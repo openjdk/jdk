@@ -167,7 +167,7 @@ public class T7093325 extends ComboInstance<T7093325> {
                 return;
             }
 
-            CodeAttribute code = test_method.findAttribute(Attributes.CODE).orElse(null);
+            CodeAttribute code = test_method.findAttribute(Attributes.code()).orElse(null);
 
             if (code == null) {
                 fail("Code attribute not found in method test()");

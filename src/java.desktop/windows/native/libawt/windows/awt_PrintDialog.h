@@ -35,10 +35,10 @@
 
 class AwtPrintDialog {
 public:
-    static jfieldID AwtPrintDialog::controlID;
-    static jfieldID AwtPrintDialog::parentID;
-    static jfieldID AwtPrintDialog::pageID;
-    static jmethodID AwtPrintDialog::setHWndMID;
+    static jfieldID controlID;
+    static jfieldID parentID;
+    static jfieldID pageID;
+    static jmethodID setHWndMID;
 
     static BOOL PrintDlg(LPPRINTDLG);
 

@@ -97,16 +97,6 @@ public:
   }
 };
 
-class XVerifyCodeBlobClosure : public CodeBlobToOopClosure {
-public:
-  XVerifyCodeBlobClosure(XVerifyRootClosure* _cl) :
-      CodeBlobToOopClosure(_cl, false /* fix_relocations */) {}
-
-  virtual void do_code_blob(CodeBlob* cb) {
-    CodeBlobToOopClosure::do_code_blob(cb);
-  }
-};
-
 class XVerifyStack : public OopClosure {
 private:
   XVerifyRootClosure* const _cl;
@@ -166,12 +156,12 @@ public:
   }
 
   void verify_frames() {
-    XVerifyCodeBlobClosure cb_cl(_cl);
+    NMethodToOopClosure nm_cl(_cl, false /* fix_relocations */);
     for (StackFrameStream frames(_jt, true /* update */, false /* process_frames */);
          !frames.is_done();
          frames.next()) {
       frame& frame = *frames.current();
-      frame.oops_do(this, &cb_cl, frames.register_map(), DerivedPointerIterationMode::_ignore);
+      frame.oops_do(this, &nm_cl, frames.register_map(), DerivedPointerIterationMode::_ignore);
       prepare_next_frame(frame);
     }
   }

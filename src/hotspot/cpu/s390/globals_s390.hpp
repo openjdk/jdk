@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -80,7 +80,6 @@ define_pd_global(intx, InitArrayShortSize, 1*BytesPerLong);
 
 #define ARCH_FLAGS(develop,                                                   \
                    product,                                                   \
-                   notproduct,                                                \
                    range,                                                     \
                    constraint)                                                \
                                                                               \

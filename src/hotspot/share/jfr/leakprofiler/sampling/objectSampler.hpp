@@ -85,6 +85,7 @@ class ObjectSampler : public CHeapObj<mtTracing> {
   ObjectSample* last() const;
   const ObjectSample* last_resolved() const;
   void set_last_resolved(const ObjectSample* sample);
+  static bool has_unresolved_entry();
 };
 
 #endif // SHARE_JFR_LEAKPROFILER_SAMPLING_OBJECTSAMPLER_HPP

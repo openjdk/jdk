@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,15 @@ public class StartupOutput {
         out = new OutputAnalyzer(pb.start());
         // The VM should not crash but may return an error message because we don't have enough space for adapters
         int exitCode = out.getExitValue();
+        if (exitCode != 1 && exitCode != 0) {
+            throw new Exception("VM crashed with exit code " + exitCode);
+        }
+
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:InitialCodeCacheSize=1024K", "-XX:ReservedCodeCacheSize=1200k", "-version");
+        out = new OutputAnalyzer(pb.start());
+        // The VM should not crash but will probably fail with a "CodeCache is full. Compiler has been disabled." message
+        out.stdoutShouldNotContain("# A fatal error");
+        exitCode = out.getExitValue();
         if (exitCode != 1 && exitCode != 0) {
             throw new Exception("VM crashed with exit code " + exitCode);
         }

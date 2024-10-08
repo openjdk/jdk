@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ package java.util.zip;
 import java.io.IOException;
 
 /**
- * Signals that a Zip exception of some sort has occurred.
+ * Signals that a ZIP exception of some sort has occurred.
  *
  * @see     java.io.IOException
  * @since   1.1

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,11 @@
 
 /*
  * @test
- * @bug 4838107 8008577
+ * @bug 4838107 8008577 8174269
  * @summary Confirm that DecimalFormat can format a number with a negative
  *          exponent number correctly. Tests also involve using a DecimalFormat
  *          with a custom pattern or a custom minus sign.
- * @run junit/othervm -Djava.locale.providers=COMPAT,SPI Bug4838107
+ * @run junit Bug4838107
  */
 
 import java.math.BigDecimal;
@@ -97,7 +97,7 @@ public class Bug4838107 {
                 Arguments.of(-0.1234, "-0.123", defaultDf),    // rounded
                 Arguments.of(Double.POSITIVE_INFINITY, "\u221e", defaultDf),
                 Arguments.of(Double.NEGATIVE_INFINITY, "-\u221e", defaultDf),
-                Arguments.of(Double.NaN, "\ufffd", defaultDf), // without prefix and suffix
+                Arguments.of(Double.NaN, "NaN", defaultDf), // without prefix and suffix
                 Arguments.of(0.0,  "0", defaultDf),
                 Arguments.of(-0.0, "-0", defaultDf),   // with the minus sign
                 // Test with a pattern and the minus sign
@@ -119,7 +119,7 @@ public class Bug4838107 {
                 Arguments.of(-0.1234, "<p>m1.234Em01<s>", customDf4),
                 Arguments.of(Double.POSITIVE_INFINITY, "<P>\u221e<S>", customDf4),
                 Arguments.of(Double.NEGATIVE_INFINITY, "<p>m\u221e<s>", customDf4),
-                Arguments.of(Double.NaN, "\ufffd", customDf4), // without prefix and suffix
+                Arguments.of(Double.NaN, "NaN", customDf4), // without prefix and suffix
                 Arguments.of(0.0,  "<P>0E00<S>", customDf4),
                 Arguments.of(-0.0, "<p>m0E00<s>", customDf4) // with the minus sign
         );

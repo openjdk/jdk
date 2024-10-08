@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -26,28 +26,23 @@
 include LibCommon.gmk
 
 ################################################################################
+## Build libprefs
+################################################################################
 
-# libprefs on macosx do not use the unix code
+# libprefs on macosx does not use the unix code
 ifeq ($(call isTargetOs, macosx), true)
-  LIBPREFS_EXCLUDE_SRC_PATTERNS := unix
+  LIBPREFS_EXCLUDE_SRC_PATTERNS := /unix/
 endif
 
 $(eval $(call SetupJdkLibrary, BUILD_LIBPREFS, \
     NAME := prefs, \
     EXCLUDE_SRC_PATTERNS := $(LIBPREFS_EXCLUDE_SRC_PATTERNS), \
     OPTIMIZATION := HIGH, \
-    CFLAGS := $(CFLAGS_JDKLIB), \
-    LDFLAGS := $(LDFLAGS_JDKLIB) \
-        $(call SET_SHARED_LIBRARY_ORIGIN), \
-    LIBS_unix := -ljvm, \
-    LIBS_linux := -ljava, \
-    LIBS_aix := -ljava, \
-    LIBS_macosx := -framework CoreFoundation -framework Foundation, \
-    LIBS_windows := advapi32.lib jvm.lib $(WIN_JAVA_LIB), \
+    JDK_LIBS := java.base:libjava java.base:libjvm, \
+    LIBS_macosx := \
+        -framework CoreFoundation \
+        -framework Foundation, \
+    LIBS_windows := advapi32.lib, \
 ))
 
-$(BUILD_LIBPREFS): $(call FindLib, java.base, java)
-
 TARGETS += $(BUILD_LIBPREFS)
-
-################################################################################

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -2154,9 +2154,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<regionFormat>{0} wagty</regionFormat>
 			<regionFormat type="daylight">{0} tomusky wagty</regionFormat>
 			<regionFormat type="standard">{0} standart wagty</regionFormat>
-			<zone type="America/Santa_Isabel">
-				<exemplarCity>Santa-Izabel</exemplarCity>
-			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>Utgaşdyrylýan ähliumumy wagt</standard>
@@ -2257,9 +2254,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="Australia/Melbourne">
 				<exemplarCity>Melburn</exemplarCity>
-			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity>Kerri</exemplarCity>
 			</zone>
 			<zone type="Australia/Sydney">
 				<exemplarCity>Sidneý</exemplarCity>
@@ -2369,9 +2363,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/Creston">
 				<exemplarCity>Kreston</exemplarCity>
 			</zone>
-			<zone type="America/Yellowknife">
-				<exemplarCity>Ýellounaýf</exemplarCity>
-			</zone>
 			<zone type="America/Swift_Current">
 				<exemplarCity>Swift-Karent</exemplarCity>
 			</zone>
@@ -2384,20 +2375,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/Resolute">
 				<exemplarCity>Rezolýut</exemplarCity>
 			</zone>
-			<zone type="America/Rainy_River">
-				<exemplarCity>Reýni-Riwer</exemplarCity>
-			</zone>
 			<zone type="America/Rankin_Inlet">
 				<exemplarCity>Rankin-Inlet</exemplarCity>
 			</zone>
-			<zone type="America/Thunder_Bay">
-				<exemplarCity>Tander-Beý</exemplarCity>
-			</zone>
 			<zone type="America/Iqaluit">
 				<exemplarCity>Ikaluit</exemplarCity>
-			</zone>
-			<zone type="America/Pangnirtung">
-				<exemplarCity>Pangnirtang</exemplarCity>
 			</zone>
 			<zone type="America/Moncton">
 				<exemplarCity>Monkton</exemplarCity>
@@ -3006,14 +2988,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Africa/Dar_es_Salaam">
 				<exemplarCity>Dar-es-Salam</exemplarCity>
 			</zone>
-			<zone type="Europe/Uzhgorod">
-				<exemplarCity>Užgorod</exemplarCity>
-			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>Kiýew</exemplarCity>
-			</zone>
-			<zone type="Europe/Zaporozhye">
-				<exemplarCity>Zaporožýe</exemplarCity>
 			</zone>
 			<zone type="Pacific/Midway">
 				<exemplarCity>Midueý</exemplarCity>
@@ -3029,9 +3005,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="Pacific/Honolulu">
 				<exemplarCity>Gonolulu</exemplarCity>
-			</zone>
-			<zone type="Pacific/Johnston">
-				<exemplarCity>Jonston</exemplarCity>
 			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>Ankoridž</exemplarCity>
@@ -3642,11 +3615,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Lord-Hau tomusky wagty</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>Makkuori adasy wagty</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>Magadan wagty</generic>
@@ -3684,13 +3652,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<metazone type="Mawson">
 				<long>
 					<standard>Mouson wagty</standard>
-				</long>
-			</metazone>
-			<metazone type="Mexico_Northwest">
-				<long>
-					<generic>Demirgazyk-günbatar Meksika wagty</generic>
-					<standard>Demirgazyk-günbatar Meksika standart wagty</standard>
-					<daylight>Demirgazyk-günbatar Meksika tomusky wagty</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">

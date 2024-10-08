@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7021614 8273244 8284908
+ * @bug 7021614 8273244 8284908 8298405
  * @summary extend com.sun.source API to support parsing javadoc comments
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file
@@ -161,6 +161,17 @@ DocComment[DOC_COMMENT, pos:2
       body: &#x012a
     ]
     Text[TEXT, pos:13, zc;_def]
+  body: empty
+  block tags: empty
+]
+*/
+
+    ///abc & def
+    public void markdown() { }
+/*
+DocComment[DOC_COMMENT, pos:0
+  firstSentence: 1
+    RawText[MARKDOWN, pos:0, abc_&_def]
   body: empty
   block tags: empty
 ]

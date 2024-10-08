@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 
 Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
@@ -915,7 +915,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="phonebook">Pagkakasunud-sunod ng Pag-uuri ng Phonebook</type>
 			<type key="collation" type="phonetic">Phonetic na Ayos ng Pag-uuri-uri</type>
 			<type key="collation" type="pinyin">Pagkakasunud-sunod ng Pag-uuri ng Pinyin</type>
-			<type key="collation" type="reformed">Pagkakasunud-sunod ng Pag-uuri ng Na-reform</type>
 			<type key="collation" type="search">Pangkalahatang Paghahanap</type>
 			<type key="collation" type="searchjl">Maghanap Ayon sa Unang Katinig ng Hangul</type>
 			<type key="collation" type="standard">Karaniwang Pagkakasunud-sunod ng Ayos</type>
@@ -2161,9 +2160,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<regionFormat>Oras sa {0}</regionFormat>
 			<regionFormat type="daylight">Daylight Time ng {0}</regionFormat>
 			<regionFormat type="standard">Standard na Oras sa {0}</regionFormat>
-			<zone type="America/Santa_Isabel">
-				<exemplarCity>Santa Isabel</exemplarCity>
-			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>Coordinated Universal Time</standard>
@@ -2171,9 +2167,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Etc/Unknown">
 				<exemplarCity>Di-kilalang Lungsod</exemplarCity>
-			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity>Currie</exemplarCity>
 			</zone>
 			<zone type="America/St_Barthelemy">
 				<exemplarCity>St. Barthélemy</exemplarCity>
@@ -2756,11 +2749,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>Daylight Time sa Lorde Howe</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>Oras sa Macquarie Island</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>Oras sa Magadan</generic>
@@ -2798,13 +2786,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Mawson">
 				<long>
 					<standard>Oras sa Mawson</standard>
-				</long>
-			</metazone>
-			<metazone type="Mexico_Northwest">
-				<long>
-					<generic>Oras sa Hilagang-kanlurang Mexico</generic>
-					<standard>Standard na Oras sa Hilagang-kanlurang Mexico</standard>
-					<daylight>Daylight na Oras sa Hilagang-kanlurang Mexico</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">

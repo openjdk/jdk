@@ -25,7 +25,7 @@
 #include <jvmti.h>
 #include <stdio.h>
 #include <string.h>
-#include "jvmti_common.h"
+#include "jvmti_common.hpp"
 
 // set by Agent_OnLoad
 static jvmtiEnv* jvmti = nullptr;

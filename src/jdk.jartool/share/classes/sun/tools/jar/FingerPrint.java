@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -172,7 +172,7 @@ final class FingerPrint {
                 cm.thisClass().asInternalName(),
                 cm.superclass().map(ClassEntry::asInternalName).orElse(null),
                 cm.majorVersion());
-        cm.forEachElement(attrs);
+        cm.forEach(attrs);
         return attrs;
     }
 
@@ -284,7 +284,7 @@ final class FingerPrint {
                 case MethodModel mm -> {
                     if (isPublic(mm.flags())) {
                         Set<String> exceptionSet = new HashSet<>();
-                        mm.findAttribute(Attributes.EXCEPTIONS).ifPresent(ea ->
+                        mm.findAttribute(Attributes.exceptions()).ifPresent(ea ->
                                 ea.exceptions().forEach(e ->
                                         exceptionSet.add(e.asInternalName())));
                         // treat type descriptor as a proxy for signature because signature

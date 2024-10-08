@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,7 +82,7 @@ public class DeleteOnClose {
         Path dir = Files.createTempDirectory("blah");
         try {
             // check that DELETE_ON_CLOSE fails when file is a sym link
-            if (TestUtil.supportsLinks(dir)) {
+            if (TestUtil.supportsSymbolicLinks(dir)) {
                 file = dir.resolve("foo");
                 Files.createFile(file);
                 Path link = dir.resolve("link");

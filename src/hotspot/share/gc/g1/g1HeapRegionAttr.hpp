@@ -26,7 +26,7 @@
 #define SHARE_GC_G1_G1HEAPREGIONATTR_HPP
 
 #include "gc/g1/g1BiasedArray.hpp"
-#include "gc/g1/heapRegion.hpp"
+#include "gc/g1/g1HeapRegion.hpp"
 
 // Per-region attributes often used during garbage collection to avoid costly
 // lookups for that information all over the place.
@@ -121,7 +121,7 @@ public:
 // processing on it.
 //
 // This means that this does NOT completely correspond to the information stored
-// in a HeapRegion, but only to what is interesting for the current young collection.
+// in a G1HeapRegion, but only to what is interesting for the current young collection.
 class G1HeapRegionAttrBiasedMappedArray : public G1BiasedMappedArray<G1HeapRegionAttr> {
  protected:
   G1HeapRegionAttr default_value() const { return G1HeapRegionAttr(G1HeapRegionAttr::NotInCSet); }
@@ -180,10 +180,10 @@ class G1HeapRegionAttrBiasedMappedArray : public G1BiasedMappedArray<G1HeapRegio
 
   bool is_in_cset_or_humongous_candidate(HeapWord* addr) const { return at(addr).is_in_cset_or_humongous_candidate(); }
   bool is_in_cset(HeapWord* addr) const { return at(addr).is_in_cset(); }
-  bool is_in_cset(const HeapRegion* hr) const { return get_by_index(hr->hrm_index()).is_in_cset(); }
+  bool is_in_cset(const G1HeapRegion* hr) const { return get_by_index(hr->hrm_index()).is_in_cset(); }
   G1HeapRegionAttr at(HeapWord* addr) const { return get_by_address(addr); }
   void clear() { G1BiasedMappedArray<G1HeapRegionAttr>::clear(); }
-  void clear(const HeapRegion* hr) { return set_by_index(hr->hrm_index(), G1HeapRegionAttr(G1HeapRegionAttr::NotInCSet)); }
+  void clear(const G1HeapRegion* hr) { return set_by_index(hr->hrm_index(), G1HeapRegionAttr(G1HeapRegionAttr::NotInCSet)); }
 };
 
 #endif // SHARE_GC_G1_G1HEAPREGIONATTR_HPP

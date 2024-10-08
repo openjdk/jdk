@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,7 @@ class AdaptCodeTest {
         var cc = ClassFile.of();
         ClassModel cm = cc.parse(testClassPath);
         for (ClassTransform t : Transforms.noops) {
-            byte[] newBytes = cc.transform(cm, t);
+            byte[] newBytes = cc.transformClass(cm, t);
             String result = (String)
                     new ByteArrayClassLoader(AdaptCodeTest.class.getClassLoader(), testClassName, newBytes)
                             .getMethod(testClassName, "many")
@@ -79,7 +79,7 @@ class AdaptCodeTest {
         var cc = ClassFile.of();
         ClassModel cm = cc.parse(fs.getPath(path));
         for (ClassTransform t : Transforms.noops) {
-            byte[] newBytes = cc.transform(cm, t);
+            byte[] newBytes = cc.transformClass(cm, t);
         }
     }
 
@@ -95,13 +95,13 @@ class AdaptCodeTest {
                     if ((val instanceof Integer) && ((Integer) val) == 13) {
                         val = 7;
                     }
-                    codeB.constantInstruction(i.opcode(), val);
+                    codeB.loadConstant(val);
                 }
                 default -> codeB.with(codeE);
             }
         });
 
-        byte[] newBytes = cc.transform(cm, transform);
+        byte[] newBytes = cc.transformClass(cm, transform);
 //        Files.write(Path.of("foo.class"), newBytes);
         String result = (String)
                 new ByteArrayClassLoader(AdaptCodeTest.class.getClassLoader(), testClassName, newBytes)
@@ -114,7 +114,7 @@ class AdaptCodeTest {
     void testCopy() throws Exception {
         var cc = ClassFile.of();
         ClassModel cm = cc.parse(testClassPath);
-        byte[] newBytes = cc.build(cm.thisClass().asSymbol(), cb -> cm.forEachElement(cb));
+        byte[] newBytes = cc.build(cm.thisClass().asSymbol(), cm::forEach);
 //        TestUtil.writeClass(newBytes, "TestClass.class");
         String result = (String)
                 new ByteArrayClassLoader(AdaptCodeTest.class.getClassLoader(), testClassName, newBytes)

@@ -323,7 +323,7 @@ void XHeap::process_non_strong_references() {
 
   ClassUnloadingContext ctx(_workers.active_workers(),
                             true /* unregister_nmethods_during_purge */,
-                            true /* lock_codeblob_free_separately */);
+                            true /* lock_nmethod_free_separately */);
 
   // Unlink stale metadata and nmethods
   _unload.unlink();

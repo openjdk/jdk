@@ -25,7 +25,7 @@
 #include <atomic>
 
 #include "jvmti.h"
-#include "jvmti_common.h"
+#include "jvmti_common.hpp"
 
 extern "C" {
 

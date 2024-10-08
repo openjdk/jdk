@@ -163,7 +163,7 @@ public class T7003595 {
                     throw new Error("Classfile not found: " + filename);
                 }
 
-                InnerClassesAttribute innerClasses = cf.findAttribute(Attributes.INNER_CLASSES).orElse(null);
+                InnerClassesAttribute innerClasses = cf.findAttribute(Attributes.innerClasses()).orElse(null);
 
                 ArrayList<String> foundInnerSig = new ArrayList<>();
                 if (innerClasses != null) {

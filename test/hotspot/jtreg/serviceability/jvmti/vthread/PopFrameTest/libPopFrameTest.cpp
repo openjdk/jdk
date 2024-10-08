@@ -24,7 +24,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "jvmti.h"
-#include "jvmti_common.h"
+#include "jvmti_common.hpp"
 
 extern "C" {
 
@@ -49,11 +49,13 @@ Breakpoint(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread,
   {
     RawMonitorLocker rml(jvmti, jni, monitor);
     bp_sync_reached = true;
-    rml.wait(0);
+    while (bp_sync_reached) { // guard against spurious wakeups
+      rml.wait(0);
+    }
   }
   LOG("Breakpoint: In method TestTask.B(): after sync section\n");
 
-  if (do_pop_frame != 0) {
+  if (do_pop_frame) {
     err = jvmti->PopFrame(thread);
     LOG("Breakpoint: PopFrame returned code: %s (%d)\n", TranslateError(err), err);
     check_jvmti_status(jni, err, "Breakpoint: Failed in PopFrame");
@@ -152,13 +154,15 @@ Java_PopFrameTest_popFrame(JNIEnv *jni, jclass cls, jthread thread) {
 
 JNIEXPORT void JNICALL
 Java_PopFrameTest_ensureAtBreakpoint(JNIEnv *jni, jclass cls) {
-  bool need_stop = false;
-
   LOG("Main: ensureAtBreakpoint\n");
-  while (!need_stop) {
-    RawMonitorLocker rml(jvmti, jni, monitor);
-    need_stop = bp_sync_reached;
-    sleep_ms(1); // 1 millisecond
+  RawMonitorLocker rml(jvmti, jni, monitor);
+  int attempts = 0;
+  while (!bp_sync_reached) {
+    if (++attempts > 100) {
+      fatal(jni, "Main: ensureAtBreakpoint: waited 20 sec");
+    }
+    LOG("Main: ensureAtBreakpoint: waiting 200 millis\n");
+    rml.wait(200); // 200 milliseconds
   }
 }
 
@@ -166,6 +170,9 @@ JNIEXPORT void JNICALL
 Java_PopFrameTest_notifyAtBreakpoint(JNIEnv *jni, jclass cls) {
   LOG("Main: notifyAtBreakpoint\n");
   RawMonitorLocker rml(jvmti, jni, monitor);
+  if (!bp_sync_reached) { // better diagnosability
+    fatal(jni, "Main: notifyAtBreakpoint: expected: bp_sync_reached==true");
+  }
   bp_sync_reached = false;
   rml.notify_all();
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,9 +34,9 @@ import static org.junit.jupiter.api.Assertions.fail;
  * @bug 4029195 4052408 4056591 4059917 4060212 4061287 4065240 4071441 4073003
  * 4089106 4100302 4101483 4103340 4103341 4104136 4104522 4106807 4108407
  * 4134203 4138203 4148168 4151631 4151706 4153860 4162071 4182066 4209272 4210209
- * 4213086 4250359 4253490 4266432 4406615 4413980 8008577 8305853
+ * 4213086 4250359 4253490 4266432 4406615 4413980 8008577 8305853 8174269
  * @library /java/text/testlib
- * @run junit/othervm -Djava.locale.providers=COMPAT,SPI DateFormatRegression
+ * @run junit DateFormatRegression
  */
 public class DateFormatRegression {
 
@@ -81,8 +81,8 @@ public class DateFormatRegression {
         String str;
         System.out.println(str = fmt.format(date));
 
-        if (!str.equals("5/3/97 8:55 AM"))
-            fail("Fail: Test broken; Want 5/3/97 8:55 AM Got " + str);
+        if (!str.equals("5/3/97, 8:55\u202fAM"))
+            fail("Fail: Test broken; Want 5/3/97, 8:55\u202fAM Got " + str);
         Map<Integer,String> expected = new HashMap<>();
         expected.put(DateFormat.MONTH_FIELD, "5");
         expected.put(DateFormat.DATE_FIELD, "3");

@@ -50,6 +50,11 @@ import jdk.internal.util.ArraysSupport;
  * reread before new bytes are  taken from
  * the contained input stream.
  *
+ * @apiNote
+ * Once wrapped in a {@code BufferedInputStream}, the underlying
+ * {@code InputStream} should not be used directly nor wrapped with
+ * another stream.
+ *
  * @author  Arthur van Hoff
  * @since   1.0
  */
@@ -61,7 +66,7 @@ public class BufferedInputStream extends FilterInputStream {
 
     /**
      * As this class is used early during bootstrap, it's motivated to use
-     * Unsafe.compareAndSetObject instead of AtomicReferenceFieldUpdater
+     * Unsafe.compareAndSetReference instead of AtomicReferenceFieldUpdater
      * (or VarHandles) to reduce dependencies and improve startup time.
      */
     private static final Unsafe U = Unsafe.getUnsafe();

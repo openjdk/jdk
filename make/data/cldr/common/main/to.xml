@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -2688,9 +2688,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<regionFormat>Taimi {0}</regionFormat>
 			<regionFormat type="daylight">{0} Taimi liliu</regionFormat>
 			<regionFormat type="standard">{0} Taimi totonu</regionFormat>
-			<zone type="America/Santa_Isabel">
-				<exemplarCity>Santa Isabel</exemplarCity>
-			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>taimi fakaemāmani</standard>
@@ -2710,9 +2707,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="Australia/Melbourne">
 				<exemplarCity>Melipoane</exemplarCity>
-			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity>Currie</exemplarCity>
 			</zone>
 			<zone type="Australia/Sydney">
 				<exemplarCity>Senē</exemplarCity>
@@ -2854,9 +2848,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Africa/Sao_Tome">
 				<exemplarCity>Sao Tomé</exemplarCity>
 			</zone>
-			<zone type="Europe/Uzhgorod">
-				<exemplarCity>Uzhhorod</exemplarCity>
-			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>Kiev</exemplarCity>
 			</zone>
@@ -2873,9 +2864,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight draft="unconfirmed">HTL</daylight>
 				</short>
 				<exemplarCity>Honolulu</exemplarCity>
-			</zone>
-			<zone type="Pacific/Johnston">
-				<exemplarCity>Sionesitoni</exemplarCity>
 			</zone>
 			<zone type="America/New_York">
 				<exemplarCity>Niu ʻIoke</exemplarCity>
@@ -3456,11 +3444,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>houa fakamakau taimi liliu</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>houa fakamotumakuali</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>houa fakalūsia-makatani</generic>
@@ -3498,13 +3481,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<metazone type="Mawson">
 				<long>
 					<standard>houa fakamausoni</standard>
-				</long>
-			</metazone>
-			<metazone type="Mexico_Northwest">
-				<long>
-					<generic>houa fakamekisikou-tokelauhihifo</generic>
-					<standard>houa fakamekisikou-tokelauhihifo taimi totonu</standard>
-					<daylight>houa fakamekisikou-tokelauhihifo taimi liliu</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">

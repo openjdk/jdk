@@ -55,8 +55,8 @@ public class Visibility {
     }
 
     void test(MethodModel mm) {
-        test(mm, Attributes.RUNTIME_VISIBLE_TYPE_ANNOTATIONS);
-        test(mm, Attributes.RUNTIME_INVISIBLE_TYPE_ANNOTATIONS);
+        test(mm, Attributes.runtimeVisibleTypeAnnotations());
+        test(mm, Attributes.runtimeInvisibleTypeAnnotations());
     }
 
     // test the result of mm.findAttribute according to expectations

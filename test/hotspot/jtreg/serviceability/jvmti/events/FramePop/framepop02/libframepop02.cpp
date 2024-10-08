@@ -26,7 +26,7 @@
 #include <string.h>
 #include <time.h>
 #include "jvmti.h"
-#include "jvmti_common.h"
+#include "jvmti_common.hpp"
 
 
 extern "C" {
@@ -194,7 +194,7 @@ void JNICALL MethodEntry(jvmtiEnv *jvmti, JNIEnv *jni,
   {
     if (printdump == JNI_TRUE) {
       print_current_time();
-      fflush(0);
+      fflush(nullptr);
       LOG(">>> %sMethod entry\n>>>", (isNative == JNI_TRUE) ? "Native " : "");
       printInfo(jni, jvmti, thr, method, frameCount);
     }
@@ -231,7 +231,7 @@ void JNICALL FramePop(jvmtiEnv *jvmti, JNIEnv *jni,
   {
     if (printdump == JNI_TRUE) {
       print_current_time();
-      fflush(0);
+      fflush(nullptr);
       LOG(" >>> Frame Pop\n>>>");
       printInfo(jni, jvmti, thr, method, frameCount);
     }

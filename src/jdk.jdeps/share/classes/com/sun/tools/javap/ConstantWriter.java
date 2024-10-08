@@ -26,7 +26,8 @@
 package com.sun.tools.javap;
 
 import java.lang.classfile.constantpool.*;
-import static java.lang.classfile.ClassFile.*;
+
+import static java.lang.classfile.constantpool.PoolEntry.*;
 
 /*
  *  Write a constant pool entry.
@@ -156,13 +157,13 @@ public class ConstantWriter extends BasicWriter {
             case TAG_CLASS -> "Class";
             case TAG_STRING -> "String";
             case TAG_FIELDREF -> "Fieldref";
-            case TAG_METHODHANDLE -> "MethodHandle";
-            case TAG_METHODTYPE -> "MethodType";
+            case TAG_METHOD_HANDLE -> "MethodHandle";
+            case TAG_METHOD_TYPE -> "MethodType";
             case TAG_METHODREF -> "Methodref";
-            case TAG_INTERFACEMETHODREF -> "InterfaceMethodref";
-            case TAG_INVOKEDYNAMIC -> "InvokeDynamic";
-            case TAG_CONSTANTDYNAMIC -> "Dynamic";
-            case TAG_NAMEANDTYPE -> "NameAndType";
+            case TAG_INTERFACE_METHODREF -> "InterfaceMethodref";
+            case TAG_INVOKE_DYNAMIC -> "InvokeDynamic";
+            case TAG_DYNAMIC -> "Dynamic";
+            case TAG_NAME_AND_TYPE -> "NameAndType";
             default -> "Unknown";
         };
     }
@@ -177,13 +178,13 @@ public class ConstantWriter extends BasicWriter {
             case TAG_CLASS -> "class";
             case TAG_STRING -> "String";
             case TAG_FIELDREF -> "Field";
-            case TAG_METHODHANDLE -> "MethodHandle";
-            case TAG_METHODTYPE -> "MethodType";
+            case TAG_METHOD_HANDLE -> "MethodHandle";
+            case TAG_METHOD_TYPE -> "MethodType";
             case TAG_METHODREF -> "Method";
-            case TAG_INTERFACEMETHODREF -> "InterfaceMethod";
-            case TAG_INVOKEDYNAMIC -> "InvokeDynamic";
-            case TAG_CONSTANTDYNAMIC -> "Dynamic";
-            case TAG_NAMEANDTYPE -> "NameAndType";
+            case TAG_INTERFACE_METHODREF -> "InterfaceMethod";
+            case TAG_INVOKE_DYNAMIC -> "InvokeDynamic";
+            case TAG_DYNAMIC -> "Dynamic";
+            case TAG_NAME_AND_TYPE -> "NameAndType";
             default -> "(unknown tag " + tag + ")";
         };
     }

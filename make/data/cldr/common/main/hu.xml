@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 
 Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
@@ -1179,7 +1179,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="phonebook">Telefonkönyv sorrend</type>
 			<type key="collation" type="phonetic">Fonetikus rendezési sorrend</type>
 			<type key="collation" type="pinyin">Pinyin sorrend</type>
-			<type key="collation" type="reformed">Átalakított rendezési elv</type>
 			<type key="collation" type="search">Általános célú keresés</type>
 			<type key="collation" type="searchjl" draft="contributed">Keresés hangul kezdő mássalhangzó szerint</type>
 			<type key="collation" type="standard">Normál rendezési sorrend</type>
@@ -2356,9 +2355,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<regionFormat>{0} idő</regionFormat>
 			<regionFormat type="daylight">{0} nyári idő</regionFormat>
 			<regionFormat type="standard">{0} zónaidő</regionFormat>
-			<zone type="America/Santa_Isabel">
-				<exemplarCity>Santa Isabel</exemplarCity>
-			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>koordinált világidő</standard>
@@ -2390,9 +2386,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Europe/Vienna">
 				<exemplarCity>Bécs</exemplarCity>
-			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity>Currie</exemplarCity>
 			</zone>
 			<zone type="Europe/Sarajevo">
 				<exemplarCity>Szarajevó</exemplarCity>
@@ -2839,17 +2832,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Africa/Dar_es_Salaam">
 				<exemplarCity>Dar es-Salaam</exemplarCity>
 			</zone>
-			<zone type="Europe/Uzhgorod">
-				<exemplarCity>Ungvár</exemplarCity>
-			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>Kijev</exemplarCity>
 			</zone>
 			<zone type="Europe/Simferopol">
 				<exemplarCity>Szimferopol</exemplarCity>
-			</zone>
-			<zone type="Europe/Zaporozhye">
-				<exemplarCity>Zaporizzsja</exemplarCity>
 			</zone>
 			<zone type="Pacific/Midway">
 				<exemplarCity>Midway-szigetek</exemplarCity>
@@ -3472,11 +3459,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>Macaui nyári idő</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>macquarie-szigeti téli idő</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>magadáni idő</generic>
@@ -3514,13 +3496,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Mawson">
 				<long>
 					<standard>mawsoni idő</standard>
-				</long>
-			</metazone>
-			<metazone type="Mexico_Northwest">
-				<long>
-					<generic>északnyugat-mexikói idő</generic>
-					<standard>északnyugat-mexikói zónaidő</standard>
-					<daylight>északnyugat-mexikói nyári idő</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">

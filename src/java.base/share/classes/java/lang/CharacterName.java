@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,7 +113,7 @@ class CharacterName {
     }
 
     private static int hashN(byte[] a, int off, int len) {
-        return ArraysSupport.vectorizedHashCode(a, off, len, 1, ArraysSupport.T_BYTE);
+        return ArraysSupport.hashCode(a, off, len, 1);
     }
 
     private int addCp(int idx, int hash, int next, int cp) {

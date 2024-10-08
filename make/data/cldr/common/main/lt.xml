@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 
 Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
@@ -1251,7 +1251,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="phonebook">telefonų knygos rūšiavimo tvarka</type>
 			<type key="collation" type="phonetic">Fonetinė rikiavimo tvarka</type>
 			<type key="collation" type="pinyin">supaprastinta kiniškų hieroglifų rūšiavimo tvarka</type>
-			<type key="collation" type="reformed">reformuota rūšiavimo tvarka</type>
 			<type key="collation" type="search">bendroji paieška</type>
 			<type key="collation" type="searchjl" draft="provisional">ieškoti pagal hangul pirmines priebalses</type>
 			<type key="collation" type="standard">standartinis rikiavimas</type>
@@ -2896,9 +2895,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<regionFormat>Laikas: {0}</regionFormat>
 			<regionFormat type="daylight">Vasaros laikas: {0}</regionFormat>
 			<regionFormat type="standard">Žiemos laikas: {0}</regionFormat>
-			<zone type="America/Santa_Isabel">
-				<exemplarCity>Santa Izabelė</exemplarCity>
-			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>pasaulio suderintasis laikas</standard>
@@ -3017,9 +3013,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Australia/Melbourne">
 				<exemplarCity>Melburnas</exemplarCity>
-			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity>Karis</exemplarCity>
 			</zone>
 			<zone type="Australia/Hobart">
 				<exemplarCity>Hobartas</exemplarCity>
@@ -3162,9 +3155,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Creston">
 				<exemplarCity>Krestonas</exemplarCity>
 			</zone>
-			<zone type="America/Yellowknife">
-				<exemplarCity>Jelounaifas</exemplarCity>
-			</zone>
 			<zone type="America/Edmonton">
 				<exemplarCity>Edmontonas</exemplarCity>
 			</zone>
@@ -3183,29 +3173,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Resolute">
 				<exemplarCity>Resolutas</exemplarCity>
 			</zone>
-			<zone type="America/Rainy_River">
-				<exemplarCity>Reini Riveris</exemplarCity>
-			</zone>
 			<zone type="America/Rankin_Inlet">
 				<exemplarCity>Rankin Inletas</exemplarCity>
 			</zone>
 			<zone type="America/Coral_Harbour">
 				<exemplarCity>Atikokanas</exemplarCity>
 			</zone>
-			<zone type="America/Thunder_Bay">
-				<exemplarCity>Tander Bėjus</exemplarCity>
-			</zone>
-			<zone type="America/Nipigon">
-				<exemplarCity>Nipigonas</exemplarCity>
-			</zone>
 			<zone type="America/Toronto">
 				<exemplarCity>Torontas</exemplarCity>
 			</zone>
 			<zone type="America/Iqaluit">
 				<exemplarCity>Ikaluitas</exemplarCity>
-			</zone>
-			<zone type="America/Pangnirtung">
-				<exemplarCity>Pangnirtungas</exemplarCity>
 			</zone>
 			<zone type="America/Moncton">
 				<exemplarCity>Monktonas</exemplarCity>
@@ -3954,17 +3932,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Africa/Dar_es_Salaam">
 				<exemplarCity>Dar es Salamas</exemplarCity>
 			</zone>
-			<zone type="Europe/Uzhgorod">
-				<exemplarCity>Užhorodas</exemplarCity>
-			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>Kijevas</exemplarCity>
 			</zone>
 			<zone type="Europe/Simferopol">
 				<exemplarCity>Simferopolis</exemplarCity>
-			</zone>
-			<zone type="Europe/Zaporozhye">
-				<exemplarCity>Zaporožė</exemplarCity>
 			</zone>
 			<zone type="Pacific/Midway">
 				<exemplarCity>Midvėjus</exemplarCity>
@@ -3980,9 +3952,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Pacific/Honolulu">
 				<exemplarCity>Honolulu</exemplarCity>
-			</zone>
-			<zone type="Pacific/Johnston">
-				<exemplarCity>Džonstonas</exemplarCity>
 			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>Ankoridžas</exemplarCity>
@@ -4668,11 +4637,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>Makau vasaros laikas</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>Makvorio Salos laikas</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>Magadano laikas</generic>
@@ -4710,13 +4674,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Mawson">
 				<long>
 					<standard>Mosono laikas</standard>
-				</long>
-			</metazone>
-			<metazone type="Mexico_Northwest">
-				<long>
-					<generic>Šiaurės Vakarų Meksikos laikas</generic>
-					<standard>Šiaurės Vakarų Meksikos žiemos laikas</standard>
-					<daylight>Šiaurės Vakarų Meksikos vasaros laikas</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">

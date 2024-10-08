@@ -954,6 +954,7 @@ class SocketChannelImpl
             try {
                 writeLock.lock();
                 try {
+                    ensureOpen();
                     boolean blocking = isBlocking();
                     boolean connected = false;
                     try {
@@ -1064,6 +1065,7 @@ class SocketChannelImpl
                     if (isConnected())
                         return true;
 
+                    ensureOpen();
                     boolean blocking = isBlocking();
                     boolean connected = false;
                     try {
@@ -1225,6 +1227,11 @@ class SocketChannelImpl
 
     @Override
     public void kill() {
+        // wait for any read/write operations to complete before trying to close
+        readLock.lock();
+        readLock.unlock();
+        writeLock.lock();
+        writeLock.unlock();
         synchronized (stateLock) {
             if (state == ST_CLOSING) {
                 tryFinishClose();

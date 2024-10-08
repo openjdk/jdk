@@ -28,20 +28,6 @@ OS=`uname`
 
 case "$OS" in
     Linux* )
-        GNOMESID=`pgrep gnome-session | head -n1`
-
-        printf "\n/* gnome-session environ\n"
-        cat "/proc/$GNOMESID/environ" | tr '\0' '\n'
-        printf "\n*/\n\n"
-
-        DBUS_SESSION_BUS_ADDRESS=`grep -z DBUS_SESSION_BUS_ADDRESS /proc/$GNOMESID/environ | cut -d= -f2-`
-        export DBUS_SESSION_BUS_ADDRESS
-
-        DISPLAY=`grep -z DISPLAY /proc/$GNOMESID/environ | cut -d= -f2-`
-        export DISPLAY
-
-        XDG_CURRENT_DESKTOP=`grep -z XDG_CURRENT_DESKTOP /proc/$GNOMESID/environ | cut -d= -f2-`
-        export XDG_CURRENT_DESKTOP
         ;;
     * )
         echo "This Feature is not to be tested on $OS"

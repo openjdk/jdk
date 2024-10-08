@@ -37,6 +37,7 @@
 #include "utilities/align.hpp"
 #include "utilities/bytes.hpp"
 #include "utilities/constantTag.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/resourceHash.hpp"
 
 // A ConstantPool is an array containing class constants as described in the
@@ -247,14 +248,6 @@ class ConstantPool : public Metadata {
   Array<Klass*>* resolved_klasses() const       { return _resolved_klasses; }
   void allocate_resolved_klasses(ClassLoaderData* loader_data, int num_klasses, TRAPS);
   void initialize_unresolved_klasses(ClassLoaderData* loader_data, TRAPS);
-
-  // Invokedynamic indexes.
-  // They must look completely different from normal indexes.
-  // The main reason is that byte swapping is sometimes done on normal indexes.
-  // Finally, it is helpful for debugging to tell the two apart.
-  static bool is_invokedynamic_index(int i) { return (i < 0); }
-  static int  decode_invokedynamic_index(int i) { assert(is_invokedynamic_index(i),  ""); return ~i; }
-  static int  encode_invokedynamic_index(int i) { assert(!is_invokedynamic_index(i), ""); return ~i; }
 
   // Given the per-instruction index of an indy instruction, report the
   // main constant pool entry for its bootstrap specifier.
@@ -669,6 +662,8 @@ class ConstantPool : public Metadata {
 
   int to_cp_index(int which, Bytecodes::Code code);
 
+  bool is_resolved(int which, Bytecodes::Code code);
+
   // Lookup for entries consisting of (name_index, signature_index)
   u2 name_ref_index_at(int cp_index);            // ==  low-order jshort of name_and_type_at(cp_index)
   u2 signature_ref_index_at(int cp_index);       // == high-order jshort of name_and_type_at(cp_index)
@@ -685,9 +680,11 @@ class ConstantPool : public Metadata {
   // CDS support
   objArrayOop prepare_resolved_references_for_archiving() NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
   void add_dumped_interned_strings() NOT_CDS_JAVA_HEAP_RETURN;
-  bool maybe_archive_resolved_klass_at(int cp_index);
   void remove_unshareable_info();
   void restore_unshareable_info(TRAPS);
+private:
+  void remove_unshareable_entries();
+  void remove_resolved_klass_if_non_deterministic(int cp_index);
 #endif
 
  private:
@@ -761,9 +758,9 @@ class ConstantPool : public Metadata {
 
   // Used by compiler to prevent classloading.
   static Method*          method_at_if_loaded      (const constantPoolHandle& this_cp, int which);
-  static bool       has_appendix_at_if_loaded      (const constantPoolHandle& this_cp, int which);
-  static oop            appendix_at_if_loaded      (const constantPoolHandle& this_cp, int which);
-  static bool has_local_signature_at_if_loaded     (const constantPoolHandle& this_cp, int which);
+  static bool       has_appendix_at_if_loaded      (const constantPoolHandle& this_cp, int which, Bytecodes::Code code);
+  static oop            appendix_at_if_loaded      (const constantPoolHandle& this_cp, int which, Bytecodes::Code code);
+  static bool has_local_signature_at_if_loaded     (const constantPoolHandle& this_cp, int which, Bytecodes::Code code);
   static Klass*            klass_at_if_loaded      (const constantPoolHandle& this_cp, int which);
 
   // Routines currently used for annotations (only called by jvm.cpp) but which might be used in the
@@ -785,7 +782,7 @@ class ConstantPool : public Metadata {
   int pre_resolve_shared_klasses(TRAPS);
 
   // Debugging
-  const char* printable_name_at(int cp_index) PRODUCT_RETURN0;
+  const char* printable_name_at(int cp_index) PRODUCT_RETURN_NULL;
 
  private:
 

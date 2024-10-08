@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,13 +46,13 @@ public class TestGetEventWriterPackage {
      public static void main(String... args) throws Throwable {
         // --add-opens jdk.jfr/jdk.jfr.events=ALL-UNNAMED gives access to
         // the FileReadEvent class in the jdk.jfr module.
-        // When JFR is initialized the FileReadEvent is registered and an EventConfiguration object
+        // When JFR is initialized the DirectBufferStatisticsEvent is registered and an EventConfiguration object
         // assigned to its static field eventConfiguration
         try (Recording r = new Recording()) {
             r.start();
         }
         // The tests gets the EventConfiguration object from the class
-        Class<?>c = Class.forName("jdk.jfr.events.FileReadEvent");
+        Class<?>c = Class.forName("jdk.jfr.events.DirectBufferStatisticsEvent");
         Field f = c.getDeclaredField("eventConfiguration");
         f.setAccessible(true);
         Object o = f.get(null);

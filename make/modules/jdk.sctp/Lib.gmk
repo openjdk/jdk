@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -25,29 +25,22 @@
 
 include LibCommon.gmk
 
-################################################################################
+ifeq ($(call isTargetOs, linux), true)
+  ##############################################################################
+  ## Build libsctp
+  ##############################################################################
 
-ifeq ($(call isTargetOsType, unix), true)
+  $(eval $(call SetupJdkLibrary, BUILD_LIBSCTP, \
+      NAME := sctp, \
+      OPTIMIZATION := LOW, \
+      EXTRA_HEADER_DIRS := \
+          $(call GetJavaHeaderDir, java.base) \
+          java.base:libjvm \
+          java.base:libnio \
+          java.base:libnio/ch, \
+      JDK_LIBS := java.base:libjava java.base:libnet, \
+      LIBS_linux := $(LIBDL) -lpthread, \
+  ))
 
-  ifeq ($(call isTargetOs, macosx aix), false)
-    $(eval $(call SetupJdkLibrary, BUILD_LIBSCTP, \
-        NAME := sctp, \
-        OPTIMIZATION := LOW, \
-        CFLAGS := $(CFLAGS_JDKLIB), \
-        EXTRA_HEADER_DIRS := \
-            $(call GetJavaHeaderDir, java.base) \
-            java.base:libnet \
-            java.base:libnio/ch, \
-        LDFLAGS := $(LDFLAGS_JDKLIB) \
-            $(call SET_SHARED_LIBRARY_ORIGIN), \
-        LIBS_unix := -lnio -lnet -ljava -ljvm, \
-        LIBS_linux := -lpthread $(LIBDL), \
-    ))
-
-    TARGETS += $(BUILD_LIBSCTP)
-
-    $(BUILD_LIBSCTP): $(call FindLib, java.base, nio)
-  endif
+  TARGETS += $(BUILD_LIBSCTP)
 endif
-
-################################################################################

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -603,15 +603,11 @@ public class JViewport extends JComponent implements Accessible
 
 
     private Graphics getBackingStoreGraphics(Graphics g) {
-        if (!SwingUtilities2.isPrinting(g)) {
-            Graphics bsg = backingStoreImage.getGraphics();
-            bsg.setColor(g.getColor());
-            bsg.setFont(g.getFont());
-            bsg.setClip(g.getClipBounds());
-            return bsg;
-        } else {
-            return g;
-        }
+        Graphics bsg = backingStoreImage.getGraphics();
+        bsg.setColor(g.getColor());
+        bsg.setFont(g.getFont());
+        bsg.setClip(g.getClipBounds());
+        return bsg;
     }
 
 

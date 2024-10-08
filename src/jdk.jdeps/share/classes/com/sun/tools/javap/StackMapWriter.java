@@ -62,7 +62,7 @@ public class StackMapWriter extends InstructionDetailWriter {
     }
 
     void setStackMap(CodeAttribute code) {
-        StackMapTableAttribute attr = code.findAttribute(Attributes.STACK_MAP_TABLE)
+        StackMapTableAttribute attr = code.findAttribute(Attributes.stackMapTable())
                 .orElse(null);
         if (attr == null) {
             map = null;
@@ -122,25 +122,25 @@ public class StackMapWriter extends InstructionDetailWriter {
         switch (entry) {
             case StackMapFrameInfo.SimpleVerificationTypeInfo s -> {
                 switch (s) {
-                    case ITEM_TOP ->
+                    case TOP ->
                         print("top");
 
-                    case ITEM_INTEGER ->
+                    case INTEGER ->
                         print("int");
 
-                    case ITEM_FLOAT ->
+                    case FLOAT ->
                         print("float");
 
-                    case ITEM_LONG ->
+                    case LONG ->
                         print("long");
 
-                    case ITEM_DOUBLE ->
+                    case DOUBLE ->
                         print("double");
 
-                    case ITEM_NULL ->
+                    case NULL ->
                         print("null");
 
-                    case ITEM_UNINITIALIZED_THIS ->
+                    case UNINITIALIZED_THIS ->
                         print("uninit_this");
                 }
             }

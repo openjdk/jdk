@@ -33,10 +33,10 @@
 
 /*************************************************************/
 
-#include "nsk_tools.h"
-#include "jni_tools.h"
-#include "jvmti_tools.h"
-#include "JVMTITools.h"
+#include "nsk_tools.hpp"
+#include "jni_tools.hpp"
+#include "jvmti_tools.hpp"
+#include "JVMTITools.hpp"
 
 /*************************************************************/
 
@@ -146,7 +146,9 @@ static int add_option(const char opt[], int opt_len, const char val[], int val_l
     } else {
         strncpy(name, opt, opt_len);
         name[opt_len] = '\0';
-        strncpy(value, val, val_len);
+        if (val != nullptr) {
+            strncpy(value, val, val_len);
+        }
         value[val_len] = '\0';
 
         if (!check_option(dashed_opt, name, value)) {

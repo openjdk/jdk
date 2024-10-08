@@ -62,7 +62,7 @@ public class InstructionHelper {
                             ClassFile.ACC_PUBLIC + ClassFile.ACC_STATIC, methodBuilder -> methodBuilder
                                     .withCode(codeBuilder -> {
                                         for (int i = 0; i < type.parameterCount(); i++) {
-                                            codeBuilder.loadInstruction(TypeKind.from(type.parameterType(i)), i);
+                                            codeBuilder.loadLocal(TypeKind.from(type.parameterType(i)), i);
                                         }
                                         codeBuilder.invokedynamic(DynamicCallSiteDesc.of(
                                                 MethodHandleDesc.ofMethod(
@@ -74,7 +74,7 @@ public class InstructionHelper {
                                                 name,
                                                 MethodTypeDesc.ofDescriptor(type.toMethodDescriptorString()),
                                                 boostrapArgs));
-                                        codeBuilder.returnInstruction(TypeKind.from(type.returnType()));
+                                        codeBuilder.return_(TypeKind.from(type.returnType()));
                                     }));
         });
         Class<?> gc = l.defineClass(byteArray);
@@ -116,7 +116,7 @@ public class InstructionHelper {
                                             name,
                                             ClassDesc.ofDescriptor(type),
                                             bootstrapArgs))
-                                    .returnInstruction(TypeKind.fromDescriptor(type))));
+                                    .return_(TypeKind.fromDescriptor(type))));
         });
         Class<?> gc = l.defineClass(bytes);
         return l.findStatic(gc, "m", fromMethodDescriptorString(methodType, l.lookupClass().getClassLoader()));

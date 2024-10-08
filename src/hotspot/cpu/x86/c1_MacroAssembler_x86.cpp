@@ -58,19 +58,20 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
 
   if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(hdr, obj, rscratch1);
-    movl(hdr, Address(hdr, Klass::access_flags_offset()));
-    testl(hdr, JVM_ACC_IS_VALUE_BASED_CLASS);
+    testb(Address(hdr, Klass::misc_flags_offset()), KlassFlags::_misc_is_value_based_class);
     jcc(Assembler::notZero, slow_case);
   }
 
   if (LockingMode == LM_LIGHTWEIGHT) {
 #ifdef _LP64
     const Register thread = r15_thread;
+    lightweight_lock(disp_hdr, obj, hdr, thread, tmp, slow_case);
 #else
-    const Register thread = disp_hdr;
-    get_thread(thread);
+    // Implicit null check.
+    movptr(hdr, Address(obj, oopDesc::mark_offset_in_bytes()));
+    // Lacking registers and thread on x86_32. Always take slow path.
+    jmp(slow_case);
 #endif
-    lightweight_lock(obj, hdr, thread, tmp, slow_case);
   } else  if (LockingMode == LM_LEGACY) {
     Label done;
     // Load object header
@@ -139,10 +140,8 @@ void C1_MacroAssembler::unlock_object(Register hdr, Register obj, Register disp_
 #ifdef _LP64
     lightweight_unlock(obj, disp_hdr, r15_thread, hdr, slow_case);
 #else
-    // This relies on the implementation of lightweight_unlock being able to handle
-    // that the reg_rax and thread Register parameters may alias each other.
-    get_thread(disp_hdr);
-    lightweight_unlock(obj, disp_hdr, disp_hdr, hdr, slow_case);
+    // Lacking registers and thread on x86_32. Always take slow path.
+    jmp(slow_case);
 #endif
   } else if (LockingMode == LM_LEGACY) {
     // test if object header is pointing to the displaced header, and if so, restore
@@ -186,6 +185,15 @@ void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register
 
   if (len->is_valid()) {
     movl(Address(obj, arrayOopDesc::length_offset_in_bytes()), len);
+#ifdef _LP64
+    int base_offset = arrayOopDesc::length_offset_in_bytes() + BytesPerInt;
+    if (!is_aligned(base_offset, BytesPerWord)) {
+      assert(is_aligned(base_offset, BytesPerInt), "must be 4-byte aligned");
+      // Clear gap/first 4 bytes following the length field.
+      xorl(t1, t1);
+      movl(Address(obj, base_offset), t1);
+    }
+#endif
   }
 #ifdef _LP64
   else if (UseCompressedClassPointers) {
@@ -263,13 +271,13 @@ void C1_MacroAssembler::initialize_object(Register obj, Register klass, Register
 
   if (CURRENT_ENV->dtrace_alloc_probes()) {
     assert(obj == rax, "must be");
-    call(RuntimeAddress(Runtime1::entry_for(Runtime1::dtrace_object_alloc_id)));
+    call(RuntimeAddress(Runtime1::entry_for(C1StubId::dtrace_object_alloc_id)));
   }
 
   verify_oop(obj);
 }
 
-void C1_MacroAssembler::allocate_array(Register obj, Register len, Register t1, Register t2, int header_size, Address::ScaleFactor f, Register klass, Label& slow_case) {
+void C1_MacroAssembler::allocate_array(Register obj, Register len, Register t1, Register t2, int base_offset_in_bytes, Address::ScaleFactor f, Register klass, Label& slow_case, bool zero_array) {
   assert(obj == rax, "obj must be in rax, for cmpxchg");
   assert_different_registers(obj, len, t1, t2, klass);
 
@@ -282,7 +290,7 @@ void C1_MacroAssembler::allocate_array(Register obj, Register len, Register t1, 
 
   const Register arr_size = t2; // okay to be the same
   // align object end
-  movptr(arr_size, header_size * BytesPerWord + MinObjAlignmentInBytesMask);
+  movptr(arr_size, base_offset_in_bytes + MinObjAlignmentInBytesMask);
   lea(arr_size, Address(arr_size, len, f));
   andptr(arr_size, ~MinObjAlignmentInBytesMask);
 
@@ -291,12 +299,17 @@ void C1_MacroAssembler::allocate_array(Register obj, Register len, Register t1, 
   initialize_header(obj, klass, len, t1, t2);
 
   // clear rest of allocated space
-  const Register len_zero = len;
-  initialize_body(obj, arr_size, header_size * BytesPerWord, len_zero);
+  if (zero_array) {
+    const Register len_zero = len;
+    // Align-up to word boundary, because we clear the 4 bytes potentially
+    // following the length field in initialize_header().
+    int base_offset = align_up(base_offset_in_bytes, BytesPerWord);
+    initialize_body(obj, arr_size, base_offset, len_zero);
+  }
 
   if (CURRENT_ENV->dtrace_alloc_probes()) {
     assert(obj == rax, "must be");
-    call(RuntimeAddress(Runtime1::entry_for(Runtime1::dtrace_object_alloc_id)));
+    call(RuntimeAddress(Runtime1::entry_for(C1StubId::dtrace_object_alloc_id)));
   }
 
   verify_oop(obj);

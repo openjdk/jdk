@@ -2770,17 +2770,18 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
      */
     @Override
     public abstract
-    $abstractvectortype$ rearrange(VectorShuffle<$Boxtype$> m);
+    $abstractvectortype$ rearrange(VectorShuffle<$Boxtype$> shuffle);
 
     /*package-private*/
     @ForceInline
     final
     <S extends VectorShuffle<$Boxtype$>>
     $abstractvectortype$ rearrangeTemplate(Class<S> shuffletype, S shuffle) {
-        shuffle.checkIndexes();
+        @SuppressWarnings("unchecked")
+        S ws = (S) shuffle.wrapIndexes();
         return VectorSupport.rearrangeOp(
             getClass(), shuffletype, null, $type$.class, length(),
-            this, shuffle, null,
+            this, ws, null,
             (v1, s_, m_) -> v1.uOp((i, a) -> {
                 int ei = s_.laneSource(i);
                 return v1.lane(ei);
@@ -2805,17 +2806,14 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
                                            M m) {
 
         m.check(masktype, this);
-        VectorMask<$Boxtype$> valid = shuffle.laneIsValid();
-        if (m.andNot(valid).anyTrue()) {
-            shuffle.checkIndexes();
-            throw new AssertionError();
-        }
+        @SuppressWarnings("unchecked")
+        S ws = (S) shuffle.wrapIndexes();
         return VectorSupport.rearrangeOp(
                    getClass(), shuffletype, masktype, $type$.class, length(),
-                   this, shuffle, m,
+                   this, ws, m,
                    (v1, s_, m_) -> v1.uOp((i, a) -> {
                         int ei = s_.laneSource(i);
-                        return ei < 0  || !m_.laneIsSet(i) ? 0 : v1.lane(ei);
+                        return !m_.laneIsSet(i) ? 0 : v1.lane(ei);
                    }));
     }
 
@@ -2928,7 +2926,10 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     /*package-private*/
     @ForceInline
     final $abstractvectortype$ selectFromTemplate($abstractvectortype$ v) {
-        return v.rearrange(this.toShuffle());
+        return ($Type$Vector)VectorSupport.selectFromOp(getClass(), null, $type$.class,
+                                                        length(), this, v, null,
+                                                        (v1, v2, _m) ->
+                                                         v2.rearrange(v1.toShuffle()));
     }
 
     /**
@@ -2940,9 +2941,15 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
 
     /*package-private*/
     @ForceInline
-    final $abstractvectortype$ selectFromTemplate($abstractvectortype$ v,
-                                                  AbstractMask<$Boxtype$> m) {
-        return v.rearrange(this.toShuffle(), m);
+    final
+    <M extends VectorMask<$Boxtype$>>
+    $abstractvectortype$ selectFromTemplate($abstractvectortype$ v,
+                                            Class<M> masktype, M m) {
+        m.check(masktype, this);
+        return ($Type$Vector)VectorSupport.selectFromOp(getClass(), masktype, $type$.class,
+                                                        length(), this, v, m,
+                                                        (v1, v2, _m) ->
+                                                         v2.rearrange(v1.toShuffle(), _m));
     }
 
     /// Ternary operations
@@ -3622,7 +3629,35 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
                                    $type$[] a, int offset,
                                    int[] indexMap, int mapOffset) {
         $Type$Species vsp = ($Type$Species) species;
-        return vsp.vOp(n -> a[offset + indexMap[mapOffset + n]]);
+        IntVector.IntSpecies isp = IntVector.species(vsp.indexShape());
+        Objects.requireNonNull(a);
+        Objects.requireNonNull(indexMap);
+        Class<? extends $abstractvectortype$> vectorType = vsp.vectorType();
+
+
+        // Constant folding should sweep out following conditonal logic.
+        VectorSpecies<Integer> lsp;
+        if (isp.length() > IntVector.SPECIES_PREFERRED.length()) {
+            lsp = IntVector.SPECIES_PREFERRED;
+        } else {
+            lsp = isp;
+        }
+
+        // Check indices are within array bounds.
+        for (int i = 0; i < vsp.length(); i += lsp.length()) {
+            IntVector vix = IntVector
+                .fromArray(lsp, indexMap, mapOffset + i)
+                .add(offset);
+            VectorIntrinsics.checkIndex(vix, a.length);
+        }
+
+        return VectorSupport.loadWithMap(
+            vectorType, null, $type$.class, vsp.laneCount(),
+            lsp.vectorType(),
+            a, ARRAY_BASE, null, null,
+            a, offset, indexMap, mapOffset, vsp,
+            (c, idx, iMap, idy, s, vm) ->
+            s.vOp(n -> c[idx + iMap[idy+n]]));
     }
 #else[byteOrShort]
     @ForceInline
@@ -3714,17 +3749,6 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
      *         where the mask is set
      * @see $abstractvectortype$#toIntArray()
      */
-#if[byteOrShort]
-    @ForceInline
-    public static
-    $abstractvectortype$ fromArray(VectorSpecies<$Boxtype$> species,
-                                   $type$[] a, int offset,
-                                   int[] indexMap, int mapOffset,
-                                   VectorMask<$Boxtype$> m) {
-        $Type$Species vsp = ($Type$Species) species;
-        return vsp.vOp(m, n -> a[offset + indexMap[mapOffset + n]]);
-    }
-#else[byteOrShort]
     @ForceInline
     public static
     $abstractvectortype$ fromArray(VectorSpecies<$Boxtype$> species,
@@ -3739,7 +3763,6 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
             return vsp.dummyVector().fromArray0(a, offset, indexMap, mapOffset, m);
         }
     }
-#end[byteOrShort]
 
 #if[short]
     /**
@@ -4793,12 +4816,51 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
                                         (arr_, off_, i) -> arr_[off_ + i]));
     }
 
-#if[!byteOrShort]
     /*package-private*/
     abstract
     $abstractvectortype$ fromArray0($type$[] a, int offset,
                                     int[] indexMap, int mapOffset,
                                     VectorMask<$Boxtype$> m);
+#if[byteOrShort]
+    @ForceInline
+    final
+    <M extends VectorMask<$Boxtype$>>
+    $abstractvectortype$ fromArray0Template(Class<M> maskClass, $type$[] a, int offset,
+                                            int[] indexMap, int mapOffset, M m) {
+        $Type$Species vsp = vspecies();
+        IntVector.IntSpecies isp = IntVector.species(vsp.indexShape());
+        Objects.requireNonNull(a);
+        Objects.requireNonNull(indexMap);
+        m.check(vsp);
+        Class<? extends $abstractvectortype$> vectorType = vsp.vectorType();
+
+
+        // Constant folding should sweep out following conditonal logic.
+        VectorSpecies<Integer> lsp;
+        if (isp.length() > IntVector.SPECIES_PREFERRED.length()) {
+            lsp = IntVector.SPECIES_PREFERRED;
+        } else {
+            lsp = isp;
+        }
+
+        // Check indices are within array bounds.
+        // FIXME: Check index under mask controlling.
+        for (int i = 0; i < vsp.length(); i += lsp.length()) {
+            IntVector vix = IntVector
+                .fromArray(lsp, indexMap, mapOffset + i)
+                .add(offset);
+            VectorIntrinsics.checkIndex(vix, a.length);
+        }
+
+        return VectorSupport.loadWithMap(
+            vectorType, maskClass, $type$.class, vsp.laneCount(),
+            lsp.vectorType(),
+            a, ARRAY_BASE, null, m,
+            a, offset, indexMap, mapOffset, vsp,
+            (c, idx, iMap, idy, s, vm) ->
+            s.vOp(vm, n -> c[idx + iMap[idy+n]]));
+    }
+#else[byteOrShort]
     @ForceInline
     final
     <M extends VectorMask<$Boxtype$>>
@@ -4852,7 +4914,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
             (c, idx, iMap, idy, s, vm) ->
             s.vOp(vm, n -> c[idx + iMap[idy+n]]));
     }
-#end[!byteOrShort]
+#end[byteOrShort]
 
 #if[short]
     /*package-private*/

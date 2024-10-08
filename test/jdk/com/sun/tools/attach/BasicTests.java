@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,8 @@
 
 import java.io.File;
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.List;
@@ -171,6 +173,7 @@ public class BasicTests {
             System.out.println(" - Test: Load an agent that does not exist");
             try {
                 vm.loadAgent("SilverBullet.jar");
+                throw new RuntimeException("AgentLoadException not thrown as expected!");
             } catch (AgentLoadException x) {
                 System.out.println(" - AgentLoadException thrown as expected!");
             }
@@ -212,7 +215,8 @@ public class BasicTests {
 
             System.out.println(" - Test: End-to-end connection with agent");
 
-            ServerSocket ss = new ServerSocket(0);
+            ServerSocket ss = new ServerSocket();
+            ss.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
             int port = ss.getLocalPort();
 
             System.out.println(" - Loading Agent.jar into target VM ...");
@@ -230,7 +234,8 @@ public class BasicTests {
 
             System.out.println(" - Test: End-to-end connection with RedefineAgent");
 
-            ServerSocket ss2 = new ServerSocket(0);
+            ServerSocket ss2 = new ServerSocket();
+            ss2.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
             int port2 = ss2.getLocalPort();
 
             System.out.println(" - Loading RedefineAgent.jar into target VM ...");

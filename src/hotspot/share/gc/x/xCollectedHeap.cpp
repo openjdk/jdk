@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,7 @@
 #include "memory/universe.hpp"
 #include "oops/stackChunkOop.hpp"
 #include "runtime/continuationJavaClasses.hpp"
+#include "runtime/stackWatermarkSet.hpp"
 #include "utilities/align.hpp"
 
 XCollectedHeap* XCollectedHeap::heap() {
@@ -215,10 +216,6 @@ size_t XCollectedHeap::unsafe_max_tlab_alloc(Thread* ignored) const {
   return _heap.unsafe_max_tlab_alloc();
 }
 
-bool XCollectedHeap::uses_stack_watermark_barrier() const {
-  return true;
-}
-
 MemoryUsage XCollectedHeap::memory_usage() {
   return _heap.serviceability_memory_pool()->get_memory_usage();
 }
@@ -277,6 +274,7 @@ VirtualSpaceSummary XCollectedHeap::create_heap_space_summary() {
 }
 
 void XCollectedHeap::safepoint_synchronize_begin() {
+  StackWatermarkSet::safepoint_synchronize_begin();
   SuspendibleThreadSet::synchronize();
 }
 

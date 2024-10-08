@@ -26,12 +26,14 @@
  * @summary Test virtual thread park when scheduler is a fixed thread pool
  * @requires vm.continuations
  * @modules java.base/java.lang:+open
+ * @library /test/lib
  * @run main ParkWithFixedThreadPool
  */
 
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 import java.util.concurrent.locks.LockSupport;
+import jdk.test.lib.thread.VThreadScheduler;
 
 public class ParkWithFixedThreadPool {
     public static void main(String[] args) throws Exception {
@@ -58,9 +60,7 @@ public class ParkWithFixedThreadPool {
                 }
             };
 
-            ThreadFactory factory = ThreadBuilders.virtualThreadBuilder(scheduler)
-                    .name("vthread-", 0)
-                    .factory();
+            ThreadFactory factory = VThreadScheduler.virtualThreadFactory(scheduler);
 
             for (int i = 0; i < vthreadCount; i++) {
                 vthreads[i] = factory.newThread(target);

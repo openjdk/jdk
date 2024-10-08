@@ -65,8 +65,6 @@ public class EventNames {
     public static final String ClassUnload = PREFIX + "ClassUnload";
     public static final String SafepointBegin = PREFIX + "SafepointBegin";
     public static final String SafepointStateSynchronization = PREFIX + "SafepointStateSynchronization";
-    public static final String SafepointCleanup = PREFIX + "SafepointCleanup";
-    public static final String SafepointCleanupTask = PREFIX + "SafepointCleanupTask";
     public static final String SafepointEnd = PREFIX + "SafepointEnd";
     public static final String ExecuteVMOperation = PREFIX + "ExecuteVMOperation";
     public static final String Shutdown = PREFIX + "Shutdown";

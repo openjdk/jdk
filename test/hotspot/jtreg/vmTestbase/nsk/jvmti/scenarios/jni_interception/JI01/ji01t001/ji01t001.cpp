@@ -27,11 +27,11 @@
 #include <string.h>
 
 #include <jvmti.h>
-#include "agent_common.h"
+#include "agent_common.hpp"
 
-#include "JVMTITools.h"
-#include "jvmti_tools.h"
-#include "nsk_tools.h"
+#include "JVMTITools.hpp"
+#include "jvmti_tools.hpp"
+#include "nsk_tools.hpp"
 
 extern "C" {
 

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6285888 6801704
+ * @bug 6285888 6801704 8325898
  * @summary Test the expected behavior for a wide range of patterns (both
  *          correct and incorrect). This test documents the behavior of incorrect
  *          ChoiceFormat patterns either throwing an exception, or discarding
@@ -31,14 +31,13 @@
  * @run junit PatternsTest
  */
 
-import java.text.ChoiceFormat;
-
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import java.text.ChoiceFormat;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
@@ -97,6 +96,7 @@ public class PatternsTest {
     // an exception.
     private static Arguments[] invalidPatternsThrowsTest() {
         return new Arguments[] {
+                arguments("#", ERR1), // Only relation
                 arguments("#foo", ERR1), // No Limit
                 arguments("0#foo|#|1#bar", ERR1), // Missing Relation in SubPattern
                 arguments("#|", ERR1), // Missing Limit
@@ -127,11 +127,20 @@ public class PatternsTest {
     // after discarding occurs.
     private static Arguments[] invalidPatternsDiscardedTest() {
         return new Arguments[] {
+                // Incomplete SubPattern (limit only) at end of Pattern
+                arguments("1#bar|2", "1#bar"),
                 // Incomplete SubPattern at the end of the Pattern
                 arguments("0#foo|1#bar|baz", "0#foo|1#bar"),
+                // Incomplete SubPattern with trailing | at the end of the Pattern
+                // Prior to 6801704, it created the broken "0#foo|1#bar|1#"
+                // which caused formatting 1 to return an empty string
+                arguments("0#foo|1#bar|baz|", "0#foo|1#bar"),
+                // Same as previous, with additional incomplete subPatterns
+                arguments("0#foo|1#bar|baz|quux", "0#foo|1#bar"),
 
                 // --- These throw an ArrayIndexOutOfBoundsException
-                // when attempting to format with them ---
+                // when attempting to format with them as the incomplete patterns
+                // are discarded, initializing the cFmt with empty limits and formats ---
                 // SubPattern with only a Limit (which is interpreted as a Format)
                 arguments("0", ""),
                 // SubPattern with only a Format

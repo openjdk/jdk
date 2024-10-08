@@ -22,9 +22,9 @@
  */
 #include <string.h>
 #include "jvmti.h"
-#include "agent_common.h"
-#include "jni_tools.h"
-#include "jvmti_tools.h"
+#include "agent_common.hpp"
+#include "jni_tools.hpp"
+#include "jvmti_tools.hpp"
 #include "jvmti_FollowRefObjects.hpp"
 
 extern "C" {
@@ -88,7 +88,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
     }
 
     printf(">>> Let debugee to finish\n");
-    fflush(0);
+    fflush(nullptr);
 
     if (!NSK_VERIFY(nsk_jvmti_waitForSync(g_timeout))) {
         return;

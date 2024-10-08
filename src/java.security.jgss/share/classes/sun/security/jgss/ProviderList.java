@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -135,7 +135,7 @@ public final class ProviderList {
                 addProviderAtEnd(prov, null);
             } catch (GSSException ge) {
                 // Move on to the next provider
-                if (GSSUtil.DEBUG) {
+                if (GSSUtil.DEBUG != null) {
                     GSSUtil.debug("Error in adding provider " +
                             prov.getName() + ": " + ge);
                 }
@@ -420,7 +420,7 @@ public final class ProviderList {
                     retVal = true;
                 } catch (GSSException e) {
                     // Skip to next property
-                    if (GSSUtil.DEBUG) {
+                    if (GSSUtil.DEBUG != null) {
                         GSSUtil.debug("Ignore the invalid property " +
                                 prop + " from provider " + p.getName());
                     }

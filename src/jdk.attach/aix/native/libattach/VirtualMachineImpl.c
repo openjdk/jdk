@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2015, 2018 SAP SE. All rights reserved.
+ * Copyright (c) 2015, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,13 +39,6 @@
 
 #include "sun_tools_attach_VirtualMachineImpl.h"
 
-#define RESTARTABLE(_cmd, _result) do { \
-  do { \
-    _result = _cmd; \
-  } while((_result == -1) && (errno == EINTR)); \
-} while(0)
-
-
 #define ROOT_UID 0
 
 /*
@@ -81,7 +74,6 @@ JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_connect
         addr.sun_family = AF_UNIX;
         /* strncpy is safe because addr.sun_path was zero-initialized before. */
         strncpy(addr.sun_path, p, sizeof(addr.sun_path) - 1);
-        /* We must call bind with the actual socketaddr length. This is obligatory for AS400. */
         if (connect(fd, (struct sockaddr*)&addr, SUN_LEN(&addr)) == -1) {
             err = errno;
         }

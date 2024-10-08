@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 /*
  * @test
- * @bug 8177552 8217721 8222756 8295372 8306116
+ * @bug 8177552 8217721 8222756 8295372 8306116 8319990 8338690
  * @summary Checks the functioning of compact number format
  * @modules jdk.localedata
  * @run testng/othervm TestCompactNumber
@@ -60,6 +60,9 @@ public class TestCompactNumber {
     private static final NumberFormat FORMAT_IT_SHORT = NumberFormat
             .getCompactNumberInstance(Locale.ITALIAN, NumberFormat.Style.SHORT);
 
+    private static final NumberFormat FORMAT_IT_LONG = NumberFormat
+            .getCompactNumberInstance(Locale.ITALIAN, NumberFormat.Style.LONG);
+
     private static final NumberFormat FORMAT_CA_LONG = NumberFormat
             .getCompactNumberInstance(Locale.of("ca"), NumberFormat.Style.LONG);
 
@@ -89,6 +92,13 @@ public class TestCompactNumber {
             .getCompactNumberInstance(Locale.ITALIAN, NumberFormat.Style.LONG);
     private static final NumberFormat FORMAT_PT_LONG_FD4 = NumberFormat
             .getCompactNumberInstance(Locale.of("pt"), NumberFormat.Style.LONG);
+
+    private static final NumberFormat FORMAT_PL_LONG = NumberFormat
+            .getCompactNumberInstance(Locale.of("pl"), NumberFormat.Style.LONG);
+
+    private static final NumberFormat FORMAT_FR_LONG = NumberFormat
+            .getCompactNumberInstance(Locale.FRENCH, NumberFormat.Style.LONG);
+
     static {
         FORMAT_ES_LONG_FD1.setMaximumFractionDigits(1);
         FORMAT_DE_LONG_FD2.setMaximumFractionDigits(2);
@@ -256,9 +266,9 @@ public class TestCompactNumber {
             // Boundary number
             {FORMAT_IT_SHORT, 1000, "1.000"},
             // Long path
-            {FORMAT_IT_SHORT, 3000000L, "3\u00a0Mio"},
+            {FORMAT_IT_SHORT, 3000000L, "3\u00a0Mln"},
             // Double path
-            {FORMAT_IT_SHORT, 3000000.0, "3\u00a0Mio"},
+            {FORMAT_IT_SHORT, 3000000.0, "3\u00a0Mln"},
             // BigInteger path
             {FORMAT_IT_SHORT, new BigInteger("12345678901234567890"),
                 "12345679\u00a0Bln"},
@@ -359,6 +369,12 @@ public class TestCompactNumber {
             {FORMAT_DE_LONG_FD2, 1_234_500, "1,23 Millionen"},
             {FORMAT_IT_LONG_FD3, 1_234_500, "1,234 milioni"},
             {FORMAT_PT_LONG_FD4, 1_234_500, "1,2345 milh\u00f5es"},
+
+            // 8338690
+            {FORMAT_PL_LONG, 5_000, "5 tysi\u0119cy"},
+            {FORMAT_PL_LONG, 4_949, "5 tysi\u0119cy"},
+            {FORMAT_FR_LONG, 1_949, "2 mille"},
+            {FORMAT_IT_LONG, 1_949, "2 mila"},
         };
     }
 
@@ -418,9 +434,9 @@ public class TestCompactNumber {
                 {FORMAT_JA_JP_SHORT, "12345679\u5146", 1.2345679E19, Double.class},
                 {FORMAT_JA_JP_SHORT, "-12345679\u5146", -1.2345679E19, Double.class},
                 {FORMAT_IT_SHORT, "-99", -99L, Long.class},
-                {FORMAT_IT_SHORT, "1\u00a0Mio", 1000000L, Long.class},
-                {FORMAT_IT_SHORT, "30\u00a0Mio", 30000000L, Long.class},
-                {FORMAT_IT_SHORT, "-30\u00a0Mio", -30000000L, Long.class},
+                {FORMAT_IT_SHORT, "1\u00a0Mln", 1000000L, Long.class},
+                {FORMAT_IT_SHORT, "30\u00a0Mln", 30000000L, Long.class},
+                {FORMAT_IT_SHORT, "-30\u00a0Mln", -30000000L, Long.class},
                 {FORMAT_IT_SHORT, "12345679\u00a0Bln", 1.2345679E19, Double.class},
                 {FORMAT_IT_SHORT, "-12345679\u00a0Bln", -1.2345679E19, Double.class},
                 {FORMAT_SW_LONG, "-0.0", -0.0, Double.class},
@@ -466,6 +482,10 @@ public class TestCompactNumber {
                 {FORMAT_DE_LONG_FD2, "1,23 Millionen", 1_230_000L, Long.class},
                 {FORMAT_IT_LONG_FD3, "1,234 milioni", 1_234_000L, Long.class},
                 {FORMAT_PT_LONG_FD4, "1,2345 milh\u00f5es", 1_234_500L, Long.class},
+                // 8338690
+                {FORMAT_PL_LONG, "5 tysi\u0119cy", 5_000L, Long.class},
+                {FORMAT_FR_LONG, "2 mille", 2_000L, Long.class},
+                {FORMAT_IT_LONG, "2 mila", 2_000L, Long.class},
         };
     }
 
@@ -514,6 +534,10 @@ public class TestCompactNumber {
             {FORMAT_SL_LONG, "5 milijon", 5L},
             {FORMAT_SL_LONG, "5 milijona", 5L},
             {FORMAT_SL_LONG, "5 milijone", 5L},
+            // 8338690
+            {FORMAT_PL_LONG, "5 tysiące", 5L},
+            {FORMAT_FR_LONG, "2 millier", 2L},
+            {FORMAT_IT_LONG, "2 mille", 2L},
         };
     }
 

@@ -244,6 +244,7 @@ $(window).on("load", function() {
         setSearchUrl();
     });
     input.prop("disabled", false);
+    input.attr("autocapitalize", "off");
     reset.prop("disabled", false);
 
     var urlParams = new URLSearchParams(window.location.search);

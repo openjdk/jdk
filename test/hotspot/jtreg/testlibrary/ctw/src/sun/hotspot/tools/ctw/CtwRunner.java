@@ -293,8 +293,10 @@ public class CtwRunner {
                 String.format("-XX:ReplayDataFile=replay_%s_%%p.log", phase),
                 // MethodHandle MUST NOT be compiled
                 "-XX:CompileCommand=exclude,java/lang/invoke/MethodHandle.*",
-                // Stress* are c2-specific stress flags, so IgnoreUnrecognizedVMOptions is needed
                 "-XX:+IgnoreUnrecognizedVMOptions",
+                // Do not pay extra zapping cost for explicit GC invocations
+                "-XX:-ZapUnusedHeapArea",
+                // Stress* are c2-specific stress flags, so IgnoreUnrecognizedVMOptions is needed
                 "-XX:+StressLCM",
                 "-XX:+StressGCM",
                 "-XX:+StressIGVN",
@@ -302,7 +304,10 @@ public class CtwRunner {
                 "-XX:+StressMacroExpansion",
                 "-XX:+StressIncrementalInlining",
                 // StressSeed is uint
-                "-XX:StressSeed=" + rng.nextInt(Integer.MAX_VALUE)));
+                "-XX:StressSeed=" + rng.nextInt(Integer.MAX_VALUE),
+                // Do not fail on huge methods where StressGCM makes register
+                // allocation allocate lots of memory
+                "-XX:CompileCommand=memlimit,*.*,0"));
 
         for (String arg : CTW_EXTRA_ARGS.split(",")) {
             Args.add(arg);

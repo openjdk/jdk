@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,13 +51,13 @@ public class methbyname_s003 extends Log {
     private final static String checked_class = package_prefix + "methbyname_s003b";
 
 
-    /**
-     * Re-call to <code>run(args,out)</code>, and exit with
-     * either status 95 or 97 (JCK-like exit status).
-     */
+
     public static void main (String argv[]) {
-        int exitCode = run(argv,System.out);
-        System.exit(exitCode + 95/*STATUS_TEMP*/);
+        int result = run(argv,System.out);
+        if (result != 0) {
+            throw new RuntimeException("TEST FAILED with result " + result);
+        }
+
     }
 
     /**

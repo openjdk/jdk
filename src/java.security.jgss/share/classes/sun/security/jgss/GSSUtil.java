@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,8 +45,8 @@ import java.security.PrivilegedActionException;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
-import sun.security.action.GetBooleanAction;
 import sun.security.util.ConsoleCallbackHandler;
+import sun.security.util.Debug;
 
 /**
  * The GSSUtilImplementation that knows how to work with the internals of
@@ -67,12 +67,12 @@ public class GSSUtil {
     public static final Oid NT_GSS_KRB5_PRINCIPAL =
                 GSSUtil.createOid("1.2.840.113554.1.2.2.1");
 
-    static final boolean DEBUG =
-            GetBooleanAction.privilegedGetProperty("sun.security.jgss.debug");
+    static final Debug DEBUG = Debug.of("jgss", GetPropertyAction
+            .privilegedGetProperty("sun.security.jgss.debug"));
 
     static void debug(String message) {
         assert(message != null);
-        System.out.println(message);
+        DEBUG.println(message);
     }
 
     // NOTE: this method is only for creating Oid objects with
@@ -82,7 +82,7 @@ public class GSSUtil {
         try {
             return new Oid(oidStr);
         } catch (GSSException e) {
-            if (DEBUG) {
+            if (DEBUG != null) {
                 debug("Ignored invalid OID: " + oidStr);
             }
             return null;
@@ -138,7 +138,7 @@ public class GSSUtil {
                 KerberosPrincipal krbPrinc = new KerberosPrincipal(krbName);
                 krb5Principals.add(krbPrinc);
             } catch (GSSException ge) {
-                if (DEBUG) {
+                if (DEBUG != null) {
                     debug("Skipped name " + name + " due to " + ge);
                 }
             }
@@ -151,7 +151,7 @@ public class GSSUtil {
         } else {
             privCredentials = new HashSet<>(); // empty Set
         }
-        if (DEBUG) {
+        if (DEBUG != null) {
             debug("Created Subject with the following");
             debug("principals=" + krb5Principals);
             debug("public creds=" + pubCredentials);
@@ -216,7 +216,7 @@ public class GSSUtil {
                 credentials.add(cred);
             } else {
                 // Ignore non-KerberosTicket and non-KerberosKey elements
-                if (DEBUG) {
+                if (DEBUG != null) {
                     debug("Skipped cred element: " + cred);
                 }
             }
@@ -314,7 +314,7 @@ public class GSSUtil {
                           final Oid mech,
                           final boolean initiate,
                           final Class<? extends T> credCls) {
-        if (DEBUG) {
+        if (DEBUG != null) {
             debug("Search Subject for " + getMechStr(mech) +
                     (initiate ? " INIT" : " ACCEPT") + " cred (" +
                     (name == null ? "<<DEF>>" : name.toString()) + ", " +
@@ -334,13 +334,13 @@ public class GSSUtil {
                             (GSSCredentialImpl.class).iterator();
                         while (iterator.hasNext()) {
                             GSSCredentialImpl cred = iterator.next();
-                            if (DEBUG) {
+                            if (DEBUG != null) {
                                 debug("...Found cred" + cred);
                             }
                             try {
                                 GSSCredentialSpi ce =
                                     cred.getElement(mech, initiate);
-                                if (DEBUG) {
+                                if (DEBUG != null) {
                                     debug("......Found element: " + ce);
                                 }
                                 if (ce.getClass().equals(credCls) &&
@@ -348,24 +348,24 @@ public class GSSUtil {
                                      name.equals((Object) ce.getName()))) {
                                     result.add(credCls.cast(ce));
                                 } else {
-                                    if (DEBUG) {
+                                    if (DEBUG != null) {
                                         debug("......Discard element");
                                     }
                                 }
                             } catch (GSSException ge) {
-                                if (DEBUG) {
+                                if (DEBUG != null) {
                                     debug("...Discard cred (" + ge + ")");
                                 }
                             }
                         }
-                    } else if (DEBUG) {
+                    } else if (DEBUG != null) {
                         debug("No Subject");
                     }
                     return result;
                 });
             return creds;
         } catch (PrivilegedActionException pae) {
-            if (DEBUG) {
+            if (DEBUG != null) {
                 debug("Unexpected exception when searching Subject:");
                 pae.printStackTrace();
             }

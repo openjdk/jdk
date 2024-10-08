@@ -40,14 +40,14 @@ public:
   virtual CLDClosure* weak_clds() = 0;
   virtual CLDClosure* strong_clds() = 0;
 
-  // Applied to code blobs reachable as strong roots.
-  virtual CodeBlobClosure* strong_codeblobs() = 0;
+  // Applied to nmethods reachable as strong roots.
+  virtual NMethodClosure* strong_nmethods() = 0;
 };
 
 class G1EvacuationRootClosures : public G1RootClosures {
 public:
-  // Applied to code blobs treated as weak roots.
-  virtual CodeBlobClosure* weak_codeblobs() = 0;
+  // Applied to nmethods treated as weak roots.
+  virtual NMethodClosure* weak_nmethods() = 0;
 
   static G1EvacuationRootClosures* create_root_closures(G1CollectedHeap* g1h,
                                                         G1ParScanThreadState* pss,

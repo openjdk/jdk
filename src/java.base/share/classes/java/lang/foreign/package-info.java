@@ -100,7 +100,7 @@
  * Linker linker = Linker.nativeLinker();
  * SymbolLookup stdlib = linker.defaultLookup();
  * MethodHandle strlen = linker.downcallHandle(
- *     stdlib.find("strlen").orElseThrow(),
+ *     stdlib.findOrThrow("strlen"),
  *     FunctionDescriptor.of(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS)
  * );
  *
@@ -111,7 +111,7 @@
  *}
  *
  * Here, we obtain a {@linkplain java.lang.foreign.Linker#nativeLinker() native linker}
- * and we use it to {@linkplain java.lang.foreign.SymbolLookup#find(java.lang.String) look up}
+ * and we use it to {@linkplain java.lang.foreign.SymbolLookup#findOrThrow(java.lang.String) look up}
  * the {@code strlen} function in the standard C library; a <em>downcall method handle</em>
  * targeting said function is subsequently
  * {@linkplain java.lang.foreign.Linker#downcallHandle(FunctionDescriptor, Linker.Option...) obtained}.
@@ -165,10 +165,11 @@
  * In the reference implementation, access to restricted methods can be granted to
  * specific modules using the command line option {@code --enable-native-access=M1,M2, ... Mn},
  * where {@code M1}, {@code M2}, {@code ... Mn} are module names (for the unnamed module,
- * the special value {@code ALL-UNNAMED} can be used). If this option is specified,
- * access to restricted methods are only granted to the modules listed by that option.
- * If this option is not specified, access to restricted methods is enabled for all
- * modules, but access to restricted methods will result in runtime warnings.
+ * the special value {@code ALL-UNNAMED} can be used). Access to restricted methods
+ * from modules not listed by that option is deemed <em>illegal</em>. Clients can
+ * control how access to restricted methods is handled, using the command line
+ * option {@code --illegal-native-access}. If this option is not specified,
+ * illegal access to restricted methods will result in runtime warnings.
  *
  * @spec jni/index.html Java Native Interface Specification
  *

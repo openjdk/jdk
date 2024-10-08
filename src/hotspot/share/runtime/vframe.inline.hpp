@@ -206,7 +206,7 @@ inline bool vframeStreamCommon::fill_from_frame() {
 
   // Compiled frame
 
-  if (cb() != nullptr && cb()->is_compiled()) {
+  if (cb() != nullptr && cb()->is_nmethod()) {
     assert(nm()->method() != nullptr, "must be");
     if (nm()->is_native_method()) {
       // Do not rely on scopeDesc since the pc might be imprecise due to the _last_native_pc trick.

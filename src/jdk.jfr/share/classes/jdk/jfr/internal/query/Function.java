@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -275,9 +275,6 @@ abstract class Function {
 
         @Override
         public Object result() {
-            if (maximum == null) {
-                System.out.println("Why");
-            }
             return maximum;
         }
     }
@@ -475,7 +472,7 @@ abstract class Function {
             if (last == null) {
                 return ChronoUnit.FOREVER.getDuration();
             }
-            return Duration.between(first, last);
+            return first.until(last);
         }
     }
 

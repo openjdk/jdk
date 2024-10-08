@@ -47,6 +47,7 @@ public class Messages {
     private final BaseConfiguration configuration;
     private final Resources resources;
     private final Reporter reporter;
+    private boolean containsDiagnosticMarkers = false;
 
     /**
      * Creates a {@code Messages} object to provide standardized access to
@@ -210,6 +211,21 @@ public class Messages {
             // Note: we do not use report(NOTE, ...) which would prefix the output with "Note:"
             reporter.getDiagnosticWriter().println(resources.getText(key, args));
         }
+    }
+
+    /**
+     * {@return true if the generated documentation contains one or more diagnostic markers
+     * for invalid input}
+     */
+    public boolean containsDiagnosticMarkers() {
+        return containsDiagnosticMarkers;
+    }
+
+    /**
+     * Sets the flag for documentation containing a diagnostic marker for invalid input.
+     */
+    public void setContainsDiagnosticMarkers() {
+        this.containsDiagnosticMarkers = true;
     }
 
     // ***** Internal support *****

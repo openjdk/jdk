@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -257,13 +257,12 @@ public abstract class Signature extends SignatureSpi {
     public static Signature getInstance(String algorithm)
             throws NoSuchAlgorithmException {
         Objects.requireNonNull(algorithm, "null algorithm name");
-        List<Service> list;
+        Iterator<Service> t;
         if (algorithm.equalsIgnoreCase(RSA_SIGNATURE)) {
-            list = GetInstance.getServices(rsaIds);
+            t = GetInstance.getServices(rsaIds);
         } else {
-            list = GetInstance.getServices("Signature", algorithm);
+            t = GetInstance.getServices("Signature", algorithm);
         }
-        Iterator<Service> t = list.iterator();
         if (!t.hasNext()) {
             throw new NoSuchAlgorithmException
                 (algorithm + " Signature not available");

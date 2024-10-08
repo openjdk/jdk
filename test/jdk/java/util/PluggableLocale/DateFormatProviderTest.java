@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4052440 7003643 8062588 8210406
+ * @bug 4052440 7003643 8062588 8210406 8174269
  * @summary DateFormatProvider tests
  * @library providersrc/foobarutils
  *          providersrc/fooprovider
@@ -31,7 +31,7 @@
  *          java.base/sun.util.resources
  * @build com.foobar.Utils
  *        com.foo.*
- * @run main/othervm -Djava.locale.providers=JRE,SPI DateFormatProviderTest
+ * @run main/othervm -Djava.locale.providers=CLDR,SPI DateFormatProviderTest
  */
 
 import java.text.DateFormat;
@@ -46,6 +46,7 @@ import java.util.Locale;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import com.foo.DateFormatProviderImpl;
 
@@ -57,8 +58,12 @@ public class DateFormatProviderTest extends ProviderTest {
     DateFormatProviderImpl dfp = new DateFormatProviderImpl();
     List<Locale> availloc = Arrays.asList(DateFormat.getAvailableLocales());
     List<Locale> providerloc = Arrays.asList(dfp.getAvailableLocales());
-    List<Locale> jreloc = Arrays.asList(LocaleProviderAdapter.forJRE().getAvailableLocales());
-    List<Locale> jreimplloc = Arrays.asList(LocaleProviderAdapter.forJRE().getDateFormatProvider().getAvailableLocales());
+    List<Locale> jreloc = Stream.concat(
+            Arrays.stream(LocaleProviderAdapter.forType(LocaleProviderAdapter.Type.CLDR).getAvailableLocales()),
+            Arrays.stream(LocaleProviderAdapter.forType(LocaleProviderAdapter.Type.FALLBACK).getAvailableLocales())).toList();
+    List<Locale> jreimplloc = Stream.concat(
+            Arrays.stream(LocaleProviderAdapter.forType(LocaleProviderAdapter.Type.CLDR).getDateFormatProvider().getAvailableLocales()),
+            Arrays.stream(LocaleProviderAdapter.forType(LocaleProviderAdapter.Type.FALLBACK).getDateFormatProvider().getAvailableLocales())).toList();
 
     public static void main(String[] s) {
         new DateFormatProviderTest();
@@ -91,23 +96,16 @@ public class DateFormatProviderTest extends ProviderTest {
             String dkey = "DatePatterns";
             String tkey = "TimePatterns";
             String dtkey = "DateTimePatterns";
-            switch (cal.getCalendarType()) {
-                case "java.util.JapaneseImperialCalendar":
-                    dkey = "japanese"+ "." + dkey;
-                    tkey = "japanese"+ "." + tkey;
-                    dtkey = "japanese"+ "." + dtkey;
-                    break;
-                case "sun.util.BuddhistCalendar":
-                    dkey = "buddhist"+ "." + dkey;
-                    tkey = "buddhist"+ "." + tkey;
-                    dtkey = "buddhist"+ "." + dtkey;
-                    break;
-                case "java.util.GregorianCalendar":
-                default:
+            var calType = cal.getCalendarType();
+            switch (calType) {
+                case "buddhist":
+                case "japanese":
+                    dkey = calType + "." + dkey;
+                    tkey = calType + "." + tkey;
                     break;
             }
             // pure JRE implementation
-            ResourceBundle rb = ((ResourceBundleBasedAdapter)LocaleProviderAdapter.forJRE()).getLocaleData().getDateFormatData(target);
+            ResourceBundle rb = ((ResourceBundleBasedAdapter)LocaleProviderAdapter.forType(LocaleProviderAdapter.Type.CLDR)).getLocaleData().getDateFormatData(target);
             boolean jreSupportsLocale = jreimplloc.contains(target);
 
             // JRE string arrays
@@ -137,7 +135,7 @@ public class DateFormatProviderTest extends ProviderTest {
                 if (jreSupportsLocale) {
                     Object[] dateTimeArgs = {jreTimePatterns[style],
                                              jreDatePatterns[style]};
-                    String pattern = MessageFormat.format(jreDateTimePatterns[0], dateTimeArgs);
+                    String pattern = MessageFormat.format(jreDateTimePatterns[style].replaceAll("'", "''"), dateTimeArgs);
                     jresResult = new SimpleDateFormat(pattern, target);
                 }
 

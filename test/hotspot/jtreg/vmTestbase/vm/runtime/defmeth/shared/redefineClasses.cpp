@@ -25,10 +25,10 @@
 #include <string.h>
 #include <jvmti.h>
 
-#include "jni_tools.h"
-#include "nsk_tools.h"
-#include "JVMTITools.h"
-#include "jvmti_tools.h"
+#include "jni_tools.hpp"
+#include "nsk_tools.hpp"
+#include "JVMTITools.hpp"
+#include "jvmti_tools.hpp"
 
 extern "C" {
 

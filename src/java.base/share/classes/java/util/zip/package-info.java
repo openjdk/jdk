@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,12 +39,12 @@
  *         are based.
  *     <li><a id="zip64">An implementation may optionally support the
  *         ZIP64(tm) format extensions defined by the</a>
- *         <a href="https://support.pkware.com/home/pkzip/developer-tools/appnote">
+ *         <a href="https://support.pkware.com/pkzip/appnote">
  *         PKWARE ZIP File Format Specification</a>. The ZIP64(tm) format
  *         extensions are used to overcome the size limitations of the
  *         original ZIP format.
  *     <li><a id="lang_encoding">APPENDIX D of</a>
- *         <a href="https://support.pkware.com/home/pkzip/developer-tools/appnote">
+ *         <a href="https://support.pkware.com/pkzip/appnote">
  *         PKWARE ZIP File Format Specification</a> - Language Encoding Flag
  *         to encode ZIP entry filename and comment fields using UTF-8.
  *     <li><a href="http://www.ietf.org/rfc/rfc1950.txt">

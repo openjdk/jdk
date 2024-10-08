@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 
 package jdk.internal.foreign;
 
-import java.lang.foreign.MemorySegment;
 import java.nio.ByteBuffer;
 import java.util.Optional;
 
@@ -59,6 +58,12 @@ sealed class NativeMemorySegmentImpl extends AbstractMemorySegmentImpl permits M
     @Override
     public Optional<Object> heapBase() {
         return Optional.empty();
+    }
+
+    public final long maxByteAlignment() {
+        return address() == 0
+                ? 1L << 62
+                : Long.lowestOneBit(address());
     }
 
     @ForceInline

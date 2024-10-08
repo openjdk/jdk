@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,11 @@
  */
 
 import java.net.StandardProtocolFamily;
+import java.net.UnixDomainSocketAddress;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.nio.file.Files;
+
 import jtreg.SkippedException;
 
 public class NonBlockingAccept {
@@ -48,17 +51,23 @@ public class NonBlockingAccept {
     public static void main(String[] args) throws Exception {
 
         checkSupported();
+        UnixDomainSocketAddress addr = null;
 
         try (ServerSocketChannel serverSocketChannel =
                                  ServerSocketChannel.open(StandardProtocolFamily.UNIX)) {
             //non blocking mode
             serverSocketChannel.configureBlocking(false);
             serverSocketChannel.bind(null);
+            addr = (UnixDomainSocketAddress) serverSocketChannel.getLocalAddress();
             SocketChannel socketChannel = serverSocketChannel.accept();
             System.out.println("The socketChannel is : expected Null " + socketChannel);
             if (socketChannel != null)
                 throw new RuntimeException("expected null");
             // or exception could be thrown otherwise
+        } finally {
+            if (addr != null) {
+                Files.deleteIfExists(addr.getPath());
+            }
         }
     }
 }

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 
 Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
@@ -1036,7 +1036,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="gb2312han">Trefn Symledig Tsieina - GB2312</type>
 			<type key="collation" type="phonebook">Trefn Llyfr Ffôn</type>
 			<type key="collation" type="pinyin">Trefn Pinyin</type>
-			<type key="collation" type="reformed">Trefn Diwygiedig</type>
 			<type key="collation" type="search">Chwilio at Ddibenion Cyffredinol</type>
 			<type key="collation" type="standard">Trefn Safonol</type>
 			<type key="collation" type="traditional">Trefn Traddodiadol</type>
@@ -2494,9 +2493,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<regionFormat>Amser {0}</regionFormat>
 			<regionFormat type="daylight">Amser Haf {0}</regionFormat>
 			<regionFormat type="standard">Amser Safonol {0}</regionFormat>
-			<zone type="America/Santa_Isabel">
-				<exemplarCity>Santa Isabel</exemplarCity>
-			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>Amser Cyffredniol Cydlynol</standard>
@@ -2510,9 +2506,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Europe/Vienna">
 				<exemplarCity>Fienna</exemplarCity>
-			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity>Currie</exemplarCity>
 			</zone>
 			<zone type="Europe/Brussels">
 				<exemplarCity>Brwsel</exemplarCity>
@@ -2630,9 +2623,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Europe/Istanbul">
 				<exemplarCity>Caergystennin</exemplarCity>
-			</zone>
-			<zone type="Europe/Uzhgorod">
-				<exemplarCity>Uzhhorod</exemplarCity>
 			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>Kiev</exemplarCity>
@@ -3185,11 +3175,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>Amser Haf yr Arglwydd Howe</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>Amser Ynys Macquarie</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>Amser Magadan</generic>
@@ -3227,13 +3212,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Mawson">
 				<long>
 					<standard>Amser Mawson</standard>
-				</long>
-			</metazone>
-			<metazone type="Mexico_Northwest">
-				<long>
-					<generic>Amser Gogledd Orllewin Mecsico</generic>
-					<standard>Amser Safonol Gogledd Orllewin Mecsico</standard>
-					<daylight>Amser Haf Gogledd Orllewin Mecsico</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -144,6 +144,7 @@ final class Summary extends Command {
             println(" Start: " + DATE_FORMAT.format(Instant.ofEpochSecond(epochSeconds, adjustNanos)) + " (UTC)");
             println(" Duration: " + (totalDuration + 500_000_000) / 1_000_000_000 + " s");
             List<Statistics> statsList = new ArrayList<>(stats.values());
+            statsList.sort((u, v) -> u.name.compareTo(v.name));
             statsList.sort((u, v) -> Long.compare(v.count, u.count));
             println();
             String header = "      Count  Size (bytes) ";

@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1ConcurrentMarkBitMap.inline.hpp"
-#include "gc/g1/heapRegion.hpp"
+#include "gc/g1/g1HeapRegion.hpp"
 #include "memory/virtualspace.hpp"
 
 G1CMBitMap::G1CMBitMap() : MarkBitMap(), _listener() {
@@ -42,6 +42,6 @@ void G1CMBitMapMappingChangedListener::on_commit(uint start_region, size_t num_r
     return;
   }
   // We need to clear the bitmap on commit, removing any existing information.
-  MemRegion mr(G1CollectedHeap::heap()->bottom_addr_for_region(start_region), num_regions * HeapRegion::GrainWords);
+  MemRegion mr(G1CollectedHeap::heap()->bottom_addr_for_region(start_region), num_regions * G1HeapRegion::GrainWords);
   _bm->clear_range(mr);
 }

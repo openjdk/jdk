@@ -80,7 +80,7 @@ public class ConstantPoolTestsHelper {
             if (constantPoolSS.getTagAt(cpi).equals(Tag.INVOKEDYNAMIC)) {
                 for (int indy_index = 0; indy_index < WB.getIndyInfoLength(this.klass); indy_index++) {
                     if (WB.getIndyCPIndex(this.klass, indy_index) == cpi) {
-                        return ~indy_index;
+                        return indy_index;
                     }
                 }
             }

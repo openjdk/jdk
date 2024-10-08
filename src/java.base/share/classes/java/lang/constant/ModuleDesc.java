@@ -24,6 +24,9 @@
  */
 package java.lang.constant;
 
+import jdk.internal.constant.ConstantUtils;
+import jdk.internal.constant.ModuleDescImpl;
+
 import static java.util.Objects.requireNonNull;
 
 /**

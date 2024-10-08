@@ -62,7 +62,7 @@ public final class CatchBuilderImpl implements CodeBuilder.CatchBuilder {
 
         if (catchBlock == null) {
             if (tryBlock.reachable()) {
-                b.branchInstruction(Opcode.GOTO, tryCatchEnd);
+                b.branch(Opcode.GOTO, tryCatchEnd);
             }
         }
 
@@ -76,7 +76,7 @@ public final class CatchBuilderImpl implements CodeBuilder.CatchBuilder {
         if (catchBlock != null) {
             catchBlock.end();
             if (catchBlock.reachable()) {
-                b.branchInstruction(Opcode.GOTO, tryCatchEnd);
+                b.branch(Opcode.GOTO, tryCatchEnd);
             }
         }
 

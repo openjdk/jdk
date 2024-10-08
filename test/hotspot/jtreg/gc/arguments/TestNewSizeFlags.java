@@ -157,7 +157,6 @@ public class TestNewSizeFlags {
                 (maxNewSize >= 0 ? "-XX:MaxNewSize=" + maxNewSize : ""),
                 "-Xmx" + maxHeapSize,
                 "-Xms" + heapSize,
-                "-XX:GCLockerEdenExpansionPercent=0",
                 "-XX:-UseLargePages",
                 NewSizeVerifier.class.getName(),
                 Long.toString(expectedNewSize),

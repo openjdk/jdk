@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,13 +32,14 @@
 
 #include CPU_HEADER(continuationEntry)
 
-class CompiledMethod;
 class JavaThread;
+class nmethod;
 class OopMap;
 class RegisterMap;
 
 // Metadata stored in the continuation entry frame
 class ContinuationEntry {
+  friend class JVMCIVMStructs;
   ContinuationEntryPD _pd;
 #ifdef ASSERT
 private:
@@ -56,12 +57,12 @@ public:
 
 public:
   static int _return_pc_offset; // friend gen_continuation_enter
-  static void set_enter_code(CompiledMethod* cm, int interpreted_entry_offset);
+  static void set_enter_code(nmethod* nm, int interpreted_entry_offset);
   static bool is_interpreted_call(address call_address);
 
 private:
   static address _return_pc;
-  static CompiledMethod* _enter_special;
+  static nmethod* _enter_special;
   static int _interpreted_entry_offset;
 
 private:
@@ -78,7 +79,7 @@ private:
 #else
   int32_t   _parent_held_monitor_count;
 #endif
-  uint _pin_count;
+  uint32_t _pin_count;
 
 public:
   static ByteSize parent_offset()   { return byte_offset_of(ContinuationEntry, _parent); }
@@ -108,7 +109,7 @@ public:
 
   bool is_pinned() { return _pin_count > 0; }
   bool pin() {
-    if (_pin_count == UINT_MAX) return false;
+    if (_pin_count == UINT32_MAX) return false;
     _pin_count++;
     return true;
   }

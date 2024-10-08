@@ -48,6 +48,7 @@
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
 
 namespace metaspace {
@@ -258,7 +259,7 @@ VirtualSpaceNode* VirtualSpaceNode::create_node(size_t word_size,
   if (!rs.is_reserved()) {
     vm_exit_out_of_memory(word_size * BytesPerWord, OOM_MMAP_ERROR, "Failed to reserve memory for metaspace");
   }
-  MemTracker::record_virtual_memory_type(rs.base(), mtMetaspace);
+  MemTracker::record_virtual_memory_tag(rs.base(), mtMetaspace);
   assert_is_aligned(rs.base(), chunklevel::MAX_CHUNK_BYTE_SIZE);
   InternalStats::inc_num_vsnodes_births();
   return new VirtualSpaceNode(rs, true, limiter, reserve_words_counter, commit_words_counter);
@@ -433,6 +434,9 @@ void VirtualSpaceNode::verify_locked() const {
   _commit_mask.verify();
 
   // Verify memory against commit mask.
+  // Down here, from ASAN's view, this memory may be poisoned, since we only unpoison
+  // way up at the ChunkManager level.
+#if !INCLUDE_ASAN
   SOMETIMES(
     for (MetaWord* p = base(); p < base() + used_words(); p += os::vm_page_size()) {
       if (_commit_mask.is_committed_address(p)) {
@@ -440,6 +444,7 @@ void VirtualSpaceNode::verify_locked() const {
       }
     }
   )
+#endif // !INCLUDE_ASAN
 
   assert(committed_words() <= word_size(), "Sanity");
   assert_is_aligned(committed_words(), Settings::commit_granule_words());

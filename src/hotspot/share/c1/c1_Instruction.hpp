@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -281,11 +281,11 @@ class Instruction: public CompilationResourceObj {
 #endif
   int          _use_count;                       // the number of instructions referring to this value (w/o prev/next); only roots can have use count = 0 or > 1
   int          _pin_state;                       // set of PinReason describing the reason for pinning
+  unsigned int _flags;                           // Flag bits
   ValueType*   _type;                            // the instruction value type
   Instruction* _next;                            // the next instruction if any (null for BlockEnd instructions)
   Instruction* _subst;                           // the substitution instruction if any
   LIR_Opr      _operand;                         // LIR specific information
-  unsigned int _flags;                           // Flag bits
 
   ValueStack*  _state_before;                    // Copy of state with input operands still on stack (or null)
   ValueStack*  _exception_state;                 // Copy of state for exception handling
@@ -364,6 +364,7 @@ class Instruction: public CompilationResourceObj {
     InWorkListFlag,
     DeoptimizeOnException,
     KillsMemoryFlag,
+    OmitChecksFlag,
     InstructionLastFlag
   };
 
@@ -402,11 +403,11 @@ class Instruction: public CompilationResourceObj {
 #endif
     _use_count(0)
   , _pin_state(0)
+  , _flags(0)
   , _type(type)
   , _next(nullptr)
   , _subst(nullptr)
   , _operand(LIR_OprFact::illegalOpr)
-  , _flags(0)
   , _state_before(state_before)
   , _exception_handlers(nullptr)
   , _block(nullptr)
@@ -1327,16 +1328,19 @@ BASE(NewArray, StateSplit)
 LEAF(NewTypeArray, NewArray)
  private:
   BasicType _elt_type;
+  bool _zero_array;
 
  public:
   // creation
-  NewTypeArray(Value length, BasicType elt_type, ValueStack* state_before)
+  NewTypeArray(Value length, BasicType elt_type, ValueStack* state_before, bool zero_array)
   : NewArray(length, state_before)
   , _elt_type(elt_type)
+  , _zero_array(zero_array)
   {}
 
   // accessors
   BasicType elt_type() const                     { return _elt_type; }
+  bool zero_array()    const                     { return _zero_array; }
   ciType* exact_type() const;
 };
 
@@ -1514,9 +1518,9 @@ LEAF(MonitorExit, AccessMonitor)
 LEAF(Intrinsic, StateSplit)
  private:
   vmIntrinsics::ID _id;
+  ArgsNonNullState _nonnull_state;
   Values*          _args;
   Value            _recv;
-  ArgsNonNullState _nonnull_state;
 
  public:
   // preserves_state can be set to true for Intrinsics
@@ -2423,15 +2427,11 @@ LEAF(MemBar, Instruction)
 class BlockPair: public CompilationResourceObj {
  private:
   BlockBegin* _from;
-  BlockBegin* _to;
+  int _index; // sux index of 'to' block
  public:
-  BlockPair(BlockBegin* from, BlockBegin* to): _from(from), _to(to) {}
+  BlockPair(BlockBegin* from, int index): _from(from), _index(index) {}
   BlockBegin* from() const { return _from; }
-  BlockBegin* to() const   { return _to;   }
-  bool is_same(BlockBegin* from, BlockBegin* to) const { return  _from == from && _to == to; }
-  bool is_same(BlockPair* p) const { return  _from == p->from() && _to == p->to(); }
-  void set_to(BlockBegin* b)   { _to = b; }
-  void set_from(BlockBegin* b) { _from = b; }
+  int index() const        { return _index; }
 };
 
 typedef GrowableArray<BlockPair*> BlockPairList;

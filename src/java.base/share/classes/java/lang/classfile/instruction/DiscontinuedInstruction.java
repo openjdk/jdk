@@ -30,6 +30,7 @@ import java.lang.classfile.Instruction;
 import java.lang.classfile.Label;
 import java.lang.classfile.Opcode;
 import jdk.internal.classfile.impl.AbstractInstruction;
+import jdk.internal.classfile.impl.BytecodeHelpers;
 import jdk.internal.classfile.impl.Util;
 import jdk.internal.javac.PreviewFeature;
 
@@ -68,6 +69,8 @@ public sealed interface DiscontinuedInstruction extends Instruction {
          * @param op the opcode for the specific type of JSR instruction,
          *           which must be of kind {@link Opcode.Kind#DISCONTINUED_JSR}
          * @param target target label of the subroutine
+         * @throws IllegalArgumentException if the opcode kind is not
+         *         {@link Opcode.Kind#DISCONTINUED_JSR}.
          */
         static JsrInstruction of(Opcode op, Label target) {
             Util.checkKind(op, Opcode.Kind.DISCONTINUED_JSR);
@@ -109,9 +112,11 @@ public sealed interface DiscontinuedInstruction extends Instruction {
          * @param op the opcode for the specific type of RET instruction,
          *           which must be of kind {@link Opcode.Kind#DISCONTINUED_RET}
          * @param slot the local variable slot to load return address from
+         * @throws IllegalArgumentException if the opcode kind is not
+         *         {@link Opcode.Kind#DISCONTINUED_RET} or if {@code slot} is out of range
          */
         static RetInstruction of(Opcode op, int slot) {
-            Util.checkKind(op, Opcode.Kind.DISCONTINUED_RET);
+            BytecodeHelpers.validateRet(op, slot);
             return new AbstractInstruction.UnboundRetInstruction(op, slot);
         }
 
@@ -119,6 +124,7 @@ public sealed interface DiscontinuedInstruction extends Instruction {
          * {@return a RET instruction}
          *
          * @param slot the local variable slot to load return address from
+         * @throws IllegalArgumentException if {@code slot} is out of range
          */
         static RetInstruction of(int slot) {
             return of(slot < 256 ? Opcode.RET : Opcode.RET_W, slot);
