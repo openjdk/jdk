@@ -30,8 +30,8 @@
  * command-line script shell, <em>{@index jrunscript jrunscript tool}</em>,
  * that supports executing JavaScript and other languages if its corresponding
  * script engine is installed.
- * <p> The {@code jrunscript} tool is deprecated for removal since JDK 24
- * and will be removed in a future release.
+ * <p> The {@code jrunscript} tool is deprecated and will be removed
+ * in a future release.
  *
  * @toolGuide jrunscript
  *
