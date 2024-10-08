@@ -68,13 +68,6 @@ import sun.security.util.SecurityConstants;
  * This class loader supports the loading of classes and resources from the
  * contents of a <a href="../util/jar/JarFile.html#multirelease">multi-release</a>
  * JAR file that is referred to by a given URL.
- * <p>
- * The AccessControlContext of the thread that created the instance of
- * URLClassLoader will be used when subsequently loading classes and
- * resources.
- * <p>
- * The classes that are loaded are by default granted permission only to
- * access the URLs specified when the URLClassLoader was created.
  *
  * @author  David Connelly
  * @since   1.2
@@ -654,24 +647,24 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
      * The implementation of this method first calls super.getPermissions
      * and then adds permissions based on the URL of the codesource.
      * <p>
-     * If the protocol of this URL is "jar", then the permission granted
+     * If the protocol of this URL is "jar", then the permission returned
      * is based on the permission that is required by the URL of the Jar
      * file.
      * <p>
      * If the protocol is "file" and there is an authority component, then
      * permission to connect to and accept connections from that authority
-     * may be granted. If the protocol is "file"
+     * may be returned. If the protocol is "file"
      * and the path specifies a file, then permission to read that
-     * file is granted. If protocol is "file" and the path is
-     * a directory, permission is granted to read all files
+     * file is returned. If protocol is "file" and the path is
+     * a directory, then permission is returned to read all files
      * and (recursively) all files and subdirectories contained in
      * that directory.
      * <p>
      * If the protocol is not "file", then permission
-     * to connect to and accept connections from the URL's host is granted.
+     * to connect to and accept connections from the URL's host is returned.
      * @param codesource the codesource
      * @throws    NullPointerException if {@code codesource} is {@code null}.
-     * @return the permissions granted to the codesource
+     * @return the permissions for the codesource
      */
     @SuppressWarnings("removal")
     protected PermissionCollection getPermissions(CodeSource codesource)
