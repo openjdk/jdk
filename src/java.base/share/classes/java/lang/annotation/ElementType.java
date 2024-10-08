@@ -28,7 +28,7 @@ package java.lang.annotation;
 /**
  * A syntactic location where an annotation may appear in Java code.
  * An annotation interface may optionally restrict its usage to a
- * particular set of these locations using the {@link
+ * particular subset of these locations using the {@link
  * java.lang.annotation.Target @Target} meta-annotation.
  *
  * <p>For example, an annotation of the following type may only appear
@@ -36,45 +36,36 @@ package java.lang.annotation;
  *
  * {@snippet id='example' :
  * @Target({ElementType.TYPE_PARAMETER, ElementType.LOCAL_VARIABLE})
- * public @interface ActLocally {}
+ * public @interface MyAnnotation {}
  * }
  *
  * <h2>Declaration annotations and type-use annotations</h2>
  *
- * <p>Java annotations fall into two categories:
+ * <p>Most annotations in Java code are <b>declaration
+ * annotations</b>, which act like modifiers of declarations (such as
+ * a field declaration). The constants of this class cover all ten
+ * kinds of annotatable declarations, plus a subcategory of {@link
+ * #TYPE} called {@link #ANNOTATION_TYPE}. An annotation interface can
+ * be used as a declaration annotation if it either omits {@code
+ * @Target}, or uses it to list which specific kinds of declarations
+ * it should apply to.
  *
- * <ul>
- * <li><b>Declaration annotations</b>, which appear as modifiers of
- *     declarations (such as a class or field declaration)
- * <li><b>Type-use annotations</b> (sometimes called <em>type
- *     annotations</em>), which can appear anywhere a Java type is
- *     being indicated
- * </ul>
- *
- * <p>To enable use as a type-use annotation, an annotation interface
- * must include {@link #TYPE_USE} in its list of targets. To enable
- * use as a declaration annotation, it may either omit {@code
- * @Target}, or use it to list which specific kinds of declarations it
- * should apply to.
- *
- * <p>The constants of this class cover all ten kinds of annotatable
- * declarations, plus a subcategory of {@link #TYPE} called {@link
- * #ANNOTATION_TYPE} used for annotation types that apply only to
- * other annotation types.
+ * <p>There are also <b>type-use annotations</b> (sometimes called
+ * "type annotations"), which can appear anywhere a Java type is being
+ * indicated (normally, immediately preceding that type). To enable
+ * use as a type-use annotation, an annotation interface must
+ * explicitly include {@link #TYPE_USE} in its list of targets. 
  *
  * <h3 id="ambiguous">Ambiguous contexts</h3>
  *
- * <p>In some declarations, a type is specified immediately following
- * the modifiers and annotations: a field, parameter, local variable,
- * or record component declaration, or the declaration of a non-void
- * method (indicating the return type of the method). In these
- * declarations, type-use annotations can <em>also</em> be freely
- * intermingled with the declaration's modifiers and declaration
- * annotations, in any order, and these are treated the same as if
- * they had directly preceded the type. In general, a library method
- * for reading declaration annotations (like {@link
- * java.lang.reflect.AnnotatedElement#getAnnotations}) will not return
- * type-use annotations found in the same location, and vice-versa.
+ * <p>In some declarations, immediately after the annotations and
+ * modifers, some <em>type</em> is indicated; specifically, the
+ * declaration of a field, parameter, local variable, record
+ * component, or non-void method (indicating the method's <em>return
+ * type</em>). In such declarations, type-use annotations can
+ * <em>also</em> be freely intermingled with the declaration's
+ * modifiers and declaration annotations, in any order, and these are
+ * treated the same as if they had directly preceded the type.
  *
  * <p>An annotation interface may specify both {@link #TYPE_USE} and
  * declaration targets, and thereby be fully usable as either kind.
@@ -83,10 +74,15 @@ package java.lang.annotation;
  * declaration annotation and a type-use annotation at the same time.
  * The results may be counterintuitive in two cases: when the type in
  * question is an inner type (like {@code Map.Entry}), or an array
- * type. In these cases, the declaration annotation still applies to
- * the "entire" declaration (of course), yet the type-use annotation
- * applies more narrowly to the <em>outer type</em> or to the
- * <em>component type</em> of the array.
+ * type. In these cases, the declaration annotation applies to the
+ * "entire" declaration, yet the type-use annotation applies more
+ * narrowly to the <em>outer type</em> or to the <em>component
+ * type</em> of the array.
+ *
+ * <p>In general, a library method for reading declaration annotations
+ * (like {@link java.lang.reflect.AnnotatedElement#getAnnotations})
+ * will not return type-use annotations found in the same location,
+ * and vice-versa.
  *
  * @author  Joshua Bloch
  * @since 1.5
