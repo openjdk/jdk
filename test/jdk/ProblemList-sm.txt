@@ -11,7 +11,6 @@ java/lang/reflect/sealed_classes/TestSecurityManagerChecks.java 0000000 generic-
 # :tier2_part2
 jdk/dynalink/BeanLinkerTest.java 0000000 generic-all
 jdk/dynalink/TrustedDynamicLinkerFactoryTest.java 0000000 generic-all
-jdk/dynalink/UntrustedDynamicLinkerFactoryTest.java 0000000 generic-all
 tools/launcher/MainClassCantBeLoadedTest.java 0000000 generic-all
 tools/launcher/modules/basic/LauncherErrors.java 0000000 generic-all
 
