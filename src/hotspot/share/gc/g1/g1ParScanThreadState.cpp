@@ -61,8 +61,7 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
                                            uint worker_id,
                                            uint num_workers,
                                            G1CollectionSet* collection_set,
-                                           G1EvacFailureRegions* evac_failure_regions,
-                                           PartialArrayStateAllocator* pas_allocator)
+                                           G1EvacFailureRegions* evac_failure_regions)
   : _g1h(g1h),
     _task_queue(g1h->task_queue(worker_id)),
     _rdc_local_qset(rdcqs),
@@ -81,7 +80,7 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
     _surviving_young_words(nullptr),
     _surviving_words_length(collection_set->young_region_length() + 1),
     _old_gen_is_full(false),
-    _partial_array_state_allocator(pas_allocator),
+    _partial_array_state_allocator(g1h->partial_array_state_manager()),
     _partial_array_stepper(num_workers, ParGCArrayScanChunk),
     _string_dedup_requests(),
     _max_num_optional_regions(collection_set->optional_region_length()),
@@ -254,7 +253,7 @@ void G1ParScanThreadState::do_partial_array(PartialArrayState* state) {
                               checked_cast<int>(step._index),
                               checked_cast<int>(step._index + _partial_array_stepper.chunk_size()));
   // Release reference to the state, now that we're done with it.
-  _partial_array_state_allocator->release(_worker_id, state);
+  _partial_array_state_allocator.release(state);
 }
 
 MAYBE_INLINE_EVACUATION
@@ -277,11 +276,10 @@ void G1ParScanThreadState::start_partial_objarray(G1HeapRegionAttr dest_attr,
     assert(((array_length - step._index) % _partial_array_stepper.chunk_size()) == 0,
            "invariant");
     PartialArrayState* state =
-      _partial_array_state_allocator->allocate(_worker_id,
-                                               from_obj, to_obj,
-                                               step._index,
-                                               array_length,
-                                               step._ncreate);
+      _partial_array_state_allocator.allocate(from_obj, to_obj,
+                                              step._index,
+                                              array_length,
+                                              step._ncreate);
     for (uint i = 0; i < step._ncreate; ++i) {
       push_on_queue(ScannerTask(state));
     }
@@ -601,8 +599,7 @@ G1ParScanThreadState* G1ParScanThreadStateSet::state_for_worker(uint worker_id) 
                                worker_id,
                                _num_workers,
                                _collection_set,
-                               _evac_failure_regions,
-                               &_partial_array_state_allocator);
+                               _evac_failure_regions);
   }
   return _states[worker_id];
 }
@@ -732,8 +729,7 @@ G1ParScanThreadStateSet::G1ParScanThreadStateSet(G1CollectedHeap* g1h,
     _surviving_young_words_total(NEW_C_HEAP_ARRAY(size_t, collection_set->young_region_length() + 1, mtGC)),
     _num_workers(num_workers),
     _flushed(false),
-    _evac_failure_regions(evac_failure_regions),
-    _partial_array_state_allocator(num_workers)
+    _evac_failure_regions(evac_failure_regions)
 {
   for (uint i = 0; i < num_workers; ++i) {
     _states[i] = nullptr;
