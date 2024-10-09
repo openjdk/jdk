@@ -40,6 +40,7 @@ import java.lang.classfile.ClassHierarchyResolver;
 
 import static java.lang.constant.ConstantDescs.CD_Object;
 import static java.lang.classfile.ClassFile.*;
+import static java.lang.classfile.constantpool.PoolEntry.*;
 import static java.util.Objects.requireNonNull;
 import static jdk.internal.constant.ConstantUtils.referenceClassDesc;
 
@@ -174,10 +175,10 @@ public final class ClassHierarchyImpl {
                     switch (tag = in.readUnsignedByte()) {
                         case TAG_UTF8 -> cpStrings[i] = in.readUTF();
                         case TAG_CLASS -> cpClasses[i] = in.readUnsignedShort();
-                        case TAG_STRING, TAG_METHODTYPE, TAG_MODULE, TAG_PACKAGE -> in.skipBytes(2);
-                        case TAG_METHODHANDLE -> in.skipBytes(3);
-                        case TAG_INTEGER, TAG_FLOAT, TAG_FIELDREF, TAG_METHODREF, TAG_INTERFACEMETHODREF,
-                                TAG_NAMEANDTYPE, TAG_CONSTANTDYNAMIC, TAG_INVOKEDYNAMIC -> in.skipBytes(4);
+                        case TAG_STRING, TAG_METHOD_TYPE, TAG_MODULE, TAG_PACKAGE -> in.skipBytes(2);
+                        case TAG_METHOD_HANDLE -> in.skipBytes(3);
+                        case TAG_INTEGER, TAG_FLOAT, TAG_FIELDREF, TAG_METHODREF, TAG_INTERFACE_METHODREF,
+                             TAG_NAME_AND_TYPE, TAG_DYNAMIC, TAG_INVOKE_DYNAMIC -> in.skipBytes(4);
                         case TAG_LONG, TAG_DOUBLE -> {
                             in.skipBytes(8);
                             i++;

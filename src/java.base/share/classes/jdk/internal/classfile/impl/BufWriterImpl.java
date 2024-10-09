@@ -36,6 +36,10 @@ import java.lang.classfile.constantpool.PoolEntry;
 
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.vm.annotation.ForceInline;
+
+import static jdk.internal.util.ModifiedUtf.putChar;
+import static jdk.internal.util.ModifiedUtf.utfLen;
 
 public final class BufWriterImpl implements BufWriter {
     private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
@@ -99,6 +103,7 @@ public final class BufWriterImpl implements BufWriter {
         elems[offset++] = (byte) x;
     }
 
+    @ForceInline
     @Override
     public void writeU2(int x) {
         reserveSpace(2);
@@ -160,14 +165,7 @@ public final class BufWriterImpl implements BufWriter {
     void writeUTF(String str) {
         int strlen = str.length();
         int countNonZeroAscii = JLA.countNonZeroAscii(str);
-        int utflen = strlen;
-        if (countNonZeroAscii != strlen) {
-            for (int i = countNonZeroAscii; i < strlen; i++) {
-                int c = str.charAt(i);
-                if (c >= 0x80 || c == 0)
-                    utflen += (c >= 0x800) ? 2 : 1;
-            }
-        }
+        int utflen = utfLen(str, countNonZeroAscii);
         if (utflen > 65535) {
             throw new IllegalArgumentException("string too long");
         }
@@ -183,20 +181,8 @@ public final class BufWriterImpl implements BufWriter {
         str.getBytes(0, countNonZeroAscii, elems, offset);
         offset += countNonZeroAscii;
 
-        for (int i = countNonZeroAscii; i < strlen; ++i) {
-            char c = str.charAt(i);
-            if (c >= '\001' && c <= '\177') {
-                elems[offset++] = (byte) c;
-            } else if (c > '\u07FF') {
-                elems[offset    ] = (byte) (0xE0 | c >> 12 & 0xF);
-                elems[offset + 1] = (byte) (0x80 | c >> 6 & 0x3F);
-                elems[offset + 2] = (byte) (0x80 | c      & 0x3F);
-                offset += 3;
-            } else {
-                elems[offset    ] = (byte) (0xC0 | c >> 6 & 0x1F);
-                elems[offset + 1] = (byte) (0x80 | c      & 0x3F);
-                offset += 2;
-            }
+        for (int i = countNonZeroAscii; i < strlen; i++) {
+            offset = putChar(elems, offset, str.charAt(i));
         }
 
         this.offset = offset;
@@ -283,12 +269,17 @@ public final class BufWriterImpl implements BufWriter {
     // writeIndex methods ensure that any CP info written
     // is relative to the correct constant pool
 
+    @ForceInline
     @Override
     public void writeIndex(PoolEntry entry) {
         int idx = AbstractPoolEntry.maybeClone(constantPool, entry).index();
         if (idx < 1 || idx > Character.MAX_VALUE)
-            throw new IllegalArgumentException(idx + " is not a valid index. Entry: " + entry);
+            throw invalidIndex(idx, entry);
         writeU2(idx);
+    }
+
+    static IllegalArgumentException invalidIndex(int idx, PoolEntry entry) {
+        return new IllegalArgumentException(idx + " is not a valid index. Entry: " + entry);
     }
 
     @Override
@@ -297,5 +288,15 @@ public final class BufWriterImpl implements BufWriter {
             writeU2(0);
         else
             writeIndex(entry);
+    }
+
+    /**
+     * Join head and tail into an exact-size buffer
+     */
+    static byte[] join(BufWriterImpl head, BufWriterImpl tail) {
+        byte[] result = new byte[head.size() + tail.size()];
+        head.copyTo(result, 0);
+        tail.copyTo(result, head.size());
+        return result;
     }
 }

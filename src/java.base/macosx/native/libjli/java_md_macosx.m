@@ -60,115 +60,79 @@ struct NSAppArgs {
 #define LD_LIBRARY_PATH "DYLD_FALLBACK_LIBRARY_PATH"
 
 /*
- * If a processor / os combination has the ability to run binaries of
- * two data models and cohabitation of jre/jdk bits with both data
- * models is supported, then DUAL_MODE is defined. MacOSX is a hybrid
- * system in that, the universal library can contain all types of libraries
- * 32/64 and client/server, thus the spawn is capable of linking with the
- * appropriate library as requested.
+ * Following is the high level flow of the launcher
+ * code residing in the common java.c and this
+ * macosx specific java_md_macosx file:
  *
- * Notes:
- * 1. VM. DUAL_MODE is disabled, and not supported, however, it is left here in
- *    for experimentation and perhaps enable it in the future.
- * 2. At the time of this writing, the universal library contains only
- *    a server 64-bit server JVM.
- * 3. "-client" command line option is supported merely as a command line flag,
- *    for, compatibility reasons, however, a server VM will be launched.
- */
-
-/*
- * Flowchart of launcher execs and options processing on unix
+ *  - JLI_Launch function, which is the entry point
+ *    to the launcher, calls CreateExecutionEnvironment.
  *
- * The selection of the proper vm shared library to open depends on
- * several classes of command line options, including vm "flavor"
- * options (-client, -server) and the data model options, -d32  and
- * -d64, as well as a version specification which may have come from
- * the command line or from the manifest of an executable jar file.
- * The vm selection options are not passed to the running
- * virtual machine; they must be screened out by the launcher.
+ *  - CreateExecutionEnvironment does the following
+ *    (not necessarily in this order):
+ *      - determines the relevant JVM type that needs
+ *        to be ultimately created
+ *      - determines the path and asserts the presence
+ *        of libjava and relevant libjvm library
+ *      - removes any JVM selection options from the
+ *        arguments that were passed to the launcher
  *
- * The version specification (if any) is processed first by the
- * platform independent routine SelectVersion.  This may result in
- * the exec of the specified launcher version.
+ *  - CreateExecutionEnvironment then creates a new
+ *    thread, within the same process, to launch the
+ *    application's main() Java method and parks the
+ *    current thread, on which CreateExecutionEnvironment
+ *    was invoked, in Apple's Cocoa event loop. Before
+ *    doing so, CreateExecutionEnvironment maintains a
+ *    state flag to keep note that a new thread has
+ *    been spawned.
  *
- * Now, in most cases,the launcher will dlopen the target libjvm.so. All
- * required libraries are loaded by the runtime linker, using the known paths
- * baked into the shared libraries at compile time. Therefore,
- * in most cases, the launcher will only exec, if the data models are
- * mismatched, and will not set any environment variables, regardless of the
- * data models.
+ *  - The newly created thread (in which the application's
+ *    main() method will ultimately run) starts right from
+ *    the beginning of the current process' main function,
+ *    which effectively means that JLI_Launch is re-invoked
+ *    on this new thread and the same above sequence of code
+ *    flow repeats again. During this "recursive" call, when
+ *    at the point of creating a new thread in
+ *    CreateExecutionEnvironment, the CreateExecutionEnvironment
+ *    will check for the state flag to see if a new thread
+ *    has already been spawned and upon noticing that it
+ *    has, it will skip spawning any more threads and will
+ *    return back from CreateExecutionEnvironment.
  *
+ *  - The control returns back from CreateExecutionEnvironment
+ *    to JLI_Launch, and the thread on which the control
+ *    returns is the thread on which the application's main()
+ *    Java method will be invoked.
  *
+ *  - JLI_Launch then invokes LoadJavaVM which dlopen()s the
+ *    JVM library and asserts the presence of JNI Invocation
+ *    Functions "JNI_CreateJavaVM", "JNI_GetDefaultJavaVMInitArgs"
+ *    and "JNI_GetCreatedJavaVMs" in that library. It then sets
+ *    internal function pointers in the launcher to point to
+ *    those functions.
  *
- *  Main
- *  (incoming argv)
- *  |
- * \|/
- * CreateExecutionEnvironment
- * (determines desired data model)
- *  |
- *  |
- * \|/
- *  Have Desired Model ? --> NO --> Is Dual-Mode ? --> NO --> Exit(with error)
- *  |                                          |
- *  |                                          |
- *  |                                         \|/
- *  |                                         YES
- *  |                                          |
- *  |                                          |
- *  |                                         \|/
- *  |                                CheckJvmType
- *  |                               (removes -client, -server etc.)
- *  |                                          |
- *  |                                          |
- * \|/                                        \|/
- * YES                             Find the desired executable/library
- *  |                                          |
- *  |                                          |
- * \|/                                        \|/
- * CheckJvmType                             POINT A
- * (removes -client, -server, etc.)
- *  |
- *  |
- * \|/
- * TranslateDashJArgs...
- * (Prepare to pass args to vm)
- *  |
- *  |
- * \|/
- * ParseArguments
- * (processes version options,
- *  creates argument list for vm,
- *  etc.)
- *   |
- *   |
- *  \|/
- * POINT A
- *   |
- *   |
- *  \|/
- * Path is desired JRE ? YES --> Continue
- *  NO
- *   |
- *   |
- *  \|/
- * Paths have well known
- * jvm paths ?       --> NO --> Continue
- *  YES
- *   |
- *   |
- *  \|/
- *  Does libjvm.so exist
- *  in any of them ? --> NO --> Continue
- *   YES
- *   |
- *   |
- *  \|/
- * Re-exec / Spawn
- *   |
- *   |
- *  \|/
- * Main
+ *  - JLI_Launch then translates any -J options by invoking
+ *    TranslateApplicationArgs.
+ *
+ *  - JLI_Launch then invokes ParseArguments to parse/process
+ *    the launcher arguments.
+ *
+ *  - JLI_Launch then ultimately calls JVMInit.
+ *
+ *  - JVMInit then invokes JavaMain.
+ *
+ *  - JavaMain, before launching the application, invokes
+ *    PostJVMInit.
+ *
+ *  - PostJVMInit invokes ShowSplashScreen which displays
+ *    a splash screen for the application, if applicable.
+ *
+ *  - Control then returns back from PostJVMInit into
+ *    JavaMain, which then loads the application's main
+ *    class and invokes the relevant main() Java method.
+ *
+ *  - JavaMain then returns back an integer result which
+ *    then gets propagated as a return value all the way
+ *    out of the JLI_Launch function.
  */
 
 /* Store the name of the executable once computed */
@@ -333,6 +297,7 @@ static void ParkEventLoop() {
 static void MacOSXStartup(int argc, char *argv[]) {
     // Thread already started?
     static jboolean started = false;
+    int rc;
     if (started) {
         return;
     }
@@ -345,12 +310,14 @@ static void MacOSXStartup(int argc, char *argv[]) {
 
     // Fire up the main thread
     pthread_t main_thr;
-    if (pthread_create(&main_thr, NULL, &apple_main, &args) != 0) {
-        JLI_ReportErrorMessageSys("Could not create main thread: %s\n", strerror(errno));
+    rc = pthread_create(&main_thr, NULL, &apple_main, &args);
+    if (rc != 0) {
+        JLI_ReportErrorMessageSys("Could not create main thread, return code: %d\n", rc);
         exit(1);
     }
-    if (pthread_detach(main_thr)) {
-        JLI_ReportErrorMessageSys("pthread_detach() failed: %s\n", strerror(errno));
+    rc = pthread_detach(main_thr);
+    if (rc != 0) {
+        JLI_ReportErrorMessage("pthread_detach() failed, return code: %d\n", rc);
         exit(1);
     }
 

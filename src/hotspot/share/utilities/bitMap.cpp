@@ -173,8 +173,8 @@ bm_word_t* ResourceBitMap::reallocate(bm_word_t* old_map, size_t old_size_in_wor
   return pseudo_reallocate(*this, old_map, old_size_in_words, new_size_in_words);
 }
 
-CHeapBitMap::CHeapBitMap(idx_t size_in_bits, MEMFLAGS flags, bool clear)
-  : GrowableBitMap<CHeapBitMap>(), _flags(flags) {
+CHeapBitMap::CHeapBitMap(idx_t size_in_bits, MemTag mem_tag, bool clear)
+  : GrowableBitMap<CHeapBitMap>(), _mem_tag(mem_tag) {
   initialize(size_in_bits, clear);
 }
 
@@ -183,7 +183,7 @@ CHeapBitMap::~CHeapBitMap() {
 }
 
 bm_word_t* CHeapBitMap::allocate(idx_t size_in_words) const {
-  return MallocArrayAllocator<bm_word_t>::allocate(size_in_words, _flags);
+  return MallocArrayAllocator<bm_word_t>::allocate(size_in_words, _mem_tag);
 }
 
 // GrowableBitMap<T>::resize uses free(ptr, size) for T as CHeapBitMap, ArenaBitMap and ResourceBitMap allocators.
@@ -193,7 +193,7 @@ void CHeapBitMap::free(bm_word_t* map, idx_t size_in_words) const {
 }
 
 bm_word_t* CHeapBitMap::reallocate(bm_word_t* map, size_t old_size_in_words, size_t new_size_in_words) const {
-  return MallocArrayAllocator<bm_word_t>::reallocate(map, new_size_in_words, _flags);
+  return MallocArrayAllocator<bm_word_t>::reallocate(map, new_size_in_words, _mem_tag);
 }
 
 #ifdef ASSERT
@@ -705,8 +705,6 @@ void BitMap::IteratorImpl::assert_not_empty() const {
 }
 #endif
 
-#ifndef PRODUCT
-
 void BitMap::print_on(outputStream* st) const {
   st->print("Bitmap (" SIZE_FORMAT " bits):", size());
   for (idx_t index = 0; index < size(); index++) {
@@ -721,8 +719,6 @@ void BitMap::print_on(outputStream* st) const {
   }
   st->cr();
 }
-
-#endif
 
 template class GrowableBitMap<ArenaBitMap>;
 template class GrowableBitMap<ResourceBitMap>;
