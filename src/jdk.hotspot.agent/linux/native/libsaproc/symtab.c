@@ -389,6 +389,7 @@ static struct symtab* build_symtab_internal(int fd, const char *filename, bool t
         goto bad;
       }
 
+      // int rslt =
       hcreate_r(htab_sz, symtab->hash_table);
       // guarantee(rslt, "unexpected failure: hcreate_r");
 
