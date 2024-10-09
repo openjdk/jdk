@@ -59,6 +59,19 @@
           "Uncommit memory if it has been unused for the specified "        \
           "amount of time (in seconds)")                                    \
                                                                             \
+  product(double, ZYoungCompactionLimit, 25.0,                              \
+          "Maximum allowed garbage in young pages")                         \
+          range(0, 100)                                                     \
+                                                                            \
+  product(double, ZCollectionIntervalMinor, -1,                             \
+          "Force Minor GC at a fixed time interval (in seconds)")           \
+                                                                            \
+  product(double, ZCollectionIntervalMajor, -1,                             \
+          "Force GC at a fixed time interval (in seconds)")                 \
+                                                                            \
+  product(bool, ZCollectionIntervalOnly, false,                             \
+          "Only use timers for GC heuristics")                              \
+                                                                            \
   product(double, ZAsyncUnmappingLimit, 100.0, DIAGNOSTIC,                  \
           "Specify the max amount (percentage of max heap size) of async "  \
           "unmapping that can be in-flight before unmapping requests are "  \
@@ -85,19 +98,6 @@
   product(bool, ZVerifyForwarding, false, DIAGNOSTIC,                       \
           "Verify forwarding tables")                                       \
                                                                             \
-  product(double, ZYoungCompactionLimit, 25.0,                              \
-          "Maximum allowed garbage in young pages")                         \
-          range(0, 100)                                                     \
-                                                                            \
-  product(double, ZCollectionIntervalMinor, -1,                             \
-          "Force Minor GC at a fixed time interval (in seconds)")           \
-                                                                            \
-  product(double, ZCollectionIntervalMajor, -1,                             \
-          "Force GC at a fixed time interval (in seconds)")                 \
-                                                                            \
-  product(bool, ZCollectionIntervalOnly, false,                             \
-          "Only use timers for GC heuristics")                              \
-                                                                            \
   product(bool, ZBufferStoreBarriers, true, DIAGNOSTIC,                     \
           "Buffer store barriers")                                          \
                                                                             \
@@ -115,12 +115,12 @@
   product(bool, ZVerifyRemembered, trueInDebug, DIAGNOSTIC,                 \
           "Verify remembered sets")                                         \
                                                                             \
-  develop(bool, ZVerifyOops, false,                                         \
-          "Verify accessed oops")                                           \
-                                                                            \
   product(int, ZTenuringThreshold, -1, DIAGNOSTIC,                          \
           "Young generation tenuring threshold, -1 for dynamic computation")\
           range(-1, static_cast<int>(ZPageAgeMax))                          \
+                                                                            \
+  develop(bool, ZVerifyOops, false,                                         \
+          "Verify accessed oops")                                           \
                                                                             \
   develop(size_t, ZForceDiscontiguousHeapReservations, 0,                   \
           "The gc will attempt to split the heap reservation into this "    \
