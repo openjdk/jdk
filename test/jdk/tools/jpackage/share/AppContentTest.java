@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
+import jdk.internal.util.OSVersion;
 
 /**
  * Tests generation of packages with input folder containing empty folders.
@@ -48,6 +49,7 @@ import java.util.List;
  * @build jdk.jpackage.test.*
  * @build AppContentTest
  * @modules jdk.jpackage/jdk.jpackage.internal
+ * @modules java.base/jdk.internal.util
  * @run main/othervm/timeout=720 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=AppContentTest
  */
@@ -81,6 +83,17 @@ public class AppContentTest {
     @Test
     public void test() throws Exception {
 
+        // On macOS signing may or may not work for modified app bundles.
+        // It works on macOS 15 and up, but fails on macOS below 15.
+        final int expectedJPackageExitCode;
+        final boolean isMacOS15 = (OSVersion.current().compareTo(
+                                      new OSVersion(15, 0, 0)) > 0);
+        if (testPathArgs.contains(TEST_BAD) || (TKit.isOSX() && !isMacOS15)) {
+            expectedJPackageExitCode = 1;
+        } else {
+            expectedJPackageExitCode = 0;
+        }
+
         new PackageTest().configureHelloApp()
             .addInitializer(cmd -> {
                 for (String arg : testPathArgs) {
@@ -99,9 +112,7 @@ public class AppContentTest {
                 }
 
             })
-            // On macOS we always signing app image and signing will fail, since
-            // test produces invalid app bundle.
-            .setExpectedExitCode(testPathArgs.contains(TEST_BAD) || TKit.isOSX() ? 1 : 0)
+            .setExpectedExitCode(expectedJPackageExitCode)
             .run();
         }
 }

@@ -64,31 +64,4 @@ void C2EntryBarrierStub::emit(C2_MacroAssembler& masm) {
   __ emit_int32(0);   // nmethod guard value
 }
 
-int C2HandleAnonOMOwnerStub::max_size() const {
-  // Max size of stub has been determined by testing with 0, in which case
-  // C2CodeStubList::emit() will throw an assertion and report the actual size that
-  // is needed.
-  return 24;
-}
-
-void C2HandleAnonOMOwnerStub::emit(C2_MacroAssembler& masm) {
-  __ bind(entry());
-  Register mon = monitor();
-  Register t = tmp();
-  assert(t != noreg, "need tmp register");
-
-  // Fix owner to be the current thread.
-  __ str(rthread, Address(mon, ObjectMonitor::owner_offset()));
-
-  // Pop owner object from lock-stack.
-  __ ldrw(t, Address(rthread, JavaThread::lock_stack_top_offset()));
-  __ subw(t, t, oopSize);
-#ifdef ASSERT
-  __ str(zr, Address(rthread, t));
-#endif
-  __ strw(t, Address(rthread, JavaThread::lock_stack_top_offset()));
-
-  __ b(continuation());
-}
-
 #undef __

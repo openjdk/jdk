@@ -231,14 +231,6 @@ public class Util {
         return ((AbstractPoolEntry.Utf8EntryImpl) utf8).methodTypeSymbol();
     }
 
-    public static ClassDesc fieldTypeSymbol(NameAndTypeEntry nat) {
-        return fieldTypeSymbol(nat.type());
-    }
-
-    public static MethodTypeDesc methodTypeSymbol(NameAndTypeEntry nat) {
-        return methodTypeSymbol(nat.type());
-    }
-
     @SuppressWarnings("unchecked")
     private static <T extends Attribute<T>> void writeAttribute(BufWriterImpl writer, Attribute<?> attr) {
         if (attr instanceof CustomAttribute<?> ca) {
