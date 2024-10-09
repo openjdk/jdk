@@ -5239,6 +5239,8 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         return pow;
     }
 
+    private static final double LOG_5_OF_2 = Math.log(2.0) / Math.log(5.0);
+
     /**
      * Remove insignificant trailing zeros from this
      * {@code BigInteger} value until the preferred scale is reached or no
@@ -5265,7 +5267,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
 
         intVal = intVal.shiftRight(powsOf2); // remove powers of 2
         // maxPowsOf5 == ceil(log5(intVal)) roughly
-        long maxPowsOf5 = (long) Math.ceil(intVal.bitLength() * BigInteger.LOG_TWO / BigInteger.logCache[5]);
+        long maxPowsOf5 = (long) Math.ceil(intVal.bitLength() * LOG_5_OF_2);
         remainingZeros = Math.min(remainingZeros, maxPowsOf5);
 
         BigInteger[] qr; // quotient-remainder pair
