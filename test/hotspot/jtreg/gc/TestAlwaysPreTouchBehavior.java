@@ -75,7 +75,7 @@ package gc;
 /**
  * @test id=Z
  * @summary tests AlwaysPreTouch
- * @requires vm.gc.ZGC
+ * @requires vm.gc.Z
  * @requires os.maxMemory > 2G
  * @requires os.family != "aix"
  * @library /test/lib
