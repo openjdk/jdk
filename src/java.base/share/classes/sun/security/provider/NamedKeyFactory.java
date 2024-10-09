@@ -85,7 +85,7 @@ public class NamedKeyFactory extends KeyFactorySpi {
                 return pname;
             }
         }
-        throw new InvalidKeyException("Unknown parameter set name: " + name);
+        throw new InvalidKeyException("Unsupported parameter set name: " + name);
     }
 
     @Override
@@ -282,7 +282,7 @@ public class NamedKeyFactory extends KeyFactorySpi {
                 throw new InvalidKeyException("Invalid X.509 key", e);
             }
         } else {
-            throw new InvalidKeyException("Unknown key format: " + key.getFormat());
+            throw new InvalidKeyException("Unsupported key format: " + key.getFormat());
         }
     }
 }

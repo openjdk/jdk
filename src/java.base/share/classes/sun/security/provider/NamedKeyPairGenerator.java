@@ -126,7 +126,7 @@ public abstract class NamedKeyPairGenerator extends KeyPairGeneratorSpi {
             }
         }
         throw new InvalidAlgorithmParameterException(
-                "Unknown parameter set name: " + name);
+                "Unsupported parameter set name: " + name);
     }
 
     @Override
@@ -136,7 +136,7 @@ public abstract class NamedKeyPairGenerator extends KeyPairGeneratorSpi {
             name = checkName(spec.getName());
         } else {
             throw new InvalidAlgorithmParameterException(
-                    "Unknown AlgorithmParameterSpec: " + params);
+                    "Unsupported AlgorithmParameterSpec: " + params);
         }
         this.secureRandom = random;
     }
