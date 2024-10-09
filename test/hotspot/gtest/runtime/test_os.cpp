@@ -416,6 +416,7 @@ TEST_VM(os, realpath) {
 
   char buffer[MAX_PATH];
 
+  /* test a non-existant path, but provide a short buffer */
   errno = 0;
   const char* returnedBuffer = os::realpath(nosuchpath, buffer, sizeof(nosuchpath) - 2);
   /* Returns ENOENT on Linux, ENAMETOOLONG on Windows */
@@ -426,21 +427,23 @@ TEST_VM(os, realpath) {
   EXPECT_TRUE(errno == ENOENT);
 #endif
 
+  /* test a non-existant path, but provide an adequate buffer */
   errno = 0;
   returnedBuffer = os::realpath(nosuchpath, buffer, sizeof(nosuchpath) + 3);
   /* Returns ENOENT on Linux, 0 on Windows */
 #if defined(_WINDOWS)
   EXPECT_TRUE(returnedBuffer == buffer);
-  EXPECT_TRUE(errno == 0);
 #else
   EXPECT_TRUE(returnedBuffer == nullptr);
   EXPECT_TRUE(errno == ENOENT);
 #endif
 
+  /* test an existing path using a large buffer */
   errno = 0;
   returnedBuffer = os::realpath(tmppath, buffer, MAX_PATH);
-  EXPECT_TRUE(returnedBuffer != nullptr);
+  EXPECT_TRUE(returnedBuffer == buffer);
 
+  /* test an existing path using a buffer that is too small on a normal macOS install */
   errno = 0;
   returnedBuffer = os::realpath(tmppath, buffer, strlen(tmppath) + 3);
   /* on MacOS, /tmp is a symlink to /private/tmp, so doesn't fit in a small buffer. */
@@ -451,28 +454,29 @@ TEST_VM(os, realpath) {
   EXPECT_TRUE(errno == ENAMETOOLONG);
 #endif
 
+  /* test an existing path using a buffer that is too small */
   errno = 0;
   returnedBuffer = os::realpath(tmppath, buffer, strlen(tmppath) - 1);
   EXPECT_TRUE(returnedBuffer == nullptr);
   EXPECT_TRUE(errno == ENAMETOOLONG);
 
-  /* the following tests cause an assert in fastdebug mode */
-  DEBUG_ONLY(if (false)) {
-    errno = 0;
-    returnedBuffer = os::realpath(nullptr, buffer, sizeof(buffer));
-    EXPECT_TRUE(returnedBuffer == nullptr);
-    EXPECT_TRUE(errno == EINVAL);
+  /* the following tests cause an assert inside os::realpath() in fastdebug mode */
+#ifndef ASSERT
+  errno = 0;
+  returnedBuffer = os::realpath(nullptr, buffer, sizeof(buffer));
+  EXPECT_TRUE(returnedBuffer == nullptr);
+  EXPECT_TRUE(errno == EINVAL);
 
-    errno = 0;
-    returnedBuffer = os::realpath(tmppath, buffer, sizeof(buffer));
-    EXPECT_TRUE(returnedBuffer == nullptr);
-    EXPECT_TRUE(errno == EINVAL);
+  errno = 0;
+  returnedBuffer = os::realpath(tmppath, nullptr, sizeof(buffer));
+  EXPECT_TRUE(returnedBuffer == nullptr);
+  EXPECT_TRUE(errno == EINVAL);
 
-    errno = 0;
-    returnedBuffer = os::realpath(tmppath, buffer, 0);
-    EXPECT_TRUE(returnedBuffer == nullptr);
-    EXPECT_TRUE(errno == EINVAL);
-  }
+  errno = 0;
+  returnedBuffer = os::realpath(tmppath, buffer, 0);
+  EXPECT_TRUE(returnedBuffer == nullptr);
+  EXPECT_TRUE(errno == EINVAL);
+#endif
 }
 
 #ifdef __APPLE__
