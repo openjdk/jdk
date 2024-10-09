@@ -436,7 +436,7 @@ Node* AddNode::convert_serial_additions(PhaseGVN* phase, BasicType bt) {
 }
 
 // Try to match `a + a`. On success, return `a` and set `2` as `multiplier`.
-// The method matches `n` to for pattern: AddNode(a, a).
+// The method matches `n` for pattern: AddNode(a, a).
 Node* AddNode::find_simple_addition_pattern(Node* n, BasicType bt, jlong* multiplier) {
   if (n->Opcode() == Op_Add(bt) && n->in(1) == n->in(2)) {
     *multiplier = 2;
