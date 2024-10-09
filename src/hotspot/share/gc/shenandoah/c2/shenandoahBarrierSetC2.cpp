@@ -249,8 +249,9 @@ void ShenandoahBarrierSetC2::satb_write_barrier_pre(GraphKit* kit,
       } __ else_(); {
 
         // logging buffer is full, call the runtime
-        const TypeFunc *tf = ShenandoahBarrierSetC2::write_ref_field_pre_entry_Type();
-        __ make_leaf_call(tf, CAST_FROM_FN_PTR(address, ShenandoahRuntime::write_ref_field_pre_entry), "shenandoah_wb_pre", pre_val, tls);
+        const TypeFunc *tf = ShenandoahBarrierSetC2::write_ref_field_pre_Type();
+        __ make_leaf_call(tf, CAST_FROM_FN_PTR(address, ShenandoahRuntime::write_ref_field_pre), "shenandoah_wb_pre",
+                          pre_val, tls);
       } __ end_if();  // (!index)
     } __ end_if();  // (pre_val != nullptr)
   } __ end_if();  // (!marking)
@@ -268,7 +269,12 @@ void ShenandoahBarrierSetC2::satb_write_barrier_pre(GraphKit* kit,
 
 bool ShenandoahBarrierSetC2::is_shenandoah_wb_pre_call(Node* call) {
   return call->is_CallLeaf() &&
-         call->as_CallLeaf()->entry_point() == CAST_FROM_FN_PTR(address, ShenandoahRuntime::write_ref_field_pre_entry);
+         call->as_CallLeaf()->entry_point() == CAST_FROM_FN_PTR(address, ShenandoahRuntime::write_ref_field_pre);
+}
+
+bool ShenandoahBarrierSetC2::is_shenandoah_clone_call(Node* call) {
+  return call->is_CallLeaf() &&
+         call->as_CallLeaf()->entry_point() == CAST_FROM_FN_PTR(address, ShenandoahRuntime::clone_barrier);
 }
 
 bool ShenandoahBarrierSetC2::is_shenandoah_lrb_call(Node* call) {
@@ -428,7 +434,7 @@ void ShenandoahBarrierSetC2::insert_pre_barrier(GraphKit* kit, Node* base_oop, N
 
 #undef __
 
-const TypeFunc* ShenandoahBarrierSetC2::write_ref_field_pre_entry_Type() {
+const TypeFunc* ShenandoahBarrierSetC2::write_ref_field_pre_Type() {
   const Type **fields = TypeTuple::fields(2);
   fields[TypeFunc::Parms+0] = TypeInstPtr::NOTNULL; // original field value
   fields[TypeFunc::Parms+1] = TypeRawPtr::NOTNULL; // thread
@@ -441,7 +447,7 @@ const TypeFunc* ShenandoahBarrierSetC2::write_ref_field_pre_entry_Type() {
   return TypeFunc::make(domain, range);
 }
 
-const TypeFunc* ShenandoahBarrierSetC2::shenandoah_clone_barrier_Type() {
+const TypeFunc* ShenandoahBarrierSetC2::clone_barrier_Type() {
   const Type **fields = TypeTuple::fields(1);
   fields[TypeFunc::Parms+0] = TypeOopPtr::NOTNULL; // src oop
   const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms+1, fields);
@@ -453,7 +459,7 @@ const TypeFunc* ShenandoahBarrierSetC2::shenandoah_clone_barrier_Type() {
   return TypeFunc::make(domain, range);
 }
 
-const TypeFunc* ShenandoahBarrierSetC2::shenandoah_load_reference_barrier_Type() {
+const TypeFunc* ShenandoahBarrierSetC2::load_reference_barrier_Type() {
   const Type **fields = TypeTuple::fields(2);
   fields[TypeFunc::Parms+0] = TypeOopPtr::BOTTOM; // original field value
   fields[TypeFunc::Parms+1] = TypeRawPtr::BOTTOM; // original load address
@@ -675,20 +681,11 @@ bool ShenandoahBarrierSetC2::is_gc_pre_barrier_node(Node* node) const {
   return is_shenandoah_wb_pre_call(node);
 }
 
-// Support for GC barriers emitted during parsing
 bool ShenandoahBarrierSetC2::is_gc_barrier_node(Node* node) const {
-  if (node->Opcode() == Op_ShenandoahLoadReferenceBarrier) return true;
-  if (node->Opcode() != Op_CallLeaf && node->Opcode() != Op_CallLeafNoFP) {
-    return false;
-  }
-  CallLeafNode *call = node->as_CallLeaf();
-  if (call->_name == nullptr) {
-    return false;
-  }
-
-  return strcmp(call->_name, "shenandoah_clone_barrier") == 0 ||
-         strcmp(call->_name, "shenandoah_cas_obj") == 0 ||
-         strcmp(call->_name, "shenandoah_wb_pre") == 0;
+  return (node->Opcode() == Op_ShenandoahLoadReferenceBarrier) ||
+         is_shenandoah_lrb_call(node) ||
+         is_shenandoah_wb_pre_call(node) ||
+         is_shenandoah_clone_call(node);
 }
 
 Node* ShenandoahBarrierSetC2::step_over_gc_barrier(Node* c) const {
@@ -802,11 +799,11 @@ void ShenandoahBarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCo
 
     // Heap is unstable, call into clone barrier stub
     Node* call = phase->make_leaf_call(unstable_ctrl, mem,
-                    ShenandoahBarrierSetC2::shenandoah_clone_barrier_Type(),
-                    CAST_FROM_FN_PTR(address, ShenandoahRuntime::shenandoah_clone_barrier),
-                    "shenandoah_clone",
-                    TypeRawPtr::BOTTOM,
-                    src_base);
+                                       ShenandoahBarrierSetC2::clone_barrier_Type(),
+                                       CAST_FROM_FN_PTR(address, ShenandoahRuntime::clone_barrier),
+                                       "shenandoah_clone",
+                                       TypeRawPtr::BOTTOM,
+                                       src_base);
     call = phase->transform_later(call);
 
     ctrl = phase->transform_later(new ProjNode(call, TypeFunc::Control));
@@ -981,7 +978,7 @@ void ShenandoahBarrierSetC2::verify_gc_barriers(Compile* compile, CompilePhase p
 
 Node* ShenandoahBarrierSetC2::ideal_node(PhaseGVN* phase, Node* n, bool can_reshape) const {
   if (is_shenandoah_wb_pre_call(n)) {
-    uint cnt = ShenandoahBarrierSetC2::write_ref_field_pre_entry_Type()->domain()->cnt();
+    uint cnt = ShenandoahBarrierSetC2::write_ref_field_pre_Type()->domain()->cnt();
     if (n->req() > cnt) {
       Node* addp = n->in(cnt);
       if (has_only_shenandoah_wb_pre_uses(addp)) {
@@ -1067,7 +1064,7 @@ bool ShenandoahBarrierSetC2::final_graph_reshaping(Compile* compile, Node* n, ui
       assert (n->is_Call(), "");
       CallNode *call = n->as_Call();
       if (ShenandoahBarrierSetC2::is_shenandoah_wb_pre_call(call)) {
-        uint cnt = ShenandoahBarrierSetC2::write_ref_field_pre_entry_Type()->domain()->cnt();
+        uint cnt = ShenandoahBarrierSetC2::write_ref_field_pre_Type()->domain()->cnt();
         if (call->req() > cnt) {
           assert(call->req() == cnt + 1, "only one extra input");
           Node *addp = call->in(cnt);

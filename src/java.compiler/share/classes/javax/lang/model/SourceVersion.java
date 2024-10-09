@@ -601,7 +601,7 @@ public enum SourceVersion {
      * keywords</i>.
      *
      * @param s the string to check
-     * @return {@code true} if {@code s} is a keyword, boolean
+     * @return {@code true} if {@code s} is a keyword, a boolean
      * literal, or the null literal, {@code false} otherwise.
      * @jls 3.9 Keywords
      * @jls 3.10.3 Boolean Literals
@@ -619,7 +619,7 @@ public enum SourceVersion {
      *
      * @param s the string to check
      * @param version the version to use
-     * @return {@code true} if {@code s} is a keyword, boolean
+     * @return {@code true} if {@code s} is a keyword, a boolean
      * literal, or the null literal, {@code false} otherwise.
      * @jls 3.9 Keywords
      * @jls 3.10.3 Boolean Literals

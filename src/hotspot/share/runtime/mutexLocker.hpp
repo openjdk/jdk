@@ -40,7 +40,6 @@ extern Mutex*   SharedDictionary_lock;           // a lock on the CDS shared dic
 extern Monitor* ClassInitError_lock;             // a lock on the class initialization error table
 extern Mutex*   Module_lock;                     // a lock on module and package related data structures
 extern Mutex*   CompiledIC_lock;                 // a lock used to guard compiled IC patching and access
-extern Mutex*   InlineCacheBuffer_lock;          // a lock used to guard the InlineCacheBuffer
 extern Mutex*   VMStatistic_lock;                // a lock used to guard statistics count increment
 extern Mutex*   JmethodIdCreation_lock;          // a lock on creating JNI method identifiers
 extern Mutex*   JfieldIdCreation_lock;           // a lock on creating JNI static field identifiers
@@ -62,6 +61,8 @@ extern Monitor* CodeCache_lock;                  // a lock on the CodeCache
 extern Mutex*   TouchedMethodLog_lock;           // a lock on allocation of LogExecutedMethods info
 extern Mutex*   RetData_lock;                    // a lock on installation of RetData inside method data
 extern Monitor* VMOperation_lock;                // a lock on queue of vm_operations waiting to execute
+extern Monitor* ThreadsLockThrottle_lock;        // used by Thread start/exit to reduce competition for Threads_lock,
+                                                 // so a VM thread calling a safepoint is prioritized
 extern Monitor* Threads_lock;                    // a lock on the Threads table of active Java threads
                                                  // (also used by Safepoints too to block threads creation/destruction)
 extern Mutex*   NonJavaThreadsList_lock;         // a lock on the NonJavaThreads list
