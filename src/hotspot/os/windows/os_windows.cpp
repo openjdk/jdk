@@ -3414,7 +3414,7 @@ int os::create_file_for_heap(const char* dir) {
 }
 
 // If 'base' is not null, function will return null if it cannot get 'base'
-char* os::map_memory_to_file(char* base, size_t size, int fd) {
+char* os::map_memory_to_file(char* base, size_t size, int fd, MemTag mem_tag) {
   assert(fd != -1, "File descriptor is not valid");
 
   HANDLE fh = (HANDLE)_get_osfhandle(fd);
@@ -3440,15 +3440,16 @@ char* os::map_memory_to_file(char* base, size_t size, int fd) {
 
   CloseHandle(fileMapping);
 
+  MemTracker::record_virtual_memory_reserve_and_commit((address)addr, size, CALLER_PC, mem_tag);
   return (char*)addr;
 }
 
-char* os::replace_existing_mapping_with_file_mapping(char* base, size_t size, int fd) {
+char* os::replace_existing_mapping_with_file_mapping(char* base, size_t size, int fd, MemTag mem_tag) {
   assert(fd != -1, "File descriptor is not valid");
   assert(base != nullptr, "Base address cannot be null");
 
   release_memory(base, size);
-  return map_memory_to_file(base, size, fd);
+  return map_memory_to_file(base, size, fd, mem_tag);
 }
 
 // Multiple threads can race in this code but it's not possible to unmap small sections of
@@ -3494,9 +3495,9 @@ static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int fi
   return aligned_base;
 }
 
-char* os::reserve_memory_aligned(size_t size, size_t alignment, bool exec) {
+char* os::reserve_memory_aligned(size_t size, size_t alignment, bool exec, MemTag mem_tag) {
   // exec can be ignored
-  return map_or_reserve_memory_aligned(size, alignment, -1 /* file_desc */);
+  return map_or_reserve_memory_aligned(size, alignment, -1 /* file_desc */, mem_tag);
 }
 
 char* os::map_memory_to_file_aligned(size_t size, size_t alignment, int fd, MemTag mem_tag) {
@@ -3743,26 +3744,13 @@ bool os::pd_commit_memory(char* addr, size_t bytes, bool exec) {
   return true;
 }
 
-bool os::pd_commit_memory(char* addr, size_t size, size_t alignment_hint,
-                          bool exec) {
-  // alignment_hint is ignored on this OS
-  return pd_commit_memory(addr, size, exec);
-}
-
 void os::pd_commit_memory_or_exit(char* addr, size_t size, bool exec,
-                                  const char* mesg) {
+                                  const char* mesg, size_t alignment_hint) {
   assert(mesg != nullptr, "mesg must be specified");
-  if (!pd_commit_memory(addr, size, exec)) {
+  if (!pd_commit_memory(addr, size, exec, alignment_hint)) {
     warn_fail_commit_memory(addr, size, exec);
     vm_exit_out_of_memory(size, OOM_MMAP_ERROR, "%s", mesg);
   }
-}
-
-void os::pd_commit_memory_or_exit(char* addr, size_t size,
-                                  size_t alignment_hint, bool exec,
-                                  const char* mesg) {
-  // alignment_hint is ignored on this OS
-  pd_commit_memory_or_exit(addr, size, exec, mesg);
 }
 
 bool os::pd_uncommit_memory(char* addr, size_t bytes, bool exec) {

@@ -213,8 +213,8 @@ jint ShenandoahHeap::initialize() {
 
   ReservedSpace sh_rs = heap_rs.first_part(max_byte_size);
   if (!_heap_region_special) {
-    os::commit_memory_or_exit(sh_rs.base(), _initial_size, heap_alignment, false,
-                              "Cannot commit heap memory");
+    os::commit_memory_or_exit(sh_rs.base(), _initial_size, false,
+                              "Cannot commit heap memory", heap_alignment);
   }
 
   //
@@ -260,8 +260,8 @@ jint ShenandoahHeap::initialize() {
                               align_up(num_committed_regions, _bitmap_regions_per_slice) / _bitmap_regions_per_slice;
   bitmap_init_commit = MIN2(_bitmap_size, bitmap_init_commit);
   if (!_bitmap_region_special) {
-    os::commit_memory_or_exit((char *) _bitmap_region.start(), bitmap_init_commit, bitmap_page_size, false,
-                              "Cannot commit bitmap memory");
+    os::commit_memory_or_exit((char *) _bitmap_region.start(), bitmap_init_commit, false,
+                              "Cannot commit bitmap memory", bitmap_page_size);
   }
 
   _marking_context = new ShenandoahMarkingContext(_heap_region, _bitmap_region, _num_regions, _max_workers);
@@ -273,8 +273,8 @@ jint ShenandoahHeap::initialize() {
                                             verify_bitmap.base(),
                                             verify_bitmap.size(), verify_bitmap.page_size());
     if (!verify_bitmap.special()) {
-      os::commit_memory_or_exit(verify_bitmap.base(), verify_bitmap.size(), bitmap_page_size, false,
-                                "Cannot commit verification bitmap memory");
+      os::commit_memory_or_exit(verify_bitmap.base(), verify_bitmap.size(), false,
+                                "Cannot commit verification bitmap memory", bitmap_page_size);
     }
     MemTracker::record_virtual_memory_tag(verify_bitmap.base(), mtGC);
     MemRegion verify_bitmap_region = MemRegion((HeapWord *) verify_bitmap.base(), verify_bitmap.size() / HeapWordSize);
@@ -310,8 +310,8 @@ jint ShenandoahHeap::initialize() {
                                           region_storage.size(), region_storage.page_size());
   MemTracker::record_virtual_memory_tag(region_storage.base(), mtGC);
   if (!region_storage.special()) {
-    os::commit_memory_or_exit(region_storage.base(), region_storage_size, region_page_size, false,
-                              "Cannot commit region memory");
+    os::commit_memory_or_exit(region_storage.base(), region_storage_size, false,
+                              "Cannot commit region memory", region_page_size);
   }
 
   // Try to fit the collection set bitmap at lower addresses. This optimizes code generation for cset checks.
