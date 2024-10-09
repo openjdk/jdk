@@ -29,6 +29,7 @@
 Register::RegisterImpl             all_RegisterImpls      [Register::number_of_registers       + 1];
 FloatRegister::FloatRegisterImpl   all_FloatRegisterImpls [FloatRegister::number_of_registers  + 1];
 VectorRegister::VectorRegisterImpl all_VectorRegisterImpls[VectorRegister::number_of_registers + 1];
+VectorRegisterGroup::VectorRegisterGroupImpl all_VectorRegisterGroupImpls[VectorRegisterGroup::number_of_registers + 1];
 
 const char* Register::RegisterImpl::name() const {
   static const char *const names[number_of_registers] = {
@@ -58,4 +59,12 @@ const char* VectorRegister::VectorRegisterImpl::name() const {
     "v24", "v25", "v26", "v27", "v28", "v29", "v30", "v31"
   };
   return is_valid() ? names[encoding()] : "noreg";
+}
+
+const char* VectorRegisterGroup::VectorRegisterGroupImpl::name() const {
+  static const char *const names[number_of_registers] = {
+    "v2m2", "v4m2", "v4m4"
+  };
+
+  return is_valid() ? names[encoding()] : "vnoreg_grp";
 }

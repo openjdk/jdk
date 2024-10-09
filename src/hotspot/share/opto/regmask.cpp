@@ -323,6 +323,8 @@ bool RegMask::is_aligned_sets(const unsigned int size) const {
       uintptr_t bit = uintptr_t(1) << find_lowest_bit(bits);
       // Low bit is not odd means its mis-aligned.
       if ((bit & low_bits_mask) == 0) {
+        print();
+        assert(false, "_lwm: %d, _hwm: %d, i: %d, bits: %ld, bit: %ld", _lwm, _hwm, i, bits, bit);
         return false;
       }
       // Do extra work since (bit << size) may overflow.
@@ -330,6 +332,8 @@ bool RegMask::is_aligned_sets(const unsigned int size) const {
       uintptr_t set = hi_bit + ((hi_bit-1) & ~(bit-1));
       // Check for aligned adjacent bits in this set
       if ((bits & set) != set) {
+        print();
+        assert(false, "_RM_UP[2]: %ld, _RM_UP[3]: %ld, _lwm: %d, _hwm: %d, i: %d, bits: %ld, bit: %ld, hi_bit: %ld, set: %ld", _RM_UP[2], _RM_UP[3], _lwm, _hwm, i, bits, bit, hi_bit, set);
         return false;
       }
       bits -= set;  // Remove this set

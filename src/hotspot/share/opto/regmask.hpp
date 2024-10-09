@@ -296,7 +296,7 @@ class RegMask {
   void Insert(OptoReg::Name reg) {
     assert(reg != OptoReg::Bad, "sanity");
     assert(reg != OptoReg::Special, "sanity");
-    assert(reg < CHUNK_SIZE, "sanity");
+    assert(reg < CHUNK_SIZE, "sanity, %d, %d, %d, %d", reg, CHUNK_SIZE, _RM_SIZE, BitsPerWord);
     assert(valid_watermarks(), "pre-condition");
     unsigned r = (unsigned)reg;
     unsigned index = r >> _LogWordBits;
