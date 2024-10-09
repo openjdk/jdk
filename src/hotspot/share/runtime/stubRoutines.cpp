@@ -61,11 +61,6 @@ address StubRoutines::_call_stub_entry                          = nullptr;
 
 address StubRoutines::_catch_exception_entry                    = nullptr;
 address StubRoutines::_forward_exception_entry                  = nullptr;
-address StubRoutines::_throw_AbstractMethodError_entry          = nullptr;
-address StubRoutines::_throw_IncompatibleClassChangeError_entry = nullptr;
-address StubRoutines::_throw_NullPointerException_at_call_entry = nullptr;
-address StubRoutines::_throw_StackOverflowError_entry           = nullptr;
-address StubRoutines::_throw_delayed_StackOverflowError_entry   = nullptr;
 jint    StubRoutines::_verify_oop_count                         = 0;
 address StubRoutines::_verify_oop_subroutine_entry              = nullptr;
 address StubRoutines::_atomic_xchg_entry                        = nullptr;
@@ -176,6 +171,7 @@ address StubRoutines::_dlibm_sin_cos_huge = nullptr;
 address StubRoutines::_dlibm_reduce_pi04l = nullptr;
 address StubRoutines::_dlibm_tan_cot_huge = nullptr;
 address StubRoutines::_dtan = nullptr;
+address StubRoutines::_dtanh = nullptr;
 
 address StubRoutines::_f2hf = nullptr;
 address StubRoutines::_hf2f = nullptr;
@@ -191,12 +187,8 @@ address StubRoutines::_cont_thaw          = nullptr;
 address StubRoutines::_cont_returnBarrier = nullptr;
 address StubRoutines::_cont_returnBarrierExc = nullptr;
 
-JFR_ONLY(RuntimeStub* StubRoutines::_jfr_write_checkpoint_stub = nullptr;)
-JFR_ONLY(address StubRoutines::_jfr_write_checkpoint = nullptr;)
-JFR_ONLY(RuntimeStub* StubRoutines::_jfr_return_lease_stub = nullptr;)
-JFR_ONLY(address StubRoutines::_jfr_return_lease = nullptr;)
-
 address StubRoutines::_upcall_stub_exception_handler = nullptr;
+address StubRoutines::_upcall_stub_load_target = nullptr;
 
 address StubRoutines::_lookup_secondary_supers_table_slow_path_stub = nullptr;
 address StubRoutines::_lookup_secondary_supers_table_stubs[Klass::SECONDARY_SUPERS_TABLE_SIZE] = { nullptr };

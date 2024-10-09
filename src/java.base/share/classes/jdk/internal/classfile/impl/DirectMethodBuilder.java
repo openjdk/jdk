@@ -46,7 +46,6 @@ public final class DirectMethodBuilder
     final Utf8Entry desc;
     int flags;
     int[] parameterSlots;
-    MethodTypeDesc mDesc;
 
     public DirectMethodBuilder(SplitConstantPool constantPool,
                                ClassFileImpl context,
@@ -59,6 +58,12 @@ public final class DirectMethodBuilder
         this.name = nameInfo;
         this.desc = typeInfo;
         this.flags = flags;
+    }
+
+    @Override
+    public MethodBuilder withFlags(int flags) {
+        setFlags(flags);
+        return this;
     }
 
     void setFlags(int flags) {
@@ -81,14 +86,7 @@ public final class DirectMethodBuilder
 
     @Override
     public MethodTypeDesc methodTypeSymbol() {
-        if (mDesc == null) {
-            if (original instanceof MethodInfo mi) {
-                mDesc = mi.methodTypeSymbol();
-            } else {
-                mDesc = MethodTypeDesc.ofDescriptor(methodType().stringValue());
-            }
-        }
-        return mDesc;
+        return Util.methodTypeSymbol(methodType());
     }
 
     @Override
@@ -98,6 +96,9 @@ public final class DirectMethodBuilder
 
     @Override
     public int parameterSlot(int paramNo) {
+        if (paramNo == 0) {
+            return ((flags & ClassFile.ACC_STATIC) != 0) ? 0 : 1;
+        }
         if (parameterSlots == null)
             parameterSlots = Util.parseParameterSlots(methodFlags(), methodTypeSymbol());
         return parameterSlots[paramNo];

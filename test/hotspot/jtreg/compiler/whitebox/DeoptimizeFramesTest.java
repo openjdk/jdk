@@ -25,6 +25,7 @@
  * @test DeoptimizeFramesTest
  * @bug 8028595
  * @summary testing of WB::deoptimizeFrames()
+ * @requires vm.opt.StressUnstableIfTraps == null | !vm.opt.StressUnstableIfTraps
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management

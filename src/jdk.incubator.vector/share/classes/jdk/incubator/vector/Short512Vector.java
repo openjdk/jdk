@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -503,7 +503,7 @@ final class Short512Vector extends ShortVector {
                                    VectorMask<Short> m) {
         return (Short512Vector)
             super.selectFromTemplate((Short512Vector) v,
-                                     (Short512Mask) m);  // specialize
+                                     Short512Mask.class, (Short512Mask) m);  // specialize
     }
 
 
@@ -890,6 +890,13 @@ final class Short512Vector extends ShortVector {
                 throw new IllegalArgumentException("VectorShuffle length and species length differ");
             int[] shuffleArray = toArray();
             return s.shuffleFromArray(shuffleArray, 0).check(s);
+        }
+
+        @Override
+        @ForceInline
+        public Short512Shuffle wrapIndexes() {
+            return VectorSupport.wrapShuffleIndexes(ETYPE, Short512Shuffle.class, this, VLENGTH,
+                                                    (s) -> ((Short512Shuffle)(((AbstractShuffle<Short>)(s)).wrapIndexesTemplate())));
         }
 
         @ForceInline

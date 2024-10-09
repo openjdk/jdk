@@ -411,7 +411,7 @@ static void retire_target_page(ZGeneration* generation, ZPage* page) {
   // relocate the remaining objects, leaving the target page empty when
   // relocation completed.
   if (page->used() == 0) {
-    ZHeap::heap()->free_page(page);
+    ZHeap::heap()->free_page(page, true /* allow_defragment */);
   }
 }
 
@@ -843,7 +843,23 @@ private:
 
     // Promotions happen through a new cloned page
     ZPage* const to_page = promotion ? from_page->clone_limited() : from_page;
-    to_page->reset(to_age, ZPageResetType::InPlaceRelocation);
+
+    // Reset page for in-place relocation
+    to_page->reset(to_age);
+    to_page->reset_top_for_allocation();
+    if (promotion) {
+      to_page->remset_alloc();
+    }
+
+    // Verify that the inactive remset is clear when resetting the page for
+    // in-place relocation.
+    if (from_page->age() == ZPageAge::old) {
+      if (ZGeneration::old()->active_remset_is_current()) {
+        to_page->verify_remset_cleared_previous();
+      } else {
+        to_page->verify_remset_cleared_current();
+      }
+    }
 
     // Clear remset bits for all objects that were relocated
     // before this page became an in-place relocated page.
@@ -927,35 +943,15 @@ public:
     return ZGeneration::old()->active_remset_is_current();
   }
 
-  void clear_remset_before_reuse(ZPage* page, bool in_place) {
+  void clear_remset_before_in_place_reuse(ZPage* page) {
     if (_forwarding->from_age() != ZPageAge::old) {
       // No remset bits
       return;
     }
 
-    if (in_place) {
-      // Clear 'previous' remset bits. For in-place relocated pages, the previous
-      // remset bits are always used, even when active_remset_is_current().
-      page->clear_remset_previous();
-
-      return;
-    }
-
-    // Normal relocate
-
-    // Clear active remset bits
-    if (active_remset_is_current()) {
-      page->clear_remset_current();
-    } else {
-      page->clear_remset_previous();
-    }
-
-    // Verify that inactive remset bits are all cleared
-    if (active_remset_is_current()) {
-      page->verify_remset_cleared_previous();
-    } else {
-      page->verify_remset_cleared_current();
-    }
+    // Clear 'previous' remset bits. For in-place relocated pages, the previous
+    // remset bits are always used, even when active_remset_is_current().
+    page->clear_remset_previous();
   }
 
   void finish_in_place_relocation() {
@@ -1001,7 +997,7 @@ public:
       ZPage* const page = _forwarding->detach_page();
 
       // Ensure that previous remset bits are cleared
-      clear_remset_before_reuse(page, true /* in_place */);
+      clear_remset_before_in_place_reuse(page);
 
       page->log_msg(" (relocate page done in-place)");
 
@@ -1013,15 +1009,10 @@ public:
       // Wait for all other threads to call release_page
       ZPage* const page = _forwarding->detach_page();
 
-      // Ensure that all remset bits are cleared
-      // Note: cleared after detach_page, when we know that
-      // the young generation isn't scanning the remset.
-      clear_remset_before_reuse(page, false /* in_place */);
-
       page->log_msg(" (relocate page done normal)");
 
       // Free page
-      ZHeap::heap()->free_page(page);
+      ZHeap::heap()->free_page(page, true /* allow_defragment */);
     }
   }
 };
@@ -1270,8 +1261,14 @@ public:
       prev_page->log_msg(promotion ? " (flip promoted)" : " (flip survived)");
 
       // Setup to-space page
-      ZPage* const new_page = promotion ? prev_page->clone_limited_promote_flipped() : prev_page;
-      new_page->reset(to_age, ZPageResetType::FlipAging);
+      ZPage* const new_page = promotion ? prev_page->clone_limited() : prev_page;
+
+      // Reset page for flip aging
+      new_page->reset(to_age);
+      new_page->reset_livemap();
+      if (promotion) {
+        new_page->remset_alloc();
+      }
 
       if (promotion) {
         ZGeneration::young()->flip_promote(prev_page, new_page);

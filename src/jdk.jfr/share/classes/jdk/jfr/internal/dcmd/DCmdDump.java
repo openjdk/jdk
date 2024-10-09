@@ -55,7 +55,7 @@ final class DCmdDump extends AbstractDCmd {
     public void execute(ArgumentParser parser) throws DCmdException {
         parser.checkUnknownArguments();
         String name = parser.getOption("name");
-        String filename = expandFilename(parser.getOption("filename"));
+        String filename = parser.getOption("filename");
         Long maxAge = parser.getOption("maxage");
         Long maxSize = parser.getOption("maxsize");
         String begin = parser.getOption("begin");
@@ -230,14 +230,14 @@ final class DCmdDump extends AbstractDCmd {
                                   dumped. If no filename is given, a filename is generated from the PID
                                   and the current date. The filename may also be a directory in which
                                   case, the filename is generated from the PID and the current date in
-                                  the specified directory. (STRING, no default value)
+                                  the specified directory. (FILE, no default value)
 
                                   Note: If a filename is given, '%%p' in the filename will be
                                   replaced by the PID, and '%%t' will be replaced by the time in
                                   'yyyy_MM_dd_HH_mm_ss' format.
 
                  maxage           (Optional) Length of time for dumping the flight recording data to a
-                                  file. (INTEGER followed by 's' for seconds 'm' for minutes or 'h' for
+                                  file. (INT followed by 's' for seconds 'm' for minutes or 'h' for
                                   hours, no default value)
 
                  maxsize          (Optional) Maximum size for the amount of data to dump from a flight
@@ -284,7 +284,7 @@ final class DCmdDump extends AbstractDCmd {
                "STRING", false, true, null, false),
            new Argument("filename",
                "Copy recording data to file, e.g. \\\"" + exampleFilename() + "\\\"",
-               "STRING", false, true, null, false),
+               "FILE", false, true, null, false),
            new Argument("maxage",
                "Maximum duration to dump, in (s)econds, (m)inutes, (h)ours, or (d)ays, e.g. 60m, or 0 for no limit",
                "NANOTIME", false, true, null, false),
