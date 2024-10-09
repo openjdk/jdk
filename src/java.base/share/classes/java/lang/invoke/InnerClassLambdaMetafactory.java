@@ -68,8 +68,7 @@ import sun.invoke.util.Wrapper;
  */
 /* package */ final class InnerClassLambdaMetafactory extends AbstractValidatingLambdaMetafactory {
     private static final String LAMBDA_INSTANCE_FIELD = "LAMBDA_INSTANCE$";
-    private static final int ARG_NAME_CACHE_SIZE = 8; // Arbitrary cache size for common capture arg names
-    private static final @Stable String[] ARG_NAME_CACHE = new String[ARG_NAME_CACHE_SIZE];
+    private static final @Stable String[] ARG_NAME_CACHE = {"arg$0", "arg$1", "arg$2", "arg$3", "arg$4", "arg$5", "arg$6", "arg$7"};
     private static final ClassDesc[] EMPTY_CLASSDESC_ARRAY = ConstantUtils.EMPTY_CLASSDESC;
 
     // For dumping generated classes to disk, for debugging purposes
@@ -188,14 +187,7 @@ import sun.invoke.util.Wrapper;
     }
 
     private static String argName(int i) {
-        String argName = i < ARG_NAME_CACHE_SIZE ? ARG_NAME_CACHE[i] : null;
-        if (argName == null) {
-            argName = "arg$" + (i + 1);
-            if (i < ARG_NAME_CACHE_SIZE) {
-                ARG_NAME_CACHE[i] = argName;
-            }
-        }
-        return argName;
+        return i < ARG_NAME_CACHE.length ? ARG_NAME_CACHE[i] :  "arg$" + (i + 1);
     }
 
     private static String lambdaClassName(Class<?> targetClass) {
