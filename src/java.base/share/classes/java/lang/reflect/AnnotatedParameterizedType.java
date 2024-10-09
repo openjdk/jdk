@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,16 +48,13 @@ public interface AnnotatedParameterizedType extends AnnotatedType {
     AnnotatedType[] getAnnotatedActualTypeArguments();
 
     /**
-     * Returns the potentially annotated type that this type is a member of, if
-     * this type represents a nested type. For example, if this type is
+     * {@return the potentially annotated type that this type is a member of, if
+     * this type represents a nested type, or {@code null}} For example, if this type is
      * {@code @TA O<T>.I<S>}, return a representation of {@code @TA O<T>}.
      *
      * <p>Returns {@code null} if this {@code AnnotatedType} represents a
-     *     top-level class or interface, or a local or anonymous class, or
-     *     a primitive type, or void.
+     *     top-level or local class or interface or an anonymous class.
      *
-     * @return an {@code AnnotatedType} object representing the potentially
-     *     annotated type that this type is a member of, or {@code null}
      * @throws TypeNotPresentException if the owner type
      *     refers to a non-existent class or interface declaration
      * @throws MalformedParameterizedTypeException if the owner type

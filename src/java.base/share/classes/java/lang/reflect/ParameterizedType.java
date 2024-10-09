@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,15 +76,14 @@ public interface ParameterizedType extends Type {
     Type getRawType();
 
     /**
-     * Returns a {@code Type} object representing the type that this type
-     * is a member of.  For example, if this type is {@code O<T>.I<S>},
+     * {@return a {@code Type} object representing the type that this type
+     * is a member of, or {@code null} if this type is not a member of
+     * another type}  For example, if this type is {@code O<T>.I<S>},
      * return a representation of {@code O<T>}.
      *
-     * <p>If this type is a top-level type, {@code null} is returned.
+     * <p>If this type is a top-level or local class or interface or
+     * an anonymous class, {@code null} is returned.
      *
-     * @return a {@code Type} object representing the type that
-     *     this type is a member of. If this type is a top-level type,
-     *     {@code null} is returned
      * @throws TypeNotPresentException if the owner type
      *     refers to a non-existent class or interface declaration
      * @throws MalformedParameterizedTypeException if the owner type
