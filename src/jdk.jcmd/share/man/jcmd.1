@@ -939,7 +939,7 @@ value)
 .RE
 .TP
 \f[V]Thread.print\f[R] [\f[I]options\f[R]]
-Prints all threads with stacktraces.
+Prints all platform threads with stacktraces.
 .RS
 .PP
 Impact: Medium --- depends on the number of threads.
@@ -956,6 +956,14 @@ false)
 .IP \[bu] 2
 \f[V]-l\f[R]: (Optional) Prints \f[V]java.util.concurrent\f[R] locks
 (BOOLEAN, false)
+.RE
+.TP
+\f[V]Thread.vthread_summary\f[R]
+Print the virtual thread scheduler, timeout schedulers, I/O pollers, and
+thread groupings.
+.RS
+.PP
+Impact: Low
 .RE
 .TP
 \f[V]VM.cds\f[R] [\f[I]arguments\f[R]]
