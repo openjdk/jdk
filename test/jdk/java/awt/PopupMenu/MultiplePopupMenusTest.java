@@ -32,7 +32,7 @@ import java.awt.event.MouseEvent;
 /*
  * @test
  * @bug 4186663 4265525
- * @summary Tests that plural PopupMenus can not appear at the same time
+ * @summary Tests that multiple PopupMenus cannot appear at the same time
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual MultiplePopupMenusTest

@@ -45,9 +45,9 @@ public class PopupMenuCrash {
     public static void main(String[] args) throws Exception {
         String INSTRUCTIONS = """
                 This tests a windows specific problem.
-                When you see a frame titled "PopupMenuCrash Test", right-click on it a lot
-                for a few seconds. Then wait about 10 seconds before the PopupMenus
-                start to appear. Then dispose them one by one by clicking on them.
+                When you see a frame titled "PopupMenuCrash Test", right-click on it
+                several times for a few seconds. Then wait about 10 seconds before the
+                PopupMenus start to appear. Then dispose them one by one by clicking on them.
                 When PopupMenus do not appear anymore, press Pass.
                 In case of a failure, you'll see a crash.
                 """;
@@ -75,7 +75,7 @@ public class PopupMenuCrash {
                 if (firstPress) {
                     firstPress = false;
                     try {
-                        Thread.sleep(15000);
+                        Thread.sleep(10000);
                     } catch (InterruptedException ignored) {
                     }
                 }

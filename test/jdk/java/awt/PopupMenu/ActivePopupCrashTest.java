@@ -155,17 +155,17 @@ public class ActivePopupCrashTest {
         c.add(pm);
         c.addMouseListener(new MouseAdapter() {
             @Override
-            public void mouseClicked (MouseEvent e) {
+            public void mouseClicked(MouseEvent e) {
                 mouseAction("mouseClicked", e);
             }
 
             @Override
-            public void mousePressed (MouseEvent e) {
+            public void mousePressed(MouseEvent e) {
                 mouseAction("mousePressed", e);
             }
 
             @Override
-            public void mouseReleased (MouseEvent e) {
+            public void mouseReleased(MouseEvent e) {
                 mouseAction("mouseReleased", e);
             }
         });
