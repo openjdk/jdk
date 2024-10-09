@@ -321,8 +321,9 @@ protected:
   DCmdArgument<jlong> _gzip;
   DCmdArgument<bool> _overwrite;
   DCmdArgument<jlong> _parallel;
+  DCmdArgument<bool> _redact;
 public:
-  static int num_arguments() { return 5; }
+  static int num_arguments() { return 6; }
   HeapDumpDCmd(outputStream* output, bool heap);
   static const char* name() {
     return "GC.heap_dump";
