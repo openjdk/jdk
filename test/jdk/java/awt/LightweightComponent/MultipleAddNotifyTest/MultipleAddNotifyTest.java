@@ -81,7 +81,7 @@ public class MultipleAddNotifyTest {
             r.waitForIdle();
             r.delay(500);
             EventQueue.invokeAndWait(() -> {
-                posX = l.getWidth() + 95;
+                posX = l.getWidth() + 75;
                 posY = l.getHeight();
             });
 
