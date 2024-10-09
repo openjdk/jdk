@@ -540,19 +540,19 @@ public final class StackMapGenerator {
             case POP, MONITORENTER, MONITOREXIT ->
                 currentFrame.decStack();
             case POP2 ->
-                 currentFrame.decStack(2);
+                currentFrame.decStack(2);
             case DUP ->
-                 currentFrame.dup();
+                currentFrame.dup();
             case DUP_X1 ->
-                 currentFrame.dup_x1();
+                currentFrame.dup_x1();
             case DUP_X2 ->
-                 currentFrame.dup_x2();
+                currentFrame.dup_x2();
             case DUP2 ->
-                 currentFrame.dup2();
+                currentFrame.dup2();
             case DUP2_X1 ->
-                 currentFrame.dup2_x1();
+                currentFrame.dup2_x1();
             case DUP2_X2 ->
-                 currentFrame.dup2_x2();
+                currentFrame.dup2_x2();
             case SWAP ->
                 currentFrame.swap();
             case IADD, ISUB, IMUL, IDIV, IREM, ISHL, ISHR, IUSHR, IOR, IXOR, IAND ->
