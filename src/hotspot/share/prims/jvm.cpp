@@ -944,7 +944,7 @@ enum {
  * Define a class with the specified flags that indicates if it's a nestmate,
  * hidden, or strongly referenced from class loader.
  */
-static jclass jvm_lookup_define_class(jclass lookup, const char *name,
+static jclass jvm_lookup_define_class(jobject loader, jclass lookup, const char *name,
                                       const jbyte *buf, jsize len, jobject pd,
                                       jboolean init, int flags, jobject classData, TRAPS) {
   ResourceMark rm(THREAD);
@@ -956,7 +956,7 @@ static jclass jvm_lookup_define_class(jclass lookup, const char *name,
   }
   assert(lookup_k->is_instance_klass(), "Lookup class must be an instance klass");
 
-  Handle class_loader (THREAD, lookup_k->class_loader());
+  Handle class_loader (THREAD, JNIHandles::resolve(loader));
 
   bool is_nestmate = (flags & NESTMATE) == NESTMATE;
   bool is_hidden = (flags & HIDDEN_CLASS) == HIDDEN_CLASS;
@@ -1074,7 +1074,7 @@ JVM_END
  *  flags:   properties of the class
  *  classData: private static pre-initialized field
  */
-JVM_ENTRY(jclass, JVM_LookupDefineClass(JNIEnv *env, jclass lookup, const char *name, const jbyte *buf,
+JVM_ENTRY(jclass, JVM_LookupDefineClass(JNIEnv *env, jobject loader, jclass lookup, const char *name, const jbyte *buf,
           jsize len, jobject pd, jboolean initialize, int flags, jobject classData))
 
   if (lookup == nullptr) {
@@ -1083,7 +1083,7 @@ JVM_ENTRY(jclass, JVM_LookupDefineClass(JNIEnv *env, jclass lookup, const char *
 
   assert(buf != nullptr, "buf must not be null");
 
-  return jvm_lookup_define_class(lookup, name, buf, len, pd, initialize, flags, classData, THREAD);
+  return jvm_lookup_define_class(loader, lookup, name, buf, len, pd, initialize, flags, classData, THREAD);
 JVM_END
 
 JVM_ENTRY(jclass, JVM_DefineClassWithSource(JNIEnv *env, const char *name, jobject loader, const jbyte *buf, jsize len, jobject pd, const char *source))
