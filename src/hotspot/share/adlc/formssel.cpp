@@ -838,6 +838,10 @@ uint InstructForm::num_opnds() {
   return num_opnds;
 }
 
+uint InstructForm::num_opnds_grouped() {
+  return _components_grouped.num_operands();
+}
+
 const char* InstructForm::opnd_ident(int idx) {
   return _components.at(idx)->_name;
 }
@@ -938,13 +942,29 @@ uint InstructForm::oper_input_base(FormDict &globals) {
 // Implementation does not modify state of internal structures
 void InstructForm::build_components() {
   // Add top-level operands to the components
+  // Match rule does not support grouping operands
   if (_matrule)  _matrule->append_components(_localNames, _components);
+  bool has_temp = build_components(_parameters, _components);
+  if (_parameters_grouped.count() > 0) {
+    bool has_temp_grouped = build_components(_parameters_grouped, _components_grouped);
+    // only support `group` for TEMP operand.
+    // if one operand is ungrouped, has_temp must be true also.
+    assert(has_temp_grouped && has_temp, "sanity");
+  }
 
+  // Resolving the interactions between expand rules and TEMPs would
+  // be complex so simply disallow it.
+  if (_matrule == nullptr && has_temp) {
+    globalAD->syntax_err(_linenum, "%s: TEMPs without match rule isn't supported\n", _ident);
+  }
+}
+
+bool InstructForm::build_components(NameList& parameters, ComponentList& components) {
   // Add parameters that "do not appear in match rule".
   bool has_temp = false;
   const char *name;
   const char *kill_name = nullptr;
-  for (_parameters.reset(); (name = _parameters.iter()) != nullptr;) {
+  for (parameters.reset(); (name = parameters.iter()) != nullptr;) {
     OpClassForm *opForm = _localNames[name]->is_opclass();
     assert(opForm != nullptr, "sanity");
 
@@ -972,11 +992,11 @@ void InstructForm::build_components() {
       }
     }
 
-    const Component *component  = _components.search(name);
+    const Component *component  = components.search(name);
     if ( component  == nullptr ) {
       if (e) {
-        _components.insert(name, opForm->_ident, e->_use_def, false);
-        component = _components.search(name);
+        components.insert(name, opForm->_ident, e->_use_def, false);
+        component = components.search(name);
         if (component->isa(Component::USE) && !component->isa(Component::TEMP) && _matrule) {
           const Form *form = globalAD->globalNames()[component->_type];
           assert( form, "component type must be a defined form");
@@ -992,7 +1012,7 @@ void InstructForm::build_components() {
         //   globalAD->syntax_err(_linenum, "%s: %s %s not mentioned in effect or match rule\n",
         //                        _ident, opForm->_ident, name);
         // }
-        _components.insert(name, opForm->_ident, Component::INVALID, false);
+        components.insert(name, opForm->_ident, Component::INVALID, false);
       }
     }
     else if (e) {
@@ -1009,25 +1029,19 @@ void InstructForm::build_components() {
                                  _ident, opForm->_ident, name);
           }
         }
-        _components.insert(name, opForm->_ident, e->_use_def, false);
+        components.insert(name, opForm->_ident, e->_use_def, false);
       } else {
         Component  *comp = (Component*)component;
         comp->promote_use_def_info(e->_use_def);
       }
       // Component positions are zero based.
-      int  pos  = _components.operand_position(name);
+      int  pos  = components.operand_position(name);
       assert( ! (component->isa(Component::DEF) && (pos >= 1)),
               "Component::DEF can only occur in the first position");
     }
   }
 
-  // Resolving the interactions between expand rules and TEMPs would
-  // be complex so simply disallow it.
-  if (_matrule == nullptr && has_temp) {
-    globalAD->syntax_err(_linenum, "%s: TEMPs without match rule isn't supported\n", _ident);
-  }
-
-  return;
+  return has_temp;
 }
 
 // Return zero-based position in component list;  -1 if not in list.
@@ -1037,6 +1051,11 @@ int   InstructForm::operand_position(const char *name, int usedef) {
 
 int   InstructForm::operand_position_format(const char *name) {
   return unique_opnds_idx(_components.operand_position_format(name, this));
+}
+
+int   InstructForm::operand_position_format_grouped(const char *name) {
+  // Every grouping operand should be unique in an intruct level.
+  return _components_grouped.operand_position_format(name, this);
 }
 
 // Return zero-based position in component list; -1 if not in list.
@@ -1463,6 +1482,19 @@ void InstructForm::index_temps(FILE *fp, FormDict &globals, const char *prefix, 
       }
       fprintf(fp," \t// %s\n", unique_opnd_ident(idx));
     }
+
+    _parameters_grouped.reset();
+    const char  * tmp = nullptr;
+    if (_parameters_grouped.count() > 0) {
+      fprintf(fp,"  // Below are grouping operands\n");
+    }
+    while ((tmp = _parameters_grouped.iter()) != nullptr) {
+      assert( *receiver == 0, "sanity");
+      fprintf(fp,"  unsigned %sidx%d = %sidx%d + opnd_array(%d)->num_edges();",
+                prefix, idx, prefix, idx-1, idx-1 );
+      fprintf(fp," \t// %s\n", tmp);
+      idx++;
+    }
   }
   if( *receiver != 0 ) {
     // This value is used by generate_peepreplace when copying a node.
@@ -1658,6 +1690,11 @@ void EncClass::add_parameter(const char *parameter_type, const char *parameter_n
   _parameter_name.addName( parameter_name );
 }
 
+void EncClass::add_parameter_grouped(const char *parameter_type, const char *parameter_name) {
+  _parameter_type_grouped.addName( parameter_type );
+  _parameter_name_grouped.addName( parameter_name );
+}
+
 // Verify operand types in parameter list
 bool EncClass::check_parameter_types(FormDict &globals) {
   // !!!!!
@@ -1677,11 +1714,19 @@ void EncClass::add_rep_var(char *replacement_var) {
 
 // Lookup the function body for an encoding class
 int EncClass::rep_var_index(const char *rep_var) {
+  return rep_var_index(rep_var, _parameter_name);
+}
+
+int EncClass::rep_var_index_grouped(const char *rep_var) {
+  return rep_var_index(rep_var, _parameter_name_grouped);
+}
+
+int EncClass::rep_var_index(const char *rep_var, NameList& parameter) {
   uint        position = 0;
   const char *name     = nullptr;
 
-  _parameter_name.reset();
-  while ( (name = _parameter_name.iter()) != nullptr ) {
+  parameter.reset();
+  while ( (name = parameter.iter()) != nullptr ) {
     if ( strcmp(rep_var,name) == 0 ) return position;
     ++position;
   }
@@ -1823,9 +1868,20 @@ NameAndList *InsEncode::add_encode(char *encoding) {
   return encode;
 }
 
+NameAndList *InsEncode::add_encode_grouped(char *encoding) {
+  assert( encoding != nullptr, "Must provide name for encoding");
+
+  // add_parameter(NameList::_signal);
+  NameAndList *encode = new NameAndList(encoding);
+  _encoding_grouped.addName((char*)encode);
+
+  return encode;
+}
+
 // Access the list of encodings
 void InsEncode::reset() {
   _encoding.reset();
+  _encoding_grouped.reset();
   // _parameter.reset();
 }
 const char* InsEncode::encode_class_iter() {
@@ -1834,7 +1890,13 @@ const char* InsEncode::encode_class_iter() {
 }
 // Obtain parameter name from zero based index
 const char *InsEncode::rep_var_name(InstructForm &inst, uint param_no) {
-  NameAndList *params = (NameAndList*)_encoding.current();
+  return rep_var_name(inst, param_no, _encoding);
+}
+const char *InsEncode::rep_var_name_grouped(InstructForm &inst, uint param_no) {
+  return rep_var_name(inst, param_no, _encoding_grouped);
+}
+const char *InsEncode::rep_var_name(InstructForm &inst, uint param_no, NameList& encoding) {
+  NameAndList *params = (NameAndList*)encoding.current();
   assert( params != nullptr, "Internal Error");
   const char *param = (*params)[param_no];
 
@@ -2144,7 +2206,7 @@ void OpClassForm::forms_do(FormClosure* f) {
 //==============================Operands=======================================
 //------------------------------OperandForm------------------------------------
 OperandForm::OperandForm(const char* id)
-  : OpClassForm(id), _ideal_only(false),
+  : OpClassForm(id), _ideal_only(false), _ungrouped_operands_num(0),
     _localNames(cmpstr, hashstr, Form::arena) {
       _ftype = Form::OPER;
 
@@ -2157,7 +2219,7 @@ OperandForm::OperandForm(const char* id)
       _format    = nullptr;
 }
 OperandForm::OperandForm(const char* id, bool ideal_only)
-  : OpClassForm(id), _ideal_only(ideal_only),
+  : OpClassForm(id), _ideal_only(ideal_only), _ungrouped_operands_num(0),
     _localNames(cmpstr, hashstr, Form::arena) {
       _ftype = Form::OPER;
 
@@ -2564,6 +2626,31 @@ const char *OperandForm::reduce_left(FormDict &globals)   const {
   return  ( _matrule ? _matrule->reduce_left(globals) : nullptr );
 }
 
+void OperandForm::append_ungrouped_operand(OperandForm *oper) {
+  assert(oper != nullptr, "sanity");
+  assert(_ungrouped_operands_num < UNGROUPED_OPER_LIMIT, "sanity");
+  _ungrouped_operands[(int)_ungrouped_operands_num++] = oper;
+}
+
+OperandForm* OperandForm::get_ungrouped_operand(int idx) {
+  assert(idx >= 0 && idx < (int)_ungrouped_operands_num, "sanity");
+  return _ungrouped_operands[idx];
+}
+
+uint OperandForm::get_ungrouped_operands_num() {
+  assert(_ungrouped_operands_num <= UNGROUPED_OPER_LIMIT, "sanity");
+  return _ungrouped_operands_num;
+}
+
+const char *OperandForm::get_ungrouped_oper_name(const char *name, int idx) {
+  assert(idx >= 0 && idx < UNGROUPED_OPER_LIMIT, "sanity");
+
+  const char *suffix = "_ungrouped_";
+  const size_t len = strlen(name) + strlen(suffix) + 2;
+  char *buf = (char *)AdlAllocateHeap(len);
+  snprintf_checked(buf, len, "%s%s%d", name, suffix, idx);
+  return buf;
+}
 
 // --------------------------- FILE *output_routines
 //
