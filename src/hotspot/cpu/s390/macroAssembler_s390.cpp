@@ -2127,8 +2127,9 @@ unsigned int MacroAssembler::push_frame_abi160(unsigned int bytes) {
 
 // Pop current C frame.
 void MacroAssembler::pop_frame() {
-  BLOCK_COMMENT("pop_frame:");
+  BLOCK_COMMENT("pop_frame {");
   Assembler::z_lg(Z_SP, _z_abi(callers_sp), Z_SP);
+  BLOCK_COMMENT("} pop_frame");
 }
 
 // Pop current C frame and restore return PC register (Z_R14).
@@ -3458,7 +3459,8 @@ void MacroAssembler::clinit_barrier(Register klass, Register thread, Label* L_fa
     L_slow_path = &L_fallthrough;
   }
 
-  // Fast path check: class is fully initialized
+  // Fast path check: class is fully initialized.
+  // init_state needs acquire, but S390 is TSO, and so we are already good.
   z_cli(Address(klass, InstanceKlass::init_state_offset()), InstanceKlass::fully_initialized);
   z_bre(*L_fast_path);
 

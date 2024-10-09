@@ -3053,6 +3053,29 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  // load Method* target of MethodHandle
+  // Z_ARG1 = jobject receiver
+  // Z_method = Method* result
+  address generate_upcall_stub_load_target() {
+    StubCodeMark mark(this, "StubRoutines", "upcall_stub_load_target");
+    address start = __ pc();
+
+    __ resolve_global_jobject(Z_ARG1, Z_tmp_1, Z_tmp_2);
+      // Load target method from receiver
+    __ load_heap_oop(Z_method, Address(Z_ARG1, java_lang_invoke_MethodHandle::form_offset()),
+                    noreg, noreg, IS_NOT_NULL);
+    __ load_heap_oop(Z_method, Address(Z_method, java_lang_invoke_LambdaForm::vmentry_offset()),
+                    noreg, noreg, IS_NOT_NULL);
+    __ load_heap_oop(Z_method, Address(Z_method, java_lang_invoke_MemberName::method_offset()),
+                    noreg, noreg, IS_NOT_NULL);
+    __ z_lg(Z_method, Address(Z_method, java_lang_invoke_ResolvedMethodName::vmtarget_offset()));
+    __ z_stg(Z_method, Address(Z_thread, JavaThread::callee_target_offset())); // just in case callee is deoptimized
+
+    __ z_br(Z_R14);
+
+    return start;
+  }
+
   void generate_initial_stubs() {
     // Generates all stubs and initializes the entry points.
 
@@ -3110,6 +3133,7 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     StubRoutines::_upcall_stub_exception_handler = generate_upcall_stub_exception_handler();
+    StubRoutines::_upcall_stub_load_target = generate_upcall_stub_load_target();
   }
 
   void generate_compiler_stubs() {

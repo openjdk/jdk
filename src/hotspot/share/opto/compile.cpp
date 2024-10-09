@@ -720,7 +720,7 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
   }
 
   if (StressLCM || StressGCM || StressIGVN || StressCCP ||
-      StressIncrementalInlining || StressMacroExpansion || StressUnstableIfTraps) {
+      StressIncrementalInlining || StressMacroExpansion || StressUnstableIfTraps || StressBailout) {
     initialize_stress_seed(directive);
   }
 
@@ -798,7 +798,7 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
       assert(failure_reason() != nullptr, "expect reason for parse failure");
       stringStream ss;
       ss.print("method parse failed: %s", failure_reason());
-      record_method_not_compilable(ss.as_string());
+      record_method_not_compilable(ss.as_string() DEBUG_ONLY(COMMA true));
       return;
     }
     GraphKit kit(jvms);
@@ -973,7 +973,7 @@ Compile::Compile( ciEnv* ci_env,
   _types = new (comp_arena()) Type_Array(comp_arena());
   _node_hash = new (comp_arena()) NodeHash(comp_arena(), 255);
 
-  if (StressLCM || StressGCM) {
+  if (StressLCM || StressGCM || StressBailout) {
     initialize_stress_seed(directive);
   }
 
@@ -1018,6 +1018,7 @@ void Compile::Init(bool aliasing) {
 
 #ifdef ASSERT
   _phase_optimize_finished = false;
+  _phase_verify_ideal_loop = false;
   _exception_backedge = false;
   _type_verify = nullptr;
 #endif
@@ -1108,7 +1109,7 @@ void Compile::Init(bool aliasing) {
 #ifdef ASSERT
 // Verify that the current StartNode is valid.
 void Compile::verify_start(StartNode* s) const {
-  assert(failing() || s == start(), "should be StartNode");
+  assert(failing_internal() || s == start(), "should be StartNode");
 }
 #endif
 
@@ -1118,7 +1119,7 @@ void Compile::verify_start(StartNode* s) const {
  * the ideal graph.
  */
 StartNode* Compile::start() const {
-  assert (!failing(), "Must not have pending failure. Reason is: %s", failure_reason());
+  assert (!failing_internal() || C->failure_is_artificial(), "Must not have pending failure. Reason is: %s", failure_reason());
   for (DUIterator_Fast imax, i = root()->fast_outs(imax); i < imax; i++) {
     Node* start = root()->fast_out(i);
     if (start->is_Start()) {
@@ -2114,7 +2115,7 @@ void Compile::inline_incrementally(PhaseIterGVN& igvn) {
     igvn_worklist()->ensure_empty(); // should be done with igvn
 
     while (inline_incrementally_one()) {
-      assert(!failing(), "inconsistent");
+      assert(!failing_internal() || failure_is_artificial(), "inconsistent");
     }
     if (failing())  return;
 
@@ -2157,7 +2158,7 @@ void Compile::process_late_inline_calls_no_inline(PhaseIterGVN& igvn) {
     igvn_worklist()->ensure_empty(); // should be done with igvn
 
     while (inline_incrementally_one()) {
-      assert(!failing(), "inconsistent");
+      assert(!failing_internal() || failure_is_artificial(), "inconsistent");
     }
     if (failing())  return;
 
@@ -2944,6 +2945,9 @@ void Compile::Code_Gen() {
 
   // Build a proper-looking CFG
   PhaseCFG cfg(node_arena(), root(), matcher);
+  if (failing()) {
+    return;
+  }
   _cfg = &cfg;
   {
     TracePhase tp("scheduler", &timers[_t_scheduler]);
@@ -4329,7 +4333,7 @@ void Compile::verify_graph_edges(bool no_dead_code) {
 // to backtrack and retry without subsuming loads.  Other than this backtracking
 // behavior, the Compile's failure reason is quietly copied up to the ciEnv
 // by the logic in C2Compiler.
-void Compile::record_failure(const char* reason) {
+void Compile::record_failure(const char* reason DEBUG_ONLY(COMMA bool allow_multiple_failures)) {
   if (log() != nullptr) {
     log()->elem("failure reason='%s' phase='compile'", reason);
   }
@@ -4339,6 +4343,8 @@ void Compile::record_failure(const char* reason) {
     if (CaptureBailoutInformation) {
       _first_failure_details = new CompilationFailureInfo(reason);
     }
+  } else {
+    assert(!StressBailout || allow_multiple_failures, "should have handled previous failure.");
   }
 
   if (!C->failure_reason_is(C2Compiler::retry_no_subsuming_loads())) {
@@ -4366,7 +4372,9 @@ Compile::TracePhase::TracePhase(const char* name, elapsedTimer* accumulator)
 }
 
 Compile::TracePhase::~TracePhase() {
-  if (_compile->failing()) return;
+  if (_compile->failing_internal()) {
+    return; // timing code, not stressing bailouts.
+  }
 #ifdef ASSERT
   if (PrintIdealNodeCount) {
     tty->print_cr("phase name='%s' nodes='%d' live='%d' live_graph_walk='%d'",
@@ -5057,6 +5065,22 @@ bool Compile::randomized_select(int count) {
   return (random() & RANDOMIZED_DOMAIN_MASK) < (RANDOMIZED_DOMAIN / count);
 }
 
+#ifdef ASSERT
+// Failures are geometrically distributed with probability 1/StressBailoutMean.
+bool Compile::fail_randomly() {
+  if ((random() % StressBailoutMean) != 0) {
+    return false;
+  }
+  record_failure("StressBailout");
+  return true;
+}
+
+bool Compile::failure_is_artificial() {
+  assert(failing_internal(), "should be failing");
+  return C->failure_reason_is("StressBailout");
+}
+#endif
+
 CloneMap&     Compile::clone_map()                 { return _clone_map; }
 void          Compile::set_clone_map(Dict* d)      { _clone_map._dict = d; }
 
@@ -5144,7 +5168,7 @@ void Compile::sort_macro_nodes() {
 }
 
 void Compile::print_method(CompilerPhaseType cpt, int level, Node* n) {
-  if (failing()) { return; }
+  if (failing_internal()) { return; } // failing_internal to not stress bailouts from printing code.
   EventCompilerPhase event(UNTIMED);
   if (event.should_commit()) {
     CompilerEvent::PhaseEvent::post(event, C->_latest_stage_start_counter, cpt, C->_compile_id, level);
