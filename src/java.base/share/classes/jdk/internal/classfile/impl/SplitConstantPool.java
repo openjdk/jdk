@@ -34,7 +34,6 @@ import java.lang.classfile.ClassReader;
 import java.lang.classfile.BootstrapMethodEntry;
 import java.lang.classfile.attribute.BootstrapMethodsAttribute;
 import java.lang.classfile.constantpool.*;
-import java.util.Objects;
 
 import jdk.internal.constant.ConstantUtils;
 
@@ -108,7 +107,6 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
 
     @Override
     public <T extends PoolEntry> T entryByIndex(int index, Class<T> cls) {
-        Objects.requireNonNull(cls);
         return ClassReaderImpl.checkType(entryByIndex(index), index, cls);
     }
 
@@ -173,8 +171,10 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
     }
 
     private EntryMap map() {
+        int parentSize = this.parentSize;
+        var map = this.map;
         if (map == null) {
-            map = new EntryMap(Math.max(size, 1024), .75f);
+            this.map = map = new EntryMap(Math.max(size, 1024), .75f);
 
             // Doing a full scan here yields fall-off-the-cliff performance results,
             // especially if we only need a few entries that are already
@@ -211,8 +211,10 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
     }
 
     private EntryMap bsmMap() {
+        int bsmSize = this.bsmSize;
+        var bsmMap = this.bsmMap;
         if (bsmMap == null) {
-            bsmMap = new EntryMap(Math.max(bsmSize, 16), .75f);
+            this.bsmMap = bsmMap = new EntryMap(Math.max(bsmSize, 16), .75f);
             for (int i=0; i<parentBsmSize; i++) {
                 BootstrapMethodEntryImpl bsm = parent.bootstrapMethodEntry(i);
                 bsmMap.put(bsm.hash, bsm.index);

@@ -201,7 +201,8 @@ void StatSampler::assert_system_property(const char* name, const char* value, TR
   // convert Java String to utf8 string
   char* system_value = java_lang_String::as_utf8_string(value_oop);
 
-  assert(strcmp(value, system_value) == 0, "property value mustn't differ from System.getProperty");
+  assert(strcmp(value, system_value) == 0, "property value mustn't differ from System.getProperty. Our value is: %s, System.getProperty is: %s",
+         value, system_value);
 #endif // ASSERT
 }
 

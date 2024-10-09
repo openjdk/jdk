@@ -287,15 +287,31 @@ public final class MethodTypeDescImpl implements MethodTypeDesc {
         if (desc != null)
             return desc;
 
-        int len = 2 + returnType.descriptorString().length();
-        for (ClassDesc argType : argTypes) {
-            len += argType.descriptorString().length();
+        return buildDescriptorString();
+    }
+
+    private String buildDescriptorString() {
+        var returnType = this.returnType;
+        var returnTypeDesc = returnType.descriptorString();
+        var argTypes = this.argTypes;
+        String desc;
+        if (argTypes.length == 0) {
+            // getter
+            desc = "()".concat(returnTypeDesc);
+        } else if (argTypes.length == 1 && returnType == ConstantDescs.CD_void) {
+            // setter
+            desc = ConstantUtils.concat("(", argTypes[0].descriptorString(), ")V");
+        } else {
+            int len = 2 + returnTypeDesc.length();
+            for (ClassDesc argType : argTypes) {
+                len += argType.descriptorString().length();
+            }
+            StringBuilder sb = new StringBuilder(len).append('(');
+            for (ClassDesc argType : argTypes) {
+                sb.append(argType.descriptorString());
+            }
+            desc = sb.append(')').append(returnTypeDesc).toString();
         }
-        StringBuilder sb = new StringBuilder(len).append('(');
-        for (ClassDesc argType : argTypes) {
-            sb.append(argType.descriptorString());
-        }
-        desc = sb.append(')').append(returnType.descriptorString()).toString();
         cachedDescriptorString = desc;
         return desc;
     }
