@@ -62,3 +62,10 @@ Java_jdk_internal_platform_CgroupMetrics_getTotalSwapSize0
     }
     return (jlong)(si.totalswap * si.mem_unit);
 }
+
+JNIEXPORT jint JNICALL
+Java_jdk_internal_platform_CgroupMetrics_getTotalCpuCount0
+  (JNIEnv *env, jclass ignored)
+{
+    return JVM_HostActiveProcessorCount();
+}
