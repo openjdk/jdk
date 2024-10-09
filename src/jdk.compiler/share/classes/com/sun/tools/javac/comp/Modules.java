@@ -1516,7 +1516,7 @@ public class Modules extends JCTree.Visitor {
         initAddReads();
 
         msym.requires = msym.requires.appendList(List.from(addReads.getOrDefault(msym, Collections.emptySet())));
-        
+
         List<RequiresDirective> requires = msym.requires;
 
         while (requires.nonEmpty()) {
