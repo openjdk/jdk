@@ -205,6 +205,7 @@ TEST(Align, alignments) {
   test_alignments<int8_t, int8_t>();
 }
 
+#ifdef ASSERT
 TEST_VM_ASSERT(Align, fail_alignments_same_size) {
   test_fail_alignment<uint64_t, uint64_t>();
 }
@@ -224,3 +225,4 @@ TEST_VM_ASSERT(Align, fail_alignments_small_large) {
 TEST_VM_ASSERT(Align, fail_alignments_large_small) {
   test_fail_alignment<uint64_t, uint8_t>();
 }
+#endif // ASSERT
