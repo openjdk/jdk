@@ -81,17 +81,17 @@ import static javax.tools.JavaFileObject.Kind.SOURCE;
 
 public class TestGetScopeResult {
     public static void main(String... args) throws IOException {
-//        new TestGetScopeResult().run();
-//        new TestGetScopeResult().testAnalyzerDisabled();
-//        new TestGetScopeResult().testVariablesInSwitch();
-//        new TestGetScopeResult().testMemberRefs();
-//        new TestGetScopeResult().testAnnotations();
-//        new TestGetScopeResult().testAnnotationsLazy();
-//        new TestGetScopeResult().testCircular();
-//        new TestGetScopeResult().testRecord();
-//        new TestGetScopeResult().testLocalRecordAnnotation();
-//        new TestGetScopeResult().testRuleCases();
-//        new TestGetScopeResult().testNestedSwitchExpression();
+        new TestGetScopeResult().run();
+        new TestGetScopeResult().testAnalyzerDisabled();
+        new TestGetScopeResult().testVariablesInSwitch();
+        new TestGetScopeResult().testMemberRefs();
+        new TestGetScopeResult().testAnnotations();
+        new TestGetScopeResult().testAnnotationsLazy();
+        new TestGetScopeResult().testCircular();
+        new TestGetScopeResult().testRecord();
+        new TestGetScopeResult().testLocalRecordAnnotation();
+        new TestGetScopeResult().testRuleCases();
+        new TestGetScopeResult().testNestedSwitchExpression();
         new TestGetScopeResult().testModuleImportScope();
     }
 
