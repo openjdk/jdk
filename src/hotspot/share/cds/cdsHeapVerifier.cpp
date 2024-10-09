@@ -46,7 +46,7 @@
 // correctly returns true when CDS disabled, but incorrectly returns false when CDS is enabled.
 //
 // class Foo {
-//     final Foo archivedFoo; // this field is archived by CDS
+//     static final Foo archivedFoo; // this field is archived by CDS
 //     Bar bar;
 //     static {
 //         CDS.initializeFromArchive(Foo.class);
@@ -271,10 +271,6 @@ inline bool CDSHeapVerifier::do_entry(oop& orig_obj, HeapShared::CachedOopInfo& 
     ResourceMark rm;
     char* class_name = info->_holder->name()->as_C_string();
     char* field_name = info->_name->as_C_string();
-    if (strstr(class_name, "java/lang/invoke/BoundMethodHandle$Species_") == class_name &&
-        strcmp(field_name, "BMH_SPECIES") == 0) {
-      return true;
-    }
     LogStream ls(Log(cds, heap)::warning());
     ls.print_cr("Archive heap points to a static field that may be reinitialized at runtime:");
     ls.print_cr("Field: %s::%s", class_name, field_name);

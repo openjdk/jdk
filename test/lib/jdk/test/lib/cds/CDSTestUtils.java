@@ -878,7 +878,7 @@ public class CDSTestUtils {
                 lastMatch = s;
             }
         }
-        if (lastMatch != null && lastMatch.equals("-XX:+" +  optionName)) {
+        if (lastMatch != null && lastMatch.equals("-XX:+" + optionName)) {
             return true;
         }
         return false;

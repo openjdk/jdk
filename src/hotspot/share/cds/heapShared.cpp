@@ -889,28 +889,35 @@ void KlassSubGraphInfo::add_subgraph_object_klass(Klass* orig_k) {
 }
 
 void KlassSubGraphInfo::check_allowed_klass(InstanceKlass* ik) {
-  if (CDSConfig::is_dumping_invokedynamic()) {
-    // We allow LambdaProxy classes in platform and app loaders as well.
-    return;
-  }
   if (ik->module()->name() == vmSymbols::java_base()) {
     assert(ik->package() != nullptr, "classes in java.base cannot be in unnamed package");
     return;
   }
 
+  const char* lambda_msg = "";
+  if (CDSConfig::is_dumping_invokedynamic()) {
+    lambda_msg = ", or a lambda proxy class";
+    if (HeapShared::is_lambda_proxy_klass(ik) &&
+        (ik->class_loader() == nullptr ||
+         ik->class_loader() == SystemDictionary::java_platform_loader() ||
+         ik->class_loader() == SystemDictionary::java_system_loader())) {
+      return;
+    }
+  }
+
 #ifndef PRODUCT
-  if (!ik->module()->is_named() && ik->package() == nullptr) {
+  if (!ik->module()->is_named() && ik->package() == nullptr && ArchiveHeapTestClass != nullptr) {
     // This class is loaded by ArchiveHeapTestClass
     return;
   }
-  const char* extra_msg = ", or in an unnamed package of an unnamed module";
+  const char* testcls_msg = ", or a test class in an unnamed package of an unnamed module";
 #else
-  const char* extra_msg = "";
+  const char* testcls_msg = "";
 #endif
 
   ResourceMark rm;
-  log_error(cds, heap)("Class %s not allowed in archive heap. Must be in java.base%s",
-                       ik->external_name(), extra_msg);
+  log_error(cds, heap)("Class %s not allowed in archive heap. Must be in java.base%s%s",
+                       ik->external_name(), lambda_msg, testcls_msg);
   MetaspaceShared::unrecoverable_writing_error();
 }
 
@@ -1972,8 +1979,8 @@ bool HeapShared::is_a_test_class_in_unnamed_module(Klass* ik) {
           return false;
         }
 
-        // See KlassSubGraphInfo::check_allowed_klass() - only two types of
-        // classes are allowed:
+        // See KlassSubGraphInfo::check_allowed_klass() - we only allow test classes
+        // to be:
         //   (A) java.base classes (which must not be in the unnamed module)
         //   (B) test classes which must be in the unnamed package of the unnamed module.
         // So if we see a '/' character in the class name, it must be in (A);

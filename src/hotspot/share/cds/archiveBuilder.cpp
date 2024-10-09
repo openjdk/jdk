@@ -230,8 +230,9 @@ bool ArchiveBuilder::gather_klass_and_symbol(MetaspaceClosure::Ref* ref, bool re
     assert(klass->is_klass(), "must be");
     if (!is_excluded(klass)) {
       _klasses->append(klass);
-      if (klass->is_hidden() && klass->is_instance_klass()) {
-        update_hidden_class_loader_type(InstanceKlass::cast(klass));
+      if (klass->is_hidden()) {
+        assert(klass->is_instance_klass(), "must be");
+        assert(SystemDictionaryShared::should_hidden_class_be_archived(InstanceKlass::cast(klass)), "must be");
       }
     }
     // See RunTimeClassInfo::get_for()
@@ -292,47 +293,6 @@ void ArchiveBuilder::gather_klasses_and_symbols() {
 
   AOTClassLinker::add_candidates();
 }
-
-#if INCLUDE_CDS_JAVA_HEAP
-
-void ArchiveBuilder::update_hidden_class_loader_type(InstanceKlass* ik) {
-  assert(ik->is_hidden(), "must be");
-
-  s2 classloader_type;
-  if (HeapShared::is_lambda_form_klass(ik)) {
-    assert(CDSConfig::is_dumping_invokedynamic(), "lambda form classes are archived only if CDSConfig::is_dumping_invokedynamic() is true");
-    classloader_type = ClassLoader::BOOT_LOADER;
-  } else {
-    assert(SystemDictionaryShared::should_hidden_class_be_archived(ik), "must be");
-    oop loader = ik->class_loader();
-
-    if (loader == nullptr) {
-      classloader_type = ClassLoader::BOOT_LOADER;
-    } else if (SystemDictionary::is_platform_class_loader(loader)) {
-      classloader_type = ClassLoader::PLATFORM_LOADER;
-    } else {
-      assert(SystemDictionary::is_system_class_loader(loader), "must be");
-      classloader_type = ClassLoader::APP_LOADER;
-    }
-  }
-  ik->set_shared_class_loader_type(classloader_type);
-
-  if (HeapShared::is_lambda_proxy_klass(ik)) {
-    InstanceKlass* nest_host = ik->nest_host_not_null();
-    ik->set_shared_classpath_index(nest_host->shared_classpath_index());
-  } else if (HeapShared::is_lambda_form_klass(ik)) {
-    ik->set_shared_classpath_index(0);
-  } else {
-    // Generated invoker classes.
-    if (classloader_type == ClassLoader::APP_LOADER) {
-      ik->set_shared_classpath_index(ClassLoaderExt::app_class_paths_start_index());
-    } else {
-      ik->set_shared_classpath_index(0);
-    }
-  }
-}
-
-#endif //INCLUDE_CDS_JAVA_HEAP
 
 int ArchiveBuilder::compare_symbols_by_address(Symbol** a, Symbol** b) {
   if (a[0] < b[0]) {

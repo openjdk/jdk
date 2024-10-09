@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
+#include "cds/heapShared.hpp"
 #include "cds/filemap.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.inline.hpp"
@@ -1236,7 +1237,7 @@ void ClassLoader::record_result(JavaThread* current, InstanceKlass* ik,
   assert(stream != nullptr, "sanity");
 
   if (ik->is_hidden()) {
-    // We do not archive hidden classes.
+    record_hidden_class(ik);
     return;
   }
 
@@ -1337,6 +1338,44 @@ void ClassLoader::record_result(JavaThread* current, InstanceKlass* ik,
                                                          ik->name()->utf8_length());
   assert(file_name != nullptr, "invariant");
   ClassLoaderExt::record_result(checked_cast<s2>(classpath_index), ik, redefined);
+}
+
+void ClassLoader::record_hidden_class(InstanceKlass* ik) {
+  assert(ik->is_hidden(), "must be");
+
+  s2 classloader_type;
+  if (HeapShared::is_lambda_form_klass(ik)) {
+    classloader_type = ClassLoader::BOOT_LOADER;
+  } else {
+    oop loader = ik->class_loader();
+
+    if (loader == nullptr) {
+      classloader_type = ClassLoader::BOOT_LOADER;
+    } else if (SystemDictionary::is_platform_class_loader(loader)) {
+      classloader_type = ClassLoader::PLATFORM_LOADER;
+    } else if (SystemDictionary::is_system_class_loader(loader)) {
+      classloader_type = ClassLoader::APP_LOADER;
+    } else {
+      // This class won't be archived, so no need to update its
+      // classloader_type/classpath_index.
+      return;
+    }
+  }
+  ik->set_shared_class_loader_type(classloader_type);
+
+  if (HeapShared::is_lambda_proxy_klass(ik)) {
+    InstanceKlass* nest_host = ik->nest_host_not_null();
+    ik->set_shared_classpath_index(nest_host->shared_classpath_index());
+  } else if (HeapShared::is_lambda_form_klass(ik)) {
+    ik->set_shared_classpath_index(0);
+  } else {
+    // Generated invoker classes.
+    if (classloader_type == ClassLoader::APP_LOADER) {
+      ik->set_shared_classpath_index(ClassLoaderExt::app_class_paths_start_index());
+    } else {
+      ik->set_shared_classpath_index(0);
+    }
+  }
 }
 #endif // INCLUDE_CDS
 
