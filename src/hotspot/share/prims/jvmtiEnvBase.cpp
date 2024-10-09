@@ -655,30 +655,30 @@ JavaThread* JvmtiEnvBase::get_JavaThread_or_null(oop vthread) {
 }
 
 javaVFrame*
+JvmtiEnvBase::skip_top_jvmti_annotated_frames(javaVFrame* jvf) {
+  // The yield and yield0 may appear in an unmounted continuation.
+  for ( ; jvf != nullptr && jvf->method()->jvmti_mount_transition(); jvf = jvf->java_sender()) {
+    // skip frame with jvmti_mount_transition() annotated method
+  }
+  return jvf;
+}
+
+javaVFrame*
 JvmtiEnvBase::check_and_skip_hidden_frames(bool is_in_VTMS_transition, javaVFrame* jvf) {
   // The second condition is needed to hide notification methods.
   if (!is_in_VTMS_transition && (jvf == nullptr || !jvf->method()->jvmti_mount_transition())) {
     return jvf;  // No frames to skip.
   }
   // Find jvf with a method annotated with @JvmtiMountTransition.
-  // Two cases with the annotated methods to skip on the top:
-  //  - is_in_VTMS_transition == false and two top annotated methods are yield and yield0
-  //  - is_in_VTMS_transition = true and some methods followed by a motifyJvmti* method
   for ( ; jvf != nullptr; jvf = jvf->java_sender()) {
     if (jvf->method()->jvmti_mount_transition()) {
-      // The yield and yield0 may appear in an unmounted continuation.
       jvf = jvf->java_sender();  // Skip annotated method.
-      continue;
+      break;
     }
     if (jvf->method()->changes_current_thread()) {
       break;
     }
-    if (is_in_VTMS_transition) {
-      // Skip frames above annotated method.
-    } else {
-      // Stop at first frame with non-annotated method.
-      break;
-    }
+    // Skip frame above annotated method.
   }
   return jvf;
 }
@@ -687,16 +687,23 @@ javaVFrame*
 JvmtiEnvBase::check_and_skip_hidden_frames(JavaThread* jt, javaVFrame* jvf) {
   bool is_virtual = java_lang_VirtualThread::is_instance(jt->jvmti_vthread());
 
-  if (is_virtual || jt->is_in_VTMS_transition()) { // filter out pure continuations
+  if (jt->is_in_VTMS_transition()) {
     jvf = check_and_skip_hidden_frames(jt->is_in_VTMS_transition(), jvf);
+  } else if (is_virtual) { // filter out pure continuations
+    jvf = skip_top_jvmti_annotated_frames(jvf);
   }
   return jvf;
 }
 
 javaVFrame*
 JvmtiEnvBase::check_and_skip_hidden_frames(oop vthread, javaVFrame* jvf) {
+  assert(java_lang_VirtualThread::is_instance(vthread), "sanity check");
   if (java_lang_VirtualThread::is_instance(vthread)) { // paranoid check for safety
-    jvf = check_and_skip_hidden_frames(java_lang_Thread::is_in_VTMS_transition(vthread), jvf);
+    if (java_lang_Thread::is_in_VTMS_transition(vthread)) {
+      jvf = check_and_skip_hidden_frames(java_lang_Thread::is_in_VTMS_transition(vthread), jvf);
+    } else {
+      jvf = skip_top_jvmti_annotated_frames(jvf);
+    }
   }
   return jvf;
 }
@@ -719,12 +726,13 @@ JvmtiEnvBase::get_vthread_jvf(oop vthread) {
       return nullptr;
     }
     vframeStream vfs(java_thread);
+    assert(!java_thread->is_in_VTMS_transition(), "invariant");
     jvf = vfs.at_end() ? nullptr : vfs.asJavaVFrame();
     jvf = check_and_skip_hidden_frames(java_thread, jvf);
   } else {
     vframeStream vfs(cont);
     jvf = vfs.at_end() ? nullptr : vfs.asJavaVFrame();
-    jvf = check_and_skip_hidden_frames(vthread, jvf);
+    jvf = skip_top_jvmti_annotated_frames(jvf);
   }
   return jvf;
 }
@@ -2009,7 +2017,11 @@ JvmtiHandshake::execute(JvmtiUnitedHandshakeClosure* hs_cl, jthread target) {
   // Target can be virtual or platform thread.
   // Disable VTMS transition for one thread if it is virtual.
   // Otherwise, disable VTMS transitions for all threads.
-  JvmtiVTMSTransitionDisabler disabler(is_virtual ? target : nullptr);
+  // For the latter, VTMS transitions are disabled for all threads by several reasons:
+  // - carrier threads can mount virtual threads which may cause incorrect behavior
+  // - it is a good invariant when a thread's handshake can't be impacted by a VTMS transition
+  // - there is no mechanism to disable transitions of a specific carrier thread yet
+  JvmtiVTMSTransitionDisabler disabler(is_virtual ? target : nullptr); // nullptr is to disable all
   ThreadsListHandle tlh(current);
   JavaThread* java_thread = nullptr;
   oop thread_obj = nullptr;

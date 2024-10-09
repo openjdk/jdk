@@ -22,14 +22,13 @@
  */
 
 /*
- * @test id=virtual
+ * @test
  * @bug 8341273
  * @summary Verifies JVMTI properly hides frames which are in VTMS transition
  * @run main/othervm/native -agentlib:CheckHiddenFrames CheckHiddenFrames
  */
 
 public class CheckHiddenFrames {
-    private static final String AGENT_LIB = "CheckHiddenFrames";
     static native boolean checkHidden(Thread t);
 
     static void sleep(long millis) {
@@ -40,8 +39,7 @@ public class CheckHiddenFrames {
     }
 
     public static void main(String[] args) throws Exception {
-        Thread thread = Thread.ofVirtual().unstarted(CheckHiddenFrames::test);
-        thread.start();
+        Thread thread = Thread.startVirtualThread(CheckHiddenFrames::test);
         System.out.println("Started virtual thread: " + thread);
 
         if (!checkHidden(thread)) {

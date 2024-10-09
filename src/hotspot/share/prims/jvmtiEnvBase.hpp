@@ -366,6 +366,7 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
   static bool get_field_descriptor(Klass* k, jfieldID field, fieldDescriptor* fd);
 
   // check and skip frames hidden in mount/unmount transitions
+  static javaVFrame* skip_top_jvmti_annotated_frames(javaVFrame* jvf);
   static javaVFrame* check_and_skip_hidden_frames(bool is_in_VTMS_transition, javaVFrame* jvf);
   static javaVFrame* check_and_skip_hidden_frames(JavaThread* jt, javaVFrame* jvf);
   static javaVFrame* check_and_skip_hidden_frames(oop vthread, javaVFrame* jvf);
