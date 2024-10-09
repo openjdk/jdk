@@ -765,15 +765,6 @@ void MetaspaceShared::make_dummy_calls(TRAPS) {
   const char* dummy = "Manifest-Version: 1.0\n";
   CDSProtectionDomain::create_jar_manifest(dummy, strlen(dummy), CHECK);
 
-  // Exercise JarVerifier
-  Handle manifest_name = java_lang_String::create_from_str("dummy.jar", CHECK);
-  typeArrayOop bytes = oopFactory::new_byteArray(0, CHECK);
-  Handle dummy_bytes(THREAD, bytes);
-  JavaCalls::construct_new_instance(vmClasses::Jar_Verifier_klass(),
-                                    vmSymbols::JarVerifier_constructor_signature(),
-                                    manifest_name, dummy_bytes,
-                                    CHECK);
-
   // Exercise FileSystem and URL code
   JavaValue result(T_OBJECT);
   Handle path_string = java_lang_String::create_from_str("dummy.jar", CHECK);
