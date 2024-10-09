@@ -2739,14 +2739,14 @@ void MacroAssembler::compiler_fast_unlock_object(ConditionRegister flag, Registe
   // Check if there is a successor.
   ld(temp, in_bytes(ObjectMonitor::succ_offset()), current_header);
   cmpdi(flag, temp, 0);
-  bne(flag, success);  // If so we are done.
+  // Invert equal bit
+  crnand(flag, Assembler::equal, flag, Assembler::equal);
+  beq(flag, success);  // There is a successor so we are done.
 
   // Save the monitor pointer in the current thread, so we can try
   // to reacquire the lock in SharedRuntime::monitor_exit_helper().
   std(current_header, in_bytes(JavaThread::unlocked_inflated_monitor_offset()), R16_thread);
-
-  crxor(flag, Assembler::equal, flag, Assembler::equal); // Set flag = NE => slow path
-  b(failure);
+  b(failure); // flag == NE
 
   // flag == EQ indicates success, decrement held monitor count
   // flag == NE indicates failure
