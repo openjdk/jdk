@@ -461,14 +461,13 @@ public abstract sealed class AbstractPoolEntry {
 
         @Override
         void writeTo(BufWriterImpl pool) {
-            pool.writeU1(TAG_UTF8);
             if (rawBytes != null) {
-                pool.writeU2(rawLen);
+                pool.writeU1U2(TAG_UTF8, rawLen);
                 pool.writeBytes(rawBytes, offset, rawLen);
             }
             else {
                 // state == STRING and no raw bytes
-                pool.writeUTF(stringValue);
+                pool.writeUtfEntry(stringValue);
             }
         }
 
@@ -502,8 +501,7 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         void writeTo(BufWriterImpl pool) {
-            pool.writeU1(tag());
-            pool.writeU2(ref1.index());
+            pool.writeU1U2(tag(), ref1.index());
         }
 
         @Override
@@ -532,9 +530,7 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         void writeTo(BufWriterImpl pool) {
-            pool.writeU1(tag());
-            pool.writeU2(ref1.index());
-            pool.writeU2(ref2.index());
+            pool.writeU1U2U2(tag(), ref1.index(), ref2.index());
         }
 
         @Override
@@ -864,9 +860,7 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         void writeTo(BufWriterImpl pool) {
-            pool.writeU1(tag());
-            pool.writeU2(bsmIndex);
-            pool.writeU2(nameAndType.index());
+            pool.writeU1U2U2(tag(), bsmIndex, nameAndType.index());
         }
 
         @Override
@@ -984,9 +978,7 @@ public abstract sealed class AbstractPoolEntry {
 
         @Override
         void writeTo(BufWriterImpl pool) {
-            pool.writeU1(TAG_METHOD_HANDLE);
-            pool.writeU1(refKind);
-            pool.writeU2(reference.index());
+            pool.writeU1U1U2(TAG_METHOD_HANDLE, refKind, reference.index());
         }
 
         @Override

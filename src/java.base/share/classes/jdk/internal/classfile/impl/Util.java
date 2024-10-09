@@ -232,7 +232,7 @@ public class Util {
     }
 
     @SuppressWarnings("unchecked")
-    private static <T extends Attribute<T>> void writeAttribute(BufWriterImpl writer, Attribute<?> attr) {
+    public static <T extends Attribute<T>> void writeAttribute(BufWriterImpl writer, Attribute<?> attr) {
         if (attr instanceof CustomAttribute<?> ca) {
             var mapper = (AttributeMapper<T>) ca.attributeMapper();
             mapper.writeAttribute(writer, (T) ca);
@@ -252,11 +252,10 @@ public class Util {
     }
 
     @ForceInline
-    static void writeList(BufWriterImpl buf, List<Writable> list) {
-        int size = list.size();
+    static void writeList(BufWriterImpl buf, Writable[] array, int size) {
         buf.writeU2(size);
         for (int i = 0; i < size; i++) {
-            list.get(i).writeTo(buf);
+            array[i].writeTo(buf);
         }
     }
 
@@ -401,6 +400,7 @@ public class Util {
             0x54fbc001, 0xb9f78001, 0x2ef34001, 0xb3ef0001, 0x48eac001, 0xede68001, 0xa2e24001,
             0x67de0001, 0xcfbc0001, 0x379a0001, 0x9f780001, 0x07560001, 0x6f340001, 0xd7120001,
             0x3ef00001, 0x7de00001, 0xbcd00001, 0xfbc00001, 0x3ab00001, 0x79a00001, 0xb8900001,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
     };
 
     static int powersIndex(int digit, int index) {
@@ -411,6 +411,6 @@ public class Util {
     // digit: 0 - 7
     // index: 0 - SIGNIFICANT_OCTAL_DIGITS - 1
     private static int powerOctal(int digit, int index) {
-        return digit == 0 ? 1 : powers[powersIndex(digit, index)];
+        return digit == 0 ? 1 : powers[powersIndex(digit, index) & 0x3F]; // & 0x3F eliminates bound check
     }
 }
