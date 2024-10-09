@@ -68,7 +68,7 @@ import sun.invoke.util.Wrapper;
  */
 /* package */ final class InnerClassLambdaMetafactory extends AbstractValidatingLambdaMetafactory {
     private static final String LAMBDA_INSTANCE_FIELD = "LAMBDA_INSTANCE$";
-    private static final @Stable String[] ARG_NAME_CACHE = {"arg$0", "arg$1", "arg$2", "arg$3", "arg$4", "arg$5", "arg$6", "arg$7"};
+    private static final @Stable String[] ARG_NAME_CACHE = {"arg$1", "arg$2", "arg$3", "arg$4", "arg$5", "arg$6", "arg$7", "arg$8"};
     private static final ClassDesc[] EMPTY_CLASSDESC_ARRAY = ConstantUtils.EMPTY_CLASSDESC;
 
     // For dumping generated classes to disk, for debugging purposes
