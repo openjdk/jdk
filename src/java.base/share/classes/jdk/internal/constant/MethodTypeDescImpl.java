@@ -39,13 +39,13 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
+import static java.lang.constant.ConstantDescs.CD_void;
 import static java.util.Objects.requireNonNull;
 
 import static jdk.internal.constant.ConstantUtils.badMethodDescriptor;
 import static jdk.internal.constant.ConstantUtils.resolveClassDesc;
 import static jdk.internal.constant.ConstantUtils.skipOverFieldSignature;
 import static jdk.internal.constant.ConstantUtils.EMPTY_CLASSDESC;
-import static jdk.internal.constant.PrimitiveClassDescImpl.CD_void;
 
 /**
  * A <a href="package-summary.html#nominal">nominal descriptor</a> for a
@@ -86,7 +86,7 @@ public final class MethodTypeDescImpl implements MethodTypeDesc {
     }
 
     private static ClassDesc validateArgument(ClassDesc arg) {
-        if (arg.descriptorString().charAt(0) == 'V') // implicit null check
+        if (requireNonNull(arg) == CD_void)
             throw new IllegalArgumentException("Void parameters not permitted");
         return arg;
     }
