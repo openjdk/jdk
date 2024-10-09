@@ -33,7 +33,7 @@
  */
 
 /*
- * @test id=ZG
+ * @test id=Z
  * @bug 8240654
  * @summary Test painting a large window works
  * @key headful
