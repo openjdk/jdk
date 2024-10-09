@@ -37,7 +37,6 @@ import jdk.javadoc.internal.doclets.toolkit.DocFileElement;
 import jdk.javadoc.internal.doclets.toolkit.util.ClassTree;
 import jdk.javadoc.internal.doclets.toolkit.util.ClassUseMapper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
-import jdk.javadoc.internal.doclets.toolkit.util.IndexBuilder;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
 
 /**
@@ -185,6 +184,13 @@ public class WriterFactory {
     }
 
     /**
+     * {@return a new writer for the page listing search tags defined in the API}
+     */
+    public HtmlDocletWriter newSearchTagsWriter() {
+        return IndexItemListWriter.createSearchTagsWriter(configuration);
+    }
+
+    /**
      * {@return a new writer for the page giving the serialized forms of classes and other type elements}
      */
     public HtmlDocletWriter newSerializedFormWriter() {
@@ -195,7 +201,7 @@ public class WriterFactory {
      * {@return a new writer for the page listing system properties referenced in the API}
      */
     public HtmlDocletWriter newSystemPropertiesWriter() {
-        return new SystemPropertiesWriter(configuration);
+        return IndexItemListWriter.createSystemPropertiesWriter(configuration);
     }
 
     /**

@@ -858,6 +858,11 @@ public enum HtmlStyles implements HtmlStyle {
     searchPage,
 
     /**
+     * The class of the {@code body} element for the search tags page.
+     */
+    searchTagsPage,
+
+    /**
      * The class of the {@code body} element for the serialized-forms page.
      */
     serializedFormPage,
