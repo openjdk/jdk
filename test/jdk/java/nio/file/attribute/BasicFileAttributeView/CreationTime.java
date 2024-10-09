@@ -77,7 +77,7 @@ public class CreationTime {
         FileTime creationTime = creationTime(file);
         Instant now = Instant.now();
         if (Math.abs(creationTime.toMillis()-now.toEpochMilli()) > 10000L) {
-            System.out.println("creationTime.toMillis() == " + creationTime.toMillis());
+            System.err.println("creationTime.toMillis() == " + creationTime.toMillis());
             System.err.println("File creation time reported as: " + creationTime);
             throw new RuntimeException("Expected to be close to: " + now);
         }
