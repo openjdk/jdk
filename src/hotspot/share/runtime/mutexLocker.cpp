@@ -66,6 +66,7 @@ Monitor* CodeCache_lock               = nullptr;
 Mutex*   TouchedMethodLog_lock        = nullptr;
 Mutex*   RetData_lock                 = nullptr;
 Monitor* VMOperation_lock             = nullptr;
+Monitor* ThreadsLockThrottle_lock     = nullptr;
 Monitor* Threads_lock                 = nullptr;
 Mutex*   NonJavaThreadsList_lock      = nullptr;
 Mutex*   NonJavaThreadsListSync_lock  = nullptr;
@@ -316,6 +317,8 @@ void mutex_init() {
   // JVMCIRuntime::_lock must be acquired before JVMCI_lock to avoid deadlock
   MUTEX_DEFN(JVMCIRuntime_lock               , PaddedMonitor, safepoint, true);
 #endif
+
+  MUTEX_DEFN(ThreadsLockThrottle_lock        , PaddedMonitor, safepoint);
 
   // These locks have relative rankings, and inherit safepoint checking attributes from that rank.
   MUTEX_DEFL(VtableStubs_lock               , PaddedMutex  , CompiledIC_lock);  // Also holds DumpTimeTable_lock
