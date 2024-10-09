@@ -302,13 +302,12 @@ final class DigitList implements Cloneable {
     final void set(boolean isNegative, double source, int maximumDigits, boolean fixedPoint) {
 
         FloatingDecimal.BinaryToASCIIConverter fdConverter  = FloatingDecimal.getBinaryToASCIIConverter(source);
-        boolean hasBeenRoundedUp = fdConverter.digitsRoundedUp();
         boolean valueExactAsDecimal = fdConverter.decimalDigitsExact();
         assert !fdConverter.isExceptional();
         String digitsString = fdConverter.toJavaFormatString();
 
         set(isNegative, digitsString,
-            hasBeenRoundedUp, valueExactAsDecimal,
+            false, valueExactAsDecimal,
             maximumDigits, fixedPoint);
     }
 
