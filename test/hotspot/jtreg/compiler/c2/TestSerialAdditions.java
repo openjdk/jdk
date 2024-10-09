@@ -44,25 +44,25 @@ public class TestSerialAdditions {
         TestFramework.run();
     }
 
-    @Run(test = { //
-            "addTo2", //
-            "addTo3", //
-            "addTo4", //
-            "shiftAndAddTo4", //
-            "mulAndAddTo4", //
-            "addTo5", //
-            "addTo6", //
-            "addTo7", //
-            "addTo8", //
-            "addTo16", //
-            "addAndShiftTo16", //
-            "addTo42", //
-            "mulAndAddTo42", //
-            "mulAndAddToMax", //
-            "mulAndAddToOverflow", //
-            "mulAndAddToZero", //
-            "mulAndAddToMinus1", //
-            "mulAndAddToMinus42" //
+    @Run(test = {
+            "addTo2",
+            "addTo3",
+            "addTo4",
+            "shiftAndAddTo4",
+            "mulAndAddTo4",
+            "addTo5",
+            "addTo6",
+            "addTo7",
+            "addTo8",
+            "addTo16",
+            "addAndShiftTo16",
+            "addTo42",
+            "mulAndAddTo42",
+            "mulAndAddToMax",
+            "mulAndAddToOverflow",
+            "mulAndAddToZero",
+            "mulAndAddToMinus1",
+            "mulAndAddToMinus42"
     })
     private void runIntTests() {
         for (int a : new int[] { 0, 1, Integer.MIN_VALUE, Integer.MAX_VALUE, RNG.nextInt() }) {
@@ -87,10 +87,10 @@ public class TestSerialAdditions {
         }
     }
 
-    @Run(test = { //
-            "mulAndAddToIntOverflowL", //
-            "mulAndAddToMaxL", //
-            "mulAndAddToOverflowL" //
+    @Run(test = {
+            "mulAndAddToIntOverflowL",
+            "mulAndAddToMaxL",
+            "mulAndAddToOverflowL"
     })
     private void runLongTests() {
         for (long a : new long[] { 0, 1, Long.MIN_VALUE, Long.MAX_VALUE, RNG.nextLong() }) {
@@ -165,7 +165,7 @@ public class TestSerialAdditions {
     @IR(failOn = IRNode.ADD_I)
     @IR(counts = { IRNode.LSHIFT_I, "1" })
     private static int addTo16(int a) {
-        return a + a + a + a + a + a + a + a + a + a //
+        return a + a + a + a + a + a + a + a + a + a
                 + a + a + a + a + a + a; // a*16 => a<<4
     }
 
@@ -180,10 +180,10 @@ public class TestSerialAdditions {
     @IR(failOn = IRNode.ADD_I)
     @IR(counts = { IRNode.MUL_I, "1" })
     private static int addTo42(int a) {
-        return a + a + a + a + a + a + a + a + a + a //
-                + a + a + a + a + a + a + a + a + a + a //
-                + a + a + a + a + a + a + a + a + a + a //
-                + a + a + a + a + a + a + a + a + a + a //
+        return a + a + a + a + a + a + a + a + a + a
+                + a + a + a + a + a + a + a + a + a + a
+                + a + a + a + a + a + a + a + a + a + a
+                + a + a + a + a + a + a + a + a + a + a
                 + a + a; // a*42
     }
 
