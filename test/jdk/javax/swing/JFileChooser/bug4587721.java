@@ -49,9 +49,10 @@ public class bug4587721 {
         }
 
         String instructions = """
-                                Press the Details button.
-                                If the file name's text is chopped off by height,
-                                test failed, otherwise it succedeed.""";
+                                Click on the Details button in JFileChooser Window.
+                                If the filename text is chopped off by height,
+                                then Press FAIL else Press PASS.
+                                """;
 
         PassFailJFrame.builder()
                 .title("bug4587721")
