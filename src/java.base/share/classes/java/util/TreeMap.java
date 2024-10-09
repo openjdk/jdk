@@ -120,7 +120,7 @@ import java.util.function.Function;
  * @since 1.2
  */
 
-public class TreeMap<K extends Comparable<? extends K>,V>
+public class TreeMap<K extends Comparable<? super K>,V>
     extends AbstractMap<K,V>
     implements NavigableMap<K,V>, Cloneable, java.io.Serializable
 {
