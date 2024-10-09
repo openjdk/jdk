@@ -24,5 +24,3 @@ java/rmi/server/RMIClassLoader/spi/DefaultProperty.java 0000000 generic-all
 java/rmi/server/RMIClassLoader/useCodebaseOnly/UseCodebaseOnly.java 0000000 generic-all
 sun/rmi/transport/tcp/disableMultiplexing/DisableMultiplexing.java 0000000 generic-all
 
-# java/lang/invoke
-java/lang/invoke/7196190/GetUnsafeTest.java 0000000 generic-all
