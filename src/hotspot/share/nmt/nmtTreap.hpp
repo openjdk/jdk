@@ -304,6 +304,36 @@ public:
     return candidate;
   }
 
+  TreapNode* closest_gt(const K& key) {
+    TreapNode* candidate = nullptr;
+    TreapNode* pos = _root;
+    while (pos != nullptr) {
+      int cmp_r = COMPARATOR::cmp(pos->key(), key);
+      if (cmp_r > 0) {
+        // Found a match, try to find a better one.
+        candidate = pos;
+        pos = pos->_left;
+      } else if (cmp_r <= 0) {
+        pos = pos->_right;
+      }
+    }
+    return candidate;
+  }
+
+  struct Range {
+    TreapNode* start;
+    TreapNode* end;
+  };
+
+  // Return the range [start, end)
+  // where start->key() <= addr < end->key().
+  // Failure to find the range leads to start and/or end being null.
+  Range find_enclosing_range(K addr) {
+    TreapNode* start = closest_leq(addr);
+    TreapNode* end = closest_gt(addr);
+    return Range{start, end};
+  }
+
   // Visit all TreapNodes in ascending key order.
   template<typename F>
   void visit_in_order(F f) const {
