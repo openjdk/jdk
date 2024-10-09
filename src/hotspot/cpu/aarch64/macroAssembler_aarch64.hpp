@@ -237,6 +237,54 @@ class MacroAssembler: public Assembler {
   inline void tstw(Register Rd, uint64_t imm) { andsw(zr, Rd, imm); }
   inline void tst(Register Rd, uint64_t imm) { ands(zr, Rd, imm); }
 
+  inline void ubfm(Register Rd, Register Rn, unsigned immr, unsigned imms) {
+    if (immr == 0 && imms == 63) {
+      mov(Rd, Rn);
+    } else {
+      Assembler::ubfm(Rd, Rn, immr, imms);
+    }
+  }
+
+  inline void ubfmw(Register Rd, Register Rn, unsigned immr, unsigned imms) {
+    if (immr == 0 && imms == 31) {
+      movw(Rd, Rn);
+    } else {
+      Assembler::ubfmw(Rd, Rn, immr, imms);
+    }
+  }
+
+  inline void bfm(Register Rd, Register Rn, unsigned immr, unsigned imms) {
+    if (immr == 0 && imms == 63) {
+      mov(Rd, Rn);
+    } else {
+      Assembler::bfm(Rd, Rn, immr, imms);
+    }
+  }
+
+  inline void bfmw(Register Rd, Register Rn, unsigned immr, unsigned imms) {
+    if (immr == 0 && imms == 31) {
+      movw(Rd, Rn);
+    } else {
+      Assembler::bfmw(Rd, Rn, immr, imms);
+    }
+  }
+
+  inline void sbfm(Register Rd, Register Rn, unsigned immr, unsigned imms) {
+    if (immr == 0 && imms == 63) {
+      mov(Rd, Rn);
+    } else {
+      Assembler::sbfm(Rd, Rn, immr, imms);
+    }
+  }
+
+  inline void sbfmw(Register Rd, Register Rn, unsigned immr, unsigned imms) {
+    if (immr == 0 && imms == 31) {
+      movw(Rd, Rn);
+    } else {
+      Assembler::sbfmw(Rd, Rn, immr, imms);
+    }
+  }
+
   inline void bfiw(Register Rd, Register Rn, unsigned lsb, unsigned width) {
     bfmw(Rd, Rn, ((32 - lsb) & 31), (width - 1));
   }
