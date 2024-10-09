@@ -1977,8 +1977,8 @@ public class ForkJoinPool extends AbstractExecutorService {
     final void runWorker(WorkQueue w) {
         if (w != null) {
             int phase = w.phase, r = w.stackPred;     // seed from registerWorker
-            int cfg = w.config, nsteals = 0, src = -1;
-            for (;;) {
+            int cfg = w.config, nsteals = 0;
+            for (boolean taken = false;;) {
                 WorkQueue[] qs;
                 r ^= r << 13; r ^= r >>> 17; r ^= r << 5; // xorshift
                 if ((runState & STOP) != 0L || (qs = queues) == null)
@@ -2007,14 +2007,13 @@ public class ForkJoinPool extends AbstractExecutorService {
                             }
                             else if (U.compareAndSetReference(a, k, t, null)) {
                                 q.base = nb;
-                                rescan = true;
                                 w.nsteals = ++nsteals;
-                                w.source = j;             // volatile write
-                                if ((src != (src = j) || t instanceof
-                                     ForkJoinTask.InterruptibleTask) &&
-                                    U.getReference(a, nk) != null)
+                                w.source = j;             // volatile
+                                if (!taken &&
+                                    U.getReferenceVolatile(a, nk) != null)
                                     signalWork();         // propagate
                                 w.topLevelExec(t, cfg);
+                                rescan = taken = true;
                             }
                         }
                     }
@@ -2022,7 +2021,7 @@ public class ForkJoinPool extends AbstractExecutorService {
                 if (!rescan) {
                     if (((phase = deactivate(w, phase)) & IDLE) != 0)
                         break;
-                    src = -1;
+                    taken = false;
                 }
             }
         }
@@ -2048,19 +2047,16 @@ public class ForkJoinPool extends AbstractExecutorService {
         if (((runState & SHUTDOWN) != 0L && quiescent() > 0) ||
             (qs = queues) == null || (n = qs.length) <= 0)
             return IDLE;                      // terminating
-        boolean signalled = false;
-        for (int steps = Math.max(n << 2, SPIN_WAITS), i = 0; ; ++i) {
+        for (int found = 0, steps = Math.max(n << 2, SPIN_WAITS), i = 0; ; ++i) {
             WorkQueue q;                      // interleave spins and rechecks
             if (w.phase == activePhase)
                 return activePhase;
             else if (i >= steps)
                 return awaitWork(w, p);       // block, drop, or exit
-            else if ((i & 1) != 0 || signalled || (q = qs[i & (n - 1)]) == null)
+            else if (found > 1 || (i & 1) != 0 || (q = qs[i & (n - 1)]) == null)
                 Thread.onSpinWait();
-            else if ((q.phase & IDLE) == 0 || q.top - q.base > 0) {
-                signalled = true;
+            else if (q.top - q.base > 0 && ++found > 1)
                 reactivate(false);            // help signal
-            }
         }
     }
 
