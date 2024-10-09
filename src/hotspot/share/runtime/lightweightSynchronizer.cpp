@@ -637,6 +637,11 @@ void LightweightSynchronizer::enter_for(Handle obj, BasicLock* lock, JavaThread*
   } else {
     // It is assumed that enter_for must enter on an object without contention.
     monitor = inflate_and_enter(obj(), ObjectSynchronizer::inflate_cause_monitor_enter, locking_thread, current);
+    if (monitor == nullptr) {
+      // But there may still be a race with deflation.
+      // But with no contention there is no safepoint poll. So deflation only happens once.
+      monitor = inflate_and_enter(obj(), ObjectSynchronizer::inflate_cause_monitor_enter, locking_thread, current);
+    }
   }
 
   assert(monitor != nullptr, "LightweightSynchronizer::enter_for must succeed");
