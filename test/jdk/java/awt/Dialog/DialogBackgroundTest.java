@@ -58,7 +58,7 @@ public class DialogBackgroundTest {
                    If label text "This is a label:" in the appeared
                    "Configuration Dialog" dialog has a grey background
                    test PASSES, otherwise it FAILS
-                               """;
+                   """;
         TreeCopy treeCopy = new TreeCopy(++TreeCopy.windowCount, null);
         PassFailJFrame.builder()
                 .title("Test Instructions")
@@ -82,7 +82,7 @@ class TreeCopy extends Frame implements ActionListener {
 
     public TreeCopy(int windowNum, Window myParent) {
         super();
-        setTitle("TreeCopy Frame #" + Integer.toString(windowNum));
+        setTitle("TreeCopy Frame #" + windowNum);
         MenuBar mb = new MenuBar();
         Menu m = new Menu("File");
         configDlg = new ConfigDialog(this);

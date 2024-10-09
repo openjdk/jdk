@@ -44,7 +44,7 @@ public class FileDialogGetFileTest {
                 2. Click cancel button without selecting any file/folder.
                 3. If FileDialog.getFile return null then test PASSES,
                    else test FAILS automatically.
-                               """;
+                   """;
 
         PassFailJFrame.builder()
                 .title("Test Instructions")
@@ -58,7 +58,7 @@ public class FileDialogGetFileTest {
     }
 
     public static Frame initialize() {
-        frame = new Frame();
+        frame = new Frame("FileDialog GetFile test");
         fd = new FileDialog(frame);
         fd.setFile("FileDialogGetFileTest.html");
         fd.setBounds(100, 100, 400, 400);
@@ -70,7 +70,7 @@ public class FileDialogGetFileTest {
             if (fd.getFile() != null) {
                 PassFailJFrame.forceFail("Test failed: FileDialog returned non-null value");
             } else {
-                PassFailJFrame.forcePass();
+                PassFailJFrame.log("Test Passed!");
             }
         });
         return frame;

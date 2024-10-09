@@ -102,7 +102,6 @@ public class ChoiceModalDialogTest {
             r.delay(500);
             r.waitForIdle();
             EventQueue.invokeAndWait(() -> {
-
                 r.mouseMove(c.getLocationOnScreen().x + c.getSize().width - 4,
                         c.getLocationOnScreen().y + c.getSize().height / 2);
                 r.mousePress(InputEvent.BUTTON1_DOWN_MASK);

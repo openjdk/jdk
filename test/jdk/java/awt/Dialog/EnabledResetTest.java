@@ -53,7 +53,7 @@ public class EnabledResetTest {
                    Verify that the first window is still disabled
                    If all the verifications are done, then test is
                    PASSED, else test fails.
-                                              """;
+                   """;
         PassFailJFrame.builder()
                 .title("Test Instructions")
                 .instructions(INSTRUCTIONS)
