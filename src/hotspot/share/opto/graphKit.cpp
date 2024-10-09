@@ -340,7 +340,9 @@ static inline void add_one_req(Node* dstphi, Node* src) {
 // having a control input of its exception map, rather than null.  Such
 // regions do not appear except in this function, and in use_exception_state.
 void GraphKit::combine_exception_states(SafePointNode* ex_map, SafePointNode* phi_map) {
-  if (failing())  return;  // dying anyway...
+  if (failing_internal()) {
+    return;  // dying anyway...
+  }
   JVMState* ex_jvms = ex_map->_jvms;
   assert(ex_jvms->same_calls_as(phi_map->_jvms), "consistent call chains");
   assert(ex_jvms->stkoff() == phi_map->_jvms->stkoff(), "matching locals");
@@ -446,7 +448,7 @@ void GraphKit::combine_exception_states(SafePointNode* ex_map, SafePointNode* ph
 
 //--------------------------use_exception_state--------------------------------
 Node* GraphKit::use_exception_state(SafePointNode* phi_map) {
-  if (failing()) { stop(); return top(); }
+  if (failing_internal()) { stop(); return top(); }
   Node* region = phi_map->control();
   Node* hidden_merge_mark = root();
   assert(phi_map->jvms()->map() == phi_map, "sanity: 1-1 relation");
@@ -2056,7 +2058,9 @@ Node* GraphKit::uncommon_trap(int trap_request,
                              ciKlass* klass, const char* comment,
                              bool must_throw,
                              bool keep_exact_action) {
-  if (failing())  stop();
+  if (failing_internal()) {
+    stop();
+  }
   if (stopped())  return nullptr; // trap reachable?
 
   // Note:  If ProfileTraps is true, and if a deopt. actually
