@@ -54,9 +54,7 @@ public class Test4887836 {
         PassFailJFrame.builder()
                 .title("Test4759306")
                 .instructions(instructions)
-                .rows(5)
                 .columns(40)
-                .testTimeOut(5)
                 .testUI(Test4887836::createColorChooser)
                 .build()
                 .awaitAndCheck();
