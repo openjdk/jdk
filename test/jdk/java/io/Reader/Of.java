@@ -36,8 +36,8 @@ import static org.testng.Assert.*;
 /*
  * @test
  * @bug 8341566
- * @run testng Of
  * @summary Check for expected behavior of Reader.of().
+ * @run testng Of
  */
 public class Of {
     final static String CONTENT = "Some Reader Test";
