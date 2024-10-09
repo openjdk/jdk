@@ -62,7 +62,6 @@ public class bug4419255 {
     }
 
     private static JColorChooser createColorChooser() {
-        JColorChooser chooser = new JColorChooser(Color.BLUE);
-        return chooser;
+        return new JColorChooser(Color.BLUE);
     }
 }
