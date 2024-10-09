@@ -37,6 +37,14 @@ import java.util.Objects;
  * This class implements a stream filter for reading compressed data in
  * the GZIP file format.
  *
+ * <p>
+ * The {@code InputStream} passed to the constructor of this class may represent
+ * a single GZIP file or multiple consecutive GZIP files. When the end of a
+ * GZIP file is immediately followed by a new GZIP file, this class continues
+ * to decode compressed data into a single, concatenated stream of uncompressed
+ * data. Otherwise, any additional trailing bytes following a GZIP file are
+ * discarded as if the end of stream is reached.
+ *
  * @see         InflaterInputStream
  * @author      David Connelly
  * @since 1.1
