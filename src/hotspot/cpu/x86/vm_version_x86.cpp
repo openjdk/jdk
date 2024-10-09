@@ -1303,7 +1303,7 @@ void VM_Version::get_processor_features() {
 
 #ifdef _LP64
   // These are only supported on 64-bit
-  if (UseSHA && supports_avx2() && supports_bmi2()) {
+  if (UseSHA && supports_avx2() && (supports_bmi2() || supports_sha512())) {
     if (FLAG_IS_DEFAULT(UseSHA512Intrinsics)) {
       FLAG_SET_DEFAULT(UseSHA512Intrinsics, true);
     }
