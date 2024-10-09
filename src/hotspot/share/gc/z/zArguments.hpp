@@ -38,8 +38,8 @@ public:
   virtual void initialize_alignments();
   virtual void initialize_heap_flags_and_sizes();
   virtual void initialize();
-  virtual size_t heap_virtual_to_physical_ratio();
   virtual size_t conservative_max_heap_alignment();
+  virtual size_t heap_virtual_to_physical_ratio();
   virtual CollectedHeap* create_heap();
 
   virtual bool is_supported() const;

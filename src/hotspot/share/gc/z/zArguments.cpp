@@ -224,12 +224,12 @@ void ZArguments::initialize() {
 #endif
 }
 
-size_t ZArguments::heap_virtual_to_physical_ratio() {
-  return ZVirtualToPhysicalRatio;
-}
-
 size_t ZArguments::conservative_max_heap_alignment() {
   return 0;
+}
+
+size_t ZArguments::heap_virtual_to_physical_ratio() {
+  return ZVirtualToPhysicalRatio;
 }
 
 CollectedHeap* ZArguments::create_heap() {
