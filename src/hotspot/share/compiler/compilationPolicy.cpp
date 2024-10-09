@@ -435,6 +435,41 @@ void CompilationPolicy::initialize() {
     bool c1_only = CompilerConfig::is_c1_only();
     bool c2_only = CompilerConfig::is_c2_or_jvmci_compiler_only();
 
+    // Compiler sizes
+    size_t c1_size = 0;
+#ifdef COMPILER1
+    c1_size = Compiler::code_buffer_size();
+#endif
+    size_t c2_size = 0;
+#ifdef COMPILER2
+    c2_size = C2Compiler::initial_code_buffer_size();
+#endif
+
+    // Check that compilers fit in code cache
+    size_t max_code_cache_size = ReservedCodeCacheSize - CodeCacheMinimumUseSpace DEBUG_ONLY(* 3);
+    size_t compiler_buffer_size = c1_size;
+#ifdef COMPILER1
+    if (compiler_buffer_size > max_code_cache_size) {
+      compiler_buffer_size -= c1_size;
+      set_c1_count(0);
+      c2_only = true;
+    }
+#endif
+#ifdef COMPILER2
+    compiler_buffer_size += c2_size;
+    if (compiler_buffer_size > max_code_cache_size) {
+      compiler_buffer_size -= c2_size;
+      set_c2_count(0);
+#ifdef COMPILER1
+      if (c1_count() == 0) {
+        CompileBroker::disable_compilation_forever();
+        return;
+      }
+      c1_only = true;
+#endif
+    }
+#endif
+
 #ifdef _LP64
     // Turn on ergonomic compiler count selection
     if (FLAG_IS_DEFAULT(CICompilerCountPerCPU) && FLAG_IS_DEFAULT(CICompilerCount)) {
@@ -446,16 +481,8 @@ void CompilationPolicy::initialize() {
       int loglog_cpu = log2i(MAX2(log_cpu, 1));
       count = MAX2(log_cpu * loglog_cpu * 3 / 2, 2);
       // Make sure there is enough space in the code cache to hold all the compiler buffers
-      size_t c1_size = 0;
-#ifdef COMPILER1
-      c1_size = Compiler::code_buffer_size();
-#endif
-      size_t c2_size = 0;
-#ifdef COMPILER2
-      c2_size = C2Compiler::initial_code_buffer_size();
-#endif
       size_t buffer_size = c1_only ? c1_size : (c1_size/3 + 2*c2_size/3);
-      int max_count = (ReservedCodeCacheSize - (int)CompilerConfig::min_code_cache_size()) / (int)buffer_size;
+      int max_count = (int)max_code_cache_size / (int)buffer_size;
       if (count > max_count) {
         // Lower the compiler count such that all buffers fit into the code cache
         count = MAX2(max_count, c1_only ? 1 : 2);
