@@ -430,9 +430,13 @@ TEST_VM(os, realpath) {
   /* test a non-existant path, but provide an adequate buffer */
   errno = 0;
   returnedBuffer = os::realpath(nosuchpath, buffer, sizeof(nosuchpath) + 3);
-  /* Returns ENOENT on Linux, 0 on Windows */
+  /* Returns ENOENT on Linux, 0 on SOME versions of Windows */
 #if defined(_WINDOWS)
-  EXPECT_TRUE(returnedBuffer == buffer);
+  if (returnedBuffer != nullptr) {
+    EXPECT_TRUE(returnedBuffer == buffer);
+  } else {
+    EXPECT_TRUE(errno != 0);
+  }
 #else
   EXPECT_TRUE(returnedBuffer == nullptr);
   EXPECT_TRUE(errno == ENOENT);
