@@ -90,18 +90,9 @@ public:
     EXPECT_EQ(LD::mask_from_decorators(LD::tid_decorator),  (uint)(1 << LD::tid_decorator));
     EXPECT_EQ(LD::mask_from_decorators(LD::tags_decorator), (uint)(1 << LD::tags_decorator));
 
-
-    // NoDecorators should yield an empty mask
-    EXPECT_EQ(LD::mask_from_decorators(LD::NoDecorators), 0U);
-
-
     // Combinations of decorators should fill the mask accordingly to their bitmask positions
     uint mask = (1 << LD::time_decorator) | (1 << LD::uptimemillis_decorator) | (1 << LD::tid_decorator);
     EXPECT_EQ(LD::mask_from_decorators(LD::time_decorator, LD::uptimemillis_decorator, LD::tid_decorator), mask);
-
-
-    // If a combination has NoDecorators in it, it takes precedence and the mask is zero
-    EXPECT_EQ(LD::mask_from_decorators(LD::time_decorator, LD::NoDecorators, LD::tid_decorator), 0U);
   }
 };
 

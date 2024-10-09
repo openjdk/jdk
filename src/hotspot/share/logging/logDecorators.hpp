@@ -67,8 +67,7 @@ class LogDecorators {
     DECORATOR_LIST
 #undef DECORATOR
     Count,
-    Invalid,
-    NoDecorators
+    Invalid
   };
 
   class DefaultUndecoratedSelection {
@@ -133,7 +132,6 @@ class LogDecorators {
     uint bitmask = 0;
     LogDecorators::Decorator decorators[1 + sizeof...(rest)] = { first, rest... };
     for (const LogDecorators::Decorator decorator : decorators) {
-      if (decorator == NoDecorators) return 0;
       bitmask |= mask(decorator);
     }
     return bitmask;
