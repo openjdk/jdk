@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8341669
+ * @bug 8338981
  * @summary Access to private classes should be permitted inside the permits clause of the enclosing top-level class.
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
