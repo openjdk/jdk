@@ -34,12 +34,10 @@ import java.io.Serializable;
 import java.lang.classfile.ClassBuilder;
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.CodeBuilder;
-import java.lang.classfile.FieldBuilder;
 import java.lang.classfile.MethodBuilder;
 import java.lang.classfile.Opcode;
 import java.lang.classfile.TypeKind;
 import java.lang.constant.ClassDesc;
-import java.lang.constant.DynamicConstantDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.reflect.Modifier;
 import java.util.LinkedHashSet;
@@ -51,16 +49,15 @@ import static java.lang.classfile.ClassFile.*;
 import java.lang.classfile.attribute.ExceptionsAttribute;
 import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
-import java.lang.classfile.constantpool.MethodRefEntry;
+
 import static java.lang.constant.ConstantDescs.*;
 import static java.lang.invoke.MethodHandleNatives.Constants.NESTMATE_CLASS;
 import static java.lang.invoke.MethodHandleNatives.Constants.STRONG_LOADER_LINK;
-import static java.lang.invoke.MethodHandles.Lookup.ClassOption.NESTMATE;
-import static java.lang.invoke.MethodHandles.Lookup.ClassOption.STRONG;
 import static java.lang.invoke.MethodType.methodType;
 import jdk.internal.constant.ConstantUtils;
 import jdk.internal.constant.MethodTypeDescImpl;
 import jdk.internal.constant.ReferenceClassDescImpl;
+import jdk.internal.vm.annotation.Stable;
 import sun.invoke.util.Wrapper;
 
 /**
@@ -71,7 +68,7 @@ import sun.invoke.util.Wrapper;
  */
 /* package */ final class InnerClassLambdaMetafactory extends AbstractValidatingLambdaMetafactory {
     private static final String LAMBDA_INSTANCE_FIELD = "LAMBDA_INSTANCE$";
-    private static final String[] EMPTY_STRING_ARRAY = new String[0];
+    private static final @Stable String[] ARG_NAME_CACHE = {"arg$1", "arg$2", "arg$3", "arg$4", "arg$5", "arg$6", "arg$7", "arg$8"};
     private static final ClassDesc[] EMPTY_CLASSDESC_ARRAY = ConstantUtils.EMPTY_CLASSDESC;
 
     // For dumping generated classes to disk, for debugging purposes
@@ -96,7 +93,6 @@ import sun.invoke.util.Wrapper;
     private final MethodTypeDesc implMethodDesc;     // Type descriptor for implementation methods "(I)Ljava/lang/String;"
     private final MethodType constructorType;        // Generated class constructor type "(CC)void"
     private final MethodTypeDesc constructorTypeDesc;// Type descriptor for the generated class constructor type "(CC)void"
-    private final String[] argNames;                 // Generated names for the constructor arguments
     private final ClassDesc[] argDescs;              // Type descriptors for the constructor arguments
     private final String lambdaClassName;            // Generated name for the generated class "X$$Lambda$1"
     private final ConstantPoolBuilder pool = ConstantPoolBuilder.of();
@@ -174,18 +170,24 @@ import sun.invoke.util.Wrapper;
                                implKind == MethodHandleInfo.REF_invokeSpecial ||
                                implKind == MethodHandleInfo.REF_invokeStatic && implClass.isHidden();
         int parameterCount = factoryType.parameterCount();
+        ClassDesc[] argDescs;
+        MethodTypeDesc constructorTypeDesc;
         if (parameterCount > 0) {
-            argNames = new String[parameterCount];
             argDescs = new ClassDesc[parameterCount];
             for (int i = 0; i < parameterCount; i++) {
-                argNames[i] = "arg$" + (i + 1);
                 argDescs[i] = classDesc(factoryType.parameterType(i));
             }
+            constructorTypeDesc = MethodTypeDescImpl.ofValidated(CD_void, argDescs);
         } else {
-            argNames = EMPTY_STRING_ARRAY;
             argDescs = EMPTY_CLASSDESC_ARRAY;
+            constructorTypeDesc = MTD_void;
         }
-        constructorTypeDesc = MethodTypeDescImpl.ofValidated(CD_void, argDescs);
+        this.argDescs = argDescs;
+        this.constructorTypeDesc = constructorTypeDesc;
+    }
+
+    private static String argName(int i) {
+        return i < ARG_NAME_CACHE.length ? ARG_NAME_CACHE[i] :  "arg$" + (i + 1);
     }
 
     private static String lambdaClassName(Class<?> targetClass) {
@@ -313,7 +315,7 @@ import sun.invoke.util.Wrapper;
                    .withInterfaceSymbols(interfaces);
                 // Generate final fields to be filled in by constructor
                 for (int i = 0; i < argDescs.length; i++) {
-                    clb.withField(argNames[i], argDescs[i], ACC_PRIVATE | ACC_FINAL);
+                    clb.withField(argName(i), argDescs[i], ACC_PRIVATE | ACC_FINAL);
                 }
 
                 generateConstructor(clb);
@@ -396,7 +398,7 @@ import sun.invoke.util.Wrapper;
                         for (int i = 0; i < parameterCount; i++) {
                             cob.aload(0)
                                .loadLocal(TypeKind.from(factoryType.parameterType(i)), cob.parameterSlot(i))
-                               .putfield(pool.fieldRefEntry(lambdaClassEntry, pool.nameAndTypeEntry(argNames[i], argDescs[i])));
+                               .putfield(pool.fieldRefEntry(lambdaClassEntry, pool.nameAndTypeEntry(argName(i), argDescs[i])));
                         }
                         cob.return_();
                     }
@@ -448,7 +450,7 @@ import sun.invoke.util.Wrapper;
                             cob.dup()
                                .loadConstant(i)
                                .aload(0)
-                               .getfield(pool.fieldRefEntry(lambdaClassEntry, pool.nameAndTypeEntry(argNames[i], argDescs[i])));
+                               .getfield(pool.fieldRefEntry(lambdaClassEntry, pool.nameAndTypeEntry(argName(i), argDescs[i])));
                             TypeConvertingMethodAdapter.boxIfTypePrimitive(cob, TypeKind.from(argDescs[i]));
                             cob.aastore();
                         }
@@ -505,9 +507,9 @@ import sun.invoke.util.Wrapper;
                     cob.ldc(cp.constantDynamicEntry(cp.bsmEntry(cp.methodHandleEntry(BSM_CLASS_DATA), List.of()),
                                                     cp.nameAndTypeEntry(DEFAULT_NAME, CD_MethodHandle)));
                 }
-                for (int i = 0; i < argNames.length; i++) {
+                for (int i = 0; i < argDescs.length; i++) {
                     cob.aload(0)
-                       .getfield(pool.fieldRefEntry(lambdaClassEntry, pool.nameAndTypeEntry(argNames[i], argDescs[i])));
+                       .getfield(pool.fieldRefEntry(lambdaClassEntry, pool.nameAndTypeEntry(argName(i), argDescs[i])));
                 }
 
                 convertArgumentTypes(cob, methodType);
