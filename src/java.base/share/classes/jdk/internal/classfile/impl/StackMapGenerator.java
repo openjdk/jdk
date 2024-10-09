@@ -1028,7 +1028,7 @@ public final class StackMapGenerator {
         Frame dup2_x2() {
             int stackSize = this.stackSize;
             if (stackSize < 4) throw stackUnderflow();
-            checkStack(stackSize + 4);
+            checkStack(stackSize + 2);
             var stack = this.stack;
             Type type0 = stack[stackSize - 4];
             Type type1 = stack[stackSize - 3];
