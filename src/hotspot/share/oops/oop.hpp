@@ -29,6 +29,7 @@
 #include "memory/memRegion.hpp"
 #include "oops/compressedKlass.hpp"
 #include "oops/accessDecorators.hpp"
+#include "oops/klassMode.hpp"
 #include "oops/markWord.hpp"
 #include "oops/metadata.hpp"
 #include "runtime/atomic.hpp"
@@ -350,15 +351,7 @@ class oopDesc {
   }
 
   static int base_offset_in_bytes() {
-    if (UseCompactObjectHeaders) {
-      // With compact headers, the Klass* field is not used for the Klass*
-      // and is used for the object fields instead.
-      return sizeof(markWord);
-    } else if (UseCompressedClassPointers) {
-      return sizeof(markWord) + sizeof(narrowKlass);
-    } else {
-      return sizeof(markWord) + sizeof(Klass*);
-    }
+    return KlassMode::oop_base_offset_in_bytes();
   }
 
   // for error reporting
