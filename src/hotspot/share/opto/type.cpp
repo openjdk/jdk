@@ -2482,13 +2482,13 @@ bool TypeAry::ary_must_be_exact() const {
 
 //==============================TypeVect=======================================
 // Convenience common pre-built types.
-const TypeVect *TypeVect::VECTA = nullptr; // vector length agnostic
-const TypeVect *TypeVect::VECTS = nullptr; //  32-bit vectors
-const TypeVect *TypeVect::VECTD = nullptr; //  64-bit vectors
-const TypeVect *TypeVect::VECTX = nullptr; // 128-bit vectors
-const TypeVect *TypeVect::VECTY = nullptr; // 256-bit vectors
-const TypeVect *TypeVect::VECTZ = nullptr; // 512-bit vectors
-const TypeVect *TypeVect::VECTMASK = nullptr; // predicate/mask vector
+const TypeVect* TypeVect::VECTA = nullptr; // vector length agnostic
+const TypeVect* TypeVect::VECTS = nullptr; //  32-bit vectors
+const TypeVect* TypeVect::VECTD = nullptr; //  64-bit vectors
+const TypeVect* TypeVect::VECTX = nullptr; // 128-bit vectors
+const TypeVect* TypeVect::VECTY = nullptr; // 256-bit vectors
+const TypeVect* TypeVect::VECTZ = nullptr; // 512-bit vectors
+const TypeVect* TypeVect::VECTMASK = nullptr; // predicate/mask vector
 
 //------------------------------make-------------------------------------------
 const TypeVect* TypeVect::make(BasicType elem_bt, uint length, bool is_mask) {
@@ -2518,7 +2518,7 @@ const TypeVect* TypeVect::make(BasicType elem_bt, uint length, bool is_mask) {
   return nullptr;
 }
 
-const TypeVect *TypeVect::makemask(BasicType elem_bt, uint length) {
+const TypeVect* TypeVect::makemask(BasicType elem_bt, uint length) {
   if (Matcher::has_predicated_vectors() &&
       Matcher::match_rule_supported_vector_masked(Op_VectorLoadMask, length, elem_bt)) {
     return TypeVectMask::make(elem_bt, length);
@@ -2528,7 +2528,8 @@ const TypeVect *TypeVect::makemask(BasicType elem_bt, uint length) {
 }
 
 //------------------------------meet-------------------------------------------
-// Compute the MEET of two types. It returns a new Type object.
+// Compute the MEET of two types. Since each TypeVect is the only instance of
+// its species, meetting often returns itself
 const Type* TypeVect::xmeet(const Type* t) const {
   // Perform a fast test for common case; meeting the same types together.
   if (this == t) {
@@ -2543,13 +2544,7 @@ const Type* TypeVect::xmeet(const Type* t) const {
 
   default:                      // All else is a mistake
     typerr(t);
-  case VectorMask: {
-    const TypeVectMask* v = t->is_vectmask();
-    assert(base() == v->base(), "");
-    assert(length() == v->length(), "");
-    assert(element_basic_type() == v->element_basic_type(), "");
-    return this;
-  }
+  case VectorMask:
   case VectorA:
   case VectorS:
   case VectorD:
@@ -2569,14 +2564,14 @@ const Type* TypeVect::xmeet(const Type* t) const {
 }
 
 //------------------------------xdual------------------------------------------
-// Dual: compute field-by-field dual
-const Type *TypeVect::xdual() const {
+// Since each TypeVect is the only instance of its species, it is self-dual
+const Type* TypeVect::xdual() const {
   return this;
 }
 
 //------------------------------eq---------------------------------------------
 // Structural equality check for Type representations
-bool TypeVect::eq(const Type *t) const {
+bool TypeVect::eq(const Type* t) const {
   const TypeVect* v = t->is_vect();
   return (element_basic_type() == v->element_basic_type()) && (length() == v->length());
 }
@@ -2603,7 +2598,7 @@ bool TypeVect::empty(void) const {
 
 //------------------------------dump2------------------------------------------
 #ifndef PRODUCT
-void TypeVect::dump2(Dict &d, uint depth, outputStream *st) const {
+void TypeVect::dump2(Dict& d, uint depth, outputStream* st) const {
   switch (base()) {
   case VectorA:
     st->print("vectora"); break;

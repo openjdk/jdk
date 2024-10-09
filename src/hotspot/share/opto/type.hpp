@@ -798,7 +798,7 @@ public:
     return _length * type2aelembytes(element_basic_type());
   }
 
-  virtual bool eq(const Type *t) const;
+  virtual bool eq(const Type* t) const;
   virtual uint hash() const;             // Type specific hashing
   virtual bool singleton(void) const;    // TRUE if type is a singleton
   virtual bool empty(void) const;        // TRUE if type is vacuous
