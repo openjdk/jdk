@@ -53,6 +53,11 @@ abstract class HotSpotObjectConstantImpl implements HotSpotObjectConstant {
     }
 
     @Override
+    public boolean isCompressible() {
+        return true;
+    }
+
+    @Override
     public abstract JavaConstant compress();
 
     @Override
