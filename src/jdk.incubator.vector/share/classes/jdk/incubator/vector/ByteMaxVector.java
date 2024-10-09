@@ -503,7 +503,7 @@ final class ByteMaxVector extends ByteVector {
                                    VectorMask<Byte> m) {
         return (ByteMaxVector)
             super.selectFromTemplate((ByteMaxVector) v,
-                                     (ByteMaxMask) m);  // specialize
+                                     ByteMaxMask.class, (ByteMaxMask) m);  // specialize
     }
 
 
@@ -828,6 +828,13 @@ final class ByteMaxVector extends ByteVector {
                 throw new IllegalArgumentException("VectorShuffle length and species length differ");
             int[] shuffleArray = toArray();
             return s.shuffleFromArray(shuffleArray, 0).check(s);
+        }
+
+        @Override
+        @ForceInline
+        public ByteMaxShuffle wrapIndexes() {
+            return VectorSupport.wrapShuffleIndexes(ETYPE, ByteMaxShuffle.class, this, VLENGTH,
+                                                    (s) -> ((ByteMaxShuffle)(((AbstractShuffle<Byte>)(s)).wrapIndexesTemplate())));
         }
 
         @ForceInline
