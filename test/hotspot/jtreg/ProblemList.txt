@@ -43,6 +43,8 @@
 
 # :hotspot_compiler
 
+applications/ctw/modules/java_base_2.java 8341831 linux-x64
+
 compiler/ciReplay/TestSAServer.java 8029528 generic-all
 compiler/compilercontrol/jcmd/ClearDirectivesFileStackTest.java 8225370 generic-all
 
