@@ -29,7 +29,7 @@
 #include "nmt/memTag.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/orderAccess.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
@@ -52,27 +52,8 @@ void PartialArrayState::add_references(size_t count) {
   assert(new_count >= count, "reference count overflow");
 }
 
-class PartialArrayStateAllocator::Impl : public CHeapObj<mtGC> {
-  struct FreeListEntry;
-
-  Arena* _arenas;
-  FreeListEntry** _free_lists;
-  uint _num_workers;
-
+class PartialArrayStateAllocator::FreeListEntry {
 public:
-  Impl(uint num_workers);
-  ~Impl();
-
-  NONCOPYABLE(Impl);
-
-  PartialArrayState* allocate(uint worker_id,
-                              oop src, oop dst,
-                              size_t index, size_t length,
-                              size_t initial_refcount);
-  void release(uint worker_id, PartialArrayState* state);
-};
-
-struct PartialArrayStateAllocator::Impl::FreeListEntry {
   FreeListEntry* _next;
 
   FreeListEntry(FreeListEntry* next) : _next(next) {}
@@ -81,73 +62,96 @@ struct PartialArrayStateAllocator::Impl::FreeListEntry {
   NONCOPYABLE(FreeListEntry);
 };
 
-PartialArrayStateAllocator::Impl::Impl(uint num_workers)
-  : _arenas(NEW_C_HEAP_ARRAY(Arena, num_workers, mtGC)),
-    _free_lists(NEW_C_HEAP_ARRAY(FreeListEntry*, num_workers, mtGC)),
-    _num_workers(num_workers)
-{
-  for (uint i = 0; i < _num_workers; ++i) {
-    ::new (&_arenas[i]) Arena(mtGC);
-    _free_lists[i] = nullptr;
-  }
-}
+PartialArrayStateAllocator::PartialArrayStateAllocator(PartialArrayStateManager* manager)
+  : _manager(manager),
+    _free_list(),
+    _arena(manager->register_allocator())
+{}
 
-PartialArrayStateAllocator::Impl::~Impl() {
-  // We don't need to clean up the free lists.  Deallocating the entries
+PartialArrayStateAllocator::~PartialArrayStateAllocator() {
+  // We don't need to clean up the free list.  Deallocating the entries
   // does nothing, since we're using arena allocation.  Instead, leave it
-  // to the arena destructor to release the memory.
-  FREE_C_HEAP_ARRAY(FreeListEntry*, _free_lists);
-  for (uint i = 0; i < _num_workers; ++i) {
-    _arenas[i].~Arena();
-  }
-  FREE_C_HEAP_ARRAY(Arena*, _arenas);
+  // to the manager to release the memory.
+  // Inform the manager that an allocator is no longer in use.
+  _manager->release_allocator();
 }
 
-PartialArrayState* PartialArrayStateAllocator::Impl::allocate(uint worker_id,
-                                                              oop src, oop dst,
-                                                              size_t index,
-                                                              size_t length,
-                                                              size_t initial_refcount) {
+PartialArrayState* PartialArrayStateAllocator::allocate(oop src, oop dst,
+                                                        size_t index,
+                                                        size_t length,
+                                                        size_t initial_refcount) {
   void* p;
-  FreeListEntry* head = _free_lists[worker_id];
+  FreeListEntry* head = _free_list;
   if (head == nullptr) {
-    p = NEW_ARENA_OBJ(&_arenas[worker_id], PartialArrayState);
+    p = NEW_ARENA_OBJ(_arena, PartialArrayState);
   } else {
-    _free_lists[worker_id] = head->_next;
+    _free_list = head->_next;
     head->~FreeListEntry();
     p = head;
   }
   return ::new (p) PartialArrayState(src, dst, index, length, initial_refcount);
 }
 
-void PartialArrayStateAllocator::Impl::release(uint worker_id, PartialArrayState* state) {
+void PartialArrayStateAllocator::release(PartialArrayState* state) {
   size_t refcount = Atomic::sub(&state->_refcount, size_t(1), memory_order_release);
   if (refcount != 0) {
     assert(refcount + 1 != 0, "refcount underflow");
   } else {
-    OrderAccess::acquire();
-    state->~PartialArrayState();
-    _free_lists[worker_id] = ::new (state) FreeListEntry(_free_lists[worker_id]);
+    // Don't need to call destructor; can't if not destructible.
+    static_assert(!std::is_destructible<PartialArrayState>::value, "expected");
+    _free_list = ::new (state) FreeListEntry(_free_list);
   }
 }
 
-PartialArrayStateAllocator::PartialArrayStateAllocator(uint num_workers)
-  : _impl(new Impl(num_workers))
-{}
-
-PartialArrayStateAllocator::~PartialArrayStateAllocator() {
-  delete _impl;
+PartialArrayStateManager::PartialArrayStateManager(uint num_allocators)
+  : _arenas(NEW_C_HEAP_ARRAY(Arena, num_allocators, mtGC)),
+    _num_allocators(num_allocators),
+    _counters(ZeroState)
+{
+  assert(num_allocators <= CounterMask, "requested number of allocaters exceeds max");
 }
 
-PartialArrayState* PartialArrayStateAllocator::allocate(uint worker_id,
-                                                        oop src, oop dst,
-                                                        size_t index,
-                                                        size_t length,
-                                                        size_t initial_refcount) {
-  return _impl->allocate(worker_id, src, dst, index, length, initial_refcount);
+PartialArrayStateManager::~PartialArrayStateManager() {
+  reset();
+  FREE_C_HEAP_ARRAY(Arena, _arenas);
 }
 
-void PartialArrayStateAllocator::release(uint worker_id, PartialArrayState* state) {
-  _impl->release(worker_id, state);
+auto PartialArrayStateManager::counter(CounterState state, uint pos)
+  -> CounterState
+{
+  static_assert(CounterBits <= BitsPerInt, "must be");
+  return (state >> pos) & CounterMask;
 }
 
+#ifdef ASSERT
+bool PartialArrayStateManager::is_allocating_phase(CounterState state) {
+  // Allocating if active == used.  Releasing if active < used.
+  return counter(state, UsedShift) == counter(state, ActiveShift);
+}
+#endif // ASSERT
+
+Arena* PartialArrayStateManager::register_allocator() {
+  CounterState state = Atomic::fetch_then_add(&_counters, Increment, memory_order_relaxed);
+  assert(is_allocating_phase(state), "not in allocating phase");
+  assert(counter(state, ActiveShift) <= _num_allocators,
+         "exceeded configured number of allocators");
+  CounterState id = counter(state, ActiveShift);
+  return ::new (&_arenas[id]) Arena(mtGC);
+}
+
+void PartialArrayStateManager::release_allocator() {
+  CounterState state = Atomic::sub(&_counters, Decrement, memory_order_relaxed);
+  // Don't have fetch_then_sub, so can't check for zero old value directly.
+  // counter value == CounterMask after sub => underflow.
+  assert(counter(state, ActiveShift) < CounterMask, "too many releases");
+}
+
+void PartialArrayStateManager::reset() {
+  CounterState state = Atomic::load(&_counters);
+  assert(counter(state, ActiveShift) == 0, "some allocators still active");
+  uint count = checked_cast<uint>(counter(state, UsedShift));
+  for (uint i = 0; i < count; ++i) {
+    _arenas[i].~Arena();
+  }
+  Atomic::store(&_counters, ZeroState);
+}
