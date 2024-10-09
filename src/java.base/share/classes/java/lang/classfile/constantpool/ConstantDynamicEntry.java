@@ -50,7 +50,7 @@ public sealed interface ConstantDynamicEntry
      * {@return a symbolic descriptor for the dynamic constant's type}
      */
     default ClassDesc typeSymbol() {
-        return Util.fieldTypeSymbol(nameAndType());
+        return Util.fieldTypeSymbol(type());
     }
 
     @Override
