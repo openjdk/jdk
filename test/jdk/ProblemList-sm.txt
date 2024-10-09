@@ -4,7 +4,6 @@ javax/swing/JPopupMenu/6694823/bug6694823.java
 # :jdk_desktop_part1
 
 # :tier1_part1
-java/lang/reflect/sealed_classes/TestSecurityManagerChecks.java 0000000 generic-all
 
 # :tier2_part1
 
