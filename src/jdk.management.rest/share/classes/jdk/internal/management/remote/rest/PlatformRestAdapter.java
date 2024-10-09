@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,10 +32,6 @@ import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsServer;
 
-import javax.management.*;
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManagerFactory;
 import java.io.BufferedInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -50,6 +46,12 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import javax.management.*;
+import javax.management.remote.JMXServiceURL;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManagerFactory;
 
 import sun.management.jmxremote.ConnectorBootstrap;
 
@@ -98,10 +100,12 @@ public final class PlatformRestAdapter {
     }
 
     /**
-     * Starts the HTTP server with the input configuration properties
+     * Called by RestAdapterProvider.startAgent().
+     *
+     * Starts the HTTP server with the given configuration properties.
      * The configuration properties are Interface name/IP, port and SSL configuration
-     * By default the server binds to address '0.0.0.0' and port '0'. SSL is off by default. [TODO]The
-     * keyStore will be created one if not configured and the private key and a public certificate will
+     * By default the server binds to address '0.0.0.0' and port '0'. SSL is off by default.
+     *[TODO]The keyStore will be created one if not configured and the private key and a public certificate will
      * be generated[/TODO].
      * Below properties are used to configure the HTTP server.
      * com.sun.management.jmxremote.rest.port
@@ -118,6 +122,7 @@ public final class PlatformRestAdapter {
      * @throws IOException If the server could not be created
      */
     public static synchronized void init(Properties properties) throws IOException {
+        System.err.println("XXXX PlatformRestAdapter.init()");
         if (httpServer == null) {
             if (properties == null || properties.isEmpty()) {
                 properties = new Properties();
@@ -149,6 +154,7 @@ public final class PlatformRestAdapter {
                 httpServer = HttpServer.create(new InetSocketAddress(host, port), 0);
             }
 
+            System.err.println("XXXX PRA.init httpserver = " + httpServer);
             new MBeanServerCollectionResource(restAdapters, httpServer);
             httpServer.setExecutor(Executors.newFixedThreadPool(maxThreadCount, new HttpThreadFactory()));
             httpServer.start();
@@ -210,15 +216,28 @@ public final class PlatformRestAdapter {
      */
     public static synchronized JmxRestAdapter newRestAdapter(MBeanServer mbeanServer, String context, Map<String, ?> env) {
         if (httpServer == null) {
-            throw new IllegalStateException("Platform Adapter not initialized");
+            // throw new IllegalStateException("Platform Adapter not initialized");
+            // A possible call via JMXConnectorServerFactory.newJMXConnectorServer() then to HttpConnectorServer.start()
+            // means we need to start http server if needed now.
+            try {
+                init(new Properties());
+            } catch (IOException ioe) {
+                ioe.printStackTrace(System.err);
+            }
         }
 
         MBeanServerResource server = restAdapters.stream()
                 .filter(s -> areMBeanServersEqual(s.getMBeanServer(), mbeanServer))
                 .findFirst()
-                .get();
+                .orElse(null);
+
+        if (env == null) {
+            env = new HashMap<>();
+        }
+        System.err.println("XXXX PlatformRestAdapter.newRestAdapter MBSResource server = " + server);
         if (server == null) {
             MBeanServerResource adapter = new MBeanServerResource(httpServer, mbeanServer, context, env);
+            System.err.println("XXXX PlatformRestAdapter.newRestAdapter adapter = " + adapter);
             adapter.start();
             restAdapters.add(adapter);
             return adapter;
@@ -264,6 +283,18 @@ public final class PlatformRestAdapter {
 
     public static synchronized String getBaseURL() {
         return getDomain() + "/jmx/servers";
+    }
+
+    public static synchronized JMXServiceURL getJMXServiceURL() {
+        if (httpServer == null) {
+            throw new IllegalStateException("Platform rest adapter not initialized");
+        }
+        try {
+            return new JMXServiceURL("http", InetAddress.getLocalHost().getCanonicalHostName(), httpServer.getAddress().getPort());
+        } catch (Exception e) {
+            e.printStackTrace(System.err);
+            return null;
+        }
     }
 
     private static SSLContext getSSLContext(Properties properties) throws AgentConfigurationError {

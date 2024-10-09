@@ -51,6 +51,7 @@ public class HttpRestConnector implements JMXConnector {
         if (env == null) {
             this.env = new HashMap<String,Object>();
         }
+        System.err.println("XXXXX HttpRestConnector url=" + url);
     }
 
     public void connect() throws IOException {

@@ -99,7 +99,7 @@ public class HttpRestConnection implements MBeanServerConnection {
         objectMap = new HashMap<ObjectName, JSONObject>();
         objectInfoRefMap = new HashMap<ObjectName,String>();
         objectInfoMap = new HashMap<ObjectName, JSONObject>();
-            new Exception().printStackTrace(System.err);
+        System.err.println("XXXX HttpRestConnection created on baseURL " + baseURL);
     }
 
     public void setup() throws IOException { 

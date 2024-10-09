@@ -31,6 +31,7 @@ import com.sun.jmx.remote.util.EnvHelp;
 import com.sun.jmx.remote.util.ClassLogger;
 
 import jdk.internal.management.remote.rest.PlatformRestAdapter;
+import jdk.internal.management.remote.rest.JmxRestAdapter;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -331,7 +332,10 @@ public class HttpConnectorServer extends JMXConnectorServer {
 
         try {
 
-            rest = null; // PlatformRestAdapter.newRestAdapter(getMBeanServer(), "context", null /*env */);
+            rest = PlatformRestAdapter.newRestAdapter(getMBeanServer(), null /* context */,  null /*env */);
+            String a = rest.getUrl(); // getJMXServiceURL();
+            address = new JMXServiceURL("service:jmx:" + a);
+
         synchronized(openedServers) {
             openedServers.add(this);
         }
@@ -496,7 +500,8 @@ public class HttpConnectorServer extends JMXConnectorServer {
     private JMXServiceURL address;
     private final Map<String, ?> attributes;
 
-    private PlatformRestAdapter rest;
+//    private PlatformRestAdapter rest;
+     private JmxRestAdapter rest;
 
     // state
     private static final int CREATED = 0;
