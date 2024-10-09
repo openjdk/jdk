@@ -213,8 +213,15 @@ final class VirtualThread extends BaseVirtualThread {
         private static Runnable wrap(VirtualThread vthread, Runnable task) {
             return new Runnable() {
                 @Hidden
+                @JvmtiMountTransition
                 public void run() {
+                    // notify JVMTI
+                    vthread.notifyJvmtiStart();
+
                     vthread.run(task);
+
+                    // notify JVMTI
+                    vthread.notifyJvmtiEnd();
                 }
             };
         }
@@ -389,9 +396,6 @@ final class VirtualThread extends BaseVirtualThread {
     private void run(Runnable task) {
         assert Thread.currentThread() == this && state == RUNNING;
 
-        // notify JVMTI, may post VirtualThreadStart event
-        notifyJvmtiStart();
-
         // emit JFR event if enabled
         if (VirtualThreadStartEvent.isTurnedOn()) {
             var event = new VirtualThreadStartEvent();
@@ -417,8 +421,6 @@ final class VirtualThread extends BaseVirtualThread {
                 }
 
             } finally {
-                // notify JVMTI, may post VirtualThreadEnd event
-                notifyJvmtiEnd();
             }
         }
     }
