@@ -122,8 +122,8 @@ public class CreationTime {
             Files.setLastModifiedTime(file, FileTime.from(plusHour));
             FileTime current = creationTime(file);
             if (!current.equals(creationTime)) {
-                System.out.println("current = " + current);
-                System.out.println("creationTime = " + creationTime);
+                System.err.println("current = " + current);
+                System.err.println("creationTime = " + creationTime);
                 throw new RuntimeException("Creation time should not have changed");
             }
         }

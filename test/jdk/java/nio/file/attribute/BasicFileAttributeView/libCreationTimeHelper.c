@@ -101,10 +101,6 @@ EXPORT bool linuxIsCreationTimeSupported(char* file) {
     }
 
     ret = my_statx_func(AT_FDCWD, file, atflag, mask, &stx);
-
-    #ifdef DEBUG
-    printf("birth time = %ld\n", stx.stx_btime.tv_sec);
-    #endif
     if (ret != 0) {
         return false;
     }
