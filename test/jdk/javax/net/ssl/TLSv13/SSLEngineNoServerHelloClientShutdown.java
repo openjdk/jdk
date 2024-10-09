@@ -222,8 +222,8 @@ public class SSLEngineNoServerHelloClientShutdown extends SSLContextTemplate {
         sTOc.flip();
         inspectTlsBuffer(sTOc);
 
-        // Client receives delayed serverHello
-        log("---Client Unwrap serverHello---");
+        // Client receives delayed server_hello
+        log("---Client Unwrap server_hello---");
         clientResult = clientEngine.unwrap(sTOc, clientIn);
         logEngineStatus(clientEngine, clientResult);
         runDelegatedTasks(clientEngine);

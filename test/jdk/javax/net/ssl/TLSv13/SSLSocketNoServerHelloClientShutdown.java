@@ -35,14 +35,10 @@ import static jdk.test.lib.Asserts.assertEquals;
 import static jdk.test.lib.Asserts.assertTrue;
 import static jdk.test.lib.security.SecurityUtils.inspectTlsBuffer;
 
-import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.lang.Override;
-import java.net.Socket;
-import java.nio.ByteBuffer;
-import java.util.ArrayDeque;
-import java.util.Queue;
+import java.net.InetSocketAddress;
+import java.nio.channels.SocketChannel;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngineResult;
@@ -61,7 +57,7 @@ public class SSLSocketNoServerHelloClientShutdown extends SSLEngineNoServerHello
 
     private volatile Exception clientException;
     private volatile Exception serverException;
-    private volatile Socket clientSocket;
+    private volatile SocketChannel clientSocketChannel;
 
     public static void main(String[] args) throws Exception {
         new SSLSocketNoServerHelloClientShutdown().runTest();
@@ -116,11 +112,11 @@ public class SSLSocketNoServerHelloClientShutdown extends SSLEngineNoServerHello
             @Override
             public void run() {
                 try {
-                    Queue<ByteBuffer> delayed = new ArrayDeque<>() {};
                     SSLEngineResult clientResult;
                     // Client-side plain TCP socket.
-                    clientSocket = new Socket("localhost", port);
-                    clientSocket.setSoTimeout(500);
+                    clientSocketChannel = SocketChannel.open(
+                            new InetSocketAddress("localhost", port));
+                    clientSocketChannel.socket().setSoTimeout(500);
 
                     log("=================");
 
@@ -129,15 +125,6 @@ public class SSLSocketNoServerHelloClientShutdown extends SSLEngineNoServerHello
                     clientResult = clientEngine.wrap(clientOut, cTOs);
                     logEngineStatus(clientEngine, clientResult);
                     runDelegatedTasks(clientEngine);
-
-                    // Send client_hello, read and store all available messages from the server.
-                    while (delayed.size() < 6) {
-                        ByteBuffer msg = clientWriteRead();
-                        if (msg == null) {
-                            break;
-                        }
-                        delayed.add(msg);
-                    }
 
                     // Shutdown client
                     log("---Client closeOutbound---");
@@ -153,35 +140,36 @@ public class SSLSocketNoServerHelloClientShutdown extends SSLEngineNoServerHello
                     log("---Client Wrap close_notify---");
                     clientResult = clientEngine.wrap(clientOut, cTOs);
                     logEngineStatus(clientEngine, clientResult);
+                    runDelegatedTasks(clientEngine);
                     assertTrue(clientEngine.isOutboundDone());
                     assertEquals(clientResult.getStatus(), Status.CLOSED);
-                    runDelegatedTasks(clientEngine);
 
-                    // Send user_canceled and close_notify alerts to server. Server should process
-                    // 2 unencrypted alerts and send its own close_notify alert back to the client.
-                    ByteBuffer serverCloseNotify = clientWriteRead();
+                    // Send client_hello, user_canceled alert and close_notify alert to server.
+                    // Server should process 2 unencrypted alerts.
+                    cTOs.flip();
+                    inspectTlsBuffer(cTOs);
+                    int len = clientSocketChannel.write(cTOs);
+                    log("---Client wrote " + len + " bytes---");
 
-                    // Consume delayed messages.
-                    for (int i = 1; !delayed.isEmpty(); i++) {
-                        ByteBuffer msg = delayed.remove();
-                        inspectTlsBuffer(msg);
+                    // Read all the messages from the server.
+                    // Server should reply with server_hello, CCS, EE and its own close_notify
+                    // alert back to the client.
+                    while ((len = clientSocketChannel.read(sTOc)) != -1) {
+                        log("---Client read " + len + " bytes---");
+                    }
+                    sTOc.flip();
+                    inspectTlsBuffer(sTOc);
 
-                        log("---Client Unwrap delayed flight " + i + "---");
-                        clientResult = clientEngine.unwrap(msg, clientIn);
+                    // Consume server messages.
+                    for (int i = 1; sTOc.hasRemaining(); i++) {
+                        log("---Client Unwrap server flight " + i + "---");
+                        clientResult = clientEngine.unwrap(sTOc, clientIn);
                         logEngineStatus(clientEngine, clientResult);
                         runDelegatedTasks(clientEngine);
                     }
 
-                    // Consume close_notify alert from server.
-                    assert serverCloseNotify != null;
-                    inspectTlsBuffer(serverCloseNotify);
-
-                    log("---Client Unwrap close_notify response---");
-                    clientResult = clientEngine.unwrap(serverCloseNotify, clientIn);
-                    logEngineStatus(clientEngine, clientResult);
                     assertTrue(clientEngine.isOutboundDone());
                     assertTrue(clientEngine.isInboundDone());
-                    runDelegatedTasks(clientEngine);
 
                 } catch (Exception e) {
                     clientException = e;
@@ -191,40 +179,5 @@ public class SSLSocketNoServerHelloClientShutdown extends SSLEngineNoServerHello
 
         t.start();
         return t;
-    }
-
-    protected ByteBuffer clientWriteRead() throws IOException {
-        OutputStream os = clientSocket.getOutputStream();
-        InputStream is = clientSocket.getInputStream();
-        byte[] inbound = new byte[8192];
-
-        cTOs.flip();
-        inspectTlsBuffer(cTOs);
-
-        byte[] outbound = new byte[cTOs.limit() - cTOs.position()];
-        cTOs.get(outbound);
-        cTOs.compact();
-
-        log("---Client writes " + outbound.length + " bytes---");
-        os.write(outbound);
-        os.flush();
-
-        int len = 0;
-
-        try {
-            len = is.read(inbound);
-            log("---Client reads " + len + " bytes---");
-        } catch (Exception e) {
-            log(e.getMessage());
-            return null;
-        }
-
-        if (len < 1) {
-            return null;
-        }
-
-        ByteBuffer flight = ByteBuffer.wrap(inbound);
-        flight.limit(len);
-        return flight;
     }
 }
