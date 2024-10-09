@@ -87,7 +87,7 @@ public class TestIndexTaglet extends JavadocTester {
         checkOrder("search-tags.html",
                 """
                     <h1>Search Tags</h1>""",
-                """    
+                """
                     <div class="caption"><span>Search Tags Summary</span></div>
                     <div class="summary-table three-column-summary">
                     <div class="table-header col-first">Search Tag</div>
