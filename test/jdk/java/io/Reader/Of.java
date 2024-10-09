@@ -165,48 +165,48 @@ public class Of {
                 "transferTo() provides wrong content");
     }
 
-    @Test(dataProvider = "readers", expectedExceptions = IOException.class)
+    @Test(dataProvider = "readers")
     public void testReadClosed(Reader reader) throws IOException {
         reader.close();
-        reader.read();
+        assertThrows(IOException.class, () -> {reader.read();});
     }
 
-    @Test(dataProvider = "readers", expectedExceptions = IOException.class)
+    @Test(dataProvider = "readers")
     public void testReadBIIClosed(Reader reader) throws IOException {
         reader.close();
-        reader.read(new char[1], 0, 1);
+        assertThrows(IOException.class, () -> reader.read(new char[1], 0, 1));
     }
 
-    @Test(dataProvider = "readers", expectedExceptions = IOException.class)
+    @Test(dataProvider = "readers")
     public void testReadCharBufferClosed(Reader reader) throws IOException {
         CharBuffer charBuffer = CharBuffer.allocate(1);
         reader.close();
-        reader.read(charBuffer);
+        assertThrows(IOException.class, () -> reader.read(charBuffer));
     }
 
-    @Test(dataProvider = "readers", expectedExceptions = IOException.class)
+    @Test(dataProvider = "readers")
     public void testReadCharBufferZeroRemainingClosed(Reader reader) throws IOException {
         CharBuffer charBuffer = CharBuffer.allocate(0);
         reader.close();
-        reader.read(charBuffer);
+        assertThrows(IOException.class, () -> reader.read(charBuffer));
     }
 
-    @Test(dataProvider = "readers", expectedExceptions = IOException.class)
+    @Test(dataProvider = "readers")
     public void testReadyClosed(Reader reader) throws IOException {
         reader.close();
-        reader.ready();
+        assertThrows(IOException.class, () -> reader.ready());
     }
 
-    @Test(dataProvider = "readers", expectedExceptions = IOException.class)
+    @Test(dataProvider = "readers")
     public void testSkipClosed(Reader reader) throws IOException {
         reader.close();
-        reader.skip(1);
+        assertThrows(IOException.class, () -> reader.skip(1));
     }
 
-    @Test(dataProvider = "readers", expectedExceptions = IOException.class)
+    @Test(dataProvider = "readers")
     public void testTransferToClosed(Reader reader) throws IOException {
         reader.close();
-        reader.transferTo(new StringWriter(1));
+        assertThrows(IOException.class, () -> reader.transferTo(new StringWriter(1)));
     }
 
     @Test(dataProvider = "readers")
