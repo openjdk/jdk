@@ -23,6 +23,7 @@
 
 #include "precompiled.hpp"
 #include "utilities/align.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "unittest.hpp"
@@ -157,6 +158,14 @@ static void test_alignments() {
   static_test_alignments<T, A>();
 }
 
+template <typename T, typename A>
+static void test_fail_alignment() {
+  A alignment = max_alignment<A>();
+  T value = std::numeric_limits<T>::max() - checked_cast<T>(alignment) + 10;
+  // Aligning up would overflow, as there isnt enough room for alignment
+  T aligned = align_up(value, alignment);
+}
+
 TEST(Align, alignments) {
   // Test the alignment functions with different type combinations.
 
@@ -194,4 +203,24 @@ TEST(Align, alignments) {
   test_alignments<uint8_t, uint8_t>();
 
   test_alignments<int8_t, int8_t>();
+}
+
+TEST_VM_ASSERT(Align, fail_alignments_same_size) {
+  test_fail_alignment<uint64_t, uint64_t>();
+}
+
+TEST_VM_ASSERT(Align, fail_alignments_unsigned_signed) {
+  test_fail_alignment<uint32_t, int32_t>();
+}
+
+TEST_VM_ASSERT(Align, fail_alignments_signed_unsigned) {
+  test_fail_alignment<int64_t, int32_t>();
+}
+
+TEST_VM_ASSERT(Align, fail_alignments_small_large) {
+  test_fail_alignment<uint8_t, uint64_t>();
+}
+
+TEST_VM_ASSERT(Align, fail_alignments_large_small) {
+  test_fail_alignment<uint64_t, uint8_t>();
 }
