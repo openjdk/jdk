@@ -682,12 +682,14 @@ class ConstantPool : public Metadata {
 #if INCLUDE_CDS
   // CDS support
   objArrayOop prepare_resolved_references_for_archiving() NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
+  void find_archivable_hidden_classes() NOT_CDS_JAVA_HEAP_RETURN;
   void add_dumped_interned_strings() NOT_CDS_JAVA_HEAP_RETURN;
   void remove_unshareable_info();
   void restore_unshareable_info(TRAPS);
 private:
   void remove_unshareable_entries();
   void remove_resolved_klass_if_non_deterministic(int cp_index);
+  template <typename Function> void iterate_archivable_resolved_references(Function function);
 #endif
 
  private:

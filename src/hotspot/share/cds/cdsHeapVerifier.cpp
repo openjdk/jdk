@@ -28,6 +28,8 @@
 #include "cds/cdsHeapVerifier.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/javaClasses.inline.hpp"
+#include "classfile/moduleEntry.hpp"
+#include "classfile/vmSymbols.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
@@ -44,7 +46,7 @@
 // correctly returns true when CDS disabled, but incorrectly returns false when CDS is enabled.
 //
 // class Foo {
-//     final Foo archivedFoo; // this field is archived by CDS
+//     static final Foo archivedFoo; // this field is archived by CDS
 //     Bar bar;
 //     static {
 //         CDS.initializeFromArchive(Foo.class);
@@ -124,6 +126,13 @@ CDSHeapVerifier::CDSHeapVerifier() : _archived_objs(0), _problems(0)
   ADD_EXCL("sun/invoke/util/ValueConversions",           "ONE_INT",                // E
                                                          "ZERO_INT");              // E
 
+  if (CDSConfig::is_dumping_invokedynamic()) {
+    ADD_EXCL("java/lang/invoke/MethodHandles",            "IMPL_NAMES");           // D
+    ADD_EXCL("java/lang/invoke/MemberName$Factory",       "INSTANCE");             // D
+    ADD_EXCL("java/lang/invoke/InvokerBytecodeGenerator", "MEMBERNAME_FACTORY",    // D
+                                                          "INVOKER_SUPER_DESC");   // E same as java.lang.constant.ConstantDescs::CD_Object
+  }
+
 # undef ADD_EXCL
 
   ClassLoaderDataGraph::classes_do(this);
@@ -154,7 +163,7 @@ public:
 
     oop static_obj_field = _ik->java_mirror()->obj_field(fd->offset());
     if (static_obj_field != nullptr) {
-      Klass* klass_of_field = static_obj_field->klass();
+      Klass* field_type = static_obj_field->klass();
       if (_exclusions != nullptr) {
         for (const char** p = _exclusions; *p != nullptr; p++) {
           if (fd->name()->equals(*p)) {
@@ -174,15 +183,22 @@ public:
         // This field points to an archived mirror.
         return;
       }
-      if (klass_of_field->has_archived_enum_objs()) {
-        // This field is an Enum. If any instance of this Enum has been archived, we will archive
-        // all static fields of this Enum as well.
-        // See HeapShared::initialize_enum_klass().
-        return;
-      }
-      if (klass_of_field->is_instance_klass()) {
-        if (InstanceKlass::cast(klass_of_field)->is_initialized() &&
-            AOTClassInitializer::can_archive_initialized_mirror(InstanceKlass::cast(klass_of_field))) {
+
+      if (field_type->is_instance_klass()) {
+        InstanceKlass* field_ik = InstanceKlass::cast(field_type);
+        if (field_ik->java_super() == vmClasses::Enum_klass()) {
+          if (field_ik->has_archived_enum_objs() || AOTClassInitializer::can_archive_initialized_mirror(field_ik)) {
+            // This field is an Enum. If any instance of this Enum has been archived, we will archive
+            // all static fields of this Enum as well.
+            return;
+          }
+        }
+
+        if (field_ik->is_hidden() && AOTClassInitializer::can_archive_initialized_mirror(field_ik)) {
+          // We have a static field in a core-library class that points to a method reference
+          // E.g., SharedSecrets::javaSecuritySpecAccess => EncodedKeySpec::clear(). These are safe
+          // to archive.
+          guarantee(_ik->module()->name() == vmSymbols::java_base(), "sanity");
           return;
         }
       }
@@ -211,12 +227,29 @@ void CDSHeapVerifier::do_klass(Klass* k) {
       return;
     }
 
+    if (HeapShared::is_lambda_form_klass(ik)) {
+      // Archived lambda forms have preinitialized mirrors, so <clinit> won't run.
+      return;
+    }
+
     CheckStaticFields csf(this, ik);
     ik->do_local_static_fields(&csf);
   }
 }
 
 void CDSHeapVerifier::add_static_obj_field(InstanceKlass* ik, oop field, Symbol* name) {
+  if (field->klass() == vmClasses::MethodType_klass()) {
+    // The identity of MethodTypes are preserved between assembly phase and production runs
+    // (by MethodType::AOTHolder::archivedMethodTypes). No need to check.
+    return;
+  }
+  if (field->klass() == vmClasses::LambdaForm_klass()) {
+    // LambdaForms are non-modifiable and are not tested for object equality, so
+    // it's OK if static fields of the LambdaForm type are reinitialized at runtime with
+    // alternative instances. No need to check.
+    return;
+  }
+
   StaticFieldInfo info = {ik, name};
   _table.put(field, info);
 }
@@ -232,10 +265,15 @@ inline bool CDSHeapVerifier::do_entry(oop& orig_obj, HeapShared::CachedOopInfo& 
       // should be flagged by CDSHeapVerifier.
       return true; /* keep on iterating */
     }
+    if (info->_holder->is_hidden()) {
+      return true;
+    }
     ResourceMark rm;
+    char* class_name = info->_holder->name()->as_C_string();
+    char* field_name = info->_name->as_C_string();
     LogStream ls(Log(cds, heap)::warning());
     ls.print_cr("Archive heap points to a static field that may be reinitialized at runtime:");
-    ls.print_cr("Field: %s::%s", info->_holder->name()->as_C_string(), info->_name->as_C_string());
+    ls.print_cr("Field: %s::%s", class_name, field_name);
     ls.print("Value: ");
     orig_obj->print_on(&ls);
     ls.print_cr("--- trace begin ---");

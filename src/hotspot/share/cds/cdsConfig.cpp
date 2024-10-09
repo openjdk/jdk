@@ -44,6 +44,7 @@ bool CDSConfig::_is_using_optimized_module_handling = true;
 bool CDSConfig::_is_dumping_full_module_graph = true;
 bool CDSConfig::_is_using_full_module_graph = true;
 bool CDSConfig::_has_aot_linked_classes = false;
+bool CDSConfig::_has_archived_invokedynamic = false;
 bool CDSConfig::_old_cds_flags_used = false;
 
 char* CDSConfig::_default_archive_path = nullptr;
@@ -329,7 +330,6 @@ bool CDSConfig::has_unsupported_runtime_module_options() {
   return false;
 }
 
-
 #define CHECK_ALIAS(f) check_flag_alias(FLAG_IS_DEFAULT(f), #f)
 
 void CDSConfig::check_flag_alias(bool alias_is_default, const char* alias_name) {
@@ -411,6 +411,14 @@ void CDSConfig::check_flag_aliases() {
 bool CDSConfig::check_vm_args_consistency(bool patch_mod_javabase, bool mode_flag_cmd_line) {
   check_flag_aliases();
 
+  if (AOTClassLinking) {
+    // If AOTClassLinking is specified, enable all AOT optimizations by default.
+    FLAG_SET_ERGO_IF_DEFAULT(AOTInvokeDynamicLinking, true);
+  } else {
+    // AOTInvokeDynamicLinking depends on AOTClassLinking.
+    FLAG_SET_ERGO(AOTInvokeDynamicLinking, false);
+  }
+
   if (is_dumping_static_archive()) {
     if (!mode_flag_cmd_line) {
       // By default, -Xshare:dump runs in interpreter-only mode, which is required for deterministic archive.
@@ -471,6 +479,11 @@ bool CDSConfig::check_vm_args_consistency(bool patch_mod_javabase, bool mode_fla
   }
 
   return true;
+}
+
+bool CDSConfig::allow_only_single_java_thread() {
+  // See comments in JVM_StartThread()
+  return is_dumping_static_archive();
 }
 
 bool CDSConfig::is_using_archive() {
@@ -559,4 +572,15 @@ void CDSConfig::set_has_aot_linked_classes(bool has_aot_linked_classes) {
 bool CDSConfig::is_initing_classes_at_dump_time() {
   return is_dumping_heap() && is_dumping_aot_linked_classes();
 }
+
+bool CDSConfig::is_dumping_invokedynamic() {
+  // Requires is_dumping_aot_linked_classes(). Otherwise the classes of some archived heap
+  // objects used by the archive indy callsites may be replaced at runtime.
+  return AOTInvokeDynamicLinking && is_dumping_aot_linked_classes() && is_dumping_heap();
+}
+
+bool CDSConfig::is_loading_invokedynamic() {
+  return UseSharedSpaces && is_using_full_module_graph() && _has_archived_invokedynamic;
+}
+
 #endif // INCLUDE_CDS_JAVA_HEAP

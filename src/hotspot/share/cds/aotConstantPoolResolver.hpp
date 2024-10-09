@@ -65,6 +65,7 @@ class AOTConstantPoolResolver :  AllStatic {
 
   static void resolve_string(constantPoolHandle cp, int cp_index, TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
   static bool is_class_resolution_deterministic(InstanceKlass* cp_holder, Klass* resolved_class);
+  static bool is_indy_resolution_deterministic(ConstantPool* cp, int cp_index);
 
   static Klass* find_loaded_class(Thread* current, oop class_loader, Symbol* name);
   static Klass* find_loaded_class(Thread* current, ConstantPool* cp, int class_cp_index);
@@ -72,12 +73,18 @@ class AOTConstantPoolResolver :  AllStatic {
   // fmi = FieldRef/MethodRef/InterfaceMethodRef
   static void maybe_resolve_fmi_ref(InstanceKlass* ik, Method* m, Bytecodes::Code bc, int raw_index,
                                     GrowableArray<bool>* resolve_fmi_list, TRAPS);
+
+  static bool check_lambda_metafactory_signature(ConstantPool* cp, Symbol* sig, bool check_return_type);
+  static bool check_lambda_metafactory_methodtype_arg(ConstantPool* cp, int bsms_attribute_index, int arg_i);
+  static bool check_lambda_metafactory_methodhandle_arg(ConstantPool* cp, int bsms_attribute_index, int arg_i);
+
 public:
   static void initialize();
   static void dispose();
 
   static void preresolve_class_cp_entries(JavaThread* current, InstanceKlass* ik, GrowableArray<bool>* preresolve_list);
   static void preresolve_field_and_method_cp_entries(JavaThread* current, InstanceKlass* ik, GrowableArray<bool>* preresolve_list);
+  static void preresolve_indy_cp_entries(JavaThread* current, InstanceKlass* ik, GrowableArray<bool>* preresolve_list);
 
 
   // Resolve all constant pool entries that are safe to be stored in the

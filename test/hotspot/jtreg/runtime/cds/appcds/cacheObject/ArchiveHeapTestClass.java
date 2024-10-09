@@ -41,6 +41,7 @@
  * @run driver ArchiveHeapTestClass
  */
 
+import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.Platform;
 import jdk.test.lib.helpers.ClassFileInstaller;
 import jdk.test.lib.process.OutputAnalyzer;
@@ -151,13 +152,15 @@ public class ArchiveHeapTestClass {
         output = dumpBootAndHello(CDSTestClassD_name);
         mustFail(output, "Unable to find the static T_OBJECT field CDSTestClassD::archivedObjects");
 
-        testCase("Use a disallowed class: in unnamed module but not in unname package");
-        output = dumpBootAndHello(CDSTestClassE_name);
-        mustFail(output, "Class pkg.ClassInPackage not allowed in archive heap");
+        if (!CDSTestUtils.isAOTClassLinkingEnabled()) {
+            testCase("Use a disallowed class: in unnamed module but not in unname package");
+            output = dumpBootAndHello(CDSTestClassE_name);
+            mustFail(output, "Class pkg.ClassInPackage not allowed in archive heap");
 
-        testCase("Use a disallowed class: not in java.base module");
-        output = dumpBootAndHello(CDSTestClassF_name);
-        mustFail(output, "Class java.util.logging.Level not allowed in archive heap");
+            testCase("Use a disallowed class: not in java.base module");
+            output = dumpBootAndHello(CDSTestClassF_name);
+            mustFail(output, "Class java.util.logging.Level not allowed in archive heap");
+        }
 
         testCase("Complex enums");
         output = dumpBootAndHello(CDSTestClassG_name, "-XX:+AOTClassLinking", "-Xlog:cds+class=debug");

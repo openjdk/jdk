@@ -49,6 +49,7 @@
 #include "oops/method.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/method.inline.hpp"
 #include "oops/resolvedFieldEntry.hpp"
 #include "oops/resolvedIndyEntry.hpp"
 #include "oops/resolvedMethodEntry.hpp"
@@ -401,9 +402,7 @@ void ConstantPoolCache::remove_unshareable_info() {
   assert(CDSConfig::is_dumping_archive(), "sanity");
 
   if (_resolved_indy_entries != nullptr) {
-    for (int i = 0; i < _resolved_indy_entries->length(); i++) {
-      resolved_indy_entry_at(i)->remove_unshareable_info();
-    }
+    remove_resolved_indy_entries_if_non_deterministic();
   }
   if (_resolved_field_entries != nullptr) {
     remove_resolved_field_entries_if_non_deterministic();
@@ -456,13 +455,13 @@ void ConstantPoolCache::remove_resolved_method_entries_if_non_deterministic() {
     bool archived = false;
     bool resolved = rme->is_resolved(Bytecodes::_invokevirtual)   ||
                     rme->is_resolved(Bytecodes::_invokespecial)   ||
-                    rme->is_resolved(Bytecodes::_invokeinterface);
+                    rme->is_resolved(Bytecodes::_invokeinterface) ||
+                    rme->is_resolved(Bytecodes::_invokehandle);
 
     // Just for safety -- this should not happen, but do not archive if we ever see this.
-    resolved &= !(rme->is_resolved(Bytecodes::_invokehandle) ||
-                  rme->is_resolved(Bytecodes::_invokestatic));
+    resolved &= !(rme->is_resolved(Bytecodes::_invokestatic));
 
-    if (resolved && can_archive_resolved_method(rme)) {
+    if (resolved && can_archive_resolved_method(src_cp, rme)) {
       rme->mark_and_relocate(src_cp);
       archived = true;
     } else {
@@ -494,7 +493,41 @@ void ConstantPoolCache::remove_resolved_method_entries_if_non_deterministic() {
   }
 }
 
-bool ConstantPoolCache::can_archive_resolved_method(ResolvedMethodEntry* method_entry) {
+void ConstantPoolCache::remove_resolved_indy_entries_if_non_deterministic() {
+  ConstantPool* cp = constant_pool();
+  ConstantPool* src_cp =  ArchiveBuilder::current()->get_source_addr(cp);
+  for (int i = 0; i < _resolved_indy_entries->length(); i++) {
+    ResolvedIndyEntry* rei = _resolved_indy_entries->adr_at(i);
+    int cp_index = rei->constant_pool_index();
+    bool archived = false;
+    bool resolved = rei->is_resolved();
+    if (resolved && AOTConstantPoolResolver::is_resolution_deterministic(src_cp, cp_index)) {
+      rei->mark_and_relocate();
+      archived = true;
+    } else {
+      rei->remove_unshareable_info();
+    }
+    if (resolved) {
+      LogStreamHandle(Trace, cds, resolve) log;
+      if (log.is_enabled()) {
+        ResourceMark rm;
+        int bsm = cp->bootstrap_method_ref_index_at(cp_index);
+        int bsm_ref = cp->method_handle_index_at(bsm);
+        Symbol* bsm_name = cp->uncached_name_ref_at(bsm_ref);
+        Symbol* bsm_signature = cp->uncached_signature_ref_at(bsm_ref);
+        Symbol* bsm_klass = cp->klass_name_at(cp->uncached_klass_ref_index_at(bsm_ref));
+        log.print("%s indy   CP entry [%3d]: %s (%d)",
+                  (archived ? "archived" : "reverted"),
+                  cp_index, cp->pool_holder()->name()->as_C_string(), i);
+        log.print(" %s %s.%s:%s", (archived ? "=>" : "  "), bsm_klass->as_C_string(),
+                  bsm_name->as_C_string(), bsm_signature->as_C_string());
+      }
+      ArchiveBuilder::alloc_stats()->record_indy_cp_entry(archived, resolved && !archived);
+    }
+  }
+}
+
+bool ConstantPoolCache::can_archive_resolved_method(ConstantPool* src_cp, ResolvedMethodEntry* method_entry) {
   InstanceKlass* pool_holder = constant_pool()->pool_holder();
   if (!(pool_holder->is_shared_boot_class() || pool_holder->is_shared_platform_class() ||
         pool_holder->is_shared_app_class())) {
@@ -519,7 +552,6 @@ bool ConstantPoolCache::can_archive_resolved_method(ResolvedMethodEntry* method_
   }
 
   int cp_index = method_entry->constant_pool_index();
-  ConstantPool* src_cp = ArchiveBuilder::current()->get_source_addr(constant_pool());
   assert(src_cp->tag_at(cp_index).is_method() || src_cp->tag_at(cp_index).is_interface_method(), "sanity");
 
   if (!AOTConstantPoolResolver::is_resolution_deterministic(src_cp, cp_index)) {
@@ -530,11 +562,16 @@ bool ConstantPoolCache::can_archive_resolved_method(ResolvedMethodEntry* method_
       method_entry->is_resolved(Bytecodes::_invokevirtual) ||
       method_entry->is_resolved(Bytecodes::_invokespecial)) {
     return true;
+  } else if (method_entry->is_resolved(Bytecodes::_invokehandle)) {
+    if (CDSConfig::is_dumping_invokedynamic()) {
+      // invokehandle depends on archived MethodType and LambdaForms.
+      return true;
+    } else {
+      return false;
+    }
   } else {
-    // invokestatic and invokehandle are not supported yet.
     return false;
   }
-
 }
 #endif // INCLUDE_CDS
 

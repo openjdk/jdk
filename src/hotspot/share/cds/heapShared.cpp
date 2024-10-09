@@ -118,6 +118,7 @@ static ArchivableStaticFieldInfo archive_subgraph_entry_fields[] = {
   {"java/lang/ModuleLayer",                       "EMPTY_LAYER"},
   {"java/lang/module/Configuration",              "EMPTY_CONFIGURATION"},
   {"jdk/internal/math/FDBigInteger",              "archivedCaches"},
+
 #ifndef PRODUCT
   {nullptr, nullptr}, // Extra slot for -XX:ArchiveHeapTestClass
 #endif
@@ -418,11 +419,33 @@ void HeapShared::remove_scratch_objects(Klass* k) {
   }
 }
 
+bool HeapShared::is_lambda_form_klass(InstanceKlass* ik) {
+  return ik->is_hidden() &&
+    (ik->name()->starts_with("java/lang/invoke/LambdaForm$MH+") ||
+     ik->name()->starts_with("java/lang/invoke/LambdaForm$DMH+") ||
+     ik->name()->starts_with("java/lang/invoke/LambdaForm$BMH+"));
+}
+
+bool HeapShared::is_lambda_proxy_klass(InstanceKlass* ik) {
+  return ik->is_hidden() && (ik->name()->index_of_at(0, "$$Lambda+", 9) > 0);
+}
+
+bool HeapShared::is_archivable_hidden_klass(InstanceKlass* ik) {
+  return CDSConfig::is_dumping_invokedynamic() && (is_lambda_form_klass(ik) || is_lambda_proxy_klass(ik));
+}
+
 void HeapShared::copy_aot_initialized_mirror(Klass* orig_k, oop orig_mirror, oop m) {
   if (!orig_k->is_instance_klass()) {
     return;
   }
   InstanceKlass* ik = InstanceKlass::cast(orig_k);
+
+  if (HeapShared::is_archivable_hidden_klass(ik)) {
+    // We can't rerun the <clinit> method of hidden classes as we don't save
+    // the classData, so we must archive its mirror in initialized state.
+    assert(ik->is_initialized(), "must be");
+  }
+
   if (!ik->is_initialized() || !AOTClassInitializer::can_archive_initialized_mirror(ik)) {
     return;
   }
@@ -467,6 +490,8 @@ void HeapShared::copy_aot_initialized_mirror(Klass* orig_k, oop orig_mirror, oop
       nfields ++;
     }
   }
+
+  java_lang_Class::set_class_data(m, java_lang_Class::class_data(orig_mirror));
 
   // Class::reflectData use SoftReference, which cannot be archived. Set it
   // to null and it will be recreated at runtime.
@@ -572,6 +597,8 @@ void HeapShared::mark_native_pointers(oop orig_obj) {
   if (java_lang_Class::is_instance(orig_obj)) {
     ArchiveHeapWriter::mark_native_pointer(orig_obj, java_lang_Class::klass_offset());
     ArchiveHeapWriter::mark_native_pointer(orig_obj, java_lang_Class::array_klass_offset());
+  } else if (java_lang_invoke_ResolvedMethodName::is_instance(orig_obj)) {
+    ArchiveHeapWriter::mark_native_pointer(orig_obj, java_lang_invoke_ResolvedMethodName::vmtarget_offset());
   }
 }
 
@@ -586,6 +613,104 @@ void HeapShared::set_has_native_pointers(oop src_obj) {
   CachedOopInfo* info = archived_object_cache()->get(src_obj);
   assert(info != nullptr, "must be");
   info->set_has_native_pointers();
+}
+
+void HeapShared::start_finding_archivable_hidden_classes() {
+  if (!CDSConfig::is_dumping_invokedynamic()) {
+    return;
+  }
+  NoSafepointVerifier nsv;
+
+  init_seen_objects_table();
+
+  find_archivable_hidden_classes_helper(archive_subgraph_entry_fields);
+  if (CDSConfig::is_dumping_full_module_graph()) {
+    find_archivable_hidden_classes_helper(fmg_archive_subgraph_entry_fields);
+  }
+}
+
+void HeapShared::end_finding_archivable_hidden_classes() {
+  if (!CDSConfig::is_dumping_invokedynamic()) {
+    return;
+  }
+  NoSafepointVerifier nsv;
+
+  delete_seen_objects_table();
+}
+
+void HeapShared::find_archivable_hidden_classes_helper(ArchivableStaticFieldInfo fields[]) {
+  if (!CDSConfig::is_dumping_heap()) {
+    return;
+  }
+  for (int i = 0; fields[i].valid(); ) {
+    ArchivableStaticFieldInfo* info = &fields[i];
+    const char* klass_name = info->klass_name;
+    for (; fields[i].valid(); i++) {
+      ArchivableStaticFieldInfo* f = &fields[i];
+      if (f->klass_name != klass_name) {
+        break;
+      }
+
+      InstanceKlass* k = f->klass;
+      oop m = k->java_mirror();
+      oop o = m->obj_field(f->offset);
+      if (o != nullptr) {
+        find_archivable_hidden_classes_in_object(o);
+      }
+    }
+  }
+}
+
+class HeapShared::FindHiddenClassesOopClosure: public BasicOopIterateClosure {
+  GrowableArray<oop> _stack;
+  template <class T> void do_oop_work(T *p) {
+    // Recurse on a GrowableArray to avoid overflowing the C stack.
+    oop o = RawAccess<>::oop_load(p);
+    if (o != nullptr) {
+      _stack.append(o);
+    }
+  }
+
+ public:
+
+  void do_oop(narrowOop *p) { FindHiddenClassesOopClosure::do_oop_work(p); }
+  void do_oop(      oop *p) { FindHiddenClassesOopClosure::do_oop_work(p); }
+
+  FindHiddenClassesOopClosure(oop o) {
+    _stack.append(o);
+  }
+  oop pop() {
+    if (_stack.length() == 0) {
+      return nullptr;
+    } else {
+      return _stack.pop();
+    }
+  }
+};
+
+void HeapShared::find_archivable_hidden_classes_in_object(oop root) {
+  ResourceMark rm;
+  FindHiddenClassesOopClosure c(root);
+  oop o;
+  while ((o = c.pop()) != nullptr) {
+    if (!has_been_seen_during_subgraph_recording(o)) {
+      set_has_been_seen_during_subgraph_recording(o);
+
+      if (java_lang_Class::is_instance(o)) {
+        Klass* k = java_lang_Class::as_Klass(o);
+        if (k != nullptr && k->is_instance_klass()) {
+          SystemDictionaryShared::mark_required_class(InstanceKlass::cast(k));
+        }
+      } else if (java_lang_invoke_ResolvedMethodName::is_instance(o)) {
+        Method* m = java_lang_invoke_ResolvedMethodName::vmtarget(o);
+        if (m != nullptr && m->method_holder() != nullptr) {
+          SystemDictionaryShared::mark_required_class(m->method_holder());
+        }
+      }
+
+      o->oop_iterate(&c);
+    }
+  }
 }
 
 void HeapShared::archive_objects(ArchiveHeapInfo *heap_info) {
@@ -714,14 +839,23 @@ void KlassSubGraphInfo::add_subgraph_object_klass(Klass* orig_k) {
   }
 
   if (buffered_k->is_instance_klass()) {
-    assert(InstanceKlass::cast(buffered_k)->is_shared_boot_class(),
-          "must be boot class");
+    if (CDSConfig::is_dumping_invokedynamic()) {
+      assert(InstanceKlass::cast(buffered_k)->is_shared_boot_class() ||
+             HeapShared::is_lambda_proxy_klass(InstanceKlass::cast(buffered_k)),
+            "we can archive only instances of boot classes or lambda proxy classes");
+    } else {
+      assert(InstanceKlass::cast(buffered_k)->is_shared_boot_class(),
+             "must be boot class");
+    }
     // vmClasses::xxx_klass() are not updated, need to check
     // the original Klass*
     if (orig_k == vmClasses::String_klass() ||
         orig_k == vmClasses::Object_klass()) {
       // Initialized early during VM initialization. No need to be added
       // to the sub-graph object class list.
+      return;
+    }
+    if (AOTClassInitializer::can_archive_initialized_mirror(InstanceKlass::cast(orig_k))) {
       return;
     }
     check_allowed_klass(InstanceKlass::cast(orig_k));
@@ -760,19 +894,30 @@ void KlassSubGraphInfo::check_allowed_klass(InstanceKlass* ik) {
     return;
   }
 
+  const char* lambda_msg = "";
+  if (CDSConfig::is_dumping_invokedynamic()) {
+    lambda_msg = ", or a lambda proxy class";
+    if (HeapShared::is_lambda_proxy_klass(ik) &&
+        (ik->class_loader() == nullptr ||
+         ik->class_loader() == SystemDictionary::java_platform_loader() ||
+         ik->class_loader() == SystemDictionary::java_system_loader())) {
+      return;
+    }
+  }
+
 #ifndef PRODUCT
-  if (!ik->module()->is_named() && ik->package() == nullptr) {
+  if (!ik->module()->is_named() && ik->package() == nullptr && ArchiveHeapTestClass != nullptr) {
     // This class is loaded by ArchiveHeapTestClass
     return;
   }
-  const char* extra_msg = ", or in an unnamed package of an unnamed module";
+  const char* testcls_msg = ", or a test class in an unnamed package of an unnamed module";
 #else
-  const char* extra_msg = "";
+  const char* testcls_msg = "";
 #endif
 
   ResourceMark rm;
-  log_error(cds, heap)("Class %s not allowed in archive heap. Must be in java.base%s",
-                       ik->external_name(), extra_msg);
+  log_error(cds, heap)("Class %s not allowed in archive heap. Must be in java.base%s%s",
+                       ik->external_name(), lambda_msg, testcls_msg);
   MetaspaceShared::unrecoverable_writing_error();
 }
 
@@ -791,6 +936,25 @@ bool KlassSubGraphInfo::is_non_early_klass(Klass* k) {
   } else {
     return false;
   }
+}
+
+static bool is_trivial_clinit(InstanceKlass* ik) {
+  if (ik->class_initializer() != nullptr) {
+    return false;
+  }
+
+  InstanceKlass* super = ik->java_super();
+  if (super != nullptr && !is_trivial_clinit(super)) {
+    return false;
+  }
+
+  Array<InstanceKlass*>* interfaces = ik->local_interfaces();
+  for (int i = 0; i < interfaces->length(); i++) {
+    if (!is_trivial_clinit(interfaces->at(i))) {
+      return false;
+    }
+  }
+  return true;
 }
 
 // Initialize an archived subgraph_info_record from the given KlassSubGraphInfo.
@@ -840,10 +1004,16 @@ void ArchivedKlassSubGraphInfoRecord::init(KlassSubGraphInfo* info) {
       if (log_is_enabled(Info, cds, heap)) {
         ResourceMark rm;
         const char* owner_name =  is_special ? "<special>" : _k->external_name();
-
+        const char* trivial_clinit = "";
+        if (subgraph_k->is_instance_klass()) {
+          InstanceKlass* src_ik = InstanceKlass::cast(ArchiveBuilder::current()->get_source_addr(subgraph_k));
+          if (is_trivial_clinit(InstanceKlass::cast(src_ik))) {
+            trivial_clinit = " (trivial clinit)";
+          }
+        }
         log_info(cds, heap)(
-          "Archived object klass %s (%2d) => %s",
-          owner_name, i, subgraph_k->external_name());
+          "Archived object klass %s (%2d) => %s%s",
+          owner_name, i, subgraph_k->external_name(), trivial_clinit);
       }
       _subgraph_object_klasses->at_put(i, subgraph_k);
       ArchivePtrMarker::mark_pointer(_subgraph_object_klasses->adr_at(i));
@@ -995,6 +1165,31 @@ void HeapShared::resolve_classes_for_subgraphs(JavaThread* current, ArchivableSt
   }
 }
 
+void HeapShared::resolve_classes_for_subgraph_of(JavaThread* current, Klass* k) {
+  JavaThread* THREAD = current;
+  ExceptionMark em(THREAD);
+  const ArchivedKlassSubGraphInfoRecord* record =
+   resolve_or_init_classes_for_subgraph_of(k, /*do_init=*/false, THREAD);
+  if (HAS_PENDING_EXCEPTION) {
+   CLEAR_PENDING_EXCEPTION;
+  }
+  if (record == nullptr) {
+   clear_archived_roots_of(k);
+  }
+}
+
+void HeapShared::initialize_java_lang_invoke(TRAPS) {
+  if (CDSConfig::is_loading_invokedynamic() || CDSConfig::is_dumping_invokedynamic()) {
+    resolve_or_init("java/lang/invoke/Invokers$Holder", true, CHECK);
+    resolve_or_init("java/lang/invoke/MethodHandle", true, CHECK);
+    resolve_or_init("java/lang/invoke/MethodHandleNatives", true, CHECK);
+    resolve_or_init("java/lang/invoke/DirectMethodHandle$Holder", true, CHECK);
+    resolve_or_init("java/lang/invoke/DelegatingMethodHandle$Holder", true, CHECK);
+    resolve_or_init("java/lang/invoke/LambdaForm$Holder", true, CHECK);
+    resolve_or_init("java/lang/invoke/BoundMethodHandle$Species_L", true, CHECK);
+  }
+}
+
 // Initialize the InstanceKlasses of objects that are reachable from the following roots:
 //   - interned strings
 //   - Klass::java_mirror() -- including aot-initialized mirrors such as those of Enum klasses.
@@ -1039,19 +1234,6 @@ void HeapShared::init_classes_for_special_subgraph(Handle class_loader, TRAPS) {
         }
       }
     }
-  }
-}
-
-void HeapShared::resolve_classes_for_subgraph_of(JavaThread* current, Klass* k) {
-  JavaThread* THREAD = current;
-  ExceptionMark em(THREAD);
-  const ArchivedKlassSubGraphInfoRecord* record =
-   resolve_or_init_classes_for_subgraph_of(k, /*do_init=*/false, THREAD);
-  if (HAS_PENDING_EXCEPTION) {
-   CLEAR_PENDING_EXCEPTION;
-  }
-  if (record == nullptr) {
-   clear_archived_roots_of(k);
   }
 }
 
@@ -1145,6 +1327,19 @@ HeapShared::resolve_or_init_classes_for_subgraph_of(Klass* k, bool do_init, TRAP
   }
 
   return record;
+}
+
+void HeapShared::resolve_or_init(const char* klass_name, bool do_init, TRAPS) {
+  TempNewSymbol klass_name_sym =  SymbolTable::new_symbol(klass_name);
+  InstanceKlass* k = SystemDictionaryShared::find_builtin_class(klass_name_sym);
+  if (k == nullptr) {
+    return;
+  }
+  assert(k->is_shared_boot_class(), "sanity");
+  resolve_or_init(k, false, CHECK);
+  if (do_init) {
+    resolve_or_init(k, true, CHECK);
+  }
 }
 
 void HeapShared::resolve_or_init(Klass* k, bool do_init, TRAPS) {
@@ -1784,8 +1979,8 @@ bool HeapShared::is_a_test_class_in_unnamed_module(Klass* ik) {
           return false;
         }
 
-        // See KlassSubGraphInfo::check_allowed_klass() - only two types of
-        // classes are allowed:
+        // See KlassSubGraphInfo::check_allowed_klass() - we only allow test classes
+        // to be:
         //   (A) java.base classes (which must not be in the unnamed module)
         //   (B) test classes which must be in the unnamed package of the unnamed module.
         // So if we see a '/' character in the class name, it must be in (A);

@@ -94,7 +94,10 @@ void AOTClassLinker::add_vm_class(InstanceKlass* ik) {
   bool created;
   _vm_classes->put_if_absent(ik, &created);
   if (created) {
-    add_candidate(ik);
+    if (CDSConfig::is_dumping_aot_linked_classes()) {
+      bool v = try_add_candidate(ik);
+      assert(v, "must succeed for VM class");
+    }
     InstanceKlass* super = ik->java_super();
     if (super != nullptr) {
       add_vm_class(super);
@@ -113,6 +116,11 @@ bool AOTClassLinker::is_candidate(InstanceKlass* ik) {
 void AOTClassLinker::add_candidate(InstanceKlass* ik) {
   _candidates->put_when_absent(ik, true);
   _sorted_candidates->append(ik);
+
+  if (log_is_enabled(Info, cds, aot, link)) {
+    ResourceMark rm;
+    log_info(cds, aot, link)("%s %s %p", class_category_name(ik), ik->external_name(), ik);
+  }
 }
 
 bool AOTClassLinker::try_add_candidate(InstanceKlass* ik) {
@@ -128,7 +136,21 @@ bool AOTClassLinker::try_add_candidate(InstanceKlass* ik) {
   }
 
   if (ik->is_hidden()) {
-    return false;
+    assert(ik->shared_class_loader_type() != ClassLoader::OTHER, "must have been set");
+    if (!CDSConfig::is_dumping_invokedynamic()) {
+      return false;
+    }
+    if (!SystemDictionaryShared::should_hidden_class_be_archived(ik)) {
+      return false;
+    }
+    if (HeapShared::is_lambda_proxy_klass(ik)) {
+      InstanceKlass* nest_host = ik->nest_host_not_null();
+      if (!try_add_candidate(nest_host)) {
+        ResourceMark rm;
+        log_warning(cds, aot, link)("%s cannot be aot-linked because it nest host is not aot-linked", ik->external_name());
+        return false;
+      }
+    }
   }
 
   InstanceKlass* s = ik->java_super();
@@ -146,11 +168,6 @@ bool AOTClassLinker::try_add_candidate(InstanceKlass* ik) {
   }
 
   add_candidate(ik);
-
-  if (log_is_enabled(Info, cds, aot, link)) {
-    ResourceMark rm;
-    log_info(cds, aot, link)("%s %s", class_category_name(ik), ik->external_name());
-  }
 
   return true;
 }

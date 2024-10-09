@@ -35,6 +35,7 @@
 #include "classfile/metadataOnStackMark.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
@@ -283,6 +284,35 @@ void ConstantPool::klass_at_put(int class_index, Klass* k) {
 }
 
 #if INCLUDE_CDS_JAVA_HEAP
+template <typename Function>
+void ConstantPool::iterate_archivable_resolved_references(Function function) {
+  objArrayOop rr = resolved_references();
+  if (rr != nullptr && cache() != nullptr && CDSConfig::is_dumping_invokedynamic()) {
+    Array<ResolvedIndyEntry>* indy_entries = cache()->resolved_indy_entries();
+    if (indy_entries != nullptr) {
+      for (int i = 0; i < indy_entries->length(); i++) {
+        ResolvedIndyEntry *rie = indy_entries->adr_at(i);
+        if (rie->is_resolved() && AOTConstantPoolResolver::is_resolution_deterministic(this, rie->constant_pool_index())) {
+          int rr_index = rie->resolved_references_index();
+          function(rr_index);
+        }
+      }
+    }
+
+    Array<ResolvedMethodEntry>* method_entries = cache()->resolved_method_entries();
+    if (method_entries != nullptr) {
+      for (int i = 0; i < method_entries->length(); i++) {
+        ResolvedMethodEntry* rme = method_entries->adr_at(i);
+        if (rme->is_resolved(Bytecodes::_invokehandle) && rme->has_appendix() &&
+            cache()->can_archive_resolved_method(this, rme)) {
+          int rr_index = rme->resolved_references_index();
+          function(rr_index);
+        }
+      }
+    }
+  }
+}
+
 // Returns the _resolved_reference array after removing unarchivable items from it.
 // Returns null if this class is not supported, or _resolved_reference doesn't exist.
 objArrayOop ConstantPool::prepare_resolved_references_for_archiving() {
@@ -300,8 +330,15 @@ objArrayOop ConstantPool::prepare_resolved_references_for_archiving() {
 
   objArrayOop rr = resolved_references();
   if (rr != nullptr) {
+    ResourceMark rm;
     int rr_len = rr->length();
+    GrowableArray<bool> keep_resolved_refs(rr_len, rr_len, false);
+
     ConstantPool* src_cp = ArchiveBuilder::current()->get_source_addr(this);
+    src_cp->iterate_archivable_resolved_references([&](int rr_index) {
+      keep_resolved_refs.at_put(rr_index, true);
+      });
+
     objArrayOop scratch_rr = HeapShared::scratch_resolved_references(src_cp);
     Array<u2>* ref_map = reference_map();
     int ref_map_len = ref_map == nullptr ? 0 : ref_map->length();
@@ -317,12 +354,40 @@ objArrayOop ConstantPool::prepare_resolved_references_for_archiving() {
               scratch_rr->obj_at_put(i, obj);
             }
           }
+        } else if (keep_resolved_refs.at(i)) {
+          scratch_rr->obj_at_put(i, obj);
         }
       }
     }
     return scratch_rr;
   }
   return rr;
+}
+
+void ConstantPool::find_archivable_hidden_classes() {
+  if (_cache == nullptr) {
+    return;
+  }
+
+  ClassLoaderData* loader_data = pool_holder()->class_loader_data();
+  if (loader_data == nullptr) {
+    // These are custom loader classes from the preimage
+    return;
+  }
+
+  if (!SystemDictionaryShared::is_builtin_loader(loader_data)) {
+    // Archiving resolved references for classes from non-builtin loaders
+    // is not yet supported.
+    return;
+  }
+
+  objArrayOop rr = resolved_references();
+  if (rr != nullptr) {
+    iterate_archivable_resolved_references([&](int rr_index) {
+      oop obj = rr->obj_at(rr_index);
+      HeapShared::find_archivable_hidden_classes_in_object(obj);
+    });
+  }
 }
 
 void ConstantPool::add_dumped_interned_strings() {
@@ -761,9 +826,7 @@ int ConstantPool::to_cp_index(int index, Bytecodes::Code code) {
     case Bytecodes::_fast_invokevfinal: // Bytecode interpreter uses this
       return resolved_method_entry_at(index)->constant_pool_index();
     default:
-      tty->print_cr("Unexpected bytecode: %d", code);
-      ShouldNotReachHere(); // All cases should have been handled
-      return -1;
+      fatal("Unexpected bytecode: %s", Bytecodes::name(code));
   }
 }
 

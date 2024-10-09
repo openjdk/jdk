@@ -49,6 +49,7 @@ class AOTLinkedClassBulkLoader :  AllStatic {
   static void initiate_loading(JavaThread* current, const char* category, Handle initiating_loader, Array<InstanceKlass*>* classes);
   static void load_classes_impl(AOTLinkedClassCategory class_category, Array<InstanceKlass*>* classes,
                                 const char* category_name, Handle loader, TRAPS);
+  static void load_hidden_class(ClassLoaderData* loader_data, InstanceKlass* ik, TRAPS);
   static void init_required_classes_for_loader(Handle class_loader, Array<InstanceKlass*>* classes, TRAPS);
 
 public:

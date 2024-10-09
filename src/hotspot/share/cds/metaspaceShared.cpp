@@ -79,6 +79,7 @@
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/javaCalls.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -561,7 +562,8 @@ void VM_PopulateDumpSharedSpace::doit() {
 
   // Block concurrent class unloading from changing the _dumptime_table
   MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
-  SystemDictionaryShared::check_excluded_classes();
+
+  SystemDictionaryShared::find_all_archivable_classes();
 
   _builder.gather_source_objs();
   _builder.reserve_buffer();
@@ -837,6 +839,18 @@ void MetaspaceShared::preload_and_dump_impl(StaticArchiveBuilder& builder, TRAPS
     ArchiveHeapWriter::init();
     if (CDSConfig::is_dumping_full_module_graph()) {
       HeapShared::reset_archived_object_states(CHECK);
+    }
+
+    if (CDSConfig::is_dumping_invokedynamic()) {
+      // This assert means that the MethodType and MethodTypeForm tables won't be
+      // updated concurrently when we are saving their contents into a side table.
+      assert(CDSConfig::allow_only_single_java_thread(), "Required");
+
+      JavaValue result(T_VOID);
+      JavaCalls::call_static(&result, vmClasses::MethodType_klass(),
+                             vmSymbols::createArchivedObjects(),
+                             vmSymbols::void_method_signature(),
+                             CHECK);
     }
 
     // Do this at the very end, when no Java code will be executed. Otherwise

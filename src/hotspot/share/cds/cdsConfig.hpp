@@ -37,6 +37,7 @@ class CDSConfig : public AllStatic {
   static bool _is_dumping_full_module_graph;
   static bool _is_using_full_module_graph;
   static bool _has_aot_linked_classes;
+  static bool _has_archived_invokedynamic;
 
   static char* _default_archive_path;
   static char* _static_archive_path;
@@ -87,6 +88,9 @@ public:
   static void enable_dumping_dynamic_archive()               { CDS_ONLY(_is_dumping_dynamic_archive = true); }
   static void disable_dumping_dynamic_archive()              { CDS_ONLY(_is_dumping_dynamic_archive = false); }
 
+  // Misc CDS features
+  static bool allow_only_single_java_thread()                NOT_CDS_RETURN_(false);
+
   // optimized_module_handling -- can we skip some expensive operations related to modules?
   static bool is_using_optimized_module_handling()           { return CDS_ONLY(_is_using_optimized_module_handling) NOT_CDS(false); }
   static void stop_using_optimized_module_handling()         NOT_CDS_RETURN;
@@ -111,6 +115,10 @@ public:
   static bool is_dumping_heap()                              NOT_CDS_JAVA_HEAP_RETURN_(false);
   static bool is_loading_heap()                              NOT_CDS_JAVA_HEAP_RETURN_(false);
   static bool is_initing_classes_at_dump_time()              NOT_CDS_JAVA_HEAP_RETURN_(false);
+
+  static bool is_dumping_invokedynamic()                     NOT_CDS_JAVA_HEAP_RETURN_(false);
+  static bool is_loading_invokedynamic()                     NOT_CDS_JAVA_HEAP_RETURN_(false);
+  static void set_has_archived_invokedynamic()               { CDS_JAVA_HEAP_ONLY(_has_archived_invokedynamic = true); }
 
   // full_module_graph (requires optimized_module_handling)
   static bool is_dumping_full_module_graph()                 { return CDS_ONLY(_is_dumping_full_module_graph) NOT_CDS(false); }

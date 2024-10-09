@@ -386,6 +386,7 @@ class ClassLoader: AllStatic {
   static char* skip_uri_protocol(char* source);
   static void  record_result(JavaThread* current, InstanceKlass* ik,
                              const ClassFileStream* stream, bool redefined);
+  static void record_hidden_class(InstanceKlass* ik);
 #endif
 
   static char* lookup_vm_options();
