@@ -158,14 +158,6 @@ static void test_alignments() {
   static_test_alignments<T, A>();
 }
 
-template <typename T, typename A>
-static void test_fail_alignment() {
-  A alignment = max_alignment<A>();
-  T value = align_down(std::numeric_limits<T>::max(), alignment) + 1;
-  // Aligning up would overflow, as there is not enough room for alignment
-  T aligned = align_up(value, alignment);
-}
-
 TEST(Align, alignments) {
   // Test the alignment functions with different type combinations.
 
@@ -206,6 +198,14 @@ TEST(Align, alignments) {
 }
 
 #ifdef ASSERT
+template <typename T, typename A>
+static void test_fail_alignment() {
+  A alignment = max_alignment<A>();
+  T value = align_down(std::numeric_limits<T>::max(), alignment) + 1;
+  // Aligning up would overflow, as there is not enough room for alignment
+  T aligned = align_up(value, alignment);
+}
+
 TEST_VM_ASSERT(Align, fail_alignments_same_size) {
   test_fail_alignment<uint64_t, uint64_t>();
 }
