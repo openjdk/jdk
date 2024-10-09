@@ -3222,8 +3222,6 @@ const TypePtr* TypeRawPtr::add_offset(intptr_t offset) const {
   case TypePtr::BotPTR:
   case TypePtr::NotNull:
     return this;
-  case TypePtr::Null:
-    return make( (address)offset );
   case TypePtr::Constant: {
     uintptr_t bits = (uintptr_t)_bits;
     uintptr_t sum = bits + offset;
