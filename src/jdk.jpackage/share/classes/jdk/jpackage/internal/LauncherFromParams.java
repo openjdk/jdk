@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,43 +22,30 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
 package jdk.jpackage.internal;
 
-import java.io.IOException;
-import java.nio.file.Path;
 import java.util.Map;
+import jdk.jpackage.internal.Launcher.Impl;
+import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
+import static jdk.jpackage.internal.StandardBundlerParam.DESCRIPTION;
+import static jdk.jpackage.internal.StandardBundlerParam.LAUNCHER_AS_SERVICE;
+import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE;
 
+final class LauncherFromParams {
 
-/**
- * AbstractBundler
- *
- * This is the base class all bundlers extend from.
- * It contains methods and parameters common to all bundlers.
- * The concrete implementations are in the platform specific bundlers.
- */
-abstract class AbstractBundler implements Bundler {
+    static Launcher create(Map<String, ? super Object> params) {
+        var name = APP_NAME.fetchFrom(params);
 
-    static final BundlerParamInfo<Path> IMAGES_ROOT =
-            new BundlerParamInfo<>(
-            "imagesRoot",
-            Path.class,
-            params ->
-                StandardBundlerParam.TEMP_ROOT.fetchFrom(params).resolve("images"),
-            (s, p) -> null);
-
-    @Override
-    public String toString() {
-        return getName();
-    }
-
-    @Override
-    public void cleanup(Map<String, ? super Object> params) {
-        try {
-            IOUtils.deleteRecursive(
-                    StandardBundlerParam.TEMP_ROOT.fetchFrom(params));
-        } catch (IOException e) {
-            Log.verbose(e.getMessage());
+        LauncherStartupInfo startupInfo = null;
+        if (PREDEFINED_APP_IMAGE.fetchFrom(params) == null) {
+            startupInfo = LauncherStartupInfo.createFromParams(params);
         }
+
+        var isService = LAUNCHER_AS_SERVICE.fetchFrom(params);
+        var description = DESCRIPTION.fetchFrom(params);
+        var icon = StandardBundlerParam.ICON.fetchFrom(params);
+        var fa = FileAssociation.fetchFrom(params);
+
+        return new Impl(name, startupInfo, fa, isService, description, icon);
     }
 }

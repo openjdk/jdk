@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,26 +33,21 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import jdk.jpackage.internal.AppImageFile.LauncherInfo;
-import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE;
 
 /**
  * Helper to install launchers as services for Unix installers.
  */
 class UnixLaunchersAsServices extends ShellCustomAction {
 
-    UnixLaunchersAsServices(PlatformPackage thePackage,
-            List<String> requiredPackages, Map<String, Object> params,
-            Function<LauncherInfo, UnixLauncherAsService> factory) throws
-            IOException {
+    UnixLaunchersAsServices(Workshop workshop, Application app, List<String> requiredPackages,
+            Function<Launcher, UnixLauncherAsService> factory) throws IOException {
 
-        this.thePackage = thePackage;
+        this.appImageDir = workshop.appImageDir();
         this.requiredPackages = requiredPackages;
 
         // Read launchers information
-        launchers = AppImageFile.getLaunchers(PREDEFINED_APP_IMAGE.fetchFrom(
-                params), params).stream().filter(LauncherInfo::isService).map(
-                factory::apply).toList();
+        launchers = app.allLaunchers().stream().filter(Launcher::isService).map(factory::apply)
+                .toList();
     }
 
     @Override
@@ -93,8 +88,7 @@ class UnixLaunchersAsServices extends ShellCustomAction {
         data.put(COMMANDS_UNINSTALL, strigifier.apply("unregister_services"));
 
         for (var launcher : launchers) {
-            launcher.getResource().saveToFile(launcher.descriptorFilePath(
-                    thePackage.sourceRoot()));
+            launcher.getResource().saveToFile(launcher.descriptorFilePath(appImageDir));
         }
 
         return data;
@@ -106,15 +100,14 @@ class UnixLaunchersAsServices extends ShellCustomAction {
 
     abstract static class UnixLauncherAsService extends LauncherAsService {
 
-        UnixLauncherAsService(String name, Map<String, Object> mainParams,
-                OverridableResource resource) {
-            super(name, mainParams, resource);
+        UnixLauncherAsService(Launcher launcher, OverridableResource resource) {
+            super(launcher, resource);
         }
 
         abstract Path descriptorFilePath(Path root);
     }
 
-    private final PlatformPackage thePackage;
+    private final Path appImageDir;
     private final List<String> requiredPackages;
     private final List<UnixLauncherAsService> launchers;
     private final Enquoter enqouter = Enquoter.forShellLiterals();

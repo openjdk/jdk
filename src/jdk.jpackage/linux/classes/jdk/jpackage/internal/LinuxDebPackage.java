@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,43 +22,45 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
 package jdk.jpackage.internal;
 
-import java.io.IOException;
 import java.nio.file.Path;
-import java.util.Map;
 
+interface LinuxDebPackage extends LinuxPackage {
 
-/**
- * AbstractBundler
- *
- * This is the base class all bundlers extend from.
- * It contains methods and parameters common to all bundlers.
- * The concrete implementations are in the platform specific bundlers.
- */
-abstract class AbstractBundler implements Bundler {
+    String maintainerEmail();
 
-    static final BundlerParamInfo<Path> IMAGES_ROOT =
-            new BundlerParamInfo<>(
-            "imagesRoot",
-            Path.class,
-            params ->
-                StandardBundlerParam.TEMP_ROOT.fetchFrom(params).resolve("images"),
-            (s, p) -> null);
-
-    @Override
-    public String toString() {
-        return getName();
+    default String maintainer() {
+        return String.format("%s <%s>", app().vendor(), maintainerEmail());
     }
 
-    @Override
-    public void cleanup(Map<String, ? super Object> params) {
-        try {
-            IOUtils.deleteRecursive(
-                    StandardBundlerParam.TEMP_ROOT.fetchFrom(params));
-        } catch (IOException e) {
-            Log.verbose(e.getMessage());
+    default String versionWithRelease() {
+        return String.format("%s-%s", version(), release());
+    }
+
+    default Path relativeCopyrightFilePath() {
+        if (isRuntimeInstaller()) {
+            return null;
+        } else if (isInstallDirInUsrTree() || Path.of("/").resolve(relativeInstallDir()).startsWith(
+                "/usr/")) {
+            return Path.of("/usr/share/doc/", packageName(), "copyright");
+        } else {
+            return relativeInstallDir().resolve("share/doc/copyright");
         }
+    }
+
+    static class Impl extends LinuxPackage.Proxy<LinuxPackage> implements LinuxDebPackage {
+
+        public Impl(LinuxPackage target, String maintainerEmail) {
+            super(target);
+            this.maintainerEmail = maintainerEmail;
+        }
+
+        @Override
+        public String maintainerEmail() {
+            return maintainerEmail;
+        }
+
+        private final String maintainerEmail;
     }
 }
