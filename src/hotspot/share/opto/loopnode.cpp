@@ -4339,13 +4339,21 @@ void PhaseIdealLoop::mark_loop_associated_parse_predicates_useful() {
   }
 }
 
+// This visitor marks all visited Parse Predicates useful.
+class ParsePredicateUsefulMarker : public PredicateVisitor {
+ public:
+  using PredicateVisitor::visit;
+
+  void visit(const ParsePredicate& parse_predicate) override {
+    parse_predicate.head()->mark_useful();
+  }
+};
+
 void PhaseIdealLoop::mark_useful_parse_predicates_for_loop(IdealLoopTree* loop) {
   Node* entry = loop->_head->as_Loop()->skip_strip_mined()->in(LoopNode::EntryControl);
-  const Predicates predicates(entry);
-  ParsePredicateIterator iterator(predicates);
-  while (iterator.has_next()) {
-    iterator.next()->mark_useful();
-  }
+  const PredicateIterator predicate_iterator(entry);
+  ParsePredicateUsefulMarker useful_marker;
+  predicate_iterator.for_each(useful_marker);
 }
 
 void PhaseIdealLoop::add_useless_parse_predicates_to_igvn_worklist() {
@@ -6289,6 +6297,43 @@ void PhaseIdealLoop::build_loop_late_post(Node *n) {
   build_loop_late_post_work(n, true);
 }
 
+// Class to visit all predicates in a predicate chain to find out which are dominated by a given node. Keeps track of
+// the entry to the earliest predicate that is still dominated by the given dominator. This class is used when trying to
+// legally skip all predicates when figuring out the latest placement such that a node does not interfere with Loop
+// Predication or creating a Loop Limit Check Predicate later.
+class DominatedPredicates : public UnifiedPredicateVisitor {
+  Node* const _dominator;
+  Node* _earliest_dominated_predicate_entry;
+  bool _should_continue;
+  PhaseIdealLoop* const _phase;
+
+ public:
+  DominatedPredicates(Node* dominator, Node* start_node, PhaseIdealLoop* phase)
+      : _dominator(dominator),
+        _earliest_dominated_predicate_entry(start_node),
+        _should_continue(true),
+        _phase(phase) {}
+  NONCOPYABLE(DominatedPredicates);
+
+  bool should_continue() const override {
+    return _should_continue;
+  }
+
+  // Returns the entry to the earliest predicate that is still dominated by the given dominator (all could be dominated).
+  Node* earliest_dominated_predicate_entry() const {
+    return _earliest_dominated_predicate_entry;
+  }
+
+  void visit_predicate(const Predicate& predicate) override {
+    Node* entry = predicate.entry();
+    if (_phase->is_strict_dominator(entry, _dominator)) {
+      _should_continue = false;
+    } else {
+      _earliest_dominated_predicate_entry = entry;
+    }
+  }
+};
+
 void PhaseIdealLoop::build_loop_late_post_work(Node *n, bool pinned) {
 
   if (n->req() == 2 && (n->Opcode() == Op_ConvI2L || n->Opcode() == Op_CastII) && !C->major_progress() && !_verify_only) {
@@ -6400,14 +6445,10 @@ void PhaseIdealLoop::build_loop_late_post_work(Node *n, bool pinned) {
     // Move the node above predicates as far up as possible so a
     // following pass of Loop Predication doesn't hoist a predicate
     // that depends on it above that node.
-    PredicateEntryIterator predicate_iterator(least);
-    while (predicate_iterator.has_next()) {
-      Node* next_predicate_entry = predicate_iterator.next_entry();
-      if (is_strict_dominator(next_predicate_entry, early)) {
-        break;
-      }
-      least = next_predicate_entry;
-    }
+    const PredicateIterator predicate_iterator(least);
+    DominatedPredicates dominated_predicates(early, least, this);
+    predicate_iterator.for_each(dominated_predicates);
+    least = dominated_predicates.earliest_dominated_predicate_entry();
   }
   // Try not to place code on a loop entry projection
   // which can inhibit range check elimination.
