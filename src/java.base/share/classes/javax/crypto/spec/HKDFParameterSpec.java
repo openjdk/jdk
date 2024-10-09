@@ -114,7 +114,7 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
          *
          * @param info
          *         the optional context and application specific information
-         *         (may be {@code null}); the byte array is copied to prevent
+         *         (may be {@code null}); the byte array is cloned to prevent
          *         subsequent modification
          * @param length
          *         the length of the output keying material (must be greater
@@ -171,7 +171,10 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
          * material as a list of {@code SecretKey} objects.
          *
          * @param ikm
-         *         the input keying material (IKM) value
+         *         the input keying material (IKM) value; the {@code ikm}
+         *         byte array will be converted to a {@code SecretKeySpec},
+         *         which means that the byte array will be cloned inside the
+         *         {@code SecretKeySpec} constructor
          *
          * @return this builder
          *
@@ -223,7 +226,10 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
          * {@code SecretKey} objects.
          *
          * @param salt
-         *         the salt value
+         *         the salt value; the {@code salt} byte array will be
+         *         converted to a {@code SecretKeySpec}, which means that the
+         *         byte array will be cloned inside the {@code SecretKeySpec}
+         *         constructor
          *
          * @return this builder
          *
@@ -257,7 +263,7 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
      *         the pseudorandom key (PRK); must not be {@code null}
      * @param info
      *         the optional context and application specific information (may be
-     *         {@code null}); the byte array is copied to prevent subsequent
+     *         {@code null}); the byte array is cloned to prevent subsequent
      *         modification
      * @param length
      *         the length of the output keying material (must be greater than
@@ -357,7 +363,7 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
          *         {@null} since the output of extract phase is used
          * @param info
          *         the optional context and application specific information
-         *         (may be {@code null}); the byte array is copied to prevent
+         *         (may be {@code null}); the byte array is cloned to prevent
          *         subsequent modification
          * @param length
          *         the length of the output keying material
@@ -387,7 +393,7 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
         /**
          * Returns the optional context and application specific information.
          *
-         * @return a copy of the optional context and application specific
+         * @return a clone of the optional context and application specific
          *         information, or {@code null} if not specified
          */
         public byte[] info() {
@@ -422,7 +428,7 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
          *         a pre-generated {@code Extract}
          * @param info
          *         the optional context and application specific information
-         *         (may be {@code null}); the byte array is copied to prevent
+         *         (may be {@code null}); the byte array is cloned to prevent
          *         subsequent modification
          * @param length
          *         the length of the output keying material
@@ -478,7 +484,7 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
         /**
          * Returns the optional context and application specific information.
          *
-         * @return a copy of the optional context and application specific
+         * @return a clone of the optional context and application specific
          *         information, or {@code null} if not specified
          */
         public byte[] info() {
