@@ -822,7 +822,7 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register reg_rax, 
     }
     movptr(Address(thread, JavaThread::unlocked_inflated_monitor_offset()), monitor);
 
-    testl(monitor, monitor);            // Fast Unlock ZF = 0
+    orl(t, 1); // Fast Unlock ZF = 0
     jmpb(slow_path);
 
     // Recursive unlock.
