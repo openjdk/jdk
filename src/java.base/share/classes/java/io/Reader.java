@@ -148,7 +148,8 @@ public abstract class Reader implements Readable, Closeable {
      * concurrent threads. If the reader is to be used by more than one
      * thread it should be controlled by appropriate synchronization.
      *
-     * <p> If the sequence is concurrently modified then the result is undefined.
+     * <p> If the sequence changes while the reader is open, e.g. the length
+     * changes, the behavior is undefined.
      *
      * <p> The returned reader is initially open. The reader is closed by
      * calling the {@code close()} method. Subsequent calls to {@code close()}
