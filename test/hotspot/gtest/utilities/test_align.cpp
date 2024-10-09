@@ -161,8 +161,8 @@ static void test_alignments() {
 template <typename T, typename A>
 static void test_fail_alignment() {
   A alignment = max_alignment<A>();
-  T value = std::numeric_limits<T>::max() - checked_cast<T>(alignment) + 10;
-  // Aligning up would overflow, as there isnt enough room for alignment
+  T value = align_down(std::numeric_limits<T>::max(), alignment) + 1;
+  // Aligning up would overflow, as there is not enough room for alignment
   T aligned = align_up(value, alignment);
 }
 
