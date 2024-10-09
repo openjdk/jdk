@@ -46,6 +46,8 @@ public class MinMaxLoopBench
     int[] maxIntB;
     long[] maxLongA;
     long[] maxLongB;
+    int[] resultIntArray;
+    long[] resultLongArray;
 
     @Setup
     public void setup() {
@@ -58,6 +60,8 @@ public class MinMaxLoopBench
         minLongB = negate(maxLongB);
         minIntA = toInts(minLongA);
         minIntB = toInts(minLongB);
+        resultIntArray = new int[size];
+        resultLongArray = new long[size];
     }
 
     static long[] negate(long[] nums) {
@@ -104,20 +108,18 @@ public class MinMaxLoopBench
 
     @Benchmark
     public int[] intLoopMin() {
-        final int[] result = new int[size];
         for (int i = 0; i < size; i++) {
-            result[i] = Math.min(minIntA[i], minIntB[i]);
+            resultIntArray[i] = Math.min(minIntA[i], minIntB[i]);
         }
-        return result;
+        return resultIntArray;
     }
 
     @Benchmark
     public int[] intLoopMax() {
-        final int[] result = new int[size];
         for (int i = 0; i < size; i++) {
-            result[i] = Math.max(maxIntA[i], maxIntB[i]);
+            resultIntArray[i] = Math.max(maxIntA[i], maxIntB[i]);
         }
-        return result;
+        return resultIntArray;
     }
 
     @Benchmark
@@ -142,20 +144,18 @@ public class MinMaxLoopBench
 
     @Benchmark
     public long[] longLoopMin() {
-        final long[] result = new long[size];
         for (int i = 0; i < size; i++) {
-            result[i] = Math.min(minLongA[i], minLongB[i]);
+            resultLongArray[i] = Math.min(minLongA[i], minLongB[i]);
         }
-        return result;
+        return resultLongArray;
     }
 
     @Benchmark
     public long[] longLoopMax() {
-        final long[] result = new long[size];
         for (int i = 0; i < size; i++) {
-            result[i] = Math.max(maxLongA[i], maxLongB[i]);
+            resultLongArray[i] = Math.max(maxLongA[i], maxLongB[i]);
         }
-        return result;
+        return resultLongArray;
     }
 
     @Benchmark
