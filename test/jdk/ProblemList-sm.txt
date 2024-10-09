@@ -28,10 +28,3 @@ sun/rmi/transport/tcp/disableMultiplexing/DisableMultiplexing.java 0000000 gener
 # java/lang/invoke
 java/lang/invoke/7196190/GetUnsafeTest.java 0000000 generic-all
 java/lang/invoke/8076596/Test8076596.java 0000000 generic-all
-java/lang/invoke/FindClassSecurityManager.java 0000000 generic-all
-java/lang/invoke/MethodHandleConstants.java 0000000 generic-all
-java/lang/invoke/MethodTypeSecurityManager.java 0000000 generic-all
-java/lang/invoke/RevealDirectTest.java 0000000 generic-all
-java/lang/invoke/TestPrivateMember.java 0000000 generic-all
-java/lang/invoke/callerSensitive/Main.java 0000000 generic-all
-java/lang/invoke/lambda/LambdaAccessControlDoPrivilegedTest.java 0000000 generic-all
