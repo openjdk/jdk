@@ -27,6 +27,7 @@
 
 #include "classfile/classLoaderData.hpp"
 #include "gc/parallel/psParallelCompact.hpp"
+#include "gc/shared/partialArrayTaskStepper.hpp"
 #include "gc/shared/preservedMarks.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/taskqueue.hpp"
@@ -40,6 +41,8 @@ class ParCompactionManager;
 class ObjectStartArray;
 class ParallelCompactData;
 class ParMarkBitMap;
+class PartialArrayState;
+class PartialArrayStateAllocator;
 
 class PCMarkAndPushClosure: public ClaimMetadataVisitingOopIterateClosure {
   ParCompactionManager* _compaction_manager;
@@ -64,26 +67,29 @@ class ParCompactionManager : public CHeapObj<mtGC> {
   friend class PCAddThreadRootsMarkingTaskClosure;
 
  private:
-  typedef OverflowTaskQueue<oop, mtGC>            OopTaskQueue;
-  typedef GenericTaskQueueSet<OopTaskQueue, mtGC> OopTaskQueueSet;
-
-  // 32-bit:  4K * 8 = 32KiB; 64-bit:  8K * 16 = 128KiB
-  #define QUEUE_SIZE (1 << NOT_LP64(12) LP64_ONLY(13))
-  typedef OverflowTaskQueue<ObjArrayTask, mtGC, QUEUE_SIZE> ObjArrayTaskQueue;
-  typedef GenericTaskQueueSet<ObjArrayTaskQueue, mtGC>      ObjArrayTaskQueueSet;
-  #undef QUEUE_SIZE
-  typedef OverflowTaskQueue<size_t, mtGC>             RegionTaskQueue;
-  typedef GenericTaskQueueSet<RegionTaskQueue, mtGC>  RegionTaskQueueSet;
+  typedef OverflowTaskQueue<ScannerTask, mtGC>           PSMarkTaskQueue;
+  typedef GenericTaskQueueSet<PSMarkTaskQueue, mtGC>     PSMarkTasksQueueSet;
+  typedef OverflowTaskQueue<size_t, mtGC>                RegionTaskQueue;
+  typedef GenericTaskQueueSet<RegionTaskQueue, mtGC>     RegionTaskQueueSet;
 
   static ParCompactionManager** _manager_array;
-  static OopTaskQueueSet*       _oop_task_queues;
-  static ObjArrayTaskQueueSet*  _objarray_task_queues;
+  static PSMarkTasksQueueSet*   _marking_stacks;
   static ObjectStartArray*      _start_array;
   static RegionTaskQueueSet*    _region_task_queues;
   static PSOldGen*              _old_gen;
+  static PartialArrayStateAllocator*  _partial_array_state_allocator;
 
-  OopTaskQueue                  _oop_stack;
-  ObjArrayTaskQueue             _objarray_stack;
+  PartialArrayTaskStepper       _partial_array_stepper;
+  uint                          _partial_array_state_allocator_index;
+  PSMarkTaskQueue               _marking_stack;
+
+#if TASKQUEUE_STATS
+  size_t                        _array_chunk_pushes;
+  size_t                        _array_chunk_steals;
+  size_t                        _arrays_chunked;
+  size_t                        _array_chunks_processed;
+#endif // TASKQUEUE_STATS
+
   size_t                        _next_shadow_region;
 
   PCMarkAndPushClosure _mark_and_push_closure;
@@ -109,23 +115,19 @@ class ParCompactionManager : public CHeapObj<mtGC> {
 
   static PSOldGen* old_gen()             { return _old_gen; }
   static ObjectStartArray* start_array() { return _start_array; }
-  static OopTaskQueueSet* oop_task_queues()  { return _oop_task_queues; }
+  static PSMarkTasksQueueSet* marking_stacks()  { return _marking_stacks; }
 
   static void initialize(ParMarkBitMap* mbm);
-
-  void publish_and_drain_oop_tasks();
-  // Try to publish all contents from the objArray task queue overflow stack to
-  // the shared objArray stack.
-  // Returns true and a valid task if there has not been enough space in the shared
-  // objArray stack, otherwise returns false and the task is invalid.
-  bool publish_or_pop_objarray_tasks(ObjArrayTask& task);
 
   ParCompactionManager(PreservedMarks* preserved_marks,
                        ReferenceProcessor* ref_processor);
 
   // Array of task queues.  Needed by the task terminator.
   static RegionTaskQueueSet* region_task_queues()      { return _region_task_queues; }
-  OopTaskQueue*  oop_stack()       { return &_oop_stack; }
+
+  inline PSMarkTaskQueue*  marking_stack() { return &_marking_stack; }
+  inline void push(PartialArrayState* stat);
+  void push_objArray(oop obj);
 
   // To collect per-region live-words in a worker local cache in order to
   // reduce threads contention.
@@ -154,6 +156,12 @@ class ParCompactionManager : public CHeapObj<mtGC> {
   };
 
   MarkingStatsCache* _marking_stats_cache;
+
+#if TASKQUEUE_STATS
+  static void print_and_reset_taskqueue_stats();
+  void print_local_stats(outputStream* const out, uint i) const;
+  void reset_stats();
+#endif // TASKQUEUE_STATS
 
 public:
   static const size_t InvalidShadow = ~0;
@@ -189,7 +197,6 @@ public:
 
   // Save for later processing.  Must not fail.
   inline void push(oop obj);
-  inline void push_objarray(oop objarray, size_t index);
   inline void push_region(size_t index);
 
   // Check mark and maybe push on marking stack.
@@ -198,19 +205,21 @@ public:
   // Access function for compaction managers
   static ParCompactionManager* gc_thread_compaction_manager(uint index);
 
-  static bool steal(int queue_num, oop& t);
-  static bool steal_objarray(int queue_num, ObjArrayTask& t);
+  static bool steal(int queue_num, ScannerTask& t);
   static bool steal(int queue_num, size_t& region);
 
-  // Process tasks remaining on any marking stack
+  // Process tasks remaining on marking stack
   void follow_marking_stacks();
-  inline bool marking_stacks_empty() const;
+  inline bool marking_stack_empty() const;
 
   // Process tasks remaining on any stack
   void drain_region_stacks();
 
-  void follow_contents(oop obj);
-  void follow_array(objArrayOop array, int index);
+  inline void follow_contents(const ScannerTask& task);
+  inline void follow_array(objArrayOop array, int start, int end);
+  void process_array_chunk(PartialArrayState* state);
+
+  TASKQUEUE_STATS_ONLY(inline void record_steal(ScannerTask task);)
 
   class FollowStackClosure: public VoidClosure {
    private:
@@ -234,8 +243,8 @@ public:
   static void verify_all_region_stack_empty() NOT_DEBUG_RETURN;
 };
 
-bool ParCompactionManager::marking_stacks_empty() const {
-  return _oop_stack.is_empty() && _objarray_stack.is_empty();
+bool ParCompactionManager::marking_stack_empty() const {
+  return _marking_stack.is_empty();
 }
 
 #endif // SHARE_GC_PARALLEL_PSCOMPACTIONMANAGER_HPP
