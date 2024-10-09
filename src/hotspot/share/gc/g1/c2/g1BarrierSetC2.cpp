@@ -324,8 +324,6 @@ void G1BarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* 
 Node* G1BarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue& val) const {
   DecoratorSet decorators = access.decorators();
   bool anonymous = (decorators & ON_UNKNOWN_OOP_REF) != 0;
-  bool on_weak = (decorators & ON_WEAK_OOP_REF) != 0;
-  bool on_phantom = (decorators & ON_PHANTOM_OOP_REF) != 0;
   bool in_heap = (decorators & IN_HEAP) != 0;
   bool tightly_coupled_alloc = (decorators & C2_TIGHTLY_COUPLED_ALLOC) != 0;
   bool need_store_barrier = !(tightly_coupled_alloc && use_ReduceInitialCardMarks()) && (in_heap || anonymous);
@@ -339,14 +337,9 @@ Node* G1BarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue& val) co
       access.set_barrier_data(access.barrier_data() & ~G1C2BarrierPre);
     }
   }
-  if ((on_weak || on_phantom) && no_keepalive) {
-    // Be extra paranoid around this path. Only accept null stores,
-    // otherwise we need a post-store barrier.
-    C2ParseAccess &parse_access = static_cast<C2ParseAccess &>(access);
-    if (val.node() == parse_access.kit()->null()) {
-      access.set_barrier_data(access.barrier_data() & ~G1C2BarrierPre);
-      access.set_barrier_data(access.barrier_data() & ~G1C2BarrierPost);
-    }
+  if (no_keepalive) {
+    // No keep-alive means no need for the pre-barrier.
+    access.set_barrier_data(access.barrier_data() & ~G1C2BarrierPre);
   }
   return BarrierSetC2::store_at_resolved(access, val);
 }

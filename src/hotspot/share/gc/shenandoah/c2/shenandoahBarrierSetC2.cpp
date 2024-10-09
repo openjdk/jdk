@@ -480,24 +480,20 @@ Node* ShenandoahBarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue&
   const TypePtr* adr_type = access.addr().type();
   Node* adr = access.addr().node();
 
-  bool on_weak = (decorators & ON_WEAK_OOP_REF) != 0;
-  bool on_phantom = (decorators & ON_PHANTOM_OOP_REF) != 0;
   bool no_keepalive = (decorators & AS_NO_KEEPALIVE) != 0;
 
   if (!access.is_oop()) {
     return BarrierSetC2::store_at_resolved(access, val);
   }
 
+  if (no_keepalive) {
+    // No keep-alive means no need for the pre-barrier.
+    return BarrierSetC2::store_at_resolved(access, val);
+  }
+
   if (access.is_parse_access()) {
     C2ParseAccess& parse_access = static_cast<C2ParseAccess&>(access);
     GraphKit* kit = parse_access.kit();
-
-    if ((val.node() == kit->null()) &&
-        ((on_weak || on_phantom) && no_keepalive)) {
-      // Be extra paranoid around this path. Only accept null stores,
-      // otherwise we need IU barrier.
-      return BarrierSetC2::store_at_resolved(access, val);
-    }
 
     uint adr_idx = kit->C->get_alias_index(adr_type);
     assert(adr_idx != Compile::AliasIdxTop, "use other store_to_memory factory" );
