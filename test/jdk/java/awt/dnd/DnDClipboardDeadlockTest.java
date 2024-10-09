@@ -136,6 +136,9 @@ public class DnDClipboardDeadlockTest {
             }
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
             robot.keyRelease(KeyEvent.VK_CONTROL);
+            if (frame != null) {
+                frame.dispose();
+            }
 
         } catch (Throwable e) {
             e.printStackTrace();
@@ -212,6 +215,9 @@ public class DnDClipboardDeadlockTest {
         }
         if (returnCode != CODE_OK) {
             throw new RuntimeException("The test failed.");
+        }
+        if (frame != null) {
+            frame.dispose();
         }
     } // start()
 } // class DnDClipboardDeadlockTest
