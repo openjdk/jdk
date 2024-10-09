@@ -160,7 +160,9 @@ void GCArguments::initialize_heap_flags_and_sizes() {
     }
   }
 
-  if (FLAG_IS_DEFAULT(SoftMaxHeapSize)) {
+  // We exclude G1GC from this override, as we rely on the default value of 0
+  // for SoftMaxHeapSize to mean that Adaptable Heap Sizing is disabled.
+  if (FLAG_IS_DEFAULT(SoftMaxHeapSize) && !UseG1GC) {
     FLAG_SET_ERGO(SoftMaxHeapSize, MaxHeapSize);
   }
 
