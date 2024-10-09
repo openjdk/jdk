@@ -161,7 +161,7 @@ public abstract class IndexItemListWriter extends HtmlDocletWriter {
     protected abstract Navigation.PageMode getPageMode();
 
     // Note: The reason we can't use anonymous classes below is that HtmlDocletWriter.getBodyStyle()
-    // uses the writer class name to deduct the CSS body style name.
+    // uses the writer's class name to deduce the CSS body style name.
 
     public static IndexItemListWriter createSystemPropertiesWriter(HtmlConfiguration configuration) {
         return new SystemPropertiesWriter(configuration);
