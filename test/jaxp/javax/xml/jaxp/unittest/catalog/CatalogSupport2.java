@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,6 @@ import javax.xml.transform.stream.StreamSource;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.w3c.dom.ls.LSResourceResolver;
 import org.xml.sax.InputSource;
@@ -54,7 +53,6 @@ import org.xml.sax.SAXParseException;
  * @test
  * @bug 8158084 8162438 8162442 8163535 8166220
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow catalog.CatalogSupport2
  * @run testng/othervm catalog.CatalogSupport2
  * @summary extends CatalogSupport tests, verifies that the use of the Catalog may
  * be disabled through the System property.
@@ -67,7 +65,6 @@ import org.xml.sax.SAXParseException;
  *
  * @author huizhe.wang@oracle.com
  */
-@Listeners({jaxp.library.FilePolicy.class, jaxp.library.NetAccessPolicy.class})
 public class CatalogSupport2 extends CatalogSupportBase {
     static final String TTIMEOUTREAD = "sun.net.client.defaultReadTimeout";
     static final String TIMEOUTCONNECT = "sun.net.client.defaultConnectTimeout";

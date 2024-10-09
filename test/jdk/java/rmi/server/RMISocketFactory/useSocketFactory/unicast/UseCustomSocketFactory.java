@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@
  *          java.rmi/sun.rmi.transport
  *          java.rmi/sun.rmi.transport.tcp
  * @build TestLibrary JavaVM Echo EchoImpl EchoImpl_Stub
- * @run main/othervm/policy=security.policy/timeout=120 UseCustomSocketFactory
+ * @run main/othervm/timeout=120 UseCustomSocketFactory
  */
 
 import java.io.IOException;
@@ -52,8 +52,6 @@ public class UseCustomSocketFactory {
 
         System.out.println("\nRegression test for bug 4127826\n");
 
-        TestLibrary.suggestSecurityManager("java.rmi.RMISecurityManager");
-
         try {
             Registry registry = TestLibrary.createRegistryOnEphemeralPort();
             registryPort = TestLibrary.getRegistryPort(registry);
@@ -61,11 +59,7 @@ public class UseCustomSocketFactory {
             TestLibrary.bomb("creating registry", e);
         }
         for (String protocol : protocols) {
-            System.err.println("test policy: " +
-                    TestParams.defaultPolicy);
             JavaVM serverVM = new JavaVM("EchoImpl",
-                    "-Djava.security.manager=allow -Djava.security.policy=" +
-                    TestParams.defaultPolicy +
                     " -Drmi.registry.port=" +
                     registryPort, protocol);
             System.err.println("\nusing protocol: " +

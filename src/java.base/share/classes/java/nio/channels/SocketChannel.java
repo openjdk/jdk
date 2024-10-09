@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -259,10 +259,6 @@ public abstract class SocketChannel
      * @throws  UnsupportedAddressTypeException
      *          If the type of the given remote address is not supported
      *
-     * @throws  SecurityException
-     *          If a security manager has been installed
-     *          and it does not permit access to the given remote endpoint
-     *
      * @throws  IOException
      *          If some other I/O error occurs
      *
@@ -355,12 +351,6 @@ public abstract class SocketChannel
      * @throws  UnsupportedAddressTypeException     {@inheritDoc}
      * @throws  ClosedChannelException              {@inheritDoc}
      * @throws  IOException                         {@inheritDoc}
-     * @throws  SecurityException
-     *          If a security manager has been installed and its {@link
-     *          SecurityManager#checkListen checkListen} method denies
-     *          the operation for an <i>Internet protocol</i> socket address,
-     *          or for a <i>Unix domain</i> socket address if it denies
-     *          {@link NetPermission}{@code("accessUnixDomainSocket")}.
      *
      * @since 1.7
      */
@@ -463,19 +453,6 @@ public abstract class SocketChannel
      * method will block until the connection is established or an I/O error
      * occurs.
      *
-     * <p> For channels to <i>Internet protocol</i> sockets, this method performs
-     * exactly the same security checks as the {@link java.net.Socket} class.
-     * That is, if a security manager has been
-     * installed then this method verifies that its {@link
-     * java.lang.SecurityManager#checkConnect checkConnect} method permits
-     * connecting to the address and port number of the given remote endpoint.
-     *
-     * <p> For channels to <i>Unix Domain</i> sockets, this method checks
-     * {@link java.net.NetPermission NetPermission}{@code
-     * ("accessUnixDomainSocket")} with the security manager's {@link
-     * SecurityManager#checkPermission(java.security.Permission)
-     * checkPermission} method.
-     *
      * <p> This method may be invoked at any time.  If a read or write
      * operation upon this channel is invoked while an invocation of this
      * method is in progress then that operation will first block until this
@@ -515,10 +492,6 @@ public abstract class SocketChannel
      *
      * @throws  UnsupportedAddressTypeException
      *          If the type of the given remote address is not supported
-     *
-     * @throws  SecurityException
-     *          If a security manager has been installed
-     *          and it does not permit access to the given remote endpoint
      *
      * @throws  IOException
      *          If some other I/O error occurs
@@ -663,24 +636,11 @@ public abstract class SocketChannel
     /**
      * {@inheritDoc}
      *
-     * If there is a security manager set, its {@code checkConnect} method is
-     * called with the local address and {@code -1} as its arguments to see
-     * if the operation is allowed. If the operation is not allowed,
-     * a {@code SocketAddress} representing the
-     * {@link java.net.InetAddress#getLoopbackAddress loopback} address and the
-     * local port of the channel's socket is returned.
-     *
      * <p> Where the channel is bound to a Unix Domain socket address, the socket
-     * address is a {@link UnixDomainSocketAddress}. If there is a security manager
-     * set, its {@link SecurityManager#checkPermission(java.security.Permission)
-     * checkPermission} method is called with {@link NetPermission}{@code
-     * ("accessUnixDomainSocket")}. If the operation is not allowed an unnamed
-     * {@link UnixDomainSocketAddress} is returned.
+     * address is a {@link UnixDomainSocketAddress}.
      *
-     * @return  The {@code SocketAddress} that the socket is bound to, or the
-     *          {@code SocketAddress} representing the loopback address or empty
-     *          path if denied by the security manager, or {@code null} if the
-     *          channel's socket is not bound
+     * @return  The {@code SocketAddress} that the socket is bound to; {@code null}
+     *          if the channel's socket is not bound
      *
      * @throws  ClosedChannelException     {@inheritDoc}
      * @throws  IOException                {@inheritDoc}

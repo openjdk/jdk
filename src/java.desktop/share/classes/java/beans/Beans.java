@@ -434,21 +434,10 @@ public class Beans {
      * Used to indicate whether of not we are running in an application
      * builder environment.
      *
-     * <p>Note that this method is security checked
-     * and is not available to (for example) untrusted applets.
-     * More specifically, if there is a security manager,
-     * its {@code checkPropertiesAccess}
-     * method is called. This could result in a SecurityException.
-     *
      * @param isDesignTime  True if we're in an application builder tool.
-     * @throws  SecurityException  if a security manager exists and its
-     *             {@code checkPropertiesAccess} method doesn't allow setting
-     *              of system properties.
-     * @see SecurityManager#checkPropertiesAccess
      */
 
-    public static void setDesignTime(boolean isDesignTime)
-                        throws SecurityException {
+    public static void setDesignTime(boolean isDesignTime) {
         @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
@@ -461,21 +450,10 @@ public class Beans {
      * Used to indicate whether of not we are running in an environment
      * where GUI interaction is available.
      *
-     * <p>Note that this method is security checked
-     * and is not available to (for example) untrusted applets.
-     * More specifically, if there is a security manager,
-     * its {@code checkPropertiesAccess}
-     * method is called. This could result in a SecurityException.
-     *
      * @param isGuiAvailable  True if GUI interaction is available.
-     * @throws  SecurityException  if a security manager exists and its
-     *             {@code checkPropertiesAccess} method doesn't allow setting
-     *              of system properties.
-     * @see SecurityManager#checkPropertiesAccess
      */
 
-    public static void setGuiAvailable(boolean isGuiAvailable)
-                        throws SecurityException {
+    public static void setGuiAvailable(boolean isGuiAvailable) {
         @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {

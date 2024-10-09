@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,6 @@ import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
 
 import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.xml.sax.InputSource;
 
@@ -47,12 +46,10 @@ import org.xml.sax.InputSource;
  * @key intermittent
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
  * @compile -XDignore.symbol.file TestSAXDriver.java
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow common.ValidationWarningsTest
  * @run testng/othervm common.ValidationWarningsTest
  * @summary Check that warnings about unsupported properties from SAX
  *  parsers are suppressed during the xml validation process.
  */
-@Listeners({jaxp.library.InternalAPIPolicy.class})
 public class ValidationWarningsTest extends WarningsTestBase {
 
     @BeforeClass

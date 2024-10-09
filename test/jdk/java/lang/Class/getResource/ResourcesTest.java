@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,7 +83,6 @@ public class ResourcesTest {
             = executeTestJava("--module-path", MODS_DIR.toString(),
                               "--add-modules", "m1,m2",
                               "-cp", CLASSES_DIR.toString(),
-                              "-Djava.security.manager=allow",
                               "Main")
                 .outputTo(System.out)
                 .errorTo(System.out)

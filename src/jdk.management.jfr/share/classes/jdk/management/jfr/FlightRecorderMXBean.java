@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -186,12 +186,9 @@ public interface FlightRecorderMXBean extends PlatformManagedObject {
      *         example, if the Java Virtual Machine (JVM) lacks Flight Recorder
      *         support, or if the file repository can't be created or accessed)
      *
-     * @throws java.lang.SecurityException if a security manager exists and the
-     *         caller does not have {@code ManagementPermission("control")}
-     *
      * @see Recording
      */
-    long newRecording() throws IllegalStateException, SecurityException;
+    long newRecording() throws IllegalStateException;
 
     /**
      * Creates a snapshot recording of all available recorded data.
@@ -206,9 +203,6 @@ public interface FlightRecorderMXBean extends PlatformManagedObject {
      * needed.
      *
      * @return a unique ID that can be used for reading recording data
-     *
-     * @throws java.lang.SecurityException if a security manager exists and the
-     *         caller does not have {@code ManagementPermission("control")}
      *
      * @see Recording
      */
@@ -235,12 +229,9 @@ public interface FlightRecorderMXBean extends PlatformManagedObject {
      * @throws IllegalArgumentException if a recording with the specified ID
      *         doesn't exist
      *
-     * @throws java.lang.SecurityException if a security manager exists and the
-     *         caller does not have {@code ManagementPermission("control")}
-     *
      * @see Recording
      */
-    long cloneRecording(long recordingId, boolean stop) throws IllegalArgumentException, SecurityException;
+    long cloneRecording(long recordingId, boolean stop) throws IllegalArgumentException;
 
     /**
      * Starts the recording with the specified ID.
@@ -252,12 +243,9 @@ public interface FlightRecorderMXBean extends PlatformManagedObject {
      * @throws IllegalArgumentException if a recording with the specified ID
      *         doesn't exist
      *
-     * @throws java.lang.SecurityException if a security manager exists and the
-     *         caller does not have {@code ManagementPermission("control")}
-     *
      * @see Recording
      */
-    void startRecording(long recordingId) throws IllegalStateException, SecurityException;
+    void startRecording(long recordingId) throws IllegalStateException;
 
     /**
      * Stops the running recording with the specified ID.
@@ -270,12 +258,10 @@ public interface FlightRecorderMXBean extends PlatformManagedObject {
      * @throws IllegalArgumentException if a recording with the specified ID
      *         doesn't exist
      * @throws IllegalStateException if the recording is not running
-     * @throws java.lang.SecurityException if a security manager exists and the
-     *         caller does not have {@code ManagementPermission("control")}
      *
      * @see #newRecording()
      */
-    boolean stopRecording(long recordingId) throws IllegalArgumentException, IllegalStateException, SecurityException;
+    boolean stopRecording(long recordingId) throws IllegalArgumentException, IllegalStateException;
 
     /**
      * Closes the recording with the specified ID and releases any system
@@ -288,8 +274,6 @@ public interface FlightRecorderMXBean extends PlatformManagedObject {
      * @throws IllegalArgumentException if a recording with the specified ID
      *         doesn't exist
      * @throws IOException if an I/O error occurs
-     * @throws java.lang.SecurityException if a security manager exists and the
-     *         caller does not have {@code ManagementPermission("control")}
      *
      * @see #newRecording()
      */
@@ -377,9 +361,6 @@ public interface FlightRecorderMXBean extends PlatformManagedObject {
      * @throws IOException if the recording is closed, an I/O error occurs, or
      *         no data is available for the specified recording or
      *         interval
-     *
-     * @throws java.lang.SecurityException if a security manager exists and the
-     *         caller does not have {@code ManagementPermission("control")}
      */
     long openStream(long recordingId, Map<String, String> streamOptions) throws IOException;
 
@@ -394,8 +375,6 @@ public interface FlightRecorderMXBean extends PlatformManagedObject {
      * @throws IllegalArgumentException if a stream with the specified ID doesn't
      *         exist
      * @throws IOException if an I/O error occurs while trying to close the stream
-     * @throws java.lang.SecurityException if a security manager exists and the
-     *         caller does not have {@code ManagementPermission("control")}
      *
      * @see #openStream(long, Map)
      */
@@ -415,8 +394,6 @@ public interface FlightRecorderMXBean extends PlatformManagedObject {
      * @throws IOException if the stream is closed, or an I/O error occurred while
      *         trying to read the stream
      * @throws IllegalArgumentException if no recording with the stream ID exists
-     * @throws java.lang.SecurityException if a security manager exists and the
-     *         caller does not have {@code ManagementPermission("monitor")}
      */
     byte[] readStream(long streamId) throws IOException;
 
@@ -433,9 +410,6 @@ public interface FlightRecorderMXBean extends PlatformManagedObject {
      *
      * @throws IllegalArgumentException if no recording with the
      *         specified ID exists
-     * @throws java.lang.SecurityException if a security manager exists and the
-     *         caller does not have {@code ManagementPermission("monitor")}
-     *
      */
     Map<String, String> getRecordingOptions(long recordingId) throws IllegalArgumentException;
 
@@ -456,8 +430,6 @@ public interface FlightRecorderMXBean extends PlatformManagedObject {
      * @return a map that describes the recording settings, not {@code null}
      *
      * @throws IllegalArgumentException if no recording with the specified ID exists
-     * @throws java.lang.SecurityException if a security manager exists and the
-     *         caller does not have {@code ManagementPermission("monitor")}
      */
     Map<String, String> getRecordingSettings(long recordingId) throws IllegalArgumentException;
 
@@ -470,8 +442,6 @@ public interface FlightRecorderMXBean extends PlatformManagedObject {
      *        not {@code null}
      * @throws IllegalArgumentException if no recording with the
      *         specified ID exists or if the configuration could not be parsed.
-     * @throws java.lang.SecurityException if a security manager exists and the
-     *         caller does not have {@code ManagementPermission("control")}
      *
      * @see Configuration#getContents()
      */
@@ -485,8 +455,6 @@ public interface FlightRecorderMXBean extends PlatformManagedObject {
      *        {@code "profile"} or {@code "default"}), not {@code null}
      * @throws IllegalArgumentException if no recording with the
      *         specified ID exists
-     * @throws java.lang.SecurityException if a security manager exists and the
-     *         caller does not have {@code ManagementPermission("control")}
      *
      * @see #getConfigurations()
      */
@@ -531,8 +499,6 @@ public interface FlightRecorderMXBean extends PlatformManagedObject {
      * @param settings name value map of the settings to set, not {@code null}
      *
      * @throws IllegalArgumentException if no recording with the specified ID exists
-     * @throws java.lang.SecurityException if a security manager exists and the
-     *         caller does not have {@code ManagementPermission("control")}
      *
      * @see Recording#getId()
      */
@@ -551,10 +517,6 @@ public interface FlightRecorderMXBean extends PlatformManagedObject {
      * @param options name/value map of the settings to set, not {@code null}
      *
      * @throws IllegalArgumentException if no recording with the specified ID exists
-     * @throws java.lang.SecurityException if a security manager exists, and the
-     *         caller does not have {@code ManagementPermission("control")} or an
-     *         option contains a file that the caller does not have permission to
-     *         operate on.
      * @see Recording#getId()
      */
     void setRecordingOptions(long recordingId, Map<String, String> options) throws IllegalArgumentException;
@@ -568,9 +530,6 @@ public interface FlightRecorderMXBean extends PlatformManagedObject {
      * RecordingInfo.from} method.
      *
      * @return list of recordings, not {@code null}
-     *
-     * @throws java.lang.SecurityException if a security manager exists and the
-     *         caller does not have {@code  ManagementPermission("monitor")}
      *
      * @see RecordingInfo
      * @see Recording
@@ -587,9 +546,6 @@ public interface FlightRecorderMXBean extends PlatformManagedObject {
      *
      * @return the list of predefined configurations, not {@code null}
      *
-     * @throws java.lang.SecurityException if a security manager exists and the
-     *         caller does not have {@code ManagementPermission("monitor")}
-     *
      * @see ConfigurationInfo
      * @see Configuration
      */
@@ -604,9 +560,6 @@ public interface FlightRecorderMXBean extends PlatformManagedObject {
      * EventTypeInfo.from} method.
      *
      * @return the list of registered event types, not {@code null}
-     *
-     * @throws java.lang.SecurityException if a security manager exists and the
-     *         caller does not have {@code ManagementPermission("monitor")}
      *
      * @see EventTypeInfo
      * @see EventType
@@ -635,13 +588,8 @@ public interface FlightRecorderMXBean extends PlatformManagedObject {
      * @throws IllegalStateException if the recording is not yet started or if it is
      *         already closed
      *
-     * @throws SecurityException if a security manager exists and its
-     *         {@code SecurityManager.checkWrite(java.lang.String)} method denies
-     *         write access to the named file or the caller does not have
-     *         {@code ManagmentPermission("control")}
-     *
      * @see java.nio.file.Path#toString()
      * @see Recording#dump(java.nio.file.Path)
      */
-    void copyTo(long recordingId, String outputFile) throws IOException, SecurityException;
+    void copyTo(long recordingId, String outputFile) throws IOException;
 }

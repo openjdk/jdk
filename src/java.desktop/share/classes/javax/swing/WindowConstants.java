@@ -71,10 +71,7 @@ public interface WindowConstants
     public static final int DISPOSE_ON_CLOSE = 2;
 
     /**
-     * The exit application default window close operation. Attempting
-     * to set this on Windows that support this, such as
-     * <code>JFrame</code>, may throw a <code>SecurityException</code> based
-     * on the <code>SecurityManager</code>.
+     * The exit application default window close operation.
      * It is recommended you only use this in an application.
      *
      * @since 1.4

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,11 +44,10 @@ import static java.util.Objects.requireNonNull;
  * connected. A datagram channel need not be connected in order for the {@link #send
  * send} and {@link #receive receive} methods to be used.  A datagram channel may be
  * connected, by invoking its {@link #connect connect} method, in order to
- * avoid the overhead of the security checks are otherwise performed as part of
- * every send and receive operation.  A datagram channel must be connected in
- * order to use the {@link #read(java.nio.ByteBuffer) read} and {@link
- * #write(java.nio.ByteBuffer) write} methods, since those methods do not
- * accept or return socket addresses.
+ * avoid the overhead of checks performed as part of every send and receive operation.
+ * A datagram channel must be connected in order to use the {@link
+ * #read(java.nio.ByteBuffer) read} and {@link #write(java.nio.ByteBuffer) write}
+ * methods, since those methods do not accept or return socket addresses.
  *
  * <p> Once connected, a datagram channel remains connected until it is
  * disconnected or closed.  Whether or not a datagram channel is connected may
@@ -220,10 +219,6 @@ public abstract class DatagramChannel
      * @throws  UnsupportedAddressTypeException     {@inheritDoc}
      * @throws  ClosedChannelException              {@inheritDoc}
      * @throws  IOException                         {@inheritDoc}
-     * @throws  SecurityException
-     *          If a security manager has been installed and its {@link
-     *          SecurityManager#checkListen checkListen} method denies the
-     *          operation
      *
      * @since 1.7
      */
@@ -268,18 +263,6 @@ public abstract class DatagramChannel
      * this method, may be discarded.  The channel's socket remains connected
      * until it is explicitly disconnected or until it is closed.
      *
-     * <p> This method performs exactly the same security checks as the {@link
-     * java.net.DatagramSocket#connect connect} method of the {@link
-     * java.net.DatagramSocket} class.  That is, if a security manager has been
-     * installed then this method verifies that its {@link
-     * java.lang.SecurityManager#checkAccept checkAccept} and {@link
-     * java.lang.SecurityManager#checkConnect checkConnect} methods permit
-     * datagrams to be received from and sent to, respectively, the given
-     * remote address. Once connected, no further security checks are performed
-     * for datagrams received from, or sent to, the given remote address. Care
-     * should be taken to ensure that a connected datagram channel is not shared
-     * with untrusted code.
-     *
      * <p> This method may be invoked at any time.  If another thread has
      * already initiated a read or write operation upon this channel, then an
      * invocation of this method will block until any such operation is
@@ -315,12 +298,6 @@ public abstract class DatagramChannel
      * @throws  UnsupportedAddressTypeException
      *          If the type of the given remote address is not supported
      *
-     * @throws  SecurityException
-     *          If a security manager has been installed and it does not
-     *          permit access to the given remote address, or if unbound,
-     *          the security manager {@link SecurityManager#checkListen checkListen}
-     *          method denies the operation
-     *
      * @throws  IOException
      *          If some other I/O error occurs
      */
@@ -331,8 +308,7 @@ public abstract class DatagramChannel
      * Disconnects this channel's socket.
      *
      * <p> The channel's socket is configured so that it can receive datagrams
-     * from, and sends datagrams to, any remote address so long as the security
-     * manager, if installed, permits it.
+     * from, and sends datagrams to, any remote address.
      *
      * <p> This method may be invoked at any time.  If another thread has
      * already initiated a read or write operation upon this channel, then an
@@ -384,17 +360,6 @@ public abstract class DatagramChannel
      * are fewer bytes remaining in the buffer than are required to hold the
      * datagram then the remainder of the datagram is silently discarded.
      *
-     * <p> This method performs exactly the same security checks as the {@link
-     * java.net.DatagramSocket#receive receive} method of the {@link
-     * java.net.DatagramSocket} class.  That is, if the socket is not connected
-     * to a specific remote address and a security manager has been installed
-     * then for each datagram received this method verifies that the source's
-     * address and port number are permitted by the security manager's {@link
-     * java.lang.SecurityManager#checkAccept checkAccept} method. Datagrams
-     * that are not permitted by the security manager are silently discarded.
-     * The overhead of this security check can be avoided by first connecting
-     * the socket via the {@link #connect connect} method.
-     *
      * <p> This method may be invoked at any time.  If another thread has
      * already initiated a read operation upon this channel, however, then an
      * invocation of this method will block until the first operation is
@@ -426,11 +391,6 @@ public abstract class DatagramChannel
      *          closing the channel and setting the current thread's
      *          interrupt status
      *
-     * @throws  SecurityException
-     *          If unbound, and a security manager has been installed and
-     *          its {@link SecurityManager#checkListen checkListen} method
-     *          denies the operation
-     *
      * @throws  IOException
      *          If some other I/O error occurs
      */
@@ -447,16 +407,6 @@ public abstract class DatagramChannel
      *
      * <p> The datagram is transferred from the byte buffer as if by a regular
      * {@link WritableByteChannel#write(java.nio.ByteBuffer) write} operation.
-     *
-     * <p> This method performs exactly the same security checks as the {@link
-     * java.net.DatagramSocket#send send} method of the {@link
-     * java.net.DatagramSocket} class.  That is, if the socket is not connected
-     * to a specific remote address and a security manager has been installed
-     * then for each datagram sent this method verifies that the target address
-     * and port number are permitted by the security manager's {@link
-     * java.lang.SecurityManager#checkConnect checkConnect} method.  The
-     * overhead of this security check can be avoided by first connecting the
-     * socket via the {@link #connect connect} method.
      *
      * <p> This method may be invoked at any time.  If another thread has
      * already initiated a write operation upon this channel, however, then an
@@ -500,12 +450,6 @@ public abstract class DatagramChannel
      *
      * @throws  UnsupportedAddressTypeException
      *          If the type of the given remote address is not supported
-     *
-     * @throws  SecurityException
-     *          If a security manager has been installed and it does not permit
-     *          datagrams to be sent to the given address, or if unbound, and
-     *          the security manager's {@link SecurityManager#checkListen checkListen}
-     *          method denies the operation
      *
      * @throws  IOException
      *          If some other I/O error occurs
@@ -651,18 +595,9 @@ public abstract class DatagramChannel
      * datagrams sent via this channel instead of the wildcard address.
      * When {@link #disconnect} is called, the bound address reverts
      * to the wildcard address.
-     * <p>
-     * If there is a security manager set, its {@code checkConnect} method is
-     * called with the local address and {@code -1} as its arguments to see
-     * if the operation is allowed. If the operation is not allowed,
-     * a {@code SocketAddress} representing the
-     * {@link java.net.InetAddress#getLoopbackAddress loopback} address and the
-     * local port of the channel's socket is returned.
      *
-     * @return  The {@code SocketAddress} that the socket is bound to, or the
-     *          {@code SocketAddress} representing the loopback address if
-     *          denied by the security manager, or {@code null} if the
-     *          channel's socket is not bound
+     * @return  The {@code SocketAddress} that the socket is bound to; {@code null}
+     *          if the channel's socket is not bound
      *
      * @throws  ClosedChannelException     {@inheritDoc}
      * @throws  IOException                {@inheritDoc}

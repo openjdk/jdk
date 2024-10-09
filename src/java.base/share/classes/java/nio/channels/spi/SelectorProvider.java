@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,24 +72,10 @@ import java.util.ServiceConfigurationError;
 
 public abstract class SelectorProvider {
 
-    private static Void checkPermission() {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null)
-            sm.checkPermission(new RuntimePermission("selectorProvider"));
-        return null;
-    }
-    private SelectorProvider(Void ignore) { }
-
     /**
      * Initializes a new instance of this class.
-     *
-     * @throws  SecurityException
-     *          If a security manager has been installed and it denies
-     *          {@link RuntimePermission}{@code ("selectorProvider")}
      */
     protected SelectorProvider() {
-        this(checkPermission());
     }
 
     private static class Holder {
@@ -314,10 +300,6 @@ public abstract class SelectorProvider {
      *
      * @throws  IOException
      *          If an I/O error occurs
-     *
-     * @throws  SecurityException
-     *          If a security manager has been installed and it denies
-     *          {@link RuntimePermission}{@code ("inheritedChannel")}
      *
      * @since 1.5
      */

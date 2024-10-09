@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -329,22 +329,11 @@ public final class ProcessBuilder
      *
      * <p>The returned map is typically case-sensitive on all platforms.
      *
-     * <p>If a security manager exists, its
-     * {@link SecurityManager#checkPermission checkPermission} method
-     * is called with a
-     * {@link RuntimePermission}{@code ("getenv.*")} permission.
-     * This may result in a {@link SecurityException} being thrown.
-     *
      * <p>When passing information to a Java subprocess,
      * <a href=System.html#EnvironmentVSSystemProperties>system properties</a>
      * are generally preferred over environment variables.
      *
      * @return this process builder's environment
-     *
-     * @throws SecurityException
-     *         if a security manager exists and its
-     *         {@link SecurityManager#checkPermission checkPermission}
-     *         method doesn't allow access to the process environment
      *
      * @see    Runtime#exec(String[],String[],java.io.File)
      * @see    System#getenv()
@@ -1009,12 +998,6 @@ public final class ProcessBuilder
      * The minimal set of system dependent environment variables
      * may override the values provided in the environment.
      *
-     * <p>If there is a security manager, its
-     * {@link SecurityManager#checkExec checkExec}
-     * method is called with the first component of this object's
-     * {@code command} array as its argument. This may result in
-     * a {@link SecurityException} being thrown.
-     *
      * <p>Starting an operating system process is highly system-dependent.
      * Among the many things that can go wrong are:
      * <ul>
@@ -1041,29 +1024,6 @@ public final class ProcessBuilder
      *
      * @throws IndexOutOfBoundsException
      *         if the command is an empty list (has size {@code 0})
-     *
-     * @throws SecurityException
-     *         if a security manager exists and
-     *         <ul>
-     *
-     *         <li>its
-     *         {@link SecurityManager#checkExec checkExec}
-     *         method doesn't allow creation of the subprocess, or
-     *
-     *         <li>the standard input to the subprocess was
-     *         {@linkplain #redirectInput redirected from a file}
-     *         and the security manager's
-     *         {@link SecurityManager#checkRead(String) checkRead} method
-     *         denies read access to the file, or
-     *
-     *         <li>the standard output or standard error of the
-     *         subprocess was
-     *         {@linkplain #redirectOutput redirected to a file}
-     *         and the security manager's
-     *         {@link SecurityManager#checkWrite(String) checkWrite} method
-     *         denies write access to the file
-     *
-     *         </ul>
      *
      * @throws  UnsupportedOperationException
      *          If the operating system does not support the creation of processes.
@@ -1216,12 +1176,6 @@ public final class ProcessBuilder
      * The minimal set of system dependent environment variables
      * may override the values provided in the environment.
      * <p>
-     * If there is a security manager, its
-     * {@link SecurityManager#checkExec checkExec}
-     * method is called with the first component of each process builder's
-     * {@code command} array as its argument. This may result in
-     * a {@link SecurityException} being thrown.
-     * <p>
      * Starting an operating system process is highly system-dependent.
      * Among the many things that can go wrong are:
      * <ul>
@@ -1272,24 +1226,6 @@ public final class ProcessBuilder
      *         the builders argument is null
      * @throws IndexOutOfBoundsException
      *         if the command is an empty list (has size {@code 0})
-     * @throws SecurityException
-     *         if a security manager exists and
-     *         <ul>
-     *         <li>its
-     *         {@link SecurityManager#checkExec checkExec}
-     *         method doesn't allow creation of the subprocess, or
-     *         <li>the standard input to the subprocess was
-     *         {@linkplain #redirectInput redirected from a file}
-     *         and the security manager's
-     *         {@link SecurityManager#checkRead(String) checkRead} method
-     *         denies read access to the file, or
-     *         <li>the standard output or standard error of the
-     *         subprocess was
-     *         {@linkplain #redirectOutput redirected to a file}
-     *         and the security manager's
-     *         {@link SecurityManager#checkWrite(String) checkWrite} method
-     *         denies write access to the file
-     *         </ul>
      *
      * @throws  UnsupportedOperationException
      *          If the operating system does not support the creation of processes

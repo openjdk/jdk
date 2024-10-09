@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,9 +30,8 @@ import com.sun.media.sound.JDK13Services;
  * @bug 4776511 8201279
  * @summary RFE: Setting the default MixerProvider. Test the retrieving and
  *          parsing of properties. This is a part of the test for 4776511.
- * @run main/othervm DefaultProperties
- * @run main/othervm/policy=java.policy DefaultProperties
  * @modules java.desktop/com.sun.media.sound
+ * @run main/othervm DefaultProperties
  */
 public class DefaultProperties {
 

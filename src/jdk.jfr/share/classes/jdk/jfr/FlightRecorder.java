@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,8 +117,6 @@ public final class FlightRecorder {
      *
      * @throws IllegalArgumentException if class is abstract or not a subclass
      *         of {@link Event}
-     * @throws SecurityException if a security manager exists and the caller
-     *         does not have {@code FlightRecorderPermission("registerEvent")}
      */
     public static void register(Class<? extends Event> eventClass) {
         Objects.requireNonNull(eventClass, "eventClass");
@@ -138,9 +136,6 @@ public final class FlightRecorder {
      * @param eventClass the event class to unregistered, not {@code null}
      * @throws IllegalArgumentException if a class is abstract or not a subclass
      *         of {@link Event}
-     *
-     * @throws SecurityException if a security manager exists and the caller
-     *         does not have {@code FlightRecorderPermission("registerEvent")}
      */
     public static void unregister(Class<? extends Event> eventClass) {
         Objects.requireNonNull(eventClass, "eventClass");
@@ -159,11 +154,8 @@ public final class FlightRecorder {
      * @throws IllegalStateException if Flight Recorder can't be created (for
      *         example, if the Java Virtual Machine (JVM) lacks Flight Recorder
      *         support, or if the file repository can't be created or accessed)
-     *
-     * @throws SecurityException if a security manager exists and the caller does
-     *         not have {@code FlightRecorderPermission("accessFlightRecorder")}
      */
-    public static FlightRecorder getFlightRecorder() throws IllegalStateException, SecurityException {
+    public static FlightRecorder getFlightRecorder() throws IllegalStateException {
         synchronized (PlatformRecorder.class) {
             SecuritySupport.checkAccessFlightRecorder();
             JVMSupport.ensureWithIllegalStateException();
@@ -212,10 +204,8 @@ public final class FlightRecorder {
      *         {@link Event}, is abstract, or the hook is already added
      * @throws IllegalStateException if the event class has the
      *         {@code Registered(false)} annotation and is not registered manually
-     * @throws SecurityException if a security manager exists and the caller
-     *         does not have {@code FlightRecorderPermission("registerEvent")}
      */
-    public static void addPeriodicEvent(Class<? extends Event> eventClass, Runnable hook) throws SecurityException {
+    public static void addPeriodicEvent(Class<? extends Event> eventClass, Runnable hook) {
         Objects.requireNonNull(eventClass, "eventClass");
         Objects.requireNonNull(hook, "hook");
         if (JVMSupport.isNotAvailable()) {
@@ -234,10 +224,8 @@ public final class FlightRecorder {
      *
      * @param hook the hook to remove, not {@code null}
      * @return {@code true} if hook is removed, {@code false} otherwise
-     * @throws SecurityException if a security manager exists and the caller
-     *         does not have {@code FlightRecorderPermission("registerEvent")}
      */
-    public static boolean removePeriodicEvent(Runnable hook) throws SecurityException {
+    public static boolean removePeriodicEvent(Runnable hook) {
         Objects.requireNonNull(hook, "hook");
         SecuritySupport.checkRegisterPermission();
         if (JVMSupport.isNotAvailable()) {
@@ -269,10 +257,6 @@ public final class FlightRecorder {
      * invoked before returning from this method.
      *
      * @param changeListener the listener to add, not {@code null}
-     *
-     * @throws SecurityException if a security manager exists and the caller
-     *         does not have
-     *         {@code FlightRecorderPermission("accessFlightRecorder")}
      */
     public static void addListener(FlightRecorderListener changeListener) {
         Objects.requireNonNull(changeListener, "changeListener");
@@ -290,10 +274,6 @@ public final class FlightRecorder {
      * removed.
      *
      * @param changeListener listener to remove, not {@code null}
-     *
-     * @throws SecurityException if a security manager exists and the caller
-     *         does not have
-     *         {@code FlightRecorderPermission("accessFlightRecorder")}
      *
      * @return {@code true}, if the listener could be removed, {@code false}
      *         otherwise

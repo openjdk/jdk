@@ -28,9 +28,6 @@
  * @compile -XDignore.symbol.file RevealDirectTest.java
  * @run junit/othervm -ea -esa test.java.lang.invoke.RevealDirectTest
  *
- * @test
- * @summary verify Lookup.revealDirect on a variety of input handles, with security manager
- * @run main/othervm/policy=jtreg.security.policy/secure=java.lang.SecurityManager -ea -esa test.java.lang.invoke.RevealDirectTest
  */
 
 /* To run manually:

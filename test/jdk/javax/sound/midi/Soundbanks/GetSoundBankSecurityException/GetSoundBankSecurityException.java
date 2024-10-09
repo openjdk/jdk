@@ -32,7 +32,7 @@ import javax.sound.midi.MidiSystem;
  * @test
  * @bug 8312535
  * @summary MidiSystem.getSoundbank() throws unexpected SecurityException
- * @run main/othervm/policy=security.policy GetSoundBankSecurityException
+ * @run main GetSoundBankSecurityException
  */
 public final class GetSoundBankSecurityException {
 

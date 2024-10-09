@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
  * @summary Basic functionality of File.get-X-Space methods.
  * @library .. /test/lib
  * @build jdk.test.lib.Platform
- * @run main/othervm/native -Djava.security.manager=allow GetXSpace
+ * @run main/othervm/native GetXSpace
  */
 
 import java.io.BufferedReader;
@@ -40,7 +40,6 @@ import java.nio.file.Files;
 import java.nio.file.FileStore;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
-import java.security.Permission;
 import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -50,14 +49,10 @@ import jdk.test.lib.Platform;
 import static java.lang.System.err;
 import static java.lang.System.out;
 
-@SuppressWarnings("removal")
 public class GetXSpace {
     static {
         System.loadLibrary("GetXSpace");
     }
-
-    private static SecurityManager [] sma = { null, new Allow(), new DenyFSA(),
-                                              new DenyRead() };
 
     private static int fail = 0;
     private static int pass = 0;
@@ -162,36 +157,6 @@ public class GetXSpace {
         }
 
         return al;
-    }
-
-    private static void tryCatch(Space s) {
-        out.format("%s:%n", s.name());
-        File f = new File(s.name());
-        SecurityManager sm = System.getSecurityManager();
-        if (sm instanceof Deny) {
-            String fmt = "  %14s: \"%s\" thrown as expected%n";
-            try {
-                f.getTotalSpace();
-                fail(s.name(), SecurityException.class);
-            } catch (SecurityException x) {
-                out.format(fmt, "getTotalSpace", x);
-                pass();
-            }
-            try {
-                f.getFreeSpace();
-                fail(s.name(), SecurityException.class);
-            } catch (SecurityException x) {
-                out.format(fmt, "getFreeSpace", x);
-                pass();
-            }
-            try {
-                f.getUsableSpace();
-                fail(s.name(), SecurityException.class);
-            } catch (SecurityException x) {
-                out.format(fmt, "getUsableSpace", x);
-                pass();
-            }
-        }
     }
 
     private static void compare(Space s) {
@@ -341,52 +306,6 @@ public class GetXSpace {
         }
     }
 
-    private static class Allow extends SecurityManager {
-        public void checkRead(String file) {}
-        public void checkPermission(Permission p) {}
-        public void checkPermission(Permission p, Object context) {}
-    }
-
-    private static class Deny extends SecurityManager {
-        public void checkPermission(Permission p) {
-            if (p.implies(new RuntimePermission("setSecurityManager"))
-                || p.implies(new RuntimePermission("getProtectionDomain")))
-                return;
-            super.checkPermission(p);
-        }
-
-        public void checkPermission(Permission p, Object context) {
-            if (p.implies(new RuntimePermission("setSecurityManager"))
-                || p.implies(new RuntimePermission("getProtectionDomain")))
-                return;
-            super.checkPermission(p, context);
-        }
-    }
-
-    private static class DenyFSA extends Deny {
-        private String err = "sorry - getFileSystemAttributes";
-
-        public void checkPermission(Permission p) {
-            if (p.implies(new RuntimePermission("getFileSystemAttributes")))
-                throw new SecurityException(err);
-            super.checkPermission(p);
-        }
-
-        public void checkPermission(Permission p, Object context) {
-            if (p.implies(new RuntimePermission("getFileSystemAttributes")))
-                throw new SecurityException(err);
-            super.checkPermission(p, context);
-        }
-    }
-
-    private static class DenyRead extends Deny {
-        private String err = "sorry - checkRead()";
-
-        public void checkRead(String file) {
-            throw new SecurityException(err);
-        }
-    }
-
     private static int testFile(Path dir) {
         String dirName = dir.toString();
         out.format("--- Testing %s%n", dirName);
@@ -418,28 +337,12 @@ public class GetXSpace {
         if (l.size() == 0)
             throw new RuntimeException("no partitions?");
 
-        for (int i = 0; i < sma.length; i++) {
-            System.setSecurityManager(sma[i]);
-            SecurityManager sm = System.getSecurityManager();
-            if (sma[i] != null && sm == null)
-                throw new RuntimeException("Test configuration error "
-                                           + " - can't set security manager");
-
-            out.format("%nSecurityManager = %s%n" ,
-                       (sm == null ? "null" : sm.getClass().getName()));
-            for (var p : l) {
-                Space s = new Space(p);
-                if (sm instanceof Deny) {
-                    tryCatch(s);
-                } else {
-                    compare(s);
-                    compareZeroNonExist();
-                    compareZeroExist();
-                }
-            }
+        for (var p : l) {
+            Space s = new Space(p);
+            compare(s);
+            compareZeroNonExist();
+            compareZeroExist();
         }
-
-        System.setSecurityManager(null);
 
         if (fail != 0) {
             err.format("%d tests: %d failure(s); first: %s%n",

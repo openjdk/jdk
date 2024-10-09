@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,8 +59,6 @@ public class Resources extends java.util.ListResourceBundle {
 
         // javax.security.auth.Subject
         {"NEWLINE", "\n"},
-        {"invalid.null.AccessControlContext.provided",
-                "invalid null AccessControlContext provided"},
         {"invalid.null.action.provided", "invalid null action provided"},
         {"invalid.null.Class.provided", "invalid null Class provided"},
         {"Subject.", "Subject:\n"},
@@ -90,40 +88,9 @@ public class Resources extends java.util.ListResourceBundle {
         {"Login.Failure.all.modules.ignored",
                 "Login Failure: all modules ignored"},
 
-        // sun.security.provider.PolicyFile
-
-        {"java.security.policy.error.parsing.policy.message",
-                "java.security.policy: error parsing {0}:\n\t{1}"},
-        {"java.security.policy.error.adding.Permission.perm.message",
-                "java.security.policy: error adding Permission, {0}:\n\t{1}"},
-        {"java.security.policy.error.adding.Entry.message",
-                "java.security.policy: error adding Entry:\n\t{0}"},
-        {"alias.name.not.provided.pe.name.", "alias name not provided ({0})"},
-        {"unable.to.perform.substitution.on.alias.suffix",
-                "unable to perform substitution on alias, {0}"},
-        {"substitution.value.prefix.unsupported",
-                "substitution value, {0}, unsupported"},
-        {"SPACE", " "},
-        {"LPARAM", "("},
-        {"RPARAM", ")"},
-        {"type.can.t.be.null","type can't be null"},
-
         // sun.security.provider.PolicyParser
-        {"keystorePasswordURL.can.not.be.specified.without.also.specifying.keystore",
-                "keystorePasswordURL can not be specified without also specifying keystore"},
-        {"expected.keystore.type", "expected keystore type"},
-        {"expected.keystore.provider", "expected keystore provider"},
-        {"multiple.Codebase.expressions",
-                "multiple Codebase expressions"},
-        {"multiple.SignedBy.expressions","multiple SignedBy expressions"},
         {"duplicate.keystore.domain.name","duplicate keystore domain name: {0}"},
         {"duplicate.keystore.name","duplicate keystore name: {0}"},
-        {"SignedBy.has.empty.alias","SignedBy has empty alias"},
-        {"can.not.specify.Principal.with.a.wildcard.class.without.a.wildcard.name",
-                "can not specify Principal with a wildcard class without a wildcard name"},
-        {"expected.codeBase.or.SignedBy.or.Principal",
-                "expected codeBase or SignedBy or Principal"},
-        {"expected.permission.entry", "expected permission entry"},
         {"number.", "number "},
         {"expected.expect.read.end.of.file.",
                 "expected [{0}], read [end of file]"},
@@ -132,8 +99,6 @@ public class Resources extends java.util.ListResourceBundle {
         {"line.number.msg", "line {0}: {1}"},
         {"line.number.expected.expect.found.actual.",
                 "line {0}: expected [{1}], found [{2}]"},
-        {"null.principalClass.or.principalName",
-                "null principalClass or principalName"},
 
         // sun.security.pkcs11.SunPKCS11
         {"PKCS11.Token.providerName.Password.",

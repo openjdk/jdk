@@ -24,10 +24,7 @@
 /*
  * @test
  * @bug 5046815
- * @summary Test that RMIServer.getVersion() reflects the JDK version when
- * the Java platform and the application is run with a security manager and the
- * test codebase has the java permission to read the "java.runtime.version"
- * system property.
+ * @summary Test that RMIServer.getVersion() reflects the JDK version.
  * @author Luis-Miguel Alventosa, Joel Feraud
  *
  * @library /test/lib
@@ -53,8 +50,6 @@ public class ImplVersionTest {
         // Build command string
 
         String[] command = new String[] {
-            "-Djava.security.manager",
-            "-Djava.security.policy==" + testSrc + File.separator + "policy",
             "-Dtest.classes=" + testClasses,
             "ImplVersionCommand",
             System.getProperty("java.runtime.version")

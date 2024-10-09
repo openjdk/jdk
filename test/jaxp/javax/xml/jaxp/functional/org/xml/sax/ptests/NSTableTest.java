@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ import static org.testng.Assert.assertTrue;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.xml.sax.XMLReader;
 
@@ -39,10 +38,8 @@ import org.xml.sax.XMLReader;
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow org.xml.sax.ptests.NSTableTest
  * @run testng/othervm org.xml.sax.ptests.NSTableTest
  */
-@Listeners({jaxp.library.BasePolicy.class})
 public class NSTableTest {
     private static final String NAMESPACES =
                         "http://xml.org/sax/features/namespaces";

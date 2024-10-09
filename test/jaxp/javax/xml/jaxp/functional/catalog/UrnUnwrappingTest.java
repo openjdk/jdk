@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,20 +29,17 @@ import static catalog.ResolutionChecker.checkPubIdResolution;
 import javax.xml.catalog.CatalogResolver;
 
 import org.testng.annotations.DataProvider;
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
  * @test
  * @bug 8077931
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow catalog.UrnUnwrappingTest
  * @run testng/othervm catalog.UrnUnwrappingTest
  * @summary If the passed public identifier is started with "urn:publicid:",
  *          it has to be regarded as URN and normalized. And then the catalog
  *          resolver uses the normalized stuff to do matching.
  */
-@Listeners({jaxp.library.FilePolicy.class})
 public class UrnUnwrappingTest {
 
     @Test(dataProvider = "urn-matchedUri")

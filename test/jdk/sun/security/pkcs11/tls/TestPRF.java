@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@
  * @modules java.base/sun.security.internal.spec
  *          jdk.crypto.cryptoki
  * @run main/othervm TestPRF
- * @run main/othervm -Djava.security.manager=allow TestPRF sm policy
  */
 
 import java.io.BufferedReader;

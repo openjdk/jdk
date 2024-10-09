@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,30 +66,13 @@ public class FileSocketPermissions    {
                 String httpDoc = "http://localhost:" + server.getAddress().getPort() + "/b.xml";
                 System.out.println(httpDoc);
 
-                // No permission granted.
-                Proc p0 = Proc.create("FileSocketPermissions")
-                        .prop("java.security.manager", "")
-                        .debug("S")
-                        .args("sign", plain.toUri().toString(), httpDoc)
-                        .start();
-                Asserts.assertEQ(p0.readData(), "Error");
-                Asserts.assertEQ(p0.readData(), "Error");
-
                 // Permission to file and socket granted.
                 Proc p = Proc.create("FileSocketPermissions")
-                        .prop("java.security.manager", "")
-                        .grant(new File(System.getProperty("test.classes")))
-                        .perm(new FilePermission(plain.toString(), "read"))
-                        .perm(new SocketPermission("localhost", "resolve,connect"))
                         .debug("S2")
                         .args("sign", plain.toUri().toString(), httpDoc)
                         .start();
 
                 Proc p2 = Proc.create("FileSocketPermissions")
-                        .prop("java.security.manager", "")
-                        .grant(new File(System.getProperty("test.classes")))
-                        .perm(new FilePermission(plain.toString(), "read"))
-                        .perm(new SocketPermission("localhost", "resolve,connect"))
                         .debug("V")
                         .args("validate")
                         .start();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,9 +66,7 @@ import java.util.stream.Stream;
  * can be used to wait for process termination, and possibly trigger dependent
  * actions.
  * <p>
- * The factory methods limit access to ProcessHandles using the
- * SecurityManager checking the {@link RuntimePermission RuntimePermission("manageProcess")}.
- * The ability to control processes is also restricted by the native system,
+ * The ability to control processes may be restricted by the native system,
  * ProcessHandle provides no more access to, or control over, the native process
  * than would be allowed by a native application.
  *
@@ -113,8 +111,6 @@ public interface ProcessHandle extends Comparable<ProcessHandle> {
      * @param pid a native process ID
      * @return an {@code Optional<ProcessHandle>} of the PID for the process;
      *         the {@code Optional} is empty if the process does not exist
-     * @throws SecurityException if a security manager has been installed and
-     *         it denies RuntimePermission("manageProcess")
      * @throws UnsupportedOperationException if the implementation
      *         does not support this operation
      */
@@ -127,8 +123,6 @@ public interface ProcessHandle extends Comparable<ProcessHandle> {
      * used to destroy the current process, use {@link System#exit System.exit} instead.
      *
      * @return a ProcessHandle for the current process
-     * @throws SecurityException if a security manager has been installed and
-     *         it denies RuntimePermission("manageProcess")
      * @throws UnsupportedOperationException if the implementation
      *         does not support this operation
      */
@@ -143,8 +137,6 @@ public interface ProcessHandle extends Comparable<ProcessHandle> {
      * @return an {@code Optional<ProcessHandle>} of the parent process;
      *         the {@code Optional} is empty if the child process does not have a parent
      *         or if the parent is not available, possibly due to operating system limitations
-     * @throws SecurityException if a security manager has been installed and
-     *         it denies RuntimePermission("manageProcess")
      */
     Optional<ProcessHandle> parent();
 
@@ -159,8 +151,6 @@ public interface ProcessHandle extends Comparable<ProcessHandle> {
      *
      * @return a sequential Stream of ProcessHandles for processes that are
      *         direct children of the process
-     * @throws SecurityException if a security manager has been installed and
-     *         it denies RuntimePermission("manageProcess")
      */
     Stream<ProcessHandle> children();
 
@@ -176,8 +166,6 @@ public interface ProcessHandle extends Comparable<ProcessHandle> {
      *
      * @return a sequential Stream of ProcessHandles for processes that
      *         are descendants of the process
-     * @throws SecurityException if a security manager has been installed and
-     *         it denies RuntimePermission("manageProcess")
      */
     Stream<ProcessHandle> descendants();
 
@@ -190,8 +178,6 @@ public interface ProcessHandle extends Comparable<ProcessHandle> {
      * </em>
      *
      * @return a Stream of ProcessHandles for all processes
-     * @throws SecurityException if a security manager has been installed and
-     *         it denies RuntimePermission("manageProcess")
      * @throws UnsupportedOperationException if the implementation
      *         does not support this operation
      */

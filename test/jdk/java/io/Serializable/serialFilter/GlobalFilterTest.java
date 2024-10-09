@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@ import java.io.InvalidClassException;
 import java.io.ObjectInputFilter;
 import java.io.ObjectInputStream;
 
-import java.io.SerializablePermission;
 import java.security.Security;
 import java.util.Objects;
 
@@ -46,11 +45,6 @@ import org.testng.annotations.DataProvider;
  * @run testng/othervm GlobalFilterTest
  * @run testng/othervm -Djdk.serialFilter=java.**
  *          -Dexpected-jdk.serialFilter=java.** GlobalFilterTest
- * @run testng/othervm/policy=security.policy GlobalFilterTest
- * @run testng/othervm/policy=security.policy
- *        -Djava.security.properties=${test.src}/java.security-extra1
- *        -Djava.security.debug=properties GlobalFilterTest
- *
  * @summary Test Global Filters
  */
 @Test
@@ -125,14 +119,10 @@ public class GlobalFilterTest {
     /**
      * If the Global filter is already set, it should always refuse to be
      * set again.
-     * If there is a security manager, setting the serialFilter should fail
-     * without the appropriate permission.
-     * If there is no security manager then setting it should work.
      */
     @Test()
     @SuppressWarnings("removal")
     static void setGlobalFilter() {
-        SecurityManager sm = System.getSecurityManager();
         ObjectInputFilter filter = new SerialFilterTest.Validator();
         ObjectInputFilter global = ObjectInputFilter.Config.getSerialFilter();
         if (global != null) {
@@ -141,49 +131,19 @@ public class GlobalFilterTest {
                 ObjectInputFilter.Config.setSerialFilter(filter);
                 Assert.fail("set only once process-wide filter");
             } catch (IllegalStateException ise) {
-                // Normal, once set can never be re-set even if no security manager
-            } catch (SecurityException se) {
-                if (sm == null) {
-                    Assert.fail("wrong exception when security manager is not set", se);
-                }
+                // Normal, once set can never be re-set
             }
         } else {
-            if (sm == null) {
-                // no security manager
-                try {
-                    ObjectInputFilter.Config.setSerialFilter(filter);
-                    // Note once set, it can not be reset; so other tests
-                    System.out.printf("Global Filter set to Validator%n");
-                } catch (SecurityException se) {
-                    Assert.fail("setGlobalFilter should not get SecurityException", se);
-                }
-                try {
-                    // Try to set it again, expecting it to throw
-                    ObjectInputFilter.Config.setSerialFilter(filter);
-                    Assert.fail("set only once process-wide filter");
-                } catch (IllegalStateException ise) {
-                    // Normal case
-                }
-            } else {
-                // Security manager
-                SecurityException expectSE = null;
-                try {
-                    sm.checkPermission(new SerializablePermission("serialFilter"));
-                } catch (SecurityException se1) {
-                    expectSE = se1;
-                }
-                SecurityException actualSE = null;
-                try {
-                    ObjectInputFilter.Config.setSerialFilter(filter);
-                } catch (SecurityException se2) {
-                    actualSE = se2;
-                }
-                if (expectSE == null | actualSE == null) {
-                    Assert.assertEquals(expectSE, actualSE, "SecurityException");
-                } else {
-                    Assert.assertEquals(expectSE.getClass(), actualSE.getClass(),
-                            "SecurityException class");
-                }
+            ObjectInputFilter.Config.setSerialFilter(filter);
+            // Note once set, it can not be reset; so other tests
+            System.out.printf("Global Filter set to Validator%n");
+
+            try {
+                // Try to set it again, expecting it to throw
+                ObjectInputFilter.Config.setSerialFilter(filter);
+                Assert.fail("set only once process-wide filter");
+            } catch (IllegalStateException ise) {
+                // Normal case
             }
         }
     }

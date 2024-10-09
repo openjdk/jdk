@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.testng.Assert;
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
@@ -44,11 +43,9 @@ import org.xml.sax.SAXException;
  * @test
  * @bug 6517707
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow dom.CR6517707Test
  * @run testng/othervm dom.CR6517707Test
  * @summary Test Node.setNodeValue(value) shall throw DOMException.NO_MODIFICATION_ALLOWED_ERR if the node is read-only.
  */
-@Listeners({jaxp.library.BasePolicy.class})
 public class CR6517707Test {
 
     @Test

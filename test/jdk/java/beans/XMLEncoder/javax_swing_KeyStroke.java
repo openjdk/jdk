@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 6501431
  * @summary Tests KeyStroke encoding
- * @run main/othervm -Djava.security.manager=allow javax_swing_KeyStroke
+ * @run main/othervm javax_swing_KeyStroke
  * @author Sergey Malenkov
  */
 
@@ -35,7 +35,7 @@ import javax.swing.KeyStroke;
 
 public final class javax_swing_KeyStroke extends AbstractTest<KeyStroke> {
     public static void main(String[] args) {
-        new javax_swing_KeyStroke().test(true);
+        new javax_swing_KeyStroke().test();
     }
 
     protected KeyStroke getObject() {

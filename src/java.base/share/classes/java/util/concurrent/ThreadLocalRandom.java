@@ -294,11 +294,6 @@ public final class ThreadLocalRandom extends Random {
         U.putReference(thread, INHERITABLETHREADLOCALS, null);
     }
 
-    static final void setInheritedAccessControlContext(Thread thread,
-                                                       @SuppressWarnings("removal") AccessControlContext acc) {
-        U.putReferenceRelease(thread, INHERITEDACCESSCONTROLCONTEXT, acc);
-    }
-
     // Serialization support
 
     private static final long serialVersionUID = -5851777807851030925L;
@@ -370,8 +365,6 @@ public final class ThreadLocalRandom extends Random {
         = U.objectFieldOffset(Thread.class, "threadLocals");
     private static final long INHERITABLETHREADLOCALS
         = U.objectFieldOffset(Thread.class, "inheritableThreadLocals");
-    private static final long INHERITEDACCESSCONTROLCONTEXT
-        = U.objectFieldOffset(Thread.class, "inheritedAccessControlContext");
 
     /** Generates per-thread initialization/probe field */
     private static final AtomicInteger probeGenerator = new AtomicInteger();

@@ -32,7 +32,6 @@
  * Run this test twice, once using the default security manager:
  *
  * @run main/othervm CheckConfigs
- * @run main/othervm/policy=CheckConfigs.policy CheckConfigs
  */
 
 import java.io.IOException;
@@ -49,11 +48,6 @@ import com.sun.security.auth.module.LdapLoginModule;
 public class CheckConfigs {
 
     public static void main(String[] args) throws Exception {
-        SecurityManager securityManager = System.getSecurityManager();
-        System.out.println(securityManager == null
-            ? "[security manager is not running]"
-            : "[security manager is running: " +
-                securityManager.getClass().getName() + "]");
         init();
         checkConfigModes();
     }

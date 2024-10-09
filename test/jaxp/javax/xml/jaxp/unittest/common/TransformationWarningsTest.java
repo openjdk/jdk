@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,6 @@ import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 
 import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
@@ -43,12 +42,10 @@ import org.testng.annotations.Test;
  * @bug 8144593
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
  * @compile -XDignore.symbol.file TestSAXDriver.java
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow common.TransformationWarningsTest
  * @run testng/othervm common.TransformationWarningsTest
  * @summary Check that warnings about unsupported properties from parsers
  * are suppressed during the transformation process.
  */
-@Listeners({jaxp.library.BasePolicy.class, jaxp.library.InternalAPIPolicy.class})
 public class TransformationWarningsTest extends WarningsTestBase {
 
     @BeforeClass

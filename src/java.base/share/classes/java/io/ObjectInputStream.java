@@ -374,17 +374,9 @@ public class ObjectInputStream
      * When the filter factory {@code apply} method is invoked it may throw a runtime exception
      * preventing the {@code ObjectInputStream} from being constructed.
      *
-     * <p>If a security manager is installed, this constructor will check for
-     * the "enableSubclassImplementation" SerializablePermission when invoked
-     * directly or indirectly by the constructor of a subclass which overrides
-     * the ObjectInputStream.readFields or ObjectInputStream.readUnshared
-     * methods.
-     *
      * @param   in input stream to read from
      * @throws  StreamCorruptedException if the stream header is incorrect
      * @throws  IOException if an I/O error occurs while reading stream header
-     * @throws  SecurityException if untrusted subclass illegally overrides
-     *          security-sensitive methods
      * @throws  IllegalStateException if the initialization of {@link ObjectInputFilter.Config}
      *          fails due to invalid serial filter or serial filter factory properties.
      * @throws  NullPointerException if {@code in} is {@code null}
@@ -419,21 +411,11 @@ public class ObjectInputStream
      * When the filter factory {@code apply} method is invoked it may throw a runtime exception
      * preventing the {@code ObjectInputStream} from being constructed.
      *
-     * <p>If there is a security manager installed, this method first calls the
-     * security manager's {@code checkPermission} method with the
-     * {@code SerializablePermission("enableSubclassImplementation")}
-     * permission to ensure it's ok to enable subclassing.
-     *
-     * @throws  SecurityException if a security manager exists and its
-     *          {@code checkPermission} method denies enabling
-     *          subclassing.
      * @throws  IOException if an I/O error occurs while creating this stream
      * @throws  IllegalStateException if the initialization of {@link ObjectInputFilter.Config}
      *      fails due to invalid serial filter or serial filter factory properties.
-     * @see SecurityManager#checkPermission
-     * @see java.io.SerializablePermission
      */
-    protected ObjectInputStream() throws IOException, SecurityException {
+    protected ObjectInputStream() throws IOException {
         @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
@@ -598,12 +580,6 @@ public class ObjectInputStream
      * <p>The deserialization filter, when not {@code null}, is invoked for
      * each object (regular or class) read to reconstruct the root object.
      * See {@link #setObjectInputFilter(ObjectInputFilter) setObjectInputFilter} for details.
-     *
-     * <p>ObjectInputStream subclasses which override this method can only be
-     * constructed in security contexts possessing the
-     * "enableSubclassImplementation" SerializablePermission; any attempt to
-     * instantiate such a subclass without this permission will cause a
-     * SecurityException to be thrown.
      *
      * @return  reference to deserialized object
      * @throws  ClassNotFoundException if class of an object to deserialize
@@ -923,26 +899,11 @@ public class ObjectInputStream
      * enabled, the {@link #resolveObject} method is called for every object being
      * deserialized.
      *
-     * <p>If object replacement is currently not enabled, and
-     * {@code enable} is true, and there is a security manager installed,
-     * this method first calls the security manager's
-     * {@code checkPermission} method with the
-     * {@code SerializablePermission("enableSubstitution")} permission to
-     * ensure that the caller is permitted to enable the stream to do replacement
-     * of objects read from the stream.
-     *
      * @param   enable true for enabling use of {@code resolveObject} for
      *          every object being deserialized
      * @return  the previous setting before this method was invoked
-     * @throws  SecurityException if a security manager exists and its
-     *          {@code checkPermission} method denies enabling the stream
-     *          to do replacement of objects read from the stream.
-     * @see SecurityManager#checkPermission
-     * @see java.io.SerializablePermission
      */
-    protected boolean enableResolveObject(boolean enable)
-        throws SecurityException
-    {
+    protected boolean enableResolveObject(boolean enable) {
         if (enable == enableResolve) {
             return enable;
         }
@@ -1341,8 +1302,6 @@ public class ObjectInputStream
      * is increased before reading an object.
      *
      * @param filter the filter, may be null
-     * @throws SecurityException if there is security manager and the
-     *       {@code SerializablePermission("serialFilter")} is not granted
      * @throws IllegalStateException if an object has been read,
      *       if the filter factory returns {@code null} when the
      *       {@linkplain #getObjectInputFilter() current filter} is non-null, or

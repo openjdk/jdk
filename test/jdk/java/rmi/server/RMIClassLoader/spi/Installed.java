@@ -34,7 +34,7 @@
  *          java.rmi/sun.rmi.transport
  *          java.rmi/sun.rmi.transport.tcp
  * @build TestLibrary ServiceConfiguration TestProvider TestProvider2
- * @run main/othervm/policy=security.policy Installed
+ * @run main/othervm Installed
  */
 
 public class Installed {

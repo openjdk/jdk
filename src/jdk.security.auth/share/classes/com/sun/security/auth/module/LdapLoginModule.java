@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package com.sun.security.auth.module;
 
-import java.net.SocketPermission;
 import java.security.Principal;
 import java.util.Arrays;
 import java.util.Hashtable;
@@ -254,47 +253,6 @@ import static sun.security.util.ResourcesMgr.getAuthResourceString;
  *     };
  *
  * }</pre>
- *
- * <dl>
- * <dt><b>Note:</b> </dt>
- * <dd>When a {@link SecurityManager} is active then an application
- *     that creates a {@link LoginContext} and uses a {@link LoginModule}
- *     must be granted certain permissions.
- *     <p>
- *     If the application creates a login context using an <em>installed</em>
- *     {@link Configuration} then the application must be granted the
- *     {@link AuthPermission} to create login contexts.
- *     For example, the following security policy allows an application in
- *     the user's current directory to instantiate <em>any</em> login context:
- *     <pre>
- *
- *     grant codebase "file:${user.dir}/" {
- *         permission javax.security.auth.AuthPermission "createLoginContext.*";
- *     };
- *     </pre>
- *
- *     Alternatively, if the application creates a login context using a
- *     <em>caller-specified</em> {@link Configuration} then the application
- *     must be granted the permissions required by the {@link LoginModule}.
- *     <em>This</em> module requires the following two permissions:
- *     <ul>
- *     <li> The {@link SocketPermission} to connect to an LDAP server.
- *     <li> The {@link AuthPermission} to modify the set of {@link Principal}s
- *          associated with a {@link Subject}.
- *     </ul>
- *     <p>
- *     For example, the following security policy grants an application in the
- *     user's current directory all the permissions required by this module:
- *     <pre>
- *
- *     grant codebase "file:${user.dir}/" {
- *         permission java.net.SocketPermission "*:389", "connect";
- *         permission java.net.SocketPermission "*:636", "connect";
- *         permission javax.security.auth.AuthPermission "modifyPrincipals";
- *     };
- *     </pre>
- * </dd>
- * </dl>
  *
  * @since 1.6
  */

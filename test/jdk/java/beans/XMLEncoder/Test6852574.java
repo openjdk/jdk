@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,13 @@
  * @test
  * @bug 6852574
  * @summary Tests Enum subclass encoding
- * @run main/othervm -Djava.security.manager=allow Test6852574
+ * @run main/othervm Test6852574
  * @author Sergey Malenkov
  */
 
 public final class Test6852574 extends AbstractTest {
     public static void main(String[] args) {
-        new Test6852574().test(true);
+        new Test6852574().test();
     }
 
     protected Object getObject() {

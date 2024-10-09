@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,12 +90,6 @@
  * some variation in drivers and the features they support. Always
  * check your driver's documentation to see whether it supports a feature before
  * you try to use it.
- * <P>
- * <b>NOTE:</b> The class {@code SQLPermission} was added in the
- * Java 2 SDK, Standard Edition,
- * version 1.3 release. This class is used to prevent unauthorized
- * access to the logging stream associated with the {@code DriverManager},
- * which may contain information such as table names, column data, and so on.
  *
  * <h2>What the {@code java.sql} Package Contains</h2>
  * The {@code java.sql} package contains API for the following:
@@ -103,10 +97,6 @@
  *   <LI>Making a connection with a database via the {@code DriverManager} facility
  *   <UL>
  *       <LI>{@code DriverManager} class -- makes a connection with a driver
- *       <LI>{@code SQLPermission} class -- provides permission when code
- *                   running within a Security Manager, such as an applet,
- *                   attempts to set up a logging stream through the
- *                   {@code DriverManager}
  *       <LI>{@code Driver} interface -- provides the API for registering
  *              and connecting drivers based on JDBC technology ("JDBC drivers");
  *              generally used only by the {@code DriverManager} class

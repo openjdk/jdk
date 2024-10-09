@@ -114,15 +114,6 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * specified for the <a
      * href="#mode">{@code RandomAccessFile(File,String)}</a> constructor.
      *
-     * <p>
-     * If there is a security manager, its {@code checkRead} method
-     * is called with the {@code pathname} argument
-     * as its argument to see if read access to the file is allowed.
-     * If the mode allows writing, the security manager's
-     * {@code checkWrite} method
-     * is also called with the {@code pathname} argument
-     * as its argument to see if write access to the file is allowed.
-     *
      * @param      pathname   the system-dependent pathname string
      * @param      mode       the access <a href="#mode">mode</a>
      * @throws     IllegalArgumentException  if the mode argument is not equal
@@ -135,13 +126,6 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      *             existing, writable regular file and a new regular file of
      *             that pathname cannot be created, or if some other error
      *             occurs while opening or creating the file
-     * @throws     SecurityException   if a security manager exists and its
-     *             {@code checkRead} method denies read access to the file
-     *             or the mode is {@code "rw"} and the security manager's
-     *             {@code checkWrite} method denies write access to the file
-     * @see        java.lang.SecurityException
-     * @see        java.lang.SecurityManager#checkRead(java.lang.String)
-     * @see        java.lang.SecurityManager#checkWrite(java.lang.String)
      */
     public RandomAccessFile(String pathname, String mode)
         throws FileNotFoundException
@@ -205,13 +189,6 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * updates to both the file's content and its metadata to be written, which
      * generally requires at least one more low-level I/O operation.
      *
-     * <p>If there is a security manager, its {@code checkRead} method is
-     * called with the pathname of the {@code file} argument as its
-     * argument to see if read access to the file is allowed.  If the mode
-     * allows writing, the security manager's {@code checkWrite} method is
-     * also called with the pathname of the {@code file} argument to see if
-     * write access to the file is allowed.
-     *
      * @param      file   the file object
      * @param      mode   the access mode, as described
      *                    <a href="#mode">above</a>
@@ -225,12 +202,6 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      *             an existing, writable regular file and a new regular file of
      *             that pathname cannot be created, or if some other error
      *             occurs while opening or creating the file
-     * @throws      SecurityException  if a security manager exists and its
-     *             {@code checkRead} method denies read access to the file
-     *             or the mode is {@code "rw"} and the security manager's
-     *             {@code checkWrite} method denies write access to the file
-     * @see        java.lang.SecurityManager#checkRead(java.lang.String)
-     * @see        java.lang.SecurityManager#checkWrite(java.lang.String)
      * @see        java.nio.channels.FileChannel#force(boolean)
      */
     @SuppressWarnings("this-escape")

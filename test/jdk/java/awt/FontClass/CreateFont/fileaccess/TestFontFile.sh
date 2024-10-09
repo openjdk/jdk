@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,7 @@ THIS_DIR=`pwd`
 
 ${TESTJAVA}${FS}bin${FS}java ${BIT_FLAG} -version
 
-${TESTJAVA}${FS}bin${FS}java -Djava.security.manager=allow ${BIT_FLAG} FontFile > test.out 2>&1
+${TESTJAVA}${FS}bin${FS}java ${BIT_FLAG} FontFile > test.out 2>&1
 
 STATUS=$?
 

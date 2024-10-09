@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,6 @@ public final class CatalogManager {
      * @throws IllegalArgumentException if either the URIs are not absolute
      * or do not have a URL protocol handler for the URI scheme
      * @throws CatalogException If an error occurs while parsing the catalog
-     * @throws SecurityException if access to the resource is denied by the security manager
      */
     public static Catalog catalog(CatalogFeatures features, URI... uris) {
         Util.validateUrisSyntax(uris);
@@ -141,7 +140,6 @@ public final class CatalogManager {
      * @throws IllegalArgumentException if either the URIs are not absolute
      * or do not have a URL protocol handler for the URI scheme
      * @throws CatalogException If an error occurs while parsing the catalog
-     * @throws SecurityException if access to the resource is denied by the security manager
      */
     public static CatalogResolver catalogResolver(CatalogFeatures features, URI... uris) {
         Catalog catalog = catalog(features, uris);

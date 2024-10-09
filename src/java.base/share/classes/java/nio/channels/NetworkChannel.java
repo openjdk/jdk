@@ -77,10 +77,6 @@ public interface NetworkChannel
      *          If the channel is closed
      * @throws  IOException
      *          If some other I/O error occurs
-     * @throws  SecurityException
-     *          If a security manager is installed and it denies an unspecified
-     *          permission. An implementation of this interface should specify
-     *          any required permissions.
      *
      * @see #getLocalAddress
      */

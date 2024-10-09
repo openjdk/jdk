@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,20 +45,6 @@ public class Main {
         if (rb1 == rb2) {
             throw new RuntimeException("unexpected resource bundle");
         }
-
-        System.setSecurityManager(new SecurityManager());
-
-        // no permission needed for local resource
-        ResourceBundle.getBundle(TEST_RESOURCE_BUNDLE_NAME, Main.class.getModule());
-
-        // resource bundle through m1's exported API
-        Bundle.getBundle(M1_RESOURCE_BUNDLE_NAME);
-
-        try {
-            // fail to get resource bundle in another module
-            ResourceBundle.getBundle(M1_RESOURCE_BUNDLE_NAME, m1);
-            throw new RuntimeException("should deny access");
-        } catch (SecurityException e) {}
     }
 
 }

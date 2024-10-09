@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,16 +52,7 @@ import sun.security.util.HexDumpEncoder;
  * directly communicating with the KDC. During the commit phase of the JAAS
  * authentication process, the JAAS login module should instantiate this
  * class and store the instance in the private credential set of a
- * {@link javax.security.auth.Subject Subject}.<p>
- *
- * It might be necessary for the application to be granted a
- * {@link javax.security.auth.PrivateCredentialPermission
- * PrivateCredentialPermission} if it needs to access a {@code KerberosTicket}
- * instance from a {@code Subject}. This permission is not needed when the
- * application depends on the default JGSS Kerberos mechanism to access the
- * {@code KerberosTicket}. In that case, however, the application will need an
- * appropriate
- * {@link javax.security.auth.kerberos.ServicePermission ServicePermission}.
+ * {@link javax.security.auth.Subject Subject}.
  * <p>
  * Note that this class is applicable to both ticket granting tickets and
  * other regular service tickets. A ticket granting ticket is just a
@@ -71,7 +62,6 @@ import sun.security.util.HexDumpEncoder;
  * all tickets after logout.
  *
  * @see javax.security.auth.Subject
- * @see javax.security.auth.PrivateCredentialPermission
  * @see javax.security.auth.login.LoginContext
  * @see org.ietf.jgss.GSSCredential
  * @see org.ietf.jgss.GSSManager

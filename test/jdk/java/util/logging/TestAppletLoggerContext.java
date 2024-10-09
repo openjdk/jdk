@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,18 +21,11 @@
  * questions.
  */
 
-import java.security.CodeSource;
-import java.security.Permission;
-import java.security.PermissionCollection;
-import java.security.Permissions;
-import java.security.Policy;
-import java.security.ProtectionDomain;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
-import java.util.logging.LoggingPermission;
 import jdk.internal.access.JavaAWTAccess;
 import jdk.internal.access.SharedSecrets;
 
@@ -44,57 +37,20 @@ import jdk.internal.access.SharedSecrets;
  *
  * @modules java.base/jdk.internal.access
  *          java.logging
- * @run main/othervm -Dtest.security=off TestAppletLoggerContext LoadingApplet
- * @run main/othervm -Djava.security.manager=allow -Dtest.security=on TestAppletLoggerContext  LoadingApplet
- * @run main/othervm -Dtest.security=off TestAppletLoggerContext LoadingMain
- * @run main/othervm -Djava.security.manager=allow -Dtest.security=on TestAppletLoggerContext  LoadingMain
- * @run main/othervm -Dtest.security=off TestAppletLoggerContext One
- * @run main/othervm -Djava.security.manager=allow -Dtest.security=on TestAppletLoggerContext  One
- * @run main/othervm -Dtest.security=off TestAppletLoggerContext Two
- * @run main/othervm -Djava.security.manager=allow -Dtest.security=on TestAppletLoggerContext  Two
- * @run main/othervm -Dtest.security=off TestAppletLoggerContext Three
- * @run main/othervm -Djava.security.manager=allow -Dtest.security=on TestAppletLoggerContext  Three
- * @run main/othervm -Dtest.security=off TestAppletLoggerContext Four
- * @run main/othervm -Djava.security.manager=allow -Dtest.security=on TestAppletLoggerContext  Four
- * @run main/othervm -Dtest.security=off TestAppletLoggerContext Five
- * @run main/othervm -Djava.security.manager=allow -Dtest.security=on TestAppletLoggerContext  Five
- * @run main/othervm -Dtest.security=off TestAppletLoggerContext Six
- * @run main/othervm -Djava.security.manager=allow -Dtest.security=on TestAppletLoggerContext  Six
- * @run main/othervm -Dtest.security=off TestAppletLoggerContext Seven
- * @run main/othervm -Djava.security.manager=allow -Dtest.security=on TestAppletLoggerContext  Seven
- * @run main/othervm -Dtest.security=off TestAppletLoggerContext
- * @run main/othervm -Djava.security.manager=allow -Dtest.security=on TestAppletLoggerContext
+ * @run main/othervm TestAppletLoggerContext LoadingApplet
+ * @run main/othervm TestAppletLoggerContext LoadingMain
+ * @run main/othervm TestAppletLoggerContext One
+ * @run main/othervm TestAppletLoggerContext Two
+ * @run main/othervm TestAppletLoggerContext Three
+ * @run main/othervm TestAppletLoggerContext Four
+ * @run main/othervm TestAppletLoggerContext Five
+ * @run main/othervm TestAppletLoggerContext Six
+ * @run main/othervm TestAppletLoggerContext Seven
+ * @run main/othervm TestAppletLoggerContext
  */
 
-// NOTE: We run in other VM in order to 1. switch security manager and 2. cause
-// LogManager class to be loaded anew.
+// NOTE: We run in other VM in order to cause LogManager class to be loaded anew.
 public class TestAppletLoggerContext {
-
-    // Avoids the hassle of dealing with files and system props...
-    static class SimplePolicy extends Policy {
-
-        static final Policy DEFAULT_POLICY = Policy.getPolicy();
-
-        private final Permissions perms;
-        public SimplePolicy(Permission... permissions) {
-            perms = new Permissions();
-            for (Permission permission : permissions) {
-                perms.add(permission);
-            }
-        }
-        @Override
-        public PermissionCollection getPermissions(CodeSource cs) {
-            return perms;
-        }
-        @Override
-        public PermissionCollection getPermissions(ProtectionDomain pd) {
-            return perms;
-        }
-        @Override
-        public boolean implies(ProtectionDomain pd, Permission p) {
-           return perms.implies(p) || DEFAULT_POLICY.implies(pd, p);
-        }
-    }
 
     // The bridge class initializes the logging system.
     // It stubs the applet context in order to simulate context changes.
@@ -123,13 +79,6 @@ public class TestAppletLoggerContext {
         static final JavaAWTAccessStub javaAwtAccess = new JavaAWTAccessStub();
         public static void init() {
             SharedSecrets.setJavaAWTAccess(javaAwtAccess);
-            if (System.getProperty("test.security", "on").equals("on")) {
-                Policy p = new SimplePolicy(new LoggingPermission("control", null),
-                    new RuntimePermission("setContextClassLoader"),
-                    new RuntimePermission("shutdownHooks"));
-                Policy.setPolicy(p);
-                System.setSecurityManager(new SecurityManager());
-            }
         }
 
         public static void changeContext() {
@@ -251,8 +200,7 @@ public class TestAppletLoggerContext {
                 test.test();
             } catch (Exception x) {
                throw new Error(String.valueOf(test)
-                   + (System.getSecurityManager() == null ? " without " : " with ")
-                   + "security failed: "+x+"\n "+"FAILED: "+test.describe()+"\n", x);
+                   + "failed: "+x+"\n "+"FAILED: "+test.describe()+"\n", x);
             } finally {
                 testrun++;
             }
@@ -404,8 +352,7 @@ public class TestAppletLoggerContext {
     /**
      * This test is designed to test the behavior of additional LogManager instances.
      * It must be noted that if the security manager is off, then calling
-     * Bridge.changeContext() has actually no effect - which explains why we have
-     * some differences between the cases security manager on & security manager
+     * Bridge.changeContext() has actually no effect.
      * off.
      **/
     public static void testSix() {
@@ -436,7 +383,7 @@ public class TestAppletLoggerContext {
 
                 // Applet context => root logger and global logger should also be null.
 
-                Logger expected = (System.getSecurityManager() == null ? global : null);
+                Logger expected = global;
                 Logger logger3 = manager.getLogger(Logger.GLOBAL_LOGGER_NAME);
                 Logger logger3b = manager.getLogger(Logger.GLOBAL_LOGGER_NAME);
                 assertEquals(expected, logger3);
@@ -447,7 +394,7 @@ public class TestAppletLoggerContext {
                 Logger logger4b = manager.getLogger(Logger.GLOBAL_LOGGER_NAME);
                 assertNotNull(logger4);
                 assertNotNull(logger4b);
-                expected = (System.getSecurityManager() == null ? global : global2);
+                expected = global;
                 assertEquals(logger4,  expected);
                 assertEquals(logger4b, expected);
 
@@ -464,9 +411,7 @@ public class TestAppletLoggerContext {
     /**
      * This test is designed to test the behavior of additional LogManager instances.
      * It must be noted that if the security manager is off, then calling
-     * Bridge.changeContext() has actually no effect - which explains why we have
-     * some differences between the cases security manager on & security manager
-     * off.
+     * Bridge.changeContext() has actually no effect.
      **/
     public static void testSeven() {
         for (int i=0; i<3 ; i++) {
@@ -508,35 +453,27 @@ public class TestAppletLoggerContext {
 
                 Logger logger5 = manager.getLogger("");
                 Logger logger5b = manager.getLogger("");
-                Logger expectedRoot = (System.getSecurityManager() == null ? root : null);
+                Logger expectedRoot = root;
                 assertEquals(logger5, expectedRoot);
                 assertEquals(logger5b, expectedRoot);
 
-                if (System.getSecurityManager() != null) {
-                    assertNull(manager.getLogger(Logger.GLOBAL_LOGGER_NAME));
-                } else {
-                    assertEquals(global, manager.getLogger(Logger.GLOBAL_LOGGER_NAME));
-                }
+                assertEquals(global, manager.getLogger(Logger.GLOBAL_LOGGER_NAME));
 
                 Logger global2 = new Bridge.CustomLogger(Logger.GLOBAL_LOGGER_NAME);
                 manager.addLogger(global2);
                 Logger logger6 = manager.getLogger(Logger.GLOBAL_LOGGER_NAME);
                 Logger logger6b = manager.getLogger(Logger.GLOBAL_LOGGER_NAME);
-                Logger expectedGlobal = (System.getSecurityManager() == null ? global : global2);
+                Logger expectedGlobal = global;
 
                 assertNotNull(logger6);
                 assertNotNull(logger6b);
                 assertEquals(logger6, expectedGlobal);
                 assertEquals(logger6b, expectedGlobal);
-                if (System.getSecurityManager() != null) {
-                    assertNull(manager.getLogger(""));
-                } else {
-                    assertEquals(root, manager.getLogger(""));
-                }
+                assertEquals(root, manager.getLogger(""));
 
                 Logger root2 = new Bridge.CustomLogger("");
                 manager.addLogger(root2);
-                expectedRoot = (System.getSecurityManager() == null ? root : root2);
+                expectedRoot = root;
                 Logger logger7 = manager.getLogger("");
                 Logger logger7b = manager.getLogger("");
                 assertNotNull(logger7);

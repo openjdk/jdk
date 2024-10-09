@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -446,9 +446,7 @@ public class UIManager implements Serializable
      * @see #getInstalledLookAndFeels
      * @throws NullPointerException if {@code infos} is {@code null}
      */
-    public static void setInstalledLookAndFeels(LookAndFeelInfo[] infos)
-        throws SecurityException
-    {
+    public static void setInstalledLookAndFeels(LookAndFeelInfo[] infos) {
         maybeInitialize();
         LookAndFeelInfo[] newInfos = new LookAndFeelInfo[infos.length];
         System.arraycopy(infos, 0, newInfos, 0, infos.length);

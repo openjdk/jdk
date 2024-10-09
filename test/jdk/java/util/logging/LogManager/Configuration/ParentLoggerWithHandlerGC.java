@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,22 +22,14 @@
  */
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.FilePermission;
 import java.io.IOException;
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.security.CodeSource;
-import java.security.Permission;
-import java.security.PermissionCollection;
-import java.security.Permissions;
-import java.security.Policy;
-import java.security.ProtectionDomain;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
@@ -49,36 +41,23 @@ import java.util.logging.FileHandler;
 import java.util.logging.Handler;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
-import java.util.logging.LoggingPermission;
 
 /**
  * @test
  * @bug 8060132
  * @summary tests that FileHandlers configured on abstract nodes in logging.properties
  *          will be closed by reset().
- * @run main/othervm ParentLoggerWithHandlerGC UNSECURE
- * @run main/othervm -Djava.security.manager=allow ParentLoggerWithHandlerGC SECURE
+ * @run main/othervm ParentLoggerWithHandlerGC
  * @author danielfuchs
  * @key randomness
  */
 public class ParentLoggerWithHandlerGC {
 
-    /**
-     * We will test the handling of abstract logger nodes with file handlers in
-     * two configurations:
-     * UNSECURE: No security manager.
-     * SECURE: With the security manager present - and the required
-     *         permissions granted.
-     */
-    public static enum TestCase {
-        UNSECURE, SECURE;
-        public void run(Properties propertyFile) throws Exception {
-            System.out.println("Running test case: " + name());
-            Configure.setUp(this, propertyFile);
-            test(this.name() + " " + propertyFile.getProperty("test.name"), propertyFile);
-        }
+    // We will test the handling of abstract logger nodes with file handlers
+    public static void run(Properties propertyFile) throws Exception {
+        Configure.setUp(propertyFile);
+        test(propertyFile.getProperty("test.name"), propertyFile);
     }
-
 
     private static final String PREFIX =
             "FileHandler-" + UUID.randomUUID() + ".log";
@@ -127,20 +106,9 @@ public class ParentLoggerWithHandlerGC {
 
     public static void main(String... args) throws Exception {
 
-
-        if (args == null || args.length == 0) {
-            args = new String[] {
-                TestCase.UNSECURE.name(),
-                TestCase.SECURE.name(),
-            };
-        }
-
         try {
-            for (String testName : args) {
-                for (Properties propertyFile : properties) {
-                    TestCase test = TestCase.valueOf(testName);
-                    test.run(propertyFile);
-                }
+            for (Properties propertyFile : properties) {
+                run(propertyFile);
             }
         } finally {
             if (userDirWritable) {
@@ -167,33 +135,7 @@ public class ParentLoggerWithHandlerGC {
     }
 
     static class Configure {
-        static Policy policy = null;
-        static final AtomicBoolean allowAll = new AtomicBoolean(false);
-        static void setUp(TestCase test, Properties propertyFile) {
-            switch (test) {
-                case SECURE:
-                    if (policy == null && System.getSecurityManager() != null) {
-                        throw new IllegalStateException("SecurityManager already set");
-                    } else if (policy == null) {
-                        policy = new SimplePolicy(TestCase.SECURE, allowAll);
-                        Policy.setPolicy(policy);
-                        System.setSecurityManager(new SecurityManager());
-                    }
-                    if (System.getSecurityManager() == null) {
-                        throw new IllegalStateException("No SecurityManager.");
-                    }
-                    if (policy == null) {
-                        throw new IllegalStateException("policy not configured");
-                    }
-                    break;
-                case UNSECURE:
-                    if (System.getSecurityManager() != null) {
-                        throw new IllegalStateException("SecurityManager already set");
-                    }
-                    break;
-                default:
-                    new InternalError("No such testcase: " + test);
-            }
+        static void setUp(Properties propertyFile) {
             doPrivileged(() -> {
                 try {
                     ByteArrayOutputStream bytes = new ByteArrayOutputStream();
@@ -206,20 +148,10 @@ public class ParentLoggerWithHandlerGC {
             });
         }
         static void doPrivileged(Runnable run) {
-            allowAll.set(true);
-            try {
-                run.run();
-            } finally {
-                allowAll.set(false);
-            }
+            run.run();
         }
         static <T> T callPrivileged(Callable<T> call) throws Exception {
-            allowAll.set(true);
-            try {
-                return call.call();
-            } finally {
-                allowAll.set(false);
-            }
+            return call.call();
         }
     }
 
@@ -449,72 +381,4 @@ public class ParentLoggerWithHandlerGC {
         }
 
     }
-
-
-    static final class PermissionsBuilder {
-        final Permissions perms;
-        public PermissionsBuilder() {
-            this(new Permissions());
-        }
-        public PermissionsBuilder(Permissions perms) {
-            this.perms = perms;
-        }
-        public PermissionsBuilder add(Permission p) {
-            perms.add(p);
-            return this;
-        }
-        public PermissionsBuilder addAll(PermissionCollection col) {
-            if (col != null) {
-                for (Enumeration<Permission> e = col.elements(); e.hasMoreElements(); ) {
-                    perms.add(e.nextElement());
-                }
-            }
-            return this;
-        }
-        public Permissions toPermissions() {
-            final PermissionsBuilder builder = new PermissionsBuilder();
-            builder.addAll(perms);
-            return builder.perms;
-        }
-    }
-
-    public static class SimplePolicy extends Policy {
-
-        static final Policy DEFAULT_POLICY = Policy.getPolicy();
-
-        final Permissions permissions;
-        final Permissions allPermissions;
-        final AtomicBoolean allowAll;
-        public SimplePolicy(TestCase test, AtomicBoolean allowAll) {
-            this.allowAll = allowAll;
-            permissions = new Permissions();
-            permissions.add(new LoggingPermission("control", null));
-            permissions.add(new FilePermission(PREFIX+".lck", "read,write,delete"));
-            permissions.add(new FilePermission(PREFIX, "read,write"));
-
-            // these are used for configuring the test itself...
-            allPermissions = new Permissions();
-            allPermissions.add(new java.security.AllPermission());
-
-        }
-
-        @Override
-        public boolean implies(ProtectionDomain domain, Permission permission) {
-            if (allowAll.get()) return allPermissions.implies(permission);
-            return permissions.implies(permission) || DEFAULT_POLICY.implies(domain, permission);
-        }
-
-        @Override
-        public PermissionCollection getPermissions(CodeSource codesource) {
-            return new PermissionsBuilder().addAll(allowAll.get()
-                    ? allPermissions : permissions).toPermissions();
-        }
-
-        @Override
-        public PermissionCollection getPermissions(ProtectionDomain domain) {
-            return new PermissionsBuilder().addAll(allowAll.get()
-                    ? allPermissions : permissions).toPermissions();
-        }
-    }
-
 }

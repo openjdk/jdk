@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @test
  * @bug 8012453 8016046
  * @requires (os.family == "windows")
- * @run testng/othervm -Djava.security.manager=allow ExecCommand
+ * @run testng/othervm ExecCommand
  * @summary workaround for legacy applications with Runtime.getRuntime().exec(String command)
  */
 
@@ -194,7 +194,6 @@ public class ExecCommand {
         // "true" by default with the legacy verification procedure
         Properties props = System.getProperties();
         props.remove(JDK_LANG_PROCESS_ALLOW_AMBIGUOUS_COMMANDS);
-        System.setSecurityManager(null);
 
         testCommandMode(command, "Ambiguous Unset", testFile,
                 perModeExpected.get(Mode.UNSET_NO_SM.ordinal()));
@@ -209,7 +208,6 @@ public class ExecCommand {
     void testCommandAmbiguousEmpty(String command, String testFile, List<Class<Exception>> perModeExpected) {
         Properties props = System.getProperties();
         props.setProperty(JDK_LANG_PROCESS_ALLOW_AMBIGUOUS_COMMANDS, "");
-        System.setSecurityManager(null);
         testCommandMode(command, "Ambiguous Empty", testFile,
                 perModeExpected.get(Mode.EMPTY_NO_SM.ordinal()));
     }
@@ -223,25 +221,9 @@ public class ExecCommand {
     void testCommandAmbiguousFalse(String command, String testFile, List<Class<Exception>> perModeExpected) {
         Properties props = System.getProperties();
         props.setProperty(JDK_LANG_PROCESS_ALLOW_AMBIGUOUS_COMMANDS, "false");
-        System.setSecurityManager(null);
 
         testCommandMode(command, "Ambiguous false", testFile,
                 perModeExpected.get(Mode.FALSE_NO_SM.ordinal()));
-    }
-
-    /**
-     * Test each command with SecurityManager and default allowAmbiguousCommands is empty.
-     * @param command a command
-     * @param perModeExpected an expected Exception class or null
-     */
-    @Test(dataProvider = "TEST_RTE_ARGS")
-    void testCommandWithSM(String command, String testFile, List<Class<Exception>> perModeExpected) {
-        Properties props = System.getProperties();
-        props.setProperty(JDK_LANG_PROCESS_ALLOW_AMBIGUOUS_COMMANDS, "");
-        System.setSecurityManager(new SecurityMan());
-
-        testCommandMode(command, "SecurityManager and Ambiguous Empty", testFile,
-                perModeExpected.get(Mode.EMPTY_SM.ordinal()));
     }
 
     private void testCommandMode(String command, String kind,
