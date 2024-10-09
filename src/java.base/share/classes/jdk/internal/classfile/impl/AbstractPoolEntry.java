@@ -246,66 +246,69 @@ public abstract sealed class AbstractPoolEntry {
                 this.contentHash = hash;
                 charLen = rawLen;
                 state = State.BYTE;
+            } else {
+                inflateNonAscii(singleBytes, hash);
             }
-            else {
-                char[] chararr = new char[rawLen];
-                int chararr_count = singleBytes;
-                // Inflate prefix of bytes to characters
-                JLA.inflateBytesToChars(rawBytes, offset, chararr, 0, singleBytes);
+        }
 
-                int px = offset + singleBytes;
-                int utfend = offset + rawLen;
-                while (px < utfend) {
-                    int c = (int) rawBytes[px] & 0xff;
-                    switch (c >> 4) {
-                        case 0, 1, 2, 3, 4, 5, 6, 7: {
-                            // 0xxx xxxx
-                            px++;
-                            chararr[chararr_count++] = (char) c;
-                            hash = 31 * hash + c;
-                            break;
-                        }
-                        case 12, 13: {
-                            // 110x xxxx  10xx xxxx
-                            px += 2;
-                            if (px > utfend) {
-                                throw malformedInput(utfend);
-                            }
-                            int char2 = rawBytes[px - 1];
-                            if ((char2 & 0xC0) != 0x80) {
-                                throw malformedInput(px);
-                            }
-                            char v = (char) (((c & 0x1F) << 6) | (char2 & 0x3F));
-                            chararr[chararr_count++] = v;
-                            hash = 31 * hash + v;
-                            break;
-                        }
-                        case 14: {
-                            // 1110 xxxx  10xx xxxx  10xx xxxx
-                            px += 3;
-                            if (px > utfend) {
-                                throw malformedInput(utfend);
-                            }
-                            int char2 = rawBytes[px - 2];
-                            int char3 = rawBytes[px - 1];
-                            if (((char2 & 0xC0) != 0x80) || ((char3 & 0xC0) != 0x80)) {
-                                throw malformedInput(px - 1);
-                            }
-                            char v = (char) (((c & 0x0F) << 12) | ((char2 & 0x3F) << 6) | (char3 & 0x3F));
-                            chararr[chararr_count++] = v;
-                            hash = 31 * hash + v;
-                            break;
-                        }
-                        default:
-                            // 10xx xxxx,  1111 xxxx
-                            throw malformedInput(px);
+        private void inflateNonAscii(int singleBytes, int hash) {
+            char[] chararr = new char[rawLen];
+            int chararr_count = singleBytes;
+            // Inflate prefix of bytes to characters
+            JLA.inflateBytesToChars(rawBytes, offset, chararr, 0, singleBytes);
+
+            int px = offset + singleBytes;
+            int utfend = offset + rawLen;
+            while (px < utfend) {
+                int c = (int) rawBytes[px] & 0xff;
+                switch (c >> 4) {
+                    case 0, 1, 2, 3, 4, 5, 6, 7: {
+                        // 0xxx xxxx
+                        px++;
+                        chararr[chararr_count++] = (char) c;
+                        hash = 31 * hash + c;
+                        break;
                     }
+                    case 12, 13: {
+                        // 110x xxxx  10xx xxxx
+                        px += 2;
+                        if (px > utfend) {
+                            throw malformedInput(utfend);
+                        }
+                        int char2 = rawBytes[px - 1];
+                        if ((char2 & 0xC0) != 0x80) {
+                            throw malformedInput(px);
+                        }
+                        char v = (char) (((c & 0x1F) << 6) | (char2 & 0x3F));
+                        chararr[chararr_count++] = v;
+                        hash = 31 * hash + v;
+                        break;
+                    }
+                    case 14: {
+                        // 1110 xxxx  10xx xxxx  10xx xxxx
+                        px += 3;
+                        if (px > utfend) {
+                            throw malformedInput(utfend);
+                        }
+                        int char2 = rawBytes[px - 2];
+                        int char3 = rawBytes[px - 1];
+                        if (((char2 & 0xC0) != 0x80) || ((char3 & 0xC0) != 0x80)) {
+                            throw malformedInput(px - 1);
+                        }
+                        char v = (char) (((c & 0x0F) << 12) | ((char2 & 0x3F) << 6) | (char3 & 0x3F));
+                        chararr[chararr_count++] = v;
+                        hash = 31 * hash + v;
+                        break;
+                    }
+                    default:
+                        // 10xx xxxx,  1111 xxxx
+                        throw malformedInput(px);
                 }
-                this.contentHash = hash;
-                charLen = chararr_count;
-                this.chars = chararr;
-                state = State.CHAR;
             }
+            this.contentHash = hash;
+            charLen = chararr_count;
+            this.chars = chararr;
+            state = State.CHAR;
         }
 
         private ConstantPoolException malformedInput(int px) {
