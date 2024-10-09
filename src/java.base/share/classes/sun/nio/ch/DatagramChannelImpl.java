@@ -1896,11 +1896,21 @@ class DatagramChannelImpl
                     }
                     if (NativeThread.isNativeThread(reader)
                             || NativeThread.isNativeThread(writer)) {
-                        nd.preClose(fd);
-                        if (NativeThread.isNativeThread(reader))
-                            NativeThread.signal(reader);
-                        if (NativeThread.isNativeThread(writer))
-                            NativeThread.signal(writer);
+                        boolean isAix = System.getProperty("os.name").startsWith("AIX");
+                        if (isAix) {
+                            if (NativeThread.isNativeThread(reader))
+                                NativeThread.signal(reader);
+                            if (NativeThread.isNativeThread(writer))
+                                NativeThread.signal(writer);
+                                nd.preClose(fd);
+                        }
+                        else {
+                            nd.preClose(fd);
+                            if (NativeThread.isNativeThread(reader))
+                                NativeThread.signal(reader);
+                            if (NativeThread.isNativeThread(writer))
+                                NativeThread.signal(writer);
+                        }
                     }
                 }
             }
