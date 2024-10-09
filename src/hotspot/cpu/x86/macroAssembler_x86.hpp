@@ -1218,7 +1218,7 @@ public:
   void addpd(XMMRegister dst, AddressLiteral src, Register rscratch = noreg);
 
   using Assembler::vbroadcasti128;
-  void vbroadcasti128(XMMRegister dst, AddressLiteral src, Register rscratch = noreg);
+  void vbroadcasti128(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch = noreg);
 
   using Assembler::vbroadcastsd;
   void vbroadcastsd(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch = noreg);

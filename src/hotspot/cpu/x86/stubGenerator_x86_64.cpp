@@ -1556,8 +1556,8 @@ address StubGenerator::generate_sha256_implCompress(bool multi_block, const char
 }
 
 address StubGenerator::generate_sha512_implCompress(bool multi_block, const char *name) {
-  assert(VM_Version::supports_avx2() || VM_Version::supports_sha512(), "");
-  assert(VM_Version::supports_bmi2(), "");
+  assert(VM_Version::supports_avx2(), "");
+  assert(VM_Version::supports_bmi2() || VM_Version::supports_sha512(), "");
   __ align(CodeEntryAlignment);
   StubCodeMark mark(this, "StubRoutines", name);
   address start = __ pc();

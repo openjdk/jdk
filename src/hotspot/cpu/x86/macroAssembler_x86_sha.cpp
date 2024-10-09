@@ -1523,7 +1523,7 @@ void MacroAssembler::sha512_update_ni_x1(Register arg_hash, Register arg_msg, Re
     Label done_hash, block_loop;
     address K512_W = StubRoutines::x86::k512_W_addr();
 
-    vbroadcasti128(xmm15, ExternalAddress(StubRoutines::x86::pshuffle_byte_flip_mask_addr_sha512()), rbx);
+    vbroadcasti128(xmm15, ExternalAddress(StubRoutines::x86::pshuffle_byte_flip_mask_addr_sha512()), Assembler::AVX_256bit, r10);
 
     //load current hash value and transform
     vmovdqu(xmm0, Address(arg_hash));

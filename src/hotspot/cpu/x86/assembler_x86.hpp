@@ -3031,7 +3031,7 @@ private:
   void evbroadcasti32x4(XMMRegister dst, Address src, int vector_len);
   void evbroadcasti64x2(XMMRegister dst, XMMRegister src, int vector_len);
   void evbroadcasti64x2(XMMRegister dst, Address src, int vector_len);
-  void vbroadcasti128(XMMRegister dst, Address src);
+  void vbroadcasti128(XMMRegister dst, Address src, int vector_len);
 
   // scalar single/double/128bit precision replicate
   void vbroadcastss(XMMRegister dst, XMMRegister src, int vector_len);

@@ -103,7 +103,7 @@ public class ClhsdbLongConstant {
         String arch = System.getProperty("os.arch");
         if (arch.equals("amd64") || arch.equals("i386") || arch.equals("x86")) {
             // Expected value obtained from the CPU_SHA definition in vm_version_x86.hpp
-            checkLongValue("VM_Version::CPU_SHA",
+            checkLongValue("VM_Version::CPU_SHA ",
                            longConstantOutput,
                            17179869184L);
         }
