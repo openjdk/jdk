@@ -123,19 +123,22 @@ int LogFileStreamOutput::write_internal_line(const LogDecorations& decorations, 
   if (!_fold_multilines) {
     const char* base = msg;
     int written_tmp = 0;
-    while (true) {
+    int decorator_padding = 0;
+    if (use_decorations) {
+      WRITE_LOG_WITH_RESULT_CHECK(write_decorations(decorations), decorator_padding);
+      WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, " "), decorator_padding);
+    }
+    written += decorator_padding;
+    WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, "%s\n", msg), written_tmp);
+    while (written_tmp < msg_len) {
+      msg = base + written_tmp;
+      
       if (use_decorations) {
-        WRITE_LOG_WITH_RESULT_CHECK(write_decorations(decorations), written);
-        WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, " "), written);
+        WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, "[%*c] ", decorator_padding - 3, ' '), written);
       }
       WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, "%s\n", msg), written_tmp);
-      if (written_tmp >= msg_len) {
-        // We are finished, add up everything
-        written += written_tmp;
-        break;
-      }
-      msg = base + written_tmp;
     }
+    written += written_tmp;
   } else {
     if (use_decorations) {
       WRITE_LOG_WITH_RESULT_CHECK(write_decorations(decorations), written);
