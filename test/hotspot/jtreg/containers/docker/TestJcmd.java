@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @test
  * @summary Test JCMD across container boundary. The JCMD runs on a host system,
  *          while sending commands to a JVM that runs inside a container.
- * @requires docker.support
+ * @requires container.support
  * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  *          java.management

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
  *          and other uses. In side car pattern the main application/service container
  *          is paired with a sidecar container by sharing certain aspects of container
  *          namespace such as PID namespace, specific sub-directories, IPC and more.
- * @requires docker.support
+ * @requires container.support
  * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  *          java.management
