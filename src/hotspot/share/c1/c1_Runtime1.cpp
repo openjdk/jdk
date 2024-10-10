@@ -887,7 +887,7 @@ static Klass* resolve_field_return_klass(const methodHandle& caller, int bci, TR
 //             movl reg, [reg1 + <const>]  (for field offsets)
 //             jmp continue
 //             <being_init offset> <bytes to copy> <bytes to skip>
-// patch_stub: jmp Runtim1::patch_code (through a runtime stub)
+// patch_stub: jmp Runtime1::patch_code (through a runtime stub)
 //             jmp patch_site
 //
 // If the class is being initialized the patch body is rewritten and
