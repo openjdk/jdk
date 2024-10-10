@@ -2231,10 +2231,6 @@ const RegMask* Matcher::predicate_reg_mask(void) {
   return &_VECTMASK_REG_mask;
 }
 
-const TypeVectMask* Matcher::predicate_reg_type(const Type* elemTy, int length) {
-  return new TypeVectMask(elemTy, length);
-}
-
 // Max vector size in bytes. 0 if not supported.
 int Matcher::vector_width_in_bytes(BasicType bt) {
   assert(is_java_primitive(bt), "only primitive type vectors");

@@ -2307,10 +2307,6 @@ const RegMask* Matcher::predicate_reg_mask(void) {
   return &_PR_REG_mask;
 }
 
-const TypeVectMask* Matcher::predicate_reg_type(const Type* elemTy, int length) {
-  return new TypeVectMask(elemTy, length);
-}
-
 // Vector calling convention not yet implemented.
 bool Matcher::supports_vector_calling_convention(void) {
   return false;
