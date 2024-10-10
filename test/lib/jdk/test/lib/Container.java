@@ -24,7 +24,7 @@
 package jdk.test.lib;
 
 public class Container {
-    // Use this property to specify container location on your system.
+    // Use this property to specify container runtime location (e.g. docker) on your system.
     // E.g.: "/usr/local/bin/docker". We define this constant here so
     // that it can be used in VMProps as well which checks container support
     // via this command
