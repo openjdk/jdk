@@ -717,6 +717,12 @@ void VMError::report(outputStream* st, bool _verbose) {
   address lastpc = nullptr;
 
   BEGIN
+  if (MemTracker::enabled() && NmtVirtualMemory_lock != nullptr && NmtVirtualMemory_lock->owned_by_self()) {
+    // Avoid reentrancy due to mallocs in detailed mode.
+    MemTracker::reduce_tracking_to_summary();
+    // Manually unlock if already holding lock upon entering error reporting.
+    NmtVirtualMemory_lock->unlock();
+  }
 
   STEP("printing fatal error message")
     st->print_cr("#");
