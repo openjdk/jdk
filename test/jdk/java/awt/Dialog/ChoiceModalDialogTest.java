@@ -93,22 +93,22 @@ public class ChoiceModalDialogTest {
                 f.setVisible(true);
                 f.toFront();
             });
-            r.delay(1000);
             r.waitForIdle();
+            r.delay(1000);
             EventQueue.invokeAndWait(() -> {
                 r.mouseMove(tf.getLocationOnScreen().x + tf.getSize().width / 2,
                         tf.getLocationOnScreen().y + tf.getSize().height / 2);
             });
-            r.delay(500);
             r.waitForIdle();
+            r.delay(500);
             EventQueue.invokeAndWait(() -> {
                 r.mouseMove(c.getLocationOnScreen().x + c.getSize().width - 4,
                         c.getLocationOnScreen().y + c.getSize().height / 2);
                 r.mousePress(InputEvent.BUTTON1_DOWN_MASK);
                 r.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
             });
-            r.delay(500);
             r.waitForIdle();
+            r.delay(500);
             EventQueue.invokeAndWait(() -> {
                 r.mouseMove(d.getLocationOnScreen().x + d.getSize().width / 2,
                         d.getLocationOnScreen().y + d.getSize().height / 2);
@@ -116,8 +116,16 @@ public class ChoiceModalDialogTest {
                 r.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
                 r.keyPress(KeyEvent.VK_A);
                 r.keyRelease(KeyEvent.VK_A);
-
             });
+            r.waitForIdle();
+            r.delay(500);
+            if (!mouseOK) {
+                throw new RuntimeException("Test Failed due to Mouse release failure!");
+            }
+            if (!keyOK) {
+                throw new RuntimeException("Test Failed due to Key release failure!");
+            }
+            System.out.println("Test Passed!");
         } finally {
             EventQueue.invokeAndWait(() -> {
                 if (d != null) {
@@ -128,11 +136,5 @@ public class ChoiceModalDialogTest {
                 }
             });
         }
-
-        if (!mouseOK || !keyOK) {
-            throw new RuntimeException("Test FAILED");
-        }
-
-        System.out.println("Test Passed!");
     }
 }
