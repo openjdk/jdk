@@ -53,7 +53,7 @@ public class MultipleAddNotifyTest {
         Robot r;
         try {
             r = new Robot();
-            r.setAutoDelay(100);
+            r.setAutoWaitForIdle(true);
             passFlag = false;
 
             EventQueue.invokeAndWait(() -> {
@@ -70,6 +70,7 @@ public class MultipleAddNotifyTest {
                 f.add(l);
                 f.addNotify();
                 f.addNotify();
+
                 if (!l.isVisible()) {
                     throw new RuntimeException("Test failed. LW Component " +
                             "not visible.");
@@ -78,11 +79,11 @@ public class MultipleAddNotifyTest {
                 f.setLocationRelativeTo(null);
                 f.setVisible(true);
             });
-
             r.waitForIdle();
-            r.delay(500);
+            r.delay(1000);
+
             EventQueue.invokeAndWait(() -> {
-                posX = f.getX() + l.getWidth() + (l.getWidth() / 2) + 10;
+                posX = f.getX() + l.getWidth() + (l.getWidth() / 2);
                 posY = f.getY() + l.getHeight();
             });
 
