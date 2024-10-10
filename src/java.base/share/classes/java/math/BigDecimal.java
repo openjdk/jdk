@@ -5255,8 +5255,9 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
     private static BigDecimal createAndStripZerosToMatchScale(BigInteger intVal, int scale, long preferredScale) {
         // avoid overflow of scale - preferredScale
         preferredScale = Math.clamp(preferredScale, Integer.MIN_VALUE - 1L, Integer.MAX_VALUE);
-        // a multiple of 10^n must be a multiple of 2^n
         int powsOf2 = intVal.getLowestSetBit();
+        // remainingZeros >= max{n : (intVal % 10^n) == 0 && scale - n >= preferredScale}
+        // a multiple of 10^n must be a multiple of 2^n
         long remainingZeros = Math.min(scale - preferredScale, powsOf2);
         if (remainingZeros <= 0L)
             return valueOf(intVal, scale, 0);
@@ -5266,7 +5267,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             intVal = intVal.negate(); // speed up computation of shiftRight() and bitLength()
 
         intVal = intVal.shiftRight(powsOf2); // remove powers of 2
-        // maxPowsOf5 == ceil(log5(intVal)) roughly
+        // maxPowsOf5 >= log5(intVal)
         long maxPowsOf5 = (long) Math.ceil(intVal.bitLength() * LOG_5_OF_2);
         remainingZeros = Math.min(remainingZeros, maxPowsOf5);
 
