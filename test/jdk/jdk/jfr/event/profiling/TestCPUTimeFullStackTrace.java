@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,15 +28,15 @@ import jdk.test.lib.jfr.EventNames;
 /**
  * @test
  * @key jfr
- * @requires vm.hasJFR
+ * @requires vm.hasJFR & os.family == "linux"
  * @library /test/lib
  * @build jdk.jfr.event.profiling.BaseTestFullStackTrace
- * @run main/othervm jdk.jfr.event.profiling.TestFullStackTrace
+ * @run main/othervm jdk.jfr.event.profiling.TestCPUTimeFullStackTrace
  */
-public class TestFullStackTrace {
+public class TestCPUTimeFullStackTrace {
 
     public static void main(String[] args) throws Throwable {
-        BaseTestFullStackTrace.run(EventNames.ExecutionSample);
+        BaseTestFullStackTrace.run(EventNames.CPUTimeSample);
     }
 
 }

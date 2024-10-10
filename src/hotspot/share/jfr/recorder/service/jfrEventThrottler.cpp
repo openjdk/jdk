@@ -27,6 +27,7 @@
 #include "jfr/recorder/service/jfrEventThrottler.hpp"
 #include "jfr/utilities/jfrSpinlockHelper.hpp"
 #include "logging/log.hpp"
+#include "jfr/periodic/sampling/jfrCPUTimeThreadSampler.hpp"
 
 constexpr static const JfrSamplerParams _disabled_params = {
                                                              0, // sample points per window
@@ -61,12 +62,19 @@ void JfrEventThrottler::destroy() {
 // There is currently only one throttler instance, for the jdk.ObjectAllocationSample event.
 // When introducing additional throttlers, also add a lookup map keyed by event id.
 JfrEventThrottler* JfrEventThrottler::for_event(JfrEventId event_id) {
+  if (event_id == JfrCPUTimeSampleEvent) { // we handle CPUTimeSampleEvents separately
+    return nullptr;
+  }
   assert(_throttler != nullptr, "JfrEventThrottler has not been properly initialized");
   assert(event_id == JfrObjectAllocationSampleEvent, "Event type has an unconfigured throttler");
   return event_id == JfrObjectAllocationSampleEvent ? _throttler : nullptr;
 }
 
 void JfrEventThrottler::configure(JfrEventId event_id, int64_t sample_size, int64_t period_ms) {
+  if (event_id == JfrCPUTimeSampleEvent) {
+    JfrCPUTimeThreadSampling::set_throttle(sample_size * 1.0 / period_ms);
+    return;
+  }
   if (event_id != JfrObjectAllocationSampleEvent) {
     return;
   }

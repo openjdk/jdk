@@ -359,6 +359,9 @@ public final class EventControl {
                 }
             }
         }
+        if (type.isEnabled() && ActiveSettingEvent.enabled()) {
+            type.writeActualPeriodIfNeeded(timestamp);
+        }
     }
 
     public ArrayList<NamedControl> getNamedControls() {

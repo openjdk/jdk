@@ -87,7 +87,9 @@ inline traceid JfrTraceIdLoadBarrier::load(const Klass* klass) {
 }
 
 inline traceid JfrTraceIdLoadBarrier::load(const Method* method) {
-  return load(method->method_holder(), method);
+  auto holder = method->method_holder();
+  auto res = load(holder, method);
+  return res;
 }
 
 inline traceid JfrTraceIdLoadBarrier::load(const Klass* klass, const Method* method) {

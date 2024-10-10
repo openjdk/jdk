@@ -58,6 +58,8 @@ JfrJniMethodRegistration::JfrJniMethodRegistration(JNIEnv* env) {
       (char*)"setGlobalBufferCount", (char*)"(J)V", (void*)jfr_set_global_buffer_count,
       (char*)"setGlobalBufferSize", (char*)"(J)V", (void*)jfr_set_global_buffer_size,
       (char*)"setMethodSamplingPeriod", (char*)"(JJ)V", (void*)jfr_set_method_sampling_period,
+      (char*)"setCPUTimeMethodSamplingPeriod", (char*)"(J)V", (void*)jfr_set_cpu_time_method_sampling_period,
+      (char*)"getCPUTimeMethodSamplingActualPeriod", (char*)"()J", (void*)jfr_get_cpu_time_method_sampling_actual_period,
       (char*)"setOutput", (char*)"(Ljava/lang/String;)V", (void*)jfr_set_output,
       (char*)"setStackDepth", (char*)"(I)V", (void*)jfr_set_stack_depth,
       (char*)"setStackTraceEnabled", (char*)"(JZ)V", (void*)jfr_set_stacktrace_enabled,

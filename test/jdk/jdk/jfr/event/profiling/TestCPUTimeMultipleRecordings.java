@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,32 +31,36 @@ import jdk.jfr.internal.JVM;
 import jdk.test.lib.jfr.EventNames;
 
 /*
+ * Tests that creating multiple recordings after another is possible.
  * @test
  * @key jfr
- * @requires vm.hasJFR
+ * @requires vm.hasJFR & os.family == "linux"
  * @library /test/lib
  * @modules jdk.jfr/jdk.jfr.internal
- * @run main jdk.jfr.event.profiling.TestNative
+ * @run main jdk.jfr.event.profiling.TestCPUTimeMultipleRecordings
  */
-public class TestNative {
+public class TestCPUTimeMultipleRecordings {
 
-    static String nativeEvent = EventNames.NativeMethodSample;
+    static String nativeEvent = EventNames.CPUTimeSample;
 
     static volatile boolean alive = true;
 
     public static void main(String[] args) throws Exception {
-        try (RecordingStream rs = new RecordingStream()) {
-            rs.enable(nativeEvent).withPeriod(Duration.ofMillis(1));
-            rs.onEvent(nativeEvent, e -> {
-                alive = false;
-                rs.close();
-            });
-            Thread t = new Thread(TestNative::nativeMethod);
-            t.setDaemon(true);
-            t.start();
-            rs.start();
-        }
+        Thread t = new Thread(TestCPUTimeMultipleRecordings::nativeMethod);
+        t.setDaemon(true);
+        t.start();
+        for (int i = 0; i < 2; i++) {
+            try (RecordingStream rs = new RecordingStream()) {
+                rs.enable(nativeEvent).withPeriod(Duration.ofMillis(1));
+                rs.onEvent(nativeEvent, e -> {
+                    alive = false;
+                    rs.close();
+                });
 
+                rs.start();
+            }
+        }
+        alive = false;
     }
 
     public static void nativeMethod() {

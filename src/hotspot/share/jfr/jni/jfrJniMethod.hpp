@@ -79,6 +79,10 @@ void JNICALL jfr_set_global_buffer_size(JNIEnv* env, jclass jvm, jlong size);
 
 void JNICALL jfr_set_method_sampling_period(JNIEnv* env, jclass jvm, jlong type, jlong periodMillis);
 
+void JNICALL jfr_set_cpu_time_method_sampling_period(JNIEnv* env, jclass jvm, jlong type, jlong periodMillis);
+
+jlong JNICALL jfr_get_cpu_time_method_sampling_actual_period(JNIEnv* env, jclass jvm);
+
 void JNICALL jfr_set_output(JNIEnv* env, jclass jvm, jstring path);
 
 void JNICALL jfr_set_stack_depth(JNIEnv* env, jclass jvm, jint depth);
