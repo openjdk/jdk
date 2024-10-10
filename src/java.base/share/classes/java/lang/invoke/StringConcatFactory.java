@@ -117,9 +117,10 @@ import static java.lang.invoke.MethodType.methodType;
  * @since 9
  */
 public final class StringConcatFactory {
-    private static final int HIGH_ARITY_THRESHOLD;
-    private static final int CACHE_THRESHOLD;
-    private static final int FORCE_INLINE_THRESHOLD;
+    private static final int
+            HIGH_ARITY_THRESHOLD,
+            CACHE_THRESHOLD,
+            FORCE_INLINE_THRESHOLD;
 
     static {
         String highArity = VM.getSavedProperty("java.lang.invoke.StringConcat.highArityThreshold");
@@ -1025,9 +1026,10 @@ public final class StringConcatFactory {
         }
     }
 
-    private static final @Stable MethodHandle[] NO_PREFIX_PREPENDERS = new MethodHandle[TYPE_COUNT];
-    private static final @Stable MethodHandle[] PREPENDERS      = new MethodHandle[TYPE_COUNT];
-    private static final @Stable MethodHandle[] MIXERS          = new MethodHandle[TYPE_COUNT];
+    private static final @Stable MethodHandle[]
+            NO_PREFIX_PREPENDERS = new MethodHandle[TYPE_COUNT],
+            PREPENDERS           = new MethodHandle[TYPE_COUNT],
+            MIXERS               = new MethodHandle[TYPE_COUNT];
     private static final long INITIAL_CODER = JLA.stringConcatInitialCoder();
 
     /**
@@ -1080,40 +1082,43 @@ public final class StringConcatFactory {
      * without copying.
      */
     private static final class InlineHiddenClassStrategy {
-        static final String CLASS_NAME   = "java.lang.String$$StringConcat";
-        static final String METHOD_NAME  = "concat";
+        static final String
+                CLASS_NAME   = "java.lang.String$$StringConcat",
+                METHOD_NAME  = "concat";
 
         static final ClassFileDumper DUMPER =
                 ClassFileDumper.getInstance("java.lang.invoke.StringConcatFactory.dump", "stringConcatClasses");
         static final MethodHandles.Lookup STR_LOOKUP = new MethodHandles.Lookup(String.class);
 
-        static final ClassDesc CD_CONCAT             = ConstantUtils.binaryNameToDesc(CLASS_NAME);
-        static final ClassDesc CD_StringConcatHelper = ReferenceClassDescImpl.ofValidated("Ljava/lang/StringConcatHelper;");
-        static final ClassDesc CD_StringConcatBase   = ReferenceClassDescImpl.ofValidated("Ljava/lang/StringConcatHelper$StringConcatBase;");
-        static final ClassDesc CD_Array_byte         = ReferenceClassDescImpl.ofValidated("[B");
-        static final ClassDesc CD_Array_String       = ReferenceClassDescImpl.ofValidated("[Ljava/lang/String;");
+        static final ClassDesc
+                CD_CONCAT             = ConstantUtils.binaryNameToDesc(CLASS_NAME),
+                CD_StringConcatHelper = ReferenceClassDescImpl.ofValidated("Ljava/lang/StringConcatHelper;"),
+                CD_StringConcatBase   = ReferenceClassDescImpl.ofValidated("Ljava/lang/StringConcatHelper$StringConcatBase;"),
+                CD_Array_byte         = ReferenceClassDescImpl.ofValidated("[B"),
+                CD_Array_String       = ReferenceClassDescImpl.ofValidated("[Ljava/lang/String;");
 
-        static final MethodTypeDesc MTD_byte_char       = MethodTypeDescImpl.ofValidated(CD_byte, CD_char);
-        static final MethodTypeDesc MTD_byte            = MethodTypeDescImpl.ofValidated(CD_byte);
-        static final MethodTypeDesc MTD_int             = MethodTypeDescImpl.ofValidated(CD_int);
-        static final MethodTypeDesc MTD_int_int_boolean = MethodTypeDescImpl.ofValidated(CD_int, CD_int, CD_boolean);
-        static final MethodTypeDesc MTD_int_int_char    = MethodTypeDescImpl.ofValidated(CD_int, CD_int, CD_char);
-        static final MethodTypeDesc MTD_int_int_int     = MethodTypeDescImpl.ofValidated(CD_int, CD_int, CD_int);
-        static final MethodTypeDesc MTD_int_int_long    = MethodTypeDescImpl.ofValidated(CD_int, CD_int, CD_long);
-        static final MethodTypeDesc MTD_int_int_String  = MethodTypeDescImpl.ofValidated(CD_int, CD_int, CD_String);
-        static final MethodTypeDesc MTD_String_float    = MethodTypeDescImpl.ofValidated(CD_String, CD_float);
-        static final MethodTypeDesc MTD_String_double   = MethodTypeDescImpl.ofValidated(CD_String, CD_double);
-        static final MethodTypeDesc MTD_String_Object   = MethodTypeDescImpl.ofValidated(CD_String, CD_Object);
+        static final MethodTypeDesc
+                MTD_byte_char       = MethodTypeDescImpl.ofValidated(CD_byte, CD_char),
+                MTD_byte            = MethodTypeDescImpl.ofValidated(CD_byte),
+                MTD_int             = MethodTypeDescImpl.ofValidated(CD_int),
+                MTD_int_int_boolean = MethodTypeDescImpl.ofValidated(CD_int, CD_int, CD_boolean),
+                MTD_int_int_char    = MethodTypeDescImpl.ofValidated(CD_int, CD_int, CD_char),
+                MTD_int_int_int     = MethodTypeDescImpl.ofValidated(CD_int, CD_int, CD_int),
+                MTD_int_int_long    = MethodTypeDescImpl.ofValidated(CD_int, CD_int, CD_long),
+                MTD_int_int_String  = MethodTypeDescImpl.ofValidated(CD_int, CD_int, CD_String),
+                MTD_String_float    = MethodTypeDescImpl.ofValidated(CD_String, CD_float),
+                MTD_String_double   = MethodTypeDescImpl.ofValidated(CD_String, CD_double),
+                MTD_String_Object   = MethodTypeDescImpl.ofValidated(CD_String, CD_Object),
 
-        static final MethodTypeDesc MTD_INIT             = MethodTypeDescImpl.ofValidated(CD_void, CD_Array_String);
-        static final MethodTypeDesc MTD_NEW_ARRAY_SUFFIX = MethodTypeDescImpl.ofValidated(CD_Array_byte, CD_String, CD_int, CD_byte);
-        static final MethodTypeDesc MTD_STRING_INIT      = MethodTypeDescImpl.ofValidated(CD_void, CD_Array_byte, CD_byte);
+                MTD_INIT             = MethodTypeDescImpl.ofValidated(CD_void, CD_Array_String),
+                MTD_NEW_ARRAY_SUFFIX = MethodTypeDescImpl.ofValidated(CD_Array_byte, CD_String, CD_int, CD_byte),
+                MTD_STRING_INIT      = MethodTypeDescImpl.ofValidated(CD_void, CD_Array_byte, CD_byte),
 
-        static final MethodTypeDesc PREPEND_int     = MethodTypeDescImpl.ofValidated(CD_int, CD_int, CD_byte, CD_Array_byte, CD_int, CD_String);
-        static final MethodTypeDesc PREPEND_long    = MethodTypeDescImpl.ofValidated(CD_int, CD_int, CD_byte, CD_Array_byte, CD_long, CD_String);
-        static final MethodTypeDesc PREPEND_boolean = MethodTypeDescImpl.ofValidated(CD_int, CD_int, CD_byte, CD_Array_byte, CD_boolean, CD_String);
-        static final MethodTypeDesc PREPEND_char    = MethodTypeDescImpl.ofValidated(CD_int, CD_int, CD_byte, CD_Array_byte, CD_char, CD_String);
-        static final MethodTypeDesc PREPEND_String  = MethodTypeDescImpl.ofValidated(CD_int, CD_int, CD_byte, CD_Array_byte, CD_String, CD_String);
+                PREPEND_int     = MethodTypeDescImpl.ofValidated(CD_int, CD_int, CD_byte, CD_Array_byte, CD_int, CD_String),
+                PREPEND_long    = MethodTypeDescImpl.ofValidated(CD_int, CD_int, CD_byte, CD_Array_byte, CD_long, CD_String),
+                PREPEND_boolean = MethodTypeDescImpl.ofValidated(CD_int, CD_int, CD_byte, CD_Array_byte, CD_boolean, CD_String),
+                PREPEND_char    = MethodTypeDescImpl.ofValidated(CD_int, CD_int, CD_byte, CD_Array_byte, CD_char, CD_String),
+                PREPEND_String  = MethodTypeDescImpl.ofValidated(CD_int, CD_int, CD_byte, CD_Array_byte, CD_String, CD_String);
 
         static final RuntimeVisibleAnnotationsAttribute FORCE_INLINE = RuntimeVisibleAnnotationsAttribute.of(Annotation.of(ClassDesc.ofDescriptor("Ljdk/internal/vm/annotation/ForceInline;")));
 
