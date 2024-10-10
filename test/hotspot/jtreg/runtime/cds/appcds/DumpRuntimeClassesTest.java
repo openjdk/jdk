@@ -27,6 +27,9 @@
  * @summary Classes used by CDS at runtime should be in the archived
  * @bug 8324259
  * @requires vm.cds
+ * @requires vm.compMode != "Xcomp"
+ * @comment Running this test with -Xcomp may load other classes which
+ *          are not used in other modes
  * @library /test/lib
  * @compile test-classes/Hello.java
  * @run driver DumpRuntimeClassesTest
