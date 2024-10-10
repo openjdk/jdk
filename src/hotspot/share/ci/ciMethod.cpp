@@ -682,6 +682,8 @@ ciMethod* ciMethod::find_monomorphic_target(ciInstanceKlass* caller,
     return nullptr;
   }
 
+  VM_ENTRY_MARK;
+
   ciMethod* root_m = resolve_invoke(caller, actual_recv, check_access, true /* allow_abstract */);
   if (root_m == nullptr) {
     // Something went wrong looking up the actual receiver method.
@@ -689,7 +691,7 @@ ciMethod* ciMethod::find_monomorphic_target(ciInstanceKlass* caller,
   }
 
   // Redefinition support.
-  if (this->get_Method()->is_old() || root_m->get_Method()->is_old()) {
+  if (this->is_old() || root_m->is_old()) {
     return nullptr;
   }
 
@@ -717,8 +719,6 @@ ciMethod* ciMethod::find_monomorphic_target(ciInstanceKlass* caller,
   // so there is no need to do the same job here.
 
   if (!UseCHA)  return nullptr;
-
-  VM_ENTRY_MARK;
 
   methodHandle target;
   {
@@ -749,7 +749,7 @@ ciMethod* ciMethod::find_monomorphic_target(ciInstanceKlass* caller,
   }
 
   // Redefinition support.
-  if (this->get_Method()->is_old() || root_m->get_Method()->is_old() || target->is_old()) {
+  if (this->is_old() || root_m->is_old() || target->is_old()) {
     return nullptr;
   }
 
@@ -799,7 +799,7 @@ bool ciMethod::can_omit_stack_trace() const {
 // Return null if the call has no target or the target is abstract.
 ciMethod* ciMethod::resolve_invoke(ciKlass* caller, ciKlass* exact_receiver, bool check_access, bool allow_abstract) {
   check_is_loaded();
-  VM_ENTRY_MARK;
+  ASSERT_IN_VM;
 
   Klass* caller_klass = caller->get_Klass();
   Klass* recv         = exact_receiver->get_Klass();
@@ -830,7 +830,7 @@ ciMethod* ciMethod::resolve_invoke(ciKlass* caller, ciKlass* exact_receiver, boo
 
   ciMethod* result = this;
   if (m != get_Method()) {
-    result = CURRENT_THREAD_ENV->get_method(m);
+    result = CURRENT_ENV->get_method(m);
   }
 
   if (result->is_abstract() && !allow_abstract) {
@@ -1491,3 +1491,10 @@ bool ciMethod::is_consistent_info(ciMethod* declared_method, ciMethod* resolved_
 }
 
 // ------------------------------------------------------------------
+// ciMethod::is_old
+//
+// Return true for redefined methods
+bool ciMethod::is_old() const {
+  ASSERT_IN_VM;
+  return get_Method()->is_old();
+}
