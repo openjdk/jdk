@@ -1,10 +1,13 @@
 /*
- * Copyright (c) 2017, 2018, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -19,32 +22,29 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
+package jdk.jfr.event.gc.detailed;
 
-/*
- * @test
- * @summary Test that reference processing works with both parallel and non-parallel variants.
+/**
+ * @test id=default
+ * @key randomness
+ * @requires vm.hasJFR
  * @requires vm.gc.Shenandoah
- *
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xmx1g -Xms1g                              TestParallelRefprocSanity
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xmx1g -Xms1g  -XX:-ParallelRefProcEnabled TestParallelRefprocSanity
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xmx1g -Xms1g  -XX:+ParallelRefProcEnabled TestParallelRefprocSanity
+ * @library /test/lib /test/jdk
+ * @run main/othervm -XX:+UseShenandoahGC -Xmx256m jdk.jfr.event.gc.detailed.TestStressBigAllocationGCEventsWithShenandoah 1048576
  */
 
-import java.lang.ref.*;
-
-public class TestParallelRefprocSanity {
-
-    static final long TARGET_MB = Long.getLong("target", 10_000); // 10 Gb allocation
-
-    static volatile Object sink;
+ /**
+  * @test id=generational
+  * @key randomness
+  * @requires vm.hasJFR
+  * @requires vm.gc.Shenandoah
+  * @library /test/lib /test/jdk
+  * @run main/othervm -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational -Xmx256m jdk.jfr.event.gc.detailed.TestStressBigAllocationGCEventsWithShenandoah 1048576
+  */
+public class TestStressBigAllocationGCEventsWithShenandoah {
 
     public static void main(String[] args) throws Exception {
-        long count = TARGET_MB * 1024 * 1024 / 32;
-        for (long c = 0; c < count; c++) {
-            sink = new WeakReference<Object>(new Object());
-        }
+        new StressAllocationGCEvents().run(args);
     }
-
 }

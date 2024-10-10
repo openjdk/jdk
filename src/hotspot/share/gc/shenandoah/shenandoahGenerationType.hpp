@@ -26,13 +26,22 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHGENERATIONTYPE_HPP
 
 enum ShenandoahGenerationType {
-  NON_GEN           // non-generational
+    NON_GEN,         // non-generational
+    GLOBAL,          // generational: Global
+    YOUNG,           // generational: Young
+    OLD              // generational: Old
 };
 
 inline const char* shenandoah_generation_name(ShenandoahGenerationType mode) {
   switch (mode) {
     case NON_GEN:
       return "Non-Generational";
+    case GLOBAL:
+      return "Global";
+    case OLD:
+      return "Old";
+    case YOUNG:
+      return "Young";
     default:
       ShouldNotReachHere();
       return "Unknown";

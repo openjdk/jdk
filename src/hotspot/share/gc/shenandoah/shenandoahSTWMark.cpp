@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021, 2022, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +30,7 @@
 #include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/workerThread.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
+#include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahGenerationType.hpp"
 #include "gc/shenandoah/shenandoahMark.inline.hpp"
 #include "gc/shenandoah/shenandoahOopClosures.inline.hpp"
@@ -45,6 +47,7 @@ private:
 
   template <class T>
   inline void do_oop_work(T* p);
+
 public:
   ShenandoahInitMarkRootsClosure(ShenandoahObjToScanQueue* q);
 
@@ -61,7 +64,8 @@ ShenandoahInitMarkRootsClosure<GENERATION>::ShenandoahInitMarkRootsClosure(Shena
 template <ShenandoahGenerationType GENERATION>
 template <class T>
 void ShenandoahInitMarkRootsClosure<GENERATION>::do_oop_work(T* p) {
-  ShenandoahMark::mark_through_ref<T, GENERATION>(p, _queue, _mark_context, false);
+  // Only called from STW mark, should not be used to bootstrap old generation marking.
+  ShenandoahMark::mark_through_ref<T, GENERATION>(p, _queue, nullptr, _mark_context, false);
 }
 
 class ShenandoahSTWMarkTask : public WorkerTask {
@@ -84,10 +88,10 @@ void ShenandoahSTWMarkTask::work(uint worker_id) {
   _mark->finish_mark(worker_id);
 }
 
-ShenandoahSTWMark::ShenandoahSTWMark(bool full_gc) :
-  ShenandoahMark(),
+ShenandoahSTWMark::ShenandoahSTWMark(ShenandoahGeneration* generation, bool full_gc) :
+  ShenandoahMark(generation),
   _root_scanner(full_gc ? ShenandoahPhaseTimings::full_gc_mark : ShenandoahPhaseTimings::degen_gc_stw_mark),
-  _terminator(ShenandoahHeap::heap()->workers()->active_workers(), ShenandoahHeap::heap()->marking_context()->task_queues()),
+  _terminator(ShenandoahHeap::heap()->workers()->active_workers(), task_queues()),
   _full_gc(full_gc) {
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Must be at a Shenandoah safepoint");
 }
@@ -100,7 +104,8 @@ void ShenandoahSTWMark::mark() {
   ShenandoahCodeRoots::arm_nmethods_for_mark();
 
   // Weak reference processing
-  ShenandoahReferenceProcessor* rp = heap->ref_processor();
+  ShenandoahReferenceProcessor* rp = heap->gc_generation()->ref_processor();
+  shenandoah_assert_generations_reconciled();
   rp->reset_thread_locals();
   rp->set_soft_reference_policy(heap->soft_ref_policy()->should_clear_all_soft_refs());
 
@@ -119,6 +124,11 @@ void ShenandoahSTWMark::mark() {
 
   {
     // Mark
+    if (_generation->is_young()) {
+      // But only scan the remembered set for young generation.
+      _generation->scan_remembered_set(false /* is_concurrent */);
+    }
+
     StrongRootsScope scope(nworkers);
     ShenandoahSTWMarkTask task(this);
     heap->workers()->run_task(&task);
@@ -126,7 +136,7 @@ void ShenandoahSTWMark::mark() {
     assert(task_queues()->is_empty(), "Should be empty");
   }
 
-  heap->mark_complete_marking_context();
+  _generation->set_mark_complete();
   end_mark();
 
   // Mark is finished, can disarm the nmethods now.
@@ -137,16 +147,36 @@ void ShenandoahSTWMark::mark() {
 }
 
 void ShenandoahSTWMark::mark_roots(uint worker_id) {
-  ShenandoahInitMarkRootsClosure<NON_GEN>  init_mark(task_queues()->queue(worker_id));
-  _root_scanner.roots_do(&init_mark, worker_id);
+  switch (_generation->type()) {
+    case NON_GEN: {
+      ShenandoahInitMarkRootsClosure<NON_GEN> init_mark(task_queues()->queue(worker_id));
+      _root_scanner.roots_do(&init_mark, worker_id);
+      break;
+    }
+    case GLOBAL: {
+      ShenandoahInitMarkRootsClosure<GLOBAL> init_mark(task_queues()->queue(worker_id));
+      _root_scanner.roots_do(&init_mark, worker_id);
+      break;
+    }
+    case YOUNG: {
+      ShenandoahInitMarkRootsClosure<YOUNG> init_mark(task_queues()->queue(worker_id));
+      _root_scanner.roots_do(&init_mark, worker_id);
+      break;
+    }
+    case OLD:
+    default:
+      ShouldNotReachHere();
+  }
 }
 
 void ShenandoahSTWMark::finish_mark(uint worker_id) {
   ShenandoahPhaseTimings::Phase phase = _full_gc ? ShenandoahPhaseTimings::full_gc_mark : ShenandoahPhaseTimings::degen_gc_stw_mark;
   ShenandoahWorkerTimingsTracker timer(phase, ShenandoahPhaseTimings::ParallelMark, worker_id);
-  ShenandoahReferenceProcessor* rp = ShenandoahHeap::heap()->ref_processor();
+  ShenandoahReferenceProcessor* rp = ShenandoahHeap::heap()->gc_generation()->ref_processor();
+  shenandoah_assert_generations_reconciled();
   StringDedup::Requests requests;
 
-  mark_loop(worker_id, &_terminator, rp, NON_GEN, false /* not cancellable */,
+  mark_loop(worker_id, &_terminator, rp,
+            _generation->type(), false /* not cancellable */,
             ShenandoahStringDedup::is_enabled() ? ALWAYS_DEDUP : NO_DEDUP, &requests);
 }
