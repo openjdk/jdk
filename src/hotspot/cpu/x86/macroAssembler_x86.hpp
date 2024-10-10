@@ -1118,6 +1118,7 @@ public:
                    XMMRegister msgtmp1, XMMRegister msgtmp2, XMMRegister msgtmp3, XMMRegister msgtmp4,
                    Register buf, Register state, Register ofs, Register limit, Register rsp, bool multi_block,
                    XMMRegister shuf_mask);
+  void sha512_update_ni_x1(Register arg_hash, Register arg_msg, Register ofs, Register limit, bool multi_block);
 #endif // _LP64
 
   void fast_md5(Register buf, Address state, Address ofs, Address limit,
@@ -1215,6 +1216,9 @@ public:
   void addpd(XMMRegister dst, XMMRegister    src) { Assembler::addpd(dst, src); }
   void addpd(XMMRegister dst, Address        src) { Assembler::addpd(dst, src); }
   void addpd(XMMRegister dst, AddressLiteral src, Register rscratch = noreg);
+
+  using Assembler::vbroadcasti128;
+  void vbroadcasti128(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch = noreg);
 
   using Assembler::vbroadcastsd;
   void vbroadcastsd(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch = noreg);
