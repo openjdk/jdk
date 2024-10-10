@@ -61,8 +61,6 @@ requires.properties= \
     vm.gc.Shenandoah \
     vm.gc.Epsilon \
     vm.gc.Z \
-    vm.gc.ZGenerational \
-    vm.gc.ZSinglegen \
     vm.jvmci \
     vm.jvmci.enabled \
     vm.emulatedClient \

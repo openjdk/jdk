@@ -27,5 +27,14 @@
 #
 #############################################################################
 
-sun/tools/jhsdb/JShellHeapDumpTest.java            8276539 generic-all
-sun/tools/jhsdb/HeapDumpTestWithActiveProcess.java 8276539 generic-all
+# Quiet all SA tests
+
+sun/tools/jhsdb/HeapDumpTest.java                  8307393   generic-all
+sun/tools/jhsdb/BasicLauncherTest.java             8307393   generic-all
+sun/tools/jhsdb/JStackStressTest.java              8307393   generic-all
+sun/tools/jhsdb/JShellHeapDumpTest.java            8307393   generic-all
+sun/tools/jhsdb/SAGetoptTest.java                  8307393   generic-all
+sun/tools/jhsdb/heapconfig/JMapHeapConfigTest.java 8307393   generic-all
+sun/tools/jhsdb/HeapDumpTestWithActiveProcess.java 8307393   generic-all
+
+com/sun/jdi/ThreadMemoryLeakTest.java          8307402 generic-all

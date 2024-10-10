@@ -28,20 +28,21 @@
 
 class CollectedHeap;
 
-class ZArguments : AllStatic {
+class ZArguments : public GCArguments {
 private:
   static void select_max_gc_threads();
 
-public:
-  static void initialize_alignments();
-  static void initialize_heap_flags_and_sizes();
-  static void initialize();
-  static size_t heap_virtual_to_physical_ratio();
-  static CollectedHeap* create_heap();
-
-  static bool is_supported();
-
   static bool is_os_supported();
+
+public:
+  virtual void initialize_alignments();
+  virtual void initialize_heap_flags_and_sizes();
+  virtual void initialize();
+  virtual size_t conservative_max_heap_alignment();
+  virtual size_t heap_virtual_to_physical_ratio();
+  virtual CollectedHeap* create_heap();
+
+  virtual bool is_supported() const;
 };
 
 #endif // SHARE_GC_Z_ZARGUMENTS_HPP

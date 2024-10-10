@@ -424,11 +424,7 @@ WB_ENTRY(jboolean, WB_isObjectInOldGen(JNIEnv* env, jobject o, jobject obj))
 #endif
 #if INCLUDE_ZGC
   if (UseZGC) {
-    if (ZGenerational) {
-      return ZHeap::heap()->is_old(to_zaddress(p));
-    } else {
-      return Universe::heap()->is_in(p);
-    }
+    return ZHeap::heap()->is_old(to_zaddress(p));
   }
 #endif
 #if INCLUDE_SHENANDOAHGC

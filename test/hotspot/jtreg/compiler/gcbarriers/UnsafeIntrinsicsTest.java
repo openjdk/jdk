@@ -22,14 +22,14 @@
  */
 
 /*
- * @test id=ZSinglegenDebug
+ * @test id=ZDebug
  * @key randomness
  * @bug 8059022 8271855
  * @modules java.base/jdk.internal.misc:+open
  * @summary Validate barriers after Unsafe getReference, CAS and swap (GetAndSet)
- * @requires vm.gc.ZSinglegen & vm.debug
+ * @requires vm.gc.Z & vm.debug
  * @library /test/lib
- * @run main/othervm -XX:+UseZGC -XX:-ZGenerational
+ * @run main/othervm -XX:+UseZGC
  *                   -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+ZVerifyOops -XX:ZCollectionInterval=1
  *                   -XX:-CreateCoredumpOnCrash
@@ -38,46 +38,14 @@
  */
 
 /*
- * @test id=ZSinglegen
+ * @test id=Z
  * @key randomness
  * @bug 8059022 8271855
  * @modules java.base/jdk.internal.misc:+open
  * @summary Validate barriers after Unsafe getReference, CAS and swap (GetAndSet)
- * @requires vm.gc.ZSinglegen & !vm.debug
+ * @requires vm.gc.Z & !vm.debug
  * @library /test/lib
- * @run main/othervm -XX:+UseZGC -XX:-ZGenerational
- *                   -XX:+UnlockDiagnosticVMOptions
- *                   -XX:ZCollectionInterval=1
- *                   -XX:-CreateCoredumpOnCrash
- *                   -XX:CompileCommand=dontinline,*::mergeImpl*
- *                   compiler.gcbarriers.UnsafeIntrinsicsTest
- */
-
-/*
- * @test id=ZGenerationalDebug
- * @key randomness
- * @bug 8059022 8271855
- * @modules java.base/jdk.internal.misc:+open
- * @summary Validate barriers after Unsafe getReference, CAS and swap (GetAndSet)
- * @requires vm.gc.ZGenerational & vm.debug
- * @library /test/lib
- * @run main/othervm -XX:+UseZGC -XX:+ZGenerational
- *                   -XX:+UnlockDiagnosticVMOptions
- *                   -XX:+ZVerifyOops -XX:ZCollectionInterval=1
- *                   -XX:-CreateCoredumpOnCrash
- *                   -XX:CompileCommand=dontinline,*::mergeImpl*
- *                   compiler.gcbarriers.UnsafeIntrinsicsTest
- */
-
-/*
- * @test id=ZGenerational
- * @key randomness
- * @bug 8059022 8271855
- * @modules java.base/jdk.internal.misc:+open
- * @summary Validate barriers after Unsafe getReference, CAS and swap (GetAndSet)
- * @requires vm.gc.ZGenerational & !vm.debug
- * @library /test/lib
- * @run main/othervm -XX:+UseZGC -XX:+ZGenerational
+ * @run main/othervm -XX:+UseZGC
  *                   -XX:+UnlockDiagnosticVMOptions
  *                   -XX:ZCollectionInterval=1
  *                   -XX:-CreateCoredumpOnCrash
