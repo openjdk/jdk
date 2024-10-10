@@ -66,6 +66,12 @@ operand x_reg(REG_NUM rnum)
 	// this operand has no op_cost entry because it uses the default value
 %}
 
+// example operand group
+operand x_reg()
+%{
+  group(y_reg, z_reg)
+%}
+
 // example instruction form
 instruct add_accum_reg(x_reg dst, reg src)
 %{
@@ -271,6 +277,11 @@ F. Operand Form: operand x_reg(REG_T rall) %{ ... %}
 		b. The block form takes valid C++ code which forms the body
 		   of a function which takes no arguments, and returns a
 		   pointer to a string to print out to the assembly file.
+	10. Group: group(reg_x, reg_z)
+		Groups a series of other existing regs in this group reg. In
+		an instruct, a group operand can be used as input operand, as
+		a TEMP in effect list, in ins_encode as parameters. Underlying,
+		a group operand will be ungrouped automatically as separate operands.
 
 		Mentions of a literal register r in a or b must be of
 		the form r_enc or r_num. The form r_enc refers to the
