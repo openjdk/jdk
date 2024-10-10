@@ -627,7 +627,7 @@ class MacroAssembler: public Assembler {
   void bgtz(Register Rs, const address dest);
 
  private:
-  void load_link_jump(const address source, Register temp = t0);
+  void load_link_jump(const address source, Register temp);
   void jump_link(const address dest, Register temp);
  public:
   // We try to follow risc-v asm menomics.
@@ -638,15 +638,15 @@ class MacroAssembler: public Assembler {
   // jump: jal x0, offset
   // For long reach uses temp register for:
   // la + jr
-  void j(const address dest, Register temp = t0);
-  void j(const Address &adr, Register temp = t0);
-  void j(Label &l, Register temp = t0);
+  void j(const address dest, Register temp = t1);
+  void j(const Address &adr, Register temp = t1);
+  void j(Label &l, Register temp = noreg);
 
   // jump register: jalr x0, offset(rs)
   void jr(Register Rd, int32_t offset = 0);
 
   // call: la + jalr x1
-  void call(const address dest, Register temp = t0);
+  void call(const address dest, Register temp = t1);
 
   // jalr: jalr x1, offset(rs)
   void jalr(Register Rs, int32_t offset = 0);
@@ -654,7 +654,8 @@ class MacroAssembler: public Assembler {
   // Emit a runtime call. Only invalidates the tmp register which
   // is used to keep the entry address for jalr/movptr.
   // Uses call() for intra code cache, else movptr + jalr.
-  void rt_call(address dest, Register tmp = t0);
+  // Clobebrs t1
+  void rt_call(address dest, Register tmp = t1);
 
   // ret: jalr x0, 0(x1)
   inline void ret() {
@@ -1165,8 +1166,9 @@ public:
   // - relocInfo::external_word_type
   // - relocInfo::runtime_call_type
   // - relocInfo::none
-  void far_call(const Address &entry, Register tmp = t0);
-  void far_jump(const Address &entry, Register tmp = t0);
+  // Clobbers t1 default.
+  void far_call(const Address &entry, Register tmp = t1);
+  void far_jump(const Address &entry, Register tmp = t1);
 
   static int far_branch_size() {
       return 2 * 4;  // auipc + jalr, see far_call() & far_jump()

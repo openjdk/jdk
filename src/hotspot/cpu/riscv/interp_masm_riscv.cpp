@@ -421,13 +421,13 @@ void InterpreterMacroAssembler::jump_from_interpreted(Register method) {
     // interp_only_mode if these events CAN be enabled.
     lwu(t0, Address(xthread, JavaThread::interp_only_mode_offset()));
     beqz(t0, run_compiled_code);
-    ld(t0, Address(method, Method::interpreter_entry_offset()));
-    jr(t0);
+    ld(t1, Address(method, Method::interpreter_entry_offset()));
+    jr(t1);
     bind(run_compiled_code);
   }
 
-  ld(t0, Address(method, Method::from_interpreted_offset()));
-  jr(t0);
+  ld(t1, Address(method, Method::from_interpreted_offset()));
+  jr(t1);
 }
 
 // The following two routines provide a hook so that an implementation

@@ -339,8 +339,8 @@ void XBarrierSetAssembler::generate_c2_load_barrier_stub(MacroAssembler* masm, X
     XSaveLiveRegisters save_live_registers(masm, stub);
     XSetupArguments setup_arguments(masm, stub);
 
-    __ mv(t0, stub->slow_path());
-    __ jalr(t0);
+    __ mv(t1, stub->slow_path());
+    __ jalr(t1);
   }
 
   // Stub exit
