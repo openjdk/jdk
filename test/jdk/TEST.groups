@@ -1,4 +1,4 @@
-#  Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+#  Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
 #  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 #  This code is free software; you can redistribute it and/or modify it
@@ -91,7 +91,8 @@ tier3 = \
     :jdk_svc \
     -:jdk_svc_sanity \
     -:svc_tools \
-    :jdk_jpackage
+    :jdk_jpackage \
+    :jdk_since_checks
 
 # Everything not in other tiers
 tier4 = \
@@ -666,3 +667,7 @@ jdk_containers_extended = \
 jdk_core_no_security = \
    :jdk_core \
    -:jdk_security
+
+# Set of tests for `@since` checks in source code documentation
+jdk_since_checks = \
+   tools/sincechecker/modules/java_base/CheckSince_javaBase.java
