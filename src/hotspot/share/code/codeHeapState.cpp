@@ -258,7 +258,7 @@ static unsigned int    used_topSizeBlocks = 0;
 
 static struct SizeDistributionElement*  SizeDistributionArray = nullptr;
 
-static int           latest_compilation_id   = 0;
+static unsigned int  latest_compilation_id   = 0;
 static volatile bool initialization_complete = false;
 
 const char* CodeHeapState::get_heapName(CodeHeap* heap) {
@@ -592,7 +592,11 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, size_t granular
   //   Finally, we adjust the granularity such that each granule covers at most 64k-1 segments.
   //   This is necessary to prevent an unsigned short overflow while accumulating space information.
   //
-  assert(granularity > 0, "granularity should be positive.");
+  if (!(granularity > 0)) {
+    printBox(ast, '-', "Requested granularity must be > 0 to aggregate statistics.", nullptr);
+    BUFFEREDSTREAM_FLUSH("")
+    return;
+  }
 
   if (granularity > size) {
     granularity = size;
@@ -659,7 +663,7 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, size_t granular
     prepare_SizeDistArray(out, nSizeDistElements, heapName);
 
     latest_compilation_id = CompileBroker::get_compilation_id();
-    int          highest_compilation_id = 0;
+    unsigned int highest_compilation_id = 0;
     size_t       usedSpace              = 0;
     size_t       t1Space                = 0;
     size_t       t2Space                = 0;
@@ -679,14 +683,14 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, size_t granular
       size_t       hb_bytelen = ((size_t)hb_len)<<log2_seg_size;
       unsigned int ix_beg     = (unsigned int)(((char*)h-low_bound)/granule_size);
       unsigned int ix_end     = (unsigned int)(((char*)h-low_bound+(hb_bytelen-1))/granule_size);
-      int compile_id = 0;
+      unsigned int compile_id = 0;
       CompLevel    comp_lvl   = CompLevel_none;
       compType     cType      = noComp;
       blobType     cbType     = noType;
 
       //---<  some sanity checks  >---
-      // Do not assert here, just check, print error message and return.
       // This is a diagnostic function. It is not supposed to tear down the VM.
+      // Therefore, just print some failure message and quit processing.
       if ((char*)h <  low_bound) {
         insane = true; ast->print_cr("Sanity check: HeapBlock @%p below low bound (%p)", (char*)h, low_bound);
       }
@@ -801,9 +805,9 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, size_t granular
               used_topSizeBlocks++;
               blob_name  = nullptr; // indicate blob_name was consumed
             // This check roughly cuts 5000 iterations (JVM98, mixed, dbg, termination stats):
-            } else if ((used_topSizeBlocks < alloc_topSizeBlocks) && (hb_len < currMin)) {
+            } else if ((used_topSizeBlocks < alloc_topSizeBlocks) && (hb_len <= currMin)) {
               //---<  all blocks in list are larger, but there is room left in array  >---
-              TopSizeArray[currMin_ix].index = used_topSizeBlocks;
+              TopSizeArray[currMin_ix].index = used_topSizeBlocks; // link currMin -> newMin
               TopSizeArray[used_topSizeBlocks].start       = h;
               TopSizeArray[used_topSizeBlocks].blob_name   = blob_name;
               TopSizeArray[used_topSizeBlocks].len         = hb_len;
@@ -842,7 +846,6 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, size_t granular
                       // That's necessary to keep the entry for the largest block at index 0.
                       // This move might cause the current minimum to be moved to another place
                       if (i == currMin_ix) {
-                        assert(TopSizeArray[i].len == currMin, "sort error");
                         currMin_ix = used_topSizeBlocks;
                       }
                       memcpy((void*)&TopSizeArray[used_topSizeBlocks], (void*)&TopSizeArray[i], sizeof(TopSizeBlk));
@@ -891,7 +894,7 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, size_t granular
                           TopSizeArray[j].blob_name   = blob_name;
                           TopSizeArray[j].len         = hb_len;
                           TopSizeArray[j].index       = tsbStopper; // already set!!
-                          TopSizeArray[i].nm_size     = nm_size;
+                          TopSizeArray[j].nm_size     = nm_size;
                           TopSizeArray[j].compiler    = cType;
                           TopSizeArray[j].level       = comp_lvl;
                           TopSizeArray[j].type        = cbType;
@@ -1106,11 +1109,21 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, size_t granular
         if (TopSizeArray[0].len != currMax) {
           out->print_cr("currMax(%d) differs from TopSizeArray[0].len(%d)", currMax, TopSizeArray[0].len);
         }
-        for (unsigned int i = 0; (TopSizeArray[i].index != tsbStopper) && (j++ < alloc_topSizeBlocks); i = TopSizeArray[i].index) {
-          if (TopSizeArray[i].len < TopSizeArray[TopSizeArray[i].index].len) {
-            out->print_cr("sort error at index %d: %d !>= %d", i, TopSizeArray[i].len, TopSizeArray[TopSizeArray[i].index].len);
+
+        if (used_topSizeBlocks > 1) {
+          int this_i = 0;
+          int prev_i = tsbStopper;
+          int elem_i = 1;
+          while (TopSizeArray[this_i].index != tsbStopper) {
+            elem_i++;
+            prev_i = this_i;
+            this_i = TopSizeArray[this_i].index;
+            if (TopSizeArray[this_i].len > TopSizeArray[prev_i].len) {
+              out->print_cr("TopSizeArray[%d].len(%d) <= TopSizeArray[%d].len(%d), #total = %d, #current = %d", this_i, TopSizeArray[this_i].len, prev_i, TopSizeArray[prev_i].len, used_topSizeBlocks, elem_i);
+            }
           }
         }
+
         if (j >= alloc_topSizeBlocks) {
           out->print_cr("Possible loop in TopSizeArray chaining!\n  allocBlocks = %d, usedBlocks = %d", alloc_topSizeBlocks, used_topSizeBlocks);
           for (unsigned int i = 0; i < alloc_topSizeBlocks; i++) {
@@ -1260,13 +1273,7 @@ void CodeHeapState::print_usedSpace(outputStream* out, CodeHeap* heap) {
     printBox(ast, '-', "Largest Used Blocks in ", heapName);
     print_blobType_legend(ast);
 
-    ast->fill_to(51);
-    ast->print("%4s", "blob");
-    ast->fill_to(56);
-    ast->print("%9s", "compiler");
-    ast->fill_to(66);
-    ast->print_cr("%6s", "method");
-    ast->print_cr("%18s %13s %17s %9s  %5s %s",      "Addr(module)      ", "offset", "size", "type", " type lvl", "Name");
+    print_MethodlistHeader(ast);
     BUFFEREDSTREAM_FLUSH_LOCKED("")
 
     //---<  print Top Ten Used Blocks  >---
@@ -1283,19 +1290,11 @@ void CodeHeapState::print_usedSpace(outputStream* out, CodeHeap* heap) {
         CodeBlob*  this_blob = (CodeBlob*)(heap->find_start(heapBlock));
         if (this_blob != nullptr) {
           //---<  access these fields only if we own the CodeCache_lock  >---
-          //---<  blob address  >---
-          ast->print(INTPTR_FORMAT, p2i(this_blob));
-          ast->fill_to(19);
-          //---<  blob offset from CodeHeap begin  >---
-          ast->print("(+" UINT32_FORMAT_X_0 ")", (unsigned int)((char*)this_blob-low_bound));
-          ast->fill_to(33);
+          //---<  blob address and offset from CodeHeap begin  >---
+          print_address_and_offset(ast, (address)this_blob, (address)low_bound);
         } else {
-          //---<  block address  >---
-          ast->print(INTPTR_FORMAT, p2i(TopSizeArray[i].start));
-          ast->fill_to(19);
-          //---<  block offset from CodeHeap begin  >---
-          ast->print("(+" UINT32_FORMAT_X_0 ")", (unsigned int)((char*)TopSizeArray[i].start-low_bound));
-          ast->fill_to(33);
+          //---<  block address and offset from CodeHeap begin  >---
+          print_address_and_offset(ast, (address)TopSizeArray[i].start, (address)low_bound);
         }
 
         //---<  print size, name, and signature (for nMethods)  >---
@@ -1310,7 +1309,7 @@ void CodeHeapState::print_usedSpace(outputStream* out, CodeHeap* heap) {
           ast->fill_to(56);
           ast->print("%5s %3d", compTypeName[TopSizeArray[i].compiler], TopSizeArray[i].level);
           //---<  name and signature  >---
-          ast->fill_to(67+6);
+          ast->fill_to(67);
           ast->print("%s", TopSizeArray[i].blob_name);
         } else {
           //---<  block size in hex  >---
@@ -1319,7 +1318,7 @@ void CodeHeapState::print_usedSpace(outputStream* out, CodeHeap* heap) {
           //---<  no compiler information  >---
           ast->fill_to(56);
           //---<  name and signature  >---
-          ast->fill_to(67+6);
+          ast->fill_to(67);
           ast->print("%s", TopSizeArray[i].blob_name);
         }
         ast->cr();
@@ -1978,11 +1977,11 @@ void CodeHeapState::print_age(outputStream* out, CodeHeap* heap) {
     granules_per_line = 128;
     for (unsigned int ix = 0; ix < alloc_granules; ix++) {
       print_line_delim(out, ast, low_bound, ix, granules_per_line);
-      int age1      = StatArray[ix].t1_age;
-      int age2      = StatArray[ix].t2_age;
-      int agex      = StatArray[ix].tx_age;
-      int age       = age1 > age2 ? age1 : age2;
-      age       = age > agex ? age : agex;
+      unsigned int age1  = StatArray[ix].t1_age;
+      unsigned int age2  = StatArray[ix].t2_age;
+      unsigned int agex  = StatArray[ix].tx_age;
+      unsigned int age   = age1 > age2 ? age1 : age2;
+      age = age > agex ? age : agex;
       print_age_single(ast, age);
     }
     ast->print("|");
@@ -2088,6 +2087,7 @@ void CodeHeapState::print_names(outputStream* out, CodeHeap* heap) {
                 "  is not continuously held, the displayed name might be wrong or no name\n"
                 "  might be found at all. The likelihood for that to happen increases\n"
                 "  over time passed between aggregation and print steps.\n");
+  print_blobType_legend(ast);
   BUFFEREDSTREAM_FLUSH_LOCKED("")
 
   for (unsigned int ix = 0; ix < alloc_granules; ix++) {
@@ -2121,6 +2121,7 @@ void CodeHeapState::print_names(outputStream* out, CodeHeap* heap) {
         last_blob          = this_blob;
 
         //---<  get type and name  >---
+        unsigned int   blob_size = this_blob->size();
         blobType       cbType = noType;
         if (segment_granules) {
           cbType = (blobType)StatArray[ix].type;
@@ -2146,19 +2147,12 @@ void CodeHeapState::print_names(outputStream* out, CodeHeap* heap) {
         //---<  print table header for new print range  >---
         if (!name_in_addr_range) {
           name_in_addr_range = true;
-          ast->fill_to(51);
-          ast->print("%9s", "compiler");
-          ast->fill_to(61);
-          ast->print_cr("%6s", "method");
-          ast->print_cr("%18s %13s %17s %9s  %18s  %s", "Addr(module)      ", "offset", "size", " type lvl", "blobType          ", "Name");
+          print_MethodlistHeader(ast);
           BUFFEREDSTREAM_FLUSH_AUTO("")
         }
 
         //---<  print line prefix (address and offset from CodeHeap start)  >---
-        ast->print(INTPTR_FORMAT, p2i(this_blob));
-        ast->fill_to(19);
-        ast->print("(+" UINT32_FORMAT_X_0 ")", (unsigned int)((char*)this_blob-low_bound));
-        ast->fill_to(33);
+        print_address_and_offset(ast, (address)this_blob, (address)low_bound);
 
         // access nmethod and Method fields only if we own the CodeCache_lock.
         // This fact is implicitly transported via nm != nullptr.
@@ -2168,27 +2162,48 @@ void CodeHeapState::print_names(outputStream* out, CodeHeap* heap) {
           //---<  collect all data to locals as quickly as possible  >---
           unsigned int total_size = nm->total_size();
           bool         get_name   = (cbType == nMethod_inuse) || (cbType == nMethod_notused);
+#if 1
+          CompLevel level = (CompLevel)(nm->comp_level());
+          u2     compiler = 0;
+          if (nm->is_compiled_by_c1()) {
+            compiler = c1;
+          }
+          if (nm->is_compiled_by_c2()) {
+            compiler = c2;
+          }
+          if (nm->is_compiled_by_jvmci()) {
+            compiler = jvmci;
+          }
+#else
+          u2     compiler = StatArray[ix].compiler;
+          CompLevel level = StatArray[ix].level
+#endif
           //---<  nMethod size in hex  >---
           ast->print(UINT32_FORMAT_X_0, total_size);
           ast->print("(" SIZE_FORMAT_W(4) "K)", total_size/K);
-          //---<  compiler information  >---
+          //---<  blob type  >---
           ast->fill_to(51);
-          ast->print("%5s %3d", compTypeName[StatArray[ix].compiler], StatArray[ix].level);
+          ast->print("  %c", blobTypeChar[cbType]);
+          //---<  compiler information  >---
+          ast->fill_to(56);
+          ast->print("%5s %3d", compTypeName[compiler], level);
           //---<  name and signature  >---
-          ast->fill_to(62);
-          ast->print("%s", blobTypeName[cbType]);
-          ast->fill_to(82);
+          ast->fill_to(67);
 
           if (get_name) {
             Symbol* methName  = method->name();
+            const char* classNameS;
             const char*   methNameS = (methName == nullptr) ? nullptr : methName->as_C_string();
             methNameS = (methNameS == nullptr) ? "<method name unavailable>" : methNameS;
             Symbol* methSig   = method->signature();
             const char*   methSigS  = (methSig  == nullptr) ? nullptr : methSig->as_C_string();
             methSigS  = (methSigS  == nullptr) ? "<method signature unavailable>" : methSigS;
             Klass* klass = method->method_holder();
-            assert(klass != nullptr, "No method holder");
-            const char* classNameS = (klass->name() == nullptr) ? "<class name unavailable>" : klass->external_name();
+            if (klass != nullptr) {
+              classNameS = (klass->name() == nullptr) ? "<class name unavailable>" : klass->external_name();
+            } else {
+              classNameS = "<no method holder>";
+            }
 
             ast->print("%s.", classNameS);
             ast->print("%s", methNameS);
@@ -2203,12 +2218,16 @@ void CodeHeapState::print_names(outputStream* out, CodeHeap* heap) {
             ast->print("%s", blob_name);
           }
         } else if (blob_is_safe) {
-          ast->fill_to(62);
-          ast->print("%s", blobTypeName[cbType]);
-          ast->fill_to(82);
+          //---<  blob size in hex  >---
+          ast->print(UINT32_FORMAT_X_0, blob_size);
+          ast->print("(" SIZE_FORMAT_W(4) "K)", blob_size/K);
+          ast->fill_to(51);
+          //---<  blob type  >---
+          ast->print("  %c", blobTypeChar[cbType]);
+          ast->fill_to(67);
           ast->print("%s", blob_name);
         } else {
-          ast->fill_to(62);
+          ast->fill_to(67);
           ast->print("<stale blob>");
         }
         ast->cr();
@@ -2222,6 +2241,31 @@ void CodeHeapState::print_names(outputStream* out, CodeHeap* heap) {
   BUFFEREDSTREAM_FLUSH_LOCKED("\n\n")
 }
 
+
+void CodeHeapState::print_MethodlistHeader(outputStream* ast) {
+
+  // Header layout:
+  // 1                  20            34                52    57        67
+  // |                  |             |                 |     |         |
+  //                                                    blob  compiler  method
+  // Addr(module)              offset              size type  type lvl  Name
+  // 0x000000010a87c008 (+0x00000008) 0x00000098(   0K)   N   none   0  java.lang.Byte.toUnsignedInt(B)I
+
+  ast->fill_to(51);
+  ast->print("%4s", "blob");
+  ast->fill_to(56);
+  ast->print("%9s", " compiler");
+  ast->fill_to(67);
+  ast->print_cr("%6s", "method");
+  ast->print_cr("%18s %13s %17s %4s %9s  %s", "Addr(module)      ", "offset", "size", "type", " type lvl", "Name");
+}
+
+void CodeHeapState::print_address_and_offset(outputStream* ast, address here, address base) {
+  ast->print(INTPTR_FORMAT, p2i(here));
+  ast->fill_to(19);
+  ast->print("(+" UINT32_FORMAT_X_0 ")", (unsigned int)(here - base));
+  ast->fill_to(33);
+}
 
 void CodeHeapState::printBox(outputStream* ast, const char border, const char* text1, const char* text2) {
   unsigned int lineLen = 1 + 2 + 2 + 1;
@@ -2274,7 +2318,6 @@ void CodeHeapState::print_blobType_legend(outputStream* out) {
 }
 
 void CodeHeapState::print_space_legend(outputStream* out) {
-  int range_beg = latest_compilation_id;
   out->cr();
   printBox(out, '-', "Space ranges, based on granule occupancy", nullptr);
   out->print_cr("    -   0%% == occupancy");
@@ -2288,8 +2331,8 @@ void CodeHeapState::print_space_legend(outputStream* out) {
 
 void CodeHeapState::print_age_legend(outputStream* out) {
   unsigned int indicator = 0;
-  int age_range = 256;
-  int range_beg = latest_compilation_id;
+  unsigned int age_range = 256;
+  unsigned int range_beg = latest_compilation_id;
   out->cr();
   printBox(out, '-', "Age ranges, based on compilation id", nullptr);
   while (age_range > 0) {
@@ -2318,9 +2361,9 @@ void CodeHeapState::print_space_single(outputStream* out, unsigned short space) 
   out->print("%c", fraction);
 }
 
-void CodeHeapState::print_age_single(outputStream* out, int age) {
+void CodeHeapState::print_age_single(outputStream* out, unsigned int age) {
   unsigned int indicator = 0;
-  int age_range = 256;
+  unsigned int age_range = 256;
   if (age > 0) {
     while ((age_range > 0) && (latest_compilation_id-age > latest_compilation_id/age_range)) {
       age_range /= 2;
@@ -2333,21 +2376,20 @@ void CodeHeapState::print_age_single(outputStream* out, int age) {
 }
 
 void CodeHeapState::print_line_delim(outputStream* out, outputStream* ast, char* low_bound, unsigned int ix, unsigned int gpl) {
+  // Note: out and ast MUST designate the SAME stream!
   if (ix % gpl == 0) {
     if (ix > 0) {
       ast->print("|");
     }
     ast->cr();
-    assert(out == ast, "must use the same stream!");
 
-    ast->print(INTPTR_FORMAT, p2i(low_bound + ix*granule_size));
-    ast->fill_to(19);
-    ast->print("(+" UINT32_FORMAT_X_0 "): |", (unsigned int)(ix*granule_size));
+    print_address_and_offset(ast, (address)(low_bound + ix*granule_size), (address)low_bound);
+    ast->print(" |");
   }
 }
 
 void CodeHeapState::print_line_delim(outputStream* out, bufferedStream* ast, char* low_bound, unsigned int ix, unsigned int gpl) {
-  assert(out != ast, "must not use the same stream!");
+  // Note: out and ast MUST NOT designate the SAME stream!
   if (ix % gpl == 0) {
     if (ix > 0) {
       ast->print("|");
@@ -2364,9 +2406,8 @@ void CodeHeapState::print_line_delim(outputStream* out, bufferedStream* ast, cha
       ast->reset();
     }
 
-    ast->print(INTPTR_FORMAT, p2i(low_bound + ix*granule_size));
-    ast->fill_to(19);
-    ast->print("(+" UINT32_FORMAT_X_0 "): |", (unsigned int)(ix*granule_size));
+    print_address_and_offset(ast, (address)(low_bound + ix*granule_size), (address)low_bound);
+    ast->print(" |");
   }
 }
 
