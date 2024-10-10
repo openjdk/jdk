@@ -34,7 +34,13 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.AccessController;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -59,15 +65,33 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
 
     private static final Optional<Path> SELF_MNT_NS;
 
+    @FunctionalInterface
+    private interface IOFunction<T, R> {
+      public R apply(T t) throws IOException;
+    }
+
+    @SuppressWarnings("removal")
+    private static <R> R filesFunctionPrivileged(IOFunction<Path, R> function, final Path path, Supplier<R> def) throws IOException {
+      try {
+        return AccessController.doPrivileged((PrivilegedExceptionAction<R>) () -> function.apply(path));
+      } catch (PrivilegedActionException e) {
+          if (e.getException() instanceof IOException ioe) throw ioe; else return def.get();
+      }
+    }
+
+    private static Optional<Path> readSymlink(Path symlink) throws IOException { return Optional.ofNullable(Files.readSymbolicLink(symlink)); }
+
+    private static Boolean FALSE() { return false; } // there should be something in j.u.f or j.l for this!
+
     static {
-        Path nsPath = null;
+        Optional<Path> nsPath = Optional.empty();
 
         try {
-            nsPath = Files.readSymbolicLink(SELF.resolve(NS_MNT));
+            nsPath = filesFunctionPrivileged(VirtualMachineImpl::readSymlink, SELF.resolve(NS_MNT), Optional::empty);
         } catch (IOException _) {
-            // do nothing
+            // do nothing...
         } finally {
-            SELF_MNT_NS = Optional.ofNullable(nsPath);
+            SELF_MNT_NS = nsPath;
         }
     }
 
@@ -277,10 +301,10 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
 
             try {
                 // attempt to read the target's mnt ns id
-                targetMountNS = Optional.ofNullable(Files.readSymbolicLink(procPidPath.resolve(NS_MNT)));
+                targetMountNS = filesFunctionPrivileged(VirtualMachineImpl::readSymlink, procPidPath.resolve(NS_MNT), Optional::empty);
             } catch (IOException _) {
                 // if we fail to read the target's mnt ns id then we either don't have access or it no longer exists!
-                if (!Files.exists(procPidPath)) {
+                if (!filesFunctionPrivileged(Files::exists, procPidPath, VirtualMachineImpl::FALSE)) {
                     throw new IOException(String.format("unable to attach, %s non-existent! process: %d terminated", procPidPath, pid));
                 }
                 // the process still exists, but we don't have privileges to read its procfs
@@ -293,7 +317,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
             } else {
                 // we could not read the target's mnt ns
                 final var procPidRootTmp = procPidPath.resolve(ROOT_TMP);
-                if (Files.isReadable(procPidRootTmp)) {
+                if (filesFunctionPrivileged(Files::isReadable, procPidRootTmp, VirtualMachineImpl::FALSE)) {
                     return procPidRootTmp.toString(); // not in the same mnt ns but tmp is accessible via /proc
                 }
             }
@@ -303,10 +327,10 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
 
             try {
                 // attempt to read the target's pid ns id
-                curPidNS = Optional.ofNullable(Files.readSymbolicLink(procPidPath.resolve(NS_PID)));
+                curPidNS = filesFunctionPrivileged(VirtualMachineImpl::readSymlink, procPidPath.resolve(NS_PID), Optional::empty);
             } catch (IOException _) {
                 // if we fail to read the target's pid ns id then we either don't have access or it no longer exists!
-                if (!Files.exists(procPidPath)) {
+                if (!filesFunctionPrivileged(Files::exists, procPidPath, VirtualMachineImpl::FALSE)) {
                     throw new IOException(String.format("unable to attach, %s non-existent! process: %d terminated", procPidPath, pid));
                 }
                 // the process still exists, but we don't have privileges to read its procfs
