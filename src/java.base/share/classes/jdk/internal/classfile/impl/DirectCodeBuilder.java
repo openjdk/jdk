@@ -64,6 +64,7 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import static java.util.Objects.requireNonNull;
 import static jdk.internal.classfile.impl.BytecodeHelpers.*;
 import static jdk.internal.classfile.impl.RawBytecodeHelper.*;
 
@@ -147,7 +148,7 @@ public final class DirectCodeBuilder
         if (element instanceof AbstractElement ae) {
             ae.writeTo(this);
         } else {
-            writeAttribute((CustomAttribute<?>) element);
+            writeAttribute((CustomAttribute<?>) requireNonNull(element));
         }
         return this;
     }

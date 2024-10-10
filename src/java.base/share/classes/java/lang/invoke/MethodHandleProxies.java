@@ -54,6 +54,7 @@ import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.TypeKind;
 
 import jdk.internal.constant.ConstantUtils;
+import jdk.internal.loader.ClassLoaders;
 import jdk.internal.module.Modules;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
@@ -371,7 +372,8 @@ public class MethodHandleProxies {
      */
     private static byte[] createTemplate(ClassLoader loader, ClassDesc proxyDesc, ClassDesc ifaceDesc,
                                          String methodName, List<MethodInfo> methods) {
-        return ClassFile.of(ClassHierarchyResolverOption.of(ClassHierarchyResolver.ofClassLoading(loader)))
+        return ClassFile.of(ClassHierarchyResolverOption.of(ClassHierarchyResolver.ofClassLoading(loader == null ?
+                        ClassLoaders.platformClassLoader() : loader)))
                         .build(proxyDesc, clb -> {
             clb.withSuperclass(CD_Object)
                .withFlags(ACC_FINAL | ACC_SYNTHETIC)

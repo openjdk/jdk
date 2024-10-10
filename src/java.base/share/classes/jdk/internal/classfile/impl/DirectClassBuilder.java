@@ -26,11 +26,7 @@
 
 package jdk.internal.classfile.impl;
 
-import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
-import java.lang.constant.MethodTypeDesc;
-import java.lang.reflect.AccessFlag;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -49,6 +45,8 @@ import java.lang.classfile.MethodBuilder;
 import java.lang.classfile.MethodModel;
 import java.lang.classfile.MethodTransform;
 import java.lang.classfile.constantpool.Utf8Entry;
+
+import static java.util.Objects.requireNonNull;
 
 public final class DirectClassBuilder
         extends AbstractDirectBuilder<ClassModel>
@@ -87,7 +85,7 @@ public final class DirectClassBuilder
         if (element instanceof AbstractElement ae) {
             ae.writeTo(this);
         } else {
-            writeAttribute((CustomAttribute<?>) element);
+            writeAttribute((CustomAttribute<?>) requireNonNull(element));
         }
         return this;
     }
