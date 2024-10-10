@@ -129,7 +129,8 @@ public class DcmdMBeanTest {
         return failures;
     }
 
-    // Knowledge of the types made public by com.sun.management.internal.DiagnosticCommandImpl
+    // Knowledge of the implementation-dependent types in DiagnosticCommandImpl, seen by applications/users
+    // (see the DiagnosticCommandMBean Descriptor, field "dcmd.arg.type").
     private static final String [] publicTypes = new String [] { "INT", "STRING", "BOOLEAN", "STRING SET", "MEMORY SIZE", "NANOTIME" };
 
     private static final boolean isPublicType(String typeName) {
