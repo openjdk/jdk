@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,8 +133,8 @@ import java.util.function.IntUnaryOperator;
  */
 @SuppressWarnings("exports")
 public abstract class VectorShuffle<E> extends jdk.internal.vm.vector.VectorSupport.VectorShuffle<E> {
-    VectorShuffle(byte[] reorder) {
-        super(reorder);
+    VectorShuffle(Object indices) {
+        super(indices);
     }
 
     /**
@@ -556,7 +556,7 @@ public abstract class VectorShuffle<E> extends jdk.internal.vm.vector.VectorSupp
      * @param i the lane index
      * @return the {@code int} lane element at lane index {@code i}
      */
-    public int laneSource(int i) { return toArray()[i]; }
+    public abstract int laneSource(int i);
 
     /**
      * Rearranges the lane elements of this shuffle selecting lane indexes
