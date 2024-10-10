@@ -156,6 +156,11 @@ VStatus VLoopAnalyzer::setup_submodules_helper() {
     _reductions.mark_reductions();
   }
 
+  VStatus body_status = _body.construct();
+  if (!body_status.is_success()) {
+    return body_status;
+  }
+
   _memory_slices.find_memory_slices();
 
   // If there is no memory slice detected, it means there is no store.
@@ -166,11 +171,6 @@ VStatus VLoopAnalyzer::setup_submodules_helper() {
     return VStatus::make_failure(VLoopAnalyzer::FAILURE_NO_REDUCTION_OR_STORE);
   }
 
-  VStatus body_status = _body.construct();
-  if (!body_status.is_success()) {
-    return body_status;
-  }
-
   _types.compute_vector_element_type();
 
   _vpointers.compute_vpointers();
@@ -179,6 +179,62 @@ VStatus VLoopAnalyzer::setup_submodules_helper() {
 
   return VStatus::make_success();
 }
+
+// There are 2 kinds of slices:
+// - No memory phi: only loads. All have the same input memory state from before the loop.
+// - With memory phi. Chain of memory operations inside the loop.
+void VLoopMemorySlices::find_memory_slices() {
+  for (int i = 0; i < _body.body().length(); i++) {
+    Node* n = _body.body().at(i);
+    if (n->is_memory_phi()) {
+      add_phi(n->as_Phi());
+    } else if (n->is_Load()) {
+      add_load(n->as_Load());
+    }
+  }
+  NOT_PRODUCT( if (_vloop.is_trace_memory_slices()) { print(); } )
+}
+
+void VLoopMemorySlices::add_phi(PhiNode* phi) {
+  Compile* C = _vloop.phase()->C;
+  int alias_idx = C->get_alias_index(phi->adr_type());
+  Node* input    = phi->in(1);
+  assert(_inputs.at(alias_idx) == nullptr, "did not yet touch this slice");
+  _inputs.at_put(alias_idx, input);
+  _heads.at_put(alias_idx, phi);
+}
+
+void VLoopMemorySlices::add_load(LoadNode* load) {
+  Compile* C = _vloop.phase()->C;
+  int alias_idx = C->get_alias_index(load->adr_type());
+  PhiNode* head = _heads.at(alias_idx);
+  if (head == nullptr) {
+    // We did not find a phi on this slice yet -> must be a slice with only loads.
+    Node* input = load->in(1);
+    assert(_inputs.at(alias_idx) == nullptr || _inputs.at(alias_idx) == input,
+           "not yet touched or the same input");
+    _inputs.at_put(alias_idx, input);
+  }
+}
+
+#ifndef PRODUCT
+void VLoopMemorySlices::print() const {
+  tty->print_cr("\nVLoopMemorySlices::print: %s",
+                heads().length() > 0 ? "" : "NONE");
+  for (int i = 0; i < _inputs.length(); i++) {
+    Node* input = _inputs.at(i);
+    PhiNode* head = _heads.at(i);
+    if (input != nullptr) {
+      tty->print("%3d input", i);  input->dump();
+      if (head == nullptr) {
+        tty->print_cr("    load only");
+      } else {
+        tty->print("    head ");  head->dump();
+      }
+    }
+  }
+}
+#endif
 
 void VLoopVPointers::compute_vpointers() {
   count_vpointers();
@@ -200,12 +256,20 @@ void VLoopVPointers::allocate_vpointers_array() {
 }
 
 void VLoopVPointers::compute_and_cache_vpointers() {
+  Node_Stack nstack(_vloop.estimated_body_length());
   int pointers_idx = 0;
   _body.for_each_mem([&] (MemNode* const mem, int bb_idx) {
     // Placement new: construct directly into the array.
-    ::new (&_vpointers[pointers_idx]) VPointer(mem, _vloop);
+    ::new (&_vpointers[pointers_idx]) VPointer(mem, _vloop, &nstack);
     _bb_idx_to_vpointer.at_put(bb_idx, pointers_idx);
     pointers_idx++;
+
+    // Process the nodes in the pointer expression:
+    while (nstack.is_nonempty()) {
+      Node* n = nstack.node();
+      nstack.pop();
+      _bb_idx_to_is_in_pointer_expression.set(_body.bb_idx(n));
+    }
   });
 }
 
@@ -238,7 +302,6 @@ void VLoopVPointers::print() const {
 //      except if we can prove that the memory does not overlap.
 void VLoopDependencyGraph::construct() {
   const GrowableArray<PhiNode*>& mem_slice_heads = _memory_slices.heads();
-  const GrowableArray<MemNode*>& mem_slice_tails = _memory_slices.tails();
 
   ResourceMark rm;
   GrowableArray<MemNode*> slice_nodes;
@@ -247,7 +310,10 @@ void VLoopDependencyGraph::construct() {
   // For each memory slice, create the memory subgraph
   for (int i = 0; i < mem_slice_heads.length(); i++) {
     PhiNode* head = mem_slice_heads.at(i);
-    MemNode* tail = mem_slice_tails.at(i);
+    // If there is no head (memory-phi) for this slice, then we have either no memops
+    // in the loop, or only loads. We do not need to add any memory edges in that case.
+    if (head == nullptr) { continue; }
+    MemNode* tail = head->in(2)->as_Mem();
 
     _memory_slices.get_slice_in_reverse_order(head, tail, slice_nodes);
 
@@ -403,6 +469,89 @@ void VLoopDependencyGraph::PredsIterator::next() {
   } else {
     _current = nullptr; // done
   }
+}
+
+bool VLoopAnalyzer::has_zero_cost(Node* n) const {
+  // Outside body?
+  if (!_vloop.in_bb(n)) { return true; }
+
+  // Part of pointer expression
+  int bb_idx = _body.bb_idx(n);
+  if (vpointers().is_in_pointer_expression(bb_idx)) { return true; }
+
+  if (n->is_AddP() || // Pointer expression
+      n->is_CFG() ||  // CFG
+      n->is_Phi() ||  // CFG
+      n->is_Cmp() ||  // CFG
+      n->is_Bool()) { // CFG
+    return true;
+  }
+
+  // All other nodes have a non-zero cost.
+  return false;
+}
+
+// Compute the cost over all operations in the (scalar) loop.
+float VLoopAnalyzer::cost() const {
+#ifndef PRODUCT
+  if (_vloop.is_trace_cost()) {
+    tty->print_cr("\nVLoopAnalyzer::cost:");
+  }
+#endif
+
+  float sum = 0;
+  for (int j = 0; j < body().body().length(); j++) {
+    Node* n = body().body().at(j);
+    if (!has_zero_cost(n)) {
+      float c = cost_for_scalar(n->Opcode());
+      sum += c;
+#ifndef PRODUCT
+      if (_vloop.is_trace_cost_verbose()) {
+        tty->print_cr("  -> cost = %.2f for %d %s", c, n->_idx, n->Name());
+      }
+#endif
+    }
+  }
+
+#ifndef PRODUCT
+  if (_vloop.is_trace_cost()) {
+    tty->print_cr("  total_cost = %.2f", sum);
+  }
+#endif
+  return sum;
+}
+
+float VLoopAnalyzer::cost_for_scalar(int opcode) const {
+  float c = Matcher::cost_for_scalar(opcode);
+#ifndef PRODUCT
+  if (_vloop.is_trace_cost()) {
+    tty->print_cr("  cost = %.2f opc=%s", c, NodeClassNames[opcode]);
+  }
+#endif
+  return c;
+}
+
+float VLoopAnalyzer::cost_for_vector(int opcode, int vlen, BasicType bt) const {
+  float c = Matcher::cost_for_vector(opcode, vlen, bt);
+#ifndef PRODUCT
+  if (_vloop.is_trace_cost()) {
+    tty->print_cr("  cost = %.2f opc=%s vlen=%d bt=%s",
+                  c, NodeClassNames[opcode], vlen, type2name(bt));
+  }
+#endif
+  return c;
+}
+
+float VLoopAnalyzer::cost_for_vector_reduction(int opcode, int vlen, BasicType bt, bool requires_strict_order) const {
+  float c = Matcher::cost_for_vector_reduction(opcode, vlen, bt, requires_strict_order);
+#ifndef PRODUCT
+  if (_vloop.is_trace_cost()) {
+    tty->print_cr("  cost = %.2f opc=%s vlen=%d bt=%s requires_strict_order=%s",
+                  c, NodeClassNames[opcode], vlen, type2name(bt),
+                  requires_strict_order ? "true" : "false");
+  }
+#endif
+  return c;
 }
 
 #ifndef PRODUCT
