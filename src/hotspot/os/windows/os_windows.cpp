@@ -1020,6 +1020,10 @@ typedef HRESULT (WINAPI *GetThreadDescriptionFnPtr)(HANDLE, PWSTR*);
 static SetThreadDescriptionFnPtr _SetThreadDescription = nullptr;
 DEBUG_ONLY(static GetThreadDescriptionFnPtr _GetThreadDescription = nullptr;)
 
+// For dynamic lookup of GetTempPath2 API
+typedef DWORD (WINAPI *GetTempPath2AFnPtr)(DWORD, LPSTR);
+static GetTempPath2AFnPtr _GetTempPath2A = nullptr;
+
 // forward decl.
 static errno_t convert_to_unicode(char const* char_path, LPWSTR* unicode_path);
 
@@ -1516,12 +1520,15 @@ int os::closedir(DIR *dirp) {
 // directory not the java application's temp directory, ala java.io.tmpdir.
 const char* os::get_temp_directory() {
   static char path_buf[MAX_PATH];
-  if (GetTempPath(MAX_PATH, path_buf) > 0) {
-    return path_buf;
-  } else {
-    path_buf[0] = '\0';
+  if (_GetTempPath2A != nullptr) {
+    if (_GetTempPath2A(MAX_PATH, path_buf) > 0) {
+      return path_buf;
+    }
+  } else if (GetTempPath(MAX_PATH, path_buf) > 0) {
     return path_buf;
   }
+  path_buf[0] = '\0';
+  return path_buf;
 }
 
 // Needs to be in os specific directory because windows requires another
@@ -4782,6 +4789,14 @@ jint os::init_2(void) {
   }
   log_info(os, thread)("The SetThreadDescription API is%s available.", _SetThreadDescription == nullptr ? " not" : "");
 
+  // Lookup GetTempPath2
+  if (_kernelbase != nullptr) {
+    _GetTempPath2A =
+      reinterpret_cast<GetTempPath2AFnPtr>(
+                                         GetProcAddress(_kernelbase,
+                                                        "GetTempPath2A"));
+  }
+  log_info(os, thread)("The _GetTempPath2A API is%s available.", _GetTempPath2A == nullptr ? " not" : "");
 
   return JNI_OK;
 }
