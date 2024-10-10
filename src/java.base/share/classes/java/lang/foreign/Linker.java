@@ -258,9 +258,10 @@ import java.util.stream.Stream;
  *     <a href="MemoryLayout.html#layout-align">natural alignment</a>;</li>
  * <li>the size of {@code G} is a multiple of its alignment constraint;</li>
  * <li>each member layout in {@code G.memberLayouts()} is either a padding layout or
- *     a layout supported by {@code NL}, and</li>
+ *     a layout supported by {@code NL};</li>
  * <li>{@code G} does not contain padding other than what is strictly required to align
- *      its non-padding layout elements, or to satisfy (2).</li>
+ *      its non-padding layout elements, or to satisfy (2), and</li>
+ * <li>not all elements in {@code G.memberLayouts()} are padding layouts.</li>
  * </ol>
  * </li>
  * </ul>
