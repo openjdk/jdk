@@ -2529,7 +2529,7 @@ const TypeVect* TypeVect::makemask(BasicType elem_bt, uint length) {
 
 //------------------------------meet-------------------------------------------
 // Compute the MEET of two types. Since each TypeVect is the only instance of
-// its species, meetting often returns itself
+// its species, meeting often returns itself
 const Type* TypeVect::xmeet(const Type* t) const {
   // Perform a fast test for common case; meeting the same types together.
   if (this == t) {

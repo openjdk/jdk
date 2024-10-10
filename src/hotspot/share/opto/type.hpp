@@ -818,7 +818,7 @@ public:
   static const TypeVect* VECTMASK;
 
 #ifndef PRODUCT
-  virtual void dump2(Dict &d, uint, outputStream *st) const; // Specialized per-Type dumping
+  virtual void dump2(Dict& d, uint, outputStream* st) const; // Specialized per-Type dumping
 #endif
 };
 
