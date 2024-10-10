@@ -49,6 +49,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.DSAParameterSpec;
+import java.security.spec.NamedParameterSpec;
 import java.security.spec.PSSParameterSpec;
 import java.util.Arrays;
 import java.util.Objects;
@@ -200,14 +201,27 @@ public class Deterministic {
 
     static KeyPair generateKeyPair(String alg, int offset) throws Exception {
         var g = KeyPairGenerator.getInstance(alg);
-        var size = switch (g.getAlgorithm()) {
-            case "RSA", "RSASSA-PSS", "DSA", "DiffieHellman" -> 1024;
-            case "EC" -> 256;
-            case "EdDSA", "Ed25519", "XDH", "X25519" -> 255;
-            case "Ed448", "X448" -> 448;
-            default -> throw new UnsupportedOperationException(alg);
-        };
-        g.initialize(size, new SeededSecureRandom(SEED + offset));
+        SeededSecureRandom random = new SeededSecureRandom(SEED + offset);
+        if (alg.startsWith("ML-KEM-") || alg.startsWith("ML-DSA-")) {
+            g.initialize(-1, random);
+        } else {
+            var size = switch (g.getAlgorithm()) {
+                case "RSA", "RSASSA-PSS", "DSA", "DiffieHellman" -> 1024;
+                case "EC" -> 256;
+                case "EdDSA", "Ed25519", "XDH", "X25519" -> 255;
+                case "Ed448", "X448" -> 448;
+                case "ML-KEM" -> {
+                    g.initialize(NamedParameterSpec.ML_KEM_768, random);
+                    yield -1;
+                }
+                case "ML-DSA" -> {
+                    g.initialize(NamedParameterSpec.ML_DSA_65, random);
+                    yield -1;
+                }
+                default -> throw new UnsupportedOperationException(alg);
+            };
+            if (size >= 0) g.initialize(size, random);
+        }
         return g.generateKeyPair();
     }
 
