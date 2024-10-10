@@ -493,6 +493,13 @@ final class Double512Vector extends DoubleVector {
                                      Double512Mask.class, (Double512Mask) m);  // specialize
     }
 
+    @Override
+    @ForceInline
+    public Double512Vector selectFrom(Vector<Double> v1,
+                                   Vector<Double> v2) {
+        return (Double512Vector)
+            super.selectFromTemplate((Double512Vector) v1, (Double512Vector) v2);  // specialize
+    }
 
     @ForceInline
     @Override

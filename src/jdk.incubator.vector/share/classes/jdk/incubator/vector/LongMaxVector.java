@@ -496,6 +496,13 @@ final class LongMaxVector extends LongVector {
                                      LongMaxMask.class, (LongMaxMask) m);  // specialize
     }
 
+    @Override
+    @ForceInline
+    public LongMaxVector selectFrom(Vector<Long> v1,
+                                   Vector<Long> v2) {
+        return (LongMaxVector)
+            super.selectFromTemplate((LongMaxVector) v1, (LongMaxVector) v2);  // specialize
+    }
 
     @ForceInline
     @Override

@@ -297,6 +297,24 @@
         assertSelectFromArraysEquals(r, a, order, SPECIES.length());
     }
 
+    @Test(dataProvider = "$type$SelectFromTwoVectorOpProvider")
+    static void SelectFromTwoVector$vectorteststype$(IntFunction<$type$[]> fa, IntFunction<$type$[]> fb, IntFunction<$type$[]> fc) {
+        $type$[] a = fa.apply(SPECIES.length());
+        $type$[] b = fb.apply(SPECIES.length());
+        $type$[] idx = fc.apply(SPECIES.length());
+        $type$[] r = fr.apply(SPECIES.length());
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < idx.length; i += SPECIES.length()) {
+                $abstractvectortype$ av = $abstractvectortype$.fromArray(SPECIES, a, i);
+                $abstractvectortype$ bv = $abstractvectortype$.fromArray(SPECIES, b, i);
+                $abstractvectortype$ idxv = $abstractvectortype$.fromArray(SPECIES, idx, i);
+                idxv.selectFrom(av, bv).intoArray(r, i);
+            }
+        }
+        assertSelectFromTwoVectorEquals(r, idx, a, b, SPECIES.length());
+    }
+
 #if[Int]
     @Test(dataProvider = "$type$UnaryOpShuffleMaskProvider")
 #else[Int]

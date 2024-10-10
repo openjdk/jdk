@@ -1612,6 +1612,21 @@ class VectorRearrangeNode : public VectorNode {
   Node* vec_shuffle() const { return in(2); }
 };
 
+
+// Select elements from two source vectors based on the wrapped indexes held in
+// the first vector.
+class SelectFromTwoVectorNode : public VectorNode {
+public:
+  SelectFromTwoVectorNode(Node* indexes, Node* src1, Node* src2, const TypeVect* vt)
+  : VectorNode(indexes, src1, src2, vt) {
+      assert(is_integral_type(indexes->bottom_type()->is_vect()->element_basic_type()),
+             "indexes must be an integral vector");
+  }
+
+  virtual int Opcode() const;
+};
+
+
 class VectorLoadShuffleNode : public VectorNode {
  public:
   VectorLoadShuffleNode(Node* in, const TypeVect* vt)
