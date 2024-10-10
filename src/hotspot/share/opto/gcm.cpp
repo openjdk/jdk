@@ -763,7 +763,15 @@ Block* PhaseCFG::insert_anti_dependences(Block* LCA, Node* load, bool verify) {
     worklist_def_use_mem_states.pop();
 
     uint op = use_mem_state->Opcode();
-    assert(!use_mem_state->needs_anti_dependence_check(), "no loads");
+
+#ifdef ASSERT
+    bool is_cache_wb = false;
+    if (use_mem_state->is_Mach()) {
+      int ideal_op = use_mem_state->as_Mach()->ideal_Opcode();
+      is_cache_wb = (ideal_op == Op_CacheWB || ideal_op == Op_CacheWBPostSync || ideal_op == Op_CacheWBPreSync);
+    }
+    assert(!use_mem_state->needs_anti_dependence_check() || is_cache_wb, "no loads");
+#endif
 
     // MergeMems do not directly have anti-deps.
     // Treat them as internal nodes in a forward tree of memory states,
