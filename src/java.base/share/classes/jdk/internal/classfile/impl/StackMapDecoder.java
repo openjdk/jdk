@@ -48,7 +48,7 @@ public class StackMapDecoder {
     private static final int
                     SAME_LOCALS_1_STACK_ITEM_EXTENDED = 247,
                     SAME_EXTENDED = 251;
-    private static final StackMapFrameInfo[] NO_STACK_FRAME_INFOS = new StackMapFrameInfo[0];
+    private static final StackMapFrameInfo[] NO_STACK_FRAME_INFOS = {};
 
     private final ClassReader classReader;
     private final int pos;

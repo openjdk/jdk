@@ -353,7 +353,11 @@ public final class ClassReaderImpl
 
     static <T extends PoolEntry> T checkType(PoolEntry e, int index, Class<T> cls) {
         if (cls.isInstance(e)) return cls.cast(e);
-        throw new ConstantPoolException("Not a " + cls.getSimpleName() + " at index: " + index);
+        throw checkTypeError(index, cls);
+    }
+
+    private static ConstantPoolException checkTypeError(int index, Class<?> cls) {
+        return new ConstantPoolException("Not a " + cls.getSimpleName() + " at index: " + index);
     }
 
     @Override

@@ -373,46 +373,43 @@ public class MethodHandleProxies {
                                          String methodName, List<MethodInfo> methods) {
         return ClassFile.of(ClassHierarchyResolverOption.of(ClassHierarchyResolver.ofClassLoading(loader)))
                         .build(proxyDesc, clb -> {
-            clb.withSuperclass(CD_Object);
-            clb.withFlags(ACC_FINAL | ACC_SYNTHETIC);
-            clb.withInterfaceSymbols(ifaceDesc);
-
-            // static and instance fields
-            clb.withField(TYPE_NAME, CD_Class, ACC_PRIVATE | ACC_STATIC | ACC_FINAL);
-            clb.withField(TARGET_NAME, CD_MethodHandle, ACC_PRIVATE | ACC_FINAL);
+            clb.withSuperclass(CD_Object)
+               .withFlags(ACC_FINAL | ACC_SYNTHETIC)
+               .withInterfaceSymbols(ifaceDesc)
+               // static and instance fields
+               .withField(TYPE_NAME, CD_Class, ACC_PRIVATE | ACC_STATIC | ACC_FINAL)
+               .withField(TARGET_NAME, CD_MethodHandle, ACC_PRIVATE | ACC_FINAL);
             for (var mi : methods) {
                 clb.withField(mi.fieldName, CD_MethodHandle, ACC_PRIVATE | ACC_FINAL);
             }
 
             // <clinit>
             clb.withMethodBody(CLASS_INIT_NAME, MTD_void, ACC_STATIC, cob -> {
-                cob.loadConstant(ifaceDesc);
-                cob.putstatic(proxyDesc, TYPE_NAME, CD_Class);
-                cob.return_();
+                cob.loadConstant(ifaceDesc)
+                   .putstatic(proxyDesc, TYPE_NAME, CD_Class)
+                   .return_();
             });
 
             // <init>(Lookup, MethodHandle target, MethodHandle callerBoundTarget)
             clb.withMethodBody(INIT_NAME, MTD_void_Lookup_MethodHandle_MethodHandle, 0, cob -> {
-                cob.aload(0);
-                cob.invokespecial(CD_Object, INIT_NAME, MTD_void);
-
-                // call ensureOriginalLookup to verify the given Lookup has access
-                cob.aload(1);
-                cob.invokestatic(proxyDesc, "ensureOriginalLookup", MTD_void_Lookup);
-
-                // this.target = target;
-                cob.aload(0);
-                cob.aload(2);
-                cob.putfield(proxyDesc, TARGET_NAME, CD_MethodHandle);
+                cob.aload(0)
+                   .invokespecial(CD_Object, INIT_NAME, MTD_void)
+                   // call ensureOriginalLookup to verify the given Lookup has access
+                   .aload(1)
+                   .invokestatic(proxyDesc, ENSURE_ORIGINAL_LOOKUP, MTD_void_Lookup)
+                   // this.target = target;
+                   .aload(0)
+                   .aload(2)
+                   .putfield(proxyDesc, TARGET_NAME, CD_MethodHandle);
 
                 // method handles adjusted to the method type of each method
                 for (var mi : methods) {
                     // this.m<i> = callerBoundTarget.asType(xxType);
-                    cob.aload(0);
-                    cob.aload(3);
-                    cob.loadConstant(mi.desc);
-                    cob.invokevirtual(CD_MethodHandle, "asType", MTD_MethodHandle_MethodType);
-                    cob.putfield(proxyDesc, mi.fieldName, CD_MethodHandle);
+                    cob.aload(0)
+                       .aload(3)
+                       .loadConstant(mi.desc)
+                       .invokevirtual(CD_MethodHandle, "asType", MTD_MethodHandle_MethodType)
+                       .putfield(proxyDesc, mi.fieldName, CD_MethodHandle);
                 }
 
                 // complete
@@ -425,26 +422,26 @@ public class MethodHandleProxies {
             clb.withMethodBody(ENSURE_ORIGINAL_LOOKUP, MTD_void_Lookup, ACC_PRIVATE | ACC_STATIC, cob -> {
                 var failLabel = cob.newLabel();
                 // check lookupClass
-                cob.aload(0);
-                cob.invokevirtual(CD_MethodHandles_Lookup, "lookupClass", MTD_Class);
-                cob.loadConstant(proxyDesc);
-                cob.if_acmpne(failLabel);
-                // check original access
-                cob.aload(0);
-                cob.invokevirtual(CD_MethodHandles_Lookup, "lookupModes", MTD_int);
-                cob.loadConstant(Lookup.ORIGINAL);
-                cob.iand();
-                cob.ifeq(failLabel);
-                // success
-                cob.return_();
-                // throw exception
-                cob.labelBinding(failLabel);
-                cob.new_(CD_IllegalAccessException);
-                cob.dup();
-                cob.aload(0); // lookup
-                cob.invokevirtual(CD_Object, "toString", MTD_String);
-                cob.invokespecial(CD_IllegalAccessException, INIT_NAME, MTD_void_String);
-                cob.athrow();
+                cob.aload(0)
+                   .invokevirtual(CD_MethodHandles_Lookup, "lookupClass", MTD_Class)
+                   .loadConstant(proxyDesc)
+                   .if_acmpne(failLabel)
+                   // check original access
+                   .aload(0)
+                   .invokevirtual(CD_MethodHandles_Lookup, "lookupModes", MTD_int)
+                   .loadConstant(Lookup.ORIGINAL)
+                   .iand()
+                   .ifeq(failLabel)
+                   // success
+                   .return_()
+                   // throw exception
+                   .labelBinding(failLabel)
+                   .new_(CD_IllegalAccessException)
+                   .dup()
+                   .aload(0) // lookup
+                   .invokevirtual(CD_Object, "toString", MTD_String)
+                   .invokespecial(CD_IllegalAccessException, INIT_NAME, MTD_void_String)
+                   .athrow();
             });
 
             // implementation methods
@@ -453,14 +450,14 @@ public class MethodHandleProxies {
                 clb.withMethodBody(methodName, mi.desc, ACC_PUBLIC, cob -> cob
                         .trying(bcb -> {
                                     // return this.handleField.invokeExact(arguments...);
-                                    bcb.aload(0);
-                                    bcb.getfield(proxyDesc, mi.fieldName, CD_MethodHandle);
+                                    bcb.aload(0)
+                                       .getfield(proxyDesc, mi.fieldName, CD_MethodHandle);
                                     for (int j = 0; j < mi.desc.parameterCount(); j++) {
                                         bcb.loadLocal(TypeKind.from(mi.desc.parameterType(j)),
                                                 bcb.parameterSlot(j));
                                     }
-                                    bcb.invokevirtual(CD_MethodHandle, "invokeExact", mi.desc);
-                                    bcb.return_(TypeKind.from(mi.desc.returnType()));
+                                    bcb.invokevirtual(CD_MethodHandle, "invokeExact", mi.desc)
+                                       .return_(TypeKind.from(mi.desc.returnType()));
                                 }, ctb -> ctb
                                         // catch (Error | RuntimeException | Declared ex) { throw ex; }
                                         .catchingMulti(mi.thrown, CodeBuilder::athrow)
