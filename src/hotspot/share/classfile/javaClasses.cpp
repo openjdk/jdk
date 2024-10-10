@@ -365,8 +365,8 @@ oop java_lang_String::create_oop_from_str(const char* utf8_str, TRAPS) {
   return h_obj();
 }
 
-Handle java_lang_String::create_from_symbol(Symbol* symbol, TRAPS) {
-  const char* utf8_str = (char*)symbol->bytes();
+Handle java_lang_String::create_from_symbol(const Symbol* symbol, TRAPS) {
+  const char* utf8_str = symbol->get_utf8();
   int utf8_len = symbol->utf8_length();
 
   bool has_multibyte, is_latin1;
@@ -389,7 +389,8 @@ Handle java_lang_String::create_from_symbol(Symbol* symbol, TRAPS) {
   }
 
 #ifdef ASSERT
-  {
+  // This check is too strict when the symbol does not contain valid UTF8.
+  if (UTF8::is_legal_utf8((const unsigned char*)utf8_str, utf8_len, false)) {
     ResourceMark rm;
     const char* expected = symbol->as_utf8();
     char* actual = as_utf8_string(h_obj());
@@ -754,6 +755,35 @@ bool java_lang_String::equals(oop java_string, const jchar* chars, int len) {
   } else {
     for (int i = 0; i < len; i++) {
       if ((((jchar) value->byte_at(i)) & 0xff) != chars[i]) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+bool java_lang_String::equals(oop java_string, const char* utf8_string, int len) {
+  assert(java_string->klass() == vmClasses::String_klass(),
+         "must be java_string");
+  typeArrayOop value = java_lang_String::value_no_keepalive(java_string);
+  int length = java_lang_String::length(java_string, value);
+  if (length != len) {
+    return false;
+  }
+  bool is_latin1 = java_lang_String::is_latin1(java_string);
+  jchar c;
+  const char *ptr = utf8_string;
+  if (!is_latin1) {
+    for (int i = 0; i < len; i++) {
+      ptr = UTF8::next(ptr, &c);
+      if (value->char_at(i) != c) {
+        return false;
+      }
+    }
+  } else {
+    for (int i = 0; i < len; i++) {
+      ptr = UTF8::next(ptr, &c);
+      if ((((jchar) value->byte_at(i)) & 0xff) != c) {
         return false;
       }
     }
