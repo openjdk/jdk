@@ -33,6 +33,7 @@
 #include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
+#include "runtime/safepointMechanism.hpp"
 #include "runtime/threadHeapSampler.hpp"
 #include "runtime/threadLocalStorage.hpp"
 #include "runtime/threadStatisticalInfo.hpp"
@@ -109,6 +110,7 @@ class Thread: public ThreadShadow {
   friend class VMErrorCallbackMark;
   friend class VMStructs;
   friend class JVMCIVMStructs;
+  friend class JavaThread;
  private:
 
 #ifndef USE_LIBRARY_BASED_TLS_ONLY
@@ -135,6 +137,11 @@ class Thread: public ThreadShadow {
   }
 
  private:
+  // Poll data is used in generated code for safepoint polls.
+  // It is important for performance to put this at lower offset
+  // in Thread. The accessors are in JavaThread.
+  SafepointMechanism::ThreadData _poll_data;
+
   // Thread local data area available to the GC. The internal
   // structure and contents of this data area is GC-specific.
   // Only GC and GC barrier code should access this data area.
