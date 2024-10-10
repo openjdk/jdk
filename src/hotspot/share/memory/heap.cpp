@@ -232,7 +232,7 @@ bool CodeHeap::reserve(ReservedSpace rs, size_t committed_size, size_t segment_s
     return false;
   }
 
-  MemTracker::record_virtual_memory_tag((address)_segmap.low_boundary(), mtCode);
+  MemTracker::record_virtual_memory_tag((address)_segmap.low_boundary(), seg_rs.size(), mtCode);
 
   assert(_segmap.committed_size() >= (size_t) _number_of_committed_segments, "could not commit  enough space for segment map");
   assert(_segmap.reserved_size()  >= (size_t) _number_of_reserved_segments , "could not reserve enough space for segment map");

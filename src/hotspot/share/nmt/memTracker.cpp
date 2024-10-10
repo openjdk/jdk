@@ -68,7 +68,7 @@ void MemTracker::initialize() {
   if (level > NMT_off) {
     if (!MallocTracker::initialize(level) ||
         !MemoryFileTracker::Instance::initialize(level) ||
-        !VirtualMemoryTracker::initialize(level)) {
+        !VirtualMemoryTracker::Instance::initialize(level)) {
       assert(false, "NMT initialization failed");
       level = NMT_off;
       log_warning(nmt)("NMT initialization failed. NMT disabled.");
@@ -123,7 +123,7 @@ void MemTracker::final_report(outputStream* output) {
 bool MemTracker::print_containing_region(const void* p, outputStream* out) {
   return enabled() &&
       (MallocTracker::print_pointer_information(p, out) ||
-       VirtualMemoryTracker::print_containing_region(p, out));
+       VirtualMemoryTracker::Instance::print_containing_region(p, out));
 }
 
 void MemTracker::report(bool summary_only, outputStream* output, size_t scale) {

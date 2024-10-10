@@ -26,6 +26,7 @@
 #ifndef SHARE_NMT_VMATREE_HPP
 #define SHARE_NMT_VMATREE_HPP
 
+#include "nmt/memTag.hpp"
 #include "nmt/nmtNativeCallStackStorage.hpp"
 #include "nmt/nmtTreap.hpp"
 #include "runtime/os.hpp"
@@ -37,8 +38,9 @@
 // For example, the state may go from released memory to committed memory,
 // or from committed memory of a certain MemTag to committed memory of a different MemTag.
 // The set of points is stored in a balanced binary tree for efficient querying and updating.
-class VMATree {
+class VMATree : public CHeapObj<mtNMT> {
   friend class NMTVMATreeTest;
+  friend class VMTWithVMATreeTest;
   // A position in memory.
 public:
   using position = size_t;
@@ -53,16 +55,18 @@ public:
     }
   };
 
-  enum class StateType : uint8_t { Reserved, Committed, Released, LAST };
+  // Bit fields view: bit 0 for Reserved, bit 1 for Committed.
+  // Setting a region as Committed preserves the Reserved state.
+  enum class StateType : uint8_t { Reserved = 1, Committed = 3, Released = 0, COUNT = 4 };
 
 private:
-  static const char* statetype_strings[static_cast<uint8_t>(StateType::LAST)];
+  static const char* statetype_strings[static_cast<uint8_t>(StateType::COUNT)];
 
 public:
   NONCOPYABLE(VMATree);
 
   static const char* statetype_to_string(StateType type) {
-    assert(type != StateType::LAST, "must be");
+    assert(type < StateType::COUNT, "must be");
     return statetype_strings[static_cast<uint8_t>(type)];
   }
 
@@ -115,6 +119,8 @@ private:
     NativeCallStackStorage::StackIndex stack() const {
      return sidx;
     }
+
+    void set_flag(MemTag mem_tag) { type_flag[1] = (uint8_t)mem_tag;}
   };
 
   // An IntervalChange indicates a change in state between two intervals. The incoming state
@@ -165,6 +171,23 @@ public:
         tag[i] = SingleDiff{0, 0};
       }
     }
+    SummaryDiff apply(SummaryDiff other) {
+      SummaryDiff out;
+      for (int i = 0; i < mt_number_of_tags; i++) {
+        out.tag[i] = SingleDiff {
+          this->tag[i].reserve + other.tag[i].reserve,
+          this->tag[i].commit + other.tag[i].commit
+        };
+      }
+      return out;
+    }
+
+    void print_self() {
+      for (int i = 0; i < mt_number_of_tags; i++) {
+        if (tag[i].reserve == 0 && tag[i].commit == 0) { continue; }
+        tty->print_cr("Flag %s R: " INT64_FORMAT " C: " INT64_FORMAT, NMTUtil::tag_to_enum_name((MemTag)i), tag[i].reserve, tag[i].commit);
+      }
+    }
   };
 
   SummaryDiff register_mapping(position A, position B, StateType state, const RegionData& metadata);
@@ -181,10 +204,42 @@ public:
     return register_mapping(from, from + sz, StateType::Released, VMATree::empty_regiondata);
   }
 
+  SummaryDiff set_tag(position from, size_t sz, MemTag mem_tag) {
+    VMATreap::Range rng = _tree.find_enclosing_range(from);
+    assert(rng.start != nullptr && rng.end != nullptr,
+           "Setting a flag must be done within existing range");
+    StateType type = rng.start->val().out.type();
+    RegionData old_data = rng.start->val().out.regiondata();
+    RegionData new_data = RegionData(old_data.stack_idx, mem_tag);
+    position end = MIN2(from+sz, rng.end->key());
+    SummaryDiff diff = register_mapping(from, end, type, new_data);
+
+    if (end < from+sz) {
+      return diff.apply(set_tag(end, sz - (end - from), mem_tag));
+    }  else {
+      return diff;
+    }
+  }
+
 public:
   template<typename F>
   void visit_in_order(F f) const {
     _tree.visit_in_order(f);
+  }
+  template<typename F>
+  void visit_range_in_order(const position& from, const position& to, F f) {
+    _tree.visit_range_in_order(from, to, f);
+  }
+
+  void put_if_absent(position A, position B, StateType state, const RegionData& region_data);
+
+  VMATreap* tree() { return &_tree; }
+  void print_self() {
+    visit_in_order([&](TreapNode* current) {
+      tty->print("(%s) - %s - ", NMTUtil::tag_to_name(current->val().out.mem_tag()), statetype_to_string(current->val().out.type()));
+      return true;
+    });
+    tty->cr();
   }
 };
 

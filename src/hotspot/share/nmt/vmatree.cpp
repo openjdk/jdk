@@ -29,9 +29,73 @@
 
 const VMATree::RegionData VMATree::empty_regiondata{NativeCallStackStorage::StackIndex{}, mtNone};
 
-const char* VMATree::statetype_strings[3] = {
-  "reserved", "committed", "released",
+const char* VMATree::statetype_strings[4] = {
+  "released","reserved", "'only-committed", "committed",
 };
+
+void VMATree::put_if_absent(position A, position B, StateType state, const RegionData& region_data) {
+  if (A == B) {
+    // A 0-sized mapping isn't worth recording.
+    return;
+  }
+
+  IntervalChange stA{
+      IntervalState{StateType::Released, empty_regiondata},
+      IntervalState{              state,   region_data}
+  };
+  IntervalChange stB{
+      IntervalState{              state,   region_data},
+      IntervalState{StateType::Released, empty_regiondata}
+  };
+
+  // First handle A.
+  // Find closest node that is LEQ A
+  bool LEQ_A_found = false;
+  AddressState LEQ_A;
+  TreapNode* leqA_n = _tree.closest_leq(A);
+  if (leqA_n == nullptr) {
+    // No match. We add the A node directly, unless it would have no effect.
+    if (!stA.is_noop()) {
+      _tree.upsert(A, stA);
+    }
+  } else {
+    LEQ_A_found = true;
+    LEQ_A = AddressState{leqA_n->key(), leqA_n->val()};
+    // Unless we know better, let B's outgoing state be the outgoing state of the node at or preceding A.
+    // Consider the case where the found node is the start of a region enclosing [A,B)
+    stB.out = leqA_n->val().out;
+
+    // Direct address match.
+    if (leqA_n->key() == A) {
+      // Take over in state from old address.
+      stA.in = leqA_n->val().in;
+
+      stB.in = stA.out;
+      if (stA.is_noop()) {
+        _tree.remove(leqA_n->key());
+      } else {
+        leqA_n->val() = stA;
+      }
+    } else {
+      // The address must be smaller.
+      assert(A > leqA_n->key(), "must be");
+
+      stA.in = leqA_n->val().out; // .. and the region's prior state is the incoming state
+      if (stA.is_noop()) {
+        // Nothing to do.
+      } else {
+        // Add new node.
+        _tree.upsert(A, stA);
+      }
+    }
+  }
+
+  TreapNode* leqB_n = _tree.closest_leq(B);
+  if (leqB_n == nullptr || leqB_n->key() != B) {
+    _tree.upsert(B, stB);
+  }
+
+}
 
 VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType state,
                                                const RegionData& metadata) {
@@ -130,6 +194,7 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
       }
       B_needs_insert = false;
     }
+    return true;
   });
 
   // Insert B node if needed
@@ -143,7 +208,6 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
   // a) Delete all nodes between (A, B]. Including B in the case of a noop.
   // b) Perform summary accounting
   SummaryDiff diff;
-
   if (to_be_deleted_inbetween_a_b.length() == 0 && LEQ_A_found) {
     // We must have smashed a hole in an existing region (or replaced it entirely).
     // LEQ_A < A < B <= C

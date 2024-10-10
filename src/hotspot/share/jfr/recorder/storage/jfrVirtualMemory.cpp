@@ -117,7 +117,7 @@ bool JfrVirtualMemorySegment::initialize(size_t reservation_size_request_bytes) 
                               _rs.base(),
                               _rs.size(),
                               os::vm_page_size());
-  MemTracker::record_virtual_memory_tag((address)_rs.base(), mtTracing);
+  MemTracker::record_virtual_memory_tag((address)_rs.base(), _rs.size(), mtTracing);
   assert(is_aligned(_rs.base(), os::vm_page_size()), "invariant");
   assert(is_aligned(_rs.size(), os::vm_page_size()), "invariant");
 

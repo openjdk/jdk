@@ -90,7 +90,7 @@ public:
   }
 
   const inline NativeCallStack& get(StackIndex si) {
-    if (is_invalid(si)) {
+    if (is_invalid(si) || si >= _stacks.length()) {
       return _fake_stack;
     }
     return _stacks.at(si);
