@@ -2799,6 +2799,12 @@ public final class System {
             public boolean allowSecurityManager() {
                 return System.allowSecurityManager();
             }
+
+            @Override
+            public String shortVersionString() {
+                return VersionProps.shortVersionString();
+            }
+
         });
     }
 }
