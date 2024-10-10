@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,7 @@ public class TestRSACipher extends PKCS11Test {
             return;
         }
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA", p);
-        kpg.initialize(1024);
+        kpg.initialize(2048);
         KeyPair kp = kpg.generateKeyPair();
         PublicKey publicKey = kp.getPublic();
         PrivateKey privateKey = kp.getPrivate();
@@ -112,7 +112,7 @@ public class TestRSACipher extends PKCS11Test {
             c1.update(b);
             e = c1.doFinal();
 
-            c1.update(new byte[256]);
+            c1.update(new byte[512]);
             try {
                 e = c1.doFinal();
                 throw new Exception("completed call");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,8 @@
  * @run main/othervm TestECDSA
  * @run main/othervm -Djava.security.manager=allow TestECDSA sm policy
  */
+
+import jdk.test.lib.security.SecurityUtils;
 
 import java.security.KeyFactory;
 import java.security.KeyPair;
@@ -156,14 +158,17 @@ public class TestECDSA extends PKCS11Test {
             return;
         }
 
-        if (getSupportedECParameterSpec("secp192r1", provider).isPresent()) {
-            test(provider, pub192, priv192, sig192);
-        }
-        if (getSupportedECParameterSpec("sect163r1", provider).isPresent()) {
-            test(provider, pub163, priv163, sig163);
-        }
-        if (getSupportedECParameterSpec("sect571r1", provider).isPresent()) {
-            test(provider, pub571, priv571, sig571);
+        // secp192r1, sect163r1, sect571r1 are not FIPS-140-2 approved curves.
+        if (!SecurityUtils.isFipsTest()) {
+            if (getSupportedECParameterSpec("secp192r1", provider).isPresent()) {
+                test(provider, pub192, priv192, sig192);
+            }
+            if (getSupportedECParameterSpec("sect163r1", provider).isPresent()) {
+                test(provider, pub163, priv163, sig163);
+            }
+            if (getSupportedECParameterSpec("sect571r1", provider).isPresent()) {
+                test(provider, pub571, priv571, sig571);
+            }
         }
         test(provider, pub521, priv521, sig521);
 
@@ -211,9 +216,14 @@ public class TestECDSA extends PKCS11Test {
         // SHA1withECDSA and NONEwithECDSA
         Signature s;
         if (p1363Format) {
-            s = Signature.getInstance("SHA1withECDSAinP1363Format", provider);
+            // FIPS-140-2 does not allow SHA-1 to be used for signing
+            String algorithm = SecurityUtils.isFipsTest() ? "SHA224withECDSAinP1363Format"
+                    : "SHA1withECDSAinP1363Format";
+            s = Signature.getInstance( algorithm, provider);
         } else {
-            s = Signature.getInstance("SHA1withECDSA", provider);
+            String algorithm = SecurityUtils.isFipsTest() ? "SHA224withECDSA"
+                    : "SHA1withECDSA";
+            s = Signature.getInstance(algorithm, provider);
         }
         s.initSign(privateKey);
         s.update(data);
@@ -230,7 +240,9 @@ public class TestECDSA extends PKCS11Test {
         } else {
             s = Signature.getInstance("NONEwithECDSA", provider);
         }
-        MessageDigest md = MessageDigest.getInstance("SHA-1");
+        // FIPS-140-2 does not allow SHA-1 to be used for signing
+        String mdAlgorithm = SecurityUtils.isFipsTest() ? "SHA-224" : "SHA-1";
+        MessageDigest md = MessageDigest.getInstance(mdAlgorithm);
         byte[] digest = md.digest(data);
         s.initVerify(publicKey);
         s.update(digest);
@@ -251,9 +263,14 @@ public class TestECDSA extends PKCS11Test {
         }
 
         if (p1363Format) {
-            s = Signature.getInstance("SHA1withECDSAinP1363Format", provider);
+            // FIPS-140-2 does not allow SHA-1 to be used for signing
+            String algorithm = SecurityUtils.isFipsTest() ? "SHA224withECDSAinP1363Format" :
+                    "SHA1withECDSAinP1363Format";
+            s = Signature.getInstance(algorithm, provider);
         } else {
-            s = Signature.getInstance("SHA1withECDSA", provider);
+            String algorithm = SecurityUtils.isFipsTest() ? "SHA224withECDSA" :
+                    "SHA1withECDSA";
+            s = Signature.getInstance(algorithm, provider);
         }
         s.initVerify(publicKey);
         s.update(data);

@@ -4,4 +4,5 @@ grant {
     permission java.security.SecurityPermission "removeProvider.*";
     permission java.io.FilePermission "${test.src}/-", "read";
     permission java.io.FilePermission "${closed.base}/-", "read";
+    permission java.util.PropertyPermission "test.run.mode", "read";
 };

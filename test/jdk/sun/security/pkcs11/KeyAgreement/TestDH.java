@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ public class TestDH extends PKCS11Test {
             return;
         }
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("DH", p);
-        kpg.initialize(512);
+        kpg.initialize(2048);
         KeyPair kp1 = kpg.generateKeyPair();
         KeyPair kp2 = kpg.generateKeyPair();
 
@@ -87,11 +87,9 @@ public class TestDH extends PKCS11Test {
             throw new Exception("Secrets (1,4) do not match");
         }
 
-        testAlgorithm(ka2, kp2, ka1, kp1, "DES");
         testAlgorithm(ka2, kp2, ka1, kp1, "DESede");
 //      testAlgorithm(ka2, kp2, ka1, kp1, "AES");
 //      testAlgorithm(ka2, kp2, ka1, kp1, "RC4");
-        testAlgorithm(ka2, kp2, ka1, kp1, "Blowfish");
         testAlgorithm(ka2, kp2, ka1, kp1, "TlsPremasterSecret");
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,10 @@
  * @library /test/lib ..
  * @modules jdk.crypto.cryptoki
  * @run main/othervm TestRSACipherWrap
- * @run main/othervm -Djava.security.manager=allow TestRSACipherWrap sm
+ * @run main/othervm -Djava.security.manager=allow TestRSACipherWrap sm policy
  */
+
+import jdk.test.lib.security.SecurityUtils;
 
 import java.security.GeneralSecurityException;
 import java.security.InvalidParameterException;
@@ -58,14 +60,15 @@ public class TestRSACipherWrap extends PKCS11Test {
             return;
         }
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA", p);
-        kpg.initialize(1024);
+        kpg.initialize(2048);
         KeyPair kp = kpg.generateKeyPair();
 
         for (String rsaAlgo: RSA_ALGOS) {
             Cipher cipherPKCS11 = Cipher.getInstance(rsaAlgo, p);
             Cipher cipherJce = Cipher.getInstance(rsaAlgo, "SunJCE");
 
-            String algos[] = {"AES", "RC2", "Blowfish"};
+            String algos[] = SecurityUtils.isFipsTest() ? new String[]{"AES"} :
+                    new String[]{"AES", "RC2", "Blowfish"};
             int keySizes[] = {128, 256};
 
             for (int j = 0; j < algos.length; j++) {
