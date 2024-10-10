@@ -992,6 +992,7 @@ bool Metaspace::is_in_shared_metaspace(const void* ptr) {
 
 // Returns true if pointer points into one of the non-class-space metaspace regions.
 bool Metaspace::is_in_nonclass_metaspace(const void* ptr) {
-  return VirtualSpaceList::vslist_nonclass()->contains((MetaWord*)ptr);
+  VirtualSpaceList* list = VirtualSpaceList::vslist_nonclass();
+  return (list != nullptr) && list->contains((MetaWord*) ptr);
 }
 
