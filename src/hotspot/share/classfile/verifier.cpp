@@ -109,16 +109,6 @@ bool Verifier::should_verify_for(oop class_loader, bool should_verify_class) {
     BytecodeVerificationLocal : BytecodeVerificationRemote;
 }
 
-bool Verifier::relax_access_for(oop loader) {
-  bool trusted = java_lang_ClassLoader::is_trusted_loader(loader);
-  bool need_verify =
-    // verifyAll
-    (BytecodeVerificationLocal && BytecodeVerificationRemote) ||
-    // verifyRemote
-    (!BytecodeVerificationLocal && BytecodeVerificationRemote && !trusted);
-  return !need_verify;
-}
-
 void Verifier::trace_class_resolution(Klass* resolve_class, InstanceKlass* verify_class) {
   assert(verify_class != nullptr, "Unexpected null verify_class");
   ResourceMark rm;
@@ -274,15 +264,7 @@ bool Verifier::is_eligible_for_verification(InstanceKlass* klass, bool should_ve
   bool is_reflect_accessor = refl_serialization_ctor_klass != nullptr &&
                                 klass->is_subtype_of(refl_serialization_ctor_klass);
 
-  return (should_verify_for(klass->class_loader(), should_verify_class) &&
-    // return if the class is a bootstrapping class
-    // or defineClass specified not to verify by default (flags override passed arg)
-    // We need to skip the following four for bootstraping
-    name != vmSymbols::java_lang_Object() &&
-    name != vmSymbols::java_lang_Class() &&
-    name != vmSymbols::java_lang_String() &&
-    name != vmSymbols::java_lang_Throwable() &&
-
+  return (should_verify_class &&
     // Can not verify the bytecodes for shared classes because they have
     // already been rewritten to contain constant pool cache indices,
     // which the verifier can't understand.
