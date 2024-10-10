@@ -594,6 +594,24 @@ private:
   bool do_not_unlock_if_synchronized()             { return _do_not_unlock_if_synchronized; }
   void set_do_not_unlock_if_synchronized(bool val) { _do_not_unlock_if_synchronized = val; }
 
+  SafepointMechanism::ThreadData* poll_data() { return &_poll_data; }
+
+  static ByteSize polling_word_offset() {
+    ByteSize offset = byte_offset_of(Thread, _poll_data) +
+                      byte_offset_of(SafepointMechanism::ThreadData, _polling_word);
+    // At least on x86_64, safepoint polls encode the offset as disp8 imm.
+    assert(in_bytes(offset) < 128, "Offset >= 128");
+    return offset;
+  }
+
+  static ByteSize polling_page_offset() {
+    ByteSize offset = byte_offset_of(Thread, _poll_data) +
+                      byte_offset_of(SafepointMechanism::ThreadData, _polling_page);
+    // At least on x86_64, safepoint polls encode the offset as disp8 imm.
+    assert(in_bytes(offset) < 128, "Offset >= 128");
+    return offset;
+  }
+
   void set_requires_cross_modify_fence(bool val) PRODUCT_RETURN NOT_PRODUCT({ _requires_cross_modify_fence = val; })
 
   // Continuation support

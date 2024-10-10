@@ -110,6 +110,7 @@ class Thread: public ThreadShadow {
   friend class VMErrorCallbackMark;
   friend class VMStructs;
   friend class JVMCIVMStructs;
+  friend class JavaThread;
  private:
 
 #ifndef USE_LIBRARY_BASED_TLS_ONLY
@@ -135,30 +136,12 @@ class Thread: public ThreadShadow {
     return offset;
   }
 
- protected:
+ private:
   // Poll data is used in generated code for safepoint polls.
+  // It is important for performance to put this at lower offset
+  // in Thread. The accessors are in JavaThread.
   SafepointMechanism::ThreadData _poll_data;
 
- public:
-  SafepointMechanism::ThreadData* poll_data()  { return &_poll_data; }
-
-  static ByteSize polling_word_offset() {
-    ByteSize offset = byte_offset_of(Thread, _poll_data) +
-                      byte_offset_of(SafepointMechanism::ThreadData, _polling_word);
-    // At least on x86_64, safepoint polls encode the offset as disp8 imm.
-    assert(in_bytes(offset) < 128, "Offset >= 128");
-    return offset;
-  }
-
-  static ByteSize polling_page_offset() {
-    ByteSize offset = byte_offset_of(Thread, _poll_data) +
-                      byte_offset_of(SafepointMechanism::ThreadData, _polling_page);
-    // At least on x86_64, safepoint polls encode the offset as disp8 imm.
-    assert(in_bytes(offset) < 128, "Offset >= 128");
-    return offset;
-  }
-
- private:
   // Thread local data area available to the GC. The internal
   // structure and contents of this data area is GC-specific.
   // Only GC and GC barrier code should access this data area.
