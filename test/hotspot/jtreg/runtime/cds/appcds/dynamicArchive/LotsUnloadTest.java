@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,10 @@
 
 /*
  * @test
- * @bug 8278602
+ * @bug 8278602 8313395
  * @summary Lots of classes being unloaded while we try to dump a dynamic archive
- * @requires vm.cds
+ * @requires vm.cds & !(vm.compMode == "Xcomp" & vm.graal.enabled)
+ * @comment Exclude for graal + -Xcomp due to JDK-8313395
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  *          /test/hotspot/jtreg/runtime/cds/appcds/dynamicArchive/test-classes
  * @build jdk.test.whitebox.WhiteBox
