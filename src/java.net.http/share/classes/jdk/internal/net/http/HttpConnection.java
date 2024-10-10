@@ -362,7 +362,7 @@ abstract class HttpConnection implements Closeable {
             assert request.proxy() == null;
             return Utils.PROXY_TUNNEL_RESTRICTED(client);
         } else {
-            return Utils.CONTEXT_RESTRICTED(client);
+            return (k, v) -> true;
         }
     }
 

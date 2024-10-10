@@ -45,6 +45,8 @@ import jdk.internal.net.http.common.Logger;
 import jdk.internal.net.http.common.Utils;
 
 import static java.lang.String.format;
+import static java.net.Authenticator.RequestorType.PROXY;
+import static java.net.Authenticator.RequestorType.SERVER;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
 /**
@@ -91,7 +93,6 @@ class Http1Request {
         }
     }
 
-
     public void collectHeaders0(StringBuilder sb) {
         BiPredicate<String,String> filter =
                 connection.headerFilter(request);
@@ -105,6 +106,8 @@ class Http1Request {
         // Filter overridable headers from userHeaders
         userHeaders = HttpHeaders.of(userHeaders.map(),
                       connection.contextRestricted(request, client));
+
+        Utils.setUserAuthFlags(request, userHeaders);
 
         final HttpHeaders uh = userHeaders;
 
