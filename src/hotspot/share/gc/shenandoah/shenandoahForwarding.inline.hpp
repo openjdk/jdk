@@ -90,4 +90,21 @@ inline oop ShenandoahForwarding::try_update_forwardee(oop obj, oop update) {
   }
 }
 
+inline Klass* ShenandoahForwarding::klass(oop obj) {
+  if (UseCompactObjectHeaders) {
+    markWord mark = obj->mark();
+    if (mark.is_marked()) {
+      oop fwd = cast_to_oop(mark.clear_lock_bits().to_pointer());
+      mark = fwd->mark();
+    }
+    return mark.klass();
+  } else {
+    return obj->klass();
+  }
+}
+
+inline size_t ShenandoahForwarding::size(oop obj) {
+  return obj->size_given_klass(klass(obj));
+}
+
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHFORWARDING_INLINE_HPP

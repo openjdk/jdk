@@ -261,7 +261,6 @@ class Arguments : AllStatic {
   // GC ergonomics
   static void set_conservative_max_heap_alignment();
   static void set_use_compressed_oops();
-  static void set_use_compressed_klass_ptrs();
   static jint set_ergonomics_flags();
   // Limits the given heap size by the maximum amount of virtual
   // memory this process is currently allowed to use. It also takes

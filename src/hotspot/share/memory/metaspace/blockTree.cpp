@@ -180,8 +180,8 @@ void BlockTree::verify() const {
   _counter.check(counter);
 }
 
-void BlockTree::zap_range(MetaWord* p, size_t word_size) {
-  memset(p, 0xF3, word_size * sizeof(MetaWord));
+void BlockTree::zap_block(MetaBlock bl) {
+  memset(bl.base(), 0xF3, bl.word_size() * sizeof(MetaWord));
 }
 
 void BlockTree::print_tree(outputStream* st) const {
@@ -222,6 +222,12 @@ void BlockTree::print_tree(outputStream* st) const {
           st->print_cr("@" PTR_FORMAT ": unreadable (skipping rest of chain).", p2i(n2));
           break; // stop printing this chain.
         }
+      }
+
+      // Handle simple circularities
+      if (n == n->_right || n == n->_left || n == n->_next) {
+        st->print_cr("@" PTR_FORMAT ": circularity detected.", p2i(n));
+        return; // stop printing
       }
 
       // Handle children.

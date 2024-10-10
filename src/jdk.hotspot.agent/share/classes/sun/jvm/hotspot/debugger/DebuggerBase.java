@@ -24,6 +24,9 @@
 
 package sun.jvm.hotspot.debugger;
 
+import sun.jvm.hotspot.oops.Mark;
+import sun.jvm.hotspot.runtime.VM;
+
 /** <P> DebuggerBase is a recommended base class for debugger
     implementations. It can use a PageCache to cache data from the
     target process. Note that this class would not be suitable if the
@@ -394,7 +397,15 @@ public abstract class DebuggerBase implements Debugger {
 
   protected long readCompKlassAddressValue(long address)
     throws UnmappedAddressException, UnalignedAddressException {
-    long value = readCInteger(address, getKlassPtrSize(), true);
+    long value;
+    if (VM.getVM().isCompactObjectHeadersEnabled()) {
+      // With compact headers, the compressed Klass* is currently read from the mark
+      // word. We need to load the whole mark, and shift the upper parts.
+      value = readCInteger(address, machDesc.getAddressSize(), true);
+      value = value >>> Mark.getKlassShift();
+    } else {
+      value = readCInteger(address, getKlassPtrSize(), true);
+    }
     if (value != 0) {
       value = (long)(narrowKlassBase + (long)(value << narrowKlassShift));
     }

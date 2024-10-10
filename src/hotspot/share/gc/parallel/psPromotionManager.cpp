@@ -321,7 +321,6 @@ void PSPromotionManager::process_array_chunk(PartialArrayState* state) {
 }
 
 void PSPromotionManager::push_objArray(oop old_obj, oop new_obj) {
-  assert(old_obj->is_objArray(), "precondition");
   assert(old_obj->is_forwarded(), "precondition");
   assert(old_obj->forwardee() == new_obj, "precondition");
   assert(new_obj->is_objArray(), "precondition");
@@ -357,7 +356,7 @@ oop PSPromotionManager::oop_promotion_failed(oop obj, markWord obj_mark) {
   // this started.  If it is the same (i.e., no forwarding
   // pointer has been installed), then this thread owns
   // it.
-  if (obj->forward_to_atomic(obj, obj_mark) == nullptr) {
+  if (obj->forward_to_self_atomic(obj_mark) == nullptr) {
     // We won any races, we "own" this object.
     assert(obj == obj->forwardee(), "Sanity");
 
