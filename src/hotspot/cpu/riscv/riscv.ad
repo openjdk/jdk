@@ -1923,6 +1923,7 @@ bool Matcher::match_rule_supported(int opcode) {
     // Current test shows that, it brings performance gain when MaxVectorSize >= 32, but brings
     // regression when MaxVectorSize == 16. So only enable the intrinsic when MaxVectorSize >= 32.
     case Op_RoundVF:
+    case Op_RoundDoubleModeV:
       return UseRVV && MaxVectorSize >= 32;
 
     // For double, current test shows that even with MaxVectorSize == 32, there is still some regression.
