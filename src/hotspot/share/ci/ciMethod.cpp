@@ -688,6 +688,11 @@ ciMethod* ciMethod::find_monomorphic_target(ciInstanceKlass* caller,
     return nullptr;
   }
 
+  // Redefinition support.
+  if (this->get_Method()->is_old() || root_m->get_Method()->is_old()) {
+    return nullptr;
+  }
+
   // Make certain quick checks even if UseCHA is false.
 
   // Is it private or final?
@@ -742,6 +747,12 @@ ciMethod* ciMethod::find_monomorphic_target(ciInstanceKlass* caller,
   if (target() == nullptr) {
     return nullptr;
   }
+
+  // Redefinition support.
+  if (this->get_Method()->is_old() || root_m->get_Method()->is_old() || target->is_old()) {
+    return nullptr;
+  }
+
   if (target() == root_m->get_Method()) {
     return root_m;
   }
@@ -780,22 +791,6 @@ bool ciMethod::can_omit_stack_trace() const {
   }
   return _can_omit_stack_trace;
 }
-
-// ------------------------------------------------------------------
-// ciMethod::equals
-//
-// Returns true if the methods are the same, taking redefined methods
-// into account.
-bool ciMethod::equals(const ciMethod* m) const {
-  if (this == m) return true;
-  VM_ENTRY_MARK;
-  Method* m1 = this->get_Method();
-  Method* m2 = m->get_Method();
-  if (m1->is_old()) m1 = m1->get_new_method();
-  if (m2->is_old()) m2 = m2->get_new_method();
-  return m1 == m2;
-}
-
 
 // ------------------------------------------------------------------
 // ciMethod::resolve_invoke
