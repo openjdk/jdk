@@ -20,7 +20,7 @@
 #  questions.
 #
 
-# Doccheck-specific test groups
+# Docs-specific test groups
 
 docs_all = \
     /

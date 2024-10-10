@@ -5,6 +5,6 @@
 
 ###########################################################################
 #
-# See doccheck/test/ProblemList.txt for documentation on this file and its purpose.
+# See doc/test/ProblemList.txt for documentation on this file and its purpose.
 #
 #############################################################################
