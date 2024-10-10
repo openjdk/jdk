@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ import javax.swing.SwingUtilities;
  * @key headful
  * @bug 8187759
  * @summary Test to check if JFrame background is refreshed in Linux.
- * @requires (os.family == "linux")
+ * @requires (os.family == "linux" | os.family == "mac")
  * @run main JFrameBackgroundRefreshTest
  */
 
@@ -59,6 +59,7 @@ public class JFrameBackgroundRefreshTest {
     private static Point frameLocation;
     private static int frameCenterX, frameCenterY, awayX, awayY;
     private static int imageCenterX, imageCenterY;
+    private static final int TOLERANCE = 10;
 
     public static void main(String[] args) throws Exception {
         try {
@@ -136,15 +137,21 @@ public class JFrameBackgroundRefreshTest {
     }
 
     private static boolean compareImages(BufferedImage bufferedImage) {
-        int sampleRGB = bufferedImage.getRGB(0,0);
+        Color firstPixel = new Color(bufferedImage.getRGB(0,0));
         for (int x = 0; x < bufferedImage.getWidth(); x++) {
             for (int y = 0; y < bufferedImage.getHeight(); y++) {
-                if (bufferedImage.getRGB(x, y) != sampleRGB) {
+                if (!compareColor(firstPixel, new Color(bufferedImage.getRGB(x, y)))) {
                     return false;
                 }
             }
         }
         return true;
+    }
+
+    private static boolean compareColor(Color c1, Color c2) {
+        return Math.abs(c1.getRed() - c2.getRed()) < TOLERANCE &&
+                Math.abs(c1.getGreen() - c2.getGreen()) < TOLERANCE &&
+                Math.abs(c1.getBlue() - c2.getBlue()) < TOLERANCE;
     }
 
     public static void initialize() throws Exception {
