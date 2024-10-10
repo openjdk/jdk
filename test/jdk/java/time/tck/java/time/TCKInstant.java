@@ -185,12 +185,15 @@ public class TCKInstant extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     // now()
     //-----------------------------------------------------------------------
-    @Test
+    @Test(timeOut=60000)
     public void now() {
-        Instant expected = Instant.now(Clock.systemUTC());
-        Instant test = Instant.now();
-        long diff = Math.abs(test.toEpochMilli() - expected.toEpochMilli());
-        assertTrue(diff < 10_000);  // less than 10 secs
+        Instant expected, test;
+        long diff;
+        do {
+            expected = Instant.now(Clock.systemUTC());
+            test = Instant.now();
+            diff = Math.abs(test.toEpochMilli() - expected.toEpochMilli());
+        } while( diff > 100 ); // retry if more than 0.1 sec
     }
 
     //-----------------------------------------------------------------------
