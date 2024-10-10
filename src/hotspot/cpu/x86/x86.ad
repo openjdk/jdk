@@ -6132,11 +6132,13 @@ instruct vmulI_mem(vec dst, vec src, memory mem) %{
   ins_pipe( pipe_slow );
 %}
 
+
 // Longs vector mul
 instruct evmulL_reg(vec dst, vec src1, vec src2) %{
-  predicate((Matcher::vector_length_in_bytes(n) == 64 &&
+  predicate(!n->as_MulVL()->is_mult_lower_double_word() &&
+            ((Matcher::vector_length_in_bytes(n) == 64 &&
              VM_Version::supports_avx512dq()) ||
-            VM_Version::supports_avx512vldq());
+            VM_Version::supports_avx512vldq()));
   match(Set dst (MulVL src1 src2));
   format %{ "evpmullq $dst,$src1,$src2\t! mul packedL" %}
   ins_encode %{
@@ -6148,10 +6150,11 @@ instruct evmulL_reg(vec dst, vec src1, vec src2) %{
 %}
 
 instruct evmulL_mem(vec dst, vec src, memory mem) %{
-  predicate((Matcher::vector_length_in_bytes(n) == 64 &&
+  predicate(!n->as_MulVL()->is_mult_lower_double_word() &&
+            ((Matcher::vector_length_in_bytes(n) == 64 &&
              VM_Version::supports_avx512dq()) ||
             (Matcher::vector_length_in_bytes(n) > 8 &&
-             VM_Version::supports_avx512vldq()));
+             VM_Version::supports_avx512vldq())));
   match(Set dst (MulVL src (LoadVector mem)));
   format %{ "evpmullq $dst,$src,$mem\t! mul packedL" %}
   ins_encode %{
@@ -6163,7 +6166,7 @@ instruct evmulL_mem(vec dst, vec src, memory mem) %{
 %}
 
 instruct vmulL(vec dst, vec src1, vec src2, vec xtmp) %{
-  predicate(UseAVX == 0);
+  predicate(UseAVX == 0 && !n->as_MulVL()->is_mult_lower_double_word());
   match(Set dst (MulVL src1 src2));
   effect(TEMP dst, TEMP xtmp);
   format %{ "mulVL   $dst, $src1, $src2\t! using $xtmp as TEMP" %}
@@ -6185,6 +6188,7 @@ instruct vmulL(vec dst, vec src1, vec src2, vec xtmp) %{
 
 instruct vmulL_reg(vec dst, vec src1, vec src2, vec xtmp1, vec xtmp2) %{
   predicate(UseAVX > 0 &&
+            !n->as_MulVL()->is_mult_lower_double_word() &&
             ((Matcher::vector_length_in_bytes(n) == 64 &&
               !VM_Version::supports_avx512dq()) ||
              (Matcher::vector_length_in_bytes(n) < 64 &&
@@ -6203,6 +6207,18 @@ instruct vmulL_reg(vec dst, vec src1, vec src2, vec xtmp1, vec xtmp2) %{
     // Get the lo-lo products
     __ vpmuludq($xtmp1$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vlen_enc);
     __ vpaddq($dst$$XMMRegister, $xtmp1$$XMMRegister, $xtmp2$$XMMRegister, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vmuludq_reg(vec dst, vec src1, vec src2) %{
+  predicate(UseAVX > 0 && n->as_MulVL()->is_mult_lower_double_word());
+  match(Set dst (MulVL src1 src2));
+  ins_cost(100);
+  format %{ "vpmuludq $dst,$src1,$src2\t! muldq packedL" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    __ vpmuludq($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}
