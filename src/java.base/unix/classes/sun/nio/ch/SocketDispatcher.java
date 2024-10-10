@@ -74,6 +74,10 @@ class SocketDispatcher extends UnixDispatcher {
         preClose0(fd);
     }
 
+    long skip(FileDescriptor fd, long n) throws IOException {
+        return skip0(fd, n);
+    }
+
     // -- Native methods --
 
     private static native int read0(FileDescriptor fd, long address, int len)
@@ -86,6 +90,9 @@ class SocketDispatcher extends UnixDispatcher {
         throws IOException;
 
     static native long writev0(FileDescriptor fd, long address, int len)
+        throws IOException;
+
+    private static native long skip0(FileDescriptor fd, long n)
         throws IOException;
 
     static {

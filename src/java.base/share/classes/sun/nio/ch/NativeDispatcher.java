@@ -86,4 +86,12 @@ abstract class NativeDispatcher {
     void dup(FileDescriptor fd1, FileDescriptor fd2) throws IOException {
         throw new UnsupportedOperationException();
     }
+
+    /**
+     * Skip at most n bytes
+     * @return the number of bytes skipped or IOS_INTERRUPTED
+     */
+    long skip(FileDescriptor fd, long n) throws IOException {
+        throw new UnsupportedOperationException();
+    }
 }
