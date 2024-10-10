@@ -29,11 +29,14 @@
  * @run main TestDocs
  */
 
-import tester.DocTester;
+import java.nio.file.Files;
 
 public class TestDocs {
     public static void main(String... args) throws Exception {
         var docs = DocTester.resolveDocs();
-        System.err.println(docs);
+        System.err.println("path to docs is: " + docs);
+        System.err.println("Do docs exits?");
+        System.err.println(Files.exists(docs));
+        System.err.println("End of test");
     }
 }

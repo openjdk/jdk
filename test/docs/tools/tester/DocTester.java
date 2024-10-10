@@ -21,7 +21,6 @@
  * questions.
  */
 
-package tester;
 
 import jtreg.SkippedException;
 

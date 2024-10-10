@@ -999,9 +999,9 @@ var getJibProfilesProfiles = function (input, common, data) {
         testOnlyProfilesPrebuilt["run-test-prebuilt"]["dependencies"].push(testedProfile + ".jdk_symbols");
     }
 
-    var testOnlyProfilesPrebuiltDocs = clone(testOnlyProfilesPrebuilt);
-    testOnlyProfilesPrebuiltDocs["run-test-prebuilt-docs"] = testOnlyProfilesPrebuiltDocs["run-test-prebuilt"];
-    delete testOnlyProfilesPrebuiltDocs["run-test-prebuilt"];
+    var testOnlyProfilesPrebuiltDocs = {
+        "run-test-prebuilt-docs": clone(testOnlyProfilesPrebuilt["run-test-prebuilt"])
+    };
 
     testOnlyProfilesPrebuiltDocs["run-test-prebuilt-docs"].dependencies.push("docs.doc_api_spec");
     testOnlyProfilesPrebuiltDocs["run-test-prebuilt-docs"].environment["DOCS_IMAGE_DIR"] = input.get("docs.doc_api_spec", "install_path");
@@ -1029,6 +1029,34 @@ var getJibProfilesProfiles = function (input, common, data) {
 
     profiles = concatObjects(profiles, testOnlyProfilesPrebuiltDocs);
     profiles = concatObjects(profiles, testOnlyProfilesPrebuilt);
+
+    // On macosx add the devkit bin dir to the path in all the run-test profiles.
+    // This gives us a guaranteed working version of lldb for the jtreg failure handler.
+    if (input.build_os == "macosx") {
+        macosxRunTestExtra = {
+            dependencies: [ "lldb" ],
+            environment_path: [
+                input.get("gnumake", "install_path") + "/bin",
+                input.get("lldb", "install_path") + "/Xcode/Contents/Developer/usr/bin",
+            ],
+        };
+        profiles["run-test"] = concatObjects(profiles["run-test"], macosxRunTestExtra);
+        profiles["run-test-prebuilt"] = concatObjects(profiles["run-test-prebuilt"], macosxRunTestExtra);
+    } else if (input.build_os == "windows") {
+        // On windows, add the devkit debugger to the path in all the run-test profiles
+        // to make them available to the jtreg failure handler.
+        var archDir = "x64";
+        if (input.build_arch == "aarch64") {
+            archDir = "arm64"
+        }
+        windowsRunTestExtra = {
+            environment_path: [
+                input.get("devkit", "install_path") + "/10/Debuggers/" + archDir
+            ]
+        }
+        profiles["run-test"] = concatObjects(profiles["run-test"], windowsRunTestExtra);
+        profiles["run-test-prebuilt"] = concatObjects(profiles["run-test-prebuilt"], windowsRunTestExtra);
+    }
 
     // The profile run-test-prebuilt defines src.conf as the src bundle. When
     // running in Mach 5, this reduces the time it takes to populate the
