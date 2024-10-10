@@ -53,6 +53,14 @@ bool LogSelectionList::verify_selections(outputStream* out) const {
   return valid;
 }
 
+LogDecorators LogSelectionList::get_default_decorators() const {
+  for (size_t i = 0; i < _nselections; ++i) {
+    if (!LogDecorators::has_disabled_default_decorators(_selections[i])) {
+      return LogDecorators();
+    }
+  }
+  return LogDecorators::None;
+}
 
 bool LogSelectionList::parse(const char* str, outputStream* errstream) {
   bool success = true;
@@ -91,7 +99,7 @@ bool LogSelectionList::parse(const char* str, outputStream* errstream) {
 LogLevelType LogSelectionList::level_for(const LogTagSet& ts) const {
   // Return NotMentioned if the given tagset isn't covered by this expression.
   LogLevelType level = LogLevel::NotMentioned;
-  for (size_t i= 0; i < _nselections; i++) {
+  for (size_t i = 0; i < _nselections; i++) {
     if (_selections[i].selects(ts)) {
       level = _selections[i].level();
     }

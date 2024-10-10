@@ -25,6 +25,10 @@
 #include "logging/logDecorators.hpp"
 #include "runtime/os.hpp"
 
+const LogLevelType AnyLevel = LogLevelType::NotMentioned;
+#define UNDECORATED_DEFAULTS \
+  UNDECORATED_DEFAULT(AnyLevel, LOG_TAGS(jit, inlining))
+
 template <LogDecorators::Decorator d>
 struct AllBitmask {
   // Use recursive template deduction to calculate the bitmask of all decorations.
@@ -45,6 +49,13 @@ const char* LogDecorators::_name[][2] = {
 #undef DECORATOR
 };
 
+const LogDecorators::DefaultUndecoratedSelection LogDecorators::default_decorators[] = {
+#define UNDECORATED_DEFAULT(level, ...) LogDecorators::DefaultUndecoratedSelection(level, __VA_ARGS__),
+  UNDECORATED_DEFAULTS
+#undef UNDECORATED_TAGSET
+};
+const size_t LogDecorators::number_of_default_decorators = sizeof(default_decorators) / sizeof(LogDecorators::DefaultUndecoratedSelection);
+
 LogDecorators::Decorator LogDecorators::from_string(const char* str) {
   for (size_t i = 0; i < Count; i++) {
     Decorator d = static_cast<Decorator>(i);
@@ -57,7 +68,7 @@ LogDecorators::Decorator LogDecorators::from_string(const char* str) {
 
 bool LogDecorators::parse(const char* decorator_args, outputStream* errstream) {
   if (decorator_args == nullptr || strlen(decorator_args) == 0) {
-    _decorators = DefaultDecoratorsMask;
+    // No decorators supplied, keep default decorators
     return true;
   }
 
@@ -92,4 +103,17 @@ bool LogDecorators::parse(const char* decorator_args, outputStream* errstream) {
     _decorators = tmp_decorators;
   }
   return result;
+}
+
+bool LogDecorators::has_disabled_default_decorators(const LogSelection& selection, const DefaultUndecoratedSelection* defaults, size_t defaults_count) {
+  for (size_t i = 0; i < defaults_count; ++i) {
+    DefaultUndecoratedSelection current_default = defaults[i];
+    const bool ignore_level = current_default.selection().level() == AnyLevel;
+    const bool level_matches = ignore_level || selection.level() == current_default.selection().level();
+    if (!level_matches) continue;
+    if (selection.superset_of(current_default.selection())) {
+      return true;
+    }
+  }
+  return false;
 }
