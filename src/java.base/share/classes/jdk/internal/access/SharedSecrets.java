@@ -30,6 +30,7 @@ import javax.crypto.spec.SecretKeySpec;
 import java.io.ObjectInputFilter;
 import java.lang.invoke.MethodHandles;
 import java.lang.module.ModuleDescriptor;
+import java.security.KeyStore;
 import java.security.Security;
 import java.security.spec.EncodedKeySpec;
 import java.util.ResourceBundle;
@@ -37,6 +38,7 @@ import java.util.concurrent.ForkJoinPool;
 import java.util.jar.JarFile;
 import java.io.Console;
 import java.io.FileDescriptor;
+import java.io.FileInputStream;
 import java.io.FilePermission;
 import java.io.ObjectInputStream;
 import java.io.PrintStream;
@@ -74,6 +76,7 @@ public class SharedSecrets {
     private static JavaIOPrintStreamAccess javaIOPrintStreamAccess;
     private static JavaIOPrintWriterAccess javaIOPrintWriterAccess;
     private static JavaIOFileDescriptorAccess javaIOFileDescriptorAccess;
+    private static JavaIOFileInputStreamAccess javaIOFileInputStreamAccess;
     private static JavaIOFilePermissionAccess javaIOFilePermissionAccess;
     private static JavaIORandomAccessFileAccess javaIORandomAccessFileAccess;
     private static JavaObjectInputStreamReadString javaObjectInputStreamReadString;
@@ -91,6 +94,7 @@ public class SharedSecrets {
     private static JavaUtilZipFileAccess javaUtilZipFileAccess;
     private static JavaUtilResourceBundleAccess javaUtilResourceBundleAccess;
     private static JavaSecurityAccess javaSecurityAccess;
+    private static JavaSecurityKeyStoreAccess javaSecurityKeyStoreAccess;
     private static JavaSecurityPropertiesAccess javaSecurityPropertiesAccess;
     private static JavaSecuritySignatureAccess javaSecuritySignatureAccess;
     private static JavaSecuritySpecAccess javaSecuritySpecAccess;
@@ -318,6 +322,19 @@ public class SharedSecrets {
         javaIOFileDescriptorAccess = jiofda;
     }
 
+    public static void setJavaIOFileInputStreamAccess(JavaIOFileInputStreamAccess jiofis) {
+        javaIOFileInputStreamAccess = jiofis;
+    }
+
+    public static JavaIOFileInputStreamAccess getJavaIOFileInputStreamAccess() {
+        var access = javaIOFileInputStreamAccess;
+        if (access == null) {
+            ensureClassInitialized(FileInputStream.class);
+            access = javaIOFileInputStreamAccess;
+        }
+        return access;
+    }
+
     public static JavaIOFilePermissionAccess getJavaIOFilePermissionAccess() {
         var access = javaIOFilePermissionAccess;
         if (access == null) {
@@ -349,6 +366,19 @@ public class SharedSecrets {
         if (access == null) {
             ensureClassInitialized(ProtectionDomain.class);
             access = javaSecurityAccess;
+        }
+        return access;
+    }
+
+    public static void setJavaSecurityKeyStoreAccess(JavaSecurityKeyStoreAccess jsks) {
+        javaSecurityKeyStoreAccess = jsks;
+    }
+
+    public static JavaSecurityKeyStoreAccess getJavaSecurityKeyStoreAccess() {
+        var access = javaSecurityKeyStoreAccess;
+        if (access == null) {
+            ensureClassInitialized(KeyStore.class);
+            access = javaSecurityKeyStoreAccess;
         }
         return access;
     }
