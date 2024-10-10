@@ -939,7 +939,7 @@ class os: AllStatic {
   // provided buffer as a scratch buffer. The status message which will be written
   // into the error log either is file location or a short error message, depending
   // on the checking result.
-  static void check_dump_limit(char* buffer, size_t bufferSize);
+  static void check_core_dump_prerequisites(char* buffer, size_t bufferSize, bool check_only = false);
 
   // Get the default path to the core file
   // Returns the length of the string

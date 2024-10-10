@@ -104,49 +104,44 @@ static int clock_tics_per_sec = 100;
 size_t os::_os_min_stack_allowed = PTHREAD_STACK_MIN;
 
 // Check core dump limit and report possible place where core can be found
-void os::check_dump_limit(char* buffer, size_t bufferSize) {
+void os::check_core_dump_prerequisites(char* buffer, size_t bufferSize, bool check_only) {
   if (!FLAG_IS_DEFAULT(CreateCoredumpOnCrash) && !CreateCoredumpOnCrash) {
     jio_snprintf(buffer, bufferSize, "CreateCoredumpOnCrash is disabled from command line");
     VMError::record_coredump_status(buffer, false);
-    return;
-  }
-
-  int n;
-  struct rlimit rlim;
-  bool success;
-
-  char core_path[PATH_MAX];
-  n = get_core_path(core_path, PATH_MAX);
-
-  if (n <= 0) {
-    jio_snprintf(buffer, bufferSize, "core.%d (may not exist)", current_process_id());
-    success = true;
-#ifdef LINUX
-  } else if (core_path[0] == '"') { // redirect to user process
-    jio_snprintf(buffer, bufferSize, "Core dumps may be processed with %s", core_path);
-    success = true;
-#endif
-  } else if (getrlimit(RLIMIT_CORE, &rlim) != 0) {
-    jio_snprintf(buffer, bufferSize, "%s (may not exist)", core_path);
-    success = true;
   } else {
-    switch(rlim.rlim_cur) {
-      case RLIM_INFINITY:
-        jio_snprintf(buffer, bufferSize, "%s", core_path);
-        success = true;
-        break;
-      case 0:
-        jio_snprintf(buffer, bufferSize, "Core dumps have been disabled. To enable core dumping, try \"ulimit -c unlimited\" before starting Java again");
-        success = false;
-        break;
-      default:
-        jio_snprintf(buffer, bufferSize, "%s (max size " UINT64_FORMAT " k). To ensure a full core dump, try \"ulimit -c unlimited\" before starting Java again", core_path, uint64_t(rlim.rlim_cur) / K);
-        success = true;
-        break;
+    struct rlimit rlim;
+    bool success = true;
+    bool warn = true;
+    char core_path[PATH_MAX];
+    if (get_core_path(core_path, PATH_MAX) <= 0) {
+      jio_snprintf(buffer, bufferSize, "core.%d (may not exist)", current_process_id());
+#ifdef LINUX
+    } else if (core_path[0] == '"') { // redirect to user process
+      jio_snprintf(buffer, bufferSize, "Core dumps may be processed with %s", core_path);
+#endif
+    } else if (getrlimit(RLIMIT_CORE, &rlim) != 0) {
+      jio_snprintf(buffer, bufferSize, "%s (may not exist)", core_path);
+    } else {
+      switch(rlim.rlim_cur) {
+        case RLIM_INFINITY:
+          jio_snprintf(buffer, bufferSize, "%s", core_path);
+          warn = false;
+          break;
+        case 0:
+          jio_snprintf(buffer, bufferSize, "Core dumps have been disabled. To enable core dumping, try \"ulimit -c unlimited\" before starting Java again");
+          success = false;
+          break;
+        default:
+          jio_snprintf(buffer, bufferSize, "%s (max size " UINT64_FORMAT " k). To ensure a full core dump, try \"ulimit -c unlimited\" before starting Java again", core_path, uint64_t(rlim.rlim_cur) / K);
+          break;
+      }
+    }
+    if (!check_only) {
+      VMError::record_coredump_status(buffer, success);
+    } else if (warn) {
+      warning("CreateCoredumpOnCrash specified, but %s", buffer);
     }
   }
-
-  VMError::record_coredump_status(buffer, success);
 }
 
 bool os::committed_in_range(address start, size_t size, address& committed_start, size_t& committed_size) {
