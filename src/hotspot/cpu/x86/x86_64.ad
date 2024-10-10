@@ -5298,32 +5298,6 @@ instruct storeImmB(memory mem, immI8 src)
   ins_pipe(ialu_mem_imm);
 %}
 
-// Store CMS card-mark Immediate
-instruct storeImmCM0_reg(memory mem, immI_0 zero)
-%{
-  predicate(UseCompressedOops && (CompressedOops::base() == nullptr));
-  match(Set mem (StoreCM mem zero));
-
-  ins_cost(125); // XXX
-  format %{ "movb    $mem, R12\t# CMS card-mark byte 0 (R12_heapbase==0)" %}
-  ins_encode %{
-    __ movb($mem$$Address, r12);
-  %}
-  ins_pipe(ialu_mem_reg);
-%}
-
-instruct storeImmCM0(memory mem, immI_0 src)
-%{
-  match(Set mem (StoreCM mem src));
-
-  ins_cost(150); // XXX
-  format %{ "movb    $mem, $src\t# CMS card-mark byte 0" %}
-  ins_encode %{
-    __ movb($mem$$Address, $src$$constant);
-  %}
-  ins_pipe(ialu_mem_imm);
-%}
-
 // Store Float
 instruct storeF(memory mem, regF src)
 %{

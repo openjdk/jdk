@@ -6482,23 +6482,6 @@ instruct storeD(memory mem, regD src) %{
   ins_pipe(pipe_class_memory);
 %}
 
-//----------Store Instructions With Zeros--------------------------------------
-
-instruct storeCM(memory mem, immI_0 zero) %{
-  match(Set mem (StoreCM mem zero));
-  ins_cost(MEMORY_REF_COST);
-
-  format %{ "STB     #0, $mem \t// CMS card-mark byte store" %}
-  size(8);
-  ins_encode %{
-    __ li(R0, 0);
-    // No release barrier: Oops are allowed to get visible after marking.
-    guarantee($mem$$base$$Register != R1_SP, "use frame_slots_bias");
-    __ stb(R0, $mem$$disp, $mem$$base$$Register);
-  %}
-  ins_pipe(pipe_class_memory);
-%}
-
 // Convert oop pointer into compressed form.
 
 // Nodes for postalloc expand.
