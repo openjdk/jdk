@@ -142,7 +142,9 @@ public abstract class Reader implements Readable, Closeable {
 
     /**
      * Returns a {@code Reader} that reads characters from a
-     * {@code CharSequence}, starting at the first character in the sequence.
+     * {@code CharSequence}.
+     *
+     * Reading starts at the first character in the sequence.
      *
      * <p> The resulting reader is not safe for use by multiple
      * concurrent threads. If the reader is to be used by more than one
@@ -158,12 +160,11 @@ public abstract class Reader implements Readable, Closeable {
      * {@code read(CharBuffer)}, {@code ready()}, {@code skip(long)}, and
      * {@code transferTo()} methods all throw {@code IOException}.
      *
-     * <p> The returned reader supports the {@link #mark mark()} operation.
+     * <p> The returned reader supports the {@link #mark mark()} and
+     * {@link #reset reset()} operations.
      *
      * @param cs {@code CharSequence} providing the character stream.
-     *
      * @return a {@code Reader} which reads characters from {@code cs}
-     *
      * @throws NullPointerException if {@code cs} is {@code null}
      *
      * @since 24
@@ -197,9 +198,10 @@ public abstract class Reader implements Readable, Closeable {
                 if (len == 0) {
                     return 0;
                 }
-                if (next >= cs.length())
+                int length = cs.length();
+                if (next >= length)
                     return -1;
-                int n = Math.min(cs.length() - next, len);
+                int n = Math.min(length - next, len);
                 switch (cs) {
                     case String s -> s.getChars(next, next + n, cbuf, off);
                     case StringBuilder sb -> sb.getChars(next, next + n, cbuf, off);
