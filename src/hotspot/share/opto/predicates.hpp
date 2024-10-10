@@ -207,7 +207,9 @@ class TemplateAssertionPredicate;
 enum class AssertionPredicateType {
   None, // Not an Assertion Predicate
   InitValue,
-  LastValue
+  LastValue,
+  // Used for the Initialized Assertion Predicate emitted during Range Check Elimination for the final IV value.
+  FinalIv
 };
 #endif // NOT PRODUCT
 
@@ -442,8 +444,9 @@ class TemplateAssertionExpression : public StackObj {
 
  public:
   Opaque4Node* clone(Node* new_ctrl, PhaseIdealLoop* phase);
-  Opaque4Node* clone_and_replace_init(Node* new_init, Node* new_ctrl,PhaseIdealLoop* phase);
-  Opaque4Node* clone_and_replace_init_and_stride(Node* new_init, Node* new_stride, Node* new_ctrl, PhaseIdealLoop* phase);
+  Opaque4Node* clone_and_replace_init(Node* new_init, Node* new_ctrl, PhaseIdealLoop* phase);
+  Opaque4Node* clone_and_replace_init_and_stride(Node* new_control, Node* new_init, Node* new_stride,
+                                                 PhaseIdealLoop* phase);
 };
 
 // Class to represent a node being part of a Template Assertion Expression. Note that this is not an IR node.
@@ -520,26 +523,84 @@ class TemplateAssertionExpressionNode : public StackObj {
   }
 };
 
-// This class creates a new Initialized Assertion Predicate.
-class InitializedAssertionPredicateCreator : public StackObj {
-  IfNode* const _template_assertion_predicate;
-  Node* const _new_init;
-  Node* const _new_stride;
+// This class is used to create the actual If node with a success path and a fail path with a Halt node.
+class AssertionPredicateIfCreator : public StackObj {
   PhaseIdealLoop* const _phase;
 
  public:
-  InitializedAssertionPredicateCreator(IfNode* template_assertion_predicate, Node* new_init, Node* new_stride,
-                                       PhaseIdealLoop* phase);
+  explicit AssertionPredicateIfCreator(PhaseIdealLoop* const phase) : _phase(phase) {}
+  NONCOPYABLE(AssertionPredicateIfCreator);
+
+  IfTrueNode* create_for_initialized(Node* new_control, int if_opcode, Node* assertion_expression
+                                     NOT_PRODUCT(COMMA const AssertionPredicateType assertion_predicate_type));
+  IfTrueNode* create_for_template(Node* new_control, int if_opcode, Node* assertion_expression
+                                  NOT_PRODUCT(COMMA const AssertionPredicateType assertion_predicate_type));
+ private:
+  IfTrueNode* create(Node* new_control, int if_opcode, Node* assertion_expression, const char* halt_message
+                     NOT_PRODUCT(COMMA const AssertionPredicateType assertion_predicate_type));
+  IfNode* create_if_node(Node* new_control, int if_opcode, Node* assertion_expression, IdealLoopTree* loop
+                         NOT_PRODUCT(COMMA const AssertionPredicateType assertion_predicate_type));
+  IfTrueNode* create_success_path(IfNode* if_node, IdealLoopTree* loop);
+  void create_fail_path(IfNode* if_node, IdealLoopTree* loop, const char* halt_message);
+  void create_halt_node(IfFalseNode* fail_proj, IdealLoopTree* loop, const char* halt_message);
+};
+
+// This class is used to create a Template Assertion Predicate either with an UCT or a Halt Node from scratch.
+class TemplateAssertionPredicateCreator : public StackObj {
+  CountedLoopNode* const _loop_head;
+  const int _scale;
+  Node* const _offset;
+  Node* const _range;
+  PhaseIdealLoop* const _phase;
+
+  OpaqueLoopInitNode* create_opaque_init(Node* new_control);
+  Opaque4Node* create_for_init_value(Node* new_control, OpaqueLoopInitNode* opaque_init, bool& does_overflow) const;
+  Opaque4Node* create_for_last_value(Node* new_control, OpaqueLoopInitNode* opaque_init, bool& does_overflow) const;
+  Node* create_last_value(Node* new_control, OpaqueLoopInitNode* opaque_init) const;
+  IfTrueNode* create_if_node_with_uncommon_trap(Opaque4Node* template_assertion_predicate_expression,
+                                                ParsePredicateSuccessProj* parse_predicate_success_proj,
+                                                Deoptimization::DeoptReason deopt_reason, int if_opcode,
+                                                bool does_overflow
+                                                NOT_PRODUCT(COMMA AssertionPredicateType assertion_predicate_type));
+  IfTrueNode* create_if_node_with_halt(Node* new_control, Opaque4Node* template_assertion_predicate_expression,
+                                       bool does_overflow
+                                       NOT_PRODUCT(COMMA AssertionPredicateType assertion_predicate_type));
+
+ public:
+  TemplateAssertionPredicateCreator(CountedLoopNode* loop_head, int scale, Node* offset, Node* range,
+                                    PhaseIdealLoop* phase)
+      : _loop_head(loop_head),
+        _scale(scale),
+        _offset(offset),
+        _range(range),
+        _phase(phase) {}
+  NONCOPYABLE(TemplateAssertionPredicateCreator);
+
+  IfTrueNode* create_with_uncommon_trap(Node* new_control, ParsePredicateSuccessProj* parse_predicate_success_proj,
+                                        Deoptimization::DeoptReason deopt_reason, int if_opcode);
+  IfTrueNode* create_with_halt(Node* new_control);
+};
+
+// This class creates a new Initialized Assertion Predicate either from a template or from scratch.
+class InitializedAssertionPredicateCreator : public StackObj {
+  PhaseIdealLoop* const _phase;
+
+ public:
+  explicit InitializedAssertionPredicateCreator(PhaseIdealLoop* phase);
   NONCOPYABLE(InitializedAssertionPredicateCreator);
 
-  IfTrueNode* create(Node* control);
+  IfTrueNode* create_from_template(IfNode* template_assertion_predicate, Node* new_control, Node* new_init,
+                                   Node* new_stride);
+  IfTrueNode* create(Node* operand, Node* new_control, jint stride, int scale, Node* offset, Node* range
+                     NOT_PRODUCT(COMMA AssertionPredicateType assertion_predicate_type));
 
  private:
-  OpaqueInitializedAssertionPredicateNode* create_assertion_expression(Node* control);
-  IfNode* create_if_node(Node* control, OpaqueInitializedAssertionPredicateNode* assertion_expression, IdealLoopTree* loop);
-  void create_fail_path(IfNode* if_node, IdealLoopTree* loop);
-  void create_halt_node(IfFalseNode* fail_proj, IdealLoopTree* loop);
-  IfTrueNode* create_success_path(IfNode* if_node, IdealLoopTree* loop);
+  OpaqueInitializedAssertionPredicateNode* create_assertion_expression_from_template(IfNode* template_assertion_predicate,
+                                                                                     Node* new_control, Node* new_init,
+                                                                                     Node* new_stride);
+  IfTrueNode* create_control_nodes(Node* new_control, int if_opcode,
+                                   OpaqueInitializedAssertionPredicateNode* assertion_expression
+                                   NOT_PRODUCT(COMMA AssertionPredicateType assertion_predicate_type));
 };
 
 // This class iterates through all predicates of a Regular Predicate Block and applies the given visitor to each.

@@ -951,7 +951,7 @@ private:
                                               uint idx_after_post_before_pre, Node* zero_trip_guard_proj_main,
                                               Node* zero_trip_guard_proj_post, const Node_List& old_new);
   Node* clone_template_assertion_predicate(IfNode* iff, Node* new_init, Node* predicate, Node* uncommon_proj, Node* control,
-                                           IdealLoopTree* outer_loop, Node* input_proj);
+                                           IdealLoopTree* outer_loop, Node* new_control);
   IfTrueNode* create_initialized_assertion_predicate(IfNode* template_assertion_predicate, Node* new_init,
                                                      Node* new_stride, Node* control);
   static void count_opaque_loop_nodes(Node* n, uint& init, uint& stride);
@@ -1384,20 +1384,17 @@ public:
  private:
   bool loop_predication_impl_helper(IdealLoopTree* loop, IfProjNode* if_success_proj,
                                     ParsePredicateSuccessProj* parse_predicate_proj, CountedLoopNode* cl, ConNode* zero,
-                                    Invariance& invar, Deoptimization::DeoptReason reason);
+                                    Invariance& invar, Deoptimization::DeoptReason deopt_reason);
   bool can_create_loop_predicates(const PredicateBlock* profiled_loop_predicate_block) const;
   bool loop_predication_should_follow_branches(IdealLoopTree* loop, float& loop_trip_cnt);
   void loop_predication_follow_branches(Node *c, IdealLoopTree *loop, float loop_trip_cnt,
                                         PathFrequency& pf, Node_Stack& stack, VectorSet& seen,
                                         Node_List& if_proj_list);
-  IfTrueNode* add_template_assertion_predicate(IfNode* iff, IdealLoopTree* loop, IfProjNode* if_proj,
-                                               ParsePredicateSuccessProj* parse_predicate_proj,
-                                               IfProjNode* upper_bound_proj, int scale, Node* offset, Node* init, Node* limit,
-                                               jint stride, Node* rng, bool& overflow, Deoptimization::DeoptReason reason);
+  IfTrueNode* create_template_assertion_predicate(int if_opcode, CountedLoopNode* loop_head,
+                                                  ParsePredicateSuccessProj* parse_predicate_proj,
+                                                  IfProjNode* new_control, int scale, Node* offset,
+                                                  Node* range, Deoptimization::DeoptReason deopt_reason);
   void eliminate_hoisted_range_check(IfTrueNode* hoisted_check_proj, IfTrueNode* template_assertion_predicate_proj);
-  Node* add_range_check_elimination_assertion_predicate(
-      IdealLoopTree* loop, Node* predicate_proj, int scale_con, Node* offset, Node* limit, int stride_con, Node* value,
-      bool is_template NOT_PRODUCT(COMMA AssertionPredicateType assertion_predicate_type = AssertionPredicateType::None));
 
   // Helper function to collect predicate for eliminating the useless ones
   void eliminate_useless_predicates();
