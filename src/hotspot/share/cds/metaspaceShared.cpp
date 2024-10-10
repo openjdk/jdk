@@ -671,6 +671,15 @@ void MetaspaceShared::preload_and_dump(TRAPS) {
       MetaspaceShared::writing_error("Unexpected exception, use -Xlog:cds,exceptions=trace for detail");
     }
   }
+
+  if (!CDSConfig::old_cds_flags_used()) {
+    // The JLI launcher only recognizes the "old" -Xshare:dump flag.
+    // When the new -XX:AOTMode=create flag is used, we can't return
+    // to the JLI launcher, as the launcher will fail when trying to
+    // run the main class, which is not what we want.
+    tty->print_cr("AOTCache creation is complete: %s", AOTCache);
+    vm_exit(0);
+  }
 }
 
 #if INCLUDE_CDS_JAVA_HEAP && defined(_LP64)
