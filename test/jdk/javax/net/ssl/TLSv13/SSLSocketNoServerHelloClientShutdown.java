@@ -38,12 +38,12 @@ import static jdk.test.lib.security.SecurityUtils.inspectTlsBuffer;
 import java.io.InputStream;
 import java.lang.Override;
 import java.net.InetSocketAddress;
+import java.net.SocketException;
 import java.nio.channels.SocketChannel;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngineResult;
 import javax.net.ssl.SSLEngineResult.Status;
-import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLSocket;
@@ -57,7 +57,6 @@ public class SSLSocketNoServerHelloClientShutdown extends SSLEngineNoServerHello
 
     private volatile Exception clientException;
     private volatile Exception serverException;
-    private volatile SocketChannel clientSocketChannel;
 
     public static void main(String[] args) throws Exception {
         new SSLSocketNoServerHelloClientShutdown().runTest();
@@ -85,19 +84,20 @@ public class SSLSocketNoServerHelloClientShutdown extends SSLEngineNoServerHello
                 SSLSocket socket = (SSLSocket) serverSocket.accept();
                 socket.setSoTimeout(2000);
                 InputStream is = socket.getInputStream();
-                byte[] inbound = new byte[8192];
+                byte[] inbound = new byte[512];
 
-                int len = is.read(inbound);
-                log("Server reads " + len + " bytes");
-
+                log("===Server is ready and reading===");
+                if (is.read(inbound) > 0) {
+                    throw new Exception("Server returned data");
+                }
             } catch (Exception e) {
                 serverException = e;
-                log(e.getMessage());
+                log(e.toString());
             } finally {
                 thread.join();
             }
         } finally {
-            if (serverException != null && serverException instanceof SSLHandshakeException) {
+            if (serverException != null && !(serverException instanceof SocketException)) {
                 throw serverException;
             }
             if (clientException != null) {
@@ -111,11 +111,11 @@ public class SSLSocketNoServerHelloClientShutdown extends SSLEngineNoServerHello
         Thread t = new Thread("ClientThread") {
             @Override
             public void run() {
-                try {
+                // Client-side plain TCP socket.
+                try (SocketChannel clientSocketChannel = SocketChannel.open(
+                        new InetSocketAddress("localhost", port))) {
+
                     SSLEngineResult clientResult;
-                    // Client-side plain TCP socket.
-                    clientSocketChannel = SocketChannel.open(
-                            new InetSocketAddress("localhost", port));
                     clientSocketChannel.socket().setSoTimeout(500);
 
                     log("=================");
