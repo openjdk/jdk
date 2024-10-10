@@ -20,8 +20,8 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.LongStream;
 
-@Warmup(iterations = 2, time = 5)
-@Measurement(iterations = 3, time = 5)
+@Warmup(iterations = 3, time = 5)
+@Measurement(iterations = 4, time = 5)
 @Fork(2)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @BenchmarkMode(Mode.Throughput)
@@ -29,7 +29,7 @@ public class MinMaxLoopBench
 {
     @State(Scope.Thread)
     public static final class LoopState {
-        @Param({"100", "1000", "10000"})
+        @Param({"1000"})
         int size;
 
         /**
