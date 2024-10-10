@@ -583,8 +583,10 @@ JvmtiEnvBase::jvf_for_thread_and_depth(JavaThread* java_thread, jint depth) {
                       RegisterMap::WalkContinuation::include);
   javaVFrame *jvf = java_thread->last_java_vframe(&reg_map);
 
-  jvf = JvmtiEnvBase::check_and_skip_hidden_frames(java_thread, jvf);
-
+  // There should not be any VTMS transition here. This is for safety.
+  if (java_thread->is_in_VTMS_transition()) {
+    jvf = JvmtiEnvBase::check_and_skip_hidden_frames(java_thread, jvf);
+  }
   for (int d = 0; jvf != nullptr && d < depth; d++) {
     jvf = jvf->java_sender();
   }
@@ -653,6 +655,15 @@ JavaThread* JvmtiEnvBase::get_JavaThread_or_null(oop vthread) {
 }
 
 javaVFrame*
+JvmtiEnvBase::skip_top_jvmti_annotated_frames(javaVFrame* jvf) {
+  // The yield and yield0 may appear in an unmounted continuation.
+  for ( ; jvf != nullptr && jvf->method()->jvmti_mount_transition(); jvf = jvf->java_sender()) {
+    // skip frame with jvmti_mount_transition() annotated method
+  }
+  return jvf;
+}
+
+javaVFrame*
 JvmtiEnvBase::check_and_skip_hidden_frames(bool is_in_VTMS_transition, javaVFrame* jvf) {
   // The second condition is needed to hide notification methods.
   if (!is_in_VTMS_transition && (jvf == nullptr || !jvf->method()->jvmti_mount_transition())) {
@@ -660,7 +671,7 @@ JvmtiEnvBase::check_and_skip_hidden_frames(bool is_in_VTMS_transition, javaVFram
   }
   // Find jvf with a method annotated with @JvmtiMountTransition.
   for ( ; jvf != nullptr; jvf = jvf->java_sender()) {
-    if (jvf->method()->jvmti_mount_transition()) {  // Cannot actually appear in an unmounted continuation; they're never frozen.
+    if (jvf->method()->jvmti_mount_transition()) {
       jvf = jvf->java_sender();  // Skip annotated method.
       break;
     }
@@ -674,18 +685,26 @@ JvmtiEnvBase::check_and_skip_hidden_frames(bool is_in_VTMS_transition, javaVFram
 
 javaVFrame*
 JvmtiEnvBase::check_and_skip_hidden_frames(JavaThread* jt, javaVFrame* jvf) {
-  jvf = check_and_skip_hidden_frames(jt->is_in_VTMS_transition(), jvf);
+  bool is_virtual = java_lang_VirtualThread::is_instance(jt->jvmti_vthread());
+
+  if (jt->is_in_VTMS_transition()) {
+    jvf = check_and_skip_hidden_frames(jt->is_in_VTMS_transition(), jvf);
+  } else if (is_virtual) { // filter out pure continuations
+    jvf = skip_top_jvmti_annotated_frames(jvf);
+  }
   return jvf;
 }
 
 javaVFrame*
 JvmtiEnvBase::check_and_skip_hidden_frames(oop vthread, javaVFrame* jvf) {
-  JvmtiThreadState* state = java_lang_Thread::jvmti_thread_state(vthread);
-  if (state == nullptr) {
-    // nothing to skip
-    return jvf;
+  assert(java_lang_VirtualThread::is_instance(vthread), "sanity check");
+  if (java_lang_VirtualThread::is_instance(vthread)) { // paranoid check for safety
+    if (java_lang_Thread::is_in_VTMS_transition(vthread)) {
+      jvf = check_and_skip_hidden_frames(java_lang_Thread::is_in_VTMS_transition(vthread), jvf);
+    } else {
+      jvf = skip_top_jvmti_annotated_frames(jvf);
+    }
   }
-  jvf = check_and_skip_hidden_frames(java_lang_Thread::is_in_VTMS_transition(vthread), jvf);
   return jvf;
 }
 
@@ -707,12 +726,13 @@ JvmtiEnvBase::get_vthread_jvf(oop vthread) {
       return nullptr;
     }
     vframeStream vfs(java_thread);
+    assert(!java_thread->is_in_VTMS_transition(), "invariant");
     jvf = vfs.at_end() ? nullptr : vfs.asJavaVFrame();
     jvf = check_and_skip_hidden_frames(java_thread, jvf);
   } else {
     vframeStream vfs(cont);
     jvf = vfs.at_end() ? nullptr : vfs.asJavaVFrame();
-    jvf = check_and_skip_hidden_frames(vthread, jvf);
+    jvf = skip_top_jvmti_annotated_frames(jvf);
   }
   return jvf;
 }
@@ -725,9 +745,11 @@ JvmtiEnvBase::get_cthread_last_java_vframe(JavaThread* jt, RegisterMap* reg_map_
   bool cthread_with_cont = JvmtiEnvBase::is_cthread_with_continuation(jt);
   javaVFrame *jvf = cthread_with_cont ? jt->carrier_last_java_vframe(reg_map_p)
                                       : jt->last_java_vframe(reg_map_p);
-  // Skip hidden frames only for carrier threads
-  // which are in non-temporary VTMS transition.
+
+  // There should not be any VTMS transition here. This is for safety.
   if (jt->is_in_VTMS_transition()) {
+    // Skip hidden frames only for carrier threads
+    // which are in non-temporary VTMS transition.
     jvf = check_and_skip_hidden_frames(jt, jvf);
   }
   return jvf;
@@ -1332,7 +1354,8 @@ JvmtiEnvBase::set_frame_pop(JvmtiThreadState* state, javaVFrame* jvf, jint depth
   if (jvf == nullptr) {
     return JVMTI_ERROR_NO_MORE_FRAMES;
   }
-  if (jvf->method()->is_native()) {
+  if (jvf->method()->is_native() ||
+     (state->is_virtual() && (jvf->is_vthread_entry() || jvf->method()->jvmti_mount_transition()))) {
     return JVMTI_ERROR_OPAQUE_FRAME;
   }
   assert(jvf->frame_pointer() != nullptr, "frame pointer mustn't be null");
@@ -1989,8 +2012,17 @@ void
 JvmtiHandshake::execute(JvmtiUnitedHandshakeClosure* hs_cl, jthread target) {
   JavaThread* current = JavaThread::current();
   HandleMark hm(current);
+  oop thread_oop = JNIHandles::resolve_external_guard(target);
+  bool is_virtual = java_lang_VirtualThread::is_instance(thread_oop);
 
-  JvmtiVTMSTransitionDisabler disabler(target);
+  // Target can be virtual or platform thread.
+  // Disable VTMS transition for one thread if it is virtual.
+  // Otherwise, disable VTMS transitions for all threads.
+  // For the latter, VTMS transitions are disabled for all threads by several reasons:
+  // - carrier threads can mount virtual threads which may cause incorrect behavior
+  // - it is a good invariant when a thread's handshake can't be impacted by a VTMS transition
+  // - there is no mechanism to disable transitions of a specific carrier thread yet
+  JvmtiVTMSTransitionDisabler disabler(is_virtual ? target : nullptr); // nullptr is to disable all
   ThreadsListHandle tlh(current);
   JavaThread* java_thread = nullptr;
   oop thread_obj = nullptr;
