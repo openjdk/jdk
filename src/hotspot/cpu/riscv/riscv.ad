@@ -5039,41 +5039,6 @@ instruct loadConD0(fRegD dst, immD0 con) %{
   ins_pipe(fp_load_constant_d);
 %}
 
-// Store Instructions
-// Store CMS card-mark Immediate
-instruct storeimmCM0(immI0 zero, memory mem)
-%{
-  match(Set mem (StoreCM mem zero));
-
-  ins_cost(STORE_COST);
-  format %{ "storestore (elided)\n\t"
-            "sb zr, $mem\t# byte, #@storeimmCM0" %}
-
-  ins_encode %{
-    __ sb(zr, Address(as_Register($mem$$base), $mem$$disp));
-  %}
-
-  ins_pipe(istore_mem);
-%}
-
-// Store CMS card-mark Immediate with intervening StoreStore
-// needed when using CMS with no conditional card marking
-instruct storeimmCM0_ordered(immI0 zero, memory mem)
-%{
-  match(Set mem (StoreCM mem zero));
-
-  ins_cost(ALU_COST + STORE_COST);
-  format %{ "membar(StoreStore)\n\t"
-            "sb zr, $mem\t# byte, #@storeimmCM0_ordered" %}
-
-  ins_encode %{
-    __ membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
-    __ sb(zr, Address(as_Register($mem$$base), $mem$$disp));
-  %}
-
-  ins_pipe(istore_mem);
-%}
-
 // Store Byte
 instruct storeB(iRegIorL2I src, memory mem)
 %{

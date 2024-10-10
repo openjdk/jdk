@@ -3061,52 +3061,6 @@ struct Final_Reshape_Counts : public StackObj {
   int  get_inner_loop_count() const { return _inner_loop_count; }
 };
 
-// Eliminate trivially redundant StoreCMs and accumulate their
-// precedence edges.
-void Compile::eliminate_redundant_card_marks(Node* n) {
-  assert(n->Opcode() == Op_StoreCM, "expected StoreCM");
-  if (n->in(MemNode::Address)->outcnt() > 1) {
-    // There are multiple users of the same address so it might be
-    // possible to eliminate some of the StoreCMs
-    Node* mem = n->in(MemNode::Memory);
-    Node* adr = n->in(MemNode::Address);
-    Node* val = n->in(MemNode::ValueIn);
-    Node* prev = n;
-    bool done = false;
-    // Walk the chain of StoreCMs eliminating ones that match.  As
-    // long as it's a chain of single users then the optimization is
-    // safe.  Eliminating partially redundant StoreCMs would require
-    // cloning copies down the other paths.
-    while (mem->Opcode() == Op_StoreCM && mem->outcnt() == 1 && !done) {
-      if (adr == mem->in(MemNode::Address) &&
-          val == mem->in(MemNode::ValueIn)) {
-        // redundant StoreCM
-        if (mem->req() > MemNode::OopStore) {
-          // Hasn't been processed by this code yet.
-          n->add_prec(mem->in(MemNode::OopStore));
-        } else {
-          // Already converted to precedence edge
-          for (uint i = mem->req(); i < mem->len(); i++) {
-            // Accumulate any precedence edges
-            if (mem->in(i) != nullptr) {
-              n->add_prec(mem->in(i));
-            }
-          }
-          // Everything above this point has been processed.
-          done = true;
-        }
-        // Eliminate the previous StoreCM
-        prev->set_req(MemNode::Memory, mem->in(MemNode::Memory));
-        assert(mem->outcnt() == 0, "should be dead");
-        mem->disconnect_inputs(this);
-      } else {
-        prev = mem;
-      }
-      mem = prev->in(MemNode::Memory);
-    }
-  }
-}
-
 //------------------------------final_graph_reshaping_impl----------------------
 // Implement items 1-5 from final_graph_reshaping below.
 void Compile::final_graph_reshaping_impl(Node *n, Final_Reshape_Counts& frc, Unique_Node_List& dead_nodes) {
@@ -3276,18 +3230,6 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
     }
     break;
   }
-
-  case Op_StoreCM:
-    {
-      // Convert OopStore dependence into precedence edge
-      Node* prec = n->in(MemNode::OopStore);
-      n->del_req(MemNode::OopStore);
-      n->add_prec(prec);
-      eliminate_redundant_card_marks(n);
-    }
-
-    // fall through
-
   case Op_StoreB:
   case Op_StoreC:
   case Op_StoreI:
