@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,7 @@ help:
 	$(info $(_) make test TEST=<t>     # Run test(s) given by TEST specification)
 	$(info $(_) make exploded-test TEST=<t> # Run test(s) on the exploded image instead of)
 	$(info $(_)                        # the full jdk image)
+	$(info $(_) make test-docs TEST=<t> # Run test(s) on the generated documentation)
 	$(info )
 	$(info Targets for troubleshooting)
 	$(info $(_) make help              # Give some help on using make)

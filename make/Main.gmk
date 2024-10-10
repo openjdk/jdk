@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -788,6 +788,12 @@ $(eval $(call SetupTarget, test, \
     DEPS := jdk-image test-image, \
 ))
 
+$(eval $(call SetupTarget, test-docs, \
+    MAKEFILE := RunTests, \
+    ARGS := TEST="$(TEST)", \
+    DEPS := jdk-image test-image docs-jdk, \
+))
+
 $(eval $(call SetupTarget, exploded-test, \
     MAKEFILE := RunTests, \
     ARGS := TEST="$(TEST)" JDK_IMAGE_DIR=$(JDK_OUTPUTDIR), \
@@ -1334,6 +1340,7 @@ RUN_TEST_TARGETS := $(addprefix run-test-, $(ALL_NAMED_TESTS))
 
 run-test: test
 exploded-run-test: exploded-test
+run-test-docs: test-docs
 
 # "make check" is a common idiom for running basic testing
 check: test-tier1

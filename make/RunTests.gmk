@@ -264,6 +264,7 @@ jaxp_JTREG_PROBLEM_LIST += $(TOPDIR)/test/jaxp/ProblemList.txt
 langtools_JTREG_PROBLEM_LIST += $(TOPDIR)/test/langtools/ProblemList.txt
 hotspot_JTREG_PROBLEM_LIST += $(TOPDIR)/test/hotspot/jtreg/ProblemList.txt
 lib-test_JTREG_PROBLEM_LIST += $(TOPDIR)/test/lib-test/ProblemList.txt
+docs_JTREG_PROBLEM_LIST += $(TOPDIR)/test/docs/ProblemList.txt
 
 ################################################################################
 # Parse test selection
@@ -867,6 +868,13 @@ define SetupRunJtregTestBody
   endif
 
   $1_JTREG_BASIC_OPTIONS += -e:TEST_IMAGE_DIR=$(TEST_IMAGE_DIR)
+
+  ifneq ($$(DOCS_IMAGE_DIR), )
+    DOCS_PATH := $$(DOCS_IMAGE_DIR)
+  else
+    DOCS_PATH := $$(OUTPUTDIR)/images/docs
+  endif
+  $1_JTREG_BASIC_OPTIONS += -e:DOCS_IMAGE_DIR=$$(DOCS_PATH)
 
   ifneq ($$(JTREG_FAILURE_HANDLER_OPTIONS), )
     $1_JTREG_LAUNCHER_OPTIONS += -Djava.library.path="$(JTREG_FAILURE_HANDLER_DIR)"
