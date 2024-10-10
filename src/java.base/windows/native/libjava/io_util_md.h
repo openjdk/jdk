@@ -41,7 +41,7 @@ WCHAR* fileToNTPath(JNIEnv *env, jobject file, jfieldID id);
 JNIEXPORT WCHAR* getPrefixed(const WCHAR* path, int pathlen);
 WCHAR* currentDir(int di);
 int currentDirLength(const WCHAR* path, int pathlen);
-int handleAvailable(FD fd, jlong *pbytes);
+JNIEXPORT int handleAvailable(FD fd, jlong *pbytes);
 int handleSync(FD fd);
 jint handleSetLength(FD fd, jlong length);
 jlong handleGetLength(FD fd);

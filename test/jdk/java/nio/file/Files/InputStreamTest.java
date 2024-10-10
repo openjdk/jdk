@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,11 @@
  */
 
 /* @test
- * @bug 8227609
+ * @bug 8227609 8233451
  * @summary Test of InputStream and OutputStream created by java.nio.file.Files
- * @library ..
+ * @library .. /test/lib
+ * @build jdk.test.lib.Platform
+ * @run main InputStreamTest
  */
 
 import java.io.InputStream;
@@ -36,6 +38,7 @@ import static java.nio.file.LinkOption.*;
 import java.nio.file.attribute.*;
 import java.io.IOException;
 import java.util.*;
+import jdk.test.lib.Platform;
 
 public class InputStreamTest {
 
@@ -43,6 +46,8 @@ public class InputStreamTest {
         Path dir = TestUtil.createTemporaryDirectory();
         try {
             testSkip(dir);
+            if (!Platform.isWindows())
+                testAvailable();
         } finally {
             TestUtil.removeAll(dir);
         }
@@ -120,6 +125,17 @@ public class InputStreamTest {
                     }
                 }
             }
+        }
+    }
+
+    /**
+     * Tests that Files.newInputStream(Path).available() does not throw
+     */
+    static void testAvailable() throws IOException {
+        Path stdin = Path.of("/dev", "stdin");
+        if (Files.exists(stdin)) {
+            InputStream s = Files.newInputStream(stdin);
+            s.available();
         }
     }
 

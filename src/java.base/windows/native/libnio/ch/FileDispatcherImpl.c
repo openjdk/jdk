@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
  */
 
 #include <windows.h>
+#include <winioctl.h>
 #include "jni.h"
 #include "jni_util.h"
 #include "jvm.h"
@@ -33,6 +34,7 @@
 #include "nio_util.h"
 #include "java_lang_Integer.h"
 #include "sun_nio_ch_FileDispatcherImpl.h"
+#include "io_util_md.h"
 
 #include <Mswsock.h> // Requires Mswsock.lib
 
@@ -390,6 +392,57 @@ Java_sun_nio_ch_FileDispatcherImpl_size0(JNIEnv *env, jobject this, jobject fdo)
         return IOS_THROWN;
     }
     return (jlong)size.QuadPart;
+}
+
+JNIEXPORT jint JNICALL
+Java_sun_nio_ch_FileDispatcherImpl_available0(JNIEnv *env, jobject this, jobject fdo)
+{
+    HANDLE handle = (HANDLE)(handleval(env, fdo));
+    jlong available;
+    if (handleAvailable((jlong)handle, &available)) {
+        if (available > java_lang_Integer_MAX_VALUE) {
+            available = java_lang_Integer_MAX_VALUE;
+        } else if (available < 0) {
+            available = 0;
+        }
+        return (jint)available;
+    }
+    // Silently ignore failure of handleAvailable and return zero
+    return 0;
+}
+
+
+JNIEXPORT jboolean JNICALL
+Java_sun_nio_ch_FileDispatcherImpl_isOther0(JNIEnv *env, jobject this, jobject fdo)
+{
+    HANDLE handle = (HANDLE)(handleval(env, fdo));
+
+    BY_HANDLE_FILE_INFORMATION finfo;
+    GetFileInformationByHandle(handle, &finfo);
+    DWORD fattr = finfo.dwFileAttributes;
+
+    if ((fattr & FILE_ATTRIBUTE_DEVICE) != 0)
+        return (jboolean)JNI_TRUE;
+
+    if ((fattr & FILE_ATTRIBUTE_REPARSE_POINT) != 0) {
+        int size = MAXIMUM_REPARSE_DATA_BUFFER_SIZE;
+        void* lpOutBuffer = (void*)malloc(size*sizeof(char));
+        if (lpOutBuffer == NULL)
+            JNU_ThrowOutOfMemoryError(env, "isOther failed");
+
+        DWORD bytesReturned;
+        if (!DeviceIoControl(handle, FSCTL_GET_REPARSE_POINT, NULL, 0,
+                             lpOutBuffer, (DWORD)size, &bytesReturned, NULL)) {
+            free(lpOutBuffer);
+            JNU_ThrowIOExceptionWithLastError(env, "isOther failed");
+        }
+        ULONG reparseTag = (*((PULONG)lpOutBuffer));
+        free(lpOutBuffer);
+        return reparseTag == IO_REPARSE_TAG_SYMLINK ?
+            (jboolean)JNI_FALSE : (jboolean)JNI_TRUE;
+    }
+
+    return (jboolean)JNI_FALSE;
 }
 
 JNIEXPORT jint JNICALL

@@ -23,6 +23,7 @@
  * questions.
  */
 
+#include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <sys/uio.h>
 #include <sys/stat.h>
@@ -41,8 +42,10 @@
 #include "nio.h"
 #include "nio_util.h"
 #include "sun_nio_ch_UnixFileDispatcherImpl.h"
+#include "java_lang_Integer.h"
 #include "java_lang_Long.h"
 #include <assert.h>
+#include "io_util_md.h"
 
 #if defined(_AIX)
   #define statvfs statvfs64
@@ -176,6 +179,34 @@ Java_sun_nio_ch_UnixFileDispatcherImpl_size0(JNIEnv *env, jobject this, jobject 
 #endif
 
     return fbuf.st_size;
+}
+
+JNIEXPORT jint JNICALL
+Java_sun_nio_ch_UnixFileDispatcherImpl_available0(JNIEnv *env, jobject this, jobject fdo)
+{
+    jint fd = fdval(env, fdo);
+    jlong available;
+    if (handleAvailable(fd, &available) == 0) {
+        JNU_ThrowIOExceptionWithLastError(env, "Available failed");
+        return -1;
+    }
+    return available > java_lang_Integer_MAX_VALUE ?
+        java_lang_Integer_MAX_VALUE : (jint)available;
+}
+
+JNIEXPORT jboolean JNICALL
+Java_sun_nio_ch_UnixFileDispatcherImpl_isOther0(JNIEnv *env, jobject this, jobject fdo)
+{
+    jint fd = fdval(env, fdo);
+    struct stat fbuf;
+
+    if (fstat(fd, &fbuf) == -1)
+        handle(env, -1, "isOther failed");
+
+    if (S_ISREG(fbuf.st_mode) || S_ISDIR(fbuf.st_mode) || S_ISLNK(fbuf.st_mode))
+        return JNI_FALSE;
+
+    return JNI_TRUE;
 }
 
 JNIEXPORT jint JNICALL
