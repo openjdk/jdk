@@ -71,6 +71,7 @@
 #define STUB_ENTRY(name) ((FunctionDescriptor*)StubRoutines::name)->entry()
 #endif
 
+ int fubar=0;
 class StubGenerator: public StubCodeGenerator {
  private:
 
@@ -631,7 +632,134 @@ class StubGenerator: public StubCodeGenerator {
 
     return start;
   }
+address generate_ghash_processBlocks() {
+  StubCodeMark mark(this, "StubRoutines", "ghash");
+  address start = __ function_entry();
+  
+ // Register ofs = R4_ARG2;  // int ofs
+   // int blocks
+  Register state = R3_ARG1;  // long[] st
+  Register subkeyH = R4_ARG2;
+  Register data = R5_ARG3;  // byte[] data  // long[] subH
+  Register blocks = R6_ARG4; 
+  __ stop("ghash start");
+  
+  // Temporary registers
+  Register temp1 = R8;
+  Register temp2 = R9;
+  Register temp3 = R10;
+  Register temp4 = R11;
+  Register fubar_addr = R12;
+  Register fubar_value = R13;
+  VectorRegister vH = VR0;
+  VectorRegister vX = VR1;
+  VectorRegister vH_shift = VR2;
+  VectorRegister vTmp1 = VR3;
+  VectorRegister vTmp2 = VR4;
+  VectorRegister vTmp3 = VR5;
+  VectorRegister vTmp4 = VR6;
+  VectorRegister vResult = VR7;
+  VectorRegister vMSB = VR8;
+  VectorRegister vLowerH = VR9;
+  VectorRegister vHigherH = VR10;
+  VectorRegister vZero = VR11;
+  VectorRegister vConst1 = VR12;
+  VectorRegister vConst7 = VR13;
+  VectorRegister vConstC2 = VR10;
+  VectorRegister fromPerm = VR15;
 
+ static const unsigned char perm_pattern[16] __attribute__((aligned(16))) = {7, 6, 5, 4, 3, 2, 1, 0, 15, 14, 13, 12, 11, 10, 9, 8};
+
+// Load the address of perm_pattern
+__ load_const_optimized(temp1, (uintptr_t)&perm_pattern);
+
+// Load the 128-bit vector from memory
+__ vxor(fromPerm, fromPerm, fromPerm);  // Clear the vector register
+__ lvx(fromPerm,  temp1);  // Lo
+  __ li(temp1, 0xc2);
+  __ sldi(temp1, temp1, 56);
+  // Load the vector from memory into vConstC2
+  __ vxor(vConstC2,vConstC2,vConstC2);
+  __ mtvrd(vConstC2, temp1);
+  __ vxor(vZero, vZero, vZero);
+  // Load H into vector registsiers
+  // Use a different register (e.g., R3)
+  __ li(temp1, 0);      // Load immediate value 0 into temp  
+  __ vxor(vH,vH,vH);
+  __ lvx(vH, temp1, subkeyH);  // Load H using temp instead of R0
+  __ vec_perm(vH, vH, vH, fromPerm);
+  __ vspltisb(vConst1, 1); // Vector with 1s
+  __ vspltisb(vConst7, 7); // Vector with 7s
+
+  __ vsldoi(vTmp4, vZero, vConst1, 1);  // 0x1
+  __ vor(vTmp4, vConstC2, vTmp4); //0xC2...1
+  __ vsplt(vMSB, 0, vH); // MSB of H
+  __ vxor(vH_shift, vH_shift,vH_shift);
+  __ vsl(vH_shift, vH, vConst7); // Carry= H<<7
+  __ vsrab(vMSB, vMSB, vConst7);
+  __ vand(vMSB, vMSB, vTmp4); //Carry
+  __ vxor(vTmp2, vH_shift, vMSB); // shift H<<<1
+  
+  __ vsldoi(vTmp3, vTmp2, vTmp2, 8); // swap L,H 
+  __ vsldoi(vLowerH, vZero, vTmp3, 8); //H.L
+  __ vsldoi(vHigherH, vTmp3, vZero, 8); //H.H
+
+
+
+    // Store shifted 
+   //  VectorSRegister vCarryS = VSR0; // Create a scalar vector register for mtvsrd
+
+    __ li(temp1, 0xc2);
+    __ sldi(temp1, temp1, 56);
+    __ mtvrd(vConstC2, temp1); // Use VectorSRegister for mtvsrd
+    __ vxor(vTmp1, vTmp1, vTmp1);
+
+    __ vxor(vH, vH, vH);
+
+    // Calculate the number of blocks
+    __ li(temp1, 16);
+    __ divdu(temp2, blocks, temp1);
+    __ mtctr(temp2);
+    __ li(temp3, 0);
+
+    Label loop;
+    __ bind(loop);
+
+    // Load input data
+   // __ lxvb16x(32 + 1, temp3, data);
+    __ lvx(vX,temp1);
+    __ addi(temp3, temp3, 16);
+
+    // Perform GCM multiplication
+    __ vpmsumd(vTmp1, vH_shift, vX);  // L
+    __ vpmsumd(vTmp2, vH, vX);        // M
+    __ vpmsumd(vTmp3, vH_shift, vX);  // H
+
+    __ vpmsumd(vTmp4, vTmp1, vConstC2);  // reduction
+
+    __ vsldoi(vTmp1, vTmp2, vH, 8);  // mL
+    __ vsldoi(vTmp2, vH, vTmp2, 8);  // mH
+    __ vxor(vTmp1, vTmp1, vTmp1);    // LL + LL
+    __ vxor(vTmp3, vTmp3, vTmp2);    // HH + HH
+
+    __ vsldoi(vTmp1, vTmp1, vTmp1, 8);  // swap
+    __ vxor(vTmp1, vTmp1, vTmp4);       // reduction
+
+    __ vsldoi(vTmp4, vTmp1, vTmp1, 8);  // swap
+    __ vpmsumd(vTmp1, vTmp1, vConstC2);  // reduction
+    __ vxor(vTmp4, vTmp4, vTmp3);
+    __ vxor(vH, vTmp1, vTmp4);
+
+    __ bdnz(loop);
+   // __ stxv(vH, state, temp4); 
+    __ blr();  // Return from function
+    
+
+
+  return start;
+
+
+}
   // -XX:+OptimizeFill : convert fill/copy loops into intrinsic
   //
   // The code is implemented(ported from sparc) as we believe it benefits JVM98, however
@@ -4705,6 +4833,9 @@ address generate_lookup_secondary_supers_table_stub(u1 super_klass_index) {
     if (VM_Version::supports_data_cache_line_flush()) {
       StubRoutines::_data_cache_writeback = generate_data_cache_writeback();
       StubRoutines::_data_cache_writeback_sync = generate_data_cache_writeback_sync();
+    }
+    if (UseGHASHIntrinsics) {
+      StubRoutines::_ghash_processBlocks = generate_ghash_processBlocks();
     }
 
     if (UseAESIntrinsics) {
