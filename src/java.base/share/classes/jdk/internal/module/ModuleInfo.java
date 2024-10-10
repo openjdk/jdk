@@ -190,7 +190,7 @@ public final class ModuleInfo {
 
         int minor_version = in.readUnsignedShort();
         int major_version = in.readUnsignedShort();
-        boolean previewClassfile = minor_version == ClassFile.PREVIEW_MINOR_VERSION;
+        boolean isPreview = minor_version == ClassFile.PREVIEW_MINOR_VERSION;
         if (!VM.isSupportedModuleDescriptorVersion(major_version, minor_version)) {
             throw invalidModuleDescriptor("Unsupported major.minor version "
                                           + major_version + "." + minor_version);
@@ -250,7 +250,7 @@ public final class ModuleInfo {
 
             switch (attribute_name) {
                 case MODULE :
-                    builder = readModuleAttribute(in, cpool, major_version, previewClassfile);
+                    builder = readModuleAttribute(in, cpool, major_version, isPreview);
                     break;
 
                 case MODULE_PACKAGES :
@@ -408,12 +408,16 @@ public final class ModuleInfo {
                     throw invalidModuleDescriptor("The requires entry for java.base"
                                                   + " has ACC_SYNTHETIC set");
                 }
+                // requires transitive java.base is illegal unless:
+                // - the major version is 53 (JDK 9), or:
+                // - the classfile is a preview classfile, or:
+                // - the module is deemed to be participating in preview
+                //   (i.e. the module is a java.* module)
+                // requires static java.base is illegal unless:
+                // - the major version is 53 (JDK 9), or:
                 if (major >= 54
                     && ((mods.contains(Requires.Modifier.TRANSITIVE) &&
-                         //requires transitive java.base; permitted for preview classfiles:
                          !previewClassfile &&
-                         //java.* modules are deemed participating in preview
-                         //and are allowed to use requires transitive java.base:
                          !mn.startsWith("java."))
                         || mods.contains(Requires.Modifier.STATIC))) {
                     String flagName;

@@ -1546,8 +1546,8 @@ public class ModuleDescriptorTest {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         ModuleInfoWriter.write(descriptor, baos);
         byte[] bytecode = baos.toByteArray();
-        bytecode = setClassFileVersion(ClassFile.JAVA_21_VERSION, -1, bytecode);
         ByteBuffer bb = ByteBuffer.wrap(bytecode);
+        setClassFileVersion(bb, ClassFile.JAVA_21_VERSION, -1);
 
         ModuleDescriptor.read(bb, () -> Set.of("p", "q"));
     }
@@ -1560,8 +1560,8 @@ public class ModuleDescriptorTest {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         ModuleInfoWriter.write(descriptor, baos);
         byte[] bytecode = baos.toByteArray();
-        bytecode = setClassFileVersion(-1, ClassFile.PREVIEW_MINOR_VERSION, bytecode);
         ByteBuffer bb = ByteBuffer.wrap(bytecode);
+        setClassFileVersion(bb, -1, ClassFile.PREVIEW_MINOR_VERSION);
 
         descriptor = ModuleDescriptor.read(bb, () -> Set.of("p", "q"));
 
@@ -1571,15 +1571,21 @@ public class ModuleDescriptorTest {
         assertEquals(javaBase.modifiers(), Set.of(Modifier.TRANSITIVE));
     }
 
-    private byte[] setClassFileVersion(int major, int minor, byte[] bytecode) {
-        ClassFile cf = ClassFile.of();
-        return cf.transformClass(cf.parse(bytecode),
-                                 (builder, element) -> {
-                                     switch (element) {
-                                         case ClassFileVersion cfv -> builder.withVersion(major != (-1) ? major : cfv.majorVersion(),
-                                                                                          minor != (-1) ? minor : cfv.minorVersion());
-                                         default -> builder.with(element);
-                                     }
-                                 });
+    /**Change the classfile versions of the provided classfile to the provided
+     * values.
+     *
+     * @param bytecode the classfile content to modify
+     * @param major the major classfile version to set,
+     *              -1 if the existing version should be kept
+     * @param minor the minor classfile version to set,
+     *              -1 if the existing version should be kept
+     */
+    private void setClassFileVersion(ByteBuffer bb, int major, int minor) {
+        if (minor != (-1)) {
+            bb.putShort(4, (short) minor);
+        }
+        if (major != (-1)) {
+            bb.putShort(6, (short) major);
+        }
     }
 }
