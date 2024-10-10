@@ -75,23 +75,24 @@ public class MultipleAddNotifyTest {
                             "not visible.");
                 }
                 f.setSize(200, 200);
+                f.setLocationRelativeTo(null);
                 f.setVisible(true);
             });
 
             r.waitForIdle();
             r.delay(500);
             EventQueue.invokeAndWait(() -> {
-                posX = l.getWidth() + 75;
-                posY = l.getHeight();
+                posX = f.getX() + l.getWidth() + (l.getWidth() / 2) + 10;
+                posY = f.getY() + l.getHeight();
             });
 
             r.mouseMove(posX, posY);
-
             r.delay(500);
+
             r.mousePress(InputEvent.BUTTON1_DOWN_MASK);
             r.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-
             r.delay(500);
+
             if (!passFlag) {
                 throw new RuntimeException("Test failed. MouseClicked event " +
                         "not working properly.");
