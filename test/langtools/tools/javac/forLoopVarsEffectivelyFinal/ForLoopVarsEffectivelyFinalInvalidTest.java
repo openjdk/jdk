@@ -59,6 +59,27 @@ public class ForLoopVarsEffectivelyFinalInvalidTest {
         }
     }
 
+    // An extra level of nesting doesn't make it OK
+    {
+        for (int i = 0; true; ) {
+            for (int j = 0; j < 3; j++) {
+                i = 42;
+                Runnable r = () -> System.out.println(i);               // error: ...must be final or effectively final
+            }
+            break;
+        }
+    }
+
+    // An extra level of nesting doesn't make it OK
+    {
+        for (int i = 0; true; ) {
+            for (int j = 0; j < ++i; j++) {
+                Runnable r = () -> System.out.println(i);               // error: ...must be final or effectively final
+            }
+            break;
+        }
+    }
+
     int f(int i) {
         return i * i;
     }

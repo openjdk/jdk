@@ -4,4 +4,6 @@ ForLoopVarsEffectivelyFinalInvalidTest.java:22:57: compiler.err.cant.ref.non.eff
 ForLoopVarsEffectivelyFinalInvalidTest.java:31:39: compiler.err.cant.ref.non.effectively.final.var: i, (compiler.misc.lambda)
 ForLoopVarsEffectivelyFinalInvalidTest.java:40:38: compiler.err.cant.ref.non.effectively.final.var: i, (compiler.misc.lambda)
 ForLoopVarsEffectivelyFinalInvalidTest.java:49:39: compiler.err.cant.ref.non.effectively.final.var: i, (compiler.misc.lambda)
-6 errors
+ForLoopVarsEffectivelyFinalInvalidTest.java:67:55: compiler.err.cant.ref.non.effectively.final.var: i, (compiler.misc.lambda)
+ForLoopVarsEffectivelyFinalInvalidTest.java:77:55: compiler.err.cant.ref.non.effectively.final.var: i, (compiler.misc.lambda)
+8 errors

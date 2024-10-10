@@ -2146,12 +2146,13 @@ public class Flow {
          */
         WriteableScope unrefdResources;
 
-        /** In a basic for() loop body, this bitmap contains variables that are reassigned
-         *  in the body of the loop (where "reassigned" means "assigned when not DU").
-         *  Basic for() loop iteration variables that are NOT reassigned have their
-         *  FOR_LOOP_BODY_MAY_CAPTURE flags set.
+        /** In a basic for() loop body, during the first (FlowKind.NORMAL) run, this contains
+         *  any loop variables that have NOT yet been reassigned (where "reassigned" means
+         *  "assigned when not DU"). Note this can also contain variables from outer containing
+         *  for() loop bodies. After a for() loop body has been scanned, the loop variables
+         *  that were never reassigned are awarded the FOR_LOOP_BODY_MAY_CAPTURE flag.
          */
-        Bits reassignedInForLoopBody;
+        final Bits notReassigned;
 
         /** Modified when processing a loop body the second time for DU analysis. */
         FlowKind flowKind = FlowKind.NORMAL;
@@ -2189,6 +2190,7 @@ public class Flow {
             initsWhenFalse = new Bits(true);
             uninitsWhenTrue = new Bits(true);
             uninitsWhenFalse = new Bits(true);
+            notReassigned = new Bits();
         }
 
         private boolean isConstructor;
@@ -2239,9 +2241,9 @@ public class Flow {
         void letInit(DiagnosticPosition pos, VarSymbol sym) {
             if (sym.adr >= firstadr && trackable(sym)) {
 
-                // In basic for() loop bodies, we keep track of which variables get reassigned
-                if (reassignedInForLoopBody != null && !uninits.isMember(sym.adr))
-                    reassignedInForLoopBody.incl(sym.adr);
+                // In basic for() loop bodies, we notice when loop variables get reassigned
+                if (notReassigned.isMember(sym.adr) && !uninits.isMember(sym.adr))
+                    notReassigned.excl(sym.adr);
 
                 if ((sym.flags() & EFFECTIVELY_FINAL) != 0) {
                     if (!uninits.isMember(sym.adr)) {
@@ -2726,16 +2728,17 @@ public class Flow {
                     uninitsSkip.assign(uninits);
                     uninitsSkip.inclRange(firstadr, nextadr);
                 }
-                final Bits reassignedInForLoopBodyPrev = reassignedInForLoopBody;
-                reassignedInForLoopBody = new Bits();
-                try {
+                if (flowKind.isFinal()) {
+                    scan(tree.body);
+                } else {
+                    // on the first pass only, check for reassignments of loop variables
+                    notReassigned.inclRange(forLoopVarMin, forLoopVarMax);
                     scan(tree.body);
                     for (int adr = forLoopVarMin; adr < forLoopVarMax; adr++) {
-                        if (!reassignedInForLoopBody.isMember(adr))
+                        if (notReassigned.isMember(adr))
                             vardecls[adr].sym.flags_field |= FOR_LOOP_BODY_MAY_CAPTURE;
                     }
-                } finally {
-                    reassignedInForLoopBody = reassignedInForLoopBodyPrev;
+                    notReassigned.excludeFrom(forLoopVarMin);
                 }
                 resolveContinues(tree);
                 scan(tree.step);
@@ -3308,8 +3311,8 @@ public class Flow {
         JCTree currentTree; //local class or lambda
         WriteableScope declaredInsideGuard;
 
-        // Variables that may be captured by classes and lambdas even if not final or effectively final.
-        final HashSet<VarSymbol> capturable = new HashSet<>();
+        // Variables that may be captured even if not final or effectively final
+        final Bits capturable = new Bits();
 
         @Override
         void markDead() {
@@ -3325,7 +3328,7 @@ public class Flow {
                     case CLASSDEF:
                     case CASE:
                     case LAMBDA:
-                        if ((sym.flags() & (EFFECTIVELY_FINAL | FINAL)) == 0 && (!capturable.contains(sym))) {
+                        if ((sym.flags() & (EFFECTIVELY_FINAL | FINAL)) == 0 && (!capturable.isMember(sym.adr))) {
                            reportEffectivelyFinalError(pos, sym);
                         }
                 }
@@ -3481,28 +3484,20 @@ public class Flow {
             scan(tree.cond);
             scan(tree.step);
 
-            // Collect the for() loop iteration variables with the FOR_LOOP_BODY_MAY_CAPTURE flag
-            HashSet<VarSymbol> capturableForLoopVars = null;
+            // Identify loop variables with FOR_LOOP_BODY_MAY_CAPTURE and then recurse on body
+            final Bits newCapturable = new Bits();
             if (tree.init != null) {
-                capturableForLoopVars = tree.init.stream()
+                tree.init.stream()
                   .filter(stmt -> stmt.hasTag(VARDEF))
                   .map(JCVariableDecl.class::cast)
                   .map(vardef -> vardef.sym)
                   .filter(sym -> (sym.flags_field & FOR_LOOP_BODY_MAY_CAPTURE) != 0)
-                  .collect(Collectors.toCollection(HashSet::new));
-                if (capturableForLoopVars.isEmpty())
-                    capturableForLoopVars = null;
+                  .mapToInt(sym -> sym.adr)
+                  .forEach(newCapturable::incl);
             }
-
-            // Merge with previous and then scan the body
-            if (capturableForLoopVars != null)
-                capturable.addAll(capturableForLoopVars);
-            try {
-                scan(tree.body);
-            } finally {
-                if (capturableForLoopVars != null)
-                    capturable.removeAll(capturableForLoopVars);
-            }
+            capturable.orSet(newCapturable);
+            scan(tree.body);
+            capturable.diffSet(newCapturable);
         }
 
         @Override
