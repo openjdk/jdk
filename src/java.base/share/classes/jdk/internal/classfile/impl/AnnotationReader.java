@@ -282,9 +282,8 @@ public final class AnnotationReader {
     }
 
     public static void writeAnnotation(BufWriterImpl buf, Annotation annotation) {
-        buf.writeIndex(annotation.className());
         var elements = annotation.elements();
-        buf.writeU2(elements.size());
+        buf.writeU2U2(buf.cpIndex(annotation.className()), elements.size());
         for (var e : elements) {
             buf.writeIndex(e.name());
             AnnotationReader.writeAnnotationValue(buf, e.value());
@@ -332,8 +331,8 @@ public final class AnnotationReader {
             case TypeAnnotation.CatchTarget ct -> buf.writeU2(ct.exceptionTableIndex());
             case TypeAnnotation.OffsetTarget ot -> buf.writeU2(labelToBci(lr, ot.target(), ta));
             case TypeAnnotation.TypeArgumentTarget tat -> {
-                buf.writeU2(labelToBci(lr, tat.target(), ta));
-                buf.writeU1(tat.typeArgumentIndex());
+                buf.writeU2U1(labelToBci(lr, tat.target(), ta),
+                        tat.typeArgumentIndex());
             }
         }
 

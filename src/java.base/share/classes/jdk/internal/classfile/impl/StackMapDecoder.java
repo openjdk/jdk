@@ -135,8 +135,7 @@ public class StackMapDecoder {
                 if (diffLocalsSize == 0 && offsetDelta < 64) { //same frame
                     out.writeU1(offsetDelta);
                 } else {   //chop, same extended or append frame
-                    out.writeU1(251 + diffLocalsSize);
-                    out.writeU2(offsetDelta);
+                    out.writeU1U2(251 + diffLocalsSize, offsetDelta);
                     for (int i=commonLocalsSize; i<fr.locals().size(); i++) writeTypeInfo(out, fr.locals().get(i));
                 }
                 return;
@@ -145,16 +144,13 @@ public class StackMapDecoder {
             if (offsetDelta < 64) {  //same locals 1 stack item frame
                 out.writeU1(64 + offsetDelta);
             } else {  //same locals 1 stack item extended frame
-                out.writeU1(247);
-                out.writeU2(offsetDelta);
+                out.writeU1U2(247, offsetDelta);
             }
             writeTypeInfo(out, fr.stack().get(0));
             return;
         }
         //full frame
-        out.writeU1(255);
-        out.writeU2(offsetDelta);
-        out.writeU2(fr.locals().size());
+        out.writeU1U2U2(255, offsetDelta, fr.locals().size());
         for (var l : fr.locals()) writeTypeInfo(out, l);
         out.writeU2(fr.stack().size());
         for (var s : fr.stack()) writeTypeInfo(out, s);
@@ -168,15 +164,15 @@ public class StackMapDecoder {
     }
 
     private static void writeTypeInfo(BufWriterImpl bw, VerificationTypeInfo vti) {
-        bw.writeU1(vti.tag());
-        switch (vti.tag()) {
+        int tag = vti.tag();
+        switch (tag) {
             case ITEM_TOP, ITEM_INTEGER, ITEM_FLOAT, ITEM_DOUBLE, ITEM_LONG, ITEM_NULL,
                  ITEM_UNINITIALIZED_THIS ->
-                {}
+                bw.writeU1(tag);
             case ITEM_OBJECT ->
-                bw.writeIndex(((ObjectVerificationTypeInfo)vti).className());
+                bw.writeU1U2(tag, bw.cpIndex(((ObjectVerificationTypeInfo)vti).className()));
             case ITEM_UNINITIALIZED ->
-                bw.writeU2(bw.labelContext().labelToBci(((UninitializedVerificationTypeInfo)vti).newTarget()));
+                bw.writeU1U2(tag, bw.labelContext().labelToBci(((UninitializedVerificationTypeInfo)vti).newTarget()));
             default -> throw new IllegalArgumentException("Invalid verification type tag: " + vti.tag());
         }
     }

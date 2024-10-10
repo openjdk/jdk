@@ -287,12 +287,10 @@ public class Util {
                             ((DirectMethodBuilder)mb).writeAttribute(new UnboundAttribute.AdHocAttribute<CodeAttribute>(Attributes.code()) {
                                 @Override
                                 public void writeBody(BufWriterImpl b) {
-                                    b.writeU2(-1);//max stack
-                                    b.writeU2(-1);//max locals
+                                    b.writeU2U2(-1, -1);//max stack & locals
                                     b.writeInt(bytecode.length());
                                     b.writeBytes(bytecode.array(), 0, bytecode.length());
-                                    b.writeU2(0);//exception handlers
-                                    b.writeU2(0);//attributes
+                                    b.writeU2U2(0, 0);//exception handlers & attributes
                                 }
                     }))));
             ClassPrinter.toYaml(clm.methods().get(0).code().get(), ClassPrinter.Verbosity.TRACE_ALL, dump);

@@ -84,9 +84,9 @@ public final class FieldImpl
             reader.copyBytesTo(buf, startPos, endPos - startPos);
         }
         else {
-            buf.writeU2(flags().flagsMask());
-            buf.writeIndex(fieldName());
-            buf.writeIndex(fieldType());
+            buf.writeU2U2U2(flags().flagsMask(),
+                    buf.cpIndex(fieldName()),
+                    buf.cpIndex(fieldType()));
             Util.writeAttributes(buf, attributes());
         }
     }

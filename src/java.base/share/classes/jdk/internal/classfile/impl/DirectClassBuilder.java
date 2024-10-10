@@ -219,12 +219,10 @@ public final class DirectClassBuilder
         }
 
         // Now we can make the head
-        head.writeLong((((long) ClassFile.MAGIC_NUMBER) << 32)
-                | ((minorVersion & 0xFFFFL) << 16)
-                | (majorVersion & 0xFFFFL));
+        head.writeInt(ClassFile.MAGIC_NUMBER);
+        head.writeU2U2(minorVersion, majorVersion);
         constantPool.writeTo(head);
-        head.writeU2U2(flags, head.cpIndex(thisClassEntry));
-        head.writeIndexOrZero(superclass);
+        head.writeU2U2U2(flags, head.cpIndex(thisClassEntry), head.cpIndexOrZero(superclass));
         head.writeU2(interfaceEntriesSize);
         for (int i = 0; i < interfaceEntriesSize; i++) {
             head.writeIndex(ies[i]);

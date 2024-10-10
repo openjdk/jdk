@@ -257,8 +257,7 @@ public final class DirectCodeBuilder
                                 }
                             } else {
                                 b.writeU2U2(start, end - 1);
-                                b.writeInt(cr.characterRangeStart());
-                                b.writeInt(cr.characterRangeEnd());
+                                b.writeIntInt(cr.characterRangeStart(), cr.characterRangeEnd());
                                 b.writeU2(cr.flags());
                             }
                         }
@@ -640,8 +639,7 @@ public final class DirectCodeBuilder
         if (pad != 4)
             bytecodesBufWriter.skip(pad); // padding content can be anything
         writeLongLabelOffset(instructionPc, defaultTarget);
-        bytecodesBufWriter.writeInt(low);
-        bytecodesBufWriter.writeInt(high);
+        bytecodesBufWriter.writeIntInt(low, high);
         var caseMap = new HashMap<Integer, Label>(cases.size());
         for (var c : cases) {
             caseMap.put(c.caseValue(), c.target());
@@ -668,8 +666,7 @@ public final class DirectCodeBuilder
     }
 
     public void writeInvokeDynamic(InvokeDynamicEntry ref) {
-        bytecodesBufWriter.writeIndex(INVOKEDYNAMIC, ref);
-        bytecodesBufWriter.writeU2(0);
+        bytecodesBufWriter.writeU1U2U2(INVOKEDYNAMIC, bytecodesBufWriter.cpIndex(ref), 0);
     }
 
     public void writeNewObject(ClassEntry type) {
