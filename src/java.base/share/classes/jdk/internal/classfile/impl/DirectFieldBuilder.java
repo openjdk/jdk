@@ -33,6 +33,8 @@ import java.lang.classfile.FieldElement;
 import java.lang.classfile.FieldModel;
 import java.lang.classfile.constantpool.Utf8Entry;
 
+import static java.util.Objects.requireNonNull;
+
 public final class DirectFieldBuilder
         extends AbstractDirectBuilder<FieldModel>
         implements TerminalFieldBuilder, Util.Writable {
@@ -48,8 +50,8 @@ public final class DirectFieldBuilder
                               FieldModel original) {
         super(constantPool, context);
         setOriginal(original);
-        this.name = name;
-        this.desc = type;
+        this.name = requireNonNull(name);
+        this.desc = requireNonNull(type);
         this.flags = flags;
     }
 
@@ -58,7 +60,7 @@ public final class DirectFieldBuilder
         if (element instanceof AbstractElement ae) {
             ae.writeTo(this);
         } else {
-            writeAttribute((CustomAttribute<?>) element);
+            writeAttribute((CustomAttribute<?>) requireNonNull(element));
         }
         return this;
     }

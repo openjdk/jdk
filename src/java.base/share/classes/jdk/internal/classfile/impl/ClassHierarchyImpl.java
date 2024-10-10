@@ -205,9 +205,9 @@ public final class ClassHierarchyImpl {
             map = HashMap.newHashMap(interfaceNames.size() + classToSuperClass.size() + 1);
             map.put(CD_Object, ClassHierarchyInfoImpl.OBJECT_INFO);
             for (var e : classToSuperClass.entrySet())
-                map.put(e.getKey(), ClassHierarchyInfo.ofClass(e.getValue()));
+                map.put(requireNonNull(e.getKey()), ClassHierarchyInfo.ofClass(e.getValue()));
             for (var i : interfaceNames)
-                map.put(i, ClassHierarchyInfo.ofInterface());
+                map.put(requireNonNull(i), ClassHierarchyInfo.ofInterface());
         }
 
         @Override

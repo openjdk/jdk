@@ -43,6 +43,8 @@ import java.lang.classfile.MethodElement;
 import java.lang.classfile.MethodModel;
 import java.lang.classfile.constantpool.Utf8Entry;
 
+import static java.util.Objects.requireNonNull;
+
 public final class BufferedMethodBuilder
         implements TerminalMethodBuilder {
     private final List<MethodElement> elements;
@@ -63,15 +65,15 @@ public final class BufferedMethodBuilder
         this.elements = new ArrayList<>();
         this.constantPool = constantPool;
         this.context = context;
-        this.name = nameInfo;
-        this.desc = typeInfo;
+        this.name = requireNonNull(nameInfo);
+        this.desc = requireNonNull(typeInfo);
         this.flags = new AccessFlagsImpl(AccessFlag.Location.METHOD, flags);
         this.original = original;
     }
 
     @Override
     public MethodBuilder with(MethodElement element) {
-        elements.add(element);
+        elements.add(requireNonNull(element));
         if (element instanceof AccessFlags f) this.flags = checkFlags(f);
         return this;
     }
