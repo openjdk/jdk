@@ -425,7 +425,11 @@ public class Resolve {
                 (env.enclClass.sym == sym.owner // fast special case
                  ||
                  env.enclClass.sym.outermostClass() ==
-                 sym.owner.outermostClass())
+                 sym.owner.outermostClass()
+                 ||
+                 (env.info.isPermitsClause
+                 &&
+                 ((JCClassDecl) env.tree).sym.outermostClass() == sym.owner.outermostClass()))
                 &&
                 sym.isInheritedIn(site.tsym, types);
         case 0:
