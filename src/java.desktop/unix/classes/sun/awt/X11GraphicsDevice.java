@@ -36,10 +36,13 @@ import java.awt.Window;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Objects;
 
+import sun.awt.image.SurfaceManager;
 import sun.awt.util.ThreadGroupUtils;
 import sun.java2d.SunGraphicsEnvironment;
 import sun.java2d.loops.SurfaceType;
@@ -62,7 +65,7 @@ public final class X11GraphicsDevice extends GraphicsDevice
      * therefore methods, which is using this id should be ready to it.
      */
     private volatile int screen;
-    HashMap<SurfaceType, Object> x11ProxyKeyMap = new HashMap<>();
+    Map<SurfaceType, SurfaceManager.ProxyCache> x11ProxyCacheMap = Collections.synchronizedMap(new HashMap<>());
 
     private static AWTPermission fullScreenExclusivePermission;
     private static Boolean xrandrExtSupported;
@@ -86,15 +89,8 @@ public final class X11GraphicsDevice extends GraphicsDevice
         return screen;
     }
 
-    public Object getProxyKeyFor(SurfaceType st) {
-        synchronized (x11ProxyKeyMap) {
-            Object o = x11ProxyKeyMap.get(st);
-            if (o == null) {
-                o = new Object();
-                x11ProxyKeyMap.put(st, o);
-            }
-            return o;
-        }
+    public SurfaceManager.ProxyCache getProxyCacheFor(SurfaceType st) {
+        return x11ProxyCacheMap.computeIfAbsent(st, unused -> new SurfaceManager.ProxyCache());
     }
 
     /**

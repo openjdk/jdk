@@ -156,7 +156,7 @@ public abstract class MTLSurfaceData extends SurfaceData
         super(getCustomSurfaceType(type), cm);
         this.graphicsConfig = gc;
         this.type = type;
-        setBlitProxyKey(gc.getProxyKey());
+        setBlitProxyCache(gc.getSurfaceDataProxyCache());
 
         // TEXTURE shouldn't be scaled, it is used for managed BufferedImages.
         scale = type == TEXTURE ? 1 : gc.getDevice().getScaleFactor();
