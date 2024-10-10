@@ -300,8 +300,8 @@ final class KeyProtector {
         // which in turn parses the key material.
         try {
             return PKCS8Key.parseKey(plainKey);
-        } catch (IOException ioe) {
-            throw new UnrecoverableKeyException(ioe.getMessage());
+        } catch (InvalidKeyException e) {
+            throw new UnrecoverableKeyException(e.getMessage());
         } finally {
             Arrays.fill(plainKey, (byte)0);
         }
