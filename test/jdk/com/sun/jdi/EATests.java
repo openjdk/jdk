@@ -160,7 +160,6 @@
  *                 -XX:GuaranteedAsyncDeflationInterval=1000
  *
  * @bug 8341819
- * @test id=8341819
  * @comment Regression test for re-locking racing with deflation with LM_LIGHTWEIGHT.
  * @run driver EATests
  *                 -XX:+UnlockDiagnosticVMOptions
