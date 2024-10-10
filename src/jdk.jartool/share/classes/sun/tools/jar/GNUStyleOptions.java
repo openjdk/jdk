@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -212,6 +212,13 @@ class GNUStyleOptions {
                 }
             },
 
+            // Extract options
+            new Option(false, OptionType.EXTRACT, "--keep-old-files", "-k") {
+                void process(Main jartool, String opt, String arg) {
+                    jartool.kflag = true;
+                }
+            },
+
             // Hidden options
             new Option(false, OptionType.OTHER, "-P") {
                 void process(Main jartool, String opt, String arg) {
@@ -254,6 +261,7 @@ class GNUStyleOptions {
         CREATE("create"),
         CREATE_UPDATE("create.update"),
         CREATE_UPDATE_INDEX("create.update.index"),
+        EXTRACT("extract"),
         OTHER("other");
 
         /** Resource lookup section prefix. */
