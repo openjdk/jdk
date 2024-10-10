@@ -42,17 +42,13 @@ import javax.swing.plaf.metal.MetalLookAndFeel;
 public class bug4587721 {
 
     public static void main(String[] args) throws Exception {
-        try {
-            UIManager.setLookAndFeel(new MetalLookAndFeel());
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        UIManager.setLookAndFeel(new MetalLookAndFeel());
 
         String instructions = """
-                                Click on the Details button in JFileChooser Window.
-                                If the filename text is chopped off by height,
-                                then Press FAIL else Press PASS.
-                                """;
+                Click on the Details button in JFileChooser Window.
+                If the filename text is chopped off by height,
+                then Press FAIL else Press PASS.
+                """;
 
         PassFailJFrame.builder()
                 .title("bug4587721")
