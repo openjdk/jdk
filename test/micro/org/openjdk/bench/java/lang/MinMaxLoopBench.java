@@ -28,7 +28,7 @@ import java.util.stream.LongStream;
 public class MinMaxLoopBench
 {
     @State(Scope.Thread)
-    public static final class LoopState {
+    public static class LoopState {
         @Param({"1000"})
         int size;
 
@@ -111,7 +111,7 @@ public class MinMaxLoopBench
     }
 
     @State(Scope.Thread)
-    public static final class RangeState
+    public static class RangeState
     {
         @Param({"1000"})
         int size;
