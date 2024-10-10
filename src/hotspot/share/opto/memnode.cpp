@@ -1253,20 +1253,71 @@ Node* MemNode::can_see_stored_value(Node* st, PhaseValues* phase) const {
 }
 
 //----------------------is_instance_field_load_with_local_phi------------------
-bool LoadNode::is_instance_field_load_with_local_phi(Node* ctrl) {
-  if( in(Memory)->is_Phi() && in(Memory)->in(0) == ctrl &&
-      in(Address)->is_AddP() ) {
+bool LoadNode::is_instance_field_load_with_local_phi() {
+  if (in(Memory)->is_Phi() && in(Address)->is_AddP()) {
     const TypeOopPtr* t_oop = in(Address)->bottom_type()->isa_oopptr();
     // Only instances and boxed values.
-    if( t_oop != nullptr &&
-        (t_oop->is_ptr_to_boxed_value() ||
-         t_oop->is_known_instance_field()) &&
+    if (t_oop != nullptr &&
+        t_oop->is_known_instance_field() &&
         t_oop->offset() != Type::OffsetBot &&
         t_oop->offset() != Type::OffsetTop) {
       return true;
     }
   }
   return false;
+}
+
+bool LoadNode::is_boxed_value_load_with_local_phi(PhaseGVN* phase) {
+  Compile* C = phase->C;
+  Node* address = in(Address);
+  const TypeOopPtr* t_oop = address->bottom_type()->isa_oopptr();
+  intptr_t ignore = 0;
+  Node* base = AddPNode::Ideal_base_and_offset(address, phase, ignore);
+  bool base_is_phi = (base != NULL) && base->is_Phi();
+  bool load_boxed_value = t_oop != NULL && t_oop->is_ptr_to_boxed_value()
+                          && C->aggressive_unboxing() && (base != NULL) && (base == address->in(AddPNode::Base))
+                          && phase->type(base)->higher_equal(TypePtr::NOTNULL);
+  return base_is_phi && load_boxed_value;
+}
+
+Node* LoadNode::phi_or_self(PhaseGVN* phase) {
+  Node* mem = in(Memory);
+  const TypeOopPtr* t_oop = in(Address)->bottom_type()->isa_oopptr();
+  const Type* this_type = bottom_type();
+
+  if (is_instance_field_load_with_local_phi()) {
+    Node* region = mem->in(0);
+
+    int this_index  = phase->C->get_alias_index(t_oop);
+    int this_offset = t_oop->offset();
+    int this_iid    = t_oop->instance_id();
+    for (DUIterator_Fast imax, i = region->fast_outs(imax); i < imax; i++) {
+      Node* phi = region->fast_out(i);
+      if (phi->is_Phi() && phi != mem &&
+          phi->as_Phi()->is_same_inst_field(this_type, (int)mem->_idx, this_iid, this_index, this_offset)) {
+        return phi;
+      }
+    }
+  }
+
+  if (is_boxed_value_load_with_local_phi(phase)) {
+    intptr_t ignore = 0;
+    Node* base = AddPNode::Ideal_base_and_offset(in(Address), phase, ignore);
+    Node* region = base->in(0);
+
+    int this_index  = phase->C->get_alias_index(t_oop);
+    int this_offset = t_oop->offset();
+    int this_iid    = base->_idx;
+    for (DUIterator_Fast imax, i = region->fast_outs(imax); i < imax; i++) {
+      Node* phi = region->fast_out(i);
+      if (phi->is_Phi() && phi != base &&
+          phi->as_Phi()->is_same_inst_field(this_type, (int)base->_idx, this_iid, this_index, this_offset)) {
+        return phi;
+      }
+    }
+  }
+
+  return this;
 }
 
 //------------------------------Identity---------------------------------------
@@ -1276,7 +1327,7 @@ Node* LoadNode::Identity(PhaseGVN* phase) {
   // to the same address, then we are equal to the value stored.
   Node* mem = in(Memory);
   Node* value = can_see_stored_value(mem, phase);
-  if( value ) {
+  if (value) {
     // byte, short & char stores truncate naturally.
     // A load has to load the truncated value which requires
     // some sort of masking operation and that requires an
@@ -1299,35 +1350,8 @@ Node* LoadNode::Identity(PhaseGVN* phase) {
   if (has_pinned_control_dependency()) {
     return this;
   }
-  // Search for an existing data phi which was generated before for the same
-  // instance's field to avoid infinite generation of phis in a loop.
-  Node *region = mem->in(0);
-  if (is_instance_field_load_with_local_phi(region)) {
-    const TypeOopPtr *addr_t = in(Address)->bottom_type()->isa_oopptr();
-    int this_index  = phase->C->get_alias_index(addr_t);
-    int this_offset = addr_t->offset();
-    int this_iid    = addr_t->instance_id();
-    if (!addr_t->is_known_instance() &&
-         addr_t->is_ptr_to_boxed_value()) {
-      // Use _idx of address base (could be Phi node) for boxed values.
-      intptr_t   ignore = 0;
-      Node*      base = AddPNode::Ideal_base_and_offset(in(Address), phase, ignore);
-      if (base == nullptr) {
-        return this;
-      }
-      this_iid = base->_idx;
-    }
-    const Type* this_type = bottom_type();
-    for (DUIterator_Fast imax, i = region->fast_outs(imax); i < imax; i++) {
-      Node* phi = region->fast_out(i);
-      if (phi->is_Phi() && phi != mem &&
-          phi->as_Phi()->is_same_inst_field(this_type, (int)mem->_idx, this_iid, this_index, this_offset)) {
-        return phi;
-      }
-    }
-  }
 
-  return this;
+  return phi_or_self(phase);
 }
 
 // Construct an equivalent unsigned load.
@@ -1679,16 +1703,19 @@ Node* LoadNode::split_through_phi(PhaseGVN* phase, bool ignore_missing_instance_
 
   // Select Region to split through.
   Node* region;
+  int mem_id = -1;
   DomResult dom_result = DomResult::Dominate;
   if (!base_is_phi) {
     assert(mem->is_Phi(), "sanity");
     region = mem->in(0);
+    mem_id = mem->_idx;
     // Skip if the region dominates some control edge of the address.
     // We will check `dom_result` later.
     dom_result = MemNode::maybe_all_controls_dominate(address, region);
   } else if (!mem->is_Phi()) {
     assert(base_is_phi, "sanity");
     region = base->in(0);
+    mem_id = base->_idx;
     // Skip if the region dominates some control edge of the memory.
     // We will check `dom_result` later.
     dom_result = MemNode::maybe_all_controls_dominate(mem, region);
@@ -1697,16 +1724,19 @@ Node* LoadNode::split_through_phi(PhaseGVN* phase, bool ignore_missing_instance_
     dom_result = MemNode::maybe_all_controls_dominate(mem, base->in(0));
     if (dom_result == DomResult::Dominate) {
       region = base->in(0);
+      mem_id = base->_idx;
     } else {
       dom_result = MemNode::maybe_all_controls_dominate(address, mem->in(0));
       if (dom_result == DomResult::Dominate) {
         region = mem->in(0);
+        mem_id = mem->_idx;
       }
       // Otherwise we encountered a complex graph.
     }
   } else {
     assert(base->in(0) == mem->in(0), "sanity");
     region = mem->in(0);
+    mem_id = mem->_idx;
   }
 
   PhaseIterGVN* igvn = phase->is_IterGVN();
@@ -1726,9 +1756,9 @@ Node* LoadNode::split_through_phi(PhaseGVN* phase, bool ignore_missing_instance_
     int this_index = C->get_alias_index(t_oop);
     int this_offset = t_oop->offset();
     int this_iid = t_oop->is_known_instance_field() ? t_oop->instance_id() : base->_idx;
-    phi = new PhiNode(region, this_type, nullptr, mem->_idx, this_iid, this_index, this_offset);
+    phi = new PhiNode(region, this_type, nullptr, mem_id, this_iid, this_index, this_offset);
   } else if (ignore_missing_instance_id) {
-    phi = new PhiNode(region, this_type, nullptr, mem->_idx);
+    phi = new PhiNode(region, this_type, nullptr, mem_id);
   } else {
     return nullptr;
   }
