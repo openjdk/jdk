@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2024 Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,18 +25,18 @@
  * @bug 8011536 8151430 8316304 8334339
  * @summary Basic test for creationTime attribute on platforms/file systems
  *     that support it, tests using /tmp directory.
- * @library  ../.. /test/lib /java/foreign
- * @build jdk.test.lib.Platform NativeTestHelper
- * @run main/othervm/native --enable-native-access=ALL-UNNAMED CreationTime
+ * @library  ../.. /test/lib
+ * @build jdk.test.lib.Platform
+ * @run main CreationTime
  */
 
 /* @test id=cwd
  * @summary Basic test for creationTime attribute on platforms/file systems
  *     that support it, tests using the test scratch directory, the test
  *     scratch directory maybe at diff disk partition to /tmp on linux.
- * @library  ../.. /test/lib /java/foreign
- * @build jdk.test.lib.Platform NativeTestHelper
- * @run main/othervm/native --enable-native-access=ALL-UNNAMED CreationTime .
+ * @library  ../.. /test/lib
+ * @build jdk.test.lib.Platform
+ * @run main CreationTime .
  */
 
 import java.lang.foreign.Linker;
@@ -51,6 +50,8 @@ import jdk.test.lib.Platform;
 import jtreg.SkippedException;
 
 public class CreationTime {
+
+    private static final java.io.PrintStream err = System.err;
 
     /**
      * Reads the creationTime attribute
@@ -77,9 +78,14 @@ public class CreationTime {
         FileTime creationTime = creationTime(file);
         Instant now = Instant.now();
         if (Math.abs(creationTime.toMillis()-now.toEpochMilli()) > 10000L) {
-            System.err.println("creationTime.toMillis() == " + creationTime.toMillis());
-            System.err.println("File creation time reported as: " + creationTime);
-            throw new RuntimeException("Expected to be close to: " + now);
+            System.out.println("creationTime.toMillis() == " + creationTime.toMillis());
+            // If the file system doesn't support birth time, then skip this test
+            if (creationTime.toMillis() == 0) {
+                throw new SkippedException("birth time not support for: " + file);
+            } else {
+                err.println("File creation time reported as: " + creationTime);
+                throw new RuntimeException("Expected to be close to: " + now);
+            }
         }
 
         /**
@@ -101,12 +107,7 @@ public class CreationTime {
             }
         } else if (Platform.isLinux()) {
             // Creation time read depends on statx system call support
-            try {
-                supportsCreationTimeRead = CreationTimeHelper.
-                        linuxIsCreationTimeSupported(file.toAbsolutePath().toString());
-            } catch (Throwable e) {
-                supportsCreationTimeRead = false;
-            }
+            supportsCreationTimeRead = Linker.nativeLinker().defaultLookup().find("statx").isPresent();
             // Creation time updates are not supported on Linux
             supportsCreationTimeWrite = false;
         }
@@ -121,11 +122,8 @@ public class CreationTime {
             Instant plusHour = Instant.now().plusSeconds(60L * 60L);
             Files.setLastModifiedTime(file, FileTime.from(plusHour));
             FileTime current = creationTime(file);
-            if (!current.equals(creationTime)) {
-                System.err.println("current = " + current);
-                System.err.println("creationTime = " + creationTime);
+            if (!current.equals(creationTime))
                 throw new RuntimeException("Creation time should not have changed");
-            }
         }
 
         /**
