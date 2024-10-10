@@ -261,8 +261,8 @@ import jdk.internal.invoke.MhUtil;
  * {@snippet lang=java :
  *     private static final ScopedValue<String> USERNAME = ScopedValue.newInstance();
  *
- *     // @link substring="runWhere" target="ScopedValue#runWhere(ScopedValue, Object, Runnable)" :
- *     ScopedValue.runWhere(USERNAME, "duke", () -> {
+ *     // @link substring="run" target="ScopedValue.Carrier#run(Runnable)" :
+ *     ScopedValue.where(USERNAME, "duke").run(() -> {
  *         try (var scope = new StructuredTaskScope<String>()) {
  *
  *             scope.fork(() -> childTask());           // @highlight substring="fork"
