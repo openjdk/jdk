@@ -73,14 +73,6 @@ ParsePredicateNode* ParsePredicate::init_parse_predicate(Node* parse_predicate_p
   return nullptr;
 }
 
-bool ParsePredicate::is_predicate(Node* maybe_success_proj) {
-  if (!maybe_success_proj->is_IfProj()) {
-    return false;
-  }
-  IfNode* if_node = maybe_success_proj->in(0)->as_If();
-  return if_node->is_ParsePredicate();
-}
-
 Deoptimization::DeoptReason RegularPredicateWithUCT::uncommon_trap_reason(IfProjNode* if_proj) {
     CallStaticJavaNode* uct_call = if_proj->is_uncommon_trap_if_pattern();
     if (uct_call == nullptr) {
@@ -90,27 +82,31 @@ Deoptimization::DeoptReason RegularPredicateWithUCT::uncommon_trap_reason(IfProj
 }
 
 bool RegularPredicateWithUCT::is_predicate(Node* maybe_success_proj) {
-  if (may_be_predicate_if(maybe_success_proj)) {
-    IfProjNode* success_proj = maybe_success_proj->as_IfProj();
-    const Deoptimization::DeoptReason deopt_reason = uncommon_trap_reason(success_proj);
-    return (deopt_reason == Deoptimization::Reason_loop_limit_check ||
-            deopt_reason == Deoptimization::Reason_predicate ||
-            deopt_reason == Deoptimization::Reason_profile_predicate);
+  if (RegularPredicate::may_be_predicate_if(maybe_success_proj)) {
+    return has_valid_uncommon_trap(maybe_success_proj);
   } else {
     return false;
   }
 }
 
-bool RegularPredicateWithUCT::is_predicate(Node* node, Deoptimization::DeoptReason deopt_reason) {
-  if (may_be_predicate_if(node)) {
+bool RegularPredicateWithUCT::has_valid_uncommon_trap(const Node* success_proj) {
+  assert(RegularPredicate::may_be_predicate_if(success_proj), "must have been checked before");
+  const Deoptimization::DeoptReason deopt_reason = uncommon_trap_reason(success_proj->as_IfProj());
+  return (deopt_reason == Deoptimization::Reason_loop_limit_check ||
+          deopt_reason == Deoptimization::Reason_predicate ||
+          deopt_reason == Deoptimization::Reason_profile_predicate);
+}
+
+bool RegularPredicateWithUCT::is_predicate(const Node* node, Deoptimization::DeoptReason deopt_reason) {
+  if (RegularPredicate::may_be_predicate_if(node)) {
     return deopt_reason == uncommon_trap_reason(node->as_IfProj());
   } else {
     return false;
   }
 }
 
-// A Runtime Predicate must have an If or a RangeCheck node, while the If should not be a zero trip guard check.
-bool RegularPredicateWithUCT::may_be_predicate_if(Node* node) {
+// A Regular Predicate must have an If or a RangeCheck node, while the If should not be a zero trip guard check.
+bool RegularPredicate::may_be_predicate_if(const Node* node) {
   if (node->is_IfProj()) {
     const IfNode* if_node = node->in(0)->as_If();
     const int opcode_if = if_node->Opcode();
@@ -122,39 +118,43 @@ bool RegularPredicateWithUCT::may_be_predicate_if(Node* node) {
   return false;
 }
 
-bool RuntimePredicate::is_success_proj(Node* node, Deoptimization::DeoptReason deopt_reason) {
+// Runtime Predicates always have an UCT since they could normally fail at runtime. In this case we execute the trap
+// on the failing path.
+bool RuntimePredicate::is_predicate(Node* node) {
+  return RegularPredicateWithUCT::is_predicate(node);
+}
+
+bool RuntimePredicate::is_predicate(Node* node, Deoptimization::DeoptReason deopt_reason) {
   return RegularPredicateWithUCT::is_predicate(node, deopt_reason);
 }
 
-ParsePredicateIterator::ParsePredicateIterator(const Predicates& predicates) : _current_index(0) {
-  const PredicateBlock* loop_limit_check_predicate_block = predicates.loop_limit_check_predicate_block();
-  if (loop_limit_check_predicate_block->has_parse_predicate()) {
-    _parse_predicates.push(loop_limit_check_predicate_block->parse_predicate());
+// A Template Assertion Predicate has an If/RangeCheckNode and either an UCT or a halt node depending on where it
+// was created.
+bool TemplateAssertionPredicate::is_predicate(Node* node) {
+  if (!RegularPredicate::may_be_predicate_if(node)) {
+    return false;
   }
-  if (UseProfiledLoopPredicate) {
-    const PredicateBlock* profiled_loop_predicate_block = predicates.profiled_loop_predicate_block();
-    if (profiled_loop_predicate_block->has_parse_predicate()) {
-      _parse_predicates.push(profiled_loop_predicate_block->parse_predicate());
-    }
+  IfNode* if_node = node->in(0)->as_If();
+  if (if_node->in(1)->is_Opaque4()) {
+    return RegularPredicateWithUCT::has_valid_uncommon_trap(node) || AssertionPredicateWithHalt::has_halt(node);
   }
-  if (UseLoopPredicate) {
-    const PredicateBlock* loop_predicate_block = predicates.loop_predicate_block();
-    if (loop_predicate_block->has_parse_predicate()) {
-      _parse_predicates.push(loop_predicate_block->parse_predicate());
-    }
-  }
+  return false;
 }
 
-ParsePredicateNode* ParsePredicateIterator::next() {
-  assert(has_next(), "always check has_next() first");
-  return _parse_predicates.at(_current_index++);
+// Initialized Assertion Predicates always have the dedicated opaque node and a halt node.
+bool InitializedAssertionPredicate::is_predicate(Node* node) {
+  if (!AssertionPredicateWithHalt::is_predicate(node)) {
+    return false;
+  }
+  IfNode* if_node = node->in(0)->as_If();
+  return if_node->in(1)->is_OpaqueInitializedAssertionPredicate();
 }
 
 #ifdef ASSERT
 // Check that the block has at most one Parse Predicate and that we only find Regular Predicate nodes (i.e. IfProj,
 // If, or RangeCheck nodes).
-void PredicateBlock::verify_block() {
-  Node* next = _parse_predicate.entry(); // Skip unique Parse Predicate of this block if present
+void RegularPredicateBlock::verify_block(Node* tail) {
+  Node* next = tail;
   while (next != _entry) {
     assert(!next->is_ParsePredicate(), "can only have one Parse Predicate in a block");
     const int opcode = next->Opcode();
@@ -165,17 +165,6 @@ void PredicateBlock::verify_block() {
   }
 }
 #endif // ASSERT
-
-// Walk over all Regular Predicates of this block (if any) and return the first node not belonging to the block
-// anymore (i.e. entry to the first Regular Predicate in this block if any or `regular_predicate_proj` otherwise).
-Node* PredicateBlock::skip_regular_predicates(Node* regular_predicate_proj, Deoptimization::DeoptReason deopt_reason) {
-  Node* entry = regular_predicate_proj;
-  while (RuntimePredicate::is_success_proj(entry, deopt_reason)) {
-    assert(entry->in(0)->as_If(), "must be If node");
-    entry = entry->in(0)->in(0);
-  }
-  return entry;
-}
 
 // This strategy clones the OpaqueLoopInit and OpaqueLoopStride nodes.
 class CloneStrategy : public TransformStrategyForOpaqueLoopNodes {
@@ -381,8 +370,8 @@ bool TemplateAssertionExpressionNode::is_template_assertion_predicate(Node* node
   return node->is_If() && node->in(1)->is_Opaque4();
 }
 
-InitializedAssertionPredicate::InitializedAssertionPredicate(IfNode* template_assertion_predicate, Node* new_init,
-                                                             Node* new_stride, PhaseIdealLoop* phase)
+InitializedAssertionPredicateCreator::InitializedAssertionPredicateCreator(IfNode* template_assertion_predicate, Node* new_init,
+                                                                           Node* new_stride, PhaseIdealLoop* phase)
     : _template_assertion_predicate(template_assertion_predicate),
       _new_init(new_init),
       _new_stride(new_stride),
@@ -408,7 +397,7 @@ InitializedAssertionPredicate::InitializedAssertionPredicate(IfNode* template_as
 //                         success     fail path                   new success   new Halt
 //                           proj    (Halt or UCT)                     proj
 //
-IfTrueNode* InitializedAssertionPredicate::create(Node* control) {
+IfTrueNode* InitializedAssertionPredicateCreator::create(Node* control) {
   IdealLoopTree* loop = _phase->get_loop(control);
   OpaqueInitializedAssertionPredicateNode* assertion_expression = create_assertion_expression(control);
   IfNode* if_node = create_if_node(control, assertion_expression, loop);
@@ -417,7 +406,7 @@ IfTrueNode* InitializedAssertionPredicate::create(Node* control) {
 }
 
 // Create a new Assertion Expression to be used as bool input for the Initialized Assertion Predicate IfNode.
-OpaqueInitializedAssertionPredicateNode* InitializedAssertionPredicate::create_assertion_expression(Node* control) {
+OpaqueInitializedAssertionPredicateNode* InitializedAssertionPredicateCreator::create_assertion_expression(Node* control) {
   Opaque4Node* template_opaque = _template_assertion_predicate->in(1)->as_Opaque4();
   TemplateAssertionExpression template_assertion_expression(template_opaque);
   Opaque4Node* tmp_opaque = template_assertion_expression.clone_and_replace_init_and_stride(_new_init, _new_stride,
@@ -428,9 +417,9 @@ OpaqueInitializedAssertionPredicateNode* InitializedAssertionPredicate::create_a
   return assertion_expression;
 }
 
-IfNode* InitializedAssertionPredicate::create_if_node(Node* control,
-                                                      OpaqueInitializedAssertionPredicateNode* assertion_expression,
-                                                      IdealLoopTree* loop) {
+IfNode* InitializedAssertionPredicateCreator::create_if_node(Node* control,
+                                                             OpaqueInitializedAssertionPredicateNode* assertion_expression,
+                                                             IdealLoopTree* loop) {
   const int if_opcode = _template_assertion_predicate->Opcode();
   NOT_PRODUCT(const AssertionPredicateType assertion_predicate_type = _template_assertion_predicate->assertion_predicate_type();)
   IfNode* if_node = if_opcode == Op_If ?
@@ -440,19 +429,19 @@ IfNode* InitializedAssertionPredicate::create_if_node(Node* control,
   return if_node;
 }
 
-IfTrueNode* InitializedAssertionPredicate::create_success_path(IfNode* if_node, IdealLoopTree* loop) {
+IfTrueNode* InitializedAssertionPredicateCreator::create_success_path(IfNode* if_node, IdealLoopTree* loop) {
   IfTrueNode* success_proj = new IfTrueNode(if_node);
   _phase->register_control(success_proj, loop, if_node);
   return success_proj;
 }
 
-void InitializedAssertionPredicate::create_fail_path(IfNode* if_node, IdealLoopTree* loop) {
+void InitializedAssertionPredicateCreator::create_fail_path(IfNode* if_node, IdealLoopTree* loop) {
   IfFalseNode* fail_proj = new IfFalseNode(if_node);
   _phase->register_control(fail_proj, loop, if_node);
   create_halt_node(fail_proj, loop);
 }
 
-void InitializedAssertionPredicate::create_halt_node(IfFalseNode* fail_proj, IdealLoopTree* loop) {
+void InitializedAssertionPredicateCreator::create_halt_node(IfFalseNode* fail_proj, IdealLoopTree* loop) {
   StartNode* start_node = _phase->C->start();
   Node* frame = new ParmNode(start_node, TypeFunc::FramePtr);
   _phase->register_new_node(frame, start_node);
@@ -461,17 +450,45 @@ void InitializedAssertionPredicate::create_halt_node(IfFalseNode* fail_proj, Ide
   _phase->register_control(halt, loop, fail_proj);
 }
 
-// Is current node pointed to by iterator a predicate?
-bool PredicateEntryIterator::has_next() const {
-    return ParsePredicate::is_predicate(_current) ||
-           RegularPredicateWithUCT::is_predicate(_current) ||
-           AssertionPredicateWithHalt::is_predicate(_current);
+#ifndef PRODUCT
+void PredicateBlock::dump() const {
+  dump("");
 }
 
-// Skip the current predicate pointed to by iterator by returning the input into the predicate. This could possibly be
-// a non-predicate node.
-Node* PredicateEntryIterator::next_entry() {
-  assert(has_next(), "current must be predicate");
-  _current = _current->in(0)->in(0);
-  return _current;
+void PredicateBlock::dump(const char* prefix) const {
+  if (is_non_empty()) {
+    PredicatePrinter printer(prefix);
+    PredicateBlockIterator iterator(_tail, _deopt_reason);
+    iterator.for_each(printer);
+  } else {
+    tty->print_cr("%s- <empty>", prefix);
+  }
 }
+
+// Dumps all predicates from the loop to the earliest predicate in a pretty format.
+void Predicates::dump() const {
+  if (has_any()) {
+    Node* loop_head = _tail->unique_ctrl_out();
+    tty->print_cr("%d %s:", loop_head->_idx, loop_head->Name());
+    tty->print_cr("- Loop Limit Check Predicate Block:");
+    _loop_limit_check_predicate_block.dump("  ");
+    tty->print_cr("- Profiled Loop Predicate Block:");
+    _profiled_loop_predicate_block.dump("  ");
+    tty->print_cr("- Loop Predicate Block:");
+    _loop_predicate_block.dump("  ");
+    tty->cr();
+  } else {
+    tty->print_cr("<no predicates>");
+  }
+}
+
+void Predicates::dump_at(Node* node) {
+  Predicates predicates(node);
+  predicates.dump();
+}
+
+// Debug method to dump all predicates that are found above 'loop_node'.
+void Predicates::dump_for_loop(LoopNode* loop_node) {
+  dump_at(loop_node->skip_strip_mined()->in(LoopNode::EntryControl));
+}
+#endif // NOT PRODUCT

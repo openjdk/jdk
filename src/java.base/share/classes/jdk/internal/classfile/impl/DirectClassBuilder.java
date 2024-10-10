@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +31,7 @@ import java.lang.constant.ConstantDescs;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.reflect.AccessFlag;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
@@ -54,9 +56,13 @@ public final class DirectClassBuilder
 
     /** The value of default class access flags */
     static final int DEFAULT_CLASS_FLAGS = ClassFile.ACC_PUBLIC;
+    static final Util.Writable[] EMPTY_WRITABLE_ARRAY = {};
+    static final ClassEntry[] EMPTY_CLASS_ENTRY_ARRAY = {};
     final ClassEntry thisClassEntry;
-    private final List<Util.Writable> fields = new ArrayList<>();
-    private final List<Util.Writable> methods = new ArrayList<>();
+    private Util.Writable[] fields = EMPTY_WRITABLE_ARRAY;
+    private Util.Writable[] methods = EMPTY_WRITABLE_ARRAY;
+    private int fieldsCount = 0;
+    private int methodsCount = 0;
     private ClassEntry superclassEntry;
     private List<ClassEntry> interfaceEntries;
     private int majorVersion;
@@ -137,12 +143,20 @@ public final class DirectClassBuilder
     // internal / for use by elements
 
     ClassBuilder withField(Util.Writable field) {
-        fields.add(field);
+        if (fieldsCount >= fields.length) {
+            int newCapacity = fieldsCount + 8;
+            this.fields = Arrays.copyOf(fields, newCapacity);
+        }
+        fields[fieldsCount++] = field;
         return this;
     }
 
     ClassBuilder withMethod(Util.Writable method) {
-        methods.add(method);
+        if (methodsCount >= methods.length) {
+            int newCapacity = methodsCount + 8;
+            this.methods = Arrays.copyOf(methods, newCapacity);
+        }
+        methods[methodsCount++] = method;
         return this;
     }
 
@@ -184,9 +198,7 @@ public final class DirectClassBuilder
         else if ((flags & ClassFile.ACC_MODULE) == 0 && !"java/lang/Object".equals(thisClassEntry.asInternalName()))
             superclass = constantPool.classEntry(ConstantDescs.CD_Object);
         int interfaceEntriesSize = interfaceEntries.size();
-        List<ClassEntry> ies = new ArrayList<>(interfaceEntriesSize);
-        for (int i = 0; i < interfaceEntriesSize; i++)
-            ies.add(AbstractPoolEntry.maybeClone(constantPool, interfaceEntries.get(i)));
+        ClassEntry[] ies = interfaceEntriesSize == 0 ? EMPTY_CLASS_ENTRY_ARRAY : buildInterfaceEnties(interfaceEntriesSize);
 
         // We maintain two writers, and then we join them at the end
         int size = sizeHint == 0 ? 256 : sizeHint;
@@ -195,8 +207,8 @@ public final class DirectClassBuilder
 
         // The tail consists of fields and methods, and attributes
         // This should trigger all the CP/BSM mutation
-        Util.writeList(tail, fields);
-        Util.writeList(tail, methods);
+        Util.writeList(tail, fields, fieldsCount);
+        Util.writeList(tail, methods, methodsCount);
         int attributesOffset = tail.size();
         attributes.writeTo(tail);
 
@@ -211,12 +223,21 @@ public final class DirectClassBuilder
                 | ((minorVersion & 0xFFFFL) << 16)
                 | (majorVersion & 0xFFFFL));
         constantPool.writeTo(head);
-        head.writeU2(flags);
-        head.writeIndex(thisClassEntry);
+        head.writeU2U2(flags, head.cpIndex(thisClassEntry));
         head.writeIndexOrZero(superclass);
-        Util.writeListIndices(head, ies);
+        head.writeU2(interfaceEntriesSize);
+        for (int i = 0; i < interfaceEntriesSize; i++) {
+            head.writeIndex(ies[i]);
+        }
 
         // Join head and tail into an exact-size buffer
         return BufWriterImpl.join(head, tail);
+    }
+
+    private ClassEntry[] buildInterfaceEnties(int interfaceEntriesSize) {
+        var ies = new ClassEntry[interfaceEntriesSize];
+        for (int i = 0; i < interfaceEntriesSize; i++)
+            ies[i] = AbstractPoolEntry.maybeClone(constantPool, interfaceEntries.get(i));
+        return ies;
     }
 }
