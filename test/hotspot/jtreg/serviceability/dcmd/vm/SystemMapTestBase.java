@@ -100,13 +100,57 @@ public class SystemMapTestBase {
         wincommitted + "STACK-\\d+-main.*"
     };
 
+    // macOS:
+    private static final String macprot =  "[\\-rwx]*/[\\-rwx]*";
+
+    private static final String macow = "cow";
+    private static final String macprivate = "prv";
+    private static final String macprivatealiased = "p/a";
+
+    private static final String macOSbase = range + space + macprot + space;
+
+    private static final String shouldMatchUnconditionally_macOS[] = {
+        // java launcher
+        macOSbase + macow + space + "/.*/bin/java",
+        // libjvm
+        macOSbase + macow + space + "/.*/lib/server/libjvm.dylib",
+        // heap segment, should be part of all user space apps on all architectures OpenJDK supports.
+       // macOSbase + macprivate + space + "\\[heap\\]",
+        // we should see the hs-perf data file, and it should appear as shared as well as committed
+        macOSbase + macprivate + space + ".*/.*/hsperfdata_.*"
+    };
+
+    private static final String shouldMatchIfNMTIsEnabled_macOS[] = {
+        macOSbase + macprivate + space + "JAVAHEAP.*",
+        // metaspace
+        macOSbase + macprivate + space + "META.*",
+        // parts of metaspace should be uncommitted
+        //regexBase + "-" + space + "META.*",
+        // code cache
+        macOSbase + macprivate + space + "CODE.*",
+        // Main thread stack
+        macOSbase + macprivatealiased + space + "STACK-.*-main.*"
+    };
+
     private static final boolean isWindows = Platform.isWindows();
+    private static final boolean isMacOS = Platform.isOSX();
 
     protected static String[] shouldMatchUnconditionally() {
-        return isWindows ? shouldMatchUnconditionally_windows : shouldMatchUnconditionally_linux;
+        if (isWindows) {
+            return shouldMatchUnconditionally_windows;
+        } else if (isMacOS) {
+            return shouldMatchUnconditionally_macOS;
+        } else {
+            return shouldMatchUnconditionally_linux;
+        }
     }
     protected static String[] shouldMatchIfNMTIsEnabled() {
-        return isWindows ? shouldMatchIfNMTIsEnabled_windows : shouldMatchIfNMTIsEnabled_linux;
+        if (isWindows) {
+            return shouldMatchIfNMTIsEnabled_windows;
+        } else if (isMacOS) {
+            return shouldMatchIfNMTIsEnabled_macOS;
+        } else {
+            return shouldMatchIfNMTIsEnabled_linux;
+        }
     }
-
 }
