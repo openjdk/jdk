@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.net.SocketException;
 import java.nio.ByteBuffer;
+
 import javax.crypto.AEADBadTagException;
 import javax.crypto.BadPaddingException;
 import javax.net.ssl.SSLHandshakeException;
@@ -105,10 +106,15 @@ interface SSLTransport {
         ByteBuffer[] srcs, int srcsOffset, int srcsLength,
         ByteBuffer[] dsts, int dstsOffset, int dstsLength) throws IOException {
 
-        Plaintext[] plaintexts;
+        Plaintext[] plaintexts = null;
+        ByteBuffer currentFlight = null;
+
+        if (srcs != null) {
+            currentFlight = srcs[srcsOffset].slice();
+        }
+
         try {
-            plaintexts =
-                    context.inputRecord.decode(srcs, srcsOffset, srcsLength);
+            plaintexts = context.inputRecord.decode(srcs, srcsOffset, srcsLength);
         } catch (UnsupportedOperationException unsoe) {         // SSLv2Hello
             // Code to deliver SSLv2 error message for SSL/TLS connections.
             if (!context.sslContext.isDTLS()) {
@@ -122,16 +128,46 @@ interface SSLTransport {
         } catch (AEADBadTagException bte) {
             throw context.fatal(Alert.BAD_RECORD_MAC, bte);
         } catch (BadPaddingException bpe) {
-            /*
-             * The basic SSLv3 record protection involves (optional)
-             * encryption for privacy, and an integrity check ensuring
-             * data origin authentication.  We do them both here, and
-             * throw a fatal alert if the integrity check fails.
-             */
-             Alert alert = (context.handshakeContext != null) ?
-                     Alert.HANDSHAKE_FAILURE :
-                     Alert.BAD_RECORD_MAC;
-            throw context.fatal(alert, bpe);
+            // Check for unexpected plaintext alert message during TLSv1.3 handshake.
+            // This can happen if client doesn't receive ServerHello due to network timeout
+            // and tries to close the connection by sending an alert message.
+
+            if (context.inputRecord instanceof SSLSocketInputRecord) {
+                currentFlight = context.inputRecord.getLastDecodeRecord();
+            }
+
+            if (currentFlight != null && !context.sslConfig.isClientMode && !context.isNegotiated &&
+                    context.handshakeContext != null && context.handshakeContext.negotiatedProtocol != null &&
+                    context.handshakeContext.negotiatedProtocol.useTLS13PlusSpec()) {
+
+                byte contentType = (byte) Record.getInt8(currentFlight);                   // pos: 0
+                byte majorVersion = (byte) Record.getInt8(currentFlight);                  // pos: 1
+                byte minorVersion = (byte) Record.getInt8(currentFlight);                  // pos: 2
+                int contentLen = Record.getInt16(currentFlight);                           // pos: 3, 4
+
+                if (contentLen == 2 && ContentType.ALERT.equals(ContentType.valueOf(contentType))) {
+                    if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
+                        SSLLogger.info("Processing plaintext alert during TLSv1.3+ handshake");
+                    }
+
+                    plaintexts = new Plaintext[]{
+                            new Plaintext(contentType, majorVersion, minorVersion, -1, -1L, currentFlight)
+                    };
+                }
+            }
+
+            if (plaintexts == null) {
+                /*
+                 * The basic SSLv3 record protection involves (optional)
+                 * encryption for privacy, and an integrity check ensuring
+                 * data origin authentication.  We do them both here, and
+                 * throw a fatal alert if the integrity check fails.
+                 */
+                Alert alert = (context.handshakeContext != null) ?
+                        Alert.HANDSHAKE_FAILURE :
+                        Alert.BAD_RECORD_MAC;
+                throw context.fatal(alert, bpe);
+            }
         } catch (SSLHandshakeException she) {
             // may be record sequence number overflow
             throw context.fatal(Alert.HANDSHAKE_FAILURE, she);
