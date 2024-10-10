@@ -13,12 +13,15 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 
 import java.util.Arrays;
+import java.util.IntSummaryStatistics;
+import java.util.LongSummaryStatistics;
+import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.LongStream;
 
-@Warmup(iterations = 3, time = 5)
-@Measurement(iterations = 4, time = 5)
+@Warmup(iterations = 2, time = 5)
+@Measurement(iterations = 3, time = 5)
 @Fork(2)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @BenchmarkMode(Mode.Throughput)
@@ -107,6 +110,65 @@ public class MinMaxLoopBench
         }
     }
 
+    @State(Scope.Thread)
+    public static final class RangeState
+    {
+        @Param({"1000"})
+        int size;
+
+        /**
+         * Define range of values to clip as a percentage.
+         * For example, if value is 100, then all values are considered in the range,
+         * and so the highest value would be the max value and the lowest value the min value in the array.
+         * If the value is 90, then highest would be 10% lower than the max value,
+         * and the min value would be 10% higher than the min value.
+         */
+        @Param({"90", "100"})
+        int range;
+
+        @Param("0")
+        int seed;
+
+        int[] ints;
+        int[] resultInts;
+        long[] longs;
+        long[] resultLongs;
+        int highestInt;
+        int lowestInt;
+        long highestLong;
+        long lowestLong;
+        Random r = new Random(seed);
+
+        @Setup
+        public void setup() {
+            ints = new int[size];
+            resultInts = new int[size];
+            longs = new long[size];
+            resultLongs = new long[size];
+
+            for (int i = 0; i < size; i++) {
+                ints[i] = r.nextInt();
+                longs[i] = r.nextLong();
+            }
+
+            final IntSummaryStatistics intStats = Arrays.stream(ints).summaryStatistics();
+            highestInt = (intStats.getMax() * range) / 100;
+            lowestInt = intStats.getMin() + (intStats.getMax() - highestInt);
+
+            final LongSummaryStatistics longStats = Arrays.stream(longs).summaryStatistics();
+            highestLong = (longStats.getMax() * range) / 100;
+            lowestLong = longStats.getMin() + (longStats.getMax() - highestLong);
+        }
+    }
+
+    @Benchmark
+    public int[] intClippingRange(RangeState state) {
+        for (int i = 0; i < state.size; i++) {
+            state.resultInts[i] = Math.min(Math.max(state.ints[i], state.lowestInt), state.highestInt);
+        }
+        return state.resultInts;
+    }
+
     @Benchmark
     public int[] intLoopMin(LoopState state) {
         for (int i = 0; i < state.size; i++) {
@@ -141,6 +203,14 @@ public class MinMaxLoopBench
             result = Math.max(result, v);
         }
         return result;
+    }
+
+    @Benchmark
+    public long[] longClippingRange(RangeState state) {
+        for (int i = 0; i < state.size; i++) {
+            state.resultLongs[i] = Math.min(Math.max(state.longs[i], state.lowestLong), state.highestLong);
+        }
+        return state.resultLongs;
     }
 
     @Benchmark
