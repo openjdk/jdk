@@ -201,7 +201,6 @@ void ZCollectedHeap::collect(GCCause::Cause cause) {
     break;
 
   case GCCause::_metadata_GC_threshold:
-  case GCCause::_codecache_GC_threshold:
     // Start not urgent major GC
     _driver_major->collect(ZDriverRequest(cause, 1, 1));
     break;

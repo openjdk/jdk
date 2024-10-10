@@ -66,9 +66,6 @@ const char* GCCause::to_string(GCCause::Cause cause) {
     case _allocation_failure:
       return "Allocation Failure";
 
-    case _codecache_GC_threshold:
-      return "CodeCache GC Threshold";
-
     case _codecache_GC_aggressive:
       return "CodeCache GC Aggressive";
 
