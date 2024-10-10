@@ -1281,7 +1281,7 @@ var getJibProfilesDependencies = function (input, common) {
             revision: "5.9.20+1",
             environment_path: input.get("tidy", "home_path") + "/bin/tidy",
             configure_args: "TIDY=" + input.get("tidy", "home_path") +"/bin/tidy",
-            module: "tidy-html-" + input.target_os,
+            module: "tidy-html-" + input.target_platform,
         },
     };
 
