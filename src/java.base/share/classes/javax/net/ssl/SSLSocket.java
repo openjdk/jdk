@@ -770,6 +770,9 @@ public abstract class SSLSocket extends Socket
      *         if a value was successfully negotiated.
      * @throws UnsupportedOperationException if the underlying provider
      *         does not implement the operation.
+     *
+     * @spec https://www.rfc-editor.org/info/rfc7301
+     *      RFC 7301: Transport Layer Security (TLS) Application-Layer Protocol Negotiation Extension
      * @since 9
      */
     public String getApplicationProtocol() {

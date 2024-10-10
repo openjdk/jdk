@@ -56,6 +56,12 @@ import java.security.spec.AlgorithmParameterSpec;
  * applications.  Other values can be specified for this class, but not
  * all CSP implementations will support them.
  *
+ * @spec https://www.rfc-editor.org/info/rfc5116
+ *      RFC 5116: An Interface and Algorithms for Authenticated Encryption
+ * @spec https://csrc.nist.gov/publications/nistpubs/800-38D/SP-800-38D.pdf
+ *      Recommendation for Block Cipher Modes of Operation: Galois/Counter
+ *      Mode (GCM) and GMAC
+ *
  * @see javax.crypto.Cipher
  *
  * @since 1.7

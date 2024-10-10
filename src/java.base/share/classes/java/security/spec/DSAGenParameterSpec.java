@@ -29,6 +29,9 @@ package java.security.spec;
  * generating DSA parameters as specified in
  * <a href="http://csrc.nist.gov/publications/fips/fips186-3/fips_186-3.pdf">FIPS 186-3 Digital Signature Standard (DSS)</a>.
  *
+ * @spec  https://csrc.nist.gov/publications/fips/fips186-3/fips_186-3.pdf
+ *      FIPS 186-3 Digital Signature Standard (DSS)
+ *
  * @see AlgorithmParameterSpec
  *
  * @since 1.8

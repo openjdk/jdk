@@ -54,6 +54,8 @@ import java.util.Arrays;
  * this class requests the password as a char array, so it can be overwritten
  * when done.
  *
+ * @spec https://www.rfc-editor.org/info/rfc2898
+ *      RFC 2898: PKCS #5: Password-Based Cryptography Specification Version 2.0
  * @author Jan Luehe
  * @author Valerie Peng
  *
