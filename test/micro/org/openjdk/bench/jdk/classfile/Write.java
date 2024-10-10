@@ -62,6 +62,15 @@ import static org.openjdk.bench.jdk.classfile.TestConstants.*;
         "--enable-preview",
         "--add-exports", "java.base/jdk.internal.classfile.impl=ALL-UNNAMED"})
 public class Write {
+    static final int REPEATS = 40;
+    static final String[] METHOD_NAMES;
+    static {
+        var names = new String[REPEATS];
+        for (int xi = 0; xi < REPEATS; ++xi) {
+            names[xi] = "main" + ((xi == 0) ? "" : "" + xi);
+        }
+        METHOD_NAMES = names;
+    }
     static String checkFileAsm = "/tmp/asw/MyClass.class";
     static String checkFileBc = "/tmp/byw/MyClass.class";
     static boolean writeClassAsm = Files.exists(Paths.get(checkFileAsm).getParent());
@@ -90,8 +99,8 @@ public class Write {
             mv.visitEnd();
         }
 
-        for (int xi = 0; xi < 40; ++xi) {
-            MethodVisitor mv = cw.visitMethod(Opcodes.ACC_PUBLIC+Opcodes.ACC_STATIC, "main"+ ((xi==0)? "" : ""+xi), "([Ljava/lang/String;)V", null, null);
+        for (int xi = 0; xi < REPEATS; ++xi) {
+            MethodVisitor mv = cw.visitMethod(Opcodes.ACC_PUBLIC+Opcodes.ACC_STATIC, METHOD_NAMES[xi], "([Ljava/lang/String;)V", null, null);
             mv.visitCode();
             Label loopTop = new Label();
             Label loopEnd = new Label();
@@ -146,8 +155,8 @@ public class Write {
                                               .return_()
                       )
               );
-            for (int xi = 0; xi < 40; ++xi) {
-                cb.withMethod("main" + ((xi == 0) ? "" : "" + xi), MTD_void_StringArray,
+            for (int xi = 0; xi < REPEATS; ++xi) {
+                cb.withMethod(METHOD_NAMES[xi], MTD_void_StringArray,
                               ACC_PUBLIC | ACC_STATIC,
                               mb -> mb.withCode(c0 -> {
                                   java.lang.classfile.Label loopTop = c0.newLabel();
