@@ -1572,18 +1572,18 @@ address StubGenerator::generate_sha512_implCompress(bool multi_block, const char
   if (VM_Version::supports_sha512()) {
       __ sha512_update_ni_x1(state, buf, ofs, limit, multi_block);
   } else {
-      const XMMRegister msg = xmm0;
-      const XMMRegister state0 = xmm1;
-      const XMMRegister state1 = xmm2;
-      const XMMRegister msgtmp0 = xmm3;
-      const XMMRegister msgtmp1 = xmm4;
-      const XMMRegister msgtmp2 = xmm5;
-      const XMMRegister msgtmp3 = xmm6;
-      const XMMRegister msgtmp4 = xmm7;
+    const XMMRegister msg = xmm0;
+    const XMMRegister state0 = xmm1;
+    const XMMRegister state1 = xmm2;
+    const XMMRegister msgtmp0 = xmm3;
+    const XMMRegister msgtmp1 = xmm4;
+    const XMMRegister msgtmp2 = xmm5;
+    const XMMRegister msgtmp3 = xmm6;
+    const XMMRegister msgtmp4 = xmm7;
 
-      const XMMRegister shuf_mask = xmm8;
-      __ sha512_AVX2(msg, state0, state1, msgtmp0, msgtmp1, msgtmp2, msgtmp3, msgtmp4,
-          buf, state, ofs, limit, rsp, multi_block, shuf_mask);
+    const XMMRegister shuf_mask = xmm8;
+    __ sha512_AVX2(msg, state0, state1, msgtmp0, msgtmp1, msgtmp2, msgtmp3, msgtmp4,
+      buf, state, ofs, limit, rsp, multi_block, shuf_mask);
   }
   __ vzeroupper();
   __ leave();

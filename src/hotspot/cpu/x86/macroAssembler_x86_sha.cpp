@@ -1519,6 +1519,7 @@ void MacroAssembler::sha512_AVX2(XMMRegister msg, XMMRegister state0, XMMRegiste
     }
 }
 
+//Implemented using Intel IpSec implementation (intel-ipsec-mb on github)
 void MacroAssembler::sha512_update_ni_x1(Register arg_hash, Register arg_msg, Register ofs, Register limit, bool multi_block) {
     Label done_hash, block_loop;
     address K512_W = StubRoutines::x86::k512_W_addr();
