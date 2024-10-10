@@ -1134,6 +1134,8 @@ private:
   }
 #endif
 
+  Node* insert_convert_node_if_needed(BasicType target, Node* input);
+
 public:
   Node* idom_no_update(Node* d) const {
     return idom_no_update(d->_idx);
