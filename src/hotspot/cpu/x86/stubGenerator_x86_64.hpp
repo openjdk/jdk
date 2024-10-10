@@ -497,6 +497,10 @@ class StubGenerator: public StubCodeGenerator {
   address generate_intpoly_montgomeryMult_P256();
   address generate_intpoly_assign();
 
+  // SHA3 stubs
+  void generate_sha3_stubs();
+  address generate_sha3_implCompress(bool multiBlock, const char *name);
+
   // BASE64 stubs
 
   address base64_shuffle_addr();
