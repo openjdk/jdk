@@ -765,6 +765,8 @@ Block* PhaseCFG::insert_anti_dependences(Block* LCA, Node* load, bool verify) {
     uint op = use_mem_state->Opcode();
 
 #ifdef ASSERT
+    // CacheWB nodes are peculiar in a sense that they both are anti-dependent and produce memory.
+    // Allow them to be treated as a store.
     bool is_cache_wb = false;
     if (use_mem_state->is_Mach()) {
       int ideal_op = use_mem_state->as_Mach()->ideal_Opcode();
