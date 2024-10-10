@@ -24,6 +24,8 @@
  */
 package jdk.tools.jlink.internal;
 
+import static jdk.tools.jlink.internal.TaskHelper.JLINK_BUNDLE;
+
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -39,14 +41,15 @@ import java.lang.module.ResolutionException;
 import java.lang.module.ResolvedModule;
 import java.net.URI;
 import java.nio.ByteOrder;
-import java.nio.file.Files;
 import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
@@ -60,18 +63,18 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import jdk.internal.module.ModulePath;
 import jdk.internal.module.ModuleReferenceImpl;
-import jdk.tools.jlink.internal.TaskHelper.BadArgs;
-import static jdk.tools.jlink.internal.TaskHelper.JLINK_BUNDLE;
+import jdk.internal.module.ModuleResolution;
+import jdk.internal.opt.CommandLine;
+import jdk.tools.jlink.internal.ImagePluginStack.ImageProvider;
 import jdk.tools.jlink.internal.Jlink.JlinkConfiguration;
 import jdk.tools.jlink.internal.Jlink.PluginsConfiguration;
+import jdk.tools.jlink.internal.TaskHelper.BadArgs;
 import jdk.tools.jlink.internal.TaskHelper.Option;
 import jdk.tools.jlink.internal.TaskHelper.OptionsHelper;
-import jdk.tools.jlink.internal.ImagePluginStack.ImageProvider;
+import jdk.tools.jlink.internal.runtimelink.ResourceDiff;
 import jdk.tools.jlink.plugin.PluginException;
-import jdk.internal.opt.CommandLine;
-import jdk.internal.module.ModulePath;
-import jdk.internal.module.ModuleResolution;
 
 /**
  * Implementation for the jlink tool.
@@ -86,6 +89,7 @@ public class JlinkTask {
 
     private static final TaskHelper taskHelper
             = new TaskHelper(JLINK_BUNDLE);
+    public static final String JLINK_MOD_NAME = "jdk.jlink";
 
     private static final Option<?>[] recognizedOptions = {
         new Option<JlinkTask>(false, (task, opt, arg) -> {
@@ -182,7 +186,16 @@ public class JlinkTask {
         }, true, "--full-version"),
         new Option<JlinkTask>(false, (task, opt, arg) -> {
             task.options.ignoreSigning = true;
-        }, "--ignore-signing-information"),};
+        }, "--ignore-signing-information"),
+        new Option<JlinkTask>(false, (task, opt, arg) -> {
+            task.options.ignoreModifiedRuntime = true;
+        }, true, "--ignore-modified-runtime"),
+        // option for generating linkable JDK runtimes (at JDK build time)
+        new Option<JlinkTask>(false, (task, opt, arg) -> {
+            task.options.generateLinkableRuntime = true;
+        }, true, "--generate-linkable-runtime")
+    };
+
 
     private static final String PROGNAME = "jlink";
     private final OptionsValues options = new OptionsValues();
@@ -222,9 +235,15 @@ public class JlinkTask {
         boolean ignoreSigning = false;
         boolean bindServices = false;
         boolean suggestProviders = false;
+        boolean ignoreModifiedRuntime = false;
+        boolean generateLinkableRuntime = false;
     }
 
     public static final String OPTIONS_RESOURCE = "jdk/tools/jlink/internal/options";
+    // meta-data files per module for linkable JDK runtimes
+    public static final String RESPATH_PATTERN = "jdk/tools/jlink/internal/runtimelink/fs_%s_files";
+    // The diff files per module for linkable JDK runtimes
+    public static final String DIFF_PATTERN = "jdk/tools/jlink/internal/runtimelink/diff_%s";
 
     int run(String[] args) {
         if (log == null) {
@@ -269,11 +288,6 @@ public class JlinkTask {
                 Path jmods = getDefaultModulePath();
                 if (jmods != null) {
                     options.modulePath.add(jmods);
-                }
-
-                if (options.modulePath.isEmpty()) {
-                    throw taskHelper.newBadArgs("err.modulepath.must.be.specified")
-                            .showUsage(true);
                 }
             }
 
@@ -356,6 +370,7 @@ public class JlinkTask {
                                     false,
                                     null,
                                     false,
+                                    new OptionsValues(),
                                     null);
 
         // Then create the Plugin Stack
@@ -370,7 +385,7 @@ public class JlinkTask {
     private JlinkConfiguration initJlinkConfig() throws BadArgs {
         Set<String> roots = new HashSet<>();
         for (String mod : options.addMods) {
-            if (mod.equals(ALL_MODULE_PATH)) {
+            if (mod.equals(ALL_MODULE_PATH) && options.modulePath.size() > 0) {
                 ModuleFinder finder = newModuleFinder(options.modulePath, options.limitMods, Set.of());
                 // all observable modules are roots
                 finder.findAll()
@@ -391,10 +406,99 @@ public class JlinkTask {
             }
             finder = newModuleFinder(options.modulePath, options.limitMods, roots);
         }
+        // Setup and init actions for JDK linkable runtimes
+        LinkableRuntimesResult result = linkableJDKRuntimesInit(finder, roots);
 
         return new JlinkConfiguration(options.output,
                                       roots,
-                                      finder);
+                                      result.finder,
+                                      result.isLinkFromRuntime,
+                                      options.ignoreModifiedRuntime,
+                                      options.generateLinkableRuntime);
+    }
+
+    private static record LinkableRuntimesResult(boolean isLinkFromRuntime,
+                                                 ModuleFinder finder) {}
+
+    /**
+     * Perform sanity checks and setup actions for JDK linkable runtime links
+     *
+     * @param finder The module finder from packaged modules
+     * @param roots The roots (if any) of the modules.
+     * @return A module finder possibly adding the system modules for JDK
+     *         linkable runtimes if and only if java.base wasn't in the provided
+     *         module finder already. Otherwise returns the provided finder.
+     *         In both cases finders get the set of limited modules applied if
+     *         so requested with --limit-modules.
+     *
+     * @throws BadArgs if the jlink input options contain an invalid
+     *                 combination.
+     */
+    private LinkableRuntimesResult linkableJDKRuntimesInit(ModuleFinder finder,
+                                                           Set<String> roots)
+        throws BadArgs {
+        // Linkable JDK runtimes and an empty module path in conjunction
+        // with --keep-packaged-modules doesn't make sense as we are not linking
+        // from packaged modules to begin with.
+        if (options.modulePath.isEmpty() && options.packagedModulesPath != null) {
+            throw taskHelper.newBadArgs("err.runtime.link.packaged.mods");
+        }
+        boolean isLinkFromRuntime = options.modulePath.isEmpty();
+        // In case of custom modules outside the JDK we may
+        // have a non-empty module path, which must not include
+        // java.base. If it did, we link using packaged modules from that
+        // module path. If the module path does not include java.base, we must
+        // have a linkable JDK runtime. In that case we take the JDK modules
+        // from the run-time image.
+        if (finder.find("java.base").isEmpty()) {
+            isLinkFromRuntime = true;
+            ModuleFinder runtimeImageFinder = ModuleFinder.ofSystem();
+            finder = combinedFinders(finder, runtimeImageFinder, options.limitMods, roots);
+        }
+        return new LinkableRuntimesResult(isLinkFromRuntime, finder);
+    }
+
+    /**
+     * Creates a combined module finder of {@code finder} and
+     * {@code runtimeImageFinder} that first looks-up modules in the
+     * {@code runtimeImageFinder} and if not present in {@code finder}.
+     *
+     * @param finder A module finder based on packaged modules.
+     * @param runtimeImageFinder A system modules finder.
+     * @param limitMods The set of limited modules for the resulting
+     *                  finder (if any).
+     * @param roots All module roots.
+     *
+     * @return A combined finder, or the input finder, potentially applying
+     *         module limits.
+     */
+    private ModuleFinder combinedFinders(ModuleFinder finder,
+            ModuleFinder runtimeImageFinder, Set<String> limitMods,
+            Set<String> roots) {
+        ModuleFinder combined = new ModuleFinder() {
+
+            @Override
+            public Optional<ModuleReference> find(String name) {
+                Optional<ModuleReference> basic = runtimeImageFinder.find(name);
+                if (basic.isEmpty()) {
+                    return finder.find(name);
+                }
+                return basic;
+            }
+
+            @Override
+            public Set<ModuleReference> findAll() {
+                Set<ModuleReference> all = new HashSet<>();
+                all.addAll(runtimeImageFinder.findAll());
+                all.addAll(finder.findAll());
+                return Collections.unmodifiableSet(all);
+            }
+        };
+        // if limitmods is specified then limit the universe
+        if (limitMods != null && !limitMods.isEmpty()) {
+            return limitFinder(combined, limitMods, Objects.requireNonNull(roots));
+        }
+        return combined;
     }
 
     private void createImage(JlinkConfiguration config) throws Exception {
@@ -413,6 +517,7 @@ public class JlinkTask {
                                                         options.bindServices,
                                                         options.endian,
                                                         options.verbose,
+                                                        options,
                                                         log);
 
         // Then create the Plugin Stack
@@ -445,14 +550,10 @@ public class JlinkTask {
                                                Set<String> limitMods,
                                                Set<String> roots)
     {
-        if (Objects.requireNonNull(paths).isEmpty()) {
-             throw new IllegalArgumentException(taskHelper.getMessage("err.empty.module.path"));
-        }
-
-        Path[] entries = paths.toArray(new Path[0]);
         Runtime.Version version = Runtime.version();
-        ModuleFinder finder = ModulePath.of(version, true, entries);
-
+        Path[] entries = paths.toArray(new Path[0]);
+        ModuleFinder finder = paths.isEmpty() ? ModuleFinder.ofSystem()
+                                              : ModulePath.of(version, true, entries);
         if (finder.find("java.base").isPresent()) {
             // use the version of java.base module, if present, as
             // the release version for multi-release JAR files
@@ -518,6 +619,7 @@ public class JlinkTask {
                                                    boolean bindService,
                                                    ByteOrder endian,
                                                    boolean verbose,
+                                                   OptionsValues opts,
                                                    PrintWriter log)
             throws IOException
     {
@@ -534,12 +636,22 @@ public class JlinkTask {
                     taskHelper.getMessage("err.automatic.module", mref.descriptor().name(), loc));
             });
 
+        // Perform some sanity checks for linkable JDK runtimes
+        if (config.linkFromRuntimeImage()) {
+            sanityChecksLinkableJDKRuntime(log, cf);
+        }
+
         if (verbose && log != null) {
             // print modules to be linked in
             cf.modules().stream()
               .sorted(Comparator.comparing(ResolvedModule::name))
-              .forEach(rm -> log.format("%s %s%n",
-                                        rm.name(), rm.reference().location().get()));
+              .forEach(rm -> log.format("%s %s%s%n",
+                                        rm.name(),
+                                        rm.reference().location().get(),
+                                        "jrt".equals(rm.reference().location().get().getScheme())
+                                            && config.linkFromRuntimeImage() ?
+                                                " " + taskHelper.getMessage("runtime.link.jprt.path.extra")
+                                                : ""));
 
             // print provider info
             Set<ModuleReference> references = cf.modules().stream()
@@ -580,7 +692,143 @@ public class JlinkTask {
                         targetPlatform.arch().byteOrder(), targetPlatform);
             }
         }
-        return new ImageHelper(cf, mods, targetPlatform, retainModulesPath, ignoreSigning);
+
+        // use the version of java.base module, if present, as
+        // the release version for multi-release JAR files
+        var version = cf.findModule("java.base")
+                        .map(ResolvedModule::reference)
+                        .map(ModuleReference::descriptor)
+                        .flatMap(ModuleDescriptor::version)
+                        .map(ModuleDescriptor.Version::toString)
+                        .map(Runtime.Version::parse)
+                        .orElse(Runtime.version());
+
+        Set<Archive> archives = mods.entrySet().stream()
+                .map(e -> newArchive(e.getKey(),
+                                     e.getValue(),
+                                     version,
+                                     ignoreSigning,
+                                     config))
+                .collect(Collectors.toSet());
+
+        return new ImageHelper(archives,
+                               targetPlatform,
+                               retainModulesPath,
+                               config.isGenerateRuntimeImage());
+    }
+
+    /**
+     * Linkable JDK runtimes support. Perform some sanity checks if we run
+     * jlink from the current run-time JDK image.
+     *
+     * @param log The log to write messages to.
+     * @param cf The current configuration
+     *
+     * @throws IOException
+     */
+    private static void sanityChecksLinkableJDKRuntime(PrintWriter log,
+                                                       Configuration cf) throws IOException {
+        // Catch the case where we don't have a linkable JDK runtime. If so,
+        // we don't have the per module resource diffs in the modules image
+        String resourceName = String.format(DIFF_PATTERN, "java.base");
+        InputStream inStream = JlinkTask.class.getModule().getResourceAsStream(resourceName);
+        if (inStream == null) {
+            // Only linkable JDK runtimes have those resources. Abort otherwise.
+            String msg = taskHelper.getMessage("err.runtime.link.not.linkable.runtime");
+            throw new IllegalArgumentException(msg);
+        }
+        // Disallow jlink runs for linkable JDK runtimes with jdk.jlink included
+        if (cf.findModule(JLINK_MOD_NAME).isPresent()) {
+            String msg = taskHelper.getMessage("err.runtime.link.jdk.jlink.prohibited");
+            throw new IllegalArgumentException(msg);
+        }
+
+        // Print info message indicating jlink is performed on a linkable JDK
+        // runtime
+        if (log != null) {
+            log.println(taskHelper.getMessage("runtime.link.info"));
+        }
+    }
+
+    private static Archive newArchive(String module,
+                                      Path path,
+                                      Runtime.Version version,
+                                      boolean ignoreSigning,
+                                      JlinkConfiguration config) {
+        if (path.toString().endsWith(".jmod")) {
+            return new JmodArchive(module, path);
+        } else if (path.toString().endsWith(".jar")) {
+            ModularJarArchive modularJarArchive = new ModularJarArchive(module, path, version);
+            try (Stream<Archive.Entry> entries = modularJarArchive.entries()) {
+                boolean hasSignatures = entries.anyMatch((entry) -> {
+                    String name = entry.name().toUpperCase(Locale.ROOT);
+
+                    return name.startsWith("META-INF/") && name.indexOf('/', 9) == -1 && (
+                            name.endsWith(".SF") ||
+                                    name.endsWith(".DSA") ||
+                                    name.endsWith(".RSA") ||
+                                    name.endsWith(".EC") ||
+                                    name.startsWith("META-INF/SIG-")
+                    );
+                });
+
+                if (hasSignatures) {
+                    if (ignoreSigning) {
+                        System.err.println(taskHelper.getMessage("warn.signing", path));
+                    } else {
+                        throw new IllegalArgumentException(taskHelper.getMessage("err.signing", path));
+                    }
+                }
+            }
+            return modularJarArchive;
+        } else if (!"jrt".equals(path.toUri().getScheme()) && Files.isDirectory(path)) {
+            // The jrt URI path scheme conditional is there since we'd otherwise
+            // enter this branch for linkable JDK runtimes where the path is
+            // a jrt path and for the specific JDK module is a directory.
+            Path modInfoPath = path.resolve("module-info.class");
+            if (Files.isRegularFile(modInfoPath)) {
+                return new DirArchive(path, findModuleName(modInfoPath));
+            } else {
+                throw new IllegalArgumentException(
+                        taskHelper.getMessage("err.not.a.module.directory", path));
+            }
+        } else if (config.linkFromRuntimeImage()) {
+            // This is after all other archive types, since user-provided
+            // modules might be in any of the above forms and we'd like to
+            // support them.
+            //
+            // For linkable JDK runtimes the modules image includes resource
+            // diffs on a per-module bases as part of the jdk.jlink module.
+            // See ImageFileCreator.generateJImage() where those are added at
+            // JDK build time for linkable JDK runtimes.
+            //
+            // Here we retrieve the per module difference file, which is
+            // potentially empty, from the modules image and pass that on to
+            // JRTArchive for further processing. When streaming resources from
+            // the archive, the diff is being applied.
+            String diffResourceName = String.format(DIFF_PATTERN, module);
+            List<ResourceDiff> perModuleDiff = null;
+            try (InputStream in = JlinkTask.class.getModule().getResourceAsStream(diffResourceName)){
+                perModuleDiff = ResourceDiff.read(in);
+            } catch (IOException e) {
+                throw new AssertionError("Failure to retrieve resource diff for " +
+                                         "module " + module, e);
+            }
+            return new JRTArchive(module, path, !config.ignoreModifiedRuntime(), perModuleDiff);
+        } else {
+            throw new IllegalArgumentException(
+                    taskHelper.getMessage("err.not.modular.format", module, path));
+        }
+    }
+
+    private static String findModuleName(Path modInfoPath) {
+        try (BufferedInputStream bis = new BufferedInputStream(
+                Files.newInputStream(modInfoPath))) {
+            return ModuleDescriptor.read(bis).name();
+        } catch (IOException exp) {
+            throw new IllegalArgumentException(taskHelper.getMessage(
+                    "err.cannot.read.module.info", modInfoPath), exp);
+        }
     }
 
     /*
@@ -845,95 +1093,14 @@ public class JlinkTask {
         return sb.toString();
     }
 
-    private static class ImageHelper implements ImageProvider {
-        final Platform targetPlatform;
-        final Path packagedModulesPath;
-        final boolean ignoreSigning;
-        final Runtime.Version version;
-        final Set<Archive> archives;
-
-        ImageHelper(Configuration cf,
-                    Map<String, Path> modsPaths,
-                    Platform targetPlatform,
-                    Path packagedModulesPath,
-                    boolean ignoreSigning) throws IOException {
-            Objects.requireNonNull(targetPlatform);
-            this.targetPlatform = targetPlatform;
-            this.packagedModulesPath = packagedModulesPath;
-            this.ignoreSigning = ignoreSigning;
-
-            // use the version of java.base module, if present, as
-            // the release version for multi-release JAR files
-            this.version = cf.findModule("java.base")
-                .map(ResolvedModule::reference)
-                .map(ModuleReference::descriptor)
-                .flatMap(ModuleDescriptor::version)
-                .map(ModuleDescriptor.Version::toString)
-                .map(Runtime.Version::parse)
-                .orElse(Runtime.version());
-
-            this.archives = modsPaths.entrySet().stream()
-                                .map(e -> newArchive(e.getKey(), e.getValue()))
-                                .collect(Collectors.toSet());
-        }
-
-        private Archive newArchive(String module, Path path) {
-            if (path.toString().endsWith(".jmod")) {
-                return new JmodArchive(module, path);
-            } else if (path.toString().endsWith(".jar")) {
-                ModularJarArchive modularJarArchive = new ModularJarArchive(module, path, version);
-
-                try (Stream<Archive.Entry> entries = modularJarArchive.entries()) {
-                    boolean hasSignatures = entries.anyMatch((entry) -> {
-                        String name = entry.name().toUpperCase(Locale.ROOT);
-
-                        return name.startsWith("META-INF/") && name.indexOf('/', 9) == -1 && (
-                                name.endsWith(".SF") ||
-                                name.endsWith(".DSA") ||
-                                name.endsWith(".RSA") ||
-                                name.endsWith(".EC") ||
-                                name.startsWith("META-INF/SIG-")
-                        );
-                    });
-
-                    if (hasSignatures) {
-                        if (ignoreSigning) {
-                            System.err.println(taskHelper.getMessage("warn.signing", path));
-                        } else {
-                            throw new IllegalArgumentException(taskHelper.getMessage("err.signing", path));
-                        }
-                    }
-                }
-
-                return modularJarArchive;
-            } else if (Files.isDirectory(path)) {
-                Path modInfoPath = path.resolve("module-info.class");
-                if (Files.isRegularFile(modInfoPath)) {
-                    return new DirArchive(path, findModuleName(modInfoPath));
-                } else {
-                    throw new IllegalArgumentException(
-                        taskHelper.getMessage("err.not.a.module.directory", path));
-                }
-            } else {
-                throw new IllegalArgumentException(
-                    taskHelper.getMessage("err.not.modular.format", module, path));
-            }
-        }
-
-        private static String findModuleName(Path modInfoPath) {
-            try (BufferedInputStream bis = new BufferedInputStream(
-                    Files.newInputStream(modInfoPath))) {
-                return ModuleDescriptor.read(bis).name();
-            } catch (IOException exp) {
-                throw new IllegalArgumentException(taskHelper.getMessage(
-                    "err.cannot.read.module.info", modInfoPath), exp);
-            }
-        }
-
+    private static record ImageHelper(Set<Archive> archives,
+                                      Platform targetPlatform,
+                                      Path packagedModulesPath,
+                                      boolean generateRuntimeImage) implements ImageProvider {
         @Override
         public ExecutableImage retrieve(ImagePluginStack stack) throws IOException {
             ExecutableImage image = ImageFileCreator.create(archives,
-                    targetPlatform.arch().byteOrder(), stack);
+                    targetPlatform.arch().byteOrder(), stack, generateRuntimeImage);
             if (packagedModulesPath != null) {
                 // copy the packaged modules to the given path
                 Files.createDirectories(packagedModulesPath);
