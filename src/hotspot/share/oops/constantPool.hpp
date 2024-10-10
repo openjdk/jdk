@@ -37,6 +37,7 @@
 #include "utilities/align.hpp"
 #include "utilities/bytes.hpp"
 #include "utilities/constantTag.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/resourceHash.hpp"
 
 // A ConstantPool is an array containing class constants as described in the
@@ -781,7 +782,7 @@ private:
   int pre_resolve_shared_klasses(TRAPS);
 
   // Debugging
-  const char* printable_name_at(int cp_index) PRODUCT_RETURN0;
+  const char* printable_name_at(int cp_index) PRODUCT_RETURN_NULL;
 
  private:
 

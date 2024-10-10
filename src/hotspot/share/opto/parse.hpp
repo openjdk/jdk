@@ -426,7 +426,7 @@ class Parse : public GraphKit {
   void set_parse_bci(int bci);
 
   // Must this parse be aborted?
-  bool failing()                { return C->failing(); }
+  bool failing() const { return C->failing_internal(); } // might have cascading effects, not stressing bailouts for now.
 
   Block* rpo_at(int rpo) {
     assert(0 <= rpo && rpo < _block_count, "oob");
@@ -611,6 +611,11 @@ class Parse : public GraphKit {
 
   // Use speculative type to optimize CmpP node
   Node* optimize_cmp_with_klass(Node* c);
+
+  // Stress unstable if traps
+  void stress_trap(IfNode* orig_iff, Node* counter, Node* incr_store);
+  // Increment counter used by StressUnstableIfTraps
+  void increment_trap_stress_counter(Node*& counter, Node*& incr_store);
 
  public:
 #ifndef PRODUCT

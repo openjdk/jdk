@@ -190,6 +190,13 @@ public final class DirectCodeBuilder
         int pos = buf.size();
         int handlersSize = handlers.size();
         buf.writeU2(handlersSize);
+        if (handlersSize > 0) {
+            writeExceptionHandlers(buf, pos);
+        }
+    }
+
+    private void writeExceptionHandlers(BufWriterImpl buf, int pos) {
+        int handlersSize = handlers.size();
         for (AbstractPseudoInstruction.ExceptionCatchImpl h : handlers) {
             int startPc = labelToBci(h.tryStart());
             int endPc = labelToBci(h.tryEnd());
@@ -482,9 +489,11 @@ public final class DirectCodeBuilder
     // Instruction writing
 
     public void writeBytecode(Opcode opcode) {
-        if (opcode.isWide())
-            bytecodesBufWriter.writeU1(ClassFile.WIDE);
-        bytecodesBufWriter.writeU1(opcode.bytecode() & 0xFF);
+        if (opcode.isWide()) {
+            bytecodesBufWriter.writeU2(opcode.bytecode());
+        } else {
+            bytecodesBufWriter.writeU1(opcode.bytecode());
+        }
     }
 
     public void writeLocalVar(Opcode opcode, int localVar) {
@@ -497,12 +506,12 @@ public final class DirectCodeBuilder
         }
     }
 
-    public void writeIncrement(int slot, int val) {
-        Opcode opcode = (slot < 256 && val < 128 && val > -127)
-                        ? IINC
-                        : IINC_W;
-        writeBytecode(opcode);
-        if (opcode.isWide()) {
+    public void writeIncrement(boolean wide, int slot, int val) {
+        if (wide) {
+            bytecodesBufWriter.writeU1(RawBytecodeHelper.WIDE);
+        }
+        bytecodesBufWriter.writeU1(RawBytecodeHelper.IINC);
+        if (wide) {
             bytecodesBufWriter.writeU2(slot);
             bytecodesBufWriter.writeU2(val);
         } else {
@@ -800,7 +809,7 @@ public final class DirectCodeBuilder
     @Override
     public CodeBuilder invoke(Opcode opcode, MemberRefEntry ref) {
         if (opcode == INVOKEINTERFACE) {
-            int slots = Util.parameterSlots(Util.methodTypeSymbol(ref.nameAndType())) + 1;
+            int slots = Util.parameterSlots(Util.methodTypeSymbol(ref.type())) + 1;
             writeInvokeInterface(opcode, (InterfaceMethodRefEntry) ref, slots);
         } else {
             writeInvokeNormal(opcode, ref);
@@ -1207,7 +1216,7 @@ public final class DirectCodeBuilder
 
     @Override
     public CodeBuilder iinc(int slot, int val) {
-        writeIncrement(slot, val);
+        writeIncrement(validateAndIsWideIinc(slot, val), slot, val);
         return this;
     }
 

@@ -53,6 +53,8 @@ import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.lang.classfile.constantpool.MethodRefEntry;
 import static java.lang.constant.ConstantDescs.*;
+import static java.lang.invoke.MethodHandleNatives.Constants.NESTMATE_CLASS;
+import static java.lang.invoke.MethodHandleNatives.Constants.STRONG_LOADER_LINK;
 import static java.lang.invoke.MethodHandles.Lookup.ClassOption.NESTMATE;
 import static java.lang.invoke.MethodHandles.Lookup.ClassOption.STRONG;
 import static java.lang.invoke.MethodType.methodType;
@@ -348,7 +350,7 @@ import sun.invoke.util.Wrapper;
         try {
             // this class is linked at the indy callsite; so define a hidden nestmate
             var classdata = useImplMethodHandle? implementation : null;
-            return caller.makeHiddenClassDefiner(lambdaClassName, classBytes, Set.of(NESTMATE, STRONG), lambdaProxyClassFileDumper)
+            return caller.makeHiddenClassDefiner(lambdaClassName, classBytes, lambdaProxyClassFileDumper, NESTMATE_CLASS | STRONG_LOADER_LINK)
                          .defineClass(!disableEagerInitialization, classdata);
 
         } catch (Throwable t) {
@@ -392,10 +394,9 @@ import sun.invoke.util.Wrapper;
                            .invokespecial(CD_Object, INIT_NAME, MTD_void);
                         int parameterCount = factoryType.parameterCount();
                         for (int i = 0; i < parameterCount; i++) {
-                            cob.aload(0);
-                            Class<?> argType = factoryType.parameterType(i);
-                            cob.loadLocal(TypeKind.from(argType), cob.parameterSlot(i));
-                            cob.putfield(pool.fieldRefEntry(lambdaClassEntry, pool.nameAndTypeEntry(argNames[i], argDescs[i])));
+                            cob.aload(0)
+                               .loadLocal(TypeKind.from(factoryType.parameterType(i)), cob.parameterSlot(i))
+                               .putfield(pool.fieldRefEntry(lambdaClassEntry, pool.nameAndTypeEntry(argNames[i], argDescs[i])));
                         }
                         cob.return_();
                     }

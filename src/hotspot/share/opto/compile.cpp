@@ -719,6 +719,11 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
     method()->ensure_method_data();
   }
 
+  if (StressLCM || StressGCM || StressIGVN || StressCCP ||
+      StressIncrementalInlining || StressMacroExpansion || StressUnstableIfTraps || StressBailout) {
+    initialize_stress_seed(directive);
+  }
+
   Init(/*do_aliasing=*/ true);
 
   print_compile_messages();
@@ -793,7 +798,7 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
       assert(failure_reason() != nullptr, "expect reason for parse failure");
       stringStream ss;
       ss.print("method parse failed: %s", failure_reason());
-      record_method_not_compilable(ss.as_string());
+      record_method_not_compilable(ss.as_string() DEBUG_ONLY(COMMA true));
       return;
     }
     GraphKit kit(jvms);
@@ -842,11 +847,6 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
 
   if (failing())  return;
   NOT_PRODUCT( verify_graph_edges(); )
-
-  if (StressLCM || StressGCM || StressIGVN || StressCCP ||
-      StressIncrementalInlining || StressMacroExpansion) {
-    initialize_stress_seed(directive);
-  }
 
   // Now optimize
   Optimize();
@@ -973,7 +973,7 @@ Compile::Compile( ciEnv* ci_env,
   _types = new (comp_arena()) Type_Array(comp_arena());
   _node_hash = new (comp_arena()) NodeHash(comp_arena(), 255);
 
-  if (StressLCM || StressGCM) {
+  if (StressLCM || StressGCM || StressBailout) {
     initialize_stress_seed(directive);
   }
 
@@ -1018,6 +1018,7 @@ void Compile::Init(bool aliasing) {
 
 #ifdef ASSERT
   _phase_optimize_finished = false;
+  _phase_verify_ideal_loop = false;
   _exception_backedge = false;
   _type_verify = nullptr;
 #endif
@@ -1108,7 +1109,7 @@ void Compile::Init(bool aliasing) {
 #ifdef ASSERT
 // Verify that the current StartNode is valid.
 void Compile::verify_start(StartNode* s) const {
-  assert(failing() || s == start(), "should be StartNode");
+  assert(failing_internal() || s == start(), "should be StartNode");
 }
 #endif
 
@@ -1118,7 +1119,7 @@ void Compile::verify_start(StartNode* s) const {
  * the ideal graph.
  */
 StartNode* Compile::start() const {
-  assert (!failing(), "Must not have pending failure. Reason is: %s", failure_reason());
+  assert (!failing_internal() || C->failure_is_artificial(), "Must not have pending failure. Reason is: %s", failure_reason());
   for (DUIterator_Fast imax, i = root()->fast_outs(imax); i < imax; i++) {
     Node* start = root()->fast_out(i);
     if (start->is_Start()) {
@@ -2114,7 +2115,7 @@ void Compile::inline_incrementally(PhaseIterGVN& igvn) {
     igvn_worklist()->ensure_empty(); // should be done with igvn
 
     while (inline_incrementally_one()) {
-      assert(!failing(), "inconsistent");
+      assert(!failing_internal() || failure_is_artificial(), "inconsistent");
     }
     if (failing())  return;
 
@@ -2157,7 +2158,7 @@ void Compile::process_late_inline_calls_no_inline(PhaseIterGVN& igvn) {
     igvn_worklist()->ensure_empty(); // should be done with igvn
 
     while (inline_incrementally_one()) {
-      assert(!failing(), "inconsistent");
+      assert(!failing_internal() || failure_is_artificial(), "inconsistent");
     }
     if (failing())  return;
 
@@ -2944,6 +2945,9 @@ void Compile::Code_Gen() {
 
   // Build a proper-looking CFG
   PhaseCFG cfg(node_arena(), root(), matcher);
+  if (failing()) {
+    return;
+  }
   _cfg = &cfg;
   {
     TracePhase tp("scheduler", &timers[_t_scheduler]);
@@ -3161,6 +3165,30 @@ void Compile::final_graph_reshaping_impl(Node *n, Final_Reshape_Counts& frc, Uni
   }
 }
 
+void Compile::handle_div_mod_op(Node* n, BasicType bt, bool is_unsigned) {
+  if (!UseDivMod) {
+    return;
+  }
+
+  // Check if "a % b" and "a / b" both exist
+  Node* d = n->find_similar(Op_DivIL(bt, is_unsigned));
+  if (d == nullptr) {
+    return;
+  }
+
+  // Replace them with a fused divmod if supported
+  if (Matcher::has_match_rule(Op_DivModIL(bt, is_unsigned))) {
+    DivModNode* divmod = DivModNode::make(n, bt, is_unsigned);
+    d->subsume_by(divmod->div_proj(), this);
+    n->subsume_by(divmod->mod_proj(), this);
+  } else {
+    // Replace "a % b" with "a - ((a / b) * b)"
+    Node* mult = MulNode::make(d, d->in(2), bt);
+    Node* sub = SubNode::make(d->in(1), mult, bt);
+    n->subsume_by(sub, this);
+  }
+}
+
 void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& frc, uint nop, Unique_Node_List& dead_nodes) {
   switch( nop ) {
   // Count all float operations that may use FPU
@@ -3323,8 +3351,9 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
       bool is_oop   = t->isa_oopptr() != nullptr;
       bool is_klass = t->isa_klassptr() != nullptr;
 
-      if ((is_oop   && Matcher::const_oop_prefer_decode()  ) ||
-          (is_klass && Matcher::const_klass_prefer_decode() && t->isa_klassptr()->exact_klass()->is_in_encoding_range())) {
+      if ((is_oop   && UseCompressedOops          && Matcher::const_oop_prefer_decode()  ) ||
+          (is_klass && UseCompressedClassPointers && Matcher::const_klass_prefer_decode() &&
+           t->isa_klassptr()->exact_klass()->is_in_encoding_range())) {
         Node* nn = nullptr;
 
         int op = is_oop ? Op_ConN : Op_ConNKlass;
@@ -3609,83 +3638,19 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
 #endif
 
   case Op_ModI:
-    if (UseDivMod) {
-      // Check if a%b and a/b both exist
-      Node* d = n->find_similar(Op_DivI);
-      if (d) {
-        // Replace them with a fused divmod if supported
-        if (Matcher::has_match_rule(Op_DivModI)) {
-          DivModINode* divmod = DivModINode::make(n);
-          d->subsume_by(divmod->div_proj(), this);
-          n->subsume_by(divmod->mod_proj(), this);
-        } else {
-          // replace a%b with a-((a/b)*b)
-          Node* mult = new MulINode(d, d->in(2));
-          Node* sub  = new SubINode(d->in(1), mult);
-          n->subsume_by(sub, this);
-        }
-      }
-    }
+    handle_div_mod_op(n, T_INT, false);
     break;
 
   case Op_ModL:
-    if (UseDivMod) {
-      // Check if a%b and a/b both exist
-      Node* d = n->find_similar(Op_DivL);
-      if (d) {
-        // Replace them with a fused divmod if supported
-        if (Matcher::has_match_rule(Op_DivModL)) {
-          DivModLNode* divmod = DivModLNode::make(n);
-          d->subsume_by(divmod->div_proj(), this);
-          n->subsume_by(divmod->mod_proj(), this);
-        } else {
-          // replace a%b with a-((a/b)*b)
-          Node* mult = new MulLNode(d, d->in(2));
-          Node* sub  = new SubLNode(d->in(1), mult);
-          n->subsume_by(sub, this);
-        }
-      }
-    }
+    handle_div_mod_op(n, T_LONG, false);
     break;
 
   case Op_UModI:
-    if (UseDivMod) {
-      // Check if a%b and a/b both exist
-      Node* d = n->find_similar(Op_UDivI);
-      if (d) {
-        // Replace them with a fused unsigned divmod if supported
-        if (Matcher::has_match_rule(Op_UDivModI)) {
-          UDivModINode* divmod = UDivModINode::make(n);
-          d->subsume_by(divmod->div_proj(), this);
-          n->subsume_by(divmod->mod_proj(), this);
-        } else {
-          // replace a%b with a-((a/b)*b)
-          Node* mult = new MulINode(d, d->in(2));
-          Node* sub  = new SubINode(d->in(1), mult);
-          n->subsume_by(sub, this);
-        }
-      }
-    }
+    handle_div_mod_op(n, T_INT, true);
     break;
 
   case Op_UModL:
-    if (UseDivMod) {
-      // Check if a%b and a/b both exist
-      Node* d = n->find_similar(Op_UDivL);
-      if (d) {
-        // Replace them with a fused unsigned divmod if supported
-        if (Matcher::has_match_rule(Op_UDivModL)) {
-          UDivModLNode* divmod = UDivModLNode::make(n);
-          d->subsume_by(divmod->div_proj(), this);
-          n->subsume_by(divmod->mod_proj(), this);
-        } else {
-          // replace a%b with a-((a/b)*b)
-          Node* mult = new MulLNode(d, d->in(2));
-          Node* sub  = new SubLNode(d->in(1), mult);
-          n->subsume_by(sub, this);
-        }
-      }
-    }
+    handle_div_mod_op(n, T_LONG, true);
     break;
 
   case Op_LoadVector:
@@ -4368,7 +4333,7 @@ void Compile::verify_graph_edges(bool no_dead_code) {
 // to backtrack and retry without subsuming loads.  Other than this backtracking
 // behavior, the Compile's failure reason is quietly copied up to the ciEnv
 // by the logic in C2Compiler.
-void Compile::record_failure(const char* reason) {
+void Compile::record_failure(const char* reason DEBUG_ONLY(COMMA bool allow_multiple_failures)) {
   if (log() != nullptr) {
     log()->elem("failure reason='%s' phase='compile'", reason);
   }
@@ -4378,6 +4343,8 @@ void Compile::record_failure(const char* reason) {
     if (CaptureBailoutInformation) {
       _first_failure_details = new CompilationFailureInfo(reason);
     }
+  } else {
+    assert(!StressBailout || allow_multiple_failures, "should have handled previous failure.");
   }
 
   if (!C->failure_reason_is(C2Compiler::retry_no_subsuming_loads())) {
@@ -4405,7 +4372,9 @@ Compile::TracePhase::TracePhase(const char* name, elapsedTimer* accumulator)
 }
 
 Compile::TracePhase::~TracePhase() {
-  if (_compile->failing()) return;
+  if (_compile->failing_internal()) {
+    return; // timing code, not stressing bailouts.
+  }
 #ifdef ASSERT
   if (PrintIdealNodeCount) {
     tty->print_cr("phase name='%s' nodes='%d' live='%d' live_graph_walk='%d'",
@@ -5096,6 +5065,22 @@ bool Compile::randomized_select(int count) {
   return (random() & RANDOMIZED_DOMAIN_MASK) < (RANDOMIZED_DOMAIN / count);
 }
 
+#ifdef ASSERT
+// Failures are geometrically distributed with probability 1/StressBailoutMean.
+bool Compile::fail_randomly() {
+  if ((random() % StressBailoutMean) != 0) {
+    return false;
+  }
+  record_failure("StressBailout");
+  return true;
+}
+
+bool Compile::failure_is_artificial() {
+  assert(failing_internal(), "should be failing");
+  return C->failure_reason_is("StressBailout");
+}
+#endif
+
 CloneMap&     Compile::clone_map()                 { return _clone_map; }
 void          Compile::set_clone_map(Dict* d)      { _clone_map._dict = d; }
 
@@ -5183,7 +5168,7 @@ void Compile::sort_macro_nodes() {
 }
 
 void Compile::print_method(CompilerPhaseType cpt, int level, Node* n) {
-  if (failing()) { return; }
+  if (failing_internal()) { return; } // failing_internal to not stress bailouts from printing code.
   EventCompilerPhase event(UNTIMED);
   if (event.should_commit()) {
     CompilerEvent::PhaseEvent::post(event, C->_latest_stage_start_counter, cpt, C->_compile_id, level);

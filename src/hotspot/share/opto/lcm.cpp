@@ -161,6 +161,14 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
     Node *m = val->out(i);
     if( !m->is_Mach() ) continue;
     MachNode *mach = m->as_Mach();
+    if (mach->barrier_data() != 0) {
+      // Using memory accesses with barriers to perform implicit null checks is
+      // not supported. These operations might expand into multiple assembly
+      // instructions during code emission, including new memory accesses (e.g.
+      // in G1's pre-barrier), which would invalidate the implicit null
+      // exception table.
+      continue;
+    }
     was_store = false;
     int iop = mach->ideal_Opcode();
     switch( iop ) {
@@ -1196,7 +1204,7 @@ bool PhaseCFG::schedule_local(Block* block, GrowableArray<int>& ready_cnt, Vecto
       // to the Compile object, and the C2Compiler will see it and retry.
       C->record_failure(C2Compiler::retry_no_subsuming_loads());
     } else {
-      assert(false, "graph should be schedulable");
+      assert(C->failure_is_artificial(), "graph should be schedulable");
     }
     // assert( phi_cnt == end_idx(), "did not schedule all" );
     return false;
