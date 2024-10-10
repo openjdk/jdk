@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,6 +60,10 @@ static inline bool not_loaded() {
 }
 
 static void* dll_lookup(const char* name, const char* path, bool vm_exit_on_failure) {
+  if (is_vm_statically_linked()) {
+    return os::lookup_function(name);
+  }
+
   assert(_zip_handle != nullptr, "invariant");
   void* func = os::dll_lookup(_zip_handle, name);
   if (func == nullptr && vm_exit_on_failure) {
@@ -87,16 +91,23 @@ static void store_function_pointers(const char* path, bool vm_exit_on_failure) {
 static void load_zip_library(bool vm_exit_on_failure) {
   assert(!is_loaded(), "should not load zip library twice");
   char path[JVM_MAXPATHLEN];
-  if (os::dll_locate_lib(&path[0], sizeof path, Arguments::get_dll_dir(), "zip")) {
-    char ebuf[1024];
-    _zip_handle = os::dll_load(&path[0], &ebuf[0], sizeof ebuf);
-  }
-  if (_zip_handle == nullptr) {
-    if (vm_exit_on_failure) {
-      vm_exit_during_initialization("Unable to load zip library", &path[0]);
+
+  if (is_vm_statically_linked()) {
+    _zip_handle = os::get_default_process_handle();
+  } else {
+    // Load the libzip shared library and lookup the needed functions.
+    if (os::dll_locate_lib(&path[0], sizeof path, Arguments::get_dll_dir(), "zip")) {
+      char ebuf[1024];
+      _zip_handle = os::dll_load(&path[0], &ebuf[0], sizeof ebuf);
     }
-    return;
+    if (_zip_handle == nullptr) {
+      if (vm_exit_on_failure) {
+        vm_exit_during_initialization("Unable to load zip library", &path[0]);
+      }
+      return;
+    }
   }
+
   store_function_pointers(&path[0], vm_exit_on_failure);
   Atomic::release_store(&_loaded, true);
   assert(is_loaded(), "invariant");
