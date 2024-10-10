@@ -121,6 +121,8 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jdk.internal.access.JavaTimeAccess;
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.DecimalDigits;
 
 import sun.text.spi.JavaTimeDateTimePatternProvider;
@@ -161,6 +163,7 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * @since 1.8
  */
 public final class DateTimeFormatterBuilder {
+    private static final JavaTimeAccess JTA = SharedSecrets.getJavaTimeAccess();
 
     /**
      * Query for a time-zone that is region-only.
@@ -3810,56 +3813,71 @@ public final class DateTimeFormatterBuilder {
             }
             long inSec = inSecs;
             int inNano = NANO_OF_SECOND.checkValidIntValue(inNanos != null ? inNanos : 0);
-            // format mostly using LocalDateTime.toString
+            if (fractionalDigits == 0) {
+                inNano = 0;
+            }
+            boolean printNanoInLocalDateTime = fractionalDigits == -2
+                    || (inNano == 0 && (fractionalDigits == 0 || fractionalDigits == -1));
             if (inSec >= -SECONDS_0000_TO_1970) {
-                // current era
-                long zeroSecs = inSec - SECONDS_PER_10000_YEARS + SECONDS_0000_TO_1970;
-                long hi = Math.floorDiv(zeroSecs, SECONDS_PER_10000_YEARS) + 1;
-                long lo = Math.floorMod(zeroSecs, SECONDS_PER_10000_YEARS);
-                LocalDateTime ldt = LocalDateTime.ofEpochSecond(lo - SECONDS_0000_TO_1970, 0, ZoneOffset.UTC);
-                if (hi > 0) {
-                    buf.append('+').append(hi);
-                }
-                buf.append(ldt);
-                if (ldt.getSecond() == 0) {
-                    buf.append(":00");
-                }
+                currentEra(buf, inSec, printNanoInLocalDateTime ? inNano : 0);
             } else {
-                // before current era
-                long zeroSecs = inSec + SECONDS_0000_TO_1970;
-                long hi = zeroSecs / SECONDS_PER_10000_YEARS;
-                long lo = zeroSecs % SECONDS_PER_10000_YEARS;
-                LocalDateTime ldt = LocalDateTime.ofEpochSecond(lo - SECONDS_0000_TO_1970, 0, ZoneOffset.UTC);
-                int pos = buf.length();
-                buf.append(ldt);
-                if (ldt.getSecond() == 0) {
-                    buf.append(":00");
-                }
-                if (hi < 0) {
-                    if (ldt.getYear() == -10_000) {
-                        buf.replace(pos, pos + 2, Long.toString(hi - 1));
-                    } else if (lo == 0) {
-                        buf.insert(pos, hi);
-                    } else {
-                        buf.insert(pos + 1, Math.abs(hi));
-                    }
-                }
+                beforeCurrentEra(buf, inSec, printNanoInLocalDateTime ? inNano : 0);
             }
             // add fraction
-            if ((fractionalDigits < 0 && inNano > 0) || fractionalDigits > 0) {
-                buf.append('.');
-                int div = 100_000_000;
-                for (int i = 0; ((fractionalDigits == -1 && inNano > 0) ||
-                                    (fractionalDigits == -2 && (inNano > 0 || (i % 3) != 0)) ||
-                                    i < fractionalDigits); i++) {
-                    int digit = inNano / div;
-                    buf.append((char) (digit + '0'));
-                    inNano = inNano - (digit * div);
-                    div = div / 10;
-                }
+            if (!printNanoInLocalDateTime) {
+                printNano(buf, inSec, inNano);
             }
             buf.append('Z');
             return true;
+        }
+
+        private void printNano(StringBuilder buf, long inSec, int inNano) {
+            buf.append('.');
+            int div = 100_000_000;
+            int fractionalDigits = this.fractionalDigits;
+            for (int i = 0; ((fractionalDigits == -1 && inNano > 0) ||
+                    (fractionalDigits == -2 && (inNano > 0 || (i % 3) != 0)) ||
+                    i < fractionalDigits); i++) {
+                int digit = inNano / div;
+                buf.append((char) (digit + '0'));
+                inNano = inNano - (digit * div);
+                div = div / 10;
+            }
+        }
+
+        private static void currentEra(StringBuilder buf, long inSec, int inNano) {
+            long zeroSecs = inSec - SECONDS_PER_10000_YEARS + SECONDS_0000_TO_1970;
+            long hi = Math.floorDiv(zeroSecs, SECONDS_PER_10000_YEARS) + 1;
+            long lo = Math.floorMod(zeroSecs, SECONDS_PER_10000_YEARS);
+            LocalDateTime ldt = LocalDateTime.ofEpochSecond(lo - SECONDS_0000_TO_1970, inNano, ZoneOffset.UTC);
+            if (hi > 0) {
+                buf.append('+').append(hi);
+            }
+            JTA.formatTo(buf, ldt);
+            if (ldt.getSecond() == 0 && inNano == 0) {
+                buf.append(":00");
+            }
+        }
+
+        private static void beforeCurrentEra(StringBuilder buf, long inSec, int inNano) {
+            long zeroSecs = inSec + SECONDS_0000_TO_1970;
+            long hi = zeroSecs / SECONDS_PER_10000_YEARS;
+            long lo = zeroSecs % SECONDS_PER_10000_YEARS;
+            LocalDateTime ldt = LocalDateTime.ofEpochSecond(lo - SECONDS_0000_TO_1970, inNano, ZoneOffset.UTC);
+            int pos = buf.length();
+            JTA.formatTo(buf, ldt);
+            if (ldt.getSecond() == 0 && inNano == 0) {
+                buf.append(":00");
+            }
+            if (hi < 0) {
+                if (ldt.getYear() == -10_000) {
+                    buf.replace(pos, pos + 2, Long.toString(hi - 1));
+                } else if (lo == 0) {
+                    buf.insert(pos, hi);
+                } else {
+                    buf.insert(pos + 1, Math.abs(hi));
+                }
+            }
         }
 
         @Override
