@@ -1010,4 +1010,26 @@ class CreateAssertionPredicatesVisitor : public PredicateVisitor {
   }
 };
 
+// This visitor collects all Template Assertion Predicates If nodes or the corresponding Opaque nodes, depending on the
+// provided 'get_opaque' flag, to the provided list.
+class TemplateAssertionPredicateCollector : public PredicateVisitor {
+  Unique_Node_List& _list;
+  const bool _get_opaque;
+
+ public:
+  TemplateAssertionPredicateCollector(Unique_Node_List& list, const bool get_opaque)
+      : _list(list),
+        _get_opaque(get_opaque) {}
+
+  using PredicateVisitor::visit;
+
+  void visit(const TemplateAssertionPredicate& template_assertion_predicate) override {
+    if (_get_opaque) {
+      _list.push(template_assertion_predicate.opaque_node());
+    } else {
+      _list.push(template_assertion_predicate.tail());
+    }
+  }
+};
+
 #endif // SHARE_OPTO_PREDICATES_HPP
