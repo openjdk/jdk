@@ -851,6 +851,14 @@ void MetaspaceShared::preload_and_dump_impl(StaticArchiveBuilder& builder, TRAPS
                              vmSymbols::createArchivedObjects(),
                              vmSymbols::void_method_signature(),
                              CHECK);
+
+      // java.lang.Class::reflectionFactory cannot be archived yet. We set this field
+      // to null, and it will be initialized again at runtime.
+      log_debug(cds)("Resetting Class::reflectionFactory");
+      TempNewSymbol method_name = SymbolTable::new_symbol("resetArchivedStates");
+      Symbol* method_sig = vmSymbols::void_method_signature();
+      JavaCalls::call_static(&result, vmClasses::Class_klass(),
+                             method_name, method_sig, CHECK);
     }
 
     // Do this at the very end, when no Java code will be executed. Otherwise

@@ -25,6 +25,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/cdsConfig.hpp"
 #include "ci/ciReplay.hpp"
 #include "classfile/altHashing.hpp"
 #include "classfile/classFileStream.hpp"
@@ -2651,9 +2652,17 @@ JNI_ENTRY(jint, jni_RegisterNatives(JNIEnv *env, jclass clazz,
     if ((cl ==  nullptr || SystemDictionary::is_platform_class_loader(cl)) &&
         ik->module()->is_named()) {
       Klass* caller = thread->security_get_caller_class(1);
-      // If no caller class, or caller class has a different loader, then
-      // issue a warning below.
-      do_warning = (caller == nullptr) || caller->class_loader() != cl;
+      if (CDSConfig::is_loading_invokedynamic() &&
+          (k == vmClasses::Class_klass() || k == vmClasses::internal_Unsafe_klass())) {
+        // With archived indys, these two classes are aot-inited, but we need to
+        // call their registerNative() methods directly from C++ code, so caller
+        // will be null.
+        assert(k->has_aot_initialized_mirror(), "sanity");
+        assert(caller == nullptr, "sanity");
+        assert(cl == nullptr, "sanity");
+      } else {
+        do_warning = (caller == nullptr) || caller->class_loader() != cl;
+      }
     }
   }
 

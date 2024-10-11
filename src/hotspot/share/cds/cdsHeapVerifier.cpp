@@ -28,6 +28,7 @@
 #include "cds/cdsHeapVerifier.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/javaClasses.inline.hpp"
+#include "classfile/systemDictionaryShared.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "logging/log.hpp"
@@ -41,9 +42,10 @@
 #if INCLUDE_CDS_JAVA_HEAP
 
 // CDSHeapVerifier is used to check for problems where an archived object references a
-// static field that may be reinitialized at runtime. In the following example,
+// static field that may be get a different value at runtime. In the following example,
 //      Foo.get.test()
-// correctly returns true when CDS disabled, but incorrectly returns false when CDS is enabled.
+// correctly returns true when CDS disabled, but incorrectly returns false when CDS is enabled,
+// because the archived archivedFoo.bar value is different than Bar.bar.
 //
 // class Foo {
 //     static final Foo archivedFoo; // this field is archived by CDS
@@ -127,8 +129,6 @@ CDSHeapVerifier::CDSHeapVerifier() : _archived_objs(0), _problems(0)
                                                          "ZERO_INT");              // E
 
   if (CDSConfig::is_dumping_invokedynamic()) {
-    ADD_EXCL("java/lang/invoke/MethodHandles",            "IMPL_NAMES");           // D
-    ADD_EXCL("java/lang/invoke/MemberName$Factory",       "INSTANCE");             // D
     ADD_EXCL("java/lang/invoke/InvokerBytecodeGenerator", "MEMBERNAME_FACTORY",    // D
                                                           "INVOKER_SUPER_DESC");   // E same as java.lang.constant.ConstantDescs::CD_Object
   }
@@ -140,9 +140,10 @@ CDSHeapVerifier::CDSHeapVerifier() : _archived_objs(0), _problems(0)
 
 CDSHeapVerifier::~CDSHeapVerifier() {
   if (_problems > 0) {
-    log_warning(cds, heap)("Scanned %d objects. Found %d case(s) where "
-                           "an object points to a static field that may be "
-                           "reinitialized at runtime.", _archived_objs, _problems);
+    log_error(cds, heap)("Scanned %d objects. Found %d case(s) where "
+                         "an object points to a static field that "
+                         "may hold a different value at runtime.", _archived_objs, _problems);
+    MetaspaceShared::unrecoverable_writing_error();
   }
 }
 
@@ -187,24 +188,31 @@ public:
       if (field_type->is_instance_klass()) {
         InstanceKlass* field_ik = InstanceKlass::cast(field_type);
         if (field_ik->java_super() == vmClasses::Enum_klass()) {
-          if (field_ik->has_archived_enum_objs() || AOTClassInitializer::can_archive_initialized_mirror(field_ik)) {
+          if (field_ik->has_archived_enum_objs() || ArchiveUtils::has_aot_initialized_mirror(field_ik)) {
             // This field is an Enum. If any instance of this Enum has been archived, we will archive
             // all static fields of this Enum as well.
             return;
           }
         }
 
-        if (field_ik->is_hidden() && AOTClassInitializer::can_archive_initialized_mirror(field_ik)) {
-          // We have a static field in a core-library class that points to a method reference
-          // E.g., SharedSecrets::javaSecuritySpecAccess => EncodedKeySpec::clear(). These are safe
-          // to archive.
+        if (field_ik->is_hidden() && ArchiveUtils::has_aot_initialized_mirror(field_ik)) {
+          // We have a static field in a core-library class that points to a method reference, which
+          // are safe to archive.
           guarantee(_ik->module()->name() == vmSymbols::java_base(), "sanity");
           return;
         }
-      }
 
-      if (AOTClassInitializer::can_archive_initialized_mirror(_ik)) {
-        return;
+        if (field_ik == vmClasses::MethodType_klass()) {
+          // The identity of MethodTypes are preserved between assembly phase and production runs
+          // (by MethodType::AOTHolder::archivedMethodTypes). No need to check.
+          return;
+        }
+
+        if (field_ik == vmClasses::internal_Unsafe_klass() && ArchiveUtils::has_aot_initialized_mirror(field_ik)) {
+          // There's only a single instance of jdk/internal/misc/Unsafe, so all references will
+          // be pointing to this singleton, which has been archived.
+          return;
+        }
       }
 
       // This field *may* be initialized to a different value at runtime. Remember it
@@ -215,7 +223,8 @@ public:
 };
 
 // Remember all the static object fields of every class that are currently
-// loaded.
+// loaded. Later, we will check if any archived objects reference one of
+// these fields.
 void CDSHeapVerifier::do_klass(Klass* k) {
   if (k->is_instance_klass()) {
     InstanceKlass* ik = InstanceKlass::cast(k);
@@ -227,8 +236,9 @@ void CDSHeapVerifier::do_klass(Klass* k) {
       return;
     }
 
-    if (HeapShared::is_lambda_form_klass(ik)) {
-      // Archived lambda forms have preinitialized mirrors, so <clinit> won't run.
+    if (ArchiveUtils::has_aot_initialized_mirror(ik)) {
+      // ik's <clinit> won't be executed at runtime, the static fields in
+      // ik will carry their values to runtime.
       return;
     }
 
@@ -238,18 +248,6 @@ void CDSHeapVerifier::do_klass(Klass* k) {
 }
 
 void CDSHeapVerifier::add_static_obj_field(InstanceKlass* ik, oop field, Symbol* name) {
-  if (field->klass() == vmClasses::MethodType_klass()) {
-    // The identity of MethodTypes are preserved between assembly phase and production runs
-    // (by MethodType::AOTHolder::archivedMethodTypes). No need to check.
-    return;
-  }
-  if (field->klass() == vmClasses::LambdaForm_klass()) {
-    // LambdaForms are non-modifiable and are not tested for object equality, so
-    // it's OK if static fields of the LambdaForm type are reinitialized at runtime with
-    // alternative instances. No need to check.
-    return;
-  }
-
   StaticFieldInfo info = {ik, name};
   _table.put(field, info);
 }
@@ -272,7 +270,7 @@ inline bool CDSHeapVerifier::do_entry(oop& orig_obj, HeapShared::CachedOopInfo& 
     char* class_name = info->_holder->name()->as_C_string();
     char* field_name = info->_name->as_C_string();
     LogStream ls(Log(cds, heap)::warning());
-    ls.print_cr("Archive heap points to a static field that may be reinitialized at runtime:");
+    ls.print_cr("Archive heap points to a static field that may hold a different value at runtime:");
     ls.print_cr("Field: %s::%s", class_name, field_name);
     ls.print("Value: ");
     orig_obj->print_on(&ls);
@@ -315,6 +313,29 @@ void CDSHeapVerifier::trace_to_root(outputStream* st, oop orig_obj) {
   }
 }
 
+const char* static_field_name(oop mirror, oop field) {
+  Klass* k = java_lang_Class::as_Klass(mirror);
+  if (k->is_instance_klass()) {
+    for (JavaFieldStream fs(InstanceKlass::cast(k)); !fs.done(); fs.next()) {
+      if (fs.access_flags().is_static()) {
+        fieldDescriptor& fd = fs.field_descriptor();
+        switch (fd.field_type()) {
+        case T_OBJECT:
+        case T_ARRAY:
+          if (mirror->obj_field(fd.offset()) == field) {
+            return fs.name()->as_C_string();
+          }
+          break;
+        default:
+          break;
+        }
+      }
+    }
+  }
+
+  return "<unknown>";
+}
+
 int CDSHeapVerifier::trace_to_root(outputStream* st, oop orig_obj, oop orig_field, HeapShared::CachedOopInfo* info) {
   int level = 0;
   if (info->orig_referrer() != nullptr) {
@@ -330,7 +351,7 @@ int CDSHeapVerifier::trace_to_root(outputStream* st, oop orig_obj, oop orig_fiel
   orig_obj->print_address_on(st);
   st->print(" %s", k->internal_name());
   if (java_lang_Class::is_instance(orig_obj)) {
-    st->print(" (%s)", java_lang_Class::as_Klass(orig_obj)->external_name());
+    st->print(" (%s::%s)", java_lang_Class::as_Klass(orig_obj)->external_name(), static_field_name(orig_obj, orig_field));
   }
   if (orig_field != nullptr) {
     if (k->is_instance_klass()) {

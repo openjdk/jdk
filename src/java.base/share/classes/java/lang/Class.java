@@ -4055,6 +4055,15 @@ public final class Class<T> implements java.io.Serializable,
     private static ReflectionFactory reflectionFactory;
 
     /**
+     * When CDS is enabled, the Class class may be aot-initialized. However,
+     * we can't archive reflectionFactory, so we reset it to null, so it
+     * will be allocated again at runtime.
+     */
+    private static void resetArchivedStates() {
+        reflectionFactory = null;
+    }
+
+    /**
      * Returns the elements of this enum class or null if this
      * Class object does not represent an enum class.
      *

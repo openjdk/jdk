@@ -400,8 +400,8 @@ class MethodType
             ptypes = NO_PTYPES; trusted = true;
         }
         MethodType primordialMT = new MethodType(rtype, ptypes);
-        if (AOTHolder.archivedMethodTypes != null) {
-            MethodType mt = AOTHolder.archivedMethodTypes.get(primordialMT);
+        if (archivedMethodTypes != null) {
+            MethodType mt = archivedMethodTypes.get(primordialMT);
             if (mt != null) {
                 return mt;
             }
@@ -426,13 +426,8 @@ class MethodType
         return internTable.intern(mt);
     }
 
-    // AOT cache support - the identity of MethodTypes are important (their object equality are
-    // check with the == operator). We need to preserve the identity of all MethodTypes that
-    // we have created during the AOT cache assembly phase.
-    static class AOTHolder {
-        private static final @Stable MethodType[] objectOnlyTypes = new MethodType[20];
-        private static @Stable HashMap<MethodType,MethodType> archivedMethodTypes;
-    }
+    private static final @Stable MethodType[] objectOnlyTypes = new MethodType[20];
+    private static @Stable HashMap<MethodType,MethodType> archivedMethodTypes;
 
     /**
      * Finds or creates a method type whose components are {@code Object} with an optional trailing {@code Object[]} array.
@@ -450,16 +445,16 @@ class MethodType
         checkSlotCount(objectArgCount);
         int ivarargs = (!finalArray ? 0 : 1);
         int ootIndex = objectArgCount*2 + ivarargs;
-        if (ootIndex < AOTHolder.objectOnlyTypes.length) {
-            mt = AOTHolder.objectOnlyTypes[ootIndex];
+        if (ootIndex < objectOnlyTypes.length) {
+            mt = objectOnlyTypes[ootIndex];
             if (mt != null)  return mt;
         }
         Class<?>[] ptypes = new Class<?>[objectArgCount + ivarargs];
         Arrays.fill(ptypes, Object.class);
         if (ivarargs != 0)  ptypes[objectArgCount] = Object[].class;
         mt = makeImpl(Object.class, ptypes, true);
-        if (ootIndex < AOTHolder.objectOnlyTypes.length) {
-            AOTHolder.objectOnlyTypes[ootIndex] = mt;     // cache it here also!
+        if (ootIndex < objectOnlyTypes.length) {
+            objectOnlyTypes[ootIndex] = mt;     // cache it here also!
         }
         return mt;
     }
@@ -1428,6 +1423,7 @@ s.writeObject(this.parameterArray());
     // This is called from C code, at the very end of Java code execution
     // during the AOT cache assembly phase.
     static void createArchivedObjects() {
-        AOTHolder.archivedMethodTypes = copyInternTable();
+        archivedMethodTypes = copyInternTable();
+        internTable.clear();
     }
 }

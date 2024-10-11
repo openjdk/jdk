@@ -371,6 +371,13 @@ void ArchiveUtils::log_to_classlist(BootstrapInfo* bootstrap_specifier, TRAPS) {
   }
 }
 
+bool ArchiveUtils::has_aot_initialized_mirror(InstanceKlass* src_ik) {
+  if (SystemDictionaryShared::is_excluded_class(src_ik)) {
+    return false;
+  }
+  return ArchiveBuilder::current()->get_buffered_addr(src_ik)->has_aot_initialized_mirror();
+}
+
 size_t HeapRootSegments::size_in_bytes(size_t seg_idx) {
   assert(seg_idx < _count, "In range");
   return objArrayOopDesc::object_size(size_in_elems(seg_idx)) * HeapWordSize;

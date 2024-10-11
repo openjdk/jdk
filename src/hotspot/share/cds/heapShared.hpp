@@ -363,9 +363,16 @@ private:
   static void fill_failed_loaded_region();
   static void mark_native_pointers(oop orig_obj);
   static bool has_been_archived(oop orig_obj);
+  static void prepare_resolved_references();
   static void archive_java_mirrors();
   static void archive_strings();
   static void copy_special_subgraph();
+
+  class AOTInitializedClassScanner;
+  static void find_all_aot_initialized_classes();
+  static void find_all_aot_initialized_classes_helper();
+  static bool scan_for_aot_initialized_classes(oop obj);
+
  public:
   static void reset_archived_object_states(TRAPS);
   static void create_archived_object_cache() {
