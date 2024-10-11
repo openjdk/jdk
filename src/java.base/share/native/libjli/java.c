@@ -351,7 +351,7 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argv */
 
 #define CHECK_EXCEPTION_NULL_LEAVE(CENL_exception) \
     do { \
-        if ((*env)->ExceptionOccurred(env)) { \
+        if ((*env)->ExceptionCheck(env)) { \
             JLI_ReportExceptionDescription(env); \
             LEAVE(); \
         } \
@@ -363,7 +363,7 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argv */
 
 #define CHECK_EXCEPTION_LEAVE(CEL_return_value) \
     do { \
-        if ((*env)->ExceptionOccurred(env)) { \
+        if ((*env)->ExceptionCheck(env)) { \
             JLI_ReportExceptionDescription(env); \
             ret = (CEL_return_value); \
             LEAVE(); \
@@ -1522,7 +1522,7 @@ NewPlatformString(JNIEnv *env, char *s)
     if (ary != 0) {
         jstring str = 0;
         (*env)->SetByteArrayRegion(env, ary, 0, len, (jbyte *)s);
-        if (!(*env)->ExceptionOccurred(env)) {
+        if (!(*env)->ExceptionCheck(env)) {
             if (makePlatformStringMID == NULL) {
                 NULL_CHECK0(makePlatformStringMID = (*env)->GetStaticMethodID(env,
                         cls, "makePlatformString", "(Z[B)Ljava/lang/String;"));
