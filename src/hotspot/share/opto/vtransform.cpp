@@ -701,7 +701,7 @@ bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_ou
   current_red = first_red;
   while (true) {
     VTransformNode* vector_input = current_red->in(2);
-    VTransformVectorNode* vector_accumulator = new (vtransform.arena()) VTransformElementWiseVectorNode(vtransform, current_red->prototype(), 3);
+    VTransformVectorNode* vector_accumulator = new (vtransform.arena()) VTransformXYZVectorNode(vtransform, current_red->prototype(), 3, vopc);
     vector_accumulator->init_req(1, current_vector_accumulator);
     vector_accumulator->init_req(2, vector_input);
     vector_accumulator->set_nodes(current_red->xnodes()); // TODO del
