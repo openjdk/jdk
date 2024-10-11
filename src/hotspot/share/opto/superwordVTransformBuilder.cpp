@@ -228,8 +228,8 @@ VTransformNode* SuperWordVTransformBuilder::get_or_make_vtnode_vector_input_at_i
       return shift_count;
     } else {
       // Replicate the scalar same_input to every vector element.
-      const Type* element_type = _vloop_analyzer.types().velt_type(p0);
-      if (index == 2 && VectorNode::is_scalar_rotate(p0) && element_type->isa_long()) {
+      BasicType element_type = _vloop_analyzer.types().velt_basic_type(p0);
+      if (index == 2 && VectorNode::is_scalar_rotate(p0) && element_type == T_LONG) {
         // Scalar rotate has int rotation value, but the scalar rotate expects longs.
         assert(same_input->bottom_type()->isa_int(), "scalar rotate expects int rotation");
         VTransformNode* conv = new (_vtransform.arena()) VTransformConvI2LNode(_vtransform);

@@ -801,7 +801,12 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public void writeTo(DirectCodeBuilder writer) {
-            writer.writeLocalVar(op, slot);
+            var op = this.op;
+            if (op.sizeIfFixed() == 1) {
+                writer.writeBytecode(op);
+            } else {
+                writer.writeLocalVar(op, slot);
+            }
         }
 
         @Override
@@ -832,7 +837,12 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public void writeTo(DirectCodeBuilder writer) {
-            writer.writeLocalVar(op, slot);
+            var op = this.op;
+            if (op.sizeIfFixed() == 1) {
+                writer.writeBytecode(op);
+            } else {
+                writer.writeLocalVar(op, slot);
+            }
         }
 
         @Override
@@ -1061,7 +1071,7 @@ public abstract sealed class AbstractInstruction
         @Override
         public int count() {
             return op == Opcode.INVOKEINTERFACE
-                   ? Util.parameterSlots(Util.methodTypeSymbol(methodEntry.nameAndType())) + 1
+                   ? Util.parameterSlots(Util.methodTypeSymbol(methodEntry.type())) + 1
                    : 0;
         }
 
