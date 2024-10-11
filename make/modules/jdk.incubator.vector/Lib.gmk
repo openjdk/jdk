@@ -50,6 +50,7 @@ ifeq ($(call isTargetOs, linux)+$(call isTargetCpu, riscv64)+$(INCLUDE_COMPILER2
       EXTRA_SRC := libsleef/generated, \
       DISABLED_WARNINGS_gcc := unused-function sign-compare tautological-compare ignored-qualifiers, \
       DISABLED_WARNINGS_clang := unused-function sign-compare tautological-compare ignored-qualifiers, \
+      CFLAGS := -march=rv64gcv, \
   ))
 
   TARGETS += $(BUILD_LIBSLEEF)
