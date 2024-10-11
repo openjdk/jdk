@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,50 +30,80 @@
  * @run main bug4323121
  */
 
-import java.awt.Graphics;
 import java.awt.Point;
 import java.awt.Robot;
+import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
-import java.awt.event.MouseMotionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.util.concurrent.CountDownLatch;
+
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 
-public class bug4323121 {
+import static java.util.concurrent.TimeUnit.SECONDS;
+
+public final class bug4323121 extends MouseAdapter {
 
     static JFrame frame;
-    static testButton button;
-    static volatile Point pt;
-    static volatile int buttonW;
-    static volatile int buttonH;
-    static volatile boolean failed = false;
+    static JButton button;
+
+    static volatile Point buttonCenter;
+
+    private static final CountDownLatch windowGainedFocus = new CountDownLatch(1);
+
+    private static final CountDownLatch mouseEntered = new CountDownLatch(1);
+
+    // Thread-safe by using the mouseEntered latch
+    private static boolean modelArmed;
 
     public static void main(String[] args) throws Exception {
         Robot robot = new Robot();
         robot.setAutoDelay(100);
+
+        final bug4323121 eventHandler = new bug4323121();
         try {
             SwingUtilities.invokeAndWait(() -> {
+                button = new TestButton("gotcha");
+                button.addMouseMotionListener(eventHandler);
+                button.addMouseListener(eventHandler);
+
                 frame = new JFrame("bug4323121");
-                button = new testButton("gotcha");
                 frame.getContentPane().add(button);
+
+                frame.addWindowFocusListener(new WindowAdapter() {
+                    @Override
+                    public void windowGainedFocus(WindowEvent e) {
+                        windowGainedFocus.countDown();
+                    }
+                });
+
                 frame.pack();
                 frame.setLocationRelativeTo(null);
                 frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
                 frame.setVisible(true);
             });
+
+            if (!windowGainedFocus.await(1, SECONDS)) {
+                throw new RuntimeException("Window didn't gain focus");
+            }
             robot.waitForIdle();
-            robot.delay(1000);
+
             SwingUtilities.invokeAndWait(() -> {
-                pt = button.getLocationOnScreen();
-                buttonW = button.getSize().width;
-                buttonH = button.getSize().height;
+                Point location = button.getLocationOnScreen();
+                buttonCenter = new Point(location.x + button.getWidth() / 2,
+                                         location.y + button.getHeight() / 2);
             });
-            robot.mouseMove(pt.x + buttonW / 2, pt.y + buttonH / 2);
-            robot.waitForIdle();
-            if (failed) {
-                throw new RuntimeException("Any created button returns " +
-                                    "true for isArmed()");
+
+            robot.mouseMove(buttonCenter.x , buttonCenter.y);
+
+            if (!mouseEntered.await(1, SECONDS)) {
+                throw new RuntimeException("Mouse entered event wasn't received");
+            }
+            if (modelArmed) {
+                throw new RuntimeException("getModel().isArmed() returns true "
+                                           + "for a subclass of JButton");
             }
         } finally {
                 SwingUtilities.invokeAndWait(() -> {
@@ -84,42 +114,17 @@ public class bug4323121 {
         }
     }
 
-    static class testButton extends JButton implements MouseMotionListener, MouseListener {
-        public testButton(String label) {
+    private static final class TestButton extends JButton {
+        public TestButton(String label) {
             super(label);
-            addMouseMotionListener(this);
-            addMouseListener(this);
         }
+    }
 
-        protected void paintComponent(Graphics g) {
-            super.paintComponent(g);
+    @Override
+    public void mouseEntered(MouseEvent e) {
+        if (button.getModel().isArmed()) {
+            modelArmed = true;
         }
-
-        protected void paintBorder(Graphics g) {
-        }
-
-        public void mousePressed(MouseEvent e) {
-        }
-
-        public void mouseDragged(MouseEvent e) {
-        }
-
-        public void mouseMoved(MouseEvent e) {
-        }
-
-        public void mouseReleased(MouseEvent e) {
-        }
-
-        public void mouseEntered(MouseEvent e) {
-            if (getModel().isArmed()) {
-                failed = true;
-            }
-        }
-
-        public void mouseExited(MouseEvent e) {
-        }
-
-        public void mouseClicked(MouseEvent e) {
-        }
+        mouseEntered.countDown();
     }
 }
