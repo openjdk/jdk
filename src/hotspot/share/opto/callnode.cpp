@@ -964,7 +964,7 @@ void CallNode::extract_projections(CallProjections* projs, bool separate_io_proj
   do_asserts = do_asserts && !Compile::current()->inlining_incrementally();
   assert(!do_asserts || projs->fallthrough_catchproj != nullptr, "must be found");
   assert(!do_asserts || projs->fallthrough_memproj   != nullptr, "must be found");
-  //assert(!do_asserts || projs->fallthrough_ioproj    != nullptr, "must be found");
+  assert(!do_asserts || projs->fallthrough_ioproj    != nullptr, "must be found");
   assert(!do_asserts || projs->catchall_catchproj    != nullptr, "must be found");
   if (separate_io_proj) {
     assert(!do_asserts || projs->catchall_memproj    != nullptr, "must be found");
