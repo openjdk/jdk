@@ -164,7 +164,7 @@ public abstract class NamedSignature extends SignatureSpi {
     ///
     /// @param name parameter name
     /// @param sk private key in raw bytes
-    /// @param sk2 parsed private key, `null` if none.
+    /// @param sk2 parsed private key, `null` if none. See [#implCheckPrivateKey].
     /// @param msg the message
     /// @param sr SecureRandom object, `null` if not initialized
     /// @return the signature
@@ -177,7 +177,7 @@ public abstract class NamedSignature extends SignatureSpi {
     ///
     /// @param name parameter name
     /// @param pk public key in raw bytes
-    /// @param pk2 parsed public key, `null` if none.
+    /// @param pk2 parsed public key, `null` if none. See [#implCheckPublicKey].
     /// @param msg the message
     /// @param sig the signature
     /// @return true if verified

@@ -155,7 +155,7 @@ public abstract class NamedKEM implements KEMSpi {
     ///
     /// @param name parameter name
     /// @param pk public key in raw bytes
-    /// @param pk2 parsed public key, `null` if none.
+    /// @param pk2 parsed public key, `null` if none. See [#implCheckPublicKey].
     /// @param sr SecureRandom object, `null` if not initialized
     /// @return the key encapsulation message and the shared key (in this order)
     /// @throws ProviderException if there is an internal error
@@ -165,7 +165,7 @@ public abstract class NamedKEM implements KEMSpi {
     ///
     /// @param name parameter name
     /// @param sk private key in raw bytes
-    /// @param sk2 parsed private key, `null` if none.
+    /// @param sk2 parsed private key, `null` if none. See [#implCheckPrivateKey].
     /// @param encap the key encapsulation message
     /// @return the shared key
     /// @throws ProviderException if there is an internal error

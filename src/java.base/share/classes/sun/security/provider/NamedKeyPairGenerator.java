@@ -100,7 +100,7 @@ import java.util.Objects;
 /// `NamedX509Key` or `NamedPKCS8Key`. Existing implementations of algorithms
 /// like EdDSA and XDH have been generating keys implementing `EdECKey` or
 /// `XECKey` interfaces, and they are not rewritten with this framework.
-/// `NamedParamterSpec` fields not implemented with this framework include
+/// `NamedParameterSpec` fields not implemented with this framework include
 /// Ed25519, Ed448, X25519, and X448.
 public abstract class NamedKeyPairGenerator extends KeyPairGeneratorSpi {
 
