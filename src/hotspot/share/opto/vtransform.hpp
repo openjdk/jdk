@@ -70,6 +70,7 @@ class VTransformLoopPhiNode;
 class VTransformVectorNode;
 class VTransformXYZVectorNode;
 class VTransformElementWiseVectorNode;
+class VTransformCmpVectorNode;
 class VTransformBoolVectorNode;
 class VTransformReductionVectorNode;
 class VTransformMemVectorNode;
@@ -478,6 +479,7 @@ public:
   virtual VTransformVectorNode* isa_Vector() { return nullptr; }
   virtual VTransformXYZVectorNode* isa_XYZVector() { return nullptr; }
   virtual VTransformElementWiseVectorNode* isa_ElementWiseVector() { return nullptr; }
+  virtual VTransformCmpVectorNode* isa_CmpVector() { return nullptr; }
   virtual VTransformBoolVectorNode* isa_BoolVector() { return nullptr; }
   virtual VTransformReductionVectorNode* isa_ReductionVector() { return nullptr; }
   virtual VTransformMemVectorNode* isa_MemVector() { return nullptr; }
@@ -672,6 +674,17 @@ struct VTransformBoolTest {
 
   VTransformBoolTest(const BoolTest::mask mask, bool is_negated) :
     _mask(mask), _is_negated(is_negated) {}
+};
+
+// Cmp + Bool -> VectorMaskCmp
+class VTransformCmpVectorNode : public VTransformVectorNode {
+public:
+  VTransformCmpVectorNode(VTransform& vtransform, VTransformNodePrototype prototype, uint req) :
+    VTransformVectorNode(vtransform, prototype, req) {}
+  virtual VTransformCmpVectorNode* isa_CmpVector() override { return this; }
+  virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override { return 0; }
+  virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override { return VTransformApplyResult::make_empty(); }
+  NOT_PRODUCT(virtual const char* name() const override { return "CmpVector"; };)
 };
 
 class VTransformBoolVectorNode : public VTransformElementWiseVectorNode {

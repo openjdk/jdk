@@ -488,14 +488,11 @@ VTransformApplyResult VTransformXYZVectorNode::apply(VTransformApplyState& apply
 }
 
 float VTransformElementWiseVectorNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
-  Node* first  = xnodes().at(0); // TODO first in element wise
   int sopc     = scalar_opcode();
   uint vlen    = vector_length();
   BasicType bt = element_basic_type();
 
-  if (first->is_Cmp()) {
-    return 0; // empty
-  } else if (VectorNode::is_scalar_op_that_returns_int_but_vector_op_returns_long(sopc)) {
+  if (VectorNode::is_scalar_op_that_returns_int_but_vector_op_returns_long(sopc)) {
     int vopc = VectorNode::opcode(sopc, T_LONG);
     return vloop_analyzer.cost_for_vector(vopc, vlen, T_LONG) +
            vloop_analyzer.cost_for_vector(Op_VectorCastL2X, vlen, T_INT);
@@ -507,16 +504,9 @@ float VTransformElementWiseVectorNode::cost(const VLoopAnalyzer& vloop_analyzer)
 }
 
 VTransformApplyResult VTransformElementWiseVectorNode::apply(VTransformApplyState& apply_state) const {
-  Node* first = xnodes().at(0); // TODO first in element wise
   int sopc     = scalar_opcode();
   uint vlen    = vector_length();
   BasicType bt = element_basic_type();
-
-  if (first->is_Cmp()) {
-    // Cmp + Bool -> VectorMaskCmp
-    // Handled by Bool / VTransformBoolVectorNode, so we do not generate any nodes here.
-    return VTransformApplyResult::make_empty();
-  }
 
   assert(2 <= req() && req() <= 4, "Must have 1-3 inputs");
   VectorNode* vn = nullptr;
@@ -563,10 +553,8 @@ VTransformApplyResult VTransformBoolVectorNode::apply(VTransformApplyState& appl
   assert(sopc == Op_Bool, "must be bool node");
 
   // Cmp + Bool -> VectorMaskCmp
-  VTransformElementWiseVectorNode* vtn_cmp = in(1)->isa_ElementWiseVector();
-  // TODO rm xnodes -> first in element wise
-  assert(vtn_cmp != nullptr && vtn_cmp->xnodes().at(0)->is_Cmp(),
-         "bool vtn expects cmp vtn as input");
+  VTransformCmpVectorNode* vtn_cmp = in(1)->isa_CmpVector();
+  assert(vtn_cmp != nullptr, "bool vtn expects cmp vtn as input");
 
   Node* cmp_in1 = apply_state.transformed_node(vtn_cmp->in(1));
   Node* cmp_in2 = apply_state.transformed_node(vtn_cmp->in(2));

@@ -111,7 +111,9 @@ void SuperWordVTransformBuilder::build_inputs_for_vector_vtnodes(VectorSet& vtn_
         init_all_req_with_vectors(pack, vtn, vtn_dependencies);
       }
     } else {
-      assert(vtn->isa_ElementWiseVector() != nullptr, "all other vtnodes are handled above");
+      assert(vtn->isa_ElementWiseVector() != nullptr ||
+             vtn->isa_CmpVector() != nullptr, // TODO could refactor code a bit
+             "all other vtnodes are handled above");
       init_all_req_with_vectors(pack, vtn, vtn_dependencies);
     }
 
@@ -193,11 +195,13 @@ VTransformVectorNode* SuperWordVTransformBuilder::make_vector_vtnode_for_pack(co
   } else if (p0->is_Store()) {
     const VPointer* vpointer = &_vloop_analyzer.vpointers().vpointer(p0->as_Store());
     vtn = new (_vtransform.arena()) VTransformStoreVectorNode(_vtransform, prototype, vpointer);
-  } else if (p0->is_CMove()) {
-    vtn = new (_vtransform.arena()) VTransformXYZVectorNode(_vtransform, prototype, p0->req(), Op_VectorBlend);
+  } else if (p0->is_Cmp()) {
+    vtn = new (_vtransform.arena()) VTransformCmpVectorNode(_vtransform, prototype, p0->req());
   } else if (p0->is_Bool()) {
     VTransformBoolTest kind = _packset.get_bool_test(pack);
     vtn = new (_vtransform.arena()) VTransformBoolVectorNode(_vtransform, prototype, kind);
+  } else if (p0->is_CMove()) {
+    vtn = new (_vtransform.arena()) VTransformXYZVectorNode(_vtransform, prototype, p0->req(), Op_VectorBlend);
   } else if (_vloop_analyzer.reductions().is_marked_reduction(p0)) {
     vtn = new (_vtransform.arena()) VTransformReductionVectorNode(_vtransform, prototype);
   } else if (VectorNode::is_muladds2i(p0)) {
