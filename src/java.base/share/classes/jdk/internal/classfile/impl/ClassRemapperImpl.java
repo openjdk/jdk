@@ -273,6 +273,7 @@ public record ClassRemapperImpl(Function<ClassDesc, ClassDesc> mapFunction) impl
 
     @Override
     public ClassDesc map(ClassDesc desc) {
+        if (desc == null) return null;
         if (desc.isArray()) return map(desc.componentType()).arrayType();
         if (desc.isPrimitive()) return desc;
         return mapFunction.apply(desc);

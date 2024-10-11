@@ -34,8 +34,6 @@ import jdk.internal.classfile.impl.BytecodeHelpers;
 import jdk.internal.classfile.impl.Util;
 import jdk.internal.javac.PreviewFeature;
 
-import static java.util.Objects.requireNonNull;
-
 /**
  * Models instruction discontinued from the {@code code} array of a {@code Code}
  * attribute. Delivered as a {@link CodeElement} when traversing the elements of
