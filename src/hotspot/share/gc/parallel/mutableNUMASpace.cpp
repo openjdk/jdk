@@ -552,7 +552,7 @@ void MutableNUMASpace::clear(bool mangle_space) {
    objects.
  */
 
-HeapWord* MutableNUMASpace::cas_allocate(size_t size, bool yield_safepoint) {
+HeapWord* MutableNUMASpace::cas_allocate(size_t size) {
   Thread* thr = Thread::current();
   int lgrp_id = thr->lgrp_id();
   if (lgrp_id == -1 || !os::numa_has_group_homing()) {

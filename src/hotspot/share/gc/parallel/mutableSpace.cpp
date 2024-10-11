@@ -24,7 +24,6 @@
 
 #include "precompiled.hpp"
 #include "gc/parallel/mutableSpace.hpp"
-#include <runtime/interfaceSupport.inline.hpp>
 #include "gc/shared/pretouchTask.hpp"
 #include "memory/iterator.inline.hpp"
 #include "memory/universe.hpp"
@@ -157,13 +156,8 @@ void MutableSpace::mangle_region(MemRegion mr) {
 
 #endif
 
-HeapWord* MutableSpace::cas_allocate(size_t size, bool yield_safepoint) {
+HeapWord* MutableSpace::cas_allocate(size_t size) {
   do {
-    if (yield_safepoint && SafepointSynchronize::is_synchronizing()) {
-      assert(Thread::current()->is_Java_thread(), "Must be mutator.");
-      ThreadBlockInVM tbivm(JavaThread::current());
-    }
-
     // Read top before end, else the range check may pass when it shouldn't.
     // If end is read first, other threads may advance end and top such that
     // current top > old end and current top + size > current end.  Then

@@ -185,7 +185,7 @@ public:
   virtual size_t unsafe_max_tlab_alloc(Thread* thr) const;
 
   // Allocation (return null if full)
-  virtual HeapWord* cas_allocate(size_t word_size, bool yield_safepoint = false);
+  virtual HeapWord* cas_allocate(size_t word_size);
 
   // Debugging
   virtual void print_on(outputStream* st) const;
