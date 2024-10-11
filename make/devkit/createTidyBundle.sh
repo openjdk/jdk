@@ -24,6 +24,11 @@
 # questions.
 #
 
+# Creates a tidy bundle in the build directory. A dependency that can be
+# used to validate and correct HTML.
+
+# wget and cmake are required to build tidy.
+
 set -e
 
 GITHUB_USER="htacg"
