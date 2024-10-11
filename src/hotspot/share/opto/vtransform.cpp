@@ -451,18 +451,22 @@ VTransformApplyResult VTransformShiftCountNode::apply(VTransformApplyState& appl
 }
 
 float VTransformPopulateIndexNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
-  return vloop_analyzer.cost_for_vector(Op_PopulateIndex, _vlen, _element_bt);
+  uint vlen    = vector_length();
+  BasicType bt = element_basic_type();
+  return vloop_analyzer.cost_for_vector(Op_PopulateIndex, vlen, bt);
 }
 
 VTransformApplyResult VTransformPopulateIndexNode::apply(VTransformApplyState& apply_state) const {
+  uint vlen    = vector_length();
+  BasicType bt = element_basic_type();
   PhaseIdealLoop* phase = apply_state.phase();
   Node* val = apply_state.transformed_node(in(1));
   assert(val->is_Phi(), "expected to be iv");
-  assert(VectorNode::is_populate_index_supported(_element_bt), "should support");
-  const TypeVect* vt = TypeVect::make(_element_bt, _vlen);
+  assert(VectorNode::is_populate_index_supported(bt), "should support");
+  const TypeVect* vt = TypeVect::make(bt, vlen);
   VectorNode* vn = new PopulateIndexNode(val, phase->igvn().intcon(1), vt);
   register_new_node_from_vectorization(apply_state, vn);
-  return VTransformApplyResult::make_vector(vn, _vlen, vn->length_in_bytes());
+  return VTransformApplyResult::make_vector(vn, vlen, vn->length_in_bytes());
 }
 
 float VTransformXYZVectorNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
@@ -840,6 +844,7 @@ void VTransformScalarNode::print_spec() const {
   tty->print("node[%d %s]", _node->_idx, _node->Name());
 }
 
+// TODO a few have quite similar print_spec... refactor?
 void VTransformReplicateNode::print_spec() const {
   tty->print("vlen=%d bt=%s", vector_length(), type2name(element_basic_type()));
 }
@@ -851,7 +856,7 @@ void VTransformShiftCountNode::print_spec() const {
 }
 
 void VTransformPopulateIndexNode::print_spec() const {
-  tty->print("vlen=%d element_bt=%s", _vlen, type2name(_element_bt));
+  tty->print("vlen=%d bt=%s", vector_length(), type2name(element_basic_type()));
 }
 
 void VTransformVectorNode::print_spec() const {

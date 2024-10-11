@@ -603,12 +603,9 @@ public:
 
 // Transform introduces a PopulateIndex node: [phi, phi+1, phi+2, phi+3, ...].
 class VTransformPopulateIndexNode : public VTransformNode {
-private:
-  int _vlen;
-  const BasicType _element_bt; // TODO can just be the element_basic_type
 public:
-  VTransformPopulateIndexNode(VTransform& vtransform, VTransformNodePrototype prototype, int vlen, const BasicType element_bt) :
-    VTransformNode(vtransform, prototype, 2), _vlen(vlen), _element_bt(element_bt) {}
+  VTransformPopulateIndexNode(VTransform& vtransform, VTransformNodePrototype prototype) :
+    VTransformNode(vtransform, prototype, 2) {}
   virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override;
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "PopulateIndex"; };)

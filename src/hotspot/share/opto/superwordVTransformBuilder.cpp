@@ -277,7 +277,7 @@ VTransformNode* SuperWordVTransformBuilder::get_or_make_vtnode_vector_input_at_i
     // the ConvI2L/F/D.
     BasicType element_bt = is_subword_type(p0_bt) ? p0_bt : T_INT;
     VTransformNodePrototype prototype = VTransformNodePrototype(_vloop.iv(), Op_Phi, pack->size(), element_bt, nullptr);
-    VTransformNode* populate_index = new (_vtransform.arena()) VTransformPopulateIndexNode(_vtransform, prototype, pack->size(), element_bt);
+    VTransformNode* populate_index = new (_vtransform.arena()) VTransformPopulateIndexNode(_vtransform, prototype);
     populate_index->init_req(1, iv_vtn);
     return populate_index;
   }
