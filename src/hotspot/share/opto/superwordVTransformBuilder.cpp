@@ -218,12 +218,6 @@ VTransformVectorNode* SuperWordVTransformBuilder::make_vector_vtnode_for_pack(co
     vtn = new (_vtransform.arena()) VTransformXYZVectorNode(_vtransform, prototype, p0->req(), vopc);
   } else if (VectorNode::is_scalar_op_that_returns_int_but_vector_op_returns_long(opc)) {
     vtn = new (_vtransform.arena()) VTransformLongToIntVectorNode(_vtransform, prototype, p0->req());
-  } else if (VectorNode::is_scalar_rotate(p0) ||
-             VectorNode::is_roundopD(p0)) {
-    // TODO this should be the else case eventually
-    assert(!VectorNode::is_roundopD(p0) || p0->in(2)->is_Con(), "rounding mode must be constant");
-    int vopc = VectorNode::opcode(opc, bt);
-    vtn = new (_vtransform.arena()) VTransformXYZVectorNode(_vtransform, prototype, p0->req(), vopc);
   } else {
     assert(p0->req() == 3 ||
            VectorNode::is_scalar_unary_op_with_equal_input_and_output_types(opc) ||
@@ -232,7 +226,9 @@ VTransformVectorNode* SuperWordVTransformBuilder::make_vector_vtnode_for_pack(co
            opc == Op_SignumF ||
            opc == Op_SignumD,
            "pack type must be in this list");
-    vtn = new (_vtransform.arena()) VTransformElementWiseVectorNode(_vtransform, prototype, p0->req());
+    assert(!VectorNode::is_roundopD(p0) || p0->in(2)->is_Con(), "rounding mode must be constant");
+    int vopc = VectorNode::opcode(opc, bt);
+    vtn = new (_vtransform.arena()) VTransformXYZVectorNode(_vtransform, prototype, p0->req(), vopc);
   }
   vtn->set_nodes(pack);
   return vtn;
