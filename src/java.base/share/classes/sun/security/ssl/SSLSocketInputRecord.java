@@ -213,7 +213,8 @@ final class SSLSocketInputRecord extends InputRecord implements SSLRecord {
     }
 
     private void saveLastDecodeRecord() {
-        if (lastDecodeRecord == null || lastDecodeRecord.capacity() < headerSize + recordBody.remaining()) {
+        if (lastDecodeRecord == null ||
+                lastDecodeRecord.capacity() < headerSize + recordBody.remaining()) {
             lastDecodeRecord = ByteBuffer.allocate(headerSize + recordBody.remaining());
         }
         lastDecodeRecord.clear();

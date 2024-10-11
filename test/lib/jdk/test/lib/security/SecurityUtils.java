@@ -141,7 +141,8 @@ public final class SecurityUtils {
             byte minorVersion = packet.get();                  // pos: 2
             int contentLen = getInt16(packet);                 // pos: 3, 4
 
-            System.err.printf("Flight %d: contentType: %d; majorVersion: %d; minorVersion: %d; contentLen: %d\n",
+            System.err.printf(
+                    "Flight %d: contentType: %d; majorVersion: %d; minorVersion: %d; contentLen: %d\n",
                     i, (int) contentType, (int) majorVersion, (int) minorVersion, contentLen);
 
             packet.position(packet.position() + contentLen);

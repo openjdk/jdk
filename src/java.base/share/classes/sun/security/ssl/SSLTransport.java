@@ -128,30 +128,32 @@ interface SSLTransport {
         } catch (AEADBadTagException bte) {
             throw context.fatal(Alert.BAD_RECORD_MAC, bte);
         } catch (BadPaddingException bpe) {
-            // Check for unexpected plaintext alert message during TLSv1.3 handshake.
-            // This can happen if client doesn't receive ServerHello due to network timeout
+            // Check for unexpected plaintext alert message during TLSv1.3+ handshake.
+            // This can happen if client doesn't receive server_hello due to network timeout
             // and tries to close the connection by sending an alert message.
-
             if (context.inputRecord instanceof SSLSocketInputRecord) {
                 currentFlight = context.inputRecord.getLastDecodeRecord();
             }
 
-            if (currentFlight != null && !context.sslConfig.isClientMode && !context.isNegotiated &&
-                    context.handshakeContext != null && context.handshakeContext.negotiatedProtocol != null &&
+            if (currentFlight != null &&
+                    !context.sslConfig.isClientMode &&
+                    !context.isNegotiated &&
+                    context.handshakeContext != null &&
+                    context.handshakeContext.negotiatedProtocol != null &&
                     context.handshakeContext.negotiatedProtocol.useTLS13PlusSpec()) {
 
-                byte contentType = (byte) Record.getInt8(currentFlight);                   // pos: 0
-                byte majorVersion = (byte) Record.getInt8(currentFlight);                  // pos: 1
-                byte minorVersion = (byte) Record.getInt8(currentFlight);                  // pos: 2
-                int contentLen = Record.getInt16(currentFlight);                           // pos: 3, 4
+                byte contentType = (byte) Record.getInt8(currentFlight);             // pos: 0
+                byte majorVersion = (byte) Record.getInt8(currentFlight);            // pos: 1
+                byte minorVersion = (byte) Record.getInt8(currentFlight);            // pos: 2
+                int contentLen = Record.getInt16(currentFlight);                     // pos: 3, 4
 
                 if (contentLen == 2 && ContentType.ALERT.equals(ContentType.valueOf(contentType))) {
                     if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
                         SSLLogger.info("Processing plaintext alert during TLSv1.3+ handshake");
                     }
 
-                    plaintexts = new Plaintext[]{
-                            new Plaintext(contentType, majorVersion, minorVersion, -1, -1L, currentFlight)
+                    plaintexts = new Plaintext[]{new Plaintext(
+                            contentType, majorVersion, minorVersion, -1, -1L, currentFlight)
                     };
                 }
             }
