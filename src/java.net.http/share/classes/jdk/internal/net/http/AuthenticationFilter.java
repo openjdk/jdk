@@ -244,7 +244,7 @@ class AuthenticationFilter implements HeaderFilter {
         HttpHeaders hdrs = r.headers();
         HttpRequestImpl req = r.request();
 
-        if (req.getUserSetAuthFlag(SERVER) && status == 401) {
+        if (req.getUserSetAuthFlag(SERVER) && status == UNAUTHORIZED) {
             // return the response. We don't handle it.
             return null;
         } else if (req.getUserSetAuthFlag(PROXY) && status == 407) {
