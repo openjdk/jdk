@@ -431,7 +431,7 @@ Node *PhaseChaitin::split_Rematerialize(Node *def, Block *b, uint insidx, uint &
 //------------------------------is_high_pressure-------------------------------
 // Function to compute whether or not this live range is "high pressure"
 // in this block - whether it spills eagerly or not.
-bool PhaseChaitin::is_high_pressure( Block *b, LRG *lrg, uint insidx ) {
+bool is_high_pressure(const Block* b, const LRG* lrg, uint insidx) {
   if( lrg->_was_spilled1 ) return true;
   // Forced spilling due to conflict?  Then split only at binding uses
   // or defs, not for supposed capacity problems.
@@ -457,7 +457,6 @@ bool PhaseChaitin::is_high_pressure( Block *b, LRG *lrg, uint insidx ) {
   return block_pres >= lrg_pres;
 }
 
-
 //------------------------------prompt_use---------------------------------
 // True if lidx is used before any real register is def'd in the block
 bool PhaseChaitin::prompt_use( Block *b, uint lidx ) {
@@ -479,6 +478,18 @@ bool PhaseChaitin::prompt_use( Block *b, uint lidx ) {
     }
     if (n->out_RegMask().is_NotEmpty()) {
       return false;
+    }
+  }
+  return false;
+}
+
+// Check if a live range would be spilt in a loop nest
+static bool is_spilt_in_loop_nest(const PhaseCFG& cfg, CFGLoop* loop, const LRG& lrg) {
+  for (uint i = 0; i < cfg.number_of_blocks(); i++) {
+    Block* b = cfg.get_block(i);
+    // Implementation details: high pressure only records the start idx, not the end idx
+    if (loop->in_loop_nest(b) && is_high_pressure(b, &lrg, b->end_idx())) {
+      return true;
     }
   }
   return false;
@@ -710,12 +721,18 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
         UPblock[slidx] = true;  // Assume new DEF is UP
         // If entering a high-pressure area with no immediate use,
         // assume Phi is DOWN
-        if( is_high_pressure( b, &lrgs(lidx), b->end_idx()) && !prompt_use(b,lidx) )
+        if (is_high_pressure( b, &lrgs(lidx), b->end_idx()) && !prompt_use(b,lidx)) {
           UPblock[slidx] = false;
+        }
         // If we are not split up/down and all inputs are down, then we
         // are down
-        if( !needs_split && !u3 )
+        if (!needs_split && !u3) {
           UPblock[slidx] = false;
+        }
+        // If we enter a loop and will spill there, try to spill in the loop entry
+        if (b->head()->is_Loop() && is_spilt_in_loop_nest(_cfg, b->_loop, lrgs(lidx))) {
+          UPblock[slidx] = false;
+        }
       }  // end if phi is needed
 
       // Do not need a phi, so grab the reaching DEF
