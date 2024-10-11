@@ -69,7 +69,6 @@ class VTransformOutputScalarNode;
 class VTransformLoopPhiNode;
 class VTransformVectorNode;
 class VTransformXYZVectorNode;
-class VTransformElementWiseVectorNode;
 class VTransformCmpVectorNode;
 class VTransformBoolVectorNode;
 class VTransformReductionVectorNode;
@@ -489,7 +488,6 @@ public:
   virtual const VTransformLoopPhiNode* isa_LoopPhi() const { return nullptr; }
   virtual VTransformVectorNode* isa_Vector() { return nullptr; }
   virtual VTransformXYZVectorNode* isa_XYZVector() { return nullptr; }
-  virtual VTransformElementWiseVectorNode* isa_ElementWiseVector() { return nullptr; }
   virtual VTransformCmpVectorNode* isa_CmpVector() { return nullptr; }
   virtual VTransformBoolVectorNode* isa_BoolVector() { return nullptr; }
   virtual VTransformReductionVectorNode* isa_ReductionVector() { return nullptr; }
@@ -679,17 +677,6 @@ public:
   NOT_PRODUCT(virtual const char* name() const override { return "LongToIntVector"; };)
 };
 
-// Catch all for all element-wise vector operations.
-class VTransformElementWiseVectorNode : public VTransformVectorNode {
-public:
-  VTransformElementWiseVectorNode(VTransform& vtransform, VTransformNodePrototype prototype, uint req) :
-    VTransformVectorNode(vtransform, prototype, req) {}
-  virtual VTransformElementWiseVectorNode* isa_ElementWiseVector() override { return this; }
-  virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override;
-  virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
-  NOT_PRODUCT(virtual const char* name() const override { return "ElementWiseVector"; };)
-};
-
 struct VTransformBoolTest {
   const BoolTest::mask _mask;
   const bool _is_negated;
@@ -709,12 +696,12 @@ public:
   NOT_PRODUCT(virtual const char* name() const override { return "CmpVector"; };)
 };
 
-class VTransformBoolVectorNode : public VTransformElementWiseVectorNode {
+class VTransformBoolVectorNode : public VTransformVectorNode {
 private:
   const VTransformBoolTest _test;
 public:
   VTransformBoolVectorNode(VTransform& vtransform, VTransformNodePrototype prototype, VTransformBoolTest test) :
-    VTransformElementWiseVectorNode(vtransform, prototype, 2), _test(test) {}
+    VTransformVectorNode(vtransform, prototype, 2), _test(test) {}
   VTransformBoolTest test() const { return _test; }
   virtual VTransformBoolVectorNode* isa_BoolVector() override { return this; }
   virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override;

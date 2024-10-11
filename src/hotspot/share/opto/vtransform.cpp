@@ -523,44 +523,6 @@ bool VTransformLongToIntVectorNode::optimize(const VLoopAnalyzer& vloop_analyzer
   return true;
 }
 
-float VTransformElementWiseVectorNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
-  int sopc     = scalar_opcode();
-  uint vlen    = vector_length();
-  BasicType bt = element_basic_type();
-
-  // Regular operations.
-  int vopc = VectorNode::opcode(sopc, bt);
-  return vloop_analyzer.cost_for_vector(vopc, vlen, bt);
-}
-
-VTransformApplyResult VTransformElementWiseVectorNode::apply(VTransformApplyState& apply_state) const {
-  int sopc     = scalar_opcode();
-  uint vlen    = vector_length();
-  BasicType bt = element_basic_type();
-
-  assert(2 <= req() && req() <= 4, "Must have 1-3 inputs");
-  VectorNode* vn = nullptr;
-  Node* in1 =                apply_state.transformed_node(in(1));
-  Node* in2 = (req() >= 3) ? apply_state.transformed_node(in(2)) : nullptr;
-  Node* in3 = (req() >= 4) ? apply_state.transformed_node(in(3)) : nullptr;
-
-  if (req() == 3 ||
-             VectorNode::is_scalar_unary_op_with_equal_input_and_output_types(sopc)) {
-    vn = VectorNode::make(sopc, in1, in2, vlen, bt); // unary and binary
-  } else {
-    assert(req() == 4, "three inputs expected");
-    assert(sopc == Op_FmaD ||
-           sopc == Op_FmaF ||
-           sopc == Op_SignumF ||
-           sopc == Op_SignumD,
-           "element wise operation must be from this list");
-    vn = VectorNode::make(sopc, in1, in2, in3, vlen, bt); // ternary
-  }
-
-  register_new_node_from_vectorization(apply_state, vn);
-  return VTransformApplyResult::make_vector(vn, vlen, vn->length_in_bytes());
-}
-
 float VTransformBoolVectorNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
   int sopc     = scalar_opcode();
   uint vlen    = vector_length();
