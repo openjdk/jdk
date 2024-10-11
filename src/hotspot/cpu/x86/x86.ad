@@ -3676,6 +3676,7 @@ instruct vconvF2HF(vec dst, vec src) %{
 %}
 
 instruct vconvF2HF_mem_reg(memory mem, vec src) %{
+  predicate(Matcher::vector_length_in_bytes(n->in(3)->in(1)) >= 16);
   match(Set mem (StoreVector mem (VectorCastF2HF src)));
   format %{ "vcvtps2ph $mem,$src" %}
   ins_encode %{

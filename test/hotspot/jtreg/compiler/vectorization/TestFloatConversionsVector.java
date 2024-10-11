@@ -67,7 +67,16 @@ public class TestFloatConversionsVector {
         }
     }
 
-    @Run(test = {"test_float_float16", "test_float_float16_strided"}, mode = RunMode.STANDALONE)
+    @Test
+    public void test_float_float16_short_vector(short[] sout, float[] finp) {
+        for (int i = 0; i < finp.length - 1; i++) {
+            sout[i+0] = Float.floatToFloat16(finp[i+0]);
+            sout[i+1] = Float.floatToFloat16(finp[i+1]);
+        }
+    }
+
+    @Run(test = {"test_float_float16", "test_float_float16_strided",
+                 "test_float_float16_short_vector"}, mode = RunMode.STANDALONE)
     public void kernel_test_float_float16() {
         finp = new float[ARRLEN];
         sout = new short[ARRLEN];
@@ -92,6 +101,15 @@ public class TestFloatConversionsVector {
         // Verifying the result
         for (int i = 0; i < ARRLEN/2; i++) {
             Asserts.assertEquals(Float.floatToFloat16(finp[i*2]), sout[i*2]);
+        }
+
+        for (int i = 0; i < ITERS; i++) {
+            test_float_float16_short_vector(sout, finp);
+        }
+
+        // Verifying the result
+        for (int i = 0; i < ARRLEN; i++) {
+            Asserts.assertEquals(Float.floatToFloat16(finp[i]), sout[i]);
         }
     }
 
