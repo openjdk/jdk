@@ -200,9 +200,6 @@ vmTestbase/nsk/monitoring/ThreadMXBean/findMonitorDeadlockedThreads/find006/Test
 # :hotspot_compiler_all_gcs
 compiler/exceptions/ExceptionInInit.java 8338411 generic-all
 
-# :hotspot_runtime
-runtime/Nestmates/protectionDomain/TestDifferentProtectionDomains.java 8338411 generic-all
-
 # :tier1_runtime
 runtime/Dictionary/CleanProtectionDomain.java 8341916 generic-all
 runtime/Dictionary/ProtectionDomainCacheTest.java 8341916 generic-all
