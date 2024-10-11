@@ -247,7 +247,7 @@ class AuthenticationFilter implements HeaderFilter {
         if (req.getUserSetAuthFlag(SERVER) && status == UNAUTHORIZED) {
             // return the response. We don't handle it.
             return null;
-        } else if (req.getUserSetAuthFlag(PROXY) && status == 407) {
+        } else if (req.getUserSetAuthFlag(PROXY) && status == PROXY_UNAUTHORIZED) {
             // same
             return null;
         }
