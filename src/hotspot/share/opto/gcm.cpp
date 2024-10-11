@@ -770,7 +770,7 @@ Block* PhaseCFG::insert_anti_dependences(Block* LCA, Node* load, bool verify) {
     bool is_cache_wb = false;
     if (use_mem_state->is_Mach()) {
       int ideal_op = use_mem_state->as_Mach()->ideal_Opcode();
-      is_cache_wb = (ideal_op == Op_CacheWB || ideal_op == Op_CacheWBPostSync || ideal_op == Op_CacheWBPreSync);
+      is_cache_wb = (ideal_op == Op_CacheWB);
     }
     assert(!use_mem_state->needs_anti_dependence_check() || is_cache_wb, "no loads");
 #endif
