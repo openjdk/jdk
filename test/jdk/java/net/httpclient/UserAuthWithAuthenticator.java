@@ -24,9 +24,9 @@
 /**
  * @test
  * @bug 8326949
+ * @summary Authorization header is removed when a proxy Authenticator is set
  * @library /test/lib
  * @run main/othervm UserAuthWithAuthenticator
- * @summary Authorization header is removed when a proxy Authenticator is set
  */
 
 import java.io.*;
@@ -234,7 +234,7 @@ public class UserAuthWithAuthenticator {
         volatile Socket s = null;
 
         public Mocker(String[] responses) throws IOException {
-            this.ss = new ServerSocket(0);
+            this.ss = new ServerSocket(0, 0, InetAddress.getLoopbackAddress());
             this.responses = responses;
             this.requests = new LinkedList<>();
         }
@@ -290,7 +290,7 @@ public class UserAuthWithAuthenticator {
                     out.write(responses[index++].getBytes(US_ASCII));
                 }
             } catch (Exception e) {
-                //e.printStackTrace();
+                e.printStackTrace();
             }
         }
     }
@@ -330,7 +330,7 @@ public class UserAuthWithAuthenticator {
         @Override
         protected PasswordAuthentication getPasswordAuthentication() {
             if (getRequestorType() != RequestorType.SERVER) {
-                // We only want to handle proxy authentication here
+                // We only want to handle server authentication here
                 return null;
             }
             return new PasswordAuthentication("serverUser", "serverPwd".toCharArray());
