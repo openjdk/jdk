@@ -165,7 +165,8 @@ void SuperWordVTransformBuilder::build_outputs() {
         for (uint j = 0; j < use->req(); j++) {
           Node* def = use->in(j);
           if (n == def) {
-            vtn_use->init_req(j, vtn);
+            assert(vtn_use->in(j) == nullptr || vtn_use->in(j) == vtn, "still empty or set the same");
+            vtn_use->set_req(j, vtn);
           }
         }
       }
