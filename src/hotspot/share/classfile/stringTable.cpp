@@ -59,6 +59,7 @@
 #include "services/diagnosticCommand.hpp"
 #include "utilities/concurrentHashTable.inline.hpp"
 #include "utilities/concurrentHashTableTasks.inline.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/resizeableResourceHash.hpp"
 #include "utilities/utf8.hpp"
@@ -131,29 +132,31 @@ static unsigned int hash_string(const jchar* s, int len, bool useAlt) {
 
 unsigned int StringTable::hash_wrapped_string(StringWrapper wrapped_str, int len) {
   switch (wrapped_str.type) {
-  case obj_str:
-    return java_lang_String::hash_code(wrapped_str.obj_str());
-  case unicode_str:
+  case StringType::OopStr:
+    return java_lang_String::hash_code(wrapped_str.oop_str());
+  case StringType::UnicodeStr:
     return java_lang_String::hash_code(wrapped_str.unicode_str, len);
-  case symbol_str:
+  case StringType::SymbolStr:
     return java_lang_String::hash_code(wrapped_str.symbol_str->get_utf8(), len);
-  case utf8_str:
+  case StringType::UTF8Str:
     return java_lang_String::hash_code(wrapped_str.utf8_str, len);
   }
+  ShouldNotReachHere();
   return 0;
 }
 
 bool StringTable::wrapped_string_equals(oop java_string, StringWrapper wrapped_str, int len) {
   switch (wrapped_str.type) {
-  case StringType::obj_str:
-    return java_lang_String::equals(java_string, wrapped_str.obj_str());
-  case StringType::unicode_str:
+  case StringType::OopStr:
+    return java_lang_String::equals(java_string, wrapped_str.oop_str());
+  case StringType::UnicodeStr:
     return java_lang_String::equals(java_string, wrapped_str.unicode_str, len);
-  case StringType::symbol_str:
+  case StringType::SymbolStr:
     return java_lang_String::equals(java_string, wrapped_str.symbol_str->get_utf8(), len);
-  case StringType::utf8_str:
+  case StringType::UTF8Str:
     return java_lang_String::equals(java_string, wrapped_str.utf8_str, len);
   }
+  ShouldNotReachHere();
   return false;
 }
 
@@ -206,19 +209,18 @@ public:
     oop val_oop = value->peek();
     return val_oop == nullptr;
   }
-  virtual bool equals(WeakHandle* value) = 0;
 };
 
-class StringTableLookupJchar : public StringTableLookup {
+class StringTableLookupUnicode : public StringTableLookup {
 private:
   const jchar* _str;
   int _len;
 
 public:
-  StringTableLookupJchar(Thread* thread, uintx hash, const jchar* key, int len)
+  StringTableLookupUnicode(Thread* thread, uintx hash, const jchar* key, int len)
       : StringTableLookup(thread, hash), _str(key), _len(len) {}
 
-  bool equals(WeakHandle* value) override {
+  bool equals(WeakHandle* value) {
     oop val_oop = value->peek();
     if (val_oop == nullptr) {
       return false;
@@ -233,16 +235,16 @@ public:
   }
 };
 
-class StringTableLookupChar : public StringTableLookup {
+class StringTableLookupUTF8 : public StringTableLookup {
 private:
   const char* _str;
   int _len;
 
 public:
-  StringTableLookupChar(Thread* thread, uintx hash, const char* key, int len)
+  StringTableLookupUTF8(Thread* thread, uintx hash, const char* key, int len)
       : StringTableLookup(thread, hash), _str(key), _len(len) {}
 
-  bool equals(WeakHandle* value) override {
+  bool equals(WeakHandle* value) {
     oop val_oop = value->peek();
     if (val_oop == nullptr) {
       return false;
@@ -265,7 +267,7 @@ public:
   StringTableLookupOop(Thread* thread, uintx hash, Handle handle)
       : StringTableLookup(thread, hash), _find(handle) {}
 
-  bool equals(WeakHandle* value) override {
+  bool equals(WeakHandle* value) {
     oop val_oop = value->peek();
     if (val_oop == nullptr) {
       return false;
@@ -378,26 +380,28 @@ oop StringTable::do_lookup(StringWrapper name, int len, uintx hash) {
   bool rehash_warning;
 
   switch (name.type) {
-  case StringType::obj_str: {
-    StringTableLookupOop lookup(thread, hash, name.obj_str);
+  case StringType::OopStr: {
+    StringTableLookupOop lookup(thread, hash, name.oop_str);
     _local_table->get(thread, lookup, stg, &rehash_warning);
     break;
   }
-  case StringType::unicode_str: {
-    StringTableLookupJchar lookup(thread, hash, name.unicode_str, len);
+  case StringType::UnicodeStr: {
+    StringTableLookupUnicode lookup(thread, hash, name.unicode_str, len);
     _local_table->get(thread, lookup, stg, &rehash_warning);
     break;
   }
-  case StringType::symbol_str: {
-    StringTableLookupChar lookup(thread, hash, name.symbol_str->get_utf8(), len);
+  case StringType::SymbolStr: {
+    StringTableLookupUTF8 lookup(thread, hash, name.symbol_str->get_utf8(), len);
     _local_table->get(thread, lookup, stg, &rehash_warning);
     break;
   }
-  case StringType::utf8_str: {
-    StringTableLookupChar lookup(thread, hash, name.utf8_str, len);
+  case StringType::UTF8Str: {
+    StringTableLookupUTF8 lookup(thread, hash, name.utf8_str, len);
     _local_table->get(thread, lookup, stg, &rehash_warning);
     break;
   }
+  default:
+    ShouldNotReachHere();
   }
 
   update_needs_rehash(rehash_warning);
@@ -406,35 +410,37 @@ oop StringTable::do_lookup(StringWrapper name, int len, uintx hash) {
 
 const jchar *StringTable::to_unicode(StringWrapper wrapped_str, int len, TRAPS) {
   switch (wrapped_str.type) {
-  case StringType::unicode_str:
+  case StringType::UnicodeStr:
     return wrapped_str.unicode_str;
-  case StringType::obj_str:
-    return java_lang_String::as_unicode_string(wrapped_str.obj_str(), len, CHECK_NULL);
-  case StringType::symbol_str: {
+  case StringType::OopStr:
+    return java_lang_String::as_unicode_string(wrapped_str.oop_str(), len, CHECK_NULL);
+  case StringType::SymbolStr: {
     jchar *chars = NEW_RESOURCE_ARRAY(jchar, len);
     UTF8::convert_to_unicode(wrapped_str.symbol_str->get_utf8(), chars, len);
     return chars;
   }
-  case StringType::utf8_str: {
+  case StringType::UTF8Str: {
     jchar *chars = NEW_RESOURCE_ARRAY(jchar, len);
     UTF8::convert_to_unicode(wrapped_str.utf8_str, chars, len);
     return chars;
   }
   }
+  ShouldNotReachHere();
   return nullptr;
 }
 
 Handle StringTable::to_handle(StringWrapper wrapped_str, int len, TRAPS) {
   switch (wrapped_str.type) {
-  case StringType::obj_str:
-    return wrapped_str.obj_str;
-  case StringType::unicode_str:
+  case StringType::OopStr:
+    return wrapped_str.oop_str;
+  case StringType::UnicodeStr:
     return java_lang_String::create_from_unicode(wrapped_str.unicode_str, len, THREAD);
-  case StringType::symbol_str:
+  case StringType::SymbolStr:
     return java_lang_String::create_from_symbol(wrapped_str.symbol_str, THREAD);
-  case StringType::utf8_str:
+  case StringType::UTF8Str:
     return java_lang_String::create_from_str(wrapped_str.utf8_str, THREAD);
   }
+  ShouldNotReachHere();
   return Handle();
 }
 

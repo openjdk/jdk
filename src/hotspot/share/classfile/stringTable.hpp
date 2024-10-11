@@ -56,21 +56,24 @@ class StringTable : AllStatic {
   static double get_load_factor();
   static double get_dead_factor(size_t num_dead);
 
-  typedef enum { obj_str, unicode_str, symbol_str, utf8_str } StringType;
+  // typedef enum { obj_str, unicode_str, symbol_str, utf8_str } StringType;
+  enum class StringType {
+    OopStr, UnicodeStr, SymbolStr, UTF8Str
+  };
 
   struct StringWrapperInternal {
     union {
-      const Handle obj_str;
+      const Handle oop_str;
       const jchar* unicode_str;
       const Symbol* symbol_str;
       const char* utf8_str;
     };
     const StringType type;
 
-    StringWrapperInternal(const Handle oopStr)     : obj_str(oopStr),         type(StringType::obj_str)     {}
-    StringWrapperInternal(const jchar* unicodeStr) : unicode_str(unicodeStr), type(StringType::unicode_str) {}
-    StringWrapperInternal(const Symbol* symbolStr) : symbol_str(symbolStr),   type(StringType::symbol_str)  {}
-    StringWrapperInternal(const char* utf8Str)     : utf8_str(utf8Str),       type(StringType::utf8_str)    {}
+    StringWrapperInternal(const Handle oop_str)     : oop_str(oop_str),         type(StringType::OopStr)     {}
+    StringWrapperInternal(const jchar* unicode_str) : unicode_str(unicode_str), type(StringType::UnicodeStr) {}
+    StringWrapperInternal(const Symbol* symbol_str) : symbol_str(symbol_str),   type(StringType::SymbolStr)  {}
+    StringWrapperInternal(const char* utf8_str)     : utf8_str(utf8_str),       type(StringType::UTF8Str)    {}
   };
 
 public:

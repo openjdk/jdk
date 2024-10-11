@@ -259,7 +259,7 @@ class Symbol : public MetaspaceObj {
   char* as_utf8() const { return as_C_string(); }
 
   // Returns the non-null-terminated utf8 string stored in the symbol
-  const char* get_utf8() const { return (char*)bytes(); }
+  const char* get_utf8() const { return reinterpret_cast<const char*>(bytes()); }
 
   jchar* as_unicode(int& length) const;
 

@@ -181,13 +181,12 @@ class java_lang_String : AllStatic {
     return h;
   }
 
-  static unsigned int hash_code(const char *utf8_str, int num_chars) {
-    const char *ptr = utf8_str;
+  static unsigned int hash_code(const char *utf8_str, int num_unicode_points) {
     unsigned int h = 0;
 
     jchar a;
-    while (num_chars-- > 0) {
-      ptr = UTF8::next(ptr, &a);
+    while (num_unicode_points-- > 0) {
+      utf8_str = UTF8::next(utf8_str, &a);
       h = 31 * h + ((unsigned int)a);
     }
     return h;
@@ -196,8 +195,8 @@ class java_lang_String : AllStatic {
   static unsigned int hash_code(oop java_string);
   static unsigned int hash_code_noupdate(oop java_string);
 
-  static bool equals(oop java_string, const jchar* chars, int len);
-  static bool equals(oop java_string, const char* chars, int len);
+  static bool equals(oop java_string, const jchar* chars, int num_unicode_points);
+  static bool equals(oop java_string, const char* chars, int num_unicode_points);
   static bool equals(oop str1, oop str2);
   static inline bool value_equals(typeArrayOop str_value1, typeArrayOop str_value2);
 

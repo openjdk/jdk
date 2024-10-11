@@ -737,23 +737,23 @@ char* java_lang_String::as_utf8_string(oop java_string, typeArrayOop value, int 
   }
 }
 
-bool java_lang_String::equals(oop java_string, const jchar* chars, int len) {
+bool java_lang_String::equals(oop java_string, const jchar* chars, int num_unicode_points) {
   assert(java_string->klass() == vmClasses::String_klass(),
          "must be java_string");
   typeArrayOop value = java_lang_String::value_no_keepalive(java_string);
   int length = java_lang_String::length(java_string, value);
-  if (length != len) {
+  if (length != num_unicode_points) {
     return false;
   }
   bool is_latin1 = java_lang_String::is_latin1(java_string);
   if (!is_latin1) {
-    for (int i = 0; i < len; i++) {
+    for (int i = 0; i < num_unicode_points; i++) {
       if (value->char_at(i) != chars[i]) {
         return false;
       }
     }
   } else {
-    for (int i = 0; i < len; i++) {
+    for (int i = 0; i < num_unicode_points; i++) {
       if ((((jchar) value->byte_at(i)) & 0xff) != chars[i]) {
         return false;
       }
@@ -762,27 +762,26 @@ bool java_lang_String::equals(oop java_string, const jchar* chars, int len) {
   return true;
 }
 
-bool java_lang_String::equals(oop java_string, const char* utf8_string, int len) {
+bool java_lang_String::equals(oop java_string, const char* utf8_string, int num_unicode_points) {
   assert(java_string->klass() == vmClasses::String_klass(),
          "must be java_string");
   typeArrayOop value = java_lang_String::value_no_keepalive(java_string);
   int length = java_lang_String::length(java_string, value);
-  if (length != len) {
+  if (length != num_unicode_points) {
     return false;
   }
   bool is_latin1 = java_lang_String::is_latin1(java_string);
   jchar c;
-  const char *ptr = utf8_string;
   if (!is_latin1) {
-    for (int i = 0; i < len; i++) {
-      ptr = UTF8::next(ptr, &c);
+    for (int i = 0; i < num_unicode_points; i++) {
+      utf8_string = UTF8::next(utf8_string, &c);
       if (value->char_at(i) != c) {
         return false;
       }
     }
   } else {
-    for (int i = 0; i < len; i++) {
-      ptr = UTF8::next(ptr, &c);
+    for (int i = 0; i < num_unicode_points; i++) {
+      utf8_string = UTF8::next(utf8_string, &c);
       if ((((jchar) value->byte_at(i)) & 0xff) != c) {
         return false;
       }
