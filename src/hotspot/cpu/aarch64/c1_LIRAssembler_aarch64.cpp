@@ -275,7 +275,7 @@ void LIR_Assembler::osr_entry() {
       // verify the interpreter's monitor has a non-null object
       {
         Label L;
-        __ ldr(rscratch1, __ form_address(rscratch2, OSR_buf, slot_offset + 1*BytesPerWord, 0));
+        __ ldr(rscratch1, __ form_address(rscratch1, OSR_buf, slot_offset + 1*BytesPerWord, 0));
         __ cbnz(rscratch1, L);
         __ stop("locked object is null");
         __ bind(L);
