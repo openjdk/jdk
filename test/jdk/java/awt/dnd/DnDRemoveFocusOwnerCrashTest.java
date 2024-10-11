@@ -82,10 +82,16 @@ public class DnDRemoveFocusOwnerCrashTest {
                 frame.add(dropTargetPanel);
                 frame.pack();
                 frame.setVisible(true);
+            });
 
+            robot.waitForIdle();
+            robot.delay(FRAME_ACTIVATION_TIMEOUT);
+
+            EventQueue.invokeAndWait(() -> {
                 p = dragSourceButton.getLocationOnScreen();
                 p.translate(10, 10);
             });
+
             robot.delay(FRAME_ACTIVATION_TIMEOUT);
             robot.mouseMove(p.x, p.y);
             robot.delay(FRAME_ACTIVATION_TIMEOUT);
@@ -98,9 +104,11 @@ public class DnDRemoveFocusOwnerCrashTest {
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
             robot.keyRelease(KeyEvent.VK_CONTROL);
         } finally {
-            if (frame != null) {
-                EventQueue.invokeAndWait(() -> frame.dispose());
-            }
+            EventQueue.invokeAndWait(() -> {
+                if (frame != null) {
+                    frame.dispose();
+                }
+            });
         }
     }
 
