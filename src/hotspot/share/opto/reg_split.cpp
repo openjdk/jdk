@@ -485,48 +485,60 @@ bool PhaseChaitin::prompt_use( Block *b, uint lidx ) {
 
 // Check if a live range would be spilt in a loop nest so that we will eagerly spill it
 static bool should_spill_before_loop(const PhaseCFG& cfg, PhaseChaitin& chaitin, CFGLoop* loop, uint lrg_idx, const LRG& lrg) {
+  // Don't be eager spilling something that will only be spilt uncommonly and is used in the common path
+  // as it leads to excessive reloads
+  constexpr double uncommon_threshold = 0.1;
   assert(&chaitin.lrgs(lrg_idx) == &lrg, "must be");
   bool spilt = false;
-  bool used_in_common_path = false;
-  for (uint i = 0; i < cfg.number_of_blocks(); i++) {
-    Block* b = cfg.get_block(i);
+
+  // Whether the lrg is spilt inside the loop
+  for (uint bidx = 0; bidx < cfg.number_of_blocks(); bidx++) {
+    Block* b = cfg.get_block(bidx);
     if (!loop->in_loop_nest(b)) {
       continue;
     }
 
-    // Don't be eager spilling something that will only be spilt uncommonly and is used in the common path
-    constexpr double uncommon_threshold = 0.1;
     // Implementation details: high pressure only records the start idx, not the end idx
     if (is_high_pressure(b, &lrg, b->end_idx())) {
       // If a node needs to be spilt in a child loop, we can spill it at the child entry, too. Choose the best option.
       double spill_freq = b->_freq;
       for (CFGLoop* l = b->_loop; l != loop; l = l->parent()) {
-        assert(l != nullptr, "");
         Block* l_entry = cfg.get_block_for_node(l->head()->pred(LoopNode::EntryControl));
         spill_freq = MIN2(spill_freq, l_entry->_freq);
       }
       if (spill_freq > loop->head()->_freq * uncommon_threshold) {
+        // Spilt in the common path, spill eagerly regardless
         return true;
       } else {
+        // Uncommon path, need to check if it is used in the common path
         spilt = true;
       }
     }
+  }
 
-    // If lrg is used in the common path
+  if (!spilt) {
+    return false;
+  }
+
+  // Whether the lrg is used in the common path
+  for (uint i = 0; i < cfg.number_of_blocks(); i++) {
+    Block* b = cfg.get_block(i);
+    if (!loop->in_loop_nest(b)) {
+      continue;
+    }
     if (b->_freq > loop->head()->_freq * uncommon_threshold) {
-      for (uint i = 0; !used_in_common_path && i < b->number_of_nodes(); i++) {
-        Node* n = b->get_node(i);
-        for (uint j = 1; j < n->req(); j++) {
-          Node* in = n->in(j);
+      for (uint nidx = 0; nidx < b->number_of_nodes(); nidx++) {
+        Node* n = b->get_node(nidx);
+        for (uint i = 1; i < n->req(); i++) {
+          Node* in = n->in(i);
           if (in != nullptr && chaitin._lrg_map.find_id(in) == lrg_idx) {
-            used_in_common_path = true;
-            break;
+            return false;
           }
         }
       }
     }
   }
-  return spilt && !used_in_common_path;
+  return true;
 }
 
 //------------------------------Split--------------------------------------
