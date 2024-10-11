@@ -426,12 +426,16 @@ VTransformApplyResult VTransformConvI2LNode::apply(VTransformApplyState& apply_s
 }
 
 float VTransformShiftCountNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
-  int shift_count_opc = VectorNode::shift_count_opcode(_shift_opcode);
+  uint vlen    = vector_length();
+  BasicType bt = element_basic_type();
+  int shift_count_opc = VectorNode::shift_count_opcode(scalar_opcode());
   return vloop_analyzer.cost_for_scalar(Op_AndI) +
-         vloop_analyzer.cost_for_vector(shift_count_opc, _vlen, _element_bt);
+         vloop_analyzer.cost_for_vector(shift_count_opc, vlen, bt);
 }
 
 VTransformApplyResult VTransformShiftCountNode::apply(VTransformApplyState& apply_state) const {
+  uint vlen    = vector_length();
+  BasicType bt = element_basic_type();
   PhaseIdealLoop* phase = apply_state.phase();
   Node* shift_count_in = apply_state.transformed_node(in(1));
   assert(shift_count_in->bottom_type()->isa_int(), "int type only for shift count");
@@ -441,9 +445,9 @@ VTransformApplyResult VTransformShiftCountNode::apply(VTransformApplyState& appl
   Node* shift_count_masked = new AndINode(shift_count_in, phase->igvn().intcon(_mask));
   register_new_node_from_vectorization(apply_state, shift_count_masked);
   // Now that masked value is "boadcast" (some platforms only set the lowest element).
-  VectorNode* vn = VectorNode::shift_count(_shift_opcode, shift_count_masked, _vlen, _element_bt);
+  VectorNode* vn = VectorNode::shift_count(scalar_opcode(), shift_count_masked, vlen, bt);
   register_new_node_from_vectorization(apply_state, vn);
-  return VTransformApplyResult::make_vector(vn, _vlen, vn->length_in_bytes());
+  return VTransformApplyResult::make_vector(vn, vlen, vn->length_in_bytes());
 }
 
 float VTransformPopulateIndexNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
@@ -841,9 +845,9 @@ void VTransformReplicateNode::print_spec() const {
 }
 
 void VTransformShiftCountNode::print_spec() const {
-  tty->print("vlen=%d element_bt=%s mask=%d shift_opcode=%s",
-             _vlen, type2name(_element_bt), _mask,
-             NodeClassNames[_shift_opcode]);
+  tty->print("vlen=%d bt=%s mask=%d opc=%s",
+             vector_length(), type2name(element_basic_type()), _mask,
+             NodeClassNames[scalar_opcode()]);
 }
 
 void VTransformPopulateIndexNode::print_spec() const {

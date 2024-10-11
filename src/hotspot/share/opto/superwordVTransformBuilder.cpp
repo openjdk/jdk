@@ -292,7 +292,7 @@ VTransformNode* SuperWordVTransformBuilder::get_or_make_vtnode_vector_input_at_i
       juint mask = (p0->bottom_type() == TypeInt::INT) ? (BitsPerInt - 1) : (BitsPerLong - 1);
       // TODO we may want to refactor this, and set a more adequate opc
       VTransformNodePrototype prototype = VTransformNodePrototype(p0, p0->Opcode(), pack->size(), element_bt, nullptr);
-      VTransformNode* shift_count = new (_vtransform.arena()) VTransformShiftCountNode(_vtransform, prototype, pack->size(), element_bt, mask, p0->Opcode());
+      VTransformNode* shift_count = new (_vtransform.arena()) VTransformShiftCountNode(_vtransform, prototype, mask);
       shift_count->init_req(1, same_input_vtn);
       return shift_count;
     } else {

@@ -590,13 +590,11 @@ public:
 // Transform introduces a shift-count node that truncates the shift count for a vector shift.
 class VTransformShiftCountNode : public VTransformNode {
 private:
-  int _vlen;
-  const BasicType _element_bt; // TODO could be element_basic_type
   juint _mask;
-  int _shift_opcode;
+
 public:
-  VTransformShiftCountNode(VTransform& vtransform, VTransformNodePrototype prototype, int vlen, BasicType element_bt, juint mask, int shift_opcode) :
-    VTransformNode(vtransform, prototype, 2), _vlen(vlen), _element_bt(element_bt), _mask(mask), _shift_opcode(shift_opcode) {}
+  VTransformShiftCountNode(VTransform& vtransform, VTransformNodePrototype prototype, juint mask) :
+    VTransformNode(vtransform, prototype, 2), _mask(mask) {}
   virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override;
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "ShiftCount"; };)
