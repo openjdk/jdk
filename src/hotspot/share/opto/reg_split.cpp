@@ -729,8 +729,9 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
         if (!needs_split && !u3) {
           UPblock[slidx] = false;
         }
-        // If we enter a loop and will spill there, try to spill in the loop entry
-        if (b->head()->is_Loop() && is_spilt_in_loop_nest(_cfg, b->_loop, lrgs(lidx))) {
+        // If we enter a loop and will spill there, try to spill in the loop entry, except if we
+        // are reassigned in the loop anyway
+        if (!has_phi && b->head()->is_Loop() && is_spilt_in_loop_nest(_cfg, b->_loop, lrgs(lidx))) {
           UPblock[slidx] = false;
         }
       }  // end if phi is needed
