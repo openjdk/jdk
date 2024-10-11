@@ -373,24 +373,19 @@ public final class DirectCodeBuilder
                             dcb.methodInfo.methodTypeSymbol().displayDescriptor()));
                 }
 
+                boolean codeMatch = dcb.original != null && codeAndExceptionsMatch(codeLength);
                 var context = dcb.context;
-                if (dcb.original != null && codeAndExceptionsMatch(codeLength)) {
-                    if (context.stackMapsWhenRequired()) {
+                if (context.stackMapsWhenRequired()) {
+                    if (codeMatch) {
                         dcb.attributes.withAttribute(dcb.original.findAttribute(Attributes.stackMapTable()).orElse(null));
                         writeCounters(true, buf);
-                    } else if (context.generateStackMaps()) {
-                        generateStackMaps(buf);
-                    } else if (context.dropStackMaps()) {
-                        writeCounters(true, buf);
-                    }
-                } else {
-                    if (context.stackMapsWhenRequired()) {
+                    } else {
                         tryGenerateStackMaps(false, buf);
-                    } else if (context.generateStackMaps()) {
-                        generateStackMaps(buf);
-                    } else if (context.dropStackMaps()) {
-                        writeCounters(false, buf);
                     }
+                } else if (context.generateStackMaps()) {
+                    generateStackMaps(buf);
+                } else if (context.dropStackMaps()) {
+                    writeCounters(codeMatch, buf);
                 }
 
                 buf.writeInt(codeLength);
