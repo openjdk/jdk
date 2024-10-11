@@ -29,9 +29,6 @@
 #include "gc/shared/gcId.hpp"
 #include "gc/shared/gcLocker.hpp"
 #include "gc/shared/gcVMOperations.hpp"
-
-#include <runtime/interfaceSupport.inline.hpp>
-
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/softRefPolicy.hpp"
 #include "interpreter/oopMapCache.hpp"
@@ -42,6 +39,7 @@
 #include "memory/universe.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "utilities/dtrace.hpp"

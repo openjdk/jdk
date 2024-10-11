@@ -25,7 +25,6 @@
 #ifndef SHARE_GC_PARALLEL_PSYOUNGGEN_HPP
 #define SHARE_GC_PARALLEL_PSYOUNGGEN_HPP
 
-#include <runtime/interfaceSupport.inline.hpp>
 #include "gc/parallel/mutableSpace.hpp"
 #include "gc/parallel/objectStartArray.hpp"
 #include "gc/parallel/psGenerationCounters.hpp"
@@ -125,16 +124,7 @@ class PSYoungGen : public CHeapObj<mtGC> {
   size_t max_gen_size() const { return _max_gen_size; }
 
   // Allocation
-  template<bool YIELD_SAFEPOINT = false>
   HeapWord* allocate(size_t word_size) {
-    if (YIELD_SAFEPOINT) {
-      assert(Thread::current()->is_Java_thread(), "this thread must be Java thread");
-      assert(!Heap_lock->owned_by_self(), "this thread should not own the Heap_lock");
-
-      if (SafepointSynchronize::is_synchronizing()) {
-        ThreadBlockInVM tbivm(JavaThread::current());
-      }
-    }
     HeapWord* result = eden_space()->cas_allocate(word_size);
     return result;
   }

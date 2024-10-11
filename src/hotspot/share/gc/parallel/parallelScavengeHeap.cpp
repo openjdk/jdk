@@ -49,6 +49,7 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/cpuTimeCounters.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/vmThread.hpp"
 #include "services/memoryManager.hpp"
@@ -290,7 +291,10 @@ HeapWord* ParallelScavengeHeap::mem_allocate_work(size_t size,
 
   while (result == nullptr) {
     if (gc_count != total_collections()) {
-      result = young_gen()->allocate<true>(size);
+      if (SafepointSynchronize::is_synchronizing()) {
+        ThreadBlockInVM tbivm(JavaThread::current());
+      }
+      result = young_gen()->allocate(size);
       gc_count = total_collections();
       if (result != nullptr) {
         return result;
