@@ -720,12 +720,17 @@ void ciTypeFlow::StateVector::do_jsr(ciBytecodeStream* str) {
 void ciTypeFlow::StateVector::do_ldc(ciBytecodeStream* str) {
   if (str->is_in_error()) {
     trap(str, nullptr, Deoptimization::make_trap_request(Deoptimization::Reason_unhandled,
-                                                      Deoptimization::Action_none));
+                                                         Deoptimization::Action_none));
     return;
   }
   ciConstant con = str->get_constant();
   if (con.is_valid()) {
     int cp_index = str->get_constant_pool_index();
+    if (!con.is_loaded()) {
+      trap(str, nullptr, Deoptimization::make_trap_request(Deoptimization::Reason_unloaded,
+                                                           Deoptimization::Action_reinterpret,
+                                                           cp_index));
+    }
     BasicType basic_type = str->get_basic_type_for_constant_at(cp_index);
     if (is_reference_type(basic_type)) {
       ciObject* obj = con.as_object();
