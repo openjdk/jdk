@@ -22,7 +22,9 @@
  */
 
 import jdk.test.lib.util.ModuleInfoWriter;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -32,7 +34,6 @@ import java.lang.constant.ConstantDescs;
 import java.lang.module.Configuration;
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleFinder;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.ByteBuffer;
@@ -42,10 +43,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.Set;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * @test
@@ -53,115 +57,85 @@ import static org.junit.jupiter.api.Assertions.*;
  * @enablePreview
  * @modules java.base/jdk.internal.module
  * @library /test/lib
- * @summary Verify that URLClassLoader checks CRC32 of class file data when
- *          defineClass fails with ClassFormatError
- * @run junit InvalidCRCData
+ * @summary Verify unspecified but long-standing behavior of URLClassLoader and
+ *          the module system class loader with respect to invalid class file data
+ *          and invalid JAR file CRC checksums
+ * @run junit InvalidCRCClassData
  */
 public class InvalidCRCClassData {
 
-    String className = "foo.bar.Library";
+    // Name of the class being loaded in this test
+    private static String className = "foo.bar.Library";
+
+    /*
+     * Provide expected behaviors for all eight combinations of
+     *   - URLClassLoader or module system class loader
+     *   - Valid or invalid class file data
+     *   - Valid or invalid class file JAR CRC32 checksums
+     */
+    public static Stream<Arguments> parameters() throws IOException {
+        return Stream.of(
+                // Verify URLClassLoader:
+                // Invalid class data + invalid CRC: ClassFormatError, suppressed exception
+                Arguments.of(ucl(false, false), ClassFormatError.class, true),
+                // Invalid class data + valid CRC: ClassFormatError, no suppressed exception
+                Arguments.of(ucl(false, true), ClassFormatError.class, false),
+                // Valid class data + invalid CRC: No exception
+                Arguments.of(ucl(true, false), null, false),
+                // Valid class data + valid CRC: No exception
+                Arguments.of(ucl(true, true), null, false),
+
+                // Verify module system class loader:
+                // Invalid class data + invalid CRC: ClassFormatError, no suppressed exception
+                Arguments.of(module(false, false), ClassFormatError.class, false),
+                // Invalid class data + valid CRC: ClassFormatError, no suppressed exception
+                Arguments.of(module(false, true), ClassFormatError.class, false),
+                // Valid class data + invalid CRC: No exception
+                Arguments.of(module(true, false), null, false),
+                // Valid class data + valid CRC: No exception
+                Arguments.of(module(true, true), null, false)
+        );
+    }
 
     /**
-     * Verify that URLClassLoader adds a suppressed exception when
-     * a class file is rejected with ClassFormatError and the CRC32 checksum
-     * of the class data file does not match the CRC32 stated in the JAR CEN header.
+     * Verify behavior of a class loader with respect to invalid class file data
+     * and/or invalid JAR file CRC checksums.
+     * @param ctx representing URLClassLoader or module system class loader with the backing JAR file
+     * @param expectedException Exception to expect during class loading
+     * @param expectSuppressed Whether to expect a suppressed CRC32 exception on the ClassFormatError
      *
-     * @throws IOException if an unexpected IO exception occurs
-     * @throws ClassNotFoundException if a class is unexpectedly not found
+     * @throws ClassNotFoundException if an class cannot be found unexpectedly
+     * @throws IOException if an unexpected IO error occurs
      */
-    @Test
-    public void invalidClassInvalidCRC_URLClassLoader() throws IOException, ClassNotFoundException {
+    @ParameterizedTest
+    @MethodSource("parameters")
+    public void verifyClassLoading(Supplier<ClassLoadingContext> ctx,
+                                   Class<? extends ClassFormatError> expectedException,
+                                   boolean expectSuppressed)
+            throws ClassNotFoundException, IOException
+    {
+        // Get the context for the class loader and JAR file
+        var context = ctx.get();
 
-        // Create a JAR file with invalid class data, invalid CRC
-        Path jarFile = createJarFile(false, false);
-
-        try (var cl = new CustomURLClassLoader(jarFile)) {
-            // Expect ClassFormatError
-            ClassFormatError exception = assertThrows(ClassFormatError.class, () -> {
-                cl.findClass(className);
-            });
-
-            // CRC32 exception should be added as suppressed
-            assertTrue(isCRC32Suppressed(exception));
+        try {
+            if (expectedException != null) {
+                // Verify that ClassFormatError is thrown
+                ClassFormatError cfe = assertThrows(expectedException, () -> {
+                    context.getClassLoader().loadClass(className);
+                });
+                // Check whether CRC mismatch caused suppressed exception
+                assertEquals(expectSuppressed, isCRC32Suppressed(cfe));
+            } else {
+                // Class should load normally
+                assertEquals(className, context.getClassLoader().loadClass(className).getName());
+            }
+        } finally {
+            // Clean up after this test
+            Files.deleteIfExists(context.getJarFile());
         }
     }
 
-    /**
-     * A CRC mismatch itself does not cause exceptions for a valid class
-     *
-     * @throws IOException if an unexpected IO exception occurs
-     * @throws ClassNotFoundException if a class is unexpectedly not found
-     */
-    @Test
-    public void validClassInvalidCRC_URLClassLoader() throws IOException, ClassNotFoundException {
-
-        // Create a JAR file with valid class data, invalid CRC
-        Path jarFile = createJarFile(true, false);
-
-        try (var cl = new CustomURLClassLoader(jarFile)) {
-            assertEquals(className, cl.findClass(className).getName());
-        }
-    }
-
-    /**
-     * Document that a JAR file with invalid class file data and a mismatching
-     * CRC32 checksum does not cause ClassFormatError to have suppressed
-     * exceptions when loaded using the module class loader.
-     *
-     * @throws IOException if an unexpected IO exception occurs
-     * @throws ClassNotFoundException if a class is unexpectedly not found
-     */
-    @Test
-    public void invalidClassCRCMismatchModule() throws IOException, ClassNotFoundException {
-
-        // Load a module with invalid class data and invalid CRC
-        Module m1 = loadModule(false, false);
-
-        // Expect ClassFormatError when loading class
-        ClassFormatError exception = assertThrows(ClassFormatError.class, () -> {
-            m1.getClassLoader().loadClass(className);
-        });
-
-        // Verify that jdk.internal.Loader does not check CRC32 on ClassFormatError
-        assertFalse(isCRC32Suppressed(exception));
-    }
-
-    /**
-     * Document that a JAR file with valid class file data and a mismatching
-     * CRC32 checksums does not cause exceptions
-     *
-     * @throws IOException if an unexpected IO exception occurs
-     * @throws ClassNotFoundException if a class is unexpectedly not found
-     */
-    @Test
-    public void validClassCRCMismatchModule() throws IOException, ClassNotFoundException {
-
-        // Load a module with valid class data, but invalid CRC
-        Module m1 = loadModule(true, false);
-
-        // Expect class to load, even with CRC mismatch
-        assertEquals(className, m1.getClassLoader().loadClass(className).getName());
-    }
-
-    // Load a module from a constructed JAR file
-    private Module loadModule(boolean validClass, boolean validCrc) throws IOException {
-        // Create a module JAR file
-        Path jarFile = createJarFile(validClass, validCrc);
-
-        // Load the module
-        ModuleFinder moduleFinder = ModuleFinder.of(jarFile);
-        Configuration parent = ModuleLayer.boot().configuration();
-
-        Configuration configuration = parent.resolve(moduleFinder, ModuleFinder.of(), Set.of("m1"));
-
-        ModuleLayer.Controller controller = ModuleLayer.defineModulesWithOneLoader(configuration,
-                Collections.singletonList(ModuleLayer.boot()),
-                getClass().getClassLoader());
-
-        return controller.layer().findModule("m1").orElseThrow();
-    }
-
-    // Return true iff CFE has a suppressed CRC32 mismatch error
+    // Return true iff ClassFormatError has a suppressed CRC32 mismatch IOException
     private static boolean isCRC32Suppressed(ClassFormatError exception) {
         for (Throwable t : exception.getSuppressed()) {
             if (t instanceof IOException ioe &&
@@ -172,9 +146,96 @@ public class InvalidCRCClassData {
         return false;
     }
 
+    // Abstraction of URLClassLoader / module system class loader context
+    interface ClassLoadingContext {
+        ClassLoader getClassLoader();
+        Path getJarFile();
+    }
+
+    // A ClassLoadingContext for loading classes using URLClassLoader
+    static class URLClassLoading implements ClassLoadingContext {
+        private final Path jarFile;
+
+        private final URLClassLoader loader;
+
+        URLClassLoading(Path jarFile, URLClassLoader loader) {
+            this.jarFile = jarFile;
+            this.loader = loader;
+        }
+
+        @Override
+        public ClassLoader getClassLoader() {
+            return loader;
+        }
+        @Override
+        public Path getJarFile() {
+            return jarFile;
+        }
+
+    }
+
+
+    // A ClassLoadingContext for loading classes using the module system
+    private static class ModuleClassLoading implements ClassLoadingContext {
+
+        private final Module module;
+        private final Path jarFile;
+
+        private ModuleClassLoading(Module module, Path jarFile) {
+            this.module = module;
+            this.jarFile = jarFile;
+        }
+
+        @Override
+        public ClassLoader getClassLoader() {
+            return module.getClassLoader();
+        }
+
+        @Override
+        public Path getJarFile() {
+            return jarFile;
+        }
+    }
+
+    // Create a context for loading classes from a JAR file using URLClassLoader
+    private static Supplier<ClassLoadingContext> ucl(boolean validClass, boolean validCrc) throws IOException {
+        return () -> {
+            try {
+                Path jarFile = createJarFile(validClass, validCrc);
+                return new URLClassLoading(jarFile, new URLClassLoader(new URL[] {jarFile.toUri().toURL()}));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        };
+    }
+
+    // Create a context for loading classes from a JAR file using the module system
+    private static Supplier<ClassLoadingContext> module(boolean validClass, boolean validCrc) throws IOException {
+        return () -> {
+            try {
+                Path jarFile = createJarFile(validClass, validCrc);
+                // Load the module
+                ModuleFinder moduleFinder = ModuleFinder.of(jarFile);
+                Configuration parent = ModuleLayer.boot().configuration();
+
+                Configuration configuration = parent.resolve(moduleFinder, ModuleFinder.of(), Set.of("m1"));
+
+                ModuleLayer.Controller controller = ModuleLayer.defineModulesWithOneLoader(configuration,
+                        Collections.singletonList(ModuleLayer.boot()),
+                        InvalidCRCClassData.class.getClassLoader());
+
+
+                Module m1 = controller.layer().findModule("m1").orElseThrow();
+                return new ModuleClassLoading(m1, jarFile);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        };
+    }
+
     // Create a JAR / module file for use in this test,
-    // optionally with invalid class file data or invalid CRC checksum
-    private Path createJarFile(boolean validClass, boolean validCrc) throws IOException {
+    // optionally with invalid class file data and/or invalid CRC checksum
+    private static Path createJarFile(boolean validClass, boolean validCrc) throws IOException {
         // Create a ZIP file with an invalid class file
         Path zipFile = Path.of("invalid-class-data.jar");
         ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -210,20 +271,10 @@ public class InvalidCRCClassData {
         return zipFile;
     }
 
-    private byte[] libraryClass() {
+    // Build a valid class file byte array
+    private static byte[] libraryClass() {
         return ClassFile.of().build(ClassDesc.of(className), cb -> {
             cb.withSuperclass(ConstantDescs.CD_Object);
         });
-    }
-
-    // URLClassLoader with access bridge to findClass
-    class CustomURLClassLoader extends URLClassLoader {
-        public CustomURLClassLoader(Path jarFile) throws MalformedURLException {
-            super(new URL[] {jarFile.toUri().toURL()});
-        }
-        @Override
-        protected Class<?> findClass(String name) throws ClassNotFoundException {
-            return super.findClass(name);
-        }
     }
 }
