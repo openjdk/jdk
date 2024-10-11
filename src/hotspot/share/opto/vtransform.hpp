@@ -40,11 +40,16 @@
 // - Construction:
 //   - From SuperWord, with the SuperWordVTransformBuilder.
 //
-// - Future Plans: optimize, if-conversion, etc.
+// - Optimize:
+//   - Move non-strict order reductions out of the loop
 //
 // - Schedule:
 //   - Compute linearization of the VTransformGraph, into an order that respects
 //     all edges in the graph (bailout if cycle detected).
+//
+// - Cost-Model:
+//   - We use a cost-model as a heuristic to determine if vectorization is profitable.
+//     Compute the cost of the loop with and without vectorization.
 //
 // - Apply:
 //   - Changes to the C2 IR are only made once the "apply" method is called.
@@ -52,13 +57,9 @@
 //     possibly replacing old scalar C2 nodes.
 //
 // Future Plans with VTransform:
-// - Cost model: estimate if vectorization is profitable.
-// - Optimizations: moving unordered reductions out of the loop, whih decreases cost.
 // - Pack/Unpack/Shuffle: introduce additional nodes not present in the scalar loop.
 //                        This is difficult to do with the SuperWord packset approach.
 // - If-conversion: convert predicated nodes into CFG.
-//
-// TODO update description
 
 typedef int VTransformNodeIDX;
 class VTransform;
@@ -508,7 +509,6 @@ public:
   NOT_PRODUCT(static void print_node_idx(const VTransformNode* vtn);)
 };
 
-// TODO refactor scalar nodes. some have _node, some opcode... how to do?
 // Identity transform for scalar nodes.
 class VTransformScalarNode : public VTransformNode {
 private:
@@ -586,7 +586,6 @@ public:
   NOT_PRODUCT(virtual void print_spec() const override;)
 };
 
-// TODO refactor to a class that can produce all sorts of scalar ops
 // Transform introduces a scalar ConvI2LNode that was not previously in the C2 graph.
 class VTransformConvI2LNode : public VTransformNode {
 public:
