@@ -109,7 +109,7 @@ public class InvalidCRCClassData {
      */
     @ParameterizedTest
     @MethodSource("parameters")
-    public void verifyClassLoading(Supplier<ClassLoadingContext> ctx,
+    public void verifyClassLoading(Supplier<ClassLoaderContext> ctx,
                                    Class<? extends ClassFormatError> expectedException,
                                    boolean expectSuppressed)
             throws ClassNotFoundException, IOException
@@ -147,18 +147,18 @@ public class InvalidCRCClassData {
     }
 
     // Abstraction of URLClassLoader / module system class loader context
-    interface ClassLoadingContext {
+    interface ClassLoaderContext {
         ClassLoader getClassLoader();
         Path getJarFile();
     }
 
     // A ClassLoadingContext for loading classes using URLClassLoader
-    static class URLClassLoading implements ClassLoadingContext {
+    static class URLClassLoaderContext implements ClassLoaderContext {
         private final Path jarFile;
 
         private final URLClassLoader loader;
 
-        URLClassLoading(Path jarFile, URLClassLoader loader) {
+        URLClassLoaderContext(Path jarFile, URLClassLoader loader) {
             this.jarFile = jarFile;
             this.loader = loader;
         }
@@ -176,12 +176,12 @@ public class InvalidCRCClassData {
 
 
     // A ClassLoadingContext for loading classes using the module system
-    private static class ModuleClassLoading implements ClassLoadingContext {
+    private static class ModuleClassLoaderContext implements ClassLoaderContext {
 
         private final Module module;
         private final Path jarFile;
 
-        private ModuleClassLoading(Module module, Path jarFile) {
+        private ModuleClassLoaderContext(Module module, Path jarFile) {
             this.module = module;
             this.jarFile = jarFile;
         }
@@ -198,11 +198,11 @@ public class InvalidCRCClassData {
     }
 
     // Create a context for loading classes from a JAR file using URLClassLoader
-    private static Supplier<ClassLoadingContext> ucl(boolean validClass, boolean validCrc) throws IOException {
+    private static Supplier<ClassLoaderContext> ucl(boolean validClass, boolean validCrc) throws IOException {
         return () -> {
             try {
                 Path jarFile = createJarFile(validClass, validCrc);
-                return new URLClassLoading(jarFile, new URLClassLoader(new URL[] {jarFile.toUri().toURL()}));
+                return new URLClassLoaderContext(jarFile, new URLClassLoader(new URL[] {jarFile.toUri().toURL()}));
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -210,7 +210,7 @@ public class InvalidCRCClassData {
     }
 
     // Create a context for loading classes from a JAR file using the module system
-    private static Supplier<ClassLoadingContext> module(boolean validClass, boolean validCrc) throws IOException {
+    private static Supplier<ClassLoaderContext> module(boolean validClass, boolean validCrc) throws IOException {
         return () -> {
             try {
                 Path jarFile = createJarFile(validClass, validCrc);
@@ -226,7 +226,7 @@ public class InvalidCRCClassData {
 
 
                 Module m1 = controller.layer().findModule("m1").orElseThrow();
-                return new ModuleClassLoading(m1, jarFile);
+                return new ModuleClassLoaderContext(m1, jarFile);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
