@@ -734,8 +734,12 @@ public class TreeMaker implements JCTree.Factory {
      *  @param base   The qualifier tree.
      */
     public JCFieldAccess Select(JCExpression base, Symbol sym) {
-        return (JCFieldAccess)new JCFieldAccess(base, sym.name, sym).setPos(pos)
-                                                                    .setType(types.erasure(sym.type));
+        JCFieldAccess res =
+                (JCFieldAccess)new JCFieldAccess(base, sym.name, sym).setPos(pos);
+
+        res.setType(sym.kind == TYP ? types.erasure(sym.type) : sym.type);
+
+        return res;
     }
 
     /** Create a qualified identifier from a symbol, adding enough qualifications
