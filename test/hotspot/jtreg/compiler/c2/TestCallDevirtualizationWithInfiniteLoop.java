@@ -50,7 +50,9 @@ public class TestCallDevirtualizationWithInfiniteLoop {
 
     public static void test(boolean flag) {
         // Avoid executing endless loop
-        if (flag) return;
+        if (flag) {
+            return;
+        }
 
         // We only know after loop opts that the receiver type is B.
         I recv = a;
