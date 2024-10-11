@@ -100,7 +100,7 @@ public final class PrimitiveClassDescImpl
 
     @Override
     public ClassDesc arrayType(int rank) {
-        ConstantUtils.validateArrayDepth(rank);
+        ConstantUtils.validateArrayRank(rank);
         if (this == CD_void)
             throw new IllegalArgumentException("not a valid reference type descriptor: " + "[".repeat(rank) + "V");
         return ArrayClassDescImpl.ofValidated(this, rank);

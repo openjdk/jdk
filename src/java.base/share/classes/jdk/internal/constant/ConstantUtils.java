@@ -301,23 +301,10 @@ public final class ConstantUtils {
             throw new IllegalArgumentException("not a class or interface type: " + classDesc);
     }
 
-    public static void validateArrayDepth(int rank) {
-        ensureRankPositive(rank);
-        validateMaxArrayDepth(rank, true);
-    }
-
-    public static void ensureRankPositive(int rank) {
-        if (rank <= 0) {
-            throw new IllegalArgumentException("rank " + rank + " is not a positive value");
-        }
-    }
-
-    public static void validateMaxArrayDepth(int rank, boolean iae) {
-        if (rank > MAX_ARRAY_TYPE_DESC_DIMENSIONS) {
-            String message = "rank: " + rank +
-                    " exceeds maximum supported dimension of " +
-                    MAX_ARRAY_TYPE_DESC_DIMENSIONS;
-            throw iae ? new IllegalArgumentException(message) : new IllegalStateException(message);
+    public static void validateArrayRank(int rank) {
+        // array rank must be representable with u1 and nonzero
+        if (rank == 0 || (rank & ~0xFF) != 0) {
+            throw new IllegalArgumentException(invalidArrayRankMessage(rank));
         }
     }
 
@@ -376,6 +363,10 @@ public final class ConstantUtils {
         } else {
             return ArrayClassDescImpl.ofValidated(ClassOrInterfaceDescImpl.ofValidated(descriptor.substring(start + arrayDepth, start + len)), arrayDepth);
         }
+    }
+
+    static String invalidArrayRankMessage(int rank) {
+        return "Array rank must be within [1, 255]: " + rank;
     }
 
     static IllegalArgumentException invalidClassName(String className) {

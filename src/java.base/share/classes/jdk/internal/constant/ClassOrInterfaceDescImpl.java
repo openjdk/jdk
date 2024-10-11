@@ -59,7 +59,7 @@ public final class ClassOrInterfaceDescImpl implements ClassDesc {
 
     @Override
     public ClassDesc arrayType(int rank) {
-        ConstantUtils.validateArrayDepth(rank);
+        ConstantUtils.validateArrayRank(rank);
         return ArrayClassDescImpl.ofValidated(this, rank);
     }
 

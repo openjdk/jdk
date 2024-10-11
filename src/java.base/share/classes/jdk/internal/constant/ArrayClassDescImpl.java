@@ -31,7 +31,6 @@ import jdk.internal.vm.annotation.Stable;
 import sun.invoke.util.Wrapper;
 
 import static java.lang.constant.ConstantDescs.CD_void;
-
 import static jdk.internal.constant.ConstantUtils.MAX_ARRAY_TYPE_DESC_DIMENSIONS;
 
 /**
@@ -76,15 +75,18 @@ public final class ArrayClassDescImpl implements ClassDesc {
     @Override
     public ClassDesc arrayType() {
         int rank = this.rank + 1;
-        ConstantUtils.validateMaxArrayDepth(rank, false);
+        if (rank > MAX_ARRAY_TYPE_DESC_DIMENSIONS)
+            throw new IllegalStateException(ConstantUtils.invalidArrayRankMessage(rank));
         return new ArrayClassDescImpl(elementType, rank);
     }
 
     @Override
     public ClassDesc arrayType(int rank) {
-        ConstantUtils.ensureRankPositive(rank);
+        if (rank <= 0) {
+            throw new IllegalArgumentException("rank " + rank + " is not a positive value");
+        }
         rank += this.rank;
-        ConstantUtils.validateArrayDepth(rank);
+        ConstantUtils.validateArrayRank(rank);
         return new ArrayClassDescImpl(elementType, rank);
     }
 

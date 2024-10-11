@@ -278,7 +278,7 @@ public sealed interface ClassDesc
      * Returns a human-readable name for the type described by this descriptor.
      *
      * @implSpec
-     * <p>The implementations return the simple name
+     * <p>The default implementation returns the simple name
      * (e.g., {@code int}) for primitive types, the unqualified class name
      * for class or interface types, or the display name of the component type
      * suffixed with the appropriate number of {@code []} pairs for array types.
