@@ -5218,7 +5218,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
     /**
      * {@code FIVE_TO_2_TO[n] == 5^(2^n)}
      */
-    private static final BigInteger[] FIVE_TO_2_TO = new BigInteger[20];
+    private static final BigInteger[] FIVE_TO_2_TO = new BigInteger[16 + 1];
 
     static {
         BigInteger pow = FIVE_TO_2_TO[0] = BigInteger.valueOf(5L);
@@ -5256,7 +5256,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         // avoid overflow of scale - preferredScale
         preferredScale = Math.clamp(preferredScale, Integer.MIN_VALUE - 1L, Integer.MAX_VALUE);
         int powsOf2 = intVal.getLowestSetBit();
-        // scale - preferredScale >= remainingZeros >= max{n : (intVal % 10^n) == 0 && scale - n >= preferredScale}
+        // scale - preferredScale >= remainingZeros >= max{n : (intVal % 10^n) == 0 && n <= scale - preferredScale}
         // a multiple of 10^n must be a multiple of 2^n
         long remainingZeros = Math.min(scale - preferredScale, powsOf2);
         if (remainingZeros <= 0L)
@@ -5328,7 +5328,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * Assumes {@code intVal != 0 && intCompact != 0}.
      */
     private static BigDecimal stripZerosToMatchScale(BigInteger intVal, long intCompact, int scale, long preferredScale) {
-        if(intCompact!=INFLATED) {
+        if (intCompact != INFLATED) {
             return createAndStripZerosToMatchScale(intCompact, scale, preferredScale);
         } else {
             return createAndStripZerosToMatchScale(intVal==null ? INFLATED_BIGINT : intVal,
