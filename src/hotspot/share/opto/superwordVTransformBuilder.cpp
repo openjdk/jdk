@@ -108,9 +108,11 @@ void SuperWordVTransformBuilder::build_inputs_for_vector_vtnodes(VectorSet& vtn_
         init_req_with_vector(pack, vtn, vtn_dependencies, 1);
         init_req_with_scalar(p0,   vtn, vtn_dependencies, 2); // constant rounding mode
       } else {
+        // TODO refactor away?
         init_all_req_with_vectors(pack, vtn, vtn_dependencies);
       }
     } else {
+      // TODO refactor away?
       init_all_req_with_vectors(pack, vtn, vtn_dependencies);
     }
 

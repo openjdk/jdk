@@ -860,9 +860,7 @@ void VTransformPopulateIndexNode::print_spec() const {
 }
 
 void VTransformVectorNode::print_spec() const {
-  tty->print("vlen=%d bt=%s",
-             vector_length(),
-             type2name(element_basic_type()));
+  tty->print("vlen=%d bt=%s", vector_length(), type2name(element_basic_type()));
 }
 
 void VTransformXYZVectorNode::print_spec() const {

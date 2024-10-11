@@ -637,7 +637,9 @@ public:
   NOT_PRODUCT(virtual void print_spec() const override;)
 };
 
-// TODO
+// The scalar operation was a long -> int operation.
+// However, the vector operation is long -> long.
+// Hence, we lower the node to: long --long_op--> long --cast--> int
 class VTransformLongToIntVectorNode : public VTransformVectorNode {
 public:
   VTransformLongToIntVectorNode(VTransform& vtransform, VTransformNodePrototype prototype, uint req) :
@@ -657,6 +659,7 @@ struct VTransformBoolTest {
 };
 
 // Cmp + Bool -> VectorMaskCmp
+// The Bool node takes care of "cost" and "apply".
 class VTransformCmpVectorNode : public VTransformVectorNode {
 public:
   VTransformCmpVectorNode(VTransform& vtransform, VTransformNodePrototype prototype, uint req) :
@@ -713,7 +716,7 @@ class VTransformLoadVectorNode : public VTransformMemVectorNode {
 private:
   const LoadNode::ControlDependency _control_dependency;
 
-  // TODO
+  // TODO can we remove it with refactored VPointer?
   GrowableArray<Node*> _xnodes;
 public:
   // req = 3 -> [ctrl, mem, adr]
