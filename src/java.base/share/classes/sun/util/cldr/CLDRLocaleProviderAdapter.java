@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -259,6 +259,24 @@ public class CLDRLocaleProviderAdapter extends JRELocaleProviderAdapter {
                     break;
                 }
             }
+
+            if (parent == null) {
+                // check nonlikelyScript locales
+                if (CLDRBaseLocaleDataMetaInfo.nonlikelyScript && locale.getCountry().isEmpty()) {
+                    var lang = " " + locale.getLanguage() + " ";
+                    var script= locale.getScript();
+                    if (!script.isEmpty()) {
+                        parent = baseMetaInfo.likelyScriptMap().entrySet().stream()
+                            .filter(e -> e.getValue().contains(lang))
+                            .findAny()
+                            .map(Map.Entry::getKey)
+                            .map(likely -> likely.equals(script) ? null : Locale.ROOT)
+                            .orElse(null);
+                    }
+                }
+            }
+
+            // no parent found
             if (parent == null) {
                 parent = locale; // non existent marker
             }

@@ -31,6 +31,7 @@ import java.io.FilterInputStream;
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.EOFException;
+import java.util.Objects;
 
 /**
  * This class implements a stream filter for reading compressed data in
@@ -75,9 +76,29 @@ public class GZIPInputStream extends InflaterInputStream {
      * @throws    IllegalArgumentException if {@code size <= 0}
      */
     public GZIPInputStream(InputStream in, int size) throws IOException {
-        super(in, in != null ? new Inflater(true) : null, size);
+        super(in, createInflater(in, size), size);
         usesDefaultInflater = true;
-        readHeader(in);
+        try {
+            readHeader(in);
+        } catch (IOException ioe) {
+            this.inf.end();
+            throw ioe;
+        }
+    }
+
+    /*
+     * Creates and returns an Inflater only if the input stream is not null and the
+     * buffer size is > 0.
+     * If the input stream is null, then this method throws a
+     * NullPointerException. If the size is <= 0, then this method throws
+     * an IllegalArgumentException
+     */
+    private static Inflater createInflater(InputStream in, int size) {
+        Objects.requireNonNull(in);
+        if (size <= 0) {
+            throw new IllegalArgumentException("buffer size <= 0");
+        }
+        return new Inflater(true);
     }
 
     /**

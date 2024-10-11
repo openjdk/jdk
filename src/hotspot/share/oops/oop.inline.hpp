@@ -190,7 +190,7 @@ size_t oopDesc::size_given_klass(Klass* klass)  {
       // skipping the intermediate round to HeapWordSize.
       s = align_up(size_in_bytes, MinObjAlignmentInBytes) / HeapWordSize;
 
-      assert(s == klass->oop_size(this) || size_might_change(), "wrong array object size");
+      assert(s == klass->oop_size(this), "wrong array object size");
     } else {
       // Must be zero, so bite the bullet and take the virtual call.
       s = klass->oop_size(this);
@@ -238,6 +238,8 @@ inline void   oopDesc::short_field_put(int offset, jshort value)    { *field_add
 
 inline jint oopDesc::int_field(int offset) const                    { return *field_addr<jint>(offset);     }
 inline void oopDesc::int_field_put(int offset, jint value)          { *field_addr<jint>(offset) = value;    }
+inline jint oopDesc::int_field_relaxed(int offset) const            { return Atomic::load(field_addr<jint>(offset)); }
+inline void oopDesc::int_field_put_relaxed(int offset, jint value)  { Atomic::store(field_addr<jint>(offset), value); }
 
 inline jlong oopDesc::long_field(int offset) const                  { return *field_addr<jlong>(offset);    }
 inline void  oopDesc::long_field_put(int offset, jlong value)       { *field_addr<jlong>(offset) = value;   }

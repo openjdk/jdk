@@ -26,7 +26,7 @@
  * @bug 8224184
  * @summary Control Char <UNDEF> check for pty
  * @modules jdk.internal.le/jdk.internal.org.jline.terminal
- *          jdk.internal.le/jdk.internal.org.jline.terminal.impl
+ *          jdk.internal.le/jdk.internal.org.jline.terminal.impl.exec
  *          jdk.internal.le/jdk.internal.org.jline.terminal.spi
  * @requires (os.family == "linux") | (os.family == "aix")
  */
@@ -35,12 +35,13 @@ import java.util.List;
 import jdk.internal.org.jline.terminal.Attributes;
 import jdk.internal.org.jline.terminal.Attributes.ControlChar;
 import jdk.internal.org.jline.terminal.Attributes.LocalFlag;
-import jdk.internal.org.jline.terminal.impl.ExecPty;
+import jdk.internal.org.jline.terminal.impl.exec.ExecPty;
+import jdk.internal.org.jline.terminal.spi.SystemStream;
 import jdk.internal.org.jline.terminal.spi.TerminalProvider;
 
 public class ExecPtyGetFlagsToSetTest extends ExecPty {
-    public ExecPtyGetFlagsToSetTest(String name, TerminalProvider.Stream stream) {
-        super(name, stream);
+    public ExecPtyGetFlagsToSetTest(TerminalProvider provider, SystemStream stream, String name) {
+        super(provider, stream, name);
     }
 
     @Override
@@ -50,7 +51,7 @@ public class ExecPtyGetFlagsToSetTest extends ExecPty {
 
     public static void main(String[] args) {
         ExecPtyGetFlagsToSetTest testPty =
-            new ExecPtyGetFlagsToSetTest("stty", TerminalProvider.Stream.Output);
+            new ExecPtyGetFlagsToSetTest(null, SystemStream.Output, "stty");
 
         Attributes attr = new Attributes();
         Attributes current = new Attributes();

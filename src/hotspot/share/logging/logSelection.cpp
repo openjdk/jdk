@@ -33,11 +33,11 @@
 
 const LogSelection LogSelection::Invalid;
 
-LogSelection::LogSelection() : _ntags(0), _wildcard(false), _level(LogLevel::Invalid), _tag_sets_selected(0) {
+LogSelection::LogSelection() : _ntags(0), _tags(), _wildcard(false), _level(LogLevel::Invalid), _tag_sets_selected(0) {
 }
 
 LogSelection::LogSelection(const LogTagType tags[LogTag::MaxTags], bool wildcard, LogLevelType level)
-    : _ntags(0), _wildcard(wildcard), _level(level), _tag_sets_selected(0) {
+  : _ntags(0), _tags(), _wildcard(wildcard), _level(level), _tag_sets_selected(0) {
   while (_ntags < LogTag::MaxTags && tags[_ntags] != LogTag::__NO_TAG) {
     _tags[_ntags] = tags[_ntags];
     _ntags++;
@@ -322,7 +322,7 @@ void LogSelection::suggest_similar_matching(outputStream* out) const {
 
   // Sort found suggestions to suggest the best one first
   SimilarityComparator sc(*this);
-  QuickSort::sort(suggestions, nsuggestions, sc, false);
+  QuickSort::sort(suggestions, nsuggestions, sc);
 
   out->print("Did you mean any of the following?");
   for (size_t i = 0; i < nsuggestions; i++) {

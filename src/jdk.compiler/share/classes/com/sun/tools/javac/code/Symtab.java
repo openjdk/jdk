@@ -222,6 +222,7 @@ public class Symtab {
     public final Type previewFeatureType;
     public final Type previewFeatureInternalType;
     public final Type restrictedType;
+    public final Type restrictedInternalType;
     public final Type typeDescriptorType;
     public final Type recordType;
     public final Type switchBootstrapsType;
@@ -230,6 +231,7 @@ public class Symtab {
     public final Type valueBasedInternalType;
     public final Type classDescType;
     public final Type enumDescType;
+    public final Type ioType;
 
     // For serialization lint checking
     public final Type objectStreamFieldType;
@@ -418,6 +420,23 @@ public class Symtab {
                                             missingInfoHandler,
                                             target.runtimeUseNestAccess());
 
+        noModule = new ModuleSymbol(names.empty, null) {
+            @Override public boolean isNoModule() {
+                return true;
+            }
+        };
+        addRootPackageFor(noModule);
+
+        Source source = Source.instance(context);
+        if (Feature.MODULES.allowedInSource(source)) {
+            java_base = enterModule(names.java_base);
+            //avoid completing java.base during the Symtab initialization
+            java_base.completer = Completer.NULL_COMPLETER;
+            java_base.visiblePackages = Collections.emptyMap();
+        } else {
+            java_base = noModule;
+        }
+
         // create the basic builtin symbols
         unnamedModule = new ModuleSymbol(names.empty, null) {
                 {
@@ -425,7 +444,6 @@ public class Symtab {
                     exports = List.nil();
                     provides = List.nil();
                     uses = List.nil();
-                    ModuleSymbol java_base = enterModule(names.java_base);
                     com.sun.tools.javac.code.Directive.RequiresDirective d =
                             new com.sun.tools.javac.code.Directive.RequiresDirective(java_base,
                                     EnumSet.of(com.sun.tools.javac.code.Directive.RequiresFlag.MANDATED));
@@ -445,7 +463,6 @@ public class Symtab {
                     exports = List.nil();
                     provides = List.nil();
                     uses = List.nil();
-                    ModuleSymbol java_base = enterModule(names.java_base);
                     com.sun.tools.javac.code.Directive.RequiresDirective d =
                             new com.sun.tools.javac.code.Directive.RequiresDirective(java_base,
                                     EnumSet.of(com.sun.tools.javac.code.Directive.RequiresFlag.MANDATED));
@@ -453,13 +470,6 @@ public class Symtab {
                 }
             };
         addRootPackageFor(errModule);
-
-        noModule = new ModuleSymbol(names.empty, null) {
-            @Override public boolean isNoModule() {
-                return true;
-            }
-        };
-        addRootPackageFor(noModule);
 
         noSymbol = new TypeSymbol(NIL, 0, names.empty, Type.noType, rootPackage) {
             @Override @DefinedBy(Api.LANGUAGE_MODEL)
@@ -523,16 +533,6 @@ public class Symtab {
 
         // Enter symbol for the errSymbol
         scope.enter(errSymbol);
-
-        Source source = Source.instance(context);
-        if (Feature.MODULES.allowedInSource(source)) {
-            java_base = enterModule(names.java_base);
-            //avoid completing java.base during the Symtab initialization
-            java_base.completer = Completer.NULL_COMPLETER;
-            java_base.visiblePackages = Collections.emptyMap();
-        } else {
-            java_base = noModule;
-        }
 
         // Get the initial completer for ModuleSymbols from Modules
         moduleCompleter = Modules.instance(context).getCompleter();
@@ -608,6 +608,7 @@ public class Symtab {
         previewFeatureType = enterClass("jdk.internal.javac.PreviewFeature");
         previewFeatureInternalType = enterSyntheticAnnotation("jdk.internal.PreviewFeature+Annotation");
         restrictedType = enterClass("jdk.internal.javac.Restricted");
+        restrictedInternalType = enterSyntheticAnnotation("jdk.internal.javac.Restricted+Annotation");
         typeDescriptorType = enterClass("java.lang.invoke.TypeDescriptor");
         recordType = enterClass("java.lang.Record");
         switchBootstrapsType = enterClass("java.lang.runtime.SwitchBootstraps");
@@ -616,6 +617,7 @@ public class Symtab {
         valueBasedInternalType = enterSyntheticAnnotation("jdk.internal.ValueBased+Annotation");
         classDescType = enterClass("java.lang.constant.ClassDesc");
         enumDescType = enterClass("java.lang.Enum$EnumDesc");
+        ioType = enterClass("java.io.IO");
         // For serialization lint checking
         objectStreamFieldType = enterClass("java.io.ObjectStreamField");
         objectInputStreamType = enterClass("java.io.ObjectInputStream");

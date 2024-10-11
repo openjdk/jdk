@@ -99,6 +99,10 @@ XReentrantLock* XNMethod::lock_for_nmethod(nmethod* nm) {
   return gc_data(nm)->lock();
 }
 
+XReentrantLock* XNMethod::ic_lock_for_nmethod(nmethod* nm) {
+  return gc_data(nm)->ic_lock();
+}
+
 void XNMethod::log_register(const nmethod* nm) {
   LogTarget(Trace, gc, nmethod) log;
   if (!log.is_enabled()) {
@@ -295,15 +299,18 @@ public:
       return;
     }
 
-    XLocker<XReentrantLock> locker(XNMethod::lock_for_nmethod(nm));
+    {
+      XLocker<XReentrantLock> locker(XNMethod::lock_for_nmethod(nm));
 
-    if (XNMethod::is_armed(nm)) {
-      // Heal oops and arm phase invariantly
-      XNMethod::nmethod_oops_barrier(nm);
-      XNMethod::set_guard_value(nm, 0);
+      if (XNMethod::is_armed(nm)) {
+        // Heal oops and arm phase invariantly
+        XNMethod::nmethod_oops_barrier(nm);
+        XNMethod::set_guard_value(nm, 0);
+      }
     }
 
     // Clear compiled ICs and exception caches
+    XLocker<XReentrantLock> locker(XNMethod::ic_lock_for_nmethod(nm));
     nm->unload_nmethod_caches(_unloading_occurred);
   }
 

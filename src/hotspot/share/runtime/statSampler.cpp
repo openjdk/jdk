@@ -201,7 +201,8 @@ void StatSampler::assert_system_property(const char* name, const char* value, TR
   // convert Java String to utf8 string
   char* system_value = java_lang_String::as_utf8_string(value_oop);
 
-  assert(strcmp(value, system_value) == 0, "property value mustn't differ from System.getProperty");
+  assert(strcmp(value, system_value) == 0, "property value mustn't differ from System.getProperty. Our value is: %s, System.getProperty is: %s",
+         value, system_value);
 #endif // ASSERT
 }
 
@@ -226,6 +227,19 @@ void StatSampler::add_property_constant(CounterNS name_space, const char* name, 
  */
 void StatSampler::add_property_constant(CounterNS name_space, const char* name, TRAPS) {
   add_property_constant(name_space, name, Arguments::get_property(name), CHECK);
+}
+
+/*
+ * Adds a string constant of the given property. Retrieves the value via
+ * Arguments::get_property() and asserts the value for the does not differ from
+ * the value retrievable from System.getProperty()
+ */
+void StatSampler::add_optional_property_constant(CounterNS name_space, const char* name, TRAPS) {
+  const char* value = Arguments::get_property(name);
+
+  if (value != nullptr) {
+    add_property_constant(name_space, name, value, CHECK);
+  }
 }
 
 /*
@@ -260,6 +274,10 @@ void StatSampler::create_system_property_instrumentation(TRAPS) {
   add_property_constant(JAVA_PROPERTY, "java.library.path", CHECK);
   add_property_constant(JAVA_PROPERTY, "java.class.path", CHECK);
   add_property_constant(JAVA_PROPERTY, "java.home", CHECK);
+
+  add_optional_property_constant(JAVA_PROPERTY, "jdk.module.path", CHECK);
+  add_optional_property_constant(JAVA_PROPERTY, "jdk.module.upgrade.path", CHECK);
+  add_optional_property_constant(JAVA_PROPERTY, "jdk.module.main", CHECK);
 }
 
 /*

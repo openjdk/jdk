@@ -75,8 +75,8 @@ class RebuildingTransformation {
                                             cob2.transforming(new CodeRebuildingTransform(), cob3 ->
                                             // first pass transforms bound to unbound instructions
                                             cob3.transforming(new CodeRebuildingTransform(), cob4 -> {
-                                                com.forEachElement(cob4::with);
-                                                com.findAttribute(Attributes.STACK_MAP_TABLE).ifPresent(cob4::with);
+                                                com.forEach(cob4::with);
+                                                com.findAttribute(Attributes.stackMapTable()).ifPresent(cob4::with);
                                             }))));
                                     case AnnotationDefaultAttribute a -> mb.with(AnnotationDefaultAttribute.of(transformAnnotationValue(a.defaultValue())));
                                     case DeprecatedAttribute a -> mb.with(DeprecatedAttribute.of());
@@ -165,9 +165,9 @@ class RebuildingTransformation {
             case AnnotationValue.OfDouble v -> AnnotationValue.of(v.doubleValue());
             case AnnotationValue.OfFloat v -> AnnotationValue.of(v.floatValue());
             case AnnotationValue.OfLong v -> AnnotationValue.of(v.longValue());
-            case AnnotationValue.OfInteger v -> AnnotationValue.of(v.intValue());
+            case AnnotationValue.OfInt v -> AnnotationValue.of(v.intValue());
             case AnnotationValue.OfShort v -> AnnotationValue.of(v.shortValue());
-            case AnnotationValue.OfCharacter v -> AnnotationValue.of(v.charValue());
+            case AnnotationValue.OfChar v -> AnnotationValue.of(v.charValue());
             case AnnotationValue.OfByte v -> AnnotationValue.of(v.byteValue());
             case AnnotationValue.OfBoolean v -> AnnotationValue.of(v.booleanValue());
             case AnnotationValue.OfClass oc -> AnnotationValue.of(oc.classSymbol());
@@ -179,8 +179,7 @@ class RebuildingTransformation {
         return annotations.stream().map(ta -> TypeAnnotation.of(
                         transformTargetInfo(ta.targetInfo(), cob, labels),
                         ta.targetPath().stream().map(tpc -> TypeAnnotation.TypePathComponent.of(tpc.typePathKind(), tpc.typeArgumentIndex())).toList(),
-                        ta.classSymbol(),
-                        ta.elements().stream().map(ae -> AnnotationElement.of(ae.name().stringValue(), transformAnnotationValue(ae.value()))).toList())).toArray(TypeAnnotation[]::new);
+                        transformAnnotation(ta.annotation()))).toArray(TypeAnnotation[]::new);
     }
 
     static TypeAnnotation.TargetInfo transformTargetInfo(TypeAnnotation.TargetInfo ti, CodeBuilder cob, HashMap<Label, Label> labels) {
@@ -220,27 +219,27 @@ class RebuildingTransformation {
             switch (coe) {
                 case ArrayLoadInstruction i -> {
                     switch (i.typeKind()) {
-                        case ByteType -> cob.baload();
-                        case ShortType -> cob.saload();
-                        case IntType -> cob.iaload();
-                        case FloatType -> cob.faload();
-                        case LongType -> cob.laload();
-                        case DoubleType -> cob.daload();
-                        case ReferenceType -> cob.aaload();
-                        case CharType -> cob.caload();
+                        case BYTE -> cob.baload();
+                        case SHORT -> cob.saload();
+                        case INT -> cob.iaload();
+                        case FLOAT -> cob.faload();
+                        case LONG -> cob.laload();
+                        case DOUBLE -> cob.daload();
+                        case REFERENCE -> cob.aaload();
+                        case CHAR -> cob.caload();
                         default -> throw new AssertionError("Should not reach here");
                     }
                 }
                 case ArrayStoreInstruction i -> {
                     switch (i.typeKind()) {
-                        case ByteType -> cob.bastore();
-                        case ShortType -> cob.sastore();
-                        case IntType -> cob.iastore();
-                        case FloatType -> cob.fastore();
-                        case LongType -> cob.lastore();
-                        case DoubleType -> cob.dastore();
-                        case ReferenceType -> cob.aastore();
-                        case CharType -> cob.castore();
+                        case BYTE -> cob.bastore();
+                        case SHORT -> cob.sastore();
+                        case INT -> cob.iastore();
+                        case FLOAT -> cob.fastore();
+                        case LONG -> cob.lastore();
+                        case DOUBLE -> cob.dastore();
+                        case REFERENCE -> cob.aastore();
+                        case CHAR -> cob.castore();
                         default -> throw new AssertionError("Should not reach here");
                     }
                 }
@@ -257,8 +256,8 @@ class RebuildingTransformation {
                         case IF_ICMPLE -> cob.if_icmple(target);
                         case IF_ICMPLT -> cob.if_icmplt(target);
                         case IF_ICMPNE -> cob.if_icmpne(target);
-                        case IFNONNULL -> cob.if_nonnull(target);
-                        case IFNULL -> cob.if_null(target);
+                        case IFNONNULL -> cob.ifnonnull(target);
+                        case IFNULL -> cob.ifnull(target);
                         case IFEQ -> cob.ifeq(target);
                         case IFGE -> cob.ifge(target);
                         case IFGT -> cob.ifgt(target);
@@ -271,7 +270,7 @@ class RebuildingTransformation {
                 case ConstantInstruction i -> {
                     if (i.constantValue() == null)
                         if (pathSwitch.nextBoolean()) cob.aconst_null();
-                        else cob.constantInstruction(null);
+                        else cob.loadConstant(null);
                     else switch (i.constantValue()) {
                         case Integer iVal -> {
                             if (iVal == 1 && pathSwitch.nextBoolean()) cob.iconst_1();
@@ -282,61 +281,61 @@ class RebuildingTransformation {
                             else if (iVal == -1 && pathSwitch.nextBoolean()) cob.iconst_m1();
                             else if (iVal >= -128 && iVal <= 127 && pathSwitch.nextBoolean()) cob.bipush(iVal);
                             else if (iVal >= -32768 && iVal <= 32767 && pathSwitch.nextBoolean()) cob.sipush(iVal);
-                            else cob.constantInstruction(iVal);
+                            else cob.loadConstant(iVal);
                         }
                         case Long lVal -> {
                             if (lVal == 0 && pathSwitch.nextBoolean()) cob.lconst_0();
                             else if (lVal == 1 && pathSwitch.nextBoolean()) cob.lconst_1();
-                            else cob.constantInstruction(lVal);
+                            else cob.loadConstant(lVal);
                         }
                         case Float fVal -> {
                             if (fVal == 0.0 && pathSwitch.nextBoolean()) cob.fconst_0();
                             else if (fVal == 1.0 && pathSwitch.nextBoolean()) cob.fconst_1();
                             else if (fVal == 2.0 && pathSwitch.nextBoolean()) cob.fconst_2();
-                            else cob.constantInstruction(fVal);
+                            else cob.loadConstant(fVal);
                         }
                         case Double dVal -> {
                             if (dVal == 0.0d && pathSwitch.nextBoolean()) cob.dconst_0();
                             else if (dVal == 1.0d && pathSwitch.nextBoolean()) cob.dconst_1();
-                            else cob.constantInstruction(dVal);
+                            else cob.loadConstant(dVal);
                         }
-                        default -> cob.constantInstruction(i.constantValue());
+                        default -> cob.loadConstant(i.constantValue());
                     }
                 }
                 case ConvertInstruction i -> {
                     switch (i.fromType()) {
-                        case DoubleType -> {
+                        case DOUBLE -> {
                             switch (i.toType()) {
-                                case FloatType -> cob.d2f();
-                                case IntType -> cob.d2i();
-                                case LongType -> cob.d2l();
+                                case FLOAT -> cob.d2f();
+                                case INT -> cob.d2i();
+                                case LONG -> cob.d2l();
                                 default -> throw new AssertionError("Should not reach here");
                             }
                         }
-                        case FloatType -> {
+                        case FLOAT -> {
                             switch (i.toType()) {
-                                case DoubleType -> cob.f2d();
-                                case IntType -> cob.f2i();
-                                case LongType -> cob.f2l();
+                                case DOUBLE -> cob.f2d();
+                                case INT -> cob.f2i();
+                                case LONG -> cob.f2l();
                                 default -> throw new AssertionError("Should not reach here");
                             }
                         }
-                        case IntType -> {
+                        case INT -> {
                             switch (i.toType()) {
-                                case ByteType -> cob.i2b();
-                                case CharType -> cob.i2c();
-                                case DoubleType -> cob.i2d();
-                                case FloatType -> cob.i2f();
-                                case LongType -> cob.i2l();
-                                case ShortType -> cob.i2s();
+                                case BYTE -> cob.i2b();
+                                case CHAR -> cob.i2c();
+                                case DOUBLE -> cob.i2d();
+                                case FLOAT -> cob.i2f();
+                                case LONG -> cob.i2l();
+                                case SHORT -> cob.i2s();
                                 default -> throw new AssertionError("Should not reach here");
                             }
                         }
-                        case LongType -> {
+                        case LONG -> {
                             switch (i.toType()) {
-                                case DoubleType -> cob.l2d();
-                                case FloatType -> cob.l2f();
-                                case IntType -> cob.l2i();
+                                case DOUBLE -> cob.l2d();
+                                case FLOAT -> cob.l2f();
+                                case INT -> cob.l2i();
                                 default -> throw new AssertionError("Should not reach here");
                             }
                         }
@@ -411,21 +410,21 @@ class RebuildingTransformation {
                 }
                 case LoadInstruction i -> {
                     switch (i.typeKind()) {
-                        case IntType -> cob.iload(i.slot());
-                        case FloatType -> cob.fload(i.slot());
-                        case LongType -> cob.lload(i.slot());
-                        case DoubleType -> cob.dload(i.slot());
-                        case ReferenceType -> cob.aload(i.slot());
+                        case INT -> cob.iload(i.slot());
+                        case FLOAT -> cob.fload(i.slot());
+                        case LONG -> cob.lload(i.slot());
+                        case DOUBLE -> cob.dload(i.slot());
+                        case REFERENCE -> cob.aload(i.slot());
                         default -> throw new AssertionError("Should not reach here");
                     }
                 }
                 case StoreInstruction i -> {
                     switch (i.typeKind()) {
-                        case IntType -> cob.istore(i.slot());
-                        case FloatType -> cob.fstore(i.slot());
-                        case LongType -> cob.lstore(i.slot());
-                        case DoubleType -> cob.dstore(i.slot());
-                        case ReferenceType -> cob.astore(i.slot());
+                        case INT -> cob.istore(i.slot());
+                        case FLOAT -> cob.fstore(i.slot());
+                        case LONG -> cob.lstore(i.slot());
+                        case DOUBLE -> cob.dstore(i.slot());
+                        case REFERENCE -> cob.astore(i.slot());
                         default -> throw new AssertionError("Should not reach here");
                     }
                 }
@@ -516,12 +515,12 @@ class RebuildingTransformation {
                 }
                 case ReturnInstruction i -> {
                     switch (i.typeKind()) {
-                        case IntType -> cob.ireturn();
-                        case FloatType -> cob.freturn();
-                        case LongType -> cob.lreturn();
-                        case DoubleType -> cob.dreturn();
-                        case ReferenceType -> cob.areturn();
-                        case VoidType -> cob.return_();
+                        case INT -> cob.ireturn();
+                        case FLOAT -> cob.freturn();
+                        case LONG -> cob.lreturn();
+                        case DOUBLE -> cob.dreturn();
+                        case REFERENCE -> cob.areturn();
+                        case VOID -> cob.return_();
                         default -> throw new AssertionError("Should not reach here");
                     }
                 }
@@ -549,13 +548,13 @@ class RebuildingTransformation {
                     if (pathSwitch.nextBoolean()) {
                         switch (i.opcode()) {
                             case CHECKCAST -> cob.checkcast(i.type().asSymbol());
-                            case INSTANCEOF -> cob.instanceof_(i.type().asSymbol());
+                            case INSTANCEOF -> cob.instanceOf(i.type().asSymbol());
                             default -> throw new AssertionError("Should not reach here");
                         }
                     } else {
                         switch (i.opcode()) {
                             case CHECKCAST -> cob.checkcast(i.type());
-                            case INSTANCEOF -> cob.instanceof_(i.type());
+                            case INSTANCEOF -> cob.instanceOf(i.type());
                             default -> throw new AssertionError("Should not reach here");
                         }
                     }

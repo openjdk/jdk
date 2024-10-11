@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -161,7 +161,7 @@ final class PBES1Core {
      * does not use any parameters.
      */
     AlgorithmParameters getParameters() {
-        AlgorithmParameters params = null;
+        AlgorithmParameters params;
         if (salt == null) {
             salt = new byte[8];
             SunJCE.getRandom().nextBytes(salt);
@@ -303,7 +303,7 @@ final class PBES1Core {
             // Concatenate the output from each digest round with the
             // password, and use the result as the input to the next digest
             // operation.
-            byte[] toBeHashed = null;
+            byte[] toBeHashed;
             result = new byte[DESedeKeySpec.DES_EDE_KEY_LEN +
                               DESConstants.DES_BLOCK_SIZE];
             for (i = 0; i < 2; i++) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -36,8 +36,6 @@
 
 namespace metaspace {
 
-DEBUG_ONLY(bool Settings::_use_allocation_guard = false;)
-
 void Settings::ergo_initialize() {
 
   // Granules must be a multiple of page size, and a power-2-value.
@@ -45,9 +43,6 @@ void Settings::ergo_initialize() {
          is_aligned(_commit_granule_bytes, os::vm_page_size()),
          "Granule size must be a page-size-aligned power-of-2 value");
   assert(commit_granule_words() <= chunklevel::MAX_CHUNK_WORD_SIZE, "Too large granule size");
-
-  // Off for release builds, off by default - but switchable - for debug builds.
-  DEBUG_ONLY(_use_allocation_guard = MetaspaceGuardAllocations;)
 
   LogStream ls(Log(metaspace)::info());
   Settings::print_on(&ls);
@@ -58,7 +53,6 @@ void Settings::print_on(outputStream* st) {
   st->print_cr(" - commit_granule_words: " SIZE_FORMAT ".", commit_granule_words());
   st->print_cr(" - virtual_space_node_default_size: " SIZE_FORMAT ".", virtual_space_node_default_word_size());
   st->print_cr(" - enlarge_chunks_in_place: %d.", (int)enlarge_chunks_in_place());
-  st->print_cr(" - use_allocation_guard: %d.", (int)use_allocation_guard());
 }
 
 } // namespace metaspace

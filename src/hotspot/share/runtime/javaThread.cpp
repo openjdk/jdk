@@ -409,9 +409,9 @@ void JavaThread::check_for_valid_safepoint_state() {
 
 // A JavaThread is a normal Java thread
 
-JavaThread::JavaThread() :
+JavaThread::JavaThread(MemTag mem_tag) :
+  Thread(mem_tag),
   // Initialize fields
-
   _on_thread_list(false),
   DEBUG_ONLY(_java_call_counter(0) COMMA)
   _entry_point(nullptr),
@@ -429,8 +429,6 @@ JavaThread::JavaThread() :
   _current_waiting_monitor(nullptr),
   _active_handles(nullptr),
   _free_handle_block(nullptr),
-
-  _monitor_chunks(nullptr),
 
   _suspend_flags(0),
 
@@ -450,16 +448,17 @@ JavaThread::JavaThread() :
   _is_in_VTMS_transition(false),
   _is_in_tmp_VTMS_transition(false),
   _is_disable_suspend(false),
+  _VTMS_transition_mark(false),
 #ifdef ASSERT
   _is_VTMS_transition_disabler(false),
 #endif
 #endif
   _jni_attach_state(_not_attaching_via_jni),
+  _is_in_internal_oome_mark(false),
 #if INCLUDE_JVMCI
   _pending_deoptimization(-1),
   _pending_monitorenter(false),
   _pending_transfer_to_interpreter(false),
-  _in_retryable_allocation(false),
   _pending_failed_speculation(0),
   _jvmci{nullptr},
   _libjvmci_runtime(nullptr),
@@ -471,8 +470,8 @@ JavaThread::JavaThread() :
 #endif // INCLUDE_JVMCI
 
   _exception_oop(oop()),
-  _exception_pc(0),
-  _exception_handler_pc(0),
+  _exception_pc(nullptr),
+  _exception_handler_pc(nullptr),
   _is_method_handle_return(0),
 
   _jni_active_critical(0),
@@ -484,10 +483,11 @@ JavaThread::JavaThread() :
   _frames_to_pop_failed_realloc(0),
 
   _cont_entry(nullptr),
-  _cont_fastpath(0),
+  _cont_fastpath(nullptr),
   _cont_fastpath_thread_state(1),
   _held_monitor_count(0),
   _jni_monitor_count(0),
+  _unlocked_inflated_monitor(nullptr),
 
   _handshake(this),
 
@@ -505,7 +505,8 @@ JavaThread::JavaThread() :
 
   _SleepEvent(ParkEvent::Allocate(this)),
 
-  _lock_stack(this) {
+  _lock_stack(this),
+  _om_cache(this) {
   set_jni_functions(jni_functions());
 
 #if INCLUDE_JVMCI
@@ -526,12 +527,11 @@ JavaThread::JavaThread() :
   assert(deferred_card_mark().is_empty(), "Default MemRegion ctor");
 }
 
-JavaThread::JavaThread(bool is_attaching_via_jni) : JavaThread() {
-  if (is_attaching_via_jni) {
-    _jni_attach_state = _attaching_via_jni;
-  }
+JavaThread* JavaThread::create_attaching_thread() {
+  JavaThread* jt = new JavaThread();
+  jt->_jni_attach_state = _attaching_via_jni;
+  return jt;
 }
-
 
 // interrupt support
 
@@ -635,8 +635,7 @@ void JavaThread::block_if_vm_exited() {
   }
 }
 
-JavaThread::JavaThread(ThreadFunction entry_point, size_t stack_sz) : JavaThread() {
-  _jni_attach_state = _not_attaching_via_jni;
+JavaThread::JavaThread(ThreadFunction entry_point, size_t stack_sz, MemTag mem_tag) : JavaThread(mem_tag) {
   set_entry_point(entry_point);
   // Create the native thread itself.
   // %note runtime_23
@@ -805,6 +804,8 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
   elapsedTimer _timer_exit_phase2;
   elapsedTimer _timer_exit_phase3;
   elapsedTimer _timer_exit_phase4;
+
+  om_clear_monitor_cache();
 
   if (log_is_enabled(Debug, os, thread, timer)) {
     _timer_exit_phase1.start();
@@ -1049,13 +1050,7 @@ JavaThread* JavaThread::active() {
 
 bool JavaThread::is_lock_owned(address adr) const {
   assert(LockingMode != LM_LIGHTWEIGHT, "should not be called with new lightweight locking");
-  if (Thread::is_lock_owned(adr)) return true;
-
-  for (MonitorChunk* chunk = monitor_chunks(); chunk != nullptr; chunk = chunk->next()) {
-    if (chunk->contains(adr)) return true;
-  }
-
-  return false;
+  return is_in_full_stack(adr);
 }
 
 oop JavaThread::exception_oop() const {
@@ -1064,22 +1059,6 @@ oop JavaThread::exception_oop() const {
 
 void JavaThread::set_exception_oop(oop o) {
   Atomic::store(&_exception_oop, o);
-}
-
-void JavaThread::add_monitor_chunk(MonitorChunk* chunk) {
-  chunk->set_next(monitor_chunks());
-  set_monitor_chunks(chunk);
-}
-
-void JavaThread::remove_monitor_chunk(MonitorChunk* chunk) {
-  guarantee(monitor_chunks() != nullptr, "must be non empty");
-  if (monitor_chunks() == chunk) {
-    set_monitor_chunks(chunk->next());
-  } else {
-    MonitorChunk* prev = monitor_chunks();
-    while (prev->next() != chunk) prev = prev->next();
-    prev->set_next(chunk->next());
-  }
 }
 
 void JavaThread::handle_special_runtime_exit_condition() {
@@ -1406,13 +1385,6 @@ void JavaThread::oops_do_no_frames(OopClosure* f, NMethodClosure* cf) {
   }
 
   DEBUG_ONLY(verify_frame_info();)
-
-  if (has_last_Java_frame()) {
-    // Traverse the monitor chunks
-    for (MonitorChunk* chunk = monitor_chunks(); chunk != nullptr; chunk = chunk->next()) {
-      chunk->oops_do(f);
-    }
-  }
 
   assert(vframe_array_head() == nullptr, "deopt in progress at a safepoint!");
   // If we have deferred set_locals there might be oops waiting to be
@@ -1890,6 +1862,9 @@ JvmtiThreadState* JavaThread::rebind_to_jvmti_thread_state_of(oop thread_oop) {
   // bind new JvmtiThreadState to JavaThread
   JvmtiThreadState::bind_to(java_lang_Thread::jvmti_thread_state(thread_oop), this);
 
+  // enable interp_only_mode for virtual or carrier thread if it has pending bit
+  JvmtiThreadState::process_pending_interp_only(this);
+
   return jvmti_thread_state();
 }
 #endif
@@ -1932,7 +1907,7 @@ void JavaThread::trace_frames() {
   int frame_no = 1;
   for (StackFrameStream fst(this, true /* update */, true /* process_frames */); !fst.is_done(); fst.next()) {
     tty->print("  %d. ", frame_no++);
-    fst.current()->print_value_on(tty, this);
+    fst.current()->print_value_on(tty);
     tty->cr();
   }
 }
@@ -2260,8 +2235,8 @@ void JavaThread::pretouch_stack() {
     if (is_in_full_stack(here) && here > end) {
       size_t to_alloc = here - end;
       char* p2 = (char*) alloca(to_alloc);
-      log_trace(os, thread)("Pretouching thread stack from " PTR_FORMAT " to " PTR_FORMAT ".",
-                            p2i(p2), p2i(end));
+      log_trace(os, thread)("Pretouching thread stack for " UINTX_FORMAT ": " RANGEFMT ".",
+                            (uintx) osthread()->thread_id(), RANGEFMTARGS(p2, to_alloc));
       os::pretouch_memory(p2, p2 + to_alloc,
                           NOT_AIX(os::vm_page_size()) AIX_ONLY(4096));
     }

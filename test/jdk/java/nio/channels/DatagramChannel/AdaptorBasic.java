@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,8 @@ import java.nio.channels.*;
 import java.util.*;
 import java.lang.reflect.Field;
 
+import jdk.test.lib.Platform;
+
 
 public class AdaptorBasic {
 
@@ -69,6 +71,8 @@ public class AdaptorBasic {
         for (;;) {
             try {
                 ds.receive(ip);
+                // weed off stray datagrams
+                if (ip.getPort() != dst.getPort()) continue;
             } catch (SocketTimeoutException x) {
                 if (shouldTimeout) {
                     out.println("Receive timed out, as expected");
@@ -111,12 +115,36 @@ public class AdaptorBasic {
             // Original
             ds = new DatagramSocket();
         } else {
-            DatagramChannel dc = DatagramChannel.open();
-            ds = dc.socket();
-            ds.bind(new InetSocketAddress(0));
+            int attempts = 0;
+            DatagramChannel toclose = null;
+            while (true) {
+                DatagramChannel dc = DatagramChannel.open();
+                ds = dc.socket();
+                if (Platform.isOSX() && dst.getAddress().isLoopbackAddress()) {
+                    // avoid binding to the wildcard on macOS if possible, in order to limit
+                    // potential port conflict issues
+                    ds.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
+                } else {
+                    ds.bind(new InetSocketAddress(0));
+                }
+                // on some systems it may be possible to bind two sockets
+                // to the same port if one of them is bound to the wildcard,
+                // if that happens, try again...
+                if (ds.getLocalPort() == dst.getPort()) {
+                    if (toclose != null) toclose.close();
+                    toclose = dc;
+                    if (++attempts == 10) {
+                        throw new AssertionError("Couldn't allocate port for client socket");
+                    }
+                    continue;
+                }
+                if (toclose != null) toclose.close();
+                break;
+            }
         }
 
-        out.println("socket: " + ds);
+        out.println("socket: " + ds + " bound to src: "
+                + ds.getLocalSocketAddress() + ", dst: " + dst);
         if (connect) {
             ds.connect(dst);
             out.println("connect: " + ds);
@@ -141,7 +169,7 @@ public class AdaptorBasic {
     public static void main(String[] args) throws Exception {
         // need an UDP echo server
         try (TestServers.UdpEchoServer echoServer
-                = TestServers.UdpEchoServer.startNewServer(100)) {
+                = TestServers.UdpEchoServer.startNewServer(100, InetAddress.getLoopbackAddress())) {
             final InetSocketAddress address
                 = new InetSocketAddress(echoServer.getAddress(),
                                         echoServer.getPort());

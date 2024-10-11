@@ -25,7 +25,6 @@
 #ifndef SHARE_UTILITIES_GLOBALDEFINITIONS_HPP
 #define SHARE_UTILITIES_GLOBALDEFINITIONS_HPP
 
-#include "utilities/attributeNoreturn.hpp"
 #include "utilities/compilerWarnings.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
@@ -37,6 +36,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <limits>
 #include <type_traits>
 
 class oopDesc;
@@ -222,9 +222,9 @@ FORBID_C_FUNCTION(void* reallocf(void *ptr, size_t size), "don't use");
 const int LogBytesPerShort   = 1;
 const int LogBytesPerInt     = 2;
 #ifdef _LP64
-const int LogBytesPerWord    = 3;
+constexpr int LogBytesPerWord    = 3;
 #else
-const int LogBytesPerWord    = 2;
+constexpr int LogBytesPerWord    = 2;
 #endif
 const int LogBytesPerLong    = 3;
 
@@ -233,16 +233,16 @@ const int BytesPerInt        = 1 << LogBytesPerInt;
 const int BytesPerWord       = 1 << LogBytesPerWord;
 const int BytesPerLong       = 1 << LogBytesPerLong;
 
-const int LogBitsPerByte     = 3;
+constexpr int LogBitsPerByte     = 3;
 const int LogBitsPerShort    = LogBitsPerByte + LogBytesPerShort;
 const int LogBitsPerInt      = LogBitsPerByte + LogBytesPerInt;
-const int LogBitsPerWord     = LogBitsPerByte + LogBytesPerWord;
+constexpr int LogBitsPerWord     = LogBitsPerByte + LogBytesPerWord;
 const int LogBitsPerLong     = LogBitsPerByte + LogBytesPerLong;
 
 const int BitsPerByte        = 1 << LogBitsPerByte;
 const int BitsPerShort       = 1 << LogBitsPerShort;
 const int BitsPerInt         = 1 << LogBitsPerInt;
-const int BitsPerWord        = 1 << LogBitsPerWord;
+constexpr int BitsPerWord        = 1 << LogBitsPerWord;
 const int BitsPerLong        = 1 << LogBitsPerLong;
 
 const int WordAlignmentMask  = (1 << LogBytesPerWord) - 1;
@@ -384,8 +384,13 @@ inline T byte_size_in_proper_unit(T s) {
 #define PROPERFMT             SIZE_FORMAT "%s"
 #define PROPERFMTARGS(s)      byte_size_in_proper_unit(s), proper_unit_for_byte_size(s)
 
+// Printing a range, with start and bytes given
 #define RANGEFMT              "[" PTR_FORMAT " - " PTR_FORMAT "), (" SIZE_FORMAT " bytes)"
 #define RANGEFMTARGS(p1, size) p2i(p1), p2i(p1 + size), size
+
+// Printing a range, with start and end given
+#define RANGE2FMT             "[" PTR_FORMAT " - " PTR_FORMAT "), (" SIZE_FORMAT " bytes)"
+#define RANGE2FMTARGS(p1, p2) p2i(p1), p2i(p2), ((uintptr_t)p2 - (uintptr_t)p1)
 
 inline const char* exact_unit_for_byte_size(size_t s) {
 #ifdef _LP64
@@ -455,6 +460,7 @@ typedef unsigned int uint;   NEEDS_CLEANUP
 typedef   signed char s_char;
 typedef unsigned char u_char;
 typedef u_char*       address;
+typedef const u_char* const_address;
 
 // Pointer subtraction.
 // The idea here is to avoid ptrdiff_t, which is signed and so doesn't have
@@ -1110,7 +1116,18 @@ template<class T> constexpr T MIN3(T a, T b, T c)      { return MIN2(MIN2(a, b),
 template<class T> constexpr T MAX4(T a, T b, T c, T d) { return MAX2(MAX3(a, b, c), d); }
 template<class T> constexpr T MIN4(T a, T b, T c, T d) { return MIN2(MIN3(a, b, c), d); }
 
-template<class T> inline T ABS(T x)                 { return (x > 0) ? x : -x; }
+#define ABS(x) asserted_abs(x, __FILE__, __LINE__)
+
+template<class T> inline T asserted_abs(T x, const char* file, int line) {
+  bool valid_arg = !(std::is_integral<T>::value && x == std::numeric_limits<T>::min());
+#ifdef ASSERT
+  if (!valid_arg) {
+    report_vm_error(file, line, "ABS: argument should not allow overflow");
+  }
+#endif
+  // Prevent exposure to UB by checking valid_arg here as well.
+  return (x < 0 && valid_arg) ? -x : x;
+}
 
 // Return the given value clamped to the range [min ... max]
 template<typename T>

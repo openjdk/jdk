@@ -25,7 +25,7 @@
 
 m4_include([util_paths.m4])
 
-###############################################################################
+################################################################################
 # Create a function/macro that takes a series of named arguments. The call is
 # similar to AC_DEFUN, but the setup of the function looks like this:
 # UTIL_DEFUN_NAMED([MYFUNC], [FOO *BAR], [$@], [
@@ -100,7 +100,7 @@ AC_DEFUN([UTIL_DEFUN_NAMED],
   ])
 ])
 
-###############################################################################
+################################################################################
 # Assert that a programmatic condition holds. If not, exit with an error message.
 # Check that a shell expression gives return code 0
 #
@@ -121,7 +121,7 @@ AC_DEFUN([UTIL_ASSERT_SHELL_TEST],
 ])
 
 
-###############################################################################
+################################################################################
 # Assert that a programmatic condition holds. If not, exit with an error message.
 # Check that two strings are equal.
 #
@@ -137,7 +137,7 @@ AC_DEFUN([UTIL_ASSERT_STRING_EQUALS],
       $3)
 ])
 
-###############################################################################
+################################################################################
 # Assert that a programmatic condition holds. If not, exit with an error message.
 # Check that two strings not are equal.
 #
@@ -153,7 +153,7 @@ AC_DEFUN([UTIL_ASSERT_STRING_NOT_EQUALS],
       $3)
 ])
 
-###############################################################################
+################################################################################
 # Assert that a programmatic condition holds. If not, exit with an error message.
 # Check that the given expression evaluates to the string 'true'
 #
@@ -165,7 +165,7 @@ AC_DEFUN([UTIL_ASSERT_TRUE],
   UTIL_ASSERT_STRING_EQUALS($1, true, $3)
 ])
 
-###############################################################################
+################################################################################
 # Assert that a programmatic condition holds. If not, exit with an error message.
 # Check that the given expression does not evaluate to the string 'true'
 #
@@ -177,7 +177,7 @@ AC_DEFUN([UTIL_ASSERT_NOT_TRUE],
   UTIL_ASSERT_STRING_NOT_EQUALS($1, true, $3)
 ])
 
-###############################################################################
+################################################################################
 # Check if a list of space-separated words are selected only from a list of
 # space-separated legal words. Typical use is to see if a user-specified
 # set of words is selected from a set of legal words.
@@ -204,7 +204,7 @@ AC_DEFUN([UTIL_GET_NON_MATCHING_VALUES],
   fi
 ])
 
-###############################################################################
+################################################################################
 # Check if a list of space-separated words contains any word(s) from a list of
 # space-separated illegal words. Typical use is to see if a user-specified
 # set of words contains any from a set of illegal words.
@@ -231,7 +231,7 @@ AC_DEFUN([UTIL_GET_MATCHING_VALUES],
   fi
 ])
 
-###############################################################################
+################################################################################
 # Converts an ISO-8601 date/time string to a unix epoch timestamp. If no
 # suitable conversion method was found, an empty string is returned.
 #
@@ -259,7 +259,7 @@ AC_DEFUN([UTIL_GET_EPOCH_TIMESTAMP],
   $1=$timestamp
 ])
 
-###############################################################################
+################################################################################
 # Sort a space-separated list, and remove duplicates.
 #
 # Sets the specified variable to the resulting list.
@@ -273,7 +273,7 @@ AC_DEFUN([UTIL_SORT_LIST],
   $1=${result//$'\n'/ }
 ])
 
-###############################################################################
+################################################################################
 # Test if $1 is a valid argument to $3 (often is $JAVA passed as $3)
 # If so, then append $1 to $2 \
 # Also set JVM_ARG_OK to true/false depending on outcome.
@@ -294,7 +294,7 @@ AC_DEFUN([UTIL_ADD_JVM_ARG_IF_OK],
   fi
 ])
 
-###############################################################################
+################################################################################
 # Register a --with argument but mark it as deprecated
 # $1: The name of the with argument to deprecate, not including --with-
 AC_DEFUN([UTIL_DEPRECATED_ARG_WITH],
@@ -304,7 +304,7 @@ AC_DEFUN([UTIL_DEPRECATED_ARG_WITH],
       [AC_MSG_WARN([Option --with-$1 is deprecated and will be ignored.])])
 ])
 
-###############################################################################
+################################################################################
 # Register a --enable argument but mark it as deprecated
 # $1: The name of the with argument to deprecate, not including --enable-
 AC_DEFUN([UTIL_DEPRECATED_ARG_ENABLE],
@@ -314,7 +314,7 @@ AC_DEFUN([UTIL_DEPRECATED_ARG_ENABLE],
       [AC_MSG_WARN([Option --enable-$1 is deprecated and will be ignored.])])
 ])
 
-###############################################################################
+################################################################################
 # Register an --enable-* argument as an alias for another argument.
 # $1: The name of the enable argument for the new alias, not including --enable-
 # $2: The full name of the argument of which to make this an alias, including
@@ -329,7 +329,7 @@ AC_DEFUN([UTIL_ALIASED_ARG_ENABLE],
   ])
 ])
 
-###############################################################################
+################################################################################
 # Creates a command-line option using the --enable-* pattern. Will return a
 # value of 'true' or 'false' in the RESULT variable, depending on whether the
 # option was enabled or not by the user. The option can not be turned on if it
@@ -471,7 +471,7 @@ UTIL_DEFUN_NAMED([UTIL_ARG_ENABLE],
   fi
 ])
 
-###############################################################################
+################################################################################
 # Helper functions for ARG_WITH, to validate different types of argument
 
 # Dispatcher to call the correct UTIL_CHECK_TYPE_* function depending on the ARG_TYPE
@@ -575,7 +575,7 @@ AC_DEFUN([UTIL_CHECK_TYPE_features],
   ARG_RESULT=$($ECHO $feature_list)
 ])
 
-###############################################################################
+################################################################################
 # Creates a command-line option using the --with-* pattern. Will return a
 # string in the RESULT variable with the option provided by the user, or the
 # empty string if the --with-* option was not given. The option can not be given
@@ -810,7 +810,7 @@ UTIL_DEFUN_NAMED([UTIL_ARG_WITH],
   fi
 ])
 
-###############################################################################
+################################################################################
 # Helper functions for CHECK_VALUE in ARG_WITH.
 AC_DEFUN([UTIL_CHECK_STRING_NON_EMPTY],
 [

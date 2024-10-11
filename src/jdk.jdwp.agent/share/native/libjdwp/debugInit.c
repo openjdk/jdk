@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -995,6 +995,8 @@ parseOptions(char *options)
     gdata->includeVThreads = JNI_FALSE;
     gdata->rememberVThreadsWhenDisconnected = JNI_FALSE;
 
+    gdata->jvmti_data_dump = JNI_FALSE;
+
     /* Options being NULL will end up being an error. */
     if (options == NULL) {
         options = "";
@@ -1158,6 +1160,13 @@ parseOptions(char *options)
             }
             if ( dopause ) {
                 do_pause();
+            }
+        } else if (strcmp(buf, "datadump") == 0) {
+          // Enable JVMTI DATA_DUMP_REQUEST support.
+          // This is not a documented flag. This feature is experimental and is only intended
+          // to be used by debug agent developers. See comment for cbDataDump() for more details.
+          if ( !get_boolean(&str, &(gdata->jvmti_data_dump)) ) {
+                goto syntax_error;
             }
         } else if (strcmp(buf, "coredump") == 0) {
             if ( !get_boolean(&str, &docoredump) ) {

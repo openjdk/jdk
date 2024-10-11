@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,15 +52,15 @@
  * @provides javax.tools.DocumentationTool
  * @provides javax.tools.Tool
  *
- *
  * @moduleGraph
  * @since 9
  */
 module jdk.javadoc {
-    requires java.xml;
 
     requires transitive java.compiler;
     requires transitive jdk.compiler;
+
+    requires jdk.internal.md;
     requires jdk.internal.opt;
 
     exports jdk.javadoc.doclet;

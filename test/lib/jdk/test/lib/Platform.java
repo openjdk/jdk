@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import java.security.PrivilegedAction;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import static java.util.Locale.ROOT;
 
 public class Platform {
     public  static final String vmName      = privilegedGetProperty("java.vm.name");
@@ -134,7 +135,7 @@ public class Platform {
     }
 
     private static boolean isOs(String osname) {
-        return osName.toLowerCase().startsWith(osname.toLowerCase());
+        return osName.toLowerCase(ROOT).startsWith(osname.toLowerCase(ROOT));
     }
 
     public static String getOsName() {
@@ -175,15 +176,15 @@ public class Platform {
     }
 
     public static boolean isDebugBuild() {
-        return (jdkDebug.toLowerCase().contains("debug"));
+        return (jdkDebug.toLowerCase(ROOT).contains("debug"));
     }
 
     public static boolean isSlowDebugBuild() {
-        return (jdkDebug.toLowerCase().equals("slowdebug"));
+        return (jdkDebug.toLowerCase(ROOT).equals("slowdebug"));
     }
 
     public static boolean isFastDebugBuild() {
-        return (jdkDebug.toLowerCase().equals("fastdebug"));
+        return (jdkDebug.toLowerCase(ROOT).equals("fastdebug"));
     }
 
     public static String getVMVersion() {
@@ -350,8 +351,8 @@ public class Platform {
     }
 
     public static boolean isOracleLinux7() {
-        if (System.getProperty("os.name").toLowerCase().contains("linux") &&
-                System.getProperty("os.version").toLowerCase().contains("el")) {
+        if (System.getProperty("os.name").toLowerCase(ROOT).contains("linux") &&
+                System.getProperty("os.version").toLowerCase(ROOT).contains("el")) {
             Pattern p = Pattern.compile("el(\\d+)");
             Matcher m = p.matcher(System.getProperty("os.version"));
             if (m.find()) {
@@ -472,5 +473,14 @@ public class Platform {
      */
     public static boolean areCustomLoadersSupportedForCDS() {
         return (is64bit() && (isLinux() || isOSX() || isWindows()));
+    }
+
+    /**
+     * Checks if the current system is running on Wayland display server on Linux.
+     *
+     * @return {@code true} if the system is running on Wayland display server
+     */
+    public static boolean isOnWayland() {
+        return System.getenv("WAYLAND_DISPLAY") != null;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -139,6 +139,30 @@ public class WindowsHelper {
                     String.format("TARGETDIR=\"%s\"",
                             unpackDir.toAbsolutePath().normalize())))));
             runMsiexecWithRetries(Executor.of("cmd", "/c", unpackBat.toString()));
+
+            //
+            // WiX3 uses "." as the value of "DefaultDir" field for "ProgramFiles64Folder" folder in msi's Directory table
+            // WiX4 uses "PFiles64" as the value of "DefaultDir" field for "ProgramFiles64Folder" folder in msi's Directory table
+            // msiexec creates "Program Files/./<App Installation Directory>" from WiX3 msi which translates to "Program Files/<App Installation Directory>"
+            // msiexec creates "Program Files/PFiles64/<App Installation Directory>" from WiX4 msi
+            // So for WiX4 msi we need to transform "Program Files/PFiles64/<App Installation Directory>" into "Program Files/<App Installation Directory>"
+            //
+            // WiX4 does the same thing for %LocalAppData%.
+            //
+            for (var extraPathComponent : List.of("PFiles64", "LocalApp")) {
+                if (Files.isDirectory(unpackDir.resolve(extraPathComponent))) {
+                    Path installationSubDirectory = getInstallationSubDirectory(cmd);
+                    Path from = Path.of(extraPathComponent).resolve(installationSubDirectory);
+                    Path to = installationSubDirectory;
+                    TKit.trace(String.format("Convert [%s] into [%s] in [%s] directory", from, to,
+                            unpackDir));
+                    ThrowingRunnable.toRunnable(() -> {
+                        Files.createDirectories(unpackDir.resolve(to).getParent());
+                        Files.move(unpackDir.resolve(from), unpackDir.resolve(to));
+                        TKit.deleteDirectoryRecursive(unpackDir.resolve(extraPathComponent));
+                    }).run();
+                }
+            }
             return destinationDir;
         };
         return msi;

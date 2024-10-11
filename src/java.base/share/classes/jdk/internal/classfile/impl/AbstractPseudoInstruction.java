@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -154,7 +154,8 @@ public abstract sealed class AbstractPseudoInstruction
 
     }
 
-    private abstract static sealed class AbstractLocalPseudo extends AbstractPseudoInstruction {
+    private abstract static sealed class AbstractLocalPseudo extends AbstractPseudoInstruction
+            implements Util.WritableLocalVariable {
         protected final int slot;
         protected final Utf8Entry name;
         protected final Utf8Entry descriptor;
@@ -162,6 +163,7 @@ public abstract sealed class AbstractPseudoInstruction
         protected final Label endScope;
 
         public AbstractLocalPseudo(int slot, Utf8Entry name, Utf8Entry descriptor, Label startScope, Label endScope) {
+            BytecodeHelpers.validateSlot(slot);
             this.slot = slot;
             this.name = name;
             this.descriptor = descriptor;
@@ -189,19 +191,17 @@ public abstract sealed class AbstractPseudoInstruction
             return endScope;
         }
 
-        public boolean writeTo(BufWriter b) {
-            var lc = ((BufWriterImpl)b).labelContext();
+        @Override
+        public boolean writeLocalTo(BufWriterImpl b) {
+            var lc = b.labelContext();
             int startBci = lc.labelToBci(startScope());
             int endBci = lc.labelToBci(endScope());
             if (startBci == -1 || endBci == -1) {
                 return false;
             }
             int length = endBci - startBci;
-            b.writeU2(startBci);
-            b.writeU2(length);
-            b.writeIndex(name);
-            b.writeIndex(descriptor);
-            b.writeU2(slot());
+            b.writeU2U2(startBci, length);
+            b.writeU2U2U2(b.cpIndex(name), b.cpIndex(descriptor), slot());
             return true;
         }
     }

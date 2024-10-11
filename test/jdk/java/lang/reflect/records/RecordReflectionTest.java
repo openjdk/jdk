@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,9 @@
 
 /*
  * @test
- * @bug 8235369 8235550 8247444
+ * @bug 8235369 8235550 8247444 8320575
  * @summary reflection test for records
+ * @build R10
  * @compile RecordReflectionTest.java
  * @run testng/othervm RecordReflectionTest
  * @run testng/othervm/java.security.policy=allPermissions.policy RecordReflectionTest
@@ -57,6 +58,27 @@ public class RecordReflectionTest {
 
     record R8<A, B>(A a, B b) implements java.io.Serializable { }
 
+    record R9(List<String> ls) {
+        R9 {} // compact constructor, will contain a mandated parameter
+    }
+
+    /* record R10 is defined in an accompaning jcod file, defined as:
+    record R10(List<String> ls) { // in this case there wasn't be any compact constructor and thus no mandated param
+    }
+    */
+
+    record R11(int i, List<String> ls) {
+        R11 {} // compact constructor, will contain mandated parameters
+    }
+
+    record R12(List<String> ls, int i) {
+        R12 {} // compact constructor, will contain mandated parameters
+    }
+
+    record R13(List<String> ls1, int i, List<String> ls2) {
+        R13 {} // compact constructor, will contain mandated parameters
+    }
+
     @DataProvider(name = "recordClasses")
     public Object[][] recordClassData() {
         return List.of(R1.class,
@@ -66,8 +88,13 @@ public class RecordReflectionTest {
                        R5.class,
                        R6.class,
                        R7.class,
-                       R8.class)
-                   .stream().map(c -> new Object[] {c}).toArray(Object[][]::new);
+                       R8.class,
+                       R9.class,
+                       R10.class,
+                       R11.class,
+                       R12.class,
+                       R13.class
+        ).stream().map(c -> new Object[] {c}).toArray(Object[][]::new);
     }
 
     @Test(dataProvider = "recordClasses")
@@ -124,6 +151,34 @@ public class RecordReflectionTest {
                            new Object[]{ new R1(), new R2(6, 7), new R3(List.of("s")) },
                            new String[]{ "r1", "r2", "r3" },
                            new String[]{ R1.class.toString(), R2.class.toString(), R3.class.toString()} },
+            new Object[] { new R9(List.of("1")),
+                        1,
+                        new Object[]{ List.of("1") },
+                        new String[]{ "ls" },
+                        new String[]{ "java.util.List<java.lang.String>"} },
+            /* R10 has exactly the same definition as R9 but the parameter of the compact constructor doesn't have
+             * the mandated flag, nevertheless we should be able to load the same generic information
+             */
+            new Object[] { new R10(List.of("1")),
+                        1,
+                        new Object[]{ List.of("1") },
+                        new String[]{ "ls" },
+                        new String[]{ "java.util.List<java.lang.String>"} },
+            new Object[] { new R11(1, List.of("1")),
+                        2,
+                        new Object[]{ 1, List.of("1") },
+                        new String[]{ "i", "ls" },
+                        new String[]{ "int", "java.util.List<java.lang.String>"} },
+            new Object[] { new R12(List.of("1"), 1),
+                        2,
+                        new Object[]{ List.of("1"), 1 },
+                        new String[]{ "ls", "i" },
+                        new String[]{ "java.util.List<java.lang.String>", "int"} },
+            new Object[] { new R13(List.of("1"), 1, List.of("2")),
+                        3,
+                        new Object[]{ List.of("1"), 1, List.of("2") },
+                        new String[]{ "ls1", "i", "ls2" },
+                        new String[]{ "java.util.List<java.lang.String>", "int", "java.util.List<java.lang.String>"} },
         };
     }
 
@@ -147,6 +202,23 @@ public class RecordReflectionTest {
             assertEquals(rc.getAccessor().getGenericReturnType().toString(), signatures[i],
                          String.format("signature of method \"%s\" different from expected signature \"%s\"",
                                  rc.getAccessor().getGenericReturnType(), signatures[i]));
+            i++;
+        }
+        // now let's check constructors
+        var constructor = recordClass.getDeclaredConstructors()[0];
+        i = 0;
+        for (var p: constructor.getParameters()) {
+            assertEquals(p.getParameterizedType().toString(), signatures[i],
+                    String.format("signature of method \"%s\" different from expected signature \"%s\"",
+                            p.getType().toString(), signatures[i]));
+            i++;
+        }
+        // similar as above but testing another API
+        i = 0;
+        for (var p : constructor.getGenericParameterTypes()) {
+            assertEquals(p.toString(), signatures[i],
+                    String.format("signature of method \"%s\" different from expected signature \"%s\"",
+                            p.toString(), signatures[i]));
             i++;
         }
     }
@@ -201,5 +273,4 @@ public class RecordReflectionTest {
         } catch (IllegalAccessException e) {
         }
     }
-
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,16 +110,5 @@ public non-sealed interface FieldTransform
     @Override
     default FieldTransform andThen(FieldTransform t) {
         return new TransformImpl.ChainedFieldTransform(this, t);
-    }
-
-    /**
-     * @implSpec The default implementation returns a resolved transform bound
-     *           to the given field builder.
-     */
-    @Override
-    default ResolvedTransform<FieldElement> resolve(FieldBuilder builder) {
-        return new TransformImpl.ResolvedTransformImpl<>(e -> accept(builder, e),
-                                                         () -> atEnd(builder),
-                                                         () -> atStart(builder));
     }
 }

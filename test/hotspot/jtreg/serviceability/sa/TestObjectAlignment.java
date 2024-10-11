@@ -55,7 +55,7 @@ public class TestObjectAlignment {
             agent.attach(Integer.parseInt(pid));
             int actualAlign = VM.getVM().getObjectAlignmentInBytes();
             Asserts.assertEquals(expectedAlign, actualAlign,
-                                 "Address of HeapRegion does not match.");
+                                 "Address of G1HeapRegion does not match.");
         } finally {
             agent.detach();
         }

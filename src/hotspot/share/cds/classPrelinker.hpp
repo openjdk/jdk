@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #ifndef SHARE_CDS_CLASSPRELINKER_HPP
 #define SHARE_CDS_CLASSPRELINKER_HPP
 
+#include "interpreter/bytecodes.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "memory/allStatic.hpp"
 #include "memory/allocation.hpp"
@@ -64,13 +65,20 @@ class ClassPrelinker :  AllStatic {
     return is_in_archivebuilder_buffer((address)(p));
   }
   static void resolve_string(constantPoolHandle cp, int cp_index, TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
-  static Klass* maybe_resolve_class(constantPoolHandle cp, int cp_index, TRAPS);
-  static bool can_archive_resolved_klass(InstanceKlass* cp_holder, Klass* resolved_klass);
-  static Klass* find_loaded_class(JavaThread* THREAD, oop class_loader, Symbol* name);
+  static bool is_class_resolution_deterministic(InstanceKlass* cp_holder, Klass* resolved_class);
 
+  static Klass* find_loaded_class(Thread* current, oop class_loader, Symbol* name);
+  static Klass* find_loaded_class(Thread* current, ConstantPool* cp, int class_cp_index);
+
+  // fmi = FieldRef/MethodRef/InterfaceMethodRef
+  static void maybe_resolve_fmi_ref(InstanceKlass* ik, Method* m, Bytecodes::Code bc, int raw_index,
+                                    GrowableArray<bool>* resolve_fmi_list, TRAPS);
 public:
   static void initialize();
   static void dispose();
+
+  static void preresolve_class_cp_entries(JavaThread* current, InstanceKlass* ik, GrowableArray<bool>* preresolve_list);
+  static void preresolve_field_and_method_cp_entries(JavaThread* current, InstanceKlass* ik, GrowableArray<bool>* preresolve_list);
 
   // Is this class resolved as part of vmClasses::resolve_all()? If so, these
   // classes are guatanteed to be loaded at runtime (and cannot be replaced by JVMTI)
@@ -82,10 +90,7 @@ public:
   // CDS archive.
   static void dumptime_resolve_constants(InstanceKlass* ik, TRAPS);
 
-  // Can we resolve the klass entry at cp_index in this constant pool, and store
-  // the result in the CDS archive? Returns true if cp_index is guaranteed to
-  // resolve to the same InstanceKlass* at both dump time and run time.
-  static bool can_archive_resolved_klass(ConstantPool* cp, int cp_index);
+  static bool is_resolution_deterministic(ConstantPool* cp, int cp_index);
 };
 
 #endif // SHARE_CDS_CLASSPRELINKER_HPP

@@ -1,4 +1,5 @@
 // Copyright (c) 2015, 2022, Red Hat Inc. All rights reserved.
+// Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -19,17 +20,15 @@
 // or visit www.oracle.com if you need additional information or have any
 // questions.
 
+#include "defs.S.inc"
+
         // JavaThread::aarch64_get_thread_helper()
         //
         // Return the current thread pointer in x0.
         // Clobber x1, flags.
         // All other registers are preserved,
 
-        .global	_ZN10JavaThread25aarch64_get_thread_helperEv
-        .hidden	_ZN10JavaThread25aarch64_get_thread_helperEv
-        .type	_ZN10JavaThread25aarch64_get_thread_helperEv, %function
-
-_ZN10JavaThread25aarch64_get_thread_helperEv:
+DECLARE_FUNC(_ZN10JavaThread25aarch64_get_thread_helperEv):
         hint #0x19      // paciasp
         stp x29, x30, [sp, -16]!
         adrp x0, :tlsdesc:_ZN6Thread12_thr_currentE

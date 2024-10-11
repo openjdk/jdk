@@ -206,6 +206,8 @@ class oopDesc {
   jboolean bool_field_acquire(int offset) const;
   void release_bool_field_put(int offset, jboolean contents);
 
+  jint int_field_relaxed(int offset) const;
+  void int_field_put_relaxed(int offset, jint contents);
   jint int_field_acquire(int offset) const;
   void release_int_field_put(int offset, jint contents);
 
@@ -317,8 +319,6 @@ class oopDesc {
 
   // for error reporting
   static void* load_oop_raw(oop obj, int offset);
-
-  DEBUG_ONLY(bool size_might_change();)
 };
 
 // An oopDesc is not initialized via a constructor.  Space is allocated in

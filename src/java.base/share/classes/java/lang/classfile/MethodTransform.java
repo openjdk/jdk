@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,17 +109,6 @@ public non-sealed interface MethodTransform
      */
     static MethodTransform transformingCode(CodeTransform xform) {
         return new TransformImpl.MethodCodeTransform(xform);
-    }
-
-    /**
-     * @implSpec The default implementation returns a resolved transform bound
-     *           to the given method builder.
-     */
-    @Override
-    default ResolvedTransform<MethodElement> resolve(MethodBuilder builder) {
-        return new TransformImpl.ResolvedTransformImpl<>(e -> accept(builder, e),
-                                                         () -> atEnd(builder),
-                                                         () -> atStart(builder));
     }
 
     /**

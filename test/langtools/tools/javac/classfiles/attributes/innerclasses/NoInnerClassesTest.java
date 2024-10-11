@@ -47,6 +47,6 @@ public class NoInnerClassesTest extends TestBase {
 
     public void test() throws IOException {
         ClassModel classModel = readClassFile("NoInnerClassesTest");
-        assertNull(classModel.findAttribute(Attributes.INNER_CLASSES).orElse(null), "Found inner class attribute");
+        assertNull(classModel.findAttribute(Attributes.innerClasses()).orElse(null), "Found inner class attribute");
     }
 }

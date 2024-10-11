@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,6 +91,8 @@ import java.time.temporal.TemporalUnit;
 import java.time.temporal.UnsupportedTemporalTypeException;
 import java.time.temporal.ValueRange;
 import java.util.Objects;
+
+import jdk.internal.util.DecimalDigits;
 
 /**
  * A time without a time-zone in the ISO-8601 calendar system,
@@ -1629,7 +1631,16 @@ public final class LocalTime
      */
     @Override
     public String toString() {
-        StringBuilder buf = new StringBuilder(18);
+        var buf = new StringBuilder(18);
+        formatTo(buf);
+        return buf.toString();
+    }
+
+    /**
+     * Prints the toString result to the given buf, avoiding extra string allocations.
+     * Requires extra capacity of 18 to avoid StringBuilder reallocation.
+     */
+    void formatTo(StringBuilder buf) {
         int hourValue = hour;
         int minuteValue = minute;
         int secondValue = second;
@@ -1640,16 +1651,21 @@ public final class LocalTime
             buf.append(secondValue < 10 ? ":0" : ":").append(secondValue);
             if (nanoValue > 0) {
                 buf.append('.');
-                if (nanoValue % 1000_000 == 0) {
-                    buf.append(Integer.toString((nanoValue / 1000_000) + 1000).substring(1));
-                } else if (nanoValue % 1000 == 0) {
-                    buf.append(Integer.toString((nanoValue / 1000) + 1000_000).substring(1));
-                } else {
-                    buf.append(Integer.toString((nanoValue) + 1000_000_000).substring(1));
+                int zeros = 9 - DecimalDigits.stringSize(nanoValue);
+                if (zeros > 0) {
+                    buf.repeat('0', zeros);
                 }
+                int digits;
+                if (nanoValue % 1_000_000 == 0) {
+                    digits = nanoValue / 1_000_000;
+                } else if (nanoValue % 1000 == 0) {
+                    digits = nanoValue / 1000;
+                } else {
+                    digits = nanoValue;
+                }
+                buf.append(digits);
             }
         }
-        return buf.toString();
     }
 
     //-----------------------------------------------------------------------

@@ -57,6 +57,13 @@ hotspot_runtime_no_cds = \
   runtime \
   -runtime/cds
 
+hotspot_runtime_non_cds_mode = \
+  runtime \
+  -runtime/cds/CheckSharingWithDefaultArchive.java \
+  -runtime/cds/appcds/dynamicArchive/DynamicSharedSymbols.java \
+  -runtime/cds/appcds/dynamicArchive/TestAutoCreateSharedArchive.java \
+  -runtime/cds/appcds/jcmd
+
 hotspot_handshake = \
   runtime/handshake
 
@@ -146,6 +153,7 @@ tier1_common = \
   gtest/MetaspaceGtests.java \
   gtest/LargePageGtests.java \
   gtest/NMTGtests.java \
+  gtest/WindowsProcessorGroups.java
 
 tier1_compiler = \
   :tier1_compiler_1 \
@@ -246,7 +254,6 @@ tier2_compiler = \
   compiler/parsing/ \
   compiler/rangechecks/ \
   compiler/reflection/ \
-  compiler/rtm/ \
   compiler/runtime/Test6826736.java \
   compiler/stable/ \
   compiler/stringopts/ \
@@ -428,8 +435,11 @@ hotspot_cds_only = \
 hotspot_appcds_dynamic = \
   runtime/cds/appcds/ \
  -runtime/cds/appcds/cacheObject \
+ -runtime/cds/appcds/complexURI \
  -runtime/cds/appcds/customLoader \
  -runtime/cds/appcds/dynamicArchive \
+ -runtime/cds/appcds/jigsaw/modulepath/ModulePathAndFMG.java \
+ -runtime/cds/appcds/jigsaw/modulepath/OptimizeModuleHandlingTest.java \
  -runtime/cds/appcds/loaderConstraints/DynamicLoaderConstraintsTest.java \
  -runtime/cds/appcds/javaldr/ArrayTest.java \
  -runtime/cds/appcds/javaldr/ExceptionDuringDumpAtObjectsInitPhase.java \
@@ -441,10 +451,12 @@ hotspot_appcds_dynamic = \
  -runtime/cds/appcds/lambdaForm/DefaultClassListLFInvokers.java \
  -runtime/cds/appcds/methodHandles \
  -runtime/cds/appcds/sharedStrings \
+ -runtime/cds/appcds/resolvedConstants \
  -runtime/cds/appcds/ArchiveRelocationTest.java \
  -runtime/cds/appcds/BadBSM.java \
  -runtime/cds/appcds/DumpClassList.java \
  -runtime/cds/appcds/DumpClassListWithLF.java \
+ -runtime/cds/appcds/DumpRuntimeClassesTest.java \
  -runtime/cds/appcds/DumpingWithNoCoops.java \
  -runtime/cds/appcds/ExtraSymbols.java \
  -runtime/cds/appcds/LambdaContainsOldInf.java \

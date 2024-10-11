@@ -29,6 +29,7 @@ import compiler.lib.ir_framework.*;
  * @test
  * @bug 8267532
  * @summary check that uncommon trap is generated for unhandled catch block
+ * @requires vm.opt.StressUnstableIfTraps == null | !vm.opt.StressUnstableIfTraps
  * @library /test/lib /
  * @requires vm.opt.DeoptimizeALot != true
  * @run driver compiler.c2.irTests.TestPrunedExHandler

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -171,6 +171,11 @@ public final class TemporaryConstantPool implements ConstantPoolBuilder {
     }
 
     @Override
+    public <T extends PoolEntry> T entryByIndex(int index, Class<T> cls) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public BootstrapMethodEntry bootstrapMethodEntry(int index) {
         throw new UnsupportedOperationException();
     }
@@ -183,15 +188,5 @@ public final class TemporaryConstantPool implements ConstantPoolBuilder {
     @Override
     public boolean canWriteDirect(ConstantPool constantPool) {
         return false;
-    }
-
-    @Override
-    public boolean writeBootstrapMethods(BufWriter buf) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void writeTo(BufWriter buf) {
-        throw new UnsupportedOperationException();
     }
 }

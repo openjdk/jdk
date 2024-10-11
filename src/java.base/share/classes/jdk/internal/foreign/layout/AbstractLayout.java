@@ -27,6 +27,7 @@ package jdk.internal.foreign.layout;
 
 import jdk.internal.foreign.LayoutPath;
 import jdk.internal.foreign.Utils;
+import jdk.internal.invoke.MhUtil;
 
 import java.lang.foreign.GroupLayout;
 import java.lang.foreign.MemoryLayout;
@@ -157,15 +158,9 @@ public abstract sealed class AbstractLayout<L extends AbstractLayout<L> & Memory
 
     public MethodHandle scaleHandle() {
         class Holder {
-            static final MethodHandle MH_SCALE;
-            static {
-                try {
-                    MH_SCALE = MethodHandles.lookup().findVirtual(MemoryLayout.class, "scale",
-                            MethodType.methodType(long.class, long.class, long.class));
-                } catch (ReflectiveOperationException e) {
-                    throw new ExceptionInInitializerError(e);
-                }
-            }
+            static final MethodHandle MH_SCALE = MhUtil.findVirtual(
+                    MethodHandles.lookup(), MemoryLayout.class, "scale",
+                    MethodType.methodType(long.class, long.class, long.class));
         }
         return Holder.MH_SCALE.bindTo(this);
     }
@@ -188,6 +183,10 @@ public abstract sealed class AbstractLayout<L extends AbstractLayout<L> & Memory
         if (this instanceof ValueLayout vl && elements.length == 0) {
             return vl.varHandle(); // fast path
         }
+        return varHandleInternal(elements);
+    }
+
+    public VarHandle varHandleInternal(PathElement... elements) {
         return computePathOp(LayoutPath.rootPath((MemoryLayout) this), LayoutPath::dereferenceHandle,
                 Set.of(), elements);
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -648,6 +648,8 @@ public class DefaultEditorKit extends EditorKit {
      * beginning of the previous line if the caret is
      * already at the beginning of the line.
      * @see #getActions
+     *
+     * @since 20
      */
     public static final String beginLineUpAction = "caret-begin-line-and-up";
 
@@ -657,6 +659,8 @@ public class DefaultEditorKit extends EditorKit {
      * end of the next line if the caret is already
      * at the end of the line.
      * @see #getActions
+     *
+     * @since 20
      */
     public static final String endLineDownAction = "caret-end-line-and-down";
 

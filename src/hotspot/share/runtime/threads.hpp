@@ -129,7 +129,8 @@ public:
   // Print threads busy compiling, and returns the number of printed threads.
   static unsigned print_threads_compiling(outputStream* st, char* buf, int buflen, bool short_form = false);
 
-  // Get count of Java threads that are waiting to enter or re-enter the specified monitor.
+  // Get Java threads that are waiting to enter or re-enter the specified monitor.
+  // Java threads that are executing mounted virtual threads are not included.
   static GrowableArray<JavaThread*>* get_pending_threads(ThreadsList * t_list,
                                                          int count, address monitor);
 

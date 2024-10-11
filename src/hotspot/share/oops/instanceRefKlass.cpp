@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@
 #include "oops/oop.inline.hpp"
 
 InstanceRefKlass::InstanceRefKlass() {
-  assert(CDSConfig::is_dumping_static_archive() || UseSharedSpaces, "only for CDS");
+  assert(CDSConfig::is_dumping_static_archive() || CDSConfig::is_using_archive(), "only for CDS");
 }
 
 static ReferenceType reference_subclass_name_to_type(const Symbol* name) {
@@ -99,7 +99,7 @@ void InstanceRefKlass::update_nonstatic_oop_maps(Klass* k) {
   const unsigned int new_count = 2; // queue and next
 
   // Verify existing map is as expected, and update if needed.
-  if (UseSharedSpaces) {
+  if (CDSConfig::is_using_archive()) {
     assert(map->offset() == new_offset, "just checking");
     assert(map->count() == new_count, "just checking");
   } else {

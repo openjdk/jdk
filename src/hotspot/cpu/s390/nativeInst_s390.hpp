@@ -212,6 +212,7 @@ class NativeCall: public NativeInstruction {
     call_far_pcrelative_displacement_alignment =  4
   };
 
+  static int byte_size() { return instruction_size; }
 
   // Maximum size (in bytes) of a call to an absolute address.
   // Used when emitting call to deopt handler blob, which is a

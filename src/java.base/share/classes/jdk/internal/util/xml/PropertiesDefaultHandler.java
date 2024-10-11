@@ -136,14 +136,14 @@ public class PropertiesDefaultHandler extends DefaultHandler {
         }
 
     }
-    ////////////////////////////////////////////////////////////////////
+    //------------------------------------------------------------------
     // Validate while parsing
-    ////////////////////////////////////////////////////////////////////
+    //------------------------------------------------------------------
     static final String ALLOWED_ELEMENTS = "comment, entry";
     static final String ALLOWED_COMMENT = "comment";
-    ////////////////////////////////////////////////////////////////////
+    //------------------------------------------------------------------
     // Handler methods
-    ////////////////////////////////////////////////////////////////////
+    //------------------------------------------------------------------
     StringBuilder buf = new StringBuilder();
     boolean sawRoot = false; // whether a valid root element exists
     boolean sawComment = false;

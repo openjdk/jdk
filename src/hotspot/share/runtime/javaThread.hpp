@@ -52,6 +52,7 @@
 class AsyncExceptionHandshake;
 class ContinuationEntry;
 class DeoptResourceMark;
+class InternalOOMEMark;
 class JNIHandleBlock;
 class JVMCIRuntime;
 
@@ -60,6 +61,7 @@ class JvmtiSampledObjectAllocEventCollector;
 class JvmtiThreadState;
 
 class Metadata;
+class ObjectMonitor;
 class OopHandleList;
 class OopStorage;
 class OSThread;
@@ -192,10 +194,6 @@ class JavaThread: public Thread {
   void pop_jni_handle_block();
 
  private:
-  MonitorChunk* _monitor_chunks;              // Contains the off stack monitors
-                                              // allocated during deoptimization
-                                              // and by JNI_MonitorEnter/Exit
-
   enum SuspendFlags {
     // NOTE: avoid using the sign-bit as cc generates different test code
     //       when the sign-bit is used, and sometimes incorrectly - see CR 6398077
@@ -317,6 +315,7 @@ class JavaThread: public Thread {
   bool                  _is_in_VTMS_transition;          // thread is in virtual thread mount state transition
   bool                  _is_in_tmp_VTMS_transition;      // thread is in temporary virtual thread mount state transition
   bool                  _is_disable_suspend;             // JVMTI suspend is temporarily disabled; used on current thread only
+  bool                  _VTMS_transition_mark;           // used for sync between VTMS transitions and disablers
 #ifdef ASSERT
   bool                  _is_VTMS_transition_disabler;    // thread currently disabled VTMS transitions
 #endif
@@ -334,6 +333,8 @@ class JavaThread: public Thread {
   // of _attaching_via_jni and transitions to _attached_via_jni.
   volatile JNIAttachStates _jni_attach_state;
 
+  // In scope of an InternalOOMEMark?
+  bool _is_in_internal_oome_mark;
 
 #if INCLUDE_JVMCI
   // The _pending_* fields below are used to communicate extra information
@@ -348,10 +349,6 @@ class JavaThread: public Thread {
 
   // Specifies if the DeoptReason for the last uncommon trap was Reason_transfer_to_interpreter
   bool      _pending_transfer_to_interpreter;
-
-  // True if in a runtime call from compiled code that will deoptimize
-  // and re-execute a failed heap allocation in the interpreter.
-  bool      _in_retryable_allocation;
 
   // An id of a speculation that JVMCI compiled code can use to further describe and
   // uniquely identify the speculative optimization guarded by an uncommon trap.
@@ -467,6 +464,7 @@ class JavaThread: public Thread {
   // It's signed for error detection.
   intx _held_monitor_count;  // used by continuations for fast lock detection
   intx _jni_monitor_count;
+  ObjectMonitor* _unlocked_inflated_monitor;
 
 private:
 
@@ -482,10 +480,12 @@ private:
 
  public:
   // Constructor
-  JavaThread();                            // delegating constructor
-  JavaThread(bool is_attaching_via_jni);   // for main thread and JNI attached threads
-  JavaThread(ThreadFunction entry_point, size_t stack_size = 0);
+  JavaThread(MemTag mem_tag = mtThread);   // delegating constructor
+  JavaThread(ThreadFunction entry_point, size_t stack_size = 0, MemTag mem_tag = mtThread);
   ~JavaThread();
+
+  // Factory method to create a new JavaThread whose attach state is "is attaching"
+  static JavaThread* create_attaching_thread();
 
 #ifdef ASSERT
   // verify this JavaThread hasn't be published in the Threads::list yet
@@ -616,6 +616,12 @@ private:
   intx jni_monitor_count()  { return _jni_monitor_count;  }
   void clear_jni_monitor_count() { _jni_monitor_count = 0;   }
 
+  // Support for SharedRuntime::monitor_exit_helper()
+  ObjectMonitor* unlocked_inflated_monitor() const { return _unlocked_inflated_monitor; }
+  void clear_unlocked_inflated_monitor() {
+    _unlocked_inflated_monitor = nullptr;
+  }
+
   inline bool is_vthread_mounted() const;
   inline const ContinuationEntry* vthread_continuation() const;
 
@@ -664,6 +670,9 @@ private:
   bool is_disable_suspend() const                { return _is_disable_suspend; }
   void toggle_is_disable_suspend()               { _is_disable_suspend = !_is_disable_suspend; };
 
+  bool VTMS_transition_mark() const              { return Atomic::load(&_VTMS_transition_mark); }
+  void set_VTMS_transition_mark(bool val)        { Atomic::store(&_VTMS_transition_mark, val); }
+
 #ifdef ASSERT
   bool is_VTMS_transition_disabler() const       { return _is_VTMS_transition_disabler; }
   void set_is_VTMS_transition_disabler(bool val);
@@ -676,7 +685,7 @@ private:
     return (_suspend_flags & (_obj_deopt JFR_ONLY(| _trace_flag))) != 0;
   }
 
-  // Fast-locking support
+  // Stack-locking support (not for LM_LIGHTWEIGHT)
   bool is_lock_owned(address adr) const;
 
   // Accessors for vframe array top
@@ -714,6 +723,10 @@ private:
   MemRegion deferred_card_mark() const           { return _deferred_card_mark; }
   void set_deferred_card_mark(MemRegion mr)      { _deferred_card_mark = mr;   }
 
+  // Is thread in scope of an InternalOOMEMark?
+  bool is_in_internal_oome_mark() const          { return _is_in_internal_oome_mark; }
+  void set_is_in_internal_oome_mark(bool b)      { _is_in_internal_oome_mark = b;    }
+
 #if INCLUDE_JVMCI
   jlong pending_failed_speculation() const        { return _pending_failed_speculation; }
   void set_pending_monitorenter(bool b)           { _pending_monitorenter = b; }
@@ -722,9 +735,6 @@ private:
   void set_pending_transfer_to_interpreter(bool b) { _pending_transfer_to_interpreter = b; }
   void set_jvmci_alternate_call_target(address a) { assert(_jvmci._alternate_call_target == nullptr, "must be"); _jvmci._alternate_call_target = a; }
   void set_jvmci_implicit_exception_pc(address a) { assert(_jvmci._implicit_exception_pc == nullptr, "must be"); _jvmci._implicit_exception_pc = a; }
-
-  virtual bool in_retryable_allocation() const    { return _in_retryable_allocation; }
-  void set_in_retryable_allocation(bool b)        { _in_retryable_allocation = b; }
 
   JVMCIRuntime* libjvmci_runtime() const          { return _libjvmci_runtime; }
   void set_libjvmci_runtime(JVMCIRuntime* rt) {
@@ -825,6 +835,7 @@ private:
   static ByteSize cont_fastpath_offset()      { return byte_offset_of(JavaThread, _cont_fastpath); }
   static ByteSize held_monitor_count_offset() { return byte_offset_of(JavaThread, _held_monitor_count); }
   static ByteSize jni_monitor_count_offset()  { return byte_offset_of(JavaThread, _jni_monitor_count); }
+  static ByteSize unlocked_inflated_monitor_offset() { return byte_offset_of(JavaThread, _unlocked_inflated_monitor); }
 
 #if INCLUDE_JVMTI
   static ByteSize is_in_VTMS_transition_offset()     { return byte_offset_of(JavaThread, _is_in_VTMS_transition); }
@@ -877,13 +888,7 @@ private:
   int depth_first_number() { return _depth_first_number; }
   void set_depth_first_number(int dfn) { _depth_first_number = dfn; }
 
- private:
-  void set_monitor_chunks(MonitorChunk* monitor_chunks) { _monitor_chunks = monitor_chunks; }
-
  public:
-  MonitorChunk* monitor_chunks() const           { return _monitor_chunks; }
-  void add_monitor_chunk(MonitorChunk* chunk);
-  void remove_monitor_chunk(MonitorChunk* chunk);
   bool in_deopt_handler() const                  { return _in_deopt_handler > 0; }
   void inc_in_deopt_handler()                    { _in_deopt_handler++; }
   void dec_in_deopt_handler() {
@@ -1169,6 +1174,7 @@ public:
 
 private:
   LockStack _lock_stack;
+  OMCache _om_cache;
 
 public:
   LockStack& lock_stack() { return _lock_stack; }
@@ -1179,6 +1185,13 @@ public:
   // is typically in a dedicated register.
   static ByteSize lock_stack_top_offset()  { return lock_stack_offset() + LockStack::top_offset(); }
   static ByteSize lock_stack_base_offset() { return lock_stack_offset() + LockStack::base_offset(); }
+
+  static ByteSize om_cache_offset()        { return byte_offset_of(JavaThread, _om_cache); }
+  static ByteSize om_cache_oops_offset()   { return om_cache_offset() + OMCache::entries_offset(); }
+
+  void om_set_monitor_cache(ObjectMonitor* monitor);
+  void om_clear_monitor_cache();
+  ObjectMonitor* om_get_from_monitor_cache(oop obj);
 
   static OopStorage* thread_oop_storage();
 

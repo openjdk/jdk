@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import java.lang.constant.ConstantDesc;
 import java.lang.constant.DirectMethodHandleDesc;
 import java.lang.reflect.AccessFlag;
 import java.util.AbstractList;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -35,7 +36,6 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -58,9 +58,9 @@ import java.lang.classfile.attribute.StackMapFrameInfo.*;
 import java.lang.classfile.constantpool.*;
 import java.lang.classfile.instruction.*;
 
-import static java.lang.classfile.ClassFile.*;
 import java.lang.classfile.CompoundElement;
 import java.lang.classfile.FieldModel;
+import static java.lang.classfile.constantpool.PoolEntry.*;
 import static jdk.internal.classfile.impl.ClassPrinterImpl.Style.*;
 
 public final class ClassPrinterImpl {
@@ -75,16 +75,22 @@ public final class ClassPrinterImpl {
         }
     }
 
-    public static final class ListNodeImpl extends AbstractList<Node> implements ListNode {
+    public static sealed class ListNodeImpl extends AbstractList<Node> implements ListNode {
 
         private final Style style;
         private final ConstantDesc name;
-        private final Node[] nodes;
+        protected final List<Node> nodes;
 
         public ListNodeImpl(Style style, ConstantDesc name, Stream<Node> nodes) {
             this.style = style;
             this.name = name;
-            this.nodes = nodes.toArray(Node[]::new);
+            this.nodes = nodes.toList();
+        }
+
+        protected ListNodeImpl(Style style, ConstantDesc name, List<Node> nodes) {
+            this.style = style;
+            this.name = name;
+            this.nodes = nodes;
         }
 
         @Override
@@ -103,17 +109,22 @@ public final class ClassPrinterImpl {
 
         @Override
         public Node get(int index) {
-            Objects.checkIndex(index, nodes.length);
-            return nodes[index];
+            return nodes.get(index);
         }
 
         @Override
         public int size() {
-            return nodes.length;
+            return nodes.size();
         }
     }
 
     public static final class MapNodeImpl implements MapNode {
+
+        private static final class PrivateListNodeImpl extends ListNodeImpl {
+            PrivateListNodeImpl(Style style, ConstantDesc name, Node... n) {
+                super(style, name, new ArrayList<>(List.of(n)));
+            }
+        }
 
         private final Style style;
         private final ConstantDesc name;
@@ -198,9 +209,19 @@ public final class ClassPrinterImpl {
 
 
         MapNodeImpl with(Node... nodes) {
-            for (var n : nodes)
-                if (n != null && map.put(n.name(), n) != null)
-                    throw new AssertionError("Double entry of " + n.name() + " into " + name);
+            for (var n : nodes) {
+                if (n != null) {
+                    var prev = map.putIfAbsent(n.name(), n);
+                    if (prev != null) {
+                        //nodes with duplicite keys are joined into a list
+                        if (prev instanceof PrivateListNodeImpl list) {
+                            list.nodes.add(n);
+                        } else {
+                            map.put(n.name(), new PrivateListNodeImpl(style, n.name(), prev, n));
+                        }
+                    }
+                }
+            }
             return this;
         }
     }
@@ -486,15 +507,15 @@ public final class ClassPrinterImpl {
 
     private static Node[] elementValueToTree(AnnotationValue v) {
         return switch (v) {
-            case OfString cv -> leafs("string", String.valueOf(cv.constantValue()));
-            case OfDouble cv -> leafs("double", String.valueOf(cv.constantValue()));
-            case OfFloat cv -> leafs("float", String.valueOf(cv.constantValue()));
-            case OfLong cv -> leafs("long", String.valueOf(cv.constantValue()));
-            case OfInteger cv -> leafs("int", String.valueOf(cv.constantValue()));
-            case OfShort cv -> leafs("short", String.valueOf(cv.constantValue()));
-            case OfCharacter cv -> leafs("char", String.valueOf(cv.constantValue()));
-            case OfByte cv -> leafs("byte", String.valueOf(cv.constantValue()));
-            case OfBoolean cv -> leafs("boolean", String.valueOf((int)cv.constantValue() != 0));
+            case OfString cv -> leafs("string", String.valueOf(cv.stringValue()));
+            case OfDouble cv -> leafs("double", String.valueOf(cv.doubleValue()));
+            case OfFloat cv -> leafs("float", String.valueOf(cv.floatValue()));
+            case OfLong cv -> leafs("long", String.valueOf(cv.longValue()));
+            case OfInt cv -> leafs("int", String.valueOf(cv.intValue()));
+            case OfShort cv -> leafs("short", String.valueOf(cv.shortValue()));
+            case OfChar cv -> leafs("char", String.valueOf(cv.charValue()));
+            case OfByte cv -> leafs("byte", String.valueOf(cv.byteValue()));
+            case OfBoolean cv -> leafs("boolean", String.valueOf(cv.booleanValue()));
             case OfClass clv -> leafs("class", clv.className().stringValue());
             case OfEnum ev -> leafs("enum class", ev.className().stringValue(),
                                     "constant name", ev.constantName().stringValue());
@@ -515,21 +536,21 @@ public final class ClassPrinterImpl {
             switch (vti) {
                 case SimpleVerificationTypeInfo s -> {
                     switch (s) {
-                        case ITEM_DOUBLE -> {
+                        case DOUBLE -> {
                             ret.accept("double");
                             ret.accept("double2");
                         }
-                        case ITEM_FLOAT ->
+                        case FLOAT ->
                             ret.accept("float");
-                        case ITEM_INTEGER ->
+                        case INTEGER ->
                             ret.accept("int");
-                        case ITEM_LONG ->  {
+                        case LONG ->  {
                             ret.accept("long");
                             ret.accept("long2");
                         }
-                        case ITEM_NULL -> ret.accept("null");
-                        case ITEM_TOP -> ret.accept("?");
-                        case ITEM_UNINITIALIZED_THIS -> ret.accept("THIS");
+                        case NULL -> ret.accept("null");
+                        case TOP -> ret.accept("?");
+                        case UNINITIALIZED_THIS -> ret.accept("THIS");
                     }
                 }
                 case ObjectVerificationTypeInfo o ->
@@ -582,12 +603,12 @@ public final class ClassPrinterImpl {
                             case TAG_STRING -> "String";
                             case TAG_FIELDREF -> "Fieldref";
                             case TAG_METHODREF -> "Methodref";
-                            case TAG_INTERFACEMETHODREF -> "InterfaceMethodref";
-                            case TAG_NAMEANDTYPE -> "NameAndType";
-                            case TAG_METHODHANDLE -> "MethodHandle";
-                            case TAG_METHODTYPE -> "MethodType";
-                            case TAG_CONSTANTDYNAMIC -> "Dynamic";
-                            case TAG_INVOKEDYNAMIC -> "InvokeDynamic";
+                            case TAG_INTERFACE_METHODREF -> "InterfaceMethodref";
+                            case TAG_NAME_AND_TYPE -> "NameAndType";
+                            case TAG_METHOD_HANDLE -> "MethodHandle";
+                            case TAG_METHOD_TYPE -> "MethodType";
+                            case TAG_DYNAMIC -> "Dynamic";
+                            case TAG_INVOKE_DYNAMIC -> "InvokeDynamic";
                             case TAG_MODULE -> "Module";
                             case TAG_PACKAGE -> "Package";
                             default -> throw new AssertionError("Unknown CP tag: " + e.tag());
@@ -830,7 +851,7 @@ public final class ClassPrinterImpl {
                                 "type", newo.className().name().stringValue()));
                         case NewPrimitiveArrayInstruction newa -> in.with(leafs(
                                 "dimensions", 1,
-                                "descriptor", newa.typeKind().typeName()));
+                                "descriptor", newa.typeKind().upperBound().displayName()));
                         case NewReferenceArrayInstruction newa -> in.with(leafs(
                                 "dimensions", 1,
                                 "descriptor", newa.componentType().name().stringValue()));
@@ -975,7 +996,7 @@ public final class ClassPrinterImpl {
                     nodes.add(leaf("module main class", mmca.mainClass().name().stringValue()));
                 case RecordAttribute ra ->
                     nodes.add(new ListNodeImpl(BLOCK, "record components", ra.components().stream()
-                            .map(rc -> new MapNodeImpl(BLOCK, "record")
+                            .map(rc -> new MapNodeImpl(BLOCK, "component")
                                     .with(leafs(
                                         "name", rc.name().stringValue(),
                                         "type", rc.descriptor().stringValue()))
@@ -1017,9 +1038,9 @@ public final class ClassPrinterImpl {
     private static Node typeAnnotationsToTree(Style style, String name, List<TypeAnnotation> annos) {
         return new ListNodeImpl(style, name, annos.stream().map(a ->
                 new MapNodeImpl(FLOW, "anno")
-                        .with(leaf("annotation class", a.className().stringValue()),
+                        .with(leaf("annotation class", a.annotation().className().stringValue()),
                               leaf("target info", a.targetInfo().targetType().name()))
-                        .with(elementValuePairsToTree(a.elements()))));
+                        .with(elementValuePairsToTree(a.annotation().elements()))));
 
     }
 

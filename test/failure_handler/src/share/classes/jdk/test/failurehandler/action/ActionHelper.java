@@ -164,7 +164,7 @@ public class ActionHelper {
         Stopwatch stopwatch = new Stopwatch();
         stopwatch.start();
 
-        log.printf("%s%n[%tF %<tT] %s timeout=%s%n%1$s%n", line, new Date(), pb.command(), params.timeout);
+        log.printf("%s%n[%tF %<tT] %s timeout=%s in %s%n%1$s%n", line, new Date(), pb.command(), params.timeout, pb.directory());
 
         Process process;
         KillerTask killer;

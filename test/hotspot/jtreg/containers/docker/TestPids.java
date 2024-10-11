@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -113,12 +113,13 @@ public class TestPids {
 
                 Asserts.assertEquals(parts.length, 2);
                 String actual = parts[1].replaceAll("\\s","");
-                // Unlimited pids leads on some setups not to "max" in the output, but to a high number
                 if (expectedValue.equals("max")) {
-                    if (actual.equals("max")) {
-                        System.out.println("Found expected max for unlimited pids value.");
+                    // Unlimited pids accept max or -1
+                    if (actual.equals("max") || actual.equals("-1")) {
+                        System.out.println("Found expected " + actual + " for unlimited pids value.");
                     } else {
                         try {
+                            // Unlimited pids leads on some setups not to "max" in the output, but to a high number
                             int ai = Integer.parseInt(actual);
                             if (ai > 20000) {
                                 System.out.println("Limit value " + ai + " got accepted as unlimited, log line was " + line);

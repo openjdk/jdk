@@ -161,7 +161,7 @@ AC_DEFUN([TOOLCHAIN_FIND_VISUAL_STUDIO_BAT_FILE],
   # version, pass -vcvars_ver=<toolset_version> argument to vcvarsall.bat.
   AC_ARG_WITH(msvc-toolset-version, [AS_HELP_STRING([--with-msvc-toolset-version],
       [specific MSVC toolset version to use, passed as -vcvars_ver argument to
-       pass to vcvarsall.bat (Windows only)])])
+      pass to vcvarsall.bat (Windows only)])])
 
   TARGET_CPU="$1"
   VS_VERSION="$2"

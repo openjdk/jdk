@@ -27,6 +27,7 @@
  * @summary Verify the conversion from key events to escape sequences works properly.
  * @modules jdk.internal.le/jdk.internal.org.jline.terminal
  *          jdk.internal.le/jdk.internal.org.jline.terminal.impl
+ *          jdk.internal.le/jdk.internal.org.jline.terminal.spi
  */
 
 import java.io.IOException;
@@ -36,6 +37,7 @@ import java.nio.charset.Charset;
 import jdk.internal.org.jline.terminal.Size;
 import jdk.internal.org.jline.terminal.Terminal.SignalHandler;
 import jdk.internal.org.jline.terminal.impl.AbstractWindowsTerminal;
+import jdk.internal.org.jline.terminal.spi.SystemStream;
 
 public class KeyConversionTest {
     public static void main(String... args) throws Exception {
@@ -58,14 +60,17 @@ public class KeyConversionTest {
 
     void checkKeyConversion(KeyEvent event, String expected) throws IOException {
         StringBuilder result = new StringBuilder();
-        new AbstractWindowsTerminal(new StringWriter(), "", "windows", Charset.forName("UTF-8"),
-                                    true, SignalHandler.SIG_DFL, in -> in) {
+        new AbstractWindowsTerminal<String>(null, SystemStream.Output,
+                                            new StringWriter(), "", "windows",
+                                            Charset.forName("UTF-8"), true,
+                                            SignalHandler.SIG_DFL, "", 0,
+                                            "", 0, in -> in) {
             @Override
-            protected int getConsoleMode() {
+            protected int getConsoleMode(String console) {
                 return 0;
             }
             @Override
-            protected void setConsoleMode(int mode) {
+            protected void setConsoleMode(String console, int mode) {
                 throw new UnsupportedOperationException("Not supported yet.");
             }
             @Override

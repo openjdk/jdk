@@ -41,7 +41,7 @@ XInitialize::XInitialize(XBarrierSet* barrier_set) {
   log_info(gc, init)("Version: %s (%s)",
                      VM_Version::vm_release(),
                      VM_Version::jdk_debug_level());
-  log_info(gc, init)("Using legacy single-generation mode");
+  log_info(gc, init)("Using deprecated non-generational mode");
 
   // Early initialization
   XAddress::initialize();

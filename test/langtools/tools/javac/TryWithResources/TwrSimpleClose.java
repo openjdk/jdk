@@ -101,7 +101,7 @@ public class TwrSimpleClose {
             ClassModel cf = ClassFile.of().parse(new ByteArrayInputStream(data).readAllBytes());
 
             for (MethodModel m : cf.methods()) {
-                CodeAttribute codeAttr = m.findAttribute(Attributes.CODE).orElseThrow();
+                CodeAttribute codeAttr = m.findAttribute(Attributes.code()).orElseThrow();
                 for (CodeElement ce : codeAttr.elementList()) {
                     if (ce instanceof InvokeInstruction ins && ins.opcode() == Opcode.INVOKEVIRTUAL) {
                         MemberRefEntry method = ins.method();

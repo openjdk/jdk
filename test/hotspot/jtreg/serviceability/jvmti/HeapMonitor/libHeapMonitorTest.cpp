@@ -515,7 +515,9 @@ static void event_storage_augment_storage(EventStorage* storage) {
   ObjectTrace** new_objects = reinterpret_cast<ObjectTrace**>(malloc(new_max * sizeof(*new_objects)));
 
   int current_count = storage->live_object_count;
-  memcpy(new_objects, storage->live_objects, current_count * sizeof(*new_objects));
+  if (storage->live_objects != nullptr) {
+    memcpy(new_objects, storage->live_objects, current_count * sizeof(*new_objects));
+  }
   free(storage->live_objects);
   storage->live_objects = new_objects;
   storage->live_object_size = new_max;

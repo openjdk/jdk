@@ -115,12 +115,19 @@ inline void jdk_internal_vm_StackChunk::set_size(HeapWord* chunk, int value) {
   *(int*)(((char*)chunk) + _size_offset) = (int)value;
 }
 
+inline void jdk_internal_vm_StackChunk::set_bottom(HeapWord* chunk, int value) {
+  // Used by StackChunkAllocator before the Object has been finished,
+  // so don't cast too oop and use int_field_put in this function.
+  assert(_bottom_offset != 0, "must be set");
+  *(int*)(((char*)chunk) + _bottom_offset) = (int)value;
+}
+
 inline int jdk_internal_vm_StackChunk::sp(oop chunk) {
-  return chunk->int_field(_sp_offset);
+  return chunk->int_field_relaxed(_sp_offset);
 }
 
 inline void jdk_internal_vm_StackChunk::set_sp(oop chunk, int value) {
-  chunk->int_field_put(_sp_offset, value);
+  chunk->int_field_put_relaxed(_sp_offset, value);
 }
 
 inline void jdk_internal_vm_StackChunk::set_sp(HeapWord* chunk, int value) {
@@ -138,12 +145,12 @@ inline void jdk_internal_vm_StackChunk::set_pc(oop chunk, address value) {
   chunk->address_field_put(_pc_offset, value);
 }
 
-inline int jdk_internal_vm_StackChunk::argsize(oop chunk) {
-  return chunk->int_field(_argsize_offset);
+inline int jdk_internal_vm_StackChunk::bottom(oop chunk) {
+  return chunk->int_field(_bottom_offset);
 }
 
-inline void jdk_internal_vm_StackChunk::set_argsize(oop chunk, int value) {
-  chunk->int_field_put(_argsize_offset, value);
+inline void jdk_internal_vm_StackChunk::set_bottom(oop chunk, int value) {
+  chunk->int_field_put(_bottom_offset, value);
 }
 
 inline uint8_t jdk_internal_vm_StackChunk::flags(oop chunk) {

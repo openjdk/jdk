@@ -146,7 +146,7 @@ void ZArguments::initialize() {
   ZHeuristics::set_medium_page_size();
 
   if (!FLAG_IS_DEFAULT(ZTenuringThreshold) && ZTenuringThreshold != -1) {
-    FLAG_SET_ERGO_IF_DEFAULT(MaxTenuringThreshold, ZTenuringThreshold);
+    FLAG_SET_ERGO_IF_DEFAULT(MaxTenuringThreshold, (uint)ZTenuringThreshold);
     if (MaxTenuringThreshold == 0) {
       FLAG_SET_ERGO_IF_DEFAULT(AlwaysTenure, true);
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 package org.openjdk.bench.java.lang.foreign;
 
 import java.lang.foreign.Arena;
+import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 
 import org.openjdk.jmh.annotations.Benchmark;
@@ -37,6 +38,8 @@ import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.annotations.Warmup;
 import sun.misc.Unsafe;
 
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.concurrent.TimeUnit;
@@ -56,6 +59,13 @@ public class LoopOverNonConstant extends JavaLayouts {
     static final int ELEM_SIZE = 1_000_000;
     static final int CARRIER_SIZE = (int)JAVA_INT.byteSize();
     static final int ALLOC_SIZE = ELEM_SIZE * CARRIER_SIZE;
+
+    static final VarHandle VH_SEQ_INT = bindToZeroOffset(MemoryLayout.sequenceLayout(ELEM_SIZE, JAVA_INT).varHandle(PathElement.sequenceElement()));
+    static final VarHandle VH_SEQ_INT_UNALIGNED = bindToZeroOffset(MemoryLayout.sequenceLayout(ELEM_SIZE, JAVA_INT.withByteAlignment(1)).varHandle(PathElement.sequenceElement()));
+
+    static VarHandle bindToZeroOffset(VarHandle varHandle) {
+        return MethodHandles.insertCoordinates(varHandle, 1, 0L);
+    }
 
     Arena arena;
     MemorySegment segment;
@@ -128,6 +138,24 @@ public class LoopOverNonConstant extends JavaLayouts {
         int sum = 0;
         for (int i = 0; i < ELEM_SIZE; i++) {
             sum += (int) VH_INT_UNALIGNED.get(segment, (long) i);
+        }
+        return sum;
+    }
+
+    @Benchmark
+    public int segment_loop_nested() {
+        int sum = 0;
+        for (int i = 0; i < ELEM_SIZE; i++) {
+            sum += (int) VH_SEQ_INT.get(segment, (long) i);
+        }
+        return sum;
+    }
+
+    @Benchmark
+    public int segment_loop_nested_unaligned() {
+        int sum = 0;
+        for (int i = 0; i < ELEM_SIZE; i++) {
+            sum += (int) VH_SEQ_INT_UNALIGNED.get(segment, (long) i);
         }
         return sum;
     }

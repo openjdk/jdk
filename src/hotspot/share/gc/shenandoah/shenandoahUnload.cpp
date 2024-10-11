@@ -91,14 +91,14 @@ public:
 class ShenandoahCompiledICProtectionBehaviour : public CompiledICProtectionBehaviour {
 public:
   virtual bool lock(nmethod* nm) {
-    ShenandoahReentrantLock* const lock = ShenandoahNMethod::lock_for_nmethod(nm);
+    ShenandoahReentrantLock* const lock = ShenandoahNMethod::ic_lock_for_nmethod(nm);
     assert(lock != nullptr, "Not yet registered?");
     lock->lock();
     return true;
   }
 
   virtual void unlock(nmethod* nm) {
-    ShenandoahReentrantLock* const lock = ShenandoahNMethod::lock_for_nmethod(nm);
+    ShenandoahReentrantLock* const lock = ShenandoahNMethod::ic_lock_for_nmethod(nm);
     assert(lock != nullptr, "Not yet registered?");
     lock->unlock();
   }
@@ -108,7 +108,7 @@ public:
       return true;
     }
 
-    ShenandoahReentrantLock* const lock = ShenandoahNMethod::lock_for_nmethod(nm);
+    ShenandoahReentrantLock* const lock = ShenandoahNMethod::ic_lock_for_nmethod(nm);
     assert(lock != nullptr, "Not yet registered?");
     return lock->owned_by_self();
   }
@@ -168,7 +168,7 @@ void ShenandoahUnload::unload() {
   // Make sure stale metadata and nmethods are no longer observable
   {
     ShenandoahTimingsTracker t(ShenandoahPhaseTimings::conc_class_unload_rendezvous);
-    heap->rendezvous_threads();
+    heap->rendezvous_threads("Shenandoah Class Unloading");
   }
 
   // Purge stale metadata and nmethods that were unlinked

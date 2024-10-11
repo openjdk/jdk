@@ -228,7 +228,6 @@ void ShenandoahDegenGC::op_degenerated() {
   // Check for futility and fail. There is no reason to do several back-to-back Degenerated cycles,
   // because that probably means the heap is overloaded and/or fragmented.
   if (!metrics.is_good_progress()) {
-    heap->notify_gc_no_progress();
     heap->cancel_gc(GCCause::_shenandoah_upgrade_to_full_gc);
     op_degenerated_futile();
   } else {
@@ -277,12 +276,12 @@ void ShenandoahDegenGC::op_prepare_evacuation() {
   }
 
   if (!heap->collection_set()->is_empty()) {
+    if (ShenandoahVerify) {
+      heap->verifier()->verify_before_evacuation();
+    }
+
     heap->set_evacuation_in_progress(true);
     heap->set_has_forwarded_objects(true);
-
-    if(ShenandoahVerify) {
-      heap->verifier()->verify_during_evacuation();
-    }
   } else {
     if (ShenandoahVerify) {
       heap->verifier()->verify_after_concmark();

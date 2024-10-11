@@ -27,47 +27,62 @@
  * @bug 8214751
  * @summary Test operations in C2 MulAddS2I and MulAddVS2VI nodes.
  * @library /test/lib
- * @requires vm.compiler2.enabled
  *
- * @run main/othervm -XX:LoopUnrollLimit=250
+ * @run main/othervm
+ *      -XX:+IgnoreUnrecognizedVMOptions
+ *      -XX:LoopUnrollLimit=250
  *      -XX:CompileThresholdScaling=0.1
  *      -XX:+UseSuperWord
  *      -XX:LoopMaxUnroll=2
  *      compiler.loopopts.superword.Vec_MulAddS2I
- * @run main/othervm -XX:LoopUnrollLimit=250
+ * @run main/othervm
+ *      -XX:+IgnoreUnrecognizedVMOptions
+ *      -XX:LoopUnrollLimit=250
  *      -XX:CompileThresholdScaling=0.1
  *      -XX:-UseSuperWord
  *      -XX:LoopMaxUnroll=2
  *      compiler.loopopts.superword.Vec_MulAddS2I
  *
- * @run main/othervm -XX:LoopUnrollLimit=250
+ * @run main/othervm
+ *      -XX:+IgnoreUnrecognizedVMOptions
+ *      -XX:LoopUnrollLimit=250
  *      -XX:CompileThresholdScaling=0.1
  *      -XX:+UseSuperWord
  *      -XX:LoopMaxUnroll=4
  *      compiler.loopopts.superword.Vec_MulAddS2I
- * @run main/othervm -XX:LoopUnrollLimit=250
+ * @run main/othervm
+ *      -XX:+IgnoreUnrecognizedVMOptions
+ *      -XX:LoopUnrollLimit=250
  *      -XX:CompileThresholdScaling=0.1
  *      -XX:-UseSuperWord
  *      -XX:LoopMaxUnroll=4
  *      compiler.loopopts.superword.Vec_MulAddS2I
  *
- * @run main/othervm -XX:LoopUnrollLimit=250
+ * @run main/othervm
+ *      -XX:+IgnoreUnrecognizedVMOptions
+ *      -XX:LoopUnrollLimit=250
  *      -XX:CompileThresholdScaling=0.1
  *      -XX:+UseSuperWord
  *      -XX:LoopMaxUnroll=8
  *      compiler.loopopts.superword.Vec_MulAddS2I
- * @run main/othervm -XX:LoopUnrollLimit=250
+ * @run main/othervm
+ *      -XX:+IgnoreUnrecognizedVMOptions
+ *      -XX:LoopUnrollLimit=250
  *      -XX:CompileThresholdScaling=0.1
  *      -XX:-UseSuperWord
  *      -XX:LoopMaxUnroll=8
  *      compiler.loopopts.superword.Vec_MulAddS2I
  *
- * @run main/othervm -XX:LoopUnrollLimit=250
+ * @run main/othervm
+ *      -XX:+IgnoreUnrecognizedVMOptions
+ *      -XX:LoopUnrollLimit=250
  *      -XX:CompileThresholdScaling=0.1
  *      -XX:+UseSuperWord
  *      -XX:LoopMaxUnroll=16
  *      compiler.loopopts.superword.Vec_MulAddS2I
- * @run main/othervm -XX:LoopUnrollLimit=250
+ * @run main/othervm
+ *      -XX:+IgnoreUnrecognizedVMOptions
+ *      -XX:LoopUnrollLimit=250
  *      -XX:CompileThresholdScaling=0.1
  *      -XX:-UseSuperWord
  *      -XX:LoopMaxUnroll=16

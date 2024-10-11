@@ -1150,20 +1150,20 @@ void MacroAssembler::addpd(XMMRegister dst, AddressLiteral src, Register rscratc
 // Stub code is generated once and never copied.
 // NMethods can't use this because they get copied and we can't force alignment > 32 bytes.
 void MacroAssembler::align64() {
-  align(64, (unsigned long long) pc());
+  align(64, (uint)(uintptr_t)pc());
 }
 
 void MacroAssembler::align32() {
-  align(32, (unsigned long long) pc());
+  align(32, (uint)(uintptr_t)pc());
 }
 
-void MacroAssembler::align(int modulus) {
+void MacroAssembler::align(uint modulus) {
   // 8273459: Ensure alignment is possible with current segment alignment
-  assert(modulus <= CodeEntryAlignment, "Alignment must be <= CodeEntryAlignment");
+  assert(modulus <= (uintx)CodeEntryAlignment, "Alignment must be <= CodeEntryAlignment");
   align(modulus, offset());
 }
 
-void MacroAssembler::align(int modulus, int target) {
+void MacroAssembler::align(uint modulus, uint target) {
   if (target % modulus != 0) {
     nop(modulus - (target % modulus));
   }
@@ -1303,7 +1303,7 @@ void MacroAssembler::reserved_stack_check() {
   jcc(Assembler::below, no_reserved_zone_enabling);
 
   call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::enable_stack_reserved_zone), thread);
-  jump(RuntimeAddress(StubRoutines::throw_delayed_StackOverflowError_entry()));
+  jump(RuntimeAddress(SharedRuntime::throw_delayed_StackOverflowError_entry()));
   should_not_reach_here();
 
   bind(no_reserved_zone_enabling);
@@ -2329,7 +2329,7 @@ void MacroAssembler::incrementl(Address dst, int value) {
 
 void MacroAssembler::jump(AddressLiteral dst, Register rscratch) {
   assert(rscratch != noreg || always_reachable(dst), "missing");
-
+  assert(!dst.rspec().reloc()->is_data(), "should not use ExternalAddress for jump");
   if (reachable(dst)) {
     jmp_literal(dst.target(), dst.rspec());
   } else {
@@ -2340,7 +2340,7 @@ void MacroAssembler::jump(AddressLiteral dst, Register rscratch) {
 
 void MacroAssembler::jump_cc(Condition cc, AddressLiteral dst, Register rscratch) {
   assert(rscratch != noreg || always_reachable(dst), "missing");
-
+  assert(!dst.rspec().reloc()->is_data(), "should not use ExternalAddress for jump_cc");
   if (reachable(dst)) {
     InstructionMark im(this);
     relocate(dst.reloc());
@@ -4088,6 +4088,11 @@ RegSet MacroAssembler::call_clobbered_gp_registers() {
 #else
   regs += RegSet::of(rax, rcx, rdx);
 #endif
+#ifdef _LP64
+  if (UseAPX) {
+    regs += RegSet::range(r16, as_Register(Register::number_of_registers - 1));
+  }
+#endif
   return regs;
 }
 
@@ -4940,9 +4945,8 @@ void MacroAssembler::lookup_secondary_supers_table_slow_path(Register r_super_kl
 
   // The bitmap is full to bursting.
   // Implicit invariant: BITMAP_FULL implies (length > 0)
-  assert(Klass::SECONDARY_SUPERS_BITMAP_FULL == ~uintx(0), "");
-  cmpq(r_bitmap, (int32_t)-1); // sign-extends immediate to 64-bit value
-  jcc(Assembler::equal, L_huge);
+  cmpl(r_array_length, (int32_t)Klass::SECONDARY_SUPERS_TABLE_SIZE - 2);
+  jcc(Assembler::greater, L_huge);
 
   // NB! Our caller has checked bits 0 and 1 in the bitmap. The
   // current slot (at secondary_supers[r_array_index]) has not yet
@@ -5080,7 +5084,8 @@ void MacroAssembler::clinit_barrier(Register klass, Register thread, Label* L_fa
     L_slow_path = &L_fallthrough;
   }
 
-  // Fast path check: class is fully initialized
+  // Fast path check: class is fully initialized.
+  // init_state needs acquire, but x86 is TSO, and so we are already good.
   cmpb(Address(klass, InstanceKlass::init_state_offset()), InstanceKlass::fully_initialized);
   jcc(Assembler::equal, *L_fast_path);
 
@@ -5137,7 +5142,7 @@ void MacroAssembler::_verify_oop(Register reg, const char* s, const char* file, 
     ss.print("verify_oop: %s: %s (%s:%d)", reg->name(), s, file, line);
     b = code_string(ss.as_string());
   }
-  ExternalAddress buffer((address) b);
+  AddressLiteral buffer((address) b, external_word_Relocation::spec_for_immediate());
   pushptr(buffer.addr(), rscratch1);
 
   // call indirectly to solve generation ordering problem
@@ -5207,7 +5212,7 @@ void MacroAssembler::_verify_oop_addr(Address addr, const char* s, const char* f
     ss.print("verify_oop_addr: %s (%s:%d)", s, file, line);
     b = code_string(ss.as_string());
   }
-  ExternalAddress buffer((address) b);
+  AddressLiteral buffer((address) b, external_word_Relocation::spec_for_immediate());
   pushptr(buffer.addr(), rscratch1);
 
   // call indirectly to solve generation ordering problem
@@ -5752,7 +5757,7 @@ void MacroAssembler::verify_heapbase(const char* msg) {
   assert (Universe::heap() != nullptr, "java heap should be initialized");
   if (CheckCompressedOops) {
     Label ok;
-    ExternalAddress src2(CompressedOops::ptrs_base_addr());
+    ExternalAddress src2(CompressedOops::base_addr());
     const bool is_src2_reachable = reachable(src2);
     if (!is_src2_reachable) {
       push(rscratch1);  // cmpptr trashes rscratch1
@@ -6043,10 +6048,10 @@ void MacroAssembler::reinit_heapbase() {
       if (CompressedOops::base() == nullptr) {
         MacroAssembler::xorptr(r12_heapbase, r12_heapbase);
       } else {
-        mov64(r12_heapbase, (int64_t)CompressedOops::ptrs_base());
+        mov64(r12_heapbase, (int64_t)CompressedOops::base());
       }
     } else {
-      movptr(r12_heapbase, ExternalAddress(CompressedOops::ptrs_base_addr()));
+      movptr(r12_heapbase, ExternalAddress(CompressedOops::base_addr()));
     }
   }
 }
@@ -6983,7 +6988,7 @@ void MacroAssembler::multiply_128_x_128_bmi2_loop(Register y, Register z,
  * rsi: y
  * rcx: ylen
  * r8:  z
- * r11: zlen
+ * r11: tmp0
  * r12: tmp1
  * r13: tmp2
  * r14: tmp3
@@ -6991,11 +6996,12 @@ void MacroAssembler::multiply_128_x_128_bmi2_loop(Register y, Register z,
  * rbx: tmp5
  *
  */
-void MacroAssembler::multiply_to_len(Register x, Register xlen, Register y, Register ylen, Register z, Register zlen,
+void MacroAssembler::multiply_to_len(Register x, Register xlen, Register y, Register ylen, Register z, Register tmp0,
                                      Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register tmp5) {
   ShortBranchVerifier sbv(this);
-  assert_different_registers(x, xlen, y, ylen, z, zlen, tmp1, tmp2, tmp3, tmp4, tmp5, rdx);
+  assert_different_registers(x, xlen, y, ylen, z, tmp0, tmp1, tmp2, tmp3, tmp4, tmp5, rdx);
 
+  push(tmp0);
   push(tmp1);
   push(tmp2);
   push(tmp3);
@@ -7003,7 +7009,6 @@ void MacroAssembler::multiply_to_len(Register x, Register xlen, Register y, Regi
   push(tmp5);
 
   push(xlen);
-  push(zlen);
 
   const Register idx = tmp1;
   const Register kdx = tmp2;
@@ -7012,7 +7017,7 @@ void MacroAssembler::multiply_to_len(Register x, Register xlen, Register y, Regi
   const Register y_idx = tmp4;
   const Register carry = tmp5;
   const Register product  = xlen;
-  const Register x_xstart = zlen;  // reuse register
+  const Register x_xstart = tmp0;
 
   // First Loop.
   //
@@ -7028,9 +7033,9 @@ void MacroAssembler::multiply_to_len(Register x, Register xlen, Register y, Regi
   //  z[xstart] = (int)carry;
   //
 
-  movl(idx, ylen);      // idx = ylen;
-  movl(kdx, zlen);      // kdx = xlen+ylen;
-  xorq(carry, carry);   // carry = 0;
+  movl(idx, ylen);               // idx = ylen;
+  lea(kdx, Address(xlen, ylen)); // kdx = xlen+ylen;
+  xorq(carry, carry);            // carry = 0;
 
   Label L_done;
 
@@ -7134,7 +7139,6 @@ void MacroAssembler::multiply_to_len(Register x, Register xlen, Register y, Regi
 
   bind(L_done);
 
-  pop(zlen);
   pop(xlen);
 
   pop(tmp5);
@@ -7142,6 +7146,7 @@ void MacroAssembler::multiply_to_len(Register x, Register xlen, Register y, Regi
   pop(tmp3);
   pop(tmp2);
   pop(tmp1);
+  pop(tmp0);
 }
 
 void MacroAssembler::vectorized_mismatch(Register obja, Register objb, Register length, Register log2_array_indxscale,
@@ -10271,9 +10276,9 @@ void MacroAssembler::check_stack_alignment(Register sp, const char* msg, unsigne
 // reg_rax: rax
 // thread: the thread which attempts to lock obj
 // tmp: a temporary register
-void MacroAssembler::lightweight_lock(Register obj, Register reg_rax, Register thread, Register tmp, Label& slow) {
+void MacroAssembler::lightweight_lock(Register basic_lock, Register obj, Register reg_rax, Register thread, Register tmp, Label& slow) {
   assert(reg_rax == rax, "");
-  assert_different_registers(obj, reg_rax, thread, tmp);
+  assert_different_registers(basic_lock, obj, reg_rax, thread, tmp);
 
   Label push;
   const Register top = tmp;
@@ -10281,6 +10286,11 @@ void MacroAssembler::lightweight_lock(Register obj, Register reg_rax, Register t
   // Preload the markWord. It is important that this is the first
   // instruction emitted as it is part of C1's null check semantics.
   movptr(reg_rax, Address(obj, oopDesc::mark_offset_in_bytes()));
+
+  if (UseObjectMonitorTable) {
+    // Clear cache in case fast locking succeeds.
+    movptr(Address(basic_lock, BasicObjectLock::lock_offset() + in_ByteSize((BasicLock::object_monitor_cache_offset_in_bytes()))), 0);
+  }
 
   // Load top.
   movl(top, Address(thread, JavaThread::lock_stack_top_offset()));
@@ -10320,13 +10330,9 @@ void MacroAssembler::lightweight_lock(Register obj, Register reg_rax, Register t
 // reg_rax: rax
 // thread: the thread
 // tmp: a temporary register
-//
-// x86_32 Note: reg_rax and thread may alias each other due to limited register
-//              availiability.
 void MacroAssembler::lightweight_unlock(Register obj, Register reg_rax, Register thread, Register tmp, Label& slow) {
   assert(reg_rax == rax, "");
-  assert_different_registers(obj, reg_rax, tmp);
-  LP64_ONLY(assert_different_registers(obj, reg_rax, thread, tmp);)
+  assert_different_registers(obj, reg_rax, thread, tmp);
 
   Label unlocked, push_and_slow;
   const Register top = tmp;
@@ -10366,10 +10372,6 @@ void MacroAssembler::lightweight_unlock(Register obj, Register reg_rax, Register
 
   bind(push_and_slow);
   // Restore lock-stack and handle the unlock in runtime.
-  if (thread == reg_rax) {
-    // On x86_32 we may lose the thread.
-    get_thread(thread);
-  }
 #ifdef ASSERT
   movl(top, Address(thread, JavaThread::lock_stack_top_offset()));
   movptr(Address(thread, top), obj);
@@ -10379,3 +10381,54 @@ void MacroAssembler::lightweight_unlock(Register obj, Register reg_rax, Register
 
   bind(unlocked);
 }
+
+#ifdef _LP64
+// Saves legacy GPRs state on stack.
+void MacroAssembler::save_legacy_gprs() {
+  subq(rsp, 16 * wordSize);
+  movq(Address(rsp, 15 * wordSize), rax);
+  movq(Address(rsp, 14 * wordSize), rcx);
+  movq(Address(rsp, 13 * wordSize), rdx);
+  movq(Address(rsp, 12 * wordSize), rbx);
+  movq(Address(rsp, 10 * wordSize), rbp);
+  movq(Address(rsp, 9 * wordSize), rsi);
+  movq(Address(rsp, 8 * wordSize), rdi);
+  movq(Address(rsp, 7 * wordSize), r8);
+  movq(Address(rsp, 6 * wordSize), r9);
+  movq(Address(rsp, 5 * wordSize), r10);
+  movq(Address(rsp, 4 * wordSize), r11);
+  movq(Address(rsp, 3 * wordSize), r12);
+  movq(Address(rsp, 2 * wordSize), r13);
+  movq(Address(rsp, wordSize), r14);
+  movq(Address(rsp, 0), r15);
+}
+
+// Resotres back legacy GPRs state from stack.
+void MacroAssembler::restore_legacy_gprs() {
+  movq(r15, Address(rsp, 0));
+  movq(r14, Address(rsp, wordSize));
+  movq(r13, Address(rsp, 2 * wordSize));
+  movq(r12, Address(rsp, 3 * wordSize));
+  movq(r11, Address(rsp, 4 * wordSize));
+  movq(r10, Address(rsp, 5 * wordSize));
+  movq(r9,  Address(rsp, 6 * wordSize));
+  movq(r8,  Address(rsp, 7 * wordSize));
+  movq(rdi, Address(rsp, 8 * wordSize));
+  movq(rsi, Address(rsp, 9 * wordSize));
+  movq(rbp, Address(rsp, 10 * wordSize));
+  movq(rbx, Address(rsp, 12 * wordSize));
+  movq(rdx, Address(rsp, 13 * wordSize));
+  movq(rcx, Address(rsp, 14 * wordSize));
+  movq(rax, Address(rsp, 15 * wordSize));
+  addq(rsp, 16 * wordSize);
+}
+
+void MacroAssembler::setcc(Assembler::Condition comparison, Register dst) {
+  if (VM_Version::supports_apx_f()) {
+    esetzucc(comparison, dst);
+  } else {
+    setb(comparison, dst);
+    movzbl(dst, dst);
+  }
+}
+#endif

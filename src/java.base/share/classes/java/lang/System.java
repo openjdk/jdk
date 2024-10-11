@@ -65,11 +65,13 @@ import java.util.PropertyPermission;
 import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.WeakHashMap;
-import java.util.concurrent.Callable;
+import java.util.concurrent.Executor;
 import java.util.function.Supplier;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
+import jdk.internal.javac.Restricted;
+import jdk.internal.loader.NativeLibraries;
 import jdk.internal.logger.LoggerFinderLoader.TemporaryLoggerFinder;
 import jdk.internal.misc.Blocker;
 import jdk.internal.misc.CarrierThreadLocal;
@@ -191,8 +193,9 @@ public final class System {
      */
     public static final PrintStream err = null;
 
-    // Holder for the initial value of `in`, set within `initPhase1()`.
-    private static InputStream initialIn;
+    // Initial values of System.in and System.err, set in initPhase1().
+    private static @Stable InputStream initialIn;
+    private static @Stable PrintStream initialErr;
 
     // indicates if a security manager is possible
     private static final int NEVER = 1;
@@ -355,10 +358,7 @@ public final class System {
             = Collections.synchronizedMap(new WeakHashMap<>());
     }
 
-    // Remember initial System.err. setSecurityManager() warning goes here
-    private static volatile @Stable PrintStream initialErrStream;
-
-    private static URL codeSource(Class<?> clazz) {
+    static URL codeSource(Class<?> clazz) {
         PrivilegedAction<ProtectionDomain> pa = clazz::getProtectionDomain;
         @SuppressWarnings("removal")
         CodeSource cs = AccessController.doPrivileged(pa).getCodeSource();
@@ -417,7 +417,7 @@ public final class System {
                 } else {
                     source = callerClass.getName() + " (" + url + ")";
                 }
-                initialErrStream.printf("""
+                initialErr.printf("""
                         WARNING: A terminally deprecated method in java.lang.System has been called
                         WARNING: System::setSecurityManager has been called by %s
                         WARNING: Please consider reporting this to the maintainers of %s
@@ -2020,14 +2020,19 @@ public final class System {
      *             linked with the VM, or the library cannot be mapped to
      *             a native library image by the host system.
      * @throws     NullPointerException if {@code filename} is {@code null}
+     * @throws     IllegalCallerException if the caller is in a module that
+     *             does not have native access enabled.
      *
      * @spec jni/index.html Java Native Interface Specification
      * @see        java.lang.Runtime#load(java.lang.String)
      * @see        java.lang.SecurityManager#checkLink(java.lang.String)
      */
     @CallerSensitive
+    @Restricted
     public static void load(String filename) {
-        Runtime.getRuntime().load0(Reflection.getCallerClass(), filename);
+        Class<?> caller = Reflection.getCallerClass();
+        Reflection.ensureNativeAccess(caller, System.class, "load", false);
+        Runtime.getRuntime().load0(caller, filename);
     }
 
     /**
@@ -2058,14 +2063,19 @@ public final class System {
      *             linked with the VM,  or the library cannot be mapped to a
      *             native library image by the host system.
      * @throws     NullPointerException if {@code libname} is {@code null}
+     * @throws     IllegalCallerException if the caller is in a module that
+     *             does not have native access enabled.
      *
      * @spec jni/index.html Java Native Interface Specification
      * @see        java.lang.Runtime#loadLibrary(java.lang.String)
      * @see        java.lang.SecurityManager#checkLink(java.lang.String)
      */
     @CallerSensitive
+    @Restricted
     public static void loadLibrary(String libname) {
-        Runtime.getRuntime().loadLibrary0(Reflection.getCallerClass(), libname);
+        Class<?> caller = Reflection.getCallerClass();
+        Reflection.ensureNativeAccess(caller, System.class, "loadLibrary", false);
+        Runtime.getRuntime().loadLibrary0(caller, libname);
     }
 
     /**
@@ -2200,7 +2210,8 @@ public final class System {
         // thus they are equivalent to Console.charset(), otherwise the encodings
         // of those properties default to native.encoding
         setOut0(newPrintStream(fdOut, props.getProperty("stdout.encoding")));
-        setErr0(newPrintStream(fdErr, props.getProperty("stderr.encoding")));
+        initialErr = newPrintStream(fdErr, props.getProperty("stderr.encoding"));
+        setErr0(initialErr);
 
         // Setup Java signal handlers for HUP, TERM, and INT (where available).
         Terminator.setup();
@@ -2265,6 +2276,7 @@ public final class System {
             super(fd);
         }
 
+        @Override
         public void write(int b) throws IOException {
             boolean attempted = Blocker.begin();
             try {
@@ -2406,8 +2418,6 @@ public final class System {
                     notSupportedJnuEncoding);
         }
 
-        initialErrStream = System.err;
-
         // initializing the system class loader
         VM.initLevel(3);
 
@@ -2542,8 +2552,8 @@ public final class System {
             public void addEnableNativeAccessToAllUnnamed() {
                 Module.implAddEnableNativeAccessToAllUnnamed();
             }
-            public void ensureNativeAccess(Module m, Class<?> owner, String methodName, Class<?> currentClass) {
-                m.ensureNativeAccess(owner, methodName, currentClass);
+            public void ensureNativeAccess(Module m, Class<?> owner, String methodName, Class<?> currentClass, boolean jni) {
+                m.ensureNativeAccess(owner, methodName, currentClass, jni);
             }
             public ServicesCatalog getServicesCatalog(ModuleLayer layer) {
                 return layer.getServicesCatalog();
@@ -2560,6 +2570,9 @@ public final class System {
 
             public int countPositives(byte[] bytes, int offset, int length) {
                 return StringCoding.countPositives(bytes, offset, length);
+            }
+            public int countNonZeroAscii(String s) {
+                return StringCoding.countNonZeroAscii(s);
             }
             public String newStringNoRepl(byte[] bytes, Charset cs) throws CharacterCodingException  {
                 return String.newStringNoRepl(bytes, cs);
@@ -2598,6 +2611,10 @@ public final class System {
                 return initialIn;
             }
 
+            public PrintStream initialSystemErr() {
+                return initialErr;
+            }
+
             public void setCause(Throwable t, Throwable cause) {
                 t.setCause(cause);
             }
@@ -2608,10 +2625,6 @@ public final class System {
 
             public MethodHandle stringConcatHelper(String name, MethodType methodType) {
                 return StringConcatHelper.lookupStatic(name, methodType);
-            }
-
-            public long stringConcatHelperPrepend(long indexCoder, byte[] buf, String value) {
-                return StringConcatHelper.prepend(indexCoder, buf, value);
             }
 
             public long stringConcatInitialCoder() {
@@ -2626,8 +2639,16 @@ public final class System {
                 return StringConcatHelper.mix(lengthCoder, value);
             }
 
-            public int stringSize(long i) {
-                return Long.stringSize(i);
+            public Object stringConcat1(String[] constants) {
+                return new StringConcatHelper.Concat1(constants);
+            }
+
+            public byte stringInitCoder() {
+                return String.COMPACT_STRINGS ? String.LATIN1 : String.UTF16;
+            }
+
+            public byte stringCoder(String str) {
+                return str.coder();
             }
 
             public int getCharsLatin1(long i, int index, byte[] buf) {
@@ -2642,13 +2663,17 @@ public final class System {
                 return String.join(prefix, suffix, delimiter, elements, size);
             }
 
+            public String concat(String prefix, Object value, String suffix) {
+                return StringConcatHelper.concat(prefix, value, suffix);
+            }
+
             public Object classData(Class<?> c) {
                 return c.getClassData();
             }
 
             @Override
-            public long findNative(ClassLoader loader, String entry) {
-                return ClassLoader.findNative(loader, entry);
+            public NativeLibraries nativeLibrariesFor(ClassLoader loader) {
+                return ClassLoader.nativeLibrariesFor(loader);
             }
 
             @Override
@@ -2678,14 +2703,6 @@ public final class System {
 
             public Thread currentCarrierThread() {
                 return Thread.currentCarrierThread();
-            }
-
-            public <V> V executeOnCarrierThread(Callable<V> task) throws Exception {
-                if (Thread.currentThread() instanceof VirtualThread vthread) {
-                    return vthread.executeOnCarrierThread(task);
-                } else {
-                    return task.call();
-                }
             }
 
             public <T> T getCarrierThreadLocal(CarrierThreadLocal<T> local) {
@@ -2752,6 +2769,10 @@ public final class System {
                 } else {
                     throw new WrongThreadException();
                 }
+            }
+
+            public Executor virtualThreadDefaultScheduler() {
+                return VirtualThread.defaultScheduler();
             }
 
             public StackWalker newStackWalkerInstance(Set<StackWalker.Option> options,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -46,7 +46,6 @@
 class CompilerThread;
 class HandleArea;
 class HandleMark;
-class ICRefillVerifier;
 class JvmtiRawMonitor;
 class NMethodClosure;
 class Metadata;
@@ -210,14 +209,6 @@ class Thread: public ThreadShadow {
   DEBUG_ONLY(bool _indirectly_safepoint_thread;)
 
  public:
-  // Determines if a heap allocation failure will be retried
-  // (e.g., by deoptimizing and re-executing in the interpreter).
-  // In this case, the failed allocation must raise
-  // Universe::out_of_memory_error_retry() and omit side effects
-  // such as JVMTI events and handling -XX:+HeapDumpOnOutOfMemoryError
-  // and -XX:OnOutOfMemoryError.
-  virtual bool in_retryable_allocation() const { return false; }
-
 #ifdef ASSERT
   void set_suspendible_thread()   { _suspendible_thread = true; }
   void clear_suspendible_thread() { _suspendible_thread = false; }
@@ -250,20 +241,6 @@ class Thread: public ThreadShadow {
  public:
   void set_last_handle_mark(HandleMark* mark)   { _last_handle_mark = mark; }
   HandleMark* last_handle_mark() const          { return _last_handle_mark; }
- private:
-
-#ifdef ASSERT
-  ICRefillVerifier* _missed_ic_stub_refill_verifier;
-
- public:
-  ICRefillVerifier* missed_ic_stub_refill_verifier() {
-    return _missed_ic_stub_refill_verifier;
-  }
-
-  void set_missed_ic_stub_refill_verifier(ICRefillVerifier* verifier) {
-    _missed_ic_stub_refill_verifier = verifier;
-  }
-#endif // ASSERT
 
  private:
   // Used by SkipGCALot class.
@@ -285,7 +262,7 @@ class Thread: public ThreadShadow {
                                                  // is waiting to lock
  public:
   // Constructor
-  Thread();
+  Thread(MemTag mem_tag = mtThread);
   virtual ~Thread() = 0;        // Thread is abstract.
 
   // Manage Thread::current()
@@ -483,9 +460,6 @@ class Thread: public ThreadShadow {
   }
 
  public:
-  // Used by fast lock support
-  virtual bool is_lock_owned(address adr) const;
-
   // Check if address is within the given range of this thread's
   // stack:  stack_base() > adr >= limit
   bool is_in_stack_range_incl(address adr, address limit) const {
@@ -543,7 +517,7 @@ protected:
 
  public:
   // Stack overflow support
-  address stack_base() const           { assert(_stack_base != nullptr,"Sanity check"); return _stack_base; }
+  address stack_base() const DEBUG_ONLY(;) NOT_DEBUG({ return _stack_base; })
   void    set_stack_base(address base) { _stack_base = base; }
   size_t  stack_size() const           { return _stack_size; }
   void    set_stack_size(size_t size)  { _stack_size = size; }
@@ -603,8 +577,6 @@ protected:
   static ByteSize tlab_end_offset()              { return byte_offset_of(Thread, _tlab) + ThreadLocalAllocBuffer::end_offset(); }
   static ByteSize tlab_top_offset()              { return byte_offset_of(Thread, _tlab) + ThreadLocalAllocBuffer::top_offset(); }
   static ByteSize tlab_pf_top_offset()           { return byte_offset_of(Thread, _tlab) + ThreadLocalAllocBuffer::pf_top_offset(); }
-
-  static ByteSize allocated_bytes_offset()       { return byte_offset_of(Thread, _allocated_bytes); }
 
   JFR_ONLY(DEFINE_THREAD_LOCAL_OFFSET_JFR;)
 

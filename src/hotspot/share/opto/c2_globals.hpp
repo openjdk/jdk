@@ -58,6 +58,9 @@
   product(bool, StressMacroExpansion, false, DIAGNOSTIC,                    \
           "Randomize macro node expansion order")                           \
                                                                             \
+  product(bool, StressUnstableIfTraps, false, DIAGNOSTIC,                   \
+          "Randomly take unstable if traps")                                \
+                                                                            \
   product(uint, StressSeed, 0, DIAGNOSTIC,                                  \
           "Seed for randomized stress testing (if unset, a random one is "  \
           "generated). The seed is recorded in the compilation log, if "    \
@@ -66,6 +69,14 @@
                                                                             \
   develop(bool, StressMethodHandleLinkerInlining, false,                    \
           "Stress inlining through method handle linkers")                  \
+                                                                            \
+  develop(bool, StressBailout, false,                                       \
+          "Perform bailouts randomly at C2 failing() checks")               \
+                                                                            \
+  develop(uint, StressBailoutMean, 100000,                                  \
+          "The expected number of failing() checks made until "             \
+          "a random bailout.")                                              \
+          range(1, max_juint)                                               \
                                                                             \
   develop(intx, OptoPrologueNops, 0,                                        \
           "Insert this many extra nop instructions "                        \
@@ -457,9 +468,6 @@
   develop(bool, PrintLockStatistics, false,                                 \
           "Print precise statistics on the dynamic lock usage")             \
                                                                             \
-  product(bool, PrintPreciseRTMLockingStatistics, false, DIAGNOSTIC,        \
-          "Print per-lock-site statistics of rtm locking in JVM")           \
-                                                                            \
   develop(bool, PrintEliminateLocks, false,                                 \
           "Print out when locks are eliminated")                            \
                                                                             \
@@ -766,9 +774,6 @@
                                                                             \
   product(bool, UseProfiledLoopPredicate, true,                             \
           "Move predicates out of loops based on profiling data")           \
-                                                                            \
-  product(bool, ExpandSubTypeCheckAtParseTime, false, DIAGNOSTIC,           \
-          "Do not use subtype check macro node")                            \
                                                                             \
   develop(uintx, StressLongCountedLoop, 0,                                  \
           "if > 0, convert int counted loops to long counted loops"         \

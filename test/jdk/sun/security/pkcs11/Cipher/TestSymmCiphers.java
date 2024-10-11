@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4898461 6604496
+ * @bug 4898461 6604496 8330842
  * @summary basic test for symmetric ciphers with padding
  * @author Valerie Peng
  * @library /test/lib ..
@@ -80,10 +80,11 @@ public class TestSymmCiphers extends PKCS11Test {
         new CI("DESede", "DESede", 408),
         new CI("AES", "AES", 128),
 
-        new CI("AES/CTR/NoPadding", "AES", 3200)
+        new CI("AES/CTR/NoPadding", "AES", 3200),
+        new CI("AES/CTS/NoPadding", "AES", 3200),
 
     };
-    private static StringBuffer debugBuf = new StringBuffer();
+    private static final StringBuffer debugBuf = new StringBuffer();
 
     @Override
     public void main(Provider p) throws Exception {
@@ -128,10 +129,7 @@ public class TestSymmCiphers extends PKCS11Test {
             }
         } catch (Exception ex) {
             // print out debug info when exception is encountered
-            if (debugBuf != null) {
-                System.out.println(debugBuf.toString());
-                debugBuf = new StringBuffer();
-            }
+            System.out.println(debugBuf);
             throw ex;
         }
     }
@@ -171,8 +169,7 @@ public class TestSymmCiphers extends PKCS11Test {
         }
         byte[] testOut1 = baos.toByteArray();
         endTime = System.nanoTime();
-        perfOut("stream InBuf + stream OutBuf: " +
-                (endTime - startTime));
+        perfOut("stream InBuf + stream OutBuf", endTime - startTime);
         match(testOut1, answer);
 
         // test#2: Non-direct Buffer in + non-direct Buffer out
@@ -184,8 +181,7 @@ public class TestSymmCiphers extends PKCS11Test {
         cipher.update(inBuf, outBuf);
         cipher.doFinal(inBuf, outBuf);
         endTime = System.nanoTime();
-        perfOut("non-direct InBuf + non-direct OutBuf: " +
-                (endTime - startTime));
+        perfOut("non-direct InBuf + non-direct OutBuf", endTime - startTime);
         match(outBuf, answer);
 
         // test#3: Direct Buffer in + direc Buffer out
@@ -197,8 +193,7 @@ public class TestSymmCiphers extends PKCS11Test {
         cipher.update(inDirectBuf, outDirectBuf);
         cipher.doFinal(inDirectBuf, outDirectBuf);
         endTime = System.nanoTime();
-        perfOut("direct InBuf + direct OutBuf: " +
-                (endTime - startTime));
+        perfOut("direct InBuf + direct OutBuf", endTime - startTime);
 
         //debugOut("(post) inputBuf: " + inDirectBuf + "\n");
         //debugOut("(post) outputBuf: " + outDirectBuf + "\n");
@@ -215,8 +210,7 @@ public class TestSymmCiphers extends PKCS11Test {
         cipher.update(inDirectBuf, outBuf);
         cipher.doFinal(inDirectBuf, outBuf);
         endTime = System.nanoTime();
-        perfOut("direct InBuf + non-direct OutBuf: " +
-                (endTime - startTime));
+        perfOut("direct InBuf + non-direct OutBuf", endTime - startTime);
         match(outBuf, answer);
 
         // test#5: Non-direct Buffer in + direct Buffer out
@@ -231,26 +225,21 @@ public class TestSymmCiphers extends PKCS11Test {
         cipher.update(inBuf, outDirectBuf);
         cipher.doFinal(inBuf, outDirectBuf);
         endTime = System.nanoTime();
-        perfOut("non-direct InBuf + direct OutBuf: " +
-                (endTime - startTime));
+        perfOut("non-direct InBuf + direct OutBuf", endTime - startTime);
 
         //debugOut("(post) inputBuf: " + inBuf + "\n");
         //debugOut("(post) outputBuf: " + outDirectBuf + "\n");
         match(outDirectBuf, answer);
 
-        debugBuf = null;
+        debugBuf.setLength(0);
     }
 
-    private static void perfOut(String msg) {
-        if (debugBuf != null) {
-            debugBuf.append("PERF>" + msg);
-        }
+    private static void perfOut(String msg, long elapsed) {
+        debugOut("PERF> " + msg + ", elapsed: " + elapsed + " ns\n");
     }
 
     private static void debugOut(String msg) {
-        if (debugBuf != null) {
-            debugBuf.append(msg);
-        }
+        debugBuf.append(msg);
     }
 
     private static void match(byte[] b1, byte[] b2) throws Exception {

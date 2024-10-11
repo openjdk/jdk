@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,9 +21,6 @@
  * questions.
  */
 
-import java.nio.file.Path;
-import java.util.List;
-import java.util.ArrayList;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.HelloApp;
 import jdk.jpackage.test.Annotations.Test;
@@ -53,10 +50,11 @@ public class ArgumentsFilteringTest {
     public void test1() {
         JPackageCommand cmd = JPackageCommand.helloAppImage();
         cmd.executeAndAssertHelloAppImageCreated();
-        Path launcherPath = cmd.appLauncherPath();
-        HelloApp.assertApp(launcherPath)
-                .executeAndVerifyOutput(false, List.of("-psn_1_1"),
-                        new ArrayList<>());
+        var appVerifier = HelloApp.assertMainLauncher(cmd);
+        if (appVerifier != null) {
+            appVerifier.execute("-psn_1_1");
+            appVerifier.verifyOutput();
+        }
     }
 
     @Test
@@ -64,9 +62,10 @@ public class ArgumentsFilteringTest {
         JPackageCommand cmd = JPackageCommand.helloAppImage()
                 .addArguments("--arguments", "-psn_2_2");
         cmd.executeAndAssertHelloAppImageCreated();
-        Path launcherPath = cmd.appLauncherPath();
-        HelloApp.assertApp(launcherPath)
-                .executeAndVerifyOutput(false, List.of("-psn_1_1"),
-                        List.of("-psn_2_2"));
+        var appVerifier = HelloApp.assertMainLauncher(cmd);
+        if (appVerifier != null) {
+            appVerifier.execute("-psn_1_1");
+            appVerifier.verifyOutput("-psn_2_2");
+        }
     }
 }

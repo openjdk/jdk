@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,6 @@ class CompileTask : public CHeapObj<mtCompiler> {
       Reason_Whitebox,         // Whitebox API
       Reason_MustBeCompiled,   // Used for -Xcomp or AlwaysCompileLoopMethods (see CompilationPolicy::must_be_compiled())
       Reason_Bootstrap,        // JVMCI bootstrap
-      Reason_DirectivesChanged, // Changed CompilerDirectivesStack
       Reason_Count
   };
 
@@ -75,8 +74,7 @@ class CompileTask : public CHeapObj<mtCompiler> {
       "replay",
       "whitebox",
       "must_be_compiled",
-      "bootstrap",
-      "directives_changed"
+      "bootstrap"
     };
     return reason_names[compile_reason];
   }
@@ -114,6 +112,7 @@ class CompileTask : public CHeapObj<mtCompiler> {
   const char*          _failure_reason;
   // Specifies if _failure_reason is on the C heap.
   bool                 _failure_reason_on_C_heap;
+  size_t               _arena_bytes;  // peak size of temporary memory during compilation (e.g. node arenas)
 
  public:
   CompileTask() : _failure_reason(nullptr), _failure_reason_on_C_heap(false) {
@@ -199,6 +198,9 @@ class CompileTask : public CHeapObj<mtCompiler> {
   // RedefineClasses support
   void         metadata_do(MetadataClosure* f);
   void         mark_on_stack();
+
+  void         set_arena_bytes(size_t s)         { _arena_bytes = s; }
+  size_t       arena_bytes() const               { return _arena_bytes; }
 
 private:
   static void  print_impl(outputStream* st, Method* method, int compile_id, int comp_level,

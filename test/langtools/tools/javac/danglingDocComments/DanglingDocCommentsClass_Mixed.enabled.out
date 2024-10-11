@@ -1,0 +1,4 @@
+DanglingDocCommentsClass_Mixed.java:13:1: compiler.warn.dangling.doc.comment
+DanglingDocCommentsClass_Mixed.java:17:5: compiler.warn.dangling.doc.comment
+DanglingDocCommentsClass_Mixed.java:21:5: compiler.warn.dangling.doc.comment
+3 warnings

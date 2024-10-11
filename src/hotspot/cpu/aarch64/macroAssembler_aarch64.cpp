@@ -215,7 +215,7 @@ public:
           break;
         } else {
           // nothing to do
-          assert(target == 0, "did not expect to relocate target for polling page load");
+          assert(target == nullptr, "did not expect to relocate target for polling page load");
         }
         break;
       }
@@ -736,7 +736,7 @@ void MacroAssembler::reserved_stack_check() {
     br(Assembler::LO, no_reserved_zone_enabling);
 
     enter();   // LR and FP are live.
-    lea(rscratch1, CAST_FROM_FN_PTR(address, SharedRuntime::enable_stack_reserved_zone));
+    lea(rscratch1, RuntimeAddress(CAST_FROM_FN_PTR(address, SharedRuntime::enable_stack_reserved_zone)));
     mov(c_rarg0, rthread);
     blr(rscratch1);
     leave();
@@ -744,7 +744,7 @@ void MacroAssembler::reserved_stack_check() {
     // We have already removed our own frame.
     // throw_delayed_StackOverflowError will think that it's been
     // called by our caller.
-    lea(rscratch1, RuntimeAddress(StubRoutines::throw_delayed_StackOverflowError_entry()));
+    lea(rscratch1, RuntimeAddress(SharedRuntime::throw_delayed_StackOverflowError_entry()));
     br(rscratch1);
     should_not_reach_here();
 
@@ -1560,11 +1560,7 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
   }
 
 #ifndef PRODUCT
-  mov(rscratch2, (address)&SharedRuntime::_partial_subtype_ctr);
-  Address pst_counter_addr(rscratch2);
-  ldr(rscratch1, pst_counter_addr);
-  add(rscratch1, rscratch1, 1);
-  str(rscratch1, pst_counter_addr);
+  incrementw(ExternalAddress((address)&SharedRuntime::_partial_subtype_ctr));
 #endif //PRODUCT
 
   // We will consult the secondary-super array.
@@ -1734,8 +1730,8 @@ void MacroAssembler::lookup_secondary_supers_table_slow_path(Register r_super_kl
   // The bitmap is full to bursting.
   // Implicit invariant: BITMAP_FULL implies (length > 0)
   assert(Klass::SECONDARY_SUPERS_BITMAP_FULL == ~uintx(0), "");
-  cmn(r_bitmap, (u1)1);
-  br(EQ, L_huge);
+  cmpw(r_array_length, (u1)(Klass::SECONDARY_SUPERS_TABLE_SIZE - 2));
+  br(GT, L_huge);
 
   // NB! Our caller has checked bits 0 and 1 in the bitmap. The
   // current slot (at secondary_supers[r_array_index]) has not yet
@@ -1842,7 +1838,8 @@ void MacroAssembler::clinit_barrier(Register klass, Register scratch, Label* L_f
     L_slow_path = &L_fallthrough;
   }
   // Fast path check: class is fully initialized
-  ldrb(scratch, Address(klass, InstanceKlass::init_state_offset()));
+  lea(scratch, Address(klass, InstanceKlass::init_state_offset()));
+  ldarb(scratch, scratch);
   subs(zr, scratch, InstanceKlass::fully_initialized);
   br(Assembler::EQ, *L_fast_path);
 
@@ -1883,7 +1880,7 @@ void MacroAssembler::_verify_oop(Register reg, const char* s, const char* file, 
   movptr(rscratch1, (uintptr_t)(address)b);
 
   // call indirectly to solve generation ordering problem
-  lea(rscratch2, ExternalAddress(StubRoutines::verify_oop_subroutine_entry_address()));
+  lea(rscratch2, RuntimeAddress(StubRoutines::verify_oop_subroutine_entry_address()));
   ldr(rscratch2, Address(rscratch2));
   blr(rscratch2);
 
@@ -1922,7 +1919,7 @@ void MacroAssembler::_verify_oop_addr(Address addr, const char* s, const char* f
   movptr(rscratch1, (uintptr_t)(address)b);
 
   // call indirectly to solve generation ordering problem
-  lea(rscratch2, ExternalAddress(StubRoutines::verify_oop_subroutine_entry_address()));
+  lea(rscratch2, RuntimeAddress(StubRoutines::verify_oop_subroutine_entry_address()));
   ldr(rscratch2, Address(rscratch2));
   blr(rscratch2);
 
@@ -2354,14 +2351,36 @@ void MacroAssembler::membar(Membar_mask_bits order_constraint) {
   address last = code()->last_insn();
   if (last != nullptr && nativeInstruction_at(last)->is_Membar() && prev == last) {
     NativeMembar *bar = NativeMembar_at(prev);
-    // We are merging two memory barrier instructions.  On AArch64 we
-    // can do this simply by ORing them together.
-    bar->set_kind(bar->get_kind() | order_constraint);
-    BLOCK_COMMENT("merged membar");
-  } else {
-    code()->set_last_insn(pc());
-    dmb(Assembler::barrier(order_constraint));
+    if (AlwaysMergeDMB) {
+      bar->set_kind(bar->get_kind() | order_constraint);
+      BLOCK_COMMENT("merged membar(always)");
+      return;
+    }
+    // Don't promote DMB ST|DMB LD to DMB (a full barrier) because
+    // doing so would introduce a StoreLoad which the caller did not
+    // intend
+    if (bar->get_kind() == order_constraint
+        || bar->get_kind() == AnyAny
+        || order_constraint == AnyAny) {
+      // We are merging two memory barrier instructions.  On AArch64 we
+      // can do this simply by ORing them together.
+      bar->set_kind(bar->get_kind() | order_constraint);
+      BLOCK_COMMENT("merged membar");
+      return;
+    } else {
+      // A special case like "DMB ST;DMB LD;DMB ST", the last DMB can be skipped
+      // We need check the last 2 instructions
+      address prev2 = prev - NativeMembar::instruction_size;
+      if (last != code()->last_label() && nativeInstruction_at(prev2)->is_Membar()) {
+        NativeMembar *bar2 = NativeMembar_at(prev2);
+        assert(bar2->get_kind() == order_constraint, "it should be merged before");
+        BLOCK_COMMENT("merged membar(elided)");
+        return;
+      }
+    }
   }
+  code()->set_last_insn(pc());
+  dmb(Assembler::barrier(order_constraint));
 }
 
 bool MacroAssembler::try_merge_ldst(Register rt, const Address &adr, size_t size_in_bytes, bool is_store) {
@@ -2949,7 +2968,7 @@ void MacroAssembler::verify_heapbase(const char* msg) {
   if (CheckCompressedOops) {
     Label ok;
     push(1 << rscratch1->encoding(), sp); // cmpptr trashes rscratch1
-    cmpptr(rheapbase, ExternalAddress(CompressedOops::ptrs_base_addr()));
+    cmpptr(rheapbase, ExternalAddress(CompressedOops::base_addr()));
     br(Assembler::EQ, ok);
     stop(msg);
     bind(ok);
@@ -3115,9 +3134,9 @@ void MacroAssembler::reinit_heapbase()
 {
   if (UseCompressedOops) {
     if (Universe::is_fully_initialized()) {
-      mov(rheapbase, CompressedOops::ptrs_base());
+      mov(rheapbase, CompressedOops::base());
     } else {
-      lea(rheapbase, ExternalAddress(CompressedOops::ptrs_base_addr()));
+      lea(rheapbase, ExternalAddress(CompressedOops::base_addr()));
       ldr(rheapbase, Address(rheapbase));
     }
   }
@@ -3883,7 +3902,7 @@ void MacroAssembler::multiply_128_x_128_loop(Register y, Register z,
  * r2: y
  * r3: ylen
  * r4:  z
- * r5: zlen
+ * r5: tmp0
  * r10: tmp1
  * r11: tmp2
  * r12: tmp3
@@ -3894,11 +3913,11 @@ void MacroAssembler::multiply_128_x_128_loop(Register y, Register z,
  *
  */
 void MacroAssembler::multiply_to_len(Register x, Register xlen, Register y, Register ylen,
-                                     Register z, Register zlen,
+                                     Register z, Register tmp0,
                                      Register tmp1, Register tmp2, Register tmp3, Register tmp4,
                                      Register tmp5, Register tmp6, Register product_hi) {
 
-  assert_different_registers(x, xlen, y, ylen, z, zlen, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6);
+  assert_different_registers(x, xlen, y, ylen, z, tmp0, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, product_hi);
 
   const Register idx = tmp1;
   const Register kdx = tmp2;
@@ -3907,7 +3926,7 @@ void MacroAssembler::multiply_to_len(Register x, Register xlen, Register y, Regi
   const Register y_idx = tmp4;
   const Register carry = tmp5;
   const Register product  = xlen;
-  const Register x_xstart = zlen;  // reuse register
+  const Register x_xstart = tmp0;
 
   // First Loop.
   //
@@ -3923,9 +3942,9 @@ void MacroAssembler::multiply_to_len(Register x, Register xlen, Register y, Regi
   //  z[xstart] = (int)carry;
   //
 
-  movw(idx, ylen);      // idx = ylen;
-  movw(kdx, zlen);      // kdx = xlen+ylen;
-  mov(carry, zr);       // carry = 0;
+  movw(idx, ylen);       // idx = ylen;
+  addw(kdx, xlen, ylen); // kdx = xlen+ylen;
+  mov(carry, zr);        // carry = 0;
 
   Label L_done;
 
@@ -5064,8 +5083,8 @@ MacroAssembler::KlassDecodeMode MacroAssembler::klass_decode_mode() {
 
   if (operand_valid_for_logical_immediate(
         /*is32*/false, (uint64_t)CompressedKlassPointers::base())) {
-    const uint64_t range_mask =
-      (1ULL << log2i(CompressedKlassPointers::range())) - 1;
+    const size_t range = CompressedKlassPointers::klass_range_end() - CompressedKlassPointers::base();
+    const uint64_t range_mask = (1ULL << log2i(range)) - 1;
     if (((uint64_t)CompressedKlassPointers::base() & range_mask) == 0) {
       return (_klass_decode_mode = KlassDecodeXor);
     }
@@ -5539,12 +5558,22 @@ address MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,
   Label DONE, SAME;
   Register tmp1 = rscratch1;
   Register tmp2 = rscratch2;
-  Register cnt2 = tmp2;  // cnt2 only used in array length compare
   int elem_per_word = wordSize/elem_size;
   int log_elem_size = exact_log2(elem_size);
+  int klass_offset  = arrayOopDesc::klass_offset_in_bytes();
   int length_offset = arrayOopDesc::length_offset_in_bytes();
   int base_offset
     = arrayOopDesc::base_offset_in_bytes(elem_size == 2 ? T_CHAR : T_BYTE);
+  // When the length offset is not aligned to 8 bytes,
+  // then we align it down. This is valid because the new
+  // offset will always be the klass which is the same
+  // for type arrays.
+  int start_offset = align_down(length_offset, BytesPerWord);
+  int extra_length = base_offset - start_offset;
+  assert(start_offset == length_offset || start_offset == klass_offset,
+         "start offset must be 8-byte-aligned or be the klass offset");
+  assert(base_offset != start_offset, "must include the length field");
+  extra_length = extra_length / elem_size; // We count in elements, not bytes.
   int stubBytesThreshold = 3 * 64 + (UseSIMDForArrayEquals ? 0 : 16);
 
   assert(elem_size == 1 || elem_size == 2, "must be char or byte");
@@ -5578,11 +5607,10 @@ address MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,
     //      return false;
     bind(A_IS_NOT_NULL);
     ldrw(cnt1, Address(a1, length_offset));
-    ldrw(cnt2, Address(a2, length_offset));
-    eorw(tmp5, cnt1, cnt2);
-    cbnzw(tmp5, DONE);
-    lea(a1, Address(a1, base_offset));
-    lea(a2, Address(a2, base_offset));
+    // Increase loop counter by diff between base- and actual start-offset.
+    addw(cnt1, cnt1, extra_length);
+    lea(a1, Address(a1, start_offset));
+    lea(a2, Address(a2, start_offset));
     // Check for short strings, i.e. smaller than wordSize.
     subs(cnt1, cnt1, elem_per_word);
     br(Assembler::LT, SHORT);
@@ -5645,18 +5673,18 @@ address MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,
     cbz(a1, DONE);
     ldrw(cnt1, Address(a1, length_offset));
     cbz(a2, DONE);
-    ldrw(cnt2, Address(a2, length_offset));
+    // Increase loop counter by diff between base- and actual start-offset.
+    addw(cnt1, cnt1, extra_length);
+
     // on most CPUs a2 is still "locked"(surprisingly) in ldrw and it's
     // faster to perform another branch before comparing a1 and a2
     cmp(cnt1, (u1)elem_per_word);
     br(LE, SHORT); // short or same
-    ldr(tmp3, Address(pre(a1, base_offset)));
+    ldr(tmp3, Address(pre(a1, start_offset)));
     subs(zr, cnt1, stubBytesThreshold);
     br(GE, STUB);
-    ldr(tmp4, Address(pre(a2, base_offset)));
+    ldr(tmp4, Address(pre(a2, start_offset)));
     sub(tmp5, zr, cnt1, LSL, 3 + log_elem_size);
-    cmp(cnt2, cnt1);
-    br(NE, DONE);
 
     // Main 16 byte comparison loop with 2 exits
     bind(NEXT_DWORD); {
@@ -5688,9 +5716,7 @@ address MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,
     b(LAST_CHECK);
 
     bind(STUB);
-    ldr(tmp4, Address(pre(a2, base_offset)));
-    cmp(cnt2, cnt1);
-    br(NE, DONE);
+    ldr(tmp4, Address(pre(a2, start_offset)));
     if (elem_size == 2) { // convert to byte counter
       lsl(cnt1, cnt1, 1);
     }
@@ -5711,12 +5737,9 @@ address MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,
     mov(result, a2);
     b(DONE);
     bind(SHORT);
-    cmp(cnt2, cnt1);
-    br(NE, DONE);
-    cbz(cnt1, SAME);
     sub(tmp5, zr, cnt1, LSL, 3 + log_elem_size);
-    ldr(tmp3, Address(a1, base_offset));
-    ldr(tmp4, Address(a2, base_offset));
+    ldr(tmp3, Address(a1, start_offset));
+    ldr(tmp4, Address(a2, start_offset));
     bind(LAST_CHECK);
     eor(tmp4, tmp3, tmp4);
     lslv(tmp5, tmp4, tmp5);
@@ -6391,8 +6414,10 @@ void MacroAssembler::cache_wbsync(bool is_pre) {
 }
 
 void MacroAssembler::verify_sve_vector_length(Register tmp) {
+  if (!UseSVE || VM_Version::get_max_supported_sve_vector_length() == FloatRegister::sve_vl_min) {
+    return;
+  }
   // Make sure that native code does not change SVE vector length.
-  if (!UseSVE) return;
   Label verify_ok;
   movw(tmp, zr);
   sve_inc(tmp, B);
@@ -6432,7 +6457,7 @@ void MacroAssembler::verify_cross_modify_fence_not_required() {
     Label fence_not_required;
     cbz(rscratch1, fence_not_required);
     // If it does then fail.
-    lea(rscratch1, CAST_FROM_FN_PTR(address, JavaThread::verify_cross_modify_fence_failure));
+    lea(rscratch1, RuntimeAddress(CAST_FROM_FN_PTR(address, JavaThread::verify_cross_modify_fence_failure)));
     mov(c_rarg0, rthread);
     blr(rscratch1);
     bind(fence_not_required);
@@ -6728,9 +6753,9 @@ void MacroAssembler::double_move(VMRegPair src, VMRegPair dst, Register tmp) {
 //  - obj: the object to be locked
 //  - t1, t2, t3: temporary registers, will be destroyed
 //  - slow: branched to if locking fails, absolute offset may larger than 32KB (imm14 encoding).
-void MacroAssembler::lightweight_lock(Register obj, Register t1, Register t2, Register t3, Label& slow) {
+void MacroAssembler::lightweight_lock(Register basic_lock, Register obj, Register t1, Register t2, Register t3, Label& slow) {
   assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
-  assert_different_registers(obj, t1, t2, t3, rscratch1);
+  assert_different_registers(basic_lock, obj, t1, t2, t3, rscratch1);
 
   Label push;
   const Register top = t1;
@@ -6740,6 +6765,11 @@ void MacroAssembler::lightweight_lock(Register obj, Register t1, Register t2, Re
   // Preload the markWord. It is important that this is the first
   // instruction emitted as it is part of C1's null check semantics.
   ldr(mark, Address(obj, oopDesc::mark_offset_in_bytes()));
+
+  if (UseObjectMonitorTable) {
+    // Clear cache in case fast locking succeeds.
+    str(zr, Address(basic_lock, BasicObjectLock::lock_offset() + in_ByteSize((BasicLock::object_monitor_cache_offset_in_bytes()))));
+  }
 
   // Check if the lock-stack is full.
   ldrw(top, Address(rthread, JavaThread::lock_stack_top_offset()));

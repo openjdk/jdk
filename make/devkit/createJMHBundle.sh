@@ -44,7 +44,7 @@ rm -f *
 fetchJar() {
   url="${MAVEN_MIRROR}/$1/$2/$3/$2-$3.jar"
   if command -v curl > /dev/null; then
-      curl -O --fail $url
+      curl -OL --fail $url
   elif command -v wget > /dev/null; then
       wget $url
   else

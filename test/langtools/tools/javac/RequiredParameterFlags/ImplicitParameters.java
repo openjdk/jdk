@@ -195,7 +195,7 @@ public class ImplicitParameters extends TestRunner {
     }
 
     private void checkParameters(MethodModel method, int... parametersFlags) {
-        MethodParametersAttribute methodParameters = method.findAttribute(Attributes.METHOD_PARAMETERS).orElseThrow();
+        MethodParametersAttribute methodParameters = method.findAttribute(Attributes.methodParameters()).orElseThrow();
         Assert.checkNonNull(methodParameters, "MethodParameters attribute must be present");
         List<MethodParameterInfo> table = methodParameters.parameters();
         Assert.check(table.size() == parametersFlags.length, () -> "Expected " + parametersFlags.length

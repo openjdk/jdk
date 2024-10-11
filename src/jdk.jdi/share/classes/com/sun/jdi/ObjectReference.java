@@ -345,7 +345,7 @@ public interface ObjectReference extends Value {
 
     /**
      * Returns a List containing a {@link ThreadReference} for
-     * each thread currently waiting for this object's monitor.
+     * each platform thread currently waiting for this object's monitor.
      * See {@link ThreadReference#currentContendedMonitor} for
      * information about when a thread is considered to be waiting
      * for a monitor.
@@ -355,7 +355,8 @@ public interface ObjectReference extends Value {
      * operation is supported.
      *
      * @return a List of {@link ThreadReference} objects. The list
-     * has zero length if no threads are waiting for the monitor.
+     * has zero length if no threads are waiting for the monitor,
+     * or only virtual threads are waiting for the monitor.
      * @throws java.lang.UnsupportedOperationException if the
      * target VM does not support this operation.
      * @throws IncompatibleThreadStateException if any
@@ -366,7 +367,7 @@ public interface ObjectReference extends Value {
         throws IncompatibleThreadStateException;
 
     /**
-     * Returns an {@link ThreadReference} for the thread, if any,
+     * Returns a {@link ThreadReference} for the platform thread, if any,
      * which currently owns this object's monitor.
      * See {@link ThreadReference#ownedMonitors} for a definition
      * of ownership.
@@ -375,8 +376,9 @@ public interface ObjectReference extends Value {
      * {@link VirtualMachine#canGetMonitorInfo} to determine if the
      * operation is supported.
      *
-     * @return the {@link ThreadReference} which currently owns the
-     * monitor, or null if it is unowned.
+     * @return the {@link ThreadReference} of the platform thread which
+     * currently owns the monitor, or null if the monitor is owned
+     * by a virtual thread or not owned.
      *
      * @throws java.lang.UnsupportedOperationException if the
      * target VM does not support this operation.
@@ -386,8 +388,9 @@ public interface ObjectReference extends Value {
     ThreadReference owningThread() throws IncompatibleThreadStateException;
 
     /**
-     * Returns the number times this object's monitor has been
-     * entered by the current owning thread.
+     * Returns the number of times this object's monitor has been entered by
+     * the current owning thread if the owning thread is platform thread;
+     * Returns 0 if not owned by a platform thread.
      * See {@link ThreadReference#ownedMonitors} for a definition
      * of ownership.
      * <p>

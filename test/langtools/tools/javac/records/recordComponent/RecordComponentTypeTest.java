@@ -155,7 +155,7 @@ public class RecordComponentTypeTest extends TestRunner {
     }
 
     private void checkRuntimeVisibleAnnotation(AttributedElement attributedElement) throws Exception {
-        RuntimeVisibleAnnotationsAttribute annotations = attributedElement.findAttribute(Attributes.RUNTIME_VISIBLE_ANNOTATIONS).orElseThrow();
+        RuntimeVisibleAnnotationsAttribute annotations = attributedElement.findAttribute(Attributes.runtimeVisibleAnnotations()).orElseThrow();
         boolean hasAnnotation = false;
         for (Annotation annotation : annotations.annotations()) {
             if (annotation.classSymbol().descriptorString().equals("LTestAnnotation;")) {

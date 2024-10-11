@@ -31,6 +31,9 @@ import jdk.jfr.events.DeserializationEvent;
 import jdk.jfr.events.ErrorThrownEvent;
 import jdk.jfr.events.ExceptionStatisticsEvent;
 import jdk.jfr.events.ExceptionThrownEvent;
+import jdk.jfr.events.FileForceEvent;
+import jdk.jfr.events.FileReadEvent;
+import jdk.jfr.events.FileWriteEvent;
 import jdk.jfr.events.ProcessStartEvent;
 import jdk.jfr.events.SecurityPropertyModificationEvent;
 import jdk.jfr.events.SecurityProviderServiceEvent;
@@ -45,6 +48,7 @@ import jdk.jfr.events.VirtualThreadStartEvent;
 import jdk.jfr.events.VirtualThreadSubmitFailedEvent;
 import jdk.jfr.events.X509CertificateEvent;
 import jdk.jfr.events.X509ValidationEvent;
+import jdk.jfr.internal.util.Utils;
 
 /**
  * This class registers all mirror events.
@@ -55,6 +59,9 @@ final class MirrorEvents {
     // Add mirror event mapping here. See MirrorEvent class for details.
     static {
         register("jdk.internal.event.DeserializationEvent", DeserializationEvent.class);
+        register("jdk.internal.event.FileForceEvent", FileForceEvent.class);
+        register("jdk.internal.event.FileReadEvent", FileReadEvent.class);
+        register("jdk.internal.event.FileWriteEvent", FileWriteEvent.class);
         register("jdk.internal.event.ProcessStartEvent", ProcessStartEvent.class);
         register("jdk.internal.event.SecurityPropertyModificationEvent", SecurityPropertyModificationEvent.class);
         register("jdk.internal.event.SecurityProviderServiceEvent", SecurityProviderServiceEvent.class);
@@ -79,7 +86,7 @@ final class MirrorEvents {
     }
 
     static Class<? extends MirrorEvent> find(Class<? extends jdk.internal.event.Event> eventClass) {
-        return find(eventClass.getClassLoader() == null, eventClass.getName());
+        return find(Utils.isJDKClass(eventClass), eventClass.getName());
     }
 
     static Class<? extends MirrorEvent> find(boolean bootClassLoader, String name) {

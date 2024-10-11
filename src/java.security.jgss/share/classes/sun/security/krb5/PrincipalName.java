@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,6 +108,12 @@ public class PrincipalName implements Cloneable {
     public static final String NAME_COMPONENT_SEPARATOR_STR = "/";
     public static final String NAME_REALM_SEPARATOR_STR = "@";
     public static final String REALM_COMPONENT_SEPARATOR_STR = ".";
+
+    private static final boolean NAME_CASE_SENSITIVE_IN_MATCH
+            = "true".equalsIgnoreCase(
+                    SecurityProperties.privilegedGetOverridable(
+                            "jdk.security.krb5.name.case.sensitive"));
+
 
     // Instance fields.
 
@@ -607,33 +613,47 @@ public class PrincipalName implements Cloneable {
 
 
     /**
-     * Checks if two <code>PrincipalName</code> objects have identical values in their corresponding data fields.
+     * Checks if two <code>PrincipalName</code> objects have identical values
+     * in their corresponding data fields.
+     * <p>
+     * If {@systemProperty jdk.security.krb5.name.case.sensitive} is set to true,
+     * the name comparison is case-sensitive. Otherwise, it's case-insensitive.
+     * <p>
+     * It is used in {@link sun.security.krb5.internal.ccache.FileCredentialsCache}
+     * and {@link sun.security.krb5.internal.ktab.KeyTab} to retrieve ccache
+     * or keytab entry for a principal.
      *
      * @param pname the other <code>PrincipalName</code> object.
      * @return true if two have identical values, otherwise, return false.
      */
-    // It is used in <code>sun.security.krb5.internal.ccache</code> package.
     public boolean match(PrincipalName pname) {
-        boolean matched = true;
-        //name type is just a hint, no two names can be the same ignoring name type.
-        // if (this.nameType != pname.nameType) {
-        //      matched = false;
-        // }
-        if ((this.nameRealm != null) && (pname.nameRealm != null)) {
+        // No need to check name type. It's just a hint, no two names can be
+        // the same ignoring name type.
+        if (NAME_CASE_SENSITIVE_IN_MATCH) {
+            if (!(this.nameRealm.toString().equals(pname.nameRealm.toString()))) {
+                return false;
+            }
+        } else {
             if (!(this.nameRealm.toString().equalsIgnoreCase(pname.nameRealm.toString()))) {
-                matched = false;
+                return false;
             }
         }
         if (this.nameStrings.length != pname.nameStrings.length) {
-            matched = false;
+            return false;
         } else {
             for (int i = 0; i < this.nameStrings.length; i++) {
-                if (!(this.nameStrings[i].equalsIgnoreCase(pname.nameStrings[i]))) {
-                    matched = false;
+                if (NAME_CASE_SENSITIVE_IN_MATCH) {
+                    if (!(this.nameStrings[i].equals(pname.nameStrings[i]))) {
+                        return false;
+                    }
+                } else {
+                    if (!(this.nameStrings[i].equalsIgnoreCase(pname.nameStrings[i]))) {
+                        return false;
+                    }
                 }
             }
         }
-        return matched;
+        return true;
     }
 
     /**
