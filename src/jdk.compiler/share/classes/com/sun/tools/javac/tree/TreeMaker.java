@@ -727,14 +727,15 @@ public class TreeMaker implements JCTree.Factory {
                                 ? sym.name
                                 : sym.flatName(), sym)
             .setPos(pos)
-            .setType(sym.type);
+            .setType(types.erasure(sym.type));
     }
 
     /** Create a selection node from a qualifier tree and a symbol.
      *  @param base   The qualifier tree.
      */
     public JCFieldAccess Select(JCExpression base, Symbol sym) {
-        return (JCFieldAccess)new JCFieldAccess(base, sym.name, sym).setPos(pos).setType(sym.type);
+        return (JCFieldAccess)new JCFieldAccess(base, sym.name, sym).setPos(pos)
+                                                                    .setType(types.erasure(sym.type));
     }
 
     /** Create a qualified identifier from a symbol, adding enough qualifications
