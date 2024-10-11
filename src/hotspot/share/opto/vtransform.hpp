@@ -438,6 +438,17 @@ public:
     _out.push(n);
   }
 
+  void replace_by(VTransformNode* n) {
+    while(outs() > 0) {
+      VTransformNode* use = out(outs() - 1);
+      for (uint i = 0; i < use->req(); i++) {
+        if (use->in(i) == this) {
+          use->set_req(i, n);
+        }
+      }
+    }
+  }
+
   void del_out(VTransformNode* n) {
     VTransformNode* last = _out.top();
     int i = _out.find(n);
@@ -655,6 +666,17 @@ public:
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "XYZVector"; };)
   NOT_PRODUCT(virtual void print_spec() const override;)
+};
+
+// TODO
+class VTransformLongToIntVectorNode : public VTransformVectorNode {
+public:
+  VTransformLongToIntVectorNode(VTransform& vtransform, VTransformNodePrototype prototype, uint req) :
+    VTransformVectorNode(vtransform, prototype, req) {}
+  virtual bool optimize(const VLoopAnalyzer& vloop_analyzer, VTransform& vtransform) override;
+  virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override { ShouldNotReachHere(); }
+  virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override { ShouldNotReachHere(); }
+  NOT_PRODUCT(virtual const char* name() const override { return "LongToIntVector"; };)
 };
 
 // Catch all for all element-wise vector operations.

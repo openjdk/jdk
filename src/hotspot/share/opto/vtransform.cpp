@@ -487,20 +487,50 @@ VTransformApplyResult VTransformXYZVectorNode::apply(VTransformApplyState& apply
   return VTransformApplyResult::make_vector(vn, vlen, vn->length_in_bytes());
 }
 
+// The scalar operation was a long -> int operation.
+// However, the vector operation is long -> long.
+// Hence, we lower the node to: long --long_op--> long --cast--> int
+bool VTransformLongToIntVectorNode::optimize(const VLoopAnalyzer& vloop_analyzer, VTransform& vtransform) {
+  int sopc     = scalar_opcode();
+  uint vlen    = vector_length();
+  BasicType bt = element_basic_type();
+  Node* origin = approximate_origin();
+  assert(VectorNode::is_scalar_op_that_returns_int_but_vector_op_returns_long(sopc), "");
+
+  // long --long_op--> long
+  int long_vopc = VectorNode::opcode(sopc, T_LONG);
+  VTransformNodePrototype long_prototype = VTransformNodePrototype(origin, sopc, vlen, T_LONG, nullptr);
+  VTransformVectorNode* long_op = new (vtransform.arena()) VTransformXYZVectorNode(vtransform, long_prototype, req(), long_vopc);
+  for (uint i = 1; i < req(); i++) {
+    long_op->init_req(i, in(i));
+  }
+
+  // long --cast--> int
+  VTransformNodePrototype cast_prototype = VTransformNodePrototype(origin, sopc, vlen, T_INT, nullptr);
+  VTransformVectorNode* cast_op = new (vtransform.arena()) VTransformXYZVectorNode(vtransform, cast_prototype, req(), Op_VectorCastL2X);
+  cast_op->init_req(1, long_op);
+
+  TRACE_OPTIMIZE(
+    tty->print_cr(" VTransformLongToIntVectorNode::optimize");
+    tty->print_cr("  replace");
+    this->print();
+    tty->print_cr("  with");
+    long_op->print();
+    cast_op->print();
+  )
+
+  this->replace_by(cast_op);
+  return true;
+}
+
 float VTransformElementWiseVectorNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
   int sopc     = scalar_opcode();
   uint vlen    = vector_length();
   BasicType bt = element_basic_type();
 
-  if (VectorNode::is_scalar_op_that_returns_int_but_vector_op_returns_long(sopc)) {
-    int vopc = VectorNode::opcode(sopc, T_LONG);
-    return vloop_analyzer.cost_for_vector(vopc, vlen, T_LONG) +
-           vloop_analyzer.cost_for_vector(Op_VectorCastL2X, vlen, T_INT);
-  } else {
-    // Regular operations.
-    int vopc = VectorNode::opcode(sopc, bt);
-    return vloop_analyzer.cost_for_vector(vopc, vlen, bt);
-  }
+  // Regular operations.
+  int vopc = VectorNode::opcode(sopc, bt);
+  return vloop_analyzer.cost_for_vector(vopc, vlen, bt);
 }
 
 VTransformApplyResult VTransformElementWiseVectorNode::apply(VTransformApplyState& apply_state) const {
@@ -514,14 +544,7 @@ VTransformApplyResult VTransformElementWiseVectorNode::apply(VTransformApplyStat
   Node* in2 = (req() >= 3) ? apply_state.transformed_node(in(2)) : nullptr;
   Node* in3 = (req() >= 4) ? apply_state.transformed_node(in(3)) : nullptr;
 
-  if (VectorNode::is_scalar_op_that_returns_int_but_vector_op_returns_long(sopc)) {
-    // The scalar operation was a long -> int operation.
-    // However, the vector operation is long -> long.
-    VectorNode* long_vn = VectorNode::make(sopc, in1, nullptr, vlen, T_LONG);
-    register_new_node_from_vectorization(apply_state, long_vn);
-    // Cast long -> int, to mimic the scalar long -> int operation.
-    vn = VectorCastNode::make(Op_VectorCastL2X, long_vn, T_INT, vlen);
-  } else if (req() == 3 ||
+  if (req() == 3 ||
              VectorNode::is_scalar_unary_op_with_equal_input_and_output_types(sopc)) {
     vn = VectorNode::make(sopc, in1, in2, vlen, bt); // unary and binary
   } else {
