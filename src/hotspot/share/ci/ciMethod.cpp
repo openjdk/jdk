@@ -684,7 +684,7 @@ ciMethod* ciMethod::find_monomorphic_target(ciInstanceKlass* caller,
 
   VM_ENTRY_MARK;
 
-  ciMethod* root_m = resolve_invoke(caller, actual_recv, check_access, true /* allow_abstract */);
+  ciMethod* root_m = resolve_invoke_helper(caller, actual_recv, check_access, true /* allow_abstract */, thread);
   if (root_m == nullptr) {
     // Something went wrong looking up the actual receiver method.
     return nullptr;
@@ -793,11 +793,11 @@ bool ciMethod::can_omit_stack_trace() const {
 }
 
 // ------------------------------------------------------------------
-// ciMethod::resolve_invoke
+// ciMethod::resolve_invoke_helper
 //
 // Given a known receiver klass, find the target for the call.
 // Return null if the call has no target or the target is abstract.
-ciMethod* ciMethod::resolve_invoke(ciKlass* caller, ciKlass* exact_receiver, bool check_access, bool allow_abstract) {
+ciMethod* ciMethod::resolve_invoke_helper(ciKlass* caller, ciKlass* exact_receiver, bool check_access, bool allow_abstract, CompilerThread* thread) {
   check_is_loaded();
   ASSERT_IN_VM;
 
@@ -830,7 +830,7 @@ ciMethod* ciMethod::resolve_invoke(ciKlass* caller, ciKlass* exact_receiver, boo
 
   ciMethod* result = this;
   if (m != get_Method()) {
-    result = CURRENT_ENV->get_method(m);
+    result = CURRENT_THREAD_ENV->get_method(m);
   }
 
   if (result->is_abstract() && !allow_abstract) {
@@ -838,6 +838,16 @@ ciMethod* ciMethod::resolve_invoke(ciKlass* caller, ciKlass* exact_receiver, boo
     return nullptr;
   }
   return result;
+}
+
+// ------------------------------------------------------------------
+// ciMethod::resolve_invoke
+//
+// Given a known receiver klass, find the target for the call.
+// Return null if the call has no target or the target is abstract.
+ciMethod* ciMethod::resolve_invoke(ciKlass* caller, ciKlass* exact_receiver, bool check_access, bool allow_abstract) {
+  VM_ENTRY_MARK;
+  return resolve_invoke_helper(caller, exact_receiver, check_access, allow_abstract, thread);
 }
 
 // ------------------------------------------------------------------

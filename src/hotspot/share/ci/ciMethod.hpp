@@ -298,6 +298,7 @@ class ciMethod : public ciMetadata {
 
   // Given a known receiver klass, find the target for the call.
   // Return null if the call has no target or is abstract.
+  ciMethod* resolve_invoke_helper(ciKlass* caller, ciKlass* exact_receiver, bool check_access, bool allow_abstract, CompilerThread* thread);
   ciMethod* resolve_invoke(ciKlass* caller, ciKlass* exact_receiver, bool check_access = true, bool allow_abstract = false);
 
   // Find the proper vtable index to invoke this method.
