@@ -184,6 +184,7 @@ VTransformVectorNode* SuperWordVTransformBuilder::make_vector_vtnode_for_pack(co
   int opc = p0->Opcode();
   VTransformVectorNode* vtn = nullptr;
   const VTransformNodePrototype prototype = VTransformNodePrototype::make_from_pack(pack, _vloop_analyzer);
+  BasicType bt = prototype.element_basic_type();
 
   if (p0->is_Load()) {
     const VPointer* vpointer = &_vloop_analyzer.vpointers().vpointer(p0->as_Load());
@@ -209,11 +210,15 @@ VTransformVectorNode* SuperWordVTransformBuilder::make_vector_vtnode_for_pack(co
     BasicType def_bt = _vloop_analyzer.types().velt_basic_type(p0->in(1));
     int vopc = VectorCastNode::opcode(opc, def_bt);
     vtn = new (_vtransform.arena()) VTransformXYZVectorNode(_vtransform, prototype, p0->req(), vopc);
+  } else if (VectorNode::can_use_RShiftI_instead_of_URShiftI(p0, bt)) {
+    // TODO ensure we have a good test for these
+    int vopc = VectorNode::opcode(Op_RShiftI, bt);
+    vtn = new (_vtransform.arena()) VTransformXYZVectorNode(_vtransform, prototype, p0->req(), vopc);
   } else if (VectorNode::is_scalar_rotate(p0) ||
              VectorNode::is_roundopD(p0)) {
     // TODO this should be the else case eventually
     assert(!VectorNode::is_roundopD(p0) || p0->in(2)->is_Con(), "rounding mode must be constant");
-    int vopc = VectorNode::opcode(opc, prototype.element_basic_type());
+    int vopc = VectorNode::opcode(opc, bt);
     vtn = new (_vtransform.arena()) VTransformXYZVectorNode(_vtransform, prototype, p0->req(), vopc);
   } else {
     assert(p0->req() == 3 ||

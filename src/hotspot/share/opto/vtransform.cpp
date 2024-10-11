@@ -495,9 +495,6 @@ float VTransformElementWiseVectorNode::cost(const VLoopAnalyzer& vloop_analyzer)
 
   if (first->is_Cmp()) {
     return 0; // empty
-  } else if (VectorNode::can_use_RShiftI_instead_of_URShiftI(first, bt)) {
-    int vopc = VectorNode::opcode(Op_RShiftI, bt);
-    return vloop_analyzer.cost_for_vector(vopc, vlen, bt);;
   } else if (VectorNode::is_scalar_op_that_returns_int_but_vector_op_returns_long(sopc)) {
     int vopc = VectorNode::opcode(sopc, T_LONG);
     return vloop_analyzer.cost_for_vector(vopc, vlen, T_LONG) +
@@ -527,10 +524,7 @@ VTransformApplyResult VTransformElementWiseVectorNode::apply(VTransformApplyStat
   Node* in2 = (req() >= 3) ? apply_state.transformed_node(in(2)) : nullptr;
   Node* in3 = (req() >= 4) ? apply_state.transformed_node(in(3)) : nullptr;
 
-  if (VectorNode::can_use_RShiftI_instead_of_URShiftI(first, bt)) {
-    sopc = Op_RShiftI;
-    vn = VectorNode::make(sopc, in1, in2, vlen, bt);
-  } else if (VectorNode::is_scalar_op_that_returns_int_but_vector_op_returns_long(sopc)) {
+  if (VectorNode::is_scalar_op_that_returns_int_but_vector_op_returns_long(sopc)) {
     // The scalar operation was a long -> int operation.
     // However, the vector operation is long -> long.
     VectorNode* long_vn = VectorNode::make(sopc, in1, nullptr, vlen, T_LONG);
