@@ -31,7 +31,7 @@
 class G1Predictions {
 private:
   // Scale factor indicating to which degree stddev should be taking into account in predictions.
-  double _stddev_scale; 
+  double _stddev_scale;
 
   // This function is used to estimate the stddev of sample sets. There is some
   // special consideration of small sample sets: the actual stddev for them is
