@@ -43,7 +43,8 @@
 
 # :hotspot_compiler
 
-applications/ctw/modules/java_base.java 8340683 generic-all
+applications/ctw/modules/java_base_2.java 8341831 linux-x64
+
 compiler/ciReplay/TestSAServer.java 8029528 generic-all
 compiler/compilercontrol/jcmd/ClearDirectivesFileStackTest.java 8225370 generic-all
 
@@ -54,7 +55,6 @@ compiler/loopopts/TestUnreachableInnerLoop.java 8288981 linux-s390x
 
 compiler/c2/Test8004741.java 8235801 generic-all
 compiler/c2/irTests/TestDuplicateBackedge.java 8318904 generic-all
-compiler/c2/irTests/TestIfMinMax.java 8339220 linux-s390x
 
 compiler/codecache/jmx/PoolsIndependenceTest.java 8264632 macosx-all
 compiler/codecache/CheckLargePages.java 8332654 linux-x64
@@ -123,6 +123,7 @@ applications/jcstress/copy.java 8229852 linux-all
 containers/docker/TestJcmd.java 8278102 linux-all
 containers/docker/TestMemoryAwareness.java 8303470 linux-all
 containers/docker/TestJFREvents.java 8327723 linux-x64
+containers/docker/TestJcmdWithSideCar.java 8341518 linux-x64
 
 #############################################################################
 
@@ -174,6 +175,7 @@ vmTestbase/nsk/jvmti/scenarios/capability/CM03/cm03t001/TestDescription.java 807
 vmTestbase/nsk/jvmti/InterruptThread/intrpthrd003/TestDescription.java 8288911 macosx-all
 
 vmTestbase/gc/lock/jni/jnilock002/TestDescription.java 8192647 generic-all
+vmTestbase/gc/memory/Nio/Nio.java 8340728 generic-all
 
 vmTestbase/jit/escape/LockCoarsening/LockCoarsening001.java 8148743 generic-all
 vmTestbase/jit/escape/LockCoarsening/LockCoarsening002.java 8208259 generic-all

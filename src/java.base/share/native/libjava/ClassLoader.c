@@ -114,7 +114,7 @@ Java_java_lang_ClassLoader_defineClass1(JNIEnv *env,
 
     (*env)->GetByteArrayRegion(env, data, offset, length, body);
 
-    if ((*env)->ExceptionOccurred(env)) {
+    if ((*env)->ExceptionCheck(env)) {
         goto free_body;
     }
 
@@ -259,7 +259,7 @@ Java_java_lang_ClassLoader_defineClass0(JNIEnv *env,
 
     (*env)->GetByteArrayRegion(env, data, offset, length, body);
 
-    if ((*env)->ExceptionOccurred(env))
+    if ((*env)->ExceptionCheck(env))
         goto free_body;
 
     if (name != NULL) {
