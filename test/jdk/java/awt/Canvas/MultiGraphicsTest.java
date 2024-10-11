@@ -47,7 +47,7 @@ import java.net.URL;
 import java.util.List;
 
 public class MultiGraphicsTest extends Canvas {
-    final static String IMAGEFILE = "jim.graham.gif";
+    final static String IMAGEFILE = "duke_404.gif";
     static Image jim;
     MediaTracker tracker;
     int w, h;
