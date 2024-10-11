@@ -672,8 +672,9 @@ class ImmutableCollections {
         public Spliterator<E> spliterator() {
             if (e1 == EMPTY) {
                 return Collections.singletonSpliterator(e0);
+            } else {
+                return super.spliterator();
             }
-            return super.spliterator();
         }
     }
 
@@ -930,8 +931,9 @@ class ImmutableCollections {
         public Spliterator<E> spliterator() {
             if (e1 == EMPTY) {
                 return Collections.singletonSpliterator(e0);
+            } else {
+                return super.spliterator();
             }
-            return super.spliterator();
         }
     }
 
