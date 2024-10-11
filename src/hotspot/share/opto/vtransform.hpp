@@ -68,7 +68,7 @@ class VTransformInputScalarNode;
 class VTransformOutputScalarNode;
 class VTransformLoopPhiNode;
 class VTransformVectorNode;
-class VTransformXYZVectorNode;
+class VTransformElementWiseVectorNode;
 class VTransformCmpVectorNode;
 class VTransformBoolVectorNode;
 class VTransformReductionVectorNode;
@@ -487,7 +487,7 @@ public:
   virtual VTransformLoopPhiNode* isa_LoopPhi() { return nullptr; }
   virtual const VTransformLoopPhiNode* isa_LoopPhi() const { return nullptr; }
   virtual VTransformVectorNode* isa_Vector() { return nullptr; }
-  virtual VTransformXYZVectorNode* isa_XYZVector() { return nullptr; }
+  virtual VTransformElementWiseVectorNode* isa_ElementWiseVector() { return nullptr; }
   virtual VTransformCmpVectorNode* isa_CmpVector() { return nullptr; }
   virtual VTransformBoolVectorNode* isa_BoolVector() { return nullptr; }
   virtual VTransformReductionVectorNode* isa_ReductionVector() { return nullptr; }
@@ -575,7 +575,6 @@ public:
   NOT_PRODUCT(virtual void print_spec() const override;)
 };
 
-// TODO can we port this to XYZVector?
 // Transform produces a ReplicateNode, replicating the input to all vector lanes.
 class VTransformReplicateNode : public VTransformNode {
 public:
@@ -622,18 +621,18 @@ public:
   NOT_PRODUCT(virtual void print_spec() const override;)
 };
 
-// TODO the new element wise - or maybe it just replaces all of VectorNode
-class VTransformXYZVectorNode : public VTransformVectorNode {
+// Simple element-wise vectors.
+class VTransformElementWiseVectorNode : public VTransformVectorNode {
 private:
   const int _vector_opcode;
 
 public:
-  VTransformXYZVectorNode(VTransform& vtransform, VTransformNodePrototype prototype, uint req, const int vector_opcode) :
+  VTransformElementWiseVectorNode(VTransform& vtransform, VTransformNodePrototype prototype, uint req, const int vector_opcode) :
     VTransformVectorNode(vtransform, prototype, req), _vector_opcode(vector_opcode) {}
-  virtual VTransformXYZVectorNode* isa_XYZVector() override { return this; }
+  virtual VTransformElementWiseVectorNode* isa_ElementWiseVector() override { return this; }
   virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override;
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
-  NOT_PRODUCT(virtual const char* name() const override { return "XYZVector"; };)
+  NOT_PRODUCT(virtual const char* name() const override { return "ElementWiseVector"; };)
   NOT_PRODUCT(virtual void print_spec() const override;)
 };
 
@@ -716,14 +715,13 @@ class VTransformLoadVectorNode : public VTransformMemVectorNode {
 private:
   const LoadNode::ControlDependency _control_dependency;
 
-  // TODO can we remove it with refactored VPointer?
-  GrowableArray<Node*> _xnodes;
+  GrowableArray<Node*> _nodes;
 public:
   // req = 3 -> [ctrl, mem, adr]
   VTransformLoadVectorNode(VTransform& vtransform, VTransformNodePrototype prototype, const VPointer* vpointer, const LoadNode::ControlDependency control_dependency) :
     VTransformMemVectorNode(vtransform, prototype, 3, vpointer),
     _control_dependency(control_dependency),
-    _xnodes(vtransform.arena(),
+    _nodes(vtransform.arena(),
            vector_length(),
            vector_length(),
 	   nullptr) {}
@@ -732,7 +730,7 @@ public:
   void set_nodes(const Node_List* pack) {
     assert(pack->size() == vector_length(), "must have same length");
     for (uint k = 0; k < pack->size(); k++) {
-      _xnodes.at_put(k, pack->at(k));
+      _nodes.at_put(k, pack->at(k));
     }
   }
 

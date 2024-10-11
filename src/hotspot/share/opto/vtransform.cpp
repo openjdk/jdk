@@ -469,11 +469,11 @@ VTransformApplyResult VTransformPopulateIndexNode::apply(VTransformApplyState& a
   return VTransformApplyResult::make_vector(vn, vlen, vn->length_in_bytes());
 }
 
-float VTransformXYZVectorNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
+float VTransformElementWiseVectorNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
   return vloop_analyzer.cost_for_vector(_vector_opcode, vector_length(), element_basic_type());
 }
 
-VTransformApplyResult VTransformXYZVectorNode::apply(VTransformApplyState& apply_state) const {
+VTransformApplyResult VTransformElementWiseVectorNode::apply(VTransformApplyState& apply_state) const {
   int vopc     = _vector_opcode;
   uint vlen    = vector_length();
   BasicType bt = element_basic_type();
@@ -508,14 +508,14 @@ bool VTransformLongToIntVectorNode::optimize(const VLoopAnalyzer& vloop_analyzer
   // long --long_op--> long
   int long_vopc = VectorNode::opcode(sopc, T_LONG);
   VTransformNodePrototype long_prototype = VTransformNodePrototype(origin, sopc, vlen, T_LONG, nullptr);
-  VTransformVectorNode* long_op = new (vtransform.arena()) VTransformXYZVectorNode(vtransform, long_prototype, req(), long_vopc);
+  VTransformVectorNode* long_op = new (vtransform.arena()) VTransformElementWiseVectorNode(vtransform, long_prototype, req(), long_vopc);
   for (uint i = 1; i < req(); i++) {
     long_op->init_req(i, in(i));
   }
 
   // long --cast--> int
   VTransformNodePrototype cast_prototype = VTransformNodePrototype(origin, sopc, vlen, T_INT, nullptr);
-  VTransformVectorNode* cast_op = new (vtransform.arena()) VTransformXYZVectorNode(vtransform, cast_prototype, req(), Op_VectorCastL2X);
+  VTransformVectorNode* cast_op = new (vtransform.arena()) VTransformElementWiseVectorNode(vtransform, cast_prototype, req(), Op_VectorCastL2X);
   cast_op->init_req(1, long_op);
 
   TRACE_OPTIMIZE(
@@ -671,7 +671,7 @@ bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_ou
   current_red = first_red;
   while (true) {
     VTransformNode* vector_input = current_red->in(2);
-    VTransformVectorNode* vector_accumulator = new (vtransform.arena()) VTransformXYZVectorNode(vtransform, current_red->prototype(), 3, vopc);
+    VTransformVectorNode* vector_accumulator = new (vtransform.arena()) VTransformElementWiseVectorNode(vtransform, current_red->prototype(), 3, vopc);
     vector_accumulator->init_req(1, current_vector_accumulator);
     vector_accumulator->init_req(2, vector_input);
     TRACE_OPTIMIZE(
@@ -744,7 +744,7 @@ VTransformApplyResult VTransformLoadVectorNode::apply(VTransformApplyState& appl
   // TODO: can we move this elsewhere? Refactor VPointer?
   while (mem->is_StoreVector()) {
     VPointer p_store(mem->as_Mem(), apply_state.vloop());
-    if (p_store.overlap_possible_with_any_in(_xnodes)) {
+    if (p_store.overlap_possible_with_any_in(_nodes)) {
       break;
     } else {
       mem = mem->in(MemNode::Memory);
@@ -844,7 +844,6 @@ void VTransformScalarNode::print_spec() const {
   tty->print("node[%d %s]", _node->_idx, _node->Name());
 }
 
-// TODO a few have quite similar print_spec... refactor?
 void VTransformReplicateNode::print_spec() const {
   tty->print("vlen=%d bt=%s", vector_length(), type2name(element_basic_type()));
 }
@@ -863,10 +862,10 @@ void VTransformVectorNode::print_spec() const {
   tty->print("vlen=%d bt=%s", vector_length(), type2name(element_basic_type()));
 }
 
-void VTransformXYZVectorNode::print_spec() const {
-  tty->print("vopc=%s vlen=%d bt=%s",
-             NodeClassNames[_vector_opcode],
+void VTransformElementWiseVectorNode::print_spec() const {
+  tty->print("vlen=%d bt=%s vopc=%s",
              vector_length(),
-             type2name(element_basic_type()));
+             type2name(element_basic_type()),
+             NodeClassNames[_vector_opcode]);
 }
 #endif
