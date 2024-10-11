@@ -23,12 +23,12 @@ public final class ML_KEM {
 
     private final int mlKem_du;
     private final int mlKem_dv;
-    private final int encapsulationSize;
+    public final int encapsulationSize;
     private ML_KEM_EncapsulationKey encapsulationKey = null;
     private ML_KEM_DecapsulationKey decapsulationKey = null;
     private SecureRandom secureRandom = null;
 
-    private static final int secretSize = 32;
+    public static final int secretSize = 32;
 
     private static final int mlKem_q = 3329;
     private static final int mlKem_n = 256;
