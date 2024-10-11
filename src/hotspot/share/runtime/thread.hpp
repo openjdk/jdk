@@ -46,7 +46,6 @@
 class CompilerThread;
 class HandleArea;
 class HandleMark;
-class ICRefillVerifier;
 class JvmtiRawMonitor;
 class NMethodClosure;
 class Metadata;
@@ -242,20 +241,6 @@ class Thread: public ThreadShadow {
  public:
   void set_last_handle_mark(HandleMark* mark)   { _last_handle_mark = mark; }
   HandleMark* last_handle_mark() const          { return _last_handle_mark; }
- private:
-
-#ifdef ASSERT
-  ICRefillVerifier* _missed_ic_stub_refill_verifier;
-
- public:
-  ICRefillVerifier* missed_ic_stub_refill_verifier() {
-    return _missed_ic_stub_refill_verifier;
-  }
-
-  void set_missed_ic_stub_refill_verifier(ICRefillVerifier* verifier) {
-    _missed_ic_stub_refill_verifier = verifier;
-  }
-#endif // ASSERT
 
  private:
   // Used by SkipGCALot class.
@@ -532,7 +517,7 @@ protected:
 
  public:
   // Stack overflow support
-  address stack_base() const           { assert(_stack_base != nullptr,"Sanity check"); return _stack_base; }
+  address stack_base() const DEBUG_ONLY(;) NOT_DEBUG({ return _stack_base; })
   void    set_stack_base(address base) { _stack_base = base; }
   size_t  stack_size() const           { return _stack_size; }
   void    set_stack_size(size_t size)  { _stack_size = size; }

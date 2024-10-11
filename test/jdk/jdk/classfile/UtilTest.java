@@ -120,7 +120,7 @@ class UtilTest {
     // Ensures the initialization statement of the powers array is filling in the right values
     @Test
     void testPowersArray() {
-        int[] powers = new int[7 * UtilAccess.significantOctalDigits()];
+        int[] powers = new int[64];
         for (int i = 1, k = 31; i <= 7; i++, k *= 31) {
             int t = powers[UtilAccess.powersIndex(i, 0)] = k;
 
