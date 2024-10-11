@@ -416,10 +416,10 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
     }
 
     /**
-     * Sets the currency symbol for the currency of these
-     * DecimalFormatSymbols in their locale. Unlike {@link
+     * Sets the currency symbol for the currency of this
+     * {@code DecimalFormatSymbols} in their locale. Unlike {@link
      * #setInternationalCurrencySymbol(String)}, this method does not update
-     * the other Currency related fields as well.
+     * the currency attribute nor the international currency symbol attribute.
      *
      * @param currency the currency symbol
      * @throws NullPointerException if {@code currency} is {@code null}
@@ -476,11 +476,7 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
     }
 
     /**
-     * Gets the currency of these DecimalFormatSymbols. May be null if the
-     * currency symbol attribute was previously set to a value that's not
-     * a valid ISO 4217 currency code.
-     *
-     * @return the currency used, or null
+     * {@return the {@code Currency} of this {@code DecimalFormatSymbols}}
      * @since 1.4
      */
     public Currency getCurrency() {
@@ -489,7 +485,7 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
     }
 
     /**
-     * Sets the currency of these DecimalFormatSymbols.
+     * Sets the currency of this {@code DecimalFormatSymbols}.
      * This also sets the currency symbol attribute to the currency's symbol
      * in the DecimalFormatSymbols' locale, and the international currency
      * symbol attribute to the currency's ISO 4217 currency code.
