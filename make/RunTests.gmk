@@ -259,10 +259,10 @@ hotspot_JTREG_NATIVEPATH := $(TEST_IMAGE_DIR)/hotspot/jtreg/native
 jdk_JTREG_NATIVEPATH := $(TEST_IMAGE_DIR)/jdk/jtreg/native
 lib-test_JTREG_NATIVEPATH := $(TEST_IMAGE_DIR)/lib-test/jtreg/native
 
-jdk_JTREG_PROBLEM_LIST += $(TOPDIR)/test/jdk/ProblemList.txt $(TOPDIR)/test/jdk/ProblemList-sm.txt
+jdk_JTREG_PROBLEM_LIST += $(TOPDIR)/test/jdk/ProblemList.txt
 jaxp_JTREG_PROBLEM_LIST += $(TOPDIR)/test/jaxp/ProblemList.txt
-langtools_JTREG_PROBLEM_LIST += $(TOPDIR)/test/langtools/ProblemList.txt $(TOPDIR)/test/langtools/ProblemList-sm.txt
-hotspot_JTREG_PROBLEM_LIST += $(TOPDIR)/test/hotspot/jtreg/ProblemList.txt $(TOPDIR)/test/hotspot/jtreg/ProblemList-sm.txt
+langtools_JTREG_PROBLEM_LIST += $(TOPDIR)/test/langtools/ProblemList.txt
+hotspot_JTREG_PROBLEM_LIST += $(TOPDIR)/test/hotspot/jtreg/ProblemList.txt
 lib-test_JTREG_PROBLEM_LIST += $(TOPDIR)/test/lib-test/ProblemList.txt
 
 ################################################################################

@@ -819,3 +819,25 @@ java/awt/Checkbox/CheckboxBoxSizeTest.java 8340870 windows-all
 java/awt/Checkbox/CheckboxIndicatorSizeTest.java 8340870 windows-all
 java/awt/Checkbox/CheckboxNullLabelTest.java 8340870 windows-all
 java/awt/dnd/WinMoveFileToShellTest.java 8341665 windows-all
+
+############################################################################
+
+# JEP 486: remaining SM related tests that are failing
+
+# :jdk_desktop
+javax/swing/JPopupMenu/6694823/bug6694823.java 8338411 generic-all
+
+# :tier2_part2
+jdk/dynalink/BeanLinkerTest.java 8338411 generic-all
+jdk/dynalink/TrustedDynamicLinkerFactoryTest.java 8338411 generic-all
+tools/launcher/MainClassCantBeLoadedTest.java 8338411 generic-all
+tools/launcher/modules/basic/LauncherErrors.java 8338411 generic-all
+
+# :tier3
+java/rmi/registry/classPathCodebase/ClassPathCodebase.java 8338411 generic-all
+java/rmi/registry/readTest/CodebaseTest.java 8338411 generic-all
+java/rmi/server/RMIClassLoader/loadProxyClasses/LoadProxyClasses.java 8338411 generic-all
+java/rmi/server/RMIClassLoader/spi/ContextInsulation.java 8338411 generic-all
+java/rmi/server/RMIClassLoader/spi/DefaultProperty.java 8338411 generic-all
+java/rmi/server/RMIClassLoader/useCodebaseOnly/UseCodebaseOnly.java 8338411 generic-all
+sun/rmi/transport/tcp/disableMultiplexing/DisableMultiplexing.java 8338411 generic-all
