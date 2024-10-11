@@ -3654,7 +3654,6 @@ int MatchNode::needs_ideal_memory_edge(FormDict &globals) const {
 #if INCLUDE_SHENANDOAHGC
     "ShenandoahCompareAndSwapN", "ShenandoahCompareAndSwapP", "ShenandoahWeakCompareAndSwapP", "ShenandoahWeakCompareAndSwapN", "ShenandoahCompareAndExchangeP", "ShenandoahCompareAndExchangeN",
 #endif
-    "StoreCM",
     "GetAndSetB", "GetAndSetS", "GetAndAddI", "GetAndSetI", "GetAndSetP",
     "GetAndAddB", "GetAndAddS", "GetAndAddL", "GetAndSetL", "GetAndSetN",
     "ClearArray"

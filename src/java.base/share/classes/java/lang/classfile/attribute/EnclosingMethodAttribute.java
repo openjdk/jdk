@@ -92,7 +92,7 @@ public sealed interface EnclosingMethodAttribute
      * immediately enclosed by a method or constructor}
      */
     default Optional<MethodTypeDesc> enclosingMethodTypeSymbol() {
-        return enclosingMethod().map(Util::methodTypeSymbol);
+        return enclosingMethodType().map(Util::methodTypeSymbol);
     }
 
     /**
