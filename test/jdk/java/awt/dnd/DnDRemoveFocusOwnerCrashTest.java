@@ -64,7 +64,7 @@ public class DnDRemoveFocusOwnerCrashTest {
     public static Frame frame;
     public static Robot robot;
     public static DragSourceButton dragSourceButton;
-    public static Point p;
+    static volatile Point p;
 
     public static void main(String[] args) throws Exception {
         try {
