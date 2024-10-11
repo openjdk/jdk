@@ -6892,36 +6892,6 @@ instruct loadConD(vRegD dst, immD con) %{
 
 // Store Instructions
 
-// Store CMS card-mark Immediate
-instruct storeimmCM0(immI0 zero, memory1 mem)
-%{
-  match(Set mem (StoreCM mem zero));
-
-  ins_cost(INSN_COST);
-  format %{ "storestore (elided)\n\t"
-            "strb zr, $mem\t# byte" %}
-
-  ins_encode(aarch64_enc_strb0(mem));
-
-  ins_pipe(istore_mem);
-%}
-
-// Store CMS card-mark Immediate with intervening StoreStore
-// needed when using CMS with no conditional card marking
-instruct storeimmCM0_ordered(immI0 zero, memory1 mem)
-%{
-  match(Set mem (StoreCM mem zero));
-
-  ins_cost(INSN_COST * 2);
-  format %{ "storestore\n\t"
-            "dmb ishst"
-            "\n\tstrb zr, $mem\t# byte" %}
-
-  ins_encode(aarch64_enc_strb0_ordered(mem));
-
-  ins_pipe(istore_mem);
-%}
-
 // Store Byte
 instruct storeB(iRegIorL2I src, memory1 mem)
 %{

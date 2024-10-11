@@ -356,7 +356,6 @@ static struct symtab* build_symtab_internal(int fd, const char *filename, bool t
 
     if (shdr->sh_type == sym_section) {
       ELF_SYM  *syms;
-      int rslt;
       size_t size, n, j, htab_sz;
 
       // FIXME: there could be multiple data buffers associated with the
@@ -390,7 +389,8 @@ static struct symtab* build_symtab_internal(int fd, const char *filename, bool t
         goto bad;
       }
 
-      rslt = hcreate_r(htab_sz, symtab->hash_table);
+      // int rslt =
+      hcreate_r(htab_sz, symtab->hash_table);
       // guarantee(rslt, "unexpected failure: hcreate_r");
 
       // shdr->sh_link points to the section that contains the actual strings
