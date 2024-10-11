@@ -282,23 +282,13 @@ HeapWord* ParallelScavengeHeap::mem_allocate_work(size_t size,
   // limit is being exceeded as checked below.
   *gc_overhead_limit_was_exceeded = false;
 
-  HeapWord* result = young_gen()->allocate<true>(size);
+  HeapWord* result = young_gen()->allocate(size);
 
   uint loop_count = 0;
   uint gc_count = total_collections();
   uint gclocker_stalled_count = 0;
 
   while (result == nullptr) {
-    // We don't want to have multiple collections for a single filled generation.
-    // To prevent this, each thread has to try to exchange VM_CollectForAllocation::_collect_for_allocation_started
-    // from false to true atomically,
-    // if it fails the thread should check the status of _collect_for_allocation_started
-    // and block itsef at VM_CollectForAllocation::VM_CollectForAllocation::_collect_for_allocation_barrier,
-    // if it succeeds, it needs to arm the barrier and proceed with collection.
-    if (VM_CollectForAllocation::is_collect_for_allocation_started()) {
-      VM_CollectForAllocation::wait_at_collect_for_allocation_barrier();
-    }
-
     if (gc_count != total_collections()) {
       result = young_gen()->allocate<true>(size);
       gc_count = total_collections();
@@ -348,7 +338,7 @@ HeapWord* ParallelScavengeHeap::mem_allocate_work(size_t size,
 
     if (result == nullptr) {
       if (!VM_CollectForAllocation::try_set_collect_for_allocation_started()) {
-        // Other thread should have set the status, continue and it will be blocked at barrier in next interation.
+        VM_CollectForAllocation::wait_at_collect_for_allocation_barrier();
         continue;
       }
 
