@@ -565,6 +565,16 @@ public:
   NOT_PRODUCT(virtual const char* name() const override { return "LoopPhi"; };)
 };
 
+// Base class for all vector vtnodes, i.e. vtnodes with a vector output.
+class VTransformVectorNode : public VTransformNode {
+public:
+  VTransformVectorNode(VTransform& vtransform, VTransformNodePrototype prototype, const uint req) :
+    VTransformNode(vtransform, prototype, req) {}
+
+  virtual VTransformVectorNode* isa_Vector() override { return this; }
+  NOT_PRODUCT(virtual void print_spec() const override;)
+};
+
 // TODO can we port this to XYZVector?
 // Transform produces a ReplicateNode, replicating the input to all vector lanes.
 class VTransformReplicateNode : public VTransformNode {
@@ -609,16 +619,6 @@ public:
   virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override;
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "PopulateIndex"; };)
-  NOT_PRODUCT(virtual void print_spec() const override;)
-};
-
-// Base class for all vector vtnodes.
-class VTransformVectorNode : public VTransformNode {
-public:
-  VTransformVectorNode(VTransform& vtransform, VTransformNodePrototype prototype, const uint req) :
-    VTransformNode(vtransform, prototype, req) {}
-
-  virtual VTransformVectorNode* isa_Vector() override { return this; }
   NOT_PRODUCT(virtual void print_spec() const override;)
 };
 
