@@ -1886,7 +1886,7 @@ void JvmtiExport::post_method_exit(JavaThread* thread, Method* method, frame cur
     post_method_exit_inner(thread, mh, state, exception_exit, current_frame, value);
   JRT_BLOCK_END
 
-  // The JRT_BLOCK_END can safepoint in ThreadInVM  desctructor. Now it is safe to allow
+  // The JRT_BLOCK_END can safepoint in ThreadInVMfromJava desctructor. Now it is safe to allow
   // adding FramePop event requests as no safepoint can happen before removing activation.
   state->clr_top_frame_is_exiting();
 
