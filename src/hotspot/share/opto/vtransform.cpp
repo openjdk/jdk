@@ -495,9 +495,6 @@ float VTransformElementWiseVectorNode::cost(const VLoopAnalyzer& vloop_analyzer)
 
   if (first->is_Cmp()) {
     return 0; // empty
-  } else if (first->is_CMove()) {
-    assert(false, "TODO rm");
-    return vloop_analyzer.cost_for_vector(Op_VectorBlend, vlen, bt);;
   } else if (VectorNode::can_use_RShiftI_instead_of_URShiftI(first, bt)) {
     int vopc = VectorNode::opcode(Op_RShiftI, bt);
     return vloop_analyzer.cost_for_vector(vopc, vlen, bt);;
