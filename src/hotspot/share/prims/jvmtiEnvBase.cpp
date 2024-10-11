@@ -1335,6 +1335,9 @@ JvmtiEnvBase::set_frame_pop(JvmtiThreadState* state, javaVFrame* jvf, jint depth
   if (jvf->method()->is_native()) {
     return JVMTI_ERROR_OPAQUE_FRAME;
   }
+  if (depth == 0 && state->is_top_frame_is_exiting()) {
+    return JVMTI_ERROR_OPAQUE_FRAME;
+  }
   assert(jvf->frame_pointer() != nullptr, "frame pointer mustn't be null");
   int frame_number = (int)get_frame_count(jvf);
   state->env_thread_state((JvmtiEnvBase*)this)->set_frame_pop(frame_number);
