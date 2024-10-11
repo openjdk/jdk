@@ -682,16 +682,9 @@ ciMethod* ciMethod::find_monomorphic_target(ciInstanceKlass* caller,
     return nullptr;
   }
 
-  VM_ENTRY_MARK;
-
-  ciMethod* root_m = resolve_invoke_helper(caller, actual_recv, check_access, true /* allow_abstract */, thread);
+  ciMethod* root_m = resolve_invoke(caller, actual_recv, check_access, true /* allow_abstract */);
   if (root_m == nullptr) {
     // Something went wrong looking up the actual receiver method.
-    return nullptr;
-  }
-
-  // Redefinition support.
-  if (this->is_old() || root_m->is_old()) {
     return nullptr;
   }
 
@@ -719,6 +712,8 @@ ciMethod* ciMethod::find_monomorphic_target(ciInstanceKlass* caller,
   // so there is no need to do the same job here.
 
   if (!UseCHA)  return nullptr;
+
+  VM_ENTRY_MARK;
 
   methodHandle target;
   {
@@ -793,13 +788,13 @@ bool ciMethod::can_omit_stack_trace() const {
 }
 
 // ------------------------------------------------------------------
-// ciMethod::resolve_invoke_helper
+// ciMethod::resolve_invoke
 //
 // Given a known receiver klass, find the target for the call.
 // Return null if the call has no target or the target is abstract.
-ciMethod* ciMethod::resolve_invoke_helper(ciKlass* caller, ciKlass* exact_receiver, bool check_access, bool allow_abstract, CompilerThread* thread) {
+ciMethod* ciMethod::resolve_invoke(ciKlass* caller, ciKlass* exact_receiver, bool check_access, bool allow_abstract) {
   check_is_loaded();
-  ASSERT_IN_VM;
+  VM_ENTRY_MARK;
 
   Klass* caller_klass = caller->get_Klass();
   Klass* recv         = exact_receiver->get_Klass();
@@ -830,6 +825,11 @@ ciMethod* ciMethod::resolve_invoke_helper(ciKlass* caller, ciKlass* exact_receiv
 
   ciMethod* result = this;
   if (m != get_Method()) {
+    // Redefinition support.
+    if (this->is_old() || m->is_old()) {
+      return nullptr;
+    }
+
     result = CURRENT_THREAD_ENV->get_method(m);
   }
 
@@ -837,17 +837,8 @@ ciMethod* ciMethod::resolve_invoke_helper(ciKlass* caller, ciKlass* exact_receiv
     // Don't return abstract methods because they aren't optimizable or interesting.
     return nullptr;
   }
-  return result;
-}
 
-// ------------------------------------------------------------------
-// ciMethod::resolve_invoke
-//
-// Given a known receiver klass, find the target for the call.
-// Return null if the call has no target or the target is abstract.
-ciMethod* ciMethod::resolve_invoke(ciKlass* caller, ciKlass* exact_receiver, bool check_access, bool allow_abstract) {
-  VM_ENTRY_MARK;
-  return resolve_invoke_helper(caller, exact_receiver, check_access, allow_abstract, thread);
+  return result;
 }
 
 // ------------------------------------------------------------------
