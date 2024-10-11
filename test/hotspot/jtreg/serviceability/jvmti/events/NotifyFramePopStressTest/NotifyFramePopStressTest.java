@@ -63,7 +63,7 @@ public class NotifyFramePopStressTest {
             bar();
         }
         done = true;
-        
+
         try {
             controlThread.join();
         } catch (InterruptedException e) {
@@ -75,7 +75,7 @@ public class NotifyFramePopStressTest {
             log("Test PASSED");
         }
     }
- 
+
     private static void sleep(long ms) {
         try {
             Thread.sleep(ms);
@@ -101,7 +101,7 @@ public class NotifyFramePopStressTest {
                 }
             }
             if (waitCount > 50) {
-                System.out.println("About to fail. notifyCount=" + notifyCount + 
+                System.out.println("About to fail. notifyCount=" + notifyCount +
                                    " getPopCount()=" + getPopCount());
                 throw new RuntimeException("Test FAILED: Waited too long for notify: " + waitCount);
             }
