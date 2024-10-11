@@ -32,6 +32,7 @@ import jdk.test.lib.Utils;
  * @bug 8341781
  * @summary Test identities of MinNodes and MaxNodes.
  * @key randomness
+ * @requires (os.simpleArch == "x64" & vm.cpu.features ~= ".*avx.*") | os.arch == "aarch64" | os.arch == "riscv64"
  * @library /test/lib /
  * @run driver compiler.c2.irTests.TestMinMaxIdentities
  */
@@ -112,26 +113,30 @@ public class TestMinMaxIdentities {
 
     // Longs
 
+    // As Math.min/max(LL) is not intrinsified, it first needs to be transformed into CMoveL and then MinL/MaxL before
+    // the identity can be matched. However, the outer min/max is not transformed into CMove because of the CMove cost model.
+    // As JDK-8307513 adds intrinsics for the methods, the Long tests are disabled until then.
+
     @Test
-    @IR(applyIfPlatform = { "riscv64", "false" }, phase = { CompilePhase.BEFORE_MACRO_EXPANSION }, counts = { IRNode.MIN_L, "1" })
+//     @IR(applyIfPlatform = { "riscv64", "false" }, phase = { CompilePhase.BEFORE_MACRO_EXPANSION }, counts = { IRNode.MIN_L, "1" })
     public long longMinMin(long a, long b) {
         return Math.min(a, Math.min(a, b));
     }
 
     @Test
-    @IR(applyIfPlatform = { "riscv64", "false" }, failOn = { IRNode.MIN_L, IRNode.MAX_L })
+//     @IR(applyIfPlatform = { "riscv64", "false" }, phase = { CompilePhase.BEFORE_MACRO_EXPANSION }, failOn = { IRNode.MIN_L, IRNode.MAX_L })
     public long longMinMax(long a, long b) {
         return Math.min(a, Math.max(a, b));
     }
 
     @Test
-    @IR(applyIfPlatform = { "riscv64", "false" }, failOn = { IRNode.MIN_L, IRNode.MAX_L })
+//     @IR(applyIfPlatform = { "riscv64", "false" }, phase = { CompilePhase.BEFORE_MACRO_EXPANSION }, failOn = { IRNode.MIN_L, IRNode.MAX_L })
     public long longMaxMin(long a, long b) {
         return Math.max(a, Math.min(a, b));
     }
 
     @Test
-    @IR(applyIfPlatform = { "riscv64", "false" }, phase = { CompilePhase.BEFORE_MACRO_EXPANSION }, counts = { IRNode.MAX_L, "1" })
+//     @IR(applyIfPlatform = { "riscv64", "false" }, phase = { CompilePhase.BEFORE_MACRO_EXPANSION }, counts = { IRNode.MAX_L, "1" })
     public long longMaxMax(long a, long b) {
         return Math.max(a, Math.max(a, b));
     }

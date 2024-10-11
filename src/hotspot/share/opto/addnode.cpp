@@ -1475,14 +1475,12 @@ Node* MaxNode::find_identity_operation(Node* operation, Node* operand) {
         return operation;
       }
 
-      // If the operations are different return the operand, as Max(A, Min(A, B)) == A if the value isn't a floating point value,
-      // as if B == NaN the identity doesn't hold.
+      // If the operations are different return the operand 'A', as Max(A, Min(A, B)) == A if the value isn't floating point.
+      // With floating point values, the identity doesn't hold if B == NaN.
       const Type* type = bottom_type();
       if (type->isa_int() || type->isa_long()) {
         return operand;
       }
-
-      return nullptr;
     }
   }
 
