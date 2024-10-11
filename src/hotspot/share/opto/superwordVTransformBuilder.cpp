@@ -87,32 +87,26 @@ void SuperWordVTransformBuilder::build_inputs_for_vector_vtnodes(VectorSet& vtn_
     } else if (vtn->isa_ReductionVector() != nullptr) {
       init_req_with_scalar(p0,   vtn, vtn_dependencies, 1); // scalar init
       init_req_with_vector(pack, vtn, vtn_dependencies, 2); // vector
-    } else if (vtn->isa_ElementWiseVector() != nullptr) {
-      if (p0->is_CMove()) {
-        // Cmp + Bool + CMove -> VectorMaskCmp + VectorBlend.
-        init_all_req_with_vectors(pack, vtn, vtn_dependencies);
-        // Inputs must be permuted from (mask, blend1, blend2) -> (blend1, blend2, mask)
+    } else if (p0->is_CMove()) {
+      // Cmp + Bool + CMove -> VectorMaskCmp + VectorBlend.
+      init_all_req_with_vectors(pack, vtn, vtn_dependencies);
+      // Inputs must be permuted from (mask, blend1, blend2) -> (blend1, blend2, mask)
+      vtn->swap_req(1, 2);
+      vtn->swap_req(2, 3);
+      // If the test was negated: (blend1, blend2, mask) -> (blend2, blend1, mask)
+      VTransformBoolVectorNode* vtn_mask_cmp = vtn->in(3)->isa_BoolVector();
+      if (vtn_mask_cmp->test()._is_negated) {
         vtn->swap_req(1, 2);
-        vtn->swap_req(2, 3);
-        // If the test was negated: (blend1, blend2, mask) -> (blend2, blend1, mask)
-        VTransformBoolVectorNode* vtn_mask_cmp = vtn->in(3)->isa_BoolVector();
-        if (vtn_mask_cmp->test()._is_negated) {
-          vtn->swap_req(1, 2);
-        }
-      } else if (VectorNode::is_scalar_rotate(p0) &&
-                 p0->in(2)->is_Con() &&
-                 Matcher::supports_vector_constant_rotates(p0->in(2)->get_int())) {
-        init_req_with_vector(pack, vtn, vtn_dependencies, 1);
-        init_req_with_scalar(p0,   vtn, vtn_dependencies, 2); // constant rotation
-      } else if (VectorNode::is_roundopD(p0)) {
-        init_req_with_vector(pack, vtn, vtn_dependencies, 1);
-        init_req_with_scalar(p0,   vtn, vtn_dependencies, 2); // constant rounding mode
-      } else {
-        // TODO refactor away?
-        init_all_req_with_vectors(pack, vtn, vtn_dependencies);
       }
+    } else if (VectorNode::is_scalar_rotate(p0) &&
+               p0->in(2)->is_Con() &&
+               Matcher::supports_vector_constant_rotates(p0->in(2)->get_int())) {
+      init_req_with_vector(pack, vtn, vtn_dependencies, 1);
+      init_req_with_scalar(p0,   vtn, vtn_dependencies, 2); // constant rotation
+    } else if (VectorNode::is_roundopD(p0)) {
+      init_req_with_vector(pack, vtn, vtn_dependencies, 1);
+      init_req_with_scalar(p0,   vtn, vtn_dependencies, 2); // constant rounding mode
     } else {
-      // TODO refactor away?
       init_all_req_with_vectors(pack, vtn, vtn_dependencies);
     }
 
@@ -292,7 +286,6 @@ VTransformNode* SuperWordVTransformBuilder::get_or_make_vtnode_vector_input_at_i
       // create a special ShiftCount node.
       BasicType element_bt = _vloop_analyzer.types().velt_basic_type(p0);
       juint mask = (p0->bottom_type() == TypeInt::INT) ? (BitsPerInt - 1) : (BitsPerLong - 1);
-      // TODO we may want to refactor this, and set a more adequate opc
       VTransformNodePrototype prototype = VTransformNodePrototype(p0, p0->Opcode(), pack->size(), element_bt, nullptr);
       VTransformNode* shift_count = new (_vtransform.arena()) VTransformShiftCountNode(_vtransform, prototype, mask);
       shift_count->init_req(1, same_input_vtn);
