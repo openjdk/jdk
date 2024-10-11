@@ -2462,24 +2462,6 @@ class ZipFileSystem extends FileSystem {
                         streams.remove(this);
                     }
                 }
-                // Override fill() method to provide an extra "dummy" byte
-                // at the end of the input stream. This is required when
-                // using the "nowrap" Inflater option. (it appears the new
-                // zlib in 7 does not need it, but keep it for now)
-                protected void fill() throws IOException {
-                    if (eof) {
-                        throw new EOFException(
-                            "Unexpected end of ZLIB input stream");
-                    }
-                    len = this.in.read(buf, 0, buf.length);
-                    if (len == -1) {
-                        buf[0] = 0;
-                        len = 1;
-                        eof = true;
-                    }
-                    inf.setInput(buf, 0, len);
-                }
-                private boolean eof;
 
                 public int available() {
                     if (isClosed)
