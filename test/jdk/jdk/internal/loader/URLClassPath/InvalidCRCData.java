@@ -69,9 +69,9 @@ public class InvalidCRCData {
     @Test
     public void verifyURLClassLoader() throws IOException, ClassNotFoundException {
 
-        Path zipFile = createJarFile();
+        Path jarFile = createJarFile();
 
-        try (var cl = new CustomURLClassLoader(zipFile)) {
+        try (var cl = new CustomURLClassLoader(jarFile)) {
             // Expect ClassFormatError
             ClassFormatError exception = assertThrows(ClassFormatError.class, () -> {
                 cl.findClass(className);
@@ -94,10 +94,10 @@ public class InvalidCRCData {
     public void verifyModule() throws IOException, ClassNotFoundException {
 
         // Create a module JAR file
-        Path zipFile = createJarFile();
+        Path jarFile = createJarFile();
 
         // Load the module
-        ModuleFinder moduleFinder = ModuleFinder.of(zipFile);
+        ModuleFinder moduleFinder = ModuleFinder.of(jarFile);
         Configuration parent = ModuleLayer.boot().configuration();
 
         Configuration configuration = parent.resolve(moduleFinder, ModuleFinder.of(), Set.of("m1"));
