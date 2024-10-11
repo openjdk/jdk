@@ -534,9 +534,7 @@ public:
     VTransformScalarNode(vtransform, prototype, n) {}
   virtual VTransformInputScalarNode* isa_InputScalar() override { return this; }
   virtual bool is_load_or_store_in_loop() const override { return false; }
-  // TODO: I'd wish to set ShouldNotReachHere, but there are some cases where backedges are not in_bb,
-  //       and that creates issues with marking those "not in the loop".
-  virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override { return 0; };
+  virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override { ShouldNotReachHere(); }
   NOT_PRODUCT(virtual const char* name() const override { return "InputScalar"; };)
 };
 
