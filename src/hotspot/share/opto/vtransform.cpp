@@ -542,7 +542,6 @@ VTransformApplyResult VTransformElementWiseVectorNode::apply(VTransformApplyStat
     vn = VectorCastNode::make(Op_VectorCastL2X, long_vn, T_INT, vlen);
   } else if (req() == 3 ||
              VectorNode::is_scalar_unary_op_with_equal_input_and_output_types(sopc)) {
-    assert(!VectorNode::is_roundopD(first) || in2->is_Con(), "rounding mode must be constant");
     vn = VectorNode::make(sopc, in1, in2, vlen, bt); // unary and binary
   } else {
     assert(req() == 4, "three inputs expected");

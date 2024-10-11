@@ -45,6 +45,8 @@ package compiler.vectorization.runner;
 import compiler.lib.ir_framework.*;
 import java.util.Random;
 
+// TODO result verification?
+
 public class BasicDoubleOpTest extends VectorizationTestRunner {
 
     private static final int SIZE = 543;

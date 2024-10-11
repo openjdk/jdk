@@ -104,17 +104,15 @@ void SuperWordVTransformBuilder::build_inputs_for_vector_vtnodes(VectorSet& vtn_
                  Matcher::supports_vector_constant_rotates(p0->in(2)->get_int())) {
         init_req_with_vector(pack, vtn, vtn_dependencies, 1);
         init_req_with_scalar(p0,   vtn, vtn_dependencies, 2); // constant rotation
-      } else {
-        init_all_req_with_vectors(pack, vtn, vtn_dependencies);
-      }
-    } else {
-      assert(vtn->isa_ElementWiseVector() != nullptr, "all other vtnodes are handled above");
-      if (VectorNode::is_roundopD(p0)) {
+      } else if (VectorNode::is_roundopD(p0)) {
         init_req_with_vector(pack, vtn, vtn_dependencies, 1);
         init_req_with_scalar(p0,   vtn, vtn_dependencies, 2); // constant rounding mode
       } else {
         init_all_req_with_vectors(pack, vtn, vtn_dependencies);
       }
+    } else {
+      assert(vtn->isa_ElementWiseVector() != nullptr, "all other vtnodes are handled above");
+      init_all_req_with_vectors(pack, vtn, vtn_dependencies);
     }
 
     for (uint k = 0; k < pack->size(); k++) {
@@ -211,8 +209,10 @@ VTransformVectorNode* SuperWordVTransformBuilder::make_vector_vtnode_for_pack(co
     BasicType def_bt = _vloop_analyzer.types().velt_basic_type(p0->in(1));
     int vopc = VectorCastNode::opcode(opc, def_bt);
     vtn = new (_vtransform.arena()) VTransformXYZVectorNode(_vtransform, prototype, p0->req(), vopc);
-  } else if (VectorNode::is_scalar_rotate(p0)) {
+  } else if (VectorNode::is_scalar_rotate(p0) ||
+             VectorNode::is_roundopD(p0)) {
     // TODO this should be the else case eventually
+    assert(!VectorNode::is_roundopD(p0) || p0->in(2)->is_Con(), "rounding mode must be constant");
     int vopc = VectorNode::opcode(opc, prototype.element_basic_type());
     vtn = new (_vtransform.arena()) VTransformXYZVectorNode(_vtransform, prototype, p0->req(), vopc);
   } else {
