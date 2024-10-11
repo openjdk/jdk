@@ -155,16 +155,6 @@ import java.util.ServiceLoader.Provider;
  * with users.  The caller thus assumes that the configured
  * modules have alternative means for authenticating the user.
  *
- *
- * <li> When the LoginContext uses the installed Configuration (instead of
- * a caller-specified Configuration, see above),
- * then this LoginContext must wrap any
- * caller-specified or default CallbackHandler implementation
- * in a new CallbackHandler implementation
- * whose {@code handle} method implementation invokes the
- * specified CallbackHandler's {@code handle} method in a
- * {@code java.security.AccessController.doPrivileged} call
- * constrained by the caller's current {@code AccessControlContext}.
  * </ul>
  * </ol>
  *
