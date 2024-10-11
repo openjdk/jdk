@@ -213,7 +213,7 @@ public abstract class NamedSignature extends SignatureSpi {
     /// The default implementation returns `null`.
     ///
     /// @param name parameter name
-    /// @param sk public key in raw bytes
+    /// @param sk private key in raw bytes
     /// @return a parsed key, `null` if none.
     /// @throws InvalidKeyException if the key is invalid
     protected Object implCheckPrivateKey(String name, byte[] sk) throws InvalidKeyException {
