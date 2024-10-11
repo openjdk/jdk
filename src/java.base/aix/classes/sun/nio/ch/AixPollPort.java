@@ -35,6 +35,9 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
+import static sun.nio.ch.Pollset.PS_ADD;
+import static sun.nio.ch.Pollset.PS_MOD;
+import static sun.nio.ch.Pollset.PS_POLLPRI;
 
 /**
  * AsynchronousChannelGroup implementation based on the AIX pollset framework.
@@ -50,6 +53,7 @@ final class AixPollPort
     // pollset ID
     private final int pollset;
 
+    private static final int ENOENT     = 2;
     // true if port is closed
     private boolean closed;
 
@@ -221,7 +225,12 @@ final class AixPollPort
     // invoke by clients to register a file descriptor
     @Override
     void startPoll(int fd, int events) {
-        queueControlEvent(new ControlEvent(fd, events, false));
+        // update events (or add to epoll on first usage)
+        int err = Pollset.pollsetCtl(pollset, PS_MOD, fd, (events | PS_POLLPRI));
+        if (err == ENOENT)
+            err = Pollset.pollsetCtl(pollset, PS_ADD, fd, (events | PS_POLLPRI));
+        if (err != 0)
+            throw new AssertionError();     // should not happen
     }
 
     // Callback method for implementations that need special handling when fd is removed
