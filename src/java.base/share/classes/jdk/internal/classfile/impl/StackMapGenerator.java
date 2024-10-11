@@ -163,7 +163,7 @@ public final class StackMapGenerator {
     private static final int FLAG_THIS_UNINIT = 0x01;
     private static final int FRAME_DEFAULT_CAPACITY = 10;
     private static final int T_BOOLEAN = 4, T_LONG = 11;
-    private static final Frame[] EMPTY_FRAME_ARRAY = new Frame[0];
+    private static final Frame[] EMPTY_FRAME_ARRAY = {};
 
     private static final int ITEM_TOP = 0,
             ITEM_INTEGER = 1,
@@ -1219,7 +1219,9 @@ public final class StackMapGenerator {
             return Arrays.equals(l1, 0, commonSize, l2, 0, commonSize);
         }
 
-        void writeTo(BufWriter out, Frame prevFrame, ConstantPoolBuilder cp) {
+        void writeTo(BufWriterImpl out, Frame prevFrame, ConstantPoolBuilder cp) {
+            int localsSize = this.localsSize;
+            int stackSize = this.stackSize;
             int offsetDelta = offset - prevFrame.offset - 1;
             if (stackSize == 0) {
                 int commonLocalsSize = localsSize > prevFrame.localsSize ? prevFrame.localsSize : localsSize;
@@ -1228,8 +1230,7 @@ public final class StackMapGenerator {
                     if (diffLocalsSize == 0 && offsetDelta < 64) { //same frame
                         out.writeU1(offsetDelta);
                     } else {   //chop, same extended or append frame
-                        out.writeU1(251 + diffLocalsSize);
-                        out.writeU2(offsetDelta);
+                        out.writeU1U2(251 + diffLocalsSize, offsetDelta);
                         for (int i=commonLocalsSize; i<localsSize; i++) locals[i].writeTo(out, cp);
                     }
                     return;
@@ -1238,15 +1239,13 @@ public final class StackMapGenerator {
                 if (offsetDelta < 64) {  //same locals 1 stack item frame
                     out.writeU1(64 + offsetDelta);
                 } else {  //same locals 1 stack item extended frame
-                    out.writeU1(247);
-                    out.writeU2(offsetDelta);
+                    out.writeU1U2(247, offsetDelta);
                 }
                 stack[0].writeTo(out, cp);
                 return;
             }
             //full frame
-            out.writeU1(255);
-            out.writeU2(offsetDelta);
+            out.writeU1U2(255, offsetDelta);
             out.writeU2(localsSize);
             for (int i=0; i<localsSize; i++) locals[i].writeTo(out, cp);
             out.writeU2(stackSize);

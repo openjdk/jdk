@@ -25,6 +25,8 @@
  */
 package jdk.internal.classfile.impl;
 
+import java.lang.constant.ClassDesc;
+import java.lang.constant.MethodTypeDesc;
 import java.lang.classfile.Attribute;
 import java.lang.classfile.Attributes;
 import java.lang.classfile.ClassFile;
@@ -52,8 +54,8 @@ import java.lang.classfile.instruction.ExceptionCatch;
 import java.lang.classfile.instruction.LocalVariable;
 import java.lang.classfile.instruction.LocalVariableType;
 import java.lang.classfile.instruction.SwitchCase;
-import java.lang.constant.ConstantDesc;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
@@ -62,18 +64,27 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import static java.lang.classfile.Opcode.*;
-
 import static jdk.internal.classfile.impl.BytecodeHelpers.*;
+import static jdk.internal.classfile.impl.RawBytecodeHelper.*;
 
 public final class DirectCodeBuilder
         extends AbstractDirectBuilder<CodeModel>
         implements TerminalCodeBuilder {
-    private final List<CharacterRange> characterRanges = new ArrayList<>();
+    private static final CharacterRange[] EMPTY_CHARACTER_RANGE = {};
+    private static final DeferredLabel[] EMPTY_LABEL_ARRAY = {};
+    private static final LocalVariable[] EMPTY_LOCAL_VARIABLE_ARRAY = {};
+    private static final LocalVariableType[] EMPTY_LOCAL_VARIABLE_TYPE_ARRAY = {};
+    private static final AbstractPseudoInstruction.ExceptionCatchImpl[] EMPTY_HANDLER_ARRAY = {};
+    private static final DeferredLabel[] EMPTY_DEFERRED_LABEL_ARRAY = {};
+
     final List<AbstractPseudoInstruction.ExceptionCatchImpl> handlers = new ArrayList<>();
-    private final List<LocalVariable> localVariables = new ArrayList<>();
-    private final List<LocalVariableType> localVariableTypes = new ArrayList<>();
-    private final boolean transformFwdJumps, transformBackJumps;
+    private CharacterRange[] characterRanges = EMPTY_CHARACTER_RANGE;
+    private LocalVariable[] localVariables = EMPTY_LOCAL_VARIABLE_ARRAY;
+    private LocalVariableType[] localVariableTypes = EMPTY_LOCAL_VARIABLE_TYPE_ARRAY;
+    private int characterRangesCount = 0;
+    private int localVariablesCount = 0;
+    private int localVariableTypesCount = 0;
+    private final boolean transformDeferredJumps, transformKnownJumps;
     private final Label startLabel, endLabel;
     final MethodInfo methodInfo;
     final BufWriterImpl bytecodesBufWriter;
@@ -83,7 +94,8 @@ public final class DirectCodeBuilder
     private DedupLineNumberTableAttribute lineNumberWriter;
     private int topLocal;
 
-    List<DeferredLabel> deferredLabels;
+    private DeferredLabel[] deferredLabels = EMPTY_DEFERRED_LABEL_ARRAY;
+    private int deferredLabelsCount = 0;
 
     /* Locals management
        lazily computed maxLocal = -1
@@ -117,12 +129,12 @@ public final class DirectCodeBuilder
                               SplitConstantPool constantPool,
                               ClassFileImpl context,
                               CodeModel original,
-                              boolean transformFwdJumps) {
+                              boolean transformDeferredJumps) {
         super(constantPool, context);
         setOriginal(original);
         this.methodInfo = methodInfo;
-        this.transformFwdJumps = transformFwdJumps;
-        this.transformBackJumps = context.fixShortJumps();
+        this.transformDeferredJumps = transformDeferredJumps;
+        this.transformKnownJumps = context.fixShortJumps();
         bytecodesBufWriter = (original instanceof CodeImpl cai) ? new BufWriterImpl(constantPool, context, cai.codeLength())
                 : new BufWriterImpl(constantPool, context);
         this.startLabel = new LabelImpl(this, 0);
@@ -208,9 +220,7 @@ public final class DirectCodeBuilder
                     throw new IllegalArgumentException("Unbound label in exception handler");
                 }
             } else {
-                buf.writeU2(startPc);
-                buf.writeU2(endPc);
-                buf.writeU2(handlerPc);
+                buf.writeU2U2U2(startPc, endPc, handlerPc);
                 buf.writeIndexOrZero(h.catchTypeEntry());
                 handlersSize++;
             }
@@ -227,15 +237,16 @@ public final class DirectCodeBuilder
         processDeferredLabels();
 
         if (context.passDebugElements()) {
-            if (!characterRanges.isEmpty()) {
+            if (characterRangesCount > 0) {
                 Attribute<?> a = new UnboundAttribute.AdHocAttribute<>(Attributes.characterRangeTable()) {
 
                     @Override
                     public void writeBody(BufWriterImpl b) {
                         int pos = b.size();
-                        int crSize = characterRanges.size();
+                        int crSize = characterRangesCount;
                         b.writeU2(crSize);
-                        for (CharacterRange cr : characterRanges) {
+                        for (int i = 0; i < characterRangesCount; i++) {
+                            CharacterRange cr = characterRanges[i];
                             var start = labelToBci(cr.startScope());
                             var end = labelToBci(cr.endScope());
                             if (start == -1 || end == -1) {
@@ -245,28 +256,28 @@ public final class DirectCodeBuilder
                                     throw new IllegalArgumentException("Unbound label in character range");
                                 }
                             } else {
-                                b.writeU2(start);
-                                b.writeU2(end - 1);
+                                b.writeU2U2(start, end - 1);
                                 b.writeInt(cr.characterRangeStart());
                                 b.writeInt(cr.characterRangeEnd());
                                 b.writeU2(cr.flags());
                             }
                         }
-                        if (crSize < characterRanges.size())
+                        if (crSize < characterRangesCount)
                             b.patchU2(pos, crSize);
                     }
                 };
                 attributes.withAttribute(a);
             }
 
-            if (!localVariables.isEmpty()) {
+            if (localVariablesCount > 0) {
                 Attribute<?> a = new UnboundAttribute.AdHocAttribute<>(Attributes.localVariableTable()) {
                     @Override
                     public void writeBody(BufWriterImpl b) {
                         int pos = b.size();
-                        int lvSize = localVariables.size();
+                        int lvSize = localVariablesCount;
                         b.writeU2(lvSize);
-                        for (LocalVariable l : localVariables) {
+                        for (int i = 0; i < localVariablesCount; i++) {
+                            LocalVariable l = localVariables[i];
                             if (!Util.writeLocalVariable(b, l)) {
                                 if (context.dropDeadLabels()) {
                                     lvSize--;
@@ -275,21 +286,22 @@ public final class DirectCodeBuilder
                                 }
                             }
                         }
-                        if (lvSize < localVariables.size())
+                        if (lvSize < localVariablesCount)
                             b.patchU2(pos, lvSize);
                     }
                 };
                 attributes.withAttribute(a);
             }
 
-            if (!localVariableTypes.isEmpty()) {
+            if (localVariableTypesCount > 0) {
                 Attribute<?> a = new UnboundAttribute.AdHocAttribute<>(Attributes.localVariableTypeTable()) {
                     @Override
                     public void writeBody(BufWriterImpl b) {
                         int pos = b.size();
-                        int lvtSize = localVariableTypes.size();
-                        b.writeU2(localVariableTypes.size());
-                        for (LocalVariableType l : localVariableTypes) {
+                        int lvtSize = localVariableTypesCount;
+                        b.writeU2(lvtSize);
+                        for (int i = 0; i < localVariableTypesCount; i++) {
+                            LocalVariableType l = localVariableTypes[i];
                             if (!Util.writeLocalVariable(b, l)) {
                                 if (context.dropDeadLabels()) {
                                     lvtSize--;
@@ -298,7 +310,7 @@ public final class DirectCodeBuilder
                                 }
                             }
                         }
-                        if (lvtSize < localVariableTypes.size())
+                        if (lvtSize < localVariableTypesCount)
                             b.patchU2(pos, lvtSize);
                     }
                 };
@@ -315,22 +327,20 @@ public final class DirectCodeBuilder
             private void writeCounters(boolean codeMatch, BufWriterImpl buf) {
                 if (codeMatch) {
                     var originalAttribute = (CodeImpl) original;
-                    buf.writeU2(originalAttribute.maxStack());
-                    buf.writeU2(originalAttribute.maxLocals());
+                    buf.writeU2U2(originalAttribute.maxStack(), originalAttribute.maxLocals());
                 } else {
                     StackCounter cntr = StackCounter.of(DirectCodeBuilder.this, buf);
-                    buf.writeU2(cntr.maxStack());
-                    buf.writeU2(cntr.maxLocals());
+                    buf.writeU2U2(cntr.maxStack(), cntr.maxLocals());
                 }
             }
 
             private void generateStackMaps(BufWriterImpl buf) throws IllegalArgumentException {
                 //new instance of generator immediately calculates maxStack, maxLocals, all frames,
                 // patches dead bytecode blocks and removes them from exception table
-                StackMapGenerator gen = StackMapGenerator.of(DirectCodeBuilder.this, buf);
-                attributes.withAttribute(gen.stackMapTableAttribute());
-                buf.writeU2(gen.maxStack());
-                buf.writeU2(gen.maxLocals());
+                var dcb = DirectCodeBuilder.this;
+                StackMapGenerator gen = StackMapGenerator.of(dcb, buf);
+                dcb.attributes.withAttribute(gen.stackMapTableAttribute());
+                buf.writeU2U2(gen.maxStack(), gen.maxLocals());
             }
 
             private void tryGenerateStackMaps(boolean codeMatch, BufWriterImpl buf) {
@@ -352,20 +362,22 @@ public final class DirectCodeBuilder
 
             @Override
             public void writeBody(BufWriterImpl buf) {
-                buf.setLabelContext(DirectCodeBuilder.this);
+                DirectCodeBuilder dcb = DirectCodeBuilder.this;
+                buf.setLabelContext(dcb);
 
                 int codeLength = curPc();
                 if (codeLength == 0 || codeLength >= 65536) {
                     throw new IllegalArgumentException(String.format(
                             "Code length %d is outside the allowed range in %s%s",
                             codeLength,
-                            methodInfo.methodName().stringValue(),
-                            methodInfo.methodTypeSymbol().displayDescriptor()));
+                            dcb.methodInfo.methodName().stringValue(),
+                            dcb.methodInfo.methodTypeSymbol().displayDescriptor()));
                 }
 
-                if (codeAndExceptionsMatch(codeLength)) {
+                var context = dcb.context;
+                if (dcb.original != null && codeAndExceptionsMatch(codeLength)) {
                     if (context.stackMapsWhenRequired()) {
-                        attributes.withAttribute(original.findAttribute(Attributes.stackMapTable()).orElse(null));
+                        dcb.attributes.withAttribute(dcb.original.findAttribute(Attributes.stackMapTable()).orElse(null));
                         writeCounters(true, buf);
                     } else if (context.generateStackMaps()) {
                         generateStackMaps(buf);
@@ -383,9 +395,9 @@ public final class DirectCodeBuilder
                 }
 
                 buf.writeInt(codeLength);
-                buf.writeBytes(bytecodesBufWriter);
-                writeExceptionHandlers(buf);
-                attributes.writeTo(buf);
+                buf.writeBytes(dcb.bytecodesBufWriter);
+                dcb.writeExceptionHandlers(buf);
+                dcb.attributes.writeTo(buf);
                 buf.setLabelContext(null);
             }
         };
@@ -405,8 +417,7 @@ public final class DirectCodeBuilder
         private void push() {
             //subsequent identical line numbers are skipped
             if (lastPc >= 0 && lastLine != writtenLine) {
-                buf.writeU2(lastPc);
-                buf.writeU2(lastLine);
+                buf.writeU2U2(lastPc, lastLine);
                 writtenLine = lastLine;
             }
         }
@@ -456,32 +467,16 @@ public final class DirectCodeBuilder
 
     private record DeferredLabel(int labelPc, int size, int instructionPc, Label label) { }
 
-    private void writeLabelOffset(int nBytes, int instructionPc, Label label) {
-        int targetBci = labelToBci(label);
-        if (targetBci == -1) {
-            int pc = bytecodesBufWriter.skip(nBytes);
-            if (deferredLabels == null)
-                deferredLabels = new ArrayList<>();
-            deferredLabels.add(new DeferredLabel(pc, nBytes, instructionPc, label));
-        }
-        else {
-            int branchOffset = targetBci - instructionPc;
-            if (nBytes == 2 && (short)branchOffset != branchOffset) throw new LabelOverflowException();
-            bytecodesBufWriter.writeIntBytes(nBytes, branchOffset);
-        }
-    }
-
     private void processDeferredLabels() {
-        if (deferredLabels != null) {
-            for (DeferredLabel dl : deferredLabels) {
-                int branchOffset = labelToBci(dl.label) - dl.instructionPc;
-                if (dl.size == 2) {
-                    if ((short)branchOffset != branchOffset) throw new LabelOverflowException();
-                    bytecodesBufWriter.patchU2(dl.labelPc, branchOffset);
-                } else {
-                    assert dl.size == 4;
-                    bytecodesBufWriter.patchInt(dl.labelPc, branchOffset);
-                }
+        for (int i = 0; i < deferredLabelsCount; i++) {
+            DeferredLabel dl = deferredLabels[i];
+            int branchOffset = labelToBci(dl.label) - dl.instructionPc;
+            if (dl.size == 2) {
+                if ((short) branchOffset != branchOffset) throw new LabelOverflowException();
+                bytecodesBufWriter.patchU2(dl.labelPc, branchOffset);
+            } else {
+                assert dl.size == 4;
+                bytecodesBufWriter.patchInt(dl.labelPc, branchOffset);
             }
         }
     }
@@ -489,72 +484,140 @@ public final class DirectCodeBuilder
     // Instruction writing
 
     public void writeBytecode(Opcode opcode) {
+        assert !opcode.isWide();
+        bytecodesBufWriter.writeU1(opcode.bytecode());
+    }
+
+    // Instruction version, refer to opcode
+    public void writeLocalVar(Opcode opcode, int slot) {
         if (opcode.isWide()) {
-            bytecodesBufWriter.writeU2(opcode.bytecode());
+            bytecodesBufWriter.writeU2U2(opcode.bytecode(), slot);
         } else {
-            bytecodesBufWriter.writeU1(opcode.bytecode());
+            bytecodesBufWriter.writeU1U1(opcode.bytecode(), slot);
         }
     }
 
-    public void writeLocalVar(Opcode opcode, int localVar) {
-        writeBytecode(opcode);
-        switch (opcode.sizeIfFixed()) {
-            case 1 -> { }
-            case 2 -> bytecodesBufWriter.writeU1(localVar);
-            case 4 -> bytecodesBufWriter.writeU2(localVar);
-            default -> throw new IllegalArgumentException("Unexpected instruction size: " + opcode);
+    // Shortcut version, refer to and validate slot
+    private void writeLocalVar(int bytecode, int slot) {
+        // TODO validation like (slot & 0xFFFF) == slot
+        if (slot < 256) {
+            bytecodesBufWriter.writeU1U1(bytecode, slot);
+        } else {
+            bytecodesBufWriter.writeU1U1U2(WIDE, bytecode, slot);
         }
     }
 
     public void writeIncrement(boolean wide, int slot, int val) {
         if (wide) {
-            bytecodesBufWriter.writeU1(RawBytecodeHelper.WIDE);
-        }
-        bytecodesBufWriter.writeU1(RawBytecodeHelper.IINC);
-        if (wide) {
-            bytecodesBufWriter.writeU2(slot);
-            bytecodesBufWriter.writeU2(val);
+            bytecodesBufWriter.writeU2U2U2((WIDE << 8) | IINC, slot, val);
         } else {
-            bytecodesBufWriter.writeU1(slot);
-            bytecodesBufWriter.writeU1(val);
+            bytecodesBufWriter.writeU1U1U1(IINC, slot, val);
         }
     }
 
     public void writeBranch(Opcode op, Label target) {
+        if (op.sizeIfFixed() == 3) {
+            writeShortJump(op.bytecode(), target);
+        } else {
+            writeLongJump(op.bytecode(), target);
+        }
+    }
+
+    private void writeLongLabelOffset(int instructionPc, Label label) {
+        int targetBci = labelToBci(label);
+
+        // algebraic union of jump | (instructionPc, target), distinguished by null == target.
+        int jumpOrInstructionPc;
+        Label nullOrTarget;
+        if (targetBci == -1) {
+            jumpOrInstructionPc = instructionPc;
+            nullOrTarget = label;
+        } else {
+            jumpOrInstructionPc = targetBci - instructionPc;
+            nullOrTarget = null;
+        }
+
+        writeParsedLongLabel(jumpOrInstructionPc, nullOrTarget);
+    }
+
+    private void writeShortJump(int bytecode, Label target) {
         int instructionPc = curPc();
         int targetBci = labelToBci(target);
-        //transform short-opcode forward jumps if enforced, and backward jumps if enabled and overflowing
-        if (op.sizeIfFixed() == 3 && (targetBci == -1
-                                      ? transformFwdJumps
-                                      : (transformBackJumps
-                                         && targetBci - instructionPc < Short.MIN_VALUE))) {
-            if (op == GOTO) {
-                writeBytecode(GOTO_W);
-                writeLabelOffset(4, instructionPc, target);
-            } else if (op == JSR) {
-                writeBytecode(JSR_W);
-                writeLabelOffset(4, instructionPc, target);
-            } else {
-                writeBytecode(BytecodeHelpers.reverseBranchOpcode(op));
-                Label bypassJump = newLabel();
-                writeLabelOffset(2, instructionPc, bypassJump);
-                writeBytecode(GOTO_W);
-                writeLabelOffset(4, instructionPc + 3, target);
-                labelBinding(bypassJump);
-            }
+
+        // algebraic union of jump | (instructionPc, target), distinguished by null == target.
+        int jumpOrInstructionPc;
+        Label nullOrTarget;
+        if (targetBci == -1) {
+            jumpOrInstructionPc = instructionPc;
+            nullOrTarget = target;
         } else {
-            writeBytecode(op);
-            writeLabelOffset(op.sizeIfFixed() == 3 ? 2 : 4, instructionPc, target);
+            jumpOrInstructionPc = targetBci - instructionPc;
+            nullOrTarget = null;
+        }
+
+        //transform short-opcode forward jumps if enforced, and backward jumps if enabled and overflowing
+        if (transformDeferredJumps || transformKnownJumps && nullOrTarget == null && jumpOrInstructionPc < Short.MIN_VALUE) {
+            fixShortJump(bytecode, jumpOrInstructionPc, nullOrTarget);
+        } else {
+            bytecodesBufWriter.writeU1(bytecode);
+            writeParsedShortLabel(jumpOrInstructionPc, nullOrTarget);
+        }
+    }
+
+    private void writeLongJump(int bytecode, Label target) {
+        int instructionPc = curPc();
+        bytecodesBufWriter.writeU1(bytecode);
+        writeLongLabelOffset(instructionPc, target);
+    }
+
+    private void fixShortJump(int bytecode, int jumpOrInstructionPc, Label nullOrTarget) {
+        if (bytecode == GOTO) {
+            bytecodesBufWriter.writeU1(GOTO_W);
+            writeParsedLongLabel(jumpOrInstructionPc, nullOrTarget);
+        } else if (bytecode == JSR) {
+            bytecodesBufWriter.writeU1(JSR_W);
+            writeParsedLongLabel(jumpOrInstructionPc, nullOrTarget);
+        } else {
+            bytecodesBufWriter.writeU1U2(
+                    BytecodeHelpers.reverseBranchOpcode(bytecode),   // u1
+                    8); // u1 + s2 + u1 + s4                         // s2
+            bytecodesBufWriter.writeU1(GOTO_W);                      // u1
+            if (nullOrTarget == null) {
+                jumpOrInstructionPc -= 3; // jump -= 3;
+            } else {
+                jumpOrInstructionPc += 3; // instructionPc += 3;
+            }
+            writeParsedLongLabel(jumpOrInstructionPc, nullOrTarget); // s4
+        }
+    }
+
+    private void writeParsedShortLabel(int jumpOrInstructionPc, Label nullOrTarget) {
+        if (nullOrTarget == null) {
+            if ((short) jumpOrInstructionPc != jumpOrInstructionPc)
+                throw new LabelOverflowException();
+            bytecodesBufWriter.writeU2(jumpOrInstructionPc);
+        } else {
+            int pc = bytecodesBufWriter.skip(2);
+            addLabel(new DeferredLabel(pc, 2, jumpOrInstructionPc, nullOrTarget));
+        }
+    }
+
+    private void writeParsedLongLabel(int jumpOrInstructionPc, Label nullOrTarget) {
+        if (nullOrTarget == null) {
+            bytecodesBufWriter.writeInt(jumpOrInstructionPc);
+        } else {
+            int pc = bytecodesBufWriter.skip(4);
+            addLabel(new DeferredLabel(pc, 4, jumpOrInstructionPc, nullOrTarget));
         }
     }
 
     public void writeLookupSwitch(Label defaultTarget, List<SwitchCase> cases) {
         int instructionPc = curPc();
-        writeBytecode(LOOKUPSWITCH);
+        bytecodesBufWriter.writeU1(LOOKUPSWITCH);
         int pad = 4 - (curPc() % 4);
         if (pad != 4)
             bytecodesBufWriter.skip(pad); // padding content can be anything
-        writeLabelOffset(4, instructionPc, defaultTarget);
+        writeLongLabelOffset(instructionPc, defaultTarget);
         bytecodesBufWriter.writeInt(cases.size());
         cases = new ArrayList<>(cases);
         cases.sort(new Comparator<>() {
@@ -565,17 +628,18 @@ public final class DirectCodeBuilder
         });
         for (var c : cases) {
             bytecodesBufWriter.writeInt(c.caseValue());
-            writeLabelOffset(4, instructionPc, c.target());
+            var target = c.target();
+            writeLongLabelOffset(instructionPc, target);
         }
     }
 
     public void writeTableSwitch(int low, int high, Label defaultTarget, List<SwitchCase> cases) {
         int instructionPc = curPc();
-        writeBytecode(TABLESWITCH);
+        bytecodesBufWriter.writeU1(TABLESWITCH);
         int pad = 4 - (curPc() % 4);
         if (pad != 4)
             bytecodesBufWriter.skip(pad); // padding content can be anything
-        writeLabelOffset(4, instructionPc, defaultTarget);
+        writeLongLabelOffset(instructionPc, defaultTarget);
         bytecodesBufWriter.writeInt(low);
         bytecodesBufWriter.writeInt(high);
         var caseMap = new HashMap<Integer, Label>(cases.size());
@@ -583,85 +647,74 @@ public final class DirectCodeBuilder
             caseMap.put(c.caseValue(), c.target());
         }
         for (long l = low; l<=high; l++) {
-            writeLabelOffset(4, instructionPc, caseMap.getOrDefault((int)l, defaultTarget));
+            var target = caseMap.getOrDefault((int)l, defaultTarget);
+            writeLongLabelOffset(instructionPc, target);
         }
     }
 
     public void writeFieldAccess(Opcode opcode, FieldRefEntry ref) {
-        writeBytecode(opcode);
-        bytecodesBufWriter.writeIndex(ref);
+        bytecodesBufWriter.writeIndex(opcode.bytecode(), ref);
     }
 
     public void writeInvokeNormal(Opcode opcode, MemberRefEntry ref) {
-        writeBytecode(opcode);
-        bytecodesBufWriter.writeIndex(ref);
+        bytecodesBufWriter.writeIndex(opcode.bytecode(), ref);
     }
 
     public void writeInvokeInterface(Opcode opcode,
                                      InterfaceMethodRefEntry ref,
                                      int count) {
-        writeBytecode(opcode);
-        bytecodesBufWriter.writeIndex(ref);
-        bytecodesBufWriter.writeU1(count);
-        bytecodesBufWriter.writeU1(0);
+        bytecodesBufWriter.writeIndex(opcode.bytecode(), ref);
+        bytecodesBufWriter.writeU1U1(count, 0);
     }
 
     public void writeInvokeDynamic(InvokeDynamicEntry ref) {
-        writeBytecode(INVOKEDYNAMIC);
-        bytecodesBufWriter.writeIndex(ref);
+        bytecodesBufWriter.writeIndex(INVOKEDYNAMIC, ref);
         bytecodesBufWriter.writeU2(0);
     }
 
     public void writeNewObject(ClassEntry type) {
-        writeBytecode(NEW);
-        bytecodesBufWriter.writeIndex(type);
+        bytecodesBufWriter.writeIndex(NEW, type);
     }
 
     public void writeNewPrimitiveArray(int newArrayCode) {
-        writeBytecode(NEWARRAY);
-        bytecodesBufWriter.writeU1(newArrayCode);
+        bytecodesBufWriter.writeU1U1(NEWARRAY, newArrayCode);
     }
 
     public void writeNewReferenceArray(ClassEntry type) {
-        writeBytecode(ANEWARRAY);
-        bytecodesBufWriter.writeIndex(type);
+        bytecodesBufWriter.writeIndex(ANEWARRAY, type);
     }
 
     public void writeNewMultidimensionalArray(int dimensions, ClassEntry type) {
-        writeBytecode(MULTIANEWARRAY);
-        bytecodesBufWriter.writeIndex(type);
+        bytecodesBufWriter.writeIndex(MULTIANEWARRAY, type);
         bytecodesBufWriter.writeU1(dimensions);
     }
 
     public void writeTypeCheck(Opcode opcode, ClassEntry type) {
-        writeBytecode(opcode);
-        bytecodesBufWriter.writeIndex(type);
+        bytecodesBufWriter.writeIndex(opcode.bytecode(), type);
     }
 
     public void writeArgumentConstant(Opcode opcode, int value) {
-        writeBytecode(opcode);
         if (opcode.sizeIfFixed() == 3) {
-            bytecodesBufWriter.writeU2(value);
+            bytecodesBufWriter.writeU1U2(opcode.bytecode(), value);
         } else {
-            bytecodesBufWriter.writeU1(value);
+            bytecodesBufWriter.writeU1U1(opcode.bytecode(), value);
         }
     }
 
     public void writeLoadConstant(Opcode opcode, LoadableConstantEntry value) {
         // Make sure Long and Double have LDC2_W and
-        // rewrite to _W if index is > 256
+        // rewrite to _W if index is >= 256
         int index = AbstractPoolEntry.maybeClone(constantPool, value).index();
-        Opcode op = opcode;
         if (value instanceof LongEntry || value instanceof DoubleEntry) {
-            op = LDC2_W;
+            opcode = Opcode.LDC2_W;
         } else if (index >= 256)
-            op = LDC_W;
+            opcode = Opcode.LDC_W;
 
-        writeBytecode(op);
-        if (op.sizeIfFixed() == 3) {
-            bytecodesBufWriter.writeU2(index);
+        assert !opcode.isWide();
+        if (opcode.sizeIfFixed() == 3) {
+            bytecodesBufWriter.writeU1U2(opcode.bytecode(), index);
         } else {
-            bytecodesBufWriter.writeU1(index);
+            bytecodesBufWriter.writeU1U1(opcode.bytecode(), index);
         }
     }
 
@@ -677,7 +730,11 @@ public final class DirectCodeBuilder
         if (context == this) {
             return lab.getBCI();
         }
-        else if (context == mruParent) {
+        return labelToBci(context, lab);
+    }
+
+    private int labelToBci(LabelContext context, LabelImpl lab) {
+        if (context == mruParent) {
             return mruParentTable[lab.getBCI()] - 1;
         }
         else if (context instanceof CodeAttribute parent) {
@@ -717,14 +774,18 @@ public final class DirectCodeBuilder
     @Override
     public void setLabelTarget(Label label, int bci) {
         LabelImpl lab = (LabelImpl) label;
-        LabelContext context = lab.labelContext();
-
-        if (context == this) {
+        if (lab.labelContext() == this) {
             if (lab.getBCI() != -1)
                 throw new IllegalArgumentException("Setting label target for already-set label");
             lab.setBCI(bci);
+        } else {
+            setLabelTarget(lab, bci);
         }
-        else if (context == mruParent) {
+    }
+
+    private void setLabelTarget(LabelImpl lab, int bci) {
+        LabelContext context = lab.labelContext();
+        if (context == mruParent) {
             mruParentTable[lab.getBCI()] = bci + 1;
         }
         else if (context instanceof CodeAttribute parent) {
@@ -739,7 +800,7 @@ public final class DirectCodeBuilder
 
             mruParent = parent;
             mruParentTable = table;
-            mruParentTable[lab.getBCI()] = bci + 1;
+            table[lab.getBCI()] = bci + 1;
         }
         else if (context instanceof BufferedCodeBuilder) {
             // Hijack the label
@@ -751,7 +812,19 @@ public final class DirectCodeBuilder
     }
 
     public void addCharacterRange(CharacterRange element) {
-        characterRanges.add(element);
+        if (characterRangesCount >= characterRanges.length) {
+            int newCapacity = characterRangesCount + 8;
+            this.characterRanges = Arrays.copyOf(characterRanges, newCapacity);
+        }
+        characterRanges[characterRangesCount++] = element;
+    }
+
+    public void addLabel(DeferredLabel label) {
+        if (deferredLabelsCount >= deferredLabels.length) {
+            int newCapacity = deferredLabelsCount + 8;
+            this.deferredLabels = Arrays.copyOf(deferredLabels, newCapacity);
+        }
+        deferredLabels[deferredLabelsCount++] = label;
     }
 
     public void addHandler(ExceptionCatch element) {
@@ -763,11 +836,19 @@ public final class DirectCodeBuilder
     }
 
     public void addLocalVariable(LocalVariable element) {
-        localVariables.add(element);
+        if (localVariablesCount >= localVariables.length) {
+            int newCapacity = localVariablesCount + 8;
+            this.localVariables = Arrays.copyOf(localVariables, newCapacity);
+        }
+        localVariables[localVariablesCount++] = element;
     }
 
     public void addLocalVariableType(LocalVariableType element) {
-        localVariableTypes.add(element);
+        if (localVariableTypesCount >= localVariableTypes.length) {
+            int newCapacity = localVariableTypesCount + 8;
+            this.localVariableTypes = Arrays.copyOf(localVariableTypes, newCapacity);
+        }
+        localVariableTypes[localVariableTypesCount++] = element;
     }
 
     @Override
@@ -789,26 +870,52 @@ public final class DirectCodeBuilder
     // These are helpful for direct class building
 
     @Override
+    public CodeBuilder return_() {
+        bytecodesBufWriter.writeU1(RETURN);
+        return this;
+    }
+
+    @Override
     public CodeBuilder return_(TypeKind tk) {
-        writeBytecode(BytecodeHelpers.returnOpcode(tk));
+        bytecodesBufWriter.writeU1(returnBytecode(tk));
         return this;
     }
 
     @Override
     public CodeBuilder storeLocal(TypeKind tk, int slot) {
-        writeLocalVar(BytecodeHelpers.storeOpcode(tk, slot), slot);
+        return switch (tk) {
+            case INT, SHORT, BYTE, CHAR, BOOLEAN
+                           -> istore(slot);
+            case LONG      -> lstore(slot);
+            case DOUBLE    -> dstore(slot);
+            case FLOAT     -> fstore(slot);
+            case REFERENCE -> astore(slot);
+            case VOID      -> throw new IllegalArgumentException("void");
+        };
+    }
+
+    @Override
+    public CodeBuilder labelBinding(Label label) {
+        setLabelTarget(label, curPc());
         return this;
     }
 
     @Override
     public CodeBuilder loadLocal(TypeKind tk, int slot) {
-        writeLocalVar(BytecodeHelpers.loadOpcode(tk, slot), slot);
-        return this;
+        return switch (tk) {
+            case INT, SHORT, BYTE, CHAR, BOOLEAN
+                           -> iload(slot);
+            case LONG      -> lload(slot);
+            case DOUBLE    -> dload(slot);
+            case FLOAT     -> fload(slot);
+            case REFERENCE -> aload(slot);
+            case VOID      -> throw new IllegalArgumentException("void");
+        };
     }
 
     @Override
     public CodeBuilder invoke(Opcode opcode, MemberRefEntry ref) {
-        if (opcode == INVOKEINTERFACE) {
+        if (opcode == Opcode.INVOKEINTERFACE) {
             int slots = Util.parameterSlots(Util.methodTypeSymbol(ref.type())) + 1;
             writeInvokeInterface(opcode, (InterfaceMethodRefEntry) ref, slots);
         } else {
@@ -818,20 +925,44 @@ public final class DirectCodeBuilder
     }
 
     @Override
+    public CodeBuilder invokespecial(ClassDesc owner, String name, MethodTypeDesc type) {
+        bytecodesBufWriter.writeIndex(INVOKESPECIAL, constantPool().methodRefEntry(owner, name, type));
+        return this;
+    }
+
+    @Override
+    public CodeBuilder invokestatic(ClassDesc owner, String name, MethodTypeDesc type) {
+        bytecodesBufWriter.writeIndex(INVOKESTATIC, constantPool().methodRefEntry(owner, name, type));
+        return this;
+    }
+
+    @Override
+    public CodeBuilder invokevirtual(ClassDesc owner, String name, MethodTypeDesc type) {
+        bytecodesBufWriter.writeIndex(INVOKEVIRTUAL, constantPool().methodRefEntry(owner, name, type));
+        return this;
+    }
+
+    @Override
+    public CodeBuilder getfield(ClassDesc owner, String name, ClassDesc type) {
+        bytecodesBufWriter.writeIndex(GETFIELD, constantPool().fieldRefEntry(owner, name, type));
+        return this;
+    }
+
+    @Override
     public CodeBuilder fieldAccess(Opcode opcode, FieldRefEntry ref) {
-        writeFieldAccess(opcode, ref);
+        bytecodesBufWriter.writeIndex(opcode.bytecode(), ref);
         return this;
     }
 
     @Override
     public CodeBuilder arrayLoad(TypeKind tk) {
-        writeBytecode(BytecodeHelpers.arrayLoadOpcode(tk));
+        bytecodesBufWriter.writeU1(BytecodeHelpers.arrayLoadBytecode(tk));
         return this;
     }
 
     @Override
     public CodeBuilder arrayStore(TypeKind tk) {
-        writeBytecode(BytecodeHelpers.arrayStoreOpcode(tk));
+        bytecodesBufWriter.writeU1(BytecodeHelpers.arrayStoreBytecode(tk));
         return this;
     }
 
@@ -843,19 +974,23 @@ public final class DirectCodeBuilder
 
     @Override
     public CodeBuilder nop() {
-        writeBytecode(NOP);
+        bytecodesBufWriter.writeU1(NOP);
         return this;
     }
 
     @Override
     public CodeBuilder aconst_null() {
-        writeBytecode(ACONST_NULL);
+        bytecodesBufWriter.writeU1(ACONST_NULL);
         return this;
     }
 
     @Override
     public CodeBuilder aload(int slot) {
-        writeLocalVar(BytecodeHelpers.aload(slot), slot);
+        if (slot >= 0 && slot <= 3) {
+            bytecodesBufWriter.writeU1(ALOAD_0 + slot);
+        } else {
+            writeLocalVar(ALOAD, slot);
+        }
         return this;
     }
 
@@ -867,350 +1002,496 @@ public final class DirectCodeBuilder
 
     @Override
     public CodeBuilder arraylength() {
-        writeBytecode(ARRAYLENGTH);
+        bytecodesBufWriter.writeU1(ARRAYLENGTH);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder areturn() {
+        bytecodesBufWriter.writeU1(ARETURN);
         return this;
     }
 
     @Override
     public CodeBuilder astore(int slot) {
-        writeLocalVar(BytecodeHelpers.astore(slot), slot);
+        if (slot >= 0 && slot <= 3) {
+            bytecodesBufWriter.writeU1(ASTORE_0 + slot);
+        } else {
+            writeLocalVar(ASTORE, slot);
+        }
         return this;
     }
 
     @Override
     public CodeBuilder athrow() {
-        writeBytecode(ATHROW);
+        bytecodesBufWriter.writeU1(ATHROW);
         return this;
     }
 
     @Override
     public CodeBuilder bipush(int b) {
         BytecodeHelpers.validateBipush(b);
-        writeArgumentConstant(BIPUSH, b);
+        bytecodesBufWriter.writeU1U1(BIPUSH, b);
         return this;
     }
 
     @Override
     public CodeBuilder checkcast(ClassEntry type) {
-        writeTypeCheck(CHECKCAST, type);
+        bytecodesBufWriter.writeIndex(CHECKCAST, type);
         return this;
     }
 
     @Override
     public CodeBuilder d2f() {
-        writeBytecode(D2F);
+        bytecodesBufWriter.writeU1(D2F);
         return this;
     }
 
     @Override
     public CodeBuilder d2i() {
-        writeBytecode(D2I);
+        bytecodesBufWriter.writeU1(D2I);
         return this;
     }
 
     @Override
     public CodeBuilder d2l() {
-        writeBytecode(D2L);
+        bytecodesBufWriter.writeU1(D2L);
         return this;
     }
 
     @Override
     public CodeBuilder dadd() {
-        writeBytecode(DADD);
+        bytecodesBufWriter.writeU1(DADD);
         return this;
     }
 
     @Override
     public CodeBuilder dcmpg() {
-        writeBytecode(DCMPG);
+        bytecodesBufWriter.writeU1(DCMPG);
         return this;
     }
 
     @Override
     public CodeBuilder dcmpl() {
-        writeBytecode(DCMPL);
+        bytecodesBufWriter.writeU1(DCMPL);
         return this;
     }
 
     @Override
     public CodeBuilder dconst_0() {
-        writeBytecode(DCONST_0);
+        bytecodesBufWriter.writeU1(DCONST_0);
         return this;
     }
 
     @Override
     public CodeBuilder dconst_1() {
-        writeBytecode(DCONST_1);
+        bytecodesBufWriter.writeU1(DCONST_1);
         return this;
     }
 
     @Override
     public CodeBuilder ddiv() {
-        writeBytecode(DDIV);
+        bytecodesBufWriter.writeU1(DDIV);
         return this;
     }
 
     @Override
     public CodeBuilder dload(int slot) {
-        writeLocalVar(BytecodeHelpers.dload(slot), slot);
+        if (slot >= 0 && slot <= 3) {
+            bytecodesBufWriter.writeU1(DLOAD_0 + slot);
+        } else {
+            writeLocalVar(DLOAD, slot);
+        }
         return this;
     }
 
     @Override
     public CodeBuilder dmul() {
-        writeBytecode(DMUL);
+        bytecodesBufWriter.writeU1(DMUL);
         return this;
     }
 
     @Override
     public CodeBuilder dneg() {
-        writeBytecode(DNEG);
+        bytecodesBufWriter.writeU1(DNEG);
         return this;
     }
 
     @Override
     public CodeBuilder drem() {
-        writeBytecode(DREM);
+        bytecodesBufWriter.writeU1(DREM);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder dreturn() {
+        bytecodesBufWriter.writeU1(DRETURN);
         return this;
     }
 
     @Override
     public CodeBuilder dstore(int slot) {
-        writeLocalVar(BytecodeHelpers.dstore(slot), slot);
+        if (slot >= 0 && slot <= 3) {
+            bytecodesBufWriter.writeU1(DSTORE_0 + slot);
+        } else {
+            writeLocalVar(DSTORE, slot);
+        }
         return this;
     }
 
     @Override
     public CodeBuilder dsub() {
-        writeBytecode(DSUB);
+        bytecodesBufWriter.writeU1(DSUB);
         return this;
     }
 
     @Override
     public CodeBuilder dup() {
-        writeBytecode(DUP);
+        bytecodesBufWriter.writeU1(DUP);
         return this;
     }
 
     @Override
     public CodeBuilder dup2() {
-        writeBytecode(DUP2);
+        bytecodesBufWriter.writeU1(DUP2);
         return this;
     }
 
     @Override
     public CodeBuilder dup2_x1() {
-        writeBytecode(DUP2_X1);
+        bytecodesBufWriter.writeU1(DUP2_X1);
         return this;
     }
 
     @Override
     public CodeBuilder dup2_x2() {
-        writeBytecode(DUP2_X2);
+        bytecodesBufWriter.writeU1(DUP2_X2);
         return this;
     }
 
     @Override
     public CodeBuilder dup_x1() {
-        writeBytecode(DUP_X1);
+        bytecodesBufWriter.writeU1(DUP_X1);
         return this;
     }
 
     @Override
     public CodeBuilder dup_x2() {
-        writeBytecode(DUP_X2);
+        bytecodesBufWriter.writeU1(DUP_X2);
         return this;
     }
 
     @Override
     public CodeBuilder f2d() {
-        writeBytecode(F2D);
+        bytecodesBufWriter.writeU1(F2D);
         return this;
     }
 
     @Override
     public CodeBuilder f2i() {
-        writeBytecode(F2I);
+        bytecodesBufWriter.writeU1(F2I);
         return this;
     }
 
     @Override
     public CodeBuilder f2l() {
-        writeBytecode(F2L);
+        bytecodesBufWriter.writeU1(F2L);
         return this;
     }
 
     @Override
     public CodeBuilder fadd() {
-        writeBytecode(FADD);
+        bytecodesBufWriter.writeU1(FADD);
         return this;
     }
 
     @Override
     public CodeBuilder fcmpg() {
-        writeBytecode(FCMPG);
+        bytecodesBufWriter.writeU1(FCMPG);
         return this;
     }
 
     @Override
     public CodeBuilder fcmpl() {
-        writeBytecode(FCMPL);
+        bytecodesBufWriter.writeU1(FCMPL);
         return this;
     }
 
     @Override
     public CodeBuilder fconst_0() {
-        writeBytecode(FCONST_0);
+        bytecodesBufWriter.writeU1(FCONST_0);
         return this;
     }
 
     @Override
     public CodeBuilder fconst_1() {
-        writeBytecode(FCONST_1);
+        bytecodesBufWriter.writeU1(FCONST_1);
         return this;
     }
 
     @Override
     public CodeBuilder fconst_2() {
-        writeBytecode(FCONST_2);
+        bytecodesBufWriter.writeU1(FCONST_2);
         return this;
     }
 
     @Override
     public CodeBuilder fdiv() {
-        writeBytecode(FDIV);
+        bytecodesBufWriter.writeU1(FDIV);
         return this;
     }
 
     @Override
     public CodeBuilder fload(int slot) {
-        writeLocalVar(BytecodeHelpers.fload(slot), slot);
+        if (slot >= 0 && slot <= 3) {
+            bytecodesBufWriter.writeU1(FLOAD_0 + slot);
+        } else {
+            writeLocalVar(FLOAD, slot);
+        }
         return this;
     }
 
     @Override
     public CodeBuilder fmul() {
-        writeBytecode(FMUL);
+        bytecodesBufWriter.writeU1(FMUL);
         return this;
     }
 
     @Override
     public CodeBuilder fneg() {
-        writeBytecode(FNEG);
+        bytecodesBufWriter.writeU1(FNEG);
         return this;
     }
 
     @Override
     public CodeBuilder frem() {
-        writeBytecode(FREM);
+        bytecodesBufWriter.writeU1(FREM);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder freturn() {
+        bytecodesBufWriter.writeU1(FRETURN);
         return this;
     }
 
     @Override
     public CodeBuilder fstore(int slot) {
-        writeLocalVar(BytecodeHelpers.fstore(slot), slot);
+        if (slot >= 0 && slot <= 3) {
+            bytecodesBufWriter.writeU1(FSTORE_0 + slot);
+        } else {
+            writeLocalVar(FSTORE, slot);
+        }
         return this;
     }
 
     @Override
     public CodeBuilder fsub() {
-        writeBytecode(FSUB);
+        bytecodesBufWriter.writeU1(FSUB);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder getstatic(ClassDesc owner, String name, ClassDesc type) {
+        bytecodesBufWriter.writeIndex(GETSTATIC, constantPool().fieldRefEntry(owner, name, type));
+        return this;
+    }
+
+    @Override
+    public CodeBuilder goto_(Label target) {
+        writeShortJump(GOTO, target);
         return this;
     }
 
     @Override
     public CodeBuilder i2b() {
-        writeBytecode(I2B);
+        bytecodesBufWriter.writeU1(I2B);
         return this;
     }
 
     @Override
     public CodeBuilder i2c() {
-        writeBytecode(I2C);
+        bytecodesBufWriter.writeU1(I2C);
         return this;
     }
 
     @Override
     public CodeBuilder i2d() {
-        writeBytecode(I2D);
+        bytecodesBufWriter.writeU1(I2D);
         return this;
     }
 
     @Override
     public CodeBuilder i2f() {
-        writeBytecode(I2F);
+        bytecodesBufWriter.writeU1(I2F);
         return this;
     }
 
     @Override
     public CodeBuilder i2l() {
-        writeBytecode(I2L);
+        bytecodesBufWriter.writeU1(I2L);
         return this;
     }
 
     @Override
     public CodeBuilder i2s() {
-        writeBytecode(I2S);
+        bytecodesBufWriter.writeU1(I2S);
         return this;
     }
 
     @Override
     public CodeBuilder iadd() {
-        writeBytecode(IADD);
+        bytecodesBufWriter.writeU1(IADD);
         return this;
     }
 
     @Override
     public CodeBuilder iand() {
-        writeBytecode(IAND);
+        bytecodesBufWriter.writeU1(IAND);
         return this;
     }
 
     @Override
     public CodeBuilder iconst_0() {
-        writeBytecode(ICONST_0);
+        bytecodesBufWriter.writeU1(ICONST_0);
         return this;
     }
 
     @Override
     public CodeBuilder iconst_1() {
-        writeBytecode(ICONST_1);
+        bytecodesBufWriter.writeU1(ICONST_1);
         return this;
     }
 
     @Override
     public CodeBuilder iconst_2() {
-        writeBytecode(ICONST_2);
+        bytecodesBufWriter.writeU1(ICONST_2);
         return this;
     }
 
     @Override
     public CodeBuilder iconst_3() {
-        writeBytecode(ICONST_3);
+        bytecodesBufWriter.writeU1(ICONST_3);
         return this;
     }
 
     @Override
     public CodeBuilder iconst_4() {
-        writeBytecode(ICONST_4);
+        bytecodesBufWriter.writeU1(ICONST_4);
         return this;
     }
 
     @Override
     public CodeBuilder iconst_5() {
-        writeBytecode(ICONST_5);
+        bytecodesBufWriter.writeU1(ICONST_5);
         return this;
     }
 
     @Override
     public CodeBuilder iconst_m1() {
-        writeBytecode(ICONST_M1);
+        bytecodesBufWriter.writeU1(ICONST_M1);
         return this;
     }
 
     @Override
     public CodeBuilder idiv() {
-        writeBytecode(IDIV);
+        bytecodesBufWriter.writeU1(IDIV);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder if_acmpeq(Label target) {
+        writeShortJump(IF_ACMPEQ, target);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder if_acmpne(Label target) {
+        writeShortJump(IF_ACMPNE, target);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder if_icmpeq(Label target) {
+        writeShortJump(IF_ICMPEQ, target);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder if_icmpge(Label target) {
+        writeShortJump(IF_ICMPGE, target);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder if_icmpgt(Label target) {
+        writeShortJump(IF_ICMPGT, target);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder if_icmple(Label target) {
+        writeShortJump(IF_ICMPLE, target);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder if_icmplt(Label target) {
+        writeShortJump(IF_ICMPLT, target);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder if_icmpne(Label target) {
+        writeShortJump(IF_ICMPNE, target);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder ifnonnull(Label target) {
+        writeShortJump(IFNONNULL, target);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder ifnull(Label target) {
+        writeShortJump(IFNULL, target);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder ifeq(Label target) {
+        writeShortJump(IFEQ, target);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder ifge(Label target) {
+        writeShortJump(IFGE, target);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder ifgt(Label target) {
+        writeShortJump(IFGT, target);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder ifle(Label target) {
+        writeShortJump(IFLE, target);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder iflt(Label target) {
+        writeShortJump(IFLT, target);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder ifne(Label target) {
+        writeShortJump(IFNE, target);
         return this;
     }
 
@@ -1222,25 +1503,29 @@ public final class DirectCodeBuilder
 
     @Override
     public CodeBuilder iload(int slot) {
-        writeLocalVar(BytecodeHelpers.iload(slot), slot);
+        if (slot >= 0 && slot <= 3) {
+            bytecodesBufWriter.writeU1(ILOAD_0 + slot);
+        } else {
+            writeLocalVar(ILOAD, slot);
+        }
         return this;
     }
 
     @Override
     public CodeBuilder imul() {
-        writeBytecode(IMUL);
+        bytecodesBufWriter.writeU1(IMUL);
         return this;
     }
 
     @Override
     public CodeBuilder ineg() {
-        writeBytecode(INEG);
+        bytecodesBufWriter.writeU1(INEG);
         return this;
     }
 
     @Override
     public CodeBuilder instanceOf(ClassEntry target) {
-        writeTypeCheck(INSTANCEOF, target);
+        bytecodesBufWriter.writeIndex(INSTANCEOF, target);
         return this;
     }
 
@@ -1252,85 +1537,95 @@ public final class DirectCodeBuilder
 
     @Override
     public CodeBuilder invokeinterface(InterfaceMethodRefEntry ref) {
-        writeInvokeInterface(INVOKEINTERFACE, ref, Util.parameterSlots(ref.typeSymbol()) + 1);
+        writeInvokeInterface(Opcode.INVOKEINTERFACE, ref, Util.parameterSlots(ref.typeSymbol()) + 1);
         return this;
     }
 
     @Override
     public CodeBuilder invokespecial(InterfaceMethodRefEntry ref) {
-        writeInvokeNormal(INVOKESPECIAL, ref);
+        bytecodesBufWriter.writeIndex(INVOKESPECIAL, ref);
         return this;
     }
 
     @Override
     public CodeBuilder invokespecial(MethodRefEntry ref) {
-        writeInvokeNormal(INVOKESPECIAL, ref);
+        bytecodesBufWriter.writeIndex(INVOKESPECIAL, ref);
         return this;
     }
 
     @Override
     public CodeBuilder invokestatic(InterfaceMethodRefEntry ref) {
-        writeInvokeNormal(INVOKESTATIC, ref);
+        bytecodesBufWriter.writeIndex(INVOKESTATIC, ref);
         return this;
     }
 
     @Override
     public CodeBuilder invokestatic(MethodRefEntry ref) {
-        writeInvokeNormal(INVOKESTATIC, ref);
+        bytecodesBufWriter.writeIndex(INVOKESTATIC, ref);
         return this;
     }
 
     @Override
     public CodeBuilder invokevirtual(MethodRefEntry ref) {
-        writeInvokeNormal(INVOKEVIRTUAL, ref);
+        bytecodesBufWriter.writeIndex(INVOKEVIRTUAL, ref);
         return this;
     }
 
     @Override
     public CodeBuilder ior() {
-        writeBytecode(IOR);
+        bytecodesBufWriter.writeU1(IOR);
         return this;
     }
 
     @Override
     public CodeBuilder irem() {
-        writeBytecode(IREM);
+        bytecodesBufWriter.writeU1(IREM);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder ireturn() {
+        bytecodesBufWriter.writeU1(IRETURN);
         return this;
     }
 
     @Override
     public CodeBuilder ishl() {
-        writeBytecode(ISHL);
+        bytecodesBufWriter.writeU1(ISHL);
         return this;
     }
 
     @Override
     public CodeBuilder ishr() {
-        writeBytecode(ISHR);
+        bytecodesBufWriter.writeU1(ISHR);
         return this;
     }
 
     @Override
     public CodeBuilder istore(int slot) {
-        writeLocalVar(BytecodeHelpers.istore(slot), slot);
+        if (slot >= 0 && slot <= 3) {
+            bytecodesBufWriter.writeU1(ISTORE_0 + slot);
+        } else {
+            writeLocalVar(ISTORE, slot);
+        }
         return this;
     }
 
     @Override
     public CodeBuilder isub() {
-        writeBytecode(ISUB);
+        bytecodesBufWriter.writeU1(ISUB);
         return this;
     }
 
     @Override
     public CodeBuilder iushr() {
-        writeBytecode(IUSHR);
+        bytecodesBufWriter.writeU1(IUSHR);
         return this;
     }
 
     @Override
     public CodeBuilder ixor() {
-        writeBytecode(IXOR);
+        bytecodesBufWriter.writeU1(IXOR);
         return this;
     }
 
@@ -1342,49 +1637,49 @@ public final class DirectCodeBuilder
 
     @Override
     public CodeBuilder l2d() {
-        writeBytecode(L2D);
+        bytecodesBufWriter.writeU1(L2D);
         return this;
     }
 
     @Override
     public CodeBuilder l2f() {
-        writeBytecode(L2F);
+        bytecodesBufWriter.writeU1(L2F);
         return this;
     }
 
     @Override
     public CodeBuilder l2i() {
-        writeBytecode(L2I);
+        bytecodesBufWriter.writeU1(L2I);
         return this;
     }
 
     @Override
     public CodeBuilder ladd() {
-        writeBytecode(LADD);
+        bytecodesBufWriter.writeU1(LADD);
         return this;
     }
 
     @Override
     public CodeBuilder land() {
-        writeBytecode(LAND);
+        bytecodesBufWriter.writeU1(LAND);
         return this;
     }
 
     @Override
     public CodeBuilder lcmp() {
-        writeBytecode(LCMP);
+        bytecodesBufWriter.writeU1(LCMP);
         return this;
     }
 
     @Override
     public CodeBuilder lconst_0() {
-        writeBytecode(LCONST_0);
+        bytecodesBufWriter.writeU1(LCONST_0);
         return this;
     }
 
     @Override
     public CodeBuilder lconst_1() {
-        writeBytecode(LCONST_1);
+        bytecodesBufWriter.writeU1(LCONST_1);
         return this;
     }
 
@@ -1396,85 +1691,99 @@ public final class DirectCodeBuilder
 
     @Override
     public CodeBuilder ldiv() {
-        writeBytecode(LDIV);
+        bytecodesBufWriter.writeU1(LDIV);
         return this;
     }
 
     @Override
     public CodeBuilder lload(int slot) {
-        writeLocalVar(BytecodeHelpers.lload(slot), slot);
+        if (slot >= 0 && slot <= 3) {
+            bytecodesBufWriter.writeU1(LLOAD_0 + slot);
+        } else {
+            writeLocalVar(LLOAD, slot);
+        }
         return this;
     }
 
     @Override
     public CodeBuilder lmul() {
-        writeBytecode(LMUL);
+        bytecodesBufWriter.writeU1(LMUL);
         return this;
     }
 
     @Override
     public CodeBuilder lneg() {
-        writeBytecode(LNEG);
+        bytecodesBufWriter.writeU1(LNEG);
         return this;
     }
 
     @Override
     public CodeBuilder lor() {
-        writeBytecode(LOR);
+        bytecodesBufWriter.writeU1(LOR);
         return this;
     }
 
     @Override
     public CodeBuilder lrem() {
-        writeBytecode(LREM);
+        bytecodesBufWriter.writeU1(LREM);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder lreturn() {
+        bytecodesBufWriter.writeU1(LRETURN);
         return this;
     }
 
     @Override
     public CodeBuilder lshl() {
-        writeBytecode(LSHL);
+        bytecodesBufWriter.writeU1(LSHL);
         return this;
     }
 
     @Override
     public CodeBuilder lshr() {
-        writeBytecode(LSHR);
+        bytecodesBufWriter.writeU1(LSHR);
         return this;
     }
 
     @Override
     public CodeBuilder lstore(int slot) {
-        writeLocalVar(BytecodeHelpers.lstore(slot), slot);
+        if (slot >= 0 && slot <= 3) {
+            bytecodesBufWriter.writeU1(LSTORE_0 + slot);
+        } else {
+            writeLocalVar(LSTORE, slot);
+        }
         return this;
     }
 
     @Override
     public CodeBuilder lsub() {
-        writeBytecode(LSUB);
+        bytecodesBufWriter.writeU1(LSUB);
         return this;
     }
 
     @Override
     public CodeBuilder lushr() {
-        writeBytecode(LUSHR);
+        bytecodesBufWriter.writeU1(LUSHR);
         return this;
     }
 
     @Override
     public CodeBuilder lxor() {
-        writeBytecode(LXOR);
+        bytecodesBufWriter.writeU1(LXOR);
         return this;
     }
 
     @Override
     public CodeBuilder monitorenter() {
-        writeBytecode(MONITORENTER);
+        bytecodesBufWriter.writeU1(MONITORENTER);
         return this;
     }
 
     @Override
     public CodeBuilder monitorexit() {
-        writeBytecode(MONITOREXIT);
+        bytecodesBufWriter.writeU1(MONITOREXIT);
         return this;
     }
 
@@ -1501,26 +1810,26 @@ public final class DirectCodeBuilder
 
     @Override
     public CodeBuilder pop() {
-        writeBytecode(POP);
+        bytecodesBufWriter.writeU1(POP);
         return this;
     }
 
     @Override
     public CodeBuilder pop2() {
-        writeBytecode(POP2);
+        bytecodesBufWriter.writeU1(POP2);
         return this;
     }
 
     @Override
     public CodeBuilder sipush(int s) {
         BytecodeHelpers.validateSipush(s);
-        writeArgumentConstant(SIPUSH, s);
+        bytecodesBufWriter.writeU1U2(SIPUSH, s);
         return this;
     }
 
     @Override
     public CodeBuilder swap() {
-        writeBytecode(SWAP);
+        bytecodesBufWriter.writeU1(SWAP);
         return this;
     }
 

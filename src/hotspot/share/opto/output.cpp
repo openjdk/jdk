@@ -1715,7 +1715,7 @@ void PhaseOutput::fill_buffer(C2_MacroAssembler* masm, uint* blk_starts) {
         node_offsets[n->_idx] = masm->offset();
       }
 #endif
-      assert(!C->failing(), "Should not reach here if failing.");
+      assert(!C->failing_internal() || C->failure_is_artificial(), "Should not reach here if failing.");
 
       // "Normal" instruction case
       DEBUG_ONLY(uint instr_offset = masm->offset());
@@ -3393,7 +3393,7 @@ uint PhaseOutput::scratch_emit_size(const Node* n) {
   n->emit(&masm, C->regalloc());
 
   // Emitting into the scratch buffer should not fail
-  assert (!C->failing(), "Must not have pending failure. Reason is: %s", C->failure_reason());
+  assert(!C->failing_internal() || C->failure_is_artificial(), "Must not have pending failure. Reason is: %s", C->failure_reason());
 
   if (is_branch) // Restore label.
     n->as_MachBranch()->label_set(saveL, save_bnum);

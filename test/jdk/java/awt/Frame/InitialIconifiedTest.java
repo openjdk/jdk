@@ -50,36 +50,75 @@ public class InitialIconifiedTest {
 
     private static Robot robot;
 
+    private static final StringBuilder FAILURES = new StringBuilder();
+
     public static void main(String[] args) throws Exception {
         robot = new Robot();
-
         try {
-            EventQueue.invokeAndWait(InitialIconifiedTest::initAndShowGui);
+            EventQueue.invokeAndWait(InitialIconifiedTest::initAndShowBackground);
             robot.waitForIdle();
             robot.delay(500);
-            test();
+
+            test(false);
+            test(true);
         } finally {
             EventQueue.invokeAndWait(() -> {
                 backgroundFrame.dispose();
                 testedFrame.dispose();
             });
         }
+
+        if (!FAILURES.isEmpty()) {
+            throw new RuntimeException(FAILURES.toString());
+        }
     }
 
-    private static void initAndShowGui() {
+    private static void test(boolean isUndecorated) throws Exception {
+        String prefix = isUndecorated ? "undecorated" : "decorated";
+
+        EventQueue.invokeAndWait(() -> initAndShowTestedFrame(isUndecorated));
+        // On macos, we can observe the animation of the window from the initial
+        // NORMAL state to the ICONIFIED state,
+        // even if the window was created in the ICONIFIED state.
+        // The following delay is commented out to capture this animation
+        // robot.waitForIdle();
+        // robot.delay(500);
+        if (!testIfIconified(prefix + "_no_extra_delay")) {
+            FAILURES.append("Case %s frame with no extra delay failed\n"
+                    .formatted(isUndecorated ? "undecorated" : "decorated"));
+        }
+
+        EventQueue.invokeAndWait(() -> initAndShowTestedFrame(isUndecorated));
+        robot.waitForIdle();
+        robot.delay(500);
+        if (!testIfIconified(prefix + "_with_extra_delay")) {
+            FAILURES.append("Case %s frame with extra delay failed\n"
+                    .formatted(isUndecorated ? "undecorated" : "decorated"));
+        }
+    }
+
+    private static void initAndShowBackground() {
         backgroundFrame = new Frame("DisposeTest background");
         backgroundFrame.setUndecorated(true);
         backgroundFrame.setBackground(Color.RED);
         backgroundFrame.setBounds(backgroundFrameBounds);
         backgroundFrame.setVisible(true);
+    }
 
+    private static void initAndShowTestedFrame(boolean isUndecorated) {
+        if (testedFrame != null) {
+            testedFrame.dispose();
+        }
         testedFrame = new Frame("Should have started ICONIC");
+        if (isUndecorated) {
+            testedFrame.setUndecorated(true);
+        }
         testedFrame.setExtendedState(Frame.ICONIFIED);
         testedFrame.setBounds(testedFrameBounds);
         testedFrame.setVisible(true);
     }
 
-    private static void test() {
+    private static boolean testIfIconified(String prefix) {
         BufferedImage bi = robot.createScreenCapture(backgroundFrameBounds);
         int redPix = Color.RED.getRGB();
 
@@ -88,11 +127,12 @@ public class InitialIconifiedTest {
                 if (bi.getRGB(x, y) != redPix) {
                     try {
                         ImageIO.write(bi, "png",
-                                new File("failure.png"));
+                                new File(prefix + "_failure.png"));
                     } catch (IOException ignored) {}
-                    throw new RuntimeException("Test failed");
+                    return false;
                 }
             }
         }
+        return true;
     }
 }
