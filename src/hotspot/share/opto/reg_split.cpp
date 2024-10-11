@@ -431,7 +431,7 @@ Node *PhaseChaitin::split_Rematerialize(Node *def, Block *b, uint insidx, uint &
 //------------------------------is_high_pressure-------------------------------
 // Function to compute whether or not this live range is "high pressure"
 // in this block - whether it spills eagerly or not.
-bool is_high_pressure(const Block* b, const LRG* lrg, uint insidx) {
+static bool is_high_pressure(const Block* b, const LRG* lrg, uint insidx) {
   if( lrg->_was_spilled1 ) return true;
   // Forced spilling due to conflict?  Then split only at binding uses
   // or defs, not for supposed capacity problems.
@@ -483,16 +483,50 @@ bool PhaseChaitin::prompt_use( Block *b, uint lidx ) {
   return false;
 }
 
-// Check if a live range would be spilt in a loop nest
-static bool is_spilt_in_loop_nest(const PhaseCFG& cfg, CFGLoop* loop, const LRG& lrg) {
+// Check if a live range would be spilt in a loop nest so that we will eagerly spill it
+static bool should_spill_before_loop(const PhaseCFG& cfg, PhaseChaitin& chaitin, CFGLoop* loop, uint lrg_idx, const LRG& lrg) {
+  assert(&chaitin.lrgs(lrg_idx) == &lrg, "must be");
+  bool spilt = false;
+  bool used_in_common_path = false;
   for (uint i = 0; i < cfg.number_of_blocks(); i++) {
     Block* b = cfg.get_block(i);
+    if (!loop->in_loop_nest(b)) {
+      continue;
+    }
+
+    // Don't be eager spilling something that will only be spilt uncommonly and is used in the common path
+    constexpr double uncommon_threshold = 0.1;
     // Implementation details: high pressure only records the start idx, not the end idx
-    if (loop->in_loop_nest(b) && is_high_pressure(b, &lrg, b->end_idx())) {
-      return true;
+    if (is_high_pressure(b, &lrg, b->end_idx())) {
+      // If a node needs to be spilt in a child loop, we can spill it at the child entry, too. Choose the best option.
+      double spill_freq = b->_freq;
+      for (CFGLoop* l = b->_loop; l != loop; l = l->parent()) {
+        assert(l != nullptr, "");
+        Block* l_entry = cfg.get_block_for_node(l->head()->pred(LoopNode::EntryControl));
+        spill_freq = MIN2(spill_freq, l_entry->_freq);
+      }
+      if (spill_freq > loop->head()->_freq * uncommon_threshold) {
+        return true;
+      } else {
+        spilt = true;
+      }
+    }
+
+    // If lrg is used in the common path
+    if (b->_freq > loop->head()->_freq * uncommon_threshold) {
+      for (uint i = 0; !used_in_common_path && i < b->number_of_nodes(); i++) {
+        Node* n = b->get_node(i);
+        for (uint j = 1; j < n->req(); j++) {
+          Node* in = n->in(j);
+          if (in != nullptr && chaitin._lrg_map.find_id(in) == lrg_idx) {
+            used_in_common_path = true;
+            break;
+          }
+        }
+      }
     }
   }
-  return false;
+  return spilt && !used_in_common_path;
 }
 
 //------------------------------Split--------------------------------------
@@ -731,7 +765,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
         }
         // If we enter a loop and will spill there, try to spill in the loop entry, except if we
         // are reassigned in the loop anyway
-        if (!has_phi && b->head()->is_Loop() && is_spilt_in_loop_nest(_cfg, b->_loop, lrgs(lidx))) {
+        if (!has_phi && b->head()->is_Loop() && should_spill_before_loop(_cfg, *this, b->_loop, lidx, lrgs(lidx))) {
           UPblock[slidx] = false;
         }
       }  // end if phi is needed
