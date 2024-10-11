@@ -58,6 +58,14 @@ public class InvalidCRCData {
 
     String className = "foo.bar.Library";
 
+    /**
+     * Verify that URLClassLoader adds a suppressed exception when
+     * a class file is rejected with ClassFormatError and the class data
+     * file CRC32 checksum does not match the CRC32 stated in the JAR CEN header.
+     *
+     * @throws IOException if an unexpected IO exception occurs
+     * @throws ClassNotFoundException if a class is unexpectedly not found
+     */
     @Test
     public void verifyURLClassLoader() throws IOException, ClassNotFoundException {
 
@@ -74,6 +82,14 @@ public class InvalidCRCData {
         }
     }
 
+    /**
+     * Document that a JAR file with invalid class file data and a mismatching
+     * CRC32 checksums does not cause ClassFormatError to have suppressed
+     * exceptions when loaded using the module class loader.
+     *
+     * @throws IOException if an unexpected IO exception occurs
+     * @throws ClassNotFoundException if a class is unexpectedly not found
+     */
     @Test
     public void verifyModule() throws IOException, ClassNotFoundException {
 
