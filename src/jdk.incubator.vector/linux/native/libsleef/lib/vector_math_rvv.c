@@ -119,6 +119,6 @@ DEFINE_VECTOR_MATH_BINARY_RVV(hypotdx_u05, vdouble_rvvm1_sleef)
 
 #undef DEFINE_VECTOR_MATH_BINARY_RVV
 
-#endif /* __riscv_v_intrinsic */
+#endif  /* __riscv_v_intrinsic */
 
-#endif
+#endif  /* check gcc and clang version */
