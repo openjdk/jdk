@@ -2182,10 +2182,6 @@ public class KeyStore {
          * <p>Calls to {@link #getProtectionParameter getProtectionParameter()}
          * will return {@code protection}.
          *
-         * <p><em>Note</em> that the {@link #getKeyStore} method is executed
-         * within the {@link AccessControlContext} of the code invoking this
-         * method.
-         *
          * @return a new {@code Builder} object
          * @param type the type of {@code KeyStore} to be constructed
          * @param provider the provider from which the {@code KeyStore} is to
