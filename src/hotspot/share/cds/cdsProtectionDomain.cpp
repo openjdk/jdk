@@ -199,10 +199,9 @@ Handle CDSProtectionDomain::get_shared_jar_manifest(int shared_path_index, TRAPS
 Handle CDSProtectionDomain::get_shared_jar_url(int shared_path_index, TRAPS) {
   Handle url_h;
   if (shared_jar_url(shared_path_index) == nullptr) {
-    JavaValue result(T_OBJECT);
     const char* path = FileMapInfo::shared_path_name(shared_path_index);
-    get_shared_jar_url_helper(&result, path, url_h, CHECK_(url_h));
-    atomic_set_shared_jar_url(shared_path_index, result.get_oop());
+    oop result_oop = get_shared_jar_url_helper(path, url_h, CHECK_(url_h));
+    atomic_set_shared_jar_url(shared_path_index, result_oop);
   }
 
   url_h = Handle(THREAD, shared_jar_url(shared_path_index));
@@ -210,13 +209,15 @@ Handle CDSProtectionDomain::get_shared_jar_url(int shared_path_index, TRAPS) {
   return url_h;
 }
 
-void CDSProtectionDomain::get_shared_jar_url_helper(JavaValue* result, const char* path, Handle url_h, TRAPS) {
-  Handle path_string = java_lang_String::create_from_str(path, CHECK);
-  JavaCalls::call_static(result,
+oop CDSProtectionDomain::get_shared_jar_url_helper(const char* path, Handle url_h, TRAPS) {
+  JavaValue result(T_OBJECT);
+  Handle path_string = java_lang_String::create_from_str(path, CHECK_NULL);
+  JavaCalls::call_static(&result,
                          vmClasses::jdk_internal_loader_ClassLoaders_klass(),
                          vmSymbols::toFileURL_name(),
                          vmSymbols::toFileURL_signature(),
-                         path_string, CHECK);
+                         path_string, CHECK_NULL);
+  return result.get_oop();
 }
 
 // Get the ProtectionDomain associated with the CodeSource from the classloader.
