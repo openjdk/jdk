@@ -666,7 +666,6 @@ bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_ou
     VTransformVectorNode* vector_accumulator = new (vtransform.arena()) VTransformXYZVectorNode(vtransform, current_red->prototype(), 3, vopc);
     vector_accumulator->init_req(1, current_vector_accumulator);
     vector_accumulator->init_req(2, vector_input);
-    vector_accumulator->set_nodes(current_red->xnodes()); // TODO del
     TRACE_OPTIMIZE(
       tty->print("  replace    ");
       current_red->print();
@@ -734,10 +733,10 @@ VTransformApplyResult VTransformLoadVectorNode::apply(VTransformApplyState& appl
   // Set the memory dependency of the LoadVector as early as possible.
   // Walk up the memory chain, and ignore any StoreVector that provably
   // does not have any memory dependency.
-  // TODO: can we move this to optimize or out of SuperWord? Would require some refactor of VPointer!
+  // TODO: can we move this elsewhere? Refactor VPointer?
   while (mem->is_StoreVector()) {
     VPointer p_store(mem->as_Mem(), apply_state.vloop());
-    if (p_store.overlap_possible_with_any_in(xnodes())) { // TODO move to LoadVector
+    if (p_store.overlap_possible_with_any_in(_xnodes)) {
       break;
     } else {
       mem = mem->in(MemNode::Memory);
@@ -852,15 +851,9 @@ void VTransformPopulateIndexNode::print_spec() const {
 }
 
 void VTransformVectorNode::print_spec() const {
-  tty->print("%d-pack[", _xnodes.length()); // TODO del / replace
-  for (int i = 0; i < _xnodes.length(); i++) {
-    Node* n = _xnodes.at(i);
-    if (i > 0) {
-      tty->print(", ");
-    }
-    tty->print("%d %s", n->_idx, n->Name());
-  }
-  tty->print("]");
+  tty->print("vlen=%d bt=%s",
+             vector_length(),
+             type2name(element_basic_type()));
 }
 
 void VTransformXYZVectorNode::print_spec() const {

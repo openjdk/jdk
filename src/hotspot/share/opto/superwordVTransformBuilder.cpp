@@ -188,7 +188,10 @@ VTransformVectorNode* SuperWordVTransformBuilder::make_vector_vtnode_for_pack(co
   if (p0->is_Load()) {
     const VPointer* vpointer = &_vloop_analyzer.vpointers().vpointer(p0->as_Load());
     const LoadNode::ControlDependency dep = load_control_dependency(pack);;
-    vtn = new (_vtransform.arena()) VTransformLoadVectorNode(_vtransform, prototype, vpointer, dep);
+    VTransformLoadVectorNode* load;
+    load = new (_vtransform.arena()) VTransformLoadVectorNode(_vtransform, prototype, vpointer, dep);
+    load->set_nodes(pack);
+    vtn = load;
   } else if (p0->is_Store()) {
     const VPointer* vpointer = &_vloop_analyzer.vpointers().vpointer(p0->as_Store());
     vtn = new (_vtransform.arena()) VTransformStoreVectorNode(_vtransform, prototype, vpointer);
@@ -230,7 +233,6 @@ VTransformVectorNode* SuperWordVTransformBuilder::make_vector_vtnode_for_pack(co
     int vopc = VectorNode::opcode(opc, bt);
     vtn = new (_vtransform.arena()) VTransformXYZVectorNode(_vtransform, prototype, p0->req(), vopc);
   }
-  vtn->set_nodes(pack);
   return vtn;
 }
 

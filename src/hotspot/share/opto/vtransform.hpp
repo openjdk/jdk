@@ -619,34 +619,10 @@ public:
 
 // Base class for all vector vtnodes.
 class VTransformVectorNode : public VTransformNode {
-private:
-  // TODO goal to eventually remove: tricky is the memory graph though...
-  // also some types need to condition on the first elements type,
-  // and so we'd have to split those node types earlier
-  GrowableArray<Node*> _xnodes;
 public:
   VTransformVectorNode(VTransform& vtransform, VTransformNodePrototype prototype, const uint req) :
-    VTransformNode(vtransform, prototype, req),
-    _xnodes(vtransform.arena(),
-           vector_length(),
-           vector_length(),
-	   nullptr) {}
+    VTransformNode(vtransform, prototype, req) {}
 
-  void set_nodes(const Node_List* pack) {
-    assert(pack->size() == vector_length(), "must have same length");
-    for (uint k = 0; k < pack->size(); k++) {
-      _xnodes.at_put(k, pack->at(k));
-    }
-  }
-
-  void set_nodes(const GrowableArray<Node*>& nodes) {
-    assert((uint)nodes.length() == vector_length(), "must have same length");
-    for (int k = 0; k < nodes.length(); k++) {
-      _xnodes.at_put(k, nodes.at(k));
-    }
-  }
-
-  const GrowableArray<Node*>& xnodes() const { return _xnodes; }
   virtual VTransformVectorNode* isa_Vector() override { return this; }
   NOT_PRODUCT(virtual void print_spec() const override;)
 };
@@ -741,12 +717,27 @@ public:
 class VTransformLoadVectorNode : public VTransformMemVectorNode {
 private:
   const LoadNode::ControlDependency _control_dependency;
+
+  // TODO
+  GrowableArray<Node*> _xnodes;
 public:
   // req = 3 -> [ctrl, mem, adr]
   VTransformLoadVectorNode(VTransform& vtransform, VTransformNodePrototype prototype, const VPointer* vpointer, const LoadNode::ControlDependency control_dependency) :
     VTransformMemVectorNode(vtransform, prototype, 3, vpointer),
-    _control_dependency(control_dependency) {}
+    _control_dependency(control_dependency),
+    _xnodes(vtransform.arena(),
+           vector_length(),
+           vector_length(),
+	   nullptr) {}
   LoadNode::ControlDependency control_dependency() const;
+
+  void set_nodes(const Node_List* pack) {
+    assert(pack->size() == vector_length(), "must have same length");
+    for (uint k = 0; k < pack->size(); k++) {
+      _xnodes.at_put(k, pack->at(k));
+    }
+  }
+
   virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override;
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "LoadVector"; };)
