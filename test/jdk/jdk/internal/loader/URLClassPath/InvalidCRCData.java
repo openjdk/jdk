@@ -117,7 +117,7 @@ public class InvalidCRCData {
         assertFalse(isCRC32Suppressed(exception));
     }
 
-    // Return true iff CFE has a suppressed CRC32 missmatch error
+    // Return true iff CFE has a suppressed CRC32 mismatch error
     private static boolean isCRC32Suppressed(ClassFormatError exception) {
         for (Throwable t : exception.getSuppressed()) {
             if (t instanceof IOException ioe &&
