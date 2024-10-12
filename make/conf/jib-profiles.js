@@ -486,7 +486,7 @@ var getJibProfilesProfiles = function (input, common, data) {
         "linux-aarch64": {
             target_os: "linux",
             target_cpu: "aarch64",
-            dependencies: ["devkit", "gtest", "build_devkit", "graphviz", "pandoc"],
+            dependencies: ["devkit", "gtest", "build_devkit", "graphviz", "pandoc", "tidy"],
             configure_args: [
                 "--with-zlib=system",
                 "--disable-dtrace",
@@ -1277,11 +1277,12 @@ var getJibProfilesDependencies = function (input, common) {
         },
         tidy: {
             organization: common.organization,
+            environment_name: "TIDY_HOME",
             ext: "tar.gz",
             revision: "5.9.20+1",
             environment_path: input.get("tidy", "home_path") + "/bin/tidy",
             configure_args: "TIDY=" + input.get("tidy", "home_path") +"/bin/tidy",
-            module: "tidy-html-" + input.target_os,
+            module: "tidy-html-" + (input.target_os === "macosx" ? input.target_os : input.target_platform),
         },
     };
 
