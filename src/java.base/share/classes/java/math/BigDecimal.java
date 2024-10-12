@@ -5274,7 +5274,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         BigInteger[] qr; // quotient-remainder pair
         // Remove 5^(2^i) from the factors of intVal, until 5^remainingZeros < 5^(2^i)
         // (i.e., there are too few powers of five left to remove).
-        // Note that if intVal % 5^(2^i) != 0, the cicle's condition will become false.
+        // Note that if intVal % 5^(2^i) != 0, the cycle's condition will become false.
         for (int i = 0; remainingZeros >= 1L << i; i++) {
             final int exp = 1 << i;
             qr = intVal.divideAndRemainder(fiveToTwoToThe(i));
@@ -5334,12 +5334,9 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * Assumes {@code intVal != 0 && intCompact != 0}.
      */
     private static BigDecimal stripZerosToMatchScale(BigInteger intVal, long intCompact, int scale, long preferredScale) {
-        if (intCompact != INFLATED) {
-            return createAndStripZerosToMatchScale(intCompact, scale, preferredScale);
-        } else {
-            return createAndStripZerosToMatchScale(intVal==null ? INFLATED_BIGINT : intVal,
-                                                   scale, preferredScale);
-        }
+        return intCompact != INFLATED
+            ? createAndStripZerosToMatchScale(intCompact, scale, preferredScale)
+            : createAndStripZerosToMatchScale(intVal == null ? INFLATED_BIGINT : intVal, scale, preferredScale);
     }
 
     /*
