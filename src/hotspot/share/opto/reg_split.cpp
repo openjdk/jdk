@@ -483,15 +483,23 @@ bool PhaseChaitin::prompt_use( Block *b, uint lidx ) {
   return false;
 }
 
+enum class SpillAction {
+  None,
+  Spill,
+  Reload
+};
+
 // Check if a live range would be spilt in a loop nest so that we will eagerly spill it
-static bool should_spill_before_loop(const PhaseCFG& cfg, PhaseChaitin& chaitin, CFGLoop* loop, uint lrg_idx, const LRG& lrg) {
+static SpillAction should_spill_before_loop(const PhaseCFG& cfg, PhaseChaitin& chaitin, CFGLoop* loop, uint lrg_idx, const LRG& lrg) {
   // Don't be eager spilling something that will only be spilt uncommonly and is used in the common path
   // as it leads to excessive reloads
   constexpr double uncommon_threshold = 0.1;
   assert(&chaitin.lrgs(lrg_idx) == &lrg, "must be");
-  bool spilt = false;
+  double entry_freq = cfg.get_block_for_node(loop->head()->pred(LoopNode::EntryControl))->_freq;
+  double head_freq = loop->head()->_freq;
 
   // Whether the lrg is spilt inside the loop
+  bool spilt_uncommon = false;
   for (uint bidx = 0; bidx < cfg.number_of_blocks(); bidx++) {
     Block* b = cfg.get_block(bidx);
     if (!loop->in_loop_nest(b)) {
@@ -500,45 +508,64 @@ static bool should_spill_before_loop(const PhaseCFG& cfg, PhaseChaitin& chaitin,
 
     // Implementation details: high pressure only records the start idx, not the end idx
     if (is_high_pressure(b, &lrg, b->end_idx())) {
-      // If a node needs to be spilt in a child loop, we can spill it at the child entry, too. Choose the best option.
+      // If a node needs spilling in a child loop, we can spill it at the child entry, too. Choose the best option.
       double spill_freq = b->_freq;
       for (CFGLoop* l = b->_loop; l != loop; l = l->parent()) {
         Block* l_entry = cfg.get_block_for_node(l->head()->pred(LoopNode::EntryControl));
         spill_freq = MIN2(spill_freq, l_entry->_freq);
       }
-      if (spill_freq > loop->head()->_freq * uncommon_threshold) {
+      if (spill_freq > head_freq * uncommon_threshold) {
         // Spilt in the common path, spill eagerly regardless
-        return true;
-      } else {
+        return SpillAction::Spill;
+      } else if (spill_freq > entry_freq) {
         // Uncommon path, need to check if it is used in the common path
-        spilt = true;
+        spilt_uncommon = true;
       }
     }
   }
 
-  if (!spilt) {
-    return false;
-  }
-
-  // Whether the lrg is used in the common path
+  // Whether the lrg is used in the loop
+  bool reloaded_uncommon = false;
   for (uint i = 0; i < cfg.number_of_blocks(); i++) {
     Block* b = cfg.get_block(i);
     if (!loop->in_loop_nest(b)) {
       continue;
     }
-    if (b->_freq > loop->head()->_freq * uncommon_threshold) {
-      for (uint nidx = 0; nidx < b->number_of_nodes(); nidx++) {
-        Node* n = b->get_node(nidx);
-        for (uint i = 1; i < n->req(); i++) {
-          Node* in = n->in(i);
-          if (in != nullptr && chaitin._lrg_map.find_id(in) == lrg_idx) {
-            return false;
-          }
+
+    // If a node needs reloading in a child loop, we can reload it at the child entry, too. Choose the best option.
+    double reload_freq = b->_freq;
+    for (CFGLoop* l = b->_loop; l != loop; l = l->parent()) {
+      Block* l_entry = cfg.get_block_for_node(l->head()->pred(LoopNode::EntryControl));
+      reload_freq = MIN2(reload_freq, l_entry->_freq);
+    }
+
+    for (uint nidx = 0; nidx < b->number_of_nodes(); nidx++) {
+      Node* n = b->get_node(nidx);
+      if (!n->is_Mach()) {
+        continue;
+      }
+      for (uint i = 1; i < n->req(); i++) {
+        Node* in = n->in(i);
+        // Check if n use lrg and lrg must be in register there
+        if (in == nullptr || chaitin._lrg_map.find_id(in) != lrg_idx || !n->in_RegMask(i).is_UP()) {
+          continue;
+        }
+        if (reload_freq > head_freq * uncommon_threshold) {
+          return SpillAction::Reload;
+        } else if (reload_freq > entry_freq) {
+          reloaded_uncommon = true;
         }
       }
     }
   }
-  return true;
+
+  if (spilt_uncommon) {
+    return SpillAction::Spill;
+  } else if (reloaded_uncommon) {
+    return SpillAction::Reload;
+  } else {
+    return SpillAction::None;
+  }
 }
 
 //------------------------------Split--------------------------------------
@@ -559,9 +586,9 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
 
   uint                 bidx, pidx, slidx, insidx, inpidx, twoidx;
   uint                 non_phi = 1, spill_cnt = 0;
-  Node                *n1, *n2, *n3;
+  Node                *n1, *n2;
   bool                *UPblock;
-  bool                 u1, u2, u3;
+  bool                 u1, u2;
   Block               *b, *pred;
   PhiNode             *phi;
   GrowableArray<uint>  lidxs(split_arena, maxlrg, 0, 0);
@@ -655,14 +682,13 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
     // be either the phi's or the reaching def, as appropriate.
     // If no Phi is needed, check if the LRG needs to spill on entry
     // to the block due to HRP.
-    for( slidx = 0; slidx < spill_cnt; slidx++ ) {
+    for (slidx = 0; slidx < spill_cnt; slidx++) {
       // Grab the live range number
       uint lidx = lidxs.at(slidx);
       // Do not bother splitting or putting in Phis for single-def
       // rematerialized live ranges.  This happens a lot to constants
       // with long live ranges.
-      if( lrgs(lidx).is_singledef() &&
-          lrgs(lidx)._def->rematerialize() ) {
+      if (lrgs(lidx).is_singledef() && lrgs(lidx)._def->rematerialize()) {
         // reset the Reaches & UP entries
         Reachblock[slidx] = lrgs(lidx)._def;
         UPblock[slidx] = true;
@@ -682,16 +708,16 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
       // Grab the appropriate reaching def info for inpidx
       pred = _cfg.get_block_for_node(n1);
       pidx = pred->_pre_order;
-      Node **Ltmp = Reaches[pidx];
-      bool  *Utmp = UP[pidx];
+      Node** Ltmp = Reaches[pidx];
+      bool* Utmp = UP[pidx];
       n1 = Ltmp[slidx];
       u1 = Utmp[slidx];
-      // Initialize node for saving type info
-      n3 = n1;
-      u3 = u1;
+      // Preserve a non-null predecessor for later type referencing
+      Node* n_any = n1;
+      bool u_any = u1;
 
       // Compare inputs to see if a Phi is needed
-      for( inpidx = 2; inpidx < b->num_preds(); inpidx++ ) {
+      for (inpidx = 2; inpidx < b->num_preds(); inpidx++) {
         // Grab predecessor block headers
         n2 = b->pred(inpidx);
         // Grab the appropriate reaching def info for inpidx
@@ -702,29 +728,28 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
         n2 = Ltmp[slidx];
         u2 = Utmp[slidx];
         // For each LRG, decide if a phi is necessary
-        if( n1 != n2 ) {
+        if (n1 != n2) {
           needs_phi = true;
         }
         // See if the phi has mismatched inputs, UP vs. DOWN
-        if( n1 && n2 && (u1 != u2) ) {
+        if (n1 != nullptr && n2 != nullptr && (u1 != u2)) {
           needs_split = true;
         }
         // Move n2/u2 to n1/u1 for next iteration
         n1 = n2;
         u1 = u2;
-        // Preserve a non-null predecessor for later type referencing
-        if( (n3 == nullptr) && (n2 != nullptr) ){
-          n3 = n2;
-          u3 = u2;
+        if (n_any == nullptr && n2 != nullptr) {
+          n_any = n2;
+          u_any = u2;
         }
       }  // End for all potential Phi inputs
 
       // check block for appropriate phinode & update edges
-      for( insidx = 1; insidx <= b->end_idx(); insidx++ ) {
+      for (insidx = 1; insidx <= b->end_idx(); insidx++) {
         n1 = b->get_node(insidx);
         // bail if this is not a phi
         phi = n1->is_Phi() ? n1->as_Phi() : nullptr;
-        if( phi == nullptr ) {
+        if (phi == nullptr) {
           // Keep track of index of first non-PhiNode instruction in block
           non_phi = insidx;
           // break out of the for loop as we have handled all phi nodes
@@ -742,13 +767,13 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
       }  // end for all phi's
 
       // If a phi is needed or exist, check for it
-      if( needs_phi || has_phi ) {
+      if (needs_phi || has_phi) {
         // add new phinode if one not already found
-        if( needs_phi ) {
+        if (needs_phi) {
           // create a new phi node and insert it into the block
           // type is taken from left over pointer to a predecessor
-          guarantee(n3, "No non-null reaching DEF for a Phi");
-          phi = new PhiNode(b->head(), n3->bottom_type());
+          guarantee(n_any != nullptr, "No non-null reaching DEF for a Phi");
+          phi = new PhiNode(b->head(), n_any->bottom_type());
           // initialize the Reaches entry for this LRG
           Reachblock[slidx] = phi;
 
@@ -762,23 +787,32 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
         // Here you have either found or created the Phi, so record it
         assert(phi != nullptr,"Must have a Phi Node here");
         phis.push(phi);
-        // PhiNodes should either force the LRG UP or DOWN depending
-        // on its inputs and the register pressure in the Phi's block.
-        UPblock[slidx] = true;  // Assume new DEF is UP
-        // If entering a high-pressure area with no immediate use,
-        // assume Phi is DOWN
-        if (is_high_pressure( b, &lrgs(lidx), b->end_idx()) && !prompt_use(b,lidx)) {
-          UPblock[slidx] = false;
-        }
-        // If we are not split up/down and all inputs are down, then we
-        // are down
-        if (!needs_split && !u3) {
-          UPblock[slidx] = false;
-        }
-        // If we enter a loop and will spill there, try to spill in the loop entry, except if we
-        // are reassigned in the loop anyway
-        if (!has_phi && b->head()->is_Loop() && should_spill_before_loop(_cfg, *this, b->_loop, lidx, lrgs(lidx))) {
-          UPblock[slidx] = false;
+
+        if (LoopAwaredSpilling && !has_phi && b->head()->is_Loop()) {
+          // Loop will always have needs_phi because the LoopBack block has not been processed yet
+          assert(needs_phi, "must be");
+          SpillAction action = should_spill_before_loop(_cfg, *this, b->_loop, lidx, lrgs(lidx));
+          if (action == SpillAction::Spill) {
+            UPblock[slidx] = false;
+          } else if (action == SpillAction::Reload) {
+            UPblock[slidx] = true;
+          } else {
+            UPblock[slidx] = u_any;
+          }
+        } else {
+          // PhiNodes should either force the LRG UP or DOWN depending
+          // on its inputs and the register pressure in the Phi's block.
+          UPblock[slidx] = true;  // Assume new DEF is UP
+          // If entering a high-pressure area with no immediate use,
+          // assume Phi is DOWN
+          if (is_high_pressure( b, &lrgs(lidx), b->end_idx()) && !prompt_use(b,lidx)) {
+            UPblock[slidx] = false;
+          }
+          // If we are not split up/down and all inputs are down, then we
+          // are down
+          if (!needs_split && !u_any) {
+            UPblock[slidx] = false;
+          }
         }
       }  // end if phi is needed
 

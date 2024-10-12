@@ -28,35 +28,88 @@ import org.openjdk.jmh.annotations.*;
 @State(Scope.Thread)
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
-@Warmup(iterations = 3, time = 1, timeUnit = TimeUnit.SECONDS)
-@Measurement(iterations = 3, time = 1, timeUnit = TimeUnit.SECONDS)
+@Warmup(iterations = 5, time = 1)
+@Measurement(iterations = 5, time = 1)
 @Fork(1)
 public class LoopCounterBench {
+    static final int SIZE = 1000;
+
     int increment;
-    long[] src, dest;
+    long[] src, dst;
+
+    @State(Scope.Benchmark)
+    public static class UncommonTest {
+        @Param({"0.0", "0.01", "0.1", "0.2", "0.5"})
+        double prob;
+
+        boolean[] test;
+
+        @Setup
+        public void setup() {
+            test = new boolean[SIZE];
+            for (int i = 0; i < SIZE * prob; i++) {
+                test[i] = true;
+            }
+        }
+    }
 
     @Setup
     public void setup() {
-        final int SIZE = 1000;
         src = new long[SIZE];
-        dest = new long[SIZE];
+        dst = new long[SIZE];
         increment = 1;
+    }
+
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+    private static void call() {}
+
+    @CompilerControl(CompilerControl.Mode.INLINE)
+    private static void spillEverything() {
+        for (int i = 0; i < 100; i++) {
+            call();
+        }
     }
 
     @Benchmark
     public long[] field_ret() {
         for (int i = 0; i < src.length; i = i + increment) {
-            dest[i] = src[i];
+            dst[i] = src[i];
         }
-        return dest;
+        return dst;
     }
 
     @Benchmark
     public long[] localVar_ret() {
         final int inc = increment;
         for (int i = 0; i < src.length; i = i + inc) {
-            dest[i] = src[i];
+            dst[i] = src[i];
         }
-        return dest;
+        return dst;
+    }
+
+    @Benchmark
+    public long[] reloadAtEntry_ret() {
+        int inc = increment;
+        long[] dst = this.dst;
+        long[] src = this.src;
+        spillEverything();
+        for (int i = 0; i < src.length; i += inc) {
+            dst[i] = src[i];
+        }
+        return dst;
+    }
+
+    @Benchmark
+    public long[] spillUncommon_ret(UncommonTest param) {
+        int inc = increment;
+        long[] dst = this.dst;
+        long[] src = this.src;
+        for (int i = 0; i < src.length; i += inc) {
+            if (param.test[i]) {
+                spillEverything();
+            }
+            dst[i] = src[i];
+        }
+        return dst;
     }
 }
