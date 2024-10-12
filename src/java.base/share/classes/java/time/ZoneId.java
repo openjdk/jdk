@@ -188,7 +188,7 @@ public abstract sealed class ZoneId implements Serializable permits ZoneOffset, 
      * <p>
      * This map contains a mapping of the IDs that is in line with TZDB 2024b and
      * later, where 'EST', 'MST' and 'HST' map to IDs which do not include daylight
-     * savings since 1970.
+     * savings since 1970. This mapping may change in update releases in support of new versions of TZDB.
      * <p>
      * This maps as follows:
      * <ul>
