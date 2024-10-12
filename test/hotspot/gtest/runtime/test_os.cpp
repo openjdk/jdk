@@ -429,10 +429,16 @@ TEST_VM(os, realpath) {
 
   /* test a non-existant path, but provide an adequate buffer */
   errno = 0;
+  buffer[0] = 0;
   returnedBuffer = os::realpath(nosuchpath, buffer, sizeof(nosuchpath) + 3);
   /* Returns ENOENT on Linux, 0 on SOME versions of Windows */
 #if defined(_WINDOWS)
   if (returnedBuffer != nullptr) {
+    //if (returnedBuffer != buffer) {
+      prinf("XXXX returnedBuffer = 0x%llx\n", (uint64_t)returnedBuffer);
+      prinf("XXXX buffer = 0x%llx\n", (uint64_t)returnedBuffer);
+      prinf("XXXX returnedBuffer = 0x%llx  string=%s\n", (uint64_t)returnedBuffer, returnedBuffer);
+   // }
     EXPECT_TRUE(returnedBuffer == buffer);
   } else {
     EXPECT_TRUE(errno != 0);
