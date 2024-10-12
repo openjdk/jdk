@@ -1003,7 +1003,7 @@ var getJibProfilesProfiles = function (input, common, data) {
         "run-test-prebuilt-docs": clone(testOnlyProfilesPrebuilt["run-test-prebuilt"])
     };
 
-    testOnlyProfilesPrebuiltDocs["run-test-prebuilt-docs"].dependencies.push("docs.doc_api_spec");
+    testOnlyProfilesPrebuiltDocs["run-test-prebuilt-docs"].dependencies.push("docs.doc_api_spec", "tidy");
     testOnlyProfilesPrebuiltDocs["run-test-prebuilt-docs"].environment["DOCS_IMAGE_DIR"] = input.get("docs.doc_api_spec", "install_path");
     testOnlyProfilesPrebuiltDocs["run-test-prebuilt-docs"].labels = "test-docs";
 

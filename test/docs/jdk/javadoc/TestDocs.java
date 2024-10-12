@@ -37,6 +37,8 @@ public class TestDocs {
         System.err.println("path to docs is: " + docs);
         System.err.println("Do docs exits?");
         System.err.println(Files.exists(docs));
+        System.err.println("Where is tidy");
+        System.err.println(System.getProperty("tidy"));
         System.err.println("End of test");
     }
 }
