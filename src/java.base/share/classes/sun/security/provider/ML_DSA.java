@@ -774,7 +774,7 @@ public class ML_DSA {
             int first = idx;
             while (idx < j) {
                 if (idx > first) {
-                    if (y[idx - 1] >= y[idx]) {
+                    if ((y[idx - 1] & 0xff) >= (y[idx] & 0xff)) {
                         return null;
                     }
                 }
