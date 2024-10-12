@@ -184,7 +184,10 @@ public:
   void set_active_index(size_t index);
   static size_t active_index_safe(const Block* block); // Returns 0 if access fails.
 
-  // Returns null if ptr is not in a block or not allocated in that block.
+  // Return block of owner containing ptr, if ptr is a valid entry of owner.
+  // If ptr is not a valid entry of owner then returns either null or a "false
+  // positive" pointer; see allocation_status.
+  // precondition: ptr != nullptr
   static Block* block_for_ptr(const OopStorage* owner, const oop* ptr);
 
   oop* allocate();

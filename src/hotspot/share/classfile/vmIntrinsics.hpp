@@ -1008,6 +1008,15 @@ class methodHandle;
                                                "Ljdk/internal/vm/vector/VectorSupport$Vector;")                                                \
    do_name(vector_shuffle_to_vector_name, "shuffleToVector")                                                                                   \
                                                                                                                                                \
+  do_intrinsic(_VectorWrapShuffleIndexes, jdk_internal_vm_vector_VectorSupport, vector_wrap_shuffle_indexes_name,                              \
+                                                                                                         vector_wrap_shuffle_indexes_sig, F_S) \
+   do_signature(vector_wrap_shuffle_indexes_sig, "(Ljava/lang/Class;"                                                                          \
+                                                  "Ljava/lang/Class;"                                                                          \
+                                                  "Ljdk/internal/vm/vector/VectorSupport$VectorShuffle;"                                       \
+                                                  "ILjdk/internal/vm/vector/VectorSupport$WrapShuffleIndexesOperation;)"                       \
+                                                  "Ljdk/internal/vm/vector/VectorSupport$VectorShuffle;")                                      \
+   do_name(vector_wrap_shuffle_indexes_name, "wrapShuffleIndexes")                                                                             \
+                                                                                                                                               \
   do_intrinsic(_VectorLoadOp, jdk_internal_vm_vector_VectorSupport, vector_load_op_name, vector_load_op_sig, F_S)                              \
    do_signature(vector_load_op_sig, "(Ljava/lang/Class;"                                                                                       \
                                      "Ljava/lang/Class;"                                                                                       \
@@ -1128,6 +1137,18 @@ class methodHandle;
                                        "Ljdk/internal/vm/vector/VectorSupport$VectorRearrangeOp;)"                                             \
                                        "Ljdk/internal/vm/vector/VectorSupport$Vector;")                                                        \
    do_name(vector_rearrange_name, "rearrangeOp")                                                                                               \
+                                                                                                                                               \
+  do_intrinsic(_VectorSelectFrom, jdk_internal_vm_vector_VectorSupport, vector_select_from_name, vector_select_from_sig, F_S)                  \
+   do_signature(vector_select_from_sig, "(Ljava/lang/Class;"                                                                                   \
+                                        "Ljava/lang/Class;"                                                                                     \
+                                        "Ljava/lang/Class;"                                                                                     \
+                                        "I"                                                                                                     \
+                                        "Ljdk/internal/vm/vector/VectorSupport$Vector;"                                                         \
+                                        "Ljdk/internal/vm/vector/VectorSupport$Vector;"                                                         \
+                                        "Ljdk/internal/vm/vector/VectorSupport$VectorMask;"                                                     \
+                                        "Ljdk/internal/vm/vector/VectorSupport$VectorSelectFromOp;)"                                            \
+                                        "Ljdk/internal/vm/vector/VectorSupport$Vector;")                                                        \
+   do_name(vector_select_from_name, "selectFromOp")                                                                                              \
                                                                                                                                                \
   do_intrinsic(_VectorExtract, jdk_internal_vm_vector_VectorSupport, vector_extract_name, vector_extract_sig, F_S)                             \
    do_signature(vector_extract_sig, "(Ljava/lang/Class;"                                                                                       \

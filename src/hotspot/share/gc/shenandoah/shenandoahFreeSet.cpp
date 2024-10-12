@@ -910,7 +910,6 @@ void ShenandoahFreeSet::try_recycle_trashed(ShenandoahHeapRegion* r) {
 void ShenandoahFreeSet::recycle_trash() {
   // lock is not reentrable, check we don't have it
   shenandoah_assert_not_heaplocked();
-
   size_t count = 0;
   for (size_t i = 0; i < _heap->num_regions(); i++) {
     ShenandoahHeapRegion* r = _heap->get_region(i);
@@ -919,16 +918,45 @@ void ShenandoahFreeSet::recycle_trash() {
     }
   }
 
-  // Relinquish the lock after this much time passed.
-  static constexpr jlong deadline_ns = 30000; // 30 us
+  size_t total_batches = 0;
+  jlong batch_start_time = 0;
+  jlong recycle_trash_start_time = os::javaTimeNanos();    // This value will be treated as the initial batch_start_time
+  jlong batch_end_time = recycle_trash_start_time;
+  // Process as many batches as can be processed within 10 us.
+  static constexpr jlong deadline_ns = 10000;               // 10 us
   size_t idx = 0;
+  jlong predicted_next_batch_end_time;
+  jlong batch_process_time_estimate = 0;
   while (idx < count) {
-    os::naked_yield(); // Yield to allow allocators to take the lock
-    ShenandoahHeapLocker locker(_heap->lock());
-    const jlong deadline = os::javaTimeNanos() + deadline_ns;
-    while (idx < count && os::javaTimeNanos() < deadline) {
-      try_recycle_trashed(_trash_regions[idx++]);
+    if (idx > 0) {
+      os::naked_yield(); // Yield to allow allocators to take the lock, except on the first iteration
     }
+    // Avoid another call to javaTimeNanos() if we already know time at which last batch ended
+    batch_start_time = batch_end_time;
+    const jlong deadline = batch_start_time + deadline_ns;
+
+    ShenandoahHeapLocker locker(_heap->lock());
+    do {
+      // Measurements on typical 2024 hardware suggest it typically requires between 1400 and 2000 ns to process a batch of
+      // 32 regions, assuming low contention with other threads.  Sometimes this goes higher, when mutator threads
+      // are contending for CPU cores and/or the heap lock.  On this hardware with a 10 us deadline, we expect 3-6 batches
+      // to be processed between yields most of the time.
+      //
+      // Note that deadline is enforced since the end of previous batch.  In the case that yield() or acquisition of heap lock
+      // takes a "long time", we will have less time to process regions, but we will always process at least one batch between
+      // yields.  Yielding more frequently when there is heavy contention for the heap lock or for CPU cores is considered the
+      // right thing to do.
+      const size_t REGIONS_PER_BATCH = 32;
+      size_t max_idx = MIN2(count, idx + REGIONS_PER_BATCH);
+      while (idx < max_idx) {
+        try_recycle_trashed(_trash_regions[idx++]);
+      }
+      total_batches++;
+      batch_end_time = os::javaTimeNanos();
+      // Estimate includes historic combination of yield times and heap lock acquisition times.
+      batch_process_time_estimate = (batch_end_time - recycle_trash_start_time) / total_batches;
+      predicted_next_batch_end_time = batch_end_time + batch_process_time_estimate;
+    } while ((idx < count) && (predicted_next_batch_end_time < deadline));
   }
 }
 
