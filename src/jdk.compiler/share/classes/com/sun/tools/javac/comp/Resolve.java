@@ -429,9 +429,7 @@ public class Resolve {
                  env.enclClass.sym.outermostClass() ==
                  sym.owner.outermostClass()
                  ||
-                 (allowPrivateMembersInPermitsClause && env.info.isPermitsClause
-                 &&
-                 ((JCClassDecl) env.tree).sym.outermostClass() == sym.owner.outermostClass()))
+                 privateMemberInPermitsClauseIfAllowed(env, sym))
                 &&
                 sym.isInheritedIn(site.tsym, types);
         case 0:
@@ -464,6 +462,19 @@ public class Resolve {
             return isAccessible(env, site, checkInner) && notOverriddenIn(site, sym);
         }
     }
+
+    private boolean privateMemberInPermitsClauseIfAllowed(Env<AttrContext> env, Symbol sym) {
+        if (env.info.isPermitsClause && ((JCClassDecl) env.tree).sym.outermostClass() == sym.owner.outermostClass()) {
+            if (allowPrivateMembersInPermitsClause) {
+                return true;
+            } else {
+                log.error(env.tree.pos(), Errors.PrivateMembersInPermitsClause);
+                return false;
+            }
+        }
+        return false;
+    }
+
     //where
     /* `sym' is accessible only if not overridden by
      * another symbol which is a member of `site'
