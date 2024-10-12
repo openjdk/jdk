@@ -208,8 +208,8 @@ public abstract class Reader implements Readable, Closeable {
                     case StringBuffer sb -> sb.getChars(next, next + n, cbuf, off);
                     case CharBuffer cb -> cb.get(next, cbuf, off, n);
                     default -> {
-                        for (int i = next, j = next + n; i < j;)
-                            cbuf[off++] = cs.charAt(i++);
+                        for (int i = 0; i < n; i++)
+                            cbuf[off + i] = cs.charAt(next + i);
                     }
                 }
                 next += n;
