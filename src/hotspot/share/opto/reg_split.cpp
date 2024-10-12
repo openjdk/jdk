@@ -489,10 +489,26 @@ enum class SpillAction {
   Reload
 };
 
-// Check if a live range would be spilt in a loop nest so that we will eagerly spill it
+// Decide the action at the loop entry based on whether the live range is used and whether it needs spilling
+// Common means that the frequency the action performed is more than 10% the frequency of the loop head
+// Untaken means that the frequency the action performed is not more than the frequency of the loop entry (outside the loop)
+// Uncommon means that the action is neither common nor untaken
+// The action we will perform on the live range at loop entry depends on the common-ness of the spilling and reloading actions:
+//
+//    Reload     Common      Uncommon      Untaken
+// Spill
+//
+//  Common       Spill        Spill         Spill
+//
+// Uncommon      Reload       Spill         Spill
+//
+// Untaken       Reload       Reload        None
+//
+// In general, if a live range is spilt more than it is used, we try to eagerly spill it, and vice versa,
+// if a live range is used more than it is spilt, we try to eagerly reload it as the spills will not happen
+// in a commmon manner. If the live range is used with roughly the same frequency as it is spilt, we prefer
+// spilling because otherwise, we need to emit both reloads and spills inside the loop.
 static SpillAction should_spill_before_loop(const PhaseCFG& cfg, PhaseChaitin& chaitin, CFGLoop* loop, uint lrg_idx, const LRG& lrg) {
-  // Don't be eager spilling something that will only be spilt uncommonly and is used in the common path
-  // as it leads to excessive reloads
   constexpr double uncommon_threshold = 0.1;
   assert(&chaitin.lrgs(lrg_idx) == &lrg, "must be");
   double entry_freq = cfg.get_block_for_node(loop->head()->pred(LoopNode::EntryControl))->_freq;
@@ -551,6 +567,7 @@ static SpillAction should_spill_before_loop(const PhaseCFG& cfg, PhaseChaitin& c
           continue;
         }
         if (reload_freq > head_freq * uncommon_threshold) {
+          // At this point, the live range cannot be spilt in the common path
           return SpillAction::Reload;
         } else if (reload_freq > entry_freq) {
           reloaded_uncommon = true;
