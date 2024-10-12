@@ -30,7 +30,7 @@
  *                     jdk.compiler/com.sun.tools.javac.main
  *                     jdk.compiler/com.sun.tools.javac.util
  * @build toolbox.ToolBox toolbox.JavacTask toolbox.Task
- * @run main PrivateMembersInPermitClause
+ * @run main PrivateMembersInPermitClause -source 19+
  */
 import java.nio.file.Path;
 import java.util.Objects;
@@ -183,6 +183,37 @@ public class PrivateMembersInPermitClause extends toolbox.TestRunner {
 
         if (!Objects.equals(compileErrors, expectedErrors)) {
             throw new AssertionError("Expected errors: " + expectedErrors + ", but got: " + compileErrors);
+        }
+    }
+
+    /**
+     * Tests that a private class in the permits clause of a sealed class does not compile when the source is lower than 19.
+     */
+    @Test
+    public void testSourceLowerThan19() throws Exception {
+        var root = Path.of("src");
+        tb.writeJavaFiles(root,
+            """
+            sealed class S permits S.A {
+                private static final class A extends S {}
+            }
+            """
+        );
+
+        var expectedErrors = List.of(
+            "S.java:1:25: compiler.err.report.access: S.A, private, S",
+            "S.java:2:26: compiler.err.cant.inherit.from.sealed: S",
+            "2 errors"
+        );
+
+        var actualOutput = new toolbox.JavacTask(tb)
+            .files(root.resolve("S.java"))
+            .options("--release", "18", "-XDrawDiagnostics")
+            .run(toolbox.Task.Expect.FAIL)
+            .getOutputLines(Task.OutputKind.DIRECT);
+
+        if (!Objects.equals(actualOutput, expectedErrors)) {
+            throw new AssertionError("Expected errors: " + expectedErrors + ", but got: " + actualOutput);
         }
     }
 }
