@@ -3468,7 +3468,9 @@ public class Flow {
             for (JCTree resource : tree.resources) {
                 if (!resource.hasTag(VARDEF)) {
                     Symbol var = TreeInfo.symbol(resource);
-                    if (var != null && (var.flags() & (FINAL | EFFECTIVELY_FINAL)) == 0) {
+                    if (var != null
+                            && (var.flags() & (FINAL | EFFECTIVELY_FINAL)) == 0
+                            && (!(var instanceof VarSymbol sym && capturable.isMember(sym.adr)))) {
                         log.error(resource.pos(), Errors.TryWithResourcesExprEffectivelyFinalVar(var));
                     }
                 }

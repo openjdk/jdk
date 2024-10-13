@@ -26,6 +26,7 @@
  * @summary Check for valid cases relating to for() loop variables being effectively final in the body
  */
 
+import java.io.*;
 import java.util.function.*;
 
 public class ForLoopVarsEffectivelyFinalValidTest {
@@ -101,13 +102,27 @@ public class ForLoopVarsEffectivelyFinalValidTest {
         return total;
     }
 
-    public static void main(String[] args) {
+    // Test: effectively final in the loop works with try-with-resources statements
+    public static void test7() throws IOException {
+        final InputStream input1 = new ByteArrayInputStream(new byte[0]);
+        final InputStream input2 = new ByteArrayInputStream(new byte[0]);
+        for (InputStream input = input1; true; input = input2) {
+            try (input) {
+                // nothing
+            }
+            if (input == input2)
+                break;
+        }
+    }
+
+    public static void main(String[] args) throws IOException {
         verify(test1(), 5);
         verify(test2(), 9);
         verify(test3(), 6);
         verify(test4(), 24);
         verify(test5(), 36);
         verify(test6(), 6);
+        test7();
     }
 
     public static void verify(int actual, int expected) {
