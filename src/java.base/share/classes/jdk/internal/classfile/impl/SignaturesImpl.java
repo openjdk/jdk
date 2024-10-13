@@ -24,15 +24,15 @@
  */
 package jdk.internal.classfile.impl;
 
+import java.lang.classfile.ClassSignature;
+import java.lang.classfile.MethodSignature;
+import java.lang.classfile.Signature;
+import java.lang.classfile.Signature.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Collections;
-import java.lang.classfile.ClassSignature;
-import java.lang.classfile.MethodSignature;
-import java.lang.classfile.Signature;
-import java.lang.classfile.Signature.*;
 
 public final class SignaturesImpl {
 

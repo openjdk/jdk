@@ -24,12 +24,13 @@
  */
 package java.lang.classfile.components;
 
-import java.util.IdentityHashMap;
-import java.util.Map;
-import java.util.function.BiFunction;
 import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.CodeTransform;
 import java.lang.classfile.Label;
+import java.util.IdentityHashMap;
+import java.util.Map;
+import java.util.function.BiFunction;
+
 import jdk.internal.classfile.impl.CodeRelabelerImpl;
 import jdk.internal.javac.PreviewFeature;
 

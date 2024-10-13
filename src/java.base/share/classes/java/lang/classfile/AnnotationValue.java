@@ -31,14 +31,13 @@ import java.lang.classfile.constantpool.FloatEntry;
 import java.lang.classfile.constantpool.IntegerEntry;
 import java.lang.classfile.constantpool.LongEntry;
 import java.lang.classfile.constantpool.Utf8Entry;
-import jdk.internal.classfile.impl.AnnotationImpl;
-import jdk.internal.classfile.impl.TemporaryConstantPool;
-
 import java.lang.constant.ClassDesc;
 import java.lang.constant.Constable;
 import java.util.ArrayList;
 import java.util.List;
 
+import jdk.internal.classfile.impl.AnnotationImpl;
+import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.classfile.impl.Util;
 import jdk.internal.javac.PreviewFeature;
 

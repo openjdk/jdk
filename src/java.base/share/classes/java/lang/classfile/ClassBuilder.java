@@ -25,7 +25,6 @@
 
 package java.lang.classfile;
 
-
 import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.util.Arrays;

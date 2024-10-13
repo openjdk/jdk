@@ -25,7 +25,6 @@
  */
 package jdk.internal.classfile.impl;
 
-
 import java.util.Arrays;
 
 import java.lang.classfile.BufWriter;

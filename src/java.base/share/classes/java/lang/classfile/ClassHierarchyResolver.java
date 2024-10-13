@@ -24,9 +24,9 @@
  */
 package java.lang.classfile;
 
-import java.io.InputStream;
 import java.lang.constant.ClassDesc;
 import java.lang.invoke.MethodHandles;
+import java.io.InputStream;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;

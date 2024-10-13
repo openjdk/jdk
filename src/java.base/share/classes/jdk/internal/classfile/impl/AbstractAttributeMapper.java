@@ -24,12 +24,7 @@
  */
 package jdk.internal.classfile.impl;
 
-import java.lang.classfile.Annotation;
-import java.lang.classfile.Attribute;
-import java.lang.classfile.AttributeMapper;
-import java.lang.classfile.AttributedElement;
-import java.lang.classfile.BufWriter;
-import java.lang.classfile.ClassReader;
+import java.lang.classfile.*;
 import java.lang.classfile.attribute.*;
 import java.util.List;
 

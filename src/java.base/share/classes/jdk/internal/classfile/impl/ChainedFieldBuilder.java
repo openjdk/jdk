@@ -24,11 +24,10 @@
  */
 package jdk.internal.classfile.impl;
 
-import java.util.function.Consumer;
-
 import java.lang.classfile.FieldBuilder;
 import java.lang.classfile.FieldElement;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
+import java.util.function.Consumer;
 
 public final class ChainedFieldBuilder implements FieldBuilder {
     private final TerminalFieldBuilder terminal;

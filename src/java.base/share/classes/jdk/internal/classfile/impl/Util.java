@@ -24,31 +24,20 @@
  */
 package jdk.internal.classfile.impl;
 
-import java.lang.classfile.CodeBuilder;
-import java.lang.classfile.CustomAttribute;
-import java.lang.classfile.FieldBuilder;
-import java.lang.classfile.MethodBuilder;
-import java.lang.classfile.PseudoInstruction;
-import java.lang.classfile.constantpool.PoolEntry;
-import java.lang.classfile.constantpool.Utf8Entry;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.CodeAttribute;
+import java.lang.classfile.components.ClassPrinter;
+import java.lang.classfile.constantpool.*;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
+import java.lang.constant.ModuleDesc;
+import java.lang.reflect.AccessFlag;
 import java.util.AbstractList;
 import java.util.Collection;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
-import java.lang.classfile.Attribute;
-import java.lang.classfile.AttributeMapper;
-import java.lang.classfile.Attributes;
-import java.lang.classfile.BufWriter;
-import java.lang.classfile.ClassFile;
-import java.lang.classfile.Opcode;
-import java.lang.classfile.constantpool.ClassEntry;
-import java.lang.classfile.constantpool.ModuleEntry;
-import java.lang.classfile.constantpool.NameAndTypeEntry;
-import java.lang.constant.ModuleDesc;
-import java.lang.reflect.AccessFlag;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;

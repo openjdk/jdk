@@ -25,18 +25,17 @@
  */
 package jdk.internal.classfile.impl;
 
+import java.lang.classfile.ClassHierarchyResolver;
+import java.lang.constant.ClassDesc;
 import java.io.BufferedInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
-import java.lang.constant.ClassDesc;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
-
-import java.lang.classfile.ClassHierarchyResolver;
 
 import static java.lang.constant.ConstantDescs.CD_Object;
 import static java.lang.classfile.ClassFile.*;

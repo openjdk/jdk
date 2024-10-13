@@ -25,26 +25,14 @@
  */
 package jdk.internal.classfile.impl;
 
-import java.lang.constant.ClassDesc;
-import java.lang.constant.ConstantDesc;
-import java.lang.constant.ConstantDescs;
-import java.lang.constant.DirectMethodHandleDesc;
-import java.lang.constant.DynamicConstantDesc;
-import java.lang.constant.MethodTypeDesc;
+import java.lang.constant.*;
+import java.lang.classfile.BootstrapMethodEntry;
+import java.lang.classfile.Opcode;
+import java.lang.classfile.TypeKind;
+import java.lang.classfile.constantpool.*;
 import java.lang.invoke.MethodHandleInfo;
 import java.util.ArrayList;
 import java.util.List;
-
-import java.lang.classfile.BootstrapMethodEntry;
-import java.lang.classfile.constantpool.ClassEntry;
-import java.lang.classfile.constantpool.ConstantDynamicEntry;
-import java.lang.classfile.constantpool.ConstantPoolBuilder;
-import java.lang.classfile.Opcode;
-import java.lang.classfile.TypeKind;
-import java.lang.classfile.constantpool.LoadableConstantEntry;
-import java.lang.classfile.constantpool.MemberRefEntry;
-import java.lang.classfile.constantpool.MethodHandleEntry;
-import java.lang.classfile.constantpool.NameAndTypeEntry;
 import java.util.Objects;
 
 import static jdk.internal.classfile.impl.RawBytecodeHelper.*;

@@ -24,19 +24,21 @@
  */
 package jdk.internal.classfile.impl.verifier;
 
+import java.lang.classfile.ClassHierarchyResolver;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.components.ClassPrinter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
-import java.lang.classfile.ClassHierarchyResolver;
-import java.lang.classfile.ClassModel;
-import java.lang.classfile.components.ClassPrinter;
+
 import jdk.internal.classfile.impl.ClassHierarchyImpl;
 import jdk.internal.classfile.impl.RawBytecodeHelper;
-import static jdk.internal.classfile.impl.RawBytecodeHelper.*;
 import jdk.internal.classfile.impl.verifier.VerificationWrapper.ConstantPoolWrapper;
-import static jdk.internal.classfile.impl.verifier.VerificationSignature.BasicType.*;
 import jdk.internal.classfile.impl.verifier.VerificationSignature.BasicType;
+
+import static jdk.internal.classfile.impl.RawBytecodeHelper.*;
+import static jdk.internal.classfile.impl.verifier.VerificationSignature.BasicType.*;
 import static jdk.internal.classfile.impl.verifier.VerificationFrame.FLAG_THIS_UNINIT;
 
 /**

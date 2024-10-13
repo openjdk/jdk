@@ -24,6 +24,13 @@
  */
 package jdk.internal.classfile.impl;
 
+import java.lang.classfile.*;
+import java.lang.classfile.AnnotationValue.*;
+import java.lang.classfile.attribute.*;
+import java.lang.classfile.attribute.StackMapFrameInfo.*;
+import java.lang.classfile.components.ClassPrinter.*;
+import java.lang.classfile.constantpool.*;
+import java.lang.classfile.instruction.*;
 import java.lang.constant.ConstantDesc;
 import java.lang.constant.DirectMethodHandleDesc;
 import java.lang.reflect.AccessFlag;
@@ -41,25 +48,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
-import java.lang.classfile.Annotation;
 
-import java.lang.classfile.AnnotationElement;
-import java.lang.classfile.AnnotationValue;
-import java.lang.classfile.AnnotationValue.*;
-import java.lang.classfile.Attribute;
-import java.lang.classfile.ClassModel;
-import java.lang.classfile.components.ClassPrinter.*;
-import java.lang.classfile.CodeModel;
-import java.lang.classfile.Instruction;
-import java.lang.classfile.MethodModel;
-import java.lang.classfile.TypeAnnotation;
-import java.lang.classfile.attribute.*;
-import java.lang.classfile.attribute.StackMapFrameInfo.*;
-import java.lang.classfile.constantpool.*;
-import java.lang.classfile.instruction.*;
-
-import java.lang.classfile.CompoundElement;
-import java.lang.classfile.FieldModel;
 import static java.lang.classfile.constantpool.PoolEntry.*;
 import static jdk.internal.classfile.impl.ClassPrinterImpl.Style.*;
 

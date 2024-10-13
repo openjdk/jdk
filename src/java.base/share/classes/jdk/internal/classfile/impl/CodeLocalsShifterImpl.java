@@ -24,16 +24,9 @@
  */
 package jdk.internal.classfile.impl;
 
-import java.lang.classfile.CodeBuilder;
-import java.lang.classfile.CodeElement;
-import java.lang.classfile.Signature;
-import java.lang.classfile.TypeKind;
+import java.lang.classfile.*;
 import java.lang.classfile.components.CodeLocalsShifter;
-import java.lang.classfile.instruction.IncrementInstruction;
-import java.lang.classfile.instruction.LoadInstruction;
-import java.lang.classfile.instruction.LocalVariable;
-import java.lang.classfile.instruction.LocalVariableType;
-import java.lang.classfile.instruction.StoreInstruction;
+import java.lang.classfile.instruction.*;
 
 import java.util.Arrays;
 

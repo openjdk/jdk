@@ -24,8 +24,6 @@
  */
 package java.lang.classfile.instruction;
 
-import java.lang.constant.MethodTypeDesc;
-
 import java.lang.classfile.CodeElement;
 import java.lang.classfile.CodeModel;
 import java.lang.classfile.constantpool.ClassEntry;
@@ -36,6 +34,8 @@ import java.lang.classfile.constantpool.MemberRefEntry;
 import java.lang.classfile.constantpool.MethodRefEntry;
 import java.lang.classfile.constantpool.NameAndTypeEntry;
 import java.lang.classfile.constantpool.Utf8Entry;
+import java.lang.constant.MethodTypeDesc;
+
 import jdk.internal.classfile.impl.AbstractInstruction;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.classfile.impl.Util;

@@ -25,20 +25,13 @@
 
 package jdk.internal.classfile.impl;
 
-import java.lang.classfile.Annotation;
-import java.lang.classfile.AnnotationElement;
-import java.lang.classfile.AnnotationValue;
-import java.lang.classfile.BufWriter;
-import java.lang.classfile.ClassReader;
+import java.lang.classfile.*;
 import java.lang.classfile.constantpool.*;
-import java.lang.classfile.TypeAnnotation;
+import java.util.List;
 
 import static java.lang.classfile.AnnotationValue.*;
 import static java.lang.classfile.TypeAnnotation.TargetInfo.*;
 
-import java.util.List;
-import java.lang.classfile.Label;
-import java.lang.classfile.constantpool.Utf8Entry;
 import jdk.internal.access.SharedSecrets;
 
 public final class AnnotationReader {

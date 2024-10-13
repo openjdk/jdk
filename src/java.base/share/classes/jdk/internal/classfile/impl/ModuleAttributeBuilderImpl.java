@@ -30,10 +30,9 @@ import java.lang.classfile.attribute.ModuleAttribute.ModuleAttributeBuilder;
 import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.constantpool.ModuleEntry;
 import java.lang.classfile.constantpool.Utf8Entry;
+import java.lang.constant.ClassDesc;
 import java.lang.constant.ModuleDesc;
 import java.lang.constant.PackageDesc;
-
-import java.lang.constant.ClassDesc;
 import java.util.*;
 
 public final class ModuleAttributeBuilderImpl
