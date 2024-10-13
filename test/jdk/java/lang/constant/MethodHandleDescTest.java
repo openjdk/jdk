@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -130,11 +130,11 @@ public class MethodHandleDescTest extends SymbolicDescTest {
     public void testSimpleMHs() throws ReflectiveOperationException {
         MethodHandle MH_String_isEmpty = LOOKUP.findVirtual(String.class, "isEmpty", MethodType.fromMethodDescriptorString("()Z", null));
         testMethodHandleDesc(MethodHandleDesc.of(Kind.VIRTUAL, CD_String, "isEmpty", "()Z"), MH_String_isEmpty);
-        testMethodHandleDesc(MethodHandleDesc.ofMethod(Kind.VIRTUAL, CD_String, "isEmpty", MethodTypeDesc.of(CD_boolean)), MH_String_isEmpty);
+        testMethodHandleDesc(MethodHandleDesc.ofMethod(Kind.VIRTUAL, CD_String, "isEmpty", MTD_boolean), MH_String_isEmpty);
 
         MethodHandle MH_List_isEmpty = LOOKUP.findVirtual(List.class, "isEmpty", MethodType.fromMethodDescriptorString("()Z", null));
         testMethodHandleDesc(MethodHandleDesc.of(Kind.INTERFACE_VIRTUAL, CD_List, "isEmpty", "()Z"), MH_List_isEmpty);
-        testMethodHandleDesc(MethodHandleDesc.ofMethod(Kind.INTERFACE_VIRTUAL, CD_List, "isEmpty", MethodTypeDesc.of(CD_boolean)), MH_List_isEmpty);
+        testMethodHandleDesc(MethodHandleDesc.ofMethod(Kind.INTERFACE_VIRTUAL, CD_List, "isEmpty", MTD_boolean), MH_List_isEmpty);
 
         MethodHandle MH_String_format = LOOKUP.findStatic(String.class, "format", MethodType.methodType(String.class, String.class, Object[].class));
         testMethodHandleDesc(MethodHandleDesc.of(Kind.STATIC, CD_String, "format", MethodType.methodType(String.class, String.class, Object[].class).descriptorString()),

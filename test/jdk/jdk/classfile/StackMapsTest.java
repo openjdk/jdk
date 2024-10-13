@@ -344,7 +344,6 @@ class StackMapsTest {
         }
     }
 
-    private static final MethodTypeDesc MTD_int = MethodTypeDesc.of(CD_int);
     private static final MethodTypeDesc MTD_int_String = MethodTypeDesc.of(CD_int, CD_String);
 
     @ParameterizedTest

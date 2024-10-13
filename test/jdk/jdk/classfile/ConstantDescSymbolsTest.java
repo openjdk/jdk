@@ -68,11 +68,11 @@ final class ConstantDescSymbolsTest {
                 cob.invokespecial(CD_Object, INIT_NAME, MTD_void);
                 cob.return_();
             });
-            clb.withMethodBody("get", MethodTypeDesc.of(CD_Object), ACC_PUBLIC, cob -> {
+            clb.withMethodBody("get", MTD_Object, ACC_PUBLIC, cob -> {
                 cob.loadConstant(CD_int);
                 cob.areturn();
             });
-            clb.withMethodBody("get2", MethodTypeDesc.of(CD_Class), ACC_PUBLIC, cob -> {
+            clb.withMethodBody("get2", MTD_Class, ACC_PUBLIC, cob -> {
                 Assertions.assertThrows(IllegalArgumentException.class, () -> cob.constantPool().classEntry(CD_long));
                 var t = cob.constantPool().loadableConstantEntry(CD_long);
                 cob.ldc(t);
@@ -99,7 +99,7 @@ final class ConstantDescSymbolsTest {
             clb.withInterfaceSymbols(Supplier.class.describeConstable().orElseThrow())
                     .withMethodBody(INIT_NAME, MTD_void, ACC_PUBLIC, cob -> cob
                             .aload(0).invokespecial(CD_Object, INIT_NAME, MTD_void).return_())
-                    .withMethodBody("get", MethodTypeDesc.of(CD_Object), ACC_PUBLIC, cob -> cob
+                    .withMethodBody("get", MTD_Object, ACC_PUBLIC, cob -> cob
                             .loadConstant(condyDesc).areturn());
         }));
         @SuppressWarnings("unchecked")

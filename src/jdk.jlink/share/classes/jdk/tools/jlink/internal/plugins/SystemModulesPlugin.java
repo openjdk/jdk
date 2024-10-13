@@ -528,7 +528,6 @@ public final class SystemModulesPlugin extends AbstractPlugin {
         private static final ClassDesc CD_MODULE_RESOLUTION =
             ClassDesc.ofInternalName("jdk/internal/module/ModuleResolution");
         private static final ClassDesc CD_Map_Entry = ClassDesc.ofInternalName("java/util/Map$Entry");
-        private static final MethodTypeDesc MTD_boolean = MethodTypeDesc.of(CD_boolean);
         private static final MethodTypeDesc MTD_ModuleDescriptorArray = MethodTypeDesc.of(CD_MODULE_DESCRIPTOR.arrayType());
         private static final MethodTypeDesc MTD_ModuleTargetArray = MethodTypeDesc.of(CD_MODULE_TARGET.arrayType());
         private static final MethodTypeDesc MTD_void_String = MethodTypeDesc.of(CD_void, CD_String);

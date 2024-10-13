@@ -352,9 +352,6 @@ public class MethodHandleProxies {
             = methodTypeDesc(MT_void_Lookup_MethodHandle_MethodHandle);
     private static final MethodTypeDesc MTD_void_Lookup = MethodTypeDesc.of(CD_void, CD_MethodHandles_Lookup);
     private static final MethodTypeDesc MTD_MethodHandle_MethodType = MethodTypeDesc.of(CD_MethodHandle, CD_MethodType);
-    private static final MethodTypeDesc MTD_Class = MethodTypeDesc.of(CD_Class);
-    private static final MethodTypeDesc MTD_int = MethodTypeDesc.of(CD_int);
-    private static final MethodTypeDesc MTD_String = MethodTypeDesc.of(CD_String);
     private static final MethodTypeDesc MTD_void_String = MethodTypeDesc.of(CD_void, CD_String);
     private static final String TARGET_NAME = "target";
     private static final String TYPE_NAME = "interfaceType";

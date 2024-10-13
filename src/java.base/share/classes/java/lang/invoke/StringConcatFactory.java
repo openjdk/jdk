@@ -1094,8 +1094,6 @@ public final class StringConcatFactory {
         static final ClassDesc CD_Array_String       = ReferenceClassDescImpl.ofValidated("[Ljava/lang/String;");
 
         static final MethodTypeDesc MTD_byte_char       = MethodTypeDescImpl.ofValidated(CD_byte, CD_char);
-        static final MethodTypeDesc MTD_byte            = MethodTypeDescImpl.ofValidated(CD_byte);
-        static final MethodTypeDesc MTD_int             = MethodTypeDescImpl.ofValidated(CD_int);
         static final MethodTypeDesc MTD_int_int_boolean = MethodTypeDescImpl.ofValidated(CD_int, CD_int, CD_boolean);
         static final MethodTypeDesc MTD_int_int_char    = MethodTypeDescImpl.ofValidated(CD_int, CD_int, CD_char);
         static final MethodTypeDesc MTD_int_int_int     = MethodTypeDescImpl.ofValidated(CD_int, CD_int, CD_int);

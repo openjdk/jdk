@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -144,7 +144,7 @@ public class ClassFileGenerator {
                         Annotation.of(CD_Retention, AnnotationElement.of("value",
                                 AnnotationValue.of(RetentionPolicy.RUNTIME)))
                 ));
-                clb.withMethod("m", MethodTypeDesc.of(CD_int), ACC_PUBLIC | ACC_ABSTRACT,
+                clb.withMethod("m", MTD_int, ACC_PUBLIC | ACC_ABSTRACT,
                         mb -> mb.with(AnnotationDefaultAttribute.of(AnnotationValue.ofInt(1))));
             });
         }
@@ -169,7 +169,7 @@ public class ClassFileGenerator {
                         Annotation.of(CD_Retention, AnnotationElement.of("value",
                                 AnnotationValue.of(RetentionPolicy.RUNTIME)))
                 ));
-                clb.withMethod("m", MethodTypeDesc.of(CD_int), ACC_PUBLIC | ACC_ABSTRACT, mb -> {
+                clb.withMethod("m", MTD_int, ACC_PUBLIC | ACC_ABSTRACT, mb -> {
                     mb.with(AnnotationDefaultAttribute.of(AnnotationValue.ofInt(1)));
                     mb.with(ExceptionsAttribute.ofSymbols(CD_Exception));
                 });
@@ -196,7 +196,7 @@ public class ClassFileGenerator {
                         Annotation.of(CD_Retention, AnnotationElement.of("value",
                                 AnnotationValue.of(RetentionPolicy.RUNTIME)))
                 ));
-                clb.withMethod("hashCode", MethodTypeDesc.of(CD_int), ACC_PUBLIC | ACC_ABSTRACT,
+                clb.withMethod("hashCode", MTD_int, ACC_PUBLIC | ACC_ABSTRACT,
                         mb -> mb.with(AnnotationDefaultAttribute.of(AnnotationValue.ofInt(1))));
             });
         }
@@ -222,9 +222,9 @@ public class ClassFileGenerator {
                         Annotation.of(CD_Retention, AnnotationElement.of("value",
                                 AnnotationValue.of(RetentionPolicy.RUNTIME)))
                 ));
-                clb.withMethod("m", MethodTypeDesc.of(CD_int), ACC_PUBLIC | ACC_ABSTRACT,
+                clb.withMethod("m", MTD_int, ACC_PUBLIC | ACC_ABSTRACT,
                         mb -> mb.with(AnnotationDefaultAttribute.of(AnnotationValue.ofInt(1))));
-                clb.withMethod("d", MethodTypeDesc.of(CD_int), ACC_PUBLIC, mb -> {
+                clb.withMethod("d", MTD_int, ACC_PUBLIC, mb -> {
                     mb.with(AnnotationDefaultAttribute.of(AnnotationValue.ofInt(2)));
                     mb.withCode(cob -> {
                         cob.iconst_2();
@@ -254,7 +254,7 @@ public class ClassFileGenerator {
                         Annotation.of(CD_Retention, AnnotationElement.of("value",
                                 AnnotationValue.of(RetentionPolicy.RUNTIME)))
                 ));
-                clb.withMethod("m", MethodTypeDesc.of(CD_int), ACC_PUBLIC | ACC_ABSTRACT,
+                clb.withMethod("m", MTD_int, ACC_PUBLIC | ACC_ABSTRACT,
                         mb -> mb.with(AnnotationDefaultAttribute.of(AnnotationValue.ofInt(1))));
             });
         }

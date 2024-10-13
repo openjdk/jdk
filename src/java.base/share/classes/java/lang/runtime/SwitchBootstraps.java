@@ -555,20 +555,20 @@ public class SwitchBootstraps {
                             if (selectorType == long.class || selectorType == Long.class) {
                                 cb.invokevirtual(CD_Number,
                                         "longValue",
-                                        MethodTypeDesc.of(CD_long));
+                                        MTD_long);
                             } else if (selectorType == float.class || selectorType == Float.class) {
                                 cb.invokevirtual(CD_Number,
                                         "floatValue",
-                                        MethodTypeDesc.of(CD_float));
+                                        MTD_float);
                             } else if (selectorType == double.class || selectorType == Double.class) {
                                 cb.invokevirtual(CD_Number,
                                         "doubleValue",
-                                        MethodTypeDesc.of(CD_double));
+                                        MTD_double);
                             } else {
                                 Label compare = cb.newLabel();
                                 cb.invokevirtual(CD_Number,
                                         "intValue",
-                                        MethodTypeDesc.of(CD_int))
+                                        MTD_int)
                                   .goto_(compare)
                                   .labelBinding(notNumber)
                                   .aload(SELECTOR_OBJ)
@@ -578,7 +578,7 @@ public class SwitchBootstraps {
                                   .checkcast(CD_Character)
                                   .invokevirtual(CD_Character,
                                         "charValue",
-                                        MethodTypeDesc.of(CD_char))
+                                        MTD_char)
                                   .labelBinding(compare);
                             }
 
@@ -646,7 +646,7 @@ public class SwitchBootstraps {
                       .checkcast(CD_Number)
                       .invokevirtual(CD_Number,
                             "intValue",
-                            MethodTypeDesc.of(CD_int))
+                            MTD_int)
                       .goto_(compare)
                       .labelBinding(notNumber)
                       .aload(SELECTOR_OBJ)
