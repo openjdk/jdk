@@ -310,7 +310,7 @@ public class Byte128VectorTests extends AbstractVectorTest {
             for (; i < a.length; i += vector_len) {
                 for (j = 0; j < vector_len; j++) {
                     idx = i + j;
-                    wrapped_index =(((int)order[idx]) & (2 * vector_len -1));
+                    wrapped_index = Math.floorMod((int)order[idx], 2 * vector_len);
                     is_exceptional_idx = wrapped_index >= vector_len;
                     oidx = is_exceptional_idx ? (wrapped_index - vector_len) : wrapped_index;
                     Assert.assertEquals(r[idx], (is_exceptional_idx ? b[i + oidx] : a[i + oidx]));
