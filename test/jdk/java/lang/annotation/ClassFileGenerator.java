@@ -44,10 +44,7 @@ import java.lang.reflect.AccessFlag;
 
 import static java.lang.classfile.ClassFile.ACC_ABSTRACT;
 import static java.lang.classfile.ClassFile.ACC_PUBLIC;
-import static java.lang.constant.ConstantDescs.CD_Exception;
-import static java.lang.constant.ConstantDescs.CD_Object;
-import static java.lang.constant.ConstantDescs.CD_int;
-import static java.lang.constant.ConstantDescs.MTD_void;
+import static java.lang.constant.ConstantDescs.*;
 import static java.lang.reflect.AccessFlag.ABSTRACT;
 import static java.lang.reflect.AccessFlag.INTERFACE;
 import static java.lang.reflect.AccessFlag.PUBLIC;

@@ -37,10 +37,7 @@ import java.lang.reflect.*;
 
 import static java.lang.classfile.ClassFile.ACC_PRIVATE;
 import static java.lang.classfile.ClassFile.ACC_PUBLIC;
-import static java.lang.constant.ConstantDescs.CD_Object;
-import static java.lang.constant.ConstantDescs.CD_int;
-import static java.lang.constant.ConstantDescs.INIT_NAME;
-import static java.lang.constant.ConstantDescs.MTD_void;
+import static java.lang.constant.ConstantDescs.*;
 
 public class TestPrivateInterfaceMethodReflect {
 
