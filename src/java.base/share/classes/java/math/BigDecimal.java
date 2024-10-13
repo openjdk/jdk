@@ -5267,7 +5267,11 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             intVal = intVal.negate(); // speed up computation of shiftRight() and bitLength()
 
         intVal = intVal.shiftRight(powsOf2); // remove powers of 2
-        // maxPowsOf5 >= floor(log5(intVal)) >= max{n : (intVal % 5^n) == 0}
+        // Let k = max{n : (intVal % 5^n) == 0}, m = max{n : 5^n <= intVal}, so m >= k.
+        // Let b = intVal.bitLength(). It can be shown that
+        // | b * LOG_5_OF_2 - b log5(2) | < 2^(-21) (fp viz. real arithmetic),
+        // which entails m <= maxPowsOf5 <= m + 1, where maxPowsOf5 is as below.
+        // Hence, maxPowsOf5 >= k.
         long maxPowsOf5 = Math.round(intVal.bitLength() * LOG_5_OF_2);
         remainingZeros = Math.min(remainingZeros, maxPowsOf5);
 
