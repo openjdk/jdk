@@ -5239,7 +5239,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         return pow;
     }
 
-    private static final double LOG_5_OF_2 = Math.log(2.0) / Math.log(5.0);
+    private static final double LOG_5_OF_2 = 0.43067655807339306; // double closest to log5(2)
 
     /**
      * Remove insignificant trailing zeros from this
