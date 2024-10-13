@@ -434,11 +434,6 @@ TEST_VM(os, realpath) {
   /* Returns ENOENT on Linux, 0 on SOME versions of Windows */
 #if defined(_WINDOWS)
   if (returnedBuffer != nullptr) {
-    //if (returnedBuffer != buffer) {
-      printf("XXXX returnedBuffer = 0x%llx\n", (uint64_t)returnedBuffer);
-      printf("XXXX buffer = 0x%llx\n", (uint64_t)returnedBuffer);
-      printf("XXXX returnedBuffer = 0x%llx  string=%s\n", (uint64_t)returnedBuffer, returnedBuffer);
-   // }
     EXPECT_TRUE(returnedBuffer == buffer);
   } else {
     EXPECT_TRUE(errno != 0);
