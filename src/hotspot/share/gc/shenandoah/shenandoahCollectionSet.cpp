@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016, 2023, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +31,7 @@
 #include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "runtime/atomic.hpp"
-#include "services/memTracker.hpp"
+#include "nmt/memTracker.hpp"
 #include "utilities/copy.hpp"
 
 ShenandoahCollectionSet::ShenandoahCollectionSet(ShenandoahHeap* heap, ReservedSpace space, char* heap_base) :
@@ -57,7 +58,7 @@ ShenandoahCollectionSet::ShenandoahCollectionSet(ShenandoahHeap* heap, ReservedS
   // subsystem for mapping not-yet-written-to pages to a single physical backing page,
   // but this is not guaranteed, and would confuse NMT and other memory accounting tools.
 
-  MemTracker::record_virtual_memory_type(_map_space.base(), mtGC);
+  MemTracker::record_virtual_memory_tag(_map_space.base(), mtGC);
 
   size_t page_size = os::vm_page_size();
 

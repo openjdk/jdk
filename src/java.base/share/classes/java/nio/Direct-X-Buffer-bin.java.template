@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,8 +58,8 @@ class XXX {
 
 #end[rw]
 
-    private ByteBuffer put$Type$(long a, $type$ x) {
 #if[rw]
+    private ByteBuffer put$Type$(long a, $type$ x) {
         try {
             $memtype$ y = $toBits$(x);
             SCOPED_MEMORY_ACCESS.put$Memtype$Unaligned(session(), null, a, y, bigEndian);
@@ -67,10 +67,8 @@ class XXX {
             Reference.reachabilityFence(this);
         }
         return this;
-#else[rw]
-        throw new ReadOnlyBufferException();
-#end[rw]
     }
+#end[rw]
 
     public ByteBuffer put$Type$($type$ x) {
 #if[rw]

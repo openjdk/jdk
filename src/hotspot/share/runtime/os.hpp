@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,8 +34,8 @@
 # include <mach/mach_time.h>
 #endif
 
-class AgentLibrary;
 class frame;
+class JvmtiAgent;
 
 // Rules for using and implementing methods declared in the "os" class
 // ===================================================================
@@ -152,6 +152,19 @@ typedef void (*java_call_t)(JavaValue* value, const methodHandle& method, JavaCa
 
 class MallocTracker;
 
+// Preserve errno across a range of calls
+
+class ErrnoPreserver {
+  int _e;
+
+public:
+  ErrnoPreserver() { _e = errno; }
+
+  ~ErrnoPreserver() { errno = _e; }
+
+  int saved_errno() { return _e; }
+};
+
 class os: AllStatic {
   friend class VMStructs;
   friend class JVMCIVMStructs;
@@ -190,6 +203,11 @@ class os: AllStatic {
   static OSThread*          _starting_thread;
   static PageSizes          _page_sizes;
 
+  // The default value for os::vm_min_address() unless the platform knows better. This value
+  // is chosen to give us reasonable protection against null pointer dereferences while being
+  // low enough to leave most of the valuable low-4gb address space open.
+  static constexpr size_t _vm_min_address_default = 16 * M;
+
   static char*  pd_reserve_memory(size_t bytes, bool executable);
 
   static char*  pd_attempt_reserve_memory_at(char* addr, size_t bytes, bool executable);
@@ -212,12 +230,13 @@ class os: AllStatic {
   static char*  pd_map_memory(int fd, const char* file_name, size_t file_offset,
                            char *addr, size_t bytes, bool read_only = false,
                            bool allow_exec = false);
-  static char*  pd_remap_memory(int fd, const char* file_name, size_t file_offset,
-                             char *addr, size_t bytes, bool read_only,
-                             bool allow_exec);
   static bool   pd_unmap_memory(char *addr, size_t bytes);
-  static void   pd_free_memory(char *addr, size_t bytes, size_t alignment_hint);
+  static void   pd_disclaim_memory(char *addr, size_t bytes);
   static void   pd_realign_memory(char *addr, size_t bytes, size_t alignment_hint);
+
+  // Returns 0 if pretouch is done via platform dependent method, or otherwise
+  // returns page_size that should be used for the common method.
+  static size_t pd_pretouch_memory(void* first, void* last, size_t page_size);
 
   static char*  pd_reserve_memory_special(size_t size, size_t alignment, size_t page_size,
 
@@ -229,6 +248,8 @@ class os: AllStatic {
   // Get summary strings for system information in buffer provided
   static void  get_summary_cpu_info(char* buf, size_t buflen);
   static void  get_summary_os_info(char* buf, size_t buflen);
+  // Returns number of bytes written on success, OS_ERR on failure.
+  static ssize_t pd_write(int fd, const void *buf, size_t nBytes);
 
   static void initialize_initial_active_processor_count();
 
@@ -310,10 +331,21 @@ class os: AllStatic {
     return (_processor_count != 1);
   }
 
+  // On some platforms there is a distinction between "available" memory and "free" memory.
+  // For example, on Linux, "available" memory (`MemAvailable` in `/proc/meminfo`) is greater
+  // than "free" memory (`MemFree` in `/proc/meminfo`) because Linux can free memory
+  // aggressively (e.g. clear caches) so that it becomes available.
   static julong available_memory();
+  static julong used_memory();
+  static julong free_memory();
+
+  static jlong total_swap_space();
+  static jlong free_swap_space();
+
   static julong physical_memory();
   static bool has_allocatable_memory_limit(size_t* limit);
   static bool is_server_class_machine();
+  static size_t rss();
 
   // Returns the id of the processor on which the calling thread is currently executing.
   // The returned value is guaranteed to be between 0 and (os::processor_count() - 1).
@@ -397,33 +429,39 @@ class os: AllStatic {
   // passed to page_size_for_region() and page_size should be the result of that
   // call.  The (optional) base and size parameters should come from the
   // ReservedSpace base() and size() methods.
-  static void trace_page_sizes(const char* str, const size_t* page_sizes, int count);
   static void trace_page_sizes(const char* str,
                                const size_t region_min_size,
                                const size_t region_max_size,
-                               const size_t page_size,
                                const char* base,
-                               const size_t size);
+                               const size_t size,
+                               const size_t page_size);
   static void trace_page_sizes_for_requested_size(const char* str,
                                                   const size_t requested_size,
-                                                  const size_t page_size,
-                                                  const size_t alignment,
+                                                  const size_t requested_page_size,
                                                   const char* base,
-                                                  const size_t size);
+                                                  const size_t size,
+                                                  const size_t page_size);
 
   static size_t vm_allocation_granularity() { return OSInfo::vm_allocation_granularity(); }
+
+  // Returns the lowest address the process is allowed to map against.
+  static size_t vm_min_address();
 
   inline static size_t cds_core_region_alignment();
 
   // Reserves virtual memory.
-  static char*  reserve_memory(size_t bytes, bool executable = false, MEMFLAGS flags = mtNone);
+  static char*  reserve_memory(size_t bytes, bool executable = false, MemTag mem_tag = mtNone);
 
   // Reserves virtual memory that starts at an address that is aligned to 'alignment'.
   static char*  reserve_memory_aligned(size_t size, size_t alignment, bool executable = false);
 
   // Attempts to reserve the virtual memory at [addr, addr + bytes).
   // Does not overwrite existing mappings.
-  static char*  attempt_reserve_memory_at(char* addr, size_t bytes, bool executable = false);
+  static char*  attempt_reserve_memory_at(char* addr, size_t bytes, bool executable = false, MemTag mem_tag = mtNone);
+
+  // Given an address range [min, max), attempts to reserve memory within this area, with the given alignment.
+  // If randomize is true, the location will be randomized.
+  static char* attempt_reserve_memory_between(char* min, char* max, size_t bytes, size_t alignment, bool randomize);
 
   static bool   commit_memory(char* addr, size_t bytes, bool executable);
   static bool   commit_memory(char* addr, size_t size, size_t alignment_hint,
@@ -471,21 +509,18 @@ class os: AllStatic {
   static int create_file_for_heap(const char* dir);
   // Map memory to the file referred by fd. This function is slightly different from map_memory()
   // and is added to be used for implementation of -XX:AllocateHeapAt
-  static char* map_memory_to_file(size_t size, int fd);
-  static char* map_memory_to_file_aligned(size_t size, size_t alignment, int fd);
+  static char* map_memory_to_file(size_t size, int fd, MemTag mem_tag = mtNone);
+  static char* map_memory_to_file_aligned(size_t size, size_t alignment, int fd, MemTag mem_tag = mtNone);
   static char* map_memory_to_file(char* base, size_t size, int fd);
-  static char* attempt_map_memory_to_file_at(char* base, size_t size, int fd);
+  static char* attempt_map_memory_to_file_at(char* base, size_t size, int fd, MemTag mem_tag = mtNone);
   // Replace existing reserved memory with file mapping
   static char* replace_existing_mapping_with_file_mapping(char* base, size_t size, int fd);
 
   static char*  map_memory(int fd, const char* file_name, size_t file_offset,
                            char *addr, size_t bytes, bool read_only = false,
-                           bool allow_exec = false, MEMFLAGS flags = mtNone);
-  static char*  remap_memory(int fd, const char* file_name, size_t file_offset,
-                             char *addr, size_t bytes, bool read_only,
-                             bool allow_exec);
+                           bool allow_exec = false, MemTag mem_tag = mtNone);
   static bool   unmap_memory(char *addr, size_t bytes);
-  static void   free_memory(char *addr, size_t bytes, size_t alignment_hint);
+  static void   disclaim_memory(char *addr, size_t bytes);
   static void   realign_memory(char *addr, size_t bytes, size_t alignment_hint);
 
   // NUMA-specific interface
@@ -493,7 +528,7 @@ class os: AllStatic {
   static void   numa_make_local(char *addr, size_t bytes, int lgrp_hint);
   static void   numa_make_global(char *addr, size_t bytes);
   static size_t numa_get_groups_num();
-  static size_t numa_get_leaf_groups(int *ids, size_t size);
+  static size_t numa_get_leaf_groups(uint *ids, size_t size);
   static bool   numa_topology_changed();
   static int    numa_get_group_id();
   static int    numa_get_group_id_for_address(const void* address);
@@ -504,8 +539,6 @@ class os: AllStatic {
     size_t size;
     int lgrp_id;
   };
-  static char*  scan_pages(char *start, char* end, page_info* page_expected, page_info* page_found);
-
   static char*  non_memory_address_word();
   // reserve, commit and pin the entire memory region
   static char*  reserve_memory_special(size_t size, size_t alignment, size_t page_size,
@@ -514,7 +547,6 @@ class os: AllStatic {
   static void   large_page_init();
   static size_t large_page_size();
   static bool   can_commit_large_page_memory();
-  static bool   can_execute_large_page_memory();
 
   // Check if pointer points to readable memory (by 4-byte read access)
   static bool    is_readable_pointer(const void* p);
@@ -589,8 +621,7 @@ class os: AllStatic {
   static bool start_debugging(char *buf, int buflen);
 
   static address current_stack_pointer();
-  static address current_stack_base();
-  static size_t current_stack_size();
+  static void current_stack_base_and_size(address* base, size_t* size);
 
   static void verify_stack_alignment() PRODUCT_RETURN;
 
@@ -644,7 +675,8 @@ class os: AllStatic {
   //File i/o operations
 
   static ssize_t read_at(int fd, void *buf, unsigned int nBytes, jlong offset);
-  static ssize_t write(int fd, const void *buf, unsigned int nBytes);
+  // Writes the bytes completely. Returns true on success, false otherwise.
+  static bool write(int fd, const void *buf, size_t nBytes);
 
   // Reading directories.
   static DIR*           opendir(const char* dirname);
@@ -653,6 +685,8 @@ class os: AllStatic {
 
   static const char*    get_temp_directory();
   static const char*    get_current_directory(char *buf, size_t buflen);
+
+  static void           prepare_native_symbols();
 
   // Builds the platform-specific name of a library.
   // Returns false if the buffer is too small.
@@ -732,15 +766,15 @@ class os: AllStatic {
   static void* get_default_process_handle();
 
   // Check for static linked agent library
-  static bool find_builtin_agent(AgentLibrary *agent_lib, const char *syms[],
+  static bool find_builtin_agent(JvmtiAgent *agent_lib, const char *syms[],
                                  size_t syms_len);
 
   // Find agent entry point
-  static void *find_agent_function(AgentLibrary *agent_lib, bool check_lib,
+  static void *find_agent_function(JvmtiAgent *agent_lib, bool check_lib,
                                    const char *syms[], size_t syms_len);
 
-  // Provide C99 compliant versions of these functions, since some versions
-  // of some platforms don't.
+  // Provide wrapper versions of these functions to guarantee NUL-termination
+  // in all cases.
   static int vsnprintf(char* buf, size_t len, const char* fmt, va_list args) ATTRIBUTE_PRINTF(3, 0);
   static int snprintf(char* buf, size_t len, const char* fmt, ...) ATTRIBUTE_PRINTF(3, 4);
 
@@ -764,12 +798,14 @@ class os: AllStatic {
   static void print_context(outputStream* st, const void* context);
   static void print_tos_pc(outputStream* st, const void* context);
   static void print_tos(outputStream* st, address sp);
-  static void print_instructions(outputStream* st, address pc, int unitsize);
+  static void print_instructions(outputStream* st, address pc, int unitsize = 1);
+  static void print_register_info(outputStream* st, const void* context, int& continuation);
   static void print_register_info(outputStream* st, const void* context);
   static bool signal_sent_by_kill(const void* siginfo);
   static void print_siginfo(outputStream* st, const void* siginfo);
   static void print_signal_handlers(outputStream* st, char* buf, size_t buflen);
   static void print_date_and_time(outputStream* st, char* buf, size_t buflen);
+  static void print_elapsed_time(outputStream* st, double time);
 
   static void print_user_info(outputStream* st);
   static void print_active_locale(outputStream* st);
@@ -780,6 +816,9 @@ class os: AllStatic {
   static void print_location(outputStream* st, intptr_t x, bool verbose = false);
   static size_t lasterror(char *buf, size_t len);
   static int get_last_error();
+
+  // Send JFR memory info event
+  static void jfr_report_memory_info() NOT_JFR_RETURN();
 
   // Replacement for strerror().
   // Will return the english description of the error (e.g. "File not found", as
@@ -817,10 +856,10 @@ class os: AllStatic {
   // return current frame. pc() and sp() are set to null on failure.
   static frame      current_frame();
 
-  static void print_hex_dump(outputStream* st, address start, address end, int unitsize,
-                             int bytes_per_line, address logical_start);
-  static void print_hex_dump(outputStream* st, address start, address end, int unitsize) {
-    print_hex_dump(st, start, end, unitsize, /*bytes_per_line=*/16, /*logical_start=*/start);
+  static void print_hex_dump(outputStream* st, const_address start, const_address end, int unitsize, bool print_ascii,
+                             int bytes_per_line, const_address logical_start, const_address highlight_address = nullptr);
+  static void print_hex_dump(outputStream* st, const_address start, const_address end, int unitsize, bool print_ascii = true, const_address highlight_address = nullptr) {
+    print_hex_dump(st, start, end, unitsize, print_ascii, /*bytes_per_line=*/16, /*logical_start=*/start, highlight_address);
   }
 
   // returns a string to describe the exception/signal;
@@ -861,23 +900,23 @@ class os: AllStatic {
   static int get_native_stack(address* stack, int size, int toSkip = 0);
 
   // General allocation (must be MT-safe)
-  static void* malloc  (size_t size, MEMFLAGS flags, const NativeCallStack& stack);
-  static void* malloc  (size_t size, MEMFLAGS flags);
-  static void* realloc (void *memblock, size_t size, MEMFLAGS flag, const NativeCallStack& stack);
-  static void* realloc (void *memblock, size_t size, MEMFLAGS flag);
+  static void* malloc  (size_t size, MemTag mem_tag, const NativeCallStack& stack);
+  static void* malloc  (size_t size, MemTag mem_tag);
+  static void* realloc (void *memblock, size_t size, MemTag mem_tag, const NativeCallStack& stack);
+  static void* realloc (void *memblock, size_t size, MemTag mem_tag);
 
   // handles null pointers
   static void  free    (void *memblock);
-  static char* strdup(const char *, MEMFLAGS flags = mtInternal);  // Like strdup
+  static char* strdup(const char *, MemTag mem_tag = mtInternal);  // Like strdup
   // Like strdup, but exit VM when strdup() returns null
-  static char* strdup_check_oom(const char*, MEMFLAGS flags = mtInternal);
+  static char* strdup_check_oom(const char*, MemTag mem_tag = mtInternal);
 
   // SocketInterface (ex HPI SocketInterface )
   static int socket_close(int fd);
-  static int recv(int fd, char* buf, size_t nBytes, uint flags);
-  static int send(int fd, char* buf, size_t nBytes, uint flags);
-  static int raw_send(int fd, char* buf, size_t nBytes, uint flags);
-  static int connect(int fd, struct sockaddr* him, socklen_t len);
+  static ssize_t recv(int fd, char* buf, size_t nBytes, uint flags);
+  static ssize_t send(int fd, char* buf, size_t nBytes, uint flags);
+  static ssize_t raw_send(int fd, char* buf, size_t nBytes, uint flags);
+  static ssize_t connect(int fd, struct sockaddr* him, socklen_t len);
 
   // Support for signals
   static void  initialize_jdk_signal_support(TRAPS);
@@ -995,7 +1034,7 @@ class os: AllStatic {
 
  public:
   inline static bool platform_print_native_stack(outputStream* st, const void* context,
-                                                 char *buf, int buf_size);
+                                                 char *buf, int buf_size, address& lastpc);
 
   // debugging support (mostly used by debug.cpp but also fatal error handler)
   static bool find(address pc, outputStream* st = tty); // OS specific function to make sense out of an address
@@ -1040,6 +1079,7 @@ class os: AllStatic {
                                 char pathSep);
   static bool set_boot_path(char fileSep, char pathSep);
 
+  static bool pd_dll_unload(void* libhandle, char* ebuf, int ebuflen);
 };
 
 // Note that "PAUSE" is almost always used with synchronization

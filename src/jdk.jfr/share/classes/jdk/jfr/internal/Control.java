@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,9 @@ import java.util.Set;
 
 import jdk.jfr.SettingControl;
 import jdk.jfr.internal.settings.JDKSettingControl;
+import jdk.jfr.internal.settings.PeriodSetting;
+import jdk.jfr.internal.settings.StackTraceSetting;
+import jdk.jfr.internal.settings.ThresholdSetting;
 
 final class Control {
     @SuppressWarnings("removal")
@@ -105,15 +108,18 @@ final class Control {
             // VM events requires no access control context
             try {
                 delegate.setValue(value);
+                lastValue = delegate.getValue();
             } catch (Throwable t) {
                 Logger.log(LogTag.JFR_SETTING, LogLevel.WARN, "Exception occurred when setting value \"" + value + "\" for " + getClass());
+                lastValue = null;
             }
         } else {
-            AccessController.doPrivileged(new PrivilegedAction<Void>() {
+            lastValue = AccessController.doPrivileged(new PrivilegedAction<String>() {
                 @Override
-                public Void run() {
+                public String run() {
                     try {
                         delegate.setValue(value);
+                        return delegate.getValue();
                     } catch (Throwable t) {
                         // Prevent malicious user to propagate exception callback in the wrong context
                         Logger.log(LogTag.JFR_SETTING, LogLevel.WARN, "Exception occurred when setting value \"" + value + "\" for " + getClass());
@@ -122,7 +128,6 @@ final class Control {
                 }
             }, context);
         }
-        lastValue = value;
     }
 
 
@@ -136,7 +141,7 @@ final class Control {
             @Override
             public String run() {
                 try {
-                    delegate.combine(Collections.unmodifiableSet(values));
+                    return delegate.combine(Collections.unmodifiableSet(values));
                 } catch (Throwable t) {
                     // Prevent malicious user to propagate exception callback in the wrong context
                     Logger.log(LogTag.JFR_SETTING, LogLevel.WARN, "Exception occurred when combining " + values + " for " + getClass());
@@ -175,5 +180,18 @@ final class Control {
 
     final SettingControl getSettingControl() {
         return delegate;
+    }
+
+    boolean isVisible(boolean hasEventHook) {
+        if (isType(ThresholdSetting.class)) {
+            return !hasEventHook;
+        }
+        if (isType(PeriodSetting.class)) {
+            return hasEventHook;
+        }
+        if (isType(StackTraceSetting.class)) {
+            return !hasEventHook;
+        }
+        return true;
     }
 }

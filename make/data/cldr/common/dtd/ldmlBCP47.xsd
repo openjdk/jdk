@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+Note: The .xsd files are a Technology Preview. They are subject to change or removal in future CLDR versions.
+Note: DTD @-annotations are not currently converted to .xsd. For full CLDR file validation, use the DTD and CLDR tools.
+-->
+
+<!--
+  Copyright © 1991-2024 Unicode, Inc.
+  For terms of use, see http://www.unicode.org/copyright.html
+  SPDX-License-Identifier: Unicode-3.0
+  CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+--><xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+  <xs:element name="ldmlBCP47">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="version"/>
+        <xs:element minOccurs="0" ref="generation"/>
+        <xs:element minOccurs="0" ref="cldrVersion"/>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="keyword"/>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="attribute"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="version">
+    <xs:complexType>
+      <xs:attribute name="number" use="required"/>
+      <xs:attribute default="45" name="cldrVersion">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:enumeration value="45"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  
+  
+  <xs:element name="generation">
+    <xs:complexType>
+      <xs:attribute name="date" use="required"/>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  
+  <xs:element name="cldrVersion">
+    <xs:complexType>
+      <xs:attribute name="version" use="required"/>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  <xs:element name="keyword">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="key"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="key">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="type"/>
+      </xs:sequence>
+      <xs:attribute name="extension" type="xs:NMTOKEN"/>
+      <xs:attribute name="name" type="xs:NMTOKEN" use="required"/>
+      <xs:attribute name="description"/>
+      <xs:attribute default="false" name="deprecated">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="true"/>
+            <xs:enumeration value="false"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="preferred" type="xs:NMTOKEN"/>
+      <xs:attribute name="alias" type="xs:NMTOKEN"/>
+      <xs:attribute name="valueType">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="single"/>
+            <xs:enumeration value="multiple"/>
+            <xs:enumeration value="incremental"/>
+            <xs:enumeration value="any"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="since"/>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <xs:element name="type">
+    <xs:complexType>
+      <xs:attribute name="name" type="xs:NMTOKEN" use="required"/>
+      <xs:attribute name="description" use="required"/>
+      <xs:attribute default="false" name="deprecated">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="true"/>
+            <xs:enumeration value="false"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="preferred" type="xs:NMTOKEN"/>
+      <xs:attribute name="alias"/>
+      <xs:attribute name="since"/>
+      <xs:attribute name="iana"/>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <xs:element name="attribute">
+    <xs:complexType>
+      <xs:attribute name="name" type="xs:NMTOKEN" use="required"/>
+      <xs:attribute name="description" use="required"/>
+      <xs:attribute default="false" name="deprecated">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="true"/>
+            <xs:enumeration value="false"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="preferred" type="xs:NMTOKEN"/>
+      <xs:attribute name="since"/>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>

@@ -79,7 +79,7 @@ public class TestRedefineWithUnresolvedClass {
     }
 
     private static void launchTest() throws Throwable {
-        OutputAnalyzer output = ProcessTools.executeTestJvm(
+        OutputAnalyzer output = ProcessTools.executeTestJava(
             "-javaagent:" + testClasses + "UnresolvedClassAgent.jar",
             "-Dtest.classes=" + testClasses,
             "UnresolvedClassAgent");

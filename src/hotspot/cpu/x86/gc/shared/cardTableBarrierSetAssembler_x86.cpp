@@ -119,7 +119,7 @@ void CardTableBarrierSetAssembler::store_check(MacroAssembler* masm, Register ob
   if (UseCondCardMark) {
     Label L_already_dirty;
     __ cmpb(card_addr, dirty);
-    __ jcc(Assembler::equal, L_already_dirty);
+    __ jccb(Assembler::equal, L_already_dirty);
     __ movb(card_addr, dirty);
     __ bind(L_already_dirty);
   } else {

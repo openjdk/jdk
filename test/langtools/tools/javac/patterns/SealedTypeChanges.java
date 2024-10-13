@@ -25,7 +25,6 @@
  * @test
  * @bug 8262891 8270151
  * @summary Verify pattern switches work properly when the set of sealed types changes.
- * @enablePreview
  * @compile SealedTypeChanges.java
  * @compile SealedTypeChanges2.java
  * @run main SealedTypeChanges

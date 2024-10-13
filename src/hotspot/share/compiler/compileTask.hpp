@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,12 @@
 class DirectiveSet;
 
 JVMCI_ONLY(class JVMCICompileState;)
+
+enum class InliningResult { SUCCESS, FAILURE };
+
+inline InliningResult inlining_result_of(bool success) {
+  return success ? InliningResult::SUCCESS : InliningResult::FAILURE;
+}
 
 // CompileTask
 //
@@ -106,6 +112,7 @@ class CompileTask : public CHeapObj<mtCompiler> {
   const char*          _failure_reason;
   // Specifies if _failure_reason is on the C heap.
   bool                 _failure_reason_on_C_heap;
+  size_t               _arena_bytes;  // peak size of temporary memory during compilation (e.g. node arenas)
 
  public:
   CompileTask() : _failure_reason(nullptr), _failure_reason_on_C_heap(false) {
@@ -174,7 +181,7 @@ class CompileTask : public CHeapObj<mtCompiler> {
   int          comp_level()                      { return _comp_level;}
   void         set_comp_level(int comp_level)    { _comp_level = comp_level;}
 
-  AbstractCompiler* compiler();
+  AbstractCompiler* compiler() const;
   CompileTask*      select_for_compilation();
 
   int          num_inlined_bytecodes() const     { return _num_inlined_bytecodes; }
@@ -191,6 +198,9 @@ class CompileTask : public CHeapObj<mtCompiler> {
   // RedefineClasses support
   void         metadata_do(MetadataClosure* f);
   void         mark_on_stack();
+
+  void         set_arena_bytes(size_t s)         { _arena_bytes = s; }
+  size_t       arena_bytes() const               { return _arena_bytes; }
 
 private:
   static void  print_impl(outputStream* st, Method* method, int compile_id, int comp_level,
@@ -225,11 +235,11 @@ public:
 
   bool         check_break_at_flags();
 
-  static void print_inlining_inner(outputStream* st, ciMethod* method, int inline_level, int bci, const char* msg = nullptr);
-  static void print_inlining_tty(ciMethod* method, int inline_level, int bci, const char* msg = nullptr) {
-    print_inlining_inner(tty, method, inline_level, bci, msg);
+  static void print_inlining_inner(outputStream* st, ciMethod* method, int inline_level, int bci, InliningResult result, const char* msg = nullptr);
+  static void print_inlining_tty(ciMethod* method, int inline_level, int bci, InliningResult result, const char* msg = nullptr) {
+    print_inlining_inner(tty, method, inline_level, bci, result, msg);
   }
-  static void print_inlining_ul(ciMethod* method, int inline_level, int bci, const char* msg = nullptr);
+  static void print_inlining_ul(ciMethod* method, int inline_level, int bci, InliningResult result, const char* msg = nullptr);
 };
 
 #endif // SHARE_COMPILER_COMPILETASK_HPP

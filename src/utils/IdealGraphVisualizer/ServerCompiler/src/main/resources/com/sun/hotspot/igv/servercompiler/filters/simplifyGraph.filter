@@ -1,0 +1,16 @@
+// Hide graph elements that are typically (but not always) unnecessary to
+// analyze the intermediate representation. This filter is most effective in
+// combination with "Condense graph".
+
+// Remove self-loops (typical for region-like control nodes).
+removeSelfLoops();
+
+// Hide secondary edges.
+remove(matches("short_name", "FP|RA|IO|RP"));
+
+// Remove back-edges to the Root node.
+removeInputs(matches("name", "Root"), matches("name", ".*"));
+
+// Remove top inputs from call-like nodes.
+removeInputs(matches("name", "SafePoint|CallStaticJava|CallDynamicJava|CallJava|CallLeaf|CallRuntime|AbstractLock|CallLeafNoFP|Call|CallStaticJavaDirect|Halt|Rethrow|ShouldNotReachHere|RethrowException|Return|Ret|MergeMem|Initialize|MemBarAcquire|MemBarRelease|Unlock|Lock|Allocate|AllocateArray"),
+             and([matches("name", "Con"), matches("type", "top")]));

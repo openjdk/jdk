@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,8 @@
 
 /*
  * @test
- * @enablePreview
  * @modules java.base/jdk.internal.access.foreign
+ * @modules java.base/jdk.internal.foreign.layout
  *
  * @run testng/othervm -Xverify:all
  *   -Djdk.internal.foreign.SHOULD_ADAPT_HANDLES=false
@@ -47,8 +47,9 @@
  */
 
 import java.lang.foreign.Arena;
-import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
+
+import jdk.internal.foreign.layout.ValueLayouts;
 import org.testng.SkipException;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -169,8 +170,8 @@ public class VarHandleTestExact {
 
     @Test(dataProvider = "dataSetMemorySegment")
     public void testExactSegmentSet(Class<?> carrier, Object testValue, SetSegmentX setter) {
-        VarHandle vh = MethodHandles.memorySegmentViewVarHandle(MemoryLayout.valueLayout(carrier, ByteOrder.nativeOrder()));
-        try (Arena arena = Arena.openConfined()) {
+        VarHandle vh = ValueLayouts.valueLayout(carrier, ByteOrder.nativeOrder()).varHandle();
+        try (Arena arena = Arena.ofConfined()) {
             MemorySegment seg = arena.allocate(8);
             doTest(vh,
                 tvh -> tvh.set(seg, 0L, testValue),

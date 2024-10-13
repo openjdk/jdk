@@ -37,7 +37,6 @@ import java.nio.file.Files;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.RandomAccessFile;
-import java.nio.file.Paths;
 import java.util.Enumeration;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -161,13 +160,9 @@ public class EntryCount64k {
         }
 
         // Check java -jar
-        String javaHome = System.getProperty("java.home");
-        String java = Paths.get(javaHome, "bin", "java").toString();
-        String[] cmd = { java, "-jar", zipFile.getName() };
-        ProcessBuilder pb = new ProcessBuilder(cmd);
-        OutputAnalyzer a = ProcessTools.executeProcess(pb);
+        OutputAnalyzer a = ProcessTools.executeTestJava("-jar", zipFile.getName());
         a.shouldHaveExitValue(0);
         a.stdoutShouldMatch("\\AMain\\Z");
-        a.stderrShouldMatch("\\A\\Z");
+        a.stderrShouldMatchIgnoreDeprecatedWarnings("\\A\\Z");
     }
 }

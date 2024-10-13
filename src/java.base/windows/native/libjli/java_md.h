@@ -39,7 +39,7 @@
 #define MAXPATHLEN      MAX_PATH
 #define MAXNAMELEN      MAX_PATH
 
-#define JLONG_FORMAT_SPECIFIER "%I64d"
+#define JLONG_FORMAT_SPECIFIER "%lld"
 
 /*
  * Function prototypes.

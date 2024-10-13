@@ -65,6 +65,10 @@ class KeyMap {
     }
 
     VarKey keyForVariable(String name) {
+        if (name.isEmpty()) {
+            return new VarKey(state, name);
+        }
+
         return varMap.computeIfAbsent(name, k -> new VarKey(state, name));
     }
 
@@ -94,5 +98,9 @@ class KeyMap {
 
     Stream<ImportKey> importKeys() {
         return importMap.values().stream();
+    }
+
+    Stream<TypeDeclKey> typeDeclKeys() {
+        return classMap.values().stream();
     }
 }

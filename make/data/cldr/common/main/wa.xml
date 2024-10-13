@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2024 Unicode, Inc.
+For terms of use, see http://www.unicode.org/copyright.html
+SPDX-License-Identifier: Unicode-3.0
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+-->
+<ldml>
+	<identity>
+		<version number="$Revision$"/>
+		<language type="wa"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="wa" draft="contributed">walon</language>
+		</languages>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters>[aàâå æ b cç d eéèêë f g h iîï j k l m n oô œ p q r s t uùûü v w x yÿ z]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[áäãā ē íìī ñ óòöø úǔ]</exemplarCharacters>
+		<exemplarCharacters type="index">[A B C D E F G H I J K L M N O P Q R S T U V W X Y Z]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … ’ &quot;“” « » ( ) \[ \] § @ * / \&amp; # † ‡]</exemplarCharacters>
+	</characters>
+</ldml>

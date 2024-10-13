@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,18 +26,19 @@
  * @summary Test virtual threads using core reflection
  * @modules java.base/java.lang:+open
  * @library /test/lib
- * @enablePreview
  * @run junit Reflection
  */
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.locks.LockSupport;
 
+import jdk.test.lib.thread.VThreadScheduler;
 import jdk.test.lib.thread.VThreadRunner;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
@@ -142,20 +143,23 @@ class Reflection {
      */
     @Test
     void testInvokeStatic6() throws Exception {
-        assumeTrue(ThreadBuilders.supportsCustomScheduler(), "No support for custom schedulers");
+        assumeTrue(VThreadScheduler.supportsCustomScheduler(), "No support for custom schedulers");
         Method parkMethod = Parker.class.getDeclaredMethod("park");
         try (ExecutorService scheduler = Executors.newFixedThreadPool(1)) {
-            Thread.Builder builder = ThreadBuilders.virtualThreadBuilder(scheduler);
-            ThreadFactory factory = builder.factory();
+            ThreadFactory factory = VThreadScheduler.virtualThreadFactory(scheduler);
+
+            var ready = new CountDownLatch(1);
             Thread vthread = factory.newThread(() -> {
+                ready.countDown();
                 try {
                     parkMethod.invoke(null);   // blocks
                 } catch (Exception e) { }
             });
             vthread.start();
+
             try {
-                // give thread time to be scheduled
-                Thread.sleep(100);
+                // wait for thread to run
+                ready.await();
 
                 // unpark with another virtual thread, runs on same carrier thread
                 Thread unparker = factory.newThread(() -> LockSupport.unpark(vthread));
@@ -317,22 +321,31 @@ class Reflection {
      */
     @Test
     void testNewInstance6() throws Exception {
-        assumeTrue(ThreadBuilders.supportsCustomScheduler(), "No support for custom schedulers");
+        assumeTrue(VThreadScheduler.supportsCustomScheduler(), "No support for custom schedulers");
         Constructor<?> ctor = Parker.class.getDeclaredConstructor();
         try (ExecutorService scheduler = Executors.newFixedThreadPool(1)) {
-            Thread.Builder builder = ThreadBuilders.virtualThreadBuilder(scheduler);
-            ThreadFactory factory = builder.factory();
+            ThreadFactory factory = VThreadScheduler.virtualThreadFactory(scheduler);
+
+            var ready = new CountDownLatch(1);
             Thread vthread = factory.newThread(() -> {
+                ready.countDown();
                 try {
                     ctor.newInstance();
                 } catch (Exception e) { }
             });
             vthread.start();
 
-            Thread.sleep(100); // give thread time to be scheduled
+            try {
+                // wait for thread to run
+                ready.await();
 
-            // unpark with another virtual thread, runs on same carrier thread
-            factory.newThread(() -> LockSupport.unpark(vthread)).start();
+                // unpark with another virtual thread, runs on same carrier thread
+                Thread unparker = factory.newThread(() -> LockSupport.unpark(vthread));
+                unparker.start();
+                unparker.join();
+            } finally {
+                LockSupport.unpark(vthread);  // in case test fails
+            }
         }
     }
 

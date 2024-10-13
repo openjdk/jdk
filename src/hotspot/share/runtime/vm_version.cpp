@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
 
 void VM_Version_init() {
   VM_Version::initialize();
-
+  guarantee(VM_Version::supports_cx8(), "Support for 64-bit atomic operations is required");
   if (log_is_enabled(Info, os, cpu)) {
     char buf[1024];
     ResourceMark rm;

@@ -106,6 +106,7 @@ import java.util.Objects;
  * usually containing the textual representation of the source expression that retrieved the
  * callee, e.g. {@code StandardOperation.CALL.named("window.open")}.
  * </p>
+ * @since 9
  */
 public final class NamedOperation implements Operation {
     private final Operation baseOperation;

@@ -24,8 +24,8 @@
 
 #include "precompiled.hpp"
 #include "memory/allocation.inline.hpp"
+#include "nmt/memTracker.hpp"
 #include "runtime/javaThread.hpp"
-#include "services/memTracker.hpp"
 
 // Lifecycle management for TSM ParkEvents.
 // ParkEvents are type-stable (TSM).

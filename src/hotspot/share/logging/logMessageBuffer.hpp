@@ -109,7 +109,7 @@ class LogMessageBuffer : public StackObj {
   // It is, however, possible to specify a prefix per LogMessageBuffer,
   // using set_prefix(). Lines added to the LogMessageBuffer after a prefix
   // function has been set will be prefixed automatically.
-  // Setting this to nullptr will disable prefixing.
+  // Setting this to null will disable prefixing.
   void set_prefix(size_t (*prefix_fn)(char*, size_t)) {
     _prefix_fn = prefix_fn;
   }

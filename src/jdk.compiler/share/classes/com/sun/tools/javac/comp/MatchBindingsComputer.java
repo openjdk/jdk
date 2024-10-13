@@ -142,7 +142,7 @@ public class MatchBindingsComputer extends TreeScanner {
     public MatchBindings finishBindings(JCTree tree, MatchBindings matchBindings) {
         switch (tree.getTag()) {
             case NOT: case AND: case OR: case BINDINGPATTERN:
-            case PARENTHESIZEDPATTERN: case TYPETEST:
+            case TYPETEST:
             case PARENS: case RECORDPATTERN:
             case CONDEXPR: //error recovery:
                 return matchBindings;

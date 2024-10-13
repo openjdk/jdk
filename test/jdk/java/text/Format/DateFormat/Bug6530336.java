@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,9 @@
 
 /*
  * @test
- * @bug 6530336 6537997 8008577
+ * @bug 6530336 6537997 8008577 8174269
  * @library /java/text/testlib
- * @run main/othervm -Djava.locale.providers=COMPAT,SPI Bug6530336
+ * @run main Bug6530336
  */
 
 import java.text.SimpleDateFormat;
@@ -78,6 +78,14 @@ public class Bug6530336 {
                 for (int j = 0; j < timezones.length; j++) {
                     sdf.setTimeZone(timezones[j]);
                     String date = sdf.format(dates[j]);
+                    // CLDR localizes GMT format into for some locales. Ignore those cases
+                    if (date.matches(".*GMT[\\s+-]\\D.*") ||
+                            date.contains("UTC") ||
+                            date.contains("TMG") || // Interlingue
+                            date.contains("\u07dc\u07ed\u07d5\u07d6") || // N’Ko
+                            date.contains("\u06af\u0631\u06cc\u0646\u06cc\u0686")) { // Central Kurdish
+                        continue;
+                    }
                     sdf.setTimeZone(timezone_LA);
                     String date_LA = sdf.parse(date).toString();
 

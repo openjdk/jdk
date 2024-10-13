@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -541,12 +541,12 @@ public class Arrrghs extends TestHelper {
         createJar(new File("some.jar"), new File("Foo"),
                 "public static int main(String[] args){return 1;}");
         tr = doExec(javaCmd, "-jar", "some.jar");
-        tr.contains("Error: Main method must return a value of type void in class Foo");
+        tr.contains("Error: Main method not found in class Foo");
         if (!tr.testStatus)
             System.out.println(tr);
         // use classpath to check
         tr = doExec(javaCmd, "-cp", "some.jar", "Foo");
-        tr.contains("Error: Main method must return a value of type void in class Foo");
+        tr.contains("Error: Main method not found in class Foo");
         if (!tr.testStatus)
             System.out.println(tr);
 
@@ -567,12 +567,12 @@ public class Arrrghs extends TestHelper {
          createJar(new File("some.jar"), new File("Foo"),
                 "public void main(String[] args){}");
         tr = doExec(javaCmd, "-jar", "some.jar");
-        tr.contains("Error: Main method is not static in class Foo");
+        tr.contains("Error: Main method not found in class Foo");
         if (!tr.testStatus)
             System.out.println(tr);
         // use classpath to check
         tr = doExec(javaCmd, "-cp", "some.jar", "Foo");
-        tr.contains("Error: Main method is not static in class Foo");
+        tr.contains("Error: Main method not found in class Foo");
         if (!tr.testStatus)
             System.out.println(tr);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -27,7 +27,6 @@ import com.sun.org.apache.xerces.internal.impl.dv.XSSimpleType;
 import com.sun.org.apache.xerces.internal.impl.validation.EntityState;
 import com.sun.org.apache.xerces.internal.impl.validation.ValidationManager;
 import com.sun.org.apache.xerces.internal.impl.xs.XMLSchemaValidator;
-import com.sun.org.apache.xerces.internal.jaxp.SAXParserFactoryImpl;
 import com.sun.org.apache.xerces.internal.util.AttributesProxy;
 import com.sun.org.apache.xerces.internal.util.SAXLocatorWrapper;
 import com.sun.org.apache.xerces.internal.util.SAXMessageFormatter;
@@ -36,7 +35,6 @@ import com.sun.org.apache.xerces.internal.util.SymbolTable;
 import com.sun.org.apache.xerces.internal.util.URI;
 import com.sun.org.apache.xerces.internal.util.XMLAttributesImpl;
 import com.sun.org.apache.xerces.internal.util.XMLSymbols;
-import com.sun.org.apache.xerces.internal.utils.XMLSecurityManager;
 import com.sun.org.apache.xerces.internal.utils.XMLSecurityPropertyManager;
 import com.sun.org.apache.xerces.internal.xni.Augmentations;
 import com.sun.org.apache.xerces.internal.xni.NamespaceContext;
@@ -63,7 +61,6 @@ import java.util.HashMap;
 import java.util.Map;
 import javax.xml.XMLConstants;
 import javax.xml.parsers.FactoryConfigurationError;
-import javax.xml.parsers.SAXParserFactory;
 import javax.xml.transform.Result;
 import javax.xml.transform.Source;
 import javax.xml.transform.sax.SAXResult;
@@ -71,6 +68,7 @@ import javax.xml.transform.sax.SAXSource;
 import javax.xml.validation.TypeInfoProvider;
 import javax.xml.validation.ValidatorHandler;
 import jdk.xml.internal.JdkConstants;
+import jdk.xml.internal.XMLSecurityManager;
 import jdk.xml.internal.JdkXmlUtils;
 import org.w3c.dom.TypeInfo;
 import org.w3c.dom.ls.LSInput;
@@ -95,7 +93,7 @@ import org.xml.sax.ext.EntityResolver2;
  * @author Kohsuke Kawaguchi
  * @author Michael Glavassevich, IBM
  *
- * @LastModified: May 2021
+ * @LastModified: July 2023
  */
 final class ValidatorHandlerImpl extends ValidatorHandler implements
     DTDHandler, EntityState, PSVIProvider, ValidatorHelper, XMLDocumentHandler {
@@ -676,8 +674,12 @@ final class ValidatorHandlerImpl extends ValidatorHandler implements
                 XMLReader reader = saxSource.getXMLReader();
                 if( reader==null ) {
                     // create one now
-                    reader = JdkXmlUtils.getXMLReader(fComponentManager.getFeature(JdkConstants.OVERRIDE_PARSER),
-                            fComponentManager.getFeature(XMLConstants.FEATURE_SECURE_PROCESSING));
+                    reader = JdkXmlUtils.getXMLReader(
+                            (XMLSecurityManager)fComponentManager.getProperty(SECURITY_MANAGER),
+                            fComponentManager.getFeature(JdkConstants.OVERRIDE_PARSER),
+                            fComponentManager.getFeature(XMLConstants.FEATURE_SECURE_PROCESSING),
+                            fComponentManager.getFeature(XMLConstants.USE_CATALOG),
+                            null);
 
                     try {
                         // If this is a Xerces SAX parser, set the security manager if there is one

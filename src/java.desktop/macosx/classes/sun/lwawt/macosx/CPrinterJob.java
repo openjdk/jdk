@@ -44,7 +44,9 @@ import javax.print.attribute.standard.Media;
 import javax.print.attribute.standard.MediaPrintableArea;
 import javax.print.attribute.standard.MediaSize;
 import javax.print.attribute.standard.MediaSizeName;
+import javax.print.attribute.standard.OutputBin;
 import javax.print.attribute.standard.PageRanges;
+import javax.print.attribute.standard.Sides;
 import javax.print.attribute.Attribute;
 
 import sun.java2d.*;
@@ -68,6 +70,8 @@ public final class CPrinterJob extends RasterPrinterJob {
     private static Font defaultFont;
 
     private String tray = null;
+
+    private String outputBin = null;
 
     // This is the NSPrintInfo for this PrinterJob. Protect multi thread
     //  access to it. It is used by the pageDialog, jobDialog, and printLoop.
@@ -189,6 +193,8 @@ public final class CPrinterJob extends RasterPrinterJob {
             CustomMediaTray customTray = (CustomMediaTray) attr;
             tray = customTray.getChoiceName();
         }
+
+        outputBin = getOutputBinValue(attributes.get(OutputBin.class));
 
         PageRanges pageRangesAttr =  (PageRanges)attributes.get(PageRanges.class);
         if (isSupportedValue(pageRangesAttr, attributes)) {
@@ -657,6 +663,41 @@ public final class CPrinterJob extends RasterPrinterJob {
         return tray;
     }
 
+    private String getOutputBin() {
+        return outputBin;
+    }
+
+    private void setOutputBin(String outputBinName) {
+
+        OutputBin outputBin = toOutputBin(outputBinName);
+        if (outputBin != null) {
+            attributes.add(outputBin);
+        }
+    }
+
+    private OutputBin toOutputBin(String outputBinName) {
+
+        PrintService ps = getPrintService();
+        if (ps == null) {
+            return null;
+        }
+
+        OutputBin[] supportedBins = (OutputBin[]) ps.getSupportedAttributeValues(OutputBin.class, null, null);
+        if (supportedBins == null || supportedBins.length == 0) {
+            return null;
+        }
+
+        for (OutputBin bin : supportedBins) {
+            if (bin instanceof CustomOutputBin customBin){
+                if (customBin.getChoiceName().equals(outputBinName)) {
+                    return customBin;
+                }
+            }
+        }
+
+        return null;
+    }
+
     private void setPrinterServiceFromNative(String printerName) {
         // This is called from the native side.
         PrintService[] services = PrintServiceLookup.lookupPrintServices(DocFlavor.SERVICE_FORMATTED.PAGEABLE, null);
@@ -682,6 +723,24 @@ public final class CPrinterJob extends RasterPrinterJob {
                     page.getImageableWidth(),
                     page.getImageableHeight());
         return pageFormatArea;
+    }
+
+    private int getSides() {
+        return (this.sidesAttr == null) ? -1 : this.sidesAttr.getValue();
+    }
+
+    private void setSides(int sides) {
+        if (attributes == null) {
+            return;
+        }
+
+        final Sides[] sidesTable = new Sides[] {Sides.ONE_SIDED, Sides.TWO_SIDED_LONG_EDGE, Sides.TWO_SIDED_SHORT_EDGE};
+
+        if (sides >= 0 && sides < sidesTable.length) {
+            Sides s = sidesTable[sides];
+            attributes.add(s);
+            this.sidesAttr = s;
+        }
     }
 
     private boolean cancelCheck() {
@@ -804,6 +863,10 @@ public final class CPrinterJob extends RasterPrinterJob {
             public void run() {
                 synchronized (ret) {
                     try {
+                        Paper paper = pageFormat.getPaper();
+                        double width = Math.rint(paper.getWidth());
+                        double height = Math.rint(paper.getHeight());
+                        setGraphicsConfigInfo(((Graphics2D)graphics).getTransform(), width, height);
                         int pageResult = printable.print(
                             graphics, pageFormat, pageIndex);
                         if (pageResult != Printable.NO_SUCH_PAGE) {

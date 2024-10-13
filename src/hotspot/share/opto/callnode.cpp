@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -755,7 +755,7 @@ Node *CallNode::match( const ProjNode *proj, const Matcher *match ) {
 
     if (Opcode() == Op_CallLeafVector) {
       // If the return is in vector, compute appropriate regmask taking into account the whole range
-      if(ideal_reg >= Op_VecS && ideal_reg <= Op_VecZ) {
+      if(ideal_reg >= Op_VecA && ideal_reg <= Op_VecZ) {
         if(OptoReg::is_valid(regs.second())) {
           for (OptoReg::Name r = regs.first(); r <= regs.second(); r = OptoReg::add(r, 1)) {
             rm.Insert(r);
@@ -786,7 +786,7 @@ uint CallNode::match_edge(uint idx) const {
 // Determine whether the call could modify the field of the specified
 // instance at the specified offset.
 //
-bool CallNode::may_modify(const TypeOopPtr *t_oop, PhaseTransform *phase) {
+bool CallNode::may_modify(const TypeOopPtr* t_oop, PhaseValues* phase) {
   assert((t_oop != nullptr), "sanity");
   if (is_call_to_arraycopystub() && strcmp(_name, "unsafe_arraycopy") != 0) {
     const TypeTuple* args = _tf->domain();
@@ -977,15 +977,15 @@ Node* CallNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   // Validate attached generator
   CallGenerator* cg = generator();
   if (cg != nullptr) {
-    assert(is_CallStaticJava()  && cg->is_mh_late_inline() ||
-           is_CallDynamicJava() && cg->is_virtual_late_inline(), "mismatch");
+    assert((is_CallStaticJava()  && cg->is_mh_late_inline()) ||
+           (is_CallDynamicJava() && cg->is_virtual_late_inline()), "mismatch");
   }
 #endif // ASSERT
   return SafePointNode::Ideal(phase, can_reshape);
 }
 
 bool CallNode::is_call_to_arraycopystub() const {
-  if (_name != nullptr && strstr(_name, "arraycopy") != 0) {
+  if (_name != nullptr && strstr(_name, "arraycopy") != nullptr) {
     return true;
   }
   return false;
@@ -1103,13 +1103,16 @@ Node* CallStaticJavaNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   return CallNode::Ideal(phase, can_reshape);
 }
 
+//----------------------------is_uncommon_trap----------------------------
+// Returns true if this is an uncommon trap.
+bool CallStaticJavaNode::is_uncommon_trap() const {
+  return (_name != nullptr && !strcmp(_name, "uncommon_trap"));
+}
+
 //----------------------------uncommon_trap_request----------------------------
 // If this is an uncommon trap, return the request code, else zero.
 int CallStaticJavaNode::uncommon_trap_request() const {
-  if (_name != nullptr && !strcmp(_name, "uncommon_trap")) {
-    return extract_uncommon_trap_request(this);
-  }
-  return 0;
+  return is_uncommon_trap() ? extract_uncommon_trap_request(this) : 0;
 }
 int CallStaticJavaNode::extract_uncommon_trap_request(const Node* call) {
 #ifndef PRODUCT
@@ -1229,7 +1232,7 @@ bool CallLeafVectorNode::cmp( const Node &n ) const {
 
 //------------------------------calling_convention-----------------------------
 void CallRuntimeNode::calling_convention(BasicType* sig_bt, VMRegPair *parm_regs, uint argcnt) const {
-  SharedRuntime::c_calling_convention(sig_bt, parm_regs, /*regs2=*/nullptr, argcnt);
+  SharedRuntime::c_calling_convention(sig_bt, parm_regs, argcnt);
 }
 
 void CallLeafVectorNode::calling_convention( BasicType* sig_bt, VMRegPair *parm_regs, uint argcnt ) const {
@@ -1460,22 +1463,15 @@ void SafePointNode::disconnect_from_root(PhaseIterGVN *igvn) {
 
 //==============  SafePointScalarObjectNode  ==============
 
-SafePointScalarObjectNode::SafePointScalarObjectNode(const TypeOopPtr* tp,
-#ifdef ASSERT
-                                                     Node* alloc,
-#endif
-                                                     uint first_index,
-                                                     uint n_fields) :
+SafePointScalarObjectNode::SafePointScalarObjectNode(const TypeOopPtr* tp, Node* alloc, uint first_index, uint depth, uint n_fields) :
   TypeNode(tp, 1), // 1 control input -- seems required.  Get from root.
   _first_index(first_index),
-  _n_fields(n_fields)
-#ifdef ASSERT
-  , _alloc(alloc)
-#endif
+  _depth(depth),
+  _n_fields(n_fields),
+  _alloc(alloc)
 {
 #ifdef ASSERT
-  if (!alloc->is_Allocate()
-      && !(alloc->Opcode() == Op_VectorBox)) {
+  if (!alloc->is_Allocate() && !(alloc->Opcode() == Op_VectorBox)) {
     alloc->dump();
     assert(false, "unexpected call node");
   }
@@ -1521,10 +1517,58 @@ SafePointScalarObjectNode::clone(Dict* sosn_map, bool& new_node) const {
 
 #ifndef PRODUCT
 void SafePointScalarObjectNode::dump_spec(outputStream *st) const {
-  st->print(" # fields@[%d..%d]", first_index(),
-             first_index() + n_fields() - 1);
+  st->print(" # fields@[%d..%d]", first_index(), first_index() + n_fields() - 1);
+}
+#endif
+
+//==============  SafePointScalarMergeNode  ==============
+
+SafePointScalarMergeNode::SafePointScalarMergeNode(const TypeOopPtr* tp, int merge_pointer_idx) :
+  TypeNode(tp, 1), // 1 control input -- seems required.  Get from root.
+  _merge_pointer_idx(merge_pointer_idx)
+{
+  init_class_id(Class_SafePointScalarMerge);
 }
 
+// Do not allow value-numbering for SafePointScalarMerge node.
+uint SafePointScalarMergeNode::hash() const { return NO_HASH; }
+bool SafePointScalarMergeNode::cmp( const Node &n ) const {
+  return (&n == this); // Always fail except on self
+}
+
+uint SafePointScalarMergeNode::ideal_reg() const {
+  return 0; // No matching to machine instruction
+}
+
+const RegMask &SafePointScalarMergeNode::in_RegMask(uint idx) const {
+  return *(Compile::current()->matcher()->idealreg2debugmask[in(idx)->ideal_reg()]);
+}
+
+const RegMask &SafePointScalarMergeNode::out_RegMask() const {
+  return RegMask::Empty;
+}
+
+uint SafePointScalarMergeNode::match_edge(uint idx) const {
+  return 0;
+}
+
+SafePointScalarMergeNode*
+SafePointScalarMergeNode::clone(Dict* sosn_map, bool& new_node) const {
+  void* cached = (*sosn_map)[(void*)this];
+  if (cached != nullptr) {
+    new_node = false;
+    return (SafePointScalarMergeNode*)cached;
+  }
+  new_node = true;
+  SafePointScalarMergeNode* res = (SafePointScalarMergeNode*)Node::clone();
+  sosn_map->Insert((void*)this, (void*)res);
+  return res;
+}
+
+#ifndef PRODUCT
+void SafePointScalarMergeNode::dump_spec(outputStream *st) const {
+  st->print(" # merge_pointer_idx=%d, scalarized_objects=%d", _merge_pointer_idx, req()-1);
+}
 #endif
 
 //=============================================================================
@@ -1557,10 +1601,8 @@ AllocateNode::AllocateNode(Compile* C, const TypeFunc *atype,
 
 void AllocateNode::compute_MemBar_redundancy(ciMethod* initializer)
 {
-  assert(initializer != nullptr &&
-         initializer->is_initializer() &&
-         !initializer->is_static(),
-             "unexpected initializer method");
+  assert(initializer != nullptr && initializer->is_object_initializer(),
+         "unexpected initializer method");
   BCEscapeAnalyzer* analyzer = initializer->get_bcea();
   if (analyzer == nullptr) {
     return;
@@ -1581,7 +1623,7 @@ Node *AllocateNode::make_ideal_mark(PhaseGVN *phase, Node* obj, Node* control, N
 // Retrieve the length from the AllocateArrayNode. Narrow the type with a
 // CastII, if appropriate.  If we are not allowed to create new nodes, and
 // a CastII is appropriate, return null.
-Node *AllocateArrayNode::make_ideal_length(const TypeOopPtr* oop_type, PhaseTransform *phase, bool allow_new_nodes) {
+Node *AllocateArrayNode::make_ideal_length(const TypeOopPtr* oop_type, PhaseValues* phase, bool allow_new_nodes) {
   Node *length = in(AllocateNode::ALength);
   assert(length != nullptr, "length is not null");
 
@@ -1595,8 +1637,8 @@ Node *AllocateArrayNode::make_ideal_length(const TypeOopPtr* oop_type, PhaseTran
       //   - the narrow_length is 0
       //   - the narrow_length is not wider than length
       assert(narrow_length_type == TypeInt::ZERO ||
-             length_type->is_con() && narrow_length_type->is_con() &&
-                (narrow_length_type->_hi <= length_type->_lo) ||
+             (length_type->is_con() && narrow_length_type->is_con() &&
+              (narrow_length_type->_hi <= length_type->_lo)) ||
              (narrow_length_type->_hi <= length_type->_hi &&
               narrow_length_type->_lo >= length_type->_lo),
              "narrow type must be narrower than length type");
@@ -1609,8 +1651,7 @@ Node *AllocateArrayNode::make_ideal_length(const TypeOopPtr* oop_type, PhaseTran
       // propagate the fact that the array length must be positive.
       InitializeNode* init = initialization();
       if (init != nullptr) {
-        length = new CastIINode(length, narrow_length_type);
-        length->set_req(TypeFunc::Control, init->proj_out_or_null(TypeFunc::Control));
+        length = new CastIINode(init->proj_out_or_null(TypeFunc::Control), length, narrow_length_type);
       }
     }
   }
@@ -1907,6 +1948,22 @@ bool AbstractLockNode::find_unlocks_for_region(const RegionNode* region, LockNod
 
 }
 
+// Check that all locks/unlocks associated with object come from balanced regions.
+bool AbstractLockNode::is_balanced() {
+  Node* obj = obj_node();
+  for (uint j = 0; j < obj->outcnt(); j++) {
+    Node* n = obj->raw_out(j);
+    if (n->is_AbstractLock() &&
+        n->as_AbstractLock()->obj_node()->eqv_uncast(obj)) {
+      BoxLockNode* n_box = n->as_AbstractLock()->box_node()->as_BoxLock();
+      if (n_box->is_unbalanced()) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
 const char* AbstractLockNode::_kind_names[] = {"Regular", "NonEscObj", "Coarsened", "Nested"};
 
 const char * AbstractLockNode::kind_as_string() const {
@@ -1959,7 +2016,7 @@ Node *LockNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     // If we are locking an non-escaped object, the lock/unlock is unnecessary
     //
     ConnectionGraph *cgr = phase->C->congraph();
-    if (cgr != nullptr && cgr->not_global_escape(obj_node())) {
+    if (cgr != nullptr && cgr->can_eliminate_lock(this)) {
       assert(!is_eliminated() || is_coarsened(), "sanity");
       // The lock could be marked eliminated by lock coarsening
       // code during first IGVN before EA. Replace coarsened flag
@@ -2013,6 +2070,8 @@ Node *LockNode::Ideal(PhaseGVN *phase, bool can_reshape) {
           int unlocks = 0;
           if (Verbose) {
             tty->print_cr("=== Locks coarsening ===");
+            tty->print("Obj: ");
+            obj_node()->dump();
           }
           for (int i = 0; i < lock_ops.length(); i++) {
             AbstractLockNode* lock = lock_ops.at(i);
@@ -2021,6 +2080,8 @@ Node *LockNode::Ideal(PhaseGVN *phase, bool can_reshape) {
             else
               unlocks++;
             if (Verbose) {
+              tty->print("Box %d: ", i);
+              box_node()->dump();
               tty->print(" %d: ", i);
               lock->dump();
             }
@@ -2122,6 +2183,7 @@ bool LockNode::is_nested_lock_region(Compile * c) {
       obj_node = bs->step_over_gc_barrier(obj_node);
       BoxLockNode* box_node = sfn->monitor_box(jvms, idx)->as_BoxLock();
       if ((box_node->stack_slot() < stk_slot) && obj_node->eqv_uncast(obj)) {
+        box->set_nested();
         return true;
       }
     }
@@ -2155,7 +2217,7 @@ Node *UnlockNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     // If we are unlocking an non-escaped object, the lock/unlock is unnecessary.
     //
     ConnectionGraph *cgr = phase->C->congraph();
-    if (cgr != nullptr && cgr->not_global_escape(obj_node())) {
+    if (cgr != nullptr && cgr->can_eliminate_lock(this)) {
       assert(!is_eliminated() || is_coarsened(), "sanity");
       // The lock could be marked eliminated by lock coarsening
       // code during first IGVN before EA. Replace coarsened flag
@@ -2195,7 +2257,7 @@ void AbstractLockNode::log_lock_optimization(Compile *C, const char * tag, Node*
   }
 }
 
-bool CallNode::may_modify_arraycopy_helper(const TypeOopPtr* dest_t, const TypeOopPtr *t_oop, PhaseTransform *phase) {
+bool CallNode::may_modify_arraycopy_helper(const TypeOopPtr* dest_t, const TypeOopPtr* t_oop, PhaseValues* phase) {
   if (dest_t->is_known_instance() && t_oop->is_known_instance()) {
     return dest_t->instance_id() == t_oop->instance_id();
   }

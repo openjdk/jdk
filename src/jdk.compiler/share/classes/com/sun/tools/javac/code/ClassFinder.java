@@ -180,6 +180,7 @@ public class ClassFinder {
     }
 
     /** Construct a new class finder. */
+    @SuppressWarnings("this-escape")
     protected ClassFinder(Context context) {
         context.put(classFinderKey, this);
         reader = ClassReader.instance(context);
@@ -225,7 +226,7 @@ public class ClassFinder {
     }
 
 
-/************************************************************************
+/* **********************************************************************
  * Temporary ct.sym replacement
  *
  * The following code is a temporary substitute for the ct.sym mechanism
@@ -277,7 +278,7 @@ public class ClassFinder {
 
     private Map<PackageSymbol, Long> supplementaryFlags;
 
-/************************************************************************
+/* **********************************************************************
  * Loading Classes
  ***********************************************************************/
 
@@ -454,7 +455,7 @@ public class ClassFinder {
         return c;
     }
 
-/************************************************************************
+/* **********************************************************************
  * Loading Packages
  ***********************************************************************/
 

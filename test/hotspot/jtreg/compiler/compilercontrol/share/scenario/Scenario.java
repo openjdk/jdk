@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,7 +104,7 @@ public final class Scenario {
             jcmdExecCommands.add(JcmdType.PRINT.command);
         }
         jcmdProcessor = new PrintDirectivesProcessor(directives);
-        executor = new Executor(isValid, vmopts, states, jcmdExecCommands);
+        executor = new Executor(vmopts, states, jcmdExecCommands);
     }
 
     /**
@@ -122,24 +122,17 @@ public final class Scenario {
             last.add(outputList.get(outputList.size() - 1));
             jcmdProcessor.accept(last);
         } else {
-            // two cases for invalid inputs.
-            if (mainOutput.getExitValue() == 0) {
-                if (!isJcmdValid) {
-                    boolean parse_error_found = false;
-                    for(OutputAnalyzer out : outputList) {
-                        if (out.getOutput().contains("Parsing of compiler directives failed")) {
-                            parse_error_found = true;
-                            break;
-                        }
-                    }
-                    Asserts.assertTrue(parse_error_found, "'Parsing of compiler directives failed' missing from output");
-                } else {
-                    mainOutput.shouldContain("CompileCommand: An error occurred during parsing");
+            Asserts.assertNE(mainOutput.getExitValue(), 0, "VM should exit with "
+                    + "error for incorrect directives");
+            boolean parse_error_found = false;
+            for (OutputAnalyzer out : outputList) {
+                if (out.getOutput().contains("Parsing of compiler directives failed")) {
+                    parse_error_found = true;
+                    break;
                 }
-            } else {
-                Asserts.assertNE(mainOutput.getExitValue(), 0, "VM should exit with "
-                        + "error for incorrect directives");
-                mainOutput.shouldContain("Parsing of compiler directives failed");
+            }
+            if (!parse_error_found) {
+                mainOutput.shouldContain("CompileCommand: An error occurred during parsing");
             }
         }
     }
@@ -188,30 +181,30 @@ public final class Scenario {
         DIRECTIVE("directives.json"),
         JCMD("jcmd_directives.json") {
             @Override
-            public CompileCommand createCompileCommand(Command command,
+            public CompileCommand createCompileCommand(Command command, boolean isValid,
                     MethodDescriptor md, Compiler compiler) {
-                return new JcmdCommand(command, md, compiler, this,
+                return new JcmdCommand(command, isValid, md, compiler, this,
                         JcmdType.ADD);
             }
 
             @Override
-            public CompileCommand createCompileCommand(Command command,
+            public CompileCommand createCompileCommand(Command command, boolean isValid,
                     MethodDescriptor md, Compiler compiler, String argument) {
-                return new JcmdCommand(command, md, compiler, this,
+                return new JcmdCommand(command, isValid, md, compiler, this,
                         JcmdType.ADD, argument);
             }
         };
 
         public final String fileName;
 
-        public CompileCommand createCompileCommand(Command command,
+        public CompileCommand createCompileCommand(Command command, boolean isValid,
                 MethodDescriptor md, Compiler compiler) {
-            return new CompileCommand(command, md, compiler, this);
+            return new CompileCommand(command, isValid, md, compiler, this);
         }
 
-        public CompileCommand createCompileCommand(Command command,
+        public CompileCommand createCompileCommand(Command command, boolean isValid,
                 MethodDescriptor md, Compiler compiler, String argument) {
-            return new CompileCommand(command, md, compiler, this, argument);
+            return new CompileCommand(command, isValid, md, compiler, this, argument);
         }
 
         private Type(String fileName) {

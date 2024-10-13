@@ -1,4 +1,5 @@
 // Copyright (c) 2021, Red Hat Inc. All rights reserved.
+// Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -19,13 +20,12 @@
 // or visit www.oracle.com if you need additional information or have any
 // questions.
 
-
+#include "defs.S.inc"
 
         .text
 
-        .globl aarch64_atomic_fetch_add_8_default_impl
         .align 5
-aarch64_atomic_fetch_add_8_default_impl:
+DECLARE_FUNC(aarch64_atomic_fetch_add_8_default_impl):
 #ifdef __ARM_FEATURE_ATOMICS
         ldaddal x1, x2, [x0]
 #else
@@ -39,9 +39,8 @@ aarch64_atomic_fetch_add_8_default_impl:
         mov     x0, x2
         ret
 
-        .globl aarch64_atomic_fetch_add_4_default_impl
         .align 5
-aarch64_atomic_fetch_add_4_default_impl:
+DECLARE_FUNC(aarch64_atomic_fetch_add_4_default_impl):
 #ifdef __ARM_FEATURE_ATOMICS
         ldaddal w1, w2, [x0]
 #else
@@ -55,9 +54,8 @@ aarch64_atomic_fetch_add_4_default_impl:
         mov     w0, w2
         ret
 
-        .global aarch64_atomic_fetch_add_8_relaxed_default_impl
         .align 5
-aarch64_atomic_fetch_add_8_relaxed_default_impl:
+DECLARE_FUNC(aarch64_atomic_fetch_add_8_relaxed_default_impl):
 #ifdef __ARM_FEATURE_ATOMICS
         ldadd x1, x2, [x0]
 #else
@@ -70,9 +68,8 @@ aarch64_atomic_fetch_add_8_relaxed_default_impl:
         mov     x0, x2
         ret
 
-        .global aarch64_atomic_fetch_add_4_relaxed_default_impl
         .align 5
-aarch64_atomic_fetch_add_4_relaxed_default_impl:
+DECLARE_FUNC(aarch64_atomic_fetch_add_4_relaxed_default_impl):
 #ifdef __ARM_FEATURE_ATOMICS
         ldadd w1, w2, [x0]
 #else
@@ -85,9 +82,8 @@ aarch64_atomic_fetch_add_4_relaxed_default_impl:
         mov     w0, w2
         ret
 
-        .globl aarch64_atomic_xchg_4_default_impl
         .align 5
-aarch64_atomic_xchg_4_default_impl:
+DECLARE_FUNC(aarch64_atomic_xchg_4_default_impl):
 #ifdef __ARM_FEATURE_ATOMICS
         swpal   w1, w2, [x0]
 #else
@@ -100,9 +96,8 @@ aarch64_atomic_xchg_4_default_impl:
         mov     w0, w2
         ret
 
-        .globl aarch64_atomic_xchg_8_default_impl
         .align 5
-aarch64_atomic_xchg_8_default_impl:
+DECLARE_FUNC(aarch64_atomic_xchg_8_default_impl):
 #ifdef __ARM_FEATURE_ATOMICS
         swpal   x1, x2, [x0]
 #else
@@ -115,9 +110,8 @@ aarch64_atomic_xchg_8_default_impl:
         mov     x0, x2
         ret
 
-        .globl aarch64_atomic_cmpxchg_1_default_impl
         .align 5
-aarch64_atomic_cmpxchg_1_default_impl:
+DECLARE_FUNC(aarch64_atomic_cmpxchg_1_default_impl):
 #ifdef __ARM_FEATURE_ATOMICS
         mov     x3, x1
         casalb  w3, w2, [x0]
@@ -135,9 +129,8 @@ aarch64_atomic_cmpxchg_1_default_impl:
         mov     w0, w3
         ret
 
-        .globl aarch64_atomic_cmpxchg_4_default_impl
         .align 5
-aarch64_atomic_cmpxchg_4_default_impl:
+DECLARE_FUNC(aarch64_atomic_cmpxchg_4_default_impl):
 #ifdef __ARM_FEATURE_ATOMICS
         mov     x3, x1
         casal   w3, w2, [x0]
@@ -154,9 +147,8 @@ aarch64_atomic_cmpxchg_4_default_impl:
         mov     w0, w3
         ret
 
-        .globl aarch64_atomic_cmpxchg_8_default_impl
         .align 5
-aarch64_atomic_cmpxchg_8_default_impl:
+DECLARE_FUNC(aarch64_atomic_cmpxchg_8_default_impl):
 #ifdef __ARM_FEATURE_ATOMICS
         mov     x3, x1
         casal   x3, x2, [x0]
@@ -173,9 +165,8 @@ aarch64_atomic_cmpxchg_8_default_impl:
         mov     x0, x3
         ret
 
-        .globl aarch64_atomic_cmpxchg_4_release_default_impl
         .align 5
-aarch64_atomic_cmpxchg_4_release_default_impl:
+DECLARE_FUNC(aarch64_atomic_cmpxchg_4_release_default_impl):
 #ifdef __ARM_FEATURE_ATOMICS
         mov     x3, x1
         casl    w3, w2, [x0]
@@ -190,9 +181,8 @@ aarch64_atomic_cmpxchg_4_release_default_impl:
 1:      mov     w0, w3
         ret
 
-        .globl aarch64_atomic_cmpxchg_8_release_default_impl
         .align 5
-aarch64_atomic_cmpxchg_8_release_default_impl:
+DECLARE_FUNC(aarch64_atomic_cmpxchg_8_release_default_impl):
 #ifdef __ARM_FEATURE_ATOMICS
         mov     x3, x1
         casl    x3, x2, [x0]
@@ -207,9 +197,8 @@ aarch64_atomic_cmpxchg_8_release_default_impl:
 1:      mov     x0, x3
         ret
 
-        .globl aarch64_atomic_cmpxchg_4_seq_cst_default_impl
         .align 5
-aarch64_atomic_cmpxchg_4_seq_cst_default_impl:
+DECLARE_FUNC(aarch64_atomic_cmpxchg_4_seq_cst_default_impl):
 #ifdef __ARM_FEATURE_ATOMICS
         mov     x3, x1
         casal   w3, w2, [x0]
@@ -224,9 +213,8 @@ aarch64_atomic_cmpxchg_4_seq_cst_default_impl:
 1:      mov     w0, w3
         ret
 
-        .globl aarch64_atomic_cmpxchg_8_seq_cst_default_impl
         .align 5
-aarch64_atomic_cmpxchg_8_seq_cst_default_impl:
+DECLARE_FUNC(aarch64_atomic_cmpxchg_8_seq_cst_default_impl):
 #ifdef __ARM_FEATURE_ATOMICS
         mov     x3, x1
         casal   x3, x2, [x0]
@@ -241,9 +229,8 @@ aarch64_atomic_cmpxchg_8_seq_cst_default_impl:
 1:      mov     x0, x3
         ret
 
-.globl aarch64_atomic_cmpxchg_1_relaxed_default_impl
         .align 5
-aarch64_atomic_cmpxchg_1_relaxed_default_impl:
+DECLARE_FUNC(aarch64_atomic_cmpxchg_1_relaxed_default_impl):
 #ifdef __ARM_FEATURE_ATOMICS
         mov     x3, x1
         casb    w3, w2, [x0]
@@ -259,9 +246,8 @@ aarch64_atomic_cmpxchg_1_relaxed_default_impl:
 1:      mov     w0, w3
         ret
 
-        .globl aarch64_atomic_cmpxchg_4_relaxed_default_impl
         .align 5
-aarch64_atomic_cmpxchg_4_relaxed_default_impl:
+DECLARE_FUNC(aarch64_atomic_cmpxchg_4_relaxed_default_impl):
 #ifdef __ARM_FEATURE_ATOMICS
         mov     x3, x1
         cas     w3, w2, [x0]
@@ -276,9 +262,8 @@ aarch64_atomic_cmpxchg_4_relaxed_default_impl:
 1:      mov     w0, w3
         ret
 
-        .globl aarch64_atomic_cmpxchg_8_relaxed_default_impl
         .align 5
-aarch64_atomic_cmpxchg_8_relaxed_default_impl:
+DECLARE_FUNC(aarch64_atomic_cmpxchg_8_relaxed_default_impl):
 #ifdef __ARM_FEATURE_ATOMICS
         mov     x3, x1
         cas     x3, x2, [x0]

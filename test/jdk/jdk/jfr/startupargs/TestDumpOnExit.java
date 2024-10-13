@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,7 +92,7 @@ public class TestDumpOnExit {
     }
 
     private static void testDumponExit(Supplier<Path> p,String... args) throws Exception, IOException {
-        ProcessBuilder pb = ProcessTools.createTestJvm(args);
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(args);
         OutputAnalyzer output = ProcessTools.executeProcess(pb);
         System.out.println(output.getOutput());
         output.shouldHaveExitValue(0);

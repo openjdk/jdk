@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import java.net.http.HttpClient;
 import java.net.http.HttpHeaders;
@@ -142,6 +144,7 @@ final class Exchange<T> {
     static final class ConnectionAborter {
         private volatile HttpConnection connection;
         private volatile boolean closeRequested;
+        private volatile Throwable cause;
 
         void connection(HttpConnection connection) {
             boolean closeRequested;
@@ -156,20 +159,27 @@ final class Exchange<T> {
                     this.closeRequested = false;
                 }
             }
-            if (closeRequested) closeConnection(connection);
+            if (closeRequested) closeConnection(connection, cause);
         }
 
-        void closeConnection() {
+        void closeConnection(Throwable error) {
             HttpConnection connection;
+            Throwable cause;
             synchronized (this) {
+                cause = this.cause;
+                if (cause == null) {
+                    cause = error;
+                }
                 connection = this.connection;
                 if (connection == null) {
                     closeRequested = true;
+                    this.cause = cause;
                 } else {
                     this.connection = null;
+                    this.cause = null;
                 }
             }
-            closeConnection(connection);
+            closeConnection(connection, cause);
         }
 
         HttpConnection disable() {
@@ -178,14 +188,15 @@ final class Exchange<T> {
                 connection = this.connection;
                 this.connection = null;
                 this.closeRequested = false;
+                this.cause = null;
             }
             return connection;
         }
 
-        private static void closeConnection(HttpConnection connection) {
+        private static void closeConnection(HttpConnection connection, Throwable cause) {
             if (connection != null) {
                 try {
-                    connection.close();
+                    connection.close(cause);
                 } catch (Throwable t) {
                     // ignore
                 }
@@ -264,11 +275,19 @@ final class Exchange<T> {
             impl.cancel(cause);
         } else {
             // no impl yet. record the exception
-            failed = cause;
+            IOException failed = this.failed;
+            if (failed == null) {
+                synchronized (this) {
+                    failed = this.failed;
+                    if (failed == null) {
+                        failed = this.failed = cause;
+                    }
+                }
+            }
 
             // abort/close the connection if setting up the exchange. This can
             // be important when setting up HTTP/2
-            connectionAborter.closeConnection();
+            connectionAborter.closeConnection(failed);
 
             // now call checkCancelled to recheck the impl.
             // if the failed state is set and the impl is not null, reset
@@ -288,7 +307,7 @@ final class Exchange<T> {
         IOException cause = null;
         CompletableFuture<? extends ExchangeImpl<T>> cf = null;
         if (failed != null) {
-            synchronized(this) {
+            synchronized (this) {
                 cause = failed;
                 impl = exchImpl;
                 cf = exchangeCF;
@@ -371,7 +390,7 @@ final class Exchange<T> {
         // instead - as we need CAS semantics.
         synchronized (this) { exchangeCF = cf; };
         res = cf.whenComplete((r,x) -> {
-            synchronized(Exchange.this) {
+            synchronized (Exchange.this) {
                 if (exchangeCF == cf) exchangeCF = null;
             }
         });
@@ -436,32 +455,55 @@ final class Exchange<T> {
     // for the 100-Continue response
     private CompletableFuture<Response> expectContinue(ExchangeImpl<T> ex) {
         assert request.expectContinue();
+
+        long responseTimeoutMillis = 5000;
+        if (request.timeout().isPresent()) {
+            final long timeoutMillis = request.timeout().get().toMillis();
+            responseTimeoutMillis = Math.min(responseTimeoutMillis, timeoutMillis);
+        }
+
         return ex.getResponseAsync(parentExecutor)
+                .completeOnTimeout(null, responseTimeoutMillis, TimeUnit.MILLISECONDS)
                 .thenCompose((Response r1) -> {
-            Log.logResponse(r1::toString);
-            int rcode = r1.statusCode();
-            if (rcode == 100) {
-                Log.logTrace("Received 100-Continue: sending body");
-                if (debug.on()) debug.log("Received 100-Continue for %s", r1);
-                CompletableFuture<Response> cf =
-                        exchImpl.sendBodyAsync()
-                                .thenCompose(exIm -> exIm.getResponseAsync(parentExecutor));
-                cf = wrapForUpgrade(cf);
-                cf = wrapForLog(cf);
-                return cf;
-            } else {
-                Log.logTrace("Expectation failed: Received {0}",
-                        rcode);
-                if (debug.on()) debug.log("Expect-Continue failed (%d) for: %s", rcode, r1);
-                if (upgrading && rcode == 101) {
-                    IOException failed = new IOException(
-                            "Unable to handle 101 while waiting for 100");
-                    return MinimalFuture.failedFuture(failed);
-                }
-                exchImpl.expectContinueFailed(rcode);
-                return MinimalFuture.completedFuture(r1);
-            }
-        });
+                    // The response will only be null if there was a timeout
+                    // send body regardless
+                    if (r1 == null) {
+                        if (debug.on())
+                            debug.log("Setting ExpectTimeoutRaised and sending request body");
+                        exchImpl.setExpectTimeoutRaised();
+                        CompletableFuture<Response> cf =
+                                exchImpl.sendBodyAsync()
+                                        .thenCompose(exIm -> exIm.getResponseAsync(parentExecutor));
+                        cf = wrapForUpgrade(cf);
+                        cf = wrapForLog(cf);
+                        return cf;
+                    }
+
+                    Log.logResponse(r1::toString);
+                    int rcode = r1.statusCode();
+                    if (rcode == 100) {
+                        Log.logTrace("Received 100-Continue: sending body");
+                        if (debug.on())
+                            debug.log("Received 100-Continue for %s", r1);
+                        CompletableFuture<Response> cf =
+                                exchImpl.sendBodyAsync()
+                                        .thenCompose(exIm -> exIm.getResponseAsync(parentExecutor));
+                        cf = wrapForUpgrade(cf);
+                        cf = wrapForLog(cf);
+                        return cf;
+                    } else {
+                        Log.logTrace("Expectation failed: Received {0}", rcode);
+                        if (debug.on())
+                            debug.log("Expect-Continue failed (%d) for: %s", rcode, r1);
+                        if (upgrading && rcode == 101) {
+                            IOException failed = new IOException(
+                                    "Unable to handle 101 while waiting for 100");
+                            return MinimalFuture.failedFuture(failed);
+                        }
+                        exchImpl.expectContinueFailed(rcode);
+                        return MinimalFuture.completedFuture(r1);
+                    }
+                });
     }
 
     // After sending the request headers, if no ProxyAuthorizationRequired
@@ -533,7 +575,7 @@ final class Exchange<T> {
         Function<ExchangeImpl<T>, CompletableFuture<Response>> after407Check;
         bodyIgnored = null;
         if (request.expectContinue()) {
-            request.addSystemHeader("Expect", "100-Continue");
+            request.setSystemHeader("Expect", "100-Continue");
             Log.logTrace("Sending Expect: 100-Continue");
             // wait for 100-Continue before sending body
             after407Check = this::expectContinue;
@@ -630,7 +672,7 @@ final class Exchange<T> {
                             if (!cached && connection != null) {
                                 connectionAborter.connection(connection);
                             }
-                            Stream<T> s = c.getStream(1);
+                            Stream<T> s = c.getInitialStream();
 
                             if (s == null) {
                                 // s can be null if an exception occurred

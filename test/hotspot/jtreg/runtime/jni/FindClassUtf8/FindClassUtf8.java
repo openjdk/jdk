@@ -43,10 +43,10 @@ public final class FindClassUtf8 {
     public static void main(String... args) throws Exception {
         if (args.length == 1) {
             // run java -Xcheck:jni FindClassUtf8 and check that the -Xcheck:jni message comes out.
-            ProcessTools.executeTestJvm("-Djava.library.path=" + Utils.TEST_NATIVE_PATH,
-                                        "-Xcheck:jni",
-                                        "-XX:-CreateCoredumpOnCrash",
-                                        "FindClassUtf8")
+            ProcessTools.executeTestJava("-Djava.library.path=" + Utils.TEST_NATIVE_PATH,
+                                         "-Xcheck:jni",
+                                         "-XX:-CreateCoredumpOnCrash",
+                                         "FindClassUtf8")
                       .shouldContain("JNI class name is not a valid UTF8 string")
                       .shouldNotHaveExitValue(0);  // you get a core dump from -Xcheck:jni failures
         } else {

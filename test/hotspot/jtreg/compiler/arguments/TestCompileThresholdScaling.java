@@ -48,7 +48,7 @@ public class TestCompileThresholdScaling {
     }
 
     static void checkCompileThresholdScaling(double value, boolean fail) throws Throwable {
-        OutputAnalyzer out = ProcessTools.executeTestJvm("-XX:CompileThresholdScaling=" + value, "--version");
+        OutputAnalyzer out = ProcessTools.executeTestJava("-XX:CompileThresholdScaling=" + value, "--version");
         out.shouldHaveExitValue(0);
         String output = out.getOutput();
 

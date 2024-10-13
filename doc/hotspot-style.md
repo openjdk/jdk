@@ -572,8 +572,12 @@ There are a few exceptions to this rule.
 
 * `#include <new>` to use placement `new`, `std::nothrow`, and `std::nothrow_t`.
 * `#include <limits>` to use `std::numeric_limits`.
-* `#include <type_traits>`.
+* `#include <type_traits>` with some restrictions, listed below.
 * `#include <cstddef>` to use `std::nullptr_t` and `std::max_align_t`.
+
+Certain restrictions apply to the declarations provided by `<type_traits>`.
+
+* The `alignof` operator should be used rather than `std::alignment_of<>`.
 
 TODO: Rather than directly \#including (permitted) Standard Library
 headers, use a convention of \#including wrapper headers (in some
@@ -721,12 +725,14 @@ for further discussion.
 
 ### nullptr
 
-Prefer `nullptr`
+Use `nullptr`
 ([n2431](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2431.pdf))
-to `NULL`.  Don't use (constexpr or literal) 0 for pointers.
+rather than `NULL`.  See the paper for reasons to avoid `NULL`.
 
-For historical reasons there are widespread uses of both `NULL` and of
-integer 0 as a pointer value.
+Don't use (constant expression or literal) 0 for pointers.  Note that C++14
+removed non-literal 0 constants from _null pointer constants_, though some
+compilers continue to treat them as such.  For historical reasons there may be
+lingering uses of 0 as a pointer.
 
 ### &lt;atomic&gt;
 
@@ -1081,6 +1087,9 @@ The following attributes are expressly forbidden:
 * `[[deprecated]]` - Not relevant in HotSpot code.
 
 ### Additional Permitted Features
+
+* `alignof`
+([n2341](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2341.pdf))
 
 * `constexpr`
 ([n2235](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2235.pdf))

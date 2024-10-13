@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,24 +27,20 @@ package sun.awt.image;
 
 import java.awt.Color;
 import java.awt.Graphics;
-import java.awt.Transparency;
-import java.awt.AWTException;
+import java.awt.Graphics2D;
 import java.awt.Rectangle;
+import java.awt.Transparency;
+import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
-import java.awt.image.DirectColorModel;
-import java.awt.image.IndexColorModel;
-import java.awt.image.ImageConsumer;
-import java.awt.image.ImageObserver;
-import sun.awt.image.ByteComponentRaster;
-import sun.awt.image.IntegerComponentRaster;
-import java.awt.image.Raster;
-import java.awt.image.WritableRaster;
 import java.awt.image.DataBuffer;
 import java.awt.image.DataBufferInt;
-import java.awt.Graphics2D;
-import java.awt.geom.AffineTransform;
-import sun.awt.image.ImageWatched;
+import java.awt.image.DirectColorModel;
+import java.awt.image.ImageConsumer;
+import java.awt.image.ImageObserver;
+import java.awt.image.IndexColorModel;
+import java.awt.image.Raster;
+import java.awt.image.WritableRaster;
 import java.util.Hashtable;
 
 public class ImageRepresentation extends ImageWatched implements ImageConsumer
@@ -114,8 +110,8 @@ public class ImageRepresentation extends ImageWatched implements ImageConsumer
             try {
                 startProduction();
                 missinginfo = flags & ~availinfo;
-                while ((availinfo & ImageObserver.ERROR) == 0 &&
-                       missinginfo != 0)
+                while ((availinfo & (ImageObserver.ERROR | ImageObserver.FRAMEBITS)) == 0
+                       && missinginfo != 0)
                 {
                     try {
                         wait();

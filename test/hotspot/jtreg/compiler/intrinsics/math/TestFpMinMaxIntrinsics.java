@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2019, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -32,11 +32,11 @@
  * @run main/othervm -Xint compiler.intrinsics.math.TestFpMinMaxIntrinsics sanityTests 1
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions
  *                   -Xcomp -XX:TieredStopAtLevel=1
- *                   -XX:CompileOnly=java/lang/Math
+ *                   -XX:CompileOnly=java.lang.Math::*
  *                   compiler.intrinsics.math.TestFpMinMaxIntrinsics sanityTests 1
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions
  *                   -Xcomp -XX:-TieredCompilation
- *                   -XX:CompileOnly=java/lang/Math
+ *                   -XX:CompileOnly=java.lang.Math::*
  *                   compiler.intrinsics.math.TestFpMinMaxIntrinsics sanityTests 1
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
  *                   -XX:-TieredCompilation -XX:CompileThresholdScaling=0.1

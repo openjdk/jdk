@@ -36,6 +36,7 @@ import javax.tools.JavaFileObject;
 
 import com.sun.tools.javac.api.DiagnosticFormatter;
 import com.sun.tools.javac.code.Lint.LintCategory;
+import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.tree.EndPosTable;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.util.DefinedBy.Api;
@@ -68,6 +69,7 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
         final Set<DiagnosticFlag> defaultErrorFlags;
 
         /** Create a new diagnostic factory. */
+        @SuppressWarnings("this-escape")
         protected Factory(Context context) {
             this(JavacMessages.instance(context), "compiler");
             context.put(diagnosticFactoryKey, this);
@@ -604,6 +606,9 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
             super(DiagnosticType.FRAGMENT, prefix, key, args);
         }
     }
+
+    /** A diagnostic argument that is a type, which will be printed with type annotations. */
+    public record AnnotatedType(Type type) {}
 
     /**
      * Create a diagnostic object.

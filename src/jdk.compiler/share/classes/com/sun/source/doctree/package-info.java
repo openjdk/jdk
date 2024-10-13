@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,10 +27,8 @@
  * Provides interfaces to represent documentation comments as abstract syntax
  * trees (AST).
  *
- * @author Jonathan Gibbons
+ * @spec javadoc/doc-comment-spec.html Documentation Comment Specification for the Standard Doclet
  * @since 1.8
  *
- * @see <a href="{@docRoot}/../specs/javadoc/doc-comment-spec.html">
- *      Documentation Comment Specification for the Standard Doclet</a>
  */
 package com.sun.source.doctree;

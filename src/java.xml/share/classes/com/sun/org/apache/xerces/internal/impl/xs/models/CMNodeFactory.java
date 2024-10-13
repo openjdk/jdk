@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -25,16 +25,16 @@ import com.sun.org.apache.xerces.internal.impl.Constants;
 import com.sun.org.apache.xerces.internal.impl.XMLErrorReporter;
 import com.sun.org.apache.xerces.internal.impl.dtd.models.CMNode;
 import com.sun.org.apache.xerces.internal.impl.xs.XSMessageFormatter;
-import com.sun.org.apache.xerces.internal.utils.XMLSecurityManager;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLComponentManager;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLConfigurationException;
+import jdk.xml.internal.XMLSecurityManager;
 
 /**
  *
  * @xerces.internal
  *
  * @author  Neeraj Bajaj
- *
+ * @LastModified: July 2023
  */
 public class CMNodeFactory {
 

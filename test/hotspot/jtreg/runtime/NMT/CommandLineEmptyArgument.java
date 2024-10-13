@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
  /*
  * @test
  * @summary Empty argument to NMT should result in an informative error message
+ * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -36,7 +37,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class CommandLineEmptyArgument {
 
   public static void main(String args[]) throws Exception {
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:NativeMemoryTracking=");
+    ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:NativeMemoryTracking=");
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
     output.shouldContain("Syntax error, expecting -XX:NativeMemoryTracking=[off|summary|detail]");
     output.shouldHaveExitValue(1);

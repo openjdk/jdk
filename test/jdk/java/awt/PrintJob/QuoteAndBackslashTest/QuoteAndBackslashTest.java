@@ -23,11 +23,10 @@
 
 /**
  * @test
- * @key headful
+ * @key headful printer
  * @bug 4040668
  * @summary Checks that banner titles which contain double quotation marks
  * or backslashes still print correctly.
- * @author dpm
  */
 
 import java.awt.*;

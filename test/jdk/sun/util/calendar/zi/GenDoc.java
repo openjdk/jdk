@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -154,10 +154,10 @@ class GenDoc extends BackEnd {
             outD.mkdirs();
 
             /* If mapfile is available, add a link to the appropriate map */
-            if ((mapList == null) && (Main.getMapFile() != null)) {
+            if (mapList == null && Main.getMapFile() != null) {
+                mapList = new HashMap<String, LatitudeAndLongitude>();
                 FileReader fr = new FileReader(Main.getMapFile());
                 BufferedReader in = new BufferedReader(fr);
-                mapList = new HashMap<String,LatitudeAndLongitude>();
                 String line;
                 while ((line = in.readLine()) != null) {
                     // skip blank and comment lines
@@ -180,7 +180,7 @@ class GenDoc extends BackEnd {
 
             out.write(header1 + new Date() + header3 + zonename + header4);
             out.write(body1 + "<FONT size=\"+2\"><B>" + zonename + "</B></FONT>");
-            LatitudeAndLongitude location = mapList.get(zonename);
+            LatitudeAndLongitude location = (mapList != null ? mapList.get(zonename) : null);
             if (location != null) {
                 int deg, min, sec;
 

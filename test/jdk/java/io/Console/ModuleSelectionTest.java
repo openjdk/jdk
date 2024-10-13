@@ -27,7 +27,7 @@
  * @summary Tests System.console() returns correct Console (or null) from the expected
  *          module.
  * @modules java.base/java.io:+open
- * @run main/othervm ModuleSelectionTest java.base
+ * @run main/othervm ModuleSelectionTest jdk.internal.le
  * @run main/othervm -Djdk.console=jdk.internal.le ModuleSelectionTest jdk.internal.le
  * @run main/othervm -Djdk.console=java.base ModuleSelectionTest java.base
  * @run main/othervm --limit-modules java.base ModuleSelectionTest java.base

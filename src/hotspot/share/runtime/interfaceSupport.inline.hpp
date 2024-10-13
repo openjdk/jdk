@@ -260,8 +260,6 @@ class VMNativeEntryWrapper {
 
 #define VM_LEAF_BASE(result_type, header)                            \
   debug_only(NoHandleMark __hm;)                                     \
-  MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite,                    \
-                                         JavaThread::current()));    \
   os::verify_stack_alignment();                                      \
   /* begin of body */
 
@@ -406,14 +404,6 @@ extern "C" {                                                         \
   result_type JNICALL header {                                       \
     VM_Exit::block_if_vm_exited();                                   \
     VM_LEAF_BASE(result_type, header)
-
-
-#define JVM_ENTRY_FROM_LEAF(env, result_type, header)                \
-  { {                                                                \
-    JavaThread* thread=JavaThread::thread_from_jni_environment(env); \
-    ThreadInVMfromNative __tiv(thread);                              \
-    debug_only(VMNativeEntryWrapper __vew;)                          \
-    VM_ENTRY_BASE_FROM_LEAF(result_type, header, thread)
 
 
 #define JVM_END } }

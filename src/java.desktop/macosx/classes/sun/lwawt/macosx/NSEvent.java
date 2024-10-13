@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -207,37 +207,37 @@ final class NSEvent {
     static int nsToJavaEventType(int nsEventType) {
         int jeventType = 0;
         switch (nsEventType) {
-            case CocoaConstants.NSLeftMouseDown:
-            case CocoaConstants.NSRightMouseDown:
-            case CocoaConstants.NSOtherMouseDown:
+            case CocoaConstants.NSEventTypeLeftMouseDown:
+            case CocoaConstants.NSEventTypeRightMouseDown:
+            case CocoaConstants.NSEventTypeOtherMouseDown:
                 jeventType = MouseEvent.MOUSE_PRESSED;
                 break;
-            case CocoaConstants.NSLeftMouseUp:
-            case CocoaConstants.NSRightMouseUp:
-            case CocoaConstants.NSOtherMouseUp:
+            case CocoaConstants.NSEventTypeLeftMouseUp:
+            case CocoaConstants.NSEventTypeRightMouseUp:
+            case CocoaConstants.NSEventTypeOtherMouseUp:
                 jeventType = MouseEvent.MOUSE_RELEASED;
                 break;
-            case CocoaConstants.NSMouseMoved:
+            case CocoaConstants.NSEventTypeMouseMoved:
                 jeventType = MouseEvent.MOUSE_MOVED;
                 break;
-            case CocoaConstants.NSLeftMouseDragged:
-            case CocoaConstants.NSRightMouseDragged:
-            case CocoaConstants.NSOtherMouseDragged:
+            case CocoaConstants.NSEventTypeLeftMouseDragged:
+            case CocoaConstants.NSEventTypeRightMouseDragged:
+            case CocoaConstants.NSEventTypeOtherMouseDragged:
                 jeventType = MouseEvent.MOUSE_DRAGGED;
                 break;
-            case CocoaConstants.NSMouseEntered:
+            case CocoaConstants.NSEventTypeMouseEntered:
                 jeventType = MouseEvent.MOUSE_ENTERED;
                 break;
-            case CocoaConstants.NSMouseExited:
+            case CocoaConstants.NSEventTypeMouseExited:
                 jeventType = MouseEvent.MOUSE_EXITED;
                 break;
-            case CocoaConstants.NSScrollWheel:
+            case CocoaConstants.NSEventTypeScrollWheel:
                 jeventType = MouseEvent.MOUSE_WHEEL;
                 break;
-            case CocoaConstants.NSKeyDown:
+            case CocoaConstants.NSEventTypeKeyDown:
                 jeventType = KeyEvent.KEY_PRESSED;
                 break;
-            case CocoaConstants.NSKeyUp:
+            case CocoaConstants.NSEventTypeKeyUp:
                 jeventType = KeyEvent.KEY_RELEASED;
                 break;
         }
@@ -269,7 +269,12 @@ final class NSEvent {
      */
     static native char nsToJavaChar(char nsChar, int modifierFlags, boolean spaceKeyTyped);
 
-    static boolean isPopupTrigger(int jmodifiers) {
+    static boolean isPopupTrigger(int jmodifiers, int jeventType) {
+        if (jeventType != MouseEvent.MOUSE_PRESSED
+                && jeventType != MouseEvent.MOUSE_RELEASED) {
+            return false;
+        }
+
         final boolean isRightButtonDown = ((jmodifiers & InputEvent.BUTTON3_DOWN_MASK) != 0);
         final boolean isLeftButtonDown = ((jmodifiers & InputEvent.BUTTON1_DOWN_MASK) != 0);
         final boolean isControlDown = ((jmodifiers & InputEvent.CTRL_DOWN_MASK) != 0);

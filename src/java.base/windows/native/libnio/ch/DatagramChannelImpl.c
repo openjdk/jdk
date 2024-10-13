@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,7 +89,7 @@ Java_sun_nio_ch_DatagramChannelImpl_disconnect0(JNIEnv *env, jclass clazz,
 
     rv = connect((SOCKET)fd, &sa.sa, sa_len);
     if (rv == SOCKET_ERROR) {
-        handleSocketError(env, WSAGetLastError());
+        NET_ThrowNew(env, WSAGetLastError(), "connect");
     } else {
         /* Disable WSAECONNRESET errors as socket is no longer connected */
         BOOL enable = FALSE;
@@ -136,7 +136,10 @@ Java_sun_nio_ch_DatagramChannelImpl_receive0(JNIEnv *env, jclass clazz,
                 }
             } else if (theErr == WSAEWOULDBLOCK) {
                 return IOS_UNAVAILABLE;
-            } else return handleSocketError(env, theErr);
+            } else {
+                NET_ThrowNew(env, theErr, "recvfrom");
+                return IOS_THROWN;
+            }
         }
     } while (retry);
 
@@ -160,7 +163,8 @@ Java_sun_nio_ch_DatagramChannelImpl_send0(JNIEnv *env, jclass clazz,
         if (theErr == WSAEWOULDBLOCK) {
             return IOS_UNAVAILABLE;
         }
-        return handleSocketError(env, (jint)WSAGetLastError());
+        NET_ThrowNew(env, (jint)WSAGetLastError(), "sendto");
+        return IOS_THROWN;
     }
     return rv;
 }

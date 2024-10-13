@@ -134,6 +134,7 @@ import java.util.Objects;
  *         StandardNamespace.PROPERTY)
  *     .named("empty");
  * </pre>
+ * @since 9
  */
 public final class NamespaceOperation implements Operation {
     private final Operation baseOperation;

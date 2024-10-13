@@ -50,8 +50,12 @@ import javax.tools.JavaFileObject;
 
 public class TestDocletExample extends TestRunner {
     public static void main(String... args) throws Exception {
-        var t = new TestDocletExample();
-        t.runTests(m -> new Object[] { Path.of(m.getName()) });
+        try {
+            var t = new TestDocletExample();
+            t.runTests(m -> new Object[] { Path.of(m.getName()) });
+        } catch (SnippetUtils.ConfigurationException e) {
+            System.err.println("NOTE: " + e.getMessage() + "; test skipped");
+        }
     }
 
     SnippetUtils snippets;

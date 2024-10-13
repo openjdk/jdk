@@ -1096,6 +1096,7 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
      * @throws NullPointerException if the specified map or any of its keys
      *         or values are null
      */
+    @SuppressWarnings("this-escape")
     public ConcurrentSkipListMap(Map<? extends K, ? extends V> m) {
         this.comparator = null;
         putAll(m);
@@ -1110,6 +1111,7 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
      * @throws NullPointerException if the specified sorted map or any of
      *         its keys or values are null
      */
+    @SuppressWarnings("this-escape")
     public ConcurrentSkipListMap(SortedMap<K, ? extends V> m) {
         this.comparator = m.comparator();
         buildFromSorted(m); // initializes transients
@@ -1773,7 +1775,7 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
     /* ------ ConcurrentMap API methods ------ */
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc ConcurrentMap}
      *
      * @return the previous value associated with the specified key,
      *         or {@code null} if there was no mapping for the key
@@ -1788,11 +1790,12 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc ConcurrentMap}
      *
      * @throws ClassCastException if the specified key cannot be compared
      *         with the keys currently in the map
      * @throws NullPointerException if the specified key is null
+     * @return {@inheritDoc ConcurrentMap}
      */
     public boolean remove(Object key, Object value) {
         if (key == null)
@@ -1801,11 +1804,12 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc ConcurrentMap}
      *
      * @throws ClassCastException if the specified key cannot be compared
      *         with the keys currently in the map
      * @throws NullPointerException if any of the arguments are null
+     * @return {@inheritDoc ConcurrentMap}
      */
     public boolean replace(K key, V oldValue, V newValue) {
         if (key == null || oldValue == null || newValue == null)
@@ -1824,7 +1828,7 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc ConcurrentMap}
      *
      * @return the previous value associated with the specified key,
      *         or {@code null} if there was no mapping for the key
@@ -1868,6 +1872,30 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
         if (n == null)
             throw new NoSuchElementException();
         return n.key;
+    }
+
+   /**
+     * Throws {@code UnsupportedOperationException}. The encounter order induced by this
+     * map's comparison method determines the position of mappings, so explicit positioning
+     * is not supported.
+     *
+     * @throws UnsupportedOperationException always
+     * @since 21
+     */
+     public V putFirst(K k, V v) {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * Throws {@code UnsupportedOperationException}. The encounter order induced by this
+     * map's comparison method determines the position of mappings, so explicit positioning
+     * is not supported.
+     *
+     * @throws UnsupportedOperationException always
+     * @since 21
+     */
+    public V putLast(K k, V v) {
+        throw new UnsupportedOperationException();
     }
 
     /**

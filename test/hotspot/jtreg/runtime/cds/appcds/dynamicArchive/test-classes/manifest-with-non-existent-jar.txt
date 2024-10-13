@@ -1,0 +1,3 @@
+Manifest-Version: 1.0
+Class-Path: NonExistent.jar
+Created-By: 23-internal (Oracle Corporation)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,8 +73,8 @@
  *       - enhanced descripton
  *
  * @library /test/lib
- * @compile --enable-preview -source ${jdk.version} thrstat01.java
- * @run main/othervm/native --enable-preview -agentlib:thrstat01 thrstat01
+ * @compile thrstat01.java
+ * @run main/othervm/native -agentlib:thrstat01 thrstat01
  */
 
 public class thrstat01 {

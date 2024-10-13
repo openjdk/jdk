@@ -146,7 +146,7 @@ public final class LWCToolkit extends LWToolkit {
     static {
         System.err.flush();
 
-        @SuppressWarnings("removal")
+        @SuppressWarnings({"removal", "restricted"})
         ResourceBundle platformResources = java.security.AccessController.doPrivileged(
                 new java.security.PrivilegedAction<ResourceBundle>() {
             @Override

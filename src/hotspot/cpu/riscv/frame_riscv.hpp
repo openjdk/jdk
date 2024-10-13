@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -131,7 +131,7 @@
     // Entry frames
     // n.b. these values are determined by the layout defined in
     // stubGenerator for the Java call stub
-    entry_frame_after_call_words                     =  34,
+    entry_frame_after_call_words                     =  35,
     entry_frame_call_wrapper_offset                  = -10,
 
     // we don't need a save area
@@ -186,10 +186,8 @@
 
 #ifdef ASSERT
   // Used in frame::sender_for_{interpreter,compiled}_frame
-  static void verify_deopt_original_pc(CompiledMethod* nm, intptr_t* unextended_sp);
+  static void verify_deopt_original_pc(nmethod* nm, intptr_t* unextended_sp);
 #endif
-
-  const ImmutableOopMap* get_oop_map() const;
 
  public:
   // Constructors

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2024 Unicode, Inc.
+For terms of use, see http://www.unicode.org/copyright.html
+SPDX-License-Identifier: Unicode-3.0
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+-->
+<ldml>
+	<identity>
+		<version number="$Revision$"/>
+		<language type="wbp"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="en">Yinkirliji</language>
+			<language type="wbp">Warlpiri</language>
+		</languages>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters>[a d g i j k l m n p r t u w y]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[b c e f h o q s v x z]</exemplarCharacters>
+		<exemplarCharacters type="index" draft="unconfirmed">[J K L {LY} M N {NG} {NY} P R {RD} {RL} {RN} {RR} {RT} T W Y]</exemplarCharacters>
+	</characters>
+</ldml>

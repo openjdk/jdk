@@ -42,7 +42,6 @@ public class ClassFileLoadHookTest {
     public static String sharedClasses[] = {
         "ClassFileLoadHook",
         "ClassFileLoadHook$TestCaseId",
-        "ClassFileLoadHook$1",
         "LoadMe",
         "java/sql/SQLException"
     };

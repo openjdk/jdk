@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,9 @@
 
 /*
  * @test
- * @enablePreview
+ * @key randomness
+ *
+ * @library /test/lib
  * @modules jdk.incubator.vector java.base/jdk.internal.vm.annotation
  * @run testng/othervm --add-opens jdk.incubator.vector/jdk.incubator.vector=ALL-UNNAMED
  *      -XX:-TieredCompilation LongMaxVectorLoadStoreTests
@@ -33,7 +35,7 @@
 // -- This file was mechanically generated: Do not edit! -- //
 
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.SegmentScope;
+import java.lang.foreign.Arena;
 import java.lang.foreign.ValueLayout;
 import jdk.incubator.vector.LongVector;
 import jdk.incubator.vector.VectorMask;
@@ -56,7 +58,7 @@ public class LongMaxVectorLoadStoreTests extends AbstractVectorLoadStoreTest {
 
     static final int INVOC_COUNT = Integer.getInteger("jdk.incubator.vector.test.loop-iterations", 100);
 
-    static final ValueLayout.OfLong ELEMENT_LAYOUT = ValueLayout.JAVA_LONG.withBitAlignment(8);
+    static final ValueLayout.OfLong ELEMENT_LAYOUT = ValueLayout.JAVA_LONG.withByteAlignment(1);
 
     static VectorShape getMaxBit() {
         return VectorShape.S_Max_BIT;
@@ -256,7 +258,8 @@ public class LongMaxVectorLoadStoreTests extends AbstractVectorLoadStoreTest {
 
     @DontInline
     static LongVector fromArray(long[] a, int i) {
-        return LongVector.fromArray(SPECIES, a, i);
+        // Tests the species method and the equivalent vector method it defers to
+        return (LongVector) SPECIES.fromArray(a, i);
     }
 
     @DontInline
@@ -276,7 +279,8 @@ public class LongMaxVectorLoadStoreTests extends AbstractVectorLoadStoreTest {
 
     @DontInline
     static LongVector fromMemorySegment(MemorySegment a, int i, ByteOrder bo) {
-        return LongVector.fromMemorySegment(SPECIES, a, i, bo);
+        // Tests the species method and the equivalent vector method it defers to
+        return (LongVector) SPECIES.fromMemorySegment(a, i, bo);
     }
 
     @DontInline
@@ -486,8 +490,8 @@ public class LongMaxVectorLoadStoreTests extends AbstractVectorLoadStoreTest {
 
     @Test(dataProvider = "longByteProviderForIOOBE")
     static void loadMemorySegmentIOOBE(IntFunction<long[]> fa, IntFunction<Integer> fi) {
-        MemorySegment a = toSegment(fa.apply(SPECIES.length()), i -> MemorySegment.allocateNative(i, Long.SIZE, SegmentScope.auto()));
-        MemorySegment r = MemorySegment.allocateNative(a.byteSize(), Long.SIZE, SegmentScope.auto());
+        MemorySegment a = toSegment(fa.apply(SPECIES.length()), i -> Arena.ofAuto().allocate(i, Long.SIZE));
+        MemorySegment r = Arena.ofAuto().allocate(a.byteSize(), Long.SIZE);
 
         int l = (int) a.byteSize();
         int s = SPECIES.vectorByteSize();
@@ -515,8 +519,8 @@ public class LongMaxVectorLoadStoreTests extends AbstractVectorLoadStoreTest {
 
     @Test(dataProvider = "longByteProviderForIOOBE")
     static void storeMemorySegmentIOOBE(IntFunction<long[]> fa, IntFunction<Integer> fi) {
-        MemorySegment a = toSegment(fa.apply(SPECIES.length()), i -> MemorySegment.allocateNative(i, Long.SIZE, SegmentScope.auto()));
-        MemorySegment r = MemorySegment.allocateNative(a.byteSize(), Long.SIZE, SegmentScope.auto());
+        MemorySegment a = toSegment(fa.apply(SPECIES.length()), i -> Arena.ofAuto().allocate(i, Long.SIZE));
+        MemorySegment r = Arena.ofAuto().allocate(a.byteSize(), Long.SIZE);
 
         int l = (int) a.byteSize();
         int s = SPECIES.vectorByteSize();
@@ -579,8 +583,8 @@ public class LongMaxVectorLoadStoreTests extends AbstractVectorLoadStoreTest {
 
     @Test(dataProvider = "longByteMaskProviderForIOOBE")
     static void loadMemorySegmentMaskIOOBE(IntFunction<long[]> fa, IntFunction<Integer> fi, IntFunction<boolean[]> fm) {
-        MemorySegment a = toSegment(fa.apply(SPECIES.length()), i -> MemorySegment.allocateNative(i, Long.SIZE, SegmentScope.auto()));
-        MemorySegment r = MemorySegment.allocateNative(a.byteSize(), Long.SIZE, SegmentScope.auto());
+        MemorySegment a = toSegment(fa.apply(SPECIES.length()), i -> Arena.ofAuto().allocate(i, Long.SIZE));
+        MemorySegment r = Arena.ofAuto().allocate(a.byteSize(), Long.SIZE);
         boolean[] mask = fm.apply(SPECIES.length());
         VectorMask<Long> vmask = VectorMask.fromValues(SPECIES, mask);
 
@@ -610,8 +614,8 @@ public class LongMaxVectorLoadStoreTests extends AbstractVectorLoadStoreTest {
 
     @Test(dataProvider = "longByteMaskProviderForIOOBE")
     static void storeMemorySegmentMaskIOOBE(IntFunction<long[]> fa, IntFunction<Integer> fi, IntFunction<boolean[]> fm) {
-        MemorySegment a = toSegment(fa.apply(SPECIES.length()), i -> MemorySegment.allocateNative(i, Long.SIZE, SegmentScope.auto()));
-        MemorySegment r = MemorySegment.allocateNative(a.byteSize(), Long.SIZE, SegmentScope.auto());
+        MemorySegment a = toSegment(fa.apply(SPECIES.length()), i -> Arena.ofAuto().allocate(i, Long.SIZE));
+        MemorySegment r = Arena.ofAuto().allocate(a.byteSize(), Long.SIZE);
         boolean[] mask = fm.apply(SPECIES.length());
         VectorMask<Long> vmask = VectorMask.fromValues(SPECIES, mask);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,8 +34,18 @@ class ValueStack: public CompilationResourceObj {
     CallerState,         // Caller state when inlining
     StateBefore,         // Before before execution of instruction
     StateAfter,          // After execution of instruction
-    ExceptionState,      // Exception handling of instruction
-    EmptyExceptionState, // Exception handling of instructions not covered by an xhandler
+    // Exception states for an instruction.
+    // Dead stack items or locals may be invalidated or cleared/removed.
+    // Locals are retained if needed for JVMTI.
+    // "empty" exception states are used when there is no handler,
+    // and invalidate the locals.
+    // "leaf" exception states clear the stack.
+    // "caller" exception states are used for the parent/caller,
+    // and invalidate the stack.
+    ExceptionState,      // Exception state for leaf with handler, stack cleared
+    EmptyExceptionState, // Exception state for leaf w/o handler, stack cleared, locals invalidated
+    CallerExceptionState, // Exception state for parent with handler, stack invalidated
+    CallerEmptyExceptionState, // Exception state for parent w/o handler, stack+locals invalidated
     BlockBeginState      // State of BlockBegin instruction with phi functions of this block
   };
 
@@ -48,14 +58,15 @@ class ValueStack: public CompilationResourceObj {
   Values   _locals;                              // the locals
   Values   _stack;                               // the expression stack
   Values*  _locks;                               // the monitor stack (holding the locked values)
+  bool     _force_reexecute;                     // force the reexecute flag on, used for patching stub
 
   Value check(ValueTag tag, Value t) {
-    assert(tag == t->type()->tag() || tag == objectTag && t->type()->tag() == addressTag, "types must correspond");
+    assert(tag == t->type()->tag() || (tag == objectTag && t->type()->tag() == addressTag), "types must correspond");
     return t;
   }
 
   Value check(ValueTag tag, Value t, Value h) {
-    assert(h == NULL, "hi-word of doubleword value must be NULL");
+    assert(h == nullptr, "hi-word of doubleword value must be null");
     return check(tag, t);
   }
 
@@ -75,10 +86,16 @@ class ValueStack: public CompilationResourceObj {
   ValueStack* copy(Kind new_kind, int new_bci)   { return new ValueStack(this, new_kind, new_bci); }
   ValueStack* copy_for_parsing()                 { return new ValueStack(this, Parsing, -99); }
 
+  // Used when no exception handler is found
+  static Kind empty_exception_kind(bool caller = false) {
+    return Compilation::current()->env()->should_retain_local_variables() ?
+      (caller ? CallerExceptionState : ExceptionState) : // retain locals
+      (caller ? CallerEmptyExceptionState : EmptyExceptionState);   // clear locals
+  }
+
   void set_caller_state(ValueStack* s)           {
-    assert(kind() == EmptyExceptionState ||
-           (Compilation::current()->env()->should_retain_local_variables() && kind() == ExceptionState),
-           "only EmptyExceptionStates can be modified");
+    assert(kind() == empty_exception_kind(false) || kind() == empty_exception_kind(true),
+           "only empty exception states can be modified");
     _caller_state = s;
   }
 
@@ -92,24 +109,24 @@ class ValueStack: public CompilationResourceObj {
 
   int locals_size() const                        { return _locals.length(); }
   int stack_size() const                         { return _stack.length(); }
-  int locks_size() const                         { return _locks == NULL ? 0 : _locks->length(); }
+  int locks_size() const                         { return _locks == nullptr ? 0 : _locks->length(); }
   bool stack_is_empty() const                    { return _stack.is_empty(); }
-  bool no_active_locks() const                   { return _locks == NULL || _locks->is_empty(); }
+  bool no_active_locks() const                   { return _locks == nullptr || _locks->is_empty(); }
   int total_locks_size() const;
 
   // locals access
-  void clear_locals();                           // sets all locals to NULL;
+  void clear_locals();                           // sets all locals to null;
 
   void invalidate_local(int i) {
     assert(!_locals.at(i)->type()->is_double_word() ||
-           _locals.at(i + 1) == NULL, "hi-word of doubleword value must be NULL");
-    _locals.at_put(i, NULL);
+           _locals.at(i + 1) == nullptr, "hi-word of doubleword value must be null");
+    _locals.at_put(i, nullptr);
   }
 
   Value local_at(int i) const {
     Value x = _locals.at(i);
-    assert(x == NULL || !x->type()->is_double_word() ||
-           _locals.at(i + 1) == NULL, "hi-word of doubleword value must be NULL");
+    assert(x == nullptr || !x->type()->is_double_word() ||
+           _locals.at(i + 1) == nullptr, "hi-word of doubleword value must be null");
     return x;
   }
 
@@ -118,29 +135,29 @@ class ValueStack: public CompilationResourceObj {
     // double word local and kill it.
     if (i > 0) {
       Value prev = _locals.at(i - 1);
-      if (prev != NULL && prev->type()->is_double_word()) {
-        _locals.at_put(i - 1, NULL);
+      if (prev != nullptr && prev->type()->is_double_word()) {
+        _locals.at_put(i - 1, nullptr);
       }
     }
 
     _locals.at_put(i, x);
     if (x->type()->is_double_word()) {
-      // hi-word of doubleword value is always NULL
-      _locals.at_put(i + 1, NULL);
+      // hi-word of doubleword value is always null
+      _locals.at_put(i + 1, nullptr);
     }
   }
 
   // stack access
   Value stack_at(int i) const {
     Value x = _stack.at(i);
-    assert(!x->type()->is_double_word() ||
-           _stack.at(i + 1) == NULL, "hi-word of doubleword value must be NULL");
+    assert(x == nullptr || !x->type()->is_double_word() ||
+           _stack.at(i + 1) == nullptr, "hi-word of doubleword value must be null");
     return x;
   }
 
   Value stack_at_inc(int& i) const {
     Value x = stack_at(i);
-    i += x->type()->size();
+    i += ((x == nullptr) ? 1 : x->type()->size());
     return x;
   }
 
@@ -164,8 +181,8 @@ class ValueStack: public CompilationResourceObj {
   void fpush(Value t)                            { _stack.push(check(floatTag  , t)); }
   void apush(Value t)                            { _stack.push(check(objectTag , t)); }
   void rpush(Value t)                            { _stack.push(check(addressTag, t)); }
-  void lpush(Value t)                            { _stack.push(check(longTag   , t)); _stack.push(NULL); }
-  void dpush(Value t)                            { _stack.push(check(doubleTag , t)); _stack.push(NULL); }
+  void lpush(Value t)                            { _stack.push(check(longTag   , t)); _stack.push(nullptr); }
+  void dpush(Value t)                            { _stack.push(check(doubleTag , t)); _stack.push(nullptr); }
 
   void push(ValueType* type, Value t) {
     switch (type->tag()) {
@@ -194,7 +211,7 @@ class ValueStack: public CompilationResourceObj {
       case doubleTag : return dpop();
       case objectTag : return apop();
       case addressTag: return rpop();
-      default        : ShouldNotReachHere(); return NULL;
+      default        : ShouldNotReachHere(); return nullptr;
     }
   }
 
@@ -208,6 +225,9 @@ class ValueStack: public CompilationResourceObj {
   // SSA form IR support
   void setup_phi_for_stack(BlockBegin* b, int index);
   void setup_phi_for_local(BlockBegin* b, int index);
+
+  bool force_reexecute() const         { return _force_reexecute; }
+  void set_force_reexecute()           { _force_reexecute = true; }
 
   // debugging
   void print()  PRODUCT_RETURN;
@@ -237,7 +257,7 @@ class ValueStack: public CompilationResourceObj {
 //     do something with value and index
 //   }
 // }
-// as an invariant, state is NULL now
+// as an invariant, state is null now
 
 
 // construct a unique variable name with the line number where the macro is used
@@ -246,21 +266,22 @@ class ValueStack: public CompilationResourceObj {
 #define temp_var     temp_var2(__LINE__)
 
 #define for_each_state(state)  \
-  for (; state != NULL; state = state->caller_state())
+  for (; state != nullptr; state = state->caller_state())
 
 #define for_each_local_value(state, index, value)                                              \
   int temp_var = state->locals_size();                                                         \
   for (index = 0;                                                                              \
        index < temp_var && (value = state->local_at(index), true);                             \
-       index += (value == NULL || value->type()->is_illegal() ? 1 : value->type()->size()))    \
-    if (value != NULL)
+       index += (value == nullptr || value->type()->is_illegal() ? 1 : value->type()->size())) \
+    if (value != nullptr)
 
 
 #define for_each_stack_value(state, index, value)                                              \
   int temp_var = state->stack_size();                                                          \
   for (index = 0;                                                                              \
        index < temp_var && (value = state->stack_at(index), true);                             \
-       index += value->type()->size())
+       index += (value == nullptr ? 1 : value->type()->size()))                                \
+    if (value != nullptr)
 
 
 #define for_each_lock_value(state, index, value)                                               \
@@ -268,7 +289,7 @@ class ValueStack: public CompilationResourceObj {
   for (index = 0;                                                                              \
        index < temp_var && (value = state->lock_at(index), true);                              \
        index++)                                                                                \
-    if (value != NULL)
+    if (value != nullptr)
 
 
 // Macro definition for simple iteration of all state values of a ValueStack
@@ -318,7 +339,7 @@ class ValueStack: public CompilationResourceObj {
   {                                                                                            \
     for_each_stack_value(cur_state, cur_index, value) {                                        \
       Phi* v_phi = value->as_Phi();                                                            \
-      if (v_phi != NULL && v_phi->block() == v_block) {                                        \
+      if (v_phi != nullptr && v_phi->block() == v_block) {                                     \
         v_code;                                                                                \
       }                                                                                        \
     }                                                                                          \
@@ -326,7 +347,7 @@ class ValueStack: public CompilationResourceObj {
   {                                                                                            \
     for_each_local_value(cur_state, cur_index, value) {                                        \
       Phi* v_phi = value->as_Phi();                                                            \
-      if (v_phi != NULL && v_phi->block() == v_block) {                                        \
+      if (v_phi != nullptr && v_phi->block() == v_block) {                                     \
         v_code;                                                                                \
       }                                                                                        \
     }                                                                                          \

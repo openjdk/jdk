@@ -34,7 +34,8 @@ grant codeBase "file:${test.classes}/../../../../test/jdk/java/net/httpclient/li
     permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.net.http.hpack";
     permission java.lang.RuntimePermission "accessClassInPackage.sun.net.www.http";
 
-    permission java.net.SocketPermission "localhost:*", "accept,resolve";
+    permission java.net.SocketPermission "127.0.0.1:*", "accept,resolve";
+    permission java.net.SocketPermission "[::1]:*", "accept,resolve";
     permission java.lang.RuntimePermission "modifyThread";
 };
 
@@ -42,10 +43,15 @@ grant codeBase "file:${test.classes}/*" {
     permission java.io.FilePermission "${user.dir}${/}asFileDownloadTest.tmp.dir", "read,write";
     permission java.io.FilePermission "${user.dir}${/}asFileDownloadTest.tmp.dir/-", "read,write";
 
-    permission java.net.URLPermission "http://localhost:*/http1/afdt",   "POST";
-    permission java.net.URLPermission "https://localhost:*/https1/afdt", "POST";
-    permission java.net.URLPermission "http://localhost:*/http2/afdt",   "POST";
-    permission java.net.URLPermission "https://localhost:*/https2/afdt", "POST";
+    permission java.net.URLPermission "http://127.0.0.1:*/http1/afdt",   "POST";
+    permission java.net.URLPermission "https://127.0.0.1:*/https1/afdt", "POST";
+    permission java.net.URLPermission "http://127.0.0.1:*/http2/afdt",   "POST";
+    permission java.net.URLPermission "https://127.0.0.1:*/https2/afdt", "POST";
+    // ipv6
+    permission java.net.URLPermission "http://[::1]:*/http1/afdt",   "POST";
+    permission java.net.URLPermission "https://[::1]:*/https1/afdt", "POST";
+    permission java.net.URLPermission "http://[::1]:*/http2/afdt",   "POST";
+    permission java.net.URLPermission "https://[::1]:*/https2/afdt", "POST";
 
 
     // needed to grant permission to the HTTP/2 server
@@ -58,7 +64,8 @@ grant codeBase "file:${test.classes}/*" {
     permission java.util.logging.LoggingPermission "control";
 
     // needed to grant the HTTP servers
-    permission java.net.SocketPermission "localhost:*", "accept,resolve";
+    permission java.net.SocketPermission "127.0.0.1:*", "accept,resolve";
+    permission java.net.SocketPermission "[::1]:*", "accept,resolve";
 
     permission java.util.PropertyPermission "*", "read";
     permission java.lang.RuntimePermission "modifyThread";

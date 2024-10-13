@@ -24,6 +24,7 @@
  * @test
  * @bug 8162796
  * @summary  Verifies if LinearGradientPaint is printed in osx
+ * @key printer
  * @run main/manual LinearGradientPrintingTest
  */
 import java.awt.BorderLayout;

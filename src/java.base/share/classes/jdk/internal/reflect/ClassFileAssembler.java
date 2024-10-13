@@ -25,6 +25,8 @@
 
 package jdk.internal.reflect;
 
+import sun.nio.cs.UTF_8;
+
 class ClassFileAssembler implements ClassFileConstants {
     private ByteVector vec;
     private short cpIdx = 0;
@@ -98,9 +100,7 @@ class ClassFileAssembler implements ClassFileConstants {
     }
 
     public void emitConstantPoolUTF8(String str) {
-        // NOTE: can not use str.getBytes("UTF-8") here because of
-        // bootstrapping issues with the character set converters.
-        byte[] bytes = UTF8.encode(str);
+        byte[] bytes = str.getBytes(UTF_8.INSTANCE);
         emitByte(CONSTANT_Utf8);
         emitShort((short) bytes.length);
         for (int i = 0; i < bytes.length; i++) {
@@ -201,9 +201,9 @@ class ClassFileAssembler implements ClassFileConstants {
         }
     }
 
-    ///////////////
+    //-----------//
     // Constants //
-    ///////////////
+    //-----------//
 
     public void opc_aconst_null() {
         emitByte(opc_aconst_null);
@@ -222,9 +222,9 @@ class ClassFileAssembler implements ClassFileConstants {
         incStack();
     }
 
-    /////////////////////////////////////
+    //---------------------------------//
     // Local variable loads and stores //
-    /////////////////////////////////////
+    //---------------------------------//
 
     public void opc_iload_0() {
         emitByte(opc_iload_0);
@@ -383,9 +383,9 @@ class ClassFileAssembler implements ClassFileConstants {
         decStack();
     }
 
-    ////////////////////////
+    //--------------------//
     // Stack manipulation //
-    ////////////////////////
+    //--------------------//
 
     public void opc_pop() {
         emitByte(opc_pop);
@@ -406,9 +406,9 @@ class ClassFileAssembler implements ClassFileConstants {
         emitByte(opc_swap);
     }
 
-    ///////////////////////////////
+    //---------------------------//
     // Widening conversions only //
-    ///////////////////////////////
+    //---------------------------//
 
     public void opc_i2l() {
         emitByte(opc_i2l);
@@ -434,9 +434,9 @@ class ClassFileAssembler implements ClassFileConstants {
         emitByte(opc_f2d);
     }
 
-    //////////////////
+    //--------------//
     // Control flow //
-    //////////////////
+    //--------------//
 
     public void opc_ifeq(short bciOffset) {
         emitByte(opc_ifeq);
@@ -514,9 +514,9 @@ class ClassFileAssembler implements ClassFileConstants {
         decStack();
     }
 
-    /////////////////////////
+    //---------------------//
     // Return instructions //
-    /////////////////////////
+    //---------------------//
 
     public void opc_ireturn() {
         emitByte(opc_ireturn);
@@ -548,9 +548,9 @@ class ClassFileAssembler implements ClassFileConstants {
         setStack(0);
     }
 
-    //////////////////////
+    //------------------//
     // Field operations //
-    //////////////////////
+    //------------------//
 
     public void opc_getstatic(short fieldIndex, int fieldSizeInStackSlots) {
         emitByte(opc_getstatic);
@@ -576,9 +576,9 @@ class ClassFileAssembler implements ClassFileConstants {
         setStack(getStack() - fieldSizeInStackSlots - 1);
     }
 
-    ////////////////////////
+    //--------------------//
     // Method invocations //
-    ////////////////////////
+    //--------------------//
 
     /** Long and double arguments and return types count as 2 arguments;
         other values count as 1. */
@@ -627,17 +627,17 @@ class ClassFileAssembler implements ClassFileConstants {
         setStack(getStack() - numArgs - 1 + numReturnValues);
     }
 
-    //////////////////
+    //--------------//
     // Array length //
-    //////////////////
+    //--------------//
 
     public void opc_arraylength() {
         emitByte(opc_arraylength);
     }
 
-    /////////
+    //-----//
     // New //
-    /////////
+    //-----//
 
     public void opc_new(short classIndex) {
         emitByte(opc_new);
@@ -645,18 +645,18 @@ class ClassFileAssembler implements ClassFileConstants {
         incStack();
     }
 
-    ////////////
+    //--------//
     // Athrow //
-    ////////////
+    //--------//
 
     public void opc_athrow() {
         emitByte(opc_athrow);
         setStack(1);
     }
 
-    //////////////////////////////
+    //--------------------------//
     // Checkcast and instanceof //
-    //////////////////////////////
+    //--------------------------//
 
     /** Assumes the checkcast succeeds */
     public void opc_checkcast(short classIndex) {

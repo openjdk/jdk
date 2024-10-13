@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,19 +24,28 @@
 /*
  * @test
  * @bug 8003881
- * @summary tests DoPrivileged action (implemented as lambda expressions) by
- * inserting them into the BootClassPath.
+ * @library /test/lib/
  * @modules jdk.compiler
  *          jdk.zipfs
- * @compile -XDignore.symbol.file LambdaAccessControlDoPrivilegedTest.java LUtils.java
+ * @compile LambdaAccessControlDoPrivilegedTest.java
  * @run main/othervm -Djava.security.manager=allow LambdaAccessControlDoPrivilegedTest
+ * @summary tests DoPrivileged action (implemented as lambda expressions) by
+ * inserting them into the BootClassPath.
  */
-import java.io.File;
+import jdk.test.lib.process.OutputAnalyzer;
+
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.spi.ToolProvider;
 
-public class LambdaAccessControlDoPrivilegedTest extends LUtils {
-    public static void main(String... args) {
+import static jdk.test.lib.process.ProcessTools.*;
+
+public class LambdaAccessControlDoPrivilegedTest {
+    public static void main(String... args) throws Exception {
         final List<String> scratch = new ArrayList();
         scratch.clear();
         scratch.add("import java.security.*;");
@@ -47,9 +56,9 @@ public class LambdaAccessControlDoPrivilegedTest extends LUtils {
         scratch.add("});");
         scratch.add("}");
         scratch.add("}");
-        File doprivJava = new File("DoPriv.java");
-        File doprivClass = getClassFile(doprivJava);
-        createFile(doprivJava, scratch);
+        Path doprivJava = Path.of("DoPriv.java");
+        Path doprivClass = Path.of("DoPriv.class");
+        Files.write(doprivJava, scratch, Charset.defaultCharset());
 
         scratch.clear();
         scratch.add("public class Bar {");
@@ -59,30 +68,40 @@ public class LambdaAccessControlDoPrivilegedTest extends LUtils {
         scratch.add("}");
         scratch.add("}");
 
-        File barJava = new File("Bar.java");
-        File barClass = getClassFile(barJava);
-        createFile(barJava, scratch);
+        Path barJava = Path.of("Bar.java");
+        Path barClass = Path.of("Bar.class");
+        Files.write(barJava, scratch, Charset.defaultCharset());
 
-        String[] javacArgs = {barJava.getName(), doprivJava.getName()};
-        compile(javacArgs);
-        File jarFile = new File("foo.jar");
-        String[] jargs = {"cvf", jarFile.getName(), doprivClass.getName()};
-        TestResult tr = doExec(JAR_CMD.getAbsolutePath(),
-                                "cvf", jarFile.getName(),
-                                doprivClass.getName());
-        if (tr.exitValue != 0){
-            throw new RuntimeException(tr.toString());
+        compile(barJava.toString(), doprivJava.toString());
+
+        jar("cvf", "foo.jar", doprivClass.toString());
+        Files.delete(doprivJava);
+        Files.delete(doprivClass);
+
+        ProcessBuilder pb = createTestJavaProcessBuilder(
+                                "-Xbootclasspath/a:foo.jar",
+                                "-cp", ".",
+                                "-Djava.security.manager=allow",
+                                "Bar");
+        executeProcess(pb).shouldHaveExitValue(0);
+
+        Files.delete(barJava);
+        Files.delete(barClass);
+        Files.delete(Path.of("foo.jar"));
+    }
+
+    static final ToolProvider JAR_TOOL = ToolProvider.findFirst("jar").orElseThrow();
+    static final ToolProvider JAVAC = ToolProvider.findFirst("javac").orElseThrow();
+    static void compile(String... args) throws IOException {
+        if (JAVAC.run(System.out, System.err, args) != 0) {
+            throw new RuntimeException("compilation fails");
         }
-        doprivJava.delete();
-        doprivClass.delete();
-        tr = doExec(JAVA_CMD.getAbsolutePath(),
-                    "-Xbootclasspath/a:foo.jar",
-                    "-cp", ".",
-                    "-Djava.security.manager=allow",
-                    "Bar");
-        tr.assertZero("testDoPrivileged fails");
-        barJava.delete();
-        barClass.delete();
-        jarFile.delete();
+    }
+
+    static void jar(String... args) {
+        int rc = JAR_TOOL.run(System.out, System.err, args);
+        if (rc != 0){
+            throw new RuntimeException("fail to create JAR file");
+        }
     }
 }

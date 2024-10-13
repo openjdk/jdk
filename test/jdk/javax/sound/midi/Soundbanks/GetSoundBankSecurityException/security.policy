@@ -1,0 +1,4 @@
+grant {
+    permission java.io.FilePermission "*", "read,write,delete";
+    permission java.util.PropertyPermission  "user.dir",  "read";
+};

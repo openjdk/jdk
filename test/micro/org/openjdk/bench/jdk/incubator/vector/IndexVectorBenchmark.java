@@ -29,7 +29,7 @@ import org.openjdk.jmh.annotations.*;
 
 @BenchmarkMode(Mode.Throughput)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
-@State(Scope.Benchmark)
+@State(Scope.Thread)
 @Warmup(iterations = 3, time = 1)
 @Measurement(iterations = 5, time = 1)
 @Fork(value = 1, jvmArgsPrepend = {"--add-modules=jdk.incubator.vector"})

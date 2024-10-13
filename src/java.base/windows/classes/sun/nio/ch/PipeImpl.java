@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,14 +129,7 @@ class PipeImpl
                         }
 
                         // Establish connection (assume connection is eagerly accepted)
-                        if (sa instanceof InetSocketAddress
-                                && Thread.currentThread().isVirtual()) {
-                            // workaround "lost event" issue on older releases of Windows
-                            sc1 = SocketChannel.open();
-                            sc1.socket().connect(sa, 10_000);
-                        } else {
-                            sc1 = SocketChannel.open(sa);
-                        }
+                        sc1 = SocketChannel.open(sa);
                         RANDOM_NUMBER_GENERATOR.nextBytes(secret.array());
                         do {
                             sc1.write(secret);

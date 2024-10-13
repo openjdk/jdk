@@ -42,14 +42,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#if (__STDC_VERSION__ >= 199901L)
-  #include <stdbool.h>
-#else
-  #define bool int
-  #define true 1
-  #define false 0
-#endif
+#include <stdbool.h>
 
 #define MAX_SIGNALS NSIG
 

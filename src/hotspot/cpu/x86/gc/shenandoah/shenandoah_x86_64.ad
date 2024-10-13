@@ -33,7 +33,6 @@ instruct compareAndSwapP_shenandoah(rRegI res,
                                     rax_RegP oldval, rRegP newval,
                                     rFlagsReg cr)
 %{
-  predicate(VM_Version::supports_cx8());
   match(Set res (ShenandoahCompareAndSwapP mem_ptr (Binary oldval newval)));
   match(Set res (ShenandoahWeakCompareAndSwapP mem_ptr (Binary oldval newval)));
   effect(TEMP tmp1, TEMP tmp2, KILL cr, KILL oldval);
@@ -41,7 +40,7 @@ instruct compareAndSwapP_shenandoah(rRegI res,
   format %{ "shenandoah_cas_oop $mem_ptr,$newval" %}
 
   ins_encode %{
-    ShenandoahBarrierSet::assembler()->cmpxchg_oop(&_masm,
+    ShenandoahBarrierSet::assembler()->cmpxchg_oop(masm,
                                                    $res$$Register, $mem_ptr$$Address, $oldval$$Register, $newval$$Register,
                                                    false, // swap
                                                    $tmp1$$Register, $tmp2$$Register
@@ -62,7 +61,7 @@ instruct compareAndSwapN_shenandoah(rRegI res,
   format %{ "shenandoah_cas_oop $mem_ptr,$newval" %}
 
   ins_encode %{
-    ShenandoahBarrierSet::assembler()->cmpxchg_oop(&_masm,
+    ShenandoahBarrierSet::assembler()->cmpxchg_oop(masm,
                                                    $res$$Register, $mem_ptr$$Address, $oldval$$Register, $newval$$Register,
                                                    false, // swap
                                                    $tmp1$$Register, $tmp2$$Register
@@ -81,7 +80,7 @@ instruct compareAndExchangeN_shenandoah(memory mem_ptr,
   format %{ "shenandoah_cas_oop $mem_ptr,$newval" %}
 
   ins_encode %{
-    ShenandoahBarrierSet::assembler()->cmpxchg_oop(&_masm,
+    ShenandoahBarrierSet::assembler()->cmpxchg_oop(masm,
                                                    noreg, $mem_ptr$$Address, $oldval$$Register, $newval$$Register,
                                                    true, // exchange
                                                    $tmp1$$Register, $tmp2$$Register
@@ -95,7 +94,6 @@ instruct compareAndExchangeP_shenandoah(memory mem_ptr,
                                         rRegP tmp1, rRegP tmp2,
                                         rFlagsReg cr)
 %{
-  predicate(VM_Version::supports_cx8());
   match(Set oldval (ShenandoahCompareAndExchangeP mem_ptr (Binary oldval newval)));
   effect(KILL cr, TEMP tmp1, TEMP tmp2);
   ins_cost(1000);
@@ -103,7 +101,7 @@ instruct compareAndExchangeP_shenandoah(memory mem_ptr,
   format %{ "shenandoah_cas_oop $mem_ptr,$newval" %}
 
   ins_encode %{
-    ShenandoahBarrierSet::assembler()->cmpxchg_oop(&_masm,
+    ShenandoahBarrierSet::assembler()->cmpxchg_oop(masm,
                                                    noreg, $mem_ptr$$Address, $oldval$$Register, $newval$$Register,
                                                    true,  // exchange
                                                    $tmp1$$Register, $tmp2$$Register

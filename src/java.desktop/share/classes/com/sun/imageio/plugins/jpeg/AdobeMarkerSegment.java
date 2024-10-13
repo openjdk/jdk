@@ -55,15 +55,17 @@ class AdobeMarkerSegment extends MarkerSegment {
 
     AdobeMarkerSegment(JPEGBuffer buffer) throws IOException {
         super(buffer);
-        buffer.bufPtr += ID_SIZE; // Skip the id
-        version = (buffer.buf[buffer.bufPtr++] & 0xff) << 8;
-        version |= buffer.buf[buffer.bufPtr++] & 0xff;
-        flags0 = (buffer.buf[buffer.bufPtr++] & 0xff) << 8;
-        flags0 |= buffer.buf[buffer.bufPtr++] & 0xff;
-        flags1 = (buffer.buf[buffer.bufPtr++] & 0xff) << 8;
-        flags1 |= buffer.buf[buffer.bufPtr++] & 0xff;
-        transform = buffer.buf[buffer.bufPtr++] & 0xff;
+        int markPtr = buffer.bufPtr;
+        markPtr += ID_SIZE; // Skip the id
+        version = (buffer.buf[markPtr++] & 0xff) << 8;
+        version |= buffer.buf[markPtr++] & 0xff;
+        flags0 = (buffer.buf[markPtr++] & 0xff) << 8;
+        flags0 |= buffer.buf[markPtr++] & 0xff;
+        flags1 = (buffer.buf[markPtr++] & 0xff) << 8;
+        flags1 |= buffer.buf[markPtr++] & 0xff;
+        transform = buffer.buf[markPtr++] & 0xff;
         buffer.bufAvail -= length;
+        buffer.bufPtr += length;
     }
 
     AdobeMarkerSegment(Node node) throws IIOInvalidTreeException {

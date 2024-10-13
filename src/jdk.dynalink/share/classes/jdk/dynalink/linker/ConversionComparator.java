@@ -70,10 +70,12 @@ package jdk.dynalink.linker;
  * specific method with unrelated signatures. In these cases, language runtimes
  * can be asked to resolve the ambiguity by expressing preferences for one
  * conversion over the other.
+ * @since 9
  */
 public interface ConversionComparator {
     /**
      * Enumeration of possible outcomes of comparing one conversion to another.
+     * @since 9
      */
     enum Comparison {
         /** The conversions cannot be compared. **/

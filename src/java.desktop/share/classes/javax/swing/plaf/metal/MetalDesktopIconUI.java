@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -126,7 +126,7 @@ public class MetalDesktopIconUI extends BasicDesktopIconUI
     }
 
     public Dimension getMinimumSize(JComponent c) {
-        // For the metal desktop icon we will use the layout maanger to
+        // For the metal desktop icon we will use the layout manager to
         // determine the correct height of the component, but we want to keep
         // the width consistent according to the jlf spec.
         return new Dimension(width,

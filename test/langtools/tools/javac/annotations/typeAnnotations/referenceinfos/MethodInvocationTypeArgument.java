@@ -25,12 +25,13 @@
  * @test
  * @bug 8042451
  * @summary Test population of reference info for method invocation type arguments
- * @modules jdk.jdeps/com.sun.tools.classfile
+ * @enablePreview
+ * @modules java.base/jdk.internal.classfile.impl
  * @compile -g Driver.java ReferenceInfoUtil.java MethodInvocationTypeArgument.java
  * @run main Driver MethodInvocationTypeArgument
  */
 
-import static com.sun.tools.classfile.TypeAnnotation.TargetType.METHOD_INVOCATION_TYPE_ARGUMENT;
+import static java.lang.classfile.TypeAnnotation.TargetType.METHOD_INVOCATION_TYPE_ARGUMENT;
 import static java.lang.System.lineSeparator;
 
 public class MethodInvocationTypeArgument {

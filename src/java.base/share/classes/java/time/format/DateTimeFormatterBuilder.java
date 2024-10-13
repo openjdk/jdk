@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,6 +120,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import jdk.internal.util.DecimalDigits;
 
 import sun.text.spi.JavaTimeDateTimePatternProvider;
 import sun.util.locale.provider.CalendarDataUtility;
@@ -353,6 +355,10 @@ public final class DateTimeFormatterBuilder {
      * The change will remain in force until the end of the formatter that is eventually
      * constructed or until {@code parseLenient} is called.
      *
+     * @implSpec A {@link Character#SPACE_SEPARATOR SPACE_SEPARATOR} in the input
+     * text will not match any other {@link Character#SPACE_SEPARATOR SPACE_SEPARATOR}s
+     * in the pattern with the strict parse style.
+     *
      * @return this, for chaining, not null
      */
     public DateTimeFormatterBuilder parseStrict() {
@@ -371,6 +377,10 @@ public final class DateTimeFormatterBuilder {
      * When used, this method changes the parsing to be lenient from this point onwards.
      * The change will remain in force until the end of the formatter that is eventually
      * constructed or until {@code parseStrict} is called.
+     *
+     * @implSpec A {@link Character#SPACE_SEPARATOR SPACE_SEPARATOR} in the input
+     * text will match any other {@link Character#SPACE_SEPARATOR SPACE_SEPARATOR}s
+     * in the pattern with the lenient parse style.
      *
      * @return this, for chaining, not null
      */
@@ -1525,6 +1535,8 @@ public final class DateTimeFormatterBuilder {
      * @param requestedTemplate the requested template to use, not null
      * @return this, for chaining, not null
      * @throws IllegalArgumentException if {@code requestedTemplate} is invalid
+     *
+     * @spec https://www.unicode.org/reports/tr35 Unicode Locale Data Markup Language (LDML)
      * @see #appendPattern(String)
      * @since 19
      */
@@ -1608,6 +1620,8 @@ public final class DateTimeFormatterBuilder {
      *
      * @param style the text style to use, not null
      * @return this, for chaining, not null
+     *
+     * @spec https://www.unicode.org/reports/tr35 Unicode Locale Data Markup Language (LDML)
      * @since 16
      */
     public DateTimeFormatterBuilder appendDayPeriodText(TextStyle style) {
@@ -2608,9 +2622,15 @@ public final class DateTimeFormatterBuilder {
                 throw new DateTimeException(
                     "Cannot print as output of " + len + " characters exceeds pad width of " + padWidth);
             }
-            for (int i = 0; i < padWidth - len; i++) {
-                buf.insert(preLen, padChar);
+            var count = padWidth - len;
+            if (count == 0) {
+                return true;
             }
+            if (count == 1) {
+                buf.insert(preLen, padChar);
+                return true;
+            }
+            buf.insert(preLen, String.valueOf(padChar).repeat(count));
             return true;
         }
 
@@ -2721,9 +2741,11 @@ public final class DateTimeFormatterBuilder {
      */
     static final class CharLiteralPrinterParser implements DateTimePrinterParser {
         private final char literal;
+        private final boolean isSpaceSeparator;
 
         private CharLiteralPrinterParser(char literal) {
             this.literal = literal;
+            isSpaceSeparator = Character.getType(literal) == Character.SPACE_SEPARATOR;
         }
 
         @Override
@@ -2740,9 +2762,10 @@ public final class DateTimeFormatterBuilder {
             }
             char ch = text.charAt(position);
             if (ch != literal) {
-                if (context.isCaseSensitive() ||
+                if ((context.isCaseSensitive() ||
                         (Character.toUpperCase(ch) != Character.toUpperCase(literal) &&
-                         Character.toLowerCase(ch) != Character.toLowerCase(literal))) {
+                         Character.toLowerCase(ch) != Character.toLowerCase(literal))) &&
+                        !spaceEquals(context, ch)) {
                     return ~position;
                 }
             }
@@ -2756,6 +2779,12 @@ public final class DateTimeFormatterBuilder {
             }
             return "'" + literal + "'";
         }
+
+        private boolean spaceEquals(DateTimeParseContext context, char ch) {
+            return !context.isStrict() && isSpaceSeparator &&
+                    Character.getType(ch) == Character.SPACE_SEPARATOR;
+        }
+
     }
 
     //-----------------------------------------------------------------------
@@ -2881,24 +2910,6 @@ public final class DateTimeFormatterBuilder {
             return new NumberPrinterParser(field, minWidth, maxWidth, signStyle, this.subsequentWidth + subsequentWidth);
         }
 
-        /*
-         * Copied from Long.stringSize
-         */
-        private static int stringSize(long x) {
-            int d = 1;
-            if (x >= 0) {
-                d = 0;
-                x = -x;
-            }
-            long p = -10;
-            for (int i = 1; i < 19; i++) {
-                if (x > p)
-                    return i + d;
-                p = 10 * p;
-            }
-            return 19 + d;
-        }
-
         @Override
         public boolean format(DateTimePrintContext context, StringBuilder buf) {
             Long valueLong = context.getValue(field);
@@ -2907,7 +2918,7 @@ public final class DateTimeFormatterBuilder {
             }
             long value = getValue(context, valueLong);
             DecimalStyle decimalStyle = context.getDecimalStyle();
-            int size = stringSize(value);
+            int size = DecimalDigits.stringSize(value);
             if (value < 0) {
                 size--;
             }
@@ -2938,8 +2949,9 @@ public final class DateTimeFormatterBuilder {
                 }
             }
             char zeroDigit = decimalStyle.getZeroDigit();
-            for (int i = 0; i < minWidth - size; i++) {
-                buf.append(zeroDigit);
+            int zeros = minWidth - size;
+            if (zeros > 0) {
+                buf.repeat(zeroDigit, zeros);
             }
             if (zeroDigit == '0' && value != Long.MIN_VALUE) {
                 buf.append(Math.abs(value));
@@ -3341,17 +3353,6 @@ public final class DateTimeFormatterBuilder {
             return false;
         }
 
-        // Simplified variant of Integer.stringSize that assumes positive values
-        private static int stringSize(int x) {
-            int p = 10;
-            for (int i = 1; i < 10; i++) {
-                if (x < p)
-                    return i;
-                p = 10 * p;
-            }
-            return 10;
-        }
-
         private static final int[] TENS = new int[] {
             1,
             10,
@@ -3372,7 +3373,7 @@ public final class DateTimeFormatterBuilder {
             }
             int val = field.range().checkValidIntValue(value, field);
             DecimalStyle decimalStyle = context.getDecimalStyle();
-            int stringSize = stringSize(val);
+            int stringSize = DecimalDigits.stringSize(val);
             char zero = decimalStyle.getZeroDigit();
             if (val == 0 || stringSize < 10 - maxWidth) {
                 // 0 or would round down to 0
@@ -3383,17 +3384,16 @@ public final class DateTimeFormatterBuilder {
                     if (decimalPoint) {
                         buf.append(decimalStyle.getDecimalSeparator());
                     }
-                    for (int i = 0; i < width; i++) {
-                        buf.append(zero);
-                    }
+                    buf.repeat(zero, width);
                 }
             } else {
                 if (decimalPoint) {
                     buf.append(decimalStyle.getDecimalSeparator());
                 }
                 // add leading zeros
-                for (int i = 9 - stringSize; i > 0; i--) {
-                    buf.append(zero);
+                int zeros = 9 - stringSize;
+                if (zeros > 0) {
+                    buf.repeat(zero, zeros);
                 }
                 // truncate unwanted digits
                 if (maxWidth < 9) {
@@ -3567,9 +3567,7 @@ public final class DateTimeFormatterBuilder {
                     if (decimalPoint) {
                         buf.append(decimalStyle.getDecimalSeparator());
                     }
-                    for (int i = 0; i < minWidth; i++) {
-                        buf.append(decimalStyle.getZeroDigit());
-                    }
+                    buf.repeat(decimalStyle.getZeroDigit(), minWidth);
                 }
             } else {
                 int outputScale = Math.clamp(fraction.scale(), minWidth, maxWidth);
@@ -4516,9 +4514,9 @@ public final class DateTimeFormatterBuilder {
 
         // cache per instance for now
         private final Map<Locale, Entry<Integer, SoftReference<PrefixTree>>>
-            cachedTree = new HashMap<>();
+            cachedTree = HashMap.newHashMap(1);
         private final Map<Locale, Entry<Integer, SoftReference<PrefixTree>>>
-            cachedTreeCI = new HashMap<>();
+            cachedTreeCI = HashMap.newHashMap(1);
 
         @Override
         protected PrefixTree getTree(DateTimeParseContext context) {
@@ -4527,9 +4525,8 @@ public final class DateTimeFormatterBuilder {
             }
             Locale locale = context.getLocale();
             boolean isCaseSensitive = context.isCaseSensitive();
-            Set<String> regionIds = new HashSet<>(ZoneRulesProvider.getAvailableZoneIds());
-            Set<String> nonRegionIds = new HashSet<>(64);
-            int regionIdsSize = regionIds.size();
+            Set<String> availableZoneIds = ZoneRulesProvider.getAvailableZoneIds();
+            int regionIdsSize = availableZoneIds.size();
 
             Map<Locale, Entry<Integer, SoftReference<PrefixTree>>> cached =
                 isCaseSensitive ? cachedTree : cachedTreeCI;
@@ -4542,6 +4539,8 @@ public final class DateTimeFormatterBuilder {
                 (tree = entry.getValue().get()) == null)) {
                 tree = PrefixTree.newTree(context);
                 zoneStrings = TimeZoneNameUtility.getZoneStrings(locale);
+                Set<String> nonRegionIds = HashSet.newHashSet(64);
+                Set<String> regionIds = new HashSet<>(availableZoneIds);
                 for (String[] names : zoneStrings) {
                     String zid = names[0];
                     if (!regionIds.remove(zid)) {
@@ -4666,10 +4665,14 @@ public final class DateTimeFormatterBuilder {
                     if (length >= position + 3 && context.charEquals(text.charAt(position + 2), 'C')) {
                         // There are localized zone texts that start with "UTC", e.g.
                         // "UTC\u221210:00" (MINUS SIGN instead of HYPHEN-MINUS) in French.
-                        // Exclude those cases.
-                        if (length == position + 3 ||
-                                context.charEquals(text.charAt(position + 3), '+') ||
-                                context.charEquals(text.charAt(position + 3), '-')) {
+                        // Treat them as normal '-' with the offset parser (using text parser would
+                        // be problematic due to std/dst distinction)
+                        if (length > position + 3 && context.charEquals(text.charAt(position + 3), '\u2212')) {
+                            var tmpText = "%s-%s".formatted(
+                                    text.subSequence(0, position + 3),
+                                    text.subSequence(position + 4, text.length()));
+                            return parseOffsetBased(context, tmpText, position, position + 3, OffsetIdPrinterParser.INSTANCE_ID_ZERO);
+                        } else {
                             return parseOffsetBased(context, text, position, position + 3, OffsetIdPrinterParser.INSTANCE_ID_ZERO);
                         }
                     } else {
@@ -4714,7 +4717,7 @@ public final class DateTimeFormatterBuilder {
          * @return the position after the parse
          */
         private int parseOffsetBased(DateTimeParseContext context, CharSequence text, int prefixPos, int position, OffsetIdPrinterParser parser) {
-            String prefix = text.subSequence(prefixPos, position).toString().toUpperCase();
+            String prefix = text.subSequence(prefixPos, position).toString().toUpperCase(Locale.ROOT);
             if (position >= text.length()) {
                 context.setParsed(ZoneId.of(prefix));
                 return position;

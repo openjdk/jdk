@@ -24,6 +24,7 @@
 /*
   @test
   @bug 4116029 4300383
+  @key printer
   @summary verify that child components can draw only inside their
            visible bounds
   @library /test/lib

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.code.TypeTag;
 import com.sun.tools.javac.parser.JavacParser;
 import com.sun.tools.javac.parser.Tokens.Comment;
-import com.sun.tools.javac.parser.Tokens.Comment.CommentStyle;
 import com.sun.tools.javac.parser.Tokens.Token;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import static com.sun.tools.javac.parser.Tokens.TokenKind.CLASS;
@@ -115,9 +114,9 @@ class ReplParser extends JavacParser {
                 seenImport = true;
                 defs.append(importDeclaration());
             } else {
-                Comment docComment = token.comment(CommentStyle.JAVADOC);
+                Comment docComment = token.docComment();
                 if (firstTypeDecl && !seenImport && !seenPackage) {
-                    docComment = firstToken.comment(CommentStyle.JAVADOC);
+                    docComment = firstToken.docComment();
                 }
                 List<? extends JCTree> udefs = replUnit(mods, docComment);
                // if (def instanceof JCExpressionStatement)
@@ -229,7 +228,7 @@ class ReplParser extends JavacParser {
                     } else if ((isVoid || (lastmode & TYPE) != 0) && LAX_IDENTIFIER.test(token.kind)) {
                         // we have "Type Ident", so we can assume it is variable or method declaration
                         pos = token.pos;
-                        Name name = ident();
+                        Name name = identOrUnderscore();
                         if (token.kind == LPAREN) {
                         // method declaration
                             //mods.flags |= Flags.STATIC;

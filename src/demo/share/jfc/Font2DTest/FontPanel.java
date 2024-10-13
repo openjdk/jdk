@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -740,7 +740,8 @@ public final class FontPanel extends JPanel implements AdjustmentListener {
                 verticalBar.setValues( oldValue, numCharDown, 0, totalNumRows );
             }
             if ( totalNumRows <= numCharDown && drawStart == 0) {
-              verticalBar.setEnabled( false );
+              // the disabled scroll bar looks odd with Nimbus L&F.
+              verticalBar.setEnabled( true );
             }
             else {
               verticalBar.setEnabled( true );

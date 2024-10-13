@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -490,7 +490,7 @@ final class FloatMaxVector extends FloatVector {
                                    VectorMask<Float> m) {
         return (FloatMaxVector)
             super.selectFromTemplate((FloatMaxVector) v,
-                                     (FloatMaxMask) m);  // specialize
+                                     FloatMaxMask.class, (FloatMaxMask) m);  // specialize
     }
 
 
@@ -510,7 +510,7 @@ final class FloatMaxVector extends FloatVector {
                      this, i,
                      (vec, ix) -> {
                      float[] vecarr = vec.vec();
-                     return (long)Float.floatToIntBits(vecarr[ix]);
+                     return (long)Float.floatToRawIntBits(vecarr[ix]);
                      });
     }
 
@@ -526,7 +526,7 @@ final class FloatMaxVector extends FloatVector {
     public FloatMaxVector withLaneHelper(int i, float e) {
         return VectorSupport.insert(
                                 VCLASS, ETYPE, VLENGTH,
-                                this, i, (long)Float.floatToIntBits(e),
+                                this, i, (long)Float.floatToRawIntBits(e),
                                 (v, ix, bits) -> {
                                     float[] res = v.vec().clone();
                                     res[ix] = Float.intBitsToFloat((int)bits);
@@ -637,14 +637,6 @@ final class FloatMaxVector extends FloatVector {
 
         @Override
         @ForceInline
-        public FloatMaxMask eq(VectorMask<Float> mask) {
-            Objects.requireNonNull(mask);
-            FloatMaxMask m = (FloatMaxMask)mask;
-            return xor(m.not());
-        }
-
-        @Override
-        @ForceInline
         /*package-private*/
         FloatMaxMask indexPartiallyInUpperRange(long offset, long limit) {
             return (FloatMaxMask) VectorSupport.indexPartiallyInUpperRange(
@@ -691,9 +683,9 @@ final class FloatMaxVector extends FloatVector {
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a | b));
         }
 
+        @Override
         @ForceInline
-        /* package-private */
-        FloatMaxMask xor(VectorMask<Float> mask) {
+        public FloatMaxMask xor(VectorMask<Float> mask) {
             Objects.requireNonNull(mask);
             FloatMaxMask m = (FloatMaxMask)mask;
             return VectorSupport.binaryOp(VECTOR_OP_XOR, FloatMaxMask.class, null, int.class, VLENGTH,
@@ -732,6 +724,16 @@ final class FloatMaxVector extends FloatVector {
             }
             return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TOLONG, FloatMaxMask.class, int.class, VLENGTH, this,
                                                       (m) -> toLongHelper(m.getBits()));
+        }
+
+        // laneIsSet
+
+        @Override
+        @ForceInline
+        public boolean laneIsSet(int i) {
+            Objects.checkIndex(i, length());
+            return VectorSupport.extract(FloatMaxMask.class, float.class, VLENGTH,
+                                         this, i, (m, idx) -> (m.getBits()[idx] ? 1L : 0L)) == 1L;
         }
 
         // Reductions
@@ -814,6 +816,13 @@ final class FloatMaxVector extends FloatVector {
                 throw new IllegalArgumentException("VectorShuffle length and species length differ");
             int[] shuffleArray = toArray();
             return s.shuffleFromArray(shuffleArray, 0).check(s);
+        }
+
+        @Override
+        @ForceInline
+        public FloatMaxShuffle wrapIndexes() {
+            return VectorSupport.wrapShuffleIndexes(ETYPE, FloatMaxShuffle.class, this, VLENGTH,
+                                                    (s) -> ((FloatMaxShuffle)(((AbstractShuffle<Float>)(s)).wrapIndexesTemplate())));
         }
 
         @ForceInline

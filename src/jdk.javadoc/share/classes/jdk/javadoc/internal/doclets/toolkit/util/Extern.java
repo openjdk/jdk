@@ -668,11 +668,22 @@ public class Extern {
         } while (redir);
 
         if (!url.equals(conn.getURL())) {
-            configuration.getReporter().print(Kind.WARNING,
-                    resources.getText("doclet.urlRedirected", url, conn.getURL()));
+            if (!getLastPathComponent(conn.getURL()).equals(getLastPathComponent(url))) {
+                configuration.getReporter().print(Kind.ERROR,
+                        resources.getText("doclet.unexpectedRedirect", url, conn.getURL()));
+            } else {
+                configuration.getReporter().print(Kind.WARNING,
+                        resources.getText("doclet.urlRedirected", url, conn.getURL()));
+            }
         }
 
         return in;
+    }
+
+    private String getLastPathComponent(URL u) {
+        var path = u.getPath();
+        var sep = path.lastIndexOf('/');
+        return sep == -1 ? path : path.substring(sep + 1);
     }
 
     private void printModularityMismatchDiagnostic(String key, Object arg) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ typedef Array<u1> AnnotationArray;
 // a type_annotation instance.
 
 class Annotations: public MetaspaceObj {
+ friend class VMStructs;
  friend class JVMCIVMStructs;
 
   // If you add a new field that points to any metaspace object, you
@@ -88,7 +89,6 @@ class Annotations: public MetaspaceObj {
   // Turn metadata annotations into a Java heap object (oop)
   static typeArrayOop make_java_array(AnnotationArray* annotations, TRAPS);
 
-  bool is_klass() const { return false; }
   void metaspace_pointers_do(MetaspaceClosure* it);
   MetaspaceObj::Type type() const { return AnnotationsType; }
 

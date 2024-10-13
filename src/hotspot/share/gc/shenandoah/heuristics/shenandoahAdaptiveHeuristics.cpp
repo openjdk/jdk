@@ -54,8 +54,8 @@ const double ShenandoahAdaptiveHeuristics::HIGHEST_EXPECTED_AVAILABLE_AT_END = 0
 const double ShenandoahAdaptiveHeuristics::MINIMUM_CONFIDENCE = 0.319; // 25%
 const double ShenandoahAdaptiveHeuristics::MAXIMUM_CONFIDENCE = 3.291; // 99.9%
 
-ShenandoahAdaptiveHeuristics::ShenandoahAdaptiveHeuristics() :
-  ShenandoahHeuristics(),
+ShenandoahAdaptiveHeuristics::ShenandoahAdaptiveHeuristics(ShenandoahSpaceInfo* space_info) :
+  ShenandoahHeuristics(space_info),
   _margin_of_error_sd(ShenandoahAdaptiveInitialConfidence),
   _spike_threshold_sd(ShenandoahAdaptiveInitialSpikeThreshold),
   _last_trigger(OTHER) { }
@@ -84,7 +84,7 @@ void ShenandoahAdaptiveHeuristics::choose_collection_set_from_regiondata(Shenand
   // we hit max_cset. When max_cset is hit, we terminate the cset selection. Note that in this scheme,
   // ShenandoahGarbageThreshold is the soft threshold which would be ignored until min_garbage is hit.
 
-  size_t capacity    = ShenandoahHeap::heap()->soft_max_capacity();
+  size_t capacity    = _space_info->soft_max_capacity();
   size_t max_cset    = (size_t)((1.0 * capacity / 100 * ShenandoahEvacReserve) / ShenandoahEvacWaste);
   size_t free_target = (capacity / 100 * ShenandoahMinFreeThreshold) + max_cset;
   size_t min_garbage = (free_target > actual_free ? (free_target - actual_free) : 0);
@@ -97,7 +97,7 @@ void ShenandoahAdaptiveHeuristics::choose_collection_set_from_regiondata(Shenand
                      byte_size_in_proper_unit(min_garbage), proper_unit_for_byte_size(min_garbage));
 
   // Better select garbage-first regions
-  QuickSort::sort<RegionData>(data, (int)size, compare_by_garbage, false);
+  QuickSort::sort(data, size, compare_by_garbage);
 
   size_t cur_cset = 0;
   size_t cur_garbage = 0;
@@ -128,7 +128,7 @@ void ShenandoahAdaptiveHeuristics::record_cycle_start() {
 void ShenandoahAdaptiveHeuristics::record_success_concurrent() {
   ShenandoahHeuristics::record_success_concurrent();
 
-  size_t available = ShenandoahHeap::heap()->free_set()->available();
+  size_t available = _space_info->available();
 
   _available.add(available);
   double z_score = 0.0;
@@ -196,11 +196,10 @@ static double saturate(double value, double min, double max) {
 }
 
 bool ShenandoahAdaptiveHeuristics::should_start_gc() {
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
-  size_t max_capacity = heap->max_capacity();
-  size_t capacity = heap->soft_max_capacity();
-  size_t available = heap->free_set()->available();
-  size_t allocated = heap->bytes_allocated_since_gc_start();
+  size_t max_capacity = _space_info->max_capacity();
+  size_t capacity = _space_info->soft_max_capacity();
+  size_t available = _space_info->available();
+  size_t allocated = _space_info->bytes_allocated_since_gc_start();
 
   // Make sure the code below treats available without the soft tail.
   size_t soft_tail = max_capacity - capacity;
@@ -243,7 +242,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
 
   double avg_cycle_time = _gc_time_history->davg() + (_margin_of_error_sd * _gc_time_history->dsd());
   double avg_alloc_rate = _allocation_rate.upper_bound(_margin_of_error_sd);
-  if (avg_cycle_time > allocation_headroom / avg_alloc_rate) {
+  if (avg_cycle_time * avg_alloc_rate > allocation_headroom) {
     log_info(gc)("Trigger: Average GC time (%.2f ms) is above the time for average allocation rate (%.0f %sB/s) to deplete free headroom (" SIZE_FORMAT "%s) (margin of error = %.2f)",
                  avg_cycle_time * 1000,
                  byte_size_in_proper_unit(avg_alloc_rate), proper_unit_for_byte_size(avg_alloc_rate),
@@ -352,10 +351,6 @@ bool ShenandoahAllocationRate::is_spiking(double rate, double threshold) const {
     }
   }
   return false;
-}
-
-double ShenandoahAllocationRate::instantaneous_rate(size_t allocated) const {
-  return instantaneous_rate(os::elapsedTime(), allocated);
 }
 
 double ShenandoahAllocationRate::instantaneous_rate(double time, size_t allocated) const {

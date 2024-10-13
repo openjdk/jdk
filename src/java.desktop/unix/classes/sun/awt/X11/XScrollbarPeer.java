@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@ package sun.awt.X11;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.peer.*;
+
+import sun.awt.OSInfo;
 import sun.util.logging.PlatformLogger;
 
 class XScrollbarPeer extends XComponentPeer implements ScrollbarPeer, XScrollbarClient {
@@ -75,7 +77,7 @@ class XScrollbarPeer extends XComponentPeer implements ScrollbarPeer, XScrollbar
      * Currently uses hardcoded values
      */
     private int getDefaultDimension() {
-        if (System.getProperty("os.name").equals("Linux")) {
+        if (OSInfo.getOSType() == OSInfo.OSType.LINUX) {
             return DEFAULT_WIDTH_LINUX;
         } else {
             return DEFAULT_WIDTH_SOLARIS;

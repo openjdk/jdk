@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -349,7 +349,7 @@ public abstract class LayoutPathImpl extends LayoutPath {
         // the path vector.  if > the square of the length of the path vector
         // (case B), the projection is past the end point of the
         // path vector.  otherwise (case C), it lies on the path vector.
-        // determine the closeset point on the path vector.  if case A, it
+        // determine the closest point on the path vector.  if case A, it
         // is the start of the path vector.  if case B and this is the last
         // path vector in the path segment, it is the end of the path vector.  If
         // case C, it is the projection onto the path vector.  Otherwise

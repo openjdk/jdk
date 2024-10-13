@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -324,8 +324,8 @@ address PhaseMacroExpand::basictype2arraycopy(BasicType t,
     int s_offs = src_offset_inttype->get_con();
     int d_offs = dest_offset_inttype->get_con();
     int element_size = type2aelembytes(t);
-    aligned = ((arrayOopDesc::base_offset_in_bytes(t) + s_offs * element_size) % HeapWordSize == 0) &&
-              ((arrayOopDesc::base_offset_in_bytes(t) + d_offs * element_size) % HeapWordSize == 0);
+    aligned = ((arrayOopDesc::base_offset_in_bytes(t) + (uint)s_offs * element_size) % HeapWordSize == 0) &&
+              ((arrayOopDesc::base_offset_in_bytes(t) + (uint)d_offs * element_size) % HeapWordSize == 0);
     if (s_offs >= d_offs)  disjoint = true;
   } else if (src_offset == dest_offset && src_offset != nullptr) {
     // This can occur if the offsets are identical non-constants.
@@ -633,7 +633,7 @@ Node* PhaseMacroExpand::generate_arraycopy(ArrayCopyNode *ac, AllocateArrayNode*
       // Test S[] against D[], not S against D, because (probably)
       // the secondary supertype cache is less busy for S[] than S.
       // This usually only matters when D is an interface.
-      Node* not_subtype_ctrl = Phase::gen_subtype_check(src_klass, dest_klass, ctrl, mem, _igvn);
+      Node* not_subtype_ctrl = Phase::gen_subtype_check(src_klass, dest_klass, ctrl, mem, _igvn, nullptr, -1);
       // Plug failing path into checked_oop_disjoint_arraycopy
       if (not_subtype_ctrl != top()) {
         Node* local_ctrl = not_subtype_ctrl;
@@ -1255,7 +1255,7 @@ void PhaseMacroExpand::expand_arraycopy_node(ArrayCopyNode *ac) {
 
     AllocateArrayNode* alloc = nullptr;
     if (ac->is_alloc_tightly_coupled()) {
-      alloc = AllocateArrayNode::Ideal_array_allocation(dest, &_igvn);
+      alloc = AllocateArrayNode::Ideal_array_allocation(dest);
       assert(alloc != nullptr, "expect alloc");
     }
 
@@ -1266,14 +1266,14 @@ void PhaseMacroExpand::expand_arraycopy_node(ArrayCopyNode *ac) {
     generate_arraycopy(ac, alloc, &ctrl, merge_mem, &io,
                        adr_type, T_OBJECT,
                        src, src_offset, dest, dest_offset, length,
-                       true, !ac->is_copyofrange());
+                       true, ac->has_negative_length_guard());
 
     return;
   }
 
   AllocateArrayNode* alloc = nullptr;
   if (ac->is_alloc_tightly_coupled()) {
-    alloc = AllocateArrayNode::Ideal_array_allocation(dest, &_igvn);
+    alloc = AllocateArrayNode::Ideal_array_allocation(dest);
     assert(alloc != nullptr, "expect alloc");
   }
 

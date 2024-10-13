@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,11 +24,12 @@
  */
 package java.util.stream;
 
+import jdk.internal.util.ArraysSupport;
+
 import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Deque;
-import java.util.List;
 import java.util.Objects;
 import java.util.Spliterator;
 import java.util.Spliterators;
@@ -58,7 +59,7 @@ final class Nodes {
     /**
      * The maximum size of an array that can be allocated.
      */
-    static final long MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
+    static final long MAX_ARRAY_SIZE = ArraysSupport.SOFT_MAX_ARRAY_LENGTH;
 
     // IllegalArgumentException messages
     static final String BAD_SIZE = "Stream size exceeds max array size";

@@ -33,7 +33,7 @@
 
 inline const ImmutableOopMap* CodeBlob::oop_map_for_slot(int slot, address return_address) const {
   assert(_oop_maps != nullptr, "nope");
-  return _oop_maps->find_map_at_slot(slot, (intptr_t) return_address - (intptr_t) code_begin());
+  return _oop_maps->find_map_at_slot(slot, pointer_delta_as_int(return_address, code_begin()));
 }
 
 #endif // SHARE_CODE_CODEBLOB_INLINE_HPP

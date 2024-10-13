@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,38 +25,38 @@
 
 package jdk.jfr.internal;
 
-import jdk.internal.org.objectweb.asm.commons.Method;
-import jdk.jfr.internal.EventInstrumentation.FieldInfo;
-import jdk.jfr.internal.event.EventConfiguration;
+import jdk.jfr.internal.util.Bytecode.FieldDesc;
+import jdk.jfr.internal.util.Bytecode.MethodDesc;
+import jdk.jfr.internal.util.ImplicitFields;
 
 public enum EventWriterMethod {
 
-    BEGIN_EVENT("(" + jdk.internal.org.objectweb.asm.Type.getType(EventConfiguration.class).getDescriptor() + "J)Z", "???", "beginEvent"),
-    END_EVENT("()Z", "???", "endEvent"),
-    PUT_BYTE("(B)V", "byte", "putByte"),
-    PUT_SHORT("(S)V", "short", "putShort"),
-    PUT_INT("(I)V", "int", "putInt"),
-    PUT_LONG("(J)V", "long", "putLong"),
-    PUT_FLOAT("(F)V", "float", "putFloat"),
-    PUT_DOUBLE("(D)V", "double", "putDouble"),
-    PUT_CHAR("(C)V", "char", "putChar"),
-    PUT_BOOLEAN("(Z)V", "boolean", "putBoolean"),
-    PUT_THREAD("(Ljava/lang/Thread;)V", Type.THREAD.getName(), "putThread"),
-    PUT_CLASS("(Ljava/lang/Class;)V", Type.CLASS.getName(), "putClass"),
-    PUT_STRING("(Ljava/lang/String;)V", Type.STRING.getName(), "putString"),
-    PUT_EVENT_THREAD("()V", Type.THREAD.getName(), "putEventThread"),
-    PUT_STACK_TRACE("()V", Type.TYPES_PREFIX + "StackTrace", "putStackTrace");
+     BEGIN_EVENT("beginEvent", "(Ljdk/jfr/internal/event/EventConfiguration;J)Z", "???"),
+     END_EVENT("endEvent", "()Z", "???"),
+     PUT_BYTE("putByte", "(B)V", "B"),
+     PUT_SHORT("putShort", "(S)V", "S"),
+     PUT_INT("putInt", "(I)V", "I"),
+     PUT_LONG("putLong", "(J)V", "J"),
+     PUT_FLOAT("putFloat", "(F)V", "F"),
+     PUT_DOUBLE("putDouble", "(D)V", "D"),
+     PUT_CHAR("putChar", "(C)V", "C"),
+     PUT_BOOLEAN("putBoolean", "(Z)V", "Z"),
+     PUT_THREAD("putThread", "(Ljava/lang/Thread;)V", "Ljava/lang/Thread;"),
+     PUT_CLASS("putClass", "(Ljava/lang/Class;)V", "Ljava/lang/Class;"),
+     PUT_STRING("putString", "(Ljava/lang/String;)V", "Ljava/lang/String;"),
+     PUT_EVENT_THREAD("putEventThread", "()V", "???"),
+     PUT_STACK_TRACE("putStackTrace", "()V", "???");
 
-    final Method asmMethod;
-    final String typeDescriptor;
+    final MethodDesc method;
+    final String fieldType;
 
-    EventWriterMethod(String paramSignature, String typeName, String methodName) {
-        this.typeDescriptor = ASMToolkit.getDescriptor(typeName);
-        this.asmMethod = new Method(methodName, paramSignature);
+    EventWriterMethod(String methodName, String paramType, String fieldType) {
+        this.fieldType = fieldType;
+        this.method = MethodDesc.of(methodName, paramType);
     }
 
-    public Method asASM() {
-        return asmMethod;
+    public MethodDesc method() {
+        return method;
     }
 
     /**
@@ -67,16 +67,16 @@ public enum EventWriterMethod {
      *
      * @return the method
      */
-    public static EventWriterMethod lookupMethod(FieldInfo field) {
+    public static EventWriterMethod lookupMethod(FieldDesc field) {
         // event thread
-        if (field.name().equals(EventInstrumentation.FIELD_EVENT_THREAD)) {
+        if (field.name().equals(ImplicitFields.EVENT_THREAD)) {
             return EventWriterMethod.PUT_EVENT_THREAD;
         }
         for (EventWriterMethod m : EventWriterMethod.values()) {
-            if (field.descriptor().equals(m.typeDescriptor)) {
+            if (field.type().descriptorString().equals(m.fieldType)) {
                 return m;
             }
         }
-        throw new Error("Unknown type " + field.descriptor());
+        throw new Error("Unknown field type " + field.type());
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,43 +24,39 @@
  */
 package jdk.internal.classfile.impl;
 
+import java.lang.reflect.AccessFlag;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.constantpool.ConstantPoolBuilder;
-import jdk.internal.classfile.constantpool.Utf8Entry;
+import java.lang.classfile.*;
+import java.lang.classfile.constantpool.ConstantPoolBuilder;
+import java.lang.classfile.constantpool.Utf8Entry;
 
 public final class BufferedFieldBuilder
         implements TerminalFieldBuilder {
     private final SplitConstantPool constantPool;
+    private final ClassFileImpl context;
     private final Utf8Entry name;
     private final Utf8Entry desc;
     private final List<FieldElement> elements = new ArrayList<>();
     private AccessFlags flags;
-    private final FieldModel original;
 
     public BufferedFieldBuilder(SplitConstantPool constantPool,
+                                ClassFileImpl context,
                                 Utf8Entry name,
-                                Utf8Entry type,
-                                FieldModel original) {
+                                Utf8Entry type) {
         this.constantPool = constantPool;
+        this.context = context;
         this.name = name;
         this.desc = type;
-        this.flags = AccessFlags.ofField();
-        this.original = original;
+        this.flags = new AccessFlagsImpl(AccessFlag.Location.FIELD);
     }
 
     @Override
     public ConstantPoolBuilder constantPool() {
         return constantPool;
-    }
-
-    @Override
-    public Optional<FieldModel> original() {
-        return Optional.ofNullable(original);
     }
 
     @Override
@@ -83,13 +79,12 @@ public final class BufferedFieldBuilder
             extends AbstractUnboundModel<FieldElement>
             implements FieldModel {
         public Model() {
-            super(elements);
+            super(BufferedFieldBuilder.this.elements);
         }
 
         @Override
         public Optional<ClassModel> parent() {
-            FieldModel fm = original().orElse(null);
-            return fm == null? Optional.empty() : fm.parent();
+            return Optional.empty();
         }
 
         @Override
@@ -108,10 +103,8 @@ public final class BufferedFieldBuilder
         }
 
         @Override
-        public void writeTo(BufWriter buf) {
-            DirectFieldBuilder fb = new DirectFieldBuilder(constantPool, name, desc, null);
-            elements.forEach(fb);
-            fb.writeTo(buf);
+        public void writeTo(DirectClassBuilder builder) {
+            builder.withField(name, desc, Util.writingAll(this));
         }
 
         @Override

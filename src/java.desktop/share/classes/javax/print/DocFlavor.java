@@ -39,8 +39,8 @@ import java.io.Serializable;
  * <ul>
  *   <li><b>MIME type.</b> This is a Multipurpose Internet Mail Extensions
  *   (MIME) media type (as defined in
- *   <a href="http://www.ietf.org/rfc/rfc2045.txt">RFC 2045</a> and
- *   <a href="http://www.ietf.org/rfc/rfc2046.txt">RFC 2046</a>) that specifies
+ *   <a href="https://www.rfc-editor.org/info/rfc2045">RFC 2045</a> and
+ *   <a href="https://www.rfc-editor.org/info/rfc2046">RFC 2046</a>) that specifies
  *   how the print data is to be interpreted. The charset of text data should be
  *   the IANA MIME-preferred name, or its canonical name if no preferred name is
  *   specified. Additionally a few historical names supported by earlier
@@ -383,6 +383,10 @@ import java.io.Serializable;
  * Print Service instance supports without having to load the representation
  * classes, which may be problematic for limited-resource clients.
  *
+ * @spec https://www.rfc-editor.org/info/rfc2045
+ *      RFC 2045: Multipurpose Internet Mail Extensions (MIME) Part One: Format of Internet Message Bodies
+ * @spec https://www.rfc-editor.org/info/rfc2046
+ *      RFC 2046: Multipurpose Internet Mail Extensions (MIME) Part Two: Media Types
  * @author Alan Kaminsky
  */
 public class DocFlavor implements Serializable, Cloneable {
@@ -396,13 +400,15 @@ public class DocFlavor implements Serializable, Cloneable {
     /**
      * A string representing the host operating system encoding. This will
      * follow the conventions documented in
-     * <a href="http://www.ietf.org/rfc/rfc2278.txt">
+     * <a href="https://www.rfc-editor.org/info/rfc2278">
      * <i>RFC&nbsp;2278:&nbsp;IANA Charset Registration Procedures</i></a>
      * except where historical names are returned for compatibility with
      * previous versions of the Java platform. The value returned from method is
      * valid only for the VM which returns it, for use in a {@code DocFlavor}.
      * This is the charset for all the "HOST" pre-defined {@code DocFlavors} in
      * the executing VM.
+     * @spec https://www.rfc-editor.org/info/rfc2278
+     *      RFC 2278: IANA Charset Registration Procedures
      */
     @SuppressWarnings("removal")
     public static final String hostEncoding =

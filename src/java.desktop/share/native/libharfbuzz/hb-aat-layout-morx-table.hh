@@ -131,14 +131,14 @@ struct RearrangementSubtable
           hb_glyph_info_t *info = buffer->info;
           hb_glyph_info_t buf[4];
 
-          memcpy (buf, info + start, l * sizeof (buf[0]));
-          memcpy (buf + 2, info + end - r, r * sizeof (buf[0]));
+          hb_memcpy (buf, info + start, l * sizeof (buf[0]));
+          hb_memcpy (buf + 2, info + end - r, r * sizeof (buf[0]));
 
           if (l != r)
             memmove (info + start + r, info + start + l, (end - start - l - r) * sizeof (buf[0]));
 
-          memcpy (info + start, buf + 2, r * sizeof (buf[0]));
-          memcpy (info + end - l, buf, l * sizeof (buf[0]));
+          hb_memcpy (info + start, buf + 2, r * sizeof (buf[0]));
+          hb_memcpy (info + end - l, buf, l * sizeof (buf[0]));
           if (reverse_l)
           {
             buf[0] = info[end - 1];
@@ -169,7 +169,7 @@ struct RearrangementSubtable
     driver_context_t dc (this);
 
     StateTableDriver<Types, EntryData> driver (machine, c->buffer, c->face);
-    driver.drive (&dc);
+    driver.drive (&dc, c);
 
     return_trace (dc.ret);
   }
@@ -325,7 +325,7 @@ struct ContextualSubtable
     driver_context_t dc (this, c);
 
     StateTableDriver<Types, EntryData> driver (machine, c->buffer, c->face);
-    driver.drive (&dc);
+    driver.drive (&dc, c);
 
     return_trace (dc.ret);
   }
@@ -525,7 +525,7 @@ struct LigatureSubtable
           if (unlikely (!componentData.sanitize (&c->sanitizer))) break;
           ligature_idx += componentData;
 
-          DEBUG_MSG (APPLY, nullptr, "Action store %u last %u",
+          DEBUG_MSG (APPLY, nullptr, "Action store %d last %d",
                      bool (action & LigActionStore),
                      bool (action & LigActionLast));
           if (action & (LigActionStore | LigActionLast))
@@ -577,7 +577,7 @@ struct LigatureSubtable
     driver_context_t dc (this, c);
 
     StateTableDriver<Types, EntryData> driver (machine, c->buffer, c->face);
-    driver.drive (&dc);
+    driver.drive (&dc, c);
 
     return_trace (dc.ret);
   }
@@ -618,8 +618,27 @@ struct NoncontextualSubtable
 
     hb_glyph_info_t *info = c->buffer->info;
     unsigned int count = c->buffer->len;
+    // If there's only one range, we already checked the flag.
+    auto *last_range = c->range_flags && (c->range_flags->length > 1) ? &(*c->range_flags)[0] : nullptr;
     for (unsigned int i = 0; i < count; i++)
     {
+      /* This block copied from StateTableDriver::drive. Keep in sync. */
+      if (last_range)
+      {
+        auto *range = last_range;
+        {
+          unsigned cluster = info[i].cluster;
+          while (cluster < range->cluster_first)
+            range--;
+          while (cluster > range->cluster_last)
+            range++;
+
+          last_range = range;
+        }
+        if (!(range->flags & c->subtable_flags))
+          continue;
+      }
+
       const HBGlyphID16 *replacement = substitute.get_value (info[i].codepoint, num_glyphs);
       if (replacement)
       {
@@ -820,7 +839,7 @@ struct InsertionSubtable
     driver_context_t dc (this, c);
 
     StateTableDriver<Types, EntryData> driver (machine, c->buffer, c->face);
-    driver.drive (&dc);
+    driver.drive (&dc, c);
 
     return_trace (dc.ret);
   }
@@ -968,7 +987,7 @@ struct Chain
         // Check whether this type/setting pair was requested in the map, and if so, apply its flags.
         // (The search here only looks at the type and setting fields of feature_info_t.)
         hb_aat_map_builder_t::feature_info_t info = { type, setting, false, 0 };
-        if (map->features.bsearch (info))
+        if (map->current_features.bsearch (info))
         {
           flags &= feature.disableFlags;
           flags |= feature.enableFlags;
@@ -980,13 +999,21 @@ struct Chain
           setting = HB_AAT_LAYOUT_FEATURE_SELECTOR_LOWER_CASE_SMALL_CAPS;
           goto retry;
         }
+#ifndef HB_NO_AAT
+        else if (type == HB_AAT_LAYOUT_FEATURE_TYPE_LANGUAGE_TAG_TYPE && setting &&
+                 /* TODO: Rudimentary language matching. */
+                 hb_language_matches (map->face->table.ltag->get_language (setting - 1), map->props.language))
+        {
+          flags &= feature.disableFlags;
+          flags |= feature.enableFlags;
+        }
+#endif
       }
     }
     return flags;
   }
 
-  void apply (hb_aat_apply_context_t *c,
-              hb_mask_t flags) const
+  void apply (hb_aat_apply_context_t *c) const
   {
     const ChainSubtable<Types> *subtable = &StructAfter<ChainSubtable<Types>> (featureZ.as_array (featureCount));
     unsigned int count = subtableCount;
@@ -994,8 +1021,10 @@ struct Chain
     {
       bool reverse;
 
-      if (!(subtable->subFeatureFlags & flags))
+      if (hb_none (hb_iter (c->range_flags) |
+                   hb_map ([&subtable] (const hb_aat_map_t::range_flags_t _) -> bool { return subtable->subFeatureFlags & (_.flags); })))
         goto skip;
+      c->subtable_flags = subtable->subFeatureFlags;
 
       if (!(subtable->get_coverage() & ChainSubtable<Types>::AllDirections) &&
           HB_DIRECTION_IS_VERTICAL (c->buffer->props.direction) !=
@@ -1034,7 +1063,7 @@ struct Chain
                 bool (subtable->get_coverage () & ChainSubtable<Types>::Backwards) !=
                 HB_DIRECTION_IS_BACKWARD (c->buffer->props.direction);
 
-      if (!c->buffer->message (c->font, "start chainsubtable %d", c->lookup_index))
+      if (!c->buffer->message (c->font, "start chainsubtable %u", c->lookup_index))
         goto skip;
 
       if (reverse)
@@ -1045,7 +1074,7 @@ struct Chain
       if (reverse)
         c->buffer->reverse ();
 
-      (void) c->buffer->message (c->font, "end chainsubtable %d", c->lookup_index);
+      (void) c->buffer->message (c->font, "end chainsubtable %u", c->lookup_index);
 
       if (unlikely (!c->buffer->successful)) return;
 
@@ -1111,22 +1140,31 @@ struct mortmorx
   {
     const Chain<Types> *chain = &firstChain;
     unsigned int count = chainCount;
+    if (unlikely (!map->chain_flags.resize (count)))
+      return;
     for (unsigned int i = 0; i < count; i++)
     {
-      map->chain_flags.push (chain->compile_flags (mapper));
+      map->chain_flags[i].push (hb_aat_map_t::range_flags_t {chain->compile_flags (mapper),
+                                                             mapper->range_first,
+                                                             mapper->range_last});
       chain = &StructAfter<Chain<Types>> (*chain);
     }
   }
 
-  void apply (hb_aat_apply_context_t *c) const
+  void apply (hb_aat_apply_context_t *c,
+              const hb_aat_map_t &map) const
   {
     if (unlikely (!c->buffer->successful)) return;
+
+    c->buffer->unsafe_to_concat ();
+
     c->set_lookup_index (0);
     const Chain<Types> *chain = &firstChain;
     unsigned int count = chainCount;
     for (unsigned int i = 0; i < count; i++)
     {
-      chain->apply (c, c->plan->aat_map.chain_flags[i]);
+      c->range_flags = &map.chain_flags[i];
+      chain->apply (c);
       if (unlikely (!c->buffer->successful)) return;
       chain = &StructAfter<Chain<Types>> (*chain);
     }

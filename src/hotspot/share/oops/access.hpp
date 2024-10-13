@@ -53,8 +53,8 @@
 // * store_at: Store a value in an internal pointer relative to a base object.
 // * atomic_cmpxchg: Atomically compare-and-swap a new value at an address if previous value matched the compared value.
 // * atomic_cmpxchg_at: Atomically compare-and-swap a new value at an internal pointer address if previous value matched the compared value.
-// * atomic_xchg: Atomically swap a new value at an address if previous value matched the compared value.
-// * atomic_xchg_at: Atomically swap a new value at an internal pointer address if previous value matched the compared value.
+// * atomic_xchg: Atomically swap a new value at an address without checking the previous value.
+// * atomic_xchg_at: Atomically swap a new value at an internal pointer address without checking the previous value.
 // * arraycopy: Copy data from one heap array to another heap array. The ArrayAccess class has convenience functions for this.
 // * clone: Clone the contents of an object to a newly allocated object.
 //
@@ -83,12 +83,11 @@
 //             and whether the access is performed on the heap or outside. Then the
 //             appropriate BarrierSet::AccessBarrier is called to perform the access.
 //
-// The implementation of step 1-4 resides in in accessBackend.hpp, to allow selected
+// The implementation of step 1-4 resides in accessBackend.hpp, to allow selected
 // accesses to be accessible from only access.hpp, as opposed to access.inline.hpp.
 // Steps 5.a and 5.b require knowledge about the GC backends, and therefore needs to
 // include the various GC backend .inline.hpp headers. Their implementation resides in
-// access.inline.hpp. The accesses that are allowed through the access.hpp file
-// must be instantiated in access.cpp using the INSTANTIATE_HPP_ACCESS macro.
+// access.inline.hpp.
 
 template <DecoratorSet decorators = DECORATORS_NONE>
 class Access: public AllStatic {

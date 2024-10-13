@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ class WorkerDataArrayTest : public ::testing::Test {
  protected:
   WorkerDataArrayTest() :
     title("Test array"),
-    array(NULL, title, 3),
+    array(nullptr, title, 3),
     sub_item_title("Sub item array") {
 
     array.create_thread_work_items(sub_item_title);
@@ -102,9 +102,9 @@ const char* WorkerDataArrayTest<double>::format_summary(
   double min, double avg, double max, double diff, double sum, size_t workers) {
 
   stringStream out;
-  out.print(" Min: %4.1lf"
-            ", Avg: %4.1lf, Max: %4.1lf"
-            ", Diff: %4.1lf, Sum: %4.1lf"
+  out.print(" Min: %4.2lf"
+            ", Avg: %4.2lf, Max: %4.2lf"
+            ", Diff: %4.2lf, Sum: %4.2lf"
             ", Workers: " SIZE_FORMAT "\n",
             min, avg, max, diff, sum, workers);
   return out.as_string();
@@ -278,12 +278,12 @@ class UninitializedDoubleElementWorkerDataArrayTest : public WorkerDataArrayTest
 
  private:
   virtual const char* expected_summary() {
-    return format_summary(5.1, 6.1, 7.2, 2.1, 12.3, 2);
+    return format_summary(5.10, 6.15, 7.20, 2.10, 12.30, 2);
   }
 
   virtual const char* expected_details() {
     stringStream out;
-    out.print(" %4.1lf - %4.1lf\n", 5.1, 7.2);
+    out.print(" %4.2lf - %4.2lf\n", 5.1, 7.2);
     return out.as_string();
   }
 };

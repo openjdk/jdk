@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,6 +59,7 @@ FD getFD(JNIEnv *env, jobject cur, jfieldID fid);
  * Route the routines
  */
 #define IO_Sync fsync
+#define IO_Lseek lseek
 #define IO_Read handleRead
 #define IO_Write handleWrite
 #define IO_Append handleWrite
@@ -66,29 +67,10 @@ FD getFD(JNIEnv *env, jobject cur, jfieldID fid);
 #define IO_SetLength handleSetLength
 #define IO_GetLength handleGetLength
 
-#ifdef _ALLBSD_SOURCE
-#define open64 open
-#define fstat64 fstat
-#define stat64 stat
-#define lseek64 lseek
-#define ftruncate64 ftruncate
-#define IO_Lseek lseek
-#else
-#define IO_Lseek lseek64
-#endif
-
 /*
  * On Solaris, the handle field is unused
  */
 #define SET_HANDLE(fd) return (jlong)-1
-
-/*
- * Retry the operation if it is interrupted
- */
-#define RESTARTABLE(_cmd, _result)                \
-    do {                                          \
-        _result = _cmd;                           \
-    } while ((_result == -1) && (errno == EINTR))
 
 void fileDescriptorClose(JNIEnv *env, jobject this);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,13 +51,17 @@ bool ProtectionDomainCacheTable::equals(const WeakHandle& protection_domain1, co
 
 // WeakHandle is both the key and the value.  We need it as the key to compare the oops that each point to
 // for equality.  We need it as the value to return the one that already exists to link in the DictionaryEntry.
-ResourceHashtable<WeakHandle, WeakHandle, 1009, AnyObj::C_HEAP, mtClass,
+using InternalProtectionDomainCacheTable = ResourceHashtable<WeakHandle, WeakHandle, 1009, AnyObj::C_HEAP, mtClass,
                   ProtectionDomainCacheTable::compute_hash,
-                  ProtectionDomainCacheTable::equals> _pd_cache_table;
+                  ProtectionDomainCacheTable::equals>;
+static InternalProtectionDomainCacheTable* _pd_cache_table;
 
 bool ProtectionDomainCacheTable::_dead_entries = false;
 int  ProtectionDomainCacheTable::_total_oops_removed = 0;
 
+void ProtectionDomainCacheTable::initialize(){
+  _pd_cache_table = new (mtClass) InternalProtectionDomainCacheTable();
+}
 void ProtectionDomainCacheTable::trigger_cleanup() {
   MutexLocker ml(Service_lock, Mutex::_no_safepoint_check_flag);
   _dead_entries = true;
@@ -73,7 +77,7 @@ class CleanProtectionDomainEntries : public CLDClosure {
   void do_cld(ClassLoaderData* data) {
     Dictionary* dictionary = data->dictionary();
     if (dictionary != nullptr) {
-      dictionary->clean_cached_protection_domains(_delete_list);
+      dictionary->remove_from_package_access_cache(_delete_list);
     }
   }
 };
@@ -92,8 +96,8 @@ class HandshakeForPD : public HandshakeClosure {
 
 static void purge_deleted_entries() {
   // If there are any deleted entries, Handshake-all then they'll be
-  // safe to remove since traversing the pd_set list does not stop for
-  // safepoints and only JavaThreads will read the pd_set.
+  // safe to remove since traversing the package_access_cache list does not stop for
+  // safepoints and only JavaThreads will read the package_access_cache.
   // This is actually quite rare because the protection domain is generally associated
   // with the caller class and class loader, which if still alive will keep this
   // protection domain entry alive.
@@ -111,7 +115,7 @@ static void purge_deleted_entries() {
 }
 
 void ProtectionDomainCacheTable::unlink() {
-  // The dictionary entries _pd_set field should be null also, so nothing to do.
+  // DictionaryEntry::_package_access_cache should be null also, so nothing to do.
   assert(java_lang_System::allow_security_manager(), "should not be called otherwise");
 
   // Create a list for holding deleted entries
@@ -124,7 +128,7 @@ void ProtectionDomainCacheTable::unlink() {
     // First clean cached pd lists in loaded CLDs
     // It's unlikely, but some loaded classes in a dictionary might
     // point to a protection_domain that has been unloaded.
-    // The dictionary pd_set points at entries in the ProtectionDomainCacheTable.
+    // DictionaryEntry::_package_access_cache points at entries in the ProtectionDomainCacheTable.
     MutexLocker ml(ClassLoaderDataGraph_lock);
     MutexLocker mldict(SystemDictionary_lock);  // need both.
     CleanProtectionDomainEntries clean(_delete_list);
@@ -159,7 +163,7 @@ void ProtectionDomainCacheTable::unlink() {
   };
 
   Deleter deleter;
-  _pd_cache_table.unlink(&deleter);
+  _pd_cache_table->unlink(&deleter);
 
   _total_oops_removed += deleter._oops_removed;
   _dead_entries = false;
@@ -171,19 +175,19 @@ void ProtectionDomainCacheTable::print_on(outputStream* st) {
       st->print_cr("  protection_domain: " PTR_FORMAT, p2i(value.peek()));
   };
   st->print_cr("Protection domain cache table (table_size=%d, protection domains=%d)",
-                _pd_cache_table.table_size(), _pd_cache_table.number_of_entries());
-  _pd_cache_table.iterate_all(printer);
+                _pd_cache_table->table_size(), _pd_cache_table->number_of_entries());
+  _pd_cache_table->iterate_all(printer);
 }
 
 void ProtectionDomainCacheTable::verify() {
   auto verifier = [&] (WeakHandle& key, WeakHandle& value) {
     guarantee(value.peek() == nullptr || oopDesc::is_oop(value.peek()), "must be an oop");
   };
-  _pd_cache_table.iterate_all(verifier);
+  _pd_cache_table->iterate_all(verifier);
 }
 
 // The object_no_keepalive() call peeks at the phantomly reachable oop without
-// keeping it alive.  This is used for traversing DictionaryEntry pd_set.
+// keeping it alive.  This is used for traversing DictionaryEntry::_package_access_cache.
 oop ProtectionDomainEntry::object_no_keepalive() {
   return _object.peek();
 }
@@ -192,7 +196,7 @@ WeakHandle ProtectionDomainCacheTable::add_if_absent(Handle protection_domain) {
   assert_locked_or_safepoint(SystemDictionary_lock);
   WeakHandle w(Universe::vm_weak(), protection_domain);
   bool created;
-  WeakHandle* wk = _pd_cache_table.put_if_absent(w, w, &created);
+  WeakHandle* wk = _pd_cache_table->put_if_absent(w, w, &created);
   if (!created) {
     // delete the one created since we already had it in the table
     w.release(Universe::vm_weak());
@@ -215,10 +219,10 @@ void ProtectionDomainCacheTable::print_table_statistics(outputStream* st) {
     // The only storage is in OopStorage for an oop
     return sizeof(oop);
   };
-  TableStatistics ts = _pd_cache_table.statistics_calculate(size);
+  TableStatistics ts = _pd_cache_table->statistics_calculate(size);
   ts.print(st, "ProtectionDomainCacheTable");
 }
 
 int ProtectionDomainCacheTable::number_of_entries() {
-  return _pd_cache_table.number_of_entries();
+  return _pd_cache_table->number_of_entries();
 }

@@ -53,7 +53,7 @@ public abstract class SchemaDVFactory {
      * @exception DVFactoryException  cannot create an instance of the specified
      *                                class name or the default class name
      */
-    public static synchronized final SchemaDVFactory getInstance() throws DVFactoryException {
+    public static final SchemaDVFactory getInstance() throws DVFactoryException {
         return getInstance(DEFAULT_FACTORY_CLASS);
     } //getInstance():  SchemaDVFactory
 
@@ -66,7 +66,7 @@ public abstract class SchemaDVFactory {
      * @exception DVFactoryException  cannot create an instance of the specified
      *                                class name or the default class name
      */
-    public static synchronized final SchemaDVFactory getInstance(String factoryClass) throws DVFactoryException {
+    public static final SchemaDVFactory getInstance(String factoryClass) throws DVFactoryException {
 
         try {
             // if the class name is not specified, use the default one
@@ -78,7 +78,7 @@ public abstract class SchemaDVFactory {
     }
 
     // can't create a new object of this class
-    protected SchemaDVFactory(){}
+    protected SchemaDVFactory() {}
 
     /**
      * Get a built-in simple type of the given name

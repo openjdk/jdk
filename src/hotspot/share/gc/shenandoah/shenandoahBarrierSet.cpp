@@ -45,7 +45,7 @@ ShenandoahBarrierSet::ShenandoahBarrierSet(ShenandoahHeap* heap) :
   BarrierSet(make_barrier_set_assembler<ShenandoahBarrierSetAssembler>(),
              make_barrier_set_c1<ShenandoahBarrierSetC1>(),
              make_barrier_set_c2<ShenandoahBarrierSetC2>(),
-             ShenandoahNMethodBarrier ? new ShenandoahBarrierSetNMethod(heap) : nullptr,
+             new ShenandoahBarrierSetNMethod(heap),
              new ShenandoahBarrierSetStackChunk(),
              BarrierSet::FakeRtti(BarrierSet::ShenandoahBarrierSet)),
   _heap(heap),
@@ -138,7 +138,7 @@ void ShenandoahBarrierSet::on_thread_detach(Thread *thread) {
 }
 
 void ShenandoahBarrierSet::clone_barrier_runtime(oop src) {
-  if (_heap->has_forwarded_objects() || (ShenandoahIUBarrier && _heap->is_concurrent_mark_in_progress())) {
+  if (_heap->has_forwarded_objects()) {
     clone_barrier(src);
   }
 }

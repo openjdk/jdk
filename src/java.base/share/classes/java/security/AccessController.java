@@ -778,6 +778,13 @@ public final class AccessController {
         T result = action.run();
         assert isPrivileged(); // sanity check invariant
 
+        // The 'getStackAccessControlContext' call inside 'isPrivileged'
+        // requires that no Local was scalar replaced. However, in some
+        // situations, after inlining, 'result' (or part of a possibly
+        // allocation merge Phi leading to it) might become NonEscaping and get
+        // scalar replaced. The call below enforces 'result' to always escape.
+        ensureMaterializedForStackWalk(result);
+
         // Keep these alive across the run() call so they can be
         // retrieved by getStackAccessControlContext().
         Reference.reachabilityFence(context);
@@ -808,6 +815,13 @@ public final class AccessController {
         assert isPrivileged(); // sanity check invariant
         T result = action.run();
         assert isPrivileged(); // sanity check invariant
+
+        // The 'getStackAccessControlContext' call inside 'isPrivileged'
+        // requires that no Local was scalar replaced. However, in some
+        // situations, after inlining, 'result' (or part of a possibly
+        // allocation merge Phi leading to it) might become NonEscaping and get
+        // scalar replaced. The call below enforces 'result' to always escape.
+        ensureMaterializedForStackWalk(result);
 
         // Keep these alive across the run() call so they can be
         // retrieved by getStackAccessControlContext().

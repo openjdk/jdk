@@ -18,3 +18,5 @@ NashornProfile.txt
 /src/utils/LogCompilation/target/
 /.project/
 /.settings/
+/compile_commands.json
+/.cache

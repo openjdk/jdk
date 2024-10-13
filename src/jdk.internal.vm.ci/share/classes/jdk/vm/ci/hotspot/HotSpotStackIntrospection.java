@@ -39,4 +39,10 @@ public class HotSpotStackIntrospection implements StackIntrospection {
         CompilerToVM compilerToVM = runtime.getCompilerToVM();
         return compilerToVM.iterateFrames(initialMethods, matchingMethods, initialSkip, visitor);
     }
+
+    @Override
+    public boolean canMaterializeVirtualObjects() {
+        // Virtual threads do not support materializing locals (JDK-8307125)
+        return !Thread.currentThread().isVirtual();
+    }
 }

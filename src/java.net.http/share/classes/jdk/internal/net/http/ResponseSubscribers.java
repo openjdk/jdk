@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -356,6 +356,7 @@ public class ResponseSubscribers {
             // incoming buffers are allocated by http client internally,
             // and won't be used anywhere except this place.
             // So it's free simply to store them for further processing.
+            Objects.requireNonNull(items); // ensure NPE is thrown before assert
             assert Utils.hasRemaining(items);
             received.addAll(items);
         }
@@ -538,8 +539,8 @@ public class ResponseSubscribers {
             if (available != 0) return available;
             Iterator<?> iterator = currentListItr;
             if (iterator != null && iterator.hasNext()) return 1;
-            if (buffers.isEmpty()) return 0;
-            return 1;
+            if (!buffers.isEmpty() && buffers.peek() != LAST_LIST ) return 1;
+            return available;
         }
 
         @Override
@@ -780,7 +781,7 @@ public class ResponseSubscribers {
                 subscriber.onComplete();
             } finally {
                 try {
-                    cf.complete(finisher.apply(subscriber));
+                    cf.completeAsync(() -> finisher.apply(subscriber));
                 } catch (Throwable throwable) {
                     cf.completeExceptionally(throwable);
                 }

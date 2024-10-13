@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @test
  * @bug 8214781 8293187
  * @summary Test for the -XX:ArchiveHeapTestClass flag
- * @requires vm.cds.write.archived.java.heap
+ * @requires vm.debug == true & vm.cds.write.archived.java.heap
  * @modules java.base/sun.invoke.util java.logging
  * @library /test/jdk/lib/testlibrary /test/lib
  *          /test/hotspot/jtreg/runtime/cds/appcds
@@ -61,11 +61,7 @@ public class ArchiveHeapTestClass {
     static final String ARCHIVE_TEST_FIELD_NAME = "archivedObjects";
 
     public static void main(String[] args) throws Exception {
-        if (Platform.isDebugBuild()) {
-            testDebugBuild();
-        } else {
-            testProductBuild();
-        }
+        testDebugBuild();
     }
 
     static OutputAnalyzer dumpHelloOnly(String... extraOpts) throws Exception {
@@ -168,13 +164,6 @@ public class ArchiveHeapTestClass {
             output = dumpBootAndHello(CDSTestClassG_name);
             mustSucceed(output);
         }
-    }
-
-    static void testProductBuild() throws Exception {
-        OutputAnalyzer output;
-
-        output = dumpHelloOnly("-XX:-IgnoreUnrecognizedVMOptions", "-XX:ArchiveHeapTestClass=NoSuchClass");
-        mustFail(output, "VM option 'ArchiveHeapTestClass' is develop and is available only in debug version of VM.");
     }
 }
 

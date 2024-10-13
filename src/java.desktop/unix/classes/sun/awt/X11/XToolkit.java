@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,6 +116,7 @@ import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
@@ -358,6 +359,11 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
                         } finally {
                             awtLock();
                         }
+                    } else {
+                        final XAtom XA_NET_WORKAREA = XAtom.get("_NET_WORKAREA");
+                        final boolean rootWindowWorkareaResized = (ev.get_type() == XConstants.PropertyNotify
+                                && ev.get_xproperty().get_atom() == XA_NET_WORKAREA.getAtom());
+                        if (rootWindowWorkareaResized) resetScreenInsetsCache();
                     }
                 }
             });
@@ -843,8 +849,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
      * When two screens overlap and the first contains a dock(*****), then
      * _NET_WORKAREA may start at point x1,y1 and end at point x2,y2.
      */
-    @Override
-    public Insets getScreenInsets(final GraphicsConfiguration gc) {
+    private Insets getScreenInsetsImpl(final GraphicsConfiguration gc) {
         GraphicsDevice gd = gc.getDevice();
         XNETProtocol np = XWM.getWM().getNETProtocol();
         if (np == null || !(gd instanceof X11GraphicsDevice) || !np.active()) {
@@ -869,6 +874,34 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
             return new Insets(0, 0, 0, 0);
         } finally {
             XToolkit.awtUnlock();
+        }
+    }
+
+    private void resetScreenInsetsCache() {
+        final GraphicsDevice[] devices = ((X11GraphicsEnvironment)GraphicsEnvironment.
+                getLocalGraphicsEnvironment()).getScreenDevices();
+        for (var gd : devices) {
+            ((X11GraphicsDevice)gd).resetInsets();
+        }
+    }
+
+    @Override
+    public Insets getScreenInsets(final GraphicsConfiguration gc) {
+        final GraphicsDevice gd = gc.getDevice();
+        if (gd instanceof X11GraphicsDevice x11Device) {
+            Insets insets = x11Device.getInsets();
+            if (insets == null) {
+                synchronized (x11Device) {
+                    insets = x11Device.getInsets();
+                    if (insets == null) {
+                        insets = getScreenInsetsImpl(gc);
+                        x11Device.setInsets(insets);
+                    }
+                }
+            }
+            return (Insets) insets.clone();
+        } else {
+            return super.getScreenInsets(gc);
         }
     }
 

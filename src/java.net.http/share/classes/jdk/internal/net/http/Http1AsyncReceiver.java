@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -419,7 +419,7 @@ class Http1AsyncReceiver {
     }
 
     void subscribe(Http1AsyncDelegate delegate) {
-        synchronized(this) {
+        synchronized (this) {
             pendingDelegateRef.set(delegate);
         }
         if (queue.isEmpty()) {
@@ -443,11 +443,15 @@ class Http1AsyncReceiver {
     }
 
     void unsubscribe(Http1AsyncDelegate delegate) {
-        synchronized(this) {
+        boolean unsubscribed = false;
+        synchronized (this) {
             if (this.delegate == delegate) {
-                if (debug.on()) debug.log("Unsubscribed %s", delegate);
                 this.delegate = null;
+                unsubscribed = true;
             }
+        }
+        if (unsubscribed) {
+            if (debug.on()) debug.log("Unsubscribed %s", delegate);
         }
     }
 

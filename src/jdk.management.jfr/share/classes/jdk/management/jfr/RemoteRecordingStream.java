@@ -565,7 +565,6 @@ public final class RemoteRecordingStream implements EventStream {
      * The following code snippet illustrates how this method can be used in
      * conjunction with the {@link #startAsync()} method to monitor what happens
      * during a test method:
-     * <p>
      * {@snippet :
      *   AtomicLong bytesWritten = new AtomicLong();
      *   try (var r = new RemoteRecordingStream(connection)) {

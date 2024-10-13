@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,10 @@
 #include "oops/markWord.hpp"
 #include "oops/weakHandle.hpp"
 #include "runtime/perfDataTypes.hpp"
+#include "utilities/checkedCast.hpp"
 
 class ObjectMonitor;
+class ObjectMonitorContentionMark;
 class ParkEvent;
 
 // ObjectWaiter serves as a "proxy" or surrogate thread.
@@ -68,20 +70,21 @@ class ObjectWaiter : public StackObj {
 //
 // ObjectMonitor Layout Overview/Highlights/Restrictions:
 //
-// - The _header field must be at offset 0 because the displaced header
+// - The _metadata field must be at offset 0 because the displaced header
 //   from markWord is stored there. We do not want markWord.hpp to include
 //   ObjectMonitor.hpp to avoid exposing ObjectMonitor everywhere. This
 //   means that ObjectMonitor cannot inherit from any other class nor can
 //   it use any virtual member functions. This restriction is critical to
 //   the proper functioning of the VM.
-// - The _header and _owner fields should be separated by enough space
+// - The _metadata and _owner fields should be separated by enough space
 //   to avoid false sharing due to parallel access by different threads.
 //   This is an advisory recommendation.
 // - The general layout of the fields in ObjectMonitor is:
-//     _header
+//     _metadata
 //     <lightly_used_fields>
 //     <optional padding>
 //     _owner
+//     <optional padding>
 //     <remaining_fields>
 // - The VM assumes write ordering and machine word alignment with
 //   respect to the _owner field and the <remaining_fields> that can
@@ -105,26 +108,21 @@ class ObjectWaiter : public StackObj {
 //   in synchronizer.cpp. Also see TEST_VM(SynchronizerTest, sanity) gtest.
 //
 // Futures notes:
-//   - Separating _owner from the <remaining_fields> by enough space to
-//     avoid false sharing might be profitable. Given
-//     http://blogs.oracle.com/dave/entry/cas_and_cache_trivia_invalidate
-//     we know that the CAS in monitorenter will invalidate the line
-//     underlying _owner. We want to avoid an L1 data cache miss on that
-//     same line for monitorexit. Putting these <remaining_fields>:
-//     _recursions, _EntryList, _cxq, and _succ, all of which may be
-//     fetched in the inflated unlock path, on a different cache line
-//     would make them immune to CAS-based invalidation from the _owner
-//     field.
+// - Separating _owner from the <remaining_fields> by enough space to
+//   avoid false sharing might be profitable. Given that the CAS in
+//   monitorenter will invalidate the line underlying _owner. We want
+//   to avoid an L1 data cache miss on that same line for monitorexit.
+//   Putting these <remaining_fields>:
+//   _recursions, _EntryList, _cxq, and _succ, all of which may be
+//   fetched in the inflated unlock path, on a different cache line
+//   would make them immune to CAS-based invalidation from the _owner
+//   field.
 //
-//   - The _recursions field should be of type int, or int32_t but not
-//     intptr_t. There's no reason to use a 64-bit type for this field
-//     in a 64-bit JVM.
+// - The _recursions field should be of type int, or int32_t but not
+//   intptr_t. There's no reason to use a 64-bit type for this field
+//   in a 64-bit JVM.
 
-#ifndef OM_CACHE_LINE_SIZE
-// Use DEFAULT_CACHE_LINE_SIZE if not already specified for
-// the current build platform.
 #define OM_CACHE_LINE_SIZE DEFAULT_CACHE_LINE_SIZE
-#endif
 
 class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   friend class ObjectSynchronizer;
@@ -134,18 +132,37 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
 
   static OopStorage* _oop_storage;
 
-  // The sync code expects the header field to be at offset zero (0).
-  // Enforced by the assert() in header_addr().
-  volatile markWord _header;        // displaced object header word - mark
+  // The sync code expects the metadata field to be at offset zero (0).
+  // Enforced by the assert() in metadata_addr().
+  // * LM_LIGHTWEIGHT with UseObjectMonitorTable:
+  // Contains the _object's hashCode.
+  // * LM_LEGACY, LM_MONITOR, LM_LIGHTWEIGHT without UseObjectMonitorTable:
+  // Contains the displaced object header word - mark
+  volatile uintptr_t _metadata;     // metadata
   WeakHandle _object;               // backward object pointer
-  // Separate _header and _owner on different cache lines since both can
-  // have busy multi-threaded access. _header and _object are set at initial
+  // Separate _metadata and _owner on different cache lines since both can
+  // have busy multi-threaded access. _metadata and _object are set at initial
   // inflation. The _object does not change, so it is a good choice to share
-  // its cache line with _header.
-  DEFINE_PAD_MINUS_SIZE(0, OM_CACHE_LINE_SIZE, sizeof(volatile markWord) +
+  // its cache line with _metadata.
+  DEFINE_PAD_MINUS_SIZE(0, OM_CACHE_LINE_SIZE, sizeof(_metadata) +
                         sizeof(WeakHandle));
-  // Used by async deflation as a marker in the _owner field:
-  #define DEFLATER_MARKER reinterpret_cast<void*>(-1)
+  // Used by async deflation as a marker in the _owner field.
+  // Note that the choice of the two markers is peculiar:
+  // - They need to represent values that cannot be pointers. In particular,
+  //   we achieve this by using the lowest two bits.
+  // - ANONYMOUS_OWNER should be a small value, it is used in generated code
+  //   and small values encode much better.
+  // - We test for anonymous owner by testing for the lowest bit, therefore
+  //   DEFLATER_MARKER must *not* have that bit set.
+  static const uintptr_t DEFLATER_MARKER_VALUE = 2;
+  #define DEFLATER_MARKER reinterpret_cast<void*>(DEFLATER_MARKER_VALUE)
+ public:
+  // NOTE: Typed as uintptr_t so that we can pick it up in SA, via vmStructs.
+  static const uintptr_t ANONYMOUS_OWNER = 1;
+
+ private:
+  static void* anon_owner_ptr() { return reinterpret_cast<void*>(ANONYMOUS_OWNER); }
+
   void* volatile _owner;            // pointer to owning thread OR BasicLock
   volatile uint64_t _previous_owner_tid;  // thread id of the previous owner of the monitor
   // Separate _owner and _next_om on different cache lines since
@@ -162,22 +179,20 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
 
   ObjectWaiter* volatile _cxq;      // LL of recently-arrived threads blocked on entry.
   JavaThread* volatile _succ;       // Heir presumptive thread - used for futile wakeup throttling
-  JavaThread* volatile _Responsible;
 
-  volatile int _Spinner;            // for exit->spinner handoff optimization
   volatile int _SpinDuration;
 
   int _contentions;                 // Number of active contentions in enter(). It is used by is_busy()
                                     // along with other fields to determine if an ObjectMonitor can be
                                     // deflated. It is also used by the async deflation protocol. See
                                     // ObjectMonitor::deflate_monitor().
- protected:
+
   ObjectWaiter* volatile _WaitSet;  // LL of threads wait()ing on the monitor
   volatile int  _waiters;           // number of waiting threads
- private:
   volatile int _WaitSetLock;        // protects Wait Queue - simple spinlock
 
  public:
+
   static void Initialize();
 
   // Only perform a PerfData operation if the PerfData object has been
@@ -202,13 +217,12 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
 
   static int Knob_SpinLimit;
 
-  // TODO-FIXME: the "offset" routines should return a type of off_t instead of int ...
-  // ByteSize would also be an appropriate type.
-  static int owner_offset_in_bytes()       { return offset_of(ObjectMonitor, _owner); }
-  static int recursions_offset_in_bytes()  { return offset_of(ObjectMonitor, _recursions); }
-  static int cxq_offset_in_bytes()         { return offset_of(ObjectMonitor, _cxq); }
-  static int succ_offset_in_bytes()        { return offset_of(ObjectMonitor, _succ); }
-  static int EntryList_offset_in_bytes()   { return offset_of(ObjectMonitor, _EntryList); }
+  static ByteSize metadata_offset()    { return byte_offset_of(ObjectMonitor, _metadata); }
+  static ByteSize owner_offset()       { return byte_offset_of(ObjectMonitor, _owner); }
+  static ByteSize recursions_offset()  { return byte_offset_of(ObjectMonitor, _recursions); }
+  static ByteSize cxq_offset()         { return byte_offset_of(ObjectMonitor, _cxq); }
+  static ByteSize succ_offset()        { return byte_offset_of(ObjectMonitor, _succ); }
+  static ByteSize EntryList_offset()   { return byte_offset_of(ObjectMonitor, _EntryList); }
 
   // ObjectMonitor references can be ORed with markWord::monitor_value
   // as part of the ObjectMonitor tagging mechanism. When we combine an
@@ -222,11 +236,17 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   // to the ObjectMonitor reference manipulation code:
   //
   #define OM_OFFSET_NO_MONITOR_VALUE_TAG(f) \
-    ((ObjectMonitor::f ## _offset_in_bytes()) - markWord::monitor_value)
+    ((in_bytes(ObjectMonitor::f ## _offset())) - checked_cast<int>(markWord::monitor_value))
 
-  markWord           header() const;
-  volatile markWord* header_addr();
-  void               set_header(markWord hdr);
+  uintptr_t           metadata() const;
+  void                set_metadata(uintptr_t value);
+  volatile uintptr_t* metadata_addr();
+
+  markWord            header() const;
+  void                set_header(markWord hdr);
+
+  intptr_t            hash() const;
+  void                set_hash(intptr_t hash);
 
   bool is_busy() const {
     // TODO-FIXME: assert _owner == null implies _recursions = 0
@@ -242,7 +262,7 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   }
   const char* is_busy_to_string(stringStream* ss);
 
-  intptr_t  is_entered(JavaThread* current) const;
+  bool is_entered(JavaThread* current) const;
 
   // Returns true if this OM has an owner, false otherwise.
   bool      has_owner() const;
@@ -263,6 +283,18 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   // _owner field. Returns the prior value of the _owner field.
   void*     try_set_owner_from(void* old_value, void* new_value);
 
+  void set_owner_anonymous() {
+    set_owner_from(nullptr, anon_owner_ptr());
+  }
+
+  bool is_owner_anonymous() const {
+    return owner_raw() == anon_owner_ptr();
+  }
+
+  void set_owner_from_anonymous(Thread* owner) {
+    set_owner_from(anon_owner_ptr(), owner);
+  }
+
   // Simply get _next_om field.
   ObjectMonitor* next_om() const;
   // Simply set _next_om field to new_value.
@@ -273,6 +305,7 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   int       contentions() const;
   void      add_to_contentions(int value);
   intx      recursions() const                                         { return _recursions; }
+  void      set_recursions(size_t recursions);
 
   // JVM/TI GetObjectMonitorUsage() needs this:
   ObjectWaiter* first_waiter()                                         { return _WaitSet; }
@@ -284,6 +317,8 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
 
   oop       object() const;
   oop       object_peek() const;
+  bool      object_is_dead() const;
+  bool      object_refers_to(oop obj) const;
 
   // Returns true if the specified thread owns the ObjectMonitor. Otherwise
   // returns false and throws IllegalMonitorStateException (IMSE).
@@ -306,8 +341,15 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
     ClearSuccOnSuspend(ObjectMonitor* om) : _om(om)  {}
     void operator()(JavaThread* current);
   };
+
+  bool      enter_is_async_deflating();
  public:
+  void      enter_for_with_contention_mark(JavaThread* locking_thread, ObjectMonitorContentionMark& contention_mark);
+  bool      enter_for(JavaThread* locking_thread);
   bool      enter(JavaThread* current);
+  bool      try_enter(JavaThread* current, bool check_for_recursion = true);
+  bool      spin_enter(JavaThread* current);
+  void      enter_with_contention_mark(JavaThread* current, ObjectMonitorContentionMark& contention_mark);
   void      exit(JavaThread* current, bool not_suspended = true);
   void      wait(jlong millis, bool interruptible, TRAPS);
   void      notify(TRAPS);
@@ -321,7 +363,6 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
 
   // Use the following at your own risk
   intx      complete_exit(JavaThread* current);
-  bool      reenter(intx recursions, JavaThread* current);
 
  private:
   void      AddWaiter(ObjectWaiter* waiter);
@@ -331,14 +372,40 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   void      EnterI(JavaThread* current);
   void      ReenterI(JavaThread* current, ObjectWaiter* current_node);
   void      UnlinkAfterAcquire(JavaThread* current, ObjectWaiter* current_node);
-  int       TryLock(JavaThread* current);
-  int       NotRunnable(JavaThread* current, JavaThread* Owner);
-  int       TrySpin(JavaThread* current);
+
+
+  enum class TryLockResult { Interference = -1, HasOwner = 0, Success = 1 };
+
+  bool           TryLockWithContentionMark(JavaThread* locking_thread, ObjectMonitorContentionMark& contention_mark);
+  TryLockResult  TryLock(JavaThread* current);
+
+  bool      TrySpin(JavaThread* current);
+  bool      short_fixed_spin(JavaThread* current, int spin_count, bool adapt);
   void      ExitEpilog(JavaThread* current, ObjectWaiter* Wakee);
 
   // Deflation support
-  bool      deflate_monitor();
+  bool      deflate_monitor(Thread* current);
+ private:
   void      install_displaced_markword_in_object(const oop obj);
+};
+
+// RAII object to ensure that ObjectMonitor::is_being_async_deflated() is
+// stable within the context of this mark.
+class ObjectMonitorContentionMark : StackObj {
+  DEBUG_ONLY(friend class ObjectMonitor;)
+
+  ObjectMonitor* _monitor;
+  bool _extended;
+
+  NONCOPYABLE(ObjectMonitorContentionMark);
+
+ public:
+  explicit ObjectMonitorContentionMark(ObjectMonitor* monitor);
+  ~ObjectMonitorContentionMark();
+
+  // Extends the contention scope beyond this objects lifetime.
+  // Requires manual decrement of the contentions counter.
+  void extend();
 };
 
 #endif // SHARE_RUNTIME_OBJECTMONITOR_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,9 +35,11 @@
  * suspends debuggee at moment when additional threads try to obtain
  * lock on synchronized object (previously locked in main thread)
  * and then tries to kill them. If these threads are killed then
- * a value of the special "notKilled" variable should not be modified.
- * Value of "notKilled" variable is checked by "eval <expr>" command.
- * The test passes if the value is equal to 0 and fails otherwise..
+ * the value of the special "killed" variable should be set
+ * to the number of additional threads created. The value of
+ * the "killed" variable is checked by "eval <expr>" command.
+ * The test passes if the value is equal to the number of
+ * additional threads created and fails otherwise.
  * COMMENTS
  *  Modified due to fix of the test bug:
  *  4940902 TEST_BUG: race in nsk/jdb/kill/kill001
@@ -47,7 +49,7 @@
  * @library /vmTestbase
  *          /test/lib
  * @build nsk.jdb.kill.kill001.kill001a
- * @run main/othervm
+ * @run driver
  *      nsk.jdb.kill.kill001.kill001
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
@@ -72,13 +74,9 @@ import java.util.*;
 public class kill001 extends JdbTest {
 
     public static void main (String argv[]) {
-        System.exit(run(argv, System.out) + JCK_STATUS_BASE);
-    }
-
-    public static int run(String argv[], PrintStream out) {
         debuggeeClass =  DEBUGGEE_CLASS;
         firstBreak = FIRST_BREAK;
-        return new kill001().runTest(argv, out);
+        new kill001().runTest(argv);
     }
 
     static final String PACKAGE_NAME    = "nsk.jdb.kill.kill001";
@@ -88,22 +86,24 @@ public class kill001 extends JdbTest {
     static final String LAST_BREAK      = DEBUGGEE_CLASS + ".breakHere";
     static final String MYTHREAD        = "MyThread";
     static final String DEBUGGEE_THREAD = PACKAGE_NAME + "." + MYTHREAD;
-    static final String DEBUGGEE_RESULT = DEBUGGEE_CLASS + ".notKilled";
+    static final String DEBUGGEE_RESULT = DEBUGGEE_CLASS + ".killed";
     static final String DEBUGGEE_EXCEPTIONS = DEBUGGEE_CLASS + ".exceptions";
 
     static int numThreads = nsk.jdb.kill.kill001.kill001a.numThreads;
 
     protected void runCases() {
         String[] reply;
-        Paragrep grep;
-        int count;
-        Vector v;
-        String found;
         String[] threads;
-        boolean vthreadMode = "Virtual".equals(System.getProperty("main.wrapper"));
 
         jdb.setBreakpointInMethod(LAST_BREAK);
         reply = jdb.receiveReplyFor(JdbCommand.cont);
+
+        // Issue a jdb "catch all" command for each exception type that will be thrown.
+        // This will force jdb to stop when the exception is thrown.
+        for (int i = 0; i < kill001a.exceptions.length; i++) {
+            String className = kill001a.exceptions[i].getClass().getName();
+            reply = jdb.receiveReplyFor(JdbCommand._catch + "all " + className);
+        }
 
         // At this point we are at the breakpoint triggered by the breakHere() call done
         // after creating all the threads. Get the list of debuggee threads.
@@ -118,23 +118,18 @@ public class kill001 extends JdbTest {
         // Kill each debuggee thread. This will cause each thread to stop in the debugger,
         // indicating that an exception was thrown.
         for (int i = 0; i < threads.length; i++) {
-            // kill (ThreadReference.stop) is not supproted for vthreads, so we expect an error.
-            String msg = (vthreadMode ? "Operation is not supported" : "killed");
             reply = jdb.receiveReplyForWithMessageWait(JdbCommand.kill + threads[i] + " " +
                                                        DEBUGGEE_EXCEPTIONS + "[" + i + "]",
-                                                       msg);
+                                                       "killed");
         }
 
         // Continue the main thread, which is still at the breakpoint. This will resume
         // all the debuggee threads, allowing the kill to take place.
         reply = jdb.receiveReplyFor(JdbCommand.cont);
 
-        // Continue each of the threads that received the "kill" exception. Not needed
-        // for the vthread case since they are not actually killed.
-        if (!vthreadMode) {
-            for (int i = 0; i < numThreads; i++) {
-                reply = jdb.receiveReplyFor(JdbCommand.cont);
-            }
+        // Continue each of the threads that received the "kill" exception.
+        for (int i = 0; i < numThreads; i++) {
+            reply = jdb.receiveReplyFor(JdbCommand.cont);
         }
 
         // make sure the debugger is at a breakpoint
@@ -146,16 +141,11 @@ public class kill001 extends JdbTest {
 
         reply = jdb.receiveReplyForWithMessageWait(JdbCommand.eval + DEBUGGEE_RESULT,
                                                    DEBUGGEE_RESULT + " =");
-        grep = new Paragrep(reply);
-        found = grep.findFirst(DEBUGGEE_RESULT + " =" );
-        if (found.length() > 0) {
-            if (vthreadMode) {
-                if (found.indexOf(DEBUGGEE_RESULT + " = " + numThreads) < 0) {
-                    log.complain("Some " + MYTHREAD + "s were killed. " + found + " remaining");
-                    success = false;
-                }
-            } else if (found.indexOf(DEBUGGEE_RESULT + " = 0") < 0) {
-                log.complain("Not all " + MYTHREAD + "s were killed. " + found + " remaining");
+        Paragrep grep = new Paragrep(reply);
+        String killed = grep.findFirst(DEBUGGEE_RESULT + " =" );
+        if (killed.length() > 0) {
+            if (killed.indexOf(DEBUGGEE_RESULT + " = " + numThreads) < 0) {
+                log.complain("Only " + killed + " out of " + numThreads + " " + MYTHREAD + "s were killed.");
                 success = false;
             }
         } else {

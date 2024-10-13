@@ -123,9 +123,19 @@ public final class ReturnJNIWeak {
         }
     }
 
+    // Verify passing a null value returns null and doesn't throw.
+    private static void testNullValue() {
+        System.out.println("running testNullValue");
+        registerObject(null);
+        if (getObject() != null) {
+            throw new RuntimeException("expected null");
+        }
+    }
+
     public static void main(String[] args) throws Exception {
         testSanity();
         testSurvival();
         testClear();
+        testNullValue();
     }
 }

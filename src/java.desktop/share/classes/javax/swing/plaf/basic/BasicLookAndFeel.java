@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -219,7 +219,7 @@ public abstract class BasicLookAndFeel extends LookAndFeel implements Serializab
         if (disposer != null) {
             // Note that we're likely calling removePropertyChangeListener()
             // during the course of AppContext.firePropertyChange().
-            // However, EventListenerAggreggate has code to safely modify
+            // However, EventListenerAggregate has code to safely modify
             // the list under such circumstances.
             context.removePropertyChangeListener(AppContext.GUI_DISPOSED,
                                                  disposer);
@@ -727,6 +727,8 @@ public abstract class BasicLookAndFeel extends LookAndFeel implements Serializab
             "Button.highlight", controlLtHighlight,
             "Button.border", buttonBorder,
             "Button.margin", new InsetsUIResource(2, 14, 2, 14),
+            // The above margin has vastly larger horizontal values when
+            // compared to other look and feels that don't rely on these values
             "Button.textIconGap", 4,
             "Button.textShiftOffset", zero,
             "Button.focusInputMap", new UIDefaults.LazyInputMap(new Object[] {
@@ -1461,7 +1463,7 @@ public abstract class BasicLookAndFeel extends LookAndFeel implements Serializab
                               "KP_DOWN", "selectNextRow",
                            "shift DOWN", "selectNextRowExtendSelection",
                         "shift KP_DOWN", "selectNextRowExtendSelection",
-                      "ctrl shift DOWN", "selectNextRowExtendSelection",
+                      "ctrl shift DOWN", "selectLastRowExtendSelection",
                    "ctrl shift KP_DOWN", "selectNextRowExtendSelection",
                             "ctrl DOWN", "selectNextRowChangeLead",
                          "ctrl KP_DOWN", "selectNextRowChangeLead",
@@ -1469,7 +1471,7 @@ public abstract class BasicLookAndFeel extends LookAndFeel implements Serializab
                                 "KP_UP", "selectPreviousRow",
                              "shift UP", "selectPreviousRowExtendSelection",
                           "shift KP_UP", "selectPreviousRowExtendSelection",
-                        "ctrl shift UP", "selectPreviousRowExtendSelection",
+                        "ctrl shift UP", "selectFirstRowExtendSelection",
                      "ctrl shift KP_UP", "selectPreviousRowExtendSelection",
                               "ctrl UP", "selectPreviousRowChangeLead",
                            "ctrl KP_UP", "selectPreviousRowChangeLead",
@@ -2228,7 +2230,7 @@ public abstract class BasicLookAndFeel extends LookAndFeel implements Serializab
                         src = (JComponent)
                             ((BasicSplitPaneDivider)c).getParent();
                     }
-                    if(src != null) {
+                    if(src != null && src.isEnabled()) {
                         JPopupMenu componentPopupMenu = src.getComponentPopupMenu();
                         if(componentPopupMenu != null) {
                             Point pt = src.getPopupLocation(me);

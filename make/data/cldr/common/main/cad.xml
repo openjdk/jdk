@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2024 Unicode, Inc.
+For terms of use, see http://www.unicode.org/copyright.html
+SPDX-License-Identifier: Unicode-3.0
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+-->
+<ldml>
+	<identity>
+		<version number="$Revision$"/>
+		<language type="cad"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="cad" draft="unconfirmed">Caddo</language>
+		</languages>
+		<territories>
+			<territory type="US" draft="unconfirmed">United States</territory>
+		</territories>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters>[aáà {aː}{áː}{àː} b {ch} {chʼ} d eéè {eː}{éː}{èː} h iíì {iː}{íː}{ìː} k {kʼ} m n oóò {oː}{óː}{òː} p s t {tsʼ} {tʼ} uúù {uː}{úː}{ùː} w y ˀ ʼ]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[c f g j l q r v x z]</exemplarCharacters>
+		<exemplarCharacters type="index">[A B {CH} D E H I K M N O P S {SH} T {TS} U W Y]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … '‘’ &quot;“” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
+	</characters>
+	<dates>
+		<calendars>
+			<calendar type="generic">
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern draft="unconfirmed">EEEE, MMMM d, y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern draft="unconfirmed">MMMM d, y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern draft="unconfirmed">MMM d, y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern draft="unconfirmed">M/d/y GGGGG</pattern>
+							<datetimeSkeleton draft="unconfirmed">GGGGGyMd</datetimeSkeleton>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+			</calendar>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="wide">
+							<month type="1">Cháykáhday Haˀimay</month>
+							<month type="2">Tsahkápbiˀ</month>
+							<month type="3">Wánit</month>
+							<month type="4">Háshnihtiˀtiˀ</month>
+							<month type="5">Háshnih Haˀimay</month>
+							<month type="6">Háshnihtsiˀ</month>
+							<month type="7">Násˀahˀatsus</month>
+							<month type="8">Dahósikah nish</month>
+							<month type="9">Híisikah nish</month>
+							<month type="10">Nípbaatiˀtiˀ</month>
+							<month type="11">Nípbaa Haˀimay</month>
+							<month type="12">Cháykáhdaytiˀtiˀ</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<days>
+					<dayContext type="format">
+						<dayWidth type="wide">
+							<day type="sun">Inikuˀ</day>
+							<day type="mon">Wísts’i hayashuh</day>
+							<day type="tue">Bít hayashuh</day>
+							<day type="wed">Dahó hayashuh</day>
+							<day type="thu">Hiwí hayashuh</day>
+							<day type="fri">Dissik’an hayashuh</day>
+							<day type="sat">Inikuˀtiˀtiˀ</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern draft="unconfirmed">EEEE, MMMM d, y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern draft="unconfirmed">MMMM d, y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern draft="unconfirmed">MMM d, y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern draft="unconfirmed">M/d/yy</pattern>
+							<datetimeSkeleton draft="unconfirmed">yyMd</datetimeSkeleton>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<timeFormats>
+					<timeFormatLength type="full">
+						<timeFormat>
+							<pattern draft="unconfirmed">h:mm:ss a zzzz</pattern>
+							<datetimeSkeleton draft="unconfirmed">ahmmsszzzz</datetimeSkeleton>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="long">
+						<timeFormat>
+							<pattern draft="unconfirmed">h:mm:ss a z</pattern>
+							<datetimeSkeleton draft="unconfirmed">ahmmssz</datetimeSkeleton>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="medium">
+						<timeFormat>
+							<pattern draft="unconfirmed">h:mm:ss a</pattern>
+							<datetimeSkeleton draft="unconfirmed">ahmmss</datetimeSkeleton>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="short">
+						<timeFormat>
+							<pattern draft="unconfirmed">h:mm a</pattern>
+							<datetimeSkeleton draft="unconfirmed">ahmm</datetimeSkeleton>
+						</timeFormat>
+					</timeFormatLength>
+				</timeFormats>
+			</calendar>
+		</calendars>
+	</dates>
+	<numbers>
+		<currencies>
+			<currency type="USD">
+				<symbol>$</symbol>
+			</currency>
+		</currencies>
+	</numbers>
+	<units>
+		<unitLength type="long">
+			<unit type="duration-month">
+				<displayName draft="provisional">Nish</displayName>
+				<unitPattern count="other">Nish {0}</unitPattern>
+			</unit>
+			<unit type="duration-week">
+				<displayName draft="provisional">Wísts’iˀ inikuˀ</displayName>
+				<unitPattern count="other">Wísts’iˀ inikuˀ {0}</unitPattern>
+			</unit>
+			<unit type="duration-day">
+				<displayName draft="provisional">Kaˀisch’áyˀah</displayName>
+				<unitPattern count="other">{0} Kaˀisch’áyˀah</unitPattern>
+			</unit>
+		</unitLength>
+	</units>
+</ldml>

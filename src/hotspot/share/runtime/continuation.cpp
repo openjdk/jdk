@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,10 +105,10 @@ bool Continuation::is_return_barrier_entry(const address pc) {
 }
 
 bool Continuation::is_continuation_enterSpecial(const frame& f) {
-  if (f.cb() == nullptr || !f.cb()->is_compiled()) {
+  if (f.cb() == nullptr || !f.cb()->is_nmethod()) {
     return false;
   }
-  Method* m = f.cb()->as_compiled_method()->method();
+  Method* m = f.cb()->as_nmethod()->method();
   return (m != nullptr && m->is_continuation_enter_intrinsic());
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -503,7 +503,7 @@ final class Short256Vector extends ShortVector {
                                    VectorMask<Short> m) {
         return (Short256Vector)
             super.selectFromTemplate((Short256Vector) v,
-                                     (Short256Mask) m);  // specialize
+                                     Short256Mask.class, (Short256Mask) m);  // specialize
     }
 
 
@@ -679,14 +679,6 @@ final class Short256Vector extends ShortVector {
 
         @Override
         @ForceInline
-        public Short256Mask eq(VectorMask<Short> mask) {
-            Objects.requireNonNull(mask);
-            Short256Mask m = (Short256Mask)mask;
-            return xor(m.not());
-        }
-
-        @Override
-        @ForceInline
         /*package-private*/
         Short256Mask indexPartiallyInUpperRange(long offset, long limit) {
             return (Short256Mask) VectorSupport.indexPartiallyInUpperRange(
@@ -733,9 +725,9 @@ final class Short256Vector extends ShortVector {
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a | b));
         }
 
+        @Override
         @ForceInline
-        /* package-private */
-        Short256Mask xor(VectorMask<Short> mask) {
+        public Short256Mask xor(VectorMask<Short> mask) {
             Objects.requireNonNull(mask);
             Short256Mask m = (Short256Mask)mask;
             return VectorSupport.binaryOp(VECTOR_OP_XOR, Short256Mask.class, null, short.class, VLENGTH,
@@ -774,6 +766,16 @@ final class Short256Vector extends ShortVector {
             }
             return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TOLONG, Short256Mask.class, short.class, VLENGTH, this,
                                                       (m) -> toLongHelper(m.getBits()));
+        }
+
+        // laneIsSet
+
+        @Override
+        @ForceInline
+        public boolean laneIsSet(int i) {
+            Objects.checkIndex(i, length());
+            return VectorSupport.extract(Short256Mask.class, short.class, VLENGTH,
+                                         this, i, (m, idx) -> (m.getBits()[idx] ? 1L : 0L)) == 1L;
         }
 
         // Reductions
@@ -858,6 +860,13 @@ final class Short256Vector extends ShortVector {
             return s.shuffleFromArray(shuffleArray, 0).check(s);
         }
 
+        @Override
+        @ForceInline
+        public Short256Shuffle wrapIndexes() {
+            return VectorSupport.wrapShuffleIndexes(ETYPE, Short256Shuffle.class, this, VLENGTH,
+                                                    (s) -> ((Short256Shuffle)(((AbstractShuffle<Short>)(s)).wrapIndexesTemplate())));
+        }
+
         @ForceInline
         @Override
         public Short256Shuffle rearrange(VectorShuffle<Short> shuffle) {
@@ -891,6 +900,12 @@ final class Short256Vector extends ShortVector {
         return super.fromArray0Template(Short256Mask.class, a, offset, (Short256Mask) m, offsetInRange);  // specialize
     }
 
+    @ForceInline
+    @Override
+    final
+    ShortVector fromArray0(short[] a, int offset, int[] indexMap, int mapOffset, VectorMask<Short> m) {
+        return super.fromArray0Template(Short256Mask.class, a, offset, indexMap, mapOffset, (Short256Mask) m);
+    }
 
     @ForceInline
     @Override

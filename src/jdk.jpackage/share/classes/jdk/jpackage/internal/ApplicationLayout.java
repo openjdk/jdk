@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,8 @@
  * questions.
  */
 package jdk.jpackage.internal;
+
+import jdk.internal.util.OperatingSystem;
 
 import java.nio.file.Path;
 import java.util.Map;
@@ -179,19 +181,19 @@ public final class ApplicationLayout implements PathGroup.Facade<ApplicationLayo
     }
 
     public static ApplicationLayout platformAppImage() {
-        if (Platform.isWindows()) {
+        if (OperatingSystem.isWindows()) {
             return windowsAppImage();
         }
 
-        if (Platform.isLinux()) {
+        if (OperatingSystem.isLinux()) {
             return linuxAppImage();
         }
 
-        if (Platform.isMac()) {
+        if (OperatingSystem.isMacOS()) {
             return macAppImage();
         }
 
-        throw Platform.throwUnknownPlatformError();
+        throw new IllegalArgumentException("Unknown platform: " + OperatingSystem.current());
     }
 
     public static ApplicationLayout javaRuntime() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <jvmti.h>
-#include "agent_common.h"
+#include "agent_common.hpp"
 
-#include "nsk_tools.h"
-#include "JVMTITools.h"
-#include "jvmti_tools.h"
+#include "nsk_tools.hpp"
+#include "JVMTITools.hpp"
+#include "jvmti_tools.hpp"
 
 extern "C" {
 
@@ -38,7 +38,7 @@ extern "C" {
 
 #define MEM_SIZE 1024
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jvmtiEventCallbacks callbacks;
 static jvmtiCapabilities caps;
 
@@ -194,7 +194,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
     /* create JVMTI environment */
     if (!NSK_VERIFY((jvmti =
-            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL))
+            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != nullptr))
         return JNI_ERR;
 
     /* add capability to generate compiled method events */
@@ -218,9 +218,9 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         return JNI_ERR;
 
     NSK_DISPLAY0("setting event callbacks done\nenabling JVMTI events ...\n");
-    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_DEATH, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_DEATH, nullptr)))
         return JNI_ERR;
-    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_GARBAGE_COLLECTION_FINISH, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_GARBAGE_COLLECTION_FINISH, nullptr)))
         return JNI_ERR;
     NSK_DISPLAY0("enabling the events done\n\n");
 

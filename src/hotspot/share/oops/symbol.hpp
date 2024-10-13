@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,7 +122,7 @@ class Symbol : public MetaspaceObj {
   };
 
   static int byte_size(int length) {
-    // minimum number of natural words needed to hold these bits (no non-heap version)
+    // minimum number of bytes needed to hold these bits (no non-heap version)
     return (int)(sizeof(Symbol) + (length > 2 ? length - 2 : 0));
   }
   static int size(int length) {
@@ -130,6 +130,7 @@ class Symbol : public MetaspaceObj {
     return (int)heap_word_size(byte_size(length));
   }
 
+  // Constructor is private for use only by SymbolTable.
   Symbol(const u1* name, int length, int refcount);
 
   static short extract_hash(uint32_t value)   { return (short)(value >> 16); }
@@ -146,8 +147,6 @@ class Symbol : public MetaspaceObj {
 
   int size()      const     { return size(utf8_length()); }
   int byte_size() const     { return byte_size(utf8_length()); };
-  // length without the _body
-  size_t effective_length() const { return (size_t)byte_size() - sizeof(Symbol); }
 
   // Symbols should be stored in the read-only region of CDS archive.
   static bool is_read_only_by_default() { return true; }
@@ -211,7 +210,7 @@ class Symbol : public MetaspaceObj {
   bool starts_with(const char* prefix) const {
     return starts_with(prefix, (int) strlen(prefix));
   }
-  bool starts_with(int prefix_char) const {
+  bool starts_with(char prefix_char) const {
     return contains_byte_at(0, prefix_char);
   }
   // Tests if the symbol ends with the given suffix.
@@ -221,7 +220,7 @@ class Symbol : public MetaspaceObj {
   bool ends_with(const char* suffix) const {
     return ends_with(suffix, (int) strlen(suffix));
   }
-  bool ends_with(int suffix_char) const {
+  bool ends_with(char suffix_char) const {
     return contains_byte_at(utf8_length() - 1, suffix_char);
   }
 

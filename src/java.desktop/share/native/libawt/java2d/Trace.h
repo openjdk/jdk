@@ -52,8 +52,6 @@ extern "C" {
 
 JNIEXPORT void JNICALL
 J2dTraceImpl(int level, jboolean cr, const char *string, ...);
-JNIEXPORT void JNICALL
-J2dTraceInit();
 
 #ifndef DEBUG
 #define J2dTrace(level, string)

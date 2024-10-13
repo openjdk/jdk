@@ -56,6 +56,7 @@ import com.sun.tools.javac.code.Symtab;
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Types;
 import com.sun.tools.javac.tree.JCTree.JCClassDecl;
+import com.sun.tools.javac.tree.JCTree.JCMethodDecl;
 import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
@@ -70,7 +71,8 @@ import jdk.jshell.TypePrinter.AnonymousTypeKind;
  */
 class ExpressionToTypeInfo {
 
-    private static final String OBJECT_TYPE_NAME = "Object";
+     //only used in erroneous/non-standard circumstances; OK to use a FQN:
+    private static final String OBJECT_TYPE_NAME = "java.lang.Object";
 
     final AnalyzeTask at;
     final CompilationUnitTree cu;
@@ -393,8 +395,8 @@ class ExpressionToTypeInfo {
                             break;
                         case NULL:
                             ei.isNonVoid = true;
-                            ei.typeName = OBJECT_TYPE_NAME;
-                            ei.accessibleTypeName = OBJECT_TYPE_NAME;
+                            ei.typeName = varTypeName(syms.objectType, false, AnonymousTypeKind.SUPER);
+                            ei.accessibleTypeName = ei.typeName;
                             break;
                         default: {
                             ei.isNonVoid = true;
@@ -428,7 +430,9 @@ class ExpressionToTypeInfo {
                         MethodInvocationTree superCall =
                                 clazz.getMembers()
                                      .stream()
-                                     .map(TreeInfo::firstConstructorCall)
+                                     .filter(JCMethodDecl.class::isInstance)
+                                     .map(JCMethodDecl.class::cast)
+                                     .map(TreeInfo::findConstructorCall)
                                      .findAny()
                                      .get();
                         TreePath superCallPath

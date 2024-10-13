@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 200
- * git 3, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +24,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <jvmti.h>
-#include "jvmti_common.h"
+#include "jvmti_common.hpp"
 
 extern "C" {
 
@@ -50,7 +49,7 @@ static const char *CLASS_SIG =
     "Lsinglestep01;";
 
 static volatile jint result = PASSED;
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 
 static volatile jboolean isVirtualExpected = JNI_FALSE;
 
@@ -62,7 +61,7 @@ static void setBP(jvmtiEnv *jvmti, JNIEnv *jni, jclass klass) {
   jvmtiError err;
 
   mid = jni->GetMethodID(klass, METHODS[0], METHOD_SIGS[0]);
-  if (mid == NULL) {
+  if (mid == nullptr) {
     jni->FatalError("failed to get ID for the java method\n");
   }
 
@@ -86,7 +85,7 @@ ClassLoad(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread, jclass klass) {
     if (err != JVMTI_ERROR_NONE) {
       jni->FatalError("failed to obtain a class signature\n");
     }
-    if (sig != NULL && (strcmp(sig, CLASS_SIG) == 0)) {
+    if (sig != nullptr && (strcmp(sig, CLASS_SIG) == 0)) {
       LOG("ClassLoad event received for the class \"%s\"\n"
           "\tsetting breakpoint ...\n", sig);
       setBP(jvmti, jni, klass);
@@ -117,7 +116,7 @@ Breakpoint(jvmtiEnv *jvmti, JNIEnv *jni, jthread thr, jmethodID method, jlocatio
     jni->FatalError("Breakpoint: failed to obtain a class signature\n");
   }
 
-  if (sig != NULL && (strcmp(sig, CLASS_SIG) == 0)) {
+  if (sig != nullptr && (strcmp(sig, CLASS_SIG) == 0)) {
     LOG("method declaring class \"%s\"\n\tenabling SingleStep events ...\n", sig);
     err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_SINGLE_STEP, thr);
     if (err != JVMTI_ERROR_NONE) {
@@ -145,7 +144,7 @@ SingleStep(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread, jmethodID method, jloca
 
   print_thread_info(jvmti, jni, thread);
 
-  err = jvmti->GetMethodName(method, &methNam, &methSig, NULL);
+  err = jvmti->GetMethodName(method, &methNam, &methSig, nullptr);
   if (err != JVMTI_ERROR_NONE) {
     result = STATUS_FAILED;
     COMPLAIN("TEST FAILED: unable to get method name during SingleStep callback\n\n");
@@ -166,7 +165,7 @@ SingleStep(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread, jmethodID method, jloca
     return;
   }
 
-  if (sig != NULL) {
+  if (sig != nullptr) {
     LOG("\tmethod name: \"%s\"\n"
         "\tsignature: \"%s\"\n"
         "\tmethod declaring class: \"%s\"\n",
@@ -244,7 +243,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   jint res;
 
   res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-  if (res != JNI_OK || jvmti == NULL) {
+  if (res != JNI_OK || jvmti == nullptr) {
     LOG("Wrong result of a valid call to GetEnv!\n");
     return JNI_ERR;
   }
@@ -284,19 +283,19 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   }
 
   LOG("setting event callbacks done\nenabling JVMTI events ...\n");
-  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_START, NULL);
+  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_START, nullptr);
   if (err != JVMTI_ERROR_NONE) {
     return JNI_ERR;
   }
-  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_DEATH, NULL);
+  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_DEATH, nullptr);
   if (err != JVMTI_ERROR_NONE) {
     return JNI_ERR;
   }
-  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_LOAD, NULL);
+  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_LOAD, nullptr);
   if (err != JVMTI_ERROR_NONE) {
     return JNI_ERR;
   }
-  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_BREAKPOINT, NULL);
+  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_BREAKPOINT, nullptr);
   if (err != JVMTI_ERROR_NONE) {
     return JNI_ERR;
   }

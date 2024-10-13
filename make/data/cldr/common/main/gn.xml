@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2024 Unicode, Inc.
+For terms of use, see http://www.unicode.org/copyright.html
+SPDX-License-Identifier: Unicode-3.0
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+-->
+<ldml>
+	<identity>
+		<version number="$Revision$"/>
+		<language type="gn"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="gn" draft="contributed">avañe’ẽ</language>
+		</languages>
+		<territories>
+			<territory type="001" draft="unconfirmed">yvóra</territory>
+			<territory type="002" draft="unconfirmed">África</territory>
+			<territory type="003" draft="unconfirmed">América del Norte</territory>
+			<territory type="005" draft="unconfirmed">América del Sur</territory>
+			<territory type="009" draft="unconfirmed">Oceanía</territory>
+			<territory type="013" draft="unconfirmed">América Central</territory>
+			<territory type="019" draft="unconfirmed">América</territory>
+			<territory type="021" draft="unconfirmed">Norteamérica</territory>
+			<territory type="029" draft="unconfirmed">Caribe</territory>
+			<territory type="142" draft="unconfirmed">Ásia</territory>
+			<territory type="150" draft="unconfirmed">Európa</territory>
+			<territory type="419" draft="unconfirmed">América Latina</territory>
+			<territory type="AR" draft="unconfirmed">Argentína</territory>
+			<territory type="BO" draft="unconfirmed">Bolívia</territory>
+			<territory type="BR" draft="unconfirmed">Brasil</territory>
+			<territory type="CL" draft="unconfirmed">Chíle</territory>
+			<territory type="CO" draft="unconfirmed">Colómbia</territory>
+			<territory type="EC" draft="unconfirmed">Ecuador</territory>
+			<territory type="EU" draft="unconfirmed">Union Européa</territory>
+			<territory type="EZ" draft="unconfirmed">Eurozóna</territory>
+			<territory type="GF" draft="unconfirmed">Guyána Francésa</territory>
+			<territory type="GL" draft="unconfirmed">Groenlandia</territory>
+			<territory type="GY" draft="unconfirmed">Guyana</territory>
+			<territory type="MX" draft="unconfirmed">México</territory>
+			<territory type="PE" draft="unconfirmed">Peru</territory>
+			<territory type="PY" draft="unconfirmed">Paraguai</territory>
+			<territory type="SR" draft="unconfirmed">Surinam</territory>
+			<territory type="UN" draft="unconfirmed">Naciónes Unídas</territory>
+			<territory type="US" draft="unconfirmed">Estados Unidos</territory>
+			<territory type="US" alt="short" draft="unconfirmed">EE. UU.</territory>
+			<territory type="UY" draft="unconfirmed">Uruguay</territory>
+			<territory type="VE" draft="unconfirmed">Venezuéla</territory>
+		</territories>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters>[aã {ch} eẽ g{g̃} h iĩ j k l m {mb} nñ {nd} {ng} {nt} oõ p r {rr} s t uũ v yỹ ʼ]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[b c d f q w x z]</exemplarCharacters>
+		<exemplarCharacters type="index">[AÃ {CH} EẼ G{G̃} H IĨ J K L M {MB} NÑ {ND} {NG} {NT} OÕ P R {RR} S T UŨ V YỸ ʼ]</exemplarCharacters>
+	</characters>
+	<dates>
+		<calendars>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="wide">
+							<month type="1">Jasyteĩ</month>
+							<month type="2">Jasykõi</month>
+							<month type="3">Jasyapy</month>
+							<month type="4">Jasyrundy</month>
+							<month type="5">Jasypo</month>
+							<month type="6">Jasypoteĩ</month>
+							<month type="7">Jasypokõi</month>
+							<month type="8">Jasypoapy</month>
+							<month type="9">Jasyporundy</month>
+							<month type="10">Jasypa</month>
+							<month type="11">Jasypateĩ</month>
+							<month type="12">Jasypakõi</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<days>
+					<dayContext type="format">
+						<dayWidth type="wide">
+							<day type="sun">Arateĩ</day>
+							<day type="mon">Arakõi</day>
+							<day type="tue">Araapy</day>
+							<day type="wed">Ararundy</day>
+							<day type="thu">Arapo</day>
+							<day type="fri">Arapoteĩ</day>
+							<day type="sat">Arapokõi</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+			</calendar>
+		</calendars>
+		<fields>
+			<field type="year">
+				<displayName draft="unconfirmed">ary</displayName>
+			</field>
+			<field type="month">
+				<displayName draft="unconfirmed">jasy</displayName>
+			</field>
+			<field type="day">
+				<displayName draft="unconfirmed">ára</displayName>
+			</field>
+			<field type="day-short">
+				<relative type="-1" draft="unconfirmed">kuehe</relative>
+				<relative type="0" draft="unconfirmed">ko ára</relative>
+				<relative type="1" draft="unconfirmed">koʼẽrõ</relative>
+			</field>
+			<field type="hour">
+				<displayName draft="unconfirmed">arapokõindy</displayName>
+			</field>
+			<field type="minute">
+				<displayName draft="unconfirmed">aravo’i</displayName>
+			</field>
+			<field type="second">
+				<displayName draft="unconfirmed">aravo’ive</displayName>
+			</field>
+		</fields>
+		<timeZoneNames>
+			<metazone type="Bolivia">
+				<long>
+					<standard draft="unconfirmed">Bolivia óra</standard>
+				</long>
+			</metazone>
+			<metazone type="Ecuador">
+				<long>
+					<standard draft="unconfirmed">Ecuador óra</standard>
+				</long>
+			</metazone>
+			<metazone type="Galapagos">
+				<long>
+					<standard draft="unconfirmed">Galápagos óra</standard>
+				</long>
+			</metazone>
+			<metazone type="Venezuela">
+				<long>
+					<standard draft="unconfirmed">Venezuela óra</standard>
+				</long>
+			</metazone>
+		</timeZoneNames>
+	</dates>
+	<numbers>
+		<symbols numberSystem="latn">
+			<decimal draft="unconfirmed">,</decimal>
+			<group draft="unconfirmed">.</group>
+		</symbols>
+		<currencies>
+			<currency type="PYG">
+				<symbol>₲</symbol>
+			</currency>
+		</currencies>
+	</numbers>
+</ldml>

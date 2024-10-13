@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2024 Unicode, Inc.
+For terms of use, see http://www.unicode.org/copyright.html
+SPDX-License-Identifier: Unicode-3.0
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+-->
+<ldml>
+	<identity>
+		<version number="$Revision$"/>
+		<language type="mn"/>
+		<script type="Mong"/>
+	</identity>
+	<localeDisplayNames>
+		<measurementSystemNames>
+			<measurementSystemName type="metric">СИ систем</measurementSystemName>
+			<measurementSystemName type="UK">Их Британи</measurementSystemName>
+			<measurementSystemName type="US">АНУ</measurementSystemName>
+		</measurementSystemNames>
+	</localeDisplayNames>
+	<layout>
+		<orientation>
+			<characterOrder>top-to-bottom</characterOrder>
+			<lineOrder>left-to-right</lineOrder>
+		</orientation>
+	</layout>
+	<characters>
+		<exemplarCharacters>[᠐ ᠑ ᠒ ᠓ ᠔ ᠕ ᠖ ᠗ ᠘ ᠙ ᠠ ᠡ ᠢ ᠣ ᠤ ᠥ ᠦ ᠧ ᠨ ᠩ ᠪ ᠫ ᠬ ᠭ ᠮ ᠯ ᠰ ᠱ ᠲ ᠳ ᠴ ᠵ ᠶ ᠷ ᠸ ᠹ ᠺ ᠻ ᠼ ᠽ ᠾ ᠿ ᡀ ᡁ ᡂ]</exemplarCharacters>
+		<exemplarCharacters type="index" draft="unconfirmed">[ᠠ ᠡ ᠢ ᠣ ᠤ ᠥ ᠦ ᠧ ᠨ ᠩ ᠪ ᠫ ᠬ ᠭ ᠮ ᠯ ᠰ ᠱ ᠲ ᠳ ᠴ ᠵ ᠶ ᠷ ᠸ ᠹ ᠺ ᠻ ᠼ ᠽ ᠾ ᠿ ᡀ ᡁ ᡂ]</exemplarCharacters>
+	</characters>
+	<numbers>
+		<otherNumberingSystems>
+			<native>mong</native>
+		</otherNumberingSystems>
+		<currencies>
+			<currency type="BRL">
+				<displayName>бразил реал</displayName>
+			</currency>
+			<currency type="CNY">
+				<displayName>юань</displayName>
+			</currency>
+			<currency type="EUR">
+				<displayName>евро</displayName>
+			</currency>
+			<currency type="GBP">
+				<displayName>фунт стерлинг</displayName>
+			</currency>
+			<currency type="INR">
+				<displayName>рупи</displayName>
+			</currency>
+			<currency type="JPY">
+				<displayName>иен</displayName>
+			</currency>
+			<currency type="MNT">
+				<displayName>төгрөг</displayName>
+			</currency>
+			<currency type="RUB">
+				<displayName>рубль</displayName>
+			</currency>
+			<currency type="USD">
+				<displayName>ам. доллар</displayName>
+				<symbol draft="contributed">$</symbol>
+			</currency>
+		</currencies>
+	</numbers>
+	<posix>
+		<messages>
+			<yesstr>тийм:т</yesstr>
+			<nostr>үгүй:ү</nostr>
+		</messages>
+	</posix>
+</ldml>

@@ -93,7 +93,8 @@ public class UITesting {
                         .promptCapture(true)
                         .persistence(new HashMap<>())
                         .locale(Locale.US)
-                        .run("--no-startup");
+                        .run("--no-startup",
+                             "--execution", Presets.TEST_DEFAULT_EXECUTION);
             } catch (Exception ex) {
                 throw new IllegalStateException(ex);
             }

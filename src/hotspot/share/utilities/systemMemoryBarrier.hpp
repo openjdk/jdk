@@ -26,6 +26,8 @@
 #define SHARE_UTILITIES_SYSTEMMEMORYBARRIER_HPP
 
 #include "logging/log.hpp"
+#include "runtime/globals.hpp"
+#include "runtime/globals_extension.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 #if defined(LINUX)
@@ -38,7 +40,7 @@ typedef WindowsSystemMemoryBarrier SystemMemoryBarrierDefault;
 class NoSystemMemoryBarrier {
  public:
   static bool initialize() {
-    log_error(os)("SystemMemoryBarrier not supported on this platform");
+    log_info(os)("SystemMemoryBarrier not supported on this platform");
     return false;
   }
   static void emit() {
@@ -51,8 +53,17 @@ typedef NoSystemMemoryBarrier SystemMemoryBarrierDefault;
 template <typename SystemMemoryBarrierImpl>
 class SystemMemoryBarrierType : public AllStatic {
  public:
-  static bool initialize() { return SystemMemoryBarrierImpl::initialize(); }
-  static void emit()       { SystemMemoryBarrierImpl::emit(); }
+  static void initialize() {
+    if (UseSystemMemoryBarrier) {
+      if (!SystemMemoryBarrierImpl::initialize()) {
+        if (!FLAG_IS_DEFAULT(UseSystemMemoryBarrier)) {
+          warning("UseSystemMemoryBarrier specified, but not supported on this OS version. Use -Xlog:os=info for details.");
+        }
+        FLAG_SET_ERGO(UseSystemMemoryBarrier, false);
+      }
+    }
+  }
+  static void emit() { SystemMemoryBarrierImpl::emit(); }
 };
 
 typedef SystemMemoryBarrierType<SystemMemoryBarrierDefault> SystemMemoryBarrier;

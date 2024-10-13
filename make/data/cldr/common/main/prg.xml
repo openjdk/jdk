@@ -1,0 +1,761 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2024 Unicode, Inc.
+For terms of use, see http://www.unicode.org/copyright.html
+SPDX-License-Identifier: Unicode-3.0
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+-->
+<ldml>
+	<identity>
+		<version number="$Revision$"/>
+		<language type="prg"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="ar" draft="unconfirmed">arābiskan</language>
+			<language type="da" draft="unconfirmed">dāniskan</language>
+			<language type="de" draft="unconfirmed">miksiskan</language>
+			<language type="de_AT" draft="unconfirmed">Āustrarīkis miksiskan</language>
+			<language type="de_CH" draft="unconfirmed">Šwēicis aūktamiksiskan</language>
+			<language type="el" draft="unconfirmed">grēkiskan</language>
+			<language type="en" draft="contributed">ēngliskan</language>
+			<language type="en_AU" draft="unconfirmed">Austrālijas ēngliskan</language>
+			<language type="en_CA" draft="unconfirmed">Kanādas ēngliskan</language>
+			<language type="en_GB" draft="unconfirmed">brītiskan ēngliskan</language>
+			<language type="en_US" draft="unconfirmed">amērikaniskan ēngliskan</language>
+			<language type="en_US" alt="short" draft="unconfirmed">APW ēngliskan</language>
+			<language type="es" draft="unconfirmed">špāniskan</language>
+			<language type="es_419" draft="unconfirmed">Lātiniskas Amērikas špāniskan</language>
+			<language type="es_ES" draft="unconfirmed">eurōpiskan špāniskan</language>
+			<language type="es_MX" draft="unconfirmed">Meksikus špāniskan</language>
+			<language type="et" draft="unconfirmed">èstiskan</language>
+			<language type="fi" draft="unconfirmed">sōmiskan</language>
+			<language type="fr" draft="unconfirmed">prancōziskan</language>
+			<language type="fr_CA" draft="unconfirmed">Kanādas prancōziskan</language>
+			<language type="fr_CH" draft="unconfirmed">Šwēicis prancōziskan</language>
+			<language type="it" draft="unconfirmed">wālkiskan</language>
+			<language type="ja" draft="unconfirmed">japāniskan</language>
+			<language type="lt" draft="unconfirmed">laītawiskan</language>
+			<language type="lv" draft="unconfirmed">lattawiskan</language>
+			<language type="nl" draft="unconfirmed">ullandiskan</language>
+			<language type="pl" draft="unconfirmed">pōliskan</language>
+			<language type="prg">prūsiskan</language>
+			<language type="pt" draft="unconfirmed">pōrtugaliskan</language>
+			<language type="pt_BR" draft="unconfirmed">Brazīlijas pōrtugaliskan</language>
+			<language type="pt_PT" draft="unconfirmed">eurōpiskan pōrtugaliskan</language>
+			<language type="ru" draft="unconfirmed">maskōwitiskan</language>
+			<language type="sv" draft="unconfirmed">šwēdiskan</language>
+			<language type="tr" draft="unconfirmed">turkiskan</language>
+			<language type="und" draft="unconfirmed">niwaistā bilā</language>
+			<language type="zh" draft="unconfirmed">kīniskan</language>
+			<language type="zh_Hans" draft="unconfirmed">prastintan kīniskan</language>
+			<language type="zh_Hant" draft="unconfirmed">tradiciōnalin kīniskan</language>
+		</languages>
+		<scripts>
+			<script type="Arab" draft="unconfirmed">arābiskan</script>
+			<script type="Cyrl" draft="unconfirmed">cīriliskan</script>
+			<script type="Hans" draft="unconfirmed">prastintan</script>
+			<script type="Hans" alt="stand-alone" draft="unconfirmed">prastintan han</script>
+			<script type="Hant" draft="unconfirmed">tradiciōnalin</script>
+			<script type="Hant" alt="stand-alone" draft="unconfirmed">tradiciōnalin han</script>
+			<script type="Jpan" draft="unconfirmed">japāniskas</script>
+			<script type="Latn" draft="unconfirmed">lātiniskan</script>
+			<script type="Zxxx" draft="unconfirmed">nienpeisātan</script>
+			<script type="Zzzz" draft="contributed">niwaīstan skriptan</script>
+		</scripts>
+		<territories>
+			<territory type="001" draft="contributed">swītai</territory>
+			<territory type="002" draft="unconfirmed">Afrika</territory>
+			<territory type="003" draft="unconfirmed">Zēimanamērika</territory>
+			<territory type="005" draft="unconfirmed">Pussideinanamērika</territory>
+			<territory type="019" draft="unconfirmed">Amērika</territory>
+			<territory type="142" draft="unconfirmed">Āzija</territory>
+			<territory type="150" draft="unconfirmed">Eurōpa</territory>
+			<territory type="AD" draft="unconfirmed">Andōra</territory>
+			<territory type="AG" draft="unconfirmed">Antīgwa be Barbūda</territory>
+			<territory type="AL" draft="unconfirmed">Albānija</territory>
+			<territory type="AR" draft="unconfirmed">Argentīnija</territory>
+			<territory type="AT" draft="unconfirmed">Āustrarīki</territory>
+			<territory type="AU" draft="unconfirmed">Austrālija</territory>
+			<territory type="BA" draft="unconfirmed">Bōsnija be Ercegōwina</territory>
+			<territory type="BB" draft="unconfirmed">Barbādas</territory>
+			<territory type="BE" draft="unconfirmed">Belgija</territory>
+			<territory type="BG" draft="unconfirmed">Bulgārija</territory>
+			<territory type="BO" draft="unconfirmed">Bōliwija</territory>
+			<territory type="BR" draft="unconfirmed">Brazīlija</territory>
+			<territory type="BS" draft="unconfirmed">Bahāmai</territory>
+			<territory type="BY" draft="unconfirmed">Krēiwa</territory>
+			<territory type="BZ" draft="unconfirmed">Belīzi</territory>
+			<territory type="CA" draft="unconfirmed">Kānada</territory>
+			<territory type="CH" draft="unconfirmed">Šwēici</territory>
+			<territory type="CL" draft="unconfirmed">Čīli</territory>
+			<territory type="CN" draft="unconfirmed">Kīna</territory>
+			<territory type="CO" draft="unconfirmed">Kōlumbija</territory>
+			<territory type="CR" draft="unconfirmed">Costa Rica</territory>
+			<territory type="CU" draft="unconfirmed">Kūba</territory>
+			<territory type="CZ" draft="unconfirmed">Čekkija</territory>
+			<territory type="DE" draft="unconfirmed">Mikskātauta</territory>
+			<territory type="DK" draft="unconfirmed">Dānanmarki</territory>
+			<territory type="DM" draft="unconfirmed">Dōminika</territory>
+			<territory type="DO" draft="unconfirmed">Dōminikas Republīki</territory>
+			<territory type="EC" draft="unconfirmed">Ekwadōrs</territory>
+			<territory type="EE" draft="unconfirmed">Estantauta</territory>
+			<territory type="ES" draft="unconfirmed">Špānija</territory>
+			<territory type="FI" draft="unconfirmed">Sōmija</territory>
+			<territory type="FO" draft="unconfirmed">Farēirai</territory>
+			<territory type="FR" draft="unconfirmed">Prankrīki</territory>
+			<territory type="GB" draft="unconfirmed">Debabritānija</territory>
+			<territory type="GB" alt="short" draft="unconfirmed">DB</territory>
+			<territory type="GD" draft="unconfirmed">Grenāda</territory>
+			<territory type="GF" draft="unconfirmed">Prancōziska Gujāna</territory>
+			<territory type="GI" draft="unconfirmed">Gibrāltars</territory>
+			<territory type="GL" draft="unconfirmed">Grēnlandan</territory>
+			<territory type="GR" draft="unconfirmed">Grēkantauta</territory>
+			<territory type="GT" draft="unconfirmed">Gwatemāla</territory>
+			<territory type="GY" draft="unconfirmed">Gujāna</territory>
+			<territory type="HN" draft="unconfirmed">Hōnduras</territory>
+			<territory type="HR" draft="unconfirmed">Kruātija</territory>
+			<territory type="HT" draft="unconfirmed">Haīti</territory>
+			<territory type="HU" draft="unconfirmed">Ungrai</territory>
+			<territory type="ID" draft="unconfirmed">Indōnezija</territory>
+			<territory type="IN" draft="unconfirmed">Īndija</territory>
+			<territory type="IS" draft="unconfirmed">Īslandan</territory>
+			<territory type="IT" draft="unconfirmed">Wālkija</territory>
+			<territory type="JM" draft="unconfirmed">Jamāika</territory>
+			<territory type="JP" draft="unconfirmed">Japānija</territory>
+			<territory type="KR" draft="unconfirmed">Pussideinankōreja</territory>
+			<territory type="LI" draft="unconfirmed">Līchtenšteinan</territory>
+			<territory type="LT" draft="unconfirmed">Laītawa</territory>
+			<territory type="LU" draft="unconfirmed">Luksemburgan</territory>
+			<territory type="LV" draft="unconfirmed">Lattawa</territory>
+			<territory type="MC" draft="unconfirmed">Mōnakō</territory>
+			<territory type="MD" draft="unconfirmed">Mōldawija</territory>
+			<territory type="ME" draft="unconfirmed">Mōntenegran</territory>
+			<territory type="MT" draft="unconfirmed">Mālta</territory>
+			<territory type="MX" draft="unconfirmed">Meksiku</territory>
+			<territory type="NI" draft="unconfirmed">Nikarāgwa</territory>
+			<territory type="NO" draft="unconfirmed">Nōrwigai</territory>
+			<territory type="NZ" draft="unconfirmed">Nawazēlandan</territory>
+			<territory type="PA" draft="unconfirmed">Panāma</territory>
+			<territory type="PE" draft="unconfirmed">Perū</territory>
+			<territory type="PL" draft="contributed">Pōli</territory>
+			<territory type="PT" draft="unconfirmed">Pōrtugalin</territory>
+			<territory type="PW" draft="unconfirmed">Palau</territory>
+			<territory type="PY" draft="unconfirmed">Paragwājs</territory>
+			<territory type="RO" draft="unconfirmed">Rumānija</territory>
+			<territory type="RS" draft="unconfirmed">Serbija</territory>
+			<territory type="RU" draft="unconfirmed">Russi</territory>
+			<territory type="SA" draft="unconfirmed">Saūdi Arābija</territory>
+			<territory type="SE" draft="unconfirmed">Šwēdija</territory>
+			<territory type="SI" draft="unconfirmed">Slōwenija</territory>
+			<territory type="SK" draft="unconfirmed">Slōwakei</territory>
+			<territory type="SM" draft="unconfirmed">San Marinō</territory>
+			<territory type="SR" draft="unconfirmed">Surināms</territory>
+			<territory type="SV" draft="unconfirmed">El Salvadōrs</territory>
+			<territory type="TH" draft="unconfirmed">Tāilandan</territory>
+			<territory type="TR" draft="unconfirmed">Turkāja</territory>
+			<territory type="TT" draft="unconfirmed">Trinidāds be Tobagō</territory>
+			<territory type="TW" draft="unconfirmed">Taiwāns</territory>
+			<territory type="UA" draft="unconfirmed">Ukrāini</territory>
+			<territory type="US" draft="unconfirmed">Peraīnintas Wālstis</territory>
+			<territory type="US" alt="short" draft="unconfirmed">PW</territory>
+			<territory type="UY" draft="unconfirmed">Urugwājs</territory>
+			<territory type="VE" draft="unconfirmed">Venezuēla</territory>
+			<territory type="XK" draft="unconfirmed">Kōsawa</territory>
+			<territory type="ZA" draft="unconfirmed">Pussideinanafrika</territory>
+			<territory type="ZZ" draft="unconfirmed">niwaistā regiōni</territory>
+		</territories>
+		<types>
+			<type key="calendar" type="gregorian" draft="unconfirmed">Gregōriskas kalāndars</type>
+			<type key="collation" type="standard" draft="unconfirmed">sēisnas rikā</type>
+			<type key="numbers" type="latn" draft="unconfirmed">lātiniskas cipperis</type>
+		</types>
+		<measurementSystemNames>
+			<measurementSystemName type="metric" draft="contributed">mētriskan</measurementSystemName>
+			<measurementSystemName type="UK" draft="contributed">brītiskan</measurementSystemName>
+			<measurementSystemName type="US" draft="contributed">amērikaniskan</measurementSystemName>
+		</measurementSystemNames>
+		<codePatterns>
+			<codePattern type="language" draft="contributed">Bilā: {0}</codePattern>
+			<codePattern type="script" draft="contributed">Skriptan: {0}</codePattern>
+			<codePattern type="territory" draft="contributed">Regiōni: {0}</codePattern>
+		</codePatterns>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters>[aā b c dḑ eē f gģ h iī j kķ l m nņ oō p q rŗ sš tț uū v w x y zž]</exemplarCharacters>
+		<exemplarCharacters type="index">[AĀ B C DḐ EĒ F GĢ H IĪ J KĶ L M NŅ OŌ P Q RŖ SŠ TȚ UŪ V W X Y ZŽ]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[  \- ‑ , % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … “„ ( ) \[ \] \{ \}]</exemplarCharacters>
+	</characters>
+	<delimiters>
+		<quotationStart draft="contributed">„</quotationStart>
+		<quotationEnd draft="contributed">“</quotationEnd>
+		<alternateQuotationStart draft="contributed">„</alternateQuotationStart>
+		<alternateQuotationEnd draft="contributed">“</alternateQuotationEnd>
+	</delimiters>
+	<dates>
+		<calendars>
+			<calendar type="generic">
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern draft="unconfirmed">EEEE, y 'mettas' d. MMMM G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern draft="unconfirmed">y 'mettas' d. MMMM G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern draft="unconfirmed">dd.MM 'st'. y G</pattern>
+							<datetimeSkeleton draft="unconfirmed">GyMMdd</datetimeSkeleton>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern draft="unconfirmed">dd.MM.y GGGGG</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<dateTimeFormats>
+					<dateTimeFormatLength type="full">
+						<dateTimeFormat>
+							<pattern draft="unconfirmed">{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="long">
+						<dateTimeFormat>
+							<pattern draft="unconfirmed">{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="medium">
+						<dateTimeFormat>
+							<pattern draft="unconfirmed">{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="short">
+						<dateTimeFormat>
+							<pattern draft="unconfirmed">{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="unconfirmed">rag</month>
+							<month type="2" draft="unconfirmed">was</month>
+							<month type="3" draft="unconfirmed">pūl</month>
+							<month type="4" draft="unconfirmed">sak</month>
+							<month type="5" draft="unconfirmed">zal</month>
+							<month type="6" draft="unconfirmed">sīm</month>
+							<month type="7" draft="unconfirmed">līp</month>
+							<month type="8" draft="unconfirmed">dag</month>
+							<month type="9" draft="unconfirmed">sil</month>
+							<month type="10" draft="unconfirmed">spa</month>
+							<month type="11" draft="unconfirmed">lap</month>
+							<month type="12" draft="unconfirmed">sal</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="contributed">rags</month>
+							<month type="2" draft="contributed">wassarins</month>
+							<month type="3" draft="contributed">pūlis</month>
+							<month type="4" draft="contributed">sakkis</month>
+							<month type="5" draft="contributed">zallaws</month>
+							<month type="6" draft="contributed">sīmenis</month>
+							<month type="7" draft="contributed">līpa</month>
+							<month type="8" draft="contributed">daggis</month>
+							<month type="9" draft="contributed">sillins</month>
+							<month type="10" draft="contributed">spallins</month>
+							<month type="11" draft="contributed">lapkrūtis</month>
+							<month type="12" draft="contributed">sallaws</month>
+						</monthWidth>
+					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="narrow">
+							<month type="1" draft="unconfirmed">R</month>
+							<month type="2" draft="unconfirmed">W</month>
+							<month type="3" draft="unconfirmed">P</month>
+							<month type="4" draft="unconfirmed">S</month>
+							<month type="5" draft="unconfirmed">Z</month>
+							<month type="6" draft="unconfirmed">S</month>
+							<month type="7" draft="unconfirmed">L</month>
+							<month type="8" draft="unconfirmed">D</month>
+							<month type="9" draft="unconfirmed">S</month>
+							<month type="10" draft="unconfirmed">S</month>
+							<month type="11" draft="unconfirmed">L</month>
+							<month type="12" draft="unconfirmed">S</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<days>
+					<dayContext type="format">
+						<dayWidth type="abbreviated">
+							<day type="sun" draft="unconfirmed">nad</day>
+							<day type="mon" draft="unconfirmed">pan</day>
+							<day type="tue" draft="unconfirmed">wis</day>
+							<day type="wed" draft="unconfirmed">pus</day>
+							<day type="thu" draft="unconfirmed">ket</day>
+							<day type="fri" draft="unconfirmed">pēn</day>
+							<day type="sat" draft="unconfirmed">sab</day>
+						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun" draft="contributed">nadīli</day>
+							<day type="mon" draft="contributed">panadīli</day>
+							<day type="tue" draft="contributed">wisasīdis</day>
+							<day type="wed" draft="contributed">pussisawaiti</day>
+							<day type="thu" draft="contributed">ketwirtiks</day>
+							<day type="fri" draft="contributed">pēntniks</day>
+							<day type="sat" draft="contributed">sabattika</day>
+						</dayWidth>
+					</dayContext>
+					<dayContext type="stand-alone">
+						<dayWidth type="narrow">
+							<day type="sun" draft="unconfirmed">N</day>
+							<day type="mon" draft="unconfirmed">P</day>
+							<day type="tue" draft="unconfirmed">W</day>
+							<day type="wed" draft="unconfirmed">P</day>
+							<day type="thu" draft="unconfirmed">K</day>
+							<day type="fri" draft="unconfirmed">P</day>
+							<day type="sat" draft="unconfirmed">S</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+				<quarters>
+					<quarterContext type="format">
+						<quarterWidth type="abbreviated">
+							<quarter type="1" draft="unconfirmed">1. k.</quarter>
+							<quarter type="2" draft="unconfirmed">2. k.</quarter>
+							<quarter type="3" draft="unconfirmed">3. k.</quarter>
+							<quarter type="4" draft="unconfirmed">4. k.</quarter>
+						</quarterWidth>
+						<quarterWidth type="wide">
+							<quarter type="1" draft="unconfirmed">1. ketwirts</quarter>
+							<quarter type="2" draft="unconfirmed">2. ketwirts</quarter>
+							<quarter type="3" draft="unconfirmed">3. ketwirts</quarter>
+							<quarter type="4" draft="unconfirmed">4. ketwirts</quarter>
+						</quarterWidth>
+					</quarterContext>
+					<quarterContext type="stand-alone">
+						<quarterWidth type="abbreviated">
+							<quarter type="1" draft="unconfirmed">1. ketw.</quarter>
+							<quarter type="2" draft="unconfirmed">2. ketw.</quarter>
+							<quarter type="3" draft="unconfirmed">3. ketw.</quarter>
+							<quarter type="4" draft="unconfirmed">4. ketw.</quarter>
+						</quarterWidth>
+					</quarterContext>
+				</quarters>
+				<dayPeriods>
+					<dayPeriodContext type="format">
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am" draft="contributed">ankstāinan</dayPeriod>
+							<dayPeriod type="pm" draft="contributed">pa pussideinan</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+				</dayPeriods>
+				<eras>
+					<eraAbbr>
+						<era type="0" draft="unconfirmed">BC</era>
+						<era type="1" draft="unconfirmed">AD</era>
+					</eraAbbr>
+				</eras>
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern draft="unconfirmed">EEEE, y 'mettas' d. MMMM</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern draft="unconfirmed">y 'mettas' d. MMMM</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern draft="unconfirmed">dd.MM 'st'. y</pattern>
+							<datetimeSkeleton draft="unconfirmed">yMMdd</datetimeSkeleton>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern draft="unconfirmed">dd.MM.yy</pattern>
+							<datetimeSkeleton draft="unconfirmed">yyMMdd</datetimeSkeleton>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<timeFormats>
+					<timeFormatLength type="full">
+						<timeFormat>
+							<pattern draft="unconfirmed">HH:mm:ss zzzz</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="long">
+						<timeFormat>
+							<pattern draft="unconfirmed">HH:mm:ss z</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="medium">
+						<timeFormat>
+							<pattern draft="unconfirmed">HH:mm:ss</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="short">
+						<timeFormat>
+							<pattern draft="unconfirmed">HH:mm</pattern>
+						</timeFormat>
+					</timeFormatLength>
+				</timeFormats>
+				<dateTimeFormats>
+					<dateTimeFormatLength type="full">
+						<dateTimeFormat>
+							<pattern draft="unconfirmed">{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="long">
+						<dateTimeFormat>
+							<pattern draft="unconfirmed">{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="medium">
+						<dateTimeFormat>
+							<pattern draft="unconfirmed">{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="short">
+						<dateTimeFormat>
+							<pattern draft="unconfirmed">{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<availableFormats>
+						<dateFormatItem id="d" draft="unconfirmed">d.</dateFormatItem>
+						<dateFormatItem id="Ed" draft="unconfirmed">E, d.</dateFormatItem>
+						<dateFormatItem id="Ehm" draft="unconfirmed">E, h:mm a</dateFormatItem>
+						<dateFormatItem id="EHm" draft="unconfirmed">E, HH:mm</dateFormatItem>
+						<dateFormatItem id="Ehms" draft="unconfirmed">E, h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="EHms" draft="unconfirmed">E, HH:mm:ss</dateFormatItem>
+						<dateFormatItem id="Gy" draft="unconfirmed">y 'm'. G</dateFormatItem>
+						<dateFormatItem id="GyMMM" draft="unconfirmed">y 'm'. MMM G</dateFormatItem>
+						<dateFormatItem id="GyMMMd" draft="unconfirmed">dd.MM 'st'. y G</dateFormatItem>
+						<dateFormatItem id="GyMMMEd" draft="unconfirmed">E, dd.MM 'st'. y G</dateFormatItem>
+						<dateFormatItem id="h" draft="unconfirmed">h a</dateFormatItem>
+						<dateFormatItem id="hm" draft="contributed">h:mm a</dateFormatItem>
+						<dateFormatItem id="hms" draft="contributed">h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="hmsv" draft="contributed">h:mm:ss a; v</dateFormatItem>
+						<dateFormatItem id="Hmsv" draft="contributed">HH:mm:ss; v</dateFormatItem>
+						<dateFormatItem id="hmv" draft="unconfirmed">h:mm a; v</dateFormatItem>
+						<dateFormatItem id="Hmv" draft="unconfirmed">HH:mm; v</dateFormatItem>
+						<dateFormatItem id="M" draft="unconfirmed">L.</dateFormatItem>
+						<dateFormatItem id="Md" draft="unconfirmed">d.M</dateFormatItem>
+						<dateFormatItem id="MEd" draft="unconfirmed">E, d.M</dateFormatItem>
+						<dateFormatItem id="MMMd" draft="unconfirmed">d. MMM</dateFormatItem>
+						<dateFormatItem id="MMMEd" draft="unconfirmed">E, d. MMM</dateFormatItem>
+						<dateFormatItem id="y" draft="unconfirmed">y 'm'.</dateFormatItem>
+						<dateFormatItem id="yM" draft="unconfirmed">M.y</dateFormatItem>
+						<dateFormatItem id="yMd" draft="contributed">d.M.y</dateFormatItem>
+						<dateFormatItem id="yMEd" draft="unconfirmed">E, d.M.y</dateFormatItem>
+						<dateFormatItem id="yMMM" draft="unconfirmed">y 'm'. MMM</dateFormatItem>
+						<dateFormatItem id="yMMMd" draft="contributed">dd.MM 'st'. y</dateFormatItem>
+						<dateFormatItem id="yMMMEd" draft="unconfirmed">E, dd.MM 'st'. y</dateFormatItem>
+						<dateFormatItem id="yQQQ" draft="unconfirmed">y 'm'. QQQ</dateFormatItem>
+						<dateFormatItem id="yQQQQ" draft="unconfirmed">y 'm'. QQQQ</dateFormatItem>
+					</availableFormats>
+					<intervalFormats>
+						<intervalFormatItem id="d">
+							<greatestDifference id="d" draft="unconfirmed">d.–d.</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="h">
+							<greatestDifference id="a" draft="unconfirmed">h a – h a</greatestDifference>
+							<greatestDifference id="h" draft="unconfirmed">h–h a</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hm">
+							<greatestDifference id="a" draft="unconfirmed">h:mm a – h:mm a</greatestDifference>
+							<greatestDifference id="h" draft="unconfirmed">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="m" draft="unconfirmed">h:mm–h:mm a</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hmv">
+							<greatestDifference id="a" draft="unconfirmed">h:mm a – h:mm a v</greatestDifference>
+							<greatestDifference id="h" draft="unconfirmed">h:mm–h:mm a v</greatestDifference>
+							<greatestDifference id="m" draft="unconfirmed">h:mm–h:mm a v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hv">
+							<greatestDifference id="a" draft="unconfirmed">h a – h a v</greatestDifference>
+							<greatestDifference id="h" draft="unconfirmed">h–h a v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="M">
+							<greatestDifference id="M" draft="unconfirmed">M.–M.</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Md">
+							<greatestDifference id="d" draft="unconfirmed">dd.MM–dd.MM</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">dd.MM–dd.MM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MEd">
+							<greatestDifference id="d" draft="unconfirmed">E, dd.MM – E, dd.MM</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E, dd.MM – E, dd.MM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMM">
+							<greatestDifference id="M" draft="unconfirmed">MMM–MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMd">
+							<greatestDifference id="d" draft="unconfirmed">d.–d. MMM</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">d. MMM – d. MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMEd">
+							<greatestDifference id="d" draft="unconfirmed">E, d. – E, d. MMM</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E, d. MMM – E, d. MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yM">
+							<greatestDifference id="M" draft="unconfirmed">MM.y–MM.y</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">MM.y–MM.y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMd">
+							<greatestDifference id="d" draft="unconfirmed">dd.MM.y–dd.MM.y</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">dd.MM.y–dd.MM.y</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">dd.MM.y–dd.MM.y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMEd">
+							<greatestDifference id="d" draft="unconfirmed">E, dd.MM.y – E, dd.MM.y</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E, dd.MM.y – E, dd.MM.y</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">E, dd.MM.y – E, dd.MM.y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMM">
+							<greatestDifference id="M" draft="unconfirmed">y 'm'. MMM–MMM</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">y 'm'. MMM – y 'm'. MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMd">
+							<greatestDifference id="d" draft="unconfirmed">dd.–dd.MM 'st'. y</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">dd.MM–dd.MM 'st'. y</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">dd.MM 'st'. y – dd.MM 'st'. y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMEd">
+							<greatestDifference id="d" draft="unconfirmed">E, dd. – E, dd.MM 'st'. y</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E, dd.MM – E, dd.MM 'st'. y</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">E, dd.MM 'st'. y – E, dd.MM 'st'. y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMM">
+							<greatestDifference id="M" draft="unconfirmed">y 'mettas' MMMM–MMMM</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">y 'mettas' MMMM – y 'mettas' MMMM</greatestDifference>
+						</intervalFormatItem>
+					</intervalFormats>
+				</dateTimeFormats>
+			</calendar>
+		</calendars>
+		<fields>
+			<field type="era">
+				<displayName draft="unconfirmed">ēra</displayName>
+			</field>
+			<field type="year">
+				<displayName draft="unconfirmed">mettan</displayName>
+				<relative type="-1" draft="unconfirmed">panzdauman mettan</relative>
+				<relative type="0" draft="unconfirmed">this year</relative>
+				<relative type="1" draft="unconfirmed">next year</relative>
+			</field>
+			<field type="year-short">
+				<displayName draft="unconfirmed">m.</displayName>
+			</field>
+			<field type="quarter">
+				<displayName draft="unconfirmed">ketwirts</displayName>
+			</field>
+			<field type="quarter-short">
+				<displayName draft="unconfirmed">ketw.</displayName>
+			</field>
+			<field type="month">
+				<displayName draft="unconfirmed">mīnss</displayName>
+			</field>
+			<field type="month-short">
+				<displayName draft="unconfirmed">mī.</displayName>
+			</field>
+			<field type="week">
+				<displayName draft="unconfirmed">sawaīti</displayName>
+			</field>
+			<field type="week-short">
+				<displayName draft="unconfirmed">saw.</displayName>
+			</field>
+			<field type="day">
+				<displayName draft="unconfirmed">deinā</displayName>
+				<relative type="-1" draft="unconfirmed">bītan</relative>
+				<relative type="0" draft="unconfirmed">šandēinan</relative>
+				<relative type="1" draft="unconfirmed">ankstāinan</relative>
+			</field>
+			<field type="day-short">
+				<displayName draft="unconfirmed">d.</displayName>
+			</field>
+			<field type="weekday">
+				<displayName draft="unconfirmed">sawaītis deinā</displayName>
+			</field>
+			<field type="dayperiod">
+				<displayName draft="unconfirmed">ankstāinan / pa pussideinan</displayName>
+			</field>
+			<field type="hour">
+				<displayName draft="unconfirmed">stūndi</displayName>
+			</field>
+			<field type="hour-short">
+				<displayName draft="unconfirmed">st.</displayName>
+			</field>
+			<field type="minute">
+				<displayName draft="unconfirmed">minūti</displayName>
+			</field>
+			<field type="minute-short">
+				<displayName draft="unconfirmed">min.</displayName>
+			</field>
+			<field type="second">
+				<displayName draft="unconfirmed">sekūndi</displayName>
+			</field>
+			<field type="second-short">
+				<displayName draft="unconfirmed">sek.</displayName>
+			</field>
+			<field type="zone">
+				<displayName draft="unconfirmed">kerdaszōni</displayName>
+			</field>
+		</fields>
+		<timeZoneNames>
+			<regionFormat draft="contributed">Kerdā: {0}</regionFormat>
+			<regionFormat type="daylight" draft="contributed">Daggas kerdā: {0}</regionFormat>
+			<regionFormat type="standard" draft="contributed">Zēimas kerdā: {0}</regionFormat>
+			<metazone type="America_Central">
+				<long>
+					<generic draft="unconfirmed">Centrālas Amērikas kerdā</generic>
+					<standard draft="unconfirmed">Centrālas Amērikas zēimas kerdā</standard>
+					<daylight draft="unconfirmed">Centrālas Amērikas daggas kerdā</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Eastern">
+				<long>
+					<generic draft="unconfirmed">Dēiniskas Amērikas kerdā</generic>
+					<standard draft="unconfirmed">Dēiniskas Amērikas zēimas kerdā</standard>
+					<daylight draft="unconfirmed">Dēiniskas Amērikas daggas kerdā</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Mountain">
+				<long>
+					<generic draft="unconfirmed">Amērikas gārban kerdā</generic>
+					<standard draft="unconfirmed">Amērikas gārban zēimas kerdā</standard>
+					<daylight draft="unconfirmed">Amērikas gārban daggas kerdā</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Pacific">
+				<long>
+					<generic draft="unconfirmed">Pacīfiskas Amērikas kerdā</generic>
+					<standard draft="unconfirmed">Pacīfiskas Amērikas zēimas kerdā</standard>
+					<daylight draft="unconfirmed">Pacīfiskas Amērikas daggas kerdā</daylight>
+				</long>
+			</metazone>
+			<metazone type="Atlantic">
+				<long>
+					<generic draft="unconfirmed">Atlāntiska kerdā</generic>
+					<standard draft="unconfirmed">Atlāntiska zēimas kerdā</standard>
+					<daylight draft="unconfirmed">Atlāntiska daggas kerdā</daylight>
+				</long>
+			</metazone>
+			<metazone type="Europe_Central">
+				<long>
+					<generic draft="unconfirmed">Centrālas Eurōpas kerdā</generic>
+					<standard draft="unconfirmed">Centrālas Eurōpas zēimas kerdā</standard>
+					<daylight draft="unconfirmed">Centrālas Eurōpas daggas kerdā</daylight>
+				</long>
+			</metazone>
+			<metazone type="Europe_Eastern">
+				<long>
+					<generic draft="unconfirmed">Dēiniskas Eurōpas kerdā</generic>
+					<standard draft="unconfirmed">Dēiniskas Eurōpas zēimas kerdā</standard>
+					<daylight draft="unconfirmed">Dēiniskas Eurōpas daggas kerdā</daylight>
+				</long>
+			</metazone>
+			<metazone type="Europe_Western">
+				<long>
+					<generic draft="unconfirmed">Wakkariskas Eurōpas kerdā</generic>
+					<standard draft="unconfirmed">Wakkariskas Eurōpas zēimas kerdā</standard>
+					<daylight draft="unconfirmed">Wakkariskas Eurōpas daggas kerdā</daylight>
+				</long>
+			</metazone>
+			<metazone type="GMT">
+				<long>
+					<standard draft="contributed">Greenwich kerdā</standard>
+				</long>
+			</metazone>
+		</timeZoneNames>
+	</dates>
+	<numbers>
+		<symbols numberSystem="latn">
+			<decimal draft="contributed">,</decimal>
+			<group draft="contributed"> </group>
+		</symbols>
+		<currencyFormats numberSystem="latn">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="contributed">#,##0.00 ¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="zero" draft="unconfirmed">{0} {1}</unitPattern>
+			<unitPattern count="one" draft="unconfirmed">{0} {1}</unitPattern>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencies>
+			<currency type="BRL">
+				<displayName draft="unconfirmed">Brazīlijas reals</displayName>
+				<displayName count="zero" draft="unconfirmed">Brazīlijas realin</displayName>
+				<displayName count="one" draft="unconfirmed">Brazīlijas reals</displayName>
+				<displayName count="other" draft="unconfirmed">Brazīlijas realai</displayName>
+			</currency>
+			<currency type="CNY">
+				<displayName draft="unconfirmed">Kīnas juāns</displayName>
+				<displayName count="zero" draft="unconfirmed">Kīnas juānan</displayName>
+				<displayName count="one" draft="unconfirmed">Kīnas juāns</displayName>
+				<displayName count="other" draft="unconfirmed">Kīnas juānai</displayName>
+			</currency>
+			<currency type="EUR">
+				<displayName draft="unconfirmed">eurō</displayName>
+			</currency>
+			<currency type="GBP">
+				<displayName draft="unconfirmed">punds sterlings</displayName>
+				<displayName count="zero" draft="unconfirmed">pundan sterlingan</displayName>
+				<displayName count="one" draft="unconfirmed">punds sterlings</displayName>
+				<displayName count="other" draft="unconfirmed">pundai sterlingai</displayName>
+			</currency>
+			<currency type="INR">
+				<displayName draft="unconfirmed">Īndijas rūpija</displayName>
+				<displayName count="zero" draft="unconfirmed">Īndijas rūpijan</displayName>
+				<displayName count="one" draft="unconfirmed">Īndijas rūpija</displayName>
+				<displayName count="other" draft="unconfirmed">Īndijas rūpijas</displayName>
+			</currency>
+			<currency type="JPY">
+				<displayName draft="unconfirmed">Japānijas jāns</displayName>
+				<displayName count="zero" draft="unconfirmed">Japānijas jānan</displayName>
+				<displayName count="one" draft="unconfirmed">Japānijas jāns</displayName>
+				<displayName count="other" draft="unconfirmed">Japānijas jānai</displayName>
+			</currency>
+			<currency type="RUB">
+				<displayName draft="unconfirmed">Russis rūbels</displayName>
+				<displayName count="zero" draft="unconfirmed">Russis rūblin</displayName>
+				<displayName count="one" draft="unconfirmed">Russis rūbels</displayName>
+				<displayName count="other" draft="unconfirmed">Russis rūblai</displayName>
+			</currency>
+			<currency type="USD">
+				<displayName draft="unconfirmed">APW dālars</displayName>
+				<displayName count="zero" draft="unconfirmed">APW dālaran</displayName>
+				<displayName count="one" draft="unconfirmed">APW dālars</displayName>
+				<displayName count="other" draft="unconfirmed">APW dālarai</displayName>
+			</currency>
+			<currency type="XXX">
+				<displayName draft="unconfirmed">niwaistā walūta</displayName>
+				<displayName count="zero" draft="unconfirmed">(niwaistā walūta)</displayName>
+				<displayName count="one" draft="unconfirmed">(niwaistā walūtas aīnibi)</displayName>
+				<displayName count="other" draft="unconfirmed">(niwaistā walūta)</displayName>
+			</currency>
+		</currencies>
+	</numbers>
+	<listPatterns>
+		<listPattern>
+			<listPatternPart type="end" draft="unconfirmed">{0} be {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0} be {1}</listPatternPart>
+		</listPattern>
+	</listPatterns>
+	<posix>
+		<messages>
+			<yesstr draft="unconfirmed">jā:j</yesstr>
+			<nostr draft="unconfirmed">ni:n</nostr>
+		</messages>
+	</posix>
+</ldml>

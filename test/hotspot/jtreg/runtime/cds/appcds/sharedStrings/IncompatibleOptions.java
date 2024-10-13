@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@
  * via the -vmoptions command line option of JTREG. vm.gc==null will help the test case to discard the explicitly passed
  * vm options.
  * @requires (vm.gc=="null")
+ * @requires vm.flagless
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -48,6 +49,7 @@
  * @test
  * @requires vm.cds.write.archived.java.heap
  * @requires (vm.gc=="null")
+ * @requires vm.flagless
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -59,6 +61,7 @@
  * @test
  * @requires vm.cds.write.archived.java.heap
  * @requires (vm.gc=="null")
+ * @requires vm.flagless
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -105,9 +108,9 @@ public class IncompatibleOptions {
             testDump(1, "-XX:+UseZGC", "-XX:-UseCompressedOops", null, false);
         }
 
-        // incompatible GCs
-        testDump(2, "-XX:+UseParallelGC", "", GC_WARNING, false);
-        testDump(3, "-XX:+UseSerialGC", "", GC_WARNING, false);
+        // Dump heap objects with ParallelGC and SerialGC
+        testDump(2, "-XX:+UseParallelGC", "", "", false);
+        testDump(3, "-XX:+UseSerialGC", "", "", false);
 
         // Explicitly archive with compressed oops, run without.
         testDump(5, "-XX:+UseG1GC", "-XX:+UseCompressedOops", null, false);

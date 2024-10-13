@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,13 @@
 package com.sun.tools.javap;
 
 import java.io.PrintWriter;
-
-import com.sun.tools.classfile.AttributeException;
-import com.sun.tools.classfile.ConstantPoolException;
-import com.sun.tools.classfile.DescriptorException;
+import java.lang.classfile.AccessFlags;
+import java.lang.reflect.AccessFlag;
+import java.lang.reflect.Modifier;
+import java.util.EnumMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Supplier;
 
 /*
  *  A writer similar to a PrintWriter but which does not hide exceptions.
@@ -41,6 +44,26 @@ import com.sun.tools.classfile.DescriptorException;
  *  deletion without notice.</b>
  */
 public class BasicWriter {
+    private static final Map<AccessFlag.Location, Integer> LOCATION_MASKS;
+
+    static {
+        var map = new EnumMap<AccessFlag.Location, Integer>(AccessFlag.Location.class);
+        for (var loc : AccessFlag.Location.values()) {
+            map.put(loc, 0);
+        }
+
+        for (var flag : AccessFlag.values()) {
+            for (var loc : flag.locations()) {
+                map.compute(loc, (_, v) -> v | flag.mask());
+            }
+        }
+
+        // Peculiarities from AccessFlag.maskToAccessFlag
+        map.compute(AccessFlag.Location.METHOD, (_, v) -> v | Modifier.STRICT);
+
+        LOCATION_MASKS = map;
+    }
+
     protected BasicWriter(Context context) {
         lineWriter = LineWriter.instance(context);
         out = context.get(PrintWriter.class);
@@ -49,12 +72,34 @@ public class BasicWriter {
             throw new AssertionError();
     }
 
+    protected Set<AccessFlag> flagsReportUnknown(AccessFlags flags) {
+        return maskToAccessFlagsReportUnknown(flags.flagsMask(), flags.location());
+    }
+
+    protected Set<AccessFlag> maskToAccessFlagsReportUnknown(int mask, AccessFlag.Location location) {
+        try {
+            return AccessFlag.maskToAccessFlags(mask, location);
+        } catch (IllegalArgumentException ex) {
+            mask &= LOCATION_MASKS.get(location);
+            report("Access Flags: " + ex.getMessage());
+            return AccessFlag.maskToAccessFlags(mask, location);
+        }
+    }
+
     protected void print(String s) {
         lineWriter.print(s);
     }
 
     protected void print(Object o) {
         lineWriter.print(o == null ? null : o.toString());
+    }
+
+    protected void print(Supplier<Object> safeguardedCode) {
+        try {
+            print(safeguardedCode.get());
+        } catch (IllegalArgumentException e) {
+            print(report(e));
+        }
     }
 
     protected void println() {
@@ -71,6 +116,11 @@ public class BasicWriter {
         lineWriter.println();
     }
 
+    protected void println(Supplier<Object> safeguardedCode) {
+        print(safeguardedCode);
+        lineWriter.println();
+    }
+
     protected void indent(int delta) {
         lineWriter.indent(delta);
     }
@@ -83,23 +133,15 @@ public class BasicWriter {
         lineWriter.pendingNewline = b;
     }
 
-    protected String report(AttributeException e) {
+    protected String report(Exception e) {
         out.println("Error: " + e.getMessage()); // i18n?
-        return "???";
-    }
-
-    protected String report(ConstantPoolException e) {
-        out.println("Error: " + e.getMessage()); // i18n?
-        return "???";
-    }
-
-    protected String report(DescriptorException e) {
-        out.println("Error: " + e.getMessage()); // i18n?
+        errorReported = true;
         return "???";
     }
 
     protected String report(String msg) {
         out.println("Error: " + msg); // i18n?
+        errorReported = true;
         return "???";
     }
 
@@ -123,6 +165,7 @@ public class BasicWriter {
     private LineWriter lineWriter;
     private PrintWriter out;
     protected Messages messages;
+    protected boolean errorReported;
 
     private static class LineWriter {
         static LineWriter instance(Context context) {

@@ -176,7 +176,6 @@ public final class ThreadDump {
                     .findAny();
         }
 
-
         /**
          * Helper method to recursively find a container with the given name.
          */

@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+ Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+
+ This code is free software; you can redistribute it and/or modify it
+ under the terms of the GNU General Public License version 2 only, as
+ published by the Free Software Foundation.  Oracle designates this
+ particular file as subject to the "Classpath" exception as provided
+ by Oracle in the LICENSE file that accompanied this code.
+
+ This code is distributed in the hope that it will be useful, but WITHOUT
+ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ version 2 for more details (a copy is included in the LICENSE file that
+ accompanied this code).
+
+ You should have received a copy of the GNU General Public License version
+ 2 along with this work; if not, write to the Free Software Foundation,
+ Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+
+ Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ or visit www.oracle.com if you need additional information or have any
+ questions.
+-->
+
+<svg width="458" height="165"
+     version="1.1"
+     xmlns="http://www.w3.org/2000/svg"
+     xmlns:xlink="http://www.w3.org/1999/xlink">
+    <style><![CDATA[
+        rect, path {
+            fill: none;
+            stroke: black;
+            stroke-width: 1px;
+        }
+        marker path {
+            fill: black;
+        }
+        g#quick rect {
+            fill: #C0DCC0;
+        }
+        line {
+            stroke: red;
+            stroke-width: 1px;
+        }
+        text {
+            font-family: Arial, 'DejaVu Sans', sans-serif;
+            font-size: 13px;
+            text-anchor: middle;
+            dominant-baseline: middle;
+        }
+        text.left {
+            text-anchor: start;
+            dominant-baseline: auto;
+        }
+        text.bold {
+            font-weight: bold;
+        }
+        text.top {
+            dominant-baseline: hanging;
+        }
+    ]]></style>
+    <defs>
+        <marker
+                id="arrow"
+                viewBox="0 0 10 10"
+                refX="10"
+                refY="5"
+                markerWidth="7"
+                markerHeight="7"
+                orient="auto">
+            <path
+                d="M 0 0 L 10 5 L 0 10"
+            />
+        </marker>
+    </defs>
+
+    <text x="1" y="16" class="left bold">Before Remove</text>
+
+    <g id="the">
+        <rect x="3.5" y="25.5" width="20" height="20"/>
+        <text x="13" y="35">T</text>
+        <rect x="27.5" y="25.5" width="20" height="20"/>
+        <text x="37" y="35">h</text>
+        <rect x="51.5" y="25.5" width="20" height="20"/>
+        <text x="61" y="35">e</text>
+        <rect x="75.5" y="25.5" width="20" height="20"/>
+        <text x="85" y="35"> </text>
+    </g>
+
+    <g id="quick">
+        <rect x="99.5" y="25.5" width="20" height="20"/>
+        <text x="109" y="35">q</text>
+        <rect x="123.5" y="25.5" width="20" height="20"/>
+        <text x="133" y="35">u</text>
+        <rect x="147.5" y="25.5" width="20" height="20"/>
+        <text x="157" y="35">i</text>
+        <rect x="171.5" y="25.5" width="20" height="20"/>
+        <text x="181" y="35">c</text>
+        <rect x="195.5" y="25.5" width="20" height="20"/>
+        <text x="205" y="35">k</text>
+        <rect x="219.5" y="25.5" width="20" height="20"/>
+        <text x="229" y="35"> </text>
+    </g>
+
+    <g id="brownFox">
+        <rect x="243.5" y="25.5" width="20" height="20"/>
+        <text x="253" y="35">b</text>
+        <rect x="267.5" y="25.5" width="20" height="20"/>
+        <text x="277" y="35">r</text>
+        <rect x="291.5" y="25.5" width="20" height="20"/>
+        <text x="301" y="35">o</text>
+        <rect x="315.5" y="25.5" width="20" height="20"/>
+        <text x="325" y="35">w</text>
+        <rect x="339.5" y="25.5" width="20" height="20"/>
+        <text x="349" y="35">n</text>
+        <rect x="363.5" y="25.5" width="20" height="20"/>
+        <text x="373" y="35"> </text>
+        <rect x="387.5" y="25.5" width="20" height="20"/>
+        <text x="397" y="35">f</text>
+        <rect x="411.5" y="25.5" width="20" height="20"/>
+        <text x="421" y="35">o</text>
+        <rect x="435.5" y="25.5" width="20" height="20"/>
+        <text x="445" y="35">x</text>
+    </g>
+
+    <line x1="97.5" y1="22" x2="97.5" y2="55"/>
+    <text x="97" y="57" class="top">4</text>
+    <line x1="241.5" y1="22" x2="241.5" y2="55"/>
+    <text x="241" y="57" class="top">10</text>
+
+    <text x="1" y="110" class="left bold">After Remove</text>
+
+    <use
+            x="0"
+            y="94"
+            xlink:href="#the"
+    />
+    <use
+            x="-144"
+            y="94"
+            xlink:href="#brownFox"
+    />
+
+    <path d="M  97.5,71 L 97.5,114" marker-end="url(#arrow)"/>
+    <path d="M 241,71 L 99,114" marker-end="url(#arrow)"/>
+
+    <line x1="97.5" y1="116" x2="97.5" y2="149"/>
+    <text x="97" y="151" class="top">4</text>
+
+</svg>

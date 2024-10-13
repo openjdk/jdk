@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -80,6 +80,7 @@ TESTLIBRARY_SRC_FILES = $(TESTLIBRARY_SRC_DIR)/Asserts.java \
                         $(TESTLIBRARY_SRC_DIR)/process/OutputBuffer.java \
                         $(TESTLIBRARY_SRC_DIR)/process/ProcessTools.java \
                         $(TESTLIBRARY_SRC_DIR)/process/StreamPumper.java \
+                        $(TESTLIBRARY_SRC_DIR)/util/FileUtils.java \
                         $(TESTLIBRARY_SRC_DIR)/util/Pair.java
 
 .PHONY: cleantmp

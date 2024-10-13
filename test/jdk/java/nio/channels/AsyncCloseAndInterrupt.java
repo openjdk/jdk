@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,8 @@
 /* @test
  * @bug 4460583 4470470 4840199 6419424 6710579 6596323 6824135 6395224 7142919
  *      8151582 8068693 8153209
- * @run main/othervm AsyncCloseAndInterrupt
+ * @library /test/lib
+ * @run main/othervm --enable-native-access=ALL-UNNAMED AsyncCloseAndInterrupt
  * @key intermittent
  * @summary Comprehensive test of asynchronous closing and interruption
  * @author Mark Reinhold
@@ -43,6 +44,14 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import java.lang.foreign.Arena;
+import java.lang.foreign.FunctionDescriptor;
+import java.lang.foreign.Linker;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.SymbolLookup;
+import java.lang.foreign.ValueLayout;
+import java.lang.invoke.MethodHandle;
+
 public class AsyncCloseAndInterrupt {
 
     static PrintStream log = System.err;
@@ -51,6 +60,23 @@ public class AsyncCloseAndInterrupt {
         try {
             Thread.sleep(ms);
         } catch (InterruptedException x) { }
+    }
+
+    private static int mkfifo(String path) throws Throwable {
+        Linker linker = Linker.nativeLinker();
+        SymbolLookup stdlib = linker.defaultLookup();
+        MethodHandle mkfifo = linker.downcallHandle(
+            stdlib.find("mkfifo").orElseThrow(),
+            FunctionDescriptor.of(ValueLayout.JAVA_INT,
+                                  ValueLayout.ADDRESS, ValueLayout.JAVA_INT)
+        );
+
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment cString = arena.allocateFrom(path);
+            int mode = 0666;
+            int returnValue = (int)mkfifo.invokeExact(cString, mode);
+            return returnValue;
+        }
     }
 
     // Wildcard address localized to this machine -- Windoze doesn't allow
@@ -129,15 +155,22 @@ public class AsyncCloseAndInterrupt {
             return;
         }
         fifoFile = new File("x.fifo");
+        fifoFile.deleteOnExit();
         if (fifoFile.exists()) {
             if (!fifoFile.delete())
                 throw new IOException("Cannot delete existing fifo " + fifoFile);
         }
-        Process p = Runtime.getRuntime().exec("mkfifo " + fifoFile);
-        if (p.waitFor() != 0)
-            throw new IOException("Error creating fifo");
-        new RandomAccessFile(fifoFile, "rw").close();
 
+        try {
+            if (mkfifo(fifoFile.toString()) != 0) {
+                fifoFile = null;
+                log.println("WARNING: mkfifo failed - cannot completely test FileChannels");
+                return;
+            }
+        } catch (Throwable cause) {
+            throw new IOException(cause);
+        }
+        new RandomAccessFile(fifoFile, "rw").close();
     }
 
 
@@ -469,8 +502,9 @@ public class AsyncCloseAndInterrupt {
                     SocketChannel sc = (SocketChannel)ch;
                     if (!sc.socket().isOutputShutdown())
                         throw new RuntimeException("Output not shutdown");
-                } else if ((test == TEST_INTR) && (op == TRANSFER_FROM)) {
-                    // Let this case pass -- CBIE applies to other channel
+                } else if ((test == TEST_INTR || test == TEST_PREINTR)
+                        && (op == TRANSFER_FROM)) {
+                    // Let these cases pass -- CBIE applies to other channel
                 } else {
                     throw new RuntimeException("Channel still open");
                 }

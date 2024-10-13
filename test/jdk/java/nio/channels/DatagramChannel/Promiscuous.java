@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@ import java.util.stream.Collectors;
 
 import jdk.test.lib.NetworkConfiguration;
 import jdk.test.lib.net.IPSupport;
+import jdk.test.lib.Platform;
 
 public class Promiscuous {
 
@@ -70,9 +71,11 @@ public class Promiscuous {
             dc.setOption(StandardSocketOptions.IP_MULTICAST_IF, nif);
             byte[] msg = Integer.toString(id).getBytes("UTF-8");
             ByteBuffer buf = ByteBuffer.wrap(msg);
-            System.out.format("Send message -> group %s (id=0x%x)\n",
-                    group.getHostAddress(), id);
+            System.out.format("Send message -> group [%s]:%d (id=0x%x) nif:%s[%s]%n",
+                    group.getHostAddress(), port, id, nif.getDisplayName(), nif.getIndex());
+            System.out.format("bound address before send: %s%n", dc.getLocalAddress());
             dc.send(buf, new InetSocketAddress(group, port));
+            System.out.format("bound address after send: %s%n", dc.getLocalAddress());
         }
         return id;
     }
@@ -96,15 +99,26 @@ public class Promiscuous {
         ByteBuffer buf = ByteBuffer.allocateDirect(100);
 
         try {
+            long elapsed = 0;
             for (;;) {
                 System.out.println("Waiting to receive message");
+                long start = System.nanoTime();
                 sel.select(5*1000);
+                long waited = (System.nanoTime() - start) / 1000_000;
+                elapsed += waited;
+                buf.clear();
                 SocketAddress sa = dc.receive(buf);
 
                 // no datagram received
                 if (sa == null) {
                     if (datagramExpected) {
-                        throw new RuntimeException("Expected message not received");
+                        if (elapsed > 4800) {
+                            throw new RuntimeException("Expected message not received");
+                        } else {
+                            sel.selectedKeys().clear();
+                            // We haven't waited long enough,
+                            continue;
+                        }
                     }
                     System.out.println("No message received (correct)");
                     return;
@@ -120,8 +134,8 @@ public class Promiscuous {
                 int receivedId = -1;
                 try {
                     receivedId = Integer.parseInt(s);
-                    System.out.format("Received message from %s (id=0x%x)\n",
-                            sender, receivedId);
+                    System.out.format("Received message from %s (id=0x%x, length=%s)\n",
+                            sender, receivedId, bytes.length);
                 } catch (NumberFormatException x) {
                     System.out.format("Received message from %s (msg=%s)\n", sender, s);
                 }
@@ -139,7 +153,6 @@ public class Promiscuous {
                 }
 
                 sel.selectedKeys().clear();
-                buf.rewind();
             }
         } finally {
             sel.close();
@@ -154,13 +167,14 @@ public class Promiscuous {
     {
 
         System.out.format("%nTest family=%s%n", family.name());
+        System.out.format("With interface=%s[%s]%n\twith bound addresses:%n\t%s%n",
+                nif.getDisplayName(), nif.getIndex(), nif.inetAddresses().toList());
 
-        DatagramChannel dc1 = (family == UNSPEC) ?
-            DatagramChannel.open() : DatagramChannel.open(family);
-        DatagramChannel dc2 = (family == UNSPEC) ?
-            DatagramChannel.open() : DatagramChannel.open(family);
+        try (DatagramChannel dc1 = (family == UNSPEC) ?
+                DatagramChannel.open() : DatagramChannel.open(family);
+            DatagramChannel dc2 = (family == UNSPEC) ?
+                DatagramChannel.open() : DatagramChannel.open(family)) {
 
-        try {
             dc1.setOption(StandardSocketOptions.SO_REUSEADDR, true);
             dc2.setOption(StandardSocketOptions.SO_REUSEADDR, true);
 
@@ -183,32 +197,20 @@ public class Promiscuous {
 
             id = sendDatagram(nif, group2, port);
 
-            receiveDatagram(dc1, "dc1", false, id);
             receiveDatagram(dc2, "dc2", true, id);
-
-        } finally {
-            dc1.close();
-            dc2.close();
+            receiveDatagram(dc1, "dc1", false, id);
         }
+    }
+
+    /*
+     * returns true if platform allows an IPv6 socket join an IPv4 multicast group
+     */
+    private static boolean supportedByPlatform() {
+        return Platform.isOSX() || Platform.isWindows() || Platform.isLinux();
     }
 
     public static void main(String[] args) throws IOException {
         IPSupport.throwSkippedExceptionIfNonOperational();
-
-        String os = System.getProperty("os.name");
-
-        // Requires IP_MULTICAST_ALL on Linux (new since 2.6.31) so skip
-        // on older kernels. Note that we skip on <= version 3 to keep the
-        // parsing simple
-        if (os.equals("Linux")) {
-            String osversion = System.getProperty("os.version");
-            String[] vers = osversion.split("\\.", 0);
-            int major = Integer.parseInt(vers[0]);
-            if (major < 3) {
-                System.out.format("Kernel version is %s, test skipped%n", osversion);
-                return;
-            }
-        }
 
         // get local network configuration to use
         NetworkConfiguration config = NetworkConfiguration.probe();
@@ -222,8 +224,8 @@ public class Promiscuous {
             InetAddress source = config.ip4Addresses(nif).iterator().next();
             test(INET, nif, ip4Group1, ip4Group2);
 
-            // Solaris and Linux allow IPv6 sockets join IPv4 multicast groups
-            if (os.equals("Linux"))
+            // test IPv6 sockets joining IPv4 multicast groups
+            if (supportedByPlatform())
                 test(UNSPEC, nif, ip4Group1, ip4Group2);
         }
     }

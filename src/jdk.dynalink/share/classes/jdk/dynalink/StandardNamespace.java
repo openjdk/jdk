@@ -62,6 +62,7 @@ package jdk.dynalink;
 
 /**
  * An enumeration of standard namespaces defined by Dynalink.
+ * @since 9
  */
 public enum StandardNamespace implements Namespace {
     /**

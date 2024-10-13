@@ -123,7 +123,7 @@ inline oop ShenandoahBarrierSet::load_reference_barrier(DecoratorSet decorators,
   }
 
   oop fwd = load_reference_barrier(obj);
-  if (ShenandoahSelfFixing && load_addr != nullptr && fwd != obj) {
+  if (load_addr != nullptr && fwd != obj) {
     // Since we are here and we know the load address, update the reference.
     ShenandoahHeap::atomic_update_oop(fwd, load_addr, obj);
   }
@@ -164,12 +164,6 @@ inline void ShenandoahBarrierSet::satb_enqueue(oop value) {
   }
 }
 
-inline void ShenandoahBarrierSet::iu_barrier(oop obj) {
-  if (ShenandoahIUBarrier && obj != nullptr && _heap->is_concurrent_mark_in_progress()) {
-    enqueue(obj);
-  }
-}
-
 inline void ShenandoahBarrierSet::keep_alive_if_weak(DecoratorSet decorators, oop value) {
   assert((decorators & ON_UNKNOWN_OOP_REF) == 0, "Reference strength must be known");
   const bool on_strong_oop_ref = (decorators & ON_STRONG_OOP_REF) != 0;
@@ -189,7 +183,6 @@ inline oop ShenandoahBarrierSet::oop_load(DecoratorSet decorators, T* addr) {
 
 template <typename T>
 inline oop ShenandoahBarrierSet::oop_cmpxchg(DecoratorSet decorators, T* addr, oop compare_value, oop new_value) {
-  iu_barrier(new_value);
   oop res;
   oop expected = compare_value;
   do {
@@ -207,7 +200,6 @@ inline oop ShenandoahBarrierSet::oop_cmpxchg(DecoratorSet decorators, T* addr, o
 
 template <typename T>
 inline oop ShenandoahBarrierSet::oop_xchg(DecoratorSet decorators, T* addr, oop new_value) {
-  iu_barrier(new_value);
   oop previous = RawAccess<>::oop_atomic_xchg(addr, new_value);
   // Note: We don't need a keep-alive-barrier here. We already enqueue any loaded reference for SATB anyway,
   // because it must be the previous value.
@@ -245,7 +237,6 @@ inline void ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_st
   shenandoah_assert_marked_if(nullptr, value, !CompressedOops::is_null(value) && ShenandoahHeap::heap()->is_evacuation_in_progress());
   shenandoah_assert_not_in_cset_if(addr, value, value != nullptr && !ShenandoahHeap::heap()->cancelled_gc());
   ShenandoahBarrierSet* const bs = ShenandoahBarrierSet::barrier_set();
-  bs->iu_barrier(value);
   bs->satb_barrier<decorators>(addr);
   Raw::oop_store(addr, value);
 }
@@ -357,7 +348,7 @@ void ShenandoahBarrierSet::arraycopy_work(T* src, size_t count) {
         if (EVAC && obj == fwd) {
           fwd = _heap->evacuate_object(obj, thread);
         }
-        assert(obj != fwd || _heap->cancelled_gc(), "must be forwarded");
+        shenandoah_assert_forwarded_except(elem_ptr, obj, _heap->cancelled_gc());
         ShenandoahHeap::atomic_update_oop(fwd, elem_ptr, o);
         obj = fwd;
       }

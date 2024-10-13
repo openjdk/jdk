@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@
  * The Catalog API defines a standard solution for resolving external resources
  * referenced by XML documents. It is fully supported by the XML Processors
  * allowing application developers to configure a catalog through an XML processor
- * or system property or the jaxp.properties file to take advantage of the feature.
+ * or system property or the configuration file to take advantage of the feature.
  * <p>
  * The XML Catalog API defines the following interfaces:
  * <ul>

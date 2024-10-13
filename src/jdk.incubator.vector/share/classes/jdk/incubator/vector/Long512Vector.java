@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -493,7 +493,7 @@ final class Long512Vector extends LongVector {
                                    VectorMask<Long> m) {
         return (Long512Vector)
             super.selectFromTemplate((Long512Vector) v,
-                                     (Long512Mask) m);  // specialize
+                                     Long512Mask.class, (Long512Mask) m);  // specialize
     }
 
 
@@ -653,14 +653,6 @@ final class Long512Vector extends LongVector {
 
         @Override
         @ForceInline
-        public Long512Mask eq(VectorMask<Long> mask) {
-            Objects.requireNonNull(mask);
-            Long512Mask m = (Long512Mask)mask;
-            return xor(m.not());
-        }
-
-        @Override
-        @ForceInline
         /*package-private*/
         Long512Mask indexPartiallyInUpperRange(long offset, long limit) {
             return (Long512Mask) VectorSupport.indexPartiallyInUpperRange(
@@ -707,9 +699,9 @@ final class Long512Vector extends LongVector {
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a | b));
         }
 
+        @Override
         @ForceInline
-        /* package-private */
-        Long512Mask xor(VectorMask<Long> mask) {
+        public Long512Mask xor(VectorMask<Long> mask) {
             Objects.requireNonNull(mask);
             Long512Mask m = (Long512Mask)mask;
             return VectorSupport.binaryOp(VECTOR_OP_XOR, Long512Mask.class, null, long.class, VLENGTH,
@@ -748,6 +740,16 @@ final class Long512Vector extends LongVector {
             }
             return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TOLONG, Long512Mask.class, long.class, VLENGTH, this,
                                                       (m) -> toLongHelper(m.getBits()));
+        }
+
+        // laneIsSet
+
+        @Override
+        @ForceInline
+        public boolean laneIsSet(int i) {
+            Objects.checkIndex(i, length());
+            return VectorSupport.extract(Long512Mask.class, long.class, VLENGTH,
+                                         this, i, (m, idx) -> (m.getBits()[idx] ? 1L : 0L)) == 1L;
         }
 
         // Reductions
@@ -830,6 +832,13 @@ final class Long512Vector extends LongVector {
                 throw new IllegalArgumentException("VectorShuffle length and species length differ");
             int[] shuffleArray = toArray();
             return s.shuffleFromArray(shuffleArray, 0).check(s);
+        }
+
+        @Override
+        @ForceInline
+        public Long512Shuffle wrapIndexes() {
+            return VectorSupport.wrapShuffleIndexes(ETYPE, Long512Shuffle.class, this, VLENGTH,
+                                                    (s) -> ((Long512Shuffle)(((AbstractShuffle<Long>)(s)).wrapIndexesTemplate())));
         }
 
         @ForceInline

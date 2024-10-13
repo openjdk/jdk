@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -66,7 +66,7 @@ int AbstractInterpreter::size_top_interpreter_activation(Method* method) {
     -(frame::interpreter_frame_initial_sp_offset) + entry_size;
 
   const int stub_code = frame::entry_frame_after_call_words;
-  assert_cond(method != NULL);
+  assert_cond(method != nullptr);
   const int method_stack = (method->max_locals() + method->max_stack()) *
                            Interpreter::stackElementWords;
   return (overhead_size + method_stack + stub_code);

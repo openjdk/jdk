@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -443,7 +443,7 @@ class XListPeer extends XComponentPeer implements ListPeer, XScrollbarClient {
 
         if (hsbVis) {
             // do need a horizontal scrollbar, so recalculate height of
-            // vertical s crollbar
+            // vertical scrollbar
             listHeight = height - SCROLLBAR_AREA;
             vis = itemsInWindow(true);
             maximum = items.size() < vis ? vis : items.size();

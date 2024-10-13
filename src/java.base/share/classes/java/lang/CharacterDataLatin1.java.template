@@ -134,6 +134,30 @@ class CharacterDataLatin1 extends CharacterData {
         return ((props & $$maskIdentifierInfo) == $$valueIgnorable);
     }
 
+    boolean isEmoji(int ch) {
+        return (getPropertiesEx(ch) & $$maskEmoji) != 0;
+    }
+
+    boolean isEmojiPresentation(int ch) {
+        return (getPropertiesEx(ch) & $$maskEmojiPresentation) != 0;
+    }
+
+    boolean isEmojiModifier(int ch) {
+        return (getPropertiesEx(ch) & $$maskEmojiModifier) != 0;
+    }
+
+    boolean isEmojiModifierBase(int ch) {
+        return (getPropertiesEx(ch) & $$maskEmojiModifierBase) != 0;
+    }
+
+    boolean isEmojiComponent(int ch) {
+        return (getPropertiesEx(ch) & $$maskEmojiComponent) != 0;
+    }
+
+    boolean isExtendedPictographic(int ch) {
+        return (getPropertiesEx(ch) & $$maskExtendedPictographic) != 0;
+    }
+
     int toLowerCase(int ch) {
         if (ch < 'A') { // Fast path for low code points
             return ch;

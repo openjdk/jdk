@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,7 +27,7 @@
  * @bug 8240335
  * @summary C2: assert(found_sfpt) failed: no node in loop that's not input to safepoint
  *
- * @run main/othervm -Xcomp -XX:CompileOnly=TestCastIIAfterUnrollingInOuterLoop TestCastIIAfterUnrollingInOuterLoop
+ * @run main/othervm -Xcomp -XX:CompileOnly=TestCastIIAfterUnrollingInOuterLoop::* TestCastIIAfterUnrollingInOuterLoop
  *
  */
 

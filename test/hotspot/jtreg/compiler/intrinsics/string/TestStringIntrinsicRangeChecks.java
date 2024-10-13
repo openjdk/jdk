@@ -27,7 +27,7 @@
  * @summary Verifies that string intrinsics throw array out of bounds exceptions.
  * @library /compiler/patches /test/lib
  * @build java.base/java.lang.Helper
- * @run main/othervm -Xbatch -XX:CompileThreshold=100 compiler.intrinsics.string.TestStringIntrinsicRangeChecks
+ * @run main/othervm/timeout=300 -Xbatch -XX:CompileThreshold=100 compiler.intrinsics.string.TestStringIntrinsicRangeChecks
  */
 package compiler.intrinsics.string;
 

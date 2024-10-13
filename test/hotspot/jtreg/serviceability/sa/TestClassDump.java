@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ public class TestClassDump {
         ProcessBuilder pb;
         OutputAnalyzer output;
 
-        pb = ProcessTools.createJavaProcessBuilder(
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
                 "-Dsun.jvm.hotspot.tools.jcore.outputDir=jtreg_classes",
                 "-m", "jdk.hotspot.agent/sun.jvm.hotspot.tools.jcore.ClassDump", String.valueOf(lingeredAppPid));
         SATestUtils.addPrivilegesIfNeeded(pb);
@@ -68,7 +68,7 @@ public class TestClassDump {
             throw new RuntimeException("jtreg_classes/sun/net/util/URLUtil.class not found");
         }
 
-        pb = ProcessTools.createJavaProcessBuilder(
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
                 "-Dsun.jvm.hotspot.tools.jcore.outputDir=jtreg_classes2",
                 "-Dsun.jvm.hotspot.tools.jcore.PackageNameFilter.pkgList=jdk,sun",
                 "-m", "jdk.hotspot.agent/sun.jvm.hotspot.tools.jcore.ClassDump", String.valueOf(lingeredAppPid));

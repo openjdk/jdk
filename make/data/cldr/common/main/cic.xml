@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2024 Unicode, Inc.
+For terms of use, see http://www.unicode.org/copyright.html
+SPDX-License-Identifier: Unicode-3.0
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+-->
+<ldml>
+	<identity>
+		<version number="$Revision$"/>
+		<language type="cic"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="cic">Chikashshanompaʼ</language>
+		</languages>
+		<territories>
+			<territory type="US">United States</territory>
+		</territories>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters>[a{a̱} b {ch} f h i{i̱} k l {lh} m n {ng} o{o̱} p s {sh} t w y ʼ]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[á{á̱} c d e g í{í̱} j ó{ó̱} q r u v x z]</exemplarCharacters>
+		<exemplarCharacters type="index">[A{A̱} B {CH} D E F H I{I̱} K L {LH} M N O{O̱} P S {SH} T V W Y]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … '‘’ &quot;“” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
+	</characters>
+	<dates>
+		<calendars>
+			<calendar type="generic">
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern draft="unconfirmed">EEEE, MMMM d, y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern draft="unconfirmed">MMMM d, y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern draft="unconfirmed">MMM d, y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern draft="unconfirmed">M/d/y GGGGG</pattern>
+							<datetimeSkeleton draft="unconfirmed">GGGGGyMd</datetimeSkeleton>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+			</calendar>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="wide">
+							<month type="1">Hashiʼ Ammoʼnaʼ</month>
+							<month type="2">Hashiʼ Atokloʼ</month>
+							<month type="3">Hashiʼ Atochchíʼnaʼ</month>
+							<month type="4">Iiplal</month>
+							<month type="5">Mih</month>
+							<month type="6">Choon</month>
+							<month type="7">Choola</month>
+							<month type="8">Akaas</month>
+							<month type="9">Siptimpaʼ</month>
+							<month type="10">Aaktopaʼ</month>
+							<month type="11">Nofimpaʼ</month>
+							<month type="12">Tiisimpaʼ</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<days>
+					<dayContext type="format">
+						<dayWidth type="wide">
+							<day type="sun">Nittak Holloʼ</day>
+							<day type="mon">Mantiʼ</day>
+							<day type="tue">Chostiʼ</day>
+							<day type="wed">Winstiʼ</day>
+							<day type="thu">Soistiʼ</day>
+							<day type="fri">Nannalhchifaʼ Nittak</day>
+							<day type="sat">Nittak Holloʼ Nakfish</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern draft="unconfirmed">EEEE, MMMM d, y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern draft="unconfirmed">MMMM d, y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern draft="unconfirmed">MMM d, y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern draft="unconfirmed">M/d/yy</pattern>
+							<datetimeSkeleton draft="unconfirmed">yyMd</datetimeSkeleton>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<timeFormats>
+					<timeFormatLength type="full">
+						<timeFormat>
+							<pattern draft="unconfirmed">h:mm:ss a zzzz</pattern>
+							<datetimeSkeleton draft="unconfirmed">ahmmsszzzz</datetimeSkeleton>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="long">
+						<timeFormat>
+							<pattern draft="unconfirmed">h:mm:ss a z</pattern>
+							<datetimeSkeleton draft="unconfirmed">ahmmssz</datetimeSkeleton>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="medium">
+						<timeFormat>
+							<pattern draft="unconfirmed">h:mm:ss a</pattern>
+							<datetimeSkeleton draft="unconfirmed">ahmmss</datetimeSkeleton>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="short">
+						<timeFormat>
+							<pattern draft="unconfirmed">h:mm a</pattern>
+							<datetimeSkeleton draft="unconfirmed">ahmm</datetimeSkeleton>
+						</timeFormat>
+					</timeFormatLength>
+				</timeFormats>
+			</calendar>
+		</calendars>
+	</dates>
+	<numbers>
+		<currencies>
+			<currency type="USD">
+				<symbol>$</symbol>
+			</currency>
+		</currencies>
+	</numbers>
+	<units>
+		<unitLength type="long">
+			<unit type="duration-year">
+				<displayName draft="provisional">Afammi</displayName>
+				<unitPattern count="other">Afammi {0}</unitPattern>
+			</unit>
+			<unit type="duration-month">
+				<displayName draft="provisional">Hashiʼ alhpisaʼ</displayName>
+				<unitPattern count="other">Hashiʼ alhpisaʼ {0}</unitPattern>
+			</unit>
+			<unit type="duration-week">
+				<displayName draft="provisional">Nittak hollo ittataklaʼ</displayName>
+				<unitPattern count="other">Nittak hollo ittataklaʼ {0}</unitPattern>
+			</unit>
+			<unit type="duration-day">
+				<displayName draft="provisional">Nittak</displayName>
+				<unitPattern count="other">{0} Nittak</unitPattern>
+			</unit>
+			<unit type="duration-hour">
+				<displayName draft="provisional">Hashiʼ kanalli chaffaʼ</displayName>
+				<unitPattern count="other">Hashiʼ kanalli chaffaʼ {0}</unitPattern>
+			</unit>
+			<unit type="duration-minute">
+				<displayName draft="provisional">Hashiʼ kanallloshiʼ</displayName>
+				<unitPattern count="other">Hashiʼ kanallloshiʼ {0}</unitPattern>
+			</unit>
+		</unitLength>
+	</units>
+</ldml>

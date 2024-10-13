@@ -27,6 +27,7 @@
 #include "gc/z/zBitField.hpp"
 #include "memory/allocation.hpp"
 #include "metaprogramming/primitiveConversions.hpp"
+
 #include <type_traits>
 
 //
@@ -58,11 +59,11 @@ private:
   uint64_t _entry;
 
 public:
-  ZForwardingEntry() :
-      _entry(0) {}
+  ZForwardingEntry()
+    : _entry(0) {}
 
-  ZForwardingEntry(size_t from_index, size_t to_offset) :
-      _entry(field_populated::encode(true) |
+  ZForwardingEntry(size_t from_index, size_t to_offset)
+    : _entry(field_populated::encode(true) |
              field_to_offset::encode(to_offset) |
              field_from_index::encode(from_index)) {}
 

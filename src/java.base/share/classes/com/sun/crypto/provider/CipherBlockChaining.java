@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ package com.sun.crypto.provider;
 
 import java.security.InvalidKeyException;
 import java.security.ProviderException;
-import java.util.Objects;
 
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import sun.security.util.ArrayUtil;
@@ -55,7 +54,7 @@ class CipherBlockChaining extends FeedbackCipher  {
     /*
      * output buffer
      */
-    private byte[] k;
+    private final byte[] k;
 
     // variables for save/restore calls
     private byte[] rSave = null;
@@ -181,7 +180,7 @@ class CipherBlockChaining extends FeedbackCipher  {
      *
      * <p>It is also the application's responsibility to make sure that
      * <code>init</code> has been called before this method is called.
-     * (This check is omitted here, to avoid double checking.)
+     * (This check is omitted here, to avoid double-checking.)
      *
      * @param cipher the buffer with the input data to be decrypted
      * @param cipherOffset the offset in <code>cipherOffset</code>

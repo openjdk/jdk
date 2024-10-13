@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,7 @@ abstract class AsynchronousChannelGroupImpl
     private final AtomicInteger threadCount = new AtomicInteger();
 
     // associated Executor for timeouts
-    private ScheduledThreadPoolExecutor timeoutExecutor;
+    private final ScheduledThreadPoolExecutor timeoutExecutor;
 
     // task queue for when using a fixed thread pool. In that case, a thread
     // waiting on I/O events must be awoken to poll tasks from this queue.

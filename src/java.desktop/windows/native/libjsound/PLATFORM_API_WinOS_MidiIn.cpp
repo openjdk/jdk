@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -301,7 +301,7 @@ INT32 prepareBuffers(MidiDeviceHandle* handle) {
     }
     sysex = (SysExQueue*) handle->longBuffers;
     for (i = 0; i<sysex->count; i++) {
-        MIDIHDR* hdr = &(sysex->header[i]);
+        MIDIHDR* hdr = &(sysex->headerInfo[i].header);
         midiInPrepareHeader((HMIDIIN) handle->deviceHandle, hdr, sizeof(MIDIHDR));
         err = midiInAddBuffer((HMIDIIN) handle->deviceHandle, hdr, sizeof(MIDIHDR));
     }
@@ -320,7 +320,7 @@ INT32 unprepareBuffers(MidiDeviceHandle* handle) {
     }
     sysex = (SysExQueue*) handle->longBuffers;
     for (i = 0; i<sysex->count; i++) {
-        err = midiInUnprepareHeader((HMIDIIN) handle->deviceHandle, &(sysex->header[i]), sizeof(MIDIHDR));
+        err = midiInUnprepareHeader((HMIDIIN) handle->deviceHandle, &(sysex->headerInfo[i].header), sizeof(MIDIHDR));
     }
     MIDIIN_CHECK_ERROR;
     return (INT32) err;
@@ -502,7 +502,7 @@ void MIDI_IN_ReleaseMessage(MidiDeviceHandle* handle, MidiMessage* msg) {
     }
     sysex = (SysExQueue*) handle->longBuffers;
     if (msg->type == LONG_MESSAGE && sysex) {
-        MIDIHDR* hdr = &(sysex->header[msg->data.l.index]);
+        MIDIHDR* hdr = &(sysex->headerInfo[msg->data.l.index].header);
         //fprintf(stdout, "ReleaseMessage index %d\n", msg->data.l.index); fflush(stdout);
         hdr->dwBytesRecorded = 0;
         midiInAddBuffer((HMIDIIN) handle->deviceHandle, hdr, sizeof(MIDIHDR));

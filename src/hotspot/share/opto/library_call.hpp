@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -156,9 +156,11 @@ class LibraryCallKit : public GraphKit {
                                          region, null_path,
                                          offset);
   }
-  Node* generate_access_flags_guard(Node* kls,
-                                    int modifier_mask, int modifier_bits,
-                                    RegionNode* region);
+  Node* generate_klass_flags_guard(Node* kls, int modifier_mask, int modifier_bits, RegionNode* region,
+                                   ByteSize offset, const Type* type, BasicType bt);
+  Node* generate_misc_flags_guard(Node* kls,
+                                  int modifier_mask, int modifier_bits,
+                                  RegionNode* region);
   Node* generate_interface_guard(Node* kls, RegionNode* region);
   Node* generate_hidden_class_guard(Node* kls, RegionNode* region);
   Node* generate_array_guard(Node* kls, RegionNode* region) {
@@ -176,13 +178,9 @@ class LibraryCallKit : public GraphKit {
   Node* generate_array_guard_common(Node* kls, RegionNode* region,
                                     bool obj_array, bool not_array);
   Node* generate_virtual_guard(Node* obj_klass, RegionNode* slow_region);
-  CallJavaNode* generate_method_call(vmIntrinsics::ID method_id,
-                                     bool is_virtual = false, bool is_static = false);
-  CallJavaNode* generate_method_call_static(vmIntrinsics::ID method_id) {
-    return generate_method_call(method_id, false, true);
-  }
-  CallJavaNode* generate_method_call_virtual(vmIntrinsics::ID method_id) {
-    return generate_method_call(method_id, true, false);
+  CallJavaNode* generate_method_call(vmIntrinsicID method_id, bool is_virtual, bool is_static, bool res_not_null);
+  CallJavaNode* generate_method_call_static(vmIntrinsicID method_id, bool res_not_null) {
+    return generate_method_call(method_id, false, true, res_not_null);
   }
   Node* load_field_from_object(Node* fromObj, const char* fieldName, const char* fieldTypeString, DecoratorSet decorators = IN_HEAP, bool is_static = false, ciInstanceKlass* fromKls = nullptr);
   Node* field_address_from_object(Node* fromObj, const char* fieldName, const char* fieldTypeString, bool is_exact = true, bool is_static = false, ciInstanceKlass* fromKls = nullptr);
@@ -235,19 +233,29 @@ class LibraryCallKit : public GraphKit {
   bool inline_unsafe_writeback0();
   bool inline_unsafe_writebackSync0(bool is_pre);
   bool inline_unsafe_copyMemory();
+  bool inline_unsafe_setMemory();
 
   bool inline_native_currentCarrierThread();
   bool inline_native_currentThread();
   bool inline_native_setCurrentThread();
 
   bool inline_native_scopedValueCache();
+  const Type* scopedValueCache_type();
   Node* scopedValueCache_helper();
   bool inline_native_setScopedValueCache();
+  bool inline_native_Continuation_pinning(bool unpin);
 
   bool inline_native_time_funcs(address method, const char* funcName);
+#if INCLUDE_JVMTI
+  bool inline_native_notify_jvmti_funcs(address funcAddr, const char* funcName, bool is_start, bool is_end);
+  bool inline_native_notify_jvmti_hide();
+  bool inline_native_notify_jvmti_sync();
+#endif
+
 #ifdef JFR_HAVE_INTRINSICS
   bool inline_native_classID();
   bool inline_native_getEventWriter();
+  bool inline_native_jvm_commit();
   void extend_setCurrentThread(Node* jt, Node* thread);
 #endif
   bool inline_native_Class_query(vmIntrinsics::ID id);
@@ -274,7 +282,9 @@ class LibraryCallKit : public GraphKit {
   JVMState* arraycopy_restore_alloc_state(AllocateArrayNode* alloc, int& saved_reexecute_sp);
   void arraycopy_move_allocation_here(AllocateArrayNode* alloc, Node* dest, JVMState* saved_jvms_before_guards, int saved_reexecute_sp,
                                       uint new_idx);
-
+  bool check_array_sort_arguments(Node* elementType, Node* obj, BasicType& bt);
+  bool inline_array_sort();
+  bool inline_array_partition();
   typedef enum { LS_get_add, LS_get_set, LS_cmp_swap, LS_cmp_swap_weak, LS_cmp_exchange } LoadStoreKind;
   bool inline_unsafe_load_store(BasicType type,  LoadStoreKind kind, AccessKind access_kind);
   bool inline_unsafe_fence(vmIntrinsics::ID id);
@@ -301,6 +311,8 @@ class LibraryCallKit : public GraphKit {
   bool inline_base64_encodeBlock();
   bool inline_base64_decodeBlock();
   bool inline_poly1305_processBlocks();
+  bool inline_intpoly_montgomeryMult_P256();
+  bool inline_intpoly_assign();
   bool inline_digestBase_implCompress(vmIntrinsics::ID id);
   bool inline_digestBase_implCompressMB(int predicate);
   bool inline_digestBase_implCompressMB(Node* digestBaseObj, ciInstanceKlass* instklass,
@@ -341,7 +353,9 @@ class LibraryCallKit : public GraphKit {
   bool inline_vector_nary_operation(int n);
   bool inline_vector_frombits_coerced();
   bool inline_vector_shuffle_to_vector();
+  bool inline_vector_wrap_shuffle_indexes();
   bool inline_vector_shuffle_iota();
+  Node* partially_wrap_indexes(Node* index_vec, int num_elem, BasicType type_bt);
   bool inline_vector_mask_operation();
   bool inline_vector_mem_operation(bool is_store);
   bool inline_vector_mem_masked_operation(bool is_store);
@@ -350,6 +364,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_vector_test();
   bool inline_vector_blend();
   bool inline_vector_rearrange();
+  bool inline_vector_select_from();
   bool inline_vector_compare();
   bool inline_vector_broadcast_int();
   bool inline_vector_convert();
@@ -359,7 +374,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_index_vector();
   bool inline_index_partially_in_upper_range();
 
-  Node* gen_call_to_svml(int vector_api_op_id, BasicType bt, int num_elem, Node* opd1, Node* opd2);
+  Node* gen_call_to_vector_math(int vector_api_op_id, BasicType bt, int num_elem, Node* opd1, Node* opd2);
 
   enum VectorMaskUseType {
     VecMaskUseLoad  = 1 << 0,

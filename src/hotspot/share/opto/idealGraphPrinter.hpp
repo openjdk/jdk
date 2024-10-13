@@ -40,6 +40,7 @@ class Matcher;
 class Node;
 class InlineTree;
 class ciMethod;
+class JVMState;
 
 class IdealGraphPrinter : public CHeapObj<mtCompiler> {
  private:
@@ -89,16 +90,18 @@ class IdealGraphPrinter : public CHeapObj<mtCompiler> {
   outputStream *_output;
   ciMethod *_current_method;
   int _depth;
-  char buffer[128];
+  char buffer[512];
   bool _should_send_method;
   PhaseChaitin* _chaitin;
   bool _traverse_outs;
   Compile *C;
   double _max_freq;
+  bool _append;
 
-  void print_method(ciMethod *method, int bci, InlineTree *tree);
-  void print_inline_tree(InlineTree *tree);
-  void visit_node(Node *n, bool edges, VectorSet* temp_set);
+  void print_method(ciMethod* method, int bci, InlineTree* tree);
+  void print_inline_tree(InlineTree* tree);
+  void visit_node(Node* n, bool edges, VectorSet* temp_set);
+  void print_bci_and_line_number(JVMState* caller);
   void print_field(const Node* node);
   ciField* get_field(const Node* node);
   ciField* find_source_field_of_array_access(const Node* node, uint& depth);
@@ -116,7 +119,7 @@ class IdealGraphPrinter : public CHeapObj<mtCompiler> {
   void head(const char *name);
   void text(const char *s);
   void init(const char* file_name, bool use_multiple_files, bool append);
-  void init_file_stream(const char* file_name, bool use_multiple_files, bool append);
+  void init_file_stream(const char* file_name, bool use_multiple_files);
   void init_network_stream();
   IdealGraphPrinter();
   ~IdealGraphPrinter();

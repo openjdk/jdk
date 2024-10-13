@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,8 @@
 
 /*
  * @test
- * @library /java/text/testlib
  * @summary test International Decimal Format API
+ * @run junit IntlTestDecimalFormatAPI
  */
 /*
 (C) Copyright Taligent, Inc. 1996, 1997 - All Rights Reserved
@@ -41,23 +41,24 @@ attribution to Taligent may not be removed.
 import java.text.*;
 import java.util.*;
 
-public class IntlTestDecimalFormatAPI extends IntlTest
-{
-    public static void main(String[] args)  throws Exception {
-        new IntlTestDecimalFormatAPI().run(args);
-    }
+import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.fail;
+
+public class IntlTestDecimalFormatAPI
+{
     // This test checks various generic API methods in DecimalFormat to achieve 100% API coverage.
+    @Test
     public void TestAPI()
     {
         Locale reservedLocale = Locale.getDefault();
         try {
-            logln("DecimalFormat API test---"); logln("");
+            System.out.println("DecimalFormat API test---"); System.out.println("");
             Locale.setDefault(Locale.ENGLISH);
 
             // ======= Test constructors
 
-            logln("Testing DecimalFormat constructors");
+            System.out.println("Testing DecimalFormat constructors");
 
             DecimalFormat def = new DecimalFormat();
 
@@ -67,7 +68,7 @@ public class IntlTestDecimalFormatAPI extends IntlTest
                 pat = new DecimalFormat(pattern);
             }
             catch (IllegalArgumentException e) {
-                errln("ERROR: Could not create DecimalFormat (pattern)");
+                fail("ERROR: Could not create DecimalFormat (pattern)");
             }
 
             DecimalFormatSymbols symbols =
@@ -77,16 +78,16 @@ public class IntlTestDecimalFormatAPI extends IntlTest
 
             // ======= Test clone(), assignment, and equality
 
-            logln("Testing clone() and equality operators");
+            System.out.println("Testing clone() and equality operators");
 
             Format clone = (Format) def.clone();
             if( ! def.equals(clone)) {
-                errln("ERROR: Clone() failed");
+                fail("ERROR: Clone() failed");
             }
 
             // ======= Test various format() methods
 
-            logln("Testing various format() methods");
+            System.out.println("Testing various format() methods");
 
 //          final double d = -10456.0037; // this appears as
                                           // -10456.003700000001 on NT
@@ -94,7 +95,7 @@ public class IntlTestDecimalFormatAPI extends IntlTest
                                              // -1.0456003700000002E-4 on NT
             final double d = -10456.00370000000000; // this works!
             final long l = 100000000;
-            logln("" + d + " is the double value");
+            System.out.println("" + d + " is the double value");
 
             StringBuffer res1 = new StringBuffer();
             StringBuffer res2 = new StringBuffer();
@@ -106,20 +107,20 @@ public class IntlTestDecimalFormatAPI extends IntlTest
             FieldPosition pos4 = new FieldPosition(0);
 
             res1 = def.format(d, res1, pos1);
-            logln("" + d + " formatted to " + res1);
+            System.out.println("" + d + " formatted to " + res1);
 
             res2 = pat.format(l, res2, pos2);
-            logln("" + l + " formatted to " + res2);
+            System.out.println("" + l + " formatted to " + res2);
 
             res3 = cust1.format(d, res3, pos3);
-            logln("" + d + " formatted to " + res3);
+            System.out.println("" + d + " formatted to " + res3);
 
             res4 = cust1.format(l, res4, pos4);
-            logln("" + l + " formatted to " + res4);
+            System.out.println("" + l + " formatted to " + res4);
 
             // ======= Test parse()
 
-            logln("Testing parse()");
+            System.out.println("Testing parse()");
 
             String text = new String("-10,456.0037");
             ParsePosition pos = new ParsePosition(0);
@@ -127,109 +128,109 @@ public class IntlTestDecimalFormatAPI extends IntlTest
             pat.applyPattern(patt);
             double d2 = pat.parse(text, pos).doubleValue();
             if(d2 != d) {
-                errln("ERROR: Roundtrip failed (via parse(" +
+                fail("ERROR: Roundtrip failed (via parse(" +
                     d2 + " != " + d + ")) for " + text);
             }
-            logln(text + " parsed into " + (long) d2);
+            System.out.println(text + " parsed into " + (long) d2);
 
             // ======= Test getters and setters
 
-            logln("Testing getters and setters");
+            System.out.println("Testing getters and setters");
 
             final DecimalFormatSymbols syms = pat.getDecimalFormatSymbols();
             def.setDecimalFormatSymbols(syms);
             if(!pat.getDecimalFormatSymbols().equals(
                     def.getDecimalFormatSymbols())) {
-                errln("ERROR: set DecimalFormatSymbols() failed");
+                fail("ERROR: set DecimalFormatSymbols() failed");
             }
 
             String posPrefix;
             pat.setPositivePrefix("+");
             posPrefix = pat.getPositivePrefix();
-            logln("Positive prefix (should be +): " + posPrefix);
+            System.out.println("Positive prefix (should be +): " + posPrefix);
             if(posPrefix != "+") {
-                errln("ERROR: setPositivePrefix() failed");
+                fail("ERROR: setPositivePrefix() failed");
             }
 
             String negPrefix;
             pat.setNegativePrefix("-");
             negPrefix = pat.getNegativePrefix();
-            logln("Negative prefix (should be -): " + negPrefix);
+            System.out.println("Negative prefix (should be -): " + negPrefix);
             if(negPrefix != "-") {
-                errln("ERROR: setNegativePrefix() failed");
+                fail("ERROR: setNegativePrefix() failed");
             }
 
             String posSuffix;
             pat.setPositiveSuffix("_");
             posSuffix = pat.getPositiveSuffix();
-            logln("Positive suffix (should be _): " + posSuffix);
+            System.out.println("Positive suffix (should be _): " + posSuffix);
             if(posSuffix != "_") {
-                errln("ERROR: setPositiveSuffix() failed");
+                fail("ERROR: setPositiveSuffix() failed");
             }
 
             String negSuffix;
             pat.setNegativeSuffix("~");
             negSuffix = pat.getNegativeSuffix();
-            logln("Negative suffix (should be ~): " + negSuffix);
+            System.out.println("Negative suffix (should be ~): " + negSuffix);
             if(negSuffix != "~") {
-                errln("ERROR: setNegativeSuffix() failed");
+                fail("ERROR: setNegativeSuffix() failed");
             }
 
             long multiplier = 0;
             pat.setMultiplier(8);
             multiplier = pat.getMultiplier();
-            logln("Multiplier (should be 8): " + multiplier);
+            System.out.println("Multiplier (should be 8): " + multiplier);
             if(multiplier != 8) {
-                errln("ERROR: setMultiplier() failed");
+                fail("ERROR: setMultiplier() failed");
             }
 
             int groupingSize = 0;
             pat.setGroupingSize(2);
             groupingSize = pat.getGroupingSize();
-            logln("Grouping size (should be 2): " + (long) groupingSize);
+            System.out.println("Grouping size (should be 2): " + (long) groupingSize);
             if(groupingSize != 2) {
-                errln("ERROR: setGroupingSize() failed");
+                fail("ERROR: setGroupingSize() failed");
             }
 
             pat.setDecimalSeparatorAlwaysShown(true);
             boolean tf = pat.isDecimalSeparatorAlwaysShown();
-            logln("DecimalSeparatorIsAlwaysShown (should be true) is " +
+            System.out.println("DecimalSeparatorIsAlwaysShown (should be true) is " +
                                                 (tf ? "true" : "false"));
             if(tf != true) {
-                errln("ERROR: setDecimalSeparatorAlwaysShown() failed");
+                fail("ERROR: setDecimalSeparatorAlwaysShown() failed");
             }
 
             String funkyPat;
             funkyPat = pat.toPattern();
-            logln("Pattern is " + funkyPat);
+            System.out.println("Pattern is " + funkyPat);
 
             String locPat;
             locPat = pat.toLocalizedPattern();
-            logln("Localized pattern is " + locPat);
+            System.out.println("Localized pattern is " + locPat);
 
             // ======= Test applyPattern()
 
-            logln("Testing applyPattern()");
+            System.out.println("Testing applyPattern()");
 
             String p1 = new String("#,##0.0#;(#,##0.0#)");
-            logln("Applying pattern " + p1);
+            System.out.println("Applying pattern " + p1);
             pat.applyPattern(p1);
             String s2;
             s2 = pat.toPattern();
-            logln("Extracted pattern is " + s2);
+            System.out.println("Extracted pattern is " + s2);
             if( ! s2.equals(p1) ) {
-                errln("ERROR: toPattern() result did not match " +
+                fail("ERROR: toPattern() result did not match " +
                         "pattern applied");
             }
 
             String p2 = new String("#,##0.0# FF;(#,##0.0# FF)");
-            logln("Applying pattern " + p2);
+            System.out.println("Applying pattern " + p2);
             pat.applyLocalizedPattern(p2);
             String s3;
             s3 = pat.toLocalizedPattern();
-            logln("Extracted pattern is " + s3);
+            System.out.println("Extracted pattern is " + s3);
             if( ! s3.equals(p2) ) {
-                errln("ERROR: toLocalizedPattern() result did not match " +
+                fail("ERROR: toLocalizedPattern() result did not match " +
                         "pattern applied");
             }
 

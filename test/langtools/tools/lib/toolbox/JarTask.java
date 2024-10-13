@@ -25,7 +25,6 @@ package toolbox;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
-import java.io.File;
 import java.io.IOError;
 import java.io.IOException;
 import java.io.InputStream;
@@ -332,7 +331,7 @@ public class JarTask extends AbstractTask<JarTask> {
                         String p = base.relativize(file)
                                 .normalize()
                                 .toString()
-                                .replace(File.separatorChar, '/');
+                                .replace(ToolBox.fileSeparatorChar, '/');
                         JarEntry e = new JarEntry(p);
                             jos.putNextEntry(e);
                         try {

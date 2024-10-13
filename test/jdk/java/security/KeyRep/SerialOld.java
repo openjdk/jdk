@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,14 +23,13 @@
 
 /*
  * @test 1.1, 03/08/13
- * @bug 4532506
+ * @bug 4532506 8301126
  * @summary Serializing KeyPair on one VM (Sun),
  *      and Deserializing on another (IBM) fails
  * @run main/othervm/java.security.policy=SerialOld.policy SerialOld
  */
 
 import java.io.*;
-import java.security.*;
 
 public class SerialOld {
     public static void main(String[] args) throws Exception {
@@ -40,10 +39,15 @@ public class SerialOld {
         deserializeTigerKey("DSA");
         deserializeTigerKey("RSA");
 
-        // verify pre-tiger keys still deserialize in our VM
+        // verify pre-tiger keys still deserialize in our VM.
+
+        // There used to be a RSA test here, but the serialized file contained
+        // classes introduced in JDK 5.0 (sun.security.rsa.RSA*).  The older
+        // RSA keys from JDK 1.4.2 were of class JSA_* which were removed when
+        // sun.security.rsa was introduced.  (See JDK-8301126 for more
+        // details.)  The test/data has been removed.
 
         deserializeKey("DSA");
-        deserializeKey("RSA");
         deserializeKey("DH");
         deserializeKey("AES");
         deserializeKey("Blowfish");

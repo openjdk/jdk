@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -503,7 +503,7 @@ final class IntMaxVector extends IntVector {
                                    VectorMask<Integer> m) {
         return (IntMaxVector)
             super.selectFromTemplate((IntMaxVector) v,
-                                     (IntMaxMask) m);  // specialize
+                                     IntMaxMask.class, (IntMaxMask) m);  // specialize
     }
 
 
@@ -649,14 +649,6 @@ final class IntMaxVector extends IntVector {
 
         @Override
         @ForceInline
-        public IntMaxMask eq(VectorMask<Integer> mask) {
-            Objects.requireNonNull(mask);
-            IntMaxMask m = (IntMaxMask)mask;
-            return xor(m.not());
-        }
-
-        @Override
-        @ForceInline
         /*package-private*/
         IntMaxMask indexPartiallyInUpperRange(long offset, long limit) {
             return (IntMaxMask) VectorSupport.indexPartiallyInUpperRange(
@@ -703,9 +695,9 @@ final class IntMaxVector extends IntVector {
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a | b));
         }
 
+        @Override
         @ForceInline
-        /* package-private */
-        IntMaxMask xor(VectorMask<Integer> mask) {
+        public IntMaxMask xor(VectorMask<Integer> mask) {
             Objects.requireNonNull(mask);
             IntMaxMask m = (IntMaxMask)mask;
             return VectorSupport.binaryOp(VECTOR_OP_XOR, IntMaxMask.class, null, int.class, VLENGTH,
@@ -744,6 +736,16 @@ final class IntMaxVector extends IntVector {
             }
             return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TOLONG, IntMaxMask.class, int.class, VLENGTH, this,
                                                       (m) -> toLongHelper(m.getBits()));
+        }
+
+        // laneIsSet
+
+        @Override
+        @ForceInline
+        public boolean laneIsSet(int i) {
+            Objects.checkIndex(i, length());
+            return VectorSupport.extract(IntMaxMask.class, int.class, VLENGTH,
+                                         this, i, (m, idx) -> (m.getBits()[idx] ? 1L : 0L)) == 1L;
         }
 
         // Reductions
@@ -837,6 +839,13 @@ final class IntMaxVector extends IntVector {
                 throw new IllegalArgumentException("VectorShuffle length and species length differ");
             int[] shuffleArray = toArray();
             return s.shuffleFromArray(shuffleArray, 0).check(s);
+        }
+
+        @Override
+        @ForceInline
+        public IntMaxShuffle wrapIndexes() {
+            return VectorSupport.wrapShuffleIndexes(ETYPE, IntMaxShuffle.class, this, VLENGTH,
+                                                    (s) -> ((IntMaxShuffle)(((AbstractShuffle<Integer>)(s)).wrapIndexesTemplate())));
         }
 
         @ForceInline

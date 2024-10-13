@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ public class ChunkedOutputStream extends OutputStream {
     private static final int EMPTY_CHUNK_HEADER_SIZE = getHeaderSize(0);
 
     /* internal buffer */
-    private byte buf[];
+    private final byte[] buf;
     /* size of data (excluding footers and headers) already stored in buf */
     private int size;
     /* current index in buf (i.e. buf[count] */
@@ -59,11 +59,11 @@ public class ChunkedOutputStream extends OutputStream {
     private PrintStream out;
 
     /* the chunk size we use */
-    private int preferredChunkDataSize;
-    private int preferedHeaderSize;
-    private int preferredChunkGrossSize;
+    private final int preferredChunkDataSize;
+    private final int preferredHeaderSize;
+    private final int preferredChunkGrossSize;
     /* header for a complete Chunk */
-    private byte[] completeHeader;
+    private final byte[] completeHeader;
 
     private final Lock writeLock = new ReentrantLock();
 
@@ -119,8 +119,8 @@ public class ChunkedOutputStream extends OutputStream {
                     getHeaderSize(DEFAULT_CHUNK_SIZE) - FOOTER_SIZE;
         }
 
-        preferedHeaderSize = getHeaderSize(preferredChunkDataSize);
-        preferredChunkGrossSize = preferedHeaderSize + preferredChunkDataSize
+        preferredHeaderSize = getHeaderSize(preferredChunkDataSize);
+        preferredChunkGrossSize = preferredHeaderSize + preferredChunkDataSize
                 + FOOTER_SIZE;
         completeHeader = getHeader(preferredChunkDataSize);
 
@@ -151,7 +151,7 @@ public class ChunkedOutputStream extends OutputStream {
                 /* adjust a header start index in case the header of the last
                  * chunk is shorter then preferedHeaderSize */
 
-                int adjustedHeaderStartIndex = preferedHeaderSize -
+                int adjustedHeaderStartIndex = preferredHeaderSize -
                         getHeaderSize(size);
 
                 /* write header */
@@ -277,7 +277,7 @@ public class ChunkedOutputStream extends OutputStream {
     public void reset() {
         writeLock.lock();
         try {
-            count = preferedHeaderSize;
+            count = preferredHeaderSize;
             size = 0;
             spaceInCurrentChunk = preferredChunkDataSize;
         } finally {

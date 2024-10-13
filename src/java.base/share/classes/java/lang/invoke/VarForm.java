@@ -26,6 +26,7 @@ package java.lang.invoke;
 
 import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.ForceInline;
+import jdk.internal.vm.annotation.Hidden;
 import jdk.internal.vm.annotation.Stable;
 
 import java.lang.invoke.VarHandle.AccessMode;
@@ -108,6 +109,7 @@ final class VarForm {
     }
 
     @ForceInline
+    @Hidden
     final MemberName getMemberName(int mode) {
         // Can be simplified by calling getMemberNameOrNull, but written in this
         // form to improve interpreter/coldpath performance.
@@ -115,7 +117,7 @@ final class VarForm {
         if (mn == null) {
             mn = resolveMemberName(mode);
             if (mn == null) {
-                throw new UnsupportedOperationException();
+                throw new UnsupportedOperationException(AccessMode.valueFromOrdinal(mode).methodName());
             }
         }
         return mn;
@@ -132,7 +134,7 @@ final class VarForm {
 
     @DontInline
     MemberName resolveMemberName(int mode) {
-        AccessMode value = AccessMode.values()[mode];
+        AccessMode value = AccessMode.valueFromOrdinal(mode);
         String methodName = value.methodName();
         MethodType type = methodType_table[value.at.ordinal()].insertParameterTypes(0, VarHandle.class);
         return memberName_table[mode] = MethodHandles.Lookup.IMPL_LOOKUP

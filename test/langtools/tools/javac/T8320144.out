@@ -1,0 +1,4 @@
+T8320144.java:16:54: compiler.err.new.not.allowed.in.annotation
+T8320144.java:17:45: compiler.err.new.not.allowed.in.annotation
+T8320144.java:17:56: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: int, java.lang.String)
+3 errors

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,13 +138,13 @@ void os_getCmdlineAndUserInfo(JNIEnv *env, jobject jinfo, pid_t pid) {
     char *args = NULL;
     jstring cmdexe = NULL;
     char fn[32];
-    struct stat64 stat_buf;
+    struct stat stat_buf;
 
     /*
      * Stat /proc/<pid> to get the user id
      */
     snprintf(fn, sizeof fn, "/proc/%d", pid);
-    if (stat64(fn, &stat_buf) == 0) {
+    if (stat(fn, &stat_buf) == 0) {
         unix_getUserInfo(env, jinfo, stat_buf.st_uid);
         JNU_CHECK_EXCEPTION(env);
     }

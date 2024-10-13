@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -727,5 +727,36 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
     };
     static ClientPropertyApplicator<JComboBox<?>, AquaComboBoxUI> getApplicator() {
         return APPLICATOR.get();
+    }
+
+    @Override
+    public int getAccessibleChildrenCount(JComponent c) {
+        return 2;
+    }
+
+    @Override
+    public Accessible getAccessibleChild(JComponent c, int i) {
+        // 0 = the popup
+        // 1 = the editor for editable combobox and the arrow button for non-editable combobox
+        switch ( i ) {
+            case 0:
+                if (popup instanceof Accessible accessiblePopup) {
+                    AccessibleContext ac = accessiblePopup.getAccessibleContext();
+                    ac.setAccessibleParent(comboBox);
+                    return accessiblePopup;
+                }
+                break;
+            case 1:
+                if (comboBox.isEditable()
+                        && (editor instanceof Accessible accessibleEditor)) {
+                    AccessibleContext ac = accessibleEditor.getAccessibleContext();
+                    ac.setAccessibleParent(comboBox);
+                    return accessibleEditor;
+                } else if (!comboBox.isEditable()) {
+                    return arrowButton;
+                }
+                break;
+        }
+        return null;
     }
 }

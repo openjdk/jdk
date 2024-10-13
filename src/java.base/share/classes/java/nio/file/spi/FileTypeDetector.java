@@ -100,6 +100,8 @@ public abstract class FileTypeDetector {
      *          provider then the {@link SecurityManager#checkRead(String)} method
      *          is invoked to check read access to the file.
      *
+     * @spec https://www.rfc-editor.org/info/rfc2045
+     *      RFC 2045: Multipurpose Internet Mail Extensions (MIME) Part One: Format of Internet Message Bodies
      * @see java.nio.file.Files#probeContentType
      */
     public abstract String probeContentType(Path path)

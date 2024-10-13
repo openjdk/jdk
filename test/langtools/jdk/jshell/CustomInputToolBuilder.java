@@ -90,7 +90,8 @@ public class CustomInputToolBuilder extends KullaTesting {
                     .interactiveTerminal(interactiveTerminal)
                     .promptCapture(true)
                     .persistence(new HashMap<>())
-                    .start("--no-startup");
+                    .start("--no-startup",
+                           "--execution", Presets.TEST_DEFAULT_EXECUTION);
 
             String actual = new String(out.toByteArray());
             List<String> actualLines = Arrays.asList(actual.split("\\R"));

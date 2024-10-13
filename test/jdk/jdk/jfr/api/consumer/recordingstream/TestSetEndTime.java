@@ -47,7 +47,7 @@ import jdk.jfr.consumer.RecordingStream;
  * @key jfr
  * @requires vm.hasJFR
  * @library /test/lib
- * @run main/othervm jdk.jfr.api.consumer.recordingstream.TestSetEndTime
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:-UseFastUnorderedTimeStamps jdk.jfr.api.consumer.recordingstream.TestSetEndTime
  */
 public final class TestSetEndTime {
 

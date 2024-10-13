@@ -35,6 +35,7 @@ import com.sun.org.apache.xml.internal.security.algorithms.implementations.Integ
 import com.sun.org.apache.xml.internal.security.algorithms.implementations.SignatureBaseRSA;
 import com.sun.org.apache.xml.internal.security.algorithms.implementations.SignatureDSA;
 import com.sun.org.apache.xml.internal.security.algorithms.implementations.SignatureECDSA;
+import com.sun.org.apache.xml.internal.security.algorithms.implementations.SignatureEDDSA;
 import com.sun.org.apache.xml.internal.security.exceptions.AlgorithmAlreadyRegisteredException;
 import com.sun.org.apache.xml.internal.security.exceptions.XMLSecurityException;
 import com.sun.org.apache.xml.internal.security.signature.XMLSignature;
@@ -497,6 +498,12 @@ public class SignatureAlgorithm extends Algorithm {
             XMLSignature.ALGO_ID_SIGNATURE_ECDSA_RIPEMD160, SignatureECDSA.SignatureECDSARIPEMD160.class
         );
         algorithmHash.put(
+                XMLSignature.ALGO_ID_SIGNATURE_EDDSA_ED25519, SignatureEDDSA.SignatureEd25519.class
+        );
+        algorithmHash.put(
+                XMLSignature.ALGO_ID_SIGNATURE_EDDSA_ED448, SignatureEDDSA.SignatureEd448.class
+        );
+        algorithmHash.put(
             XMLSignature.ALGO_ID_MAC_HMAC_NOT_RECOMMENDED_MD5, IntegrityHmac.IntegrityHmacMD5.class
         );
         algorithmHash.put(
@@ -521,6 +528,7 @@ public class SignatureAlgorithm extends Algorithm {
      *
      * @return URI of this element
      */
+    @Override
     public String getBaseNamespace() {
         return Constants.SignatureSpecNS;
     }
@@ -530,6 +538,7 @@ public class SignatureAlgorithm extends Algorithm {
      *
      * @return Local name
      */
+    @Override
     public String getBaseLocalName() {
         return Constants._TAG_SIGNATUREMETHOD;
     }

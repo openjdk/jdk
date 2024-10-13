@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,8 +87,8 @@ public class SortingFocusTraversalPolicy
     private static final SwingContainerOrderFocusTraversalPolicy
         fitnessTestPolicy = new SwingContainerOrderFocusTraversalPolicy();
 
-    private final int FORWARD_TRAVERSAL = 0;
-    private final int BACKWARD_TRAVERSAL = 1;
+    private static final int FORWARD_TRAVERSAL = 0;
+    private static final int BACKWARD_TRAVERSAL = 1;
 
     /*
      * When true (by default), the legacy merge-sort algo is used to sort an FTP cycle.
@@ -281,8 +281,8 @@ public class SortingFocusTraversalPolicy
             throw new IllegalArgumentException("aContainer is not a focus cycle root of aComponent");
         }
 
-        // Before all the ckecks below we first see if it's an FTP provider or a focus cycle root.
-        // If it's the case just go down cycle (if it's set to "implicit").
+        // Before all the checks below we first see if it's an FTP provider or a focus cycle root.
+        // If it's the case, just go down cycle (if it's set to "implicit").
         Component comp = getComponentDownCycle(aComponent, FORWARD_TRAVERSAL);
         if (comp != null) {
             return comp;

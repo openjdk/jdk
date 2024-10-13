@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "code/compiledMethod.hpp"
+#include "code/nmethod.hpp"
 #include "code/scopeDesc.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetStackChunk.hpp"
@@ -37,6 +37,11 @@
 #include "runtime/registerMap.hpp"
 #include "runtime/smallRegisterMap.inline.hpp"
 #include "runtime/stackChunkFrameStream.inline.hpp"
+
+// Note: Some functions in this file work with stale object pointers, e.g.
+//       DerivedPointerSupport. Be extra careful to not put those pointers into
+//       variables of the 'oop' type. There's extra GC verification around oops
+//       that may fail when stale oops are being used.
 
 template <typename RegisterMapT>
 class FrameOopIterator : public OopIterator {
@@ -103,9 +108,9 @@ frame stackChunkOopDesc::sender(const frame& f, RegisterMap* map) {
   return Continuation::continuation_parent_frame(map);
 }
 
-static int num_java_frames(CompiledMethod* cm, address pc) {
+static int num_java_frames(nmethod* nm, address pc) {
   int count = 0;
-  for (ScopeDesc* scope = cm->scope_desc_at(pc); scope != nullptr; scope = scope->sender()) {
+  for (ScopeDesc* scope = nm->scope_desc_at(pc); scope != nullptr; scope = scope->sender()) {
     count++;
   }
   return count;
@@ -113,14 +118,14 @@ static int num_java_frames(CompiledMethod* cm, address pc) {
 
 static int num_java_frames(const StackChunkFrameStream<ChunkFrames::Mixed>& f) {
   assert(f.is_interpreted()
-         || (f.cb() != nullptr && f.cb()->is_compiled() && f.cb()->as_compiled_method()->is_java_method()), "");
-  return f.is_interpreted() ? 1 : num_java_frames(f.cb()->as_compiled_method(), f.orig_pc());
+         || (f.cb() != nullptr && f.cb()->is_nmethod() && f.cb()->as_nmethod()->is_java_method()), "");
+  return f.is_interpreted() ? 1 : num_java_frames(f.cb()->as_nmethod(), f.orig_pc());
 }
 
 int stackChunkOopDesc::num_java_frames() const {
   int n = 0;
   for (StackChunkFrameStream<ChunkFrames::Mixed> f(const_cast<stackChunkOopDesc*>(this)); !f.is_done();
-       f.next(SmallRegisterMap::instance)) {
+       f.next(SmallRegisterMap::instance())) {
     if (!f.is_stub()) {
       n += ::num_java_frames(f);
     }
@@ -153,43 +158,45 @@ template void stackChunkOopDesc::do_barriers<stackChunkOopDesc::BarrierType::Sto
 
 class DerivedPointersSupport {
 public:
-  static void relativize(oop* base_loc, derived_pointer* derived_loc) {
-    oop base = *base_loc;
-    if (base == nullptr) {
+  static void relativize(derived_base* base_loc, derived_pointer* derived_loc) {
+    // The base oop could be stale from the GC's point-of-view. Treat it as an
+    // uintptr_t to stay clear of the oop verification code in oopsHierarcy.hpp.
+    uintptr_t base = *(uintptr_t*)base_loc;
+    if (base == 0) {
       return;
     }
-    assert(!UseCompressedOops || !CompressedOops::is_base(base), "");
+    assert(!UseCompressedOops || !CompressedOops::is_base((void*)base), "");
 
     // This is always a full derived pointer
     uintptr_t derived_int_val = *(uintptr_t*)derived_loc;
 
     // Make the pointer an offset (relativize) and store it at the same location
-    uintptr_t offset = derived_int_val - cast_from_oop<uintptr_t>(base);
+    uintptr_t offset = derived_int_val - base;
     *(uintptr_t*)derived_loc = offset;
   }
 
-  static void derelativize(oop* base_loc, derived_pointer* derived_loc) {
-    oop base = *base_loc;
-    if (base == nullptr) {
+  static void derelativize(derived_base* base_loc, derived_pointer* derived_loc) {
+    uintptr_t base = *(uintptr_t*)base_loc;
+    if (base == 0) {
       return;
     }
-    assert(!UseCompressedOops || !CompressedOops::is_base(base), "");
+    assert(!UseCompressedOops || !CompressedOops::is_base((void*)base), "");
 
     // All derived pointers should have been relativized into offsets
     uintptr_t offset = *(uintptr_t*)derived_loc;
 
     // Restore the original derived pointer
-    *(uintptr_t*)derived_loc = cast_from_oop<uintptr_t>(base) + offset;
+    *(uintptr_t*)derived_loc = base + offset;
   }
 
   struct RelativizeClosure : public DerivedOopClosure {
-    virtual void do_derived_oop(oop* base_loc, derived_pointer* derived_loc) override {
+    virtual void do_derived_oop(derived_base* base_loc, derived_pointer* derived_loc) override {
       DerivedPointersSupport::relativize(base_loc, derived_loc);
     }
   };
 
   struct DerelativizeClosure : public DerivedOopClosure {
-    virtual void do_derived_oop(oop* base_loc, derived_pointer* derived_loc) override {
+    virtual void do_derived_oop(derived_base* base_loc, derived_pointer* derived_loc) override {
       DerivedPointersSupport::derelativize(base_loc, derived_loc);
     }
   };
@@ -404,8 +411,6 @@ template void stackChunkOopDesc::fix_thawed_frame(const frame& f, const SmallReg
 void stackChunkOopDesc::print_on(bool verbose, outputStream* st) const {
   if (*((juint*)this) == badHeapWordVal) {
     st->print_cr("BAD WORD");
-  } else if (*((juint*)this) == badMetaWordVal) {
-    st->print_cr("BAD META WORD");
   } else {
     InstanceStackChunkKlass::print_chunk(const_cast<stackChunkOopDesc*>(this), verbose, st);
   }
@@ -528,12 +533,12 @@ bool stackChunkOopDesc::verify(size_t* out_size, int* out_oops, int* out_frames,
   assert(oopDesc::is_oop(this), "");
 
   assert(stack_size() >= 0, "");
-  assert(argsize() >= 0, "");
   assert(!has_bitmap() || is_gc_mode(), "");
 
   if (is_empty()) {
-    assert(argsize() == 0, "");
     assert(max_thawing_size() == 0, "");
+  } else {
+    assert(argsize() >= 0, "");
   }
 
   assert(oopDesc::is_oop_or_null(parent()), "");
@@ -542,7 +547,7 @@ bool stackChunkOopDesc::verify(size_t* out_size, int* out_oops, int* out_frames,
 
   // If argsize == 0 and the chunk isn't mixed, the chunk contains the metadata (pc, fp -- frame::sender_sp_offset)
   // for the top frame (below sp), and *not* for the bottom frame.
-  int size = stack_size() - argsize() - sp();
+  int size = bottom() - sp();
   assert(size >= 0, "");
   assert((size == 0) == is_empty(), "");
 
@@ -555,22 +560,25 @@ bool stackChunkOopDesc::verify(size_t* out_size, int* out_oops, int* out_frames,
   iterate_stack(&closure);
 
   assert(!is_empty() || closure._cb == nullptr, "");
-  if (closure._cb != nullptr && closure._cb->is_compiled()) {
+  if (closure._cb != nullptr && closure._cb->is_nmethod()) {
     assert(argsize() ==
-      (closure._cb->as_compiled_method()->method()->num_stack_arg_slots()*VMRegImpl::stack_slot_size) >>LogBytesPerWord,
+      (closure._cb->as_nmethod()->num_stack_arg_slots()*VMRegImpl::stack_slot_size) >>LogBytesPerWord,
       "chunk argsize: %d bottom frame argsize: %d", argsize(),
-      (closure._cb->as_compiled_method()->method()->num_stack_arg_slots()*VMRegImpl::stack_slot_size) >>LogBytesPerWord);
+      (closure._cb->as_nmethod()->num_stack_arg_slots()*VMRegImpl::stack_slot_size) >>LogBytesPerWord);
   }
 
   assert(closure._num_interpreted_frames == 0 || has_mixed_frames(), "");
 
   if (!concurrent) {
-    assert(closure._size <= size + argsize() + frame::metadata_words,
-           "size: %d argsize: %d closure.size: %d end sp: " PTR_FORMAT " start sp: %d chunk size: %d",
-           size, argsize(), closure._size, closure._sp - start_address(), sp(), stack_size());
-    assert(argsize() == closure._argsize - (closure._num_frames > 0 ? frame::metadata_words_at_top : 0),
-           "argsize(): %d closure.argsize: %d closure.callee_interpreted: %d",
-           argsize(), closure._argsize, closure._callee_interpreted);
+    assert(closure._size <= size + (stack_size() - bottom()),
+           "size: %d bottom: %d closure.size: %d end sp: " PTR_FORMAT " start sp: %d chunk size: %d",
+           size, bottom(), closure._size, closure._sp - start_address(), sp(), stack_size());
+    if (closure._num_frames > 0) {
+      assert(closure._argsize >= frame::metadata_words_at_top, "should be set up");
+      assert(argsize() == closure._argsize - frame::metadata_words_at_top,
+             "argsize(): %d closure.argsize: %d closure.callee_interpreted: %d",
+             argsize(), closure._argsize, closure._callee_interpreted);
+    }
 
     int calculated_max_size = closure._size
                               + closure._num_i2c * frame::align_wiggle

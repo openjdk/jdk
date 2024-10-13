@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,6 @@ import static org.testng.Assert.*;
  * @summary TerminatingThreadLocal unit test
  * @modules java.base/java.lang:+open java.base/jdk.internal.misc
  * @requires vm.continuations
- * @enablePreview
  * @run testng/othervm TestTerminatingThreadLocal
  */
 public class TestTerminatingThreadLocal {
@@ -140,7 +139,6 @@ public class TestTerminatingThreadLocal {
 
             ThreadFactory factory = virtualThreadBuilder(pool)
                     .name("ttl-test-virtual-", 0)
-                    .allowSetThreadLocals(false)
                     .factory();
             try (var executor = Executors.newThreadPerTaskExecutor(factory)) {
                 executor.submit(() -> ttlOps.accept(ttl)).get();

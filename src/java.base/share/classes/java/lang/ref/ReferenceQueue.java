@@ -34,6 +34,14 @@ import jdk.internal.misc.VM;
 /**
  * Reference queues, to which registered reference objects are appended by the
  * garbage collector after the appropriate reachability changes are detected.
+ *
+ * <p>{@linkplain java.lang.ref##MemoryConsistency Memory consistency effects}:
+ * The enqueueing of a reference to a queue (by the garbage collector, or by a
+ * successful call to {@link Reference#enqueue})
+ * <a href="{@docRoot}/java.base/java/util/concurrent/package-summary.html#MemoryVisibility"><i>happens-before</i></a>
+ * the reference is removed from the queue by {@link ReferenceQueue#poll} or
+ * {@link ReferenceQueue#remove}.
+ *
  * @param <T> the type of the reference object
  *
  * @author   Mark Reinhold
@@ -175,6 +183,7 @@ public class ReferenceQueue<T> {
      *
      * @return  A reference object, if one was immediately available,
      *          otherwise {@code null}
+     * @see java.lang.ref.Reference#enqueue()
      */
     public Reference<? extends T> poll() {
         if (headIsNull())
@@ -206,6 +215,8 @@ public class ReferenceQueue<T> {
      *
      * @throws  InterruptedException
      *          If the timeout wait is interrupted
+     *
+     * @see java.lang.ref.Reference#enqueue()
      */
     public Reference<? extends T> remove(long timeout) throws InterruptedException {
         if (timeout < 0)
@@ -227,6 +238,7 @@ public class ReferenceQueue<T> {
      *
      * @return A reference object, blocking until one becomes available
      * @throws  InterruptedException  If the wait is interrupted
+     * @see java.lang.ref.Reference#enqueue()
      */
     public Reference<? extends T> remove() throws InterruptedException {
         lock.lock();

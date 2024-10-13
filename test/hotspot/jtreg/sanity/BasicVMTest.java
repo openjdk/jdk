@@ -42,7 +42,7 @@ public class BasicVMTest {
                 "-X",
                 "-help");
         for (String flag : flags) {
-            ProcessTools.executeTestJvm(flag)
+            ProcessTools.executeTestJava(flag)
                         .shouldHaveExitValue(0);
         }
     }

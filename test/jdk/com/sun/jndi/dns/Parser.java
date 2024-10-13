@@ -30,7 +30,7 @@
 
 import com.sun.jndi.dns.ResourceRecord;
 import javax.naming.CommunicationException;
-import javax.naming.InvalidNameException;;
+import javax.naming.InvalidNameException;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;

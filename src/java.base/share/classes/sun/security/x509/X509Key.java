@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.Objects;
 
 import sun.security.util.HexDumpEncoder;
 import sun.security.util.*;
@@ -63,24 +64,6 @@ public class X509Key implements PublicKey, DerEncoder {
 
     /* The algorithm information (name, parameters, etc). */
     protected AlgorithmId algid;
-
-    /**
-     * The key bytes, without the algorithm information.
-     * @deprecated Use the BitArray form which does not require keys to
-     * be byte aligned.
-     * @see sun.security.x509.X509Key#setKey(BitArray)
-     * @see sun.security.x509.X509Key#getKey()
-     */
-    @Deprecated
-    protected byte[] key = null;
-
-    /*
-     * The number of bits unused in the last byte of the key.
-     * Added to keep the byte[] key form consistent with the BitArray
-     * form. Can de deleted when byte[] key is deleted.
-     */
-    @Deprecated
-    private int unusedBits = 0;
 
     /* BitArray form of key */
     private transient BitArray bitStringKey = null;
@@ -111,15 +94,6 @@ public class X509Key implements PublicKey, DerEncoder {
      */
     protected void setKey(BitArray key) {
         this.bitStringKey = (BitArray)key.clone();
-
-        /*
-         * Do this to keep the byte array form consistent with
-         * this. Can delete when byte[] key is deleted.
-         */
-        this.key = key.toByteArray();
-        int remaining = key.length() % 8;
-        this.unusedBits =
-            ((remaining == 0) ? 0 : 8 - remaining);
     }
 
     /**
@@ -127,18 +101,6 @@ public class X509Key implements PublicKey, DerEncoder {
      * @return a BitArray containing the key.
      */
     protected BitArray getKey() {
-        /*
-         * Do this for consistency in case a subclass
-         * modifies byte[] key directly. Remove when
-         * byte[] key is deleted.
-         * Note: the consistency checks fail when the subclass
-         * modifies a non byte-aligned key (into a byte-aligned key)
-         * using the deprecated byte[] key field.
-         */
-        this.bitStringKey = new BitArray(
-                          this.key.length * 8 - this.unusedBits,
-                          this.key);
-
         return (BitArray)bitStringKey.clone();
     }
 
@@ -330,12 +292,11 @@ public class X509Key implements PublicKey, DerEncoder {
         HexDumpEncoder  encoder = new HexDumpEncoder();
 
         return "algorithm = " + algid.toString()
-            + ", unparsed keybits = \n" + encoder.encodeBuffer(key);
+            + ", unparsed keybits = \n" + encoder.encodeBuffer(bitStringKey.toByteArray());
     }
 
     /**
-     * Initialize an X509Key object from an input stream.  The data on that
-     * input stream must be encoded using DER, obeying the X.509
+     * Initialize an X509Key object from a DerValue, obeying the X.509
      * <code>SubjectPublicKeyInfo</code> format.  That is, the data is a
      * sequence consisting of an algorithm ID and a bit string which holds
      * the key.  (That bit string is often used to encapsulate another DER
@@ -350,17 +311,11 @@ public class X509Key implements PublicKey, DerEncoder {
      * private keys may override this method, <code>encode</code>, and
      * of course <code>getFormat</code>.
      *
-     * @param in an input stream with a DER-encoded X.509
-     *          SubjectPublicKeyInfo value
+     * @param val a DER-encoded X.509 SubjectPublicKeyInfo value
      * @exception InvalidKeyException on parsing errors.
      */
-    public void decode(InputStream in)
-    throws InvalidKeyException
-    {
-        DerValue        val;
-
+    void decode(DerValue val) throws InvalidKeyException {
         try {
-            val = new DerValue(in);
             if (val.tag != DerValue.tag_Sequence)
                 throw new InvalidKeyException("invalid key format");
 
@@ -371,13 +326,16 @@ public class X509Key implements PublicKey, DerEncoder {
                 throw new InvalidKeyException ("excess key data");
 
         } catch (IOException e) {
-            throw new InvalidKeyException("IOException: " +
-                                          e.getMessage());
+            throw new InvalidKeyException("Unable to decode key", e);
         }
     }
 
     public void decode(byte[] encodedKey) throws InvalidKeyException {
-        decode(new ByteArrayInputStream(encodedKey));
+        try {
+            decode(new DerValue(encodedKey));
+        } catch (IOException e) {
+            throw new InvalidKeyException("Unable to decode key", e);
+        }
     }
 
     /**
@@ -396,14 +354,13 @@ public class X509Key implements PublicKey, DerEncoder {
     @java.io.Serial
     private void readObject(ObjectInputStream stream) throws IOException {
         try {
-            decode(stream);
+            decode(new DerValue(stream));
         } catch (InvalidKeyException e) {
-            e.printStackTrace();
-            throw new IOException("deserialized key is invalid: " +
-                                  e.getMessage());
+            throw new IOException("deserialized key is invalid", e);
         }
     }
 
+    @Override
     public boolean equals(Object obj) {
         if (this == obj) {
             return true;
@@ -425,13 +382,9 @@ public class X509Key implements PublicKey, DerEncoder {
      * Calculates a hash code value for the object. Objects
      * which are equal will also have the same hashcode.
      */
+    @Override
     public int hashCode() {
-        byte[] b1 = getEncodedInternal();
-        int r = b1.length;
-        for (int i = 0; i < b1.length; i++) {
-            r += (b1[i] & 0xff) * 37;
-        }
-        return r;
+        return Arrays.hashCode(getEncodedInternal());
     }
 
     /*

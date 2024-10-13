@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,16 +35,25 @@ LPSTR UnicodeToUTF8(const LPCWSTR lpUnicodeStr)
 {
     DWORD dwUTF8Len = WideCharToMultiByte(CP_UTF8, 0, lpUnicodeStr, -1, nullptr, 0, nullptr, nullptr);
     LPSTR lpUTF8Str = new CHAR[dwUTF8Len];
+    if (lpUTF8Str == NULL) return NULL;
     memset(lpUTF8Str, 0, sizeof(CHAR) * (dwUTF8Len));
-    WideCharToMultiByte(CP_UTF8, 0, lpUnicodeStr, -1, lpUTF8Str, dwUTF8Len, nullptr, nullptr);
-    return lpUTF8Str;
+    int nb = WideCharToMultiByte(CP_UTF8, 0, lpUnicodeStr, -1, lpUTF8Str, dwUTF8Len, nullptr, nullptr);
+    if (nb > 0) {
+        return lpUTF8Str;
+    }
+    delete[] lpUTF8Str;
+    return NULL;
 }
 
 void UnicodeToUTF8AndCopy(LPSTR dest, LPCWSTR src, SIZE_T maxLength) {
     LPSTR utf8EncodedName = UnicodeToUTF8(src);
-    strncpy(dest, utf8EncodedName, maxLength - 1);
-    delete[] utf8EncodedName;
-    dest[maxLength - 1] = '\0';
+    if (utf8EncodedName != NULL) {
+        strncpy(dest, utf8EncodedName, maxLength - 1);
+        delete[] utf8EncodedName;
+        dest[maxLength - 1] = '\0';
+    } else {
+        if (maxLength > 0) dest[0] = '\0';
+    }
 }
 
 #ifdef __cplusplus

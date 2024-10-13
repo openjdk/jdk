@@ -1,4 +1,4 @@
-.\" Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
+.\" Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
 .\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 .\"
 .\" This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@
 . ftr VB CB
 . ftr VBI CBI
 .\}
-.TH "JSTATD" "1" "2023" "JDK 21-ea" "JDK Commands"
+.TH "JSTATD" "1" "2025" "JDK 24-ea" "JDK Commands"
 .hy
 .SH NAME
 .PP
@@ -43,7 +43,9 @@ jstatd - monitor the creation and termination of instrumented Java
 HotSpot VMs
 .SH SYNOPSIS
 .PP
-\f[B]Note:\f[R] This command is experimental and unsupported.
+\f[B]WARNING:\f[R] This command is experimental, unsupported, and
+deprecated.
+It will be removed in a future release.
 .PP
 \f[V]jstatd\f[R] [\f[I]options\f[R]]
 .TP
@@ -107,9 +109,9 @@ The \f[V]jstatd\f[R] server can monitor only JVMs for which it has the
 appropriate native access permissions.
 Therefore, the \f[V]jstatd\f[R] process must be running with the same
 user credentials as the target JVMs.
-Some user credentials, such as the root user in Linux and OS X operating
-systems, have permission to access the instrumentation exported by any
-JVM on the system.
+Some user credentials, such as the root user in Linux and macOS
+operating systems, have permission to access the instrumentation
+exported by any JVM on the system.
 A \f[V]jstatd\f[R] process running with such credentials can monitor any
 JVM on the system, but introduces additional security concerns.
 .PP

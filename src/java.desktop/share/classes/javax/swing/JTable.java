@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1266,6 +1266,12 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
             autoResizeMode = mode;
             resizeAndRepaint();
             if (tableHeader != null) {
+                if (mode == JTable.AUTO_RESIZE_LAST_COLUMN) {
+                    int colCnt = columnModel.getColumnCount();
+                    if (colCnt > 0) {
+                        tableHeader.setResizingColumn(columnModel.getColumn(colCnt - 1));
+                    }
+                }
                 tableHeader.resizeAndRepaint();
             }
             firePropertyChange("autoResizeMode", old, autoResizeMode);
@@ -3006,16 +3012,17 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
         }
         else {
             TableColumnModel cm = getColumnModel();
-            if( getComponentOrientation().isLeftToRight() ) {
-                for(int i = 0; i < column; i++) {
-                    r.x += cm.getColumn(i).getWidth();
-                }
-            } else {
-                for(int i = cm.getColumnCount()-1; i > column; i--) {
-                    r.x += cm.getColumn(i).getWidth();
-                }
+            for (int i = 0; i < column; i++) {
+                r.x += cm.getColumn(i).getWidth();
             }
-            r.width = cm.getColumn(column).getWidth();
+            // Table columns are laid out from right to left when component
+            // orientation is set to ComponentOrientation.RIGHT_TO_LEFT,
+            // adjust the x coordinate for this case.
+            final int columnWidth = cm.getColumn(column).getWidth();
+            if (!getComponentOrientation().isLeftToRight()) {
+                r.x = getWidth() - r.x - columnWidth;
+            }
+            r.width = columnWidth;
         }
 
         if (valid && !includeSpacing) {
@@ -3209,7 +3216,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
             // would have resulted in the layout the user has chosen.
             // Thereafter, during window resizing etc. it has to work off
             // the preferred sizes as usual - the idea being that, whatever
-            // the user does, everything stays in synch and things don't jump
+            // the user does, everything stays in sync and things don't jump
             // around.
             setWidthsFromPreferredWidths(true);
         }
@@ -4036,7 +4043,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
         }
 
         /**
-         * Inovked when either the table has changed or the sorter has changed
+         * Invoked when either the table has changed or the sorter has changed
          * and after the sorter has been notified. If necessary this will
          * reapply the selection and variable row heights.
          */

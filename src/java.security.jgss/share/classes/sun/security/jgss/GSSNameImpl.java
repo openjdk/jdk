@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -332,10 +332,9 @@ public final class GSSNameImpl implements GSSName {
     }
 
     /**
-     * Returns a hashcode value for this GSSName.
-     *
-     * @return a hashCode value
+     * {@return a hashcode value for this GSSName}
      */
+    @Override
     public int hashCode() {
         /*
          * XXX
@@ -350,6 +349,7 @@ public final class GSSNameImpl implements GSSName {
         return 1;
     }
 
+    @Override
     public boolean equals(Object another) {
 
         try {

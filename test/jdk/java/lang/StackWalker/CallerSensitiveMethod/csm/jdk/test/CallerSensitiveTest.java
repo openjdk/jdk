@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@ import java.util.function.Supplier;
 public class CallerSensitiveTest {
     static final Policy DEFAULT_POLICY = Policy.getPolicy();
     private static final String NON_CSM_CALLER_METHOD = "getCallerClass";
+    private static final String REFLECTIVE_GET_CALLER_METHOD = "getCallerClassReflectively";
     private static final String CSM_CALLER_METHOD = "caller";
 
     public static void main(String... args) throws Throwable {
@@ -68,6 +69,8 @@ public class CallerSensitiveTest {
         CallerSensitiveTest cstest = new CallerSensitiveTest();
         // test static call to java.util.CSM::caller and CSM::getCallerClass
         cstest.staticMethodCall();
+        // test reflective call to StackWalker::getCallerClass
+        cstest.invokeMethod();
         // test java.lang.reflect.Method call
         cstest.reflectMethodCall();
         // test java.lang.invoke.MethodHandle
@@ -95,19 +98,33 @@ public class CallerSensitiveTest {
         method1.invoke(null);
 
         Method method2 = java.util.CSM.class.getMethod(NON_CSM_CALLER_METHOD);
-        Result result = (Result) method2.invoke(null);
+        Result result2 = (Result) method2.invoke(null);
+        checkNonCSMCaller(CallerSensitiveTest.class, result2);
+
+        Method method3 = java.util.CSM.class.getMethod(REFLECTIVE_GET_CALLER_METHOD);
+        Result result3 = (Result) method3.invoke(null);
+        checkNonCSMCaller(CallerSensitiveTest.class, result3);
+    }
+
+    void invokeMethod() throws Throwable {
+        Result result = java.util.CSM.getCallerClassReflectively();
         checkNonCSMCaller(CallerSensitiveTest.class, result);
     }
 
     void invokeMethodHandle(Lookup lookup) throws Throwable {
         MethodHandle mh1 = lookup.findStatic(java.util.CSM.class, CSM_CALLER_METHOD,
-            MethodType.methodType(Class.class));
+                                             MethodType.methodType(Class.class));
         Class<?> c = (Class<?>)mh1.invokeExact();
 
         MethodHandle mh2 = lookup.findStatic(java.util.CSM.class, NON_CSM_CALLER_METHOD,
-            MethodType.methodType(Result.class));
-        Result result = (Result)mh2.invokeExact();
-        checkNonCSMCaller(CallerSensitiveTest.class, result);
+                                             MethodType.methodType(Result.class));
+        Result result2 = (Result)mh2.invokeExact();
+        checkNonCSMCaller(CallerSensitiveTest.class, result2);
+
+        MethodHandle mh3 = lookup.findStatic(java.util.CSM.class, REFLECTIVE_GET_CALLER_METHOD,
+                                             MethodType.methodType(Result.class));
+        Result result3 = (Result)mh3.invokeExact();
+        checkNonCSMCaller(CallerSensitiveTest.class, result3);
     }
 
     void lambda() {

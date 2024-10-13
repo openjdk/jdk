@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,16 +21,25 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 4387255
  * @summary Verifies that ChoiceFormat can handle large numbers of choices
+ *          (previously capped at 30).
+ * @run junit Bug4387255
  */
 
 import java.text.ChoiceFormat;
 
-public class Bug4387255 {
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.params.provider.Arguments.arguments;
+
+public class Bug4387255 {
     private static final double[] doubles = {
             0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
             10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
@@ -49,21 +58,39 @@ public class Bug4387255 {
             "|20#K|21#L|22#M|23#N|24#O|25#P|26#Q|27#R|28#S|29#T" +
             "|30#U|31#V|32#W|33#X|34#Y|35#Z";
 
-    public static void main(String[] args) throws Exception {
-        ChoiceFormat choiceFormat1 = new ChoiceFormat(doubles, strings);
-        ChoiceFormat choiceFormat2 = new ChoiceFormat(pattern);
-        if (!choiceFormat1.equals(choiceFormat2)) {
-            System.out.println("choiceFormat1: " + choiceFormat1.toPattern());
-            System.out.println("choiceFormat2: " + choiceFormat2.toPattern());
-            throw new RuntimeException();
-        }
+    private static final ChoiceFormat choiceFormat1 = new ChoiceFormat(doubles, strings);
+    private static final ChoiceFormat choiceFormat2 = new ChoiceFormat(pattern);
 
+    // Ensure that both the large ChoiceFormats format each value properly
+    @ParameterizedTest
+    @MethodSource
+    public void largeChoicesTest(double db, String expectedString) {
+        String result = choiceFormat2.format(db);
+        assertEquals(expectedString, result,
+                "Wrong format result with: " + choiceFormat2);
+    }
+
+
+    /*
+     * Create arguments in form of : (double, string)
+     * Each string is the expected result of ChoiceFormat.format(double)
+     */
+    private static Arguments[] largeChoicesTest() {
+        Arguments[] doublesAndStrings = new Arguments[doubles.length];
         for (int i = 0; i < doubles.length; i++) {
-            String result = choiceFormat2.format(doubles[i]);
-            if (!result.equals(strings[i])) {
-                throw new RuntimeException("Wrong format result - expected " +
-                        strings[i] + ", got " + result);
-            }
+            doublesAndStrings[i] = arguments(doubles[i], strings[i]);
         }
+        return doublesAndStrings;
+    }
+
+    /*
+     * Check that creating a ChoiceFormat with limits and formats arrays
+     * equivalent to a string pattern are equal. (Checks that both constructors
+     * allow for a large number of choices and formats)
+     */
+    @Test
+    public void patternEqualsArraysTest() {
+        assertEquals(choiceFormat1, choiceFormat2, "Pattern is equivalent to " +
+                "formats and limits, but ChoiceFormats are not equal");
     }
 }

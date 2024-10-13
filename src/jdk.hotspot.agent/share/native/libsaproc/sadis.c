@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,12 +33,6 @@
  */
 
 #ifdef _WINDOWS
-// Disable CRT security warning against _snprintf
-#pragma warning (disable : 4996)
-
-#define snprintf  _snprintf
-#define vsnprintf _vsnprintf
-
 #include <windows.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -82,11 +76,9 @@ JNIEXPORT jlong JNICALL Java_sun_jvm_hotspot_asm_Disassembler_load_1library(JNIE
                                                                            jclass disclass,
                                                                            jstring libname_s) {
   uintptr_t func = 0;
-  const char *error_message = NULL;
   const char *libname = NULL;
 
 #ifdef _WINDOWS
-  char buffer[JVM_MAXPATHLEN];
   HINSTANCE hsdis_handle = (HINSTANCE) NULL;
 #else
   void* hsdis_handle = NULL;
@@ -104,8 +96,7 @@ JNIEXPORT jlong JNICALL Java_sun_jvm_hotspot_asm_Disassembler_load_1library(JNIE
     func = (uintptr_t)GetProcAddress(hsdis_handle, "decode_instructions_virtual");
   }
   if (func == 0) {
-    getLastErrorString(buffer, sizeof(buffer));
-    error_message = buffer;
+    JNU_ThrowByNameWithLastError(env, "sun/jvm/hotspot/debugger/DebuggerException", "GetProcAddress failed");
   }
 #else
   hsdis_handle = dlopen(libname, RTLD_LAZY | RTLD_GLOBAL);
@@ -113,24 +104,11 @@ JNIEXPORT jlong JNICALL Java_sun_jvm_hotspot_asm_Disassembler_load_1library(JNIE
     func = (uintptr_t)dlsym(hsdis_handle, "decode_instructions_virtual");
   }
   if (func == 0) {
-    error_message = dlerror();
+    JNU_ThrowByName(env, "sun/jvm/hotspot/debugger/DebuggerException", dlerror());
   }
 #endif
 
   (*env)->ReleaseStringUTFChars(env, libname_s, libname);
-
-  if (func == 0) {
-    /* Couldn't find entry point.  error_message should contain some
-     * platform dependent error message.
-     */
-    jstring s = JNU_NewStringPlatform(env, error_message);
-    if (s != NULL) {
-      jobject x = JNU_NewObjectByName(env, "sun/jvm/hotspot/debugger/DebuggerException", "(Ljava/lang/String;)V", s);
-      if (x != NULL) {
-        (*env)->Throw(env, x);
-      }
-    }
-  }
   return (jlong)func;
 }
 

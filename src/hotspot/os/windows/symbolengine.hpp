@@ -49,6 +49,11 @@ namespace SymbolEngine {
   // Returns true for success, false for error.
   bool recalc_search_path(bool* p_search_path_was_updated = nullptr);
 
+  // Refresh the list of loaded modules e.g. pick up any newly loaded dll's
+  // since VM initialization.
+  // Returns true for success, false for error.
+  bool refreshModuleList();
+
   // Print one liner describing state (if library loaded, which functions are
   // missing - if any, and the dbhelp API version)
   void print_state_on(outputStream* st);

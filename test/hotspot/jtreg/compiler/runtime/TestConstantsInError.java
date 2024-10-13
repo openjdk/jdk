@@ -261,7 +261,7 @@ public abstract class TestConstantsInError implements OutputProcessor {
         c1Args.addAll(List.of("-XX:+TieredCompilation", "-XX:TieredStopAtLevel=1", "-XX:+TracePatching"));
         c1Args.addAll(commonArgs);
 
-        OutputAnalyzer outputC1 = ProcessTools.executeTestJvm(c1Args)
+        OutputAnalyzer outputC1 = ProcessTools.executeTestJava(c1Args)
                 .shouldHaveExitValue(0);
 
         test.process(outputC1, true);
@@ -270,7 +270,7 @@ public abstract class TestConstantsInError implements OutputProcessor {
         c2Args.add("-XX:-TieredCompilation");
         c2Args.addAll(commonArgs);
 
-        OutputAnalyzer outputC2 = ProcessTools.executeTestJvm(c2Args)
+        OutputAnalyzer outputC2 = ProcessTools.executeTestJava(c2Args)
                 .shouldHaveExitValue(0);
 
         test.process(outputC2, false);

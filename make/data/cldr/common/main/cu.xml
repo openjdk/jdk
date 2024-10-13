@@ -1,0 +1,764 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2024 Unicode, Inc.
+For terms of use, see http://www.unicode.org/copyright.html
+SPDX-License-Identifier: Unicode-3.0
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+-->
+<ldml>
+	<identity>
+		<version number="$Revision$"/>
+		<language type="cu"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="ab" draft="unconfirmed">а҆бха́зскїй</language>
+			<language type="ar" draft="unconfirmed">а҆ра́вскїй</language>
+			<language type="az" draft="unconfirmed">а҆зербайджа́нскїй</language>
+			<language type="be" draft="unconfirmed">бѣлорꙋ́сскїй</language>
+			<language type="bg" draft="unconfirmed">бо́лгарскїй</language>
+			<language type="cu" draft="unconfirmed">церковнослове́нскїй</language>
+			<language type="de" draft="unconfirmed">нѣме́цкїй</language>
+			<language type="de_AT" draft="unconfirmed">а҆ѵстрі́йскїй нѣме́цкїй</language>
+			<language type="de_CH" draft="unconfirmed">є҆лветі́йскїй нѣме́цкїй</language>
+			<language type="el" draft="unconfirmed">є҆́ллинскїй</language>
+			<language type="en" draft="unconfirmed">а҆нглі́йскїй</language>
+			<language type="en_AU" draft="unconfirmed">а҆ѵстралі́йскїй а҆нглі́йскїй</language>
+			<language type="en_CA" draft="unconfirmed">кана́дскїй а҆нглі́йскїй</language>
+			<language type="en_GB" draft="unconfirmed">брїта́нскїй а҆нглі́йскїй</language>
+			<language type="en_GB" alt="short" draft="unconfirmed">а҆нглі́йскїй (вели́каѧ брїта́нїа)</language>
+			<language type="en_US" draft="unconfirmed">а҆мерїка́нскїй а҆нглі́йскїй</language>
+			<language type="en_US" alt="short" draft="unconfirmed">а҆нглі́йскїй (асд)</language>
+			<language type="es" draft="unconfirmed">і҆спа́нскїй</language>
+			<language type="es_419" draft="unconfirmed">латїноамерїка́нскїй і҆спа́нскїй</language>
+			<language type="es_ES" draft="unconfirmed">є҆ѵрѡпе́йскїй і҆спа́нскїй</language>
+			<language type="es_MX" draft="unconfirmed">і҆спанскїй (ме́ѯїка)</language>
+			<language type="et" draft="unconfirmed">є҆сто́нскїй</language>
+			<language type="fi" draft="unconfirmed">фі́нскїй</language>
+			<language type="fr" draft="unconfirmed">францꙋ́зскїй</language>
+			<language type="fr_CA" draft="unconfirmed">кана́дскїй францꙋ́зскїй</language>
+			<language type="fr_CH" draft="unconfirmed">є҆лветі́йскїй францꙋ́зскїй</language>
+			<language type="he" draft="unconfirmed">є҆вре́йскїй</language>
+			<language type="hy" draft="unconfirmed">а҆рме́нскїй</language>
+			<language type="it" draft="unconfirmed">і҆талїа́нскїй</language>
+			<language type="ja" draft="unconfirmed">ꙗ҆пѡ́нскїй</language>
+			<language type="ka" draft="unconfirmed">і҆́верскїй</language>
+			<language type="kk" draft="unconfirmed">каза́хскїй</language>
+			<language type="la" draft="unconfirmed">латі́нскїй</language>
+			<language type="lt" draft="unconfirmed">лїто́вскїй</language>
+			<language type="lv" draft="unconfirmed">латві́йскїй</language>
+			<language type="pt" draft="unconfirmed">портога́льскїй</language>
+			<language type="pt_BR" draft="unconfirmed">бразі́льскїй портога́льскїй</language>
+			<language type="pt_PT" draft="unconfirmed">є҆ѵрѡпе́йскїй портога́льскїй</language>
+			<language type="ro" draft="unconfirmed">дакорꙋмы́нскїй</language>
+			<language type="ro_MD" draft="unconfirmed">молда́вскїй</language>
+			<language type="ru" draft="unconfirmed">рꙋ́сскїй</language>
+			<language type="sr" draft="unconfirmed">се́рбскїй</language>
+			<language type="uk" draft="unconfirmed">ᲂу҆краи́нскїй</language>
+			<language type="und" draft="unconfirmed">невѣ́домый ѧ҆зы́къ</language>
+			<language type="zh" draft="unconfirmed">хи́нскїй</language>
+			<language type="zh_Hans" draft="unconfirmed">ᲂу҆проще́нный хи́нскїй</language>
+			<language type="zh_Hant" draft="unconfirmed">традїцїо́нный хи́нскїй</language>
+		</languages>
+		<scripts>
+			<script type="Arab" draft="unconfirmed">а҆раві́йскаѧ</script>
+			<script type="Cyrl" draft="unconfirmed">кѷри́ллица</script>
+			<script type="Glag" draft="unconfirmed">глаго́лица</script>
+			<script type="Hans" draft="unconfirmed">хи́нскаѧ ᲂу҆проще́ннаѧ</script>
+			<script type="Hant" draft="unconfirmed">хи́нскаѧ традїцїо́ннаѧ</script>
+			<script type="Latn" draft="unconfirmed">латі́ница</script>
+			<script type="Zxxx" draft="unconfirmed">безпи́сьменный</script>
+			<script type="Zzzz" draft="unconfirmed">невѣ̑домаѧ пи́сьмена</script>
+		</scripts>
+		<territories>
+			<territory type="AU" draft="unconfirmed">А҆ѵстралі́ѧ</territory>
+			<territory type="BR" draft="unconfirmed">бразі́лїа</territory>
+			<territory type="BY" draft="unconfirmed">бѣ́лаѧ рꙋ́сь</territory>
+			<territory type="CA" draft="unconfirmed">Кана́да</territory>
+			<territory type="CN" draft="unconfirmed">хи́нскаѧ страна̀</territory>
+			<territory type="DE" draft="unconfirmed">герма́нїа</territory>
+			<territory type="DK" draft="unconfirmed">Дані́ѧ</territory>
+			<territory type="FR" draft="unconfirmed">га́ллїа</territory>
+			<territory type="GB" draft="unconfirmed">Вели́каѧ брїта́нїа</territory>
+			<territory type="IN" draft="unconfirmed">і҆́ндїа</territory>
+			<territory type="IT" draft="unconfirmed">і҆та́лїа</territory>
+			<territory type="JP" draft="unconfirmed">ꙗ҆пѡ́нїа</territory>
+			<territory type="KG" draft="unconfirmed">кирги́зїа</territory>
+			<territory type="KZ" draft="unconfirmed">казахста́нъ</territory>
+			<territory type="MX" draft="unconfirmed">Ме́ѯїко</territory>
+			<territory type="RU" draft="unconfirmed">рѡссі́а</territory>
+			<territory type="UA" draft="unconfirmed">ᲂу҆краи́на</territory>
+			<territory type="US" draft="unconfirmed">а҆мерїка̑нскїѧ соединє́нныѧ держа̑вы</territory>
+			<territory type="ZZ" draft="unconfirmed">невѣ́домаѧ страна̀</territory>
+		</territories>
+		<types>
+			<type key="calendar" type="gregorian" draft="unconfirmed">григорїа́нскїй мѣсѧцесло́въ</type>
+			<type key="collation" type="standard" draft="unconfirmed">канѡни́ческое ᲂу҆порѧ́доченїе</type>
+			<type key="numbers" type="latn" draft="unconfirmed">а҆раві́йстїи числові́и зна́цы</type>
+		</types>
+		<measurementSystemNames>
+			<measurementSystemName type="metric" draft="unconfirmed">метрі́ческаѧ</measurementSystemName>
+			<measurementSystemName type="UK" draft="unconfirmed">а҆нглі́йскаѧ</measurementSystemName>
+			<measurementSystemName type="US" draft="unconfirmed">а҆мерїка́нскаѧ</measurementSystemName>
+		</measurementSystemNames>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters>[҇ ꙽ ҃ ҂ а б ⷠ в ⷡ г ⷢ д ⷣ еє ж ⷤ ⷥ ѕ зꙁ ий ії к ⷦ л ⷧ м ⷨ н ⷩ ѻо ⷪ п р ⷬ с ⷭ т у ꙋ ф х ⷯ ѡ ѿ ꙍ ѽ ц ч ⷱ ш щ ⸯ ꙿ ъ ы ь ѣ ю ѫ ꙗѧ ѯ ѱ ѳ ѵѷ ⷴ]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[҈ ҉\u200C\u200D ꙰ ꙱ ꙲ ︯ ҄ ︮ ꙯ ⷶ ꙣ ⷷ ꙴ ꙃ ꙅ ꙵ ꙶ ꙇ ꙉ ⷸ ꙥ ꙧ ҥ ꙩꙫꙭꙮꚙꚛ ⷫ ҁ ⷵ ⷮ ꙷ ⷹ ꚞ ꙻ ⷰ ꙡ џ ⷲ ⷳ ꙏ ꙸ ꙑ ꙹ ꙺ ⷺ ꙓ ⷻ ꙕ ⷼ ѥ ꚟ ⷽ ꙙ ⷾ ꙛ ѩ ꙝ ѭ ⷿ ꙟ]</exemplarCharacters>
+		<exemplarCharacters type="index">[А Б В Г Д Є Ж Ѕ З И І К Л М Н ѺО П Р С Т Ꙋ Ф Х Ѡ Ѿ Ц Ч Ш Щ Ъ Ы Ь Ѣ Ю Ѫ ꙖѦ Ѯ Ѱ Ѳ Ѵ]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[  \- ‑ , % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[_ \- ‐‑ – — ⹃ , ; \: ! ? . ( ) ꙳ / ꙾]</exemplarCharacters>
+	</characters>
+	<delimiters>
+		<quotationStart draft="unconfirmed">«</quotationStart>
+		<quotationEnd draft="unconfirmed">»</quotationEnd>
+		<alternateQuotationStart draft="unconfirmed">„</alternateQuotationStart>
+		<alternateQuotationEnd draft="unconfirmed">“</alternateQuotationEnd>
+	</delimiters>
+	<dates>
+		<calendars>
+			<calendar type="generic">
+				<dateTimeFormats>
+					<intervalFormats>
+						<intervalFormatFallback draft="unconfirmed">{0} – {1}</intervalFormatFallback>
+					</intervalFormats>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="unconfirmed">і҆аⷩ҇</month>
+							<month type="2" draft="unconfirmed">феⷡ҇</month>
+							<month type="3" draft="unconfirmed">маⷬ҇</month>
+							<month type="4" draft="unconfirmed">а҆пⷬ҇</month>
+							<month type="5" draft="unconfirmed">маꙵ</month>
+							<month type="6" draft="unconfirmed">і҆ꙋⷩ҇</month>
+							<month type="7" draft="unconfirmed">і҆ꙋⷧ҇</month>
+							<month type="8" draft="unconfirmed">а҆́ѵⷢ҇</month>
+							<month type="9" draft="unconfirmed">сеⷫ҇</month>
+							<month type="10" draft="unconfirmed">ѻ҆кⷮ</month>
+							<month type="11" draft="unconfirmed">ноеⷨ</month>
+							<month type="12" draft="unconfirmed">деⷦ҇</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="unconfirmed">і҆аннꙋа́рїа</month>
+							<month type="2" draft="unconfirmed">феврꙋа́рїа</month>
+							<month type="3" draft="unconfirmed">ма́рта</month>
+							<month type="4" draft="unconfirmed">а҆прі́ллїа</month>
+							<month type="5" draft="unconfirmed">ма́їа</month>
+							<month type="6" draft="unconfirmed">і҆ꙋ́нїа</month>
+							<month type="7" draft="unconfirmed">і҆ꙋ́лїа</month>
+							<month type="8" draft="unconfirmed">а҆́ѵгꙋста</month>
+							<month type="9" draft="unconfirmed">септе́мврїа</month>
+							<month type="10" draft="unconfirmed">ѻ҆ктѡ́врїа</month>
+							<month type="11" draft="unconfirmed">ное́мврїа</month>
+							<month type="12" draft="unconfirmed">деке́мврїа</month>
+						</monthWidth>
+					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="narrow">
+							<month type="1" draft="unconfirmed">І҆</month>
+							<month type="2" draft="unconfirmed">Ф</month>
+							<month type="3" draft="unconfirmed">М</month>
+							<month type="4" draft="unconfirmed">А҆</month>
+							<month type="5" draft="unconfirmed">М</month>
+							<month type="6" draft="unconfirmed">І҆</month>
+							<month type="7" draft="unconfirmed">І҆</month>
+							<month type="8" draft="unconfirmed">А҆</month>
+							<month type="9" draft="unconfirmed">С</month>
+							<month type="10" draft="unconfirmed">Ѻ҆</month>
+							<month type="11" draft="unconfirmed">Н</month>
+							<month type="12" draft="unconfirmed">Д</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="unconfirmed">і҆аннꙋа́рїй</month>
+							<month type="2" draft="unconfirmed">феврꙋа́рїй</month>
+							<month type="3" draft="unconfirmed">ма́ртъ</month>
+							<month type="4" draft="unconfirmed">а҆прі́ллїй</month>
+							<month type="5" draft="unconfirmed">ма́їй</month>
+							<month type="6" draft="unconfirmed">і҆ꙋ́нїй</month>
+							<month type="7" draft="unconfirmed">і҆ꙋ́лїй</month>
+							<month type="8" draft="unconfirmed">а҆́ѵгꙋстъ</month>
+							<month type="9" draft="unconfirmed">септе́мврїй</month>
+							<month type="10" draft="unconfirmed">ѻ҆ктѡ́врїй</month>
+							<month type="11" draft="unconfirmed">ное́мврїй</month>
+							<month type="12" draft="unconfirmed">деке́мврїй</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<days>
+					<dayContext type="format">
+						<dayWidth type="abbreviated">
+							<day type="sun" draft="unconfirmed">ндⷧ҇ѧ</day>
+							<day type="mon" draft="unconfirmed">пнⷣе</day>
+							<day type="tue" draft="unconfirmed">втоⷬ҇</day>
+							<day type="wed" draft="unconfirmed">срⷣе</day>
+							<day type="thu" draft="unconfirmed">чеⷦ҇</day>
+							<day type="fri" draft="unconfirmed">пѧⷦ҇</day>
+							<day type="sat" draft="unconfirmed">сꙋⷠ҇</day>
+						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun" draft="unconfirmed">недѣ́лѧ</day>
+							<day type="mon" draft="unconfirmed">понедѣ́льникъ</day>
+							<day type="tue" draft="unconfirmed">вто́рникъ</day>
+							<day type="wed" draft="unconfirmed">среда̀</day>
+							<day type="thu" draft="unconfirmed">четверто́къ</day>
+							<day type="fri" draft="unconfirmed">пѧто́къ</day>
+							<day type="sat" draft="unconfirmed">сꙋббѡ́та</day>
+						</dayWidth>
+					</dayContext>
+					<dayContext type="stand-alone">
+						<dayWidth type="narrow">
+							<day type="sun" draft="unconfirmed">Н</day>
+							<day type="mon" draft="unconfirmed">П</day>
+							<day type="tue" draft="unconfirmed">В</day>
+							<day type="wed" draft="unconfirmed">С</day>
+							<day type="thu" draft="unconfirmed">Ч</day>
+							<day type="fri" draft="unconfirmed">П</day>
+							<day type="sat" draft="unconfirmed">С</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+				<quarters>
+					<quarterContext type="format">
+						<quarterWidth type="wide">
+							<quarter type="1" draft="unconfirmed">а҃_ѧ че́тверть</quarter>
+							<quarter type="2" draft="unconfirmed">в҃_ѧ че́тверть</quarter>
+							<quarter type="3" draft="unconfirmed">г҃_ѧ че́тверть</quarter>
+							<quarter type="4" draft="unconfirmed">д҃_ѧ че́тверть</quarter>
+						</quarterWidth>
+					</quarterContext>
+					<quarterContext type="stand-alone">
+						<quarterWidth type="abbreviated">
+							<quarter type="1" draft="unconfirmed">а҃</quarter>
+							<quarter type="2" draft="unconfirmed">в҃</quarter>
+							<quarter type="3" draft="unconfirmed">г҃</quarter>
+							<quarter type="4" draft="unconfirmed">д҃</quarter>
+						</quarterWidth>
+						<quarterWidth type="narrow">
+							<quarter type="1" draft="unconfirmed">а҃</quarter>
+							<quarter type="2" draft="unconfirmed">в҃</quarter>
+							<quarter type="3" draft="unconfirmed">г҃</quarter>
+							<quarter type="4" draft="unconfirmed">д҃</quarter>
+						</quarterWidth>
+					</quarterContext>
+				</quarters>
+				<dayPeriods>
+					<dayPeriodContext type="format">
+						<dayPeriodWidth type="abbreviated">
+							<dayPeriod type="am" draft="unconfirmed">ДП</dayPeriod>
+							<dayPeriod type="pm" draft="unconfirmed">ПП</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+				</dayPeriods>
+				<eras>
+					<eraNames>
+						<era type="1" draft="unconfirmed">по р. х.</era>
+					</eraNames>
+					<eraAbbr>
+						<era type="0" draft="unconfirmed">пре́дъ р. х.</era>
+						<era type="0" alt="variant" draft="unconfirmed">пре́дъ р. х.</era>
+						<era type="1" draft="unconfirmed">ѿ р. х.</era>
+						<era type="1" alt="variant" draft="unconfirmed">ѿ р. х.</era>
+					</eraAbbr>
+				</eras>
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern draft="unconfirmed">EEEE, d MMMM 'л'. y.</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern draft="unconfirmed">y MMMM d</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern draft="unconfirmed">y MMM d</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern draft="unconfirmed">y.MM.dd</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<timeFormats>
+					<timeFormatLength type="full">
+						<timeFormat>
+							<pattern draft="unconfirmed">HH:mm:ss zzzz</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="long">
+						<timeFormat>
+							<pattern draft="unconfirmed">HH:mm:ss z</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="medium">
+						<timeFormat>
+							<pattern draft="unconfirmed">HH:mm:ss</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="short">
+						<timeFormat>
+							<pattern draft="unconfirmed">HH:mm</pattern>
+						</timeFormat>
+					</timeFormatLength>
+				</timeFormats>
+				<dateTimeFormats>
+					<dateTimeFormatLength type="full">
+						<dateTimeFormat>
+							<pattern draft="unconfirmed">{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="long">
+						<dateTimeFormat>
+							<pattern draft="unconfirmed">{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="medium">
+						<dateTimeFormat>
+							<pattern draft="unconfirmed">{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="short">
+						<dateTimeFormat>
+							<pattern draft="unconfirmed">{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<intervalFormats>
+						<intervalFormatFallback draft="unconfirmed">{0} – {1}</intervalFormatFallback>
+					</intervalFormats>
+				</dateTimeFormats>
+			</calendar>
+		</calendars>
+		<fields>
+			<field type="era">
+				<displayName draft="unconfirmed">вѣ́къ</displayName>
+			</field>
+			<field type="year">
+				<displayName draft="unconfirmed">лѣ́то</displayName>
+			</field>
+			<field type="year-short">
+				<displayName draft="unconfirmed">л.</displayName>
+			</field>
+			<field type="quarter">
+				<displayName draft="unconfirmed">че́тверть</displayName>
+			</field>
+			<field type="quarter-short">
+				<displayName draft="unconfirmed">чеⷡ҇</displayName>
+			</field>
+			<field type="month">
+				<displayName draft="unconfirmed">мѣ́сѧцъ</displayName>
+			</field>
+			<field type="month-short">
+				<displayName draft="unconfirmed">мцⷭ҇ъ</displayName>
+			</field>
+			<field type="week">
+				<displayName draft="unconfirmed">седми́ца</displayName>
+			</field>
+			<field type="week-short">
+				<displayName draft="unconfirmed">сеⷣ</displayName>
+			</field>
+			<field type="day">
+				<displayName draft="unconfirmed">де́нь</displayName>
+				<relative type="-1" draft="unconfirmed">вчера̀</relative>
+				<relative type="0" draft="unconfirmed">дне́сь</relative>
+				<relative type="1" draft="unconfirmed">наꙋ́трїе</relative>
+			</field>
+			<field type="day-short">
+				<displayName draft="unconfirmed">деⷩ҇</displayName>
+			</field>
+			<field type="weekday">
+				<displayName draft="unconfirmed">де́нь седми́цы</displayName>
+			</field>
+			<field type="dayperiod">
+				<displayName draft="unconfirmed">ДП/ПП</displayName>
+			</field>
+			<field type="hour">
+				<displayName draft="unconfirmed">ча́съ</displayName>
+			</field>
+			<field type="hour-short">
+				<displayName draft="unconfirmed">чаⷭ҇</displayName>
+			</field>
+			<field type="minute">
+				<displayName draft="unconfirmed">минꙋ́та</displayName>
+			</field>
+			<field type="minute-short">
+				<displayName draft="unconfirmed">миⷩ҇</displayName>
+			</field>
+			<field type="second">
+				<displayName draft="unconfirmed">секꙋ́нда</displayName>
+			</field>
+			<field type="second-short">
+				<displayName draft="unconfirmed">сеⷦ҇</displayName>
+			</field>
+			<field type="zone">
+				<displayName draft="unconfirmed">по́ѧсъ часовѡ́мъ</displayName>
+			</field>
+		</fields>
+		<timeZoneNames>
+			<regionFormat draft="unconfirmed">{0} (вре́мѧ)</regionFormat>
+			<regionFormat type="daylight" draft="unconfirmed">{0} (лѣ́тнее вре́мѧ)</regionFormat>
+			<regionFormat type="standard" draft="unconfirmed">{0} (зи́мнее вре́мѧ)</regionFormat>
+			<zone type="Etc/UTC">
+				<long>
+					<standard draft="unconfirmed">всемі́рное сѷгхронїзи́рованное вре́мѧ</standard>
+				</long>
+			</zone>
+			<zone type="Etc/Unknown">
+				<exemplarCity draft="unconfirmed">невѣ́домый гра́дъ</exemplarCity>
+			</zone>
+			<zone type="Europe/Minsk">
+				<exemplarCity draft="unconfirmed">ми́нскъ</exemplarCity>
+			</zone>
+			<zone type="Asia/Bishkek">
+				<exemplarCity draft="unconfirmed">бишке́къ</exemplarCity>
+			</zone>
+			<zone type="Asia/Aqtau">
+				<exemplarCity draft="unconfirmed">а҆кта́ꙋ</exemplarCity>
+			</zone>
+			<zone type="Asia/Oral">
+				<exemplarCity draft="unconfirmed">ᲂу҆ра́льскъ</exemplarCity>
+			</zone>
+			<zone type="Asia/Aqtobe">
+				<exemplarCity draft="unconfirmed">а҆ктю́бинскъ</exemplarCity>
+			</zone>
+			<zone type="Asia/Qyzylorda">
+				<exemplarCity draft="unconfirmed">кызылѻрда̀</exemplarCity>
+			</zone>
+			<zone type="Asia/Almaty">
+				<exemplarCity draft="unconfirmed">а҆лматы̀</exemplarCity>
+			</zone>
+			<zone type="Europe/Kaliningrad">
+				<exemplarCity draft="unconfirmed">калинингра́дъ</exemplarCity>
+			</zone>
+			<zone type="Europe/Moscow">
+				<exemplarCity draft="unconfirmed">москва̀</exemplarCity>
+			</zone>
+			<zone type="Europe/Volgograd">
+				<exemplarCity draft="unconfirmed">волгогра́дъ</exemplarCity>
+			</zone>
+			<zone type="Europe/Samara">
+				<exemplarCity draft="unconfirmed">сама́ра</exemplarCity>
+			</zone>
+			<zone type="Asia/Yekaterinburg">
+				<exemplarCity draft="unconfirmed">є҆катерїнбꙋ́ргъ</exemplarCity>
+			</zone>
+			<zone type="Asia/Omsk">
+				<exemplarCity draft="unconfirmed">ѻ҆́мскъ</exemplarCity>
+			</zone>
+			<zone type="Asia/Novosibirsk">
+				<exemplarCity draft="unconfirmed">новосиби́рскъ</exemplarCity>
+			</zone>
+			<zone type="Asia/Novokuznetsk">
+				<exemplarCity draft="unconfirmed">новокꙋзне́цкъ</exemplarCity>
+			</zone>
+			<zone type="Asia/Krasnoyarsk">
+				<exemplarCity draft="unconfirmed">красноѧ́рскъ</exemplarCity>
+			</zone>
+			<zone type="Asia/Irkutsk">
+				<exemplarCity draft="unconfirmed">и҆ркꙋ́тскъ</exemplarCity>
+			</zone>
+			<zone type="Asia/Chita">
+				<exemplarCity draft="unconfirmed">чита̀</exemplarCity>
+			</zone>
+			<zone type="Asia/Yakutsk">
+				<exemplarCity draft="unconfirmed">ꙗ҆кꙋ́тскъ</exemplarCity>
+			</zone>
+			<zone type="Asia/Vladivostok">
+				<exemplarCity draft="unconfirmed">владивосто́къ</exemplarCity>
+			</zone>
+			<zone type="Asia/Khandyga">
+				<exemplarCity draft="unconfirmed">ха́ндыга</exemplarCity>
+			</zone>
+			<zone type="Asia/Sakhalin">
+				<exemplarCity draft="unconfirmed">сахали́нъ</exemplarCity>
+			</zone>
+			<zone type="Asia/Ust-Nera">
+				<exemplarCity draft="unconfirmed">ᲂу҆́сть_не́ра</exemplarCity>
+			</zone>
+			<zone type="Asia/Magadan">
+				<exemplarCity draft="unconfirmed">магада́нъ</exemplarCity>
+			</zone>
+			<zone type="Asia/Srednekolymsk">
+				<exemplarCity draft="unconfirmed">среднеколы́мскъ</exemplarCity>
+			</zone>
+			<zone type="Asia/Kamchatka">
+				<exemplarCity draft="unconfirmed">петропа́ѵловскъ_камча́тскїй</exemplarCity>
+			</zone>
+			<zone type="Asia/Anadyr">
+				<exemplarCity draft="unconfirmed">а҆на́дырь</exemplarCity>
+			</zone>
+			<zone type="Europe/Kiev">
+				<exemplarCity draft="unconfirmed">кі́евъ</exemplarCity>
+			</zone>
+			<zone type="Europe/Simferopol">
+				<exemplarCity draft="unconfirmed">сѷмферꙋ́поль</exemplarCity>
+			</zone>
+			<metazone type="America_Central">
+				<long>
+					<generic draft="unconfirmed">среднеамерїка́нское вре́мѧ</generic>
+					<standard draft="unconfirmed">среднеамерїка́нское зи́мнее вре́мѧ</standard>
+					<daylight draft="unconfirmed">среднеамерїка́нское лѣ́тнее вре́мѧ</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Eastern">
+				<long>
+					<generic draft="unconfirmed">восточноамерїка́нское вре́мѧ</generic>
+					<standard draft="unconfirmed">восточноамерїка́нское зи́мнее вре́мѧ</standard>
+					<daylight draft="unconfirmed">восточноамерїка́нское лѣ́тнее вре́мѧ</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Mountain">
+				<long>
+					<generic draft="unconfirmed">а҆мерїка́нское наго́рнее вре́мѧ</generic>
+					<standard draft="unconfirmed">а҆мерїка́нское наго́рнее зи́мнее вре́мѧ</standard>
+					<daylight draft="unconfirmed">а҆мерїка́нское наго́рнее лѣ́тнее вре́мѧ</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Pacific">
+				<long>
+					<generic draft="unconfirmed">тихоѻкеа́нское вре́мѧ</generic>
+					<standard draft="unconfirmed">тихоѻкеа́нское зи́мнее вре́мѧ</standard>
+					<daylight draft="unconfirmed">тихоѻкеа́нское лѣ́тнее вре́мѧ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Atlantic">
+				<long>
+					<generic draft="unconfirmed">а҆тланті́ческое вре́мѧ</generic>
+					<standard draft="unconfirmed">а҆тланті́ческое зи́мнее вре́мѧ</standard>
+					<daylight draft="unconfirmed">а҆тланті́ческое лѣ́тнее вре́мѧ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Europe_Central">
+				<long>
+					<generic draft="unconfirmed">среднеєѵрѡпе́йское вре́мѧ</generic>
+					<standard draft="unconfirmed">среднеєѵрѡпе́йское зи́мнее вре́мѧ</standard>
+					<daylight draft="unconfirmed">среднеєѵрѡпе́йское лѣ́тнее вре́мѧ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Europe_Eastern">
+				<long>
+					<generic draft="unconfirmed">восточноєѵрѡпе́йское вре́мѧ</generic>
+					<standard draft="unconfirmed">восточноєѵрѡпе́йское зи́мнее вре́мѧ</standard>
+					<daylight draft="unconfirmed">восточноєѵрѡпе́йское лѣ́тнее вре́мѧ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Europe_Further_Eastern">
+				<long>
+					<standard draft="unconfirmed">вре́мѧ въ калинингра́дѣ и҆ ми́нскѣ</standard>
+				</long>
+			</metazone>
+			<metazone type="Europe_Western">
+				<long>
+					<generic draft="unconfirmed">западноєѵрѡпе́йское вре́мѧ</generic>
+					<standard draft="unconfirmed">западноєѵрѡпе́йское зи́мнее вре́мѧ</standard>
+					<daylight draft="unconfirmed">западноєѵрѡпе́йское лѣ́тнее вре́мѧ</daylight>
+				</long>
+			</metazone>
+			<metazone type="GMT">
+				<long>
+					<standard draft="unconfirmed">сре́днее вре́мѧ по грі́нꙋичꙋ</standard>
+				</long>
+			</metazone>
+			<metazone type="Irkutsk">
+				<long>
+					<generic draft="unconfirmed">и҆ркꙋ́тское вре́мѧ</generic>
+					<standard draft="unconfirmed">и҆ркꙋ́тское зи́мнее вре́мѧ</standard>
+					<daylight draft="unconfirmed">и҆ркꙋ́тское лѣ́тнее вре́мѧ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan_Eastern">
+				<long>
+					<standard draft="unconfirmed">восто́чный казахста́нъ</standard>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan_Western">
+				<long>
+					<standard draft="unconfirmed">за́падный казахста́нъ</standard>
+				</long>
+			</metazone>
+			<metazone type="Krasnoyarsk">
+				<long>
+					<generic draft="unconfirmed">красноѧ́рское вре́мѧ</generic>
+					<standard draft="unconfirmed">красноѧ́рское зи́мнее вре́мѧ</standard>
+					<daylight draft="unconfirmed">красноѧ́рское лѣ́тнее вре́мѧ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kyrgystan">
+				<long>
+					<standard draft="unconfirmed">кирги́зїа</standard>
+				</long>
+			</metazone>
+			<metazone type="Magadan">
+				<long>
+					<generic draft="unconfirmed">магада́нское вре́мѧ</generic>
+					<standard draft="unconfirmed">магада́нское зи́мнее вре́мѧ</standard>
+					<daylight draft="unconfirmed">магада́нское лѣ́тнее вре́мѧ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Moscow">
+				<long>
+					<generic draft="unconfirmed">моско́вское вре́мѧ</generic>
+					<standard draft="unconfirmed">моско́вское зи́мнее вре́мѧ</standard>
+					<daylight draft="unconfirmed">моско́вское лѣ́тнее вре́мѧ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Novosibirsk">
+				<long>
+					<generic draft="unconfirmed">новосиби́рское вре́мѧ</generic>
+					<standard draft="unconfirmed">новосиби́рское зи́мнее вре́мѧ</standard>
+					<daylight draft="unconfirmed">новосиби́рское лѣ́тнее вре́мѧ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Omsk">
+				<long>
+					<generic draft="unconfirmed">ѻ҆́мское вре́мѧ</generic>
+					<standard draft="unconfirmed">ѻ҆́мское зи́мнее вре́мѧ</standard>
+					<daylight draft="unconfirmed">ѻ҆́мское лѣ́тнее вре́мѧ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Sakhalin">
+				<long>
+					<generic draft="unconfirmed">вре́мѧ на сахали́нѣ</generic>
+					<standard draft="unconfirmed">зи́мнее вре́мѧ на сахали́нѣ</standard>
+					<daylight draft="unconfirmed">лѣ́тнее вре́мѧ на сахали́нѣ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Vladivostok">
+				<long>
+					<generic draft="unconfirmed">владивосто́цкое вре́мѧ</generic>
+					<standard draft="unconfirmed">владивосто́цкое зи́мнее вре́мѧ</standard>
+					<daylight draft="unconfirmed">владивосто́цкое лѣ́тнее вре́мѧ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Volgograd">
+				<long>
+					<generic draft="unconfirmed">волгогра́дское вре́мѧ</generic>
+					<standard draft="unconfirmed">волгогра́дское зи́мнее вре́мѧ</standard>
+					<daylight draft="unconfirmed">волгогра́дское лѣ́тнее вре́мѧ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Yakutsk">
+				<long>
+					<generic draft="unconfirmed">ꙗ҆кꙋ́тское вре́мѧ</generic>
+					<standard draft="unconfirmed">ꙗ҆кꙋ́тское зи́мнее вре́мѧ</standard>
+					<daylight draft="unconfirmed">ꙗ҆кꙋ́тское лѣ́тнее вре́мѧ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Yekaterinburg">
+				<long>
+					<generic draft="unconfirmed">є҆катерїнбꙋ́ржское вре́мѧ</generic>
+					<standard draft="unconfirmed">є҆катерїнбꙋ́ржское зи́мнее вре́мѧ</standard>
+					<daylight draft="unconfirmed">є҆катерїнбꙋ́ржское лѣ́тнее вре́мѧ</daylight>
+				</long>
+			</metazone>
+		</timeZoneNames>
+	</dates>
+	<numbers>
+		<otherNumberingSystems>
+			<traditional>cyrl</traditional>
+		</otherNumberingSystems>
+		<symbols numberSystem="latn">
+			<decimal draft="unconfirmed">,</decimal>
+			<group draft="unconfirmed"> </group>
+		</symbols>
+		<percentFormats numberSystem="latn">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0 %</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<currencyFormats numberSystem="latn">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">#,##0.00 ¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencies>
+			<currency type="BRL">
+				<displayName draft="unconfirmed">бразі́льскїй реа́лъ</displayName>
+				<displayName count="other" draft="unconfirmed">бразі́льскагѡ реа́ла</displayName>
+			</currency>
+			<currency type="BYN">
+				<displayName draft="unconfirmed">бѣлорꙋ́сскїй рꙋ́бль</displayName>
+				<displayName count="other" draft="unconfirmed">бѣлорꙋ́сскагѡ рꙋблѧ̀</displayName>
+				<symbol alt="narrow" draft="unconfirmed">р.</symbol>
+			</currency>
+			<currency type="BYR">
+				<displayName draft="unconfirmed">бѣлорꙋ́сскїй рꙋ́бль (2000–2016)</displayName>
+				<displayName count="other" draft="unconfirmed">бѣлорꙋ́сскагѡ рꙋблѧ̀ (2000–2016)</displayName>
+			</currency>
+			<currency type="CNY">
+				<displayName draft="unconfirmed">хи́нскїй ю҆а́нь</displayName>
+				<displayName count="other" draft="unconfirmed">хи́нскагѡ ю҆а́нѧ</displayName>
+			</currency>
+			<currency type="EUR">
+				<displayName draft="unconfirmed">є҆́ѵрѡ</displayName>
+				<displayName count="other" draft="unconfirmed">є҆́ѵра</displayName>
+			</currency>
+			<currency type="GBP">
+				<displayName draft="unconfirmed">а҆нглі́йскїй фꙋ́нтъ сте́рлингѡвъ</displayName>
+				<displayName count="other" draft="unconfirmed">а҆нглі́йскагѡ фꙋ́нта сте́рлингѡвъ</displayName>
+			</currency>
+			<currency type="INR">
+				<displayName draft="unconfirmed">і҆нді́йскаѧ рꙋ́пїѧ</displayName>
+				<displayName count="other" draft="unconfirmed">і҆нді́йскїѧ рꙋ́пїи</displayName>
+			</currency>
+			<currency type="JPY">
+				<displayName draft="unconfirmed">ꙗ҆пѡ́нскаѧ і҆е́на</displayName>
+				<displayName count="other" draft="unconfirmed">ꙗ҆пѡ́нскїѧ і҆е́ны</displayName>
+			</currency>
+			<currency type="KGS">
+				<displayName draft="unconfirmed">кирги́зскїй сꙋ́мъ</displayName>
+				<displayName count="other" draft="unconfirmed">кирги́зскагѡ сꙋ́ма</displayName>
+			</currency>
+			<currency type="KZT">
+				<displayName draft="unconfirmed">каза́хскаѧ деньга̀</displayName>
+				<displayName count="other" draft="unconfirmed">каза́хскїѧ деньгѝ</displayName>
+				<symbol draft="unconfirmed">₸</symbol>
+			</currency>
+			<currency type="RUB">
+				<displayName draft="unconfirmed">рѡссі́йскїй рꙋ́бль</displayName>
+				<displayName count="other" draft="unconfirmed">рѡссі́йскагѡ рꙋблѧ̀</displayName>
+				<symbol>₽</symbol>
+			</currency>
+			<currency type="UAH">
+				<displayName draft="unconfirmed">ᲂу҆краи́нскаѧ гри́вна</displayName>
+				<displayName count="other" draft="unconfirmed">ᲂу҆краи́нскїѧ гри́вны</displayName>
+				<symbol draft="unconfirmed">₴</symbol>
+			</currency>
+			<currency type="USD">
+				<displayName draft="unconfirmed">а҆мерїка́нскїй до́лларъ</displayName>
+				<displayName count="other" draft="unconfirmed">а҆мерїка́нскагѡ до́ллара</displayName>
+				<symbol draft="unconfirmed">$</symbol>
+			</currency>
+			<currency type="XXX">
+				<displayName draft="unconfirmed">невѣ́домое пла́тное сре́дство</displayName>
+				<displayName count="other" draft="unconfirmed">невѣ́домагѡ пла́тнагѡ сре́дства</displayName>
+			</currency>
+		</currencies>
+	</numbers>
+	<listPatterns>
+		<listPattern>
+			<listPatternPart type="end" draft="unconfirmed">{0} и҆ {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0} и҆ {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="unit-short">
+			<listPatternPart type="end" draft="unconfirmed">{0}, {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0}, {1}</listPatternPart>
+		</listPattern>
+	</listPatterns>
+	<posix>
+		<messages>
+			<yesstr draft="unconfirmed">є҆́й:є</yesstr>
+			<nostr draft="unconfirmed">нѝ:н</nostr>
+		</messages>
+	</posix>
+</ldml>

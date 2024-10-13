@@ -3,7 +3,7 @@
 <!--
 Copyright © 1991-2022 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <supplementalData>
@@ -80,6 +80,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
             <pluralRule count="zero">n = 0 @integer 0 @decimal 0.0, 0.00, 0.000, 0.0000</pluralRule>
             <pluralRule count="one">n = 1 @integer 1 @decimal 1.0, 1.00, 1.000, 1.0000</pluralRule>
             <pluralRule count="other"> @integer 2~17, 100, 1000, 10000, 100000, 1000000, … @decimal 0.1~0.9, 1.1~1.7, 10.0, 100.0, 1000.0, 10000.0, 100000.0, 1000000.0, …</pluralRule>
+        </pluralRules>
+        <pluralRules locales="blo">
+            <pluralRule count="zero">n = 0 @integer 0 @decimal 0.0, 0.00, 0.000, 0.0000</pluralRule>
+            <pluralRule count="one">n = 1 @integer 1 @decimal 1.0, 1.00, 1.000, 1.0000</pluralRule>
+            <pluralRule count="other"> @integer 2~16, 100, 1000, 10000, 100000, 1000000, … @decimal 2.0~2.5, 10.0, 100.0, 1000.0, 10000.0, 100000.0, 1000000.0, …</pluralRule>
         </pluralRules>
 
         <!-- 3: one,two,other -->

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -30,7 +30,6 @@
                             develop_pd,                                     \
                             product,                                        \
                             product_pd,                                     \
-                            notproduct,                                     \
                             range,                                          \
                             constraint)                                     \
                                                                             \
@@ -50,13 +49,6 @@
           "With automatic region sizing, the regions would be at most "     \
           "this large.")                                                    \
                                                                             \
-  product(intx, ShenandoahHumongousThreshold, 100, EXPERIMENTAL,            \
-          "Humongous objects are allocated in separate regions. "           \
-          "This setting defines how large the object should be to be "      \
-          "deemed humongous. Value is in  percents of heap region size. "   \
-          "This also caps the maximum TLAB size.")                          \
-          range(1, 100)                                                     \
-                                                                            \
   product(ccstr, ShenandoahGCMode, "satb",                                  \
           "GC mode to use.  Among other things, this defines which "        \
           "barriers are in in use. Possible values are:"                    \
@@ -75,11 +67,6 @@
           " aggressive - run GC continuously, try to evacuate everything;"  \
           " compact - run GC more frequently and with deeper targets to "   \
           "free up more memory.")                                           \
-                                                                            \
-  product(uintx, ShenandoahUnloadClassesFrequency, 1, EXPERIMENTAL,         \
-          "Unload the classes every Nth cycle. Normally affects concurrent "\
-          "GC cycles, as degenerated and full GCs would try to unload "     \
-          "classes regardless. Set to zero to disable class unloading.")    \
                                                                             \
   product(uintx, ShenandoahGarbageThreshold, 25, EXPERIMENTAL,              \
           "How much garbage a region has to contain before it would be "    \
@@ -120,7 +107,7 @@
           "to learn application and GC performance.")                       \
           range(0,100)                                                      \
                                                                             \
-  product(uintx, ShenandoahImmediateThreshold, 90, EXPERIMENTAL,            \
+  product(uintx, ShenandoahImmediateThreshold, 70, EXPERIMENTAL,            \
           "The cycle may shortcut when enough garbage can be reclaimed "    \
           "from the immediate garbage (completely garbage regions). "       \
           "In percents of total garbage found. Setting this threshold "     \
@@ -220,9 +207,6 @@
           " 3 = previous level, plus all reachable objects; "               \
           " 4 = previous level, plus all marked objects")                   \
                                                                             \
-  product(bool, ShenandoahElasticTLAB, true, DIAGNOSTIC,                    \
-          "Use Elastic TLABs with Shenandoah")                              \
-                                                                            \
   product(uintx, ShenandoahEvacReserve, 5, EXPERIMENTAL,                    \
           "How much of heap to reserve for evacuations. Larger values make "\
           "GC evacuate more live objects on every cycle, while leaving "    \
@@ -294,6 +278,11 @@
           "How many back-to-back Degenerated GCs should happen before "     \
           "going to a Full GC.")                                            \
                                                                             \
+  product(uintx, ShenandoahNoProgressThreshold, 5, EXPERIMENTAL,            \
+          "After this number of consecutive Full GCs fail to make "         \
+          "progress, Shenandoah will raise out of memory errors. Note "     \
+          "that progress is determined by ShenandoahCriticalFreeThreshold") \
+                                                                            \
   product(bool, ShenandoahImplicitGCInvokesConcurrent, false, EXPERIMENTAL, \
           "Should internally-caused GC requests invoke concurrent cycles, " \
           "should they do the stop-the-world (Degenerated / Full GC)? "     \
@@ -322,9 +311,10 @@
           "checking for cancellation, yielding, etc. Larger values improve "\
           "marking performance at expense of responsiveness.")              \
                                                                             \
-  product(uintx, ShenandoahParallelRegionStride, 1024, EXPERIMENTAL,        \
+  product(uintx, ShenandoahParallelRegionStride, 0, EXPERIMENTAL,           \
           "How many regions to process at once during parallel region "     \
-          "iteration. Affects heaps with lots of regions.")                 \
+          "iteration. Affects heaps with lots of regions. "                 \
+          "Set to 0 to let Shenandoah to decide the best value.")           \
                                                                             \
   product(size_t, ShenandoahSATBBufferSize, 1 * K, EXPERIMENTAL,            \
           "Number of entries in an SATB log buffer.")                       \
@@ -334,14 +324,8 @@
           "How many times to maximum attempt to flush SATB buffers at the " \
           "end of concurrent marking.")                                     \
                                                                             \
-  product(bool, ShenandoahSuspendibleWorkers, false, EXPERIMENTAL,          \
-          "Suspend concurrent GC worker threads at safepoints")             \
-                                                                            \
   product(bool, ShenandoahSATBBarrier, true, DIAGNOSTIC,                    \
           "Turn on/off SATB barriers in Shenandoah")                        \
-                                                                            \
-  product(bool, ShenandoahIUBarrier, false, DIAGNOSTIC,                     \
-          "Turn on/off I-U barriers barriers in Shenandoah")                \
                                                                             \
   product(bool, ShenandoahCASBarrier, true, DIAGNOSTIC,                     \
           "Turn on/off CAS barriers in Shenandoah")                         \
@@ -352,21 +336,12 @@
   product(bool, ShenandoahLoadRefBarrier, true, DIAGNOSTIC,                 \
           "Turn on/off load-reference barriers in Shenandoah")              \
                                                                             \
-  product(bool, ShenandoahNMethodBarrier, true, DIAGNOSTIC,                 \
-          "Turn on/off NMethod entry barriers in Shenandoah")               \
-                                                                            \
   product(bool, ShenandoahStackWatermarkBarrier, true, DIAGNOSTIC,          \
           "Turn on/off stack watermark barriers in Shenandoah")             \
                                                                             \
-  develop(bool, ShenandoahVerifyOptoBarriers, false,                        \
+  develop(bool, ShenandoahVerifyOptoBarriers, trueInDebug,                  \
           "Verify no missing barriers in C2.")                              \
                                                                             \
-  product(bool, ShenandoahLoopOptsAfterExpansion, true, DIAGNOSTIC,         \
-          "Attempt more loop opts after barrier expansion.")                \
-                                                                            \
-  product(bool, ShenandoahSelfFixing, true, DIAGNOSTIC,                     \
-          "Fix references with load reference barrier. Disabling this "     \
-          "might degrade performance.")
 
 // end of GC_SHENANDOAH_FLAGS
 

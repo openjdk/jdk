@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
 
     static final int FORBID_OPCODE_KIND = VO_ONLYFP;
 
-    static final ValueLayout.OfByte ELEMENT_LAYOUT = ValueLayout.JAVA_BYTE.withBitAlignment(8);
+    static final ValueLayout.OfByte ELEMENT_LAYOUT = ValueLayout.JAVA_BYTE.withByteAlignment(1);
 
     @ForceInline
     static int opCode(Operator op) {
@@ -2393,17 +2393,18 @@ public abstract class ByteVector extends AbstractVector<Byte> {
      */
     @Override
     public abstract
-    ByteVector rearrange(VectorShuffle<Byte> m);
+    ByteVector rearrange(VectorShuffle<Byte> shuffle);
 
     /*package-private*/
     @ForceInline
     final
     <S extends VectorShuffle<Byte>>
     ByteVector rearrangeTemplate(Class<S> shuffletype, S shuffle) {
-        shuffle.checkIndexes();
+        @SuppressWarnings("unchecked")
+        S ws = (S) shuffle.wrapIndexes();
         return VectorSupport.rearrangeOp(
             getClass(), shuffletype, null, byte.class, length(),
-            this, shuffle, null,
+            this, ws, null,
             (v1, s_, m_) -> v1.uOp((i, a) -> {
                 int ei = s_.laneSource(i);
                 return v1.lane(ei);
@@ -2428,17 +2429,14 @@ public abstract class ByteVector extends AbstractVector<Byte> {
                                            M m) {
 
         m.check(masktype, this);
-        VectorMask<Byte> valid = shuffle.laneIsValid();
-        if (m.andNot(valid).anyTrue()) {
-            shuffle.checkIndexes();
-            throw new AssertionError();
-        }
+        @SuppressWarnings("unchecked")
+        S ws = (S) shuffle.wrapIndexes();
         return VectorSupport.rearrangeOp(
                    getClass(), shuffletype, masktype, byte.class, length(),
-                   this, shuffle, m,
+                   this, ws, m,
                    (v1, s_, m_) -> v1.uOp((i, a) -> {
                         int ei = s_.laneSource(i);
-                        return ei < 0  || !m_.laneIsSet(i) ? 0 : v1.lane(ei);
+                        return !m_.laneIsSet(i) ? 0 : v1.lane(ei);
                    }));
     }
 
@@ -2551,7 +2549,10 @@ public abstract class ByteVector extends AbstractVector<Byte> {
     /*package-private*/
     @ForceInline
     final ByteVector selectFromTemplate(ByteVector v) {
-        return v.rearrange(this.toShuffle());
+        return (ByteVector)VectorSupport.selectFromOp(getClass(), null, byte.class,
+                                                        length(), this, v, null,
+                                                        (v1, v2, _m) ->
+                                                         v2.rearrange(v1.toShuffle()));
     }
 
     /**
@@ -2563,9 +2564,15 @@ public abstract class ByteVector extends AbstractVector<Byte> {
 
     /*package-private*/
     @ForceInline
-    final ByteVector selectFromTemplate(ByteVector v,
-                                                  AbstractMask<Byte> m) {
-        return v.rearrange(this.toShuffle(), m);
+    final
+    <M extends VectorMask<Byte>>
+    ByteVector selectFromTemplate(ByteVector v,
+                                            Class<M> masktype, M m) {
+        m.check(masktype, this);
+        return (ByteVector)VectorSupport.selectFromOp(getClass(), masktype, byte.class,
+                                                        length(), this, v, m,
+                                                        (v1, v2, _m) ->
+                                                         v2.rearrange(v1.toShuffle(), _m));
     }
 
     /// Ternary operations
@@ -2845,7 +2852,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
      *
      * @param i the lane index
      * @return the lane element at lane index {@code i}
-     * @throws IllegalArgumentException if the index is is out of range
+     * @throws IllegalArgumentException if the index is out of range
      * ({@code < 0 || >= length()})
      */
     public abstract byte lane(int i);
@@ -2863,7 +2870,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
      * @param e the value to be placed
      * @return the result of replacing the lane element of this vector at lane
      * index {@code i} with value {@code e}.
-     * @throws IllegalArgumentException if the index is is out of range
+     * @throws IllegalArgumentException if the index is out of range
      * ({@code < 0 || >= length()})
      */
     public abstract ByteVector withLane(int i, byte e);
@@ -3049,7 +3056,35 @@ public abstract class ByteVector extends AbstractVector<Byte> {
                                    byte[] a, int offset,
                                    int[] indexMap, int mapOffset) {
         ByteSpecies vsp = (ByteSpecies) species;
-        return vsp.vOp(n -> a[offset + indexMap[mapOffset + n]]);
+        IntVector.IntSpecies isp = IntVector.species(vsp.indexShape());
+        Objects.requireNonNull(a);
+        Objects.requireNonNull(indexMap);
+        Class<? extends ByteVector> vectorType = vsp.vectorType();
+
+
+        // Constant folding should sweep out following conditonal logic.
+        VectorSpecies<Integer> lsp;
+        if (isp.length() > IntVector.SPECIES_PREFERRED.length()) {
+            lsp = IntVector.SPECIES_PREFERRED;
+        } else {
+            lsp = isp;
+        }
+
+        // Check indices are within array bounds.
+        for (int i = 0; i < vsp.length(); i += lsp.length()) {
+            IntVector vix = IntVector
+                .fromArray(lsp, indexMap, mapOffset + i)
+                .add(offset);
+            VectorIntrinsics.checkIndex(vix, a.length);
+        }
+
+        return VectorSupport.loadWithMap(
+            vectorType, null, byte.class, vsp.laneCount(),
+            lsp.vectorType(),
+            a, ARRAY_BASE, null, null,
+            a, offset, indexMap, mapOffset, vsp,
+            (c, idx, iMap, idy, s, vm) ->
+            s.vOp(n -> c[idx + iMap[idy+n]]));
     }
 
     /**
@@ -3094,8 +3129,13 @@ public abstract class ByteVector extends AbstractVector<Byte> {
                                    byte[] a, int offset,
                                    int[] indexMap, int mapOffset,
                                    VectorMask<Byte> m) {
-        ByteSpecies vsp = (ByteSpecies) species;
-        return vsp.vOp(m, n -> a[offset + indexMap[mapOffset + n]]);
+        if (m.allTrue()) {
+            return fromArray(species, a, offset, indexMap, mapOffset);
+        }
+        else {
+            ByteSpecies vsp = (ByteSpecies) species;
+            return vsp.dummyVector().fromArray0(a, offset, indexMap, mapOffset, m);
+        }
     }
 
 
@@ -3281,8 +3321,6 @@ public abstract class ByteVector extends AbstractVector<Byte> {
      *         if {@code offset+N*1 < 0}
      *         or {@code offset+N*1 >= ms.byteSize()}
      *         for any lane {@code N} in the vector
-     * @throws IllegalArgumentException if the memory segment is a heap segment that is
-     *         not backed by a {@code byte[]} array.
      * @throws IllegalStateException if the memory segment's session is not alive,
      *         or if access occurs from a thread other than the thread owning the session.
      * @since 19
@@ -3314,7 +3352,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
      * byte[] ar = new byte[species.length()];
      * for (int n = 0; n < ar.length; n++) {
      *     if (m.laneIsSet(n)) {
-     *         ar[n] = slice.getAtIndex(ValuaLayout.JAVA_BYTE.withBitAlignment(8), n);
+     *         ar[n] = slice.getAtIndex(ValuaLayout.JAVA_BYTE.withByteAlignment(1), n);
      *     }
      * }
      * ByteVector r = ByteVector.fromArray(species, ar, 0);
@@ -3333,8 +3371,6 @@ public abstract class ByteVector extends AbstractVector<Byte> {
      *         or {@code offset+N*1 >= ms.byteSize()}
      *         for any lane {@code N} in the vector
      *         where the mask is set
-     * @throws IllegalArgumentException if the memory segment is a heap segment that is
-     *         not backed by a {@code byte[]} array.
      * @throws IllegalStateException if the memory segment's session is not alive,
      *         or if access occurs from a thread other than the thread owning the session.
      * @since 19
@@ -3377,7 +3413,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         ByteSpecies vsp = vspecies();
         VectorSupport.store(
             vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
-            a, arrayAddress(a, offset),
+            a, arrayAddress(a, offset), false,
             this,
             a, offset,
             (arr, off, v)
@@ -3530,7 +3566,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         ByteVector normalized = this.and((byte) 1);
         VectorSupport.store(
             vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
-            a, booleanArrayAddress(a, offset),
+            a, booleanArrayAddress(a, offset), false,
             normalized,
             a, offset,
             (arr, off, v)
@@ -3741,7 +3777,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         ByteSpecies vsp = vspecies();
         return VectorSupport.load(
             vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
-            a, arrayAddress(a, offset),
+            a, arrayAddress(a, offset), false,
             a, offset, vsp,
             (arr, off, s) -> s.ldOp(arr, (int) off,
                                     (arr_, off_, i) -> arr_[off_ + i]));
@@ -3758,12 +3794,55 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         ByteSpecies vsp = vspecies();
         return VectorSupport.loadMasked(
             vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
-            a, arrayAddress(a, offset), m, offsetInRange,
+            a, arrayAddress(a, offset), false, m, offsetInRange,
             a, offset, vsp,
             (arr, off, s, vm) -> s.ldOp(arr, (int) off, vm,
                                         (arr_, off_, i) -> arr_[off_ + i]));
     }
 
+    /*package-private*/
+    abstract
+    ByteVector fromArray0(byte[] a, int offset,
+                                    int[] indexMap, int mapOffset,
+                                    VectorMask<Byte> m);
+    @ForceInline
+    final
+    <M extends VectorMask<Byte>>
+    ByteVector fromArray0Template(Class<M> maskClass, byte[] a, int offset,
+                                            int[] indexMap, int mapOffset, M m) {
+        ByteSpecies vsp = vspecies();
+        IntVector.IntSpecies isp = IntVector.species(vsp.indexShape());
+        Objects.requireNonNull(a);
+        Objects.requireNonNull(indexMap);
+        m.check(vsp);
+        Class<? extends ByteVector> vectorType = vsp.vectorType();
+
+
+        // Constant folding should sweep out following conditonal logic.
+        VectorSpecies<Integer> lsp;
+        if (isp.length() > IntVector.SPECIES_PREFERRED.length()) {
+            lsp = IntVector.SPECIES_PREFERRED;
+        } else {
+            lsp = isp;
+        }
+
+        // Check indices are within array bounds.
+        // FIXME: Check index under mask controlling.
+        for (int i = 0; i < vsp.length(); i += lsp.length()) {
+            IntVector vix = IntVector
+                .fromArray(lsp, indexMap, mapOffset + i)
+                .add(offset);
+            VectorIntrinsics.checkIndex(vix, a.length);
+        }
+
+        return VectorSupport.loadWithMap(
+            vectorType, maskClass, byte.class, vsp.laneCount(),
+            lsp.vectorType(),
+            a, ARRAY_BASE, null, m,
+            a, offset, indexMap, mapOffset, vsp,
+            (c, idx, iMap, idy, s, vm) ->
+            s.vOp(vm, n -> c[idx + iMap[idy+n]]));
+    }
 
 
     /*package-private*/
@@ -3775,7 +3854,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         ByteSpecies vsp = vspecies();
         return VectorSupport.load(
             vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
-            a, booleanArrayAddress(a, offset),
+            a, booleanArrayAddress(a, offset), false,
             a, offset, vsp,
             (arr, off, s) -> s.ldOp(arr, (int) off,
                                     (arr_, off_, i) -> (byte) (arr_[off_ + i] ? 1 : 0)));
@@ -3792,7 +3871,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         ByteSpecies vsp = vspecies();
         return VectorSupport.loadMasked(
             vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
-            a, booleanArrayAddress(a, offset), m, offsetInRange,
+            a, booleanArrayAddress(a, offset), false, m, offsetInRange,
             a, offset, vsp,
             (arr, off, s, vm) -> s.ldOp(arr, (int) off, vm,
                                         (arr_, off_, i) -> (byte) (arr_[off_ + i] ? 1 : 0)));
@@ -3840,7 +3919,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         ByteSpecies vsp = vspecies();
         VectorSupport.store(
             vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
-            a, arrayAddress(a, offset),
+            a, arrayAddress(a, offset), false,
             this, a, offset,
             (arr, off, v)
             -> v.stOp(arr, (int) off,
@@ -3857,7 +3936,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         ByteSpecies vsp = vspecies();
         VectorSupport.storeMasked(
             vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
-            a, arrayAddress(a, offset),
+            a, arrayAddress(a, offset), false,
             this, m, a, offset,
             (arr, off, v, vm)
             -> v.stOp(arr, (int) off, vm,
@@ -3876,7 +3955,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         ByteVector normalized = this.and((byte) 1);
         VectorSupport.storeMasked(
             vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
-            a, booleanArrayAddress(a, offset),
+            a, booleanArrayAddress(a, offset), false,
             normalized, m, a, offset,
             (arr, off, v, vm)
             -> v.stOp(arr, (int) off, vm,
@@ -4198,9 +4277,19 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         @ForceInline
         @Override final
         public ByteVector fromArray(Object a, int offset) {
-            // User entry point:  Be careful with inputs.
+            // User entry point
+            // Defer only to the equivalent method on the vector class, using the same inputs
             return ByteVector
                 .fromArray(this, (byte[]) a, offset);
+        }
+
+        @ForceInline
+        @Override final
+        public ByteVector fromMemorySegment(MemorySegment ms, long offset, ByteOrder bo) {
+            // User entry point
+            // Defer only to the equivalent method on the vector class, using the same inputs
+            return ByteVector
+                .fromMemorySegment(this, ms, offset, bo);
         }
 
         @ForceInline

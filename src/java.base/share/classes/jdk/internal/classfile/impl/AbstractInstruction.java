@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,46 +24,47 @@
  */
 package jdk.internal.classfile.impl;
 
+import java.lang.classfile.constantpool.PoolEntry;
 import java.lang.constant.ConstantDesc;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.Instruction;
-import jdk.internal.classfile.constantpool.ClassEntry;
-import jdk.internal.classfile.instruction.SwitchCase;
-import jdk.internal.classfile.constantpool.FieldRefEntry;
-import jdk.internal.classfile.constantpool.InterfaceMethodRefEntry;
-import jdk.internal.classfile.constantpool.InvokeDynamicEntry;
-import jdk.internal.classfile.constantpool.LoadableConstantEntry;
-import jdk.internal.classfile.constantpool.MemberRefEntry;
-import jdk.internal.classfile.instruction.ArrayLoadInstruction;
-import jdk.internal.classfile.instruction.ArrayStoreInstruction;
-import jdk.internal.classfile.instruction.BranchInstruction;
-import jdk.internal.classfile.instruction.ConstantInstruction;
-import jdk.internal.classfile.instruction.ConvertInstruction;
-import jdk.internal.classfile.instruction.FieldInstruction;
-import jdk.internal.classfile.instruction.IncrementInstruction;
-import jdk.internal.classfile.instruction.InvokeDynamicInstruction;
-import jdk.internal.classfile.instruction.InvokeInstruction;
-import jdk.internal.classfile.instruction.LoadInstruction;
-import jdk.internal.classfile.instruction.LookupSwitchInstruction;
-import jdk.internal.classfile.instruction.MonitorInstruction;
-import jdk.internal.classfile.instruction.NewMultiArrayInstruction;
-import jdk.internal.classfile.instruction.NewObjectInstruction;
-import jdk.internal.classfile.instruction.NewPrimitiveArrayInstruction;
-import jdk.internal.classfile.instruction.NewReferenceArrayInstruction;
-import jdk.internal.classfile.instruction.NopInstruction;
-import jdk.internal.classfile.instruction.OperatorInstruction;
-import jdk.internal.classfile.instruction.ReturnInstruction;
-import jdk.internal.classfile.instruction.StackInstruction;
-import jdk.internal.classfile.instruction.StoreInstruction;
-import jdk.internal.classfile.instruction.TableSwitchInstruction;
-import jdk.internal.classfile.instruction.ThrowInstruction;
-import jdk.internal.classfile.instruction.TypeCheckInstruction;
-import jdk.internal.classfile.Label;
-import jdk.internal.classfile.Opcode;
-import jdk.internal.classfile.TypeKind;
+import java.lang.classfile.Instruction;
+import java.lang.classfile.constantpool.ClassEntry;
+import java.lang.classfile.instruction.SwitchCase;
+import java.lang.classfile.constantpool.FieldRefEntry;
+import java.lang.classfile.constantpool.InterfaceMethodRefEntry;
+import java.lang.classfile.constantpool.InvokeDynamicEntry;
+import java.lang.classfile.constantpool.LoadableConstantEntry;
+import java.lang.classfile.constantpool.MemberRefEntry;
+import java.lang.classfile.instruction.ArrayLoadInstruction;
+import java.lang.classfile.instruction.ArrayStoreInstruction;
+import java.lang.classfile.instruction.BranchInstruction;
+import java.lang.classfile.instruction.ConstantInstruction;
+import java.lang.classfile.instruction.ConvertInstruction;
+import java.lang.classfile.instruction.DiscontinuedInstruction;
+import java.lang.classfile.instruction.FieldInstruction;
+import java.lang.classfile.instruction.IncrementInstruction;
+import java.lang.classfile.instruction.InvokeDynamicInstruction;
+import java.lang.classfile.instruction.InvokeInstruction;
+import java.lang.classfile.instruction.LoadInstruction;
+import java.lang.classfile.instruction.LookupSwitchInstruction;
+import java.lang.classfile.instruction.MonitorInstruction;
+import java.lang.classfile.instruction.NewMultiArrayInstruction;
+import java.lang.classfile.instruction.NewObjectInstruction;
+import java.lang.classfile.instruction.NewPrimitiveArrayInstruction;
+import java.lang.classfile.instruction.NewReferenceArrayInstruction;
+import java.lang.classfile.instruction.NopInstruction;
+import java.lang.classfile.instruction.OperatorInstruction;
+import java.lang.classfile.instruction.ReturnInstruction;
+import java.lang.classfile.instruction.StackInstruction;
+import java.lang.classfile.instruction.StoreInstruction;
+import java.lang.classfile.instruction.TableSwitchInstruction;
+import java.lang.classfile.instruction.ThrowInstruction;
+import java.lang.classfile.instruction.TypeCheckInstruction;
+import java.lang.classfile.Label;
+import java.lang.classfile.Opcode;
+import java.lang.classfile.TypeKind;
 
 public abstract sealed class AbstractInstruction
         extends AbstractElement
@@ -89,10 +90,10 @@ public abstract sealed class AbstractInstruction
             FMT_TableSwitch = "TableSwitch[OP=%s]",
             FMT_Throw = "Throw[OP=%s]",
             FMT_TypeCheck = "TypeCheck[OP=%s, type=%s]",
-            FMT_Unbound = "%s[op=%s]";
+            FMT_Unbound = "%s[op=%s]",
+            FMT_Discontinued = "Discontinued[OP=%s]";
 
     final Opcode op;
-    final int size;
 
     @Override
     public Opcode opcode() {
@@ -101,23 +102,23 @@ public abstract sealed class AbstractInstruction
 
     @Override
     public int sizeInBytes() {
-        return size;
+        // Note: only lookupswitch and tableswitch have variable sizes
+        return op.sizeIfFixed();
     }
 
-    public AbstractInstruction(Opcode op, int size) {
+    AbstractInstruction(Opcode op) {
         this.op = op;
-        this.size = size;
     }
 
     @Override
     public abstract void writeTo(DirectCodeBuilder writer);
 
-    public static abstract sealed class BoundInstruction extends AbstractInstruction {
+    public abstract static sealed class BoundInstruction extends AbstractInstruction {
         final CodeImpl code;
         final int pos;
 
-        protected BoundInstruction(Opcode op, int size, CodeImpl code, int pos) {
-            super(op, size);
+        protected BoundInstruction(Opcode op, CodeImpl code, int pos) {
+            super(op);
             this.code = code;
             this.pos = pos;
         }
@@ -129,7 +130,7 @@ public abstract sealed class AbstractInstruction
         @Override
         public void writeTo(DirectCodeBuilder writer) {
             // Override this if the instruction has any CP references or labels!
-            code.classReader.copyBytesTo(writer.bytecodesBufWriter, pos, size);
+            code.classReader.copyBytesTo(writer.bytecodesBufWriter, pos, op.sizeIfFixed());
         }
     }
 
@@ -137,13 +138,13 @@ public abstract sealed class AbstractInstruction
             extends BoundInstruction implements LoadInstruction {
 
         public BoundLoadInstruction(Opcode op, CodeImpl code, int pos) {
-            super(op, op.sizeIfFixed(), code, pos);
+            super(op, code, pos);
         }
 
 
         @Override
         public TypeKind typeKind() {
-            return op.primaryTypeKind();
+            return BytecodeHelpers.loadType(op);
         }
 
         @Override
@@ -153,7 +154,7 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public int slot() {
-            return switch (size) {
+            return switch (sizeInBytes()) {
                 case 2 -> code.classReader.readU1(pos + 1);
                 case 4 -> code.classReader.readU2(pos + 2);
                 default -> throw new IllegalArgumentException("Unexpected op size: " + op.sizeIfFixed() + " -- " + op);
@@ -166,12 +167,12 @@ public abstract sealed class AbstractInstruction
             extends BoundInstruction implements StoreInstruction {
 
         public BoundStoreInstruction(Opcode op, CodeImpl code, int pos) {
-            super(op, op.sizeIfFixed(), code, pos);
+            super(op, code, pos);
         }
 
         @Override
         public TypeKind typeKind() {
-            return op.primaryTypeKind();
+            return BytecodeHelpers.storeType(op);
         }
 
         @Override
@@ -181,10 +182,10 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public int slot() {
-            return switch (size) {
+            return switch (sizeInBytes()) {
                 case 2 -> code.classReader.readU1(pos + 1);
                 case 4 -> code.classReader.readU2(pos + 2);
-                default -> throw new IllegalArgumentException("Unexpected op size: " + size + " -- " + op);
+                default -> throw new IllegalArgumentException("Unexpected op size: " + sizeInBytes() + " -- " + op);
             };
         }
 
@@ -194,17 +195,17 @@ public abstract sealed class AbstractInstruction
             extends BoundInstruction implements IncrementInstruction {
 
         public BoundIncrementInstruction(Opcode op, CodeImpl code, int pos) {
-            super(op, op.sizeIfFixed(), code, pos);
+            super(op, code, pos);
         }
 
         @Override
         public int slot() {
-            return size == 6 ? code.classReader.readU2(pos + 2) : code.classReader.readU1(pos + 1);
+            return sizeInBytes() == 6 ? code.classReader.readU2(pos + 2) : code.classReader.readU1(pos + 1);
         }
 
         @Override
         public int constant() {
-            return size == 6 ? code.classReader.readS2(pos + 4) : (byte) code.classReader.readS1(pos + 2);
+            return sizeInBytes() == 6 ? code.classReader.readS2(pos + 4) : code.classReader.readS1(pos + 2);
         }
 
         @Override
@@ -218,7 +219,7 @@ public abstract sealed class AbstractInstruction
             extends BoundInstruction implements BranchInstruction {
 
         public BoundBranchInstruction(Opcode op, CodeImpl code, int pos) {
-            super(op, op.sizeIfFixed(), code, pos);
+            super(op, code, pos);
         }
 
         @Override
@@ -227,8 +228,8 @@ public abstract sealed class AbstractInstruction
         }
 
         public int branchByteOffset() {
-            return size == 3
-                   ? (int) (short) code.classReader.readU2(pos + 1)
+            return sizeInBytes() == 3
+                   ? code.classReader.readS2(pos + 1)
                    : code.classReader.readInt(pos + 1);
         }
 
@@ -254,19 +255,16 @@ public abstract sealed class AbstractInstruction
         // will always need size, cache everything to there
         private final int afterPad;
         private final int npairs;
+        private final int size;
 
         BoundLookupSwitchInstruction(Opcode op, CodeImpl code, int pos) {
-            super(op, size(code, code.codeStart, pos), code, pos);
-
-            this.afterPad = pos + 1 + ((4 - ((pos + 1 - code.codeStart) & 3)) & 3);
+            super(op, code, pos);
+            this.afterPad = code.codeStart + RawBytecodeHelper.align(pos + 1 - code.codeStart);
             this.npairs = code.classReader.readInt(afterPad + 4);
-        }
-
-        static int size(CodeImpl code, int codeStart, int pos) {
-            int afterPad = pos + 1 + ((4 - ((pos + 1 - codeStart) & 3)) & 3);
-            int pad = afterPad - (pos + 1);
-            int npairs = code.classReader.readInt(afterPad + 4);
-            return 1 + pad + 8 + npairs * 8;
+            if (npairs < 0 || npairs > code.codeLength >> 3) {
+                throw new IllegalArgumentException("Invalid lookupswitch npairs value: " + npairs);
+            }
+            this.size = afterPad + 8 + npairs * 8 - pos;
         }
 
         private int defaultOffset() {
@@ -274,10 +272,14 @@ public abstract sealed class AbstractInstruction
         }
 
         @Override
+        public int sizeInBytes() {
+            return size;
+        }
+
+        @Override
         public List<SwitchCase> cases() {
             var cases = new SwitchCase[npairs];
-            for (int i = 0; i < npairs; ++i) {
-                int z = afterPad + 8 + 8 * i;
+            for (int i = 0, z = afterPad + 8; i < npairs; ++i, z += 8) {
                 cases[i] = SwitchCase.of(code.classReader.readInt(z), offsetToLabel(code.classReader.readInt(z + 4)));
             }
             return List.of(cases);
@@ -303,22 +305,26 @@ public abstract sealed class AbstractInstruction
     public static final class BoundTableSwitchInstruction
             extends BoundInstruction implements TableSwitchInstruction {
 
+        private final int afterPad;
+        private final int low;
+        private final int high;
+        private final int size;
+
         BoundTableSwitchInstruction(Opcode op, CodeImpl code, int pos) {
-            super(op, size(code, code.codeStart, pos), code, pos);
-        }
-
-        static int size(CodeImpl code, int codeStart, int pos) {
-            int ap = pos + 1 + ((4 - ((pos + 1 - codeStart) & 3)) & 3);
-            int pad = ap - (pos + 1);
-            int low = code.classReader.readInt(ap + 4);
-            int high = code.classReader.readInt(ap + 8);
+            super(op, code, pos);
+            afterPad = code.codeStart + RawBytecodeHelper.align(pos + 1 - code.codeStart);
+            low = code.classReader.readInt(afterPad + 4);
+            high = code.classReader.readInt(afterPad + 8);
+            if (high < low || (long)high - low > code.codeLength >> 2) {
+                throw new IllegalArgumentException("Invalid tableswitch values low: " + low + " high: " + high);
+            }
             int cnt = high - low + 1;
-            return 1 + pad + 12 + cnt * 4;
+            size = afterPad + 12 + cnt * 4 - pos;
         }
 
-        private int afterPadding() {
-            int p = pos;
-            return p + 1 + ((4 - ((p + 1 - code.codeStart) & 3)) & 3);
+        @Override
+        public int sizeInBytes() {
+            return size;
         }
 
         @Override
@@ -328,12 +334,12 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public int lowValue() {
-            return code.classReader.readInt(afterPadding() + 4);
+            return low;
         }
 
         @Override
         public int highValue() {
-            return code.classReader.readInt(afterPadding() + 8);
+            return high;
         }
 
         @Override
@@ -342,19 +348,17 @@ public abstract sealed class AbstractInstruction
             int high = highValue();
             int defOff = defaultOffset();
             var cases = new ArrayList<SwitchCase>(high - low + 1);
-            int z = afterPadding() + 12;
-            for (int i = lowValue(); i <= high; ++i) {
+            for (int i = low, z = afterPad + 12; i <= high; ++i, z += 4) {
                 int off = code.classReader.readInt(z);
                 if (defOff != off) {
                     cases.add(SwitchCase.of(i, offsetToLabel(off)));
                 }
-                z += 4;
             }
             return Collections.unmodifiableList(cases);
         }
 
         private int defaultOffset() {
-            return code.classReader.readInt(afterPadding());
+            return code.classReader.readInt(afterPad);
         }
 
         @Override
@@ -375,13 +379,13 @@ public abstract sealed class AbstractInstruction
         private FieldRefEntry fieldEntry;
 
         public BoundFieldInstruction(Opcode op, CodeImpl code, int pos) {
-            super(op, op.sizeIfFixed(), code, pos);
+            super(op, code, pos);
         }
 
         @Override
         public FieldRefEntry field() {
             if (fieldEntry == null)
-                fieldEntry = (FieldRefEntry) code.classReader.readEntry(pos + 1);
+                fieldEntry = code.classReader.readEntry(pos + 1, FieldRefEntry.class);
             return fieldEntry;
         }
 
@@ -405,24 +409,24 @@ public abstract sealed class AbstractInstruction
         MemberRefEntry methodEntry;
 
         public BoundInvokeInstruction(Opcode op, CodeImpl code, int pos) {
-            super(op, op.sizeIfFixed(), code, pos);
+            super(op, code, pos);
         }
 
         @Override
         public MemberRefEntry method() {
             if (methodEntry == null)
-                methodEntry = (MemberRefEntry) code.classReader.readEntry(pos + 1);
+                methodEntry = code.classReader.readEntry(pos + 1, MemberRefEntry.class);
             return methodEntry;
         }
 
         @Override
         public boolean isInterface() {
-            return method().tag() == Classfile.TAG_INTERFACEMETHODREF;
+            return method().tag() == PoolEntry.TAG_INTERFACE_METHODREF;
         }
 
         @Override
         public int count() {
-            return Util.parameterSlots(type().stringValue());
+            return 0;
         }
 
         @Override
@@ -445,13 +449,13 @@ public abstract sealed class AbstractInstruction
         InterfaceMethodRefEntry methodEntry;
 
         public BoundInvokeInterfaceInstruction(Opcode op, CodeImpl code, int pos) {
-            super(op, op.sizeIfFixed(), code, pos);
+            super(op, code, pos);
         }
 
         @Override
         public MemberRefEntry method() {
             if (methodEntry == null)
-                methodEntry = (InterfaceMethodRefEntry) code.classReader.readEntry(pos + 1);
+                methodEntry = code.classReader.readEntry(pos + 1, InterfaceMethodRefEntry.class);
             return methodEntry;
         }
 
@@ -485,13 +489,13 @@ public abstract sealed class AbstractInstruction
         InvokeDynamicEntry indyEntry;
 
         BoundInvokeDynamicInstruction(Opcode op, CodeImpl code, int pos) {
-            super(op, op.sizeIfFixed(), code, pos);
+            super(op, code, pos);
         }
 
         @Override
         public InvokeDynamicEntry invokedynamic() {
             if (indyEntry == null)
-                indyEntry = (InvokeDynamicEntry) code.classReader.readEntry(pos + 1);
+                indyEntry = code.classReader.readEntry(pos + 1, InvokeDynamicEntry.class);
             return indyEntry;
         }
 
@@ -515,13 +519,13 @@ public abstract sealed class AbstractInstruction
         ClassEntry classEntry;
 
         BoundNewObjectInstruction(CodeImpl code, int pos) {
-            super(Opcode.NEW, Opcode.NEW.sizeIfFixed(), code, pos);
+            super(Opcode.NEW, code, pos);
         }
 
         @Override
         public ClassEntry className() {
             if (classEntry == null)
-                classEntry = code.classReader.readClassEntry(pos + 1);
+                classEntry = code.classReader.readEntry(pos + 1, ClassEntry.class);
             return classEntry;
         }
 
@@ -544,12 +548,12 @@ public abstract sealed class AbstractInstruction
             extends BoundInstruction implements NewPrimitiveArrayInstruction {
 
         public BoundNewPrimitiveArrayInstruction(Opcode op, CodeImpl code, int pos) {
-            super(op, op.sizeIfFixed(), code, pos);
+            super(op, code, pos);
         }
 
         @Override
         public TypeKind typeKind() {
-            return TypeKind.fromNewArrayCode(code.classReader.readU1(pos + 1));
+            return TypeKind.fromNewarrayCode(code.classReader.readU1(pos + 1));
         }
 
         @Override
@@ -563,12 +567,12 @@ public abstract sealed class AbstractInstruction
             extends BoundInstruction implements NewReferenceArrayInstruction {
 
         public BoundNewReferenceArrayInstruction(Opcode op, CodeImpl code, int pos) {
-            super(op, op.sizeIfFixed(), code, pos);
+            super(op, code, pos);
         }
 
         @Override
         public ClassEntry componentType() {
-            return code.classReader.readClassEntry(pos + 1);
+            return code.classReader.readEntry(pos + 1, ClassEntry.class);
         }
 
         @Override
@@ -589,7 +593,7 @@ public abstract sealed class AbstractInstruction
             extends BoundInstruction implements NewMultiArrayInstruction {
 
         public BoundNewMultidimensionalArrayInstruction(Opcode op, CodeImpl code, int pos) {
-            super(op, op.sizeIfFixed(), code, pos);
+            super(op, code, pos);
         }
 
         @Override
@@ -599,7 +603,7 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public ClassEntry arrayType() {
-            return code.classReader.readClassEntry(pos + 1);
+            return code.classReader.readEntry(pos + 1, ClassEntry.class);
         }
 
         @Override
@@ -622,13 +626,13 @@ public abstract sealed class AbstractInstruction
         ClassEntry typeEntry;
 
         public BoundTypeCheckInstruction(Opcode op, CodeImpl code, int pos) {
-            super(op, op.sizeIfFixed(), code, pos);
+            super(op, code, pos);
         }
 
         @Override
         public ClassEntry type() {
             if (typeEntry == null)
-                typeEntry = code.classReader.readClassEntry(pos + 1);
+                typeEntry = code.classReader.readEntry(pos + 1, ClassEntry.class);
             return typeEntry;
         }
 
@@ -651,7 +655,7 @@ public abstract sealed class AbstractInstruction
             extends BoundInstruction implements ConstantInstruction.ArgumentConstantInstruction {
 
         public BoundArgumentConstantInstruction(Opcode op, CodeImpl code, int pos) {
-            super(op, op.sizeIfFixed(), code, pos);
+            super(op, code, pos);
         }
 
         @Override
@@ -660,7 +664,7 @@ public abstract sealed class AbstractInstruction
         }
 
         public int constantInt() {
-            return size == 3 ? code.classReader.readS2(pos + 1) : code.classReader.readS1(pos + 1);
+            return sizeInBytes() == 3 ? code.classReader.readS2(pos + 1) : code.classReader.readS1(pos + 1);
         }
 
         @Override
@@ -674,15 +678,15 @@ public abstract sealed class AbstractInstruction
             extends BoundInstruction implements ConstantInstruction.LoadConstantInstruction {
 
         public BoundLoadConstantInstruction(Opcode op, CodeImpl code, int pos) {
-            super(op, op.sizeIfFixed(), code, pos);
+            super(op, code, pos);
         }
 
         @Override
         public LoadableConstantEntry constantEntry() {
-            return (LoadableConstantEntry)
-                    code.classReader.entryByIndex(op == Opcode.LDC
+            return code.classReader.entryByIndex(op == Opcode.LDC
                                                   ? code.classReader.readU1(pos + 1)
-                                                  : code.classReader.readU2(pos + 1));
+                                                  : code.classReader.readU2(pos + 1),
+                            LoadableConstantEntry.class);
         }
 
         @Override
@@ -705,10 +709,63 @@ public abstract sealed class AbstractInstruction
 
     }
 
-    public static abstract sealed class UnboundInstruction extends AbstractInstruction {
+    public static final class BoundJsrInstruction
+            extends BoundInstruction implements DiscontinuedInstruction.JsrInstruction {
+
+        public BoundJsrInstruction(Opcode op, CodeImpl code, int pos) {
+            super(op, code, pos);
+        }
+
+        @Override
+        public Label target() {
+            return offsetToLabel(branchByteOffset());
+        }
+
+        public int branchByteOffset() {
+            return sizeInBytes() == 3
+                   ? code.classReader.readS2(pos + 1)
+                   : code.classReader.readInt(pos + 1);
+        }
+
+        @Override
+        public void writeTo(DirectCodeBuilder writer) {
+            writer.writeBranch(opcode(), target());
+        }
+
+        @Override
+        public String toString() {
+            return String.format(FMT_Discontinued, this.opcode());
+        }
+
+    }
+
+    public static final class BoundRetInstruction
+            extends BoundInstruction implements DiscontinuedInstruction.RetInstruction {
+
+        public BoundRetInstruction(Opcode op, CodeImpl code, int pos) {
+            super(op, code, pos);
+        }
+
+        @Override
+        public String toString() {
+            return String.format(FMT_Discontinued, this.opcode());
+        }
+
+        @Override
+        public int slot() {
+            return switch (sizeInBytes()) {
+                case 2 -> code.classReader.readU1(pos + 1);
+                case 4 -> code.classReader.readU2(pos + 2);
+                default -> throw new IllegalArgumentException("Unexpected op size: " + op.sizeIfFixed() + " -- " + op);
+            };
+        }
+
+    }
+
+    public abstract static sealed class UnboundInstruction extends AbstractInstruction {
 
         UnboundInstruction(Opcode op) {
-            super(op, op.sizeIfFixed());
+            super(op);
         }
 
         @Override
@@ -739,12 +796,17 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public TypeKind typeKind() {
-            return op.primaryTypeKind();
+            return BytecodeHelpers.loadType(op);
         }
 
         @Override
         public void writeTo(DirectCodeBuilder writer) {
-            writer.writeLoad(op, slot);
+            var op = this.op;
+            if (op.sizeIfFixed() == 1) {
+                writer.writeBytecode(op);
+            } else {
+                writer.writeLocalVar(op, slot);
+            }
         }
 
         @Override
@@ -770,12 +832,17 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public TypeKind typeKind() {
-            return op.primaryTypeKind();
+            return BytecodeHelpers.storeType(op);
         }
 
         @Override
         public void writeTo(DirectCodeBuilder writer) {
-            writer.writeStore(op, slot);
+            var op = this.op;
+            if (op.sizeIfFixed() == 1) {
+                writer.writeBytecode(op);
+            } else {
+                writer.writeLocalVar(op, slot);
+            }
         }
 
         @Override
@@ -791,9 +858,9 @@ public abstract sealed class AbstractInstruction
         final int constant;
 
         public UnboundIncrementInstruction(int slot, int constant) {
-            super(slot <= 255 && constant < 128 && constant > -127
-                  ? Opcode.IINC
-                  : Opcode.IINC_W);
+            super(BytecodeHelpers.validateAndIsWideIinc(slot, constant)
+                  ? Opcode.IINC_W
+                  : Opcode.IINC);
             this.slot = slot;
             this.constant = constant;
         }
@@ -805,12 +872,12 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public int constant() {
-            return 0;
+            return constant;
         }
 
         @Override
         public void writeTo(DirectCodeBuilder writer) {
-            writer.writeIncrement(slot, constant);
+            writer.writeIncrement(op == Opcode.IINC_W, slot, constant);
         }
 
         @Override
@@ -932,7 +999,7 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public TypeKind typeKind() {
-            return op.primaryTypeKind();
+            return BytecodeHelpers.returnType(op);
         }
 
         @Override
@@ -1004,7 +1071,7 @@ public abstract sealed class AbstractInstruction
         @Override
         public int count() {
             return op == Opcode.INVOKEINTERFACE
-                   ? Util.parameterSlots(methodEntry.nameAndType().type().stringValue()) + 1
+                   ? Util.parameterSlots(Util.methodTypeSymbol(methodEntry.type())) + 1
                    : 0;
         }
 
@@ -1088,7 +1155,7 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public void writeTo(DirectCodeBuilder writer) {
-            writer.writeNewPrimitiveArray(typeKind.newarraycode());
+            writer.writeNewPrimitiveArray(typeKind.newarrayCode());
         }
 
         @Override
@@ -1165,7 +1232,7 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public TypeKind typeKind() {
-            return op.primaryTypeKind();
+            return BytecodeHelpers.arrayLoadType(op);
         }
     }
 
@@ -1178,7 +1245,7 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public TypeKind typeKind() {
-            return op.primaryTypeKind();
+            return BytecodeHelpers.arrayStoreType(op);
         }
     }
 
@@ -1225,12 +1292,12 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public TypeKind fromType() {
-            return op.primaryTypeKind();
+            return BytecodeHelpers.convertFromType(op);
         }
 
         @Override
         public TypeKind toType() {
-            return op.secondaryTypeKind();
+            return BytecodeHelpers.convertToType(op);
         }
     }
 
@@ -1243,27 +1310,19 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public TypeKind typeKind() {
-            return op.primaryTypeKind();
+            return BytecodeHelpers.operatorOperandType(op);
         }
     }
 
     public static final class UnboundIntrinsicConstantInstruction
             extends UnboundInstruction implements ConstantInstruction.IntrinsicConstantInstruction {
-        final ConstantDesc constant;
-
         public UnboundIntrinsicConstantInstruction(Opcode op) {
             super(op);
-            constant = op.constantValue();
-        }
-
-        @Override
-        public void writeTo(DirectCodeBuilder writer) {
-            super.writeTo(writer);
         }
 
         @Override
         public ConstantDesc constantValue() {
-            return constant;
+            return BytecodeHelpers.intrinsicConstantValue(op);
         }
     }
 
@@ -1338,5 +1397,55 @@ public abstract sealed class AbstractInstruction
             super(Opcode.NOP);
         }
 
+    }
+
+    public static final class UnboundJsrInstruction
+            extends UnboundInstruction implements DiscontinuedInstruction.JsrInstruction {
+        final Label target;
+
+        public UnboundJsrInstruction(Opcode op, Label target) {
+            super(op);
+            this.target = target;
+        }
+
+        @Override
+        public Label target() {
+            return target;
+        }
+
+        @Override
+        public void writeTo(DirectCodeBuilder writer) {
+            writer.writeBranch(op, target);
+        }
+
+        @Override
+        public String toString() {
+            return String.format(FMT_Discontinued, this.opcode());
+        }
+    }
+
+    public static final class UnboundRetInstruction
+            extends UnboundInstruction implements DiscontinuedInstruction.RetInstruction {
+        final int slot;
+
+        public UnboundRetInstruction(Opcode op, int slot) {
+            super(op);
+            this.slot = slot;
+        }
+
+        @Override
+        public int slot() {
+            return slot;
+        }
+
+        @Override
+        public void writeTo(DirectCodeBuilder writer) {
+            writer.writeLocalVar(op, slot);
+        }
+
+        @Override
+        public String toString() {
+            return String.format(FMT_Discontinued, this.opcode());
+        }
     }
 }

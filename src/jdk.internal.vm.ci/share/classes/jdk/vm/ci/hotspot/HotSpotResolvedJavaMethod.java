@@ -23,6 +23,7 @@
 package jdk.vm.ci.hotspot;
 
 import java.lang.reflect.Modifier;
+import java.util.BitSet;
 
 import jdk.vm.ci.meta.JavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
@@ -127,4 +128,18 @@ public interface HotSpotResolvedJavaMethod extends ResolvedJavaMethod {
     boolean hasCodeAtLevel(int entryBCI, int level);
 
     int methodIdnum();
+
+
+    /**
+     * Computes which local variables and operand stack slots in {@code method} contain
+     * live object values at the instruction denoted by {@code bci}. This is the "oop map"
+     * used by the garbage collector for interpreter frames.
+     *
+     * @param bci the index of an instruction in this method's bytecodes
+     * @return the computed oop map. The first {@link #getMaxLocals} bits are for
+     *         the local variables, the remaining bits are for the stack slots.
+     * @throws IllegalArgumentException if this method has no bytecode or
+     *         {@code bci} is not the index of a bytecode instruction
+     */
+    BitSet getOopMapAt(int bci);
 }

@@ -26,7 +26,8 @@
  * @bug 8193717
  * @summary Check that code with a lot named imports can compile.
  * @library /tools/lib
- * @modules jdk.jdeps/com.sun.tools.classfile
+ * @enablePreview
+ * @modules java.base/jdk.internal.classfile.impl
  *          jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.jdeps/com.sun.tools.javap
@@ -38,6 +39,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.constant.ClassDesc;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Paths;
@@ -55,17 +57,7 @@ import javax.tools.StandardJavaFileManager;
 import javax.tools.StandardLocation;
 import javax.tools.ToolProvider;
 
-import com.sun.tools.classfile.AccessFlags;
-import com.sun.tools.classfile.Attribute;
-import com.sun.tools.classfile.Attributes;
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.ClassWriter;
-import com.sun.tools.classfile.ConstantPool;
-import com.sun.tools.classfile.ConstantPool.CONSTANT_Class_info;
-import com.sun.tools.classfile.ConstantPool.CONSTANT_Utf8_info;
-import com.sun.tools.classfile.ConstantPool.CPInfo;
-import com.sun.tools.classfile.Field;
-import com.sun.tools.classfile.Method;
+import java.lang.classfile.*;
 
 import toolbox.JavacTask;
 import toolbox.ToolBox;
@@ -106,28 +98,13 @@ public class T8193717 {
     }
 
     private byte[] generateClassFile(String name) throws IOException {
-        ConstantPool cp = new ConstantPool(new CPInfo[] {
-            new CONSTANT_Utf8_info(""),                     //0
-            new CONSTANT_Utf8_info(name.replace(".", "/")), //1
-            new CONSTANT_Class_info(null, 1),               //2
-            new CONSTANT_Utf8_info("java/lang/Object"),     //3
-            new CONSTANT_Class_info(null, 3),               //4
+        byte[] bytes = ClassFile.of().build(ClassDesc.of(name), classBuilder -> {
+            classBuilder.withSuperclass(ClassDesc.ofInternalName("java/lang/Object"))
+                    .withVersion(51, 0)
+                    .withFlags(ClassFile.ACC_ABSTRACT | ClassFile.ACC_INTERFACE | ClassFile.ACC_PUBLIC);
         });
-        ClassFile cf = new ClassFile(0xCAFEBABE,
-                      0,
-                      51,
-                      cp,
-                      new AccessFlags(AccessFlags.ACC_ABSTRACT |
-                                      AccessFlags.ACC_INTERFACE |
-                                      AccessFlags.ACC_PUBLIC),
-                      2,
-                      4,
-                      new int[0],
-                      new Field[0],
-                      new Method[0],
-                      new Attributes(cp, new Attribute[0]));
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        new ClassWriter().write(cf, baos);
+        baos.write(bytes);
         return baos.toByteArray();
     }
 

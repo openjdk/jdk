@@ -24,17 +24,16 @@
 /*
  * @test
  * @summary Basic test for Expect 100-Continue ( HTTP/1.1 only )
- * @modules java.net.http
+ * @library /test/lib /test/jdk/java/net/httpclient/lib
+ * @build jdk.test.lib.net.SimpleSSLContext jdk.httpclient.test.lib.common.TestServerConfigurator
+ * @modules java.net.http/jdk.internal.net.http.common
  *          jdk.httpserver
- * @library /test/lib
- * @build jdk.test.lib.net.SimpleSSLContext
  * @run testng/othervm ExpectContinue
  */
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
-import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsServer;
 import java.io.IOException;
 import java.io.InputStream;
@@ -49,6 +48,8 @@ import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.util.List;
 import javax.net.ssl.SSLContext;
+
+import jdk.httpclient.test.lib.common.TestServerConfigurator;
 import jdk.test.lib.net.SimpleSSLContext;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
@@ -148,7 +149,7 @@ public class ExpectContinue {
         httpURI = "http://" + serverAuthority(httpTestServer) + "/http1/ec";
 
         httpsTestServer = HttpsServer.create(sa, 0);
-        httpsTestServer.setHttpsConfigurator(new HttpsConfigurator(sslContext));
+        httpsTestServer.setHttpsConfigurator(new TestServerConfigurator(sa.getAddress(), sslContext));
         httpsTestServer.createContext("/https1/ec", new Http1ExpectContinueHandler());
         httpsURI = "https://" + serverAuthority(httpsTestServer) + "/https1/ec";
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -362,7 +362,7 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
         int x;
         int y;
         JPopupMenu pm = getPopupMenu();
-        // Figure out the sizes needed to caclulate the menu position
+        // Figure out the sizes needed to calculate the menu position
         Dimension s = getSize();
         Dimension pmSize = pm.getSize();
         // For the first time the menu is popped up,
@@ -477,6 +477,23 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
 
                 y = 0 - yOffset - pmSize.height;   // Otherwise drop 'up'
             }
+        }
+        // Note that the position may be later adjusted to fit the menu into the screen if possible.
+        // However, the code that does it (JPopupMenu.adjustPopupLocationToFitScreen) has no idea which screen
+        // to fit into, and determines it by the position calculated here, so we need to make sure it's on
+        // the correct screen, otherwise the menu may appear on the wrong screen (JDK-6415065).
+        // (Both x and y are relative to the JMenu position here, that's why we need these +-position.x/y here.)
+        if (position.y + y < screenBounds.y) { // Above the current screen?
+            y = screenBounds.y - position.y; // The top of the screen relative to this JMenu.
+        }
+        if (position.y + y >= screenBounds.y + screenBounds.height) { // Below the current screen?
+            y = screenBounds.y + screenBounds.height - 1 - position.y; // The bottom of the screen...
+        }
+        if (position.x + x < screenBounds.x) { // To the left of the current screen?
+            x = screenBounds.x - position.x; // The left edge of the screen...
+        }
+        if (position.x + x >= screenBounds.x + screenBounds.width) { // To the right of the current screen?
+            x = screenBounds.x + screenBounds.width - 1 - position.x; // The right edge of the screen...
         }
         return new Point(x,y);
     }

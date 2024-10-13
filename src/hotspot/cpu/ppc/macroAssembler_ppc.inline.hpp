@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -264,6 +264,29 @@ inline void MacroAssembler::set_cmpu3(Register dst, bool treat_unordered_like_le
   set_cmp3(dst);
 }
 
+// Branch-free implementation to convert !=0 to 1
+// Set register dst to 1 if dst is non-zero. Uses setbcr instruction on Power10.
+inline void MacroAssembler::normalize_bool(Register dst, Register temp, bool is_64bit) {
+
+  if (VM_Version::has_brw()) {
+    if (is_64bit) {
+      cmpdi(CCR0, dst, 0);
+    } else {
+      cmpwi(CCR0, dst, 0);
+    }
+    setbcr(dst, CCR0, Assembler::equal);
+  } else {
+    assert_different_registers(temp, dst);
+    neg(temp, dst);
+    orr(temp, dst, temp);
+    if (is_64bit) {
+      srdi(dst, temp, 63);
+    } else {
+      srwi(dst, temp, 31);
+    }
+  }
+}
+
 // Convenience bc_far versions
 inline void MacroAssembler::blt_far(ConditionRegister crx, Label& L, int optimize) { MacroAssembler::bc_far(bcondCRbiIs1, bi0(crx, less), L, optimize); }
 inline void MacroAssembler::bgt_far(ConditionRegister crx, Label& L, int optimize) { MacroAssembler::bc_far(bcondCRbiIs1, bi0(crx, greater), L, optimize); }
@@ -354,7 +377,7 @@ inline void MacroAssembler::access_store_at(BasicType type, DecoratorSet decorat
                                             Register tmp1, Register tmp2, Register tmp3,
                                             MacroAssembler::PreservationLevel preservation_level) {
   assert((decorators & ~(AS_RAW | IN_HEAP | IN_NATIVE | IS_ARRAY | IS_NOT_NULL |
-                         ON_UNKNOWN_OOP_REF)) == 0, "unsupported decorator");
+                         ON_UNKNOWN_OOP_REF | IS_DEST_UNINITIALIZED)) == 0, "unsupported decorator");
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
   bool as_raw = (decorators & AS_RAW) != 0;
   decorators = AccessInternal::decorator_fixup(decorators, type);
@@ -419,7 +442,7 @@ inline Register MacroAssembler::encode_heap_oop_not_null(Register d, Register sr
 }
 
 inline Register MacroAssembler::encode_heap_oop(Register d, Register src) {
-  if (CompressedOops::base() != NULL) {
+  if (CompressedOops::base() != nullptr) {
     if (VM_Version::has_isel()) {
       cmpdi(CCR0, src, 0);
       Register co = encode_heap_oop_not_null(d, src);
@@ -451,7 +474,7 @@ inline Register MacroAssembler::decode_heap_oop_not_null(Register d, Register sr
     sldi(d, current, CompressedOops::shift());
     current = d;
   }
-  if (CompressedOops::base() != NULL) {
+  if (CompressedOops::base() != nullptr) {
     add_const_optimized(d, current, CompressedOops::base(), R0);
     current = d;
   }
@@ -461,7 +484,7 @@ inline Register MacroAssembler::decode_heap_oop_not_null(Register d, Register sr
 inline void MacroAssembler::decode_heap_oop(Register d) {
   Label isNull;
   bool use_isel = false;
-  if (CompressedOops::base() != NULL) {
+  if (CompressedOops::base() != nullptr) {
     cmpwi(CCR0, d, 0);
     if (VM_Version::has_isel()) {
       use_isel = true;

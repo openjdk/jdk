@@ -22,9 +22,6 @@
  */
 
 // key: compiler.err.incorrect.number.of.nested.patterns
-// key: compiler.misc.feature.deconstruction.patterns
-// key: compiler.warn.preview.feature.use.plural
-// options: --enable-preview -source ${jdk.version} -Xlint:preview
 
 class IncorrectNumberOfNestedPatterns {
     private boolean t(Object o) {

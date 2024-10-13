@@ -41,8 +41,8 @@ import tests.JImageGenerator.JLinkTask;
  * @bug 8168925
  * @summary MODULES property should be topologically ordered and space-separated list
  * @library ../lib
+ * @enablePreview
  * @modules java.base/jdk.internal.jimage
- *          jdk.jdeps/com.sun.tools.classfile
  *          jdk.jlink/jdk.tools.jlink.internal
  *          jdk.jlink/jdk.tools.jmod
  *          jdk.jlink/jdk.tools.jimage

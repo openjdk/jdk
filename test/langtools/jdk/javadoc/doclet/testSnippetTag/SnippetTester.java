@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,7 +100,7 @@ public class SnippetTester extends JavadocTester {
 
     protected String getSnippetHtmlRepresentation(String pathToHtmlFile,
                                                   String content) {
-        return getSnippetHtmlRepresentation(pathToHtmlFile, content, Optional.empty(), Optional.empty());
+        return getSnippetHtmlRepresentation(pathToHtmlFile, content, Optional.of("java"), Optional.empty());
     }
 
     protected String getSnippetHtmlRepresentation(String pathToHtmlFile,
@@ -115,12 +115,13 @@ public class SnippetTester extends JavadocTester {
                                                   Optional<String> id) {
         // the further away from the root, the further to reach to common resources
         int nComponents = (int) pathToHtmlFile.chars().filter(c -> c == '/').count();
-        var svgString = "../".repeat(nComponents) + "copy.svg";
+        var svgString = "../".repeat(nComponents) + "resource-files/copy.svg";
         var idString = id.isEmpty() ? "" : " id=\"%s\"".formatted(id.get());
         var langString = lang.isEmpty() ? "" : " class=\"language-%s\"".formatted(lang.get());
         return """
-                <div class="snippet-container"><button class="copy snippet-copy" onclick="copySnippet(this)">\
-                <span data-copied="Copied!">Copy</span><img src="%s" alt="Copy"></button>
+                <div class="snippet-container"><button class="copy snippet-copy" aria-label="Copy snippet" \
+                onclick="copySnippet(this)"><span data-copied="Copied!">Copy</span><img src="%s" alt="Copy \
+                snippet"></button>
                 <pre class="snippet"%s><code%s>%s</code></pre>
                 </div>""".formatted(svgString, idString, langString, content);
     }

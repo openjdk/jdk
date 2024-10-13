@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
 * Copyright (c) 2020, Datadog, Inc. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
@@ -122,7 +122,7 @@ class JfrAdaptiveSampler : public JfrCHeapObj {
 
   size_t amortize_debt(const JfrSamplerWindow* expired);
   size_t derive_sampling_interval(double sample_size, const JfrSamplerWindow* expired);
-  size_t project_population_size(const JfrSamplerWindow* expired);
+  double project_population_size(const JfrSamplerWindow* expired);
   size_t project_sample_size(const JfrSamplerParams& params, const JfrSamplerWindow* expired);
   JfrSamplerWindow* set_rate(const JfrSamplerParams& params, const JfrSamplerWindow* expired);
 

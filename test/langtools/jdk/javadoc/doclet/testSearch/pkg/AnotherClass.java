@@ -75,7 +75,7 @@ public class AnotherClass {
     }
 
     /**
-     * Method to test member search index URL.
+     * Method to test member search index URL. Testing search tag for {@index trailing backslash\}
      *
      * @param testArray some test array.
      * @param testInt some test int.

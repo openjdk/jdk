@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ public class PatchModuleDupJavaBase {
   // The VM should exit initialization if java.base is specified
   // more than once to --patch-module.
   public static void main(String args[]) throws Exception {
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+    ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
       "--patch-module=java.base=javabase_dir",
       "--patch-module=java.base=javabase_dir",
       "-version");

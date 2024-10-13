@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
 //
 
 grant {
-    permission java.net.SocketPermission "localhost:*", "connect, accept, listen, resolve";
-    permission java.util.PropertyPermission "java.net.preferIPv4Stack", "read";
-    permission java.util.PropertyPermission "java.net.preferIPv6Addresses", "read";
+    permission java.net.SocketPermission "*:*", "connect, accept, listen, resolve";
+    permission java.util.PropertyPermission "*", "read";
 };

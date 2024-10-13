@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
 package sun.security.pkcs;
 
 import java.io.*;
+import java.util.Arrays;
+
 import sun.security.x509.*;
 import sun.security.util.DerValue;
 import sun.security.util.DerOutputStream;
@@ -134,33 +136,20 @@ public class EncryptedPrivateKeyInfo {
         return this.encoded.clone();
     }
 
-    public boolean equals(Object other) {
-        if (this == other)
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
             return true;
-        if (!(other instanceof EncryptedPrivateKeyInfo))
-            return false;
-        byte[] thisEncrInfo = this.getEncoded();
-        byte[] otherEncrInfo
-                = ((EncryptedPrivateKeyInfo) other).getEncoded();
-
-        if (thisEncrInfo.length != otherEncrInfo.length)
-            return false;
-        for (int i = 0; i < thisEncrInfo.length; i++)
-            if (thisEncrInfo[i] != otherEncrInfo[i])
-                return false;
-        return true;
+        }
+        return obj instanceof EncryptedPrivateKeyInfo other
+                && Arrays.equals(this.getEncoded(), other.getEncoded());
     }
 
     /**
-     * Returns a hashcode for this EncryptedPrivateKeyInfo.
-     *
-     * @return a hashcode for this EncryptedPrivateKeyInfo.
+     * {@return a hashcode for this EncryptedPrivateKeyInfo}
      */
+    @Override
     public int hashCode() {
-        int retval = 0;
-
-        for (int i = 0; i < this.encryptedData.length; i++)
-            retval += this.encryptedData[i] * i;
-        return retval;
+        return Arrays.hashCode(encryptedData);
     }
 }

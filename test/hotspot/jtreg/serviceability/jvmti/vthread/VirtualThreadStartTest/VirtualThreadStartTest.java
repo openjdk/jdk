@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
  * @test id=default
  * @summary Verifies JVMTI can_support_virtual_threads works for agents loaded at startup and into running VM
  * @requires vm.jvmti
- * @enablePreview
  * @run main/othervm/native -agentlib:VirtualThreadStartTest VirtualThreadStartTest
  * @run main/othervm/native -agentlib:VirtualThreadStartTest=can_support_virtual_threads VirtualThreadStartTest
  * @run main/othervm/native -Djdk.attach.allowAttachSelf=true VirtualThreadStartTest attach
@@ -35,7 +34,6 @@
  * @test id=no-vmcontinuations
  * @requires vm.continuations
  * @requires vm.jvmti
- * @enablePreview
  * @run main/othervm/native -agentlib:VirtualThreadStartTest -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations VirtualThreadStartTest
  * @run main/othervm/native -agentlib:VirtualThreadStartTest=can_support_virtual_threads -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations VirtualThreadStartTest
  * @run main/othervm/native -Djdk.attach.allowAttachSelf=true -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations VirtualThreadStartTest attach
@@ -48,6 +46,7 @@ public class VirtualThreadStartTest {
     private static final String AGENT_LIB = "VirtualThreadStartTest";
     private static final int THREAD_CNT = 10;
 
+    private static native boolean canSupportVirtualThreads();
     private static native int getAndResetStartedThreads();
 
     public static void main(String[] args) throws Exception {
@@ -57,8 +56,6 @@ public class VirtualThreadStartTest {
             String arg = args.length == 2 ? args[1] : "";
             VirtualMachine vm = VirtualMachine.attach(String.valueOf(ProcessHandle.current().pid()));
             vm.loadAgentLibrary(AGENT_LIB, arg);
-        } else {
-            System.loadLibrary(AGENT_LIB);
         }
         getAndResetStartedThreads();
 
@@ -66,10 +63,15 @@ public class VirtualThreadStartTest {
             Thread.ofVirtual().name("Tested-VT-" + i).start(() -> {}).join();
         }
 
+        // No VirtualThreadStart events are expected if can_support_virtual_threads is disabled.
+        int expStartedThreads = canSupportVirtualThreads() ? THREAD_CNT : 0;
         int startedThreads = getAndResetStartedThreads();
-        System.out.println("ThreadStart event count: " + startedThreads + ", expected: " + THREAD_CNT);
-        if (startedThreads != THREAD_CNT) {
-            throw new RuntimeException("Failed: wrong ThreadStart event count");
+
+        System.out.println("ThreadStart event count: " + startedThreads + ", expected: " + expStartedThreads);
+
+        if (startedThreads != expStartedThreads) {
+            throw new RuntimeException("Failed: wrong ThreadStart count: " +
+                                       startedThreads + " expected: " + expStartedThreads);
         }
     }
 }

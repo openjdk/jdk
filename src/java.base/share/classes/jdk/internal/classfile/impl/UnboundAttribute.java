@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,74 +28,73 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
-import jdk.internal.classfile.Annotation;
-import jdk.internal.classfile.AnnotationElement;
-import jdk.internal.classfile.AnnotationValue;
-import jdk.internal.classfile.Attribute;
-import jdk.internal.classfile.AttributeMapper;
-import jdk.internal.classfile.Attributes;
-import jdk.internal.classfile.BootstrapMethodEntry;
-import jdk.internal.classfile.BufWriter;
-import jdk.internal.classfile.constantpool.ClassEntry;
-import jdk.internal.classfile.Label;
-import jdk.internal.classfile.TypeAnnotation;
-import jdk.internal.classfile.attribute.AnnotationDefaultAttribute;
-import jdk.internal.classfile.attribute.BootstrapMethodsAttribute;
-import jdk.internal.classfile.attribute.CharacterRangeInfo;
-import jdk.internal.classfile.attribute.CharacterRangeTableAttribute;
-import jdk.internal.classfile.attribute.CompilationIDAttribute;
-import jdk.internal.classfile.attribute.ConstantValueAttribute;
-import jdk.internal.classfile.attribute.DeprecatedAttribute;
-import jdk.internal.classfile.attribute.EnclosingMethodAttribute;
-import jdk.internal.classfile.attribute.ExceptionsAttribute;
-import jdk.internal.classfile.attribute.InnerClassInfo;
-import jdk.internal.classfile.attribute.InnerClassesAttribute;
-import jdk.internal.classfile.attribute.LineNumberInfo;
-import jdk.internal.classfile.attribute.LineNumberTableAttribute;
-import jdk.internal.classfile.attribute.LocalVariableInfo;
-import jdk.internal.classfile.attribute.LocalVariableTableAttribute;
-import jdk.internal.classfile.attribute.LocalVariableTypeInfo;
-import jdk.internal.classfile.attribute.LocalVariableTypeTableAttribute;
-import jdk.internal.classfile.attribute.MethodParameterInfo;
-import jdk.internal.classfile.attribute.MethodParametersAttribute;
-import jdk.internal.classfile.attribute.ModuleAttribute;
-import jdk.internal.classfile.attribute.ModuleExportInfo;
-import jdk.internal.classfile.attribute.ModuleHashInfo;
-import jdk.internal.classfile.attribute.ModuleHashesAttribute;
-import jdk.internal.classfile.attribute.ModuleMainClassAttribute;
-import jdk.internal.classfile.attribute.ModuleOpenInfo;
-import jdk.internal.classfile.attribute.ModulePackagesAttribute;
-import jdk.internal.classfile.attribute.ModuleProvideInfo;
-import jdk.internal.classfile.attribute.ModuleRequireInfo;
-import jdk.internal.classfile.attribute.ModuleResolutionAttribute;
-import jdk.internal.classfile.attribute.ModuleTargetAttribute;
-import jdk.internal.classfile.attribute.NestHostAttribute;
-import jdk.internal.classfile.attribute.NestMembersAttribute;
-import jdk.internal.classfile.attribute.PermittedSubclassesAttribute;
-import jdk.internal.classfile.attribute.RecordAttribute;
-import jdk.internal.classfile.attribute.RecordComponentInfo;
-import jdk.internal.classfile.attribute.RuntimeInvisibleAnnotationsAttribute;
-import jdk.internal.classfile.attribute.RuntimeInvisibleParameterAnnotationsAttribute;
-import jdk.internal.classfile.attribute.RuntimeInvisibleTypeAnnotationsAttribute;
-import jdk.internal.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
-import jdk.internal.classfile.attribute.RuntimeVisibleParameterAnnotationsAttribute;
-import jdk.internal.classfile.attribute.RuntimeVisibleTypeAnnotationsAttribute;
-import jdk.internal.classfile.attribute.SignatureAttribute;
-import jdk.internal.classfile.attribute.SourceDebugExtensionAttribute;
-import jdk.internal.classfile.attribute.SourceFileAttribute;
-import jdk.internal.classfile.attribute.SourceIDAttribute;
-import jdk.internal.classfile.attribute.StackMapTableAttribute;
-import jdk.internal.classfile.attribute.StackMapFrameInfo;
-import jdk.internal.classfile.attribute.SyntheticAttribute;
-import jdk.internal.classfile.constantpool.ConstantValueEntry;
-import jdk.internal.classfile.constantpool.ModuleEntry;
-import jdk.internal.classfile.constantpool.NameAndTypeEntry;
-import jdk.internal.classfile.constantpool.PackageEntry;
-import jdk.internal.classfile.constantpool.Utf8Entry;
+import java.lang.classfile.Annotation;
+import java.lang.classfile.AnnotationValue;
+import java.lang.classfile.Attribute;
+import java.lang.classfile.AttributeMapper;
+import java.lang.classfile.Attributes;
+import java.lang.classfile.BootstrapMethodEntry;
+import java.lang.classfile.constantpool.ClassEntry;
+import java.lang.classfile.TypeAnnotation;
+import java.lang.classfile.attribute.AnnotationDefaultAttribute;
+import java.lang.classfile.attribute.BootstrapMethodsAttribute;
+import java.lang.classfile.attribute.CharacterRangeInfo;
+import java.lang.classfile.attribute.CharacterRangeTableAttribute;
+import java.lang.classfile.attribute.CompilationIDAttribute;
+import java.lang.classfile.attribute.ConstantValueAttribute;
+import java.lang.classfile.attribute.DeprecatedAttribute;
+import java.lang.classfile.attribute.EnclosingMethodAttribute;
+import java.lang.classfile.attribute.ExceptionsAttribute;
+import java.lang.classfile.attribute.InnerClassInfo;
+import java.lang.classfile.attribute.InnerClassesAttribute;
+import java.lang.classfile.attribute.LineNumberInfo;
+import java.lang.classfile.attribute.LineNumberTableAttribute;
+import java.lang.classfile.attribute.LocalVariableInfo;
+import java.lang.classfile.attribute.LocalVariableTableAttribute;
+import java.lang.classfile.attribute.LocalVariableTypeInfo;
+import java.lang.classfile.attribute.LocalVariableTypeTableAttribute;
+import java.lang.classfile.attribute.MethodParameterInfo;
+import java.lang.classfile.attribute.MethodParametersAttribute;
+import java.lang.classfile.attribute.ModuleAttribute;
+import java.lang.classfile.attribute.ModuleExportInfo;
+import java.lang.classfile.attribute.ModuleHashInfo;
+import java.lang.classfile.attribute.ModuleHashesAttribute;
+import java.lang.classfile.attribute.ModuleMainClassAttribute;
+import java.lang.classfile.attribute.ModuleOpenInfo;
+import java.lang.classfile.attribute.ModulePackagesAttribute;
+import java.lang.classfile.attribute.ModuleProvideInfo;
+import java.lang.classfile.attribute.ModuleRequireInfo;
+import java.lang.classfile.attribute.ModuleResolutionAttribute;
+import java.lang.classfile.attribute.ModuleTargetAttribute;
+import java.lang.classfile.attribute.NestHostAttribute;
+import java.lang.classfile.attribute.NestMembersAttribute;
+import java.lang.classfile.attribute.PermittedSubclassesAttribute;
+import java.lang.classfile.attribute.RecordAttribute;
+import java.lang.classfile.attribute.RecordComponentInfo;
+import java.lang.classfile.attribute.RuntimeInvisibleAnnotationsAttribute;
+import java.lang.classfile.attribute.RuntimeInvisibleParameterAnnotationsAttribute;
+import java.lang.classfile.attribute.RuntimeInvisibleTypeAnnotationsAttribute;
+import java.lang.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
+import java.lang.classfile.attribute.RuntimeVisibleParameterAnnotationsAttribute;
+import java.lang.classfile.attribute.RuntimeVisibleTypeAnnotationsAttribute;
+import java.lang.classfile.attribute.SignatureAttribute;
+import java.lang.classfile.attribute.SourceDebugExtensionAttribute;
+import java.lang.classfile.attribute.SourceFileAttribute;
+import java.lang.classfile.attribute.SourceIDAttribute;
+import java.lang.classfile.attribute.StackMapTableAttribute;
+import java.lang.classfile.attribute.StackMapFrameInfo;
+import java.lang.classfile.attribute.SyntheticAttribute;
+import java.lang.classfile.constantpool.ConstantValueEntry;
+import java.lang.classfile.constantpool.ModuleEntry;
+import java.lang.classfile.constantpool.NameAndTypeEntry;
+import java.lang.classfile.constantpool.PackageEntry;
+import java.lang.classfile.constantpool.Utf8Entry;
+
+import jdk.internal.access.SharedSecrets;
 
 public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         extends AbstractElement
-        implements Attribute<T> {
+        implements Attribute<T>, Util.Writable {
     protected final AttributeMapper<T> mapper;
 
     public UnboundAttribute(AttributeMapper<T> mapper) {
@@ -114,7 +113,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
 
     @Override
     @SuppressWarnings("unchecked")
-    public void writeTo(BufWriter buf) {
+    public void writeTo(BufWriterImpl buf) {
         mapper.writeAttribute(buf, (T) this);
     }
 
@@ -149,7 +148,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         private final ConstantValueEntry entry;
 
         public UnboundConstantValueAttribute(ConstantValueEntry entry) {
-            super(Attributes.CONSTANT_VALUE);
+            super(Attributes.constantValue());
             this.entry = entry;
         }
 
@@ -164,7 +163,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
             extends UnboundAttribute<DeprecatedAttribute>
             implements DeprecatedAttribute {
         public UnboundDeprecatedAttribute() {
-            super(Attributes.DEPRECATED);
+            super(Attributes.deprecated());
         }
     }
 
@@ -172,7 +171,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
             extends UnboundAttribute<SyntheticAttribute>
             implements SyntheticAttribute {
         public UnboundSyntheticAttribute() {
-            super(Attributes.SYNTHETIC);
+            super(Attributes.synthetic());
         }
     }
 
@@ -182,7 +181,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         private final Utf8Entry signature;
 
         public UnboundSignatureAttribute(Utf8Entry signature) {
-            super(Attributes.SIGNATURE);
+            super(Attributes.signature());
             this.signature = signature;
         }
 
@@ -198,7 +197,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         private final List<ClassEntry> exceptions;
 
         public UnboundExceptionsAttribute(List<ClassEntry> exceptions) {
-            super(Attributes.EXCEPTIONS);
+            super(Attributes.exceptions());
             this.exceptions = List.copyOf(exceptions);
         }
 
@@ -214,7 +213,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         private final AnnotationValue annotationDefault;
 
         public UnboundAnnotationDefaultAttribute(AnnotationValue annotationDefault) {
-            super(Attributes.ANNOTATION_DEFAULT);
+            super(Attributes.annotationDefault());
             this.annotationDefault = annotationDefault;
         }
 
@@ -229,7 +228,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         private final Utf8Entry sourceFile;
 
         public UnboundSourceFileAttribute(Utf8Entry sourceFile) {
-            super(Attributes.SOURCE_FILE);
+            super(Attributes.sourceFile());
             this.sourceFile = sourceFile;
         }
 
@@ -245,7 +244,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         private final List<StackMapFrameInfo> entries;
 
         public UnboundStackMapTableAttribute(List<StackMapFrameInfo> entries) {
-            super(Attributes.STACK_MAP_TABLE);
+            super(Attributes.stackMapTable());
             this.entries = List.copyOf(entries);
         }
 
@@ -261,7 +260,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         private final List<InnerClassInfo> innerClasses;
 
         public UnboundInnerClassesAttribute(List<InnerClassInfo> innerClasses) {
-            super(Attributes.INNER_CLASSES);
+            super(Attributes.innerClasses());
             this.innerClasses = List.copyOf(innerClasses);
         }
 
@@ -277,7 +276,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         private final List<RecordComponentInfo> components;
 
         public UnboundRecordAttribute(List<RecordComponentInfo> components) {
-            super(Attributes.RECORD);
+            super(Attributes.record());
             this.components = List.copyOf(components);
         }
 
@@ -294,7 +293,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         private final NameAndTypeEntry method;
 
         public UnboundEnclosingMethodAttribute(ClassEntry classEntry, NameAndTypeEntry method) {
-            super(Attributes.ENCLOSING_METHOD);
+            super(Attributes.enclosingMethod());
             this.classEntry = classEntry;
             this.method = method;
         }
@@ -316,7 +315,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         private final List<MethodParameterInfo> parameters;
 
         public UnboundMethodParametersAttribute(List<MethodParameterInfo> parameters) {
-            super(Attributes.METHOD_PARAMETERS);
+            super(Attributes.methodParameters());
             this.parameters = List.copyOf(parameters);
         }
 
@@ -332,7 +331,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         final Utf8Entry moduleTarget;
 
         public UnboundModuleTargetAttribute(Utf8Entry moduleTarget) {
-            super(Attributes.MODULE_TARGET);
+            super(Attributes.moduleTarget());
             this.moduleTarget = moduleTarget;
         }
 
@@ -348,7 +347,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         final ClassEntry mainClass;
 
         public UnboundModuleMainClassAttribute(ClassEntry mainClass) {
-            super(Attributes.MODULE_MAIN_CLASS);
+            super(Attributes.moduleMainClass());
             this.mainClass = mainClass;
         }
 
@@ -365,7 +364,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         private final List<ModuleHashInfo> hashes;
 
         public UnboundModuleHashesAttribute(Utf8Entry algorithm, List<ModuleHashInfo> hashes) {
-            super(Attributes.MODULE_HASHES);
+            super(Attributes.moduleHashes());
             this.algorithm = algorithm;
             this.hashes = List.copyOf(hashes);
         }
@@ -387,7 +386,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         private final Collection<PackageEntry> packages;
 
         public UnboundModulePackagesAttribute(Collection<PackageEntry> packages) {
-            super(Attributes.MODULE_PACKAGES);
+            super(Attributes.modulePackages());
             this.packages = List.copyOf(packages);
         }
 
@@ -403,7 +402,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         private final int resolutionFlags;
 
         public UnboundModuleResolutionAttribute(int flags) {
-            super(Attributes.MODULE_RESOLUTION);
+            super(Attributes.moduleResolution());
             resolutionFlags = flags;
         }
 
@@ -419,7 +418,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         private final List<ClassEntry> permittedSubclasses;
 
         public UnboundPermittedSubclassesAttribute(List<ClassEntry> permittedSubclasses) {
-            super(Attributes.PERMITTED_SUBCLASSES);
+            super(Attributes.permittedSubclasses());
             this.permittedSubclasses = List.copyOf(permittedSubclasses);
         }
 
@@ -435,7 +434,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         private final List<ClassEntry> memberEntries;
 
         public UnboundNestMembersAttribute(List<ClassEntry> memberEntries) {
-            super(Attributes.NEST_MEMBERS);
+            super(Attributes.nestMembers());
             this.memberEntries = List.copyOf(memberEntries);
         }
 
@@ -451,7 +450,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         private final ClassEntry hostEntry;
 
         public UnboundNestHostAttribute(ClassEntry hostEntry) {
-            super(Attributes.NEST_HOST);
+            super(Attributes.nestHost());
             this.hostEntry = hostEntry;
         }
 
@@ -467,7 +466,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         private final Utf8Entry idEntry;
 
         public UnboundCompilationIDAttribute(Utf8Entry idEntry) {
-            super(Attributes.COMPILATION_ID);
+            super(Attributes.compilationId());
             this.idEntry = idEntry;
         }
 
@@ -483,7 +482,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         private final Utf8Entry idEntry;
 
         public UnboundSourceIDAttribute(Utf8Entry idEntry) {
-            super(Attributes.SOURCE_ID);
+            super(Attributes.sourceId());
             this.idEntry = idEntry;
         }
 
@@ -499,7 +498,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         private final byte[] contents;
 
         public UnboundSourceDebugExtensionAttribute(byte[] contents) {
-            super(Attributes.SOURCE_DEBUG_EXTENSION);
+            super(Attributes.sourceDebugExtension());
             this.contents = contents;
         }
 
@@ -515,7 +514,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         private final List<CharacterRangeInfo> ranges;
 
         public UnboundCharacterRangeTableAttribute(List<CharacterRangeInfo> ranges) {
-            super(Attributes.CHARACTER_RANGE_TABLE);
+            super(Attributes.characterRangeTable());
             this.ranges = List.copyOf(ranges);
         }
 
@@ -531,7 +530,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         private final List<LineNumberInfo> lines;
 
         public UnboundLineNumberTableAttribute(List<LineNumberInfo> lines) {
-            super(Attributes.LINE_NUMBER_TABLE);
+            super(Attributes.lineNumberTable());
             this.lines = List.copyOf(lines);
         }
 
@@ -547,7 +546,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         private final List<LocalVariableInfo> locals;
 
         public UnboundLocalVariableTableAttribute(List<LocalVariableInfo> locals) {
-            super(Attributes.LOCAL_VARIABLE_TABLE);
+            super(Attributes.localVariableTable());
             this.locals = List.copyOf(locals);
         }
 
@@ -563,7 +562,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         private final List<LocalVariableTypeInfo> locals;
 
         public UnboundLocalVariableTypeTableAttribute(List<LocalVariableTypeInfo> locals) {
-            super(Attributes.LOCAL_VARIABLE_TYPE_TABLE);
+            super(Attributes.localVariableTypeTable());
             this.locals = List.copyOf(locals);
         }
 
@@ -579,7 +578,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         private final List<Annotation> elements;
 
         public UnboundRuntimeVisibleAnnotationsAttribute(List<Annotation> elements) {
-            super(Attributes.RUNTIME_VISIBLE_ANNOTATIONS);
+            super(Attributes.runtimeVisibleAnnotations());
             this.elements = List.copyOf(elements);
         }
 
@@ -595,7 +594,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         private final List<Annotation> elements;
 
         public UnboundRuntimeInvisibleAnnotationsAttribute(List<Annotation> elements) {
-            super(Attributes.RUNTIME_INVISIBLE_ANNOTATIONS);
+            super(Attributes.runtimeInvisibleAnnotations());
             this.elements = List.copyOf(elements);
         }
 
@@ -611,7 +610,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         private final List<List<Annotation>> elements;
 
         public UnboundRuntimeVisibleParameterAnnotationsAttribute(List<List<Annotation>> elements) {
-            super(Attributes.RUNTIME_VISIBLE_PARAMETER_ANNOTATIONS);
+            super(Attributes.runtimeVisibleParameterAnnotations());
             this.elements = List.copyOf(elements);
         }
 
@@ -627,8 +626,14 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         private final List<List<Annotation>> elements;
 
         public UnboundRuntimeInvisibleParameterAnnotationsAttribute(List<List<Annotation>> elements) {
-            super(Attributes.RUNTIME_INVISIBLE_PARAMETER_ANNOTATIONS);
-            this.elements = List.copyOf(elements);
+            super(Attributes.runtimeInvisibleParameterAnnotations());
+            // deep copy
+            var array = elements.toArray().clone();
+            for (int i = 0; i < array.length; i++) {
+                array[i] = List.copyOf((List<?>) array[i]);
+            }
+
+            this.elements = SharedSecrets.getJavaUtilCollectionAccess().listFromTrustedArray(array);
         }
 
         @Override
@@ -643,7 +648,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         private final List<TypeAnnotation> elements;
 
         public UnboundRuntimeVisibleTypeAnnotationsAttribute(List<TypeAnnotation> elements) {
-            super(Attributes.RUNTIME_VISIBLE_TYPE_ANNOTATIONS);
+            super(Attributes.runtimeVisibleTypeAnnotations());
             this.elements = List.copyOf(elements);
         }
 
@@ -659,7 +664,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         private final List<TypeAnnotation> elements;
 
         public UnboundRuntimeInvisibleTypeAnnotationsAttribute(List<TypeAnnotation> elements) {
-            super(Attributes.RUNTIME_INVISIBLE_TYPE_ANNOTATIONS);
+            super(Attributes.runtimeInvisibleTypeAnnotations());
             this.elements = List.copyOf(elements);
         }
 
@@ -751,75 +756,10 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
 
     public record UnboundTypeAnnotation(TargetInfo targetInfo,
                                         List<TypePathComponent> targetPath,
-                                        Utf8Entry className,
-                                        List<AnnotationElement> elements) implements TypeAnnotation {
+                                        Annotation annotation) implements TypeAnnotation {
 
-        public UnboundTypeAnnotation(TargetInfo targetInfo, List<TypePathComponent> targetPath,
-                                     Utf8Entry className, List<AnnotationElement> elements) {
-            this.targetInfo = targetInfo;
-            this.targetPath = List.copyOf(targetPath);
-            this.className = className;
-            this.elements = List.copyOf(elements);
-        }
-
-        private int labelToBci(LabelContext lr, Label label) {
-            //helper method to avoid NPE
-            if (lr == null) throw new IllegalArgumentException("Illegal targetType '%s' in TypeAnnotation outside of Code attribute".formatted(targetInfo.targetType()));
-            return lr.labelToBci(label);
-        }
-
-        @Override
-        public void writeTo(BufWriter buf) {
-            LabelContext lr = ((BufWriterImpl) buf).labelContext();
-            // target_type
-            buf.writeU1(targetInfo.targetType().targetTypeValue());
-
-            // target_info
-            switch (targetInfo) {
-                case TypeParameterTarget tpt -> buf.writeU1(tpt.typeParameterIndex());
-                case SupertypeTarget st -> buf.writeU2(st.supertypeIndex());
-                case TypeParameterBoundTarget tpbt -> {
-                    buf.writeU1(tpbt.typeParameterIndex());
-                    buf.writeU1(tpbt.boundIndex());
-                }
-                case EmptyTarget et -> {
-                    // nothing to write
-                }
-                case FormalParameterTarget fpt -> buf.writeU1(fpt.formalParameterIndex());
-                case ThrowsTarget tt -> buf.writeU2(tt.throwsTargetIndex());
-                case LocalVarTarget lvt -> {
-                    buf.writeU2(lvt.table().size());
-                    for (var e : lvt.table()) {
-                        int startPc = labelToBci(lr, e.startLabel());
-                        buf.writeU2(startPc);
-                        buf.writeU2(labelToBci(lr, e.endLabel()) - startPc);
-                        buf.writeU2(e.index());
-                    }
-                }
-                case CatchTarget ct -> buf.writeU2(ct.exceptionTableIndex());
-                case OffsetTarget ot -> buf.writeU2(labelToBci(lr, ot.target()));
-                case TypeArgumentTarget tat -> {
-                    buf.writeU2(labelToBci(lr, tat.target()));
-                    buf.writeU1(tat.typeArgumentIndex());
-                }
-            }
-
-            // target_path
-            buf.writeU1(targetPath().size());
-            for (TypePathComponent component : targetPath()) {
-                buf.writeU1(component.typePathKind().tag());
-                buf.writeU1(component.typeArgumentIndex());
-            }
-
-            // type_index
-            buf.writeIndex(className);
-
-            // element_value_pairs
-            buf.writeU2(elements.size());
-            for (AnnotationElement pair : elements()) {
-                buf.writeIndex(pair.name());
-                pair.value().writeTo(buf);
-            }
+        public UnboundTypeAnnotation {
+            targetPath = List.copyOf(targetPath);
         }
     }
 
@@ -845,7 +785,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
                                       Collection<ClassEntry> uses,
                                       Collection<ModuleProvideInfo> provides)
         {
-            super(Attributes.MODULE);
+            super(Attributes.module());
             this.moduleName = moduleName;
             this.moduleFlags = moduleFlags;
             this.moduleVersion = moduleVersion;
@@ -897,23 +837,22 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         }
     }
 
-    public static abstract non-sealed class AdHocAttribute<T extends Attribute<T>>
+    public abstract static non-sealed class AdHocAttribute<T extends Attribute<T>>
             extends UnboundAttribute<T> {
 
         public AdHocAttribute(AttributeMapper<T> mapper) {
             super(mapper);
         }
 
-        public abstract void writeBody(BufWriter b);
+        public abstract void writeBody(BufWriterImpl b);
 
         @Override
-        public void writeTo(BufWriter b) {
+        public void writeTo(BufWriterImpl b) {
             b.writeIndex(b.constantPool().utf8Entry(mapper.name()));
-            b.writeInt(0);
-            int start = b.size();
+            int lengthIndex = b.skip(4);
             writeBody(b);
-            int written = b.size() - start;
-            b.patchInt(start - 4, 4, written);
+            int written = b.size() - lengthIndex - 4;
+            b.patchInt(lengthIndex, written);
         }
     }
 
@@ -921,7 +860,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
             extends UnboundAttribute<BootstrapMethodsAttribute>
             implements BootstrapMethodsAttribute {
         public EmptyBootstrapAttribute() {
-            super(Attributes.BOOTSTRAP_METHODS);
+            super(Attributes.bootstrapMethods());
         }
 
         @Override
@@ -932,15 +871,6 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         @Override
         public List<BootstrapMethodEntry> bootstrapMethods() {
             return List.of();
-        }
-    }
-
-    public static abstract sealed class CustomAttribute<T extends CustomAttribute<T>>
-            extends UnboundAttribute<T>
-            permits jdk.internal.classfile.CustomAttribute {
-
-        public CustomAttribute(AttributeMapper<T> mapper) {
-            super(mapper);
         }
     }
 }

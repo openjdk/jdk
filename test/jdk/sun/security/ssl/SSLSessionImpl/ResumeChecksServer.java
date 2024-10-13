@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug 8206929
  * @summary ensure that server only resumes a session if certain properties
  *    of the session are compatible with the new connection
+ * @library /javax/net/ssl/templates
  * @run main/othervm -Djdk.tls.client.protocols=TLSv1.2 -Djdk.tls.server.enableSessionTicketExtension=false -Djdk.tls.client.enableSessionTicketExtension=false ResumeChecksServer BASIC
  * @run main/othervm -Djdk.tls.client.protocols=TLSv1.2 -Djdk.tls.server.enableSessionTicketExtension=true -Djdk.tls.client.enableSessionTicketExtension=false ResumeChecksServer BASIC
  * @run main/othervm -Djdk.tls.client.protocols=TLSv1.2 -Djdk.tls.server.enableSessionTicketExtension=true -Djdk.tls.client.enableSessionTicketExtension=true ResumeChecksServer BASIC
@@ -48,12 +49,7 @@ import java.security.*;
 import java.net.*;
 import java.util.*;
 
-public class ResumeChecksServer {
-
-    static String pathToStores = "../../../../javax/net/ssl/etc";
-    static String keyStoreFile = "keystore";
-    static String trustStoreFile = "truststore";
-    static String passwd = "passphrase";
+public class ResumeChecksServer extends SSLContextTemplate {
 
     enum TestMode {
         BASIC,
@@ -66,23 +62,18 @@ public class ResumeChecksServer {
 
     public static void main(String[] args) throws Exception {
 
-        TestMode mode = TestMode.valueOf(args[0]);
+        new ResumeChecksServer(TestMode.valueOf(args[0])).run();
+    }
+    private final TestMode testMode;
 
-        String keyFilename =
-            System.getProperty("test.src", "./") + "/" + pathToStores +
-                "/" + keyStoreFile;
-        String trustFilename =
-            System.getProperty("test.src", "./") + "/" + pathToStores +
-                "/" + trustStoreFile;
+    public ResumeChecksServer(TestMode testMode) {
+        this.testMode = testMode;
+    }
 
-        System.setProperty("javax.net.ssl.keyStore", keyFilename);
-        System.setProperty("javax.net.ssl.keyStorePassword", passwd);
-        System.setProperty("javax.net.ssl.trustStore", trustFilename);
-        System.setProperty("javax.net.ssl.trustStorePassword", passwd);
-
+    private void run() throws Exception {
         SSLSession secondSession = null;
 
-        SSLContext sslContext = SSLContext.getDefault();
+        SSLContext sslContext = createServerSSLContext();
         ServerSocketFactory fac = sslContext.getServerSocketFactory();
         SSLServerSocket ssock = (SSLServerSocket)
             fac.createServerSocket(0);
@@ -90,7 +81,7 @@ public class ResumeChecksServer {
         Client client = startClient(ssock.getLocalPort());
 
         try {
-            connect(client, ssock, mode, false);
+            connect(client, ssock, testMode, false);
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }
@@ -98,7 +89,7 @@ public class ResumeChecksServer {
         long secondStartTime = System.currentTimeMillis();
         Thread.sleep(10);
         try {
-            secondSession = connect(client, ssock, mode, true);
+            secondSession = connect(client, ssock, testMode, true);
         } catch (SSLHandshakeException ex) {
             // this is expected
         } catch (Exception ex) {
@@ -108,7 +99,7 @@ public class ResumeChecksServer {
         client.go = false;
         client.signal();
 
-        switch (mode) {
+        switch (testMode) {
         case BASIC:
             // fail if session is not resumed
             if (secondSession.getCreationTime() > secondStartTime) {
@@ -129,7 +120,7 @@ public class ResumeChecksServer {
             }
             break;
         default:
-            throw new RuntimeException("unknown mode: " + mode);
+            throw new RuntimeException("unknown mode: " + testMode);
         }
     }
 
@@ -244,7 +235,7 @@ public class ResumeChecksServer {
         return client;
     }
 
-    private static class Client implements Runnable {
+    private static class Client extends SSLContextTemplate implements Runnable {
 
         public volatile boolean go = true;
         private boolean signal = false;
@@ -278,7 +269,7 @@ public class ResumeChecksServer {
         public void run() {
             try {
 
-                SSLContext sc = SSLContext.getDefault();
+                SSLContext sc = createClientSSLContext();
 
                 waitForSignal();
                 while (go) {

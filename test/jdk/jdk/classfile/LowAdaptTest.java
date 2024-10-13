@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -25,10 +23,13 @@
 
 /*
  * @test
- * @summary Testing Classfile low adaptation.
+ * @summary Testing ClassFile low adaptation.
  * @run junit LowAdaptTest
  */
 import java.lang.constant.ClassDesc;
+
+import static java.lang.classfile.ClassFile.ACC_PUBLIC;
+import static java.lang.classfile.ClassFile.ACC_STATIC;
 import static java.lang.constant.ConstantDescs.*;
 import java.lang.constant.DirectMethodHandleDesc;
 import java.lang.constant.DynamicCallSiteDesc;
@@ -37,15 +38,11 @@ import java.lang.constant.MethodTypeDesc;
 import java.net.URI;
 import java.nio.file.Paths;
 
-import jdk.internal.classfile.AccessFlags;
 import java.lang.reflect.AccessFlag;
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.Opcode;
-import jdk.internal.classfile.TypeKind;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.ClassFile;
 import helpers.ByteArrayClassLoader;
-import jdk.internal.classfile.attribute.SourceFileAttribute;
-import jdk.internal.classfile.impl.DirectClassBuilder;
+import java.lang.classfile.attribute.SourceFileAttribute;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -56,7 +53,8 @@ class LowAdaptTest {
 
     @Test
     void testAdapt() throws Exception {
-        ClassModel cl = Classfile.parse(Paths.get(URI.create(LowAdaptTest.class.getResource(test + ".class").toString())));
+        var cc = ClassFile.of();
+        ClassModel cl = cc.parse(Paths.get(URI.create(LowAdaptTest.class.getResource(test + ".class").toString())));
 
         DirectMethodHandleDesc bsm = MethodHandleDesc.ofMethod(DirectMethodHandleDesc.Kind.STATIC,
                                                                ClassDesc.of("java.lang.invoke.LambdaMetafactory"),
@@ -73,23 +71,23 @@ class LowAdaptTest {
                                                           MethodHandleDesc.of(DirectMethodHandleDesc.Kind.STATIC, ClassDesc.of(test), "fib", "(I)I"),
                                                           MethodTypeDesc.ofDescriptor("(I)I"));
 
-        byte[] clazz = Classfile.build(ClassDesc.of(test), cb -> {
+        byte[] clazz = cc.build(ClassDesc.of(test), cb -> {
             cb.withFlags(AccessFlag.PUBLIC);
             cb.with(SourceFileAttribute.of("/some/madeup/TestClass.java"));
-            cl.methods().forEach(m -> ((DirectClassBuilder) cb).withMethod(m));
+            cl.methods().forEach(cb::with);
 
             cb.withMethod("doit", MethodTypeDesc.of(CD_int, CD_int),
-                          AccessFlags.ofMethod(AccessFlag.PUBLIC, AccessFlag.STATIC).flagsMask(),
+                          ACC_PUBLIC | ACC_STATIC,
                           mb -> mb.withCode(xb -> {
-                              xb.invokeDynamicInstruction(indy);
-                              xb.storeInstruction(TypeKind.ReferenceType, 1);
-                              xb.loadInstruction(TypeKind.ReferenceType, 1);
-                              xb.loadInstruction(TypeKind.IntType, 0);
-                              xb.invokeInstruction(Opcode.INVOKEINTERFACE, ClassDesc.of("java.util.function.IntUnaryOperator"),
-                                                   "applyAsInt", MethodTypeDesc.ofDescriptor("(I)I"), true);
-                              xb.storeInstruction(TypeKind.IntType, 2);
-                              xb.loadInstruction(TypeKind.IntType, 2);
-                              xb.returnInstruction(TypeKind.IntType);
+                              xb.invokedynamic(indy);
+                              xb.astore(1);
+                              xb.aload(1);
+                              xb.iload(0);
+                              xb.invokeinterface(ClassDesc.of("java.util.function.IntUnaryOperator"),
+                                                   "applyAsInt", MethodTypeDesc.ofDescriptor("(I)I"));
+                              xb.istore(2);
+                              xb.iload(2);
+                              xb.ireturn();
                           }));
         });
 

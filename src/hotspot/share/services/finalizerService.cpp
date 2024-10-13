@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ static const char* allocate(oop string) {
   char* str = nullptr;
   const typeArrayOop value = java_lang_String::value(string);
   if (value != nullptr) {
-    const int length = java_lang_String::utf8_length(string, value);
+    const size_t length = java_lang_String::utf8_length(string, value);
     str = NEW_C_HEAP_ARRAY(char, length + 1, mtServiceability);
     java_lang_String::as_utf8_string(string, value, str, length + 1);
   }
@@ -137,10 +137,13 @@ class FinalizerEntryLookup : StackObj {
  public:
   FinalizerEntryLookup(const InstanceKlass* ik) : _ik(ik) {}
   uintx get_hash() const { return hash_function(_ik); }
-  bool equals(FinalizerEntry** value, bool* is_dead) {
+  bool equals(FinalizerEntry** value) {
     assert(value != nullptr, "invariant");
     assert(*value != nullptr, "invariant");
     return (*value)->klass() == _ik;
+  }
+  bool is_dead(FinalizerEntry** value) {
+    return false;
   }
 };
 

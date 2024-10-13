@@ -62,6 +62,7 @@ public class MultiTaskListener implements TaskListener {
         return instance;
     }
 
+    @SuppressWarnings("this-escape")
     protected MultiTaskListener(Context context) {
         context.put(taskListenerKey, this);
         ccw = ClientCodeWrapper.instance(context);

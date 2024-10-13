@@ -77,26 +77,27 @@ public class HotSpotMethodHandleAccessProvider implements MethodHandleAccessProv
             throw new NoSuchFieldError(declaringType + "." + fieldName);
         }
 
-        private static ResolvedJavaType resolveType(String className) {
-            return (ResolvedJavaType) runtime().lookupTypeInternal(className, null, true);
+        private static ResolvedJavaType resolveType(String className, HotSpotResolvedObjectType accessingType) {
+            return (ResolvedJavaType) runtime().lookupTypeInternal(className, accessingType, true);
         }
 
         private Internals() {
             try {
-                ResolvedJavaType methodHandleType = resolveType("Ljava/lang/invoke/MethodHandle;");
-                ResolvedJavaType memberNameType = resolveType("Ljava/lang/invoke/MemberName;");
-                lambdaFormType = resolveType("Ljava/lang/invoke/LambdaForm;");
+                HotSpotResolvedObjectType accessingType = runtime().getJavaLangObject();
+                ResolvedJavaType methodHandleType = resolveType("Ljava/lang/invoke/MethodHandle;", accessingType);
+                ResolvedJavaType memberNameType = resolveType("Ljava/lang/invoke/MemberName;", accessingType);
+                lambdaFormType = resolveType("Ljava/lang/invoke/LambdaForm;", accessingType);
                 methodHandleFormField = findFieldInClass(methodHandleType, "form", lambdaFormType);
                 lambdaFormVmentryField = findFieldInClass(lambdaFormType, "vmentry", memberNameType);
 
-                ResolvedJavaType methodType = resolveType("Ljava/lang/invoke/ResolvedMethodName;");
+                ResolvedJavaType methodType = resolveType("Ljava/lang/invoke/ResolvedMethodName;", accessingType);
                 methodField = findFieldInClass(memberNameType, "method", methodType);
-                vmtargetField = (HotSpotResolvedJavaField) findFieldInClass(methodType, "vmtarget", resolveType(Character.toString(HotSpotJVMCIRuntime.getHostWordKind().getTypeChar())));
+                vmtargetField = (HotSpotResolvedJavaField) findFieldInClass(methodType, "vmtarget", resolveType(Character.toString(HotSpotJVMCIRuntime.getHostWordKind().getTypeChar()), accessingType));
 
-                ResolvedJavaType callSiteType = resolveType("Ljava/lang/invoke/CallSite;");
+                ResolvedJavaType callSiteType = resolveType("Ljava/lang/invoke/CallSite;", accessingType);
                 callSiteTargetField = (HotSpotResolvedJavaField) findFieldInClass(callSiteType, "target", methodHandleType);
-                ResolvedJavaType constantCallSiteType = resolveType("Ljava/lang/invoke/ConstantCallSite;");
-                ResolvedJavaType booleanType = resolveType("Z");
+                ResolvedJavaType constantCallSiteType = resolveType("Ljava/lang/invoke/ConstantCallSite;", accessingType);
+                ResolvedJavaType booleanType = resolveType("Z", accessingType);
                 constantCallSiteFrozenField = (HotSpotResolvedJavaField) findFieldInClass(constantCallSiteType, "isFrozen", booleanType);
             } catch (Throwable ex) {
                 throw new JVMCIError(ex);
@@ -145,6 +146,8 @@ public class HotSpotMethodHandleAccessProvider implements MethodHandleAccessProv
             return IntrinsicMethod.LINK_TO_STATIC;
         } else if (intrinsicId == config.vmIntrinsicLinkToVirtual) {
             return IntrinsicMethod.LINK_TO_VIRTUAL;
+        } else if (intrinsicId == config.vmIntrinsicLinkToNative) {
+            return IntrinsicMethod.LINK_TO_NATIVE;
         }
         return null;
     }

@@ -22,13 +22,14 @@
  */
 package jdk.httpclient.test.lib.common;
 
+import com.sun.net.httpserver.Authenticator;
+import com.sun.net.httpserver.BasicAuthenticator;
 import com.sun.net.httpserver.Filter;
 import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpContext;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
-import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsServer;
 import jdk.httpclient.test.lib.http2.Http2Handler;
 import jdk.httpclient.test.lib.http2.Http2TestExchange;
@@ -48,6 +49,7 @@ import java.math.BigInteger;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.http.HttpHeaders;
+import java.util.Base64;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
@@ -56,8 +58,10 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
+import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.net.ssl.SSLContext;
@@ -236,6 +240,7 @@ public interface HttpServerAdapters {
         public abstract String getRequestMethod();
         public abstract void close();
         public abstract InetSocketAddress getRemoteAddress();
+        public abstract String getConnectionKey();
         public void serverPush(URI uri, HttpHeaders headers, byte[] body) {
             ByteArrayInputStream bais = new ByteArrayInputStream(body);
             serverPush(uri, headers, bais);
@@ -250,7 +255,7 @@ public interface HttpServerAdapters {
             return new Http1TestExchange(exchange);
         }
         public static HttpTestExchange of(Http2TestExchange exchange) {
-            return new Http2TestExchangeImpl(exchange);
+            return new H2ExchangeImpl(exchange);
         }
 
         abstract void doFilter(Filter.Chain chain) throws IOException;
@@ -303,15 +308,21 @@ public interface HttpServerAdapters {
             public URI getRequestURI() { return exchange.getRequestURI(); }
             @Override
             public String getRequestMethod() { return exchange.getRequestMethod(); }
+
+            @Override
+            public String getConnectionKey() {
+                return exchange.getLocalAddress() + "->" + exchange.getRemoteAddress();
+            }
+
             @Override
             public String toString() {
                 return this.getClass().getSimpleName() + ": " + exchange.toString();
             }
         }
 
-        private static final class Http2TestExchangeImpl extends HttpTestExchange {
+        private static final class H2ExchangeImpl extends HttpTestExchange {
             private final Http2TestExchange exchange;
-            Http2TestExchangeImpl(Http2TestExchange exch) {
+            H2ExchangeImpl(Http2TestExchange exch) {
                 this.exchange = exch;
             }
             @Override
@@ -358,6 +369,11 @@ public interface HttpServerAdapters {
             @Override
             public InetSocketAddress getRemoteAddress() {
                 return exchange.getRemoteAddress();
+            }
+
+            @Override
+            public String getConnectionKey() {
+                return exchange.getConnectionKey();
             }
 
             @Override
@@ -506,6 +522,175 @@ public interface HttpServerAdapters {
         }
     }
 
+    static String toString(HttpTestRequestHeaders headers) {
+        return headers.entrySet().stream()
+                .map((e) -> e.getKey() + ": " + e.getValue())
+                .collect(Collectors.joining("\n"));
+    }
+
+    abstract static class AbstractHttpAuthFilter extends HttpTestFilter {
+
+        public static final int HTTP_PROXY_AUTH = 407;
+        public static final int HTTP_UNAUTHORIZED = 401;
+        public enum HttpAuthMode {PROXY, SERVER}
+        final HttpAuthMode authType;
+        final String type;
+
+        public AbstractHttpAuthFilter(HttpAuthMode authType, String type) {
+            this.authType = authType;
+            this.type = type;
+        }
+
+        public final String type() {
+            return type;
+        }
+
+        protected String getLocation() {
+            return "Location";
+        }
+        protected String getKeepAlive() {
+            return "keep-alive";
+        }
+        protected String getConnection() {
+            return authType == HttpAuthMode.PROXY ? "Proxy-Connection" : "Connection";
+        }
+
+        protected String getAuthenticate() {
+            return authType == HttpAuthMode.PROXY
+                    ? "Proxy-Authenticate" : "WWW-Authenticate";
+        }
+        protected String getAuthorization() {
+            return authType == HttpAuthMode.PROXY
+                    ? "Proxy-Authorization" : "Authorization";
+        }
+        protected int getUnauthorizedCode() {
+            return authType == HttpAuthMode.PROXY
+                    ? HTTP_PROXY_AUTH
+                    : HTTP_UNAUTHORIZED;
+        }
+        protected abstract boolean isAuthentified(HttpTestExchange he) throws IOException;
+        protected abstract void requestAuthentication(HttpTestExchange he) throws IOException;
+        protected void accept(HttpTestExchange he, HttpChain chain) throws IOException {
+            chain.doFilter(he);
+        }
+
+        @Override
+        public void doFilter(HttpTestExchange he, HttpChain chain) throws IOException {
+            try {
+                System.out.println(type + ": Got " + he.getRequestMethod()
+                        + ": " + he.getRequestURI()
+                        + "\n" + HttpServerAdapters.toString(he.getRequestHeaders()));
+
+                // Assert only a single value for Expect. Not directly related
+                // to digest authentication, but verifies good client behaviour.
+                List<String> expectValues = he.getRequestHeaders().get("Expect");
+                if (expectValues != null && expectValues.size() > 1) {
+                    throw new IOException("Expect:  " + expectValues);
+                }
+
+                if (!isAuthentified(he)) {
+                    try {
+                        requestAuthentication(he);
+                        he.sendResponseHeaders(getUnauthorizedCode(), -1);
+                        System.out.println(type
+                                + ": Sent back " + getUnauthorizedCode());
+                    } finally {
+                        he.close();
+                    }
+                } else {
+                    accept(he, chain);
+                }
+            } catch (RuntimeException | Error | IOException t) {
+                System.err.println(type
+                        + ": Unexpected exception while handling request: " + t);
+                t.printStackTrace(System.err);
+                he.close();
+                throw t;
+            }
+        }
+
+    }
+
+    public static class HttpBasicAuthFilter extends AbstractHttpAuthFilter {
+
+            static String type(HttpAuthMode authType) {
+                String type = authType == HttpAuthMode.SERVER
+                        ? "BasicAuth Server Filter" : "BasicAuth Proxy Filter";
+                return "["+type+"]";
+            }
+
+            final BasicAuthenticator auth;
+            public HttpBasicAuthFilter(BasicAuthenticator auth) {
+                this(auth, HttpAuthMode.SERVER);
+            }
+
+            public HttpBasicAuthFilter(BasicAuthenticator auth, HttpAuthMode authType) {
+                this(auth, authType, type(authType));
+            }
+
+            public HttpBasicAuthFilter(BasicAuthenticator auth, HttpAuthMode authType, String typeDesc) {
+                super(authType, typeDesc);
+                this.auth = auth;
+            }
+
+            protected String getAuthValue() {
+                return "Basic realm=\"" + auth.getRealm() + "\"";
+            }
+
+            @Override
+            protected void requestAuthentication(HttpTestExchange he)
+                    throws IOException
+            {
+                String headerName = getAuthenticate();
+                String headerValue = getAuthValue();
+                he.getResponseHeaders().addHeader(headerName, headerValue);
+                System.out.println(type + ": Requesting Basic Authentication, "
+                        + headerName + " : "+ headerValue);
+            }
+
+            @Override
+            protected boolean isAuthentified(HttpTestExchange he) {
+                if (he.getRequestHeaders().containsKey(getAuthorization())) {
+                    List<String> authorization =
+                            he.getRequestHeaders().get(getAuthorization());
+                    for (String a : authorization) {
+                        System.out.println(type + ": processing " + a);
+                        int sp = a.indexOf(' ');
+                        if (sp < 0) return false;
+                        String scheme = a.substring(0, sp);
+                        if (!"Basic".equalsIgnoreCase(scheme)) {
+                            System.out.println(type + ": Unsupported scheme '"
+                                    + scheme +"'");
+                            return false;
+                        }
+                        if (a.length() <= sp+1) {
+                            System.out.println(type + ": value too short for '"
+                                    + scheme +"'");
+                            return false;
+                        }
+                        a = a.substring(sp+1);
+                        return validate(a);
+                    }
+                    return false;
+                }
+                return false;
+            }
+
+            boolean validate(String a) {
+                byte[] b = Base64.getDecoder().decode(a);
+                String userpass = new String (b);
+                int colon = userpass.indexOf (':');
+                String uname = userpass.substring (0, colon);
+                String pass = userpass.substring (colon+1);
+                return auth.checkCredentials(uname, pass);
+            }
+
+        @Override
+        public String description() {
+            return "HttpBasicAuthFilter";
+        }
+    }
+
     /**
      * A version agnostic adapter class for HTTP Server Context.
      */
@@ -514,7 +699,7 @@ public interface HttpServerAdapters {
         public abstract void addFilter(HttpTestFilter filter);
         public abstract Version getVersion();
 
-        // will throw UOE if the server is HTTP/2
+        // will throw UOE if the server is HTTP/2 or Authenticator is not a BasicAuthenticator
         public abstract void setAuthenticator(com.sun.net.httpserver.Authenticator authenticator);
     }
 
@@ -536,10 +721,18 @@ public interface HttpServerAdapters {
         public abstract HttpTestContext addHandler(HttpTestHandler handler, String root);
         public abstract InetSocketAddress getAddress();
         public abstract Version getVersion();
+        public abstract void setRequestApprover(final Predicate<String> approver);
 
         public String serverAuthority() {
-            return InetAddress.getLoopbackAddress().getHostName() + ":"
-                    + getAddress().getPort();
+            InetSocketAddress address = getAddress();
+            String hostString = address.getHostString();
+            hostString = address.getAddress().isLoopbackAddress() || hostString.equals("localhost")
+                    ? address.getAddress().getHostAddress() // use the raw IP address, if loopback
+                    : hostString; // use whatever host string was used to construct the address
+            hostString = hostString.contains(":")
+                    ? "[" + hostString + "]"
+                    : hostString;
+            return hostString + ":" + address.getPort();
         }
 
         public static HttpTestServer of(HttpServer server) {
@@ -618,14 +811,14 @@ public interface HttpServerAdapters {
                     return HttpTestServer.of(underlying);
                 }
                 case HTTP_1_1 ->  {
-                    InetSocketAddress sa = new InetSocketAddress(
-                            InetAddress.getLoopbackAddress(), 0);
+                    InetAddress loopback = InetAddress.getLoopbackAddress();
+                    InetSocketAddress sa = new InetSocketAddress(loopback, 0);
                     HttpServer underlying;
                     if (sslContext == null) {
                         underlying = HttpServer.create(sa, 0); // HTTP
                     } else {
                         HttpsServer https = HttpsServer.create(sa, 0); // HTTPS
-                        https.setHttpsConfigurator(new HttpsConfigurator(sslContext));
+                        https.setHttpsConfigurator(new TestServerConfigurator(loopback, sslContext));
                         underlying = https;
                     }
                     if (executor != null) {
@@ -677,6 +870,11 @@ public interface HttpServerAdapters {
                         impl.getAddress().getPort());
             }
             public Version getVersion() { return Version.HTTP_1_1; }
+
+            @Override
+            public void setRequestApprover(final Predicate<String> approver) {
+                throw new UnsupportedOperationException("not supported");
+            }
         }
 
         private static class Http1TestContext extends HttpTestContext {
@@ -728,6 +926,11 @@ public interface HttpServerAdapters {
                         impl.getAddress().getPort());
             }
             public Version getVersion() { return Version.HTTP_2; }
+
+            @Override
+            public void setRequestApprover(final Predicate<String> approver) {
+                this.impl.setRequestApprover(approver);
+            }
         }
 
         private static class Http2TestContext
@@ -752,8 +955,13 @@ public interface HttpServerAdapters {
                 HttpChain.of(filters, handler).doFilter(exchange);
             }
             @Override
-            public void setAuthenticator(com.sun.net.httpserver.Authenticator authenticator) {
-                throw new UnsupportedOperationException("Can't set HTTP/1.1 authenticator on HTTP/2 context");
+            public void setAuthenticator(final Authenticator authenticator) {
+                if (authenticator instanceof BasicAuthenticator basicAuth) {
+                    addFilter(new HttpBasicAuthFilter(basicAuth));
+                } else {
+                    throw new UnsupportedOperationException(
+                            "only BasicAuthenticator is supported on HTTP/2 context");
+                }
             }
             @Override public Version getVersion() { return Version.HTTP_2; }
         }

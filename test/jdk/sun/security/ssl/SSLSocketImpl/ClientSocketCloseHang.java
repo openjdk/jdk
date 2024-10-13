@@ -34,7 +34,7 @@
 import javax.net.ssl.*;
 import java.net.InetAddress;
 
-public class ClientSocketCloseHang implements SSLContextTemplate {
+public class ClientSocketCloseHang extends SSLContextTemplate {
 
     public static void main(String[] args) throws Exception {
         System.setProperty("jdk.tls.client.protocols", args[0]);

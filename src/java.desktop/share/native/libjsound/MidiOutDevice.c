@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,6 +121,7 @@ Java_com_sun_media_sound_MidiOutDevice_nSendLongMessage(JNIEnv* e, jobject thisO
                                                         jbyteArray jData, jint size, jlong timeStamp) {
 #if USE_PLATFORM_MIDI_OUT == TRUE
     UBYTE* data;
+    UBYTE* msg;
 #endif
 
     TRACE0("Java_com_sun_media_sound_MidiOutDevice_nSendLongMessage.\n");
@@ -133,11 +134,12 @@ Java_com_sun_media_sound_MidiOutDevice_nSendLongMessage(JNIEnv* e, jobject thisO
     }
     /* "continuation" sysex messages start with F7 (instead of F0), but
        are sent without the F7. */
+    msg = data;
     if (data[0] == 0xF7 && size > 1) {
-        data++;
+        msg++;
         size--;
     }
-    MIDI_OUT_SendLongMessage((MidiDeviceHandle*) (UINT_PTR) deviceHandle, data,
+    MIDI_OUT_SendLongMessage((MidiDeviceHandle*) (UINT_PTR) deviceHandle, msg,
                              (UINT32) size, (UINT32)timeStamp);
     // release the byte array
     (*e)->ReleaseByteArrayElements(e, jData, (jbyte*) data, JNI_ABORT);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,26 +24,26 @@
 #include <string.h>
 #include <stdlib.h>
 #include "jvmti.h"
-#include "agent_common.h"
-#include "jni_tools.h"
-#include "jvmti_tools.h"
-#include "JVMTITools.h"
-#include "nsk_list.h"
+#include "agent_common.hpp"
+#include "jni_tools.hpp"
+#include "jvmti_tools.hpp"
+#include "JVMTITools.hpp"
+#include "nsk_list.hpp"
 
 extern "C" {
 
 /* ============================================================================= */
 
 /* scaffold objects */
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jlong timeout = 0;
-static jrawMonitorID syncLock = NULL;
+static jrawMonitorID syncLock = nullptr;
 
 static int methodLoadCount = 0;
 static int methodUnloadCount = 0;
 
 #define NAME_LENGTH 50
-const void *plist = NULL;
+const void *plist = nullptr;
 static volatile int callbacksEnabled = NSK_TRUE;
 
 typedef struct nsk_jvmti_CompiledMethodIDStruct {
@@ -109,7 +109,7 @@ cbCompiledMethodLoad(jvmtiEnv *jvmti_env, jmethodID method, jint code_size,
     if (!NSK_JVMTI_VERIFY(jvmti_env->Deallocate((unsigned char*)sign))) {
         nsk_jvmti_setFailStatus();
     }
-    if (genc != NULL)
+    if (genc != nullptr)
         if (!NSK_JVMTI_VERIFY(jvmti_env->Deallocate((unsigned char*)genc))) {
             nsk_jvmti_setFailStatus();
         }
@@ -155,7 +155,7 @@ cbCompiledMethodUnload(jvmtiEnv *jvmti_env, jmethodID method,
 
 static int
 enableEvent(jvmtiEventMode enable, jvmtiEvent event) {
-    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(enable, event, NULL))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(enable, event, nullptr))) {
         nsk_jvmti_setFailStatus();
         return NSK_FALSE;
     }
@@ -264,7 +264,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
     timeout = nsk_jvmti_getWaitTime() * 60 * 1000;
 
-    if (!NSK_VERIFY((jvmti = nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL))
+    if (!NSK_VERIFY((jvmti = nsk_jvmti_createJVMTIEnv(jvm, reserved)) != nullptr))
         return JNI_ERR;
 
     if (!NSK_JVMTI_VERIFY(jvmti->CreateRawMonitor("_syncLock", &syncLock))) {
@@ -272,7 +272,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         return JNI_ERR;
     }
 
-    if (!NSK_VERIFY((plist = (const void *)nsk_list_create()) != NULL))
+    if (!NSK_VERIFY((plist = (const void *)nsk_list_create()) != nullptr))
         return JNI_ERR;
 
     {
@@ -293,7 +293,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         return JNI_ERR;
     }
 
-    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, NULL)))
+    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, nullptr)))
         return JNI_ERR;
 
     return JNI_OK;

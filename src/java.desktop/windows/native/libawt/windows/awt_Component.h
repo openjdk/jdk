@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -401,13 +401,6 @@ public:
                              jboolean popupTrigger, jint scrollType,
                              jint scrollAmount, jint wheelRotation,
                              jdouble preciseWheelRotation, MSG *msg = NULL);
-
-    /*
-     * Allocate and initialize a new java.awt.event.FocusEvent, and
-     * post it to the peer's target object.  No response is expected
-     * from the target.
-     */
-    void SendFocusEvent(jint id, HWND opposite);
 
     /* Forward a filtered event directly to the subclassed window.
        synthetic should be TRUE iff the message was generated because

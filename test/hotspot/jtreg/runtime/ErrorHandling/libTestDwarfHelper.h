@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,10 @@
  * questions.
  */
 
-#include "jni.h"
 #include <stdio.h>
+
+#include "export.h"
+#include "jni.h"
 
 void unused1() {
 }
@@ -39,7 +41,7 @@ void unused4() {
 void unused5() {
 }
 
-void dereference_null() {
+EXPORT void dereference_null() {
   int* x = (int*)0;
   *x = 34; // Crash
 }

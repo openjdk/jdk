@@ -21,7 +21,7 @@
  * questions.
  */
 
-/* @test 1.2 02/05/15
+/* @test
    @bug 4810363 4924441
    @key printer
    @run main DeviceScale

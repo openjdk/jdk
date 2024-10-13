@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,18 +59,8 @@ void ScavengableNMethods::register_nmethod(nmethod* nm) {
 }
 
 void ScavengableNMethods::unregister_nmethod(nmethod* nm) {
-  assert_locked_or_safepoint(CodeCache_lock);
-
-  if (gc_data(nm).on_list()) {
-    nmethod* prev = nullptr;
-    for (nmethod* cur = _head; cur != nullptr; cur = gc_data(cur).next()) {
-      if (cur == nm) {
-        unlist_nmethod(cur, prev);
-        return;
-      }
-      prev = cur;
-    }
-  }
+  // All users of this method only unregister in bulk during code unloading.
+  ShouldNotReachHere();
 }
 
 #ifndef PRODUCT
@@ -117,31 +107,29 @@ void ScavengableNMethods::verify_nmethod(nmethod* nm) {
 #endif // PRODUCT
 }
 
-class HasScavengableOops: public OopClosure {
-  BoolObjectClosure* _is_scavengable;
-  bool               _found;
-public:
-  HasScavengableOops(BoolObjectClosure* is_scavengable, nmethod* nm) :
+bool ScavengableNMethods::has_scavengable_oops(nmethod* nm) {
+  struct HasScavengableOops: public OopClosure {
+    BoolObjectClosure* _is_scavengable;
+    bool               _found;
+
+    explicit HasScavengableOops(BoolObjectClosure* is_scavengable) :
       _is_scavengable(is_scavengable),
       _found(false) {}
 
-  bool found() { return _found; }
-  virtual void do_oop(oop* p) {
-    if (!_found && *p != nullptr && _is_scavengable->do_object_b(*p)) {
-      _found = true;
+    virtual void do_oop(oop* p) {
+      if (!_found && *p != nullptr && _is_scavengable->do_object_b(*p)) {
+        _found = true;
+      }
     }
-  }
-  virtual void do_oop(narrowOop* p) { ShouldNotReachHere(); }
-};
+    virtual void do_oop(narrowOop* p) { ShouldNotReachHere(); }
+  } cl {_is_scavengable};
 
-bool ScavengableNMethods::has_scavengable_oops(nmethod* nm) {
-  HasScavengableOops cl(_is_scavengable, nm);
   nm->oops_do(&cl);
-  return cl.found();
+  return cl._found;
 }
 
 // Walk the list of methods which might contain oops to the java heap.
-void ScavengableNMethods::nmethods_do_and_prune(CodeBlobToOopClosure* cl) {
+void ScavengableNMethods::nmethods_do_and_prune(NMethodToOopClosure* cl) {
   assert_locked_or_safepoint(CodeCache_lock);
 
   debug_only(mark_on_list_nmethods());
@@ -154,7 +142,7 @@ void ScavengableNMethods::nmethods_do_and_prune(CodeBlobToOopClosure* cl) {
     assert(data.on_list(), "else shouldn't be on this list");
 
     if (cl != nullptr) {
-      cl->do_code_blob(cur);
+      cl->do_nmethod(cur);
     }
 
     nmethod* const next = data.next();
@@ -169,29 +157,44 @@ void ScavengableNMethods::nmethods_do_and_prune(CodeBlobToOopClosure* cl) {
   }
 
   // Check for stray marks.
-  debug_only(verify_unlisted_nmethods(nullptr));
+  debug_only(verify_nmethods());
 }
 
-void ScavengableNMethods::prune_nmethods() {
+void ScavengableNMethods::prune_nmethods_not_into_young() {
   nmethods_do_and_prune(nullptr /* No closure */);
 }
 
-// Walk the list of methods which might contain oops to the java heap.
-void ScavengableNMethods::nmethods_do(CodeBlobToOopClosure* cl) {
-  nmethods_do_and_prune(cl);
+void ScavengableNMethods::prune_unlinked_nmethods() {
+  assert_locked_or_safepoint(CodeCache_lock);
+
+  debug_only(mark_on_list_nmethods());
+
+  nmethod* prev = nullptr;
+  nmethod* cur = _head;
+  while (cur != nullptr) {
+    ScavengableNMethodsData data = gc_data(cur);
+    debug_only(data.clear_marked());
+    assert(data.on_list(), "else shouldn't be on this list");
+
+    nmethod* const next = data.next();
+
+    if (cur->is_unlinked()) {
+      unlist_nmethod(cur, prev);
+    } else {
+      prev = cur;
+    }
+
+    cur = next;
+  }
+
+  // Check for stray marks.
+  debug_only(verify_nmethods());
 }
 
-#ifndef PRODUCT
-void ScavengableNMethods::asserted_non_scavengable_nmethods_do(CodeBlobClosure* cl) {
-  // While we are here, verify the integrity of the list.
-  mark_on_list_nmethods();
-  for (nmethod* cur = _head; cur != nullptr; cur = gc_data(cur).next()) {
-    assert(gc_data(cur).on_list(), "else shouldn't be on this list");
-    gc_data(cur).clear_marked();
-  }
-  verify_unlisted_nmethods(cl);
+// Walk the list of methods which might contain oops to the java heap.
+void ScavengableNMethods::nmethods_do(NMethodToOopClosure* cl) {
+  nmethods_do_and_prune(cl);
 }
-#endif // PRODUCT
 
 void ScavengableNMethods::unlist_nmethod(nmethod* nm, nmethod* prev) {
   assert_locked_or_safepoint(CodeCache_lock);
@@ -213,27 +216,26 @@ void ScavengableNMethods::unlist_nmethod(nmethod* nm, nmethod* prev) {
 #ifndef PRODUCT
 // Temporarily mark nmethods that are claimed to be on the scavenge list.
 void ScavengableNMethods::mark_on_list_nmethods() {
-  NMethodIterator iter(NMethodIterator::all_blobs);
+  NMethodIterator iter(NMethodIterator::all);
   while(iter.next()) {
     nmethod* nm = iter.method();
     ScavengableNMethodsData data = gc_data(nm);
     assert(data.not_marked(), "clean state");
-    if (data.on_list())
+    if (data.on_list()) {
       data.set_marked();
+    }
   }
 }
 
-// If the closure is given, run it on the unlisted nmethods.
-// Also make sure that the effects of mark_on_list_nmethods is gone.
-void ScavengableNMethods::verify_unlisted_nmethods(CodeBlobClosure* cl) {
-  NMethodIterator iter(NMethodIterator::all_blobs);
+// Make sure that the effects of mark_on_list_nmethods is gone.
+void ScavengableNMethods::verify_nmethods() {
+  NMethodIterator iter(NMethodIterator::all);
   while(iter.next()) {
     nmethod* nm = iter.method();
 
-    verify_nmethod(nm);
-
-    if (cl != nullptr && !gc_data(nm).on_list()) {
-      cl->do_code_blob(nm);
+    // Can not verify already unlinked nmethods as they are partially invalid already.
+    if (!nm->is_unlinked()) {
+      verify_nmethod(nm);
     }
   }
 }

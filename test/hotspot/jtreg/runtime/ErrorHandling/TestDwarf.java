@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,13 +98,12 @@ public class TestDwarf {
     // Crash the VM in different ways in order to verify that DWARF parsing is able to print the source information
     // in the hs_err_files for each VM and C stack frame.
     private static void test() throws Exception {
-        runAndCheck(new Flags("-Xcomp", "-XX:CICrashAt=1", "--version"));
+        runAndCheck(new Flags("-Xcomp", "-XX:+CICountNative", "-XX:CICrashAt=1", "--version"));
         runAndCheck(new Flags("-Xmx100M", "-XX:ErrorHandlerTest=15", "-XX:TestCrashInErrorHandler=14", "--version"));
         runAndCheck(new Flags("-XX:+CrashGCForDumpingJavaThread", "--version"));
         runAndCheck(new Flags("-Xmx10m", "-XX:+CrashOnOutOfMemoryError", TestDwarf.class.getCanonicalName(), "outOfMemory"));
-        // Use -XX:-TieredCompilation as C1 is currently not aborting the VM (JDK-8264899).
         runAndCheck(new Flags(TestDwarf.class.getCanonicalName(), "unsafeAccess"));
-        runAndCheck(new Flags("-XX:-TieredCompilation", "-XX:+UnlockDiagnosticVMOptions", "-XX:AbortVMOnException=MyException",
+        runAndCheck(new Flags("-XX:+UnlockDiagnosticVMOptions", "-XX:AbortVMOnException=MyException",
                               TestDwarf.class.getCanonicalName(), "abortVMOnException"));
         if (Platform.isX64() || Platform.isX86()) {
             // Not all platforms raise SIGFPE but x86_32 and x86_64 do.
@@ -115,12 +114,19 @@ public class TestDwarf {
                         new DwarfConstraint(1, "Java_TestDwarf_crashNativeMultipleMethods", "libTestDwarf.c", 70));
         }
         runAndCheck(new Flags(TestDwarf.class.getCanonicalName(), "nativeDereferenceNull"),
-                    new DwarfConstraint(0, "dereference_null", "libTestDwarfHelper.h", 44));
+                    new DwarfConstraint(0, "dereference_null", "libTestDwarfHelper.h", 46));
     }
+
+    // A full pattern could check for lines like:
+    //  V [libjvm.so+0x8f4ed8] report_fatal(VMErrorType, char const*, int, char const*, ...)+0x78 (debug.cpp:212)
+    // but the decoder is not reliably working at the moment (see JDK-8305489). We therefore use a pattern that only
+    // checks that lines have the following structure with source information:
+    //  V [libjvm.so+0x8f4ed8] (debug.cpp:212)
+    private static final String NO_DECODER_PATTERN ="[CV][\\s\\t]+\\[([a-zA-Z0-9_.]+)\\+0x.+].*\\([a-zA-Z0-9_.]+\\.[a-z]+:[1-9][0-9]*\\)";
 
     private static void runAndCheck(Flags flags, DwarfConstraint... constraints) throws Exception {
         OutputAnalyzer crashOut;
-        crashOut = ProcessTools.executeProcess(ProcessTools.createTestJvm(flags.getFlags()));
+        crashOut = ProcessTools.executeProcess(ProcessTools.createTestJavaProcessBuilder(flags.getFlags()));
         String crashOutputString = crashOut.getOutput();
         Asserts.assertNotEquals(crashOut.getExitValue(), 0, "Crash JVM should not exit gracefully");
         System.out.println(crashOutputString);
@@ -132,7 +138,9 @@ public class TestDwarf {
             boolean foundNativeFrames = false;
             int matches = 0;
             int frameIdx = 0;
-            Pattern pattern = Pattern.compile("[CV][\\s\\t]+\\[([a-zA-Z0-9_.]+)\\+0x.+][\\s\\t]+.*\\+0x.+[\\s\\t]+\\([a-zA-Z0-9_.]+\\.[a-z]+:[1-9][0-9]*\\)");
+
+            Pattern pattern = Pattern.compile(NO_DECODER_PATTERN);
+
             // Check all stack entries after the line starting with "Native frames" in the hs_err_file until an empty line
             // is found which denotes the end of the stack frames.
             while ((line = reader.readLine()) != null) {
@@ -147,7 +155,7 @@ public class TestDwarf {
                         // Line numbers have at least one digit and start with non-zero ([1-9][0-9]*).
                         Matcher matcher = pattern.matcher(line);
                         if (!matcher.find()) {
-                            checkNoSourceLine(crashOutputString, line);
+                            checkMissingElement(crashOutputString, line);
                         }
 
                         // Check additional DWARF constraints
@@ -168,12 +176,15 @@ public class TestDwarf {
     }
 
     /**
-     * There are some valid cases where we cannot find source information. Check these.
+     * After we failed to match the pattern, try to determine what element was missing.
+     * There are some valid cases where we cannot find source information.
      */
-    private static void checkNoSourceLine(String crashOutputString, String line) {
-        Pattern pattern = Pattern.compile("[CV][\\s\\t]+\\[([a-zA-Z0-9_.]+)\\+0x.+]");
+    private static void checkMissingElement(String crashOutputString, String line) {
+        // First check if we got the library name.
+        Pattern pattern = Pattern.compile("[CV][\\s\\t]+\\[([a-zA-Z0-9_.-]+)\\+0x.+]");
         Matcher matcher = pattern.matcher(line);
-        Asserts.assertTrue(matcher.find(), "Must find library in \"" + line + "\"");
+        Asserts.assertTrue(matcher.find(), "Must find library name in \"" + line + "\"");
+
         // Check if there are symbols available for library. If not, then we cannot find any source information for this library.
         // This can happen if this test is run without any JDK debug symbols at all but also for some libraries like libpthread.so
         // which usually has no symbols available.

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -68,7 +68,7 @@ cp "${TESTSRC}"/RedefineMethodInBacktraceTargetB_2.java \
     RedefineMethodInBacktraceTargetB.java
 "${JAVAC}" ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -d . RedefineMethodInBacktraceTargetB.java
 
-"${JAVA}" ${TESTVMOPTS} -javaagent:RedefineMethodInBacktraceAgent.jar \
+"${JAVA}" ${TESTVMOPTS} ${TESTJAVAOPTS} -javaagent:RedefineMethodInBacktraceAgent.jar \
     -XX:+AllowRedefinitionToAddDeleteMethods \
     -classpath "${TESTCLASSES}" RedefineMethodInBacktraceApp > output.log 2>&1
 RUN_RESULT=$?

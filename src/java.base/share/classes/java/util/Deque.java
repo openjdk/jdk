@@ -163,7 +163,7 @@ package java.util;
  *  </tr>
  *  <tr>
  *    <th scope="row">{@link #peek() peek()}</th>
- *    <td>{@link #getFirst() getFirst()}</td>
+ *    <td>{@link #peekFirst() peekFirst()}</td>
  *  </tr>
  *  </tbody>
  * </table>
@@ -201,7 +201,7 @@ package java.util;
  * @since  1.6
  * @param <E> the type of elements held in this deque
  */
-public interface Deque<E> extends Queue<E> {
+public interface Deque<E> extends Queue<E>, SequencedCollection<E> {
     /**
      * Inserts the specified element at the front of this deque if it is
      * possible to do so immediately without violating capacity restrictions,
@@ -613,4 +613,23 @@ public interface Deque<E> extends Queue<E> {
      */
     Iterator<E> descendingIterator();
 
+    /**
+     * {@inheritDoc}
+     *
+     * @implSpec
+     * The implementation in this interface returns a reverse-ordered Deque
+     * view. The {@code reversed()} method of the view returns a reference
+     * to this Deque. Other operations on the view are implemented via calls to
+     * public methods on this Deque. The exact relationship between calls on the
+     * view and calls on this Deque is unspecified. However, order-sensitive
+     * operations generally behave as if they delegate to the appropriate method
+     * with the opposite orientation. For example, calling {@code getFirst} on
+     * the view might result in a call to {@code getLast} on this Deque.
+     *
+     * @return a reverse-ordered view of this collection, as a {@code Deque}
+     * @since 21
+     */
+    default Deque<E> reversed() {
+        return ReverseOrderDequeView.of(this);
+    }
 }

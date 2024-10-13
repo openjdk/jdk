@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@
  *          /test/lib
  * @build nsk.jdi.ThreadReference.forceEarlyReturn.forceEarlyReturn002.forceEarlyReturn002
  *        nsk.jdi.ThreadReference.forceEarlyReturn.forceEarlyReturn002.forceEarlyReturn002a
- * @run main/othervm
+ * @run driver
  *      nsk.jdi.ThreadReference.forceEarlyReturn.forceEarlyReturn002.forceEarlyReturn002
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
@@ -66,7 +66,10 @@ import nsk.share.jdi.ForceEarlyReturnDebugger;
 
 public class forceEarlyReturn002 extends ForceEarlyReturnDebugger {
     public static void main(String argv[]) {
-        System.exit(run(argv, System.out) + Consts.JCK_STATUS_BASE);
+        int result = run(argv,System.out);
+        if (result != 0) {
+            throw new RuntimeException("TEST FAILED with result " + result);
+        }
     }
 
     public String debuggeeClassName() {
@@ -147,30 +150,17 @@ public class forceEarlyReturn002 extends ForceEarlyReturnDebugger {
 
         // get value for early return
         ObjectReference returnValue = (ObjectReference) referenceType.getValue(referenceType.fieldByName("expectedValue"));
-        boolean vthreadMode = "Virtual".equals(System.getProperty("main.wrapper"));
+
         try {
-            // don't expect any exception, except for vthreads expect OpaqueFrameException
+            // don't expect any exception
             threadReference.forceEarlyReturn(returnValue);
-            if (vthreadMode) {
-                setSuccess(false);
-                log.complain("Expected OpaqueFrameException");
-            }
         } catch (Exception e) {
-            if (vthreadMode && (e instanceof OpaqueFrameException)) {
-                // pass
-            } else {
-                setSuccess(false);
-                log.complain("Unexpected exception: " + e);
-                e.printStackTrace(log.getOutStream());
-            }
+            setSuccess(false);
+            log.complain("Unexpected exception: " + e);
+            e.printStackTrace(log.getOutStream());
         }
 
-        if (vthreadMode) {
-            // MethodExit event won't be as expected if using vthreads, so just resume
-            threadReference.resume();
-        } else {
-            testMethodExitEvent(threadReference, ClassUsingTestClass.breakpointMethodName);
-        }
+        testMethodExitEvent(threadReference, ClassUsingTestClass.breakpointMethodName);
 
         if (!isDebuggeeReady())
             return;

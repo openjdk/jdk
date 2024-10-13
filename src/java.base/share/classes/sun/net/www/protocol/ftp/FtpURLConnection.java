@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,10 +21,6 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- */
-
-/**
- * FTP stream opener.
  */
 
 package sun.net.www.protocol.ftp;
@@ -84,7 +80,7 @@ public class FtpURLConnection extends URLConnection {
 
     // In case we have to use proxies, we use HttpURLConnection
     HttpURLConnection http = null;
-    private Proxy instProxy;
+    private final Proxy instProxy;
 
     InputStream is = null;
     OutputStream os = null;

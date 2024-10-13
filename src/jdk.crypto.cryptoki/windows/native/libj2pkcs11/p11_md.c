@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -116,12 +116,12 @@ JNIEXPORT jobject JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_connect
         exceptionMessage = (char *) malloc(sizeof(char) *
                 (strlen((LPTSTR) lpMsgBuf) + strlen(libraryNameStr) + 1));
         if (exceptionMessage == NULL) {
-            throwOutOfMemoryError(env, 0);
+            p11ThrowOutOfMemoryError(env, 0);
             goto cleanup;
         }
         strcpy(exceptionMessage, (LPTSTR) lpMsgBuf);
         strcat(exceptionMessage, libraryNameStr);
-        throwIOException(env, (LPTSTR) exceptionMessage);
+        p11ThrowIOException(env, (LPTSTR) exceptionMessage);
         goto cleanup;
     }
 
@@ -175,7 +175,7 @@ JNIEXPORT jobject JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_connect
                 0,
                 NULL
             );
-            throwIOException(env, (LPTSTR) lpMsgBuf);
+            p11ThrowIOException(env, (LPTSTR) lpMsgBuf);
             goto cleanup;
         }
         TRACE1("Connect: Found %s func\n", getFunctionListStr);
@@ -186,7 +186,7 @@ JNIEXPORT jobject JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_connect
         if (C_GetInterface != NULL) {
             TRACE0("Connect: Found C_GetInterface func\n");
             rv = (C_GetInterface)(NULL, NULL, &interface, 0);
-            if (ckAssertReturnValueOK(env, rv) == CK_ASSERT_OK) {
+            if (rv == CKR_OK && interface != NULL) {
                 goto setModuleData;
             }
         }
@@ -205,7 +205,7 @@ JNIEXPORT jobject JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_connect
                 0,
                 NULL
             );
-            throwIOException(env, (LPTSTR) lpMsgBuf);
+            p11ThrowIOException(env, (LPTSTR) lpMsgBuf);
             goto cleanup;
         }
         TRACE0("Connect: Found C_GetFunctionList func\n");
@@ -217,7 +217,7 @@ setModuleData:
      */
     moduleData = (ModuleData *) malloc(sizeof(ModuleData));
     if (moduleData == NULL) {
-        throwOutOfMemoryError(env, 0);
+        p11ThrowOutOfMemoryError(env, 0);
         goto cleanup;
     }
     moduleData->hModule = hModule;
@@ -231,10 +231,11 @@ setModuleData:
         moduleData->ckFunctionListPtr = interface->pFunctionList;
     } else {
         // should never happen
-        throwIOException(env, "ERROR: No function list ptr found");
+        p11ThrowIOException(env, "ERROR: No function list ptr found");
         goto cleanup;
     }
-    if (((CK_VERSION *)moduleData->ckFunctionListPtr)->major == 3) {
+    if (((CK_VERSION *)moduleData->ckFunctionListPtr)->major == 3 &&
+            interface != NULL) {
         moduleData->ckFunctionList30Ptr = interface->pFunctionList;
     } else {
         moduleData->ckFunctionList30Ptr = NULL;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,8 @@
  * @test
  * @summary Verifies JVMTI GetStackTrace functions called without suspend.
  * @library /test/lib
- * @compile --enable-preview -source ${jdk.version} GetStackTraceNotSuspendedStressTest.java
- * @run main/othervm/native --enable-preview -agentlib:GetStackTraceNotSuspendedStress GetStackTraceNotSuspendedStressTest
+ * @compile GetStackTraceNotSuspendedStressTest.java
+ * @run main/othervm/native -agentlib:GetStackTraceNotSuspendedStress GetStackTraceNotSuspendedStressTest
  */
 
 import jdk.test.lib.jvmti.DebugeeClass;

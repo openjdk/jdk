@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@
 #include "oops/access.inline.hpp"
 #include "oops/arrayKlass.hpp"
 #include "oops/arrayOop.hpp"
-#include "oops/compressedOops.inline.hpp"
+#include "oops/compressedKlass.inline.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/markWord.hpp"
 #include "oops/oopsHierarchy.hpp"
@@ -64,6 +64,10 @@ void oopDesc::set_mark(markWord m) {
 
 void oopDesc::set_mark(HeapWord* mem, markWord m) {
   *(markWord*)(((char*)mem) + mark_offset_in_bytes()) = m;
+}
+
+void oopDesc::release_set_mark(HeapWord* mem, markWord m) {
+  Atomic::release_store((markWord*)(((char*)mem) + mark_offset_in_bytes()), m);
 }
 
 void oopDesc::release_set_mark(markWord m) {
@@ -107,9 +111,9 @@ Klass* oopDesc::klass_or_null_acquire() const {
   }
 }
 
-Klass* oopDesc::klass_raw() const {
+Klass* oopDesc::klass_without_asserts() const {
   if (UseCompressedClassPointers) {
-    return CompressedKlassPointers::decode_raw(_metadata._compressed_klass);
+    return CompressedKlassPointers::decode_without_asserts(_metadata._compressed_klass);
   } else {
     return _metadata._klass;
   }
@@ -186,7 +190,7 @@ size_t oopDesc::size_given_klass(Klass* klass)  {
       // skipping the intermediate round to HeapWordSize.
       s = align_up(size_in_bytes, MinObjAlignmentInBytes) / HeapWordSize;
 
-      assert(s == klass->oop_size(this) || size_might_change(), "wrong array object size");
+      assert(s == klass->oop_size(this), "wrong array object size");
     } else {
       // Must be zero, so bite the bullet and take the virtual call.
       s = klass->oop_size(this);
@@ -234,6 +238,8 @@ inline void   oopDesc::short_field_put(int offset, jshort value)    { *field_add
 
 inline jint oopDesc::int_field(int offset) const                    { return *field_addr<jint>(offset);     }
 inline void oopDesc::int_field_put(int offset, jint value)          { *field_addr<jint>(offset) = value;    }
+inline jint oopDesc::int_field_relaxed(int offset) const            { return Atomic::load(field_addr<jint>(offset)); }
+inline void oopDesc::int_field_put_relaxed(int offset, jint value)  { Atomic::store(field_addr<jint>(offset), value); }
 
 inline jlong oopDesc::long_field(int offset) const                  { return *field_addr<jlong>(offset);    }
 inline void  oopDesc::long_field_put(int offset, jlong value)       { *field_addr<jlong>(offset) = value;   }
@@ -252,28 +258,23 @@ bool oopDesc::is_unlocked() const {
   return mark().is_unlocked();
 }
 
-// Used only for markSweep, scavenging
 bool oopDesc::is_gc_marked() const {
   return mark().is_marked();
 }
 
 // Used by scavengers
 bool oopDesc::is_forwarded() const {
-  // The extra heap check is needed since the obj might be locked, in which case the
-  // mark would point to a stack location and have the sentinel bit cleared
-  return mark().is_marked();
+  return mark().is_forwarded();
 }
 
 // Used by scavengers
 void oopDesc::forward_to(oop p) {
-  verify_forwardee(p);
   markWord m = markWord::encode_pointer_as_mark(p);
   assert(m.decode_pointer() == p, "encoding must be reversible");
   set_mark(m);
 }
 
 oop oopDesc::forward_to_atomic(oop p, markWord compare, atomic_memory_order order) {
-  verify_forwardee(p);
   markWord m = markWord::encode_pointer_as_mark(p);
   assert(m.decode_pointer() == p, "encoding must be reversible");
   markWord old_mark = cas_set_mark(m, compare, order);
@@ -288,26 +289,27 @@ oop oopDesc::forward_to_atomic(oop p, markWord compare, atomic_memory_order orde
 // The forwardee is used when copying during scavenge and mark-sweep.
 // It does need to clear the low two locking- and GC-related bits.
 oop oopDesc::forwardee() const {
-  assert(is_forwarded(), "only decode when actually forwarded");
-  return cast_to_oop(mark().decode_pointer());
+  return mark().forwardee();
 }
 
 // The following method needs to be MT safe.
 uint oopDesc::age() const {
-  assert(!mark().is_marked(), "Attempt to read age from forwarded mark");
-  if (has_displaced_mark()) {
-    return displaced_mark().age();
+  markWord m = mark();
+  assert(!m.is_marked(), "Attempt to read age from forwarded mark");
+  if (m.has_displaced_mark_helper()) {
+    return m.displaced_mark_helper().age();
   } else {
-    return mark().age();
+    return m.age();
   }
 }
 
 void oopDesc::incr_age() {
-  assert(!mark().is_marked(), "Attempt to increment age of forwarded mark");
-  if (has_displaced_mark()) {
-    set_displaced_mark(displaced_mark().incr_age());
+  markWord m = mark();
+  assert(!m.is_marked(), "Attempt to increment age of forwarded mark");
+  if (m.has_displaced_mark_helper()) {
+    m.set_displaced_mark_helper(m.displaced_mark_helper().incr_age());
   } else {
-    set_mark(mark().incr_age());
+    set_mark(m.incr_age());
   }
 }
 

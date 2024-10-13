@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,23 +34,18 @@
 class outputStream;
 class ReservedHeapSpace;
 
-struct NarrowPtrStruct {
-  // Base address for oop-within-java-object materialization.
-  // null if using wide oops or zero based narrow oops.
-  address _base;
-  // Number of shift bits for encoding/decoding narrow ptrs.
-  // 0 if using wide ptrs or zero based unscaled narrow ptrs,
-  // LogMinObjAlignmentInBytes/LogKlassAlignmentInBytes otherwise.
-  int     _shift;
-  // Generate code with implicit null checks for narrow ptrs.
-  bool    _use_implicit_null_checks;
-};
-
 class CompressedOops : public AllStatic {
   friend class VMStructs;
 
-  // For UseCompressedOops.
-  static NarrowPtrStruct _narrow_oop;
+  // Base address for oop-within-java-object materialization.
+  // null if using wide oops or zero based narrow oops.
+  static address _base;
+  // Number of shift bits for encoding/decoding narrow ptrs.
+  // 0 if using wide oops or zero based unscaled narrow oops,
+  // LogMinObjAlignmentInBytes otherwise.
+  static int _shift;
+  // Generate code with implicit null checks for narrow oops.
+  static bool _use_implicit_null_checks;
 
   // The address range of the heap
   static MemRegion _heap_address_range;
@@ -73,8 +68,7 @@ public:
     UnscaledNarrowOop  = 0,
     ZeroBasedNarrowOop = 1,
     DisjointBaseNarrowOop = 2,
-    HeapBasedNarrowOop = 3,
-    AnyNarrowOopMode = 4
+    HeapBasedNarrowOop = 3
   };
 
   // The representation type for narrowOop is assumed to be uint32_t.
@@ -87,15 +81,13 @@ public:
   static void set_shift(int shift);
   static void set_use_implicit_null_checks(bool use);
 
-  static address  base()                     { return _narrow_oop._base; }
+  static address  base()                     { return _base; }
+  static address  base_addr()                { return (address)&_base; }
   static address  begin()                    { return (address)_heap_address_range.start(); }
   static address  end()                      { return (address)_heap_address_range.end(); }
   static bool     is_base(void* addr)        { return (base() == (address)addr); }
-  static int      shift()                    { return _narrow_oop._shift; }
-  static bool     use_implicit_null_checks() { return _narrow_oop._use_implicit_null_checks; }
-
-  static address  ptrs_base_addr()           { return (address)&_narrow_oop._base; }
-  static address  ptrs_base()                { return _narrow_oop._base; }
+  static int      shift()                    { return _shift; }
+  static bool     use_implicit_null_checks() { return _use_implicit_null_checks; }
 
   static bool is_in(void* addr);
   static bool is_in(MemRegion mr);
@@ -138,59 +130,6 @@ public:
 
   template<typename T>
   static inline narrowOop narrow_oop_cast(T i);
-};
-
-// For UseCompressedClassPointers.
-class CompressedKlassPointers : public AllStatic {
-  friend class VMStructs;
-
-  static NarrowPtrStruct _narrow_klass;
-
-  // Together with base, this defines the address range within which Klass
-  //  structures will be located: [base, base+range). While the maximal
-  //  possible encoding range is 4|32G for shift 0|3, if we know beforehand
-  //  the expected range of Klass* pointers will be smaller, a platform
-  //  could use this info to optimize encoding.
-  static size_t _range;
-
-  static void set_base(address base);
-  static void set_range(size_t range);
-
-public:
-
-  static void set_shift(int shift);
-
-
-  // Given an address p, return true if p can be used as an encoding base.
-  //  (Some platforms have restrictions of what constitutes a valid base
-  //   address).
-  static bool is_valid_base(address p);
-
-  // Given an address range [addr, addr+len) which the encoding is supposed to
-  //  cover, choose base, shift and range.
-  //  The address range is the expected range of uncompressed Klass pointers we
-  //  will encounter (and the implicit promise that there will be no Klass
-  //  structures outside this range).
-  static void initialize(address addr, size_t len);
-
-  static void     print_mode(outputStream* st);
-
-  static address  base()               { return  _narrow_klass._base; }
-  static size_t   range()              { return  _range; }
-  static int      shift()              { return  _narrow_klass._shift; }
-
-  static bool is_null(Klass* v)      { return v == nullptr; }
-  static bool is_null(narrowKlass v) { return v == 0; }
-
-  static inline Klass* decode_raw(narrowKlass v, address base);
-  static inline Klass* decode_raw(narrowKlass v);
-  static inline Klass* decode_not_null(narrowKlass v);
-  static inline Klass* decode_not_null(narrowKlass v, address base);
-  static inline Klass* decode(narrowKlass v);
-  static inline narrowKlass encode_not_null(Klass* v);
-  static inline narrowKlass encode_not_null(Klass* v, address base);
-  static inline narrowKlass encode(Klass* v);
-
 };
 
 #endif // SHARE_OOPS_COMPRESSEDOOPS_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,25 +44,9 @@ public class DynLibsTest {
 
     public void run(CommandExecutor executor) {
         OutputAnalyzer output = executor.execute("VM.dynlibs");
-
-        String osDependentBaseString = null;
-        if (Platform.isAix()) {
-            osDependentBaseString = "lib%s.so";
-        } else if (Platform.isLinux()) {
-            osDependentBaseString = "lib%s.so";
-        } else if (Platform.isOSX()) {
-            osDependentBaseString = "lib%s.dylib";
-        } else if (Platform.isWindows()) {
-            osDependentBaseString = "%s.dll";
-        }
-
-        if (osDependentBaseString == null) {
-            Assert.fail("Unsupported OS");
-        }
-
-        output.shouldContain(String.format(osDependentBaseString, "jvm"));
-        output.shouldContain(String.format(osDependentBaseString, "java"));
-        output.shouldContain(String.format(osDependentBaseString, "management"));
+        output.shouldContain(Platform.buildSharedLibraryName("jvm"));
+        output.shouldContain(Platform.buildSharedLibraryName("java"));
+        output.shouldContain(Platform.buildSharedLibraryName("management"));
     }
 
     @Test

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2016, the original author or authors.
+ * Copyright (c) 2002-2016, the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -8,17 +8,17 @@
  */
 package jdk.internal.org.jline.terminal.impl;
 
-import jdk.internal.org.jline.terminal.MouseEvent;
-import jdk.internal.org.jline.terminal.Terminal;
-import jdk.internal.org.jline.utils.InfoCmp;
-import jdk.internal.org.jline.utils.InputStreamReader;
-
 import java.io.EOFException;
 import java.io.IOError;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.EnumSet;
 import java.util.function.IntSupplier;
+
+import jdk.internal.org.jline.terminal.MouseEvent;
+import jdk.internal.org.jline.terminal.Terminal;
+import jdk.internal.org.jline.utils.InfoCmp;
+import jdk.internal.org.jline.utils.InputStreamReader;
 
 public class MouseSupport {
 
@@ -78,7 +78,8 @@ public class MouseSupport {
                 case 0:
                     button = MouseEvent.Button.Button1;
                     if (last.getButton() == button
-                            && (last.getType() == MouseEvent.Type.Pressed || last.getType() == MouseEvent.Type.Dragged)) {
+                            && (last.getType() == MouseEvent.Type.Pressed
+                                    || last.getType() == MouseEvent.Type.Dragged)) {
                         type = MouseEvent.Type.Dragged;
                     } else {
                         type = MouseEvent.Type.Pressed;
@@ -87,7 +88,8 @@ public class MouseSupport {
                 case 1:
                     button = MouseEvent.Button.Button2;
                     if (last.getButton() == button
-                            && (last.getType() == MouseEvent.Type.Pressed || last.getType() == MouseEvent.Type.Dragged)) {
+                            && (last.getType() == MouseEvent.Type.Pressed
+                                    || last.getType() == MouseEvent.Type.Dragged)) {
                         type = MouseEvent.Type.Dragged;
                     } else {
                         type = MouseEvent.Type.Pressed;
@@ -96,7 +98,8 @@ public class MouseSupport {
                 case 2:
                     button = MouseEvent.Button.Button3;
                     if (last.getButton() == button
-                            && (last.getType() == MouseEvent.Type.Pressed || last.getType() == MouseEvent.Type.Dragged)) {
+                            && (last.getType() == MouseEvent.Type.Pressed
+                                    || last.getType() == MouseEvent.Type.Dragged)) {
                         type = MouseEvent.Type.Dragged;
                     } else {
                         type = MouseEvent.Type.Pressed;
@@ -134,5 +137,4 @@ public class MouseSupport {
             throw new IOError(e);
         }
     }
-
 }

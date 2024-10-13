@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2024 Unicode, Inc.
+For terms of use, see http://www.unicode.org/copyright.html
+SPDX-License-Identifier: Unicode-3.0
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+-->
+<ldml>
+	<identity>
+		<version number="$Revision$"/>
+		<language type="cho"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="cho">Chahta</language>
+			<language type="en">English</language>
+		</languages>
+		<scripts>
+			<script type="Latn">Latin</script>
+		</scripts>
+		<territories>
+			<territory type="US">United States</territory>
+		</territories>
+		<codePatterns>
+			<codePattern type="language">Anumpa: {0}</codePattern>
+		</codePatterns>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters>[a{a̱} b {ch} e f h {hl} i{i̱} k l m n o{o̱} p s {sh} t u v ʋ w y]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[cč d g j q r š x z]</exemplarCharacters>
+		<exemplarCharacters type="index">[A{A̱} B {CH} E F H {HL} I{I̱} K L M N O{O̱} P S {SH} T U V Ʋ W Z]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … '‘’ &quot;“” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
+	</characters>
+</ldml>

@@ -1082,6 +1082,7 @@ public class LogParser extends DefaultHandler implements ErrorHandler {
             site.setReason("succeed: " + search(atts, "reason"));
         } else if (qname.equals("failure")) {
             failureReason = search(atts, "reason");
+            lateInlining = false;
         } else if (qname.equals("task_done")) {
             compile.setEnd(Double.parseDouble(search(atts, "stamp")));
             if (Integer.parseInt(search(atts, "success")) == 0) {

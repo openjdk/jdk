@@ -26,17 +26,18 @@
  * @bug 8080878
  * @summary Checking ACC_MODULE flag is generated for module-info.
  * @library /tools/lib
+ * @enablePreview
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.javac.util
- *          jdk.jdeps/com.sun.tools.classfile
+ *          java.base/jdk.internal.classfile.impl
  * @build toolbox.ToolBox toolbox.JavacTask toolbox.ToolBox
  * @run main ModuleFlagTest
  */
 
-import com.sun.tools.classfile.AccessFlags;
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.ConstantPoolException;
+import java.lang.classfile.AccessFlags;
+import java.lang.classfile.ClassFile;
+import java.lang.reflect.AccessFlag;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -46,7 +47,7 @@ import toolbox.JavacTask;
 import toolbox.ToolBox;
 
 public class ModuleFlagTest {
-    public static void main(String[] args) throws IOException, ConstantPoolException {
+    public static void main(String[] args) throws IOException {
         Path outdir = Paths.get(".");
         ToolBox tb = new ToolBox();
         final Path moduleInfo = Paths.get("module-info.java");
@@ -56,10 +57,10 @@ public class ModuleFlagTest {
                 .files(moduleInfo)
                 .run();
 
-        AccessFlags accessFlags = ClassFile.read(outdir.resolve("module-info.class"))
-                .access_flags;
-        if (!accessFlags.is(AccessFlags.ACC_MODULE)) {
-            throw new RuntimeException("Classfile doesn't have module access flag");
+        AccessFlags accessFlags = ClassFile.of().parse(outdir.resolve("module-info.class"))
+                .flags();
+        if (!accessFlags.has(AccessFlag.MODULE)) {
+            throw new RuntimeException("ClassFile doesn't have module access flag");
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,18 +96,12 @@ public class LookupSignatureInPoolTest {
         if (entry == null) {
             return;
         }
-        int index = cpi;
-        String cached = "";
-        int cpci = dummyClass.getCPCacheIndex(cpi);
-        if (cpci != ConstantPoolTestsHelper.NO_CP_CACHE_PRESENT) {
-            index = cpci;
-            cached = "cached ";
-        }
-        String sigToVerify = CompilerToVMHelper.lookupSignatureInPool(constantPoolCTVM, index);
+        int opcode = ConstantPoolTestsHelper.getDummyOpcode(cpType);
+        int index = dummyClass.getCPCacheIndex(cpi);
+        Asserts.assertTrue(index != ConstantPoolTestsHelper.NO_CP_CACHE_PRESENT, "the class must have been rewritten");
+        String sigToVerify = CompilerToVMHelper.lookupSignatureInPool(constantPoolCTVM, index, opcode);
         String sigToRefer = entry.type;
-        String msg = String.format("Wrong signature accessed by %sconstant pool index %d",
-                                   cached,
-                                   index);
+        String msg = String.format("Wrong signature accessed by cached constant pool index %d", index);
         Asserts.assertEQ(sigToVerify, sigToRefer, msg);
     }
 }

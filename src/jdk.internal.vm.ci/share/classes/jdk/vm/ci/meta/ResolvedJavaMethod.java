@@ -28,12 +28,13 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
+import java.util.BitSet;
 
 /**
  * Represents a resolved Java method. Methods, like fields and types, are resolved through
  * {@link ConstantPool constant pools}.
  */
-public interface ResolvedJavaMethod extends JavaMethod, InvokeTarget, ModifiersProvider, AnnotatedElement {
+public interface ResolvedJavaMethod extends JavaMethod, InvokeTarget, ModifiersProvider, AnnotatedElement, Annotated {
 
     /**
      * Returns the method's bytecode. The returned bytecode does not contain breakpoints or non-Java
@@ -460,6 +461,16 @@ public interface ResolvedJavaMethod extends JavaMethod, InvokeTarget, ModifiersP
      */
     default boolean isJavaLangObjectInit() {
         return getDeclaringClass().isJavaLangObject() && getName().equals("<init>");
+    }
+
+    /**
+     * Returns true if this method has a
+     * {@code jdk.internal.misc.ScopedMemoryAccess.Scoped} annotation.
+     *
+     * @return true if Scoped annotation present, false otherwise.
+     */
+    default boolean isScoped() {
+        throw new UnsupportedOperationException();
     }
 
     /**

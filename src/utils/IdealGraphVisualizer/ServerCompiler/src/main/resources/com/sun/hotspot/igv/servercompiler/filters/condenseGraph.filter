@@ -1,0 +1,68 @@
+// Condense the graph without information loss and make the structure of the
+// intermediate representation more explicit. This filter is most effective in
+// combination with "Simplify graph".
+
+// Pretty-print Bool nodes to be shown as output slots.
+function replaceComparisonWithSign(propertyValues) {
+  dump_spec = propertyValues[0]
+  var comparison = dump_spec.replace('[','').replace(']','')
+  switch (comparison) {
+    case "eq":  return "=";
+    case "gt":  return ">";
+    case "lt":  return "<";
+    case "ne":  return "≠";
+    case "le":  return "≤";
+    case "ge":  return "≥";
+    default:    return comparison;
+  }
+}
+editSameProperty(matches("name", "Bool"), "dump_spec", replaceComparisonWithSign);
+
+// Add a more informative text for null-pointer input slots.
+editSameProperty(and([matches("name", "ConP|ConN"), matches("dump_spec", "#.*NULL")]),
+                 "short_name",
+                 function(t) {return "null";});
+
+// Pretty-print CatchProj nodes.
+function catchProjShortText(propertyValues) {
+  con = propertyValues[0]
+  switch (con) {
+    case "0": return "F"; // fall-through
+    case "1": return "T"; // throw
+    default:  return "?";
+  }
+}
+editProperty(matches("name", "CatchProj"), ["con"], "short_name", catchProjShortText);
+
+// Add short text to inlined Mach data parameters.
+editProperty(and([matches("name", "MachProj"),
+                  matches("category", "data"),
+                  successorOf(matches("name", "Start"))]),
+             ["dump_spec"], "short_name",
+             function(dump_spec) {return dump_spec[0];});
+
+// Condense inputs in all nodes.
+var anyNode = matches("name", ".*");
+removeEmptySlots(anyNode);
+
+// Inline ("split") Parm and start MachProj nodes, except control ones.
+split(and([matches("name", "Parm|MachProj"),
+           not(matches("category", "control")),
+           successorOf(matches("name", "Start"))]),
+      ["[short_name]"]);
+
+// Combine single-input nodes.
+combine(anyNode, matches("name", "Proj|IfFalse|IfTrue|JProj|MachProj|JumpProj|CatchProj|Parm"));
+combine(anyNode, matches("name", "SCMemProj"), ["SCM"]);
+combine(matches("name", "SubTypeCheck|Cmp.*"), matches("name", "Bool"), ["[dump_spec]"]);
+combine(anyNode, matches("name", "Decode(N|NarrowPtr|NKlass)"), ["DC"]);
+combine(anyNode, matches("name", "Conv2B"), ["2B"]);
+combine(anyNode, matches("name", "Conv[LFD]2I"), ["2I"]);
+combine(anyNode, matches("name", "Conv[IFD]2L"), ["2L"]);
+combine(anyNode, matches("name", "Conv[ILD]2F"), ["2F"]);
+combine(anyNode, matches("name", "Conv[ILF]2D"), ["2D"]);
+
+// Inline ("split") constant nodes.
+split(matches("name", "MachTemp"), ["T"]);
+split(matches("name", "ThreadLocal"), ["TL"]);
+split(matches("name", "(Con[A-Z]?)|ConNKlass|(loadCon.*)"), ["[short_name]", "[name]"]);

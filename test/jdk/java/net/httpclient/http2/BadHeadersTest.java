@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8303965
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.http2.Http2TestServer jdk.test.lib.net.SimpleSSLContext
  * @run testng/othervm -Djdk.internal.httpclient.debug=true BadHeadersTest
@@ -202,20 +203,26 @@ public class BadHeadersTest {
     // Assertions based on implementation specific detail messages. Keep in
     // sync with implementation.
     static void assertDetailMessage(Throwable throwable, int iterationIndex) {
-        assertTrue(throwable instanceof IOException,
-                   "Expected IOException, got, " + throwable);
-        assertTrue(throwable.getMessage().contains("protocol error"),
-                "Expected \"protocol error\" in: " + throwable.getMessage());
+        try {
+            assertTrue(throwable instanceof IOException,
+                    "Expected IOException, got, " + throwable);
+            assertTrue(throwable.getMessage().contains("malformed response"),
+                    "Expected \"malformed response\" in: " + throwable.getMessage());
 
-        if (iterationIndex == 0) { // unknown
-            assertTrue(throwable.getMessage().contains("Unknown pseudo-header"),
-                    "Expected \"Unknown pseudo-header\" in: " + throwable.getMessage());
-        } else if (iterationIndex == 4) { // unexpected
-            assertTrue(throwable.getMessage().contains(" Unexpected pseudo-header"),
-                    "Expected \" Unexpected pseudo-header\" in: " + throwable.getMessage());
-        } else {
-            assertTrue(throwable.getMessage().contains("Bad header"),
-                    "Expected \"Bad header\" in: " + throwable.getMessage());
+            if (iterationIndex == 0) { // unknown
+                assertTrue(throwable.getMessage().contains("Unknown pseudo-header"),
+                        "Expected \"Unknown pseudo-header\" in: " + throwable.getMessage());
+            } else if (iterationIndex == 4) { // unexpected
+                assertTrue(throwable.getMessage().contains(" Unexpected pseudo-header"),
+                        "Expected \" Unexpected pseudo-header\" in: " + throwable.getMessage());
+            } else {
+                assertTrue(throwable.getMessage().contains("Bad header"),
+                        "Expected \"Bad header\" in: " + throwable.getMessage());
+            }
+        } catch (AssertionError e) {
+            System.out.println("Exception does not match expectation: " + throwable);
+            throwable.printStackTrace(System.out);
+            throw e;
         }
     }
 

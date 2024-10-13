@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,10 @@
 package javax.lang.model.util;
 
 import javax.lang.model.element.*;
-import static javax.lang.model.element.ElementKind.*;
 import javax.annotation.processing.SupportedSourceVersion;
-import static javax.lang.model.SourceVersion.*;
 import javax.lang.model.SourceVersion;
+import static javax.lang.model.element.ElementKind.*;
+import static javax.lang.model.SourceVersion.*;
 
 
 /**
@@ -107,15 +107,15 @@ public class ElementKindVisitor6<R, P>
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc ElementVisitor}
      *
      * The element argument has kind {@code PACKAGE}.
      *
      * @implSpec This implementation calls {@code defaultAction}.
      *
-     * @param e {@inheritDoc}
-     * @param p {@inheritDoc}
-     * @return  {@inheritDoc}
+     * @param e {@inheritDoc ElementVisitor}
+     * @param p {@inheritDoc ElementVisitor}
+     * @return  {@inheritDoc ElementVisitor}
      */
     @Override
     public R visitPackage(PackageElement e, P p) {
@@ -124,15 +124,15 @@ public class ElementKindVisitor6<R, P>
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc ElementVisitor}
      *
      * @implSpec This implementation dispatches to the visit method for the
      * specific {@linkplain ElementKind kind} of type, {@code
      * ANNOTATION_TYPE}, {@code CLASS}, {@code ENUM}, or {@code
      * INTERFACE}.
      *
-     * @param e {@inheritDoc}
-     * @param p {@inheritDoc}
+     * @param e {@inheritDoc ElementVisitor}
+     * @param p {@inheritDoc ElementVisitor}
      * @return  the result of the kind-specific visit method
      */
     @Override
@@ -227,15 +227,15 @@ public class ElementKindVisitor6<R, P>
     }
 
     /**
-     * Visits a variable element
+     * {@inheritDoc ElementVisitor}
      *
      * @implSpec This implementation dispatches to the visit method for
      * the specific {@linkplain ElementKind kind} of variable, {@code
      * ENUM_CONSTANT}, {@code EXCEPTION_PARAMETER}, {@code FIELD},
      * {@code LOCAL_VARIABLE}, {@code PARAMETER}, or {@code RESOURCE_VARIABLE}.
      *
-     * @param e {@inheritDoc}
-     * @param p {@inheritDoc}
+     * @param e {@inheritDoc ElementVisitor}
+     * @param p {@inheritDoc ElementVisitor}
      * @return  the result of the kind-specific visit method
      */
     @Override
@@ -364,15 +364,15 @@ public class ElementKindVisitor6<R, P>
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc ElementVisitor}
      *
      * @implSpec This implementation dispatches to the visit method
      * for the specific {@linkplain ElementKind kind} of executable,
      * {@code CONSTRUCTOR}, {@code INSTANCE_INIT}, {@code METHOD}, or
      * {@code STATIC_INIT}.
      *
-     * @param e {@inheritDoc}
-     * @param p {@inheritDoc}
+     * @param e {@inheritDoc ElementVisitor}
+     * @param p {@inheritDoc ElementVisitor}
      * @return  the result of the kind-specific visit method
      */
     @Override
@@ -449,15 +449,15 @@ public class ElementKindVisitor6<R, P>
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc ElementVisitor}
      *
      * The element argument has kind {@code TYPE_PARAMETER}.
      *
      * @implSpec This implementation calls {@code defaultAction}.
      *
-     * @param e {@inheritDoc}
-     * @param p {@inheritDoc}
-     * @return  {@inheritDoc}
+     * @param e {@inheritDoc ElementVisitor}
+     * @param p {@inheritDoc ElementVisitor}
+     * @return  {@inheritDoc ElementVisitor}
      */
     @Override
     public R visitTypeParameter(TypeParameterElement e, P p) {

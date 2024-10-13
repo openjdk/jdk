@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
  * @library /java/text/testlib
  * @summary Regression tests for Collation and associated classes
  * @modules jdk.localedata
+ * @run junit Regression
  */
 /*
 (C) Copyright Taligent, Inc. 1996 - All Rights Reserved
@@ -47,15 +48,16 @@ import java.text.*;
 import java.util.Locale;
 import java.util.Vector;
 
+import org.junit.jupiter.api.Test;
 
-public class Regression extends CollatorTest {
+import static org.junit.jupiter.api.Assertions.fail;
 
-    public static void main(String[] args) throws Exception {
-        new Regression().run(args);
-    }
+
+public class Regression {
 
     // CollationElementIterator.reset() doesn't work
     //
+    @Test
     public void Test4048446() {
         CollationElementIterator i1 = en_us.getCollationElementIterator(test1);
         CollationElementIterator i2 = en_us.getCollationElementIterator(test1);
@@ -64,12 +66,13 @@ public class Regression extends CollatorTest {
         }
         i1.reset();
 
-        assertEqual(i1, i2);
+        TestUtils.compareCollationElementIters(i1, i2);
     }
 
 
     // Collator -> rules -> Collator round-trip broken for expanding characters
     //
+    @Test
     public void Test4051866() throws ParseException {
         // Build a collator containing expanding characters
         RuleBasedCollator c1 = new RuleBasedCollator("< o "
@@ -84,15 +87,16 @@ public class Regression extends CollatorTest {
 
         // Make sure they're the same
         if (!c1.getRules().equals(c2.getRules())) {
-            errln("Rules are not equal");
+            fail("Rules are not equal");
         }
     }
 
     // Collator thinks "black-bird" == "black"
     //
+    @Test
     public void Test4053636() {
         if (en_us.equals("black-bird","black")) {
-            errln("black-bird == black");
+            fail("black-bird == black");
         }
     }
 
@@ -100,6 +104,7 @@ public class Regression extends CollatorTest {
     // CollationElementIterator will not work correctly if the associated
     // Collator object's mode is changed
     //
+    @Test
     public void Test4054238() {
         RuleBasedCollator c = (RuleBasedCollator) en_us.clone();
 
@@ -111,18 +116,19 @@ public class Regression extends CollatorTest {
 
         // At this point, BOTH iterators should use NO_DECOMPOSITION, since the
         // collator itself is in that mode
-        assertEqual(i1, i2);
+        TestUtils.compareCollationElementIters(i1, i2);
     }
 
     // Collator.IDENTICAL documented but not implemented
     //
+    @Test
     public void Test4054734() {
         RuleBasedCollator c = (RuleBasedCollator) en_us.clone();
         try {
             c.setStrength(Collator.IDENTICAL);
         }
         catch (Exception e) {
-            errln("Caught " + e.toString() + " setting Collator.IDENTICAL");
+            fail("Caught " + e.toString() + " setting Collator.IDENTICAL");
         }
 
         String[] decomp = {
@@ -143,6 +149,7 @@ public class Regression extends CollatorTest {
 
     // Full Decomposition mode not implemented
     //
+    @Test
     public void Test4054736() {
         RuleBasedCollator c = (RuleBasedCollator) en_us.clone();
         c.setDecomposition(Collator.FULL_DECOMPOSITION);
@@ -156,6 +163,7 @@ public class Regression extends CollatorTest {
 
     // Collator.getInstance() causes an ArrayIndexOutofBoundsException for Korean
     //
+    @Test
     public void Test4058613() {
         // Creating a default collator doesn't work when Korean is the default
         // locale
@@ -169,7 +177,7 @@ public class Regression extends CollatorTest {
             // Since the fix to this bug was to turn of decomposition for Korean collators,
             // ensure that's what we got
             if (c.getDecomposition() != Collator.NO_DECOMPOSITION) {
-              errln("Decomposition is not set to NO_DECOMPOSITION");
+              fail("Decomposition is not set to NO_DECOMPOSITION");
             }
         }
         finally {
@@ -180,28 +188,30 @@ public class Regression extends CollatorTest {
     // RuleBasedCollator.getRules does not return the exact pattern as input
     // for expanding character sequences
     //
+    @Test
     public void Test4059820() {
         RuleBasedCollator c = null;
         try {
             c = new RuleBasedCollator("< a < b , c/a < d < z");
         } catch (ParseException e) {
-            errln("Exception building collator: " + e.toString());
+            fail("Exception building collator: " + e.toString());
             return;
         }
         if ( c.getRules().indexOf("c/a") == -1) {
-            errln("returned rules do not contain 'c/a'");
+            fail("returned rules do not contain 'c/a'");
         }
     }
 
     // MergeCollation::fixEntry broken for "& H < \u0131, \u0130, i, I"
     //
+    @Test
     public void Test4060154() {
         RuleBasedCollator c = null;
         try {
             c = new RuleBasedCollator("< g, G < h, H < i, I < j, J"
                                       + " & H < \u0131, \u0130, i, I" );
         } catch (ParseException e) {
-            errln("Exception building collator: " + e.toString());
+            fail("Exception building collator: " + e.toString());
             return;
         }
         c.setDecomposition(Collator.CANONICAL_DECOMPOSITION);
@@ -227,6 +237,7 @@ public class Regression extends CollatorTest {
 
     // Secondary/Tertiary comparison incorrect in French Secondary
     //
+    @Test
     public void Test4062418() throws ParseException {
         RuleBasedCollator c = (RuleBasedCollator) Collator.getInstance(Locale.FRANCE);
         c.setStrength(Collator.SECONDARY);
@@ -240,9 +251,10 @@ public class Regression extends CollatorTest {
 
     // Collator.compare() method broken if either string contains spaces
     //
+    @Test
     public void Test4065540() {
         if (en_us.compare("abcd e", "abcd f") == 0) {
-            errln("'abcd e' == 'abcd f'");
+            fail("'abcd e' == 'abcd f'");
         }
     }
 
@@ -250,6 +262,7 @@ public class Regression extends CollatorTest {
     // correct result. For example,
     // u1EB1 -> \u0103 + \u0300 -> a + \u0306 + \u0300.
     //
+    @Test
     public void Test4066189() {
         String test1 = "\u1EB1";
         String test2 = "a\u0306\u0300";
@@ -262,11 +275,12 @@ public class Regression extends CollatorTest {
         c2.setDecomposition(Collator.NO_DECOMPOSITION);
         CollationElementIterator i2 = en_us.getCollationElementIterator(test2);
 
-        assertEqual(i1, i2);
+        TestUtils.compareCollationElementIters(i1, i2);
     }
 
     // French secondary collation checking at the end of compare iteration fails
     //
+    @Test
     public void Test4066696() {
         RuleBasedCollator c = (RuleBasedCollator) Collator.getInstance(Locale.FRANCE);
         c.setStrength(Collator.SECONDARY);
@@ -281,6 +295,7 @@ public class Regression extends CollatorTest {
 
     // Bad canonicalization of same-class combining characters
     //
+    @Test
     public void Test4076676() {
         // These combining characters are all in the same class, so they should not
         // be reordered, and they should compare as unequal.
@@ -291,38 +306,41 @@ public class Regression extends CollatorTest {
         c.setStrength(Collator.TERTIARY);
 
         if (c.compare(s1,s2) == 0) {
-            errln("Same-class combining chars were reordered");
+            fail("Same-class combining chars were reordered");
         }
     }
 
 
     // RuleBasedCollator.equals(null) throws NullPointerException
     //
+    @Test
     public void Test4079231() {
         try {
             if (en_us.equals(null)) {
-                errln("en_us.equals(null) returned true");
+                fail("en_us.equals(null) returned true");
             }
         }
         catch (Exception e) {
-            errln("en_us.equals(null) threw " + e.toString());
+            fail("en_us.equals(null) threw " + e.toString());
         }
     }
 
     // RuleBasedCollator breaks on "< a < bb" rule
     //
+    @Test
     public void Test4078588() throws ParseException {
         RuleBasedCollator rbc=new RuleBasedCollator("< a < bb");
 
         int result = rbc.compare("a","bb");
 
         if (result != -1) {
-            errln("Compare(a,bb) returned " + result + "; expected -1");
+            fail("Compare(a,bb) returned " + result + "; expected -1");
         }
     }
 
     // Combining characters in different classes not reordered properly.
     //
+    @Test
     public void Test4081866() throws ParseException {
         // These combining characters are all in different classes,
         // so they should be reordered and the strings should compare as equal.
@@ -338,12 +356,13 @@ public class Regression extends CollatorTest {
         c.setDecomposition(Collator.CANONICAL_DECOMPOSITION);
 
         if (c.compare(s1,s2) != 0) {
-            errln("Combining chars were not reordered");
+            fail("Combining chars were not reordered");
         }
     }
 
     // string comparison errors in Scandinavian collators
     //
+    @Test
     public void Test4087241() {
         RuleBasedCollator c = (RuleBasedCollator) Collator.getInstance(
                                                         Locale.of("da", "DK"));
@@ -360,6 +379,7 @@ public class Regression extends CollatorTest {
 
     // CollationKey takes ignorable strings into account when it shouldn't
     //
+    @Test
     public void Test4087243() {
         RuleBasedCollator c = (RuleBasedCollator) en_us.clone();
         c.setStrength(Collator.TERTIARY);
@@ -374,6 +394,7 @@ public class Regression extends CollatorTest {
     // Mu/micro conflict
     // Micro symbol and greek lowercase letter Mu should sort identically
     //
+    @Test
     public void Test4092260() {
         Collator c = Collator.getInstance(Locale.of("el"));
 
@@ -401,6 +422,7 @@ public class Regression extends CollatorTest {
         compareArray(c, tests);
     }
 
+    @Test
     public void Test4101940() {
         try {
             RuleBasedCollator c = new RuleBasedCollator("< a < b");
@@ -408,16 +430,17 @@ public class Regression extends CollatorTest {
             i.reset();
 
             if (i.next() != i.NULLORDER) {
-                errln("next did not return NULLORDER");
+                fail("next did not return NULLORDER");
             }
         }
         catch (Exception e) {
-            errln("Caught " + e );
+            fail("Caught " + e );
         }
     }
 
     // Collator.compare not handling spaces properly
     //
+    @Test
     public void Test4103436() {
         RuleBasedCollator c = (RuleBasedCollator) en_us.clone();
         c.setStrength(Collator.TERTIARY);
@@ -432,6 +455,7 @@ public class Regression extends CollatorTest {
 
     // Collation not Unicode conformant with Hangul syllables
     //
+    @Test
     public void Test4114076() {
         RuleBasedCollator c = (RuleBasedCollator) en_us.clone();
         c.setStrength(Collator.TERTIARY);
@@ -457,18 +481,20 @@ public class Regression extends CollatorTest {
 
     // Collator.getCollationKey was hanging on certain character sequences
     //
+    @Test
     public void Test4124632() throws Exception {
         Collator coll = Collator.getInstance(Locale.JAPAN);
 
         try {
             coll.getCollationKey("A\u0308bc");
         } catch (OutOfMemoryError e) {
-            errln("Ran out of memory -- probably an infinite loop");
+            fail("Ran out of memory -- probably an infinite loop");
         }
     }
 
     // sort order of french words with multiple accents has errors
     //
+    @Test
     public void Test4132736() {
         Collator c = Collator.getInstance(Locale.FRANCE);
 
@@ -481,6 +507,7 @@ public class Regression extends CollatorTest {
 
     // The sorting using java.text.CollationKey is not in the exact order
     //
+    @Test
     public void Test4133509() {
         String[] test1 = {
             "Exception",    "<",    "ExceptionInInitializerError",
@@ -492,6 +519,7 @@ public class Regression extends CollatorTest {
 
     // Collation with decomposition off doesn't work for Europe
     //
+    @Test
     public void Test4114077() {
         // Ensure that we get the same results with decomposition off
         // as we do with it on....
@@ -519,6 +547,7 @@ public class Regression extends CollatorTest {
 
     // Support for Swedish gone in 1.1.6 (Can't create Swedish collator)
     //
+    @Test
     public void Test4141640() {
         //
         // Rather than just creating a Swedish collator, we might as well
@@ -531,7 +560,7 @@ public class Regression extends CollatorTest {
             try {
                 Collator c = Collator.getInstance(locales[i]);
             } catch (Exception e) {
-                errln("Caught " + e + " creating collator for " + locales[i]);
+                fail("Caught " + e + " creating collator for " + locales[i]);
             }
         }
     }
@@ -539,6 +568,7 @@ public class Regression extends CollatorTest {
     // getCollationKey throws exception for spanish text
     // Cannot reproduce this bug on 1.2, however it DOES fail on 1.1.6
     //
+    @Test
     public void Test4139572() {
         //
         // Code pasted straight from the bug report
@@ -553,6 +583,7 @@ public class Regression extends CollatorTest {
 
     // RuleBasedCollator doesn't use getCollationElementIterator internally
     //
+    @Test
     public void Test4146160() throws ParseException {
         //
         // Use a custom collator class whose getCollationElementIterator
@@ -561,13 +592,13 @@ public class Regression extends CollatorTest {
         My4146160Collator.count = 0;
         new My4146160Collator().getCollationKey("1");
         if (My4146160Collator.count < 1) {
-            errln("getCollationElementIterator not called");
+            fail("getCollationElementIterator not called");
         }
 
         My4146160Collator.count = 0;
         new My4146160Collator().compare("1", "2");
         if (My4146160Collator.count < 1) {
-            errln("getCollationElementIterator not called");
+            fail("getCollationElementIterator not called");
         }
     }
 
@@ -592,6 +623,7 @@ public class Regression extends CollatorTest {
 
     // CollationElementIterator.previous broken for expanding char sequences
     //
+    @Test
     public void Test4179686() throws ParseException {
 
         // Create a collator with a few expanding character sequences in it....
@@ -617,7 +649,7 @@ public class Regression extends CollatorTest {
             int expect = ((Integer)elements.elementAt(index)).intValue();
 
             if (elem != expect) {
-                errln("Mismatch at index " + index
+                fail("Mismatch at index " + index
                       + ": got " + Integer.toString(elem,16)
                       + ", expected " + Integer.toString(expect,16));
             }
@@ -625,6 +657,7 @@ public class Regression extends CollatorTest {
         }
     }
 
+    @Test
     public void Test4244884() throws ParseException {
         RuleBasedCollator coll = (RuleBasedCollator)Collator.getInstance(Locale.US);
         coll = new RuleBasedCollator(coll.getRules()
@@ -644,13 +677,14 @@ public class Regression extends CollatorTest {
 
         for (int i = 1; i < testStrings.length; i++) {
             if (coll.compare(testStrings[i - 1], testStrings[i]) >= 0) {
-                errln("error: \"" + testStrings[i - 1]
+                fail("error: \"" + testStrings[i - 1]
                     + "\" is greater than or equal to \"" + testStrings[i]
                     + "\".");
             }
         }
     }
 
+    @Test
     public void Test4179216() throws ParseException {
         // you can position a CollationElementIterator in the middle of
         // a contracting character sequence, yielding a bogus collation
@@ -673,7 +707,7 @@ public class Regression extends CollatorTest {
         int elt5 = CollationElementIterator.primaryOrder(iter.next());
 
         if (elt4 != elt0 || elt5 != elt0)
-            errln("The collation elements at positions 0 (" + elt0 + "), 4 ("
+            fail("The collation elements at positions 0 (" + elt0 + "), 4 ("
                     + elt4 + "), and 5 (" + elt5 + ") don't match.");
 
         // test that the "cat" combination works properly
@@ -697,7 +731,7 @@ public class Regression extends CollatorTest {
 
         if (elt14 != elt15 || elt14 != elt16 || elt14 != elt17
                 || elt14 != elt18 || elt14 != elt19)
-            errln("\"cat\" elements don't match: elt14 = " + elt14 + ", elt15 = "
+            fail("\"cat\" elements don't match: elt14 = " + elt14 + ", elt15 = "
             + elt15 + ", elt16 = " + elt16 + ", elt17 = " + elt17
             + ", elt18 = " + elt18 + ", elt19 = " + elt19);
 
@@ -735,14 +769,15 @@ public class Regression extends CollatorTest {
         }
         for (int i = 0; i < nextElements.length; i++) {
             if (nextElements[i].equals(setOffsetElements[i])) {
-                logln(nextElements[i]);
+                System.out.println(nextElements[i]);
             } else {
-                errln("Error: next() yielded " + nextElements[i] + ", but setOffset() yielded "
+                fail("Error: next() yielded " + nextElements[i] + ", but setOffset() yielded "
                     + setOffsetElements[i]);
             }
         }
     }
 
+    @Test
     public void Test4216006() throws Exception {
         // rule parser barfs on "<\u00e0=a\u0300", and on other cases
         // where the same token (after normalization) appears twice in a row
@@ -769,6 +804,7 @@ public class Regression extends CollatorTest {
         compareArray(collator, tests);
     }
 
+    @Test
     public void Test4171974() {
         // test French accent ordering more thoroughly
         String[] frenchList = {
@@ -800,10 +836,10 @@ public class Regression extends CollatorTest {
         };
         Collator french = Collator.getInstance(Locale.FRENCH);
 
-        logln("Testing French order...");
+        System.out.println("Testing French order...");
         checkListOrder(frenchList, french);
 
-        logln("Testing French order without decomposition...");
+        System.out.println("Testing French order without decomposition...");
         french.setDecomposition(Collator.NO_DECOMPOSITION);
         checkListOrder(frenchList, french);
 
@@ -836,10 +872,10 @@ public class Regression extends CollatorTest {
         };
         Collator english = Collator.getInstance(Locale.ENGLISH);
 
-        logln("Testing English order...");
+        System.out.println("Testing English order...");
         checkListOrder(englishList, english);
 
-        logln("Testing English order without decomposition...");
+        System.out.println("Testing English order without decomposition...");
         english.setDecomposition(Collator.NO_DECOMPOSITION);
         checkListOrder(englishList, english);
     }
@@ -849,35 +885,36 @@ public class Regression extends CollatorTest {
         // passed-in list is already sorted into ascending order
         for (int i = 0; i < sortedList.length - 1; i++) {
             if (c.compare(sortedList[i], sortedList[i + 1]) >= 0) {
-                errln("List out of order at element #" + i + ": "
-                        + prettify(sortedList[i]) + " >= "
-                        + prettify(sortedList[i + 1]));
+                fail("List out of order at element #" + i + ": "
+                        + TestUtils.prettify(sortedList[i]) + " >= "
+                        + TestUtils.prettify(sortedList[i + 1]));
             }
         }
     }
 
     // CollationElementIterator set doesn't work propertly with next/prev
+    @Test
     public void Test4663220() {
         RuleBasedCollator collator = (RuleBasedCollator)Collator.getInstance(Locale.US);
         CharacterIterator stringIter = new StringCharacterIterator("fox");
         CollationElementIterator iter = collator.getCollationElementIterator(stringIter);
 
         int[] elements_next = new int[3];
-        logln("calling next:");
+        System.out.println("calling next:");
         for (int i = 0; i < 3; ++i) {
-            logln("[" + i + "] " + (elements_next[i] = iter.next()));
+            System.out.println("[" + i + "] " + (elements_next[i] = iter.next()));
         }
 
         int[] elements_fwd = new int[3];
-        logln("calling set/next:");
+        System.out.println("calling set/next:");
         for (int i = 0; i < 3; ++i) {
             iter.setOffset(i);
-            logln("[" + i + "] " + (elements_fwd[i] = iter.next()));
+            System.out.println("[" + i + "] " + (elements_fwd[i] = iter.next()));
         }
 
         for (int i = 0; i < 3; ++i) {
             if (elements_next[i] != elements_fwd[i]) {
-                errln("mismatch at position " + i +
+                fail("mismatch at position " + i +
                       ": " + elements_next[i] +
                       " != " + elements_fwd[i]);
             }
@@ -904,8 +941,8 @@ public class Regression extends CollatorTest {
             int result = c.compare(tests[i], tests[i+2]);
             if (sign(result) != sign(expect))
             {
-                errln( i/3 + ": compare(" + prettify(tests[i])
-                                    + " , " + prettify(tests[i+2])
+                fail( i/3 + ": compare(" + TestUtils.prettify(tests[i])
+                                    + " , " + TestUtils.prettify(tests[i+2])
                                     + ") got " + result + "; expected " + expect);
             }
             else
@@ -916,11 +953,11 @@ public class Regression extends CollatorTest {
 
                 result = k1.compareTo(k2);
                 if (sign(result) != sign(expect)) {
-                    errln( i/3 + ": key(" + prettify(tests[i])
-                                        + ").compareTo(key(" + prettify(tests[i+2])
+                    fail( i/3 + ": key(" + TestUtils.prettify(tests[i])
+                                        + ").compareTo(key(" + TestUtils.prettify(tests[i+2])
                                         + ")) got " + result + "; expected " + expect);
 
-                    errln("  " + prettify(k1) + " vs. " + prettify(k2));
+                    fail("  " + TestUtils.prettifyCKey(k1) + " vs. " + TestUtils.prettifyCKey(k2));
                 }
             }
         }

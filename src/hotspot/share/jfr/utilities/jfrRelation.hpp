@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,7 @@ class GreaterThan {
 template <typename Node>
 class HeadNode {
  public:
-  HeadNode(const Node* node = NULL) {}
+  HeadNode(const Node* node = nullptr) {}
   bool operator()(const Node* current, const Node* next) {
     return is_marked_for_removal(next);
   }
@@ -88,7 +88,7 @@ class HeadNode {
 template <typename Node>
 class LastNode {
  public:
-  LastNode(const Node* node = NULL) {}
+  LastNode(const Node* node = nullptr) {}
   bool operator()(const Node* current, const Node* next ) {
     return true;
   }
@@ -100,10 +100,10 @@ class Identity {
   const  Node* _target;
   bool _found;
  public:
-  Identity(const Node* node = NULL) : _target(node), _found(false) {}
+  Identity(const Node* node = nullptr) : _target(node), _found(false) {}
   bool operator()(const Node* current, const Node* next) {
-    assert(current != NULL, "invariant");
-    assert(next != NULL, "invariant");
+    assert(current != nullptr, "invariant");
+    assert(next != nullptr, "invariant");
     if (!_found && current == _target) {
       _found = true;
     }

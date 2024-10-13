@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,11 +24,12 @@
 /*
  * @test
  * @bug 8170859
- * @summary Ensure no incubator modules are resolved by default in the image
+ * @requires vm.flagless
  * @library /test/lib
  * @modules jdk.compiler
  * @build jdk.test.lib.compiler.CompilerUtils
  * @run testng DefaultImage
+ * @summary Ensure no incubator modules are resolved by default in the image
  */
 
 import java.io.ByteArrayOutputStream;
@@ -43,6 +44,7 @@ import java.util.function.Consumer;
 import java.util.stream.Stream;
 import jdk.test.lib.compiler.CompilerUtils;
 
+import jdk.test.lib.process.ProcessTools;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 
@@ -108,10 +110,8 @@ public class DefaultImage {
     static ToolResult java(String... opts) throws Throwable {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         PrintStream ps = new PrintStream(baos);
-        String[] options = Stream.concat(Stream.of(getJava()), Stream.of(opts))
-                .toArray(String[]::new);
 
-        ProcessBuilder pb = new ProcessBuilder(options);
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(opts);
         int exitValue = executeCommand(pb).outputTo(ps)
                 .errorTo(ps)
                 .getExitValue();
@@ -153,15 +153,6 @@ public class DefaultImage {
                             + output + "]" + "\n");
             return this;
         }
-    }
-
-    static String getJava() {
-        Path image = Paths.get(JAVA_HOME);
-        boolean isWindows = System.getProperty("os.name").startsWith("Windows");
-        Path java = image.resolve("bin").resolve(isWindows ? "java.exe" : "java");
-        if (Files.notExists(java))
-            throw new RuntimeException(java + " not found");
-        return java.toAbsolutePath().toString();
     }
 
     static boolean isExplodedBuild() {

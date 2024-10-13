@@ -37,6 +37,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 /*
  * Bsd implementation of HotSpotVirtualMachine
  */
+@SuppressWarnings("restricted")
 public class VirtualMachineImpl extends HotSpotVirtualMachine {
     // "tmpdir" is used as a global well-known location for the files
     // .java_pid<pid>. and .attach_pid<pid>. It is important that this
@@ -136,6 +137,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
      */
     InputStream execute(String cmd, Object ... args) throws AgentLoadException, IOException {
         assert args.length <= 3;                // includes null
+        checkNulls(args);
 
         // did we detach?
         synchronized (this) {

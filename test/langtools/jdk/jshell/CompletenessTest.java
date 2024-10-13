@@ -232,7 +232,9 @@ public class CompletenessTest extends KullaTesting {
     };
 
     static final String[] unknown = new String[] {
-        "new ;"
+        "new ;",
+        "\"",
+        "\"\\"
     };
 
     static final Map<Completeness, String[]> statusToCases = new HashMap<>();
@@ -369,6 +371,7 @@ public class CompletenessTest extends KullaTesting {
     public void testTextBlocks() {
         assertStatus("\"\"\"", DEFINITELY_INCOMPLETE, null);
         assertStatus("\"\"\"broken", DEFINITELY_INCOMPLETE, null);
+        assertStatus("\"\"\"\n", DEFINITELY_INCOMPLETE, null);
         assertStatus("\"\"\"\ntext", DEFINITELY_INCOMPLETE, null);
         assertStatus("\"\"\"\ntext\"\"", DEFINITELY_INCOMPLETE, "\"\"\"\ntext\"\"\"");
         assertStatus("\"\"\"\ntext\"\"\"", COMPLETE, "\"\"\"\ntext\"\"\"");
@@ -376,6 +379,7 @@ public class CompletenessTest extends KullaTesting {
         assertStatus("\"\"\"\ntext\\\"\"\"", DEFINITELY_INCOMPLETE, null);
         assertStatus("\"\"\"\ntext\\\"\"\"\\\"\"\"", DEFINITELY_INCOMPLETE, null);
         assertStatus("\"\"\"\ntext\\\"\"\"\\\"\"\"\"\"\"", COMPLETE, "\"\"\"\ntext\\\"\"\"\\\"\"\"\"\"\"");
+        assertStatus("\"\"\"\n\\", DEFINITELY_INCOMPLETE, null);
     }
 
     public void testMiscSource() {
@@ -384,5 +388,10 @@ public class CompletenessTest extends KullaTesting {
         assertStatus("int p = ", DEFINITELY_INCOMPLETE, "int p ="); //Bug
         assertStatus("int[] m = {1, 2}, n = new int[0];  int i;", COMPLETE,
                      "int[] m = {1, 2}, n = new int[0];");
+    }
+
+    public void testInstanceOf() {
+        assertStatus("i instanceof Integer", COMPLETE, "i instanceof Integer");
+        assertStatus("i instanceof int", COMPLETE, "i instanceof int");
     }
 }

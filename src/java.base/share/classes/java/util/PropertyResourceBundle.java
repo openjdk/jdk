@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,37 +73,29 @@ import sun.util.ResourceBundleEnumeration;
  * the German member of the bundle family.
  * This member is based on {@code PropertyResourceBundle}, and the text
  * therefore is the content of the file "MyResources_de.properties"
- * (a related <a href="ListResourceBundle.html#sample">example</a> shows
+ * (a related {@linkplain ListResourceBundle##sample example} shows
  * how you can add bundles to this family that are implemented as subclasses
  * of {@code ListResourceBundle}).
  * The keys in this example are of the form "s1" etc. The actual
  * keys are entirely up to your choice, so long as they are the same as
  * the keys you use in your program to retrieve the objects from the bundle.
  * Keys are case-sensitive.
- * <blockquote>
- * <pre>
- * # MessageFormat pattern
- * s1=Die Platte \"{1}\" enth&auml;lt {0}.
- *
- * # location of {0} in pattern
- * s2=1
- *
- * # sample disk name
- * s3=Meine Platte
- *
- * # first ChoiceFormat choice
- * s4=keine Dateien
- *
- * # second ChoiceFormat choice
- * s5=eine Datei
- *
- * # third ChoiceFormat choice
- * s6={0,number} Dateien
- *
- * # sample date
- * s7=3. M&auml;rz 1996
- * </pre>
- * </blockquote>
+ * {@snippet lang=properties :
+ *     # MessageFormat pattern
+ *     s1=Die Platte \"{1}\" enth\u00E4lt {0}.
+ *     # location of {0} in pattern
+ *     s2=1
+ *     # sample disk name
+ *     s3=Meine Platte
+ *     # first ChoiceFormat choice
+ *     s4=keine Dateien
+ *     # second ChoiceFormat choice
+ *     s5=eine Datei
+ *     # third ChoiceFormat choice
+ *     s6={0,number} Dateien
+ *     # sample date
+ *     s7=3. M\u00E4rz 1996
+ * }
  *
  * @apiNote
  * {@code PropertyResourceBundle} can be constructed either

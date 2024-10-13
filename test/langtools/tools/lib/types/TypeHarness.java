@@ -464,7 +464,7 @@ public class TypeHarness {
 
             String id;
             String type;
-            String template = "#Package;\n" +
+            String template = "#Package\n" +
                     "#Imports\n" +
                     "class G#Id#TypeVars {\n" +
                     "   #FieldType var;" +

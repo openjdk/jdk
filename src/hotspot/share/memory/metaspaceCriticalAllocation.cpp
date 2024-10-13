@@ -79,12 +79,19 @@ void MetaspaceCriticalAllocation::add(MetadataAllocationRequest* request) {
   MutexLocker ml(MetaspaceCritical_lock, Mutex::_no_safepoint_check_flag);
   log_info(metaspace)("Requesting critical metaspace allocation; almost out of memory");
   Atomic::store(&_has_critical_allocation, true);
+  // This is called by the request constructor to insert the request into the
+  // global list.  The request's destructor will remove the request from the
+  // list.  gcc13 has a false positive warning about the local request being
+  // added to the global list because it doesn't relate those operations.
+  PRAGMA_DIAG_PUSH
+  PRAGMA_DANGLING_POINTER_IGNORED
   if (_requests_head == nullptr) {
     _requests_head = _requests_tail = request;
   } else {
     _requests_tail->set_next(request);
     _requests_tail = request;
   }
+  PRAGMA_DIAG_POP
 }
 
 void MetaspaceCriticalAllocation::unlink(MetadataAllocationRequest* curr, MetadataAllocationRequest* prev) {

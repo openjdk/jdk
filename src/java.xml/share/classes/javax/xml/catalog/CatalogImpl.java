@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ import static javax.xml.catalog.BaseEntry.CatalogEntryType;
 import static javax.xml.catalog.CatalogFeatures.DEFER_TRUE;
 import javax.xml.catalog.CatalogFeatures.Feature;
 import static javax.xml.catalog.CatalogMessages.formatMessage;
+import javax.xml.catalog.CatalogResolver.NotFoundAction;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
@@ -59,8 +60,8 @@ class CatalogImpl extends GroupEntry implements Catalog {
     //Value of the defer attribute to determine if alternative catalogs are read
     boolean isDeferred = true;
 
-    //Value of the resolve attribute
-    ResolveType resolveType = ResolveType.STRICT;
+    //Value of the resolve attribute mapped to the resolver's action type
+    NotFoundAction resolveType = NotFoundAction.STRICT;
 
     //indicate whether the Catalog is empty
     boolean isEmpty;
@@ -259,7 +260,7 @@ class CatalogImpl extends GroupEntry implements Catalog {
      * @param value The value of the resolve attribute
      */
     public final void setResolve(String value) {
-        resolveType = ResolveType.getType(value);
+        resolveType = NotFoundAction.getType(value);
     }
 
     /**
@@ -267,7 +268,7 @@ class CatalogImpl extends GroupEntry implements Catalog {
      *
      * @return The value of the resolve attribute
      */
-    public final ResolveType getResolve() {
+    public final NotFoundAction getResolve() {
         return resolveType;
     }
 

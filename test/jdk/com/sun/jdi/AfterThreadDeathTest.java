@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,9 +51,9 @@ class AfterDeathTarg {
 public class AfterThreadDeathTest extends TestScaffold {
     ReferenceType targetClass;
     ThreadReference mainThread;
-    StepRequest stepRequest = null;
     EventRequestManager erm;
-    boolean mainIsDead;
+    volatile boolean mainIsDead = false;
+    volatile boolean gotExpectedThreadStart = false;
 
     AfterThreadDeathTest (String args[]) {
         super(args);
@@ -68,20 +68,23 @@ public class AfterThreadDeathTest extends TestScaffold {
     public void threadStarted(ThreadStartEvent event) {
         println("Got ThreadStartEvent: " + event);
 
-        if (stepRequest != null) {
-            erm.deleteEventRequest(stepRequest);
-            stepRequest = null;
-            println("Deleted stepRequest");
+        // We don't want to attempt the StepRequest.enable() until we recieve
+        // the ThreadStartEvent for the "DestroyJavaVM" thread. See JDK-8232839.
+        if (!event.thread().name().equals("DestroyJavaVM")) {
+            return;
         }
+        gotExpectedThreadStart = true;
 
-        if (mainIsDead) {
+        if (!mainIsDead) {
+            failure("FAILED: Got expected ThreadStartEvent before \"main\" ThreadDeathEvent");
+        } else {
             // Here is the odd thing about this test; whatever thread this event
             // is for, we do a step on the mainThread. If the mainThread is
             // already dead, we should get the exception.  Note that we don't
             // come here for the start of the main thread.
-            stepRequest = erm.createStepRequest(mainThread,
-                                                StepRequest.STEP_LINE,
-                                                StepRequest.STEP_OVER);
+            StepRequest stepRequest = erm.createStepRequest(mainThread,
+                                                            StepRequest.STEP_LINE,
+                                                            StepRequest.STEP_OVER);
             stepRequest.addCountFilter(1);
             stepRequest.setSuspendPolicy (EventRequest.SUSPEND_ALL);
             try {
@@ -145,6 +148,13 @@ public class AfterThreadDeathTest extends TestScaffold {
          * resume the target listening for events
          */
         listenUntilVMDisconnect();
+
+        if (!gotExpectedThreadStart) {
+            failure("FAILED: never got expected ThreadStartEvent");
+        }
+        if (!mainIsDead) {
+            failure("FAILED: never got ThreadDeathEvent for \"main\" thread");
+        }
 
         /*
          * deal with results of test

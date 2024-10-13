@@ -735,7 +735,16 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, size_t granular
             } else {
               blob_name = os::strdup(cb->name());
             }
-
+#if INCLUDE_JVMCI
+            const char* jvmci_name = nm->jvmci_name();
+            if (jvmci_name != nullptr) {
+              size_t size = ::strlen(blob_name) + ::strlen(" jvmci_name=") + ::strlen(jvmci_name) + 1;
+              char* new_blob_name = (char*)os::malloc(size, mtInternal);
+              os::snprintf(new_blob_name, size, "%s jvmci_name=%s", blob_name, jvmci_name);
+              os::free((void*)blob_name);
+              blob_name = new_blob_name;
+            }
+#endif
             nm_size    = nm->total_size();
             compile_id = nm->compile_id();
             comp_lvl   = (CompLevel)(nm->comp_level());
@@ -1216,6 +1225,7 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, size_t granular
 
 void CodeHeapState::print_usedSpace(outputStream* out, CodeHeap* heap) {
   if (!initialization_complete) {
+    print_aggregate_missing(out, nullptr);
     return;
   }
 
@@ -1223,6 +1233,7 @@ void CodeHeapState::print_usedSpace(outputStream* out, CodeHeap* heap) {
   get_HeapStatGlobals(out, heapName);
 
   if ((StatArray == nullptr) || (TopSizeArray == nullptr) || (used_topSizeBlocks == 0)) {
+    print_aggregate_missing(out, heapName);
     return;
   }
   BUFFEREDSTREAM_DECL(ast, out)
@@ -1426,6 +1437,7 @@ void CodeHeapState::print_usedSpace(outputStream* out, CodeHeap* heap) {
 
 void CodeHeapState::print_freeSpace(outputStream* out, CodeHeap* heap) {
   if (!initialization_complete) {
+    print_aggregate_missing(out, nullptr);
     return;
   }
 
@@ -1433,6 +1445,7 @@ void CodeHeapState::print_freeSpace(outputStream* out, CodeHeap* heap) {
   get_HeapStatGlobals(out, heapName);
 
   if ((StatArray == nullptr) || (FreeArray == nullptr) || (alloc_granules == 0)) {
+    print_aggregate_missing(out, heapName);
     return;
   }
   BUFFEREDSTREAM_DECL(ast, out)
@@ -1600,6 +1613,7 @@ void CodeHeapState::print_freeSpace(outputStream* out, CodeHeap* heap) {
 
 void CodeHeapState::print_count(outputStream* out, CodeHeap* heap) {
   if (!initialization_complete) {
+    print_aggregate_missing(out, nullptr);
     return;
   }
 
@@ -1607,6 +1621,7 @@ void CodeHeapState::print_count(outputStream* out, CodeHeap* heap) {
   get_HeapStatGlobals(out, heapName);
 
   if ((StatArray == nullptr) || (alloc_granules == 0)) {
+    print_aggregate_missing(out, heapName);
     return;
   }
   BUFFEREDSTREAM_DECL(ast, out)
@@ -1758,6 +1773,7 @@ void CodeHeapState::print_count(outputStream* out, CodeHeap* heap) {
 
 void CodeHeapState::print_space(outputStream* out, CodeHeap* heap) {
   if (!initialization_complete) {
+    print_aggregate_missing(out, nullptr);
     return;
   }
 
@@ -1765,6 +1781,7 @@ void CodeHeapState::print_space(outputStream* out, CodeHeap* heap) {
   get_HeapStatGlobals(out, heapName);
 
   if ((StatArray == nullptr) || (alloc_granules == 0)) {
+    print_aggregate_missing(out, heapName);
     return;
   }
   BUFFEREDSTREAM_DECL(ast, out)
@@ -1927,6 +1944,7 @@ void CodeHeapState::print_space(outputStream* out, CodeHeap* heap) {
 
 void CodeHeapState::print_age(outputStream* out, CodeHeap* heap) {
   if (!initialization_complete) {
+    print_aggregate_missing(out, nullptr);
     return;
   }
 
@@ -1934,6 +1952,7 @@ void CodeHeapState::print_age(outputStream* out, CodeHeap* heap) {
   get_HeapStatGlobals(out, heapName);
 
   if ((StatArray == nullptr) || (alloc_granules == 0)) {
+    print_aggregate_missing(out, heapName);
     return;
   }
   BUFFEREDSTREAM_DECL(ast, out)
@@ -2039,6 +2058,7 @@ void CodeHeapState::print_age(outputStream* out, CodeHeap* heap) {
 
 void CodeHeapState::print_names(outputStream* out, CodeHeap* heap) {
   if (!initialization_complete) {
+    print_aggregate_missing(out, nullptr);
     return;
   }
 
@@ -2046,6 +2066,7 @@ void CodeHeapState::print_names(outputStream* out, CodeHeap* heap) {
   get_HeapStatGlobals(out, heapName);
 
   if ((StatArray == nullptr) || (alloc_granules == 0)) {
+    print_aggregate_missing(out, heapName);
     return;
   }
   BUFFEREDSTREAM_DECL(ast, out)
@@ -2172,6 +2193,12 @@ void CodeHeapState::print_names(outputStream* out, CodeHeap* heap) {
             ast->print("%s.", classNameS);
             ast->print("%s", methNameS);
             ast->print("%s", methSigS);
+#if INCLUDE_JVMCI
+            const char* jvmci_name = nm->jvmci_name();
+            if (jvmci_name != nullptr) {
+              ast->print(" jvmci_name=%s", jvmci_name);
+            }
+#endif
           } else {
             ast->print("%s", blob_name);
           }
@@ -2340,6 +2367,14 @@ void CodeHeapState::print_line_delim(outputStream* out, bufferedStream* ast, cha
     ast->print(INTPTR_FORMAT, p2i(low_bound + ix*granule_size));
     ast->fill_to(19);
     ast->print("(+" UINT32_FORMAT_X_0 "): |", (unsigned int)(ix*granule_size));
+  }
+}
+
+void CodeHeapState::print_aggregate_missing(outputStream* out, const char* heapName) {
+  if (heapName == nullptr) {
+    out->print_cr("No aggregated code heap data available. Run function aggregate first.");
+  } else {
+    out->print_cr("No aggregated data available for heap %s. Run function aggregate first.", heapName);
   }
 }
 

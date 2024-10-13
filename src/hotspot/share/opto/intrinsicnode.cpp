@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -174,7 +174,7 @@ Node* CompressBitsNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   return nullptr;
 }
 
-Node* compress_expand_identity(PhaseGVN* phase, Node* n) {
+static Node* compress_expand_identity(PhaseGVN* phase, Node* n) {
   BasicType bt = n->bottom_type()->basic_type();
   // compress(x, 0) == 0, expand(x, 0) == 0
   if(phase->type(n->in(2))->higher_equal(TypeInteger::zero(bt))) return n->in(2);
@@ -244,12 +244,12 @@ static const Type* bitshuffle_value(const TypeInteger* src_type, const TypeInteg
     int bitcount = population_count(static_cast<julong>(bt == T_INT ? maskcon & 0xFFFFFFFFL : maskcon));
     if (opc == Op_CompressBits) {
       // Bit compression selects the source bits corresponding to true mask bits
-      // and lays them out contiguously at desitination bit poistions starting from
+      // and lays them out contiguously at destination bit positions starting from
       // LSB, remaining higher order bits are set to zero.
-      // Thus, it will always generates a +ve value i.e. sign bit set to 0 if
+      // Thus, it will always generate a +ve value i.e. sign bit set to 0 if
       // any bit of constant mask value is zero.
       lo = 0L;
-      hi = (1L << bitcount) - 1;
+      hi = (1UL << bitcount) - 1;
     } else {
       assert(opc == Op_ExpandBits, "");
       // Expansion sequentially reads source bits starting from LSB

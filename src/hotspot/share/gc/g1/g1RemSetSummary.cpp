@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,10 +29,10 @@
 #include "gc/g1/g1ConcurrentRefine.hpp"
 #include "gc/g1/g1ConcurrentRefineThread.hpp"
 #include "gc/g1/g1DirtyCardQueue.hpp"
+#include "gc/g1/g1HeapRegion.hpp"
+#include "gc/g1/g1HeapRegionRemSet.inline.hpp"
 #include "gc/g1/g1RemSet.hpp"
 #include "gc/g1/g1RemSetSummary.hpp"
-#include "gc/g1/heapRegion.hpp"
-#include "gc/g1/heapRegionRemSet.inline.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/iterator.hpp"
 #include "runtime/javaThread.hpp"
@@ -55,19 +55,19 @@ void G1RemSetSummary::update() {
 }
 
 void G1RemSetSummary::set_rs_thread_vtime(uint thread, double value) {
-  assert(_rs_threads_vtimes != NULL, "just checking");
+  assert(_rs_threads_vtimes != nullptr, "just checking");
   assert(thread < _num_vtimes, "just checking");
   _rs_threads_vtimes[thread] = value;
 }
 
 double G1RemSetSummary::rs_thread_vtime(uint thread) const {
-  assert(_rs_threads_vtimes != NULL, "just checking");
+  assert(_rs_threads_vtimes != nullptr, "just checking");
   assert(thread < _num_vtimes, "just checking");
   return _rs_threads_vtimes[thread];
 }
 
 G1RemSetSummary::G1RemSetSummary(bool should_update) :
-  _num_vtimes(G1ConcurrentRefine::max_num_threads()),
+  _num_vtimes(G1ConcRefinementThreads),
   _rs_threads_vtimes(NEW_C_HEAP_ARRAY(double, _num_vtimes, mtGC)) {
 
   memset(_rs_threads_vtimes, 0, sizeof(double) * _num_vtimes);
@@ -82,14 +82,14 @@ G1RemSetSummary::~G1RemSetSummary() {
 }
 
 void G1RemSetSummary::set(G1RemSetSummary* other) {
-  assert(other != NULL, "just checking");
+  assert(other != nullptr, "just checking");
   assert(_num_vtimes == other->_num_vtimes, "just checking");
 
   memcpy(_rs_threads_vtimes, other->_rs_threads_vtimes, sizeof(double) * _num_vtimes);
 }
 
 void G1RemSetSummary::subtract_from(G1RemSetSummary* other) {
-  assert(other != NULL, "just checking");
+  assert(other != nullptr, "just checking");
   assert(_num_vtimes == other->_num_vtimes, "just checking");
 
   for (uint i = 0; i < _num_vtimes; i++) {
@@ -181,53 +181,61 @@ public:
 };
 
 
-class HRRSStatsIter: public HeapRegionClosure {
+class HRRSStatsIter: public G1HeapRegionClosure {
 private:
   RegionTypeCounter _young;
   RegionTypeCounter _humongous;
   RegionTypeCounter _free;
   RegionTypeCounter _old;
-  RegionTypeCounter _archive;
   RegionTypeCounter _all;
 
   size_t _max_rs_mem_sz;
-  HeapRegion* _max_rs_mem_sz_region;
+  G1HeapRegion* _max_rs_mem_sz_region;
 
   size_t total_rs_unused_mem_sz() const     { return _all.rs_unused_mem_size(); }
   size_t total_rs_mem_sz() const            { return _all.rs_mem_size(); }
   size_t total_cards_occupied() const       { return _all.cards_occupied(); }
 
   size_t max_rs_mem_sz() const              { return _max_rs_mem_sz; }
-  HeapRegion* max_rs_mem_sz_region() const  { return _max_rs_mem_sz_region; }
+  G1HeapRegion* max_rs_mem_sz_region() const  { return _max_rs_mem_sz_region; }
 
   size_t _max_code_root_mem_sz;
-  HeapRegion* _max_code_root_mem_sz_region;
+  G1HeapRegion* _max_code_root_mem_sz_region;
 
   size_t total_code_root_mem_sz() const     { return _all.code_root_mem_size(); }
   size_t total_code_root_elems() const      { return _all.code_root_elems(); }
 
   size_t max_code_root_mem_sz() const       { return _max_code_root_mem_sz; }
-  HeapRegion* max_code_root_mem_sz_region() const { return _max_code_root_mem_sz_region; }
+  G1HeapRegion* max_code_root_mem_sz_region() const { return _max_code_root_mem_sz_region; }
 
 public:
   HRRSStatsIter() : _young("Young"), _humongous("Humongous"),
-    _free("Free"), _old("Old"), _archive("Archive"), _all("All"),
-    _max_rs_mem_sz(0), _max_rs_mem_sz_region(NULL),
-    _max_code_root_mem_sz(0), _max_code_root_mem_sz_region(NULL)
+    _free("Free"), _old("Old"), _all("All"),
+    _max_rs_mem_sz(0), _max_rs_mem_sz_region(nullptr),
+    _max_code_root_mem_sz(0), _max_code_root_mem_sz_region(nullptr)
   {}
 
-  bool do_heap_region(HeapRegion* r) {
-    HeapRegionRemSet* hrrs = r->rem_set();
+  bool do_heap_region(G1HeapRegion* r) {
+    G1HeapRegionRemSet* hrrs = r->rem_set();
 
-    // HeapRegionRemSet::mem_size() includes the
+    size_t occupied_cards = hrrs->occupied();
+    // G1HeapRegionRemSet::mem_size() includes the
     // size of the code roots
     size_t rs_unused_mem_sz = hrrs->unused_mem_size();
     size_t rs_mem_sz = hrrs->mem_size();
+
+    if (r->is_young()) {
+      uint num_young  =  G1CollectedHeap::heap()->young_regions_count();
+      occupied_cards /= num_young;
+      rs_unused_mem_sz /= num_young;
+      rs_mem_sz /= num_young;
+    }
+
     if (rs_mem_sz > _max_rs_mem_sz) {
       _max_rs_mem_sz = rs_mem_sz;
       _max_rs_mem_sz_region = r;
     }
-    size_t occupied_cards = hrrs->occupied();
+
     size_t code_root_mem_sz = hrrs->code_roots_mem_size();
     if (code_root_mem_sz > max_code_root_mem_sz()) {
       _max_code_root_mem_sz = code_root_mem_sz;
@@ -235,7 +243,7 @@ public:
     }
     size_t code_root_elems = hrrs->code_roots_list_length();
 
-    RegionTypeCounter* current = NULL;
+    RegionTypeCounter* current = nullptr;
     if (r->is_free()) {
       current = &_free;
     } else if (r->is_young()) {
@@ -244,8 +252,6 @@ public:
       current = &_humongous;
     } else if (r->is_old()) {
       current = &_old;
-    } else if (r->is_archive()) {
-      current = &_archive;
     } else {
       ShouldNotReachHere();
     }
@@ -258,7 +264,7 @@ public:
   }
 
   void print_summary_on(outputStream* out) {
-    RegionTypeCounter* counters[] = { &_young, &_humongous, &_free, &_old, &_archive, NULL };
+    RegionTypeCounter* counters[] = { &_young, &_humongous, &_free, &_old, nullptr };
 
     out->print_cr(" Current rem set statistics");
     out->print_cr("  Total per region rem sets sizes = " SIZE_FORMAT
@@ -266,43 +272,43 @@ public:
                   total_rs_mem_sz(),
                   max_rs_mem_sz(),
                   total_rs_unused_mem_sz());
-    for (RegionTypeCounter** current = &counters[0]; *current != NULL; current++) {
+    for (RegionTypeCounter** current = &counters[0]; *current != nullptr; current++) {
       (*current)->print_rs_mem_info_on(out, total_rs_mem_sz());
     }
 
     out->print_cr("    " SIZE_FORMAT " occupied cards represented.",
                   total_cards_occupied());
-    for (RegionTypeCounter** current = &counters[0]; *current != NULL; current++) {
+    for (RegionTypeCounter** current = &counters[0]; *current != nullptr; current++) {
       (*current)->print_cards_occupied_info_on(out, total_cards_occupied());
     }
 
     // Largest sized rem set region statistics
-    HeapRegionRemSet* rem_set = max_rs_mem_sz_region()->rem_set();
+    G1HeapRegionRemSet* rem_set = max_rs_mem_sz_region()->rem_set();
     out->print_cr("    Region with largest rem set = " HR_FORMAT ", "
                   "size = " SIZE_FORMAT " occupied = " SIZE_FORMAT,
                   HR_FORMAT_PARAMS(max_rs_mem_sz_region()),
                   rem_set->mem_size(),
                   rem_set->occupied());
 
-    HeapRegionRemSet::print_static_mem_size(out);
+    G1HeapRegionRemSet::print_static_mem_size(out);
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
     g1h->card_set_freelist_pool()->print_on(out);
 
     // Code root statistics
-    HeapRegionRemSet* max_code_root_rem_set = max_code_root_mem_sz_region()->rem_set();
+    G1HeapRegionRemSet* max_code_root_rem_set = max_code_root_mem_sz_region()->rem_set();
     out->print_cr("  Total heap region code root sets sizes = " SIZE_FORMAT "%s."
                   "  Max = " SIZE_FORMAT "%s.",
                   byte_size_in_proper_unit(total_code_root_mem_sz()),
                   proper_unit_for_byte_size(total_code_root_mem_sz()),
                   byte_size_in_proper_unit(max_code_root_rem_set->code_roots_mem_size()),
                   proper_unit_for_byte_size(max_code_root_rem_set->code_roots_mem_size()));
-    for (RegionTypeCounter** current = &counters[0]; *current != NULL; current++) {
+    for (RegionTypeCounter** current = &counters[0]; *current != nullptr; current++) {
       (*current)->print_code_root_mem_info_on(out, total_code_root_mem_sz());
     }
 
     out->print_cr("    " SIZE_FORMAT " code roots represented.",
                   total_code_root_elems());
-    for (RegionTypeCounter** current = &counters[0]; *current != NULL; current++) {
+    for (RegionTypeCounter** current = &counters[0]; *current != nullptr; current++) {
       (*current)->print_code_root_elems_info_on(out, total_code_root_elems());
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,10 +39,10 @@ import java.util.stream.Stream;
 import static java.lang.constant.ConstantDescs.CD_Class;
 import static java.lang.constant.ConstantDescs.CD_VarHandle;
 import static java.lang.constant.ConstantDescs.DEFAULT_NAME;
-import static java.lang.constant.ConstantUtils.EMPTY_CONSTANTDESC;
-import static java.lang.constant.ConstantUtils.validateMemberName;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
+import static jdk.internal.constant.ConstantUtils.EMPTY_CONSTANTDESC;
+import static jdk.internal.constant.ConstantUtils.validateMemberName;
 
 /**
  * A <a href="package-summary.html#nominal">nominal descriptor</a> for a
@@ -87,12 +87,9 @@ public abstract non-sealed class DynamicConstantDesc<T>
                                   ClassDesc constantType,
                                   ConstantDesc... bootstrapArgs) {
         this.bootstrapMethod = requireNonNull(bootstrapMethod);
-        this.constantName = validateMemberName(requireNonNull(constantName), true);
+        this.constantName = validateMemberName(constantName, true);
         this.constantType = requireNonNull(constantType);
-        this.bootstrapArgs = requireNonNull(bootstrapArgs).clone();
-
-        if (constantName.length() == 0)
-            throw new IllegalArgumentException("Illegal invocation name: " + constantName);
+        this.bootstrapArgs = bootstrapArgs.length == 0 ? EMPTY_CONSTANTDESC : bootstrapArgs.clone();
     }
 
     /**
@@ -252,7 +249,7 @@ public abstract non-sealed class DynamicConstantDesc<T>
     @SuppressWarnings("unchecked")
     public T resolveConstantDesc(MethodHandles.Lookup lookup) throws ReflectiveOperationException {
         try {
-            MethodHandle bsm = (MethodHandle) bootstrapMethod.resolveConstantDesc(lookup);
+            MethodHandle bsm = bootstrapMethod.resolveConstantDesc(lookup);
             if (bsm.type().parameterCount() < 2 ||
                 !MethodHandles.Lookup.class.isAssignableFrom(bsm.type().parameterType(0))) {
                 throw new BootstrapMethodError(

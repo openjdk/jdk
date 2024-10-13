@@ -38,7 +38,7 @@ public class VerifiedReference {
      * @param valid Whether this Reference was successfully validated or not
      * @param uri The URI of this Reference
      * @param manifestReferences If this reference is a reference to a Manifest, this holds the list
-     * of verified referenes associated with this Manifest
+     * of verified references associated with this Manifest
      */
     public VerifiedReference(boolean valid, String uri, List<VerifiedReference> manifestReferences) {
         this.valid = valid;

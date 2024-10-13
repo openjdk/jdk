@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,6 +103,7 @@ public class Security {
     static String httproot, fileuri, fileroot, redirectroot;
     static List<HttpClient> clients = new LinkedList<>();
     static URI uri;
+    static String serverAuthority;
 
     interface ThrowingRunnable { void run() throws Throwable; }
 
@@ -201,56 +202,56 @@ public class Security {
         return new TestAndResult[] {
             // (0) policy does not have permission for file. Should fail
             TestAndResult.of(true, () -> { // Policy 0
-                URI u = URI.create("http://localhost:" + port + "/files/foo.txt");
+                URI u = URI.create("http://" + serverAuthority + "/files/foo.txt");
                 HttpRequest request = HttpRequest.newBuilder(u).GET().build();
                 HttpResponse<?> response = client.send(request, ofString());
                 System.out.println("Received response:" + response);
             }),
             // (1) policy has permission for file URL
             TestAndResult.of(false, () -> { //Policy 1
-                URI u = URI.create("http://localhost:" + port + "/files/foo.txt");
+                URI u = URI.create("http://" + serverAuthority + "/files/foo.txt");
                 HttpRequest request = HttpRequest.newBuilder(u).GET().build();
                 HttpResponse<?> response = client.send(request, ofString());
                 System.out.println("Received response:" + response);
             }),
             // (2) policy has permission for all file URLs under /files
             TestAndResult.of(false, () -> { // Policy 2
-                URI u = URI.create("http://localhost:" + port + "/files/foo.txt");
+                URI u = URI.create("http://" + serverAuthority + "/files/foo.txt");
                 HttpRequest request = HttpRequest.newBuilder(u).GET().build();
                 HttpResponse<?> response = client.send(request, ofString());
                 System.out.println("Received response:" + response);
             }),
             // (3) policy has permission for first URL but not redirected URL
             TestAndResult.of(true, () -> { // Policy 3
-                URI u = URI.create("http://localhost:" + port + "/redirect/foo.txt");
+                URI u = URI.create("http://" + serverAuthority + "/redirect/foo.txt");
                 HttpRequest request = HttpRequest.newBuilder(u).GET().build();
                 HttpResponse<?> response = client.send(request, ofString());
                 System.out.println("Received response:" + response);
             }),
             // (4) policy has permission for both first URL and redirected URL
             TestAndResult.of(false, () -> { // Policy 4
-                URI u = URI.create("http://localhost:" + port + "/redirect/foo.txt");
+                URI u = URI.create("http://" + serverAuthority + "/redirect/foo.txt");
                 HttpRequest request = HttpRequest.newBuilder(u).GET().build();
                 HttpResponse<?> response = client.send(request, ofString());
                 System.out.println("Received response:" + response);
             }),
             // (5) policy has permission for redirected but not first URL
             TestAndResult.of(true, () -> { // Policy 5
-                URI u = URI.create("http://localhost:" + port + "/redirect/foo.txt");
+                URI u = URI.create("http://" + serverAuthority + "/redirect/foo.txt");
                 HttpRequest request = HttpRequest.newBuilder(u).GET().build();
                 HttpResponse<?> response = client.send(request, ofString());
                 System.out.println("Received response:" + response);
             }),
             // (6) policy has permission for file URL, but not method
             TestAndResult.of(true, () -> { //Policy 6
-                URI u = URI.create("http://localhost:" + port + "/files/foo.txt");
+                URI u = URI.create("http://" + serverAuthority + "/files/foo.txt");
                 HttpRequest request = HttpRequest.newBuilder(u).GET().build();
                 HttpResponse<?> response = client.send(request, ofString());
                 System.out.println("Received response:" + response);
             }),
             // (7) policy has permission for file URL, method, but not header
             TestAndResult.of(true, () -> { //Policy 7
-                URI u = URI.create("http://localhost:" + port + "/files/foo.txt");
+                URI u = URI.create("http://" + serverAuthority + "/files/foo.txt");
                 HttpRequest request = HttpRequest.newBuilder(u)
                                                  .header("X-Foo", "bar")
                                                  .GET()
@@ -260,7 +261,7 @@ public class Security {
             }),
             // (8) policy has permission for file URL, method and header
             TestAndResult.of(false, () -> { //Policy 8
-                URI u = URI.create("http://localhost:" + port + "/files/foo.txt");
+                URI u = URI.create("http://" + serverAuthority + "/files/foo.txt");
                 HttpRequest request = HttpRequest.newBuilder(u)
                                                  .header("X-Foo", "bar")
                                                  .GET()
@@ -270,7 +271,7 @@ public class Security {
             }),
             // (9) policy has permission for file URL, method and header
             TestAndResult.of(false, () -> { //Policy 9
-                URI u = URI.create("http://localhost:" + port + "/files/foo.txt");
+                URI u = URI.create("http://" + serverAuthority + "/files/foo.txt");
                 HttpRequest request = HttpRequest.newBuilder(u)
                                                  .headers("X-Foo", "bar", "X-Bar", "foo")
                                                  .GET()
@@ -292,7 +293,7 @@ public class Security {
             }),
             // (13) async version of test 0
             TestAndResult.of(true, () -> { // Policy 0
-                URI u = URI.create("http://localhost:" + port + "/files/foo.txt");
+                URI u = URI.create("http://" + serverAuthority + "/files/foo.txt");
                 HttpRequest request = HttpRequest.newBuilder(u).GET().build();
                 try {
                     HttpResponse<?> response = client.sendAsync(request, ofString()).get();
@@ -307,14 +308,14 @@ public class Security {
             }),
             // (14) async version of test 1
             TestAndResult.of(false, () -> { //Policy 1
-                URI u = URI.create("http://localhost:" + port + "/files/foo.txt");
+                URI u = URI.create("http://" + serverAuthority + "/files/foo.txt");
                 HttpRequest request = HttpRequest.newBuilder(u).GET().build();
                 try {
                     HttpResponse<?> response = client.sendAsync(request, ofString()).get();
                     System.out.println("Received response:" + response);
                 } catch (ExecutionException e) {
-                    if (e.getCause() instanceof SecurityException) {
-                        throw (SecurityException)e.getCause();
+                    if (e.getCause() instanceof SecurityException se) {
+                        throw se;
                     } else {
                         throw new RuntimeException(e);
                     }
@@ -323,7 +324,7 @@ public class Security {
             // (15) check that user provided unprivileged code running on a worker
             //      thread does not gain ungranted privileges.
             TestAndResult.of(true, () -> { //Policy 12
-                URI u = URI.create("http://localhost:" + port + "/files/foo.txt");
+                URI u = URI.create("http://" + serverAuthority + "/files/foo.txt");
                 HttpRequest request = HttpRequest.newBuilder(u).GET().build();
                 HttpResponse.BodyHandler<String> sth = ofString();
 
@@ -369,18 +370,18 @@ public class Security {
                     System.out.println("Received response:" + response);
                 } catch (CompletionException e) {
                     Throwable t = e.getCause();
-                    if (t instanceof SecurityException)
-                        throw (SecurityException)t;
+                    if (t instanceof SecurityException se)
+                        throw se;
                     else if ((t instanceof IOException)
-                              && (t.getCause() instanceof SecurityException))
-                        throw ((SecurityException)t.getCause());
+                              && (t.getCause() instanceof SecurityException se))
+                        throw se;
                     else
                         throw new RuntimeException(t);
                 }
             }),
             // (16) allowed to set Host header but does not have permission
             TestAndResult.of(true, () -> { //Policy 16
-                URI u = URI.create("http://localhost:" + port + "/files/foo.txt");
+                URI u = URI.create("http://" + serverAuthority + "/files/foo.txt");
                 HttpRequest request = HttpRequest.newBuilder(u)
                         .header("Host", "foohost:123")
                         .GET().build();
@@ -389,7 +390,7 @@ public class Security {
             }),
             // (17) allowed to set Host header and does have permission
             TestAndResult.of(false, () -> { //Policy 17
-                URI u = URI.create("http://localhost:" + port + "/files/foo.txt");
+                URI u = URI.create("http://" + serverAuthority + "/files/foo.txt");
                 HttpRequest request = HttpRequest.newBuilder(u)
                         .header("Host", "foohost:123")
                         .GET().build();
@@ -426,14 +427,13 @@ public class Security {
         }
         System.out.println("Proxy port, p:" + p);
 
-        InetSocketAddress addr = new InetSocketAddress(InetAddress.getLoopbackAddress(),
-                                                       p);
+        InetSocketAddress addr = new InetSocketAddress(InetAddress.getLoopbackAddress(), p);
         HttpClient cl = HttpClient.newBuilder()
                                     .proxy(ProxySelector.of(addr))
                                     .build();
         clients.add(cl);
 
-        URI u = URI.create("http://localhost:" + port + "/files/foo.txt");
+        URI u = URI.create("http://" + serverAuthority + "/files/foo.txt");
         HttpRequest request = HttpRequest.newBuilder(u)
                                          .headers("X-Foo", "bar", "X-Bar", "foo")
                                          .build();
@@ -498,11 +498,18 @@ public class Security {
                 throw new RuntimeException("Error wrong port");
             System.out.println("Port was assigned by Driver");
         }
-        System.out.println("HTTP server port = " + port);
-        httproot = "http://localhost:" + port + "/files/";
-        redirectroot = "http://localhost:" + port + "/redirect/";
+        serverAuthority = makeServerAuthority(addr.getAddress().getHostAddress(), port);
+        System.out.println("HTTP server started at " + serverAuthority);
+        httproot = "http://" + serverAuthority + "/files/";
+        redirectroot = "http://" + serverAuthority + "/redirect/";
         uri = new URI(httproot);
         fileuri = httproot + "foo.txt";
+    }
+
+    private static String makeServerAuthority(final String host, final int port) {
+        // escape for ipv6
+        final String h = host.contains(":") ? "[" + host + "]" : host;
+        return h + ":" + port;
     }
 
     static class RedirectHandler implements HttpHandler {

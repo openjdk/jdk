@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,9 @@ package sun.security.pkcs11;
 
 import java.lang.ref.Cleaner;
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.Charset;
 import java.security.*;
 
 import sun.security.pkcs11.wrapper.PKCS11Exception;
@@ -49,6 +52,46 @@ public final class P11Util {
 
     private P11Util() {
         // empty
+    }
+
+    static boolean isNSS(Token token) {
+        char[] tokenLabel = token.tokenInfo.label;
+        if (tokenLabel != null && tokenLabel.length >= 3) {
+            return (tokenLabel[0] == 'N' && tokenLabel[1] == 'S'
+                    && tokenLabel[2] == 'S');
+        }
+        return false;
+    }
+
+    static char[] encodePassword(char[] password, Charset cs,
+            int nullTermBytes) {
+        /*
+         * When a Java char (2 bytes) is converted to CK_UTF8CHAR (1 byte) for
+         * a PKCS #11 (native) call, the high-order byte is discarded (see
+         * jCharArrayToCKUTF8CharArray in p11_util.c). In order to have an
+         * encoded string passed to C_GenerateKey, we need to account for
+         * truncation and expand beforehand: high and low parts of each char
+         * are split into 2 chars. As an example, this is the transformation
+         * for a NULL terminated password "a" that has to be encoded in
+         * UTF-16 BE:
+         *     char[] password       => [    0x0061,         0x0000    ]
+         *                                   /    \          /    \
+         * ByteBuffer passwordBytes  => [ 0x00,   0x61,   0x00,   0x00 ]
+         *                                  |       |       |       |
+         *     char[] encPassword    => [0x0000, 0x0061, 0x0000, 0x0000]
+         *                                  |       |       |       |
+         *     PKCS #11 call (bytes) => [ 0x00,   0x61,   0x00,   0x00 ]
+         */
+        ByteBuffer passwordBytes = cs.encode(CharBuffer.wrap(password));
+        char[] encPassword =
+                new char[passwordBytes.remaining() + nullTermBytes];
+        int i = 0;
+        while (passwordBytes.hasRemaining()) {
+            encPassword[i] = (char) (passwordBytes.get() & 0xFF);
+            // Erase password bytes as we read during encoding.
+            passwordBytes.put(i++, (byte) 0);
+        }
+        return encPassword;
     }
 
     static Provider getSunProvider() {

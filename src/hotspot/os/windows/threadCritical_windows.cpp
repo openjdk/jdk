@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,8 @@ ThreadCritical::ThreadCritical() {
   if (lock_owner != current_thread) {
     // Grab the lock before doing anything.
     DWORD ret = WaitForSingleObject(lock_event,  INFINITE);
-    assert(ret == WAIT_OBJECT_0, "unexpected return value from WaitForSingleObject");
+    assert(ret != WAIT_FAILED,   "WaitForSingleObject failed with error code: %lu", GetLastError());
+    assert(ret == WAIT_OBJECT_0, "WaitForSingleObject failed with return value: %lu", ret);
     lock_owner = current_thread;
   }
   // Atomicity isn't required. Bump the recursion count.

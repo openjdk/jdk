@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2024 Unicode, Inc.
+For terms of use, see http://www.unicode.org/copyright.html
+SPDX-License-Identifier: Unicode-3.0
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+-->
+<ldml>
+	<identity>
+		<version number="$Revision$"/>
+		<language type="blt"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="blt">ꪼꪕꪒꪾ</language>
+		</languages>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters draft="unconfirmed">[꪿ ꫁ ꫝ ꪀ ꪁ ꪄ ꪅ ꪆ ꪇ ꪈ ꪉ ꪊ ꪋ ꪎ ꪏ ꪐ ꪑ ꪒ ꪓ ꪔ ꪕ ꪖ ꪗ ꪘ ꪙ ꪚ ꪛ ꪜ ꪝ ꪠ ꪡ ꪢ ꪣ ꪤ ꪥ ꪦ ꪧ ꪨ ꪩ ꪪ ꪫ ꪬ ꪭ ꪮ ꪯ ꪰ ꪱ ꪲ ꪳ ꪴ ꪵ ꪶ ꪷ ꪸ ꪹ ꪺ ꪻ ꪼ ꪽ ꪾ ꫀ ꫂ ꫛ ꫜ]</exemplarCharacters>
+		<exemplarCharacters type="punctuation" draft="unconfirmed">[. ꫞ ꫟]</exemplarCharacters>
+	</characters>
+</ldml>

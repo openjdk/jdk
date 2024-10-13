@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,7 @@ public class TestDestState {
         Asserts.assertTrue(Files.exists(runningDest), "No recording file: " + runningDest);
         List<RecordedEvent> events = RecordingFile.readAllEvents(runningDest);
         Asserts.assertFalse(events.isEmpty(), "No event found");
-        System.out.printf("Found event %s%n", events.get(0).getEventType().getName());
+        System.out.printf("Found event %s%n", events.getFirst().getEventType().getName());
         r.close();
     }
 

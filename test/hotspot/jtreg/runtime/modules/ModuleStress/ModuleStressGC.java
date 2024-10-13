@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,7 +72,7 @@ public class ModuleStressGC {
         // Check that jdk.test/test.MainGC walks module jdk.test's
         // reads list and walks the exports list for package test,
         // defined in module jdk.test, during a GC.
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-Xmx128m",
             "-Xlog:module=trace",
             "-p", MODS_DIR.toString(),

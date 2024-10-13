@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,11 @@
  */
 package jdk.internal.classfile.impl;
 
-import java.util.Optional;
 import java.util.function.Consumer;
 
-import jdk.internal.classfile.FieldBuilder;
-import jdk.internal.classfile.FieldElement;
-import jdk.internal.classfile.FieldModel;
-import jdk.internal.classfile.constantpool.ConstantPoolBuilder;
+import java.lang.classfile.FieldBuilder;
+import java.lang.classfile.FieldElement;
+import java.lang.classfile.constantpool.ConstantPoolBuilder;
 
 public final class ChainedFieldBuilder implements FieldBuilder {
     private final TerminalFieldBuilder terminal;
@@ -48,11 +46,6 @@ public final class ChainedFieldBuilder implements FieldBuilder {
     @Override
     public ConstantPoolBuilder constantPool() {
         return terminal.constantPool();
-    }
-
-    @Override
-    public Optional<FieldModel> original() {
-        return terminal.original();
     }
 
     @Override

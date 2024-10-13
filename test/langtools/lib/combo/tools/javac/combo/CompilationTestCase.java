@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,29 +31,13 @@ import java.util.stream.IntStream;
 
 import javax.tools.Diagnostic;
 
-import org.testng.ITestResult;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.Test;
-
-import static java.util.stream.Collectors.toList;
-
 /**
  * Base class for negative and positive compilation tests.
  */
-@Test
 public class CompilationTestCase extends JavacTemplateTestBase {
-    private String[] compileOptions = new String[] { };
+    private String[] compileOptions = new String[]{};
     private String defaultFileName = "Source.java";
     private String programShell = "#";
-
-    @AfterMethod
-    public void dumpTemplateIfError(ITestResult result) {
-        // Make sure offending template ends up in log file on failure
-        if (!result.isSuccess()) {
-            System.err.printf("Diagnostics: %s%nTemplate: %s%n", diags.errorKeys(),
-                              sourceFiles.stream().map(p -> p.snd).collect(toList()));
-        }
-    }
 
     protected void setProgramShell(String shell) {
         programShell = shell;
@@ -81,7 +65,7 @@ public class CompilationTestCase extends JavacTemplateTestBase {
             throw new AssertionError("unexpected negative value " + i);
         }
         if (i >= compileOptions.length) {
-            compileOptions = new String[] {};
+            compileOptions = new String[]{};
         } else {
             compileOptions = Arrays.copyOf(compileOptions, compileOptions.length - i);
         }
@@ -105,8 +89,7 @@ public class CompilationTestCase extends JavacTemplateTestBase {
         File dir = null;
         try {
             dir = compile(generate);
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
         postTest.run();

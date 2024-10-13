@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,12 +30,13 @@ import java.security.SecureRandom;
 import java.util.Objects;
 import java.util.concurrent.ThreadLocalRandom;
 import jdk.internal.util.random.RandomSupport;
-import jdk.internal.util.random.RandomSupport.*;
 
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
+
+import static java.lang.Math.*;
 
 /**
  * The {@link RandomGenerator} interface is designed to provide a common
@@ -250,6 +251,174 @@ public interface RandomGenerator {
         RandomSupport.checkRange(randomNumberOrigin, randomNumberBound);
 
         return doubles(randomNumberOrigin, randomNumberBound).limit(streamSize);
+    }
+
+    /**
+     * Returns an effectively unlimited stream of pseudorandomly chosen
+     * {@code double} values, where each value is between the specified
+     * {@code left} boundary and the specified {@code right} boundary.
+     * The {@code left} boundary is included as indicated by
+     * {@code isLeftIncluded}; similarly, the {@code right} boundary is included
+     * as indicated by {@code isRightIncluded}.
+     *
+     * <p>The stream potentially produces all multiples <i>k</i> &delta;
+     * (<i>k</i> integer) lying in the interval specified by the parameters,
+     * where &delta; > 0 is the smallest number for which all these multiples
+     * are exact {@code double}s.
+     * They are therefore all equidistant.
+     * The uniformity of the distribution of the {@code double}s produced by
+     * the stream depends on the quality of the underlying {@link #nextLong(long)}.
+     *
+     * @implSpec The default implementation first determines the &delta; above.
+     * It then computes both the smallest integer <i>k</i><sub><i>l</i></sub>
+     * such that <i>k</i><sub><i>l</i></sub> &delta; lies <em>inside</em>
+     * the given interval, and the smallest integer <i>n</i> > 0 such that
+     * (<i>k</i><sub><i>l</i></sub> + <i>n</i>) &delta; lies
+     * <em>outside</em> the interval.
+     * Finally, it returns a stream which generates the {@code double}s
+     * according to (<i>k</i><sub><i>l</i></sub> + {@code nextLong(}<i>n</i>{@code )})
+     * &delta;.
+     * The stream never produces {@code -0.0}, although it may produce
+     * {@code 0.0} if the specified interval contains 0.
+     *
+     * @param left the left boundary
+     * @param right the right boundary
+     * @param isLeftIncluded whether the {@code left} boundary is included
+     * @param isRightIncluded whether the {@code right} boundary is included
+     *
+     * @return a stream of pseudorandomly chosen {@code double} values, each
+     *         between {@code left} and {@code right}, as specified above.
+     *
+     * @throws IllegalArgumentException if {@code left} is not finite,
+     *         or {@code right} is not finite, or if the specified interval
+     *         is empty.
+     *
+     * @since 22
+     */
+    default DoubleStream equiDoubles(double left, double right,
+        boolean isLeftIncluded, boolean isRightIncluded) {
+        if (!(Double.NEGATIVE_INFINITY < left
+                && right < Double.POSITIVE_INFINITY
+                && (isLeftIncluded ? left : nextUp(left))
+                    <= (isRightIncluded ? right : nextDown(right)))) {
+            throw new IllegalArgumentException(
+                    "the boundaries must be finite and the interval must not be empty");
+        }
+
+        /*
+         * Inspired by
+         *      Goualard, "Drawing random floating-point numbers from an
+         *      interval", ACM TOMACS, 2022, 32 (3)
+         *      (https://hal.science/hal-03282794v4)
+         * although implemented differently.
+         *
+         * It is assumed that left <= right.
+         * Whether the boundaries of the interval I = <left, right> are included
+         * is indicated by isLeftIncluded and isRightIncluded.
+         *
+         * delta > 0 is the smallest double such that every product k delta
+         * (k integer) that lies in I is an exact double as well.
+         * It turns out that delta is always a power of 2.
+         *
+         * kl is the smallest k such that k delta is inside I.
+         * kr > kl is the smallest k such that k delta is outside I.
+         * n is kr - kl
+         */
+        double delta;  // captured
+        long kl;  // captured
+        long kr;
+        long n;  // captured
+
+        if (left <= -right) {
+            /*
+             * Here,
+             *      left <= 0,      left <= right <= -left
+             *      P = Double.PRECISION
+             *
+             * delta is the distance from left to the next double in the
+             * direction of positive infinity.
+             * Most of the time, this is equivalent to the ulp of left, but not
+             * always.
+             * For example, for left == -1.0, Math.ulp(left) == 2.220446049250313E-16,
+             * whereas delta as computed here is 1.1102230246251565E-16.
+             *
+             * Every product k delta lying in [left, -left] is an exact double.
+             * Thus, every product k delta lying in I is an exact double, too.
+             * Any other positive eps < delta does not meet this property:
+             * some product k eps lying in I is not an exact double.
+             * On the other hand, any other eps > delta would generate more
+             * sparse products k eps, that is, fewer doubles in I.
+             * delta is therefore the best value to ensure the largest number
+             * of equidistant doubles in the interval I.
+             *
+             * left / delta is an exact double and an exact integer with
+             *      -2^P <= left / delta <= 0
+             * Thus, kl is computed exactly.
+             *
+             * Mathematically,
+             *      kr = ceil(right / delta),           if !isRightIncluded
+             *      kr = floor(right / delta) + 1,      if isRightIncluded
+             * The double division rd = right / delta never overflows and is
+             * exact, except in the presence of underflows. But even underflows
+             * do not affect the outcomes of ceil() and floor(), except,
+             * in turn, when the result drops to 0, that is, rd = 0.
+             *
+             * crd is a corrected version of rd when rd is zero. It is simply
+             * right / delta, but rounded away from 0 to preserve information
+             * ensuring correct outcomes in ceil() and floor().
+             *
+             * We know that -2^P <= kl, so
+             *      -2^P <= kl + nextLong(n)
+             * Also, since right <= -left, we know that
+             *      kr <= -kl + 1
+             * so that
+             *      0 < n <= -2 kl + 1
+             * This implies
+             *      kl + nextLong(n) <= kl + (-2 kl) = -kl <= 2^P
+             * and thus
+             *      -2^P <= kl + nextLong(n) <= 2^P
+             * which shows that kl + nextLong(n) can be cast exactly to double.
+             *
+             * Further, if isLeftIncluded then left = kl delta, so that we get
+             *      left = kl * delta <= (kl + nextLong(n)) * delta
+             * For any other k < kl, when nextLong(n) = 0 we would have
+             *      (k + nextLong(n)) * delta < left
+             * Otherwise, left = (kl - 1) delta, and therefore
+             *      left = (kl - 1) * delta < (kl + nextLong(n)) * delta
+             * For any other k < kl, when nextLong(n) = 0 we would get
+             *      (k + nextLong(n)) * delta <= left
+             * Either way, the lhs expression would not belong to I.
+             * That is, kl is the smallest integer such that kl delta always
+             * lies in I (it is an exact double).
+             *
+             * Similar considerations show that kr is the smallest integer such
+             * that kr delta lies to the right of I (it is an exact double).
+             *
+             * All the above means that (kl + nextLong(n)) * delta is an exact
+             * double lying in I and that kl and kr, thus n, are the best
+             * possible choices to ensure the largest number of equidistant
+             * doubles in I. Uniform distribution relies on the guarantee
+             * afforded by nextLong().
+             */
+            delta = nextUp(left) - left;
+            double rd = right / delta;
+            double crd = rd != 0 || right == 0 ? rd : copySign(Double.MIN_VALUE, right);
+            kr = isRightIncluded ? (long) floor(crd) + 1 : (long) ceil(crd);
+            kl = (long) (left / delta) + (isLeftIncluded ? 0 : 1);
+        } else {
+            /* Here,
+             *      right > 0,      -right < left <= right
+             *
+             * Considerations similar to the ones above apply here as well.
+             */
+            delta = right - nextDown(right);
+            double ld = left / delta;
+            double cld = ld != 0 || left == 0 ? ld : copySign(Double.MIN_VALUE, left);
+            kl = isLeftIncluded ? (long) ceil(cld) : (long) floor(cld) + 1;
+            kr = (long) (right / delta) + (isRightIncluded ? 1 : 0);
+        }
+        n = kr - kl;
+        return DoubleStream.generate(() -> (kl + nextLong(n)) * delta).sequential();
     }
 
     /**
@@ -640,12 +809,11 @@ public interface RandomGenerator {
      *
      * @throws IllegalArgumentException if {@code bound} is not positive
      *
-     * @implSpec The default implementation checks that {@code bound} is a
-     * positive {@code int}. Then invokes {@code nextInt()}, limiting the result
-     * to be greater than or equal zero and less than {@code bound}. If {@code bound}
-     * is a power of two then limiting is a simple masking operation. Otherwise,
-     * the result is re-calculated by invoking {@code nextInt()} until the
-     * result is greater than or equal zero and less than {@code bound}.
+     * @implSpec The default implementation checks that {@code bound} is positive.
+     * It then invokes {@link #nextInt()} one or more times to ensure a uniform
+     * distribution in the range 0 (inclusive)
+     * to {@code bound} (exclusive).
+     * It assumes the distribution of {@link #nextInt()} to be uniform.
      */
     default int nextInt(int bound) {
         RandomSupport.checkBound(bound);
@@ -666,13 +834,12 @@ public interface RandomGenerator {
      * @throws IllegalArgumentException if {@code origin} is greater than
      *         or equal to {@code bound}
      *
-     * @implSpec The default implementation checks that {@code origin} and
-     * {@code bound} are positive {@code ints}. Then invokes {@code nextInt()},
-     * limiting the result to be greater that or equal {@code origin} and less
-     * than {@code bound}. If {@code bound} is a power of two then limiting is a
-     * simple masking operation. Otherwise, the result is re-calculated  by
-     * invoking {@code nextInt()} until the result is greater than or equal
-     * {@code origin} and less than {@code bound}.
+     * @implSpec The default implementation checks that {@code origin}
+     * is less than {@code bound}.
+     * It then invokes {@link #nextInt()} one or more times to ensure a uniform
+     * distribution in the range {@code origin} (inclusive)
+     * to {@code bound} (exclusive).
+     * It assumes the distribution of {@link #nextInt()} to be uniform.
      */
     default int nextInt(int origin, int bound) {
         RandomSupport.checkRange(origin, bound);
@@ -699,13 +866,11 @@ public interface RandomGenerator {
      *
      * @throws IllegalArgumentException if {@code bound} is not positive
      *
-     * @implSpec The default implementation checks that {@code bound} is a
-     * positive  {@code long}. Then invokes {@code nextLong()}, limiting the
-     * result to be greater than or equal zero and less than {@code bound}. If
-     * {@code bound} is a power of two then limiting is a simple masking
-     * operation. Otherwise, the result is re-calculated by invoking
-     * {@code nextLong()} until the result is greater than or equal zero and
-     * less than {@code bound}.
+     * @implSpec The default implementation checks that {@code bound} is positive.
+     * It then invokes {@link #nextLong()} one or more times to ensure a uniform
+     * distribution in the range 0 (inclusive)
+     * to {@code bound} (exclusive).
+     * It assumes the distribution of {@link #nextLong()} to be uniform.
      */
     default long nextLong(long bound) {
         RandomSupport.checkBound(bound);
@@ -726,13 +891,12 @@ public interface RandomGenerator {
      * @throws IllegalArgumentException if {@code origin} is greater than
      *         or equal to {@code bound}
      *
-     * @implSpec The default implementation checks that {@code origin} and
-     * {@code bound} are positive {@code longs}. Then invokes {@code nextLong()},
-     * limiting the result to be greater than or equal {@code origin} and less
-     * than {@code bound}. If {@code bound} is a power of two then limiting is a
-     * simple masking operation. Otherwise, the result is re-calculated by
-     * invoking {@code nextLong()} until the result is greater than or equal
-     * {@code origin} and less than {@code bound}.
+     * @implSpec The default implementation checks that {@code origin}
+     * is less than {@code bound}.
+     * It then invokes {@link #nextLong()} one or more times to ensure a uniform
+     * distribution in the range {@code origin} (inclusive)
+     * to {@code bound} (exclusive).
+     * It assumes the distribution of {@link #nextLong()} to be uniform.
      */
     default long nextLong(long origin, long bound) {
         RandomSupport.checkRange(origin, bound);

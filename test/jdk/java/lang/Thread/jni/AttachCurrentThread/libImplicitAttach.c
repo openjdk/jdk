@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,15 +20,18 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-#include <stdio.h>
+
 #include <pthread.h>
+#include <stdio.h>
+
+#include "export.h"
 
 #define STACK_SIZE 0x100000
 
 /**
  * Creates n threads to execute the given function.
  */
-void start_threads(int n, void *(*f)(void *)) {
+EXPORT void start_threads(int n, void *(*f)(void *)) {
     pthread_t tid;
     pthread_attr_t attr;
     int i;

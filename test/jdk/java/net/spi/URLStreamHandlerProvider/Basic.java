@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,8 @@ import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.StandardLocation;
 import javax.tools.ToolProvider;
+
+import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.util.FileUtils;
 import jdk.test.lib.JDKToolFinder;
 import static java.lang.String.format;
@@ -234,12 +236,8 @@ public class Basic {
 
     static Result java(List<String> sysProps, Collection<Path> classpath,
                        String classname, String arg) {
-        String java = getJDKTool("java");
 
-        List<String> commands = new ArrayList<>();
-        commands.add(java);
-        for (String prop : sysProps)
-            commands.add(prop);
+        List<String> commands = new ArrayList<>(sysProps);
 
         String cp = classpath.stream()
                 .map(Path::toString)
@@ -249,7 +247,7 @@ public class Basic {
         commands.add(classname);
         commands.add(arg);
 
-        return run(new ProcessBuilder(commands));
+        return run(ProcessTools.createTestJavaProcessBuilder(commands));
     }
 
     static Result run(ProcessBuilder pb) {

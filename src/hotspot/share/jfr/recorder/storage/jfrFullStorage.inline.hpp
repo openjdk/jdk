@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@
 
 template <typename ValueType, template <typename> class NodeType, typename AllocPolicy>
 JfrFullStorage<ValueType, NodeType, AllocPolicy>
-::JfrFullStorage(JfrStorageControl& control) : _control(control), _free_node_list(NULL), _queue(NULL) {}
+::JfrFullStorage(JfrStorageControl& control) : _control(control), _free_node_list(nullptr), _queue(nullptr) {}
 
 template <typename ValueType, template <typename> class NodeType, typename AllocPolicy>
 JfrFullStorage<ValueType, NodeType, AllocPolicy>::~JfrFullStorage() {
@@ -52,21 +52,21 @@ JfrFullStorage<ValueType, NodeType, AllocPolicy>::~JfrFullStorage() {
 
 template <typename ValueType, template <typename> class NodeType, typename AllocPolicy>
 bool JfrFullStorage<ValueType, NodeType, AllocPolicy>::initialize(size_t free_list_prealloc_count) {
-  assert(_free_node_list == NULL, "invariant");
+  assert(_free_node_list == nullptr, "invariant");
   _free_node_list = new JfrConcurrentQueue<Node>();
-  if (_free_node_list == NULL || !_free_node_list->initialize()) {
+  if (_free_node_list == nullptr || !_free_node_list->initialize()) {
     return false;
   }
   for (size_t i = 0; i < free_list_prealloc_count; ++i) {
     NodePtr node = new Node();
-    if (node == NULL) {
+    if (node == nullptr) {
       return false;
     }
     _free_node_list->add(node);
   }
-  assert(_queue == NULL, "invariant");
+  assert(_queue == nullptr, "invariant");
   _queue = new JfrConcurrentQueue<Node>();
-  return _queue != NULL && _queue->initialize();
+  return _queue != nullptr && _queue->initialize();
 }
 
 template <typename ValueType, template <typename> class NodeType, typename AllocPolicy>
@@ -83,21 +83,21 @@ template <typename ValueType, template <typename> class NodeType, typename Alloc
 inline typename JfrFullStorage<ValueType, NodeType, AllocPolicy>::NodePtr
 JfrFullStorage<ValueType, NodeType, AllocPolicy>::acquire() {
   NodePtr node = _free_node_list->remove();
-  return node != NULL ? node : new Node();
+  return node != nullptr ? node : new Node();
 }
 
 template <typename ValueType, template <typename> class NodeType, typename AllocPolicy>
 inline void JfrFullStorage<ValueType, NodeType, AllocPolicy>
 ::release(typename JfrFullStorage<ValueType, NodeType, AllocPolicy>::NodePtr node) {
-  assert(node != NULL, "invariant");
+  assert(node != nullptr, "invariant");
   _free_node_list->add(node);
 }
 
 template <typename ValueType, template <typename> class NodeType, typename AllocPolicy>
 inline bool JfrFullStorage<ValueType, NodeType, AllocPolicy>::add(ValueType value) {
-  assert(value != NULL, "invariant");
+  assert(value != nullptr, "invariant");
   NodePtr node = acquire();
-  assert(node != NULL, "invariant");
+  assert(node != nullptr, "invariant");
   node->set_value(value);
   const bool notify = _control.increment_full();
   _queue->add(node);
@@ -106,9 +106,9 @@ inline bool JfrFullStorage<ValueType, NodeType, AllocPolicy>::add(ValueType valu
 
 template <typename ValueType, template <typename> class NodeType, typename AllocPolicy>
 inline ValueType JfrFullStorage<ValueType, NodeType, AllocPolicy>::remove() {
-  Value value = NULL;
+  Value value = nullptr;
   NodePtr node = _queue->remove();
-  if (node != NULL) {
+  if (node != nullptr) {
     _control.decrement_full();
     value = node->value();
     release(node);

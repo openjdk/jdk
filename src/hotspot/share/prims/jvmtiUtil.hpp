@@ -50,9 +50,9 @@ public:
 
   static const char* error_name(int num)    { return _error_names[num]; }    // To Do: add range checking
 
-  static const bool has_event_capability(jvmtiEvent event_type, const jvmtiCapabilities* capabilities_ptr);
+  static bool has_event_capability(jvmtiEvent event_type, const jvmtiCapabilities* capabilities_ptr);
 
-  static const bool  event_threaded(int num) {
+  static bool  event_threaded(int num) {
     if (num >= JVMTI_MIN_EVENT_TYPE_VAL && num <= JVMTI_MAX_EVENT_TYPE_VAL) {
       return _event_threaded[num];
     }

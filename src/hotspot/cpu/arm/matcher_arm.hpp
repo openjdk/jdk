@@ -126,6 +126,11 @@
     return VM_Version::has_simd();
   }
 
+  // Does target support predicated operation emulation.
+  static bool supports_vector_predicate_op_emulation(int vopc, int vlen, BasicType bt) {
+    return false;
+  }
+
   // Does the CPU supports vector variable rotate instructions?
   static constexpr bool supports_vector_variable_rotates(void) {
     return false; // not supported
@@ -184,6 +189,11 @@
         return 30;
       }
     }
+  }
+
+  // Is SIMD sort supported for this CPU?
+  static bool supports_simd_sort(BasicType bt) {
+    return false;
   }
 
 #endif // CPU_ARM_MATCHER_ARM_HPP

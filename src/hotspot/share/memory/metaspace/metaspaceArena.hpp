@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -28,11 +28,8 @@
 
 #include "memory/allocation.hpp"
 #include "memory/metaspace.hpp"
-#include "memory/metaspace/chunkManager.hpp"
 #include "memory/metaspace/counters.hpp"
-#include "memory/metaspace/metachunk.hpp"
 #include "memory/metaspace/metachunkList.hpp"
-#include "memory/metaspace/metaspaceCommon.hpp"
 
 class outputStream;
 class Mutex;
@@ -40,6 +37,8 @@ class Mutex;
 namespace metaspace {
 
 class ArenaGrowthPolicy;
+class ChunkManager;
+class Metachunk;
 class FreeBlocks;
 
 struct ArenaStats;
@@ -76,14 +75,8 @@ struct ArenaStats;
 
 class MetaspaceArena : public CHeapObj<mtClass> {
 
-  // Reference to an outside lock to use for synchronizing access to this arena.
-  //  This lock is normally owned by the CLD which owns the ClassLoaderMetaspace which
-  //  owns this arena.
-  // Todo: This should be changed. Either the CLD should synchronize access to the
-  //       CLMS and its arenas itself, or the arena should have an own lock. The latter
-  //       would allow for more fine granular locking since it would allow access to
-  //       both class- and non-class arena in the CLMS independently.
-  Mutex* const _lock;
+  // Please note that access to a metaspace arena may be shared
+  // between threads and needs to be synchronized in CLMS.
 
   // Reference to the chunk manager to allocate chunks from.
   ChunkManager* const _chunk_manager;
@@ -107,28 +100,6 @@ class MetaspaceArena : public CHeapObj<mtClass> {
   // A name for purely debugging/logging purposes.
   const char* const _name;
 
-#ifdef ASSERT
-  // Allocation guards: When active, arena allocations are interleaved with
-  //  fence allocations. An overwritten fence indicates a buffer overrun in either
-  //  the preceding or the following user block. All fences are linked together;
-  //  validating the fences just means walking that linked list.
-  // Note that for the Arena, fence blocks are just another form of user blocks.
-  class Fence {
-    static const uintx EyeCatcher =
-      NOT_LP64(0x77698465) LP64_ONLY(0x7769846577698465ULL); // "META" resp "METAMETA"
-    // Two eyecatchers to easily spot a corrupted _next pointer
-    const uintx _eye1;
-    const Fence* const _next;
-    const uintx _eye2;
-  public:
-    Fence(const Fence* next) : _eye1(EyeCatcher), _next(next), _eye2(EyeCatcher) {}
-    const Fence* next() const { return _next; }
-    void verify() const;
-  };
-  const Fence* _first_fence;
-#endif // ASSERT
-
-  Mutex* lock() const                           { return _lock; }
   ChunkManager* chunk_manager() const           { return _chunk_manager; }
 
   // free block list
@@ -151,10 +122,6 @@ class MetaspaceArena : public CHeapObj<mtClass> {
   // On success, true is returned, false otherwise.
   bool attempt_enlarge_current_chunk(size_t requested_word_size);
 
-  // Prematurely returns a metaspace allocation to the _block_freelists
-  // because it is not needed anymore (requires CLD lock to be active).
-  void deallocate_locked(MetaWord* p, size_t word_size);
-
   // Returns true if the area indicated by pointer and size have actually been allocated
   // from this arena.
   DEBUG_ONLY(bool is_valid_area(MetaWord* p, size_t word_size) const;)
@@ -165,7 +132,7 @@ class MetaspaceArena : public CHeapObj<mtClass> {
 public:
 
   MetaspaceArena(ChunkManager* chunk_manager, const ArenaGrowthPolicy* growth_policy,
-                 Mutex* lock, SizeAtomicCounter* total_used_words_counter,
+                 SizeAtomicCounter* total_used_words_counter,
                  const char* name);
 
   ~MetaspaceArena();
@@ -190,11 +157,9 @@ public:
   void usage_numbers(size_t* p_used_words, size_t* p_committed_words, size_t* p_capacity_words) const;
 
   DEBUG_ONLY(void verify() const;)
-  DEBUG_ONLY(void verify_locked() const;)
   DEBUG_ONLY(void verify_allocation_guards() const;)
 
   void print_on(outputStream* st) const;
-  void print_on_locked(outputStream* st) const;
 
 };
 

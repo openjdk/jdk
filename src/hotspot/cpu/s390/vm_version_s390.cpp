@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -272,6 +272,13 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseSHA, false);
   }
 
+  if (UseSecondarySupersTable && VM_Version::get_model_index() < 5 /* z196/z11 */) {
+    if (!FLAG_IS_DEFAULT(UseSecondarySupersTable)) {
+      warning("UseSecondarySupersTable requires z196 or later.");
+    }
+    FLAG_SET_DEFAULT(UseSecondarySupersTable, false);
+  }
+
 #ifdef COMPILER2
   if (FLAG_IS_DEFAULT(UseMultiplyToLenIntrinsic)) {
     FLAG_SET_DEFAULT(UseMultiplyToLenIntrinsic, true);
@@ -286,11 +293,6 @@ void VM_Version::initialize() {
   if (FLAG_IS_DEFAULT(UsePopCountInstruction)) {
     FLAG_SET_DEFAULT(UsePopCountInstruction, true);
   }
-
-  // z/Architecture supports 8-byte compare-exchange operations
-  // (see Atomic::cmpxchg)
-  // and 'atomic long memory ops' (see Unsafe_GetLongVolatile).
-  _supports_cx8 = true;
 
   _supports_atomic_getadd4 = VM_Version::has_LoadAndALUAtomicV1();
   _supports_atomic_getadd8 = VM_Version::has_LoadAndALUAtomicV1();
@@ -707,7 +709,7 @@ void VM_Version::print_features_internal(const char* text, bool print_anyway) {
     }
     if (ContendedPaddingWidth > 0) {
       tty->cr();
-      tty->print_cr("ContendedPaddingWidth " INTX_FORMAT, ContendedPaddingWidth);
+      tty->print_cr("ContendedPaddingWidth %d", ContendedPaddingWidth);
     }
   }
 }
@@ -717,7 +719,7 @@ void VM_Version::print_platform_virtualization_info(outputStream* st) {
   // - LPAR
   // - whole "Box" (CPUs )
   // - z/VM / KVM (VM<nn>); this is not available in an LPAR-only setup
-  const char* kw[] = { "LPAR", "CPUs", "VM", NULL };
+  const char* kw[] = { "LPAR", "CPUs", "VM", nullptr };
   const char* info_file = "/proc/sysinfo";
 
   if (!print_matching_lines_from_file(info_file, st, kw)) {
@@ -842,7 +844,7 @@ void VM_Version::set_features_from(const char* march) {
   bool err = false;
   bool prt = false;
 
-  if ((march != NULL) && (march[0] != '\0')) {
+  if ((march != nullptr) && (march[0] != '\0')) {
     const int buf_len = 16;
     const int hdr_len =  5;
     char buf[buf_len];
@@ -909,10 +911,10 @@ void VM_Version::set_features_from(const char* march) {
 //                <  0: failure: required number of feature bit string words (buffer too small).
 //                == 0: failure: operation aborted.
 //
-static long (*getFeatures)(unsigned long*, int, int) = NULL;
+static long (*getFeatures)(unsigned long*, int, int) = nullptr;
 
 void VM_Version::set_getFeatures(address entryPoint) {
-  if (getFeatures == NULL) {
+  if (getFeatures == nullptr) {
     getFeatures = (long(*)(unsigned long*, int, int))entryPoint;
   }
 }

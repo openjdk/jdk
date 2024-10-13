@@ -76,12 +76,6 @@
  * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive
  *      TestAllocObjects
- *
- * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive
- *      -XX:+ShenandoahSuspendibleWorkers
- *      TestAllocObjects
- *
  */
 
 /*
@@ -97,11 +91,6 @@
  * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=adaptive
  *      TestAllocObjects
- *
- * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=adaptive
- *      -XX:+ShenandoahSuspendibleWorkers
- *      TestAllocObjects
  */
 
 /*
@@ -111,11 +100,6 @@
  *
  * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=static
- *      TestAllocObjects
- *
- * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=static
- *      -XX:+ShenandoahSuspendibleWorkers
  *      TestAllocObjects
  */
 
@@ -127,63 +111,7 @@
  * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=compact
  *      TestAllocObjects
- *
- * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=compact
- *      -XX:+ShenandoahSuspendibleWorkers
- *      TestAllocObjects
  */
-
-/*
- * @test id=iu-aggressive
- * @summary Acceptance tests: collector can withstand allocation
- * @requires vm.gc.Shenandoah
- *
- * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu -XX:ShenandoahGCHeuristics=aggressive
- *      -XX:+ShenandoahOOMDuringEvacALot -XX:+ShenandoahVerify
- *      TestAllocObjects
- *
- * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu -XX:ShenandoahGCHeuristics=aggressive
- *      -XX:+ShenandoahAllocFailureALot -XX:+ShenandoahVerify
- *      TestAllocObjects
- *
- * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu -XX:ShenandoahGCHeuristics=aggressive
- *      -XX:+ShenandoahOOMDuringEvacALot
- *      TestAllocObjects
- *
- * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu -XX:ShenandoahGCHeuristics=aggressive
- *      -XX:+ShenandoahAllocFailureALot
- *      TestAllocObjects
- *
- * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu -XX:ShenandoahGCHeuristics=aggressive
- *      TestAllocObjects
- */
-
-/*
- * @test id=iu
- * @summary Acceptance tests: collector can withstand allocation
- * @requires vm.gc.Shenandoah
- *
- * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu
- *      -XX:+ShenandoahVerify
- *      TestAllocObjects
- *
- * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu
- *      TestAllocObjects
- *
- * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu
- *      -XX:+ShenandoahSuspendibleWorkers
- *      TestAllocObjects
- */
-
 public class TestAllocObjects {
 
     static final long TARGET_MB = Long.getLong("target", 10_000); // 10 Gb allocation

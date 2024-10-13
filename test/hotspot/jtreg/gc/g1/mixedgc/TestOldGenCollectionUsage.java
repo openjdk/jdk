@@ -143,4 +143,3 @@ public class TestOldGenCollectionUsage {
         System.out.println("Test passed.");
     }
 }
-

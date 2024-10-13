@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2013, 2019, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -24,7 +24,7 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/shared/space.inline.hpp"
+#include "gc/shared/space.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionSet.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
@@ -51,8 +51,6 @@ size_t ShenandoahHeapRegion::RegionSizeBytesShift = 0;
 size_t ShenandoahHeapRegion::RegionSizeWordsShift = 0;
 size_t ShenandoahHeapRegion::RegionSizeBytesMask = 0;
 size_t ShenandoahHeapRegion::RegionSizeWordsMask = 0;
-size_t ShenandoahHeapRegion::HumongousThresholdBytes = 0;
-size_t ShenandoahHeapRegion::HumongousThresholdWords = 0;
 size_t ShenandoahHeapRegion::MaxTLABSizeBytes = 0;
 size_t ShenandoahHeapRegion::MaxTLABSizeWords = 0;
 
@@ -102,8 +100,10 @@ void ShenandoahHeapRegion::make_regular_allocation() {
 
 void ShenandoahHeapRegion::make_regular_bypass() {
   shenandoah_assert_heaplocked();
-  assert (ShenandoahHeap::heap()->is_full_gc_in_progress() || ShenandoahHeap::heap()->is_degenerated_gc_in_progress(),
-          "only for full or degen GC");
+  assert (!Universe::is_fully_initialized() ||
+          ShenandoahHeap::heap()->is_full_gc_in_progress() ||
+          ShenandoahHeap::heap()->is_degenerated_gc_in_progress(),
+          "Only for STW GC or when Universe is initializing (CDS)");
 
   switch (_state) {
     case _empty_uncommitted:
@@ -351,7 +351,7 @@ void ShenandoahHeapRegion::print_on(outputStream* st) const {
       st->print("|CS ");
       break;
     case _trash:
-      st->print("|T  ");
+      st->print("|TR ");
       break;
     case _pinned:
       st->print("|P  ");
@@ -598,36 +598,8 @@ size_t ShenandoahHeapRegion::setup_sizes(size_t max_heap_size) {
   RegionCount = align_up(max_heap_size, RegionSizeBytes) / RegionSizeBytes;
   guarantee(RegionCount >= MIN_NUM_REGIONS, "Should have at least minimum regions");
 
-  guarantee(HumongousThresholdWords == 0, "we should only set it once");
-  HumongousThresholdWords = RegionSizeWords * ShenandoahHumongousThreshold / 100;
-  HumongousThresholdWords = align_down(HumongousThresholdWords, MinObjAlignment);
-  assert (HumongousThresholdWords <= RegionSizeWords, "sanity");
-
-  guarantee(HumongousThresholdBytes == 0, "we should only set it once");
-  HumongousThresholdBytes = HumongousThresholdWords * HeapWordSize;
-  assert (HumongousThresholdBytes <= RegionSizeBytes, "sanity");
-
-  // The rationale for trimming the TLAB sizes has to do with the raciness in
-  // TLAB allocation machinery. It may happen that TLAB sizing policy polls Shenandoah
-  // about next free size, gets the answer for region #N, goes away for a while, then
-  // tries to allocate in region #N, and fail because some other thread have claimed part
-  // of the region #N, and then the freeset allocation code has to retire the region #N,
-  // before moving the allocation to region #N+1.
-  //
-  // The worst case realizes when "answer" is "region size", which means it could
-  // prematurely retire an entire region. Having smaller TLABs does not fix that
-  // completely, but reduces the probability of too wasteful region retirement.
-  // With current divisor, we will waste no more than 1/8 of region size in the worst
-  // case. This also has a secondary effect on collection set selection: even under
-  // the race, the regions would be at least 7/8 used, which allows relying on
-  // "used" - "live" for cset selection. Otherwise, we can get the fragmented region
-  // below the garbage threshold that would never be considered for collection.
-  //
-  // The whole thing is mitigated if Elastic TLABs are enabled.
-  //
   guarantee(MaxTLABSizeWords == 0, "we should only set it once");
-  MaxTLABSizeWords = MIN2(ShenandoahElasticTLAB ? RegionSizeWords : (RegionSizeWords / 8), HumongousThresholdWords);
-  MaxTLABSizeWords = align_down(MaxTLABSizeWords, MinObjAlignment);
+  MaxTLABSizeWords = align_down(RegionSizeWords, MinObjAlignment);
 
   guarantee(MaxTLABSizeBytes == 0, "we should only set it once");
   MaxTLABSizeBytes = MaxTLABSizeWords * HeapWordSize;

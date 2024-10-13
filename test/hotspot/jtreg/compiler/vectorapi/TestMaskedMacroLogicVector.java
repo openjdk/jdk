@@ -280,17 +280,23 @@ public class TestMaskedMacroLogicVector {
     }
 
     @Test
-    @IR(applyIfAnd = {"UseAVX", "3", "UseSSE", " > 3 "}, counts = {IRNode.AND_V, " > 0 ", IRNode.XOR_V, " > 0 "})
+    @IR(applyIfAnd = {"UseAVX", "3", "UseSSE", " > 3 "},
+        counts = {IRNode.AND_VI, IRNode.VECTOR_SIZE_4, " > 0 ",
+                  IRNode.XOR_VI, IRNode.VECTOR_SIZE_4, " > 0 "})
     public void testInt4_Int128(int[] r, int[] a, int[] b, int[] c, boolean [] mask) {
         testInt4Kernel(IntVector.SPECIES_128, r, a, b, c, mask);
     }
     @Test
-    @IR(applyIfAnd = {"UseAVX", "3", "UseSSE", " > 3 "}, counts = {IRNode.AND_V, " > 0 ", IRNode.XOR_V, " > 0 "})
+    @IR(applyIfAnd = {"UseAVX", "3", "UseSSE", " > 3 "},
+        counts = {IRNode.AND_VI, IRNode.VECTOR_SIZE_8, " > 0 ",
+                  IRNode.XOR_VI, IRNode.VECTOR_SIZE_8, " > 0 "})
     public void testInt4_Int256(int[] r, int[] a, int[] b, int[] c, boolean [] mask) {
         testInt4Kernel(IntVector.SPECIES_256, r, a, b, c, mask);
     }
     @Test
-    @IR(applyIfAnd = {"UseAVX", "3", "UseSSE", " > 3 "}, counts = {IRNode.AND_V, " > 0 ", IRNode.XOR_V, " > 0 "})
+    @IR(applyIfAnd = {"UseAVX", "3", "UseSSE", " > 3 "},
+        counts = {IRNode.AND_VI, IRNode.VECTOR_SIZE_16, " > 0 ",
+                  IRNode.XOR_VI, IRNode.VECTOR_SIZE_16, " > 0 "})
     public void testInt4_Int512(int[] r, int[] a, int[] b, int[] c, boolean [] mask) {
         testInt4Kernel(IntVector.SPECIES_512, r, a, b, c, mask);
     }

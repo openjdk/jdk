@@ -30,6 +30,7 @@ import java.lang.ref.WeakReference;
 
 import sun.java2d.SurfaceData;
 import sun.java2d.pipe.Region;
+import sun.java2d.loops.GraphicsPrimitiveMgr.GeneralPrimitives;
 
 /**
  * MaskBlit
@@ -109,7 +110,7 @@ public class MaskBlit extends GraphicsPrimitive
                                 byte[] mask, int maskoff, int maskscan);
 
     static {
-        GraphicsPrimitiveMgr.registerGeneral(new MaskBlit(null, null, null));
+        GeneralPrimitives.register(new MaskBlit(null, null, null));
     }
 
     protected GraphicsPrimitive makePrimitive(SurfaceType srctype,

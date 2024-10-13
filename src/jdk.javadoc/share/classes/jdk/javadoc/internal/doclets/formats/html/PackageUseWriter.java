@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,22 +30,21 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
-import javax.lang.model.element.Element;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
-import jdk.javadoc.internal.doclets.formats.html.markup.Text;
-import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
 import jdk.javadoc.internal.doclets.toolkit.util.ClassUseMapper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
+import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.ContentBuilder;
+import jdk.javadoc.internal.html.Entity;
+import jdk.javadoc.internal.html.HtmlTag;
+import jdk.javadoc.internal.html.HtmlTree;
+import jdk.javadoc.internal.html.Text;
 
 /**
  * Generate package usage information.
@@ -60,13 +59,12 @@ public class PackageUseWriter extends SubWriterHolderWriter {
      *
      * @param configuration the configuration
      * @param mapper a mapper to provide details of where elements are used
-     * @param filename the file to be generated
      * @param pkgElement the package element to be documented
      */
     public PackageUseWriter(HtmlConfiguration configuration,
-                            ClassUseMapper mapper, DocPath filename,
+                            ClassUseMapper mapper,
                             PackageElement pkgElement) {
-        super(configuration, configuration.docPaths.forPackage(pkgElement).resolve(filename));
+        super(configuration, pathFor(configuration, pkgElement));
         this.packageElement = pkgElement;
 
         // by examining all classes in this package, find what packages
@@ -80,7 +78,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
                     Set<TypeElement> usedClasses = usingPackageToUsedClasses
                             .get(utils.getPackageName(usingPackage));
                     if (usedClasses == null) {
-                        usedClasses = new TreeSet<>(comparators.makeGeneralPurposeComparator());
+                        usedClasses = new TreeSet<>(comparators.generalPurposeComparator());
                         usingPackageToUsedClasses.put(utils.getPackageName(usingPackage),
                                                       usedClasses);
                     }
@@ -90,27 +88,16 @@ public class PackageUseWriter extends SubWriterHolderWriter {
         }
     }
 
-    /**
-     * Generate a class page.
-     *
-     * @param configuration the current configuration of the doclet.
-     * @param mapper        the mapping of the class usage.
-     * @param pkgElement    the package being documented.
-     * @throws DocFileIOException if there is a problem generating the package use page
-     */
-    public static void generate(HtmlConfiguration configuration,
-                                ClassUseMapper mapper, PackageElement pkgElement)
-            throws DocFileIOException {
-        DocPath filename = DocPaths.PACKAGE_USE;
-        PackageUseWriter pkgusegen = new PackageUseWriter(configuration, mapper, filename, pkgElement);
-        pkgusegen.generatePackageUseFile();
+    private static DocPath pathFor(HtmlConfiguration configuration, PackageElement packageElement) {
+        return configuration.docPaths.forPackage(packageElement).resolve(DocPaths.PACKAGE_USE);
     }
 
     /**
      * Generate the package use list.
      * @throws DocFileIOException if there is a problem generating the package use page
      */
-    protected void generatePackageUseFile() throws DocFileIOException {
+    @Override
+    public void buildPage() throws DocFileIOException {
         HtmlTree body = getBody();
         Content mainContent = new ContentBuilder();
         if (usingPackageToUsedClasses.isEmpty()) {
@@ -149,10 +136,10 @@ public class PackageUseWriter extends SubWriterHolderWriter {
         Content caption = contents.getContent(
                 "doclet.ClassUse_Packages.that.use.0",
                 getPackageLink(packageElement, getLocalizedPackageName(packageElement)));
-        var table = new Table<Void>(HtmlStyle.summaryTable)
+        var table = new Table<Void>(HtmlStyles.summaryTable)
                 .setCaption(caption)
                 .setHeader(getPackageTableHeader())
-                .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast);
+                .setColumnStyles(HtmlStyles.colFirst, HtmlStyles.colLast);
         for (String pkgname: usingPackageToUsedClasses.keySet()) {
             PackageElement pkg = utils.elementUtils.getPackageElement(pkgname);
             Content packageLink = links.createLink(htmlIds.forPackage(pkg),
@@ -176,19 +163,19 @@ public class PackageUseWriter extends SubWriterHolderWriter {
     protected void addClassList(Content content) {
         TableHeader classTableHeader = new TableHeader(
                 contents.classLabel, contents.descriptionLabel);
-        var ul = HtmlTree.UL(HtmlStyle.blockList);
+        var ul = HtmlTree.UL(HtmlStyles.blockList);
         for (String packageName : usingPackageToUsedClasses.keySet()) {
             PackageElement usingPackage = utils.elementUtils.getPackageElement(packageName);
-            var section = HtmlTree.SECTION(HtmlStyle.detail)
+            var section = HtmlTree.SECTION(HtmlStyles.detail)
                     .setId(htmlIds.forPackage(usingPackage));
             Content caption = contents.getContent(
                     "doclet.ClassUse_Classes.in.0.used.by.1",
                     getPackageLink(packageElement, getLocalizedPackageName(packageElement)),
                     getPackageLink(usingPackage, getLocalizedPackageName(usingPackage)));
-            var table = new Table<Void>(HtmlStyle.summaryTable)
+            var table = new Table<Void>(HtmlStyles.summaryTable)
                     .setCaption(caption)
                     .setHeader(classTableHeader)
-                    .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast);
+                    .setColumnStyles(HtmlStyles.colFirst, HtmlStyles.colLast);
             for (TypeElement te : usingPackageToUsedClasses.get(packageName)) {
                 DocPath dp = pathString(te,
                         DocPaths.CLASS_USE.resolve(docPaths.forName(te)));
@@ -203,7 +190,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
             section.add(table);
             ul.add(HtmlTree.LI(section));
         }
-        var li = HtmlTree.SECTION(HtmlStyle.packageUses, ul);
+        var li = HtmlTree.SECTION(HtmlStyles.packageUses, ul);
         content.add(li);
     }
 
@@ -217,21 +204,13 @@ public class PackageUseWriter extends SubWriterHolderWriter {
         HtmlTree body = getBody(getWindowTitle(title));
         ContentBuilder headingContent = new ContentBuilder();
         headingContent.add(contents.getContent("doclet.ClassUse_Title", packageText));
-        headingContent.add(new HtmlTree(TagName.BR));
+        headingContent.add(HtmlTree.BR());
         headingContent.add(name);
         var heading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
-                HtmlStyle.title, headingContent);
-        var div = HtmlTree.DIV(HtmlStyle.header, heading);
+                HtmlStyles.title, headingContent);
+        var div = HtmlTree.DIV(HtmlStyles.header, heading);
         bodyContents.setHeader(getHeader(PageMode.USE, packageElement))
                 .addMainContent(div);
         return body;
-    }
-
-    @Override
-    protected Navigation getNavBar(PageMode pageMode, Element element) {
-        Content linkContent = getModuleLink(utils.elementUtils.getModuleOf(element),
-                contents.moduleLabel);
-        return super.getNavBar(pageMode, element)
-                .setNavLinkModule(linkContent);
     }
 }

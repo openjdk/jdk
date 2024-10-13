@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,10 +37,10 @@ import static java.lang.constant.ConstantDescs.BSM_GET_STATIC_FINAL;
 import static java.lang.constant.ConstantDescs.CD_Boolean;
 
 /**
- * The Boolean class wraps a value of the primitive type
- * {@code boolean} in an object. An object of type
- * {@code Boolean} contains a single field whose type is
- * {@code boolean}.
+ * The {@code Boolean} class is the {@linkplain
+ * java.lang##wrapperClass wrapper class} for values of the primitive
+ * type {@code boolean}. An object of type {@code Boolean} contains a
+ * single field whose type is {@code boolean}.
  *
  * <p>In addition, this class provides many methods for
  * converting a {@code boolean} to a {@code String} and a

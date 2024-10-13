@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,7 @@
 
 package sun.reflect.generics.reflectiveObjects;
 
-import sun.reflect.generics.tree.FieldTypeSignature;
-
 import java.lang.reflect.MalformedParameterizedTypeException;
-import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
@@ -165,42 +162,13 @@ public class ParameterizedTypeImpl implements ParameterizedType {
      */
     @Override
     public boolean equals(Object o) {
-        if (o instanceof ParameterizedType) {
-            // Check that information is equivalent
-            ParameterizedType that = (ParameterizedType) o;
-
-            if (this == that)
-                return true;
-
-            Type thatOwner   = that.getOwnerType();
-            Type thatRawType = that.getRawType();
-
-            if (false) { // Debugging
-                boolean ownerEquality = (ownerType == null ?
-                                         thatOwner == null :
-                                         ownerType.equals(thatOwner));
-                boolean rawEquality = (rawType == null ?
-                                       thatRawType == null :
-                                       rawType.equals(thatRawType));
-
-                boolean typeArgEquality = Arrays.equals(actualTypeArguments, // avoid clone
-                                                        that.getActualTypeArguments());
-                for (Type t : actualTypeArguments) {
-                    System.out.printf("\t\t%s%s%n", t, t.getClass());
-                }
-
-                System.out.printf("\towner %s\traw %s\ttypeArg %s%n",
-                                  ownerEquality, rawEquality, typeArgEquality);
-                return ownerEquality && rawEquality && typeArgEquality;
-            }
-
-            return
-                Objects.equals(ownerType, thatOwner) &&
-                Objects.equals(rawType, thatRawType) &&
+        if (this == o)
+            return true;
+        return o instanceof ParameterizedType that &&
+                Objects.equals(ownerType, that.getOwnerType()) &&
+                Objects.equals(rawType, that.getRawType()) &&
                 Arrays.equals(actualTypeArguments, // avoid clone
                               that.getActualTypeArguments());
-        } else
-            return false;
     }
 
     @Override
@@ -219,10 +187,10 @@ public class ParameterizedTypeImpl implements ParameterizedType {
 
             sb.append("$");
 
-            if (ownerType instanceof ParameterizedTypeImpl) {
+            if (ownerType instanceof ParameterizedTypeImpl pt) {
                 // Find simple name of nested type by removing the
                 // shared prefix with owner.
-                sb.append(rawType.getName().replace( ((ParameterizedTypeImpl)ownerType).rawType.getName() + "$",
+                sb.append(rawType.getName().replace(pt.rawType.getName() + "$",
                                          ""));
             } else
                sb.append(rawType.getSimpleName());

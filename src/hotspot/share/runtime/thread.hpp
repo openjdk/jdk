@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -43,11 +43,13 @@
 #include "jfr/support/jfrThreadExtension.hpp"
 #endif
 
+class CompilerThread;
 class HandleArea;
 class HandleMark;
-class ICRefillVerifier;
 class JvmtiRawMonitor;
+class NMethodClosure;
 class Metadata;
+class OopClosure;
 class OSThread;
 class ParkEvent;
 class ResourceArea;
@@ -55,9 +57,8 @@ class SafeThreadsListPtr;
 class ThreadClosure;
 class ThreadsList;
 class ThreadsSMRSupport;
+class VMErrorCallback;
 
-class OopClosure;
-class CodeBlobClosure;
 
 DEBUG_ONLY(class ResourceMark;)
 
@@ -104,6 +105,8 @@ class JavaThread;
 //       - this->entry_point()  // set differently for each kind of JavaThread
 
 class Thread: public ThreadShadow {
+  friend class VMError;
+  friend class VMErrorCallbackMark;
   friend class VMStructs;
   friend class JVMCIVMStructs;
  private:
@@ -200,36 +203,24 @@ class Thread: public ThreadShadow {
   // with the calling Thread?
   static bool is_JavaThread_protected_by_TLH(const JavaThread* target);
 
-  void* operator new(size_t size) throw() { return allocate(size, true); }
-  void* operator new(size_t size, const std::nothrow_t& nothrow_constant) throw() {
-    return allocate(size, false); }
-  void  operator delete(void* p);
-
- protected:
-  static void* allocate(size_t size, bool throw_excpt, MEMFLAGS flags = mtThread);
-
  private:
   DEBUG_ONLY(bool _suspendible_thread;)
+  DEBUG_ONLY(bool _indirectly_suspendible_thread;)
+  DEBUG_ONLY(bool _indirectly_safepoint_thread;)
 
  public:
-  // Determines if a heap allocation failure will be retried
-  // (e.g., by deoptimizing and re-executing in the interpreter).
-  // In this case, the failed allocation must raise
-  // Universe::out_of_memory_error_retry() and omit side effects
-  // such as JVMTI events and handling -XX:+HeapDumpOnOutOfMemoryError
-  // and -XX:OnOutOfMemoryError.
-  virtual bool in_retryable_allocation() const { return false; }
-
 #ifdef ASSERT
-  void set_suspendible_thread() {
-    _suspendible_thread = true;
-  }
+  void set_suspendible_thread()   { _suspendible_thread = true; }
+  void clear_suspendible_thread() { _suspendible_thread = false; }
+  bool is_suspendible_thread()    { return _suspendible_thread; }
 
-  void clear_suspendible_thread() {
-    _suspendible_thread = false;
-  }
+  void set_indirectly_suspendible_thread()   { _indirectly_suspendible_thread = true; }
+  void clear_indirectly_suspendible_thread() { _indirectly_suspendible_thread = false; }
+  bool is_indirectly_suspendible_thread()    { return _indirectly_suspendible_thread; }
 
-  bool is_suspendible_thread() { return _suspendible_thread; }
+  void set_indirectly_safepoint_thread()   { _indirectly_safepoint_thread = true; }
+  void clear_indirectly_safepoint_thread() { _indirectly_safepoint_thread = false; }
+  bool is_indirectly_safepoint_thread()    { return _indirectly_safepoint_thread; }
 #endif
 
  private:
@@ -250,20 +241,6 @@ class Thread: public ThreadShadow {
  public:
   void set_last_handle_mark(HandleMark* mark)   { _last_handle_mark = mark; }
   HandleMark* last_handle_mark() const          { return _last_handle_mark; }
- private:
-
-#ifdef ASSERT
-  ICRefillVerifier* _missed_ic_stub_refill_verifier;
-
- public:
-  ICRefillVerifier* missed_ic_stub_refill_verifier() {
-    return _missed_ic_stub_refill_verifier;
-  }
-
-  void set_missed_ic_stub_refill_verifier(ICRefillVerifier* verifier) {
-    _missed_ic_stub_refill_verifier = verifier;
-  }
-#endif // ASSERT
 
  private:
   // Used by SkipGCALot class.
@@ -285,7 +262,7 @@ class Thread: public ThreadShadow {
                                                  // is waiting to lock
  public:
   // Constructor
-  Thread();
+  Thread(MemTag mem_tag = mtThread);
   virtual ~Thread() = 0;        // Thread is abstract.
 
   // Manage Thread::current()
@@ -327,6 +304,14 @@ class Thread: public ThreadShadow {
   virtual bool is_Named_thread() const               { return false; }
   virtual bool is_Worker_thread() const              { return false; }
   virtual bool is_JfrSampler_thread() const          { return false; }
+  virtual bool is_AttachListener_thread() const      { return false; }
+  virtual bool is_monitor_deflation_thread() const   { return false; }
+
+  // Convenience cast functions
+  CompilerThread* as_Compiler_thread() const {
+    assert(is_Compiler_thread(), "Must be compiler thread");
+    return (CompilerThread*)this;
+  }
 
   // Can this thread make Java upcalls
   virtual bool can_call_java() const                 { return false; }
@@ -345,7 +330,7 @@ class Thread: public ThreadShadow {
   // and logging.
   virtual const char* type_name() const { return "Thread"; }
 
-  // Returns the current thread (ASSERTS if nullptr)
+  // Returns the current thread (ASSERTS if null)
   static inline Thread* current();
   // Returns the current thread, or null if not attached
   static inline Thread* current_or_null();
@@ -435,10 +420,10 @@ class Thread: public ThreadShadow {
   // GC support
   // Apply "f->do_oop" to all root oops in "this".
   //   Used by JavaThread::oops_do.
-  // Apply "cf->do_code_blob" (if !nullptr) to all code blobs active in frames
-  virtual void oops_do_no_frames(OopClosure* f, CodeBlobClosure* cf);
-  virtual void oops_do_frames(OopClosure* f, CodeBlobClosure* cf) {}
-  void oops_do(OopClosure* f, CodeBlobClosure* cf);
+  // Apply "cf->do_nmethod" (if !nullptr) to all nmethods active in frames
+  virtual void oops_do_no_frames(OopClosure* f, NMethodClosure* cf);
+  virtual void oops_do_frames(OopClosure* f, NMethodClosure* cf) {}
+  void oops_do(OopClosure* f, NMethodClosure* cf);
 
   // Handles the parallel case for claim_threads_do.
  private:
@@ -475,9 +460,6 @@ class Thread: public ThreadShadow {
   }
 
  public:
-  // Used by fast lock support
-  virtual bool is_lock_owned(address adr) const;
-
   // Check if address is within the given range of this thread's
   // stack:  stack_base() > adr >= limit
   bool is_in_stack_range_incl(address adr, address limit) const {
@@ -535,7 +517,7 @@ protected:
 
  public:
   // Stack overflow support
-  address stack_base() const           { assert(_stack_base != nullptr,"Sanity check"); return _stack_base; }
+  address stack_base() const DEBUG_ONLY(;) NOT_DEBUG({ return _stack_base; })
   void    set_stack_base(address base) { _stack_base = base; }
   size_t  stack_size() const           { return _stack_size; }
   void    set_stack_size(size_t size)  { _stack_size = size; }
@@ -596,8 +578,6 @@ protected:
   static ByteSize tlab_top_offset()              { return byte_offset_of(Thread, _tlab) + ThreadLocalAllocBuffer::top_offset(); }
   static ByteSize tlab_pf_top_offset()           { return byte_offset_of(Thread, _tlab) + ThreadLocalAllocBuffer::pf_top_offset(); }
 
-  static ByteSize allocated_bytes_offset()       { return byte_offset_of(Thread, _allocated_bytes); }
-
   JFR_ONLY(DEFINE_THREAD_LOCAL_OFFSET_JFR;)
 
  public:
@@ -631,6 +611,36 @@ protected:
     assert(_wx_state == expected, "wrong state");
   }
 #endif // __APPLE__ && AARCH64
+
+ private:
+  bool _in_asgct = false;
+ public:
+  bool in_asgct() const { return _in_asgct; }
+  void set_in_asgct(bool value) { _in_asgct = value; }
+  static bool current_in_asgct() {
+    Thread *cur = Thread::current_or_null_safe();
+    return cur != nullptr && cur->in_asgct();
+  }
+
+ private:
+  VMErrorCallback* _vm_error_callbacks;
+};
+
+class ThreadInAsgct {
+ private:
+  Thread* _thread;
+  bool _saved_in_asgct;
+ public:
+  ThreadInAsgct(Thread* thread) : _thread(thread) {
+    assert(thread != nullptr, "invariant");
+    // Allow AsyncGetCallTrace to be reentrant - save the previous state.
+    _saved_in_asgct = thread->in_asgct();
+    thread->set_in_asgct(true);
+  }
+  ~ThreadInAsgct() {
+    assert(_thread->in_asgct(), "invariant");
+    _thread->set_in_asgct(_saved_in_asgct);
+  }
 };
 
 // Inline implementation of Thread::current()

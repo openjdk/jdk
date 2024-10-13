@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,8 +52,6 @@ public class TestSafepointEvents {
     static final String[] EVENT_NAMES = new String[] {
         EventNames.SafepointBegin,
         EventNames.SafepointStateSynchronization,
-        EventNames.SafepointCleanup,
-        EventNames.SafepointCleanupTask,
         EventNames.SafepointEnd
     };
 
@@ -68,9 +66,10 @@ public class TestSafepointEvents {
 
         try {
             // Verify that each event type was seen at least once
+            List<RecordedEvent> events = Events.fromRecording(recording);
             for (String name : EVENT_NAMES) {
                 boolean found = false;
-                for (RecordedEvent event : Events.fromRecording(recording)) {
+                for (RecordedEvent event : events) {
                     found = event.getEventType().getName().equals(name);
                     if (found) {
                         break;
@@ -81,7 +80,7 @@ public class TestSafepointEvents {
 
             // Collect all events grouped by safepoint id
             SortedMap<Long, Set<String>> safepointIds = new TreeMap<>();
-            for (RecordedEvent event : Events.fromRecording(recording)) {
+            for (RecordedEvent event : events) {
                 Long safepointId = event.getValue("safepointId");
                 if (!safepointIds.containsKey(safepointId)) {
                     safepointIds.put(safepointId, new HashSet<>());

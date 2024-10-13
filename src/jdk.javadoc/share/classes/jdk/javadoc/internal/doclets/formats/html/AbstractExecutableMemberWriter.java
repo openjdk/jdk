@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,19 +31,21 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.TypeParameterElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.ExecutableType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.SimpleTypeVisitor14;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
-import jdk.javadoc.internal.doclets.formats.html.markup.Text;
-import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
+import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
+import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.ContentBuilder;
+import jdk.javadoc.internal.html.Entity;
+import jdk.javadoc.internal.html.HtmlTag;
+import jdk.javadoc.internal.html.HtmlTree;
+import jdk.javadoc.internal.html.Text;
 
 import static jdk.javadoc.internal.doclets.formats.html.HtmlLinkInfo.Kind.LINK_TYPE_PARAMS;
 import static jdk.javadoc.internal.doclets.formats.html.HtmlLinkInfo.Kind.LINK_TYPE_PARAMS_AND_BOUNDS;
@@ -52,18 +54,37 @@ import static jdk.javadoc.internal.doclets.formats.html.HtmlLinkInfo.Kind.SHOW_P
 import static jdk.javadoc.internal.doclets.formats.html.HtmlLinkInfo.Kind.SHOW_TYPE_PARAMS_AND_BOUNDS;
 
 /**
- * Print method and constructor info.
+ * Abstract "member writer" for executable elements.
  */
 public abstract class AbstractExecutableMemberWriter extends AbstractMemberWriter {
 
-    public AbstractExecutableMemberWriter(SubWriterHolderWriter writer, TypeElement typeElement) {
-        super(writer, typeElement);
+    /**
+     * Creates a writer for executable members, for a given enclosing writer, type element, and kind of member.
+     *
+     * @param writer the enclosing "page" writer, with an associated type element
+     * @param typeElement the type element
+     * @param kind the kind of member: one of {@link VisibleMemberTable.Kind#CONSTRUCTORS} or {@link VisibleMemberTable.Kind#METHODS}
+     */
+    protected AbstractExecutableMemberWriter(SubWriterHolderWriter writer, TypeElement typeElement,
+                                          VisibleMemberTable.Kind kind) {
+        super(writer, typeElement, kind);
+
+        // The following would be better before the preceding call to super; see JDK-8300786
+        switch (kind) {
+            case CONSTRUCTORS, METHODS -> { }
+            default -> throw new IllegalArgumentException(kind.toString());
+        }
     }
 
-    public AbstractExecutableMemberWriter(SubWriterHolderWriter writer) {
+    /**
+     * Creates a writer for executable members, for a given enclosing writer.
+     * No type element or kind is provided, limiting the set of methods that can be used.
+     *
+     * @param writer the enclosing "page" writer.
+     */
+    protected AbstractExecutableMemberWriter(SubWriterHolderWriter writer) {
         super(writer);
     }
-
 
     /**
      * Get the type parameters for the executable member.
@@ -72,9 +93,9 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
      * @return the type parameters.
      */
     protected Content getTypeParameters(ExecutableElement member) {
-        HtmlLinkInfo linkInfo = new HtmlLinkInfo(configuration, LINK_TYPE_PARAMS_AND_BOUNDS, member);
-        linkInfo.addLineBreaksInTypeParameters = true;
-        linkInfo.showTypeParameterAnnotations = true;
+        HtmlLinkInfo linkInfo = new HtmlLinkInfo(configuration, LINK_TYPE_PARAMS_AND_BOUNDS, member)
+                .addLineBreaksInTypeParameters(true)
+                .showTypeParameterAnnotations(true);
         return writer.getTypeParameterLinks(linkInfo);
     }
 
@@ -88,7 +109,7 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
         }
         String signature = utils.flatSignature((ExecutableElement) member, typeElement);
         if (signature.length() > 2) {
-            content.add(new HtmlTree(TagName.WBR));
+            content.add(HtmlTree.WBR());
         }
         content.add(signature);
 
@@ -100,7 +121,7 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
     protected void addSummaryLink(HtmlLinkInfo.Kind context, TypeElement te, Element member,
                                   Content target) {
         ExecutableElement ee = (ExecutableElement)member;
-        Content memberLink = writer.getDocLink(context, te, ee, name(ee), HtmlStyle.memberNameLink);
+        Content memberLink = writer.getDocLink(context, te, ee, name(ee), HtmlStyles.memberNameLink);
         var code = HtmlTree.CODE(memberLink);
         addParameters(ee, code);
         target.add(code);
@@ -109,6 +130,24 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
     @Override
     protected void addInheritedSummaryLink(TypeElement te, Element member, Content target) {
         target.add(writer.getDocLink(PLAIN, te, member, name(member)));
+    }
+
+    /**
+     * Adds the generic type parameters.
+     *
+     * @param member the member to add the generic type parameters for
+     * @param target the content to which the generic type parameters will be added
+     */
+    protected void addTypeParameters(ExecutableElement member, Content target) {
+        Content typeParameters = getTypeParameters(member);
+        target.add(typeParameters);
+        // Add explicit line break between method type parameters and
+        // return type in member summary table to avoid random wrapping.
+        if (typeParameters.charCount() > 10) {
+            target.add(HtmlTree.BR());
+        } else {
+            target.add(Entity.NO_BREAK_SPACE);
+        }
     }
 
     /**
@@ -121,9 +160,9 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
      */
     protected void addParam(VariableElement param, TypeMirror paramType, boolean isVarArg,
                             Content target) {
-        HtmlLinkInfo linkInfo = new HtmlLinkInfo(configuration, LINK_TYPE_PARAMS,
-                paramType).varargs(isVarArg);
-        linkInfo.showTypeParameterAnnotations = true;
+        HtmlLinkInfo linkInfo = new HtmlLinkInfo(configuration, LINK_TYPE_PARAMS, paramType)
+                .varargs(isVarArg)
+                .showTypeParameterAnnotations(true);
         Content link = writer.getLink(linkInfo);
         target.add(link);
         if(name(param).length() > 0) {
@@ -142,8 +181,8 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
      * @param target the content to which the information will be added.
      */
     protected void addReceiver(ExecutableElement member, TypeMirror rcvrType, Content target) {
-        var info = new HtmlLinkInfo(configuration, SHOW_TYPE_PARAMS_AND_BOUNDS, rcvrType);
-        info.linkToSelf = false;
+        var info = new HtmlLinkInfo(configuration, SHOW_TYPE_PARAMS_AND_BOUNDS, rcvrType)
+                .linkToSelf(false);
         target.add(writer.getLink(info));
         target.add(Entity.NO_BREAK_SPACE);
         if (member.getKind() == ElementKind.CONSTRUCTOR) {
@@ -194,7 +233,7 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
         Content params = getParameters(member, false);
         if (params.charCount() > 2) {
             // only add <wbr> for non-empty parameters
-            target.add(new HtmlTree(TagName.WBR));
+            target.add(HtmlTree.WBR());
         }
         target.add(params);
     }

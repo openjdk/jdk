@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,8 @@ import java.io.IOException;
 
 import sun.security.util.DerValue;
 
+import static sun.security.krb5.internal.Krb5.DEBUG;
+
 /**
  * This class encapsulates the KRB-CRED message that a client uses to
  * send its delegated credentials to a server.
@@ -45,8 +47,6 @@ import sun.security.util.DerValue;
  * @author Mayank Upadhyay
  */
 public class KrbCred {
-
-    private static boolean DEBUG = Krb5.DEBUG;
 
     private byte[] obuf = null;
     private KRBCred credMessg = null;
@@ -144,8 +144,8 @@ public class KrbCred {
         PrincipalName sname = credInfo.sname;
         HostAddresses caddr = credInfo.caddr;
 
-        if (DEBUG) {
-            System.out.println(">>>Delegated Creds have pname=" + pname
+        if (DEBUG != null) {
+            DEBUG.println(">>>Delegated Creds have pname=" + pname
                                + " sname=" + sname
                                + " authtime=" + authtime
                                + " starttime=" + starttime

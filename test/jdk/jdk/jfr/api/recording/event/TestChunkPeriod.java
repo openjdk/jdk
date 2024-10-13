@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,7 +68,7 @@ public class TestChunkPeriod {
         r.stop();
         List<RecordedEvent> events = Events.fromRecording(r);
         Asserts.assertEquals(events.size(), 1, "Expected one event with beginChunk");
-        RecordedEvent event = events.get(0);
+        RecordedEvent event = events.getFirst();
         Asserts.assertGreaterThanOrEqual(event.getStartTime(), beforeStart);
         Asserts.assertGreaterThanOrEqual(afterStart, event.getStartTime());
         r.close();
@@ -83,7 +83,7 @@ public class TestChunkPeriod {
         Instant afterStop =  Instant.now().plus(MARGIN_OF_ERROR);
         List<RecordedEvent> events = Events.fromRecording(r);
         Asserts.assertEquals(events.size(), 1, "Expected one event with endChunk");
-        RecordedEvent event = events.get(0);
+        RecordedEvent event = events.getFirst();
         Asserts.assertGreaterThanOrEqual(event.getStartTime(), beforeStop);
         Asserts.assertGreaterThanOrEqual(afterStop, event.getStartTime());
         r.close();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
  * @test
  * @bug 7167142
  * @summary Warn if unused .hotspot_compiler file is present
+ * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -46,10 +47,9 @@ public class CompilerConfigFileWarning {
         pw.println("aaa, aaa");
         pw.close();
 
-        pb = ProcessTools.createJavaProcessBuilder("-XX:CompileCommandFile=hs_comp.txt", "-version");
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:CompileCommandFile=hs_comp.txt", "-version");
         output = new OutputAnalyzer(pb.start());
-        // problems in CompileCommandFile are treated as warnings
-        output.shouldHaveExitValue(0);
+        output.shouldHaveExitValue(1);
         output.shouldContain("An error occurred during parsing");
         output.shouldContain("Unrecognized option 'aaa'");
         output.shouldContain("aaa, aaa");
@@ -60,7 +60,7 @@ public class CompilerConfigFileWarning {
             pw.println("aa");
             pw.close();
 
-            pb = ProcessTools.createJavaProcessBuilder("-version");
+            pb = ProcessTools.createLimitedTestJavaProcessBuilder("-version");
             output = new OutputAnalyzer(pb.start());
             output.shouldHaveExitValue(0);
             output.shouldContain("warning: .hotspot_compiler file is present but has been ignored.  Run with -XX:CompileCommandFile=.hotspot_compiler to load the file.");

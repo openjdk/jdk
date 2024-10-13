@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,11 +102,6 @@ public class Mark extends VMObject {
 
   private static long maxAge;
 
-  /* Constants in markWord used by CMS. */
-  private static long cmsShift;
-  private static long cmsMask;
-  private static long sizeShift;
-
   public Mark(Address addr) {
     super(addr);
   }
@@ -161,6 +156,16 @@ public class Mark extends VMObject {
     if (Assert.ASSERTS_ENABLED) {
       Assert.that(hasMonitor(), "check");
     }
+    if (VM.getVM().getCommandLineFlag("UseObjectMonitorTable").getBool()) {
+      Iterator it = ObjectSynchronizer.objectMonitorIterator();
+      while (it != null && it.hasNext()) {
+        ObjectMonitor mon = (ObjectMonitor)it.next();
+        if (getAddress().equals(mon.object())) {
+          return mon;
+        }
+      }
+      return null;
+    }
     // Use xor instead of &~ to provide one extra tag-bit check.
     Address monAddr = valueAsAddress().xorWithMask(monitorValue);
     return new ObjectMonitor(monAddr);
@@ -202,5 +207,5 @@ public class Mark extends VMObject {
     }
   }
 
-  public long getSize() { return (long)(value() >> sizeShift); }
+  public long getSize() { return (long)value(); }
 }

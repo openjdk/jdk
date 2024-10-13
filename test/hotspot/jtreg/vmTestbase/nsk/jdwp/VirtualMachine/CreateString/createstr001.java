@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,10 @@ public class createstr001 {
     static final int JDWP_COMMAND_ID = JDWP.Command.VirtualMachine.CreateString;
 
     public static void main (String argv[]) {
-        System.exit(run(argv,System.out) + JCK_STATUS_BASE);
+        int result = run(argv, System.out);
+        if (result != 0) {
+            throw new RuntimeException("Test failed");
+        }
     }
 
     public static int run(String argv[], PrintStream out) {

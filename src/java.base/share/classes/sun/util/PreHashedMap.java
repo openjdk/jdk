@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -243,7 +243,7 @@ public abstract class PreHashedMap<V>
 
                     public Map.Entry<String,V> next() {
                         return new Map.Entry<String,V>() {
-                            String k = i.next();
+                            final String k = i.next();
                             public String getKey() { return k; }
                             public V getValue() { return get(k); }
                             public int hashCode() {

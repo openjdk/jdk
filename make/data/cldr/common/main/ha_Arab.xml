@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2024 Unicode, Inc.
+For terms of use, see http://www.unicode.org/copyright.html
+SPDX-License-Identifier: Unicode-3.0
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+-->
+<ldml>
+	<identity>
+		<version number="$Revision$"/>
+		<language type="ha"/>
+		<script type="Arab"/>
+	</identity>
+	<layout>
+		<orientation>
+			<characterOrder>right-to-left</characterOrder>
+		</orientation>
+	</layout>
+	<characters>
+		<exemplarCharacters draft="unconfirmed">[ا ب ت ث ج ح خ د ذ ر ز س ش ص ض ط ظ ع غ ف ڢ ك ل م ن]</exemplarCharacters>
+		<exemplarCharacters type="index" draft="unconfirmed">[ا ب ت ث ج ح خ د ذ ر ز س ش ص ض ط ظ ع غ ف ڢ ك ل م ن]</exemplarCharacters>
+	</characters>
+	<dates>
+		<calendars>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="unconfirmed">جَن</month>
+							<month type="2" draft="unconfirmed">ڢَب</month>
+							<month type="3" draft="unconfirmed">مَر</month>
+							<month type="4" draft="unconfirmed">أَڢْر</month>
+							<month type="5" draft="unconfirmed">مَي</month>
+							<month type="6" draft="unconfirmed">يُون</month>
+							<month type="7" draft="unconfirmed">يُول</month>
+							<month type="8" draft="unconfirmed">أَغُ</month>
+							<month type="9" draft="unconfirmed">سَت</month>
+							<month type="10" draft="unconfirmed">أُكْت</month>
+							<month type="11" draft="unconfirmed">نُو</month>
+							<month type="12" draft="unconfirmed">دِس</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="unconfirmed">جَنَيْرُ</month>
+							<month type="2" draft="unconfirmed">ڢَبْرَيْرُ</month>
+							<month type="3" draft="unconfirmed">مَرِسْ</month>
+							<month type="4" draft="unconfirmed">أَڢْرِلُ</month>
+							<month type="5" draft="unconfirmed">مَيُ</month>
+							<month type="6" draft="unconfirmed">يُونِ</month>
+							<month type="7" draft="unconfirmed">يُولِ</month>
+							<month type="8" draft="unconfirmed">أَغُسْتَ</month>
+							<month type="9" draft="unconfirmed">سَتُمْبَ</month>
+							<month type="10" draft="unconfirmed">أُكْتوُبَ</month>
+							<month type="11" draft="unconfirmed">نُوَمْبَ</month>
+							<month type="12" draft="unconfirmed">دِسَمْبَ</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<days>
+					<dayContext type="format">
+						<dayWidth type="abbreviated">
+							<day type="sun" draft="unconfirmed">لَح</day>
+							<day type="mon" draft="unconfirmed">لِت</day>
+							<day type="tue" draft="unconfirmed">تَل</day>
+							<day type="wed" draft="unconfirmed">لَر</day>
+							<day type="thu" draft="unconfirmed">أَلْح</day>
+							<day type="fri" draft="unconfirmed">جُم</day>
+							<day type="sat" draft="unconfirmed">أَسَ</day>
+						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun" draft="unconfirmed">لَحَدِ</day>
+							<day type="mon" draft="unconfirmed">لِتِنِنْ</day>
+							<day type="tue" draft="unconfirmed">تَلَتَ</day>
+							<day type="wed" draft="unconfirmed">لَرَبَ</day>
+							<day type="thu" draft="unconfirmed">أَلْحَمِسْ</day>
+							<day type="fri" draft="unconfirmed">جُمَعَ</day>
+							<day type="sat" draft="unconfirmed">أَسَبَرْ</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+				<dayPeriods>
+					<dayPeriodContext type="format">
+						<dayPeriodWidth type="abbreviated">
+							<dayPeriod type="am" draft="unconfirmed">A.M.</dayPeriod>
+							<dayPeriod type="pm" draft="unconfirmed">P.M.</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+				</dayPeriods>
+				<eras>
+					<eraAbbr>
+						<era type="0" draft="unconfirmed">غَبَنِنْ مِلَدِ</era>
+						<era type="1" draft="unconfirmed">مِلَدِ</era>
+					</eraAbbr>
+				</eras>
+			</calendar>
+		</calendars>
+	</dates>
+	<numbers>
+		<otherNumberingSystems>
+			<native>arab</native>
+		</otherNumberingSystems>
+		<currencies>
+			<currency type="NGN">
+				<displayName draft="unconfirmed">نَيْرَ</displayName>
+				<symbol>₦</symbol>
+			</currency>
+		</currencies>
+	</numbers>
+</ldml>

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -32,10 +32,6 @@ header exports java/rmi,java/rmi/dgc,java/rmi/registry,java/rmi/server,javax/rmi
 class name java/rmi/RMISecurityManager
 header extends java/lang/SecurityManager flags 21 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="1.8")
 
-class name java/rmi/RemoteException
-header extends java/io/IOException flags 21
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
 -class name java/rmi/activation/Activatable
 
 -class name java/rmi/activation/ActivateFailedException
@@ -67,24 +63,4 @@ innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang
 -class name java/rmi/activation/UnknownGroupException
 
 -class name java/rmi/activation/UnknownObjectException
-
-class name java/rmi/dgc/VMID
-header extends java/lang/Object implements java/io/Serializable flags 31
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
-class name java/rmi/server/ObjID
-header extends java/lang/Object implements java/io/Serializable flags 31
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
-class name java/rmi/server/RemoteObject
-header extends java/lang/Object implements java/rmi/Remote,java/io/Serializable flags 421
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
-class name java/rmi/server/ServerCloneException
-header extends java/lang/CloneNotSupportedException flags 21
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
-class name java/rmi/server/UID
-header extends java/lang/Object implements java/io/Serializable flags 31
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
 

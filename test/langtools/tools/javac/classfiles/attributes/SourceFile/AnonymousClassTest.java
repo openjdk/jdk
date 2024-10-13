@@ -26,9 +26,10 @@
  * @summary sourcefile attribute test for anonymous class.
  * @bug 8040129
  * @library /tools/lib /tools/javac/lib ../lib
+ * @enablePreview
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
- *          jdk.jdeps/com.sun.tools.classfile
+ *          java.base/jdk.internal.classfile.impl
  * @build toolbox.ToolBox InMemoryFileManager TestBase SourceFileTestBase
  * @run main AnonymousClassTest
  */

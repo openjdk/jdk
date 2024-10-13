@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ import jdk.test.lib.RandomFactory;
 import jdk.test.lib.NetworkConfiguration;
 import jdk.test.lib.Platform;
 import jdk.test.lib.net.IPSupport;
+import org.testng.Assert;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -46,6 +47,7 @@ import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
 import java.util.ArrayList;
@@ -55,6 +57,7 @@ import java.util.function.Predicate;
 import static java.net.StandardProtocolFamily.INET;
 import static java.net.StandardProtocolFamily.INET6;
 import static java.net.StandardSocketOptions.SO_SNDBUF;
+import static java.net.StandardSocketOptions.SO_RCVBUF;
 import static jdk.test.lib.net.IPSupport.hasIPv4;
 import static jdk.test.lib.net.IPSupport.hasIPv6;
 import static jdk.test.lib.net.IPSupport.preferIPv4Stack;
@@ -63,8 +66,6 @@ import static org.testng.Assert.assertThrows;
 import static org.testng.Assert.assertTrue;
 
 public class SendReceiveMaxSize {
-    private final static int IPV4_SNDBUF = 65507;
-    private final static int IPV6_SNDBUF = 65527;
     private final static Class<IOException> IOE = IOException.class;
     private final static Random random = RandomFactory.getRandom();
 
@@ -89,12 +90,12 @@ public class SendReceiveMaxSize {
                     .orElse((Inet4Address) InetAddress.getByName("127.0.0.1"));
             testcases.add(new Object[]{
                     supplier(() -> DatagramChannel.open()),
-                    IPV4_SNDBUF,
+                    IPSupport.getMaxUDPSendBufSizeIPv4(),
                     IPv4Addr
             });
             testcases.add(new Object[]{
                     supplier(() -> DatagramChannel.open(INET)),
-                    IPV4_SNDBUF,
+                    IPSupport.getMaxUDPSendBufSizeIPv4(),
                     IPv4Addr
             });
         }
@@ -105,12 +106,12 @@ public class SendReceiveMaxSize {
                     .orElse((Inet6Address) InetAddress.getByName("::1"));
             testcases.add(new Object[]{
                     supplier(() -> DatagramChannel.open()),
-                    IPV6_SNDBUF,
+                    IPSupport.getMaxUDPSendBufSizeIPv6(),
                     IPv6Addr
             });
             testcases.add(new Object[]{
                     supplier(() -> DatagramChannel.open(INET6)),
-                    IPV6_SNDBUF,
+                    IPSupport.getMaxUDPSendBufSizeIPv6(),
                     IPv6Addr
             });
         }
@@ -132,11 +133,17 @@ public class SendReceiveMaxSize {
             throws IOException {
         try (var receiver = DatagramChannel.open()) {
             receiver.bind(new InetSocketAddress(host, 0));
+            assertTrue(receiver.getOption(SO_RCVBUF) >= capacity,
+                       receiver.getOption(SO_RCVBUF) +
+                       " for UDP receive buffer too small to hold capacity " +
+                       capacity);
             var port = receiver.socket().getLocalPort();
             var addr = new InetSocketAddress(host, port);
 
             try (var sender = supplier.open()) {
-                sender.bind(null);
+                sender.bind(new InetSocketAddress(host, 0));
+                System.out.format("testSendReceiveMaxSize: sender: %s -> receiver: %s%n",
+                        sender.getLocalAddress(), receiver.getLocalAddress());
                 if (!Platform.isOSX()) {
                     if (sender.getOption(SO_SNDBUF) < capacity)
                         sender.setOption(SO_SNDBUF, capacity);
@@ -147,7 +154,18 @@ public class SendReceiveMaxSize {
                 var sendBuf = ByteBuffer.wrap(testData);
                 sender.send(sendBuf, addr);
                 var receiveBuf = ByteBuffer.allocate(capacity);
-                receiver.receive(receiveBuf);
+                SocketAddress src;
+                int count = 0;
+                do {
+                    receiveBuf.clear();
+                    src = receiver.receive(receiveBuf);
+                    if (sender.getLocalAddress().equals(src)) break;
+                    System.out.println("step1: received unexpected datagram from: " + src);
+                    System.out.println("\texpected: " + sender.getLocalAddress());
+                    if (++count > 10) {
+                        throw new AssertionError("too many unexpected messages");
+                    }
+                } while (true);
 
                 sendBuf.flip();
                 receiveBuf.flip();
@@ -164,7 +182,17 @@ public class SendReceiveMaxSize {
                 sendBuf = ByteBuffer.wrap(testData);
                 sender.send(sendBuf, addr);
                 receiveBuf = ByteBuffer.allocate(capacity - 1);
-                receiver.receive(receiveBuf);
+                count = 0;
+                do {
+                    receiveBuf.clear();
+                    src = receiver.receive(receiveBuf);
+                    if (sender.getLocalAddress().equals(src)) break;
+                    System.out.println("step1: received unexpected datagram from: " + src);
+                    System.out.println("\texpected: " + sender.getLocalAddress());
+                    if (++count > 10) {
+                        throw new AssertionError("too many unexpected messages");
+                    }
+                } while (true);
 
                 sendBuf.flip();
                 receiveBuf.flip();

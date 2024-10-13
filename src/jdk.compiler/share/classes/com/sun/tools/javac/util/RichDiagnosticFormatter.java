@@ -94,6 +94,7 @@ public class RichDiagnosticFormatter extends
         return instance;
     }
 
+    @SuppressWarnings("this-escape")
     protected RichDiagnosticFormatter(Context context) {
         super((AbstractDiagnosticFormatter)Log.instance(context).getDiagnosticFormatter());
         setRichPrinter(new RichPrinter());
@@ -182,6 +183,9 @@ public class RichDiagnosticFormatter extends
     protected void preprocessArgument(Object arg) {
         if (arg instanceof Type type) {
             preprocessType(type);
+        }
+        else if (arg instanceof JCDiagnostic.AnnotatedType type) {
+            preprocessType(type.type());
         }
         else if (arg instanceof Symbol symbol) {
             preprocessSymbol(symbol);

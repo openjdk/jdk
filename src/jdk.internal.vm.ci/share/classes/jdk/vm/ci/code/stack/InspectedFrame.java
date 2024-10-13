@@ -51,6 +51,10 @@ public interface InspectedFrame {
     /**
      * This method will materialize all virtual objects, deoptimize the stack frame and make sure
      * that subsequent execution of the deoptimized frame uses the materialized values.
+     *
+     * @see StackIntrospection#canMaterializeVirtualObjects
+     * @throws IllegalArgumentException if stack introspection does not support
+     *             materialization of virtual objects for this frame
      */
     void materializeVirtualObjects(boolean invalidateCode);
 

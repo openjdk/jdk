@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -159,14 +159,16 @@ inline void vframeStreamCommon::fill_from_compiled_frame(int decode_offset) {
     // as it were a native compiled frame (no Java-level assumptions).
 #ifdef ASSERT
     if (WizardMode) {
-      ttyLocker ttyl;
-      tty->print_cr("Error in fill_from_frame: pc_desc for "
-                    INTPTR_FORMAT " not found or invalid at %d",
-                    p2i(_frame.pc()), decode_offset);
-      nm()->print();
-      nm()->method()->print_codes();
-      nm()->print_code();
-      nm()->print_pcs();
+      // Keep tty output consistent. To avoid ttyLocker, we buffer in stream, and print all at once.
+      stringStream ss;
+      ss.print_cr("Error in fill_from_frame: pc_desc for "
+                  INTPTR_FORMAT " not found or invalid at %d",
+                  p2i(_frame.pc()), decode_offset);
+      nm()->print_on(&ss);
+      nm()->method()->print_codes_on(&ss);
+      nm()->print_code_on(&ss);
+      nm()->print_pcs_on(&ss);
+      tty->print("%s", ss.as_string()); // print all at once
     }
     found_bad_method_frame();
 #endif
@@ -204,7 +206,7 @@ inline bool vframeStreamCommon::fill_from_frame() {
 
   // Compiled frame
 
-  if (cb() != nullptr && cb()->is_compiled()) {
+  if (cb() != nullptr && cb()->is_nmethod()) {
     assert(nm()->method() != nullptr, "must be");
     if (nm()->is_native_method()) {
       // Do not rely on scopeDesc since the pc might be imprecise due to the _last_native_pc trick.

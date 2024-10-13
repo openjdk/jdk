@@ -57,8 +57,8 @@ void ShenandoahRootVerifier::roots_do(OopClosure* oops) {
   ShenandoahGCStateResetter resetter;
   shenandoah_assert_safepoint();
 
-  CodeBlobToOopClosure blobs(oops, !CodeBlobToOopClosure::FixRelocations);
-  CodeCache::blobs_do(&blobs);
+  NMethodToOopClosure blobs(oops, !NMethodToOopClosure::FixRelocations);
+  CodeCache::nmethods_do(&blobs);
 
   CLDToOopClosure clds(oops, ClassLoaderData::_claim_none);
   ClassLoaderDataGraph::cld_do(&clds);
@@ -86,6 +86,6 @@ void ShenandoahRootVerifier::strong_roots_do(OopClosure* oops) {
   // Do thread roots the last. This allows verification code to find
   // any broken objects from those special roots first, not the accidental
   // dangling reference from the thread root.
-  CodeBlobToOopClosure blobs(oops, !CodeBlobToOopClosure::FixRelocations);
-  Threads::possibly_parallel_oops_do(true, oops, &blobs);
+  NMethodToOopClosure nmethods(oops, !NMethodToOopClosure::FixRelocations);
+  Threads::possibly_parallel_oops_do(true, oops, &nmethods);
 }

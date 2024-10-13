@@ -38,16 +38,12 @@
 #include "runtime/stackChunkFrameStream.inline.hpp"
 
 ContinuationWrapper::ContinuationWrapper(const RegisterMap* map)
-  : _thread(map->thread()),
-    _entry(Continuation::get_continuation_entry_for_continuation(_thread, map->stack_chunk()->cont())),
-    _continuation(map->stack_chunk()->cont())
-  {
-  assert(oopDesc::is_oop(_continuation),"Invalid cont: " INTPTR_FORMAT, p2i((void*)_continuation));
+  : ContinuationWrapper(map->thread(),
+                        Continuation::get_continuation_entry_for_continuation(map->thread(), map->stack_chunk()->cont()),
+                        map->stack_chunk()->cont()) {
   assert(_entry == nullptr || _continuation == _entry->cont_oop(map->thread()),
     "cont: " INTPTR_FORMAT " entry: " INTPTR_FORMAT " entry_sp: " INTPTR_FORMAT,
     p2i( (oopDesc*)_continuation), p2i((oopDesc*)_entry->cont_oop(map->thread())), p2i(entrySP()));
-  disallow_safepoint();
-  read();
 }
 
 const frame ContinuationWrapper::last_frame() {
@@ -96,4 +92,3 @@ bool ContinuationWrapper::chunk_invariant() const {
   return true;
 }
 #endif // ASSERT
-

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,9 @@
 
 #include <string.h>
 #include "jvmti.h"
-#include "agent_common.h"
-#include "jni_tools.h"
-#include "jvmti_tools.h"
+#include "agent_common.hpp"
+#include "jni_tools.hpp"
+#include "jvmti_tools.hpp"
 
 extern "C" {
 
@@ -57,8 +57,8 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
 
     /* perform testing */
     {
-        jthread* threads = NULL;
-        jvmtiError* results = NULL;
+        jthread* threads = nullptr;
+        jvmtiError* results = nullptr;
         int i;
 
         NSK_DISPLAY1("Allocate threads array: %d threads\n", threadsCount);
@@ -138,7 +138,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
 
         NSK_DISPLAY0("Delete threads references\n");
         for (i = 0; i < threadsCount; i++) {
-            if (threads[i] != NULL)
+            if (threads[i] != nullptr)
                 NSK_TRACE(jni->DeleteGlobalRef(threads[i]));
         }
 
@@ -164,14 +164,14 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
 static int fillThreadsByName(jvmtiEnv* jvmti, JNIEnv* jni,
                             const char name[], int foundCount, jthread foundThreads[]) {
     jint count = 0;
-    jthread* threads = NULL;
+    jthread* threads = nullptr;
 
     size_t len = strlen(name);
     int found = 0;
     int i;
 
     for (i = 0; i < foundCount; i++) {
-        foundThreads[i] = NULL;
+        foundThreads[i] = nullptr;
     }
 
     if (!NSK_JVMTI_VERIFY(jvmti->GetAllThreads(&count, &threads))) {
@@ -188,7 +188,7 @@ static int fillThreadsByName(jvmtiEnv* jvmti, JNIEnv* jni,
             break;
         }
 
-        if (info.name != NULL && strncmp(name, info.name, len) == 0) {
+        if (info.name != nullptr && strncmp(name, info.name, len) == 0) {
             NSK_DISPLAY3("  ... found thread #%d: %p (%s)\n",
                                     found, threads[i], info.name);
             if (found < foundCount)
@@ -216,7 +216,7 @@ static int fillThreadsByName(jvmtiEnv* jvmti, JNIEnv* jni,
     NSK_DISPLAY1("Make global references for threads: %d threads\n", foundCount);
     for (i = 0; i < foundCount; i++) {
         if (!NSK_JNI_VERIFY(jni, (foundThreads[i] = (jthread)
-                    jni->NewGlobalRef(foundThreads[i])) != NULL)) {
+                    jni->NewGlobalRef(foundThreads[i])) != nullptr)) {
             nsk_jvmti_setFailStatus();
             return NSK_FALSE;
         }
@@ -241,7 +241,7 @@ JNIEXPORT jint JNI_OnLoad_resumethrdlst001(JavaVM *jvm, char *options, void *res
 }
 #endif
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
-    jvmtiEnv* jvmti = NULL;
+    jvmtiEnv* jvmti = nullptr;
 
     /* init framework and parse options */
     if (!NSK_VERIFY(nsk_jvmti_parseOptions(options)))
@@ -256,7 +256,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
     /* create JVMTI environment */
     if (!NSK_VERIFY((jvmti =
-            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL))
+            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != nullptr))
         return JNI_ERR;
 
     /* add specific capabilities for suspending thread */
@@ -269,7 +269,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     }
 
     /* register agent proc and arg */
-    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, NULL)))
+    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, nullptr)))
         return JNI_ERR;
 
     return JNI_OK;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,9 @@
 
 package javax.lang.model.element;
 
+import javax.lang.model.type.TypeMirror;
+import javax.lang.model.type.TypeKind;
+
 /**
  * Represents a record component.
  *
@@ -32,6 +35,18 @@ package javax.lang.model.element;
  * @since 16
  */
 public interface RecordComponentElement extends Element {
+    /**
+     * {@return the type of this record component}
+     *
+     * Note that the types of record components range over {@linkplain
+     * TypeKind many kinds} of types, including primitive types,
+     * declared types, and array types.
+     *
+     * @see TypeKind
+     */
+    @Override
+    TypeMirror asType();
+
     /**
      * {@return the enclosing element of this record component}
      *

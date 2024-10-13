@@ -1,0 +1,3070 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2024 Unicode, Inc.
+For terms of use, see http://www.unicode.org/copyright.html
+SPDX-License-Identifier: Unicode-3.0
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+-->
+<ldml>
+	<identity>
+		<version number="$Revision$"/>
+		<language type="kxv"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="ar">arabic</language>
+			<language type="ar_001">punijuga mānānka arabic</language>
+			<language type="bn">bangali</language>
+			<language type="de">jerman</language>
+			<language type="de_AT">ausṭriati jerman</language>
+			<language type="de_CH">svis high jerman</language>
+			<language type="en">ingrajī</language>
+			<language type="en_AU">ausṭreliati ingarjī</language>
+			<language type="en_CA">kanaḍati ingarjī</language>
+			<language type="en_GB">briṭisti ingrajī</language>
+			<language type="en_GB" alt="short">juktarajyati ingrajī</language>
+			<language type="en_US">amerikati ingrajī</language>
+			<language type="en_US" alt="short">juktarasṭrati ingrajī</language>
+			<language type="es">spenis</language>
+			<language type="es_419">laṭin americati spenis</language>
+			<language type="es_ES">yuropīyati spenis</language>
+			<language type="es_MX">meksikoti spenis</language>
+			<language type="fr">prenc</language>
+			<language type="fr_CA">kanaḍati prenc</language>
+			<language type="fr_CH">svis prenc</language>
+			<language type="hi_Latn">hindi</language>
+			<language type="id">inḍonesiyati</language>
+			<language type="it">iṭaliti</language>
+			<language type="ja">japanij</language>
+			<language type="ko">koriati</language>
+			<language type="kxv">kuvi</language>
+			<language type="nl">ḍc</language>
+			<language type="nl_BE">vlaams</language>
+			<language type="pl">polis</language>
+			<language type="pt">portugīj</language>
+			<language type="pt_BR">brajilian portugīj</language>
+			<language type="pt_PT">yuropīyati portugīj</language>
+			<language type="ru">rusiyati</language>
+			<language type="th">tae</language>
+			<language type="tr">turkis</language>
+			<language type="zh">cainati</language>
+			<language type="zh" alt="menu">cainati, manḍarin</language>
+			<language type="zh_Hans">sahaj cainati</language>
+			<language type="zh_Hans" alt="long">sahaj manḍarin cainati</language>
+			<language type="zh_Hant">hirudlu cainati</language>
+			<language type="zh_Hant" alt="long">hirudlu manḍarin cainati</language>
+		</languages>
+		<scripts>
+			<script type="Arab">aarabic</script>
+			<script type="Cyrl">sirilik</script>
+			<script type="Deva">devnagrī</script>
+			<script type="Hans">sahaj</script>
+			<script type="Hans" alt="stand-alone">sahaj han</script>
+			<script type="Hant">hirudlu</script>
+			<script type="Hant" alt="stand-alone">hirudlu han</script>
+			<script type="Latn">laṭin</script>
+			<script type="Orya">oḍiaa</script>
+			<script type="Telu">telugu</script>
+			<script type="Zxxx">raciaahalee</script>
+			<script type="Zzzz">puṇāātiakr</script>
+		</scripts>
+		<territories>
+			<territory type="001">raji, purti</territory>
+			<territory type="419">laṭin amerika</territory>
+			<territory type="AD">ānḍorā</territory>
+			<territory type="AE">aanḍiti arab emireṭs</territory>
+			<territory type="AF">aapganistan</territory>
+			<territory type="AG">eṇṭigaa aḍe barbuḍaa</territory>
+			<territory type="AI">anguila</territory>
+			<territory type="AL">albania</territory>
+			<territory type="AM">aarmenia</territory>
+			<territory type="AO">angola</territory>
+			<territory type="AQ">ānṭarkṭikā</territory>
+			<territory type="AR">aarhenṭina</territory>
+			<territory type="AS">amerikati samva</territory>
+			<territory type="AT">austria</territory>
+			<territory type="AU">astrelia</territory>
+			<territory type="AW">aruba</territory>
+			<territory type="AX">eleṇḍ dīp</territory>
+			<territory type="AZ">ajerbaijan</territory>
+			<territory type="BA">bajnia aḍe hertsegovina</territory>
+			<territory type="BB">barbaḍos</territory>
+			<territory type="BD">banglades</territory>
+			<territory type="BE">beljiym</territory>
+			<territory type="BF">burkina paso</territory>
+			<territory type="BG">bulgaria</territory>
+			<territory type="BH">bāren</territory>
+			<territory type="BI">buruṇḍī</territory>
+			<territory type="BJ">benīn</territory>
+			<territory type="BL">se barṭelemi</territory>
+			<territory type="BM">bermuḍā</territory>
+			<territory type="BN">brunae</territory>
+			<territory type="BO">boliviā</territory>
+			<territory type="BQ">karibiyn nedrlends</territory>
+			<territory type="BR">brājil</territory>
+			<territory type="BS">bāhāmās</territory>
+			<territory type="BT">buṭān</territory>
+			<territory type="BW">boṭsvana</territory>
+			<territory type="BY">belarūs</territory>
+			<territory type="BZ">belīj</territory>
+			<territory type="CA">kanaḍa</territory>
+			<territory type="CC">kokos keling dīp</territory>
+			<territory type="CD">kongo - kinsasa</territory>
+			<territory type="CD" alt="variant">kongo (drc)</territory>
+			<territory type="CF">madini aaprika republik</territory>
+			<territory type="CG">kongo - brajavil</territory>
+			<territory type="CG" alt="variant">kongo republik</territory>
+			<territory type="CH">svitjerlaṇḍ</territory>
+			<territory type="CI">koṭ ḍi vaa</territory>
+			<territory type="CI" alt="variant">aivrī kosṭ</territory>
+			<territory type="CK">kuk dīp</territory>
+			<territory type="CL">cili</territory>
+			<territory type="CM">kemarun</territory>
+			<territory type="CN">caina</territory>
+			<territory type="CO">kolmbiaa</territory>
+			<territory type="CR">kosta rika</territory>
+			<territory type="CU">kyuba</territory>
+			<territory type="CV">kep vrḍi</territory>
+			<territory type="CW">kyurasao</territory>
+			<territory type="CX">kristmas dīp</territory>
+			<territory type="CY">saipras</territory>
+			<territory type="CZ">cekiya</territory>
+			<territory type="CZ" alt="variant">cek republik</territory>
+			<territory type="DE">jermanī</territory>
+			<territory type="DG">ḍiego garsia</territory>
+			<territory type="DJ">jibutī</territory>
+			<territory type="DK">ḍenmark</territory>
+			<territory type="DM">dominika</territory>
+			<territory type="DO">dominikan republik</territory>
+			<territory type="DZ">aljīriaa</territory>
+			<territory type="EA">seuṭa aḍe melila</territory>
+			<territory type="EC">ekvaḍor</territory>
+			<territory type="EE">esṭoniya</territory>
+			<territory type="EG">ījipṭ</territory>
+			<territory type="EH">vedakuṇpu sahara</territory>
+			<territory type="ER">īriṭriaa</territory>
+			<territory type="ES">spein</territory>
+			<territory type="ET">ītiyopiya</territory>
+			<territory type="FI">pinlaṇd</territory>
+			<territory type="FJ">piji</territory>
+			<territory type="FK">paklaṇd dīp</territory>
+			<territory type="FK" alt="variant">paklaṇd dīp (āislas malvinas)</territory>
+			<territory type="FM">micronesiaa</territory>
+			<territory type="FO">pēro dīp</territory>
+			<territory type="FR">prans</territory>
+			<territory type="GA">gbon</territory>
+			<territory type="GB">uniṭeḍ kingḍom</territory>
+			<territory type="GB" alt="short">yuke</territory>
+			<territory type="GD">graneida</territory>
+			<territory type="GE">jeorjiaa</territory>
+			<territory type="GF">prenc guiyana</territory>
+			<territory type="GG">grnse</territory>
+			<territory type="GH">gana</territory>
+			<territory type="GI">jbralṭr</territory>
+			<territory type="GL">grīnlanḍ</territory>
+			<territory type="GM">gambia</territory>
+			<territory type="GN">gini</territory>
+			<territory type="GP">gvadelup</territory>
+			<territory type="GQ">ikveṭorial gini</territory>
+			<territory type="GR">grīs</territory>
+			<territory type="GS">dakiṇ jārjiā aḍe dakiṇ sandwich dīp</territory>
+			<territory type="GT">gvaṭemala</territory>
+			<territory type="GU">guām</territory>
+			<territory type="GW">gini-bisau</territory>
+			<territory type="GY">guyana</territory>
+			<territory type="HK">hong kong (sar) caina</territory>
+			<territory type="HK" alt="short">hong kong</territory>
+			<territory type="HN">honḍuras</territory>
+			<territory type="HR">kroesia</territory>
+			<territory type="HT">haiti</territory>
+			<territory type="HU">hungarī</territory>
+			<territory type="IC">kanari dīp</territory>
+			<territory type="ID">inḍonesiya</territory>
+			<territory type="IE">aayarlanḍ</territory>
+			<territory type="IL">israel</territory>
+			<territory type="IM">aail āp man</territory>
+			<territory type="IN">inḍiā</territory>
+			<territory type="IO">briṭis inḍiāti samudra handi</territory>
+			<territory type="IQ">irak</territory>
+			<territory type="IR">iran</territory>
+			<territory type="IS">aislanḍ</territory>
+			<territory type="IT">iṭalī</territory>
+			<territory type="JE">jersī</territory>
+			<territory type="JM">jamaika</territory>
+			<territory type="JO">jorḍan</territory>
+			<territory type="JP">japan</territory>
+			<territory type="KE">kenya</territory>
+			<territory type="KG">kirgistan</territory>
+			<territory type="KH">kamboḍia</territory>
+			<territory type="KI">kiribaṭi</territory>
+			<territory type="KM">komoros</territory>
+			<territory type="KN">seint kiṭs āḍe nebis</territory>
+			<territory type="KP">uttar koriya</territory>
+			<territory type="KR">dkiṇ koriyaa</territory>
+			<territory type="KW">kuvet</territory>
+			<territory type="KY">keimen dīp</territory>
+			<territory type="KZ">kajakstan</territory>
+			<territory type="LA">laos</territory>
+			<territory type="LB">lebanon</territory>
+			<territory type="LC">seint lusiya</territory>
+			<territory type="LI">likṭensṭein</territory>
+			<territory type="LK">sri lanka</territory>
+			<territory type="LR">laiberīya</territory>
+			<territory type="LS">lesotho</territory>
+			<territory type="LT">liṭuaania</territory>
+			<territory type="LU">lksemborg</territory>
+			<territory type="LV">laṭviya</territory>
+			<territory type="LY">libya</territory>
+			<territory type="MA">morkko</territory>
+			<territory type="MC">monako</territory>
+			<territory type="MD">molḍovaa</territory>
+			<territory type="ME">monṭenegro</territory>
+			<territory type="MF">seint martin</territory>
+			<territory type="MG">madagascar</territory>
+			<territory type="MH">marsall dīp</territory>
+			<territory type="MK">uttar mesiḍoniya</territory>
+			<territory type="ML">mali</territory>
+			<territory type="MM">myanmar (brma)</territory>
+			<territory type="MN">mongolia</territory>
+			<territory type="MO">makao sar cina</territory>
+			<territory type="MO" alt="short">makao</territory>
+			<territory type="MP">uttar mariyana dīp</territory>
+			<territory type="MQ">marṭinik</territory>
+			<territory type="MR">mauriṭaniya</territory>
+			<territory type="MS">monṭserrarṭ</territory>
+			<territory type="MT">malṭaa</territory>
+			<territory type="MU">mauriss</territory>
+			<territory type="MV">māldīp</territory>
+			<territory type="MW">malavī</territory>
+			<territory type="MX">meksīko</territory>
+			<territory type="MY">maleseāā</territory>
+			<territory type="MZ">mojambik</territory>
+			<territory type="NA">namibia</territory>
+			<territory type="NC">nyu keleḍoniya</territory>
+			<territory type="NE">naījr</territory>
+			<territory type="NF">norpok dīp</territory>
+			<territory type="NG">naigeria</territory>
+			<territory type="NI">nikaraguaa</territory>
+			<territory type="NL">nederlanḍs</territory>
+			<territory type="NO">norvay</territory>
+			<territory type="NP">nepal</territory>
+			<territory type="NR">nauru</territory>
+			<territory type="NU">niyu</territory>
+			<territory type="NZ">nyu jīlanḍ</territory>
+			<territory type="OM">oman</territory>
+			<territory type="PA">panema</territory>
+			<territory type="PE">peru</territory>
+			<territory type="PF">prenc</territory>
+			<territory type="PG">papua nyu gini</territory>
+			<territory type="PH">pilippines</territory>
+			<territory type="PK">pakistan</territory>
+			<territory type="PL">polanḍ</territory>
+			<territory type="PM">seint pierri ande mikelon</territory>
+			<territory type="PN">piṭkarn dīp</territory>
+			<territory type="PR">puerto rico</territory>
+			<territory type="PS">palesṭiati handi</territory>
+			<territory type="PS" alt="short">palesṭain</territory>
+			<territory type="PT">portugal</territory>
+			<territory type="PW">palau</territory>
+			<territory type="PY">pareguvai</territory>
+			<territory type="QA">katar</territory>
+			<territory type="RE">riyuniyn</territory>
+			<territory type="RO">romaniya</territory>
+			<territory type="RS">serbia</territory>
+			<territory type="RU">russia</territory>
+			<territory type="RW">rvanḍa</territory>
+			<territory type="SA">saūdi arabiya</territory>
+			<territory type="SB">soloman dīp</territory>
+			<territory type="SC">siselles</territory>
+			<territory type="SD">suḍan</territory>
+			<territory type="SE">sviḍen</territory>
+			<territory type="SG">singapor</territory>
+			<territory type="SH">seint helena</territory>
+			<territory type="SI">slovenia</territory>
+			<territory type="SJ">svalbard aḍe jan mayen</territory>
+			<territory type="SK">slovakia</territory>
+			<territory type="SL">sierra leyon</territory>
+			<territory type="SM">san marino</territory>
+			<territory type="SN">senegal</territory>
+			<territory type="SO">somaliya</territory>
+			<territory type="SR">surīname</territory>
+			<territory type="SS">dkiṇ sūdan</territory>
+			<territory type="ST">sao tom aḍe prinsipe</territory>
+			<territory type="SV">el salvador</territory>
+			<territory type="SX">sint mārṭen</territory>
+			<territory type="SY">sīriya</territory>
+			<territory type="SZ">esvaṭini</territory>
+			<territory type="SZ" alt="variant">svajilanḍ</territory>
+			<territory type="TC">turks aḍe keikes dīp</territory>
+			<territory type="TD">cad</territory>
+			<territory type="TF">prēnch dakiṇ teritorī</territory>
+			<territory type="TG">ṭogo</territory>
+			<territory type="TH">tailanḍ</territory>
+			<territory type="TJ">tajākīstān</territory>
+			<territory type="TK">ṭokelau</territory>
+			<territory type="TL">ṭimor - leste</territory>
+			<territory type="TL" alt="variant">īst ṭimor</territory>
+			<territory type="TM">turkmenīstān</territory>
+			<territory type="TN">ṭunisiaa</territory>
+			<territory type="TO">ṭonga</territory>
+			<territory type="TR">turkī</territory>
+			<territory type="TT">ṭriniḍaḍ aḍe ṭobego</territory>
+			<territory type="TV">tuvala</territory>
+			<territory type="TW">taivan</territory>
+			<territory type="TZ">ṭanjaniya</territory>
+			<territory type="UA">yūkrain</territory>
+			<territory type="UG">yūganḍa</territory>
+			<territory type="UM">yu.es. aautlaing dīp</territory>
+			<territory type="US">yunaiṭeḍ stets</territory>
+			<territory type="US" alt="short">yu.es.</territory>
+			<territory type="UY">ūrugve</territory>
+			<territory type="UZ">ūjbekistaan</territory>
+			<territory type="VA">bāṭikān</territory>
+			<territory type="VC">seint vinseṇṭ aḍe grenaḍi</territory>
+			<territory type="VE">venejuela</territory>
+			<territory type="VG">briṭis vrjin dīp</territory>
+			<territory type="VI">yu.es. vrjin dīp</territory>
+			<territory type="VN">viyetnam</territory>
+			<territory type="VU">vanuaatu</territory>
+			<territory type="WF">vallis aḍe puṭuna</territory>
+			<territory type="WS">samoaa</territory>
+			<territory type="XK">kosovo</territory>
+			<territory type="YE">yemen</territory>
+			<territory type="YT">mayoṭṭ</territory>
+			<territory type="ZA">dkīṇ aaprika</territory>
+			<territory type="ZM">jambiya</territory>
+			<territory type="ZW">jimbabve</territory>
+		</territories>
+		<types>
+			<type key="calendar" type="gregorian">gregoriyan kelenḍr</type>
+			<type key="calendar" type="indian">barat jatiya kelenḍr</type>
+			<type key="collation" type="standard">mānānka baga lẽ</type>
+			<type key="numbers" type="deva">devnagrī nmbr</type>
+			<type key="numbers" type="latn">veḍa kuṇpu nmbr</type>
+			<type key="numbers" type="orya">oḍiya nmbr</type>
+			<type key="numbers" type="telu">telugū nmbr</type>
+		</types>
+		<measurementSystemNames>
+			<measurementSystemName type="metric">meṭric</measurementSystemName>
+			<measurementSystemName type="UK">yuke</measurementSystemName>
+			<measurementSystemName type="US">yues</measurementSystemName>
+		</measurementSystemNames>
+		<codePatterns>
+			<codePattern type="language">kata: {0}</codePattern>
+			<codePattern type="script">akr: {0}</codePattern>
+			<codePattern type="territory">muṭha: {0}</codePattern>
+		</codePatterns>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters>[aā {aa}{āā} b c dḍ eē g h iī j k lḷ m nñṅṇ oō p rṛ s tṭ uū v y]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … '‘’ &quot;“” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
+	</characters>
+	<dates>
+		<calendars>
+			<calendar type="generic">
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern>EEEE, MMMM d, y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern>G d MMMM y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern>G d MMM y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>G d/M/y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<dateTimeFormats>
+					<dateTimeFormatLength type="full">
+						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} 'aa'~ {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="long">
+						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} 'aa'~ {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="medium">
+						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="short">
+						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<availableFormats>
+						<dateFormatItem id="GyMd">GGGGG d/M/y</dateFormatItem>
+						<dateFormatItem id="GyMMMd">G d MMM y</dateFormatItem>
+						<dateFormatItem id="GyMMMEd">G E, d MMM y</dateFormatItem>
+						<dateFormatItem id="M">M</dateFormatItem>
+						<dateFormatItem id="Md">d/M</dateFormatItem>
+						<dateFormatItem id="MEd">E, d/M</dateFormatItem>
+						<dateFormatItem id="MMM">MMM</dateFormatItem>
+						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
+						<dateFormatItem id="MMMEd">E, d MMM</dateFormatItem>
+						<dateFormatItem id="yyyyM">GGGGG M/y</dateFormatItem>
+						<dateFormatItem id="yyyyMd">G d/M/y</dateFormatItem>
+						<dateFormatItem id="yyyyMEd">G E, d/M/y</dateFormatItem>
+						<dateFormatItem id="yyyyMMM">G MMM y</dateFormatItem>
+						<dateFormatItem id="yyyyMMMd">G d MMM y</dateFormatItem>
+						<dateFormatItem id="yyyyMMMEd">G E, d MMM y</dateFormatItem>
+						<dateFormatItem id="yyyyQQQ">QQQ G y</dateFormatItem>
+						<dateFormatItem id="yyyyQQQQ">QQQQ G y</dateFormatItem>
+					</availableFormats>
+					<intervalFormats>
+						<intervalFormatItem id="M">
+							<greatestDifference id="M">M–M</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Md">
+							<greatestDifference id="d">d/M – d/M</greatestDifference>
+							<greatestDifference id="M">d/M – d/M</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MEd">
+							<greatestDifference id="d">E, d/M – E, d/M</greatestDifference>
+							<greatestDifference id="M">E, d/M – E, d/M</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMM">
+							<greatestDifference id="M">MMM–MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMd">
+							<greatestDifference id="d">d–d MMM</greatestDifference>
+							<greatestDifference id="M">d MMM – d MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMEd">
+							<greatestDifference id="d">E, d MMM – E, d MMM</greatestDifference>
+							<greatestDifference id="M">E, d MMM – E, d MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="y">
+							<greatestDifference id="y">y–y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yM">
+							<greatestDifference id="M">M/y – M/y G</greatestDifference>
+							<greatestDifference id="y">M/y – M/y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMd">
+							<greatestDifference id="d">d/M/y – d/M/y G</greatestDifference>
+							<greatestDifference id="M">d/M/y – d/M/y G</greatestDifference>
+							<greatestDifference id="y">d/M/y – d/M/y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMEd">
+							<greatestDifference id="d">E, d/M/y – E, d/M/y G</greatestDifference>
+							<greatestDifference id="M">E, d/M/y – E, d/M/y G</greatestDifference>
+							<greatestDifference id="y">E, d/M/y – E, d/M/y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMM">
+							<greatestDifference id="M">MMM–MMM y G</greatestDifference>
+							<greatestDifference id="y">MMM y – MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMd">
+							<greatestDifference id="d">d – d MMM y G</greatestDifference>
+							<greatestDifference id="M">d MMM – d MMM y G</greatestDifference>
+							<greatestDifference id="y">d MMM y – d MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMEd">
+							<greatestDifference id="d">E, d MMM – E, d MMM y G</greatestDifference>
+							<greatestDifference id="M">E, d MMM – E, d MMM y G</greatestDifference>
+							<greatestDifference id="y">E, d MMM y – E, d MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMM">
+							<greatestDifference id="M">MMMM–MMMM y G</greatestDifference>
+							<greatestDifference id="y">MMMM y – MMMM y G</greatestDifference>
+						</intervalFormatItem>
+					</intervalFormats>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1">pusu</month>
+							<month type="2">maha</month>
+							<month type="3">pagu</month>
+							<month type="4">hire</month>
+							<month type="5">bese</month>
+							<month type="6">jaṭṭa</month>
+							<month type="7">aasaḍi</month>
+							<month type="8">srabĩ</month>
+							<month type="9">bado</month>
+							<month type="10">dasara</month>
+							<month type="11">divi</month>
+							<month type="12">pande</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1">pusu lenju</month>
+							<month type="2">maha lenju</month>
+							<month type="3">pagu lenju</month>
+							<month type="4">hire lenju</month>
+							<month type="5">bese lenju</month>
+							<month type="6">jaṭṭa lenju</month>
+							<month type="7">aasaḍi lenju</month>
+							<month type="8">srabĩ lenju</month>
+							<month type="9">bado lenju</month>
+							<month type="10">dasara lenju</month>
+							<month type="11">divi lenju</month>
+							<month type="12">pande lenju</month>
+						</monthWidth>
+					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="narrow">
+							<month type="1">pu</month>
+							<month type="2">ma</month>
+							<month type="3">pa</month>
+							<month type="4">hi</month>
+							<month type="5">be</month>
+							<month type="6">ja</month>
+							<month type="7">aa</month>
+							<month type="8">sra</month>
+							<month type="9">b</month>
+							<month type="10">da</month>
+							<month type="11">di</month>
+							<month type="12">pa</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<days>
+					<dayContext type="format">
+						<dayWidth type="abbreviated">
+							<day type="sun">aadi</day>
+							<day type="mon">smba</day>
+							<day type="tue">manga</day>
+							<day type="wed">puda</day>
+							<day type="thu">laki</day>
+							<day type="fri">sukru</day>
+							<day type="sat">sani</day>
+						</dayWidth>
+						<dayWidth type="short">
+							<day type="sun">aa</day>
+							<day type="mon">s</day>
+							<day type="tue">ma</day>
+							<day type="wed">pu</day>
+							<day type="thu">laki</day>
+							<day type="fri">su</day>
+							<day type="sat">sa</day>
+						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun">aadi vara</day>
+							<day type="mon">smbara</day>
+							<day type="tue">mangaḍa</day>
+							<day type="wed">pudara</day>
+							<day type="thu">laki vara</day>
+							<day type="fri">sukru vara</day>
+							<day type="sat">sani vara</day>
+						</dayWidth>
+					</dayContext>
+					<dayContext type="stand-alone">
+						<dayWidth type="narrow">
+							<day type="sun">aa</day>
+							<day type="mon">s</day>
+							<day type="tue">ma</day>
+							<day type="wed">pu</day>
+							<day type="thu">la</day>
+							<day type="fri">su</day>
+							<day type="sat">sa</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+				<quarters>
+					<quarterContext type="format">
+						<quarterWidth type="abbreviated">
+							<quarter type="1">Q1</quarter>
+							<quarter type="2">Q2</quarter>
+							<quarter type="3">Q3</quarter>
+							<quarter type="4">Q4</quarter>
+						</quarterWidth>
+						<quarterWidth type="wide">
+							<quarter type="1">1sṭ kuarṭr</quarter>
+							<quarter type="2">2nḍ kuarṭr</quarter>
+							<quarter type="3">3rḍ kuarṭr</quarter>
+							<quarter type="4">4th kuarṭr</quarter>
+						</quarterWidth>
+					</quarterContext>
+					<quarterContext type="stand-alone">
+						<quarterWidth type="abbreviated">
+							<quarter type="1">Q1</quarter>
+							<quarter type="2">Q2</quarter>
+							<quarter type="3">Q3</quarter>
+							<quarter type="4">Q4</quarter>
+						</quarterWidth>
+					</quarterContext>
+				</quarters>
+				<dayPeriods>
+					<dayPeriodContext type="format">
+						<dayPeriodWidth type="abbreviated">
+							<dayPeriod type="am">am</dayPeriod>
+							<dayPeriod type="pm">pm</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="narrow">
+							<dayPeriod type="am">a</dayPeriod>
+							<dayPeriod type="pm">p</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+					<dayPeriodContext type="stand-alone">
+						<dayPeriodWidth type="narrow">
+							<dayPeriod type="am">a</dayPeriod>
+							<dayPeriod type="pm">p</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+				</dayPeriods>
+				<eras>
+					<eraNames>
+						<era type="0">krisṭ purb nki</era>
+						<era type="0" alt="variant">neeti nki jug</era>
+						<era type="1">krisṭabd</era>
+						<era type="1" alt="variant">neeti jug</era>
+					</eraNames>
+					<eraAbbr>
+						<era type="0">bc</era>
+						<era type="0" alt="variant">bce</era>
+						<era type="1">ad</era>
+						<era type="1" alt="variant">ce</era>
+					</eraAbbr>
+				</eras>
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern>EEEE, d MMMM y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern>d MMMM y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern>d MMM y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>d/M/yy</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<timeFormats>
+					<timeFormatLength type="full">
+						<timeFormat>
+							<pattern>h:mm:ss a zzzz</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="long">
+						<timeFormat>
+							<pattern>h:mm:ss a z</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="medium">
+						<timeFormat>
+							<pattern>h:mm:ss a</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="short">
+						<timeFormat>
+							<pattern>h:mm a</pattern>
+						</timeFormat>
+					</timeFormatLength>
+				</timeFormats>
+				<dateTimeFormats>
+					<dateTimeFormatLength type="full">
+						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} 'aã' {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="long">
+						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} 'aã' {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="medium">
+						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="short">
+						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<availableFormats>
+						<dateFormatItem id="Bh">B h</dateFormatItem>
+						<dateFormatItem id="Bhm">&gt;B h:mm</dateFormatItem>
+						<dateFormatItem id="Bhms">B h:mm:ss</dateFormatItem>
+						<dateFormatItem id="EBhm">E B h:mm</dateFormatItem>
+						<dateFormatItem id="EBhms">E B h:mm:ss</dateFormatItem>
+						<dateFormatItem id="Ed">E d</dateFormatItem>
+						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
+						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="Gy">y G</dateFormatItem>
+						<dateFormatItem id="GyMd">GGGGG d/M/y</dateFormatItem>
+						<dateFormatItem id="GyMMM">MMM G y</dateFormatItem>
+						<dateFormatItem id="GyMMMd">d MMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMEd">E, d MMM y G</dateFormatItem>
+						<dateFormatItem id="Md">d/M</dateFormatItem>
+						<dateFormatItem id="MEd">E, d/M</dateFormatItem>
+						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
+						<dateFormatItem id="MMMEd">E, d MMM</dateFormatItem>
+						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
+						<dateFormatItem id="yM">M/y</dateFormatItem>
+						<dateFormatItem id="yMd">d/M/y</dateFormatItem>
+						<dateFormatItem id="yMEd">E, d/M/y</dateFormatItem>
+						<dateFormatItem id="yMMM">MMM y</dateFormatItem>
+						<dateFormatItem id="yMMMd">d MMM y</dateFormatItem>
+						<dateFormatItem id="yMMMEd">E, d MMM y</dateFormatItem>
+						<dateFormatItem id="yMMMM">MMMM y</dateFormatItem>
+						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
+						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
+					</availableFormats>
+					<intervalFormats>
+						<intervalFormatItem id="M">
+							<greatestDifference id="M">M–M</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Md">
+							<greatestDifference id="d">d/M – d/M</greatestDifference>
+							<greatestDifference id="M">d/M – d/M</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MEd">
+							<greatestDifference id="d">E, d/M – E, d/M</greatestDifference>
+							<greatestDifference id="M">E, d/M – E, d/M</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMM">
+							<greatestDifference id="M">MMM–MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMd">
+							<greatestDifference id="d">d–d MMM</greatestDifference>
+							<greatestDifference id="M">d MMM – d MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMEd">
+							<greatestDifference id="d">E, d MMM – E, d MMM</greatestDifference>
+							<greatestDifference id="M">E, d MMM – E, d MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yM">
+							<greatestDifference id="M">M/y – M/y</greatestDifference>
+							<greatestDifference id="y">M/y – M/y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMd">
+							<greatestDifference id="d">d/M/y – d/M/y</greatestDifference>
+							<greatestDifference id="M">d/M/y – d/M/y</greatestDifference>
+							<greatestDifference id="y">d/M/y – d/M/y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMEd">
+							<greatestDifference id="d">E, d/M/y – E, d/M/y</greatestDifference>
+							<greatestDifference id="M">E, d/M/y – E, d/M/y</greatestDifference>
+							<greatestDifference id="y">E, d/M/y – E, d/M/y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMM">
+							<greatestDifference id="M">MMM–MMM y</greatestDifference>
+							<greatestDifference id="y">MMM y – MMM y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMd">
+							<greatestDifference id="d">d–d MMM y</greatestDifference>
+							<greatestDifference id="M">d MMM – d MMM y</greatestDifference>
+							<greatestDifference id="y">d MMM y – d MMM y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMEd">
+							<greatestDifference id="d">E, d MMM – E, d MMM y</greatestDifference>
+							<greatestDifference id="M">E, d MMM – E, d MMM y</greatestDifference>
+							<greatestDifference id="y">E, d MMM y – E, d MMM y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMM">
+							<greatestDifference id="M">MMMM – MMMM y</greatestDifference>
+							<greatestDifference id="y">MMMM y – MMMM y</greatestDifference>
+						</intervalFormatItem>
+					</intervalFormats>
+				</dateTimeFormats>
+			</calendar>
+		</calendars>
+		<fields>
+			<field type="era">
+				<displayName>jug</displayName>
+			</field>
+			<field type="year">
+				<displayName>barsa</displayName>
+			</field>
+			<field type="year-short">
+				<displayName>ba.</displayName>
+			</field>
+			<field type="quarter">
+				<displayName>kuarṭer</displayName>
+			</field>
+			<field type="month">
+				<displayName>lenju</displayName>
+			</field>
+			<field type="month-short">
+				<displayName>le</displayName>
+			</field>
+			<field type="week">
+				<displayName>vara</displayName>
+			</field>
+			<field type="week-short">
+				<displayName>va</displayName>
+			</field>
+			<field type="day">
+				<displayName>dina</displayName>
+				<relative type="-1">raaala</relative>
+				<relative type="0">inju</relative>
+				<relative type="1">vie</relative>
+			</field>
+			<field type="weekday">
+				<displayName>vara ti dina</displayName>
+			</field>
+			<field type="dayperiod">
+				<displayName>am/pm</displayName>
+			</field>
+			<field type="hour">
+				<displayName>belā</displayName>
+			</field>
+			<field type="hour-short">
+				<displayName>be</displayName>
+			</field>
+			<field type="minute">
+				<displayName>miniṭ</displayName>
+			</field>
+			<field type="minute-short">
+				<displayName>min.</displayName>
+			</field>
+			<field type="second">
+				<displayName>sekenḍ</displayName>
+			</field>
+			<field type="second-short">
+				<displayName>sek.</displayName>
+			</field>
+			<field type="zone">
+				<displayName>belā muṭha</displayName>
+			</field>
+		</fields>
+		<timeZoneNames>
+			<regionFormat>{0} belā</regionFormat>
+			<regionFormat type="daylight">{0} ḍayliṭ belā</regionFormat>
+			<regionFormat type="standard">{0} mānānka belā</regionFormat>
+			<zone type="Etc/UTC">
+				<long>
+					<standard>smani jaga pruti belā</standard>
+				</long>
+			</zone>
+			<zone type="Etc/Unknown">
+				<exemplarCity>puṇaã ti gaḍa</exemplarCity>
+			</zone>
+			<zone type="Europe/Andorra">
+				<exemplarCity>aaṇḍora</exemplarCity>
+			</zone>
+			<zone type="Asia/Dubai">
+				<exemplarCity>dubai</exemplarCity>
+			</zone>
+			<zone type="Asia/Kabul">
+				<exemplarCity>kabul</exemplarCity>
+			</zone>
+			<zone type="America/Antigua">
+				<exemplarCity>enṭigua</exemplarCity>
+			</zone>
+			<zone type="America/Anguilla">
+				<exemplarCity>enguilla</exemplarCity>
+			</zone>
+			<zone type="Europe/Tirane">
+				<exemplarCity>ṭirane</exemplarCity>
+			</zone>
+			<zone type="Asia/Yerevan">
+				<exemplarCity>yerevan</exemplarCity>
+			</zone>
+			<zone type="Africa/Luanda">
+				<exemplarCity>luanḍa</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Rothera">
+				<exemplarCity>rotera</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Palmer">
+				<exemplarCity>palmer</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Troll">
+				<exemplarCity>ṭroll</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Syowa">
+				<exemplarCity>syova</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Mawson">
+				<exemplarCity>mavson</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Davis">
+				<exemplarCity>ḍevis</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Vostok">
+				<exemplarCity>vosṭok</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Casey">
+				<exemplarCity>kesee</exemplarCity>
+			</zone>
+			<zone type="Antarctica/DumontDUrville">
+				<exemplarCity>ḍyumont de urvill</exemplarCity>
+			</zone>
+			<zone type="Antarctica/McMurdo">
+				<exemplarCity>mek murḍo</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/Rio_Gallegos">
+				<exemplarCity>riyo gallegos</exemplarCity>
+			</zone>
+			<zone type="America/Mendoza">
+				<exemplarCity>menḍoja</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/San_Juan">
+				<exemplarCity>san huan</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/Ushuaia">
+				<exemplarCity>usvaiya</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/La_Rioja">
+				<exemplarCity>la rioja</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/San_Luis">
+				<exemplarCity>san luis</exemplarCity>
+			</zone>
+			<zone type="America/Catamarca">
+				<exemplarCity>katamarka</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/Salta">
+				<exemplarCity>salṭa</exemplarCity>
+			</zone>
+			<zone type="America/Jujuy">
+				<exemplarCity>huhue</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/Tucuman">
+				<exemplarCity>ṭukūmn</exemplarCity>
+			</zone>
+			<zone type="America/Cordoba">
+				<exemplarCity>korḍaba</exemplarCity>
+			</zone>
+			<zone type="America/Buenos_Aires">
+				<exemplarCity>buenous aires</exemplarCity>
+			</zone>
+			<zone type="Pacific/Pago_Pago">
+				<exemplarCity>pango pango</exemplarCity>
+			</zone>
+			<zone type="Europe/Vienna">
+				<exemplarCity>vienna</exemplarCity>
+			</zone>
+			<zone type="Australia/Perth">
+				<exemplarCity>pert</exemplarCity>
+			</zone>
+			<zone type="Australia/Eucla">
+				<exemplarCity>yukla</exemplarCity>
+			</zone>
+			<zone type="Australia/Darwin">
+				<exemplarCity>ḍarvin</exemplarCity>
+			</zone>
+			<zone type="Australia/Adelaide">
+				<exemplarCity>aedileid</exemplarCity>
+			</zone>
+			<zone type="Australia/Broken_Hill">
+				<exemplarCity>broken hill</exemplarCity>
+			</zone>
+			<zone type="Australia/Melbourne">
+				<exemplarCity>melborne</exemplarCity>
+			</zone>
+			<zone type="Australia/Hobart">
+				<exemplarCity>hobarṭ</exemplarCity>
+			</zone>
+			<zone type="Australia/Lindeman">
+				<exemplarCity>linḍerman</exemplarCity>
+			</zone>
+			<zone type="Australia/Sydney">
+				<exemplarCity>syḍnī</exemplarCity>
+			</zone>
+			<zone type="Australia/Brisbane">
+				<exemplarCity>brisbane</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Macquarie">
+				<exemplarCity>mekvari</exemplarCity>
+			</zone>
+			<zone type="Australia/Lord_Howe">
+				<exemplarCity>lorḍ hove</exemplarCity>
+			</zone>
+			<zone type="America/Aruba">
+				<exemplarCity>aruba</exemplarCity>
+			</zone>
+			<zone type="Europe/Mariehamn">
+				<exemplarCity>marieham</exemplarCity>
+			</zone>
+			<zone type="Asia/Baku">
+				<exemplarCity>baku</exemplarCity>
+			</zone>
+			<zone type="Europe/Sarajevo">
+				<exemplarCity>sarajevo</exemplarCity>
+			</zone>
+			<zone type="America/Barbados">
+				<exemplarCity>barbaḍos</exemplarCity>
+			</zone>
+			<zone type="Asia/Dhaka">
+				<exemplarCity>ḍaka</exemplarCity>
+			</zone>
+			<zone type="Europe/Brussels">
+				<exemplarCity>brussels</exemplarCity>
+			</zone>
+			<zone type="Africa/Ouagadougou">
+				<exemplarCity>vagdugu</exemplarCity>
+			</zone>
+			<zone type="Europe/Sofia">
+				<exemplarCity>sopiya</exemplarCity>
+			</zone>
+			<zone type="Asia/Bahrain">
+				<exemplarCity>bahrain</exemplarCity>
+			</zone>
+			<zone type="Africa/Bujumbura">
+				<exemplarCity>bujumbura</exemplarCity>
+			</zone>
+			<zone type="Africa/Porto-Novo">
+				<exemplarCity>porṭo-ṇovo</exemplarCity>
+			</zone>
+			<zone type="America/St_Barthelemy">
+				<exemplarCity>senṭ bartelemi</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Bermuda">
+				<exemplarCity>bermūda</exemplarCity>
+			</zone>
+			<zone type="Asia/Brunei">
+				<exemplarCity>brunei</exemplarCity>
+			</zone>
+			<zone type="America/La_Paz">
+				<exemplarCity>la paj</exemplarCity>
+			</zone>
+			<zone type="America/Kralendijk">
+				<exemplarCity>krelenḍeik</exemplarCity>
+			</zone>
+			<zone type="America/Eirunepe">
+				<exemplarCity>eirunepe</exemplarCity>
+			</zone>
+			<zone type="America/Rio_Branco">
+				<exemplarCity>rio branko</exemplarCity>
+			</zone>
+			<zone type="America/Porto_Velho">
+				<exemplarCity>porṭp velho</exemplarCity>
+			</zone>
+			<zone type="America/Boa_Vista">
+				<exemplarCity>boa vista</exemplarCity>
+			</zone>
+			<zone type="America/Manaus">
+				<exemplarCity>manaus</exemplarCity>
+			</zone>
+			<zone type="America/Cuiaba">
+				<exemplarCity>kuaaba</exemplarCity>
+			</zone>
+			<zone type="America/Santarem">
+				<exemplarCity>satari</exemplarCity>
+			</zone>
+			<zone type="America/Campo_Grande">
+				<exemplarCity>kampo granḍe</exemplarCity>
+			</zone>
+			<zone type="America/Belem">
+				<exemplarCity>belem</exemplarCity>
+			</zone>
+			<zone type="America/Araguaina">
+				<exemplarCity>aragvaina</exemplarCity>
+			</zone>
+			<zone type="America/Sao_Paulo">
+				<exemplarCity>sao paulo</exemplarCity>
+			</zone>
+			<zone type="America/Bahia">
+				<exemplarCity>bahia</exemplarCity>
+			</zone>
+			<zone type="America/Fortaleza">
+				<exemplarCity>portaleja</exemplarCity>
+			</zone>
+			<zone type="America/Maceio">
+				<exemplarCity>masīo</exemplarCity>
+			</zone>
+			<zone type="America/Recife">
+				<exemplarCity>resipi</exemplarCity>
+			</zone>
+			<zone type="America/Noronha">
+				<exemplarCity>noronha</exemplarCity>
+			</zone>
+			<zone type="America/Nassau">
+				<exemplarCity>nasau</exemplarCity>
+			</zone>
+			<zone type="Asia/Thimphu">
+				<exemplarCity>timphu</exemplarCity>
+			</zone>
+			<zone type="Africa/Gaborone">
+				<exemplarCity>gaboron</exemplarCity>
+			</zone>
+			<zone type="Europe/Minsk">
+				<exemplarCity>minsk</exemplarCity>
+			</zone>
+			<zone type="America/Belize">
+				<exemplarCity>belij</exemplarCity>
+			</zone>
+			<zone type="America/Dawson">
+				<exemplarCity>ḍaosn</exemplarCity>
+			</zone>
+			<zone type="America/Whitehorse">
+				<exemplarCity>vhaiṭhors</exemplarCity>
+			</zone>
+			<zone type="America/Inuvik">
+				<exemplarCity>inūvik</exemplarCity>
+			</zone>
+			<zone type="America/Vancouver">
+				<exemplarCity>vankūver</exemplarCity>
+			</zone>
+			<zone type="America/Fort_Nelson">
+				<exemplarCity>phort nelsn</exemplarCity>
+			</zone>
+			<zone type="America/Dawson_Creek">
+				<exemplarCity>ḍaoson krīk</exemplarCity>
+			</zone>
+			<zone type="America/Creston">
+				<exemplarCity>kresṭon</exemplarCity>
+			</zone>
+			<zone type="America/Edmonton">
+				<exemplarCity>eḍmonṭon</exemplarCity>
+			</zone>
+			<zone type="America/Swift_Current">
+				<exemplarCity>svipṭ kurrenṭ</exemplarCity>
+			</zone>
+			<zone type="America/Cambridge_Bay">
+				<exemplarCity>kembrij be</exemplarCity>
+			</zone>
+			<zone type="America/Regina">
+				<exemplarCity>rejina</exemplarCity>
+			</zone>
+			<zone type="America/Winnipeg">
+				<exemplarCity>vinnipeg</exemplarCity>
+			</zone>
+			<zone type="America/Resolute">
+				<exemplarCity>rejalyuṭ</exemplarCity>
+			</zone>
+			<zone type="America/Rankin_Inlet">
+				<exemplarCity>rankin inledṭ</exemplarCity>
+			</zone>
+			<zone type="America/Coral_Harbour">
+				<exemplarCity>eṭikoken</exemplarCity>
+			</zone>
+			<zone type="America/Toronto">
+				<exemplarCity>ṭoronṭo</exemplarCity>
+			</zone>
+			<zone type="America/Iqaluit">
+				<exemplarCity>ikaluiṭ</exemplarCity>
+			</zone>
+			<zone type="America/Moncton">
+				<exemplarCity>monkṭon</exemplarCity>
+			</zone>
+			<zone type="America/Halifax">
+				<exemplarCity>helipaks</exemplarCity>
+			</zone>
+			<zone type="America/Goose_Bay">
+				<exemplarCity>goos be</exemplarCity>
+			</zone>
+			<zone type="America/Glace_Bay">
+				<exemplarCity>glas bay</exemplarCity>
+			</zone>
+			<zone type="America/Blanc-Sablon">
+				<exemplarCity>blank-sablon</exemplarCity>
+			</zone>
+			<zone type="America/St_Johns">
+				<exemplarCity>senṭ jons</exemplarCity>
+			</zone>
+			<zone type="Indian/Cocos">
+				<exemplarCity>kokos</exemplarCity>
+			</zone>
+			<zone type="Africa/Kinshasa">
+				<exemplarCity>kinsasa</exemplarCity>
+			</zone>
+			<zone type="Africa/Lubumbashi">
+				<exemplarCity>lubumbasi</exemplarCity>
+			</zone>
+			<zone type="Africa/Bangui">
+				<exemplarCity>bangui</exemplarCity>
+			</zone>
+			<zone type="Africa/Brazzaville">
+				<exemplarCity>brajavill</exemplarCity>
+			</zone>
+			<zone type="Europe/Zurich">
+				<exemplarCity>juric</exemplarCity>
+			</zone>
+			<zone type="Africa/Abidjan">
+				<exemplarCity>abidjan</exemplarCity>
+			</zone>
+			<zone type="Pacific/Rarotonga">
+				<exemplarCity>rarotonga</exemplarCity>
+			</zone>
+			<zone type="Pacific/Easter">
+				<exemplarCity>īster</exemplarCity>
+			</zone>
+			<zone type="America/Punta_Arenas">
+				<exemplarCity>puṇṭa erenas</exemplarCity>
+			</zone>
+			<zone type="America/Santiago">
+				<exemplarCity>sanṭiago</exemplarCity>
+			</zone>
+			<zone type="Africa/Douala">
+				<exemplarCity>duala</exemplarCity>
+			</zone>
+			<zone type="Asia/Urumqi">
+				<exemplarCity>urumci</exemplarCity>
+			</zone>
+			<zone type="Asia/Shanghai">
+				<exemplarCity>sengai</exemplarCity>
+			</zone>
+			<zone type="America/Bogota">
+				<exemplarCity>bogoṭa</exemplarCity>
+			</zone>
+			<zone type="America/Costa_Rica">
+				<exemplarCity>kosṭa rika</exemplarCity>
+			</zone>
+			<zone type="America/Havana">
+				<exemplarCity>havana</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Cape_Verde">
+				<exemplarCity>kep verḍe</exemplarCity>
+			</zone>
+			<zone type="America/Curacao">
+				<exemplarCity>kyuraso</exemplarCity>
+			</zone>
+			<zone type="Indian/Christmas">
+				<exemplarCity>krisṭmas</exemplarCity>
+			</zone>
+			<zone type="Asia/Nicosia">
+				<exemplarCity>nikosiya</exemplarCity>
+			</zone>
+			<zone type="Asia/Famagusta">
+				<exemplarCity>pamagusta</exemplarCity>
+			</zone>
+			<zone type="Europe/Prague">
+				<exemplarCity>prag</exemplarCity>
+			</zone>
+			<zone type="Europe/Busingen">
+				<exemplarCity>busingen</exemplarCity>
+			</zone>
+			<zone type="Europe/Berlin">
+				<exemplarCity>berlin</exemplarCity>
+			</zone>
+			<zone type="Africa/Djibouti">
+				<exemplarCity>jibuti</exemplarCity>
+			</zone>
+			<zone type="Europe/Copenhagen">
+				<exemplarCity>kopenhagen</exemplarCity>
+			</zone>
+			<zone type="America/Dominica">
+				<exemplarCity>ḍominika</exemplarCity>
+			</zone>
+			<zone type="America/Santo_Domingo">
+				<exemplarCity>sento ḍomingo</exemplarCity>
+			</zone>
+			<zone type="Africa/Algiers">
+				<exemplarCity>aljīyrs</exemplarCity>
+			</zone>
+			<zone type="Pacific/Galapagos">
+				<exemplarCity>galapagos</exemplarCity>
+			</zone>
+			<zone type="America/Guayaquil">
+				<exemplarCity>guajakil</exemplarCity>
+			</zone>
+			<zone type="Europe/Tallinn">
+				<exemplarCity>talin</exemplarCity>
+			</zone>
+			<zone type="Africa/Cairo">
+				<exemplarCity>kairo</exemplarCity>
+			</zone>
+			<zone type="Africa/El_Aaiun">
+				<exemplarCity>el aaiyun</exemplarCity>
+			</zone>
+			<zone type="Africa/Asmera">
+				<exemplarCity>asmara</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Canary">
+				<exemplarCity>keneri</exemplarCity>
+			</zone>
+			<zone type="Africa/Ceuta">
+				<exemplarCity>seuṭa</exemplarCity>
+			</zone>
+			<zone type="Europe/Madrid">
+				<exemplarCity>meḍriḍ</exemplarCity>
+			</zone>
+			<zone type="Africa/Addis_Ababa">
+				<exemplarCity>aḍis ababa</exemplarCity>
+			</zone>
+			<zone type="Europe/Helsinki">
+				<exemplarCity>helsinki</exemplarCity>
+			</zone>
+			<zone type="Pacific/Fiji">
+				<exemplarCity>piji</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Stanley">
+				<exemplarCity>sṭanli</exemplarCity>
+			</zone>
+			<zone type="Pacific/Truk">
+				<exemplarCity>cūk</exemplarCity>
+			</zone>
+			<zone type="Pacific/Ponape">
+				<exemplarCity>ponpei</exemplarCity>
+			</zone>
+			<zone type="Pacific/Kosrae">
+				<exemplarCity>kisrae</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Faeroe">
+				<exemplarCity>pero</exemplarCity>
+			</zone>
+			<zone type="Europe/Paris">
+				<exemplarCity>paris</exemplarCity>
+			</zone>
+			<zone type="Africa/Libreville">
+				<exemplarCity>librevill</exemplarCity>
+			</zone>
+			<zone type="Europe/London">
+				<long>
+					<daylight>briṭis karã masa belā</daylight>
+				</long>
+				<exemplarCity>lnḍn</exemplarCity>
+			</zone>
+			<zone type="America/Grenada">
+				<exemplarCity>grenaḍa</exemplarCity>
+			</zone>
+			<zone type="Asia/Tbilisi">
+				<exemplarCity>tbilisi</exemplarCity>
+			</zone>
+			<zone type="America/Cayenne">
+				<exemplarCity>keyen</exemplarCity>
+			</zone>
+			<zone type="Europe/Guernsey">
+				<exemplarCity>gernsi</exemplarCity>
+			</zone>
+			<zone type="Africa/Accra">
+				<exemplarCity>ecra</exemplarCity>
+			</zone>
+			<zone type="Europe/Gibraltar">
+				<exemplarCity>jibralṭar</exemplarCity>
+			</zone>
+			<zone type="America/Thule">
+				<exemplarCity>tule</exemplarCity>
+			</zone>
+			<zone type="America/Godthab">
+				<exemplarCity>nūk</exemplarCity>
+			</zone>
+			<zone type="America/Scoresbysund">
+				<exemplarCity>iṭokoṭormiṭ</exemplarCity>
+			</zone>
+			<zone type="America/Danmarkshavn">
+				<exemplarCity>ḍanmarksavn</exemplarCity>
+			</zone>
+			<zone type="Africa/Banjul">
+				<exemplarCity>banjul</exemplarCity>
+			</zone>
+			<zone type="Africa/Conakry">
+				<exemplarCity>konakrī</exemplarCity>
+			</zone>
+			<zone type="America/Guadeloupe">
+				<exemplarCity>guaḍeloupe</exemplarCity>
+			</zone>
+			<zone type="Africa/Malabo">
+				<exemplarCity>malabo</exemplarCity>
+			</zone>
+			<zone type="Europe/Athens">
+				<exemplarCity>etens</exemplarCity>
+			</zone>
+			<zone type="Atlantic/South_Georgia">
+				<exemplarCity>dkiṇ jorjia</exemplarCity>
+			</zone>
+			<zone type="America/Guatemala">
+				<exemplarCity>guatemala</exemplarCity>
+			</zone>
+			<zone type="Pacific/Guam">
+				<exemplarCity>guam</exemplarCity>
+			</zone>
+			<zone type="Africa/Bissau">
+				<exemplarCity>bissau</exemplarCity>
+			</zone>
+			<zone type="America/Guyana">
+				<exemplarCity>guyana</exemplarCity>
+			</zone>
+			<zone type="Asia/Hong_Kong">
+				<exemplarCity>hong kong</exemplarCity>
+			</zone>
+			<zone type="America/Tegucigalpa">
+				<exemplarCity>tegu</exemplarCity>
+			</zone>
+			<zone type="Europe/Zagreb">
+				<exemplarCity>tegusigalpa</exemplarCity>
+			</zone>
+			<zone type="America/Port-au-Prince">
+				<exemplarCity>port-au-prinse</exemplarCity>
+			</zone>
+			<zone type="Europe/Budapest">
+				<exemplarCity>buḍapest</exemplarCity>
+			</zone>
+			<zone type="Asia/Jakarta">
+				<exemplarCity>jakarta</exemplarCity>
+			</zone>
+			<zone type="Asia/Pontianak">
+				<exemplarCity>ponṭianak</exemplarCity>
+			</zone>
+			<zone type="Asia/Makassar">
+				<exemplarCity>makasar</exemplarCity>
+			</zone>
+			<zone type="Asia/Jayapura">
+				<exemplarCity>jayapura</exemplarCity>
+			</zone>
+			<zone type="Europe/Dublin">
+				<long>
+					<daylight>aairis manaka belā</daylight>
+				</long>
+				<exemplarCity>ḍblin</exemplarCity>
+			</zone>
+			<zone type="Asia/Jerusalem">
+				<exemplarCity>jerusalem</exemplarCity>
+			</zone>
+			<zone type="Europe/Isle_of_Man">
+				<exemplarCity>aail ap man</exemplarCity>
+			</zone>
+			<zone type="Asia/Calcutta">
+				<exemplarCity>kolkata</exemplarCity>
+			</zone>
+			<zone type="Indian/Chagos">
+				<exemplarCity>chagos</exemplarCity>
+			</zone>
+			<zone type="Asia/Baghdad">
+				<exemplarCity>bagdad</exemplarCity>
+			</zone>
+			<zone type="Asia/Tehran">
+				<exemplarCity>tehran</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Reykjavik">
+				<exemplarCity>reykyavik</exemplarCity>
+			</zone>
+			<zone type="Europe/Rome">
+				<exemplarCity>rom</exemplarCity>
+			</zone>
+			<zone type="Europe/Jersey">
+				<exemplarCity>jersi</exemplarCity>
+			</zone>
+			<zone type="America/Jamaica">
+				<exemplarCity>jamaika</exemplarCity>
+			</zone>
+			<zone type="Asia/Amman">
+				<exemplarCity>amman</exemplarCity>
+			</zone>
+			<zone type="Asia/Tokyo">
+				<exemplarCity>ṭokyo</exemplarCity>
+			</zone>
+			<zone type="Africa/Nairobi">
+				<exemplarCity>nairobi</exemplarCity>
+			</zone>
+			<zone type="Asia/Bishkek">
+				<exemplarCity>biskek</exemplarCity>
+			</zone>
+			<zone type="Asia/Phnom_Penh">
+				<exemplarCity>pnom penh</exemplarCity>
+			</zone>
+			<zone type="Pacific/Kanton">
+				<exemplarCity>kanṭon</exemplarCity>
+			</zone>
+			<zone type="Pacific/Kiritimati">
+				<exemplarCity>kiritimati</exemplarCity>
+			</zone>
+			<zone type="Pacific/Tarawa">
+				<exemplarCity>tarava</exemplarCity>
+			</zone>
+			<zone type="Indian/Comoro">
+				<exemplarCity>komoro</exemplarCity>
+			</zone>
+			<zone type="America/St_Kitts">
+				<exemplarCity>sent kiṭṭs</exemplarCity>
+			</zone>
+			<zone type="Asia/Pyongyang">
+				<exemplarCity>pyongyang</exemplarCity>
+			</zone>
+			<zone type="Asia/Seoul">
+				<exemplarCity>seol</exemplarCity>
+			</zone>
+			<zone type="Asia/Kuwait">
+				<exemplarCity>kuvait</exemplarCity>
+			</zone>
+			<zone type="America/Cayman">
+				<exemplarCity>keiman</exemplarCity>
+			</zone>
+			<zone type="Asia/Aqtau">
+				<exemplarCity>aktau</exemplarCity>
+			</zone>
+			<zone type="Asia/Oral">
+				<exemplarCity>oral</exemplarCity>
+			</zone>
+			<zone type="Asia/Atyrau">
+				<exemplarCity>atarau</exemplarCity>
+			</zone>
+			<zone type="Asia/Aqtobe">
+				<exemplarCity>aaktobe</exemplarCity>
+			</zone>
+			<zone type="Asia/Qostanay">
+				<exemplarCity>kosṭane</exemplarCity>
+			</zone>
+			<zone type="Asia/Qyzylorda">
+				<exemplarCity>kijuorda</exemplarCity>
+			</zone>
+			<zone type="Asia/Almaty">
+				<exemplarCity>almaṭy</exemplarCity>
+			</zone>
+			<zone type="Asia/Vientiane">
+				<exemplarCity>vienṭiaan</exemplarCity>
+			</zone>
+			<zone type="Asia/Beirut">
+				<exemplarCity>beirut</exemplarCity>
+			</zone>
+			<zone type="America/St_Lucia">
+				<exemplarCity>sent lusia</exemplarCity>
+			</zone>
+			<zone type="Europe/Vaduz">
+				<exemplarCity>vaḍuj</exemplarCity>
+			</zone>
+			<zone type="Asia/Colombo">
+				<exemplarCity>kolombo</exemplarCity>
+			</zone>
+			<zone type="Africa/Monrovia">
+				<exemplarCity>monrovia</exemplarCity>
+			</zone>
+			<zone type="Africa/Maseru">
+				<exemplarCity>maseru</exemplarCity>
+			</zone>
+			<zone type="Europe/Vilnius">
+				<exemplarCity>vilnius</exemplarCity>
+			</zone>
+			<zone type="Europe/Luxembourg">
+				<exemplarCity>lksembrg</exemplarCity>
+			</zone>
+			<zone type="Europe/Riga">
+				<exemplarCity>riga</exemplarCity>
+			</zone>
+			<zone type="Africa/Tripoli">
+				<exemplarCity>tripoli</exemplarCity>
+			</zone>
+			<zone type="Africa/Casablanca">
+				<exemplarCity>kasablanka</exemplarCity>
+			</zone>
+			<zone type="Europe/Monaco">
+				<exemplarCity>monako</exemplarCity>
+			</zone>
+			<zone type="Europe/Chisinau">
+				<exemplarCity>kisinau</exemplarCity>
+			</zone>
+			<zone type="Europe/Podgorica">
+				<exemplarCity>pḍgoritsa</exemplarCity>
+			</zone>
+			<zone type="America/Marigot">
+				<exemplarCity>marigoṭ</exemplarCity>
+			</zone>
+			<zone type="Indian/Antananarivo">
+				<exemplarCity>ṭananariv</exemplarCity>
+			</zone>
+			<zone type="Pacific/Kwajalein">
+				<exemplarCity>kvajalein</exemplarCity>
+			</zone>
+			<zone type="Pacific/Majuro">
+				<exemplarCity>majuro</exemplarCity>
+			</zone>
+			<zone type="Europe/Skopje">
+				<exemplarCity>skopi</exemplarCity>
+			</zone>
+			<zone type="Africa/Bamako">
+				<exemplarCity>bamako</exemplarCity>
+			</zone>
+			<zone type="Asia/Rangoon">
+				<exemplarCity>yangon</exemplarCity>
+			</zone>
+			<zone type="Asia/Hovd">
+				<exemplarCity>hovd</exemplarCity>
+			</zone>
+			<zone type="Asia/Ulaanbaatar">
+				<exemplarCity>ulanbaṭar</exemplarCity>
+			</zone>
+			<zone type="Asia/Choibalsan">
+				<exemplarCity>koibalsan</exemplarCity>
+			</zone>
+			<zone type="Asia/Macau">
+				<exemplarCity>mkao</exemplarCity>
+			</zone>
+			<zone type="Pacific/Saipan">
+				<exemplarCity>saipan</exemplarCity>
+			</zone>
+			<zone type="America/Martinique">
+				<exemplarCity>marṭinik</exemplarCity>
+			</zone>
+			<zone type="Africa/Nouakchott">
+				<exemplarCity>nueksa</exemplarCity>
+			</zone>
+			<zone type="America/Montserrat">
+				<exemplarCity>monṭserreṭ</exemplarCity>
+			</zone>
+			<zone type="Europe/Malta">
+				<exemplarCity>malṭa</exemplarCity>
+			</zone>
+			<zone type="Indian/Mauritius">
+				<exemplarCity>maurisius</exemplarCity>
+			</zone>
+			<zone type="Indian/Maldives">
+				<exemplarCity>maldives</exemplarCity>
+			</zone>
+			<zone type="Africa/Blantyre">
+				<exemplarCity>blanṭaer</exemplarCity>
+			</zone>
+			<zone type="America/Tijuana">
+				<exemplarCity>tihvana</exemplarCity>
+			</zone>
+			<zone type="America/Hermosillo">
+				<exemplarCity>ermosijo</exemplarCity>
+			</zone>
+			<zone type="America/Mazatlan">
+				<exemplarCity>masaṭlan</exemplarCity>
+			</zone>
+			<zone type="America/Chihuahua">
+				<exemplarCity>chihuahua</exemplarCity>
+			</zone>
+			<zone type="America/Bahia_Banderas">
+				<exemplarCity>baia banḍeras</exemplarCity>
+			</zone>
+			<zone type="America/Ojinaga">
+				<exemplarCity>ojinaga</exemplarCity>
+			</zone>
+			<zone type="America/Monterrey">
+				<exemplarCity>monṭerre</exemplarCity>
+			</zone>
+			<zone type="America/Mexico_City">
+				<exemplarCity>meksico siṭy</exemplarCity>
+			</zone>
+			<zone type="America/Matamoros">
+				<exemplarCity>maṭamoros</exemplarCity>
+			</zone>
+			<zone type="America/Merida">
+				<exemplarCity>meriḍa</exemplarCity>
+			</zone>
+			<zone type="America/Cancun">
+				<exemplarCity>kankun</exemplarCity>
+			</zone>
+			<zone type="Asia/Kuala_Lumpur">
+				<exemplarCity>kuala lumpur</exemplarCity>
+			</zone>
+			<zone type="Asia/Kuching">
+				<exemplarCity>kucing</exemplarCity>
+			</zone>
+			<zone type="Africa/Maputo">
+				<exemplarCity>mapuṭu</exemplarCity>
+			</zone>
+			<zone type="Africa/Windhoek">
+				<exemplarCity>vindhuk</exemplarCity>
+			</zone>
+			<zone type="Pacific/Noumea">
+				<exemplarCity>numie</exemplarCity>
+			</zone>
+			<zone type="Africa/Niamey">
+				<exemplarCity>niyame</exemplarCity>
+			</zone>
+			<zone type="Pacific/Norfolk">
+				<exemplarCity>norpok</exemplarCity>
+			</zone>
+			<zone type="Africa/Lagos">
+				<exemplarCity>lagos</exemplarCity>
+			</zone>
+			<zone type="America/Managua">
+				<exemplarCity>managua</exemplarCity>
+			</zone>
+			<zone type="Europe/Amsterdam">
+				<exemplarCity>amsṭerḍam</exemplarCity>
+			</zone>
+			<zone type="Europe/Oslo">
+				<exemplarCity>oslo</exemplarCity>
+			</zone>
+			<zone type="Asia/Katmandu">
+				<exemplarCity>kaṭmanḍu</exemplarCity>
+			</zone>
+			<zone type="Pacific/Nauru">
+				<exemplarCity>nauru</exemplarCity>
+			</zone>
+			<zone type="Pacific/Niue">
+				<exemplarCity>niue</exemplarCity>
+			</zone>
+			<zone type="Pacific/Chatham">
+				<exemplarCity>ceṭam</exemplarCity>
+			</zone>
+			<zone type="Pacific/Auckland">
+				<exemplarCity>āklanḍ</exemplarCity>
+			</zone>
+			<zone type="Asia/Muscat">
+				<exemplarCity>maskat</exemplarCity>
+			</zone>
+			<zone type="America/Panama">
+				<exemplarCity>panama</exemplarCity>
+			</zone>
+			<zone type="America/Lima">
+				<exemplarCity>lima</exemplarCity>
+			</zone>
+			<zone type="Pacific/Tahiti">
+				<exemplarCity>ṭahiṭi</exemplarCity>
+			</zone>
+			<zone type="Pacific/Marquesas">
+				<exemplarCity>markisas</exemplarCity>
+			</zone>
+			<zone type="Pacific/Gambier">
+				<exemplarCity>gambier</exemplarCity>
+			</zone>
+			<zone type="Pacific/Port_Moresby">
+				<exemplarCity>porṭ moresbi</exemplarCity>
+			</zone>
+			<zone type="Pacific/Bougainville">
+				<exemplarCity>bouganvill</exemplarCity>
+			</zone>
+			<zone type="Asia/Manila">
+				<exemplarCity>manīla</exemplarCity>
+			</zone>
+			<zone type="Asia/Karachi">
+				<exemplarCity>karacī</exemplarCity>
+			</zone>
+			<zone type="Europe/Warsaw">
+				<exemplarCity>varsa</exemplarCity>
+			</zone>
+			<zone type="America/Miquelon">
+				<exemplarCity>mikvilõ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Pitcairn">
+				<exemplarCity>piṭkern</exemplarCity>
+			</zone>
+			<zone type="America/Puerto_Rico">
+				<exemplarCity>puerto riko</exemplarCity>
+			</zone>
+			<zone type="Asia/Gaza">
+				<exemplarCity>gaja</exemplarCity>
+			</zone>
+			<zone type="Asia/Hebron">
+				<exemplarCity>hebron</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Azores">
+				<exemplarCity>ajores</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Madeira">
+				<exemplarCity>maḍiera</exemplarCity>
+			</zone>
+			<zone type="Europe/Lisbon">
+				<exemplarCity>lisbon</exemplarCity>
+			</zone>
+			<zone type="Pacific/Palau">
+				<exemplarCity>palau</exemplarCity>
+			</zone>
+			<zone type="America/Asuncion">
+				<exemplarCity>esunsion</exemplarCity>
+			</zone>
+			<zone type="Asia/Qatar">
+				<exemplarCity>katar</exemplarCity>
+			</zone>
+			<zone type="Indian/Reunion">
+				<exemplarCity>reunion</exemplarCity>
+			</zone>
+			<zone type="Europe/Bucharest">
+				<exemplarCity>bukarest</exemplarCity>
+			</zone>
+			<zone type="Europe/Belgrade">
+				<exemplarCity>belgraḍe</exemplarCity>
+			</zone>
+			<zone type="Europe/Kaliningrad">
+				<exemplarCity>kaliningraḍ</exemplarCity>
+			</zone>
+			<zone type="Europe/Moscow">
+				<exemplarCity>mosko</exemplarCity>
+			</zone>
+			<zone type="Europe/Volgograd">
+				<exemplarCity>volgograḍ</exemplarCity>
+			</zone>
+			<zone type="Europe/Saratov">
+				<exemplarCity>saraṭov</exemplarCity>
+			</zone>
+			<zone type="Europe/Astrakhan">
+				<exemplarCity>aasṭrahan</exemplarCity>
+			</zone>
+			<zone type="Europe/Ulyanovsk">
+				<exemplarCity>ulyanovsk</exemplarCity>
+			</zone>
+			<zone type="Europe/Kirov">
+				<exemplarCity>kirov</exemplarCity>
+			</zone>
+			<zone type="Europe/Samara">
+				<exemplarCity>samara</exemplarCity>
+			</zone>
+			<zone type="Asia/Yekaterinburg">
+				<exemplarCity>yikaterinburg</exemplarCity>
+			</zone>
+			<zone type="Asia/Omsk">
+				<exemplarCity>omsk</exemplarCity>
+			</zone>
+			<zone type="Asia/Novosibirsk">
+				<exemplarCity>novosibirsk</exemplarCity>
+			</zone>
+			<zone type="Asia/Barnaul">
+				<exemplarCity>barnaul</exemplarCity>
+			</zone>
+			<zone type="Asia/Tomsk">
+				<exemplarCity>ṭomsk</exemplarCity>
+			</zone>
+			<zone type="Asia/Novokuznetsk">
+				<exemplarCity>nevokujneṭsk</exemplarCity>
+			</zone>
+			<zone type="Asia/Krasnoyarsk">
+				<exemplarCity>krasneyarsk</exemplarCity>
+			</zone>
+			<zone type="Asia/Irkutsk">
+				<exemplarCity>irkuṭsk</exemplarCity>
+			</zone>
+			<zone type="Asia/Chita">
+				<exemplarCity>cita</exemplarCity>
+			</zone>
+			<zone type="Asia/Yakutsk">
+				<exemplarCity>yakuṭsk</exemplarCity>
+			</zone>
+			<zone type="Asia/Vladivostok">
+				<exemplarCity>vlaḍivosṭok</exemplarCity>
+			</zone>
+			<zone type="Asia/Khandyga">
+				<exemplarCity>kandiga</exemplarCity>
+			</zone>
+			<zone type="Asia/Sakhalin">
+				<exemplarCity>sahalin</exemplarCity>
+			</zone>
+			<zone type="Asia/Ust-Nera">
+				<exemplarCity>yust-nera</exemplarCity>
+			</zone>
+			<zone type="Asia/Magadan">
+				<exemplarCity>megaḍan</exemplarCity>
+			</zone>
+			<zone type="Asia/Srednekolymsk">
+				<exemplarCity>sreḍnekolymsk</exemplarCity>
+			</zone>
+			<zone type="Asia/Kamchatka">
+				<exemplarCity>kamcaṭka</exemplarCity>
+			</zone>
+			<zone type="Asia/Anadyr">
+				<exemplarCity>anaḍir</exemplarCity>
+			</zone>
+			<zone type="Africa/Kigali">
+				<exemplarCity>kigali</exemplarCity>
+			</zone>
+			<zone type="Asia/Riyadh">
+				<exemplarCity>riyad</exemplarCity>
+			</zone>
+			<zone type="Pacific/Guadalcanal">
+				<exemplarCity>guaḍalkenal</exemplarCity>
+			</zone>
+			<zone type="Indian/Mahe">
+				<exemplarCity>mahe</exemplarCity>
+			</zone>
+			<zone type="Africa/Khartoum">
+				<exemplarCity>karṭoum</exemplarCity>
+			</zone>
+			<zone type="Europe/Stockholm">
+				<exemplarCity>sṭokhom</exemplarCity>
+			</zone>
+			<zone type="Asia/Singapore">
+				<exemplarCity>singapor</exemplarCity>
+			</zone>
+			<zone type="Atlantic/St_Helena">
+				<exemplarCity>sent helena</exemplarCity>
+			</zone>
+			<zone type="Europe/Ljubljana">
+				<exemplarCity>lyublyana</exemplarCity>
+			</zone>
+			<zone type="Arctic/Longyearbyen">
+				<exemplarCity>lngyarbyen</exemplarCity>
+			</zone>
+			<zone type="Europe/Bratislava">
+				<exemplarCity>braṭislava</exemplarCity>
+			</zone>
+			<zone type="Africa/Freetown">
+				<exemplarCity>prīṭaun</exemplarCity>
+			</zone>
+			<zone type="Europe/San_Marino">
+				<exemplarCity>san marino</exemplarCity>
+			</zone>
+			<zone type="Africa/Dakar">
+				<exemplarCity>ḍkar</exemplarCity>
+			</zone>
+			<zone type="Africa/Mogadishu">
+				<exemplarCity>mogaḍisu</exemplarCity>
+			</zone>
+			<zone type="America/Paramaribo">
+				<exemplarCity>paramaribo</exemplarCity>
+			</zone>
+			<zone type="Africa/Juba">
+				<exemplarCity>juba</exemplarCity>
+			</zone>
+			<zone type="Africa/Sao_Tome">
+				<exemplarCity>sao ṭom</exemplarCity>
+			</zone>
+			<zone type="America/El_Salvador">
+				<exemplarCity>el salvaḍor</exemplarCity>
+			</zone>
+			<zone type="America/Lower_Princes">
+				<exemplarCity>lover princ’s kuvaṭar</exemplarCity>
+			</zone>
+			<zone type="Asia/Damascus">
+				<exemplarCity>ḍamaskus</exemplarCity>
+			</zone>
+			<zone type="Africa/Mbabane">
+				<exemplarCity>mbabane</exemplarCity>
+			</zone>
+			<zone type="America/Grand_Turk">
+				<exemplarCity>granḍ ṭurk</exemplarCity>
+			</zone>
+			<zone type="Africa/Ndjamena">
+				<exemplarCity>njamena</exemplarCity>
+			</zone>
+			<zone type="Indian/Kerguelen">
+				<exemplarCity>kerguelen</exemplarCity>
+			</zone>
+			<zone type="Africa/Lome">
+				<exemplarCity>lom</exemplarCity>
+			</zone>
+			<zone type="Asia/Bangkok">
+				<exemplarCity>bangkok</exemplarCity>
+			</zone>
+			<zone type="Asia/Dushanbe">
+				<exemplarCity>dusambe</exemplarCity>
+			</zone>
+			<zone type="Pacific/Fakaofo">
+				<exemplarCity>pakaopo</exemplarCity>
+			</zone>
+			<zone type="Asia/Dili">
+				<exemplarCity>ḍili</exemplarCity>
+			</zone>
+			<zone type="Asia/Ashgabat">
+				<exemplarCity>asgabaṭ</exemplarCity>
+			</zone>
+			<zone type="Africa/Tunis">
+				<exemplarCity>ṭunis</exemplarCity>
+			</zone>
+			<zone type="Pacific/Tongatapu">
+				<exemplarCity>ṭongaṭapu</exemplarCity>
+			</zone>
+			<zone type="Europe/Istanbul">
+				<exemplarCity>istanbul</exemplarCity>
+			</zone>
+			<zone type="America/Port_of_Spain">
+				<exemplarCity>porṭ ap spain</exemplarCity>
+			</zone>
+			<zone type="Pacific/Funafuti">
+				<exemplarCity>punaputi</exemplarCity>
+			</zone>
+			<zone type="Asia/Taipei">
+				<exemplarCity>taipei</exemplarCity>
+			</zone>
+			<zone type="Africa/Dar_es_Salaam">
+				<exemplarCity>dar es salaam</exemplarCity>
+			</zone>
+			<zone type="Europe/Kiev">
+				<exemplarCity>kiyv</exemplarCity>
+			</zone>
+			<zone type="Europe/Simferopol">
+				<exemplarCity>simperopol</exemplarCity>
+			</zone>
+			<zone type="Africa/Kampala">
+				<exemplarCity>kmpala</exemplarCity>
+			</zone>
+			<zone type="Pacific/Midway">
+				<exemplarCity>miḍvay</exemplarCity>
+			</zone>
+			<zone type="Pacific/Wake">
+				<exemplarCity>vek</exemplarCity>
+			</zone>
+			<zone type="America/Adak">
+				<exemplarCity>aḍak</exemplarCity>
+			</zone>
+			<zone type="America/Nome">
+				<exemplarCity>nom</exemplarCity>
+			</zone>
+			<zone type="America/Anchorage">
+				<exemplarCity>ankoraj</exemplarCity>
+			</zone>
+			<zone type="America/Yakutat">
+				<exemplarCity>yakuṭaṭ</exemplarCity>
+			</zone>
+			<zone type="America/Sitka">
+				<exemplarCity>sitka</exemplarCity>
+			</zone>
+			<zone type="America/Juneau">
+				<exemplarCity>junov</exemplarCity>
+			</zone>
+			<zone type="America/Metlakatla">
+				<exemplarCity>meṭlakaṭla</exemplarCity>
+			</zone>
+			<zone type="America/Los_Angeles">
+				<exemplarCity>los anjeles</exemplarCity>
+			</zone>
+			<zone type="America/Boise">
+				<exemplarCity>boisī</exemplarCity>
+			</zone>
+			<zone type="America/Phoenix">
+				<exemplarCity>piniks</exemplarCity>
+			</zone>
+			<zone type="America/Denver">
+				<exemplarCity>ḍenver</exemplarCity>
+			</zone>
+			<zone type="America/North_Dakota/Beulah">
+				<exemplarCity>biyula, uttar ḍakoṭa</exemplarCity>
+			</zone>
+			<zone type="America/North_Dakota/New_Salem">
+				<exemplarCity>neu salem, uttar ḍakoṭa</exemplarCity>
+			</zone>
+			<zone type="America/North_Dakota/Center">
+				<exemplarCity>maḍinī uttar ḍakoṭa</exemplarCity>
+			</zone>
+			<zone type="America/Chicago">
+				<exemplarCity>cikago</exemplarCity>
+			</zone>
+			<zone type="America/Menominee">
+				<exemplarCity>menominī</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Vincennes">
+				<exemplarCity>vincens, inḍiyana</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Petersburg">
+				<exemplarCity>piṭtrsberg, inḍiyana</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Tell_City">
+				<exemplarCity>ṭell sity, inḍiyana</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Knox">
+				<exemplarCity>noks, inḍiyana</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Winamac">
+				<exemplarCity>vinamak, inḍiyana</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Marengo">
+				<exemplarCity>marengo, inḍiyana</exemplarCity>
+			</zone>
+			<zone type="America/Indianapolis">
+				<exemplarCity>inḍianapolis</exemplarCity>
+			</zone>
+			<zone type="America/Louisville">
+				<exemplarCity>louiville</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Vevay">
+				<exemplarCity>vivi, inḍiyana</exemplarCity>
+			</zone>
+			<zone type="America/Kentucky/Monticello">
+				<exemplarCity>monṭisello, kenṭukī</exemplarCity>
+			</zone>
+			<zone type="America/Detroit">
+				<exemplarCity>ḍeṭroiṭ</exemplarCity>
+			</zone>
+			<zone type="America/New_York">
+				<exemplarCity>niyu york</exemplarCity>
+			</zone>
+			<zone type="America/Montevideo">
+				<exemplarCity>monṭevidio</exemplarCity>
+			</zone>
+			<zone type="Asia/Samarkand">
+				<exemplarCity>samarkand</exemplarCity>
+			</zone>
+			<zone type="Asia/Tashkent">
+				<exemplarCity>taskenṭ</exemplarCity>
+			</zone>
+			<zone type="Europe/Vatican">
+				<exemplarCity>vaṭikan</exemplarCity>
+			</zone>
+			<zone type="America/St_Vincent">
+				<exemplarCity>senṭ vinsenṭ</exemplarCity>
+			</zone>
+			<zone type="America/Caracas">
+				<exemplarCity>karakas</exemplarCity>
+			</zone>
+			<zone type="America/Tortola">
+				<exemplarCity>ṭorṭola</exemplarCity>
+			</zone>
+			<zone type="America/St_Thomas">
+				<exemplarCity>senṭ tomas</exemplarCity>
+			</zone>
+			<zone type="Asia/Saigon">
+				<exemplarCity>ho ci minh siti</exemplarCity>
+			</zone>
+			<zone type="Pacific/Efate">
+				<exemplarCity>ipeṭe</exemplarCity>
+			</zone>
+			<zone type="Pacific/Wallis">
+				<exemplarCity>vallis</exemplarCity>
+			</zone>
+			<zone type="Pacific/Apia">
+				<exemplarCity>apia</exemplarCity>
+			</zone>
+			<zone type="Asia/Aden">
+				<exemplarCity>eḍen</exemplarCity>
+			</zone>
+			<zone type="Indian/Mayotte">
+				<exemplarCity>mayoṭ</exemplarCity>
+			</zone>
+			<zone type="Africa/Johannesburg">
+				<exemplarCity>johannesburg</exemplarCity>
+			</zone>
+			<zone type="Africa/Lusaka">
+				<exemplarCity>lusaka</exemplarCity>
+			</zone>
+			<zone type="Africa/Harare">
+				<exemplarCity>hrare</exemplarCity>
+			</zone>
+			<metazone type="Afghanistan">
+				<long>
+					<standard>aapganistan belā</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Central">
+				<long>
+					<standard>madini aaprika belā</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Eastern">
+				<long>
+					<standard>veḍa hpu aaprika belā</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Southern">
+				<long>
+					<standard>dkiṇ aaprika belā</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Western">
+				<long>
+					<generic>veḍakuṇpu aaprika belā</generic>
+					<standard>veḍa kuṇpu aaprika mananka belā</standard>
+					<daylight>veḍa kuṇpu aaprika karã belā</daylight>
+				</long>
+			</metazone>
+			<metazone type="Alaska">
+				<long>
+					<generic>alaska belā</generic>
+					<standard>alaska mananka belā</standard>
+					<daylight>alaska ḍelaaiṭ belā</daylight>
+				</long>
+			</metazone>
+			<metazone type="Amazon">
+				<long>
+					<generic>āmajon belā</generic>
+					<standard>āmajon mananka belā</standard>
+					<daylight>āmajon karã masa belā</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Central">
+				<long>
+					<generic>madinī belā</generic>
+					<standard>madinī mananka belā</standard>
+					<daylight>madinī ḍelaaiṭ belā</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Eastern">
+				<long>
+					<generic>veḍahapu belā</generic>
+					<standard>veḍahapu mananka belā</standard>
+					<daylight>veḍahapu ḍelaaiṭ belā</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Mountain">
+				<long>
+					<generic>harka belā</generic>
+					<standard>harka mananka belā</standard>
+					<daylight>harka ḍelaaiṭ belā</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Pacific">
+				<long>
+					<generic>pesipik belā</generic>
+					<standard>pesipik mananka belā</standard>
+					<daylight>pesipik ḍelaaiṭ belā</daylight>
+				</long>
+			</metazone>
+			<metazone type="Apia">
+				<long>
+					<generic>epiā belā</generic>
+					<standard>epiā mānānka belā</standard>
+					<daylight>epiā delāit belā</daylight>
+				</long>
+			</metazone>
+			<metazone type="Arabian">
+				<long>
+					<generic>ārbiāti belā</generic>
+					<standard>ārbiāti mānānka belā</standard>
+					<daylight>ārbiāti delāit belā</daylight>
+				</long>
+			</metazone>
+			<metazone type="Argentina">
+				<long>
+					<generic>ārjenṭinā belā</generic>
+					<standard>ārjenṭinā mānānka belā</standard>
+					<daylight>ārjenṭinā kār~ā belā belā</daylight>
+				</long>
+			</metazone>
+			<metazone type="Argentina_Western">
+				<long>
+					<generic>weḍākuṇupu ārjenṭinā belā</generic>
+					<standard>weḍākuṇupu ārjenṭinā mānānka belā</standard>
+					<daylight>weḍākuṇupu ārjenṭinā kār~ā belā</daylight>
+				</long>
+			</metazone>
+			<metazone type="Armenia">
+				<long>
+					<generic>ārmeniā belā</generic>
+					<standard>ārmeniā mānānka belā</standard>
+					<daylight>ārmeniā kār~ā belā</daylight>
+				</long>
+			</metazone>
+			<metazone type="Atlantic">
+				<long>
+					<generic>āṭlānṭik belā</generic>
+					<standard>āṭlānṭik mānānka belā</standard>
+					<daylight>āṭlānṭik delāiṭ belā</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_Central">
+				<long>
+					<generic>mādinā āstreliā belā</generic>
+					<standard>āstreliāti mādinā mānānka belā</standard>
+					<daylight>āstreliāti mādinā delāiṭ belā</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_CentralWestern">
+				<long>
+					<generic>āstreliāti mādinā weḍākuṇupu belā</generic>
+					<standard>āstreliāti mādinā weḍākuṇupu mānānka belā</standard>
+					<daylight>āstreliāti mādinā weḍākuṇupu delāiṭ belā</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_Eastern">
+				<long>
+					<generic>weḍāhapu āstraliā belā</generic>
+					<standard>āstreliāti weḍāhapū mānānka belā</standard>
+					<daylight>āstreliāti weḍāhapū delāiti belā</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_Western">
+				<long>
+					<generic>weḍākuṇupū āstreliā belā</generic>
+					<standard>āstreliāti weḍākuṇupū mānānka belā</standard>
+					<daylight>āstreliāti weḍākuṇupū delāiṭ belā</daylight>
+				</long>
+			</metazone>
+			<metazone type="Azerbaijan">
+				<long>
+					<generic>ājerbāijān belā</generic>
+					<standard>ājerbāijān mānānka belā</standard>
+					<daylight>ājerbāijān kār~ā belā</daylight>
+				</long>
+			</metazone>
+			<metazone type="Azores">
+				<long>
+					<generic>ajores belā</generic>
+					<standard>ajores mānānka belā</standard>
+					<daylight>ajores kār~ā belā</daylight>
+				</long>
+			</metazone>
+			<metazone type="Bangladesh">
+				<long>
+					<generic>bānglādes belā</generic>
+					<standard>bānglādes mānānka belā</standard>
+					<daylight>bānglādes kār~ā belā</daylight>
+				</long>
+			</metazone>
+			<metazone type="Bhutan">
+				<long>
+					<standard>butān belā</standard>
+				</long>
+			</metazone>
+			<metazone type="Bolivia">
+				<long>
+					<standard>bolwiā belā</standard>
+				</long>
+			</metazone>
+			<metazone type="Brasilia">
+				<long>
+					<generic>brājiliā belā</generic>
+					<standard>brājiliā mānānka belā</standard>
+					<daylight>brājiliā kār~ā belā</daylight>
+				</long>
+			</metazone>
+			<metazone type="Brunei">
+				<long>
+					<standard>bruneti dārusālām belā</standard>
+				</long>
+			</metazone>
+			<metazone type="Cape_Verde">
+				<long>
+					<generic>kep bḍ belā</generic>
+					<standard>kep bḍ mānānka belā</standard>
+					<daylight>kep bḍ kār~ā belā</daylight>
+				</long>
+			</metazone>
+			<metazone type="Chamorro">
+				<long>
+					<standard>cāmor mānānka belā</standard>
+				</long>
+			</metazone>
+			<metazone type="Chatham">
+				<long>
+					<generic>cyātām belā</generic>
+					<standard>cyātām mānānka belā</standard>
+					<daylight>cyātām delāit belā</daylight>
+				</long>
+			</metazone>
+			<metazone type="Chile">
+				<long>
+					<generic>cini belā</generic>
+					<standard>cili mānānka belā</standard>
+					<daylight>cili kār~ā belā</daylight>
+				</long>
+			</metazone>
+			<metazone type="China">
+				<long>
+					<generic>cin belā</generic>
+					<standard>cin mānānka belā</standard>
+					<daylight>cin delāiṭ belā</daylight>
+				</long>
+			</metazone>
+			<metazone type="Choibalsan">
+				<long>
+					<generic>koibālsn belā</generic>
+					<standard>koibālsn mānānka belā</standard>
+					<daylight>koibālsn kār~ā belā</daylight>
+				</long>
+			</metazone>
+			<metazone type="Christmas">
+				<long>
+					<standard>krismās dīp belā</standard>
+				</long>
+			</metazone>
+			<metazone type="Cocos">
+				<long>
+					<standard>kokos dīp belā</standard>
+				</long>
+			</metazone>
+			<metazone type="Colombia">
+				<long>
+					<generic>kolombiā belā</generic>
+					<standard>kolombiā mānānka belā</standard>
+					<daylight>kolombiā kār~ā belā</daylight>
+				</long>
+			</metazone>
+			<metazone type="Cook">
+				<long>
+					<generic>kuk dīp belā</generic>
+					<standard>kuk dīp mānānka belā</standard>
+					<daylight>kuk dīp ādā kār~ā belā</daylight>
+				</long>
+			</metazone>
+			<metazone type="Cuba">
+				<long>
+					<generic>kubā belā</generic>
+					<standard>kubā mānānka belā</standard>
+					<daylight>kubā delāiṭ belā</daylight>
+				</long>
+			</metazone>
+			<metazone type="Davis">
+				<long>
+					<standard>debis belā</standard>
+				</long>
+			</metazone>
+			<metazone type="DumontDUrville">
+				<long>
+					<standard>ḍumonṭ ḍi arwilē belā</standard>
+				</long>
+			</metazone>
+			<metazone type="East_Timor">
+				<long>
+					<standard>weḍāhapu timor belā</standard>
+				</long>
+			</metazone>
+			<metazone type="Easter">
+				<long>
+					<generic>isṭr dīp belā</generic>
+					<standard>isṭr dīp mānānka belā</standard>
+					<daylight>isṭr dīp kār~ā belā</daylight>
+				</long>
+			</metazone>
+			<metazone type="Ecuador">
+				<long>
+					<standard>iquāḍor belā</standard>
+				</long>
+			</metazone>
+			<metazone type="Europe_Central">
+				<long>
+					<generic>mādinā yuropiāti belā</generic>
+					<standard>mādinā yuropiāti mānānka belā</standard>
+					<daylight>mādinā yuropiāti kār~ā belā</daylight>
+				</long>
+			</metazone>
+			<metazone type="Europe_Eastern">
+				<long>
+					<generic>weḍāhpu yuropiāti belā</generic>
+					<standard>weḍāhpu yuropiāti mānānka belā</standard>
+					<daylight>weḍāhpu yuropiāti kār~ā belā</daylight>
+				</long>
+			</metazone>
+			<metazone type="Europe_Further_Eastern">
+				<long>
+					<standard>ar weḍāhpu yuropati belā</standard>
+				</long>
+			</metazone>
+			<metazone type="Europe_Western">
+				<long>
+					<generic>weḍākūṇūpu yuropiāti belā</generic>
+					<standard>weḍākūṇūpu yuropiāti mānānka belā</standard>
+					<daylight>weḍākūṇūpu yuropiāti kār~ā belā</daylight>
+				</long>
+			</metazone>
+			<metazone type="Falkland">
+				<long>
+					<generic>paklyānḍ dīpati belā</generic>
+					<standard>paklyānḍ dīpati mānānka belā</standard>
+					<daylight>paklyānḍ dīpati kār~ā belā</daylight>
+				</long>
+			</metazone>
+			<metazone type="Fiji">
+				<long>
+					<generic>piji belā</generic>
+					<standard>piji mānānka belā</standard>
+					<daylight>piji kār~ā belā</daylight>
+				</long>
+			</metazone>
+			<metazone type="French_Guiana">
+				<long>
+					<standard>prench guyān belā</standard>
+				</long>
+			</metazone>
+			<metazone type="French_Southern">
+				<long>
+					<standard>prenc dakiṇ aḍe aanṭārkṭik belā</standard>
+				</long>
+			</metazone>
+			<metazone type="Galapagos">
+				<long>
+					<standard>gālāpogs belā</standard>
+				</long>
+			</metazone>
+			<metazone type="Gambier">
+				<long>
+					<standard>gambiyr belā</standard>
+				</long>
+			</metazone>
+			<metazone type="Georgia">
+				<long>
+					<generic>jarjīā belā</generic>
+					<standard>jarjiā mānānka belā</standard>
+					<daylight>jarjiā kār~ā belā</daylight>
+				</long>
+			</metazone>
+			<metazone type="Gilbert_Islands">
+				<long>
+					<standard>gīlbrṭ dīp belā</standard>
+				</long>
+			</metazone>
+			<metazone type="GMT">
+				<long>
+					<standard>grinwic mīn belā</standard>
+				</long>
+			</metazone>
+			<metazone type="Greenland_Eastern">
+				<long>
+					<generic>weḍāhpu grinlānd belā</generic>
+					<standard>weḍāhpu grinlānd mānānka belā</standard>
+					<daylight>weḍāhpu grinlānd kār~ā belā</daylight>
+				</long>
+			</metazone>
+			<metazone type="Greenland_Western">
+				<long>
+					<generic>weḍakūṇūp grinlānḍ belā</generic>
+					<standard>weḍakūṇūp grinlānḍ mānānka belā</standard>
+					<daylight>weḍakūṇūp grinlānḍ kār~ā belā</daylight>
+				</long>
+			</metazone>
+			<metazone type="Gulf">
+				<long>
+					<standard>galp mānānka belā</standard>
+				</long>
+			</metazone>
+			<metazone type="Guyana">
+				<long>
+					<standard>guyān belā</standard>
+				</long>
+			</metazone>
+			<metazone type="Hawaii_Aleutian">
+				<long>
+					<generic>hāwāe- aalūsān belā</generic>
+					<standard>hāwāe- aalūsān mānānka belā</standard>
+					<daylight>hāwāe- aalūsān ḍelāiṭ belā</daylight>
+				</long>
+			</metazone>
+			<metazone type="Hong_Kong">
+				<long>
+					<generic>hang kang belā</generic>
+					<standard>hang kang mānānka belā</standard>
+					<daylight>hang kang kār~ā belā</daylight>
+				</long>
+			</metazone>
+			<metazone type="Hovd">
+				<long>
+					<generic>hwoḍ belā</generic>
+					<standard>hwoḍ mānānka belā</standard>
+					<daylight>hwoḍ kār~ā belā</daylight>
+				</long>
+			</metazone>
+			<metazone type="India">
+				<long>
+					<standard>bārat mānānka belā</standard>
+				</long>
+			</metazone>
+			<metazone type="Indian_Ocean">
+				<long>
+					<standard>bārat kājā belā</standard>
+				</long>
+			</metazone>
+			<metazone type="Indochina">
+				<long>
+					<standard>inḍocinā belā</standard>
+				</long>
+			</metazone>
+			<metazone type="Indonesia_Central">
+				<long>
+					<standard>mādini inḍnesiā belā</standard>
+				</long>
+			</metazone>
+			<metazone type="Indonesia_Eastern">
+				<long>
+					<standard>weḍāhpu inḍnesiā belā</standard>
+				</long>
+			</metazone>
+			<metazone type="Indonesia_Western">
+				<long>
+					<standard>weḍākūṇpū inḍnesiā belā</standard>
+				</long>
+			</metazone>
+			<metazone type="Iran">
+				<long>
+					<generic>irān belā</generic>
+					<standard>irān mānānka belā</standard>
+					<daylight>irān ḍelāiṭ belā</daylight>
+				</long>
+			</metazone>
+			<metazone type="Irkutsk">
+				<long>
+					<generic>īrkustak belā</generic>
+					<standard>īrkustak mānānka belā</standard>
+					<daylight>īrkustak kār~ā belā</daylight>
+				</long>
+			</metazone>
+			<metazone type="Israel">
+				<long>
+					<generic>ijarāīl belā</generic>
+					<standard>ijarāīl mānānka belā</standard>
+					<daylight>ijarāīl ḍelāiṭ belā</daylight>
+				</long>
+			</metazone>
+			<metazone type="Japan">
+				<long>
+					<generic>jāpān belā</generic>
+					<standard>jāpān mānānka belā</standard>
+					<daylight>jāpān ḍelāiṭ belā</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan_Eastern">
+				<long>
+					<standard>weḍāhapu kājākstān belā</standard>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan_Western">
+				<long>
+					<standard>weḍākūṇpū kājākstān belā</standard>
+				</long>
+			</metazone>
+			<metazone type="Korea">
+				<long>
+					<generic>koriān belā</generic>
+					<standard>koriān mānānka belā</standard>
+					<daylight>koriān ḍelāiṭ belā</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kosrae">
+				<long>
+					<standard>kasrāē belā</standard>
+				</long>
+			</metazone>
+			<metazone type="Krasnoyarsk">
+				<long>
+					<generic>krāsnōrska belā</generic>
+					<standard>krāsnōrska mānānka belā</standard>
+					<daylight>krāsnōrska kār~ā belā</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kyrgystan">
+				<long>
+					<standard>kirgijstān belā</standard>
+				</long>
+			</metazone>
+			<metazone type="Line_Islands">
+				<long>
+					<standard>lāin dīp belā</standard>
+				</long>
+			</metazone>
+			<metazone type="Lord_Howe">
+				<long>
+					<generic>laṛ hawe belā</generic>
+					<standard>laṛ hawe mānānka belā</standard>
+					<daylight>laṛ hawe ḍelāiṭ belā</daylight>
+				</long>
+			</metazone>
+			<metazone type="Magadan">
+				<long>
+					<generic>māgādan belā</generic>
+					<standard>māgādan mānānka belā</standard>
+					<daylight>māgādan ḍelāit belā</daylight>
+				</long>
+			</metazone>
+			<metazone type="Malaysia">
+				<long>
+					<standard>malesiā belā</standard>
+				</long>
+			</metazone>
+			<metazone type="Maldives">
+				<long>
+					<standard>māldīp belā</standard>
+				</long>
+			</metazone>
+			<metazone type="Marquesas">
+				<long>
+					<standard>mārksas belā</standard>
+				</long>
+			</metazone>
+			<metazone type="Marshall_Islands">
+				<long>
+					<standard>mārsāl dīpa belā</standard>
+				</long>
+			</metazone>
+			<metazone type="Mauritius">
+				<long>
+					<generic>marīsas belā</generic>
+					<standard>marīsasmānānka belā</standard>
+					<daylight>marīsas kār~ā belā</daylight>
+				</long>
+			</metazone>
+			<metazone type="Mawson">
+				<long>
+					<standard>māwosn belā</standard>
+				</long>
+			</metazone>
+			<metazone type="Mexico_Pacific">
+				<long>
+					<generic>meksikān pesipic belā</generic>
+					<standard>meksikān pesipic mānānka belā</standard>
+					<daylight>meksikān pesipic ḍelāiṭ belā</daylight>
+				</long>
+			</metazone>
+			<metazone type="Mongolia">
+				<long>
+					<generic>ūlānbator belā</generic>
+					<standard>ūlānbator mānānka belā</standard>
+					<daylight>ūlānbator kār~ā belā</daylight>
+				</long>
+			</metazone>
+			<metazone type="Moscow">
+				<long>
+					<generic>mosko belā</generic>
+					<standard>mosko mānānka belā</standard>
+					<daylight>mosko kār~ā belā</daylight>
+				</long>
+			</metazone>
+			<metazone type="Myanmar">
+				<long>
+					<standard>miñyāmār belā</standard>
+				</long>
+			</metazone>
+			<metazone type="Nauru">
+				<long>
+					<standard>nāurū belā</standard>
+				</long>
+			</metazone>
+			<metazone type="Nepal">
+				<long>
+					<standard>nepāl belā</standard>
+				</long>
+			</metazone>
+			<metazone type="New_Caledonia">
+				<long>
+					<generic>niū keleḍoniā belā</generic>
+					<standard>niū keleḍoniā mānānka belā</standard>
+					<daylight>niū keleḍoniā kār~ā belā</daylight>
+				</long>
+			</metazone>
+			<metazone type="New_Zealand">
+				<long>
+					<generic>niūjilānḍ belā</generic>
+					<standard>niūjilānḍ mānānka belā</standard>
+					<daylight>niūjilānḍ ḍelāiṭ belā</daylight>
+				</long>
+			</metazone>
+			<metazone type="Newfoundland">
+				<long>
+					<generic>niūpaunḍlyānḍ belā</generic>
+					<standard>niūpaunḍlyānḍ mānānka belā</standard>
+					<daylight>niūpaunḍlyānḍ ḍelāiṭ belā</daylight>
+				</long>
+			</metazone>
+			<metazone type="Niue">
+				<long>
+					<standard>niū belā</standard>
+				</long>
+			</metazone>
+			<metazone type="Norfolk">
+				<long>
+					<generic>norpok dīp belā</generic>
+					<standard>norpok dīp mānānka belā</standard>
+					<daylight>norpok dīp ḍelāiṭ belā</daylight>
+				</long>
+			</metazone>
+			<metazone type="Noronha">
+				<long>
+					<generic>parn~ḍo ḍe norohā~ belā</generic>
+					<standard>parn~ḍo ḍe norohā~ mānānka belā</standard>
+					<daylight>parn~ḍo ḍe norohā~ kār~ā belā</daylight>
+				</long>
+			</metazone>
+			<metazone type="Novosibirsk">
+				<long>
+					<generic>nawosibisrk belā</generic>
+					<standard>nawosibisrk mānānka belā</standard>
+					<daylight>nawosibisrk kār~ā belā</daylight>
+				</long>
+			</metazone>
+			<metazone type="Omsk">
+				<long>
+					<generic>amska belā</generic>
+					<standard>amska mānānka belā</standard>
+					<daylight>amska kār~ā belā</daylight>
+				</long>
+			</metazone>
+			<metazone type="Pakistan">
+				<long>
+					<generic>pākistān belā</generic>
+					<standard>pākistān mānānka belā</standard>
+					<daylight>pākistān kār~ā belā</daylight>
+				</long>
+			</metazone>
+			<metazone type="Palau">
+				<long>
+					<standard>pālāu belā</standard>
+				</long>
+			</metazone>
+			<metazone type="Papua_New_Guinea">
+				<long>
+					<standard>pāpuā niu gunīā belā</standard>
+				</long>
+			</metazone>
+			<metazone type="Paraguay">
+				<long>
+					<generic>pārāguyē belā</generic>
+					<standard>pārāguyē mānānka belā</standard>
+					<daylight>pārāguyē kār~ā belā</daylight>
+				</long>
+			</metazone>
+			<metazone type="Peru">
+				<long>
+					<generic>peru belā</generic>
+					<standard>peru mānānka belā</standard>
+					<daylight>peru kār~ā belā</daylight>
+				</long>
+			</metazone>
+			<metazone type="Philippines">
+				<long>
+					<generic>pilipin belā</generic>
+					<standard>pilipin mānānka belā</standard>
+					<daylight>pilipin kār~ā belā</daylight>
+				</long>
+			</metazone>
+			<metazone type="Phoenix_Islands">
+				<long>
+					<standard>piniksa dīpati belā</standard>
+				</long>
+			</metazone>
+			<metazone type="Pierre_Miquelon">
+				<long>
+					<generic>sēnṭ pierē aḍē mekwēlān belā</generic>
+					<standard>sēnṭ pierē aḍē mekwēlān mānānka belā</standard>
+					<daylight>sēnṭ pierē aḍē mekwēlān ḍelāiṭ belā</daylight>
+				</long>
+			</metazone>
+			<metazone type="Pitcairn">
+				<long>
+					<standard>piṭkēran belā</standard>
+				</long>
+			</metazone>
+			<metazone type="Ponape">
+				<long>
+					<standard>ponāpe belā</standard>
+				</long>
+			</metazone>
+			<metazone type="Pyongyang">
+				<long>
+					<standard>pyongayāng belā</standard>
+				</long>
+			</metazone>
+			<metazone type="Reunion">
+				<long>
+					<standard>rīūnīan belā</standard>
+				</long>
+			</metazone>
+			<metazone type="Rothera">
+				<long>
+					<standard>rotērā belā</standard>
+				</long>
+			</metazone>
+			<metazone type="Sakhalin">
+				<long>
+					<generic>sakālin belā</generic>
+					<standard>sakālin mānānka belā</standard>
+					<daylight>sakālin kār~ā belā</daylight>
+				</long>
+			</metazone>
+			<metazone type="Samoa">
+				<long>
+					<generic>saāmoa belā</generic>
+					<standard>saāmoa mānānka belā</standard>
+					<daylight>saāmoa ḍelāiṭ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Seychelles">
+				<long>
+					<standard>sēsels belā</standard>
+				</long>
+			</metazone>
+			<metazone type="Singapore">
+				<long>
+					<standard>singāpur mānānka belā</standard>
+				</long>
+			</metazone>
+			<metazone type="Solomon">
+				<long>
+					<standard>soloman dīpati belā</standard>
+				</long>
+			</metazone>
+			<metazone type="South_Georgia">
+				<long>
+					<standard>dkīṇa jarjīā belā</standard>
+				</long>
+			</metazone>
+			<metazone type="Suriname">
+				<long>
+					<standard>surīnām belā</standard>
+				</long>
+			</metazone>
+			<metazone type="Syowa">
+				<long>
+					<standard>sawā belā</standard>
+				</long>
+			</metazone>
+			<metazone type="Tahiti">
+				<long>
+					<standard>tāhiti belā</standard>
+				</long>
+			</metazone>
+			<metazone type="Taipei">
+				<long>
+					<generic>tāipē belā</generic>
+					<standard>tāipē mānānka belā</standard>
+					<daylight>tāipē ḍelāiṭ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Tajikistan">
+				<long>
+					<standard>tājikistān belā</standard>
+				</long>
+			</metazone>
+			<metazone type="Tokelau">
+				<long>
+					<standard>ṭokelāu belā</standard>
+				</long>
+			</metazone>
+			<metazone type="Tonga">
+				<long>
+					<generic>ṭangā belā</generic>
+					<standard>ṭangā mānānka belā</standard>
+					<daylight>ṭangā kār~ā belā</daylight>
+				</long>
+			</metazone>
+			<metazone type="Truk">
+				<long>
+					<standard>cuk belā</standard>
+				</long>
+			</metazone>
+			<metazone type="Turkmenistan">
+				<long>
+					<generic>turkmenistān belā</generic>
+					<standard>turkmenistān manaka belā</standard>
+					<daylight>turkmenistān kār~ā belā</daylight>
+				</long>
+			</metazone>
+			<metazone type="Tuvalu">
+				<long>
+					<standard>tuwalū belā</standard>
+				</long>
+			</metazone>
+			<metazone type="Uruguay">
+				<long>
+					<generic>urguwē belā</generic>
+					<standard>urguwē manaka belā</standard>
+					<daylight>urguwē kār~ā belā</daylight>
+				</long>
+			</metazone>
+			<metazone type="Uzbekistan">
+				<long>
+					<generic>uzwēkistān belā</generic>
+					<standard>uzwēkistān mānānka belā</standard>
+					<daylight>uzwēkistān kārã belā</daylight>
+				</long>
+			</metazone>
+			<metazone type="Vanuatu">
+				<long>
+					<generic>wanuātū belā</generic>
+					<standard>wanuātū mānānka belā</standard>
+					<daylight>wanuātū kār~ā belā</daylight>
+				</long>
+			</metazone>
+			<metazone type="Venezuela">
+				<long>
+					<standard>wenēzuelā belā</standard>
+				</long>
+			</metazone>
+			<metazone type="Vladivostok">
+				<long>
+					<generic>wlādiwostak belā</generic>
+					<standard>wlādiwostak mānānka belā</standard>
+					<daylight>wlādiwostak kār~ā belā</daylight>
+				</long>
+			</metazone>
+			<metazone type="Volgograd">
+				<long>
+					<generic>wālgogrāḍ belā</generic>
+					<standard>wālgogrāḍ mānānka belā</standard>
+					<daylight>wālgogrāḍ kār~ā belā</daylight>
+				</long>
+			</metazone>
+			<metazone type="Vostok">
+				<long>
+					<standard>wostak belā</standard>
+				</long>
+			</metazone>
+			<metazone type="Wake">
+				<long>
+					<standard>waka dīpa belā</standard>
+				</long>
+			</metazone>
+			<metazone type="Wallis">
+				<long>
+					<standard>walis aḍē puṭunā</standard>
+				</long>
+			</metazone>
+			<metazone type="Yakutsk">
+				<long>
+					<generic>yakustuk belā</generic>
+					<standard>yakustuk mānānka belā</standard>
+					<daylight>yakustuk kār~ā belā</daylight>
+				</long>
+			</metazone>
+			<metazone type="Yekaterinburg">
+				<long>
+					<generic>yakaterinbarg belā</generic>
+					<standard>yakaterinbarg mānānka belā</standard>
+					<daylight>yakaterinbarg kār~ā belā</daylight>
+				</long>
+			</metazone>
+		</timeZoneNames>
+	</dates>
+	<numbers>
+		<decimalFormats numberSystem="latn">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern>#,##,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<currencyFormats numberSystem="latn">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern>¤#,##,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern>¤#,##0.00;(¤#,##0.00)</pattern>
+					<pattern alt="noCurrency">#,##0.00;(#,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencies>
+			<currency type="BRL">
+				<displayName>brājil ti riel</displayName>
+			</currency>
+			<currency type="CNY">
+				<displayName>cin ti yuān</displayName>
+			</currency>
+			<currency type="EUR">
+				<displayName>yuro</displayName>
+			</currency>
+			<currency type="GBP">
+				<displayName>briṭis pāunḍ</displayName>
+			</currency>
+			<currency type="INR">
+				<displayName>bārat ti ṭnkā</displayName>
+			</currency>
+			<currency type="JPY">
+				<displayName>jāpān ti yēn</displayName>
+			</currency>
+			<currency type="RUB">
+				<displayName>rūs ti rūbel</displayName>
+			</currency>
+			<currency type="USD">
+				<displayName>iūes ḍalār</displayName>
+			</currency>
+			<currency type="XXX">
+				<displayName>puṇātī lēmbū</displayName>
+			</currency>
+		</currencies>
+	</numbers>
+	<listPatterns>
+		<listPattern>
+			<listPatternPart type="end">{0}, aḍe {1}</listPatternPart>
+			<listPatternPart type="2">{0} aḍe {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="or">
+			<listPatternPart type="end">{0}, aadtẽ {1}</listPatternPart>
+			<listPatternPart type="2">{0} aaḍẽ {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="unit">
+			<listPatternPart type="end">{0}, {1}</listPatternPart>
+			<listPatternPart type="2">{0}, {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="unit-narrow">
+			<listPatternPart type="start">{0} {1}</listPatternPart>
+			<listPatternPart type="middle">{0} {1}</listPatternPart>
+			<listPatternPart type="end">{0} {1}</listPatternPart>
+			<listPatternPart type="2">{0} {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="unit-short">
+			<listPatternPart type="end">{0}, {1}</listPatternPart>
+			<listPatternPart type="2">{0}, {1}</listPatternPart>
+		</listPattern>
+	</listPatterns>
+</ldml>

@@ -726,7 +726,7 @@ class MetalTitlePane extends JComponent {
         int xOffset = leftToRight ? 5 : width - 5;
 
         if (getWindowDecorationStyle() == JRootPane.FRAME) {
-            xOffset += leftToRight ? IMAGE_WIDTH + 5 : - IMAGE_WIDTH - 5;
+            xOffset += leftToRight ? menuBar.getWidth() + 5 : - menuBar.getWidth() - 5;
         }
 
         String theTitle = getTitle();

@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2024 Unicode, Inc.
+For terms of use, see http://www.unicode.org/copyright.html
+SPDX-License-Identifier: Unicode-3.0
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+-->
+<ldml>
+	<identity>
+		<version number="$Revision$"/>
+		<language type="tpi"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="de">Jeman</language>
+			<language type="de_AT">Austria Jeman</language>
+			<language type="de_CH">Swis Jeman</language>
+			<language type="en">Inglis</language>
+			<language type="en_AU">Australian Inglis</language>
+			<language type="en_CA">Kenedien Inglis</language>
+			<language type="en_GB">Britis Inglis</language>
+			<language type="en_US">Amerikan Inglis</language>
+			<language type="es">Spenis</language>
+			<language type="es_419">Saut Amerikan Spenis</language>
+			<language type="es_ES">Spenis (Spein)</language>
+			<language type="es_MX">Meksikan Spenis</language>
+			<language type="fr">Frens</language>
+			<language type="fr_CA">Kenedien Frens</language>
+			<language type="fr_CH">Swis Frens</language>
+			<language type="it">Italien</language>
+			<language type="ja">Japanis</language>
+			<language type="pt">Potigis</language>
+			<language type="pt_BR">Brasilien Potigis</language>
+			<language type="pt_PT">Yurop Potigis</language>
+			<language type="ru" draft="unconfirmed">Rasien</language>
+			<language type="tpi">Tok Pisin</language>
+			<language type="und">Tok ples i no stap</language>
+			<language type="zh">Sainis</language>
+			<language type="zh_Hans">Isipela Sainis</language>
+			<language type="zh_Hant">Tredisinol Sainis</language>
+		</languages>
+		<scripts>
+			<script type="Arab">Arabik</script>
+			<script type="Cyrl">Syrilik</script>
+			<script type="Hans">Han (isipela)</script>
+			<script type="Hant">Han (tredisinol)</script>
+			<script type="Latn">Latin</script>
+			<script type="Zxxx">Tok i no raitim yet</script>
+			<script type="Zzzz">Tok i no gat kod yet</script>
+		</scripts>
+		<territories>
+			<territory type="BR">Brasil</territory>
+			<territory type="CN" draft="unconfirmed">Saina</territory>
+			<territory type="DE">Jemani</territory>
+			<territory type="FR">Frans</territory>
+			<territory type="GB">Yunaited Kingdom</territory>
+			<territory type="IN" draft="unconfirmed">India</territory>
+			<territory type="IT">Itali</territory>
+			<territory type="PG">Papua Niugini</territory>
+			<territory type="ZZ">Rijen i no stap</territory>
+		</territories>
+		<types>
+			<type key="calendar" type="gregorian">Gregorien kalenda</type>
+			<type key="cf" type="standard" draft="unconfirmed">stendet karensi fomet</type>
+			<type key="collation" type="standard">stendet oda bilong skelim</type>
+			<type key="numbers" type="latn">westen namba</type>
+		</types>
+		<codePatterns>
+			<codePattern type="language">tok ples: {0}</codePattern>
+			<codePattern type="script">skript: {0}</codePattern>
+			<codePattern type="territory">rijen: {0}</codePattern>
+		</codePatterns>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters draft="contributed">[a b d e f g h i j k l m n o p r s t u w y]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary" draft="contributed">[c q v x z]</exemplarCharacters>
+		<exemplarCharacters type="index" draft="contributed">[A B D E F G H I J K L M N O P R S T U W Y]</exemplarCharacters>
+	</characters>
+	<dates>
+		<calendars>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="unconfirmed">Jan</month>
+							<month type="2" draft="unconfirmed">Feb</month>
+							<month type="3" draft="unconfirmed">Mas</month>
+							<month type="4" draft="unconfirmed">Epr</month>
+							<month type="5" draft="unconfirmed">Me</month>
+							<month type="6" draft="unconfirmed">Jun</month>
+							<month type="7" draft="unconfirmed">Jul</month>
+							<month type="8" draft="unconfirmed">Oga</month>
+							<month type="9" draft="unconfirmed">Sep</month>
+							<month type="10" draft="unconfirmed">Okt</month>
+							<month type="11" draft="unconfirmed">Nov</month>
+							<month type="12" draft="unconfirmed">Des</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1">Janueri</month>
+							<month type="2">Februeri</month>
+							<month type="3">Mas</month>
+							<month type="4">Epril</month>
+							<month type="5">Me</month>
+							<month type="6">Jun</month>
+							<month type="7">Julai</month>
+							<month type="8">Ogas</month>
+							<month type="9">Septemba</month>
+							<month type="10">Oktoba</month>
+							<month type="11">Novemba</month>
+							<month type="12">Desemba</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<days>
+					<dayContext type="format">
+						<dayWidth type="abbreviated">
+							<day type="sun" draft="unconfirmed">San</day>
+							<day type="mon" draft="unconfirmed">Man</day>
+							<day type="tue" draft="unconfirmed">Tun</day>
+							<day type="wed" draft="unconfirmed">Tri</day>
+							<day type="thu" draft="unconfirmed">Fon</day>
+							<day type="fri" draft="unconfirmed">Fra</day>
+							<day type="sat" draft="unconfirmed">Sar</day>
+						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun">Sande</day>
+							<day type="mon">Mande</day>
+							<day type="tue">Tunde</day>
+							<day type="wed">Trinde</day>
+							<day type="thu">Fonde</day>
+							<day type="fri">Fraide</day>
+							<day type="sat">Sarere</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern draft="unconfirmed">EEE, dd MMMM y</pattern>
+							<datetimeSkeleton draft="unconfirmed">yyyyMMMMEEEdd</datetimeSkeleton>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern draft="unconfirmed">dd MMMM y</pattern>
+							<datetimeSkeleton draft="unconfirmed">yyyyMMMMdd</datetimeSkeleton>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern draft="unconfirmed">dd MMM y</pattern>
+							<datetimeSkeleton draft="unconfirmed">yyyyMMMdd</datetimeSkeleton>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern draft="unconfirmed">dd/MM/yy</pattern>
+							<datetimeSkeleton draft="unconfirmed">yyMMdd</datetimeSkeleton>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<timeFormats>
+					<timeFormatLength type="full">
+						<timeFormat>
+							<pattern draft="unconfirmed">hh:mm:ss a zzzz</pattern>
+							<datetimeSkeleton draft="unconfirmed">ahhmmsszzzz</datetimeSkeleton>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="long">
+						<timeFormat>
+							<pattern draft="unconfirmed">hh:mm:ss a zzz</pattern>
+							<datetimeSkeleton draft="unconfirmed">ahhmmsszzz</datetimeSkeleton>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="medium">
+						<timeFormat>
+							<pattern draft="unconfirmed">hh:mm:ss a</pattern>
+							<datetimeSkeleton draft="unconfirmed">ahhmmss</datetimeSkeleton>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="short">
+						<timeFormat>
+							<pattern draft="unconfirmed">hh:mm a</pattern>
+							<datetimeSkeleton draft="unconfirmed">ahhmm</datetimeSkeleton>
+						</timeFormat>
+					</timeFormatLength>
+				</timeFormats>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="yMd">d/M/y</dateFormatItem>
+						<dateFormatItem id="yMMMd">d MMM y</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
+			</calendar>
+		</calendars>
+	</dates>
+	<numbers>
+		<currencyFormats numberSystem="latn">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern>#,##0.00 ¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+	</numbers>
+</ldml>

@@ -58,7 +58,7 @@ public class TestSecurityPropertyModificationEvent {
         }
 
         try (Recording recording = new Recording()) {
-            recording.enable(EventNames.SecurityProperty);
+            recording.enable(EventNames.SecurityProperty).withStackTrace();
             recording.start();
             for (String key: keys) {
                 Security.setProperty(key, keyValue);
@@ -78,6 +78,7 @@ public class TestSecurityPropertyModificationEvent {
             if (keys.contains(e.getString("key"))) {
                 Events.assertField(e, "value").equal(keyValue);
                 i++;
+                Events.assertTopFrame(e, TestSecurityPropertyModificationEvent.class, "main");
             } else {
                 System.out.println(events);
                 throw new Exception("Unexpected event at index:" + i);

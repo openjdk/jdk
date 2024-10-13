@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2018, the original author or authors.
+ * Copyright (c) 2002-2018, the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -34,6 +34,7 @@ public interface Terminal extends Closeable, Flushable {
      * Type used for dumb terminals.
      */
     String TYPE_DUMB = "dumb";
+
     String TYPE_DUMB_COLOR = "dumb-color";
 
     String getName();
@@ -42,6 +43,9 @@ public interface Terminal extends Closeable, Flushable {
     // Signal support
     //
 
+    /**
+     * Types of signals.
+     */
     enum Signal {
         INT,
         QUIT,
@@ -51,16 +55,55 @@ public interface Terminal extends Closeable, Flushable {
         WINCH
     }
 
+    /**
+     * The SignalHandler defines the interface used to trap signals and perform specific behaviors.
+     * @see Terminal.Signal
+     * @see Terminal#handle(Signal, SignalHandler)
+     */
     interface SignalHandler {
 
+        /**
+         * The {@code SIG_DFL} value can be used to specify that the JVM default behavior
+         * should be used to handle this signal.
+         */
         SignalHandler SIG_DFL = NativeSignalHandler.SIG_DFL;
+
+        /**
+         * The {@code SIG_IGN} value can be used to ignore this signal and not perform
+         * any special processing.
+         */
         SignalHandler SIG_IGN = NativeSignalHandler.SIG_IGN;
 
+        /**
+         * Handle the signal.
+         * @param signal the signal
+         */
         void handle(Signal signal);
     }
 
+    /**
+     * Registers a handler for the given {@link Signal}.
+     * <p>
+     * Note that the JVM does not easily allow catching the {@link Signal#QUIT} signal, which causes a thread dump
+     * to be displayed.  This signal is mainly used when connecting through an SSH socket to a virtual terminal.
+     *
+     * @param signal the signal to register a handler for
+     * @param handler the handler
+     * @return the previous signal handler
+     */
     SignalHandler handle(Signal signal, SignalHandler handler);
 
+    /**
+     * Raise the specific signal.
+     * This is not method usually called by non system terminals.
+     * When accessing a terminal through a SSH or Telnet connection, signals may be
+     * conveyed by the protocol and thus need to be raised when reaching the terminal code.
+     * The terminals do that automatically when the terminal input stream has a character
+     * mapped to {@link Attributes.ControlChar#VINTR}, {@link Attributes.ControlChar#VQUIT},
+     * or {@link Attributes.ControlChar#VSUSP}.
+     *
+     * @param signal the signal to raise
+     */
     void raise(Signal signal);
 
     //
@@ -180,8 +223,21 @@ public interface Terminal extends Closeable, Flushable {
 
     boolean echo(boolean echo);
 
+    /**
+     * Returns the terminal attributes.
+     * The returned object can be safely modified
+     * further used in a call to {@link #setAttributes(Attributes)}.
+     *
+     * @return the terminal attributes.
+     */
     Attributes getAttributes();
 
+    /**
+     * Set the terminal attributes.
+     * The terminal will perform a copy of the given attributes.
+     *
+     * @param attr the new attributes
+     */
     void setAttributes(Attributes attr);
 
     /**
@@ -334,5 +390,4 @@ public interface Terminal extends Closeable, Flushable {
      * Color support
      */
     ColorPalette getPalette();
-
 }

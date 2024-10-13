@@ -1,6 +1,6 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ public class TestPrintOptoAssemblyLineNumbers {
             CheckC2OptoAssembly.class.getName()
         };
 
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(procArgs);
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(procArgs);
         OutputAnalyzer oa = new OutputAnalyzer(pb.start());
         oa.shouldHaveExitValue(0);
 

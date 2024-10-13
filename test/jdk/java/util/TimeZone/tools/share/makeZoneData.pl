@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -157,9 +157,14 @@ if ($#javatzids < 0) {
 
 foreach $z (@javatzids) {
     #
-    # skip any Riyadh zones; ZoneData.java can't handle Riyada zones
+    # skip any Riyadh zones; ZoneData.java can't handle Riyadh zones
     #
-    next if ($z =~ /Riyadh/);
+    # Skip these zones for CLDR
+    # Africa/Windhoek: Negative DST (throughout year)
+    # Korea zones: CLDR metazone shares Seoul/Pyongyang, where TZDB doesn't
+    # Adak: CLDR's short names (Hawaii_Aleutian) differ from TZDB, HAST/HADT vs. HST/HDT
+    #
+    next if ($z =~ /Riyadh|Windhoek|Seoul|Pyongyang|Adak/);
 
     for ($i = 0, $fd = 0; $i < $count; $i++, $fd++) {
 	if (!defined($zones{$z})) {

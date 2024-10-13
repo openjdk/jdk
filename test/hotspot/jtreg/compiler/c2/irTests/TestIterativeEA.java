@@ -78,7 +78,7 @@ public class TestIterativeEA {
     }
 
     @Test
-    @Arguments({ Argument.RANDOM_EACH })
+    @Arguments(values = { Argument.RANDOM_EACH })
     @IR(failOn = { IRNode.ALLOC })
     public static int testSlow(int val) {
         MyClass obj = new MyClass(val);
@@ -88,7 +88,7 @@ public class TestIterativeEA {
     }
 
     @Test
-    @Arguments({ Argument.RANDOM_EACH })
+    @Arguments(values = { Argument.RANDOM_EACH })
     @IR(failOn = { IRNode.ALLOC })
     public static int testFast(int val) {
         MyClass obj = new MyClass(val);
@@ -119,7 +119,7 @@ public class TestIterativeEA {
     }
 
     @Test
-    @Arguments({ Argument.RANDOM_EACH })
+    @Arguments(values = { Argument.RANDOM_EACH })
     @IR(failOn = { IRNode.ALLOC })
     static int testNested(int i) {
         C c = new C(new B(new A(i)));

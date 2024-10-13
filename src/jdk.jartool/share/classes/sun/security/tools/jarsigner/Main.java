@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,7 +118,7 @@ public class Main {
     private static final Set<CryptoPrimitive> SIG_PRIMITIVE_SET = Collections
             .unmodifiableSet(EnumSet.of(CryptoPrimitive.SIGNATURE));
 
-    private static boolean extraAttrsDetected;
+    private static boolean externalFileAttributesDetected;
 
     static final String VERSION = "1.0";
 
@@ -135,7 +135,19 @@ public class Main {
     // This is the entry that get launched by the security tool jarsigner.
     public static void main(String args[]) throws Exception {
         Main js = new Main();
-        js.run(args);
+        int exitCode = js.run(args);
+        if (exitCode != 0) {
+            System.exit(exitCode);
+        }
+    }
+
+    private static class ExitException extends RuntimeException {
+        @java.io.Serial
+        static final long serialVersionUID = 0L;
+        private final int errorCode;
+        public ExitException(int errorCode) {
+            this.errorCode = errorCode;
+        }
     }
 
     X509Certificate[] certChain;    // signer's cert chain (when composing)
@@ -179,14 +191,13 @@ public class Main {
     boolean revocationCheck = false; // Revocation check flag
 
     // read zip entry raw bytes
-    private String altSignerClass = null;
-    private String altSignerClasspath = null;
     private ZipFile zipFile = null;
 
     // Informational warnings
     private boolean hasExpiringCert = false;
     private boolean hasExpiringTsaCert = false;
     private boolean noTimestamp = true;
+    private boolean hasNonexistentEntries = false;
 
     // Expiration date. The value could be null if signed by a trusted cert.
     private Date expireDate = null;
@@ -232,13 +243,13 @@ public class Main {
     PKIXBuilderParameters pkixParameters;
     Set<X509Certificate> trustedCerts = new HashSet<>();
 
-    public void run(String args[]) {
+    public int run(String args[]) {
         try {
-            args = parseArgs(args);
+            parseArgs(args);
 
             // Try to load and install the specified providers
             if (providers != null) {
-                for (String provName: providers) {
+                for (String provName : providers) {
                     try {
                         KeyStoreUtil.loadProviderByName(provName,
                                 providerArgs.get(provName));
@@ -265,7 +276,7 @@ public class Main {
                 } else {
                     cl = ClassLoader.getSystemClassLoader();
                 }
-                for (String provClass: providerClasses) {
+                for (String provClass : providerClasses) {
                     try {
                         KeyStoreUtil.loadProviderByClass(provClass,
                                 providerArgs.get(provClass), cl);
@@ -287,19 +298,9 @@ public class Main {
                     loadKeyStore(keystore, false);
                 } catch (Exception e) {
                     if ((keystore != null) || (storepass != null)) {
-                        System.out.println(rb.getString("jarsigner.error.") +
-                                        e.getMessage());
-                        if (debug) {
-                            e.printStackTrace();
-                        }
-                        System.exit(1);
+                        throw e;
                     }
                 }
-                /*              if (debug) {
-                    SignatureFileVerifier.setDebug(true);
-                    ManifestEntryVerifier.setDebug(true);
-                }
-                */
                 verifyJar(jarfile);
             } else {
                 loadKeyStore(keystore, true);
@@ -307,12 +308,14 @@ public class Main {
 
                 signJar(jarfile, alias);
             }
+        } catch (ExitException ee) {
+            return ee.errorCode;
         } catch (Exception e) {
             System.out.println(rb.getString("jarsigner.error.") + e);
             if (debug) {
                 e.printStackTrace();
             }
-            System.exit(1);
+            return 1;
         } finally {
             // zero-out private key password
             if (keypass != null) {
@@ -345,10 +348,10 @@ public class Main {
             if (tsaChainNotValidated) {
                 exitCode |= 64;
             }
-            if (exitCode != 0) {
-                System.exit(exitCode);
-            }
+            return exitCode;
         }
+
+        return 0;
     }
 
     /*
@@ -483,18 +486,6 @@ public class Main {
             } else if (collator.compare(flags, "-tsacert") ==0) {
                 if (++n == args.length) usageNoArg();
                 tsaAlias = args[n];
-            } else if (collator.compare(flags, "-altsigner") ==0) {
-                if (++n == args.length) usageNoArg();
-                altSignerClass = args[n];
-                System.err.println(
-                        rb.getString("This.option.is.forremoval") +
-                                "-altsigner");
-            } else if (collator.compare(flags, "-altsignerpath") ==0) {
-                if (++n == args.length) usageNoArg();
-                altSignerClasspath = args[n];
-                System.err.println(
-                        rb.getString("This.option.is.forremoval") +
-                                "-altsignerpath");
             } else if (collator.compare(flags, "-sectionsonly") ==0) {
                 signManifest = false;
             } else if (collator.compare(flags, "-internalsf") ==0) {
@@ -626,12 +617,12 @@ public class Main {
     static void usage() {
         System.out.println();
         System.out.println(rb.getString("Please.type.jarsigner.help.for.usage"));
-        System.exit(1);
+        throw new ExitException(1);
     }
 
     static void doPrintVersion() {
         System.out.println("jarsigner " + System.getProperty("java.version"));
-        System.exit(0);
+        throw new ExitException(0);
     }
 
     static void fullusage() {
@@ -699,12 +690,6 @@ public class Main {
                 (".tsadigestalg.algorithm.of.digest.data.in.timestamping.request"));
         System.out.println();
         System.out.println(rb.getString
-                (".altsigner.class.class.name.of.an.alternative.signing.mechanism"));
-        System.out.println();
-        System.out.println(rb.getString
-                (".altsignerpath.pathlist.location.of.an.alternative.signing.mechanism"));
-        System.out.println();
-        System.out.println(rb.getString
                 (".internalsf.include.the.SF.file.inside.the.signature.block"));
         System.out.println();
         System.out.println(rb.getString
@@ -739,7 +724,7 @@ public class Main {
                 (".print.this.help.message"));
         System.out.println();
 
-        System.exit(0);
+        throw new ExitException(0);
     }
 
     void verifyJar(String jarName)
@@ -751,6 +736,7 @@ public class Main {
         Map<String,PKCS7> sigMap = new HashMap<>();
         Map<String,String> sigNameMap = new HashMap<>();
         Map<String,String> unparsableSignatures = new HashMap<>();
+        Map<String,Set<String>> entriesInSF = new HashMap<>();
 
         try {
             jf = new JarFile(jarName, true);
@@ -773,6 +759,13 @@ public class Main {
                             && SignatureFileVerifier.isBlockOrSF(name)) {
                         String alias = name.substring(name.lastIndexOf('/') + 1,
                                 name.lastIndexOf('.'));
+                        long uncompressedSize = je.getSize();
+                        if (uncompressedSize > SignatureFileVerifier.MAX_SIG_FILE_SIZE) {
+                            unparsableSignatures.putIfAbsent(alias, String.format(
+                                    rb.getString("history.unparsable"), name));
+                            continue;
+                        }
+
                         try {
                             if (name.endsWith(".SF")) {
                                 Manifest sf = new Manifest(is);
@@ -791,6 +784,7 @@ public class Main {
                                         break;
                                     }
                                 }
+                                entriesInSF.put(alias, sf.getEntries().keySet());
                                 if (!found) {
                                     unparsableSignatures.putIfAbsent(alias,
                                         String.format(
@@ -832,8 +826,8 @@ public class Main {
                     JarEntry je = e.nextElement();
                     String name = je.getName();
 
-                    if (!extraAttrsDetected && JUZFA.getExtraAttributes(je) != -1) {
-                        extraAttrsDetected = true;
+                    if (!externalFileAttributesDetected && JUZFA.getExternalFileAttributes(je) != -1) {
+                        externalFileAttributesDetected = true;
                     }
                     hasSignature |= signatureRelated(name) && SignatureFileVerifier.isBlockOrSF(name);
 
@@ -889,6 +883,9 @@ public class Main {
                                 sb.append(si);
                                 sb.append('\n');
                             }
+                        }
+                        for (var signed : entriesInSF.values()) {
+                            signed.remove(name);
                         }
                     } else if (showcerts && !verbose.equals("all")) {
                         // Print no info for unsigned entries when -verbose:all,
@@ -1024,8 +1021,7 @@ public class Main {
                             String digestAlg = digestMap.get(s);
                             String sigAlg = SignerInfo.makeSigAlg(
                                     si.getDigestAlgorithmId(),
-                                    si.getDigestEncryptionAlgorithmId(),
-                                    si.getAuthenticatedAttributes() == null);
+                                    si.getDigestEncryptionAlgorithmId());
                             AlgorithmId encAlgId = si.getDigestEncryptionAlgorithmId();
                             AlgorithmParameters sigAlgParams = encAlgId.getParameters();
                             PublicKey key = signer.getPublicKey();
@@ -1040,8 +1036,7 @@ public class Main {
                                 String tsDigestAlg = tsTokenInfo.getHashAlgorithm().getName();
                                 String tsSigAlg = SignerInfo.makeSigAlg(
                                         tsSi.getDigestAlgorithmId(),
-                                        tsSi.getDigestEncryptionAlgorithmId(),
-                                        tsSi.getAuthenticatedAttributes() == null);
+                                        tsSi.getDigestEncryptionAlgorithmId());
                                 AlgorithmId tsEncAlgId = tsSi.getDigestEncryptionAlgorithmId();
                                 AlgorithmParameters tsSigAlgParams = tsEncAlgId.getParameters();
                                 Calendar c = Calendar.getInstance(
@@ -1087,6 +1082,13 @@ public class Main {
                         if (verbose != null) {
                             System.out.println(history);
                         }
+                        var signed = entriesInSF.get(s);
+                        if (!signed.isEmpty()) {
+                            if (verbose != null) {
+                                System.out.println(rb.getString("history.nonexistent.entries") + signed);
+                            }
+                            hasNonexistentEntries = true;
+                        }
                     } else {
                         unparsableSignatures.putIfAbsent(s, String.format(
                                 rb.getString("history.nobk"), s));
@@ -1118,19 +1120,11 @@ public class Main {
             } else {
                 displayMessagesAndResult(false);
             }
-            return;
-        } catch (Exception e) {
-            System.out.println(rb.getString("jarsigner.") + e);
-            if (debug) {
-                e.printStackTrace();
-            }
         } finally { // close the resource
             if (jf != null) {
                 jf.close();
             }
         }
-
-        System.exit(1);
     }
 
     private void displayMessagesAndResult(boolean isSigning) {
@@ -1330,8 +1324,11 @@ public class Main {
             }
         }
 
-        if (extraAttrsDetected) {
-            warnings.add(rb.getString("extra.attributes.detected"));
+        if (hasNonexistentEntries) {
+            warnings.add(rb.getString("nonexistent.entries.found"));
+        }
+        if (externalFileAttributesDetected) {
+            warnings.add(rb.getString("external.file.attributes.detected"));
         }
 
         if ((strict) && (!errors.isEmpty())) {
@@ -1948,18 +1945,6 @@ public class Main {
             }
         }
 
-        if (altSignerClass != null) {
-            builder.setProperty("altSigner", altSignerClass);
-            if (verbose != null) {
-                System.out.println(
-                        rb.getString("using.an.alternative.signing.mechanism"));
-            }
-        }
-
-        if (altSignerClasspath != null) {
-            builder.setProperty("altSignerPath", altSignerClasspath);
-        }
-
         builder.signerName(sigfile);
 
         builder.setProperty("sectionsOnly", Boolean.toString(!signManifest));
@@ -1977,7 +1962,7 @@ public class Main {
 
         try {
             Event.setReportListener(Event.ReporterCategory.ZIPFILEATTRS,
-                    (t, o) -> extraAttrsDetected = true);
+                    (t, o) -> externalFileAttributesDetected = true);
             builder.build().sign(zipFile, fos);
         } catch (JarSignerException e) {
             failedCause = e.getCause();
@@ -2494,7 +2479,7 @@ public class Main {
 
     void error(String message) {
         System.out.println(rb.getString("jarsigner.")+message);
-        System.exit(1);
+        throw new ExitException(1);
     }
 
 
@@ -2503,7 +2488,7 @@ public class Main {
         if (debug) {
             e.printStackTrace();
         }
-        System.exit(1);
+        throw new ExitException(1);
     }
 
     /**

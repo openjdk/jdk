@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -64,6 +64,10 @@ private:
 
   static const MetaspaceTracer* _tracer;
 
+  // For quick pointer testing: extent of class space; nullptr if no class space.
+  static const void* _class_space_start;
+  static const void* _class_space_end;
+
   static bool _initialized;
 
 public:
@@ -74,13 +78,9 @@ public:
 
 #ifdef _LP64
 
-  // Reserve a range of memory at an address suitable for en/decoding narrow
-  // Klass pointers (see: CompressedClassPointers::is_valid_base()).
-  // The returned address shall both be suitable as a compressed class pointers
-  //  base, and aligned to Metaspace::reserve_alignment (which is equal to or a
-  //  multiple of allocation granularity).
-  // On error, returns an unreserved space.
-  static ReservedSpace reserve_address_space_for_compressed_classes(size_t size);
+  // Reserve a range of memory that is to contain narrow Klass IDs. If "try_in_low_address_ranges"
+  // is true, we will attempt to reserve memory suitable for zero-based encoding.
+  static ReservedSpace reserve_address_space_for_compressed_classes(size_t size, bool optimize_for_zero_base);
 
   // Given a prereserved space, use that to set up the compressed class space list.
   static void initialize_class_space(ReservedSpace rs);
@@ -110,15 +110,39 @@ public:
   static size_t max_allocation_word_size();
 
   static MetaWord* allocate(ClassLoaderData* loader_data, size_t word_size,
-                            MetaspaceObj::Type type, TRAPS);
+                            MetaspaceObj::Type type, bool use_class_space, TRAPS);
 
   // Non-TRAPS version of allocate which can be called by a non-Java thread, that returns
   // null on failure.
   static MetaWord* allocate(ClassLoaderData* loader_data, size_t word_size,
-                            MetaspaceObj::Type type);
+                            MetaspaceObj::Type type, bool use_class_space);
 
-  static bool contains(const void* ptr);
-  static bool contains_non_shared(const void* ptr);
+  // Returns true if the pointer points into class space, non-class metaspace, or the
+  // metadata portion of the CDS archive.
+  static bool contains(const void* ptr) {
+    return is_in_shared_metaspace(ptr) || // in cds
+           is_in_class_space(ptr) ||      // in class space
+           is_in_nonclass_metaspace(ptr); // in one of the non-class regions?
+  }
+
+  // Returns true if the pointer points into class space or into non-class metaspace
+  static bool contains_non_shared(const void* ptr) {
+    return is_in_class_space(ptr) ||      // in class space
+           is_in_nonclass_metaspace(ptr); // in one of the non-class regions?
+  }
+
+  // Returns true if pointer points into the CDS klass region.
+  static bool is_in_shared_metaspace(const void* ptr);
+
+  // Returns true if pointer points into one of the non-class-space metaspace regions.
+  static bool is_in_nonclass_metaspace(const void* ptr);
+
+  // Returns true if pointer points into class space, false if it doesn't or if
+  // there is no class space. Class space is a contiguous region, which is why
+  // two address comparisons are enough.
+  static inline bool is_in_class_space(const void* ptr) {
+    return ptr < _class_space_end && ptr >= _class_space_start;
+  }
 
   // Free empty virtualspaces
   static void purge(bool classes_unloaded);

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2024 Unicode, Inc.
+For terms of use, see http://www.unicode.org/copyright.html
+SPDX-License-Identifier: Unicode-3.0
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+-->
+<ldml>
+	<identity>
+		<version number="$Revision$"/>
+		<language type="aa"/>
+		<territory type="DJ"/>
+	</identity>
+	<dates>
+		<calendars>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="wide">
+							<month type="1" draft="unconfirmed">Qunxa Garablu</month>
+							<month type="2" draft="unconfirmed">Kudo</month>
+							<month type="3" draft="unconfirmed">Ciggilta Kudo</month>
+							<month type="4" draft="unconfirmed">Agda Baxis</month>
+							<month type="5" draft="unconfirmed">Caxah Alsa</month>
+							<month type="6" draft="unconfirmed">Qasa Dirri</month>
+							<month type="7" draft="unconfirmed">Qado Dirri</month>
+							<month type="8" draft="unconfirmed">Leqeeni</month>
+							<month type="9" draft="unconfirmed">Waysu</month>
+							<month type="10" draft="unconfirmed">Diteli</month>
+							<month type="11" draft="unconfirmed">Ximoli</month>
+							<month type="12" draft="unconfirmed">Kaxxa Garablu</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+			</calendar>
+		</calendars>
+	</dates>
+	<numbers>
+		<currencies>
+			<currency type="DJF">
+				<symbol>Fdj</symbol>
+			</currency>
+		</currencies>
+	</numbers>
+</ldml>

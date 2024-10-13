@@ -24,10 +24,10 @@
 
 #include "precompiled.hpp"
 #include "logging/log.hpp"
+#include "nmt/memTracker.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 #include "runtime/safepointMechanism.hpp"
-#include "services/memTracker.hpp"
 #include <sys/mman.h>
 
 void SafepointMechanism::pd_initialize() {

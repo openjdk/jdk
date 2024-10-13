@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2024 Unicode, Inc.
+For terms of use, see http://www.unicode.org/copyright.html
+SPDX-License-Identifier: Unicode-3.0
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+-->
+<ldml>
+	<identity>
+		<version number="$Revision$"/>
+		<language type="iu"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="fr" draft="unconfirmed">ᐅᐃᒍᐃᕐᒥᐅᖅ</language>
+			<language type="iu" draft="unconfirmed">ᐃᓄᒃᑎᑐᑦ</language>
+		</languages>
+		<territories>
+			<territory type="CA" draft="unconfirmed">ᑲᓇᑕᒥ</territory>
+		</territories>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters>[ᐃ ᐄ ᐅ ᐆ ᐊ ᐋ ᐱ ᐲ ᐳ ᐴ ᐸ ᐹ ᑉ ᑎ ᑏ ᑐ ᑑ ᑕ ᑖ ᑦ ᑭ ᑮ ᑯ ᑰ ᑲ ᑳ ᒃ ᒋ ᒌ ᒍ ᒎ ᒐ ᒑ ᒡ ᒥ ᒦ ᒧ ᒨ ᒪ ᒫ ᒻ ᓂ ᓃ ᓄ ᓅ ᓇ ᓈ ᓐ ᓕ ᓖ ᓗ ᓘ ᓚ ᓛ ᓪ ᓯ ᓰ ᓱ ᓲ ᓴ ᓵ ᔅ ᔨ ᔩ ᔪ ᔫ ᔭ ᔮ ᔾ ᕆ ᕇ ᕈ ᕉ ᕋ ᕌ ᕐ ᕕ ᕖ ᕗ ᕘ ᕙ ᕚ ᕝ ᕿ ᖀ ᖁ ᖂ ᖃ ᖅ ᖏ ᖑ ᖒ ᖓ ᖔ ᖕ ᙱ ᙲ ᙳ ᙴ ᙵ ᙶ ᖖ ᖠ ᖡ ᖢ ᖣ ᖤ ᖥ ᖦ]</exemplarCharacters>
+		<exemplarCharacters type="index" draft="unconfirmed">[ᐃ ᐄ ᐅ ᐆ ᐊ ᐋ ᐱ ᐲ ᐳ ᐴ ᐸ ᐹ ᑎ ᑏ ᑐ ᑑ ᑕ ᑖ ᑦ ᑭ ᑮ ᑯ ᑰ ᑳ ᒃ ᒋ ᒌ ᒍ ᒎ ᒐ ᒑ ᒡ ᒥ ᒦ ᒨ ᒪ ᒫ ᒻ ᓂ ᓃ ᓄ ᓅ ᓇ ᓈ ᓐ ᓖ ᓗ ᓘ ᓚ ᓛ ᓪ ᓯ ᓰ ᓱ ᓲ ᓴ ᔅ ᔨ ᔩ ᔪ ᔫ ᔭ ᔮ ᔾ ᕆ ᕇ ᕈ ᕋ ᕌ ᕐ ᕕ ᕖ ᕗ ᕘ ᕙ ᕚ ᕝ ᕿ ᖁ ᖂ ᖃ ᖅ ᖏ ᖑ ᖒ ᖓ ᖔ ᖕ ᙱ ᙳ ᙴ ᙵ ᙶ ᖖ ᖠ ᖡ ᖢ ᖣ ᖤ ᖥ]</exemplarCharacters>
+	</characters>
+	<dates>
+		<calendars>
+			<calendar type="generic">
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern>EEEE, MMMM d, y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern>MMMM d, y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern>MMM d, y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>MM/dd/y GGGGG</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="Ed">E, d</dateFormatItem>
+						<dateFormatItem id="Gy">y G</dateFormatItem>
+						<dateFormatItem id="Md">MM/dd</dateFormatItem>
+						<dateFormatItem id="MEd">E, MM/dd</dateFormatItem>
+						<dateFormatItem id="MMMEd">E, MMM d</dateFormatItem>
+						<dateFormatItem id="y">y</dateFormatItem>
+						<dateFormatItem id="yM">MM/y</dateFormatItem>
+						<dateFormatItem id="yMd">MM/dd/y</dateFormatItem>
+						<dateFormatItem id="yMEd">E, MM/dd/y</dateFormatItem>
+						<dateFormatItem id="yMMM">MMM y</dateFormatItem>
+						<dateFormatItem id="yMMMd">MMM d, y</dateFormatItem>
+						<dateFormatItem id="yMMMEd">E, MMM d, y</dateFormatItem>
+						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
+						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="wide">
+							<month type="1" draft="unconfirmed">ᔭᓐᓄᐊᓕ</month>
+							<month type="2" draft="unconfirmed">ᕕᕝᕗᐊᓕ</month>
+							<month type="3" draft="unconfirmed">ᒫᑦᓯ</month>
+							<month type="4" draft="unconfirmed">ᐊᐃᑉᐳᓗ</month>
+							<month type="5" draft="unconfirmed">ᒪᐃ</month>
+							<month type="6" draft="unconfirmed">ᔫᓂ</month>
+							<month type="7" draft="unconfirmed">ᔪᓚᐃ</month>
+							<month type="8" draft="unconfirmed">ᐊᐅᒡᒍᓯ</month>
+							<month type="9" draft="unconfirmed">ᓯᑎᐱᕆ</month>
+							<month type="10" draft="unconfirmed">ᐆᑦᑑᕝᕙ</month>
+							<month type="11" draft="unconfirmed">ᓄᕕᐱᕆ</month>
+							<month type="12" draft="unconfirmed">ᑎᓯᐱᕆ</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<days>
+					<dayContext type="format">
+						<dayWidth type="wide">
+							<day type="sun" draft="unconfirmed">ᓈᑦᑏᖑᔭᖅ</day>
+							<day type="mon" draft="unconfirmed">ᓇᒡᒐᔾᔭᐅ</day>
+							<day type="tue" draft="unconfirmed">ᓇᒡᒐᔾᔭᐅᓕᖅᑭ</day>
+							<day type="wed" draft="unconfirmed">ᐱᖓᑦᓯᖅ</day>
+							<day type="thu" draft="unconfirmed">ᓯᑕᒻᒥᖅ</day>
+							<day type="fri" draft="unconfirmed">ᑕᓪᓕᒻᒥᐅᑦ</day>
+							<day type="sat" draft="unconfirmed">ᓈᑦᓰᖑᔭᓛᕐᓂᐊᖅ</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+				<dayPeriods>
+					<dayPeriodContext type="format">
+						<dayPeriodWidth type="abbreviated">
+							<dayPeriod type="am" draft="unconfirmed">am</dayPeriod>
+							<dayPeriod type="pm" draft="unconfirmed">pm</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+				</dayPeriods>
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern>EEEE, MMMM d, y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern>MMMM d, y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern>MMM d, y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>MM/dd/y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<timeFormats>
+					<timeFormatLength type="full">
+						<timeFormat>
+							<pattern>h:mm:ss a zzzz</pattern>
+							<datetimeSkeleton>ahmmsszzzz</datetimeSkeleton>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="long">
+						<timeFormat>
+							<pattern>h:mm:ss a z</pattern>
+							<datetimeSkeleton>ahmmssz</datetimeSkeleton>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="medium">
+						<timeFormat>
+							<pattern>h:mm:ss a</pattern>
+							<datetimeSkeleton>ahmmss</datetimeSkeleton>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="short">
+						<timeFormat>
+							<pattern>h:mm a</pattern>
+							<datetimeSkeleton>ahmm</datetimeSkeleton>
+						</timeFormat>
+					</timeFormatLength>
+				</timeFormats>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="Ed">E, d</dateFormatItem>
+						<dateFormatItem id="Gy">y G</dateFormatItem>
+						<dateFormatItem id="Md">MM/dd</dateFormatItem>
+						<dateFormatItem id="MEd">E, MM/dd</dateFormatItem>
+						<dateFormatItem id="MMMEd">E, MMM d</dateFormatItem>
+						<dateFormatItem id="yM">MM/y</dateFormatItem>
+						<dateFormatItem id="yMd">MM/dd/y</dateFormatItem>
+						<dateFormatItem id="yMEd">E, MM/dd/y</dateFormatItem>
+						<dateFormatItem id="yMMM">MMM y</dateFormatItem>
+						<dateFormatItem id="yMMMd">MMM d, y</dateFormatItem>
+						<dateFormatItem id="yMMMEd">E, MMM d, y</dateFormatItem>
+						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
+						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
+			</calendar>
+		</calendars>
+	</dates>
+</ldml>

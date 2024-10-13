@@ -236,21 +236,24 @@ void Parse::do_put_xxx(Node* obj, ciField* field, bool is_field) {
     set_wrote_fields(true);
 
     // If the field is final, the rules of Java say we are in <init> or <clinit>.
-    // Note the presence of writes to final non-static fields, so that we
+    // If the field is @Stable, we can be in any method, but we only care about
+    // constructors at this point.
+    //
+    // Note the presence of writes to final/@Stable non-static fields, so that we
     // can insert a memory barrier later on to keep the writes from floating
     // out of the constructor.
-    // Any method can write a @Stable field; insert memory barriers after those also.
-    if (field->is_final()) {
-      set_wrote_final(true);
-      if (AllocateNode::Ideal_allocation(obj, &_gvn) != nullptr) {
+    if (field->is_final() || field->is_stable()) {
+      if (field->is_final()) {
+        set_wrote_final(true);
+      }
+      if (field->is_stable()) {
+        set_wrote_stable(true);
+      }
+      if (AllocateNode::Ideal_allocation(obj) != nullptr) {
         // Preserve allocation ptr to create precedent edge to it in membar
         // generated on exit from constructor.
-        // Can't bind stable with its allocation, only record allocation for final field.
-        set_alloc_with_final(obj);
+        set_alloc_with_final_or_stable(obj);
       }
-    }
-    if (field->is_stable()) {
-      set_wrote_stable(true);
     }
   }
 }
@@ -339,10 +342,13 @@ void Parse::do_multianewarray() {
   // It is often the case that the lengths are small (except the last).
   // If that happens, use the fast 1-d creator a constant number of times.
   const int expand_limit = MIN2((int)MultiArrayExpandLimit, 100);
-  int expand_count = 1;        // count of allocations in the expansion
-  int expand_fanout = 1;       // running total fanout
+  int64_t expand_count = 1;        // count of allocations in the expansion
+  int64_t expand_fanout = 1;       // running total fanout
   for (j = 0; j < ndimensions-1; j++) {
     int dim_con = find_int_con(length[j], -1);
+    // To prevent overflow, we use 64-bit values.  Alternatively,
+    // we could clamp dim_con like so:
+    // dim_con = MIN2(dim_con, expand_limit);
     expand_fanout *= dim_con;
     expand_count  += expand_fanout; // count the level-J sub-arrays
     if (dim_con <= 0

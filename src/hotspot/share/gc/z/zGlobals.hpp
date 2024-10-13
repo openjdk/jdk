@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,30 +31,15 @@
 // Collector name
 const char* const ZName                         = "The Z Garbage Collector";
 
-// Global phase state
-extern uint32_t   ZGlobalPhase;
-const uint32_t    ZPhaseMark                    = 0;
-const uint32_t    ZPhaseMarkCompleted           = 1;
-const uint32_t    ZPhaseRelocate                = 2;
-const char*       ZGlobalPhaseToString();
-
-// Global sequence number
-extern uint32_t   ZGlobalSeqNum;
-
 // Granule shift/size
 const size_t      ZGranuleSizeShift             = 21; // 2MB
 const size_t      ZGranuleSize                  = (size_t)1 << ZGranuleSizeShift;
 
-// Number of heap views
-const size_t      ZHeapViews                    = ZPlatformHeapViews;
-
 // Virtual memory to physical memory ratio
 const size_t      ZVirtualToPhysicalRatio       = 16; // 16:1
 
-// Page types
-const uint8_t     ZPageTypeSmall                = 0;
-const uint8_t     ZPageTypeMedium               = 1;
-const uint8_t     ZPageTypeLarge                = 2;
+// Max virtual memory ranges
+const size_t      ZMaxVirtualReservations       = 100; // Each reservation at least 1% of total
 
 // Page size shifts
 const size_t      ZPageSizeSmallShift           = ZGranuleSizeShift;
@@ -78,53 +63,11 @@ extern const int& ZObjectAlignmentSmall;
 extern int        ZObjectAlignmentMedium;
 const int         ZObjectAlignmentLarge         = 1 << ZObjectAlignmentLargeShift;
 
-//
-// Good/Bad mask states
-// --------------------
-//
-//                 GoodMask         BadMask          WeakGoodMask     WeakBadMask
-//                 --------------------------------------------------------------
-//  Marked0        001              110              101              010
-//  Marked1        010              101              110              001
-//  Remapped       100              011              100              011
-//
-
-// Good/bad masks
-extern uintptr_t  ZAddressGoodMask;
-extern uintptr_t  ZAddressBadMask;
-extern uintptr_t  ZAddressWeakBadMask;
-
-// The bad mask is 64 bit. Its high order 32 bits contain all possible value combinations
-// that this mask will have. Therefore, the memory where the 32 high order bits are stored,
-// can be used as a 32 bit GC epoch counter, that has a different bit pattern every time
-// the bad mask is flipped. This provides a pointer to said 32 bits.
-extern uint32_t*  ZAddressBadMaskHighOrderBitsAddr;
-const int         ZAddressBadMaskHighOrderBitsOffset = LITTLE_ENDIAN_ONLY(4) BIG_ENDIAN_ONLY(0);
-
-// Pointer part of address
-extern size_t     ZAddressOffsetBits;
-const  size_t     ZAddressOffsetShift           = 0;
-extern uintptr_t  ZAddressOffsetMask;
-extern size_t     ZAddressOffsetMax;
-
-// Metadata part of address
-const size_t      ZAddressMetadataBits          = 4;
-extern size_t     ZAddressMetadataShift;
-extern uintptr_t  ZAddressMetadataMask;
-
-// Metadata types
-extern uintptr_t  ZAddressMetadataMarked;
-extern uintptr_t  ZAddressMetadataMarked0;
-extern uintptr_t  ZAddressMetadataMarked1;
-extern uintptr_t  ZAddressMetadataRemapped;
-extern uintptr_t  ZAddressMetadataFinalizable;
-
 // Cache line size
 const size_t      ZCacheLineSize                = ZPlatformCacheLineSize;
 #define           ZCACHE_ALIGNED                ATTRIBUTE_ALIGNED(ZCacheLineSize)
 
 // Mark stack space
-extern uintptr_t  ZMarkStackSpaceStart;
 const size_t      ZMarkStackSpaceExpandSize     = (size_t)1 << 25; // 32M
 
 // Mark stack and magazine sizes
@@ -147,10 +90,10 @@ const size_t      ZMarkCacheSize                = 1024; // Must be a power of tw
 // Partial array minimum size
 const size_t      ZMarkPartialArrayMinSizeShift = 12; // 4K
 const size_t      ZMarkPartialArrayMinSize      = (size_t)1 << ZMarkPartialArrayMinSizeShift;
+const size_t      ZMarkPartialArrayMinLength    = ZMarkPartialArrayMinSize / oopSize;
 
 // Max number of proactive/terminate flush attempts
 const size_t      ZMarkProactiveFlushMax        = 10;
-const size_t      ZMarkTerminateFlushMax        = 3;
 
 // Try complete mark timeout
 const uint64_t    ZMarkCompleteTimeout          = 200; // us

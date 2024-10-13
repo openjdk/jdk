@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
 #include "runtime/atomic.hpp"
 
 // The ProtectionDomainCacheTable maps all java.security.ProtectionDomain objects that are
-// registered by DictionaryEntry::add_protection_domain() to a unique WeakHandle.
+// registered by DictionaryEntry::add_to_package_access_cache() to a unique WeakHandle.
 // The amount of different protection domains used is typically magnitudes smaller
 // than the number of system dictionary entries (loaded classes).
 class ProtectionDomainCacheTable : public AllStatic {
@@ -39,6 +39,7 @@ class ProtectionDomainCacheTable : public AllStatic {
   static int _total_oops_removed;
 
 public:
+  static void initialize();
   static unsigned int compute_hash(const WeakHandle& protection_domain);
   static bool equals(const WeakHandle& protection_domain1, const WeakHandle& protection_domain2);
 
@@ -57,7 +58,7 @@ public:
 };
 
 
-// This describes the linked list protection domain for each DictionaryEntry in pd_set.
+// This describes the linked list protection domain for each DictionaryEntry in its package_access_cache.
 class ProtectionDomainEntry :public CHeapObj<mtClass> {
   WeakHandle _object;
   ProtectionDomainEntry* volatile _next;

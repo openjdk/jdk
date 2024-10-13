@@ -68,6 +68,7 @@ import jdk.dynalink.linker.support.CompositeTypeBasedGuardingDynamicLinker;
  * linkers will fall into this category, as they recognize their native objects as Java objects of classes implementing
  * a specific language-native interface or superclass. The linker mechanism can optimize the dispatch for these linkers,
  * see {@link CompositeTypeBasedGuardingDynamicLinker}.
+ * @since 9
  */
 public interface TypeBasedGuardingDynamicLinker extends GuardingDynamicLinker {
     /**

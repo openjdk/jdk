@@ -29,6 +29,7 @@ import javax.print.attribute.standard.PrinterName;
 
 /*
  * @test
+ * @key printer
  * @bug 8013810 8025439
  * @summary Test that print service returned without filter are of the same class
  *          as with name filter

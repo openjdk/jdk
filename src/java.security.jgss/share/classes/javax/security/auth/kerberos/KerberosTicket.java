@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -716,11 +716,10 @@ public class KerberosTicket implements Destroyable, Refreshable,
     }
 
     /**
-     * Returns a hash code for this {@code KerberosTicket}.
-     *
-     * @return a hash code for this {@code KerberosTicket}.
+     * {@return a hash code for this {@code KerberosTicket}}
      * @since 1.6
      */
+    @Override
     public int hashCode() {
         int result = 17;
         if (isDestroyed()) {
@@ -768,6 +767,7 @@ public class KerberosTicket implements Destroyable, Refreshable,
      * false otherwise.
      * @since 1.6
      */
+    @Override
     public boolean equals(Object other) {
 
         if (other == this) {
@@ -792,39 +792,10 @@ public class KerberosTicket implements Destroyable, Refreshable,
             return false;
         }
 
-        // authTime may be null
-        if (authTime == null) {
-            if (otherTicket.getAuthTime() != null) {
-                return false;
-            }
-        } else {
-            if (!authTime.equals(otherTicket.getAuthTime())) {
-                return false;
-            }
-        }
-
-        // startTime may be null
-        if (startTime == null) {
-            if (otherTicket.getStartTime() != null) {
-                return false;
-            }
-        } else {
-            if (!startTime.equals(otherTicket.getStartTime())) {
-                return false;
-            }
-        }
-
-        if (renewTill == null) {
-            if (otherTicket.getRenewTill() != null) {
-                return false;
-            }
-        } else {
-            if (!renewTill.equals(otherTicket.getRenewTill())) {
-                return false;
-            }
-        }
-
-        return Objects.equals(proxy, otherTicket.proxy);
+        return Objects.equals(authTime, otherTicket.getAuthTime())
+                && Objects.equals(startTime, otherTicket.getStartTime())
+                && Objects.equals(renewTill, otherTicket.getRenewTill())
+                && Objects.equals(proxy, otherTicket.proxy);
     }
 
     /**

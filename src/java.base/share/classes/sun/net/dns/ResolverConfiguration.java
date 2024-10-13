@@ -37,7 +37,7 @@ import java.util.List;
  * @since 1.4
  */
 
-public sealed abstract class ResolverConfiguration permits ResolverConfigurationImpl {
+public abstract sealed class ResolverConfiguration permits ResolverConfigurationImpl {
 
     private static final Object lock = new Object();
 

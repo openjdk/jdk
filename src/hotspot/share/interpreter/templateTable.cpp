@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,8 +48,8 @@ void Template::initialize(int flags, TosState tos_in, TosState tos_out, generato
 
 
 Bytecodes::Code Template::bytecode() const {
-  int i = this - TemplateTable::_template_table;
-  if (i < 0 || i >= Bytecodes::number_of_codes) i = this - TemplateTable::_template_table_wide;
+  int i = (int)(this - TemplateTable::_template_table);
+  if (i < 0 || i >= Bytecodes::number_of_codes) i = (int)(this - TemplateTable::_template_table_wide);
   return Bytecodes::cast(i);
 }
 

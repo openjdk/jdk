@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -392,6 +392,7 @@ class ServerSocketChannelImpl
 
         acceptLock.lock();
         try {
+            ensureOpen();
             boolean blocking = isBlocking();
             try {
                 begin(blocking);
@@ -653,6 +654,9 @@ class ServerSocketChannelImpl
 
     @Override
     public void kill() {
+        // wait for any accept operation to complete before trying to close
+        acceptLock.lock();
+        acceptLock.unlock();
         synchronized (stateLock) {
             if (state == ST_CLOSING) {
                 tryFinishClose();

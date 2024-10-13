@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,20 +58,17 @@ public final class EventWriter {
     // Event may not exceed size for a padded integer
     private static final long MAX_EVENT_SIZE = (1 << 28) -1;
     private static final Unsafe unsafe = Unsafe.getUnsafe();
-    private static final JVM jvm = JVM.getJVM();
 
     // The JVM needs access to these values. Don't remove
     private final long threadID;
     private long startPosition;
-    private long startPositionAddress;
     private long currentPosition;
     private long maxPosition;
     private boolean valid;
-    boolean notified; // Not private to avoid being optimized away
+    private boolean pinVirtualThread;
     boolean excluded;
 
     private PlatformEventType eventType;
-    private boolean flushOnEnd;
     private boolean largeSize = false;
 
     // User code must not be able to instantiate
@@ -148,7 +145,7 @@ public final class EventWriter {
             return;
         }
         if (length > StringPool.MIN_LIMIT && length < StringPool.MAX_LIMIT) {
-            long l = StringPool.addString(s);
+            long l = StringPool.addString(s, pinVirtualThread);
             if (l > 0) {
                 putByte(StringParser.Encoding.CONSTANT_POOL.byteValue());
                 putLong(l);
@@ -178,7 +175,7 @@ public final class EventWriter {
         if (athread == null) {
             putLong(0L);
         } else {
-            putLong(jvm.getThreadId(athread));
+            putLong(JVM.getThreadId(athread));
         }
     }
 
@@ -192,7 +189,7 @@ public final class EventWriter {
 
     public void putStackTrace() {
         if (eventType.getStackTraceEnabled()) {
-            putLong(jvm.getStackTraceId(eventType.getStackTraceOffset()));
+            putLong(JVM.getStackTraceId(eventType.getStackTraceOffset(), eventType.getStackFilterId()));
         } else {
             putLong(0L);
         }
@@ -213,10 +210,6 @@ public final class EventWriter {
 
     public void reset() {
         currentPosition = startPosition;
-        if (flushOnEnd) {
-            flushOnEnd = flush();
-        }
-        valid = true;
     }
 
     private boolean isValidForSize(int requestedSize) {
@@ -224,7 +217,7 @@ public final class EventWriter {
             return false;
         }
         if (currentPosition + requestedSize > maxPosition) {
-            flushOnEnd = flush(usedSize(), requestedSize);
+            flush(usedSize(), requestedSize);
             // retry
             if (!valid) {
                 return false;
@@ -233,30 +226,17 @@ public final class EventWriter {
         return true;
     }
 
-    private boolean isNotified() {
-        return notified;
-    }
-
-    private void resetNotified() {
-        notified = false;
-    }
-
-    private void resetStringPool() {
-        StringPool.reset();
-    }
-
     private int usedSize() {
         return (int) (currentPosition - startPosition);
     }
 
-    private boolean flush() {
-        return flush(usedSize(), 0);
+    private void flush() {
+        flush(usedSize(), 0);
     }
 
-    private boolean flush(int usedSize, int requestedSize) {
-        return JVM.flush(this, usedSize, requestedSize);
+    private void flush(int usedSize, int requestedSize) {
+        JVM.flush(this, usedSize, requestedSize);
     }
-
 
     public boolean beginEvent(EventConfiguration configuration, long typeId) {
         // Malicious code could take the EventConfiguration object from one
@@ -278,6 +258,7 @@ public final class EventWriter {
     public boolean endEvent() {
         if (!valid) {
             reset();
+            valid = true;
             return true;
         }
         final int eventSize = usedSize();
@@ -285,7 +266,6 @@ public final class EventWriter {
             reset();
             return true;
         }
-
         if (largeSize) {
             Bits.putInt(startPosition, makePaddedInt(eventSize));
         } else {
@@ -299,32 +279,30 @@ public final class EventWriter {
                 return false;
             }
         }
-
-        if (isNotified()) {
-            resetNotified();
-            resetStringPool();
-            reset();
-            // returning false will trigger restart of the event write attempt
-            return false;
+        long nextPosition = JVM.commit(currentPosition);
+        if (nextPosition == currentPosition) {
+            // Successful commit. Update the writer start position.
+            startPosition = nextPosition;
+            return true;
         }
-        startPosition = currentPosition;
-        unsafe.storeStoreFence();
-        unsafe.putAddress(startPositionAddress, currentPosition);
-        // the event is now committed
-        if (flushOnEnd) {
-            flushOnEnd = flush();
+        // If nextPosition == 0, the event was committed, the underlying buffer lease
+        // returned and new writer positions updated. Nothing to do.
+        if (nextPosition == 0) {
+            return true;
         }
-        return true;
+        // The commit was aborted because of an interleaving epoch shift.
+        // The nextPosition returned is the current start position.
+        // Reset the writer and return false to restart the write attempt.
+        currentPosition = nextPosition;
+        return false;
     }
 
-    private EventWriter(long startPos, long maxPos, long startPosAddress, long threadID, boolean valid, boolean excluded) {
+    private EventWriter(long startPos, long maxPos, long threadID, boolean valid, boolean pinVirtualThread, boolean excluded) {
         startPosition = currentPosition = startPos;
         maxPosition = maxPos;
-        startPositionAddress = startPosAddress;
         this.threadID = threadID;
-        flushOnEnd = false;
         this.valid = valid;
-        notified = false;
+        this.pinVirtualThread = pinVirtualThread;
         this.excluded = excluded;
     }
 

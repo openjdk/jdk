@@ -31,16 +31,10 @@
 
 class ShenandoahBarrierSetC2State : public ArenaObj {
 private:
-  GrowableArray<ShenandoahIUBarrierNode*>* _iu_barriers;
   GrowableArray<ShenandoahLoadReferenceBarrierNode*>* _load_reference_barriers;
 
 public:
   ShenandoahBarrierSetC2State(Arena* comp_arena);
-
-  int iu_barriers_count() const;
-  ShenandoahIUBarrierNode* iu_barrier(int idx) const;
-  void add_iu_barrier(ShenandoahIUBarrierNode* n);
-  void remove_iu_barrier(ShenandoahIUBarrierNode * n);
 
   int load_reference_barriers_count() const;
   ShenandoahLoadReferenceBarrierNode* load_reference_barrier(int idx) const;
@@ -52,7 +46,7 @@ class ShenandoahBarrierSetC2 : public BarrierSetC2 {
 private:
   void shenandoah_eliminate_wb_pre(Node* call, PhaseIterGVN* igvn) const;
 
-  bool satb_can_remove_pre_barrier(GraphKit* kit, PhaseTransform* phase, Node* adr,
+  bool satb_can_remove_pre_barrier(GraphKit* kit, PhaseValues* phase, Node* adr,
                                    BasicType bt, uint adr_idx) const;
   void satb_write_barrier_pre(GraphKit* kit, bool do_load,
                               Node* obj,
@@ -73,8 +67,6 @@ private:
                                     Node* pre_val,
                                     BasicType bt) const;
 
-  Node* shenandoah_iu_barrier(GraphKit* kit, Node* obj) const;
-
   void insert_pre_barrier(GraphKit* kit, Node* base_oop, Node* offset,
                           Node* pre_val, bool need_mem_bar) const;
 
@@ -93,16 +85,17 @@ public:
   static ShenandoahBarrierSetC2* bsc2();
 
   static bool is_shenandoah_wb_pre_call(Node* call);
+  static bool is_shenandoah_clone_call(Node* call);
   static bool is_shenandoah_lrb_call(Node* call);
-  static bool is_shenandoah_marking_if(PhaseTransform *phase, Node* n);
+  static bool is_shenandoah_marking_if(PhaseValues* phase, Node* n);
   static bool is_shenandoah_state_load(Node* n);
   static bool has_only_shenandoah_wb_pre_uses(Node* n);
 
   ShenandoahBarrierSetC2State* state() const;
 
-  static const TypeFunc* write_ref_field_pre_entry_Type();
-  static const TypeFunc* shenandoah_clone_barrier_Type();
-  static const TypeFunc* shenandoah_load_reference_barrier_Type();
+  static const TypeFunc* write_ref_field_pre_Type();
+  static const TypeFunc* clone_barrier_Type();
+  static const TypeFunc* load_reference_barrier_Type();
   virtual bool has_load_barrier_nodes() const { return true; }
 
   // This is the entry-point for the backend to perform accesses through the Access API.

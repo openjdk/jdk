@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,7 +102,7 @@ public class attach004t {
         SocketIOPipe pipe = null;
         try {
             int portNumber = readPortNumber(log);
-            pipe = SocketIOPipe.createClientIOPipe(log, "localhost", portNumber, 0);
+            pipe = SocketIOPipe.createClientIOPipe(log, portNumber, 0);
             log.display("Send message to debugger: " + attach004.messageOK);
             pipe.println(attach004.messageOK);
 

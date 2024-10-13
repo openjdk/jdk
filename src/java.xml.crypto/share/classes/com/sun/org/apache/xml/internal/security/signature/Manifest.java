@@ -28,7 +28,6 @@ import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -357,11 +356,8 @@ public class Manifest extends SignatureElementProxy {
                             currentRef.dereferenceURIandPerformTransforms(null);
                         Set<Node> nl = signedManifestNodes.getNodeSet();
                         Manifest referencedManifest = null;
-                        Iterator<Node> nlIterator = nl.iterator();
 
-                        while (nlIterator.hasNext()) {
-                            Node n = nlIterator.next();
-
+                        for (Node n : nl) {
                             if (n.getNodeType() == Node.ELEMENT_NODE
                                 && ((Element) n).getNamespaceURI().equals(Constants.SignatureSpecNS)
                                 && ((Element) n).getLocalName().equals(Constants._TAG_MANIFEST)
@@ -579,6 +575,7 @@ public class Manifest extends SignatureElementProxy {
      *
      * {@inheritDoc}
      */
+    @Override
     public String getBaseLocalName() {
         return Constants._TAG_MANIFEST;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,8 @@ import jdk.jfr.internal.Type;
 import jdk.jfr.internal.consumer.ChunkHeader;
 import jdk.jfr.internal.consumer.FileAccess;
 import jdk.jfr.internal.consumer.RecordingInput;
+import jdk.jfr.internal.util.UserDataException;
+import jdk.jfr.internal.util.UserSyntaxException;
 
 final class Summary extends Command {
     private final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withLocale(Locale.UK).withZone(ZoneOffset.UTC);
@@ -142,6 +144,7 @@ final class Summary extends Command {
             println(" Start: " + DATE_FORMAT.format(Instant.ofEpochSecond(epochSeconds, adjustNanos)) + " (UTC)");
             println(" Duration: " + (totalDuration + 500_000_000) / 1_000_000_000 + " s");
             List<Statistics> statsList = new ArrayList<>(stats.values());
+            statsList.sort((u, v) -> u.name.compareTo(v.name));
             statsList.sort((u, v) -> Long.compare(v.count, u.count));
             println();
             String header = "      Count  Size (bytes) ";

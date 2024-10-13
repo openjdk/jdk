@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ import java.time.LocalDateTime;
 import java.io.IOException;
 
 import jdk.jfr.internal.SecuritySupport;
-import jdk.jfr.internal.Utils;
+import jdk.jfr.internal.util.ValueFormatter;
 import jdk.jfr.internal.consumer.FileAccess;
 
 // Allows a remote streaming client to create chunk files
@@ -60,7 +60,7 @@ public final class ChunkFilename {
    }
 
    public String next(LocalDateTime time) throws IOException {
-       String filename = Utils.formatDateTime(time);
+       String filename = ValueFormatter.formatDateTime(time);
        Path p = directory.resolve(filename + FILE_EXTENSION);
 
        // If less than one file per second (typically case)

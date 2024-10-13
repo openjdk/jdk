@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2024 Unicode, Inc.
+For terms of use, see http://www.unicode.org/copyright.html
+SPDX-License-Identifier: Unicode-3.0
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+-->
+<ldml>
+	<identity>
+		<version number="$Revision$"/>
+		<language type="kxv"/>
+		<script type="Deva"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="en">इंराजी</language>
+			<language type="kxv">कुवि</language>
+		</languages>
+		<scripts>
+			<script type="Deva">देवनागरी</script>
+			<script type="Latn">लातिन</script>
+			<script type="Orya">ऑड़िया</script>
+			<script type="Telu">तेलुगू</script>
+		</scripts>
+		<territories>
+			<territory type="IN">बारत</territory>
+		</territories>
+		<measurementSystemNames>
+			<measurementSystemName type="metric">मीट्रिक</measurementSystemName>
+			<measurementSystemName type="UK">यूके</measurementSystemName>
+			<measurementSystemName type="US">यूएस</measurementSystemName>
+		</measurementSystemNames>
+		<codePatterns>
+			<codePattern type="language">काता: {0}</codePattern>
+			<codePattern type="script">ऑकॉरॉ : {0}</codePattern>
+			<codePattern type="territory">मुट्-हा: {0}</codePattern>
+		</codePatterns>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters>[ँ ंः अ {अऽ} आ {आऽ} इ ई उ ऊ ए {एऽ} ओ {ओऽ} क ग ङ च ज ञ ट ड{ड़} ण त द न प ब म य र ल ळ व स ह ऽ ा ि ी ु ू े ो ्]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0 १ २ ३ ४ ५ ६ ७ ८ ९]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … '‘’ &quot;“” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
+	</characters>
+	<dates>
+		<calendars>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="wide">
+							<month type="1">पुसु लेञ्जु</month>
+							<month type="2">माहाका लेञ्जु</month>
+							<month type="3">पागुणी लेञ्जु</month>
+							<month type="4">हिरे लेञ्जु</month>
+							<month type="5">बेसे लेञ्जु</month>
+							<month type="6">जाटा लेञ्जु</month>
+							<month type="7">आसाड़ी लेञ्जु</month>
+							<month type="8">स्राबाँ लेञ्जु</month>
+							<month type="9">बोदो लेञ्जु</month>
+							<month type="10">दसारा लेञ्जु</month>
+							<month type="11">दिवी लेञ्जु</month>
+							<month type="12">पान्डे लेञ्जु</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<days>
+					<dayContext type="format">
+						<dayWidth type="wide">
+							<day type="sun">आदि वारा</day>
+							<day type="mon">साॅम्वारा</day>
+							<day type="tue">मंगाड़ा</day>
+							<day type="wed">पुद्दारा</day>
+							<day type="thu">लाक्कि वारा</day>
+							<day type="fri">सुकुरु वारा</day>
+							<day type="sat">सान्नि वारा</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+				<dayPeriods>
+					<dayPeriodContext type="format">
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am">ए एम</dayPeriod>
+							<dayPeriod type="pm">पी एम</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+				</dayPeriods>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="yMd">d/M/y</dateFormatItem>
+						<dateFormatItem id="yMMMd">d MMM y</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
+			</calendar>
+		</calendars>
+		<timeZoneNames>
+			<regionFormat>{0} बेला</regionFormat>
+			<regionFormat type="daylight">{0} मानांकॉ बेला</regionFormat>
+			<regionFormat type="standard">{0} डेलाइट बेला</regionFormat>
+			<metazone type="GMT">
+				<long>
+					<standard>ग्रीनविच मीन बेला</standard>
+				</long>
+			</metazone>
+		</timeZoneNames>
+	</dates>
+	<numbers>
+		<otherNumberingSystems>
+			<native draft="contributed">deva</native>
+		</otherNumberingSystems>
+		<decimalFormats numberSystem="latn">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern>#,##,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<currencyFormats numberSystem="latn">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern>¤#,##,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+	</numbers>
+</ldml>

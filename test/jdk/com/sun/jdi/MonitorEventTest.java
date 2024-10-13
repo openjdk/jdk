@@ -61,7 +61,7 @@ class MonitorEventTestTarg {
         endingMonitor = new Object();
         startingMonitor = new Object();
 
-        Thread t1 = TestScaffold.newThread(new MyTask());
+        Thread t1 = DebuggeeWrapper.newThread(new MyTask());
         foo();
         aboutEnterLock = false;
 

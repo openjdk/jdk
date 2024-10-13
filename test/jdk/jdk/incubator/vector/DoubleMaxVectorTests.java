@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,11 @@
 
 /*
  * @test
+ * @key randomness
+ *
+ * @library /test/lib
  * @modules jdk.incubator.vector
- * @run testng/othervm -ea -esa -Xbatch -XX:-TieredCompilation DoubleMaxVectorTests
+ * @run testng/othervm/timeout=300 -ea -esa -Xbatch -XX:-TieredCompilation DoubleMaxVectorTests
  */
 
 // -- This file was mechanically generated: Do not edit! -- //
@@ -65,8 +68,23 @@ public class DoubleMaxVectorTests extends AbstractVectorTest {
 
     private static final int Max = 256;  // juts so we can do N/Max
 
+    // for floating point addition reduction ops that may introduce rounding errors
+    private static final double RELATIVE_ROUNDING_ERROR_FACTOR_ADD = (double)10.0;
+
+    // for floating point multiplication reduction ops that may introduce rounding errors
+    private static final double RELATIVE_ROUNDING_ERROR_FACTOR_MUL = (double)50.0;
 
     static final int BUFFER_REPS = Integer.getInteger("jdk.incubator.vector.test.buffer-vectors", 25000 / Max);
+
+    static void assertArraysStrictlyEquals(double[] r, double[] a) {
+        for (int i = 0; i < a.length; i++) {
+            long ir = Double.doubleToRawLongBits(r[i]);
+            long ia = Double.doubleToRawLongBits(a[i]);
+            if (ir != ia) {
+                Assert.fail(String.format("at index #%d, expected = %016X, actual = %016X", i, ia, ir));
+            }
+        }
+    }
 
     interface FUnOp {
         double apply(double a);
@@ -124,15 +142,21 @@ public class DoubleMaxVectorTests extends AbstractVectorTest {
 
     static void assertReductionArraysEquals(double[] r, double rc, double[] a,
                                             FReductionOp f, FReductionAllOp fa) {
+        assertReductionArraysEquals(r, rc, a, f, fa, (double)0.0);
+    }
+
+    static void assertReductionArraysEquals(double[] r, double rc, double[] a,
+                                            FReductionOp f, FReductionAllOp fa,
+                                            double relativeErrorFactor) {
         int i = 0;
         try {
-            Assert.assertEquals(rc, fa.apply(a));
+            Assert.assertEquals(rc, fa.apply(a), Math.ulp(rc) * relativeErrorFactor);
             for (; i < a.length; i += SPECIES.length()) {
-                Assert.assertEquals(r[i], f.apply(a, i));
+                Assert.assertEquals(r[i], f.apply(a, i), Math.ulp(r[i]) * relativeErrorFactor);
             }
         } catch (AssertionError e) {
-            Assert.assertEquals(rc, fa.apply(a), "Final result is incorrect!");
-            Assert.assertEquals(r[i], f.apply(a, i), "at index #" + i);
+            Assert.assertEquals(rc, fa.apply(a), Math.ulp(rc) * relativeErrorFactor, "Final result is incorrect!");
+            Assert.assertEquals(r[i], f.apply(a, i), Math.ulp(r[i]) * relativeErrorFactor, "at index #" + i);
         }
     }
 
@@ -146,15 +170,22 @@ public class DoubleMaxVectorTests extends AbstractVectorTest {
 
     static void assertReductionArraysEqualsMasked(double[] r, double rc, double[] a, boolean[] mask,
                                             FReductionMaskedOp f, FReductionAllMaskedOp fa) {
+        assertReductionArraysEqualsMasked(r, rc, a, mask, f, fa, (double)0.0);
+    }
+
+    static void assertReductionArraysEqualsMasked(double[] r, double rc, double[] a, boolean[] mask,
+                                            FReductionMaskedOp f, FReductionAllMaskedOp fa,
+                                            double relativeError) {
         int i = 0;
         try {
-            Assert.assertEquals(rc, fa.apply(a, mask));
+            Assert.assertEquals(rc, fa.apply(a, mask), Math.abs(rc * relativeError));
             for (; i < a.length; i += SPECIES.length()) {
-                Assert.assertEquals(r[i], f.apply(a, i, mask));
+                Assert.assertEquals(r[i], f.apply(a, i, mask), Math.abs(r[i] *
+relativeError));
             }
         } catch (AssertionError e) {
-            Assert.assertEquals(rc, fa.apply(a, mask), "Final result is incorrect!");
-            Assert.assertEquals(r[i], f.apply(a, i, mask), "at index #" + i);
+            Assert.assertEquals(rc, fa.apply(a, mask), Math.abs(rc * relativeError), "Final result is incorrect!");
+            Assert.assertEquals(r[i], f.apply(a, i, mask), Math.abs(r[i] * relativeError), "at index #" + i);
         }
     }
 
@@ -229,25 +260,6 @@ public class DoubleMaxVectorTests extends AbstractVectorTest {
             }
         } catch (AssertionError e) {
             Assert.assertEquals(r[i], f.apply(a, i), "at index #" + i);
-        }
-    }
-
-    static void assertInsertArraysEquals(double[] r, double[] a, double element, int index, int start, int end) {
-        int i = start;
-        try {
-            for (; i < end; i += 1) {
-                if(i%SPECIES.length() == index) {
-                    Assert.assertEquals(r[i], element);
-                } else {
-                    Assert.assertEquals(r[i], a[i]);
-                }
-            }
-        } catch (AssertionError e) {
-            if (i%SPECIES.length() == index) {
-                Assert.assertEquals(r[i], element, "at index #" + i);
-            } else {
-                Assert.assertEquals(r[i], a[i], "at index #" + i);
-            }
         }
     }
 
@@ -779,21 +791,6 @@ public class DoubleMaxVectorTests extends AbstractVectorTest {
         }
     }
 
-    interface FBinArrayOp {
-        double apply(double[] a, int b);
-    }
-
-    static void assertArraysEquals(double[] r, double[] a, FBinArrayOp f) {
-        int i = 0;
-        try {
-            for (; i < a.length; i++) {
-                Assert.assertEquals(r[i], f.apply(a, i));
-            }
-        } catch (AssertionError e) {
-            Assert.assertEquals(r[i], f.apply(a,i), "at index #" + i);
-        }
-    }
-
     interface FGatherScatterOp {
         double[] apply(double[] a, int ix, int[] b, int iy);
     }
@@ -1083,6 +1080,14 @@ public class DoubleMaxVectorTests extends AbstractVectorTest {
                 return fill(s * BUFFER_REPS,
                             i -> (((double)(i + 1) == 0) ? 1 : (double)(i + 1)));
             }),
+            withToString("double[0.01 + (i / (i + 1))]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> (double)0.01 + ((double)i / (i + 1)));
+            }),
+            withToString("double[i -> i % 17 == 0 ? cornerCaseValue(i) : 0.01 + (i / (i + 1))]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> i % 17 == 0 ? cornerCaseValue(i) : (double)0.01 + ((double)i / (i + 1)));
+            }),
             withToString("double[cornerCaseValue(i)]", (int s) -> {
                 return fill(s * BUFFER_REPS,
                             i -> cornerCaseValue(i));
@@ -1332,26 +1337,16 @@ public class DoubleMaxVectorTests extends AbstractVectorTest {
     }
 
     static double cornerCaseValue(int i) {
-        switch(i % 7) {
-            case 0:
-                return Double.MAX_VALUE;
-            case 1:
-                return Double.MIN_VALUE;
-            case 2:
-                return Double.NEGATIVE_INFINITY;
-            case 3:
-                return Double.POSITIVE_INFINITY;
-            case 4:
-                return Double.NaN;
-            case 5:
-                return (double)0.0;
-            default:
-                return (double)-0.0;
-        }
-    }
-
-    static double get(double[] a, int i) {
-        return (double) a[i];
+        return switch(i % 8) {
+            case 0  -> Double.MAX_VALUE;
+            case 1  -> Double.MIN_VALUE;
+            case 2  -> Double.NEGATIVE_INFINITY;
+            case 3  -> Double.POSITIVE_INFINITY;
+            case 4  -> Double.NaN;
+            case 5  -> Double.longBitsToDouble(0x7FF123456789ABCDL);
+            case 6  -> (double)0.0;
+            default -> (double)-0.0;
+        };
     }
 
     static final IntFunction<double[]> fr = (vl) -> {
@@ -2173,7 +2168,7 @@ public class DoubleMaxVectorTests extends AbstractVectorTest {
         }
 
         assertReductionArraysEquals(r, ra, a,
-                DoubleMaxVectorTests::ADDReduce, DoubleMaxVectorTests::ADDReduceAll);
+                DoubleMaxVectorTests::ADDReduce, DoubleMaxVectorTests::ADDReduceAll, RELATIVE_ROUNDING_ERROR_FACTOR_ADD);
     }
 
     static double ADDReduceMasked(double[] a, int idx, boolean[] mask) {
@@ -2219,7 +2214,7 @@ public class DoubleMaxVectorTests extends AbstractVectorTest {
         }
 
         assertReductionArraysEqualsMasked(r, ra, a, mask,
-                DoubleMaxVectorTests::ADDReduceMasked, DoubleMaxVectorTests::ADDReduceAllMasked);
+                DoubleMaxVectorTests::ADDReduceMasked, DoubleMaxVectorTests::ADDReduceAllMasked, RELATIVE_ROUNDING_ERROR_FACTOR_ADD);
     }
 
     static double MULReduce(double[] a, int idx) {
@@ -2262,7 +2257,7 @@ public class DoubleMaxVectorTests extends AbstractVectorTest {
         }
 
         assertReductionArraysEquals(r, ra, a,
-                DoubleMaxVectorTests::MULReduce, DoubleMaxVectorTests::MULReduceAll);
+                DoubleMaxVectorTests::MULReduce, DoubleMaxVectorTests::MULReduceAll, RELATIVE_ROUNDING_ERROR_FACTOR_MUL);
     }
 
     static double MULReduceMasked(double[] a, int idx, boolean[] mask) {
@@ -2308,7 +2303,7 @@ public class DoubleMaxVectorTests extends AbstractVectorTest {
         }
 
         assertReductionArraysEqualsMasked(r, ra, a, mask,
-                DoubleMaxVectorTests::MULReduceMasked, DoubleMaxVectorTests::MULReduceAllMasked);
+                DoubleMaxVectorTests::MULReduceMasked, DoubleMaxVectorTests::MULReduceAllMasked, RELATIVE_ROUNDING_ERROR_FACTOR_MUL);
     }
 
     static double MINReduce(double[] a, int idx) {
@@ -2578,22 +2573,23 @@ public class DoubleMaxVectorTests extends AbstractVectorTest {
                 DoubleMaxVectorTests::FIRST_NONZEROReduceMasked, DoubleMaxVectorTests::FIRST_NONZEROReduceAllMasked);
     }
 
-    @Test(dataProvider = "doubleUnaryOpProvider")
-    static void withDoubleMaxVectorTests(IntFunction<double []> fa) {
+    @Test(dataProvider = "doubleBinaryOpProvider")
+    static void withDoubleMaxVectorTests(IntFunction<double []> fa, IntFunction<double []> fb) {
         double[] a = fa.apply(SPECIES.length());
+        double[] b = fb.apply(SPECIES.length());
         double[] r = fr.apply(SPECIES.length());
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0, j = 0; i < a.length; i += SPECIES.length()) {
                 DoubleVector av = DoubleVector.fromArray(SPECIES, a, i);
-                av.withLane((j++ & (SPECIES.length()-1)), (double)(65535+i)).intoArray(r, i);
+                av.withLane(j, b[i + j]).intoArray(r, i);
+                a[i + j] = b[i + j];
+                j = (j + 1) & (SPECIES.length() - 1);
             }
         }
 
 
-        for (int i = 0, j = 0; i < a.length; i += SPECIES.length()) {
-            assertInsertArraysEquals(r, a, (double)(65535+i), (j++ & (SPECIES.length()-1)), i , i + SPECIES.length());
-        }
+        assertArraysStrictlyEquals(r, a);
     }
 
     static boolean testIS_DEFAULT(double a) {
@@ -3483,7 +3479,7 @@ public class DoubleMaxVectorTests extends AbstractVectorTest {
             }
         }
 
-        assertArraysEquals(r, a, DoubleMaxVectorTests::get);
+        assertArraysStrictlyEquals(r, a);
     }
 
     @Test(dataProvider = "doubleUnaryOpProvider")
@@ -3529,7 +3525,7 @@ public class DoubleMaxVectorTests extends AbstractVectorTest {
     static void sliceUnaryDoubleMaxVectorTests(IntFunction<double[]> fa) {
         double[] a = fa.apply(SPECIES.length());
         double[] r = new double[a.length];
-        int origin = (new java.util.Random()).nextInt(SPECIES.length());
+        int origin = RAND.nextInt(SPECIES.length());
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 DoubleVector av = DoubleVector.fromArray(SPECIES, a, i);
@@ -3558,7 +3554,7 @@ public class DoubleMaxVectorTests extends AbstractVectorTest {
         double[] a = fa.apply(SPECIES.length());
         double[] b = fb.apply(SPECIES.length());
         double[] r = new double[a.length];
-        int origin = (new java.util.Random()).nextInt(SPECIES.length());
+        int origin = RAND.nextInt(SPECIES.length());
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 DoubleVector av = DoubleVector.fromArray(SPECIES, a, i);
@@ -3592,7 +3588,7 @@ public class DoubleMaxVectorTests extends AbstractVectorTest {
         VectorMask<Double> vmask = VectorMask.fromArray(SPECIES, mask, 0);
 
         double[] r = new double[a.length];
-        int origin = (new java.util.Random()).nextInt(SPECIES.length());
+        int origin = RAND.nextInt(SPECIES.length());
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 DoubleVector av = DoubleVector.fromArray(SPECIES, a, i);
@@ -3621,7 +3617,7 @@ public class DoubleMaxVectorTests extends AbstractVectorTest {
     static void unsliceUnaryDoubleMaxVectorTests(IntFunction<double[]> fa) {
         double[] a = fa.apply(SPECIES.length());
         double[] r = new double[a.length];
-        int origin = (new java.util.Random()).nextInt(SPECIES.length());
+        int origin = RAND.nextInt(SPECIES.length());
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 DoubleVector av = DoubleVector.fromArray(SPECIES, a, i);
@@ -3659,8 +3655,8 @@ public class DoubleMaxVectorTests extends AbstractVectorTest {
         double[] a = fa.apply(SPECIES.length());
         double[] b = fb.apply(SPECIES.length());
         double[] r = new double[a.length];
-        int origin = (new java.util.Random()).nextInt(SPECIES.length());
-        int part = (new java.util.Random()).nextInt(2);
+        int origin = RAND.nextInt(SPECIES.length());
+        int part = RAND.nextInt(2);
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 DoubleVector av = DoubleVector.fromArray(SPECIES, a, i);
@@ -3716,8 +3712,8 @@ public class DoubleMaxVectorTests extends AbstractVectorTest {
         boolean[] mask = fm.apply(SPECIES.length());
         VectorMask<Double> vmask = VectorMask.fromArray(SPECIES, mask, 0);
         double[] r = new double[a.length];
-        int origin = (new java.util.Random()).nextInt(SPECIES.length());
-        int part = (new java.util.Random()).nextInt(2);
+        int origin = RAND.nextInt(SPECIES.length());
+        int part = RAND.nextInt(2);
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 DoubleVector av = DoubleVector.fromArray(SPECIES, a, i);
@@ -4883,6 +4879,82 @@ public class DoubleMaxVectorTests extends AbstractVectorTest {
             int to = i + SPECIES.length();
             Assert.assertEquals(equals, Arrays.equals(a, i, to, b, i, to));
         }
+    }
+
+    static boolean band(boolean a, boolean b) {
+        return a & b;
+    }
+
+    @Test(dataProvider = "maskCompareOpProvider")
+    static void maskAndDoubleMaxVectorTestsSmokeTest(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
+        boolean[] a = fa.apply(SPECIES.length());
+        boolean[] b = fb.apply(SPECIES.length());
+        boolean[] r = new boolean[a.length];
+
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            var av = SPECIES.loadMask(a, i);
+            var bv = SPECIES.loadMask(b, i);
+            var cv = av.and(bv);
+            cv.intoArray(r, i);
+        }
+        assertArraysEquals(r, a, b, DoubleMaxVectorTests::band);
+    }
+
+    static boolean bor(boolean a, boolean b) {
+        return a | b;
+    }
+
+    @Test(dataProvider = "maskCompareOpProvider")
+    static void maskOrDoubleMaxVectorTestsSmokeTest(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
+        boolean[] a = fa.apply(SPECIES.length());
+        boolean[] b = fb.apply(SPECIES.length());
+        boolean[] r = new boolean[a.length];
+
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            var av = SPECIES.loadMask(a, i);
+            var bv = SPECIES.loadMask(b, i);
+            var cv = av.or(bv);
+            cv.intoArray(r, i);
+        }
+        assertArraysEquals(r, a, b, DoubleMaxVectorTests::bor);
+    }
+
+    static boolean bxor(boolean a, boolean b) {
+        return a != b;
+    }
+
+    @Test(dataProvider = "maskCompareOpProvider")
+    static void maskXorDoubleMaxVectorTestsSmokeTest(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
+        boolean[] a = fa.apply(SPECIES.length());
+        boolean[] b = fb.apply(SPECIES.length());
+        boolean[] r = new boolean[a.length];
+
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            var av = SPECIES.loadMask(a, i);
+            var bv = SPECIES.loadMask(b, i);
+            var cv = av.xor(bv);
+            cv.intoArray(r, i);
+        }
+        assertArraysEquals(r, a, b, DoubleMaxVectorTests::bxor);
+    }
+
+    static boolean bandNot(boolean a, boolean b) {
+        return a & !b;
+    }
+
+    @Test(dataProvider = "maskCompareOpProvider")
+    static void maskAndNotDoubleMaxVectorTestsSmokeTest(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
+        boolean[] a = fa.apply(SPECIES.length());
+        boolean[] b = fb.apply(SPECIES.length());
+        boolean[] r = new boolean[a.length];
+
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            var av = SPECIES.loadMask(a, i);
+            var bv = SPECIES.loadMask(b, i);
+            var cv = av.andNot(bv);
+            cv.intoArray(r, i);
+        }
+        assertArraysEquals(r, a, b, DoubleMaxVectorTests::bandNot);
     }
 
     static boolean beq(boolean a, boolean b) {

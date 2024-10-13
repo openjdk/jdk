@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @summary Test using -XX:ExitOnOutOfMemoryError
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
+ * @requires vm.flagless
  * @run driver TestExitOnOutOfMemoryError
  * @bug 8138745
  */
@@ -48,7 +49,7 @@ public class TestExitOnOutOfMemoryError {
         }
 
         // else this is the main test
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+ExitOnOutOfMemoryError",
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+ExitOnOutOfMemoryError",
                 "-Xmx128m", TestExitOnOutOfMemoryError.class.getName(), "throwOOME");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,7 +69,7 @@ void LRG::dump() const {
       tty->print(") ");
     }
   }
-  else if( _def == 0 ) tty->print("Dead ");
+  else if( _def == nullptr ) tty->print("Dead ");
   else tty->print("Def: N%d ",_def->_idx);
 
   tty->print("Cost:%4.2g Area:%4.2g Score:%4.2g ",_cost,_area, score());
@@ -203,7 +203,7 @@ PhaseChaitin::PhaseChaitin(uint unique, PhaseCFG &cfg, Matcher &matcher, bool sc
        nullptr
 #endif
        )
-  , _live(0)
+  , _live(nullptr)
   , _lo_degree(0), _lo_stk_degree(0), _hi_degree(0), _simplified(0)
   , _oldphi(unique)
 #ifndef PRODUCT
@@ -221,41 +221,60 @@ PhaseChaitin::PhaseChaitin(uint unique, PhaseCFG &cfg, Matcher &matcher, bool sc
   _high_frequency_lrg = MIN2(double(OPTO_LRG_HIGH_FREQ), _cfg.get_outer_loop_frequency());
 
   // Build a list of basic blocks, sorted by frequency
-  _blks = NEW_RESOURCE_ARRAY(Block *, _cfg.number_of_blocks());
   // Experiment with sorting strategies to speed compilation
+  uint nr_blocks = _cfg.number_of_blocks();
   double  cutoff = BLOCK_FREQUENCY(1.0); // Cutoff for high frequency bucket
   Block **buckets[NUMBUCKS];             // Array of buckets
   uint    buckcnt[NUMBUCKS];             // Array of bucket counters
   double  buckval[NUMBUCKS];             // Array of bucket value cutoffs
+
+  // The space which our buckets point into.
+  Block** start = NEW_RESOURCE_ARRAY(Block *, nr_blocks*NUMBUCKS);
+
   for (uint i = 0; i < NUMBUCKS; i++) {
-    buckets[i] = NEW_RESOURCE_ARRAY(Block *, _cfg.number_of_blocks());
+    buckets[i] = &start[i*nr_blocks];
     buckcnt[i] = 0;
     // Bump by three orders of magnitude each time
     cutoff *= 0.001;
     buckval[i] = cutoff;
-    for (uint j = 0; j < _cfg.number_of_blocks(); j++) {
-      buckets[i][j] = nullptr;
-    }
   }
+
   // Sort blocks into buckets
-  for (uint i = 0; i < _cfg.number_of_blocks(); i++) {
+  for (uint i = 0; i < nr_blocks; i++) {
     for (uint j = 0; j < NUMBUCKS; j++) {
-      if ((j == NUMBUCKS - 1) || (_cfg.get_block(i)->_freq > buckval[j])) {
+      double bval = buckval[j];
+      Block* blk = _cfg.get_block(i);
+      if (j == NUMBUCKS - 1 || blk->_freq > bval) {
+        uint cnt = buckcnt[j];
         // Assign block to end of list for appropriate bucket
-        buckets[j][buckcnt[j]++] = _cfg.get_block(i);
+        buckets[j][cnt] = blk;
+        buckcnt[j] = cnt+1;
         break; // kick out of inner loop
       }
     }
   }
-  // Dump buckets into final block array
+
+  // Squash the partially filled buckets together into the first one.
+  static_assert(NUMBUCKS >= 2, "must"); // If this isn't true then it'll mess up the squashing.
+  Block** offset = &buckets[0][buckcnt[0]];
+  for (int i = 1; i < NUMBUCKS; i++) {
+    ::memmove(offset, buckets[i], buckcnt[i]*sizeof(Block*));
+    offset += buckcnt[i];
+  }
+  assert((&buckets[0][0] + nr_blocks) == offset, "should be");
+
+  // Free the now unused memory
+  FREE_RESOURCE_ARRAY(Block*, buckets[1], (NUMBUCKS-1)*nr_blocks);
+  // Finally, point the _blks to our memory
+  _blks = buckets[0];
+
+#ifdef ASSERT
   uint blkcnt = 0;
   for (uint i = 0; i < NUMBUCKS; i++) {
-    for (uint j = 0; j < buckcnt[i]; j++) {
-      _blks[blkcnt++] = buckets[i][j];
-    }
+    blkcnt += buckcnt[i];
   }
-
-  assert(blkcnt == _cfg.number_of_blocks(), "Block array not totally filled");
+  assert(blkcnt == nr_blocks, "Block array not totally filled");
+#endif
 }
 
 // union 2 sets together.
@@ -460,6 +479,9 @@ void PhaseChaitin::Register_Allocate() {
     }
 
     uint new_max_lrg_id = Split(_lrg_map.max_lrg_id(), &split_arena);  // Split spilling LRG everywhere
+    if (C->failing()) {
+      return;
+    }
     _lrg_map.set_max_lrg_id(new_max_lrg_id);
     // Bail out if unique gets too large (ie - unique > MaxNodeLimit - 2*NodeLimitFudgeFactor)
     // or we failed to split
@@ -532,6 +554,9 @@ void PhaseChaitin::Register_Allocate() {
       return;
     }
     uint new_max_lrg_id = Split(_lrg_map.max_lrg_id(), &split_arena);  // Split spilling LRG everywhere
+    if (C->failing()) {
+      return;
+    }
     _lrg_map.set_max_lrg_id(new_max_lrg_id);
     // Bail out if unique gets too large (ie - unique > MaxNodeLimit - 2*NodeLimitFudgeFactor)
     C->check_node_count(2 * NodeLimitFudgeFactor, "out of nodes after split");
@@ -1770,10 +1795,20 @@ void PhaseChaitin::fixup_spills() {
 // Helper to stretch above; recursively discover the base Node for a
 // given derived Node.  Easy for AddP-related machine nodes, but needs
 // to be recursive for derived Phis.
-Node *PhaseChaitin::find_base_for_derived( Node **derived_base_map, Node *derived, uint &maxlrg ) {
+Node* PhaseChaitin::find_base_for_derived(Node** derived_base_map, Node* derived, uint& maxlrg) {
   // See if already computed; if so return it
-  if( derived_base_map[derived->_idx] )
+  if (derived_base_map[derived->_idx]) {
     return derived_base_map[derived->_idx];
+  }
+
+#ifdef ASSERT
+  if (derived->is_Mach() && derived->as_Mach()->ideal_Opcode() == Op_VerifyVectorAlignment) {
+    // Bypass the verification node
+    Node* base = find_base_for_derived(derived_base_map, derived->in(1), maxlrg);
+    derived_base_map[derived->_idx] = base;
+    return base;
+  }
+#endif
 
   // See if this happens to be a base.
   // NOTE: we use TypePtr instead of TypeOopPtr because we can have

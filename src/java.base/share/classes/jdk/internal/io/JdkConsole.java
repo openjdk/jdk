@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package jdk.internal.io;
 import java.io.PrintWriter;
 import java.io.Reader;
 import java.nio.charset.Charset;
+import java.util.Locale;
 
 /**
  * Delegate interface for custom Console implementations.
@@ -37,11 +38,13 @@ import java.nio.charset.Charset;
 public interface JdkConsole {
     PrintWriter writer();
     Reader reader();
-    JdkConsole format(String fmt, Object ... args);
-    JdkConsole printf(String format, Object ... args);
-    String readLine(String fmt, Object ... args);
+    JdkConsole println(Object obj);
+    JdkConsole print(Object obj);
+    String readln(String prompt);
+    JdkConsole format(Locale locale, String format, Object ... args);
+    String readLine(Locale locale, String format, Object ... args);
     String readLine();
-    char[] readPassword(String fmt, Object ... args);
+    char[] readPassword(Locale locale, String format, Object ... args);
     char[] readPassword();
     void flush();
     Charset charset();

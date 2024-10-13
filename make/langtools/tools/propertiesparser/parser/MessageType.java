@@ -97,6 +97,7 @@ public interface MessageType {
         TOKEN("token", "TokenKind", "com.sun.tools.javac.parser.Tokens"),
         TREE_TAG("tree tag", "Tag", "com.sun.tools.javac.tree.JCTree"),
         TYPE("type", "Type", "com.sun.tools.javac.code"),
+        ANNOTATED_TYPE("annotated-type", "AnnotatedType", "com.sun.tools.javac.util.JCDiagnostic"),
         URL("url", "URL", "java.net"),
         SET("set", "Set", "java.util"),
         LIST("list", "List", "java.util"),

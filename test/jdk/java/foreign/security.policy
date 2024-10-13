@@ -1,0 +1,7 @@
+grant codeBase "file:${test.classes}/*" {
+    // Permissions needed to run the test
+    permission java.util.PropertyPermission "os.name", "read";
+    permission java.util.PropertyPermission "NativeTestHelper.DEFAULT_RANDOM.seed", "read";
+    permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.foreign";
+};
+

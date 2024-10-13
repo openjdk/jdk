@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,10 @@ import java.io.*;
 public class filter001 extends TestDebuggerType1 {
 
     public static void main (String argv[]) {
-        System.exit(run(argv, System.out) + Consts.JCK_STATUS_BASE);
+        int result = run(argv,System.out);
+        if (result != 0) {
+            throw new RuntimeException("TEST FAILED with result " + result);
+        }
     }
 
     public static int run (String argv[], PrintStream out) {
@@ -74,6 +77,7 @@ public class filter001 extends TestDebuggerType1 {
 
     private String classExclName1 = "java";
     private String classExclName2 = "sun";
+    private String classExclName3 = "jdk";
     private boolean methodExitReceived = false;
 
     protected void testRun() {
@@ -103,6 +107,7 @@ public class filter001 extends TestDebuggerType1 {
 
                 eventRequest1.addClassExclusionFilter(classExclName1 + "*");
                 eventRequest1.addClassExclusionFilter(classExclName2 + "*");
+                eventRequest1.addClassExclusionFilter(classExclName3 + "*");
                 eventRequest1.enable();
 
                 eventHandler.addListener(
@@ -111,7 +116,10 @@ public class filter001 extends TestDebuggerType1 {
                             if (event instanceof MethodExitEvent) {
                                 methodExitReceived = true;
                                 String str = ((MethodExitEvent)event).location().declaringType().name();
-                                if (str.indexOf(classExclName1) == 0 || str.indexOf(classExclName2) == 0) {
+                                if (str.indexOf(classExclName1) == 0 ||
+                                    str.indexOf(classExclName2) == 0 ||
+                                    str.indexOf(classExclName3) == 0)
+                                {
                                     setFailedStatus("Received unexpected MethodExitEvent for excluded class:" + str);
                                 } else {
                                     display("Received expected MethodExitEvent for " + str);

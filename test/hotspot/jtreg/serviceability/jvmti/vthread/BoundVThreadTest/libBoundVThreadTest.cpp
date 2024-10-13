@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 #include <string.h>
 #include "jvmti.h"
-#include "jvmti_common.h"
+#include "jvmti_common.hpp"
 
 extern "C" {
 
@@ -114,18 +114,6 @@ test_unsupported_jvmti_functions(jvmtiEnv *jvmti, JNIEnv *jni, jthread vthread, 
   if (caps.can_support_virtual_threads != JNI_TRUE) {
     fatal(jni, "Virtual threads are not supported");
   }
-
-  LOG("Testing StopThread\n");
-  err = jvmti->StopThread(vthread, vthread);
-  check_jvmti_error_unsupported_operation(jni, "StopThread", err);
-
-  LOG("Testing PopFrame\n");
-  err = jvmti->PopFrame(vthread);
-  check_jvmti_error_opaque_frame(jni, "PopFrame", err);
-
-  LOG("Testing ForceEarlyReturnVoid\n");
-  err = jvmti->ForceEarlyReturnVoid(vthread);
-  check_jvmti_error_opaque_frame(jni, "ForceEarlyReturnVoid", err);
 
   LOG("Testing GetThreadCpuTime\n");
   err = jvmti->GetThreadCpuTime(vthread, &nanos);

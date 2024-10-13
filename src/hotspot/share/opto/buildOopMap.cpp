@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -235,6 +235,13 @@ OopMap *OopFlow::build_oop_map( Node *n, int max_reg, PhaseRegAlloc *regalloc, i
     Node *def = _defs[reg];     // Get reaching def
     assert( def, "since live better have reaching def" );
 
+    if (def->is_MachTemp()) {
+      assert(!def->bottom_type()->isa_oop_ptr(),
+             "ADLC only assigns OOP types to MachTemp defs corresponding to xRegN operands");
+      // Exclude MachTemp definitions even if they are typed as oops.
+      continue;
+    }
+
     // Classify the reaching def as oop, derived, callee-save, dead, or other
     const Type *t = def->bottom_type();
     if( t->isa_oop_ptr() ) {    // Oop or derived?
@@ -251,7 +258,11 @@ OopMap *OopFlow::build_oop_map( Node *n, int max_reg, PhaseRegAlloc *regalloc, i
 
       // Check for a legal reg name in the oopMap and bailout if it is not.
       if (!omap->legal_vm_reg_name(r)) {
-        regalloc->C->record_method_not_compilable("illegal oopMap register name");
+        stringStream ss;
+        ss.print("illegal oopMap register name: ");
+        r->print_on(&ss);
+        assert(false, "%s", ss.as_string());
+        regalloc->C->record_method_not_compilable(ss.as_string());
         continue;
       }
       if( t->is_ptr()->_offset == 0 ) { // Not derived?
@@ -318,7 +329,11 @@ OopMap *OopFlow::build_oop_map( Node *n, int max_reg, PhaseRegAlloc *regalloc, i
       assert( !OptoReg::is_valid(_callees[reg]), "oop can't be callee save" );
       // Check for a legal reg name in the oopMap and bailout if it is not.
       if (!omap->legal_vm_reg_name(r)) {
-        regalloc->C->record_method_not_compilable("illegal oopMap register name");
+        stringStream ss;
+        ss.print("illegal oopMap register name: ");
+        r->print_on(&ss);
+        assert(false, "%s", ss.as_string());
+        regalloc->C->record_method_not_compilable(ss.as_string());
         continue;
       }
       if( mcall ) {
@@ -481,7 +496,7 @@ static void do_liveness(PhaseRegAlloc* regalloc, PhaseCFG* cfg, Block_List* work
         // GEN use'd bits
         for( uint l=1; l<n->req(); l++ ) {
           Node *def = n->in(l);
-          assert(def != 0, "input edge required");
+          assert(def != nullptr, "input edge required");
           int first = regalloc->get_reg_first(def);
           int second = regalloc->get_reg_second(def);
           //If peephole had removed the node,do not set live bit for it.

@@ -46,7 +46,6 @@ import java.security.PrivilegedExceptionAction;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
-import jdk.internal.javac.PreviewFeature;
 import jdk.internal.ref.CleanerFactory;
 import sun.security.util.SecurityConstants;
 
@@ -249,9 +248,8 @@ public class Executors {
      * @param threadFactory the factory to use when creating new threads
      * @return a new executor that creates a new Thread for each task
      * @throws NullPointerException if threadFactory is null
-     * @since 19
+     * @since 21
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.VIRTUAL_THREADS)
     public static ExecutorService newThreadPerTaskExecutor(ThreadFactory threadFactory) {
         return ThreadPerTaskExecutor.create(threadFactory);
     }
@@ -265,10 +263,8 @@ public class Executors {
      * that creates virtual threads.
      *
      * @return a new executor that creates a new virtual Thread for each task
-     * @throws UnsupportedOperationException if preview features are not enabled
-     * @since 19
+     * @since 21
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.VIRTUAL_THREADS)
     public static ExecutorService newVirtualThreadPerTaskExecutor() {
         ThreadFactory factory = Thread.ofVirtual().factory();
         return newThreadPerTaskExecutor(factory);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,12 +24,18 @@
 /*
  * @test
  * @summary round trip test NumberFormat
- * @library /java/text/testlib
  * @key randomness
+ * @run junit NumberRoundTrip
  */
 
-import java.text.*;
-import java.util.*;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
+import java.text.ParseException;
+import java.util.Locale;
+
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * This class tests the round-trip behavior of NumberFormat, DecimalFormat, and DigitList.
@@ -40,28 +46,18 @@ import java.util.*;
  * should extend to the few least-significant bits.
  * //bug472
  */
-public class NumberRoundTrip extends IntlTest {
+public class NumberRoundTrip {
     static final boolean STRING_COMPARE = true;
     static final boolean EXACT_NUMERIC_COMPARE = false;
     static final double MAX_ERROR = 1e-14;
-    static boolean DEBUG = false;
     static double max_numeric_error = 0;
     static double min_numeric_error = 1;
 
     String localeName, formatName;
 
-    public static void main(String[] args) throws Exception {
-        if (args.length > 0 && args[0].equals("-debug")) {
-            DEBUG = true;
-            String[] newargs = new String[args.length - 1];
-            System.arraycopy(args, 1, newargs, 0, newargs.length);
-            args = newargs;
-        }
-        new NumberRoundTrip().run(args);
-    }
-
+    @Test
     public void TestNumberFormatRoundTrip() {
-        logln("Default Locale");
+        System.out.println("Default Locale");
         localeName = "Default Locale";
         formatName = "getInstance";
         doTest(NumberFormat.getInstance());
@@ -74,7 +70,7 @@ public class NumberRoundTrip extends IntlTest {
 
         Locale[] loc = NumberFormat.getAvailableLocales();
         for (int i=0; i<loc.length; ++i) {
-            logln(loc[i].getDisplayName());
+            System.out.println(loc[i].getDisplayName());
             localeName = loc[i].toString();
             formatName = "getInstance";
             doTest(NumberFormat.getInstance(loc[i]));
@@ -86,7 +82,7 @@ public class NumberRoundTrip extends IntlTest {
             doTest(NumberFormat.getPercentInstance(loc[i]));
         }
 
-        logln("Numeric error " +
+        System.out.println("Numeric error " +
               min_numeric_error + " to " +
               max_numeric_error);
     }
@@ -150,21 +146,21 @@ public class NumberRoundTrip extends IntlTest {
         Number n = null;
         String err = "";
         try {
-            if (DEBUG) logln("  " + value + " F> " + escape(s));
+            System.out.println("  " + value + " F> " + escape(s));
             n = fmt.parse(s);
-            if (DEBUG) logln("  " + escape(s) + " P> " + n);
+            System.out.println("  " + escape(s) + " P> " + n);
             s2 = fmt.format(n);
-            if (DEBUG) logln("  " + n + " F> " + escape(s2));
+            System.out.println("  " + n + " F> " + escape(s2));
 
             if (STRING_COMPARE) {
                 if (!s.equals(s2)) {
                     if (fmt instanceof DecimalFormat) {
-                        logln("Text mismatch: expected: " + s + ", got: " + s2 + " --- Try BigDecimal parsing.");
+                        System.out.println("Text mismatch: expected: " + s + ", got: " + s2 + " --- Try BigDecimal parsing.");
                         ((DecimalFormat)fmt).setParseBigDecimal(true);
                         n = fmt.parse(s);
-                        if (DEBUG) logln("  " + escape(s) + " P> " + n);
+                        System.out.println("  " + escape(s) + " P> " + n);
                         s2 = fmt.format(n);
-                        if (DEBUG) logln("  " + n + " F> " + escape(s2));
+                        System.out.println("  " + n + " F> " + escape(s2));
                         ((DecimalFormat)fmt).setParseBigDecimal(false);
 
                         if (!s.equals(s2)) {
@@ -197,14 +193,14 @@ public class NumberRoundTrip extends IntlTest {
                 n + typeOf(n) + " F> " +
                 escape(s2);
             if (err.length() > 0) {
-                errln("*** " + err + " with " +
+                fail("*** " + err + " with " +
                       formatName + " in " + localeName +
                       " " + message);
             } else {
-                logln(message);
+                System.out.println(message);
             }
         } catch (ParseException e) {
-            errln("*** " + e.toString() + " with " +
+            fail("*** " + e.toString() + " with " +
                   formatName + " in " + localeName);
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,21 +121,6 @@ public class Button extends Component implements Accessible {
      */
     @Serial
     private static final long serialVersionUID = -8774683716313001058L;
-
-
-    static {
-        /* ensure that the necessary native libraries are loaded */
-        Toolkit.loadLibraries();
-        if (!GraphicsEnvironment.isHeadless()) {
-            initIDs();
-        }
-    }
-
-    /**
-     * Initialize JNI field and method IDs for fields that may be
-     * accessed from C.
-     */
-    private static native void initIDs();
 
     /**
      * Constructs a button with an empty string for its label.

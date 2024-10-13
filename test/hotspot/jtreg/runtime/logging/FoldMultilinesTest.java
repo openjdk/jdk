@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021 NTT DATA.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -79,15 +79,15 @@ public class FoldMultilinesTest {
         ProcessBuilder pb;
 
         Xlog = XLOG_BASE + out +  "::foldmultilines=true";
-        pb = ProcessTools.createJavaProcessBuilder(Xlog, InternalClass.class.getName());
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder(Xlog, InternalClass.class.getName());
         analyzeFoldMultilinesOn(pb, out);
 
         Xlog = XLOG_BASE + out + "::foldmultilines=false";
-        pb = ProcessTools.createJavaProcessBuilder(Xlog, InternalClass.class.getName());
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder(Xlog, InternalClass.class.getName());
         analyzeFoldMultilinesOff(pb, out);
 
         Xlog = XLOG_BASE + out + "::foldmultilines=invalid";
-        pb = ProcessTools.createJavaProcessBuilder(Xlog, InternalClass.class.getName());
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder(Xlog, InternalClass.class.getName());
         analyzeFoldMultilinesInvalid(pb);
     }
 

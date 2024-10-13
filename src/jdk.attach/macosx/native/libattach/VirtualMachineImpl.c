@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,12 +39,6 @@
 #include <unistd.h>
 
 #include "sun_tools_attach_VirtualMachineImpl.h"
-
-#define RESTARTABLE(_cmd, _result) do { \
-  do { \
-    _result = _cmd; \
-  } while((_result == -1) && (errno == EINTR)); \
-} while(0)
 
 #define ROOT_UID 0
 
@@ -200,9 +194,8 @@ JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_checkPermissions
 JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_close
   (JNIEnv *env, jclass cls, jint fd)
 {
-    int res;
     shutdown(fd, SHUT_RDWR);
-    RESTARTABLE(close(fd), res);
+    close(fd);
 }
 
 /*
@@ -294,8 +287,7 @@ JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_createAttachFile
     }
 
     RESTARTABLE(chown(_path, geteuid(), getegid()), rc);
-
-    RESTARTABLE(close(fd), rc);
+    close(fd);
 
     /* release p here */
     if (isCopy) {

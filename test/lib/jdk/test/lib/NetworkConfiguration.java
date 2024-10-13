@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,8 +127,8 @@ public class NetworkConfiguration {
 
     public static boolean isTestable(NetworkInterface nif) {
         if (Platform.isOSX()) {
-            if (nif.getName().contains("awdl")) {
-                return false; // exclude awdl
+            if (nif.getName().contains("awdl") || nif.getName().contains("docker")) {
+                return false; // exclude awdl or docker
             }
             // filter out interfaces that only have link-local IPv6 addresses
             // on macOS interfaces like 'en6' fall in this category and
@@ -142,6 +142,13 @@ public class NetworkConfiguration {
         if (Platform.isWindows()) {
             String dName = nif.getDisplayName();
             if (dName != null && dName.contains("Teredo")) {
+                return false;
+            }
+        }
+
+        if (Platform.isLinux()) {
+            String dName = nif.getDisplayName();
+            if (dName != null && dName.contains("docker")) {
                 return false;
             }
         }
@@ -173,17 +180,6 @@ public class NetworkConfiguration {
     private boolean supportsIp4Multicast(NetworkInterface nif) {
         try {
             if (!nif.supportsMulticast()) {
-                return false;
-            }
-
-            // On AIX there is a bug:
-            // When IPv6 is enabled on the system, the JDK opens sockets as AF_INET6.
-            // If there's an interface configured with IPv4 addresses only, it should
-            // be able to become the network interface for a multicast socket (that
-            // could be in both, IPv4 or IPv6 space). But both possible setsockopt
-            // calls for either IPV6_MULTICAST_IF or IP_MULTICAST_IF return
-            // EADDRNOTAVAIL. So we must skip such interfaces here.
-            if (Platform.isAix() && isIPv6Available() && !hasIp6Addresses(nif)) {
                 return false;
             }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
  * @modules
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.util
- * @run testng BoundUnboundSearchTest
+ * @run junit BoundUnboundSearchTest
  */
 
 import java.util.function.*;
@@ -40,13 +40,10 @@ import com.sun.tools.javac.api.ClientCodeWrapper.DiagnosticSourceUnwrapper;
 import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.JCDiagnostic;
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 import tools.javac.combo.CompilationTestCase;
 
-import static org.testng.Assert.assertEquals;
-
-@Test
-public class BoundUnboundSearchTest extends CompilationTestCase {
+class BoundUnboundSearchTest extends CompilationTestCase {
     static final String TEMPLATE =
             """
             import java.util.function.*;
@@ -58,7 +55,7 @@ public class BoundUnboundSearchTest extends CompilationTestCase {
             }
             """;
 
-    public BoundUnboundSearchTest() {
+    BoundUnboundSearchTest() {
         setDefaultFilename("Test.java");
         setCompileOptions(new String[]{"--debug=dumpMethodReferenceSearchResults"});
     }
@@ -75,7 +72,8 @@ public class BoundUnboundSearchTest extends CompilationTestCase {
         };
     }
 
-    public void test() {
+    @Test
+    void test() {
         assertOK(
             getDiagConsumer(0, -1),
                 TEMPLATE.replaceFirst("#CANDIDATES",

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -167,9 +167,7 @@ public class KeyGenerator {
 
     private KeyGenerator(String algorithm) throws NoSuchAlgorithmException {
         this.algorithm = algorithm;
-        List<Service> list =
-                GetInstance.getServices("KeyGenerator", algorithm);
-        serviceIterator = list.iterator();
+        serviceIterator = GetInstance.getServices("KeyGenerator", algorithm);
         initType = I_NONE;
         // fetch and instantiate initial spi
         if (nextSpi(null, false) == null) {

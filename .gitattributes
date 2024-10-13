@@ -1,1 +1,10 @@
 *	-text
+*.java	diff=java
+*.c	diff=cpp
+*.h	diff=cpp
+*.cpp	diff=cpp
+*.hpp	diff=cpp
+*.md	diff=markdown
+*.sh	diff=bash
+*.html	diff=html
+*.css	diff=css

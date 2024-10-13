@@ -27,8 +27,8 @@ import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.ResolvedJavaField;
 
 public class HotSpotResolvedJavaFieldHelper {
-    public static ResolvedJavaField createField(HotSpotResolvedObjectTypeImpl holder, JavaType type, int offset, int modifiers, int index) {
-        return new HotSpotResolvedJavaFieldImpl(holder, type, offset, modifiers, index);
+    public static ResolvedJavaField createField(HotSpotResolvedObjectTypeImpl holder, JavaType type, int offset, int modifiers, int internalModifiers, int index) {
+        return new HotSpotResolvedJavaFieldImpl(holder, type, offset, modifiers, internalModifiers, index);
     }
 
     public static int getIndex(ResolvedJavaField field) {

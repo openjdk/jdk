@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,8 +43,7 @@ class AccessorGenerator implements ClassFileConstants {
     protected static final short S5 = (short) 5;
     protected static final short S6 = (short) 6;
 
-    // Instance variables for shared functionality between
-    // FieldAccessorGenerator and MethodAccessorGenerator
+    // Instance variables for shared functionality
     protected ClassFileAssembler asm;
     protected int   modifiers;
     protected short thisClass;

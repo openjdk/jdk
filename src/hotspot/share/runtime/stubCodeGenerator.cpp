@@ -51,6 +51,11 @@ void StubCodeDesc::freeze() {
   _frozen = true;
 }
 
+void StubCodeDesc::unfreeze() {
+  assert(_frozen, "repeated unfreeze operation");
+  _frozen = false;
+}
+
 void StubCodeDesc::print_on(outputStream* st) const {
   st->print("%s", group());
   st->print("::");
@@ -83,6 +88,13 @@ void StubCodeGenerator::stub_prolog(StubCodeDesc* cdesc) {
 }
 
 void StubCodeGenerator::stub_epilog(StubCodeDesc* cdesc) {
+  LogTarget(Debug, stubs) lt;
+  if (lt.is_enabled()) {
+    LogStream ls(lt);
+    cdesc->print_on(&ls);
+    ls.cr();
+  }
+
   if (_print_code) {
 #ifndef PRODUCT
     // Find the assembly code remarks in the outer CodeBuffer.

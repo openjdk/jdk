@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2024 Unicode, Inc.
+For terms of use, see http://www.unicode.org/copyright.html
+SPDX-License-Identifier: Unicode-3.0
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+-->
+<ldml>
+	<identity>
+		<version number="$Revision$"/>
+		<language type="csw"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="csw">ᓀᐦᐃᓇᐍᐏᐣ</language>
+			<language type="en">ᐊᑲᓇᓯᒧᐏᐣ</language>
+			<language type="en_CA">ᒧᓀᐅ ᐏᓂᓀᐤ ᐋᑲᓇᓯᓄᒯᐣ</language>
+		</languages>
+		<scripts>
+			<script type="Cans">ᓀᐦᐃᔭᐊᐧᓯᓇᐦᐃᑳᑌᐤ</script>
+		</scripts>
+		<territories>
+			<territory type="CA">ᑲᓇᑕ</territory>
+		</territories>
+		<codePatterns>
+			<codePattern type="language">ᐊᔭᒥᐏᐣ: {0}</codePattern>
+			<codePattern type="script">ᒪᓯᓇᐦᐃᑫᐃᐧᐣ: {0}</codePattern>
+			<codePattern type="territory">ᓀᐦᐃᔭᐊᐧᐢᑭᕀ: {0}</codePattern>
+		</codePatterns>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters>[ᐁ ᐃ ᐄ ᐅ ᐆ ᐊ ᐋ ᐍ ᐏ ᐑ ᐓ ᐕ ᐘ ᐚ ᐟ ᐠ ᐢ ᐣ ᐤ ᐦ ᐨ ᐩ ᐯ ᐱ ᐲ ᐳ ᐴ ᐸ ᐹ ᐻ ᐽ ᐿ ᑁ ᑃ ᑅ ᑇ ᑊ ᑌ ᑎ ᑏ ᑐ ᑑ ᑕ ᑖ ᑘ ᑚ ᑜ ᑞ ᑠ ᑢ ᑤ ᑫ ᑭ ᑮ ᑯ ᑰ ᑲ ᑳ ᑵ ᑷ ᑹ ᑻ ᑽ ᑿ ᒁ ᒉ ᒋ ᒌ ᒍ ᒎ ᒐ ᒑ ᒓ ᒕ ᒗ ᒙ ᒛ ᒝ ᒟ ᒣ ᒥ ᒦ ᒧ ᒨ ᒪ ᒫ ᒭ ᒯ ᒱ ᒳ ᒵ ᒷ ᒹ ᒼ ᓀ ᓂ ᓃ ᓄ ᓅ ᓇ ᓈ ᓊ ᓌ ᓎ ᓭ ᓯ ᓰ ᓱ ᓲ ᓴ ᓵ ᓷ ᓹ ᓻ ᓽ ᓿ ᔁ ᔃ ᔦ ᔨ ᔩ ᔪ ᔫ ᔭ ᔮ ᔰ ᔲ ᔴ ᔶ ᔸ ᔺ ᔼ]</exemplarCharacters>
+	</characters>
+	<dates>
+		<calendars>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="wide">
+							<month type="1">ᑭᓴᐱᓯᒼ</month>
+							<month type="2">ᒥᑭᓯᐏᐱᓯᒼ</month>
+							<month type="3">ᓂᐢᑭᐱᓯᒼ</month>
+							<month type="4">ᐊᓂᑭᐱᓯᒼ</month>
+							<month type="5">ᓴᑭᐸᑲᐏᐱᓯᒼ</month>
+							<month type="6">ᐸᐢᑲᐍᐦᐅᐱᓯᒼ</month>
+							<month type="7">ᐸᐢᑯᐏᐱᓯᒼ</month>
+							<month type="8">ᐅᐸᐦᐅᐏᐱᓯᒼ</month>
+							<month type="9">ᑕᐦᑿᑭᐱᓯᒼ</month>
+							<month type="10">ᐱᒪᐦᐊᒧᐏᐱᓯᒼ</month>
+							<month type="11">ᐊᑿᑎᓄᐏᐱᓯᒼ</month>
+							<month type="12">ᐸᐘᐢᒐᑲᓂᓹᐱᓯᒼ</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<days>
+					<dayContext type="format">
+						<dayWidth type="wide">
+							<day type="sun">ᐊᔭᒥᐦᐁᐃ ᑭᓯᑲᐤ</day>
+							<day type="mon">ᐯᔭᐠᑭᓯᑲᐤ</day>
+							<day type="tue">ᓂᓱᑭᓯᑲᐤ</day>
+							<day type="wed">ᐊᐱᐦᑕᐘᐣ</day>
+							<day type="thu">ᓀᐓᑭᓯᑲᐤ</day>
+							<day type="fri">ᓂᔭᓇᓄᑭᓯᑲᐤ</day>
+							<day type="sat">ᒪᑎᓄᐏᑭᓯᑲᐤ</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+			</calendar>
+		</calendars>
+		<fields>
+			<field type="year">
+				<displayName>ᐊᐢᑭ</displayName>
+			</field>
+			<field type="month">
+				<displayName>ᐱᓯᒧᐘᐠ</displayName>
+			</field>
+			<field type="week">
+				<displayName>ᑭᓯᑲᐘ</displayName>
+			</field>
+			<field type="day">
+				<displayName>ᑭᓯᑲᐤ</displayName>
+				<relative type="-1">ᐅᑕᑯᓯᐠ</relative>
+				<relative type="0">ᐊᓄᐢᐨ</relative>
+				<relative type="1">ᐘᐸᐦᑫ</relative>
+			</field>
+		</fields>
+		<timeZoneNames>
+			<regionFormat>{0} ᐁᐃᐢᐸᓂᐟ</regionFormat>
+			<regionFormat type="daylight">{0} ᑮᓯᑳᐤ ᐁᐃᐢᐸᓂᐟ</regionFormat>
+			<regionFormat type="standard">{0} ᐯᔭᑯᐦᑕᐃᐧᐣ ᐁᐃᐢᐸᓂᐟ</regionFormat>
+			<metazone type="GMT">
+				<long>
+					<standard>ᕒᐁᐁᐣᐤᐏᐨ ᒣᐊᐣ ᐁᐃᐢᐸᓂᐟ</standard>
+				</long>
+			</metazone>
+		</timeZoneNames>
+	</dates>
+	<characterLabels>
+		<characterLabel type="person">ᐊᓂᓯᓂᐤ</characterLabel>
+	</characterLabels>
+	<typographicNames>
+		<styleName type="wght" subtype="900">ᑲᑭᐦᑌᐘᐤ</styleName>
+	</typographicNames>
+</ldml>

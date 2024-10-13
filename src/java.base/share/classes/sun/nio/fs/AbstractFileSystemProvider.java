@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,9 @@
 
 package sun.nio.fs;
 
-import java.nio.file.Path;
+import java.nio.file.AccessMode;
 import java.nio.file.LinkOption;
+import java.nio.file.Path;
 import java.nio.file.spi.FileSystemProvider;
 import java.io.IOException;
 import java.util.Map;
@@ -115,4 +116,40 @@ public abstract class AbstractFileSystemProvider extends FileSystemProvider {
      * If path is empty, then an empty byte[] is returned.
      */
     public abstract byte[] getSunPathForSocketFile(Path path);
+
+    /**
+     * Tests whether a file is readable.
+     */
+    public boolean isReadable(Path path) {
+        try {
+            checkAccess(path, AccessMode.READ);
+        } catch (IOException e) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Tests whether a file is writable.
+     */
+    public boolean isWritable(Path path) {
+        try {
+            checkAccess(path, AccessMode.WRITE);
+        } catch (IOException e) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Tests whether a file is executable.
+     */
+    public boolean isExecutable(Path path) {
+        try {
+            checkAccess(path, AccessMode.EXECUTE);
+        } catch (IOException e) {
+            return false;
+        }
+        return true;
+    }
 }

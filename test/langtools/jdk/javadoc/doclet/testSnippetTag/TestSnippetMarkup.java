@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8266666 8281969
+ * @bug 8266666 8281969 8319339
  * @summary Implementation for snippets
  * @library /tools/lib ../../lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -52,6 +52,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.regex.MatchResult;
@@ -259,8 +260,12 @@ public class TestSnippetMarkup extends SnippetTester {
         Path srcDir = base.resolve("src");
         Path outDir = base.resolve("out");
         var goodFile = "good.txt";
+        // use two files that differ in name but not content, to work around
+        // error deduplication, whereby an error related to coordinates
+        // (file, pos) reported before is suppressed; see:
+        // com.sun.tools.javac.util.Log.shouldReport(JavaFileObject, int)
         var badFile = "bad.txt";
-        var badFile2 = "bad2.txt"; // to workaround error deduplication
+        var badFile2 = "bad2.txt";
         new ClassBuilder(tb, "pkg.A")
                 .setModifiers("public", "class")
                 .addMembers(
@@ -361,7 +366,7 @@ First line // @highlight :
                         <span class="element-name">case%s</span>()</div>
                         <div class="block">
                         %s
-                        </div>""".formatted(index, getSnippetHtmlRepresentation("A.html", t.expectedOutput()));
+                        </div>""".formatted(index, getSnippetHtmlRepresentation("A.html", t.expectedOutput(), Optional.of("java"), Optional.of("snippet-case" + index + "()2")));
             checkOutput("A.html", true, html);
         });
     }
@@ -625,7 +630,7 @@ First line // @highlight :
     }
 
     @Test
-    public void testPositiveInlineTagMarkup_FalseMarkup(Path base) throws Exception {
+    public void testPositiveInlineTagMarkup_SpuriousMarkup(Path base) throws Exception {
         var testCases = List.of(
                 new TestCase(
                         """
@@ -661,6 +666,134 @@ First line // @highlight :
                         """)
         );
         testPositive(base, testCases);
+        checkOutput(Output.OUT, true, """
+                A.java:6: warning: spurious markup
+                // @formatter:off
+                  ^""","""
+                A.java:9: warning: spurious markup
+                    // @formatter:on
+                      ^""","""
+                A.java:17: warning: spurious markup
+                // @formatter:off
+                  ^""","""
+                A.java:22: warning: spurious markup
+                    // @formatter:on
+                      ^""");
+    }
+
+    /*
+     * If spurious markup appears in an external snippet or either side of a
+     * hybrid snippet, then all of the below is true:
+     *
+     *   - no error is raised
+     *   - relevant warnings are emitted
+     *   - spurious markup is output literally
+     */
+    @Test
+    public void testPositiveExternalHybridTagMarkup_SpuriousMarkup(Path base) throws Exception {
+        Path srcDir = base.resolve("src");
+        Path outDir = base.resolve("out");
+        var plain = "plain.txt";
+        var withRegion = "withRegion.txt";
+        new ClassBuilder(tb, "pkg.A")
+                .setModifiers("public", "class")
+                .addMembers(
+                        ClassBuilder.MethodBuilder
+                                .parse("public void external() { }")
+                                .setComments("""
+                                             {@snippet file="%s"}
+                                             """.formatted(plain)))
+                .addMembers(
+                        ClassBuilder.MethodBuilder
+                                .parse("public void hybrid1() { }")
+                                .setComments("""
+                                             {@snippet file="%s":
+                                                First line
+                                                // @formatter:off
+                                                  Second Line
+                                                    Third line
+                                                    // @formatter:on
+                                                      Fourth line
+                                             }
+                                             """.formatted(plain)))
+                .addMembers(
+                        ClassBuilder.MethodBuilder
+                                .parse("public void hybrid2() { }")
+                                .setComments("""
+                                             {@snippet file="%s" region="showThis" :
+                                             Second Line
+                                               Third line
+                                             }
+                                             """.formatted(withRegion)))
+                .addMembers(
+                        ClassBuilder.MethodBuilder
+                                .parse("public void hybrid3() { }")
+                                .setComments("""
+                                             {@snippet file="%s" region="showThis" :
+                                                First line
+                                                // @formatter:off
+                                                  Second Line // @start region=showThis
+                                                    Third line
+                                                    // @end
+                                                    // @formatter:on
+                                                      Fourth line
+                                             }
+                                             """.formatted(withRegion)))
+                .write(srcDir);
+
+        addSnippetFile(srcDir, "pkg", plain, """
+   First line
+   // @formatter:off
+     Second Line
+       Third line
+       // @formatter:on
+         Fourth line
+""");
+        addSnippetFile(srcDir, "pkg", withRegion, """
+   First line
+   // @formatter:off
+     Second Line // @start region=showThis
+       Third line
+     // @end
+       // @formatter:on
+         Fourth line
+""");
+        javadoc("-d", outDir.toString(),
+                "-sourcepath", srcDir.toString(),
+                "pkg");
+        checkExit(Exit.OK);
+        checkNoCrashes();
+        checkOutput(Output.OUT, true, """
+                %s:2: warning: spurious markup
+                   // @formatter:off
+                     ^""".formatted(plain), """
+                %s:5: warning: spurious markup
+                       // @formatter:on
+                         ^""".formatted(plain), """
+                A.java:11: warning: spurious markup
+                   // @formatter:off
+                     ^""", """
+                A.java:14: warning: spurious markup
+                       // @formatter:on
+                         ^""", """
+                %s:2: warning: spurious markup
+                   // @formatter:off
+                     ^""".formatted(plain), """
+                %s:5: warning: spurious markup
+                       // @formatter:on
+                         ^""".formatted(plain), """
+                %s:2: warning: spurious markup
+                   // @formatter:off
+                     ^""".formatted(withRegion), """
+                %s:6: warning: spurious markup
+                       // @formatter:on
+                         ^""".formatted(withRegion), """
+                A.java:31: warning: spurious markup
+                   // @formatter:off
+                     ^""", """
+                A.java:35: warning: spurious markup
+                       // @formatter:on
+                         ^""");
     }
 
     @Test
@@ -836,6 +969,11 @@ First line // @highlight :
 
             @Override
             public Iterable<? extends JavaFileObject> getJavaFileObjects(File... files) {
+                return delegate.getJavaFileObjects(files);
+            }
+
+            @Override
+            public Iterable<? extends JavaFileObject> getJavaFileObjects(Path... files) {
                 return delegate.getJavaFileObjects(files);
             }
 

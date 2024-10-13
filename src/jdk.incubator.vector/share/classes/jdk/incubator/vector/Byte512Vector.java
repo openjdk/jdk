@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -503,7 +503,7 @@ final class Byte512Vector extends ByteVector {
                                    VectorMask<Byte> m) {
         return (Byte512Vector)
             super.selectFromTemplate((Byte512Vector) v,
-                                     (Byte512Mask) m);  // specialize
+                                     Byte512Mask.class, (Byte512Mask) m);  // specialize
     }
 
 
@@ -775,14 +775,6 @@ final class Byte512Vector extends ByteVector {
 
         @Override
         @ForceInline
-        public Byte512Mask eq(VectorMask<Byte> mask) {
-            Objects.requireNonNull(mask);
-            Byte512Mask m = (Byte512Mask)mask;
-            return xor(m.not());
-        }
-
-        @Override
-        @ForceInline
         /*package-private*/
         Byte512Mask indexPartiallyInUpperRange(long offset, long limit) {
             return (Byte512Mask) VectorSupport.indexPartiallyInUpperRange(
@@ -829,9 +821,9 @@ final class Byte512Vector extends ByteVector {
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a | b));
         }
 
+        @Override
         @ForceInline
-        /* package-private */
-        Byte512Mask xor(VectorMask<Byte> mask) {
+        public Byte512Mask xor(VectorMask<Byte> mask) {
             Objects.requireNonNull(mask);
             Byte512Mask m = (Byte512Mask)mask;
             return VectorSupport.binaryOp(VECTOR_OP_XOR, Byte512Mask.class, null, byte.class, VLENGTH,
@@ -870,6 +862,16 @@ final class Byte512Vector extends ByteVector {
             }
             return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TOLONG, Byte512Mask.class, byte.class, VLENGTH, this,
                                                       (m) -> toLongHelper(m.getBits()));
+        }
+
+        // laneIsSet
+
+        @Override
+        @ForceInline
+        public boolean laneIsSet(int i) {
+            Objects.checkIndex(i, length());
+            return VectorSupport.extract(Byte512Mask.class, byte.class, VLENGTH,
+                                         this, i, (m, idx) -> (m.getBits()[idx] ? 1L : 0L)) == 1L;
         }
 
         // Reductions
@@ -954,6 +956,13 @@ final class Byte512Vector extends ByteVector {
             return s.shuffleFromArray(shuffleArray, 0).check(s);
         }
 
+        @Override
+        @ForceInline
+        public Byte512Shuffle wrapIndexes() {
+            return VectorSupport.wrapShuffleIndexes(ETYPE, Byte512Shuffle.class, this, VLENGTH,
+                                                    (s) -> ((Byte512Shuffle)(((AbstractShuffle<Byte>)(s)).wrapIndexesTemplate())));
+        }
+
         @ForceInline
         @Override
         public Byte512Shuffle rearrange(VectorShuffle<Byte> shuffle) {
@@ -987,6 +996,12 @@ final class Byte512Vector extends ByteVector {
         return super.fromArray0Template(Byte512Mask.class, a, offset, (Byte512Mask) m, offsetInRange);  // specialize
     }
 
+    @ForceInline
+    @Override
+    final
+    ByteVector fromArray0(byte[] a, int offset, int[] indexMap, int mapOffset, VectorMask<Byte> m) {
+        return super.fromArray0Template(Byte512Mask.class, a, offset, indexMap, mapOffset, (Byte512Mask) m);
+    }
 
 
     @ForceInline

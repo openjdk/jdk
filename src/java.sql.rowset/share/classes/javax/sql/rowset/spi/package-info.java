@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -476,5 +476,6 @@
  * <li><a href="http://docs.oracle.com/javase/tutorial/jdbc/">DataSource for JDBC
  * Connections</a>
  * </ul>
+ * @since 1.5
  */
 package javax.sql.rowset.spi;

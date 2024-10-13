@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8200337
+ * @bug 8200337 8307377 8306578
  * @summary Generalize see and link tags for user-defined anchors
  * @library /tools/lib ../../lib
  * @modules
@@ -79,8 +79,8 @@ public class TestSeeLinkAnchor extends JavadocTester {
             """
                     Plain link to <a href="../p2/Class2.html#class2-sub-heading">sub heading above</a></div>""",
             """
-                    <li><a href="../p2/Class2.html#class2main"><code>See main heading in p2.Class2</code></a></li>
-                    <li><a href="../p2/package-summary.html#package-p2-heading"><code>See heading in p2</code></a></li>
+                    <li><a href="../p2/Class2.html#class2main">See main heading in p2.Class2</a></li>
+                    <li><a href="../p2/package-summary.html#package-p2-heading">See heading in p2</a></li>
                     """);
         checkOrder("p2/Class2.html",
             """
@@ -89,13 +89,13 @@ public class TestSeeLinkAnchor extends JavadocTester {
                     Plain link <a href="../p1/Class1.html#main">to Class1</a>.""");
         checkOrder("p2/package-summary.html",
             """
-                    <a href="Class2.html#class2-sub-heading"><code>See sub heading in p2.Class2</code></a>""");
+                    <a href="Class2.html#class2-sub-heading">See sub heading in p2.Class2</a>""");
 
         checkOrder("p2/doc-files/file.html",
             """
                     Plain link to <a href="../../p1/Class1.html#main">heading in p1.ClassA</a>.""",
             """
-                    <a href="../Class2.html#class2main"><code>See main heading in p2.ClassB</code></a>""");
+                    <a href="../Class2.html#class2main">See main heading in p2.ClassB</a>""");
     }
 
     @Test
@@ -111,13 +111,13 @@ public class TestSeeLinkAnchor extends JavadocTester {
         checkExit(Exit.OK);
         checkOrder("m1/module-summary.html",
             """
-                    <a href="../m2/com/m2/Class2.html#main-heading"><code>See main heading in Class2</code></a>""");
+                    <a href="../m2/com/m2/Class2.html#main-heading">See main heading in Class2</a>""");
         checkOrder("m1/com/m1/Class1.html",
             """
                     <a href="../../../m2/com/m2/Class2.html#sub"><code>sub heading in Class2</code></a>.""",
             """
-                    <li><a href="../../../m2/com/m2/Class2.html#main-heading"><code>See main heading in Class2</code></a></li>
-                    <li><a href="../../module-summary.html#module-m1-heading"><code>See heading in module m1</code></a></li>
+                    <li><a href="../../../m2/com/m2/Class2.html#main-heading">See main heading in Class2</a></li>
+                    <li><a href="../../module-summary.html#module-m1-heading">See heading in module m1</a></li>
                     """);
         checkOrder("m2/com/m2/Class2.html",
             """
@@ -128,7 +128,7 @@ public class TestSeeLinkAnchor extends JavadocTester {
             """
                     Link to <a href="../com/m2/Class2.html#main-heading"><code>heading in Class2</code></a>.""",
             """
-                    <li><a href="../../m1/module-summary.html#module-m1-heading"><code>Heading in module m1</code></a></li>""");
+                    <li><a href="../../m1/module-summary.html#module-m1-heading">Heading in module m1</a></li>""");
     }
 
     @Test
@@ -140,14 +140,14 @@ public class TestSeeLinkAnchor extends JavadocTester {
                 "--no-platform-links",
                 "nolabel");
 
-        checkExit(Exit.OK);
+        checkExit(Exit.ERROR);
         checkOutput(Output.OUT, true, """
-                    warning: missing reference label
+                    error: missing reference label
                     Link with missing label: {@link ##main}.
                                              ^
                     """,
             """
-                    Class1.java:5: warning: missing reference label
+                    Class1.java:5: error: missing reference label
                     @see ##main
                     ^
                     """);
@@ -180,7 +180,7 @@ public class TestSeeLinkAnchor extends JavadocTester {
         checkOutput("inv/Class1.html", true, """
                      Invalid link to\s
                      <details class="invalid-tag">
-                     <summary>invalid @link</summary>
+                     <summary>invalid reference</summary>
                      <pre><code>main heading</code></pre>
                      </details>""");
     }

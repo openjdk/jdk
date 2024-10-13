@@ -30,19 +30,19 @@
 
 JNIEXPORT void JNICALL Java_com_sun_management_internal_DiagnosticCommandImpl_setNotificationEnabled
 (JNIEnv *env, jobject dummy, jboolean enabled) {
-    if (jmm_version <= JMM_VERSION_1_2_2) {
+    if (jmm_version_management_ext <= JMM_VERSION_1_2_2) {
         JNU_ThrowByName(env, "java/lang/UnsupportedOperationException",
                         "JMX interface to diagnostic framework notifications is not supported by this VM");
         return;
     }
-    jmm_interface->SetDiagnosticFrameworkNotificationEnabled(env, enabled);
+    jmm_interface_management_ext->SetDiagnosticFrameworkNotificationEnabled(env, enabled);
 }
 
 JNIEXPORT jobjectArray JNICALL
 Java_com_sun_management_internal_DiagnosticCommandImpl_getDiagnosticCommands
   (JNIEnv *env, jobject dummy)
 {
-  return jmm_interface->GetDiagnosticCommands(env);
+  return jmm_interface_management_ext->GetDiagnosticCommands(env);
 }
 
 //
@@ -78,7 +78,7 @@ jobject getDiagnosticCommandArgumentInfoArray(JNIEnv *env, jstring command,
     JNU_ThrowOutOfMemoryError(env, 0);
     return NULL;
   }
-  jmm_interface->GetDiagnosticCommandArgumentsInfo(env, command,
+  jmm_interface_management_ext->GetDiagnosticCommandArgumentsInfo(env, command,
                                                    dcmd_arg_info_array, num_arg);
   dcmdArgInfoCls = (*env)->FindClass(env,
                                      "com/sun/management/internal/DiagnosticCommandArgumentInfo");
@@ -151,7 +151,7 @@ Java_com_sun_management_internal_DiagnosticCommandImpl_getDiagnosticCommandInfo
   jobjectArray args;
   jobject obj;
   jmmOptionalSupport mos;
-  jint ret = jmm_interface->GetOptionalSupport(env, &mos);
+  jint ret = jmm_interface_management_ext->GetOptionalSupport(env, &mos);
   jsize num_commands;
   dcmdInfo* dcmd_info_array;
   jstring jname, jdesc, jimpact, cmd;
@@ -189,7 +189,7 @@ Java_com_sun_management_internal_DiagnosticCommandImpl_getDiagnosticCommandInfo
       JNU_ThrowOutOfMemoryError(env, NULL);
       return NULL;
   }
-  jmm_interface->GetDiagnosticCommandInfo(env, commands, dcmd_info_array);
+  jmm_interface_management_ext->GetDiagnosticCommandInfo(env, commands, dcmd_info_array);
   for (i=0; i<num_commands; i++) {
       // Ensure capacity for 6 + 3 local refs:
       //  6 => jname, jdesc, jimpact, cmd, args, obj
@@ -247,5 +247,5 @@ Java_com_sun_management_internal_DiagnosticCommandImpl_getDiagnosticCommandInfo
 JNIEXPORT jstring JNICALL
 Java_com_sun_management_internal_DiagnosticCommandImpl_executeDiagnosticCommand
 (JNIEnv *env, jobject dummy, jstring command) {
-  return jmm_interface->ExecuteDiagnosticCommand(env, command);
+  return jmm_interface_management_ext->ExecuteDiagnosticCommand(env, command);
 }

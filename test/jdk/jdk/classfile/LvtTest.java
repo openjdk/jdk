@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -25,31 +23,28 @@
 
 /*
  * @test
- * @summary Testing Classfile local variable table.
+ * @summary Testing ClassFile local variable table.
  * @compile -g testdata/Lvt.java
  * @run junit LvtTest
  */
 import helpers.ClassRecord;
 import helpers.Transforms;
-import jdk.internal.classfile.*;
+import java.lang.classfile.*;
 
 import java.io.*;
 import java.lang.constant.ClassDesc;
 import java.net.URI;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
-import jdk.internal.classfile.AccessFlags;
-import jdk.internal.classfile.Attributes;
-import jdk.internal.classfile.attribute.SourceFileAttribute;
-import jdk.internal.classfile.constantpool.ConstantPoolBuilder;
-import jdk.internal.classfile.constantpool.Utf8Entry;
-import jdk.internal.classfile.instruction.LocalVariable;
-import jdk.internal.classfile.instruction.LocalVariableType;
+import java.lang.classfile.Attributes;
+import java.lang.classfile.attribute.SourceFileAttribute;
+import java.lang.classfile.constantpool.ConstantPoolBuilder;
+import java.lang.classfile.constantpool.Utf8Entry;
+import java.lang.classfile.instruction.LocalVariable;
+import java.lang.classfile.instruction.LocalVariableType;
 import java.lang.reflect.AccessFlag;
 import org.junit.jupiter.api.Test;
 
@@ -60,11 +55,10 @@ import static helpers.TestConstants.MTD_INT_VOID;
 import static helpers.TestConstants.MTD_VOID;
 import static helpers.TestUtil.ExpectedLvRecord;
 import static helpers.TestUtil.ExpectedLvtRecord;
+import static java.lang.classfile.ClassFile.ACC_PUBLIC;
+import static java.lang.classfile.ClassFile.ACC_STATIC;
 import static java.lang.constant.ConstantDescs.*;
 import java.lang.constant.MethodTypeDesc;
-import static jdk.internal.classfile.Opcode.*;
-import static jdk.internal.classfile.Opcode.INVOKEVIRTUAL;
-import static jdk.internal.classfile.TypeKind.VoidType;
 import static org.junit.jupiter.api.Assertions.*;
 
 class LvtTest {
@@ -81,7 +75,7 @@ class LvtTest {
 
     @Test
     void getLVTEntries() {
-        ClassModel c = Classfile.parse(fileBytes);
+        ClassModel c = ClassFile.of().parse(fileBytes);
         CodeModel co = c.methods().stream()
                         .filter(mm -> mm.methodName().stringValue().equals("m"))
                         .map(MethodModel::code)
@@ -90,7 +84,7 @@ class LvtTest {
                         .orElseThrow();
 
         List<LocalVariable> lvs = new ArrayList<>();
-        co.forEachElement(e -> {
+        co.forEach(e -> {
             if (e instanceof LocalVariable l) lvs.add(l);
         });
 
@@ -106,29 +100,31 @@ class LvtTest {
 
     @Test
     void buildLVTEntries() throws Exception {
-        ClassModel c = Classfile.parse(fileBytes);
+        var cc = ClassFile.of();
+        ClassModel c = cc.parse(fileBytes);
 
         // Compare transformed model and original with CodeBuilder filter
-        byte[] newClass = c.transform(Transforms.threeLevelNoop);
-        ClassRecord orig = ClassRecord.ofClassModel(Classfile.parse(fileBytes), ClassRecord.CompatibilityFilter.By_ClassBuilder);
-        ClassRecord transformed = ClassRecord.ofClassModel(Classfile.parse(newClass), ClassRecord.CompatibilityFilter.By_ClassBuilder);
+        byte[] newClass = cc.transformClass(c, Transforms.threeLevelNoop);
+        ClassRecord orig = ClassRecord.ofClassModel(cc.parse(fileBytes), ClassRecord.CompatibilityFilter.By_ClassBuilder);
+        ClassRecord transformed = ClassRecord.ofClassModel(cc.parse(newClass), ClassRecord.CompatibilityFilter.By_ClassBuilder);
         ClassRecord.assertEqualsDeep(transformed, orig);
     }
 
     @Test
     void testCreateLoadLVT() throws Exception {
-        byte[] bytes = Classfile.build(ClassDesc.of("MyClass"), cb -> {
+        var cc = ClassFile.of();
+        byte[] bytes = cc.build(ClassDesc.of("MyClass"), cb -> {
             cb.withFlags(AccessFlag.PUBLIC);
             cb.withVersion(52, 0);
             cb.with(SourceFileAttribute.of(cb.constantPool().utf8Entry(("MyClass.java"))))
               .withMethod("<init>", MethodTypeDesc.of(CD_void), 0, mb -> mb
-                      .withCode(codeb -> codeb.loadInstruction(TypeKind.ReferenceType, 0)
-                                              .invokeInstruction(INVOKESPECIAL, CD_Object, "<init>", MTD_VOID, false)
-                                              .returnInstruction(VoidType)
+                      .withCode(codeb -> codeb.aload(0)
+                                              .invokespecial(CD_Object, "<init>", MTD_VOID, false)
+                                              .return_()
                       )
               )
               .withMethod("main", MethodTypeDesc.of(CD_void, CD_String.arrayType()),
-                          AccessFlags.ofMethod(AccessFlag.PUBLIC, AccessFlag.STATIC).flagsMask(),
+                          ACC_PUBLIC | ACC_STATIC,
                           mb -> mb
                               .withCode(c0 -> {
                                   ConstantPoolBuilder cpb = cb.constantPool();
@@ -146,35 +142,35 @@ class LvtTest {
                                   c0.localVariable(1, i1n, intSig, i1, preEnd) // LV Entries can be added before the labels
                                     .localVariable(2, i2, intSig, loopTop, preEnd)
                                     .labelBinding(start)
-                                    .constantInstruction(ICONST_1, 1)         // 0
-                                    .storeInstruction(TypeKind.IntType, 1)          // 1
+                                    .iconst_1()         // 0
+                                    .istore(1)          // 1
                                     .labelBinding(i1)
-                                    .constantInstruction(ICONST_1, 1)         // 2
-                                    .storeInstruction(TypeKind.IntType, 2)          // 3
+                                    .iconst_1()         // 2
+                                    .istore(2)          // 3
                                     .labelBinding(loopTop)
-                                    .loadInstruction(TypeKind.IntType, 2)           // 4
-                                    .constantInstruction(BIPUSH, 10)         // 5
-                                    .branchInstruction(IF_ICMPGE, loopEnd) // 6
-                                    .loadInstruction(TypeKind.IntType, 1)           // 7
-                                    .loadInstruction(TypeKind.IntType, 2)           // 8
-                                    .operatorInstruction(IMUL)             // 9
-                                    .storeInstruction(TypeKind.IntType, 1)          // 10
-                                    .incrementInstruction(2, 1)    // 11
-                                    .branchInstruction(GOTO, loopTop)     // 12
+                                    .iload(2)           // 4
+                                    .bipush(10)         // 5
+                                    .if_icmpge(loopEnd) // 6
+                                    .iload(1)           // 7
+                                    .iload(2)           // 8
+                                    .imul()             // 9
+                                    .istore(1)          // 10
+                                    .iinc(2, 1)    // 11
+                                    .goto_(loopTop)     // 12
                                     .labelBinding(loopEnd)
-                                    .fieldInstruction(GETSTATIC, CD_System, "out", CD_PrintStream)   // 13
-                                    .loadInstruction(TypeKind.IntType, 1)
-                                    .invokeInstruction(INVOKEVIRTUAL, CD_PrintStream, "println", MTD_INT_VOID, false)  // 15
+                                    .getstatic(CD_System, "out", CD_PrintStream)   // 13
+                                    .iload(1)
+                                    .invokevirtual(CD_PrintStream, "println", MTD_INT_VOID)  // 15
                                     .labelBinding(preEnd)
-                                    .returnInstruction(VoidType)
+                                    .return_()
                                     .labelBinding(end)
                                     .localVariable(0, slotName, desc, start, end); // and lv entries can be added after the labels
                               }));
         });
 
-        var c = Classfile.parse(bytes);
+        var c = cc.parse(bytes);
         var main = c.methods().get(1);
-        var lvt = main.code().get().findAttribute(Attributes.LOCAL_VARIABLE_TABLE).get();
+        var lvt = main.code().get().findAttribute(Attributes.localVariableTable()).get();
         var lvs = lvt.localVariables();
 
         assertEquals(lvs.size(), 3);
@@ -189,7 +185,7 @@ class LvtTest {
 
     @Test
     void getLVTTEntries() {
-        ClassModel c = Classfile.parse(fileBytes);
+        ClassModel c = ClassFile.of().parse(fileBytes);
         CodeModel co = c.methods().stream()
                         .filter(mm -> mm.methodName().stringValue().equals("n"))
                         .map(MethodModel::code)
@@ -198,7 +194,7 @@ class LvtTest {
                         .orElseThrow();
 
         List<LocalVariableType> lvts = new ArrayList<>();
-        co.forEachElement(e -> {
+        co.forEach(e -> {
             if (e instanceof LocalVariableType l) lvts.add(l);
         });
 
@@ -229,20 +225,21 @@ class LvtTest {
 
     @Test
     void testCreateLoadLVTT() throws Exception {
-        byte[] bytes = Classfile.build(ClassDesc.of("MyClass"), cb -> {
+        var cc = ClassFile.of();
+        byte[] bytes = cc.build(ClassDesc.of("MyClass"), cb -> {
             cb.withFlags(AccessFlag.PUBLIC);
             cb.withVersion(52, 0);
             cb.with(SourceFileAttribute.of(cb.constantPool().utf8Entry(("MyClass.java"))))
 
               .withMethod("<init>", MethodTypeDesc.of(CD_void), 0, mb -> mb
-                      .withCode(codeb -> codeb.loadInstruction(TypeKind.ReferenceType, 0)
-                                              .invokeInstruction(INVOKESPECIAL, CD_Object, "<init>", MTD_VOID, false)
-                                              .returnInstruction(VoidType)
+                      .withCode(codeb -> codeb.aload(0)
+                                              .invokespecial(CD_Object, "<init>", MTD_VOID, false)
+                                              .return_()
                       )
               )
 
               .withMethod("m", MethodTypeDesc.of(CD_Object, CD_Object.arrayType()),
-                          Classfile.ACC_PUBLIC,
+                          ACC_PUBLIC,
                           mb -> mb.withFlags(AccessFlag.PUBLIC)
                                   .withCode(c0 -> {
                                       ConstantPoolBuilder cpb = cb.constantPool();
@@ -262,22 +259,22 @@ class LvtTest {
                                       c0.localVariable(2, l, juList, beforeRet, end)
                                         .localVariableType(1, u, TU, start, end)
                                         .labelBinding(start)
-                                        .newObjectInstruction(ClassDesc.of("java.util.ArrayList"))
-                                        .stackInstruction(DUP)
-                                        .invokeInstruction(INVOKESPECIAL, CD_ArrayList, "<init>", MTD_VOID, false)
-                                        .storeInstruction(TypeKind.ReferenceType, 2)
+                                        .new_(ClassDesc.of("java.util.ArrayList"))
+                                        .dup()
+                                        .invokespecial(CD_ArrayList, "<init>", MTD_VOID, false)
+                                        .astore(2)
                                         .labelBinding(beforeRet)
                                         .localVariableType(2, l, sig, beforeRet, end)
-                                        .loadInstruction(TypeKind.ReferenceType, 1)
-                                        .returnInstruction(TypeKind.ReferenceType)
+                                        .aload(1)
+                                        .areturn()
                                         .labelBinding(end)
                                         .localVariable(0, slotName, desc, start, end)
                                         .localVariable(1, u, jlObject, start, end);
                                   }));
         });
-        var c = Classfile.parse(bytes);
+        var c = cc.parse(bytes);
         var main = c.methods().get(1);
-        var lvtt = main.code().get().findAttribute(Attributes.LOCAL_VARIABLE_TYPE_TABLE).get();
+        var lvtt = main.code().get().findAttribute(Attributes.localVariableTypeTable()).get();
         var lvts = lvtt.localVariableTypes();
 
         /* From javap:
@@ -301,13 +298,13 @@ class LvtTest {
 
     @Test
     void skipDebugSkipsLVT() {
-        ClassModel c = Classfile.parse(fileBytes, Classfile.Option.processDebug(false));
+        ClassModel c = ClassFile.of(ClassFile.DebugElementsOption.DROP_DEBUG).parse(fileBytes);
 
-        c.forEachElement(e -> {
+        c.forEach(e -> {
             if (e instanceof MethodModel m) {
-                m.forEachElement(el -> {
+                m.forEach(el -> {
                     if (el instanceof CodeModel cm) {
-                        cm.forEachElement(elem -> {
+                        cm.forEach(elem -> {
                             assertFalse(elem instanceof LocalVariable);
                             assertFalse(elem instanceof LocalVariableType);
                         });

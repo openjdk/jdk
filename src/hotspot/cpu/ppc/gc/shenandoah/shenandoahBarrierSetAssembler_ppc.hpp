@@ -82,11 +82,6 @@ public:
                           Register tmp1, Register tmp2, Register tmp3,
                           MacroAssembler::PreservationLevel preservation_level);
 
-  void iu_barrier(MacroAssembler* masm,
-                        Register val,
-                        Register tmp1, Register tmp2,
-                        MacroAssembler::PreservationLevel preservation_level, DecoratorSet decorators = 0);
-
   void load_reference_barrier(MacroAssembler* masm, DecoratorSet decorators,
                               Register base, RegisterOrConstant ind_or_offs,
                               Register dst,
@@ -110,7 +105,7 @@ public:
   virtual void load_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                        Register base, RegisterOrConstant ind_or_offs, Register dst,
                        Register tmp1, Register tmp2,
-                       MacroAssembler::PreservationLevel preservation_level, Label* L_handle_null = NULL);
+                       MacroAssembler::PreservationLevel preservation_level, Label* L_handle_null = nullptr);
 
   virtual void try_resolve_jobject_in_native(MacroAssembler* masm, Register dst, Register jni_env,
                                              Register obj, Register tmp, Label& slowpath);

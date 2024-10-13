@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, 2021, Red Hat Inc. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
 #include "code/vmreg.hpp"
 #include "metaprogramming/enableIf.hpp"
 #include "oops/compressedOops.hpp"
+#include "oops/compressedKlass.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/powerOfTwo.hpp"
 
@@ -57,7 +58,7 @@ class MacroAssembler: public Assembler {
   virtual void call_VM_leaf_base(
     address entry_point,               // the entry point
     int     number_of_arguments,        // the number of arguments to pop after the call
-    Label *retaddr = NULL
+    Label *retaddr = nullptr
   );
 
   virtual void call_VM_leaf_base(
@@ -149,6 +150,7 @@ class MacroAssembler: public Assembler {
   void bind(Label& L) {
     Assembler::bind(L);
     code()->clear_last_insn();
+    code()->set_last_label(pc());
   }
 
   void membar(Membar_mask_bits order_constraint);
@@ -443,6 +445,15 @@ class MacroAssembler: public Assembler {
 
   // macro assembly operations needed for aarch64
 
+public:
+
+  enum FpPushPopMode {
+    PushPopFull,
+    PushPopSVE,
+    PushPopNeon,
+    PushPopFp
+  };
+
   // first two private routines for loading 32 bit or 64 bit constants
 private:
 
@@ -452,8 +463,8 @@ private:
   int push(unsigned int bitset, Register stack);
   int pop(unsigned int bitset, Register stack);
 
-  int push_fp(unsigned int bitset, Register stack);
-  int pop_fp(unsigned int bitset, Register stack);
+  int push_fp(unsigned int bitset, Register stack, FpPushPopMode mode);
+  int pop_fp(unsigned int bitset, Register stack, FpPushPopMode mode);
 
   int push_p(unsigned int bitset, Register stack);
   int pop_p(unsigned int bitset, Register stack);
@@ -461,11 +472,12 @@ private:
   void mov(Register dst, Address a);
 
 public:
+
   void push(RegSet regs, Register stack) { if (regs.bits()) push(regs.bits(), stack); }
   void pop(RegSet regs, Register stack) { if (regs.bits()) pop(regs.bits(), stack); }
 
-  void push_fp(FloatRegSet regs, Register stack) { if (regs.bits()) push_fp(regs.bits(), stack); }
-  void pop_fp(FloatRegSet regs, Register stack) { if (regs.bits()) pop_fp(regs.bits(), stack); }
+  void push_fp(FloatRegSet regs, Register stack, FpPushPopMode mode = PushPopFull) { if (regs.bits()) push_fp(regs.bits(), stack, mode); }
+  void pop_fp(FloatRegSet regs, Register stack, FpPushPopMode mode = PushPopFull) { if (regs.bits()) pop_fp(regs.bits(), stack, mode); }
 
   static RegSet call_clobbered_gp_registers();
 
@@ -570,6 +582,19 @@ public:
     msr(0b011, 0b0100, 0b0100, 0b001, zr);
   }
 
+  // FPCR : op1 == 011
+  //        CRn == 0100
+  //        CRm == 0100
+  //        op2 == 000
+
+  inline void get_fpcr(Register reg) {
+    mrs(0b11, 0b0100, 0b0100, 0b000, reg);
+  }
+
+  inline void set_fpcr(Register reg) {
+    msr(0b011, 0b0100, 0b0100, 0b000, reg);
+  }
+
   // DCZID_EL0: op1 == 011
   //            CRn == 0000
   //            CRm == 0000
@@ -602,9 +627,9 @@ public:
   int corrected_idivq(Register result, Register ra, Register rb,
                       bool want_remainder, Register tmp = rscratch1);
 
-  // Support for NULL-checks
+  // Support for null-checks
   //
-  // Generates code that causes a NULL OS exception if the content of reg is NULL.
+  // Generates code that causes a null OS exception if the content of reg is null.
   // If the accessed location is M[reg + offset] and the offset is known, provide the
   // offset. No explicit code generation is needed if the offset is within a certain
   // range (0 <= offset <= page_size).
@@ -627,7 +652,7 @@ public:
   // Required platform-specific helpers for Label::patch_instructions.
   // They _shadow_ the declarations in AbstractAssembler, which are undefined.
   static int pd_patch_instruction_size(address branch, address target);
-  static void pd_patch_instruction(address branch, address target, const char* file = NULL, int line = 0) {
+  static void pd_patch_instruction(address branch, address target, const char* file = nullptr, int line = 0) {
     pd_patch_instruction_size(branch, target);
   }
   static address pd_call_destination(address branch) {
@@ -706,6 +731,7 @@ public:
 
   // Alignment
   void align(int modulus);
+  void align(int modulus, int target);
 
   // nop
   void post_call_nop();
@@ -716,9 +742,9 @@ public:
 
   // ROP Protection
   void protect_return_address();
-  void protect_return_address(Register return_reg, Register temp_reg);
-  void authenticate_return_address(Register return_reg = lr);
-  void authenticate_return_address(Register return_reg, Register temp_reg);
+  void protect_return_address(Register return_reg);
+  void authenticate_return_address();
+  void authenticate_return_address(Register return_reg);
   void strip_return_address();
   void check_return_address(Register return_reg=lr) PRODUCT_RETURN;
 
@@ -850,7 +876,6 @@ public:
 
   // oop manipulations
   void load_klass(Register dst, Register src);
-  void load_klass_check_null(Register dst, Register src);
   void store_klass(Register dst, Register src);
   void cmp_klass(Register oop, Register trial_klass, Register tmp);
 
@@ -873,14 +898,14 @@ public:
                       Register tmp2, Register tmp3, DecoratorSet decorators = 0);
 
   // currently unimplemented
-  // Used for storing NULL. All other oop constants should be
+  // Used for storing null. All other oop constants should be
   // stored using routines that take a jobject.
   void store_heap_oop_null(Address dst);
 
   void store_klass_gap(Register dst, Register src);
 
   // This dummy is to prevent a call to store_heap_oop from
-  // converting a zero (like NULL) into a Register by giving
+  // converting a zero (like null) into a Register by giving
   // the compiler two choices it can't resolve
 
   void store_heap_oop(Address dst, void* dummy);
@@ -943,6 +968,15 @@ public:
                                Label& no_such_interface,
                    bool return_method = true);
 
+  void lookup_interface_method_stub(Register recv_klass,
+                                    Register holder_klass,
+                                    Register resolved_klass,
+                                    Register method_result,
+                                    Register temp_reg,
+                                    Register temp_reg2,
+                                    int itable_index,
+                                    Label& L_no_such_interface);
+
   // virtual method calling
   // n.b. x86 allows RegisterOrConstant for vtable_index
   void lookup_virtual_method(Register recv_klass,
@@ -952,7 +986,7 @@ public:
   // Test sub_klass against super_klass, with fast and slow paths.
 
   // The fast path produces a tri-state answer: yes / no / maybe-slow.
-  // One of the three labels can be NULL, meaning take the fall-through.
+  // One of the three labels can be null, meaning take the fall-through.
   // If super_check_offset is -1, the value is loaded up from super_klass.
   // No registers are killed, except temp_reg.
   void check_klass_subtype_fast_path(Register sub_klass,
@@ -976,6 +1010,31 @@ public:
                                      Label* L_failure,
                                      bool set_cond_codes = false);
 
+  // As above, but with a constant super_klass.
+  // The result is in Register result, not the condition codes.
+  bool lookup_secondary_supers_table(Register r_sub_klass,
+                                     Register r_super_klass,
+                                     Register temp1,
+                                     Register temp2,
+                                     Register temp3,
+                                     FloatRegister vtemp,
+                                     Register result,
+                                     u1 super_klass_slot,
+                                     bool stub_is_near = false);
+
+  void verify_secondary_supers_table(Register r_sub_klass,
+                                     Register r_super_klass,
+                                     Register temp1,
+                                     Register temp2,
+                                     Register result);
+
+  void lookup_secondary_supers_table_slow_path(Register r_super_klass,
+                                               Register r_array_base,
+                                               Register r_array_index,
+                                               Register r_bitmap,
+                                               Register temp1,
+                                               Register result);
+
   // Simplified, combined version, good for typical uses.
   // Falls through on failure.
   void check_klass_subtype(Register sub_klass,
@@ -985,8 +1044,8 @@ public:
 
   void clinit_barrier(Register klass,
                       Register thread,
-                      Label* L_fast_path = NULL,
-                      Label* L_slow_path = NULL);
+                      Label* L_fast_path = nullptr,
+                      Label* L_slow_path = nullptr);
 
   Address argument_address(RegisterOrConstant arg_slot, int extra_slot_offset = 0);
 
@@ -1025,8 +1084,8 @@ public:
 #define verify_method_ptr(reg) _verify_method_ptr(reg, "broken method " #reg, __FILE__, __LINE__)
 #define verify_klass_ptr(reg) _verify_klass_ptr(reg, "broken klass " #reg, __FILE__, __LINE__)
 
-  // only if +VerifyFPU
-  void verify_FPU(int stack_depth, const char* s = "illegal FPU state");
+  // Restore cpu control state after JNI call
+  void restore_cpu_control_state_after_jni(Register tmp1, Register tmp2);
 
   // prints msg, dumps registers and stops execution
   void stop(const char* msg);
@@ -1189,7 +1248,8 @@ public:
   // - relocInfo::static_call_type
   // - relocInfo::virtual_call_type
   //
-  // Return: the call PC or NULL if CodeCache is full.
+  // Return: the call PC or null if CodeCache is full.
+  // Clobbers: rscratch1
   address trampoline_call(Address entry);
 
   static bool far_branches() {
@@ -1225,6 +1285,8 @@ public:
 
   // Emit the CompiledIC call idiom
   address ic_call(address entry, jint method_index = 0);
+  static int ic_check_size();
+  int ic_check(int end_alignment);
 
 public:
 
@@ -1377,8 +1439,7 @@ public:
   address arrays_equals(Register a1, Register a2, Register result, Register cnt1,
                         Register tmp1, Register tmp2, Register tmp3, int elem_size);
 
-  void string_equals(Register a1, Register a2, Register result, Register cnt1,
-                     int elem_size);
+  void string_equals(Register a1, Register a2, Register result, Register cnt1);
 
   void fill_words(Register base, Register cnt, Register value);
   address zero_words(Register base, uint64_t cnt);
@@ -1394,18 +1455,15 @@ public:
   void char_array_compress(Register src, Register dst, Register len,
                            Register res,
                            FloatRegister vtmp0, FloatRegister vtmp1,
-                           FloatRegister vtmp2, FloatRegister vtmp3);
+                           FloatRegister vtmp2, FloatRegister vtmp3,
+                           FloatRegister vtmp4, FloatRegister vtmp5);
 
   void encode_iso_array(Register src, Register dst,
                         Register len, Register res, bool ascii,
                         FloatRegister vtmp0, FloatRegister vtmp1,
-                        FloatRegister vtmp2, FloatRegister vtmp3);
+                        FloatRegister vtmp2, FloatRegister vtmp3,
+                        FloatRegister vtmp4, FloatRegister vtmp5);
 
-  void fast_log(FloatRegister vtmp0, FloatRegister vtmp1, FloatRegister vtmp2,
-                FloatRegister vtmp3, FloatRegister vtmp4, FloatRegister vtmp5,
-                FloatRegister tmpC1, FloatRegister tmpC2, FloatRegister tmpC3,
-                FloatRegister tmpC4, Register tmp1, Register tmp2,
-                Register tmp3, Register tmp4, Register tmp5);
   void generate_dsin_dcos(bool isCos, address npio2_hw, address two_over_pi,
       address pio2, address dsin_coef, address dcos_coef);
  private:
@@ -1453,7 +1511,7 @@ public:
   void ghash_load_wide(int index, Register data, FloatRegister result, FloatRegister state);
 public:
   void multiply_to_len(Register x, Register xlen, Register y, Register ylen, Register z,
-                       Register zlen, Register tmp1, Register tmp2, Register tmp3,
+                       Register tmp0, Register tmp1, Register tmp2, Register tmp3,
                        Register tmp4, Register tmp5, Register tmp6, Register tmp7);
   void mul_add(Register out, Register in, Register offs, Register len, Register k);
   void ghash_multiply(FloatRegister result_lo, FloatRegister result_hi,
@@ -1580,6 +1638,9 @@ public:
 
   // Code for java.lang.Thread::onSpinWait() intrinsic.
   void spin_wait();
+
+  void lightweight_lock(Register basic_lock, Register obj, Register t1, Register t2, Register t3, Label& slow);
+  void lightweight_unlock(Register obj, Register t1, Register t2, Register t3, Label& slow);
 
 private:
   // Check the current thread doesn't need a cross modify fence.

@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 8029204
+ * @key printer
  * @library ../../regtesthelpers
  * @build PassFailJFrame
  * @summary Tests GlyphVector is printed in the correct location

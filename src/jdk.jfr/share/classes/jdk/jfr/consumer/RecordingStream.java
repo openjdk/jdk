@@ -46,7 +46,7 @@ import jdk.jfr.RecordingState;
 import jdk.jfr.internal.PlatformRecording;
 import jdk.jfr.internal.PrivateAccess;
 import jdk.jfr.internal.SecuritySupport;
-import jdk.jfr.internal.Utils;
+import jdk.jfr.internal.util.Utils;
 import jdk.jfr.internal.consumer.EventDirectoryStream;
 import jdk.jfr.internal.management.StreamBarrier;
 
@@ -102,7 +102,7 @@ public final class RecordingStream implements AutoCloseable, EventStream {
     }
 
     private RecordingStream(Map<String, String> settings) {
-        Utils.checkAccessFlightRecorder();
+        SecuritySupport.checkAccessFlightRecorder();
         @SuppressWarnings("removal")
         AccessControlContext acc = AccessController.getContext();
         this.recording = new Recording();

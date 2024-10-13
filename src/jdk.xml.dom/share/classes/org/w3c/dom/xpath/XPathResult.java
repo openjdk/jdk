@@ -52,6 +52,8 @@ import org.w3c.dom.DOMException;
  * result types, this object makes it possible to discover and manipulate
  * the type and value of the result.
  * <p>See also the <a href='https://www.w3.org/TR/DOM-Level-3-XPath/'>Document Object Model (DOM) Level 3 XPath Specification</a>.
+ *
+ * @since 1.4, DOM Level 3
  */
 public interface XPathResult {
     // XPathResultType

@@ -1,0 +1,4793 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2024 Unicode, Inc.
+For terms of use, see http://www.unicode.org/copyright.html
+SPDX-License-Identifier: Unicode-3.0
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+-->
+<ldml>
+	<identity>
+		<version number="$Revision$"/>
+		<language type="syr"/>
+	</identity>
+	<localeDisplayNames>
+		<localeDisplayPattern>
+			<localeSeparator>{0}، {1}</localeSeparator>
+		</localeDisplayPattern>
+		<languages>
+			<language type="ab">ܐܒܟܐܙܝܬ</language>
+			<language type="am">ܐܡܪܢܝܬ</language>
+			<language type="an">ܐܪܐܓܘܢܝܬ</language>
+			<language type="ar">ܥܪܒܝܬ</language>
+			<language type="ar_001">ܥܪܒܝܬ ܪܘܫܡܝܐ ܚܕܬܐ</language>
+			<language type="arp">ܐܪܐܦܗܝܬ</language>
+			<language type="az">ܐܙܪܒܝܓܐܢܝܬ</language>
+			<language type="az" alt="short">ܐܙܪܝ</language>
+			<language type="bn">ܒܢܓܐܠܝܐ</language>
+			<language type="ckb">ܩܪܕܝܬ ܩܢܛܪܘܢܝܐ</language>
+			<language type="ckb" alt="menu">ܩܘܪܕܝܬ ܡܨܥܝܐ</language>
+			<language type="ckb" alt="variant">ܩܘܪܕܝܬ ܣܘܪܢܝ</language>
+			<language type="de">ܐܠܡܢܝܐ</language>
+			<language type="el">ܝܘܢܐܝܬ</language>
+			<language type="en">ܐܢܓܠܝܬ</language>
+			<language type="es">ܣܦܢܝܝܐ</language>
+			<language type="fa">ܦܪܣܝܬ</language>
+			<language type="ff">ܦܘܠܐܗܝܬ</language>
+			<language type="fi">ܦܝܢܠܢܕܝܬ</language>
+			<language type="fil" draft="unconfirmed">ܦܝܠܝܦܝܢܝܬ</language>
+			<language type="fon">ܦܘܢܝܬ</language>
+			<language type="fr">ܦܪܢܣܝܬ</language>
+			<language type="gaa">ܓܐܝܬ</language>
+			<language type="gl">ܓܠܝܩܝܬ</language>
+			<language type="gu">ܓܘܓܐܪܝܬ</language>
+			<language type="he">ܥܒܪܐܝܬ</language>
+			<language type="hi">ܗܢܕܝܐ</language>
+			<language type="hy">ܐܪܡܢܝܬ</language>
+			<language type="id" draft="unconfirmed">ܐܢܕܘܢܝܬ</language>
+			<language type="it">ܐܝܛܠܝܬ</language>
+			<language type="ja" draft="unconfirmed">ܝܦܢܝܐ</language>
+			<language type="ka">ܓܘܪܓܝܐܝܬ</language>
+			<language type="ko" draft="unconfirmed">ܟܘܪܐܝܬ</language>
+			<language type="ku">ܩܘܪܕܝܬ</language>
+			<language type="la">ܠܬܝܢܝܬ</language>
+			<language type="lg">ܓܢܕܝܬ</language>
+			<language type="mul">ܠܫ̈ܢܐ ܦܖ̈ܝܫܐ</language>
+			<language type="nds">ܐܠܡܢܝܐ ܠܐܠܬܚܬ</language>
+			<language type="nds_NL">ܗܘܠܢܕܐ ܠܐܠܬܚܬ</language>
+			<language type="nl">ܗܘܠܢܕܝܬ</language>
+			<language type="nl_BE">ܦܠܡܝܫܝܬ</language>
+			<language type="no">ܢܘܪܒܝܓܐܝܬ</language>
+			<language type="om">ܐܘܪܘܡܘܐܝܬ</language>
+			<language type="pis">ܦܝܓܝܢܝܬ</language>
+			<language type="pl">ܦܘܠܢܕܐܝܬ</language>
+			<language type="pt">ܦܘܪܛܘܓܠܐܝܬ</language>
+			<language type="ro">ܪܘܡܢܐܝܬ</language>
+			<language type="ru">ܐܘܪܘܣܢܝܬ</language>
+			<language type="sco">ܣܟܘܬܠܢܕܐܝܬ</language>
+			<language type="sq">ܐܠܒܢܝܬ</language>
+			<language type="sv">ܣܘܝܕܐܝܬ</language>
+			<language type="sw">ܣܘܐܗܝܠܐܝܬ</language>
+			<language type="syr">ܣܘܪܝܝܐ</language>
+			<language type="th" draft="unconfirmed">ܬܝܠܢܕܐܝܬ</language>
+			<language type="tr">ܬܘܪܟܝܬ</language>
+			<language type="uk">ܐܘܟܪܐܝܢܐܝܬ</language>
+			<language type="und">ܠܫܢܐ ܠܐ ܝܕܝܥܐ</language>
+			<language type="ur">ܐܘܪܕܘܝܬ</language>
+			<language type="vi">ܒܝܬܢܐܡܐܝܬ</language>
+			<language type="yi">ܝܕܝܬܝܬ</language>
+			<language type="zh">ܨܝܢܝܬ</language>
+			<language type="zh" alt="menu">ܨܝܢܝܬ (ܡܐܢܕܘܪܝܐ)</language>
+			<language type="zh_Hans">ܨܝܢܝܬ (ܦܫܝܛܐ)</language>
+			<language type="zh_Hans" alt="long">ܨܝܢܝܬ (ܡܐܢܕܘܪܝܐ ܦܫܝܛܐ)</language>
+			<language type="zh_Hant">ܨܝܢܐܝܬ</language>
+		</languages>
+		<scripts>
+			<script type="Arab">ܥܪܒܝܬ</script>
+			<script type="Armi">ܐܪܡܝܐ</script>
+			<script type="Armn">ܐܪܡܢܝܬ</script>
+			<script type="Beng" draft="unconfirmed">ܒܢܓܠܝܬ</script>
+			<script type="Bopo" draft="unconfirmed">ܒܘܦܘܡܘܦܘܐܝܬ</script>
+			<script type="Cyrl" draft="unconfirmed">ܣܝܪܝܠܝܐ</script>
+			<script type="Ethi" draft="unconfirmed">ܟܘܫܝܬ</script>
+			<script type="Geor">ܓܘܪܓܝܬ</script>
+			<script type="Grek">ܝܘܢܝܬ</script>
+			<script type="Gujr">ܓܘܓܐܪܝܬ</script>
+			<script type="Hans" draft="unconfirmed">ܗܢܙ</script>
+			<script type="Hant" draft="unconfirmed">ܗܢܙ ܦܫܝܛܐ</script>
+			<script type="Hebr">ܥܒܪܝܬ</script>
+			<script type="Jpan" draft="unconfirmed">ܝܦܢܝܐ</script>
+			<script type="Knda" draft="unconfirmed">ܟܢܕܐܝܬ</script>
+			<script type="Kore" draft="unconfirmed">ܟܘܪܐܝܬ</script>
+			<script type="Latn" draft="unconfirmed">ܠܬܝܢܝܐ</script>
+			<script type="Syrc">ܣܘܪܝܬ</script>
+			<script type="Zsye">ܐܝܡܘܓܝ</script>
+			<script type="Zxxx">ܠܝܬ ܟܬܝܒܘܬܐ</script>
+			<script type="Zzzz">ܠܝܬ ܛܟܣܐ ܕܟܬܝܒܬܐ</script>
+		</scripts>
+		<territories>
+			<territory type="001">ܬܐܒܝܠ</territory>
+			<territory type="002">ܐܦܪܝܩܐ</territory>
+			<territory type="003">ܐܡܪܝܟܐ ܓܪܒܝܝܬܐ</territory>
+			<territory type="005">ܐܡܪܝܟܐ ܬܝܡܢܝܬܐ</territory>
+			<territory type="009">ܐܘܩܝܢܘܣܝܐ</territory>
+			<territory type="011">ܐܦܪܝܩܐ ܡܥܪܒܝܬܐ</territory>
+			<territory type="013">ܐܡܪܝܟܐ ܡܨܥܝܬܐ</territory>
+			<territory type="014">ܐܦܪܝܩܐ ܡܕܢܚܝܬܐ</territory>
+			<territory type="015">ܐܦܪܝܩܐ ܓܪܒܝܝܬܐ</territory>
+			<territory type="017">ܐܦܪܝܩܐ ܡܨܥܝܬܐ</territory>
+			<territory type="018">ܐܦܪܝܩܐ ܬܝܡܢܝܬܐ</territory>
+			<territory type="019">ܐܡܪ̈ܝܟܐ</territory>
+			<territory type="021">ܓܪܒܝܐ ܐܡܪܝܟܐ</territory>
+			<territory type="029">ܟܐܪܝܒܝܢ</territory>
+			<territory type="030">ܐܣܝܐ ܡܕܢܚܝܬܐ</territory>
+			<territory type="034">ܐܣܝܐ ܬܝܡܢܝܬܐ</territory>
+			<territory type="035">ܬܝܡܢ ܡܕܢܚ ܐܣܝܐ</territory>
+			<territory type="039">ܐܘܪܘܦܐ ܬܝܡܢܝܬܐ</territory>
+			<territory type="053">ܐܘܣܛܪܐܠܐܣܝܐ</territory>
+			<territory type="054">ܡܝܠܐܢܝܣܝܐ</territory>
+			<territory type="057">ܡܝܟܪܘܢܝܙܝܐ</territory>
+			<territory type="061">ܦܘܠܢܝܣܝܐ</territory>
+			<territory type="142">ܐܣܝܐ</territory>
+			<territory type="143">ܐܣܝܐ ܡܨܥܝܬܐ</territory>
+			<territory type="145">ܐܣܝܐ ܡܥܪܒܝܬܐ</territory>
+			<territory type="150">ܐܘܪܘܦܐ</territory>
+			<territory type="151">ܐܘܪܘܦܐ ܡܕܢܚܝܬܐ</territory>
+			<territory type="154">ܐܘܪܘܦܐ ܓܪܒܝܝܬܐ</territory>
+			<territory type="155">ܐܘܪܘܦܐ ܡܥܪܒ݂ܝܬܐ</territory>
+			<territory type="202">ܐܦܪܝܩܐ ܨܚܪܐ ܬܝܡܢܝܬܐ</territory>
+			<territory type="419">ܐܡܪܝܟܐ ܠܬܝܢܝܬܐ</territory>
+			<territory type="AC" draft="unconfirmed">ܓܙܪܬܐ ܕܐܣܝܢܫܘܢ</territory>
+			<territory type="AD">ܐܢܕܘܪܐ</territory>
+			<territory type="AE">ܐܡܝܪ̈ܘܬܐ ܡܚܝܕ̈ܬܐ ܥܪ̈ܒܝܐ</territory>
+			<territory type="AF">ܐܦܓܐܢܣܬܐܢ</territory>
+			<territory type="AG">ܐܢܬܝܓܘܐ ܘܒܐܪܒܘܕܐ</territory>
+			<territory type="AI">ܐܢܓܘܝܠܐ</territory>
+			<territory type="AL">ܐܠܒܢܝܐ</territory>
+			<territory type="AM">ܐܪܡܢܝܐ</territory>
+			<territory type="AO">ܐܢܓܘܠܐ</territory>
+			<territory type="AQ">ܐܢܬܪܬܝܟܐ</territory>
+			<territory type="AR">ܐܪܓܢܬܝܢܐ</territory>
+			<territory type="AS">ܣܡܘܐ ܐܡܝܖ̈ܟܝܐ</territory>
+			<territory type="AT">ܐܘܣܛܪܝܐ</territory>
+			<territory type="AU">ܐܘܣܬܪܠܝܐ</territory>
+			<territory type="AW">ܐܪܘܒܐ</territory>
+			<territory type="AX">ܓܙܝܖ̈ܐ ܕܐܠܐܢܕ</territory>
+			<territory type="AZ">ܐܙܪܒܝܓܐܢ</territory>
+			<territory type="BA">ܒܘܣܢܐ ܘܗܪܬܣܓܘܒܝܢܐ</territory>
+			<territory type="BB">ܒܪܒܐܕܘܣ</territory>
+			<territory type="BD">ܒܢܓܠܐܕܝܫ</territory>
+			<territory type="BE">ܒܠܓܝܩܐ</territory>
+			<territory type="BF">ܒܘܪܩܝܢܐ ܦܐܣܘ</territory>
+			<territory type="BG">ܒܘܠܓܐܪܝܐ</territory>
+			<territory type="BH">ܒܚܪܝܢ</territory>
+			<territory type="BI">ܒܘܪܘܢܕܝ</territory>
+			<territory type="BJ">ܒܢܝܢ</territory>
+			<territory type="BL">ܡܪܬܝ ܒܪ ܬܘܠܡܝ</territory>
+			<territory type="BM">ܒܪܡܘܕܐ</territory>
+			<territory type="BN">ܒܪܘܢܐܝ</territory>
+			<territory type="BO">ܒܘܠܝܒܝܐ</territory>
+			<territory type="BQ">ܟܐܪܝܒܝܢ ܕܢܝܬܝܪܠܐܢܕܣ</territory>
+			<territory type="BR">ܒܪܐܙܝܠ</territory>
+			<territory type="BS">ܒܗܐܡܣ</territory>
+			<territory type="BT">ܒܘܬܐܢ</territory>
+			<territory type="BV">ܓܙܪܬܐ ܕܒܘܒܝܬ</territory>
+			<territory type="BW">ܒܘܛܣܘܐܢܐ</territory>
+			<territory type="BY">ܒܠܐܪܘܣ</territory>
+			<territory type="BZ">ܒܠܝܙ</territory>
+			<territory type="CA">ܟܢܕܐ</territory>
+			<territory type="CC">ܓܙܝܖ̈ܐ ܕܟܘܟܘܣ</territory>
+			<territory type="CD">ܟܘܢܓܘ - ܟܝܢܫܐܣܐ</territory>
+			<territory type="CD" alt="variant">ܩܘܛܢܝܘܬܐ ܕܝܡܘܩܪܛܝܬܐ ܕܟܘܢܓܘ</territory>
+			<territory type="CF">ܩܘܛܢܝܘܬܐ ܕܐܦܪܝܩܐ ܡܨܥܝܬܐ</territory>
+			<territory type="CG">ܟܘܢܓܘ - ܒܪܐܙܐܒܝܠ</territory>
+			<territory type="CG" alt="variant">ܩܘܛܢܝܘܬܐ ܕܟܘܢܓܘ</territory>
+			<territory type="CH">ܣܘܝܣܪܐ</territory>
+			<territory type="CI">ܩܘܛ ܕܝܒܘܐܪ</territory>
+			<territory type="CI" alt="variant">ܣܘܦܐ ܕܓܪܡܦܝܠܐ</territory>
+			<territory type="CK">ܓܙܪܬܐ ܟܘܟ</territory>
+			<territory type="CL">ܬܫܝܠܝ</territory>
+			<territory type="CM">ܟܐܡܪܘܢ</territory>
+			<territory type="CN">ܨܝܢ</territory>
+			<territory type="CO">ܟܘܠܘܡܒܝܐ</territory>
+			<territory type="CP" draft="unconfirmed">ܓܙܪܬܐ ܕܟܠܝܦܝܪܬܘܢ</territory>
+			<territory type="CR">ܟܘܣܬܐ ܪܝܩܐ</territory>
+			<territory type="CU">ܟܘܒܐ</territory>
+			<territory type="CV">ܟܐܦ ܒܝܪܕܝ (ܪܝܫܐ ܝܘܪܩܐ)</territory>
+			<territory type="CW">ܟܘܪܐܟܘ</territory>
+			<territory type="CX">ܓܙܪܬܐ ܕܟܪܝܣܬܡܣ</territory>
+			<territory type="CY">ܩܘܦܪܘܣ</territory>
+			<territory type="CZ">ܬܫܝܟܝܐ</territory>
+			<territory type="CZ" alt="variant">ܬܫܝܟ</territory>
+			<territory type="DE">ܐܠܡܢܝܐ</territory>
+			<territory type="DG" draft="unconfirmed">ܕܐܝܓܘ ܓܪܣܝܐ</territory>
+			<territory type="DJ">ܓܝܒܘܛܝ</territory>
+			<territory type="DK">ܕܐܢܡܐܪܩ</territory>
+			<territory type="DM">ܕܘܡܝܢܝܩܐ</territory>
+			<territory type="DO">ܩܘܛܢܝܘܬܐ ܕܘܡܝܢܝܩܐܢܝܬܐ</territory>
+			<territory type="DZ">ܓܙܐܪ</territory>
+			<territory type="EA">ܟܘܝܛܐ ܘܡܝܠܝܐ</territory>
+			<territory type="EC">ܐܩܘܐܕܘܪ</territory>
+			<territory type="EE">ܐܣܛܘܢܝܐ</territory>
+			<territory type="EG">ܡܨܪܝܢ</territory>
+			<territory type="EH">ܨܚܪܐ ܡܥܪܒܝܬܐ</territory>
+			<territory type="ER">ܐܪܬܪܝܐ</territory>
+			<territory type="ES">ܐܣܦܢܝܐ</territory>
+			<territory type="ET">ܟܘܫ</territory>
+			<territory type="EU">ܚܘܝܕܐ ܐܘܪܘܦܝܐ</territory>
+			<territory type="EZ">ܩܠܝܡܐ ܕܐܘܪܘ</territory>
+			<territory type="FI">ܦܝܢܠܢܕ</territory>
+			<territory type="FJ">ܦܝܓܝ</territory>
+			<territory type="FK">ܓܙܪܬܐ ܕܦܠܟܠܢܕ</territory>
+			<territory type="FK" alt="variant">ܓܙܪܬܐ ܕܡܠܒܢܐܣ</territory>
+			<territory type="FM">ܐܬܪܘܬܐ ܦܕܪܠܝܐ ܕܡܝܩܪܘܢܝܣܝܐ</territory>
+			<territory type="FO">ܓܙܝܖ̈ܐ ܕܦܪܘ</territory>
+			<territory type="FR">ܦܪܢܣܐ</territory>
+			<territory type="GA">ܓܒܘܢ</territory>
+			<territory type="GB">ܡܠܟܘܬܐ ܡܚܝܕܬܐ</territory>
+			<territory type="GD">ܓܪܝܢܐܕܐ</territory>
+			<territory type="GE">ܓܘܪܓܝܐ</territory>
+			<territory type="GF">ܓܘܝܐܢܐ ܦܪܢܣܝܬܐ</territory>
+			<territory type="GG">ܓܘܪܢܙܝ</territory>
+			<territory type="GH">ܓܐܢܐ</territory>
+			<territory type="GI">ܓܒܪܠܛܪ</territory>
+			<territory type="GL">ܓܪܝܢܠܢܕ</territory>
+			<territory type="GM">ܓܡܒܝܐ</territory>
+			<territory type="GN">ܓܝܢܝܐ</territory>
+			<territory type="GP">ܓܘܐܕܘܠܘܦܐܝ</territory>
+			<territory type="GQ">ܓܝܢܝܐ ܫܘܝܬܐ</territory>
+			<territory type="GR">ܝܘܢ</territory>
+			<territory type="GS">ܓܙܝܖ̈ܐ ܕܓܘܪܓܝܐ ܘܣܐܢܕܘܝܟ ܬܝܡܢܝ̈ܐ</territory>
+			<territory type="GT">ܓܘܐܬܝܡܐܠܐ</territory>
+			<territory type="GU">ܓܘܐܡ</territory>
+			<territory type="GW">ܓܝܢܝܐ ܒܝܣܐܘ</territory>
+			<territory type="GY">ܓܘܝܐܢܐ</territory>
+			<territory type="HK">ܗܘܢܓ ܟܘܢܓ</territory>
+			<territory type="HM" draft="unconfirmed">ܓܙܝܪ̈ܐ ܕܗܪܕ ܘܡܟܕܘܢܠܕ</territory>
+			<territory type="HN">ܗܘܢܕܘܪܣ</territory>
+			<territory type="HR">ܩܪܘܐܛܝܐ</territory>
+			<territory type="HT">ܗܐܝܬܝ</territory>
+			<territory type="HU">ܡܓܪ</territory>
+			<territory type="IC">ܓܙܝܖ̈ܐ ܕܟܐܢܪܝ</territory>
+			<territory type="ID">ܐܝܢܕܘܢܝܣܝܐ</territory>
+			<territory type="IE">ܐܝܪܠܢܕ</territory>
+			<territory type="IL">ܐܝܣܪܐܝܠ</territory>
+			<territory type="IM">ܓܙܪܬܐ ܕܡܐܢ</territory>
+			<territory type="IN">ܗܢܕܘ</territory>
+			<territory type="IO" draft="provisional">ܩܠܝܡܐ ܕܒܪܝܛܢܝܐ ܓܘ ܐܘܩܝܢܘܣ ܗܢܕܘܝܐ</territory>
+			<territory type="IQ">ܥܝܪܩ</territory>
+			<territory type="IR">ܐܝܪܐܢ</territory>
+			<territory type="IS">ܐܝܣܠܢܕ</territory>
+			<territory type="IT">ܐܝܛܠܝܐ</territory>
+			<territory type="JE">ܓܝܪܙܝ</territory>
+			<territory type="JM">ܓܡܝܟܐ</territory>
+			<territory type="JO">ܐܘܪܕܘܢ</territory>
+			<territory type="JP">ܝܦܢ</territory>
+			<territory type="KE">ܩܝܢܝܐ</territory>
+			<territory type="KG">ܩܝܪܓܝܙܣܬܐܢ</territory>
+			<territory type="KH">ܟܡܒܘܕܝܐ</territory>
+			<territory type="KI">ܟܝܪܝܒܬܝ</territory>
+			<territory type="KM">ܓܙܪܬܐ ܕܩܡܪ</territory>
+			<territory type="KN">ܣܐܢܬ ܟܝܬܣ ܘܢܝܒܝܣ</territory>
+			<territory type="KP">ܟܘܪܝܐ ܕܓܪܒܝܐ</territory>
+			<territory type="KR">ܟܘܪܝܐ ܕܬܝܡܢܝܐ</territory>
+			<territory type="KW">ܟܘܝܬ</territory>
+			<territory type="KY">ܓܙܝܖ̈ܐ ܕܟܐܝܡܐܢ</territory>
+			<territory type="KZ">ܟܙܩܣܬܐܢ</territory>
+			<territory type="LA">ܠܐܘܣ</territory>
+			<territory type="LB">ܠܒܢܢ</territory>
+			<territory type="LC">ܡܪܬܝ ܠܘܫܐ</territory>
+			<territory type="LI">ܠܝܟܛܢܫܛܝܢ</territory>
+			<territory type="LK">ܫܪܝ ܠܐܢܟܐ</territory>
+			<territory type="LR">ܠܝܒܝܪܝܐ</territory>
+			<territory type="LS">ܠܣܘܛܘ</territory>
+			<territory type="LT">ܠܬܘܢܝܐ</territory>
+			<territory type="LU">ܠܘܟܣܡܒܘܪܓ</territory>
+			<territory type="LV">ܠܐܛܒܝܐ</territory>
+			<territory type="LY">ܠܘܒܐ</territory>
+			<territory type="MA">ܡܓܪܒ</territory>
+			<territory type="MC">ܡܘܢܐܩܘ</territory>
+			<territory type="MD">ܡܘܠܕܘܒܐ</territory>
+			<territory type="ME">ܡܘܢܛܝܢܝܓܪܘ</territory>
+			<territory type="MF">ܣܐܢܬ ܡܐܪܬܝܢ</territory>
+			<territory type="MG">ܡܕܓܣܩܪ</territory>
+			<territory type="MH">ܓܙܪܬܐ ܡܐܪܫܐܠ</territory>
+			<territory type="MK">ܓܪܒܝ ܡܩܕܘܢܝܐ</territory>
+			<territory type="ML">ܡܐܠܝ</territory>
+			<territory type="MM">ܡܝܐܢܡܐܪ (ܒܘܪܡܐ)</territory>
+			<territory type="MN">ܡܘܢܓܘܠܝܐ</territory>
+			<territory type="MO" draft="unconfirmed">ܡܐܟܐܘ</territory>
+			<territory type="MP">ܓܙܝܖ̈ܐ ܕܡܪܝܢܐ ܓܪܒܝܐ</territory>
+			<territory type="MQ">ܡܐܪܬܝܢܝܩ</territory>
+			<territory type="MR">ܡܘܪܝܛܢܝܐ</territory>
+			<territory type="MS">ܡܘܢܣܝܪܐܬ</territory>
+			<territory type="MT">ܡܝܠܛܐ</territory>
+			<territory type="MU">ܡܘܪܝܛܝܘܣ</territory>
+			<territory type="MV">ܓܙܪܬܐ ܡܐܠܕܝܒܝܬܐ</territory>
+			<territory type="MW">ܡܠܐܘܝ</territory>
+			<territory type="MX">ܡܟܣܝܟܘ</territory>
+			<territory type="MY">ܡܠܝܙܝܐ</territory>
+			<territory type="MZ">ܡܘܙܡܒܝܩ</territory>
+			<territory type="NA">ܢܡܝܒܝܐ</territory>
+			<territory type="NC" draft="unconfirmed">ܢܝܘ ܟܠܝܕܘܢܝܐ</territory>
+			<territory type="NE">ܢܝܓܪ</territory>
+			<territory type="NF" draft="unconfirmed">ܓܙܪܬܐ ܕܢܘܪܦܠܟ</territory>
+			<territory type="NG">ܢܝܓܝܪܝܐ</territory>
+			<territory type="NI">ܢܝܟܪܐܓܘܐ</territory>
+			<territory type="NL">ܗܘܠܢܕܐ</territory>
+			<territory type="NO">ܢܘܪܒܝܓ</territory>
+			<territory type="NP">ܢܝܦܐܠ</territory>
+			<territory type="NR">ܢܐܘܪܘ</territory>
+			<territory type="NU" draft="unconfirmed">ܢܘܥ</territory>
+			<territory type="NZ">ܢܝܘ ܙܝܠܢܕ</territory>
+			<territory type="NZ" alt="variant" draft="unconfirmed">ܐܬܝܐܐܪܐܘ ܢܝܘ ܙܝܠܢܕ</territory>
+			<territory type="OM">ܥܘܡܐܢ</territory>
+			<territory type="PA">ܦܢܡܐ</territory>
+			<territory type="PE">ܦܝܪܘ</territory>
+			<territory type="PF" draft="unconfirmed">ܦܘܠܝܢܝܣܝܐ ܦܪܢܣܝܐ</territory>
+			<territory type="PG">ܦܐܦܘܐ ܓܝܢܝܐ ܚܕܬܐ</territory>
+			<territory type="PH">ܦܝܠܝܦܝܢܝܐ</territory>
+			<territory type="PK">ܦܐܟܣܬܐܢ</territory>
+			<territory type="PL">ܦܘܠܢܕ</territory>
+			<territory type="PM">ܣܐܢܬ ܦܝܥܪ ܘܡܩܘܠܘܢ</territory>
+			<territory type="PN" draft="unconfirmed">ܓܙܝܪ̈ܐ ܕܦܝܬܟܐܝܪܢ</territory>
+			<territory type="PR">ܦܘܐܪܛܘ ܪܝܩܘ</territory>
+			<territory type="PS">ܐܬܖ̈ܘܬܐ ܕܦܠܣܛܝܢ</territory>
+			<territory type="PS" alt="short">ܦܠܣܛܝܢ</territory>
+			<territory type="PT">ܦܘܪܛܘܓܠ</territory>
+			<territory type="PW">ܦܠܐܘ</territory>
+			<territory type="PY">ܦܪܓܘܐܝ</territory>
+			<territory type="QA">ܩܛܪ</territory>
+			<territory type="QO">ܐܘܩܝܢܘܣܝܐ ܒܪܝܬܐ</territory>
+			<territory type="RE">ܪܝܘܢܝܘܢ</territory>
+			<territory type="RO">ܪܘܡܢܝܐ</territory>
+			<territory type="RS">ܣܪܒܝܐ</territory>
+			<territory type="RU">ܪܘܣܝܐ</territory>
+			<territory type="RW">ܪܘܐܢܕܐ</territory>
+			<territory type="SA">ܣܥܘܕܝܐ</territory>
+			<territory type="SB">ܓܙܪܬܐ ܕܫܠܝܡܘܢ</territory>
+			<territory type="SC">ܣܐܝܫܝܠ</territory>
+			<territory type="SD">ܣܘܕܐܢ</territory>
+			<territory type="SE">ܣܘܝܕ</territory>
+			<territory type="SG">ܣܝܢܓܐܦܘܪ</territory>
+			<territory type="SH">ܡܪܬܝ ܗܝܠܝܢܐ</territory>
+			<territory type="SI">ܣܠܘܒܢܝܐ</territory>
+			<territory type="SJ">ܣܒܠܕܒܪܕ ܘܓܐܢ ܡܐܝܝܢ</territory>
+			<territory type="SK">ܣܠܘܒܩܝܐ</territory>
+			<territory type="SL">ܣܝܝܪܐ ܠܝܐܘܢܝ</territory>
+			<territory type="SM">ܣܢ ܡܪܝܢܘ</territory>
+			<territory type="SN">ܣܢܓܐܠ</territory>
+			<territory type="SO">ܨܘܡܐܠ</territory>
+			<territory type="SR">ܣܘܪܝܢܐܡ</territory>
+			<territory type="SS">ܬܝܡܢ ܣܘܕܐܢ</territory>
+			<territory type="ST">ܣܐܘ ܛܘܡܝ ܘܦܪܝܢܣܝܦܝ</territory>
+			<territory type="SV">ܐܠ ܣܠܒܐܕܘܪ</territory>
+			<territory type="SX">ܣܢܬ ܡܐܪܬܝܢ</territory>
+			<territory type="SY">ܣܘܪܝܐ</territory>
+			<territory type="SZ">ܐܣܘܐܛܝܢܝ</territory>
+			<territory type="SZ" alt="variant">ܣܘܐܙܝܠܢܕ</territory>
+			<territory type="TA" draft="unconfirmed">ܬܪܝܣܬܢ ܕܟܘܢܗܐ</territory>
+			<territory type="TC">ܓܙܝܖ̈ܐ ܕܬܘܪܟܣ ܘܟܐܝܟܘܣ</territory>
+			<territory type="TD">ܬܫܐܕ</territory>
+			<territory type="TF">ܩܠܝܡ̈ܐ ܕܦܪܢܣܐ ܬܝܡܢܝܬܐ</territory>
+			<territory type="TG">ܬܘܓܘ</territory>
+			<territory type="TH">ܬܐܝܠܢܕ</territory>
+			<territory type="TJ">ܬܐܓܝܟܣܬܐܢ</territory>
+			<territory type="TK" draft="unconfirmed">ܬܘܟܝܠܐܘ</territory>
+			<territory type="TL">ܬܝܡܘܪ-ܠܣܬܝ</territory>
+			<territory type="TL" alt="variant">ܬܝܡܘܪ ܡܕܢܚܐ</territory>
+			<territory type="TM">ܬܘܪܟܡܢܣܬܐܢ</territory>
+			<territory type="TN">ܬܘܢܣ</territory>
+			<territory type="TO">ܬܘܢܓܐ</territory>
+			<territory type="TR">ܬܘܪܟܝܐ</territory>
+			<territory type="TT">ܬܪܝܢܝܕܐܕ ܘܬܘܒܐܓܘ</territory>
+			<territory type="TV">ܬܘܒܐܠܘ</territory>
+			<territory type="TW">ܬܐܝܘܐܢ</territory>
+			<territory type="TZ">ܛܢܙܢܝܐ</territory>
+			<territory type="UA">ܐܘܩܪܐܝܢܐ</territory>
+			<territory type="UG">ܐܘܓܢܕܐ</territory>
+			<territory type="UM" draft="unconfirmed">ܓܙܝܪ̈ܐ ܪ̈ܚܝܩܐ ܕܐܘܚܕ̈ܢܐ ܡܚܝܕ̈ܐ</territory>
+			<territory type="UN">ܐܡ̈ܘܬܐ ܡܚܝ̈ܕܬܐ</territory>
+			<territory type="US">ܐܘܚܕ̈ܢܐ ܡܚܝܕ̈ܐ</territory>
+			<territory type="UY">ܐܘܪܘܓܘܐܝ</territory>
+			<territory type="UZ">ܐܘܙܒܟܣܬܐܢ</territory>
+			<territory type="VA">ܡܕܝܢܬܐ ܕܘܛܝܩܢ</territory>
+			<territory type="VC">ܣܐܢܬ ܒܝܢܣܝܢܬ ܘܓܪܝܢܐܕܝܢܐܣ</territory>
+			<territory type="VE">ܒܢܙܘܝܠܐ</territory>
+			<territory type="VG">ܓܙܖ̈ܝܐ ܒܬܘ̈ܠܐ ܕܒܪܝܛܢܝܐ</territory>
+			<territory type="VI">ܓܙܖ̈ܝܐ ܒܬܘ̈ܠܐ ܕܐܡܝܪܟܐ</territory>
+			<territory type="VN">ܒܝܬܢܐܡ</territory>
+			<territory type="VU">ܒܐܢܘܐܛܘ</territory>
+			<territory type="WF" draft="unconfirmed">ܘܝܠܝܣ ܘܦܘܬܘܢܐ</territory>
+			<territory type="WS">ܣܡܘܐ</territory>
+			<territory type="XK">ܩܘܣܘܒܘ</territory>
+			<territory type="YE">ܝܡܢ</territory>
+			<territory type="YT">ܡܐܝܘܛ</territory>
+			<territory type="ZA">ܬܝܡܢ ܐܦܪܝܩܐ</territory>
+			<territory type="ZM">ܙܐܡܒܝܐ</territory>
+			<territory type="ZW">ܙܝܡܒܐܒܘܝ</territory>
+			<territory type="ZZ" draft="unconfirmed">ܩܠܝܡܐ ܠܐ ܝܕܝܥܐ</territory>
+		</territories>
+		<keys>
+			<key type="calendar">ܣܘܪܓܕܐ</key>
+			<key type="cf">ܛܘܦܣܐ ܕܙܘ̈ܙܐ</key>
+			<key type="collation">ܛܟܣܐ ܕܦܘܪܫܢܝܐ</key>
+			<key type="currency">ܙܘ̈ܙܐ</key>
+			<key type="hc">ܛܟ݂ܣܐ ܥܕܢܘܬܐ (12 ܠܘܩܒܠ 24)</key>
+			<key type="ms">ܛܟܣܐ ܕܟܝܠܬܐ</key>
+			<key type="numbers">ܡܢܝ̈ܢܐ</key>
+		</keys>
+		<types>
+			<type key="calendar" type="buddhist">ܣܘܪܓܕܐ ܒܘܕܗܝܝܐ</type>
+			<type key="calendar" type="chinese">ܣܘܪܓܕܐ ܨܝܢܝܐ</type>
+			<type key="calendar" type="coptic">ܣܘܪܓܕܐ ܐܓܒܛܝܐ</type>
+			<type key="calendar" type="dangi">ܣܘܪܓܕܐ ܕܢܓܝ</type>
+			<type key="calendar" type="ethiopic">ܣܘܪܓܕܐ ܟܘܫܝܐ</type>
+			<type key="calendar" type="gregorian">ܣܘܪܓܕܐ ܓܪܝܓܘܪܝܐ</type>
+			<type key="calendar" type="hebrew">ܣܘܪܓܕܐ ܝܗܘܕܝܐ</type>
+			<type key="calendar" type="indian">ܣܘܪܓܕܐ ܐܘܡܬܢܝܐ ܗܢܕܘܝܐ</type>
+			<type key="calendar" type="islamic" draft="provisional">ܣܘܪܓܕܐ ܡܫܠܡܢܝܐ</type>
+			<type key="calendar" type="islamic-civil" draft="provisional">ܣܘܪܓܕܐ ܡܫܠܡܢܝܐ ܡܕܝܢܝܐ</type>
+			<type key="calendar" type="iso8601">ܣܘܪܓܕܐ ISO-8601</type>
+			<type key="calendar" type="japanese">ܣܘܪܓܕܐ ܝܦܢܝܐ</type>
+			<type key="calendar" type="persian">ܣܘܪܓܕܐ ܦܪܣܝܐ</type>
+			<type key="calendar" type="roc">ܣܘܪܓܕܐ ܡܝܢܓܘ</type>
+			<type key="cf" type="account">ܛܘܦܣܐ ܕܙܘ̈ܙܐ ܡܚܫܒܢܘܬܝܐ</type>
+			<type key="cf" type="standard">ܛܘܦܣܐ ܕܙܘ̈ܙܐ ܫܪܫܝܐ</type>
+			<type key="collation" type="dictionary">ܛܟ݂ܣܐ ܦܘܪܫܢܝܐ ܕܠܟܣܝܩܘܢ</type>
+			<type key="collation" type="phonebook">ܟܬܒܐ ܕܡܢܝ̈ܢܐ ܕܬܝܠܝܦܘܢ</type>
+			<type key="collation" type="standard">ܛܟ݂ܣܐ ܦܘܪܫܢܝܐ ܫܪܫܝܐ</type>
+			<type key="collation" type="traditional">ܛܟ݂ܣܐ ܦܘܪܫܢܝܐ ܥܝܕ݂ܝܐ</type>
+			<type key="hc" type="h11">ܛܟ݂ܣܐ 12 ܫܥܬ݂ܐ (0–11)</type>
+			<type key="hc" type="h12">ܛܟ݂ܣܐ 12 ܫܥܬ݂ܐ (1–12)</type>
+			<type key="hc" type="h23">ܛܟ݂ܣܐ 24 ܫܥܬ݂ܐ (0–23)</type>
+			<type key="hc" type="h24">ܛܟ݂ܣܐ 24 ܫܥܬ݂ܐ (0–23)</type>
+			<type key="ms" type="metric">ܛܟܣܐ ܡܝܬܪܝܐ</type>
+			<type key="ms" type="uksystem">ܛܟܣܐ ܕܟܝܠܬܐ ܒܪܝܛܢܝܝܐ</type>
+			<type key="ms" type="ussystem">ܛܟܣܐ ܕܟܝܠܬܐ ܐܡܪܝܟܝܐ</type>
+			<type key="numbers" type="arab">ܡܢܝ̈ܢܐ ܕܥܖ̈ܒܝܐ ܗܢܕܘܝܐ</type>
+			<type key="numbers" type="armn">ܡܢܝ̈ܢܐ ܕܐܖ̈ܡܢܝܐ</type>
+			<type key="numbers" type="ethi">ܡܢܝ̈ܢܐ ܟܘܫܝܐ</type>
+			<type key="numbers" type="geor">ܡܢܝ̈ܢܐ ܓܘܪܓܝܐ</type>
+			<type key="numbers" type="grek">ܡܢܝ̈ܢܐ ܕܝܘܢܝ̈ܐ</type>
+			<type key="numbers" type="hebr">ܡܢܝ̈ܢܐ ܕܝܗܘܕܝ̈ܐ</type>
+			<type key="numbers" type="jpan">ܡܢܝ̈ܢܐ ܕܝܦܢܝ̈ܐ</type>
+			<type key="numbers" type="latn">ܡܢܝ̈ܢܐ ܡܥܪܒܝܐ</type>
+			<type key="numbers" type="mong">ܡܢܝ̈ܢܐ ܕܡܘܢܓܘܠܢܝ̈ܐ</type>
+			<type key="numbers" type="roman">ܡܢܝ̈ܢܐ ܪܗܘܡܝܐ</type>
+		</types>
+		<measurementSystemNames>
+			<measurementSystemName type="metric">ܛܟܣܐ ܡܝܬܪܝܐ</measurementSystemName>
+			<measurementSystemName type="UK">ܛܟܣܐ ܒܪܝܛܢܝܐ</measurementSystemName>
+			<measurementSystemName type="US">ܛܟܣܐ ܐܡܝܪܟܐ</measurementSystemName>
+		</measurementSystemNames>
+		<codePatterns>
+			<codePattern type="language">ܠܫܢܐ:‌ {0}</codePattern>
+			<codePattern type="script">ܛܟܣܐ ܕܟܬܝܒܬܐ: {0}</codePattern>
+			<codePattern type="territory">ܩܠܝܡܐ: {0}</codePattern>
+		</codePatterns>
+	</localeDisplayNames>
+	<layout>
+		<orientation>
+			<characterOrder>right-to-left</characterOrder>
+		</orientation>
+	</layout>
+	<characters>
+		<exemplarCharacters>[݀ ݃ ݄ ݇ ݈ ݉ ݊ ݁ ݅ ݂ ݆ ܑ ܰ ܱ ܲ ܳ ܴ ܵ ܶ ܷ ܸ ܹ ܺ ܻ ܼ ܽ ܾ ܿ ܃ ܄ ܅ ܆ ܇ ܈ ܉ ܁ ܂ ܀ ܊ ܋ ܌ ܍ ܐ ܒ ܓܔ ܖ ܕ ܗ ܘ ܙ ܚ ܛܜ ܝ ܞ ܟ ܠ ܡ ܢ ܣܤ ܥ ܦܧ ܨ ܩ ܪ ܫ ܬ]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[܏\u200C\u200D ܭ ܮ ܯ ݍ ݎ ݏ]</exemplarCharacters>
+		<exemplarCharacters type="index" draft="contributed">[ܐ ܒ ܓ ܖ ܕ ܗ ܘ ܙ ܚ ܛ ܝ ܟ ܠ ܡ ܢ ܣ ܥ ܦ ܨ ܩ ܪ ܫ ܬ]</exemplarCharacters>
+		<exemplarCharacters type="numbers" draft="contributed">[\u061C\u200E \- ‑ , ٫ ٬ . % ٪ ‰ ؉ + 0٠ 1١ 2٢ 3٣ 4٤ 5٥ 6٦ 7٧ 8٨ 9٩]</exemplarCharacters>
+		<exemplarCharacters type="punctuation" draft="contributed">[\- ‐‑ – — ، ؛ \: ܃ ܄ ܅ ܆ ܇ ܈ ! ؟ ܉ . … ܁ ܂ ܀ '‘’ &quot;“” « » ( ) \[ \] ܊ ܋ ܌ ܍]</exemplarCharacters>
+		<moreInformation>؟</moreInformation>
+		<parseLenients scope="date" level="lenient">
+			<parseLenient sample=":" draft="contributed">[\: ∶]</parseLenient>
+		</parseLenients>
+		<parseLenients scope="general" level="lenient">
+			<parseLenient sample="£" draft="contributed">[£ ₤]</parseLenient>
+		</parseLenients>
+		<parseLenients scope="number" level="lenient">
+			<parseLenient sample="-" draft="contributed">[\-－﹣ ‑ ‒ −⁻₋ ➖]</parseLenient>
+		</parseLenients>
+	</characters>
+	<delimiters>
+		<quotationStart>”</quotationStart>
+		<quotationEnd>“</quotationEnd>
+		<alternateQuotationStart>’</alternateQuotationStart>
+		<alternateQuotationEnd>‘</alternateQuotationEnd>
+	</delimiters>
+	<dates>
+		<calendars>
+			<calendar type="generic">
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern>EEEE، d ܒMMMM y G</pattern>
+							<datetimeSkeleton draft="unconfirmed">GyMMMMdd</datetimeSkeleton>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern>d ܒMMMM y G</pattern>
+							<datetimeSkeleton draft="unconfirmed">GyMMMMdd</datetimeSkeleton>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern>d ܒMMM y G</pattern>
+							<datetimeSkeleton draft="unconfirmed">GyMMdd</datetimeSkeleton>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>d/M/y GGGGG</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<timeFormats>
+					<timeFormatLength type="full">
+						<timeFormat>
+							<pattern draft="unconfirmed">h:mm:ss a zzzz</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="long">
+						<timeFormat>
+							<pattern draft="unconfirmed">h:mm:ss a z</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="medium">
+						<timeFormat>
+							<pattern draft="unconfirmed">h:mm:ss a</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="short">
+						<timeFormat>
+							<pattern draft="unconfirmed">h:mm a</pattern>
+						</timeFormat>
+					</timeFormatLength>
+				</timeFormats>
+				<dateTimeFormats>
+					<dateTimeFormatLength type="full">
+						<dateTimeFormat>
+							<pattern>{1}، {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} ܒܫܥܬܐ {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="long">
+						<dateTimeFormat>
+							<pattern>{1}، {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} ܒܫܥܬܐ {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="medium">
+						<dateTimeFormat>
+							<pattern>{1}، {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="short">
+						<dateTimeFormat>
+							<pattern>{1}، {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<availableFormats>
+						<dateFormatItem id="Ed">E، d</dateFormatItem>
+						<dateFormatItem id="Gy">y G</dateFormatItem>
+						<dateFormatItem id="GyMd">dd/MM/y G</dateFormatItem>
+						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMd">d ܒMMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMEd">EEEE، d ܒMMM y G</dateFormatItem>
+						<dateFormatItem id="Md">dd/MM</dateFormatItem>
+						<dateFormatItem id="MEd">EEEE، dd/MM</dateFormatItem>
+						<dateFormatItem id="MMMd">d ܒMMM</dateFormatItem>
+						<dateFormatItem id="MMMEd">E، d ܒMMM</dateFormatItem>
+						<dateFormatItem id="MMMMd">d ܒMMMM</dateFormatItem>
+						<dateFormatItem id="y">y G</dateFormatItem>
+						<dateFormatItem id="yyyy">y G</dateFormatItem>
+						<dateFormatItem id="yyyyM">MM/y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMd">d/M/y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMEd">E، d/M/y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMMM">MMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMd">d ܒMMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMEd">E، d ܒMMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMM">MMMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyQQQ">QQQ y G</dateFormatItem>
+						<dateFormatItem id="yyyyQQQQ">QQQQ y G</dateFormatItem>
+					</availableFormats>
+					<intervalFormats>
+						<intervalFormatFallback>{0} - {1}</intervalFormatFallback>
+						<intervalFormatItem id="Gy">
+							<greatestDifference id="G" draft="unconfirmed">y G – y G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">y–y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyM">
+							<greatestDifference id="G">MM/y GGGG – MM/y GGGG</greatestDifference>
+							<greatestDifference id="M">MM/y – MM/y GGGG</greatestDifference>
+							<greatestDifference id="y">MM/y – MM/y GGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMd">
+							<greatestDifference id="d">d/M/y – d/M/y GGGG</greatestDifference>
+							<greatestDifference id="G">d/M/y GGGG – d/M/y GGGG</greatestDifference>
+							<greatestDifference id="M">d/M/y – d/M/y GGGG</greatestDifference>
+							<greatestDifference id="y">d/M/y – d/M/y GGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMEd">
+							<greatestDifference id="d">E، d/M/y – E، d/M/y GGGG</greatestDifference>
+							<greatestDifference id="G">E، d/M/y GGGG – E، d/M/y GGGG</greatestDifference>
+							<greatestDifference id="M">E، d/M/y – E، d/M/y GGGG</greatestDifference>
+							<greatestDifference id="y">E، d/M/y – E، d/M/y GGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMM">
+							<greatestDifference id="G">MMM y G – MMM y G</greatestDifference>
+							<greatestDifference id="M">MMM – MMM y G</greatestDifference>
+							<greatestDifference id="y">MMM y – MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMd">
+							<greatestDifference id="d">d–d ܒMMM y G</greatestDifference>
+							<greatestDifference id="G">d ܒMMM y G – d ܒMMM y G</greatestDifference>
+							<greatestDifference id="M">d ܒMMM – d ܒMMM y G</greatestDifference>
+							<greatestDifference id="y">d ܒMMM y – d ܒMMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMEd">
+							<greatestDifference id="d">E، d ܒMMM – E، d ܒMMM y G</greatestDifference>
+							<greatestDifference id="G">E، d ܒMMM y G – E، d ܒMMM y G</greatestDifference>
+							<greatestDifference id="M">E، d ܒMMM – E، d ܒMMM y G</greatestDifference>
+							<greatestDifference id="y">E، d ܒMMM y – E، d ܒMMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="M">
+							<greatestDifference id="M">M–M</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Md">
+							<greatestDifference id="d">d/M – d/M</greatestDifference>
+							<greatestDifference id="M">d/M – d/M</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MEd">
+							<greatestDifference id="d">E، d/M – E، M/d</greatestDifference>
+							<greatestDifference id="M">E، d/M – E، M/d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMM">
+							<greatestDifference id="M">MMM–MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMd">
+							<greatestDifference id="d">d–d ܒMMM</greatestDifference>
+							<greatestDifference id="M">d ܒMMM – d ܒMMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMEd">
+							<greatestDifference id="d">E، d ܒMMM – E، d ܒMMM</greatestDifference>
+							<greatestDifference id="M">E، d ܒMMM – E، d ܒMMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="y">
+							<greatestDifference id="y">y–y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yM">
+							<greatestDifference id="M">M/y – M/y GGGGG</greatestDifference>
+							<greatestDifference id="y">M/y – M/y GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMd">
+							<greatestDifference id="d">d/M/y – d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="M">d/M/y – d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="y">d/M/y – d/M/y GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMEd">
+							<greatestDifference id="d">E، d/M/y – E، d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="M">E، d/M/y – E، d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="y">E، d/M/y – E، d/M/y GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMM">
+							<greatestDifference id="M">MMM – MMM y G</greatestDifference>
+							<greatestDifference id="y">MMM y – MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMd">
+							<greatestDifference id="d">d–d ܒMMM y G</greatestDifference>
+							<greatestDifference id="M">d ܒMMM – d ܒMMM y G</greatestDifference>
+							<greatestDifference id="y">d ܒMMM y – d ܒMMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMEd">
+							<greatestDifference id="d">E، d ܒMMM – E، d ܒMMM y G</greatestDifference>
+							<greatestDifference id="M">E، d ܒMMM – E، d ܒMMM y G</greatestDifference>
+							<greatestDifference id="y">E، d ܒMMM y – E، d ܒMMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMM">
+							<greatestDifference id="M">MMMM – MMMM y G</greatestDifference>
+							<greatestDifference id="y">MMMM y – MMMM y G</greatestDifference>
+						</intervalFormatItem>
+					</intervalFormats>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1">ܟܢܘܢ ܒ</month>
+							<month type="2">ܫܒܛ</month>
+							<month type="3">ܐܕܪ</month>
+							<month type="4">ܢܝܣܢ</month>
+							<month type="5">ܐܝܪ</month>
+							<month type="6">ܚܙܝܪܢ</month>
+							<month type="7">ܬܡܘܙ</month>
+							<month type="8">ܐܒ</month>
+							<month type="9">ܐܝܠܘܠ</month>
+							<month type="10">ܬܫܪܝܢ ܐ</month>
+							<month type="11">ܬܫܪܝܢ ܒ</month>
+							<month type="12">ܟܢܘܢ ܐ</month>
+						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1">ܟ</month>
+							<month type="2">ܫ</month>
+							<month type="3">ܐ</month>
+							<month type="4">ܢ</month>
+							<month type="5">ܐ</month>
+							<month type="6">ܚ</month>
+							<month type="7">ܬ</month>
+							<month type="8">ܐ</month>
+							<month type="9">ܐ</month>
+							<month type="10">ܬ</month>
+							<month type="11">ܬ</month>
+							<month type="12">ܟ</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1">ܟܢܘܢ ܐܚܪܝܐ</month>
+							<month type="2">ܫܒܛ</month>
+							<month type="3">ܐܕܪ</month>
+							<month type="4">ܢܝܣܢ</month>
+							<month type="5">ܐܝܪ</month>
+							<month type="6">ܚܙܝܪܢ</month>
+							<month type="7">ܬܡܘܙ</month>
+							<month type="8">ܐܒ</month>
+							<month type="9">ܐܝܠܘܠ</month>
+							<month type="10">ܬܫܪܝܢ ܩܕܡܝܐ</month>
+							<month type="11">ܬܫܪܝܢ ܐܚܪܝܐ</month>
+							<month type="12">ܟܢܘܢ ܩܕܡܝܐ</month>
+						</monthWidth>
+					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="narrow">
+							<month type="1">ܟ</month>
+							<month type="2">ܫ</month>
+							<month type="3">ܐ</month>
+							<month type="4">ܢ</month>
+							<month type="5">ܐ</month>
+							<month type="6">ܬ</month>
+							<month type="7">ܚ</month>
+							<month type="8">ܐ</month>
+							<month type="9">ܐ</month>
+							<month type="10">ܬ</month>
+							<month type="11">ܬ</month>
+							<month type="12">ܟ</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<days>
+					<dayContext type="format">
+						<dayWidth type="abbreviated">
+							<day type="sun">ܚܕ</day>
+							<day type="mon">ܬܪܝܢ</day>
+							<day type="tue">ܬܠܬ</day>
+							<day type="wed">ܐܪܒܥ</day>
+							<day type="thu">ܚܡܫ</day>
+							<day type="fri">ܥܪܘ</day>
+							<day type="sat">ܫܒܬܐ</day>
+						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun">ܚܕܒܫܒܐ</day>
+							<day type="mon">ܬܪܝܢܒܫܒܐ</day>
+							<day type="tue">ܬܠܬܒܫܒܐ</day>
+							<day type="wed">ܐܪܒܥܒܫܒܐ</day>
+							<day type="thu">ܚܡܫܒܫܒܐ</day>
+							<day type="fri">ܥܪܘܒܬܐ</day>
+							<day type="sat">ܫܒܬܐ</day>
+						</dayWidth>
+					</dayContext>
+					<dayContext type="stand-alone">
+						<dayWidth type="narrow">
+							<day type="sun">ܚ</day>
+							<day type="mon">ܬ</day>
+							<day type="tue">ܬ</day>
+							<day type="wed">ܐ</day>
+							<day type="thu">ܚ</day>
+							<day type="fri">ܥ</day>
+							<day type="sat">ܫ</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+				<quarters>
+					<quarterContext type="format">
+						<quarterWidth type="wide">
+							<quarter type="1">ܪܘܒܥܐ ܩܕܡܝܐ</quarter>
+							<quarter type="2">ܪܘܒܥܐ ܬܪܝܢܐ</quarter>
+							<quarter type="3">ܪܘܒܥܐ ܬܠܝܬܝܐ</quarter>
+							<quarter type="4">ܪܘܒܥܐ ܪܒܝܥܝܐ</quarter>
+						</quarterWidth>
+					</quarterContext>
+				</quarters>
+				<dayPeriods>
+					<dayPeriodContext type="format">
+						<dayPeriodWidth type="abbreviated">
+							<dayPeriod type="am">܏ܩܛ‌</dayPeriod>
+							<dayPeriod type="pm">܏ܒܛ‌</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="narrow">
+							<dayPeriod type="am">܏ܩ‌</dayPeriod>
+							<dayPeriod type="pm">܏ܒ‌</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+				</dayPeriods>
+				<eras>
+					<eraNames>
+						<era type="0">ܩܕܡ ܡܫܝܚܐ</era>
+						<era type="0" alt="variant">ܩܕܡ ܕܪܐ ܚܕܬܐ</era>
+						<era type="1">ܫܢܬܐ ܡܪܢܝܬܐ</era>
+						<era type="1" alt="variant">ܕܪܐ ܚܕܬܐ</era>
+					</eraNames>
+					<eraAbbr>
+						<era type="0">܏ܩܡ‌</era>
+						<era type="0" alt="variant">܏ܩܕܚ‌</era>
+						<era type="1">܏ܫܡ‌</era>
+						<era type="1" alt="variant">܏ܕܚ‌</era>
+					</eraAbbr>
+				</eras>
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern>EEEE، d ܒMMMM y</pattern>
+							<datetimeSkeleton draft="unconfirmed">yMMMMdd</datetimeSkeleton>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern>d ܒMMMM y</pattern>
+							<datetimeSkeleton draft="unconfirmed">yMMMMdd</datetimeSkeleton>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern>d ܒMMM y</pattern>
+							<datetimeSkeleton draft="unconfirmed">yMMdd</datetimeSkeleton>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>d-MM-y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<timeFormats>
+					<timeFormatLength type="full">
+						<timeFormat>
+							<pattern>h:mm:ss a zzzz</pattern>
+							<datetimeSkeleton draft="unconfirmed">ahmmsszzzz</datetimeSkeleton>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="long">
+						<timeFormat>
+							<pattern>h:mm:ss a z</pattern>
+							<datetimeSkeleton draft="unconfirmed">ahmmssz</datetimeSkeleton>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="medium">
+						<timeFormat>
+							<pattern>h:mm:ss a</pattern>
+							<datetimeSkeleton draft="unconfirmed">ahmmss</datetimeSkeleton>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="short">
+						<timeFormat>
+							<pattern>h:mm a</pattern>
+							<datetimeSkeleton draft="unconfirmed">ahmm</datetimeSkeleton>
+						</timeFormat>
+					</timeFormatLength>
+				</timeFormats>
+				<dateTimeFormats>
+					<dateTimeFormatLength type="full">
+						<dateTimeFormat>
+							<pattern>{1}، {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} ܒܫܥܬܐ {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="long">
+						<dateTimeFormat>
+							<pattern>{1}، {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} ܒܫܥܬܐ {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="medium">
+						<dateTimeFormat>
+							<pattern>{1}، {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="short">
+						<dateTimeFormat>
+							<pattern>{1}، {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<availableFormats>
+						<dateFormatItem id="Ed">E، d</dateFormatItem>
+						<dateFormatItem id="Gy">y G</dateFormatItem>
+						<dateFormatItem id="GyMd">dd/MM/y G</dateFormatItem>
+						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMd">d ܒMMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMEd">EEEE، d ܒMMM y G</dateFormatItem>
+						<dateFormatItem id="Md">dd/MM</dateFormatItem>
+						<dateFormatItem id="MEd">EEEE، dd/MM</dateFormatItem>
+						<dateFormatItem id="MMMd">d ܒMMM</dateFormatItem>
+						<dateFormatItem id="MMMEd">E، d ܒMMM</dateFormatItem>
+						<dateFormatItem id="MMMMd">d ܒMMMM</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="one">ܫܒܘܥܐ W ܒMMMM</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="other">ܫܒܘܥܐ W ܒMMMM</dateFormatItem>
+						<dateFormatItem id="yM">MM/y</dateFormatItem>
+						<dateFormatItem id="yMd">d/M/y</dateFormatItem>
+						<dateFormatItem id="yMEd">E، d/M/y</dateFormatItem>
+						<dateFormatItem id="yMMM">MMM y</dateFormatItem>
+						<dateFormatItem id="yMMMd">d ܒMMM y</dateFormatItem>
+						<dateFormatItem id="yMMMEd">E، d ܒMMM y</dateFormatItem>
+						<dateFormatItem id="yMMMM">MMMM y</dateFormatItem>
+						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
+						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
+						<dateFormatItem id="yw" count="one">ܫܒܘܥܐ w ܕܫܢܬܐ Y</dateFormatItem>
+						<dateFormatItem id="yw" count="other">ܫܒܘܥܐ w ܕܫܢܬܐ Y</dateFormatItem>
+					</availableFormats>
+					<intervalFormats>
+						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
+						<intervalFormatItem id="Gy">
+							<greatestDifference id="G">y G – y G</greatestDifference>
+							<greatestDifference id="y">y – y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyM">
+							<greatestDifference id="G">MM/y G – MM/y G</greatestDifference>
+							<greatestDifference id="M">MM/y – MM/y G</greatestDifference>
+							<greatestDifference id="y">MM/y – MM/y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMd">
+							<greatestDifference id="d">d/M/y – d/M/y G</greatestDifference>
+							<greatestDifference id="G">d/M/y G – d/M/y G</greatestDifference>
+							<greatestDifference id="M">d/M/y – d/M/y G</greatestDifference>
+							<greatestDifference id="y">d/M/y – d/M/y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMEd">
+							<greatestDifference id="d">E، d/M/y – E، d/M/y G</greatestDifference>
+							<greatestDifference id="G">E، d/M/y G – E، d/M/y G</greatestDifference>
+							<greatestDifference id="M">E، d/M/y – E، d/M/y G</greatestDifference>
+							<greatestDifference id="y">E، d/M/y – E، d/M/y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMM">
+							<greatestDifference id="G">MMM y G – MMM y G</greatestDifference>
+							<greatestDifference id="M">MMM – MMM y G</greatestDifference>
+							<greatestDifference id="y">MMM y – MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMd">
+							<greatestDifference id="d">d–d ܒMMM y G</greatestDifference>
+							<greatestDifference id="G">d ܒMMM y G – d ܒMMM y G</greatestDifference>
+							<greatestDifference id="M">d ܒMMM – dܒMMM y G</greatestDifference>
+							<greatestDifference id="y">d ܒMMM y – d ܒMMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMEd">
+							<greatestDifference id="d">E، d ܒMMM – E، d ܒMMM y G</greatestDifference>
+							<greatestDifference id="G">E، d ܒMMM y G – E، d ܒMMM y G</greatestDifference>
+							<greatestDifference id="M">E، d ܒMMM – E، d ܒMMM y G</greatestDifference>
+							<greatestDifference id="y">E، d ܒMMM y – E، d ܒMMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="M">
+							<greatestDifference id="M">M–M</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Md">
+							<greatestDifference id="d">d/M – d/M</greatestDifference>
+							<greatestDifference id="M">d/M – d/M</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MEd">
+							<greatestDifference id="d">E، d/‏M –‏ E، d/‏M</greatestDifference>
+							<greatestDifference id="M">E، d/‏M – E، d/‏M</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMM">
+							<greatestDifference id="M">MMM–MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMd">
+							<greatestDifference id="d">d–d ܒMMM</greatestDifference>
+							<greatestDifference id="M">d ܒMMM – d ܒMMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMEd">
+							<greatestDifference id="d">E، d – E، d ܒMMM</greatestDifference>
+							<greatestDifference id="M">E، d ܒMMM – E، d ܒMMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yM">
+							<greatestDifference id="M">M/y – M/y</greatestDifference>
+							<greatestDifference id="y">M/y – M/y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMd">
+							<greatestDifference id="d">d/M/y – d/M/y</greatestDifference>
+							<greatestDifference id="M">d/M/y – d/M/y</greatestDifference>
+							<greatestDifference id="y">d/M/y – d/M/y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMEd">
+							<greatestDifference id="d">E، d/M/y – E، d/M/y</greatestDifference>
+							<greatestDifference id="M">E، d/M/y – E، d/M/y</greatestDifference>
+							<greatestDifference id="y">E، d/M/y – E، d/M/y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMM">
+							<greatestDifference id="M">MMM – MMM y</greatestDifference>
+							<greatestDifference id="y">MMM y – MMM y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMd">
+							<greatestDifference id="d">d–d ܒMMM y</greatestDifference>
+							<greatestDifference id="M">d ܒMMM – d ܒMMM y</greatestDifference>
+							<greatestDifference id="y">d ܒMMM y – d ܒMMM y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMEd">
+							<greatestDifference id="d">E، d ܒMMM – E، d ܒMMM y</greatestDifference>
+							<greatestDifference id="M">E، d ܒMMM – E، d ܒMMM y</greatestDifference>
+							<greatestDifference id="y">E، d ܒMMM y – E، d ܒMMM y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMM">
+							<greatestDifference id="M">MMMM–MMMM y</greatestDifference>
+							<greatestDifference id="y">MMMM y – MMMM y</greatestDifference>
+						</intervalFormatItem>
+					</intervalFormats>
+				</dateTimeFormats>
+			</calendar>
+		</calendars>
+		<fields>
+			<field type="era">
+				<displayName>ܕܪܐ</displayName>
+			</field>
+			<field type="year">
+				<displayName>ܫܢܬܐ</displayName>
+				<relative type="-1">ܐܫܬܩܕܝ</relative>
+				<relative type="0">ܗܕܐ ܫܢܬܐ</relative>
+				<relative type="1">ܫܢܬܐ ܐܚܪܬܐ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">ܒܚܕܐ ܫܢܬܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܒ{0} ܫܢܝ̈ܐ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">ܡ̣ܢ ܩܕܡ ܚܕܐ ܫܢܬܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܡ̣ܢ ܩܕܡ {0} ܫܢܝ̈ܐ</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="quarter">
+				<displayName>ܪܘܒܥܐ ܕܫܢܬܐ</displayName>
+				<relative type="-1">ܪܘܒܥܐ ܕܥܒܪ</relative>
+				<relative type="0">ܗܢܐ ܪܘܒܥܐ</relative>
+				<relative type="1">ܪܘܒܥܐ ܕܐܬܐ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">ܒܚܕ ܪܘܒܥܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܒ{0} ܪ̈ܘܒܥܐ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">ܡ̣ܢ ܩܕܡ ܚܕ ܪܘܒܥܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܡ̣ܢ ܩܕܡ {0} ܪ̈ܘܒܥܐ</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="month">
+				<displayName>ܝܪܚܐ</displayName>
+				<relative type="-1">ܝܪܚܐ ܕܕܥܒܪ</relative>
+				<relative type="0">ܗܢܐ ܝܪܚܐ</relative>
+				<relative type="1">ܝܪܚܐ ܕܐܬܐ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">ܒܚܕ ܝܪܚܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܒ{0} ܝܪ̈ܚܐ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">ܡ̣ܢ ܩܕܡ ܚܕ ܝܪܚܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܡ̣ܢ ܩܕܡ {0} ܝܪ̈ܚܐ</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="month-short">
+				<relativeTime type="past">
+					<relativeTimePattern count="one">ܡ̣ܢ ܩܕܡ ܚܕ ܝܪܚܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܡ̣ܢ ܩܕܡ {0} ܝܖ̈ܚܐ</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="week">
+				<displayName>ܫܒܘܥܐ</displayName>
+				<relative type="-1">ܫܒܘܥܐ ܕܕܥܒܪ</relative>
+				<relative type="0">ܗܕܐ ܫܒܘܥܐ</relative>
+				<relative type="1">ܫܒܘܥܐ ܕܐܬܐ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">ܒܚܕ ܫܒܘܥܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܒ{0} ܫܒ̈ܘܥܐ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">ܡ̣ܢ ܩܕܡ ܚܕ ܫܒܘܥܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܡ̣ܢ ܩܕܡ {0} ܫܒ̈ܘܥܐ</relativeTimePattern>
+				</relativeTime>
+				<relativePeriod>ܫܒܘܥܐ ܕ{0}</relativePeriod>
+			</field>
+			<field type="week-short">
+				<displayName>ܫܒܐ</displayName>
+			</field>
+			<field type="weekOfMonth">
+				<displayName>ܫܒܘܥܐ ܕܝܪܚܐ</displayName>
+			</field>
+			<field type="weekOfMonth-short">
+				<displayName>ܫܒܐ ܕܝܪܚܐ</displayName>
+			</field>
+			<field type="day">
+				<displayName>ܝܘܡܐ</displayName>
+				<relative type="-1">ܐܬܡܠܝ</relative>
+				<relative type="0">ܐܕܝܘܡ</relative>
+				<relative type="1">ܝܘܡܐ ܕܐܬܐ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">ܒܚܕ ܝܘܡܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܒ{0} ܝܘܡܢ̈ܐ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">ܡ̣ܢ ܩܕܡ ܚܕ ܝܘܡܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܡ̣ܢ ܩܕܡ {0} ܝܘܡܢ̈ܐ</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="dayOfYear">
+				<displayName>ܝܘܡܐ ܕܫܢܬܐ</displayName>
+			</field>
+			<field type="weekday">
+				<displayName>ܝܘܡܐ ܕܫܒܘܥܐ</displayName>
+			</field>
+			<field type="weekday-short">
+				<displayName>ܝܘܡܐ ܕܫܒܐ</displayName>
+			</field>
+			<field type="weekdayOfMonth">
+				<displayName>ܝܘܡܐ ܦܘܠܚܢܐ ܕܫܒܘܥܐ</displayName>
+			</field>
+			<field type="weekdayOfMonth-short">
+				<displayName>ܝܘܡܐ ܦܘܠܚܢܐ ܕܫܒܐ</displayName>
+			</field>
+			<field type="sun">
+				<relative type="-1">ܚܕܒܫܒܐ ܕܕܥܒܪ</relative>
+				<relative type="0">ܗܕܐ ܚܕܒܫܒܐ</relative>
+				<relative type="1">ܚܕܒܫܒܐ ܕܐܬܐ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">ܒܚܕ ܚܕܒܫܒܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܒ{0} ܚܕܒܫܒ̈ܐ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">ܡ̣ܢ ܩܕܡ ܚܕ ܚܕܒܫܒܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܡ̣ܢ ܩܕܡ {0} ܚܕܒܫܒ̈ܐ</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="mon">
+				<relative type="-1">ܬܪܝܢܒܫܒܐ ܕܕܥܒܪ</relative>
+				<relative type="0">ܗܕܐ ܬܪܝܢܒܫܒܐ</relative>
+				<relative type="1">ܬܪܝܢܒܫܒܐ ܕܐܬܐ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">ܒܚܕ ܬܪܝܢܒܫܒܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܒ{0} ܬܪܝܢܒܫܒ̈ܐ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">ܡ̣ܢ ܩܕܡ ܚܕ ܬܪܝܢܒܫܒܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܡ̣ܢ ܩܕܡ {0} ܬܪܝܢܒܫܒ̈ܐ</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="tue">
+				<relative type="-1">ܬܠܬܒܫܒܐ ܕܕܥܒܪ</relative>
+				<relative type="0">ܗܕܐ ܬܠܬܒܫܒܐ</relative>
+				<relative type="1">ܬܠܬܒܫܒܐ ܕܐܬܐ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">ܒܚܕ ܬܠܬܒܫܒܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܒ{0} ܬܠܬܒܫܒ̈ܐ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">ܡ̣ܢ ܩܕܡ ܚܕ ܬܠܬܒܫܒܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܡ̣ܢ ܩܕܡ {0} ܬܠܬܒܫܒ̈ܐ</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="wed">
+				<relative type="-1">ܐܪܒܥܒܫܒܐ ܕܕܥܒܪ</relative>
+				<relative type="0">ܗܕܐ ܐܪܒܥܒܫܒܐ</relative>
+				<relative type="1">ܐܪܒܥܒܫܒܐ ܕܐܬܐ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">ܒܚܕ ܐܪܒܥܒܫܒܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܒ{0} ܐܪܒܥܒܫܒ̈ܐ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">ܡ̣ܢ ܩܕܡ ܚܕ ܐܪܒܥܒܫܒܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܡ̣ܢ ܩܕܡ {0} ܐܪܒܥܒܫܒ̈ܐ</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="thu">
+				<relative type="-1">ܚܡܫܒܫܒܐ ܕܕܥܒܪ</relative>
+				<relative type="0">ܗܕܐ ܚܡܫܒܫܒܐ</relative>
+				<relative type="1">ܚܡܫܒܫܒܐ ܕܐܬܐ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">ܒܚܕ ܚܡܫܒܫܒܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܒ{0} ܚܡܫܒܫܒ̈ܐ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">ܡ̣ܢ ܩܕܡ ܚܕ ܚܡܫܒܫܒܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܡ̣ܢ ܩܕܡ {0} ܚܡܫܒܫܒ̈ܐ</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="fri">
+				<relative type="-1">ܥܪܘܒܬܐ ܕܕܥܒܪ</relative>
+				<relative type="0">ܗܕܐ ܥܪܘܒܬܐ</relative>
+				<relative type="1">ܥܪܘܒܬܐ ܕܐܬܐ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">ܒܚܕܐ ܥܪܘܒܬܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܒ{0} ܥܪ̈ܘܒܬܐ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">ܡ̣ܢ ܩܕܡ ܚܕܐ ܥܪܘܒܬܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܡ̣ܢ ܩܕܡ {0} ܥܪ̈ܘܒܬܐ</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sat">
+				<relative type="-1">ܫܒܬܐ ܕܕܥܒܪ</relative>
+				<relative type="0">ܗܕܐ ܫܒܬܐ</relative>
+				<relative type="1">ܫܒܬܐ ܕܐܬܐ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">ܒܚܕܐ ܫܒܬܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܒ{0} ܫܒ̈ܬܐ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">ܡ̣ܢ ܩܕܡ ܚܕܐ ܫܒܬܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܡ̣ܢ ܩܕܡ {0} ܫܒ̈ܬܐ</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="dayperiod-short">
+				<displayName>܏ܩܛ‌/܏ܒܛ‌</displayName>
+			</field>
+			<field type="dayperiod">
+				<displayName>ܩܕܡ ܛܗܪܐ/ܒܬܪ ܛܗܪܐ</displayName>
+			</field>
+			<field type="hour">
+				<displayName>ܫܥܬܐ</displayName>
+				<relative type="0">ܗܕܐ ܫܥܬܐ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">ܒܚܕܐ ܫܥܬܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܒ{0} ܫܥ̈ܐ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">ܡ̣ܢ ܩܕܡ ܚܕܐ ܫܥܬܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܡ̣ܢ ܩܕܡ {0} ܫܥ̈ܐ</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="minute">
+				<displayName>ܩܛܝܢܬܐ</displayName>
+				<relative type="0">ܗܢܐ ܩܛܝܢܬܐ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">ܒܚܕܐ ܩܛܝܢܬܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܒ{0} ܩܛܝ̈ܢܐ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">ܡ̣ܢ ܩܕܡ ܚܕܐ ܩܛܝܢܬܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܡ̣ܢ ܩܕܡ {0} ܩܛܝ̈ܢܐ</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="second">
+				<displayName>ܪܦܦܐ</displayName>
+				<relative type="0">ܗܫܐ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">ܒܚܕ ܪܦܦܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܒ{0} ܪ̈ܦܦܐ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">ܡ̣ܢ ܩܕܡ ܚܕ ܪܦܦܐ</relativeTimePattern>
+					<relativeTimePattern count="other">ܡ̣ܢ ܩܕܡ {0} ܖ̈ܦܦܐ</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="zone">
+				<displayName>ܦܢܝܬܐ ܕܙܒܢܐ</displayName>
+			</field>
+		</fields>
+		<timeZoneNames>
+			<regionFormat>ܥܕܢܐ {0}</regionFormat>
+			<regionFormat type="daylight">ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ {0}</regionFormat>
+			<regionFormat type="standard">ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ {0}</regionFormat>
+			<zone type="Etc/UTC">
+				<long>
+					<standard>ܥܕܢܘܬܐ ܬܒܠܝܬܐ ܡܛܟܘܣܬܐ</standard>
+				</long>
+			</zone>
+			<zone type="Etc/Unknown">
+				<exemplarCity>ܡܕܝܢܬܐ ܠܐ ܝܕܥܝܬܐ</exemplarCity>
+			</zone>
+			<zone type="Europe/Andorra">
+				<exemplarCity>ܐܢܕܘܪܐ</exemplarCity>
+			</zone>
+			<zone type="Asia/Dubai">
+				<exemplarCity>ܕܘܒܐܝ</exemplarCity>
+			</zone>
+			<zone type="Asia/Kabul">
+				<exemplarCity>ܟܐܒܘܠ</exemplarCity>
+			</zone>
+			<zone type="America/Antigua">
+				<exemplarCity>ܐܢܬܝܓܘܐ</exemplarCity>
+			</zone>
+			<zone type="America/Anguilla">
+				<exemplarCity>ܐܢܓܘܝܐ</exemplarCity>
+			</zone>
+			<zone type="Europe/Tirane">
+				<exemplarCity>ܬܝܪܐܢ</exemplarCity>
+			</zone>
+			<zone type="Asia/Yerevan">
+				<exemplarCity>ܝܪܒܐܢ</exemplarCity>
+			</zone>
+			<zone type="Africa/Luanda">
+				<exemplarCity>ܠܘܐܢܕܐ</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Rothera">
+				<exemplarCity>ܪܘܬܝܪܐ</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Palmer">
+				<exemplarCity>ܦܐܠܡܝܪ</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Troll">
+				<exemplarCity>ܬܪܘܠ</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Syowa">
+				<exemplarCity>ܣܝܘܐ</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Mawson">
+				<exemplarCity>ܡܐܘܣܘܢ</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Davis">
+				<exemplarCity>ܕܒܝܣ</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Vostok">
+				<exemplarCity>ܒܘܣܬܘܟ</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Casey">
+				<exemplarCity>ܟܐܝܣܝ</exemplarCity>
+			</zone>
+			<zone type="Antarctica/DumontDUrville">
+				<exemplarCity>ܕܘܡܘܢܬ ܕܐܘܪܒܝܠ</exemplarCity>
+			</zone>
+			<zone type="Antarctica/McMurdo">
+				<exemplarCity>ܡܟܡܘܪܕܘ</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/Rio_Gallegos">
+				<exemplarCity>ܪܝܘ ܓܝܓܘܣ</exemplarCity>
+			</zone>
+			<zone type="America/Mendoza">
+				<exemplarCity>ܡܢܕܘܙܐ</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/San_Juan">
+				<exemplarCity>ܣܐܢ ܘܐܢ</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/Ushuaia">
+				<exemplarCity>ܐܘܫܘܐܝܐ</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/La_Rioja">
+				<exemplarCity>ܠܐ ܪܝܘܗܐ</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/San_Luis">
+				<exemplarCity>ܣܐܢ ܠܘܝܣ</exemplarCity>
+			</zone>
+			<zone type="America/Catamarca">
+				<exemplarCity>ܟܐܬܐܡܪܟܐ</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/Salta">
+				<exemplarCity>ܣܠܬܐ</exemplarCity>
+			</zone>
+			<zone type="America/Jujuy">
+				<exemplarCity>ܓܘܓܘܝ</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/Tucuman">
+				<exemplarCity>ܬܘܟܘܡܐܢ</exemplarCity>
+			</zone>
+			<zone type="America/Cordoba">
+				<exemplarCity>ܟܘܪܕܘܒܐ</exemplarCity>
+			</zone>
+			<zone type="America/Buenos_Aires">
+				<exemplarCity>ܒܘܐܝܢܘܣ ܥܝܪܣ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Pago_Pago">
+				<exemplarCity>ܦܐܓܘ ܦܐܓܘ</exemplarCity>
+			</zone>
+			<zone type="Europe/Vienna">
+				<exemplarCity>ܒܝܝܢܐ</exemplarCity>
+			</zone>
+			<zone type="Australia/Perth">
+				<exemplarCity>ܦܝܪܬ</exemplarCity>
+			</zone>
+			<zone type="Australia/Eucla">
+				<exemplarCity>ܐܘܟܠܐ</exemplarCity>
+			</zone>
+			<zone type="Australia/Darwin">
+				<exemplarCity>ܕܪܘܝܢ</exemplarCity>
+			</zone>
+			<zone type="Australia/Adelaide">
+				<exemplarCity>ܐܕܝܠܝܕ</exemplarCity>
+			</zone>
+			<zone type="Australia/Broken_Hill">
+				<exemplarCity>ܒܪܘܟܝܢ ܗܝܠ</exemplarCity>
+			</zone>
+			<zone type="Australia/Melbourne">
+				<exemplarCity>ܡܝܠܒܘܪܢ</exemplarCity>
+			</zone>
+			<zone type="Australia/Hobart">
+				<exemplarCity>ܗܘܒܪܬ</exemplarCity>
+			</zone>
+			<zone type="Australia/Lindeman">
+				<exemplarCity>ܠܝܢܕܡܐܢ</exemplarCity>
+			</zone>
+			<zone type="Australia/Sydney">
+				<exemplarCity>ܣܝܕܢܝ</exemplarCity>
+			</zone>
+			<zone type="Australia/Brisbane">
+				<exemplarCity>ܒܪܝܣܒܐܢ</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Macquarie">
+				<exemplarCity>ܡܐܟܐܘܪܝ</exemplarCity>
+			</zone>
+			<zone type="Australia/Lord_Howe">
+				<exemplarCity>ܠܘܪܕ ܗܐܘ</exemplarCity>
+			</zone>
+			<zone type="America/Aruba">
+				<exemplarCity>ܐܪܘܒܐ</exemplarCity>
+			</zone>
+			<zone type="Europe/Mariehamn">
+				<exemplarCity>ܡܐܪܝܗܐܡ</exemplarCity>
+			</zone>
+			<zone type="Asia/Baku">
+				<exemplarCity>ܒܐܟܘ</exemplarCity>
+			</zone>
+			<zone type="Europe/Sarajevo">
+				<exemplarCity>ܣܪܐܝܝܒܘ</exemplarCity>
+			</zone>
+			<zone type="America/Barbados">
+				<exemplarCity>ܒܐܪܒܕܘܣ</exemplarCity>
+			</zone>
+			<zone type="Asia/Dhaka">
+				<exemplarCity>ܕܟܐ</exemplarCity>
+			</zone>
+			<zone type="Europe/Brussels">
+				<exemplarCity>ܒܪܘܟܣܠ</exemplarCity>
+			</zone>
+			<zone type="Africa/Ouagadougou">
+				<exemplarCity>ܐܘܐܓܐܕܐܘܓܐܘ</exemplarCity>
+			</zone>
+			<zone type="Europe/Sofia">
+				<exemplarCity>ܣܘܦܝܐ</exemplarCity>
+			</zone>
+			<zone type="Asia/Bahrain">
+				<exemplarCity>ܒܚܪܝܢ</exemplarCity>
+			</zone>
+			<zone type="Africa/Bujumbura">
+				<exemplarCity>ܒܘܓܘܡܒܘܪܐ</exemplarCity>
+			</zone>
+			<zone type="Africa/Porto-Novo">
+				<exemplarCity>ܦܘܪܬܘ-ܢܘܒܘ</exemplarCity>
+			</zone>
+			<zone type="America/St_Barthelemy">
+				<exemplarCity>ܡܪ ܒܪ ܬܘܠܡܝ</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Bermuda">
+				<exemplarCity>ܒܝܪܡܝܘܕܐ</exemplarCity>
+			</zone>
+			<zone type="Asia/Brunei">
+				<exemplarCity>ܒܪܘܢܐܝ</exemplarCity>
+			</zone>
+			<zone type="America/La_Paz">
+				<exemplarCity>ܠܐ ܦܐܙ</exemplarCity>
+			</zone>
+			<zone type="America/Kralendijk">
+				<exemplarCity>ܟܪܠܝܢܓܩ</exemplarCity>
+			</zone>
+			<zone type="America/Eirunepe">
+				<exemplarCity>ܐܝܪܘܢܝܦܝ</exemplarCity>
+			</zone>
+			<zone type="America/Rio_Branco">
+				<exemplarCity>ܪܝܘ ܒܪܢܟܘ</exemplarCity>
+			</zone>
+			<zone type="America/Porto_Velho">
+				<exemplarCity>ܦܘܪܬܘ ܒܝܠܗܘ</exemplarCity>
+			</zone>
+			<zone type="America/Boa_Vista">
+				<exemplarCity>ܒܘܥ ܒܝܣܬܐ</exemplarCity>
+			</zone>
+			<zone type="America/Manaus">
+				<exemplarCity>ܡܐܢܐܘܣ</exemplarCity>
+			</zone>
+			<zone type="America/Cuiaba">
+				<exemplarCity>ܟܘܝܐܒܐ</exemplarCity>
+			</zone>
+			<zone type="America/Santarem">
+				<exemplarCity>ܣܐܢܬܐܪܡ</exemplarCity>
+			</zone>
+			<zone type="America/Campo_Grande">
+				<exemplarCity>ܟܐܡܦܘ ܓܪܢܕܝ</exemplarCity>
+			</zone>
+			<zone type="America/Belem">
+				<exemplarCity>ܒܝܠܝܡ</exemplarCity>
+			</zone>
+			<zone type="America/Araguaina">
+				<exemplarCity>ܐܪܐܓܐܘܝܢܐ</exemplarCity>
+			</zone>
+			<zone type="America/Sao_Paulo">
+				<exemplarCity>ܣܐܘ ܦܐܘܠܘ</exemplarCity>
+			</zone>
+			<zone type="America/Bahia">
+				<exemplarCity>ܒܐܗܝܐ</exemplarCity>
+			</zone>
+			<zone type="America/Fortaleza">
+				<exemplarCity>ܦܘܪܬܐܠܝܙܐ</exemplarCity>
+			</zone>
+			<zone type="America/Maceio">
+				<exemplarCity>ܡܐܣܝܐܘ</exemplarCity>
+			</zone>
+			<zone type="America/Recife">
+				<exemplarCity>ܪܝܣܝܦܝ</exemplarCity>
+			</zone>
+			<zone type="America/Noronha">
+				<exemplarCity>ܢܘܪܘܢܗܐ</exemplarCity>
+			</zone>
+			<zone type="America/Nassau">
+				<exemplarCity>ܢܐܣܐܘ</exemplarCity>
+			</zone>
+			<zone type="Asia/Thimphu">
+				<exemplarCity>ܬܝܡܦܘ</exemplarCity>
+			</zone>
+			<zone type="Africa/Gaborone">
+				<exemplarCity>ܓܒܘܪܘܢ</exemplarCity>
+			</zone>
+			<zone type="Europe/Minsk">
+				<exemplarCity>ܡܝܢܣܟ</exemplarCity>
+			</zone>
+			<zone type="America/Belize">
+				<exemplarCity>ܒܝܠܝܙ</exemplarCity>
+			</zone>
+			<zone type="America/Dawson">
+				<exemplarCity>ܕܐܣܘܢ</exemplarCity>
+			</zone>
+			<zone type="America/Whitehorse">
+				<exemplarCity>ܣܘܣܬܐ ܚܘܪܬܐ</exemplarCity>
+			</zone>
+			<zone type="America/Inuvik">
+				<exemplarCity>ܐܢܘܒܝܟ</exemplarCity>
+			</zone>
+			<zone type="America/Vancouver">
+				<exemplarCity>ܒܢܟܘܒܝܪ</exemplarCity>
+			</zone>
+			<zone type="America/Fort_Nelson">
+				<exemplarCity>ܦܘܪܬ ܢܝܠܣܘܢ</exemplarCity>
+			</zone>
+			<zone type="America/Dawson_Creek">
+				<exemplarCity>ܕܐܣܘܢ ܟܪܝܟ</exemplarCity>
+			</zone>
+			<zone type="America/Creston">
+				<exemplarCity>ܟܪܝܣܬܘܢ</exemplarCity>
+			</zone>
+			<zone type="America/Edmonton">
+				<exemplarCity>ܐܕܡܘܢܬܘܢ</exemplarCity>
+			</zone>
+			<zone type="America/Swift_Current">
+				<exemplarCity>ܢܕܘܪܬܐ</exemplarCity>
+			</zone>
+			<zone type="America/Cambridge_Bay">
+				<exemplarCity>ܟܡܒܪܓ ܒܐܝ</exemplarCity>
+			</zone>
+			<zone type="America/Regina">
+				<exemplarCity>ܪܝܓܝܢܐ</exemplarCity>
+			</zone>
+			<zone type="America/Winnipeg">
+				<exemplarCity>ܘܝܢܝܦܓ</exemplarCity>
+			</zone>
+			<zone type="America/Resolute">
+				<exemplarCity>ܪܝܣܘܠܘܬ</exemplarCity>
+			</zone>
+			<zone type="America/Rankin_Inlet">
+				<exemplarCity>ܪܐܢܟܢ ܐܢܠܝܬ</exemplarCity>
+			</zone>
+			<zone type="America/Coral_Harbour">
+				<exemplarCity>ܐܬܝܟܘܟܐܢ</exemplarCity>
+			</zone>
+			<zone type="America/Toronto">
+				<exemplarCity>ܬܘܪܘܢܬܘ</exemplarCity>
+			</zone>
+			<zone type="America/Iqaluit">
+				<exemplarCity>ܐܝܩܠܘܝܬ</exemplarCity>
+			</zone>
+			<zone type="America/Moncton">
+				<exemplarCity>ܡܘܢܟܬܘܢ</exemplarCity>
+			</zone>
+			<zone type="America/Halifax">
+				<exemplarCity>ܗܠܝܦܐܟܣ</exemplarCity>
+			</zone>
+			<zone type="America/Goose_Bay">
+				<exemplarCity>ܓܘܣ ܒܐܝ</exemplarCity>
+			</zone>
+			<zone type="America/Glace_Bay">
+				<exemplarCity>ܓܠܝܣ ܒܐܝ</exemplarCity>
+			</zone>
+			<zone type="America/Blanc-Sablon">
+				<exemplarCity>ܒܠܐܢܟ-ܣܐܒܠܘܢ</exemplarCity>
+			</zone>
+			<zone type="America/St_Johns">
+				<exemplarCity>ܡܪ ܝܘܚܢܢ</exemplarCity>
+			</zone>
+			<zone type="Indian/Cocos">
+				<exemplarCity>ܟܘܟܘܣ</exemplarCity>
+			</zone>
+			<zone type="Africa/Kinshasa">
+				<exemplarCity>ܟܝܢܫܐܣܐ</exemplarCity>
+			</zone>
+			<zone type="Africa/Lubumbashi">
+				<exemplarCity>ܠܘܒܘܡܒܫܝ</exemplarCity>
+			</zone>
+			<zone type="Africa/Bangui">
+				<exemplarCity>ܒܐܢܓܐܘܝ</exemplarCity>
+			</zone>
+			<zone type="Africa/Brazzaville">
+				<exemplarCity>ܒܪܐܙܐܒܝܠ</exemplarCity>
+			</zone>
+			<zone type="Europe/Zurich">
+				<exemplarCity>ܙܝܘܪܚ</exemplarCity>
+			</zone>
+			<zone type="Africa/Abidjan">
+				<exemplarCity>ܐܒܕܓܢ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Rarotonga">
+				<exemplarCity>ܪܐܪܘܬܘܢܓܐ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Easter">
+				<exemplarCity>ܦܨܚܐ</exemplarCity>
+			</zone>
+			<zone type="America/Punta_Arenas">
+				<exemplarCity>ܦܘܢܬܐ ܥܪܝܢܣ</exemplarCity>
+			</zone>
+			<zone type="America/Santiago">
+				<exemplarCity>ܣܐܢܬܝܐܓܘ</exemplarCity>
+			</zone>
+			<zone type="Africa/Douala">
+				<exemplarCity>ܕܘܐܠܐ</exemplarCity>
+			</zone>
+			<zone type="Asia/Urumqi">
+				<exemplarCity>ܐܘܪܘܡܟܝ</exemplarCity>
+			</zone>
+			<zone type="Asia/Shanghai">
+				<exemplarCity>ܫܢܓܗܐܝܝ</exemplarCity>
+			</zone>
+			<zone type="America/Bogota">
+				<exemplarCity>ܒܘܓܘܬܐ</exemplarCity>
+			</zone>
+			<zone type="America/Costa_Rica">
+				<exemplarCity>ܟܘܣܬܐ ܪܝܟܐ</exemplarCity>
+			</zone>
+			<zone type="America/Havana">
+				<exemplarCity>ܗܐܒܐܢܐ</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Cape_Verde">
+				<exemplarCity>ܟܐܦ ܒܝܪܕܝ</exemplarCity>
+			</zone>
+			<zone type="America/Curacao">
+				<exemplarCity>ܟܘܪܐܟܐܘ</exemplarCity>
+			</zone>
+			<zone type="Indian/Christmas">
+				<exemplarCity>ܟܪܝܣܬܡܣ</exemplarCity>
+			</zone>
+			<zone type="Asia/Nicosia">
+				<exemplarCity>ܢܝܩܘܣܝܐ</exemplarCity>
+			</zone>
+			<zone type="Asia/Famagusta">
+				<exemplarCity>ܦܐܡܐܓܘܣܬܐ</exemplarCity>
+			</zone>
+			<zone type="Europe/Prague">
+				<exemplarCity>ܦܪܐܓ</exemplarCity>
+			</zone>
+			<zone type="Europe/Busingen">
+				<exemplarCity>ܒܘܣܝܢܓܢ</exemplarCity>
+			</zone>
+			<zone type="Europe/Berlin">
+				<exemplarCity>ܒܪܠܝܢ</exemplarCity>
+			</zone>
+			<zone type="Africa/Djibouti">
+				<exemplarCity>ܓܝܒܘܬܝ</exemplarCity>
+			</zone>
+			<zone type="Europe/Copenhagen">
+				<exemplarCity>ܟܘܦܢܗܐܓܢ</exemplarCity>
+			</zone>
+			<zone type="America/Dominica">
+				<exemplarCity>ܕܘܡܝܢܝܟܐ</exemplarCity>
+			</zone>
+			<zone type="America/Santo_Domingo">
+				<exemplarCity>ܣܢܬܘ ܕܘܡܝܢܓܘ</exemplarCity>
+			</zone>
+			<zone type="Africa/Algiers">
+				<exemplarCity>ܓܙܐܐܪ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Galapagos">
+				<exemplarCity>ܓܐܠܐܦܓܘܣ</exemplarCity>
+			</zone>
+			<zone type="America/Guayaquil">
+				<exemplarCity>ܓܘܐܝܐܩܘܝܠ</exemplarCity>
+			</zone>
+			<zone type="Europe/Tallinn">
+				<exemplarCity>ܬܐܠܝܢ</exemplarCity>
+			</zone>
+			<zone type="Africa/Cairo">
+				<exemplarCity>ܩܐܗܖ̈ܗ</exemplarCity>
+			</zone>
+			<zone type="Africa/El_Aaiun">
+				<exemplarCity>ܐܠ ܥܝܘܢ</exemplarCity>
+			</zone>
+			<zone type="Africa/Asmera">
+				<exemplarCity>ܐܣܡܐܪܐ</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Canary">
+				<exemplarCity>ܟܐܢܪܝ</exemplarCity>
+			</zone>
+			<zone type="Africa/Ceuta">
+				<exemplarCity>ܣܒܬܐ</exemplarCity>
+			</zone>
+			<zone type="Europe/Madrid">
+				<exemplarCity>ܡܕܪܝܕ</exemplarCity>
+			</zone>
+			<zone type="Africa/Addis_Ababa">
+				<exemplarCity>ܐܕܝܣ ܐܒܒܐ</exemplarCity>
+			</zone>
+			<zone type="Europe/Helsinki">
+				<exemplarCity>ܗܠܣܢܟܝ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Fiji">
+				<exemplarCity>ܦܝܓܝ</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Stanley">
+				<exemplarCity>ܣܬܐܢܠܝ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Truk">
+				<exemplarCity>ܬܫܘܟ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Ponape">
+				<exemplarCity>ܦܘܗܢܦܐܝ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Kosrae">
+				<exemplarCity>ܟܘܣܪܐܝ</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Faeroe">
+				<exemplarCity>ܦܐܪܘ</exemplarCity>
+			</zone>
+			<zone type="Europe/Paris">
+				<exemplarCity>ܦܐܪܝܣ</exemplarCity>
+			</zone>
+			<zone type="Africa/Libreville">
+				<exemplarCity>ܠܝܒܪܝܒܝܠ</exemplarCity>
+			</zone>
+			<zone type="Europe/London">
+				<long>
+					<daylight>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܒܪܝܛܢܝܐ</daylight>
+				</long>
+				<exemplarCity>ܠܘܢܕܘܢ</exemplarCity>
+			</zone>
+			<zone type="America/Grenada">
+				<exemplarCity>ܓܪܝܢܕܐ</exemplarCity>
+			</zone>
+			<zone type="Asia/Tbilisi">
+				<exemplarCity>ܬܦܠܝܣ</exemplarCity>
+			</zone>
+			<zone type="America/Cayenne">
+				<exemplarCity>ܟܐܝܐܢ</exemplarCity>
+			</zone>
+			<zone type="Europe/Guernsey">
+				<exemplarCity>ܓܘܪܢܙܝ</exemplarCity>
+			</zone>
+			<zone type="Africa/Accra">
+				<exemplarCity>ܐܟܪܐ</exemplarCity>
+			</zone>
+			<zone type="Europe/Gibraltar">
+				<exemplarCity>ܓܒܪܠܛܪ</exemplarCity>
+			</zone>
+			<zone type="America/Thule">
+				<exemplarCity>ܬܘܠ</exemplarCity>
+			</zone>
+			<zone type="America/Godthab">
+				<exemplarCity>ܢܘܟ</exemplarCity>
+			</zone>
+			<zone type="America/Scoresbysund">
+				<exemplarCity>ܐܝܛܘܩܘܪܡܝܬ</exemplarCity>
+			</zone>
+			<zone type="America/Danmarkshavn">
+				<exemplarCity>ܕܐܢܡܪܟܫܒܝܢ</exemplarCity>
+			</zone>
+			<zone type="Africa/Banjul">
+				<exemplarCity>ܒܐܢܓܘܠ</exemplarCity>
+			</zone>
+			<zone type="Africa/Conakry">
+				<exemplarCity>ܟܘܢܐܟܪܝ</exemplarCity>
+			</zone>
+			<zone type="America/Guadeloupe">
+				<exemplarCity>ܓܘܐܕܐܠܘܦܝ</exemplarCity>
+			</zone>
+			<zone type="Africa/Malabo">
+				<exemplarCity>ܡܐܠܐܒܘ</exemplarCity>
+			</zone>
+			<zone type="Europe/Athens">
+				<exemplarCity>ܐܬܢܘܣ</exemplarCity>
+			</zone>
+			<zone type="Atlantic/South_Georgia">
+				<exemplarCity>ܬܡܝܢ ܓܘܪܓܝܐ</exemplarCity>
+			</zone>
+			<zone type="America/Guatemala">
+				<exemplarCity>ܓܘܐܬܡܐܠܐ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Guam">
+				<exemplarCity>ܓܘܐܡ</exemplarCity>
+			</zone>
+			<zone type="Africa/Bissau">
+				<exemplarCity>ܒܝܣܐܘ</exemplarCity>
+			</zone>
+			<zone type="America/Guyana">
+				<exemplarCity>ܓܘܝܐܢܐ</exemplarCity>
+			</zone>
+			<zone type="Asia/Hong_Kong">
+				<exemplarCity>ܗܘܢܓ ܟܘܢܓ</exemplarCity>
+			</zone>
+			<zone type="America/Tegucigalpa">
+				<exemplarCity>ܬܝܓܘܣܝܓܐܠܦܐ</exemplarCity>
+			</zone>
+			<zone type="Europe/Zagreb">
+				<exemplarCity>ܙܐܓܪܒ</exemplarCity>
+			</zone>
+			<zone type="America/Port-au-Prince">
+				<exemplarCity>ܦܘܪܬ ܐܘ ܦܪܝܢܣ</exemplarCity>
+			</zone>
+			<zone type="Europe/Budapest">
+				<exemplarCity>ܒܘܕܦܫܛ</exemplarCity>
+			</zone>
+			<zone type="Asia/Jakarta">
+				<exemplarCity>ܓܐܟܐܪܬܐ</exemplarCity>
+			</zone>
+			<zone type="Asia/Pontianak">
+				<exemplarCity>ܦܘܢܬܝܐܢܐܟ</exemplarCity>
+			</zone>
+			<zone type="Asia/Makassar">
+				<exemplarCity>ܡܐܟܐܣܐܪ</exemplarCity>
+			</zone>
+			<zone type="Asia/Jayapura">
+				<exemplarCity>ܓܐܝܦܘܪܐ</exemplarCity>
+			</zone>
+			<zone type="Europe/Dublin">
+				<long>
+					<daylight>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܐܝܪܠܢܕ</daylight>
+				</long>
+				<exemplarCity>ܕܒܠܢ</exemplarCity>
+			</zone>
+			<zone type="Asia/Jerusalem">
+				<exemplarCity>ܐܘܪܫܠܡ</exemplarCity>
+			</zone>
+			<zone type="Europe/Isle_of_Man">
+				<exemplarCity>ܓܙܪܬܐ ܕܡܐܢ</exemplarCity>
+			</zone>
+			<zone type="Asia/Calcutta">
+				<exemplarCity>ܟܘܠܟܬܐ</exemplarCity>
+			</zone>
+			<zone type="Indian/Chagos">
+				<exemplarCity>ܬܫܓܘܣ</exemplarCity>
+			</zone>
+			<zone type="Asia/Baghdad">
+				<exemplarCity>ܒܓܕܕ</exemplarCity>
+			</zone>
+			<zone type="Asia/Tehran">
+				<exemplarCity>ܬܗܪܢ</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Reykjavik">
+				<exemplarCity>ܪܐܝܟܒܝܟ</exemplarCity>
+			</zone>
+			<zone type="Europe/Rome">
+				<exemplarCity>ܪܘܡܝ</exemplarCity>
+			</zone>
+			<zone type="Europe/Jersey">
+				<exemplarCity>ܓܝܪܙܝ</exemplarCity>
+			</zone>
+			<zone type="America/Jamaica">
+				<exemplarCity>ܓܡܐܝܟܐ</exemplarCity>
+			</zone>
+			<zone type="Asia/Amman">
+				<exemplarCity>ܥܡܐܢ</exemplarCity>
+			</zone>
+			<zone type="Asia/Tokyo">
+				<exemplarCity>ܛܘܟܝܘ</exemplarCity>
+			</zone>
+			<zone type="Africa/Nairobi">
+				<exemplarCity>ܢܝܪܘܒܝ</exemplarCity>
+			</zone>
+			<zone type="Asia/Bishkek">
+				<exemplarCity>ܒܝܫܟܝܟ</exemplarCity>
+			</zone>
+			<zone type="Asia/Phnom_Penh">
+				<exemplarCity>ܦܢܘܡ ܦܢ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Kanton">
+				<exemplarCity>ܟܐܢܬܘܢ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Kiritimati">
+				<exemplarCity>ܟܝܪܝܡܐܬܝ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Tarawa">
+				<exemplarCity>ܬܐܪܐܘܐ</exemplarCity>
+			</zone>
+			<zone type="Indian/Comoro">
+				<exemplarCity>ܟܘܡܘܪܘ</exemplarCity>
+			</zone>
+			<zone type="America/St_Kitts">
+				<exemplarCity>ܣܐܢܬ ܟܬܣ</exemplarCity>
+			</zone>
+			<zone type="Asia/Pyongyang">
+				<exemplarCity>ܦܝܘܢܓܝܢܓ</exemplarCity>
+			</zone>
+			<zone type="Asia/Seoul">
+				<exemplarCity>ܣܐܘܠ</exemplarCity>
+			</zone>
+			<zone type="Asia/Kuwait">
+				<exemplarCity>ܟܘܝܬ</exemplarCity>
+			</zone>
+			<zone type="America/Cayman">
+				<exemplarCity>ܟܐܝܡܝܢ</exemplarCity>
+			</zone>
+			<zone type="Asia/Aqtau">
+				<exemplarCity>ܐܟܬܐܘ</exemplarCity>
+			</zone>
+			<zone type="Asia/Oral">
+				<exemplarCity>ܐܘܪܐܠ</exemplarCity>
+			</zone>
+			<zone type="Asia/Atyrau">
+				<exemplarCity>ܐܬܝܪܘ</exemplarCity>
+			</zone>
+			<zone type="Asia/Aqtobe">
+				<exemplarCity>ܐܟܬܘܒ</exemplarCity>
+			</zone>
+			<zone type="Asia/Qostanay">
+				<exemplarCity>ܟܘܣܬܐܢܐܝ</exemplarCity>
+			</zone>
+			<zone type="Asia/Qyzylorda">
+				<exemplarCity>ܟܝܙܝܠܘܪܕܐ</exemplarCity>
+			</zone>
+			<zone type="Asia/Almaty">
+				<exemplarCity>ܐܠܡܐܬܝ</exemplarCity>
+			</zone>
+			<zone type="Asia/Vientiane">
+				<exemplarCity>ܒܝܐܢܬܝܐܢ</exemplarCity>
+			</zone>
+			<zone type="Asia/Beirut">
+				<exemplarCity>ܒܝܪܘܬ</exemplarCity>
+			</zone>
+			<zone type="America/St_Lucia">
+				<exemplarCity>ܡܪܬܝ ܠܘܫܐ</exemplarCity>
+			</zone>
+			<zone type="Europe/Vaduz">
+				<exemplarCity>ܒܕܘܙ</exemplarCity>
+			</zone>
+			<zone type="Asia/Colombo">
+				<exemplarCity>ܟܘܠܘܡܒܘ</exemplarCity>
+			</zone>
+			<zone type="Africa/Monrovia">
+				<exemplarCity>ܡܘܢܪܘܒܝܐ</exemplarCity>
+			</zone>
+			<zone type="Africa/Maseru">
+				<exemplarCity>ܡܐܣܝܪܘ</exemplarCity>
+			</zone>
+			<zone type="Europe/Vilnius">
+				<exemplarCity>ܒܠܢܘܣ</exemplarCity>
+			</zone>
+			<zone type="Europe/Luxembourg">
+				<exemplarCity>ܠܘܟܣܡܒܘܪܓ</exemplarCity>
+			</zone>
+			<zone type="Europe/Riga">
+				<exemplarCity>ܪܝܓܐ</exemplarCity>
+			</zone>
+			<zone type="Africa/Tripoli">
+				<exemplarCity>ܛܪܝܦܘܠܝܣ</exemplarCity>
+			</zone>
+			<zone type="Africa/Casablanca">
+				<exemplarCity>ܟܐܣܐܒܠܢܟܐ</exemplarCity>
+			</zone>
+			<zone type="Europe/Monaco">
+				<exemplarCity>ܡܘܢܐܟܘ</exemplarCity>
+			</zone>
+			<zone type="Europe/Chisinau">
+				<exemplarCity>ܟܝܣܝܢܐܘ</exemplarCity>
+			</zone>
+			<zone type="Europe/Podgorica">
+				<exemplarCity>ܦܘܕܓܘܪܝܟܐ</exemplarCity>
+			</zone>
+			<zone type="America/Marigot">
+				<exemplarCity>ܡܪܝܓܘܬ</exemplarCity>
+			</zone>
+			<zone type="Indian/Antananarivo">
+				<exemplarCity>ܐܢܬܐܢܐܢܪܝܒܘ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Kwajalein">
+				<exemplarCity>ܟܘܐܓܐܠܝܢ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Majuro">
+				<exemplarCity>ܡܐܓܘܪܘ</exemplarCity>
+			</zone>
+			<zone type="Europe/Skopje">
+				<exemplarCity>ܣܩܘܦܝܐ</exemplarCity>
+			</zone>
+			<zone type="Africa/Bamako">
+				<exemplarCity>ܒܐܡܐܟܘ</exemplarCity>
+			</zone>
+			<zone type="Asia/Rangoon">
+				<exemplarCity>ܝܢܓܘܢ</exemplarCity>
+			</zone>
+			<zone type="Asia/Hovd">
+				<exemplarCity>ܗܘܒܕ</exemplarCity>
+			</zone>
+			<zone type="Asia/Ulaanbaatar">
+				<exemplarCity>ܐܘܠܐܢܒܐܬܘܪ</exemplarCity>
+			</zone>
+			<zone type="Asia/Choibalsan">
+				<exemplarCity>ܟܘܝܒܠܣܢ</exemplarCity>
+			</zone>
+			<zone type="Asia/Macau">
+				<exemplarCity>ܡܐܟܐܘ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Saipan">
+				<exemplarCity>ܣܐܝܦܐܢ</exemplarCity>
+			</zone>
+			<zone type="America/Martinique">
+				<exemplarCity>ܡܐܪܬܝܢܝܩ</exemplarCity>
+			</zone>
+			<zone type="Africa/Nouakchott">
+				<exemplarCity>ܢܘܐܟܫܘܬ</exemplarCity>
+			</zone>
+			<zone type="America/Montserrat">
+				<exemplarCity>ܡܘܢܬܣܝܪܐܬ</exemplarCity>
+			</zone>
+			<zone type="Europe/Malta">
+				<exemplarCity>ܡܝܠܛܐ</exemplarCity>
+			</zone>
+			<zone type="Indian/Mauritius">
+				<exemplarCity>ܡܘܪܝܫܘܣ</exemplarCity>
+			</zone>
+			<zone type="Indian/Maldives">
+				<exemplarCity>ܓܙܪܬܐ ܡܐܠܕܝܒܝܬܐ</exemplarCity>
+			</zone>
+			<zone type="Africa/Blantyre">
+				<exemplarCity>ܒܠܢܬܝܪ</exemplarCity>
+			</zone>
+			<zone type="America/Tijuana">
+				<exemplarCity>ܬܝܐܘܐܢܐ</exemplarCity>
+			</zone>
+			<zone type="America/Hermosillo">
+				<exemplarCity>ܗܝܪܡܘܣܝܐ</exemplarCity>
+			</zone>
+			<zone type="America/Ciudad_Juarez">
+				<exemplarCity>ܣܝܘܕܐܕ ܐܘܪܝܙ</exemplarCity>
+			</zone>
+			<zone type="America/Mazatlan">
+				<exemplarCity>ܡܙܛܠܐܢ</exemplarCity>
+			</zone>
+			<zone type="America/Chihuahua">
+				<exemplarCity>ܟܝܘܐܘܐ</exemplarCity>
+			</zone>
+			<zone type="America/Bahia_Banderas">
+				<exemplarCity>ܒܐܗܝܐ ܒܐܢܝܪܣ</exemplarCity>
+			</zone>
+			<zone type="America/Ojinaga">
+				<exemplarCity>ܘܓܝܢܐܓܐ</exemplarCity>
+			</zone>
+			<zone type="America/Monterrey">
+				<exemplarCity>ܡܘܢܛܪܐܝ</exemplarCity>
+			</zone>
+			<zone type="America/Mexico_City">
+				<exemplarCity>ܡܕܝܢܬܐ ܕܡܟܣܝܟܘ</exemplarCity>
+			</zone>
+			<zone type="America/Matamoros">
+				<exemplarCity>ܡܐܬܐܡܘܪܘܣ</exemplarCity>
+			</zone>
+			<zone type="America/Merida">
+				<exemplarCity>ܡܪܝܕܐ</exemplarCity>
+			</zone>
+			<zone type="America/Cancun">
+				<exemplarCity>ܟܐܢܟܘܢ</exemplarCity>
+			</zone>
+			<zone type="Asia/Kuala_Lumpur">
+				<exemplarCity>ܟܘܐܠܐ ܠܘܡܦܘܪ</exemplarCity>
+			</zone>
+			<zone type="Asia/Kuching">
+				<exemplarCity>ܟܘܫܝܢܓ</exemplarCity>
+			</zone>
+			<zone type="Africa/Maputo">
+				<exemplarCity>ܡܐܦܘܬܘ</exemplarCity>
+			</zone>
+			<zone type="Africa/Windhoek">
+				<exemplarCity>ܘܝܢܕܗܘܟ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Noumea">
+				<exemplarCity>ܢܘܡܝܐ</exemplarCity>
+			</zone>
+			<zone type="Africa/Niamey">
+				<exemplarCity>ܢܝܐܡܝ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Norfolk">
+				<exemplarCity>ܢܘܪܦܠܟ</exemplarCity>
+			</zone>
+			<zone type="Africa/Lagos">
+				<exemplarCity>ܠܐܓܘܣ</exemplarCity>
+			</zone>
+			<zone type="America/Managua">
+				<exemplarCity>ܡܐܢܐܓܘܐ</exemplarCity>
+			</zone>
+			<zone type="Europe/Amsterdam">
+				<exemplarCity>ܐܡܣܬܪܕܡ</exemplarCity>
+			</zone>
+			<zone type="Europe/Oslo">
+				<exemplarCity>ܐܘܣܠܘ</exemplarCity>
+			</zone>
+			<zone type="Asia/Katmandu">
+				<exemplarCity>ܟܐܬܡܐܢܕܘ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Nauru">
+				<exemplarCity>ܢܐܘܪܘ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Niue">
+				<exemplarCity>ܢܝܘܝ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Chatham">
+				<exemplarCity>ܬܫܐܬܡ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Auckland">
+				<exemplarCity>ܐܟܠܐܢܕ</exemplarCity>
+			</zone>
+			<zone type="Asia/Muscat">
+				<exemplarCity>ܡܣܩܛ</exemplarCity>
+			</zone>
+			<zone type="America/Panama">
+				<exemplarCity>ܦܢܡܐ</exemplarCity>
+			</zone>
+			<zone type="America/Lima">
+				<exemplarCity>ܠܝܡܐ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Tahiti">
+				<exemplarCity>ܬܐܗܝܬܝ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Marquesas">
+				<exemplarCity>ܡܐܪܟܐܘܣܐܣ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Gambier">
+				<exemplarCity>ܓܡܒܝܪ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Port_Moresby">
+				<exemplarCity>ܦܘܪܬ ܡܘܪܝܣܒܐܝ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Bougainville">
+				<exemplarCity>ܒܘܓܐܝܢܒܝܠ</exemplarCity>
+			</zone>
+			<zone type="Asia/Manila">
+				<exemplarCity>ܡܐܢܝܠܐ</exemplarCity>
+			</zone>
+			<zone type="Asia/Karachi">
+				<exemplarCity>ܟܪܐܟܝ</exemplarCity>
+			</zone>
+			<zone type="Europe/Warsaw">
+				<exemplarCity>ܘܐܪܣܘ</exemplarCity>
+			</zone>
+			<zone type="America/Miquelon">
+				<exemplarCity>ܡܩܘܠܘܢ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Pitcairn">
+				<exemplarCity>ܦܝܬܟܐܝܪܢ</exemplarCity>
+			</zone>
+			<zone type="America/Puerto_Rico">
+				<exemplarCity>ܦܘܪܬܘ ܪܝܟܘ</exemplarCity>
+			</zone>
+			<zone type="Asia/Gaza">
+				<exemplarCity>ܥܙܐ</exemplarCity>
+			</zone>
+			<zone type="Asia/Hebron">
+				<exemplarCity>ܚܒܪܘܢ</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Azores">
+				<exemplarCity>ܓܙܪܬܐ ܕܐܙܘܪ</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Madeira">
+				<exemplarCity>ܡܕܐܝܪܐ</exemplarCity>
+			</zone>
+			<zone type="Europe/Lisbon">
+				<exemplarCity>ܠܫܒܘܢܐ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Palau">
+				<exemplarCity>ܦܠܐܘ</exemplarCity>
+			</zone>
+			<zone type="America/Asuncion">
+				<exemplarCity>ܐܣܘܢܟܣܝܘܢ</exemplarCity>
+			</zone>
+			<zone type="Asia/Qatar">
+				<exemplarCity>ܩܛܪ</exemplarCity>
+			</zone>
+			<zone type="Indian/Reunion">
+				<exemplarCity>ܪܝܘܢܝܘܢ</exemplarCity>
+			</zone>
+			<zone type="Europe/Bucharest">
+				<exemplarCity>ܒܘܩܘܪܫܛ</exemplarCity>
+			</zone>
+			<zone type="Europe/Belgrade">
+				<exemplarCity>ܒܠܓܪܕ</exemplarCity>
+			</zone>
+			<zone type="Europe/Kaliningrad">
+				<exemplarCity>ܟܐܠܝܢܝܢܓܪܐܕ</exemplarCity>
+			</zone>
+			<zone type="Europe/Moscow">
+				<exemplarCity>ܡܘܣܟܘ</exemplarCity>
+			</zone>
+			<zone type="Europe/Volgograd">
+				<exemplarCity>ܒܘܠܓܘܓܪܐܕ</exemplarCity>
+			</zone>
+			<zone type="Europe/Saratov">
+				<exemplarCity>ܣܪܐܬܘܒ</exemplarCity>
+			</zone>
+			<zone type="Europe/Astrakhan">
+				<exemplarCity>ܐܣܬܪܐܚܢ</exemplarCity>
+			</zone>
+			<zone type="Europe/Ulyanovsk">
+				<exemplarCity>ܐܘܠܝܢܘܒܣܟ</exemplarCity>
+			</zone>
+			<zone type="Europe/Kirov">
+				<exemplarCity>ܟܝܪܘܒ</exemplarCity>
+			</zone>
+			<zone type="Europe/Samara">
+				<exemplarCity>ܣܡܐܪܐ</exemplarCity>
+			</zone>
+			<zone type="Asia/Yekaterinburg">
+				<exemplarCity>ܝܟܐܬܝܪܢܒܝܪܓ</exemplarCity>
+			</zone>
+			<zone type="Asia/Omsk">
+				<exemplarCity>ܐܘܡܣܟ</exemplarCity>
+			</zone>
+			<zone type="Asia/Novosibirsk">
+				<exemplarCity>ܢܘܒܘܣܝܒܪܣܟ</exemplarCity>
+			</zone>
+			<zone type="Asia/Barnaul">
+				<exemplarCity>ܒܐܪܢܐܘܠ</exemplarCity>
+			</zone>
+			<zone type="Asia/Tomsk">
+				<exemplarCity>ܬܘܡܣܟ</exemplarCity>
+			</zone>
+			<zone type="Asia/Novokuznetsk">
+				<exemplarCity>ܢܘܒܘܟܘܙܢܝܬܣܟ</exemplarCity>
+			</zone>
+			<zone type="Asia/Krasnoyarsk">
+				<exemplarCity>ܟܪܐܣܢܘܝܪܣܟ</exemplarCity>
+			</zone>
+			<zone type="Asia/Irkutsk">
+				<exemplarCity>ܐܝܪܟܘܬܣܟ</exemplarCity>
+			</zone>
+			<zone type="Asia/Chita">
+				<exemplarCity>ܬܫܝܬܐ</exemplarCity>
+			</zone>
+			<zone type="Asia/Yakutsk">
+				<exemplarCity>ܝܐܟܘܬܣܟ</exemplarCity>
+			</zone>
+			<zone type="Asia/Vladivostok">
+				<exemplarCity>ܒܠܐܕܝܒܘܣܬܘܟ</exemplarCity>
+			</zone>
+			<zone type="Asia/Khandyga">
+				<exemplarCity>ܚܐܢܕܝܓܐ</exemplarCity>
+			</zone>
+			<zone type="Asia/Sakhalin">
+				<exemplarCity>ܣܐܚܐܠܝܢ</exemplarCity>
+			</zone>
+			<zone type="Asia/Ust-Nera">
+				<exemplarCity>ܐܘܣܬ-ܢܝܪܐ</exemplarCity>
+			</zone>
+			<zone type="Asia/Magadan">
+				<exemplarCity>ܡܐܓܐܕܐܢ</exemplarCity>
+			</zone>
+			<zone type="Asia/Srednekolymsk">
+				<exemplarCity>ܣܪܝܕܢܝܟܘܠܝܡܣܟ</exemplarCity>
+			</zone>
+			<zone type="Asia/Kamchatka">
+				<exemplarCity>ܟܐܡܬܫܐܬܟܐ</exemplarCity>
+			</zone>
+			<zone type="Asia/Anadyr">
+				<exemplarCity>ܐܢܐܕܝܪ</exemplarCity>
+			</zone>
+			<zone type="Africa/Kigali">
+				<exemplarCity>ܟܝܓܐܠܝ</exemplarCity>
+			</zone>
+			<zone type="Asia/Riyadh">
+				<exemplarCity>ܪܝܐܕ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Guadalcanal">
+				<exemplarCity>ܓܘܐܕܐܠܟܐܢܐܠ</exemplarCity>
+			</zone>
+			<zone type="Indian/Mahe">
+				<exemplarCity>ܡܐܗܝ</exemplarCity>
+			</zone>
+			<zone type="Africa/Khartoum">
+				<exemplarCity>ܚܪܛܘܡ</exemplarCity>
+			</zone>
+			<zone type="Europe/Stockholm">
+				<exemplarCity>ܣܬܘܟܗܘܠܡ</exemplarCity>
+			</zone>
+			<zone type="Asia/Singapore">
+				<exemplarCity>ܣܝܢܓܐܦܘܪ</exemplarCity>
+			</zone>
+			<zone type="Atlantic/St_Helena">
+				<exemplarCity>ܡܪܬܝ ܗܝܠܝܢܐ</exemplarCity>
+			</zone>
+			<zone type="Europe/Ljubljana">
+				<exemplarCity>ܠܝܘܒܠܝܐܢܐ</exemplarCity>
+			</zone>
+			<zone type="Arctic/Longyearbyen">
+				<exemplarCity>ܠܘܢܓܝܥܪܒܝܝܢ</exemplarCity>
+			</zone>
+			<zone type="Europe/Bratislava">
+				<exemplarCity>ܒܪܬܝܣܠܒܐ‏</exemplarCity>
+			</zone>
+			<zone type="Africa/Freetown">
+				<exemplarCity>ܦܪܝܬܐܘܢ</exemplarCity>
+			</zone>
+			<zone type="Europe/San_Marino">
+				<exemplarCity>ܣܢ ܡܪܝܢܘ</exemplarCity>
+			</zone>
+			<zone type="Africa/Dakar">
+				<exemplarCity>ܕܐܟܐܪ</exemplarCity>
+			</zone>
+			<zone type="Africa/Mogadishu">
+				<exemplarCity>ܡܘܩܕܝܫܘ</exemplarCity>
+			</zone>
+			<zone type="America/Paramaribo">
+				<exemplarCity>ܦܐܪܐܡܐܪܝܒܘ</exemplarCity>
+			</zone>
+			<zone type="Africa/Juba">
+				<exemplarCity>ܓܘܒܐ</exemplarCity>
+			</zone>
+			<zone type="Africa/Sao_Tome">
+				<exemplarCity>ܣܐܘ ܬܘܡܝ</exemplarCity>
+			</zone>
+			<zone type="America/El_Salvador">
+				<exemplarCity>ܐܠ ܣܠܒܐܕܘܪ</exemplarCity>
+			</zone>
+			<zone type="America/Lower_Princes">
+				<exemplarCity>ܪܘܒ݂ܥܐ ܕܫܠܝܛܐ ܬܚܬܝܐ</exemplarCity>
+			</zone>
+			<zone type="Asia/Damascus">
+				<exemplarCity>ܕܪܡܣܘܩ</exemplarCity>
+			</zone>
+			<zone type="Africa/Mbabane">
+				<exemplarCity>ܡܒܐܒܐܢܝ</exemplarCity>
+			</zone>
+			<zone type="America/Grand_Turk">
+				<exemplarCity>ܓܪܐܢܕ ܬܘܪܟ</exemplarCity>
+			</zone>
+			<zone type="Africa/Ndjamena">
+				<exemplarCity>ܢܓܡܝܢܐ</exemplarCity>
+			</zone>
+			<zone type="Indian/Kerguelen">
+				<exemplarCity>ܟܝܪܓܘܠܝܢ</exemplarCity>
+			</zone>
+			<zone type="Africa/Lome">
+				<exemplarCity>ܠܘܡܝ</exemplarCity>
+			</zone>
+			<zone type="Asia/Bangkok">
+				<exemplarCity>ܒܐܢܟܘܟ</exemplarCity>
+			</zone>
+			<zone type="Asia/Dushanbe">
+				<exemplarCity>ܕܘܫܐܢܒܝ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Fakaofo">
+				<exemplarCity>ܦܐܟܐܘܦܘ</exemplarCity>
+			</zone>
+			<zone type="Asia/Dili">
+				<exemplarCity>ܕܝܠܝ</exemplarCity>
+			</zone>
+			<zone type="Asia/Ashgabat">
+				<exemplarCity>ܥܫܩܐܒܐܕ</exemplarCity>
+			</zone>
+			<zone type="Africa/Tunis">
+				<exemplarCity>ܬܘܢܣ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Tongatapu">
+				<exemplarCity>ܬܘܢܓܐܬܐܦܘ</exemplarCity>
+			</zone>
+			<zone type="Europe/Istanbul">
+				<exemplarCity>ܐܣܛܢܒܘܠ</exemplarCity>
+			</zone>
+			<zone type="America/Port_of_Spain">
+				<exemplarCity>ܦܘܪܬ ܕܐܣܦܢܝܐ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Funafuti">
+				<exemplarCity>ܦܘܢܐܦܘܬܝ</exemplarCity>
+			</zone>
+			<zone type="Asia/Taipei">
+				<exemplarCity>ܬܐܝܦܐܝ</exemplarCity>
+			</zone>
+			<zone type="Africa/Dar_es_Salaam">
+				<exemplarCity>ܕܐܪ ܫܠܡܐ</exemplarCity>
+			</zone>
+			<zone type="Europe/Kiev">
+				<exemplarCity>ܟܝܝܒ</exemplarCity>
+			</zone>
+			<zone type="Europe/Simferopol">
+				<exemplarCity>ܣܡܦܪܘܦܠ</exemplarCity>
+			</zone>
+			<zone type="Africa/Kampala">
+				<exemplarCity>ܟܐܡܦܐܠܐ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Midway">
+				<exemplarCity>ܡܝܕܘܐܝ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Wake">
+				<exemplarCity>ܘܐܝܟ</exemplarCity>
+			</zone>
+			<zone type="America/Adak">
+				<exemplarCity>ܐܕܐܟ</exemplarCity>
+			</zone>
+			<zone type="America/Nome">
+				<exemplarCity>ܢܘܡ</exemplarCity>
+			</zone>
+			<zone type="America/Anchorage">
+				<exemplarCity>ܐܢܟܘܪܓ</exemplarCity>
+			</zone>
+			<zone type="America/Yakutat">
+				<exemplarCity>ܝܩܘܬܐܬ</exemplarCity>
+			</zone>
+			<zone type="America/Sitka">
+				<exemplarCity>ܣܝܛܟܐ</exemplarCity>
+			</zone>
+			<zone type="America/Juneau">
+				<exemplarCity>ܓܘܢܘ</exemplarCity>
+			</zone>
+			<zone type="America/Metlakatla">
+				<exemplarCity>ܡܛܠܟܐܬܠܐ</exemplarCity>
+			</zone>
+			<zone type="America/Los_Angeles">
+				<exemplarCity>ܠܘܣ ܐܢܓܠܘܣ</exemplarCity>
+			</zone>
+			<zone type="America/Boise">
+				<exemplarCity>ܒܘܝܙܝ</exemplarCity>
+			</zone>
+			<zone type="America/Phoenix">
+				<exemplarCity>ܦܝܢܝܟܣ</exemplarCity>
+			</zone>
+			<zone type="America/Denver">
+				<exemplarCity>ܕܢܒܪ</exemplarCity>
+			</zone>
+			<zone type="America/North_Dakota/Beulah">
+				<exemplarCity>ܒܝܘܠܐ، ܕܐܟܘܬܐ ܓܪܒܝܝܬܐ</exemplarCity>
+			</zone>
+			<zone type="America/North_Dakota/New_Salem">
+				<exemplarCity>ܢܝܘ ܣܐܠܝܡ،‌ ܕܐܟܘܬܐ ܓܪܒܝܝܬܐ</exemplarCity>
+			</zone>
+			<zone type="America/North_Dakota/Center">
+				<exemplarCity>ܣܝܢܬܪ، ܕܐܟܘܬܐ ܓܪܒܝܝܬܐ</exemplarCity>
+			</zone>
+			<zone type="America/Chicago">
+				<exemplarCity>ܫܟܓܘ</exemplarCity>
+			</zone>
+			<zone type="America/Menominee">
+				<exemplarCity>ܡܢܘܡܝܢܝ</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Vincennes">
+				<exemplarCity>ܒܝܢܣܝܢܝܣ، ܐܢܕܝܐܢܐ</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Petersburg">
+				<exemplarCity>ܦܝܬܝܪܣܒܝܪܓ، ܐܢܕܝܐܢܐ</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Tell_City">
+				<exemplarCity>ܡܢܕܝܬܐ ܕܬܝܠ، ܐܢܕܝܐܢܐ</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Knox">
+				<exemplarCity>ܢܘܟܣ، ܐܢܕܝܐܢܐ</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Winamac">
+				<exemplarCity>ܘܝܢܐܡܐܟ، ܐܢܕܝܐܢܐ</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Marengo">
+				<exemplarCity>ܡܪܝܢܓܘ، ܐܢܕܝܐܢܐ</exemplarCity>
+			</zone>
+			<zone type="America/Indianapolis">
+				<exemplarCity>ܐܢܕܝܐܢܐܦܘܠܝܣ</exemplarCity>
+			</zone>
+			<zone type="America/Louisville">
+				<exemplarCity>ܠܘܝܣܒܝܠ</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Vevay">
+				<exemplarCity>ܒܝܒܐܝ، ܐܢܕܝܐܢܐ</exemplarCity>
+			</zone>
+			<zone type="America/Kentucky/Monticello">
+				<exemplarCity>ܡܘܢܬܐܟܝܠܘ، ܟܝܢܬܐܟܝ</exemplarCity>
+			</zone>
+			<zone type="America/Detroit">
+				<exemplarCity>ܕܝܬܪܘܝܬ</exemplarCity>
+			</zone>
+			<zone type="America/New_York">
+				<exemplarCity>ܢܝܘ ܝܘܪܟ</exemplarCity>
+			</zone>
+			<zone type="America/Montevideo">
+				<exemplarCity>ܡܘܢܬܝܒܝܕܝܘ</exemplarCity>
+			</zone>
+			<zone type="Asia/Samarkand">
+				<exemplarCity>ܣܡܪܟܢܕ</exemplarCity>
+			</zone>
+			<zone type="Asia/Tashkent">
+				<exemplarCity>ܬܫܟܝܢܬ</exemplarCity>
+			</zone>
+			<zone type="Europe/Vatican">
+				<exemplarCity>ܘܐܬܝܩܐܢ</exemplarCity>
+			</zone>
+			<zone type="America/St_Vincent">
+				<exemplarCity>ܡܪ ܒܢܣܢܬ</exemplarCity>
+			</zone>
+			<zone type="America/Caracas">
+				<exemplarCity>ܟܐܪܐܟܣ</exemplarCity>
+			</zone>
+			<zone type="America/Tortola">
+				<exemplarCity>ܬܘܪܬܘܠܐ</exemplarCity>
+			</zone>
+			<zone type="America/St_Thomas">
+				<exemplarCity>ܡܪ ܬܐܘܡܐ</exemplarCity>
+			</zone>
+			<zone type="Asia/Saigon">
+				<exemplarCity>ܡܕܝܢܬܐ ܕܗܘ ܟܝ ܡܝܢ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Efate">
+				<exemplarCity>ܝܦܐܬ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Wallis">
+				<exemplarCity>ܘܝܠܝܣ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Apia">
+				<exemplarCity>ܐܦܝܐ</exemplarCity>
+			</zone>
+			<zone type="Asia/Aden">
+				<exemplarCity>ܥܕܢ</exemplarCity>
+			</zone>
+			<zone type="Indian/Mayotte">
+				<exemplarCity>ܡܐܝܘܬ</exemplarCity>
+			</zone>
+			<zone type="Africa/Johannesburg">
+				<exemplarCity>ܝܘܗܢܝܣܒܘܪܓ</exemplarCity>
+			</zone>
+			<zone type="Africa/Lusaka">
+				<exemplarCity>ܠܘܣܐܟܐ</exemplarCity>
+			</zone>
+			<zone type="Africa/Harare">
+				<exemplarCity>ܗܪܐܪܝ</exemplarCity>
+			</zone>
+			<metazone type="Acre">
+				<long>
+					<generic>ܥܕܢܘܬܐ ܕܐܝܟܝܪ</generic>
+					<standard>ܥܕܢܘܬܐ ܫܪܫܝܬܐ ܥܕܢܘܬܐ ܫܪܫܝܬܐ ܕܐܝܟܝܪ</standard>
+					<daylight>ܥܕܢܘܬܐ ܩܝܬܝܬܐ ܕܐܝܟܝܪ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Afghanistan">
+				<long>
+					<standard>ܥܕܢܐ ܕܐܦܓܐܢܣܬܐܢ</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Central">
+				<long>
+					<standard>ܥܕܢܐ ܕܡܨܥܝܬܐ ܐܦܪܝܩܐ</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Eastern">
+				<long>
+					<standard>ܥܕܢܐ ܕܡܕܢܚ ܐܦܪܝܩܐ</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Southern">
+				<long>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܬܝܡܢ ܐܦܪܝܩܐ</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Western">
+				<long>
+					<generic>ܥܕܢܐ ܕܡܥܪܒ ܐܦܪܝܩܐ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܡܥܪܒ ܐܦܪܝܩܐ</standard>
+					<daylight>ܥܕܢܐ ܩܝܬܝܬܐ ܕܡܥܪܒ ܐܦܪܝܩܐ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Alaska">
+				<long>
+					<generic>ܥܕܢܐ ܕܐܠܐܣܟܐ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܐܠܐܣܟܐ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܐܠܐܣܟܐ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Almaty">
+				<long>
+					<generic>ܥܕܢܐ ܕܐܠܡܐܬܝ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܐܠܡܐܬܝ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܐܠܡܐܬܝ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Amazon">
+				<long>
+					<generic>ܥܕܢܐ ܕܐܡܙܢ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܐܡܙܢ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܐܡܙܢ</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Central">
+				<long>
+					<generic>ܥܕܢܐ ܡܨܥܝܬܐ ܕܐܡܪܝܟܐ ܓܪܒܝܝܬܐ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܡܨܥܝܬܐ ܕܐܡܪܝܟܐ ܓܪܒܝܝܬܐ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܡܨܥܝܬܐ ܕܐܡܪܝܟܐ ܓܪܒܝܝܬܐ</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Eastern">
+				<long>
+					<generic>ܥܕܢܐ ܡܕܢܚܝܬܐ ܕܐܡܪܝܟܐ ܓܪܒܝܝܬܐ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܡܕܢܚܝܬܐ ܕܐܡܪܝܟܐ ܓܪܒܝܝܬܐ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܡܕܢܚܝܬܐ ܕܐܡܪܝܟܐ ܓܪܒܝܝܬܐ</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Mountain">
+				<long>
+					<generic>ܥܕܢܐ ܛܘܪܝܬܐ ܕܐܡܪܝܟܐ ܓܪܒܝܝܬܐ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܛܘܪܝܬܐ ܕܐܡܪܝܟܐ ܓܪܒܝܝܬܐ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܛܘܪܝܬܐ ܕܐܡܪܝܟܐ ܓܪܒܝܝܬܐ</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Pacific">
+				<long>
+					<generic>ܥܕܢܐ ܫܝܢܝܬܐ ܕܐܡܪܝܟܐ ܓܪܒܝܝܬܐ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܫܝܢܝܬܐ ܕܐܡܪܝܟܐ ܓܪܒܝܝܬܐ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܫܝܢܝܬܐ ܕܐܡܪܝܟܐ ܓܪܒܝܝܬܐ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Anadyr">
+				<long>
+					<generic>ܥܕܢܐ ܕܐܢܐܕܝܪ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܐܢܐܕܝܪ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܐܢܐܕܝܪ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Apia">
+				<long>
+					<generic>ܥܕܢܐ ܕܐܦܝܐ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܐܦܝܐ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܐܦܝܐ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Aqtau">
+				<long>
+					<generic>ܥܕܢܐ ܐܟܬܐܘ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܐܟܬܐܘ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܐܟܬܐܘ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Aqtobe">
+				<long>
+					<generic>ܥܕܢܐ ܕܐܟܬܘܒ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܐܟܬܘܒ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܐܟܬܘܒ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Arabian">
+				<long>
+					<generic draft="unconfirmed">ܥܕܢܐ ܕܐܪܒܝܐ</generic>
+					<standard draft="unconfirmed">ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܐܪܒܝܐ</standard>
+					<daylight draft="unconfirmed">ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܐܪܒܝܐ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Argentina">
+				<long>
+					<generic>ܥܕܢܐ ܕܐܪܓܢܬܝܢܐ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܐܪܓܢܬܝܢܐ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܐܪܓܢܬܝܢܐ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Argentina_Western">
+				<long>
+					<generic>ܥܕܢܐ ܕܐܪܓܢܬܝܢܐ ܡܥܪܒܝܬܐ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܐܪܓܢܬܝܢܐ ܡܥܪܒܝܬܐ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܐܪܓܢܬܝܢܐ ܡܥܪܒܝܬܐ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Armenia">
+				<long>
+					<generic>ܥܕܢܐ ܕܐܪܡܢܝܐ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܐܪܡܢܝܐ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܐܪܡܢܝܐ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Atlantic">
+				<long>
+					<generic>ܥܕܢܐ ܐܛܠܢܛܝܬܐ ܕܐܡܪܝܟܐ ܓܪܒܝܝܬܐ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܐܛܠܢܛܝܬܐ ܕܐܡܪܝܟܐ ܓܪܒܝܝܬܐ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܐܛܠܢܛܝܬܐ ܕܐܡܪܝܟܐ ܓܪܒܝܝܬܐ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_Central">
+				<long>
+					<generic>ܥܕܢܐ ܕܐܘܣܬܪܠܝܐ ܡܨܥܝܬܐ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܐܘܣܬܪܠܝܐ ܡܨܥܝܬܐ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܐܘܣܬܪܠܝܐ ܡܨܥܝܬܐ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_CentralWestern">
+				<long>
+					<generic>ܥܕܢܐ ܡܥܪܒܝܬܐ ܡܨܥܝܬܐ ܕܐܘܣܬܪܠܝܐ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܡܥܪܒܝܬܐ ܡܨܥܝܬܐ ܕܐܘܣܬܪܠܝܐ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܡܥܪܒܝܬܐ ܡܨܥܝܬܐ ܕܐܘܣܬܪܠܝܐ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_Eastern">
+				<long>
+					<generic>ܥܕܢܐ ܕܐܘܣܬܪܠܝܐ ܡܕܢܚܝܬܐ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܐܘܣܬܪܠܝܐ ܡܕܢܚܝܬܐ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܐܘܣܬܪܠܝܐ ܡܕܢܚܝܬܐ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_Western">
+				<long>
+					<generic>ܥܕܢܐ ܕܐܘܣܬܪܠܝܐ ܡܥܪܒܝܬܐ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܐܘܣܬܪܠܝܐ ܡܥܪܒܝܬܐ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܐܘܣܬܪܠܝܐ ܡܥܪܒܝܬܐ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Azerbaijan">
+				<long>
+					<generic>ܥܕܢܐ ܕܐܙܪܒܝܓܐܢ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܐܙܪܒܝܓܐܢ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܐܙܪܒܝܓܐܢ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Azores">
+				<long>
+					<generic>ܥܕܢܐ ܕܐܙܘܪ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܐܙܘܪ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܐܙܘܪ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Bangladesh">
+				<long>
+					<generic>ܥܕܢܐ ܕܒܢܓܠܐܕܝܫ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܒܢܓܠܐܕܝܫ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܒܢܓܠܐܕܝܫ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Bhutan">
+				<long>
+					<standard>ܥܕܢܐ ܕܒܘܬܐܢ</standard>
+				</long>
+			</metazone>
+			<metazone type="Bolivia">
+				<long>
+					<standard>ܥܕܢܐ ܕܒܘܠܝܒܝܐ</standard>
+				</long>
+			</metazone>
+			<metazone type="Brasilia">
+				<long>
+					<generic>ܥܕܢܐ ܕܒܪܐܣܝܠܝܐ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܒܪܐܣܝܠܝܐ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܒܪܐܣܝܠܝܐ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Brunei">
+				<long>
+					<standard>ܥܕܢܐ ܕܒܪܘܢܐܝ ܕܐܪܘܣܐܠܡ</standard>
+				</long>
+			</metazone>
+			<metazone type="Cape_Verde">
+				<long>
+					<generic>ܥܕܢܐ ܕܟܐܦ ܒܝܪܕܝ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܟܐܦ ܒܝܪܕܝ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܟܐܦ ܒܝܪܕܝ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Casey">
+				<long>
+					<standard>ܥܕܢܐ ܕܟܐܝܣܝ</standard>
+				</long>
+			</metazone>
+			<metazone type="Chamorro">
+				<long>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܬܫܐܡܘܪܘ</standard>
+				</long>
+			</metazone>
+			<metazone type="Chatham">
+				<long>
+					<generic>ܥܕܢܐ ܕܬܫܐܬܡ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܬܫܐܬܡ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܬܫܐܬܡ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Chile">
+				<long>
+					<generic>ܥܕܢܐ ܕܬܫܝܠܝ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܬܫܝܠܝ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܬܫܝܠܝ</daylight>
+				</long>
+			</metazone>
+			<metazone type="China">
+				<long>
+					<generic>ܥܕܢܐ ܕܨܝܢ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܨܝܢ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܨܝܢ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Choibalsan">
+				<long>
+					<generic>ܥܕܢܐ ܕܟܘܝܒܠܣܢ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܟܘܝܒܠܣܢ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܟܘܝܒܠܣܢ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Christmas">
+				<long>
+					<standard>ܥܕܢܐ ܕܓܙܪܬܐ ܕܟܪܝܣܬܡܣ</standard>
+				</long>
+			</metazone>
+			<metazone type="Cocos">
+				<long>
+					<standard>ܥܕܢܐ ܕܓܙܝܖ̈ܐ ܕܟܘܟܘܣ</standard>
+				</long>
+			</metazone>
+			<metazone type="Colombia">
+				<long>
+					<generic>ܥܕܢܐ ܕܟܘܠܘܡܒܝܐ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܟܘܠܘܡܒܝܐ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܟܘܠܘܡܒܝܐ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Cook">
+				<long>
+					<generic>ܥܕܢܐ ܓܙܝܪ̈ܐ ܕܟܘܟ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܓܙܝܪ̈ܐ ܕܟܘܟ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܓܙܝܪ̈ܐ ܕܟܘܟ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Cuba">
+				<long>
+					<generic>ܥܕܢܐ ܕܟܘܒܐ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܟܘܒܐ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܟܘܒܐ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Davis">
+				<long>
+					<standard>ܥܕܢܐ ܕܕܒܝܣ</standard>
+				</long>
+			</metazone>
+			<metazone type="DumontDUrville">
+				<long>
+					<standard>ܥܕܢܐ ܕܕܘܡܘܢܬ ܕܐܘܪܒܝܠ</standard>
+				</long>
+			</metazone>
+			<metazone type="East_Timor">
+				<long>
+					<standard>ܥܕܢܐ ܕܡܕܢܚ ܬܝܡܘܪ</standard>
+				</long>
+			</metazone>
+			<metazone type="Easter">
+				<long>
+					<generic>ܥܕܢܐ ܕܓܙܪܬܐ ܦܨܚܐ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܓܙܪܬܐ ܦܨܚܐ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܓܙܪܬܐ ܦܨܚܐ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Ecuador">
+				<long>
+					<standard>ܥܕܢܐ ܕܐܩܘܐܕܘܪ</standard>
+				</long>
+			</metazone>
+			<metazone type="Europe_Central">
+				<long>
+					<generic>ܥܕܢܐ ܕܐܘܪܘܦܐ ܡܨܥܝܬܐ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܐܘܪܘܦܐ ܡܨܥܝܬܐ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܐܘܪܘܦܐ ܡܨܥܝܬܐ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Europe_Eastern">
+				<long>
+					<generic>ܥܕܢܐ ܕܐܘܪܘܦܐ ܡܕܢܚܝܬܐ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܐܘܪܘܦܐ ܡܕܢܚܝܬܐ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܐܘܪܘܦܐ ܡܕܢܚܝܬܐ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Europe_Further_Eastern">
+				<long>
+					<standard>ܥܕܢܐ ܕܐܘܪܘܦܐ (ܗܡ ܡܕܢܚܐ)</standard>
+				</long>
+			</metazone>
+			<metazone type="Europe_Western">
+				<long>
+					<generic>ܥܕܢܐ ܕܐܘܪܘܦܐ ܡܥܪܒܝܬܐ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܐܘܪܘܦܐ ܡܥܪܒܝܬܐ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܐܘܪܘܦܐ ܡܥܪܒܝܬܐ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Falkland">
+				<long>
+					<generic>ܥܕܢܐ ܕܓܙܝܪ̈ܐ ܕܦܠܟܠܢܕ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܓܙܝܪ̈ܐ ܕܦܠܟܠܢܕ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܓܙܝܪ̈ܐ ܕܦܠܟܠܢܕ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Fiji">
+				<long>
+					<generic>ܥܕܢܐ ܕܦܝܓܝ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܦܝܓܝ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܦܝܓܝ</daylight>
+				</long>
+			</metazone>
+			<metazone type="French_Guiana">
+				<long>
+					<standard>ܥܕܢܐ ܕܓܘܝܐܢܐ ܦܪܢܣܝܬܐ</standard>
+				</long>
+			</metazone>
+			<metazone type="French_Southern">
+				<long>
+					<standard>ܥܕܢܐ ܕܦܪܢܣܐ ܬܝܡܢܝܬܐ ܘܐܢܬܪܬܝܟܐ</standard>
+				</long>
+			</metazone>
+			<metazone type="Galapagos">
+				<long>
+					<standard>ܥܕܢܐ ܕܓܐܠܦܐܓܘܣ</standard>
+				</long>
+			</metazone>
+			<metazone type="Gambier">
+				<long>
+					<standard>ܥܕܢܐ ܕܓܡܒܝܪ</standard>
+				</long>
+			</metazone>
+			<metazone type="Georgia">
+				<long>
+					<generic>ܥܕܢܐ ܕܓܘܪܓܝܐ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܓܘܪܓܝܐ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܓܘܪܓܝܐ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Gilbert_Islands">
+				<long>
+					<standard>ܥܕܢܐ ܕܓܙܝܪ̈ܐ ܕܓܝܠܒܪܬ</standard>
+				</long>
+			</metazone>
+			<metazone type="GMT">
+				<long>
+					<standard>ܥܕܢܐ ܕܓܪܝܢܟ</standard>
+				</long>
+			</metazone>
+			<metazone type="Greenland_Eastern">
+				<long>
+					<generic>ܥܕܢܐ ܓܪܝܢܠܢܕ ܡܕܢܚܝܬܐ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܓܪܝܢܠܢܕ ܡܕܢܚܝܬܐ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܓܪܝܢܠܢܕ ܡܕܢܚܝܬܐ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Greenland_Western">
+				<long>
+					<generic>ܥܕܢܐ ܕܓܪܝܢܠܢܕ ܕܡܥܪܒܝܬܐ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܓܪܝܢܠܢܕ ܕܡܥܪܒܝܬܐ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܓܪܝܢܠܢܕ ܕܡܥܪܒܝܬܐ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Guam">
+				<long>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܓܘܐܡ</standard>
+				</long>
+			</metazone>
+			<metazone type="Gulf">
+				<long>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܡܥܠܢܐ</standard>
+				</long>
+			</metazone>
+			<metazone type="Guyana">
+				<long>
+					<standard>ܥܕܢܐ ܕܓܘܝܐܢܐ</standard>
+				</long>
+			</metazone>
+			<metazone type="Hawaii_Aleutian">
+				<long>
+					<generic>ܥܕܢܐ ܕܗܐܘܐܝܝ ܐܠܘܫܝܢ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܗܐܘܐܝܝ ܐܠܘܫܝܢ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܗܐܘܐܝܝ ܐܠܘܫܝܢ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Hong_Kong">
+				<long>
+					<generic>ܥܕܢܐ ܕܗܘܢܓ ܟܘܢܓ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܗܘܢܓ ܟܘܢܓ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܗܘܢܓ ܟܘܢܓ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Hovd">
+				<long>
+					<generic>ܕܗܘܒܕ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܗܘܒܕ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܗܘܒܕ</daylight>
+				</long>
+			</metazone>
+			<metazone type="India">
+				<long>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܗܢܕܘ</standard>
+				</long>
+			</metazone>
+			<metazone type="Indian_Ocean">
+				<long>
+					<standard>ܥܕܢܐ ܕܐܘܩܝܢܘܣ ܗܢܕܘܝܐ</standard>
+				</long>
+			</metazone>
+			<metazone type="Indochina">
+				<long>
+					<standard>ܥܕܢܐ ܕܗܢܕܘܨܝܢ</standard>
+				</long>
+			</metazone>
+			<metazone type="Indonesia_Central">
+				<long>
+					<standard>ܥܕܢܐ ܕܗܢܕܘܨܝܢ ܡܨܥܝܬܐ</standard>
+				</long>
+			</metazone>
+			<metazone type="Indonesia_Eastern">
+				<long>
+					<standard>ܥܕܢܐ ܕܗܢܕܘܨܝܢ ܡܕܢܚܝܬܐ</standard>
+				</long>
+			</metazone>
+			<metazone type="Indonesia_Western">
+				<long>
+					<standard>ܥܕܢܐ ܕܗܢܕܘܨܝܢ ܡܥܪܒܝܬܐ</standard>
+				</long>
+			</metazone>
+			<metazone type="Iran">
+				<long>
+					<generic>ܥܕܢܐ ܕܐܝܪܐܢ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܐܝܪܐܢ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܐܝܪܐܢ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Irkutsk">
+				<long>
+					<generic>ܥܕܢܐ ܕܐܝܪܟܘܬܣܟ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܐܝܪܟܘܬܣܟ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܐܝܪܟܘܬܣܟ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Israel">
+				<long>
+					<generic>ܥܕܢܐ ܕܐܝܣܪܐܝܠ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܐܝܣܪܐܝܠ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܐܝܣܪܐܝܠ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Japan">
+				<long>
+					<generic>ܥܕܢܐ ܕܝܦܢ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܝܦܢ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܝܦܢ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kamchatka">
+				<long>
+					<generic>ܥܕܢܐ ܕܦܝܬܪܘܦܒܠܒܣܟܝ-ܟܐܡܟܬܣܟܝ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܦܝܬܪܘܦܒܠܒܣܟܝ-ܟܐܡܟܬܣܟܝ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܦܝܬܪܘܦܒܠܒܣܟܝ-ܟܐܡܟܬܣܟܝ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan_Eastern">
+				<long>
+					<standard>ܥܕܢܐ ܕܡܕܢܚ ܟܙܩܣܬܐܢ</standard>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan_Western">
+				<long>
+					<standard>ܥܕܢܐ ܕܡܥܪܒ ܟܙܩܣܬܐܢ</standard>
+				</long>
+			</metazone>
+			<metazone type="Korea">
+				<long>
+					<generic>ܥܕܢܐ ܕܟܘܪܝܝܐ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܟܘܪܝܝܐ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܟܘܪܝܝܐ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kosrae">
+				<long>
+					<standard draft="unconfirmed">ܥܕܢܐ ܟܘܣܪܐܝ</standard>
+				</long>
+			</metazone>
+			<metazone type="Krasnoyarsk">
+				<long>
+					<generic>ܥܕܢܐ ܕܟܪܐܣܢܘܝܪܣܟ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܟܪܐܣܢܘܝܪܣܟ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܟܪܐܣܢܘܝܪܣܟ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kyrgystan">
+				<long>
+					<standard>ܥܕܢܐ ܕܩܝܪܓܝܙܣܬܐܢ</standard>
+				</long>
+			</metazone>
+			<metazone type="Lanka">
+				<long>
+					<standard>ܥܕܢܐ ܕܠܐܢܟܐ</standard>
+				</long>
+			</metazone>
+			<metazone type="Line_Islands">
+				<long>
+					<standard>ܥܕܢܐ ܕܓܙܝܪ̈ܐ ܕܠܐܝܢ</standard>
+				</long>
+			</metazone>
+			<metazone type="Lord_Howe">
+				<long>
+					<generic>ܥܕܢܐ ܕܠܘܪܕ ܗܐܘ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܠܘܪܕ ܗܐܘ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܠܘܪܕ ܗܐܘ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Macau">
+				<long>
+					<generic>ܥܕܢܐ ܕܡܐܟܐܘ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܡܐܟܐܘ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܡܐܟܐܘ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Magadan">
+				<long>
+					<generic>ܥܕܢܐ ܕܡܐܓܐܕܐܢ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܡܐܓܕܐܢ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܡܐܓܕܐܢ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Malaysia">
+				<long>
+					<standard>ܥܕܢܐ ܕܡܠܝܙܝܐ</standard>
+				</long>
+			</metazone>
+			<metazone type="Maldives">
+				<long>
+					<standard>ܥܕܢܐ ܕܓܙܪܬܐ ܡܐܠܕܝܒܝܬܐ</standard>
+				</long>
+			</metazone>
+			<metazone type="Marquesas">
+				<long>
+					<standard>ܥܕܢܐ ܕܡܐܪܟܐܘܣܐܣ</standard>
+				</long>
+			</metazone>
+			<metazone type="Marshall_Islands">
+				<long>
+					<standard>ܥܕܢܐ ܕܓܙܝܪ̈ܐ ܕܡܐܪܫܐܠ</standard>
+				</long>
+			</metazone>
+			<metazone type="Mauritius">
+				<long>
+					<generic>ܥܕܢܐ ܕܡܘܪܝܛܝܘܣ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܡܘܪܝܛܝܘܣ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܡܘܪܝܛܝܘܣ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Mawson">
+				<long>
+					<standard>ܥܕܢܐ ܕܡܐܘܣܘܢ</standard>
+				</long>
+			</metazone>
+			<metazone type="Mexico_Pacific">
+				<long>
+					<generic>ܥܕܢܐ ܕܡܟܣܝܩܘ ܫܝܢܝܬܐ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܡܟܣܝܩܘ ܫܝܢܝܬܐ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܡܟܣܝܩܘ ܫܝܢܝܬܐ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Mongolia">
+				<long>
+					<generic>ܥܕܢܐ ܕܐܘܠܐܢܒܐܬܘܪ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܐܘܠܐܢܒܐܬܘܪ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܐܘܠܐܢܒܐܬܘܪ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Moscow">
+				<long>
+					<generic>ܥܕܢܐ ܕܡܘܣܟܘ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܡܘܣܟܘ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܡܘܣܟܘ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Myanmar">
+				<long>
+					<standard>ܥܕܢܐ ܕܡܝܐܢܡܐܪ</standard>
+				</long>
+			</metazone>
+			<metazone type="Nauru">
+				<long>
+					<standard>ܥܕܢܐ ܕܢܐܘܪܘ</standard>
+				</long>
+			</metazone>
+			<metazone type="Nepal">
+				<long>
+					<standard>ܥܕܢܐ ܕܢܝܦܐܠ</standard>
+				</long>
+			</metazone>
+			<metazone type="New_Caledonia">
+				<long>
+					<generic>ܥܕܢܐ ܕܢܝܘ ܟܠܝܕܘܢܝܐ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܢܝܘ ܟܠܝܕܘܢܝܐ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܢܝܘ ܟܠܝܕܘܢܝܐ</daylight>
+				</long>
+			</metazone>
+			<metazone type="New_Zealand">
+				<long>
+					<generic>ܥܕܢܐ ܕܢܝܘ ܙܝܠܢܕ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܢܝܘ ܙܝܠܢܕ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܢܝܘ ܙܝܠܢܕ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Newfoundland">
+				<long>
+					<generic>ܥܕܢܐ ܕܢܝܘܦܐܘܢܠܢܕ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܢܝܘܦܐܘܢܠܢܕ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܢܝܘܦܐܘܢܠܢܕ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Niue">
+				<long>
+					<standard>ܥܕܢܐ ܕܢܝܘܝ</standard>
+				</long>
+			</metazone>
+			<metazone type="Norfolk">
+				<long>
+					<generic>ܥܕܢܐ ܕܓܙܪܬܐ ܕܢܘܪܦܠܟ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܓܙܪܬܐ ܕܢܘܪܦܠܟ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܓܙܪܬܐ ܕܢܘܪܦܠܟ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Noronha">
+				<long>
+					<generic>ܥܕܢܐ ܕܦܪܢܢܕܘ ܕܢܘܪܘܢܗܐ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܦܪܢܢܕܘ ܕܢܘܪܘܢܗܐ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܦܪܢܢܕܘ ܕܢܘܪܘܢܗܐ</daylight>
+				</long>
+			</metazone>
+			<metazone type="North_Mariana">
+				<long>
+					<standard>ܥܕܢܐ ܕܓܙܝܖ̈ܐ ܕܡܪܝܐܢܐ ܓܪܒܝܝܬܐ</standard>
+				</long>
+			</metazone>
+			<metazone type="Novosibirsk">
+				<long>
+					<generic>ܥܕܢܐ ܕܢܘܒܘܣܝܒܪܣܟ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܢܘܒܘܣܝܒܪܣܟ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܢܘܒܘܣܝܒܪܣܟ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Omsk">
+				<long>
+					<generic>ܥܕܢܐ ܕܘܡܣܟ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܘܡܣܟ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܘܡܣܟ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Pakistan">
+				<long>
+					<generic>ܥܕܢܐ ܕܦܐܟܣܬܐܢ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܦܐܟܣܬܐܢ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܦܐܟܣܬܐܢ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Palau">
+				<long>
+					<standard>ܥܕܢܐ ܕܦܠܐܘ</standard>
+				</long>
+			</metazone>
+			<metazone type="Papua_New_Guinea">
+				<long>
+					<standard>ܥܕܢܐ ܕܦܐܦܘܐ ܓܝܢܝܐ ܚܕܬܐ</standard>
+				</long>
+			</metazone>
+			<metazone type="Paraguay">
+				<long>
+					<generic>ܥܕܢܐ ܕܦܪܓܘܐܝ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܦܪܓܘܐܝ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܦܪܓܘܐܝ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Peru">
+				<long>
+					<generic>ܥܕܢܐ ܕܦܝܪܘ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܦܝܪܘ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܦܝܪܘ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Philippines">
+				<long>
+					<generic>ܥܕܢܐ ܕܦܝܠܝܦܝܢܝܐ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܦܝܠܝܦܝܢܝܐ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܦܝܠܝܦܝܢܝܐ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Phoenix_Islands">
+				<long>
+					<standard>ܥܕܢܐ ܕܓܙܝܪ̈ܐ ܕܦܝܢܝܟܣ</standard>
+				</long>
+			</metazone>
+			<metazone type="Pierre_Miquelon">
+				<long>
+					<generic>ܥܕܢܐ ܕܣܐܢܬ ܦܝܥܪ ܘܡܩܘܠܘܢ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܣܐܢܬ ܦܝܥܪ ܘܡܩܘܠܘܢ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܣܐܢܬ ܦܝܥܪ ܘܡܩܘܠܘܢ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Pitcairn">
+				<long>
+					<standard>ܥܕܢܐ ܕܦܝܬܟܐܝܪܢ</standard>
+				</long>
+			</metazone>
+			<metazone type="Ponape">
+				<long>
+					<standard>ܥܕܢܐ ܕܦܘܢܐܦܝ</standard>
+				</long>
+			</metazone>
+			<metazone type="Pyongyang">
+				<long>
+					<standard>ܥܕܢܐ ܕܦܝܘܢܓܝܢܓ</standard>
+				</long>
+			</metazone>
+			<metazone type="Qyzylorda">
+				<long>
+					<generic>ܥܕܢܐ ܕܟܝܙܝܠܘܪܕܐ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܟܝܙܝܠܘܪܕܐ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܟܝܙܝܠܘܪܕܐ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Reunion">
+				<long>
+					<standard>ܥܕܢܐ ܕܪܝܘܢܝܘܢ</standard>
+				</long>
+			</metazone>
+			<metazone type="Rothera">
+				<long>
+					<standard>ܥܕܢܐ ܕܪܘܬܝܪܐ</standard>
+				</long>
+			</metazone>
+			<metazone type="Sakhalin">
+				<long>
+					<generic>ܥܕܢܐ ܕܣܐܚܐܠܝܢ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܣܐܚܐܠܝܢ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܣܐܚܐܠܝܢ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Samara">
+				<long>
+					<generic>ܥܕܢܐ ܕܣܡܐܪܐ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܣܡܐܪܐ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܣܡܐܪܐ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Samoa">
+				<long>
+					<generic>ܥܕܢܐ ܕܣܡܘܐ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܣܡܘܐ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܣܡܘܐ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Seychelles">
+				<long>
+					<standard>ܥܕܢܐ ܕܣܐܝܫܝܠ</standard>
+				</long>
+			</metazone>
+			<metazone type="Singapore">
+				<long>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܣܝܢܓܐܦܘܪ</standard>
+				</long>
+			</metazone>
+			<metazone type="Solomon">
+				<long>
+					<standard>ܥܕܢܐ ܕܓܙܝܪ̈ܐ ܕܫܠܝܡܘܢ</standard>
+				</long>
+			</metazone>
+			<metazone type="South_Georgia">
+				<long>
+					<standard>ܥܕܢܐ ܕܓܝܘܪܓܝܐ ܬܝܡܢܝܬܐ</standard>
+				</long>
+			</metazone>
+			<metazone type="Suriname">
+				<long>
+					<standard>ܥܕܢܐ ܕܣܘܪܝܢܐܡ</standard>
+				</long>
+			</metazone>
+			<metazone type="Syowa">
+				<long>
+					<standard>ܥܕܢܐ ܕܣܝܘܐ</standard>
+				</long>
+			</metazone>
+			<metazone type="Tahiti">
+				<long>
+					<standard>ܥܕܢܐ ܕܬܗܝܬܝ</standard>
+				</long>
+			</metazone>
+			<metazone type="Taipei">
+				<long>
+					<generic>ܥܕܢܐ ܕܬܐܝܦܐܝ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܬܐܝܦܐܝ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܬܐܝܦܐܝ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Tajikistan">
+				<long>
+					<standard>ܥܕܢܐ ܕܬܐܓܝܟܣܬܐܢ</standard>
+				</long>
+			</metazone>
+			<metazone type="Tokelau">
+				<long>
+					<standard>ܥܕܢܐ ܕܬܘܟܝܠܐܘ</standard>
+				</long>
+			</metazone>
+			<metazone type="Tonga">
+				<long>
+					<generic>ܥܕܢܐ ܬܘܢܓܐ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܬܘܢܓܐ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܬܘܢܓܐ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Truk">
+				<long>
+					<standard>ܥܕܢܐ ܕܬܫܘܟ</standard>
+				</long>
+			</metazone>
+			<metazone type="Turkmenistan">
+				<long>
+					<generic>ܥܕܢܐ ܕܬܘܪܟܡܢܣܬܐܢ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܬܘܪܟܡܢܣܬܐܢ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܬܘܪܟܡܢܣܬܐܢ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Tuvalu">
+				<long>
+					<standard>ܥܕܢܐ ܕܬܘܒܐܠܘ</standard>
+				</long>
+			</metazone>
+			<metazone type="Uruguay">
+				<long>
+					<generic>ܥܕܢܐ ܕܐܘܪܘܓܘܐܝ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܐܘܪܘܓܘܐܝ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܐܘܪܘܓܘܐܝ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Uzbekistan">
+				<long>
+					<generic>ܥܕܢܐ ܕܐܘܙܒܟܣܬܐܢ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܐܘܙܒܟܣܬܐܢ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܐܘܙܒܟܣܬܐܢ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Vanuatu">
+				<long>
+					<generic>ܥܕܢܐ ܕܒܐܢܘܐܛܘ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܒܐܢܘܐܛܘ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܒܐܢܘܐܛܘ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Venezuela">
+				<long>
+					<standard>ܥܕܢܐ ܕܒܢܙܘܝܠܐ</standard>
+				</long>
+			</metazone>
+			<metazone type="Vladivostok">
+				<long>
+					<generic>ܥܕܢܐ ܕܒܠܐܕܝܒܘܣܬܘܟ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܒܠܐܕܝܒܘܣܬܘܟ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܒܠܐܕܝܒܘܣܬܘܟ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Volgograd">
+				<long>
+					<generic>ܥܕܢܐ ܕܒܘܠܓܘܓܪܐܕ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܒܘܠܓܘܓܪܐܕ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܒܘܠܓܘܓܪܐܕ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Vostok">
+				<long>
+					<standard>ܥܕܢܐ ܕܒܘܣܬܘܟ</standard>
+				</long>
+			</metazone>
+			<metazone type="Wake">
+				<long>
+					<standard>ܥܕܢܐ ܕܓܙܝܪ̈ܐ ܕܘܐܝܟ</standard>
+				</long>
+			</metazone>
+			<metazone type="Wallis">
+				<long>
+					<standard>ܥܕܢܐ ܕܘܝܠܝܣ ܘܦܘܬܘܢܐ</standard>
+				</long>
+			</metazone>
+			<metazone type="Yakutsk">
+				<long>
+					<generic>ܥܕܢܐ ܕܝܐܟܘܬܣܟ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܝܐܟܘܬܣܟ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܝܐܟܘܬܣܟ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Yekaterinburg">
+				<long>
+					<generic>ܥܕܢܐ ܕܝܟܐܬܝܪܢܒܝܪܓ</generic>
+					<standard>ܥܕܢܐ ܡܫܘܚܬܢܝܬܐ ܕܝܟܐܬܝܪܢܒܝܪܓ</standard>
+					<daylight>ܥܕܢܐ ܕܒܗܪ ܝܘܡܐ ܕܝܟܐܬܝܪܢܒܝܪܓ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Yukon">
+				<long>
+					<standard>ܥܕܢܐ ܕܝܘܩܘܢ</standard>
+				</long>
+			</metazone>
+		</timeZoneNames>
+	</dates>
+	<numbers>
+		<symbols numberSystem="latn">
+			<nan draft="unconfirmed">ܠܝܬ ܡܢܝܢܐ</nan>
+		</symbols>
+		<decimalFormats>
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###;#,##0.###-</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<currencyFormats>
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">¤ #,##0.00;¤ #,##0.00-</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="latn">
+			<unitPattern count="one" draft="unconfirmed">{0} {1}</unitPattern>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencies>
+			<currency type="SYP">
+				<symbol draft="unconfirmed">ل.س.‏</symbol>
+			</currency>
+		</currencies>
+		<minimalPairs>
+			<pluralMinimalPairs count="one" draft="contributed">ܝܠܐ ܝܠܗ ܥܬܝܕܐ</pluralMinimalPairs>
+			<pluralMinimalPairs count="other" draft="contributed">ܝܠ̈ܐ ܝܢܐ ܥܬܝܕ̈ܐ &lt;RLM&gt;{0}</pluralMinimalPairs>
+			<ordinalMinimalPairs ordinal="other" draft="unconfirmed">ܫܩܘܠ ܦܬܠܐ ܕ{0} ܝܡܝܢܐ</ordinalMinimalPairs>
+		</minimalPairs>
+	</numbers>
+	<units>
+		<unitLength type="long">
+			<compoundUnit type="10p-3">
+				<unitPrefixPattern>ܡܝܠܝ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-6">
+				<unitPrefixPattern>ܡܝܟܪܘ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-9">
+				<unitPrefixPattern>ܢܐܢܘ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-12">
+				<unitPrefixPattern>ܦܝܟܘ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-15">
+				<unitPrefixPattern>ܦ̮ܝܡܬܘ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-18">
+				<unitPrefixPattern>ܐܬܘ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-21">
+				<unitPrefixPattern>ܙܝܦܬܘ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-24">
+				<unitPrefixPattern>ܝܟܬܘ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p1">
+				<unitPrefixPattern>ܕܝܟܐ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p2">
+				<unitPrefixPattern>ܗܟܬܘ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p3">
+				<unitPrefixPattern>ܟܝܠܘ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p6">
+				<unitPrefixPattern>ܡܝܓܐ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p9">
+				<unitPrefixPattern>ܓܝܓܐ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p12">
+				<unitPrefixPattern>ܬܝܪܐ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p15">
+				<unitPrefixPattern>ܦܝܬܐ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p18">
+				<unitPrefixPattern>ܐܟܣܐ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p21">
+				<unitPrefixPattern>ܙܝܬܐ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p24">
+				<unitPrefixPattern>ܝܘܬܐ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p27">
+				<unitPrefixPattern draft="unconfirmed">ܪܘܢܐ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p30">
+				<unitPrefixPattern draft="unconfirmed">ܟܒܝܬܐ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="power2">
+				<compoundUnitPattern1 count="one">{0} ܡܪܒܥܐ</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0} ܡܪܒܥܐ</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="power3">
+				<compoundUnitPattern1 count="one">{0} ܡܩܦܣܐ</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0} ܡܩܦܣܐ</compoundUnitPattern1>
+			</compoundUnit>
+			<unit type="acceleration-g-force">
+				<displayName>ܚܝܠܐ ܢܬܘܦܘܬܐ</displayName>
+				<unitPattern count="one">{0} ܚܝܠܐ ܢܬܘܦܘܬܐ</unitPattern>
+				<unitPattern count="other">{0} ܚܝܠܐ ܢܬܘܦܘܬܐ</unitPattern>
+			</unit>
+			<unit type="acceleration-meter-per-square-second">
+				<displayName>ܡܝܬܪ̈ܐ ܒܪܦܦܐ ܡܪܒܥܐ</displayName>
+				<unitPattern count="one">{0} ܡܝܬܪܐ ܒܪܦܦܐ ܡܪܒܥܐ</unitPattern>
+				<unitPattern count="other">{0} ܡܝܬܪ̈ܐ ܒܪܦܦܐ ܡܪܒܥܐ</unitPattern>
+			</unit>
+			<unit type="angle-revolution">
+				<displayName>ܚܘܕܖ̈ܢܐ</displayName>
+				<unitPattern count="one">{0} ܚܘܕܪܐ</unitPattern>
+				<unitPattern count="other">{0} ܚܘܕܖ̈ܢܐ</unitPattern>
+			</unit>
+			<unit type="angle-radian">
+				<displayName>ܪܐܕܝܐܢ</displayName>
+				<unitPattern count="one">{0} ܪܐܕܝܐܢ</unitPattern>
+				<unitPattern count="other">{0} ܪܐܕܝܐܢ</unitPattern>
+			</unit>
+			<unit type="angle-degree">
+				<displayName>ܕܪ̈ܓܐ</displayName>
+				<unitPattern count="one">ܕܪܓܐ</unitPattern>
+				<unitPattern count="other">{0} ܕܖ̈ܓܐ</unitPattern>
+			</unit>
+			<unit type="angle-arc-minute">
+				<displayName>ܩܛܝ̈ܢܬܐ ܩܫܬܢܝܬܐ</displayName>
+				<unitPattern count="one">ܩܛܝܢܐ ܩܫܬܢܝܐ</unitPattern>
+				<unitPattern count="other">{0} ܩܛܝ̈ܢܬܐ ܩܫܬܢܝܬܐ</unitPattern>
+			</unit>
+			<unit type="angle-arc-second">
+				<displayName>ܪ̈ܦܦܐ ܩܫܬܢܝܐ</displayName>
+				<unitPattern count="one">{0} ܪ̈ܦܦܐ ܩܫܬܢܝܐ</unitPattern>
+				<unitPattern count="other">{0} ܪ̈ܦܦܐ ܩܫܬܢ̈ܝܐ</unitPattern>
+			</unit>
+			<unit type="area-square-kilometer">
+				<displayName>ܟܝܠܘܡܝܬܪ̈ܐ ܡܪܒܥܐ</displayName>
+				<unitPattern count="one">{0} ܟܝܠܘܡܝܬܪܐ ܡܪܒܥܐ</unitPattern>
+				<unitPattern count="other">{0} ܟܝܠܘܡܝܬܪ̈ܐ ܡܪܒܥܐ</unitPattern>
+				<perUnitPattern>{0} ܒܟܝܠܘܡܝܬܪܐ ܡܪܒܥܐ</perUnitPattern>
+			</unit>
+			<unit type="area-hectare">
+				<unitPattern count="one">{0} ܗܟܬܪ</unitPattern>
+				<unitPattern count="other">{0} ܗܟܬܖ̈ܐ</unitPattern>
+			</unit>
+			<unit type="area-square-meter">
+				<displayName>ܡܝܬܪ̈ܐ ܡܪܒܥܐ</displayName>
+				<unitPattern count="one">{0} ܡܝܬܪܐ ܡܪܒܥܐ</unitPattern>
+				<unitPattern count="other">{0} ܡܝܬܪ̈ܐ ܡܪܒܥܐ</unitPattern>
+				<perUnitPattern>{0} ܒܡܝܬܪܐ ܡܪܒܥܐ</perUnitPattern>
+			</unit>
+			<unit type="area-square-centimeter">
+				<displayName>ܣܢܬܝܡܝܬܪ̈ܐ ܡܪܒܥܐ</displayName>
+				<unitPattern count="one">{0} ܣܢܬܝܡܝܬܪܐ ܡܪܒܥܐ</unitPattern>
+				<unitPattern count="other">{0} ܣܢܬܝܡܝܬܪ̈ܐ ܡܪܒܥܐ</unitPattern>
+				<perUnitPattern>{0} ܒܣܢܬܝܡܝܬܪܐ ܡܪܒܥܐ</perUnitPattern>
+			</unit>
+			<unit type="area-square-mile">
+				<displayName>ܡܝܠ̈ܐ ܡܪܒܥܐ</displayName>
+				<unitPattern count="one">{0} ܡܝܠܐ ܡܪܒܥܐ</unitPattern>
+				<unitPattern count="other">{0} ܡܝܠ̈ܐ ܡܪܒܥܐ</unitPattern>
+				<perUnitPattern>{0} ܒܡܝܠ̈ܐ ܡܪܒܥܐ</perUnitPattern>
+			</unit>
+			<unit type="area-square-yard">
+				<displayName>ܝܪ̈ܕܐ ܡܪܒܥܐ</displayName>
+				<unitPattern count="one">{0} ܝܪܕܐ ܡܪܒܥܐ</unitPattern>
+				<unitPattern count="other">{0} ܝܪ̈ܕܐ ܡܪܒܥܐ</unitPattern>
+			</unit>
+			<unit type="area-square-foot">
+				<displayName>ܐܩܠ̈ܐ ܡܪܒܥܐ</displayName>
+				<unitPattern count="one">{0} ܐܩܠܐ ܡܪܒܥܐ</unitPattern>
+				<unitPattern count="other">{0} ܐܩܠ̈ܐ ܡܪܒܥܐ</unitPattern>
+			</unit>
+			<unit type="area-square-inch">
+				<displayName>ܐܢܟ̈ܐ ܡܪܒܥܐ</displayName>
+				<unitPattern count="one">{0} ܐܢܟ ܡܪܒܥܐ</unitPattern>
+				<unitPattern count="other">{0} ܐܢܟ̈ܐ ܡܪܒܥܐ</unitPattern>
+				<perUnitPattern>{0} ܒܐܢܟ ܡܪܒܥܐ</perUnitPattern>
+			</unit>
+			<unit type="concentr-karat">
+				<displayName>ܩܪ̈ܛܐ</displayName>
+				<unitPattern count="one">ܩܪܛܐ</unitPattern>
+				<unitPattern count="other">{0} ܩܪ̈ܛܐ</unitPattern>
+			</unit>
+			<unit type="concentr-milligram-ofglucose-per-deciliter">
+				<displayName>ܡܝܠܝܓܪ̈ܡܐ ܒܕܝܣܝܠܝܬܪܐ</displayName>
+				<unitPattern count="one">{0} ܡܝܠܝܓܪܡܐ ܒܕܝܣܝܠܝܬܪ</unitPattern>
+				<unitPattern count="other">{0} ܡܝܠܝܓܪ̈ܡܐ ܒܕܝܣܝܠܝܬܪܐ</unitPattern>
+			</unit>
+			<unit type="concentr-millimole-per-liter">
+				<displayName>ܡܝܠܝܡܘܠ ܒܠܝܬܪܐ</displayName>
+				<unitPattern count="one">{0} ܡܝܠܝܡܘܠ ܒܠܝܬܪܐ</unitPattern>
+				<unitPattern count="other">{0} ܡܝܠܝܡܘܠ ܒܠܝܬܪܐ</unitPattern>
+			</unit>
+			<unit type="concentr-item">
+				<displayName>ܡܠܘܐ̈ܐ</displayName>
+				<unitPattern count="one">ܚܕ ܡܠܘܐܐ</unitPattern>
+				<unitPattern count="other">{0} ܡܠܘܐ̈ܐ</unitPattern>
+			</unit>
+			<unit type="concentr-permillion">
+				<displayName>ܡܢܘ̈ܬܐ ܒܡܠܝܘܢ</displayName>
+				<unitPattern count="one">{0} ܡܢܬܐ ܒܡܠܝܘܢ</unitPattern>
+				<unitPattern count="other">{0} ܡܢܘ̈ܬܐ ܒܡܠܝܘܢ</unitPattern>
+			</unit>
+			<unit type="concentr-percent">
+				<displayName>ܒܡܐܐ</displayName>
+			</unit>
+			<unit type="concentr-permille">
+				<displayName>ܒܐܠܦܐ</displayName>
+				<unitPattern count="one">{0} ܒܐܠܦܐ</unitPattern>
+				<unitPattern count="other">{0} ܒܐܠܦܐ</unitPattern>
+			</unit>
+			<unit type="concentr-mole">
+				<displayName>ܡܘܠ</displayName>
+				<unitPattern count="one">{0} ܡܘܠ</unitPattern>
+				<unitPattern count="other">{0} ܡܘܠ</unitPattern>
+			</unit>
+			<unit type="consumption-liter-per-kilometer">
+				<displayName>ܠܝܬܪ̈ܐ ܒܟܝܠܘܡܝܬܪܐ</displayName>
+				<unitPattern count="one">{0} ܠܝܬܪܐ ܒܟܝܠܘܡܝܬܪܐ</unitPattern>
+				<unitPattern count="other">{0} ܠܝܬܪ̈ܐ ܒܟܝܠܘܡܝܬܪܐ</unitPattern>
+			</unit>
+			<unit type="consumption-liter-per-100-kilometer">
+				<displayName>ܠܝܬܪ̈ܐ ܒܡܐܐ ܟܝܠܘܡܝܬܪ̈ܐ</displayName>
+				<unitPattern count="one">{0} ܠܝܬܪ̈ܐ ܒܡܐܐ ܟܝܠܘܡܝܬܪܐ</unitPattern>
+				<unitPattern count="other">{0} ܠܝܬܪ̈ܐ ܒܡܐܐ ܟܝܠܘܡܝܬܪ̈ܐ</unitPattern>
+			</unit>
+			<unit type="consumption-mile-per-gallon">
+				<displayName>ܡܝܠ̈ܐ ܒܓܠܘܢܐ</displayName>
+				<unitPattern count="one">{0} ܡܝܠܐ ܒܓܠܘܢܐ</unitPattern>
+				<unitPattern count="other">{0} ܡܝܠ̈ܐ ܒܓܠܘܢܐ</unitPattern>
+			</unit>
+			<unit type="consumption-mile-per-gallon-imperial">
+				<displayName>ܡܝܠ̈ܐ ܒܓܠܘܢܐ ܐܡܦܪܬܘܪܝܐ</displayName>
+				<unitPattern count="one">{0} ܡܝܠܐ ܒܓܠܘܢܐ ܐܡܦܪܬܘܪܝܐ</unitPattern>
+				<unitPattern count="other">{0} ܡܝܠ̈ܐ ܒܓܠܘܢܐ ܐܡܦܪܬܘܪܝܐ</unitPattern>
+			</unit>
+			<unit type="digital-petabyte">
+				<displayName>ܦܝܬܐܒܐܝܬ</displayName>
+				<unitPattern count="one">{0} ܦܝܬܐܒܐܝܬ</unitPattern>
+				<unitPattern count="other">{0} ܦܝܬܐܒܐܝܬ</unitPattern>
+			</unit>
+			<unit type="digital-terabyte">
+				<displayName>ܬܝܪܐܒܐܝܬ</displayName>
+				<unitPattern count="one">{0} ܬܝܪܐܒܐܝܬ</unitPattern>
+				<unitPattern count="other">{0} ܬܝܪܐܒܐܝܬ</unitPattern>
+			</unit>
+			<unit type="digital-terabit">
+				<displayName>ܬܝܪܐܒܬ</displayName>
+				<unitPattern count="one">{0} ܬܝܪܐܒܬ</unitPattern>
+				<unitPattern count="other">{0} ܬܝܪܐܒܬ</unitPattern>
+			</unit>
+			<unit type="digital-gigabyte">
+				<displayName>ܓܝܓܐܒܐܝܬ</displayName>
+				<unitPattern count="one">{0} ܓܝܓܐܒܐܝܬ</unitPattern>
+				<unitPattern count="other">{0} ܓܝܓܐܒܐܝܬ</unitPattern>
+			</unit>
+			<unit type="digital-gigabit">
+				<displayName>ܓܝܓܐܒܬ</displayName>
+				<unitPattern count="one">{0} ܓܝܓܐܒܬ</unitPattern>
+				<unitPattern count="other">{0} ܓܝܓܐܒܬ</unitPattern>
+			</unit>
+			<unit type="digital-megabyte">
+				<displayName>ܡܝܓܐܒܐܝܬ</displayName>
+				<unitPattern count="one">{0} ܡܝܓܐܒܐܝܬ</unitPattern>
+				<unitPattern count="other">{0} ܡܝܓܐܒܐܝܬ</unitPattern>
+			</unit>
+			<unit type="digital-megabit">
+				<displayName>ܡܝܓܐܒܬ</displayName>
+				<unitPattern count="one">{0} ܡܝܓܐܒܬ</unitPattern>
+				<unitPattern count="other">{0} ܡܝܓܐܒܬ</unitPattern>
+			</unit>
+			<unit type="digital-kilobyte">
+				<displayName>ܟܝܠܘܒܐܝܬ</displayName>
+				<unitPattern count="one">{0} ܟܝܠܘܒܐܝܬ</unitPattern>
+				<unitPattern count="other">{0} ܟܝܠܘܒܐܝܬ</unitPattern>
+			</unit>
+			<unit type="digital-kilobit">
+				<displayName>ܟܝܠܘܒܬ</displayName>
+				<unitPattern count="one">{0} ܟܝܠܘܒܬ</unitPattern>
+				<unitPattern count="other">{0} ܟܝܠܘܒܬ</unitPattern>
+			</unit>
+			<unit type="digital-byte">
+				<displayName>ܒܐܝܬ</displayName>
+				<unitPattern count="one">{0} ܒܐܝܬ</unitPattern>
+				<unitPattern count="other">{0} ܒܐܝܬ</unitPattern>
+			</unit>
+			<unit type="digital-bit">
+				<displayName>ܒܬ</displayName>
+				<unitPattern count="one">{0} ܒܬ</unitPattern>
+				<unitPattern count="other">{0} ܒܬ</unitPattern>
+			</unit>
+			<unit type="duration-century">
+				<displayName>ܕܪ̈ܐ</displayName>
+			</unit>
+			<unit type="duration-decade">
+				<displayName>ܥܣܝܪ̈ܘܬܐ</displayName>
+			</unit>
+			<unit type="duration-year">
+				<perUnitPattern>{0} ܒܫܢܬܐ</perUnitPattern>
+			</unit>
+			<unit type="duration-quarter">
+				<displayName>ܪ̈ܘܒܥܐ</displayName>
+			</unit>
+			<unit type="duration-month">
+				<perUnitPattern>{0} ܒܝܪܚܐ</perUnitPattern>
+			</unit>
+			<unit type="duration-week">
+				<perUnitPattern>{0} ܒܫܒܘܥܐ</perUnitPattern>
+			</unit>
+			<unit type="duration-day">
+				<perUnitPattern>{0} ܒܝܘܡܐ</perUnitPattern>
+			</unit>
+			<unit type="duration-hour">
+				<perUnitPattern>{0} ܒܫܥܬܐ</perUnitPattern>
+			</unit>
+			<unit type="duration-minute">
+				<unitPattern count="one">ܩܛܝܢܐ</unitPattern>
+				<unitPattern count="other">{0} ܩܛܝܢ̈ܐ</unitPattern>
+				<perUnitPattern>{0} ܒܩܛܝܢܐ</perUnitPattern>
+			</unit>
+			<unit type="duration-second">
+				<unitPattern count="one">{0} ܪܦܦܐ</unitPattern>
+				<unitPattern count="other">{0} ܪ̈ܦܦܐ</unitPattern>
+				<perUnitPattern>{0} ܒܪܦܦܐ</perUnitPattern>
+			</unit>
+			<unit type="duration-microsecond">
+				<displayName>ܡܝܟܪܘܪ̈ܦܦܐ</displayName>
+				<unitPattern count="one">{0} ܡܝܟܪܘܪܦܦܐ</unitPattern>
+				<unitPattern count="other">{0} ܡܝܟܪܘܪ̈ܦܦܐ</unitPattern>
+			</unit>
+			<unit type="duration-nanosecond">
+				<unitPattern count="one">{0} ܢܐܢܘܪܦܦܐ</unitPattern>
+				<unitPattern count="other">{0} ܢܐܢܘܪ̈ܦܦܐ</unitPattern>
+			</unit>
+			<unit type="electric-ampere">
+				<displayName>ܐܡܦܝܪ</displayName>
+				<unitPattern count="one">{0} ܐܡܦܝܪ</unitPattern>
+				<unitPattern count="other">{0} ܐܡܦܝܪ</unitPattern>
+			</unit>
+			<unit type="electric-milliampere">
+				<displayName>ܡܝܠܝܐܡܦܝܪ</displayName>
+				<unitPattern count="one">{0} ܡ ܐܡܦܝܪ</unitPattern>
+				<unitPattern count="other">{0} ܡ ܐܡܦܝܪ</unitPattern>
+			</unit>
+			<unit type="force-newton">
+				<displayName>ܢܝܘܬܢ</displayName>
+				<unitPattern count="one">{0} ܢܝܘܬܢ</unitPattern>
+				<unitPattern count="other">{0} ܢܝܘܬܢ</unitPattern>
+			</unit>
+			<unit type="force-kilowatt-hour-per-100-kilometer">
+				<displayName>ܟܝܠܘܘܐܬ-ܫܥ̈ܐ ܒܡܐܐ ܟܝܠܘܡܝܬܪ̈ܐ</displayName>
+				<unitPattern count="one">{0} ܟܝܠܘܘܐܬ-ܫܥܬܐ ܒܡܐܐ ܟܝܠܘܡܝܬܪܐ</unitPattern>
+				<unitPattern count="other">{0} ܟܝܠܘܘܐܬ-ܫܥ̈ܐ ܒܡܐܐ ܟܝܠܘܡܝܬܪ̈ܐ</unitPattern>
+			</unit>
+			<unit type="graphics-pixel">
+				<displayName>ܦܝ̈ܟܣܠܐ</displayName>
+				<unitPattern count="one">{0} ܦܝܟܣܠܐ</unitPattern>
+				<unitPattern count="other">{0} ܦܝ̈ܟܣܠܐ</unitPattern>
+			</unit>
+			<unit type="graphics-megapixel">
+				<displayName>ܡܝܓܐܦܝ̈ܟܣܠܐ</displayName>
+				<unitPattern count="one">{0} ܡܝܓܐܦܝܟܣܠܐ</unitPattern>
+				<unitPattern count="other">{0} ܡܝܓܐܦܝ̈ܟܣܠܐ</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-centimeter">
+				<displayName>ܦܝ̈ܟܣܠܐ ܒܣܢܬܝܡܝܬܪܐ</displayName>
+				<unitPattern count="one">{0} ܦܝܟܣܠܐ ܒܣܢܬܝܡܝܬܪܐ</unitPattern>
+				<unitPattern count="other">{0} ܦܝ̈ܟܣܠܐ ܒܣܢܬܝܡܝܬܪܐ</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-inch">
+				<displayName>ܦܝ̈ܟܣܠܐ ܒܐܢܟ</displayName>
+				<unitPattern count="one">{0} ܦܝܟܣܠܐ ܒܐܢܟ</unitPattern>
+				<unitPattern count="other">{0} ܦܝ̈ܟܣܠܐ ܒܐܢܟ</unitPattern>
+			</unit>
+			<unit type="length-earth-radius">
+				<displayName>ܥܘܒܐ ܦܫܝܛܐ ܐܪܥܝܐ</displayName>
+				<unitPattern count="one">ܚܕ ܥܘܒܐ ܦܫܝܛܐ ܐܪܥܝܐ</unitPattern>
+				<unitPattern count="other">{0} ܥܘܒ̈ܐ ܦܫܝ̈ܛܐ ܐܖ̈ܥܝܐ</unitPattern>
+			</unit>
+			<unit type="length-kilometer">
+				<displayName>ܟܝܠܘܡܝܬܪ̈ܐ</displayName>
+				<unitPattern count="one">ܚܕ ܟܝܠܘܡܝܬܪܐ</unitPattern>
+				<unitPattern count="other">{0} ܟܝܠܘܡܝܬܪ̈ܐ</unitPattern>
+				<perUnitPattern>{0} ܒܟܝܠܘܡܝܬܪܐ</perUnitPattern>
+			</unit>
+			<unit type="length-meter">
+				<displayName>ܡܝܬܪ̈ܐ</displayName>
+				<unitPattern count="one">ܡܝܬܪܐ</unitPattern>
+				<unitPattern count="other">{0} ܡܝܬܪ̈ܐ</unitPattern>
+				<perUnitPattern>{0} ܒܡܝܬܪܐ</perUnitPattern>
+			</unit>
+			<unit type="length-decimeter">
+				<displayName>ܕܝܣܝܡܝܬܪ̈ܐ</displayName>
+				<unitPattern count="one">{0} ܕܝܣܝܡܝܬܪܐ</unitPattern>
+				<unitPattern count="other">{0} ܕܝܣܝܡܝܬܪ̈ܐ</unitPattern>
+			</unit>
+			<unit type="length-centimeter">
+				<displayName>ܣܢܬܝܡܝܬܪ̈ܐ</displayName>
+				<unitPattern count="one">{0} ܣܢܬܝܡܝܬܪܐ</unitPattern>
+				<unitPattern count="other">{0} ܣܢܬܝܡܝܬܪ̈ܐ</unitPattern>
+				<perUnitPattern>{0} ܒܣܢܬܝܡܝܬܪܐ</perUnitPattern>
+			</unit>
+			<unit type="length-millimeter">
+				<displayName>ܡܝܠܝܡܝܬܪ̈ܐ</displayName>
+				<unitPattern count="one">{0} ܡܝܠܝܡܝܬܪܐ</unitPattern>
+				<unitPattern count="other">{0} ܡܝܠܝܡܝܬܪ̈ܐ</unitPattern>
+			</unit>
+			<unit type="length-micrometer">
+				<displayName>ܡܝܟܪܘܡܝܬܪ̈ܐ</displayName>
+				<unitPattern count="one">{0} ܡܝܟܪܘܡܝܬܪܐ</unitPattern>
+				<unitPattern count="other">{0} ܡܝܟܪܘܡܝܬܪ̈ܐ</unitPattern>
+			</unit>
+			<unit type="length-nanometer">
+				<displayName>ܢܐܢܘܡܝܬܪ̈ܐ</displayName>
+				<unitPattern count="one">{0} ܢܐܢܘܡܝܬܪܐ</unitPattern>
+				<unitPattern count="other">{0} ܢܐܢܘܡܝܬܪ̈ܐ</unitPattern>
+			</unit>
+			<unit type="length-picometer">
+				<displayName>ܦܝܟܘܡܝܬܪ̈ܐ</displayName>
+				<unitPattern count="one">{0} ܦܝܟܘܡܝܬܪܐ</unitPattern>
+				<unitPattern count="other">{0} ܦܝܟܘܡܝܬܪ̈ܐ</unitPattern>
+			</unit>
+			<unit type="length-mile">
+				<displayName>ܡܝܠ̈ܐ</displayName>
+				<unitPattern count="one">{0} ܡܝܠܐ</unitPattern>
+				<unitPattern count="other">{0} ܡܝܠ̈ܐ</unitPattern>
+			</unit>
+			<unit type="length-yard">
+				<displayName>ܝܪܕ̈ܐ</displayName>
+				<unitPattern count="one">{0} ܝܪܕ̈ܐ</unitPattern>
+				<unitPattern count="other">{0} ܝܪܕ̈ܐ</unitPattern>
+			</unit>
+			<unit type="length-foot">
+				<unitPattern count="one">{0} ܐܩܠܐ</unitPattern>
+				<unitPattern count="other">{0} ܐܩܠ̈ܐ</unitPattern>
+				<perUnitPattern>{0} ܒܐܩܠܐ</perUnitPattern>
+			</unit>
+			<unit type="length-inch">
+				<displayName>ܐܢܟ̈ܐ</displayName>
+				<unitPattern count="one">{0} ܐܢܟ</unitPattern>
+				<unitPattern count="other">{0} ܐܢܟ̈ܐ</unitPattern>
+				<perUnitPattern>{0} ܒܐܢܟ</perUnitPattern>
+			</unit>
+			<unit type="length-parsec">
+				<displayName>ܦܪ̈ܣܚܐ</displayName>
+				<unitPattern count="one">{0} ܦܪܣܚܐ</unitPattern>
+				<unitPattern count="other">{0} ܦܪ̈ܣܚܐ</unitPattern>
+			</unit>
+			<unit type="length-light-year">
+				<displayName>ܫ̈ܢܐ ܕܢܘܗܪܐ</displayName>
+				<unitPattern count="one">{0} ܫܢܬܐ ܕܢܘܗܪܐ</unitPattern>
+				<unitPattern count="other">{0} ܫ̈ܢܐ ܕܢܘܗܪܐ</unitPattern>
+			</unit>
+			<unit type="length-astronomical-unit">
+				<displayName>ܡܫܘܚ̈ܐ ܪܩܝܥܝ̈ܐ</displayName>
+				<unitPattern count="one">{0} ܡܫܘܚܬܐ ܪܩܝܥܝܬܐ</unitPattern>
+				<unitPattern count="other">{0} ܡܫܘܚܬܐ ܪܩܝܥܝܬܐ</unitPattern>
+			</unit>
+			<unit type="length-furlong">
+				<displayName>ܦܘܪ̈ܠܢܓܐ</displayName>
+				<unitPattern count="one">{0} ܦܘܪܠܢܓ</unitPattern>
+				<unitPattern count="other">{0} ܦܘܪ̈ܠܢܓܐ</unitPattern>
+			</unit>
+			<unit type="length-nautical-mile">
+				<displayName>ܡܝܠ̈ܐ ܝܡܝ̈ܐ</displayName>
+				<unitPattern count="one">{0} ܡܝܠܐ ܝܡܝܐ</unitPattern>
+				<unitPattern count="other">{0} ܡܝܠ̈ܐ ܝܡܝ̈ܐ</unitPattern>
+			</unit>
+			<unit type="length-mile-scandinavian">
+				<displayName>ܡܝܠ̈ܐ ܐܣܟܢܕܝܢܒܝܝܢ</displayName>
+				<unitPattern count="one">{0} ܡܝܠܐ ܐܣܟܢܕܝܢܒܝܝܢ</unitPattern>
+				<unitPattern count="other">{0} ܡܝܠ̈ܐ ܐܣܟܢܕܝܢܒܝܝܢ</unitPattern>
+			</unit>
+			<unit type="length-point">
+				<displayName>ܢܘܩܙ̈ܐ</displayName>
+				<unitPattern count="one">{0} ܢܘܩܙܐ</unitPattern>
+				<unitPattern count="other">{0} ܢܘܩܙ̈ܐ</unitPattern>
+			</unit>
+			<unit type="length-solar-radius">
+				<displayName>ܥܘܒܐ ܦܫܝܛܐ ܫܡܫܝܐ</displayName>
+			</unit>
+			<unit type="light-lux">
+				<displayName>lux</displayName>
+				<unitPattern count="one">{0} lux</unitPattern>
+				<unitPattern count="other">{0} lux</unitPattern>
+			</unit>
+			<unit type="light-candela">
+				<displayName>ܢܗܝܪܐ</displayName>
+				<unitPattern count="one">{0} ܢܗܝܪܐ</unitPattern>
+				<unitPattern count="other">{0} ܢܗܝܪܐ</unitPattern>
+			</unit>
+			<unit type="light-lumen">
+				<displayName>ܠܘܡܝܢ</displayName>
+				<unitPattern count="one">{0} ܠܘܡܝܢ</unitPattern>
+				<unitPattern count="other">{0} ܠܘܡܝܢ</unitPattern>
+			</unit>
+			<unit type="mass-tonne">
+				<displayName>ܬܘܢ ܡܝܬܪܝܐ</displayName>
+				<unitPattern count="one">{0} ܬܘܢ ܡܝܬܪܝܐ</unitPattern>
+				<unitPattern count="other">{0} ܬܘܢ̈ ܡܝܬܪ̈ܝܐ</unitPattern>
+			</unit>
+			<unit type="mass-kilogram">
+				<displayName>ܟܝܠܘܓܪ̈ܡܐ</displayName>
+				<unitPattern count="one">{0} ܟܝܠܘܓܪܡܐ</unitPattern>
+				<unitPattern count="other">{0} ܟܝܠܘܓܪ̈ܡܐ</unitPattern>
+				<perUnitPattern>{0} ܒܟܝܠܘܓܪܡܐ</perUnitPattern>
+			</unit>
+			<unit type="mass-gram">
+				<displayName>ܓܪ̈ܡܐ</displayName>
+				<unitPattern count="one">ܓܪܡܐ</unitPattern>
+				<unitPattern count="other">{0} ܓܪ̈ܡܐ</unitPattern>
+				<perUnitPattern>{0} ܒܓܪܡܐ</perUnitPattern>
+			</unit>
+			<unit type="mass-milligram">
+				<displayName>ܡܝܠܝܓܪ̈ܡܐ</displayName>
+				<unitPattern count="one">{0} ܡܝܠܝܓܪܡܐ</unitPattern>
+				<unitPattern count="other">{0} ܡܝܠܝܓܪ̈ܡܐ</unitPattern>
+			</unit>
+			<unit type="mass-microgram">
+				<displayName>ܡܝܟܪܘܓܪ̈ܡܐ</displayName>
+				<unitPattern count="one">{0} ܡܝܟܪܘܓܪܡܐ</unitPattern>
+				<unitPattern count="other">{0} ܡܝܟܪܘܓܪ̈ܡܐ</unitPattern>
+			</unit>
+			<unit type="mass-ton">
+				<displayName>ܬܘܢ̈ܐ</displayName>
+				<unitPattern count="one">{0} ܬܘܢܐ</unitPattern>
+				<unitPattern count="other">{0} ܬܘܢ̈ܐ</unitPattern>
+			</unit>
+			<unit type="mass-stone">
+				<displayName>ܣܛܘܢ</displayName>
+				<unitPattern count="one">{0} ܣܛܘܢ</unitPattern>
+				<unitPattern count="other">{0} ܣܛܘܢ</unitPattern>
+			</unit>
+			<unit type="mass-pound">
+				<displayName>ܡܢܝ̈ܐ</displayName>
+				<unitPattern count="one">{0} ܡܢܝܐ</unitPattern>
+				<unitPattern count="other">{0} ܡܢܝ̈ܐ</unitPattern>
+				<perUnitPattern>{0} ܒܡܢܝܐ</perUnitPattern>
+			</unit>
+			<unit type="mass-ounce">
+				<displayName>ܐܘܢܩ̈ܝܐ</displayName>
+				<unitPattern count="one">{0} ܐܘܢܩܝܐ</unitPattern>
+				<unitPattern count="other">{0} ܐܘܢܩ̈ܝܐ</unitPattern>
+				<perUnitPattern>{0} ܒܐܘܢܩܝܐ</perUnitPattern>
+			</unit>
+			<unit type="mass-carat">
+				<displayName>ܩܪ̈ܛܐ</displayName>
+				<unitPattern count="one">{0} ܩܪܛܐ</unitPattern>
+				<unitPattern count="other">{0} ܩܪ̈ܛܐ</unitPattern>
+			</unit>
+			<unit type="mass-dalton">
+				<displayName>ܕܐܠܬܘܢ</displayName>
+				<unitPattern count="one">{0} ܕܐܠܬܘܢ</unitPattern>
+				<unitPattern count="other">{0} ܕܐܠܬܘܢ</unitPattern>
+			</unit>
+			<unit type="mass-earth-mass">
+				<displayName>ܥܘܫܢܐ ܐܪܥܝܐ</displayName>
+				<unitPattern count="one">{0} ܥܘܫܢܐ ܐܪܥܝܐ</unitPattern>
+				<unitPattern count="other">{0} ܥܘܫܢܐ ܐܪܥܝܐ</unitPattern>
+			</unit>
+			<unit type="mass-solar-mass">
+				<displayName>ܥܘܫܢܐ ܫܡܫܝܐ</displayName>
+				<unitPattern count="one">{0} ܥܘܫܢܐ ܫܡܫܝܐ</unitPattern>
+				<unitPattern count="other">{0} ܥܘܫܢܐ ܫܡܫܝܐ</unitPattern>
+			</unit>
+			<unit type="power-gigawatt">
+				<displayName>ܓܝܓܐܘܐܬ</displayName>
+				<unitPattern count="one">{0} ܓܝܓܐܘܐܬ</unitPattern>
+				<unitPattern count="other">{0} ܓܝܓܐܘܐܬ</unitPattern>
+			</unit>
+			<unit type="power-megawatt">
+				<displayName>ܡܝܓܐܘܐܬ</displayName>
+				<unitPattern count="one">{0} ܡܝܓܐܘܐܬ</unitPattern>
+				<unitPattern count="other">{0} ܡܝܓܐܘܐܬ</unitPattern>
+			</unit>
+			<unit type="power-kilowatt">
+				<displayName>ܟܝܠܘܘܐܬ</displayName>
+				<unitPattern count="one">{0} ܟܝܠܘܘܐܬ</unitPattern>
+				<unitPattern count="other">{0} ܟܝܠܘܘܐܬ</unitPattern>
+			</unit>
+			<unit type="power-watt">
+				<displayName>ܘܐܬ</displayName>
+				<unitPattern count="one">{0} ܘܐܬ</unitPattern>
+				<unitPattern count="other">{0} ܘܐܬ</unitPattern>
+			</unit>
+			<unit type="power-milliwatt">
+				<displayName>ܡܝܠܝܘܐܬ</displayName>
+				<unitPattern count="one">{0} ܡܝܠܝܘܐܬ</unitPattern>
+				<unitPattern count="other">{0} ܡܝܠܝܘܐܬ</unitPattern>
+			</unit>
+			<unit type="power-horsepower">
+				<displayName>ܚܝܠܐ ܕܣܘܣܝܐ</displayName>
+				<unitPattern count="one">{0} ܣܘܣܝܐ</unitPattern>
+				<unitPattern count="other">{0} ܣܘܣܝܐ</unitPattern>
+			</unit>
+			<unit type="pressure-millimeter-ofhg">
+				<displayName>ܡܝܠܝܡܝܬܪ̈ܐ ܕܙܝܘܓܐ</displayName>
+				<unitPattern count="one">{0} ܡܝܠܝܡܝܬܪܐ ܕܙܝܘܓܐ</unitPattern>
+				<unitPattern count="other">{0} ܡܝܠܝܡܝܬܪ̈ܐ ܕܙܝܘܓܐ</unitPattern>
+			</unit>
+			<unit type="pressure-bar">
+				<displayName>ܒܐܪ</displayName>
+				<unitPattern count="one">{0} ܒܐܪ</unitPattern>
+				<unitPattern count="other">{0} ܒܐܪ</unitPattern>
+			</unit>
+			<unit type="pressure-millibar">
+				<displayName>ܡܝܠܝܒܐܪ</displayName>
+				<unitPattern count="one">{0} ܡܝܠܝܒܐܪ</unitPattern>
+				<unitPattern count="other">{0} ܡܝܠܝܒܐܪ</unitPattern>
+			</unit>
+			<unit type="pressure-atmosphere">
+				<displayName>ܡܫܘܚܬܐ ܟܒܘܫܝܬܐ ܪܩܝܥܝܬܐ</displayName>
+				<unitPattern count="one">{0} ܟܒܘܫܐ ܪܩܝܥܐ</unitPattern>
+				<unitPattern count="other">{0} ܟܒܘܫ̈ܐ ܪ̈ܩܝܥܐ</unitPattern>
+			</unit>
+			<unit type="pressure-pascal">
+				<displayName>ܦܣܟ̈ܠܐ</displayName>
+				<unitPattern count="one">{0} ܦܣܟ̈ܠܐ</unitPattern>
+				<unitPattern count="other">{0} ܦܣܟ̈ܠܐ</unitPattern>
+			</unit>
+			<unit type="pressure-hectopascal">
+				<displayName>ܗܟܬܘܦܣܟ̈ܠܐ</displayName>
+				<unitPattern count="one">{0} ܗܟܬܘܦܣܟ̈ܠܐ</unitPattern>
+				<unitPattern count="other">{0} ܗܟܬܘܦܣܟ̈ܠܐ</unitPattern>
+			</unit>
+			<unit type="pressure-kilopascal">
+				<displayName>ܟܝܠܘܦܣܟܠ</displayName>
+				<unitPattern count="one">{0} ܟܝܠܘܦܣܟܠ</unitPattern>
+				<unitPattern count="other">{0} ܟܝܠܘܦܣܟܠ</unitPattern>
+			</unit>
+			<unit type="pressure-megapascal">
+				<displayName>ܡܝܓܐܦܣܟܠ</displayName>
+				<unitPattern count="one">{0} ܡܝܓܐܦܣܟܠ</unitPattern>
+				<unitPattern count="other">{0} ܡܝܓܐܦܣܟܠ</unitPattern>
+			</unit>
+			<unit type="speed-kilometer-per-hour">
+				<displayName>ܟܝܠܘܡܝܬܪ̈ܐ ܒܫܥܬܐ</displayName>
+				<unitPattern count="one">{0} ܟܝܠܘܡܝܬܪܐ ܒܫܥܬܐ</unitPattern>
+				<unitPattern count="other">{0} ܟܝܠܘܡܝܬܪ̈ܐ ܒܫܥܬܐ</unitPattern>
+			</unit>
+			<unit type="speed-meter-per-second">
+				<displayName>ܡܝܬܪ̈ܐ ܒܪܦܦܐ</displayName>
+				<unitPattern count="one">{0} ܡܝܬܪܐ ܒܪܦܦܐ</unitPattern>
+				<unitPattern count="other">{0} ܡܝܬܪ̈ܐ ܒܪܦܦܐ</unitPattern>
+			</unit>
+			<unit type="speed-mile-per-hour">
+				<displayName>ܡܝܠ̈ܐ ܒܫܥܬܐ</displayName>
+				<unitPattern count="one">{0} ܡܝܠܐ ܒܫܥܬܐ</unitPattern>
+				<unitPattern count="other">{0} ܡܝܠ̈ܐ ܒܫܥܬܐ</unitPattern>
+			</unit>
+			<unit type="speed-knot">
+				<displayName>ܩܛܪ̈ܐ</displayName>
+				<unitPattern count="one">{0} ܩܛܪܐ</unitPattern>
+				<unitPattern count="other">{0} ܩܛܪ̈ܐ</unitPattern>
+			</unit>
+			<unit type="temperature-celsius">
+				<displayName>ܕܪ̈ܓܐ ܡܐܢܝܐ</displayName>
+				<unitPattern count="one">{0} ܕܪܓܐ ܡܐܢܝܐ</unitPattern>
+				<unitPattern count="other">{0} ܕܪ̈ܓܐ ܡܐܢܝܐ</unitPattern>
+			</unit>
+			<unit type="temperature-fahrenheit">
+				<displayName>ܕܪ̈ܓܐ ܦܐܗܪܢܗܥܝܬ</displayName>
+				<unitPattern count="one">{0} ܕܪܓܐ ܦܐܗܪܢܗܥܝܬ</unitPattern>
+				<unitPattern count="other">{0} ܕܪ̈ܓܐ ܦܐܗܪܢܗܥܝܬ</unitPattern>
+			</unit>
+			<unit type="temperature-kelvin">
+				<displayName>ܕܪ̈ܓܐ ܟܠܒܝܢ</displayName>
+				<unitPattern count="one">{0} ܕܪܓܐ ܟܠܒܝܢ</unitPattern>
+				<unitPattern count="other">{0} ܕܪ̈ܓܐ ܟܠܒܝܢ</unitPattern>
+			</unit>
+			<unit type="torque-newton-meter">
+				<displayName>ܢܝܘܬܢ-ܡܝܬܪ̈ܐ</displayName>
+				<unitPattern count="one">{0} ܢܝܘܬܢ-ܡܝܬܪܐ</unitPattern>
+				<unitPattern count="other">{0} ܢܝܘܬܢ-ܡܝܬܪ̈ܐ</unitPattern>
+			</unit>
+			<unit type="volume-cubic-kilometer">
+				<displayName>ܟܝܠܘܡܝܬܪ̈ܐ ܡܩܦܣܐ</displayName>
+				<unitPattern count="one">{0} ܟܝܠܘܡܝܬܪܐ ܡܩܦܣܐ</unitPattern>
+				<unitPattern count="other">{0} ܟܝܠܘܡܝܬܪ̈ܐ ܡܩܦܣܐ</unitPattern>
+			</unit>
+			<unit type="volume-cubic-meter">
+				<displayName>ܡܝܬܪ̈ܐ ܡܩܦܣܐ</displayName>
+				<unitPattern count="one">{0} ܡܝܬܪܐ ܡܩܦܣܐ</unitPattern>
+				<unitPattern count="other">{0} ܡܝܬܪ̈ܐ ܡܩܦܣܐ</unitPattern>
+				<perUnitPattern>{0}/ܡܝܬܪܐ ܡܩܦܣܐ</perUnitPattern>
+			</unit>
+			<unit type="volume-cubic-centimeter">
+				<displayName>ܣܢܬܝܡܝܬܪ̈ܐ ܡܩܦܣܐ</displayName>
+				<unitPattern count="one">{0} ܣܢܬܝܡܝܬܪܐ ܡܩܦܣܐ</unitPattern>
+				<unitPattern count="other">{0} ܣܢܬܝܡܝܬܪ̈ܐ ܡܩܦܣܐ</unitPattern>
+				<perUnitPattern>{0}/ܣܢܬܝܡܝܬܪܐ ܡܩܦܣܐ</perUnitPattern>
+			</unit>
+			<unit type="volume-cubic-mile">
+				<displayName>ܡܝܠ̈ܐ ܡܩܦܣܐ</displayName>
+				<unitPattern count="one">{0} ܡܝܠܐ ܡܩܦܣܐ</unitPattern>
+				<unitPattern count="other">{0} ܡܝܠ̈ܐ ܡܩܦܣܐ</unitPattern>
+			</unit>
+			<unit type="volume-cubic-yard">
+				<displayName>ܝܪ̈ܕܐ ܡܩܦܣܐ</displayName>
+				<unitPattern count="one">{0} ܝܪܕܐ ܡܩܦܣܐ</unitPattern>
+				<unitPattern count="other">{0} ܝܪ̈ܕܐ ܡܩܦܣܐ</unitPattern>
+			</unit>
+			<unit type="volume-cubic-foot">
+				<displayName>ܐܩܠ̈ܐ ܡܩܦܣܐ</displayName>
+				<unitPattern count="one">{0} ܐܩܠܐ ܡܩܦܣܐ</unitPattern>
+				<unitPattern count="other">{0} ܐܩܠ̈ܐ ܡܩܦܣܐ</unitPattern>
+			</unit>
+			<unit type="volume-cubic-inch">
+				<displayName>ܐܢܟ̈ܐ ܡܩܦܣܐ</displayName>
+				<unitPattern count="one">ܚܕܐ ܐܢܟ ܡܩܦܣܐ</unitPattern>
+				<unitPattern count="other">{0} ܐܢܟ̈ܐ ܡܩܦܣܐ</unitPattern>
+			</unit>
+			<unit type="volume-megaliter">
+				<displayName>ܡܝܓܐܠܝܬܪ̈ܐ</displayName>
+				<unitPattern count="one">{0} ܡܝܓܐܠܝܬܪܐ</unitPattern>
+				<unitPattern count="other">{0} ܡܝܓܐܠܝܬܪ̈ܐ</unitPattern>
+			</unit>
+			<unit type="volume-hectoliter">
+				<displayName>ܗܟܬܘܠܝܬܪ̈ܐ</displayName>
+				<unitPattern count="one">{0} ܗܟܬܘܠܝܬܪܐ</unitPattern>
+				<unitPattern count="other">{0} ܗܟܬܘܠܝܬܪ̈ܐ</unitPattern>
+			</unit>
+			<unit type="volume-liter">
+				<displayName>ܠܝܬܪ̈ܐ</displayName>
+				<unitPattern count="one">{0} ܠܝܬܪܐ</unitPattern>
+				<unitPattern count="other">{0} ܠܝܬܪ̈ܐ</unitPattern>
+				<perUnitPattern>{0}/ܠܝܬܪܐ</perUnitPattern>
+			</unit>
+			<unit type="volume-deciliter">
+				<displayName>ܕܝܣܝܠܝܬܪ̈ܐ</displayName>
+				<unitPattern count="one">{0} ܕܝܣܝܠܝܬܪܐ</unitPattern>
+				<unitPattern count="other">{0} ܕܝܣܝܠܝܬܪ̈ܐ</unitPattern>
+			</unit>
+			<unit type="volume-centiliter">
+				<displayName>ܣܢܬܝܠܝܬܪ̈ܐ</displayName>
+				<unitPattern count="one">{0} ܣܢܬܝܠܝܬܪܐ</unitPattern>
+				<unitPattern count="other">{0} ܣܢܬܝܠܝܬܪ̈ܐ</unitPattern>
+			</unit>
+			<unit type="volume-milliliter">
+				<displayName>ܡܝܠܝܠܝܬܪ̈ܐ</displayName>
+				<unitPattern count="one">{0} ܡܝܠܝܠܝܬܪܐ</unitPattern>
+				<unitPattern count="other">{0} ܡܝܠܝܠܝܬܪ̈ܐ</unitPattern>
+			</unit>
+			<unit type="volume-acre-foot">
+				<displayName>ܐܩܠ̈ܐ-ܦܕܢܐ</displayName>
+				<unitPattern count="one">{0} ܐܩܠܐ-ܦܕܢܐ</unitPattern>
+				<unitPattern count="other">{0} ܐܩܠ̈ܐ-ܦܕܢܐ</unitPattern>
+			</unit>
+			<unit type="volume-gallon">
+				<displayName>ܓܠܘܢ̈ܐ</displayName>
+				<unitPattern count="one">{0} ܓܠܘܢܐ</unitPattern>
+				<unitPattern count="other">{0} ܓܠܘܢ̈ܐ</unitPattern>
+				<perUnitPattern>{0}/ܓܠܘܢܐ</perUnitPattern>
+			</unit>
+			<unit type="volume-gallon-imperial">
+				<displayName>ܓܠܘܢ̈ܐ ܐܡܦܪܬܘܪܝܐ</displayName>
+				<unitPattern count="one">{0} ܓܠܘܢܐ ܐܡܦܪܬܘܪܝܐ</unitPattern>
+				<unitPattern count="other">{0} ܓܠܘܢ̈ܐ ܐܡܦܪܬܘܪܝܐ</unitPattern>
+				<perUnitPattern>{0}/ܓܠܘܢܐ ܐܡܦܪܬܘܪܝܐ</perUnitPattern>
+			</unit>
+			<unit type="volume-quart">
+				<displayName>ܪ̈ܘܒܥܐ ܓܠܘܢ̈ܐ</displayName>
+				<unitPattern count="one">{0} ܪܘܒܥܐ ܓܠܘܢܐ</unitPattern>
+				<unitPattern count="other">{0} ܪ̈ܘܒܥܐ ܓܠܘܢ̈ܐ</unitPattern>
+			</unit>
+			<unit type="volume-fluid-ounce">
+				<displayName>ܐܘܢܩ̈ܝܐ ܪ̈ܕܘܝܐ</displayName>
+				<unitPattern count="one">{0} ܐܘܢܩܝܐ ܪܕܘܝܐ</unitPattern>
+				<unitPattern count="other">{0} ܐܘܢܩ̈ܝܐ ܪ̈ܕܘܝܐ</unitPattern>
+			</unit>
+			<unit type="volume-fluid-ounce-imperial">
+				<displayName>ܐܘܢܩ̈ܝܐ ܪ̈ܕܘܝܐ ܐܡܦܪܬܘܪܝܐ</displayName>
+				<unitPattern count="one">{0} ܐܘܢܩܝܐ ܪܕܘܝܐ ܐܡܦܪܬܘܪܝܐ</unitPattern>
+				<unitPattern count="other">{0} ܐܘܢܩ̈ܝܐ ܪ̈ܕܘܝܐ ܐܡܦܪܬܘܪܝܐ</unitPattern>
+			</unit>
+			<unit type="volume-tablespoon">
+				<displayName>ܬܪ̈ܘܕܐ ܪ̈ܒܐ</displayName>
+				<unitPattern count="one">{0} ܬܪܘܕܐ ܪܒܐ</unitPattern>
+				<unitPattern count="other">{0} ܬܪ̈ܘܕܐ ܪ̈ܒܐ</unitPattern>
+			</unit>
+			<unit type="volume-teaspoon">
+				<displayName>ܬܪ̈ܘܕܐ ܙܥܘܪ̈ܐ</displayName>
+				<unitPattern count="one">{0} ܬܪܘܕܐ ܙܥܘܪܐ</unitPattern>
+				<unitPattern count="other">{0} ܬܪ̈ܘܕܐ ܙܥܘܪ̈ܐ</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>ܬܪ̈ܘܕܐ ܚܠܝ̈ܐ</displayName>
+				<unitPattern count="one">{0} ܬܪܘܕܐ ܚܠܝܐ</unitPattern>
+				<unitPattern count="other">{0} ܬܪ̈ܘܕܐ ܚܠܝ̈ܐ</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName>ܬܪ̈ܘܕܐ ܚܠܝ̈ܐ ܐܡܦܪܬܘܪܝܐ</displayName>
+				<unitPattern count="one">{0} ܬܪܘܕܐ ܚܠܝܐ ܐܡܦܪܬܘܪܝܐ</unitPattern>
+				<unitPattern count="other">{0} ܬܪ̈ܘܕܐ ܚܠܝ̈ܐ ܐܡܦܪܬܘܪܝܐ</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<displayName>ܛܘܦ̈ܢܐ</displayName>
+				<unitPattern count="one">{0} ܛܘܦܬܐ</unitPattern>
+				<unitPattern count="other">{0} ܛܘܦ̈ܢܐ</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<displayName>ܕܪ̈ܟܡܐ ܪ̈ܕܘܝܐ</displayName>
+				<unitPattern count="one">{0} ܕܪܟܡܐ ܪܕܘܝܐ</unitPattern>
+				<unitPattern count="other">{0} ܕܪ̈ܟܡܐ ܪ̈ܕܘܝܐ</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>ܪ̈ܘܒܥܐ ܓܠܘܢ̈ܐ ܐܡܦܪܬܘܪܝܐ</displayName>
+				<unitPattern count="one">{0} ܪܘܒܥܐ ܓܠܘܢܐ ܐܡܦܪܬܘܪܝܐ</unitPattern>
+				<unitPattern count="other">{0} ܪ̈ܘܒܥܐ ܓܠܘܢ̈ܐ ܐܡܦܪܬܘܪܝܐ</unitPattern>
+			</unit>
+			<coordinateUnit>
+				<coordinateUnitPattern type="east">{0} ܡܕܢܚܐ</coordinateUnitPattern>
+				<coordinateUnitPattern type="north">{0} ܓܪܒܝܐ</coordinateUnitPattern>
+				<coordinateUnitPattern type="south">{0} ܬܝܡܢܐ</coordinateUnitPattern>
+				<coordinateUnitPattern type="west">{0} ܡܥܪܒ݂ܐ</coordinateUnitPattern>
+			</coordinateUnit>
+		</unitLength>
+		<unitLength type="short">
+			<compoundUnit type="10p-1">
+				<unitPrefixPattern>ܕܝܣܝ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-2">
+				<unitPrefixPattern>ܣܢܬܝ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-3">
+				<unitPrefixPattern>ܡ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-6">
+				<unitPrefixPattern>ܡܟ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-9">
+				<unitPrefixPattern>ܢ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-12">
+				<unitPrefixPattern>ܦ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-15">
+				<unitPrefixPattern>ܦ̮{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-18">
+				<unitPrefixPattern>ܐ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-21">
+				<unitPrefixPattern>ܙܝܦ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-24">
+				<unitPrefixPattern>ܝܟ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-27">
+				<unitPrefixPattern>{0}ܪܘܢܬܘ</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p1">
+				<unitPrefixPattern>ܕܐ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p2">
+				<unitPrefixPattern>ܗ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p3">
+				<unitPrefixPattern>ܟ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p6">
+				<unitPrefixPattern>ܡܝܓ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p9">
+				<unitPrefixPattern>ܓܝ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p12">
+				<unitPrefixPattern>ܬ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p15">
+				<unitPrefixPattern>ܦܝܬ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p18">
+				<unitPrefixPattern>ܐܟ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p21">
+				<unitPrefixPattern>ܙܬ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p24">
+				<unitPrefixPattern>ܝܘ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p27">
+				<unitPrefixPattern draft="unconfirmed">ܪ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p30">
+				<unitPrefixPattern draft="unconfirmed">ܟܒ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p1">
+				<unitPrefixPattern>ܟܝܒܝ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p2">
+				<unitPrefixPattern>ܡܝܒܝ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p3">
+				<unitPrefixPattern>ܓܝܒܝ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p4">
+				<unitPrefixPattern>ܬܝܒܝ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p5">
+				<unitPrefixPattern>ܦܝܒܝ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p6">
+				<unitPrefixPattern>ܐܟܣܒܝ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p7">
+				<unitPrefixPattern>ܙܝܒܝ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p8">
+				<unitPrefixPattern>ܝܘܒܝ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<unit type="area-acre">
+				<displayName>ܦ̈ܕܢܐ</displayName>
+				<unitPattern count="one">{0} ܦܕܢܐ</unitPattern>
+				<unitPattern count="other">{0} ܦ̈ܕܢܐ</unitPattern>
+			</unit>
+			<unit type="concentr-item">
+				<displayName>ܡܠܘܐܐ</displayName>
+				<unitPattern count="one">ܡܠܘܐܐ</unitPattern>
+				<unitPattern count="other">{0} ܡܠܘܐ̈ܐ</unitPattern>
+			</unit>
+			<unit type="duration-century">
+				<displayName>ܕܪܐ</displayName>
+				<unitPattern count="one">ܕܪܐ</unitPattern>
+				<unitPattern count="other">{0} ܕܪ̈ܐ</unitPattern>
+			</unit>
+			<unit type="duration-decade">
+				<displayName>ܥܣܝܪܘܬܐ</displayName>
+				<unitPattern count="one">ܥܣܝܪܘܬܐ</unitPattern>
+				<unitPattern count="other">{0} ܥܣܝܪ̈ܘܬܐ</unitPattern>
+			</unit>
+			<unit type="duration-year">
+				<displayName>ܫ̈ܢܐ</displayName>
+				<unitPattern count="one">ܫܢܬܐ</unitPattern>
+				<unitPattern count="other">{0} ܫ̈ܢܐ</unitPattern>
+				<perUnitPattern>{0}/ܫܢܬܐ</perUnitPattern>
+			</unit>
+			<unit type="duration-quarter">
+				<displayName>ܪܘܒܥܐ</displayName>
+				<unitPattern count="one">ܪܘܒܥܐ</unitPattern>
+				<unitPattern count="other">{0} ܪ̈ܘܒܥܐ</unitPattern>
+				<perUnitPattern>{0}/ܪܘܒܥܐ</perUnitPattern>
+			</unit>
+			<unit type="duration-month">
+				<displayName>ܝܪ̈ܚܐ</displayName>
+				<unitPattern count="one">ܝܪܚܐ</unitPattern>
+				<unitPattern count="other">{0} ܝܪ̈ܚܐ</unitPattern>
+				<perUnitPattern>{0}/ܝܪܚܐ</perUnitPattern>
+			</unit>
+			<unit type="duration-week">
+				<displayName>ܫܒ̈ܘܥܐ</displayName>
+				<unitPattern count="one">{0} ܫܒܘܥܐ</unitPattern>
+				<unitPattern count="other">{0} ܫܒ̈ܘܥܐ</unitPattern>
+				<perUnitPattern>{0}/ܫܒ̈ܘܥܐ</perUnitPattern>
+			</unit>
+			<unit type="duration-day">
+				<displayName>ܝܘܡܢ̈ܐ</displayName>
+				<unitPattern count="one">ܚܕ ܝܘܡܐ</unitPattern>
+				<unitPattern count="other">{0} ܝܘܡܢ̈ܐ</unitPattern>
+				<perUnitPattern>{0}/ܝܘܡܐ</perUnitPattern>
+			</unit>
+			<unit type="duration-hour">
+				<displayName>ܫ̈ܥܐ</displayName>
+				<unitPattern count="one">{0} ܫܥܬܐ</unitPattern>
+				<unitPattern count="other">{0} ܫ̈ܥܐ</unitPattern>
+				<perUnitPattern>{0}/ܫܥܬܐ</perUnitPattern>
+			</unit>
+			<unit type="duration-minute">
+				<displayName>ܩܛܝܢ̈ܐ</displayName>
+				<unitPattern count="one">{0} ܩܛܝܢܐ</unitPattern>
+				<unitPattern count="other">{0} ܩܛܝܢ̈ܐ</unitPattern>
+				<perUnitPattern>{0}/ܩܛܝܢܐ</perUnitPattern>
+			</unit>
+			<unit type="duration-second">
+				<displayName>ܪ̈ܦܦܐ</displayName>
+				<unitPattern count="one">{0} ܪܦܦܐ</unitPattern>
+				<unitPattern count="other">{0} ܖ̈ܦܦܐ</unitPattern>
+				<perUnitPattern>{0}/ܪܦܦܐ</perUnitPattern>
+			</unit>
+			<unit type="duration-millisecond">
+				<displayName>ܡܝܠܝܪ̈ܦܦܐ</displayName>
+				<unitPattern count="one">{0} ܡܝܠܝܪܦܦܐ</unitPattern>
+				<unitPattern count="other">{0} ܡܝܠܝܪ̈ܦܦܐ</unitPattern>
+			</unit>
+			<unit type="duration-microsecond">
+				<displayName>ܡܝܟܪܘܖ̈ܦܦܐ</displayName>
+				<unitPattern count="one">{0} ܡܝܟܪܘܪܦܦܐ</unitPattern>
+				<unitPattern count="other">{0} ܡܝܟܪܘܖ̈ܦܦܐ</unitPattern>
+			</unit>
+			<unit type="duration-nanosecond">
+				<displayName>ܢܐܢܘܪ̈ܦܦܐ</displayName>
+				<unitPattern count="one">{0} ܢܐܢܘܪܦܦܐ</unitPattern>
+				<unitPattern count="other">{0} ܢܐܢܘܖ̈ܦܦܐ</unitPattern>
+			</unit>
+			<unit type="length-meter">
+				<displayName>m</displayName>
+			</unit>
+			<unit type="length-foot">
+				<displayName>ܐܩܠ̈ܐ</displayName>
+			</unit>
+			<unit type="length-solar-radius">
+				<unitPattern count="one">{0} ☉R</unitPattern>
+				<unitPattern count="other">{0} ☉R</unitPattern>
+			</unit>
+			<unit type="temperature-celsius">
+				<unitPattern count="one">{0} °C</unitPattern>
+				<unitPattern count="other">{0} °C</unitPattern>
+			</unit>
+			<unit type="temperature-fahrenheit">
+				<unitPattern count="one">{0} °F</unitPattern>
+				<unitPattern count="other">{0} °F</unitPattern>
+			</unit>
+			<coordinateUnit>
+				<displayName>ܦܢܝܬܐ ܫܪܫܢܝܬܐ</displayName>
+			</coordinateUnit>
+		</unitLength>
+		<unitLength type="narrow">
+			<unit type="area-acre">
+				<displayName>ܦܕܢܐ</displayName>
+			</unit>
+			<unit type="concentr-percent">
+				<displayName>ܒܡܐܐ</displayName>
+			</unit>
+			<unit type="duration-century">
+				<unitPattern count="one">{0} ܕܪܐ</unitPattern>
+				<unitPattern count="other">{0} ܕܪ̈ܐ</unitPattern>
+			</unit>
+			<unit type="duration-decade">
+				<unitPattern count="one">{0} ܥܣܝܪܘܬܐ</unitPattern>
+				<unitPattern count="other">{0} ܥܣܝܪ̈ܘܬܐ</unitPattern>
+			</unit>
+			<unit type="duration-year">
+				<displayName>ܫܢܬܐ</displayName>
+				<unitPattern count="one">{0} ܫܢܬܐ</unitPattern>
+				<unitPattern count="other">{0} ܫ̈ܢܐ</unitPattern>
+			</unit>
+			<unit type="duration-quarter">
+				<unitPattern count="one">{0} ܪܘܒܥܐ</unitPattern>
+				<unitPattern count="other">{0} ܪ̈ܘܒܥܐ</unitPattern>
+			</unit>
+			<unit type="duration-month">
+				<displayName>ܝܪܚܐ</displayName>
+				<unitPattern count="one">{0} ܝܪܚܐ</unitPattern>
+				<unitPattern count="other">{0} ܝܪ̈ܚܐ</unitPattern>
+			</unit>
+			<unit type="duration-week">
+				<displayName>ܫܒܘܥܐ</displayName>
+				<perUnitPattern>{0}/ܫܒܘܥܐ</perUnitPattern>
+			</unit>
+			<unit type="duration-day">
+				<displayName>ܝܘܡܐ</displayName>
+			</unit>
+			<unit type="duration-hour">
+				<displayName>ܫܥܬܐ</displayName>
+			</unit>
+			<unit type="duration-minute">
+				<displayName>ܩܛܝܢܐ</displayName>
+			</unit>
+			<unit type="duration-second">
+				<displayName>ܪܦܦܐ</displayName>
+			</unit>
+			<unit type="duration-millisecond">
+				<displayName>ܡܝܠܝܪܦܦܐ</displayName>
+			</unit>
+			<unit type="duration-microsecond">
+				<displayName>ܡܝܟܪܘܪܦܦܐ</displayName>
+			</unit>
+			<unit type="duration-nanosecond">
+				<displayName>ܢܐܢܘܪܦܦܐ</displayName>
+			</unit>
+			<unit type="length-foot">
+				<displayName>ft</displayName>
+				<unitPattern count="one">{0}′</unitPattern>
+				<unitPattern count="other">{0}′</unitPattern>
+			</unit>
+			<unit type="length-inch">
+				<unitPattern count="one">{0}″</unitPattern>
+				<unitPattern count="other">{0}″</unitPattern>
+			</unit>
+			<unit type="length-point">
+				<displayName>pts</displayName>
+			</unit>
+			<unit type="length-solar-radius">
+				<displayName>☉R</displayName>
+			</unit>
+			<coordinateUnit>
+				<coordinateUnitPattern type="east">{0} ܡܕܢܚܐ</coordinateUnitPattern>
+				<coordinateUnitPattern type="north">{0} ܓܪܒܝܐ</coordinateUnitPattern>
+				<coordinateUnitPattern type="south">{0} ܬܝܡܢܐ</coordinateUnitPattern>
+				<coordinateUnitPattern type="west">{0} ܡܥܪܒ݂ܐ</coordinateUnitPattern>
+			</coordinateUnit>
+		</unitLength>
+	</units>
+	<listPatterns>
+		<listPattern>
+			<listPatternPart type="start">{0} ܘ{1}</listPatternPart>
+			<listPatternPart type="middle">{0} ܘ{1}</listPatternPart>
+			<listPatternPart type="end">{0} ܘ{1}</listPatternPart>
+			<listPatternPart type="2">{0} ܘ{1}</listPatternPart>
+		</listPattern>
+		<listPattern type="or">
+			<listPatternPart type="start">{0} ܐܘ {1}</listPatternPart>
+			<listPatternPart type="middle">{0} ܐܘ {1}</listPatternPart>
+			<listPatternPart type="end">{0} ܐܘ {1}</listPatternPart>
+			<listPatternPart type="2">{0} ܐܘ {1}</listPatternPart>
+		</listPattern>
+	</listPatterns>
+	<posix>
+		<messages>
+			<yesstr>ܗܐ:ܗ</yesstr>
+			<nostr>ܠܐ:ܠ</nostr>
+		</messages>
+	</posix>
+	<personNames>
+		<nameOrderLocales order="givenFirst">und syr</nameOrderLocales>
+		<parameterDefault parameter="length">long</parameterDefault>
+		<personName order="givenFirst" length="long" usage="referring" formality="formal">
+			<namePattern>{title} {given} {given2} {surname} {generation}، {credentials}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="referring" formality="informal">
+			<namePattern>{given-informal} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="addressing" formality="formal">
+			<namePattern>{title} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="monogram" formality="formal">
+			<namePattern>{given-monogram-allCaps}.{given2-monogram-allCaps}.{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram-allCaps}.{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="referring" formality="formal">
+			<namePattern>{title} {given} {given2-initial} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="referring" formality="informal">
+			<namePattern>{given-informal} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="addressing" formality="formal">
+			<namePattern>{title} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="monogram" formality="formal">
+			<namePattern draft="provisional">{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="monogram" formality="informal">
+			<namePattern>{given-monogram-allCaps}.{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="referring" formality="formal">
+			<namePattern draft="provisional">{title} {given-initial} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="referring" formality="informal">
+			<namePattern>{given-informal-initial}. {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="addressing" formality="formal">
+			<namePattern draft="provisional">{title} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="monogram" formality="formal">
+			<namePattern draft="provisional">{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="monogram" formality="informal">
+			<namePattern>{given-monogram-allCaps}.{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="referring" formality="formal">
+			<namePattern>{surname}، {given} {given2}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="referring" formality="informal">
+			<namePattern>{surname} {given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="addressing" formality="formal">
+			<namePattern draft="provisional">{title} {surname}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}.{given-monogram-allCaps}.{given2-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="monogram" formality="informal">
+			<namePattern>{surname-monogram-allCaps}.{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="referring" formality="formal">
+			<namePattern>{surname}، {given} {given2-initial}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="referring" formality="informal">
+			<namePattern>{surname} {given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="addressing" formality="formal">
+			<namePattern>{title} {surname}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="monogram" formality="formal">
+			<namePattern draft="provisional">{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="monogram" formality="informal">
+			<namePattern draft="provisional">{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="referring" formality="formal">
+			<namePattern>{surname}، {given-initial} {given2-initial}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="referring" formality="informal">
+			<namePattern>{surname} {given-initial}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="addressing" formality="formal">
+			<namePattern draft="provisional">{title} {surname}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="monogram" formality="formal">
+			<namePattern draft="provisional">{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="monogram" formality="informal">
+			<namePattern draft="provisional">{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="sorting" length="long" usage="referring" formality="formal">
+			<namePattern>{surname-prefix} {surname-core}، {given} {given2}</namePattern>
+		</personName>
+		<personName order="sorting" length="long" usage="referring" formality="informal">
+			<namePattern>{surname}، {given-informal}</namePattern>
+		</personName>
+		<personName order="sorting" length="medium" usage="referring" formality="formal">
+			<namePattern>{surname-prefix} {surname-core}، {given} {given2-initial}</namePattern>
+		</personName>
+		<personName order="sorting" length="medium" usage="referring" formality="informal">
+			<namePattern>{surname}، {given-informal}</namePattern>
+		</personName>
+		<personName order="sorting" length="short" usage="referring" formality="formal">
+			<namePattern>{surname-prefix} {surname-core}، {given} {given2-initial}</namePattern>
+		</personName>
+		<personName order="sorting" length="short" usage="referring" formality="informal">
+			<namePattern>{surname}، {given-informal}</namePattern>
+		</personName>
+		<sampleName item="nativeG">
+			<nameField type="given">ܢܝܢܘܝܬܐ</nameField>
+		</sampleName>
+		<sampleName item="nativeGS">
+			<nameField type="given">ܐܝܫܬܪ</nameField>
+			<nameField type="surname">ܣܪܓܝܣ</nameField>
+		</sampleName>
+		<sampleName item="nativeGGS">
+			<nameField type="given">ܡܪܝܡ</nameField>
+			<nameField type="given2">ܐܘܪܗܝ</nameField>
+			<nameField type="surname">ܝܘܚܢܢ</nameField>
+		</sampleName>
+		<sampleName item="nativeFull">
+			<nameField type="title">ܡܝܩܪܐ</nameField>
+			<nameField type="given">ܫܪܘܟܝܢܐ ܢܝܢܘܬܐ</nameField>
+			<nameField type="given-informal">ܫܪܘ</nameField>
+			<nameField type="given2">ܘܪܕܐ</nameField>
+			<nameField type="surname-core">ܒܝܬ ܝܘܐܝܠ</nameField>
+			<nameField type="generation">ܒܪܐ ܙܥܘܪܐ</nameField>
+			<nameField type="credentials">ܐܝܙܓܕܐ</nameField>
+		</sampleName>
+		<sampleName item="foreignG">
+			<nameField type="given">ܣܢܒܕ</nameField>
+		</sampleName>
+		<sampleName item="foreignGS">
+			<nameField type="given">ܟܬܪܝܢ</nameField>
+			<nameField type="surname">ܡܘܠܪ</nameField>
+		</sampleName>
+		<sampleName item="foreignGGS">
+			<nameField type="given">ܙܙܝܠܝܐ</nameField>
+			<nameField type="given2">ܗܡܝܫ</nameField>
+			<nameField type="surname">ܣܬܘܒܪ</nameField>
+		</sampleName>
+		<sampleName item="foreignFull">
+			<nameField type="title">ܕܘܟܬܘܪ ܦܪܘܦܣܘܪ</nameField>
+			<nameField type="given">ܐܕܐ ܟܘܪܢܝܠܝܐ</nameField>
+			<nameField type="given-informal">ܢܝܠ</nameField>
+			<nameField type="given2">ܣܐܙܪ ܡܪܬܝܢ</nameField>
+			<nameField type="surname-prefix">ܒܘܢ</nameField>
+			<nameField type="surname-core">ܒܪܘܗܠ</nameField>
+			<nameField type="surname2">ܓܘܢܙܠܝܙ ܕܘܡܝܢܓܘ</nameField>
+			<nameField type="generation">ܒܪܐ ܙܥܘܪܐ</nameField>
+			<nameField type="credentials">ܐܣܝܐ ܘܥܨܘܒܐ</nameField>
+		</sampleName>
+	</personNames>
+</ldml>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,16 +37,16 @@ void ZVirtualMemoryManager::pd_initialize_after_reserve() {
   // Does nothing
 }
 
-bool ZVirtualMemoryManager::pd_reserve(uintptr_t addr, size_t size) {
-  const uintptr_t res = (uintptr_t)mmap((void*)addr, size, PROT_NONE, MAP_ANONYMOUS|MAP_PRIVATE|MAP_NORESERVE, -1, 0);
-  if (res == (uintptr_t)MAP_FAILED) {
+bool ZVirtualMemoryManager::pd_reserve(zaddress_unsafe addr, size_t size) {
+  void* const res = mmap((void*)untype(addr), size, PROT_NONE, MAP_ANONYMOUS|MAP_PRIVATE|MAP_NORESERVE, -1, 0);
+  if (res == MAP_FAILED) {
     // Failed to reserve memory
     return false;
   }
 
-  if (res != addr) {
+  if (res != (void*)untype(addr)) {
     // Failed to reserve memory at the requested address
-    munmap((void*)res, size);
+    munmap(res, size);
     return false;
   }
 
@@ -54,7 +54,7 @@ bool ZVirtualMemoryManager::pd_reserve(uintptr_t addr, size_t size) {
   return true;
 }
 
-void ZVirtualMemoryManager::pd_unreserve(uintptr_t addr, size_t size) {
-  const int res = munmap((void*)addr, size);
+void ZVirtualMemoryManager::pd_unreserve(zaddress_unsafe addr, size_t size) {
+  const int res = munmap((void*)untype(addr), size);
   assert(res == 0, "Failed to unmap memory");
 }

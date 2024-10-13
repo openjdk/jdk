@@ -195,6 +195,7 @@ public class LinkedBlockingDeque<E>
      * @throws NullPointerException if the specified collection or any
      *         of its elements are null
      */
+    @SuppressWarnings("this-escape")
     public LinkedBlockingDeque(Collection<? extends E> c) {
         this(Integer.MAX_VALUE);
         addAll(c);
@@ -628,7 +629,9 @@ public class LinkedBlockingDeque<E>
     }
 
     /**
+     * {@inheritDoc BlockingDeque}
      * @throws NullPointerException if the specified element is null
+     * @return {@inheritDoc BlockingDeque}
      */
     public boolean offer(E e) {
         return offerLast(e);
@@ -665,6 +668,10 @@ public class LinkedBlockingDeque<E>
         return removeFirst();
     }
 
+    /**
+     * {@inheritDoc BlockingDeque}
+     * @return {@inheritDoc BlockingDeque}
+     */
     public E poll() {
         return pollFirst();
     }
@@ -691,6 +698,10 @@ public class LinkedBlockingDeque<E>
         return getFirst();
     }
 
+    /**
+     * {@inheritDoc BlockingDeque}
+     * @return {@inheritDoc BlockingDeque}
+     */
     public E peek() {
         return peekFirst();
     }

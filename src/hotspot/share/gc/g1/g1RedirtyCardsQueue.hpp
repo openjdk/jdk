@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #ifndef SHARE_GC_G1_G1REDIRTYCARDSQUEUE_HPP
 #define SHARE_GC_G1_G1REDIRTYCARDSQUEUE_HPP
 
+#include "gc/shared/bufferNode.hpp"
 #include "gc/shared/bufferNodeList.hpp"
 #include "gc/shared/ptrQueue.hpp"
 #include "memory/padded.hpp"
@@ -55,7 +56,9 @@ public:
   void enqueue(void* value);
 
   // Transfer all completed buffers to the shared qset.
-  void flush();
+  // Returns the flushed BufferNodeList which is later used
+  // as a shortcut into the shared qset.
+  BufferNodeList flush();
 };
 
 // Card table entries to be redirtied and the cards reprocessed later.
@@ -65,11 +68,11 @@ public:
 // collected (and processed) buffers reverts back to collecting, allowing
 // the set to be reused for another round of redirtying.
 class G1RedirtyCardsQueueSet : public PtrQueueSet {
-  DEFINE_PAD_MINUS_SIZE(1, DEFAULT_CACHE_LINE_SIZE, 0);
+  DEFINE_PAD_MINUS_SIZE(1, DEFAULT_PADDING_SIZE, 0);
   BufferNode::Stack _list;
-  DEFINE_PAD_MINUS_SIZE(2, DEFAULT_CACHE_LINE_SIZE, sizeof(size_t));
+  DEFINE_PAD_MINUS_SIZE(2, DEFAULT_PADDING_SIZE, sizeof(size_t));
   volatile size_t _entry_count;
-  DEFINE_PAD_MINUS_SIZE(3, DEFAULT_CACHE_LINE_SIZE, sizeof(BufferNode*));
+  DEFINE_PAD_MINUS_SIZE(3, DEFAULT_PADDING_SIZE, sizeof(BufferNode*));
   BufferNode* _tail;
   DEBUG_ONLY(mutable bool _collecting;)
 

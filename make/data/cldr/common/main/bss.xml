@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2024 Unicode, Inc.
+For terms of use, see http://www.unicode.org/copyright.html
+SPDX-License-Identifier: Unicode-3.0
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+-->
+<ldml>
+	<identity>
+		<version number="$Revision$"/>
+		<language type="bss"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="bss">Akoose</language>
+			<language type="en">Akáálé</language>
+			<language type="fr">Frɛnsé</language>
+		</languages>
+		<scripts>
+			<script type="Latn">Akoose</script>
+		</scripts>
+		<territories>
+			<territory type="CM">Kamerûn</territory>
+		</territories>
+		<keys>
+			<key type="currency">mɔné</key>
+		</keys>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters>[aáâǎā b c d eéêěē ə{ə́}{ə̂}{ə̌}{ə̄} ɛ{ɛ́}{ɛ̂}{ɛ̌}{ɛ̄} g h iíîǐī j k l mḿ nń ŋ oóôǒō ɔ{ɔ́}{ɔ̂}{ɔ̌}{ɔ̄} p s t uúûǔū w y z ʼ]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[f q r v x]</exemplarCharacters>
+		<exemplarCharacters type="index">[A B C D E Ə Ɛ G H I J K L M N Ŋ O Ɔ P S T U W Y Z]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[, ; \: ! ? . ' &quot;]</exemplarCharacters>
+	</characters>
+	<dates>
+		<fields>
+			<field type="year">
+				<displayName>mwɛ̌</displayName>
+			</field>
+			<field type="month">
+				<displayName>ngɔn</displayName>
+			</field>
+			<field type="week">
+				<displayName>sɔ̂ndé</displayName>
+			</field>
+			<field type="day">
+				<displayName>mbwɛ</displayName>
+				<relative type="-2">súúbɛ</relative>
+				<relative type="-1">chǎn ábe éʼtómé</relative>
+				<relative type="0">chii</relative>
+				<relative type="1">chǎn ábe éʼhúɛʼ</relative>
+			</field>
+			<field type="hour">
+				<displayName>háwa</displayName>
+			</field>
+			<field type="minute">
+				<displayName>menúte</displayName>
+			</field>
+		</fields>
+	</dates>
+	<numbers>
+		<currencies>
+			<currency type="XAF">
+				<displayName>Frânke CFA</displayName>
+			</currency>
+		</currencies>
+	</numbers>
+	<listPatterns>
+		<listPattern>
+			<listPatternPart type="end">{0} {1}</listPatternPart>
+		</listPattern>
+	</listPatterns>
+</ldml>

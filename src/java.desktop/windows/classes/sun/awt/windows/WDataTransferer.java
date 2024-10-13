@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -597,7 +597,7 @@ class HTMLCodec extends InputStream {
      *<!--StartFragment--><HTML>...<BODY>...</BODY><HTML><!--EndFragment-->
      * or
      *<HTML>...<!--StartFragment-->...<BODY>...</BODY><!--EndFragment--><HTML>
-     * are vailid too.
+     * are valid too.
      */
     public static byte[] convertToHTMLFormat(byte[] bytes) {
         // Calculate section offsets

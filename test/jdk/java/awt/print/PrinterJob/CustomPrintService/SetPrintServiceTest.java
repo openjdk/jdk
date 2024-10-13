@@ -28,7 +28,6 @@ import java.awt.print.PrinterJob;
  * @test
  * @bug 6870661
  * @summary tests setPrintService() with a custom implementation
- * @author reinhapa
  */
 public class SetPrintServiceTest {
 

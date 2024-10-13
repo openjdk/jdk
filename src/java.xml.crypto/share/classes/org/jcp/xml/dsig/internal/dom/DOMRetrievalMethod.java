@@ -176,14 +176,17 @@ public final class DOMRetrievalMethod extends DOMStructure
         }
     }
 
+    @Override
     public String getURI() {
         return uri;
     }
 
+    @Override
     public String getType() {
         return type;
     }
 
+    @Override
     public List<Transform> getTransforms() {
         return transforms;
     }
@@ -219,10 +222,12 @@ public final class DOMRetrievalMethod extends DOMStructure
         here = rmElem.getAttributeNodeNS(null, "URI");
     }
 
+    @Override
     public Node getHere() {
         return here;
     }
 
+    @Override
     public Data dereference(XMLCryptoContext context)
         throws URIReferenceException
     {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,8 +35,8 @@
 #ifndef AMD64
     format_width       =  1
 #else
-    // vs Assembler::narrow_oop_operand.
-    format_width       =  2
+    // vs Assembler::narrow_oop_operand and ZGC barrier encodings.
+    format_width       =  3
 #endif
   };
 

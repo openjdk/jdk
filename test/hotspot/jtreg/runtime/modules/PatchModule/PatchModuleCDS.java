@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ public class PatchModuleCDS {
 
         // Case 1: Test that --patch-module and -Xshare:dump are compatible
         String filename = "patch_module.jsa";
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:SharedArchiveFile=" + filename,
             "-Xshare:dump",
@@ -69,7 +69,7 @@ public class PatchModuleCDS {
              InMemoryJavaCompiler.compile("javax.naming.spi.NamingManager", source, "--patch-module=java.naming"),
              System.getProperty("test.classes"));
 
-        pb = ProcessTools.createJavaProcessBuilder(
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:SharedArchiveFile=" + filename,
             "-Xshare:dump",
@@ -84,7 +84,7 @@ public class PatchModuleCDS {
         // Case 3a: Test CDS dumping with jar file in --patch-module
         BasicJarBuilder.build("javanaming", "javax/naming/spi/NamingManager");
         String moduleJar = BasicJarBuilder.getTestJar("javanaming.jar");
-        pb = ProcessTools.createJavaProcessBuilder(
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:SharedArchiveFile=" + filename,
             "-Xshare:dump",
@@ -98,7 +98,7 @@ public class PatchModuleCDS {
             .shouldContain("Cannot use the following option when dumping the shared archive: --patch-module");
 
         // Case 3b: Test CDS run with jar file in --patch-module
-        pb = ProcessTools.createJavaProcessBuilder(
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:SharedArchiveFile=" + filename,
             "-Xshare:auto",

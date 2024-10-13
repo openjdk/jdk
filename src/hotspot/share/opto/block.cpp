@@ -39,7 +39,10 @@
 #include "utilities/powerOfTwo.hpp"
 
 void Block_Array::grow( uint i ) {
-  assert(i >= Max(), "must be an overflow");
+  _nesting.check(_arena); // Check if a potential reallocation in the arena is safe
+  if (i < Max()) {
+    return; // No need to grow
+  }
   debug_only(_limit = i+1);
   if( i < _size )  return;
   if( !_size ) {
@@ -374,6 +377,7 @@ void Block::dump(const PhaseCFG* cfg) const {
 PhaseCFG::PhaseCFG(Arena* arena, RootNode* root, Matcher& matcher)
 : Phase(CFG)
 , _root(root)
+, _blocks(arena)
 , _block_arena(arena)
 , _regalloc(nullptr)
 , _scheduling_for_pressure(false)
@@ -394,7 +398,10 @@ PhaseCFG::PhaseCFG(Arena* arena, RootNode* root, Matcher& matcher)
   Node *x = new GotoNode(nullptr);
   x->init_req(0, x);
   _goto = matcher.match_tree(x);
-  assert(_goto != nullptr, "");
+  assert(_goto != nullptr || C->failure_is_artificial(), "");
+  if (C->failing()) {
+    return;
+  }
   _goto->set_req(0,_goto);
 
   // Build the CFG in Reverse Post Order
@@ -622,8 +629,8 @@ static bool no_flip_branch(Block *b) {
 void PhaseCFG::convert_NeverBranch_to_Goto(Block *b) {
   int end_idx = b->end_idx();
   NeverBranchNode* never_branch = b->get_node(end_idx)->as_NeverBranch();
-  Block* succ = get_block_for_node(never_branch->proj_out(0)->unique_ctrl_out_or_null());
-  Block* dead = get_block_for_node(never_branch->proj_out(1)->unique_ctrl_out_or_null());
+  Block* succ = get_block_for_node(never_branch->proj_out(0)->unique_ctrl_out());
+  Block* dead = get_block_for_node(never_branch->proj_out(1)->unique_ctrl_out());
   assert(succ == b->_succs[0] || succ == b->_succs[1], "succ is a successor");
   assert(dead == b->_succs[0] || dead == b->_succs[1], "dead is a successor");
 
@@ -1417,7 +1424,7 @@ UnionFind::UnionFind( uint max ) : _cnt(max), _max(max), _indices(NEW_RESOURCE_A
 }
 
 void UnionFind::extend( uint from_idx, uint to_idx ) {
-  _nesting.check();
+  _nesting.check(); // Check if a potential reallocation in the resource arena is safe
   if( from_idx >= _max ) {
     uint size = 16;
     while( size <= from_idx ) size <<=1;
@@ -1764,21 +1771,20 @@ void PhaseBlockLayout::merge_traces(bool fall_thru_only) {
 
 // Order the sequence of the traces in some desirable way
 void PhaseBlockLayout::reorder_traces(int count) {
-  ResourceArea *area = Thread::current()->resource_area();
-  Trace ** new_traces = NEW_ARENA_ARRAY(area, Trace *, count);
+  Trace** new_traces = NEW_RESOURCE_ARRAY(Trace*, count);
   Block_List worklist;
   int new_count = 0;
 
   // Compact the traces.
   for (int i = 0; i < count; i++) {
-    Trace *tr = traces[i];
+    Trace* tr = traces[i];
     if (tr != nullptr) {
       new_traces[new_count++] = tr;
     }
   }
 
   // The entry block should be first on the new trace list.
-  Trace *tr = trace(_cfg.get_root_block());
+  Trace* tr = trace(_cfg.get_root_block());
   assert(tr == new_traces[0], "entry trace misplaced");
 
   // Sort the new trace list by frequency
@@ -1787,7 +1793,7 @@ void PhaseBlockLayout::reorder_traces(int count) {
   // Collect all blocks from existing Traces
   _cfg.clear_blocks();
   for (int i = 0; i < new_count; i++) {
-    Trace *tr = new_traces[i];
+    Trace* tr = new_traces[i];
     if (tr != nullptr) {
       // push blocks onto the CFG list
       for (Block* b = tr->first_block(); b != nullptr; b = tr->next(b)) {
@@ -1802,16 +1808,15 @@ PhaseBlockLayout::PhaseBlockLayout(PhaseCFG &cfg)
 : Phase(BlockLayout)
 , _cfg(cfg) {
   ResourceMark rm;
-  ResourceArea *area = Thread::current()->resource_area();
 
   // List of traces
   int size = _cfg.number_of_blocks() + 1;
-  traces = NEW_ARENA_ARRAY(area, Trace *, size);
+  traces = NEW_RESOURCE_ARRAY(Trace*, size);
   memset(traces, 0, size*sizeof(Trace*));
-  next = NEW_ARENA_ARRAY(area, Block *, size);
-  memset(next,   0, size*sizeof(Block *));
-  prev = NEW_ARENA_ARRAY(area, Block *, size);
-  memset(prev  , 0, size*sizeof(Block *));
+  next = NEW_RESOURCE_ARRAY(Block*, size);
+  memset(next,   0, size*sizeof(Block*));
+  prev = NEW_RESOURCE_ARRAY(Block*, size);
+  memset(prev  , 0, size*sizeof(Block*));
 
   // List of edges
   edges = new GrowableArray<CFGEdge*>;

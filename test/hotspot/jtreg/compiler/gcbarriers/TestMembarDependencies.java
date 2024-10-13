@@ -43,7 +43,7 @@ public class TestMembarDependencies {
     public static void main(String args[]) throws Exception {
         if (args.length == 0) {
             // For debugging, add "-XX:+TraceOptoPipelining"
-            OutputAnalyzer oa = ProcessTools.executeTestJvm("-XX:+IgnoreUnrecognizedVMOptions",
+            OutputAnalyzer oa = ProcessTools.executeTestJava("-XX:+IgnoreUnrecognizedVMOptions",
                 "-XX:-TieredCompilation", "-XX:-BackgroundCompilation", "-XX:+PrintOpto",
                 "-XX:CompileCommand=compileonly,compiler.membars.TestMembarDependencies::test*",
                 "-XX:CompileCommand=dontinline,compiler.membars.TestMembarDependencies::test_m1",

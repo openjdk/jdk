@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,11 +35,13 @@ import java.util.function.IntUnaryOperator;
 import java.util.stream.Stream;
 import java.util.stream.Collectors;
 
+import jdk.test.lib.Utils;
+
 import org.testng.Assert;
 
 public class AbstractVectorTest {
 
-    static final Random RAND = new Random(Integer.getInteger("jdk.incubator.vector.test.random-seed", 1337));
+    static final Random RAND = Utils.getRandomInstance();
 
     interface ToBoolF {
         boolean apply(int i);

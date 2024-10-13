@@ -24,6 +24,7 @@ package org.openjdk.bench.vm.compiler;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.CompilerControl;
 import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
@@ -50,6 +51,14 @@ public class InterfaceCalls {
 
     interface SecondInterface {
         public int getIntSecond();
+    }
+
+    interface FirstInterfaceExt extends FirstInterface {
+        default int getIntFirst() { return 44; }
+    }
+
+    interface FirstInterfaceExtExt extends FirstInterfaceExt {
+        default int getIntFirst() { return 45; }
     }
 
     class FirstClass implements FirstInterface, SecondInterface {
@@ -102,8 +111,80 @@ public class InterfaceCalls {
         }
     }
 
+    class FirstClassDontInline implements FirstInterface {
+        @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+        public int getIntFirst() {
+            return -1;
+        }
+    }
+
+    class SecondClassDontInline implements FirstInterface {
+        @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+        public int getIntFirst() {
+            return -2;
+        }
+    }
+
+    class ThirdClassDontInline implements FirstInterface {
+        @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+        public int getIntFirst() {
+            return -3;
+        }
+    }
+
+    class FourthClassDontInline implements FirstInterface {
+        @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+        public int getIntFirst() {
+            return -4;
+        }
+    }
+
+    class FifthClassDontInline implements FirstInterface {
+        @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+        public int getIntFirst() {
+            return -5;
+        }
+    }
+
+    class FirstClassDontInlineExtExt implements FirstInterfaceExtExt {
+        @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+        public int getIntFirst() {
+            return -1;
+        }
+    }
+
+    class SecondClassDontInlineExtExt implements FirstInterfaceExtExt {
+        @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+        public int getIntFirst() {
+            return -2;
+        }
+    }
+
+    class ThirdClassDontInlineExtExt implements FirstInterfaceExtExt {
+        @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+        public int getIntFirst() {
+            return -3;
+        }
+    }
+
+    class FourthClassDontInlineExtExt implements FirstInterfaceExtExt {
+        @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+        public int getIntFirst() {
+            return -4;
+        }
+    }
+
+    class FifthClassDontInlineExtExt implements FirstInterfaceExtExt {
+        @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+        public int getIntFirst() {
+            return -5;
+        }
+    }
+
     final int asLength = 5;
     public FirstInterface[] as = new FirstInterface[asLength];
+    public FirstInterface[] noninlined = new FirstInterface[asLength];
+    public FirstInterfaceExtExt[] noninlinedextext = new FirstInterfaceExtExt[asLength];
 
 
     @Setup
@@ -113,6 +194,18 @@ public class InterfaceCalls {
         as[2] = new ThirdClass();
         as[3] = new FourthClass();
         as[4] = new FifthClass();
+
+        noninlined[0] = new FirstClassDontInline();
+        noninlined[1] = new SecondClassDontInline();
+        noninlined[2] = new ThirdClassDontInline();
+        noninlined[3] = new FourthClassDontInline();
+        noninlined[4] = new FifthClassDontInline();
+
+        noninlinedextext[0] = new FirstClassDontInlineExtExt();
+        noninlinedextext[1] = new SecondClassDontInlineExtExt();
+        noninlinedextext[2] = new ThirdClassDontInlineExtExt();
+        noninlinedextext[3] = new FourthClassDontInlineExtExt();
+        noninlinedextext[4] = new FifthClassDontInlineExtExt();
     }
 
     /**
@@ -125,6 +218,22 @@ public class InterfaceCalls {
     }
 
     int l = 0;
+
+    /** Tests single base interface method call */
+    @Benchmark
+    public int testIfaceCall(Blackhole bh) {
+        FirstInterface ai = noninlined[l];
+        l = ++ l % asLength;
+        return ai.getIntFirst();
+    }
+
+    /** Tests extended interface method call */
+    @Benchmark
+    public int testIfaceExtCall(Blackhole bh) {
+        FirstInterfaceExtExt ai = noninlinedextext[l];
+        l = ++ l % asLength;
+        return ai.getIntFirst();
+    }
 
     /**
      * Interface call address computation within loop but the receiver preexists

@@ -33,22 +33,28 @@
 C2CodeStubList::C2CodeStubList() :
   _stubs(Compile::current()->comp_arena(), 2, 0, nullptr) {}
 
-void C2CodeStubList::emit(CodeBuffer& cb) {
-  C2_MacroAssembler masm(&cb);
+void C2CodeStubList::emit(C2_MacroAssembler& masm) {
   for (int i = _stubs.length() - 1; i >= 0; i--) {
     C2CodeStub* stub = _stubs.at(i);
     int max_size = stub->max_size();
     // Make sure there is enough space in the code buffer
-    if (cb.insts()->maybe_expand_to_ensure_remaining(max_size) && cb.blob() == nullptr) {
+    if (masm.code()->insts()->maybe_expand_to_ensure_remaining(max_size) && masm.code()->blob() == nullptr) {
       ciEnv::current()->record_failure("CodeCache is full");
       return;
     }
 
-    DEBUG_ONLY(int size_before = cb.insts_size();)
+    DEBUG_ONLY(int size_before = masm.offset();)
 
     stub->emit(masm);
 
-    DEBUG_ONLY(int actual_size = cb.insts_size() - size_before;)
+    DEBUG_ONLY(int actual_size = masm.offset() - size_before;)
     assert(max_size >= actual_size, "Expected stub size (%d) must be larger than or equal to actual stub size (%d)", max_size, actual_size);
+  }
+}
+
+// move here to avoid circular dependency between c2_CodeStubs.hpp and output.hpp
+void C2CodeStub::add_to_stub_list() {
+  if (!Compile::current()->output()->in_scratch_emit_size()) {
+    Compile::current()->output()->add_stub(this);
   }
 }

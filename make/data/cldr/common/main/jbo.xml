@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2024 Unicode, Inc.
+For terms of use, see http://www.unicode.org/copyright.html
+SPDX-License-Identifier: Unicode-3.0
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+-->
+<ldml>
+	<identity>
+		<version number="$Revision$"/>
+		<language type="jbo"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="jbo" draft="contributed">la .lojban.</language>
+		</languages>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters>[a b c d e f g h i j k l m n o p r s t u v x y z]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[q w]</exemplarCharacters>
+		<exemplarCharacters type="index">[a b c d e f g i j k l m n o p r s t u v x y z]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[, . ']</exemplarCharacters>
+	</characters>
+	<dates>
+		<timeZoneNames>
+			<metazone type="Colombia">
+				<long>
+					<generic draft="unconfirmed">tcika fo la kolombiias</generic>
+					<standard draft="unconfirmed">nalcistcika fo la kolombiias</standard>
+					<daylight draft="unconfirmed">cistcika fo la kolombiias</daylight>
+				</long>
+			</metazone>
+			<metazone type="Galapagos">
+				<long>
+					<standard draft="unconfirmed">tcika fo la galapagos</standard>
+				</long>
+			</metazone>
+		</timeZoneNames>
+	</dates>
+</ldml>

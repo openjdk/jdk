@@ -56,7 +56,7 @@ JNIEXPORT void JNICALL Java_org_openjdk_bench_java_lang_foreign_QSort_jni_1qsort
     jint* ints = (*env)->GetIntArrayElements(env, arr, NULL);
     jsize length = (*env)->GetArrayLength(env, arr);
 
-    qsort(ints, length, sizeof(jint), &comparator);
+    qsort(ints, (size_t) length, sizeof(jint), &comparator);
 
     (*env)->ReleaseIntArrayElements(env, arr, ints, 0);
 }
@@ -84,6 +84,6 @@ JNIEXPORT void JNICALL Java_org_openjdk_bench_java_lang_foreign_QSort_jni_1qsort
 
     jint* carr = (*env)->GetIntArrayElements(env, arr, 0);
     jsize length = (*env)->GetArrayLength(env, arr);
-    qsort(carr, length, sizeof(jint), java_cmp);
+    qsort(carr, (size_t) length, sizeof(jint), java_cmp);
     (*env)->ReleaseIntArrayElements(env, arr, carr, 0);
 }

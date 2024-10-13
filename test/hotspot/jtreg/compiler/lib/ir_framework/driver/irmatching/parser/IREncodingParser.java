@@ -103,7 +103,7 @@ public class IREncodingParser {
      */
     private String[] getIREncodingLines(String irEncoding) {
         Matcher matcher = IR_ENCODING_PATTERN.matcher(irEncoding);
-        TestFramework.check(matcher.find(), "Did not find IR encoding");
+        TestFramework.check(matcher.find(), "Did not find IR encoding in:" + System.lineSeparator() + irEncoding);
         String lines = matcher.group(1).trim();
         if (lines.isEmpty()) {
             // Nothing to IR match.

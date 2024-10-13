@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,8 @@
 #include <string.h>
 #include <jni.h>
 #include <jvmti.h>
-#include <aod.h>
-#include <jvmti_aod.h>
+#include <aod.hpp>
+#include <jvmti_aod.hpp>
 #include "ExceptionCheckingJniEnv.hpp"
 
 extern "C" {
@@ -45,7 +45,7 @@ extern "C" {
 // class name in the ClassFileLoadHook callback
 #define REDEFINED_CLASS_NAME_INTERNAL "nsk/jvmti/AttachOnDemand/attach002/ClassToRedefine"
 
-static Options* options = NULL;
+static Options* options = nullptr;
 static const char* agentName;
 
 static volatile jboolean agentGotCapabilities = JNI_FALSE;
@@ -152,13 +152,13 @@ void JNICALL classFileLoadHoockHandler(
         jint * new_class_data_len,
         unsigned char** new_class_data) {
 
-    if (name != NULL) {
+    if (name != nullptr) {
         NSK_DISPLAY2("%s: ClassFileLoadHook event received for class '%s'\n", agentName, name);
         if (!strcmp(name, REDEFINED_CLASS_NAME_INTERNAL)) {
             classFileLoadHookReceived++;
         }
     } else {
-        NSK_DISPLAY1("%s: ClassFileLoadHook event received for class with NULL name\n", agentName);
+        NSK_DISPLAY1("%s: ClassFileLoadHook event received for class with null name\n", agentName);
     }
 }
 
@@ -177,21 +177,21 @@ Agent_OnAttach(JavaVM *vm, char *optionsString, void *reserved)
 {
     jvmtiEventCallbacks eventCallbacks;
     jvmtiCapabilities caps;
-    jvmtiEnv* jvmti = NULL;
-    JNIEnv* jni = NULL;
+    jvmtiEnv* jvmti = nullptr;
+    JNIEnv* jni = nullptr;
 
     options = (Options*) nsk_aod_createOptions(optionsString);
-    if (!NSK_VERIFY(options != NULL))
+    if (!NSK_VERIFY(options != nullptr))
         return JNI_ERR;
 
     agentName = nsk_aod_getOptionValue(options, NSK_AOD_AGENT_NAME_OPTION);
 
     jni = (JNIEnv*) nsk_aod_createJNIEnv(vm);
-    if (jni == NULL)
+    if (jni == nullptr)
         return NSK_FALSE;
 
     jvmti = nsk_jvmti_createJVMTIEnv(vm, reserved);
-    if (!NSK_VERIFY(jvmti != NULL))
+    if (!NSK_VERIFY(jvmti != nullptr))
         return JNI_ERR;
 
     registerNativeMethods(jni);

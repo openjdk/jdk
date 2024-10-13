@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -856,10 +856,18 @@ final class Win32ShellFolder2 extends ShellFolder {
 
     /**
      * @return Whether this shell folder is a link
+     * @implNote Returns {@code true} for {@code .lnk} shortcuts only.
+     * For <i>symbolic links</i> and <i>junctions</i>, it returns
+     * {@code false} even though {@code IShellFolder} returns
+     * {@code true} now. It is a workaround for easier handling of
+     * symbolic links and junctions.
      */
+
     public boolean isLink() {
         if (cachedIsLink == null) {
-            cachedIsLink = hasAttribute(ATTRIB_LINK);
+            cachedIsLink = hasAttribute(ATTRIB_LINK)
+                           && (!isFileSystem()
+                               || getPath().toLowerCase().endsWith(".lnk"));
         }
 
         return cachedIsLink;
@@ -1117,7 +1125,10 @@ final class Win32ShellFolder2 extends ShellFolder {
 
                         if (hiResIconAvailable(getParentIShellFolder(), getRelativePIDL()) || newIcon == null) {
                             int size = getLargeIcon ? LARGE_ICON_SIZE : SMALL_ICON_SIZE;
-                            newIcon = getIcon(size, size);
+                            newIcon2 = getIcon(size, size);
+                            if (newIcon2 != null) {
+                                newIcon = newIcon2;
+                            }
                         }
 
                         if (newIcon == null) {
@@ -1184,6 +1195,9 @@ final class Win32ShellFolder2 extends ShellFolder {
                     newIcon = makeIcon(hIcon);
                     disposeIcon(hIcon);
 
+                    if (newIcon == null) {
+                        return null;
+                    }
                     multiResolutionIcon.put(s, newIcon);
                     if (size < MIN_QUALITY_ICON || size > MAX_QUALITY_ICON) {
                         break;

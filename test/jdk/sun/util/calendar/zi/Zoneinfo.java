@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ import java.util.StringTokenizer;
 class Zoneinfo {
 
     private static final int minYear = 1900;
-    private static final int maxYear = 2037;
+    private static final int maxYear = 2100;
     private static final long minTime = Time.getLocalTime(minYear, Month.JANUARY, 1, 0);
     private static int startYear = minYear;
     private static int endYear = maxYear;
@@ -240,8 +240,9 @@ class Zoneinfo {
                     continue;
                 }
                 String token = tokens.nextToken();
+                int len = token.length();
 
-                if (continued || "Zone".equals(token)) {
+                if (continued || token.regionMatches(true, 0, "Zone", 0, len)){
                     if (zone == null) {
                         if (!tokens.hasMoreTokens()) {
                             panic("syntax error: zone no more token");
@@ -268,7 +269,7 @@ class Zoneinfo {
                         }
                         zone = null;
                     }
-                } else if ("Rule".equals(token)) {
+                } else if (token.regionMatches(true, 0, "Rule", 0, len)) {
                     if (!tokens.hasMoreTokens()) {
                         panic("syntax error: rule no more token");
                     }
@@ -281,7 +282,7 @@ class Zoneinfo {
                     RuleRec rrec = RuleRec.parse(tokens);
                     rrec.setLine(line);
                     rule.add(rrec);
-                } else if ("Link".equals(token)) {
+                } else if (token.regionMatches(true, 0, "Link", 0, len)) {
                     // Link <newname> <oldname>
                     try {
                         String name1 = tokens.nextToken();

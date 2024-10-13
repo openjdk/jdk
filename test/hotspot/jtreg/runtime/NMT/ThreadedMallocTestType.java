@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,12 +29,9 @@
  *          java.management
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:NativeMemoryTracking=detail ThreadedMallocTestType
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:NativeMemoryTracking=summary ThreadedMallocTestType
  */
 
-import jdk.test.lib.process.ProcessTools;
-import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.JDKToolFinder;
 import jdk.test.whitebox.WhiteBox;
 
 public class ThreadedMallocTestType {
@@ -42,12 +40,7 @@ public class ThreadedMallocTestType {
   public static long memAlloc3;
 
   public static void main(String args[]) throws Exception {
-    OutputAnalyzer output;
     final WhiteBox wb = WhiteBox.getWhiteBox();
-
-    // Grab my own PID
-    String pid = Long.toString(ProcessTools.getProcessId());
-    ProcessBuilder pb = new ProcessBuilder();
 
     Thread allocThread = new Thread() {
       public void run() {
@@ -66,9 +59,10 @@ public class ThreadedMallocTestType {
     System.out.println("memAlloc3:"+memAlloc3);
 
     // Run 'jcmd <pid> VM.native_memory summary'
-    pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.native_memory", "summary"});
-    output = new OutputAnalyzer(pb.start());
-    output.shouldContain("Test (reserved=896KB, committed=896KB)");
+    NMTTestUtils.runJcmdSummaryReportAndCheckOutput(
+            "Test (reserved=896KB, committed=896KB)",
+            "(malloc=896KB #3) (at peak)"
+    );
 
     Thread freeThread = new Thread() {
       public void run() {
@@ -82,7 +76,9 @@ public class ThreadedMallocTestType {
     freeThread.start();
     freeThread.join();
 
-    output = new OutputAnalyzer(pb.start());
-    output.shouldNotContain("Test (reserved=");
+    NMTTestUtils.runJcmdSummaryReportAndCheckOutput(
+            "Test (reserved=0KB, committed=0KB)",
+            "(malloc=0KB) (peak=896KB #3)"
+    );
   }
 }

@@ -56,7 +56,7 @@ public class ClhsdbField {
                 "field InstanceKlass _constants ConstantPool*",
                 "field Klass _name Symbol*",
                 "field JavaThread _osthread OSThread*",
-                "field TenuredGeneration _the_space TenuredSpace*",
+                "field TenuredGeneration _the_space ContiguousSpace*",
                 "field VirtualSpace _low_boundary char*",
                 "field MethodCounters _backedge_counter InvocationCounter",
                 "field nmethod _entry_bci int",

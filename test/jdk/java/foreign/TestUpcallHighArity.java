@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,6 @@
 
 /*
  * @test
- * @enablePreview
- * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64" | os.arch == "riscv64"
  * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcallHighArity
  *
@@ -48,15 +46,6 @@ import java.util.function.Consumer;
 
 public class TestUpcallHighArity extends CallGeneratorHelper {
     static final MethodHandle MH_do_upcall;
-    static final Linker LINKER = Linker.nativeLinker();
-
-    // struct S_PDI { void* p0; double p1; int p2; };
-    static final MemoryLayout S_PDI_LAYOUT = MemoryLayout.structLayout(
-        C_POINTER.withName("p0"),
-        C_DOUBLE.withName("p1"),
-        C_INT.withName("p2"),
-        MemoryLayout.paddingLayout(32)
-    );
 
     static {
         System.loadLibrary("TestUpcallHighArity");
@@ -74,7 +63,7 @@ public class TestUpcallHighArity extends CallGeneratorHelper {
     public void testUpcall(MethodHandle downcall, MethodType upcallType,
                            FunctionDescriptor upcallDescriptor) throws Throwable {
         AtomicReference<Object[]> capturedArgs = new AtomicReference<>();
-        try (Arena arena = Arena.openConfined()) {
+        try (Arena arena = Arena.ofConfined()) {
             Object[] args = new Object[upcallType.parameterCount() + 1];
             args[0] = makeArgSaverCB(upcallDescriptor, arena, capturedArgs, -1);
             List<MemoryLayout> argLayouts = upcallDescriptor.argumentLayouts();

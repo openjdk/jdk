@@ -25,18 +25,18 @@
  * @test
  * @bug 8245245
  * @summary Test for Websocket URI encoding during HandShake
- * @library /test/lib
- * @build jdk.test.lib.net.SimpleSSLContext
- * @modules java.net.http
+ * @library /test/lib /test/jdk/java/net/httpclient/lib
+ * @build jdk.test.lib.net.SimpleSSLContext jdk.httpclient.test.lib.common.TestServerConfigurator
+ * @modules java.net.http/jdk.internal.net.http.common
  *          jdk.httpserver
  * @run testng/othervm -Djdk.internal.httpclient.debug=true HandshakeUrlEncodingTest
  */
 
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
-import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsServer;
 import com.sun.net.httpserver.HttpExchange;
+import jdk.httpclient.test.lib.common.TestServerConfigurator;
 import jdk.test.lib.net.SimpleSSLContext;
 import jdk.test.lib.net.URIBuilder;
 import org.testng.annotations.AfterTest;
@@ -154,7 +154,7 @@ public class HandshakeUrlEncodingTest {
         httpTestServer.createContext("/", new UrlHandler());
 
         httpsTestServer = HttpsServer.create(sa, 10);
-        httpsTestServer.setHttpsConfigurator(new HttpsConfigurator(sslContext));
+        httpsTestServer.setHttpsConfigurator(new TestServerConfigurator(sa.getAddress(), sslContext));
         httpsURI = URIBuilder.newBuilder()
                              .scheme("wss")
                              .host("localhost")

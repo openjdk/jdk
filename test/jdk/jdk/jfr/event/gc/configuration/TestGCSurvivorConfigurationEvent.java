@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ public class TestGCSurvivorConfigurationEvent {
         recording.stop();
         List<RecordedEvent> events = Events.fromRecording(recording);
         assertGreaterThanOrEqual(events.size(), 1, "Expected at least 1 event");
-        GCSurvivorConfigurationEventVerifier verifier = new GCSurvivorConfigurationEventVerifier(events.get(0));
+        GCSurvivorConfigurationEventVerifier verifier = new GCSurvivorConfigurationEventVerifier(events.getFirst());
         verifier.verify();
     }
 }

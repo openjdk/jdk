@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * This class is a placeholder for all internal static objects that represent
  * system state. We keep our representation up-to-date with actual system
  * state by tracking events, such as X Focus, Component under cursor etc.
- * All attributes should be private static with accessors to simpify change
+ * All attributes should be private static with accessors to simplify change
  * tracking.
  */
 package sun.awt.X11;

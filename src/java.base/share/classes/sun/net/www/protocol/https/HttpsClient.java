@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ import java.util.StringTokenizer;
 
 import javax.net.ssl.*;
 import sun.net.www.http.HttpClient;
-import sun.net.www.protocol.http.AuthenticatorKeys;
+import sun.net.www.protocol.http.AuthCacheImpl;
 import sun.net.www.protocol.http.HttpURLConnection;
 import sun.security.action.*;
 
@@ -335,11 +335,10 @@ final class HttpsClient extends HttpClient
             }
 
             if (ret != null) {
-                String ak = httpuc == null ? AuthenticatorKeys.DEFAULT
-                     : httpuc.getAuthenticatorKey();
+                AuthCacheImpl ak = httpuc == null ? null : httpuc.getAuthCache();
                 boolean compatible = ((ret.proxy != null && ret.proxy.equals(p)) ||
                     (ret.proxy == null && p == Proxy.NO_PROXY))
-                     && Objects.equals(ret.getAuthenticatorKey(), ak);
+                     && Objects.equals(ret.getAuthCache(), ak);
 
                 if (compatible) {
                     ret.lock();
@@ -377,7 +376,7 @@ final class HttpsClient extends HttpClient
         if (ret == null) {
             ret = new HttpsClient(sf, url, p, connectTimeout);
             if (httpuc != null) {
-                ret.authenticatorKey = httpuc.getAuthenticatorKey();
+                ret.authcache = httpuc.getAuthCache();
             }
         } else {
             @SuppressWarnings("removal")

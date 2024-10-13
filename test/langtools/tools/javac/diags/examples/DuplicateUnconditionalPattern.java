@@ -22,9 +22,6 @@
  */
 
 // key: compiler.err.duplicate.unconditional.pattern
-// key: compiler.misc.feature.pattern.switch
-// key: compiler.warn.preview.feature.use.plural
-// options: --enable-preview -source ${jdk.version} -Xlint:preview
 
 class DuplicateUnconditionalPattern {
     private void doSwitch(Object o) {

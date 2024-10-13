@@ -271,10 +271,14 @@ void
 SplashCreateThread(Splash * splash) {
     pthread_t thr;
     pthread_attr_t attr;
-    int rc;
 
-    pthread_attr_init(&attr);
-    rc = pthread_create(&thr, &attr, SplashScreenThread, (void *) splash);
+    int rslt = pthread_attr_init(&attr);
+    if (rslt != 0) return;
+    rslt = pthread_create(&thr, &attr, SplashScreenThread, (void *) splash);
+    if (rslt != 0) {
+        fprintf(stderr, "Could not create SplashScreen thread, error number:%d\n", rslt);
+    }
+    pthread_attr_destroy(&attr);
 }
 
 void

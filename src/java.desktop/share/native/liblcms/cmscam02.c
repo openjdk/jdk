@@ -30,7 +30,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2022 Marti Maria Saguer
+//  Copyright (c) 1998-2023 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -353,7 +353,7 @@ CAM02COLOR HPEtoCAT02(CAM02COLOR clr)
     M[5] = ((-0.7036 *  0.201908) + (1.6975 * 0.000008) + 0.0061);
     M[6] = (( 0.0030 *  1.910197) + (0.0136 * 0.370950));
     M[7] = (( 0.0030 * -1.112124) + (0.0136 * 0.629054));
-    M[8] = (( 0.0030 *  0.201908) + (0.0136 * 0.000008) + 0.9834);;
+    M[8] = (( 0.0030 *  0.201908) + (0.0136 * 0.000008) + 0.9834);
 
     clr.RGBc[0] = (clr.RGBp[0] * M[0]) + (clr.RGBp[1] * M[1]) + (clr.RGBp[2] * M[2]);
     clr.RGBc[1] = (clr.RGBp[0] * M[3]) + (clr.RGBp[1] * M[4]) + (clr.RGBp[2] * M[5]);

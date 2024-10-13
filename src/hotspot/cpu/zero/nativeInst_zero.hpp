@@ -70,6 +70,8 @@ class NativeCall : public NativeInstruction {
     instruction_size = 0 // not used within the interpreter
   };
 
+  static int byte_size() { return instruction_size; }
+
   address instruction_address() const {
     ShouldNotCallThis();
     return nullptr;
@@ -214,8 +216,8 @@ inline NativeGeneralJump* nativeGeneralJump_at(address address) {
 class NativePostCallNop: public NativeInstruction {
 public:
   bool check() const { Unimplemented(); return false; }
-  int displacement() const { Unimplemented(); return 0; }
-  void patch(jint diff) { Unimplemented(); }
+  bool decode(int32_t& oopmap_slot, int32_t& cb_offset) const { Unimplemented(); return false; }
+  bool patch(int32_t oopmap_slot, int32_t cb_offset) { Unimplemented(); return false; }
   void make_deopt() { Unimplemented(); }
 };
 

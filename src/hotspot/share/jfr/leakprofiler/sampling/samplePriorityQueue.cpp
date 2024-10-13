@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,12 +38,12 @@ SamplePriorityQueue::SamplePriorityQueue(size_t size) :
 
 SamplePriorityQueue::~SamplePriorityQueue() {
   FREE_C_HEAP_ARRAY(ObjectSample*, _items);
-  _items = NULL;
+  _items = nullptr;
 }
 
 void SamplePriorityQueue::push(ObjectSample* item) {
-  assert(item != NULL, "invariant");
-  assert(_items[_count] == NULL, "invariant");
+  assert(item != nullptr, "invariant");
+  assert(_items[_count] == nullptr, "invariant");
 
   _items[_count] = item;
   _items[_count]->set_index(_count);
@@ -58,16 +58,16 @@ size_t SamplePriorityQueue::total() const {
 
 ObjectSample* SamplePriorityQueue::pop() {
   if (_count == 0) {
-    return NULL;
+    return nullptr;
   }
 
   ObjectSample* const s = _items[0];
-  assert(s != NULL, "invariant");
+  assert(s != nullptr, "invariant");
   swap(0, _count - 1);
   _count--;
   assert(s == _items[_count], "invariant");
   // clear from heap
-  _items[_count] = NULL;
+  _items[_count] = nullptr;
   moveDown(0);
   _total -= s->span();
   return s;
@@ -128,7 +128,7 @@ void SamplePriorityQueue::moveUp(int i) {
 }
 
 void SamplePriorityQueue::remove(ObjectSample* s) {
-  assert(s != NULL, "invariant");
+  assert(s != nullptr, "invariant");
   const size_t realSpan = s->span();
   s->set_span(0);
   moveUp(s->index());
@@ -141,7 +141,7 @@ int SamplePriorityQueue::count() const {
 }
 
 const ObjectSample* SamplePriorityQueue::peek() const {
-  return _count == 0 ? NULL : _items[0];
+  return _count == 0 ? nullptr : _items[0];
 }
 
 ObjectSample* SamplePriorityQueue::item_at(int index) {

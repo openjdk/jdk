@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -490,7 +490,7 @@ final class Double512Vector extends DoubleVector {
                                    VectorMask<Double> m) {
         return (Double512Vector)
             super.selectFromTemplate((Double512Vector) v,
-                                     (Double512Mask) m);  // specialize
+                                     Double512Mask.class, (Double512Mask) m);  // specialize
     }
 
 
@@ -518,7 +518,7 @@ final class Double512Vector extends DoubleVector {
                      this, i,
                      (vec, ix) -> {
                      double[] vecarr = vec.vec();
-                     return (long)Double.doubleToLongBits(vecarr[ix]);
+                     return (long)Double.doubleToRawLongBits(vecarr[ix]);
                      });
     }
 
@@ -541,7 +541,7 @@ final class Double512Vector extends DoubleVector {
     public Double512Vector withLaneHelper(int i, double e) {
         return VectorSupport.insert(
                                 VCLASS, ETYPE, VLENGTH,
-                                this, i, (long)Double.doubleToLongBits(e),
+                                this, i, (long)Double.doubleToRawLongBits(e),
                                 (v, ix, bits) -> {
                                     double[] res = v.vec().clone();
                                     res[ix] = Double.longBitsToDouble((long)bits);
@@ -652,14 +652,6 @@ final class Double512Vector extends DoubleVector {
 
         @Override
         @ForceInline
-        public Double512Mask eq(VectorMask<Double> mask) {
-            Objects.requireNonNull(mask);
-            Double512Mask m = (Double512Mask)mask;
-            return xor(m.not());
-        }
-
-        @Override
-        @ForceInline
         /*package-private*/
         Double512Mask indexPartiallyInUpperRange(long offset, long limit) {
             return (Double512Mask) VectorSupport.indexPartiallyInUpperRange(
@@ -706,9 +698,9 @@ final class Double512Vector extends DoubleVector {
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a | b));
         }
 
+        @Override
         @ForceInline
-        /* package-private */
-        Double512Mask xor(VectorMask<Double> mask) {
+        public Double512Mask xor(VectorMask<Double> mask) {
             Objects.requireNonNull(mask);
             Double512Mask m = (Double512Mask)mask;
             return VectorSupport.binaryOp(VECTOR_OP_XOR, Double512Mask.class, null, long.class, VLENGTH,
@@ -747,6 +739,16 @@ final class Double512Vector extends DoubleVector {
             }
             return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TOLONG, Double512Mask.class, long.class, VLENGTH, this,
                                                       (m) -> toLongHelper(m.getBits()));
+        }
+
+        // laneIsSet
+
+        @Override
+        @ForceInline
+        public boolean laneIsSet(int i) {
+            Objects.checkIndex(i, length());
+            return VectorSupport.extract(Double512Mask.class, double.class, VLENGTH,
+                                         this, i, (m, idx) -> (m.getBits()[idx] ? 1L : 0L)) == 1L;
         }
 
         // Reductions
@@ -829,6 +831,13 @@ final class Double512Vector extends DoubleVector {
                 throw new IllegalArgumentException("VectorShuffle length and species length differ");
             int[] shuffleArray = toArray();
             return s.shuffleFromArray(shuffleArray, 0).check(s);
+        }
+
+        @Override
+        @ForceInline
+        public Double512Shuffle wrapIndexes() {
+            return VectorSupport.wrapShuffleIndexes(ETYPE, Double512Shuffle.class, this, VLENGTH,
+                                                    (s) -> ((Double512Shuffle)(((AbstractShuffle<Double>)(s)).wrapIndexesTemplate())));
         }
 
         @ForceInline

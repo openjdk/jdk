@@ -1,0 +1,1647 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2024 Unicode, Inc.
+For terms of use, see http://www.unicode.org/copyright.html
+SPDX-License-Identifier: Unicode-3.0
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+-->
+<ldml>
+	<identity>
+		<version number="$Revision$"/>
+		<language type="nqo"/>
+	</identity>
+	<localeDisplayNames>
+		<localeDisplayPattern>
+			<localeSeparator>{0}، {1}</localeSeparator>
+		</localeDisplayPattern>
+		<languages>
+			<language type="af">ߊߝߙߌߞߊ߲߯ߛߑߞߊ߲</language>
+			<language type="agq">ߊߜ߭ߍߡߑߞߊ߲</language>
+			<language type="ak">ߊߞߊ߲ߞߊ</language>
+			<language type="am">ߊߡߑߤߊߙߌ</language>
+			<language type="ar">ߊߙߓߎߞߊ߲</language>
+			<language type="ar_001">ߊߙߊߓߎߞߊ߲ ߘߐߞߣߍߣߍ߲</language>
+			<language type="as">ߊߛߊߡߍߞߊ߲</language>
+			<language type="asa">ߊߖ߭ߎߞߊ߲</language>
+			<language type="ast">ߊߛߑߕߎߙߌߞߊ߲</language>
+			<language type="az">ߊߖߍߙߑߓߊߦߌߖߊߞߊ߲</language>
+			<language type="az" alt="short">ߊߖߋߙߌߞߊ߲</language>
+			<language type="bas">ߓߛߊߞߊ߲</language>
+			<language type="be">ߓߌߟߏߙߎ߳ߛߌߞߊ߲</language>
+			<language type="bem">ߓߋ߲ߓߊߞߊ߲</language>
+			<language type="bez">ߓߋߣߊߞߊ߲</language>
+			<language type="bg">ߓߌߟߑߜ߭ߊߙߌߞߊ߲</language>
+			<language type="bm">ߒߞߏ ߡߊߟߌ</language>
+			<language type="bn">ߓߍ߲ߜ߭ߊߟߌߞߊ߲</language>
+			<language type="bo">ߕߌߓߋߕߌߞߊ߲</language>
+			<language type="br">ߓߙߋߕߐ߲ߞߊ߲</language>
+			<language type="brx">ߓߏߘߏߞߊ߲</language>
+			<language type="bs">ߓߐߛߑߣߌߞߊ߲</language>
+			<language type="ca">ߞߕߊߟߊ߲ߞߊ߲</language>
+			<language type="ccp">ߞߏߘߊ߫ ߗߊߜ߭ߑߡߊߞߊ߲</language>
+			<language type="ce">ߗߋߗߋߣߌߞߊ߲</language>
+			<language type="ceb">ߛߋߓߎߥߊߞߊ߲</language>
+			<language type="cgg">ߞߌߜ߭ߊߞߊ߲</language>
+			<language type="chr">ߗߋߙߏߞߌߞߊ߲</language>
+			<language type="ckb">ߛߏߙߊߣߌߞߊ߲</language>
+			<language type="ckb" alt="menu">ߛߏߙߊߣߌ߫ ߞߎߙߑߘߎߞߊ߲</language>
+			<language type="co">ߞߐߙߑߛߌߞߊ߲</language>
+			<language type="cs">ߗߍߞߌߞߊ߲</language>
+			<language type="cu">ߛߌߟߊߝ߭ߐ߲ߞߊ߲ ߓߊ߬ߕߏ߬ߓߏ߲߬ߞߊ߲</language>
+			<language type="cy">ߜ߭ߟߏߥߊߞߊ߲</language>
+			<language type="da">ߘߊߣߏߥߊߞߊ߲</language>
+			<language type="dav">ߕߊߦߌߕߊߞߊ߲</language>
+			<language type="de">ߊߟߑߡߊ߲ߞߊ߲</language>
+			<language type="de_AT">ߏߕߑߙߌߛߌ߬ ߊߟߑߡߊߞߊ߲</language>
+			<language type="de_CH">ߛߥߌߛ ߊߟߑߡߊ߲ߞߊ߲</language>
+			<language type="dje">ߖ߭ߍߙߑߡߊߞߊ߲</language>
+			<language type="doi">ߘߏߜ߭ߙߌߞߊ߲</language>
+			<language type="dsb">ߛߏߙߊߓ-ߓߊߛߑߞߊ߲</language>
+			<language type="dua">ߘߎߥߟߊߞߊ߲</language>
+			<language type="dyo">ߝߐߢߌ߫ ߖߏ߬ߟߊ߬ߞߊ߲</language>
+			<language type="dz">ߖ߭ߏ߲ߜ߭ߊߞߊ߲</language>
+			<language type="ebu">ߋ߲ߓߎߞߊ߲</language>
+			<language type="ee">ߋߥߋߞߊ߲</language>
+			<language type="el">ߜ߭ߙߍ߬ߞߌ߬ߞߊ߲</language>
+			<language type="en">ߊ߲߬ߜߑߟߋ߬ߞߊ߲</language>
+			<language type="en_AU">ߐߛߑߕߙߊߟߌ߫ ߊ߲߬ߜ߭ߑߟߋ߬ߞߊ߲</language>
+			<language type="en_CA">ߞߣߊߘߊ߫ ߊ߲߬ߜ߭ߑߟߋ߬ߞߊ߲</language>
+			<language type="en_GB">ߓߙߌߕߊ߲ߓߊ߫ ߊ߲߬ߜ߭ߑߟߋ߬ߞߊ߲</language>
+			<language type="en_GB" alt="short">ߡ.ߟ. ߊ߲߬ߜ߭ߑߟߋ߲߬ߞߊ߲</language>
+			<language type="en_US">ߊߡߋߙߌߞߌ߬ ߊ߲߬ߜ߭ߑߟߋ߬ߞߊ߲</language>
+			<language type="en_US" alt="short">ߞ.ߘ. ߊ߲߬ߜ߭ߑߟߋ߬ߞߊ߲</language>
+			<language type="eo">ߍߛߑߔߋߙߊ߲ߕߏߞߊ߲</language>
+			<language type="es">ߊߛߌߔߞߊ߲</language>
+			<language type="es_419">ߊߡߋߙߌߞߌ߬ ߊߛߌߔߊ߲ߞߊ߲ ߟߊ߬ߕߍ߬ߡߊ</language>
+			<language type="es_ES">ߊߛߌߔߊ߲߫ ߊߛߌߔߊ߲ߞߊ߲</language>
+			<language type="es_MX">ߡߍߞߑߛߌߞ ߊߛߌߔߊ߲ߞߊ߲</language>
+			<language type="et">ߍߛߑߕߏߣߌߞߊ߲</language>
+			<language type="eu">ߓߊߛߑߞߌߞߊ߲</language>
+			<language type="ewo">ߋߥߏ߲ߘߏߞߊ߲</language>
+			<language type="fa">ߝߊ߯ߙߛߌߞߊ߲</language>
+			<language type="fa_AF">ߘߊߙߌߞߊ߲</language>
+			<language type="ff">ߝߎߟߊߞߊ߲</language>
+			<language type="fi">ߝߍߣߏߥߊߞߊ߲</language>
+			<language type="fil">ߝߟߌߔߌ߲ߞߊ߲</language>
+			<language type="fo">ߝߋߙߏߞߊ</language>
+			<language type="fr">ߝߊ߬ߙߊ߲߬ߛߌ߬ߞߊ߲</language>
+			<language type="fr_CA">ߞߣߊߘߊ߫ ߝߊ߬ߙߊ߲߬ߛߌ߬ߞߊ߲</language>
+			<language type="fr_CH">ߛߥߌߛ ߝߙߊ߬ߛߌ߬ߞߊ߲</language>
+			<language type="frc">ߞߊߘߌ߫ ߝߊ߬ߙߊ߲߬ߛߌ߬ߞߊ߲</language>
+			<language type="fur">ߝߙߌߥߎߟߊߞߊ߲</language>
+			<language type="fy">ߕߟߋ߬ߓߋ ߝߙߌߛߐ߲ߞߊ߲</language>
+			<language type="ga">ߌߙߑߟߊ߲ߘߌߞߊ߲</language>
+			<language type="gd">ߋߞߐߛߌ߬ ߖ߭ߋߏߟߌߞߊ߲</language>
+			<language type="gl">ߜ߭ߊߟߌߛߌߞߊ߲</language>
+			<language type="gsw">ߛߥߌߛߌ߬ ߊߟߑߡߊ߲ߞߊ߲</language>
+			<language type="gu">ߜ߭ߎߖߙߊߞߊ߲</language>
+			<language type="guz">ߜߎ߭ߛߌߞߊ߲</language>
+			<language type="gv">ߡߊߣߏߥߊߞߊ߲</language>
+			<language type="ha">ߤߊߥߎߛߊߞߊ߲</language>
+			<language type="haw">ߤߥߊߦߌߞߊ߲</language>
+			<language type="he">ߋߓߙߋߞߊ߲</language>
+			<language type="hi">ߍ߲ߘߎߞߊ߲</language>
+			<language type="hmn">ߡߐ߲ߜ߭ߑߞߊ߲</language>
+			<language type="hr">ߞߙߏߥߊߛߌߞߊ߲</language>
+			<language type="hsb">ߛߏߙߊߓߎ߫ ߛߊ߲ߘߐ߫ ߞߊ߲</language>
+			<language type="ht">ߤߊߦߌߕߌ߫ ߕߊ߬ߓߎ߰ߛߌ߬ߞߊ߲</language>
+			<language type="hu">ߤߐ߲ߜ߭ߙߌߞߊ߲</language>
+			<language type="hy">ߊߙߊߡߋߣߌߞߊ߲</language>
+			<language type="ia">ߍ߲ߕߍߙߑߟߌ߲ߜ߭ߏߥߊߞߊ߲</language>
+			<language type="id">ߍ߲ߘߣߏߛߌߞߊ߲</language>
+			<language type="ig">ߊߜߏߞߊ߲</language>
+			<language type="ii">ߛߌߛߎߥߊ߲߫ ߦߌߞߊ߲</language>
+			<language type="is">ߌߛߑߟߊ߲ߘߌߞߊ߲</language>
+			<language type="it">ߌߕߊߟߌߞߊ߲</language>
+			<language type="ja">ߖ߭ߊߔߐ߲ߞߊ߲</language>
+			<language type="jgo">ߒߜ߭ߏ߲ߓߊߞߊ߲</language>
+			<language type="jmc">ߡߊߗߊߡߋߞߊ߲</language>
+			<language type="jv">ߖ߭ߝ߭ߊߣߊߞߊ߲</language>
+			<language type="ka">ߖ߭ߋߐߙߑߖ߭ߌߞߊ߲</language>
+			<language type="kab">ߞߊߓߟߌߞߊ߲</language>
+			<language type="kam">ߞߊ߲ߓߊߞߊ߲</language>
+			<language type="kde">ߡߊߞߐ߲ߘߋߞߊ߲</language>
+			<language type="kea">ߜߙߋߞߎ߲ߝߙߌߛߌߞߊ߲</language>
+			<language type="kgp">ߞߍ߲ߜ߭ߊ߲ߞߊ߲</language>
+			<language type="khq">ߞߏߙߌߦߊߗߣߌߞߊ߲</language>
+			<language type="ki">ߞߌߞߌߦߎߞߊ߲</language>
+			<language type="kk">ߞߖ߭ߊߞߌߞߊ߲</language>
+			<language type="kkj">ߞߊߞߏߞߊ߲</language>
+			<language type="kl">ߜ߭ߙߏߟߊ߲ߘߌߞߊ߲</language>
+			<language type="kln">ߞߊߟߊ߲ߖߌߞߊ߲</language>
+			<language type="km">ߞߑߡߍߙߑߞߊ߲</language>
+			<language type="kn">ߞߊ߲ߣߊߘߊߞߊ߲</language>
+			<language type="ko">ߞߏߙߋߞߊ߲</language>
+			<language type="kok">ߞߐ߲ߞߊߣߌߞߊ߲</language>
+			<language type="ks">ߞߊߛߑߡߙߌߞߊ߲</language>
+			<language type="ksb">ߛߊ߲ߓߟߊߞߊ߲</language>
+			<language type="ksf">ߓߊߝߌߞߊ߲</language>
+			<language type="ksh">ߞߐߟߑߗߌߞߊ߲</language>
+			<language type="ku">ߞߎߙߑߘߎߞߊ߲</language>
+			<language type="kw">ߞߐߙߑߣߌߞߌߞߊ߲</language>
+			<language type="ky">ߞߌߙߑߞߌߖ߭ߑߞߊ߲</language>
+			<language type="la">ߟߊ߬ߕߍ߲߬ߞߊ߲</language>
+			<language type="lag">ߟߊ߲ߖߌߞߊ߲</language>
+			<language type="lb">ߟߎߞߑߛߊ߲ߓߎ߯ߙߎߞߊ߲</language>
+			<language type="lg">ߜ߭ߊ߲ߘߊߞߊ߲</language>
+			<language type="lij">ߟߌ߭ߎ߳ߙߌߞߊ߲</language>
+			<language type="lkt">ߟߊߞߏߕߊߞߊ߲</language>
+			<language type="ln">ߟߌ߲ߜ߭ߟߊߞߊ߲</language>
+			<language type="lo">ߟߊߏߞߊ߲</language>
+			<language type="lou">ߟߌߖ߭ߌߦߊߣߌ߫ ߕߊ߬ߓߎ߰ߛߌ߬ߞߊ߲</language>
+			<language type="lrc">ߕߟߋ߬ߓߐ ߟߏߙߌߞߊ߲</language>
+			<language type="lt">ߟߌߕߎ߳ߦߊߣߌߞߊ߲</language>
+			<language type="lu">ߞߊߕߊ߲ߜ߭ߊ߫-ߗߌ߬ߟߎ߬ߓߊ߬ߞߊ߲</language>
+			<language type="luo">ߟߎ߳ߏߞߊ߲</language>
+			<language type="luy">ߟߎ߳ߦߌߞߊ߲</language>
+			<language type="lv">ߟߋߕߐ߲ߞߊ߲</language>
+			<language type="mai">ߡߊߗߟߌߞߊ߲</language>
+			<language type="mas">ߡߊ߯ߛߊߞߊ߲</language>
+			<language type="mer">ߡߋߙߎߞߊ߲</language>
+			<language type="mfe">ߡߏߙߌߛ ߕߊ߬ߓߎ߰ߛߌ߬ߞߊ߲</language>
+			<language type="mg">ߡߊߟߑߜ߭ߊߛߌߞߊ߲</language>
+			<language type="mgh">ߡߊߞߎߞߊ߲</language>
+			<language type="mgo">ߡߋߕߊߞߊ߲</language>
+			<language type="mi">ߡߊߏߙߌߞߊ߲</language>
+			<language type="mk">ߡߊߛߋߘߏߣߌߞߊ߲</language>
+			<language type="ml">ߡߟߊߦߟߊߡߑߞߊ߲</language>
+			<language type="mn">ߡߐ߲ߜ߭ߐߟߌߞߊ߲</language>
+			<language type="mni">ߡߊߣߌߔߎߙߌߞߊ߲</language>
+			<language type="mr">ߡߙߊߕߌߞߊ߲</language>
+			<language type="ms">ߡߊߟߍߞߊ߲</language>
+			<language type="mt">ߡߊߟߑߕߍߞߊ߲</language>
+			<language type="mua">ߡߎ߲ߘߊ߲ߞߊ߲</language>
+			<language type="mul">ߞߊ߲ߥߙߍߞߊ߲</language>
+			<language type="my">ߓߙߌߡߊ߲ߞߊ߲</language>
+			<language type="mzn">ߡߊߖ߭ߊ߲ߘߋߙߊߣߞߊ߲</language>
+			<language type="naq">ߣߡߊߞߊ߲</language>
+			<language type="nb">ߣߐߙߑߝ߭ߍߖ߭ ߓߏߞߑߡߊߟߑߞߊ߲</language>
+			<language type="nd">ߕߟߋ߬ߓߐ ߒߘߓߋߟߋߞߊ߲</language>
+			<language type="nds">ߊߟߑߡߊ߲ߘߎ߯-ߓߊߛߑߞߊ߲</language>
+			<language type="nds_NL">ߤߏߟߊ߲ߘߌ߬ ߓߊߛߊߞߑߛߐ߲ߞߊ߲</language>
+			<language type="ne">ߣߋߔߌߟߌߞߊ߲</language>
+			<language type="nl">ߣߍ߯ߙߑߟߊ߲ߘߌߞߊ߲</language>
+			<language type="nl_BE">ߝߌߟߊߡߊ߲ߞߊ߲</language>
+			<language type="nmg">ߒߜ߭ߎ߲ߓߊߞߊ߲</language>
+			<language type="nn">ߣߐߙߑߝ߭ߍߖ߭ ߢߙߐߛߌߞߊ߲</language>
+			<language type="nnh">ߒߖߋ߲ߓߎ߲ߞߊ߲</language>
+			<language type="no">ߣߐߙߑߝ߭ߍߖ߭ߌߞߊ߲</language>
+			<language type="nqo">ߒߞߏ</language>
+			<language type="nus">ߣߎߦߋߞߊ߲</language>
+			<language type="nv">ߣߝ߭ߊߖߏߞߊ߲</language>
+			<language type="ny">ߛߋߥߞߊ߲</language>
+			<language type="nyn">ߢߊ߲ߞߏߟߋߞߊ߲</language>
+			<language type="om">ߏߙߏߡߏߞߊ߲</language>
+			<language type="or">ߏߖߊߞߊ߲</language>
+			<language type="os">ߏߛߍߕߌߞߊ߲</language>
+			<language type="pa">ߔߍ߲ߖߊߓߌߞߊ߲</language>
+			<language type="pcm">ߖߋ߬ߟߌ߬ߓߊߟߊ߫ ߔߌߘߑߜ߭ߍ߲ߞߊ߲</language>
+			<language type="pl">ߔߟߏߣߍߞߊ߲</language>
+			<language type="prg">ߔߎߙߛߌߞߊ߲</language>
+			<language type="ps">ߔߊߛߑߕߏߞߊ߲</language>
+			<language type="pt">ߔߕߏ߬ߞߌ߬ߞߊ߲</language>
+			<language type="pt_BR">ߓߙߋߖ߭ߌߟ ߔߕߏ߬ߞߌ߬ߞߊ߲</language>
+			<language type="pt_PT">ߋߙߐߔߎ߬ ߔߕߏ߬ߞߌ߬ߞߊ߲</language>
+			<language type="qu">ߞߋߛߎߥߊߞߊ߲</language>
+			<language type="rhg">ߙߏߤߌ߲ߜ߭ߊ</language>
+			<language type="rm">ߙߏߡߊ߲ߛߌߞߊ߲</language>
+			<language type="rn">ߙߎ߲ߘߌߞߊ߲</language>
+			<language type="ro">ߙߏߡߍߞߊ߲</language>
+			<language type="ro_MD">ߡߐߟߑߘߊߝ߭ߌߞߊ߲</language>
+			<language type="rof">ߙߏ߲ߓߏߞߊ߲</language>
+			<language type="ru">ߌ߬ߙߛߌ߬ߞߊ߲</language>
+			<language type="rw">ߞߌ߲ߦߊߙߎߥߊ߲ߘߊߞߊ߲</language>
+			<language type="rwk">ߙߥߊߞߊ߲</language>
+			<language type="sa">ߛߊߛߑߞߙߌߞߊ߲</language>
+			<language type="sah">ߌߦߊߞߎߕߌߞߊ߲</language>
+			<language type="saq">ߛߊ߲ߓߙߎߞߊ߲</language>
+			<language type="sat">ߛߊ߲ߕߊߟߌߞߊ߲</language>
+			<language type="sbp">ߌߛߊ߲ߜ߭ߎߞߊ߲</language>
+			<language type="sd">ߛߌ߲ߘߌߞߊ߲</language>
+			<language type="se">ߛߋߡߌ߫ ߕߟߋ߬ߓߐ߬ߞߊ߲</language>
+			<language type="seh">ߛߌߛߋߣߊߞߊ߲</language>
+			<language type="ses">ߞߏߦߌߙߊߓߙߏ߫ ߛߋߣߌߞߊ߲</language>
+			<language type="sg">ߛߊ߲ߜߵߏߞߊ߲</language>
+			<language type="shi">ߗߑߟߋߥߎߞߊ߲</language>
+			<language type="si">ߛߌ߲ߜ߭ߟߊߞߊ߲</language>
+			<language type="sk">ߛߑߟߏߝ߭ߊߞߌߞߊ߲</language>
+			<language type="sl">ߛߑߟߏߝ߭ߋߣߌߞߊ߲</language>
+			<language type="sm">ߛߊߡߏߥߊߞߊ߲</language>
+			<language type="smn">ߌߣߊߙߌ߫ ߛߊߡߌߞߊ߲</language>
+			<language type="sn">ߛߏߣߊߞߊ߲</language>
+			<language type="so">ߛߏߡߊߟߌߞߊ߲</language>
+			<language type="sq">ߊߟߑߓߊߣߌߞߊ߲</language>
+			<language type="sr">ߛߍߙߑߓߌߞߊ߲</language>
+			<language type="st">ߛߕߏ߫ ߥߙߏ߬ߘߎ߰ߞߊ߲</language>
+			<language type="su">ߛߎ߲ߘߣߊߞߊ߲</language>
+			<language type="sv">ߛߎߥߍߘߌߞߊ߲</language>
+			<language type="sw">ߛߎߥߊߤߟߌߞߊ߲</language>
+			<language type="ta">ߕߊߡߎߟߌߞߊ߲</language>
+			<language type="te">ߕߋߟߎߜ߭ߎߞߊ߲</language>
+			<language type="teo">ߕߋߛߏߞߊ߲</language>
+			<language type="tg">ߕߊߖߞߌߞߊ߲</language>
+			<language type="th">ߕߊߦߌߞߊ߲</language>
+			<language type="ti">ߕߜ߭ߌߙߌߢߊߞߊ߲</language>
+			<language type="tk">ߕߎߙߞߌߡߍߣߌߞߊ߲</language>
+			<language type="to">ߕߏ߲ߖ߭ߌߞߊ߲</language>
+			<language type="tr">ߕߙߎߞߌߞߊ߲</language>
+			<language type="tt">ߕߊߕߊߙߌߞߊ߲</language>
+			<language type="twq">ߕߛߊߥߊߜ߭ߌߞߊ߲</language>
+			<language type="tzm">ߊߕߌߟߊ߲ߕߊ߫ ߕߊ߲ߓߊ߲ ߊߡߊ߲ߖ߭ߌ߲ߞߊ߲</language>
+			<language type="ug">ߥߌߜ߭ߎ߯ߙߎߞߊ߲</language>
+			<language type="uk">ߎߞߌߙߍߣߌߞߊ߲</language>
+			<language type="und">ߞߊ߲߫ ߘߊ߲߬ߠߊ߬ߕߍ߰ߓߊߟߌ</language>
+			<language type="ur">ߎߙߘߎߞߊ߲</language>
+			<language type="uz">ߎߖ߭ߑߓߋߞߌߞߊ߲</language>
+			<language type="vai">ߒߝ߭ߊߦߌ߲ߞߊ߲</language>
+			<language type="vi">ߝ߭ߌߦߋߕߌߣߊߡߌߞߊ߲</language>
+			<language type="vo">ߝ߭ߏߟߊߔߎߞߊ߲</language>
+			<language type="vun">ߝ߭ߎߖߏߞߊ߲</language>
+			<language type="wae">ߥߊߟߑߛߍߙߌߞߊ߲</language>
+			<language type="wo">ߥߟߐߝߐߞߊ߲</language>
+			<language type="xh">ߛߏߖ߭ߊߞߊ߲</language>
+			<language type="xog">ߛߏߜ߭ߊߞߊ߲</language>
+			<language type="yav">ߦߊ߲ߜߌߞߊ߲</language>
+			<language type="yi">ߦߘߌߛߌߞߊ߲</language>
+			<language type="yo">ߙߦߏߓߊߞߊ߲</language>
+			<language type="yue">ߞߊ߲ߕߏߣߊߞߊ߲</language>
+			<language type="yue" alt="menu">ߞߊ߲ߕߏߣߊ ߛߣߌߥߊߞߊ߲</language>
+			<language type="zgh">ߡߊ߬ߙߐߞߎ߬ ߢߊߓߘߍߡߊ</language>
+			<language type="zh">ߛߣߌߥߊߞߊ߲</language>
+			<language type="zh" alt="menu">ߛߣߌߥߊ ߡߊ߲ߘߊߙߍ߲ߞߊ߲</language>
+			<language type="zh_Hans">ߛߣߌߥߊߞߊ߲ ߘߐߞߣߍߣߍ߲</language>
+			<language type="zh_Hans" alt="long">ߡߊ߲ߘߊߙߍ߲ ߘߐߞߣߍߣߍ߲</language>
+			<language type="zh_Hant">ߛߣߌߥߊߞߊ߲ ߦߋ߲ߢߐ߲߯ߠߊ</language>
+			<language type="zh_Hant" alt="long">ߡߊ߲ߘߊߙߍ߲ߞߊ߲ ߢߋ߲ߢߐ߲߯ߠߊ</language>
+			<language type="zu">ߖ߭ߟߎߞߊ߲</language>
+			<language type="zxx">ߞߊ߲߫ ߘߐߞߏߟߏ߲</language>
+		</languages>
+		<scripts>
+			<script type="Adlm">ߊߘߑߟߊߡ</script>
+			<script type="Aghb">ߊߜ߭ߑߓߊߣߌ</script>
+			<script type="Ahom">ߊߤߏ߲</script>
+			<script type="Arab">ߊߙߊߓߎ</script>
+			<script type="Aran">ߣߊߛߑߕߊߟߌߞ</script>
+			<script type="Armi">ߝߊ߰ߡߊ߬ߟߊ-ߊߙߊߡߋ</script>
+			<script type="Armn">ߊߙߌߡߋߣߌ</script>
+			<script type="Avst">ߊߝ߭ߋߛߑߕߌ</script>
+			<script type="Bali">ߓߊߟߌߣߍ</script>
+			<script type="Bamu">ߓߊߡߎ߲</script>
+			<script type="Bass">ߓߊ߯ߛߊ</script>
+			<script type="Batk">ߓߕߊߞ</script>
+			<script type="Beng">ߓߍ߲ߜ߭ߊߟߌ</script>
+			<script type="Bhks">ߓߊߦߌߞߑߛߎߞߌ</script>
+			<script type="Bopo">ߔߓߏߡߝߏ</script>
+			<script type="Brah">ߓߑߙߊߤߡߌ</script>
+			<script type="Brai">ߓߑߙߊߦߌ</script>
+			<script type="Bugi">ߓߎߜ߭ߌ</script>
+			<script type="Buhd">ߓߎߤߌߘ</script>
+			<script type="Cakm">ߗߍߞߑߡߊ</script>
+			<script type="Cans">ߞߣߊߘߊ߫ ߘߎ߰ߙߋ߲߬ ߛߓߍ߬ߛߎ߲߬ ߞߝߊ ߟߊߘߍ߬ߣߍ߲</script>
+			<script type="Cari">ߞߊ߯ߙߌ</script>
+			<script type="Cham">ߛߊ߲</script>
+			<script type="Cher">ߛߋߙߐߞ</script>
+			<script type="Chrs">ߞߏߙߊߦߌߛߑߡߌ</script>
+			<script type="Copt">ߞߐߔߑߕ</script>
+			<script type="Cpmn">ߛߌߔߙߏ-ߡߌߣߏߞߊ</script>
+			<script type="Cprt">ߛߔߙߌߐߕ ߜߋ߲߬ߞߝߊ</script>
+			<script type="Cyrl">ߛߙߌߟߌߞ</script>
+			<script type="Deva">ߘߋߝ߭ߣߊߜ߭ߊߙߌ߫</script>
+			<script type="Diak">ߊߞߎ߯ߙߎ</script>
+			<script type="Dogr">ߘߏߜ߭ߑߙߌ</script>
+			<script type="Dsrt">ߘߖ߭ߋߙߋ</script>
+			<script type="Dupl">ߛߑߕߋߣߏߜ߭ߙߊߝߌ ߘߎߔߑߟߏߦߋ</script>
+			<script type="Egyp">ߋߖ߭ߌߔߑߕ ߤߌߙߏߜ߭ߟߌߝߌ</script>
+			<script type="Elba">ߍߟߑߓߊߛߊ߲</script>
+			<script type="Elym">ߋߟߌߡߊߦߌߞ</script>
+			<script type="Ethi">ߋߗߏߔߌߞ</script>
+			<script type="Geor">ߖ߭ߐߙߑߖ߭ߌߞߊ</script>
+			<script type="Glag">ߜ߭ߑߟߊߜ߭ߏߟߌߕߌߞ</script>
+			<script type="Gong">ߜ߭ߏ߲ߖߌ߫ ߜ߭ߎ߲ߖߋߟߊ ߘߐ߫</script>
+			<script type="Gonm">ߡߛߊߙߊ߲߫-ߜ߭ߏ߲ߘߌ</script>
+			<script type="Goth">ߜ߭ߏߕߌߞ</script>
+			<script type="Gran">ߜ߭ߑߙߊ߲ߗߊ</script>
+			<script type="Grek">ߜ߭ߙߍ߬ߞߌ</script>
+			<script type="Gujr">ߜ߭ߎߖߙߊߕߌ</script>
+			<script type="Guru">ߜ߭ߎߙߑߡߎߞߌ</script>
+			<script type="Hanb">ߤߊ߲߫ ߓߔߏߡߝߏ ߘߐ߫</script>
+			<script type="Hang">ߤߊ߲ߜ߭ߎ</script>
+			<script type="Hani">ߛߌߣߏߜ߭ߙߊߡ</script>
+			<script type="Hano">ߤߊߣߎߣߏ</script>
+			<script type="Hans">ߘߐߞߣߍߣߍ߲</script>
+			<script type="Hans" alt="stand-alone">ߛߌߣߏߜ߭ߙߊߡ ߘߐߞߣߍߣߍ߲</script>
+			<script type="Hant">ߦߋߢߐ߲߯ߠߊ</script>
+			<script type="Hant" alt="stand-alone">ߛߌߣߏߜ߭ߙߊߡ ߦߋߢߐ߲߯ߠߊ</script>
+			<script type="Hatr">ߤߊߕߙߋߣߌ</script>
+			<script type="Hebr">ߋߓߙߋ</script>
+			<script type="Hira">ߤߌߙߊߜ߭ߣߊ</script>
+			<script type="Hluw">ߤߕߌ-ߤߙߏߜ߭ߟߌߝߌ</script>
+			<script type="Hmng">ߔߤߊߥ ߡߐ߲ߜ߭</script>
+			<script type="Hmnp">ߢߊߞߋ߲ߜ߭ ߔߎߛߑߡߐ߲ߜ߭</script>
+			<script type="Hrkt">ߞߊߕߊ߲ߞߣߊ</script>
+			<script type="Hung">ߤߐ߲ߜ߭ߙߌ߫ ߞߘߐ߬ߡߊ߲</script>
+			<script type="Ital">ߌߕߊߟߌߞ ߞߘߐ߬ߡߊ߲</script>
+			<script type="Jamo">ߖߡߏ</script>
+			<script type="Java">ߖ߭ߝ߭ߊߣߍߛ</script>
+			<script type="Jpan">ߣߌߔߐ߲߫</script>
+			<script type="Kali">ߞߦߊߟߌ߫</script>
+			<script type="Kana">ߞߕߊߞߣߊ</script>
+			<script type="Khar">ߞߊߙߏߗߌ߮</script>
+			<script type="Khmr">ߞߑߡߍߙ</script>
+			<script type="Khoj">ߞߏߖߞߌ</script>
+			<script type="Kits">ߞߌߕߊ߲߫ ߛߓߍߟߌߣߍ߲</script>
+			<script type="Knda">ߞߌߡߍߙ</script>
+			<script type="Kore">ߞߏߙߋ߫</script>
+			<script type="Kthi">ߞߊߦߌߗߌ߮</script>
+			<script type="Lana">ߟߣߊ</script>
+			<script type="Laoo">ߟߊߏ</script>
+			<script type="Latn">ߟߊ߬ߕߍ߲</script>
+			<script type="Lepc">ߟߋߔߑߛߊ</script>
+			<script type="Limb">ߟߌ߲ߓߎ</script>
+			<script type="Lina">ߟߌߣߍ߯ߙ ߊ</script>
+			<script type="Linb">ߟߌߣߍ߯ߙ ߓ</script>
+			<script type="Lisu">ߟߌߛߎ</script>
+			<script type="Lyci">ߟߛߌ</script>
+			<script type="Lydi">ߟߘߌ</script>
+			<script type="Mahj">ߡߤߊߖߊߣߌ</script>
+			<script type="Maka">ߡߞߊߛߊ߯ߙ</script>
+			<script type="Mand">ߡߊ߲߬ߘߋ߲߬ߞߊ ߡߋߛߔߏߕߊߡߌ߫</script>
+			<script type="Mani">ߡߊߣߌߛߋ</script>
+			<script type="Marc">ߡߊߙߑߛߋ</script>
+			<script type="Medf">ߡߋߘߑߝߘߌߙߌ߲</script>
+			<script type="Mend">ߡߍ߲߬ߘߋ</script>
+			<script type="Merc">ߡߋߞߙߏߕߌߞ ߞߎ߳ߙߑߛߌߝ</script>
+			<script type="Mero">ߡߋߙߏߦߕߌߞ</script>
+			<script type="Mlym">ߡߟߊߦߊߟߊ߲</script>
+			<script type="Modi">ߡߏߘߌ</script>
+			<script type="Mong">ߡߐ߲ߜ߭ߐߟ</script>
+			<script type="Mroo">ߡߑߙߏ</script>
+			<script type="Mtei">ߡߋߦߌߕߋ ߡߊߦߌߞ</script>
+			<script type="Mult">ߡߎߟߑߕߊߣߌ</script>
+			<script type="Mymr">ߓߙߌߡߊ߲</script>
+			<script type="Nand">ߣߊ߲ߘߌߣߜ߭ߊߙߌ</script>
+			<script type="Narb">ߕߟߋ߬ߓߐ-ߊߙߊߓߎ</script>
+			<script type="Nbat">ߣߓߊߕߋ</script>
+			<script type="Newa">ߣߋߥߊ</script>
+			<script type="Nkoo">ߒߞߏ</script>
+			<script type="Nshu">ߣߎ߳ߛߎ</script>
+			<script type="Ogam">ߏߜ߭ߊ߲</script>
+			<script type="Olck">ߏߟߑߗߞߌ</script>
+			<script type="Orkh">ߐߙߑߞߐ߲</script>
+			<script type="Orya">ߏߖߊ</script>
+			<script type="Osge">ߏߛߊߖ߭</script>
+			<script type="Osma">ߎߛߑߡߊߣߌ</script>
+			<script type="Ougr">ߎߜ߭ߎߙ ߞߘߐ߬ߡߊ߲</script>
+			<script type="Palm">ߔߊߟߑߡߙߋߣߌ</script>
+			<script type="Pauc">ߔߊߎ-ߛߌ߲ߤߊߥߎ</script>
+			<script type="Perm">ߡߙߋߡߌ߫ ߞߘߐ߬ߡߊ߲</script>
+			<script type="Phag">ߝߊߜ߭-ߔߊ</script>
+			<script type="Phli">ߝߋ߲ߟߋߥߌ߫ ߛߓߍߟߌ ߟߎ߬</script>
+			<script type="Phlp">ߛߏߕߌߦߋ߫ ߝߋ߲ߟߋߝ߭ߌ</script>
+			<script type="Phnx">ߝߋߣߌߛߌ</script>
+			<script type="Plrd">ߔߏߟߊߙ ߞߊ߲ߡߊߛߙߋߡߊ</script>
+			<script type="Prti">ߔߊߙߑߕ ߛߓߍߟߌ</script>
+			<script type="Qaag">ߖ߭ߊߎߜ߭ߌ</script>
+			<script type="Rjng">ߙߋߖ߭ߊ߲ߜ߭</script>
+			<script type="Rohg">ߤߊߣߝߌ</script>
+			<script type="Runr">ߙߎߣߌߞ</script>
+			<script type="Samr">ߛߡߊߙߌߕߍ߲</script>
+			<script type="Sarb">ߥߙߏ߬ߘߎ߮ ߊߙߊߓߎ߫ ߞߘߐ߬ߡߊ߲</script>
+			<script type="Saur">ߛߏߙߊߗߌߙߊ</script>
+			<script type="Sgnw">ߞߐߙߍߦߊ߫-ߛߓߍߟߌ ߟߎ߬</script>
+			<script type="Shaw">ߛߊߝ߭ߌ</script>
+			<script type="Shrd">ߛߙߊߘߊ</script>
+			<script type="Sidd">ߛߌߘߊߡ</script>
+			<script type="Sind">ߛߌ߲ߘߌ</script>
+			<script type="Sinh">ߛߌ߲ߜ߭ߟߊ</script>
+			<script type="Sogd">ߛߏߜ߭ߑߘߌ</script>
+			<script type="Sogo">ߛߏߜ߭ߑߘߌ ߞߘߐ߬ߡߊ߲</script>
+			<script type="Sora">ߛߏߙߊ ߛߎ߲ߔߍ߲ߜ߭</script>
+			<script type="Soyo">ߛߏߦߏ߲ߓߏ</script>
+			<script type="Sund">ߛߎ߲ߘߣߊ</script>
+			<script type="Sylo">ߛߌߟߏߕߌ ߣߊߜ߭ߑߙߌ</script>
+			<script type="Syrc">ߛߙߌߦߊߞ</script>
+			<script type="Tagb">ߕߜߊߣߎߥߊ</script>
+			<script type="Takr">ߕߊߞߙߌ</script>
+			<script type="Tale">ߕߊߦߌ-ߟߋ߫</script>
+			<script type="Talu">ߕߊߦߌ-ߟߎ߫ ߞߎߘߊ߫</script>
+			<script type="Taml">ߕߊߡߎߟ</script>
+			<script type="Tang">ߕߊ߲ߜ߭ߎߕ</script>
+			<script type="Tavt">ߕߊߦߌ-ߝ߭ߌߋ߫</script>
+			<script type="Telu">ߕߟߋߜ߭ߎ</script>
+			<script type="Tfng">ߕߝߌߣߊߜ߭</script>
+			<script type="Tglg">ߕߜ߭ߊߟ</script>
+			<script type="Thaa">ߕߡߊ</script>
+			<script type="Thai">ߕߊߦߌ</script>
+			<script type="Tibt">ߕߓߌߕߋߕߍ߲</script>
+			<script type="Tirh">ߕߌߙߎߕߊ</script>
+			<script type="Tnsa">ߕߊ߲ߜߑߛߊ߫</script>
+			<script type="Toto">ߕߏߕߏ߫</script>
+			<script type="Ugar">ߎߜ߭ߊߙߕߌߞ</script>
+			<script type="Vaii">ߒߝ߭ߊߦߌ</script>
+			<script type="Vith">ߝ߭ߌߕߑߞߎߜ߭ߌ߫</script>
+			<script type="Wara">ߥߊߙߊ߲ߜ߭ ߛߕߌ</script>
+			<script type="Wcho">ߥߊ߲ߗߏ</script>
+			<script type="Xpeo">ߝߊ߯ߙߛߌ߫ ߞߘߐߡߊ߲</script>
+			<script type="Xsux">ߛߎߡߋߙߏ-ߊߞߊߘߌ</script>
+			<script type="Yezi">ߦߋߖ߭ߘߌ</script>
+			<script type="Yiii">ߦߌ</script>
+			<script type="Zanb">ߖ߭ߣߊߓߊߖ߭ߊ߯ߙ ߝߘߎ߬ߓߍ߲</script>
+			<script type="Zinh">ߤߋߙߌߕߋ</script>
+			<script type="Zmth">ߘߡߊ߬ߟߐ߲ ߛߙߍߛߙߍߦߊߟߌ</script>
+			<script type="Zsye">ߋߡߏߖߌ߬</script>
+			<script type="Zsym">ߕߐ߰ߡߊ߬ߛߙߋ</script>
+			<script type="Zxxx">ߛߓߍߓߊߟߌ</script>
+			<script type="Zyyy">ߞߏߡߎ߲</script>
+			<script type="Zzzz">ߛߓߍߟߌ߫ ߡߊߟߐ߲ߓߊߟߌ</script>
+		</scripts>
+		<territories>
+			<territory type="001">ߞߌߢߍ߲߫</territory>
+			<territory type="002">ߝߘߊ߬ߝߌ߲߬ߠߊ߫</territory>
+			<territory type="003">ߊߡߋߙߌߞߌ߬ ߞߐ߬ߘߎ߮</territory>
+			<territory type="005">ߊߡߋߙߌߞߌ߬ ߥߙߏ߬ߘߎ߮</territory>
+			<territory type="009">ߟߌ߲ߓߊ߲ߘߎ߯</territory>
+			<territory type="011">ߝߘߊ߬ߝߌ߲߬ߠߊ߫ ߕߟߋ߬ߓߋ</territory>
+			<territory type="013">ߊߡߋߙߌߞߌ߬ ߕߊ߲ߓߊ߲</territory>
+			<territory type="014">ߝߘߊ߬ߝߌ߲߬ߠߊ߫ ߕߟߋ߬ߓߐ</territory>
+			<territory type="015">ߝߘߊ߬ߝߌ߲߬ߠߊ߫ ߞߐ߬ߘߎ߮</territory>
+			<territory type="017">ߝߘߊ߬ߝߌ߲߬ߠߊ߫ ߕߊ߲ߓߊ߲</territory>
+			<territory type="018">ߝߘߊ߬ߝߌ߲߬ߠߊ߫ ߥߙߏ߬ߘߎ߮</territory>
+			<territory type="019">ߊߡߋߙߌߞߌ߬</territory>
+			<territory type="021">ߞߐ߰ߘߎ߮ ߊߡߋߙߌߞߌ߬</territory>
+			<territory type="029">ߞߙߊߦߌߓ</territory>
+			<territory type="030">ߊߖ߭ߌ߫ ߕߟߋ߬ߓߐ</territory>
+			<territory type="034">ߊߖ߭ߌ߫ ߥߙߏ߬ߘߎ߮</territory>
+			<territory type="035">ߊߖ߭ߌ߫ ߥߙߏ߬ߘߎ߮-ߕߟߋ߬ߓߐ</territory>
+			<territory type="039">ߋߙߐߔߎ߬ ߥߙߏ߬ߘߎ߮</territory>
+			<territory type="053">ߐߛߑߕߙߊߟߊߖ߭ߌ߫</territory>
+			<territory type="054">ߡߋߟߊߣߋߖ߭ߌ߫</territory>
+			<territory type="057">ߡߌߞߙߏߣߋߖ߭ߌ߫ ߕߌ߲߬ߞߎߘߎ߲</territory>
+			<territory type="061">ߔߏߟߣߋߖ߭ߌ߫</territory>
+			<territory type="142">ߊߖ߭ߌ߫</territory>
+			<territory type="143">ߊߖ߭ߌ߫ ߕߊ߲ߓߊ߲</territory>
+			<territory type="145">ߊߖ߭ߌ߫ ߕߟߋ߬ߓߋ</territory>
+			<territory type="150">ߋߙߐߔߎ߬</territory>
+			<territory type="151">ߋߙߐߔߎ߬ ߕߟߋ߬ߓߐ</territory>
+			<territory type="154">ߋߙߐߔߎ߬ ߞߐ߬ߘߎ߮</territory>
+			<territory type="155">ߋߙߐߔߎ߬ ߕߟߋ߬ߓߋ</territory>
+			<territory type="202">ߝߘߊ߬ߝߌ߲߬ߠߊ߫ ߞߌ߬ߢߍ߬ߞߏ߲ߞߏ߫ ߘߎ߰ߟߊ߬-ߖߡߊߣߊ</territory>
+			<territory type="419">ߊߡߋߙߞߌ߬ ߟߊ߬ߕߍ߬ߡߊ߬ ߦߙߐ</territory>
+			<territory type="AC">ߊߛߊ߲ߛߌߦߐ߲߫ ߕߌ߲</territory>
+			<territory type="AD">ߊ߲ߘߐߙ</territory>
+			<territory type="AE">ߋߡߌߙߊߕ ߊߙߊߓߎ߫ ߘߍ߬ߣߍ߲</territory>
+			<territory type="AF">ߊߝߎߜ߭ߊߣߌߛߑߕߊ߲߫</territory>
+			<territory type="AG">ߊ߲ߕߌߞߎߥߊ߫ ߣߌ߫ ߓߊߙߑߓߎߘߊ߫</territory>
+			<territory type="AI">ߊ߲ߞߎ߳ߟߊ߫</territory>
+			<territory type="AL">ߊߟߑߓߊߣߌ߫</territory>
+			<territory type="AM">ߊߙߑߡߋߣߌ߫</territory>
+			<territory type="AO">ߊ߲ߜߏߟߊ߫</territory>
+			<territory type="AQ">ߊ߲ߕߊߙߑߛߕߌߞ</territory>
+			<territory type="AR">ߊߙߑߖ߭ߊ߲ߕߌߣ</territory>
+			<territory type="AS">ߛߊߡߏߥߊ߫ ߊߡߋߙߞߌߞߊ</territory>
+			<territory type="AT">ߏߕߑߙߌߛ</territory>
+			<territory type="AU">ߐߛߑߕߙߊߟߌ߫</territory>
+			<territory type="AW">ߊߙߎߓߊ߫</territory>
+			<territory type="AX">ߊߟߊ߲ߘ ߕߌ߲</territory>
+			<territory type="AZ">ߊߖߊߙߑߓߊߦߌߖߊ߲</territory>
+			<territory type="BA">ߓߐߛߑߣߌ߫-ߍߙߑߖ߭ߋߜ߭ߏߝ߭ߌߣ</territory>
+			<territory type="BB">ߓߊߙߑߓߊߘ</territory>
+			<territory type="BD">ߓߊ߲ߜ߭ߑߟߊߘߍߛ</territory>
+			<territory type="BE">ߓߍߟߑߖ߭ߌߞ</territory>
+			<territory type="BF">ߓߙߎߞߌߣߊ߫ ߝߊ߬ߛߏ߫</territory>
+			<territory type="BG">ߓߌߟߑߜ߭ߊ߯ߙߌ߫</territory>
+			<territory type="BH">ߓߤߊ߬ߙߊߦߌ߬ߣ</territory>
+			<territory type="BI">ߓߎߙߎ߲ߘߌ߫</territory>
+			<territory type="BJ">ߓߋߣߍ߲߫</territory>
+			<territory type="BL">ߛߍ߲ߕ-ߓߌߙߑߕߟߋߡߌ߫</territory>
+			<territory type="BM">ߓߍߙߑߓߎߘ</territory>
+			<territory type="BN">ߓߙߎߣߋ߫</territory>
+			<territory type="BO">ߓߏߟߝ߭ߌ߫</territory>
+			<territory type="BQ">ߤߏߟߊ߲ߘ ߞߊߙߌߓߋ߫</territory>
+			<territory type="BR">ߓߙߋߖ߭ߌߟ</territory>
+			<territory type="BS">ߓߤߊߡߊߛ</territory>
+			<territory type="BT">ߓߎߕߊ߲߫</territory>
+			<territory type="BV">ߓߎߝ߭ߋ߫ ߕߌ߲</territory>
+			<territory type="BW">ߓߐߛߎߥߣߊ߫</territory>
+			<territory type="BY">ߓߌߟߏߙߌߛ</territory>
+			<territory type="BZ">ߓߋߟߌߖ߭</territory>
+			<territory type="CA">ߞߣߊߘߊ߫</territory>
+			<territory type="CC">ߞߏߞߏ߫ ߕߌ߲</territory>
+			<territory type="CD">ߞߏ߲߬ߜ߭ߏ߫-ߞߌ߲ߛߊߛߊ߫</territory>
+			<territory type="CD" alt="variant">ߞߏ߲߬ߜ߭ߏ߫ ߓߍ߯ߦߊ߫ ߞߊ߲ߓߍ߲</territory>
+			<territory type="CF">ߕߊ߲ߓߊ߲-ߝߘߊ߬ߝߌ߲߬ߠߊ߫ ߞߊ߲ߓߍ߲</territory>
+			<territory type="CG">ߞߏ߲߬ߜ߭ߏ߫-ߓߙߊߖ߭ߊ߫</territory>
+			<territory type="CG" alt="variant">ߞߏ߲߬ߜ߭ߏ߫ ߞߊ߲ߓߍ߫</territory>
+			<territory type="CH">ߛߎߥߌߛ</territory>
+			<territory type="CI">ߜߋ߲-ߞߐ߰ߖߌ߬ߘߊ</territory>
+			<territory type="CI" alt="variant">ߜߋ߲-ߞߐ߰ߖߌ߬ߘߊ ߞߊ߲ߓߍ߲</territory>
+			<territory type="CK">ߞߎߞ ߕߌ߲</territory>
+			<territory type="CL">ߛ߭ߟߌ߫</territory>
+			<territory type="CM">ߞߊߡߋߙߎ߲</territory>
+			<territory type="CN">ߛߌߣ</territory>
+			<territory type="CO">ߞߏߟߐ߲ߓߌ߫</territory>
+			<territory type="CP">ߞߟߌߔߍߙߑߕߐ߲߫ ߕߌ߲</territory>
+			<territory type="CR">ߞߐߛߑߕߊ߫ ߙߌߞߊ߫</territory>
+			<territory type="CU">ߞߎ߳ߓߊ߫</territory>
+			<territory type="CV">ߜߙߋߞߎ߲߫-ߝߙߌߛߌ߫</territory>
+			<territory type="CW">ߞߎߙߛߊߏ߫</territory>
+			<territory type="CX">ߞߙߌߛߑߕߌߡߊ߫ ߕߌ߲</territory>
+			<territory type="CY">ߛߌߔߑߙߎ߫</territory>
+			<territory type="CZ">ߗߍߞ</territory>
+			<territory type="CZ" alt="variant">ߗߍߞ ߞߊ߲ߓߍ߲</territory>
+			<territory type="DE">ߊߟߑߡߊ߲ߘߎ߯</territory>
+			<territory type="DG">ߖߋߜ߭ߏ߫-ߜ߭ߊߙߑߛߌߦߊ߫</territory>
+			<territory type="DJ">ߖߌߓߎߕߌ߫</territory>
+			<territory type="DK">ߘߊߣߌߡߊߙߑߞ</territory>
+			<territory type="DM">ߘߏߡߣߌߞ</territory>
+			<territory type="DO">ߘߏߡߣߌߞ ߞߊ߲ߓߍ߲</territory>
+			<territory type="DZ">ߊߟߑߖ߭ߋߙߌ߫</territory>
+			<territory type="EA">ߛߋߎߕߊ߫ ߣߌ߫ ߡߋߟߌߣߊ߫</territory>
+			<territory type="EC">ߕߍߡߊߓߊ߲߮</territory>
+			<territory type="EE">ߋߛߑߕߏߣߌ߫</territory>
+			<territory type="EG">ߋߖ߭ߌߔߑߕ</territory>
+			<territory type="EH">ߞߌ߲߬ߢߍ߬ߞߏ߲ߞߏ߫ ߕߟߋ߬ߓߋ</territory>
+			<territory type="ER">ߋߙߕߌߙߋ߫</territory>
+			<territory type="ES">ߊߛߌߔߊ߲߫</territory>
+			<territory type="ET">ߋߗߏߔߌ߫</territory>
+			<territory type="EU">ߋߙߐߔߎ߬ ߘߍ߭</territory>
+			<territory type="EZ">ߋߙߐߔߎ߬ ߞߣߍ</territory>
+			<territory type="FI">ߝߍ߲ߟߊ߲ߘ</territory>
+			<territory type="FJ">ߝߖߌ߫</territory>
+			<territory type="FK">ߡߊߟߎ߲ߌ߲߫ ߕߌ߲</territory>
+			<territory type="FK" alt="variant">ߡߊߟߎ߲ߌ߲߫ ߕߌ߲ ( ߝߊߟߑߞߑߟߊ߲ ߕߌ߲ )</territory>
+			<territory type="FM">ߡߌߞߙߏߣߋߖ߭ߌ߫</territory>
+			<territory type="FO">ߝߋߙߏߦߋ߫ ߕߌ߲</territory>
+			<territory type="FR">ߝߊ߬ߙߊ߲߬ߛߌ߫</territory>
+			<territory type="GA">ߜ߭ߊߓߐ߲߫</territory>
+			<territory type="GB">ߡߊ߲߬ߛߊ߬ߟߊ߫ ߟߊߘߍ߬ߣߍ߲</territory>
+			<territory type="GB" alt="short">ߡ.ߟ.</territory>
+			<territory type="GD">ߜ߭ߙߋߣߊߘ</territory>
+			<territory type="GE">ߖ߭ߋߐߙߑߖ߭ߌ߫</territory>
+			<territory type="GF">ߝߊ߲߬ߙߊ߲߬ߛߌ߫ ߜ߭ߎ߳ߦߊߣ</territory>
+			<territory type="GG">ߜ߭ߋߙߑߣߋߖ߭ߌ߫</territory>
+			<territory type="GH">ߜ߭ߊ߯ߣߊ߫</territory>
+			<territory type="GI">ߜ߭ߌߓߙߊߟߑߕߊߙ</territory>
+			<territory type="GL">ߜ߭ߎߙߎ߲ߟߊ߲ߘ</territory>
+			<territory type="GM">ߜ߭ߊ߲ߓߌ߫</territory>
+			<territory type="GN">ߖߌ߬ߣߍ߫</territory>
+			<territory type="GP">ߜ߭ߎߥߊߘߋߟߎߔ</territory>
+			<territory type="GQ">ߕߍߡߊߓߊ߲߮-ߖߌ߬ߣߍ߫</territory>
+			<territory type="GR">ߜ߭ߙߍ߬ߞߌ߬</territory>
+			<territory type="GS">ߖ߭ߐߙߑߖ߭ߌ߫ ߥߙߏ߬ߘߎ߮ ߣߌ߫ ߛߊ߲ߘߎߥߌߛ ߕߌ߲</territory>
+			<territory type="GT">ߜ߭ߎߥߊߕߋߡߟߊ߫</territory>
+			<territory type="GU">ߜ߭ߎߥߊߡ</territory>
+			<territory type="GW">ߖߌ߬ߣߍ߫ ߓߌߛߊߥߏ߫</territory>
+			<territory type="GY">ߜ߭ߎߦߊߣ</territory>
+			<territory type="HK">ߛߌߣ ߕߌ߲߬ߞߎߘߎ߲߫ ߡߊߡߙߊ߬ߣߍ߲ ߤߐ߲ߞߐ߲߫</territory>
+			<territory type="HK" alt="short">ߤߐ߲ߞߐ߲߫</territory>
+			<territory type="HM">ߡߊߞߑߘߏߣߊߟߑߘ ߕߌ߲</territory>
+			<territory type="HN">ߤߎ߲ߘߎߙߊ߫</territory>
+			<territory type="HR">ߞߙߏߥߊߛߌ߫</territory>
+			<territory type="HT">ߤߊߦߕߌ߫</territory>
+			<territory type="HU">ߤߐ߲ߜ߭ߙߌ߫</territory>
+			<territory type="IC">ߞߣߊߙߌ߫ ߕߌ߲</territory>
+			<territory type="ID">ߍ߲ߘߣߏߖ߭ߌ߫</territory>
+			<territory type="IE">ߌߙߑߟߊ߲ߘ</territory>
+			<territory type="IL">ߌߛߑߙߊߍߟ</territory>
+			<territory type="IM">ߡߊ߲߯ ߕߌ߲</territory>
+			<territory type="IN">ߌߘߎ߬</territory>
+			<territory type="IO">ߓߙߌߕߊ߲ߓߊ߫ ߟߊ߫ ߌ߲ߘߎ߫ ߟߌ߲ߓߊ߲ ߞߣߍ</territory>
+			<territory type="IQ">ߌߙߊߞߌ߬</territory>
+			<territory type="IR">ߌߙߊ߲߫</territory>
+			<territory type="IS">ߌߛߑߟߊߘ</territory>
+			<territory type="IT">ߌߕߊߟߌ߫</territory>
+			<territory type="JE">ߖߋߙߑߖ߭ߌ߫</territory>
+			<territory type="JM">ߖ߭ߡߊߦߌߞ</territory>
+			<territory type="JO">ߖߐߙߑߘߊߣߌ߫</territory>
+			<territory type="JP">ߖ߭ߊߔߐ߲߫</territory>
+			<territory type="KE">ߞߋߣߌߦߊ߫</territory>
+			<territory type="KG">ߞߌߙߑߜ߭ߌߛߑߕߊ߲߫</territory>
+			<territory type="KH">ߞߊ߲ߓߐߘߑߖ</territory>
+			<territory type="KI">ߞߙߌߓߊߕߌ߫</territory>
+			<territory type="KM">ߞߡߐߙ</territory>
+			<territory type="KN">ߛߍ߲ߕ-ߞߙߌߛߑߕߐߝ ߣߌ߫ ߢߝ߭ߋ߫</territory>
+			<territory type="KP">ߞߐ߬ߘߎ߮ ߞߏ߯ߙߋ߫</territory>
+			<territory type="KR">ߕߟߋ߬ߓߋ ߞߏ߯ߙߋ߫</territory>
+			<territory type="KW">ߞߎ߬ߥߊ߬ߕ</territory>
+			<territory type="KY">ߓߊ߲߬ߓߊ߬-ߕߌ߲</territory>
+			<territory type="KZ">ߞߖ߭ߊߞߌߛߑߕߊ߲߫</territory>
+			<territory type="LA">ߟߊߐߛ</territory>
+			<territory type="LB">ߟߌߓߊ߲߫</territory>
+			<territory type="LC">ߛߍ߲ߕ-ߟߎ߳ߛߌ߫</territory>
+			<territory type="LI">ߟߎߛߑߕߊ߲ߛߑߕߍ߲߫</territory>
+			<territory type="LK">ߛߙߌߟߊ߲ߞߊ߫</territory>
+			<territory type="LR">ߟߌߓߋߙߌߦߊ߫</territory>
+			<territory type="LS">ߟߋߛߕߏ߫</territory>
+			<territory type="LT">ߟߎߕߎ߳ߦߊߣߌ߫</territory>
+			<territory type="LU">ߟߎߜ߭ߑߛߊ߲ߓߎ߯ߙ</territory>
+			<territory type="LV">ߟߋߕߏߣߌ߫</territory>
+			<territory type="LY">ߟߓߌ߫</territory>
+			<territory type="MA">ߡߊ߬ߙߐߞߎ߬</territory>
+			<territory type="MC">ߡߏߣߊߞߏ߫</territory>
+			<territory type="MD">ߡߐߟߑߘߊߝ߭ߌ߫</territory>
+			<territory type="ME">ߡߐ߲ߕߣߋߜ߭ߙߏ߫</territory>
+			<territory type="MF">ߛߍ߲ߕ-ߡߊߙߑߕߍ߲߫</territory>
+			<territory type="MG">ߡߘߊߜ߭ߛߑߞߊ߯ߙ</territory>
+			<territory type="MH">ߡߊߙߑߛߊߟ ߕߌ߲</territory>
+			<territory type="MK">ߞߐ߬ߘߎ߮ ߡߊߛߋߘߏߣߌ߫</territory>
+			<territory type="ML">ߡߊ߬ߟߌ߬</territory>
+			<territory type="MM">ߡߌߦߊߡߊ߯ߙ ( ߓߙߌߡߊߣߌ߫ )</territory>
+			<territory type="MN">ߡߐ߲ߜ߭ߐߟߌ߫</territory>
+			<territory type="MO">ߛߌߣ ߕߌ߲߬ߞߎߘߎ߲߫ ߡߊߡߙߊ߬ߣߍ߲ ߡߞߊߥߏ߫</territory>
+			<territory type="MO" alt="short">ߡߞߊߥߏ߫</territory>
+			<territory type="MP">ߡߊߙߌߦߊߣ ߞߐ߬ߘߎ߮ ߕߌ߲</territory>
+			<territory type="MQ">ߡߊߙߑߕߣߌߞ</territory>
+			<territory type="MR">ߡߏߙߌߕߊߣߌ߫</territory>
+			<territory type="MS">ߡߐ߲ߗߋߙߊ߫</territory>
+			<territory type="MT">ߡߊߟߑߕ</territory>
+			<territory type="MU">ߡߏߙߌߛ</territory>
+			<territory type="MV">ߡߊߟߑߘߌߝ߭</territory>
+			<territory type="MW">ߡߟߊߥߌ߫</territory>
+			<territory type="MX">ߡߍߞߑߛߌߞ</territory>
+			<territory type="MY">ߡߊߟߍߘߎ߯</territory>
+			<territory type="MZ">ߡߏߖ߭ߊ߲ߓߌߞ</territory>
+			<territory type="NA">ߣߊߡߌ߲ߓߌ߫</territory>
+			<territory type="NC">ߞߊߟߋߘߏߣߌ߫-ߞߎߘߊ߫</territory>
+			<territory type="NE">ߖߋ߬ߟߌ߬ߓߊߘߎ߯</territory>
+			<territory type="NF">ߣߐߙߑߝߐߟߑߞ</territory>
+			<territory type="NG">ߖߋ߬ߟߌ߬ߓߊ߬ߟߊ߫</territory>
+			<territory type="NI">ߣߌߞߙߊߜ߭ߎߥߊ߫</territory>
+			<territory type="NL">ߤߏߟߊ߲ߘ</territory>
+			<territory type="NO">ߣߐߙߑߝ߭ߍߖ</territory>
+			<territory type="NP">ߣߋߔߊߟ</territory>
+			<territory type="NR">ߣߏ߯ߙߎ߫</territory>
+			<territory type="NU">ߣߎ߳ߋ߫</territory>
+			<territory type="NZ">ߖ߭ߋߟߊ߲ߘߌ߫-ߞߎߘߊ߫</territory>
+			<territory type="OM">ߏߡߊ߲߫</territory>
+			<territory type="PA">ߔߣߊߡߊ߫</territory>
+			<territory type="PE">ߔߋߙߎ߫</territory>
+			<territory type="PF">ߝߊ߬ߙߊ߲߬ߛߌ߫ ߔߏߟߌߣߋߖ߭ߌ߫</territory>
+			<territory type="PG">ߡߊߡߎߥߊߖ߭ߌ߫ ߖߌ߬ߣߍ߬-ߞߎߘߊ߫</territory>
+			<territory type="PH">ߝߟߌߔߌ߲ߣ</territory>
+			<territory type="PK">ߔߊߞߌߛߑߕߊ߲߫</territory>
+			<territory type="PL">ߔߏߟߐߢ</territory>
+			<territory type="PM">ߛߍ߲ߕ-ߔߍ߯ߙ ߣߌ߫ ߡߌ߲ߞߋߟߐ߲߫</territory>
+			<territory type="PN">ߔߌߕߑߞߍ߲ ߕߌ߲</territory>
+			<territory type="PR">ߔߐߙߑߕߏ߫-ߙߌߞߏ߫</territory>
+			<territory type="PS">ߔߊߟߍߛߑߕߌߣ ߞߣߍ</territory>
+			<territory type="PS" alt="short">ߔߊߟߍߛߑߕߌߣ</territory>
+			<territory type="PT">ߔߐߙߑߕߎߜ߭ߊߟ</territory>
+			<territory type="PW">ߔߟߊߐߛ</territory>
+			<territory type="PY">ߔߙߊߜ߭ߏߦߋ߫</territory>
+			<territory type="QA">ߞߊߕߊ߯ߙ</territory>
+			<territory type="QO">ߟߌ߲ߓߊ߲ߘߎ߯ ߕߌ߲߬ߞߎߘߎ߲ ߦߙߐ߫ ߡߊߕߊ߯ߣߍ߲</territory>
+			<territory type="RE">ߟߊ߬ߘߍ</territory>
+			<territory type="RO">ߙߎߡߊߣߌ߫</territory>
+			<territory type="RS">ߛߍߙߑߓߌ߫</territory>
+			<territory type="RU">ߌߙߌ߬ߛߌ߫</territory>
+			<territory type="RW">ߙߎߥߊ߲ߘߊ߫</territory>
+			<territory type="SA">ߛߎ߰ߘߎ߬ߟߊ߫-ߡߊ߲߬ߛߊ߬ߟߊ</territory>
+			<territory type="SB">ߛߊߟߏߡߐ߲߫ ߕߌ߲</territory>
+			<territory type="SC">ߛߋߦߌߛߍߟ</territory>
+			<territory type="SD">ߛߎߘߊ߲߫</territory>
+			<territory type="SE">ߛߎߥߍߘ</territory>
+			<territory type="SG">ߛߌ߲ߜ߭ߊߔߎߙ</territory>
+			<territory type="SH">ߛߍ߲ߕ-ߋߟߍߣ</territory>
+			<territory type="SI">ߛߑߟߏߝ߭ߋߣߌ߫</territory>
+			<territory type="SJ">ߛߊߟߑߓߊߙ ߣߌ߫ ߖ߭ߊ߲ ߡߊߦߍ߲߫</territory>
+			<territory type="SK">ߛߑߟߏߝ߭ߊߞߌ߫</territory>
+			<territory type="SL">ߛߙߊ߬ߟߏ߲߫</territory>
+			<territory type="SM">ߛߍߕ-ߡߊߙߍ߲߫</territory>
+			<territory type="SN">ߛߣߍ߬ߜߊ߯ߟߌ߫</territory>
+			<territory type="SO">ߛߏߡߊߟߌ߫</territory>
+			<territory type="SR">ߛߎߙߑߣߊߡ</territory>
+			<territory type="SS">ߥߙߏ߬ߘߎ߮ ߛߎ߬ߘߊ߲߫</territory>
+			<territory type="ST">ߛߊߥߕߏߡߋ߫ ߣߌ߫ ߔߑߙߍ߲ߛߌߔ</territory>
+			<territory type="SV">ߛߊߟߑߝ߭ߊߘߐߙ</territory>
+			<territory type="SX">ߛߍ߲ߕ-ߡߊߙߑߕߍ߲߫ ( ߤߏߟߊ߲ߘ ߝߊ߲߭ߝߍ߬ )</territory>
+			<territory type="SY">ߛߙߌ߫</territory>
+			<territory type="SZ">ߒߛߎߥߊߕߣߌ߫</territory>
+			<territory type="SZ" alt="variant">ߛߑߥߊߖ߭ߌߟߊ߲ߘ</territory>
+			<territory type="TA">ߞߎ߲ߓߊ߫ ߕߑߙߌߛߑߕߊ߫</territory>
+			<territory type="TC">ߕߎߙߑߞߌ߫ ߣߌ߫ ߞߊߦߌߞ</territory>
+			<territory type="TD">ߗߊߘ</territory>
+			<territory type="TF">ߝߊ߬ߙߊ߲߬ߛߌ߫ ߘߎ߰ߞߟߏ ߓߊߙߌ ߘߐ߫</territory>
+			<territory type="TG">ߕߜ߭ߏ߫</territory>
+			<territory type="TH">ߕߊߦߌߘߎ߯</territory>
+			<territory type="TJ">ߕߊߖߞߌߛߑߕߊ߲߫</territory>
+			<territory type="TK">ߕߏߞߋߟߊߏ߫</territory>
+			<territory type="TL">ߕߌߡߐߙ ߕߟߋ߬ߓߐ߬ߝߊ߲</territory>
+			<territory type="TL" alt="variant">ߕߌߡߐߙ ߕߟߋ߬ߓߐ</territory>
+			<territory type="TM">ߕߎߙߑߞߌߡߋߣߌߛߑߕߊ߲߫</territory>
+			<territory type="TN">ߕߎߣߖ߭ߌ߫</territory>
+			<territory type="TO">ߕߏ߲ߜ߭ߊ߫</territory>
+			<territory type="TR">ߕߎߙߑߞߌ߫</territory>
+			<territory type="TT">ߕߙߌߣߌߕߋ߫ ߣߌ߫ ߕߏߓߊߜ߭ߏ߫</territory>
+			<territory type="TV">ߕߎߝ߭ߊߟߎ߫</territory>
+			<territory type="TW">ߕߊߦߌߥߊ߲߫</territory>
+			<territory type="TZ">ߕߊ߲ߖ߭ߊߣߌ߫</territory>
+			<territory type="UA">ߎ߳ߞߑߙߍߣ</territory>
+			<territory type="UG">ߎߜ߭ߊ߲ߘߊ߫</territory>
+			<territory type="UM">ߞߊ߬ߝߏ߫ ߘߍ߬ߣߍ߲ ߘߌߣߍ߲߫ ߕߌ߲߫ ߡߊߕߊ߯ߣߍ߲</territory>
+			<territory type="UN">ߡߊ߲߬ߕߏ߲߫ ߠߊߘߍ߬ߣߍ߲ ߛߌ߬ߝߏ߲߬ߧߊ߬ߟߌ</territory>
+			<territory type="US">ߞߊ߬ߝߏ߫ ߘߍ߬ߣߍ߲</territory>
+			<territory type="US" alt="short">ߞ.ߘ.</territory>
+			<territory type="UY">ߎ߳ߙߑߜ߭ߋߦߌ߫</territory>
+			<territory type="UZ">ߎߖ߭ߑߓߋߞߌߛߑߕߊ߲߫</territory>
+			<territory type="VA">ߝ߭ߊߕߌߞߊ߲߫ ߞߊ߬ߝߏ</territory>
+			<territory type="VC">ߛߍ߲ߕ-ߝ߭ߍߛߊ߲ ߜ߭ߙߋߣߊߘߌ߫</territory>
+			<territory type="VE">ߝ߭ߣߋߖ߭ߎߦߋߟߊ߫</territory>
+			<territory type="VG">ߓߙߌߕߊ߲ߓߊ߫ ߕߌ߲߫ ߞߊߓߊ߲</territory>
+			<territory type="VI">ߞߊ߬ߝߏ߫ ߘߍ߬ߣߍ߲ ߕߌ߲߫ ߞߊߓߊ߲߫</territory>
+			<territory type="VN">ߝ߭ߌߦߍߕߑߣߊߡ</territory>
+			<territory type="VU">ߝ߭ߊߣߎߦߊߕߎ߫</territory>
+			<territory type="WF">ߥߊߟߌߛߌ߫ ߣߌ߫ ߝߕߎߣߊ߫</territory>
+			<territory type="WS">ߛߊߡߏߥߊ߫</territory>
+			<territory type="XA">ߔߛߏߘߏ߫ ߊߞߑߛߊ߲</territory>
+			<territory type="XB">ߔߛߔߘߏ߫-ߓߘߌ߫</territory>
+			<territory type="XK">ߞߛߏߝ߭ߏ߫</territory>
+			<territory type="YE">ߦߡߊߣߌ߲߫</territory>
+			<territory type="YT">ߡߊߦߐߕ</territory>
+			<territory type="ZA">ߥߙߏ߬ߘߎ߮ ߝߘߊ߬ߝߌ߲߬ߠߊ߫</territory>
+			<territory type="ZM">ߖ߭ߊ߲ߓߌ߫</territory>
+			<territory type="ZW">ߖ߭ߌ߲ߓߊߓߏߦߋ߫</territory>
+			<territory type="ZZ">ߕߌ߲߬ߞߎߘߎ߲߫ ߕߊ߲߬ߠߊߕߍ߰ߓߊߟߌ</territory>
+		</territories>
+		<measurementSystemNames>
+			<measurementSystemName type="metric">ߜߟߊ߬ߜߟߊ߬ߡߊ</measurementSystemName>
+			<measurementSystemName type="UK">ߓߙߌߕߊ߲ߓߊ߫ ߡߊ߲߬ߛߊ߬ߟߊ (ߓ.ߡ.)</measurementSystemName>
+			<measurementSystemName type="US">ߞߊ߬ߝߏ߫ ߘߍ߬ߣߍ߲ (ߞ.ߘ.)</measurementSystemName>
+		</measurementSystemNames>
+		<codePatterns>
+			<codePattern type="language">ߞߊ߲: {0}</codePattern>
+			<codePattern type="script">ߛߓߍߟߌ: {0}</codePattern>
+			<codePattern type="territory">ߕߌ߲߬ߞߎߘߎ߲: {0}</codePattern>
+		</codePatterns>
+	</localeDisplayNames>
+	<layout>
+		<orientation>
+			<characterOrder>right-to-left</characterOrder>
+		</orientation>
+	</layout>
+	<characters>
+		<exemplarCharacters>[߫ ߬ ߭ ߮ ߯ ߰ ߱ ߲ ߳ ߊ ߋ ߌ ߍ ߎ ߏ ߐ ߑ ߒ ߓ ߔ ߕ ߖ ߗ ߘ ߙ ߚ ߛ ߜ ߝ ߞ ߟ ߠ ߡ ߢ ߣ ߤ ߥ ߦ ߧ ߴ ߵ]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary" draft="contributed">[ߨ ߩ ߪ]</exemplarCharacters>
+		<exemplarCharacters type="numbers" draft="contributed">[\- ‑ ، . % ‰ + ߀ ߁ ߂ ߃ ߄ ߅ ߆ ߇ ߈ ߉]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[߸ ߹ ߷]</exemplarCharacters>
+	</characters>
+	<dates>
+		<calendars>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1">ߓߌ߲ߠ</month>
+							<month type="2">ߞߏ߲ߞ</month>
+							<month type="3">ߕߙߊ</month>
+							<month type="4">ߞߏ߲ߘ</month>
+							<month type="5">ߘߓߊ߬ߕ</month>
+							<month type="6">ߥߊ߬ߛ</month>
+							<month type="7">ߞߊ߬ߙ</month>
+							<month type="8">ߘߓߊ߬ߓ</month>
+							<month type="9">ߕߎߟߊߝߌ߲</month>
+							<month type="10">ߞߏ߲ߓ</month>
+							<month type="11">ߣߍߣ</month>
+							<month type="12">ߞߏߟ</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1">ߓߌ߲ߠߊߥߎߟߋ߲</month>
+							<month type="2">ߞߏ߲ߞߏߜߍ</month>
+							<month type="3">ߕߙߊߓߊ</month>
+							<month type="4">ߞߏ߲ߞߏߘߌ߬ߓߌ</month>
+							<month type="5">ߘߓߊ߬ߕߊ</month>
+							<month type="6">ߥߊ߬ߛߌ߬ߥߙߊ</month>
+							<month type="7">ߞߊ߬ߙߌߝߐ߭</month>
+							<month type="8">ߘߓߊ߬ߓߌߟߊ</month>
+							<month type="9">ߕߎߟߊߝߌ߲</month>
+							<month type="10">ߞߏ߲ߓߌߕߌ߮</month>
+							<month type="11">ߣߍߣߍߓߊ</month>
+							<month type="12">ߞߏߟߌ߲ߞߏߟߌ߲</month>
+						</monthWidth>
+					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="narrow">
+							<month type="1">ߓ</month>
+							<month type="2">ߞ</month>
+							<month type="3">ߕ</month>
+							<month type="4">ߞ</month>
+							<month type="5">ߘ</month>
+							<month type="6">ߥ</month>
+							<month type="7">ߞ</month>
+							<month type="8">ߘ</month>
+							<month type="9">ߕ</month>
+							<month type="10">ߞ</month>
+							<month type="11">ߣ</month>
+							<month type="12">ߞ</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<days>
+					<dayContext type="format">
+						<dayWidth type="abbreviated">
+							<day type="sun">ߞߊ߯ߙ</day>
+							<day type="mon">ߞߐ߬ߓ</day>
+							<day type="tue">ߞߐ߬ߟߏ߲</day>
+							<day type="wed">ߞߎߣ</day>
+							<day type="thu">ߓߌߟ</day>
+							<day type="fri">ߛߌ߬ߣ</day>
+							<day type="sat">ߞߍ߲ߘ</day>
+						</dayWidth>
+						<dayWidth type="short">
+							<day type="sun">ߞߊ߯</day>
+							<day type="mon">ߞߐ߬</day>
+							<day type="tue">ߞߐ߬ߟߏ߲</day>
+							<day type="wed">ߞߎ</day>
+							<day type="thu">ߓߌ</day>
+							<day type="fri">ߛߌ߬</day>
+							<day type="sat">ߞߍ߲</day>
+						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun">ߞߊ߯ߙߌߟߏ߲</day>
+							<day type="mon">ߞߐ߬ߓߊ߬ߟߏ߲</day>
+							<day type="tue">ߞߐ߬ߟߏ߲</day>
+							<day type="wed">ߞߎߣߎ߲ߟߏ߲</day>
+							<day type="thu">ߓߌߟߏ߲</day>
+							<day type="fri">ߛߌ߬ߣߌ߲߬ߟߏ߲</day>
+							<day type="sat">ߞߍ߲ߘߍߟߏ߲</day>
+						</dayWidth>
+					</dayContext>
+					<dayContext type="stand-alone">
+						<dayWidth type="abbreviated">
+							<day type="sun">ߞߊ߯ߙ</day>
+							<day type="mon">ߞߐ߬ߓ</day>
+							<day type="tue">ߞߐ߬ߟ</day>
+							<day type="wed">ߞߎߣ</day>
+							<day type="thu">ߓߌߟ</day>
+							<day type="fri">ߛߌ߬ߣ</day>
+							<day type="sat">ߞߍ߲ߘ</day>
+						</dayWidth>
+						<dayWidth type="narrow">
+							<day type="sun">ߞ</day>
+							<day type="mon">ߞ</day>
+							<day type="tue">ߞ</day>
+							<day type="wed">ߞ</day>
+							<day type="thu">ߓ</day>
+							<day type="fri">ߛ</day>
+							<day type="sat">ߞ</day>
+						</dayWidth>
+						<dayWidth type="short">
+							<day type="sun">ߞߊ߯</day>
+							<day type="mon">ߞߐ߬ߓ</day>
+							<day type="tue">ߞߐ߬ߟ</day>
+							<day type="wed">ߞߎ</day>
+							<day type="thu">ߓߌ</day>
+							<day type="fri">ߛߌ߬</day>
+							<day type="sat">ߞߍ߲</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+				<quarters>
+					<quarterContext type="format">
+						<quarterWidth type="abbreviated">
+							<quarter type="1">ߞߛ߁</quarter>
+							<quarter type="2">ߞߛ߂</quarter>
+							<quarter type="3">ߞߛ߃</quarter>
+							<quarter type="4">ߞߛ߄</quarter>
+						</quarterWidth>
+						<quarterWidth type="wide">
+							<quarter type="1">ߞߊߙߏߛߓߊ߫ ߁߭</quarter>
+							<quarter type="2">ߞߊߙߏߛߓߊ߫ ߂߲</quarter>
+							<quarter type="3">ߞߊߙߏߛߓߊ߫ ߃߲</quarter>
+							<quarter type="4">ߞߊߙߏߛߓߊ߫ ߄߲</quarter>
+						</quarterWidth>
+					</quarterContext>
+					<quarterContext type="stand-alone">
+						<quarterWidth type="narrow">
+							<quarter type="1">߁</quarter>
+							<quarter type="2">߂</quarter>
+							<quarter type="3">߃</quarter>
+							<quarter type="4">߄</quarter>
+						</quarterWidth>
+					</quarterContext>
+				</quarters>
+				<dayPeriods>
+					<dayPeriodContext type="format">
+						<dayPeriodWidth type="abbreviated">
+							<dayPeriod type="am">ߛ</dayPeriod>
+							<dayPeriod type="pm">ߥ</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+				</dayPeriods>
+				<eras>
+					<eraNames>
+						<era type="0">ߌߛߊ߫ ߡߏߦߌ ߢߍ߫</era>
+						<era type="0" alt="variant">ߞߊ߬ߝߏ߬ߙߋ߲ ߥߎ߬ߛߎ ߢߍ߫</era>
+						<era type="1">ߌߛߊ߫ ߡߏߦߌ ߞߐ߫</era>
+						<era type="1" alt="variant">ߞߊ߬ߝߏ߬ߙߋ߲ ߠߊ߫ ߥߎ߬ߛߎ</era>
+					</eraNames>
+					<eraAbbr>
+						<era type="0">ߌߛ. ߡ. ߢߍ߫</era>
+						<era type="1">ߌߛ. ߡ. ߞߐ߫</era>
+					</eraAbbr>
+					<eraNarrow>
+						<era type="0">ߌߛ. ߢߍ߫</era>
+						<era type="1">ߌߛ. ߞߐ߫</era>
+					</eraNarrow>
+				</eras>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="yMd">y / dd / MM</dateFormatItem>
+						<dateFormatItem id="yMMMd">y / dd MMM</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
+			</calendar>
+		</calendars>
+		<timeZoneNames>
+			<gmtFormat>ߜ߭ߕߖ{0}</gmtFormat>
+			<gmtZeroFormat>ߜ߭ߕߖ</gmtZeroFormat>
+			<regionFormat>{0} ߕߎ߬ߡߊ</regionFormat>
+			<regionFormat type="daylight">{0} ߕߎ߬ߡߊ߬-ߦߟߍߡߊ߲</regionFormat>
+			<regionFormat type="standard">{0} ߕߎ߬ߡߊ߬-ߦߟߍߡߊ߲ߓߊߟߌ</regionFormat>
+			<zone type="Africa/Luanda">
+				<exemplarCity>ߟߎߥߊ߲ߘߊ߫</exemplarCity>
+			</zone>
+			<zone type="Africa/Ouagadougou">
+				<exemplarCity>ߥߜ߭ߊ߬ߘߜ߭ߎ߫</exemplarCity>
+			</zone>
+			<zone type="Africa/Bujumbura">
+				<exemplarCity>ߓߎߖ߭ߎ߲ߓߎߙߊ߫</exemplarCity>
+			</zone>
+			<zone type="Africa/Porto-Novo">
+				<exemplarCity>ߔߐߙߑߕߏ߫-ߣߝ߭ߏ߫</exemplarCity>
+			</zone>
+			<zone type="Africa/Gaborone">
+				<exemplarCity>ߜ߭ߊߓߏߙߐߣ</exemplarCity>
+			</zone>
+			<zone type="Africa/Kinshasa">
+				<exemplarCity>ߞߌ߲ߛߊߛߊ߫</exemplarCity>
+			</zone>
+			<zone type="Africa/Lubumbashi">
+				<exemplarCity>ߟߎߓߎ߲ߓߊߛߌ߫</exemplarCity>
+			</zone>
+			<zone type="Africa/Bangui">
+				<exemplarCity>ߓߊ߲ߜ߭ߌ߫</exemplarCity>
+			</zone>
+			<zone type="Africa/Brazzaville">
+				<exemplarCity>ߓߙߖ߭ߊߝ߭ߌߟ</exemplarCity>
+			</zone>
+			<zone type="Africa/Abidjan">
+				<exemplarCity>ߊߓߌߖߊ߲߬</exemplarCity>
+			</zone>
+			<zone type="Africa/Douala">
+				<exemplarCity>ߘߎߥߟߊ߫</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Cape_Verde">
+				<exemplarCity>ߜߦߋߞߎ߲߫-ߝߙߌߛߌ߫</exemplarCity>
+			</zone>
+			<zone type="Africa/Djibouti">
+				<exemplarCity>ߖߌߓߎߕߌ߫</exemplarCity>
+			</zone>
+			<zone type="Africa/Algiers">
+				<exemplarCity>ߊߟߑߖ߭ߋ</exemplarCity>
+			</zone>
+			<zone type="Africa/Cairo">
+				<exemplarCity>ߞߍ߯ߙ</exemplarCity>
+			</zone>
+			<zone type="Africa/El_Aaiun">
+				<exemplarCity>ߟߊ߯ߦߎߣ</exemplarCity>
+			</zone>
+			<zone type="Africa/Asmera">
+				<exemplarCity>ߊߛߑߡߙߊ߫</exemplarCity>
+			</zone>
+			<zone type="Africa/Addis_Ababa">
+				<exemplarCity>ߊ߬ߘߌ߫ ߛߊ߬ߓߋߓߊ߫</exemplarCity>
+			</zone>
+			<zone type="Africa/Libreville">
+				<exemplarCity>ߟߌߓߙߋߝ߭ߌߟ</exemplarCity>
+			</zone>
+			<zone type="Africa/Accra">
+				<exemplarCity>ߊߞߙߊ߫</exemplarCity>
+			</zone>
+			<zone type="Africa/Banjul">
+				<exemplarCity>ߓߊ߲ߖߎߟ</exemplarCity>
+			</zone>
+			<zone type="Africa/Conakry">
+				<exemplarCity>ߞߐߣߊߞߙߌ߫</exemplarCity>
+			</zone>
+			<zone type="Africa/Malabo">
+				<exemplarCity>ߡߟߊߓߏ߫</exemplarCity>
+			</zone>
+			<zone type="Africa/Bissau">
+				<exemplarCity>ߓߌߛߊߥߏ߫</exemplarCity>
+			</zone>
+			<zone type="Indian/Chagos">
+				<exemplarCity>ߛߊߜ߭ߐߛ</exemplarCity>
+			</zone>
+			<zone type="Africa/Nairobi">
+				<exemplarCity>ߣߊߦߙߏߓߌ߫</exemplarCity>
+			</zone>
+			<zone type="Indian/Comoro">
+				<exemplarCity>ߞߐߡߐ߯ߙ</exemplarCity>
+			</zone>
+			<zone type="Africa/Monrovia">
+				<exemplarCity>ߡߏ߬ߙߏߝ߭ߌߦߊ߫</exemplarCity>
+			</zone>
+			<zone type="Africa/Maseru">
+				<exemplarCity>ߡߊߛߋߙߎ߫</exemplarCity>
+			</zone>
+			<zone type="Africa/Tripoli">
+				<exemplarCity>ߕߙߌߔߟߌ߫ ( ߟߓߌ߫ )</exemplarCity>
+			</zone>
+			<zone type="Africa/Casablanca">
+				<exemplarCity>ߞߛߊߓߎߟߊ߲ߞߊ߫</exemplarCity>
+			</zone>
+			<zone type="Indian/Antananarivo">
+				<exemplarCity>ߊ߲ߕߣߊߣߊߙߌߝ߭ߏ߫</exemplarCity>
+			</zone>
+			<zone type="Africa/Bamako">
+				<exemplarCity>ߓߡߊ߬ߞߐ߫</exemplarCity>
+			</zone>
+			<zone type="Africa/Nouakchott">
+				<exemplarCity>ߣߎߥߊߞߑߛߐߕ</exemplarCity>
+			</zone>
+			<zone type="Indian/Mauritius">
+				<exemplarCity>ߡߏߙߌߛ</exemplarCity>
+			</zone>
+			<zone type="Africa/Blantyre">
+				<exemplarCity>ߓߑߟߊ߲ߕߌ߯ߙ</exemplarCity>
+			</zone>
+			<zone type="Africa/Maputo">
+				<exemplarCity>ߡߊߔߎߕߏ߫</exemplarCity>
+			</zone>
+			<zone type="Africa/Windhoek">
+				<exemplarCity>ߥߌ߲ߘߐߞ</exemplarCity>
+			</zone>
+			<zone type="Africa/Niamey">
+				<exemplarCity>ߢߊߡߋ߫</exemplarCity>
+			</zone>
+			<zone type="Africa/Lagos">
+				<exemplarCity>ߟߋߜ߭ߐߛ</exemplarCity>
+			</zone>
+			<zone type="Indian/Reunion">
+				<exemplarCity>ߙߋߣߌߦߐ߲߫</exemplarCity>
+			</zone>
+			<zone type="Africa/Kigali">
+				<exemplarCity>ߞߌߜ߭ߊߟߌ߫</exemplarCity>
+			</zone>
+			<zone type="Indian/Mahe">
+				<exemplarCity>ߡߊߤߋ߫</exemplarCity>
+			</zone>
+			<zone type="Africa/Khartoum">
+				<exemplarCity>ߞߊߙߑߕߎߡ</exemplarCity>
+			</zone>
+			<zone type="Atlantic/St_Helena">
+				<exemplarCity>ߛߍ߲ߕ ߤߋߟߍߣ</exemplarCity>
+			</zone>
+			<zone type="Africa/Freetown">
+				<exemplarCity>ߝߙߌߕߐ߲߬</exemplarCity>
+			</zone>
+			<zone type="Africa/Dakar">
+				<exemplarCity>ߘߊ߬ߞߊ߯ߙߎ߫</exemplarCity>
+			</zone>
+			<zone type="Africa/Mogadishu">
+				<exemplarCity>ߡߏߜ߭ߊߘߌߛߏ߫</exemplarCity>
+			</zone>
+			<zone type="Africa/Juba">
+				<exemplarCity>ߖߎߓߊ߫</exemplarCity>
+			</zone>
+			<zone type="Africa/Sao_Tome">
+				<exemplarCity>ߛߊߏ-ߕߏߡߋ߫</exemplarCity>
+			</zone>
+			<zone type="Africa/Mbabane">
+				<exemplarCity>ߒߓߊߓߊߣ</exemplarCity>
+			</zone>
+			<zone type="Africa/Ndjamena">
+				<exemplarCity>ߒߖߊߡߋߣߊ߫</exemplarCity>
+			</zone>
+			<zone type="Indian/Kerguelen">
+				<exemplarCity>ߞߍߙߑߜ߭ߋߟߍ߲߫</exemplarCity>
+			</zone>
+			<zone type="Africa/Lome">
+				<exemplarCity>ߟߏߡߋ߫</exemplarCity>
+			</zone>
+			<zone type="Africa/Tunis">
+				<exemplarCity>ߕߎߣߌߛ</exemplarCity>
+			</zone>
+			<zone type="Africa/Dar_es_Salaam">
+				<exemplarCity>ߘߊ߯ߙ-ߛߊ߬ߟߊ߯ߡ</exemplarCity>
+			</zone>
+			<zone type="Africa/Kampala">
+				<exemplarCity>ߞߊ߲ߔߟߊ߫</exemplarCity>
+			</zone>
+			<zone type="Indian/Mayotte">
+				<exemplarCity>ߡߊߦߐߕ</exemplarCity>
+			</zone>
+			<zone type="Africa/Johannesburg">
+				<exemplarCity>ߖ߭ߎߥߊߣߍߛߑߓߎ߯ߙ</exemplarCity>
+			</zone>
+			<zone type="Africa/Lusaka">
+				<exemplarCity>ߟߎߛߞߊ߫</exemplarCity>
+			</zone>
+			<zone type="Africa/Harare">
+				<exemplarCity>ߤߙߊߙߋ߫</exemplarCity>
+			</zone>
+			<metazone type="Africa_Central">
+				<long>
+					<standard>ߝߘߊ߬ߝߌ߲߬ߠߊ߫ ߕߊ߲ߓߊ߲ ߕߎ߬ߡߊ߬ߙߋ߲ ߢߊߓߘߍ</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Eastern">
+				<long>
+					<standard>ߝߘߊ߬ߌ߲߬ߠߊ߫ ߓߟߋ߬ߓߐ ߕߎ߬ߡߊ߬ߙߋ߲ ߢߊߓߘߍ</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Southern">
+				<long>
+					<standard>ߝߘߌ߬ߝߌ߲߬ߠߊ߫ ߥߙߏ߬ߘߎ߮ ߕߎ߬ߡߊ߬ߙߋ߲ ߢߊߓߘߍ</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Western">
+				<long>
+					<generic>ߝߘߊ߬ߝߌ߲߬ߠߊ߫ ߕߟߋ߬ߓߋ ߕߎ߬ߡߊ߬ߙߋ߲</generic>
+					<standard>ߝߘߊ߬ߝߌ߲߬ߠߊ߫ ߕߟߋ߬ߓߋ ߕߎ߬ߡߊ߬ߙߋ߲ ߢߊߓߘߍ</standard>
+					<daylight>ߝߘߊ߬ߝߌ߲߬ߠߊ߫ ߕߟߋ߬ߓߋ ߕߟߋ߬ߡߊ߬ ߕߎߡߊߙߋ߲</daylight>
+				</long>
+			</metazone>
+			<metazone type="Cape_Verde">
+				<long>
+					<generic>ߜߙߋߞߎ߲߫-ߝߙߌߛߌ߫ ߕߎ߬ߡߊ߬ߙߋ߲</generic>
+					<standard>ߜߙߋߞߎ߲߫-ߝߙߌߛߌ߫ ߕߎ߬ߡߊ߬ߙߋ߲ ߢߊߓߘߍ</standard>
+					<daylight>ߜߙߋߞߎ߲߫-ߝߙߌߛߌ߫ ߕߟߋ߬ߡߊ߬ ߕߎߡߊߙߋ߲</daylight>
+				</long>
+			</metazone>
+			<metazone type="French_Southern">
+				<long>
+					<standard>ߐߛߑߕߙߊߟߌ߫ ߘߎ߰ߞߟߏ ߣߌ߫ ߝߊ߬ߙߊ߲߬ߛߌ߫ ߊ߲ߕߊߙߑߕߌߞ ߕߎ߬ߡߊ߬ߙߋ</standard>
+				</long>
+			</metazone>
+			<metazone type="GMT">
+				<long>
+					<standard>ߜ߭ߙߋߣߍߕ ߕߎ߬ߡߊ߬ߘߊ</standard>
+				</long>
+			</metazone>
+			<metazone type="Indian_Ocean">
+				<long>
+					<standard>ߍ߲ߘߎ߫ ߟߌ߲ߓߊ߲ߘߎ߯ ߕߎ߬ߡߊ߬ߙߋ߲</standard>
+				</long>
+			</metazone>
+			<metazone type="Mauritius">
+				<long>
+					<generic>ߡߏߙߌߛ ߕߎ߬ߡߊ߬ߙߋ߲</generic>
+					<standard>ߡߏߙߌߛ ߕߎ߬ߡߊ߬ߙߋ߲ ߢߊߓߘߍ</standard>
+					<daylight>ߡߏߙߌߛ ߕߟߋ߬ߡߊ߬ ߕߎߡߊߙߋ߲</daylight>
+				</long>
+			</metazone>
+			<metazone type="Reunion">
+				<long>
+					<standard>ߙߋߣߌߦߐ߲߫ ߕߎ߬ߡߊ߬ߙߋ߲</standard>
+				</long>
+			</metazone>
+			<metazone type="Seychelles">
+				<long>
+					<standard>ߛߋߦߌߛߌߟ ߕߎ߬ߡߊ߬ߙߋ߲</standard>
+				</long>
+			</metazone>
+		</timeZoneNames>
+	</dates>
+	<numbers>
+		<defaultNumberingSystem>nkoo</defaultNumberingSystem>
+		<otherNumberingSystems>
+			<native>nkoo</native>
+		</otherNumberingSystems>
+		<symbols numberSystem="latn">
+			<group>،</group>
+		</symbols>
+		<currencies>
+			<currency type="AOA">
+				<displayName>ߊ߲ߜ߭ߏߟߞߊ ߟߎ߬ ߟߊ߫ ߞߎߥߊ߲ߖ߭ߊ</displayName>
+				<symbol draft="contributed">ߊ߲ߜ߭ߎ</symbol>
+				<symbol alt="narrow" draft="contributed">ߞߖ߭</symbol>
+			</currency>
+			<currency type="AOK">
+				<displayName>ߊ߲ߜ߭ߏߟߊ߫ ߞߎߥߊ߲ߖ߭ߊ ( ߁߉߇߇–߁߉߉߀ )</displayName>
+			</currency>
+			<currency type="AON">
+				<displayName>ߊ߲ߜ߭ߏߟߊ߫ ߞߎߥߊߖ߭ߊ߫ ߞߎߘߊ ( ߁߉߉߀–߂߀߀߀ )</displayName>
+				<symbol draft="contributed">ߊߜ߭ߞ</symbol>
+			</currency>
+			<currency type="AOR">
+				<displayName>ߊ߲ߜ߭ߏߟߊ߫ ߞߎߥߊߖ߭ߊ ߝߊ߲߬ߞߊߘߏ߲߬ߣߍ߲ ( ߁߉߉߅–߁߉߉߉ )</displayName>
+				<symbol draft="contributed">ߊߜ߭ߝ</symbol>
+			</currency>
+			<currency type="BIF">
+				<displayName>ߓߎߙߎ߲ߘߌߞߊ ߟߎ߬ ߟߊ߫ ߝߊߙߊ߲</displayName>
+				<symbol draft="contributed">ߓߙߝ</symbol>
+			</currency>
+			<currency type="BWP">
+				<displayName>ߓߐߛߎߥߣߊߞߊ ߟߎ߬ ߟߊ߫ ߔߎߟߊ</displayName>
+				<symbol draft="contributed">ߓߥߔ</symbol>
+				<symbol alt="narrow" draft="contributed">ߔ</symbol>
+			</currency>
+			<currency type="CDF">
+				<displayName>ߞߏ߲߬ߜ߭ߏ߬ߞߊ ߟߎ߬ ߟߊ߫ ߝߊߙߊ߲</displayName>
+				<symbol draft="contributed">ߞߝ</symbol>
+			</currency>
+			<currency type="CVE">
+				<displayName>ߜߙߋߞߎ߲߫ ߝߙߌߛߌߞߊ ߟߎ߬ ߍߛߑߞߎߘߐߛ</displayName>
+				<symbol draft="contributed">ߍߛߞ</symbol>
+			</currency>
+			<currency type="DJF">
+				<displayName>ߖߌߓߎߕߌߞߊ ߟߎ߬ ߟߊ߫ ߝߊߙߊ߲</displayName>
+				<symbol draft="contributed">ߖߓߝ</symbol>
+			</currency>
+			<currency type="DZD">
+				<displayName>ߊߟߌߖ߭ߋߙߌߞߊ ߟߎ߬ ߟߊ߫ ߘߌ߬ߣߊ߯ߙߌ</displayName>
+				<symbol draft="contributed">ߊߟߘ</symbol>
+			</currency>
+			<currency type="EGP">
+				<displayName>ߡߌߛߌߙߊ߲ߞߊ ߟߎ߬ ߟߊ߫ ߔߐߣߌ߬</displayName>
+				<symbol draft="contributed">ߡߛߔ</symbol>
+			</currency>
+			<currency type="ERN">
+				<displayName>ߋߙߌߕߙߋߞߊ ߟߎ߬ ߟߊ߫ ߣߊߝߑߞߊ</displayName>
+				<symbol draft="contributed">ߋߙߝ</symbol>
+			</currency>
+			<currency type="ETB">
+				<displayName>ߋߗߏߔߌߞߊ ߟߎ߬ ߟߊ߫ ߓߌߙߑߛ</displayName>
+				<symbol draft="contributed">ߋߗߓ</symbol>
+			</currency>
+			<currency type="GHC">
+				<displayName>ߛߘߌ</displayName>
+				<displayName count="other">ߜ߭ߊ߯ߣߊ߫ ߛߘߌ ( ߁߉߆߇–߂߀߀߇ )</displayName>
+			</currency>
+			<currency type="GHS">
+				<displayName>ߜ߭ߊ߯ߣߊ߫ ߛߘߌ</displayName>
+				<displayName count="other">ߜ߭ߊ߯ߣߞߊ ߟߎ߬ ߛߘߌ</displayName>
+				<symbol draft="contributed">ߜ߭ߛߘ</symbol>
+			</currency>
+			<currency type="GMD">
+				<displayName>ߜ߭ߊ߲ߓߌߞߊ ߟߎ߬ ߟߊ߫ ߘߟߊߛߌ߫</displayName>
+				<symbol draft="contributed">ߜ߭ߓߘ</symbol>
+			</currency>
+			<currency type="GNF">
+				<displayName>ߖߌ߬ߣߍ߬ߞߊ ߟߎ߬ ߟߊ߫ ߝߊߙߊ߲</displayName>
+				<symbol draft="contributed">߿</symbol>
+				<symbol alt="narrow" draft="contributed">߿</symbol>
+			</currency>
+			<currency type="GNS">
+				<displayName>ߖߌ߬ߣߍ߬ߞߊ ߟߎ߬ ߟߊ߫ ߛߟߌ</displayName>
+				<symbol draft="contributed">ߖߛ߾</symbol>
+			</currency>
+			<currency type="GQE">
+				<displayName>ߕߍߡߊߓߊ߲߮ ߖߌ߬ߣߍ߬ߞߊ ߟߎ߬ ߟߊ߫ ߋߞߥߋߟߋ</displayName>
+				<symbol draft="contributed">ߕߖߋ</symbol>
+			</currency>
+			<currency type="GWE">
+				<displayName>ߖߌߣߍ߫ ߓߌߛߊߥߏߞߊ ߟߎ߬ ߟߊ߫ ߍߛߑߞߎߘߐߛ</displayName>
+				<symbol draft="contributed">ߖߓߍ</symbol>
+			</currency>
+			<currency type="GWP">
+				<displayName>ߖߌߣߍ߫ ߓߌߛߊߥߏߞߊ ߟߎ߬ ߟߊ߫ ߔߋߖ߭ߏ</displayName>
+				<symbol draft="contributed">ߖߓߔ</symbol>
+			</currency>
+			<currency type="KES">
+				<displayName>ߝߋߣߌߦߞߊ ߟߎ߬ ߟߊ߫ ߛߌߟߌ߲ߜ߭</displayName>
+				<symbol draft="contributed">ߞߋߛ</symbol>
+			</currency>
+			<currency type="KMF">
+				<displayName>ߞߐߡ߲߯ߙߌߞߊ ߟߎ߬ ߟߊ߫ ߝߊߙߊ߲</displayName>
+				<symbol draft="contributed">ߞߡߝ</symbol>
+				<symbol alt="narrow" draft="contributed">ߝߛ</symbol>
+			</currency>
+			<currency type="LRD">
+				<displayName>ߟߌߓߋߙߌߦߞߊ ߟߎ߬ ߟߊ߫ ߘߏߟߊߙ</displayName>
+				<symbol draft="contributed">ߟ߾</symbol>
+			</currency>
+			<currency type="LSL">
+				<displayName>ߟߋߛߕߏߞߊ ߟߎ߬ ߟߊ߫ ߟߏߕߌ</displayName>
+				<symbol draft="contributed">ߟߛߟ</symbol>
+			</currency>
+			<currency type="LYD">
+				<displayName>ߟߓߌ߫ ߘߌ߬ߣߊ߯ߙ</displayName>
+				<displayName count="other">ߟߓߌߞߊ ߟߎ߬ ߟߊ߫ ߘߌ߬ߣߊ߯ߙ</displayName>
+				<symbol draft="contributed">ߟߓߘ</symbol>
+			</currency>
+			<currency type="MAD">
+				<displayName>ߡߊ߬ߙߐߞߎ߬ ߘߌ߬ߙߑߤߊߡ</displayName>
+				<displayName count="other">ߡߊ߬ߙߐ߬ߞߎ߬ߞߊ ߟߎ߬ ߟߊ߫ ߘߌ߬ߙߑߤߊߡ</displayName>
+				<symbol draft="contributed">ߡߘߤ</symbol>
+			</currency>
+			<currency type="MAF">
+				<displayName>ߡߊ߬ߙߐ߬ߞߎߞߊ ߟߎ߬ ߟߊ߫ ߝߊߙߊ߲</displayName>
+				<symbol draft="contributed">ߡߙߝ</symbol>
+			</currency>
+			<currency type="MGA">
+				<displayName>ߡߘߊߜ߭ߊߛߑߞߊ߯ߙߌߞߊ ߟߎ߬ ߟߊ߫ ߊߙߌߦߊߙߌ</displayName>
+				<symbol draft="contributed">ߡߘߙ</symbol>
+				<symbol alt="narrow" draft="contributed">ߊߙ</symbol>
+			</currency>
+			<currency type="MGF">
+				<displayName>ߡߘߊߜ߭ߊߑߞߊ߯ߙߌߞߊ ߟߎ߬ ߟߊ߫ ߝߊߙߊ߲</displayName>
+				<symbol draft="contributed">ߡߘߝ</symbol>
+			</currency>
+			<currency type="MLF">
+				<displayName>ߡߊߟߌߞߊ ߟߎ߬ ߟߊ߫ ߝߊߙߊ߲</displayName>
+				<symbol draft="contributed">ߡߝ</symbol>
+			</currency>
+			<currency type="MRO">
+				<displayName>ߡߏߙߌߕߊߣߌߞߊ ߟߎ߬ ߟߊ߫ ߎ߬ߜ߭ߌߦߊ ( ߁߉߇߃–߂߀߁߇ )</displayName>
+				<symbol draft="contributed">ߡߙߏ</symbol>
+			</currency>
+			<currency type="MRU">
+				<displayName>ߡߏߙߌߕߊߣߌߞߊ ߟߎ߬ ߟߊ߫ ߎ߬ߜ߭ߌߦߊ</displayName>
+				<symbol draft="contributed">ߡߎߜ߭</symbol>
+			</currency>
+			<currency type="MUR">
+				<displayName>ߡߏߙߛߌߞߊ ߟߎ߬ ߟߊ߫ ߙߔߎ</displayName>
+				<symbol draft="contributed">ߡߙߔ</symbol>
+				<symbol alt="narrow" draft="contributed">ߙߛ</symbol>
+			</currency>
+			<currency type="MWK">
+				<displayName>ߡߟߊߥߌߞߊ ߟߎ߬ ߟߊ߫ ߞߎߥߛߊ</displayName>
+				<symbol draft="contributed">ߡߟߞ</symbol>
+			</currency>
+			<currency type="MZE">
+				<displayName>ߡߏߖ߭ߊ߲ߓߞߌߞߊ ߟߎ߬ ߟߊ߫ ߍߛߑߞߎߘߏߛ</displayName>
+				<symbol draft="contributed">ߡߖ߭ߋ</symbol>
+			</currency>
+			<currency type="MZM">
+				<displayName>ߡߏߖ߭ߊ߲ߓߞߌߞߊ ߟߎ߬ ߟߊ߫ ߡߋߕߌߞ ( ߁߉߈߀–߂߀߀߆ )</displayName>
+				<symbol draft="contributed">ߡߖߡ</symbol>
+			</currency>
+			<currency type="MZN">
+				<displayName>ߡߏߖ߭ߊ߲ߓߞߌߞߊ ߟߎ߬ ߟߊ߫ ߡߋߕߌߞߊߟ</displayName>
+				<symbol draft="contributed">ߡߖ߭ߡ</symbol>
+			</currency>
+			<currency type="NAD">
+				<displayName>ߣߊߡߌ߲ߓߌߞߊ ߟߎ߬ ߟߊ߫ ߘߏߟߊ߯ߙ</displayName>
+				<symbol draft="contributed">ߣߡߘ</symbol>
+				<symbol alt="narrow" draft="contributed">ߛ</symbol>
+			</currency>
+			<currency type="NGN">
+				<displayName>ߖߋ߬ߟߌ߬ߓߊ߬ߞߊ ߟߎ߬ ߟߊ߫ ߣߍߙߊ</displayName>
+				<symbol draft="contributed">ߖߣ</symbol>
+			</currency>
+			<currency type="RHD">
+				<displayName>ߖ߭ߌ߲ߓߊߓߏߦߋߞߊ ߟߎ߬ ߟߊ߫ ߘߏߟߊ߯ߙ</displayName>
+				<symbol draft="contributed">ߖ߭ߓߘ</symbol>
+			</currency>
+			<currency type="RWF">
+				<displayName>ߙߎߥߊ߲ߘߞߊ ߟߎ߬ ߟߊ߫ ߝߊߙߊ߲</displayName>
+				<symbol draft="contributed">ߙߥߝ</symbol>
+				<symbol alt="narrow" draft="contributed">ߝߙ</symbol>
+			</currency>
+			<currency type="SCR">
+				<displayName>ߛߋߦߌߛߍߟߌߞߊ ߟߎ߬ ߟߊ߫ ߙߎߔߌ</displayName>
+				<symbol draft="contributed">ߛߛߥ</symbol>
+			</currency>
+			<currency type="SDD">
+				<displayName>ߛߎ߬ߘߊ߲߬ߞߊ ߟߎ߬ ߘߌ߬ߣߊ߯ߙ ( ߁߉߉߂–߂߀߀߇ )</displayName>
+				<symbol draft="contributed">ߛߘߘ</symbol>
+			</currency>
+			<currency type="SDG">
+				<displayName>ߛߎߘߊ߲ߞߊ ߟߎ߬ ߟߊ߫ ߔߐߣߌ߬</displayName>
+				<symbol draft="contributed">ߛߘߜ߭</symbol>
+			</currency>
+			<currency type="SDP">
+				<displayName>ߛߎ߬ߘ߲ߊ߬ߞߊ ߟߊ߫ ߔߐߣߌ߬ ( ߁߉߅߆–߂߀߀߇ )</displayName>
+				<symbol draft="contributed">ߛߘߔ</symbol>
+			</currency>
+			<currency type="SHP">
+				<displayName>ߛߍ߲ߕ ߤߌߟߋߣߞߊ ߟߎ߬ ߟߊ߫ ߔߐߣߌ߬</displayName>
+				<symbol draft="contributed">ߛߤߔ</symbol>
+			</currency>
+			<currency type="SLE">
+				<displayName>ߛߙߊ߬ߟߏ߲߬ߞߊ ߟߎ߬ ߟߊ߫ ߔߐߣߌ߬</displayName>
+				<symbol draft="contributed">ߛߙߔ</symbol>
+			</currency>
+			<currency type="SLL">
+				<displayName>ߛߙߊ߬ߟߏ߲߬ߞߊ ߟߎ߬ ߟߊ߫ ߔߐߣߌ߬ - 1964-2022</displayName>
+			</currency>
+			<currency type="SOS">
+				<displayName>ߛߏߡߊߟߌߞߊ ߟߎ߬ ߟߊ߫ ߛߌߟߌ߲ߜ߭</displayName>
+				<symbol draft="contributed">ߛߡߛ</symbol>
+			</currency>
+			<currency type="SSP">
+				<displayName>ߛߎ߬ߘߊ߲߬ߞߊ ߟߎ߬ ߟߊ߫ ߔߐߣߌ߬</displayName>
+				<symbol draft="contributed">ߛߛߔ</symbol>
+			</currency>
+			<currency type="STD">
+				<displayName>ߛߊߏߕߏߡߋߞߊ ߟߎ߬ ߟߊ߫ ߘߏߓߙߊߛ ( ߁߉߇߇– ߂߀߁߇ )</displayName>
+				<symbol draft="contributed">ߛߕߘ</symbol>
+			</currency>
+			<currency type="STN">
+				<displayName>ߛߊߏߕߏߡߋߞߊ ߟߎ߬ ߟߊ߫ ߘߏߓߙߊߛ</displayName>
+				<symbol draft="contributed">ߛߔߘ</symbol>
+				<symbol alt="narrow" draft="contributed">ߛߓ</symbol>
+			</currency>
+			<currency type="SZL">
+				<displayName>ߛߑߥߊߕߣߞߊ ߟߎ߬ ߟߌߟߊ߲ߖ߭ߋߣߌߛ</displayName>
+				<symbol draft="contributed">ߛߖ߭ߟ</symbol>
+			</currency>
+			<currency type="TND">
+				<displayName>ߕߎߣߛߌߞߊ ߟߎ߬ ߟߊ߫ ߘߌ߬ߣߊ߯ߙ</displayName>
+				<symbol draft="contributed">ߕߣߘ</symbol>
+			</currency>
+			<currency type="TZS">
+				<displayName>ߕߊ߲ߖ߭ߊ߯ߣߌߞߊ ߟߎ߬ ߟߊ߫ ߛߌߟߌ߲ߜ߭</displayName>
+				<symbol draft="contributed">ߕߖ߭ߛ</symbol>
+			</currency>
+			<currency type="UGS">
+				<displayName>ߎߜ߭ߊ߲ߘߞߊ ߟߎ߬ ߟߊ߫ ߛߌߟߌ߲ߜ߭ ( ߁߉߆߆–߁߉߈߇ )</displayName>
+				<symbol draft="contributed">ߎߜ߭ߥ</symbol>
+			</currency>
+			<currency type="UGX">
+				<displayName>ߎߜ߭ߊ߲ߘߞߊ ߟߎ߬ ߟߊ߫ ߛߌߟߌ߲ߜ߭</displayName>
+				<symbol draft="contributed">ߎߜ߭ߛ</symbol>
+			</currency>
+			<currency type="XAF">
+				<displayName>ߝߘߊ߬ߝߌ߲߬ߠߊ߫ ߕߊ߲ߓߊ߲ ߠߎ߬ ߝߊߙߊ߲߫ ߛߍߝߊ</displayName>
+				<symbol draft="contributed">ߝߛߝ</symbol>
+			</currency>
+			<currency type="XOF">
+				<displayName>ߝߊߙߊ߲߫ ߛߍߝߊ</displayName>
+				<symbol draft="contributed">߾</symbol>
+			</currency>
+			<currency type="ZAR">
+				<displayName>ߥߙߏ߬ߘߎ߮ ߝߘߊ߬ߝߌ߲߬ߠߞߊ ߟߎ߬ ߟߊ߫ ߙߊ߲ߘ</displayName>
+				<symbol draft="contributed">ߥߝߙ</symbol>
+			</currency>
+			<currency type="ZMK">
+				<displayName>ߖ߭ߊ߲ߓߌߞߊ ߟߎ߬ ߟߊ߫ ߞߎߥߛߊ ( ߁߉߆߈–߂߀߁߂ )</displayName>
+				<symbol draft="contributed">ߖ߭ߓߞ</symbol>
+			</currency>
+			<currency type="ZMW">
+				<displayName>ߖ߭ߊ߲ߓߌߞߊ ߟߎ߬ ߟߊ߫ ߞߎߥߛߊ</displayName>
+				<symbol draft="contributed">ߖ߭ߓߥ</symbol>
+				<symbol alt="narrow" draft="contributed">ߖ߭ߞ</symbol>
+			</currency>
+			<currency type="ZRN">
+				<displayName>ߖ߭ߊ߬ߦߌ߬ߞߊ ߟߎ߬ ߟߊ߫ ߖ߭ߊ߬ߦߌߙ ( ߁߉߉߃–߁߉߉߈ )</displayName>
+				<symbol draft="contributed">ߖ߭ߙ</symbol>
+			</currency>
+			<currency type="ZRZ">
+				<displayName>ߖ߭ߊߦߙߌߞߊ ߟߎ߫ ߟߊ߫ ߖ߭ߊ߬ߦߌߙ ( ߁߉߇߁–߁߉߉߃ )</displayName>
+				<symbol draft="contributed">ߖ߭ߙߖ߭</symbol>
+			</currency>
+			<currency type="ZWD">
+				<displayName>ߖߌ߲ߓߊߓߏߦߋߞߊ ߟߎ߬ ߟߊ߫ ߘߏߟߊ߯ߙ (߁߉߈߀–߂߀߀߈ )</displayName>
+				<symbol draft="contributed">ߖ߭ߥߘ</symbol>
+			</currency>
+			<currency type="ZWL">
+				<displayName>ߖ߭ߌ߲ߓߊߓߏߦߋߞߊ ߟߎ߬ ߟߊ߫ ߘߏߟߊ߯ߙ ( ߂߀߀߉ )</displayName>
+				<symbol draft="contributed">ߖ߭ߥߟ</symbol>
+			</currency>
+			<currency type="ZWR">
+				<displayName>ߖ߭ߌ߲ߓߊߓߏߦߋߞߊ ߟߎ߬ ߟߊ߫ ߘߏߟߊ߯ߙ ( ߂߀߀߈ )</displayName>
+				<symbol draft="contributed">ߖ߭ߥߙ</symbol>
+			</currency>
+		</currencies>
+	</numbers>
+	<units>
+		<unitLength type="long">
+			<unit type="duration-decade">
+				<displayName>ߦߟߍ߬ߘߐ߬ߞߍ</displayName>
+				<unitPattern count="other">ߦߟߍ߬ߘߐ߬ߞߍ {0}</unitPattern>
+			</unit>
+			<unit type="duration-year">
+				<perUnitPattern>ߛߊ߲߭ ߠߊ߫ {0}</perUnitPattern>
+			</unit>
+			<unit type="duration-month">
+				<displayName>ߞߊߙߏ</displayName>
+				<unitPattern count="other">ߞߊߙߏ {0}</unitPattern>
+				<perUnitPattern>ߞߊߙߏ ߟߊ߫ {0}</perUnitPattern>
+			</unit>
+			<unit type="duration-week">
+				<displayName>ߞߎ߲߬ߢߐ߮</displayName>
+				<unitPattern count="other">ߞߎ߲߬ߢߐ߮ {0}</unitPattern>
+				<perUnitPattern>ߞߎ߲߬ߢߐ߮ ߟߊ߫ {0}</perUnitPattern>
+			</unit>
+			<unit type="duration-day">
+				<displayName>ߟߏ߲</displayName>
+				<unitPattern count="other">ߟߏ߲ ߜߍ {0}</unitPattern>
+				<perUnitPattern>ߟߏ߲ ߠߊ߫ {0}</perUnitPattern>
+			</unit>
+			<unit type="duration-hour">
+				<unitPattern count="other">ߕߎ߬ߡߊ߬ߙߋ߲ {0}</unitPattern>
+				<perUnitPattern>ߕߎ߬ߡߊ߬ߙߋ߲ ߞߘߐ߫ {0}</perUnitPattern>
+			</unit>
+			<unit type="duration-minute">
+				<displayName>ߡߌ߬ߛߍ߲</displayName>
+				<unitPattern count="other">ߡߌ߬ߛߍ߲ {0}</unitPattern>
+				<perUnitPattern>ߡߌ߬ߛߍ߲ ߠߊ߫ {0}</perUnitPattern>
+			</unit>
+			<unit type="duration-second">
+				<displayName>ߝߌ߬ߟߊ߲</displayName>
+				<unitPattern count="other">ߝߌ߬ߟߊ߲ {0}</unitPattern>
+			</unit>
+			<unit type="duration-millisecond">
+				<displayName>ߝߌ߬ߟߊ߲߬ߥߊ߰ߘߋ߲</displayName>
+				<unitPattern count="other">ߝߌ߬ߟߊ߲߬ߥߊ߰ߘߋ߲ {0}</unitPattern>
+			</unit>
+			<unit type="duration-microsecond">
+				<displayName>ߝߌ߬ߟߊ߲߬ߢߊ߲߯ߕߊ</displayName>
+				<unitPattern count="other">ߝߌ߬ߟߊ߲߬ߢߊ߲߯ߕߊ {0}</unitPattern>
+			</unit>
+			<unit type="duration-nanosecond">
+				<displayName>ߝߌ߬ߟߊ߲߬ߞߏߦߋ</displayName>
+				<unitPattern count="other">ߝߌ߬ߟߊ߲߬ߞߏߦߋ {0}</unitPattern>
+			</unit>
+		</unitLength>
+		<unitLength type="short">
+			<unit type="duration-century">
+				<displayName>ߝߊ߯ߘߐߞߍ</displayName>
+				<unitPattern count="other">ߝߊ߯ߘߐߞߍ {0}</unitPattern>
+			</unit>
+			<unit type="duration-decade">
+				<displayName>ߦߟߍ߬ߘ</displayName>
+			</unit>
+			<unit type="duration-year">
+				<displayName>ߛߊ߲߭</displayName>
+				<unitPattern count="other">ߛߊ߲߭ {0}</unitPattern>
+				<perUnitPattern>{0}/ߛߊ߲߭</perUnitPattern>
+			</unit>
+			<unit type="duration-month">
+				<displayName>ߞ.</displayName>
+				<unitPattern count="other">ߞ. {0}</unitPattern>
+				<perUnitPattern>{0}/ߞ.</perUnitPattern>
+			</unit>
+			<unit type="duration-week">
+				<displayName>ߞߎ߲߬ߢ</displayName>
+				<unitPattern count="other">ߞߎ߲߬ߢ{0}</unitPattern>
+				<perUnitPattern>{0}/ߞߎ߲߬ߢ</perUnitPattern>
+			</unit>
+			<unit type="duration-day">
+				<displayName>ߟ</displayName>
+				<unitPattern count="other">ߟ {0}</unitPattern>
+				<perUnitPattern>{0}/ߟ</perUnitPattern>
+			</unit>
+			<unit type="duration-hour">
+				<displayName>ߕߎ߬ߡߊ߬ߙߋ߲</displayName>
+				<unitPattern count="other">ߕ {0}</unitPattern>
+				<perUnitPattern>{0}/ߕ</perUnitPattern>
+			</unit>
+			<unit type="duration-minute">
+				<displayName>ߡߌ߬ߛ</displayName>
+				<unitPattern count="other">ߡߌ߬ߛ {0}</unitPattern>
+				<perUnitPattern>{0}/ߡߌ߬ߛ</perUnitPattern>
+			</unit>
+			<unit type="duration-second">
+				<displayName>ߝ</displayName>
+				<unitPattern count="other">ߝ {0}</unitPattern>
+				<perUnitPattern>{0}/ߝ</perUnitPattern>
+			</unit>
+			<unit type="duration-millisecond">
+				<displayName>ߝߥ</displayName>
+				<unitPattern count="other">ߝߥ {0}</unitPattern>
+			</unit>
+			<unit type="duration-microsecond">
+				<displayName>ߝߢ</displayName>
+				<unitPattern count="other">ߝߢ {0}</unitPattern>
+			</unit>
+			<unit type="duration-nanosecond">
+				<displayName>ߝߌ߬ߟߞ</displayName>
+				<unitPattern count="other">ߝߞ {0}</unitPattern>
+			</unit>
+		</unitLength>
+		<unitLength type="narrow">
+			<unit type="duration-century">
+				<unitPattern count="other">ߝߊ߯ߘߞ{0}</unitPattern>
+			</unit>
+			<unit type="duration-decade">
+				<displayName>ߦߟߍ߬ߘߐ߬ߞߍ</displayName>
+				<unitPattern count="other">ߦߟߍ߬ߘߞ{0}</unitPattern>
+			</unit>
+			<unit type="duration-year">
+				<unitPattern count="other">ߛߊ߲߭{0}</unitPattern>
+			</unit>
+			<unit type="duration-month">
+				<displayName>ߞߊߙߏ</displayName>
+				<unitPattern count="other">ߞ.{0}</unitPattern>
+			</unit>
+			<unit type="duration-day">
+				<displayName>ߟߏ߲</displayName>
+				<unitPattern count="other">ߟ{0}</unitPattern>
+			</unit>
+			<unit type="duration-hour">
+				<unitPattern count="other">ߕ{0}</unitPattern>
+			</unit>
+			<unit type="duration-minute">
+				<unitPattern count="other">ߡߌ߬ߛ{0}</unitPattern>
+			</unit>
+			<unit type="duration-second">
+				<unitPattern count="other">ߝ{0}</unitPattern>
+			</unit>
+			<unit type="duration-millisecond">
+				<unitPattern count="other">ߝߥ{0}</unitPattern>
+			</unit>
+			<unit type="duration-microsecond">
+				<unitPattern count="other">ߝߢ{0}</unitPattern>
+			</unit>
+			<unit type="duration-nanosecond">
+				<displayName>ߝߞ</displayName>
+				<unitPattern count="other">ߝߞ{0}</unitPattern>
+			</unit>
+		</unitLength>
+	</units>
+</ldml>

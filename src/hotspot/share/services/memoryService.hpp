@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,10 +67,10 @@ public:
   static MemoryPool*    get_memory_pool(instanceHandle pool);
   static MemoryManager* get_memory_manager(instanceHandle mgr);
 
-  static const int num_memory_pools() {
+  static int num_memory_pools() {
     return _pools_list->length();
   }
-  static const int num_memory_managers() {
+  static int num_memory_managers() {
     return _managers_list->length();
   }
 
@@ -104,10 +104,10 @@ public:
                      bool recordAccumulatedGCTime,
                      bool recordGCEndTime, bool countCollection,
                      GCCause::Cause cause,
-                     bool allMemoryPoolsAffected);
+                     bool allMemoryPoolsAffected, const char* notificationMessage = nullptr);
 
-  static bool get_verbose() { return log_is_enabled(Info, gc); }
   static bool set_verbose(bool verbose);
+  static bool get_verbose();
 
   // Create an instance of java/lang/management/MemoryUsage
   static Handle create_MemoryUsage_obj(MemoryUsage usage, TRAPS);
@@ -116,19 +116,21 @@ public:
 class TraceMemoryManagerStats : public StackObj {
 private:
   GCMemoryManager* _gc_memory_manager;
-  bool         _allMemoryPoolsAffected;
-  bool         _recordGCBeginTime;
-  bool         _recordPreGCUsage;
-  bool         _recordPeakUsage;
-  bool         _recordPostGCUsage;
-  bool         _recordAccumulatedGCTime;
-  bool         _recordGCEndTime;
-  bool         _countCollection;
-  GCCause::Cause _cause;
+  GCCause::Cause   _cause;
+  const char*      _end_message;
+  bool             _allMemoryPoolsAffected;
+  bool             _recordGCBeginTime;
+  bool             _recordPreGCUsage;
+  bool             _recordPeakUsage;
+  bool             _recordPostGCUsage;
+  bool             _recordAccumulatedGCTime;
+  bool             _recordGCEndTime;
+  bool             _countCollection;
 public:
   TraceMemoryManagerStats() {}
   TraceMemoryManagerStats(GCMemoryManager* gc_memory_manager,
                           GCCause::Cause cause,
+                          const char* end_message,
                           bool allMemoryPoolsAffected = true,
                           bool recordGCBeginTime = true,
                           bool recordPreGCUsage = true,
@@ -140,6 +142,7 @@ public:
 
   void initialize(GCMemoryManager* gc_memory_manager,
                   GCCause::Cause cause,
+                  const char* end_message,
                   bool allMemoryPoolsAffected,
                   bool recordGCBeginTime,
                   bool recordPreGCUsage,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,18 +27,17 @@ package jdk.jfr.events;
 
 import jdk.jfr.Category;
 import jdk.jfr.Description;
-import jdk.jfr.Experimental;
 import jdk.jfr.Label;
 import jdk.jfr.Name;
 import jdk.jfr.internal.MirrorEvent;
+import jdk.jfr.internal.RemoveFields;
 
 @Category({"Java Development Kit", "Threading"})
 @Label("Virtual Thread Submit Failed")
 @Name("jdk.VirtualThreadSubmitFailed")
 @Description("Submit of task for virtual thread failed")
-@MirrorEvent(className = "jdk.internal.event.VirtualThreadSubmitFailedEvent")
-@Experimental
-public final class VirtualThreadSubmitFailedEvent extends AbstractJDKEvent {
+@RemoveFields("duration")
+public final class VirtualThreadSubmitFailedEvent extends MirrorEvent {
 
     @Label("Thread Id")
     public long javaThreadId;

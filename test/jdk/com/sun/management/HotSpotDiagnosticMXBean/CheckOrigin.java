@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
  * @test
  * @bug 8028994
  * @author Staffan Larsen
+ * @requires vm.flagless
  * @library /test/lib
  * @modules jdk.attach/sun.tools.attach
  *          jdk.management
@@ -40,6 +41,7 @@ import java.io.FileWriter;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.lang.management.ManagementFactory;
+import java.nio.file.Path;
 import java.util.Map;
 import jdk.test.lib.process.ProcessTools;
 import sun.tools.attach.HotSpotVirtualMachine;
@@ -52,14 +54,14 @@ public class CheckOrigin {
         if (args.length == 0) {
             // start a process that has options set in a number of different ways
 
-            File flagsFile = File.createTempFile("CheckOriginFlags", null);
+            File flagsFile = File.createTempFile("CheckOriginFlags", null, Path.of(".").toFile());
             try (PrintWriter pw =
                    new PrintWriter(new FileWriter(flagsFile))) {
                 pw.println("+PrintCodeCache");
             }
 
             ProcessBuilder pb = ProcessTools.
-                createJavaProcessBuilder(
+                createLimitedTestJavaProcessBuilder(
                     "--add-exports", "jdk.attach/sun.tools.attach=ALL-UNNAMED",
                     "-XX:+UseG1GC",  // this will cause MaxNewSize to be FLAG_SET_ERGO
                     "-XX:+UseCodeCacheFlushing",

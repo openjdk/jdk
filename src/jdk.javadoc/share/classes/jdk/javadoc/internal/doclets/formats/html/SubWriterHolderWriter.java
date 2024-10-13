@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,31 +25,34 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import java.util.*;
+import java.util.List;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 
 import com.sun.source.doctree.DeprecatedTree;
 import com.sun.source.doctree.DocTree;
+
 import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
-import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
+import jdk.javadoc.internal.doclets.toolkit.PropertyUtils;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
+import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.ContentBuilder;
+import jdk.javadoc.internal.html.HtmlId;
+import jdk.javadoc.internal.html.HtmlStyle;
+import jdk.javadoc.internal.html.HtmlTree;
 
 /**
  * This abstract class exists to provide functionality needed in the
- * the formatting of member information.  Since AbstractSubWriter and its
+ * the formatting of member information.  Since AbstractMemberWriter and its
  * subclasses control this, they would be the logical place to put this.
  * However, because each member type has its own subclass, subclassing
  * can not be used effectively to change formatting.  The concrete
  * class subclass of this class can be subclassed to change formatting.
  *
  * @see AbstractMemberWriter
- * @see ClassWriterImpl
+ * @see ClassWriter
  */
 public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
 
@@ -60,6 +63,14 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
 
     public SubWriterHolderWriter(HtmlConfiguration configuration, DocPath filename) {
         super(configuration, filename);
+    }
+
+    public SubWriterHolderWriter(HtmlConfiguration configuration, DocPath filename, boolean generating) {
+        super(configuration, filename, generating);
+    }
+
+    public PropertyUtils.PropertyHelper getPropertyHelper() {
+        throw new UnsupportedOperationException();
     }
 
     /**
@@ -105,11 +116,12 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
     protected void addIndexComment(Element member, List<? extends DocTree> firstSentenceTags,
             Content tdSummaryContent) {
         addPreviewSummary(member, tdSummaryContent);
+        addRestrictedSummary(member, tdSummaryContent);
         List<? extends DeprecatedTree> deprs = utils.getDeprecatedTrees(member);
         Content div;
         if (utils.isDeprecated(member)) {
-            var deprLabel = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, getDeprecatedPhrase(member));
-            div = HtmlTree.DIV(HtmlStyle.block, deprLabel);
+            var deprLabel = HtmlTree.SPAN(HtmlStyles.deprecatedLabel, getDeprecatedPhrase(member));
+            div = HtmlTree.DIV(HtmlStyles.block, deprLabel);
             if (!deprs.isEmpty()) {
                 addSummaryDeprecatedComment(member, deprs.get(0), div);
             }
@@ -118,8 +130,8 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
         } else {
             Element te = member.getEnclosingElement();
             if (te != null &&  utils.isTypeElement(te) && utils.isDeprecated(te)) {
-                var deprLabel = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, getDeprecatedPhrase(te));
-                div = HtmlTree.DIV(HtmlStyle.block, deprLabel);
+                var deprLabel = HtmlTree.SPAN(HtmlStyles.deprecatedLabel, getDeprecatedPhrase(te));
+                div = HtmlTree.DIV(HtmlStyles.block, deprLabel);
                 tdSummaryContent.add(div);
             }
         }
@@ -178,26 +190,11 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
     /**
      * Add the class content.
      *
-     * @param source class content which will be added to the documentation
+     * @param classContent class content which will be added to the documentation
      */
-    public void addClassContent(Content source) {
-        bodyContents.addMainContent(source);
-    }
-
-    /**
-     * Add the annotation content.
-     *
-     * @param source annotation content which will be added to the documentation
-     */
-    public void addAnnotationContent(Content source) {
-        addClassContent(source);
-    }
-
-    /**
-     * {@return the member header}
-     */
-    public Content getMemberHeader() {
-        return HtmlTree.UL(HtmlStyle.blockList);
+    public void addClassContent(Content classContent) {
+        bodyContents.addMainContent(classContent);
+        bodyContents.setSideContent(tableOfContents.toContent(true));
     }
 
     /**
@@ -206,7 +203,7 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
      * @return a list to be used for the list of summaries for members of a given kind
      */
     public Content getSummariesList() {
-        return HtmlTree.UL(HtmlStyle.summaryList);
+        return HtmlTree.UL(HtmlStyles.summaryList);
     }
 
     /**
@@ -219,14 +216,13 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
         return HtmlTree.LI(content);
     }
 
-
     /**
      * Returns a list to be used for the list of details for members of a given kind.
      *
      * @return a list to be used for the list of details for members of a given kind
      */
     public Content getDetailsList() {
-        return HtmlTree.UL(HtmlStyle.detailsList);
+        return HtmlTree.UL(HtmlStyles.detailsList);
     }
 
     /**
@@ -243,7 +239,7 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
      * {@return a list to add member items to}
      */
     public Content getMemberList() {
-        return HtmlTree.UL(HtmlStyle.memberList);
+        return HtmlTree.UL(HtmlStyles.memberList);
     }
 
     /**
@@ -256,7 +252,7 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
     }
 
     public Content getMemberInherited() {
-        return HtmlTree.DIV(HtmlStyle.inheritedList);
+        return HtmlTree.DIV(HtmlStyles.inheritedList);
     }
 
     /**
@@ -288,16 +284,7 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
      * @param memberContent the content used to generate the member summary
      */
     public Content getMemberSummary(Content memberContent) {
-        return HtmlTree.SECTION(HtmlStyle.summary, memberContent);
-    }
-
-    /**
-     * {@return the member details}
-     *
-     * @param content the content used to generate the member details
-     */
-    public Content getMemberDetailsContent(Content content) {
-        return HtmlTree.SECTION(HtmlStyle.details, content);
+        return HtmlTree.SECTION(HtmlStyles.summary, memberContent);
     }
 
     /**

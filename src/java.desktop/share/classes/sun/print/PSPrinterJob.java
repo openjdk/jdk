@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,6 +61,7 @@ import javax.print.attribute.standard.Copies;
 import javax.print.attribute.standard.Destination;
 import javax.print.attribute.standard.DialogTypeSelection;
 import javax.print.attribute.standard.JobName;
+import javax.print.attribute.standard.OutputBin;
 import javax.print.attribute.standard.Sides;
 
 import java.io.BufferedOutputStream;
@@ -82,6 +83,7 @@ import java.util.Properties;
 
 import sun.awt.CharsetString;
 import sun.awt.FontConfiguration;
+import sun.awt.OSInfo;
 import sun.awt.PlatformFont;
 import sun.awt.SunToolkit;
 import sun.font.FontAccess;
@@ -263,7 +265,7 @@ public class PSPrinterJob extends RasterPrinterJob {
    private AffineTransform mLastTransform;
 
    private double xres = PS_XRES;
-   private double yres = PS_XRES;
+   private double yres = PS_YRES;
 
    /* non-null if printing EPS for Java Plugin */
    private EPSPrinter epsPrinter = null;
@@ -344,8 +346,7 @@ public class PSPrinterJob extends RasterPrinterJob {
                             new java.security.PrivilegedAction<Object>() {
             public Object run() {
                 mFontProps = initProps();
-                String osName = System.getProperty("os.name");
-                isMac = osName.startsWith("Mac");
+                isMac = OSInfo.getOSType() == OSInfo.OSType.MACOSX;
                 return null;
             }
         });
@@ -491,13 +492,18 @@ public class PSPrinterJob extends RasterPrinterJob {
         if (attributes == null) {
             return; // now always use attributes, so this shouldn't happen.
         }
+        mOptions = "";
         Attribute attr = attributes.get(Media.class);
         if (attr instanceof CustomMediaTray) {
             CustomMediaTray customTray = (CustomMediaTray)attr;
             String choice = customTray.getChoiceName();
             if (choice != null) {
-                mOptions = " InputSlot="+ choice;
+                mOptions += " InputSlot="+ choice;
             }
+        }
+        String outputBin = getOutputBinValue(outputBinAttr);
+        if (outputBin != null) {
+            mOptions += " output-bin=" + outputBin;
         }
     }
 
@@ -511,9 +517,9 @@ public class PSPrinterJob extends RasterPrinterJob {
 
         // A security check has been performed in the
         // java.awt.print.printerJob.getPrinterJob method.
-        // We use an inner class to execute the privilged open operations.
+        // We use an inner class to execute the privileged open operations.
         // Note that we only open a file if it has been nominated by
-        // the end-user in a dialog that we ouselves put up.
+        // the end-user in a dialog that we ourselves put up.
 
         OutputStream output = null;
 
@@ -885,7 +891,7 @@ public class PSPrinterJob extends RasterPrinterJob {
     }
 
     /**
-     * The RastePrintJob super class calls this method
+     * The RasterPrintJob super class calls this method
      * at the end of each page.
      */
     protected void endPage(PageFormat format, Printable painter,
@@ -1185,7 +1191,7 @@ public class PSPrinterJob extends RasterPrinterJob {
                         Integer.parseInt(mFontProps.getProperty(psName));
 
                 /* If there is no PostScript font for this font name,
-                 * then we want to termintate the loop and the method
+                 * then we want to terminate the loop and the method
                  * indicating our failure. Setting the array to null
                  * is used to indicate these failures.
                  */
@@ -1623,8 +1629,8 @@ public class PSPrinterJob extends RasterPrinterJob {
             ncomps+=1; // for jobsheet
         }
 
-        String osname = System.getProperty("os.name");
-        if (osname.equals("Linux") || osname.contains("OS X")) {
+        if (OSInfo.getOSType() == OSInfo.OSType.LINUX ||
+                OSInfo.getOSType() == OSInfo.OSType.MACOSX) {
             execCmd = new String[ncomps];
             execCmd[n++] = "/usr/bin/lpr";
             if ((pFlags & PRINTER) != 0) {
@@ -1643,7 +1649,9 @@ public class PSPrinterJob extends RasterPrinterJob {
                 execCmd[n++] = "-o job-sheets=standard";
             }
             if ((pFlags & OPTIONS) != 0) {
-                execCmd[n++] = "-o" + options;
+                for (String option : options.trim().split(" ")) {
+                    execCmd[n++] = "-o " + option;
+                }
             }
         } else {
             ncomps+=1; //add 1 arg for lp
@@ -1666,7 +1674,9 @@ public class PSPrinterJob extends RasterPrinterJob {
                 execCmd[n++] = "-o job-sheets=standard";
             }
             if ((pFlags & OPTIONS) != 0) {
-                execCmd[n++] = "-o" + options;
+                for (String option : options.trim().split(" ")) {
+                    execCmd[n++] = "-o " + option;
+                }
             }
         }
         execCmd[n++] = spoolFile;

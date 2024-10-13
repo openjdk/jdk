@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,9 @@
 
  /*
  * @test
- * @bug 8275721
+ * @bug 8275721 8174269
  * @modules jdk.localedata
  * @summary Checks Chinese time zone names for `UTC` using CLDR are consistent
- * @run testng/othervm -Djava.locale.providers=CLDR,COMPAT ChineseTimeZoneNameTest
  * @run testng/othervm -Djava.locale.providers=CLDR ChineseTimeZoneNameTest
  */
 

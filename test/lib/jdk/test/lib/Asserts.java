@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,8 @@
 
 package jdk.test.lib;
 
+import java.util.Arrays;
+import java.util.HexFormat;
 import java.util.Objects;
 
 /**
@@ -199,10 +201,7 @@ public class Asserts {
      */
     public static void assertEquals(Object lhs, Object rhs, String msg) {
         if ((lhs != rhs) && ((lhs == null) || !(lhs.equals(rhs)))) {
-            msg = Objects.toString(msg, "assertEquals")
-                    + ": expected " + Objects.toString(lhs)
-                    + " to equal " + Objects.toString(rhs);
-            fail(msg);
+            fail((msg == null ? "assertEquals" : msg) + " expected: " + lhs + " but was: " + rhs);
         }
     }
 
@@ -230,6 +229,64 @@ public class Asserts {
             msg = Objects.toString(msg, "assertSame")
                     + ": expected " + Objects.toString(lhs)
                     + " to equal " + Objects.toString(rhs);
+            fail(msg);
+        }
+    }
+
+    /**
+     * Asserts that {@code lhs} is the same byte array as {@code rhs}.
+     *
+     * @param lhs The left hand side of the comparison.
+     * @param rhs The right hand side of the comparison.
+     * @throws RuntimeException if the assertion is not true.
+     * @see #assertEqualsByteArray(byte[], byte[], String)
+     */
+    public static void assertEqualsByteArray(byte[] lhs, byte[] rhs) {
+        assertEqualsByteArray(lhs, rhs, null);
+    }
+
+    /**
+     * Asserts that {@code lhs} is not the same byte array as {@code rhs}.
+     *
+     * @param lhs The left hand side of the comparison.
+     * @param rhs The right hand side of the comparison.
+     * @throws RuntimeException if the assertion is not true.
+     * @see #assertNotEqualsByteArray(byte[], byte[], String)
+     */
+    public static void assertNotEqualsByteArray(byte[] lhs, byte[] rhs) {
+        assertNotEqualsByteArray(lhs, rhs, null);
+    }
+
+    /**
+     * Asserts that {@code lhs} is the same byte array as {@code rhs}.
+     *
+     * @param lhs The left hand side of the comparison.
+     * @param rhs The right hand side of the comparison.
+     * @param msg A description of the assumption; {@code null} for a default message.
+     * @throws RuntimeException if the assertion is not true.
+     */
+    public static void assertEqualsByteArray(byte[] lhs, byte[] rhs, String msg) {
+        if (!Arrays.equals(lhs, rhs)) {
+            msg = Objects.toString(msg, "assertEqualsByteArray")
+                    + ": expected " + HexFormat.of().formatHex(lhs)
+                    + " to equal " + HexFormat.of().formatHex(rhs);
+            fail(msg);
+        }
+    }
+
+    /**
+     * Asserts that {@code lhs} is not the same byte array as {@code rhs}.
+     *
+     * @param lhs The left hand side of the comparison.
+     * @param rhs The right hand side of the comparison.
+     * @param msg A description of the assumption; {@code null} for a default message.
+     * @throws RuntimeException if the assertion is not true.
+     */
+    public static void assertNotEqualsByteArray(byte[] lhs, byte[] rhs, String msg) {
+        if (Arrays.equals(lhs, rhs)) {
+            msg = Objects.toString(msg, "assertNotEqualsByteArray")
+                    + ": expected " + HexFormat.of().formatHex(lhs)
+                    + " to not equal " + HexFormat.of().formatHex(rhs);
             fail(msg);
         }
     }
@@ -550,6 +607,46 @@ public class Asserts {
         if (stringsAreDifferent) {
             fail(messageBuilder.toString());
         }
+    }
+
+    /**
+     * A functional interface for executing tests in assertThrownException
+     */
+    @FunctionalInterface
+    public interface TestMethod {
+        void execute() throws Throwable;
+    }
+
+
+    public static <T extends Throwable> T assertThrows(Class<T> expected, TestMethod testMethod) {
+        return assertThrows(expected, testMethod, "An unexpected exception was thrown.");
+    }
+
+    /**
+     * Asserts that the given exception (or a subclass of it) is thrown when
+     * executing the test method.
+     *
+     * If the test method throws the correct exception, the exception is returned
+     * to the caller for additional validation e.g., comparing the exception
+     * message.
+     *
+     * @param expected The expected exception
+     * @param testMethod The code to execute that should throw the exception
+     * @param msg A description of the assumption
+     * @return The thrown exception.
+     */
+    public static <T extends Throwable> T assertThrows(Class<T> expected, TestMethod testMethod, String msg) {
+        try {
+            testMethod.execute();
+        } catch (Throwable exc) {
+            if (expected.isInstance(exc)) {
+                return (T) exc;
+            } else {
+                fail(Objects.toString(msg, "An unexpected exception was thrown.")
+                        + " Expected " + expected.getName(), exc);
+            }
+        }
+        throw new RuntimeException("No exception was thrown. Expected: " + expected.getName());
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +58,12 @@ abstract class ExchangeImpl<T> {
 
     final Exchange<T> exchange;
 
+    private volatile boolean expectTimeoutRaised;
+
+    // this will be set to true only when the peer explicitly states (through a GOAWAY frame or
+    // a relevant error code in reset frame) that the corresponding stream (id) wasn't processed
+    private volatile boolean unprocessedByPeer;
+
     ExchangeImpl(Exchange<T> e) {
         // e == null means a http/2 pushed stream
         this.exchange = e;
@@ -65,6 +71,14 @@ abstract class ExchangeImpl<T> {
 
     final Exchange<T> getExchange() {
         return exchange;
+    }
+
+    final void setExpectTimeoutRaised() {
+        expectTimeoutRaised = true;
+    }
+
+    final boolean expectTimeoutRaised() {
+        return expectTimeoutRaised;
     }
 
     HttpClientImpl client() {
@@ -194,7 +208,8 @@ abstract class ExchangeImpl<T> {
      * @param response a response info
      * @return a new {@code HttpBodySubscriberWrapper} to handle the response
      */
-    HttpBodySubscriberWrapper<T> createResponseSubscriber(HttpResponse.BodyHandler<T> handler, ResponseInfo response) {
+    HttpBodySubscriberWrapper<T> createResponseSubscriber(
+            HttpResponse.BodyHandler<T> handler, ResponseInfo response) {
         return new HttpBodySubscriberWrapper<>(handler.apply(response));
     }
 
@@ -264,4 +279,13 @@ abstract class ExchangeImpl<T> {
     // Called when server returns non 100 response to
     // an Expect-Continue
     void expectContinueFailed(int rcode) { }
+
+    final boolean isUnprocessedByPeer() {
+        return this.unprocessedByPeer;
+    }
+
+    // Marks the exchange as unprocessed by the peer
+    final void markUnprocessedByPeer() {
+        this.unprocessedByPeer = true;
+    }
 }

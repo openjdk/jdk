@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,12 @@
 #include "oops/oop.hpp"
 #include "utilities/macros.hpp"
 
+class ArchiveBuilder;
+class ArchiveHeapInfo;
 class FileMapInfo;
 class outputStream;
+class SerializeClosure;
+class StaticArchiveBuilder;
 
 template<class E> class GrowableArray;
 
@@ -46,47 +50,32 @@ enum MapArchiveResult {
 class MetaspaceShared : AllStatic {
   static ReservedSpace _symbol_rs;  // used only during -Xshare:dump
   static VirtualSpace _symbol_vs;   // used only during -Xshare:dump
-  static bool _has_error_classes;
   static bool _archive_loading_failed;
   static bool _remapped_readwrite;
   static void* _shared_metaspace_static_top;
   static intx _relocation_delta;
   static char* _requested_base_address;
   static bool _use_optimized_module_handling;
-  static bool _use_full_module_graph;
+
  public:
   enum {
     // core archive spaces
     rw = 0,  // read-write shared space
     ro = 1,  // read-only shared space
     bm = 2,  // relocation bitmaps (freed after file mapping is finished)
+    hp = 3,  // heap region
     num_core_region = 2,       // rw and ro
-    num_non_heap_regions = 3,  // rw and ro and bm
-
-    // java heap regions
-    first_closed_heap_region = bm + 1,
-    max_num_closed_heap_regions = 2,
-    last_closed_heap_region = first_closed_heap_region + max_num_closed_heap_regions - 1,
-    first_open_heap_region = last_closed_heap_region + 1,
-    max_num_open_heap_regions = 2,
-    last_open_heap_region = first_open_heap_region + max_num_open_heap_regions - 1,
-    max_num_heap_regions = max_num_closed_heap_regions + max_num_open_heap_regions,
-
-    first_archive_heap_region = first_closed_heap_region,
-    last_archive_heap_region = last_open_heap_region,
-
-    last_valid_region = last_open_heap_region,
-    n_regions =  last_valid_region + 1 // total number of regions
+    n_regions = 4              // total number of regions
   };
 
   static void prepare_for_dumping() NOT_CDS_RETURN;
-  static void preload_and_dump() NOT_CDS_RETURN;
+  static void preload_and_dump(TRAPS) NOT_CDS_RETURN;
 #ifdef _LP64
   static void adjust_heap_sizes_for_dumping() NOT_CDS_JAVA_HEAP_RETURN;
 #endif
 
 private:
-  static void preload_and_dump_impl(TRAPS) NOT_CDS_RETURN;
+  static void preload_and_dump_impl(StaticArchiveBuilder& builder, TRAPS) NOT_CDS_RETURN;
   static void preload_classes(TRAPS) NOT_CDS_RETURN;
 
 public:
@@ -106,8 +95,8 @@ public:
 
   static void initialize_shared_spaces() NOT_CDS_RETURN;
 
-  // Return true if given address is in the shared metaspace regions (i.e., excluding any
-  // mapped heap regions.)
+  // Return true if given address is in the shared metaspace regions (i.e., excluding the
+  // mapped heap region.)
   static bool is_in_shared_metaspace(const void* p) {
     return MetaspaceObj::is_shared((const MetaspaceObj*)p);
   }
@@ -115,6 +104,11 @@ public:
   static void set_shared_metaspace_range(void* base, void *static_top, void* top) NOT_CDS_RETURN;
 
   static bool is_shared_dynamic(void* p) NOT_CDS_RETURN_(false);
+  static bool is_shared_static(void* p) NOT_CDS_RETURN_(false);
+
+  static void unrecoverable_loading_error(const char* message = nullptr);
+  static void unrecoverable_writing_error(const char* message = nullptr);
+  static void writing_error(const char* message = nullptr);
 
   static void serialize(SerializeClosure* sc) NOT_CDS_RETURN;
 
@@ -174,12 +168,9 @@ public:
   static bool use_optimized_module_handling() { return NOT_CDS(false) CDS_ONLY(_use_optimized_module_handling); }
   static void disable_optimized_module_handling() { _use_optimized_module_handling = false; }
 
-  // Can we use the full archived module graph?
-  static bool use_full_module_graph() NOT_CDS_RETURN_(false);
-  static void disable_full_module_graph() { _use_full_module_graph = false; }
-
 private:
   static void read_extra_data(JavaThread* current, const char* filename) NOT_CDS_RETURN;
+  static bool write_static_archive(ArchiveBuilder* builder, FileMapInfo* map_info, ArchiveHeapInfo* heap_info);
   static FileMapInfo* open_static_archive();
   static FileMapInfo* open_dynamic_archive();
   // use_requested_addr: If true (default), attempt to map at the address the

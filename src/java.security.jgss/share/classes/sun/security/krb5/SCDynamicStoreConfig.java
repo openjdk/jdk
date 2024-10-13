@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,15 @@
 
 package sun.security.krb5;
 
+import jdk.internal.util.OperatingSystem;
+
 import java.io.IOException;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Vector;
 
+import static sun.security.krb5.internal.Krb5.DEBUG;
 
 public class SCDynamicStoreConfig {
     private static native void installNotificationCallback();
@@ -40,15 +43,13 @@ public class SCDynamicStoreConfig {
      * (realm kdc* null) null (mapping-domain mapping-realm)*
      */
     private static native List<String> getKerberosConfig();
-    private static boolean DEBUG = sun.security.krb5.internal.Krb5.DEBUG;
 
     static {
-        @SuppressWarnings("removal")
+        @SuppressWarnings({"removal", "restricted"})
         boolean isMac = java.security.AccessController.doPrivileged(
             new java.security.PrivilegedAction<Boolean>() {
                 public Boolean run() {
-                    String osname = System.getProperty("os.name");
-                    if (osname.contains("OS X")) {
+                    if (OperatingSystem.isMacOS()) {
                         System.loadLibrary("osxkrb5");
                         return true;
                     }
@@ -71,7 +72,7 @@ public class SCDynamicStoreConfig {
             throw new IOException(
                     "Could not load configuration from SCDynamicStore");
         }
-        if (DEBUG) System.out.println("Raw map from JNI: " + list);
+        if (DEBUG != null) DEBUG.println("Raw map from JNI: " + list);
 
         Hashtable<String,Object> v = new Hashtable<>();
         Hashtable<String,Object> realms = new Hashtable<>();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,8 @@ import java.util.*;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 
+import jdk.internal.util.ArraysSupport;
+import sun.security.action.GetIntegerAction;
 import sun.security.jca.Providers;
 import sun.security.pkcs.PKCS7;
 import sun.security.pkcs.SignerInfo;
@@ -82,6 +84,12 @@ public class SignatureFileVerifier {
     private JarConstraintsParameters params;
 
     private static final String META_INF = "META-INF/";
+
+    // the maximum allowed size in bytes for the signature-related files
+    public static final int MAX_SIG_FILE_SIZE = initializeMaxSigFileSize();
+
+    // The maximum size of array to allocate
+    private static final int MAX_ARRAY_SIZE = ArraysSupport.SOFT_MAX_ARRAY_LENGTH;
 
     /**
      * Create the named SignatureFileVerifier.
@@ -177,21 +185,20 @@ public class SignatureFileVerifier {
     /**
      * Returns the signed JAR block file extension for a key.
      *
+     * Returns "DSA" for unknown algorithms. This is safe because the
+     * signature verification process does not require the extension to
+     * match the key algorithm as long as it is "RSA", "DSA", or "EC."
+     *
      * @param key the key used to sign the JAR file
      * @return the extension
      * @see #isBlockOrSF(String)
      */
     public static String getBlockExtension(PrivateKey key) {
-        String keyAlgorithm = key.getAlgorithm().toUpperCase(Locale.ENGLISH);
-        if (keyAlgorithm.equals("RSASSA-PSS")) {
-            return "RSA";
-        } else if (keyAlgorithm.equals("EDDSA")
-                || keyAlgorithm.equals("ED25519")
-                || keyAlgorithm.equals("ED448")) {
-            return "EC";
-        } else {
-            return keyAlgorithm;
-        }
+        return switch (key.getAlgorithm().toUpperCase(Locale.ENGLISH)) {
+            case "RSA", "RSASSA-PSS" -> "RSA";
+            case "EC", "EDDSA", "ED25519", "ED448" -> "EC";
+            default -> "DSA";
+        };
     }
 
     /**
@@ -832,5 +839,25 @@ public class SignatureFileVerifier {
         }
         signerCache.add(cachedSigners);
         signers.put(name, cachedSigners);
+    }
+
+    private static int initializeMaxSigFileSize() {
+        /*
+         * System property "jdk.jar.maxSignatureFileSize" used to configure
+         * the maximum allowed number of bytes for the signature-related files
+         * in a JAR file.
+         */
+        int tmp = GetIntegerAction.privilegedGetProperty(
+                "jdk.jar.maxSignatureFileSize", 16000000);
+        if (tmp < 0 || tmp > MAX_ARRAY_SIZE) {
+            if (debug != null) {
+                debug.println("The default signature file size of 16000000 bytes " +
+                        "will be used for the jdk.jar.maxSignatureFileSize " +
+                        "system property since the specified value " +
+                        "is out of range: " + tmp);
+            }
+            tmp = 16000000;
+        }
+        return tmp;
     }
 }

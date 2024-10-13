@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -153,6 +153,8 @@ import javax.tools.StandardLocation;
  *                                                      from other files
  * <tr><th scope="row">{@code cast}                 <td>use of unnecessary casts
  * <tr><th scope="row">{@code classfile}            <td>issues related to classfile contents
+ * <tr><th scope="row">{@code dangling-doc-comments} <td>issues related to "dangling" documentation comments,
+ *                                                       not attached to a declaration
  * <tr><th scope="row">{@code deprecation}          <td>use of deprecated items
  * <tr><th scope="row">{@code dep-ann}              <td>items marked as deprecated in a documentation comment but not
  *                                                      using the {@code @Deprecated} annotation
@@ -162,6 +164,7 @@ import javax.tools.StandardLocation;
  * <tr><th scope="row">{@code fallthrough}          <td>falling through from one case of a {@code switch} statement to
  *                                                      the next
  * <tr><th scope="row">{@code finally}              <td>{@code finally} clauses that do not terminate normally
+ * <tr><th scope="row">{@code incubating}           <td>use of incubating modules
  * <tr><th scope="row">{@code lossy-conversions}    <td>possible lossy conversions in compound assignment
  * <tr><th scope="row">{@code missing-explicit-ctor} <td>missing explicit constructors in public and protected classes
  *                                                      in exported packages
@@ -173,6 +176,7 @@ import javax.tools.StandardLocation;
  * <tr><th scope="row">{@code preview}              <td>use of preview language features
  * <tr><th scope="row">{@code rawtypes}             <td>use of raw types
  * <tr><th scope="row">{@code removal}              <td>use of API that has been marked for removal
+ * <tr><th scope="row">{@code restricted}           <td>use of restricted methods
  * <tr><th scope="row">{@code requires-automatic}   <td>use of automatic modules in the {@code requires} clauses
  * <tr><th scope="row">{@code requires-transitive-automatic} <td>automatic modules in {@code requires transitive}
  * <tr><th scope="row">{@code serial}               <td>{@link java.base/java.io.Serializable Serializable} classes
@@ -184,6 +188,7 @@ import javax.tools.StandardLocation;
  * <tr><th scope="row">{@code strictfp}             <td>unnecessary use of the {@code strictfp} modifier
  * <tr><th scope="row">{@code synchronization}      <td>synchronization attempts on instances of value-based classes
  * <tr><th scope="row">{@code text-blocks}          <td>inconsistent white space characters in text block indentation
+ * <tr><th scope="row">{@code this-escape}          <td>superclass constructor leaking {@code this} before subclass initialized
  * <tr><th scope="row">{@code try}                  <td>issues relating to use of {@code try} blocks
  *                                                      (that is, try-with-resources)
  * <tr><th scope="row">{@code unchecked}            <td>unchecked operations
@@ -216,6 +221,7 @@ import javax.tools.StandardLocation;
  */
 module jdk.compiler {
     requires transitive java.compiler;
+    requires jdk.internal.opt;
     requires jdk.zipfs;
 
     exports com.sun.source.doctree;
@@ -227,7 +233,8 @@ module jdk.compiler {
         jdk.javadoc;
     exports com.sun.tools.javac.api to
         jdk.javadoc,
-        jdk.jshell;
+        jdk.jshell,
+        jdk.internal.md;
     exports com.sun.tools.javac.resources to
         jdk.jshell;
     exports com.sun.tools.javac.code to
@@ -247,24 +254,26 @@ module jdk.compiler {
     exports com.sun.tools.javac.model to
         jdk.javadoc;
     exports com.sun.tools.javac.parser to
-        jdk.jshell;
+        jdk.jshell,
+        jdk.internal.md;
     exports com.sun.tools.javac.platform to
         jdk.jdeps,
         jdk.javadoc;
     exports com.sun.tools.javac.tree to
         jdk.javadoc,
-        jdk.jshell;
+        jdk.jshell,
+        jdk.internal.md;
     exports com.sun.tools.javac.util to
         jdk.jdeps,
         jdk.javadoc,
-        jdk.jshell;
-    exports jdk.internal.shellsupport.doc to
-        jdk.jshell;
+        jdk.jshell,
+        jdk.internal.md;
 
     uses javax.annotation.processing.Processor;
     uses com.sun.source.util.Plugin;
     uses com.sun.tools.doclint.DocLint;
     uses com.sun.tools.javac.platform.PlatformProvider;
+    uses com.sun.tools.javac.api.JavacTrees.DocCommentTreeTransformer;
 
     provides java.util.spi.ToolProvider with
         com.sun.tools.javac.main.JavacToolProvider;

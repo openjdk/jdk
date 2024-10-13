@@ -154,18 +154,18 @@ void Devirtualizer::do_cld(OopClosureType* closure, ClassLoaderData* cld) {
 
 template <typename Receiver, typename Base, typename DerivedOopClosureType>
 static typename EnableIf<std::is_same<Receiver, Base>::value, void>::type
-call_do_derived_oop(void (Receiver::*)(oop*, derived_pointer*), void (Base::*)(oop*, derived_pointer*), DerivedOopClosureType* closure, oop* base, derived_pointer* derived) {
+call_do_derived_oop(void (Receiver::*)(derived_base*, derived_pointer*), void (Base::*)(derived_base*, derived_pointer*), DerivedOopClosureType* closure, derived_base* base, derived_pointer* derived) {
   closure->do_derived_oop(base, derived);
 }
 
 template <typename Receiver, typename Base, typename DerivedOopClosureType>
 static typename EnableIf<!std::is_same<Receiver, Base>::value, void>::type
-call_do_derived_oop(void (Receiver::*)(oop*, derived_pointer*), void (Base::*)(oop*, derived_pointer*), DerivedOopClosureType* closure, oop* base, derived_pointer* derived) {
+call_do_derived_oop(void (Receiver::*)(derived_base*, derived_pointer*), void (Base::*)(derived_base*, derived_pointer*), DerivedOopClosureType* closure, derived_base* base, derived_pointer* derived) {
   closure->DerivedOopClosureType::do_derived_oop(base, derived);
 }
 
 template <typename DerivedOopClosureType>
-inline void Devirtualizer::do_derived_oop(DerivedOopClosureType* closure, oop* base, derived_pointer* derived) {
+inline void Devirtualizer::do_derived_oop(DerivedOopClosureType* closure, derived_base* base, derived_pointer* derived) {
   call_do_derived_oop(&DerivedOopClosureType::do_derived_oop, &DerivedOopClosure::do_derived_oop, closure, base, derived);
 }
 

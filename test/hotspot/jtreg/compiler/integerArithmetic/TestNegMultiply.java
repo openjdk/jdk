@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +30,7 @@
  *
  * @library /test/lib
  *
- * @run main/othervm -XX:-TieredCompilation -XX:-BackgroundCompilation -XX:-UseOnStackReplacement -XX:CompileCommand="dontinline,TestNegMultiply::test*" TestNegMultiply
+ * @run main/othervm -XX:-TieredCompilation -XX:-BackgroundCompilation -XX:-UseOnStackReplacement -XX:CompileCommand=dontinline,TestNegMultiply::test* TestNegMultiply
  *
  */
 

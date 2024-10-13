@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2024 Unicode, Inc.
+For terms of use, see http://www.unicode.org/copyright.html
+SPDX-License-Identifier: Unicode-3.0
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+-->
+<ldml>
+	<identity>
+		<version number="$Revision$"/>
+		<language type="mni"/>
+		<script type="Mtei"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="mni" draft="contributed">ꯃꯤꯇꯩꯂꯣꯟ</language>
+		</languages>
+		<scripts>
+			<script type="Beng" draft="contributed">ꯕꯪꯂꯥ</script>
+			<script type="Mtei" draft="contributed">ꯃꯤꯇꯩ ꯃꯌꯦꯛ</script>
+		</scripts>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters draft="contributed">[꯬ ꯀ ꯁ ꯂ ꯃ ꯄ ꯅ ꯆ ꯇ ꯈ ꯉ ꯊ ꯋ ꯌ ꯍ ꯎ ꯏ ꯐ ꯑ ꯒ ꯓ ꯔ ꯕ ꯖ ꯗ ꯘ ꯙ ꯚ ꯣ ꯤ ꯥ ꯦ ꯧ ꯨ ꯩ ꯪ ꯛ ꯜ ꯝ ꯞ ꯟ ꯠ ꯡ ꯢ ꯭]</exemplarCharacters>
+		<exemplarCharacters type="numbers" draft="contributed">[\- ‑ , . % + 0꯰ 1꯱ 2꯲ 3꯳ 4꯴ 5꯵ 6꯶ 7꯷ 8꯸ 9꯹]</exemplarCharacters>
+		<exemplarCharacters type="punctuation" draft="provisional">[\- ‑ , ; \: ! ? . … ꯫ ' &quot; ( ) \[ \] @ * / \&amp; #]</exemplarCharacters>
+	</characters>
+	<dates>
+		<calendars>
+			<calendar type="gregorian">
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern draft="unconfirmed">EEEE, d MMMM, y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern draft="unconfirmed">d MMMM, y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern draft="unconfirmed">dd-MM-y</pattern>
+							<datetimeSkeleton draft="unconfirmed">yMMdd</datetimeSkeleton>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern draft="unconfirmed">d-M-y</pattern>
+							<datetimeSkeleton draft="unconfirmed">yMd</datetimeSkeleton>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<timeFormats>
+					<timeFormatLength type="full">
+						<timeFormat>
+							<pattern draft="unconfirmed">h.mm.ss a zzzz</pattern>
+							<datetimeSkeleton draft="unconfirmed">ahmmsszzzz</datetimeSkeleton>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="long">
+						<timeFormat>
+							<pattern draft="unconfirmed">h.mm.ss a z</pattern>
+							<datetimeSkeleton draft="unconfirmed">ahmmssz</datetimeSkeleton>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="medium">
+						<timeFormat>
+							<pattern draft="unconfirmed">h.mm.ss a</pattern>
+							<datetimeSkeleton draft="unconfirmed">ahmmss</datetimeSkeleton>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="short">
+						<timeFormat>
+							<pattern draft="unconfirmed">h.mm. a</pattern>
+							<datetimeSkeleton draft="unconfirmed">ahmm</datetimeSkeleton>
+						</timeFormat>
+					</timeFormatLength>
+				</timeFormats>
+			</calendar>
+		</calendars>
+	</dates>
+	<numbers>
+		<defaultNumberingSystem>mtei</defaultNumberingSystem>
+	</numbers>
+</ldml>

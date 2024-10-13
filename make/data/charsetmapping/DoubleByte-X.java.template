@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,10 +56,10 @@ public class $NAME_CLZ$ extends Charset
         return new DoubleByte.Encoder$ENCTYPE$(this, $ENC_REPLACEMENT$ EncodeHolder.c2b, EncodeHolder.c2bIndex, $ASCIICOMPATIBLE$);
     }
 
-    static class DecodeHolder {
+    public static class DecodeHolder {
         $B2C$
-        static final char[][] b2c = new char[b2cStr.length][];
-        static final char[] b2cSB;
+        public static final char[][] b2c = new char[b2cStr.length][];
+        public static final char[] b2cSB;
 
         static {
             for (int i = 0; i < b2cStr.length; i++) {
@@ -72,9 +72,9 @@ public class $NAME_CLZ$ extends Charset
         }
     }
 
-    static class EncodeHolder {
-        static final char[] c2b = new char[$C2BLENGTH$];
-        static final char[] c2bIndex = new char[0x100];
+    public static class EncodeHolder {
+        public static final char[] c2b = new char[$C2BLENGTH$];
+        public static final char[] c2bIndex = new char[0x100];
 
         static {
             $NONROUNDTRIP_B2C$

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -27,15 +27,11 @@
 # ##########################################################
 #
 class name jdk/javadoc/doclet/Reporter
-header extends java/lang/Object flags 601
-innerclass innerClass javax/tools/Diagnostic$Kind outerClass javax/tools/Diagnostic innerClassName Kind flags 4019
 method name print descriptor (Ljavax/tools/Diagnostic$Kind;Ljavax/tools/FileObject;IIILjava/lang/String;)V flags 1
 method name getStandardWriter descriptor ()Ljava/io/PrintWriter; flags 1
 method name getDiagnosticWriter descriptor ()Ljava/io/PrintWriter; flags 1
 
 class name jdk/javadoc/doclet/StandardDoclet
-header extends java/lang/Object implements jdk/javadoc/doclet/Doclet flags 21
-innerclass innerClass jdk/javadoc/doclet/Doclet$Option outerClass jdk/javadoc/doclet/Doclet innerClassName Option flags 609
 method name getLocale descriptor ()Ljava/util/Locale; flags 1
 method name getReporter descriptor ()Ljdk/javadoc/doclet/Reporter; flags 1
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -28,6 +28,7 @@
 #include "asm/macroAssembler.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/vmClasses.hpp"
+#include "compiler/disassembler.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "memory/allocation.inline.hpp"
@@ -37,7 +38,7 @@
 #include "runtime/frame.inline.hpp"
 #include "runtime/stubRoutines.hpp"
 
-#define __ _masm->
+#define __ Disassembler::hook<MacroAssembler>(__FILE__, __LINE__, _masm)->
 
 #ifdef PRODUCT
 #define BLOCK_COMMENT(str) /* nothing */
@@ -120,7 +121,7 @@ void MethodHandles::jump_from_method_handle(MacroAssembler* _masm, Register meth
   __ ld(t0,Address(method, entry_offset));
   __ jr(t0);
   __ bind(L_no_such_method);
-  __ far_jump(RuntimeAddress(StubRoutines::throw_AbstractMethodError_entry()));
+  __ far_jump(RuntimeAddress(SharedRuntime::throw_AbstractMethodError_entry()));
 }
 
 void MethodHandles::jump_to_lambda_form(MacroAssembler* _masm,
@@ -173,14 +174,14 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
     // They are linked to Java-generated adapters via MethodHandleNatives.linkMethod.
     // They all allow an appendix argument.
     __ ebreak();           // empty stubs make SG sick
-    return NULL;
+    return nullptr;
   }
 
   // No need in interpreter entry for linkToNative for now.
   // Interpreter calls compiled entry through i2c.
   if (iid == vmIntrinsics::_linkToNative) {
     __ ebreak();
-    return NULL;
+    return nullptr;
   }
 
   // x19_sender_sp: sender SP (must preserve; see prepare_to_jump_from_interpreted)
@@ -200,7 +201,7 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
 
     Label L;
     BLOCK_COMMENT("verify_intrinsic_id {");
-    __ lhu(t0, Address(xmethod, Method::intrinsic_id_offset_in_bytes()));
+    __ lhu(t0, Address(xmethod, Method::intrinsic_id_offset()));
     __ mv(t1, (int) iid);
     __ beq(t0, t1, L);
     if (iid == vmIntrinsics::_linkToVirtual ||
@@ -315,7 +316,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
         __ null_check(receiver_reg);
       } else {
         // load receiver klass itself
-        __ load_klass_check_null(temp1_recv_klass, receiver_reg);
+        __ load_klass(temp1_recv_klass, receiver_reg);
         __ verify_klass_ptr(temp1_recv_klass);
       }
       BLOCK_COMMENT("check_receiver {");
@@ -441,10 +442,9 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
     jump_from_method_handle(_masm, xmethod, temp1, for_compiler_entry);
     if (iid == vmIntrinsics::_linkToInterface) {
       __ bind(L_incompatible_class_change_error);
-      __ far_jump(RuntimeAddress(StubRoutines::throw_IncompatibleClassChangeError_entry()));
+      __ far_jump(RuntimeAddress(SharedRuntime::throw_IncompatibleClassChangeError_entry()));
     }
   }
-
 }
 
 #ifndef PRODUCT

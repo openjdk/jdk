@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,11 @@
 
 /*
  * @test
+ * @key randomness
+ *
+ * @library /test/lib
  * @modules jdk.incubator.vector
- * @run testng/othervm -ea -esa -Xbatch -XX:-TieredCompilation Short256VectorTests
+ * @run testng/othervm/timeout=300 -ea -esa -Xbatch -XX:-TieredCompilation Short256VectorTests
  */
 
 // -- This file was mechanically generated: Do not edit! -- //
@@ -63,6 +66,14 @@ public class Short256VectorTests extends AbstractVectorTest {
     private static final short CONST_SHIFT = Short.SIZE / 2;
 
     static final int BUFFER_REPS = Integer.getInteger("jdk.incubator.vector.test.buffer-vectors", 25000 / 256);
+
+    static void assertArraysStrictlyEquals(short[] r, short[] a) {
+        for (int i = 0; i < a.length; i++) {
+            if (r[i] != a[i]) {
+                Assert.fail("at index #" + i + ", expected = " + a[i] + ", actual = " + r[i]);
+            }
+        }
+    }
 
     interface FUnOp {
         short apply(short a);
@@ -225,25 +236,6 @@ public class Short256VectorTests extends AbstractVectorTest {
             }
         } catch (AssertionError e) {
             Assert.assertEquals(r[i], f.apply(a, i), "at index #" + i);
-        }
-    }
-
-    static void assertInsertArraysEquals(short[] r, short[] a, short element, int index, int start, int end) {
-        int i = start;
-        try {
-            for (; i < end; i += 1) {
-                if(i%SPECIES.length() == index) {
-                    Assert.assertEquals(r[i], element);
-                } else {
-                    Assert.assertEquals(r[i], a[i]);
-                }
-            }
-        } catch (AssertionError e) {
-            if (i%SPECIES.length() == index) {
-                Assert.assertEquals(r[i], element, "at index #" + i);
-            } else {
-                Assert.assertEquals(r[i], a[i], "at index #" + i);
-            }
         }
     }
 
@@ -700,21 +692,6 @@ public class Short256VectorTests extends AbstractVectorTest {
     }
 
 
-
-    interface FBinArrayOp {
-        short apply(short[] a, int b);
-    }
-
-    static void assertArraysEquals(short[] r, short[] a, FBinArrayOp f) {
-        int i = 0;
-        try {
-            for (; i < a.length; i++) {
-                Assert.assertEquals(r[i], f.apply(a, i));
-            }
-        } catch (AssertionError e) {
-            Assert.assertEquals(r[i], f.apply(a,i), "at index #" + i);
-        }
-    }
 
     interface FGatherScatterOp {
         short[] apply(short[] a, int ix, int[] b, int iy);
@@ -1197,10 +1174,6 @@ public class Short256VectorTests extends AbstractVectorTest {
             default:
                 return (short)0;
         }
-    }
-
-    static short get(short[] a, int i) {
-        return (short) a[i];
     }
 
     static final IntFunction<short[]> fr = (vl) -> {
@@ -3736,22 +3709,23 @@ public class Short256VectorTests extends AbstractVectorTest {
         assertReductionBoolArraysEquals(r, mask, Short256VectorTests::allTrue);
     }
 
-    @Test(dataProvider = "shortUnaryOpProvider")
-    static void withShort256VectorTests(IntFunction<short []> fa) {
+    @Test(dataProvider = "shortBinaryOpProvider")
+    static void withShort256VectorTests(IntFunction<short []> fa, IntFunction<short []> fb) {
         short[] a = fa.apply(SPECIES.length());
+        short[] b = fb.apply(SPECIES.length());
         short[] r = fr.apply(SPECIES.length());
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0, j = 0; i < a.length; i += SPECIES.length()) {
                 ShortVector av = ShortVector.fromArray(SPECIES, a, i);
-                av.withLane((j++ & (SPECIES.length()-1)), (short)(65535+i)).intoArray(r, i);
+                av.withLane(j, b[i + j]).intoArray(r, i);
+                a[i + j] = b[i + j];
+                j = (j + 1) & (SPECIES.length() - 1);
             }
         }
 
 
-        for (int i = 0, j = 0; i < a.length; i += SPECIES.length()) {
-            assertInsertArraysEquals(r, a, (short)(65535+i), (j++ & (SPECIES.length()-1)), i , i + SPECIES.length());
-        }
+        assertArraysStrictlyEquals(r, a);
     }
 
     static boolean testIS_DEFAULT(short a) {
@@ -4686,7 +4660,7 @@ public class Short256VectorTests extends AbstractVectorTest {
             }
         }
 
-        assertArraysEquals(r, a, Short256VectorTests::get);
+        assertArraysStrictlyEquals(r, a);
     }
 
     @Test(dataProvider = "shortUnaryOpProvider")
@@ -4732,7 +4706,7 @@ public class Short256VectorTests extends AbstractVectorTest {
     static void sliceUnaryShort256VectorTests(IntFunction<short[]> fa) {
         short[] a = fa.apply(SPECIES.length());
         short[] r = new short[a.length];
-        int origin = (new java.util.Random()).nextInt(SPECIES.length());
+        int origin = RAND.nextInt(SPECIES.length());
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 ShortVector av = ShortVector.fromArray(SPECIES, a, i);
@@ -4761,7 +4735,7 @@ public class Short256VectorTests extends AbstractVectorTest {
         short[] a = fa.apply(SPECIES.length());
         short[] b = fb.apply(SPECIES.length());
         short[] r = new short[a.length];
-        int origin = (new java.util.Random()).nextInt(SPECIES.length());
+        int origin = RAND.nextInt(SPECIES.length());
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 ShortVector av = ShortVector.fromArray(SPECIES, a, i);
@@ -4795,7 +4769,7 @@ public class Short256VectorTests extends AbstractVectorTest {
         VectorMask<Short> vmask = VectorMask.fromArray(SPECIES, mask, 0);
 
         short[] r = new short[a.length];
-        int origin = (new java.util.Random()).nextInt(SPECIES.length());
+        int origin = RAND.nextInt(SPECIES.length());
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 ShortVector av = ShortVector.fromArray(SPECIES, a, i);
@@ -4824,7 +4798,7 @@ public class Short256VectorTests extends AbstractVectorTest {
     static void unsliceUnaryShort256VectorTests(IntFunction<short[]> fa) {
         short[] a = fa.apply(SPECIES.length());
         short[] r = new short[a.length];
-        int origin = (new java.util.Random()).nextInt(SPECIES.length());
+        int origin = RAND.nextInt(SPECIES.length());
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 ShortVector av = ShortVector.fromArray(SPECIES, a, i);
@@ -4862,8 +4836,8 @@ public class Short256VectorTests extends AbstractVectorTest {
         short[] a = fa.apply(SPECIES.length());
         short[] b = fb.apply(SPECIES.length());
         short[] r = new short[a.length];
-        int origin = (new java.util.Random()).nextInt(SPECIES.length());
-        int part = (new java.util.Random()).nextInt(2);
+        int origin = RAND.nextInt(SPECIES.length());
+        int part = RAND.nextInt(2);
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 ShortVector av = ShortVector.fromArray(SPECIES, a, i);
@@ -4919,8 +4893,8 @@ public class Short256VectorTests extends AbstractVectorTest {
         boolean[] mask = fm.apply(SPECIES.length());
         VectorMask<Short> vmask = VectorMask.fromArray(SPECIES, mask, 0);
         short[] r = new short[a.length];
-        int origin = (new java.util.Random()).nextInt(SPECIES.length());
-        int part = (new java.util.Random()).nextInt(2);
+        int origin = RAND.nextInt(SPECIES.length());
+        int part = RAND.nextInt(2);
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 ShortVector av = ShortVector.fromArray(SPECIES, a, i);
@@ -5827,6 +5801,82 @@ public class Short256VectorTests extends AbstractVectorTest {
             int to = i + SPECIES.length();
             Assert.assertEquals(equals, Arrays.equals(a, i, to, b, i, to));
         }
+    }
+
+    static boolean band(boolean a, boolean b) {
+        return a & b;
+    }
+
+    @Test(dataProvider = "maskCompareOpProvider")
+    static void maskAndShort256VectorTestsSmokeTest(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
+        boolean[] a = fa.apply(SPECIES.length());
+        boolean[] b = fb.apply(SPECIES.length());
+        boolean[] r = new boolean[a.length];
+
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            var av = SPECIES.loadMask(a, i);
+            var bv = SPECIES.loadMask(b, i);
+            var cv = av.and(bv);
+            cv.intoArray(r, i);
+        }
+        assertArraysEquals(r, a, b, Short256VectorTests::band);
+    }
+
+    static boolean bor(boolean a, boolean b) {
+        return a | b;
+    }
+
+    @Test(dataProvider = "maskCompareOpProvider")
+    static void maskOrShort256VectorTestsSmokeTest(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
+        boolean[] a = fa.apply(SPECIES.length());
+        boolean[] b = fb.apply(SPECIES.length());
+        boolean[] r = new boolean[a.length];
+
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            var av = SPECIES.loadMask(a, i);
+            var bv = SPECIES.loadMask(b, i);
+            var cv = av.or(bv);
+            cv.intoArray(r, i);
+        }
+        assertArraysEquals(r, a, b, Short256VectorTests::bor);
+    }
+
+    static boolean bxor(boolean a, boolean b) {
+        return a != b;
+    }
+
+    @Test(dataProvider = "maskCompareOpProvider")
+    static void maskXorShort256VectorTestsSmokeTest(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
+        boolean[] a = fa.apply(SPECIES.length());
+        boolean[] b = fb.apply(SPECIES.length());
+        boolean[] r = new boolean[a.length];
+
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            var av = SPECIES.loadMask(a, i);
+            var bv = SPECIES.loadMask(b, i);
+            var cv = av.xor(bv);
+            cv.intoArray(r, i);
+        }
+        assertArraysEquals(r, a, b, Short256VectorTests::bxor);
+    }
+
+    static boolean bandNot(boolean a, boolean b) {
+        return a & !b;
+    }
+
+    @Test(dataProvider = "maskCompareOpProvider")
+    static void maskAndNotShort256VectorTestsSmokeTest(IntFunction<boolean[]> fa, IntFunction<boolean[]> fb) {
+        boolean[] a = fa.apply(SPECIES.length());
+        boolean[] b = fb.apply(SPECIES.length());
+        boolean[] r = new boolean[a.length];
+
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            var av = SPECIES.loadMask(a, i);
+            var bv = SPECIES.loadMask(b, i);
+            var cv = av.andNot(bv);
+            cv.intoArray(r, i);
+        }
+        assertArraysEquals(r, a, b, Short256VectorTests::bandNot);
     }
 
     static boolean beq(boolean a, boolean b) {

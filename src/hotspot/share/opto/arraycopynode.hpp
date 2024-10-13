@@ -111,7 +111,7 @@ private:
                             BasicType copy_type, const Type* value_type, int count);
   bool finish_transform(PhaseGVN *phase, bool can_reshape,
                         Node* ctl, Node *mem);
-  static bool may_modify_helper(const TypeOopPtr *t_oop, Node* n, PhaseTransform *phase, CallNode*& call);
+  static bool may_modify_helper(const TypeOopPtr* t_oop, Node* n, PhaseValues* phase, CallNode*& call);
 public:
   static Node* load(BarrierSetC2* bs, PhaseGVN *phase, Node*& ctl, MergeMemNode* mem, Node* addr, const TypePtr* adr_type, const Type *type, BasicType bt);
 private:
@@ -173,17 +173,17 @@ public:
   virtual bool guaranteed_safepoint()  { return false; }
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
 
-  virtual bool may_modify(const TypeOopPtr *t_oop, PhaseTransform *phase);
+  virtual bool may_modify(const TypeOopPtr* t_oop, PhaseValues* phase);
 
   bool is_alloc_tightly_coupled() const { return _alloc_tightly_coupled; }
 
   bool has_negative_length_guard() const { return _has_negative_length_guard; }
 
-  static bool may_modify(const TypeOopPtr *t_oop, MemBarNode* mb, PhaseTransform *phase, ArrayCopyNode*& ac);
+  static bool may_modify(const TypeOopPtr* t_oop, MemBarNode* mb, PhaseValues* phase, ArrayCopyNode*& ac);
 
   static int get_partial_inline_vector_lane_count(BasicType type, int const_len);
 
-  bool modifies(intptr_t offset_lo, intptr_t offset_hi, PhaseTransform* phase, bool must_modify) const;
+  bool modifies(intptr_t offset_lo, intptr_t offset_hi, PhaseValues* phase, bool must_modify) const;
 
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,10 +27,10 @@
  * @summary Tests if mismatched char load from stable byte[] returns correct result
  *
  * @run main/othervm -XX:-CompactStrings -XX:TieredStopAtLevel=1 -Xcomp
- *                   -XX:CompileOnly=compiler.stable.TestStableMismatched::test,::charAt
+ *                   -XX:CompileOnly=compiler.stable.TestStableMismatched::test,*::charAt
  *                   compiler.stable.TestStableMismatched
  * @run main/othervm -XX:-CompactStrings -XX:-TieredCompilation -Xcomp
- *                   -XX:CompileOnly=compiler.stable.TestStableMismatched::test,::charAt
+ *                   -XX:CompileOnly=compiler.stable.TestStableMismatched::test,*::charAt
  *                   compiler.stable.TestStableMismatched
  */
 
@@ -50,4 +50,3 @@ public class TestStableMismatched {
         }
     }
 }
-

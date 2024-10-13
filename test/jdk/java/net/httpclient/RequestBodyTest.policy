@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -33,20 +33,30 @@ grant codeBase "file:${test.classes}/../../../../test/lib/-" {
     permission java.io.FilePermission "${test.src}/../../../../lib/jdk/test/lib/net/testkeys", "read";
 };
 
+// for jdk/httpclient/test/lib/* classes
+grant codeBase "file:${test.classes}/../../../../test/jdk/java/net/httpclient/lib/-" {
+    permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.net.http.common";
+};
+
 grant codeBase "file:${test.classes}/*" {
     permission java.io.FilePermission "${test.src}${/}docs${/}files${/}smallfile.txt", "read";
     permission java.io.FilePermission "${test.src}${/}docs${/}files${/}notsobigfile.txt", "read";
     permission java.io.FilePermission "RequestBodyTest.tmp", "read,write,delete";
 
-    permission java.net.URLPermission "http://localhost:*/echo/foo",   "POST";
-    permission java.net.URLPermission "https://localhost:*/echo/foo",  "POST";
+    permission java.net.URLPermission "http://127.0.0.1:*/echo/foo",   "POST";
+    permission java.net.URLPermission "https://127.0.0.1:*/echo/foo",  "POST";
+    permission java.net.URLPermission "http://[::1]:*/echo/foo",   "POST";
+    permission java.net.URLPermission "https://[::1]:*/echo/foo",  "POST";
 
     // for HTTP/1.1 server logging
     permission java.util.logging.LoggingPermission "control";
 
     // needed to grant the HTTP server
-    permission java.net.SocketPermission "localhost:*", "accept,resolve";
+    permission java.net.SocketPermission "127.0.0.1:*", "accept,resolve";
+    permission java.net.SocketPermission "[::1]:*", "accept,resolve";
 
     permission java.util.PropertyPermission "*", "read";
     permission java.lang.RuntimePermission "modifyThread";
+
+    permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.net.http.common";
 };

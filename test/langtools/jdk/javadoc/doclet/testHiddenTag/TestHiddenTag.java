@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,8 +72,8 @@ public class TestHiddenTag extends JavadocTester {
                 """
                     <code><a href="A.html#visibleMethod()">visibleMethod</a></code>""",
                 """
-                    <h2 id="nested-classes-inherited-from-class-pkg1.A">Nested classes/interfaces in\
-                    herited from class&nbsp;pkg1.<a href="A.html" title="class in pkg1">A</a></h2>
+                    <h3 id="nested-classes-inherited-from-class-pkg1.A">Nested classes/interfaces in\
+                    herited from class&nbsp;pkg1.<a href="A.html" title="class in pkg1">A</a></h3>
                     <code><a href="A.VisibleInner.html" title="class in pkg1">A.VisibleInner</a>, <a\
                      href="A.VisibleInnerExtendsInvisibleInner.html" title="class in pkg1">A.Visible\
                     InnerExtendsInvisibleInner</a></code></div>

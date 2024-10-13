@@ -40,7 +40,6 @@ public class PLABUtils {
     private final static String[] GC_TUNE_OPTIONS = {
         "-XX:+UseG1GC",
         "-XX:G1HeapRegionSize=1m",
-        "-XX:OldSize=64m",
         "-XX:-UseAdaptiveSizePolicy",
         "-XX:MaxTenuringThreshold=1",
         "-XX:-UseTLAB",

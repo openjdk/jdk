@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,10 +63,9 @@ class BasicAuthentication extends AuthenticationInfo {
      */
     public BasicAuthentication(boolean isProxy, String host, int port,
                                String realm, PasswordAuthentication pw,
-                               boolean isUTF8, String authenticatorKey) {
+                               boolean isUTF8) {
         super(isProxy ? PROXY_AUTHENTICATION : SERVER_AUTHENTICATION,
-              AuthScheme.BASIC, host, port, realm,
-              Objects.requireNonNull(authenticatorKey));
+              AuthScheme.BASIC, host, port, realm);
         this.auth = authValueFrom(pw, isUTF8);
         this.pw = pw;
     }
@@ -75,11 +74,9 @@ class BasicAuthentication extends AuthenticationInfo {
      * Create a BasicAuthentication
      */
     public BasicAuthentication(boolean isProxy, String host, int port,
-                               String realm, String auth,
-                               String authenticatorKey) {
+                               String realm, String auth) {
         super(isProxy ? PROXY_AUTHENTICATION : SERVER_AUTHENTICATION,
-              AuthScheme.BASIC, host, port, realm,
-              Objects.requireNonNull(authenticatorKey));
+              AuthScheme.BASIC, host, port, realm);
         this.auth = "Basic " + auth;
     }
 
@@ -87,11 +84,9 @@ class BasicAuthentication extends AuthenticationInfo {
      * Create a BasicAuthentication
      */
     public BasicAuthentication(boolean isProxy, URL url, String realm,
-                               PasswordAuthentication pw, boolean isUTF8,
-                               String authenticatorKey) {
+                               PasswordAuthentication pw, boolean isUTF8) {
         super(isProxy ? PROXY_AUTHENTICATION : SERVER_AUTHENTICATION,
-              AuthScheme.BASIC, url, realm,
-              Objects.requireNonNull(authenticatorKey));
+              AuthScheme.BASIC, url, realm);
         this.auth = authValueFrom(pw, isUTF8);
         this.pw = pw;
     }
@@ -116,10 +111,9 @@ class BasicAuthentication extends AuthenticationInfo {
      * Create a BasicAuthentication
      */
     public BasicAuthentication(boolean isProxy, URL url, String realm,
-                               String auth, String authenticatorKey) {
+                               String auth) {
         super(isProxy ? PROXY_AUTHENTICATION : SERVER_AUTHENTICATION,
-              AuthScheme.BASIC, url, realm,
-              Objects.requireNonNull(authenticatorKey));
+              AuthScheme.BASIC, url, realm);
         this.auth = "Basic " + auth;
     }
 

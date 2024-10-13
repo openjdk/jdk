@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,9 +63,10 @@ final class DesktopIntegration extends ShellCustomAction {
     private static final String COMMANDS_INSTALL = "DESKTOP_COMMANDS_INSTALL";
     private static final String COMMANDS_UNINSTALL = "DESKTOP_COMMANDS_UNINSTALL";
     private static final String SCRIPTS = "DESKTOP_SCRIPTS";
+    private static final String COMMON_SCRIPTS = "COMMON_SCRIPTS";
 
     private static final List<String> REPLACEMENT_STRING_IDS = List.of(
-            COMMANDS_INSTALL, COMMANDS_UNINSTALL, SCRIPTS);
+            COMMANDS_INSTALL, COMMANDS_UNINSTALL, SCRIPTS, COMMON_SCRIPTS);
 
     private DesktopIntegration(PlatformPackage thePackage,
             Map<String, ? super Object> params,
@@ -229,8 +230,6 @@ final class DesktopIntegration extends ShellCustomAction {
             shellCommands.applyTo(data);
         }
 
-        boolean needCleanupScripts = !associations.isEmpty();
-
         // Take care of additional launchers if there are any.
         // Process every additional launcher as the main application launcher.
         // Collect shell commands to install/uninstall integration with desktop
@@ -241,10 +240,6 @@ final class DesktopIntegration extends ShellCustomAction {
         List<String> uninstallShellCmds = new ArrayList<>(Arrays.asList(
                 data.get(COMMANDS_UNINSTALL)));
         for (var integration: nestedIntegrations) {
-            if (!integration.associations.isEmpty()) {
-                needCleanupScripts = true;
-            }
-
             Map<String, String> launcherData = integration.create();
 
             installShellCmds.add(launcherData.get(COMMANDS_INSTALL));
@@ -254,10 +249,8 @@ final class DesktopIntegration extends ShellCustomAction {
         data.put(COMMANDS_INSTALL, stringifyShellCommands(installShellCmds));
         data.put(COMMANDS_UNINSTALL, stringifyShellCommands(uninstallShellCmds));
 
-        if (needCleanupScripts) {
-            // Pull in desktop_utils.sh scrips library.
-            data.put(SCRIPTS, stringifyTextFile("desktop_utils.sh"));
-        }
+        data.put(COMMON_SCRIPTS, stringifyTextFile("common_utils.sh"));
+        data.put(SCRIPTS, stringifyTextFile("desktop_utils.sh"));
 
         return data;
     }
@@ -295,7 +288,9 @@ final class DesktopIntegration extends ShellCustomAction {
 
             registerDesktopFileCmd = String.join(" ", "xdg-desktop-menu",
                     "install", desktopFile.installPath().toString());
-            unregisterDesktopFileCmd = String.join(" ", "xdg-desktop-menu",
+            unregisterDesktopFileCmd = String.join(" ",
+                    "do_if_file_belongs_to_single_package", desktopFile.
+                            installPath().toString(), "xdg-desktop-menu",
                     "uninstall", desktopFile.installPath().toString());
         }
 
@@ -303,8 +298,10 @@ final class DesktopIntegration extends ShellCustomAction {
             registerFileAssociationsCmd = String.join(" ", "xdg-mime",
                     "install",
                     mimeInfoFile.installPath().toString());
-            unregisterFileAssociationsCmd = String.join(" ", "xdg-mime",
-                    "uninstall", mimeInfoFile.installPath().toString());
+            unregisterFileAssociationsCmd = String.join(" ",
+                    "do_if_file_belongs_to_single_package", mimeInfoFile.
+                            installPath().toString(), "xdg-mime", "uninstall",
+                    mimeInfoFile.installPath().toString());
 
             //
             // Add manual cleanup of system files to get rid of
@@ -320,16 +317,14 @@ final class DesktopIntegration extends ShellCustomAction {
             // of non-existing desktop file.
             //
             String cleanUpCommand = String.join(" ",
-                    "uninstall_default_mime_handler",
-                    desktopFile.installPath().getFileName().toString(),
-                    String.join(" ", getMimeTypeNamesFromFileAssociations()));
+                    "do_if_file_belongs_to_single_package", desktopFile.
+                            installPath().toString(),
+                    "desktop_uninstall_default_mime_handler", desktopFile.
+                            installPath().getFileName().toString(), String.join(
+                            " ", getMimeTypeNamesFromFileAssociations()));
 
             unregisterFileAssociationsCmd = stringifyShellCommands(
                     unregisterFileAssociationsCmd, cleanUpCommand);
-        }
-
-        void addIcon(String mimeType, Path iconFile) {
-            addIcon(mimeType, iconFile, getSquareSizeOfImage(iconFile.toFile()));
         }
 
         void addIcon(String mimeType, Path iconFile, int imgSize) {
@@ -338,8 +333,10 @@ final class DesktopIntegration extends ShellCustomAction {
             registerIconCmds.add(String.join(" ", "xdg-icon-resource",
                     "install", "--context", "mimetypes", "--size",
                     Integer.toString(imgSize), iconFile.toString(), dashMime));
-            unregisterIconCmds.add(String.join(" ", "xdg-icon-resource",
-                    "uninstall", dashMime, "--size", Integer.toString(imgSize)));
+            unregisterIconCmds.add(String.join(" ",
+                    "do_if_file_belongs_to_single_package", iconFile.toString(),
+                    "xdg-icon-resource", "uninstall", dashMime, "--size",
+                    Integer.toString(imgSize)));
         }
 
         void applyTo(Map<String, String> data) {

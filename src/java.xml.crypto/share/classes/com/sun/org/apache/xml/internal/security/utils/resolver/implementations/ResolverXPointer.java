@@ -104,6 +104,7 @@ public class ResolverXPointer extends ResourceResolverSpi {
     /**
      * {@inheritDoc}
      */
+    @Override
     public boolean engineCanResolveURI(ResourceResolverContext context) {
         return isXPointerSlash(context.uriToResolve) || isXPointerId(context.uriToResolve);
     }

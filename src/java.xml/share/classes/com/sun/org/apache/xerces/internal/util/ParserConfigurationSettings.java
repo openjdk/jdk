@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2023, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -28,6 +28,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import jdk.xml.internal.JdkXmlUtils;
 
 /**
  * This class implements the basic operations for managing parser
@@ -42,7 +43,7 @@ import java.util.Map;
  *
  * @author Andy Clark, IBM
  *
- * @LastModified: Apr 2019
+ * @LastModified: Nov 2023
  */
 public class ParserConfigurationSettings
     implements XMLComponentManager {
@@ -97,6 +98,8 @@ public class ParserConfigurationSettings
         // save parent
         fParentSettings = parent;
 
+        // Initialize Catalog features
+        JdkXmlUtils.initCatalogFeatures(fProperties);
     } // <init>(XMLComponentManager)
 
     //

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -285,6 +285,7 @@ extern sctp_freepaddrs_func* nio_sctp_freepaddrs;
 extern sctp_bindx_func* nio_sctp_bindx;
 extern sctp_peeloff_func* nio_sctp_peeloff;
 
-jboolean loadSocketExtensionFuncs(JNIEnv* env);
+extern jint sctpHandleSocketError(JNIEnv *env, jint errorValue);
+extern jint sctpHandleSocketErrorWithMessage(JNIEnv *env, jint errorValue, const char* message);
 
 #endif /* !SUN_NIO_CH_SCTP_H */

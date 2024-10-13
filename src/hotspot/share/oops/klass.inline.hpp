@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,8 +37,7 @@ inline oop Klass::klass_holder() const {
 }
 
 inline bool Klass::is_non_strong_hidden() const {
-  return access_flags().is_hidden_class() &&
-         class_loader_data()->has_class_mirror_holder();
+  return is_hidden() && class_loader_data()->has_class_mirror_holder();
 }
 
 // Iff the class loader (or mirror for non-strong hidden classes) is alive the
@@ -54,6 +53,10 @@ inline bool Klass::is_loader_alive() const {
 
 inline oop Klass::java_mirror() const {
   return _java_mirror.resolve();
+}
+
+inline oop Klass::java_mirror_no_keepalive() const {
+  return _java_mirror.peek();
 }
 
 inline klassVtable Klass::vtable() const {

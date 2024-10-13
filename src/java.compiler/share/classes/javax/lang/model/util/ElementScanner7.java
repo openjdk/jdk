@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,7 +68,7 @@ import static javax.lang.model.SourceVersion.*;
  *            methods.  Use {@code Void} for visitors that do not need an
  *            additional parameter.
  *
- * @see <a href="ElementScanner6.html#note_for_subclasses"><strong>Compatibility note for subclasses</strong></a>
+ * @see ElementScanner6##note_for_subclasses <strong>Compatibility note for subclasses</strong>
  * @see ElementScanner6
  * @see ElementScanner8
  * @see ElementScanner9
@@ -104,13 +104,13 @@ public class ElementScanner7<R, P> extends ElementScanner6<R, P> {
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc ElementVisitor}
      *
      * @implSpec This implementation scans the enclosed elements.
      *
-     * @param e  {@inheritDoc}
-     * @param p  {@inheritDoc}
-     * @return the result of scanning
+     * @param e  {@inheritDoc ElementVisitor}
+     * @param p  {@inheritDoc ElementVisitor}
+     * @return {@inheritDoc ElementScanner6}
      */
     @Override
     public R visitVariable(VariableElement e, P p) {

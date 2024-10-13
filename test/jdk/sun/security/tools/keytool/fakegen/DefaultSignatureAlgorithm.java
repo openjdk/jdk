@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,9 +28,11 @@
  * @library /test/lib
  * @build java.base/sun.security.rsa.RSAKeyPairGenerator
  *        java.base/sun.security.provider.DSAKeyPairGenerator
- *        jdk.crypto.ec/sun.security.ec.ECKeyPairGenerator
+ *        java.base/sun.security.ec.ECKeyPairGenerator
  * @run main DefaultSignatureAlgorithm
- * @modules jdk.crypto.ec
+ *
+ * This test uses RSA, DSA, and EC inside this test directory, not the providers
+ * from the jdk
  */
 
 import jdk.test.lib.Asserts;
@@ -82,10 +84,7 @@ public class DefaultSignatureAlgorithm {
             throws Exception {
         String patchArg = "-J--patch-module=java.base="
                 + System.getProperty("test.classes")
-                + File.separator + "patches" + File.separator + "java.base"
-                + " -J--patch-module=jdk.crypto.ec="
-                + System.getProperty("test.classes")
-                + File.separator + "patches" + File.separator + "jdk.crypto.ec";
+                + File.separator + "patches" + File.separator + "java.base";
         return kt(patchArg + " -genkeypair -alias " + alias
                 + " -dname CN=" + alias + " " + options);
     }

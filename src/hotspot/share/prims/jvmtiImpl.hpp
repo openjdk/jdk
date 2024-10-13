@@ -66,9 +66,9 @@ class JvmtiBreakpoints;
 class GrowableElement : public CHeapObj<mtInternal> {
 public:
   virtual ~GrowableElement() {}
-  virtual address getCacheValue()          =0;
-  virtual bool equals(GrowableElement* e)  =0;
-  virtual GrowableElement *clone()         =0;
+  virtual address getCacheValue()                     =0;
+  virtual bool equals(const GrowableElement* e) const =0;
+  virtual GrowableElement* clone()                    =0;
 };
 
 class GrowableCache {
@@ -88,8 +88,6 @@ private:
   // (but NOT when cached elements are recomputed).
   void (*_listener_fun)(void *, address*);
 
-  static bool equals(void *, GrowableElement *);
-
   // recache all elements after size change, notify listener
   void recache();
 
@@ -104,7 +102,7 @@ public:
   // get the value of the index element in the collection
   GrowableElement* at(int index);
   // find the index of the element, -1 if it doesn't exist
-  int find(GrowableElement* e);
+  int find(const GrowableElement* e) const;
   // append a copy of the element to the end of the collection, notify listener
   void append(GrowableElement* e);
   // remove the element at index, notify listener
@@ -165,7 +163,7 @@ public:
   JvmtiBreakpoint() : _method(nullptr), _bci(0) {}
   JvmtiBreakpoint(Method* m_method, jlocation location);
   virtual ~JvmtiBreakpoint();
-  bool equals(JvmtiBreakpoint& bp);
+  bool equals(const JvmtiBreakpoint& bp) const;
   void copy(JvmtiBreakpoint& bp);
   address getBcp() const;
   void each_method_version_do(method_action meth_act);
@@ -177,7 +175,7 @@ public:
 
   // GrowableElement implementation
   address getCacheValue()         { return getBcp(); }
-  bool equals(GrowableElement* e) { return equals((JvmtiBreakpoint&) *e); }
+  bool equals(const GrowableElement* e) const { return equals((const JvmtiBreakpoint&) *e); }
 
   GrowableElement *clone()        {
     JvmtiBreakpoint *bp = new JvmtiBreakpoint();
@@ -501,9 +499,9 @@ class JvmtiDeferredEvent {
   void post_compiled_method_load_event(JvmtiEnv* env) NOT_JVMTI_RETURN;
   void run_nmethod_entry_barriers() NOT_JVMTI_RETURN;
   // GC support to keep nmethods from unloading while in the queue.
-  void nmethods_do(CodeBlobClosure* cf) NOT_JVMTI_RETURN;
+  void nmethods_do(NMethodClosure* cf) NOT_JVMTI_RETURN;
   // GC support to keep nmethod from being unloaded while in the queue.
-  void oops_do(OopClosure* f, CodeBlobClosure* cf) NOT_JVMTI_RETURN;
+  void oops_do(OopClosure* f, NMethodClosure* cf) NOT_JVMTI_RETURN;
 };
 
 /**
@@ -544,9 +542,9 @@ class JvmtiDeferredEventQueue : public CHeapObj<mtInternal> {
   void run_nmethod_entry_barriers();
 
   // GC support to keep nmethods from unloading while in the queue.
-  void nmethods_do(CodeBlobClosure* cf) NOT_JVMTI_RETURN;
+  void nmethods_do(NMethodClosure* cf) NOT_JVMTI_RETURN;
   // GC support to keep nmethod from being unloaded while in the queue.
-  void oops_do(OopClosure* f, CodeBlobClosure* cf) NOT_JVMTI_RETURN;
+  void oops_do(OopClosure* f, NMethodClosure* cf) NOT_JVMTI_RETURN;
 };
 
 // Utility macro that checks for null pointers:

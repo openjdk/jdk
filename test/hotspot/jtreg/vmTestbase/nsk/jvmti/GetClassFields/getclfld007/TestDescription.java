@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,9 +31,9 @@
  * DESCRIPTION
  *     The test exercises JVMTI function
  *         GetClassFields(clazz, fieldCountPtr, fieldsPtr).
- *     The test checks if the function returns the expected list of fields.
- *     That is the field list contains only directly declared (not inherited)
- *     fields.
+ *     The test checks if the function returns the expected list of fields:
+ *         - the list contains only directly declared (not inherited) fields;
+ *         - fields are returned in the order they occur in the class file.
  * COMMENTS
  *     Ported from JVMDI.
  *     Test fixed due to test bug:
@@ -45,6 +45,7 @@
  *
  * @library /vmTestbase
  *          /test/lib
+ * @modules java.base/jdk.internal.org.objectweb.asm
  * @run main/othervm/native -agentlib:getclfld007 nsk.jvmti.GetClassFields.getclfld007
  */
 

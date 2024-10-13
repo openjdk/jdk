@@ -79,6 +79,9 @@ public class ForkJoinPool9Test extends JSR166TestCase {
             assertSame(ForkJoinPool.commonPool(), ForkJoinTask.getPool());
             Thread currentThread = Thread.currentThread();
 
+            ClassLoader preexistingContextClassLoader =
+                    currentThread.getContextClassLoader();
+
             Stream.of(systemClassLoader, null).forEach(cl -> {
                 if (randomBoolean())
                     // should always be permitted, without effect
@@ -95,6 +98,11 @@ public class ForkJoinPool9Test extends JSR166TestCase {
                     () -> System.getProperty("foo"),
                     () -> currentThread.setContextClassLoader(
                         classLoaderDistinctFromSystemClassLoader));
+            else {
+                currentThread.setContextClassLoader(classLoaderDistinctFromSystemClassLoader);
+                assertSame(currentThread.getContextClassLoader(), classLoaderDistinctFromSystemClassLoader);
+                currentThread.setContextClassLoader(preexistingContextClassLoader);
+            }
             // TODO ?
 //          if (haveSecurityManager
 //              && Thread.currentThread().getClass().getSimpleName()

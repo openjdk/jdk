@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,7 +138,7 @@ public class TestDynamicAnnotations {
             r.stop();
             List<RecordedEvent> events = Events.fromRecording(r);
             Events.hasEvents(events);
-            Events.assertField(events.get(0), "ecid").equal(ecidValue);
+            Events.assertField(events.getFirst(), "ecid").equal(ecidValue);
         }
         EventType type = f.getEventType();
         ECID e = type.getAnnotation(ECID.class);
@@ -175,7 +175,7 @@ public class TestDynamicAnnotations {
             r.stop();
             List<RecordedEvent> events = Events.fromRecording(r);
             Events.hasEvents(events);
-            RecordedEvent re = events.get(0);
+            RecordedEvent re = events.getFirst();
             Array arrayAnnotation = re.getEventType().getAnnotation(Array.class);
             if (arrayAnnotation== null) {
                 throw new Exception("Missing array annotation");

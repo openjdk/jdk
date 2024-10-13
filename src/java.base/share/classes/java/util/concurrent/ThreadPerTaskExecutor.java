@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ import java.util.stream.Stream;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.invoke.MhUtil;
 import jdk.internal.vm.ThreadContainer;
 import jdk.internal.vm.ThreadContainers;
 
@@ -48,15 +49,8 @@ import jdk.internal.vm.ThreadContainers;
 class ThreadPerTaskExecutor extends ThreadContainer implements ExecutorService {
     private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
     private static final Permission MODIFY_THREAD = new RuntimePermission("modifyThread");
-    private static final VarHandle STATE;
-    static {
-        try {
-            MethodHandles.Lookup l = MethodHandles.lookup();
-            STATE = l.findVarHandle(ThreadPerTaskExecutor.class, "state", int.class);
-        } catch (Exception e) {
-            throw new InternalError(e);
-        }
-    }
+    private static final VarHandle STATE = MhUtil.findVarHandle(
+            MethodHandles.lookup(), "state", int.class);
 
     private final ThreadFactory factory;
     private final Set<Thread> threads = ConcurrentHashMap.newKeySet();
@@ -325,15 +319,14 @@ class ThreadPerTaskExecutor extends ThreadContainer implements ExecutorService {
      * notified when the task completes.
      */
     private static class ThreadBoundFuture<T>
-            extends CompletableFuture<T> implements Runnable {
+            extends FutureTask<T> implements Runnable {
 
         final ThreadPerTaskExecutor executor;
-        final Callable<T> task;
         final Thread thread;
 
         ThreadBoundFuture(ThreadPerTaskExecutor executor, Callable<T> task) {
+            super(task);
             this.executor = executor;
-            this.task = task;
             this.thread = executor.newThread(this);
         }
 
@@ -342,28 +335,8 @@ class ThreadPerTaskExecutor extends ThreadContainer implements ExecutorService {
         }
 
         @Override
-        public void run() {
-            if (Thread.currentThread() != thread) {
-                // should not happen except where something casts this object
-                // to a Runnable and invokes the run method.
-                throw new WrongThreadException();
-            }
-            try {
-                T result = task.call();
-                complete(result);
-            } catch (Throwable e) {
-                completeExceptionally(e);
-            } finally {
-                executor.taskComplete(thread);
-            }
-        }
-
-        @Override
-        public boolean cancel(boolean mayInterruptIfRunning) {
-            boolean cancelled = super.cancel(mayInterruptIfRunning);
-            if (cancelled && mayInterruptIfRunning)
-                thread.interrupt();
-            return cancelled;
+        protected void done() {
+            executor.taskComplete(thread);
         }
     }
 
@@ -527,14 +500,10 @@ class ThreadPerTaskExecutor extends ThreadContainer implements ExecutorService {
         private static final VarHandle EXCEPTION;
         private static final VarHandle EXCEPTION_COUNT;
         static {
-            try {
-                MethodHandles.Lookup l = MethodHandles.lookup();
-                RESULT = l.findVarHandle(AnyResultHolder.class, "result", Object.class);
-                EXCEPTION = l.findVarHandle(AnyResultHolder.class, "exception", Throwable.class);
-                EXCEPTION_COUNT = l.findVarHandle(AnyResultHolder.class, "exceptionCount", int.class);
-            } catch (Exception e) {
-                throw new InternalError(e);
-            }
+            MethodHandles.Lookup l = MethodHandles.lookup();
+            RESULT = MhUtil.findVarHandle(l, "result", Object.class);
+            EXCEPTION = MhUtil.findVarHandle(l, "exception", Throwable.class);
+            EXCEPTION_COUNT = MhUtil.findVarHandle(l, "exceptionCount", int.class);
         }
         private static final Object NULL = new Object();
 

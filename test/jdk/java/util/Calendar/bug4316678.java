@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,49 +21,64 @@
  * questions.
  */
 
-import java.io.*;
-import java.util.*;
-import java.text.*;
-
-/**
+/*
  * @test
  * @bug 4316678
- * @summary test that Calendar's Serializasion works correctly.
- * @library /java/text/testlib
+ * @summary test that Calendar's Serialization works correctly.
+ * @run junit bug4316678
  */
-public class bug4316678 extends IntlTest {
 
-    public static void main(String[] args) throws Exception {
-        new bug4316678().run(args);
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
+import java.util.TimeZone;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+public class bug4316678 {
+
+    private static final String serializedData = "bug4316678.ser";
+
+    // Save JVM default TimeZone
+    private static final TimeZone savedTz = TimeZone.getDefault();
+
+    // Set custom JVM default TimeZone
+    @BeforeAll
+    static void initAll() {
+        TimeZone.setDefault(TimeZone.getTimeZone("PST"));
     }
 
-    public void Test4316678() throws Exception {
-        GregorianCalendar gc1;
+    // Restore JVM default Locale and TimeZone
+    @AfterAll
+    static void tearDownAll() {
+        TimeZone.setDefault(savedTz);
+    }
+
+    // Test that a serialized GregorianCalendar has the expected values
+    @Test
+    public void serializationTest() throws IOException, ClassNotFoundException {
+        GregorianCalendar gc1 = new GregorianCalendar(2000, Calendar.OCTOBER, 10);
         GregorianCalendar gc2;
-        TimeZone saveZone = TimeZone.getDefault();
-
-        try {
-            TimeZone.setDefault(TimeZone.getTimeZone("PST"));
-
-            gc1 = new GregorianCalendar(2000, Calendar.OCTOBER, 10);
-            try (ObjectOutputStream out
-                    = new ObjectOutputStream(new FileOutputStream("bug4316678.ser"))) {
-                out.writeObject(gc1);
-            }
-
-            try (ObjectInputStream in
-                    = new ObjectInputStream(new FileInputStream("bug4316678.ser"))) {
-                gc2 = (GregorianCalendar)in.readObject();
-            }
-
-            gc1.set(Calendar.DATE, 16);
-            gc2.set(Calendar.DATE, 16);
-            if (!gc1.getTime().equals(gc2.getTime())) {
-                errln("Invalid Time :" + gc2.getTime() +
-                    ", expected :" + gc1.getTime());
-            }
-        } finally {
-            TimeZone.setDefault(saveZone);
+        try (ObjectOutputStream out
+                = new ObjectOutputStream(new FileOutputStream(serializedData))) {
+            out.writeObject(gc1);
         }
+
+        try (ObjectInputStream in = new ObjectInputStream(new FileInputStream(serializedData))) {
+            gc2 = (GregorianCalendar)in.readObject();
+        }
+
+        gc1.set(Calendar.DATE, 16);
+        gc2.set(Calendar.DATE, 16);
+        assertEquals(gc2.getTime(), gc1.getTime(),
+                "Times should be equal after serialization");
     }
 }

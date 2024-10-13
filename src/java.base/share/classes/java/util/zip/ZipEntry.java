@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,7 @@ public class ZipEntry implements ZipConstants, Cloneable {
     int flag = 0;       // general purpose flag
     byte[] extra;       // optional extra field data for entry
     String comment;     // optional comment string for entry
-    int extraAttributes = -1; // e.g. POSIX permissions, sym links.
+    int externalFileAttributes = -1; // File type, setuid, setgid, sticky, POSIX permissions
     /**
      * Compression method for uncompressed entries.
      */
@@ -78,7 +78,7 @@ public class ZipEntry implements ZipConstants, Cloneable {
     /**
      * Approximately 128 years, in milliseconds (ignoring leap years etc).
      *
-     * This establish an approximate high-bound value for DOS times in
+     * This establishes an approximate high-bound value for DOS times in
      * milliseconds since epoch, used to enable an efficient but
      * sufficient bounds check to avoid generating extended last modified
      * time entries.
@@ -93,7 +93,7 @@ public class ZipEntry implements ZipConstants, Cloneable {
             128L * 365 * 24 * 60 * 60 * 1000;
 
     /**
-     * Creates a new zip entry with the specified name.
+     * Creates a new ZIP entry with the specified name.
      *
      * @param  name
      *         The entry name
@@ -111,11 +111,11 @@ public class ZipEntry implements ZipConstants, Cloneable {
     }
 
     /**
-     * Creates a new zip entry with fields taken from the specified
-     * zip entry.
+     * Creates a new ZIP entry with fields taken from the specified
+     * ZIP entry.
      *
      * @param  e
-     *         A zip Entry object
+     *         A ZIP Entry object
      *
      * @throws NullPointerException if the entry object is null
      */
@@ -134,12 +134,11 @@ public class ZipEntry implements ZipConstants, Cloneable {
         flag = e.flag;
         extra = e.extra;
         comment = e.comment;
-        extraAttributes = e.extraAttributes;
+        externalFileAttributes = e.externalFileAttributes;
     }
 
     /**
-     * Returns the name of the entry.
-     * @return the name of the entry
+     * {@return the name of the entry}
      */
     public String getName() {
         return name;
@@ -150,7 +149,7 @@ public class ZipEntry implements ZipConstants, Cloneable {
      *
      * <p> If the entry is output to a ZIP file or ZIP file formatted
      * output stream the last modification time set by this method will
-     * be stored into the {@code date and time fields} of the zip file
+     * be stored into the {@code date and time fields} of the ZIP file
      * entry and encoded in standard {@code MS-DOS date and time format}.
      * The {@link java.util.TimeZone#getDefault() default TimeZone} is
      * used to convert the epoch time to the MS-DOS date and time.
@@ -183,7 +182,7 @@ public class ZipEntry implements ZipConstants, Cloneable {
      *
      * <p> If the entry is read from a ZIP file or ZIP file formatted
      * input stream, this is the last modification time from the {@code
-     * date and time fields} of the zip file entry. The
+     * date and time fields} of the ZIP file entry. The
      * {@link java.util.TimeZone#getDefault() default TimeZone} is used
      * to convert the standard MS-DOS formatted date and time to the
      * epoch time.
@@ -206,11 +205,11 @@ public class ZipEntry implements ZipConstants, Cloneable {
      *
      * <p> If the entry is output to a ZIP file or ZIP file formatted
      * output stream the last modification time set by this method will
-     * be stored into the {@code date and time fields} of the zip file
+     * be stored into the {@code date and time fields} of the ZIP file
      * entry and encoded in standard {@code MS-DOS date and time format}.
      * If the date-time set is out of the range of the standard {@code
      * MS-DOS date and time format}, the time will also be stored into
-     * zip file entry's extended timestamp fields in {@code optional
+     * ZIP file entry's extended timestamp fields in {@code optional
      * extra data} in UTC time. The {@link java.time.ZoneId#systemDefault()
      * system default TimeZone} is used to convert the local date-time
      * to UTC time.
@@ -222,7 +221,7 @@ public class ZipEntry implements ZipConstants, Cloneable {
      *
      * @param  time
      *         The last modification time of the entry in local date-time
-     *
+     * @throws NullPointerException if {@code time} is null
      * @see #getTimeLocal()
      * @since 9
      */
@@ -285,13 +284,13 @@ public class ZipEntry implements ZipConstants, Cloneable {
      *
      * <p> When output to a ZIP file or ZIP file formatted output stream
      * the last modification time set by this method will be stored into
-     * zip file entry's {@code date and time fields} in {@code standard
+     * ZIP file entry's {@code date and time fields} in {@code standard
      * MS-DOS date and time format}), and the extended timestamp fields
      * in {@code optional extra data} in UTC time.
      *
      * @param  time
      *         The last modification time of the entry
-     * @return This zip entry
+     * @return This ZIP entry
      *
      * @throws NullPointerException if the {@code time} is null
      *
@@ -337,7 +336,7 @@ public class ZipEntry implements ZipConstants, Cloneable {
      *
      * @param  time
      *         The last access time of the entry
-     * @return This zip entry
+     * @return This ZIP entry
      *
      * @throws NullPointerException if the {@code time} is null
      *
@@ -373,7 +372,7 @@ public class ZipEntry implements ZipConstants, Cloneable {
      *
      * @param  time
      *         The creation time of the entry
-     * @return This zip entry
+     * @return This ZIP entry
      *
      * @throws NullPointerException if the {@code time} is null
      *
@@ -565,20 +564,20 @@ public class ZipEntry implements ZipConstants, Cloneable {
                             // be the magic value and it "accidentally" has some
                             // bytes in extra match the id.
                             if (sz >= 16) {
-                                size = get64(extra, off);
-                                csize = get64(extra, off + 8);
+                                size = get64S(extra, off);
+                                csize = get64S(extra, off + 8);
                             }
                         } else {
                             // CEN extra zip64
                             if (size == ZIP64_MAGICVAL) {
                                 if (off + 8 > len)  // invalid zip64 extra
                                     break;          // fields, just skip
-                                size = get64(extra, off);
+                                size = get64S(extra, off);
                             }
                             if (csize == ZIP64_MAGICVAL) {
                                 if (off + 16 > len)  // invalid zip64 extra
                                     break;           // fields, just skip
-                                csize = get64(extra, off + 8);
+                                csize = get64S(extra, off + 8);
                             }
                         }
                     }
@@ -589,15 +588,15 @@ public class ZipEntry implements ZipConstants, Cloneable {
                     int pos = off + 4;               // reserved 4 bytes
                     if (get16(extra, pos) !=  0x0001 || get16(extra, pos + 2) != 24)
                         break;
-                    long wtime = get64(extra, pos + 4);
+                    long wtime = get64S(extra, pos + 4);
                     if (wtime != WINDOWS_TIME_NOT_AVAILABLE) {
                         mtime = winTimeToFileTime(wtime);
                     }
-                    wtime = get64(extra, pos + 12);
+                    wtime = get64S(extra, pos + 12);
                     if (wtime != WINDOWS_TIME_NOT_AVAILABLE) {
                         atime = winTimeToFileTime(wtime);
                     }
-                    wtime = get64(extra, pos + 20);
+                    wtime = get64S(extra, pos + 20);
                     if (wtime != WINDOWS_TIME_NOT_AVAILABLE) {
                         ctime = winTimeToFileTime(wtime);
                     }

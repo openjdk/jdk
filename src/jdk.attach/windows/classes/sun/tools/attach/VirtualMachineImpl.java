@@ -35,6 +35,7 @@ import java.util.Random;
 /*
  * Windows implementation of HotSpotVirtualMachine
  */
+@SuppressWarnings("restricted")
 public class VirtualMachineImpl extends HotSpotVirtualMachine {
 
     // the enqueue code stub (copied into each target VM)
@@ -73,6 +74,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
         throws AgentLoadException, IOException
     {
         assert args.length <= 3;        // includes null
+        checkNulls(args);
 
         // create a pipe using a random name
         Random rnd = new Random();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,8 @@
 #include "code/vmreg.inline.hpp"
 #include "compiler/oopMap.hpp"
 #include "utilities/macros.hpp"
-#include "runtime/rtmLocking.hpp"
 #include "runtime/vm_version.hpp"
+#include "utilities/checkedCast.hpp"
 
 // MacroAssembler extends Assembler by frequently used macros.
 //
@@ -91,9 +91,9 @@ class MacroAssembler: public Assembler {
   Address as_Address(AddressLiteral adr);
   Address as_Address(ArrayAddress adr, Register rscratch);
 
-  // Support for NULL-checks
+  // Support for null-checks
   //
-  // Generates code that causes a NULL OS exception if the content of reg is NULL.
+  // Generates code that causes a null OS exception if the content of reg is null.
   // If the accessed location is M[reg + offset] and the offset is known, provide the
   // offset. No explicit code generation is needed if the offset is within a certain
   // range (0 <= offset <= page_size).
@@ -110,20 +110,20 @@ class MacroAssembler: public Assembler {
         op == 0xE9 /* jmp */ ||
         op == 0xEB /* short jmp */ ||
         (op & 0xF0) == 0x70 /* short jcc */ ||
-        op == 0x0F && (branch[1] & 0xF0) == 0x80 /* jcc */ ||
-        op == 0xC7 && branch[1] == 0xF8 /* xbegin */,
+        (op == 0x0F && (branch[1] & 0xF0) == 0x80) /* jcc */ ||
+        (op == 0xC7 && branch[1] == 0xF8) /* xbegin */,
         "Invalid opcode at patch point");
 
     if (op == 0xEB || (op & 0xF0) == 0x70) {
       // short offset operators (jmp and jcc)
       char* disp = (char*) &branch[1];
-      int imm8 = target - (address) &disp[1];
+      int imm8 = checked_cast<int>(target - (address) &disp[1]);
       guarantee(this->is8bit(imm8), "Short forward jump exceeds 8-bit offset at %s:%d",
-                file == NULL ? "<NULL>" : file, line);
-      *disp = imm8;
+                file == nullptr ? "<null>" : file, line);
+      *disp = (char)imm8;
     } else {
       int* disp = (int*) &branch[(op == 0x0F || op == 0xC7)? 2: 1];
-      int imm32 = target - (address) &disp[1];
+      int imm32 = checked_cast<int>(target - (address) &disp[1]);
       *disp = imm32;
     }
   }
@@ -149,6 +149,8 @@ class MacroAssembler: public Assembler {
 
   void increment(Register reg, int value = 1) { LP64_ONLY(incrementq(reg, value)) NOT_LP64(incrementl(reg, value)) ; }
   void decrement(Register reg, int value = 1) { LP64_ONLY(decrementq(reg, value)) NOT_LP64(decrementl(reg, value)) ; }
+  void increment(Address dst, int value = 1)  { LP64_ONLY(incrementq(dst, value)) NOT_LP64(incrementl(dst, value)) ; }
+  void decrement(Address dst, int value = 1)  { LP64_ONLY(decrementq(dst, value)) NOT_LP64(decrementl(dst, value)) ; }
 
   void decrementl(Address dst, int value = 1);
   void decrementl(Register reg, int value = 1);
@@ -210,8 +212,8 @@ class MacroAssembler: public Assembler {
   // Alignment
   void align32();
   void align64();
-  void align(int modulus);
-  void align(int modulus, int target);
+  void align(uint modulus);
+  void align(uint modulus, uint target);
 
   void post_call_nop();
   // A 5 byte nop that is safe for patching (see patch_verified_entry)
@@ -362,7 +364,6 @@ class MacroAssembler: public Assembler {
 
   // oop manipulations
   void load_klass(Register dst, Register src, Register tmp);
-  void load_klass_check_null(Register dst, Register src, Register tmp);
   void store_klass(Register dst, Register src, Register tmp);
 
   void access_load_at(BasicType type, DecoratorSet decorators, Register dst, Address src,
@@ -377,7 +378,7 @@ class MacroAssembler: public Assembler {
   void store_heap_oop(Address dst, Register val, Register tmp1 = noreg,
                       Register tmp2 = noreg, Register tmp3 = noreg, DecoratorSet decorators = 0);
 
-  // Used for storing NULL. All other oop constants should be
+  // Used for storing null. All other oop constants should be
   // stored using routines that take a jobject.
   void store_heap_oop_null(Address dst);
 
@@ -385,7 +386,7 @@ class MacroAssembler: public Assembler {
   void store_klass_gap(Register dst, Register src);
 
   // This dummy is to prevent a call to store_heap_oop from
-  // converting a zero (like NULL) into a Register by giving
+  // converting a zero (like null) into a Register by giving
   // the compiler two choices it can't resolve
 
   void store_heap_oop(Address dst, void* dummy);
@@ -593,6 +594,8 @@ public:
   );
   void zero_memory(Register address, Register length_in_bytes, int offset_in_bytes, Register temp);
 
+  void population_count(Register dst, Register src, Register scratch1, Register scratch2);
+
   // interface method calling
   void lookup_interface_method(Register recv_klass,
                                Register intf_klass,
@@ -602,6 +605,16 @@ public:
                                Label& no_such_interface,
                                bool return_method = true);
 
+  void lookup_interface_method_stub(Register recv_klass,
+                                    Register holder_klass,
+                                    Register resolved_klass,
+                                    Register method_result,
+                                    Register scan_temp,
+                                    Register temp_reg2,
+                                    Register receiver,
+                                    int itable_index,
+                                    Label& L_no_such_interface);
+
   // virtual method calling
   void lookup_virtual_method(Register recv_klass,
                              RegisterOrConstant vtable_index,
@@ -610,7 +623,7 @@ public:
   // Test sub_klass against super_klass, with fast and slow paths.
 
   // The fast path produces a tri-state answer: yes / no / maybe-slow.
-  // One of the three labels can be NULL, meaning take the fall-through.
+  // One of the three labels can be null, meaning take the fall-through.
   // If super_check_offset is -1, the value is loaded up from super_klass.
   // No registers are killed, except temp_reg.
   void check_klass_subtype_fast_path(Register sub_klass,
@@ -633,8 +646,46 @@ public:
                                      Label* L_success,
                                      Label* L_failure,
                                      bool set_cond_codes = false);
+  void hashed_check_klass_subtype_slow_path(Register sub_klass,
+                                     Register super_klass,
+                                     Register temp_reg,
+                                     Register temp2_reg,
+                                     Label* L_success,
+                                     Label* L_failure,
+                                     bool set_cond_codes = false);
 
-  // Simplified, combined version, good for typical uses.
+  // As above, but with a constant super_klass.
+  // The result is in Register result, not the condition codes.
+  void lookup_secondary_supers_table(Register sub_klass,
+                                     Register super_klass,
+                                     Register temp1,
+                                     Register temp2,
+                                     Register temp3,
+                                     Register temp4,
+                                     Register result,
+                                     u1 super_klass_slot);
+
+  void lookup_secondary_supers_table_slow_path(Register r_super_klass,
+                                               Register r_array_base,
+                                               Register r_array_index,
+                                               Register r_bitmap,
+                                               Register temp1,
+                                               Register temp2,
+                                               Label* L_success,
+                                               Label* L_failure = nullptr);
+
+  void verify_secondary_supers_table(Register r_sub_klass,
+                                     Register r_super_klass,
+                                     Register expected,
+                                     Register temp1,
+                                     Register temp2,
+                                     Register temp3);
+
+  void repne_scanq(Register addr, Register value, Register count, Register limit,
+                   Label* L_success,
+                   Label* L_failure = nullptr);
+
+    // Simplified, combined version, good for typical uses.
   // Falls through on failure.
   void check_klass_subtype(Register sub_klass,
                            Register super_klass,
@@ -643,8 +694,8 @@ public:
 
   void clinit_barrier(Register klass,
                       Register thread,
-                      Label* L_fast_path = NULL,
-                      Label* L_slow_path = NULL);
+                      Label* L_fast_path = nullptr,
+                      Label* L_slow_path = nullptr);
 
   // method handles (JSR 292)
   Address argument_address(RegisterOrConstant arg_slot, int extra_slot_offset = 0);
@@ -738,7 +789,7 @@ public:
   void addptr(Register dst, int32_t src);
   void addptr(Register dst, Register src);
   void addptr(Register dst, RegisterOrConstant src) {
-    if (src.is_constant()) addptr(dst, src.as_constant());
+    if (src.is_constant()) addptr(dst, checked_cast<int>(src.as_constant()));
     else                   addptr(dst, src.as_register());
   }
 
@@ -865,6 +916,7 @@ public:
 
   void testptr(Register src, int32_t imm32) {  LP64_ONLY(testq(src, imm32)) NOT_LP64(testl(src, imm32)); }
   void testptr(Register src1, Address src2) { LP64_ONLY(testq(src1, src2)) NOT_LP64(testl(src1, src2)); }
+  void testptr(Address src, int32_t imm32) {  LP64_ONLY(testq(src, imm32)) NOT_LP64(testl(src, imm32)); }
   void testptr(Register src1, Register src2);
 
   void xorptr(Register dst, Register src) { LP64_ONLY(xorq(dst, src)) NOT_LP64(xorl(dst, src)); }
@@ -883,6 +935,8 @@ public:
 
   // Emit the CompiledIC call idiom
   void ic_call(address entry, jint method_index = 0);
+  static int ic_check_size();
+  int ic_check(int end_alignment);
 
   void emit_static_call_stub();
 
@@ -899,6 +953,74 @@ public:
   // to be installed in the Address class. This jump will transfer to the address
   // contained in the location described by entry (not the address of entry)
   void jump(ArrayAddress entry, Register rscratch);
+
+  // Adding more natural conditional jump instructions
+  void ALWAYSINLINE jo(Label& L, bool maybe_short = true) { jcc(Assembler::overflow, L, maybe_short); }
+  void ALWAYSINLINE jno(Label& L, bool maybe_short = true) { jcc(Assembler::noOverflow, L, maybe_short); }
+  void ALWAYSINLINE js(Label& L, bool maybe_short = true) { jcc(Assembler::negative, L, maybe_short); }
+  void ALWAYSINLINE jns(Label& L, bool maybe_short = true) { jcc(Assembler::positive, L, maybe_short); }
+  void ALWAYSINLINE je(Label& L, bool maybe_short = true) { jcc(Assembler::equal, L, maybe_short); }
+  void ALWAYSINLINE jz(Label& L, bool maybe_short = true) { jcc(Assembler::zero, L, maybe_short); }
+  void ALWAYSINLINE jne(Label& L, bool maybe_short = true) { jcc(Assembler::notEqual, L, maybe_short); }
+  void ALWAYSINLINE jnz(Label& L, bool maybe_short = true) { jcc(Assembler::notZero, L, maybe_short); }
+  void ALWAYSINLINE jb(Label& L, bool maybe_short = true) { jcc(Assembler::below, L, maybe_short); }
+  void ALWAYSINLINE jnae(Label& L, bool maybe_short = true) { jcc(Assembler::below, L, maybe_short); }
+  void ALWAYSINLINE jc(Label& L, bool maybe_short = true) { jcc(Assembler::carrySet, L, maybe_short); }
+  void ALWAYSINLINE jnb(Label& L, bool maybe_short = true) { jcc(Assembler::aboveEqual, L, maybe_short); }
+  void ALWAYSINLINE jae(Label& L, bool maybe_short = true) { jcc(Assembler::aboveEqual, L, maybe_short); }
+  void ALWAYSINLINE jnc(Label& L, bool maybe_short = true) { jcc(Assembler::carryClear, L, maybe_short); }
+  void ALWAYSINLINE jbe(Label& L, bool maybe_short = true) { jcc(Assembler::belowEqual, L, maybe_short); }
+  void ALWAYSINLINE jna(Label& L, bool maybe_short = true) { jcc(Assembler::belowEqual, L, maybe_short); }
+  void ALWAYSINLINE ja(Label& L, bool maybe_short = true) { jcc(Assembler::above, L, maybe_short); }
+  void ALWAYSINLINE jnbe(Label& L, bool maybe_short = true) { jcc(Assembler::above, L, maybe_short); }
+  void ALWAYSINLINE jl(Label& L, bool maybe_short = true) { jcc(Assembler::less, L, maybe_short); }
+  void ALWAYSINLINE jnge(Label& L, bool maybe_short = true) { jcc(Assembler::less, L, maybe_short); }
+  void ALWAYSINLINE jge(Label& L, bool maybe_short = true) { jcc(Assembler::greaterEqual, L, maybe_short); }
+  void ALWAYSINLINE jnl(Label& L, bool maybe_short = true) { jcc(Assembler::greaterEqual, L, maybe_short); }
+  void ALWAYSINLINE jle(Label& L, bool maybe_short = true) { jcc(Assembler::lessEqual, L, maybe_short); }
+  void ALWAYSINLINE jng(Label& L, bool maybe_short = true) { jcc(Assembler::lessEqual, L, maybe_short); }
+  void ALWAYSINLINE jg(Label& L, bool maybe_short = true) { jcc(Assembler::greater, L, maybe_short); }
+  void ALWAYSINLINE jnle(Label& L, bool maybe_short = true) { jcc(Assembler::greater, L, maybe_short); }
+  void ALWAYSINLINE jp(Label& L, bool maybe_short = true) { jcc(Assembler::parity, L, maybe_short); }
+  void ALWAYSINLINE jpe(Label& L, bool maybe_short = true) { jcc(Assembler::parity, L, maybe_short); }
+  void ALWAYSINLINE jnp(Label& L, bool maybe_short = true) { jcc(Assembler::noParity, L, maybe_short); }
+  void ALWAYSINLINE jpo(Label& L, bool maybe_short = true) { jcc(Assembler::noParity, L, maybe_short); }
+  // * No condition for this *  void ALWAYSINLINE jcxz(Label& L, bool maybe_short = true) { jcc(Assembler::cxz, L, maybe_short); }
+  // * No condition for this *  void ALWAYSINLINE jecxz(Label& L, bool maybe_short = true) { jcc(Assembler::cxz, L, maybe_short); }
+
+  // Short versions of the above
+  void ALWAYSINLINE jo_b(Label& L) { jccb(Assembler::overflow, L); }
+  void ALWAYSINLINE jno_b(Label& L) { jccb(Assembler::noOverflow, L); }
+  void ALWAYSINLINE js_b(Label& L) { jccb(Assembler::negative, L); }
+  void ALWAYSINLINE jns_b(Label& L) { jccb(Assembler::positive, L); }
+  void ALWAYSINLINE je_b(Label& L) { jccb(Assembler::equal, L); }
+  void ALWAYSINLINE jz_b(Label& L) { jccb(Assembler::zero, L); }
+  void ALWAYSINLINE jne_b(Label& L) { jccb(Assembler::notEqual, L); }
+  void ALWAYSINLINE jnz_b(Label& L) { jccb(Assembler::notZero, L); }
+  void ALWAYSINLINE jb_b(Label& L) { jccb(Assembler::below, L); }
+  void ALWAYSINLINE jnae_b(Label& L) { jccb(Assembler::below, L); }
+  void ALWAYSINLINE jc_b(Label& L) { jccb(Assembler::carrySet, L); }
+  void ALWAYSINLINE jnb_b(Label& L) { jccb(Assembler::aboveEqual, L); }
+  void ALWAYSINLINE jae_b(Label& L) { jccb(Assembler::aboveEqual, L); }
+  void ALWAYSINLINE jnc_b(Label& L) { jccb(Assembler::carryClear, L); }
+  void ALWAYSINLINE jbe_b(Label& L) { jccb(Assembler::belowEqual, L); }
+  void ALWAYSINLINE jna_b(Label& L) { jccb(Assembler::belowEqual, L); }
+  void ALWAYSINLINE ja_b(Label& L) { jccb(Assembler::above, L); }
+  void ALWAYSINLINE jnbe_b(Label& L) { jccb(Assembler::above, L); }
+  void ALWAYSINLINE jl_b(Label& L) { jccb(Assembler::less, L); }
+  void ALWAYSINLINE jnge_b(Label& L) { jccb(Assembler::less, L); }
+  void ALWAYSINLINE jge_b(Label& L) { jccb(Assembler::greaterEqual, L); }
+  void ALWAYSINLINE jnl_b(Label& L) { jccb(Assembler::greaterEqual, L); }
+  void ALWAYSINLINE jle_b(Label& L) { jccb(Assembler::lessEqual, L); }
+  void ALWAYSINLINE jng_b(Label& L) { jccb(Assembler::lessEqual, L); }
+  void ALWAYSINLINE jg_b(Label& L) { jccb(Assembler::greater, L); }
+  void ALWAYSINLINE jnle_b(Label& L) { jccb(Assembler::greater, L); }
+  void ALWAYSINLINE jp_b(Label& L) { jccb(Assembler::parity, L); }
+  void ALWAYSINLINE jpe_b(Label& L) { jccb(Assembler::parity, L); }
+  void ALWAYSINLINE jnp_b(Label& L) { jccb(Assembler::noParity, L); }
+  void ALWAYSINLINE jpo_b(Label& L) { jccb(Assembler::noParity, L); }
+  // * No condition for this *  void ALWAYSINLINE jcxz_b(Label& L) { jccb(Assembler::cxz, L); }
+  // * No condition for this *  void ALWAYSINLINE jecxz_b(Label& L) { jccb(Assembler::cxz, L); }
 
   // Floating
 
@@ -1099,6 +1221,10 @@ public:
 
   using Assembler::vbroadcastss;
   void vbroadcastss(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch = noreg);
+
+  // Vector float blend
+  void vblendvps(XMMRegister dst, XMMRegister nds, XMMRegister src, XMMRegister mask, int vector_len, bool compute_mask = true, XMMRegister scratch = xnoreg);
+  void vblendvpd(XMMRegister dst, XMMRegister nds, XMMRegister src, XMMRegister mask, int vector_len, bool compute_mask = true, XMMRegister scratch = xnoreg);
 
   void divsd(XMMRegister dst, XMMRegister    src) { Assembler::divsd(dst, src); }
   void divsd(XMMRegister dst, Address        src) { Assembler::divsd(dst, src); }
@@ -1330,7 +1456,9 @@ public:
   void vpbroadcastq(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch = noreg);
 
   void vpcmpeqb(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void vpcmpeqb(XMMRegister dst, XMMRegister src1, Address src2, int vector_len);
 
+  void vpcmpeqw(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
   void vpcmpeqw(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void evpcmpeqd(KRegister kdst, KRegister mask, XMMRegister nds, AddressLiteral src, int vector_len, Register rscratch = noreg);
 
@@ -1420,6 +1548,8 @@ public:
       Assembler::evpsrlvd(dst, mask, nds, src, merge, vector_len);
     }
   }
+
+  using Assembler::evpsrlq;
   void evpsrlq(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int vector_len, bool is_varshift) {
     if (!is_varshift) {
       Assembler::evpsrlq(dst, mask, nds, src, merge, vector_len);
@@ -1441,6 +1571,7 @@ public:
       Assembler::evpsravd(dst, mask, nds, src, merge, vector_len);
     }
   }
+  using Assembler::evpsraq;
   void evpsraq(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int vector_len, bool is_varshift) {
     if (!is_varshift) {
       Assembler::evpsraq(dst, mask, nds, src, merge, vector_len);
@@ -1777,8 +1908,17 @@ public:
   using Assembler::evpandq;
   void evpandq(XMMRegister dst, XMMRegister nds, AddressLiteral src, int vector_len, Register rscratch = noreg);
 
+  using Assembler::evpaddq;
+  void evpaddq(XMMRegister dst, KRegister mask, XMMRegister nds, AddressLiteral src, bool merge, int vector_len, Register rscratch = noreg);
+
   using Assembler::evporq;
   void evporq(XMMRegister dst, XMMRegister nds, AddressLiteral src, int vector_len, Register rscratch = noreg);
+
+  using Assembler::vpshufb;
+  void vpshufb(XMMRegister dst, XMMRegister nds, AddressLiteral src, int vector_len, Register rscratch = noreg);
+
+  using Assembler::vpor;
+  void vpor(XMMRegister dst, XMMRegister nds, AddressLiteral src, int vector_len, Register rscratch = noreg);
 
   using Assembler::vpternlogq;
   void vpternlogq(XMMRegister dst, int imm8, XMMRegister src2, AddressLiteral src3, int vector_len, Register rscratch = noreg);
@@ -1877,7 +2017,7 @@ public:
                                Register yz_idx, Register idx, Register jdx,
                                Register carry, Register product,
                                Register carry2);
-  void multiply_to_len(Register x, Register xlen, Register y, Register ylen, Register z, Register zlen,
+  void multiply_to_len(Register x, Register xlen, Register y, Register ylen, Register z, Register tmp0,
                        Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register tmp5);
   void square_rshift(Register x, Register len, Register z, Register tmp1, Register tmp3,
                      Register tmp4, Register tmp5, Register rdxReg, Register raxReg);
@@ -2008,6 +2148,14 @@ public:
 
   void check_stack_alignment(Register sp, const char* msg, unsigned bias = 0, Register tmp = noreg);
 
+  void lightweight_lock(Register basic_lock, Register obj, Register reg_rax, Register thread, Register tmp, Label& slow);
+  void lightweight_unlock(Register obj, Register reg_rax, Register thread, Register tmp, Label& slow);
+
+#ifdef _LP64
+  void save_legacy_gprs();
+  void restore_legacy_gprs();
+  void setcc(Assembler::Condition comparison, Register dst);
+#endif
 };
 
 /**

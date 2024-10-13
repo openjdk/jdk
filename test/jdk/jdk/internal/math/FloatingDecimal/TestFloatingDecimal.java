@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,12 @@
 
 import java.util.Random;
 import jdk.internal.math.FloatingDecimal;
+
+import jdk.test.lib.RandomFactory;
+
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /*
 OldFloatingDecimalForTest
@@ -57,48 +63,35 @@ public class jdk.internal.math.FloatingDecimal {
 /**
  * @test
  * @bug 7032154
- * @summary unit tests of FloatingDecimal
+ * @summary unit tests of FloatingDecimal (use -Dseed=X to set PRANDOM seed)
  * @modules java.base/jdk.internal.math
+ * @library ..
+ * @library /test/lib
  * @library /java/lang/Math
+ * @build jdk.test.lib.RandomFactory
  * @build DoubleConsts FloatConsts
- * @run main TestFloatingDecimal
+ * @run junit TestFloatingDecimal
  * @author Brian Burkhalter
  * @key randomness
  */
 public class TestFloatingDecimal {
-    private static enum ResultType {
-        RESULT_EXCEPTION,
-        RESULT_PRINT
-    }
+    private static final int NUM_RANDOM_TESTS = 100_000;
 
-    private static final ResultType RESULT_TYPE = ResultType.RESULT_PRINT;
-    private static final int NUM_RANDOM_TESTS = 100000;
-
-    private static final Random RANDOM = new Random();
-
-    private static void result(String message) {
-        switch (RESULT_TYPE) {
-            case RESULT_EXCEPTION:
-                throw new RuntimeException(message);
-            case RESULT_PRINT:
-                System.err.println(message);
-                break;
-            default:
-                assert false;
-        }
-    }
+    private static final Random RANDOM = RandomFactory.getRandom();
 
     private static int check(String test, Object expected, Object actual) {
         int failures = 0;
         if(!actual.equals(expected)) {
             failures++;
-            result("Test "+test+" expected "+expected+" but obtained "+actual);
+            System.err.println("Test " + test +
+                               " expected " + expected +
+                               " but obtained " + actual);
         }
         return failures;
     }
 
-    private static int testAppendToDouble() {
-        System.out.println("  testAppendToDouble");
+    @Test
+    public void testAppendToDouble() {
         int failures = 0;
 
         for(int i = 0; i < NUM_RANDOM_TESTS; i++) {
@@ -119,11 +112,11 @@ public class TestFloatingDecimal {
             }
         }
 
-        return failures;
+        assertEquals(0, failures);
     }
 
-    private static int testAppendToFloat() {
-        System.out.println("  testAppendToFloat");
+    @Test
+    public void testAppendToFloat() {
         int failures = 0;
 
         for(int i = 0; i < NUM_RANDOM_TESTS; i++) {
@@ -144,21 +137,11 @@ public class TestFloatingDecimal {
             }
         }
 
-        return failures;
+        assertEquals(0, failures);
     }
 
-    private static int testAppendTo() {
-        System.out.println("testAppendTo");
-        int failures = 0;
-
-        failures += testAppendToDouble();
-        failures += testAppendToFloat();
-
-        return failures;
-    }
-
-    private static int testParseDouble() {
-        System.out.println("  testParseDouble");
+    @Test
+    public void testParseDouble() {
         int failures = 0;
 
         for(int i = 0; i < NUM_RANDOM_TESTS; i++) {
@@ -177,11 +160,11 @@ public class TestFloatingDecimal {
             }
         }
 
-        return failures;
+        assertEquals(0, failures);
     }
 
-    private static int testParseFloat() {
-        System.out.println("  testParseFloat");
+    @Test
+    public void testParseFloat() {
         int failures = 0;
 
         for(int i = 0; i < NUM_RANDOM_TESTS; i++) {
@@ -200,21 +183,11 @@ public class TestFloatingDecimal {
             }
         }
 
-        return failures;
+        assertEquals(0, failures);
     }
 
-    private static int testParse() {
-        System.out.println("testParse");
-        int failures = 0;
-
-        failures += testParseDouble();
-        failures += testParseFloat();
-
-        return failures;
-    }
-
-    private static int testToJavaFormatStringDoubleFixed() {
-        System.out.println("    testToJavaFormatStringDoubleFixed");
+    @Test
+    public void testToJavaFormatStringDoubleFixed() {
         int failures = 0;
 
         double[] d = new double [] {
@@ -228,11 +201,11 @@ public class TestFloatingDecimal {
             failures += check("testToJavaFormatStringDoubleFixed", ofd.toJavaFormatString(), FloatingDecimal.toJavaFormatString(d[i]));
         }
 
-        return failures;
+        assertEquals(0, failures);
     }
 
-    private static int testToJavaFormatStringDoubleRandom() {
-        System.out.println("    testToJavaFormatStringDoubleRandom");
+    @Test
+    public void testToJavaFormatStringDoubleRandom() {
         int failures = 0;
 
         for(int i = 0; i < NUM_RANDOM_TESTS; i++) {
@@ -247,19 +220,11 @@ public class TestFloatingDecimal {
             }
         }
 
-        return failures;
+        assertEquals(0, failures);
     }
 
-    private static int testToJavaFormatStringDouble() {
-        System.out.println("  testToJavaFormatStringDouble");
-        int failures = 0;
-        failures += testToJavaFormatStringDoubleFixed();
-        failures += testToJavaFormatStringDoubleRandom();
-        return failures;
-    }
-
-    private static int testToJavaFormatStringFloatFixed() {
-        System.out.println("    testToJavaFormatStringFloatFixed");
+    @Test
+    public void testToJavaFormatStringFloatFixed() {
         int failures = 0;
 
         float[] f = new float[] {
@@ -273,11 +238,11 @@ public class TestFloatingDecimal {
             failures += check("testToJavaFormatStringFloatFixed", ofd.toJavaFormatString(), FloatingDecimal.toJavaFormatString(f[i]));
         }
 
-        return failures;
+        assertEquals(0, failures);
     }
 
-    private static int testToJavaFormatStringFloatRandom() {
-        System.out.println("    testToJavaFormatStringFloatRandom");
+    @Test
+    public void testToJavaFormatStringFloatRandom() {
         int failures = 0;
 
         for(int i = 0; i < NUM_RANDOM_TESTS; i++) {
@@ -292,38 +257,6 @@ public class TestFloatingDecimal {
             }
         }
 
-        return failures;
-    }
-
-    private static int testToJavaFormatStringFloat() {
-        System.out.println("  testToJavaFormatStringFloat");
-        int failures = 0;
-
-        failures += testToJavaFormatStringFloatFixed();
-        failures += testToJavaFormatStringFloatRandom();
-
-        return failures;
-    }
-
-    private static int testToJavaFormatString() {
-        System.out.println("testToJavaFormatString");
-        int failures = 0;
-
-        failures += testToJavaFormatStringDouble();
-        failures += testToJavaFormatStringFloat();
-
-        return failures;
-    }
-
-    public static void main(String[] args) {
-        int failures = 0;
-
-        failures += testAppendTo();
-        failures += testParse();
-        failures += testToJavaFormatString();
-
-        if (failures != 0) {
-            throw new RuntimeException("" + failures + " failures while testing FloatingDecimal");
-        }
+        assertEquals(0, failures);
     }
 }

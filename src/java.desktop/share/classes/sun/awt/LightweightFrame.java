@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,7 +141,7 @@ public abstract class LightweightFrame extends Frame {
      *
      * @return the scale factor
      * @see #notifyDisplayChanged(int)
-     * @Deprecated replaced by {@link #getScaleFactorX()} and
+     * @deprecated replaced by {@link #getScaleFactorX()} and
      * {@link #getScaleFactorY}
      */
     @Deprecated(since = "9")
@@ -171,7 +171,7 @@ public abstract class LightweightFrame extends Frame {
      * Called when display of the hosted frame is changed.
      *
      * @param scaleFactor the scale factor
-     * @Deprecated replaced by {@link #notifyDisplayChanged(double, double)}
+     * @deprecated replaced by {@link #notifyDisplayChanged(double, double)}
      */
     @Deprecated(since = "9")
     public abstract void notifyDisplayChanged(int scaleFactor);

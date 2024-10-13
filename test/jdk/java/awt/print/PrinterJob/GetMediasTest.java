@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 6653384
+ * @key printer
  * @summary No exception should be thrown.
  * @run main GetMediasTest
  */

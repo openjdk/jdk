@@ -1,4 +1,5 @@
 java/lang/EnumConstantNotPresentException::EnumConstantNotPresentException(Ljava/lang/Class;Ljava/lang/String;)
+java/lang/Math::random()
 java/lang/Object::notify()
 java/lang/Object::notifyAll()
 java/lang/Object::toString()

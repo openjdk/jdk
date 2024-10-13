@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,7 +92,7 @@ public class WindowPropertyGetter {
                 return XConstants.Success;
             }
 
-            // Fix for performance problem - IgnodeBadWindowHandler is
+            // Fix for performance problem - IgnoreBadWindowHandler is
             // used too much without reason, just ignore it
             if (errorHandler instanceof XErrorHandler.IgnoreBadWindowHandler) {
                 errorHandler = null;

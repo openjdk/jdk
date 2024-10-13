@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,15 +61,14 @@ final class WhileOps {
     static <T> Stream<T> makeTakeWhileRef(AbstractPipeline<?, T, ?> upstream,
                                           Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate);
-        return new ReferencePipeline.StatefulOp<T, T>(upstream, StreamShape.REFERENCE, TAKE_FLAGS) {
+        return new ReferencePipeline.StatefulOp<>(upstream, StreamShape.REFERENCE, TAKE_FLAGS) {
             @Override
             <P_IN> Spliterator<T> opEvaluateParallelLazy(PipelineHelper<T> helper,
                                                          Spliterator<P_IN> spliterator) {
                 if (StreamOpFlag.ORDERED.isKnown(helper.getStreamAndOpFlags())) {
                     return opEvaluateParallel(helper, spliterator, Nodes.castingArray())
                             .spliterator();
-                }
-                else {
+                } else {
                     return new UnorderedWhileSpliterator.OfRef.Taking<>(
                             helper.wrapSpliterator(spliterator), false, predicate);
                 }
@@ -85,7 +84,7 @@ final class WhileOps {
 
             @Override
             Sink<T> opWrapSink(int flags, Sink<T> sink) {
-                return new Sink.ChainedReference<T, T>(sink) {
+                return new Sink.ChainedReference<>(sink) {
                     boolean take = true;
 
                     @Override
@@ -118,15 +117,14 @@ final class WhileOps {
     static IntStream makeTakeWhileInt(AbstractPipeline<?, Integer, ?> upstream,
                                       IntPredicate predicate) {
         Objects.requireNonNull(predicate);
-        return new IntPipeline.StatefulOp<Integer>(upstream, StreamShape.INT_VALUE, TAKE_FLAGS) {
+        return new IntPipeline.StatefulOp<>(upstream, StreamShape.INT_VALUE, TAKE_FLAGS) {
             @Override
             <P_IN> Spliterator<Integer> opEvaluateParallelLazy(PipelineHelper<Integer> helper,
                                                                Spliterator<P_IN> spliterator) {
                 if (StreamOpFlag.ORDERED.isKnown(helper.getStreamAndOpFlags())) {
                     return opEvaluateParallel(helper, spliterator, Integer[]::new)
                             .spliterator();
-                }
-                else {
+                } else {
                     return new UnorderedWhileSpliterator.OfInt.Taking(
                             (Spliterator.OfInt) helper.wrapSpliterator(spliterator), false, predicate);
                 }
@@ -142,7 +140,7 @@ final class WhileOps {
 
             @Override
             Sink<Integer> opWrapSink(int flags, Sink<Integer> sink) {
-                return new Sink.ChainedInt<Integer>(sink) {
+                return new Sink.ChainedInt<>(sink) {
                     boolean take = true;
 
                     @Override
@@ -175,15 +173,14 @@ final class WhileOps {
     static LongStream makeTakeWhileLong(AbstractPipeline<?, Long, ?> upstream,
                                         LongPredicate predicate) {
         Objects.requireNonNull(predicate);
-        return new LongPipeline.StatefulOp<Long>(upstream, StreamShape.LONG_VALUE, TAKE_FLAGS) {
+        return new LongPipeline.StatefulOp<>(upstream, StreamShape.LONG_VALUE, TAKE_FLAGS) {
             @Override
             <P_IN> Spliterator<Long> opEvaluateParallelLazy(PipelineHelper<Long> helper,
                                                             Spliterator<P_IN> spliterator) {
                 if (StreamOpFlag.ORDERED.isKnown(helper.getStreamAndOpFlags())) {
                     return opEvaluateParallel(helper, spliterator, Long[]::new)
                             .spliterator();
-                }
-                else {
+                } else {
                     return new UnorderedWhileSpliterator.OfLong.Taking(
                             (Spliterator.OfLong) helper.wrapSpliterator(spliterator), false, predicate);
                 }
@@ -199,7 +196,7 @@ final class WhileOps {
 
             @Override
             Sink<Long> opWrapSink(int flags, Sink<Long> sink) {
-                return new Sink.ChainedLong<Long>(sink) {
+                return new Sink.ChainedLong<>(sink) {
                     boolean take = true;
 
                     @Override
@@ -232,15 +229,14 @@ final class WhileOps {
     static DoubleStream makeTakeWhileDouble(AbstractPipeline<?, Double, ?> upstream,
                                             DoublePredicate predicate) {
         Objects.requireNonNull(predicate);
-        return new DoublePipeline.StatefulOp<Double>(upstream, StreamShape.DOUBLE_VALUE, TAKE_FLAGS) {
+        return new DoublePipeline.StatefulOp<>(upstream, StreamShape.DOUBLE_VALUE, TAKE_FLAGS) {
             @Override
             <P_IN> Spliterator<Double> opEvaluateParallelLazy(PipelineHelper<Double> helper,
                                                               Spliterator<P_IN> spliterator) {
                 if (StreamOpFlag.ORDERED.isKnown(helper.getStreamAndOpFlags())) {
                     return opEvaluateParallel(helper, spliterator, Double[]::new)
                             .spliterator();
-                }
-                else {
+                } else {
                     return new UnorderedWhileSpliterator.OfDouble.Taking(
                             (Spliterator.OfDouble) helper.wrapSpliterator(spliterator), false, predicate);
                 }
@@ -256,7 +252,7 @@ final class WhileOps {
 
             @Override
             Sink<Double> opWrapSink(int flags, Sink<Double> sink) {
-                return new Sink.ChainedDouble<Double>(sink) {
+                return new Sink.ChainedDouble<>(sink) {
                     boolean take = true;
 
                     @Override

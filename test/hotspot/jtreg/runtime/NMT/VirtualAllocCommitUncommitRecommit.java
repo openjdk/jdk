@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,10 +33,7 @@
  *
  */
 
-import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.JDKToolFinder;
-
 import jdk.test.whitebox.WhiteBox;
 
 public class VirtualAllocCommitUncommitRecommit {
@@ -49,16 +46,10 @@ public class VirtualAllocCommitUncommitRecommit {
         long reserveSize = 4 * 1024 * 1024; // 4096KB
         long addr;
 
-        String pid = Long.toString(ProcessTools.getProcessId());
-        ProcessBuilder pb = new ProcessBuilder();
-
         // reserve
         addr = wb.NMTReserveMemory(reserveSize);
-        pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid,
-                "VM.native_memory", "detail" });
-
-        output = new OutputAnalyzer(pb.start());
-        output.shouldContain("Test (reserved=4096KB, committed=0KB)");
+        output = NMTTestUtils.startJcmdVMNativeMemoryDetail();
+        checkReservedCommittedSummary(output, 4096, 0);
         output.shouldMatch("\\[0x[0]*" + Long.toHexString(addr) + " - 0x[0]*"
                            + Long.toHexString(addr + reserveSize)
                            + "\\] reserved 4096KB for Test");
@@ -76,8 +67,8 @@ public class VirtualAllocCommitUncommitRecommit {
         wb.NMTCommitMemory(addrC, commitSize);
         wb.NMTCommitMemory(addrD, commitSize);
 
-        output = new OutputAnalyzer(pb.start());
-        output.shouldContain("Test (reserved=4096KB, committed=512KB)");
+        output = NMTTestUtils.startJcmdVMNativeMemoryDetail();
+        checkReservedCommittedSummary(output, 4096, 512);
 
         output.shouldMatch("\\[0x[0]*" + Long.toHexString(addr) + " - 0x[0]*"
                            + Long.toHexString(addr + reserveSize)
@@ -86,9 +77,8 @@ public class VirtualAllocCommitUncommitRecommit {
         wb.NMTUncommitMemory(addrB, commitSize);
         wb.NMTUncommitMemory(addrC, commitSize);
 
-        output = new OutputAnalyzer(pb.start());
-        output.shouldContain("Test (reserved=4096KB, committed=256KB)");
-
+        output = NMTTestUtils.startJcmdVMNativeMemoryDetail();
+        checkReservedCommittedSummary(output, 4096, 256);
         output.shouldMatch("\\[0x[0]*" + Long.toHexString(addr) + " - 0x[0]*"
                             + Long.toHexString(addr + reserveSize)
                             + "\\] reserved 4096KB for Test");
@@ -97,8 +87,8 @@ public class VirtualAllocCommitUncommitRecommit {
         wb.NMTCommitMemory(addrE, commitSize);
         wb.NMTCommitMemory(addrF, commitSize);
 
-        output = new OutputAnalyzer(pb.start());
-        output.shouldContain("Test (reserved=4096KB, committed=512KB)");
+        output = NMTTestUtils.startJcmdVMNativeMemoryDetail();
+        checkReservedCommittedSummary(output, 4096, 512);
         output.shouldMatch("\\[0x[0]*" + Long.toHexString(addr) + " - 0x[0]*"
                            + Long.toHexString(addr + reserveSize)
                            + "\\] reserved 4096KB for Test");
@@ -106,8 +96,8 @@ public class VirtualAllocCommitUncommitRecommit {
         // uncommit A
         wb.NMTUncommitMemory(addrA, commitSize);
 
-        output = new OutputAnalyzer(pb.start());
-        output.shouldContain("Test (reserved=4096KB, committed=384KB)");
+        output = NMTTestUtils.startJcmdVMNativeMemoryDetail();
+        checkReservedCommittedSummary(output, 4096, 384);
         output.shouldMatch("\\[0x[0]*" + Long.toHexString(addr) + " - 0x[0]*"
                            + Long.toHexString(addr + reserveSize)
                            + "\\] reserved 4096KB for Test");
@@ -117,8 +107,8 @@ public class VirtualAllocCommitUncommitRecommit {
         wb.NMTCommitMemory(addrB, commitSize);
         wb.NMTCommitMemory(addrC, commitSize);
 
-        output = new OutputAnalyzer(pb.start());
-        output.shouldContain("Test (reserved=4096KB, committed=768KB)");
+        output = NMTTestUtils.startJcmdVMNativeMemoryDetail();
+        checkReservedCommittedSummary(output, 4096, 768);
         output.shouldMatch("\\[0x[0]*" + Long.toHexString(addr) + " - 0x[0]*"
                            + Long.toHexString(addr + reserveSize)
                            + "\\] reserved 4096KB for Test");
@@ -131,17 +121,27 @@ public class VirtualAllocCommitUncommitRecommit {
         wb.NMTUncommitMemory(addrE, commitSize);
         wb.NMTUncommitMemory(addrF, commitSize);
 
-        output = new OutputAnalyzer(pb.start());
-        output.shouldContain("Test (reserved=4096KB, committed=0KB)");
+        output = NMTTestUtils.startJcmdVMNativeMemoryDetail();
+        checkReservedCommittedSummary(output, 4096, 0);
         output.shouldMatch("\\[0x[0]*" + Long.toHexString(addr) + " - 0x[0]*"
                            + Long.toHexString(addr + reserveSize)
                            + "\\] reserved 4096KB for Test");
 
         // release
         wb.NMTReleaseMemory(addr, reserveSize);
-        output = new OutputAnalyzer(pb.start());
-        output.shouldNotContain("Test (reserved=");
+        output = NMTTestUtils.startJcmdVMNativeMemoryDetail();
+        checkReservedCommittedSummary(output, 0, 0);
         output.shouldNotMatch("\\[0x[0]*" + Long.toHexString(addr) + " - 0x[0]*"
                 + Long.toHexString(addr + reserveSize) + "\\] reserved 4096KB for Test");
+    }
+
+    // running peak counter
+    static long peakKB = 0;
+
+    public static void checkReservedCommittedSummary(OutputAnalyzer output, long reservedKB, long committedKB) {
+        if (committedKB > peakKB) {
+            peakKB = committedKB;
+        }
+        NMTTestUtils.checkReservedCommittedSummary(output, reservedKB, committedKB, peakKB);
     }
 }

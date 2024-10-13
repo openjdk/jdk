@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
 #include "runtime/atomic.hpp"
 
 inline bool ZAbort::should_abort() {
-  return Atomic::load_acquire(&_should_abort);
+  return Atomic::load(&_should_abort);
 }
 
 #endif // SHARE_GC_Z_ZABORT_INLINE_HPP

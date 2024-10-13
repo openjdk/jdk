@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -82,7 +82,7 @@ AC_DEFUN_ONCE([LIB_DETERMINE_DEPENDENCIES],
   fi
 
   # Check if ffi is needed
-  if HOTSPOT_CHECK_JVM_VARIANT(zero); then
+  if HOTSPOT_CHECK_JVM_VARIANT(zero) || test "x$ENABLE_FALLBACK_LINKER" = "xtrue"; then
     NEEDS_LIB_FFI=true
   else
     NEEDS_LIB_FFI=false
@@ -99,20 +99,14 @@ AC_DEFUN([LIB_SETUP_JVM_LIBS],
   if HOTSPOT_CHECK_JVM_VARIANT(zero); then
     if test "x$OPENJDK_$1_OS" = xlinux &&
         (test "x$OPENJDK_$1_CPU" = xarm ||
-         test "x$OPENJDK_$1_CPU" = xm68k ||
-         test "x$OPENJDK_$1_CPU" = xmips ||
-         test "x$OPENJDK_$1_CPU" = xmipsel ||
-         test "x$OPENJDK_$1_CPU" = xppc ||
-         test "x$OPENJDK_$1_CPU" = xsh ||
-         test "x$OPENJDK_$1_CPU" = xriscv32); then
+        test "x$OPENJDK_$1_CPU" = xm68k ||
+        test "x$OPENJDK_$1_CPU" = xmips ||
+        test "x$OPENJDK_$1_CPU" = xmipsel ||
+        test "x$OPENJDK_$1_CPU" = xppc ||
+        test "x$OPENJDK_$1_CPU" = xsh ||
+        test "x$OPENJDK_$1_CPU" = xriscv32); then
       BASIC_JVM_LIBS_$1="$BASIC_JVM_LIBS_$1 -latomic"
     fi
-  fi
-
-  # Because RISC-V only has word-sized atomics, it requires libatomic where
-  # other common architectures do not, so link libatomic by default.
-  if test "x$OPENJDK_$1_OS" = xlinux && test "x$OPENJDK_$1_CPU" = xriscv64; then
-    BASIC_JVM_LIBS_$1="$BASIC_JVM_LIBS_$1 -latomic"
   fi
 ])
 
@@ -134,12 +128,6 @@ AC_DEFUN_ONCE([LIB_SETUP_LIBRARIES],
   LIB_SETUP_X11
 
   LIB_TESTS_SETUP_GTEST
-
-  BASIC_JDKLIB_LIBS=""
-  BASIC_JDKLIB_LIBS_TARGET=""
-  if test "x$TOOLCHAIN_TYPE" != xmicrosoft; then
-    BASIC_JDKLIB_LIBS="-ljava -ljvm"
-  fi
 
   # Math library
   BASIC_JVM_LIBS="$LIBM"
@@ -176,14 +164,10 @@ AC_DEFUN_ONCE([LIB_SETUP_LIBRARIES],
   LIB_SETUP_JVM_LIBS(BUILD)
   LIB_SETUP_JVM_LIBS(TARGET)
 
-  JDKLIB_LIBS="$BASIC_JDKLIB_LIBS"
-  JDKEXE_LIBS=""
   JVM_LIBS="$BASIC_JVM_LIBS $BASIC_JVM_LIBS_TARGET"
-  OPENJDK_BUILD_JDKLIB_LIBS="$BASIC_JDKLIB_LIBS"
+  OPENJDK_BUILD_JDKLIB_LIBS=""
   OPENJDK_BUILD_JVM_LIBS="$BASIC_JVM_LIBS $BASIC_JVM_LIBS_BUILD"
 
-  AC_SUBST(JDKLIB_LIBS)
-  AC_SUBST(JDKEXE_LIBS)
   AC_SUBST(JVM_LIBS)
   AC_SUBST(OPENJDK_BUILD_JDKLIB_LIBS)
   AC_SUBST(OPENJDK_BUILD_JVM_LIBS)

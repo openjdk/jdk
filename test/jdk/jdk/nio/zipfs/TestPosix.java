@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, SAP SE. All rights reserved.
+ * Copyright (c) 2019, 2024, SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,23 +25,16 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.file.*;
-import java.nio.file.attribute.BasicFileAttributes;
-import java.nio.file.attribute.GroupPrincipal;
-import java.nio.file.attribute.PosixFileAttributeView;
-import java.nio.file.attribute.PosixFileAttributes;
-import java.nio.file.attribute.PosixFilePermission;
-import java.nio.file.attribute.PosixFilePermissions;
-import java.nio.file.attribute.UserPrincipal;
+import java.nio.file.attribute.*;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.time.Instant;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -49,7 +42,7 @@ import java.util.spi.ToolProvider;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import static java.nio.file.attribute.PosixFilePermission.GROUP_EXECUTE;
 import static java.nio.file.attribute.PosixFilePermission.GROUP_READ;
@@ -60,20 +53,20 @@ import static java.nio.file.attribute.PosixFilePermission.OTHERS_WRITE;
 import static java.nio.file.attribute.PosixFilePermission.OWNER_EXECUTE;
 import static java.nio.file.attribute.PosixFilePermission.OWNER_READ;
 import static java.nio.file.attribute.PosixFilePermission.OWNER_WRITE;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.assertNull;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @test
- * @bug 8213031 8273935
+ * @bug 8213031 8273935 8324635
  * @summary Test POSIX ZIP file operations.
  * @modules jdk.zipfs
  *          jdk.jartool
- * @run testng TestPosix
- * @run testng/othervm/java.security.policy=test.policy.posix TestPosix
+ * @run junit TestPosix
+ * @run junit/othervm/java.security.policy=test.policy.posix TestPosix
  */
 public class TestPosix {
     private static final ToolProvider JAR_TOOL = ToolProvider.findFirst("jar")
@@ -298,7 +291,8 @@ public class TestPosix {
         return fs;
     }
 
-    private FileSystem createEmptyZipFile(Path zpath, Map<String, Object> env) throws IOException {
+    // The caller is responsible for closing the FileSystem returned by this method
+    private FileSystem createEmptyZipFileSystem(Path zpath, Map<String, Object> env) throws IOException {
         if (Files.exists(zpath)) {
             System.out.println("Deleting old " + zpath + "...");
             Files.delete(zpath);
@@ -364,7 +358,7 @@ public class TestPosix {
                 fail("Caught IOException reading file attributes (basic) " + name + ": " + e.getMessage());
             }
         }
-        assertEquals(Files.isDirectory(file), ei.isDir, "Unexpected directory attribute for:" + System.lineSeparator() + attrs);
+        assertEquals(ei.isDir, Files.isDirectory(file), "Unexpected directory attribute for:" + System.lineSeparator() + attrs);
 
         if (expected == checkExpects.contentOnly) {
             return;
@@ -402,7 +396,7 @@ public class TestPosix {
             });
         }
         System.out.println("Number of entries: " + entries.get() + ".");
-        assertEquals(entries.get(), entriesCreated, "File contained wrong number of entries.");
+        assertEquals(entriesCreated, entries.get(), "File contained wrong number of entries.");
     }
 
     private void checkEntries(FileSystem fs, checkExpects expected) throws IOException {
@@ -429,7 +423,7 @@ public class TestPosix {
             assertNull(actual, "Permissions are not null");
         } else {
             assertNotNull(actual, "Permissions are null.");
-            assertEquals(actual.size(), expected.size(), "Unexpected number of permissions (" +
+            assertEquals(expected.size(), actual.size(), "Unexpected number of permissions (" +
                 actual.size() + " received vs " + expected.size() + " expected).");
             for (PosixFilePermission p : expected) {
                 assertTrue(actual.contains(p), "Posix permission " + p + " missing.");
@@ -487,7 +481,7 @@ public class TestPosix {
     public void testCopy() throws IOException {
         // copy zip to zip with default options
         try (FileSystem zipIn = createTestZipFile(ZIP_FILE, ENV_DEFAULT);
-             FileSystem zipOut = createEmptyZipFile(ZIP_FILE_COPY, ENV_DEFAULT)) {
+             FileSystem zipOut = createEmptyZipFileSystem(ZIP_FILE_COPY, ENV_DEFAULT)) {
             Path from = zipIn.getPath("/");
             Files.walkFileTree(from, new CopyVisitor(from, zipOut.getPath("/")));
         }
@@ -523,7 +517,7 @@ public class TestPosix {
 
         // the target zip file is opened with Posix support
         // but we expect no permission data to be copied using the default copy method
-        try (FileSystem tgtZip = createEmptyZipFile(ZIP_FILE_COPY, ENV_POSIX)) {
+        try (FileSystem tgtZip = createEmptyZipFileSystem(ZIP_FILE_COPY, ENV_POSIX)) {
             Files.walkFileTree(UNZIP_DIR, new CopyVisitor(UNZIP_DIR, tgtZip.getPath("/")));
         }
 
@@ -566,7 +560,7 @@ public class TestPosix {
         // permissions should have been propagated to file system
         checkEntries(UNZIP_DIR, checkExpects.permsPosix);
 
-        try (FileSystem tgtZip = createEmptyZipFile(ZIP_FILE_COPY, ENV_POSIX)) {
+        try (FileSystem tgtZip = createEmptyZipFileSystem(ZIP_FILE_COPY, ENV_POSIX)) {
             // Make some files owner readable to be able to copy them into the zipfs
             addOwnerRead(UNZIP_DIR);
 
@@ -609,18 +603,18 @@ public class TestPosix {
             var owner = Files.getOwner(entry);
             assertNotNull(owner, "owner should not be null");
             if (defaultOwner != null) {
-                assertEquals(owner.getName(), defaultOwner);
+                assertEquals(defaultOwner, owner.getName());
             }
             Files.setOwner(entry, DUMMY_USER);
-            assertEquals(Files.getOwner(entry), DUMMY_USER);
+            assertEquals(DUMMY_USER, Files.getOwner(entry));
             var view = Files.getFileAttributeView(entry, PosixFileAttributeView.class);
             var group = view.readAttributes().group();
             assertNotNull(group, "group must not be null");
             if (defaultGroup != null) {
-                assertEquals(group.getName(), defaultGroup);
+                assertEquals(defaultGroup, group.getName());
             }
             view.setGroup(DUMMY_GROUP);
-            assertEquals(view.readAttributes().group(), DUMMY_GROUP);
+            assertEquals(DUMMY_GROUP, view.readAttributes().group());
             entry = zipIn.getPath("/uexec");
             Files.setPosixFilePermissions(entry, GR); // will be persisted
             comparePermissions(GR, Files.getPosixFilePermissions(entry));
@@ -632,9 +626,9 @@ public class TestPosix {
         {
             var entry = zipIn.getPath("/noperms");
             comparePermissions(UR, Files.getPosixFilePermissions(entry));
-            assertEquals(Files.getOwner(entry).getName(), "auser");
+            assertEquals("auser", Files.getOwner(entry).getName());
             var view = Files.getFileAttributeView(entry, PosixFileAttributeView.class);
-            assertEquals(view.readAttributes().group().getName(), "agroup");
+            assertEquals("agroup", view.readAttributes().group().getName());
             // check if the change to permissions of /uexec was persisted
             comparePermissions(GR, Files.getPosixFilePermissions(zipIn.getPath("/uexec")));
         }
@@ -645,9 +639,9 @@ public class TestPosix {
         {
             var entry = zipIn.getPath("/noperms");
             comparePermissions(UR, Files.getPosixFilePermissions(entry));
-            assertEquals(Files.getOwner(entry), DUMMY_USER);
+            assertEquals(DUMMY_USER, Files.getOwner(entry));
             var view = Files.getFileAttributeView(entry, PosixFileAttributeView.class);
-            assertEquals(view.readAttributes().group(), DUMMY_GROUP);
+            assertEquals(DUMMY_GROUP, view.readAttributes().group());
         }
     }
 
@@ -722,6 +716,154 @@ public class TestPosix {
 
         // the run method catches IOExceptions, we need to expose them
         int rc = JAR_TOOL.run(System.out, System.err, "xvf", JAR_FILE.toString());
-        assertEquals(rc, 0, "Return code of jar call is " + rc + " but expected 0");
+        assertEquals(0, rc, "Return code of jar call is " + rc + " but expected 0");
+    }
+
+    /**
+     * Verify that calling Files.setPosixFilePermissions with the current
+     * permission set does not change the 'external file attributes' field.
+     *
+     * @throws IOException if an unexpected IOException occurs
+     */
+    @Test
+    public void setPermissionsShouldPreserveRemainingBits() throws IOException {
+        assertExternalFileAttributeUnchanged(fs -> {
+            Path path = fs.getPath("hello.txt");
+            // Set permissions to their current value
+            Files.setPosixFilePermissions(path, Files.getPosixFilePermissions(path));
+        });
+    }
+
+    /**
+     * Verify that calling Files.setPosixFilePermissions on an MS-DOS entry
+     * results in only the expected permission bits being set
+     *
+     * @throws IOException if an unexpected IOException occurs
+     */
+    @Test
+    public void setPermissionsShouldConvertToUnix() throws IOException {
+        // The default environment creates MS-DOS entries, with zero 'external file attributes'
+        try (FileSystem fs = createEmptyZipFileSystem(ZIP_FILE, ENV_DEFAULT)) {
+            Path path = fs.getPath("hello.txt");
+            Files.createFile(path);
+        }
+        // The CEN header is now as follows:
+        //
+        //   004A CENTRAL HEADER #1     02014B50
+        //   004E Created Zip Spec      14 '2.0'
+        //   004F Created OS            00 'MS-DOS'
+        //   0050 Extract Zip Spec      14 '2.0'
+        //   0051 Extract OS            00 'MS-DOS'
+        //   [...]
+        //   0070 Ext File Attributes   00000000
+
+        // Sanity check that all 'external file attributes' bits are all zero
+        verifyExternalFileAttribute(Files.readAllBytes(ZIP_FILE), "0");
+
+        // Convert to a UNIX entry by calling Files.setPosixFilePermissions
+        try (FileSystem fs = FileSystems.newFileSystem(ZIP_FILE, ENV_POSIX)) {
+            Path path = fs.getPath("hello.txt");
+            Files.setPosixFilePermissions(path, EnumSet.of(OWNER_READ));
+        }
+
+        // The CEN header should now be as follows:
+        //
+        // 004A CENTRAL HEADER #1     02014B50
+        // 004E Created Zip Spec      14 '2.0'
+        // 004F Created OS            03 'Unix'
+        // 0050 Extract Zip Spec      14 '2.0'
+        // 0051 Extract OS            00 'MS-DOS'
+        // [...]
+        // 0070 Ext File Attributes   01000000
+
+        // The first of the nine trailing permission bits should be set
+        verifyExternalFileAttribute(Files.readAllBytes(ZIP_FILE), "100000000");
+    }
+
+    /**
+     * Verify that a non-POSIX operation such as Files.setLastModifiedTime
+     * does not change the 'external file attributes' field.
+     *
+     * @throws IOException if an unexpected IOException occurs
+     */
+    @Test
+    public void setLastModifiedTimeShouldNotChangeExternalFileAttribute() throws IOException {
+        assertExternalFileAttributeUnchanged(fs -> {
+            Path path = fs.getPath("hello.txt");
+            Files.setLastModifiedTime(path, FileTime.from(Instant.now()));
+        });
+    }
+
+    // Represents an operation performed on a FileSystem
+    static interface FileSystemOperation {
+        void accept(FileSystem fileSystem) throws IOException;
+    }
+
+    /**
+     * Assert that running the given operation on a ZipFileSystem does not
+     * change the 'external file attributes' value of the 'hello.txt' entry
+     * @param action the action to run on the file system
+     *
+     * @throws IOException if an unexpected IOException occurs
+     */
+    private void assertExternalFileAttributeUnchanged(FileSystemOperation action) throws IOException {
+        /*
+         * The ZIP test vector used here is created using:
+         * % touch hello.txt
+         * % chmod u+s hello.txt     # setuid
+         * % chmod g+s hello.txt     # setgid
+         * % chmod +t hello.txt      # sticky
+         * % zip hello.zip hello.txt
+         * % cat hello.zip | xxd -ps
+         */
+        byte[] zip = HexFormat.of().parseHex("""
+                504b03040a0000000000d994945700000000000000000000000009001c00
+                68656c6c6f2e7478745554090003aa268365aa26836575780b000104f501
+                00000414000000504b01021e030a0000000000d994945700000000000000
+                0000000000090018000000000000000000a48f0000000068656c6c6f2e74
+                78745554050003aa26836575780b000104f50100000414000000504b0506
+                00000000010001004f000000430000000000
+                """.replaceAll("\n",""));
+
+        // Expected bit values of the 'external file attributes' CEN field in the ZIP above
+        String expectedBits = "1000111110100100";
+                            // ^^^^             file type: 1000 (regular file)
+                            //     ^            setuid: ON
+                            //      ^           setgid: ON
+                            //       ^          sticky: ON
+                            //        ^^^^^^^^^ rwxr--r--  (9 bits)
+
+        // Sanity check that 'external file attributes' has the expected value
+        verifyExternalFileAttribute(zip, expectedBits);
+
+
+        Path zipFile = Path.of("preserve-external-file-attrs.zip");
+        Files.write(zipFile, zip);
+
+        // Run the provided action on the ZipFileSystem
+        try (FileSystem fs = FileSystems.newFileSystem(zipFile, ENV_POSIX)) {
+            action.accept(fs);
+        }
+        // Running the action should not change the 'external file attributes' value
+        verifyExternalFileAttribute(Files.readAllBytes(zipFile), expectedBits);
+    }
+
+    /**
+     * Verify that the first 16 bits of the CEN field 'external file attributes' matches
+     * a given bit string
+     * @param zip the ZIP file to parse
+     * @param expectedBits a string of '0' or '1' representing the expected bits
+     */
+    private void verifyExternalFileAttribute(byte[] zip, String expectedBits) {
+        // Buffer to help parse the ZIP
+        ByteBuffer buffer = ByteBuffer.wrap(zip).order(ByteOrder.LITTLE_ENDIAN);
+        // Look up offset of first CEN header from the END header
+        int cenOff = buffer.getInt(buffer.capacity() - ZipFile.ENDHDR + ZipFile.ENDOFF);
+        // We're interested in the first 16 'unix' bits of the 32-bit 'external file attributes' field
+        int externalFileAttr = (buffer.getInt(cenOff + ZipFile.CENATX) >> 16) & 0xFFFF;
+
+        // Verify that the expected bits are set
+        assertEquals(expectedBits, Integer.toBinaryString(externalFileAttr),
+                "The 'external file attributes' field does not match the expected value:");
     }
 }

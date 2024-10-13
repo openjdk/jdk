@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -142,6 +142,7 @@ public class TTYResources extends java.util.ListResourceBundle {
         {"Illegal Argument Exception", "Illegal Argument Exception"},
         {"Illegal connector argument", "Illegal connector argument: {0}"},
         {"Illegal thread state", "Illegal thread state"},
+        {"Illegal thread state (virtual thread not suspended)", "Illegal thread state (virtual thread not suspended)"},
         {"implementor:", "implementor: {0}"},
         {"implements:", "implements: {0}"},
         {"Initializing progname", "Initializing {0} ..."},
@@ -244,7 +245,7 @@ public class TTYResources extends java.util.ListResourceBundle {
         {"Not waiting for a monitor", "  Not waiting for a monitor"},
         {"Nothing suspended.", "Nothing suspended."},
         {"object description and id", "({0}){1}"},
-        {"Operation is not supported on the target VM", "Operation is not supported on the target VM"},
+        {"Operation is not supported on the current frame", "Operation is not supported on the current frame"},
         {"operation not yet supported", "operation not yet supported"},
         {"Owned by:", "  Owned by: {0}, entry count: {1,number,integer}"},
         {"Owned monitor:", "  Owned monitor: {0}"},
@@ -477,7 +478,6 @@ public class TTYResources extends java.util.ListResourceBundle {
              "                      connect to target VM using named connector with listed argument values\n" +
              "    -dbgtrace [flags] print info for debugging {0}\n" +
              "    -trackallthreads  Track all threads, including virtual threads.\n" +
-             "                      Virtual threads are a preview feature of the Java platform.\n" +
              "    -tclient          run the application in the HotSpot(TM) Client Compiler\n" +
              "    -tserver          run the application in the HotSpot(TM) Server Compiler\n" +
              "    -R<option>        forward <option> to debuggee process if launched by jdb, otherwise ignored\n" +

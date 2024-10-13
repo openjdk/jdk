@@ -22,16 +22,36 @@
  */
 
 /*
- * @test
+ * @test id=default
  * @bug 8240654
  * @summary Test painting a large window works
  * @key headful
  * @requires (os.family == "windows")
  * @requires vm.gc.Z
- * @run main/othervm -Dsun.java2d.uiScale=1 LargeWindowPaintTest
- * @run main/othervm -Dsun.java2d.uiScale=1 -Dsun.java2d.d3d=false LargeWindowPaintTest
- * @run main/othervm -XX:+UseZGC -Dsun.java2d.uiScale=1 LargeWindowPaintTest
- * @run main/othervm -XX:+UseZGC -Dsun.java2d.uiScale=1 -Dsun.java2d.d3d=false LargeWindowPaintTest
+ * @run main/othervm -XX:-UseZGC -Dsun.java2d.uiScale=1 LargeWindowPaintTest
+ * @run main/othervm -XX:-UseZGC -Dsun.java2d.uiScale=1 -Dsun.java2d.d3d=false LargeWindowPaintTest
+ */
+
+/*
+ * @test id=ZSinglegen
+ * @bug 8240654
+ * @summary Test painting a large window works
+ * @key headful
+ * @requires (os.family == "windows")
+ * @requires vm.gc.ZSinglegen
+ * @run main/othervm -XX:+UseZGC -XX:-ZGenerational -Dsun.java2d.uiScale=1 LargeWindowPaintTest
+ * @run main/othervm -XX:+UseZGC -XX:-ZGenerational -Dsun.java2d.uiScale=1 -Dsun.java2d.d3d=false LargeWindowPaintTest
+ */
+
+/*
+ * @test id=ZGenerational
+ * @bug 8240654
+ * @summary Test painting a large window works
+ * @key headful
+ * @requires (os.family == "windows")
+ * @requires vm.gc.ZGenerational
+ * @run main/othervm -XX:+UseZGC -XX:+ZGenerational -Dsun.java2d.uiScale=1 LargeWindowPaintTest
+ * @run main/othervm -XX:+UseZGC -XX:+ZGenerational -Dsun.java2d.uiScale=1 -Dsun.java2d.d3d=false LargeWindowPaintTest
  */
 
 import java.awt.Color;

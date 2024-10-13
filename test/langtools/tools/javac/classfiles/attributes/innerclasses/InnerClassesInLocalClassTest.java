@@ -26,7 +26,8 @@
  * @bug 8042251
  * @summary Testing InnerClasses_attribute of inner classes in local class.
  * @library /tools/lib /tools/javac/lib ../lib
- * @modules jdk.jdeps/com.sun.tools.classfile
+ * @enablePreview
+ * @modules java.base/jdk.internal.classfile.impl
  *          jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  * @build toolbox.ToolBox InMemoryFileManager TestResult TestBase

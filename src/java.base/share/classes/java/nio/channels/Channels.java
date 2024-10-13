@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -260,8 +260,10 @@ public final class Channels {
      * Constructs a channel that reads bytes from the given stream.
      *
      * <p> The resulting channel will not be buffered; it will simply redirect
-     * its I/O operations to the given stream.  Closing the channel will in
-     * turn cause the stream to be closed.  </p>
+     * its I/O operations to the given stream. Reading from the resulting
+     * channel will read from the input stream and thus block until input is
+     * available or end of file is reached. Closing the channel will in turn
+     * cause the stream to be closed.  </p>
      *
      * @param  in
      *         The stream from which bytes are to be read
@@ -448,15 +450,15 @@ public final class Channels {
      *
      * <p> An invocation of this method of the form
      *
-     * <pre> {@code
+     * {@snippet lang=java :
      *     Channels.newReader(ch, csname)
-     * } </pre>
+     * }
      *
      * behaves in exactly the same way as the expression
      *
-     * <pre> {@code
+     * {@snippet lang=java :
      *     Channels.newReader(ch, Charset.forName(csName))
-     * } </pre>
+     * }
      *
      * @param  ch
      *         The channel from which bytes will be read
@@ -483,15 +485,15 @@ public final class Channels {
      *
      * <p> An invocation of this method of the form
      *
-     * <pre> {@code
+     * {@snippet lang=java :
      *     Channels.newReader(ch, charset)
-     * } </pre>
+     * }
      *
      * behaves in exactly the same way as the expression
      *
-     * <pre> {@code
-     *     Channels.newReader(ch, Charset.forName(csName).newDecoder(), -1)
-     * } </pre>
+     * {@snippet lang=java :
+     *     Channels.newReader(ch, charset.newDecoder(), -1)
+     * }
      *
      * <p> The reader's default action for malformed-input and unmappable-character
      * errors is to {@linkplain java.nio.charset.CodingErrorAction#REPORT report}
@@ -503,6 +505,8 @@ public final class Channels {
      * @param  charset The charset to be used
      *
      * @return  A new reader
+     *
+     * @since 10
      */
     public static Reader newReader(ReadableByteChannel ch, Charset charset) {
         Objects.requireNonNull(charset, "charset");
@@ -521,6 +525,9 @@ public final class Channels {
      * The resulting stream will not otherwise be buffered.  Closing the stream
      * will in turn cause the channel to be closed.  </p>
      *
+     * @implNote
+     * The value of {@code minBufferCap} is ignored.
+     *
      * @param  ch
      *         The channel to which bytes will be written
      *
@@ -530,7 +537,8 @@ public final class Channels {
      * @param  minBufferCap
      *         The minimum capacity of the internal byte buffer,
      *         or {@code -1} if an implementation-dependent
-     *         default capacity is to be used
+     *         default capacity is to be used. The value of
+     *         {@code minBufferCap} may be ignored
      *
      * @return  A new writer
      */
@@ -539,7 +547,9 @@ public final class Channels {
                                    int minBufferCap)
     {
         Objects.requireNonNull(ch, "ch");
-        return StreamEncoder.forEncoder(ch, enc.reset(), minBufferCap);
+        Objects.requireNonNull(enc, "enc");
+        OutputStream out = newOutputStream(ch);
+        return StreamEncoder.forOutputStreamWriter(out, enc.reset());
     }
 
     /**
@@ -548,15 +558,15 @@ public final class Channels {
      *
      * <p> An invocation of this method of the form
      *
-     * <pre> {@code
+     * {@snippet lang=java :
      *     Channels.newWriter(ch, csname)
-     * } </pre>
+     * }
      *
      * behaves in exactly the same way as the expression
      *
-     * <pre> {@code
+     * {@snippet lang=java :
      *     Channels.newWriter(ch, Charset.forName(csName))
-     * } </pre>
+     * }
      *
      * @param  ch
      *         The channel to which bytes will be written
@@ -583,15 +593,15 @@ public final class Channels {
      *
      * <p> An invocation of this method of the form
      *
-     * <pre> {@code
+     * {@snippet lang=java :
      *     Channels.newWriter(ch, charset)
-     * } </pre>
+     * }
      *
      * behaves in exactly the same way as the expression
      *
-     * <pre> {@code
-     *     Channels.newWriter(ch, Charset.forName(csName).newEncoder(), -1)
-     * } </pre>
+     * {@snippet lang=java :
+     *     Channels.newWriter(ch, charset.newEncoder(), -1)
+     * }
      *
      * <p> The writer's default action for malformed-input and unmappable-character
      * errors is to {@linkplain java.nio.charset.CodingErrorAction#REPORT report}
@@ -605,6 +615,8 @@ public final class Channels {
      *         The charset to be used
      *
      * @return  A new writer
+     *
+     * @since 10
      */
     public static Writer newWriter(WritableByteChannel ch, Charset charset) {
         Objects.requireNonNull(charset, "charset");

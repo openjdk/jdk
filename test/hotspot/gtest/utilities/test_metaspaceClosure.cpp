@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ public:
   MyMetaData* _a;
   MyMetaData* _b;
 
-  MyMetaData() : _a(NULL), _b(NULL) {}
+  MyMetaData() : _a(nullptr), _b(nullptr) {}
 
   MetaspaceObj::Type type() const {
     return MetaspaceObj::SymbolType; // Just lie. It doesn't matter in this test
@@ -64,7 +64,7 @@ class MyUniqueMetaspaceClosure : public MetaspaceClosure {
 public:
   MyUniqueMetaspaceClosure() {
     for (int i = 0; i < SIZE; i++) {
-      _visited[i] = NULL;
+      _visited[i] = nullptr;
     }
     _count = 0;
   }
@@ -92,7 +92,7 @@ TEST_VM(MetaspaceClosure, MSOPointerArrayRef) {
   ClassLoaderData* cld = ClassLoaderData::the_null_class_loader_data();
   Array<MyMetaData*>* array = MetadataFactory::new_array<MyMetaData*>(cld, 4, THREAD);
   for (int i = 0; i < array->length(); i++) {
-    EXPECT_TRUE(array->at(i) == NULL) << "should be initialized to null";
+    EXPECT_TRUE(array->at(i) == nullptr) << "should be initialized to null";
   }
 
   MyMetaData x;
@@ -117,8 +117,8 @@ TEST_VM(MetaspaceClosure, MSOArrayRef) {
   ClassLoaderData* cld = ClassLoaderData::the_null_class_loader_data();
   Array<MyMetaData>* array = MetadataFactory::new_array<MyMetaData>(cld, 4, THREAD);
   for (int i = 0; i < array->length(); i++) {
-    EXPECT_TRUE(array->at(i)._a == NULL) << "should be initialized to null";
-    EXPECT_TRUE(array->at(i)._b == NULL) << "should be initialized to null";
+    EXPECT_TRUE(array->at(i)._a == nullptr) << "should be initialized to null";
+    EXPECT_TRUE(array->at(i)._b == nullptr) << "should be initialized to null";
   }
 
   MyMetaData x;

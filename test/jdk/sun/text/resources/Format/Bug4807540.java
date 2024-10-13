@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,10 @@
 
 /*
  * @test %i%
- * @bug 4807540 8008577
+ * @bug 4807540 8008577 8174269
  * @modules jdk.localedata
  * @summary updating dateformat for sl_SI
- * @run main/othervm -Djava.locale.providers=JRE,SPI Bug4807540
+ * @run main Bug4807540
  */
 
 import java.text.DateFormat;
@@ -39,7 +39,7 @@ public class Bug4807540 {
     public static void main(String[] args) {
         Locale si = Locale.of("sl", "si");
 
-        String expected = "30.4.2008";
+        String expected = "30. apr. 2008";
         DateFormat dfSi = DateFormat.getDateInstance (DateFormat.MEDIUM, si);
 
         String siString = new String (dfSi.format(new Date(108, Calendar.APRIL, 30)));

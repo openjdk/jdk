@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -209,7 +209,7 @@ public interface TreeSelectionModel
       * Returns true if the path, <code>path</code>, is in the current
       * selection.
       *
-      * @param  path    the path to be loked for
+      * @param  path    the path to be looked for
       * @return         whether the {@code path} is in the current selection
       */
     boolean isPathSelected(TreePath path);

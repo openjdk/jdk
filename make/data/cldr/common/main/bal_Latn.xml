@@ -1,0 +1,540 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2024 Unicode, Inc.
+For terms of use, see http://www.unicode.org/copyright.html
+SPDX-License-Identifier: Unicode-3.0
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+-->
+<ldml>
+	<identity>
+		<version number="$Revision$"/>
+		<language type="bal"/>
+		<script type="Latn"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="bal">بلۆچی</language>
+			<language type="bal_Latn" draft="provisional">Balóchi</language>
+			<language type="de" draft="provisional">Jarman</language>
+			<language type="de_AT" draft="provisional">Ástriái Jarman</language>
+			<language type="de_CH" draft="provisional">Swizi Jarman</language>
+			<language type="en" draft="provisional">Engrézi</language>
+			<language type="en_AU" draft="provisional">Ástréliái Engrézi</language>
+			<language type="en_CA" draft="provisional">Kaynadhái Engrézi</language>
+			<language type="en_GB" draft="provisional">Bartániái Engrézi</language>
+			<language type="en_US" draft="provisional">Amriki Engrézi</language>
+			<language type="es" draft="provisional">Espini</language>
+			<language type="es_419" draft="provisional">Zerbári-Amriki Espini</language>
+			<language type="es_ES" draft="provisional">Espini (Espin)</language>
+			<language type="es_MX" draft="provisional">Meksiki Espini</language>
+			<language type="fr" draft="provisional">Paránsi</language>
+			<language type="fr_CA" draft="provisional">Kaynadhái Paránsi</language>
+			<language type="fr_CH" draft="provisional">Swizi Paránsi</language>
+			<language type="it" draft="provisional">Itáliái</language>
+			<language type="ja" draft="provisional">Jápáni</language>
+			<language type="pt" draft="provisional">Portagáli</language>
+			<language type="pt_BR" draft="provisional">Brázili Portagáli</language>
+			<language type="pt_PT" draft="provisional">Yuropi Portagáli</language>
+			<language type="ru" draft="provisional">Rusi</language>
+			<language type="und" draft="provisional">Nagisshetagén zobán</language>
+			<language type="zh" draft="provisional">Chini</language>
+			<language type="zh_Hans" draft="provisional">Sádah kortagén Chini</language>
+			<language type="zh_Hant" draft="provisional">Rabyati Chini</language>
+		</languages>
+		<scripts>
+			<script type="Arab" draft="provisional">Arabi</script>
+			<script type="Cyrl" draft="provisional">Rusi</script>
+			<script type="Hans" draft="provisional">Hán (sádah kortagén)</script>
+			<script type="Hant" draft="provisional">Hán (asligén)</script>
+			<script type="Latn" draft="provisional">Látin</script>
+			<script type="Zxxx" draft="provisional">Nebeshtah nabutagén syáhag</script>
+			<script type="Zzzz" draft="provisional">Kódh nakortagén syáhag</script>
+		</scripts>
+		<territories>
+			<territory type="BR" draft="provisional">Brázil</territory>
+			<territory type="CN" draft="provisional">Chin</territory>
+			<territory type="DE" draft="provisional">Jarmani</territory>
+			<territory type="FR" draft="provisional">Paráns</territory>
+			<territory type="GB" draft="provisional">Bartániá</territory>
+			<territory type="IN" draft="provisional">Hendostán</territory>
+			<territory type="IT" draft="provisional">Itáliá</territory>
+			<territory type="JP" draft="provisional">Jápán</territory>
+			<territory type="PK" draft="provisional">Pákestán</territory>
+			<territory type="RU" draft="provisional">Rus</territory>
+			<territory type="US" draft="provisional">Amrikáay Tepákén Están</territory>
+			<territory type="ZZ" draft="provisional">Nagisshetagén damag</territory>
+		</territories>
+		<types>
+			<type key="calendar" type="buddhist" draft="provisional">Buddái sáldar</type>
+			<type key="calendar" type="chinese" draft="provisional">Chini sáldar</type>
+			<type key="calendar" type="coptic" draft="provisional">Kobti sáldar</type>
+			<type key="calendar" type="dangi" draft="provisional">Dángi sáldar</type>
+			<type key="calendar" type="ethiopic" draft="provisional">Etupiái sáldar</type>
+			<type key="calendar" type="ethiopic-amete-alem" draft="provisional">Etupiái Ámet Álem sáldar</type>
+			<type key="calendar" type="gregorian" draft="provisional">Miládi sáldar</type>
+			<type key="calendar" type="hebrew" draft="provisional">Ebráni sáldar</type>
+			<type key="calendar" type="indian" draft="provisional">Hendi Kawmi sáldar</type>
+			<type key="calendar" type="islamic" draft="provisional">Eslámi sáldar</type>
+			<type key="calendar" type="islamic-civil" draft="provisional">Eslámi shahri sáldar</type>
+			<type key="calendar" type="islamic-rgsa" draft="provisional">Eslámi Saudi-Arabi sáldar</type>
+			<type key="calendar" type="islamic-tbla" draft="provisional">Eslámi Nojumi sáldar</type>
+			<type key="calendar" type="islamic-umalqura" draft="provisional">Eslámi Omm al-Korrahi sáldar</type>
+			<type key="calendar" type="iso8601" draft="provisional">ISO-8601 sáldar</type>
+			<type key="calendar" type="japanese" draft="provisional">Jápáni sáldar</type>
+			<type key="calendar" type="persian" draft="provisional">Pársi sáldar</type>
+			<type key="calendar" type="roc" draft="provisional">Mingu-Chini sáldar</type>
+			<type key="cf" type="standard" draft="provisional">Zarray anjárén káleb</type>
+			<type key="collation" type="standard" draft="provisional">Gisshetagén red o band</type>
+			<type key="numbers" type="arab" draft="provisional">Arabi-Hendi mórdán</type>
+			<type key="numbers" type="cyrl" draft="provisional">Rusi mórdán</type>
+			<type key="numbers" type="deva" draft="provisional">Dénágari mórdán</type>
+			<type key="numbers" type="latn" draft="provisional">Rónendi mórdán</type>
+		</types>
+		<measurementSystemNames>
+			<measurementSystemName type="metric" draft="provisional">mitari</measurementSystemName>
+			<measurementSystemName type="UK" draft="provisional">Bartáni</measurementSystemName>
+			<measurementSystemName type="US" draft="provisional">Amriki</measurementSystemName>
+		</measurementSystemNames>
+		<codePatterns>
+			<codePattern type="language">zobán: {0}</codePattern>
+			<codePattern type="script">syáhag: {0}</codePattern>
+			<codePattern type="territory">damag: {0}</codePattern>
+		</codePatterns>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters draft="provisional">[á a b c d é e g h i j k l m n ó o p r s t u v w y z]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary" draft="provisional">[f ń q x]</exemplarCharacters>
+		<exemplarCharacters type="index" draft="provisional">[Á A B {Ch} D {Dh} É E F G H I J K L M N Ó O P R {Rh} S {Sh} T {Th} U V W Y Z {Zh}]</exemplarCharacters>
+		<exemplarCharacters type="punctuation" draft="provisional">[, ; \: ? . ‘’ “”]</exemplarCharacters>
+	</characters>
+	<dates>
+		<calendars>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="provisional">Jan</month>
+							<month type="2" draft="provisional">Par</month>
+							<month type="3" draft="provisional">Már</month>
+							<month type="4" draft="provisional">Apr</month>
+							<month type="5" draft="provisional">Mai</month>
+							<month type="6" draft="provisional">Jun</month>
+							<month type="7" draft="provisional">Jól</month>
+							<month type="8" draft="provisional">Aga</month>
+							<month type="9" draft="provisional">Sat</month>
+							<month type="10" draft="provisional">Akt</month>
+							<month type="11" draft="provisional">Naw</month>
+							<month type="12" draft="provisional">Das</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="provisional">Janwari</month>
+							<month type="2" draft="provisional">Parwari</month>
+							<month type="3" draft="provisional">Márch</month>
+							<month type="4" draft="provisional">Aprél</month>
+							<month type="5" draft="provisional">Mai</month>
+							<month type="6" draft="provisional">Jun</month>
+							<month type="7" draft="provisional">Jólái</month>
+							<month type="8" draft="provisional">Agast</month>
+							<month type="9" draft="provisional">Satambar</month>
+							<month type="10" draft="provisional">Aktubar</month>
+							<month type="11" draft="provisional">Nawambar</month>
+							<month type="12" draft="provisional">Dasambar</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<days>
+					<dayContext type="format">
+						<dayWidth type="abbreviated">
+							<day type="sun" draft="provisional">Yak</day>
+							<day type="mon" draft="provisional">Do</day>
+							<day type="tue" draft="provisional">Say</day>
+							<day type="wed" draft="provisional">Chá</day>
+							<day type="thu" draft="provisional">Pan</day>
+							<day type="fri" draft="provisional">Jom</day>
+							<day type="sat" draft="provisional">Sha</day>
+						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun" draft="provisional">Yakshambeh</day>
+							<day type="mon" draft="provisional">Doshambeh</day>
+							<day type="tue" draft="provisional">Sayshambeh</day>
+							<day type="wed" draft="provisional">Chárshambeh</day>
+							<day type="thu" draft="provisional">Panchshambeh</day>
+							<day type="fri" draft="provisional">Jomah</day>
+							<day type="sat" draft="provisional">Shambeh</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+				<quarters>
+					<quarterContext type="format">
+						<quarterWidth type="abbreviated">
+							<quarter type="1" draft="provisional">1/4</quarter>
+							<quarter type="2" draft="provisional">2/4</quarter>
+							<quarter type="3" draft="provisional">3/4</quarter>
+							<quarter type="4" draft="provisional">4/4</quarter>
+						</quarterWidth>
+						<quarterWidth type="wide">
+							<quarter type="1" draft="provisional">awali chárek</quarter>
+							<quarter type="2" draft="provisional">domi chárek</quarter>
+							<quarter type="3" draft="provisional">sayomi chárek</quarter>
+							<quarter type="4" draft="provisional">cháromi chárek</quarter>
+						</quarterWidth>
+					</quarterContext>
+				</quarters>
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern draft="provisional">EEEE, d MMMM, y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern draft="provisional">d MMMM, y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern draft="provisional">d MMM, y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern draft="provisional">d/M/yy</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<timeFormats>
+					<timeFormatLength type="full">
+						<timeFormat>
+							<pattern draft="provisional">hh:mm:ss a zzzz</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="long">
+						<timeFormat>
+							<pattern draft="provisional">hh:mm:ss a zzz</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="medium">
+						<timeFormat>
+							<pattern draft="provisional">hh:mm:ss a</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="short">
+						<timeFormat>
+							<pattern draft="provisional">hh:mm a</pattern>
+						</timeFormat>
+					</timeFormatLength>
+				</timeFormats>
+				<dateTimeFormats>
+					<dateTimeFormatLength type="full">
+						<dateTimeFormat>
+							<pattern draft="provisional">{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="long">
+						<dateTimeFormat>
+							<pattern draft="provisional">{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="medium">
+						<dateTimeFormat>
+							<pattern draft="provisional">{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="short">
+						<dateTimeFormat>
+							<pattern draft="provisional">{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+				</dateTimeFormats>
+			</calendar>
+		</calendars>
+		<timeZoneNames>
+			<metazone type="Alaska">
+				<long>
+					<generic draft="provisional">Aláskáay wahd</generic>
+					<standard draft="provisional">Aláskáay anjári wahd</standard>
+					<daylight draft="provisional">Aláskáay garmági wahd</daylight>
+				</long>
+			</metazone>
+			<metazone type="Amazon">
+				<long>
+					<generic draft="provisional">Amázónay wahd</generic>
+					<standard draft="provisional">Amázónay anjári wahd</standard>
+					<daylight draft="provisional">Amázónay garmági wahd</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Central">
+				<long>
+					<generic draft="provisional">Delgáhi Amrikáay wahd</generic>
+					<standard draft="provisional">Delgáhi Amrikáay anjári wahd</standard>
+					<daylight draft="provisional">Delgáhi Amrikáay garmági wahd</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Eastern">
+				<long>
+					<generic draft="provisional">Ródarátki Amrikáay wahd</generic>
+					<standard draft="provisional">Ródarátki Amrikáay anjári wahd</standard>
+					<daylight draft="provisional">Ródarátki Amrikáay garmági wahd</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Mountain">
+				<long>
+					<generic draft="provisional">Kóhestagi Amrikáay wahd</generic>
+					<standard draft="provisional">Kóhestagi Amrikáay anjári wahd</standard>
+					<daylight draft="provisional">Kóhestagi Amrikáay garmági wahd</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Pacific">
+				<long>
+					<generic draft="provisional">Árámzeri Amrikáay wahd</generic>
+					<standard draft="provisional">Árámzeri Amrikáay anjári wahd</standard>
+					<daylight draft="provisional">Árámzeri Amrikáay garmági wahd</daylight>
+				</long>
+			</metazone>
+			<metazone type="Argentina">
+				<long>
+					<generic draft="provisional">Arjentináay wahd</generic>
+					<standard draft="provisional">Arjentináay anjári wahd</standard>
+					<daylight draft="provisional">Arjentináay garmági wahd</daylight>
+				</long>
+			</metazone>
+			<metazone type="Argentina_Western">
+				<long>
+					<generic draft="provisional">Rónendi Arjentináay wahd</generic>
+					<standard draft="provisional">Rónendi Arjentináay anjári wahd</standard>
+					<daylight draft="provisional">Rónendi Arjentináay gramági wahd</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_Central">
+				<long>
+					<generic draft="provisional">Delgáhi Ástréliáay wahd</generic>
+					<standard draft="provisional">Delgáhi Ástréliáay anjári wahd</standard>
+					<daylight draft="provisional">Delgáhi Ástréliáay garmági wahd</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_CentralWestern">
+				<long>
+					<generic draft="provisional">Delgáhirónendi Ástréliáay wahd</generic>
+					<standard draft="provisional">Delgáhirónendi Ástréliáay anjári wahd</standard>
+					<daylight draft="provisional">Delgáhirónendi Ástréliáay garmági wahd</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_Eastern">
+				<long>
+					<generic draft="provisional">Ródarátki Ástréliáay wahd</generic>
+					<standard draft="provisional">Ródarátki Ástréliáay anjári wahd</standard>
+					<daylight draft="provisional">Ródarátki Ástréliáay garmági wahd</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_Western">
+				<long>
+					<generic draft="provisional">Rónendi Ástréliáay wahd</generic>
+					<standard draft="provisional">Rónendi Ástréliáay anjári wahd</standard>
+					<daylight draft="provisional">Rónendi Ástréliáay garmági wahd</daylight>
+				</long>
+			</metazone>
+			<metazone type="Brasilia">
+				<long>
+					<generic draft="provisional">Brázilay wahd</generic>
+					<standard draft="provisional">Brázilay anjári wahd</standard>
+					<daylight draft="provisional">Brázilay garmági wahd</daylight>
+				</long>
+			</metazone>
+			<metazone type="Europe_Central">
+				<long>
+					<generic draft="provisional">Delgáhi Yuropay wahd</generic>
+					<standard draft="provisional">Delgáhi Yuropay anjári wahd</standard>
+					<daylight draft="provisional">Delgáhi Yuropay garmági wahd</daylight>
+				</long>
+			</metazone>
+			<metazone type="Europe_Eastern">
+				<long>
+					<generic draft="provisional">Ródarátki Yuropay wahd</generic>
+					<standard draft="provisional">Ródarátki Yuropay anjári wahd</standard>
+					<daylight draft="provisional">Ródarátki Yuropay garmági wahd</daylight>
+				</long>
+			</metazone>
+			<metazone type="Europe_Further_Eastern">
+				<long>
+					<standard draft="provisional">Démterén Ródarátki Yuropay anjári wahd</standard>
+				</long>
+			</metazone>
+			<metazone type="Europe_Western">
+				<long>
+					<generic draft="provisional">Rónendi Yuropay wahd</generic>
+					<standard draft="provisional">Rónendi Yuropay anjári wahd</standard>
+					<daylight draft="provisional">Rónendi Yuropay garmági wahd</daylight>
+				</long>
+			</metazone>
+			<metazone type="Hawaii_Aleutian">
+				<long>
+					<generic draft="provisional">Hawái/Alushiay wahd</generic>
+					<standard draft="provisional">Hawái/Alushiay anjári wahd</standard>
+					<daylight draft="provisional">Hawái/Alushiay garmági wahd</daylight>
+				</long>
+			</metazone>
+			<metazone type="Indonesia_Central">
+				<long>
+					<standard draft="provisional">Delgáhi Endhonishiáay anjári wahd</standard>
+				</long>
+			</metazone>
+			<metazone type="Indonesia_Eastern">
+				<long>
+					<standard draft="provisional">Ródarátki Endhonishiáay anjári wahd</standard>
+				</long>
+			</metazone>
+			<metazone type="Indonesia_Western">
+				<long>
+					<standard draft="provisional">Rónendi Endhonishiáay anjári wahd</standard>
+				</long>
+			</metazone>
+			<metazone type="Irkutsk">
+				<long>
+					<generic draft="provisional">Erkuskay wahd</generic>
+					<standard draft="provisional">Erkuskay anjári wahd</standard>
+					<daylight draft="provisional">Erkuskay garmági wahd</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan_Eastern">
+				<long>
+					<standard draft="provisional">Ródarátki Kázekestánay anjári wahd</standard>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan_Western">
+				<long>
+					<standard draft="provisional">Rónendi Kázekestánay anjári wahd</standard>
+				</long>
+			</metazone>
+			<metazone type="Krasnoyarsk">
+				<long>
+					<generic draft="provisional">Krasnóyáskay wahd</generic>
+					<standard draft="provisional">Krasnóyáskay anjári wahd</standard>
+					<daylight draft="provisional">Krasnóyáskay garmági wahd</daylight>
+				</long>
+			</metazone>
+			<metazone type="Lord_Howe">
+				<long>
+					<generic draft="provisional">Ástréliáay, Ládhaway wahd</generic>
+					<standard draft="provisional">Ástréliáay, Ládhaway anjári wahd</standard>
+					<daylight draft="provisional">Ástréliáay, Ládhaway garmági wahd</daylight>
+				</long>
+			</metazone>
+			<metazone type="Magadan">
+				<long>
+					<generic draft="provisional">Mágadánay wahd</generic>
+					<standard draft="provisional">Mágadánay anjári wahd</standard>
+					<daylight draft="provisional">Mágadánay garmági wahd</daylight>
+				</long>
+			</metazone>
+			<metazone type="Mexico_Pacific">
+				<long>
+					<generic draft="provisional">Árámzeri Meksikóay wahd</generic>
+					<standard draft="provisional">Árámzeri Meksikóay anjári wahd</standard>
+					<daylight draft="provisional">Árámzeri Meksikóay garmági wahd</daylight>
+				</long>
+			</metazone>
+			<metazone type="Moscow">
+				<long>
+					<generic draft="provisional">Máskóay wahd</generic>
+					<standard draft="provisional">Máskóay anjári wahd</standard>
+					<daylight draft="provisional">Máskóay garmági wahd</daylight>
+				</long>
+			</metazone>
+			<metazone type="Newfoundland">
+				<long>
+					<generic draft="provisional">Nipándlaynday wahd</generic>
+					<standard draft="provisional">Nipándlaynday anjári wahd</standard>
+					<daylight draft="provisional">Nipándlaynday garmági wahd</daylight>
+				</long>
+			</metazone>
+			<metazone type="Noronha">
+				<long>
+					<generic draft="provisional">Noronáay wahd</generic>
+					<standard draft="provisional">Noronáay anjári wahd</standard>
+					<daylight draft="provisional">Noronáay garmági wahd</daylight>
+				</long>
+			</metazone>
+			<metazone type="Novosibirsk">
+				<long>
+					<generic draft="provisional">Nawásibiskay wahd</generic>
+					<standard draft="provisional">Nawásibiskay anjári wahd</standard>
+					<daylight draft="provisional">Nawásibiskay garmági wahd</daylight>
+				</long>
+			</metazone>
+			<metazone type="Omsk">
+				<long>
+					<generic draft="provisional">Ómskay wahd</generic>
+					<standard draft="provisional">Ómskay anjári wahd</standard>
+					<daylight draft="provisional">Ómskay garmági wahd</daylight>
+				</long>
+			</metazone>
+			<metazone type="Vladivostok">
+				<long>
+					<generic draft="provisional">Waládiwástókay wahd</generic>
+					<standard draft="provisional">Waládiwástókay anjári wahd</standard>
+					<daylight draft="provisional">Waládiwástókay garmági wahd</daylight>
+				</long>
+			</metazone>
+			<metazone type="Yakutsk">
+				<long>
+					<generic draft="provisional">Yákuskay wahd</generic>
+					<standard draft="provisional">Yákuskay anjári wahd</standard>
+					<daylight draft="provisional">Yákuskay garmági wahd</daylight>
+				</long>
+			</metazone>
+			<metazone type="Yekaterinburg">
+				<long>
+					<generic draft="provisional">Yakátrinborgay wahd</generic>
+					<standard draft="provisional">Yakátrinborgay anjári wahd</standard>
+					<daylight draft="provisional">Yakátrinborgay garmági wahd</daylight>
+				</long>
+			</metazone>
+		</timeZoneNames>
+	</dates>
+	<numbers>
+		<currencies>
+			<currency type="BRL">
+				<displayName draft="provisional">Brázili riál</displayName>
+			</currency>
+			<currency type="EUR">
+				<displayName draft="provisional">yuró</displayName>
+			</currency>
+			<currency type="GBP">
+				<displayName draft="provisional">Bartáni pawndh</displayName>
+			</currency>
+			<currency type="INR">
+				<displayName draft="provisional">Hendostáni rupi</displayName>
+			</currency>
+			<currency type="IRR">
+				<displayName draft="provisional">Éráni ryál</displayName>
+				<symbol draft="provisional">ریال</symbol>
+			</currency>
+			<currency type="JPY">
+				<displayName draft="provisional">Jápáni yen</displayName>
+				<symbol draft="provisional">¥</symbol>
+			</currency>
+			<currency type="PKR">
+				<displayName draft="provisional">Pákestáni rupi</displayName>
+				<symbol draft="provisional">Rs</symbol>
+			</currency>
+			<currency type="RUB">
+				<displayName draft="provisional">Rusi rubel</displayName>
+				<symbol draft="provisional">₽</symbol>
+			</currency>
+			<currency type="USD">
+				<displayName draft="provisional">Amriki dhálar</displayName>
+				<symbol draft="provisional">$</symbol>
+			</currency>
+			<currency type="XXX">
+				<displayName draft="provisional">Nazántagén zarr</displayName>
+				<symbol draft="provisional">XXX</symbol>
+			</currency>
+		</currencies>
+	</numbers>
+	<posix>
+		<messages>
+			<yesstr>haw:h</yesstr>
+			<nostr>na:n</nostr>
+		</messages>
+	</posix>
+</ldml>

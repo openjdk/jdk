@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,16 +72,16 @@ public class EUC_JP
         return new Encoder(this);
     }
 
-    static class Decoder extends CharsetDecoder
+    public static class Decoder extends CharsetDecoder
         implements DelegatableDecoder {
 
-        static final SingleByte.Decoder DEC0201 =
+        public static final SingleByte.Decoder DEC0201 =
             (SingleByte.Decoder)new JIS_X_0201().newDecoder();
 
-        static final DoubleByte.Decoder DEC0208 =
+        public static final DoubleByte.Decoder DEC0208 =
             (DoubleByte.Decoder)new JIS_X_0208().newDecoder();
 
-        static final DoubleByte.Decoder DEC0212 =
+        public static final DoubleByte.Decoder DEC0212 =
             (DoubleByte.Decoder)new JIS_X_0212().newDecoder();
 
         private final SingleByte.Decoder dec0201;
@@ -228,7 +228,7 @@ public class EUC_JP
     }
 
 
-    static class Encoder extends CharsetEncoder {
+    public static class Encoder extends CharsetEncoder {
 
         static final SingleByte.Encoder ENC0201 =
             (SingleByte.Encoder)new JIS_X_0201().newEncoder();

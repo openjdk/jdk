@@ -47,7 +47,7 @@ public class PrintCompilation {
         options.add("-XX:CompileCommand=compileonly," + getTestClass() + "::*");
         options.add(getTestClass());
 
-        OutputAnalyzer oa = ProcessTools.executeTestJvm(options);
+        OutputAnalyzer oa = ProcessTools.executeTestJava(options);
 
         oa.shouldHaveExitValue(0)
         .shouldContain(getTestMethod("method1"))
