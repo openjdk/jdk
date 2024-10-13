@@ -435,9 +435,9 @@ TEST_VM(os, realpath) {
 #if defined(_WINDOWS)
   if (returnedBuffer != nullptr) {
     //if (returnedBuffer != buffer) {
-      prinf("XXXX returnedBuffer = 0x%llx\n", (uint64_t)returnedBuffer);
-      prinf("XXXX buffer = 0x%llx\n", (uint64_t)returnedBuffer);
-      prinf("XXXX returnedBuffer = 0x%llx  string=%s\n", (uint64_t)returnedBuffer, returnedBuffer);
+      printf("XXXX returnedBuffer = 0x%llx\n", (uint64_t)returnedBuffer);
+      printf("XXXX buffer = 0x%llx\n", (uint64_t)returnedBuffer);
+      printf("XXXX returnedBuffer = 0x%llx  string=%s\n", (uint64_t)returnedBuffer, returnedBuffer);
    // }
     EXPECT_TRUE(returnedBuffer == buffer);
   } else {
