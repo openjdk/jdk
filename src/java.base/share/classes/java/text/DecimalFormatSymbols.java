@@ -797,7 +797,8 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
                 patternSeparator,
                 infinity,
                 NaN,
-                getCurrencySymbol(), // possible currency init occurs here
+                // Currency fields are lazy. Init via get call to ensure non-null
+                getCurrencySymbol(),
                 intlCurrencySymbol,
                 currency,
                 monetarySeparator,

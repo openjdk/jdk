@@ -29,6 +29,7 @@
  * @run junit SettersShouldThrowNPETest
  */
 
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -37,11 +38,13 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.text.DecimalFormatSymbols;
 import java.util.Arrays;
+import java.util.Currency;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -50,9 +53,9 @@ public class SettersShouldThrowNPETest {
     // The public setter methods that should throw NPE
     private static final List<Method> NPE_SETTERS =
             Arrays.stream(DecimalFormatSymbols.class.getDeclaredMethods())
-            .filter(m -> Modifier.isPublic(m.getModifiers()))
-            .filter(m -> m.getName().startsWith("set"))
-            .filter(m -> Stream.of(m.getParameterTypes()).noneMatch(Class::isPrimitive))
+            .filter(m -> Modifier.isPublic(m.getModifiers())
+                    && m.getName().startsWith("set")
+                    && Stream.of(m.getParameterTypes()).noneMatch(Class::isPrimitive))
             .toList();
 
     // Non-primitive setters should throw NPE
@@ -77,6 +80,23 @@ public class SettersShouldThrowNPETest {
         assertNotNull(dfs.getCurrency());
         assertNotNull(dfs.getInternationalCurrencySymbol());
         assertNotNull(dfs.getCurrencySymbol());
+    }
+
+    // Prior to 8341445, if the international currency symbol was invalid,
+    // the currency attribute was set to null. However, we should not have null
+    // currency fields post initializeCurrency() call. Ensure invalid code
+    // does not update the other fields.
+    @Test
+    public void setInternationalCurrencySymbolFallbackTest() {
+        var code = "fooBarBazQux";
+        // initialize() should provide null for all currency related fields
+        var dfs = new DecimalFormatSymbols(Locale.ROOT);
+        // Load the fallbacks via initCurrency() since the loc is Locale.ROOT
+        dfs.setInternationalCurrencySymbol(code); // set invalid code
+        // Ensure our values are the expected fallbacks, minus the updated intl code
+        assertEquals(Currency.getInstance("XXX"), dfs.getCurrency());
+        assertEquals("\u00A4", dfs.getCurrencySymbol());
+        assertEquals("fooBarBazQux", dfs.getInternationalCurrencySymbol());
     }
 
     private static List<Method> setters() {
