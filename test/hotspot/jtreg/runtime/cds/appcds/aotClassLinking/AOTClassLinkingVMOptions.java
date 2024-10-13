@@ -62,6 +62,11 @@ public class AOTClassLinkingVMOptions {
             .assertAbnormalExit("CDS archive has aot-linked classes." +
                                 " It cannot be used when the java.system.class.loader property is specified.");
 
+        testCase("Cannot use a different main module");
+        TestCommon.run("-cp", appJar, "-Xlog:cds", "-m", "jdk.compiler/com.sun.tools.javac.Main")
+            .assertAbnormalExit("CDS archive has aot-linked classes." +
+                                " It cannot be used when archived full module graph is not used.");
+
         // NOTE: tests for ClassFileLoadHook + AOTClassLinking is in
         // ../jvmti/ClassFileLoadHookTest.java
     }

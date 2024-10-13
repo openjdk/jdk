@@ -427,7 +427,6 @@ void MetaspaceShared::serialize(SerializeClosure* soc) {
   SystemDictionaryShared::serialize_vm_classes(soc);
   soc->do_tag(--tag);
 
-  CDS_JAVA_HEAP_ONLY(Modules::serialize(soc);)
   CDS_JAVA_HEAP_ONLY(ClassLoaderDataShared::serialize(soc);)
   soc->do_ptr((void**)&_archived_method_handle_intrinsics);
 
@@ -475,6 +474,7 @@ private:
   ArchiveHeapInfo _heap_info;
   FileMapInfo* _map_info;
   StaticArchiveBuilder& _builder;
+  char* _archived_main_module_name;
 
   void dump_java_heap_objects(GrowableArray<Klass*>* klasses) NOT_CDS_JAVA_HEAP_RETURN;
   void dump_shared_symbol_table(GrowableArray<Symbol*>* symbols) {
@@ -486,7 +486,8 @@ private:
 public:
 
   VM_PopulateDumpSharedSpace(StaticArchiveBuilder& b) :
-    VM_Operation(), _heap_info(), _map_info(nullptr), _builder(b) {}
+    VM_Operation(), _heap_info(), _map_info(nullptr), _builder(b),
+    _archived_main_module_name(nullptr) {}
 
   bool skip_operation() const { return false; }
 
@@ -495,6 +496,15 @@ public:
   FileMapInfo* map_info() const { return _map_info; }
   void doit();   // outline because gdb sucks
   bool allow_nested_vm_operations() const { return true; }
+
+  void dump_main_module_name() {
+    const char* module_name = Arguments::get_property("jdk.module.main");
+    if (module_name != nullptr) {
+      _archived_main_module_name = ArchiveBuilder::current()->ro_strdup(module_name);
+    } else {
+      _archived_main_module_name = ArchiveBuilder::current()->ro_strdup("");
+    }
+  }
 }; // class VM_PopulateDumpSharedSpace
 
 class StaticArchiveBuilder : public ArchiveBuilder {
@@ -534,7 +544,7 @@ char* VM_PopulateDumpSharedSpace::dump_read_only_tables() {
   // Write lambform lines into archive
   LambdaFormInvokers::dump_static_archive_invokers();
   // Write module name into archive
-  CDS_JAVA_HEAP_ONLY(Modules::dump_main_module_name();)
+  CDS_JAVA_HEAP_ONLY(dump_main_module_name();)
   // Write the other data to the output array.
   DumpRegion* ro_region = ArchiveBuilder::current()->ro_region();
   char* start = ro_region->top();
@@ -597,6 +607,7 @@ void VM_PopulateDumpSharedSpace::doit() {
   _map_info->populate_header(MetaspaceShared::core_region_alignment());
   _map_info->set_serialized_data(serialized_data);
   _map_info->set_cloned_vtables(CppVtables::vtables_serialized_base());
+  _map_info->set_main_module_name(_archived_main_module_name);
 }
 
 class CollectCLDClosure : public CLDClosure {
@@ -1509,10 +1520,6 @@ MapArchiveResult MetaspaceShared::map_archive(FileMapInfo* mapinfo, char* mapped
     return MAP_ARCHIVE_SUCCESS; // The dynamic archive has not been specified. No error has happened -- trivially succeeded.
   }
 
-  if (!mapinfo->validate_aot_class_linking()) {
-    return MAP_ARCHIVE_OTHER_FAILURE;
-  }
-
   mapinfo->set_is_mapped(false);
   if (mapinfo->core_region_alignment() != (size_t)core_region_alignment()) {
     log_info(cds)("Unable to map CDS archive -- core_region_alignment() expected: " SIZE_FORMAT
@@ -1529,6 +1536,11 @@ MapArchiveResult MetaspaceShared::map_archive(FileMapInfo* mapinfo, char* mapped
   }
 
   if (!mapinfo->validate_shared_path_table()) {
+    unmap_archive(mapinfo);
+    return MAP_ARCHIVE_OTHER_FAILURE;
+  }
+
+  if (!mapinfo->validate_aot_class_linking()) {
     unmap_archive(mapinfo);
     return MAP_ARCHIVE_OTHER_FAILURE;
   }
