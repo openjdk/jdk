@@ -781,7 +781,7 @@
           "Run DuplicateBackedge whenever possible ignoring benefit"        \
           "analysis")                                                       \
                                                                             \
-  product(bool, LoopAwaredSpilling, true, DIAGNOSTIC,                       \
+  product(bool, LoopAwareSpilling, true, DIAGNOSTIC,                        \
           "Eagerly spill or reload live ranges at loop entry if it seems"   \
           "beneficial")                                                     \
                                                                             \

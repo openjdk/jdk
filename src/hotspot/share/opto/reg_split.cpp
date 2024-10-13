@@ -495,14 +495,14 @@ enum class SpillAction {
 // Uncommon means that the action is neither common nor untaken
 // The action we will perform on the live range at loop entry depends on the common-ness of the spilling and reloading actions:
 //
-//    Reload     Common      Uncommon      Untaken
-// Spill
-//
-//  Common       Spill        Spill         Spill
-//
-// Uncommon      Reload       Spill         Spill
-//
-// Untaken       Reload       Reload        None
+//     Reload |  Common   |  Uncommon  |   Untaken
+// Spill      |           |            |
+//------------|-----------|------------|------------
+//   Common   |  Spill    |   Spill    |    Spill
+//------------|-----------|------------|------------
+//  Uncommon  |  Reload   |   Spill    |    Spill
+//------------|-----------|------------|------------
+//  Untaken   |  Reload   |   Reload   |    None
 //
 // In general, if a live range is spilt more than it is used, we try to eagerly spill it, and vice versa,
 // if a live range is used more than it is spilt, we try to eagerly reload it as the spills will not happen
@@ -805,7 +805,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
         assert(phi != nullptr,"Must have a Phi Node here");
         phis.push(phi);
 
-        if (LoopAwaredSpilling && !has_phi && b->head()->is_Loop()) {
+        if (LoopAwareSpilling && !has_phi && b->head()->is_Loop()) {
           // Loop will always have needs_phi because the LoopBack block has not been processed yet
           assert(needs_phi, "must be");
           SpillAction action = should_spill_before_loop(_cfg, *this, b->_loop, lidx, lrgs(lidx));
