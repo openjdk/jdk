@@ -1085,7 +1085,7 @@ void TemplateTable::aastore() {
 
   // Come here on failure
   // object is at TOS
-  __ j(Interpreter::_throw_ArrayStoreException_entry, t1);
+  __ j(Interpreter::_throw_ArrayStoreException_entry);
 
   // Come here on success
   __ bind(ok_is_subtype);
