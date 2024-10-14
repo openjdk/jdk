@@ -243,17 +243,16 @@ public final class SegmentBulkOperations {
     @ForceInline
     private static int mismatch(long first, long second) {
         final long x = first ^ second;
-        return (Architecture.isLittleEndian()
-                ? Long.numberOfTrailingZeros(x)
-                : Long.numberOfLeadingZeros(x)) / 8;
+        return Long.numberOfTrailingZeros(
+                Architecture.isLittleEndian() ? x : Long.reverseBytes(x)) / 8;
+
     }
 
     @ForceInline
     private static int mismatch(int first, int second) {
         final int x = first ^ second;
-        return (Architecture.isLittleEndian()
-                ? Integer.numberOfTrailingZeros(x)
-                : Integer.numberOfLeadingZeros(x)) / 8;
+        return Integer.numberOfTrailingZeros(
+                Architecture.isLittleEndian() ? x : Integer.reverseBytes(x)) / 8;
     }
 
     @ForceInline
