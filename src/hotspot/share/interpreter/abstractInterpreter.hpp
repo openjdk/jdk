@@ -126,6 +126,8 @@ class AbstractInterpreter: AllStatic {
 
   static address    _rethrow_exception_entry;                   // rethrows an activation in previous frame
 
+  static bool       _should_print_instructions;                 // only with PrintInterpreter and when printing all InterpreterCodelet
+
   friend class      AbstractInterpreterGenerator;
   friend class      InterpreterMacroAssembler;
 
@@ -133,6 +135,7 @@ class AbstractInterpreter: AllStatic {
   // Initialization/debugging
   static void       initialize();
   static StubQueue* code()                                      { return _code; }
+  static bool       should_print_instructions()                 { return _should_print_instructions; }
 
 
   // Method activation
