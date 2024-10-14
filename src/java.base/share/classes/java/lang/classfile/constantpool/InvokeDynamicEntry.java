@@ -47,7 +47,7 @@ public sealed interface InvokeDynamicEntry
      * {@return a symbolic descriptor for the call site's invocation type}
      */
     default MethodTypeDesc typeSymbol() {
-        return Util.methodTypeSymbol(nameAndType());
+        return Util.methodTypeSymbol(type());
     }
 
     /**

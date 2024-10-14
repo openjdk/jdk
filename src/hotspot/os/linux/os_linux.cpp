@@ -817,7 +817,7 @@ static void *thread_native_entry(Thread *thread) {
   OSThread* osthread = thread->osthread();
   Monitor* sync = osthread->startThread_lock();
 
-  osthread->set_thread_id(checked_cast<OSThread::thread_id_t>(os::current_thread_id()));
+  osthread->set_thread_id(checked_cast<pid_t>(os::current_thread_id()));
 
   if (UseNUMA) {
     int lgrp_id = os::numa_get_group_id();
