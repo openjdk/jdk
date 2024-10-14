@@ -1471,8 +1471,8 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   if (VM_Version::supports_fast_class_init_checks() && method->needs_clinit_barrier()) {
     Label L_skip_barrier;
-    __ mov_metadata(t0, method->method_holder()); // InstanceKlass*
-    __ clinit_barrier(t0, t1, &L_skip_barrier);
+    __ mov_metadata(t1, method->method_holder()); // InstanceKlass*
+    __ clinit_barrier(t1, t0, &L_skip_barrier);
     __ far_jump(RuntimeAddress(SharedRuntime::get_handle_wrong_method_stub()));
 
     __ bind(L_skip_barrier);
