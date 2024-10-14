@@ -26,6 +26,8 @@
  * @bug 7096375
  * @summary  Test that Swing does not ignore first click on a JButton after
  * decreasing system's time
+ * @library /java/awt/regtesthelpers
+ * @build PassFailJFrame
  * @run main/manual TimeChangeButtonClickTest
  */
 
