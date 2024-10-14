@@ -246,14 +246,14 @@ typedef struct {
 
 #define CHECK_EXCEPTION_RETURN_VALUE(CER_value) \
     do { \
-        if ((*env)->ExceptionOccurred(env)) { \
+        if ((*env)->ExceptionCheck(env)) { \
             return CER_value; \
         } \
     } while (JNI_FALSE)
 
 #define CHECK_EXCEPTION_RETURN() \
     do { \
-        if ((*env)->ExceptionOccurred(env)) { \
+        if ((*env)->ExceptionCheck(env)) { \
             return; \
         } \
     } while (JNI_FALSE)

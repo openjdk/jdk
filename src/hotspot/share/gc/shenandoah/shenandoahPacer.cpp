@@ -65,6 +65,7 @@ void ShenandoahPacer::setup_for_mark() {
 
   size_t non_taxable = free * ShenandoahPacingCycleSlack / 100;
   size_t taxable = free - non_taxable;
+  taxable = MAX2<size_t>(1, taxable);
 
   double tax = 1.0 * live / taxable; // base tax for available free space
   tax *= 1;                          // mark can succeed with immediate garbage, claim all available space
@@ -88,6 +89,7 @@ void ShenandoahPacer::setup_for_evac() {
 
   size_t non_taxable = free * ShenandoahPacingCycleSlack / 100;
   size_t taxable = free - non_taxable;
+  taxable = MAX2<size_t>(1, taxable);
 
   double tax = 1.0 * used / taxable; // base tax for available free space
   tax *= 2;                          // evac is followed by update-refs, claim 1/2 of remaining free
@@ -112,6 +114,7 @@ void ShenandoahPacer::setup_for_updaterefs() {
 
   size_t non_taxable = free * ShenandoahPacingCycleSlack / 100;
   size_t taxable = free - non_taxable;
+  taxable = MAX2<size_t>(1, taxable);
 
   double tax = 1.0 * used / taxable; // base tax for available free space
   tax *= 1;                          // update-refs is the last phase, claim the remaining free
