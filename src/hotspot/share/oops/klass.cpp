@@ -187,14 +187,15 @@ bool Klass::fallback_search_secondary_supers(const Klass* k, int index, uintx ro
     return linear_search_secondary_supers(k);
   }
 
-  precond((int)population_count(bitmap) <= secondaries->length());
-
   // This is conventional linear probing, but instead of terminating
   // when a null entry is found in the table, we maintain a bitmap
   // in which a 0 indicates missing entries.
 
-  // The check at the start of this function guarantees there are 0s
-  // in the bitmap, so this loop eventually terminates.
+  precond((int)population_count(rotated_bitmap) <= secondary_supers()->length());
+
+  // The check for secondary_supers()->length() <= SECONDARY_SUPERS_TABLE_SIZE - 2
+  // at the start of this function guarantees there are 0s in the
+  // bitmap, so this loop eventually terminates.
   while ((rotated_bitmap & 2) != 0) {
     if (++index == secondary_supers()->length()) {
       index = 0;
