@@ -136,7 +136,7 @@ public class BindingPatternVarTypeModel {
             public Void visitVariable(VariableTree node, Void p) {
                 boolean prevCheckAttributes = checkAttributes;
                 try {
-                    checkAttributes |= 
+                    checkAttributes |=
                             node.getName().toString().startsWith("checkType");
                     return super.visitVariable(node, p);
                 } finally {
