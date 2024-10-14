@@ -37,24 +37,7 @@ import java.nio.charset.Charset;
 import java.nio.file.InvalidPathException;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.Files;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Deque;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Objects;
-import java.util.Set;
-import java.util.Spliterator;
-import java.util.Spliterators;
-import java.util.TreeSet;
-import java.util.WeakHashMap;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.IntFunction;
 import java.util.jar.JarEntry;
@@ -1807,7 +1790,7 @@ public class ZipFile implements ZipConstants, Closeable {
                             // Add version for name
                             if (metaVersionsMap == null)
                                 metaVersionsMap = new HashMap<>();
-                            metaVersionsMap.computeIfAbsent(name, n -> new TreeSet<>()).add(version);
+                            metaVersionsMap.computeIfAbsent(name, n -> new HashSet<>()).add(version);
                         }
                     }
                 }
@@ -1828,12 +1811,14 @@ public class ZipFile implements ZipConstants, Closeable {
             if (metaVersionsMap != null) {
                 metaVersions = new HashMap<>();
                 for (var entry : metaVersionsMap.entrySet()) {
-                    // Convert TreeSet<Integer> to int[] for performance
+                    // Convert Set<Integer> to int[] for performance
                     int[] versions = new int[entry.getValue().size()];
                     int c = 0;
                     for (Integer i : entry.getValue()) {
                         versions[c++] = i.intValue();
                     }
+                    // JarFile::getVersionedEntry expects sorted versions
+                    Arrays.sort(versions);
                     metaVersions.put(entry.getKey(), versions);
                 }
             } else {
