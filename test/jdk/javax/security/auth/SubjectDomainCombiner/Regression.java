@@ -101,7 +101,7 @@ public class Regression {
 
         if (domains1.length != 4 ||
             domains1[0] == d1 || domains1[1] == d2 || domains1[2] == d3 ||
-            domains1[3] != d4) { 
+            domains1[3] != d4) {
             throw new SecurityException("Test failed: combine test 1 failed");
         }
 
