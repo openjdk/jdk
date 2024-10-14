@@ -192,3 +192,15 @@ vmTestbase/nsk/jdwp/ThreadReference/ForceEarlyReturn/forceEarlyReturn001/forceEa
 vmTestbase/nsk/monitoring/ThreadMXBean/ThreadInfo/Multi/Multi005/TestDescription.java 8076494 windows-x64
 
 vmTestbase/nsk/monitoring/ThreadMXBean/findMonitorDeadlockedThreads/find006/TestDescription.java 8310144 macosx-aarch64
+
+#############################################################################
+
+# JEP 486: remaining SM related tests that are failing
+
+# :hotspot_compiler_all_gcs
+compiler/exceptions/ExceptionInInit.java 8338411 generic-all
+
+# :tier1_runtime
+runtime/Dictionary/CleanProtectionDomain.java 8341916 generic-all
+runtime/Dictionary/ProtectionDomainCacheTest.java 8341916 generic-all
+runtime/logging/ProtectionDomainVerificationTest.java 8341916 generic-all

@@ -3817,7 +3817,7 @@ bool PhaseIdealLoop::match_fill_loop(IdealLoopTree* lpt, Node*& store, Node*& st
         break;
       }
       int opc = n->Opcode();
-      if (opc == Op_StoreP || opc == Op_StoreN || opc == Op_StoreNKlass || opc == Op_StoreCM) {
+      if (opc == Op_StoreP || opc == Op_StoreN || opc == Op_StoreNKlass) {
         msg = "oop fills not handled";
         break;
       }

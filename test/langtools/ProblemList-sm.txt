@@ -1,2 +1,0 @@
-# :tier1
-tools/javac/processing/6348193/T6348193.java 0000000 generic-all
