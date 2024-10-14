@@ -1277,7 +1277,6 @@ var getJibProfilesDependencies = function (input, common) {
         },
         tidy: {
             organization: common.organization,
-            environment_name: "TIDY_HOME",
             ext: "tar.gz",
             revision: "5.9.20+1",
             environment_path: input.get("tidy", "home_path") + "/bin/tidy",
