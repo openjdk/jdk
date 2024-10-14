@@ -25,8 +25,10 @@
 
 package jdk.internal.classfile.impl;
 
+import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
 import java.lang.constant.MethodTypeDesc;
+import java.lang.reflect.AccessFlag;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -50,6 +52,8 @@ public final class DirectClassBuilder
         extends AbstractDirectBuilder<ClassModel>
         implements ClassBuilder {
 
+    /** The value of default class access flags */
+    static final int DEFAULT_CLASS_FLAGS = ClassFile.ACC_PUBLIC;
     final ClassEntry thisClassEntry;
     private final List<Util.Writable> fields = new ArrayList<>();
     private final List<Util.Writable> methods = new ArrayList<>();
@@ -65,7 +69,7 @@ public final class DirectClassBuilder
                               ClassEntry thisClass) {
         super(constantPool, context);
         this.thisClassEntry = AbstractPoolEntry.maybeClone(constantPool, thisClass);
-        this.flags = ClassFile.DEFAULT_CLASS_FLAGS;
+        this.flags = DEFAULT_CLASS_FLAGS;
         this.superclassEntry = null;
         this.interfaceEntries = Collections.emptyList();
         this.majorVersion = ClassFile.latestMajorVersion();
@@ -83,17 +87,30 @@ public final class DirectClassBuilder
     }
 
     @Override
+    public ClassBuilder withFlags(int flags) {
+        setFlags(flags);
+        return this;
+    }
+
+    @Override
+    public ClassBuilder withField(Utf8Entry name,
+                                  Utf8Entry descriptor,
+                                  int flags) {
+        return withField(new DirectFieldBuilder(constantPool, context, name, descriptor, flags, null));
+    }
+
+    @Override
     public ClassBuilder withField(Utf8Entry name,
                                   Utf8Entry descriptor,
                                   Consumer<? super FieldBuilder> handler) {
-        return withField(new DirectFieldBuilder(constantPool, context, name, descriptor, null)
+        return withField(new DirectFieldBuilder(constantPool, context, name, descriptor, 0, null)
                                  .run(handler));
     }
 
     @Override
     public ClassBuilder transformField(FieldModel field, FieldTransform transform) {
         DirectFieldBuilder builder = new DirectFieldBuilder(constantPool, context, field.fieldName(),
-                                                            field.fieldType(), field);
+                                                            field.fieldType(), 0, field);
         builder.transform(field, transform);
         return withField(builder);
     }
@@ -105,13 +122,6 @@ public final class DirectClassBuilder
                                    Consumer<? super MethodBuilder> handler) {
         return withMethod(new DirectMethodBuilder(constantPool, context, name, descriptor, flags, null)
                                   .run(handler));
-    }
-
-    @Override
-    public ClassBuilder withMethod(String name, MethodTypeDesc descriptor, int flags, Consumer<? super MethodBuilder> handler) {
-        var method = new DirectMethodBuilder(constantPool, context, constantPool.utf8Entry(name), constantPool.utf8Entry(descriptor), flags, null);
-        method.mDesc = descriptor;
-        return withMethod(method.run(handler));
     }
 
     @Override
@@ -167,14 +177,16 @@ public final class DirectClassBuilder
         // BSM writers until everything else is written.
 
         // Do this early because it might trigger CP activity
+        var constantPool = this.constantPool;
         ClassEntry superclass = superclassEntry;
         if (superclass != null)
             superclass = AbstractPoolEntry.maybeClone(constantPool, superclass);
         else if ((flags & ClassFile.ACC_MODULE) == 0 && !"java/lang/Object".equals(thisClassEntry.asInternalName()))
             superclass = constantPool.classEntry(ConstantDescs.CD_Object);
-        List<ClassEntry> ies = new ArrayList<>(interfaceEntries.size());
-        for (ClassEntry ce : interfaceEntries)
-            ies.add(AbstractPoolEntry.maybeClone(constantPool, ce));
+        int interfaceEntriesSize = interfaceEntries.size();
+        List<ClassEntry> ies = new ArrayList<>(interfaceEntriesSize);
+        for (int i = 0; i < interfaceEntriesSize; i++)
+            ies.add(AbstractPoolEntry.maybeClone(constantPool, interfaceEntries.get(i)));
 
         // We maintain two writers, and then we join them at the end
         int size = sizeHint == 0 ? 256 : sizeHint;
@@ -189,16 +201,15 @@ public final class DirectClassBuilder
         attributes.writeTo(tail);
 
         // Now we have to append the BSM, if there is one
-        boolean written = constantPool.writeBootstrapMethods(tail);
-        if (written) {
+        if (constantPool.writeBootstrapMethods(tail)) {
             // Update attributes count
-            tail.patchInt(attributesOffset, 2, attributes.size() + 1);
+            tail.patchU2(attributesOffset, attributes.size() + 1);
         }
 
         // Now we can make the head
-        head.writeInt(ClassFile.MAGIC_NUMBER);
-        head.writeU2(minorVersion);
-        head.writeU2(majorVersion);
+        head.writeLong((((long) ClassFile.MAGIC_NUMBER) << 32)
+                | ((minorVersion & 0xFFFFL) << 16)
+                | (majorVersion & 0xFFFFL));
         constantPool.writeTo(head);
         head.writeU2(flags);
         head.writeIndex(thisClassEntry);
@@ -206,9 +217,6 @@ public final class DirectClassBuilder
         Util.writeListIndices(head, ies);
 
         // Join head and tail into an exact-size buffer
-        byte[] result = new byte[head.size() + tail.size()];
-        head.copyTo(result, 0);
-        tail.copyTo(result, head.size());
-        return result;
+        return BufWriterImpl.join(head, tail);
     }
 }

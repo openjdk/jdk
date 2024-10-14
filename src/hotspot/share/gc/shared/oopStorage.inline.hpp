@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,7 @@ class OopStorage::ActiveArray {
 
 public:
   static ActiveArray* create(size_t size,
-                             MEMFLAGS memflags = mtGC,
+                             MemTag mem_tag = mtGC,
                              AllocFailType alloc_fail = AllocFailStrategy::EXIT_OOM);
   static void destroy(ActiveArray* ba);
 
@@ -196,6 +196,8 @@ public:
 
   template<typename F> bool iterate(F f);
   template<typename F> bool iterate(F f) const;
+
+  bool print_containing(const oop* addr, outputStream* st);
 }; // class Block
 
 inline OopStorage::Block* OopStorage::AllocationList::head() {

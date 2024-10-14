@@ -102,7 +102,7 @@
 #include "jfr/jfr.hpp"
 #endif
 
-static jint CurrentVersion = JNI_VERSION_21;
+static jint CurrentVersion = JNI_VERSION_24;
 
 #if defined(_WIN32) && !defined(USE_VECTORED_EXCEPTION_HANDLING)
 extern LONG WINAPI topLevelExceptionFilter(_EXCEPTION_POINTERS* );
@@ -444,9 +444,11 @@ JNI_ENTRY(jobject, jni_ToReflectedMethod(JNIEnv *env, jclass cls, jmethodID meth
   methodHandle m (THREAD, Method::resolve_jmethod_id(method_id));
   assert(m->is_static() == (isStatic != 0), "jni_ToReflectedMethod access flags doesn't match");
   oop reflection_method;
-  if (m->is_initializer()) {
+  if (m->is_object_initializer()) {
     reflection_method = Reflection::new_constructor(m, CHECK_NULL);
   } else {
+    // Note: Static initializers can theoretically be here, if JNI users manage
+    // to get their jmethodID. Record them as plain methods.
     reflection_method = Reflection::new_method(m, false, CHECK_NULL);
   }
   ret = JNIHandles::make_local(THREAD, reflection_method);
@@ -2221,11 +2223,19 @@ JNI_END
 
 
 JNI_ENTRY(jsize, jni_GetStringUTFLength(JNIEnv *env, jstring string))
- HOTSPOT_JNI_GETSTRINGUTFLENGTH_ENTRY(env, string);
+  HOTSPOT_JNI_GETSTRINGUTFLENGTH_ENTRY(env, string);
   oop java_string = JNIHandles::resolve_non_null(string);
   jsize ret = java_lang_String::utf8_length_as_int(java_string);
   HOTSPOT_JNI_GETSTRINGUTFLENGTH_RETURN(ret);
   return ret;
+JNI_END
+
+JNI_ENTRY(jlong, jni_GetStringUTFLengthAsLong(JNIEnv *env, jstring string))
+  HOTSPOT_JNI_GETSTRINGUTFLENGTHASLONG_ENTRY(env, string);
+  oop java_string = JNIHandles::resolve_non_null(string);
+  size_t ret = java_lang_String::utf8_length(java_string);
+  HOTSPOT_JNI_GETSTRINGUTFLENGTHASLONG_RETURN(ret);
+return checked_cast<jlong>(ret);
 JNI_END
 
 
@@ -2401,7 +2411,7 @@ static char* get_bad_address() {
     if (bad_address != nullptr) {
       os::protect_memory(bad_address, size, os::MEM_PROT_READ,
                          /*is_committed*/false);
-      MemTracker::record_virtual_memory_type((void*)bad_address, mtInternal);
+      MemTracker::record_virtual_memory_tag((void*)bad_address, mtInternal);
     }
   }
   return bad_address;
@@ -3398,7 +3408,11 @@ struct JNINativeInterface_ jni_NativeInterface = {
 
     // Virtual threads
 
-    jni_IsVirtualThread
+    jni_IsVirtualThread,
+
+    // Large UTF8 support
+
+    jni_GetStringUTFLengthAsLong
 };
 
 

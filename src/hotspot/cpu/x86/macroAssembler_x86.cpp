@@ -5756,7 +5756,7 @@ void MacroAssembler::verify_heapbase(const char* msg) {
   assert (Universe::heap() != nullptr, "java heap should be initialized");
   if (CheckCompressedOops) {
     Label ok;
-    ExternalAddress src2(CompressedOops::ptrs_base_addr());
+    ExternalAddress src2(CompressedOops::base_addr());
     const bool is_src2_reachable = reachable(src2);
     if (!is_src2_reachable) {
       push(rscratch1);  // cmpptr trashes rscratch1
@@ -6047,10 +6047,10 @@ void MacroAssembler::reinit_heapbase() {
       if (CompressedOops::base() == nullptr) {
         MacroAssembler::xorptr(r12_heapbase, r12_heapbase);
       } else {
-        mov64(r12_heapbase, (int64_t)CompressedOops::ptrs_base());
+        mov64(r12_heapbase, (int64_t)CompressedOops::base());
       }
     } else {
-      movptr(r12_heapbase, ExternalAddress(CompressedOops::ptrs_base_addr()));
+      movptr(r12_heapbase, ExternalAddress(CompressedOops::base_addr()));
     }
   }
 }
@@ -10420,5 +10420,14 @@ void MacroAssembler::restore_legacy_gprs() {
   movq(rcx, Address(rsp, 14 * wordSize));
   movq(rax, Address(rsp, 15 * wordSize));
   addq(rsp, 16 * wordSize);
+}
+
+void MacroAssembler::setcc(Assembler::Condition comparison, Register dst) {
+  if (VM_Version::supports_apx_f()) {
+    esetzucc(comparison, dst);
+  } else {
+    setb(comparison, dst);
+    movzbl(dst, dst);
+  }
 }
 #endif

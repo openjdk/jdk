@@ -4602,7 +4602,7 @@ static void workaround_expand_exec_shield_cs_limit() {
     return; // No matter, we tried, best effort.
   }
 
-  MemTracker::record_virtual_memory_type((address)codebuf, mtInternal);
+  MemTracker::record_virtual_memory_tag((address)codebuf, mtInternal);
 
   log_info(os)("[CS limit NX emulation work-around, exec code at: %p]", codebuf);
 

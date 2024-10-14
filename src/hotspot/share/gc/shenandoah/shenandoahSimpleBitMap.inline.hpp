@@ -27,15 +27,22 @@
 
 #include "gc/shenandoah/shenandoahSimpleBitMap.hpp"
 
+inline uintx tail_mask(uintx bit_number) {
+  if (bit_number >= BitsPerWord) {
+    return -1;
+  }
+  return (uintx(1) << bit_number) - 1;
+}
+
 inline idx_t ShenandoahSimpleBitMap::find_first_set_bit(idx_t beg, idx_t end) const {
   assert((beg >= 0) && (beg < _num_bits), "precondition");
   assert((end > beg) && (end <= _num_bits), "precondition");
   do {
     size_t array_idx = beg >> LogBitsPerWord;
-    uintx bit_number = beg & right_n_bits(LogBitsPerWord);
+    uintx bit_number = beg & (BitsPerWord - 1);
     uintx element_bits = _bitmap[array_idx];
     if (bit_number > 0) {
-      uintx mask_out = right_n_bits(bit_number);
+      uintx mask_out = tail_mask(bit_number);
       element_bits &= ~mask_out;
     }
     if (element_bits) {
@@ -62,10 +69,10 @@ inline idx_t ShenandoahSimpleBitMap::find_last_set_bit(idx_t beg, idx_t end) con
   assert((beg >= -1) && (beg < end), "precondition");
   do {
     idx_t array_idx = end >> LogBitsPerWord;
-    uintx bit_number = end & right_n_bits(LogBitsPerWord);
+    uint8_t bit_number = end & (BitsPerWord - 1);
     uintx element_bits = _bitmap[array_idx];
     if (bit_number < BitsPerWord - 1){
-      uintx mask_in = right_n_bits(bit_number + 1);
+      uintx mask_in = tail_mask(bit_number + 1);
       element_bits &= mask_in;
     }
     if (element_bits) {

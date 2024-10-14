@@ -535,6 +535,28 @@
  * @run main/othervm/manual -Djava.security.debug=certpath CAInterop globalsigne46 CRL
  */
 
+/*
+ * @test id=ssltlsrootecc2022
+ * @bug 8341057
+ * @summary Interoperability tests with SSL TLS 2022 root CAs
+ * @library /test/lib
+ * @build jtreg.SkippedException ValidatePathWithURL CAInterop
+ * @run main/othervm/manual -Djava.security.debug=certpath,ocsp CAInterop ssltlsrootecc2022 DEFAULT
+ * @run main/othervm/manual -Djava.security.debug=certpath,ocsp -Dcom.sun.security.ocsp.useget=false CAInterop ssltlsrootecc2022 DEFAULT
+ * @run main/othervm/manual -Djava.security.debug=certpath CAInterop ssltlsrootecc2022 CRL
+ */
+
+/*
+ * @test id=ssltlsrootrsa2022
+ * @bug 8341057
+ * @summary Interoperability tests with SSL TLS 2022 root CAs
+ * @library /test/lib
+ * @build jtreg.SkippedException ValidatePathWithURL CAInterop
+ * @run main/othervm/manual -Djava.security.debug=certpath,ocsp CAInterop ssltlsrootrsa2022 DEFAULT
+ * @run main/othervm/manual -Djava.security.debug=certpath,ocsp -Dcom.sun.security.ocsp.useget=false CAInterop ssltlsrootrsa2022 DEFAULT
+ * @run main/othervm/manual -Djava.security.debug=certpath CAInterop ssltlsrootrsa2022 CRL
+ */
+
 /**
  * Collection of certificate validation tests for interoperability with external CAs.
  * These tests are marked as manual as they depend on external infrastructure and may fail
@@ -712,6 +734,13 @@ public class CAInterop {
             case "globalsigne46" ->
                     new CATestURLs("https://valid.e46.roots.globalsign.com",
                             "https://revoked.e46.roots.globalsign.com");
+
+            case "ssltlsrootecc2022" ->
+                    new CATestURLs("https://test-root-2022-ecc.ssl.com",
+                            "https://revoked-root-2022-ecc.ssl.com");
+            case "ssltlsrootrsa2022" ->
+                    new CATestURLs("https://test-root-2022-rsa.ssl.com",
+                            "https://revoked-root-2022-rsa.ssl.com");
 
             default -> throw new RuntimeException("No test setup found for: " + alias);
         };

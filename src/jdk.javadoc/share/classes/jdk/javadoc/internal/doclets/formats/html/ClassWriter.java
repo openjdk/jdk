@@ -165,7 +165,7 @@ public class ClassWriter extends SubWriterHolderWriter {
         buildInterfaceUsageInfo(c);
         buildNestedClassInfo(c);
         buildFunctionalInterfaceInfo(c);
-        c.add(new HtmlTree(HtmlTag.HR));
+        c.add(HtmlTree.HR());
         var div = HtmlTree.DIV(HtmlStyles.horizontalScroll);
         buildClassSignature(div);
         buildDeprecationInfo(div);
@@ -461,7 +461,7 @@ public class ClassWriter extends SubWriterHolderWriter {
             var first = true;
             for (TypeParameterElement t : typeParams) {
                 if (!first) {
-                    content.add(",").add(new HtmlTree(HtmlTag.WBR));
+                    content.add(",").add(HtmlTree.WBR());
                 }
                 var typeParamLink = getLink(linkInfo.forType(t.asType()));
                 content.add(needsId
@@ -689,11 +689,9 @@ public class ClassWriter extends SubWriterHolderWriter {
 
     protected void addFunctionalInterfaceInfo (Content target) {
         if (utils.isFunctionalInterface(typeElement)) {
-            var dl = HtmlTree.DL(HtmlStyles.notes);
-            dl.add(HtmlTree.DT(contents.functionalInterface));
-            var dd = new HtmlTree(HtmlTag.DD);
-            dd.add(contents.functionalInterfaceMessage);
-            dl.add(dd);
+            var dl = HtmlTree.DL(HtmlStyles.notes)
+                .add(HtmlTree.DT(contents.functionalInterface))
+                .add(HtmlTree.DD(contents.functionalInterfaceMessage));
             target.add(dl);
         }
     }

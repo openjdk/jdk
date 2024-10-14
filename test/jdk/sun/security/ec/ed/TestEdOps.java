@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ import java.security.spec.*;
 import java.util.Arrays;
 import java.util.HexFormat;
 
-import sun.security.provider.SHAKE256;
+import sun.security.provider.SHA3.SHAKE256;
 
 public class TestEdOps {
 

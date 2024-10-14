@@ -29,6 +29,7 @@ import java.io.InputStream;
 import java.io.PrintStream;
 import java.lang.annotation.Annotation;
 import java.lang.foreign.MemorySegment;
+import java.lang.foreign.SymbolLookup;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.lang.module.ModuleDescriptor;
@@ -43,9 +44,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.stream.Stream;
 
+import jdk.internal.loader.NativeLibraries;
 import jdk.internal.misc.CarrierThreadLocal;
 import jdk.internal.module.ServicesCatalog;
 import jdk.internal.reflect.ConstantPool;
@@ -319,6 +322,11 @@ public interface JavaLangAccess {
     int countPositives(byte[] ba, int off, int len);
 
     /**
+     * Count the number of leading non-zero ascii chars in the String.
+     */
+    int countNonZeroAscii(String s);
+
+    /**
      * Constructs a new {@code String} by decoding the specified subarray of
      * bytes using the specified {@linkplain java.nio.charset.Charset charset}.
      *
@@ -453,9 +461,24 @@ public interface JavaLangAccess {
     Object stringConcat1(String[] constants);
 
     /**
+     * Get the string initial coder, When COMPACT_STRINGS is on, it returns 0, and when it is off, it returns 1.
+     */
+    byte stringInitCoder();
+
+    /**
+     * Get the Coder of String, which is used by StringConcatFactory to calculate the initCoder of constants
+     */
+    byte stringCoder(String str);
+
+    /**
      * Join strings
      */
     String join(String prefix, String suffix, String delimiter, String[] elements, int size);
+
+    /**
+     * Concatenation of prefix and suffix characters to a String for early bootstrap
+     */
+    String concat(String prefix, Object value, String suffix);
 
     /*
      * Get the class data associated with the given class.
@@ -468,7 +491,11 @@ public interface JavaLangAccess {
 
     int getCharsUTF16(long i, int index, byte[] buf);
 
-    long findNative(ClassLoader loader, String entry);
+    /**
+     * Returns the {@link NativeLibraries} object associated with the provided class loader.
+     * This is used by {@link SymbolLookup#loaderLookup()}.
+     */
+    NativeLibraries nativeLibrariesFor(ClassLoader loader);
 
     /**
      * Direct access to Shutdown.exit to avoid security manager checks
@@ -579,6 +606,11 @@ public interface JavaLangAccess {
      * @throws RejectedExecutionException if the scheduler cannot accept a task
      */
     void unparkVirtualThread(Thread thread);
+
+    /**
+     * Returns the virtual thread default scheduler.
+     */
+    Executor virtualThreadDefaultScheduler();
 
     /**
      * Creates a new StackWalker

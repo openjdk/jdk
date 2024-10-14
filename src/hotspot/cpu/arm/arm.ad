@@ -3890,6 +3890,7 @@ instruct loadRange(iRegI dst, memoryI mem) %{
 
 
 instruct loadP(iRegP dst, memoryP mem) %{
+  predicate(!(UseG1GC && n->as_Load()->barrier_data() != 0));
   match(Set dst (LoadP mem));
   ins_cost(MEMORY_REF_COST);
   size(4);
@@ -4356,6 +4357,7 @@ instruct movSP(store_ptr_RegP dst, SPRegP src) %{
 
 
 instruct storeP(memoryP mem, store_ptr_RegP src) %{
+  predicate(!(UseG1GC && n->as_Store()->barrier_data() != 0));
   match(Set mem (StoreP mem src));
   ins_cost(MEMORY_REF_COST);
   size(4);
@@ -5390,6 +5392,7 @@ instruct compareAndSwapI_bool(memoryex mem, iRegI oldval, iRegI newval, iRegI re
 %}
 
 instruct compareAndSwapP_bool(memoryex mem, iRegP oldval, iRegP newval, iRegI res, iRegI tmp, flagsReg ccr ) %{
+  predicate(!(UseG1GC && n->as_LoadStore()->barrier_data() != 0));
   match(Set res (CompareAndSwapP mem (Binary oldval newval)));
   effect( KILL ccr, TEMP tmp);
   size(28);
@@ -5659,6 +5662,7 @@ instruct xchgL(memoryex mem, iRegLd newval, iRegLd res, iRegI tmp, flagsReg ccr)
 %}
 
 instruct xchgP(memoryex mem, iRegP newval, iRegP res, iRegI tmp, flagsReg ccr) %{
+  predicate(!(UseG1GC && n->as_LoadStore()->barrier_data() != 0));
   match(Set res (GetAndSetP mem newval));
   effect(KILL ccr, TEMP tmp, TEMP res);
   size(16);

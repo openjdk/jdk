@@ -44,12 +44,13 @@ public final class DirectFieldBuilder
                               ClassFileImpl context,
                               Utf8Entry name,
                               Utf8Entry type,
+                              int flags,
                               FieldModel original) {
         super(constantPool, context);
         setOriginal(original);
         this.name = name;
         this.desc = type;
-        this.flags = 0;
+        this.flags = flags;
     }
 
     @Override
@@ -64,6 +65,12 @@ public final class DirectFieldBuilder
 
     public DirectFieldBuilder run(Consumer<? super FieldBuilder> handler) {
         handler.accept(this);
+        return this;
+    }
+
+    @Override
+    public FieldBuilder withFlags(int flags) {
+        setFlags(flags);
         return this;
     }
 

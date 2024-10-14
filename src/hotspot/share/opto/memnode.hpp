@@ -124,11 +124,7 @@ public:
   // Raw access function, to allow copying of adr_type efficiently in
   // product builds and retain the debug info for debug builds.
   const TypePtr *raw_adr_type() const {
-#ifdef ASSERT
-    return _adr_type;
-#else
-    return 0;
-#endif
+    return DEBUG_ONLY(_adr_type) NOT_DEBUG(nullptr);
   }
 
   // Return the barrier data of n, if available, or 0 otherwise.

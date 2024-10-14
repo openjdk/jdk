@@ -101,7 +101,8 @@ TARGETS += $(BUILD_LIBLCMS)
 ifeq ($(USE_EXTERNAL_LIBJPEG), true)
   LIBJAVAJPEG_INCLUDE_FILES := \
       imageioJPEG.c \
-      jpegdecoder.c
+      jpegdecoder.c \
+      #
   # If we're using an external library, we can't include our own SRC path
   # as includes, instead the system headers should be used.
   LIBJAVAJPEG_HEADERS_FROM_SRC := false
@@ -391,7 +392,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBFONTMANAGER, \
     DISABLED_WARNINGS_clang := $(HARFBUZZ_DISABLED_WARNINGS_clang), \
     DISABLED_WARNINGS_microsoft := $(HARFBUZZ_DISABLED_WARNINGS_microsoft), \
     LDFLAGS := $(LDFLAGS_CXX_JDK), \
-    LDFLAGS_FILTER_OUT :=-Wl$(COMMA)-z$(COMMA)defs, \
+    LDFLAGS_FILTER_OUT := -Wl$(COMMA)-z$(COMMA)defs, \
     LDFLAGS_aix := -Wl$(COMMA)-berok, \
     JDK_LIBS := libawt java.base:libjava $(LIBFONTMANAGER_JDK_LIBS), \
     JDK_LIBS_macosx := libawt_lwawt, \

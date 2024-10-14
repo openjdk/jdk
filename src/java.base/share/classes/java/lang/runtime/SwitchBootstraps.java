@@ -659,7 +659,7 @@ public class SwitchBootstraps {
                             MethodTypeDesc.of(ConstantDescs.CD_char));
                     cb.labelBinding(compare);
 
-                    cb.ldc(integerLabel);
+                    cb.loadConstant(integerLabel);
                     cb.if_icmpne(next);
                 } else if ((caseLabel instanceof Long ||
                         caseLabel instanceof Float ||

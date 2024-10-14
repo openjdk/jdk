@@ -131,7 +131,7 @@ POLICY_SRC_LIST := $(POLICY_SRC)
 $(POLICY_DST): $(POLICY_SRC_LIST)
 	$(call MakeTargetDir)
 	$(RM) $@ $@.tmp
-	$(foreach f,$(POLICY_SRC_LIST),$(CAT) $(f) >> $@.tmp;)
+	$(foreach f, $(POLICY_SRC_LIST), $(CAT) $(f) >> $@.tmp;)
 	$(MV) $@.tmp $@
 
 TARGETS += $(POLICY_DST)
@@ -156,7 +156,7 @@ endif
 $(DEF_POLICY_DST): $(DEF_POLICY_SRC_LIST)
 	$(call MakeTargetDir)
 	$(RM) $@ $@.tmp
-	$(foreach f,$(DEF_POLICY_SRC_LIST),$(CAT) $(f) >> $@.tmp;)
+	$(foreach f, $(DEF_POLICY_SRC_LIST), $(CAT) $(f) >> $@.tmp;)
 	$(MV) $@.tmp $@
 
 TARGETS += $(DEF_POLICY_DST)

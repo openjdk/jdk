@@ -1555,26 +1555,12 @@ class LambdaForm {
          *  Return -1 if the name is not used.
          */
         int lastUseIndex(Name n) {
+            Object[] arguments = this.arguments;
             if (arguments == null)  return -1;
             for (int i = arguments.length; --i >= 0; ) {
                 if (arguments[i] == n)  return i;
             }
             return -1;
-        }
-
-        /** Return the number of occurrences of n in the argument array.
-         *  Return 0 if the name is not used.
-         */
-        int useCount(Name n) {
-            int count = 0;
-            if (arguments != null) {
-                for (Object argument : arguments) {
-                    if (argument == n) {
-                        count++;
-                    }
-                }
-            }
-            return count;
         }
 
         public boolean equals(Name that) {
@@ -1618,8 +1604,16 @@ class LambdaForm {
     int useCount(Name n) {
         int count = (result == n.index) ? 1 : 0;
         int i = Math.max(n.index + 1, arity);
+        Name[] names = this.names;
         while (i < names.length) {
-            count += names[i++].useCount(n);
+            Object[] arguments = names[i++].arguments;
+            if (arguments != null) {
+                for (Object argument : arguments) {
+                    if (argument == n) {
+                        count++;
+                    }
+                }
+            }
         }
         return count;
     }
@@ -1642,6 +1636,16 @@ class LambdaForm {
             names[i] = argument(i, basicType(types.parameterType(i)));
         return names;
     }
+
+    static Name[] invokeArguments(int extra, MethodType types) {
+        int length = types.parameterCount();
+        Name[] names = new Name[length + extra + 1];
+        names[0] = argument(0, L_TYPE);
+        for (int i = 0; i < length; i++)
+            names[i + 1] = argument(i + 1, basicType(types.parameterType(i)));
+        return names;
+    }
+
     static final int INTERNED_ARGUMENT_LIMIT = 10;
     private static final Name[][] INTERNED_ARGUMENTS
             = new Name[ARG_TYPE_LIMIT][INTERNED_ARGUMENT_LIMIT];

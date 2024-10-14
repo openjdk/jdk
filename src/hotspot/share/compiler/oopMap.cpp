@@ -246,10 +246,13 @@ private:
 };
 
 void OopMapSort::sort() {
+#ifdef ASSERT
   for (OopMapStream oms(_map); !oms.is_done(); oms.next()) {
     OopMapValue omv = oms.current();
-    assert(omv.type() == OopMapValue::oop_value || omv.type() == OopMapValue::narrowoop_value || omv.type() == OopMapValue::derived_oop_value || omv.type() == OopMapValue::callee_saved_value, "");
+    assert(omv.type() == OopMapValue::oop_value || omv.type() == OopMapValue::narrowoop_value ||
+           omv.type() == OopMapValue::derived_oop_value || omv.type() == OopMapValue::callee_saved_value, "");
   }
+#endif
 
   for (OopMapStream oms(_map); !oms.is_done(); oms.next()) {
     if (oms.current().type() == OopMapValue::callee_saved_value) {

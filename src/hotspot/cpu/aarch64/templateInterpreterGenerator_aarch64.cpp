@@ -69,12 +69,6 @@ int TemplateInterpreter::InterpreterCodeSize = 200 * 1024;
 
 #define __ _masm->
 
-//-----------------------------------------------------------------------------
-
-extern "C" void entry(CodeBuffer*);
-
-//-----------------------------------------------------------------------------
-
 address TemplateInterpreterGenerator::generate_slow_signature_handler() {
   address entry = __ pc();
 

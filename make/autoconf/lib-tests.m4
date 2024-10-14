@@ -31,7 +31,7 @@
 JTREG_MINIMUM_VERSION=7.4
 GTEST_MINIMUM_VERSION=1.14.0
 
-###############################################################################
+################################################################################
 #
 # Setup and check for gtest framework source files
 #
@@ -74,7 +74,7 @@ AC_DEFUN_ONCE([LIB_TESTS_SETUP_GTEST],
   AC_SUBST(GTEST_FRAMEWORK_SRC)
 ])
 
-###############################################################################
+################################################################################
 #
 # Setup and check the Java Microbenchmark Harness
 #

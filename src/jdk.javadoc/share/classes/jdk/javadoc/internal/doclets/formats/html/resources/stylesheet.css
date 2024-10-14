@@ -360,8 +360,11 @@ main {
     padding:10px 20px;
     position:relative;
 }
-section[id$=-description] :is(dl, ol, ul, p, div, blockquote, pre):last-child,
-section[id$=-description] :is(dl, ol, ul):last-child > :is(li, dd):last-child {
+/* Compensate for non-collapsing margins between element description and summary tables */
+div.horizontal-scroll > section[id$=-description] > :is(dl, ol, ul, p, div, blockquote, pre):last-child,
+div.horizontal-scroll > section[id$=-description] > :last-child > :is(li, dd):last-child,
+section.class-description > div.horizontal-scroll > :is(dl, ol, ul, p, div, blockquote, pre):last-child,
+section.class-description > div.horizontal-scroll > :last-child > :is(li, dd):last-child {
     margin-bottom:4px;
 }
 dl.notes > dt {

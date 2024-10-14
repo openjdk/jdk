@@ -1594,6 +1594,14 @@ static bool match_into_reg( const Node *n, Node *m, Node *control, int i, bool s
     // the same register.  See find_shared_node.
     return false;
   } else {                      // Not a constant
+    if (!shared && Matcher::is_encode_and_store_pattern(n, m)) {
+      // Make it possible to match "encode and store" patterns with non-shared
+      // encode operations that are pinned to a control node (e.g. by CastPP
+      // node removal in final graph reshaping). The matched instruction cannot
+      // float above the encode's control node because it is pinned to the
+      // store's control node.
+      return false;
+    }
     // Stop recursion if they have different Controls.
     Node* m_control = m->in(0);
     // Control of load's memory can post-dominates load's control.
@@ -2831,6 +2839,18 @@ bool Matcher::is_non_long_integral_vector(const Node* n) {
   BasicType bt = vector_element_basic_type(n);
   assert(bt != T_CHAR, "char is not allowed in vector");
   return is_subword_type(bt) || bt == T_INT;
+}
+
+bool Matcher::is_encode_and_store_pattern(const Node* n, const Node* m) {
+  if (n == nullptr ||
+      m == nullptr ||
+      n->Opcode() != Op_StoreN ||
+      !m->is_EncodeP() ||
+      n->as_Store()->barrier_data() == 0) {
+    return false;
+  }
+  assert(m == n->in(MemNode::ValueIn), "m should be input to n");
+  return true;
 }
 
 #ifdef ASSERT

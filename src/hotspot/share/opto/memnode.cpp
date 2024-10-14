@@ -1981,6 +1981,12 @@ LoadNode::load_array_final_field(const TypeKlassPtr *tkls,
     assert(this->Opcode() == Op_LoadI, "must load an int from _access_flags");
     return TypeInt::make(klass->access_flags());
   }
+  if (tkls->offset() == in_bytes(Klass::misc_flags_offset())) {
+    // The field is Klass::_misc_flags.  Return its (constant) value.
+    // (Folds up the 2nd indirection in Reflection.getClassAccessFlags(aClassConstant).)
+    assert(this->Opcode() == Op_LoadUB, "must load an unsigned byte from _misc_flags");
+    return TypeInt::make(klass->misc_flags());
+  }
   if (tkls->offset() == in_bytes(Klass::layout_helper_offset())) {
     // The field is Klass::_layout_helper.  Return its constant value if known.
     assert(this->Opcode() == Op_LoadI, "must load an int from _layout_helper");
@@ -4638,6 +4644,11 @@ intptr_t InitializeNode::can_capture_store(StoreNode* st, PhaseGVN* phase, bool 
   Node* mem = st->in(MemNode::Memory);
   if (!(mem->is_Proj() && mem->in(0) == this))
     return FAIL;                // must not be preceded by other stores
+  BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
+  if ((st->Opcode() == Op_StoreP || st->Opcode() == Op_StoreN) &&
+      !bs->can_initialize_object(st)) {
+    return FAIL;
+  }
   Node* adr = st->in(MemNode::Address);
   intptr_t offset;
   AllocateNode* alloc = AllocateNode::Ideal_allocation(adr, phase, offset);

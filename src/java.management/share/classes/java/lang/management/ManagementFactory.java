@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,7 +95,6 @@ import sun.management.spi.PlatformMBeanProvider.PlatformComponent;
  * <p>
  * An application can access a platform MXBean in the following ways:
  * <h3>1. Direct access to an MXBean interface</h3>
- * <blockquote>
  * <ul>
  *     <li>Get an MXBean instance by calling the
  *         {@link #getPlatformMXBean(Class) getPlatformMXBean} or
@@ -130,7 +129,6 @@ import sun.management.spi.PlatformMBeanProvider.PlatformComponent;
  *         for details.
  *        </li>
  * </ul>
- * </blockquote>
  *
  * <p>
  * The {@link #getPlatformManagementInterfaces getPlatformManagementInterfaces}

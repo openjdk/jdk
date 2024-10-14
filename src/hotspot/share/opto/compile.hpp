@@ -864,7 +864,7 @@ private:
   RootNode*    root() const                { return _root; }
   void         set_root(RootNode* r)       { _root = r; }
   StartNode*   start() const;              // (Derived from root.)
-  void         init_start(StartNode* s);
+  void         verify_start(StartNode* s) const NOT_DEBUG_RETURN;
   Node*        immutable_memory();
 
   Node*        recent_alloc_ctl() const    { return _recent_alloc_ctl; }
@@ -1216,6 +1216,7 @@ private:
   void final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& frc, uint nop, Unique_Node_List& dead_nodes);
   void final_graph_reshaping_walk(Node_Stack& nstack, Node* root, Final_Reshape_Counts& frc, Unique_Node_List& dead_nodes);
   void eliminate_redundant_card_marks(Node* n);
+  void handle_div_mod_op(Node* n, BasicType bt, bool is_unsigned);
 
   // Logic cone optimization.
   void optimize_logic_cones(PhaseIterGVN &igvn);

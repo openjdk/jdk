@@ -1045,6 +1045,10 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(UseAPX, apx_supported ? true : false);
   }
 
+  if (!UseAPX) {
+    _features &= ~CPU_APX_F;
+  }
+
   if (UseAVX < 2) {
     _features &= ~CPU_AVX2;
     _features &= ~CPU_AVX_IFMA;
