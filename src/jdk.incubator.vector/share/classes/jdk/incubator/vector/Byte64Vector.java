@@ -503,7 +503,7 @@ final class Byte64Vector extends ByteVector {
                                    VectorMask<Byte> m) {
         return (Byte64Vector)
             super.selectFromTemplate((Byte64Vector) v,
-                                     (Byte64Mask) m);  // specialize
+                                     Byte64Mask.class, (Byte64Mask) m);  // specialize
     }
 
 
@@ -842,6 +842,13 @@ final class Byte64Vector extends ByteVector {
                 throw new IllegalArgumentException("VectorShuffle length and species length differ");
             int[] shuffleArray = toArray();
             return s.shuffleFromArray(shuffleArray, 0).check(s);
+        }
+
+        @Override
+        @ForceInline
+        public Byte64Shuffle wrapIndexes() {
+            return VectorSupport.wrapShuffleIndexes(ETYPE, Byte64Shuffle.class, this, VLENGTH,
+                                                    (s) -> ((Byte64Shuffle)(((AbstractShuffle<Byte>)(s)).wrapIndexesTemplate())));
         }
 
         @ForceInline
