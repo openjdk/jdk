@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,7 @@ void InterpreterCodelet::verify() {}
 void InterpreterCodelet::print_on(outputStream* st) const {
   ttyLocker ttyl;
 
-  if (PrintInterpreter) {
+  if (AbstractInterpreter::should_print_instructions()) {
     st->cr();
     st->print_cr("----------------------------------------------------------------------");
   }
@@ -76,7 +76,7 @@ void InterpreterCodelet::print_on(outputStream* st) const {
   st->print_cr("[" INTPTR_FORMAT ", " INTPTR_FORMAT "]  %d bytes",
                 p2i(code_begin()), p2i(code_end()), code_size());
 
-  if (PrintInterpreter) {
+  if (AbstractInterpreter::should_print_instructions()) {
     st->cr();
     Disassembler::decode(code_begin(), code_end(), st NOT_PRODUCT(COMMA &_asm_remarks));
   }

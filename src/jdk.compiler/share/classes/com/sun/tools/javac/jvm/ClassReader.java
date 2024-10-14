@@ -2352,6 +2352,12 @@ public class ClassReader {
             this.attributes = attributes;
         }
 
+        /**
+         * A supertype_index value of 65535 specifies that the annotation appears on the superclass
+         * in an extends clause of a class declaration, see JVMS 4.7.20.1
+         */
+        public static final int SUPERCLASS_INDEX = 65535;
+
         @Override
         public Void visitClassSymbol(Symbol.ClassSymbol s, Void unused) {
             ClassType t = (ClassType) s.type;
@@ -2361,7 +2367,7 @@ public class ClassReader {
                 interfaces.add(addTypeAnnotations(itf, classExtends(i++)));
             }
             t.interfaces_field = interfaces.toList();
-            t.supertype_field = addTypeAnnotations(t.supertype_field, classExtends(65535));
+            t.supertype_field = addTypeAnnotations(t.supertype_field, classExtends(SUPERCLASS_INDEX));
             if (t.typarams_field != null) {
                 t.typarams_field =
                         rewriteTypeParameters(
