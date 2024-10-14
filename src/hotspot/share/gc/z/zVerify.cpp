@@ -589,7 +589,7 @@ void ZVerify::on_color_flip() {
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread* const jt = jtiwh.next(); ) {
     const ZStoreBarrierBuffer* const buffer = ZThreadLocalData::store_barrier_buffer(jt);
 
-    for (size_t i = buffer->current(); i < ZStoreBarrierBuffer::_buffer_length; ++i) {
+    for (size_t i = buffer->current(); i < ZStoreBarrierBuffer::BufferLength; ++i) {
       volatile zpointer* const p = buffer->_buffer[i]._p;
       bool created = false;
       z_verify_store_barrier_buffer_table->put_if_absent(p, true, &created);

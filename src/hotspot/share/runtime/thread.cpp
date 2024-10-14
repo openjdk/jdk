@@ -64,7 +64,7 @@ THREAD_LOCAL Thread* Thread::_thr_current = nullptr;
 
 DEBUG_ONLY(Thread* Thread::_starting_thread = nullptr;)
 
-Thread::Thread(MEMFLAGS flags) {
+Thread::Thread(MemTag mem_tag) {
 
   DEBUG_ONLY(_run_state = PRE_CALL_RUN;)
 
@@ -78,12 +78,11 @@ Thread::Thread(MEMFLAGS flags) {
 
   // allocated data structures
   set_osthread(nullptr);
-  set_resource_area(new (flags) ResourceArea(flags));
+  set_resource_area(new (mem_tag) ResourceArea(mem_tag));
   DEBUG_ONLY(_current_resource_mark = nullptr;)
-  set_handle_area(new (flags) HandleArea(flags, nullptr));
+  set_handle_area(new (mem_tag) HandleArea(mem_tag, nullptr));
   set_metadata_handles(new (mtClass) GrowableArray<Metadata*>(30, mtClass));
   set_last_handle_mark(nullptr);
-  DEBUG_ONLY(_missed_ic_stub_refill_verifier = nullptr);
 
   // Initial value of zero ==> never claimed.
   _threads_do_token = 0;
@@ -144,6 +143,16 @@ Thread::Thread(MEMFLAGS flags) {
 
   MACOS_AARCH64_ONLY(DEBUG_ONLY(_wx_init = false));
 }
+
+#ifdef ASSERT
+address Thread::stack_base() const {
+  // Note: can't report Thread::name() here as that can require a ResourceMark which we
+  // can't use because this gets called too early in the thread initialization.
+  assert(_stack_base != nullptr, "Stack base not yet set for thread id:%d (0 if not set)",
+         osthread() != nullptr ? osthread()->thread_id() : 0);
+  return _stack_base;
+}
+#endif
 
 void Thread::initialize_tlab() {
   if (UseTLAB) {

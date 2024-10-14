@@ -1636,6 +1636,16 @@ class LambdaForm {
             names[i] = argument(i, basicType(types.parameterType(i)));
         return names;
     }
+
+    static Name[] invokeArguments(int extra, MethodType types) {
+        int length = types.parameterCount();
+        Name[] names = new Name[length + extra + 1];
+        names[0] = argument(0, L_TYPE);
+        for (int i = 0; i < length; i++)
+            names[i + 1] = argument(i + 1, basicType(types.parameterType(i)));
+        return names;
+    }
+
     static final int INTERNED_ARGUMENT_LIMIT = 10;
     private static final Name[][] INTERNED_ARGUMENTS
             = new Name[ARG_TYPE_LIMIT][INTERNED_ARGUMENT_LIMIT];
