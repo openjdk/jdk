@@ -750,35 +750,32 @@ public class AnnotationsOnModules extends ModuleTestBase {
 
         Path modifiedModuleInfo = libClasses.resolve("module-info.class");
         ClassModel cm1 = ClassFile.of().parse(modifiedModuleInfo);
-        byte[] newBytes = ClassFile.of().transformClass(cm1, new ClassTransform() {
-            @Override
-            public void accept(ClassBuilder builder, ClassElement element) {
-                if (element instanceof ModuleAttribute attr) {
-                    List<ModuleRequireInfo> requires = new ArrayList<>();
+        byte[] newBytes = ClassFile.of().transformClass(cm1, (builder, element) -> {
+            if (element instanceof ModuleAttribute attr) {
+                List<ModuleRequireInfo> requires = new ArrayList<>();
 
-                    for (ModuleRequireInfo mri : attr.requires()) {
-                        if (mri.requires().name().equalsString("java.base")) {
-                            requires.add(ModuleRequireInfo.of(mri.requires(),
-                                                              List.of(AccessFlag.TRANSITIVE),
-                                                              mri.requiresVersion()
-                                                                 .orElse(null)));
-                        } else {
-                            requires.add(mri);
-                        }
+                for (ModuleRequireInfo mri : attr.requires()) {
+                    if (mri.requires().name().equalsString("java.base")) {
+                        requires.add(ModuleRequireInfo.of(mri.requires(),
+                                                          List.of(AccessFlag.TRANSITIVE),
+                                                          mri.requiresVersion()
+                                                             .orElse(null)));
+                    } else {
+                        requires.add(mri);
                     }
-
-                    builder.accept(ModuleAttribute.of(attr.moduleName(),
-                                                      attr.moduleFlagsMask(),
-                                                      attr.moduleVersion()
-                                                          .orElseGet(() -> null),
-                                                      requires,
-                                                      attr.exports(),
-                                                      attr.opens(),
-                                                      attr.uses(),
-                                                      attr.provides()));
-                } else {
-                    builder.accept(element);
                 }
+
+                builder.accept(ModuleAttribute.of(attr.moduleName(),
+                                                  attr.moduleFlagsMask(),
+                                                  attr.moduleVersion()
+                                                      .orElseGet(() -> null),
+                                                  requires,
+                                                  attr.exports(),
+                                                  attr.opens(),
+                                                  attr.uses(),
+                                                  attr.provides()));
+            } else {
+                builder.accept(element);
             }
         });
 
