@@ -48,6 +48,7 @@ class RegisterSaver {
   // Boolean flags to force only argument registers to be saved.
   static int live_reg_save_size(RegisterSet reg_set);
   static int live_reg_frame_size(RegisterSet reg_set, bool save_vectors = false);
+  static int calculate_vregstosave_num();
   // Specify the register that should be stored as the return pc in the current frame.
   static OopMap* save_live_registers(MacroAssembler* masm, RegisterSet reg_set, Register return_pc = Z_R14, bool save_vectors = false);
   static void restore_live_registers(MacroAssembler* masm, RegisterSet reg_set, bool save_vectors = false);

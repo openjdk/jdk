@@ -1195,7 +1195,7 @@ static enum RC rc_class(OptoReg::Name reg) {
     return rc_float;
   }
 
-  // we have 32 vector register
+  // we have 128 vector register halves at index 64
   if (reg < 32+32+128) {
     return rc_vector;
   }
@@ -11169,6 +11169,17 @@ instruct vadd4I_reg(vecX dst, vecX src1, vecX src2) %{
   ins_pipe(pipe_class_dummy);
 %}
 
+instruct vadd2L_reg(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (AddVL src1 src2));
+  predicate(n->as_Vector()->length() == 2);
+  format %{ "VAG  $dst,$src1,$src2\t// add packed2L" %}
+  size(6);
+  ins_encode %{
+    __ z_vag($dst$$VectorRegister, $src1$$VectorRegister, $src2$$VectorRegister);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
 instruct vmul16B_reg(vecX dst, vecX src1, vecX src2) %{
   match(Set dst (MulVB src1 src2));
   predicate(n->as_Vector()->length() == 16);
@@ -11202,18 +11213,7 @@ instruct vmul4I_reg(vecX dst, vecX src1, vecX src2) %{
   ins_pipe(pipe_class_dummy);
 %}
 
-instruct vadd2L_reg(vecX dst, vecX src1, vecX src2) %{
-  match(Set dst (AddVL src1 src2));
-  predicate(n->as_Vector()->length() == 2);
-  format %{ "VAG  $dst,$src1,$src2\t// add packed2L" %}
-  size(6);
-  ins_encode %{
-    __ z_vag($dst$$VectorRegister, $src1$$VectorRegister, $src2$$VectorRegister);
-  %}
-  ins_pipe(pipe_class_dummy);
-%}
-
-instruct vsub416B_reg(vecX dst, vecX src1, vecX src2) %{
+instruct vsub16B_reg(vecX dst, vecX src1, vecX src2) %{
   match(Set dst (SubVB src1 src2));
   predicate(n->as_Vector()->length() == 16);
   format %{ "VSB  $dst,$src1,$src2\t// sub packed16B" %}

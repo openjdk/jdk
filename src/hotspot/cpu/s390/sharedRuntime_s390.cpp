@@ -293,11 +293,12 @@ int RegisterSaver::live_reg_save_size(RegisterSet reg_set) {
   return (reg_space / sizeof(RegisterSaver::LiveRegType)) * reg_size;
 }
 
-int RegisterSaver::live_reg_frame_size(RegisterSet reg_set, bool save_vectors) {
-  const int vregstosave_num = save_vectors ? (sizeof(RegisterSaver_LiveVRegs) /
-                                              sizeof(RegisterSaver::LiveRegType))
-                                            : 0;
+int RegisterSaver::calculate_vregstosave_num() {
+  return (sizeof(RegisterSaver_LiveVRegs) / sizeof(RegisterSaver::LiveRegType));
+}
 
+int RegisterSaver::live_reg_frame_size(RegisterSet reg_set, bool save_vectors) {
+  const int vregstosave_num = save_vectors ? calculate_vregstosave_num() : 0;
   return live_reg_save_size(reg_set) + vregstosave_num * v_reg_size + frame::z_abi_160_size;
 }
 
@@ -310,13 +311,10 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, RegisterSet reg
   // deoptimization; see compiledVFrame::create_stack_value).
 
   // Calculate frame size.
-  const int vregstosave_num     = save_vectors ? (sizeof(RegisterSaver_LiveVRegs) /
-                                                  sizeof(RegisterSaver::LiveRegType))
-                                                  : 0;
-  const int register_save_size   = live_reg_save_size(reg_set) + vregstosave_num * v_reg_size;
-  const int frame_size_in_bytes  = frame::z_abi_160_size + register_save_size;
+  const int frame_size_in_bytes  = live_reg_frame_size(reg_set, save_vectors);
   const int frame_size_in_slots  = frame_size_in_bytes / sizeof(jint);
-  const int register_save_offset = frame_size_in_bytes - register_save_size;
+  const int vregstosave_num = save_vectors ? calculate_vregstosave_num() : 0;
+  const int register_save_offset = frame_size_in_bytes - (live_reg_save_size(reg_set) + vregstosave_num * v_reg_size);
 
   // OopMap frame size is in c2 stack slots (sizeof(jint)) not bytes or words.
   OopMap* map = new OopMap(frame_size_in_slots, 0);
@@ -489,13 +487,8 @@ OopMap* RegisterSaver::generate_oop_map(MacroAssembler* masm, RegisterSet reg_se
 // Pop the current frame and restore all the registers that we saved.
 void RegisterSaver::restore_live_registers(MacroAssembler* masm, RegisterSet reg_set, bool save_vectors) {
   int offset;
-  // Calculate frame size.
-  const int vregstosave_num     = save_vectors ? (sizeof(RegisterSaver_LiveVRegs) /
-                                                  sizeof(RegisterSaver::LiveRegType))
-                                                  : 0;
-  const int register_save_size   = live_reg_save_size(reg_set) + vregstosave_num * v_reg_size;
-  const int frame_size_in_bytes  = frame::z_abi_160_size + register_save_size;
-  const int register_save_offset = frame_size_in_bytes - register_save_size;
+  const int vregstosave_num = save_vectors ? calculate_vregstosave_num() : 0;
+  const int register_save_offset = live_reg_frame_size(reg_set, save_vectors) - (live_reg_save_size(reg_set) + vregstosave_num * v_reg_size);
 
   Register first = noreg;
   Register last = noreg;
@@ -578,7 +571,6 @@ void RegisterSaver::restore_live_registers(MacroAssembler* masm, RegisterSet reg
     __ z_vl(as_VectorRegister(reg_num), Address(Z_SP, offset));
   }
 
-  assert(offset == frame_size_in_bytes, "consistency check");
   // Pop the frame.
   __ pop_frame();
 
