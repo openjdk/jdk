@@ -2714,35 +2714,11 @@ void MacroAssembler::compiler_fast_unlock_object(ConditionRegister flag, Registe
   STATIC_ASSERT(markWord::monitor_value <= INT_MAX);
   addi(current_header, current_header, -(int)markWord::monitor_value); // monitor
 
-#ifdef ASSERT
-  {
-    Label is_owner, not_owner;
-    Register owner = temp;
-    Register stack_limit = displaced_header;
-    ld(owner, in_bytes(ObjectMonitor::owner_offset()), current_header);
-    cmpld(CCR0, owner, R16_thread);
-    beq(CCR0, is_owner);
-    if (LockingMode != LM_MONITOR) {
-      // With LM_LEGACY the owner field could point to the BasicLock in the stack.
-      // owner >= stack_base -> not owner
-      ld(stack_limit, in_bytes(Thread::stack_base_offset()), R16_thread);
-      cmpld(CCR0, owner, stack_limit);
-      bge(CCR0, not_owner);
-      // owner >= stack_end -> not owner
-      ld(R0, in_bytes(Thread::stack_size_offset()), R16_thread);
-      subf(stack_limit, R0, stack_limit);
-      cmpld(CCR0, owner, stack_limit);
-      bge(CCR0, is_owner);
-    }
-    bind(not_owner); stop("compiler_fast_unlock_object: not owner of monitor");
-    bind(is_owner);
-  }
-#endif
-
   ld(displaced_header, in_bytes(ObjectMonitor::recursions_offset()), current_header);
-
   addic_(displaced_header, displaced_header, -1);
   blt(CCR0, notRecursive); // Not recursive if negative after decrement.
+
+  // Recursive unlock
   std(displaced_header, in_bytes(ObjectMonitor::recursions_offset()), current_header);
   if (flag == CCR0) { // Otherwise, flag is already EQ, here.
     crorc(CCR0, Assembler::equal, CCR0, Assembler::equal); // Set CCR0 EQ
