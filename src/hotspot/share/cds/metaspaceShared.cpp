@@ -63,7 +63,6 @@
 #include "logging/logStream.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/metaspaceClosure.hpp"
-#include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "nmt/memTracker.hpp"
