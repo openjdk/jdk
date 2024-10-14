@@ -241,31 +241,36 @@ import java.util.stream.Stream;
  * </tbody>
  * </table></blockquote>
  * <p>
- * All native linker implementations support a well-defined subset of layouts. More formally,
- * a layout {@code L} is supported by a native linker {@code NL} if:
+ * A native linker only supports function descriptors whose argument/return layouts are
+ * <em>well-formed</em> layouts. More formally, a layout `L`is well-formed if:
  * <ul>
- * <li>{@code L} is a value layout {@code V} and {@code V.withoutName()} is a canonical layout</li>
+ * <li>{@code L} is a value layout and {@code L} is derived from a canonical layout
+ *     {@code C} such that {@code L.byteAlignment() <= C.byteAlignment()}</li>
  * <li>{@code L} is a sequence layout {@code S} and all the following conditions hold:
  * <ol>
- * <li>the alignment constraint of {@code S} is set to its
- *     <a href="MemoryLayout.html#layout-align">natural alignment</a>, and</li>
- * <li>{@code S.elementLayout()} is a layout supported by {@code NL}.</li>
+ * <li>{@code L.byteAlignment()} is equal to the sequence layout's <em>natural alignment</em>
+ *     , and</li>
+ * <li>{@code S.elementLayout()} is a well-defined layout.</li>
  * </ol>
  * </li>
  * <li>{@code L} is a group layout {@code G} and all the following conditions hold:
  * <ol>
- * <li>the alignment constraint of {@code G} is set to its
- *     <a href="MemoryLayout.html#layout-align">natural alignment</a>;</li>
- * <li>the size of {@code G} is a multiple of its alignment constraint;</li>
- * <li>each member layout in {@code G.memberLayouts()} is either a padding layout or
- *     a layout supported by {@code NL};</li>
- * <li>{@code G} does not contain padding other than what is strictly required to align
- *      its non-padding layout elements, or to satisfy (2), and</li>
- * <li>not all elements in {@code G.memberLayouts()} are padding layouts.</li>
+ * <li>{@code G.byteAlignment()} is equal to the group layout's <em>natural alignment</em></li>
+ * <li>{@code G.byteSize()} is a multiple of {@code G.byteAlignment()}</li>
+ * <li>Each member layout in {@code G.memberLayouts()} is either a padding layout or a
+ *     well-defined layout</li>
+ * <li>Each non-padding member layout {@code E} in {@code G.memberLayouts()} follows an
+ *     optional padding member layout, whose size is the minimum size required to
+ *     align {@code E}</li>
+ * <li>{@code G} contains an optional trailing padding member layout, whose size is the
+ *     minimum size that satisfies (2)</li>
  * </ol>
  * </li>
  * </ul>
  *
+ * Linker implementations may optionally impose additional platform-specific constraints
+ * on functional descriptors despite being <em>well-formed</em>.
+ * <p>
  * Linker implementations may optionally support additional layouts, such as
  * <em>packed</em> struct layouts. A packed struct is a struct in which there is
  * at least one member layout {@code L} that has an alignment constraint less strict
