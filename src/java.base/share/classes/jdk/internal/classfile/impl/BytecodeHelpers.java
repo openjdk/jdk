@@ -45,8 +45,9 @@ import java.lang.classfile.constantpool.LoadableConstantEntry;
 import java.lang.classfile.constantpool.MemberRefEntry;
 import java.lang.classfile.constantpool.MethodHandleEntry;
 import java.lang.classfile.constantpool.NameAndTypeEntry;
+import java.util.Objects;
 
-import static java.lang.classfile.ClassFile.*;
+import static jdk.internal.classfile.impl.RawBytecodeHelper.*;
 
 /**
  * Note: This class switches on opcode.bytecode for code size
@@ -58,6 +59,14 @@ public class BytecodeHelpers {
 
     public static IllegalArgumentException cannotConvertException(TypeKind from, TypeKind to) {
         return new IllegalArgumentException(String.format("convert %s -> %s", from, to));
+    }
+
+    public static IllegalArgumentException slotOutOfBounds(int slot) {
+        return new IllegalArgumentException("Invalid slot index :".concat(Integer.toString(slot)));
+    }
+
+    public static IllegalArgumentException slotOutOfBounds(Opcode opcode, int slot) {
+        return new IllegalArgumentException("Invalid slot index %d for %s".formatted(slot, opcode));
     }
 
     public static Opcode loadOpcode(TypeKind tk, int slot) {
@@ -78,7 +87,13 @@ public class BytecodeHelpers {
             case 1 -> Opcode.ALOAD_1;
             case 2 -> Opcode.ALOAD_2;
             case 3 -> Opcode.ALOAD_3;
-            default -> (slot < 256) ? Opcode.ALOAD : Opcode.ALOAD_W;
+            default -> {
+                if ((slot & ~0xFF) == 0)
+                    yield Opcode.ALOAD;
+                if ((slot & ~0xFFFF) == 0)
+                    yield Opcode.ALOAD_W;
+                throw slotOutOfBounds(slot);
+            }
         };
     }
 
@@ -88,7 +103,13 @@ public class BytecodeHelpers {
             case 1 -> Opcode.FLOAD_1;
             case 2 -> Opcode.FLOAD_2;
             case 3 -> Opcode.FLOAD_3;
-            default -> (slot < 256) ? Opcode.FLOAD : Opcode.FLOAD_W;
+            default -> {
+                if ((slot & ~0xFF) == 0)
+                    yield Opcode.FLOAD;
+                if ((slot & ~0xFFFF) == 0)
+                    yield Opcode.FLOAD_W;
+                throw slotOutOfBounds(slot);
+            }
         };
     }
 
@@ -98,7 +119,13 @@ public class BytecodeHelpers {
             case 1 -> Opcode.DLOAD_1;
             case 2 -> Opcode.DLOAD_2;
             case 3 -> Opcode.DLOAD_3;
-            default -> (slot < 256) ? Opcode.DLOAD : Opcode.DLOAD_W;
+            default -> {
+                if ((slot & ~0xFF) == 0)
+                    yield Opcode.DLOAD;
+                if ((slot & ~0xFFFF) == 0)
+                    yield Opcode.DLOAD_W;
+                throw slotOutOfBounds(slot);
+            }
         };
     }
 
@@ -108,7 +135,13 @@ public class BytecodeHelpers {
             case 1 -> Opcode.LLOAD_1;
             case 2 -> Opcode.LLOAD_2;
             case 3 -> Opcode.LLOAD_3;
-            default -> (slot < 256) ? Opcode.LLOAD : Opcode.LLOAD_W;
+            default -> {
+                if ((slot & ~0xFF) == 0)
+                    yield Opcode.LLOAD;
+                if ((slot & ~0xFFFF) == 0)
+                    yield Opcode.LLOAD_W;
+                throw slotOutOfBounds(slot);
+            }
         };
     }
 
@@ -118,7 +151,13 @@ public class BytecodeHelpers {
             case 1 -> Opcode.ILOAD_1;
             case 2 -> Opcode.ILOAD_2;
             case 3 -> Opcode.ILOAD_3;
-            default -> (slot < 256) ? Opcode.ILOAD : Opcode.ILOAD_W;
+            default -> {
+                if ((slot & ~0xFF) == 0)
+                    yield Opcode.ILOAD;
+                if ((slot & ~0xFFFF) == 0)
+                    yield Opcode.ILOAD_W;
+                throw slotOutOfBounds(slot);
+            }
         };
     }
 
@@ -140,7 +179,13 @@ public class BytecodeHelpers {
             case 1 -> Opcode.ASTORE_1;
             case 2 -> Opcode.ASTORE_2;
             case 3 -> Opcode.ASTORE_3;
-            default -> (slot < 256) ? Opcode.ASTORE : Opcode.ASTORE_W;
+            default -> {
+                if ((slot & ~0xFF) == 0)
+                    yield Opcode.ASTORE;
+                if ((slot & ~0xFFFF) == 0)
+                    yield Opcode.ASTORE_W;
+                throw slotOutOfBounds(slot);
+            }
         };
     }
 
@@ -150,7 +195,13 @@ public class BytecodeHelpers {
             case 1 -> Opcode.FSTORE_1;
             case 2 -> Opcode.FSTORE_2;
             case 3 -> Opcode.FSTORE_3;
-            default -> (slot < 256) ? Opcode.FSTORE : Opcode.FSTORE_W;
+            default -> {
+                if ((slot & ~0xFF) == 0)
+                    yield Opcode.FSTORE;
+                if ((slot & ~0xFFFF) == 0)
+                    yield Opcode.FSTORE_W;
+                throw slotOutOfBounds(slot);
+            }
         };
     }
 
@@ -160,7 +211,13 @@ public class BytecodeHelpers {
             case 1 -> Opcode.DSTORE_1;
             case 2 -> Opcode.DSTORE_2;
             case 3 -> Opcode.DSTORE_3;
-            default -> (slot < 256) ? Opcode.DSTORE : Opcode.DSTORE_W;
+            default -> {
+                if ((slot & ~0xFF) == 0)
+                    yield Opcode.DSTORE;
+                if ((slot & ~0xFFFF) == 0)
+                    yield Opcode.DSTORE_W;
+                throw slotOutOfBounds(slot);
+            }
         };
     }
 
@@ -170,7 +227,13 @@ public class BytecodeHelpers {
             case 1 -> Opcode.LSTORE_1;
             case 2 -> Opcode.LSTORE_2;
             case 3 -> Opcode.LSTORE_3;
-            default -> (slot < 256) ? Opcode.LSTORE : Opcode.LSTORE_W;
+            default -> {
+                if ((slot & ~0xFF) == 0)
+                    yield Opcode.LSTORE;
+                if ((slot & ~0xFFFF) == 0)
+                    yield Opcode.LSTORE_W;
+                throw slotOutOfBounds(slot);
+            }
         };
     }
 
@@ -180,7 +243,13 @@ public class BytecodeHelpers {
             case 1 -> Opcode.ISTORE_1;
             case 2 -> Opcode.ISTORE_2;
             case 3 -> Opcode.ISTORE_3;
-            default -> (slot < 256) ? Opcode.ISTORE : Opcode.ISTORE_W;
+            default -> {
+                if ((slot & ~0xFF) == 0)
+                    yield Opcode.ISTORE;
+                if ((slot & ~0xFFFF) == 0)
+                    yield Opcode.ISTORE_W;
+                throw slotOutOfBounds(slot);
+            }
         };
     }
 
@@ -193,6 +262,11 @@ public class BytecodeHelpers {
             case REFERENCE -> Opcode.ARETURN;
             case VOID -> Opcode.RETURN;
         };
+    }
+
+    public static int returnBytecode(TypeKind tk) {
+        int kind = Math.max(0, tk.ordinal() - 4); // BYTE, SHORT, CHAR, BOOLEAN becomes INT
+        return IRETURN + kind;
     }
 
     public static Opcode arrayLoadOpcode(TypeKind tk) {
@@ -209,6 +283,20 @@ public class BytecodeHelpers {
         };
     }
 
+    public static int arrayLoadBytecode(TypeKind tk) {
+        return switch (tk) {
+            case BYTE, BOOLEAN -> BALOAD;
+            case SHORT -> SALOAD;
+            case INT -> IALOAD;
+            case FLOAT -> FALOAD;
+            case LONG -> LALOAD;
+            case DOUBLE -> DALOAD;
+            case REFERENCE -> AALOAD;
+            case CHAR -> CALOAD;
+            case VOID -> throw new IllegalArgumentException("void not an allowable array type");
+        };
+    }
+
     public static Opcode arrayStoreOpcode(TypeKind tk) {
         return switch (tk) {
             case BYTE, BOOLEAN -> Opcode.BASTORE;
@@ -219,6 +307,20 @@ public class BytecodeHelpers {
             case DOUBLE -> Opcode.DASTORE;
             case REFERENCE -> Opcode.AASTORE;
             case CHAR -> Opcode.CASTORE;
+            case VOID -> throw new IllegalArgumentException("void not an allowable array type");
+        };
+    }
+
+    public static int arrayStoreBytecode(TypeKind tk) {
+        return switch (tk) {
+            case BYTE, BOOLEAN -> BASTORE;
+            case SHORT -> SASTORE;
+            case INT -> IASTORE;
+            case FLOAT -> FASTORE;
+            case LONG -> LASTORE;
+            case DOUBLE -> DASTORE;
+            case REFERENCE -> AASTORE;
+            case CHAR -> CASTORE;
             case VOID -> throw new IllegalArgumentException("void not an allowable array type");
         };
     }
@@ -242,6 +344,29 @@ public class BytecodeHelpers {
             case IFNULL -> Opcode.IFNONNULL;
             case IFNONNULL -> Opcode.IFNULL;
             default -> throw Util.badOpcodeKindException(op, Opcode.Kind.BRANCH);
+        };
+    }
+
+    public static int reverseBranchOpcode(int bytecode) {
+        return switch (bytecode) {
+            case IFEQ -> IFNE;
+            case IFNE -> IFEQ;
+            case IFLT -> IFGE;
+            case IFGE -> IFLT;
+            case IFGT -> IFLE;
+            case IFLE -> IFGT;
+            case IF_ICMPEQ -> IF_ICMPNE;
+            case IF_ICMPNE -> IF_ICMPEQ;
+            case IF_ICMPLT -> IF_ICMPGE;
+            case IF_ICMPGE -> IF_ICMPLT;
+            case IF_ICMPGT -> IF_ICMPLE;
+            case IF_ICMPLE -> IF_ICMPGT;
+            case IF_ACMPEQ -> IF_ACMPNE;
+            case IF_ACMPNE -> IF_ACMPEQ;
+            case IFNULL -> IFNONNULL;
+            case IFNONNULL -> IFNULL;
+            default -> throw new IllegalArgumentException(
+                    String.format("Wrong opcode kind specified; found %d, expected %s", bytecode, Opcode.Kind.BRANCH));
         };
     }
 
@@ -303,6 +428,48 @@ public class BytecodeHelpers {
             case I2D, L2D, F2D -> TypeKind.DOUBLE;
             default -> throw Util.badOpcodeKindException(opcode, Opcode.Kind.CONVERT);
         };
+    }
+
+    public static void validateSlot(Opcode opcode, int slot, boolean load) {
+        int size = opcode.sizeIfFixed();
+        if (size == 1 && slot == (load ? intrinsicLoadSlot(opcode) : intrinsicStoreSlot(opcode)) ||
+                size == 2 && (slot & ~0xFF) == 0 ||
+                size == 4 && (slot & ~0xFFFF) == 0)
+            return;
+        throw slotOutOfBounds(opcode, slot);
+    }
+
+    public static void validateSlot(int slot) {
+        if ((slot & ~0xFFFF) != 0)
+            throw slotOutOfBounds(slot);
+    }
+
+    public static boolean validateAndIsWideIinc(int slot, int val) {
+        var ret = false;
+        if ((slot & ~0xFF) != 0) {
+            validateSlot(slot);
+            ret = true;
+        }
+        if ((byte) val != val) {
+            if ((short) val != val) {
+                throw new IllegalArgumentException("cannot encode as S2: ".concat(String.valueOf(val)));
+            }
+            ret = true;
+        }
+        return ret;
+    }
+
+    public static void validateRet(Opcode opcode, int slot) {
+        if (opcode == Opcode.RET && (slot & ~0xFF) == 0 ||
+                opcode == Opcode.RET_W && (slot & ~0xFFFF) == 0)
+            return;
+        Objects.requireNonNull(opcode);
+        throw slotOutOfBounds(opcode, slot);
+    }
+
+    public static void validateMultiArrayDimensions(int value) {
+        if (value < 1 || value > 0xFF)
+            throw new IllegalArgumentException("Not a valid array dimension: ".concat(String.valueOf(value)));
     }
 
     public static void validateSipush(int value) {
