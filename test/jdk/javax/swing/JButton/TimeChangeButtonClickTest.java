@@ -44,7 +44,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 
 public class TimeChangeButtonClickTest {
-    private static final String instructions = """
+    private static final String INSTRUCTIONS = """
             <html><body>
             <ol>
             <li>
@@ -82,7 +82,7 @@ public class TimeChangeButtonClickTest {
 
     public static void main(String[] args) throws Exception {
         PassFailJFrame.builder()
-                      .instructions(instructions)
+                      .instructions(INSTRUCTIONS)
                       .rows(20)
                       .columns(40)
                       .splitUI(TimeChangeButtonClickTest::createTestPanel)
