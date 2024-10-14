@@ -238,8 +238,6 @@ class JavaThread: public Thread {
   // Safepoint support
  public:                                                        // Expose _thread_state for SafeFetchInt()
   volatile JavaThreadState _thread_state;
- private:
-  SafepointMechanism::ThreadData _poll_data;
   ThreadSafepointState*          _safepoint_state;              // Holds information about a thread during a safepoint
   address                        _saved_exception_pc;           // Saved pc of instruction where last implicit exception happened
   NOT_PRODUCT(bool               _requires_cross_modify_fence;) // State used by VerifyCrossModifyFence
@@ -464,6 +462,7 @@ class JavaThread: public Thread {
   // It's signed for error detection.
   intx _held_monitor_count;  // used by continuations for fast lock detection
   intx _jni_monitor_count;
+  ObjectMonitor* _unlocked_inflated_monitor;
 
 private:
 
@@ -597,6 +596,22 @@ private:
 
   SafepointMechanism::ThreadData* poll_data() { return &_poll_data; }
 
+  static ByteSize polling_word_offset() {
+    ByteSize offset = byte_offset_of(Thread, _poll_data) +
+                      byte_offset_of(SafepointMechanism::ThreadData, _polling_word);
+    // At least on x86_64, safepoint polls encode the offset as disp8 imm.
+    assert(in_bytes(offset) < 128, "Offset >= 128");
+    return offset;
+  }
+
+  static ByteSize polling_page_offset() {
+    ByteSize offset = byte_offset_of(Thread, _poll_data) +
+                      byte_offset_of(SafepointMechanism::ThreadData, _polling_page);
+    // At least on x86_64, safepoint polls encode the offset as disp8 imm.
+    assert(in_bytes(offset) < 128, "Offset >= 128");
+    return offset;
+  }
+
   void set_requires_cross_modify_fence(bool val) PRODUCT_RETURN NOT_PRODUCT({ _requires_cross_modify_fence = val; })
 
   // Continuation support
@@ -614,6 +629,12 @@ private:
   intx held_monitor_count() { return _held_monitor_count; }
   intx jni_monitor_count()  { return _jni_monitor_count;  }
   void clear_jni_monitor_count() { _jni_monitor_count = 0;   }
+
+  // Support for SharedRuntime::monitor_exit_helper()
+  ObjectMonitor* unlocked_inflated_monitor() const { return _unlocked_inflated_monitor; }
+  void clear_unlocked_inflated_monitor() {
+    _unlocked_inflated_monitor = nullptr;
+  }
 
   inline bool is_vthread_mounted() const;
   inline const ContinuationEntry* vthread_continuation() const;
@@ -780,8 +801,6 @@ private:
   static ByteSize vm_result_offset()             { return byte_offset_of(JavaThread, _vm_result); }
   static ByteSize vm_result_2_offset()           { return byte_offset_of(JavaThread, _vm_result_2); }
   static ByteSize thread_state_offset()          { return byte_offset_of(JavaThread, _thread_state); }
-  static ByteSize polling_word_offset()          { return byte_offset_of(JavaThread, _poll_data) + byte_offset_of(SafepointMechanism::ThreadData, _polling_word);}
-  static ByteSize polling_page_offset()          { return byte_offset_of(JavaThread, _poll_data) + byte_offset_of(SafepointMechanism::ThreadData, _polling_page);}
   static ByteSize saved_exception_pc_offset()    { return byte_offset_of(JavaThread, _saved_exception_pc); }
   static ByteSize osthread_offset()              { return byte_offset_of(JavaThread, _osthread); }
 #if INCLUDE_JVMCI
@@ -828,6 +847,7 @@ private:
   static ByteSize cont_fastpath_offset()      { return byte_offset_of(JavaThread, _cont_fastpath); }
   static ByteSize held_monitor_count_offset() { return byte_offset_of(JavaThread, _held_monitor_count); }
   static ByteSize jni_monitor_count_offset()  { return byte_offset_of(JavaThread, _jni_monitor_count); }
+  static ByteSize unlocked_inflated_monitor_offset() { return byte_offset_of(JavaThread, _unlocked_inflated_monitor); }
 
 #if INCLUDE_JVMTI
   static ByteSize is_in_VTMS_transition_offset()     { return byte_offset_of(JavaThread, _is_in_VTMS_transition); }

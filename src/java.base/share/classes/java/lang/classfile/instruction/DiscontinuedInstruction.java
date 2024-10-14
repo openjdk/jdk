@@ -30,6 +30,7 @@ import java.lang.classfile.Instruction;
 import java.lang.classfile.Label;
 import java.lang.classfile.Opcode;
 import jdk.internal.classfile.impl.AbstractInstruction;
+import jdk.internal.classfile.impl.BytecodeHelpers;
 import jdk.internal.classfile.impl.Util;
 import jdk.internal.javac.PreviewFeature;
 
@@ -112,10 +113,10 @@ public sealed interface DiscontinuedInstruction extends Instruction {
          *           which must be of kind {@link Opcode.Kind#DISCONTINUED_RET}
          * @param slot the local variable slot to load return address from
          * @throws IllegalArgumentException if the opcode kind is not
-         *         {@link Opcode.Kind#DISCONTINUED_RET}.
+         *         {@link Opcode.Kind#DISCONTINUED_RET} or if {@code slot} is out of range
          */
         static RetInstruction of(Opcode op, int slot) {
-            Util.checkKind(op, Opcode.Kind.DISCONTINUED_RET);
+            BytecodeHelpers.validateRet(op, slot);
             return new AbstractInstruction.UnboundRetInstruction(op, slot);
         }
 
@@ -123,6 +124,7 @@ public sealed interface DiscontinuedInstruction extends Instruction {
          * {@return a RET instruction}
          *
          * @param slot the local variable slot to load return address from
+         * @throws IllegalArgumentException if {@code slot} is out of range
          */
         static RetInstruction of(int slot) {
             return of(slot < 256 ? Opcode.RET : Opcode.RET_W, slot);

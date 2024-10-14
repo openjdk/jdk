@@ -429,6 +429,8 @@ public sealed interface CodeBuilder
      * @param tk the load type
      * @param slot the local variable slot
      * @return this builder
+     * @throws IllegalArgumentException if {@code tk} is {@link TypeKind#VOID void}
+     *         or {@code slot} is out of range
      * @since 23
      */
     default CodeBuilder loadLocal(TypeKind tk, int slot) {
@@ -440,6 +442,8 @@ public sealed interface CodeBuilder
      * @param tk the store type
      * @param slot the local variable slot
      * @return this builder
+     * @throws IllegalArgumentException if {@code tk} is {@link TypeKind#VOID void}
+     *         or {@code slot} is out of range
      * @since 23
      */
     default CodeBuilder storeLocal(TypeKind tk, int slot) {
@@ -793,6 +797,7 @@ public sealed interface CodeBuilder
      * @param startScope the start scope of the variable
      * @param endScope the end scope of the variable
      * @return this builder
+     * @throws IllegalArgumentException if {@code slot} is out of range
      */
     default CodeBuilder localVariable(int slot, Utf8Entry nameEntry, Utf8Entry descriptorEntry, Label startScope, Label endScope) {
         return with(LocalVariable.of(slot, nameEntry, descriptorEntry, startScope, endScope));
@@ -806,6 +811,7 @@ public sealed interface CodeBuilder
      * @param startScope the start scope of the variable
      * @param endScope the end scope of the variable
      * @return this builder
+     * @throws IllegalArgumentException if {@code slot} is out of range
      */
     default CodeBuilder localVariable(int slot, String name, ClassDesc descriptor, Label startScope, Label endScope) {
         return localVariable(slot,
@@ -822,6 +828,7 @@ public sealed interface CodeBuilder
      * @param startScope the start scope of the variable
      * @param endScope the end scope of the variable
      * @return this builder
+     * @throws IllegalArgumentException if {@code slot} is out of range
      */
     default CodeBuilder localVariableType(int slot, Utf8Entry nameEntry, Utf8Entry signatureEntry, Label startScope, Label endScope) {
         return with(LocalVariableType.of(slot, nameEntry, signatureEntry, startScope, endScope));
@@ -835,6 +842,7 @@ public sealed interface CodeBuilder
      * @param startScope the start scope of the variable
      * @param endScope the end scope of the variable
      * @return this builder
+     * @throws IllegalArgumentException if {@code slot} is out of range
      */
     default CodeBuilder localVariableType(int slot, String name, Signature signature, Label startScope, Label endScope) {
         return localVariableType(slot,
@@ -877,6 +885,7 @@ public sealed interface CodeBuilder
      *
      * @param slot the local variable slot
      * @return this builder
+     * @throws IllegalArgumentException if {@code slot} is out of range
      */
     default CodeBuilder aload(int slot) {
         return loadLocal(TypeKind.REFERENCE, slot);
@@ -925,6 +934,7 @@ public sealed interface CodeBuilder
      *
      * @param slot the local variable slot
      * @return this builder
+     * @throws IllegalArgumentException if {@code slot} is out of range
      */
     default CodeBuilder astore(int slot) {
         return storeLocal(TypeKind.REFERENCE, slot);
@@ -958,6 +968,7 @@ public sealed interface CodeBuilder
      * Generate an instruction pushing an int in the range of byte onto the operand stack.
      * @param b the int in the range of byte
      * @return this builder
+     * @throws IllegalArgumentException if {@code b} is out of range of byte
      */
     default CodeBuilder bipush(int b) {
         return with(ConstantInstruction.ofArgument(Opcode.BIPUSH, b));
@@ -1094,6 +1105,7 @@ public sealed interface CodeBuilder
      *
      * @param slot the local variable slot
      * @return this builder
+     * @throws IllegalArgumentException if {@code slot} is out of range
      */
     default CodeBuilder dload(int slot) {
         return loadLocal(TypeKind.DOUBLE, slot);
@@ -1139,6 +1151,7 @@ public sealed interface CodeBuilder
      *
      * @param slot the local variable slot
      * @return this builder
+     * @throws IllegalArgumentException if {@code slot} is out of range
      */
     default CodeBuilder dstore(int slot) {
         return storeLocal(TypeKind.DOUBLE, slot);
@@ -1306,6 +1319,7 @@ public sealed interface CodeBuilder
      *
      * @param slot the local variable slot
      * @return this builder
+     * @throws IllegalArgumentException if {@code slot} is out of range
      */
     default CodeBuilder fload(int slot) {
         return loadLocal(TypeKind.FLOAT, slot);
@@ -1351,6 +1365,7 @@ public sealed interface CodeBuilder
      *
      * @param slot the local variable slot
      * @return this builder
+     * @throws IllegalArgumentException if {@code slot} is out of range
      */
     default CodeBuilder fstore(int slot) {
         return storeLocal(TypeKind.FLOAT, slot);
@@ -1726,6 +1741,7 @@ public sealed interface CodeBuilder
      * @param slot the local variable slot
      * @param val the increment value
      * @return this builder
+     * @throws IllegalArgumentException if {@code slot} or {@code val} is out of range
      */
     default CodeBuilder iinc(int slot, int val) {
         return with(IncrementInstruction.of(slot, val));
@@ -1739,6 +1755,7 @@ public sealed interface CodeBuilder
      *
      * @param slot the local variable slot
      * @return this builder
+     * @throws IllegalArgumentException if {@code slot} is out of range
      */
     default CodeBuilder iload(int slot) {
         return loadLocal(TypeKind.INT, slot);
@@ -1997,6 +2014,7 @@ public sealed interface CodeBuilder
      *
      * @param slot the local variable slot
      * @return this builder
+     * @throws IllegalArgumentException if {@code slot} is out of range
      */
     default CodeBuilder istore(int slot) {
         return storeLocal(TypeKind.INT, slot);
@@ -2159,6 +2177,7 @@ public sealed interface CodeBuilder
      *
      * @param slot the local variable slot
      * @return this builder
+     * @throws IllegalArgumentException if {@code slot} is out of range
      */
     default CodeBuilder lload(int slot) {
         return loadLocal(TypeKind.LONG, slot);
@@ -2228,6 +2247,7 @@ public sealed interface CodeBuilder
      *
      * @param slot the local variable slot
      * @return this builder
+     * @throws IllegalArgumentException if {@code slot} is out of range
      */
     default CodeBuilder lstore(int slot) {
         return storeLocal(TypeKind.LONG, slot);
@@ -2278,6 +2298,7 @@ public sealed interface CodeBuilder
      * @param array the array type
      * @param dims the number of dimensions
      * @return this builder
+     * @throws IllegalArgumentException if {@code dims} is out of range
      */
     default CodeBuilder multianewarray(ClassEntry array, int dims) {
         return with(NewMultiArrayInstruction.of(array, dims));
@@ -2289,6 +2310,7 @@ public sealed interface CodeBuilder
      * @param dims the number of dimensions
      * @return this builder
      * @throws IllegalArgumentException if {@code array} represents a primitive type
+     * or if {@code dims} is out of range
      */
     default CodeBuilder multianewarray(ClassDesc array, int dims) {
         return multianewarray(constantPool().classEntry(array), dims);
@@ -2327,6 +2349,8 @@ public sealed interface CodeBuilder
      * Generate an instruction to create a new array of a primitive type
      * @param typeKind the primitive array type
      * @return this builder
+     * @throws IllegalArgumentException when the {@code typeKind} is not a legal
+     *         primitive array component type
      */
     default CodeBuilder newarray(TypeKind typeKind) {
         return with(NewPrimitiveArrayInstruction.of(typeKind));
@@ -2423,6 +2447,7 @@ public sealed interface CodeBuilder
      * Generate an instruction pushing an int in the range of short onto the operand stack.
      * @param s the int in the range of short
      * @return this builder
+     * @throws IllegalArgumentException if {@code s} is out of range of short
      */
     default CodeBuilder sipush(int s) {
         return with(ConstantInstruction.ofArgument(Opcode.SIPUSH, s));

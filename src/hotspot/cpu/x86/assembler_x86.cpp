@@ -1919,6 +1919,11 @@ void Assembler::cmpb(Address dst, int imm8) {
   emit_int8(imm8);
 }
 
+void Assembler::cmpb(Register dst, int imm8) {
+  prefix(dst);
+  emit_arith_b(0x80, 0xF8, dst, imm8);
+}
+
 void Assembler::cmpl(Address dst, int32_t imm32) {
   InstructionMark im(this);
   prefix(dst);
@@ -8048,6 +8053,14 @@ void Assembler::andpd(XMMRegister dst, XMMRegister src) {
   emit_int16(0x54, (0xC0 | encode));
 }
 
+void Assembler::andnpd(XMMRegister dst, XMMRegister src) {
+  NOT_LP64(assert(VM_Version::supports_sse2(), ""));
+  InstructionAttr attributes(AVX_128bit, /* rex_w */ !_legacy_mode_dq, /* legacy_mode */ _legacy_mode_dq, /* no_mask_reg */ true, /* uses_vl */ true);
+  attributes.set_rex_vex_w_reverted();
+  int encode = simd_prefix_and_encode(dst, dst, src, VEX_SIMD_66, VEX_OPCODE_0F, &attributes);
+  emit_int16(0x55, (0xC0 | encode));
+}
+
 void Assembler::andps(XMMRegister dst, XMMRegister src) {
   NOT_LP64(assert(VM_Version::supports_sse(), ""));
   InstructionAttr attributes(AVX_128bit, /* rex_w */ false, /* legacy_mode */ _legacy_mode_dq, /* no_mask_reg */ true, /* uses_vl */ true);
@@ -9657,6 +9670,15 @@ void Assembler::vinserti64x4(XMMRegister dst, XMMRegister nds, XMMRegister src, 
   // 0x00 - insert into lower 256 bits
   // 0x01 - insert into upper 256 bits
   emit_int24(0x3A, (0xC0 | encode), imm8 & 0x01);
+}
+
+void Assembler::evinserti64x2(XMMRegister dst, XMMRegister nds, XMMRegister src, uint8_t imm8, int vector_len) {
+   assert(VM_Version::supports_avx512dq(), "");
+   assert(vector_len == AVX_512bit || VM_Version::supports_avx512vl(), "");
+   InstructionAttr attributes(vector_len, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
+   attributes.set_is_evex_instruction();
+   int encode = vex_prefix_and_encode(dst->encoding(), nds->encoding(), src->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_3A, &attributes);
+   emit_int24(0x38, (0xC0 | encode), imm8 & 0x03);
 }
 
 
@@ -11722,6 +11744,21 @@ void Assembler::vbroadcastf128(XMMRegister dst, Address src, int vector_len) {
   emit_int8(0x1A);
   emit_operand(dst, src, 0);
 }
+
+void Assembler::evbroadcastf64x2(XMMRegister dst, Address src, int vector_len) {
+  assert(VM_Version::supports_avx512dq(), "");
+  assert(vector_len == AVX_512bit || VM_Version::supports_avx512vl(), "");
+  assert(dst != xnoreg, "sanity");
+  InstructionMark im(this);
+  InstructionAttr attributes(vector_len, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
+  attributes.set_address_attributes(/* tuple_type */ EVEX_T2, /* input_size_in_bits */ EVEX_64bit);
+  attributes.set_is_evex_instruction();
+  // swap src<->dst for encoding
+  vex_prefix(src, 0, dst->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_38, &attributes);
+  emit_int8(0x1A);
+  emit_operand(dst, src, 0);
+}
+
 
 // gpr source broadcast forms
 
