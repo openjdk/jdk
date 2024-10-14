@@ -103,7 +103,6 @@ class RegionsTree : public VMATree {
             auto st = stack(curr);
             CommittedMemoryRegion cmr((address)base, comm_size, st);
             comm_size = 0;
-            prev.clear_node();
             if (!func(cmr))
               return false;
           }
