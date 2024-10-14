@@ -1930,7 +1930,7 @@ static void add_mergemem_users_to_worklist(Unique_Node_List& wl, Node* mem) {
 }
 
 // Replace the call with the current state of the kit.
-void GraphKit::replace_call(CallNode* call, Node* result, bool do_replaced_nodes) {
+void GraphKit::replace_call(CallNode* call, Node* result, bool do_replaced_nodes, bool do_asserts) {
   JVMState* ejvms = nullptr;
   if (has_exceptions()) {
     ejvms = transfer_exceptions_into_jvms();
@@ -1944,7 +1944,7 @@ void GraphKit::replace_call(CallNode* call, Node* result, bool do_replaced_nodes
 
   // Find all the needed outputs of this call
   CallProjections callprojs;
-  call->extract_projections(&callprojs, true);
+  call->extract_projections(&callprojs, true, do_asserts);
 
   Unique_Node_List wl;
   Node* init_mem = call->in(TypeFunc::Memory);
