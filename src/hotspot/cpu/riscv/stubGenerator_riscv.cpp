@@ -1689,17 +1689,17 @@ class StubGenerator: public StubCodeGenerator {
     __ beqz(t0, L_int_aligned);
     __ test_bit(t0, t0, 0);
     __ beqz(t0, L_short_aligned);
-    __ j(RuntimeAddress(byte_copy_entry), t1);
+    __ j(RuntimeAddress(byte_copy_entry));
 
     __ BIND(L_short_aligned);
     __ srli(count, count, LogBytesPerShort);  // size => short_count
-    __ j(RuntimeAddress(short_copy_entry), t1);
+    __ j(RuntimeAddress(short_copy_entry));
     __ BIND(L_int_aligned);
     __ srli(count, count, LogBytesPerInt);    // size => int_count
-    __ j(RuntimeAddress(int_copy_entry), t1);
+    __ j(RuntimeAddress(int_copy_entry));
     __ BIND(L_long_aligned);
     __ srli(count, count, LogBytesPerLong);   // size => long_count
-    __ j(RuntimeAddress(long_copy_entry), t1);
+    __ j(RuntimeAddress(long_copy_entry));
 
     return start;
   }
@@ -1880,13 +1880,13 @@ class StubGenerator: public StubCodeGenerator {
     __ add(from, src, src_pos); // src_addr
     __ add(to, dst, dst_pos); // dst_addr
     __ sign_extend(count, scratch_length, 32); // length
-    __ j(RuntimeAddress(byte_copy_entry), t1);
+    __ j(RuntimeAddress(byte_copy_entry));
 
   __ BIND(L_copy_shorts);
     __ shadd(from, src_pos, src, t0, 1); // src_addr
     __ shadd(to, dst_pos, dst, t0, 1); // dst_addr
     __ sign_extend(count, scratch_length, 32); // length
-    __ j(RuntimeAddress(short_copy_entry), t1);
+    __ j(RuntimeAddress(short_copy_entry));
 
   __ BIND(L_copy_ints);
     __ test_bit(t0, x30_elsize, 0);
@@ -1894,7 +1894,7 @@ class StubGenerator: public StubCodeGenerator {
     __ shadd(from, src_pos, src, t0, 2); // src_addr
     __ shadd(to, dst_pos, dst, t0, 2); // dst_addr
     __ sign_extend(count, scratch_length, 32); // length
-    __ j(RuntimeAddress(int_copy_entry), t1);
+    __ j(RuntimeAddress(int_copy_entry));
 
   __ BIND(L_copy_longs);
 #ifdef ASSERT
@@ -1913,7 +1913,7 @@ class StubGenerator: public StubCodeGenerator {
     __ shadd(from, src_pos, src, t0, 3); // src_addr
     __ shadd(to, dst_pos, dst, t0, 3); // dst_addr
     __ sign_extend(count, scratch_length, 32); // length
-    __ j(RuntimeAddress(long_copy_entry), t1);
+    __ j(RuntimeAddress(long_copy_entry));
 
     // ObjArrayKlass
   __ BIND(L_objArray);
@@ -1934,7 +1934,7 @@ class StubGenerator: public StubCodeGenerator {
     __ add(to, to, arrayOopDesc::base_offset_in_bytes(T_OBJECT));
     __ sign_extend(count, scratch_length, 32); // length
   __ BIND(L_plain_copy);
-    __ j(RuntimeAddress(oop_copy_entry), t1);
+    __ j(RuntimeAddress(oop_copy_entry));
 
   __ BIND(L_checkcast_copy);
     // live at this point:  scratch_src_klass, scratch_length, t2 (dst_klass)
@@ -1976,7 +1976,7 @@ class StubGenerator: public StubCodeGenerator {
       assert(c_rarg3 == sco_temp, "#3 already in place");
       // Set up arguments for checkcast_copy_entry.
       __ mv(c_rarg4, dst_klass);  // dst.klass.element_klass
-      __ j(RuntimeAddress(checkcast_copy_entry), t1);
+      __ j(RuntimeAddress(checkcast_copy_entry));
     }
 
   __ BIND(L_failed);
