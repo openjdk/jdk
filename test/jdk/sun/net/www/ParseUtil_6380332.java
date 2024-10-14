@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,13 @@
  */
 
 /* @test
- * @summary SunTea applet fails to load under Mustang
+ * @summary Ensure ParseUtil.toURI does not fail when port number is -1
  * @bug 6380332
  * @modules java.base/sun.net.www
  */
 
 import sun.net.www.ParseUtil;
+
 import java.net.URI;
 import java.net.URL;
 
