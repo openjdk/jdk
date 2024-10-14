@@ -1217,8 +1217,9 @@ bool PhaseIdealLoop::short_running_loop(IdealLoopTree* loop, jint stride_con, co
     entry_control = head->skip_strip_mined()->in(LoopNode::EntryControl);
   } else if (bt == T_LONG) {
     const Predicates predicates(entry_control);
+    const TypeLong* new_limit_t = new_limit->Value(&_igvn)->is_long();
     new_limit = ConstraintCastNode::make_cast_for_basic_type(predicates.entry(), new_limit,
-                                                             new_limit->Value(&_igvn),
+                                                             TypeLong::make(0, new_limit_t->_hi, new_limit_t->_widen),
                                                              ConstraintCastNode::UnconditionalDependency, bt);
     register_new_node(new_limit, predicates.entry());
   //   const TypeInteger* phi_t = _igvn.type(phi)->is_integer(bt);
