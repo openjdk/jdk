@@ -62,12 +62,10 @@ public final class bug4323121 extends MouseAdapter {
         Robot robot = new Robot();
         robot.setAutoDelay(100);
 
-        final bug4323121 eventHandler = new bug4323121();
         try {
             SwingUtilities.invokeAndWait(() -> {
                 button = new TestButton("gotcha");
-                button.addMouseMotionListener(eventHandler);
-                button.addMouseListener(eventHandler);
+                button.addMouseListener(new bug4323121());
 
                 frame = new JFrame("bug4323121");
                 frame.getContentPane().add(button);
