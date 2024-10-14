@@ -42,7 +42,7 @@ import java.util.Enumeration;
 /*
  * @test
  * @bug 4110094 4178930 4178390
- * @summary Test: Rewrite of Win32 modal dialogs
+ * @summary Test: Rewrite of Win modal dialogs
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual NestedDialogTest
