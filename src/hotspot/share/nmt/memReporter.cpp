@@ -439,7 +439,8 @@ void MemDetailReporter::report_virtual_memory_region(const ReservedMemoryRegion*
 
   if (all_committed) {
     bool reserved_and_committed = false;
-    VirtualMemoryTracker::Instance::tree()->visit_committed_regions(*reserved_rgn,
+    VirtualMemoryTracker::Instance::tree()->visit_committed_regions((VMATree::position)reserved_rgn->base(),
+                                                                    reserved_rgn->size(),
                                                                   [&](CommittedMemoryRegion& committed_rgn) {
       if (committed_rgn.size() == reserved_rgn->size() && committed_rgn.call_stack()->equals(*stack)) {
         // One region spanning the entire reserved region, with the same stack trace.
@@ -455,13 +456,13 @@ void MemDetailReporter::report_virtual_memory_region(const ReservedMemoryRegion*
       return;
   }
 
-  auto print_committed_rgn = [&](CommittedMemoryRegion* crgn) {
+  auto print_committed_rgn = [&](const CommittedMemoryRegion& crgn) {
     // Don't report if size is too small
-    if (amount_in_current_scale(crgn->size()) == 0) return;
-    stack = crgn->call_stack();
+    if (amount_in_current_scale(crgn.size()) == 0) return;
+    stack = crgn.call_stack();
     out->cr();
     INDENT_BY(8,
-      print_virtual_memory_region("committed", crgn->base(), crgn->size());
+      print_virtual_memory_region("committed", crgn.base(), crgn.size());
       if (stack->is_empty()) {
         out->cr();
       } else {
@@ -470,8 +471,11 @@ void MemDetailReporter::report_virtual_memory_region(const ReservedMemoryRegion*
       }
     )
   };
-  VirtualMemoryTracker::Instance::tree()->visit_committed_regions(*reserved_rgn, [&](CommittedMemoryRegion& crgn) {
-    print_committed_rgn(&crgn);
+
+  VirtualMemoryTracker::Instance::tree()->visit_committed_regions((VMATree::position)reserved_rgn->base(),
+                                                                  reserved_rgn->size(),
+                                                                  [&](CommittedMemoryRegion& crgn) {
+    print_committed_rgn(crgn);
     return true;
   });
 }

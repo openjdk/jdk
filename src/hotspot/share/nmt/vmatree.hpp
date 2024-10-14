@@ -38,7 +38,7 @@
 // For example, the state may go from released memory to committed memory,
 // or from committed memory of a certain MemTag to committed memory of a different MemTag.
 // The set of points is stored in a balanced binary tree for efficient querying and updating.
-class VMATree : public CHeapObj<mtNMT> {
+class VMATree {
   friend class NMTVMATreeTest;
   friend class VMTWithVMATreeTest;
   // A position in memory.
@@ -230,8 +230,6 @@ public:
   void visit_range_in_order(const position& from, const position& to, F f) {
     _tree.visit_range_in_order(from, to, f);
   }
-
-  void put_if_absent(position A, position B, StateType state, const RegionData& region_data);
 
   VMATreap* tree() { return &_tree; }
   void print_self() {

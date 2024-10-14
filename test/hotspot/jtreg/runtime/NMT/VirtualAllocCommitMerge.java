@@ -120,7 +120,6 @@ public class VirtualAllocCommitMerge {
             checkCommitted(output, addrA, commitSize, "128KB");
             checkCommitted(output, addrC, commitSize, "128KB");
             checkCommitted(output, addrE, commitSize, "128KB");
-            System.out.println(output.getStdout());
 
             // uncommit ACE
             wb.NMTUncommitMemory(addrA, commitSize);

@@ -35,9 +35,6 @@
 #include "utilities/linkedlist.hpp"
 #include "utilities/ostream.hpp"
 
-
-
-
 /*
  * Virtual memory counter
  */

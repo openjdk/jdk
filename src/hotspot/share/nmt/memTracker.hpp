@@ -288,7 +288,6 @@ class MemTracker : AllStatic {
   static MemBaseline      _baseline;
   // Query lock
   static Mutex*           _query_lock;
-
 };
 
 #endif // SHARE_NMT_MEMTRACKER_HPP

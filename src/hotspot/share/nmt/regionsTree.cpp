@@ -24,13 +24,9 @@
 #include "precompiled.hpp"
 #include "nmt/regionsTree.hpp"
 
-ReservedMemoryRegion RegionsTree::find_reserved_region(address addr, bool with_trace) {
+ReservedMemoryRegion RegionsTree::find_reserved_region(address addr) {
     ReservedMemoryRegion rmr;
     auto contain_region = [&](ReservedMemoryRegion& region_in_tree) {
-      if (with_trace) {
-        log_debug(nmt)("trc base: " INTPTR_FORMAT " , trc end: " INTPTR_FORMAT,
-                      p2i(region_in_tree.base()), p2i(region_in_tree.end()));
-      }
       if (region_in_tree.contain_address(addr)) {
         rmr = region_in_tree;
         return false;

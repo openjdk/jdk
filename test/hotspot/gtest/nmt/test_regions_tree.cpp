@@ -84,7 +84,7 @@ TEST_VM_F(RegionsTreeTest, VisitCommittedRegions) {
   rt.commit_region((address)1040, 5UL, ncs);
   ReservedMemoryRegion rmr((address)1000, 50);
   size_t count = 0;
-  rt.visit_committed_regions(rmr, [&](CommittedMemoryRegion& crgn) {
+  rt.visit_committed_regions((VMATree::position)rmr.base(), rmr.size(), [&](CommittedMemoryRegion& crgn) {
     count++;
     EXPECT_EQ((((size_t)crgn.base()) % 100) / 10, count);
     EXPECT_EQ(crgn.size(), 5UL);

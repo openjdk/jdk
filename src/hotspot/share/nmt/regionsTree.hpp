@@ -36,8 +36,7 @@ class RegionsTree : public VMATree {
  public:
   RegionsTree(bool with_storage) : VMATree() , _ncs_storage(with_storage) { }
 
-
-  ReservedMemoryRegion find_reserved_region(address addr, bool with_trace = false);
+  ReservedMemoryRegion find_reserved_region(address addr);
 
   SummaryDiff commit_region(address addr, size_t size, const NativeCallStack& stack);
   SummaryDiff uncommit_region(address addr, size_t size);
@@ -88,9 +87,8 @@ class RegionsTree : public VMATree {
   }
 
   template<typename F> // F == bool(*)(CommittedMemoryRegion&)
-  void visit_committed_regions(const ReservedMemoryRegion& rgn, F func) {
-    size_t start = (size_t)rgn.base();
-    size_t end = (size_t)rgn.end();
+  void visit_committed_regions(position start, size_t size, F func) {
+    size_t end = start + size;
     size_t comm_size = 0;
     size_t base = start;
 
@@ -135,9 +133,6 @@ class RegionsTree : public VMATree {
       if (curr.is_released_begin() || begin_node.out_flag() != curr.out_flag()) {
         auto st = stack(curr);
         size_t r_size = curr.distance_from(begin_node);
-        if (r_size != rgn_size) {
-          log_debug(nmt)("----------------- size differ, distance: " SIZE_FORMAT " size: " SIZE_FORMAT, r_size, rgn_size);
-        }
         if (rgn_size == 0) {
           prev.clear_node();
           return true;

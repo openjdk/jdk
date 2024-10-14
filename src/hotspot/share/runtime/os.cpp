@@ -2188,9 +2188,9 @@ bool os::release_memory(char* addr, size_t bytes) {
   assert_nonempty_range(addr, bytes);
   bool res;
   if (MemTracker::enabled()) {
-    ThreadCritical tc;
     res = pd_release_memory(addr, bytes);
     if (res) {
+      ThreadCritical tc;
       MemTracker::record_virtual_memory_release((address)addr, bytes);
     }
   } else {
