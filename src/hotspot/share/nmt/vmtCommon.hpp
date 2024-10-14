@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_NMT_VIRTUALMEMORYTRACKER_HPP
-#define SHARE_NMT_VIRTUALMEMORYTRACKER_HPP
+#ifndef NMT_VMTCOMMON_HPP
+#define NMT_VMTCOMMON_HPP
 
 #include "memory/allocation.hpp"
 #include "memory/metaspace.hpp" // For MetadataType
@@ -377,5 +377,5 @@ class VirtualMemoryWalker : public StackObj {
    virtual bool do_allocation_site(const ReservedMemoryRegion* rgn) { return false; }
 };
 
-#endif // SHARE_NMT_VIRTUALMEMORYTRACKER_HPP
+#endif // NMT_VMTCOMMON_HPP
 
