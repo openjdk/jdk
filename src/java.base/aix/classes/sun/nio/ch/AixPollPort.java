@@ -225,7 +225,7 @@ final class AixPollPort
     // invoke by clients to register a file descriptor
     @Override
     void startPoll(int fd, int events) {
-        // update events (or add to epoll on first usage)
+        // update events (or add to pollset on first usage)
         int err = Pollset.pollsetCtl(pollset, PS_MOD, fd, (events | PS_POLLPRI));
         if (err == ENOENT)
             err = Pollset.pollsetCtl(pollset, PS_ADD, fd, (events | PS_POLLPRI));
