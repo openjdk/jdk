@@ -28,37 +28,35 @@ package jdk.internal.lang.stable;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 
-import java.util.Objects;
-import java.util.Set;
-import java.util.function.Function;
+import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
+// Note: It would be possible to just use `LazyList::get` instead of this
+// class but explicitly providing a class like this provides better
+// debug capability, exception handling, and may provide better performance.
 /**
- * Optimized implementation of a cached Function with enums as keys.
+ * Implementation of a stable IntFunction.
+ * <p>
+ * For performance reasons (~10%), we are not delegating to a StableList but are using
+ * the more primitive functions in StableValueUtil that are shared with StableList/StableValueImpl.
  *
  * @implNote This implementation can be used early in the boot sequence as it does not
  *           rely on reflection, MethodHandles, Streams etc.
  *
- * @param firstOrdinal the lowest ordinal used
- * @param delegates    a delegate array of inputs to StableValue mappings
- * @param original     the original Function
- * @param <E>          the type of the input to the function
- * @param <R>          the type of the result of the function
+ * @param <R> the return type
  */
-record CachingEnumFunction<E extends Enum<E>, R>(Class<E> enumType,
-                                                 int firstOrdinal,
-                                                 @Stable StableValueImpl<R>[] delegates,
-                                                 Function<? super E, ? extends R> original) implements Function<E, R> {
+record StableIntFunction<R>(@Stable StableValueImpl<R>[] delegates,
+                            IntFunction<? extends R> original) implements IntFunction<R> {
+
     @ForceInline
     @Override
-    public R apply(E value) {
-        final int index = value.ordinal() - firstOrdinal;
+    public R apply(int index) {
         try {
             return delegates[index]
                     .computeIfUnset(new Supplier<R>() {
-                        @Override public R get() { return original.apply(value); }});
+                        @Override public R get() { return original.apply(index); }});
         } catch (ArrayIndexOutOfBoundsException ioob) {
-            throw new IllegalArgumentException("Input not allowed: " + value, ioob);
+            throw new IllegalArgumentException("Input not allowed: " + index, ioob);
         }
     }
 
@@ -74,42 +72,30 @@ record CachingEnumFunction<E extends Enum<E>, R>(Class<E> enumType,
 
     @Override
     public String toString() {
-        return "CachingEnumFunction[values=" + renderElements() + ", original=" + original + "]";
+        return "StableIntFunction[values=" +
+                renderElements() +
+                ", original=" + original + ']';
     }
 
     private String renderElements() {
         final StringBuilder sb = new StringBuilder();
-        sb.append("{");
+        sb.append("[");
         boolean first = true;
-        int ordinal = firstOrdinal;
-        final E[] enumElements = enumType.getEnumConstants();
         for (int i = 0; i < delegates.length; i++) {
             if (first) { first = false; } else { sb.append(", "); };
             final Object value = delegates[i].wrappedValue();
-            sb.append(enumElements[ordinal++]).append('=');
             if (value == this) {
-                sb.append("(this CachingEnumFunction)");
+                sb.append("(this StableIntFunction)");
             } else {
                 sb.append(StableValueImpl.renderWrapped(value));
             }
         }
-        sb.append("}");
+        sb.append("]");
         return sb.toString();
     }
 
-    @SuppressWarnings("unchecked")
-    static <T, E extends Enum<E>, R> Function<T, R> of(Set<? extends T> inputs,
-                                                       Function<? super T, ? extends R> original) {
-        // The input set is not empty
-        int min = Integer.MAX_VALUE;
-        int max = Integer.MIN_VALUE;
-        for (T t : inputs) {
-            min = Math.min(min, ((E) t).ordinal());
-            max = Math.max(max, ((E) t).ordinal());
-        }
-        final int size = max - min + 1;
-        final Class<E> enumType = (Class<E>)inputs.iterator().next().getClass();
-        return (Function<T, R>) new CachingEnumFunction<E, R>(enumType, min, StableValueFactories.ofArray(size), (Function<E, R>) original);
+    static <R> StableIntFunction<R> of(int size, IntFunction<? extends R> original) {
+        return new StableIntFunction<>(StableValueFactories.ofArray(size), original);
     }
 
 }

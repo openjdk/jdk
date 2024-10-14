@@ -19,22 +19,22 @@ public final class StableValueFactories {
     }
 
     public static <T> Supplier<T> ofSupplier(Supplier<? extends T> original) {
-        return CachingSupplier.of(original);
+        return StableSupplier.of(original);
     }
 
     public static <R> IntFunction<R> ofIntFunction(int size,
                                                    IntFunction<? extends R> original) {
-        return CachingIntFunction.of(size, original);
+        return StableIntFunction.of(size, original);
     }
 
     public static <T, R> Function<T, R> ofFunction(Set<? extends T> inputs,
                                                    Function<? super T, ? extends R> original) {
         if (inputs.isEmpty()) {
-            return EmptyCachingFunction.of(original);
+            return EmptyStableFunction.of(original);
         }
         return inputs instanceof EnumSet<?>
-                ? CachingEnumFunction.of(inputs, original)
-                : CachingFunction.of(inputs, original);
+                ? StableEnumFunction.of(inputs, original)
+                : StableFunction.of(inputs, original);
     }
 
     @SuppressWarnings("unchecked")
@@ -45,7 +45,7 @@ public final class StableValueFactories {
     public static <T extends Enum<T>, R> Function<T, R> newCachingEnumFunction(EnumSet<T> inputs,
                                                                                Function<? super T, ? extends R> original) {
 
-        return CachingEnumFunction.of(inputs, original);
+        return StableEnumFunction.of(inputs, original);
     }
 
     public static <T> StableValueImpl<T>[] ofArray(int size) {

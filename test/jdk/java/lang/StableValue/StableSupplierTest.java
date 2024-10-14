@@ -22,9 +22,9 @@
  */
 
 /* @test
- * @summary Basic tests for CachingSupplier methods
- * @compile --enable-preview -source ${jdk.version} CachingSupplierTest.java
- * @run junit/othervm --enable-preview CachingSupplierTest
+ * @summary Basic tests for StableSupplierTest methods
+ * @compile --enable-preview -source ${jdk.version} StableSupplierTest.java
+ * @run junit/othervm --enable-preview StableSupplierTest
  */
 
 import org.junit.jupiter.api.Test;
@@ -34,7 +34,7 @@ import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-final class CachingSupplierTest {
+final class StableSupplierTest {
 
     private static final Supplier<Integer> SUPPLIER = () -> 42;
 
@@ -52,12 +52,12 @@ final class CachingSupplierTest {
     void basic(Supplier<Integer> supplier) {
         StableTestUtil.CountingSupplier<Integer> cs = new StableTestUtil.CountingSupplier<>(supplier);
         var cached = StableValue.ofSupplier(cs);
-        assertEquals("CachingSupplier[value=.unset, original=" + cs + "]", cached.toString());
+        assertEquals("StableSupplier[value=.unset, original=" + cs + "]", cached.toString());
         assertEquals(supplier.get(), cached.get());
         assertEquals(1, cs.cnt());
         assertEquals(supplier.get(), cached.get());
         assertEquals(1, cs.cnt());
-        assertEquals("CachingSupplier[value=[" + supplier.get() + "], original=" + cs + "]", cached.toString());
+        assertEquals("StableSupplier[value=[" + supplier.get() + "], original=" + cs + "]", cached.toString());
     }
 
     @Test
@@ -70,7 +70,7 @@ final class CachingSupplierTest {
         assertEquals(1, cs.cnt());
         assertThrows(UnsupportedOperationException.class, cached::get);
         assertEquals(2, cs.cnt());
-        assertEquals("CachingSupplier[value=.unset, original=" + cs + "]", cached.toString());
+        assertEquals("StableSupplier[value=.unset, original=" + cs + "]", cached.toString());
     }
 
     @Test
@@ -80,7 +80,7 @@ final class CachingSupplierTest {
         ref.set(cached);
         cached.get();
         String toString = cached.toString();
-        assertTrue(toString.startsWith("CachingSupplier[value=(this CachingSupplier), original="));
+        assertTrue(toString.startsWith("StableSupplier[value=(this StableSupplier), original="));
         assertDoesNotThrow(cached::hashCode);
     }
 

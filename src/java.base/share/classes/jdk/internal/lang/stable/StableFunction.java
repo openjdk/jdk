@@ -26,38 +26,37 @@
 package jdk.internal.lang.stable;
 
 import jdk.internal.vm.annotation.ForceInline;
-import jdk.internal.vm.annotation.Stable;
 
-import java.util.function.IntFunction;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
-// Note: It would be possible to just use `LazyList::get` instead of this
-// class but explicitly providing a class like this provides better
+// Note: It would be possible to just use `LazyMap::get` with some additional logic
+// instead of this class but explicitly providing a class like this provides better
 // debug capability, exception handling, and may provide better performance.
 /**
- * Implementation of a cached IntFunction.
- * <p>
- * For performance reasons (~10%), we are not delegating to a StableList but are using
- * the more primitive functions in StableValueUtil that are shared with StableList/StableValueImpl.
+ * Implementation of a stable Function.
  *
  * @implNote This implementation can be used early in the boot sequence as it does not
  *           rely on reflection, MethodHandles, Streams etc.
  *
- * @param <R> the return type
+ * @param values   a delegate map of inputs to StableValue mappings
+ * @param original the original Function
+ * @param <T>      the type of the input to the function
+ * @param <R>      the type of the result of the function
  */
-record CachingIntFunction<R>(@Stable StableValueImpl<R>[] delegates,
-                             IntFunction<? extends R> original) implements IntFunction<R> {
-
+record StableFunction<T, R>(Map<? extends T, StableValueImpl<R>> values,
+                            Function<? super T, ? extends R> original) implements Function<T, R> {
     @ForceInline
     @Override
-    public R apply(int index) {
-        try {
-            return delegates[index]
-                    .computeIfUnset(new Supplier<R>() {
-                        @Override public R get() { return original.apply(index); }});
-        } catch (ArrayIndexOutOfBoundsException ioob) {
-            throw new IllegalArgumentException("Input not allowed: " + index, ioob);
+    public R apply(T value) {
+        final StableValueImpl<R> stable = values.get(value);
+        if (stable == null) {
+            throw new IllegalArgumentException("Input not allowed: " + value);
         }
+        return stable.computeIfUnset(new Supplier<R>() {
+            @Override  public R get() { return original.apply(value); }});
     }
 
     @Override
@@ -72,30 +71,30 @@ record CachingIntFunction<R>(@Stable StableValueImpl<R>[] delegates,
 
     @Override
     public String toString() {
-        return "CachingIntFunction[values=" +
-                renderElements() +
-                ", original=" + original + ']';
+        return "StableFunction[values=" + renderMappings() + ", original=" + original + "]";
     }
 
-    private String renderElements() {
+    private String renderMappings() {
         final StringBuilder sb = new StringBuilder();
-        sb.append("[");
+        sb.append("{");
         boolean first = true;
-        for (int i = 0; i < delegates.length; i++) {
+        for (var e:values.entrySet()) {
             if (first) { first = false; } else { sb.append(", "); };
-            final Object value = delegates[i].wrappedValue();
+            final Object value = e.getValue().wrappedValue();
+            sb.append(e.getKey()).append('=');
             if (value == this) {
-                sb.append("(this CachingIntFunction)");
+                sb.append("(this StableFunction)");
             } else {
                 sb.append(StableValueImpl.renderWrapped(value));
             }
         }
-        sb.append("]");
+        sb.append("}");
         return sb.toString();
     }
 
-    static <R> CachingIntFunction<R> of(int size, IntFunction<? extends R> original) {
-        return new CachingIntFunction<>(StableValueFactories.ofArray(size), original);
+    static <T, R> StableFunction<T, R> of(Set<? extends T> inputs,
+                                          Function<? super T, ? extends R> original) {
+        return new StableFunction<>(StableValueFactories.ofMap(inputs), original);
     }
 
 }

@@ -22,9 +22,9 @@
  */
 
 /* @test
- * @summary Basic tests for CachingFunction methods
- * @compile --enable-preview -source ${jdk.version} CachingFunctionTest.java
- * @run junit/othervm --enable-preview CachingFunctionTest
+ * @summary Basic tests for StableFunctionTest methods
+ * @compile --enable-preview -source ${jdk.version} StableFunctionTest.java
+ * @run junit/othervm --enable-preview StableFunctionTest
  */
 
 import org.junit.jupiter.api.Test;
@@ -43,7 +43,7 @@ import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-final class CachingFunctionTest {
+final class StableFunctionTest {
 
     enum Value {
         // Zero is here so that we have enums with ordinals before the first one
@@ -163,9 +163,9 @@ final class CachingFunctionTest {
     @Test
     void usesOptimizedVersion() {
         Function<Value, Integer> enumFunction = StableValue.ofFunction(EnumSet.of(Value.FORTY_TWO), Value::asInt);
-        assertEquals("jdk.internal.lang.stable.CachingEnumFunction", enumFunction.getClass().getName());
+        assertEquals("jdk.internal.lang.stable.StableEnumFunction", enumFunction.getClass().getName());
         Function<Value, Integer> emptyFunction = StableValue.ofFunction(Set.of(), Value::asInt);
-        assertEquals("jdk.internal.lang.stable.EmptyCachingFunction", emptyFunction.getClass().getName());
+        assertEquals("jdk.internal.lang.stable.EmptyStableFunction", emptyFunction.getClass().getName());
     }
 
     private static Stream<Set<Value>> nonEmptySets() {

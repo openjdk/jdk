@@ -22,9 +22,9 @@
  */
 
 /* @test
- * @summary Basic tests for CachingIntFunction methods
- * @compile --enable-preview -source ${jdk.version} CachingIntFunctionTest.java
- * @run junit/othervm --enable-preview CachingIntFunctionTest
+ * @summary Basic tests for StableIntFunctionTest methods
+ * @compile --enable-preview -source ${jdk.version} StableIntFunctionTest.java
+ * @run junit/othervm --enable-preview StableIntFunctionTest
  */
 
 import org.junit.jupiter.api.Test;
@@ -34,7 +34,7 @@ import java.util.function.IntFunction;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-final class CachingIntFunctionTest {
+final class StableIntFunctionTest {
 
     private static final int SIZE = 2;
     private static final IntFunction<Integer> MAPPER = i -> i;
@@ -54,12 +54,12 @@ final class CachingIntFunctionTest {
     void basic(IntFunction<Integer> mapper) {
         StableTestUtil.CountingIntFunction<Integer> cif = new StableTestUtil.CountingIntFunction<>(mapper);
         var cached = StableValue.ofIntFunction(SIZE, cif);
-        assertEquals("CachingIntFunction[values=[.unset, .unset], original=" + cif + "]", cached.toString());
+        assertEquals("StableIntFunction[values=[.unset, .unset], original=" + cif + "]", cached.toString());
         assertEquals(mapper.apply(1), cached.apply(1));
         assertEquals(1, cif.cnt());
         assertEquals(mapper.apply(1), cached.apply(1));
         assertEquals(1, cif.cnt());
-        assertEquals("CachingIntFunction[values=[.unset, [" + mapper.apply(1) + "]], original=" + cif + "]", cached.toString());
+        assertEquals("StableIntFunction[values=[.unset, [" + mapper.apply(1) + "]], original=" + cif + "]", cached.toString());
         assertThrows(IllegalArgumentException.class, () -> cached.apply(SIZE));
         assertThrows(IllegalArgumentException.class, () -> cached.apply(-1));
         assertThrows(IllegalArgumentException.class, () -> cached.apply(1_000_000));
@@ -75,7 +75,7 @@ final class CachingIntFunctionTest {
         assertEquals(1, cif.cnt());
         assertThrows(UnsupportedOperationException.class, () -> cached.apply(1));
         assertEquals(2, cif.cnt());
-        assertEquals("CachingIntFunction[values=[.unset, .unset], original=" + cif + "]", cached.toString());
+        assertEquals("StableIntFunction[values=[.unset, .unset], original=" + cif + "]", cached.toString());
     }
 
     @Test
@@ -85,7 +85,7 @@ final class CachingIntFunctionTest {
         ref.set(cached);
         cached.apply(0);
         String toString = cached.toString();
-        assertTrue(toString.startsWith("CachingIntFunction[values=[(this CachingIntFunction), .unset], original="));
+        assertTrue(toString.startsWith("StableIntFunction[values=[(this StableIntFunction), .unset], original="));
         assertDoesNotThrow(cached::hashCode);
         assertDoesNotThrow((() -> cached.equals(cached)));
     }

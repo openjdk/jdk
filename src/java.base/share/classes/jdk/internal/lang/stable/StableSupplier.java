@@ -27,24 +27,22 @@ package jdk.internal.lang.stable;
 
 import jdk.internal.vm.annotation.ForceInline;
 
-import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
- * An empty caching function with no allowed inputs
- *
+ * Implementation of a stable supplier.
+ * <p>
  * @implNote This implementation can be used early in the boot sequence as it does not
  *           rely on reflection, MethodHandles, Streams etc.
  *
- * @param original     the original Function
- * @param <T>          the type of the input to the function
- * @param <R>          the type of the result of the function
+ * @param <T> the return type
  */
-record EmptyCachingFunction<T, R>(Function<? super T, ? extends R> original) implements Function<T, R> {
+record StableSupplier<T>(StableValueImpl<T> delegate, Supplier<? extends T> original) implements Supplier<T> {
 
     @ForceInline
     @Override
-    public R apply(T value) {
-        throw new IllegalArgumentException("Input not allowed: " + value);
+    public T get() {
+        return delegate.computeIfUnset(original);
     }
 
     @Override
@@ -59,11 +57,12 @@ record EmptyCachingFunction<T, R>(Function<? super T, ? extends R> original) imp
 
     @Override
     public String toString() {
-        return "EmptyCachingFunction[values={}, original=" + original + "]";
+        final Object t = delegate.wrappedValue();
+        return "StableSupplier[value=" + (t == this ? "(this StableSupplier)" : StableValueImpl.renderWrapped(t)) + ", original=" + original + "]";
     }
 
-    static <T, R> Function<T, R> of(Function<? super T, ? extends R> original) {
-        return new EmptyCachingFunction<>(original);
+    static <T> StableSupplier<T> of(Supplier<? extends T> original) {
+        return new StableSupplier<>(StableValueImpl.newInstance(), original);
     }
 
 }
