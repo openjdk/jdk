@@ -1196,7 +1196,7 @@ public class ZipFile implements ZipConstants, Closeable {
         private int   manifestPos = -1;      // position of the META-INF/MANIFEST.MF, if exists
         private int   manifestNum = 0;       // number of META-INF/MANIFEST.MF, case insensitive
         private int[] signatureMetaNames;    // positions of signature related entries, if such exist
-        private Map<String, int[]> metaVersions;          // list of unique versions found in META-INF/versions/
+        private Map<String, int[]> metaVersions; // Set of versions found in META-INF/versions/, by entry name
         private final boolean startsWithLoc; // true, if ZIP file starts with LOCSIG (usually true)
 
         // A Hashmap for all entries.
