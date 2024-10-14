@@ -941,8 +941,7 @@ void MacroAssembler::li(Register Rd, int64_t imm) {
 
 void MacroAssembler::load_link_jump(const address source, Register temp) {
   assert(temp != noreg && temp != x0, "expecting a register");
-  assert(temp != x5, "Register x5 not used for calls.");
-  assert(temp != x1, "Register x1 not used for calls.");
+  assert(temp != x5 && temp != x1, "temp register must not be x1/x5.");
   assert_cond(source != nullptr);
   int64_t distance = source - pc();
   assert(is_simm32(distance), "Must be");
@@ -1009,16 +1008,14 @@ void MacroAssembler::j(Label &lab, Register temp) {
 
 void MacroAssembler::jr(Register Rd, int32_t offset) {
   assert(Rd != noreg, "expecting a register");
-  assert(Rd != x5, "Register x5 not used for jumps.");
-  assert(Rd != x1, "Register x1 not used for jumps.");
+  assert(Rd != x1 && Rd != x5, "Rd register must not be x1/x5.");
   Assembler::jalr(x0, Rd, offset);
 }
 
 void MacroAssembler::call(const address dest, Register temp) {
   assert_cond(dest != nullptr);
   assert(temp != noreg, "expecting a register");
-  assert(temp != x5, "Register x5 not used for jumps.");
-  assert(temp != x1, "Register x1 not used for jumps.");
+  assert(temp != x1 && temp != x5, "temp register must not be x1/x5.");
   int32_t offset = 0;
   la(temp, dest, offset);
   jalr(temp, offset);
@@ -1026,14 +1023,12 @@ void MacroAssembler::call(const address dest, Register temp) {
 
 void MacroAssembler::jalr(Register Rs, int32_t offset) {
   assert(Rs != noreg, "expecting a register");
-  assert(Rs != x1, "expecting a register");
-  assert(Rs != x5, "expecting a register");
+  assert(Rs != x1 && Rs != x5, "Rs register must not be x1/x5.");
   Assembler::jalr(x1, Rs, offset);
 }
 
 void MacroAssembler::rt_call(address dest, Register tmp) {
-  assert(tmp != x5, "Register x5 not used for jumps.");
-  assert(tmp != x1, "Register x1 not used for jumps.");
+  assert(tmp != x1 && tmp != x5, "tmp register must not be x1/x5.");
   CodeBlob *cb = CodeCache::find_blob(dest);
   RuntimeAddress target(dest);
   if (cb) {

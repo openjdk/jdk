@@ -2892,7 +2892,7 @@ public:
  protected:
   // All calls and jumps must go via MASM.
   void jalr(Register Rd, Register Rs, const int32_t offset) {
-    assert(Rd != x5 && Rs != x5, "Register x5 not used for calls/jumps.");
+    assert(Rd != x5 && Rs != x5, "Register x5 must not be used for calls/jumps.");
     /* jalr -> c.jr/c.jalr */
     if (do_compress() && (offset == 0 && Rs != x0)) {
       if (Rd == x1) {
@@ -2907,7 +2907,7 @@ public:
   }
 
   void jal(Register Rd, const int32_t offset) {
-    assert(Rd != x5, "Register x5 not used for calls/jumps.");
+    assert(Rd != x5, "Register x5 must not be used for calls/jumps.");
     /* jal -> c.j, note c.jal is RV32C only */
     if (do_compress() &&
         Rd == x0 &&
