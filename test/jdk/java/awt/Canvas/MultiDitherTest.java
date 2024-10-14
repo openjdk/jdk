@@ -73,14 +73,10 @@ public class MultiDitherTest extends Panel implements Runnable {
 
     public static void main(String[] args) throws Exception {
         String INSTRUCTIONS = """
-                This test displays several dithered Canvases similar to the
-                DitherTest demo applet, one for each available GraphicsConfiguration.
                 Depending on the GraphicsConfiguration, the dithering may be in
                 color or in grayscale and/or display at a lower bitdepth.
                 The number of GraphicsConfigurations will be printed in the
-                TextArea below as the test is starting up..
-                On Solaris, making some Windows active will cause some of the
-                other Windows to display strangely. This is normal.
+                TextArea below as the test is starting up.
                 Ensure that there are as many Frames created as there are
                 available GraphicsConfigurations.
                 Examine each Frame to ensure it displays the dither pattern.
@@ -283,7 +279,7 @@ public class MultiDitherTest extends Panel implements Runnable {
 
     /**
      * Calculates and returns the image.  Halts the calculation and returns
-     * null if the Applet is stopped during the calculation.
+     * null if the Application is stopped during the calculation.
      */
     Image calculateImage() {
         Thread me = Thread.currentThread();

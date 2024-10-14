@@ -61,11 +61,9 @@ public class MultiGraphicsTest extends Canvas {
                 lower bitdepth.
                 The number of GraphicsConfigurations will be printed below
                 as the test is starting up.
-                On Solaris, making some Windows active will cause some of
-                the other Windows to display strangely. This is normal.
                 Ensure that there are as many Windows created as there are
                 available GraphicsConfigurations.
-                Examine each Window to ensure it displays Jim.
+                Examine each Window to ensure it displays Duke_404.
                 If all Canvases display correctly, the test PASSES.
                 Otherwise, the test FAILS."
                 """;

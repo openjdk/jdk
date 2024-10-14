@@ -26,8 +26,6 @@
  * @bug 4147957
  * @key headful
  * @summary Test to verify setClip with invalid rect changes rect to valid
- * @library /java/awt/regtesthelpers
- * @build PassFailJFrame
  * @run main IntersectionTest
  */
 
