@@ -727,28 +727,29 @@ public class TreeMaker implements JCTree.Factory {
                                 ? sym.name
                                 : sym.flatName(), sym)
             .setPos(pos)
-            .setType(types.erasure(sym.type));
+            .setType(sym.type);
     }
 
     /** Create a selection node from a qualifier tree and a symbol.
      *  @param base   The qualifier tree.
      */
     public JCFieldAccess Select(JCExpression base, Symbol sym) {
-        JCFieldAccess res =
-                (JCFieldAccess)new JCFieldAccess(base, sym.name, sym).setPos(pos);
-
-        res.setType(sym.kind == TYP ? types.erasure(sym.type) : sym.type);
-
-        return res;
+        return (JCFieldAccess)new JCFieldAccess(base, sym.name, sym).setPos(pos).setType(sym.type);
     }
 
     /** Create a qualified identifier from a symbol, adding enough qualifications
      *  to make the reference unique.
      */
     public JCExpression QualIdent(Symbol sym) {
-        return isUnqualifiable(sym)
+        JCExpression result = isUnqualifiable(sym)
             ? Ident(sym)
             : Select(QualIdent(sym.owner), sym);
+
+        if (sym.kind == TYP) {
+            result.setType(types.erasure(sym.type));
+        }
+
+        return result;
     }
 
     /** Create an identifier that refers to the variable declared in given variable
