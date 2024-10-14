@@ -969,8 +969,8 @@ void MacroAssembler::j(const address dest, Register temp) {
   if (is_simm21(distance) && ((distance % 2) == 0)) {
     Assembler::jal(x0, distance);
   } else {
-    assert(temp != x5 && temp != x1, "Register x5/x1 not used for jumps.");
     assert(temp != noreg && temp != x0, "Expecting a register");
+    assert(temp != x1 && temp != x5, "temp register must not be x1/x5.");
     int32_t offset = 0;
     la(temp, dest, offset);
     jr(temp, offset);
