@@ -42,6 +42,8 @@ import static org.testng.Assert.*;
 @Test
 public class UdpSocket {
 
+    private static final int MAX_RETRIES = 3;
+
     /**
      * Test using the Socket API to send/receive datagrams
      */
