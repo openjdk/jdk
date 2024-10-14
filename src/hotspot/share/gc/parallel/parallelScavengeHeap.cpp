@@ -33,6 +33,7 @@
 #include "gc/parallel/psPromotionManager.hpp"
 #include "gc/parallel/psScavenge.hpp"
 #include "gc/parallel/psVMOperations.hpp"
+#include "gc/shared/fullGCForwarding.inline.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
 #include "gc/shared/gcLocker.inline.hpp"
 #include "gc/shared/gcWhen.hpp"
@@ -128,6 +129,8 @@ jint ParallelScavengeHeap::initialize() {
   CPUTimeCounters::create_counter(CPUTimeGroups::CPUTimeType::gc_parallel_workers);
 
   ParallelInitLogger::print();
+
+  FullGCForwarding::initialize(heap_rs.region());
 
   return JNI_OK;
 }

@@ -144,6 +144,7 @@ public class TestAutoCreateSharedArchiveNoDefaultArchive {
     private static void removeDefaultArchives(String java_home_dst, String variant) {
         removeDefaultArchive(java_home_dst, variant, "");
         removeDefaultArchive(java_home_dst, variant, "_nocoops");
+        removeDefaultArchive(java_home_dst, variant, "_coh");
     }
 
     private static void removeDefaultArchive(String java_home_dst, String variant, String suffix) {

@@ -111,7 +111,7 @@ class PSPromotionManager {
 
   void push_depth(ScannerTask task);
 
-  inline void promotion_trace_event(oop new_obj, oop old_obj, size_t obj_size,
+  inline void promotion_trace_event(oop new_obj, Klass* klass, size_t obj_size,
                                     uint age, bool tenured,
                                     const PSPromotionLAB* lab);
 

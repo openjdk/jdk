@@ -117,19 +117,3 @@ char* CompressedKlassPointers::reserve_address_space_for_compressed_classes(size
 
   return result;
 }
-
-void CompressedKlassPointers::initialize(address addr, size_t len) {
-  constexpr uintptr_t unscaled_max = nth_bit(32);
-  assert(len <= unscaled_max, "Klass range larger than 32 bits?");
-
-  // Shift is always 0 on aarch64.
-  _shift = 0;
-
-  // On aarch64, we don't bother with zero-based encoding (base=0 shift>0).
-  address const end = addr + len;
-  _base = (end <= (address)unscaled_max) ? nullptr : addr;
-
-  // Remember the Klass range:
-  _klass_range_start = addr;
-  _klass_range_end = addr + len;
-}

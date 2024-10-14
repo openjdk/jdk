@@ -135,6 +135,9 @@ public:
   }
 
   void print_stats(int ro_all, int rw_all);
+
+  DEBUG_ONLY(void verify(int expected_byte_size, bool read_only) const);
+
 };
 
 #endif // SHARE_CDS_DUMPALLOCSTATS_HPP
