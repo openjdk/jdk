@@ -32,7 +32,7 @@ package java.lang.annotation;
  * java.lang.annotation.Target @Target} meta-annotation.
  *
  * <p>For example, an annotation of the following type may only appear
- * in a type parameter or local variable declaration:
+ * as part of a type parameter or local variable declaration:
  *
  * {@snippet id='example' :
  * @Target({ElementType.TYPE_PARAMETER, ElementType.LOCAL_VARIABLE})
@@ -58,31 +58,35 @@ package java.lang.annotation;
  *
  * <h3 id="ambiguous">Ambiguous contexts</h3>
  *
- * <p>In some declarations, immediately after the annotations and
- * modifers, some <em>type</em> is indicated; specifically, the
- * declaration of a field, parameter, local variable, record
- * component, or non-void method (indicating the method's <em>return
- * type</em>). In such declarations, type-use annotations can
- * <em>also</em> be freely intermingled with the declaration's
- * modifiers and declaration annotations, in any order, and these are
- * treated the same as if they had directly preceded the type.
+ * <p>For six kinds of declarations, type-use annotations can also
+ * appear freely intermingled with declaration annotations and
+ * modifiers:
+ *
+ * <ul>
+ * <li>a field, parameter, local variable, or record component
+ *     (treated as if it precedes that variable's type)
+ * <li>a non-void method (treated as if it precedes the method's
+ *     return type)
+ * <li>a constructor (treated as if it modifies the constructed type,
+ *     even though this is not technically a type context)
+ * </ul>
+ *
+ * <p>In general, a library method for reading declaration annotations
+ * (like {@link java.lang.reflect.Field#getAnnotations}) will not
+ * return type-use annotations found in the same location, and
+ * vice-versa.
  *
  * <p>An annotation interface may specify both {@link #TYPE_USE} and
  * declaration targets, and thereby be fully usable as either kind.
- * When an annotation of this type appears in one of the five
- * ambiguous contexts just listed, it functions as <em>both</em> a
- * declaration annotation and a type-use annotation at the same time.
- * The results may be counterintuitive in two cases: when the type in
- * question is an inner type (like {@code Map.Entry}), or an array
- * type. In these cases, the declaration annotation applies to the
- * "entire" declaration, yet the type-use annotation applies more
- * narrowly to the <em>outer type</em> or to the <em>component
- * type</em> of the array.
- *
- * <p>In general, a library method for reading declaration annotations
- * (like {@link java.lang.reflect.AnnotatedElement#getAnnotations})
- * will not return type-use annotations found in the same location,
- * and vice-versa.
+ * When an annotation of this type appears in one of the six ambiguous
+ * contexts just listed, it functions as <em>both</em> a declaration
+ * annotation and a type-use annotation at the same time. The results
+ * may be counterintuitive in two cases: when the variable type or
+ * method return type is an inner type or an array type. In these
+ * cases, the declaration annotation applies to the "entire"
+ * declaration, yet the type-use annotation applies more narrowly to
+ * the <em>outer type</em> or to the <em>component type</em> of the
+ * array.
  *
  * @author  Joshua Bloch
  * @since 1.5
@@ -190,19 +194,14 @@ public enum ElementType {
      * for <em>class</em> declarations).
      * 
      * <p>This is a very broad category: {@jls 4.11} lists seventeen
-     * kinds of type contexts, followed by more locations where
-     * type-use annotations can also legally appear. Eight of these
+     * kinds of type contexts, followed by five more locations where
+     * type-use annotations can also legally appear. Six of these
      * locations are also annotatable <em>declarations</em>
      * themselves; see <a href="#ambiguous">ambiguous cases</a> above.
      * 
-     * <p>Specifying this target automatically includes the declaration
-     * targets {@link #TYPE}, {@link #TYPE_PARAMETER}, and {@link
-     * #CONSTRUCTOR} as well, with no way to exclude them.
-     *
-     * <p>An annotation interface with no {@code @Target}
-     * meta-annotation can be used in <em>any</em> declaration, but not
-     * as a type-use annotation. That is, this is the only constant in
-     * this class that must always be specified explicitly.
+     * <p>In addition, specifying this target automatically includes
+     * the declaration targets {@link #TYPE} and {@link
+     * #TYPE_PARAMETER}, though these are not type contexts.
      *
      * @since 1.8
      */
