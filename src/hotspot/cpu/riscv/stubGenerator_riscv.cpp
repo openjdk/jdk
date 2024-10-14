@@ -1189,7 +1189,7 @@ class StubGenerator: public StubCodeGenerator {
     __ slli(t1, count, exact_log2(size));
     Label L_continue;
     __ bltu(t0, t1, L_continue);
-    __ j(nooverlap_target, t1);
+    __ j(nooverlap_target);
     __ bind(L_continue);
 
     DecoratorSet decorators = IN_HEAP | IS_ARRAY;
