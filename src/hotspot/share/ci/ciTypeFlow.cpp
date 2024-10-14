@@ -730,6 +730,7 @@ void ciTypeFlow::StateVector::do_ldc(ciBytecodeStream* str) {
       trap(str, nullptr, Deoptimization::make_trap_request(Deoptimization::Reason_unloaded,
                                                            Deoptimization::Action_reinterpret,
                                                            cp_index));
+      return;
     }
     BasicType basic_type = str->get_basic_type_for_constant_at(cp_index);
     if (is_reference_type(basic_type)) {
