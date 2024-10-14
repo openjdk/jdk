@@ -22,10 +22,10 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/shared/gcLogPrecious.hpp"
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zErrno.hpp"
 #include "gc/z/zGlobals.hpp"
+#include "gc/z/zInitialize.hpp"
 #include "gc/z/zLargePages.inline.hpp"
 #include "gc/z/zPhysicalMemory.inline.hpp"
 #include "gc/z/zPhysicalMemoryBacking_bsd.hpp"
@@ -82,7 +82,7 @@ ZPhysicalMemoryBacking::ZPhysicalMemoryBacking(size_t max_capacity)
   _base = (uintptr_t)os::reserve_memory(max_capacity);
   if (_base == 0) {
     // Failed
-    log_error_pd(gc)("Failed to reserve address space for backing memory");
+    ZInitialize::error("Failed to reserve address space for backing memory");
     return;
   }
 

@@ -657,8 +657,7 @@ static void emit_cmpfp3(MacroAssembler* masm, Register dst) {
   __ movl(dst, -1);
   __ jcc(Assembler::parity, done);
   __ jcc(Assembler::below, done);
-  __ setb(Assembler::notEqual, dst);
-  __ movzbl(dst, dst);
+  __ setcc(Assembler::notEqual, dst);
   __ bind(done);
 }
 
@@ -4342,6 +4341,7 @@ instruct loadP(rRegP dst, memory mem)
 // Load Compressed Pointer
 instruct loadN(rRegN dst, memory mem)
 %{
+   predicate(n->as_Load()->barrier_data() == 0);
    match(Set dst (LoadN mem));
 
    ins_cost(125); // XXX
@@ -5127,6 +5127,7 @@ instruct storeImmP(memory mem, immP31 src)
 // Store Compressed Pointer
 instruct storeN(memory mem, rRegN src)
 %{
+  predicate(n->as_Store()->barrier_data() == 0);
   match(Set mem (StoreN mem src));
 
   ins_cost(125); // XXX
@@ -5151,7 +5152,7 @@ instruct storeNKlass(memory mem, rRegN src)
 
 instruct storeImmN0(memory mem, immN0 zero)
 %{
-  predicate(CompressedOops::base() == nullptr);
+  predicate(CompressedOops::base() == nullptr && n->as_Store()->barrier_data() == 0);
   match(Set mem (StoreN mem zero));
 
   ins_cost(125); // XXX
@@ -5164,6 +5165,7 @@ instruct storeImmN0(memory mem, immN0 zero)
 
 instruct storeImmN(memory mem, immN src)
 %{
+  predicate(n->as_Store()->barrier_data() == 0);
   match(Set mem (StoreN mem src));
 
   ins_cost(150); // XXX
@@ -5290,32 +5292,6 @@ instruct storeImmB(memory mem, immI8 src)
 
   ins_cost(150); // XXX
   format %{ "movb    $mem, $src\t# byte" %}
-  ins_encode %{
-    __ movb($mem$$Address, $src$$constant);
-  %}
-  ins_pipe(ialu_mem_imm);
-%}
-
-// Store CMS card-mark Immediate
-instruct storeImmCM0_reg(memory mem, immI_0 zero)
-%{
-  predicate(UseCompressedOops && (CompressedOops::base() == nullptr));
-  match(Set mem (StoreCM mem zero));
-
-  ins_cost(125); // XXX
-  format %{ "movb    $mem, R12\t# CMS card-mark byte 0 (R12_heapbase==0)" %}
-  ins_encode %{
-    __ movb($mem$$Address, r12);
-  %}
-  ins_pipe(ialu_mem_reg);
-%}
-
-instruct storeImmCM0(memory mem, immI_0 src)
-%{
-  match(Set mem (StoreCM mem src));
-
-  ins_cost(150); // XXX
-  format %{ "movb    $mem, $src\t# CMS card-mark byte 0" %}
   ins_encode %{
     __ movb($mem$$Address, $src$$constant);
   %}
@@ -7070,13 +7046,11 @@ instruct compareAndSwapP(rRegI res,
 
   format %{ "cmpxchgq $mem_ptr,$newval\t# "
             "If rax == $mem_ptr then store $newval into $mem_ptr\n\t"
-            "sete    $res\n\t"
-            "movzbl  $res, $res" %}
+            "setcc $res \t# emits sete + movzbl or setzue for APX" %}
   ins_encode %{
     __ lock();
     __ cmpxchgq($newval$$Register, $mem_ptr$$Address);
-    __ setb(Assembler::equal, $res$$Register);
-    __ movzbl($res$$Register, $res$$Register);
+    __ setcc(Assembler::equal, $res$$Register);
   %}
   ins_pipe( pipe_cmpxchg );
 %}
@@ -7092,13 +7066,11 @@ instruct compareAndSwapL(rRegI res,
 
   format %{ "cmpxchgq $mem_ptr,$newval\t# "
             "If rax == $mem_ptr then store $newval into $mem_ptr\n\t"
-            "sete    $res\n\t"
-            "movzbl  $res, $res" %}
+            "setcc $res \t# emits sete + movzbl or setzue for APX" %}
   ins_encode %{
     __ lock();
     __ cmpxchgq($newval$$Register, $mem_ptr$$Address);
-    __ setb(Assembler::equal, $res$$Register);
-    __ movzbl($res$$Register, $res$$Register);
+    __ setcc(Assembler::equal, $res$$Register);
   %}
   ins_pipe( pipe_cmpxchg );
 %}
@@ -7114,13 +7086,11 @@ instruct compareAndSwapI(rRegI res,
 
   format %{ "cmpxchgl $mem_ptr,$newval\t# "
             "If rax == $mem_ptr then store $newval into $mem_ptr\n\t"
-            "sete    $res\n\t"
-            "movzbl  $res, $res" %}
+            "setcc $res \t# emits sete + movzbl or setzue for APX" %}
   ins_encode %{
     __ lock();
     __ cmpxchgl($newval$$Register, $mem_ptr$$Address);
-    __ setb(Assembler::equal, $res$$Register);
-    __ movzbl($res$$Register, $res$$Register);
+    __ setcc(Assembler::equal, $res$$Register);
   %}
   ins_pipe( pipe_cmpxchg );
 %}
@@ -7136,13 +7106,11 @@ instruct compareAndSwapB(rRegI res,
 
   format %{ "cmpxchgb $mem_ptr,$newval\t# "
             "If rax == $mem_ptr then store $newval into $mem_ptr\n\t"
-            "sete    $res\n\t"
-            "movzbl  $res, $res" %}
+            "setcc $res \t# emits sete + movzbl or setzue for APX" %}
   ins_encode %{
     __ lock();
     __ cmpxchgb($newval$$Register, $mem_ptr$$Address);
-    __ setb(Assembler::equal, $res$$Register);
-    __ movzbl($res$$Register, $res$$Register);
+    __ setcc(Assembler::equal, $res$$Register);
   %}
   ins_pipe( pipe_cmpxchg );
 %}
@@ -7158,13 +7126,11 @@ instruct compareAndSwapS(rRegI res,
 
   format %{ "cmpxchgw $mem_ptr,$newval\t# "
             "If rax == $mem_ptr then store $newval into $mem_ptr\n\t"
-            "sete    $res\n\t"
-            "movzbl  $res, $res" %}
+            "setcc $res \t# emits sete + movzbl or setzue for APX" %}
   ins_encode %{
     __ lock();
     __ cmpxchgw($newval$$Register, $mem_ptr$$Address);
-    __ setb(Assembler::equal, $res$$Register);
-    __ movzbl($res$$Register, $res$$Register);
+    __ setcc(Assembler::equal, $res$$Register);
   %}
   ins_pipe( pipe_cmpxchg );
 %}
@@ -7173,19 +7139,18 @@ instruct compareAndSwapN(rRegI res,
                           memory mem_ptr,
                           rax_RegN oldval, rRegN newval,
                           rFlagsReg cr) %{
+  predicate(n->as_LoadStore()->barrier_data() == 0);
   match(Set res (CompareAndSwapN mem_ptr (Binary oldval newval)));
   match(Set res (WeakCompareAndSwapN mem_ptr (Binary oldval newval)));
   effect(KILL cr, KILL oldval);
 
   format %{ "cmpxchgl $mem_ptr,$newval\t# "
             "If rax == $mem_ptr then store $newval into $mem_ptr\n\t"
-            "sete    $res\n\t"
-            "movzbl  $res, $res" %}
+            "setcc $res \t# emits sete + movzbl or setzue for APX" %}
   ins_encode %{
     __ lock();
     __ cmpxchgl($newval$$Register, $mem_ptr$$Address);
-    __ setb(Assembler::equal, $res$$Register);
-    __ movzbl($res$$Register, $res$$Register);
+    __ setcc(Assembler::equal, $res$$Register);
   %}
   ins_pipe( pipe_cmpxchg );
 %}
@@ -7262,6 +7227,7 @@ instruct compareAndExchangeN(
                           memory mem_ptr,
                           rax_RegN oldval, rRegN newval,
                           rFlagsReg cr) %{
+  predicate(n->as_LoadStore()->barrier_data() == 0);
   match(Set oldval (CompareAndExchangeN mem_ptr (Binary oldval newval)));
   effect(KILL cr);
 
@@ -7483,6 +7449,7 @@ instruct xchgP( memory mem, rRegP newval) %{
 %}
 
 instruct xchgN( memory mem, rRegN newval) %{
+  predicate(n->as_LoadStore()->barrier_data() == 0);
   match(Set newval (GetAndSetN mem newval));
   format %{ "XCHGL  $newval,$mem]" %}
   ins_encode %{
@@ -9729,13 +9696,11 @@ instruct cmpLTMask(rRegI dst, rRegI p, rRegI q, rFlagsReg cr)
 
   ins_cost(400);
   format %{ "cmpl    $p, $q\t# cmpLTMask\n\t"
-            "setlt   $dst\n\t"
-            "movzbl  $dst, $dst\n\t"
+            "setcc   $dst \t# emits setlt + movzbl or setzul for APX"
             "negl    $dst" %}
   ins_encode %{
     __ cmpl($p$$Register, $q$$Register);
-    __ setb(Assembler::less, $dst$$Register);
-    __ movzbl($dst$$Register, $dst$$Register);
+    __ setcc(Assembler::less, $dst$$Register);
     __ negl($dst$$Register);
   %}
   ins_pipe(pipe_slow);
@@ -11674,6 +11639,7 @@ instruct compN_rReg(rFlagsRegU cr, rRegN op1, rRegN op2)
 
 instruct compN_rReg_mem(rFlagsRegU cr, rRegN src, memory mem)
 %{
+  predicate(n->in(2)->as_Load()->barrier_data() == 0);
   match(Set cr (CmpN src (LoadN mem)));
 
   format %{ "cmpl    $src, $mem\t# compressed ptr" %}
@@ -11695,6 +11661,7 @@ instruct compN_rReg_imm(rFlagsRegU cr, rRegN op1, immN op2) %{
 
 instruct compN_mem_imm(rFlagsRegU cr, memory mem, immN src)
 %{
+  predicate(n->in(2)->as_Load()->barrier_data() == 0);
   match(Set cr (CmpN src (LoadN mem)));
 
   format %{ "cmpl    $mem, $src\t# compressed ptr" %}
@@ -11735,7 +11702,8 @@ instruct testN_reg(rFlagsReg cr, rRegN src, immN0 zero) %{
 
 instruct testN_mem(rFlagsReg cr, memory mem, immN0 zero)
 %{
-  predicate(CompressedOops::base() != nullptr);
+  predicate(CompressedOops::base() != nullptr &&
+            n->in(1)->as_Load()->barrier_data() == 0);
   match(Set cr (CmpN (LoadN mem) zero));
 
   ins_cost(500); // XXX
@@ -11748,7 +11716,8 @@ instruct testN_mem(rFlagsReg cr, memory mem, immN0 zero)
 
 instruct testN_mem_reg0(rFlagsReg cr, memory mem, immN0 zero)
 %{
-  predicate(CompressedOops::base() == nullptr);
+  predicate(CompressedOops::base() == nullptr &&
+            n->in(1)->as_Load()->barrier_data() == 0);
   match(Set cr (CmpN (LoadN mem) zero));
 
   format %{ "cmpl    R12, $mem\t# compressed ptr (R12_heapbase==0)" %}
@@ -11860,16 +11829,14 @@ instruct cmpU3_reg_reg(rRegI dst, rRegI src1, rRegI src2, rFlagsReg flags)
   format %{ "cmpl    $src1, $src2\t# CmpL3\n\t"
             "movl    $dst, -1\n\t"
             "jb,u    done\n\t"
-            "setne   $dst\n\t"
-            "movzbl  $dst, $dst\n\t"
+            "setcc   $dst \t# emits setne + movzbl or setzune for APX"
     "done:" %}
   ins_encode %{
     Label done;
     __ cmpl($src1$$Register, $src2$$Register);
     __ movl($dst$$Register, -1);
     __ jccb(Assembler::below, done);
-    __ setb(Assembler::notZero, $dst$$Register);
-    __ movzbl($dst$$Register, $dst$$Register);
+    __ setcc(Assembler::notZero, $dst$$Register);
     __ bind(done);
   %}
   ins_pipe(pipe_slow);
@@ -11886,16 +11853,14 @@ instruct cmpL3_reg_reg(rRegI dst, rRegL src1, rRegL src2, rFlagsReg flags)
   format %{ "cmpq    $src1, $src2\t# CmpL3\n\t"
             "movl    $dst, -1\n\t"
             "jl,s    done\n\t"
-            "setne   $dst\n\t"
-            "movzbl  $dst, $dst\n\t"
+            "setcc   $dst \t# emits setne + movzbl or setzune for APX"
     "done:" %}
   ins_encode %{
     Label done;
     __ cmpq($src1$$Register, $src2$$Register);
     __ movl($dst$$Register, -1);
     __ jccb(Assembler::less, done);
-    __ setb(Assembler::notZero, $dst$$Register);
-    __ movzbl($dst$$Register, $dst$$Register);
+    __ setcc(Assembler::notZero, $dst$$Register);
     __ bind(done);
   %}
   ins_pipe(pipe_slow);
@@ -11912,16 +11877,14 @@ instruct cmpUL3_reg_reg(rRegI dst, rRegL src1, rRegL src2, rFlagsReg flags)
   format %{ "cmpq    $src1, $src2\t# CmpL3\n\t"
             "movl    $dst, -1\n\t"
             "jb,u    done\n\t"
-            "setne   $dst\n\t"
-            "movzbl  $dst, $dst\n\t"
+            "setcc   $dst \t# emits setne + movzbl or setzune for APX"
     "done:" %}
   ins_encode %{
     Label done;
     __ cmpq($src1$$Register, $src2$$Register);
     __ movl($dst$$Register, -1);
     __ jccb(Assembler::below, done);
-    __ setb(Assembler::notZero, $dst$$Register);
-    __ movzbl($dst$$Register, $dst$$Register);
+    __ setcc(Assembler::notZero, $dst$$Register);
     __ bind(done);
   %}
   ins_pipe(pipe_slow);

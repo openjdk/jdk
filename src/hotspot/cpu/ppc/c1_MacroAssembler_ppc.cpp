@@ -92,7 +92,7 @@ void C1_MacroAssembler::lock_object(Register Rmark, Register Roop, Register Rbox
   }
 
   if (LockingMode == LM_LIGHTWEIGHT) {
-    lightweight_lock(Roop, Rmark, Rscratch, slow_int);
+    lightweight_lock(Rbox, Roop, Rmark, Rscratch, slow_int);
   } else if (LockingMode == LM_LEGACY) {
     // ... and mark it unlocked.
     ori(Rmark, Rmark, markWord::unlocked_value);
@@ -293,7 +293,7 @@ void C1_MacroAssembler::initialize_object(
   if (CURRENT_ENV->dtrace_alloc_probes()) {
     Unimplemented();
 //    assert(obj == O0, "must be");
-//    call(CAST_FROM_FN_PTR(address, Runtime1::entry_for(Runtime1::dtrace_object_alloc_id)),
+//    call(CAST_FROM_FN_PTR(address, Runtime1::entry_for(C1StubId::dtrace_object_alloc_id)),
 //         relocInfo::runtime_call_type);
   }
 
@@ -369,7 +369,7 @@ void C1_MacroAssembler::allocate_array(
   if (CURRENT_ENV->dtrace_alloc_probes()) {
     Unimplemented();
     //assert(obj == O0, "must be");
-    //call(CAST_FROM_FN_PTR(address, Runtime1::entry_for(Runtime1::dtrace_object_alloc_id)),
+    //call(CAST_FROM_FN_PTR(address, Runtime1::entry_for(C1StubId::dtrace_object_alloc_id)),
     //     relocInfo::runtime_call_type);
   }
 
@@ -398,7 +398,7 @@ void C1_MacroAssembler::null_check(Register r, Label* Lnull) {
   if (TrapBasedNullChecks) { // SIGTRAP based
     trap_null_check(r);
   } else { // explicit
-    //const address exception_entry = Runtime1::entry_for(Runtime1::throw_null_pointer_exception_id);
+    //const address exception_entry = Runtime1::entry_for(C1StubId::throw_null_pointer_exception_id);
     assert(Lnull != nullptr, "must have Label for explicit check");
     cmpdi(CCR0, r, 0);
     bc_far_optimized(Assembler::bcondCRbiIs1, bi0(CCR0, Assembler::equal), *Lnull);

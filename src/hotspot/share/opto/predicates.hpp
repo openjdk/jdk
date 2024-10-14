@@ -30,6 +30,11 @@
 #include "opto/opaquenode.hpp"
 
 class IdealLoopTree;
+class InitializedAssertionPredicate;
+class ParsePredicate;
+class PredicateVisitor;
+class RuntimePredicate;
+class TemplateAssertionPredicate;
 
 /*
  * There are different kinds of predicates throughout the code. We differentiate between the following predicates:
@@ -152,7 +157,8 @@ class IdealLoopTree;
  *                                            together.
  *                    - Loop Limit Check      Groups the Loop Limit Check Predicate (if created) and the Loop Limit
  *                      Predicate Block:      Check Parse Predicate (if not removed, yet) together.
- *
+ * - Regular Predicate Block: A block that only contains the Regular Predicates of a Predicate Block without the
+ *                            Parse Predicate.
  *
  * Initially, before applying any loop-splitting optimizations, we find the following structure after Loop Predication
  * (predicates inside square brackets [] do not need to exist if there are no checks to hoist):
@@ -205,6 +211,41 @@ enum class AssertionPredicateType {
 };
 #endif // NOT PRODUCT
 
+// Interface to represent a C2 predicate. A predicate is always represented by two CFG nodes:
+// - An If node (head)
+// - An IfProj node representing the success projection of the If node (tail).
+class Predicate : public StackObj {
+ public:
+  // Return the unique entry CFG node into the predicate.
+  virtual Node* entry() const = 0;
+
+  // Return the head node of the predicate which is either:
+  // - A ParsePredicateNode if the predicate is a Parse Predicate
+  // - An IfNode or RangeCheckNode, otherwise.
+  virtual IfNode* head() const = 0;
+
+  // Return the tail node of the predicate. Runtime Predicates can either have a true of false projection as success
+  // projection while Parse Predicates and Assertion Predicates always have a true projection as success projection.
+  virtual IfProjNode* tail() const = 0;
+};
+
+// Generic predicate visitor that does nothing. Subclass this visitor to add customized actions for each predicate.
+// The visit methods of this visitor are called from the predicate iterator classes which walk the predicate chain.
+// Use the UnifiedPredicateVisitor if the type of the predicate does not matter.
+class PredicateVisitor : StackObj {
+ public:
+  virtual void visit(const ParsePredicate& parse_predicate) {}
+  virtual void visit(const RuntimePredicate& runtime_predicate) {}
+  virtual void visit(const TemplateAssertionPredicate& template_assertion_predicate) {}
+  virtual void visit(const InitializedAssertionPredicate& initialized_assertion_predicate) {}
+
+  // This method can be overridden to stop the predicate iterators from visiting more predicates further up in the
+  // predicate chain.
+  virtual bool should_continue() const {
+    return true;
+  }
+};
+
 // Class to represent Assertion Predicates with a HaltNode instead of an UCT (i.e. either an Initialized Assertion
 // Predicate or a Template Assertion Predicate created after the initial one at Loop Predication).
 class AssertionPredicatesWithHalt : public StackObj {
@@ -228,9 +269,15 @@ class AssertionPredicatesWithHalt : public StackObj {
 // Note that all other Regular Predicates have an UCT node.
 class AssertionPredicateWithHalt : public StackObj {
   static bool has_assertion_predicate_opaque(const Node* predicate_proj);
-  static bool has_halt(const Node* success_proj);
  public:
   static bool is_predicate(const Node* maybe_success_proj);
+  static bool has_halt(const Node* success_proj);
+};
+
+// Utility class representing a Regular Predicate which is either a Runtime Predicate or an Assertion Predicate.
+class RegularPredicate : public StackObj {
+ public:
+  static bool may_be_predicate_if(const Node* node);
 };
 
 // Class to represent a single Regular Predicate with an UCT. This could either be:
@@ -239,15 +286,15 @@ class AssertionPredicateWithHalt : public StackObj {
 // Note that all other Regular Predicates have a Halt node.
 class RegularPredicateWithUCT : public StackObj {
   static Deoptimization::DeoptReason uncommon_trap_reason(IfProjNode* if_proj);
-  static bool may_be_predicate_if(Node* node);
 
  public:
   static bool is_predicate(Node* maybe_success_proj);
-  static bool is_predicate(Node* node, Deoptimization::DeoptReason deopt_reason);
+  static bool is_predicate(const Node* node, Deoptimization::DeoptReason deopt_reason);
+  static bool has_valid_uncommon_trap(const Node* success_proj);
 };
 
 // Class to represent a Parse Predicate.
-class ParsePredicate : public StackObj {
+class ParsePredicate : public Predicate {
   ParsePredicateSuccessProj* _success_proj;
   ParsePredicateNode* _parse_predicate_node;
   Node* _entry;
@@ -267,7 +314,7 @@ class ParsePredicate : public StackObj {
 
   // Returns the control input node into this Parse Predicate if it is valid. Otherwise, it returns the passed node
   // into the constructor of this class.
-  Node* entry() const {
+  Node* entry() const override {
     return _entry;
   }
 
@@ -277,23 +324,102 @@ class ParsePredicate : public StackObj {
     return _parse_predicate_node != nullptr;
   }
 
-  ParsePredicateNode* node() const {
+  ParsePredicateNode* head() const override {
     assert(is_valid(), "must be valid");
     return _parse_predicate_node;
   }
 
-  ParsePredicateSuccessProj* success_proj() const {
+  ParsePredicateSuccessProj* tail() const override {
     assert(is_valid(), "must be valid");
     return _success_proj;
   }
-
-  static bool is_predicate(Node* maybe_success_proj);
 };
 
-// Utility class for queries on Runtime Predicates.
-class RuntimePredicate : public StackObj {
+// Class to represent a Runtime Predicate which always has an associated UCT on the failing path.
+class RuntimePredicate : public Predicate {
+  IfProjNode* _success_proj;
+  IfNode* _if_node;
+
  public:
-  static bool is_success_proj(Node* node, Deoptimization::DeoptReason deopt_reason);
+  explicit RuntimePredicate(IfProjNode* success_proj)
+      : _success_proj(success_proj),
+        _if_node(success_proj->in(0)->as_If()) {
+    assert(is_predicate(success_proj), "must be valid");
+  }
+  NONCOPYABLE(RuntimePredicate);
+
+ private:
+  static bool is_predicate(Node* maybe_success_proj);
+
+ public:
+  Node* entry() const override {
+    return _if_node->in(0);
+  }
+
+  IfNode* head() const override {
+    return _if_node;
+  }
+
+  IfProjNode* tail() const override {
+    return _success_proj;
+  }
+
+  static bool is_predicate(Node* node, Deoptimization::DeoptReason deopt_reason);
+};
+
+// Class to represent a Template Assertion Predicate.
+class TemplateAssertionPredicate : public Predicate {
+  IfTrueNode* _success_proj;
+  IfNode* _if_node;
+
+ public:
+  explicit TemplateAssertionPredicate(IfTrueNode* success_proj)
+      : _success_proj(success_proj),
+        _if_node(success_proj->in(0)->as_If()) {
+    assert(is_predicate(success_proj), "must be valid");
+  }
+
+  Node* entry() const override {
+    return _if_node->in(0);
+  }
+
+  IfNode* head() const override {
+    return _if_node;
+  }
+
+  IfTrueNode* tail() const override {
+    return _success_proj;
+  }
+
+  static bool is_predicate(Node* node);
+};
+
+// Class to represent an Initialized Assertion Predicate which always has a halt node on the failing path.
+// This predicate should never fail at runtime by design.
+class InitializedAssertionPredicate : public Predicate {
+  IfTrueNode* _success_proj;
+  IfNode* _if_node;
+
+ public:
+  explicit InitializedAssertionPredicate(IfTrueNode* success_proj)
+      : _success_proj(success_proj),
+        _if_node(success_proj->in(0)->as_If()) {
+    assert(is_predicate(success_proj), "must be valid");
+  }
+
+  Node* entry() const override {
+    return _if_node->in(0);
+  }
+
+  IfNode* head() const override {
+    return _if_node;
+  }
+
+  IfTrueNode* tail() const override {
+    return _success_proj;
+  }
+
+  static bool is_predicate(Node* node);
 };
 
 // Interface to transform OpaqueLoopInit and OpaqueLoopStride nodes of a Template Assertion Expression.
@@ -395,16 +521,16 @@ class TemplateAssertionExpressionNode : public StackObj {
 };
 
 // This class creates a new Initialized Assertion Predicate.
-class InitializedAssertionPredicate : public StackObj {
+class InitializedAssertionPredicateCreator : public StackObj {
   IfNode* const _template_assertion_predicate;
   Node* const _new_init;
   Node* const _new_stride;
   PhaseIdealLoop* const _phase;
 
  public:
-  InitializedAssertionPredicate(IfNode* template_assertion_predicate, Node* new_init, Node* new_stride,
-                                PhaseIdealLoop* phase);
-  NONCOPYABLE(InitializedAssertionPredicate);
+  InitializedAssertionPredicateCreator(IfNode* template_assertion_predicate, Node* new_init, Node* new_stride,
+                                       PhaseIdealLoop* phase);
+  NONCOPYABLE(InitializedAssertionPredicateCreator);
 
   IfTrueNode* create(Node* control);
 
@@ -416,23 +542,208 @@ class InitializedAssertionPredicate : public StackObj {
   IfTrueNode* create_success_path(IfNode* if_node, IdealLoopTree* loop);
 };
 
+// This class iterates through all predicates of a Regular Predicate Block and applies the given visitor to each.
+class RegularPredicateBlockIterator : public StackObj {
+  Node* const _start_node;
+  const Deoptimization::DeoptReason _deopt_reason;
+
+ public:
+  RegularPredicateBlockIterator(Node* start_node, Deoptimization::DeoptReason deopt_reason)
+      : _start_node(start_node),
+        _deopt_reason(deopt_reason) {}
+  NONCOPYABLE(RegularPredicateBlockIterator);
+
+  // Skip all predicates by just following the inputs. We do not call any user provided visitor.
+  Node* skip_all() const {
+    PredicateVisitor do_nothing; // No real visits, just do nothing.
+    return for_each(do_nothing);
+  }
+
+  // Walk over all predicates of this block (if any) and apply the given 'predicate_visitor' to each predicate.
+  // Returns the entry to the earliest predicate.
+  Node* for_each(PredicateVisitor& predicate_visitor) const {
+    Node* current = _start_node;
+    while (predicate_visitor.should_continue()) {
+      if (TemplateAssertionPredicate::is_predicate(current)) {
+        TemplateAssertionPredicate template_assertion_predicate(current->as_IfTrue());
+        predicate_visitor.visit(template_assertion_predicate);
+        current = template_assertion_predicate.entry();
+      } else if (RuntimePredicate::is_predicate(current, _deopt_reason)) {
+        RuntimePredicate runtime_predicate(current->as_IfProj());
+        predicate_visitor.visit(runtime_predicate);
+        current = runtime_predicate.entry();
+      } else if (InitializedAssertionPredicate::is_predicate(current)) {
+        InitializedAssertionPredicate initialized_assertion_predicate(current->as_IfTrue());
+        predicate_visitor.visit(initialized_assertion_predicate);
+        current = initialized_assertion_predicate.entry();
+      } else {
+        // Either a Parse Predicate or not a Regular Predicate. In both cases, the node does not belong to this block.
+        break;
+      }
+    }
+    return current;
+  }
+};
+
+// This class iterates through all predicates of a Predicate Block and applies the given visitor to each.
+class PredicateBlockIterator : public StackObj {
+  Node* const _start_node;
+  const ParsePredicate _parse_predicate; // Could be missing.
+  const RegularPredicateBlockIterator _regular_predicate_block_iterator;
+
+ public:
+  PredicateBlockIterator(Node* start_node, Deoptimization::DeoptReason deopt_reason)
+      : _start_node(start_node),
+        _parse_predicate(start_node, deopt_reason),
+        _regular_predicate_block_iterator(_parse_predicate.entry(), deopt_reason) {}
+
+  // Walk over all predicates of this block (if any) and apply the given 'predicate_visitor' to each predicate.
+  // Returns the entry to the earliest predicate.
+  Node* for_each(PredicateVisitor& predicate_visitor) const {
+    if (!predicate_visitor.should_continue()) {
+      return _start_node;
+    }
+    if (_parse_predicate.is_valid()) {
+      predicate_visitor.visit(_parse_predicate);
+    }
+    return _regular_predicate_block_iterator.for_each(predicate_visitor);
+  }
+};
+
+// Class to walk over all predicates starting at a node, which usually is the loop entry node, and following the inputs.
+// At each predicate, a PredicateVisitor is applied which the user can implement freely.
+class PredicateIterator : public StackObj {
+  Node* _start_node;
+
+ public:
+  explicit PredicateIterator(Node* start_node)
+      : _start_node(start_node) {}
+  NONCOPYABLE(PredicateIterator);
+
+  // Apply the 'predicate_visitor' for each predicate found in the predicate chain started at the provided node.
+  // Returns the entry to the earliest predicate.
+  Node* for_each(PredicateVisitor& predicate_visitor) const {
+    Node* current = _start_node;
+    PredicateBlockIterator loop_limit_check_predicate_iterator(current, Deoptimization::Reason_loop_limit_check);
+    current = loop_limit_check_predicate_iterator.for_each(predicate_visitor);
+    PredicateBlockIterator profiled_loop_predicate_iterator(current, Deoptimization::Reason_profile_predicate);
+    current = profiled_loop_predicate_iterator.for_each(predicate_visitor);
+    PredicateBlockIterator loop_predicate_iterator(current, Deoptimization::Reason_predicate);
+    return loop_predicate_iterator.for_each(predicate_visitor);
+  }
+};
+
+// Unified PredicateVisitor which only provides a single visit method for a generic Predicate. This visitor can be used
+// when it does not matter what kind of predicate is visited. Note that we override all normal visit methods from
+// PredicateVisitor by calling the unified method. These visit methods are marked final such that they cannot be
+// overridden by implementors of this class.
+class UnifiedPredicateVisitor : public PredicateVisitor {
+ public:
+  virtual void visit(const TemplateAssertionPredicate& template_assertion_predicate) override final {
+    visit_predicate(template_assertion_predicate);
+  }
+
+  virtual void visit(const ParsePredicate& parse_predicate) override final {
+    visit_predicate(parse_predicate);
+  }
+
+  virtual void visit(const RuntimePredicate& runtime_predicate) override final {
+    visit_predicate(runtime_predicate);
+  }
+
+  virtual void visit(const InitializedAssertionPredicate& initialized_assertion_predicate) override final {
+    visit_predicate(initialized_assertion_predicate);
+  }
+
+  virtual void visit_predicate(const Predicate& predicate) = 0;
+};
+
+// A block of Regular Predicates inside a Predicate Block without its Parse Predicate.
+class RegularPredicateBlock : public StackObj {
+  const Deoptimization::DeoptReason _deopt_reason;
+  Node* const _entry;
+
+ public:
+  RegularPredicateBlock(Node* tail, Deoptimization::DeoptReason deopt_reason)
+      : _deopt_reason(deopt_reason),
+        _entry(skip_all(tail)) {
+    DEBUG_ONLY(verify_block(tail);)
+  }
+  NONCOPYABLE(RegularPredicateBlock);
+
+ private:
+  // Walk over all Regular Predicates of this block (if any) and return the first node not belonging to the block
+  // anymore (i.e. entry to the first Regular Predicate in this block if any or `tail` otherwise).
+  Node* skip_all(Node* tail) const {
+    RegularPredicateBlockIterator iterator(tail, _deopt_reason);
+    return iterator.skip_all();
+  }
+
+  DEBUG_ONLY(void verify_block(Node* tail);)
+
+ public:
+  Node* entry() const {
+    return _entry;
+  }
+};
+
+#ifndef PRODUCT
+// Visitor class to print all the visited predicates. Used by the Predicates class which does the printing starting
+// at the loop node and then following the inputs to the earliest predicate.
+class PredicatePrinter : public PredicateVisitor {
+  const char* _prefix; // Prefix added to each dumped string.
+
+ public:
+  explicit PredicatePrinter(const char* prefix) : _prefix(prefix) {}
+  NONCOPYABLE(PredicatePrinter);
+
+  void visit(const ParsePredicate& parse_predicate) override {
+    print_predicate_node("Parse Predicate", parse_predicate);
+  }
+
+  void visit(const RuntimePredicate& runtime_predicate) override {
+    print_predicate_node("Runtime Predicate", runtime_predicate);
+  }
+
+  void visit(const TemplateAssertionPredicate& template_assertion_predicate) override {
+    print_predicate_node("Template Assertion Predicate", template_assertion_predicate);
+  }
+
+  void visit(const InitializedAssertionPredicate& initialized_assertion_predicate) override {
+    print_predicate_node("Initialized Assertion Predicate", initialized_assertion_predicate);
+  }
+
+ private:
+  void print_predicate_node(const char* predicate_name, const Predicate& predicate) const {
+    tty->print_cr("%s- %s: %d %s", _prefix, predicate_name, predicate.head()->_idx, predicate.head()->Name());
+  }
+};
+#endif // NOT PRODUCT
 
 // This class represents a Predicate Block (i.e. either a Loop Predicate Block, a Profiled Loop Predicate Block,
 // or a Loop Limit Check Predicate Block). It contains zero or more Regular Predicates followed by a Parse Predicate
 // which, however, does not need to exist (we could already have decided to remove Parse Predicates for this loop).
 class PredicateBlock : public StackObj {
-  ParsePredicate _parse_predicate; // Could be missing.
-  Node* _entry;
-
-  static Node* skip_regular_predicates(Node* regular_predicate_proj, Deoptimization::DeoptReason deopt_reason);
-  DEBUG_ONLY(void verify_block();)
+  const ParsePredicate _parse_predicate; // Could be missing.
+  const RegularPredicateBlock _regular_predicate_block;
+  Node* const _entry;
+#ifndef PRODUCT
+  // Used for dumping.
+  Node* const _tail;
+  const Deoptimization::DeoptReason _deopt_reason;
+#endif // NOT PRODUCT
 
  public:
-  PredicateBlock(Node* predicate_proj, Deoptimization::DeoptReason deopt_reason)
-      : _parse_predicate(predicate_proj, deopt_reason),
-        _entry(skip_regular_predicates(_parse_predicate.entry(), deopt_reason)) {
-    DEBUG_ONLY(verify_block();)
-  }
+  PredicateBlock(Node* tail, Deoptimization::DeoptReason deopt_reason)
+      : _parse_predicate(tail, deopt_reason),
+        _regular_predicate_block(_parse_predicate.entry(), deopt_reason),
+        _entry(_regular_predicate_block.entry())
+#ifndef PRODUCT
+        , _tail(tail)
+        , _deopt_reason(deopt_reason)
+#endif // NOT PRODUCT
+        {}
+  NONCOPYABLE(PredicateBlock);
 
   // Returns the control input node into this Regular Predicate block. This is either:
   // - The control input to the first If node in the block representing a Runtime Predicate if there is at least one
@@ -453,11 +764,11 @@ class PredicateBlock : public StackObj {
   }
 
   ParsePredicateNode* parse_predicate() const {
-    return _parse_predicate.node();
+    return _parse_predicate.head();
   }
 
   ParsePredicateSuccessProj* parse_predicate_success_proj() const {
-    return _parse_predicate.success_proj();
+    return _parse_predicate.tail();
   }
 
   bool has_runtime_predicates() const {
@@ -471,25 +782,31 @@ class PredicateBlock : public StackObj {
   Node* skip_parse_predicate() const {
     return _parse_predicate.entry();
   }
+
+#ifndef PRODUCT
+  void dump() const;
+  void dump(const char* prefix) const;
+#endif // NOT PRODUCT
 };
 
 // This class takes a loop entry node and finds all the available predicates for the loop.
 class Predicates : public StackObj {
-  Node* _loop_entry;
-  PredicateBlock _loop_limit_check_predicate_block;
-  PredicateBlock _profiled_loop_predicate_block;
-  PredicateBlock _loop_predicate_block;
-  Node* _entry;
+  Node* const _tail;
+  const PredicateBlock _loop_limit_check_predicate_block;
+  const PredicateBlock _profiled_loop_predicate_block;
+  const PredicateBlock _loop_predicate_block;
+  Node* const _entry;
 
  public:
-  Predicates(Node* loop_entry)
-      : _loop_entry(loop_entry),
+  explicit Predicates(Node* loop_entry)
+      : _tail(loop_entry),
         _loop_limit_check_predicate_block(loop_entry, Deoptimization::Reason_loop_limit_check),
         _profiled_loop_predicate_block(_loop_limit_check_predicate_block.entry(),
                                        Deoptimization::Reason_profile_predicate),
         _loop_predicate_block(_profiled_loop_predicate_block.entry(),
                               Deoptimization::Reason_predicate),
         _entry(_loop_predicate_block.entry()) {}
+  NONCOPYABLE(Predicates);
 
   // Returns the control input the first predicate if there are any predicates. If there are no predicates, the same
   // node initially passed to the constructor is returned.
@@ -510,35 +827,17 @@ class Predicates : public StackObj {
   }
 
   bool has_any() const {
-    return _entry != _loop_entry;
-  }
-};
-
-// This class iterates over the Parse Predicates of a loop.
-class ParsePredicateIterator : public StackObj {
-  GrowableArray<ParsePredicateNode*> _parse_predicates;
-  int _current_index;
-
- public:
-  ParsePredicateIterator(const Predicates& predicates);
-
-  bool has_next() const {
-    return _current_index < _parse_predicates.length();
+    return _entry != _tail;
   }
 
-  ParsePredicateNode* next();
+#ifndef PRODUCT
+  /*
+   * Debug printing functions.
+   */
+  void dump() const;
+  static void dump_at(Node* node);
+  static void dump_for_loop(LoopNode* loop_node);
+#endif // NOT PRODUCT
 };
 
-// Special predicate iterator that can be used to walk through predicate entries, regardless of whether the predicate
-// belongs to the same loop or not (i.e. leftovers from already folded nodes). The iterator returns the next entry
-// to a predicate.
-class PredicateEntryIterator : public StackObj {
-  Node* _current;
-
- public:
-  explicit PredicateEntryIterator(Node* start) : _current(start) {};
-
-  bool has_next() const;
-  Node* next_entry();
-};
 #endif // SHARE_OPTO_PREDICATES_HPP

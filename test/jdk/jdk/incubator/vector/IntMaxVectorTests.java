@@ -72,6 +72,14 @@ public class IntMaxVectorTests extends AbstractVectorTest {
 
     static final int BUFFER_REPS = Integer.getInteger("jdk.incubator.vector.test.buffer-vectors", 25000 / Max);
 
+    static void assertArraysStrictlyEquals(int[] r, int[] a) {
+        for (int i = 0; i < a.length; i++) {
+            if (r[i] != a[i]) {
+                Assert.fail("at index #" + i + ", expected = " + a[i] + ", actual = " + r[i]);
+            }
+        }
+    }
+
     interface FUnOp {
         int apply(int a);
     }
@@ -233,25 +241,6 @@ public class IntMaxVectorTests extends AbstractVectorTest {
             }
         } catch (AssertionError e) {
             Assert.assertEquals(r[i], f.apply(a, i), "at index #" + i);
-        }
-    }
-
-    static void assertInsertArraysEquals(int[] r, int[] a, int element, int index, int start, int end) {
-        int i = start;
-        try {
-            for (; i < end; i += 1) {
-                if(i%SPECIES.length() == index) {
-                    Assert.assertEquals(r[i], element);
-                } else {
-                    Assert.assertEquals(r[i], a[i]);
-                }
-            }
-        } catch (AssertionError e) {
-            if (i%SPECIES.length() == index) {
-                Assert.assertEquals(r[i], element, "at index #" + i);
-            } else {
-                Assert.assertEquals(r[i], a[i], "at index #" + i);
-            }
         }
     }
 
@@ -709,21 +698,6 @@ public class IntMaxVectorTests extends AbstractVectorTest {
 
 
 
-    interface FBinArrayOp {
-        int apply(int[] a, int b);
-    }
-
-    static void assertArraysEquals(int[] r, int[] a, FBinArrayOp f) {
-        int i = 0;
-        try {
-            for (; i < a.length; i++) {
-                Assert.assertEquals(r[i], f.apply(a, i));
-            }
-        } catch (AssertionError e) {
-            Assert.assertEquals(r[i], f.apply(a,i), "at index #" + i);
-        }
-    }
-
     interface FGatherScatterOp {
         int[] apply(int[] a, int ix, int[] b, int iy);
     }
@@ -1175,10 +1149,6 @@ public class IntMaxVectorTests extends AbstractVectorTest {
             default:
                 return (int)0;
         }
-    }
-
-    static int get(int[] a, int i) {
-        return (int) a[i];
     }
 
     static final IntFunction<int[]> fr = (vl) -> {
@@ -3797,22 +3767,23 @@ public class IntMaxVectorTests extends AbstractVectorTest {
         assertReductionBoolArraysEquals(r, mask, IntMaxVectorTests::allTrue);
     }
 
-    @Test(dataProvider = "intUnaryOpProvider")
-    static void withIntMaxVectorTests(IntFunction<int []> fa) {
+    @Test(dataProvider = "intBinaryOpProvider")
+    static void withIntMaxVectorTests(IntFunction<int []> fa, IntFunction<int []> fb) {
         int[] a = fa.apply(SPECIES.length());
+        int[] b = fb.apply(SPECIES.length());
         int[] r = fr.apply(SPECIES.length());
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0, j = 0; i < a.length; i += SPECIES.length()) {
                 IntVector av = IntVector.fromArray(SPECIES, a, i);
-                av.withLane((j++ & (SPECIES.length()-1)), (int)(65535+i)).intoArray(r, i);
+                av.withLane(j, b[i + j]).intoArray(r, i);
+                a[i + j] = b[i + j];
+                j = (j + 1) & (SPECIES.length() - 1);
             }
         }
 
 
-        for (int i = 0, j = 0; i < a.length; i += SPECIES.length()) {
-            assertInsertArraysEquals(r, a, (int)(65535+i), (j++ & (SPECIES.length()-1)), i , i + SPECIES.length());
-        }
+        assertArraysStrictlyEquals(r, a);
     }
 
     static boolean testIS_DEFAULT(int a) {
@@ -4747,7 +4718,7 @@ public class IntMaxVectorTests extends AbstractVectorTest {
             }
         }
 
-        assertArraysEquals(r, a, IntMaxVectorTests::get);
+        assertArraysStrictlyEquals(r, a);
     }
 
     @Test(dataProvider = "intUnaryOpProvider")
