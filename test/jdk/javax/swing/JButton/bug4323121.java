@@ -55,7 +55,7 @@ public final class bug4323121 extends MouseAdapter {
 
     private static final CountDownLatch mouseEntered = new CountDownLatch(1);
 
-    // Thread-safe by using the mouseEntered latch
+    // Usage of this flag is thread-safe because of using the mouseEntered latch
     private static boolean modelArmed;
 
     public static void main(String[] args) throws Exception {
