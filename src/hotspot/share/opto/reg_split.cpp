@@ -512,7 +512,7 @@ static SpillAction should_spill_before_loop(const PhaseCFG& cfg, PhaseChaitin& c
   constexpr double uncommon_threshold = 0.1;
   assert(&chaitin.lrgs(lrg_idx) == &lrg, "must be");
   double entry_freq = cfg.get_block_for_node(loop->head()->pred(LoopNode::EntryControl))->_freq;
-  double head_freq = loop->head()->_freq;
+  double uncommon_freq = MAX2(entry_freq, loop->head()->_freq * uncommon_threshold);
 
   // Whether the lrg is spilt inside the loop
   bool spilt_uncommon = false;
@@ -530,7 +530,7 @@ static SpillAction should_spill_before_loop(const PhaseCFG& cfg, PhaseChaitin& c
         Block* l_entry = cfg.get_block_for_node(l->head()->pred(LoopNode::EntryControl));
         spill_freq = MIN2(spill_freq, l_entry->_freq);
       }
-      if (spill_freq > head_freq * uncommon_threshold) {
+      if (spill_freq > uncommon_freq) {
         // Spilt in the common path, spill eagerly regardless
         return SpillAction::Spill;
       } else if (spill_freq > entry_freq) {
@@ -566,7 +566,7 @@ static SpillAction should_spill_before_loop(const PhaseCFG& cfg, PhaseChaitin& c
         if (in == nullptr || chaitin._lrg_map.find_id(in) != lrg_idx || !n->in_RegMask(i).is_UP()) {
           continue;
         }
-        if (reload_freq > head_freq * uncommon_threshold) {
+        if (reload_freq > uncommon_freq) {
           // At this point, the live range cannot be spilt in the common path
           return SpillAction::Reload;
         } else if (reload_freq > entry_freq) {
