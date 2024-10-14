@@ -536,9 +536,15 @@ hotspot_aot_classlinking = \
  -runtime/cds/appcds/customLoader/ParallelTestMultiFP.java \
  -runtime/cds/appcds/customLoader/ParallelTestSingleFP.java \
  -runtime/cds/appcds/customLoader/SameNameInTwoLoadersTest.java \
+ -runtime/cds/appcds/dynamicArchive/ModulePath.java \
  -runtime/cds/appcds/dynamicArchive/LambdaInBaseArchive.java \
  -runtime/cds/appcds/jigsaw/classpathtests/EmptyClassInBootClassPath.java \
  -runtime/cds/appcds/jigsaw/JigsawOptionsCombo.java \
+ -runtime/cds/appcds/jigsaw/modulepath/AddOpens.java \
+ -runtime/cds/appcds/jigsaw/modulepath/JvmtiAddPath.java \
+ -runtime/cds/appcds/jigsaw/modulepath/MainModuleOnly.java \
+ -runtime/cds/appcds/jigsaw/modulepath/ModulePathAndCP.java \
+ -runtime/cds/appcds/jigsaw/modulepath/ModulePathAndFMG.java \
  -runtime/cds/appcds/jigsaw/modulepath/OptimizeModuleHandlingTest.java \
  -runtime/cds/appcds/jigsaw/overridetests/OverrideTests.java \
  -runtime/cds/appcds/jigsaw/RedefineClassesInModuleGraph.java \
@@ -550,6 +556,7 @@ hotspot_aot_classlinking = \
  -runtime/cds/appcds/RewriteBytecodesTest.java \
  -runtime/cds/appcds/SpecifySysLoaderProp.java \
  -runtime/cds/appcds/TestSerialGCWithCDS.java \
+ -runtime/cds/appcds/TestZGCWithCDS.java \
  -runtime/cds/appcds/TestWithProfiler.java \
  -runtime/cds/serviceability/ReplaceCriticalClassesForSubgraphs.java \
  -runtime/cds/serviceability/ReplaceCriticalClasses.java \
