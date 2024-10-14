@@ -197,13 +197,6 @@ public class TestMismatch {
             s2.set(ValueLayout.JAVA_BYTE, i, (byte) 0xFF);
 
             if (s1.byteSize() == s2.byteSize()) {
-
-                /* To be removed */
-                if (s1.mismatch(s2) != expectedMismatchOffset) {
-                    out.println("s1 = " + Arrays.toString(s1.toArray(ValueLayout.JAVA_BYTE)));
-                    out.println("s2 = " + Arrays.toString(s1.toArray(ValueLayout.JAVA_BYTE)));
-                }
-
                 assertEquals(s1.mismatch(s2), expectedMismatchOffset);
                 assertEquals(s2.mismatch(s1), expectedMismatchOffset);
             } else if (s1.byteSize() > s2.byteSize()) {

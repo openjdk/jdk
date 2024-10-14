@@ -203,15 +203,6 @@ public final class SegmentBulkOperations {
             final long s = SCOPED_MEMORY_ACCESS.getLongUnaligned(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcFromOffset + offset, false);
             final long d = SCOPED_MEMORY_ACCESS.getLongUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstFromOffset + offset, false);
             if (s != d) {
-
-                /* To be removed */
-                System.out.println("s = " + s);
-                System.out.println("d = " + d);
-                System.out.println("mismatch(s, d) = " + mismatch(s, d));
-                final long x = s ^ d;
-                System.out.println("x = " + x);
-                System.out.println("Long.numberOfTrailingZeros(x) = " + Long.numberOfTrailingZeros(x));
-
                 return start + offset + mismatch(s, d);
             }
         }
