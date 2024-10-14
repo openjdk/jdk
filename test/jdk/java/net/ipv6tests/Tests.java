@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,7 +123,8 @@ public class Tests {
         }
 
         dprintln ("dest2 = " + dest2);
-
+        dprintln ("sender endpoint = " + s1.getLocalSocketAddress());
+        dprintln ("echo endpoint = " + s2.getLocalSocketAddress());
 
         DatagramPacket r1 = new DatagramPacket (new byte[256], 256);
         DatagramPacket r2 = new DatagramPacket (new byte[256], 256);

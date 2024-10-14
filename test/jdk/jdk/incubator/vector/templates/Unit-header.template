@@ -105,6 +105,26 @@ public class $vectorteststype$ extends AbstractVectorTest {
 
     static final int BUFFER_REPS = Integer.getInteger("jdk.incubator.vector.test.buffer-vectors", 25000 / $bits$);
 
+    static void assertArraysStrictlyEquals($type$[] r, $type$[] a) {
+        for (int i = 0; i < a.length; i++) {
+#if[FP]
+            $bitstype$ ir = $Wideboxtype$.$type$ToRaw$Bitstype$Bits(r[i]);
+            $bitstype$ ia = $Wideboxtype$.$type$ToRaw$Bitstype$Bits(a[i]);
+            if (ir != ia) {
+#if[Float]
+                Assert.fail(String.format("at index #%d, expected = %08X, actual = %08X", i, ia, ir));
+#else[Float]
+                Assert.fail(String.format("at index #%d, expected = %016X, actual = %016X", i, ia, ir));
+#end[Float]
+            }
+#else[FP]
+            if (r[i] != a[i]) {
+                Assert.fail("at index #" + i + ", expected = " + a[i] + ", actual = " + r[i]);
+            }
+#end[FP]
+        }
+    }
+
     interface FUnOp {
         $type$ apply($type$ a);
     }
@@ -311,25 +331,6 @@ relativeError));
             }
         } catch (AssertionError e) {
             Assert.assertEquals(r[i], f.apply(a, i), "at index #" + i);
-        }
-    }
-
-    static void assertInsertArraysEquals($type$[] r, $type$[] a, $type$ element, int index, int start, int end) {
-        int i = start;
-        try {
-            for (; i < end; i += 1) {
-                if(i%SPECIES.length() == index) {
-                    Assert.assertEquals(r[i], element);
-                } else {
-                    Assert.assertEquals(r[i], a[i]);
-                }
-            }
-        } catch (AssertionError e) {
-            if (i%SPECIES.length() == index) {
-                Assert.assertEquals(r[i], element, "at index #" + i);
-            } else {
-                Assert.assertEquals(r[i], a[i], "at index #" + i);
-            }
         }
     }
 
@@ -862,21 +863,6 @@ relativeError));
         }
     }
 #end[FP]
-
-    interface FBinArrayOp {
-        $type$ apply($type$[] a, int b);
-    }
-
-    static void assertArraysEquals($type$[] r, $type$[] a, FBinArrayOp f) {
-        int i = 0;
-        try {
-            for (; i < a.length; i++) {
-                Assert.assertEquals(r[i], f.apply(a, i));
-            }
-        } catch (AssertionError e) {
-            Assert.assertEquals(r[i], f.apply(a,i), "at index #" + i);
-        }
-    }
 
     interface FGatherScatterOp {
         $type$[] apply($type$[] a, int ix, int[] b, int iy);
@@ -1472,22 +1458,20 @@ relativeError));
 
     static $type$ cornerCaseValue(int i) {
 #if[FP]
-        switch(i % 7) {
-            case 0:
-                return $Wideboxtype$.MAX_VALUE;
-            case 1:
-                return $Wideboxtype$.MIN_VALUE;
-            case 2:
-                return $Wideboxtype$.NEGATIVE_INFINITY;
-            case 3:
-                return $Wideboxtype$.POSITIVE_INFINITY;
-            case 4:
-                return $Wideboxtype$.NaN;
-            case 5:
-                return ($type$)0.0;
-            default:
-                return ($type$)-0.0;
-        }
+        return switch(i % 8) {
+            case 0  -> $Wideboxtype$.MAX_VALUE;
+            case 1  -> $Wideboxtype$.MIN_VALUE;
+            case 2  -> $Wideboxtype$.NEGATIVE_INFINITY;
+            case 3  -> $Wideboxtype$.POSITIVE_INFINITY;
+            case 4  -> $Wideboxtype$.NaN;
+#if[Float]
+            case 5  -> Float.intBitsToFloat(0x7F812345);
+#else[Float]
+            case 5  -> Double.longBitsToDouble(0x7FF123456789ABCDL);
+#end[Float]
+            case 6  -> ($type$)0.0;
+            default -> ($type$)-0.0;
+        };
 #else[FP]
         switch(i % 5) {
             case 0:
@@ -1502,10 +1486,6 @@ relativeError));
                 return ($type$)0;
         }
 #end[FP]
-    }
-
-    static $type$ get($type$[] a, int i) {
-        return ($type$) a[i];
     }
 
     static final IntFunction<$type$[]> fr = (vl) -> {

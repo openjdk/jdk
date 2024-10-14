@@ -1150,30 +1150,40 @@ static void parse_annotations(const ConstantPool* const cp,
     if (AnnotationCollector::_unknown == id)  continue;
     coll->set_annotation(id);
     if (AnnotationCollector::_java_lang_Deprecated == id) {
-      assert(count <= 2, "change this if more element-value pairs are added to the @Deprecated annotation");
-      // @Deprecated can specify forRemoval=true
+      // @Deprecated can specify forRemoval=true, which we need
+      // to record for JFR to use. If the annotation is not well-formed
+      // then we may not be able to determine that.
       const u1* offset = abase + member_off;
-      for (int i = 0; i < count; ++i) {
+      // There are only 2 members in @Deprecated.
+      int n_members = MIN2(count, 2);
+      for (int i = 0; i < n_members; ++i) {
         int member_index = Bytes::get_Java_u2((address)offset);
         offset += 2;
         member = check_symbol_at(cp, member_index);
-        if (member == vmSymbols::since()) {
-          assert(*((address)offset) == s_tag_val, "invariant");
+        if (member == vmSymbols::since() &&
+            (*((address)offset) == s_tag_val)) {
+          // Found `since` first so skip over it
           offset += 3;
-          continue;
         }
-        if (member == vmSymbols::for_removal()) {
-          assert(*((address)offset) == b_tag_val, "invariant");
+        else if (member == vmSymbols::for_removal() &&
+                 (*((address)offset) == b_tag_val)) {
           const u2 boolean_value_index = Bytes::get_Java_u2((address)offset + 1);
-          if (cp->int_at(boolean_value_index) == 1) {
+          // No guarantee the entry is valid so check it refers to an int in the CP.
+          if (cp->is_within_bounds(boolean_value_index) &&
+              cp->tag_at(boolean_value_index).is_int() &&
+              cp->int_at(boolean_value_index) == 1) {
             // forRemoval == true
             coll->set_annotation(AnnotationCollector::_java_lang_Deprecated_for_removal);
           }
+          break; // no need to check further
+        }
+        else {
+          // This @Deprecated annotation is malformed so we don't try to
+          // determine whether forRemoval is set.
           break;
         }
-
       }
-      continue;
+      continue; // proceed to next annotation
     }
 
     if (AnnotationCollector::_jdk_internal_vm_annotation_Contended == id) {
@@ -1194,11 +1204,21 @@ static void parse_annotations(const ConstantPool* const cp,
         && s_tag_val == *(abase + tag_off)
         && member == vmSymbols::value_name()) {
         group_index = Bytes::get_Java_u2((address)abase + s_con_off);
-        if (cp->symbol_at(group_index)->utf8_length() == 0) {
-          group_index = 0; // default contended group
+        // No guarantee the group_index is valid so check it refers to a
+        // symbol in the CP.
+        if (cp->is_within_bounds(group_index) &&
+            cp->tag_at(group_index).is_utf8()) {
+          // Seems valid, so check for empty string and reset
+          if (cp->symbol_at(group_index)->utf8_length() == 0) {
+            group_index = 0; // default contended group
+          }
+        } else {
+          // Not valid so use the default
+          group_index = 0;
         }
       }
       coll->set_contended_group(group_index);
+      continue; // proceed to next annotation
     }
   }
 }

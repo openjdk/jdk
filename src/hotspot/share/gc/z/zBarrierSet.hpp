@@ -155,7 +155,7 @@ public:
 };
 
 template<> struct BarrierSet::GetName<ZBarrierSet> {
-  static const BarrierSet::Name value = BarrierSet::ZBarrierSet;
+  static const BarrierSet::Name Value = BarrierSet::ZBarrierSet;
 };
 
 template<> struct BarrierSet::GetType<BarrierSet::ZBarrierSet> {

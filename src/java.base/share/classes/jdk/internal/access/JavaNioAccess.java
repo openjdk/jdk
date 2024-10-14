@@ -25,6 +25,7 @@
 
 package jdk.internal.access;
 
+import jdk.internal.access.foreign.MappedMemoryUtilsProxy;
 import jdk.internal.access.foreign.UnmapperProxy;
 import jdk.internal.misc.VM.BufferPool;
 
@@ -108,24 +109,9 @@ public interface JavaNioAccess {
     boolean hasSession(Buffer buffer);
 
     /**
-     * Used by {@code jdk.internal.foreign.MappedMemorySegmentImpl} and byte buffer var handle views.
-     */
-    void force(FileDescriptor fd, long address, boolean isSync, long offset, long size);
-
-    /**
-     * Used by {@code jdk.internal.foreign.MappedMemorySegmentImpl} and byte buffer var handle views.
-     */
-    void load(long address, boolean isSync, long size);
-
-    /**
      * Used by {@code jdk.internal.foreign.MappedMemorySegmentImpl}.
      */
-    void unload(long address, boolean isSync, long size);
-
-    /**
-     * Used by {@code jdk.internal.foreign.MappedMemorySegmentImpl} and byte buffer var handle views.
-     */
-    boolean isLoaded(long address, boolean isSync, long size);
+    MappedMemoryUtilsProxy mappedMemoryUtils();
 
     /**
      * Used by {@code jdk.internal.foreign.NativeMemorySegmentImpl}.

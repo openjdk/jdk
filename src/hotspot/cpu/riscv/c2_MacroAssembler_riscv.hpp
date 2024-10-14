@@ -187,6 +187,9 @@
   void expand_bits_i_v(Register dst, Register src, Register mask);
   void expand_bits_l_v(Register dst, Register src, Register mask);
 
+  void java_round_float_v(VectorRegister dst, VectorRegister src, FloatRegister ftmp, BasicType bt, uint vector_length);
+  void java_round_double_v(VectorRegister dst, VectorRegister src, FloatRegister ftmp, BasicType bt, uint vector_length);
+
   void float16_to_float_v(VectorRegister dst, VectorRegister src, uint vector_length);
   void float_to_float16_v(VectorRegister dst, VectorRegister src, VectorRegister vtmp, Register tmp, uint vector_length);
 
