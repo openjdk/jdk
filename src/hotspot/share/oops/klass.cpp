@@ -181,9 +181,13 @@ bool Klass::linear_search_secondary_supers(const Klass* k) const {
 // occupancy bitmap rotated such that Bit 1 is the next bit to test,
 // search for k.
 bool Klass::fallback_search_secondary_supers(const Klass* k, int index, uintx rotated_bitmap) const {
+  // Once the occupancy bitmap is almost full, it's faster to use a
+  // linear search.
   if (secondary_supers()->length() > SECONDARY_SUPERS_TABLE_SIZE - 2) {
     return linear_search_secondary_supers(k);
   }
+
+  precond((int)population_count(bitmap) <= secondaries->length());
 
   // This is conventional linear probing, but instead of terminating
   // when a null entry is found in the table, we maintain a bitmap

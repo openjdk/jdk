@@ -1929,8 +1929,10 @@ void MacroAssembler::lookup_secondary_supers_table_slow_path(Register r_super_kl
   { // This is conventional linear probing, but instead of terminating
     // when a null entry is found in the table, we maintain a bitmap
     // in which a 0 indicates missing entries.
-    // The check above guarantees there are 0s in the bitmap, so the loop
-    // eventually terminates.
+    // As long as the bitmap is not completely full,
+    // array_length == popcount(bitmap). The array_length check above
+    // guarantees there are 0s in the bitmap, so the loop eventually
+    // terminates.
     Label L_loop;
     bind(L_loop);
 
