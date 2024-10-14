@@ -25,7 +25,7 @@ package gc.z;
 
 /**
  * @test TestZForceDiscontiguousHeapReservations
- * @requires vm.gc.ZGenerational & vm.debug
+ * @requires vm.gc.Z & vm.debug
  * @summary Test the ZForceDiscontiguousHeapReservations development flag
  * @library /test/lib
  * @run driver gc.z.TestZForceDiscontiguousHeapReservations
@@ -47,7 +47,6 @@ public class TestZForceDiscontiguousHeapReservations {
         final int XmsInM = Math.min(16 * XmxInM / (n + 1), XmxInM);
         OutputAnalyzer oa = ProcessTools.executeTestJava(
             "-XX:+UseZGC",
-            "-XX:+ZGenerational",
             "-Xms" + XmsInM + "M",
             "-Xmx" + XmxInM + "M",
             "-Xlog:gc,gc+init",
