@@ -43,7 +43,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
     private static byte[] stub;
 
     private volatile long hProcess;     // handle to the process
-    private int ver = VERSION_1;        // updated by detectVersion on attach
+    private int ver = VERSION_1;        // updated in ctor depending on detectVersion result
 
     VirtualMachineImpl(AttachProvider provider, String id)
         throws AttachNotSupportedException, IOException

@@ -554,45 +554,12 @@ int AttachOperation::RequestReader::read_uint() {
   }
 }
 
-bool AttachOperation::read_request(RequestReader* reader) {
-  uint ver = reader->read_uint();
-  int buffer_size = 0;
-  // Read conditions:
-  int min_str_count = 0; // expected number of strings in the request
-  int min_read_size = 1; // expected size of the request data (by default 1 symbol for terminating '\0')
-  switch (ver) {
-  case ATTACH_API_V1: // <ver>0<cmd>0<arg>0<arg>0<arg>0
-    // Always contain a command (up to name_length_max symbols)
-    // and arg_count_max(3) arguments (each up to arg_length_max symbols).
-    buffer_size = (name_length_max + 1) + arg_count_max * (arg_length_max + 1);
-    min_str_count = 1 /*name*/ + arg_count_max;
-    break;
-  case ATTACH_API_V2: // <ver>0<size>0<cmd>0<arg>0<arg>0<arg>0
-    if (AttachListener::get_supported_version() < 2) {
-        log_error(attach)("Failed to read request: v2 is unsupported ot disabled");
-        return false;
-    }
-
-    // read size of the data
-    buffer_size = reader->read_uint();
-    if (buffer_size < 0) {
-      return false;
-    }
-    log_debug(attach)("v2 request, data size = %d", buffer_size);
-
-    // Sanity check: max request size is 256K.
-    if (buffer_size > 256 * 1024) {
-      log_error(attach)("Failed to read request: too big");
-      return false;
-    }
-    // Must contain exact 'buffer_size' bytes.
-    min_read_size = buffer_size;
-    break;
-  default:
-    log_error(attach)("Failed to read request: unknown version (%d)", ver);
-    return false;
-  }
-
+// Reads operation name and arguments.
+// buffer_size: maximum data size;
+// min_str_count: minimum number of strings in the request (name + arguments);
+// min_read_size: minimum data size.
+bool AttachOperation::read_request_data(AttachOperation::RequestReader* reader,
+                                        int buffer_size, int min_str_count, int min_read_size) {
   char* buffer = (char*)os::malloc(buffer_size, mtServiceability);
   int str_count = 0;
   int off = 0;
@@ -646,6 +613,48 @@ bool AttachOperation::read_request(RequestReader* reader) {
   os::free(buffer);
 
   return true;
+}
+
+bool AttachOperation::read_request(RequestReader* reader) {
+  uint ver = reader->read_uint();
+  int buffer_size = 0;
+  // Read conditions:
+  int min_str_count = 0; // expected number of strings in the request
+  int min_read_size = 1; // expected size of the request data (by default 1 symbol for terminating '\0')
+  switch (ver) {
+  case ATTACH_API_V1: // <ver>0<cmd>0<arg>0<arg>0<arg>0
+    // Always contain a command (up to name_length_max symbols)
+    // and arg_count_max(3) arguments (each up to arg_length_max symbols).
+    buffer_size = (name_length_max + 1) + arg_count_max * (arg_length_max + 1);
+    min_str_count = 1 /*name*/ + arg_count_max;
+    break;
+  case ATTACH_API_V2: // <ver>0<size>0<cmd>0<arg>0<arg>0<arg>0
+    if (AttachListener::get_supported_version() < 2) {
+        log_error(attach)("Failed to read request: v2 is unsupported ot disabled");
+        return false;
+    }
+
+    // read size of the data
+    buffer_size = reader->read_uint();
+    if (buffer_size < 0) {
+      return false;
+    }
+    log_debug(attach)("v2 request, data size = %d", buffer_size);
+
+    // Sanity check: max request size is 256K.
+    if (buffer_size > 256 * 1024) {
+      log_error(attach)("Failed to read request: too big");
+      return false;
+    }
+    // Must contain exact 'buffer_size' bytes.
+    min_read_size = buffer_size;
+    break;
+  default:
+    log_error(attach)("Failed to read request: unknown version (%d)", ver);
+    return false;
+  }
+
+  return read_request_data(reader, buffer_size, min_str_count, min_read_size);
 }
 
 bool AttachOperation::ReplyWriter::write_fully(const void* buffer, int size) {

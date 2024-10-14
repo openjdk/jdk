@@ -258,6 +258,9 @@ public:
   // Writes standard operation reply (to be called from 'complete' method).
   bool write_reply(ReplyWriter* writer, jint result, bufferedStream* result_stream);
 
+private:
+  bool read_request_data(AttachOperation::RequestReader* reader, int buffer_size, int min_str_count, int min_read_size);
+
 };
 
 #endif // INCLUDE_SERVICES
