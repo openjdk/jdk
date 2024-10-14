@@ -48,6 +48,10 @@ The compiled code is then loaded with a `ClassLoader`. The classes can be access
 
 Should one require the modified classpath that includes the compiled classes, this is available with `compileFramework.getEscapedClassPathOfCompiledClasses()`. This can be necessary if the test launches any other VMs that also access the compiled classes. This is for example necessary when using the IR Framework.
 
+### Running the compiled code in a new VM
+
+One can also run the compiled code in a new VM. For this, one has to set the classpath with `compileFramework.getEscapedClassPathOfCompiledClasses()` ([RunWithFlagsExample](../../../testlibrary_tests/compile_framework/examples/RunWithFlagsExample.java))
+
 ### Verbose Printing
 
 For debugging purposes, one can enable verbose printing, with `-DCompileFrameworkVerbose=true`.
