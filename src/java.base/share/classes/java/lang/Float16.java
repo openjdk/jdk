@@ -591,7 +591,7 @@ public final class Float16
     public static int hashCode(short value) {
         return value;
     }
-    
+
     /**
      * Compares this object against the specified object.  The result
      * is {@code true} if and only if the argument is not
