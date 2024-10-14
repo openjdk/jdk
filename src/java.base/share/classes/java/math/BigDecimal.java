@@ -5294,7 +5294,8 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
 
         // bitLength(remainingZeros) == min{n >= 0 : 5^(2^n) > 5^remainingZeros}
         // so, while the loop condition is true,
-        // the invariant i == max{n : 5^(2^n) <= 5^remainingZeros}
+        // the invariant i == max{n : 5^(2^n) <= 5^remainingZeros},
+        // which is equivalent to i == bitLength(remainingZeros) - 1,
         // is preserved at the beginning of each iteration.
         // Note that the loop stops exactly when remainingZeros == 0.
         for (int i = BigInteger.bitLengthForLong(remainingZeros) - 1; i >= 0; i--) {
