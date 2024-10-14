@@ -3953,19 +3953,19 @@ bool MatchNode::equivalent(FormDict &globals, MatchNode *mNode2) {
 // which could be swapped.
 void MatchNode::count_commutative_op(int& count) {
   static const char *commut_op_list[] = {
-    "AddI","AddL","AddF","AddD",
+    "AddI","AddL","AddHF","AddF","AddD",
     "AndI","AndL",
-    "MaxI","MinI","MaxF","MinF","MaxD","MinD",
-    "MulI","MulL","MulF","MulD",
+    "MaxI","MinI","MaxHF","MinHF","MaxF","MinF","MaxD","MinD",
+    "MulI","MulL","MulHF","MulF","MulD",
     "OrI","OrL",
     "XorI","XorL"
   };
 
   static const char *commut_vector_op_list[] = {
-    "AddVB", "AddVS", "AddVI", "AddVL", "AddVF", "AddVD",
-    "MulVB", "MulVS", "MulVI", "MulVL", "MulVF", "MulVD",
+    "AddVB", "AddVS", "AddVI", "AddVL", "AddVHF", "AddVF", "AddVD",
+    "MulVB", "MulVS", "MulVI", "MulVL", "MulVHF", "MulVF", "MulVD",
     "AndV", "OrV", "XorV",
-    "MaxV", "MinV"
+    "MaxVHF", "MinVHF", "MaxV", "MinV"
   };
 
   if (_lChild && _rChild && (_lChild->_lChild || _rChild->_lChild)) {
@@ -4192,6 +4192,7 @@ int MatchRule::is_expensive() const {
     const char  *opType = _rChild->_opType;
     if( strcmp(opType,"AtanD")==0 ||
         strcmp(opType,"DivD")==0 ||
+        strcmp(opType,"DivHF")==0 ||
         strcmp(opType,"DivF")==0 ||
         strcmp(opType,"DivI")==0 ||
         strcmp(opType,"Log10D")==0 ||
@@ -4200,6 +4201,7 @@ int MatchRule::is_expensive() const {
         strcmp(opType,"ModI")==0 ||
         strcmp(opType,"SqrtD")==0 ||
         strcmp(opType,"SqrtF")==0 ||
+        strcmp(opType,"SqrtHF")==0 ||
         strcmp(opType,"TanD")==0 ||
         strcmp(opType,"ConvD2F")==0 ||
         strcmp(opType,"ConvD2I")==0 ||
@@ -4219,6 +4221,7 @@ int MatchRule::is_expensive() const {
         strcmp(opType,"DecodeNKlass")==0 ||
         strcmp(opType,"FmaD") == 0 ||
         strcmp(opType,"FmaF") == 0 ||
+        strcmp(opType,"FmaHF") == 0 ||
         strcmp(opType,"RoundDouble")==0 ||
         strcmp(opType,"RoundDoubleMode")==0 ||
         strcmp(opType,"RoundFloat")==0 ||
@@ -4331,15 +4334,15 @@ Form::DataType MatchRule::is_ideal_load() const {
 
 bool MatchRule::is_vector() const {
   static const char *vector_list[] = {
-    "AddVB","AddVS","AddVI","AddVL","AddVF","AddVD",
-    "SubVB","SubVS","SubVI","SubVL","SubVF","SubVD",
-    "MulVB","MulVS","MulVI","MulVL","MulVF","MulVD",
-    "DivVF","DivVD",
-    "AbsVB","AbsVS","AbsVI","AbsVL","AbsVF","AbsVD",
-    "NegVF","NegVD","NegVI","NegVL",
-    "SqrtVD","SqrtVF",
+    "AddVB","AddVHF", "AddVS","AddVI","AddVL","AddVF","AddVD",
+    "SubVB","SubVS","SubVI","SubVL", "SubVHF", "SubVF","SubVD",
+    "MulVB","MulVS","MulVI","MulVL", "MulVHF", "MulVF","MulVD",
+    "DivVHF","DivVF","DivVD",
+    "AbsVB","AbsVS","AbsVI","AbsVL","AbsVF","AbsVD","AbsVHF",
+    "NegVF","NegVD","NegVHF","NegVI","NegVL",
+    "SqrtVD","SqrtVF","SqrtVHF",
     "AndV" ,"XorV" ,"OrV",
-    "MaxV", "MinV",
+    "MaxV", "MinV", "MinVHF", "MaxVHF",
     "CompressV", "ExpandV", "CompressM", "CompressBitsV", "ExpandBitsV",
     "AddReductionVI", "AddReductionVL",
     "AddReductionVF", "AddReductionVD",
@@ -4360,8 +4363,8 @@ bool MatchRule::is_vector() const {
     "VectorCastB2X", "VectorCastS2X", "VectorCastI2X",
     "VectorCastL2X", "VectorCastF2X", "VectorCastD2X", "VectorCastF2HF", "VectorCastHF2F",
     "VectorUCastB2X", "VectorUCastS2X", "VectorUCastI2X",
-    "VectorMaskWrapper","VectorMaskCmp","VectorReinterpret","LoadVectorMasked","StoreVectorMasked",
-    "FmaVD","FmaVF","PopCountVI","PopCountVL","PopulateIndex","VectorLongToMask",
+    "VectorMaskWrapper", "VectorMaskCmp", "VectorReinterpret", "LoadVectorMasked", "StoreVectorMasked",
+    "FmaVD", "FmaVF", "FmaVHF", "PopCountVI", "PopCountVL", "PopulateIndex", "VectorLongToMask",
     "CountLeadingZerosV", "CountTrailingZerosV", "SignumVF", "SignumVD",
     // Next are vector mask ops.
     "MaskAll", "AndVMask", "OrVMask", "XorVMask", "VectorMaskCast",

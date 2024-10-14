@@ -86,6 +86,7 @@ class VectorNode : public TypeNode {
   static bool is_shift_opcode(int opc);
   static bool can_use_RShiftI_instead_of_URShiftI(Node* n, BasicType bt);
   static bool is_convert_opcode(int opc);
+  static bool is_reinterpret_opcode(int opc);
   static bool is_minmax_opcode(int opc);
 
   static bool is_vshift_cnt_opcode(int opc);
@@ -103,6 +104,8 @@ class VectorNode : public TypeNode {
   static bool is_muladds2i(const Node* n);
   static bool is_roundopD(Node* n);
   static bool is_scalar_rotate(Node* n);
+  static bool is_float16_node(int opc);
+
   static bool is_vector_rotate_supported(int opc, uint vlen, BasicType bt);
   static bool is_vector_integral_negate_supported(int opc, uint vlen, BasicType bt, bool use_predicate);
   static bool is_populate_index_supported(BasicType bt);
@@ -182,6 +185,14 @@ public:
 class AddVFNode : public VectorNode {
 public:
   AddVFNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
+  virtual int Opcode() const;
+};
+
+//------------------------------AddVHFNode--------------------------------------
+// Vector add float
+class AddVHFNode : public VectorNode {
+public:
+  AddVHFNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
   virtual int Opcode() const;
 };
 
@@ -355,6 +366,14 @@ class SubVLNode : public VectorNode {
   virtual int Opcode() const;
 };
 
+//------------------------------SubVHFNode--------------------------------------
+// Vector subtract half float
+class SubVHFNode : public VectorNode {
+public:
+  SubVHFNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
+  virtual int Opcode() const;
+};
+
 //------------------------------SubVFNode--------------------------------------
 // Vector subtract float
 class SubVFNode : public VectorNode {
@@ -400,6 +419,14 @@ class MulVINode : public VectorNode {
 class MulVLNode : public VectorNode {
 public:
   MulVLNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
+  virtual int Opcode() const;
+};
+
+//------------------------------MulVFNode--------------------------------------
+// Vector multiply half float
+class MulVHFNode : public VectorNode {
+public:
+  MulVHFNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
   virtual int Opcode() const;
 };
 
@@ -450,6 +477,14 @@ public:
 class FmaVFNode : public FmaVNode {
 public:
   FmaVFNode(Node* in1, Node* in2, Node* in3, const TypeVect* vt) : FmaVNode(in1, in2, in3, vt) {}
+  virtual int Opcode() const;
+};
+
+//------------------------------FmaVHFNode-------------------------------------
+// Vector fused-multiply-add half-precision float
+class FmaVHFNode : public FmaVNode {
+public:
+  FmaVHFNode(Node* in1, Node* in2, Node* in3, const TypeVect* vt) : FmaVNode(in1, in2, in3, vt) {}
   virtual int Opcode() const;
 };
 
@@ -537,6 +572,15 @@ class DivVDNode : public VectorNode {
   virtual int Opcode() const;
 };
 
+//------------------------------DivVHFNode-------------------------------------
+// Vector divide half float
+class DivVHFNode : public VectorNode {
+public:
+  DivVHFNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
+  virtual int Opcode() const;
+};
+
+
 //------------------------------AbsVBNode--------------------------------------
 // Vector Abs byte
 class AbsVBNode : public VectorNode {
@@ -566,6 +610,22 @@ public:
 class MaxVNode : public VectorNode {
  public:
   MaxVNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
+  virtual int Opcode() const;
+};
+
+//------------------------------MinVHFNode------------------------------------
+// Vector Min for half floats
+class MinVHFNode : public VectorNode {
+public:
+  MinVHFNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
+  virtual int Opcode() const;
+};
+
+//------------------------------MaxVHFNode------------------------------------
+// Vector Max for half floats
+class MaxVHFNode : public VectorNode {
+public:
+  MaxVHFNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
   virtual int Opcode() const;
 };
 
@@ -672,6 +732,15 @@ class SqrtVFNode : public VectorNode {
   SqrtVFNode(Node* in, const TypeVect* vt) : VectorNode(in,vt) {}
   virtual int Opcode() const;
 };
+
+//------------------------------SqrtVHFNode-------------------------------------
+// Vector Sqrt half-precision float
+class SqrtVHFNode : public VectorNode {
+public:
+  SqrtVHFNode(Node* in, const TypeVect* vt) : VectorNode(in, vt) {}
+  virtual int Opcode() const;
+};
+
 //------------------------------RoundDoubleVNode--------------------------------
 // Vector round double
 class RoundDoubleModeVNode : public VectorNode {
@@ -1677,6 +1746,7 @@ class VectorReinterpretNode : public VectorNode {
   virtual Node* Identity(PhaseGVN* phase);
 
   virtual int Opcode() const;
+  static VectorNode* make(Node* n, const TypeVect* dst_vt, const TypeVect* src_vt);
 };
 
 class VectorCastNode : public VectorNode {

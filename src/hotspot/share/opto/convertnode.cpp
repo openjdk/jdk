@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -249,6 +249,26 @@ const Type* ConvF2HFNode::Value(PhaseGVN* phase) const {
   return TypeInt::make( StubRoutines::f2hf(tf->getf()) );
 }
 
+//------------------------------Ideal------------------------------------------
+Node* ConvF2HFNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  // Optimize pattern - ConvHF2F (SqrtF) ConvF2HF ==> ReinterpretS2HF (SqrtHF) ReinterpretHF2S.
+  // It is safe to do so as we do not lose any precision bits during ConvHF2F and ConvF2HF conversions.
+  // Eventually if the loop is vectorizable, ReinterpretS2HF/HF2S will be optimized away as they are
+  // of the same size and only the vectorized sqrt nodes for half-precision floats will be generated.
+  Node* hf2f; Node* sqrthf;
+  if (in(1)->Opcode() == Op_SqrtF && in(1)->in(1)->Opcode() == Op_ConvHF2F) {
+    Node* sqrtf = in(1);
+    Node* convhf2f = sqrtf->in(1);
+    if (Matcher::match_rule_supported(Op_SqrtHF) &&
+        Matcher::match_rule_supported(Op_ReinterpretS2HF) &&
+        Matcher::match_rule_supported(Op_ReinterpretHF2S)) {
+      hf2f = phase->transform(new ReinterpretS2HFNode(convhf2f->in(1)));
+      sqrthf = phase->transform(new SqrtHFNode(phase->C, sqrtf->in(0), hf2f));
+      return new ReinterpretHF2SNode(sqrthf);
+    }
+  }
+  return nullptr;
+}
 //=============================================================================
 //------------------------------Value------------------------------------------
 const Type* ConvF2INode::Value(PhaseGVN* phase) const {
@@ -897,3 +917,35 @@ const Type* RoundDoubleModeNode::Value(PhaseGVN* phase) const {
   return Type::DOUBLE;
 }
 //=============================================================================
+
+const Type* ReinterpretS2HFNode::Value(PhaseGVN* phase) const {
+  const Type* type = phase->type( in(1) );
+  // Convert FP16 constant value to Float constant value, this will allow
+  // further constant folding to be done at float granularity by value routines
+  // of FP16 IR nodes.
+  if ((type->isa_int() && type->is_int()->is_con()) && StubRoutines::hf2f_adr() != nullptr) {
+     jshort hfval = type->is_int()->get_con();
+     jfloat fval = StubRoutines::hf2f(hfval);
+     return TypeF::make(fval);
+  }
+  return Type::FLOAT;
+}
+
+Node* ReinterpretS2HFNode::Identity(PhaseGVN* phase) {
+  if (in(1)->Opcode() == Op_ReinterpretHF2S) {
+     assert(in(1)->in(1)->bottom_type()->isa_float(), "");
+     return in(1)->in(1);
+  }
+  return this;
+}
+
+const Type* ReinterpretHF2SNode::Value(PhaseGVN* phase) const {
+  const Type* type = phase->type( in(1) );
+  // Convert Float constant value to FP16 constant value.
+  if (type->isa_float_constant() && StubRoutines::f2hf_adr() != nullptr) {
+     jfloat fval = type->is_float_constant()->_f;
+     jshort hfval = StubRoutines::f2hf(fval);
+     return TypeInt::make(hfval);
+  }
+  return TypeInt::SHORT;
+}

@@ -925,19 +925,40 @@ class methodHandle;
    do_signature(getAndAddShort_signature,                               "(Ljava/lang/Object;JS)S" )                           \
   do_intrinsic(_getAndSetInt,             jdk_internal_misc_Unsafe,     getAndSetInt_name, getAndSetInt_signature, F_R)       \
    do_name(     getAndSetInt_name,                                      "getAndSetInt")                                       \
-   do_alias(    getAndSetInt_signature,                                 /*"(Ljava/lang/Object;JI)I"*/ getAndAddInt_signature)   \
+   do_alias(    getAndSetInt_signature,                                 /*"(Ljava/lang/Object;JI)I"*/ getAndAddInt_signature) \
   do_intrinsic(_getAndSetLong,            jdk_internal_misc_Unsafe,     getAndSetLong_name, getAndSetLong_signature, F_R)     \
    do_name(     getAndSetLong_name,                                     "getAndSetLong")                                      \
-   do_alias(    getAndSetLong_signature,                                /*"(Ljava/lang/Object;JJ)J"*/ getAndAddLong_signature)  \
+   do_alias(    getAndSetLong_signature,                                /*"(Ljava/lang/Object;JJ)J"*/ getAndAddLong_signature)\
   do_intrinsic(_getAndSetByte,            jdk_internal_misc_Unsafe,     getAndSetByte_name, getAndSetByte_signature, F_R)     \
    do_name(     getAndSetByte_name,                                     "getAndSetByte")                                      \
-   do_alias(    getAndSetByte_signature,                                /*"(Ljava/lang/Object;JB)B"*/ getAndAddByte_signature)  \
+   do_alias(    getAndSetByte_signature,                                /*"(Ljava/lang/Object;JB)B"*/ getAndAddByte_signature)\
   do_intrinsic(_getAndSetShort,           jdk_internal_misc_Unsafe,     getAndSetShort_name, getAndSetShort_signature, F_R)   \
-   do_name(     getAndSetShort_name,                                    "getAndSetShort")                                     \
-   do_alias(    getAndSetShort_signature,                               /*"(Ljava/lang/Object;JS)S"*/ getAndAddShort_signature) \
-  do_intrinsic(_getAndSetReference,       jdk_internal_misc_Unsafe,     getAndSetReference_name, getAndSetReference_signature, F_R) \
-   do_name(     getAndSetReference_name,                                "getAndSetReference")                                  \
+   do_name(     getAndSetShort_name,                                    "getAndSetShort")                                             \
+   do_alias(    getAndSetShort_signature,                               /*"(Ljava/lang/Object;JS)S"*/ getAndAddShort_signature)       \
+  do_intrinsic(_getAndSetReference,       jdk_internal_misc_Unsafe,     getAndSetReference_name, getAndSetReference_signature, F_R)   \
+   do_name(     getAndSetReference_name,                                "getAndSetReference")                                         \
    do_signature(getAndSetReference_signature,                           "(Ljava/lang/Object;JLjava/lang/Object;)Ljava/lang/Object;" ) \
+                                                                                                           \
+  /* Float16Math API intrinsification support */                                                           \
+                                                                                                           \
+  do_name(add_name, "add")                                                                                 \
+  do_name(subtract_name, "subtract")                                                                       \
+  do_name(multiply_name, "multiply")                                                                       \
+  do_name(divide_name, "divide")                                                                           \
+  /* Float16 signatures */                                                                                                \
+  do_signature(short_2_short_signature,   "(SS)S")                                                                        \
+  do_signature(short_3_short_signature,  "(SSS)S")                                                                        \
+  /* Float16 intrinsics for binary operations */                                                                          \
+  do_intrinsic(_add_float16,              jdk_internal_math_Float16Math, add_name,         short_2_short_signature,  F_S) \
+  do_intrinsic(_subtract_float16,         jdk_internal_math_Float16Math, subtract_name,    short_2_short_signature,  F_S) \
+  do_intrinsic(_multiply_float16,         jdk_internal_math_Float16Math, multiply_name,    short_2_short_signature,  F_S) \
+  do_intrinsic(_divide_float16,           jdk_internal_math_Float16Math, divide_name,      short_2_short_signature,  F_S) \
+  do_intrinsic(_max_float16,              jdk_internal_math_Float16Math, max_name,         short_2_short_signature,  F_S) \
+  do_intrinsic(_min_float16,              jdk_internal_math_Float16Math, min_name,         short_2_short_signature,  F_S) \
+  /* Float16 intrinsics for unary operations */                                                                           \
+  do_intrinsic(_sqrt_float16,             jdk_internal_math_Float16Math, sqrt_name,        short_short_signature,   F_S)  \
+  /* Float16 intrinsics for ternary operations */                                                                         \
+  do_intrinsic(_fma_float16,              jdk_internal_math_Float16Math, fma_name,         short_3_short_signature,  F_S) \
                                                                                                                                                \
   /* Vector API intrinsification support */                                                                                                    \
                                                                                                                                                \

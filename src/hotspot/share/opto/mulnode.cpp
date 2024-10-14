@@ -67,7 +67,8 @@ Node *MulNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // only valid for the actual Mul nodes.
   uint op = Opcode();
   bool real_mul = (op == Op_MulI) || (op == Op_MulL) ||
-                  (op == Op_MulF) || (op == Op_MulD);
+                  (op == Op_MulF) || (op == Op_MulD) ||
+                  (op == Op_MulHF);
 
   // Convert "(-a)*(-b)" into "a*b".
   if (real_mul && in1->is_Sub() && in2->is_Sub()) {
@@ -122,7 +123,8 @@ Node *MulNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // constant, flatten the expression tree.
   if( t2->singleton() &&        // Right input is a constant?
       op != Op_MulF &&          // Float & double cannot reassociate
-      op != Op_MulD ) {
+      op != Op_MulD &&
+      op != Op_MulHF) {
     if( t2 == Type::TOP ) return nullptr;
     Node *mul1 = in(1);
 #ifdef ASSERT
@@ -536,7 +538,20 @@ Node* MulFNode::Ideal(PhaseGVN* phase, bool can_reshape) {
     Node* base = in(1);
     return new AddFNode(base, base);
   }
+  return MulNode::Ideal(phase, can_reshape);
+}
 
+//=============================================================================
+//------------------------------Ideal------------------------------------------
+// Check to see if we are multiplying by a constant 2 and convert to add, then try the regular MulNode::Ideal
+Node* MulHFNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  const TypeF* t2 = phase->type(in(2))->isa_float_constant();
+
+  // x * 2 -> x + x
+  if (t2 != nullptr && t2->getf() == 2) {
+    Node* base = in(1);
+    return new AddHFNode(base, base);
+  }
   return MulNode::Ideal(phase, can_reshape);
 }
 

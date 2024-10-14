@@ -162,6 +162,14 @@ public:
   virtual uint ideal_reg() const { return Op_RegD; }
 };
 
+//------------------------------AddHFNode---------------------------------------
+// Add 2 half-precision floats
+class AddHFNode : public AddFNode {
+public:
+  AddHFNode( Node *in1, Node *in2 ) : AddFNode(in1,in2) {}
+  virtual int Opcode() const;
+};
+
 //------------------------------AddPNode---------------------------------------
 // Add pointer plus integer to get pointer.  NOT commutative, really.
 // So not really an AddNode.  Lives here, because people associate it with
@@ -404,6 +412,26 @@ public:
   virtual uint ideal_reg() const { return Op_RegF; }
   int max_opcode() const { return Op_MaxF; }
   int min_opcode() const { return Op_MinF; }
+};
+
+//------------------------------MaxHFNode--------------------------------------
+// Maximum of 2 half floats.
+class MaxHFNode : public MaxFNode {
+public:
+  MaxHFNode(Node* in1, Node* in2) : MaxFNode(in1, in2) {}
+  virtual int Opcode() const;
+  int max_opcode() const { return Op_MaxHF; }
+  int min_opcode() const { return Op_MinHF; }
+};
+
+//------------------------------MinHFNode---------------------------------------
+// Minimum of 2 half floats.
+class MinHFNode : public MinFNode {
+public:
+  MinHFNode(Node* in1, Node* in2) : MinFNode(in1, in2) {}
+  virtual int Opcode() const;
+  int max_opcode() const { return Op_MaxHF; }
+  int min_opcode() const { return Op_MinHF; }
 };
 
 //------------------------------MaxDNode---------------------------------------

@@ -143,6 +143,19 @@ public:
   virtual uint ideal_reg() const { return Op_RegF; }
 };
 
+//------------------------------MulHFNode---------------------------------------
+// Multiply 2 half floats
+class MulHFNode : public MulFNode {
+public:
+  MulHFNode(Node* in1, Node* in2) : MulFNode(in1, in2) {}
+  virtual int Opcode() const;
+  int add_opcode() const { return Op_AddHF; }
+  int mul_opcode() const { return Op_MulHF; }
+  int max_opcode() const { return Op_MaxHF; }
+  int min_opcode() const { return Op_MinHF; }
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+};
+
 //------------------------------MulDNode---------------------------------------
 // Multiply 2 doubles
 class MulDNode : public MulNode {
@@ -388,6 +401,14 @@ public:
   const Type* bottom_type() const { return Type::FLOAT; }
   virtual uint ideal_reg() const { return Op_RegF; }
   virtual const Type* Value(PhaseGVN* phase) const;
+};
+
+//------------------------------FmaHFNode-------------------------------------
+// fused-multiply-add half-precision float
+class FmaHFNode : public FmaFNode {
+public:
+  FmaHFNode(Node* c, Node* in1, Node* in2, Node* in3) : FmaFNode(c, in1, in2, in3) {}
+  virtual int Opcode() const;
 };
 
 //------------------------------MulAddS2INode----------------------------------
