@@ -682,7 +682,8 @@ bool ShenandoahBarrierSetC2::is_gc_pre_barrier_node(Node* node) const {
 }
 
 bool ShenandoahBarrierSetC2::is_gc_barrier_node(Node* node) const {
-  return is_shenandoah_lrb_call(node) ||
+  return (node->Opcode() == Op_ShenandoahLoadReferenceBarrier) ||
+         is_shenandoah_lrb_call(node) ||
          is_shenandoah_wb_pre_call(node) ||
          is_shenandoah_clone_call(node);
 }
