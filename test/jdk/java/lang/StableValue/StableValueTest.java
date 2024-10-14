@@ -73,7 +73,7 @@ final class StableValueTest {
     void orElseThrow() {
         StableValue<Integer> stable = StableValue.of();
         var e = assertThrows(NoSuchElementException.class, stable::orElseThrow);
-        assertEquals("No data set", e.getMessage());
+        assertEquals("No underlying data set", e.getMessage());
         stable.trySet(VALUE);
         assertEquals(VALUE, stable.orElseThrow());
     }

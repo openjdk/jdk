@@ -118,7 +118,7 @@ import java.util.function.Supplier;
  * set underlying data.
  *
  * More generally, the action of attempting to interact (i.e. via load or store operations)
- * with a StableValue's holder value (e.g. via {@link StableValue#trySet} or
+ * with a StableValue's underlying data (e.g. via {@link StableValue#trySet} or
  * {@link StableValue#orElseThrow()}) forms a
  * <a href="{@docRoot}/java.base/java/util/concurrent/package-summary.html#MemoryVisibility"><i>happens-before</i></a>
  * relation between any other attempt to interact with the StableValue's underlying data.
@@ -132,13 +132,13 @@ import java.util.function.Supplier;
  *           a StableValue. Failure to do this may lead to deadlock.
  *
  * @implNote Instance fields explicitly declared as StableValue or one-dimensional arrays
- *           thereof are eligible for certain JVM optimizations compared to normal
- *           instance fields. This comes with restrictions on reflective modifications.
+ *           thereof are eligible for certain JVM optimizations where normal instance
+ *           fields are not. This comes with restrictions on reflective modifications.
  *           Although most ways of reflective modification of such fields are disabled,
  *           it is strongly discouraged to circumvent these protection means as
  *           reflectively modifying such fields may lead to unspecified behavior.
  *
- * @param <T> type of the holder value
+ * @param <T> type of the underlying data
  *
  * @since 24
  */
@@ -159,7 +159,7 @@ public sealed interface StableValue<T>
     boolean trySet(T value);
 
     /**
-     * {@return the set underlying data (nullable) if set, otherwise return the
+     * {@return the underlying data (nullable) if set, otherwise return the
      * {@code other} value}
      *
      * @param other to return if the underlying data is not set
@@ -178,35 +178,17 @@ public sealed interface StableValue<T>
      */
     boolean isSet();
 
-    // Convenience methods
-
     /**
-     * Sets the underlying data to the provided {@code value}, or, if already set,
-     * throws {@link IllegalStateException}}
-     * <p>
-     * When this method returns (or throws an Exception), the underlying data is always set.
-     *
-     * @param value to set (nullable)
-     * @throws IllegalStateException if a holder value is already set
-     */
-    default void setOrThrow(T value) {
-        if (!trySet(value)) {
-            throw new IllegalStateException("Cannot set the underlying data to " + value +
-                    " because the underlying data is alredy set: " + this);
-        }
-    }
-
-    /**
-     * {@return the underlying data if set, otherwise attempts to compute and set a
+     * {@return the underlying data if set, otherwise attempts to compute and set
      * new (nullable) underlying data using the provided {@code supplier}, returning the
-     * (pre-existing or newly set) underlying data}
+     * newly set underlying data}
      * <p>
      * The provided {@code supplier} is guaranteed to be invoked at most once if it
      * completes without throwing an exception.
      * <p>
      * If the supplier throws an (unchecked) exception, the exception is rethrown, and no
-     * value is set. The most common usage is to construct a new object serving as a
-     * lazily computed value or memoized result, as in:
+     * underlying data is set. The most common usage is to construct a new object serving
+     * as a lazily computed value or memoized result, as in:
      *
      * <pre> {@code
      * Value witness = stable.computeIfUnset(Value::new);
@@ -234,6 +216,24 @@ public sealed interface StableValue<T>
      *         invokes the provided {@code supplier} upon being invoked.
      */
     T computeIfUnset(Supplier<? extends T> supplier);
+
+    // Convenience methods
+
+    /**
+     * Sets the underlying data to the provided {@code value}, or, if already set,
+     * throws {@link IllegalStateException}}
+     * <p>
+     * When this method returns (or throws an Exception), the underlying data is always set.
+     *
+     * @param value to set (nullable)
+     * @throws IllegalStateException if the underlying data is already set
+     */
+    default void setOrThrow(T value) {
+        if (!trySet(value)) {
+            throw new IllegalStateException("Cannot set the underlying data to " + value +
+                    " because the underlying data is already set: " + this);
+        }
+    }
 
     // Factories
 
@@ -361,11 +361,11 @@ public sealed interface StableValue<T>
      * If the provided {@code mapper} IntFunction throws an exception, it is relayed
      * to the initial caller and no element is computed.
      * <p>
-     * The returned List is not {@link Serializable}
+     * The returned List is not {@link Serializable}.
      *
      * @param size   the size of the returned list
      * @param mapper to invoke whenever an element is first accessed (may return null)
-     * @param <T>    the {@code StableValue}s' element type
+     * @param <T>    the type of elements in the returned list
      */
     static <T> List<T> ofList(int size, IntFunction<? extends T> mapper) {
         if (size < 0) {
@@ -393,13 +393,13 @@ public sealed interface StableValue<T>
      * If the provided {@code mapper} Function throws an exception, it is relayed
      * to the initial caller and no value is computed.
      * <p>
-     * The returned Map is not {@link Serializable}
+     * The returned Map is not {@link Serializable}.
      *
      * @param keys   the keys in the returned map
      * @param mapper to invoke whenever an associated value is first accessed
      *                (may return null)
      * @param <K>    the type of keys maintained by the returned map
-     * @param <V>    the type of mapped values
+     * @param <V>    the type of mapped values in the returned map
      */
     static <K, V> Map<K, V> ofMap(Set<K> keys, Function<? super K, ? extends V> mapper) {
         Objects.requireNonNull(keys);

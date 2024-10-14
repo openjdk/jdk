@@ -39,7 +39,7 @@ import java.util.function.Supplier;
  * @implNote This implementation can be used early in the boot sequence as it does not
  *           rely on reflection, MethodHandles, Streams etc.
  *
- * @param <T> type of the holder value
+ * @param <T> type of the underlying data
  */
 public final class StableValueImpl<T> implements StableValue<T> {
 
@@ -47,8 +47,8 @@ public final class StableValueImpl<T> implements StableValue<T> {
     static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
     // Unsafe offsets for direct field access
-    private static final long VALUE_OFFSET =
-            UNSAFE.objectFieldOffset(StableValueImpl.class, "wrappedValue");
+    private static final long UNDERLYING_DATA_OFFSET =
+            UNSAFE.objectFieldOffset(StableValueImpl.class, "underlyingData");
 
     // Generally, fields annotated with `@Stable` are accessed by the JVM using special
     // memory semantics rules (see `parse.hpp` and `parse(1|2|3).cpp`).
@@ -62,7 +62,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
     // | other          |  Set(other)   |
     //
     @Stable
-    private volatile Object wrappedValue;
+    private volatile Object underlyingData;
 
     // Only allow creation via the factory `StableValueImpl::newInstance`
     private StableValueImpl() {}
@@ -70,7 +70,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
     @ForceInline
     @Override
     public boolean trySet(T newValue) {
-        if (wrappedValue != null) {
+        if (underlyingData != null) {
             return false;
         }
         // Mutual exclusion is required here as `computeIfUnset` might also
@@ -83,9 +83,9 @@ public final class StableValueImpl<T> implements StableValue<T> {
     @ForceInline
     @Override
     public T orElseThrow() {
-        final Object t = wrappedValue;
+        final Object t = underlyingData;
         if (t == null) {
-            throw new NoSuchElementException("No data set");
+            throw new NoSuchElementException("No underlying data set");
         }
         return unwrap(t);
     }
@@ -93,26 +93,26 @@ public final class StableValueImpl<T> implements StableValue<T> {
     @ForceInline
     @Override
     public T orElse(T other) {
-        final Object t = wrappedValue;
+        final Object t = underlyingData;
         return (t == null) ? other : unwrap(t);
     }
 
     @ForceInline
     @Override
     public boolean isSet() {
-        return wrappedValue != null;
+        return underlyingData != null;
     }
 
     @ForceInline
     @Override
     public T computeIfUnset(Supplier<? extends T> supplier) {
-        final Object t = wrappedValue;
+        final Object t = underlyingData;
         return (t == null) ? computeIfUnsetSlowPath(supplier) : unwrap(t);
     }
 
     @DontInline
     private synchronized T computeIfUnsetSlowPath(Supplier<? extends T> supplier) {
-        final Object t = wrappedValue;
+        final Object t = underlyingData;
         if (t == null) {
             final T newValue = supplier.get();
             // The mutex is reentrant so we need to check if the value was actually set.
@@ -125,7 +125,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
 
     @Override
     public String toString() {
-        final Object t = wrappedValue;
+        final Object t = underlyingData;
         return t == this
                 ? "(this StableValue)"
                 : "StableValue" + renderWrapped(t);
@@ -135,7 +135,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
 
     @ForceInline
     public Object wrappedValue() {
-        return wrappedValue;
+        return underlyingData;
     }
 
     static String renderWrapped(Object t) {
@@ -147,7 +147,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
     @ForceInline
     private boolean wrapAndCas(Object value) {
         // This upholds the invariant, a `@Stable` field is written to at most once
-        return UNSAFE.compareAndSetReference(this, VALUE_OFFSET, null, wrap(value));
+        return UNSAFE.compareAndSetReference(this, UNDERLYING_DATA_OFFSET, null, wrap(value));
     }
 
     // Used to indicate a holder value is `null` (see field `value` below)

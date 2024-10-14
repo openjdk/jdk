@@ -25,10 +25,12 @@
  * @summary Basic tests for TrustedFieldType implementations
  * @modules jdk.unsupported/sun.misc
  * @modules java.base/jdk.internal.lang.stable
+ * @modules java.base/jdk.internal.misc
  * @compile --enable-preview -source ${jdk.version} TrustedFieldTypeTest.java
  * @run junit/othervm --enable-preview TrustedFieldTypeTest
  */
 
+import jdk.internal.misc.Unsafe;
 import org.junit.jupiter.api.Test;
 
 import java.lang.invoke.MethodHandles;
@@ -104,6 +106,11 @@ final class TrustedFieldTypeTest {
                 unsafe.objectFieldOffset(arrayField)
         );
 
+        // Test direct access
+        StableValue<?> stableValue = StableValue.of();
+        Class<?> clazz = stableValue.getClass();
+        System.out.println("clazz = " + clazz);
+        assertThrows(NoSuchFieldException.class, () -> clazz.getField("underlyingData"));
     }
 
     @Test
@@ -144,6 +151,21 @@ final class TrustedFieldTypeTest {
                 arrayVarHandle.compareAndSet(arrayHolder, originalArrayValue, new StableValue[1])
         );
 
+    }
+
+    @Test
+    void updateStableValueUnderlyingData() {
+        StableValue<Integer> stableValue = StableValue.of();
+        stableValue.trySet(42);
+        jdk.internal.misc.Unsafe unsafe = Unsafe.getUnsafe();
+
+        long offset = unsafe.objectFieldOffset(stableValue.getClass(), "underlyingData");
+        assertTrue(offset > 0);
+
+        // Unfortunately, it is possible to update the underlying data via jdk.internal.misc.Unsafe
+        Object oldData = unsafe.getAndSetReference(stableValue, offset, 13);
+        assertEquals(42, oldData);
+        assertEquals(13, stableValue.orElseThrow());
     }
 
 }
