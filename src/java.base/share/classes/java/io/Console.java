@@ -34,7 +34,7 @@ import jdk.internal.access.SharedSecrets;
 import jdk.internal.io.JdkConsoleImpl;
 import jdk.internal.io.JdkConsoleProvider;
 import jdk.internal.javac.PreviewFeature;
-import jdk.internal.util.StaticProperty;
+import sun.nio.cs.UTF_8;
 import sun.security.action.GetPropertyAction;
 
 /**
@@ -614,27 +614,10 @@ public sealed class Console implements Flushable permits ProxyingConsole {
                 "Console class itself does not provide implementation");
     }
 
-    private static native String encoding();
     private static final boolean istty = istty();
     static final Charset CHARSET;
     static {
-        Charset cs = null;
-
-        if (istty) {
-            String csname = encoding();
-            if (csname == null) {
-                csname = GetPropertyAction.privilegedGetProperty("stdout.encoding");
-            }
-            if (csname != null) {
-                cs = Charset.forName(csname, null);
-            }
-        }
-        if (cs == null) {
-            cs = Charset.forName(StaticProperty.nativeEncoding(),
-                    Charset.defaultCharset());
-        }
-
-        CHARSET = cs;
+        CHARSET = Charset.forName(GetPropertyAction.privilegedGetProperty("stdout.encoding"), UTF_8.INSTANCE);
 
         cons = instantiateConsole();
 
