@@ -63,7 +63,7 @@ public class RunWithFlagsExample {
         // Create a new CompileFramework instance.
         CompileFramework comp = new CompileFramework();
 
-        // Add a java source file.
+        // Add a Java source file.
         comp.addJavaSourceCode("p.xyz.X", generate());
 
         // Compile the source file.
@@ -75,7 +75,7 @@ public class RunWithFlagsExample {
             "-classpath",
             comp.getEscapedClassPathOfCompiledClasses(),
             // Pass additional flags here.
-            // "-Xbatch" is a harmless VM flag, so this example runs everywhere without issue.
+            // "-Xbatch" is a harmless VM flag, so this example runs everywhere without issues.
             "-Xbatch",
             // We can also pass properties like "MyMessage".
             "-DMyMessage=hello_world",
@@ -84,7 +84,7 @@ public class RunWithFlagsExample {
         };
 
         // Execute the command, and capture the output.
-        // The JTREG VM options are automatically passed to the test VM.
+        // The JTREG Java and VM options are automatically passed to the test VM.
         OutputAnalyzer analyzer = ProcessTools.executeTestJava(command);
 
         // Verify output.
