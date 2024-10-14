@@ -23,11 +23,11 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/aotConstantPoolResolver.hpp"
 #include "cds/archiveHeapWriter.hpp"
 #include "cds/archiveHeapLoader.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/cdsConfig.hpp"
-#include "cds/classPrelinker.hpp"
 #include "cds/heapShared.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.hpp"
@@ -482,7 +482,7 @@ void ConstantPool::remove_resolved_klass_if_non_deterministic(int cp_index) {
     can_archive = false;
   } else {
     ConstantPool* src_cp = ArchiveBuilder::current()->get_source_addr(this);
-    can_archive = ClassPrelinker::is_resolution_deterministic(src_cp, cp_index);
+    can_archive = AOTConstantPoolResolver::is_resolution_deterministic(src_cp, cp_index);
   }
 
   if (!can_archive) {
