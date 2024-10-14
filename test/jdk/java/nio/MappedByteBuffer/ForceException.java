@@ -40,7 +40,7 @@ public class ForceException {
         int numberOfBlocks = 200;
         int fileLength = numberOfBlocks * blockSize;
 
-        File file = new File(System.getProperty("test.dir", "."), "test.dat");
+        File file = new File(".", "test.dat");
         file.deleteOnExit();
         try (RandomAccessFile raf = new RandomAccessFile(file, "rw")) {
             raf.setLength(fileLength);

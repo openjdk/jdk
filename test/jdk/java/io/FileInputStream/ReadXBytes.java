@@ -45,7 +45,7 @@ public class ReadXBytes {
     private static final Random RND = RandomFactory.getRandom();
 
     public static void main(String args[]) throws IOException {
-        File dir = new File(System.getProperty("test.dir", "."));
+        File dir = new File(".");
         dir.deleteOnExit();
 
         File empty = File.createTempFile("foo", "bar", dir);

@@ -51,7 +51,7 @@ public class ForceViews {
 
     @BeforeTest(alwaysRun=true)
     public void openChannel() throws IOException {
-        Path file = Path.of(System.getProperty("test.dir", "."), "junk");
+        Path file = Path.of(".", "junk");
         fc = FileChannel.open(file, CREATE_NEW, READ, WRITE, DELETE_ON_CLOSE);
         ByteBuffer buf = ByteBuffer.wrap(new byte[1024]);
         fc.write(buf);
