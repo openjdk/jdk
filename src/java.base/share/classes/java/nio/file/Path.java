@@ -803,8 +803,8 @@ public interface Path
      * "{@code ..}" (or equivalent) is preceded by a non-"{@code ..}" name then
      * an implementation will typically cause both names to be removed. When
      * not resolving symbolic links and the preceding name is a symbolic link
-     * then the names are only removed if it guaranteed that the resulting path
-     * will locate the same file as this path.
+     * then the names are only removed if it is guaranteed that the resulting
+     * path will locate the same file as this path.
      *
      * @param   options
      *          options indicating how symbolic links are handled

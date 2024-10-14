@@ -2204,6 +2204,7 @@ public:
 #ifdef _LP64
   void save_legacy_gprs();
   void restore_legacy_gprs();
+  void setcc(Assembler::Condition comparison, Register dst);
 #endif
 };
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,8 +39,9 @@ import static java.lang.constant.ConstantDescs.CD_short;
 import static java.lang.constant.ConstantDescs.DEFAULT_NAME;
 
 /**
- * The {@code Short} class wraps a value of primitive type {@code
- * short} in an object.  An object of type {@code Short} contains a
+ * The {@code Short} class is the {@linkplain
+ * java.lang##wrapperClass wrapper class} for values of the primitive
+ * type {@code short}. An object of type {@code Short} contains a
  * single field whose type is {@code short}.
  *
  * <p>In addition, this class provides several methods for converting
