@@ -524,17 +524,16 @@ bool LibraryCallKit::inline_vector_nary_operation(int n) {
 Node* LibraryCallKit::partially_wrap_indexes(Node* index_vec, int num_elem, BasicType elem_bt) {
   assert(elem_bt == T_BYTE, "Shuffles use byte array based backing storage.");
   const TypeVect* vt  = TypeVect::make(elem_bt, num_elem);
-  const Type* type_bt = Type::get_const_basic_type(elem_bt);
 
   Node* mod_mask = gvn().makecon(TypeInt::make(num_elem-1));
-  Node* bcast_mod_mask  = gvn().transform(VectorNode::scalar2vector(mod_mask, num_elem, type_bt));
+  Node* bcast_mod_mask = gvn().transform(VectorNode::scalar2vector(mod_mask, num_elem, elem_bt));
 
   BoolTest::mask pred = BoolTest::ugt;
   ConINode* pred_node = (ConINode*)gvn().makecon(TypeInt::make(pred));
   Node* lane_cnt  = gvn().makecon(TypeInt::make(num_elem));
-  Node* bcast_lane_cnt = gvn().transform(VectorNode::scalar2vector(lane_cnt, num_elem, type_bt));
-  const TypeVect* vmask_type = TypeVect::makemask(type_bt, num_elem);
-  Node*  mask = gvn().transform(new VectorMaskCmpNode(pred, bcast_lane_cnt, index_vec, pred_node, vmask_type));
+  Node* bcast_lane_cnt = gvn().transform(VectorNode::scalar2vector(lane_cnt, num_elem, elem_bt));
+  const TypeVect* vmask_type = TypeVect::makemask(elem_bt, num_elem);
+  Node* mask = gvn().transform(new VectorMaskCmpNode(pred, bcast_lane_cnt, index_vec, pred_node, vmask_type));
 
   // Make the indices greater than lane count as -ve values to match the java side implementation.
   index_vec = gvn().transform(VectorNode::make(Op_AndV, index_vec, bcast_mod_mask, vt));
@@ -600,8 +599,7 @@ bool LibraryCallKit::inline_vector_shuffle_iota() {
     return false;
   }
 
-  const Type * type_bt = Type::get_const_basic_type(elem_bt);
-  const TypeVect * vt  = TypeVect::make(type_bt, num_elem);
+  const TypeVect* vt = TypeVect::make(elem_bt, num_elem);
 
   Node* res = gvn().transform(new VectorLoadConstNode(gvn().makecon(TypeInt::ZERO), vt));
 
@@ -609,7 +607,7 @@ bool LibraryCallKit::inline_vector_shuffle_iota() {
   Node* step  = argument(5);
 
   if (step_multiply) {
-    Node* bcast_step     = gvn().transform(VectorNode::scalar2vector(step, num_elem, type_bt));
+    Node* bcast_step = gvn().transform(VectorNode::scalar2vector(step, num_elem, elem_bt));
     res = gvn().transform(VectorNode::make(Op_MulVB, res, bcast_step, vt));
   } else if (step_val->get_con() > 1) {
     Node* cnt = gvn().makecon(TypeInt::make(log2i_exact(step_val->get_con())));
@@ -618,12 +616,12 @@ bool LibraryCallKit::inline_vector_shuffle_iota() {
   }
 
   if (!start_val->is_con() || start_val->get_con() != 0) {
-    Node* bcast_start    = gvn().transform(VectorNode::scalar2vector(start, num_elem, type_bt));
+    Node* bcast_start = gvn().transform(VectorNode::scalar2vector(start, num_elem, elem_bt));
     res = gvn().transform(VectorNode::make(Op_AddVB, res, bcast_start, vt));
   }
 
-  Node * mod_val = gvn().makecon(TypeInt::make(num_elem-1));
-  Node * bcast_mod  = gvn().transform(VectorNode::scalar2vector(mod_val, num_elem, type_bt));
+  Node* mod_val = gvn().makecon(TypeInt::make(num_elem-1));
+  Node* bcast_mod = gvn().transform(VectorNode::scalar2vector(mod_val, num_elem, elem_bt));
 
   if (do_wrap)  {
     // Wrap the indices greater than lane count.
@@ -802,9 +800,8 @@ bool LibraryCallKit::inline_vector_wrap_shuffle_indexes() {
   Node* shuffle_vec = unbox_vector(shuffle, shuffle_box_type, shuffle_bt, num_elem, true);
 
   const TypeVect* vt  = TypeVect::make(shuffle_bt, num_elem);
-  const Type* shuffle_type_bt = Type::get_const_basic_type(shuffle_bt);
-  Node* mod_mask = gvn().makecon(TypeInt::make(num_elem-1));
-  Node* bcast_mod_mask  = gvn().transform(VectorNode::scalar2vector(mod_mask, num_elem, shuffle_type_bt));
+  Node* mod_mask = gvn().makecon(TypeInt::make(num_elem - 1));
+  Node* bcast_mod_mask  = gvn().transform(VectorNode::scalar2vector(mod_mask, num_elem, shuffle_bt));
   // Wrap the indices greater than lane count.
   Node* res = gvn().transform(VectorNode::make(Op_AndV, shuffle_vec, bcast_mod_mask, vt));
 
@@ -908,7 +905,7 @@ bool LibraryCallKit::inline_vector_frombits_coerced() {
       }
       default: fatal("%s", type2name(elem_bt));
     }
-    broadcast = VectorNode::scalar2vector(elem, num_elem, Type::get_const_basic_type(elem_bt), is_mask);
+    broadcast = VectorNode::scalar2vector(elem, num_elem, elem_bt, is_mask);
     broadcast = gvn().transform(broadcast);
   }
 
@@ -1352,7 +1349,7 @@ bool LibraryCallKit::inline_vector_mem_masked_operation(bool is_store) {
     } else {
       // Use the vector blend to implement the masked load vector. The biased elements are zeros.
       Node* zero = gvn().transform(gvn().zerocon(mem_elem_bt));
-      zero = gvn().transform(VectorNode::scalar2vector(zero, mem_num_elem, Type::get_const_basic_type(mem_elem_bt)));
+      zero = gvn().transform(VectorNode::scalar2vector(zero, mem_num_elem, mem_elem_bt));
       vload = gvn().transform(LoadVectorNode::make(0, control(), memory(addr), addr, addr_type, mem_num_elem, mem_elem_bt));
       vload = gvn().transform(new VectorBlendNode(zero, vload, mask));
     }
@@ -1678,7 +1675,7 @@ bool LibraryCallKit::inline_vector_reduction() {
 
   assert(mask != nullptr || !is_masked_op, "Masked op needs the mask value never null");
   if (mask != nullptr && !use_predicate) {
-    Node* reduce_identity = gvn().transform(VectorNode::scalar2vector(init, num_elem, Type::get_const_basic_type(elem_bt)));
+    Node* reduce_identity = gvn().transform(VectorNode::scalar2vector(init, num_elem, elem_bt));
     value = gvn().transform(new VectorBlendNode(reduce_identity, value, mask));
   }
 
@@ -2059,7 +2056,7 @@ bool LibraryCallKit::inline_vector_rearrange() {
       const TypeVect* vt = v1->bottom_type()->is_vect();
       rearrange = gvn().transform(rearrange);
       Node* zero = gvn().makecon(Type::get_zero_type(elem_bt));
-      Node* zerovec = gvn().transform(VectorNode::scalar2vector(zero, num_elem, Type::get_const_basic_type(elem_bt)));
+      Node* zerovec = gvn().transform(VectorNode::scalar2vector(zero, num_elem, elem_bt));
       rearrange = new VectorBlendNode(zerovec, rearrange, mask);
     }
   }
@@ -2215,18 +2212,17 @@ bool LibraryCallKit::inline_vector_select_from() {
   }
 
   // cast index vector from elem_bt vector to byte vector
-  const Type * byte_bt = Type::get_const_basic_type(T_BYTE);
-  const TypeVect * byte_vt  = TypeVect::make(byte_bt, num_elem);
+  const TypeVect* byte_vt = TypeVect::make(T_BYTE, num_elem);
   Node* byte_shuffle = gvn().transform(VectorCastNode::make(cast_vopc, v1, T_BYTE, num_elem));
 
   // wrap the byte vector lanes to (num_elem - 1) to form the shuffle vector where num_elem is vector length
   // this is a simple AND operation as we come here only for power of two vector length
   Node* mod_val = gvn().makecon(TypeInt::make(num_elem-1));
-  Node* bcast_mod  = gvn().transform(VectorNode::scalar2vector(mod_val, num_elem, byte_bt));
+  Node* bcast_mod = gvn().transform(VectorNode::scalar2vector(mod_val, num_elem, T_BYTE));
   byte_shuffle = gvn().transform(VectorNode::make(Op_AndV, byte_shuffle, bcast_mod, byte_vt));
 
   // load the shuffle to use in rearrange
-  const TypeVect * shuffle_vt  = TypeVect::make(elem_bt, num_elem);
+  const TypeVect* shuffle_vt = TypeVect::make(elem_bt, num_elem);
   Node* load_shuffle = gvn().transform(new VectorLoadShuffleNode(byte_shuffle, shuffle_vt));
 
   // and finally rearrange
@@ -2243,7 +2239,7 @@ bool LibraryCallKit::inline_vector_select_from() {
 
       // create a zero vector with each lane element set as zero
       Node* zero = gvn().makecon(Type::get_zero_type(elem_bt));
-      Node* zerovec = gvn().transform(VectorNode::scalar2vector(zero, num_elem, Type::get_const_basic_type(elem_bt)));
+      Node* zerovec = gvn().transform(VectorNode::scalar2vector(zero, num_elem, elem_bt));
 
       // For each lane for which mask is set, blend in the rearranged lane into zero vector
       rearrange = new VectorBlendNode(zerovec, rearrange, mask);
@@ -2391,9 +2387,8 @@ bool LibraryCallKit::inline_vector_broadcast_int() {
   } else {
     assert(is_rotate, "unexpected operation");
     if (!is_const_rotate) {
-      const Type * type_bt = Type::get_const_basic_type(elem_bt);
       cnt = elem_bt == T_LONG ? gvn().transform(new ConvI2LNode(cnt)) : cnt;
-      opd2 = gvn().transform(VectorNode::scalar2vector(cnt, num_elem, type_bt));
+      opd2 = gvn().transform(VectorNode::scalar2vector(cnt, num_elem, elem_bt));
     } else {
       // Constant shift value.
       opd2 = cnt;
@@ -3051,7 +3046,7 @@ bool LibraryCallKit::inline_index_vector() {
       }
       default: fatal("%s", type2name(elem_bt));
     }
-    scale = gvn().transform(VectorNode::scalar2vector(scale, num_elem, Type::get_const_basic_type(elem_bt)));
+    scale = gvn().transform(VectorNode::scalar2vector(scale, num_elem, elem_bt));
     index = gvn().transform(VectorNode::make(vmul_op, index, scale, vt));
   }
 
@@ -3164,7 +3159,7 @@ bool LibraryCallKit::inline_index_partially_in_upper_range() {
       }
       default: fatal("%s", type2name(elem_bt));
     }
-    indexLimit = gvn().transform(VectorNode::scalar2vector(indexLimit, num_elem, Type::get_const_basic_type(elem_bt)));
+    indexLimit = gvn().transform(VectorNode::scalar2vector(indexLimit, num_elem, elem_bt));
 
     // Load the "iota" vector.
     const TypeVect* vt = TypeVect::make(elem_bt, num_elem);

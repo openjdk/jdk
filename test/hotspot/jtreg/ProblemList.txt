@@ -43,6 +43,8 @@
 
 # :hotspot_compiler
 
+applications/ctw/modules/java_base_2.java 8341831 linux-x64
+
 compiler/ciReplay/TestSAServer.java 8029528 generic-all
 compiler/compilercontrol/jcmd/ClearDirectivesFileStackTest.java 8225370 generic-all
 
@@ -121,6 +123,7 @@ applications/jcstress/copy.java 8229852 linux-all
 containers/docker/TestJcmd.java 8278102 linux-all
 containers/docker/TestMemoryAwareness.java 8303470 linux-all
 containers/docker/TestJFREvents.java 8327723 linux-x64
+containers/docker/TestJcmdWithSideCar.java 8341518 linux-x64
 
 #############################################################################
 
