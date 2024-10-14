@@ -69,7 +69,7 @@ public class TestFloatConversionsVector {
 
     @Test
     public void test_float_float16_short_vector(short[] sout, float[] finp) {
-        for (int i = 0; i < finp.length - 1; i++) {
+        for (int i = 0; i < finp.length; i+= 4) {
             sout[i+0] = Float.floatToFloat16(finp[i+0]);
             sout[i+1] = Float.floatToFloat16(finp[i+1]);
         }
