@@ -705,7 +705,7 @@ void TemplateTable::wide_aload() {
 }
 
 void TemplateTable::index_check(Register array, Register index) {
-  // destroys x11, t0
+  // destroys x11, t0, t1
   // sign extend index for use by indexed load
   // check index
   const Register length = t0;
