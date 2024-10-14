@@ -16076,7 +16076,6 @@ instruct partialSubtypeCheckVarSuper(iRegP_R4 sub, iRegP_R0 super, vRegD_V0 vtem
   format %{ "partialSubtypeCheck $result, $sub, $super" %}
 
   ins_encode %{
-    bool success = false;
     __ lookup_secondary_supers_table_var($sub$$Register, $super$$Register,
                                          $tempR1$$Register, $tempR2$$Register, $tempR3$$Register,
                                          $vtemp$$FloatRegister,
