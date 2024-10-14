@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8190951
+ * @bug 8331008
  * @summary KDF API tests
  * @library /test/lib
  * @run main/othervm -Djava.security.egd=file:/dev/urandom -Djava.security.debug=provider,engine=kdf HKDFExhaustiveTest
