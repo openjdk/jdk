@@ -291,28 +291,6 @@ AC_DEFUN_ONCE([JVM_FEATURES_CHECK_JVMCI],
 ])
 
 ################################################################################
-# Check if the feature 'g1gc' is available on this platform.
-#
-AC_DEFUN_ONCE([JVM_FEATURES_CHECK_G1GC],
-[
-  JVM_FEATURES_CHECK_AVAILABILITY(g1gc, [
-    AC_MSG_CHECKING([if platform is supported by G1])
-    if test "x$OPENJDK_TARGET_CPU" = "xx86_64"  || \
-       test "x$OPENJDK_TARGET_CPU" = "xarm"     || \
-       test "x$OPENJDK_TARGET_CPU" = "xaarch64" || \
-       test "x$OPENJDK_TARGET_CPU" = "xppc64"   || \
-       test "x$OPENJDK_TARGET_CPU" = "xppc64le" || \
-       test "x$OPENJDK_TARGET_CPU" = "xs390x"   || \
-       test "x$OPENJDK_TARGET_CPU" = "xriscv64"; then
-      AC_MSG_RESULT([yes])
-    else
-      AC_MSG_RESULT([no, $OPENJDK_TARGET_CPU])
-      AVAILABLE=false
-    fi
-  ])
-])
-
-################################################################################
 # Check if the feature 'shenandoahgc' is available on this platform.
 #
 AC_DEFUN_ONCE([JVM_FEATURES_CHECK_SHENANDOAHGC],
@@ -400,7 +378,6 @@ AC_DEFUN_ONCE([JVM_FEATURES_PREPARE_PLATFORM],
   JVM_FEATURES_CHECK_CDS
   JVM_FEATURES_CHECK_DTRACE
   JVM_FEATURES_CHECK_JVMCI
-  JVM_FEATURES_CHECK_G1GC
   JVM_FEATURES_CHECK_SHENANDOAHGC
   JVM_FEATURES_CHECK_ZGC
 
@@ -503,6 +480,22 @@ AC_DEFUN([JVM_FEATURES_CALCULATE_ACTIVE],
 ])
 
 ################################################################################
+# Filter the unsupported feature combinations.
+# This is called after JVM_FEATURES_ACTIVE are fully populated.
+#
+AC_DEFUN([JVM_FEATURES_FILTER_UNSUPPORTED],
+[
+  # G1 late barrier expansion in C2 is not implemented for some platforms.
+  # Choose not to support G1 in this configuration.
+  if JVM_FEATURES_IS_ACTIVE(compiler2); then
+    if test "x$OPENJDK_TARGET_CPU" = "xx86"; then
+      AC_MSG_NOTICE([G1 cannot be used with C2 on this platform, disabling G1])
+      UTIL_GET_NON_MATCHING_VALUES(JVM_FEATURES_ACTIVE, $JVM_FEATURES_ACTIVE, "g1gc")
+    fi
+  fi
+])
+
+################################################################################
 # Helper function for JVM_FEATURES_VERIFY. Check if the specified JVM
 # feature is active. To be used in shell if constructs, like this:
 # 'if JVM_FEATURES_IS_ACTIVE(jvmti); then'
@@ -576,6 +569,9 @@ AC_DEFUN_ONCE([JVM_FEATURES_SETUP],
     # Calculate the resulting set of enabled features for this variant.
     # The result is stored in JVM_FEATURES_ACTIVE.
     JVM_FEATURES_CALCULATE_ACTIVE($variant)
+
+    # Filter unsupported feature combinations from JVM_FEATURES_ACTIVE.
+    JVM_FEATURES_FILTER_UNSUPPORTED
 
     # Verify consistency for JVM_FEATURES_ACTIVE.
     JVM_FEATURES_VERIFY($variant)
