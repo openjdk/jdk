@@ -33,14 +33,8 @@ package compile_framework.examples;
 
 import compiler.lib.compile_framework.*;
 
-import jdk.test.lib.Utils;
-
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.concurrent.TimeUnit;
-import java.util.List;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
 
 /**
  * This test shows how the generated code can be compiled and invoked in a new VM. This allows
@@ -59,12 +53,13 @@ public class RunWithFlagsExample {
                    public static void main(String args[]) {
                        System.out.println("Hello world!");
                        System.out.println(System.getProperty("MyMessage", "fail"));
+                       System.err.println(args[0]);
                    }
                }
                """;
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         // Create a new CompileFramework instance.
         CompileFramework comp = new CompileFramework();
 
@@ -75,54 +70,30 @@ public class RunWithFlagsExample {
         comp.compile();
 
         // Build command line.
-        List<String> command = new ArrayList<>();
-        command.add("%s/bin/java".formatted(System.getProperty("test.jdk")));
-        // Pass JVM options from JTREG to our new VM.
-        command.addAll(Arrays.asList(Utils.getTestJavaOpts()));
-        // Set the classpath to include our newly compiled class.
-        command.add("-classpath");
-        command.add(comp.getEscapedClassPathOfCompiledClasses());
-        // Pass additional flags here.
-        // And "-Xbatch" is a harmless VM flag, so this example runs everywhere without issue.
-        // We can also pass properties like "MyMessage".
-        command.add("-Xbatch");
-        command.add("-DMyMessage=hello_world");
-        command.add("p.xyz.X");
-        System.out.println("Running on command-line: " + String.join(" ", command));
+        String[] command = {
+            // Set the classpath to include our newly compiled class.
+            "-classpath",
+            comp.getEscapedClassPathOfCompiledClasses(),
+            // Pass additional flags here.
+            // "-Xbatch" is a harmless VM flag, so this example runs everywhere without issue.
+            "-Xbatch",
+            // We can also pass properties like "MyMessage".
+            "-DMyMessage=hello_world",
+            "p.xyz.X",
+            "hello_arg"
+        };
 
-        // Execute command, and capture the output.
-        ProcessBuilder builder = new ProcessBuilder(command);
-        builder.redirectErrorStream(true);
-
-        String output;
-        int exitCode;
-        try {
-            Process process = builder.start();
-            boolean exited = process.waitFor(60, TimeUnit.SECONDS);
-            if (!exited) {
-                process.destroyForcibly();
-                System.out.println("Timeout: compile command: " + String.join(" ", command));
-                throw new RuntimeException("Process timeout: compilation took too long.");
-            }
-            output = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
-            exitCode = process.exitValue();
-        } catch (IOException e) {
-            throw new RuntimeException("IOException when launching new VM", e);
-        } catch (InterruptedException e) {
-            throw new RuntimeException("InterruptedException when launching new VM", e);
-        }
+        // Execute the command, and capture the output.
+        // The JTREG VM options are automatically passed to the test VM.
+        OutputAnalyzer analyzer = ProcessTools.executeTestJava(command);
 
         // Verify output.
-        System.err.println("Exit code: " + exitCode);
-        System.err.println("Output: '" + output + "'");
-        if (exitCode != 0) {
-            throw new RuntimeException("Exit code must be zero!");
-        }
-        if (!output.contains("Hello world!")) {
-            throw new RuntimeException("Did not find 'Hello world!' in output!");
-        }
-        if (!output.contains("hello_world")) {
-            throw new RuntimeException("Did not find 'hello_world' in output!");
-        }
+        analyzer.shouldHaveExitValue(0);
+        analyzer.stdoutContains("Hello world!");
+        analyzer.stdoutContains("hello_world");
+        analyzer.stdoutContains("hello_arg");
+
+        // Print output to stderr.
+        analyzer.reportDiagnosticSummary();
     }
 }
