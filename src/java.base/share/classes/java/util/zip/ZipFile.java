@@ -47,8 +47,9 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
-import java.util.Objects;
+import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Set;
 import java.util.Spliterator;
 import java.util.Spliterators;
@@ -64,6 +65,7 @@ import jdk.internal.access.JavaUtilZipFileAccess;
 import jdk.internal.access.JavaUtilJarAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.ArraysSupport;
+import jdk.internal.util.DecimalDigits;
 import jdk.internal.util.OperatingSystem;
 import jdk.internal.perf.PerfCounter;
 import jdk.internal.ref.CleanerFactory;
@@ -1096,10 +1098,10 @@ public class ZipFile implements ZipConstants, Closeable {
      * optimization when looking up potentially versioned entries.
      * Returns an empty array if no versioned entries exist.
      */
-    private int[] getMetaInfVersions() {
+    private int[] getMetaInfVersions(String name) {
         synchronized (this) {
             ensureOpen();
-            return res.zsrc.metaVersions;
+            return res.zsrc.metaVersions.getOrDefault(name, Source.EMPTY_META_VERSIONS);
         }
     }
 
@@ -1139,8 +1141,8 @@ public class ZipFile implements ZipConstants, Closeable {
                     return ((ZipFile)jar).getManifestName(onlyIfHasSignatureRelatedFiles);
                 }
                 @Override
-                public int[] getMetaInfVersions(JarFile jar) {
-                    return ((ZipFile)jar).getMetaInfVersions();
+                public int[] getMetaInfVersions(JarFile jar, String name) {
+                    return ((ZipFile)jar).getMetaInfVersions(name);
                 }
                 @Override
                 public Enumeration<JarEntry> entries(ZipFile zip) {
@@ -1175,6 +1177,8 @@ public class ZipFile implements ZipConstants, Closeable {
         private static final JavaUtilJarAccess JUJA = SharedSecrets.javaUtilJarAccess();
         // "META-INF/".length()
         private static final int META_INF_LEN = 9;
+        // "META-INF/versions//".length()
+        private static final int META_INF_VERSIONS_LEN = 19;
         private static final int[] EMPTY_META_VERSIONS = new int[0];
         // CEN size is limited to the maximum array size in the JDK
         private static final int MAX_CEN_SIZE = ArraysSupport.SOFT_MAX_ARRAY_LENGTH;
@@ -1192,7 +1196,7 @@ public class ZipFile implements ZipConstants, Closeable {
         private int   manifestPos = -1;      // position of the META-INF/MANIFEST.MF, if exists
         private int   manifestNum = 0;       // number of META-INF/MANIFEST.MF, case insensitive
         private int[] signatureMetaNames;    // positions of signature related entries, if such exist
-        private int[] metaVersions;          // list of unique versions found in META-INF/versions/
+        private Map<String, int[]> metaVersions;          // list of unique versions found in META-INF/versions/
         private final boolean startsWithLoc; // true, if ZIP file starts with LOCSIG (usually true)
 
         // A Hashmap for all entries.
@@ -1574,7 +1578,7 @@ public class ZipFile implements ZipConstants, Closeable {
             manifestPos = -1;
             manifestNum = 0;
             signatureMetaNames = null;
-            metaVersions = EMPTY_META_VERSIONS;
+            metaVersions = null;
         }
 
         private static final int BUF_SIZE = 8192;
@@ -1756,8 +1760,9 @@ public class ZipFile implements ZipConstants, Closeable {
 
             // list for all meta entries
             ArrayList<Integer> signatureNames = null;
-            // Set of all version numbers seen in META-INF/versions/
-            Set<Integer> metaVersionsSet = null;
+            // Map entry name to the set of versions seen in
+            // META-INF/versions/{version}/{name}
+            Map<String, Set<Integer>> metaVersionsMap = null;
 
             // Iterate through the entries in the central directory
             int idx = 0; // Index into the entries array
@@ -1796,9 +1801,13 @@ public class ZipFile implements ZipConstants, Closeable {
                         // performance in multi-release jar files
                         int version = getMetaVersion(entryPos + META_INF_LEN, nlen - META_INF_LEN);
                         if (version > 0) {
-                            if (metaVersionsSet == null)
-                                metaVersionsSet = new TreeSet<>();
-                            metaVersionsSet.add(version);
+                            int versionPrefix = META_INF_VERSIONS_LEN + DecimalDigits.stringSize(version);
+                            // Extract name from "META-INF/versions/{version)/{name}
+                            String name = zipCoderForPos(pos).toString(cen, entryPos + versionPrefix, nlen - versionPrefix);
+                            // Add version for name
+                            if (metaVersionsMap == null)
+                                metaVersionsMap = new HashMap<>();
+                            metaVersionsMap.computeIfAbsent(name, n -> new TreeSet<>()).add(version);
                         }
                     }
                 }
@@ -1816,14 +1825,19 @@ public class ZipFile implements ZipConstants, Closeable {
                     signatureMetaNames[j] = signatureNames.get(j);
                 }
             }
-            if (metaVersionsSet != null) {
-                metaVersions = new int[metaVersionsSet.size()];
-                int c = 0;
-                for (Integer version : metaVersionsSet) {
-                    metaVersions[c++] = version;
+            if (metaVersionsMap != null) {
+                metaVersions = new HashMap<>();
+                for (var entry : metaVersionsMap.entrySet()) {
+                    // Convert TreeSet<Integer> to int[] for performance
+                    int[] versions = new int[entry.getValue().size()];
+                    int c = 0;
+                    for (Integer i : entry.getValue()) {
+                        versions[c++] = i.intValue();
+                    }
+                    metaVersions.put(entry.getKey(), versions);
                 }
             } else {
-                metaVersions = EMPTY_META_VERSIONS;
+                metaVersions = Map.of();
             }
             if (pos != cen.length) {
                 zerror("invalid CEN header (bad header size)");
