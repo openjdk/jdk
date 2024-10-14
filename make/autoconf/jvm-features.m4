@@ -291,6 +291,28 @@ AC_DEFUN_ONCE([JVM_FEATURES_CHECK_JVMCI],
 ])
 
 ################################################################################
+# Check if the feature 'g1gc' is available on this platform.
+#
+AC_DEFUN_ONCE([JVM_FEATURES_CHECK_G1GC],
+[
+  JVM_FEATURES_CHECK_AVAILABILITY(g1gc, [
+    AC_MSG_CHECKING([if platform is supported by G1])
+    if test "x$OPENJDK_TARGET_CPU" = "xx86_64"  || \
+       test "x$OPENJDK_TARGET_CPU" = "xarm"     || \
+       test "x$OPENJDK_TARGET_CPU" = "xaarch64" || \
+       test "x$OPENJDK_TARGET_CPU" = "xppc64"   || \
+       test "x$OPENJDK_TARGET_CPU" = "xppc64le" || \
+       test "x$OPENJDK_TARGET_CPU" = "xs390x"   || \
+       test "x$OPENJDK_TARGET_CPU" = "xriscv64"; then
+      AC_MSG_RESULT([yes])
+    else
+      AC_MSG_RESULT([no, $OPENJDK_TARGET_CPU])
+      AVAILABLE=false
+    fi
+  ])
+])
+
+################################################################################
 # Check if the feature 'shenandoahgc' is available on this platform.
 #
 AC_DEFUN_ONCE([JVM_FEATURES_CHECK_SHENANDOAHGC],
@@ -378,6 +400,7 @@ AC_DEFUN_ONCE([JVM_FEATURES_PREPARE_PLATFORM],
   JVM_FEATURES_CHECK_CDS
   JVM_FEATURES_CHECK_DTRACE
   JVM_FEATURES_CHECK_JVMCI
+  JVM_FEATURES_CHECK_G1GC
   JVM_FEATURES_CHECK_SHENANDOAHGC
   JVM_FEATURES_CHECK_ZGC
 
