@@ -32,6 +32,7 @@ import java.security.cert.*;
 import java.security.spec.PSSParameterSpec;
 import java.util.*;
 
+import sun.security.provider.SHA3.SHAKE128;
 import sun.security.provider.SHA3.SHAKE256;
 import sun.security.timestamp.TimestampToken;
 import sun.security.util.*;
@@ -376,6 +377,10 @@ public class SignerInfo implements DerEncoder {
                     var md = new SHAKE256(64);
                     md.update(data, 0, data.length);
                     computedMessageDigest = md.digest();
+                } else if (digestAlgName.equals("SHAKE128")) {
+                    var md = new SHAKE128(32);
+                    md.update(data, 0, data.length);
+                    computedMessageDigest = md.digest();
                 } else {
                     MessageDigest md = MessageDigest.getInstance(digestAlgName);
                     computedMessageDigest = md.digest(data);
@@ -507,17 +512,17 @@ public class SignerInfo implements DerEncoder {
                 }
                 break;
             case "Ed25519":
-                if (!digAlgId.equals(SignatureUtil.EdDSADigestAlgHolder.sha512)) {
+                if (!digAlgId.equals(SignatureUtil.DigestAlgHolder.sha512)) {
                     throw new NoSuchAlgorithmException("Incompatible digest algorithm");
                 }
                 break;
             case "Ed448":
                 if (directSign) {
-                    if (!digAlgId.equals(SignatureUtil.EdDSADigestAlgHolder.shake256)) {
+                    if (!digAlgId.equals(SignatureUtil.DigestAlgHolder.shake256)) {
                         throw new NoSuchAlgorithmException("Incompatible digest algorithm");
                     }
                 } else {
-                    if (!digAlgId.equals(SignatureUtil.EdDSADigestAlgHolder.shake256$512)) {
+                    if (!digAlgId.equals(SignatureUtil.DigestAlgHolder.shake256$512)) {
                         throw new NoSuchAlgorithmException("Incompatible digest algorithm");
                     }
                 }
@@ -528,6 +533,9 @@ public class SignerInfo implements DerEncoder {
                     throw new NoSuchAlgorithmException("Incompatible digest algorithm");
                 }
                 break;
+            // case "ML-DSA":
+            // https://www.ietf.org/archive/id/draft-salter-lamps-cms-ml-dsa-00.html
+            // only RECOMMEND bit has not required
         }
     }
 
