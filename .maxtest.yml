@@ -12,4 +12,4 @@ tests:
   clusterParameters:
     cpus: 1.0
     mem: 1024.0
-    centos6: 1.0
+    centos7: 1.0
