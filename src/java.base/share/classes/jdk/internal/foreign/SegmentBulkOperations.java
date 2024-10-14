@@ -203,6 +203,15 @@ public final class SegmentBulkOperations {
             final long s = SCOPED_MEMORY_ACCESS.getLongUnaligned(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcFromOffset + offset, false);
             final long d = SCOPED_MEMORY_ACCESS.getLongUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstFromOffset + offset, false);
             if (s != d) {
+
+                /* To be removed */
+                System.out.println("s = " + s);
+                System.out.println("d = " + d);
+                System.out.println("mismatch(s, d) = " + mismatch(s, d));
+                final long x = s ^ d;
+                System.out.println("x = " + x);
+                System.out.println("Long.numberOfTrailingZeros(x) = " + Long.numberOfTrailingZeros(x));
+
                 return start + offset + mismatch(s, d);
             }
         }
@@ -243,25 +252,18 @@ public final class SegmentBulkOperations {
     @ForceInline
     private static int mismatch(long first, long second) {
         final long x = first ^ second;
-        return Long.numberOfTrailingZeros(
-                Architecture.isLittleEndian() ? x : Long.reverseBytes(x)) / 8;
-
+        return Long.numberOfTrailingZeros(x) / 8;
     }
 
     @ForceInline
     private static int mismatch(int first, int second) {
         final int x = first ^ second;
-        return Integer.numberOfTrailingZeros(
-                Architecture.isLittleEndian() ? x : Integer.reverseBytes(x)) / 8;
+        return Integer.numberOfTrailingZeros(x) / 8;
     }
 
     @ForceInline
     private static int mismatch(short first, short second) {
-        if (Architecture.isLittleEndian()) {
-            return ((0xff & first) == (0xff & second)) ? 1 : 0;
-        } else {
-            return ((0xff & first) == (0xff & second)) ? 0 : 1;
-        }
+        return ((0xff & first) == (0xff & second)) ? 1 : 0;
     }
 
     /**
