@@ -83,8 +83,8 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
       } else {
         // If the state is not matching then we have different operations, such as:
         // reserve [x1, A); ... commit [A, x2); or
-        // reserve [x1, A), flag1; ... reserve [A, x2), flag2; or
-        // reserve [A, x1), flag1; ... reserve [A, x2), flag2;
+        // reserve [x1, A), mem_tag1; ... reserve [A, x2), mem_tag2; or
+        // reserve [A, x1), mem_tag1; ... reserve [A, x2), mem_tag2;
         // then we re-use the existing out node, overwriting its old metadata.
         leqA_n->val() = stA;
       }
@@ -147,7 +147,7 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
   if (to_be_deleted_inbetween_a_b.length() == 0 && LEQ_A_found) {
     // We must have smashed a hole in an existing region (or replaced it entirely).
     // LEQ_A < A < B <= C
-    SingleDiff& rescom = diff.flag[NMTUtil::flag_to_index(LEQ_A.out().flag())];
+    SingleDiff& rescom = diff.tag[NMTUtil::tag_to_index(LEQ_A.out().mem_tag())];
     if (LEQ_A.out().type() == StateType::Reserved) {
       rescom.reserve -= B - A;
     } else if (LEQ_A.out().type() == StateType::Committed) {
@@ -163,7 +163,7 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
     _tree.remove(delete_me.address);
 
     // Perform summary accounting
-    SingleDiff& rescom = diff.flag[NMTUtil::flag_to_index(delete_me.in().flag())];
+    SingleDiff& rescom = diff.tag[NMTUtil::tag_to_index(delete_me.in().mem_tag())];
     if (delete_me.in().type() == StateType::Reserved) {
       rescom.reserve -= delete_me.address - prev.address;
     } else if (delete_me.in().type() == StateType::Committed) {
@@ -178,17 +178,17 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
     // A - prev - B - (some node >= B)
     // It might be that prev.address == B == (some node >= B), this is fine.
     if (prev.out().type() == StateType::Reserved) {
-      SingleDiff& rescom = diff.flag[NMTUtil::flag_to_index(prev.out().flag())];
+      SingleDiff& rescom = diff.tag[NMTUtil::tag_to_index(prev.out().mem_tag())];
       rescom.reserve -= B - prev.address;
     } else if (prev.out().type() == StateType::Committed) {
-      SingleDiff& rescom = diff.flag[NMTUtil::flag_to_index(prev.out().flag())];
+      SingleDiff& rescom = diff.tag[NMTUtil::tag_to_index(prev.out().mem_tag())];
       rescom.commit -= B - prev.address;
       rescom.reserve -= B - prev.address;
     }
   }
 
   // Finally, we can register the new region [A, B)'s summary data.
-  SingleDiff& rescom = diff.flag[NMTUtil::flag_to_index(metadata.flag)];
+  SingleDiff& rescom = diff.tag[NMTUtil::tag_to_index(metadata.mem_tag)];
   if (state == StateType::Reserved) {
     rescom.reserve += B - A;
   } else if (state == StateType::Committed) {

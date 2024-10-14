@@ -568,6 +568,10 @@ $(eval $(call SetupTarget, update-build-docs, \
     MAKEFILE := UpdateBuildDocs, \
 ))
 
+$(eval $(call SetupTarget, update-sleef-source, \
+    MAKEFILE := UpdateSleefSource, \
+))
+
 $(eval $(call SetupTarget, update-x11wrappers, \
     MAKEFILE := UpdateX11Wrappers, \
     DEPS := java.base-copy buildtools-jdk, \

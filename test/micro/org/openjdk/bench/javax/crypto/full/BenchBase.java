@@ -45,7 +45,7 @@ public abstract class BenchBase extends CryptoBase {
     int keyLength = 256;
 
     // Default data sizes for full tests
-    @Param({"1024", "1500", "4096", "16384"})
+    @Param({"128", "256", "512", "1024", "1500", "4096", "16384"})
     int dataSize;
 
     static final int IV_BUFFER_SIZE = 36;
