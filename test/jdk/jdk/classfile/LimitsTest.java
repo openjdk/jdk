@@ -28,6 +28,7 @@
  * @run junit LimitsTest
  */
 import java.lang.classfile.Attributes;
+import java.lang.classfile.constantpool.PoolEntry;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
 import java.lang.constant.MethodTypeDesc;
@@ -36,12 +37,10 @@ import java.lang.classfile.Opcode;
 import java.lang.classfile.attribute.CodeAttribute;
 import java.lang.classfile.attribute.LineNumberInfo;
 import java.lang.classfile.attribute.LineNumberTableAttribute;
-import java.lang.classfile.attribute.LocalVariableInfo;
 import java.lang.classfile.attribute.LocalVariableTableAttribute;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.lang.classfile.constantpool.ConstantPoolException;
 import java.lang.classfile.constantpool.IntegerEntry;
-import java.lang.classfile.instruction.LocalVariable;
 import java.util.List;
 
 import jdk.internal.classfile.impl.BufWriterImpl;
@@ -113,13 +112,13 @@ class LimitsTest {
     @Test
     void testInvalidClassEntry() {
         assertThrows(ConstantPoolException.class, () -> ClassFile.of().parse(new byte[]{(byte)0xCA, (byte)0xFE, (byte)0xBA, (byte)0xBE,
-            0, 0, 0, 0, 0, 2, ClassFile.TAG_METHODREF, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}).thisClass());
+            0, 0, 0, 0, 0, 2, PoolEntry.TAG_METHODREF, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}).thisClass());
     }
 
     @Test
     void testInvalidUtf8Entry() {
         var cp = ClassFile.of().parse(new byte[]{(byte)0xCA, (byte)0xFE, (byte)0xBA, (byte)0xBE,
-            0, 0, 0, 0, 0, 3, ClassFile.TAG_INTEGER, 0, 0, 0, 0, ClassFile.TAG_NAMEANDTYPE, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}).constantPool();
+            0, 0, 0, 0, 0, 3, PoolEntry.TAG_INTEGER, 0, 0, 0, 0, PoolEntry.TAG_NAME_AND_TYPE, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}).constantPool();
         assertTrue(cp.entryByIndex(1) instanceof IntegerEntry); //parse valid int entry first
         assertThrows(ConstantPoolException.class, () -> cp.entryByIndex(2));
     }

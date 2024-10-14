@@ -41,13 +41,14 @@ import java.util.List;
 import java.util.Objects;
 
 import static java.lang.classfile.ClassFile.*;
+import static java.lang.classfile.attribute.StackMapFrameInfo.VerificationTypeInfo.*;
 
 public class StackMapDecoder {
 
     private static final int
                     SAME_LOCALS_1_STACK_ITEM_EXTENDED = 247,
                     SAME_EXTENDED = 251;
-    private static final StackMapFrameInfo[] NO_STACK_FRAME_INFOS = new StackMapFrameInfo[0];
+    private static final StackMapFrameInfo[] NO_STACK_FRAME_INFOS = {};
 
     private final ClassReader classReader;
     private final int pos;
@@ -75,7 +76,7 @@ public class StackMapDecoder {
         if (!isStatic) {
             vtis = new VerificationTypeInfo[methodType.parameterCount() + 1];
             if ("<init>".equals(methodName) && !ConstantDescs.CD_Object.equals(thisClass.asSymbol())) {
-                vtis[i++] = SimpleVerificationTypeInfo.ITEM_UNINITIALIZED_THIS;
+                vtis[i++] = SimpleVerificationTypeInfo.UNINITIALIZED_THIS;
             } else {
                 vtis[i++] = new StackMapDecoder.ObjectVerificationTypeInfoImpl(thisClass);
             }
@@ -85,10 +86,10 @@ public class StackMapDecoder {
         for (int pi = 0; pi < methodType.parameterCount(); pi++) {
             var arg = methodType.parameterType(pi);
             vtis[i++] = switch (arg.descriptorString().charAt(0)) {
-                case 'I', 'S', 'C' ,'B', 'Z' -> SimpleVerificationTypeInfo.ITEM_INTEGER;
-                case 'J' -> SimpleVerificationTypeInfo.ITEM_LONG;
-                case 'F' -> SimpleVerificationTypeInfo.ITEM_FLOAT;
-                case 'D' -> SimpleVerificationTypeInfo.ITEM_DOUBLE;
+                case 'I', 'S', 'C' ,'B', 'Z' -> SimpleVerificationTypeInfo.INTEGER;
+                case 'J' -> SimpleVerificationTypeInfo.LONG;
+                case 'F' -> SimpleVerificationTypeInfo.FLOAT;
+                case 'D' -> SimpleVerificationTypeInfo.DOUBLE;
                 case 'V' -> throw new IllegalArgumentException("Illegal method argument type: " + arg);
                 default -> new StackMapDecoder.ObjectVerificationTypeInfoImpl(TemporaryConstantPool.INSTANCE.classEntry(arg));
             };
@@ -134,8 +135,7 @@ public class StackMapDecoder {
                 if (diffLocalsSize == 0 && offsetDelta < 64) { //same frame
                     out.writeU1(offsetDelta);
                 } else {   //chop, same extended or append frame
-                    out.writeU1(251 + diffLocalsSize);
-                    out.writeU2(offsetDelta);
+                    out.writeU1U2(251 + diffLocalsSize, offsetDelta);
                     for (int i=commonLocalsSize; i<fr.locals().size(); i++) writeTypeInfo(out, fr.locals().get(i));
                 }
                 return;
@@ -144,16 +144,13 @@ public class StackMapDecoder {
             if (offsetDelta < 64) {  //same locals 1 stack item frame
                 out.writeU1(64 + offsetDelta);
             } else {  //same locals 1 stack item extended frame
-                out.writeU1(247);
-                out.writeU2(offsetDelta);
+                out.writeU1U2(247, offsetDelta);
             }
             writeTypeInfo(out, fr.stack().get(0));
             return;
         }
         //full frame
-        out.writeU1(255);
-        out.writeU2(offsetDelta);
-        out.writeU2(fr.locals().size());
+        out.writeU1U2U2(255, offsetDelta, fr.locals().size());
         for (var l : fr.locals()) writeTypeInfo(out, l);
         out.writeU2(fr.stack().size());
         for (var s : fr.stack()) writeTypeInfo(out, s);
@@ -167,14 +164,15 @@ public class StackMapDecoder {
     }
 
     private static void writeTypeInfo(BufWriterImpl bw, VerificationTypeInfo vti) {
-        bw.writeU1(vti.tag());
-        switch (vti.tag()) {
-            case VT_TOP, VT_INTEGER, VT_FLOAT, VT_DOUBLE, VT_LONG, VT_NULL, VT_UNINITIALIZED_THIS ->
-                {}
-            case VT_OBJECT ->
-                bw.writeIndex(((ObjectVerificationTypeInfo)vti).className());
-            case VT_UNINITIALIZED ->
-                bw.writeU2(bw.labelContext().labelToBci(((UninitializedVerificationTypeInfo)vti).newTarget()));
+        int tag = vti.tag();
+        switch (tag) {
+            case ITEM_TOP, ITEM_INTEGER, ITEM_FLOAT, ITEM_DOUBLE, ITEM_LONG, ITEM_NULL,
+                 ITEM_UNINITIALIZED_THIS ->
+                bw.writeU1(tag);
+            case ITEM_OBJECT ->
+                bw.writeU1U2(tag, bw.cpIndex(((ObjectVerificationTypeInfo)vti).className()));
+            case ITEM_UNINITIALIZED ->
+                bw.writeU1U2(tag, bw.labelContext().labelToBci(((UninitializedVerificationTypeInfo)vti).newTarget()));
             default -> throw new IllegalArgumentException("Invalid verification type tag: " + vti.tag());
         }
     }
@@ -232,15 +230,15 @@ public class StackMapDecoder {
     private VerificationTypeInfo readVerificationTypeInfo() {
         int tag = classReader.readU1(p++);
         return switch (tag) {
-            case VT_TOP -> SimpleVerificationTypeInfo.ITEM_TOP;
-            case VT_INTEGER -> SimpleVerificationTypeInfo.ITEM_INTEGER;
-            case VT_FLOAT -> SimpleVerificationTypeInfo.ITEM_FLOAT;
-            case VT_DOUBLE -> SimpleVerificationTypeInfo.ITEM_DOUBLE;
-            case VT_LONG -> SimpleVerificationTypeInfo.ITEM_LONG;
-            case VT_NULL -> SimpleVerificationTypeInfo.ITEM_NULL;
-            case VT_UNINITIALIZED_THIS -> SimpleVerificationTypeInfo.ITEM_UNINITIALIZED_THIS;
-            case VT_OBJECT -> new ObjectVerificationTypeInfoImpl(classReader.entryByIndex(u2(), ClassEntry.class));
-            case VT_UNINITIALIZED -> new UninitializedVerificationTypeInfoImpl(ctx.getLabel(u2()));
+            case ITEM_TOP -> SimpleVerificationTypeInfo.TOP;
+            case ITEM_INTEGER -> SimpleVerificationTypeInfo.INTEGER;
+            case ITEM_FLOAT -> SimpleVerificationTypeInfo.FLOAT;
+            case ITEM_DOUBLE -> SimpleVerificationTypeInfo.DOUBLE;
+            case ITEM_LONG -> SimpleVerificationTypeInfo.LONG;
+            case ITEM_NULL -> SimpleVerificationTypeInfo.NULL;
+            case ITEM_UNINITIALIZED_THIS -> SimpleVerificationTypeInfo.UNINITIALIZED_THIS;
+            case ITEM_OBJECT -> new ObjectVerificationTypeInfoImpl(classReader.entryByIndex(u2(), ClassEntry.class));
+            case ITEM_UNINITIALIZED -> new UninitializedVerificationTypeInfoImpl(ctx.getLabel(u2()));
             default -> throw new IllegalArgumentException("Invalid verification type tag: " + tag);
         };
     }
@@ -249,7 +247,7 @@ public class StackMapDecoder {
             ClassEntry className) implements ObjectVerificationTypeInfo {
 
         @Override
-        public int tag() { return VT_OBJECT; }
+        public int tag() { return ITEM_OBJECT; }
 
         @Override
         public boolean equals(Object o) {
@@ -274,7 +272,7 @@ public class StackMapDecoder {
     public static record UninitializedVerificationTypeInfoImpl(Label newTarget) implements UninitializedVerificationTypeInfo {
 
         @Override
-        public int tag() { return VT_UNINITIALIZED; }
+        public int tag() { return ITEM_UNINITIALIZED; }
 
         @Override
         public String toString() {

@@ -31,9 +31,22 @@
 // constants required by the Serviceability Agent. This file is
 // referenced by vmStructs.cpp.
 
-#define VM_STRUCTS_OS(nonstatic_field, static_field, unchecked_nonstatic_field, volatile_nonstatic_field, nonproduct_nonstatic_field, c2_nonstatic_field, unchecked_c1_static_field, unchecked_c2_static_field)
+#define VM_STRUCTS_OS(nonstatic_field, static_field, unchecked_nonstatic_field, volatile_nonstatic_field, nonproduct_nonstatic_field, c2_nonstatic_field, unchecked_c1_static_field, unchecked_c2_static_field) \
+                                                                                                                                     \
+  /******************************/                                                                                                   \
+  /* Threads (NOTE: incomplete) */                                                                                                   \
+  /******************************/                                                                                                   \
+  nonstatic_field(OSThread,                      _thread_id,                                      pid_t)                             \
+  nonstatic_field(OSThread,                      _pthread_id,                                     pthread_t)
 
-#define VM_TYPES_OS(declare_type, declare_toplevel_type, declare_oop_type, declare_integer_type, declare_unsigned_integer_type, declare_c1_toplevel_type, declare_c2_type, declare_c2_toplevel_type)
+#define VM_TYPES_OS(declare_type, declare_toplevel_type, declare_oop_type, declare_integer_type, declare_unsigned_integer_type, declare_c1_toplevel_type, declare_c2_type, declare_c2_toplevel_type) \
+                                                                          \
+  /**********************/                                                \
+  /* Posix Thread IDs   */                                                \
+  /**********************/                                                \
+                                                                          \
+  declare_integer_type(pid_t)                                             \
+  declare_unsigned_integer_type(pthread_t)
 
 #define VM_INT_CONSTANTS_OS(declare_constant, declare_preprocessor_constant, declare_c1_constant, declare_c2_constant, declare_c2_preprocessor_constant)
 

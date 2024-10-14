@@ -503,7 +503,7 @@ final class Short128Vector extends ShortVector {
                                    VectorMask<Short> m) {
         return (Short128Vector)
             super.selectFromTemplate((Short128Vector) v,
-                                     (Short128Mask) m);  // specialize
+                                     Short128Mask.class, (Short128Mask) m);  // specialize
     }
 
 
@@ -842,6 +842,13 @@ final class Short128Vector extends ShortVector {
                 throw new IllegalArgumentException("VectorShuffle length and species length differ");
             int[] shuffleArray = toArray();
             return s.shuffleFromArray(shuffleArray, 0).check(s);
+        }
+
+        @Override
+        @ForceInline
+        public Short128Shuffle wrapIndexes() {
+            return VectorSupport.wrapShuffleIndexes(ETYPE, Short128Shuffle.class, this, VLENGTH,
+                                                    (s) -> ((Short128Shuffle)(((AbstractShuffle<Short>)(s)).wrapIndexesTemplate())));
         }
 
         @ForceInline

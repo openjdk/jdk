@@ -490,7 +490,7 @@ final class Double128Vector extends DoubleVector {
                                    VectorMask<Double> m) {
         return (Double128Vector)
             super.selectFromTemplate((Double128Vector) v,
-                                     (Double128Mask) m);  // specialize
+                                     Double128Mask.class, (Double128Mask) m);  // specialize
     }
 
 
@@ -819,6 +819,13 @@ final class Double128Vector extends DoubleVector {
                 throw new IllegalArgumentException("VectorShuffle length and species length differ");
             int[] shuffleArray = toArray();
             return s.shuffleFromArray(shuffleArray, 0).check(s);
+        }
+
+        @Override
+        @ForceInline
+        public Double128Shuffle wrapIndexes() {
+            return VectorSupport.wrapShuffleIndexes(ETYPE, Double128Shuffle.class, this, VLENGTH,
+                                                    (s) -> ((Double128Shuffle)(((AbstractShuffle<Double>)(s)).wrapIndexesTemplate())));
         }
 
         @ForceInline
