@@ -41,7 +41,6 @@ inline const char* shenandoah_affiliation_code(ShenandoahAffiliation type) {
       return "O";
     default:
       ShouldNotReachHere();
-      return "?";
   }
 }
 
@@ -55,7 +54,6 @@ inline const char* shenandoah_affiliation_name(ShenandoahAffiliation type) {
       return "OLD";
     default:
       ShouldNotReachHere();
-      return "?";
   }
 }
 

@@ -25,7 +25,6 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHMMUTRACKER_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHMMUTRACKER_HPP
 
-#include "runtime/mutex.hpp"
 #include "utilities/numberSeq.hpp"
 
 class ShenandoahGeneration;
