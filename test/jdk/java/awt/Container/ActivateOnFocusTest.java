@@ -50,25 +50,31 @@ public class ActivateOnFocusTest {
     static Point p;
 
     public static void main(String[] args) throws Exception {
-        EventQueue.invokeAndWait(() -> {
-            mf1 = new MyFrame();
-            mf1.setBounds(100, 100, 300, 300);
-            mf1.mc1.requestFocusInWindow();
-        });
+        try {
+            EventQueue.invokeAndWait(() -> {
+                mf1 = new MyFrame();
+                mf1.setBounds(100, 100, 300, 300);
+                mf1.mc1.requestFocusInWindow();
+            });
 
-        Robot robot = new Robot();
-        robot.waitForIdle();
-        EventQueue.invokeAndWait(() -> {
-            p = mf1.mb.getLocationOnScreen();
-        });
+            Robot robot = new Robot();
+            robot.waitForIdle();
+            EventQueue.invokeAndWait(() -> {
+                p = mf1.mb.getLocationOnScreen();
+            });
 
-        robot.waitForIdle();
+            robot.waitForIdle();
 
-        robot.mouseMove(p.x + 5, p.y + 5);
-        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-        robot.delay(250);
-        robot.waitForIdle();
+            robot.mouseMove(p.x + 5, p.y + 5);
+            robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+            robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+            robot.delay(250);
+            robot.waitForIdle();
+        } finally {
+            if (mf1 != null) {
+                EventQueue.invokeAndWait(mf1::dispose);
+            }
+        }
     }
 }
 

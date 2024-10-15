@@ -85,33 +85,39 @@ public class MouseEnteredTest extends JFrame implements ActionListener {
     }
 
     public static void main(String[] args) throws Exception {
-        EventQueue.invokeAndWait(() -> {
-            test = new MouseEnteredTest();
-        });
+        try {
+            EventQueue.invokeAndWait(() -> {
+                test = new MouseEnteredTest();
+            });
 
-        Robot robot = new Robot();
-        robot.setAutoWaitForIdle(true);
-        robot.waitForIdle();
-        robot.delay(250);
+            Robot robot = new Robot();
+            robot.setAutoWaitForIdle(true);
+            robot.waitForIdle();
+            robot.delay(250);
 
-        EventQueue.invokeAndWait(() -> {
-            p = m.getLocationOnScreen();
-            p2 = menu.getLocationOnScreen();
-        });
-        robot.waitForIdle();
-        robot.delay(250);
-        robot.mouseMove(p.x + 5, p.y + 10);
-        robot.waitForIdle();
+            EventQueue.invokeAndWait(() -> {
+                p = m.getLocationOnScreen();
+                p2 = menu.getLocationOnScreen();
+            });
+            robot.waitForIdle();
+            robot.delay(250);
+            robot.mouseMove(p.x + 5, p.y + 10);
+            robot.waitForIdle();
 
-        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-        for (int i = p.x; i < p2.x + 10; i = i + 2) {
-            robot.mouseMove(i, p2.y + 10);
-        }
-        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-        robot.delay(2000);
+            robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+            for (int i = p.x; i < p2.x + 10; i = i + 2) {
+                robot.mouseMove(i, p2.y + 10);
+            }
+            robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+            robot.delay(2000);
 
-        if (m.isPopupMenuVisible()) {
-            throw new RuntimeException("First menu is showing. Test Failed.");
+            if (m.isPopupMenuVisible()) {
+                throw new RuntimeException("First menu is showing. Test Failed.");
+            }
+        } finally {
+            if (test != null) {
+                EventQueue.invokeAndWait(test::dispose);
+            }
         }
     }
 
