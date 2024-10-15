@@ -404,7 +404,7 @@ uintx Klass::hash_secondary_supers(Array<Klass*>* secondaries, bool rewrite) {
       }
     }
     assert(i == secondaries->length(), "mismatch");
-    postcond((int)population_count(bitmap) <= secondaries->length());
+    postcond((int)population_count(bitmap) == secondaries->length());
 
     return bitmap;
   }
