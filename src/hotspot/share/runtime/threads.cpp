@@ -284,10 +284,12 @@ void Threads::possibly_parallel_threads_do(bool is_par, ThreadClosure* tc) {
 //     fields in, out, and err. Set up java signal handlers, OS-specific
 //     system settings, and thread group of the main thread.
 static void call_initPhase1(TRAPS) {
+  log_trace(init)("create_vm: System.initPhase1 (system configuration)");
   Klass* klass = vmClasses::System_klass();
   JavaValue result(T_VOID);
   JavaCalls::call_static(&result, klass, vmSymbols::initPhase1_name(),
                                          vmSymbols::void_method_signature(), CHECK);
+  log_trace(init)("create_vm: System.initPhase1 (done)");
 }
 
 // Phase 2. Module system initialization
@@ -302,6 +304,7 @@ static void call_initPhase1(TRAPS) {
 //
 //     After phase 2, The VM will begin search classes from -Xbootclasspath/a.
 static void call_initPhase2(TRAPS) {
+  log_trace(init)("create_vm: System.initPhase2 (modules)");
   TraceTime timer("Initialize module system", TRACETIME_LOG(Info, startuptime));
 
   Klass* klass = vmClasses::System_klass();
@@ -317,6 +320,7 @@ static void call_initPhase2(TRAPS) {
   }
 
   universe_post_module_init();
+  log_trace(init)("create_vm: System.initPhase2 (done)");
 }
 
 // Phase 3. final setup - set security manager, system class loader and TCCL
@@ -326,13 +330,16 @@ static void call_initPhase2(TRAPS) {
 //     and system class loader may be a custom class loaded from -Xbootclasspath/a,
 //     other modules or the application's classpath.
 static void call_initPhase3(TRAPS) {
+  log_trace(init)("create_vm: System.initPhase3 (loaders)");
   Klass* klass = vmClasses::System_klass();
   JavaValue result(T_VOID);
   JavaCalls::call_static(&result, klass, vmSymbols::initPhase3_name(),
                                          vmSymbols::void_method_signature(), CHECK);
+  log_trace(init)("create_vm: System.initPhase3 (done)");
 }
 
 void Threads::initialize_java_lang_classes(JavaThread* main_thread, TRAPS) {
+  log_trace(init)("create_vm: java.lang classes");
   TraceTime timer("Initialize java.lang classes", TRACETIME_LOG(Info, startuptime));
 
   initialize_class(vmSymbols::java_lang_String(), CHECK);
@@ -397,15 +404,8 @@ void Threads::initialize_java_lang_classes(JavaThread* main_thread, TRAPS) {
   initialize_class(vmSymbols::java_lang_StackOverflowError(), CHECK);
   initialize_class(vmSymbols::java_lang_IllegalMonitorStateException(), CHECK);
   initialize_class(vmSymbols::java_lang_IllegalArgumentException(), CHECK);
-}
 
-void Threads::initialize_jsr292_core_classes(TRAPS) {
-  TraceTime timer("Initialize java.lang.invoke classes", TRACETIME_LOG(Info, startuptime));
-
-  initialize_class(vmSymbols::java_lang_invoke_MethodHandle(), CHECK);
-  initialize_class(vmSymbols::java_lang_invoke_ResolvedMethodName(), CHECK);
-  initialize_class(vmSymbols::java_lang_invoke_MemberName(), CHECK);
-  initialize_class(vmSymbols::java_lang_invoke_MethodHandleNatives(), CHECK);
+  log_trace(init)("create_vm: java.lang classes (done)");
 }
 
 jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
@@ -693,6 +693,20 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   // initialize compiler(s)
 #if defined(COMPILER1) || COMPILER2_OR_JVMCI
+  log_trace(init)("create_vm: compilers");
+  /* sample output from $ java -Xlog:init=trace::none
+     create_vm: java.lang classes
+     create_vm: System.initPhase1 (system configuration)
+     create_vm: System.initPhase1 (done)
+     create_vm: java.lang classes (done)
+     create_vm: compilers
+     create_vm: compilers (done)
+     create_vm: System.initPhase2 (modules)
+     create_vm: System.initPhase2 (done)
+     create_vm: System.initPhase3 (loaders)
+     create_vm: System.initPhase3 (done)
+     create_vm: all done
+   */
   bool init_compilation = true;
 #if INCLUDE_JVMCI
   bool force_JVMCI_initialization = false;
@@ -716,18 +730,13 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   if (init_compilation) {
     CompileBroker::compilation_init(CHECK_JNI_ERR);
   }
+  log_trace(init)("create_vm: compilers (done)");
 #endif
 
   // Start string deduplication thread if requested.
   if (StringDedup::is_enabled()) {
     StringDedup::start();
   }
-
-  // Pre-initialize some JSR292 core classes to avoid deadlock during class loading.
-  // It is done after compilers are initialized, because otherwise compilations of
-  // signature polymorphic MH intrinsics can be missed
-  // (see SystemDictionary::find_method_handle_intrinsic).
-  initialize_jsr292_core_classes(CHECK_JNI_ERR);
 
   // This will initialize the module system.  Only java.base classes can be
   // loaded until phase 2 completes
@@ -819,7 +828,9 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 #endif
 
   if (CDSConfig::is_dumping_static_archive()) {
+    log_trace(init)("create_vm: preload and dump");
     MetaspaceShared::preload_and_dump(CHECK_JNI_ERR);
+    log_trace(init)("create_vm: preload and dump (done)");
   }
 
   if (log_is_enabled(Info, perf, class, link)) {
@@ -828,6 +839,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
     ClassLoader::print_counters(&log);
   }
 
+  log_trace(init)("create_vm: all done");
   return JNI_OK;
 }
 

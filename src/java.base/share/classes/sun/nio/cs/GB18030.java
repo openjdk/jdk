@@ -48,7 +48,7 @@ public class GB18030
     // Assumes non-2000 standard if initialized during System.initPhase1(),
     // as the system property is not ready to be read in that case.
     static final boolean IS_2000 =
-        VM.initLevel() >= 1 &&
+        VM.initLevelReached(VM.JAVA_LANG_SYSTEM_INITED) &&
         "2000".equals(GetPropertyAction.privilegedGetProperty("jdk.charset.GB18030", ""));
 
     public GB18030() {

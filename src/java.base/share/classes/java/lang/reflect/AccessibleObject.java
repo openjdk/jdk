@@ -772,7 +772,7 @@ public class AccessibleObject implements AnnotatedElement {
      * Returns true if a stack trace should be printed when access fails.
      */
     private static boolean printStackTraceWhenAccessFails() {
-        if (!printStackPropertiesSet && VM.initLevel() >= 1) {
+        if (!printStackPropertiesSet && VM.initLevelReached(VM.JAVA_LANG_SYSTEM_INITED)) {
             String s = GetPropertyAction.privilegedGetProperty(
                     "sun.reflect.debugModuleAccessChecks");
             if (s != null) {

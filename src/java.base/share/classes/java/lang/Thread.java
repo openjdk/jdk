@@ -721,7 +721,7 @@ public class Thread implements Runnable {
             this.holder = new FieldHolder(g, task, stackSize, priority, parent.isDaemon());
         }
 
-        if (attached && VM.initLevel() < 1) {
+        if (attached && !VM.initLevelReached(VM.JAVA_LANG_SYSTEM_INITED)) {
             this.tid = 1;  // primordial thread
         } else {
             this.tid = ThreadIdentifiers.next();

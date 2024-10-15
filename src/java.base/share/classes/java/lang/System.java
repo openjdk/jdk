@@ -2114,7 +2114,7 @@ public final class System {
                                          boolean printStackTrace,
                                          String msg,
                                          Throwable e) {
-        if (VM.initLevel() < 1) {
+        if (!VM.initLevelReached(VM.JAVA_LANG_SYSTEM_INITED)) {
             throw new InternalError("system classes not initialized");
         }
         PrintStream log = (printToStderr) ? err : out;
@@ -2226,7 +2226,23 @@ public final class System {
         SharedSecrets.getJavaLangRefAccess().startThreads();
 
         // system properties, java.lang and other core classes are now initialized
-        VM.initLevel(1);
+        VM.initLevel(VM.JAVA_LANG_SYSTEM_INITED);
+
+        try {
+            initJSR292Classes();
+        } catch (Throwable ex) {
+            throw new InternalError(ex);
+        }
+        VM.initLevel(VM.JAVA_LANG_INVOKE_INITED);
+    }
+
+    // do phase1 initializations specific to JSR 292 APIs
+    private static void initJSR292Classes() throws Throwable {
+        var mh = java.lang.invoke.MethodHandles.identity(int.class);
+        int z = 0;
+        z |= (int) mh.invokeExact(z);
+        z |= (Integer) mh.invoke((Object)0);
+        if (z != 0)  throw new AssertionError();
     }
 
     /**
@@ -2330,7 +2346,7 @@ public final class System {
         }
 
         // module system initialized
-        VM.initLevel(2);
+        VM.initLevel(VM.MODULE_SYSTEM_INITED);
 
         return 0; // JNI_OK
     }
@@ -2419,7 +2435,7 @@ public final class System {
         }
 
         // initializing the system class loader
-        VM.initLevel(3);
+        VM.initLevel(VM.SYSTEM_LOADER_INITIALIZING);
 
         // system class loader initialized
         ClassLoader scl = ClassLoader.initSystemClassLoader();
@@ -2428,7 +2444,7 @@ public final class System {
         Thread.currentThread().setContextClassLoader(scl);
 
         // system is fully initialized
-        VM.initLevel(4);
+        VM.initLevel(VM.SYSTEM_BOOTED);
     }
 
     private static void setJavaLangAccess() {

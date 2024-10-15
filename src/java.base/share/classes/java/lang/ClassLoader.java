@@ -1941,25 +1941,21 @@ public abstract class ClassLoader {
      */
     @CallerSensitive
     public static ClassLoader getSystemClassLoader() {
-        switch (VM.initLevel()) {
-            case 0:
-            case 1:
-            case 2:
-                // the system class loader is the built-in app class loader during startup
-                return getBuiltinAppClassLoader();
-            case 3:
-                String msg = "getSystemClassLoader cannot be called during the system class loader instantiation";
-                throw new IllegalStateException(msg);
-            default:
-                // system fully initialized
-                assert VM.isBooted() && scl != null;
-                @SuppressWarnings("removal")
-                SecurityManager sm = System.getSecurityManager();
-                if (sm != null) {
-                    checkClassLoaderPermission(scl, Reflection.getCallerClass());
-                }
-                return scl;
+        if (!VM.initLevelReached(VM.SYSTEM_LOADER_INITIALIZING)) {
+            // the system class loader is the built-in app class loader during startup
+            return getBuiltinAppClassLoader();
+        } else if (!VM.isBooted()) {
+            String msg = "getSystemClassLoader cannot be called during the system class loader instantiation";
+            throw new IllegalStateException(msg);
         }
+        // system fully initialized
+        assert scl != null;
+        @SuppressWarnings("removal")
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            checkClassLoaderPermission(scl, Reflection.getCallerClass());
+        }
+        return scl;
     }
 
     static ClassLoader getBuiltinPlatformClassLoader() {
@@ -1977,7 +1973,7 @@ public abstract class ClassLoader {
      * @see java.lang.System#initPhase3
      */
     static synchronized ClassLoader initSystemClassLoader() {
-        if (VM.initLevel() != 3) {
+        if (VM.initLevel() != VM.SYSTEM_LOADER_INITIALIZING) {
             throw new InternalError("system class loader cannot be set at initLevel " +
                                     VM.initLevel());
         }
