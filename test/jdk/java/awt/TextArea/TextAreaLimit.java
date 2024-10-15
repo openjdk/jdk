@@ -29,7 +29,7 @@ import java.awt.TextArea;
  * @test
  * @bug 4341196
  * @summary Tests that TextArea can handle more than 64K of text
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual TextAreaLimit
  */
@@ -65,6 +65,6 @@ public class TextAreaLimit extends Frame {
         text.setText(buf.toString());
         text.setCaretPosition(buf.length());
         text.requestFocus();
-        setSize(200,200);
+        setSize(200, 200);
     }
 }

@@ -28,7 +28,7 @@ import java.awt.TextArea;
  * @test
  * @bug 4118915
  * @summary Test appending to a TextArea after the peer is created
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual TextAreaAppendTest
  */

@@ -29,7 +29,7 @@ import java.awt.TextArea;
  * @test
  * @bug 6192116
  * @summary Auto-scrolling does not work properly for TextArea when appending some text, on XToolkit
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual TextAreaAppendScrollTest2
  */
@@ -53,7 +53,7 @@ public class TextAreaAppendScrollTest2 extends Frame {
     }
 
     public TextAreaAppendScrollTest2() {
-        this.setLayout(new BorderLayout());
+        setLayout(new BorderLayout());
         area = new TextArea("AWT is cool ", 3, 3, TextArea.SCROLLBARS_NONE);
         add("Center", area);
         setSize(200, 200);

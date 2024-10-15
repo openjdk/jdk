@@ -35,7 +35,7 @@ import java.awt.event.ActionListener;
  * @test
  * @bug 4800187
  * @summary REGRESSION:show the wrong selection when there are \r characters in the text
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual TextAreaCRLFAutoDetectManualTest
  */
