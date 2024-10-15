@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 
 Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
@@ -1255,7 +1255,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="phonebook">porządek sortowania książki telefonicznej</type>
 			<type key="collation" type="phonetic">sortowanie fonetyczne</type>
 			<type key="collation" type="pinyin">porządek sortowania pinyin</type>
-			<type key="collation" type="reformed">sortowanie zreformowane</type>
 			<type key="collation" type="search">wyszukiwanie ogólnego zastosowania</type>
 			<type key="collation" type="searchjl" draft="contributed">Wyszukiwanie według początkowej spółgłoski hangul</type>
 			<type key="collation" type="standard">standardowa kolejność sortowania</type>
@@ -2662,9 +2661,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<regionFormat>czas: {0}</regionFormat>
 			<regionFormat type="daylight">{0} (czas letni)</regionFormat>
 			<regionFormat type="standard">{0} (czas standardowy)</regionFormat>
-			<zone type="America/Santa_Isabel">
-				<exemplarCity>Santa Isabel</exemplarCity>
-			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>uniwersalny czas koordynowany</standard>
@@ -2693,9 +2689,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Europe/Vienna">
 				<exemplarCity>Wiedeń</exemplarCity>
-			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity>Currie</exemplarCity>
 			</zone>
 			<zone type="Europe/Mariehamn">
 				<exemplarCity>Maarianhamina</exemplarCity>
@@ -3194,17 +3187,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Asia/Taipei">
 				<exemplarCity>Tajpej</exemplarCity>
 			</zone>
-			<zone type="Europe/Uzhgorod">
-				<exemplarCity>Użgorod</exemplarCity>
-			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>Kijów</exemplarCity>
 			</zone>
 			<zone type="Europe/Simferopol">
 				<exemplarCity>Symferopol</exemplarCity>
-			</zone>
-			<zone type="Europe/Zaporozhye">
-				<exemplarCity>Zaporoże</exemplarCity>
 			</zone>
 			<zone type="Pacific/Honolulu">
 				<exemplarCity>Honolulu</exemplarCity>
@@ -3798,11 +3785,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>Lord Howe (czas letni)</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>czas Macquarie</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>czas Magadan</generic>
@@ -3840,13 +3822,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Mawson">
 				<long>
 					<standard>czas Mawson</standard>
-				</long>
-			</metazone>
-			<metazone type="Mexico_Northwest">
-				<long>
-					<generic>czas Meksyk Północno-Zachodni</generic>
-					<standard>Meksyk Północno-Zachodni (czas standardowy)</standard>
-					<daylight>Meksyk Północno-Zachodni (czas letni)</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">

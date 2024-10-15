@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -135,15 +135,7 @@ void InterpreterMacroAssembler::check_and_handle_popframe(Register scratch_reg) 
     // Call the Interpreter::remove_activation_preserving_args_entry()
     // func to get the address of the same-named entrypoint in the
     // generated interpreter code.
-#if defined(ABI_ELFv2)
-    call_c(CAST_FROM_FN_PTR(address,
-                            Interpreter::remove_activation_preserving_args_entry),
-           relocInfo::none);
-#else
-    call_c(CAST_FROM_FN_PTR(FunctionDescriptor*,
-                            Interpreter::remove_activation_preserving_args_entry),
-           relocInfo::none);
-#endif
+    call_c(CAST_FROM_FN_PTR(address, Interpreter::remove_activation_preserving_args_entry));
 
     // Jump to Interpreter::_remove_activation_preserving_args_entry.
     mtctr(R3_RET);
@@ -444,8 +436,6 @@ void InterpreterMacroAssembler::get_cache_index_at_bcp(Register Rdst, int bcp_of
     } else {
       lwa(Rdst, bcp_offset, R14_bcp);
     }
-    assert(ConstantPool::decode_invokedynamic_index(~123) == 123, "else change next line");
-    nand(Rdst, Rdst, Rdst); // convert to plain index
   } else if (index_size == sizeof(u1)) {
     lbz(Rdst, bcp_offset, R14_bcp);
   } else {
@@ -970,20 +960,19 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
 
     // markWord displaced_header = obj->mark().set_unlocked();
 
-    // Load markWord from object into header.
-    ld(header, oopDesc::mark_offset_in_bytes(), object);
-
     if (DiagnoseSyncOnValueBasedClasses != 0) {
       load_klass(tmp, object);
-      lwz(tmp, in_bytes(Klass::access_flags_offset()), tmp);
-      testbitdi(CCR0, R0, tmp, exact_log2(JVM_ACC_IS_VALUE_BASED_CLASS));
+      lbz(tmp, in_bytes(Klass::misc_flags_offset()), tmp);
+      testbitdi(CCR0, R0, tmp, exact_log2(KlassFlags::_misc_is_value_based_class));
       bne(CCR0, slow_case);
     }
 
     if (LockingMode == LM_LIGHTWEIGHT) {
-      lightweight_lock(object, /* mark word */ header, tmp, slow_case);
+      lightweight_lock(monitor, object, header, tmp, slow_case);
       b(count_locking);
     } else if (LockingMode == LM_LEGACY) {
+      // Load markWord from object into header.
+      ld(header, oopDesc::mark_offset_in_bytes(), object);
 
       // Set displaced_header to be (markWord of object | UNLOCK_VALUE).
       ori(header, header, markWord::unlocked_value);
@@ -1046,11 +1035,7 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
     // None of the above fast optimizations worked so we have to get into the
     // slow case of monitor enter.
     bind(slow_case);
-    if (LockingMode == LM_LIGHTWEIGHT) {
-      call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter_obj), object);
-    } else {
-      call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter), monitor);
-    }
+    call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter), monitor);
     b(done);
     // }
     align(32, 12);
@@ -1115,22 +1100,6 @@ void InterpreterMacroAssembler::unlock_object(Register monitor) {
     ld(object, in_bytes(BasicObjectLock::obj_offset()), monitor);
 
     if (LockingMode == LM_LIGHTWEIGHT) {
-      // Check for non-symmetric locking. This is allowed by the spec and the interpreter
-      // must handle it.
-      Register tmp = current_header;
-      // First check for lock-stack underflow.
-      lwz(tmp, in_bytes(JavaThread::lock_stack_top_offset()), R16_thread);
-      cmplwi(CCR0, tmp, (unsigned)LockStack::start_offset());
-      ble(CCR0, slow_case);
-      // Then check if the top of the lock-stack matches the unlocked object.
-      addi(tmp, tmp, -oopSize);
-      ldx(tmp, tmp, R16_thread);
-      cmpd(CCR0, tmp, object);
-      bne(CCR0, slow_case);
-
-      ld(header, oopDesc::mark_offset_in_bytes(), object);
-      andi_(R0, header, markWord::monitor_value);
-      bne(CCR0, slow_case);
       lightweight_unlock(object, header, slow_case);
     } else {
       addi(object_mark_addr, object, oopDesc::mark_offset_in_bytes());

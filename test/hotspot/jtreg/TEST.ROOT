@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,8 @@
 # randomness:           test uses randomness, test cases differ from run to run
 # cgroups:              test uses cgroups
 # flag-sensitive:       test is sensitive to certain flags and might fail when flags are passed using -vmoptions and -javaoptions
-keys=stress headful intermittent randomness cgroups flag-sensitive
+# external-dep:         test requires external dependencies to work
+keys=stress headful intermittent randomness cgroups flag-sensitive external-dep
 
 groups=TEST.groups TEST.quick-groups
 
@@ -80,16 +81,17 @@ requires.properties= \
     vm.jvmti \
     vm.graal.enabled \
     jdk.hasLibgraal \
-    vm.libgraal.enabled \
+    vm.libgraal.jit \
     vm.compiler1.enabled \
     vm.compiler2.enabled \
     vm.musl \
     vm.flagless \
-    docker.support \
+    container.support \
+    systemd.support \
     jdk.containerized
 
 # Minimum jtreg version
-requiredVersion=7.3.1+1
+requiredVersion=7.4+1
 
 # Path to libraries in the topmost test directory. This is needed so @library
 # does not need ../../../ notation to reach them

@@ -29,6 +29,7 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Map.Entry;
 import java.util.Map;
@@ -39,6 +40,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -72,9 +75,16 @@ import static com.sun.tools.javac.tree.JCTree.Tag.*;
  * Looks for possible 'this' escapes and generates corresponding warnings.
  *
  * <p>
- * A 'this' escape is when a constructor invokes a method that could be overridden in a
- * subclass, in which case the method will execute before the subclass constructor has
- * finished initializing the instance.
+ * A 'this' escape occurs in the following scenario:
+ * <ul>
+ *  <li>There is some class {@code A} and some subclass {@code B} that extends it
+ *  <li>{@code A} defines an instance method {@code m()} which is overridden in {@code B}
+ *  <li>Some constructor {@code B()} invokes some superclass constructor {@code A()}
+ *  <li>At some point during the execution of {@code A()}, method {@code m()} is invoked and the
+ *      reciever for the instance method is the new instance being constructed by {@code B()}
+ * </ul>
+ * This represents a problem because the method {@code B.m()} will execute before the constructor
+ * {@code B()} has performed any of its own initialization.
  *
  * <p>
  * This class attempts to identify possible 'this' escapes while also striking a balance
@@ -83,34 +93,41 @@ import static com.sun.tools.javac.tree.JCTree.Tag.*;
  * If it passes to code outside of the current module, we declare a possible leak.
  *
  * <p>
- * As we analyze constructors and the methods they invoke, we track the various things in scope
- * that could possibly reference the 'this' instance we are following. Such references are
- * represented by {@link Ref} instances, of which there are these varieties:
+ * As we analyze constructors and the methods they invoke, we track the various object references that
+ * might reference the 'this' instance we are watching (i.e., the one under construction). Such object
+ * references are represented by the {@link Ref} class hierarchy, which models the various ways in which,
+ * at any point during the execution of a constructor or some other method or constructor that it invokes,
+ * there can live references to the object under construction lying around. In a nutshell, the analyzer
+ * keeps track of these references and watches what happens to them as the code executes so it can catch
+ * them in the act of trying to "escape".
+ *
+ * <p>
+ * The {@link Ref} sub-types are:
  * <ul>
- *  <li>The current 'this' reference; see {@link ThisRef}
- *  <li>The current outer 'this' reference; see {@link OuterRef}
- *  <li>Local variables and method parameters; see {@link VarRef}
- *  <li>The current expression being evaluated, i.e.,what's on top of the Java stack; see {@link ExprRef}
- *  <li>The current switch expressions's yield value; see {@link YieldRef}
- *  <li>The current method's return value; see {@link ReturnRef}
+ *  <li>{@link ThisRef} - The current 'this' instance of the (instance) method being analyzed
+ *  <li>{@link ExprRef} - The current expression being evaluated, i.e., what's on top of the Java stack
+ *  <li>{@link VarRef} - Local variables and method parameters currently in scope
+ *  <li>{@link YieldRef} - The current switch expression's yield value(s)
+ *  <li>{@link ReturnRef} - The current method's return value(s)
  * </ul>
  *
  * <p>
- * For each type of reference, we distinguish between <i>direct</i> and <i>indirect</i> references.
- * A direct reference means the reference directly refers to the 'this' instance we are tracking.
- * An indirect reference means the reference refers to the 'this' instance we are tracking through
- * at least one level of indirection.
+ * Currently we don't attempt to explicitly track references stored in fields (for future study).
  *
  * <p>
- * Currently we do not attempt to explicitly track references stored in fields (for future study).
+ * For each object reference represented by a {@link Ref}, we track up to three distinct ways in which
+ * it might refer to the new 'this' instance: the reference can be direct, indirect, or via an associated
+ * enclosing instance (see {@link Indirection}).
  *
  * <p>
  * A few notes on this implementation:
  * <ul>
- *  <li>We "execute" constructors and track where the 'this' reference goes as the constructor executes.
- *  <li>We use a very simplified flow analysis that you might call a "flood analysis", where the union
- *      of every possible code branch is taken.
- *  <li>A "leak" is defined as the possible passing of a subclassed 'this' reference to code defined
+ *  <li>We "execute" constructors and track how the {@link Ref}'s evolve as the constructor executes.
+ *  <li>We use a simplified "flooding" flow analysis where every possible code branch is taken and
+ *      we take the union of the resulting {@link Ref}'s that are generated.
+ *  <li>Loops are repeated until the set of {@link Ref}'s stabilizes; the maximum number of iterations
+ *      possible is proportional to the number of variables in scope.
+ *  <li>An "escape" is defined as the possible passing of a subclassed 'this' reference to code defined
  *      outside of the current module.
  *  <ul>
  *      <li>In other words, we don't try to protect the current module's code from itself.
@@ -131,10 +148,15 @@ class ThisEscapeAnalyzer extends TreeScanner {
     private final Names names;
     private final Symtab syms;
     private final Types types;
+    private final Resolve rs;
     private final Log log;
     private       Lint lint;
 
 // These fields are scoped to the entire compilation unit
+
+    /** Environment for symbol lookup.
+     */
+    private Env<AttrContext> attrEnv;
 
     /** Maps symbols of all methods to their corresponding declarations.
      */
@@ -143,6 +165,10 @@ class ThisEscapeAnalyzer extends TreeScanner {
     /** Contains symbols of fields and constructors that have warnings suppressed.
      */
     private final Set<Symbol> suppressed = new HashSet<>();
+
+    /** Contains classes whose outer instance (if any) is non-public.
+     */
+    private final Set<ClassSymbol> nonPublicOuters = new HashSet<>();
 
     /** The declaring class of the constructor we're currently analyzing.
      *  This is the 'this' type we're trying to detect leaks of.
@@ -189,10 +215,11 @@ class ThisEscapeAnalyzer extends TreeScanner {
 
 // Constructor
 
-    ThisEscapeAnalyzer(Names names, Symtab syms, Types types, Log log, Lint lint) {
+    ThisEscapeAnalyzer(Names names, Symtab syms, Types types, Resolve rs, Log log, Lint lint) {
         this.names = names;
         this.syms = syms;
         this.types = types;
+        this.rs = rs;
         this.log = log;
         this.lint = lint;
     }
@@ -221,19 +248,10 @@ class ThisEscapeAnalyzer extends TreeScanner {
                             .collect(Collectors.toSet()))
             .orElse(null);
 
-        // Build a set of symbols for classes declared in this file
-        final Set<Symbol> classSyms = new HashSet<>();
-        new TreeScanner() {
-            @Override
-            public void visitClassDef(JCClassDecl tree) {
-                classSyms.add(tree.sym);
-                super.visitClassDef(tree);
-            }
-        }.scan(env.tree);
-
         // Build a mapping from symbols of methods to their declarations.
         // Classify all ctors and methods as analyzable and/or invokable.
         // Track which constructors and fields have warnings suppressed.
+        // Record classes whose outer instance (if any) is non-public.
         new TreeScanner() {
 
             private Lint lint = ThisEscapeAnalyzer.this.lint;
@@ -248,8 +266,12 @@ class ThisEscapeAnalyzer extends TreeScanner {
                 lint = lint.augment(tree.sym);
                 try {
                     currentClass = tree;
+
+                    // Track which clases have non-public outer instances
                     nonPublicOuter |= tree.sym.isAnonymous();
                     nonPublicOuter |= (tree.mods.flags & Flags.PUBLIC) == 0;
+                    if (nonPublicOuter)
+                        nonPublicOuters.add(currentClass.sym);
 
                     // Recurse
                     super.visitClassDef(tree);
@@ -335,7 +357,7 @@ class ThisEscapeAnalyzer extends TreeScanner {
 
                 // Handle field initializers
                 if (defs.head instanceof JCVariableDecl vardef) {
-                    visitTopLevel(klass, () -> {
+                    visitTopLevel(env, klass, () -> {
                         scan(vardef);
                         copyPendingWarning();
                     });
@@ -344,7 +366,7 @@ class ThisEscapeAnalyzer extends TreeScanner {
 
                 // Handle initialization blocks
                 if (defs.head instanceof JCBlock block) {
-                    visitTopLevel(klass, () -> analyzeStatements(block.stats));
+                    visitTopLevel(env, klass, () -> analyzeStatements(block.stats));
                     continue;
                 }
             }
@@ -354,7 +376,7 @@ class ThisEscapeAnalyzer extends TreeScanner {
         methodMap.values().stream()
                 .filter(MethodInfo::analyzable)
                 .forEach(methodInfo -> {
-            visitTopLevel(methodInfo.declaringClass(),
+            visitTopLevel(env, methodInfo.declaringClass(),
                 () -> analyzeStatements(methodInfo.declaration().body.stats));
         });
 
@@ -480,15 +502,19 @@ class ThisEscapeAnalyzer extends TreeScanner {
 
     @Override
     public void visitVarDef(JCVariableDecl tree) {
+        visitVarDef(tree.sym, tree.init);
+    }
+
+    private void visitVarDef(VarSymbol sym, JCExpression expr) {
 
         // Skip if ignoring warnings for this field
-        if (suppressed.contains(tree.sym))
+        if (suppressed.contains(sym))
             return;
 
         // Scan initializer, if any
-        scan(tree.init);
-        if (isParamOrVar(tree.sym))
-            refs.replaceExprs(depth, direct -> new VarRef(tree.sym, direct));
+        scan(expr);
+        if (isParamOrVar(sym))
+            refs.replaceExprs(depth, ref -> new VarRef(sym, ref));
         else
             refs.discardExprs(depth);           // we don't track fields yet
     }
@@ -508,19 +534,15 @@ class ThisEscapeAnalyzer extends TreeScanner {
         // Get method symbol
         Symbol sym = TreeInfo.symbolFor(invoke.meth);
 
-        // Recurse on method expression
+        // Recurse on method expression and gather references from the method itself (if non-static)
         scan(invoke.meth);
-        boolean direct = refs.remove(ExprRef.direct(depth));
-        boolean indirect = refs.remove(ExprRef.indirect(depth));
-
-        // Determine if method receiver represents a possible reference
         RefSet<ThisRef> receiverRefs = RefSet.newEmpty();
         if (sym != null && !sym.isStatic()) {
-            if (direct)
-                receiverRefs.add(ThisRef.direct());
-            if (indirect)
-                receiverRefs.add(ThisRef.indirect());
-        }
+            refs.removeExprs(depth)
+              .map(ThisRef::new)
+              .forEach(receiverRefs::add);
+        } else
+            refs.discardExprs(depth);
 
         // If "super()": ignore - we don't try to track into superclasses
         if (TreeInfo.name(invoke.meth) == names._super)
@@ -530,7 +552,7 @@ class ThisEscapeAnalyzer extends TreeScanner {
         invoke(invoke, sym, invoke.args, receiverRefs);
     }
 
-    private void invoke(JCTree site, Symbol sym, List<JCExpression> args, RefSet<?> receiverRefs) {
+    private void invoke(JCTree site, Symbol sym, List<JCExpression> args, RefSet<ThisRef> receiverRefs) {
 
         // Skip if ignoring warnings for a constructor invoked via 'this()'
         if (suppressed.contains(sym))
@@ -544,17 +566,51 @@ class ThisEscapeAnalyzer extends TreeScanner {
             return;
         }
 
-        // Analyze method if possible, otherwise assume nothing
+        // See if this method is known because it's declared somewhere in our file
         MethodInfo methodInfo = methodMap.get(sym);
+
+        // If the method is not matched exactly, look a little harder. This especially helps
+        // with anonymous interface classes, where the method symbols won't match.
+        //
+        // For example:
+        //
+        //  public Leaker() {
+        //      Runnable r = new Runnable() {
+        //          public void run() {
+        //              Leaker.this.mightLeak();
+        //          }
+        //      };
+        //      r.run();    // "r" has type Runnable, but we know it's really a Leaker$1
+        //  }
+        //
+        if (methodInfo == null && receiverRefs.size() == 1) {
+            ThisRef receiverRef = receiverRefs.iterator().next();
+            methodInfo = methodMap.values().stream()
+              .filter(info -> isTargetMethod(info, sym, receiverRef.tsym))
+              .findFirst()
+              .orElse(null);
+        }
+
+        // Analyze method if possible, otherwise assume nothing
         if (methodInfo != null && methodInfo.invokable())
             invokeInvokable(site, args, receiverRefs, methodInfo);
         else
             invokeUnknown(site, args, receiverRefs);
     }
 
+    // Can we conclude that "info" represents the actual method invoked?
+    private boolean isTargetMethod(MethodInfo info, Symbol method, TypeSymbol receiverType) {
+        return method.kind == MTH &&                                            // not an error symbol, etc.
+          info.declaration.name == method.name &&                               // method name matches
+          info.declaringClass.sym == receiverType &&                            // same class as receiver
+          !info.declaration.sym.isConstructor() &&                              // not a constructor
+          (info.declaration.sym.flags() & Flags.STATIC) == 0 &&                 // not a static method
+          info.declaration.sym.overrides(method, receiverType, types, false);   // method overrides
+    }
+
     // Handle the invocation of a local analyzable method or constructor
     private void invokeInvokable(JCTree site, List<JCExpression> args,
-        RefSet<?> receiverRefs, MethodInfo methodInfo) {
+            RefSet<ThisRef> receiverRefs, MethodInfo methodInfo) {
         Assert.check(methodInfo.invokable());
 
         // Collect 'this' references found in method parameters
@@ -564,7 +620,9 @@ class ThisEscapeAnalyzer extends TreeScanner {
         while (args.nonEmpty() && params.nonEmpty()) {
             VarSymbol sym = params.head.sym;
             scan(args.head);
-            refs.removeExprs(depth, direct -> paramRefs.add(new VarRef(sym, direct)));
+            refs.removeExprs(depth)
+              .map(ref -> new VarRef(sym, ref))
+              .forEach(paramRefs::add);
             args = args.tail;
             params = params.tail;
         }
@@ -601,8 +659,17 @@ class ThisEscapeAnalyzer extends TreeScanner {
                 invocations.remove(invocation);
             }
 
-            // "Return" any references from method return value
-            refs.mapInto(refsPrev, ReturnRef.class, direct -> new ExprRef(depthPrev, direct));
+            // Constructors "return" their new instances
+            if (TreeInfo.isConstructor(methodInfo.declaration)) {
+                refs.remove(ThisRef.class)
+                  .map(ReturnRef::new)
+                  .forEach(refs::add);
+            }
+
+            // "Return" any references from method return statements
+            refs.remove(ReturnRef.class)
+              .map(ref -> new ExprRef(depthPrev, ref))
+              .forEach(refsPrev::add);
         } finally {
             callStack.pop();
             depth = depthPrev;
@@ -611,19 +678,33 @@ class ThisEscapeAnalyzer extends TreeScanner {
         }
     }
 
-    // Handle invocation of an unknown or overridable method or constructor
-    private void invokeUnknown(JCTree invoke, List<JCExpression> args, RefSet<?> receiverRefs) {
+    // Handle invocation of an unknown or overridable method or constructor.
+    private void invokeUnknown(JCTree invoke, List<JCExpression> args, RefSet<ThisRef> receiverRefs) {
 
         // Detect leak via receiver
-        if (!receiverRefs.isEmpty())
+        if (receiverRefs.stream().anyMatch(this::triggersUnknownInvokeLeak))
             leakAt(invoke);
 
-        // Detect leaks via method parameters
+        // Detect leaks via method parameters (except via non-public outer instance)
         for (JCExpression arg : args) {
             scan(arg);
-            if (refs.discardExprs(depth))
+            if (refs.removeExprs(depth).anyMatch(this::triggersUnknownInvokeLeak))
                 leakAt(arg);
         }
+
+        // Constructors "return" their new instance, so we should return the receiver refs
+        if (invoke.hasTag(NEWCLASS)) {
+            receiverRefs.stream()
+              .map(ref -> new ExprRef(depth, ref))
+              .forEach(refs::add);
+        }
+    }
+
+    // Determine if a reference should qualify as a leak if it's passed to an unknown method.
+    // To avoid false positives, we exclude references from non-public outer instances.
+    private boolean triggersUnknownInvokeLeak(Ref ref) {
+        return !nonPublicOuters.contains(ref.tsym) ||
+          ref.indirections.stream().anyMatch(i -> i != Indirection.OUTER);
     }
 
 //
@@ -633,22 +714,47 @@ class ThisEscapeAnalyzer extends TreeScanner {
     @Override
     public void visitNewClass(JCNewClass tree) {
         MethodInfo methodInfo = methodMap.get(tree.constructor);
+        TypeSymbol tsym = tree.def != null ? tree.def.sym : tree.clazz.type.tsym;
+
+        // Gather 'this' reference that the new instance itself will have
+        RefSet<ThisRef> receiverRefs = receiverRefsForConstructor(tree.encl, tsym);
+
+        // "Invoke" the constructor
         if (methodInfo != null && methodInfo.invokable())
-            invokeInvokable(tree, tree.args, outerThisRefs(tree.encl, tree.clazz.type), methodInfo);
+            invokeInvokable(tree, tree.args, receiverRefs, methodInfo);
         else
-            invokeUnknown(tree, tree.args, outerThisRefs(tree.encl, tree.clazz.type));
+            invokeUnknown(tree, tree.args, receiverRefs);
     }
 
-    // Determine 'this' references passed to a constructor via the outer 'this' instance
-    private RefSet<OuterRef> outerThisRefs(JCExpression explicitOuterThis, Type type) {
-        RefSet<OuterRef> outerRefs = RefSet.newEmpty();
+    // Determine the references a constructor will inherit from its outer 'this' instance, if any
+    private RefSet<ThisRef> receiverRefsForConstructor(JCExpression explicitOuterThis, TypeSymbol tsym) {
+
+        // Create references based on explicit outer instance, if any
         if (explicitOuterThis != null) {
             scan(explicitOuterThis);
-            refs.removeExprs(depth, direct -> outerRefs.add(new OuterRef(direct)));
-        } else if (type.tsym != methodClass.sym && type.tsym.isEnclosedBy(methodClass.sym)) {
-            refs.mapInto(outerRefs, ThisRef.class, OuterRef::new);
+            return refs.removeExprs(depth)
+              .map(ref -> ref.toOuter(explicitOuterThis.type.tsym))
+              .flatMap(Optional::stream)
+              .collect(RefSet.collector());
         }
-        return outerRefs;
+
+        // Create references based on current outer instance, if any
+        if (hasImplicitOuterInstance(tsym)) {
+            return refs.find(ThisRef.class)
+              .map(ref -> ref.toOuter(tsym))
+              .flatMap(Optional::stream)
+              .collect(RefSet.collector());
+        }
+
+        // None
+        return RefSet.newEmpty();
+    }
+
+    // Determine if an unqualified "new Foo()" constructor gets 'this' as an implicit outer instance
+    private boolean hasImplicitOuterInstance(TypeSymbol tsym) {
+        return tsym != methodClass.sym
+          && tsym.hasOuterInstance()
+          && tsym.isEnclosedBy(methodClass.sym);
     }
 
 //
@@ -678,9 +784,72 @@ class ThisEscapeAnalyzer extends TreeScanner {
 
     @Override
     public void visitForeachLoop(JCEnhancedForLoop tree) {
+
+        // Check for loop on array
+        Type elemType = types.elemtype(tree.expr.type);
+
+        // If not array, resolve the Iterable and Iterator methods
+        record ForeachMethods(MethodSymbol iterator, MethodSymbol hasNext, MethodSymbol next) { };
+        MethodSymbol iterator = null;
+        MethodSymbol hasNext = null;
+        MethodSymbol next = null;
+        if (elemType == null) {
+            Symbol iteratorSym = rs.resolveQualifiedMethod(tree.expr.pos(), attrEnv,
+              tree.expr.type, names.iterator, List.nil(), List.nil());
+            if (iteratorSym instanceof MethodSymbol) {
+                iterator = (MethodSymbol)iteratorSym;
+                Symbol hasNextSym = rs.resolveQualifiedMethod(tree.expr.pos(), attrEnv,
+                  iterator.getReturnType(), names.hasNext, List.nil(), List.nil());
+                Symbol nextSym = rs.resolveQualifiedMethod(tree.expr.pos(), attrEnv,
+                  iterator.getReturnType(), names.next, List.nil(), List.nil());
+                if (hasNextSym instanceof MethodSymbol)
+                    hasNext = (MethodSymbol)hasNextSym;
+                if (nextSym instanceof MethodSymbol)
+                    next = (MethodSymbol)nextSym;
+            }
+        }
+        ForeachMethods foreachMethods = iterator != null && hasNext != null && next != null ?
+          new ForeachMethods(iterator, hasNext, next) : null;
+
+        // Iterate loop
         visitLooped(tree, foreach -> {
+
+            // Scan iteration target
             scan(foreach.expr);
-            refs.discardExprs(depth);       // we don't handle iterator() yet
+            if (elemType != null) {                     // array iteration
+                if (isParamOrVar(foreach.var.sym)) {
+                    refs.removeExprs(depth)
+                      .map(ref -> ref.toIndirect(elemType.tsym))
+                      .flatMap(Optional::stream)
+                      .map(ref -> new VarRef(foreach.var.sym, ref))
+                      .forEach(refs::add);
+                } else
+                    refs.discardExprs(depth);           // we don't track fields yet
+            } else if (foreachMethods != null) {        // Iterable iteration
+
+                // "Invoke" the iterator() method
+                RefSet<ThisRef> receiverRefs = refs.removeExprs(depth)
+                  .map(ThisRef::new)
+                  .collect(RefSet.collector());
+                invoke(foreach.expr, foreachMethods.iterator, List.nil(), receiverRefs);
+
+                // "Invoke" the hasNext() method
+                receiverRefs = refs.removeExprs(depth)
+                  .map(ThisRef::new)
+                  .collect(RefSet.collector());
+                invoke(foreach.expr, foreachMethods.hasNext, List.nil(), receiverRefs);
+                refs.discardExprs(depth);
+
+                // "Invoke" the next() method
+                invoke(foreach.expr, foreachMethods.next, List.nil(), receiverRefs);
+                if (isParamOrVar(foreach.var.sym))
+                    refs.replaceExprs(depth, ref -> new VarRef(foreach.var.sym, ref));
+                else
+                    refs.discardExprs(depth);           // we don't track fields yet
+            } else                                      // what is it???
+                refs.discardExprs(depth);
+
+            // Scan loop body
             scan(foreach.body);
         });
     }
@@ -699,11 +868,14 @@ class ThisEscapeAnalyzer extends TreeScanner {
         visitScoped(true, () -> {
             scan(tree.selector);
             refs.discardExprs(depth);
-            RefSet<ExprRef> combinedRefs = new RefSet<>();
+            RefSet<ExprRef> combinedRefs = RefSet.newEmpty();
             for (List<JCCase> cases = tree.cases; cases.nonEmpty(); cases = cases.tail) {
                 scan(cases.head.stats);
-                refs.replace(YieldRef.class, direct -> new ExprRef(depth, direct));
-                combinedRefs.addAll(refs.removeExprs(depth));
+                refs.remove(YieldRef.class)
+                  .map(ref -> new ExprRef(depth, ref))
+                  .forEach(combinedRefs::add);
+                refs.removeExprs(depth)
+                  .forEach(combinedRefs::add);
             }
             refs.addAll(combinedRefs);
         });
@@ -733,79 +905,60 @@ class ThisEscapeAnalyzer extends TreeScanner {
 
     @Override
     public void visitLambda(JCLambda lambda) {
-        visitDeferred(() -> visitScoped(false, () -> {
-            scan(lambda.body);
-            refs.discardExprs(depth);       // needed in case body is a JCExpression
-        }));
+        visitDeferred(() -> visitScoped(true, () -> scan(lambda.body)));
     }
 
     @Override
     public void visitAssign(JCAssign tree) {
+        VarSymbol sym = (VarSymbol)TreeInfo.symbolFor(tree.lhs);
         scan(tree.lhs);
         refs.discardExprs(depth);
         scan(tree.rhs);
-        VarSymbol sym = (VarSymbol)TreeInfo.symbolFor(tree.lhs);
         if (isParamOrVar(sym))
-            refs.replaceExprs(depth, direct -> new VarRef(sym, direct));
+            refs.replaceExprs(depth, ref -> new VarRef(sym, ref));
         else
             refs.discardExprs(depth);         // we don't track fields yet
     }
 
     @Override
     public void visitIndexed(JCArrayAccess tree) {
-        scan(tree.indexed);
-        refs.remove(ExprRef.direct(depth));
-        boolean indirectRef = refs.remove(ExprRef.indirect(depth));
         scan(tree.index);
         refs.discardExprs(depth);
-        if (indirectRef) {
-            refs.add(ExprRef.direct(depth));
-            refs.add(ExprRef.indirect(depth));
-        }
+        scan(tree.indexed);
+        refs.removeExprs(depth)
+          .map(ref -> ref.toDirect(tree.type.tsym))
+          .flatMap(Optional::stream)
+          .forEach(refs::add);
     }
 
     @Override
     public void visitSelect(JCFieldAccess tree) {
 
-        // Scan the selected thing
+        // Scan the selection target (i.e., the method)
         scan(tree.selected);
-        boolean selectedDirectRef = refs.remove(ExprRef.direct(depth));
-        boolean selectedIndirectRef = refs.remove(ExprRef.indirect(depth));
+        Stream<ExprRef> methodRefs = refs.removeExprs(depth);
 
-        // Explicit 'this' reference?
+        // Explicit 'this' reference? The expression references whatever 'this' references
         Type.ClassType currentClassType = (Type.ClassType)methodClass.sym.type;
-        if (isExplicitThisReference(types, currentClassType, tree)) {
-            refs.mapInto(refs, ThisRef.class, direct -> new ExprRef(depth, direct));
+        if (TreeInfo.isExplicitThisReference(types, currentClassType, tree)) {
+            refs.find(ThisRef.class)
+              .map(ref -> new ExprRef(depth, ref))
+              .forEach(refs::add);
             return;
         }
 
-        // Explicit outer 'this' reference?
-        Type selectedType = types.erasure(tree.selected.type);
-        if (selectedType.hasTag(CLASS)) {
-            ClassSymbol currentClassSym = (ClassSymbol)currentClassType.tsym;
-            ClassSymbol selectedTypeSym = (ClassSymbol)selectedType.tsym;
-            if (tree.name == names._this &&
-                    selectedTypeSym != currentClassSym &&
-                    currentClassSym.isEnclosedBy(selectedTypeSym)) {
-                refs.mapInto(refs, OuterRef.class, direct -> new ExprRef(depth, direct));
-                return;
-            }
-        }
-
-        // Methods - the "value" of a non-static method is a reference to its instance
-        Symbol sym = tree.sym;
-        if (sym.kind == MTH) {
-            if ((sym.flags() & Flags.STATIC) == 0) {
-                if (selectedDirectRef)
-                    refs.add(ExprRef.direct(depth));
-                if (selectedIndirectRef)
-                    refs.add(ExprRef.indirect(depth));
-            }
+        // Explicit outer 'this' reference? The expression references whatever the outer 'this' references
+        if (isExplicitOuterThisReference(types, currentClassType, tree)) {
+            refs.find(ThisRef.class)
+              .map(ref -> ref.fromOuter(depth))
+              .flatMap(Optional::stream)
+              .forEach(refs::add);
             return;
         }
 
-        // Unknown
-        return;
+        // For regular non-static methods, our expression "value" is the method's target instance
+        if (tree.sym.kind == MTH && (tree.sym.flags() & Flags.STATIC) == 0)
+            methodRefs.forEach(refs::add);
     }
 
     @Override
@@ -817,28 +970,25 @@ class ThisEscapeAnalyzer extends TreeScanner {
 
         // Scan target expression and extract 'this' references, if any
         scan(tree.expr);
-        boolean direct = refs.remove(ExprRef.direct(depth));
-        boolean indirect = refs.remove(ExprRef.indirect(depth));
 
         // Gather receiver references for deferred invocation
-        RefSet<Ref> receiverRefs = RefSet.newEmpty();
+        RefSet<ThisRef> receiverRefs = RefSet.newEmpty();
         switch (tree.kind) {
         case UNBOUND:
         case STATIC:
         case TOPLEVEL:
         case ARRAY_CTOR:
+            refs.discardExprs(depth);
             return;
         case SUPER:
-            refs.mapInto(receiverRefs, ThisRef.class, ThisRef::new);
-            break;
         case BOUND:
-            if (direct)
-                receiverRefs.add(ThisRef.direct());
-            if (indirect)
-                receiverRefs.add(ThisRef.indirect());
+            refs.removeExprs(depth)
+              .map(ThisRef::new)
+              .forEach(receiverRefs::add);
             break;
         case IMPLICIT_INNER:
-            receiverRefs.addAll(outerThisRefs(null, tree.expr.type));
+            receiverRefsForConstructor(null, tree.expr.type.tsym)
+              .forEach(receiverRefs::add);
             break;
         default:
             throw new RuntimeException("non-exhaustive?");
@@ -851,37 +1001,43 @@ class ThisEscapeAnalyzer extends TreeScanner {
     @Override
     public void visitIdent(JCIdent tree) {
 
-        // Reference to this?
+        // Explicit 'this' reference? The expression references whatever 'this' references
         if (tree.name == names._this || tree.name == names._super) {
-            refs.mapInto(refs, ThisRef.class, direct -> new ExprRef(depth, direct));
+            refs.find(ThisRef.class)
+              .map(ref -> new ExprRef(depth, ref))
+              .forEach(refs::add);
             return;
         }
 
-        // Parameter or local variable?
+        // Parameter or local variable? The expression references whatever the variable references
         if (isParamOrVar(tree.sym)) {
             VarSymbol sym = (VarSymbol)tree.sym;
-            if (refs.contains(VarRef.direct(sym)))
-                refs.add(ExprRef.direct(depth));
-            if (refs.contains(VarRef.indirect(sym)))
-                refs.add(ExprRef.indirect(depth));
+            refs.find(VarRef.class, ref -> ref.sym == sym)
+              .map(ref -> new ExprRef(depth, ref))
+              .forEach(refs::add);
             return;
         }
 
         // An unqualified, non-static method invocation must reference 'this' or outer 'this'.
-        // The "value" of a non-static method is a reference to its instance.
+        // The expression "value" of a non-static method is a reference to its target instance.
         if (tree.sym.kind == MTH && (tree.sym.flags() & Flags.STATIC) == 0) {
             MethodSymbol sym = (MethodSymbol)tree.sym;
 
             // Check for implicit 'this' reference
             ClassSymbol methodClassSym = methodClass.sym;
             if (methodClassSym.isSubClass(sym.owner, types)) {
-                refs.mapInto(refs, ThisRef.class, direct -> new ExprRef(depth, direct));
+                refs.find(ThisRef.class)
+                  .map(ref -> new ExprRef(depth, ref))
+                  .forEach(refs::add);
                 return;
             }
 
             // Check for implicit outer 'this' reference
             if (methodClassSym.isEnclosedBy((ClassSymbol)sym.owner)) {
-                refs.mapInto(refs, OuterRef.class, direct -> new ExprRef(depth, direct));
+                refs.find(ThisRef.class)
+                  .map(ref -> ref.fromOuter(depth))
+                  .flatMap(Optional::stream)
+                  .forEach(refs::add);
                 return;
             }
 
@@ -905,11 +1061,13 @@ class ThisEscapeAnalyzer extends TreeScanner {
     public void visitConditional(JCConditional tree) {
         scan(tree.cond);
         refs.discardExprs(depth);
-        RefSet<ExprRef> combinedRefs = new RefSet<>();
+        RefSet<ExprRef> combinedRefs = RefSet.newEmpty();
         scan(tree.truepart);
-        combinedRefs.addAll(refs.removeExprs(depth));
+        refs.removeExprs(depth)
+          .forEach(combinedRefs::add);
         scan(tree.falsepart);
-        combinedRefs.addAll(refs.removeExprs(depth));
+        refs.removeExprs(depth)
+          .forEach(combinedRefs::add);
         refs.addAll(combinedRefs);
     }
 
@@ -944,20 +1102,24 @@ class ThisEscapeAnalyzer extends TreeScanner {
 
     @Override
     public void visitNewArray(JCNewArray tree) {
-        boolean ref = false;
+        RefSet<ExprRef> combinedRefs = RefSet.newEmpty();
         if (tree.elems != null) {
             for (List<JCExpression> elems = tree.elems; elems.nonEmpty(); elems = elems.tail) {
                 scan(elems.head);
-                ref |= refs.discardExprs(depth);
+                refs.removeExprs(depth)
+                  .map(ref -> ref.toIndirect(tree.type.tsym))
+                  .flatMap(Optional::stream)
+                  .forEach(combinedRefs::add);
             }
         }
-        if (ref)
-            refs.add(ExprRef.indirect(depth));
+        combinedRefs.stream()
+          .forEach(refs::add);
     }
 
     @Override
     public void visitTypeCast(JCTypeCast tree) {
         scan(tree.expr);
+        refs.replaceExprs(depth, ref -> ref.withType(tree.expr.type.tsym));
     }
 
     @Override
@@ -1046,23 +1208,26 @@ class ThisEscapeAnalyzer extends TreeScanner {
 
 // Helper methods
 
-    private void visitTopLevel(JCClassDecl klass, Runnable action) {
+    private void visitTopLevel(Env<AttrContext> env, JCClassDecl klass, Runnable action) {
+        Assert.check(attrEnv == null);
         Assert.check(targetClass == null);
         Assert.check(methodClass == null);
         Assert.check(depth == -1);
         Assert.check(refs == null);
+        attrEnv = env;
         targetClass = klass;
         methodClass = klass;
         try {
 
             // Add the initial 'this' reference
             refs = RefSet.newEmpty();
-            refs.add(ThisRef.direct());
+            refs.add(new ThisRef(targetClass.sym, EnumSet.of(Indirection.DIRECT)));
 
             // Perform action
             this.visitScoped(false, action);
         } finally {
             Assert.check(depth == -1);
+            attrEnv = null;
             methodClass = null;
             targetClass = null;
             refs = null;
@@ -1075,20 +1240,24 @@ class ThisEscapeAnalyzer extends TreeScanner {
     // pending warning and the current RefSet. Finally, if the deferred code would have
     // leaked, we create an indirect ExprRef because it must be holding a 'this' reference.
     // If the deferred code would not leak, then obviously no leak is possible, period.
-    private <T extends JCTree> void visitDeferred(Runnable recurse) {
+    private <T extends JCTree> void visitDeferred(Runnable deferredCode) {
         DiagnosticPosition[] pendingWarningPrev = pendingWarning;
         pendingWarning = null;
         RefSet<Ref> refsPrev = refs.clone();
         boolean deferredCodeLeaks;
         try {
-            recurse.run();
+            deferredCode.run();
             deferredCodeLeaks = pendingWarning != null;
+
+            // There can be ExprRef's if the deferred code returns something.
+            // Don't let them escape unnoticed.
+            deferredCodeLeaks |= refs.discardExprs(depth);
         } finally {
             refs = refsPrev;
             pendingWarning = pendingWarningPrev;
         }
         if (deferredCodeLeaks)
-            refs.add(ExprRef.indirect(depth));
+            refs.add(new ExprRef(depth, syms.objectType.tsym, EnumSet.of(Indirection.INDIRECT)));
     }
 
     // Repeat loop as needed until the current set of references converges
@@ -1116,7 +1285,9 @@ class ThisEscapeAnalyzer extends TreeScanner {
             // "Promote" ExprRef's to the enclosing lexical scope, if requested
             if (promote) {
                 Assert.check(depth > 0);
-                refs.removeExprs(depth, direct -> refs.add(new ExprRef(depth - 1, direct)));
+                refs.removeExprs(depth)
+                  .map(ref -> new ExprRef(depth - 1, ref))
+                  .forEach(refs::add);
             }
         } finally {
             popScope();
@@ -1129,8 +1300,8 @@ class ThisEscapeAnalyzer extends TreeScanner {
 
     private void popScope() {
         Assert.check(depth >= 0);
+        refs.discardExprs(depth);
         depth--;
-        refs.removeIf(ref -> ref.getDepth() > depth);
     }
 
     // Note a possible 'this' reference leak at the specified location
@@ -1162,41 +1333,21 @@ class ThisEscapeAnalyzer extends TreeScanner {
             (sym.owner.kind == MTH || sym.owner.kind == VAR);
     }
 
-    /** Check if the given tree is an explicit reference to the 'this' instance of the
-     *  class currently being compiled. This is true if tree is:
-     *  - An unqualified 'this' identifier
-     *  - A 'super' identifier qualified by a class name whose type is 'currentClass' or a supertype
-     *  - A 'this' identifier qualified by a class name whose type is 'currentClass' or a supertype
-     *    but also NOT an enclosing outer class of 'currentClass'.
+    /** Check if the given tree is an explicit reference to the outer 'this' instance of the
+     *  class currently being compiled. This is true if tree is 'Foo.this' where 'Foo' is
+     *  the immediately enclosing class of the current class.
      */
-    private boolean isExplicitThisReference(Types types, Type.ClassType currentClass, JCTree tree) {
-        switch (tree.getTag()) {
-            case PARENS:
-                return isExplicitThisReference(types, currentClass, TreeInfo.skipParens(tree));
-            case IDENT:
-            {
-                JCIdent ident = (JCIdent)tree;
-                Names names = ident.name.table.names;
-                return ident.name == names._this;
-            }
-            case SELECT:
-            {
-                JCFieldAccess select = (JCFieldAccess)tree;
-                Type selectedType = types.erasure(select.selected.type);
-                if (!selectedType.hasTag(CLASS))
-                    return false;
-                ClassSymbol currentClassSym = (ClassSymbol)((Type.ClassType)types.erasure(currentClass)).tsym;
-                ClassSymbol selectedClassSym = (ClassSymbol)((Type.ClassType)selectedType).tsym;
-                Names names = select.name.table.names;
-                return currentClassSym.isSubClass(selectedClassSym, types) &&
-                        (select.name == names._super ||
-                        (select.name == names._this &&
-                            (currentClassSym == selectedClassSym ||
-                            !currentClassSym.isEnclosedBy(selectedClassSym))));
-            }
-            default:
-                return false;
+    private boolean isExplicitOuterThisReference(Types types, Type.ClassType currentClass, JCFieldAccess select) {
+        Type selectedType = types.erasure(select.selected.type);
+        if (selectedType.hasTag(CLASS)) {
+            ClassSymbol currentClassSym = (ClassSymbol)currentClass.tsym;
+            ClassSymbol selectedTypeSym = (ClassSymbol)selectedType.tsym;
+            if (select.name == names._this &&
+                    currentClassSym.hasOuterInstance() &&
+                    currentClassSym.owner.enclClass() == selectedTypeSym)
+                return true;
         }
+        return false;
     }
 
     // When scanning nodes we can be in one of two modes:
@@ -1216,9 +1367,8 @@ class ThisEscapeAnalyzer extends TreeScanner {
             Assert.check(targetClass != null);
             Assert.check(refs != null);
             Assert.check(depth >= 0);
-            Assert.check(refs.stream().noneMatch(ref -> ref.getDepth() > depth));
-            Assert.check(allowExpr || !refs.contains(ExprRef.direct(depth)));
-            Assert.check(allowExpr || !refs.contains(ExprRef.indirect(depth)));
+            Assert.check(refs.find(ExprRef.class)
+              .allMatch(ref -> allowExpr && ref.depth <= depth));
         } else {
             Assert.check(targetClass == null);
             Assert.check(refs == null);
@@ -1232,34 +1382,46 @@ class ThisEscapeAnalyzer extends TreeScanner {
 
 // Ref's
 
-    /** Represents a location that could possibly hold a 'this' reference.
-     *
-     *  <p>
-     *  If not "direct", the reference is found through at least one indirection.
+    /** Describes how the 'this' we care about is referenced by a {@link Ref} that is being tracked.
+     */
+    enum Indirection {
+
+        /** The {@link Ref} directly references 'this'. */
+        DIRECT,
+
+        /** The {@link Ref} references 'this' via its outer instance. */
+        OUTER,
+
+        /** The {@link Ref} references 'this' indirectly somehow through
+            at least one level of indirection. */
+        INDIRECT;
+    }
+
+    /** Represents an object reference that could refer to the 'this' we care about.
      */
     private abstract static class Ref {
 
-        private final int depth;
-        private final boolean direct;
+        final TypeSymbol tsym;
+        final EnumSet<Indirection> indirections;
 
-        Ref(int depth, boolean direct) {
-            this.depth = depth;
-            this.direct = direct;
+        Ref(Ref ref) {
+            this(ref.tsym, ref.indirections);
         }
 
-        public int getDepth() {
-            return depth;
+        Ref(TypeSymbol tsym, EnumSet<Indirection> indirections) {
+            Assert.check(tsym != null);
+            Assert.check(indirections != null);
+            this.tsym = tsym;
+            this.indirections = EnumSet.copyOf(indirections);
         }
 
-        public boolean isDirect() {
-            return direct;
-        }
+        public abstract Ref withType(TypeSymbol tsym);
 
         @Override
         public int hashCode() {
             return getClass().hashCode()
-                ^ Integer.hashCode(depth)
-                ^ Boolean.hashCode(direct);
+                ^ tsym.hashCode()
+                ^ indirections.hashCode();
         }
 
         @Override
@@ -1269,65 +1431,155 @@ class ThisEscapeAnalyzer extends TreeScanner {
             if (obj == null || obj.getClass() != getClass())
                 return false;
             Ref that = (Ref)obj;
-            return depth == that.depth
-              && direct == that.direct;
+            return tsym == that.tsym
+              && indirections.equals(that.indirections);
         }
 
         @Override
-        public String toString() {
+        public final String toString() {
             ArrayList<String> properties = new ArrayList<>();
+            properties.add("tsym=" + tsym);
             addProperties(properties);
+            properties.add(indirections.stream()
+              .map(Indirection::name)
+              .collect(Collectors.joining(",")));
             return getClass().getSimpleName()
               + "[" + properties.stream().collect(Collectors.joining(",")) + "]";
         }
 
         protected void addProperties(ArrayList<String> properties) {
-            properties.add("depth=" + depth);
-            properties.add(direct ? "direct" : "indirect");
+        }
+
+        // Return a modified copy of this Ref's Indirections. The modified set must not be empty.
+        public EnumSet<Indirection> modifiedIndirections(Consumer<? super EnumSet<Indirection>> modifier) {
+            EnumSet<Indirection> newIndirections = EnumSet.copyOf(indirections);
+            modifier.accept(newIndirections);
+            Assert.check(!newIndirections.isEmpty());
+            return newIndirections;
+        }
+
+        // Add one level of indirection through an outer instance
+        //  - DIRECT references become OUTER
+        //  - OUTER references disappear (we don't try to track indirect outer 'this' references)
+        //  - INDIRECT references disappear (we don't try to track outer indirect 'this' references)
+        public Optional<ThisRef> toOuter(TypeSymbol tsym) {
+            return Optional.of(this)
+              .filter(ref -> ref.indirections.contains(Indirection.DIRECT))
+              .map(ref -> new ThisRef(tsym, ref.modifiedIndirections(indirections -> {
+                indirections.remove(Indirection.DIRECT);
+                indirections.remove(Indirection.INDIRECT);
+                indirections.add(Indirection.OUTER);
+              })));
         }
     }
 
-    /** A reference from the current 'this' instance.
+    /** A reference originating from the current 'this' instance.
      */
     private static class ThisRef extends Ref {
 
-        ThisRef(boolean direct) {
-            super(0, direct);
+        ThisRef(Ref ref) {
+            super(ref);
         }
 
-        public static ThisRef direct() {
-            return new ThisRef(true);
+        ThisRef(TypeSymbol tsym, EnumSet<Indirection> indirections) {
+            super(tsym, indirections);
         }
 
-        public static ThisRef indirect() {
-            return new ThisRef(false);
+        @Override
+        public ThisRef withType(TypeSymbol tsym) {
+            return new ThisRef(tsym, indirections);
+        }
+
+        // Remove one level of indirection through the outer instance
+        //  - DIRECT references disappear
+        //  - OUTER references become DIRECT
+        //  - INDIRECT references disappear
+        public Optional<ExprRef> fromOuter(int depth) {
+            ClassSymbol outerType = Optional.of(tsym.owner)
+              .map(Symbol::enclClass)
+              .orElse(null);
+            if (outerType == null)
+                return Optional.empty();        // weird
+            return Optional.of(this)
+              .filter(ref -> ref.indirections.contains(Indirection.OUTER))
+              .map(ref -> new ExprRef(depth, outerType, ref.modifiedIndirections(indirections -> {
+                indirections.remove(Indirection.OUTER);
+                indirections.remove(Indirection.INDIRECT);
+                indirections.add(Indirection.DIRECT);
+              })));
         }
     }
 
-    /** A reference from the current outer 'this' instance.
-     */
-    private static class OuterRef extends Ref {
-
-        OuterRef(boolean direct) {
-            super(0, direct);
-        }
-    }
-
-    /** A reference from the expression that was just evaluated.
+    /** A reference originating from the expression that was just evaluated.
      *  In other words, a reference that's sitting on top of the stack.
      */
     private static class ExprRef extends Ref {
 
-        ExprRef(int depth, boolean direct) {
-            super(depth, direct);
+        final int depth;
+
+        ExprRef(int depth, Ref ref) {
+            super(ref);
+            this.depth = depth;
         }
 
-        public static ExprRef direct(int depth) {
-            return new ExprRef(depth, true);
+        ExprRef(int depth, TypeSymbol tsym, EnumSet<Indirection> indirections) {
+            super(tsym, indirections);
+            this.depth = depth;
         }
 
-        public static ExprRef indirect(int depth) {
-            return new ExprRef(depth, false);
+        @Override
+        public ExprRef withType(TypeSymbol tsym) {
+            return new ExprRef(depth, tsym, indirections);
+        }
+
+        // Add one level of indirection
+        //  - DIRECT references convert to INDIRECT
+        //  - OUTER references disappear (we don't try to track indirect outer 'this' references)
+        //  - INDIRECT references stay INDIRECT
+        public Optional<ExprRef> toIndirect(TypeSymbol indirectType) {
+            return Optional.of(this)
+              .filter(ref -> ref.indirections.contains(Indirection.DIRECT) ||
+                             ref.indirections.contains(Indirection.INDIRECT))
+              .map(ref -> new ExprRef(depth, indirectType, ref.modifiedIndirections(indirections -> {
+                indirections.remove(Indirection.DIRECT);
+                indirections.remove(Indirection.OUTER);
+                indirections.add(Indirection.INDIRECT);
+              })));
+        }
+
+        // Remove one level of indirection
+        //  - DIRECT references disappear
+        //  - OUTER references disappear
+        //  - INDIRECT references become both DIRECT and INDIRECT
+        public Optional<ExprRef> toDirect(TypeSymbol directType) {
+            return Optional.of(this)
+              .filter(ref -> ref.indirections.contains(Indirection.INDIRECT))
+              .map(ref -> new ExprRef(depth, directType, ref.modifiedIndirections(indirections -> {
+                indirections.remove(Indirection.OUTER);
+                indirections.add(Indirection.DIRECT);
+              })));
+        }
+
+        @Override
+        public int hashCode() {
+            return super.hashCode()
+                ^ Integer.hashCode(depth);
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj == this)
+                return true;
+            if (!super.equals(obj))
+                return false;
+            ExprRef that = (ExprRef)obj;
+            return depth == that.depth;
+        }
+
+        @Override
+        protected void addProperties(ArrayList<String> properties) {
+            super.addProperties(properties);
+            properties.add("depth=" + depth);
         }
     }
 
@@ -1335,8 +1587,17 @@ class ThisEscapeAnalyzer extends TreeScanner {
      */
     private static class ReturnRef extends Ref {
 
-        ReturnRef(boolean direct) {
-            super(0, direct);
+        ReturnRef(Ref ref) {
+            super(ref);
+        }
+
+        ReturnRef(TypeSymbol tsym, EnumSet<Indirection> indirections) {
+            super(tsym, indirections);
+        }
+
+        @Override
+        public ReturnRef withType(TypeSymbol tsym) {
+            return new ReturnRef(tsym, indirections);
         }
     }
 
@@ -1344,8 +1605,17 @@ class ThisEscapeAnalyzer extends TreeScanner {
      */
     private static class YieldRef extends Ref {
 
-        YieldRef(boolean direct) {
-            super(0, direct);
+        YieldRef(Ref ref) {
+            super(ref);
+        }
+
+        YieldRef(TypeSymbol tsym, EnumSet<Indirection> indirections) {
+            super(tsym, indirections);
+        }
+
+        @Override
+        public YieldRef withType(TypeSymbol tsym) {
+            return new YieldRef(tsym, indirections);
         }
     }
 
@@ -1353,23 +1623,21 @@ class ThisEscapeAnalyzer extends TreeScanner {
      */
     private static class VarRef extends Ref {
 
-        private final VarSymbol sym;
+        final VarSymbol sym;
 
-        VarRef(VarSymbol sym, boolean direct) {
-            super(0, direct);
+        VarRef(VarSymbol sym, Ref ref) {
+            super(ref);
             this.sym = sym;
         }
 
-        public VarSymbol getSymbol() {
-            return sym;
+        VarRef(VarSymbol sym, TypeSymbol tsym, EnumSet<Indirection> indirections) {
+            super(tsym, indirections);
+            this.sym = sym;
         }
 
-        public static VarRef direct(VarSymbol sym) {
-            return new VarRef(sym, true);
-        }
-
-        public static VarRef indirect(VarSymbol sym) {
-            return new VarRef(sym, false);
+        @Override
+        public VarRef withType(TypeSymbol tsym) {
+            return new VarRef(sym, tsym, indirections);
         }
 
         @Override
@@ -1398,79 +1666,90 @@ class ThisEscapeAnalyzer extends TreeScanner {
 // RefSet
 
     /** Contains locations currently known to hold a possible 'this' reference.
+     *  All methods that return Stream return a copy to avoid ConcurrentModificationException.
      */
     @SuppressWarnings("serial")
     private static class RefSet<T extends Ref> extends HashSet<T> {
+
+        private RefSet() {
+            super(8);
+        }
 
         public static <T extends Ref> RefSet<T> newEmpty() {
             return new RefSet<>();
         }
 
-        /**
-         * Discard any {@link ExprRef}'s at the specified depth.
-         * Do this when discarding whatever is on top of the stack.
+        /** Find all {@link Ref}'s of the given type.
+         */
+        public <T extends Ref> Stream<T> find(Class<T> refType) {
+            return find(refType, ref -> true);
+        }
+
+        /** Find all {@link Ref}'s of the given type and matching the given predicate.
+         */
+        public <T extends Ref> Stream<T> find(Class<T> refType, Predicate<? super T> filter) {
+            return stream()
+              .filter(refType::isInstance)
+              .map(refType::cast)
+              .filter(filter)
+              .collect(Collectors.toList())         // avoid ConcurrentModificationException
+              .stream();
+        }
+
+        /** Find the {@link ExprRef} at the given depth, if any.
+         */
+        public Stream<ExprRef> findExprs(int depth) {
+            return find(ExprRef.class, ref -> ref.depth == depth);
+        }
+
+        /** Extract (i.e., find and remove) all {@link Ref}'s of the given type.
+         */
+        public <T extends Ref> Stream<T> remove(Class<T> refType) {
+            return remove(refType, ref -> true);
+        }
+
+        /** Extract (i.e., find and remove) all {@link Ref}'s of the given type
+         *  and matching the given predicate.
+         */
+        public <T extends Ref> Stream<T> remove(Class<T> refType, Predicate<? super T> filter) {
+            ArrayList<T> list = stream()
+              .filter(refType::isInstance)
+              .map(refType::cast)
+              .filter(filter)
+              .collect(Collectors.toCollection(ArrayList::new)); // avoid ConcurrentModificationException
+            removeAll(list);
+            return list.stream();
+        }
+
+        /** Extract (i.e., find and remove) all {@link ExprRef}'s at the given depth.
+         */
+        public Stream<ExprRef> removeExprs(int depth) {
+            return remove(ExprRef.class, ref -> ref.depth == depth);
+        }
+
+        /** Discard all {@link ExprRef}'s at the given depth.
          */
         public boolean discardExprs(int depth) {
-            return remove(ExprRef.direct(depth)) | remove(ExprRef.indirect(depth));
+            return removeIf(ref -> ref instanceof ExprRef exprRef && exprRef.depth == depth);
         }
 
-        /**
-         * Extract any {@link ExprRef}'s at the specified depth.
+        /** Replace all {@link ExprRef}'s at the given depth after mapping them somehow.
          */
-        public RefSet<ExprRef> removeExprs(int depth) {
-            return Stream.of(ExprRef.direct(depth), ExprRef.indirect(depth))
-              .filter(this::remove)
-              .collect(Collectors.toCollection(RefSet::new));
-        }
-
-        /**
-         * Extract any {@link ExprRef}'s at the specified depth and do something with them.
-         */
-        public void removeExprs(int depth, Consumer<? super Boolean> handler) {
-            Stream.of(ExprRef.direct(depth), ExprRef.indirect(depth))
-              .filter(this::remove)
-              .map(ExprRef::isDirect)
-              .forEach(handler);
-        }
-
-        /**
-         * Replace any references of the given type.
-         */
-        public void replace(Class<? extends Ref> type, Function<Boolean, ? extends T> mapper) {
-            final List<Ref> oldRefs = this.stream()
-              .filter(type::isInstance)
-              .collect(List.collector());             // avoid ConcurrentModificationException
-            this.removeAll(oldRefs);
-            oldRefs.stream()
-              .map(Ref::isDirect)
+        public void replaceExprs(int depth, Function<? super ExprRef, ? extends T> mapper) {
+            removeExprs(depth)
               .map(mapper)
               .forEach(this::add);
-        }
-
-        /**
-         * Replace any {@link ExprRef}'s at the specified depth.
-         */
-        public void replaceExprs(int depth, Function<Boolean, ? extends T> mapper) {
-            removeExprs(depth, direct -> add(mapper.apply(direct)));
-        }
-
-        /**
-         * Find references of the given type, map them, and add them to {@code dest}.
-         */
-        public <S extends Ref> void mapInto(RefSet<S> dest, Class<? extends Ref> type,
-                Function<Boolean, ? extends S> mapper) {
-            final List<S> newRefs = this.stream()
-              .filter(type::isInstance)
-              .map(Ref::isDirect)
-              .map(mapper)
-              .collect(List.collector());             // avoid ConcurrentModificationException
-            dest.addAll(newRefs);
         }
 
         @Override
         @SuppressWarnings("unchecked")
         public RefSet<T> clone() {
             return (RefSet<T>)super.clone();
+        }
+
+        // Return a collector that builds a RefSet
+        public static <T extends Ref> Collector<T, ?, RefSet<T>> collector() {
+            return Collectors.toCollection(RefSet::new);
         }
     }
 
@@ -1482,5 +1761,14 @@ class ThisEscapeAnalyzer extends TreeScanner {
         JCMethodDecl declaration,       // the method or constructor itself
         boolean analyzable,             // it's a constructor that we should analyze
         boolean invokable) {            // it may be safely "invoked" during analysis
+
+        @Override
+        public String toString() {
+            return "MethodInfo"
+              + "[method=" + declaringClass.sym.flatname + "." + declaration.sym
+              + ",analyzable=" + analyzable
+              + ",invokable=" + invokable
+              + "]";
+        }
     }
 }

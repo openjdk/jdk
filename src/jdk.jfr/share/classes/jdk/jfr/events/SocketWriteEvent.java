@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,8 +37,7 @@ import jdk.jfr.internal.Type;
 @Label("Socket Write")
 @Category("Java Application")
 @Description("Writing data to a socket")
-@MirrorEvent(className = "jdk.internal.event.SocketWriteEvent")
-public final class SocketWriteEvent extends AbstractJDKEvent {
+public final class SocketWriteEvent extends MirrorEvent {
 
     @Label("Remote Host")
     public String host;

@@ -108,7 +108,10 @@ public class InflaterInputStreams {
     @Benchmark
     public void inflaterInputStreamRead() throws IOException {
         deflated.reset();
-        InflaterInputStream iis = new InflaterInputStream(deflated);
-        while (iis.read(inflated, 0, inflated.length) != -1);
+        // We close the InflaterInputStream to release underlying native resources of the Inflater.
+        // The "deflated" ByteArrayInputStream remains unaffected.
+        try (InflaterInputStream iis = new InflaterInputStream(deflated)) {
+            while (iis.read(inflated, 0, inflated.length) != -1);
+        }
     }
 }

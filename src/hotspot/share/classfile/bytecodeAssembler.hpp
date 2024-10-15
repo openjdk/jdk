@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,6 @@ class BytecodeCPEntry {
   union {
     Symbol* utf8;
     u2 klass;
-    u2 string;
     struct {
       u2 name_index;
       u2 type_index;
@@ -93,9 +92,9 @@ class BytecodeCPEntry {
     return bcpe;
   }
 
-  static BytecodeCPEntry string(u2 index) {
+  static BytecodeCPEntry string(Symbol* symbol) {
     BytecodeCPEntry bcpe(STRING);
-    bcpe._u.string = index;
+    bcpe._u.utf8 = symbol;
     return bcpe;
   }
 
@@ -114,6 +113,8 @@ class BytecodeCPEntry {
   }
 
   static bool equals(BytecodeCPEntry const& e0, BytecodeCPEntry const& e1) {
+    // The hash is the "union trick" value of the information saved for the tag,
+    // so can be compared for equality.
     return e0._tag == e1._tag && e0._u.hash == e1._u.hash;
   }
 
@@ -122,23 +123,27 @@ class BytecodeCPEntry {
   }
 };
 
-class BytecodeConstantPool : ResourceObj {
+class BytecodeConstantPool : public ResourceObj {
  private:
   typedef ResourceHashtable<BytecodeCPEntry, u2,
       256, AnyObj::RESOURCE_AREA, mtInternal,
       &BytecodeCPEntry::hash, &BytecodeCPEntry::equals> IndexHash;
 
   ConstantPool* _orig;
-  GrowableArray<BytecodeCPEntry> _entries;
-  IndexHash _indices;
+  GrowableArray<BytecodeCPEntry> _added_entries;
+  IndexHash _index_map;
+  int _orig_cp_added;
 
   u2 find_or_add(BytecodeCPEntry const& bcpe, TRAPS);
 
+  void init();
  public:
 
-  BytecodeConstantPool(ConstantPool* orig) : _orig(orig) {}
+  BytecodeConstantPool(ConstantPool* orig) : _orig(orig), _orig_cp_added(0) {
+    init();
+  }
 
-  BytecodeCPEntry const& at(u2 index) const { return _entries.at(index); }
+  BytecodeCPEntry const& at(u2 index) const { return _added_entries.at(index); }
 
   InstanceKlass* pool_holder() const {
     return _orig->pool_holder();
@@ -154,8 +159,9 @@ class BytecodeConstantPool : ResourceObj {
   }
 
   u2 string(Symbol* str, TRAPS) {
-    u2 utf8_entry = utf8(str, CHECK_0);
-    return find_or_add(BytecodeCPEntry::string(utf8_entry), THREAD);
+    // Create the utf8_entry in the hashtable but use Symbol for matching.
+    (void)utf8(str, CHECK_0);
+    return find_or_add(BytecodeCPEntry::string(str), THREAD);
   }
 
   u2 name_and_type(Symbol* name, Symbol* sig, TRAPS) {

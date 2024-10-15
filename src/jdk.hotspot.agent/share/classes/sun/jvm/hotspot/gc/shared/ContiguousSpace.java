@@ -34,7 +34,17 @@ import sun.jvm.hotspot.types.*;
 import sun.jvm.hotspot.utilities.Observable;
 import sun.jvm.hotspot.utilities.Observer;
 
-public class ContiguousSpace extends Space implements LiveRegionsProvider {
+/** <P> A ContiguousSpace describes a heap area. </P>
+
+    <P> Invariant: bottom() and end() are on page_size boundaries and: </P>
+
+    <P> bottom() <= top() <= end() </P>
+
+    <P> top() is inclusive and end() is exclusive. </P> */
+
+public class ContiguousSpace extends VMObject implements LiveRegionsProvider {
+  private static AddressField bottomField;
+  private static AddressField endField;
   private static AddressField topField;
 
   static {
@@ -48,6 +58,8 @@ public class ContiguousSpace extends Space implements LiveRegionsProvider {
   private static synchronized void initialize(TypeDataBase db) {
     Type type = db.lookupType("ContiguousSpace");
 
+    bottomField = type.getAddressField("_bottom");
+    endField    = type.getAddressField("_end");
     topField = type.getAddressField("_top");
   }
 
@@ -55,24 +67,30 @@ public class ContiguousSpace extends Space implements LiveRegionsProvider {
     super(addr);
   }
 
-  public Address top() {
-    return topField.getValue(addr);
+  public Address bottom() { return bottomField.getValue(addr); }
+  public Address end()    { return endField.getValue(addr);    }
+  public Address top()    { return topField.getValue(addr);    }
+
+  /** Support for iteration over heap -- not sure how this will
+      interact with GC in reflective system, but necessary for the
+      debugging mechanism */
+  public OopHandle bottomAsOopHandle() {
+    return bottomField.getOopHandle(addr);
   }
 
-  /** In bytes */
-  public long capacity() {
-    return end().minus(bottom());
+  /** Support for iteration over heap -- not sure how this will
+      interact with GC in reflective system, but necessary for the
+      debugging mechanism */
+  public OopHandle nextOopHandle(OopHandle handle, long size) {
+    return handle.addOffsetToAsOopHandle(size);
   }
 
-  /** In bytes */
-  public long used() {
-    return top().minus(bottom());
-  }
+  /** Returned value is in bytes */
+  public long capacity() { return end().minus(bottom()); }
+  public long used()     { return top().minus(bottom()); }
+  public long free()     { return end().minus(top());    }
 
-  /** In bytes */
-  public long free() {
-    return end().minus(top());
-  }
+  public void print() { printOn(System.out); }
 
   /** In a contiguous space we have a more obvious bound on what parts
       contain objects. */
@@ -95,6 +113,10 @@ public class ContiguousSpace extends Space implements LiveRegionsProvider {
   public void printOn(PrintStream tty) {
     tty.print(" [" + bottom() + "," +
                 top() + "," + end() + ")");
-    super.printOn(tty);
+    tty.print(" space capacity = ");
+    tty.print(capacity());
+    tty.print(", ");
+    tty.print((double) used() * 100.0/ capacity());
+    tty.print(" used");
   }
 }

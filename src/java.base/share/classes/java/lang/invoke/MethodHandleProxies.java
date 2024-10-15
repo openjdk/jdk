@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,9 @@ import java.lang.classfile.ClassHierarchyResolver;
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.TypeKind;
+
+import jdk.internal.constant.ConstantUtils;
+import jdk.internal.loader.ClassLoaders;
 import jdk.internal.module.Modules;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
@@ -63,6 +66,7 @@ import static java.lang.invoke.MethodHandleStatics.*;
 import static java.lang.invoke.MethodType.methodType;
 import static java.lang.module.ModuleDescriptor.Modifier.SYNTHETIC;
 import static java.lang.classfile.ClassFile.*;
+import static jdk.internal.constant.ConstantUtils.*;
 
 /**
  * This class consists exclusively of static methods that help adapt
@@ -249,14 +253,14 @@ public class MethodHandleProxies {
 
             // the field name holding the method handle for this method
             String fieldName = "m" + count++;
-            var mt = methodType(m.getReturnType(), JLRA.getExecutableSharedParameterTypes(m), true);
+            var md = methodTypeDesc(m.getReturnType(), JLRA.getExecutableSharedParameterTypes(m));
             var thrown = JLRA.getExecutableSharedExceptionTypes(m);
             var exceptionTypeDescs =
                     thrown.length == 0 ? DEFAULT_RETHROWS
                                        : Stream.concat(DEFAULT_RETHROWS.stream(),
-                                                       Arrays.stream(thrown).map(MethodHandleProxies::desc))
+                                                       Arrays.stream(thrown).map(ConstantUtils::referenceClassDesc))
                                                .distinct().toList();
-            methods.add(new MethodInfo(desc(mt), exceptionTypeDescs, fieldName));
+            methods.add(new MethodInfo(md, exceptionTypeDescs, fieldName));
 
             // find the types referenced by this method
             addElementType(referencedTypes, m.getReturnType());
@@ -279,9 +283,10 @@ public class MethodHandleProxies {
         int i = intfcName.lastIndexOf('.');
         // jdk.MHProxy#.Interface
         String className = packageName + "." + (i > 0 ? intfcName.substring(i + 1) : intfcName);
-        byte[] template = createTemplate(loader, ClassDesc.of(className), desc(intfc), uniqueName, methods);
+        byte[] template = createTemplate(loader, binaryNameToDesc(className),
+                referenceClassDesc(intfc), uniqueName, methods);
         // define the dynamic module to the class loader of the interface
-        var definer = new Lookup(intfc).makeHiddenClassDefiner(className, template, Set.of(), DUMPER);
+        var definer = new Lookup(intfc).makeHiddenClassDefiner(className, template, DUMPER);
 
         @SuppressWarnings("removal")
         var sm = System.getSecurityManager();
@@ -335,17 +340,17 @@ public class MethodHandleProxies {
         }
     }
 
-    private static final List<ClassDesc> DEFAULT_RETHROWS = List.of(desc(RuntimeException.class), desc(Error.class));
-    private static final ClassDesc CD_UndeclaredThrowableException = desc(UndeclaredThrowableException.class);
-    private static final ClassDesc CD_IllegalAccessException = desc(IllegalAccessException.class);
+    private static final List<ClassDesc> DEFAULT_RETHROWS = List.of(referenceClassDesc(RuntimeException.class), referenceClassDesc(Error.class));
+    private static final ClassDesc CD_UndeclaredThrowableException = referenceClassDesc(UndeclaredThrowableException.class);
+    private static final ClassDesc CD_IllegalAccessException = referenceClassDesc(IllegalAccessException.class);
     private static final MethodTypeDesc MTD_void_Throwable = MethodTypeDesc.of(CD_void, CD_Throwable);
     private static final MethodType MT_void_Lookup_MethodHandle_MethodHandle =
             methodType(void.class, Lookup.class, MethodHandle.class, MethodHandle.class);
     private static final MethodType MT_Object_Lookup_MethodHandle_MethodHandle =
             MT_void_Lookup_MethodHandle_MethodHandle.changeReturnType(Object.class);
     private static final MethodType MT_MethodHandle_Object = methodType(MethodHandle.class, Object.class);
-    private static final MethodTypeDesc MTD_void_Lookup_MethodHandle_MethodHandle =
-            desc(MT_void_Lookup_MethodHandle_MethodHandle);
+    private static final MethodTypeDesc MTD_void_Lookup_MethodHandle_MethodHandle
+            = methodTypeDesc(MT_void_Lookup_MethodHandle_MethodHandle);
     private static final MethodTypeDesc MTD_void_Lookup = MethodTypeDesc.of(CD_void, CD_MethodHandles_Lookup);
     private static final MethodTypeDesc MTD_MethodHandle_MethodType = MethodTypeDesc.of(CD_MethodHandle, CD_MethodType);
     private static final MethodTypeDesc MTD_Class = MethodTypeDesc.of(CD_Class);
@@ -367,48 +372,46 @@ public class MethodHandleProxies {
      */
     private static byte[] createTemplate(ClassLoader loader, ClassDesc proxyDesc, ClassDesc ifaceDesc,
                                          String methodName, List<MethodInfo> methods) {
-        return ClassFile.of(ClassHierarchyResolverOption.of(ClassHierarchyResolver.ofClassLoading(loader)))
+        return ClassFile.of(ClassHierarchyResolverOption.of(ClassHierarchyResolver.ofClassLoading(loader == null ?
+                        ClassLoaders.platformClassLoader() : loader)))
                         .build(proxyDesc, clb -> {
-            clb.withSuperclass(CD_Object);
-            clb.withFlags(ACC_FINAL | ACC_SYNTHETIC);
-            clb.withInterfaceSymbols(ifaceDesc);
-
-            // static and instance fields
-            clb.withField(TYPE_NAME, CD_Class, ACC_PRIVATE | ACC_STATIC | ACC_FINAL);
-            clb.withField(TARGET_NAME, CD_MethodHandle, ACC_PRIVATE | ACC_FINAL);
+            clb.withSuperclass(CD_Object)
+               .withFlags(ACC_FINAL | ACC_SYNTHETIC)
+               .withInterfaceSymbols(ifaceDesc)
+               // static and instance fields
+               .withField(TYPE_NAME, CD_Class, ACC_PRIVATE | ACC_STATIC | ACC_FINAL)
+               .withField(TARGET_NAME, CD_MethodHandle, ACC_PRIVATE | ACC_FINAL);
             for (var mi : methods) {
                 clb.withField(mi.fieldName, CD_MethodHandle, ACC_PRIVATE | ACC_FINAL);
             }
 
             // <clinit>
             clb.withMethodBody(CLASS_INIT_NAME, MTD_void, ACC_STATIC, cob -> {
-                cob.constantInstruction(ifaceDesc);
-                cob.putstatic(proxyDesc, TYPE_NAME, CD_Class);
-                cob.return_();
+                cob.loadConstant(ifaceDesc)
+                   .putstatic(proxyDesc, TYPE_NAME, CD_Class)
+                   .return_();
             });
 
             // <init>(Lookup, MethodHandle target, MethodHandle callerBoundTarget)
             clb.withMethodBody(INIT_NAME, MTD_void_Lookup_MethodHandle_MethodHandle, 0, cob -> {
-                cob.aload(0);
-                cob.invokespecial(CD_Object, INIT_NAME, MTD_void);
-
-                // call ensureOriginalLookup to verify the given Lookup has access
-                cob.aload(1);
-                cob.invokestatic(proxyDesc, "ensureOriginalLookup", MTD_void_Lookup);
-
-                // this.target = target;
-                cob.aload(0);
-                cob.aload(2);
-                cob.putfield(proxyDesc, TARGET_NAME, CD_MethodHandle);
+                cob.aload(0)
+                   .invokespecial(CD_Object, INIT_NAME, MTD_void)
+                   // call ensureOriginalLookup to verify the given Lookup has access
+                   .aload(1)
+                   .invokestatic(proxyDesc, ENSURE_ORIGINAL_LOOKUP, MTD_void_Lookup)
+                   // this.target = target;
+                   .aload(0)
+                   .aload(2)
+                   .putfield(proxyDesc, TARGET_NAME, CD_MethodHandle);
 
                 // method handles adjusted to the method type of each method
                 for (var mi : methods) {
                     // this.m<i> = callerBoundTarget.asType(xxType);
-                    cob.aload(0);
-                    cob.aload(3);
-                    cob.constantInstruction(mi.desc);
-                    cob.invokevirtual(CD_MethodHandle, "asType", MTD_MethodHandle_MethodType);
-                    cob.putfield(proxyDesc, mi.fieldName, CD_MethodHandle);
+                    cob.aload(0)
+                       .aload(3)
+                       .loadConstant(mi.desc)
+                       .invokevirtual(CD_MethodHandle, "asType", MTD_MethodHandle_MethodType)
+                       .putfield(proxyDesc, mi.fieldName, CD_MethodHandle);
                 }
 
                 // complete
@@ -421,26 +424,26 @@ public class MethodHandleProxies {
             clb.withMethodBody(ENSURE_ORIGINAL_LOOKUP, MTD_void_Lookup, ACC_PRIVATE | ACC_STATIC, cob -> {
                 var failLabel = cob.newLabel();
                 // check lookupClass
-                cob.aload(0);
-                cob.invokevirtual(CD_MethodHandles_Lookup, "lookupClass", MTD_Class);
-                cob.constantInstruction(proxyDesc);
-                cob.if_acmpne(failLabel);
-                // check original access
-                cob.aload(0);
-                cob.invokevirtual(CD_MethodHandles_Lookup, "lookupModes", MTD_int);
-                cob.constantInstruction(Lookup.ORIGINAL);
-                cob.iand();
-                cob.ifeq(failLabel);
-                // success
-                cob.return_();
-                // throw exception
-                cob.labelBinding(failLabel);
-                cob.new_(CD_IllegalAccessException);
-                cob.dup();
-                cob.aload(0); // lookup
-                cob.invokevirtual(CD_Object, "toString", MTD_String);
-                cob.invokespecial(CD_IllegalAccessException, INIT_NAME, MTD_void_String);
-                cob.athrow();
+                cob.aload(0)
+                   .invokevirtual(CD_MethodHandles_Lookup, "lookupClass", MTD_Class)
+                   .loadConstant(proxyDesc)
+                   .if_acmpne(failLabel)
+                   // check original access
+                   .aload(0)
+                   .invokevirtual(CD_MethodHandles_Lookup, "lookupModes", MTD_int)
+                   .loadConstant(Lookup.ORIGINAL)
+                   .iand()
+                   .ifeq(failLabel)
+                   // success
+                   .return_()
+                   // throw exception
+                   .labelBinding(failLabel)
+                   .new_(CD_IllegalAccessException)
+                   .dup()
+                   .aload(0) // lookup
+                   .invokevirtual(CD_Object, "toString", MTD_String)
+                   .invokespecial(CD_IllegalAccessException, INIT_NAME, MTD_void_String)
+                   .athrow();
             });
 
             // implementation methods
@@ -449,14 +452,14 @@ public class MethodHandleProxies {
                 clb.withMethodBody(methodName, mi.desc, ACC_PUBLIC, cob -> cob
                         .trying(bcb -> {
                                     // return this.handleField.invokeExact(arguments...);
-                                    bcb.aload(0);
-                                    bcb.getfield(proxyDesc, mi.fieldName, CD_MethodHandle);
+                                    bcb.aload(0)
+                                       .getfield(proxyDesc, mi.fieldName, CD_MethodHandle);
                                     for (int j = 0; j < mi.desc.parameterCount(); j++) {
-                                        bcb.loadInstruction(TypeKind.from(mi.desc.parameterType(j)),
+                                        bcb.loadLocal(TypeKind.from(mi.desc.parameterType(j)),
                                                 bcb.parameterSlot(j));
                                     }
-                                    bcb.invokevirtual(CD_MethodHandle, "invokeExact", mi.desc);
-                                    bcb.returnInstruction(TypeKind.from(mi.desc.returnType()));
+                                    bcb.invokevirtual(CD_MethodHandle, "invokeExact", mi.desc)
+                                       .return_(TypeKind.from(mi.desc.returnType()));
                                 }, ctb -> ctb
                                         // catch (Error | RuntimeException | Declared ex) { throw ex; }
                                         .catchingMulti(mi.thrown, CodeBuilder::athrow)
@@ -529,16 +532,6 @@ public class MethodHandleProxies {
         } catch (Throwable e) {
             throw uncaughtException(e);
         }
-    }
-
-    private static ClassDesc desc(Class<?> cl) {
-        return cl.describeConstable().orElseThrow(() -> newInternalError("Cannot convert class "
-                + cl.getName() + " to a constant"));
-    }
-
-    private static MethodTypeDesc desc(MethodType mt) {
-        return mt.describeConstable().orElseThrow(() -> newInternalError("Cannot convert method type "
-                + mt + " to a constant"));
     }
 
     private static final JavaLangReflectAccess JLRA = SharedSecrets.getJavaLangReflectAccess();

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 
 Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
@@ -985,7 +985,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="phonebook">የስልክ ደብተር ድርድር ቅደም ተከተል</type>
 			<type key="collation" type="phonetic">የፎነቲክ ድርደራ ቅደም ተከተል</type>
 			<type key="collation" type="pinyin">ፒንይን የድርድር ቅደም ተከተል</type>
-			<type key="collation" type="reformed">ዳግም የተፈጠረ የድርድር ቅደም ተከተል</type>
 			<type key="collation" type="search">ለጠቅላላ ጉዳይ ፍለጋ</type>
 			<type key="collation" type="searchjl">በሃንጉል የመጀመሪያ ተነባቢ ፈልግ</type>
 			<type key="collation" type="standard">መደበኛ</type>
@@ -1982,9 +1981,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<regionFormat>{0} ጊዜ</regionFormat>
 			<regionFormat type="daylight">{0} የቀን ብርሃን ሰዓት</regionFormat>
 			<regionFormat type="standard">{0} መደበኛ ሰዓት</regionFormat>
-			<zone type="America/Santa_Isabel">
-				<exemplarCity>ሳንታ ኢዛቤል</exemplarCity>
-			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>የተቀነባበረ ሁለገብ ሰዓት</standard>
@@ -2106,9 +2102,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Australia/Melbourne">
 				<exemplarCity>ሜልቦርን</exemplarCity>
-			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity>ከሪ</exemplarCity>
 			</zone>
 			<zone type="Australia/Hobart">
 				<exemplarCity>ሆባርት</exemplarCity>
@@ -2263,9 +2256,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Creston">
 				<exemplarCity>ክረስተን</exemplarCity>
 			</zone>
-			<zone type="America/Yellowknife">
-				<exemplarCity>የሎውናይፍ</exemplarCity>
-			</zone>
 			<zone type="America/Edmonton">
 				<exemplarCity>ኤድመንተን</exemplarCity>
 			</zone>
@@ -2284,29 +2274,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Resolute">
 				<exemplarCity>ሪዞሊዩት</exemplarCity>
 			</zone>
-			<zone type="America/Rainy_River">
-				<exemplarCity>ሬኒ ሪቨር</exemplarCity>
-			</zone>
 			<zone type="America/Rankin_Inlet">
 				<exemplarCity>ራንኪን ኢንሌት</exemplarCity>
 			</zone>
 			<zone type="America/Coral_Harbour">
 				<exemplarCity>አቲኮካን</exemplarCity>
 			</zone>
-			<zone type="America/Thunder_Bay">
-				<exemplarCity>ተንደር ቤይ</exemplarCity>
-			</zone>
-			<zone type="America/Nipigon">
-				<exemplarCity>ኒፒጎን</exemplarCity>
-			</zone>
 			<zone type="America/Toronto">
 				<exemplarCity>ቶሮንቶ</exemplarCity>
 			</zone>
 			<zone type="America/Iqaluit">
 				<exemplarCity>ኢኳሊውት</exemplarCity>
-			</zone>
-			<zone type="America/Pangnirtung">
-				<exemplarCity>ፓንግኒርተንግ</exemplarCity>
 			</zone>
 			<zone type="America/Moncton">
 				<exemplarCity>ሞንክቶን</exemplarCity>
@@ -3121,17 +3099,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Africa/Dar_es_Salaam">
 				<exemplarCity>ዳሬ ሰላም</exemplarCity>
 			</zone>
-			<zone type="Europe/Uzhgorod">
-				<exemplarCity>ኡዝጎሮድ</exemplarCity>
-			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>ኪየቭ</exemplarCity>
 			</zone>
 			<zone type="Europe/Simferopol">
 				<exemplarCity>ሲምፈሮፖል</exemplarCity>
-			</zone>
-			<zone type="Europe/Zaporozhye">
-				<exemplarCity>ዛፖሮዚይ</exemplarCity>
 			</zone>
 			<zone type="Africa/Kampala">
 				<exemplarCity>ካምፓላ</exemplarCity>
@@ -3150,9 +3122,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Pacific/Honolulu">
 				<exemplarCity>ሆኖሉሉ</exemplarCity>
-			</zone>
-			<zone type="Pacific/Johnston">
-				<exemplarCity>ጆንስተን</exemplarCity>
 			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>አንኮራጅ</exemplarCity>
@@ -3803,11 +3772,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>የሎርድ ሆዌ የቀን ሰዓት አቆጣጠር</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>የማከሪ ደሴት ሰዓት</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>የማጋዳን የሰዓት አቆጣጠር</generic>
@@ -3845,13 +3809,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Mawson">
 				<long>
 					<standard>የማውሰን ሰዓት</standard>
-				</long>
-			</metazone>
-			<metazone type="Mexico_Northwest">
-				<long>
-					<generic>ሰሜናዊ ምእራብ የሜክሲኮ ሰዓት አቆጣጠር</generic>
-					<standard>ሰሜናዊ ምእራብ የሜክሲኮ መደበኛ ሰዓት አቆጣጠር</standard>
-					<daylight>ሰሜናዊ ምእራብ የሜክሲኮ የቀን ሰዓት አቆጣጠር</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">

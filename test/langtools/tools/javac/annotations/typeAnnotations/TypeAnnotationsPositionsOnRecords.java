@@ -197,15 +197,15 @@ public class TypeAnnotationsPositionsOnRecords {
 
     // utility methods
     void findAnnotations(ClassModel cm, AttributedElement m, List<TypeAnnotation> annos) {
-        findAnnotations(cm, m, Attributes.RUNTIME_VISIBLE_TYPE_ANNOTATIONS, annos);
-        findAnnotations(cm, m, Attributes.RUNTIME_INVISIBLE_TYPE_ANNOTATIONS, annos);
+        findAnnotations(cm, m, Attributes.runtimeVisibleTypeAnnotations(), annos);
+        findAnnotations(cm, m, Attributes.runtimeInvisibleTypeAnnotations(), annos);
     }
 
     <T extends Attribute<T>> void findAnnotations(ClassModel cf, AttributedElement m, AttributeMapper<T> attrName, List<TypeAnnotation> annos) {
         Attribute<T> attr = m.findAttribute(attrName).orElse(null);
         addAnnos(annos, attr);
         if (m instanceof MethodModel) {
-            CodeAttribute cattr = m.findAttribute(Attributes.CODE).orElse(null);
+            CodeAttribute cattr = m.findAttribute(Attributes.code()).orElse(null);
             if (cattr != null) {
                 attr = cattr.findAttribute(attrName).orElse(null);
                 addAnnos(annos, attr);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -264,57 +264,18 @@ bool JvmtiEnvThreadState::is_frame_pop(int cur_frame_number) {
   return get_frame_pops()->contains(fp);
 }
 
-class VM_VirtualThreadGetCurrentLocation : public VM_Operation {
- private:
-   Handle _vthread_h;
-   jmethodID _method_id;
-   int _bci;
-   bool _completed;
-
- public:
-  VM_VirtualThreadGetCurrentLocation(Handle vthread_h)
-    : _vthread_h(vthread_h),
-      _method_id(nullptr),
-      _bci(0),
-      _completed(false)
-  {}
-
-  VMOp_Type type() const { return VMOp_VirtualThreadGetCurrentLocation; }
-  void doit() {
-    if (!JvmtiEnvBase::is_vthread_alive(_vthread_h())) {
-      return; // _completed remains false.
-    }
-    ResourceMark rm;
-    javaVFrame* jvf = JvmtiEnvBase::get_vthread_jvf(_vthread_h());
-
-    if (jvf != nullptr) {
-      // jvf can be null, when the native enterSpecial frame is on the top.
-      Method* method = jvf->method();
-      _method_id = method->jmethod_id();
-      _bci = jvf->bci();
-    }
-    _completed = true;
-  }
-  void get_current_location(jmethodID *method_id, int *bci) {
-    *method_id = _method_id;
-    *bci = _bci;
-  }
-  bool completed() {
-    return _completed;
-  }
-};
-
-class GetCurrentLocationClosure : public HandshakeClosure {
+class GetCurrentLocationClosure : public JvmtiUnitedHandshakeClosure {
  private:
    jmethodID _method_id;
    int _bci;
    bool _completed;
  public:
   GetCurrentLocationClosure()
-    : HandshakeClosure("GetCurrentLocation"),
+    : JvmtiUnitedHandshakeClosure("GetCurrentLocation"),
       _method_id(nullptr),
       _bci(0),
       _completed(false) {}
+
   void do_thread(Thread *target) {
     JavaThread *jt = JavaThread::cast(target);
     ResourceMark rmark; // jt != Thread::current()
@@ -332,6 +293,21 @@ class GetCurrentLocationClosure : public HandshakeClosure {
         _method_id = method->jmethod_id();
         _bci = vf->bci();
       }
+    }
+    _completed = true;
+  }
+  void do_vthread(Handle target_h) {
+    assert(_target_jt == nullptr || !_target_jt->is_exiting(), "sanity check");
+    // Use jvmti_vthread() instead of vthread() as target could have temporarily changed
+    // identity to carrier thread (see VirtualThread.switchToCarrierThread).
+    assert(_target_jt == nullptr || _target_jt->jvmti_vthread() == target_h(), "sanity check");
+    ResourceMark rm;
+    javaVFrame *jvf = JvmtiEnvBase::get_vthread_jvf(target_h());
+
+    if (jvf != nullptr) {
+      Method* method = jvf->method();
+      _method_id = method->jmethod_id();
+      _bci = jvf->bci();
     }
     _completed = true;
   }
@@ -372,41 +348,25 @@ void JvmtiEnvThreadState::reset_current_location(jvmtiEvent event_type, bool ena
   if (enabled) {
     // If enabling breakpoint, no need to reset.
     // Can't do anything if empty stack.
-
     JavaThread* thread = get_thread_or_saved();
 
-    oop thread_oop = jvmti_thread_state()->get_thread_oop();
+    if (event_type == JVMTI_EVENT_SINGLE_STEP &&
+        ((thread == nullptr && is_virtual()) || thread->has_last_Java_frame())) {
+      JavaThread* current = JavaThread::current();
+      HandleMark hm(current);
+      oop thread_oop = jvmti_thread_state()->get_thread_oop();
+      Handle thread_h(current, thread_oop);
+      ThreadsListHandle tlh(current);
 
-    if (thread == nullptr && event_type == JVMTI_EVENT_SINGLE_STEP && is_virtual()) {
-      // Handle the unmounted virtual thread case.
-      jmethodID method_id;
-      int bci;
-      JavaThread* cur_thread = JavaThread::current();
-      HandleMark hm(cur_thread);
-      VM_VirtualThreadGetCurrentLocation op(Handle(cur_thread, thread_oop));
-      VMThread::execute(&op);
+      GetCurrentLocationClosure op;
+      JvmtiHandshake::execute(&op, &tlh, thread, thread_h);
+
       if (op.completed()) {
-        // Do nothing if virtual thread has been already terminated.
+        jmethodID method_id;
+        int bci;
         op.get_current_location(&method_id, &bci);
         set_current_location(method_id, bci);
       }
-      return;
-    }
-    if (event_type == JVMTI_EVENT_SINGLE_STEP && thread->has_last_Java_frame()) {
-      jmethodID method_id;
-      int bci;
-      // The java thread stack may not be walkable for a running thread
-      // so get current location with direct handshake.
-      GetCurrentLocationClosure op;
-      Thread *current = Thread::current();
-      if (thread->is_handshake_safe_for(current)) {
-        op.do_thread(thread);
-      } else {
-        Handshake::execute(&op, thread);
-        guarantee(op.completed(), "Handshake failed. Target thread is not alive?");
-      }
-      op.get_current_location(&method_id, &bci);
-      set_current_location(method_id, bci);
     }
   } else if (event_type == JVMTI_EVENT_SINGLE_STEP || !is_enabled(JVMTI_EVENT_SINGLE_STEP)) {
     // If this is to disable breakpoint, also check if single-step is not enabled

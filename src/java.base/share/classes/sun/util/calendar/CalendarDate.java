@@ -59,7 +59,7 @@ import java.util.TimeZone;
  * @author Masayoshi Okutsu
  * @since 1.5
  */
-public sealed abstract class CalendarDate implements Cloneable
+public abstract sealed class CalendarDate implements Cloneable
         permits BaseCalendar.Date {
     public static final int FIELD_UNDEFINED = Integer.MIN_VALUE;
     public static final long TIME_UNDEFINED = Long.MIN_VALUE;

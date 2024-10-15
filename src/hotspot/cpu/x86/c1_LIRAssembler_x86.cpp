@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,7 +72,6 @@ static jlong *double_signflip_pool = double_quadword(&fp_signmask_pool[4*2], (jl
 
 
 NEEDS_CLEANUP // remove this definitions ?
-const Register IC_Klass    = rax;   // where the IC klass is cached
 const Register SYNC_header = rax;   // synchronization header
 const Register SHIFT_count = rcx;   // where count for shift operations must be
 
@@ -336,23 +335,7 @@ void LIR_Assembler::osr_entry() {
 
 // inline cache check; done before the frame is built.
 int LIR_Assembler::check_icache() {
-  Register receiver = FrameMap::receiver_opr->as_register();
-  Register ic_klass = IC_Klass;
-  const int ic_cmp_size = LP64_ONLY(10) NOT_LP64(9);
-  const bool do_post_padding = VerifyOops || UseCompressedClassPointers;
-  if (!do_post_padding) {
-    // insert some nops so that the verified entry point is aligned on CodeEntryAlignment
-    __ align(CodeEntryAlignment, __ offset() + ic_cmp_size);
-  }
-  int offset = __ offset();
-  __ inline_cache_check(receiver, IC_Klass);
-  assert(__ offset() % CodeEntryAlignment == 0 || do_post_padding, "alignment must be correct");
-  if (do_post_padding) {
-    // force alignment after the cache check.
-    // It's been verified to be aligned if !VerifyOops
-    __ align(CodeEntryAlignment);
-  }
-  return offset;
+  return __ ic_check(CodeEntryAlignment);
 }
 
 void LIR_Assembler::clinit_barrier(ciMethod* method) {
@@ -416,7 +399,7 @@ int LIR_Assembler::emit_exception_handler() {
   __ verify_not_null_oop(rax);
 
   // search an exception handler (rax: exception oop, rdx: throwing pc)
-  __ call(RuntimeAddress(Runtime1::entry_for(Runtime1::handle_exception_from_callee_id)));
+  __ call(RuntimeAddress(Runtime1::entry_for(C1StubId::handle_exception_from_callee_id)));
   __ should_not_reach_here();
   guarantee(code_offset() - offset <= exception_handler_size(), "overflow");
   __ end_a_stub();
@@ -480,7 +463,7 @@ int LIR_Assembler::emit_unwind_handler() {
 
   // remove the activation and dispatch to the unwind handler
   __ remove_frame(initial_frame_size_in_bytes());
-  __ jump(RuntimeAddress(Runtime1::entry_for(Runtime1::unwind_exception_id)));
+  __ jump(RuntimeAddress(Runtime1::entry_for(C1StubId::unwind_exception_id)));
 
   // Emit the slow path assembly
   if (stub != nullptr) {
@@ -1583,7 +1566,7 @@ void LIR_Assembler::emit_opConvert(LIR_OpConvert* op) {
 
       // instruction sequence too long to inline it here
       {
-        __ call(RuntimeAddress(Runtime1::entry_for(Runtime1::fpu2long_stub_id)));
+        __ call(RuntimeAddress(Runtime1::entry_for(C1StubId::fpu2long_stub_id)));
       }
       break;
 #endif // _LP64
@@ -1595,6 +1578,7 @@ void LIR_Assembler::emit_opConvert(LIR_OpConvert* op) {
 void LIR_Assembler::emit_alloc_obj(LIR_OpAllocObj* op) {
   if (op->init_check()) {
     add_debug_info_for_null_check_here(op->stub()->info());
+    // init_state needs acquire, but x86 is TSO, and so we are already good.
     __ cmpb(Address(op->klass()->as_register(),
                     InstanceKlass::init_state_offset()),
                     InstanceKlass::fully_initialized);
@@ -1635,10 +1619,11 @@ void LIR_Assembler::emit_alloc_array(LIR_OpAllocArray* op) {
                       len,
                       tmp1,
                       tmp2,
-                      arrayOopDesc::header_size(op->type()),
+                      arrayOopDesc::base_offset_in_bytes(op->type()),
                       array_element_size(op->type()),
                       op->klass()->as_register(),
-                      *op->stub()->entry());
+                      *op->stub()->entry(),
+                      op->zero_array());
   }
   __ bind(*op->stub()->continuation());
 }
@@ -1797,7 +1782,7 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
 #else
         __ pushklass(k->constant_encoding(), noreg);
 #endif // _LP64
-        __ call(RuntimeAddress(Runtime1::entry_for(Runtime1::slow_subtype_check_id)));
+        __ call(RuntimeAddress(Runtime1::entry_for(C1StubId::slow_subtype_check_id)));
         __ pop(klass_RInfo);
         __ pop(klass_RInfo);
         // result is a boolean
@@ -1811,7 +1796,7 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
       // call out-of-line instance of __ check_klass_subtype_slow_path(...):
       __ push(klass_RInfo);
       __ push(k_RInfo);
-      __ call(RuntimeAddress(Runtime1::entry_for(Runtime1::slow_subtype_check_id)));
+      __ call(RuntimeAddress(Runtime1::entry_for(C1StubId::slow_subtype_check_id)));
       __ pop(klass_RInfo);
       __ pop(k_RInfo);
       // result is a boolean
@@ -1890,7 +1875,7 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
     // call out-of-line instance of __ check_klass_subtype_slow_path(...):
     __ push(klass_RInfo);
     __ push(k_RInfo);
-    __ call(RuntimeAddress(Runtime1::entry_for(Runtime1::slow_subtype_check_id)));
+    __ call(RuntimeAddress(Runtime1::entry_for(C1StubId::slow_subtype_check_id)));
     __ pop(klass_RInfo);
     __ pop(k_RInfo);
     // result is a boolean
@@ -2852,7 +2837,7 @@ void LIR_Assembler::align_call(LIR_Code code) {
     offset += NativeCall::displacement_offset;
     break;
   case lir_icvirtual_call:
-    offset += NativeCall::displacement_offset + NativeMovConstReg::instruction_size;
+    offset += NativeCall::displacement_offset + NativeMovConstReg::instruction_size_rex;
     break;
   default: ShouldNotReachHere();
   }
@@ -2889,7 +2874,7 @@ void LIR_Assembler::emit_static_call_stub() {
   int start = __ offset();
 
   // make sure that the displacement word of the call ends up word aligned
-  __ align(BytesPerWord, __ offset() + NativeMovConstReg::instruction_size + NativeCall::displacement_offset);
+  __ align(BytesPerWord, __ offset() + NativeMovConstReg::instruction_size_rex + NativeCall::displacement_offset);
   __ relocate(static_stub_Relocation::spec(call_pc));
   __ mov_metadata(rbx, (Metadata*)nullptr);
   // must be set to -1 at code generation time
@@ -2909,7 +2894,7 @@ void LIR_Assembler::throw_op(LIR_Opr exceptionPC, LIR_Opr exceptionOop, CodeEmit
   // exception object is not added to oop map by LinearScan
   // (LinearScan assumes that no oops are in fixed registers)
   info->add_register_oop(exceptionOop);
-  Runtime1::StubID unwind_id;
+  C1StubId unwind_id;
 
   // get current pc information
   // pc is only needed if the method has an exception handler, the unwind code does not need it.
@@ -2921,9 +2906,9 @@ void LIR_Assembler::throw_op(LIR_Opr exceptionPC, LIR_Opr exceptionOop, CodeEmit
   __ verify_not_null_oop(rax);
   // search an exception handler (rax: exception oop, rdx: throwing pc)
   if (compilation()->has_fpu_code()) {
-    unwind_id = Runtime1::handle_exception_id;
+    unwind_id = C1StubId::handle_exception_id;
   } else {
-    unwind_id = Runtime1::handle_exception_nofpu_id;
+    unwind_id = C1StubId::handle_exception_nofpu_id;
   }
   __ call(RuntimeAddress(Runtime1::entry_for(unwind_id)));
 
@@ -3278,7 +3263,7 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
 
       __ push(src);
       __ push(dst);
-      __ call(RuntimeAddress(Runtime1::entry_for(Runtime1::slow_subtype_check_id)));
+      __ call(RuntimeAddress(Runtime1::entry_for(C1StubId::slow_subtype_check_id)));
       __ pop(dst);
       __ pop(src);
 
@@ -3470,7 +3455,9 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
   address entry = StubRoutines::select_arraycopy_function(basic_type, aligned, disjoint, name, false);
   __ call_VM_leaf(entry, 0);
 
-  __ bind(*stub->continuation());
+  if (stub != nullptr) {
+    __ bind(*stub->continuation());
+  }
 }
 
 void LIR_Assembler::emit_updatecrc32(LIR_OpUpdateCRC32* op) {

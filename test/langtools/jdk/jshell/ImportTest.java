@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8141415
+ * @bug 8141415 8129418
  * @summary Test imports
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -33,16 +33,20 @@
  * @run testng ImportTest
  */
 
+import java.lang.reflect.Method;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.function.Consumer;
 
 import javax.tools.Diagnostic;
+import jdk.jshell.JShell;
 
 import jdk.jshell.Snippet;
 import org.testng.annotations.Test;
 
 import static jdk.jshell.Snippet.Status.VALID;
 import static jdk.jshell.Snippet.Status.OVERWRITTEN;
+import static jdk.jshell.Snippet.SubKind.MODULE_IMPORT_SUBKIND;
 import static jdk.jshell.Snippet.SubKind.SINGLE_TYPE_IMPORT_SUBKIND;
 import static jdk.jshell.Snippet.SubKind.SINGLE_STATIC_IMPORT_SUBKIND;
 import static jdk.jshell.Snippet.SubKind.TYPE_IMPORT_ON_DEMAND_SUBKIND;
@@ -76,12 +80,11 @@ public class ImportTest extends KullaTesting {
         assertEval("abs(cos(PI / 2)) < 0.00001;", "true");
     }
 
-    @Test(enabled = false) // TODO 8129418
     public void testUnknownPackage() {
         assertDeclareFail("import unknown.qqq;",
                 new ExpectedDiagnostic("compiler.err.doesnt.exist", 7, 18, 14, -1, -1, Diagnostic.Kind.ERROR));
         assertDeclareFail("import unknown.*;",
-                new ExpectedDiagnostic("compiler.err.doesnt.exist", 7, 15, 7, -1, -1, Diagnostic.Kind.ERROR));
+                new ExpectedDiagnostic("compiler.err.doesnt.exist", 7, 14, 7, -1, -1, Diagnostic.Kind.ERROR));
     }
 
     public void testBogusImportIgnoredInFuture() {
@@ -168,4 +171,20 @@ public class ImportTest extends KullaTesting {
         assertImportKeyMatch("import java.util.List;//comment", "List", SINGLE_TYPE_IMPORT_SUBKIND, added(VALID));
         assertEval("List l = null;");
     }
+
+    public void testImportModule() {
+        assertImportKeyMatch("import module java.base;", "java.base", MODULE_IMPORT_SUBKIND, added(VALID));
+        assertEval("MethodHandle m;");
+    }
+
+    @org.testng.annotations.BeforeMethod
+    public void setUp(Method m) {
+        switch (m.getName()) {
+            case "testImportModule" ->
+                super.setUp(bc -> bc.compilerOptions("--source", System.getProperty("java.specification.version"), "--enable-preview").remoteVMOptions("--enable-preview"));
+            default ->
+                super.setUp(bc -> {});
+        }
+    }
+
 }

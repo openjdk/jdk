@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,6 @@ PSAdaptiveSizePolicy::PSAdaptiveSizePolicy(size_t init_eden_size,
                                            size_t init_survivor_size,
                                            size_t space_alignment,
                                            double gc_pause_goal_sec,
-                                           double gc_minor_pause_goal_sec,
                                            uint gc_cost_ratio) :
      AdaptiveSizePolicy(init_eden_size,
                         init_promo_size,
@@ -50,12 +49,11 @@ PSAdaptiveSizePolicy::PSAdaptiveSizePolicy(size_t init_eden_size,
                         gc_cost_ratio),
      _avg_major_pause(new AdaptivePaddedAverage(AdaptiveTimeWeight, PausePadding)),
      _avg_base_footprint(new AdaptiveWeightedAverage(AdaptiveSizePolicyWeight)),
-     _gc_stats(),
+     _avg_promoted(new AdaptivePaddedNoZeroDevAverage(AdaptiveSizePolicyWeight, PromotedPadding)),
      _major_pause_old_estimator(new LinearLeastSquareFit(AdaptiveSizePolicyWeight)),
      _major_pause_young_estimator(new LinearLeastSquareFit(AdaptiveSizePolicyWeight)),
      _latest_major_mutator_interval_seconds(0),
      _space_alignment(space_alignment),
-     _gc_minor_pause_goal_sec(gc_minor_pause_goal_sec),
      _live_at_last_full_gc(init_promo_size),
      _change_old_gen_for_min_pauses(0),
      _change_young_gen_for_maj_pauses(0),
@@ -207,8 +205,6 @@ void PSAdaptiveSizePolicy::compute_eden_space_size(
                                            bool   is_full_gc) {
 
   // Update statistics
-  // Time statistics are updated as we go, update footprint stats here
-  _avg_base_footprint->sample(BaseFootPrintEstimate);
   avg_young_live()->sample(young_live);
   avg_eden_live()->sample(eden_live);
 
@@ -282,7 +278,7 @@ void PSAdaptiveSizePolicy::compute_eden_space_size(
     // at a time.
     adjust_eden_for_pause_time(&desired_eden_size);
 
-  } else if (_avg_minor_pause->padded_average() > gc_minor_pause_goal_sec()) {
+  } else if (_avg_minor_pause->padded_average() > gc_pause_goal_sec()) {
     // Adjust only for the minor pause time goal
     adjust_eden_for_minor_pause_time(&desired_eden_size);
 
@@ -365,8 +361,7 @@ void PSAdaptiveSizePolicy::compute_eden_space_size(
   log_debug(gc, ergo)("Live_space: " SIZE_FORMAT " free_space: " SIZE_FORMAT,
                       live_space(), free_space());
 
-  log_trace(gc, ergo)("Base_footprint: " SIZE_FORMAT " avg_young_live: " SIZE_FORMAT " avg_old_live: " SIZE_FORMAT,
-                      (size_t)_avg_base_footprint->average(),
+  log_trace(gc, ergo)("avg_young_live: " SIZE_FORMAT " avg_old_live: " SIZE_FORMAT,
                       (size_t)avg_young_live()->average(),
                       (size_t)avg_old_live()->average());
 
@@ -537,8 +532,7 @@ void PSAdaptiveSizePolicy::compute_old_gen_free_space(
   log_debug(gc, ergo)("Live_space: " SIZE_FORMAT " free_space: " SIZE_FORMAT,
                       live_space(), free_space());
 
-  log_trace(gc, ergo)("Base_footprint: " SIZE_FORMAT " avg_young_live: " SIZE_FORMAT " avg_old_live: " SIZE_FORMAT,
-                      (size_t)_avg_base_footprint->average(),
+  log_trace(gc, ergo)("avg_young_live: " SIZE_FORMAT " avg_old_live: " SIZE_FORMAT,
                       (size_t)avg_young_live()->average(),
                       (size_t)avg_old_live()->average());
 

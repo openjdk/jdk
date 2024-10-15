@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -463,11 +463,6 @@ void InterpreterMacroAssembler::get_cache_index_at_bcp(Register index,
     load_unsigned_short(index, Address(_bcp_register, bcp_offset));
   } else if (index_size == sizeof(u4)) {
     movl(index, Address(_bcp_register, bcp_offset));
-    // Check if the secondary index definition is still ~x, otherwise
-    // we have to change the following assembler code to calculate the
-    // plain index.
-    assert(ConstantPool::decode_invokedynamic_index(~123) == 123, "else change next line");
-    notl(index);  // convert to plain index
   } else if (index_size == sizeof(u1)) {
     load_unsigned_byte(index, Address(_bcp_register, bcp_offset));
   } else {
@@ -1180,21 +1175,18 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg) {
 
     if (DiagnoseSyncOnValueBasedClasses != 0) {
       load_klass(tmp_reg, obj_reg, rklass_decode_tmp);
-      movl(tmp_reg, Address(tmp_reg, Klass::access_flags_offset()));
-      testl(tmp_reg, JVM_ACC_IS_VALUE_BASED_CLASS);
+      testb(Address(tmp_reg, Klass::misc_flags_offset()), KlassFlags::_misc_is_value_based_class);
       jcc(Assembler::notZero, slow_case);
     }
 
     if (LockingMode == LM_LIGHTWEIGHT) {
 #ifdef _LP64
       const Register thread = r15_thread;
+      lightweight_lock(lock_reg, obj_reg, swap_reg, thread, tmp_reg, slow_case);
 #else
-      const Register thread = lock_reg;
-      get_thread(thread);
+      // Lacking registers and thread on x86_32. Always take slow path.
+      jmp(slow_case);
 #endif
-      // Load object header, prepare for CAS from unlocked to locked.
-      movptr(swap_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
-      lightweight_lock(obj_reg, swap_reg, thread, tmp_reg, slow_case);
     } else if (LockingMode == LM_LEGACY) {
       // Load immediate 1 into swap_reg %rax
       movl(swap_reg, 1);
@@ -1256,15 +1248,9 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg) {
     bind(slow_case);
 
     // Call the runtime routine for slow case
-    if (LockingMode == LM_LIGHTWEIGHT) {
-      call_VM(noreg,
-              CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter_obj),
-              obj_reg);
-    } else {
-      call_VM(noreg,
-              CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter),
-              lock_reg);
-    }
+    call_VM(noreg,
+            CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter),
+            lock_reg);
     bind(done);
   }
 }
@@ -1311,20 +1297,11 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg) {
 
     if (LockingMode == LM_LIGHTWEIGHT) {
 #ifdef _LP64
-      const Register thread = r15_thread;
+      lightweight_unlock(obj_reg, swap_reg, r15_thread, header_reg, slow_case);
 #else
-      const Register thread = header_reg;
-      get_thread(thread);
+      // Lacking registers and thread on x86_32. Always take slow path.
+      jmp(slow_case);
 #endif
-      // Handle unstructured locking.
-      Register tmp = swap_reg;
-      movl(tmp, Address(thread, JavaThread::lock_stack_top_offset()));
-      cmpptr(obj_reg, Address(thread, tmp, Address::times_1,  -oopSize));
-      jcc(Assembler::notEqual, slow_case);
-      // Try to swing header from locked to unlocked.
-      movptr(swap_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
-      andptr(swap_reg, ~(int32_t)markWord::lock_mask_in_place);
-      lightweight_unlock(obj_reg, swap_reg, header_reg, slow_case);
     } else if (LockingMode == LM_LEGACY) {
       // Load the old header from BasicLock structure
       movptr(header_reg, Address(swap_reg,
@@ -1969,8 +1946,7 @@ void InterpreterMacroAssembler::notify_method_entry() {
     bind(L);
   }
 
-  {
-    SkipIfEqual skip(this, &DTraceMethodProbes, false, rscratch1);
+  if (DTraceMethodProbes) {
     NOT_LP64(get_thread(rthread);)
     get_method(rarg);
     call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_method_entry),
@@ -2014,8 +1990,7 @@ void InterpreterMacroAssembler::notify_method_exit(
     pop(state);
   }
 
-  {
-    SkipIfEqual skip(this, &DTraceMethodProbes, false, rscratch1);
+  if (DTraceMethodProbes) {
     push(state);
     NOT_LP64(get_thread(rthread);)
     get_method(rarg);

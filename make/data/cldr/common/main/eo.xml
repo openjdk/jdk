@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -2690,17 +2690,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Africa/Dar_es_Salaam">
 				<exemplarCity draft="unconfirmed">Daresalamo</exemplarCity>
 			</zone>
-			<zone type="Europe/Uzhgorod">
-				<exemplarCity draft="unconfirmed">Uĵhorodo</exemplarCity>
-			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity draft="unconfirmed">Kievo</exemplarCity>
 			</zone>
 			<zone type="Europe/Simferopol">
 				<exemplarCity draft="unconfirmed">Simferopolo</exemplarCity>
-			</zone>
-			<zone type="Europe/Zaporozhye">
-				<exemplarCity draft="unconfirmed">Zaporiĵo</exemplarCity>
 			</zone>
 			<zone type="Africa/Kampala">
 				<exemplarCity draft="unconfirmed">Kampalo</exemplarCity>
@@ -3231,11 +3225,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight draft="unconfirmed">Lord Howe (somera tempo)</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard draft="unconfirmed">makvor-insula tempo</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic draft="unconfirmed">magadana tempo</generic>
@@ -3253,13 +3242,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic draft="unconfirmed">maŭricia tempo</generic>
 					<standard draft="unconfirmed">maŭricia norma tempo</standard>
 					<daylight draft="unconfirmed">maŭricia somera tempo</daylight>
-				</long>
-			</metazone>
-			<metazone type="Mexico_Northwest">
-				<long>
-					<generic draft="unconfirmed">nordokcidenta meksika tempo</generic>
-					<standard draft="unconfirmed">nordokcidenta meksika norma tempo</standard>
-					<daylight draft="unconfirmed">nordokcidenta meksika somera tempo</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">

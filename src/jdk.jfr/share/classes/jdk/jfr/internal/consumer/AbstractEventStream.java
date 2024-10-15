@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -205,7 +205,7 @@ public abstract class AbstractEventStream implements EventStream {
 
     protected abstract void process() throws IOException;
 
-    protected abstract boolean isRecording();
+    protected abstract boolean isRecordingStream();
 
     protected final void closeParser() {
         parserState.close();
@@ -249,7 +249,7 @@ public abstract class AbstractEventStream implements EventStream {
             if (streamConfiguration.started) {
                 throw new IllegalStateException("Event stream can only be started once");
             }
-            if (isRecording() && streamConfiguration.startTime == null) {
+            if (isRecordingStream() && streamConfiguration.startTime == null) {
                 streamConfiguration.setStartNanos(startNanos);
             }
             streamConfiguration.setStarted(true);

@@ -177,10 +177,11 @@ is equivalent to <code>make test TEST="tier1"</code>, but the latter is
 more tab-completion friendly. For more complex test runs, the
 <code>test TEST="x"</code> solution needs to be used.</p>
 <p>The test specifications given in <code>TEST</code> is parsed into
-fully qualified test descriptors, which clearly and unambigously show
+fully qualified test descriptors, which clearly and unambiguously show
 which tests will be run. As an example, <code>:tier1</code> will expand
-to
-<code>jtreg:$(TOPDIR)/test/hotspot/jtreg:tier1 jtreg:$(TOPDIR)/test/jdk:tier1 jtreg:$(TOPDIR)/test/langtools:tier1 jtreg:$(TOPDIR)/test/nashorn:tier1 jtreg:$(TOPDIR)/test/jaxp:tier1</code>.
+to include all subcomponent test directories that define
+<code>tier1</code>, for example:
+<code>jtreg:$(TOPDIR)/test/hotspot/jtreg:tier1 jtreg:$(TOPDIR)/test/jdk:tier1 jtreg:$(TOPDIR)/test/langtools:tier1 ...</code>.
 You can always submit a list of fully qualified test descriptors in the
 <code>TEST</code> variable if you want to shortcut the parser.</p>
 <h3 id="common-test-groups">Common Test Groups</h3>
@@ -227,7 +228,7 @@ tests.</p></li>
 These contain, among other things, tests that either run for too long to
 be at <code>tier1</code>, or may require special configuration, or tests
 that are less stable, or cover the broader range of non-core JVM and JDK
-features/components(for example, XML).</p></li>
+features/components (for example, XML).</p></li>
 <li><p><code>tier3</code>: This test group includes more stressful
 tests, the tests for corner cases not covered by previous tiers, plus
 the tests that require GUIs. As such, this suite should either be run
@@ -367,7 +368,7 @@ would give an error, while <code>JTREG_TMIEOUT_FACTOR=8</code> would
 just pass unnoticed.</p>
 <p>To separate multiple keyword=value pairs, use <code>;</code>
 (semicolon). Since the shell normally eats <code>;</code>, the
-recommended usage is to write the assignment inside qoutes, e.g.
+recommended usage is to write the assignment inside quotes, e.g.
 <code>JTREG="...;..."</code>. This will also make sure spaces are
 preserved, as in
 <code>JTREG="JAVA_OPTIONS=-XshowSettings -Xlog:gc+ref=debug"</code>.</p>
@@ -396,10 +397,8 @@ TEST_OPTS keywords.</p>
 <p>Applies to JTReg, GTest and Micro.</p>
 <h4 id="vm_options">VM_OPTIONS</h4>
 <p>Applies to JTReg, GTest and Micro.</p>
-<h4 id="aot_modules">AOT_MODULES</h4>
-<p>Applies to JTReg and GTest.</p>
 <h4 id="jcov">JCOV</h4>
-<p>This keywords applies globally to the test runner system. If set to
+<p>This keyword applies globally to the test runner system. If set to
 <code>true</code>, it enables JCov coverage reporting for all tests run.
 To be useful, the JDK under test must be run with a JDK built with JCov
 instrumentation
@@ -499,11 +498,6 @@ options to your test classes, use <code>JAVA_OPTIONS</code>.</p>
 <h4 id="launcher_options">LAUNCHER_OPTIONS</h4>
 <p>Additional Java options that are sent to the java launcher that
 starts the JTReg harness.</p>
-<h4 id="aot_modules-1">AOT_MODULES</h4>
-<p>Generate AOT modules before testing for the specified module, or set
-of modules. If multiple modules are specified, they should be separated
-by space (or, to help avoid quoting issues, the special value
-<code>%20</code>).</p>
 <h4 id="retry_count">RETRY_COUNT</h4>
 <p>Retry failed tests up to a set number of times, until they pass. This
 allows to pass the tests with intermittent failures. Defaults to 0.</p>
@@ -526,11 +520,6 @@ intermittent problem.</p>
 <p>Additional options to the Gtest test framework.</p>
 <p>Use <code>GTEST="OPTIONS=--help"</code> to see all available Gtest
 options.</p>
-<h4 id="aot_modules-2">AOT_MODULES</h4>
-<p>Generate AOT modules before testing for the specified module, or set
-of modules. If multiple modules are specified, they should be separated
-by space (or, to help avoid quoting issues, the special value
-<code>%20</code>).</p>
 <h3 id="microbenchmark-keywords">Microbenchmark keywords</h3>
 <h4 id="fork">FORK</h4>
 <p>Override the number of benchmark forks to spawn. Same as specifying
@@ -574,7 +563,7 @@ docker image are required on Ubuntu 18.04 by using
 <p>If your locale is non-US, some tests are likely to fail. To work
 around this you can set the locale to US. On Unix platforms simply
 setting <code>LANG="en_US"</code> in the environment before running
-tests should work. On Windows or MacOS, setting
+tests should work. On Windows or macOS, setting
 <code>JTREG="VM_OPTIONS=-Duser.language=en -Duser.country=US"</code>
 helps for most, but not all test cases.</p>
 <p>For example:</p>
@@ -609,7 +598,7 @@ provided below.</p>
 Shortcuts; select or deselect desired shortcut.</p>
 <p>For example,
 test/jdk/javax/swing/TooltipManager/JMenuItemToolTipKeyBindingsTest/JMenuItemToolTipKeyBindingsTest.java
-fails on MacOS because it uses <code>CTRL + F1</code> key sequence to
+fails on macOS because it uses <code>CTRL + F1</code> key sequence to
 show or hide tooltip message but the key combination is reserved by the
 operating system. To run the test correctly the default global key
 shortcut should be disabled using the steps described above, and then

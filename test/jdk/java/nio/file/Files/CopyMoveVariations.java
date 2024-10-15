@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import java.nio.file.AccessDeniedException;
 import java.nio.file.CopyOption;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
+import java.nio.file.FileStore;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.attribute.PosixFilePermission;
@@ -68,19 +69,21 @@ public class CopyMoveVariations {
     }
 
     private static final boolean SUPPORTS_POSIX_PERMISSIONS;
+    private static final String TMP_DIR =
+        System.getProperty("copymove.tmp.dir", ".");
 
     static {
-        Path tmp = null;
+        Path tempFile = null;
         try {
-            tmp = Files.createTempFile("this", "that");
+            tempFile = Files.createTempFile(Path.of(TMP_DIR), "this", "that");
             SUPPORTS_POSIX_PERMISSIONS =
-                Files.getFileStore(tmp).supportsFileAttributeView("posix");
+                Files.getFileStore(tempFile).supportsFileAttributeView("posix");
         } catch (IOException cause) {
             throw new UncheckedIOException(cause);
         } finally {
-            if (tmp != null) {
+            if (tempFile != null) {
                 try {
-                    Files.delete(tmp);
+                    Files.delete(tempFile);
                 } catch (IOException ignore)  {
                 }
             }
@@ -89,6 +92,13 @@ public class CopyMoveVariations {
 
     private static boolean supportsPosixPermissions() {
         return SUPPORTS_POSIX_PERMISSIONS;
+    }
+
+    private static boolean isSameFileStore(Path p1, Path p2)
+        throws IOException {
+        FileStore fs1 = p1.getFileSystem().provider().getFileStore(p1);
+        FileStore fs2 = p2.getFileSystem().provider().getFileStore(p2);
+        return fs1.equals(fs2);
     }
 
     private static Stream<Arguments> params() {
@@ -142,14 +152,15 @@ public class CopyMoveVariations {
         Path source = null;
         Path target = null;
         Path linkTarget = null;
+        Path tmpDir = Path.of(TMP_DIR);
         try {
             switch (type) {
                 case FILE ->
-                    source = Files.createTempFile("file", "dat");
+                    source = Files.createTempFile(tmpDir, "file", "dat");
                 case DIR ->
-                    source = Files.createTempDirectory("dir");
+                    source = Files.createTempDirectory(tmpDir, "dir");
                 case LINK -> {
-                    linkTarget = Files.createTempFile("link", "target");
+                    linkTarget = Files.createTempFile(tmpDir, "link", "target");
                     Path link = Path.of("link");
                     source = Files.createSymbolicLink(link, linkTarget);
                 }
@@ -163,7 +174,7 @@ public class CopyMoveVariations {
                 Files.setPosixFilePermissions(source, perms);
 
             if (targetExists)
-                target = Files.createTempFile("file", "target");
+                target = Files.createTempFile(tmpDir, "file", "target");
             else
                 target = Path.of("target");
 
@@ -192,7 +203,11 @@ public class CopyMoveVariations {
                     assertThrows(FileAlreadyExistsException.class,
                                  () -> Files.move(src, dst, options));
                 } else {
-                    Files.move(source, target, options);
+                    try {
+                        Files.move(source, target, options);
+                    } catch (AccessDeniedException ade) {
+                        assertTrue(mode.charAt(0) != 'r');
+                    }
                     assert Files.exists(target);
                 }
             } else if (type == PathType.DIR) {
@@ -212,7 +227,20 @@ public class CopyMoveVariations {
                         Files.move(source, target, options);
                         assert Files.exists(target);
                     } catch (AccessDeniedException ade) {
-                        assertTrue(mode.charAt(1) != 'w');
+                        Path other = target.getParent();
+                        if (other == null)
+                            other = Path.of(System.getProperty("user.dir"));
+                        if (isSameFileStore(source, other)) {
+                            // directories on same store should be renamed
+                            assertTrue(mode.charAt(1) != 'w');
+                        } else {
+                            // directories on different stores will likely be
+                            // moved by a copy which requires read permission
+                            if (mode.charAt(1) == 'w')
+                                assertTrue(mode.charAt(0) != 'r');
+                            else
+                                assertTrue(mode.charAt(1) != 'w');
+                        }
                     } catch (FileAlreadyExistsException faee) {
                         assertTrue(targetExists && !replaceExisting);
                     }

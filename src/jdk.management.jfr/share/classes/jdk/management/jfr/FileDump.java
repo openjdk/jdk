@@ -32,8 +32,10 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 
 import jdk.management.jfr.DiskRepository.DiskChunk;
+import jdk.jfr.internal.management.HiddenWait;
 
 final class FileDump {
+    private final HiddenWait lock = new HiddenWait();
     private final Deque<DiskChunk> chunks = new ArrayDeque<>();
     private final long stopTimeMillis;
     private boolean complete;
@@ -42,45 +44,53 @@ final class FileDump {
         this.stopTimeMillis = stopTimeMillis;
     }
 
-    public synchronized void add(DiskChunk dc) {
-        if (isComplete()) {
-            return;
-        }
-        dc.acquire();
-        chunks.addFirst(dc);
-        long endMillis = dc.endTimeNanos / 1_000_000;
-        if (endMillis >= stopTimeMillis) {
-            setComplete();
+    public void add(DiskChunk dc) {
+        synchronized (lock) {
+            if (isComplete()) {
+                return;
+            }
+            dc.acquire();
+            chunks.addFirst(dc);
+            long endMillis = dc.endTimeNanos / 1_000_000;
+            if (endMillis >= stopTimeMillis) {
+                setComplete();
+            }
         }
     }
 
-    public synchronized boolean isComplete() {
-        return complete;
-    }
-
-    public synchronized void setComplete() {
-        complete = true;
-        this.notifyAll();
-    }
-
-    public synchronized void close() {
-        for (DiskChunk dc : chunks) {
-            dc.release();
+    public boolean isComplete() {
+        synchronized (lock) {
+            return complete;
         }
-        chunks.clear();
-        complete = true;
+    }
+
+    public void setComplete() {
+        synchronized (lock) {
+            complete = true;
+            lock.notifyAll();
+        }
+    }
+
+    public void close() {
+        synchronized (lock) {
+            for (DiskChunk dc : chunks) {
+                dc.release();
+            }
+            chunks.clear();
+            complete = true;
+        }
     }
 
     private DiskChunk oldestChunk() throws InterruptedException {
         while (true) {
-            synchronized (this) {
+            synchronized (lock) {
                 if (!chunks.isEmpty()) {
                     return chunks.pollLast();
                 }
                 if (complete) {
                     return null;
                 }
-                this.wait();
+                lock.wait();
             }
         }
     }

@@ -322,7 +322,7 @@ public class TTYResources_de extends java.util.ListResourceBundle {
         {"Unable to set", "{0} kann nicht festgelegt werden: {1}"},
         {"Unexpected event type", "Unerwarteter Ereignistyp: {0}"},
         {"unknown", "unbekannt"},
-        {"Unmonitoring", "\u00DCberwachung von {0} aufheben"},
+        {"Unmonitoring", "Monitoring von {0} aufheben"},
         {"Unrecognized command.  Try help...", "Nicht erkannter Befehl: \"{0}\". Rufen Sie \"help\" auf..."},
         {"Usage: catch exception", "Verwendung: catch [uncaught|caught|all] <Klassen-ID>|<Klassenmuster>"},
         {"Usage: ignore exception", "Verwendung: ignore [uncaught|caught|all] <Klassen-ID>|<Klassenmuster>"},

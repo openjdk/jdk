@@ -34,8 +34,8 @@
 
 #define __ _masm->
 
-static const int native_invoker_code_base_size = 512;
-static const int native_invoker_size_per_arg = 8;
+static const int native_invoker_code_base_size = 256;
+static const int native_invoker_size_per_arg = 16;
 
 RuntimeStub* DowncallLinker::make_downcall_stub(BasicType* signature,
                                                 int num_args,

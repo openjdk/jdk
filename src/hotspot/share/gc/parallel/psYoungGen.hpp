@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,10 +123,6 @@ class PSYoungGen : public CHeapObj<mtGC> {
   size_t min_gen_size() const { return _min_gen_size; }
   size_t max_gen_size() const { return _max_gen_size; }
 
-  bool is_maximal_no_gc() const {
-    return true;  // Never expands except at a GC
-  }
-
   // Allocation
   HeapWord* allocate(size_t word_size) {
     HeapWord* result = eden_space()->cas_allocate(word_size);
@@ -156,8 +152,6 @@ class PSYoungGen : public CHeapObj<mtGC> {
                         MemRegion s1MR,
                         MutableSpace* s2,
                         MemRegion s2MR) PRODUCT_RETURN;
-
-  void record_spaces_top() PRODUCT_RETURN;
 };
 
 #endif // SHARE_GC_PARALLEL_PSYOUNGGEN_HPP

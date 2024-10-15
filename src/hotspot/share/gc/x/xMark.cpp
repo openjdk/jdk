@@ -367,8 +367,10 @@ void XMark::mark_and_follow(XMarkContext* context, XMarkStackEntry entry) {
       const oop obj = XOop::from_address(addr);
       follow_object(obj, finalizable);
 
-      // Try deduplicate
-      try_deduplicate(context, obj);
+      if (!finalizable) {
+        // Try deduplicate
+        try_deduplicate(context, obj);
+      }
     }
   }
 }

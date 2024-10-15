@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,9 +38,8 @@ import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import javax.swing.JViewport;
 import javax.swing.JFrame;
-import javax.swing.SwingUtilities;
+import javax.swing.JViewport;
 
 public class MultimonVImage {
     private static final String instructionsText =
@@ -64,25 +63,20 @@ public class MultimonVImage {
             "    issue, try to use the same or similar video cards for each monitor.";
 
     public static void main(String[] args) throws Exception {
-        PassFailJFrame passFailJFrame = new PassFailJFrame.Builder()
+        PassFailJFrame.builder()
                 .title("MultimonVImage Instructions")
                 .instructions(instructionsText)
                 .testTimeOut(5)
                 .rows(25)
                 .columns(50)
-                .build();
-
-        SwingUtilities.invokeAndWait(() -> {
-            AnimatingFrame af = new AnimatingFrame();
-            af.test();
-            af.run();
-
-            PassFailJFrame.addTestWindow(af);
-            PassFailJFrame.positionTestWindow(af,
-                    PassFailJFrame.Position.HORIZONTAL);
-        });
-
-        passFailJFrame.awaitAndCheck();
+                .testUI(() -> {
+                    AnimatingFrame af = new AnimatingFrame();
+                    af.test();
+                    af.run();
+                    return af;
+                })
+                .build()
+                .awaitAndCheck();
     }
 }
 
@@ -164,9 +158,7 @@ class AnimatingFrame extends JFrame implements Runnable {
         setContentPane(component);
         component.setVisible(true);
 
-        setLocationRelativeTo(null);
         pack();
-        setVisible(true);
     }
 
     public void test() {

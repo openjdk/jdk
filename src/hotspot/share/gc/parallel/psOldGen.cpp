@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@
 #include "gc/parallel/psOldGen.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/gcLocker.hpp"
-#include "gc/shared/spaceDecorator.inline.hpp"
 #include "logging/log.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/java.hpp"
@@ -121,10 +120,16 @@ void PSOldGen::initialize_performance_counters(const char* perf_data_name, int l
                                       _object_space, _gen_counters);
 }
 
-// Assume that the generation has been allocated if its
-// reserved size is not 0.
-bool  PSOldGen::is_allocated() {
-  return virtual_space()->reserved_size() != 0;
+HeapWord* PSOldGen::expand_and_allocate(size_t word_size) {
+  assert(SafepointSynchronize::is_at_safepoint(), "precondition");
+  assert(Thread::current()->is_VM_thread(), "precondition");
+  if (object_space()->needs_expand(word_size)) {
+    expand(word_size*HeapWordSize);
+  }
+
+  // Reuse the CAS API even though this is VM thread in safepoint. This method
+  // is not invoked repeatedly, so the CAS overhead should be negligible.
+  return cas_allocate_noexpand(word_size);
 }
 
 size_t PSOldGen::num_iterable_blocks() const {
@@ -133,7 +138,7 @@ size_t PSOldGen::num_iterable_blocks() const {
 
 void PSOldGen::object_iterate_block(ObjectClosure* cl, size_t block_index) {
   size_t block_word_size = IterateBlockSize / HeapWordSize;
-  assert((block_word_size % BOTConstants::card_size_in_words()) == 0,
+  assert((block_word_size % CardTable::card_size_in_words()) == 0,
          "To ensure fast object_start calls");
 
   MutableSpace *space = object_space();
@@ -177,9 +182,13 @@ bool PSOldGen::expand_for_allocate(size_t word_size) {
 }
 
 bool PSOldGen::expand(size_t bytes) {
-  assert_lock_strong(PSOldGenExpand_lock);
+#ifdef ASSERT
+  if (!Thread::current()->is_VM_thread()) {
+    assert_lock_strong(PSOldGenExpand_lock);
+  }
   assert_locked_or_safepoint(Heap_lock);
   assert(bytes > 0, "precondition");
+#endif
   const size_t alignment = virtual_space()->alignment();
   size_t aligned_bytes  = align_up(bytes, alignment);
   size_t aligned_expand_bytes = align_up(MinHeapDeltaBytes, alignment);
@@ -215,8 +224,6 @@ bool PSOldGen::expand(size_t bytes) {
 }
 
 bool PSOldGen::expand_by(size_t bytes) {
-  assert_lock_strong(PSOldGenExpand_lock);
-  assert_locked_or_safepoint(Heap_lock);
   assert(bytes > 0, "precondition");
   bool result = virtual_space()->expand_by(bytes);
   if (result) {
@@ -251,9 +258,6 @@ bool PSOldGen::expand_by(size_t bytes) {
 }
 
 bool PSOldGen::expand_to_reserved() {
-  assert_lock_strong(PSOldGenExpand_lock);
-  assert_locked_or_safepoint(Heap_lock);
-
   bool result = false;
   const size_t remaining_bytes = virtual_space()->uncommitted_size();
   if (remaining_bytes > 0) {
@@ -382,28 +386,3 @@ void PSOldGen::update_counters() {
 void PSOldGen::verify() {
   object_space()->verify();
 }
-
-class VerifyObjectStartArrayClosure : public ObjectClosure {
-  ObjectStartArray* _start_array;
-
-public:
-  VerifyObjectStartArrayClosure(ObjectStartArray* start_array) :
-    _start_array(start_array) { }
-
-  virtual void do_object(oop obj) {
-    HeapWord* test_addr = cast_from_oop<HeapWord*>(obj) + 1;
-    guarantee(_start_array->object_start(test_addr) == cast_from_oop<HeapWord*>(obj), "ObjectStartArray cannot find start of object");
-  }
-};
-
-void PSOldGen::verify_object_start_array() {
-  VerifyObjectStartArrayClosure check(&_start_array);
-  object_iterate(&check);
-}
-
-#ifndef PRODUCT
-void PSOldGen::record_spaces_top() {
-  assert(ZapUnusedHeapArea, "Not mangling unused space");
-  object_space()->set_top_for_allocations();
-}
-#endif

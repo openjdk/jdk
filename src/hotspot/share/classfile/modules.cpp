@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -72,7 +72,9 @@ static char* get_module_name(oop module, int& len, TRAPS) {
   if (name_oop == nullptr) {
     THROW_MSG_NULL(vmSymbols::java_lang_NullPointerException(), "Null module name");
   }
-  char* module_name = java_lang_String::as_utf8_string(name_oop, len);
+  size_t utf8_len;
+  char* module_name = java_lang_String::as_utf8_string(name_oop, utf8_len);
+  len = checked_cast<int>(utf8_len); // module names are < 64K
   if (!verify_module_name(module_name, len)) {
     THROW_MSG_NULL(vmSymbols::java_lang_IllegalArgumentException(),
                    err_msg("Invalid module name: %s", module_name));
@@ -84,9 +86,9 @@ static Symbol* as_symbol(jstring str_object) {
   if (str_object == nullptr) {
     return nullptr;
   }
-  int len;
+  size_t len;
   char* str = java_lang_String::as_utf8_string(JNIHandles::resolve_non_null(str_object), len);
-  return SymbolTable::new_symbol(str, len);
+  return SymbolTable::new_symbol(str, checked_cast<int>(len));
 }
 
 ModuleEntryTable* Modules::get_module_entry_table(Handle h_loader) {
@@ -142,8 +144,10 @@ bool Modules::is_package_defined(Symbol* package, Handle h_loader) {
 // Will use the provided buffer if it's sufficiently large, otherwise allocates
 // a resource array
 // The length of the resulting string will be assigned to utf8_len
-static const char* as_internal_package(oop package_string, char* buf, int buflen, int& utf8_len) {
-  char* package_name = java_lang_String::as_utf8_string_full(package_string, buf, buflen, utf8_len);
+static const char* as_internal_package(oop package_string, char* buf, size_t buflen, int& utf8_len) {
+  size_t full_utf8_len;
+  char* package_name = java_lang_String::as_utf8_string_full(package_string, buf, buflen, full_utf8_len);
+  utf8_len = checked_cast<int>(full_utf8_len); // package names are < 64K
 
   // Turn all '/'s into '.'s
   for (int index = 0; index < utf8_len; index++) {
@@ -259,7 +263,7 @@ static void define_javabase_module(Handle module_handle, jstring version, jstrin
 }
 
 // Caller needs ResourceMark.
-void throw_dup_pkg_exception(const char* module_name, PackageEntry* package, TRAPS) {
+static void throw_dup_pkg_exception(const char* module_name, PackageEntry* package, TRAPS) {
   const char* package_name = package->name()->as_C_string();
   if (package->module()->is_named()) {
     THROW_MSG(vmSymbols::java_lang_IllegalStateException(),
@@ -560,9 +564,7 @@ void Modules::verify_archived_modules() {
   ModuleEntry::verify_archived_module_entries();
 }
 
-#if INCLUDE_CDS_JAVA_HEAP
 char* Modules::_archived_main_module_name = nullptr;
-#endif
 
 void Modules::dump_main_module_name() {
   const char* module_name = Arguments::get_property("jdk.module.main");
@@ -596,15 +598,15 @@ void Modules::serialize(SerializeClosure* soc) {
 
     if (disable) {
       log_info(cds)("Disabling optimized module handling");
-      MetaspaceShared::disable_optimized_module_handling();
+      CDSConfig::stop_using_optimized_module_handling();
     }
-    log_info(cds)("optimized module handling: %s", MetaspaceShared::use_optimized_module_handling() ? "enabled" : "disabled");
-    log_info(cds)("full module graph: %s", CDSConfig::is_loading_full_module_graph() ? "enabled" : "disabled");
+    log_info(cds)("optimized module handling: %s", CDSConfig::is_using_optimized_module_handling() ? "enabled" : "disabled");
+    log_info(cds)("full module graph: %s", CDSConfig::is_using_full_module_graph() ? "enabled" : "disabled");
   }
 }
 
 void Modules::define_archived_modules(Handle h_platform_loader, Handle h_system_loader, TRAPS) {
-  assert(CDSConfig::is_loading_full_module_graph(), "must be");
+  assert(CDSConfig::is_using_full_module_graph(), "must be");
 
   // We don't want the classes used by the archived full module graph to be redefined by JVMTI.
   // Luckily, such classes are loaded in the JVMTI "early" phase, and CDS is disabled if a JVMTI

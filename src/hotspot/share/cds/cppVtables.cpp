@@ -66,19 +66,17 @@
 
 class CppVtableInfo {
   intptr_t _vtable_size;
-  intptr_t _cloned_vtable[1];
+  intptr_t _cloned_vtable[1]; // Pseudo flexible array member.
+  static size_t cloned_vtable_offset() { return offset_of(CppVtableInfo, _cloned_vtable); }
 public:
-  static int num_slots(int vtable_size) {
-    return 1 + vtable_size; // Need to add the space occupied by _vtable_size;
-  }
   int vtable_size()           { return int(uintx(_vtable_size)); }
   void set_vtable_size(int n) { _vtable_size = intptr_t(n); }
-  intptr_t* cloned_vtable()   { return &_cloned_vtable[0]; }
-  void zero()                 { memset(_cloned_vtable, 0, sizeof(intptr_t) * vtable_size()); }
+  // Using _cloned_vtable[i] for i > 0 causes undefined behavior. We use address calculation instead.
+  intptr_t* cloned_vtable()   { return (intptr_t*)((char*)this + cloned_vtable_offset()); }
+  void zero()                 { memset(cloned_vtable(), 0, sizeof(intptr_t) * vtable_size()); }
   // Returns the address of the next CppVtableInfo that can be placed immediately after this CppVtableInfo
   static size_t byte_size(int vtable_size) {
-    CppVtableInfo i;
-    return pointer_delta(&i._cloned_vtable[vtable_size], &i, sizeof(u1));
+    return cloned_vtable_offset() + (sizeof(intptr_t) * vtable_size);
   }
 };
 
@@ -213,23 +211,30 @@ void CppVtableCloner<T>::init_orig_cpp_vtptr(int kind) {
 // the following holds true:
 //     _index[ConstantPool_Kind]->cloned_vtable()  == ((intptr_t**)cp)[0]
 //     _index[InstanceKlass_Kind]->cloned_vtable() == ((intptr_t**)ik)[0]
-CppVtableInfo** CppVtables::_index = nullptr;
+static CppVtableInfo* _index[_num_cloned_vtable_kinds];
 
-char* CppVtables::dumptime_init(ArchiveBuilder* builder) {
+// Vtables are all fixed offsets from ArchiveBuilder::current()->mapped_base()
+// E.g. ConstantPool is at offset 0x58. We can archive these offsets in the
+// RO region and use them to alculate their location at runtime without storing
+// the pointers in the RW region
+char* CppVtables::_vtables_serialized_base = nullptr;
+
+void CppVtables::dumptime_init(ArchiveBuilder* builder) {
   assert(CDSConfig::is_dumping_static_archive(), "cpp tables are only dumped into static archive");
-  size_t vtptrs_bytes = _num_cloned_vtable_kinds * sizeof(CppVtableInfo*);
-  _index = (CppVtableInfo**)builder->rw_region()->allocate(vtptrs_bytes);
 
   CPP_VTABLE_TYPES_DO(ALLOCATE_AND_INITIALIZE_VTABLE);
 
   size_t cpp_tables_size = builder->rw_region()->top() - builder->rw_region()->base();
   builder->alloc_stats()->record_cpp_vtables((int)cpp_tables_size);
-
-  return (char*)_index;
 }
 
 void CppVtables::serialize(SerializeClosure* soc) {
-  soc->do_ptr(&_index);
+  if (!soc->reading()) {
+    _vtables_serialized_base = (char*)ArchiveBuilder::current()->buffer_top();
+  }
+  for (int i = 0; i < _num_cloned_vtable_kinds; i++) {
+    soc->do_ptr(&_index[i]);
+  }
   if (soc->reading()) {
     CPP_VTABLE_TYPES_DO(INITIALIZE_VTABLE);
   }

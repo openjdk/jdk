@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,8 +39,6 @@
 // using dynamic bytecode generation. The Array class has not yet been
 // rewritten using bytecodes; if it were, most of the rest of this
 // class could go away, as well as a few more entry points in jvm.cpp.
-
-class FieldStream;
 
 class Reflection: public AllStatic {
  public:

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8316972
+ * @bug 8316972 8325217
  * @summary Add javadoc support for restricted methods
  * @library /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -107,9 +107,8 @@ public class TestRestricted extends JavadocTester {
                         """
                 <h3>restrictedMethod</h3>
                 <div class="horizontal-scroll">
-                <div class="member-signature"><span class="modifiers">sealed</span>&nbsp;<span clas\
-                s="return-type">void</span>&nbsp;<span class="element-name">restrictedMethod</span>\
-                ()</div>
+                <div class="member-signature"><span class="return-type">void</span>&nbsp;<span \
+                class="element-name">restrictedMethod</span>()</div>
                 <div class="restricted-block" id="restricted-restrictedMethod()"><span class="restr\
                 icted-label"><code>restrictedMethod</code> is a restricted method of the Java platf\
                 orm.</span>
@@ -121,9 +120,8 @@ public class TestRestricted extends JavadocTester {
                         """
                 <h3>restrictedPreviewMethod</h3>
                 <div class="horizontal-scroll">
-                <div class="member-signature"><span class="modifiers">sealed</span>&nbsp;<span clas\
-                s="return-type">int</span>&nbsp;<span class="element-name">restrictedPreviewMethod<\
-                /span>()</div>
+                <div class="member-signature"><span class="return-type">int</span>&nbsp;<span class=\
+                "element-name">restrictedPreviewMethod</span>()</div>
                 <div class="preview-block" id="preview-restrictedPreviewMethod()"><span class="prev\
                 iew-label"><code>restrictedPreviewMethod</code> is a preview API of the Java platfo\
                 rm.</span>

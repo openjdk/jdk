@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ import jdk.internal.classfile.impl.Util;
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * Models the generic signature of a method, as defined by {@jvms 4.7.9}.
+ * Models the generic signature of a method, as defined by JVMS {@jvms 4.7.9}.
  *
  * @since 22
  */
@@ -109,6 +109,6 @@ public sealed interface MethodSignature
      */
     public static MethodSignature parseFrom(String methodSignature) {
 
-        return new SignaturesImpl().parseMethodSignature(requireNonNull(methodSignature));
+        return new SignaturesImpl(methodSignature).parseMethodSignature();
     }
 }

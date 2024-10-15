@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,226 +21,87 @@
  * questions.
  */
 
-/**
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.print.PageFormat;
+import java.awt.print.Printable;
+import java.awt.print.PrinterException;
+import java.awt.print.PrinterJob;
+
+import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.JButton;
+import javax.swing.JComponent;
+import javax.swing.JOptionPane;
+
+/*
  * @test
  * @bug 4399442
  * @summary Brackets should be quoted in Postscript output
  * @key printer
+ * @library /java/awt/regtesthelpers
+ * @build PassFailJFrame
  * @run main/manual PrintParenString
  */
+public class PrintParenString implements Printable {
+    private static final String STR = "String containing unclosed parenthesis (.";
 
+    private static final String INSTRUCTIONS =
+            "This test should print a page with following text\n\n" +
+            STR + "\n\n" +
+            "If an exception is thrown, or the page doesn't print properly\n" +
+            "then the test fails";
 
-import java.awt.*;
-import java.awt.event.*;
-import java.awt.print.*;
-import java.text.*;
+    public static void main(String[] args) throws Exception {
+        if (PrinterJob.lookupPrintServices().length == 0) {
+            throw new RuntimeException("Printer not configured or available.");
+        }
 
-public class PrintParenString extends Frame implements ActionListener {
+        PassFailJFrame.builder()
+                .instructions(INSTRUCTIONS)
+                .splitUI(PrintParenString::createTestUI)
+                .rows((int) INSTRUCTIONS.lines().count() + 1)
+                .columns(45)
+                .build()
+                .awaitAndCheck();
+    }
 
- private TextCanvas c;
-
- public static void main(String args[]) {
-
-  String[] instructions =
-        {
-         "You must have a printer available to perform this test",
-         "This test should print a page which contains the same",
-         "text message as in the test window on the screen",
-         "You should also monitor the command line to see if any exceptions",
-         "were thrown",
-         "If an exception is thrown, or the page doesn't print properly",
-         "then the test fails",
-       };
-      Sysout.createDialog( );
-      Sysout.printInstructions( instructions );
-
-    PrintParenString f = new PrintParenString();
-    f.show();
- }
-
- public PrintParenString() {
-    super("JDK 1.2 drawString Printing");
-
-    c = new TextCanvas();
-    add("Center", c);
-
-    Button printButton = new Button("Print");
-    printButton.addActionListener(this);
-    add("South", printButton);
-
-    addWindowListener(new WindowAdapter() {
-       public void windowClosing(WindowEvent e) {
-             System.exit(0);
+    private static JComponent createTestUI() {
+        JButton b = new JButton("Print");
+        b.addActionListener((ae) -> {
+            try {
+                PrinterJob job = PrinterJob.getPrinterJob();
+                job.setPrintable(new PrintParenString());
+                if (job.printDialog()) {
+                    job.print();
+                }
+            } catch (PrinterException ex) {
+                ex.printStackTrace();
+                String msg = "PrinterException: " + ex.getMessage();
+                JOptionPane.showMessageDialog(b, msg, "Error occurred",
+                        JOptionPane.ERROR_MESSAGE);
+                PassFailJFrame.forceFail(msg);
             }
-    });
+        });
 
-    pack();
- }
+        Box main = Box.createHorizontalBox();
+        main.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
+        main.add(Box.createHorizontalGlue());
+        main.add(b);
+        main.add(Box.createHorizontalGlue());
+        return main;
+    }
 
- public void actionPerformed(ActionEvent e) {
-
-   PrinterJob pj = PrinterJob.getPrinterJob();
-
-   if (pj != null && pj.printDialog()) {
-
-       pj.setPrintable(c);
-       try {
-            pj.print();
-      } catch (PrinterException pe) {
-      } finally {
-         System.err.println("PRINT RETURNED");
-      }
-   }
- }
-
- class TextCanvas extends Panel implements Printable {
-
-    String nullStr = null;
-    String emptyStr = new String();
-    AttributedString nullAttStr = null;
-    AttributedString emptyAttStr = new AttributedString(emptyStr);
-    AttributedCharacterIterator nullIterator = null;
-    AttributedCharacterIterator emptyIterator = emptyAttStr.getIterator();
-
+    @Override
     public int print(Graphics g, PageFormat pgFmt, int pgIndex) {
+        if (pgIndex > 0) {
+            return Printable.NO_SUCH_PAGE;
+        }
 
-      if (pgIndex > 0)
-         return Printable.NO_SUCH_PAGE;
+        Graphics2D g2d = (Graphics2D) g;
+        g2d.translate(pgFmt.getImageableX(), pgFmt.getImageableY());
+        g2d.drawString(STR, 20, 40);
 
-      Graphics2D g2d = (Graphics2D)g;
-      g2d.translate(pgFmt.getImageableX(), pgFmt.getImageableY());
-
-      paint(g);
-
-      return Printable.PAGE_EXISTS;
+        return Printable.PAGE_EXISTS;
     }
-
-    public void paint(Graphics g1) {
-        Graphics2D g = (Graphics2D)g1;
-
-          String str = "String containing unclosed parenthesis (.";
-          g.drawString(str, 20, 40);
-
-    }
-
-     public Dimension getPreferredSize() {
-        return new Dimension(450, 250);
-    }
- }
-
 }
-
-class Sysout
- {
-   private static TestDialog dialog;
-
-   public static void createDialogWithInstructions( String[] instructions )
-    {
-      dialog = new TestDialog( new Frame(), "Instructions" );
-      dialog.printInstructions( instructions );
-      dialog.show();
-      println( "Any messages for the tester will display here." );
-    }
-
-   public static void createDialog( )
-    {
-      dialog = new TestDialog( new Frame(), "Instructions" );
-      String[] defInstr = { "Instructions will appear here. ", "" } ;
-      dialog.printInstructions( defInstr );
-      dialog.show();
-      println( "Any messages for the tester will display here." );
-    }
-
-
-   public static void printInstructions( String[] instructions )
-    {
-      dialog.printInstructions( instructions );
-    }
-
-
-   public static void println( String messageIn )
-    {
-      dialog.displayMessage( messageIn );
-    }
-
- }// Sysout  class
-
-/**
-  This is part of the standard test machinery.  It provides a place for the
-   test instructions to be displayed, and a place for interactive messages
-   to the user to be displayed.
-  To have the test instructions displayed, see Sysout.
-  To have a message to the user be displayed, see Sysout.
-  Do not call anything in this dialog directly.
-  */
-class TestDialog extends Dialog {
-
-   TextArea instructionsText;
-   TextArea messageText;
-   int maxStringLength = 80;
-
-   //DO NOT call this directly, go through Sysout
-   public TestDialog( Frame frame, String name )
-    {
-      super( frame, name );
-      int scrollBoth = TextArea.SCROLLBARS_BOTH;
-      instructionsText = new TextArea( "", 15, maxStringLength, scrollBoth );
-      add( "North", instructionsText );
-
-      messageText = new TextArea( "", 5, maxStringLength, scrollBoth );
-      add("Center", messageText);
-
-      pack();
-
-      show();
-    }// TestDialog()
-
-   //DO NOT call this directly, go through Sysout
-   public void printInstructions( String[] instructions )
-    {
-      //Clear out any current instructions
-      instructionsText.setText( "" );
-
-      //Go down array of instruction strings
-
-      String printStr, remainingStr;
-      for( int i=0; i < instructions.length; i++ )
-       {
-         //chop up each into pieces maxSringLength long
-         remainingStr = instructions[ i ];
-         while( remainingStr.length() > 0 )
-          {
-            //if longer than max then chop off first max chars to print
-            if( remainingStr.length() >= maxStringLength )
-             {
-               //Try to chop on a word boundary
-               int posOfSpace = remainingStr.
-                  lastIndexOf( ' ', maxStringLength - 1 );
-
-               if( posOfSpace <= 0 ) posOfSpace = maxStringLength - 1;
-
-               printStr = remainingStr.substring( 0, posOfSpace + 1 );
-               remainingStr = remainingStr.substring( posOfSpace + 1 );
-             }
-            //else just print
-            else
-             {
-               printStr = remainingStr;
-               remainingStr = "";
-             }
-
-            instructionsText.append( printStr + "\n" );
-
-          }// while
-
-       }// for
-
-    }//printInstructions()
-
-   //DO NOT call this directly, go through Sysout
-   public void displayMessage( String messageIn )
-    {
-      messageText.append( messageIn + "\n" );
-    }
-
- }// TestDialog  class

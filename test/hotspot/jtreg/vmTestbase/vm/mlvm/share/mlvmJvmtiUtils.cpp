@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,10 @@
 #include <string.h>
 #include <stdlib.h>
 #include "jvmti.h"
-#include "agent_common.h"
-#include "JVMTITools.h"
-#include "jvmti_tools.h"
-#include "mlvmJvmtiUtils.h"
+#include "agent_common.hpp"
+#include "JVMTITools.hpp"
+#include "jvmti_tools.hpp"
+#include "mlvmJvmtiUtils.hpp"
 
 extern "C" {
 
@@ -36,7 +36,7 @@ void copyFromJString(JNIEnv * pEnv, jstring src, char ** dst) {
     const char * pStr;
         jsize len;
 
-    if (!NSK_VERIFY((pStr = pEnv->GetStringUTFChars(src, NULL)) != NULL)) {
+    if (!NSK_VERIFY((pStr = pEnv->GetStringUTFChars(src, nullptr)) != nullptr)) {
         return;
     }
 
@@ -70,30 +70,30 @@ struct MethodName * getMethodName(jvmtiEnv * pJvmtiEnv, jmethodID method) {
     jclass clazz;
     struct MethodName * mn;
 
-    if (!NSK_JVMTI_VERIFY(pJvmtiEnv->GetMethodName(method, &szName, NULL, NULL))) {
-        return NULL;
+    if (!NSK_JVMTI_VERIFY(pJvmtiEnv->GetMethodName(method, &szName, nullptr, nullptr))) {
+        return nullptr;
     }
 
     JvmtiResource szNameResource(pJvmtiEnv, szName);
 
     if (!NSK_JVMTI_VERIFY(pJvmtiEnv->GetMethodDeclaringClass(method, &clazz))) {
-        return NULL;
+        return nullptr;
     }
 
-    if (!NSK_JVMTI_VERIFY(pJvmtiEnv->GetClassSignature(clazz, &szSignature, NULL))) {
-        return NULL;
+    if (!NSK_JVMTI_VERIFY(pJvmtiEnv->GetClassSignature(clazz, &szSignature, nullptr))) {
+        return nullptr;
     }
 
     JvmtiResource szSignatureResource(pJvmtiEnv, szSignature);
 
     if (strlen(szName) + 1 > sizeof(mn->methodName) ||
         strlen(szSignature) + 1 > sizeof(mn->classSig)) {
-      return NULL;
+      return nullptr;
     }
 
     mn = (MethodName*) malloc(sizeof(MethodNameStruct));
-    if (mn == NULL) {
-      return NULL;
+    if (mn == nullptr) {
+      return nullptr;
     }
 
     strncpy(mn->methodName, szName, sizeof(mn->methodName) - 1);
@@ -115,17 +115,17 @@ char * locationToString(jvmtiEnv * pJvmtiEnv, jmethodID method, jlocation locati
     if (!pMN)
         return strdup("NONE");
 
-    len = snprintf(NULL, 0, format, pMN->classSig, pMN->methodName, location) + 1;
+    len = snprintf(nullptr, 0, format, pMN->classSig, pMN->methodName, location) + 1;
 
     if (len <= 0) {
         free(pMN);
-        return NULL;
+        return nullptr;
     }
 
     result = (char*) malloc(len);
-    if (result == NULL) {
+    if (result == nullptr) {
         free(pMN);
-        return NULL;
+        return nullptr;
     }
 
     snprintf(result, len, format, pMN->classSig, pMN->methodName, location);
@@ -137,16 +137,16 @@ char * locationToString(jvmtiEnv * pJvmtiEnv, jmethodID method, jlocation locati
 void * getTLS(jvmtiEnv * pJvmtiEnv, jthread thread, jsize sizeToAllocate) {
     void * tls;
     if (!NSK_JVMTI_VERIFY(pJvmtiEnv->GetThreadLocalStorage(thread, &tls)))
-        return NULL;
+        return nullptr;
 
     if (!tls) {
-        if (!NSK_VERIFY((tls = malloc(sizeToAllocate)) != NULL))
-            return NULL;
+        if (!NSK_VERIFY((tls = malloc(sizeToAllocate)) != nullptr))
+            return nullptr;
 
         memset(tls, 0, sizeToAllocate);
 
         if (!NSK_JVMTI_VERIFY(pJvmtiEnv->SetThreadLocalStorage(thread, tls)))
-            return NULL;
+            return nullptr;
     }
 
     return tls;

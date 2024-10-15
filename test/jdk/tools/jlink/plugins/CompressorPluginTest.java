@@ -370,7 +370,7 @@ public class CompressorPluginTest {
             byte[] decompressed = compressed.contentBytes();
             for (ResourceDecompressorFactory factory : decompressors) {
                 try {
-                    ResourceDecompressor decompressor = factory.newDecompressor(new Properties());
+                    ResourceDecompressor decompressor = factory.newDecompressor();
                     decompressed = decompressor.decompress(
                         strings::get, decompressed,
                         CompressedResourceHeader.getSize(), header.getUncompressedSize());

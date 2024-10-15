@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,15 +24,20 @@
 /*
  * @test
  * @bug 4496290 4985072 7006178 7068595 8016328 8050031 8048351 8081854 8071982 8162363 8175200 8186332
- *      8182765 8196202 8202626 8261976
+ *      8182765 8196202 8202626 8261976 8323698
  * @summary A simple test to ensure class-use files are correct.
- * @library ../../lib
+ * @library /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build javadoc.tester.*
  * @run main TestUseOption
  */
 
 import javadoc.tester.JavadocTester;
+import toolbox.ToolBox;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 public class TestUseOption extends JavadocTester {
 
@@ -40,6 +45,8 @@ public class TestUseOption extends JavadocTester {
         var tester = new TestUseOption();
         tester.runTests();
     }
+
+    private final ToolBox tb = new ToolBox();
 
     @Test
     public void test1() {
@@ -190,5 +197,84 @@ public class TestUseOption extends JavadocTester {
                     <a href="../C1.html#umethod3(unique.UseMe,unique.UseMe)" class="member-name-link">""",
                 """
                     <a href="../C1.html#%3Cinit%3E(unique.UseMe,unique.UseMe)" class="member-name-link">""");
+    }
+
+    @Test
+    public void testSuperclassAndInterfaceTypeArgument(Path base) throws IOException {
+        Path src = base.resolve("src");
+
+        Files.createDirectories(src);
+        tb.writeJavaFiles(src,
+                """
+                    public class One {}
+                    """,
+                """
+                    import java.util.*;
+                    public class Two extends ArrayList<One> implements Comparator<One> {
+                    }
+                    """,
+                """
+                    import java.util.*;
+                    public interface Three extends Comparator<One> {
+                    }
+                    """);
+
+        javadoc(
+                "-use",
+                "-d", base.resolve("out").toString(),
+                src.resolve("One.java").toString(),
+                src.resolve("Two.java").toString(),
+                src.resolve("Three.java").toString()
+        );
+        checkExit(Exit.OK);
+
+        checkOrder("class-use/One.html",
+                """
+                    <div class="caption"><span>Subclasses with type arguments of \
+                    type <a href="../One.html" title="class in Unnamed Package">One</a> \
+                    in <a href="../package-summary.html">Unnamed Package</a></span></div>
+                    """,
+                """
+                    <div class="summary-table three-column-summary">
+                    <div class="table-header col-first">Modifier and Type</div>
+                    <div class="table-header col-second">Class</div>
+                    <div class="table-header col-last">Description</div>
+                    <div class="col-first even-row-color"><code>class&nbsp;</code></div>
+                    <div class="col-second even-row-color"><code><a href="../Two.html" class="type-name-link" \
+                    title="class in Unnamed Package">Two</a></code></div>
+                    <div class="col-last even-row-color">&nbsp;</div>
+                    </div>
+                    """,
+                """
+                    <div class="caption"><span>Subinterfaces with type arguments of \
+                    type <a href="../One.html" title="class in Unnamed Package">One</a> \
+                    in <a href="../package-summary.html">Unnamed Package</a></span></div>
+                    """,
+                """
+                    <div class="summary-table three-column-summary">
+                    <div class="table-header col-first">Modifier and Type</div>
+                    <div class="table-header col-second">Interface</div>
+                    <div class="table-header col-last">Description</div>
+                    <div class="col-first even-row-color"><code>interface&nbsp;</code></div>
+                    <div class="col-second even-row-color"><code><a href="../Three.html" class="type-name-link" title="interface in Unnamed Package">Three</a></code></div>
+                    <div class="col-last even-row-color">&nbsp;</div>
+                    </div>
+                    """,
+                """
+                    <div class="caption"><span>Classes in <a href="../package-summary.html">\
+                    Unnamed Package</a> that implement interfaces with type arguments of type \
+                    <a href="../One.html" title="class in Unnamed Package">One</a></span></div>
+                    """,
+                """
+                    <div class="summary-table three-column-summary">
+                    <div class="table-header col-first">Modifier and Type</div>
+                    <div class="table-header col-second">Class</div>
+                    <div class="table-header col-last">Description</div>
+                    <div class="col-first even-row-color"><code>class&nbsp;</code></div>
+                    <div class="col-second even-row-color"><code><a href="../Two.html" class="type-name-link" \
+                    title="class in Unnamed Package">Two</a></code></div>
+                    <div class="col-last even-row-color">&nbsp;</div>
+                    </div>
+                    """);
     }
 }

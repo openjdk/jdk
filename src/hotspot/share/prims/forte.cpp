@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,7 +80,7 @@ class vframeStreamForte : public vframeStreamCommon {
 };
 
 
-static bool is_decipherable_compiled_frame(JavaThread* thread, frame* fr, CompiledMethod* nm);
+static bool is_decipherable_compiled_frame(JavaThread* thread, frame* fr, nmethod* nm);
 static bool is_decipherable_interpreted_frame(JavaThread* thread,
                                               frame* fr,
                                               Method** method_p,
@@ -150,7 +150,7 @@ void vframeStreamForte::forte_next() {
 // Determine if 'fr' is a decipherable compiled frame. We are already
 // assured that fr is for a java compiled method.
 
-static bool is_decipherable_compiled_frame(JavaThread* thread, frame* fr, CompiledMethod* nm) {
+static bool is_decipherable_compiled_frame(JavaThread* thread, frame* fr, nmethod* nm) {
   assert(nm->is_java_method(), "invariant");
 
   if (thread->has_last_Java_frame() && thread->last_Java_pc() == fr->pc()) {
@@ -413,9 +413,9 @@ static bool find_initial_Java_frame(JavaThread* thread,
       return false;
     }
 
-    if (candidate.cb()->is_compiled()) {
+    if (candidate.cb()->is_nmethod()) {
 
-      CompiledMethod* nm = candidate.cb()->as_compiled_method();
+      nmethod* nm = candidate.cb()->as_nmethod();
       *method_p = nm->method();
 
       // If the frame is not decipherable, then the value of -1
@@ -602,7 +602,7 @@ void AsyncGetCallTrace(ASGCT_CallTrace *trace, jint depth, void* ucontext) {
     return;
   }
 
-  if (Universe::heap()->is_gc_active()) {
+  if (Universe::heap()->is_stw_gc_active()) {
     trace->num_frames = ticks_GC_active; // -2
     return;
   }

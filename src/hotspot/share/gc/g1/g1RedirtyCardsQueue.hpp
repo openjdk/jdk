@@ -56,7 +56,9 @@ public:
   void enqueue(void* value);
 
   // Transfer all completed buffers to the shared qset.
-  void flush();
+  // Returns the flushed BufferNodeList which is later used
+  // as a shortcut into the shared qset.
+  BufferNodeList flush();
 };
 
 // Card table entries to be redirtied and the cards reprocessed later.

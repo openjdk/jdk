@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,17 +28,15 @@ import static com.sun.tools.jdeps.Module.*;
 import static com.sun.tools.jdeps.Analyzer.NOT_FOUND;
 import static java.util.stream.Collectors.*;
 
-import com.sun.tools.classfile.AccessFlags;
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.ConstantPoolException;
-import com.sun.tools.classfile.Dependencies;
-import com.sun.tools.classfile.Dependencies.ClassFileError;
-import com.sun.tools.classfile.Dependency;
-import com.sun.tools.classfile.Dependency.Location;
+import com.sun.tools.jdeps.Dependencies.ClassFileError;
+import com.sun.tools.jdeps.Dependency.Location;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.nio.file.Paths;
+import java.lang.classfile.AccessFlags;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassModel;
+import java.lang.reflect.AccessFlag;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
@@ -46,7 +44,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ExecutionException;
@@ -176,20 +173,20 @@ class DependencyFinder {
         trace("parsing %s %s%n", archive.getName(), archive.getPathName());
         FutureTask<Set<Location>> task = new FutureTask<>(() -> {
             Set<Location> targets = new HashSet<>();
-            for (ClassFile cf : archive.reader().getClassFiles()) {
-                if (cf.access_flags.is(AccessFlags.ACC_MODULE))
+            for (var cf : archive.reader().getClassFiles()) {
+                if (cf.isModuleInfo())
                     continue;
 
                 String classFileName;
                 try {
-                    classFileName = cf.getName();
-                } catch (ConstantPoolException e) {
+                    classFileName = cf.thisClass().asInternalName();
+                } catch (IllegalArgumentException e) {
                     throw new ClassFileError(e);
                 }
 
                 // filter source class/archive
                 String cn = classFileName.replace('/', '.');
-                if (!finder.accept(archive, cn, cf.access_flags))
+                if (!finder.accept(archive, cn, cf.flags()))
                     continue;
 
                 // tests if this class matches the -include
@@ -217,24 +214,24 @@ class DependencyFinder {
     private Set<Location> parse(Archive archive, Finder finder, String name)
         throws IOException
     {
-        ClassFile cf = archive.reader().getClassFile(name);
+        var cf = archive.reader().getClassFile(name);
         if (cf == null) {
             throw new IllegalArgumentException(archive.getName() +
                 " does not contain " + name);
         }
 
-        if (cf.access_flags.is(AccessFlags.ACC_MODULE))
+        if (cf.isModuleInfo())
             return Collections.emptySet();
 
         Set<Location> targets = new HashSet<>();
         String cn;
         try {
-            cn =  cf.getName().replace('/', '.');
-        } catch (ConstantPoolException e) {
+            cn =  cf.thisClass().asInternalName().replace('/', '.');
+        } catch (IllegalArgumentException e) {
             throw new Dependencies.ClassFileError(e);
         }
 
-        if (!finder.accept(archive, cn, cf.access_flags))
+        if (!finder.accept(archive, cn, cf.flags()))
             return targets;
 
         // tests if this class matches the -include
@@ -296,7 +293,7 @@ class DependencyFinder {
         Finder(boolean apiOnly) {
             this.apiOnly = apiOnly;
             this.finder = apiOnly
-                ? Dependencies.getAPIFinder(AccessFlags.ACC_PROTECTED)
+                ? Dependencies.getAPIFinder(ClassFile.ACC_PROTECTED)
                 : Dependencies.getClassDependencyFinder();
 
         }
@@ -309,12 +306,12 @@ class DependencyFinder {
             // if -apionly is specified, analyze only exported and public types
             // All packages are exported in unnamed module.
             return apiOnly ? archive.getModule().isExported(pn) &&
-                                 accessFlags.is(AccessFlags.ACC_PUBLIC)
+                                 accessFlags.has(AccessFlag.PUBLIC)
                            : true;
         }
 
         @Override
-        public Iterable<? extends Dependency> findDependencies(ClassFile classfile) {
+        public Iterable<? extends Dependency> findDependencies(ClassModel classfile) {
             return finder.findDependencies(classfile);
         }
     }

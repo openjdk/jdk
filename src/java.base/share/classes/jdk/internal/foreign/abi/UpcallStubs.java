@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,7 @@ public final class UpcallStubs {
         registerNatives();
     }
 
+    @SuppressWarnings("restricted")
     static MemorySegment makeUpcall(long entry, Arena arena) {
         MemorySessionImpl.toMemorySession(arena).addOrCleanupIfFail(new MemorySessionImpl.ResourceList.ResourceCleanup() {
             @Override
@@ -58,6 +59,6 @@ public final class UpcallStubs {
                 freeUpcallStub(entry);
             }
         });
-        return MemorySegment.ofAddress(entry).reinterpret(arena, null);
+        return MemorySegment.ofAddress(entry).reinterpret(arena, null); // restricted
     }
 }

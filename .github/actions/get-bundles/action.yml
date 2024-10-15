@@ -48,14 +48,14 @@ runs:
   steps:
     - name: 'Download bundles artifact'
       id: download-bundles
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: bundles-${{ inputs.platform }}${{ inputs.debug-suffix }}
         path: bundles
       continue-on-error: true
 
     - name: 'Download bundles artifact (retry)'
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: bundles-${{ inputs.platform }}${{ inputs.debug-suffix }}
         path: bundles

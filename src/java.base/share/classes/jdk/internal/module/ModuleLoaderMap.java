@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,6 +110,13 @@ public final class ModuleLoaderMap {
         return Modules.platformModules;
     }
 
+    /**
+     * Returns the names of the modules defined to the application loader which perform native access.
+     */
+    public static Set<String> nativeAccessModules() {
+        return Modules.nativeAccessModules;
+    }
+
     private static class Modules {
         // list of boot modules is generated at build time.
         private static final Set<String> bootModules =
@@ -118,6 +125,10 @@ public final class ModuleLoaderMap {
         // list of platform modules is generated at build time.
         private static final Set<String> platformModules =
                 Set.of(new String[] { "@@PLATFORM_MODULE_NAMES@@" });
+
+        // list of jdk modules is generated at build time.
+        private static final Set<String> nativeAccessModules =
+                Set.of(new String[] { "@@NATIVE_ACCESS_MODULE_NAMES@@" });
     }
 
     /**

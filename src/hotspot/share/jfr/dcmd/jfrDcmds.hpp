@@ -37,6 +37,7 @@ class JfrDCmd : public DCmd {
   JfrDCmd(outputStream* output, bool heap, int num_arguments);
   virtual const char* javaClass() const = 0;
   void invoke(JfrJavaArguments& method, TRAPS) const;
+  void print_java_help(const char* help_method) const;
  public:
   virtual void execute(DCmdSource source, TRAPS);
   virtual void print_help(const char* name) const;

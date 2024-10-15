@@ -25,6 +25,7 @@
  * @test
  * @library ../ /test/lib
  * @requires jdk.foreign.linker != "FALLBACK"
+ * @requires vm.compMode != "Xcomp"
  * @run testng/othervm/native
  *   --enable-native-access=ALL-UNNAMED
  *   TestStubAllocFailure

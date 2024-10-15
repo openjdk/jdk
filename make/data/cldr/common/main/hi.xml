@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 
 Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
@@ -1116,7 +1116,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="phonebook">फ़ोनबुक वर्गीकरण क्रम</type>
 			<type key="collation" type="phonetic">ध्वन्यात्मक वर्गीकरण क्रम</type>
 			<type key="collation" type="pinyin">पिनयिन वर्गीकरण क्रम</type>
-			<type key="collation" type="reformed">संशोधित वर्गीकरण क्रम</type>
 			<type key="collation" type="search">सामान्य-उद्देश्य खोज</type>
 			<type key="collation" type="searchjl" draft="contributed">हांगुल आरंभिक व्‍यंजन द्वारा खोजें</type>
 			<type key="collation" type="standard">मानक वर्गीकरण क्रम</type>
@@ -2534,9 +2533,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<regionFormat>{0} समय</regionFormat>
 			<regionFormat type="daylight">{0} डेलाइट समय</regionFormat>
 			<regionFormat type="standard">{0} मानक समय</regionFormat>
-			<zone type="America/Santa_Isabel">
-				<exemplarCity>सांता इसाबेल</exemplarCity>
-			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>समन्वित वैश्विक समय</standard>
@@ -2658,9 +2654,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Australia/Melbourne">
 				<exemplarCity>मेलबोर्न</exemplarCity>
-			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity>क्यूरी</exemplarCity>
 			</zone>
 			<zone type="Australia/Hobart">
 				<exemplarCity>होबार्ट</exemplarCity>
@@ -2815,9 +2808,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Creston">
 				<exemplarCity>क्रेस्टन</exemplarCity>
 			</zone>
-			<zone type="America/Yellowknife">
-				<exemplarCity>येलोनाइफ़</exemplarCity>
-			</zone>
 			<zone type="America/Edmonton">
 				<exemplarCity>एडमंटन</exemplarCity>
 			</zone>
@@ -2836,29 +2826,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Resolute">
 				<exemplarCity>रिसोल्यूट</exemplarCity>
 			</zone>
-			<zone type="America/Rainy_River">
-				<exemplarCity>रेनी नदी</exemplarCity>
-			</zone>
 			<zone type="America/Rankin_Inlet">
 				<exemplarCity>रेंकिन इनलेट</exemplarCity>
 			</zone>
 			<zone type="America/Coral_Harbour">
 				<exemplarCity>अटिकोकान</exemplarCity>
 			</zone>
-			<zone type="America/Thunder_Bay">
-				<exemplarCity>थंडर खाड़ी</exemplarCity>
-			</zone>
-			<zone type="America/Nipigon">
-				<exemplarCity>निपिगन</exemplarCity>
-			</zone>
 			<zone type="America/Toronto">
 				<exemplarCity>टोरंटो</exemplarCity>
 			</zone>
 			<zone type="America/Iqaluit">
 				<exemplarCity>इकालुईट</exemplarCity>
-			</zone>
-			<zone type="America/Pangnirtung">
-				<exemplarCity>पांगनिर्टंग</exemplarCity>
 			</zone>
 			<zone type="America/Moncton">
 				<exemplarCity>मोंकटन</exemplarCity>
@@ -3673,17 +3651,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Africa/Dar_es_Salaam">
 				<exemplarCity>दार अस सलाम</exemplarCity>
 			</zone>
-			<zone type="Europe/Uzhgorod">
-				<exemplarCity>अज़्गोरोद</exemplarCity>
-			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>कीव</exemplarCity>
 			</zone>
 			<zone type="Europe/Simferopol">
 				<exemplarCity>सिम्फ़ेरोपोल</exemplarCity>
-			</zone>
-			<zone type="Europe/Zaporozhye">
-				<exemplarCity>ज़ैपोरोज़ाई</exemplarCity>
 			</zone>
 			<zone type="Africa/Kampala">
 				<exemplarCity>कंपाला</exemplarCity>
@@ -3707,9 +3679,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight draft="contributed">HST</daylight>
 				</short>
 				<exemplarCity>होनोलुलु</exemplarCity>
-			</zone>
-			<zone type="Pacific/Johnston">
-				<exemplarCity>जॉनस्टन</exemplarCity>
 			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>एंकरेज</exemplarCity>
@@ -4363,11 +4332,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>लॉर्ड होवे डेलाइट समय</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>मक्वारी द्वीप समय</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>मागादान समय</generic>
@@ -4405,13 +4369,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Mawson">
 				<long>
 					<standard>माव्सन समय</standard>
-				</long>
-			</metazone>
-			<metazone type="Mexico_Northwest">
-				<long>
-					<generic>उत्तर पश्चिमी मेक्सिको समय</generic>
-					<standard>उत्तर पश्चिमी मेक्सिको मानक समय</standard>
-					<daylight>उत्तर पश्चिमी मेक्सिको डेलाइट समय</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">

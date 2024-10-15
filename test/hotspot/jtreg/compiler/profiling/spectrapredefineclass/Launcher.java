@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ package compiler.profiling.spectrapredefineclass;
 
 import jdk.test.lib.JDKToolLauncher;
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 import java.io.File;
 import java.io.IOException;
@@ -60,11 +61,10 @@ public class Launcher {
                 .addToolArg(Agent.AGENT_JAR)
                 .addToolArg(Agent.class.getName().replace('.', File.separatorChar) + ".class");
 
-        ProcessBuilder pb = new ProcessBuilder(jar.getCommand());
         try {
-            OutputAnalyzer output = new OutputAnalyzer(pb.start());
+            OutputAnalyzer output = ProcessTools.executeProcess(jar.getCommand());
             output.shouldHaveExitValue(0);
-        } catch (IOException ex) {
+        } catch (Exception ex) {
             throw new Error("TESTBUG: jar failed.", ex);
         }
     }

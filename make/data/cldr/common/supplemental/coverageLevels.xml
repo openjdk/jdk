@@ -54,9 +54,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<coverageVariable key="%CJK_Languages" value="(ja|ko|zh)"/>
 		<coverageVariable key="%chineseCalendarTerritories" value="(CN|CX|HK|MO|SG|TW)"/>
 		<coverageVariable key="%collationType80" value="(ducet|search)"/>
-		<coverageVariable key="%collationType80ForTopLangs" value="(big5han|compat|dictionary|gb2312han|phonebook|phonetic|pinyin|reformed|stroke|traditional|unihan|zhuyin)"/>
+		<coverageVariable key="%collationType80ForTopLangs" value="(big5han|compat|dictionary|gb2312han|phonebook|phonetic|pinyin|stroke|traditional|unihan|zhuyin)"/>
 		<coverageVariable key="%collationType80TopLangs" value="(ar|bg|ca|cs|da|de|el|en|es|fi|fr|he|hi|hr|hu|id|it|ja|ko|ms|nl|no|pl|pt|ro|ru|sk|sl|sr|sv|th|tr|uk|vi|zh)"/>
-		<coverageVariable key="%collationType100" value="(big5han|compat|dictionary|emoji|eor|gb2312han|phonebook|phonetic|pinyin|reformed|searchjl|stroke|traditional|unihan|zhuyin)"/>
+		<coverageVariable key="%collationType100" value="(big5han|compat|dictionary|emoji|eor|gb2312han|phonebook|phonetic|pinyin|searchjl|stroke|traditional|unihan|zhuyin)"/>
 		<coverageVariable key="%collationAlternateValues" value="(non-ignorable|shifted)"/>
 		<coverageVariable key="%collationCases" value="(upper|lower)"/>
 		<coverageVariable key="%collationStrengths" value="(primary|secondary|tertiary|quaternary|identical)"/>
@@ -115,7 +115,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<coverageVariable key="%medLong" value="(medium|long)"/>
 		<coverageVariable key="%metazone30_AR" value="Argentina(_Western)?"/>
 		<coverageVariable key="%metazone30_AU" value="(Australia_(Central(Western)?|(East|West)ern)|Lord_Howe)"/>
-		<coverageVariable key="%metazone30_AU_stdonly" value="Macquarie"/>
 		<coverageVariable key="%metazone30_BR" value="(Amazon|Brasilia|Noronha)"/>
 		<coverageVariable key="%metazone30_CA" value="(America_(Eastern|Central|Mountain|Pacific)|Newfoundland|Yukon)"/>
 		<coverageVariable key="%metazone30_EU" value="Europe_(Central|(East|West)ern)"/>
@@ -130,7 +129,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<coverageVariable key="%metazone60_stdonly" value="(Africa_(Central|(East|South)ern)|India|Indochina|Indonesia_(Central|(East|West)ern))"/>
 		<coverageVariable key="%metazone60_AE_stdonly" value="Gulf"/>
 		<coverageVariable key="%metazone80" value="(Alaska|Amazon|Apia|Argentina(_Western)?|Armenia|Azerbaijan|Azores|Bangladesh|Brasilia|Cape_Verde|Chatham|Chile|Choibalsan|Colombia|Cook|Cuba|Easter|Falkland|Fiji|Georgia|Greenland_(East|West)ern|Hawaii_Aleutian|Hong_Kong|Hovd|Iran|Irkutsk|Krasnoyarsk|Lord_Howe|Magadan|Mauritius|Mexico_(Northwest|Pacific)|Mongolia|New_(Caledonia|Zealand)|Newfoundland|Norfolk|Noronha|Novosibirsk|Omsk|Pakistan|Paraguay|Peru|Philippines|Pierre_Miquelon|Sakhalin|Samoa|Taipei|Tonga|Turkmenistan|Uruguay|Uzbekistan|Vanuatu|Vladivostok|Volgograd|Yakutsk|Yekaterinburg)"/>
-		<coverageVariable key="%metazone80_stdonly" value="(Afghanistan|Bhutan|Bolivia|Brunei|Chamorro|Christmas|Cocos|Davis|DumontDUrville|East_Timor|Ecuador|Europe_Further_Eastern|French_(Guiana|Southern)|Gambier|Galapagos|Gilbert_Islands|Gulf|Guyana|Indian_Ocean|Kazakhstan_(East|West)ern|Kosrae|Kyrgystan|Line_Islands|Macquarie|Malaysia|Maldives|Marquesas|Marshall_Islands|Mawson|Myanmar|Nauru|Nepal|Niue|Palau|Papua_New_Guinea|Phoenix_Islands|Pitcairn|Ponape|Pyongyang|Reunion|Rothera|Seychelles|Singapore|Solomon|South_Georgia|Suriname|Syowa|Tahiti|Tajikistan|Tokelau|Truk|Tuvalu|Venezuela|Vostok|Wake|Wallis|Yukon)"/>
+		<coverageVariable key="%metazone80_stdonly" value="(Afghanistan|Bhutan|Bolivia|Brunei|Chamorro|Christmas|Cocos|Davis|DumontDUrville|East_Timor|Ecuador|Europe_Further_Eastern|French_(Guiana|Southern)|Gambier|Galapagos|Gilbert_Islands|Gulf|Guyana|Indian_Ocean|Kazakhstan_(East|West)ern|Kosrae|Kyrgystan|Line_Islands|Malaysia|Maldives|Marquesas|Marshall_Islands|Mawson|Myanmar|Nauru|Nepal|Niue|Palau|Papua_New_Guinea|Phoenix_Islands|Pitcairn|Ponape|Pyongyang|Reunion|Rothera|Seychelles|Singapore|Solomon|South_Georgia|Suriname|Syowa|Tahiti|Tajikistan|Tokelau|Truk|Tuvalu|Venezuela|Vostok|Wake|Wallis|Yukon)"/>
 		<coverageVariable key="%metazone100" value="(Acre|Almaty|Anadyr|Aqtau|Aqtobe|Kamchatka|Macau|Qyzylorda|Samara)"/>
 		<coverageVariable key="%metazone100_stdonly" value="(Casey|Guam|Lanka|North_Mariana)"/>
 		<coverageVariable key="%miscPatternTypes" value="(atLeast|range)"/>
@@ -262,7 +261,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<coverageLevel	value="moderate"	inLanguage="zh"	match="localeDisplayNames/types/type[@key='collation'][@type='(big5han|gb2312han|pinyin|stroke|zhuyin)']"/>
 		<coverageLevel	value="moderate"	inLanguage="si"	match="localeDisplayNames/types/type[@key='collation'][@type='dictionary']"/>
 		<coverageLevel	value="moderate"	inLanguage="%phonebookCollationLanguages"	match="localeDisplayNames/types/type[@key='collation'][@type='phonebook']"/>
-		<coverageLevel	value="moderate"	inLanguage="sv"	match="localeDisplayNames/types/type[@key='collation'][@type='reformed']"/>
 		<coverageLevel	value="moderate"	 	match="localeDisplayNames/types/type[@key='collation'][@type='standard']"/>
 		<coverageLevel	value="moderate"	inLanguage="%traditionalCollationLanguages"	match="localeDisplayNames/types/type[@key='collation'][@type='traditional']"/>
 		<coverageLevel	value="moderate"	inLanguage="%CJK_Languages"	match="localeDisplayNames/types/type[@key='collation'][@type='unihan']"/>

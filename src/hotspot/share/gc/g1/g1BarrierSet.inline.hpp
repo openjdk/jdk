@@ -68,16 +68,8 @@ inline void G1BarrierSet::write_ref_field_pre(T* field) {
   enqueue(field);
 }
 
-inline void G1BarrierSet::invalidate(MemRegion mr) {
-  invalidate(JavaThread::current(), mr);
-}
-
-inline void G1BarrierSet::write_region(JavaThread* thread, MemRegion mr) {
-  invalidate(thread, mr);
-}
-
-inline void G1BarrierSet::write_ref_array_work(MemRegion mr) {
-  invalidate(mr);
+inline void G1BarrierSet::write_region(MemRegion mr) {
+  write_region(JavaThread::current(), mr);
 }
 
 template <DecoratorSet decorators, typename T>

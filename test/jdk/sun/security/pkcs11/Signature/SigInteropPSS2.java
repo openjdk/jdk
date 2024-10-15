@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@ import java.security.interfaces.*;
 
 /*
  * @test
- * @bug 8080462 8226651 8242332
+ * @bug 8080462 8226651 8242332 8325164
  * @summary testing interoperability of PSS signatures of PKCS11 provider
  *         against SunRsaSign provider
  * @library /test/lib ..
@@ -51,9 +51,12 @@ public class SigInteropPSS2 extends PKCS11Test {
     @Override
     public void main(Provider p) throws Exception {
 
+        Provider sunRsaSign = Security.getProvider("SunRsaSign");
+        Security.removeProvider("SunRsaSign");
+
         Signature sigPkcs11;
         Signature sigSunRsaSign =
-                Signature.getInstance("RSASSA-PSS", "SunRsaSign");
+                Signature.getInstance("RSASSA-PSS", sunRsaSign);
 
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA", p);
             kpg.initialize(3072);

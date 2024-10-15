@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      8202947 8239804
+ * @bug      8202947 8239804 8324342
  * @summary  test the at-version tag, and corresponding option
  * @library  /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -128,5 +128,38 @@ public class TestVersionTag extends JavadocTester {
                     <dt>Version:</dt>
                     <dd>1.2.3</dd>
                     </dl>""");
+    }
+
+    @Test
+    public void testVersionDefault(Path base) throws Exception {
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src, """
+                package p;
+                /**
+                 * Class C.
+                 * @version 42
+                 */
+                 public class C {
+                     /** Class Nested, with no explicit at-version. */
+                     public class Nested { }
+                 }""");
+        javadoc("-d", base.resolve("api").toString(),
+                "-version",
+                "-sourcepath", src.toString(),
+                "p");
+        checkExit(Exit.OK);
+
+        checkOutput("p/C.html", true,
+                """
+                    <dl class="notes">
+                    <dt>Version:</dt>
+                    <dd>42</dd>""");
+
+        checkOutput("p/C.Nested.html", true,
+                """
+                    <dl class="notes">
+                    <dt>Version:</dt>
+                    <dd>42</dd>""");
+
     }
 }

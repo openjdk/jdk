@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,21 +55,8 @@
   #if !defined(NAME_MAX)
     #define NAME_MAX MAXNAMLEN
   #endif
-  #define DIR DIR64
-  #define dirent dirent64
-  #define opendir opendir64
-  #define readdir readdir64
-  #define closedir closedir64
-  #define stat stat64
+  #define statvfs statvfs64
 #endif
-
-#if defined(_ALLBSD_SOURCE)
-  #ifndef MACOSX
-    #define statvfs64 statvfs
-    #define stat64 stat
-  #endif
-#endif
-
 /* -- Field IDs -- */
 
 static struct {
@@ -117,8 +104,8 @@ Java_java_io_UnixFileSystem_canonicalize0(JNIEnv *env, jobject this,
 static jboolean
 statMode(const char *path, int *mode)
 {
-    struct stat64 sb;
-    if (stat64(path, &sb) == 0) {
+    struct stat sb;
+    if (stat(path, &sb) == 0) {
         *mode = sb.st_mode;
         return JNI_TRUE;
     }
@@ -229,8 +216,8 @@ Java_java_io_UnixFileSystem_getLastModifiedTime0(JNIEnv *env, jobject this,
     jlong rv = 0;
 
     WITH_FIELD_PLATFORM_STRING(env, file, ids.path, path) {
-        struct stat64 sb;
-        if (stat64(path, &sb) == 0) {
+        struct stat sb;
+        if (stat(path, &sb) == 0) {
 #if defined(_AIX)
             rv =  (jlong)sb.st_mtime * 1000;
             rv += (jlong)sb.st_mtime_n / 1000000;
@@ -254,8 +241,8 @@ Java_java_io_UnixFileSystem_getLength0(JNIEnv *env, jobject this,
     jlong rv = 0;
 
     WITH_FIELD_PLATFORM_STRING(env, file, ids.path, path) {
-        struct stat64 sb;
-        if (stat64(path, &sb) == 0) {
+        struct stat sb;
+        if (stat(path, &sb) == 0) {
             rv = sb.st_size;
         }
     } END_PLATFORM_STRING(env, path);
@@ -409,9 +396,9 @@ Java_java_io_UnixFileSystem_setLastModifiedTime0(JNIEnv *env, jobject this,
     jboolean rv = JNI_FALSE;
 
     WITH_FIELD_PLATFORM_STRING(env, file, ids.path, path) {
-        struct stat64 sb;
+        struct stat sb;
 
-        if (stat64(path, &sb) == 0) {
+        if (stat(path, &sb) == 0) {
             struct timeval tv[2];
 
             /* Preserve access time */
@@ -467,7 +454,7 @@ Java_java_io_UnixFileSystem_getSpace0(JNIEnv *env, jobject this,
 #ifdef MACOSX
         struct statfs fsstat;
 #else
-        struct statvfs64 fsstat;
+        struct statvfs fsstat;
         int res;
 #endif
         memset(&fsstat, 0, sizeof(fsstat));
@@ -491,7 +478,7 @@ Java_java_io_UnixFileSystem_getSpace0(JNIEnv *env, jobject this,
             }
         }
 #else
-        RESTARTABLE(statvfs64(path, &fsstat), res);
+        RESTARTABLE(statvfs(path, &fsstat), res);
         if (res == 0) {
             switch(t) {
             case java_io_FileSystem_SPACE_TOTAL:

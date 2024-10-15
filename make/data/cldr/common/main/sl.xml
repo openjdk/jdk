@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 
 Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
@@ -1116,7 +1116,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="phonebook">razvrščanje po sistemu telefonskega imenika</type>
 			<type key="collation" type="phonetic">fonetično razvrščanje</type>
 			<type key="collation" type="pinyin">razvrščanje po sistemu pinjin</type>
-			<type key="collation" type="reformed">reformirano razvrščanje</type>
 			<type key="collation" type="search">Splošno iskanje</type>
 			<type key="collation" type="searchjl" draft="contributed">Iskanje po začetnem soglasniku hangul</type>
 			<type key="collation" type="standard">Standardno razvrščanje</type>
@@ -2542,9 +2541,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<regionFormat>{0} čas</regionFormat>
 			<regionFormat type="daylight">{0} poletni čas</regionFormat>
 			<regionFormat type="standard">{0} standardni čas</regionFormat>
-			<zone type="America/Santa_Isabel">
-				<exemplarCity>Santa Isabel</exemplarCity>
-			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>univerzalni koordinirani čas</standard>
@@ -2570,9 +2566,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Europe/Vienna">
 				<exemplarCity>Dunaj</exemplarCity>
-			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity>Currie</exemplarCity>
 			</zone>
 			<zone type="Asia/Dhaka">
 				<exemplarCity>Daka</exemplarCity>
@@ -2929,14 +2922,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Asia/Taipei">
 				<exemplarCity>Tajpej</exemplarCity>
 			</zone>
-			<zone type="Europe/Uzhgorod">
-				<exemplarCity>Užgorod</exemplarCity>
-			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>Kijev</exemplarCity>
-			</zone>
-			<zone type="Europe/Zaporozhye">
-				<exemplarCity>Zaporožje</exemplarCity>
 			</zone>
 			<zone type="Pacific/Honolulu">
 				<exemplarCity>Honolulu</exemplarCity>
@@ -3485,11 +3472,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>Poletni čas otoka Lord Howe</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>Macquarieski čas</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>Magadanski čas</generic>
@@ -3527,13 +3509,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Mawson">
 				<long>
 					<standard>Mawsonski čas</standard>
-				</long>
-			</metazone>
-			<metazone type="Mexico_Northwest">
-				<long>
-					<generic>Mehiški severozahodni čas</generic>
-					<standard>Mehiški severozahodni standardni čas</standard>
-					<daylight>Mehiški severozahodni poletni čas</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">

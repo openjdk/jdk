@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -67,11 +67,6 @@ public final class MacOsAArch64Linker extends AbstractLinker {
     @Override
     protected UpcallStubFactory arrangeUpcall(MethodType targetType, FunctionDescriptor function, LinkerOptions options) {
         return CallArranger.MACOS.arrangeUpcall(targetType, function, options);
-    }
-
-    @Override
-    protected ByteOrder linkerByteOrder() {
-        return ByteOrder.LITTLE_ENDIAN;
     }
 
     @Override

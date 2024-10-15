@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,7 @@ public class GetFlagValueTest {
 
         final WhiteBox wb = WhiteBox.getWhiteBox();
 
-        // Line example: ccstr PrintIdealGraphAddress = 127.0.0.1 {C2 notproduct} {default}
+        // Line example: ccstr PrintIdealGraphAddress = 127.0.0.1 {C2 develop} {default}
         Pattern flagLine = Pattern.compile("(\\w+)\\s+(\\w+)\\s+:?= (?:(.+))\\{[^}]+\\}\\s+\\{[^}]+\\}");
         for (String line : lines) {
             if (line.indexOf('=') != -1) {

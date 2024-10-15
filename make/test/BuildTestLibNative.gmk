@@ -33,6 +33,8 @@ default: all
 
 include $(SPEC)
 include MakeBase.gmk
+
+include CopyFiles.gmk
 include TestFilesCompilation.gmk
 
 ################################################################################

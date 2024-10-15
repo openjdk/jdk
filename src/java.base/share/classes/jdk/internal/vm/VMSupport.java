@@ -122,19 +122,25 @@ public class VMSupport {
      *             2: an OutOfMemoryError was thrown while encoding the exception
      *             3: some other problem occured while encoding the exception. If {@code buffer != 0},
      *                it contains a {@code struct { u4 len; char[len] desc}} where {@code desc} describes the problem
+     *             4: an OutOfMemoryError thrown from within VM code on a
+     *                thread that cannot call Java (OOME has no stack trace)
      *            </pre>
      * @param buffer encoded info about the exception to throw (depends on {@code format})
      * @param inJVMHeap [@code true} if executing in the JVM heap, {@code false} otherwise
+     * @param debug specifies whether debug stack traces should be enabled in case of translation failure
      */
-    public static void decodeAndThrowThrowable(int format, long buffer, boolean inJVMHeap) throws Throwable {
+    public static void decodeAndThrowThrowable(int format, long buffer, boolean inJVMHeap, boolean debug) throws Throwable {
         if (format != 0) {
+            if (format == 4) {
+                throw new TranslatedException(new OutOfMemoryError("in VM code and current thread cannot call Java"));
+            }
             String context = String.format("while encoding an exception to translate it %s the JVM heap",
                     inJVMHeap ? "to" : "from");
             if (format == 1) {
                 throw new InternalError("native buffer could not be allocated " + context);
             }
             if (format == 2) {
-                throw new OutOfMemoryError("OutOfMemoryError occurred " + context);
+                throw new OutOfMemoryError(context);
             }
             if (format == 3 && buffer != 0L) {
                 byte[] bytes = bufferToBytes(buffer);
@@ -142,7 +148,7 @@ public class VMSupport {
             }
             throw new InternalError("unexpected problem occurred " + context);
         }
-        throw TranslatedException.decodeThrowable(bufferToBytes(buffer));
+        throw TranslatedException.decodeThrowable(bufferToBytes(buffer), debug);
     }
 
     private static byte[] bufferToBytes(long buffer) {

@@ -31,15 +31,15 @@
 #include "gc/g1/g1FullCollector.hpp"
 #include "gc/g1/g1FullGCCompactionPoint.hpp"
 #include "gc/g1/g1FullGCScope.hpp"
-#include "gc/g1/heapRegion.inline.hpp"
+#include "gc/g1/g1HeapRegion.inline.hpp"
 
-void G1DetermineCompactionQueueClosure::free_empty_humongous_region(HeapRegion* hr) {
+void G1DetermineCompactionQueueClosure::free_empty_humongous_region(G1HeapRegion* hr) {
   _g1h->free_humongous_region(hr, nullptr);
   _collector->set_free(hr->hrm_index());
   add_to_compaction_queue(hr);
 }
 
-inline bool G1DetermineCompactionQueueClosure::should_compact(HeapRegion* hr) const {
+inline bool G1DetermineCompactionQueueClosure::should_compact(G1HeapRegion* hr) const {
   // There is no need to iterate and forward objects in non-movable regions ie.
   // prepare them for compaction.
   if (hr->is_humongous() || hr->has_pinned_objects()) {
@@ -61,7 +61,7 @@ inline G1FullGCCompactionPoint* G1DetermineCompactionQueueClosure::next_compacti
   return _collector->compaction_point(next_worker());
 }
 
-inline void G1DetermineCompactionQueueClosure::add_to_compaction_queue(HeapRegion* hr) {
+inline void G1DetermineCompactionQueueClosure::add_to_compaction_queue(G1HeapRegion* hr) {
   _collector->set_compaction_top(hr, hr->bottom());
   _collector->set_has_compaction_targets();
 
@@ -73,12 +73,12 @@ inline void G1DetermineCompactionQueueClosure::add_to_compaction_queue(HeapRegio
   cp->add(hr);
 }
 
-static bool has_pinned_objects(HeapRegion* hr) {
+static bool has_pinned_objects(G1HeapRegion* hr) {
   return hr->has_pinned_objects() ||
       (hr->is_humongous() && hr->humongous_start_region()->has_pinned_objects());
 }
 
-inline bool G1DetermineCompactionQueueClosure::do_heap_region(HeapRegion* hr) {
+inline bool G1DetermineCompactionQueueClosure::do_heap_region(G1HeapRegion* hr) {
   if (should_compact(hr)) {
     assert(!hr->is_humongous(), "moving humongous objects not supported.");
     add_to_compaction_queue(hr);

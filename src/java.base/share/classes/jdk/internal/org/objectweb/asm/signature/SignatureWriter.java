@@ -73,7 +73,7 @@ import jdk.internal.org.objectweb.asm.Opcodes;
 public class SignatureWriter extends SignatureVisitor {
 
     /** The builder used to construct the visited signature. */
-    private final StringBuilder stringBuilder = new StringBuilder();
+    private final StringBuilder stringBuilder;
 
     /** Whether the visited signature contains formal type parameters. */
     private boolean hasFormals;
@@ -83,8 +83,9 @@ public class SignatureWriter extends SignatureVisitor {
 
     /**
       * The stack used to keep track of class types that have arguments. Each element of this stack is
-      * a boolean encoded in one bit. The top of the stack is the least significant bit. Pushing false
-      * = *2, pushing true = *2+1, popping = /2.
+      * a boolean encoded in one bit. The top of the stack is the least significant bit. The bottom of
+      * the stack is a sentinel element always equal to 1 (used to detect when the stack is full).
+      * Pushing false = {@code <<= 1}, pushing true = {@code ( <<= 1) | 1}, popping = {@code >>>= 1}.
       *
       * <p>Class type arguments must be surrounded with '&lt;' and '&gt;' and, because
       *
@@ -94,15 +95,20 @@ public class SignatureWriter extends SignatureVisitor {
       *       SignatureWriter instances),
       * </ol>
       *
-      * <p>we need a stack to properly balance these 'parentheses'. A new element is pushed on this
-      * stack for each new visited type, and popped when the visit of this type ends (either is
+      * <p>we need a stack to properly balance these angle brackets. A new element is pushed on this
+      * stack for each new visited type, and popped when the visit of this type ends (either in
       * visitEnd, or because visitInnerClassType is called).
       */
-    private int argumentStack;
+    private int argumentStack = 1;
 
     /** Constructs a new {@link SignatureWriter}. */
     public SignatureWriter() {
+        this(new StringBuilder());
+    }
+
+    private SignatureWriter(final StringBuilder stringBuilder) {
         super(/* latest api =*/ Opcodes.ASM9);
+        this.stringBuilder = stringBuilder;
     }
 
     // -----------------------------------------------------------------------------------------------
@@ -191,7 +197,7 @@ public class SignatureWriter extends SignatureVisitor {
         stringBuilder.append(name);
         // Pushes 'false' on the stack, meaning that this type does not have type arguments (as far as
         // we can tell at this point).
-        argumentStack *= 2;
+        argumentStack <<= 1;
     }
 
     @Override
@@ -201,7 +207,7 @@ public class SignatureWriter extends SignatureVisitor {
         stringBuilder.append(name);
         // Pushes 'false' on the stack, meaning that this type does not have type arguments (as far as
         // we can tell at this point).
-        argumentStack *= 2;
+        argumentStack <<= 1;
     }
 
     @Override
@@ -209,7 +215,7 @@ public class SignatureWriter extends SignatureVisitor {
         // If the top of the stack is 'false', this means we are visiting the first type argument of the
         // currently visited type. We therefore need to append a '<', and to replace the top stack
         // element with 'true' (meaning that the current type does have type arguments).
-        if (argumentStack % 2 == 0) {
+        if ((argumentStack & 1) == 0) {
             argumentStack |= 1;
             stringBuilder.append('<');
         }
@@ -221,14 +227,15 @@ public class SignatureWriter extends SignatureVisitor {
         // If the top of the stack is 'false', this means we are visiting the first type argument of the
         // currently visited type. We therefore need to append a '<', and to replace the top stack
         // element with 'true' (meaning that the current type does have type arguments).
-        if (argumentStack % 2 == 0) {
+        if ((argumentStack & 1) == 0) {
             argumentStack |= 1;
             stringBuilder.append('<');
         }
         if (wildcard != '=') {
             stringBuilder.append(wildcard);
         }
-        return this;
+        // If the stack is full, start a nested one by returning a new SignatureWriter.
+        return (argumentStack & (1 << 31)) == 0 ? this : new SignatureWriter(stringBuilder);
     }
 
     @Override
@@ -264,10 +271,9 @@ public class SignatureWriter extends SignatureVisitor {
         // If the top of the stack is 'true', this means that some type arguments have been visited for
         // the type whose visit is now ending. We therefore need to append a '>', and to pop one element
         // from the stack.
-        if (argumentStack % 2 == 1) {
+        if ((argumentStack & 1) == 1) {
             stringBuilder.append('>');
         }
-        argumentStack /= 2;
+        argumentStack >>>= 1;
     }
 }
-

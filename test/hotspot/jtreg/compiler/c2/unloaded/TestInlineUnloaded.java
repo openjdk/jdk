@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,6 +56,7 @@ package compiler.c2.unloaded;
 
 import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 import java.io.IOException;
 import java.net.URL;
@@ -179,7 +180,7 @@ public class TestInlineUnloaded {
         }
     }
 
-    static void run(String testCaseName, Consumer<OutputAnalyzer> processor) throws IOException {
+    static void run(String testCaseName, Consumer<OutputAnalyzer> processor) throws Exception {
         ProcessBuilder pb = new ProcessBuilder();
 
         pb.command(JDKToolFinder.getJDKTool("java"),
@@ -192,7 +193,7 @@ public class TestInlineUnloaded {
 
         System.out.println("Command line: [" + pb.command() + "]");
 
-        OutputAnalyzer analyzer = new OutputAnalyzer(pb.start());
+        OutputAnalyzer analyzer = ProcessTools.executeProcess(pb);
 
         analyzer.shouldHaveExitValue(0);
 

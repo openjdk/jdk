@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,7 @@
  * @clean nsk.jdi.ObjectReference.invokeMethod.invokemethod011t
  * @compile -g:lines,source,vars ../invokemethod011t.java
  *
- * @run main/othervm
+ * @run driver
  *      nsk.jdi.ObjectReference.invokeMethod.invokemethod011
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

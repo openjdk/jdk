@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,10 @@ public sealed interface ConstantPool extends Iterable<PoolEntry>
     /**
      * {@return the entry at the specified index}
      *
+     * @apiNote
+     * If only a particular type of entry is expected, use {@link #entryByIndex(
+     * int, Class) entryByIndex(int, Class)}.
+     *
      * @param index the index within the pool of the desired entry
      * @throws ConstantPoolException if the index is out of range of the
      *         constant pool, or is considered unusable
@@ -56,6 +60,18 @@ public sealed interface ConstantPool extends Iterable<PoolEntry>
      * {@return the size of the constant pool}
      */
     int size();
+
+    /**
+     * {@return the entry of a given type at the specified index}
+     *
+     * @param <T> the entry type
+     * @param index the index within the pool of the desired entry
+     * @param cls the entry type
+     * @throws ConstantPoolException if the index is out of range of the
+     *         constant pool, or the entry is not of the given type
+     * @since 23
+     */
+    <T extends PoolEntry> T entryByIndex(int index, Class<T> cls);
 
     /**
      * {@return an iterator over pool entries}

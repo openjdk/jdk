@@ -74,7 +74,7 @@ public class CheckedTestExample {
     }
 
     @Test
-    @Arguments(Argument.DEFAULT) // As with normal tests, you need to tell the framework what the argument is.
+    @Arguments(values = Argument.DEFAULT) // As with normal tests, you need to tell the framework what the argument is.
     @Warmup(100) // As with normal tests, you can specify the warmup iterations.
     public int test(int x) {
         return 42;

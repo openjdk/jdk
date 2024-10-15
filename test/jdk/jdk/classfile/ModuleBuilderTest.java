@@ -89,7 +89,7 @@ class ModuleBuilderTest {
                           .with(ModuleMainClassAttribute.of(ClassDesc.of("overwritten.main.Class"))));
         moduleModel = cc.parse(modInfo);
         attr = ((ModuleAttribute) moduleModel.attributes().stream()
-                .filter(a -> a.attributeMapper() == Attributes.MODULE)
+                .filter(a -> a.attributeMapper() == Attributes.module())
                 .findFirst()
                 .orElseThrow());
     }
@@ -103,7 +103,7 @@ class ModuleBuilderTest {
         // Verify
         var cm = cc.parse(modBytes);
 
-        var attr =cm.findAttribute(Attributes.MODULE).get();
+        var attr =cm.findAttribute(Attributes.module()).get();
         assertEquals(attr.moduleName().name().stringValue(), modName.name());
         assertEquals(attr.moduleFlagsMask(), 0);
         assertEquals(attr.moduleVersion().get().stringValue(), modVsn);
@@ -181,13 +181,13 @@ class ModuleBuilderTest {
 
     @Test
     void verifyPackages() {
-        ModulePackagesAttribute a = moduleModel.findAttribute(Attributes.MODULE_PACKAGES).orElseThrow();
+        ModulePackagesAttribute a = moduleModel.findAttribute(Attributes.modulePackages()).orElseThrow();
         assertEquals(a.packages().stream().map(pe -> pe.asSymbol().name()).toList(), List.of("foo.bar.baz", "quux"));
     }
 
     @Test
     void verifyMainclass() {
-        ModuleMainClassAttribute a = moduleModel.findAttribute(Attributes.MODULE_MAIN_CLASS).orElseThrow();
+        ModuleMainClassAttribute a = moduleModel.findAttribute(Attributes.moduleMainClass()).orElseThrow();
         assertEquals(a.mainClass().asInternalName(), "overwritten/main/Class");
     }
 

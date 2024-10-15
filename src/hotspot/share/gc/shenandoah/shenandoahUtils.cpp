@@ -44,12 +44,12 @@ ShenandoahGCSession::ShenandoahGCSession(GCCause::Cause cause) :
   _tracer(_heap->tracer()) {
   assert(!ShenandoahGCPhase::is_current_phase_valid(), "No current GC phase");
 
+  _heap->shenandoah_policy()->record_collection_cause(cause);
   _heap->set_gc_cause(cause);
   _timer->register_gc_start();
   _tracer->report_gc_start(cause, _timer->gc_start());
   _heap->trace_heap_before_gc(_tracer);
 
-  _heap->shenandoah_policy()->record_cycle_start();
   _heap->heuristics()->record_cycle_start();
   _trace_cycle.initialize(_heap->cycle_memory_manager(), cause,
           "end of GC cycle",
@@ -111,8 +111,8 @@ ShenandoahConcurrentPhase::~ShenandoahConcurrentPhase() {
   _timer->register_gc_concurrent_end();
 }
 
-ShenandoahTimingsTracker::ShenandoahTimingsTracker(ShenandoahPhaseTimings::Phase phase) :
-  _timings(ShenandoahHeap::heap()->phase_timings()), _phase(phase) {
+ShenandoahTimingsTracker::ShenandoahTimingsTracker(ShenandoahPhaseTimings::Phase phase, bool should_aggregate) :
+  _timings(ShenandoahHeap::heap()->phase_timings()), _phase(phase), _should_aggregate(should_aggregate) {
   assert(Thread::current()->is_VM_thread() || Thread::current()->is_ConcurrentGC_thread(),
           "Must be set by these threads");
   _parent_phase = _current_phase;
@@ -121,7 +121,7 @@ ShenandoahTimingsTracker::ShenandoahTimingsTracker(ShenandoahPhaseTimings::Phase
 }
 
 ShenandoahTimingsTracker::~ShenandoahTimingsTracker() {
-  _timings->record_phase_time(_phase, os::elapsedTime() - _start);
+  _timings->record_phase_time(_phase, os::elapsedTime() - _start, _should_aggregate);
   _current_phase = _parent_phase;
 }
 

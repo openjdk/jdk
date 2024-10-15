@@ -25,7 +25,27 @@
 #include "gc/z/zPhysicalMemory.inline.hpp"
 #include "unittest.hpp"
 
+class ZAddressOffsetMaxSetter {
+private:
+  const size_t _old_max;
+  const size_t _old_mask;
+
+public:
+  ZAddressOffsetMaxSetter()
+    : _old_max(ZAddressOffsetMax),
+      _old_mask(ZAddressOffsetMask) {
+    ZAddressOffsetMax = size_t(16) * G * 1024;
+    ZAddressOffsetMask = ZAddressOffsetMax - 1;
+  }
+  ~ZAddressOffsetMaxSetter() {
+    ZAddressOffsetMax = _old_max;
+    ZAddressOffsetMask = _old_mask;
+  }
+};
+
 TEST(ZPhysicalMemoryTest, copy) {
+  ZAddressOffsetMaxSetter setter;
+
   const ZPhysicalMemorySegment seg0(zoffset(0), 100, true);
   const ZPhysicalMemorySegment seg1(zoffset(200), 100, true);
 
@@ -52,6 +72,8 @@ TEST(ZPhysicalMemoryTest, copy) {
 }
 
 TEST(ZPhysicalMemoryTest, add) {
+  ZAddressOffsetMaxSetter setter;
+
   const ZPhysicalMemorySegment seg0(zoffset(0), 1, true);
   const ZPhysicalMemorySegment seg1(zoffset(1), 1, true);
   const ZPhysicalMemorySegment seg2(zoffset(2), 1, true);
@@ -114,6 +136,8 @@ TEST(ZPhysicalMemoryTest, add) {
 }
 
 TEST(ZPhysicalMemoryTest, remove) {
+  ZAddressOffsetMaxSetter setter;
+
   ZPhysicalMemory pmem;
 
   pmem.add_segment(ZPhysicalMemorySegment(zoffset(10), 10, true));
@@ -130,6 +154,8 @@ TEST(ZPhysicalMemoryTest, remove) {
 }
 
 TEST(ZPhysicalMemoryTest, split) {
+  ZAddressOffsetMaxSetter setter;
+
   ZPhysicalMemory pmem;
 
   pmem.add_segment(ZPhysicalMemorySegment(zoffset(0), 10, true));
@@ -158,6 +184,8 @@ TEST(ZPhysicalMemoryTest, split) {
 }
 
 TEST(ZPhysicalMemoryTest, split_committed) {
+  ZAddressOffsetMaxSetter setter;
+
   ZPhysicalMemory pmem0;
   pmem0.add_segment(ZPhysicalMemorySegment(zoffset(0), 10, true));
   pmem0.add_segment(ZPhysicalMemorySegment(zoffset(10), 10, false));
@@ -171,4 +199,21 @@ TEST(ZPhysicalMemoryTest, split_committed) {
   EXPECT_EQ(pmem0.size(), 20u);
   EXPECT_EQ(pmem1.nsegments(), 2);
   EXPECT_EQ(pmem1.size(), 20u);
+}
+
+TEST(ZPhysicalMemoryTest, limits) {
+  ZAddressOffsetMaxSetter setter;
+
+  const size_t HalfZAddressOffsetMax = ZAddressOffsetMax >> 1;
+  ZPhysicalMemory pmem0;
+  pmem0.add_segment(ZPhysicalMemorySegment(zoffset(0), HalfZAddressOffsetMax, true));
+  pmem0.add_segment(ZPhysicalMemorySegment(zoffset(HalfZAddressOffsetMax), HalfZAddressOffsetMax, false));
+  EXPECT_EQ(pmem0.nsegments(), 2);
+  EXPECT_EQ(pmem0.size(), ZAddressOffsetMax);
+
+  ZPhysicalMemory pmem1 = pmem0.split_committed();
+  EXPECT_EQ(pmem0.nsegments(), 1);
+  EXPECT_EQ(pmem0.size(), HalfZAddressOffsetMax);
+  EXPECT_EQ(pmem1.nsegments(), 1);
+  EXPECT_EQ(pmem1.size(), HalfZAddressOffsetMax);
 }

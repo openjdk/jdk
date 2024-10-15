@@ -62,7 +62,7 @@ package jdk.internal.org.objectweb.asm;
 /**
  * A visitor to visit a Java method. The methods of this class must be called in the following
  * order: ( {@code visitParameter} )* [ {@code visitAnnotationDefault} ] ( {@code visitAnnotation} |
- * {@code visitAnnotableParameterCount} | {@code visitParameterAnnotation} {@code
+ * {@code visitAnnotableParameterCount} | {@code visitParameterAnnotation} | {@code
  * visitTypeAnnotation} | {@code visitAttribute} )* [ {@code visitCode} ( {@code visitFrame} |
  * {@code visit<i>X</i>Insn} | {@code visitLabel} | {@code visitInsnAnnotation} | {@code
  * visitTryCatchBlock} | {@code visitTryCatchAnnotation} | {@code visitLocalVariable} | {@code
@@ -124,6 +124,16 @@ public abstract class MethodVisitor {
         this.mv = methodVisitor;
     }
 
+    /**
+      * The method visitor to which this visitor must delegate method calls. May be {@literal null}.
+      *
+      * @return the method visitor to which this visitor must delegate method calls, or {@literal
+      *     null}.
+      */
+    public MethodVisitor getDelegate() {
+        return mv;
+    }
+
     // -----------------------------------------------------------------------------------------------
     // Parameters, annotations and non standard attributes
     // -----------------------------------------------------------------------------------------------
@@ -150,7 +160,7 @@ public abstract class MethodVisitor {
       * @return a visitor to the visit the actual default value of this annotation interface method, or
       *     {@literal null} if this visitor is not interested in visiting this default value. The
       *     'name' parameters passed to the methods of this annotation visitor are ignored. Moreover,
-      *     exacly one visit method must be called on this annotation visitor, followed by visitEnd.
+      *     exactly one visit method must be called on this annotation visitor, followed by visitEnd.
       */
     public AnnotationVisitor visitAnnotationDefault() {
         if (mv != null) {
@@ -303,15 +313,17 @@ public abstract class MethodVisitor {
       * @param type the type of this stack map frame. Must be {@link Opcodes#F_NEW} for expanded
       *     frames, or {@link Opcodes#F_FULL}, {@link Opcodes#F_APPEND}, {@link Opcodes#F_CHOP}, {@link
       *     Opcodes#F_SAME} or {@link Opcodes#F_APPEND}, {@link Opcodes#F_SAME1} for compressed frames.
-      * @param numLocal the number of local variables in the visited frame.
+      * @param numLocal the number of local variables in the visited frame. Long and double values
+      *     count for one variable.
       * @param local the local variable types in this frame. This array must not be modified. Primitive
       *     types are represented by {@link Opcodes#TOP}, {@link Opcodes#INTEGER}, {@link
       *     Opcodes#FLOAT}, {@link Opcodes#LONG}, {@link Opcodes#DOUBLE}, {@link Opcodes#NULL} or
       *     {@link Opcodes#UNINITIALIZED_THIS} (long and double are represented by a single element).
-      *     Reference types are represented by String objects (representing internal names), and
-      *     uninitialized types by Label objects (this label designates the NEW instruction that
-      *     created this uninitialized value).
-      * @param numStack the number of operand stack elements in the visited frame.
+      *     Reference types are represented by String objects (representing internal names, see {@link
+      *     Type#getInternalName()}), and uninitialized types by Label objects (this label designates
+      *     the NEW instruction that created this uninitialized value).
+      * @param numStack the number of operand stack elements in the visited frame. Long and double
+      *     values count for one stack element.
       * @param stack the operand stack types in this frame. This array must not be modified. Its
       *     content has the same format as the "local" array.
       * @throws IllegalStateException if a frame is visited just after another one, without any
@@ -390,7 +402,7 @@ public abstract class MethodVisitor {
 
     /**
       * Visits a type instruction. A type instruction is an instruction that takes the internal name of
-      * a class as parameter.
+      * a class as parameter (see {@link Type#getInternalName()}).
       *
       * @param opcode the opcode of the type instruction to be visited. This opcode is either NEW,
       *     ANEWARRAY, CHECKCAST or INSTANCEOF.
@@ -673,8 +685,9 @@ public abstract class MethodVisitor {
       * @param start the beginning of the exception handler's scope (inclusive).
       * @param end the end of the exception handler's scope (exclusive).
       * @param handler the beginning of the exception handler's code.
-      * @param type the internal name of the type of exceptions handled by the handler, or {@literal
-      *     null} to catch any exceptions (for "finally" blocks).
+      * @param type the internal name of the type of exceptions handled by the handler (see {@link
+      *     Type#getInternalName()}), or {@literal null} to catch any exceptions (for "finally"
+      *     blocks).
       * @throws IllegalArgumentException if one of the labels has already been visited by this visitor
       *     (by the {@link #visitLabel} method).
       */
@@ -812,4 +825,3 @@ public abstract class MethodVisitor {
         }
     }
 }
-

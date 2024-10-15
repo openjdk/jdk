@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 
 Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
@@ -1888,9 +1888,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</field>
 		</fields>
 		<timeZoneNames>
-			<zone type="America/Santa_Isabel">
-				<exemplarCity>Santa-Izabel</exemplarCity>
-			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>Koordinatali universal vaqt</standard>
@@ -1982,9 +1979,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Australia/Melbourne">
 				<exemplarCity>Melburn</exemplarCity>
-			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity>Kerri</exemplarCity>
 			</zone>
 			<zone type="Australia/Hobart">
 				<exemplarCity>Xobart</exemplarCity>
@@ -2091,9 +2085,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Creston">
 				<exemplarCity>Kreston</exemplarCity>
 			</zone>
-			<zone type="America/Yellowknife">
-				<exemplarCity>Yellounayf</exemplarCity>
-			</zone>
 			<zone type="America/Swift_Current">
 				<exemplarCity>Svift-Karrent</exemplarCity>
 			</zone>
@@ -2109,23 +2100,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Resolute">
 				<exemplarCity>Rezolyut</exemplarCity>
 			</zone>
-			<zone type="America/Rainy_River">
-				<exemplarCity>Reyni-River</exemplarCity>
-			</zone>
 			<zone type="America/Rankin_Inlet">
 				<exemplarCity>Rankin-Inlet</exemplarCity>
 			</zone>
 			<zone type="America/Coral_Harbour">
 				<exemplarCity>Koral-Xarbor</exemplarCity>
 			</zone>
-			<zone type="America/Thunder_Bay">
-				<exemplarCity>Tander-Bey</exemplarCity>
-			</zone>
 			<zone type="America/Iqaluit">
 				<exemplarCity>Ikaluit</exemplarCity>
-			</zone>
-			<zone type="America/Pangnirtung">
-				<exemplarCity>Pangnirtang</exemplarCity>
 			</zone>
 			<zone type="America/Moncton">
 				<exemplarCity>Monkton</exemplarCity>
@@ -2674,14 +2656,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Africa/Dar_es_Salaam">
 				<exemplarCity>Dor-us-Salom</exemplarCity>
 			</zone>
-			<zone type="Europe/Uzhgorod">
-				<exemplarCity>Ujgorod</exemplarCity>
-			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>Kiyev</exemplarCity>
-			</zone>
-			<zone type="Europe/Zaporozhye">
-				<exemplarCity>Zaporojye</exemplarCity>
 			</zone>
 			<zone type="Pacific/Midway">
 				<exemplarCity>Midvey orollari</exemplarCity>
@@ -2697,9 +2673,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Pacific/Honolulu">
 				<exemplarCity>Gonolulu</exemplarCity>
-			</zone>
-			<zone type="Pacific/Johnston">
-				<exemplarCity>Jonston</exemplarCity>
 			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>Ankorij</exemplarCity>
@@ -3303,11 +3276,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>Lord-Xau yozgi vaqti</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>Makkuori oroli vaqti</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>Magadan vaqti</generic>
@@ -3345,13 +3313,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Mawson">
 				<long>
 					<standard>Mouson vaqti</standard>
-				</long>
-			</metazone>
-			<metazone type="Mexico_Northwest">
-				<long>
-					<generic>Shimoli-g‘arbiy Meksika vaqti</generic>
-					<standard>Shimoli-g‘arbiy Meksika standart vaqti</standard>
-					<daylight>Shimoli-g‘arbiy Meksika yozgi vaqti</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">

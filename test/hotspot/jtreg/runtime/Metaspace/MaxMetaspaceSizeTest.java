@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,14 +36,14 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class MaxMetaspaceSizeTest {
     public static void main(String... args) throws Exception {
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+            "-Xshare:off",
             "-Xmx1g",
             "-XX:MaxMetaspaceSize=4K",
             "-XX:+UseCompressedClassPointers",
             "-XX:CompressedClassSpaceSize=1g",
             "--version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        // We do not explicitly limit MaxMetaspaceSize to a lower minimum. User can get as low as he wants.
-        // However, you most certainly will hit either one of
+        // -Xshare:off --version loads hundreds of classes and will hit either one of
         // "OutOfMemoryError: Metaspace" or
         // "OutOfMemoryError: Compressed class space"
         output.shouldMatch("OutOfMemoryError.*(Compressed class space|Metaspace)");

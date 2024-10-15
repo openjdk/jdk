@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,7 +80,7 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
     @Override
     @CallerSensitive
     public final MethodHandle downcallHandle(MemorySegment symbol, FunctionDescriptor function, Option... options) {
-        Reflection.ensureNativeAccess(Reflection.getCallerClass(), Linker.class, "downcallHandle");
+        Reflection.ensureNativeAccess(Reflection.getCallerClass(), Linker.class, "downcallHandle", false);
         SharedUtils.checkSymbol(symbol);
         return downcallHandle0(function, options).bindTo(symbol);
     }
@@ -88,7 +88,7 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
     @Override
     @CallerSensitive
     public final MethodHandle downcallHandle(FunctionDescriptor function, Option... options) {
-        Reflection.ensureNativeAccess(Reflection.getCallerClass(), Linker.class, "downcallHandle");
+        Reflection.ensureNativeAccess(Reflection.getCallerClass(), Linker.class, "downcallHandle", false);
         return downcallHandle0(function, options);
     }
 
@@ -115,7 +115,7 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
     @Override
     @CallerSensitive
     public final MemorySegment upcallStub(MethodHandle target, FunctionDescriptor function, Arena arena, Linker.Option... options) {
-        Reflection.ensureNativeAccess(Reflection.getCallerClass(), Linker.class, "upcallStub");
+        Reflection.ensureNativeAccess(Reflection.getCallerClass(), Linker.class, "upcallStub", false);
         Objects.requireNonNull(arena);
         Objects.requireNonNull(target);
         Objects.requireNonNull(function);
@@ -140,9 +140,6 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
     public SystemLookup defaultLookup() {
         return SystemLookup.getInstance();
     }
-
-    /** {@return byte order used by this linker} */
-    protected abstract ByteOrder linkerByteOrder();
 
     // C spec mandates that variadic arguments smaller than int are promoted to int,
     // and float is promoted to double
@@ -256,6 +253,7 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
         }
     }
 
+    @SuppressWarnings("restricted")
     private static MemoryLayout stripNames(MemoryLayout ml) {
         // we don't care about transferring alignment and byte order here
         // since the linker already restricts those such that they will always be the same
@@ -264,7 +262,7 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
             case UnionLayout ul -> MemoryLayout.unionLayout(stripNames(ul.memberLayouts()));
             case SequenceLayout sl -> MemoryLayout.sequenceLayout(sl.elementCount(), stripNames(sl.elementLayout()));
             case AddressLayout al -> al.targetLayout()
-                    .map(tl -> al.withoutName().withTargetLayout(stripNames(tl)))
+                    .map(tl -> al.withoutName().withTargetLayout(stripNames(tl))) // restricted
                     .orElseGet(al::withoutName);
             default -> ml.withoutName(); // ValueLayout and PaddingLayout
         };

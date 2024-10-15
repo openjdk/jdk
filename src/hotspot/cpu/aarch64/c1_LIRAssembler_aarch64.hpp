@@ -60,8 +60,6 @@ friend class ArrayCopyStub;
   void casw(Register addr, Register newval, Register cmpval);
   void casl(Register addr, Register newval, Register cmpval);
 
-  void poll_for_safepoint(relocInfo::relocType rtype, CodeEmitInfo* info = nullptr);
-
   static const int max_tableswitches = 20;
   struct tableswitch switches[max_tableswitches];
   int tableswitch_count;
@@ -71,8 +69,8 @@ friend class ArrayCopyStub;
   void deoptimize_trap(CodeEmitInfo *info);
 
   enum {
-    // call stub: CompiledStaticCall::to_interp_stub_size() +
-    //            CompiledStaticCall::to_trampoline_stub_size()
+    // call stub: CompiledDirectCall::to_interp_stub_size() +
+    //            CompiledDirectCall::to_trampoline_stub_size()
     _call_stub_size = 13 * NativeInstruction::instruction_size,
     _exception_handler_size = DEBUG_ONLY(1*K) NOT_DEBUG(175),
     _deopt_handler_size = 7 * NativeInstruction::instruction_size

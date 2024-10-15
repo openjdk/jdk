@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,25 +31,6 @@ import static sun.security.util.SecurityConstants.PROVIDER_VER;
 
 /**
  * The JSSE provider.
- *
- * SunJSSE now supports an experimental FIPS compliant mode when used with an
- * appropriate FIPS certified crypto provider. In FIPS mode, we:
- *  . allow only TLS 1.0 or later
- *  . allow only FIPS approved ciphersuites
- *  . perform all crypto in the FIPS crypto provider
- *
- * It is currently not possible to use both FIPS compliant SunJSSE and
- * standard JSSE at the same time because of the various static data structures
- * we use.
- *
- * However, we do want to allow FIPS mode to be enabled at runtime and without
- * editing the java.security file. That means we need to allow
- * Security.removeProvider("SunJSSE") to work, which creates an instance of
- * this class in non-FIPS mode. That is why we delay the selection of the mode
- * as long as possible. This is until we open an SSL/TLS connection and the
- * data structures need to be initialized or until SunJSSE is initialized in
- * FIPS mode.
- *
  */
 public class SunJSSE extends java.security.Provider {
 

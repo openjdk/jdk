@@ -203,7 +203,7 @@ class StringConcat : public ResourceObj {
       Node* uct = _uncommon_traps.at(u);
 
       // Build a new call using the jvms state of the allocate
-      address call_addr = SharedRuntime::uncommon_trap_blob()->entry_point();
+      address call_addr = OptoRuntime::uncommon_trap_blob()->entry_point();
       const TypeFunc* call_type = OptoRuntime::uncommon_trap_Type();
       const TypePtr* no_memory_effects = nullptr;
       Compile* C = _stringopts->C;
@@ -2010,7 +2010,7 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
     // of the initialization is committed to memory before any code publishes
     // a reference to the newly constructed object (see Parse::do_exits()).
     assert(AllocateNode::Ideal_allocation(result) != nullptr, "should be newly allocated");
-    kit.insert_mem_bar(Op_MemBarRelease, result);
+    kit.insert_mem_bar(UseStoreStoreForCtor ? Op_MemBarStoreStore : Op_MemBarRelease, result);
   } else {
     result = C->top();
   }

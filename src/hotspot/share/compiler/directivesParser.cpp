@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "opto/phasetype.hpp"
+#include "opto/traceAutoVectorizationTag.hpp"
 #include "runtime/os.hpp"
 #include <string.h>
 
@@ -335,6 +336,17 @@ bool DirectivesParser::set_option_flag(JSON_TYPE t, JSON_VAL* v, const key* opti
           if (!valid) {
             error(VALUE_ERROR, "Unrecognized intrinsic detected in DisableIntrinsic: %s", validator.what());
           }
+        }
+#if !defined(PRODUCT) && defined(COMPILER2)
+        else if (strncmp(option_key->name, "TraceAutoVectorization", 22) == 0) {
+          TraceAutoVectorizationTagValidator validator(s, false);
+
+          valid = validator.is_valid();
+          if (valid) {
+            set->set_trace_auto_vectorization_tags(validator.tags());
+          } else {
+            error(VALUE_ERROR, "Unrecognized tag name detected in TraceAutoVectorization: %s", validator.what());
+          }
         } else if (strncmp(option_key->name, "PrintIdealPhase", 15) == 0) {
           PhaseNameValidator validator(s);
 
@@ -345,6 +357,7 @@ bool DirectivesParser::set_option_flag(JSON_TYPE t, JSON_VAL* v, const key* opti
             error(VALUE_ERROR, "Unrecognized phase name detected in PrintIdealPhase: %s", validator.what());
           }
         }
+#endif
 
         if (!valid) {
           FREE_C_HEAP_ARRAY(char, s);

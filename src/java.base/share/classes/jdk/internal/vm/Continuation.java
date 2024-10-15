@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -296,10 +296,10 @@ public class Continuation {
     }
 
     @IntrinsicCandidate
-    private native static int doYield();
+    private static native int doYield();
 
     @IntrinsicCandidate
-    private native static void enterSpecial(Continuation c, boolean isContinue, boolean isVirtualThread);
+    private static native void enterSpecial(Continuation c, boolean isContinue, boolean isVirtualThread);
 
 
     @Hidden
@@ -427,6 +427,7 @@ public class Continuation {
      * Pins the current continuation (enters a critical section).
      * This increments an internal semaphore that, when greater than 0, pins the continuation.
      */
+    @IntrinsicCandidate
     public static native void pin();
 
     /**
@@ -434,6 +435,7 @@ public class Continuation {
      * This decrements an internal semaphore that, when equal 0, unpins the current continuation
      * if pinned with {@link #pin()}.
      */
+    @IntrinsicCandidate
     public static native void unpin();
 
     /**
@@ -448,7 +450,7 @@ public class Continuation {
         return res != 0;
     }
 
-    static private native int isPinned0(ContinuationScope scope);
+    private static native int isPinned0(ContinuationScope scope);
 
     private boolean fence() {
         U.storeFence(); // needed to prevent certain transformations by the compiler

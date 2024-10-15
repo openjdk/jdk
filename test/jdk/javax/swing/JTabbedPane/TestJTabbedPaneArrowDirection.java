@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ public class TestJTabbedPaneArrowDirection {
     private static JFrame frame;
     private static JTabbedPane tabPane;
     private static final String INSTRUCTIONS =
-            "1. Observe the arrows are ponting to left and right direction\n" +
+            "1. Observe the arrows are pointing to left and right direction\n" +
                " for tab placement set to TOP. Default tab placement is TOP.\n\n" +
             "2. Press BOTTOM to change the tab placement to bottom.\n\n" +
             "3. Observe arrows are pointing to the left and right direction.\n\n" +
@@ -57,7 +57,7 @@ public class TestJTabbedPaneArrowDirection {
 
     public static void main(String[] args) throws Exception {
         UIManager.setLookAndFeel("com.sun.java.swing.plaf.gtk.GTKLookAndFeel");
-        PassFailJFrame passFailJFrame = new PassFailJFrame.Builder()
+        PassFailJFrame passFailJFrame = PassFailJFrame.builder()
                 .title("JTabbedPane Arrow Direction Test Instructions")
                 .instructions(INSTRUCTIONS)
                 .testTimeOut(5)

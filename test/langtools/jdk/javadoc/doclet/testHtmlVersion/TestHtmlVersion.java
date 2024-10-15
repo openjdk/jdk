@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,7 +97,7 @@ public class TestHtmlVersion extends JavadocTester {
                     <ul id="navbar-top-firstrow" class="nav-list" title="Navigation">
                     """,
                 """
-                    <div class="summary-table two-column-summary" aria-labelledby="class-summary-tab0">""",
+                    <div class="summary-table two-column-summary">""",
                 """
                     <header role="banner">
                     <nav role="navigation">
@@ -189,12 +189,11 @@ public class TestHtmlVersion extends JavadocTester {
                     <nav role="navigation">
                     <!-- ========= START OF TOP NAVBAR ======= -->""",
                 """
+                    <nav role="navigation" class="toc" aria-label="Table of contents">
+                    <div class="toc-header">Contents&nbsp;""",
+                """
                     <main role="main">
                     <div class="header">""",
-                """
-                    <section class="packages">
-                    <h2 title="Contents">Contents</h2>
-                    """,
                 """
                     <section class="constants-summary" id="pkg">
                     <h2 title="pkg.*">pkg.*</h2>
@@ -297,6 +296,7 @@ public class TestHtmlVersion extends JavadocTester {
                     <!-- ========= START OF TOP NAVBAR ======= -->""",
                 """
                     </header>
+                    <div class="main-grid">
                     <main role="main">""",
                 """
                     <footer role="contentinfo">""",
@@ -412,7 +412,7 @@ public class TestHtmlVersion extends JavadocTester {
                     <div class="caption"><span>Enum Constants</span></div>
                     """,
                 """
-                    <div class="summary-table three-column-summary" aria-labelledby="method-summary-table-tab0">
+                    <div class="summary-table three-column-summary">
                     """,
                 """
                     <section class="method-summary" id="method-summary">
@@ -453,7 +453,7 @@ public class TestHtmlVersion extends JavadocTester {
                     <div id="method-summary-table">
                     """,
                 """
-                    <div class="summary-table three-column-summary" aria-labelledby="method-summary-table-tab0">
+                    <div class="summary-table three-column-summary">
                     """,
                 """
                     <section class="method-details" id="method-detail">

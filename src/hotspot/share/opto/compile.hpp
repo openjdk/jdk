@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,9 +29,9 @@
 #include "ci/compilerInterface.hpp"
 #include "code/debugInfoRec.hpp"
 #include "compiler/compiler_globals.hpp"
-#include "compiler/compilerOracle.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerEvent.hpp"
+#include "compiler/cHeapStringHolder.hpp"
 #include "libadt/dict.hpp"
 #include "libadt/vectset.hpp"
 #include "memory/resourceArea.hpp"
@@ -45,6 +45,7 @@
 #include "runtime/timerTrace.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/ticks.hpp"
+#include "utilities/vmEnums.hpp"
 
 class AbstractLockNode;
 class AddPNode;
@@ -317,6 +318,7 @@ class Compile : public Phase {
   uintx                 _max_node_limit;        // Max unique node count during a single compilation.
 
   bool                  _post_loop_opts_phase;  // Loop opts are finished.
+  bool                  _allow_macro_nodes;     // True if we allow creation of macro nodes.
 
   int                   _major_progress;        // Count of something big happening
   bool                  _inlining_progress;     // progress doing incremental inlining?
@@ -352,8 +354,8 @@ class Compile : public Phase {
   // JSR 292
   bool                  _has_method_handle_invokes; // True if this method has MethodHandle invokes.
   bool                  _has_monitors;          // Metadata transfered to nmethod to enable Continuations lock-detection fastpath
+  bool                  _has_scoped_access;     // For shared scope closure
   bool                  _clinit_barrier_on_entry; // True if clinit barrier is needed on nmethod entry
-  RTMState              _rtm_state;             // State of Restricted Transactional Memory usage
   int                   _loop_opts_cnt;         // loop opts round
   uint                  _stress_seed;           // Seed for stress testing
 
@@ -363,7 +365,7 @@ class Compile : public Phase {
   ciEnv*                _env;                   // CI interface
   DirectiveSet*         _directive;             // Compiler directive
   CompileLog*           _log;                   // from CompilerThread
-  const char*           _failure_reason;        // for record_failure/failing pattern
+  CHeapStringHolder     _failure_reason;        // for record_failure/failing pattern
   CompilationFailureInfo* _first_failure_details; // Details for the first failure happening during compilation
   GrowableArray<CallGenerator*> _intrinsics;    // List of intrinsics.
   GrowableArray<Node*>  _macro_nodes;           // List of nodes which need to be expanded before matching.
@@ -388,6 +390,8 @@ class Compile : public Phase {
   VectorSet             _dead_node_list;        // Set of dead nodes
   DEBUG_ONLY(Unique_Node_List* _modified_nodes;)   // List of nodes which inputs were modified
   DEBUG_ONLY(bool       _phase_optimize_finished;) // Used for live node verification while creating new nodes
+
+  DEBUG_ONLY(bool       _phase_verify_ideal_loop;) // Are we in PhaseIdealLoop verification?
 
   // Arenas for new-space and old-space nodes.
   // Swapped between using _node_arena.
@@ -665,19 +669,17 @@ private:
   void          set_print_inlining(bool z)       { _print_inlining = z; }
   bool              print_intrinsics() const     { return _print_intrinsics; }
   void          set_print_intrinsics(bool z)     { _print_intrinsics = z; }
-  RTMState          rtm_state()  const           { return _rtm_state; }
-  void          set_rtm_state(RTMState s)        { _rtm_state = s; }
-  bool              use_rtm() const              { return (_rtm_state & NoRTM) == 0; }
-  bool          profile_rtm() const              { return _rtm_state == ProfileRTM; }
   uint              max_node_limit() const       { return (uint)_max_node_limit; }
   void          set_max_node_limit(uint n)       { _max_node_limit = n; }
   bool              clinit_barrier_on_entry()       { return _clinit_barrier_on_entry; }
   void          set_clinit_barrier_on_entry(bool z) { _clinit_barrier_on_entry = z; }
   bool              has_monitors() const         { return _has_monitors; }
   void          set_has_monitors(bool v)         { _has_monitors = v; }
+  bool              has_scoped_access() const    { return _has_scoped_access; }
+  void          set_has_scoped_access(bool v)    { _has_scoped_access = v; }
 
   // check the CompilerOracle for special behaviours for this compile
-  bool          method_has_option(enum CompileCommand option) {
+  bool          method_has_option(CompileCommandEnum option) {
     return method() != nullptr && method()->has_option(option);
   }
 
@@ -780,10 +782,20 @@ private:
   void add_coarsened_locks(GrowableArray<AbstractLockNode*>& locks);
   void remove_coarsened_lock(Node* n);
   bool coarsened_locks_consistent();
+  void mark_unbalanced_boxes() const;
 
   bool       post_loop_opts_phase() { return _post_loop_opts_phase;  }
   void   set_post_loop_opts_phase() { _post_loop_opts_phase = true;  }
   void reset_post_loop_opts_phase() { _post_loop_opts_phase = false; }
+
+#ifdef ASSERT
+  bool       phase_verify_ideal_loop() const { return _phase_verify_ideal_loop; }
+  void   set_phase_verify_ideal_loop() { _phase_verify_ideal_loop = true; }
+  void reset_phase_verify_ideal_loop() { _phase_verify_ideal_loop = false; }
+#endif
+
+  bool       allow_macro_nodes() { return _allow_macro_nodes;  }
+  void reset_allow_macro_nodes() { _allow_macro_nodes = false;  }
 
   void record_for_post_loop_opts_igvn(Node* n);
   void remove_from_post_loop_opts_igvn(Node* n);
@@ -794,6 +806,7 @@ private:
   void remove_useless_unstable_if_traps(Unique_Node_List &useful);
   void process_for_unstable_if_traps(PhaseIterGVN& igvn);
 
+  void shuffle_macro_nodes();
   void sort_macro_nodes();
 
   void mark_parse_predicate_nodes_useless(PhaseIterGVN& igvn);
@@ -809,19 +822,52 @@ private:
   Arena*      comp_arena()           { return &_comp_arena; }
   ciEnv*      env() const            { return _env; }
   CompileLog* log() const            { return _log; }
-  bool        failing() const        { return _env->failing() || _failure_reason != nullptr; }
-  const char* failure_reason() const { return (_env->failing()) ? _env->failure_reason() : _failure_reason; }
-  const CompilationFailureInfo* first_failure_details() const { return _first_failure_details; }
 
-  bool failure_reason_is(const char* r) const {
-    return (r == _failure_reason) || (r != nullptr && _failure_reason != nullptr && strcmp(r, _failure_reason) == 0);
+  bool        failing_internal() const {
+    return _env->failing() ||
+           _failure_reason.get() != nullptr;
   }
 
-  void record_failure(const char* reason);
-  void record_method_not_compilable(const char* reason) {
+  const char* failure_reason() const {
+    return _env->failing() ? _env->failure_reason()
+                           : _failure_reason.get();
+  }
+
+  const CompilationFailureInfo* first_failure_details() const { return _first_failure_details; }
+
+  bool failing() {
+    if (failing_internal()) {
+      return true;
+    }
+#ifdef ASSERT
+    // Disable stress code for PhaseIdealLoop verification (would have cascading effects).
+    if (phase_verify_ideal_loop()) {
+      return false;
+    }
+    if (StressBailout) {
+      return fail_randomly();
+    }
+#endif
+    return false;
+  }
+
+#ifdef ASSERT
+  bool fail_randomly();
+  bool failure_is_artificial();
+#endif
+
+  bool failure_reason_is(const char* r) const {
+    return (r == _failure_reason.get()) ||
+           (r != nullptr &&
+            _failure_reason.get() != nullptr &&
+            strcmp(r, _failure_reason.get()) == 0);
+  }
+
+  void record_failure(const char* reason DEBUG_ONLY(COMMA bool allow_multiple_failures = false));
+  void record_method_not_compilable(const char* reason DEBUG_ONLY(COMMA bool allow_multiple_failures = false)) {
     env()->record_method_not_compilable(reason);
     // Record failure reason.
-    record_failure(reason);
+    record_failure(reason DEBUG_ONLY(COMMA allow_multiple_failures));
   }
   bool check_node_count(uint margin, const char* reason) {
     if (oom()) {
@@ -847,7 +893,7 @@ private:
   RootNode*    root() const                { return _root; }
   void         set_root(RootNode* r)       { _root = r; }
   StartNode*   start() const;              // (Derived from root.)
-  void         init_start(StartNode* s);
+  void         verify_start(StartNode* s) const NOT_DEBUG_RETURN;
   Node*        immutable_memory();
 
   Node*        recent_alloc_ctl() const    { return _recent_alloc_ctl; }
@@ -1198,7 +1244,7 @@ private:
   void final_graph_reshaping_impl(Node *n, Final_Reshape_Counts& frc, Unique_Node_List& dead_nodes);
   void final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& frc, uint nop, Unique_Node_List& dead_nodes);
   void final_graph_reshaping_walk(Node_Stack& nstack, Node* root, Final_Reshape_Counts& frc, Unique_Node_List& dead_nodes);
-  void eliminate_redundant_card_marks(Node* n);
+  void handle_div_mod_op(Node* n, BasicType bt, bool is_unsigned);
 
   // Logic cone optimization.
   void optimize_logic_cones(PhaseIterGVN &igvn);
@@ -1258,6 +1304,9 @@ private:
   // Auxiliary methods for randomized fuzzing/stressing
   int random();
   bool randomized_select(int count);
+
+  // seed random number generation and log the seed for repeatability.
+  void initialize_stress_seed(const DirectiveSet* directive);
 
   // supporting clone_map
   CloneMap&     clone_map();

@@ -52,7 +52,7 @@ public class TestInvalidCompileCommand {
             "-version"
         },
         {
-            "-XX:CompileCommand=option,Test::test,VectorizeDebug,3",
+            "-XX:CompileCommand=option,Test::test,MemStat,3",
             "-version"
         },
         {
@@ -72,7 +72,7 @@ public class TestInvalidCompileCommand {
             "Missing type 'intx' before option 'RepeatCompilation'"
         },
         {
-            "Missing type 'uintx' before option 'VectorizeDebug'"
+            "Missing type 'uintx' before option 'MemStat'"
         },
         {
             "Missing type 'ccstrlist' before option 'ControlIntrinsic'"

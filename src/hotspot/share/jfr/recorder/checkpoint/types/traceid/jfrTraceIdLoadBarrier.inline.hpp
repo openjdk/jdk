@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,7 +82,7 @@ inline traceid JfrTraceIdLoadBarrier::load(const Klass* klass) {
   if (should_tag(klass)) {
     load_barrier(klass);
   }
-  assert(USED_THIS_EPOCH(klass), "invariant");
+  assert(METHOD_AND_CLASS_USED_THIS_EPOCH(klass), "invariant");
   return TRACE_ID(klass);
 }
 
@@ -148,11 +148,18 @@ inline traceid JfrTraceIdLoadBarrier::load(const PackageEntry* package) {
   return set_used_and_get(package);
 }
 
+inline traceid JfrTraceIdLoadBarrier::load_leakp(const Klass* klass) {
+  assert(klass != nullptr, "invariant");
+  load(klass); // Ensure tagged and enqueued.
+  SET_LEAKP(klass);
+  return TRACE_ID(klass);
+}
+
 inline traceid JfrTraceIdLoadBarrier::load_leakp(const Klass* klass, const Method* method) {
   assert(klass != nullptr, "invariant");
-  assert(METHOD_AND_CLASS_USED_THIS_EPOCH(klass), "invariant");
   assert(method != nullptr, "invariant");
   assert(klass == method->method_holder(), "invariant");
+  assert(METHOD_AND_CLASS_USED_THIS_EPOCH(klass), "invariant");
   if (should_tag(method)) {
     // the method is already logically tagged, just like the klass,
     // but because of redefinition, the latest Method*
@@ -167,9 +174,9 @@ inline traceid JfrTraceIdLoadBarrier::load_leakp(const Klass* klass, const Metho
 
 inline traceid JfrTraceIdLoadBarrier::load_leakp_previuos_epoch(const Klass* klass, const Method* method) {
   assert(klass != nullptr, "invariant");
-  assert(METHOD_AND_CLASS_USED_PREVIOUS_EPOCH(klass), "invariant");
   assert(method != nullptr, "invariant");
   assert(klass == method->method_holder(), "invariant");
+  assert(METHOD_AND_CLASS_USED_PREVIOUS_EPOCH(klass), "invariant");
   if (METHOD_FLAG_NOT_USED_PREVIOUS_EPOCH(method)) {
     // the method is already logically tagged, just like the klass,
     // but because of redefinition, the latest Method*

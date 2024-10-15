@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,25 +26,25 @@
 #define SHARE_GC_G1_G1FULLGCPREPARETASK_HPP
 
 #include "gc/g1/g1FullGCTask.hpp"
-#include "gc/g1/heapRegion.hpp"
+#include "gc/g1/g1HeapRegion.hpp"
 #include "memory/allocation.hpp"
 
 class G1CollectedHeap;
 class G1CMBitMap;
 class G1FullCollector;
 class G1FullGCCompactionPoint;
-class HeapRegion;
+class G1HeapRegion;
 
 // Determines the regions in the heap that should be part of the compaction and
 // distributes them among the compaction queues in round-robin fashion.
-class G1DetermineCompactionQueueClosure : public HeapRegionClosure {
+class G1DetermineCompactionQueueClosure : public G1HeapRegionClosure {
   G1CollectedHeap* _g1h;
   G1FullCollector* _collector;
   uint _cur_worker;
 
-  inline void free_empty_humongous_region(HeapRegion* hr);
+  inline void free_empty_humongous_region(G1HeapRegion* hr);
 
-  inline bool should_compact(HeapRegion* hr) const;
+  inline bool should_compact(G1HeapRegion* hr) const;
 
   // Returns the current worker id to assign a compaction point to, and selects
   // the next one round-robin style.
@@ -52,17 +52,17 @@ class G1DetermineCompactionQueueClosure : public HeapRegionClosure {
 
   inline G1FullGCCompactionPoint* next_compaction_point();
 
-  inline void add_to_compaction_queue(HeapRegion* hr);
+  inline void add_to_compaction_queue(G1HeapRegion* hr);
 
 public:
   G1DetermineCompactionQueueClosure(G1FullCollector* collector);
 
-  inline bool do_heap_region(HeapRegion* hr) override;
+  inline bool do_heap_region(G1HeapRegion* hr) override;
 };
 
 class G1FullGCPrepareTask : public G1FullGCTask {
   volatile bool     _has_free_compaction_targets;
-  HeapRegionClaimer _hrclaimer;
+  G1HeapRegionClaimer _hrclaimer;
 
   void set_has_free_compaction_targets();
 
@@ -74,19 +74,19 @@ public:
   bool has_free_compaction_targets();
 
 private:
-  class G1CalculatePointersClosure : public HeapRegionClosure {
+  class G1CalculatePointersClosure : public G1HeapRegionClosure {
     G1CollectedHeap* _g1h;
     G1FullCollector* _collector;
     G1CMBitMap* _bitmap;
     G1FullGCCompactionPoint* _cp;
 
-    void prepare_for_compaction(HeapRegion* hr);
+    void prepare_for_compaction(G1HeapRegion* hr);
 
   public:
     G1CalculatePointersClosure(G1FullCollector* collector,
                                G1FullGCCompactionPoint* cp);
 
-    bool do_heap_region(HeapRegion* hr);
+    bool do_heap_region(G1HeapRegion* hr);
   };
 
   class G1PrepareCompactLiveClosure : public StackObj {

@@ -168,4 +168,3 @@ public final class ModuleHashesAttribute extends Attribute {
         return byteVector;
     }
 }
-

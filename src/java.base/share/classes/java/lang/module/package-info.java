@@ -154,9 +154,9 @@
  * application module specified to the 'java' launcher. When compiling code in
  * the unnamed module, or at run-time when the main application class is loaded
  * from the class path, then the default set of root modules is implementation
- * specific. In the JDK the default set of root modules contains every module
- * that is observable on the upgrade module path or among the system modules,
- * and that exports at least one package without qualification. </p>
+ * specific. In the JDK the default set of root modules contains every module on
+ * the upgrade module path or among the system modules that exports at least one
+ * package, without qualification. </p>
  *
  * <h3> Observable modules </h3>
  *

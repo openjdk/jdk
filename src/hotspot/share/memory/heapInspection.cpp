@@ -83,14 +83,14 @@ const char* KlassInfoEntry::name() const {
   if (_klass->name() != nullptr) {
     name = _klass->external_name();
   } else {
-    if (_klass == Universe::boolArrayKlassObj())         name = "<boolArrayKlass>";         else
-    if (_klass == Universe::charArrayKlassObj())         name = "<charArrayKlass>";         else
-    if (_klass == Universe::floatArrayKlassObj())        name = "<floatArrayKlass>";        else
-    if (_klass == Universe::doubleArrayKlassObj())       name = "<doubleArrayKlass>";       else
-    if (_klass == Universe::byteArrayKlassObj())         name = "<byteArrayKlass>";         else
-    if (_klass == Universe::shortArrayKlassObj())        name = "<shortArrayKlass>";        else
-    if (_klass == Universe::intArrayKlassObj())          name = "<intArrayKlass>";          else
-    if (_klass == Universe::longArrayKlassObj())         name = "<longArrayKlass>";         else
+    if (_klass == Universe::boolArrayKlass())         name = "<boolArrayKlass>";         else
+    if (_klass == Universe::charArrayKlass())         name = "<charArrayKlass>";         else
+    if (_klass == Universe::floatArrayKlass())        name = "<floatArrayKlass>";        else
+    if (_klass == Universe::doubleArrayKlass())       name = "<doubleArrayKlass>";       else
+    if (_klass == Universe::byteArrayKlass())         name = "<byteArrayKlass>";         else
+    if (_klass == Universe::shortArrayKlass())        name = "<shortArrayKlass>";        else
+    if (_klass == Universe::intArrayKlass())          name = "<intArrayKlass>";          else
+    if (_klass == Universe::longArrayKlass())         name = "<longArrayKlass>";         else
       name = "<no name>";
   }
   return name;
@@ -170,7 +170,7 @@ public:
 
 KlassInfoTable::KlassInfoTable(bool add_all_classes) {
   _size_of_instances_in_words = 0;
-  _ref = (HeapWord*) Universe::boolArrayKlassObj();
+  _ref = (uintptr_t) Universe::boolArrayKlass();
   _buckets =
     (KlassInfoBucket*)  AllocateHeap(sizeof(KlassInfoBucket) * _num_buckets,
        mtInternal, CURRENT_PC, AllocFailStrategy::RETURN_NULL);
@@ -196,7 +196,7 @@ KlassInfoTable::~KlassInfoTable() {
 }
 
 uint KlassInfoTable::hash(const Klass* p) {
-  return (uint)(((uintptr_t)p - (uintptr_t)_ref) >> 2);
+  return (uint)(((uintptr_t)p - _ref) >> 2);
 }
 
 KlassInfoEntry* KlassInfoTable::lookup(Klass* k) {

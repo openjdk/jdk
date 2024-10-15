@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,11 @@
  */
 #include <stdio.h>
 #include <jvmti.h>
-#include "agent_common.h"
+#include "agent_common.hpp"
 #include <jni.h>
 #include <string.h>
-#include "jvmti_tools.h"
-#include "JVMTITools.h"
+#include "jvmti_tools.hpp"
+#include "JVMTITools.hpp"
 /*
  *1. Enable event ClassPrepare.
  *2. Upon occurrence of ClassPrepare, set a breakpoint in class static
@@ -57,12 +57,12 @@ callbackClassPrepare(jvmtiEnv *jvmti,
     if ((strcmp(className, CLASS_NAME) == 0)) {
         jclass cls;
         cls = jni->FindClass(SEARCH_NAME);
-        if (cls == NULL) {
+        if (cls == nullptr) {
             printf("Agent::CLS is null");
         } else {
             jmethodID method;
             method = jni->GetMethodID(cls, METHOD_NAME,METHOD_SIGNATURE);
-            if (method == NULL) {
+            if (method == nullptr) {
                 printf("Agent::Method is null ");
             } else {
                 jlocation start;
@@ -158,8 +158,8 @@ jint Agent_Initialize(JavaVM *vm, char *options, void *reserved) {
             return JNI_ERR;
         }
 
-        nsk_jvmti_enableNotification(jvmti, JVMTI_EVENT_CLASS_PREPARE , NULL);
-        nsk_jvmti_enableNotification(jvmti, JVMTI_EVENT_BREAKPOINT, NULL);
+        nsk_jvmti_enableNotification(jvmti, JVMTI_EVENT_CLASS_PREPARE , nullptr);
+        nsk_jvmti_enableNotification(jvmti, JVMTI_EVENT_BREAKPOINT, nullptr);
     }
     return JNI_OK;
 }

@@ -115,6 +115,7 @@ public class BitArray {
      * Create a BitArray whose bits are those of the given array
      * of Booleans.
      */
+    @SuppressWarnings("this-escape")
     public BitArray(boolean[] bits) {
         length = bits.length;
         repn = new byte[(length + 7)/8];

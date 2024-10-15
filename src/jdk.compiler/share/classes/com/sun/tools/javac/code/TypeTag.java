@@ -186,6 +186,10 @@ public enum TypeTag {
         return (this.superClasses & tag.numericClass) != 0;
     }
 
+    public boolean isInSuperClassesOf(TypeTag tag) {
+        return (this.numericClass & tag.superClasses) != 0;
+    }
+
     /** Returns the number of type tags.
      */
     public static int getTypeTagCount() {

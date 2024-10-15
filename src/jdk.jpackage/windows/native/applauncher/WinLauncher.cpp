@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -264,7 +264,7 @@ void launchApp() {
         }
         JOBOBJECT_EXTENDED_LIMIT_INFORMATION jobInfo = { };
         jobInfo.BasicLimitInformation.LimitFlags =
-                                          JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
+                JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE | JOB_OBJECT_LIMIT_SILENT_BREAKAWAY_OK;
         if (!SetInformationJobObject(jobHandle.get(),
                 JobObjectExtendedLimitInformation, &jobInfo, sizeof(jobInfo))) {
             JP_THROW(SysError(tstrings::any() <<

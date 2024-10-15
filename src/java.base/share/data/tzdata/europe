@@ -1013,9 +1013,34 @@ Zone	Europe/Sofia	1:33:16 -	LMT	1880
 # Czech Republic (Czechia)
 # Slovakia
 #
-# From Paul Eggert (2018-04-15):
-# The source for Czech data is: Kdy začíná a končí letní čas. 2018-04-15.
+# From Ivan Benovic (2024-01-30):
+# https://www.slov-lex.sk/pravne-predpisy/SK/ZZ/1946/54/
+# (This is an official link to the Czechoslovak Summer Time Act of
+# March 8, 1946 that authorizes the Czechoslovak government to set the
+# exact dates of change to summer time and back to Central European Time.
+# The act also implicitly confirms Central European Time as the
+# official time zone of Czechoslovakia and currently remains in force
+# in both the Czech Republic and Slovakia.)
+# https://www.psp.cz/eknih/1945pns/tisky/t0216_00.htm
+# (This is a link to the original legislative proposal dating back to
+# February 22, 1946. The accompanying memorandum to the proposal says
+# that an advisory committee on European railroad transportation that
+# met in Brussels in October 1945 decided that the change of time
+# should be carried out in all participating countries in a strictly
+# coordinated manner....)
+#
+# From Paul Eggert (2024-01-30):
+# The source for Czech data is: Kdy začíná a končí letní čas.
 # https://kalendar.beda.cz/kdy-zacina-a-konci-letni-cas
+# Its main text disagrees with its quoted sources only in 1918,
+# where the main text says spring and autumn transitions
+# occurred at 02:00 and 03:00 respectively (as usual),
+# whereas the 1918 source "Oznámení o zavedení letního času v roce 1918"
+# says transitions were at 01:00 and 02:00 respectively.
+# As the 1918 source appears to be a humorous piece, and it is
+# unlikely that Prague would have disagreed with its neighbors by an hour,
+# go with the main text for now.
+#
 # We know of no English-language name for historical Czech winter time;
 # abbreviate it as "GMT", as it happened to be GMT.
 #

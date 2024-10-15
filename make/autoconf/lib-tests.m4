@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -28,10 +28,10 @@
 ################################################################################
 
 # Minimum supported versions
-JTREG_MINIMUM_VERSION=7.3.1
+JTREG_MINIMUM_VERSION=7.4
 GTEST_MINIMUM_VERSION=1.14.0
 
-###############################################################################
+################################################################################
 #
 # Setup and check for gtest framework source files
 #
@@ -74,7 +74,7 @@ AC_DEFUN_ONCE([LIB_TESTS_SETUP_GTEST],
   AC_SUBST(GTEST_FRAMEWORK_SRC)
 ])
 
-###############################################################################
+################################################################################
 #
 # Setup and check the Java Microbenchmark Harness
 #

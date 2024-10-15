@@ -26,10 +26,10 @@
 #include "precompiled.hpp"
 #include "asm/assembler.inline.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "code/compiledIC.hpp"
 #include "code/vtableStubs.hpp"
 #include "interp_masm_aarch64.hpp"
 #include "memory/resourceArea.hpp"
-#include "oops/compiledICHolder.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klassVtable.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -168,22 +168,22 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   assert(VtableStub::receiver_location() == j_rarg0->as_VMReg(), "receiver expected in j_rarg0");
 
   // Entry arguments:
-  //  rscratch2: CompiledICHolder
+  //  rscratch2: CompiledICData
   //  j_rarg0: Receiver
 
   // This stub is called from compiled code which has no callee-saved registers,
   // so all registers except arguments are free at this point.
   const Register recv_klass_reg     = r10;
-  const Register holder_klass_reg   = r16; // declaring interface klass (DECC)
+  const Register holder_klass_reg   = r16; // declaring interface klass (DEFC)
   const Register resolved_klass_reg = r17; // resolved interface klass (REFC)
   const Register temp_reg           = r11;
   const Register temp_reg2          = r15;
-  const Register icholder_reg       = rscratch2;
+  const Register icdata_reg         = rscratch2;
 
   Label L_no_such_interface;
 
-  __ ldr(resolved_klass_reg, Address(icholder_reg, CompiledICHolder::holder_klass_offset()));
-  __ ldr(holder_klass_reg,   Address(icholder_reg, CompiledICHolder::holder_metadata_offset()));
+  __ ldr(resolved_klass_reg, Address(icdata_reg, CompiledICData::itable_refc_klass_offset()));
+  __ ldr(holder_klass_reg,   Address(icdata_reg, CompiledICData::itable_defc_klass_offset()));
 
   start_pc = __ pc();
 

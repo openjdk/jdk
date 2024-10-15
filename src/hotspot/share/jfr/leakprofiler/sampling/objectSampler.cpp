@@ -35,6 +35,7 @@
 #include "jfr/recorder/jfrEventSetting.inline.hpp"
 #include "jfr/recorder/checkpoint/jfrCheckpointManager.hpp"
 #include "jfr/recorder/stacktrace/jfrStackTraceRepository.hpp"
+#include "jfr/utilities/jfrSignal.hpp"
 #include "jfr/support/jfrThreadLocal.hpp"
 #include "jfr/utilities/jfrTime.hpp"
 #include "jfr/utilities/jfrTryLock.hpp"
@@ -58,6 +59,25 @@ static bool volatile _dead_samples = false;
 // It is constructed and registered during VM initialization. This is a singleton
 // that persist independent of the state of the ObjectSampler.
 static OopStorage* _oop_storage = nullptr;
+
+// A notification mechanism to let class unloading determine if to save unloaded typesets.
+static JfrSignal _unresolved_entry;
+
+static inline void signal_unresolved_entry() {
+  _unresolved_entry.signal_if_not_set();
+}
+
+static inline void clear_unresolved_entry() {
+  _unresolved_entry.reset();
+}
+
+static inline void signal_resolved() {
+  clear_unresolved_entry();
+}
+
+bool ObjectSampler::has_unresolved_entry() {
+  return _unresolved_entry.is_signaled();
+}
 
 OopStorage* ObjectSampler::oop_storage() { return _oop_storage; }
 
@@ -108,6 +128,8 @@ ObjectSampler::~ObjectSampler() {
 bool ObjectSampler::create(size_t size) {
   assert(SafepointSynchronize::is_at_safepoint(), "invariant");
   assert(_oop_storage != nullptr, "should be already created");
+  clear_unresolved_entry();
+  assert(!has_unresolved_entry(), "invariant");
   ObjectSampleCheckpoint::clear();
   assert(_instance == nullptr, "invariant");
   _instance = new ObjectSampler(size);
@@ -242,6 +264,7 @@ void ObjectSampler::add(HeapWord* obj, size_t allocated, traceid thread_id, bool
   }
 
   assert(sample != nullptr, "invariant");
+  signal_unresolved_entry();
   sample->set_thread_id(thread_id);
   if (virtual_thread) {
     sample->set_thread_is_virtual();
@@ -304,6 +327,7 @@ const ObjectSample* ObjectSampler::last_resolved() const {
 
 void ObjectSampler::set_last_resolved(const ObjectSample* sample) {
   _list->set_last_resolved(sample);
+  signal_resolved();
 }
 
 int ObjectSampler::item_count() const {

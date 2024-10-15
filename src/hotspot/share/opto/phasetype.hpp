@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #define SHARE_OPTO_PHASETYPE_HPP
 
 #include "utilities/bitMap.inline.hpp"
+#include "utilities/stringUtils.hpp"
 
 #define COMPILER_PHASES(flags) \
   flags(BEFORE_STRINGOPTS,              "Before StringOpts") \
@@ -67,9 +68,10 @@
   flags(AFTER_RANGE_CHECK_ELIMINATION,  "After Range Check Elimination") \
   flags(BEFORE_PRE_MAIN_POST,           "Before Pre/Main/Post Loops") \
   flags(AFTER_PRE_MAIN_POST,            "After Pre/Main/Post Loops") \
-  flags(SUPERWORD1_BEFORE_SCHEDULE,     "Superword 1, Before Schedule") \
-  flags(SUPERWORD2_BEFORE_OUTPUT,       "Superword 2, Before Output") \
-  flags(SUPERWORD3_AFTER_OUTPUT,        "Superword 3, After Output") \
+  flags(AUTO_VECTORIZATION1_BEFORE_APPLY,       "AutoVectorization 1, Before Apply") \
+  flags(AUTO_VECTORIZATION2_AFTER_REORDER,      "AutoVectorization 2, After Apply Memop Reordering") \
+  flags(AUTO_VECTORIZATION3_AFTER_ADJUST_LIMIT, "AutoVectorization 3, After Adjusting Pre-Loop Limit") \
+  flags(AUTO_VECTORIZATION4_AFTER_APPLY,        "AutoVectorization 4, After Apply") \
   flags(BEFORE_CLOOPS,                  "Before CountedLoop") \
   flags(AFTER_CLOOPS,                   "After CountedLoop") \
   flags(PHASEIDEAL_BEFORE_EA,           "PhaseIdealLoop before EA") \
@@ -83,7 +85,9 @@
   flags(CCP1,                           "PhaseCCP 1") \
   flags(ITER_GVN2,                      "Iter GVN 2") \
   flags(PHASEIDEALLOOP_ITERATIONS,      "PhaseIdealLoop iterations") \
-  flags(MACRO_EXPANSION,                "Macro expand") \
+  flags(BEFORE_MACRO_EXPANSION ,        "Before Macro Expansion") \
+  flags(AFTER_MACRO_EXPANSION_STEP,     "After Macro Expansion Step") \
+  flags(AFTER_MACRO_EXPANSION,          "After Macro Expansion") \
   flags(BARRIER_EXPANSION,              "Barrier expand") \
   flags(OPTIMIZE_FINISHED,              "Optimize finished") \
   flags(BEFORE_MATCHING,                "Before matching") \
@@ -139,47 +143,6 @@ static CompilerPhaseType find_phase(const char* str) {
   return PHASE_NONE;
 }
 
-class PhaseNameIter {
- private:
-  char* _token;
-  char* _saved_ptr;
-  char* _list;
-
- public:
-  PhaseNameIter(ccstrlist option) {
-    _list = (char*) canonicalize(option);
-    _saved_ptr = _list;
-    _token = strtok_r(_saved_ptr, ",", &_saved_ptr);
-  }
-
-  ~PhaseNameIter() {
-    FREE_C_HEAP_ARRAY(char, _list);
-  }
-
-  const char* operator*() const { return _token; }
-
-  PhaseNameIter& operator++() {
-    _token = strtok_r(nullptr, ",", &_saved_ptr);
-    return *this;
-  }
-
-  ccstrlist canonicalize(ccstrlist option_value) {
-    char* canonicalized_list = NEW_C_HEAP_ARRAY(char, strlen(option_value) + 1, mtCompiler);
-    int i = 0;
-    char current;
-    while ((current = option_value[i]) != '\0') {
-      if (current == '\n' || current == ' ') {
-        canonicalized_list[i] = ',';
-      } else {
-        canonicalized_list[i] = current;
-      }
-      i++;
-    }
-    canonicalized_list[i] = '\0';
-    return canonicalized_list;
-  }
-};
-
 class PhaseNameValidator {
  private:
   CHeapBitMap _phase_name_set;
@@ -192,7 +155,7 @@ class PhaseNameValidator {
     _valid(true),
     _bad(nullptr)
   {
-    for (PhaseNameIter iter(option); *iter != nullptr && _valid; ++iter) {
+    for (StringUtils::CommaSeparatedStringIterator iter(option); *iter != nullptr && _valid; ++iter) {
 
       CompilerPhaseType cpt = find_phase(*iter);
       if (PHASE_NONE == cpt) {

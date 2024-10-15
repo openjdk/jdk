@@ -56,8 +56,8 @@ public class Wildcards {
         System.out.println("PASSED");
     }
     void test(AttributedElement m) {
-        test(m, Attributes.RUNTIME_VISIBLE_TYPE_ANNOTATIONS);
-        test(m, Attributes.RUNTIME_INVISIBLE_TYPE_ANNOTATIONS);
+        test(m, Attributes.runtimeVisibleTypeAnnotations());
+        test(m, Attributes.runtimeInvisibleTypeAnnotations());
     }
     <T extends Attribute<T>> void test(AttributedElement m, AttributeMapper<T> attr_name) {
         Attribute<T> attr_instance = m.findAttribute(attr_name).orElse(null);

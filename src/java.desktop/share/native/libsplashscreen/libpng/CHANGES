@@ -6129,6 +6129,73 @@ Version 1.6.40 [June 21, 2023]
   Updated the configurations and the scripts for continuous integration.
   Cleaned up the code, the build scripts, and the documentation.
 
+Version 1.6.41 [January 24, 2024]
+  Added SIMD-optimized code for the LoongArch LSX hardware.
+    (Contributed by GuXiWei, JinBo and ZhangLixia)
+  Fixed the run-time discovery of MIPS MSA hardware.
+    (Contributed by Sui Jingfeng)
+  Fixed an off-by-one error in the function png_do_check_palette_indexes(),
+    which failed to recognize errors that might have existed in the first
+    column of a broken palette-encoded image. This was a benign regression
+    accidentally introduced in libpng-1.6.33. No pixel was harmed.
+    (Contributed by Adam Richter; reviewed by John Bowler)
+  Fixed, improved and modernized the contrib/pngminus programs, i.e.,
+    png2pnm.c and pnm2png.c
+  Removed old and peculiar portability hacks that were meant to silence
+    warnings issued by gcc version 7.1 alone.
+    (Contributed by John Bowler)
+  Fixed and modernized the CMake file, and raised the minimum required
+    CMake version from 3.1 to 3.6.
+    (Contributed by Clinton Ingram, Timothy Lyanguzov, Tyler Kropp, et al.)
+  Allowed the configure script to disable the building of auxiliary tools
+    and tests, thus catching up with the CMake file.
+    (Contributed by Carlo Bramini)
+  Fixed a build issue on Mac.
+    (Contributed by Zixu Wang)
+  Moved the Autoconf macro files to scripts/autoconf.
+  Moved the CMake files (except for the main CMakeLists.txt) to
+    scripts/cmake and moved the list of their contributing authors to
+    scripts/cmake/AUTHORS.md
+  Updated the CI configurations and scripts.
+  Relicensed the CI scripts to the MIT License.
+  Improved the test coverage.
+    (Contributed by John Bowler)
+
+Version 1.6.42 [January 29, 2024]
+  Fixed the implementation of the macro function png_check_sig().
+    This was an API regression, introduced in libpng-1.6.41.
+    (Reported by Matthieu Darbois)
+  Fixed and updated the libpng manual.
+
+Version 1.6.43 [February 23, 2024]
+  Fixed the row width check in png_check_IHDR().
+    This corrected a bug that was specific to the 16-bit platforms,
+    and removed a spurious compiler warning from the 64-bit builds.
+    (Reported by Jacek Caban; fixed by John Bowler)
+  Added eXIf chunk support to the push-mode reader in pngpread.c.
+    (Contributed by Chris Blume)
+  Added contrib/pngexif for the benefit of the users who would like
+    to inspect the content of eXIf chunks.
+  Added contrib/conftest/basic.dfa, a basic build-time configuration.
+    (Contributed by John Bowler)
+  Fixed a preprocessor condition in pngread.c that broke build-time
+    configurations like contrib/conftest/pngcp.dfa.
+    (Contributed by John Bowler)
+  Added CMake build support for LoongArch LSX.
+    (Contributed by GuXiWei)
+  Fixed a CMake build error that occurred under a peculiar state of the
+    dependency tree. This was a regression introduced in libpng-1.6.41.
+    (Contributed by Dan Rosser)
+  Marked the installed libpng headers as system headers in CMake.
+    (Contributed by Benjamin Buch)
+  Updated the build support for RISCOS.
+    (Contributed by Cameron Cawley)
+  Updated the makefiles to allow cross-platform builds to initialize
+    conventional make variables like AR and ARFLAGS.
+  Added various improvements to the CI scripts in areas like version
+    consistency verification and text linting.
+  Added version consistency verification to pngtest.c also.
+
 Send comments/corrections/commendations to png-mng-implement at lists.sf.net.
 Subscription is required; visit
 https://lists.sourceforge.net/lists/listinfo/png-mng-implement

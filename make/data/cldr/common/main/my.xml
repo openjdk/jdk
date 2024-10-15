@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 
 Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
@@ -1710,9 +1710,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<regionFormat>{0} အချိန်</regionFormat>
 			<regionFormat type="daylight">{0} နွေရာသီ စံတော်ချိန်</regionFormat>
 			<regionFormat type="standard">{0} စံတော်ချိန်</regionFormat>
-			<zone type="America/Santa_Isabel">
-				<exemplarCity>ဆန်တာ အစ္ဇဘဲလ်</exemplarCity>
-			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>ညှိထားသည့် ကမ္ဘာ့ စံတော်ချိန်</standard>
@@ -1834,9 +1831,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Australia/Melbourne">
 				<exemplarCity>မဲလ်ဘုန်း</exemplarCity>
-			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity>ကာရီ</exemplarCity>
 			</zone>
 			<zone type="Australia/Hobart">
 				<exemplarCity>ဟိုးဘားတ်</exemplarCity>
@@ -1991,9 +1985,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Creston">
 				<exemplarCity>ကရစ်စတွန်</exemplarCity>
 			</zone>
-			<zone type="America/Yellowknife">
-				<exemplarCity>ရဲလိုနိုက်ဖ်</exemplarCity>
-			</zone>
 			<zone type="America/Edmonton">
 				<exemplarCity>အက်ဒ်မွန်တန်</exemplarCity>
 			</zone>
@@ -2012,29 +2003,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Resolute">
 				<exemplarCity>ရီဆိုလုပ်(တ်)</exemplarCity>
 			</zone>
-			<zone type="America/Rainy_River">
-				<exemplarCity>ရိမ်းနီး ရီဗာ</exemplarCity>
-			</zone>
 			<zone type="America/Rankin_Inlet">
 				<exemplarCity>ရန်ကင် အင်းလက်</exemplarCity>
 			</zone>
 			<zone type="America/Coral_Harbour">
 				<exemplarCity>အာတီကိုကန်</exemplarCity>
 			</zone>
-			<zone type="America/Thunder_Bay">
-				<exemplarCity>သန်းန်ဒါး ဘေး</exemplarCity>
-			</zone>
-			<zone type="America/Nipigon">
-				<exemplarCity>နီပီဂွန်</exemplarCity>
-			</zone>
 			<zone type="America/Toronto">
 				<exemplarCity>တိုရန်တို</exemplarCity>
 			</zone>
 			<zone type="America/Iqaluit">
 				<exemplarCity>အီကာလူအီတ်</exemplarCity>
-			</zone>
-			<zone type="America/Pangnirtung">
-				<exemplarCity>ဖန်ဂ်နသ်တံ</exemplarCity>
 			</zone>
 			<zone type="America/Moncton">
 				<exemplarCity>မွန်ခ်တွန်</exemplarCity>
@@ -2849,17 +2828,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Africa/Dar_es_Salaam">
 				<exemplarCity>ဒါရက်စ်ဆာလမ်</exemplarCity>
 			</zone>
-			<zone type="Europe/Uzhgorod">
-				<exemplarCity>ဥဇ်ဂိုရို့တ်</exemplarCity>
-			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>ခီးအက်ဖ်</exemplarCity>
 			</zone>
 			<zone type="Europe/Simferopol">
 				<exemplarCity>စင်ဖာရိုးဖို</exemplarCity>
-			</zone>
-			<zone type="Europe/Zaporozhye">
-				<exemplarCity>ဇာဖိုရိုးစ်ဂျာ</exemplarCity>
 			</zone>
 			<zone type="Africa/Kampala">
 				<exemplarCity>ကမ်ပါလာ</exemplarCity>
@@ -2878,9 +2851,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Pacific/Honolulu">
 				<exemplarCity>ဟိုနိုလူလူ</exemplarCity>
-			</zone>
-			<zone type="Pacific/Johnston">
-				<exemplarCity>ဂျွန်စတန်</exemplarCity>
 			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>အန်ကာရေ့ဂျ်</exemplarCity>
@@ -3529,11 +3499,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>မကာအို နွေရာသီ အချိန်</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>မက်ကွယ်ရီကျွန်း အချိန်</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>မာဂါဒန်း အချိန်</generic>
@@ -3571,13 +3536,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Mawson">
 				<long>
 					<standard>မော်စွန် အချိန်</standard>
-				</long>
-			</metazone>
-			<metazone type="Mexico_Northwest">
-				<long>
-					<generic>အနောက်တောင် မက္ကဆီကို အချိန်</generic>
-					<standard>အနောက်တောင် မက္ကဆီကို စံတော်ချိန်</standard>
-					<daylight>အနောက်တောင် မက္ကစီကို နွေရာသီ စံတော်ချိန်</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">

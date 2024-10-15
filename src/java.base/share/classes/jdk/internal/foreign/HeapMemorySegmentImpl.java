@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -49,9 +49,6 @@ import jdk.internal.vm.annotation.ForceInline;
 abstract sealed class HeapMemorySegmentImpl extends AbstractMemorySegmentImpl {
 
     // Constants defining the maximum alignment supported by various kinds of heap arrays.
-    // While for most arrays, the maximum alignment is constant (the size, in bytes, of the array elements),
-    // note that the alignment of a long[]/double[] depends on the platform: it's 4-byte on x86, but 8 bytes on x64
-    // (as specified by the JAVA_LONG layout constant).
 
     private static final long MAX_ALIGN_BYTE_ARRAY = ValueLayout.JAVA_BYTE.byteAlignment();
     private static final long MAX_ALIGN_SHORT_ARRAY = ValueLayout.JAVA_SHORT.byteAlignment();
@@ -78,6 +75,13 @@ abstract sealed class HeapMemorySegmentImpl extends AbstractMemorySegmentImpl {
     @Override
     public long unsafeGetOffset() {
         return offset;
+    }
+
+    @Override
+    public final long maxByteAlignment() {
+        return address() == 0
+            ? maxAlignMask()
+            : Math.min(maxAlignMask(), Long.lowestOneBit(address()));
     }
 
     @Override

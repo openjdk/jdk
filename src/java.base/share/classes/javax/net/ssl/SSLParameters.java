@@ -115,6 +115,7 @@ public class SSLParameters {
      *
      * @param cipherSuites the array of ciphersuites (or null)
      */
+    @SuppressWarnings("this-escape")
     public SSLParameters(String[] cipherSuites) {
         setCipherSuites(cipherSuites);
     }
@@ -136,6 +137,7 @@ public class SSLParameters {
      * @param cipherSuites the array of ciphersuites (or null)
      * @param protocols the array of protocols (or null)
      */
+    @SuppressWarnings("this-escape")
     public SSLParameters(String[] cipherSuites, String[] protocols) {
         setCipherSuites(cipherSuites);
         setProtocols(protocols);

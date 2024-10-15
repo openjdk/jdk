@@ -95,7 +95,7 @@ class ClassFileVisitor extends MethodParametersTester.Visitor {
         isStatic = false;
         isAnon = false;
 
-        classFile.findAttribute(Attributes.INNER_CLASSES).ifPresent(this::visitInnerClasses);
+        classFile.findAttribute(Attributes.innerClasses()).ifPresent(this::visitInnerClasses);
         isAnon = isInner & isAnon;
 
         sb.append(isStatic ? "static " : "")

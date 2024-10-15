@@ -177,6 +177,7 @@ public class LinkedHashSet<E>
      *           this set
      * @throws NullPointerException if the specified collection is null
      */
+    @SuppressWarnings("this-escape")
     public LinkedHashSet(Collection<? extends E> c) {
         super(HashMap.calculateHashMapCapacity(Math.max(c.size(), 12)), .75f, true);
         addAll(c);

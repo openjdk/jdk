@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,7 +123,7 @@ TEST_F(XAddressTest, is_weak_good_or_null) {
     << " is_remaped: " << XAddress::is_remapped(value)                           \
     << " is_good_or_null_or_remapped: " << XAddress::is_weak_good_or_null(value)
 
-  check_is_weak_good_or_null((uintptr_t)NULL);
+  check_is_weak_good_or_null((uintptr_t)nullptr);
   check_is_weak_good_or_null(XAddressMetadataMarked0);
   check_is_weak_good_or_null(XAddressMetadataMarked1);
   check_is_weak_good_or_null(XAddressMetadataRemapped);

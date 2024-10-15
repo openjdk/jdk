@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,8 @@ import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
 import java.nio.file.attribute.PosixFilePermission;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -63,14 +65,29 @@ final class TokenStorage {
     private TokenStorage() {}
 
     private static final String REL_NAME =
+            ".java/robot/screencast-tokens.properties";
+    private static final String REL_NAME_SECONDARY =
             ".awt/robot/screencast-tokens.properties";
 
     private static final Properties PROPS = new Properties();
     private static final Path PROPS_PATH;
     private static final Path PROP_FILENAME;
 
+    @SuppressWarnings("removal")
+    private static void doPrivilegedRunnable(Runnable runnable) {
+        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+            runnable.run();
+            return null;
+        });
+    }
+
     static {
-        PROPS_PATH = setupPath();
+        @SuppressWarnings("removal")
+        Path propsPath = AccessController
+                .doPrivileged((PrivilegedAction<Path>) () -> setupPath());
+
+        PROPS_PATH = propsPath;
+
         if (PROPS_PATH != null) {
             PROP_FILENAME = PROPS_PATH.getFileName();
             if (SCREENCAST_DEBUG) {
@@ -91,25 +108,32 @@ final class TokenStorage {
         }
 
         Path path = Path.of(userHome, REL_NAME);
+        Path secondaryPath = Path.of(userHome, REL_NAME_SECONDARY);
+
+        boolean copyFromSecondary = !Files.isWritable(path)
+                && Files.isWritable(secondaryPath);
+
         Path workdir = path.getParent();
 
-        if (!Files.exists(workdir)) {
-            try {
-                Files.createDirectories(workdir);
-            } catch (Exception e) {
+        if (!Files.isWritable(path)) {
+            if (!Files.exists(workdir)) {
+                try {
+                    Files.createDirectories(workdir);
+                } catch (Exception e) {
+                    if (SCREENCAST_DEBUG) {
+                        System.err.printf("Token storage: cannot create" +
+                                " directory %s %s\n", workdir, e);
+                    }
+                    return null;
+                }
+            }
+
+            if (!Files.isWritable(workdir)) {
                 if (SCREENCAST_DEBUG) {
-                    System.err.printf("Token storage: cannot create" +
-                                    " directory %s %s\n", workdir, e);
+                    System.err.printf("Token storage: %s is not writable\n", workdir);
                 }
                 return null;
             }
-        }
-
-        if (!Files.isWritable(workdir)) {
-            if (SCREENCAST_DEBUG) {
-                System.err.printf("Token storage: %s is not writable\n", workdir);
-            }
-            return null;
         }
 
         try {
@@ -126,7 +150,17 @@ final class TokenStorage {
             }
         }
 
-        if (Files.exists(path)) {
+        if (copyFromSecondary) {
+            if (SCREENCAST_DEBUG) {
+                System.out.println("Token storage: copying from the secondary location "
+                                        + secondaryPath);
+            }
+            synchronized (PROPS) {
+                if (readTokens(secondaryPath)) {
+                    store(path, "copy from the secondary location");
+                }
+            }
+        } else if (Files.exists(path)) {
             if (!setFilePermission(path)) {
                 return null;
             }
@@ -192,9 +226,9 @@ final class TokenStorage {
                     }
 
                     if (kind == ENTRY_CREATE) {
-                        setFilePermission(PROPS_PATH);
+                        doPrivilegedRunnable(() -> setFilePermission(PROPS_PATH));
                     } else if (kind == ENTRY_MODIFY) {
-                        readTokens(PROPS_PATH);
+                        doPrivilegedRunnable(() -> readTokens(PROPS_PATH));
                     } else if (kind == ENTRY_DELETE) {
                         synchronized (PROPS) {
                             PROPS.clear();
@@ -207,24 +241,31 @@ final class TokenStorage {
         }
     }
 
+    private static WatchService watchService;
+
     private static void setupWatch() {
-        try {
-            WatchService watchService =
-                    FileSystems.getDefault().newWatchService();
+        doPrivilegedRunnable(() -> {
+            try {
+                watchService =
+                        FileSystems.getDefault().newWatchService();
 
-            PROPS_PATH
-                    .getParent()
-                    .register(watchService,
-                            ENTRY_CREATE,
-                            ENTRY_DELETE,
-                            ENTRY_MODIFY);
+                PROPS_PATH
+                        .getParent()
+                        .register(watchService,
+                                ENTRY_CREATE,
+                                ENTRY_DELETE,
+                                ENTRY_MODIFY);
 
-            new WatcherThread(watchService).start();
-        } catch (Exception e) {
-            if (SCREENCAST_DEBUG) {
-                System.err.printf("Token storage: failed to setup " +
-                        "file watch %s\n", e);
+            } catch (Exception e) {
+                if (SCREENCAST_DEBUG) {
+                    System.err.printf("Token storage: failed to setup " +
+                            "file watch %s\n", e);
+                }
             }
+        });
+
+        if (watchService != null) {
+            new WatcherThread(watchService).start();
         }
     }
 
@@ -276,7 +317,7 @@ final class TokenStorage {
             }
 
             if (changed) {
-                store("save tokens");
+                doPrivilegedRunnable(() -> store(PROPS_PATH, "save tokens"));
             }
         }
     }
@@ -289,7 +330,7 @@ final class TokenStorage {
                 PROPS.clear();
                 PROPS.load(reader);
             }
-        } catch (IOException e) {
+        } catch (IOException | IllegalArgumentException e) {
             if (SCREENCAST_DEBUG) {
                 System.err.printf("""
                         Token storage: failed to load property file %s
@@ -331,7 +372,7 @@ final class TokenStorage {
                     .toList();
         }
 
-        removeMalformedRecords(malformed);
+        doPrivilegedRunnable(() -> removeMalformedRecords(malformed));
 
         // 1. Try to find exact matches
         for (TokenItem tokenItem : allTokenItems) {
@@ -384,7 +425,7 @@ final class TokenStorage {
     }
 
     private static void removeMalformedRecords(Set<String> malformedRecords) {
-        if (!isWritable()
+        if (!isWritable(PROPS_PATH)
             || malformedRecords == null
             || malformedRecords.isEmpty()) {
             return;
@@ -398,17 +439,17 @@ final class TokenStorage {
                 }
             }
 
-            store("remove malformed records");
+            store(PROPS_PATH, "remove malformed records");
         }
     }
 
-    private static void store(String failMsg) {
-        if (!isWritable()) {
+    private static void store(Path path, String failMsg) {
+        if (!isWritable(path)) {
             return;
         }
 
         synchronized (PROPS) {
-            try (BufferedWriter writer = Files.newBufferedWriter(PROPS_PATH)) {
+            try (BufferedWriter writer = Files.newBufferedWriter(path)) {
                 PROPS.store(writer, null);
             } catch (IOException e) {
                 if (SCREENCAST_DEBUG) {
@@ -419,13 +460,13 @@ final class TokenStorage {
         }
     }
 
-    private static boolean isWritable() {
-        if (PROPS_PATH == null
-            || (Files.exists(PROPS_PATH) && !Files.isWritable(PROPS_PATH))) {
+    private static boolean isWritable(Path path) {
+        if (path == null
+            || (Files.exists(path) && !Files.isWritable(path))) {
 
             if (SCREENCAST_DEBUG) {
                 System.err.printf(
-                        "Token storage: %s is not writable\n", PROPS_PATH);
+                        "Token storage: %s is not writable\n", path);
             }
             return false;
         } else {

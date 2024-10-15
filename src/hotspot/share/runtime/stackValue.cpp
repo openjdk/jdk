@@ -248,8 +248,9 @@ StackValue* StackValue::create_stack_value(ScopeValue* sv, address value_addr, c
     return new StackValue(value.p);
 #endif
   } else if (sv->is_object()) { // Scalar replaced object in compiled frame
-    Handle ov = ((ObjectValue *)sv)->value();
-    return new StackValue(ov, (ov.is_null()) ? 1 : 0);
+    ObjectValue* ov = (ObjectValue *)sv;
+    Handle hdl = ov->value();
+    return new StackValue(hdl, hdl.is_null() && ov->is_scalar_replaced() ? 1 : 0);
   } else if (sv->is_marker()) {
     // Should never need to directly construct a marker.
     ShouldNotReachHere();

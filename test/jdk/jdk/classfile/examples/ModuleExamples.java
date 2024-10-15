@@ -54,14 +54,14 @@ public class ModuleExamples {
         ClassModel cm = ClassFile.of().parse(JRT.getPath("modules/java.base/module-info.class"));
         System.out.println("Is JVMS $4.7 compatible module-info: " + cm.isModuleInfo());
 
-        ModuleAttribute ma = cm.findAttribute(Attributes.MODULE).orElseThrow();
+        ModuleAttribute ma = cm.findAttribute(Attributes.module()).orElseThrow();
         System.out.println("Module name: " + ma.moduleName().name().stringValue());
         System.out.println("Exports: " + ma.exports());
 
-        ModuleMainClassAttribute mmca = cm.findAttribute(Attributes.MODULE_MAIN_CLASS).orElse(null);
+        ModuleMainClassAttribute mmca = cm.findAttribute(Attributes.moduleMainClass()).orElse(null);
         System.out.println("Does the module have a MainClassAttribute?: " + (mmca != null));
 
-        ModulePackagesAttribute mmp = cm.findAttribute(Attributes.MODULE_PACKAGES).orElseThrow();
+        ModulePackagesAttribute mmp = cm.findAttribute(Attributes.modulePackages()).orElseThrow();
         System.out.println("Packages?: " + mmp.packages());
     }
 

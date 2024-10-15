@@ -457,18 +457,19 @@ public class Thread implements Runnable {
      * Called before sleeping to create a jdk.ThreadSleep event.
      */
     private static ThreadSleepEvent beforeSleep(long nanos) {
-        ThreadSleepEvent event = null;
-        if (ThreadSleepEvent.isTurnedOn()) {
-            try {
-                event = new ThreadSleepEvent();
+        try {
+            ThreadSleepEvent event = new ThreadSleepEvent();
+            if (event.isEnabled()) {
                 event.time = nanos;
                 event.begin();
-            } catch (OutOfMemoryError e) {
-                event = null;
+                return event;
             }
+        } catch (OutOfMemoryError e) {
+            // ignore
         }
-        return event;
+        return null;
     }
+
 
     /**
      * Called after sleeping to commit the jdk.ThreadSleep event.
@@ -1702,24 +1703,25 @@ public class Thread implements Runnable {
     public void interrupt() {
         if (this != Thread.currentThread()) {
             checkAccess();
+        }
 
-            // thread may be blocked in an I/O operation
+        // Setting the interrupt status must be done before reading nioBlocker.
+        interrupted = true;
+        interrupt0();  // inform VM of interrupt
+
+        // thread may be blocked in an I/O operation
+        if (this != Thread.currentThread()) {
             Interruptible blocker;
             synchronized (interruptLock) {
                 blocker = nioBlocker;
                 if (blocker != null) {
-                    interrupted = true;
-                    interrupt0();  // inform VM of interrupt
                     blocker.interrupt(this);
                 }
             }
             if (blocker != null) {
                 blocker.postInterrupt();
-                return;
             }
         }
-        interrupted = true;
-        interrupt0();  // inform VM of interrupt
     }
 
     /**

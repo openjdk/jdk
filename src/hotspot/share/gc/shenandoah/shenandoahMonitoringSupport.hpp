@@ -25,13 +25,35 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHMONITORINGSUPPORT_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHMONITORINGSUPPORT_HPP
 
+#include "gc/shenandoah/shenandoahSharedVariables.hpp"
 #include "memory/allocation.hpp"
+#include "runtime/task.hpp"
 
 class GenerationCounters;
 class HSpaceCounters;
 class ShenandoahHeap;
 class CollectorCounters;
 class ShenandoahHeapRegionCounters;
+class ShenandoahMonitoringSupport;
+
+class ShenandoahPeriodicCountersUpdateTask : public PeriodicTask {
+private:
+  ShenandoahSharedFlag _do_counters_update;
+  ShenandoahSharedFlag _force_counters_update;
+  ShenandoahMonitoringSupport* const _monitoring_support;
+
+public:
+  explicit ShenandoahPeriodicCountersUpdateTask(ShenandoahMonitoringSupport* monitoring_support) :
+    PeriodicTask(100),
+    _monitoring_support(monitoring_support) { }
+
+  void task() override;
+
+  void handle_counters_update();
+  void handle_force_counters_update();
+  void set_forced_counters_update(bool value);
+  void notify_heap_changed();
+};
 
 class ShenandoahMonitoringSupport : public CHeapObj<mtGC> {
 private:
@@ -44,14 +66,20 @@ private:
   HSpaceCounters* _space_counters;
 
   ShenandoahHeapRegionCounters* _heap_region_counters;
+  ShenandoahPeriodicCountersUpdateTask _counters_update_task;
 
 public:
- ShenandoahMonitoringSupport(ShenandoahHeap* heap);
- CollectorCounters* stw_collection_counters();
- CollectorCounters* full_stw_collection_counters();
- CollectorCounters* concurrent_collection_counters();
- CollectorCounters* partial_collection_counters();
- void update_counters();
+  explicit ShenandoahMonitoringSupport(ShenandoahHeap* heap);
+  CollectorCounters* stw_collection_counters();
+  CollectorCounters* full_stw_collection_counters();
+  CollectorCounters* concurrent_collection_counters();
+  CollectorCounters* partial_collection_counters();
+
+  void notify_heap_changed();
+  void set_forced_counters_update(bool value);
+  void handle_force_counters_update();
+
+  void update_counters();
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHMONITORINGSUPPORT_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,9 +32,10 @@ import java.util.Locale;
  * This is the super class of all the locale sensitive service provider
  * interfaces (SPIs).
  * <p>
- * Locale sensitive  service provider interfaces are interfaces that
+ * Locale sensitive service provider interfaces are interfaces that
  * correspond to locale sensitive classes in the {@code java.text}
- * and {@code java.util} packages. The interfaces enable the
+ * and {@code java.util} packages in order to provide the locale
+ * data used for each service. The interfaces enable the
  * construction of locale sensitive objects and the retrieval of
  * localized names for these packages. Locale sensitive factory methods
  * and methods for name retrieval in the {@code java.text} and
@@ -75,7 +76,7 @@ import java.util.Locale;
  * </pre>
  * which is the fully qualified class name of the class implementing
  * {@code DateFormatProvider}.
- * <h3>Invocation of Locale Sensitive Services</h3>
+ * <h2>Invocation of Locale Sensitive Services</h2>
  * <p>
  * Locale sensitive factory methods and methods for name retrieval in the
  * {@code java.text} and {@code java.util} packages invoke
@@ -120,35 +121,83 @@ import java.util.Locale;
  * property on the java launcher command line. Setting it at runtime with
  * {@link System#setProperty(String, String)} is discouraged and it may not affect
  * the order.
- * JDK Reference Implementation provides the following four
- * locale providers:
+ * JDK Reference Implementation provides the following three
+ * locale data providers:
  * <ul>
- * <li> "CLDR": A provider based on Unicode Consortium's
- * <a href="http://cldr.unicode.org/">CLDR Project</a>.
- * <li> "COMPAT": represents the locale sensitive services that is compatible
- * with the prior JDK releases up to JDK 8 (same as JDK 8's "JRE"). This
- * provider is deprecated and will be removed in the future release of JDK.
+ * <li> "CLDR": A locale data provider based on the Unicode Consortium's
+ * <a href="http://cldr.unicode.org/">Common Locale Data Repository (CLDR)</a>.
  * <li> "SPI": represents the locale sensitive services implementing the subclasses of
  * this {@code LocaleServiceProvider} class.
- * <li> "HOST": A provider that reflects the user's custom settings in the
+ * <li> "HOST": A locale data provider that reflects the user's custom settings in the
  * underlying operating system. This provider may not be available, depending
  * on the JDK Reference Implementation.
- * <li> "JRE": represents a synonym to "COMPAT". This name
- * is deprecated and will be removed in the future release of JDK.
  * </ul>
  * <p>
  * For example, if the following is specified in the property:
  * <pre>
- * java.locale.providers=SPI,CLDR,COMPAT
+ * java.locale.providers=SPI,CLDR
  * </pre>
  * the locale sensitive services in the SPI providers are looked up first. If the
- * desired locale sensitive service is not available, then the runtime looks for CLDR,
- * COMPAT in that order.
+ * desired locale sensitive service is not available, then the runtime looks for CLDR.
  * <p>
- * The default order for looking up the preferred locale providers is "CLDR,COMPAT",
- * so specifying "CLDR,COMPAT" is identical to the default behavior. Applications which
+ * The default value for looking up the preferred locale data providers is "CLDR",
+ * so specifying only "CLDR" is identical to the default behavior. Applications which
  * require implementations of the locale sensitive services must explicitly specify
  * "SPI" in order for the Java runtime to load them from the classpath.
+ *
+ * @implNote The JDK uses locale data from the Unicode Consortium's
+ * <a href="http://cldr.unicode.org/">Common Locale Data Repository (CLDR)</a>
+ * to implement locale-sensitive APIs in the {@code java.util} and
+ * {@code java.text} packages. This locale data derives the set of locales
+ * supported by the Java runtime environment. The following table lists the
+ * version of CLDR used in each JDK release. Unless otherwise specified, all
+ * update releases in a given JDK release family use the same CLDR version.
+ * Note that the CLDR locale data are subject to change. Users should not assume
+ * that the locale data remain the same across CLDR versions. Otherwise, unexpected
+ * incompatible behaviors may occur, such as an exception on parsing a date.
+ * Refer to <a href="https://cldr.unicode.org/index/downloads">CLDR Releases</a>
+ * for the deltas between their releases.
+ * <table class="striped">
+ * <caption style="display:none">JDK releases and supported CLDR versions</caption>
+ * <thead>
+ * <tr><th scope="col">JDK release</th>
+ *     <th scope="col">CLDR version</th></tr>
+ * </thead>
+ * <tbody>
+ * <tr><th scope="row" style="text-align:left">JDK 23</th>
+ *     <td>CLDR 45</td></tr>
+ * <tr><th scope="row" style="text-align:left">JDK 22</th>
+ *     <td>CLDR 44</td></tr>
+ * <tr><th scope="row" style="text-align:left">JDK 21</th>
+ *     <td>CLDR 43</td></tr>
+ * <tr><th scope="row" style="text-align:left">JDK 20</th>
+ *     <td>CLDR 42</td></tr>
+ * <tr><th scope="row" style="text-align:left">JDK 19</th>
+ *     <td>CLDR 41</td></tr>
+ * <tr><th scope="row" style="text-align:left">JDK 18</th>
+ *     <td>CLDR 39</td></tr>
+ * <tr><th scope="row" style="text-align:left">JDK 17</th>
+ *     <td>CLDR 39</td></tr>
+ * <tr><th scope="row" style="text-align:left">JDK 16</th>
+ *     <td>CLDR 38</td></tr>
+ * <tr><th scope="row" style="text-align:left">JDK 15</th>
+ *     <td>CLDR 37</td></tr>
+ * <tr><th scope="row" style="text-align:left">JDK 14</th>
+ *     <td>CLDR 36</td></tr>
+ * <tr><th scope="row" style="text-align:left">JDK 13</th>
+ *     <td>CLDR 35.1</td></tr>
+ * <tr><th scope="row" style="text-align:left">JDK 12</th>
+ *     <td>CLDR 33</td></tr>
+ * <tr><th scope="row" style="text-align:left">JDK 11</th>
+ *     <td>CLDR 33</td></tr>
+ * <tr><th scope="row" style="text-align:left">JDK 10</th>
+ *     <td>CLDR 29</td></tr>
+ * <tr><th scope="row" style="text-align:left">JDK 9</th>
+ *     <td>CLDR 29</td></tr>
+ * <tr><th scope="row" style="text-align:left">JDK 8</th>
+ *     <td>CLDR 21.0.1</td></tr>
+ * </tbody>
+ * </table>
  *
  * @since        1.6
  */
@@ -220,7 +269,7 @@ public abstract class LocaleServiceProvider {
         for (Locale available : getAvailableLocales()) {
             if (locale.equals(available.stripExtensions())) {
                 return true;
-}
+            }
         }
         return false;
     }

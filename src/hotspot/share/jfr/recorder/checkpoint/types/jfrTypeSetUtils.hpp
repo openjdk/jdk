@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,6 +80,7 @@ class KlassToFieldEnvelope {
  public:
   KlassToFieldEnvelope(Letter* letter) : _letter(letter) {}
   bool operator()(const Klass* klass) {
+    assert(IS_SERIALIZED(klass), "invariant");
     typename FieldSelector::TypePtr t = FieldSelector::select(klass);
     return t != nullptr ? (*_letter)(t) : true;
   }
@@ -95,6 +96,8 @@ class ClearArtifact {
     assert(IS_NOT_TRANSIENT(value), "invariant");
     SET_PREVIOUS_EPOCH_CLEARED_BIT(value);
     CLEAR_PREVIOUS_EPOCH_METHOD_AND_CLASS(value);
+    assert(IS_THIS_EPOCH_CLEARED_BIT_SET(value), "invariant");
+    assert(IS_PREVIOUS_EPOCH_CLEARED_BIT_SET(value), "invariant");
     return true;
   }
 };
@@ -110,6 +113,8 @@ class ClearArtifact<const Method*> {
     assert(METHOD_IS_NOT_TRANSIENT(method), "invariant");
     SET_PREVIOUS_EPOCH_METHOD_CLEARED_BIT(method);
     CLEAR_PREVIOUS_EPOCH_METHOD_FLAG(method);
+    assert(IS_THIS_EPOCH_METHOD_CLEARED_BIT_SET(method), "invariant");
+    assert(IS_PREVIOUS_EPOCH_METHOD_CLEARED_BIT_SET(method), "invariant");
     return true;
   }
 };
@@ -130,7 +135,7 @@ class SymbolPredicate {
 
 class KlassUsedPredicate {
   bool _current_epoch;
-public:
+ public:
   KlassUsedPredicate(bool current_epoch) : _current_epoch(current_epoch) {}
   bool operator()(const Klass* klass) {
     return _current_epoch ? USED_THIS_EPOCH(klass) : USED_PREVIOUS_EPOCH(klass);
@@ -201,7 +206,6 @@ class JfrArtifactSet : public JfrCHeapObj {
   GrowableArray<const Klass*>* _klass_list;
   GrowableArray<const Klass*>* _klass_loader_set;
   GrowableArray<const Klass*>* _klass_loader_leakp_set;
-  GrowableArray<const Klass*>* _unloading_set;
   size_t _total_count;
   bool _class_unload;
 
@@ -229,22 +233,7 @@ class JfrArtifactSet : public JfrCHeapObj {
   size_t total_count() const;
   void register_klass(const Klass* k);
   bool should_do_cld_klass(const Klass* k, bool leakp);
-  bool should_do_unloading_artifact(const void* ptr);
   void increment_checkpoint_id();
-
-  template <typename Functor>
-  void iterate_klasses(Functor& functor) const {
-    for (int i = 0; i < _klass_list->length(); ++i) {
-      if (!functor(_klass_list->at(i))) {
-        return;
-      }
-    }
-    for (int i = 0; i < _klass_loader_set->length(); ++i) {
-      if (!functor(_klass_loader_set->at(i))) {
-        return;
-      }
-    }
-  }
 
   template <typename T>
   void iterate_symbols(T& functor) {
@@ -261,6 +250,24 @@ class JfrArtifactSet : public JfrCHeapObj {
     _total_count += writer.count();
   }
 
+  template <typename Functor>
+  void iterate_klasses(Functor& functor) const {
+    if (iterate(functor, _klass_list)) {
+      iterate(functor, _klass_loader_set);
+    }
+  }
+
+ private:
+  template <typename Functor>
+  bool iterate(Functor& functor, GrowableArray<const Klass*>* list) const {
+    assert(list != nullptr, "invariant");
+    for (int i = 0; i < list->length(); ++i) {
+      if (!functor(list->at(i))) {
+        return false;
+      }
+    }
+    return true;
+  }
 };
 
 class KlassArtifactRegistrator {

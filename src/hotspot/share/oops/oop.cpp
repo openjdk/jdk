@@ -43,8 +43,6 @@
 void oopDesc::print_on(outputStream* st) const {
   if (*((juint*)this) == badHeapWordVal) {
     st->print_cr("BAD WORD");
-  } else if (*((juint*)this) == badMetaWordVal) {
-    st->print_cr("BAD META WORD");
   } else {
     klass()->oop_print_on(cast_to_oop(this), st);
   }
@@ -58,8 +56,6 @@ void oopDesc::print_address_on(outputStream* st) const {
 void oopDesc::print_name_on(outputStream* st) const {
   if (*((juint*)this) == badHeapWordVal) {
     st->print_cr("BAD WORD");
-  } else if (*((juint*)this) == badMetaWordVal) {
-    st->print_cr("BAD META WORD");
   } else {
     st->print_cr("%s", klass()->external_name());
   }
@@ -169,16 +165,6 @@ void oopDesc::set_narrow_klass(narrowKlass nk) {
 }
 #endif
 
-void* oopDesc::load_klass_raw(oop obj) {
-  if (UseCompressedClassPointers) {
-    narrowKlass narrow_klass = obj->_metadata._compressed_klass;
-    if (narrow_klass == 0) return nullptr;
-    return (void*)CompressedKlassPointers::decode_raw(narrow_klass);
-  } else {
-    return obj->_metadata._klass;
-  }
-}
-
 void* oopDesc::load_oop_raw(oop obj, int offset) {
   uintptr_t addr = (uintptr_t)(void*)obj + (uint)offset;
   if (UseCompressedOops) {
@@ -232,14 +218,3 @@ void oopDesc::release_float_field_put(int offset, jfloat value)       { Atomic::
 
 jdouble oopDesc::double_field_acquire(int offset) const               { return Atomic::load_acquire(field_addr<jdouble>(offset)); }
 void oopDesc::release_double_field_put(int offset, jdouble value)     { Atomic::release_store(field_addr<jdouble>(offset), value); }
-
-#ifdef ASSERT
-bool oopDesc::size_might_change() {
-  // UseParallelGC and UseG1GC can change the length field
-  // of an "old copy" of an object array in the young gen so it indicates
-  // the grey portion of an already copied array. This will cause the first
-  // disjunct below to fail if the two comparands are computed across such
-  // a concurrent change.
-  return Universe::heap()->is_gc_active() && is_objArray() && is_forwarded() && (UseParallelGC || UseG1GC);
-}
-#endif

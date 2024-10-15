@@ -1,0 +1,115 @@
+#
+# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+################################################################################
+# This file contains functionality related to linking a native binary;
+# creating either a dynamic library, a static library or an executable.
+
+################################################################################
+define CreateLinkedResultMicrosoft
+  ifeq ($$($1_TYPE), STATIC_LIBRARY)
+    $$(eval $$(call CreateStaticLibraryMicrosoft,$1))
+  else
+    $$(eval $$(call CreateDynamicLibraryOrExecutableMicrosoft,$1))
+  endif
+endef
+
+################################################################################
+define CreateStaticLibraryMicrosoft
+  $1_VARDEPS := $$($1_LIB) $$(LIBFLAGS) $$($1_LIBS) \
+      $$($1_EXTRA_LIBS)
+  $1_VARDEPS_FILE := $$(call DependOnVariable, $1_VARDEPS, \
+      $$($1_OBJECT_DIR)/$$($1_NOSUFFIX).vardeps)
+
+  $1_TARGET_DEPS :=  $$($1_ALL_OBJS) $$($1_RES) $$($1_EXTRA_LINK_DEPS) \
+      $$($1_VARDEPS_FILE)
+
+  $$($1_TARGET): $$($1_TARGET_DEPS)
+        ifneq ($$($1_OBJ_FILE_LIST), )
+	  $$(eval $$(call ListPathsSafely, $1_ALL_OBJS, $$($1_OBJ_FILE_LIST)))
+        endif
+	$$(call LogInfo, Building static library $$($1_BASENAME))
+	$$(call MakeDir, $$($1_OUTPUT_DIR) $$($1_SYMBOLS_DIR))
+	$$(call ExecuteWithLog, $$($1_OBJECT_DIR)/$$($1_SAFE_NAME)_run_lib, \
+	    $$($1_LIB) -nologo $$(LIBFLAGS) -out:$$($1_TARGET) \
+	        $$($1_LD_OBJ_ARG) $$($1_RES))
+endef
+
+################################################################################
+define CreateDynamicLibraryOrExecutableMicrosoft
+  ifeq ($$($1_EMBED_MANIFEST), true)
+    $1_EXTRA_LDFLAGS += -manifest:embed
+  endif
+
+  $1_IMPORT_LIBRARY := $$($1_OBJECT_DIR)/$$($1_NAME).lib
+  $1_EXTRA_LDFLAGS += "-implib:$$($1_IMPORT_LIBRARY)"
+
+  ifeq ($$($1_TYPE), LIBRARY)
+    # To properly trigger downstream dependants of the import library, just as
+    # for debug files, we must have a recipe in the rule. To avoid rerunning
+    # the recipe every time have it touch the target. If an import library
+    # file is deleted by something external, explicitly delete the target to
+    # trigger a rebuild of both.
+    ifneq ($$(wildcard $$($1_IMPORT_LIBRARY)), $$($1_IMPORT_LIBRARY))
+      $$(call LogDebug, Deleting $$($1_BASENAME) because import library is missing)
+      $$(shell $(RM) $$($1_TARGET))
+    endif
+    $$($1_IMPORT_LIBRARY): $$($1_TARGET)
+	$(TOUCH) $$@
+
+    $1 += $$($1_IMPORT_LIBRARY)
+  endif
+
+  $1_VARDEPS := $$($1_LD) $$($1_SYSROOT_LDFLAGS) $$($1_LDFLAGS) \
+      $$($1_EXTRA_LDFLAGS) $$($1_LIBS) $$($1_EXTRA_LIBS) $$($1_MT) \
+      $$($1_MANIFEST_VERSION)
+
+  $1_VARDEPS_FILE := $$(call DependOnVariable, $1_VARDEPS, \
+      $$($1_OBJECT_DIR)/$$($1_NOSUFFIX).vardeps)
+
+  $1_TARGET_DEPS := $$($1_ALL_OBJS) $$($1_RES) $$($1_MANIFEST) \
+      $$($1_EXTRA_LINK_DEPS) $$($1_VARDEPS_FILE)
+
+  $$($1_TARGET): $$($1_TARGET_DEPS)
+        ifneq ($$($1_OBJ_FILE_LIST), )
+	  $$(eval $$(call ListPathsSafely, $1_ALL_OBJS, $$($1_OBJ_FILE_LIST)))
+        endif
+	$$(call LogInfo, Linking $$($1_BASENAME))
+	$$(call MakeDir, $$($1_OUTPUT_DIR) $$($1_SYMBOLS_DIR))
+	$$(call ExecuteWithLog, $$($1_OBJECT_DIR)/$$($1_SAFE_NAME)_run_ld, \
+	    $$($1_LD) -nologo $$($1_LDFLAGS) $$($1_EXTRA_LDFLAGS) \
+	        $$($1_SYSROOT_LDFLAGS) -out:$$($1_TARGET) $$($1_LD_OBJ_ARG) \
+	        $$($1_RES) $$($1_LIBS) $$($1_EXTRA_LIBS)) \
+	    | $(GREP) -v "^   Creating library .*\.lib and object .*\.exp" || \
+	        test "$$$$?" = "1"
+        ifeq ($(call isBuildOsEnv, windows.wsl2), true)
+	  $$(CHMOD) +x $$($1_TARGET)
+        endif
+        ifneq ($$($1_MANIFEST), )
+	  $$($1_MT) -nologo -manifest $$($1_MANIFEST) \
+	      -identity:"$$($1_NAME).exe, version=$$($1_MANIFEST_VERSION)" \
+	      -outputresource:$$@;#1
+        endif
+endef

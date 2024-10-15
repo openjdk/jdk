@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8291769
+ * @bug 8291769 8326129
  * @summary Check expected translation of various pattern related constructs
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -31,7 +31,7 @@
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.javac.tree
  *          jdk.compiler/com.sun.tools.javac.util
- * @build toolbox.ToolBox toolbox.JavacTask
+ * @build toolbox.ToolBox toolbox.JavacTask toolbox.JavaTask
  * @run main TranslationTest
 */
 
@@ -48,6 +48,7 @@ import com.sun.tools.javac.tree.TreeMaker;
 import com.sun.tools.javac.tree.TreeScanner;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Context.Factory;
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -56,6 +57,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import toolbox.TestRunner;
+import toolbox.JavaTask;
 import toolbox.JavacTask;
 import toolbox.Task;
 import toolbox.ToolBox;
@@ -186,6 +188,38 @@ public class TranslationTest extends TestRunner {
                            case ..., default
                    default
                """);
+    }
+
+    @Test //JDK-8326129
+    public void testRunWithNull(Path base) throws Exception {
+        doRunTest(base,
+                  new String[]{"""
+                               package lib;
+                               public record Box(Object o) {}
+                               """},
+                  """
+                  import lib.*;
+                  public class Test {
+                      public static void main(String... args) {
+                          System.err.println(new Test().test(new Box(null)));
+                      }
+                      private int test(Box b) {
+                          return switch (b) {
+                              case Box(Integer i) -> 0;
+                              case Box(Object o) when check(o) -> 1;
+                              case Box(Object o) -> 2;
+                          };
+                      }
+                      private static int c;
+                      private boolean check(Object o) {
+                          System.err.println("check: " + o);
+                          if (c++ > 10) throw new IllegalStateException();
+                          return o != null;
+                      }
+                  }
+                  """,
+                  "check: null",
+                  "2");
     }
 
     private void doTest(Path base, String[] libraryCode, String testCode,
@@ -321,5 +355,52 @@ public class TranslationTest extends TestRunner {
             return result;
         }
 
+    }
+
+    private void doRunTest(Path base, String[] libraryCode, String testCode,
+                           String... expectedOutput) throws IOException {
+        Path current = base.resolve(".");
+        Path libClasses = current.resolve("libClasses");
+
+        Files.createDirectories(libClasses);
+
+        if (libraryCode.length != 0) {
+            Path libSrc = current.resolve("lib-src");
+
+            for (String code : libraryCode) {
+                tb.writeJavaFiles(libSrc, code);
+            }
+
+            new JavacTask(tb)
+                    .outdir(libClasses)
+                    .files(tb.findJavaFiles(libSrc))
+                    .run();
+        }
+
+        Path src = current.resolve("src");
+        tb.writeJavaFiles(src, testCode);
+
+        Path classes = current.resolve("classes");
+
+        Files.createDirectories(classes);
+
+        new JavacTask(tb)
+            .options("-Xlint:-preview",
+                     "--class-path", libClasses.toString())
+            .outdir(classes)
+            .files(tb.findJavaFiles(src))
+            .run()
+            .writeAll();
+
+        List<String> log = new JavaTask(tb)
+            .classpath(libClasses.toString() + File.pathSeparatorChar + classes.toString())
+            .classArgs("Test")
+            .run()
+            .getOutputLines(Task.OutputKind.STDERR);
+
+        if (!List.of(expectedOutput).equals(log)) {
+            throw new AssertionError("Expected: " + expectedOutput +
+                                     "but got: " + log);
+        }
     }
 }

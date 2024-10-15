@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@ import java.io.*;
 import java.security.Principal;
 import java.util.Collections;
 import java.util.Map;
+import jdk.internal.access.JavaxSecurityAccess;
+import jdk.internal.access.SharedSecrets;
 import sun.security.x509.X500Name;
 import sun.security.util.*;
 
@@ -82,16 +84,31 @@ public final class X500Principal implements Principal, java.io.Serializable {
     /**
      * The X500Name representing this principal.
      *
-     * NOTE: this field is reflectively accessed from within X500Name.
+     * NOTE: this field is accessed using shared secrets from within X500Name.
      */
     private transient X500Name thisX500Name;
+
+    static {
+        // Set up JavaxSecurityAccess in SharedSecrets
+        SharedSecrets.setJavaxSecurityAccess(
+            new JavaxSecurityAccess() {
+                @Override
+                public X500Name asX500Name(X500Principal principal) {
+                    return principal.thisX500Name;
+                }
+                @Override
+                public X500Principal asX500Principal(X500Name name) {
+                    return new X500Principal(name);
+                }
+        });
+    }
 
     /**
      * Creates an X500Principal by wrapping an X500Name.
      *
      * NOTE: The constructor is package private. It is intended to be accessed
-     * using privileged reflection from classes in sun.security.*.
-     * Currently, it is referenced from sun.security.x509.X500Name.asX500Principal().
+     * using shared secrets from classes in sun.security.*. Currently, it is
+     * referenced from sun.security.x509.X500Name.asX500Principal().
      */
     X500Principal(X500Name x500Name) {
         thisX500Name = x500Name;

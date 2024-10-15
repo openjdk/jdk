@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,10 +27,6 @@ package java.lang.classfile;
 import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.constantpool.ConstantPool;
 import java.lang.classfile.constantpool.ConstantPoolException;
-import java.lang.classfile.constantpool.MethodHandleEntry;
-import java.lang.classfile.constantpool.ModuleEntry;
-import java.lang.classfile.constantpool.NameAndTypeEntry;
-import java.lang.classfile.constantpool.PackageEntry;
 import java.lang.classfile.constantpool.PoolEntry;
 import java.lang.classfile.constantpool.Utf8Entry;
 import jdk.internal.classfile.impl.ClassReaderImpl;
@@ -71,35 +67,19 @@ public sealed interface ClassReader extends ConstantPool
     /** {@return the constant pool entry describing the name of the superclass, if any} */
     Optional<ClassEntry> superclassEntry();
 
-    /** {@return the offset into the classfile of the {@code this_class} field} */
-    int thisClassPos();
-
     /** {@return the length of the classfile, in bytes} */
     int classfileLength();
-
-    // Buffer related
-
-    /**
-     * {@return the offset following the block of attributes starting at the
-     * specified position}
-     * @param offset the offset into the classfile at which the attribute block
-     *               starts
-     */
-    int skipAttributeHolder(int offset);
 
     // Constant pool
 
     /**
-     * {@return the UTF8 constant pool entry at the given index of the constant
-     * pool}  The given index must correspond to a valid constant pool index
-     * whose slot holds a UTF8 constant.
-     * @param index the index into the constant pool
-     */
-    Utf8Entry utf8EntryByIndex(int index);
-
-    /**
      * {@return the constant pool entry whose index is given at the specified
      * offset within the classfile}
+     *
+     * @apiNote
+     * If only a particular type of entry is expected, use {@link #readEntry(
+     * int, Class) readEntry(int, Class)}.
+     *
      * @param offset the offset of the index within the classfile
      * @throws ConstantPoolException if the index is out of range of the
      *         constant pool size, or zero
@@ -121,6 +101,11 @@ public sealed interface ClassReader extends ConstantPool
      * {@return the constant pool entry whose index is given at the specified
      * offset within the classfile, or null if the index at the specified
      * offset is zero}
+     *
+     * @apiNote
+     * If only a particular type of entry is expected, use {@link #readEntryOrNull(
+     * int, Class) readEntryOrNull(int, Class)}.
+     *
      * @param offset the offset of the index within the classfile
      * @throws ConstantPoolException if the index is out of range of the
      *         constant pool size
@@ -128,75 +113,18 @@ public sealed interface ClassReader extends ConstantPool
     PoolEntry readEntryOrNull(int offset);
 
     /**
-     * {@return the UTF8 entry whose index is given at the specified
-     * offset within the classfile}
+     * {@return the constant pool entry of a given type whose index is given
+     * at the specified offset within the classfile, or null if the index at
+     * the specified offset is zero}
+     *
+     * @param <T> the entry type
      * @param offset the offset of the index within the classfile
+     * @param cls the entry type
      * @throws ConstantPoolException if the index is out of range of the
-     *         constant pool size, or zero, or the index does not correspond to
-     *         a UTF8 entry
+     *         constant pool size, or zero, or the entry is not of the given type
+     * @since 23
      */
-    Utf8Entry readUtf8Entry(int offset);
-
-    /**
-     * {@return the UTF8 entry whose index is given at the specified
-     * offset within the classfile, or null if the index at the specified
-     * offset is zero}
-     * @param offset the offset of the index within the classfile
-     * @throws ConstantPoolException if the index is out of range of the
-     *         constant pool size, or the index does not correspond to
-     *         a UTF8 entry
-     */
-    Utf8Entry readUtf8EntryOrNull(int offset);
-
-    /**
-     * {@return the module entry whose index is given at the specified
-     * offset within the classfile}
-     * @param offset the offset of the index within the classfile
-     * @throws ConstantPoolException if the index is out of range of the
-     *         constant pool size, or zero, or the index does not correspond to
-     *         a module entry
-     */
-    ModuleEntry readModuleEntry(int offset);
-
-    /**
-     * {@return the package entry whose index is given at the specified
-     * offset within the classfile}
-     * @param offset the offset of the index within the classfile
-     * @throws ConstantPoolException if the index is out of range of the
-     *         constant pool size, or zero, or the index does not correspond to
-     *         a package entry
-     */
-    PackageEntry readPackageEntry(int offset);
-
-    /**
-     * {@return the class entry whose index is given at the specified
-     * offset within the classfile}
-     * @param offset the offset of the index within the classfile
-     * @throws ConstantPoolException if the index is out of range of the
-     *         constant pool size, or zero, or the index does not correspond to
-     *         a class entry
-     */
-    ClassEntry readClassEntry(int offset);
-
-    /**
-     * {@return the name-and-type entry whose index is given at the specified
-     * offset within the classfile}
-     * @param offset the offset of the index within the classfile
-     * @throws ConstantPoolException if the index is out of range of the
-     *         constant pool size, or zero, or the index does not correspond to
-     *         a name-and-type entry
-     */
-    NameAndTypeEntry readNameAndTypeEntry(int offset);
-
-    /**
-     * {@return the method handle entry whose index is given at the specified
-     * offset within the classfile}
-     * @param offset the offset of the index within the classfile
-     * @throws ConstantPoolException if the index is out of range of the
-     *         constant pool size, or zero, or the index does not correspond to
-     *         a method handle entry
-     */
-    MethodHandleEntry readMethodHandleEntry(int offset);
+    <T extends PoolEntry> T readEntryOrNull(int offset, Class<T> cls);
 
     /**
      * {@return the unsigned byte at the specified offset within the classfile}
@@ -261,19 +189,4 @@ public sealed interface ClassReader extends ConstantPool
      * @param len the length of the range
      */
     void copyBytesTo(BufWriter buf, int offset, int len);
-
-    /**
-     * Compare a range of bytes from the classfile to a range of bytes within
-     * a {@link BufWriter}.
-     *
-     * @param bufWriter the {@linkplain BufWriter}
-     * @param bufWriterOffset the offset within the {@linkplain BufWriter}
-     * @param classReaderOffset the offset within the classfile
-     * @param length the length of the range
-     * @return whether the two ranges were identical
-     */
-    boolean compare(BufWriter bufWriter,
-                    int bufWriterOffset,
-                    int classReaderOffset,
-                    int length);
 }

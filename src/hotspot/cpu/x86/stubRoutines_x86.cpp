@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,6 +82,10 @@ address StubRoutines::x86::_join_0_1_base64 = nullptr;
 address StubRoutines::x86::_join_1_2_base64 = nullptr;
 address StubRoutines::x86::_join_2_3_base64 = nullptr;
 address StubRoutines::x86::_decoding_table_base64 = nullptr;
+address StubRoutines::x86::_compress_perm_table32 = nullptr;
+address StubRoutines::x86::_compress_perm_table64 = nullptr;
+address StubRoutines::x86::_expand_perm_table32 = nullptr;
+address StubRoutines::x86::_expand_perm_table64 = nullptr;
 #endif
 address StubRoutines::x86::_pshuffle_byte_flip_mask_addr = nullptr;
 
@@ -275,7 +279,7 @@ uint32_t _crc32c_pow_2k_table[TILL_CYCLE]; // because _crc32c_pow_2k_table[TILL_
 // A. Kadatch and B. Jenkins / Everything we know about CRC but afraid to forget September 3, 2010 8
 // Listing 1: Multiplication of normalized polynomials
 // "a" and "b" occupy D least significant bits.
-uint32_t crc32c_multiply(uint32_t a, uint32_t b) {
+static uint32_t crc32c_multiply(uint32_t a, uint32_t b) {
   uint32_t product = 0;
   uint32_t b_pow_x_table[D + 1]; // b_pow_x_table[k] = (b * x**k) mod P
   b_pow_x_table[0] = b;
@@ -299,7 +303,7 @@ uint32_t crc32c_multiply(uint32_t a, uint32_t b) {
 #undef P
 
 // A. Kadatch and B. Jenkins / Everything we know about CRC but afraid to forget September 3, 2010 9
-void crc32c_init_pow_2k(void) {
+static void crc32c_init_pow_2k(void) {
   // _crc32c_pow_2k_table(0) =
   // x^(2^k) mod P(x) = x mod P(x) = x
   // Since we are operating on a reflected values
@@ -314,7 +318,7 @@ void crc32c_init_pow_2k(void) {
 }
 
 // x^N mod P(x)
-uint32_t crc32c_f_pow_n(uint32_t n) {
+static uint32_t crc32c_f_pow_n(uint32_t n) {
   //            result = 1 (polynomial)
   uint32_t one, result = 0x80000000, i = 0;
 

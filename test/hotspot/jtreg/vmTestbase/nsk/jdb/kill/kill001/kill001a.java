@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,6 +141,16 @@ class MyThread extends Thread {
         expectedException = e;
     }
 
+
+    static public int[] trash;
+
+    void methodForException() {
+        trash = new int[10];
+        for (int i = 0; ;i++) {
+            trash[i % trash.length] = i;
+        }
+    }
+
     public void run() {
         // Concatenate strings in advance to avoid lambda calculations later
         String ThreadFinished = "Thread finished: " + this.name;
@@ -156,8 +166,9 @@ class MyThread extends Thread {
         try {
             synchronized (kill001a.lock) { }
             // We need some code that does an invoke here to make sure the async exception
-            // gets thrown before we leave the try block. Printing a log message works well.
-            kill001a.log.display("exited synchronized");
+            // gets thrown before we leave the try block.
+            // The methodForException should work until exception is thrown.
+            methodForException();
         } catch (Throwable t) {
             if (t == expectedException) {
                 kill001a.log.display(CaughtExpected);

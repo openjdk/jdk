@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,6 @@ import jdk.jfr.internal.consumer.FileAccess;
  */
 public final class SecuritySupport {
     private static final String EVENTS_PACKAGE_NAME = "jdk.jfr.events";
-    private static final String INSTRUMENT_PACKAGE_NAME = "jdk.jfr.internal.instrument";
     private static final String EVENT_PACKAGE_NAME = "jdk.jfr.internal.event";
 
     public static final String REGISTER_EVENT = "registerEvent";
@@ -89,7 +88,6 @@ public final class SecuritySupport {
         addReadEdge(Object.class);
         addInternalEventExport(Object.class);
         addEventsExport(Object.class);
-        addInstrumentExport(Object.class);
     }
 
     static final class SecureRecorderListener implements FlightRecorderListener {
@@ -287,10 +285,11 @@ public final class SecuritySupport {
 
     public static List<SafePath> getPredefinedJFCFiles() {
         List<SafePath> list = new ArrayList<>();
-        try (var ds = doPrivilegedIOWithReturn(() -> Files.newDirectoryStream(JFC_DIRECTORY.toPath(), "*.jfc"))) {
+        try (var ds = doPrivilegedIOWithReturn(() -> Files.newDirectoryStream(JFC_DIRECTORY.toPath()))) {
             for (Path path : ds) {
                 SafePath s = new SafePath(path);
-                if (!SecuritySupport.isDirectory(s)) {
+                String text = s.toString();
+                if (text.endsWith(".jfc") && !SecuritySupport.isDirectory(s)) {
                     list.add(s);
                 }
             }
@@ -320,10 +319,6 @@ public final class SecuritySupport {
 
     static void addEventsExport(Class<?> clazz) {
         Modules.addExports(JFR_MODULE, EVENTS_PACKAGE_NAME, clazz.getModule());
-    }
-
-    static void addInstrumentExport(Class<?> clazz) {
-        Modules.addExports(JFR_MODULE, INSTRUMENT_PACKAGE_NAME, clazz.getModule());
     }
 
     static void addReadEdge(Class<?> clazz) {

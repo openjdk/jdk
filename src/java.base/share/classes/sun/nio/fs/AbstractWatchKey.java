@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,16 +28,38 @@ package sun.nio.fs;
 import java.nio.file.*;
 import java.util.*;
 
+import jdk.internal.util.ArraysSupport;
+import sun.security.action.GetPropertyAction;
+
 /**
  * Base implementation class for watch keys.
  */
 
 abstract class AbstractWatchKey implements WatchKey {
 
+    private static final int DEFAULT_MAX_EVENT_LIST_SIZE = 512;
+
     /**
-     * Maximum size of event list (in the future this may be tunable)
+     * Maximum size of event list before dropping events and signalling OVERFLOW
      */
-    static final int MAX_EVENT_LIST_SIZE    = 512;
+    static final int MAX_EVENT_LIST_SIZE;
+    static {
+        String rawValue = GetPropertyAction.privilegedGetProperty(
+            "jdk.nio.file.WatchService.maxEventsPerPoll",
+            String.valueOf(DEFAULT_MAX_EVENT_LIST_SIZE));
+        int intValue;
+        try {
+            // Clamp to max array length to signal OVERFLOW and drop events
+            // before OOMing.
+            intValue = Math.clamp(
+                Long.decode(rawValue),
+                1,
+                ArraysSupport.SOFT_MAX_ARRAY_LENGTH);
+        } catch (NumberFormatException e) {
+            intValue = DEFAULT_MAX_EVENT_LIST_SIZE;
+        }
+        MAX_EVENT_LIST_SIZE = intValue;
+    }
 
     /**
      * Special event to signal overflow

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,8 +33,8 @@
 // lea d, [s1 + s2]     and
 // mov d, s1; shl d, s2 into
 // lea d, [s1 << s2]    with s2 = 1, 2, 3
-bool lea_coalesce_helper(Block* block, int block_index, PhaseCFG* cfg_, PhaseRegAlloc* ra_,
-                         MachNode* (*new_root)(), uint inst0_rule, bool imm) {
+static bool lea_coalesce_helper(Block* block, int block_index, PhaseCFG* cfg_, PhaseRegAlloc* ra_,
+                                MachNode* (*new_root)(), uint inst0_rule, bool imm) {
   MachNode* inst0 = block->get_node(block_index)->as_Mach();
   assert(inst0->rule() == inst0_rule, "sanity");
 
@@ -136,7 +136,7 @@ bool lea_coalesce_helper(Block* block, int block_index, PhaseCFG* cfg_, PhaseReg
 // This helper func takes a condition and returns the flags that need to be set for the condition
 // It uses the same flags as the test instruction, so if the e.g. the overflow bit is required,
 // this func returns clears_overflow, as that is what the test instruction does and what the downstream path expects
-juint map_condition_to_required_test_flags(Assembler::Condition condition) {
+static juint map_condition_to_required_test_flags(Assembler::Condition condition) {
   switch (condition) {
     case Assembler::Condition::zero: // Same value as equal
     case Assembler::Condition::notZero: // Same value as notEqual

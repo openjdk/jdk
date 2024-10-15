@@ -67,7 +67,7 @@ public class TestDefaultBody {
             MethodModel testMethod = null;
             CodeAttribute codeAttr = null;
             for (MethodModel m : cf.methods()) {
-                codeAttr = m.findAttribute(Attributes.CODE).orElse(null);
+                codeAttr = m.findAttribute(Attributes.code()).orElse(null);
                 String mname = m.methodName().stringValue();
                 if (mname.equals(TEST_METHOD_NAME)) {
                     testMethod = m;

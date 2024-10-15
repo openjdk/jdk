@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8192920 8204588 8246774 8248843 8268869 8235876
+ * @bug 8192920 8204588 8246774 8248843 8268869 8235876 8328339 8335896
  * @summary Test source launcher
  * @library /tools/lib
  * @enablePreview
@@ -51,12 +51,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.List;
 import java.util.Properties;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import com.sun.tools.javac.launcher.SourceLauncher;
 import com.sun.tools.javac.launcher.Fault;
@@ -110,6 +107,27 @@ public class SourceLauncherTest extends TestRunner {
             "        System.out.println(\"Hello World! \" + Arrays.toString(args));\n" +
             "    }\n" +
             "}");
+        testSuccess(base.resolve("hello").resolve("World.java"), "Hello World! [1, 2, 3]\n");
+    }
+
+    @Test
+    public void testHelloWorldInPackageWithStaticImport(Path base) throws IOException {
+        tb.writeJavaFiles(base,
+                """
+                package hello;
+                import static hello.Helper.*;
+                import java.util.Arrays;
+                class World {
+                    public static void main(String... args) {
+                        m(args);
+                    }
+                }
+                class Helper {
+                    static void m(String... args) {
+                        System.out.println("Hello World! " + Arrays.toString(args));
+                    }
+                }
+                """);
         testSuccess(base.resolve("hello").resolve("World.java"), "Hello World! [1, 2, 3]\n");
     }
 
@@ -258,6 +276,27 @@ public class SourceLauncherTest extends TestRunner {
         checkEqual("stdout", log.trim(), file.toAbsolutePath().toString());
     }
 
+    @Test
+    public void testThreadContextClassLoader(Path base) throws IOException {
+        tb.writeJavaFiles(base, //language=java
+                """
+                class ThreadContextClassLoader {
+                    public static void main(String... args) {
+                        var expected = ThreadContextClassLoader.class.getClassLoader();
+                        var actual = Thread.currentThread().getContextClassLoader();
+                        System.out.println(expected == actual);
+                    }
+                }
+                """);
+
+        Path file = base.resolve("ThreadContextClassLoader.java");
+        String log = new JavaTask(tb)
+                .className(file.toString())
+                .run(Task.Expect.SUCCESS)
+                .getOutput(Task.OutputKind.STDOUT);
+        checkEqual("stdout", log.trim(), "true");
+    }
+
     void testSuccess(Path file, String expect) throws IOException {
         Result r = run(file, Collections.emptyList(), List.of("1", "2", "3"));
         checkEqual("stdout", r.stdOut, expect);
@@ -303,7 +342,7 @@ public class SourceLauncherTest extends TestRunner {
     public void testMismatchOfPathAndPackage(Path base) throws IOException {
         Files.createDirectories(base);
         Path file = base.resolve("MismatchOfPathAndPackage.java");
-        Files.write(file, List.of("package p;"));
+        Files.write(file, List.of("package p; class MismatchOfPathAndPackage {}"));
         testError(file, "", "error: end of path to source file does not match its package name p: " + file);
     }
 
@@ -534,10 +573,9 @@ public class SourceLauncherTest extends TestRunner {
         List<String> log = new JavaTask(tb)
                 .vmOptions("--enable-preview")
                 .className(base.resolve("HelloWorld.java").toString())
-                .run(Task.Expect.FAIL)
-                .getOutputLines(Task.OutputKind.STDERR);
-        log = log.stream().filter(s->!s.matches("^Picked up .*JAVA.*OPTIONS:.*")).collect(Collectors.toList());
-        checkEqual("stderr", log, List.of("error: --enable-preview must be used with --source"));
+                .run(Task.Expect.SUCCESS)
+                .getOutputLines(Task.OutputKind.STDOUT);
+        checkEqual("stdout", log, List.of("Hello World! []"));
     }
 
     @Test
@@ -726,8 +764,8 @@ public class SourceLauncherTest extends TestRunner {
         private static void markModuleAsIncubator(Path moduleInfoFile) throws Exception {
             ClassModel cf = ClassFile.of().parse(moduleInfoFile);
             ModuleResolutionAttribute newAttr = ModuleResolutionAttribute.of(WARN_INCUBATING);
-            byte[] newBytes = ClassFile.of().transform(cf, ClassTransform.dropping(ce -> ce instanceof Attributes)
-                    .andThen(ClassTransform.endHandler(classBuilder -> classBuilder.with(newAttr))));
+            byte[] newBytes = ClassFile.of().transformClass(cf,
+                    ClassTransform.endHandler(classBuilder -> classBuilder.with(newAttr)));
             try (OutputStream out = Files.newOutputStream(moduleInfoFile)) {
                 out.write(newBytes);
             }

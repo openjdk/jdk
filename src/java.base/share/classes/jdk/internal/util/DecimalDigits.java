@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,6 @@
 
 package jdk.internal.util;
 
-import java.lang.invoke.MethodHandle;
-
 import jdk.internal.vm.annotation.Stable;
 
 /**
@@ -34,7 +32,7 @@ import jdk.internal.vm.annotation.Stable;
  *
  * @since 21
  */
-public final class DecimalDigits implements Digits {
+public final class DecimalDigits {
 
     /**
      * Each element of the array represents the packaging of two ascii characters based on little endian:<p>
@@ -73,82 +71,9 @@ public final class DecimalDigits implements Digits {
     }
 
     /**
-     * Singleton instance of DecimalDigits.
-     */
-    public static final Digits INSTANCE = new DecimalDigits();
-
-    /**
      * Constructor.
      */
     private DecimalDigits() {
-    }
-
-    @Override
-    public int digits(long value, byte[] buffer, int index,
-                      MethodHandle putCharMH) throws Throwable {
-        boolean negative = value < 0;
-        if (!negative) {
-            value = -value;
-        }
-
-        long q;
-        int r;
-        while (value <= Integer.MIN_VALUE) {
-            q = value / 100;
-            r = (int)((q * 100) - value);
-            value = q;
-            int digits = DIGITS[r];
-
-            putCharMH.invokeExact(buffer, --index, digits >> 8);
-            putCharMH.invokeExact(buffer, --index, digits & 0xFF);
-        }
-
-        int iq, ivalue = (int)value;
-        while (ivalue <= -100) {
-            iq = ivalue / 100;
-            r = (iq * 100) - ivalue;
-            ivalue = iq;
-            int digits = DIGITS[r];
-            putCharMH.invokeExact(buffer, --index, digits >> 8);
-            putCharMH.invokeExact(buffer, --index, digits & 0xFF);
-        }
-
-        if (ivalue < 0) {
-            ivalue = -ivalue;
-        }
-
-        int digits = DIGITS[ivalue];
-        putCharMH.invokeExact(buffer, --index, digits >> 8);
-
-        if (9 < ivalue) {
-            putCharMH.invokeExact(buffer, --index, digits & 0xFF);
-        }
-
-        if (negative) {
-            putCharMH.invokeExact(buffer, --index, (int)'-');
-        }
-
-        return index;
-    }
-
-    @Override
-    public int size(long value) {
-        boolean negative = value < 0;
-        int sign = negative ? 1 : 0;
-
-        if (!negative) {
-            value = -value;
-        }
-
-        long precision = -10;
-        for (int i = 1; i < 19; i++) {
-            if (value > precision)
-                return i + sign;
-
-            precision = 10 * precision;
-        }
-
-        return 19 + sign;
     }
 
     /**
@@ -158,5 +83,57 @@ public final class DecimalDigits implements Digits {
      */
     public static short digitPair(int i) {
         return DIGITS[i];
+    }
+
+    /**
+     * Returns the string representation size for a given int value.
+     *
+     * @param x int value
+     * @return string size
+     *
+     * @implNote There are other ways to compute this: e.g. binary search,
+     * but values are biased heavily towards zero, and therefore linear search
+     * wins. The iteration results are also routinely inlined in the generated
+     * code after loop unrolling.
+     */
+    public static int stringSize(int x) {
+        int d = 1;
+        if (x >= 0) {
+            d = 0;
+            x = -x;
+        }
+        int p = -10;
+        for (int i = 1; i < 10; i++) {
+            if (x > p)
+                return i + d;
+            p = 10 * p;
+        }
+        return 10 + d;
+    }
+
+    /**
+     * Returns the string representation size for a given long value.
+     *
+     * @param x long value
+     * @return string size
+     *
+     * @implNote There are other ways to compute this: e.g. binary search,
+     * but values are biased heavily towards zero, and therefore linear search
+     * wins. The iteration results are also routinely inlined in the generated
+     * code after loop unrolling.
+     */
+    public static int stringSize(long x) {
+        int d = 1;
+        if (x >= 0) {
+            d = 0;
+            x = -x;
+        }
+        long p = -10;
+        for (int i = 1; i < 19; i++) {
+            if (x > p)
+                return i + d;
+            p = 10 * p;
+        }
+        return 19 + d;
     }
 }

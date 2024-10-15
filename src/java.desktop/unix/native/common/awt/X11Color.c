@@ -338,7 +338,7 @@ awt_allocate_colors(AwtGraphicsConfigDataPtr awt_data)
     unsigned char reds[256], greens[256], blues[256];
     int indices[256];
     Colormap cm;
-    int i, j, k, cmapsize, nfree, depth, bpp;
+    int i, k, cmapsize, nfree, depth, bpp;
     int allocatedColorsNum, unavailableColorsNum;
     XPixmapFormatValues *pPFV;
     int numpfv;
@@ -878,7 +878,6 @@ awt_allocate_colors(AwtGraphicsConfigDataPtr awt_data)
 
 jobject getColorSpace(JNIEnv* env, jint csID) {
     jclass clazz;
-    jobject cspaceL;
     jmethodID mid;
 
     clazz = (*env)->FindClass(env,"java/awt/color/ColorSpace");
@@ -1033,7 +1032,6 @@ jobject awtJNI_GetColorModel(JNIEnv *env, AwtGraphicsConfigDataPtr aData)
         jobject validBits = NULL;
         ColorEntry *c;
         int i, allocAllGray, b, allvalid, paletteSize;
-        jlong pData;
 
         if (aData->awt_visInfo.depth == 12) {
             paletteSize = MAX_PALETTE12_SIZE;
@@ -1233,11 +1231,10 @@ jobject awtJNI_GetColorModel(JNIEnv *env, AwtGraphicsConfigDataPtr aData)
 void
 awt_allocate_systemrgbcolors (jint *rgbColors, int num_colors,
                               AwtGraphicsConfigDataPtr awtData) {
-    int i, pixel;
-    for (i = 0; i < num_colors; i++)
-        pixel = alloc_col (awt_display, awtData->awt_cmap, red (rgbColors [i]),
-                           green (rgbColors [i]), blue (rgbColors [i]), -1,
-                           awtData);
+    for (int i = 0; i < num_colors; i++)
+        alloc_col (awt_display, awtData->awt_cmap, red (rgbColors [i]),
+                   green (rgbColors [i]), blue (rgbColors [i]), -1,
+                   awtData);
 }
 
 int

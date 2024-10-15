@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,19 +100,28 @@ public final class ThemeReader {
         return xpStyleEnabled;
     }
 
-    private static Long openThemeImpl(String widget, int dpi) {
-       Long theme;
+    private static long openThemeImpl(String widget, int dpi) {
+       long theme;
        int i = widget.indexOf("::");
        if (i > 0) {
            // We're using the syntax "subAppName::controlName" here, as used by msstyles.
            // See documentation for SetWindowTheme on MSDN.
            setWindowTheme(widget.substring(0, i));
-           theme = openTheme(widget.substring(i + 2), dpi);
+           theme = getOpenThemeValue(widget.substring(i + 2), dpi);
            setWindowTheme(null);
        } else {
-           theme = openTheme(widget, dpi);
+           theme = getOpenThemeValue(widget, dpi);
        }
        return theme;
+    }
+
+    private static long getOpenThemeValue(String widget, int dpi) {
+        long theme;
+        theme = openTheme(widget, dpi);
+        if (theme == 0) {
+            theme = openTheme(widget, defaultDPI);
+        }
+        return theme;
     }
 
     // this should be called only with writeLock held

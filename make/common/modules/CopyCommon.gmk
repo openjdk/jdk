@@ -23,6 +23,8 @@
 # questions.
 #
 
+include CopyFiles.gmk
+
 LIB_DST_DIR := $(SUPPORT_OUTPUTDIR)/modules_libs/$(MODULE)
 CONF_DST_DIR := $(SUPPORT_OUTPUTDIR)/modules_conf/$(MODULE)
 LEGAL_DST_DIR := $(SUPPORT_OUTPUTDIR)/modules_legal/$(MODULE)

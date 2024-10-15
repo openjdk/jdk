@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,7 +112,9 @@ record RelevantJavacOptions(List<String> forProgramCompilation,
                     programOptions.add(opt);
                     subsequentOptions.add(opt);
                     if (sourceOpt == null) {
-                        throw new Fault(Errors.EnablePreviewRequiresSource);
+                        String feature = String.valueOf(Runtime.version().feature());
+                        programOptions.addAll(List.of("--release", feature));
+                        subsequentOptions.addAll(List.of("--release", feature));
                     }
                 }
                 default -> {

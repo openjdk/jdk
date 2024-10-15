@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -90,7 +90,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
     // so we just assume they are OK.
     // Adapter blobs never have a complete frame and are never OK
     if (!_cb->is_frame_complete_at(_pc)) {
-      if (_cb->is_compiled() || _cb->is_adapter_blob() || _cb->is_runtime_stub()) {
+      if (_cb->is_nmethod() || _cb->is_adapter_blob() || _cb->is_runtime_stub()) {
         return false;
       }
     }
@@ -117,9 +117,9 @@ bool frame::safe_for_sender(JavaThread *thread) {
       return false;
     }
 
-    common_abi* sender_abi = (common_abi*) fp;
+    volatile common_abi* sender_abi = (common_abi*) fp; // May get updated concurrently by deoptimization!
     intptr_t* sender_sp = (intptr_t*) fp;
-    address   sender_pc = (address) sender_abi->lr;;
+    address   sender_pc = (address) sender_abi->lr;
 
     if (Continuation::is_return_barrier_entry(sender_pc)) {
       // If our sender_pc is the return barrier, then our "real" sender is the continuation entry
@@ -134,9 +134,18 @@ bool frame::safe_for_sender(JavaThread *thread) {
       return false;
     }
 
+    intptr_t* unextended_sender_sp = is_interpreted_frame() ? interpreter_frame_sender_sp() : sender_sp;
+
+    // If the sender is a deoptimized nmethod we need to check if the original pc is valid.
+    nmethod* sender_nm = sender_blob->as_nmethod_or_null();
+    if (sender_nm != nullptr && sender_nm->is_deopt_pc(sender_pc)) {
+      address orig_pc = *(address*)((address)unextended_sender_sp + sender_nm->orig_pc_offset());
+      if (!sender_nm->insts_contains_inclusive(orig_pc)) return false;
+    }
+
     // It should be safe to construct the sender though it might not be valid.
 
-    frame sender(sender_sp, sender_pc, nullptr /* unextended_sp */, nullptr /* fp */, sender_blob);
+    frame sender(sender_sp, sender_pc, unextended_sender_sp, nullptr /* fp */, sender_blob);
 
     // Do we have a valid fp?
     address sender_fp = (address) sender.fp();
@@ -280,7 +289,7 @@ void frame::patch_pc(Thread* thread, address pc) {
   DEBUG_ONLY(address old_pc = _pc;)
   own_abi()->lr = (uint64_t)pc;
   _pc = pc; // must be set before call to get_deopt_original_pc
-  address original_pc = CompiledMethod::get_deopt_original_pc(this);
+  address original_pc = get_deopt_original_pc();
   if (original_pc != nullptr) {
     assert(original_pc == old_pc, "expected original PC to be stored before patching");
     _deopt_state = is_deoptimized;
@@ -288,7 +297,7 @@ void frame::patch_pc(Thread* thread, address pc) {
   } else {
     _deopt_state = not_deoptimized;
   }
-  assert(!is_compiled_frame() || !_cb->as_compiled_method()->is_deopt_entry(_pc), "must be");
+  assert(!is_compiled_frame() || !_cb->as_nmethod()->is_deopt_entry(_pc), "must be");
 
 #ifdef ASSERT
   {

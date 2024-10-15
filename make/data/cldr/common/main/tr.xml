@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 
 Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
@@ -1263,7 +1263,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="phonebook">Telefon Defteri Sıralama Düzeni</type>
 			<type key="collation" type="phonetic">Fonetik Sıralama Düzeni</type>
 			<type key="collation" type="pinyin">Pinyin Sıralama Düzeni</type>
-			<type key="collation" type="reformed">Yeni Sıralama Düzeni</type>
 			<type key="collation" type="search">Genel Amaçlı Arama</type>
 			<type key="collation" type="searchjl">Hangul İlk Sessiz Harfe Göre Arama</type>
 			<type key="collation" type="standard">Standart Sıralama Düzeni</type>
@@ -2505,9 +2504,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<regionFormat>{0} Saati</regionFormat>
 			<regionFormat type="daylight">{0} Yaz Saati</regionFormat>
 			<regionFormat type="standard">{0} Standart Saati</regionFormat>
-			<zone type="America/Santa_Isabel">
-				<exemplarCity>Santa Isabel</exemplarCity>
-			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>Eş Güdümlü Evrensel Zaman</standard>
@@ -2530,9 +2526,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Europe/Vienna">
 				<exemplarCity>Viyana</exemplarCity>
-			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity>Currie</exemplarCity>
 			</zone>
 			<zone type="Australia/Sydney">
 				<exemplarCity>Sidney</exemplarCity>
@@ -2863,14 +2856,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Africa/Dar_es_Salaam">
 				<exemplarCity>Darüsselam</exemplarCity>
 			</zone>
-			<zone type="Europe/Uzhgorod">
-				<exemplarCity>Ujgorod</exemplarCity>
-			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>Kiev</exemplarCity>
-			</zone>
-			<zone type="Europe/Zaporozhye">
-				<exemplarCity>Zaporojye</exemplarCity>
 			</zone>
 			<zone type="Pacific/Honolulu">
 				<exemplarCity>Honolulu</exemplarCity>
@@ -3466,11 +3453,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>Makao Yaz Saati</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>Macquarie Adası Saati</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>Magadan Saati</generic>
@@ -3508,13 +3490,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Mawson">
 				<long>
 					<standard>Mawson Saati</standard>
-				</long>
-			</metazone>
-			<metazone type="Mexico_Northwest">
-				<long>
-					<generic>Kuzeybatı Meksika Saati</generic>
-					<standard>Kuzeybatı Meksika Standart Saati</standard>
-					<daylight>Kuzeybatı Meksika Yaz Saati</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">

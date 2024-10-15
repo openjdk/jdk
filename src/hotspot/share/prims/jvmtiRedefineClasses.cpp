@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/cdsConfig.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
@@ -48,6 +49,7 @@
 #include "oops/fieldStreams.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/klassVtable.hpp"
+#include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/recordComponent.hpp"
 #include "prims/jvmtiImpl.hpp"
@@ -64,6 +66,7 @@
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/events.hpp"
+#include "utilities/macros.hpp"
 
 Array<Method*>* VM_RedefineClasses::_old_methods = nullptr;
 Array<Method*>* VM_RedefineClasses::_new_methods = nullptr;
@@ -243,7 +246,7 @@ void VM_RedefineClasses::doit() {
   }
 
 #if INCLUDE_CDS
-  if (UseSharedSpaces) {
+  if (CDSConfig::is_using_archive()) {
     // Sharing is enabled so we remap the shared readonly space to
     // shared readwrite, private just in case we need to redefine
     // a shared class. We do the remap during the doit() phase of
@@ -1171,6 +1174,7 @@ jvmtiError VM_RedefineClasses::compare_and_normalize_class_versions(
           }
         }
       }
+      JFR_ONLY(k_new_method->copy_trace_flags(k_old_method->trace_flags());)
       log_trace(redefine, class, normalize)
         ("Method matched: new: %s [%d] == old: %s [%d]",
          k_new_method->name_and_sig_as_C_string(), ni, k_old_method->name_and_sig_as_C_string(), oi);
@@ -1820,6 +1824,12 @@ jvmtiError VM_RedefineClasses::merge_cp_and_rewrite(
   if (!result) {
     // The merge can fail due to memory allocation failure or due
     // to robustness checks.
+    return JVMTI_ERROR_INTERNAL;
+  }
+
+  // ensure merged constant pool size does not overflow u2
+  if (merge_cp_length > 0xFFFF) {
+    log_warning(redefine, class, constantpool)("Merged constant pool overflow: %d entries", merge_cp_length);
     return JVMTI_ERROR_INTERNAL;
   }
 
@@ -4060,21 +4070,22 @@ void VM_RedefineClasses::transfer_old_native_function_registrations(InstanceKlas
 // Deoptimize all compiled code that depends on the classes redefined.
 //
 // If the can_redefine_classes capability is obtained in the onload
-// phase then the compiler has recorded all dependencies from startup.
-// In that case we need only deoptimize and throw away all compiled code
-// that depends on the class.
+// phase or 'AlwaysRecordEvolDependencies' is true, then the compiler has
+// recorded all dependencies from startup. In that case we need only
+// deoptimize and throw away all compiled code that depends on the class.
 //
-// If can_redefine_classes is obtained sometime after the onload
-// phase then the dependency information may be incomplete. In that case
-// the first call to RedefineClasses causes all compiled code to be
-// thrown away. As can_redefine_classes has been obtained then
-// all future compilations will record dependencies so second and
-// subsequent calls to RedefineClasses need only throw away code
-// that depends on the class.
+// If can_redefine_classes is obtained sometime after the onload phase
+// (and 'AlwaysRecordEvolDependencies' is false) then the dependency
+// information may be incomplete. In that case the first call to
+// RedefineClasses causes all compiled code to be thrown away. As
+// can_redefine_classes has been obtained then all future compilations will
+// record dependencies so second and subsequent calls to RedefineClasses
+// need only throw away code that depends on the class.
 //
 
 void VM_RedefineClasses::flush_dependent_code() {
   assert(SafepointSynchronize::is_at_safepoint(), "sanity check");
+  assert(JvmtiExport::all_dependencies_are_recorded() || !AlwaysRecordEvolDependencies, "sanity check");
 
   DeoptimizationScope deopt_scope;
 
@@ -4340,7 +4351,8 @@ void VM_RedefineClasses::redefine_single_class(Thread* current, jclass the_jclas
   the_class->vtable().initialize_vtable();
   the_class->itable().initialize_itable();
 
-  // Leave arrays of jmethodIDs and itable index cache unchanged
+  // Update jmethodID cache if present.
+  the_class->update_methods_jmethod_cache();
 
   // Copy the "source debug extension" attribute from new class version
   the_class->set_source_debug_extension(

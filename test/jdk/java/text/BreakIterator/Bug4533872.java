@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,7 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 4533872 4640853
  * @summary Unit tests for supplementary character support (JSR-204) and Unicode 4.0 support
@@ -62,6 +62,7 @@ public class Bug4533872 {
     /*
      * Test for next(int n)
      */
+    @Test
     void TestNext() {
         iter = BreakIterator.getWordInstance(Locale.US);
 
@@ -84,6 +85,7 @@ public class Bug4533872 {
     /*
      * Test for isBoundary(int n)
      */
+    @Test
     void TestIsBoundary() {
         iter = BreakIterator.getWordInstance(Locale.US);
 
@@ -112,6 +114,7 @@ public class Bug4533872 {
     /*
      * Test mainly for next() and current()
      */
+    @Test
     void TestPrintEachForward() {
         iter = BreakIterator.getWordInstance(Locale.US);
 
@@ -151,6 +154,7 @@ public class Bug4533872 {
     /*
      * Test mainly for previous() and current()
      */
+    @Test
     void TestPrintEachBackward() {
         iter = BreakIterator.getWordInstance(Locale.US);
 
@@ -190,6 +194,7 @@ public class Bug4533872 {
     /*
      * Test mainly for following() and previous()
      */
+    @Test
     void TestPrintAt_1() {
         iter = BreakIterator.getWordInstance(Locale.US);
 
@@ -219,6 +224,7 @@ public class Bug4533872 {
     /*
      * Test mainly for preceding() and next()
      */
+    @Test
     void TestPrintAt_2() {
         iter = BreakIterator.getWordInstance(Locale.US);
 

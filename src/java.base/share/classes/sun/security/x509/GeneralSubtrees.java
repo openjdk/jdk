@@ -70,6 +70,7 @@ public class GeneralSubtrees implements Cloneable, DerEncoder {
      *
      * @param val the DER encoded form of the same.
      */
+    @SuppressWarnings("this-escape")
     public GeneralSubtrees(DerValue val) throws IOException {
         this();
         if (val.tag != DerValue.tag_Sequence) {

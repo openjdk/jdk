@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.locks.LockSupport;
 
+import jdk.test.lib.thread.VThreadScheduler;
 import jdk.test.lib.thread.VThreadRunner;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
@@ -142,11 +143,10 @@ class Reflection {
      */
     @Test
     void testInvokeStatic6() throws Exception {
-        assumeTrue(ThreadBuilders.supportsCustomScheduler(), "No support for custom schedulers");
+        assumeTrue(VThreadScheduler.supportsCustomScheduler(), "No support for custom schedulers");
         Method parkMethod = Parker.class.getDeclaredMethod("park");
         try (ExecutorService scheduler = Executors.newFixedThreadPool(1)) {
-            Thread.Builder builder = ThreadBuilders.virtualThreadBuilder(scheduler);
-            ThreadFactory factory = builder.factory();
+            ThreadFactory factory = VThreadScheduler.virtualThreadFactory(scheduler);
 
             var ready = new CountDownLatch(1);
             Thread vthread = factory.newThread(() -> {
@@ -321,11 +321,10 @@ class Reflection {
      */
     @Test
     void testNewInstance6() throws Exception {
-        assumeTrue(ThreadBuilders.supportsCustomScheduler(), "No support for custom schedulers");
+        assumeTrue(VThreadScheduler.supportsCustomScheduler(), "No support for custom schedulers");
         Constructor<?> ctor = Parker.class.getDeclaredConstructor();
         try (ExecutorService scheduler = Executors.newFixedThreadPool(1)) {
-            Thread.Builder builder = ThreadBuilders.virtualThreadBuilder(scheduler);
-            ThreadFactory factory = builder.factory();
+            ThreadFactory factory = VThreadScheduler.virtualThreadFactory(scheduler);
 
             var ready = new CountDownLatch(1);
             Thread vthread = factory.newThread(() -> {

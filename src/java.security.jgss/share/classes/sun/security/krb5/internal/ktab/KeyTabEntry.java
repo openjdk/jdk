@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import sun.security.krb5.*;
 import sun.security.krb5.internal.*;
 
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
+import static sun.security.krb5.internal.Krb5.DEBUG;
 
 /**
  * This class represents a Key Table entry. Each entry contains the service principal of
@@ -49,7 +50,6 @@ public class KeyTabEntry implements KeyTabConstants {
     int keyVersion;
     int keyType;
     byte[] keyblock = null;
-    boolean DEBUG = Krb5.DEBUG;
 
     public KeyTabEntry (PrincipalName new_service, Realm new_realm, KerberosTime new_time,
                         int new_keyVersion, int new_keyType, byte[] new_keyblock) {
@@ -95,8 +95,8 @@ public class KeyTabEntry implements KeyTabConstants {
             + timestampSize + keyVersionSize
             + keyTypeSize + keySize + keyblock.length;
 
-        if (DEBUG) {
-            System.out.println(">>> KeyTabEntry: key tab entry size is " + size);
+        if (DEBUG != null) {
+            DEBUG.println(">>> KeyTabEntry: key tab entry size is " + size);
         }
         return size;
     }

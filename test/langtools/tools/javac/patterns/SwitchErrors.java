@@ -127,12 +127,6 @@ public class SwitchErrors {
             default: break;
         }
     }
-    void primitivePattern(Object o) {
-        switch (o) {
-            case int i: break;
-            default: break;
-        }
-    }
     void patternAndDefault1(Object o) {
         switch (o) {
             case String s, default: break;
@@ -237,16 +231,6 @@ public class SwitchErrors {
         switch (null) {
             case String s: break;
             case CharSequence cs: break;
-        }
-    }
-    void primitiveToReference(int i) {
-        switch (i) {
-            case Integer j: break;
-        }
-    }
-    void referenceToPrimitive(Integer i) {
-        switch (i) {
-            case int j: break;
         }
     }
     void nullAndParenthesized1(Object o) {

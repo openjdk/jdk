@@ -23,22 +23,24 @@
 
 package sampleapi.generator;
 
-import java.util.ArrayList;
 import java.util.Set;
+
 import javax.lang.model.element.Modifier;
 
-import com.sun.tools.javac.util.Context;
-import com.sun.tools.javac.tree.JCTree;
-import com.sun.tools.javac.tree.JCTree.*;
-import com.sun.tools.javac.tree.DocCommentTable;
-import com.sun.tools.javac.parser.ScannerFactory;
-import com.sun.tools.javac.parser.Scanner;
-import com.sun.tools.javac.parser.Tokens.Token;
-import com.sun.tools.javac.parser.Tokens.Comment;
-import com.sun.tools.javac.parser.Tokens.Comment.CommentStyle;
 import com.sun.source.tree.Tree.Kind;
+import com.sun.tools.javac.parser.Scanner;
+import com.sun.tools.javac.parser.ScannerFactory;
+import com.sun.tools.javac.parser.Tokens.Comment;
+import com.sun.tools.javac.parser.Tokens.Token;
+import com.sun.tools.javac.tree.DocCommentTable;
+import com.sun.tools.javac.tree.JCTree;
+import com.sun.tools.javac.tree.JCTree.JCClassDecl;
+import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
+import com.sun.tools.javac.tree.JCTree.JCMethodDecl;
+import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
+import com.sun.tools.javac.util.Context;
 
-import sampleapi.util.*;
+import sampleapi.util.PoorDocCommentTable;
 
 class Documentifier {
 

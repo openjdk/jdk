@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import com.sun.net.httpserver.SimpleFileServer;
 import com.sun.net.httpserver.SimpleFileServer.OutputLevel;
 
 import java.io.PrintWriter;
+import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
@@ -168,6 +169,13 @@ final class SimpleFileServerImpl {
             var addr = isAnyLocal ? InetAddress.getLocalHost().getHostAddress() : inetAddr.getHostAddress();
             if (!addrSpecified) {
                 writer.println(ResourceBundleHelper.getMessage("loopback.info"));
+            }
+            if (inetAddr instanceof Inet6Address && addr.contains(":") && !addr.startsWith("[")) {
+                // we use the "addr" when printing the URL, so make sure it
+                // conforms to RFC-2732, section 2:
+                // To use a literal IPv6 address in a URL, the literal
+                // address should be enclosed in "[" and "]" characters.
+                addr = "[" + addr + "]";
             }
             if (isAnyLocal) {
                 writer.println(ResourceBundleHelper.getMessage("msg.start.anylocal", root, addr, port));

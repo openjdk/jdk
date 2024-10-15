@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,6 @@ import org.ietf.jgss.Oid;
 
 import sun.net.www.protocol.http.HttpCallerInfo;
 import sun.net.www.protocol.http.Negotiator;
-import sun.security.action.GetBooleanAction;
 import sun.security.action.GetPropertyAction;
 import sun.security.jgss.GSSManagerImpl;
 import sun.security.jgss.GSSContextImpl;
@@ -44,6 +43,8 @@ import sun.security.jgss.HttpCaller;
 import sun.security.jgss.krb5.internal.TlsChannelBindingImpl;
 import sun.security.util.ChannelBindingException;
 import sun.security.util.TlsChannelBinding;
+
+import static sun.security.krb5.internal.Krb5.DEBUG;
 
 /**
  * This class encapsulates all JAAS and JGSS API calls in a separate class
@@ -54,9 +55,6 @@ import sun.security.util.TlsChannelBinding;
  * @since 1.6
  */
 public class NegotiatorImpl extends Negotiator {
-
-    private static final boolean DEBUG =
-            GetBooleanAction.privilegedGetProperty("sun.security.krb5.debug");
 
     private GSSContext context;
     private byte[] oneToken;
@@ -105,8 +103,8 @@ public class NegotiatorImpl extends Negotiator {
             ((GSSContextImpl)context).requestDelegPolicy(true);
         }
         if (hci.serverCert != null) {
-            if (DEBUG) {
-                System.out.println("Negotiate: Setting CBT");
+            if (DEBUG != null) {
+                DEBUG.println("Negotiate: Setting CBT");
             }
             // set the channel binding token
             TlsChannelBinding b = TlsChannelBinding.create(hci.serverCert);
@@ -123,8 +121,8 @@ public class NegotiatorImpl extends Negotiator {
         try {
             init(hci);
         } catch (GSSException | ChannelBindingException e) {
-            if (DEBUG) {
-                System.out.println("Negotiate support not initiated, will " +
+            if (DEBUG != null) {
+                DEBUG.println("Negotiate support not initiated, will " +
                         "fallback to other scheme if allowed. Reason:");
                 e.printStackTrace();
             }
@@ -160,9 +158,9 @@ public class NegotiatorImpl extends Negotiator {
             }
             return context.initSecContext(token, 0, token.length);
         } catch (GSSException e) {
-            if (DEBUG) {
-                System.out.println("Negotiate support cannot continue. Reason:");
-                e.printStackTrace();
+            if (DEBUG != null) {
+                DEBUG.println("Negotiate support cannot continue. Reason:");
+                e.printStackTrace(DEBUG.getPrintStream());
             }
             throw new IOException("Negotiate support cannot continue", e);
         }
@@ -181,9 +179,9 @@ public class NegotiatorImpl extends Negotiator {
                 context.dispose();
             }
         } catch (GSSException e) {
-            if (DEBUG) {
-                System.out.println("Cannot release resources. Reason:");
-                e.printStackTrace();
+            if (DEBUG != null) {
+                DEBUG.println("Cannot release resources. Reason:");
+                e.printStackTrace(DEBUG.getPrintStream());
             }
             throw new IOException("Cannot release resources", e);
         };

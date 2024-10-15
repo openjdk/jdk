@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2021 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,10 @@
 
 #include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "code/compiledIC.hpp"
 #include "code/vtableStubs.hpp"
 #include "interp_masm_s390.hpp"
 #include "memory/resourceArea.hpp"
-#include "oops/compiledICHolder.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/klassVtable.hpp"
@@ -197,12 +197,12 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   __ load_klass(rcvr_klass, Z_ARG1);
 
   // Receiver subtype check against REFC.
-  __ z_lg(interface, Address(Z_method, CompiledICHolder::holder_klass_offset()));
+  __ z_lg(interface, Address(Z_method, CompiledICData::itable_refc_klass_offset()));
   __ lookup_interface_method(rcvr_klass, interface, noreg,
                              noreg, Z_R1, no_such_interface, /*return_method=*/ false);
 
   // Get Method* and entrypoint for compiler
-  __ z_lg(interface, Address(Z_method, CompiledICHolder::holder_metadata_offset()));
+  __ z_lg(interface, Address(Z_method, CompiledICData::itable_defc_klass_offset()));
   __ lookup_interface_method(rcvr_klass, interface, itable_index,
                              Z_method, Z_R1, no_such_interface, /*return_method=*/ true);
 

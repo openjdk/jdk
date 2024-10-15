@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018, Google Inc. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,17 +35,14 @@
 import java.lang.classfile.*;
 import java.lang.classfile.attribute.MethodParameterInfo;
 import java.lang.classfile.attribute.MethodParametersAttribute;
-import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 import javax.tools.JavaCompiler;
 import javax.tools.JavaCompiler.CompilationTask;
 import javax.tools.JavaFileObject;
-import javax.tools.JavaFileObject.Kind;
 import javax.tools.SimpleJavaFileObject;
 import javax.tools.ToolProvider;
 
@@ -73,13 +71,8 @@ public class LegacyOutputTest {
     List<String> getParameterNames(String release) throws Exception {
         JavaCompiler tool = ToolProvider.getSystemJavaCompiler();
         JavaFileObject fileObject =
-                new SimpleJavaFileObject(URI.create("Test.java"), Kind.SOURCE) {
-                    @Override
-                    public CharSequence getCharContent(boolean ignoreEncodingErrors)
-                            throws IOException {
-                        return "class Test { void f(int x, int y) {} }";
-                    }
-                };
+                SimpleJavaFileObject.forSource(URI.create("Test.java"),
+                                               "class Test { void f(int x, int y) {} }");
         CompilationTask task =
                 tool.getTask(
                         null,
@@ -93,7 +86,7 @@ public class LegacyOutputTest {
         }
         ClassModel classFile = ClassFile.of().parse(Paths.get("Test.class"));
         MethodModel method = getMethod(classFile, "f");
-        MethodParametersAttribute attribute = method.findAttribute(Attributes.METHOD_PARAMETERS).orElse(null);
+        MethodParametersAttribute attribute = method.findAttribute(Attributes.methodParameters()).orElse(null);
         if (attribute == null) {
             return null;
         }

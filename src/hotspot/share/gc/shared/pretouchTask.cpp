@@ -68,12 +68,6 @@ void PretouchTask::pretouch(const char* task_name, char* start_address, char* en
   // Page-align the chunk size, so if start_address is also page-aligned (as
   // is common) then there won't be any pages shared by multiple chunks.
   size_t chunk_size = align_down_bounded(PretouchTask::chunk_size(), page_size);
-#ifdef LINUX
-  // When using THP we need to always pre-touch using small pages as the OS will
-  // initially always use small pages.
-  page_size = UseTransparentHugePages ? (size_t)os::vm_page_size() : page_size;
-#endif
-
   PretouchTask task(task_name, start_address, end_address, page_size, chunk_size);
   size_t total_bytes = pointer_delta(end_address, start_address, sizeof(char));
 

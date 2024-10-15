@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 
 the U.S. and other countries. CLDR data files are interpreted according to
@@ -48,6 +48,7 @@ annotations.
 			<territory type="BL">St. Barthelemy</territory>
 			<territory type="CI">Cote d’Ivoire</territory>
 			<territory type="CW">Curacao</territory>
+			<territory type="IN">Bharat</territory>
 			<territory type="KN">St. Kitts &amp; Nevis</territory>
 			<territory type="LC">St. Lucia</territory>
 			<territory type="MF">St. Martin</territory>
@@ -88,7 +89,6 @@ annotations.
 			<type key="colCaseLevel" type="yes">Case sensitive sorting karein</type>
 			<type key="collation" type="compat">Compatibility ke liye, picchla sort order</type>
 			<type key="collation" type="dictionary">Dictionary kaa sort order</type>
-			<type key="collation" type="reformed">Reform kiya gaya Sort Order</type>
 			<type key="collation" type="searchjl">Hangul initial consonant se search karein</type>
 			<type key="colNormalization" type="no">Bina normalization ke sort karein</type>
 			<type key="colNormalization" type="yes">Sort Unicode Normalized</type>
@@ -489,14 +489,14 @@ annotations.
 						<intervalFormatItem id="GyMMMd">
 							<greatestDifference id="d">G y MMM d–d</greatestDifference>
 							<greatestDifference id="G">G y MMM d – G y MMM d</greatestDifference>
-							<greatestDifference id="M">G y MMM d  – MMM d</greatestDifference>
-							<greatestDifference id="y">G y MMM d –  y d MMM</greatestDifference>
+							<greatestDifference id="M">G y MMM d – MMM d</greatestDifference>
+							<greatestDifference id="y">G y MMM d – y d MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMMEd">
 							<greatestDifference id="d">G y MMM d, E – MMM d, E</greatestDifference>
-							<greatestDifference id="G">G y MMM d, E –  G y MMM d, E</greatestDifference>
-							<greatestDifference id="M">G y MMM d, E –  MMM d, E</greatestDifference>
-							<greatestDifference id="y">G y MMM d, E –  y MMM d, E</greatestDifference>
+							<greatestDifference id="G">G y MMM d, E – G y MMM d, E</greatestDifference>
+							<greatestDifference id="M">G y MMM d, E – MMM d, E</greatestDifference>
+							<greatestDifference id="y">G y MMM d, E – y MMM d, E</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="H">
 							<greatestDifference id="H">HH – HH</greatestDifference>
@@ -1233,9 +1233,6 @@ annotations.
 			</zone>
 			<zone type="Africa/Sao_Tome">
 				<exemplarCity>Sao Tome</exemplarCity>
-			</zone>
-			<zone type="Europe/Uzhgorod">
-				<exemplarCity>Uzhgorod</exemplarCity>
 			</zone>
 			<zone type="Pacific/Honolulu">
 				<short>

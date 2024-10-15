@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,6 @@ package com.sun.hotspot.igv.view;
 import com.sun.hotspot.igv.data.InputGraph;
 import com.sun.hotspot.igv.data.services.GraphViewer;
 import com.sun.hotspot.igv.difference.Difference;
-import com.sun.hotspot.igv.graph.Diagram;
-import com.sun.hotspot.igv.settings.Settings;
 import org.openide.util.lookup.ServiceProvider;
 
 /**
@@ -38,33 +36,37 @@ import org.openide.util.lookup.ServiceProvider;
 public class GraphViewerImplementation implements GraphViewer {
 
     @Override
-    public void viewDifference(InputGraph firstGraph, InputGraph secondGraph) {
+    public InputGraph viewDifference(InputGraph firstGraph, InputGraph secondGraph) {
         if (firstGraph.getGroup() != secondGraph.getGroup()) {
             InputGraph diffGraph = Difference.createDiffGraph(firstGraph, secondGraph);
-            view(diffGraph, true);
+            return view(diffGraph, true);
         } else {
-            view(firstGraph, true);
-            EditorTopComponent etc = EditorTopComponent.findEditorForGraph(firstGraph);
-            if (etc != null) {
-                etc.getModel().selectDiffGraph(secondGraph);
-                etc.requestActive();
+            if (view(firstGraph, true) != null) {
+                EditorTopComponent etc = EditorTopComponent.findEditorForGraph(firstGraph);
+                if (etc != null) {
+                    etc.getModel().selectDiffGraph(secondGraph);
+                    etc.requestActive();
+                    return etc.getModel().getGraph();
+                }
             }
+            return null;
         }
     }
 
     @Override
-    public void view(InputGraph graph, boolean newTab) {
+    public InputGraph view(InputGraph graph, boolean newTab) {
         if (!newTab) {
             EditorTopComponent etc = EditorTopComponent.findEditorForGraph(graph);
             if (etc != null) {
                 etc.getModel().selectGraph(graph);
                 etc.requestActive();
-                return;
+                return etc.getModel().getGraph();
             }
         }
         DiagramViewModel model = new DiagramViewModel(graph);
         EditorTopComponent etc = new EditorTopComponent(model);
         etc.open();
         etc.requestActive();
+        return etc.getModel().getGraph();
     }
 }

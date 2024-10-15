@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -158,6 +158,8 @@ public abstract class SourceCodeAnalysis {
      * @param input The input String to convert
      * @return usually a singleton list of Snippet, but may be empty or multiple
      * @throws IllegalStateException if the {@code JShell} instance is closed.
+     *
+     * @since 10
      */
     public abstract List<Snippet> sourceToSnippets(String input);
 

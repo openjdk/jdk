@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,14 +94,14 @@ TEST_VM(FlagAccess, ccstr_flag) {
 
 template <typename T, int type_enum>
 static JVMFlag::Error get_flag(const char* name) {
-  JVMFlag* flag = (name == NULL) ? NULL : JVMFlag::find_flag(name);
+  JVMFlag* flag = (name == nullptr) ? nullptr : JVMFlag::find_flag(name);
 
   T val;
   return JVMFlagAccess::get<T, type_enum>(flag, &val);
 }
 
 TEST_VM(FlagAccess, wrong_format) {
-  ASSERT_EQ((get_flag<JVM_FLAG_TYPE(int)>(NULL)), JVMFlag::INVALID_FLAG);
+  ASSERT_EQ((get_flag<JVM_FLAG_TYPE(int)>(nullptr)), JVMFlag::INVALID_FLAG);
 
   // MaxRAMPercentage is a double flag
   ASSERT_EQ((get_flag<JVM_FLAG_TYPE(bool)>    ("MaxRAMPercentage")), JVMFlag::WRONG_FORMAT);

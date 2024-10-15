@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 #include "nmt/mallocTracker.hpp"
 #include "nmt/nmtCommon.hpp"
+#include "nmt/memoryFileTracker.hpp"
 #include "nmt/threadStackTracker.hpp"
 #include "nmt/virtualMemoryTracker.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -40,25 +41,6 @@
                     NativeCallStack(1) : FAKE_CALLSTACK)
 
 class MemBaseline;
-
-// Tracker is used for guarding 'release' semantics of virtual memory operation, to avoid
-// the other thread obtains and records the same region that is just 'released' by current
-// thread but before it can record the operation.
-class Tracker : public StackObj {
- public:
-  enum TrackerType {
-     uncommit,
-     release
-  };
-
- public:
-  Tracker(enum TrackerType type) : _type(type) { }
-  void record(address addr, size_t size);
- private:
-  enum TrackerType  _type;
-  // Virtual memory tracking data structures are protected by ThreadCritical lock.
-  ThreadCritical    _tc;
-};
 
 class MemTracker : AllStatic {
   friend class VirtualMemoryTrackerTest;
@@ -90,14 +72,14 @@ class MemTracker : AllStatic {
 
   // Per-malloc overhead incurred by NMT, depending on the current NMT level
   static size_t overhead_per_malloc() {
-    return enabled() ? MallocTracker::overhead_per_malloc : 0;
+    return enabled() ? MallocTracker::overhead_per_malloc() : 0;
   }
 
-  static inline void* record_malloc(void* mem_base, size_t size, MEMFLAGS flag,
+  static inline void* record_malloc(void* mem_base, size_t size, MemTag mem_tag,
     const NativeCallStack& stack) {
     assert(mem_base != nullptr, "caller should handle null");
     if (enabled()) {
-      return MallocTracker::record_malloc(mem_base, size, flag, stack);
+      return MallocTracker::record_malloc(mem_base, size, mem_tag, stack);
     }
     return mem_base;
   }
@@ -117,44 +99,60 @@ class MemTracker : AllStatic {
   }
 
   // Record creation of an arena
-  static inline void record_new_arena(MEMFLAGS flag) {
+  static inline void record_new_arena(MemTag mem_tag) {
     if (!enabled()) return;
-    MallocTracker::record_new_arena(flag);
+    MallocTracker::record_new_arena(mem_tag);
   }
 
   // Record destruction of an arena
-  static inline void record_arena_free(MEMFLAGS flag) {
+  static inline void record_arena_free(MemTag mem_tag) {
     if (!enabled()) return;
-    MallocTracker::record_arena_free(flag);
+    MallocTracker::record_arena_free(mem_tag);
   }
 
   // Record arena size change. Arena size is the size of all arena
   // chunks that are backing up the arena.
-  static inline void record_arena_size_change(ssize_t diff, MEMFLAGS flag) {
+  static inline void record_arena_size_change(ssize_t diff, MemTag mem_tag) {
     if (!enabled()) return;
-    MallocTracker::record_arena_size_change(diff, flag);
+    MallocTracker::record_arena_size_change(diff, mem_tag);
   }
 
   // Note: virtual memory operations should only ever be called after NMT initialization
   //  (we do not do any reservations before that).
 
   static inline void record_virtual_memory_reserve(void* addr, size_t size, const NativeCallStack& stack,
-    MEMFLAGS flag = mtNone) {
+    MemTag mem_tag = mtNone) {
     assert_post_init();
     if (!enabled()) return;
     if (addr != nullptr) {
       ThreadCritical tc;
-      VirtualMemoryTracker::add_reserved_region((address)addr, size, stack, flag);
+      VirtualMemoryTracker::add_reserved_region((address)addr, size, stack, mem_tag);
+    }
+  }
+
+  static inline void record_virtual_memory_release(address addr, size_t size) {
+    assert_post_init();
+    if (!enabled()) return;
+    if (addr != nullptr) {
+      VirtualMemoryTracker::remove_released_region((address)addr, size);
+    }
+  }
+
+  static inline void record_virtual_memory_uncommit(address addr, size_t size) {
+    assert_post_init();
+    if (!enabled()) return;
+    if (addr != nullptr) {
+      VirtualMemoryTracker::remove_uncommitted_region((address)addr, size);
     }
   }
 
   static inline void record_virtual_memory_reserve_and_commit(void* addr, size_t size,
-    const NativeCallStack& stack, MEMFLAGS flag = mtNone) {
+    const NativeCallStack& stack, MemTag mem_tag = mtNone) {
     assert_post_init();
     if (!enabled()) return;
     if (addr != nullptr) {
       ThreadCritical tc;
-      VirtualMemoryTracker::add_reserved_region((address)addr, size, stack, flag);
+      VirtualMemoryTracker::add_reserved_region((address)addr, size, stack, mem_tag);
       VirtualMemoryTracker::add_committed_region((address)addr, size, stack);
     }
   }
@@ -169,27 +167,60 @@ class MemTracker : AllStatic {
     }
   }
 
+  static inline MemoryFileTracker::MemoryFile* register_file(const char* descriptive_name) {
+    assert_post_init();
+    if (!enabled()) return nullptr;
+    MemoryFileTracker::Instance::Locker lock;
+    return MemoryFileTracker::Instance::make_file(descriptive_name);
+  }
+
+  static inline void remove_file(MemoryFileTracker::MemoryFile* file) {
+    assert_post_init();
+    if (!enabled()) return;
+    assert(file != nullptr, "must be");
+    MemoryFileTracker::Instance::Locker lock;
+    MemoryFileTracker::Instance::free_file(file);
+  }
+
+  static inline void allocate_memory_in(MemoryFileTracker::MemoryFile* file, size_t offset, size_t size,
+                                       const NativeCallStack& stack, MemTag mem_tag) {
+    assert_post_init();
+    if (!enabled()) return;
+    assert(file != nullptr, "must be");
+    MemoryFileTracker::Instance::Locker lock;
+    MemoryFileTracker::Instance::allocate_memory(file, offset, size, stack, mem_tag);
+  }
+
+  static inline void free_memory_in(MemoryFileTracker::MemoryFile* file,
+                                        size_t offset, size_t size) {
+    assert_post_init();
+    if (!enabled()) return;
+    assert(file != nullptr, "must be");
+    MemoryFileTracker::Instance::Locker lock;
+    MemoryFileTracker::Instance::free_memory(file, offset, size);
+  }
+
   // Given an existing memory mapping registered with NMT and a splitting
   //  address, split the mapping in two. The memory region is supposed to
   //  be fully uncommitted.
   //
   // The two new memory regions will be both registered under stack and
   //  memory flags of the original region.
-  static inline void record_virtual_memory_split_reserved(void* addr, size_t size, size_t split) {
+  static inline void record_virtual_memory_split_reserved(void* addr, size_t size, size_t split, MemTag mem_tag, MemTag split_tag) {
     assert_post_init();
     if (!enabled()) return;
     if (addr != nullptr) {
       ThreadCritical tc;
-      VirtualMemoryTracker::split_reserved_region((address)addr, size, split);
+      VirtualMemoryTracker::split_reserved_region((address)addr, size, split, mem_tag, split_tag);
     }
   }
 
-  static inline void record_virtual_memory_type(void* addr, MEMFLAGS flag) {
+  static inline void record_virtual_memory_tag(void* addr, MemTag mem_tag) {
     assert_post_init();
     if (!enabled()) return;
     if (addr != nullptr) {
       ThreadCritical tc;
-      VirtualMemoryTracker::set_reserved_region_type((address)addr, flag);
+      VirtualMemoryTracker::set_reserved_region_type((address)addr, mem_tag);
     }
   }
 
@@ -231,8 +262,8 @@ class MemTracker : AllStatic {
   static void tuning_statistics(outputStream* out);
 
   // MallocLimt: Given an allocation size s, check if mallocing this much
-  // under category f would hit either the global limit or the limit for category f.
-  static inline bool check_exceeds_limit(size_t s, MEMFLAGS f);
+  // for MemTag would hit either the global limit or the limit for MemTag.
+  static inline bool check_exceeds_limit(size_t s, MemTag mem_tag);
 
   // Given an unknown pointer, check if it points into a known region; print region if found
   // and return true; false if not found.

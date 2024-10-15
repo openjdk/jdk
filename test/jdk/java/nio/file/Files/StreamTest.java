@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,15 +72,15 @@ public class StreamTest {
      *            - linkFile(./file)
      */
     static Path testFolder;
-    static boolean supportsLinks;
+    static boolean supportsSymbolicLinks;
     static Path[] level1;
     static Path[] all;
-    static Path[] all_folowLinks;
+    static Path[] allFollowLinks;
 
     @BeforeClass
     void setupTestFolder() throws IOException {
         testFolder = TestUtil.createTemporaryDirectory();
-        supportsLinks = TestUtil.supportsLinks(testFolder);
+        supportsSymbolicLinks = TestUtil.supportsSymbolicLinks(testFolder);
         TreeSet<Path> set = new TreeSet<>();
 
         // Level 1
@@ -96,7 +96,7 @@ public class StreamTest {
         set.add(file);
         set.add(dir);
         set.add(dir2);
-        if (supportsLinks) {
+        if (supportsSymbolicLinks) {
             Path tmp = testFolder.resolve("linkDir");
             Files.createSymbolicLink(tmp, dir);
             set.add(tmp);
@@ -113,7 +113,7 @@ public class StreamTest {
         tmp = dir.resolve("f1");
         Files.createFile(tmp);
         set.add(tmp);
-        if (supportsLinks) {
+        if (supportsSymbolicLinks) {
             tmp = dir.resolve("lnDir2");
             Files.createSymbolicLink(tmp, dir2);
             set.add(tmp);
@@ -123,14 +123,14 @@ public class StreamTest {
         all = set.toArray(new Path[0]);
 
         // Follow links
-        if (supportsLinks) {
+        if (supportsSymbolicLinks) {
             tmp = testFolder.resolve("linkDir");
             set.add(tmp.resolve("d1"));
             set.add(tmp.resolve("f1"));
             tmp = tmp.resolve("lnDir2");
             set.add(tmp);
         }
-        all_folowLinks = set.toArray(new Path[0]);
+        allFollowLinks = set.toArray(new Path[0]);
     }
 
     @AfterClass
@@ -179,7 +179,7 @@ public class StreamTest {
         // We still want to test the behavior with FOLLOW_LINKS option.
         try (Stream<Path> s = Files.walk(testFolder, FileVisitOption.FOLLOW_LINKS)) {
             Object[] actual = s.sorted().toArray();
-            assertEquals(actual, all_folowLinks);
+            assertEquals(actual, allFollowLinks);
         } catch (IOException ioe) {
             fail("Unexpected IOException");
         }
@@ -212,7 +212,7 @@ public class StreamTest {
     }
 
     public void testWalkFollowLinkLoop() {
-        if (!supportsLinks) {
+        if (!supportsSymbolicLinks) {
             return;
         }
 
@@ -513,7 +513,7 @@ public class StreamTest {
         Path triggerLink = null;
         Path linkTriggerDir = null;
         Path linkTriggerFile = null;
-        if (supportsLinks) {
+        if (supportsSymbolicLinks) {
             Path dir = testFolder.resolve("dir");
             triggerLink = Files.createSymbolicLink(dir.resolve("SecurityException"), empty);
             linkTriggerDir = Files.createSymbolicLink(dir.resolve("lnDirSE"), triggerDir);
@@ -539,7 +539,7 @@ public class StreamTest {
                 assertEqualsNoOrder(result, new String[] { "dir2", "SecurityException", "fileInSE", "file" });
             }
 
-            if (supportsLinks) {
+            if (supportsSymbolicLinks) {
                 try (Stream<Path> s = Files.list(fakeRoot.resolve("dir"))) {
                     String[] result = s.map(path -> path.getFileName().toString())
                                        .toArray(String[]::new);
@@ -562,7 +562,7 @@ public class StreamTest {
                 assertEqualsNoOrder(result, new String[] { "dir2", "file" });
             }
 
-            if (supportsLinks) {
+            if (supportsSymbolicLinks) {
                 // not following links
                 try (Stream<Path> s = Files.walk(fakeRoot.resolve("dir"))) {
                     String[] result = s.map(path -> path.getFileName().toString())
@@ -639,7 +639,7 @@ public class StreamTest {
             if (fs != null) {
                 fs.close();
             }
-            if (supportsLinks) {
+            if (supportsSymbolicLinks) {
                 Files.delete(triggerLink);
                 Files.delete(linkTriggerDir);
                 Files.delete(linkTriggerFile);

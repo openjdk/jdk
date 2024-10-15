@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
 // Copyright (c) 2020, 2021, Huawei Technologies Co., Ltd. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
@@ -32,7 +32,7 @@ source_hpp %{
 
 source %{
 
-static void x_load_barrier(MacroAssembler& _masm, const MachNode* node, Address ref_addr, Register ref, Register tmp, int barrier_data) {
+static void x_load_barrier(MacroAssembler* masm, const MachNode* node, Address ref_addr, Register ref, Register tmp, int barrier_data) {
   if (barrier_data == XLoadBarrierElided) {
     return;
   }
@@ -43,7 +43,7 @@ static void x_load_barrier(MacroAssembler& _masm, const MachNode* node, Address 
   __ bind(*stub->continuation());
 }
 
-static void x_load_barrier_slow_path(MacroAssembler& _masm, const MachNode* node, Address ref_addr, Register ref, Register tmp) {
+static void x_load_barrier_slow_path(MacroAssembler* masm, const MachNode* node, Address ref_addr, Register ref, Register tmp) {
   XLoadBarrierStubC2* const stub = XLoadBarrierStubC2::create(node, ref_addr, ref, tmp, XLoadBarrierStrong);
   __ j(*stub->entry());
   __ bind(*stub->continuation());
@@ -52,11 +52,11 @@ static void x_load_barrier_slow_path(MacroAssembler& _masm, const MachNode* node
 %}
 
 // Load Pointer
-instruct xLoadP(iRegPNoSp dst, memory mem, iRegPNoSp tmp)
+instruct xLoadP(iRegPNoSp dst, memory mem, iRegPNoSp tmp, rFlagsReg cr)
 %{
   match(Set dst (LoadP mem));
   predicate(UseZGC && !ZGenerational && (n->as_Load()->barrier_data() != 0));
-  effect(TEMP dst, TEMP tmp);
+  effect(TEMP dst, TEMP tmp, KILL cr);
 
   ins_cost(4 * DEFAULT_COST);
 
@@ -65,17 +65,17 @@ instruct xLoadP(iRegPNoSp dst, memory mem, iRegPNoSp tmp)
   ins_encode %{
     const Address ref_addr (as_Register($mem$$base), $mem$$disp);
     __ ld($dst$$Register, ref_addr);
-    x_load_barrier(_masm, this, ref_addr, $dst$$Register, $tmp$$Register /* tmp */, barrier_data());
+    x_load_barrier(masm, this, ref_addr, $dst$$Register, $tmp$$Register /* tmp */, barrier_data());
   %}
 
   ins_pipe(iload_reg_mem);
 %}
 
-instruct xCompareAndSwapP(iRegINoSp res, indirect mem, iRegP oldval, iRegP newval, iRegPNoSp tmp) %{
+instruct xCompareAndSwapP(iRegINoSp res, indirect mem, iRegP oldval, iRegP newval, iRegPNoSp tmp, rFlagsReg cr) %{
   match(Set res (CompareAndSwapP mem (Binary oldval newval)));
   match(Set res (WeakCompareAndSwapP mem (Binary oldval newval)));
   predicate(UseZGC && !ZGenerational && !needs_acquiring_load_reserved(n) && n->as_LoadStore()->barrier_data() == XLoadBarrierStrong);
-  effect(TEMP_DEF res, TEMP tmp);
+  effect(TEMP_DEF res, TEMP tmp, KILL cr);
 
   ins_cost(2 * VOLATILE_REF_COST);
 
@@ -94,7 +94,7 @@ instruct xCompareAndSwapP(iRegINoSp res, indirect mem, iRegP oldval, iRegP newva
       __ ld(t0, Address(xthread, XThreadLocalData::address_bad_mask_offset()));
       __ andr(t0, t0, $tmp$$Register);
       __ beqz(t0, good);
-      x_load_barrier_slow_path(_masm, this, Address($mem$$Register), $tmp$$Register /* ref */, $res$$Register /* tmp */);
+      x_load_barrier_slow_path(masm, this, Address($mem$$Register), $tmp$$Register /* ref */, $res$$Register /* tmp */);
       __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::int64,
                  Assembler::relaxed /* acquire */, Assembler::rl /* release */, $res$$Register,
                  true /* result_as_bool */);
@@ -105,11 +105,11 @@ instruct xCompareAndSwapP(iRegINoSp res, indirect mem, iRegP oldval, iRegP newva
   ins_pipe(pipe_slow);
 %}
 
-instruct xCompareAndSwapPAcq(iRegINoSp res, indirect mem, iRegP oldval, iRegP newval, iRegPNoSp tmp) %{
+instruct xCompareAndSwapPAcq(iRegINoSp res, indirect mem, iRegP oldval, iRegP newval, iRegPNoSp tmp, rFlagsReg cr) %{
   match(Set res (CompareAndSwapP mem (Binary oldval newval)));
   match(Set res (WeakCompareAndSwapP mem (Binary oldval newval)));
   predicate(UseZGC && !ZGenerational && needs_acquiring_load_reserved(n) && (n->as_LoadStore()->barrier_data() == XLoadBarrierStrong));
-  effect(TEMP_DEF res, TEMP tmp);
+  effect(TEMP_DEF res, TEMP tmp, KILL cr);
 
   ins_cost(2 * VOLATILE_REF_COST);
 
@@ -128,7 +128,7 @@ instruct xCompareAndSwapPAcq(iRegINoSp res, indirect mem, iRegP oldval, iRegP ne
       __ ld(t0, Address(xthread, XThreadLocalData::address_bad_mask_offset()));
       __ andr(t0, t0, $tmp$$Register);
       __ beqz(t0, good);
-      x_load_barrier_slow_path(_masm, this, Address($mem$$Register), $tmp$$Register /* ref */, $res$$Register /* tmp */);
+      x_load_barrier_slow_path(masm, this, Address($mem$$Register), $tmp$$Register /* ref */, $res$$Register /* tmp */);
       __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::int64,
                  Assembler::aq /* acquire */, Assembler::rl /* release */, $res$$Register,
                  true /* result_as_bool */);
@@ -139,10 +139,10 @@ instruct xCompareAndSwapPAcq(iRegINoSp res, indirect mem, iRegP oldval, iRegP ne
   ins_pipe(pipe_slow);
 %}
 
-instruct xCompareAndExchangeP(iRegPNoSp res, indirect mem, iRegP oldval, iRegP newval, iRegPNoSp tmp) %{
+instruct xCompareAndExchangeP(iRegPNoSp res, indirect mem, iRegP oldval, iRegP newval, iRegPNoSp tmp, rFlagsReg cr) %{
   match(Set res (CompareAndExchangeP mem (Binary oldval newval)));
   predicate(UseZGC && !ZGenerational && !needs_acquiring_load_reserved(n) && n->as_LoadStore()->barrier_data() == XLoadBarrierStrong);
-  effect(TEMP_DEF res, TEMP tmp);
+  effect(TEMP_DEF res, TEMP tmp, KILL cr);
 
   ins_cost(2 * VOLATILE_REF_COST);
 
@@ -157,7 +157,7 @@ instruct xCompareAndExchangeP(iRegPNoSp res, indirect mem, iRegP oldval, iRegP n
       __ ld(t0, Address(xthread, XThreadLocalData::address_bad_mask_offset()));
       __ andr(t0, t0, $res$$Register);
       __ beqz(t0, good);
-      x_load_barrier_slow_path(_masm, this, Address($mem$$Register), $res$$Register /* ref */, $tmp$$Register /* tmp */);
+      x_load_barrier_slow_path(masm, this, Address($mem$$Register), $res$$Register /* ref */, $tmp$$Register /* tmp */);
       __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::int64,
                  Assembler::relaxed /* acquire */, Assembler::rl /* release */, $res$$Register);
       __ bind(good);
@@ -167,10 +167,10 @@ instruct xCompareAndExchangeP(iRegPNoSp res, indirect mem, iRegP oldval, iRegP n
   ins_pipe(pipe_slow);
 %}
 
-instruct xCompareAndExchangePAcq(iRegPNoSp res, indirect mem, iRegP oldval, iRegP newval, iRegPNoSp tmp) %{
+instruct xCompareAndExchangePAcq(iRegPNoSp res, indirect mem, iRegP oldval, iRegP newval, iRegPNoSp tmp, rFlagsReg cr) %{
   match(Set res (CompareAndExchangeP mem (Binary oldval newval)));
   predicate(UseZGC && !ZGenerational && needs_acquiring_load_reserved(n) && n->as_LoadStore()->barrier_data() == XLoadBarrierStrong);
-  effect(TEMP_DEF res, TEMP tmp);
+  effect(TEMP_DEF res, TEMP tmp, KILL cr);
 
   ins_cost(2 * VOLATILE_REF_COST);
 
@@ -185,7 +185,7 @@ instruct xCompareAndExchangePAcq(iRegPNoSp res, indirect mem, iRegP oldval, iReg
       __ ld(t0, Address(xthread, XThreadLocalData::address_bad_mask_offset()));
       __ andr(t0, t0, $res$$Register);
       __ beqz(t0, good);
-      x_load_barrier_slow_path(_masm, this, Address($mem$$Register), $res$$Register /* ref */, $tmp$$Register /* tmp */);
+      x_load_barrier_slow_path(masm, this, Address($mem$$Register), $res$$Register /* ref */, $tmp$$Register /* tmp */);
       __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::int64,
                  Assembler::aq /* acquire */, Assembler::rl /* release */, $res$$Register);
       __ bind(good);
@@ -195,10 +195,10 @@ instruct xCompareAndExchangePAcq(iRegPNoSp res, indirect mem, iRegP oldval, iReg
   ins_pipe(pipe_slow);
 %}
 
-instruct xGetAndSetP(indirect mem, iRegP newv, iRegPNoSp prev, iRegPNoSp tmp) %{
+instruct xGetAndSetP(indirect mem, iRegP newv, iRegPNoSp prev, iRegPNoSp tmp, rFlagsReg cr) %{
   match(Set prev (GetAndSetP mem newv));
   predicate(UseZGC && !ZGenerational && !needs_acquiring_load_reserved(n) && n->as_LoadStore()->barrier_data() != 0);
-  effect(TEMP_DEF prev, TEMP tmp);
+  effect(TEMP_DEF prev, TEMP tmp, KILL cr);
 
   ins_cost(2 * VOLATILE_REF_COST);
 
@@ -206,16 +206,16 @@ instruct xGetAndSetP(indirect mem, iRegP newv, iRegPNoSp prev, iRegPNoSp tmp) %{
 
   ins_encode %{
     __ atomic_xchg($prev$$Register, $newv$$Register, as_Register($mem$$base));
-    x_load_barrier(_masm, this, Address(noreg, 0), $prev$$Register, $tmp$$Register /* tmp */, barrier_data());
+    x_load_barrier(masm, this, Address(noreg, 0), $prev$$Register, $tmp$$Register /* tmp */, barrier_data());
   %}
 
   ins_pipe(pipe_serial);
 %}
 
-instruct xGetAndSetPAcq(indirect mem, iRegP newv, iRegPNoSp prev, iRegPNoSp tmp) %{
+instruct xGetAndSetPAcq(indirect mem, iRegP newv, iRegPNoSp prev, iRegPNoSp tmp, rFlagsReg cr) %{
   match(Set prev (GetAndSetP mem newv));
   predicate(UseZGC && !ZGenerational && needs_acquiring_load_reserved(n) && (n->as_LoadStore()->barrier_data() != 0));
-  effect(TEMP_DEF prev, TEMP tmp);
+  effect(TEMP_DEF prev, TEMP tmp, KILL cr);
 
   ins_cost(VOLATILE_REF_COST);
 
@@ -223,7 +223,7 @@ instruct xGetAndSetPAcq(indirect mem, iRegP newv, iRegPNoSp prev, iRegPNoSp tmp)
 
   ins_encode %{
     __ atomic_xchgal($prev$$Register, $newv$$Register, as_Register($mem$$base));
-    x_load_barrier(_masm, this, Address(noreg, 0), $prev$$Register, $tmp$$Register /* tmp */, barrier_data());
+    x_load_barrier(masm, this, Address(noreg, 0), $prev$$Register, $tmp$$Register /* tmp */, barrier_data());
   %}
   ins_pipe(pipe_serial);
 %}

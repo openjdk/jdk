@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,8 @@ class VirtualSpace;
 // fixed, but _ptr_end can be expanded as more objects are dumped.
 class ArchivePtrMarker : AllStatic {
   static CHeapBitMap*  _ptrmap;
+  static CHeapBitMap*  _rw_ptrmap;
+  static CHeapBitMap*  _ro_ptrmap;
   static VirtualSpace* _vs;
 
   // Once _ptrmap is compacted, we don't allow bit marking anymore. This is to
@@ -53,6 +55,7 @@ class ArchivePtrMarker : AllStatic {
 
 public:
   static void initialize(CHeapBitMap* ptrmap, VirtualSpace* vs);
+  static void initialize_rw_ro_maps(CHeapBitMap* rw_ptrmap, CHeapBitMap* ro_ptrmap);
   static void mark_pointer(address* ptr_loc);
   static void clear_pointer(address* ptr_loc);
   static void compact(address relocatable_base, address relocatable_end);
@@ -73,8 +76,18 @@ public:
     return _ptrmap;
   }
 
+  static CHeapBitMap* rw_ptrmap() {
+    return _rw_ptrmap;
+  }
+
+  static CHeapBitMap* ro_ptrmap() {
+    return _ro_ptrmap;
+  }
+
   static void reset_map_and_vs() {
     _ptrmap = nullptr;
+    _rw_ptrmap = nullptr;
+    _ro_ptrmap = nullptr;
     _vs = nullptr;
   }
 };
@@ -202,7 +215,10 @@ public:
     _dump_region->append_intptr_t((intptr_t)tag);
   }
 
-  void do_region(u_char* start, size_t size);
+  char* region_top() {
+    return _dump_region->top();
+  }
+
   bool reading() const { return false; }
 };
 
@@ -225,13 +241,53 @@ public:
   void do_int(int* p);
   void do_bool(bool *p);
   void do_tag(int tag);
-  void do_region(u_char* start, size_t size);
   bool reading() const { return true; }
+  char* region_top() { return nullptr; }
 };
 
 class ArchiveUtils {
 public:
   static void log_to_classlist(BootstrapInfo* bootstrap_specifier, TRAPS) NOT_CDS_RETURN;
+};
+
+class HeapRootSegments {
+private:
+  size_t _base_offset;
+  size_t _count;
+  int _roots_count;
+  int _max_size_in_bytes;
+  int _max_size_in_elems;
+
+public:
+  size_t base_offset() { return _base_offset; }
+  size_t count() { return _count; }
+  int roots_count() { return _roots_count; }
+  int max_size_in_bytes() { return _max_size_in_bytes; }
+  int max_size_in_elems() { return _max_size_in_elems; }
+
+  size_t size_in_bytes(size_t seg_idx);
+  int size_in_elems(size_t seg_idx);
+  size_t segment_offset(size_t seg_idx);
+
+  // Trivial copy assignments are allowed to copy the entire object representation.
+  // We also inline this class into archive header. Therefore, it is important to make
+  // sure any gaps in object representation are initialized to zeroes. This is why
+  // constructors memset before doing field assignments.
+  HeapRootSegments() {
+    memset(this, 0, sizeof(*this));
+  }
+  HeapRootSegments(size_t base_offset, int roots_count, int max_size_in_bytes, int max_size_in_elems) {
+    memset(this, 0, sizeof(*this));
+    _base_offset = base_offset;
+    _count = (roots_count + max_size_in_elems - 1) / max_size_in_elems;
+    _roots_count = roots_count;
+    _max_size_in_bytes = max_size_in_bytes;
+    _max_size_in_elems = max_size_in_elems;
+  }
+
+  // This class is trivially copyable and assignable.
+  HeapRootSegments(const HeapRootSegments&) = default;
+  HeapRootSegments& operator=(const HeapRootSegments&) = default;
 };
 
 #endif // SHARE_CDS_ARCHIVEUTILS_HPP

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -1478,9 +1478,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/Creston">
 				<exemplarCity draft="unconfirmed">ᱠᱨᱮᱥᱴᱚᱱ</exemplarCity>
 			</zone>
-			<zone type="America/Yellowknife">
-				<exemplarCity draft="unconfirmed">ᱭᱮᱞᱚᱱᱟᱭᱤᱯᱷ</exemplarCity>
-			</zone>
 			<zone type="America/Edmonton">
 				<exemplarCity draft="unconfirmed">ᱮᱰᱢᱚᱱᱴᱚᱱ</exemplarCity>
 			</zone>
@@ -1499,29 +1496,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/Resolute">
 				<exemplarCity draft="unconfirmed">ᱨᱤᱥᱚᱞᱭᱩᱴ</exemplarCity>
 			</zone>
-			<zone type="America/Rainy_River">
-				<exemplarCity draft="unconfirmed">ᱨᱚᱱᱤ ᱜᱟᱰᱟ</exemplarCity>
-			</zone>
 			<zone type="America/Rankin_Inlet">
 				<exemplarCity draft="unconfirmed">ᱨᱟᱱᱠᱤᱱ ᱤᱱᱞᱮᱴ</exemplarCity>
 			</zone>
 			<zone type="America/Coral_Harbour">
 				<exemplarCity draft="unconfirmed">ᱟᱴᱤᱠᱚᱠᱟᱱ</exemplarCity>
 			</zone>
-			<zone type="America/Thunder_Bay">
-				<exemplarCity draft="unconfirmed">ᱛᱷᱚᱱᱰᱚᱨ ᱵᱮ</exemplarCity>
-			</zone>
-			<zone type="America/Nipigon">
-				<exemplarCity draft="unconfirmed">ᱱᱤᱯᱤᱜᱚᱱ</exemplarCity>
-			</zone>
 			<zone type="America/Toronto">
 				<exemplarCity draft="unconfirmed">ᱴᱚᱨᱚᱱᱴᱚ</exemplarCity>
 			</zone>
 			<zone type="America/Iqaluit">
 				<exemplarCity draft="unconfirmed">ᱤᱠᱟᱞᱩᱣᱤᱛ</exemplarCity>
-			</zone>
-			<zone type="America/Pangnirtung">
-				<exemplarCity draft="unconfirmed">ᱯᱟᱝᱱᱤᱨᱛᱩᱝ</exemplarCity>
 			</zone>
 			<zone type="America/Moncton">
 				<exemplarCity draft="unconfirmed">ᱢᱚᱱᱠᱴᱚᱱ</exemplarCity>
@@ -1872,13 +1857,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic draft="unconfirmed">ᱦᱟᱣᱟᱭᱤᱼᱟᱞᱮᱣᱴᱤᱭᱟᱱ ᱚᱠᱛᱚ</generic>
 					<standard draft="unconfirmed">ᱦᱟᱣᱟᱭᱤᱼᱟᱞᱮᱣᱴᱤᱭᱟᱱ ᱢᱟᱱᱚᱠ ᱚᱠᱛᱚ</standard>
 					<daylight draft="unconfirmed">ᱦᱟᱣᱟᱭᱤᱼᱟᱞᱮᱣᱴᱤᱭᱟᱱ ᱥᱤᱧᱟᱜ ᱚᱠᱛᱚ</daylight>
-				</long>
-			</metazone>
-			<metazone type="Mexico_Northwest">
-				<long>
-					<generic draft="unconfirmed">ᱮᱛᱚᱢᱯᱟᱪᱮ ᱢᱚᱠᱥᱤᱠᱚ ᱚᱠᱛᱚ</generic>
-					<standard draft="unconfirmed">ᱮᱛᱚᱢᱯᱟᱪᱮ ᱢᱚᱠᱥᱤᱠᱚ ᱢᱟᱱᱚᱠ ᱚᱠᱛᱚ</standard>
-					<daylight draft="unconfirmed">ᱮᱛᱚᱢᱯᱟᱪᱮ ᱢᱚᱠᱥᱤᱠᱚ ᱥᱤᱧᱟᱜ ᱚᱠᱛᱚ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">

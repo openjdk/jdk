@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8008577 8138613
+ * @bug 8008577 8138613 8174269
  * @summary Check whether CLDR locale provider adapter is enabled by default
  * @compile -XDignore.symbol.file ExpectedAdapterTypes.java
  * @modules java.base/sun.util.locale.provider
@@ -42,7 +42,7 @@ public class ExpectedAdapterTypes {
 
     static final LocaleProviderAdapter.Type[] expected = {
         LocaleProviderAdapter.Type.CLDR,
-        LocaleProviderAdapter.Type.JRE,
+        LocaleProviderAdapter.Type.FALLBACK,
     };
 
     /**

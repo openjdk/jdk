@@ -65,7 +65,6 @@ public class NonStandardNames {
 
         // test PKCS9Attributes.toString(), PKCS9Attributes.getAttributes()
         System.out.println(authed);
-        authed.getAttributes();
 
         Signature s = Signature.getInstance("SHA256withRSA");
         s.initSign(cakg.getPrivateKey());

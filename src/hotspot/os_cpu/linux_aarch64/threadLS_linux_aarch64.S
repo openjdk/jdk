@@ -1,4 +1,5 @@
 // Copyright (c) 2015, 2022, Red Hat Inc. All rights reserved.
+// Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -19,28 +20,27 @@
 // or visit www.oracle.com if you need additional information or have any
 // questions.
 
+#include "defs.S.inc"
+
         // JavaThread::aarch64_get_thread_helper()
         //
         // Return the current thread pointer in x0.
         // Clobber x1, flags.
         // All other registers are preserved,
 
-	.global	_ZN10JavaThread25aarch64_get_thread_helperEv
-	.type	_ZN10JavaThread25aarch64_get_thread_helperEv, %function
+DECLARE_FUNC(_ZN10JavaThread25aarch64_get_thread_helperEv):
+        hint #0x19      // paciasp
+        stp x29, x30, [sp, -16]!
+        adrp x0, :tlsdesc:_ZN6Thread12_thr_currentE
+        ldr x1, [x0, #:tlsdesc_lo12:_ZN6Thread12_thr_currentE]
+        add x0, x0, :tlsdesc_lo12:_ZN6Thread12_thr_currentE
+        .tlsdesccall _ZN6Thread12_thr_currentE
+        blr x1
+        mrs x1, tpidr_el0
+        add x0, x1, x0
+        ldr x0, [x0]
+        ldp x29, x30, [sp], 16
+        hint #0x1d      // autiasp
+        ret
 
-_ZN10JavaThread25aarch64_get_thread_helperEv:
-	hint #0x19      // paciasp
-	stp x29, x30, [sp, -16]!
-	adrp x0, :tlsdesc:_ZN6Thread12_thr_currentE
-	ldr x1, [x0, #:tlsdesc_lo12:_ZN6Thread12_thr_currentE]
-	add x0, x0, :tlsdesc_lo12:_ZN6Thread12_thr_currentE
-	.tlsdesccall _ZN6Thread12_thr_currentE
-	blr x1
-	mrs x1, tpidr_el0
-	add x0, x1, x0
-	ldr x0, [x0]
-	ldp x29, x30, [sp], 16
-	hint #0x1d      // autiasp
-	ret
-
-	.size _ZN10JavaThread25aarch64_get_thread_helperEv, .-_ZN10JavaThread25aarch64_get_thread_helperEv
+        .size _ZN10JavaThread25aarch64_get_thread_helperEv, .-_ZN10JavaThread25aarch64_get_thread_helperEv

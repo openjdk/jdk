@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@
 #include "utilities/ostream.hpp"
 
 TEST_VM(LogTagSetDescriptions, describe) {
-  for (LogTagSetDescription* d = tagset_descriptions; d->tagset != NULL; d++) {
+  for (LogTagSetDescription* d = tagset_descriptions; d->tagset != nullptr; d++) {
     char expected[1 * K];
     d->tagset->label(expected, sizeof(expected), "+");
     jio_snprintf(expected + strlen(expected),
@@ -51,12 +51,12 @@ TEST_VM(LogTagSetDescriptions, command_line_help) {
   ResourceMark rm;
   const char* filename = prepend_temp_dir("logtagset_descriptions");
   FILE* fp = os::fopen(filename, "w+");
-  ASSERT_NE((void*)NULL, fp);
+  ASSERT_NE((void*)nullptr, fp);
   fileStream stream(fp);
   LogConfiguration::print_command_line_help(&stream);
   fclose(fp);
 
-  for (LogTagSetDescription* d = tagset_descriptions; d->tagset != NULL; d++) {
+  for (LogTagSetDescription* d = tagset_descriptions; d->tagset != nullptr; d++) {
     char expected[1 * K];
     d->tagset->label(expected, sizeof(expected), "+");
     jio_snprintf(expected + strlen(expected),

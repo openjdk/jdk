@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 
 Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
@@ -1098,7 +1098,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="phonebook">Terefuni sesewara muakaresawa</type>
 			<type key="collation" type="phonetic" draft="contributed">Yupurawakasawa terefuniara mukaresawa</type>
 			<type key="collation" type="pinyin">Pin-yin mukaresawa</type>
-			<type key="collation" type="reformed">Muakaresawa amũrupisawaira</type>
 			<type key="collation" type="search">Sikaisá purusawa panhérupí</type>
 			<type key="collation" type="searchjl" draft="contributed">Resikai kũsuãti uyupiruwa hangul rupí</type>
 			<type key="collation" type="standard">Mukaresawa retewa</type>
@@ -2247,9 +2246,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<regionFormat>Hurariyu {0}</regionFormat>
 			<regionFormat type="daylight">Kurasí Ara Hurariyu: {0}</regionFormat>
 			<regionFormat type="standard">Hurariyu Retewa: {0}</regionFormat>
-			<zone type="America/Santa_Isabel">
-				<exemplarCity>Sãta Isabeu</exemplarCity>
-			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>Hurariyu Mũdi turususawa Kurdenadu</standard>
@@ -2362,9 +2358,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Australia/Melbourne">
 				<exemplarCity>Meubúni</exemplarCity>
-			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity>Kurie</exemplarCity>
 			</zone>
 			<zone type="Australia/Hobart">
 				<exemplarCity>Hobati</exemplarCity>
@@ -2510,9 +2503,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Creston">
 				<exemplarCity>Kerestũ</exemplarCity>
 			</zone>
-			<zone type="America/Yellowknife">
-				<exemplarCity>Kisé-tawá</exemplarCity>
-			</zone>
 			<zone type="America/Edmonton">
 				<exemplarCity>Edimũtũ</exemplarCity>
 			</zone>
@@ -2531,29 +2521,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Resolute">
 				<exemplarCity>Resoruti</exemplarCity>
 			</zone>
-			<zone type="America/Rainy_River">
-				<exemplarCity>Paranã Amanawera</exemplarCity>
-			</zone>
 			<zone type="America/Rankin_Inlet">
 				<exemplarCity>Rãkĩ Uikesawa</exemplarCity>
 			</zone>
 			<zone type="America/Coral_Harbour">
 				<exemplarCity>Atikokã</exemplarCity>
 			</zone>
-			<zone type="America/Thunder_Bay">
-				<exemplarCity>Tupã Kuara</exemplarCity>
-			</zone>
-			<zone type="America/Nipigon">
-				<exemplarCity>Nipigũ</exemplarCity>
-			</zone>
 			<zone type="America/Toronto">
 				<exemplarCity>Turũtu</exemplarCity>
 			</zone>
 			<zone type="America/Iqaluit">
 				<exemplarCity>Ikaruiti</exemplarCity>
-			</zone>
-			<zone type="America/Pangnirtung">
-				<exemplarCity>Pãginitũgi</exemplarCity>
 			</zone>
 			<zone type="America/Moncton">
 				<exemplarCity>Mũkitũ</exemplarCity>
@@ -3311,17 +3289,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Africa/Dar_es_Salaam">
 				<exemplarCity>Katuawa ruka</exemplarCity>
 			</zone>
-			<zone type="Europe/Uzhgorod">
-				<exemplarCity>Usigurudi</exemplarCity>
-			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>Kiyewe</exemplarCity>
 			</zone>
 			<zone type="Europe/Simferopol">
 				<exemplarCity>Sĩwerupu</exemplarCity>
-			</zone>
-			<zone type="Europe/Zaporozhye">
-				<exemplarCity>Saporisiya</exemplarCity>
 			</zone>
 			<zone type="Africa/Kampala">
 				<exemplarCity>Kãpara</exemplarCity>
@@ -3337,9 +3309,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Pacific/Honolulu">
 				<exemplarCity>Hunururu</exemplarCity>
-			</zone>
-			<zone type="Pacific/Johnston">
-				<exemplarCity>Jũsitũ</exemplarCity>
 			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>Ãkurage</exemplarCity>
@@ -4035,11 +4004,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>Makau Kurasí Ara Hurariyu</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>Kapuãma Makikuari Hurariyu</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>Magadã Hurariyu</generic>
@@ -4077,13 +4041,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Mawson">
 				<long>
 					<standard>Mausũ Hurariyu</standard>
-				</long>
-			</metazone>
-			<metazone type="Mexico_Northwest">
-				<long>
-					<generic>Mẽsiku Nutiwesiti Hurariyu</generic>
-					<standard>Mẽsiku Nutiwesiti Hurariyu Retewa</standard>
-					<daylight>Mẽsiku Nutiwesiti Kurasí Ara Hurariyu</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">

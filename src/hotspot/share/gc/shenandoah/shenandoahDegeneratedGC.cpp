@@ -44,7 +44,8 @@
 
 ShenandoahDegenGC::ShenandoahDegenGC(ShenandoahDegenPoint degen_point) :
   ShenandoahGC(),
-  _degen_point(degen_point) {
+  _degen_point(degen_point),
+  _abbreviated(false) {
 }
 
 bool ShenandoahDegenGC::collect(GCCause::Cause cause) {
@@ -193,6 +194,8 @@ void ShenandoahDegenGC::op_degenerated() {
       if (heap->has_forwarded_objects()) {
         op_init_updaterefs();
         assert(!heap->cancelled_gc(), "STW reference update can not OOM");
+      } else {
+        _abbreviated = true;
       }
 
     case _degenerated_updaterefs:
@@ -225,11 +228,12 @@ void ShenandoahDegenGC::op_degenerated() {
   // Check for futility and fail. There is no reason to do several back-to-back Degenerated cycles,
   // because that probably means the heap is overloaded and/or fragmented.
   if (!metrics.is_good_progress()) {
-    heap->notify_gc_no_progress();
     heap->cancel_gc(GCCause::_shenandoah_upgrade_to_full_gc);
     op_degenerated_futile();
   } else {
     heap->notify_gc_progress();
+    heap->shenandoah_policy()->record_success_degenerated(_abbreviated);
+    heap->heuristics()->record_success_degenerated();
   }
 }
 
@@ -272,12 +276,12 @@ void ShenandoahDegenGC::op_prepare_evacuation() {
   }
 
   if (!heap->collection_set()->is_empty()) {
+    if (ShenandoahVerify) {
+      heap->verifier()->verify_before_evacuation();
+    }
+
     heap->set_evacuation_in_progress(true);
     heap->set_has_forwarded_objects(true);
-
-    if(ShenandoahVerify) {
-      heap->verifier()->verify_during_evacuation();
-    }
   } else {
     if (ShenandoahVerify) {
       heap->verifier()->verify_after_concmark();
@@ -343,17 +347,11 @@ void ShenandoahDegenGC::op_cleanup_complete() {
 }
 
 void ShenandoahDegenGC::op_degenerated_fail() {
-  log_info(gc)("Cannot finish degeneration, upgrading to Full GC");
-  ShenandoahHeap::heap()->shenandoah_policy()->record_degenerated_upgrade_to_full();
-
-  ShenandoahFullGC full_gc;
-  full_gc.op_full(GCCause::_shenandoah_upgrade_to_full_gc);
+  upgrade_to_full();
 }
 
 void ShenandoahDegenGC::op_degenerated_futile() {
-  ShenandoahHeap::heap()->shenandoah_policy()->record_degenerated_upgrade_to_full();
-  ShenandoahFullGC full_gc;
-  full_gc.op_full(GCCause::_shenandoah_upgrade_to_full_gc);
+  upgrade_to_full();
 }
 
 const char* ShenandoahDegenGC::degen_event_message(ShenandoahDegenPoint point) const {
@@ -372,4 +370,11 @@ const char* ShenandoahDegenGC::degen_event_message(ShenandoahDegenPoint point) c
       ShouldNotReachHere();
       return "ERROR";
   }
+}
+
+void ShenandoahDegenGC::upgrade_to_full() {
+  log_info(gc)("Degenerated GC upgrading to Full GC");
+  ShenandoahHeap::heap()->shenandoah_policy()->record_degenerated_upgrade_to_full();
+  ShenandoahFullGC full_gc;
+  full_gc.op_full(GCCause::_shenandoah_upgrade_to_full_gc);
 }
