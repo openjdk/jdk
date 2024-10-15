@@ -185,15 +185,23 @@ public class TCKInstant extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     // now()
     //-----------------------------------------------------------------------
-    @Test(timeOut=60000)
+    @Test
     public void now() {
-        Instant expected, test;
-        long diff;
+        long beforeMillis, instantMillis, afterMillis, diff;
+        int retryRemaining = 5; // MAX_RETRY_COUNT
         do {
-            expected = Instant.now(Clock.systemUTC());
-            test = Instant.now();
-            diff = Math.abs(test.toEpochMilli() - expected.toEpochMilli());
-        } while( diff > 100 ); // retry if more than 0.1 sec
+            beforeMillis = Instant.now(Clock.systemUTC()).toEpochMilli();
+            instantMillis = Instant.now().toEpochMilli();
+            afterMillis = Instant.now(Clock.systemUTC()).toEpochMilli();
+            diff = instantMillis - beforeMillis;
+            if (instantMillis < beforeMillis || instantMillis > afterMillis) {
+                throw new RuntimeException(": Invalid instant: (~" + instantMillis + "ms)"
+                        + " when systemUTC in millis is in ["
+                        + beforeMillis + ", "
+                        + afterMillis + "]");
+            }
+        } while (diff > 100 && --retryRemaining > 0);  // retry if diff more than 0.1 sec
+        assertTrue(retryRemaining > 0);
     }
 
     //-----------------------------------------------------------------------
