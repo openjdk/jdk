@@ -133,10 +133,6 @@ final class BootstrapMethodInvoker {
                     result = (CallSite)bootstrapMethod
                             .invokeBasic(caller, name, (MethodType)type, (MethodType)argv[0],
                                     (MethodHandle)argv[1], (MethodType)argv[2]);
-                } else if (isLambdaMetafactoryCondyBSM(bsmType) && argv.length == 3) {
-                    result = bootstrapMethod
-                            .invokeBasic(caller, name, (Class<?>)type, (MethodType)argv[0],
-                                    (MethodHandle)argv[1], (MethodType)argv[2]);
                 } else if (isStringConcatFactoryBSM(bsmType) && argv.length >= 1) {
                     String recipe = (String)argv[0];
                     Object[] shiftedArgs = Arrays.copyOfRange(argv, 1, argv.length);
@@ -252,9 +248,6 @@ final class BootstrapMethodInvoker {
     private static final MethodType OBJECT_METHODS_MT = MethodType.methodType(Object.class,
             Lookup.class, String.class, TypeDescriptor.class, Class.class, String.class, MethodHandle[].class);
 
-    private static final MethodType LMF_CONDY_MT = MethodType.methodType(Object.class,
-            Lookup.class, String.class, Class.class, MethodType.class, MethodHandle.class, MethodType.class);
-
     private static final MethodType SCF_MT = MethodType.methodType(CallSite.class,
             Lookup.class, String.class, MethodType.class, String.class, Object[].class);
 
@@ -265,15 +258,6 @@ final class BootstrapMethodInvoker {
      */
     private static boolean isStringConcatFactoryBSM(MethodType bsmType) {
         return bsmType == SCF_MT;
-    }
-
-    /**
-     * @return true iff the BSM method type exactly matches
-     *         {@link java.lang.invoke.LambdaMetafactory#metafactory(
-     *          MethodHandles.Lookup,String,Class,MethodType,MethodHandle,MethodType)}
-     */
-    private static boolean isLambdaMetafactoryCondyBSM(MethodType bsmType) {
-        return bsmType == LMF_CONDY_MT;
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,9 +36,9 @@ import java.lang.StackWalker.*;
  * The JCE security manager.
  *
  * <p>The JCE security manager is responsible for determining the maximum
- * allowable cryptographic strength for a given applet/application, for a given
+ * allowable cryptographic strength for a given application, for a given
  * algorithm, by consulting the configured jurisdiction policy files and
- * the cryptographic permissions bundled with the applet/application.
+ * the cryptographic permissions bundled with the application.
  *
  * @author Jan Luehe
  *
@@ -85,7 +85,7 @@ final class JceSecurityManager {
 
     /**
      * Returns the maximum allowable crypto strength for the given
-     * applet/application, for the given algorithm.
+     * application, for the given algorithm.
      */
     CryptoPermission getCryptoPermission(String theAlg) {
 

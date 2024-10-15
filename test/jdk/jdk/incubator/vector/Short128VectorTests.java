@@ -67,6 +67,14 @@ public class Short128VectorTests extends AbstractVectorTest {
 
     static final int BUFFER_REPS = Integer.getInteger("jdk.incubator.vector.test.buffer-vectors", 25000 / 128);
 
+    static void assertArraysStrictlyEquals(short[] r, short[] a) {
+        for (int i = 0; i < a.length; i++) {
+            if (r[i] != a[i]) {
+                Assert.fail("at index #" + i + ", expected = " + a[i] + ", actual = " + r[i]);
+            }
+        }
+    }
+
     interface FUnOp {
         short apply(short a);
     }
@@ -228,25 +236,6 @@ public class Short128VectorTests extends AbstractVectorTest {
             }
         } catch (AssertionError e) {
             Assert.assertEquals(r[i], f.apply(a, i), "at index #" + i);
-        }
-    }
-
-    static void assertInsertArraysEquals(short[] r, short[] a, short element, int index, int start, int end) {
-        int i = start;
-        try {
-            for (; i < end; i += 1) {
-                if(i%SPECIES.length() == index) {
-                    Assert.assertEquals(r[i], element);
-                } else {
-                    Assert.assertEquals(r[i], a[i]);
-                }
-            }
-        } catch (AssertionError e) {
-            if (i%SPECIES.length() == index) {
-                Assert.assertEquals(r[i], element, "at index #" + i);
-            } else {
-                Assert.assertEquals(r[i], a[i], "at index #" + i);
-            }
         }
     }
 
@@ -703,21 +692,6 @@ public class Short128VectorTests extends AbstractVectorTest {
     }
 
 
-
-    interface FBinArrayOp {
-        short apply(short[] a, int b);
-    }
-
-    static void assertArraysEquals(short[] r, short[] a, FBinArrayOp f) {
-        int i = 0;
-        try {
-            for (; i < a.length; i++) {
-                Assert.assertEquals(r[i], f.apply(a, i));
-            }
-        } catch (AssertionError e) {
-            Assert.assertEquals(r[i], f.apply(a,i), "at index #" + i);
-        }
-    }
 
     interface FGatherScatterOp {
         short[] apply(short[] a, int ix, int[] b, int iy);
@@ -1200,10 +1174,6 @@ public class Short128VectorTests extends AbstractVectorTest {
             default:
                 return (short)0;
         }
-    }
-
-    static short get(short[] a, int i) {
-        return (short) a[i];
     }
 
     static final IntFunction<short[]> fr = (vl) -> {
@@ -3739,22 +3709,23 @@ public class Short128VectorTests extends AbstractVectorTest {
         assertReductionBoolArraysEquals(r, mask, Short128VectorTests::allTrue);
     }
 
-    @Test(dataProvider = "shortUnaryOpProvider")
-    static void withShort128VectorTests(IntFunction<short []> fa) {
+    @Test(dataProvider = "shortBinaryOpProvider")
+    static void withShort128VectorTests(IntFunction<short []> fa, IntFunction<short []> fb) {
         short[] a = fa.apply(SPECIES.length());
+        short[] b = fb.apply(SPECIES.length());
         short[] r = fr.apply(SPECIES.length());
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0, j = 0; i < a.length; i += SPECIES.length()) {
                 ShortVector av = ShortVector.fromArray(SPECIES, a, i);
-                av.withLane((j++ & (SPECIES.length()-1)), (short)(65535+i)).intoArray(r, i);
+                av.withLane(j, b[i + j]).intoArray(r, i);
+                a[i + j] = b[i + j];
+                j = (j + 1) & (SPECIES.length() - 1);
             }
         }
 
 
-        for (int i = 0, j = 0; i < a.length; i += SPECIES.length()) {
-            assertInsertArraysEquals(r, a, (short)(65535+i), (j++ & (SPECIES.length()-1)), i , i + SPECIES.length());
-        }
+        assertArraysStrictlyEquals(r, a);
     }
 
     static boolean testIS_DEFAULT(short a) {
@@ -4689,7 +4660,7 @@ public class Short128VectorTests extends AbstractVectorTest {
             }
         }
 
-        assertArraysEquals(r, a, Short128VectorTests::get);
+        assertArraysStrictlyEquals(r, a);
     }
 
     @Test(dataProvider = "shortUnaryOpProvider")
