@@ -611,7 +611,6 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
 
   const Register receiver = j_rarg0;
   const Register data = t0;
-  const Register tmp = t2;  // A call-clobbered register not used for arg passing
 
   // -------------------------------------------------------------------------
   // Generate a C2I adapter.  On entry we know xmethod holds the Method* during calls
