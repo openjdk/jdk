@@ -105,7 +105,7 @@ class Http1Request {
 
         // Filter overridable headers from userHeaders
         userHeaders = HttpHeaders.of(userHeaders.map(),
-                      connection.contextRestricted(request, client));
+                      connection.contextRestricted(request));
 
         Utils.setUserAuthFlags(request, userHeaders);
 

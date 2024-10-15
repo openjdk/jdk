@@ -214,9 +214,8 @@ public final class Utils {
 
     public record ProxyHeaders(HttpHeaders userHeaders, HttpHeaders systemHeaders) {}
 
-    private static final BiPredicate<String, String> HOST_RESTRICTED = (k,v) -> !"host".equalsIgnoreCase(k);
-    public static final BiPredicate<String, String> PROXY_TUNNEL_RESTRICTED(HttpClient client)  {
-        return HOST_RESTRICTED;
+    public static final BiPredicate<String, String> PROXY_TUNNEL_RESTRICTED()  {
+        return (k,v) -> !"host".equalsIgnoreCase(k);
     }
 
     private static final Predicate<String> IS_HOST = "host"::equalsIgnoreCase;

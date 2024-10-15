@@ -25,7 +25,9 @@
  * @test
  * @bug 8326949
  * @summary Authorization header is removed when a proxy Authenticator is set
- * @library /test/lib
+ * @library /test/lib /test/jdk/java/net/httpclient /test/jdk/java/net/httpclient/lib
+ * @build jdk.test.lib.net.SimpleSSLContext jdk.httpclient.test.lib.common.HttpServerAdapters
+ *        jdk.httpclient.test.lib.http2.Http2TestServer
  * @run main/othervm UserAuthWithAuthenticator
  */
 
@@ -47,6 +49,27 @@ import jdk.test.lib.net.URIBuilder;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
 public class UserAuthWithAuthenticator {
+
+    static HttpTestServer initServer(boolean h2, InetAddress addr, 
+                                     ExecutorService e) throws Exception {
+        HttpTestServer s = null;
+        InetSocketAddress ia = new InetSocketAddress (addr, 0);
+
+        if (!h2) {
+            s = HttpTestServer.of(getHttpsServer(ia, e, ctx));
+            HttpTestHandler h = new HttpTestEchoHandler();
+            s.addHandler(h, "/test1");
+            s.start();
+            return s;
+        } else {
+            s = HttpTestServer.of(new Http2TestServer(addr, sni, true, 0, e,
+                        10, null, ctx, false));
+            HttpTestHandler h = new HttpTestEchoHandler();
+            s.addHandler(h, "/test1");
+            s.start();
+            return s;
+        }
+    }
 
     static final String data = "0123456789";
 
@@ -135,10 +158,11 @@ public class UserAuthWithAuthenticator {
     static void testServerWithProxyError() throws IOException, InterruptedException {
         Mocker proxyMock = new Mocker(proxyWithErrorResponses);
         proxyMock.start();
+        ProxyAuth p = new ProxyAuth();
         try (var client = HttpClient.newBuilder()
                 .version(java.net.http.HttpClient.Version.HTTP_1_1)
                 .proxy(new ProxySel(proxyMock.getPort()))
-                .authenticator(new ProxyAuth())
+                .authenticator(p)
                 .build()) {
 
             var badCreds = "user:wrong";
@@ -153,6 +177,7 @@ public class UserAuthWithAuthenticator {
             var proxyStr = proxyMock.getRequest(0);
             assertEquals(407, response.statusCode());
             assertPattern(".*^Proxy-Authorization:.*Basic " + encoded1 + ".*", proxyStr);
+            assertTrue(!p.wasCalled(), "Proxy Auth should not have been called");
             System.out.println("testServerWithProxyError: OK");
         } finally {
             proxyMock.stopMocker();
