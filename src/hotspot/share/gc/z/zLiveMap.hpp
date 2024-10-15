@@ -35,7 +35,7 @@ class ZLiveMap {
   friend class ZLiveMapTest;
 
 private:
-  static const size_t nsegments = 64;
+  static const size_t NumSegments = 64;
 
   volatile uint32_t _seqnum;
   volatile uint32_t _live_objects;

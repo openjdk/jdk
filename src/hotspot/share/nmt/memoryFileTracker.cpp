@@ -42,23 +42,23 @@ MemoryFileTracker::MemoryFileTracker(bool is_detailed_mode)
 
 void MemoryFileTracker::allocate_memory(MemoryFile* file, size_t offset,
                                         size_t size, const NativeCallStack& stack,
-                                        MEMFLAGS flag) {
+                                        MemTag mem_tag) {
   NativeCallStackStorage::StackIndex sidx = _stack_storage.push(stack);
-  VMATree::RegionData regiondata(sidx, flag);
+  VMATree::RegionData regiondata(sidx, mem_tag);
   VMATree::SummaryDiff diff = file->_tree.commit_mapping(offset, size, regiondata);
-  for (int i = 0; i < mt_number_of_types; i++) {
-    VirtualMemory* summary = file->_summary.by_type(NMTUtil::index_to_flag(i));
-    summary->reserve_memory(diff.flag[i].commit);
-    summary->commit_memory(diff.flag[i].commit);
+  for (int i = 0; i < mt_number_of_tags; i++) {
+    VirtualMemory* summary = file->_summary.by_type(NMTUtil::index_to_tag(i));
+    summary->reserve_memory(diff.tag[i].commit);
+    summary->commit_memory(diff.tag[i].commit);
   }
 }
 
 void MemoryFileTracker::free_memory(MemoryFile* file, size_t offset, size_t size) {
   VMATree::SummaryDiff diff = file->_tree.release_mapping(offset, size);
-  for (int i = 0; i < mt_number_of_types; i++) {
-    VirtualMemory* summary = file->_summary.by_type(NMTUtil::index_to_flag(i));
-    summary->reserve_memory(diff.flag[i].commit);
-    summary->commit_memory(diff.flag[i].commit);
+  for (int i = 0; i < mt_number_of_tags; i++) {
+    VirtualMemory* summary = file->_summary.by_type(NMTUtil::index_to_tag(i));
+    summary->reserve_memory(diff.tag[i].commit);
+    summary->commit_memory(diff.tag[i].commit);
   }
 }
 
@@ -79,7 +79,7 @@ void MemoryFileTracker::print_report_on(const MemoryFile* file, outputStream* st
       return;
     }
 #ifdef ASSERT
-    if (broken_start != nullptr && prev->val().out.type() != current->val().in.type()) {
+    if (broken_start != nullptr && prev->val().out.mem_tag() != current->val().in.mem_tag()) {
       broken_start = prev;
       broken_end = current;
     }
@@ -91,7 +91,7 @@ void MemoryFileTracker::print_report_on(const MemoryFile* file, outputStream* st
                        start_addr, end_addr,
                        NMTUtil::amount_in_scale(end_addr - start_addr, scale),
                        NMTUtil::scale_name(scale),
-                       NMTUtil::flag_to_name(prev->val().out.flag()));
+                       NMTUtil::tag_to_name(prev->val().out.mem_tag()));
       {
         streamIndentor si(stream, 4);
         _stack_storage.get(prev->val().out.stack()).print_on(stream);
@@ -138,8 +138,8 @@ bool MemoryFileTracker::Instance::initialize(NMT_TrackingLevel tracking_level) {
 
 void MemoryFileTracker::Instance::allocate_memory(MemoryFile* file, size_t offset,
                                                   size_t size, const NativeCallStack& stack,
-                                                  MEMFLAGS flag) {
-  _tracker->allocate_memory(file, offset, size, stack, flag);
+                                                  MemTag mem_tag) {
+  _tracker->allocate_memory(file, offset, size, stack, mem_tag);
 }
 
 void MemoryFileTracker::Instance::free_memory(MemoryFile* file, size_t offset, size_t size) {
@@ -181,9 +181,9 @@ const GrowableArrayCHeap<MemoryFileTracker::MemoryFile*, mtNMT>& MemoryFileTrack
 void MemoryFileTracker::summary_snapshot(VirtualMemorySnapshot* snapshot) const {
   for (int d = 0; d < _files.length(); d++) {
     const MemoryFile* file = _files.at(d);
-    for (int i = 0; i < mt_number_of_types; i++) {
-      VirtualMemory* snap = snapshot->by_type(NMTUtil::index_to_flag(i));
-      const VirtualMemory* current = file->_summary.by_type(NMTUtil::index_to_flag(i));
+    for (int i = 0; i < mt_number_of_tags; i++) {
+      VirtualMemory* snap = snapshot->by_type(NMTUtil::index_to_tag(i));
+      const VirtualMemory* current = file->_summary.by_type(NMTUtil::index_to_tag(i));
       // Only account the committed memory.
       snap->commit_memory(current->committed());
     }
