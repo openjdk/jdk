@@ -457,7 +457,7 @@ $(eval $(call SetupTarget, symbols-image, \
 $(eval $(call SetupTarget, static-launcher, \
     MAKEFILE := StaticLibs, \
     TARGET := static-launcher, \
-    DEPS := hotspot-server-static-libs static-libs, \
+    DEPS := hotspot-static-libs static-libs, \
 ))
 
 $(eval $(call SetupTarget, static-jdk-image, \
