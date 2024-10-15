@@ -38,7 +38,7 @@ import java.awt.event.ActionListener;
  * @bug 4075786
  * @key printer
  * @summary Test that container prints multiline text properly
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual PrintTextTest
 */
