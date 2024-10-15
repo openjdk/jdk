@@ -31,6 +31,7 @@ import sun.security.provider.NamedKeyFactory;
 import sun.security.provider.NamedKeyPairGenerator;
 
 import java.security.*;
+import java.util.Arrays;
 import java.util.Map;
 
 import javax.crypto.DecapsulateException;
@@ -57,9 +58,10 @@ public final class ML_KEM_Provider {
         @Override
         public byte[][] implGenerateKeyPair(String name, SecureRandom random) {
             byte[] seed = new byte[32];
-            random.nextBytes(seed);
+            var r = random != null ? random : JCAUtil.getDefSecureRandom();
+            r.nextBytes(seed);
             byte[] z = new byte[32];
-            random.nextBytes(z);
+            r.nextBytes(z);
 
             ML_KEM mlKem = new ML_KEM(name2int(name));
             ML_KEM.ML_KEM_KeyPair kp;
@@ -67,6 +69,9 @@ public final class ML_KEM_Provider {
                 kp = mlKem.generateKemKeyPair(seed, z);
             } catch (NoSuchAlgorithmException | DigestException e) {
                 throw new RuntimeException("internal error", e);
+            } finally {
+                Arrays.fill(seed, (byte)0);
+                Arrays.fill(z, (byte)0);
             }
             return new byte[][] {
                 kp.encapsulationKey().keyBytes(),

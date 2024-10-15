@@ -474,6 +474,7 @@ public final class ML_KEM {
         byte[] kPkePrivateKey = kPkeKeyPair.privateKey.keyBytes;
         byte[] decapsKey = new byte[encapsKey.length + kPkePrivateKey.length + 64];
         System.arraycopy(kPkePrivateKey, 0, decapsKey, 0, kPkePrivateKey.length);
+        Arrays.fill(kPkePrivateKey, (byte)0);
         System.arraycopy(encapsKey, 0, decapsKey, kPkePrivateKey.length, encapsKey.length);
 
         mlKemH.update(encapsKey);
@@ -625,6 +626,7 @@ public final class ML_KEM {
             encodedPoly = encodePoly(12, keyGenSHat[i]);
             System.arraycopy(encodedPoly, 0,
                     skEncoded, i * ((mlKem_n * 12) / 8), (mlKem_n * 12) / 8);
+            Arrays.fill(encodedPoly, (byte)0);
         }
         System.arraycopy(rho, 0,
                 pkEncoded, (mlKem_k * mlKem_n * 12) / 8, rho.length);
