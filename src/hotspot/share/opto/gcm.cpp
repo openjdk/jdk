@@ -216,19 +216,13 @@ void PhaseCFG::schedule_pinned_nodes(VectorSet &visited) {
       for (uint i = node->len()-1; i >= node->req(); i--) {
         Node* m = node->in(i);
         if (m == nullptr) continue;
-
-        // Only process precedence edges that are CFG nodes. Safepoints and control projections can be in the middle of a block
-        if (is_CFG(m)) {
-          node->rm_prec(i);
-          if (n == nullptr) {
-            n = m;
-          } else {
-            assert(is_dominator(n, m) || is_dominator(m, n), "one must dominate the other");
-            n = is_dominator(n, m) ? m : n;
-          }
+        assert(is_CFG(m), "must be a CFG node");
+        node->rm_prec(i);
+        if (n == nullptr) {
+          n = m;
         } else {
-          assert(node->is_Mach(), "sanity");
-          assert(node->as_Mach()->ideal_Opcode() == Op_StoreCM, "must be StoreCM node");
+          assert(is_dominator(n, m) || is_dominator(m, n), "one must dominate the other");
+          n = is_dominator(n, m) ? m : n;
         }
       }
       if (n != nullptr) {
@@ -746,6 +740,21 @@ Block* PhaseCFG::insert_anti_dependences(Block* LCA, Node* load, bool verify) {
   // The anti-dependence constraints apply only to the fringe of this tree.
 
   Node* initial_mem = load->in(MemNode::Memory);
+
+  // We don't optimize the memory graph for pinned loads, so we may need to raise the
+  // root of our search tree through the corresponding slices of MergeMem nodes to
+  // get to the node that really creates the memory state for this slice.
+  if (load_alias_idx >= Compile::AliasIdxRaw) {
+    while (initial_mem->is_MergeMem()) {
+      MergeMemNode* mm = initial_mem->as_MergeMem();
+      Node* p = mm->memory_at(load_alias_idx);
+      if (p != mm->base_memory()) {
+        initial_mem = p;
+      } else {
+        break;
+      }
+    }
+  }
   worklist_def_use_mem_states.push(nullptr, initial_mem);
   while (worklist_def_use_mem_states.is_nonempty()) {
     // Examine a nearby store to see if it might interfere with our load.
@@ -1512,8 +1521,8 @@ void PhaseCFG::schedule_late(VectorSet &visited, Node_Stack &stack) {
         C->record_failure(C2Compiler::retry_no_subsuming_loads());
       } else {
         // Bailout without retry when (early->_dom_depth > LCA->_dom_depth)
-        assert(false, "graph should be schedulable");
-        C->record_method_not_compilable("late schedule failed: incorrect graph");
+        assert(C->failure_is_artificial(), "graph should be schedulable");
+        C->record_method_not_compilable("late schedule failed: incorrect graph" DEBUG_ONLY(COMMA true));
       }
       return;
     }
@@ -1693,8 +1702,8 @@ void PhaseCFG::global_code_motion() {
     Block* block = get_block(i);
     if (!schedule_local(block, ready_cnt, visited, recalc_pressure_nodes)) {
       if (!C->failure_reason_is(C2Compiler::retry_no_subsuming_loads())) {
-        assert(false, "local schedule failed");
-        C->record_method_not_compilable("local schedule failed");
+        assert(C->failure_is_artificial(), "local schedule failed");
+        C->record_method_not_compilable("local schedule failed" DEBUG_ONLY(COMMA true));
       }
       _regalloc = nullptr;
       return;

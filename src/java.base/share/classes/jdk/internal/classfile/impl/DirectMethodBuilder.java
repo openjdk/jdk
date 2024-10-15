@@ -148,9 +148,7 @@ public final class DirectMethodBuilder
 
     @Override
     public void writeTo(BufWriterImpl buf) {
-        buf.writeU2(flags);
-        buf.writeIndex(name);
-        buf.writeIndex(desc);
+        buf.writeU2U2U2(flags, buf.cpIndex(name), buf.cpIndex(desc));
         attributes.writeTo(buf);
     }
 }

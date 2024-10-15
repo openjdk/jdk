@@ -74,7 +74,9 @@ void AbstractInterpreter::print() {
     tty->print_cr("avg codelet size = %6d bytes", _code->used_space() / _code->number_of_stubs());
     tty->cr();
   }
+  _should_print_instructions = PrintInterpreter;
   _code->print();
+  _should_print_instructions = false;
   tty->print_cr("----------------------------------------------------------------------");
   tty->cr();
 }
@@ -90,6 +92,8 @@ address    AbstractInterpreter::_rethrow_exception_entry                    = nu
 address    AbstractInterpreter::_slow_signature_handler;
 address    AbstractInterpreter::_entry_table            [AbstractInterpreter::number_of_method_entries];
 address    AbstractInterpreter::_native_abi_to_tosca    [AbstractInterpreter::number_of_result_handlers];
+
+bool       AbstractInterpreter::_should_print_instructions = false;
 
 //------------------------------------------------------------------------------------------------------------------------
 // Generation of complete interpreter

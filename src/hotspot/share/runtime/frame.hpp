@@ -464,6 +464,7 @@ class frame {
                         const RegisterMap* map, bool use_interpreter_oop_map_cache) const;
 
   void oops_entry_do(OopClosure* f, const RegisterMap* map) const;
+  void oops_upcall_do(OopClosure* f, const RegisterMap* map) const;
   void oops_nmethod_do(OopClosure* f, NMethodClosure* cf,
                        DerivedOopClosure* df, DerivedPointerIterationMode derived_mode,
                        const RegisterMap* map) const;

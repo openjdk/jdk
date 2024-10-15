@@ -6322,17 +6322,6 @@ instruct storeImmB(memory mem, immI8 src) %{
   ins_pipe( ialu_mem_imm );
 %}
 
-// Store CMS card-mark Immediate
-instruct storeImmCM(memory mem, immI8 src) %{
-  match(Set mem (StoreCM mem src));
-
-  ins_cost(150);
-  format %{ "MOV8   $mem,$src\t! CMS card-mark imm0" %}
-  opcode(0xC6);               /* C6 /0 */
-  ins_encode( SetInstMark, OpcP, RMopc_Mem(0x00,mem), Con8or32(src), ClearInstMark);
-  ins_pipe( ialu_mem_imm );
-%}
-
 // Store Double
 instruct storeDPR( memory mem, regDPR1 src) %{
   predicate(UseSSE<=1);

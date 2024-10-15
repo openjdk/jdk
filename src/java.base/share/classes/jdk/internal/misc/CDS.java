@@ -76,16 +76,6 @@ public class CDS {
         return (configStatus & IS_DUMPING_STATIC_ARCHIVE) != 0;
     }
 
-    /*
-     * When dumping the static archive, CDS is able to archive MethodHandles.
-     * However, CDS cannot archive SoftReference objects, so we need to
-     * make sure the archived MethodHandles do not directly or indirectly use
-     * SoftReferences.
-     */
-    public static boolean disableMethodHandleSoftCache() {
-        return isDumpingStaticArchive();
-    }
-
     private static native int getCDSConfigStatus();
     private static native void logLambdaFormInvoker(String line);
 

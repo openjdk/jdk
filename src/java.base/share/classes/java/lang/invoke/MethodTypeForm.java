@@ -30,7 +30,7 @@ import sun.invoke.util.Wrapper;
 import java.lang.ref.SoftReference;
 
 import static java.lang.invoke.MethodHandleStatics.newIllegalArgumentException;
-import static java.lang.invoke.MethodHandleStatics.NO_SOFT_CACHE;
+import static java.lang.invoke.MethodHandleNatives.USE_SOFT_CACHE;
 
 /**
  * Shared information for a group of method types, which differ
@@ -128,10 +128,10 @@ final class MethodTypeForm {
         if (prev != null) {
             return prev;
         }
-        if (NO_SOFT_CACHE) {
-            methodHandles[which] = mh;
-        } else {
+        if (USE_SOFT_CACHE) {
             methodHandles[which] = new SoftReference<>(mh);
+        } else {
+            methodHandles[which] = mh;
         }
         return mh;
     }
@@ -154,10 +154,10 @@ final class MethodTypeForm {
         if (prev != null) {
             return prev;
         }
-        if (NO_SOFT_CACHE) {
-            lambdaForms[which] = form;
-        } else {
+        if (USE_SOFT_CACHE) {
             lambdaForms[which] = new SoftReference<>(form);
+        } else {
+            lambdaForms[which] = form;
         }
         return form;
     }

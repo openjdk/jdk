@@ -2324,12 +2324,11 @@ public final class Locale implements Cloneable, Serializable {
             // If we cannot get the message format pattern, then we use a simple
             // hard-coded pattern.  This should not occur in practice unless the
             // installation is missing some core files (FormatData etc.).
-            StringBuilder result = new StringBuilder();
-            result.append((String)displayNames[1]);
-            if (displayNames.length > 2) {
-                result.append(" (");
-                result.append((String)displayNames[2]);
-                result.append(')');
+            StringBuilder result = new StringBuilder((String) displayNames[1]);
+            if (displayNames[2] != null) {
+                result.append(" (")
+                        .append((String) displayNames[2])
+                        .append(')');
             }
             return result.toString();
         }
