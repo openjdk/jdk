@@ -917,7 +917,7 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
   # for SVE. Set SVE_CFLAGS to -march=armv8-a+sve if it does.
   # ACLE and this flag are required to build the aarch64 SVE related functions in
   # libvectormath.
-  if test "x${OPENJDK_TARGET_CPU}" = "xaarch64"; then
+  if test "x$OPENJDK_TARGET_CPU" = "xaarch64"; then
     if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang; then
       AC_LANG_PUSH(C)
       OLD_CFLAGS="$CFLAGS"
