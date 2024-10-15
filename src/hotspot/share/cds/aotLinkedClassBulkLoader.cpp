@@ -23,10 +23,12 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/aotClassInitializer.hpp"
 #include "cds/aotClassLinker.hpp"
 #include "cds/aotLinkedClassBulkLoader.hpp"
 #include "cds/aotLinkedClassTable.hpp"
 #include "cds/cdsConfig.hpp"
+#include "cds/heapShared.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/systemDictionaryShared.hpp"
@@ -83,6 +85,30 @@ void AOTLinkedClassBulkLoader::load_classes_in_loader_impl(AOTLinkedClassCategor
   Handle h_loader(THREAD, class_loader_oop);
   load_table(AOTLinkedClassTable::for_static_archive(),  class_category, h_loader, CHECK);
   load_table(AOTLinkedClassTable::for_dynamic_archive(), class_category, h_loader, CHECK);
+
+  // Initialize the InstanceKlasses of all archived heap objects that are reachable from the
+  // archived java class mirrors.
+  //
+  // Only the classes in the static archive can have archived mirrors.
+  AOTLinkedClassTable* static_table = AOTLinkedClassTable::for_static_archive();
+  switch (class_category) {
+  case AOTLinkedClassCategory::BOOT1:
+    // Delayed until finish_loading_javabase_classes(), as the VM is not ready to
+    // execute some of the <clinit> methods.
+    break;
+  case AOTLinkedClassCategory::BOOT2:
+    init_required_classes_for_loader(h_loader, static_table->boot2(), CHECK);
+    break;
+  case AOTLinkedClassCategory::PLATFORM:
+    init_required_classes_for_loader(h_loader, static_table->platform(), CHECK);
+    break;
+  case AOTLinkedClassCategory::APP:
+    init_required_classes_for_loader(h_loader, static_table->app(), CHECK);
+    break;
+  case AOTLinkedClassCategory::UNREGISTERED:
+    ShouldNotReachHere();
+    break;
+  }
 
   if (Universe::is_fully_initialized() && VerifyDuringStartup) {
     // Make sure we're still in a clean state.
@@ -205,4 +231,35 @@ void AOTLinkedClassBulkLoader::initiate_loading(JavaThread* current, const char*
       SystemDictionary::add_to_initiating_loader(current, ik, loader_data);
     }
   }
+}
+
+void AOTLinkedClassBulkLoader::finish_loading_javabase_classes(TRAPS) {
+  init_required_classes_for_loader(Handle(), AOTLinkedClassTable::for_static_archive()->boot(), CHECK);
+}
+
+// Some AOT-linked classes for <class_loader> must be initialized early. This includes
+// - classes that were AOT-initialized by AOTClassInitializer
+// - the classes of all objects that are reachable from the archived mirrors of
+//   the AOT-linked classes for <class_loader>.
+void AOTLinkedClassBulkLoader::init_required_classes_for_loader(Handle class_loader, Array<InstanceKlass*>* classes, TRAPS) {
+  if (classes != nullptr) {
+    for (int i = 0; i < classes->length(); i++) {
+      InstanceKlass* ik = classes->at(i);
+      if (ik->class_loader_data() == nullptr) {
+        // This class is not yet loaded. We will initialize it in a later phase.
+        // For example, we have loaded only AOTLinkedClassCategory::BOOT1 classes
+        // but k is part of AOTLinkedClassCategory::BOOT2.
+        continue;
+      }
+      if (ik->has_aot_initialized_mirror()) {
+        // No <clinit> of ik or any of its supertypes will be executed.
+        // Their mirrors were already initialized during AOT cache assembly.
+        AOTClassInitializer::assert_no_clinit_will_run_for_aot_init_class(ik);
+
+        ik->initialize_from_cds(CHECK);
+      }
+    }
+  }
+
+  HeapShared::init_classes_for_special_subgraph(class_loader, CHECK);
 }

@@ -493,6 +493,10 @@ bool CDSConfig::is_dumping_heap() {
   return is_dumping_static_archive() && HeapShared::can_write();
 }
 
+bool CDSConfig::is_loading_heap() {
+  return ArchiveHeapLoader::is_in_use();
+}
+
 bool CDSConfig::is_using_full_module_graph() {
   if (ClassLoaderDataShared::is_full_module_graph_loaded()) {
     return true;
@@ -550,5 +554,9 @@ bool CDSConfig::is_using_aot_linked_classes() {
 
 void CDSConfig::set_has_aot_linked_classes(bool has_aot_linked_classes) {
   _has_aot_linked_classes |= has_aot_linked_classes;
+}
+
+bool CDSConfig::is_initing_classes_at_dump_time() {
+  return is_dumping_heap() && is_dumping_aot_linked_classes();
 }
 #endif // INCLUDE_CDS_JAVA_HEAP

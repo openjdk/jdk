@@ -49,12 +49,14 @@ class AOTLinkedClassBulkLoader :  AllStatic {
   static void initiate_loading(JavaThread* current, const char* category, Handle initiating_loader, Array<InstanceKlass*>* classes);
   static void load_classes_impl(AOTLinkedClassCategory class_category, Array<InstanceKlass*>* classes,
                                 const char* category_name, Handle loader, TRAPS);
+  static void init_required_classes_for_loader(Handle class_loader, Array<InstanceKlass*>* classes, TRAPS);
 
 public:
   static void serialize(SerializeClosure* soc, bool is_static_archive) NOT_CDS_RETURN;
 
   static void load_javabase_classes(JavaThread* current) NOT_CDS_RETURN;
   static void load_non_javabase_classes(JavaThread* current) NOT_CDS_RETURN;
+  static void finish_loading_javabase_classes(TRAPS) NOT_CDS_RETURN;
 };
 
 #endif // SHARE_CDS_AOTLINKEDCLASSBULKLOADER_HPP

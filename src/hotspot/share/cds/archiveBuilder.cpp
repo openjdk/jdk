@@ -768,11 +768,13 @@ void ArchiveBuilder::relocate_metaspaceobj_embedded_pointers() {
 
 #define ADD_COUNT(x) \
   x += 1; \
-  x ## _a += aotlinked ? 1 : 0;
+  x ## _a += aotlinked ? 1 : 0; \
+  x ## _i += inited ? 1 : 0;
 
 #define DECLARE_INSTANCE_KLASS_COUNTER(x) \
   int x = 0; \
-  int x ## _a = 0;
+  int x ## _a = 0; \
+  int x ## _i = 0;
 
 void ArchiveBuilder::make_klasses_shareable() {
   DECLARE_INSTANCE_KLASS_COUNTER(num_instance_klasses);
@@ -781,7 +783,7 @@ void ArchiveBuilder::make_klasses_shareable() {
   DECLARE_INSTANCE_KLASS_COUNTER(num_platform_klasses);
   DECLARE_INSTANCE_KLASS_COUNTER(num_app_klasses);
   DECLARE_INSTANCE_KLASS_COUNTER(num_hidden_klasses);
-
+  DECLARE_INSTANCE_KLASS_COUNTER(num_enum_klasses);
   DECLARE_INSTANCE_KLASS_COUNTER(num_unregistered_klasses);
   int num_unlinked_klasses = 0;
   int num_obj_array_klasses = 0;
@@ -805,9 +807,11 @@ void ArchiveBuilder::make_klasses_shareable() {
   for (int i = 0; i < klasses()->length(); i++) {
     const char* type;
     const char* unlinked = "";
+    const char* kind = "";
     const char* hidden = "";
     const char* generated = "";
     const char* aotlinked_msg = "";
+    const char* inited_msg = "";
     Klass* k = get_buffered_addr(klasses()->at(i));
     k->remove_java_mirror();
     if (k->is_objArray_klass()) {
@@ -824,6 +828,7 @@ void ArchiveBuilder::make_klasses_shareable() {
       InstanceKlass* ik = InstanceKlass::cast(k);
       InstanceKlass* src_ik = get_source_addr(ik);
       bool aotlinked = AOTClassLinker::is_candidate(src_ik);
+      bool inited = ik->has_aot_initialized_mirror();
       ADD_COUNT(num_instance_klasses);
       if (CDSConfig::is_dumping_dynamic_archive()) {
         // For static dump, class loader type are already set.
@@ -879,12 +884,21 @@ void ArchiveBuilder::make_klasses_shareable() {
         }
       }
 
+      if (ik->is_interface()) {
+        kind = " interface";
+      } else if (src_ik->java_super() == vmClasses::Enum_klass()) {
+        kind = " enum";
+        ADD_COUNT(num_enum_klasses);
+      }
 
       if (ik->is_generated_shared_class()) {
         generated = " generated";
       }
       if (aotlinked) {
         aotlinked_msg = " aot-linked";
+      }
+      if (inited) {
+        inited_msg = " inited";
       }
 
       MetaspaceShared::rewrite_nofast_bytecodes_and_calculate_fingerprints(Thread::current(), ik);
@@ -893,14 +907,14 @@ void ArchiveBuilder::make_klasses_shareable() {
 
     if (log_is_enabled(Debug, cds, class)) {
       ResourceMark rm;
-      log_debug(cds, class)("klasses[%5d] = " PTR_FORMAT " %-5s %s%s%s%s%s", i,
+      log_debug(cds, class)("klasses[%5d] = " PTR_FORMAT " %-5s %s%s%s%s%s%s%s", i,
                             p2i(to_requested(k)), type, k->external_name(),
-                            hidden, unlinked, generated, aotlinked_msg);
+                            kind, hidden, unlinked, generated, aotlinked_msg, inited_msg);
     }
   }
 
-#define STATS_FORMAT    "= %5d, aot-linked = %5d"
-#define STATS_PARAMS(x) num_ ## x, num_ ## x ## _a
+#define STATS_FORMAT    "= %5d, aot-linked = %5d, inited = %5d"
+#define STATS_PARAMS(x) num_ ## x, num_ ## x ## _a, num_ ## x ## _i
 
   log_info(cds)("Number of classes %d", num_instance_klasses + num_obj_array_klasses + num_type_array_klasses);
   log_info(cds)("    instance classes   " STATS_FORMAT, STATS_PARAMS(instance_klasses));
@@ -909,6 +923,7 @@ void ArchiveBuilder::make_klasses_shareable() {
   log_info(cds)("      platform         " STATS_FORMAT, STATS_PARAMS(platform_klasses));
   log_info(cds)("      app              " STATS_FORMAT, STATS_PARAMS(app_klasses));
   log_info(cds)("      unregistered     " STATS_FORMAT, STATS_PARAMS(unregistered_klasses));
+  log_info(cds)("      (enum)           " STATS_FORMAT, STATS_PARAMS(enum_klasses));
   log_info(cds)("      (hidden)         " STATS_FORMAT, STATS_PARAMS(hidden_klasses));
   log_info(cds)("      (unlinked)       = %5d, boot = %d, plat = %d, app = %d, unreg = %d",
                 num_unlinked_klasses, boot_unlinked, platform_unlinked, app_unlinked, unreg_unlinked);

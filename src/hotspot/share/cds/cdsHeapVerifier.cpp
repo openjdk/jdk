@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/aotClassInitializer.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/cdsHeapVerifier.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
@@ -138,7 +139,7 @@ CDSHeapVerifier::~CDSHeapVerifier() {
 
 class CDSHeapVerifier::CheckStaticFields : public FieldClosure {
   CDSHeapVerifier* _verifier;
-  InstanceKlass* _ik;
+  InstanceKlass* _ik; // The class whose static fields are being checked.
   const char** _exclusions;
 public:
   CheckStaticFields(CDSHeapVerifier* verifier, InstanceKlass* ik)
@@ -153,7 +154,7 @@ public:
 
     oop static_obj_field = _ik->java_mirror()->obj_field(fd->offset());
     if (static_obj_field != nullptr) {
-      Klass* klass = static_obj_field->klass();
+      Klass* klass_of_field = static_obj_field->klass();
       if (_exclusions != nullptr) {
         for (const char** p = _exclusions; *p != nullptr; p++) {
           if (fd->name()->equals(*p)) {
@@ -173,10 +174,20 @@ public:
         // This field points to an archived mirror.
         return;
       }
-      if (klass->has_archived_enum_objs()) {
-        // This klass is a subclass of java.lang.Enum. If any instance of this klass
-        // has been archived, we will archive all static fields of this klass.
+      if (klass_of_field->has_archived_enum_objs()) {
+        // This field is an Enum. If any instance of this Enum has been archived, we will archive
+        // all static fields of this Enum as well.
         // See HeapShared::initialize_enum_klass().
+        return;
+      }
+      if (klass_of_field->is_instance_klass()) {
+        if (InstanceKlass::cast(klass_of_field)->is_initialized() &&
+            AOTClassInitializer::can_archive_initialized_mirror(InstanceKlass::cast(klass_of_field))) {
+          return;
+        }
+      }
+
+      if (AOTClassInitializer::can_archive_initialized_mirror(_ik)) {
         return;
       }
 
@@ -280,6 +291,9 @@ int CDSHeapVerifier::trace_to_root(outputStream* st, oop orig_obj, oop orig_fiel
   st->print("[%2d] ", level);
   orig_obj->print_address_on(st);
   st->print(" %s", k->internal_name());
+  if (java_lang_Class::is_instance(orig_obj)) {
+    st->print(" (%s)", java_lang_Class::as_Klass(orig_obj)->external_name());
+  }
   if (orig_field != nullptr) {
     if (k->is_instance_klass()) {
       TraceFields clo(orig_obj, orig_field, st);
