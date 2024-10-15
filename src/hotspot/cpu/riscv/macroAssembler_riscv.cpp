@@ -768,13 +768,13 @@ void MacroAssembler::call_VM_leaf_base(address entry_point,
                                        int number_of_arguments,
                                        Label *retaddr) {
   int32_t offset = 0;
-  push_reg(RegSet::of(t1, xmethod), sp);   // push << t0 & xmethod >> to sp
+  push_reg(RegSet::of(t1, xmethod), sp);   // push << t1 & xmethod >> to sp
   mv(t1, entry_point, offset);
   jalr(t1, offset);
   if (retaddr != nullptr) {
     bind(*retaddr);
   }
-  pop_reg(RegSet::of(t1, xmethod), sp);   // pop << t0 & xmethod >> from sp
+  pop_reg(RegSet::of(t1, xmethod), sp);   // pop << t1 & xmethod >> from sp
 }
 
 void MacroAssembler::call_VM_leaf(address entry_point, int number_of_arguments) {

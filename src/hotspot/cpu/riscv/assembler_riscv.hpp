@@ -2892,7 +2892,7 @@ public:
 // Unconditional branch instructions
 // --------------------------
  protected:
-  // All calls and jumps must go via MASM.
+  // All calls and jumps must go via MASM. Only use x1 (aka ra) as link register for now.
   void jalr(Register Rd, Register Rs, const int32_t offset) {
     assert(Rd != x5 && Rs != x5, "Register x5 must not be used for calls/jumps.");
     /* jalr -> c.jr/c.jalr */
