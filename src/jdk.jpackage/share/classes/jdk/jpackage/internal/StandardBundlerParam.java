@@ -596,7 +596,7 @@ class StandardBundlerParam<T> extends BundlerParamInfo<T> {
         }
 
         // copy whole runtime, need to skip jmods and src.zip
-        final List<String> excludes = Arrays.asList("jmods", "src.zip");
+        final List<Path> excludes = Arrays.asList(Path.of("jmods"), Path.of("src.zip"));
         IOUtils.copyRecursive(topImage, appLayout.runtimeHomeDirectory(),
                         excludes, LinkOption.NOFOLLOW_LINKS);
 
