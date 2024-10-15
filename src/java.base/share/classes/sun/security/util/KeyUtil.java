@@ -184,13 +184,13 @@ public final class KeyUtil {
      */
     public static final String fullDisplayAlgName(Key key) {
         String result = key.getAlgorithm();
-        if (key instanceof ECKey) {
-            ECParameterSpec paramSpec = ((ECKey) key).getParams();
+        if (key instanceof AsymmetricKey ak) {
+            AlgorithmParameterSpec paramSpec = ak.getParams();
             if (paramSpec instanceof NamedCurve nc) {
                 result += " (" + nc.getNameAndAliases()[0] + ")";
+            } else if (paramSpec instanceof NamedParameterSpec nps) {
+                result = nps.getName();
             }
-        } else if (key instanceof EdECKey) {
-            result = ((EdECKey) key).getParams().getName();
         }
         return result;
     }
