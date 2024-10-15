@@ -4226,28 +4226,6 @@ instruct storeB(memory mem, iRegI src) %{
   ins_pipe(pipe_class_dummy);
 %}
 
-instruct storeCM(memory mem, immI_0 src) %{
-  match(Set mem (StoreCM mem src));
-  ins_cost(MEMORY_REF_COST);
-  // TODO: s390 port size(VARIABLE_SIZE);
-  format %{ "STC(Y)  $src,$mem\t # CMS card-mark byte (must be 0!)" %}
-  ins_encode %{
-    guarantee($mem$$index$$Register != Z_R0, "content will not be used.");
-    if ($mem$$index$$Register != noreg) {
-      // Can't use clear_mem --> load const zero and store character.
-      __ load_const_optimized(Z_R0_scratch, (long)0);
-      if (Immediate::is_uimm12($mem$$disp)) {
-        __ z_stc(Z_R0_scratch, $mem$$Address);
-      } else {
-        __ z_stcy(Z_R0_scratch, $mem$$Address);
-      }
-    } else {
-      __ clear_mem(Address($mem$$Address), 1);
-    }
-  %}
-  ins_pipe(pipe_class_dummy);
-%}
-
 // CHAR/SHORT
 
 // Store Char/Short
