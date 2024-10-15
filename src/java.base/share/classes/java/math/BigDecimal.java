@@ -5276,8 +5276,9 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         remainingZeros = Math.min(remainingZeros, maxPowsOf5);
 
         BigInteger[] qr; // quotient-remainder pair
-        // Remove 5^(2^i) from the factors of intVal, until 5^remainingZeros < 5^(2^i)
-        // (i.e., there are too few powers of five left to remove).
+        // Remove 5^(2^i) from the factors of intVal, until 5^remainingZeros < 5^(2^i).
+        // Let z = max{n >= 0 : ((intVal * 2^powsOf2) % 10^n) == 0 && n <= scale - preferredScale},
+        // then the invariant remainingZeros >= z is preserved after each iteration.
         // Note that if intVal % 5^(2^i) != 0, the loop condition will become false.
         for (int i = 0; remainingZeros >= 1L << i; i++) {
             final int exp = 1 << i;
@@ -5298,6 +5299,9 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         // which is equivalent to i == bitLength(remainingZeros) - 1,
         // is preserved at the beginning of each iteration.
         // Note that the loop stops exactly when remainingZeros == 0.
+        // Using the same definition of z for the first loop, the invariant
+        // remainingZeros >= z is preserved in this loop as well,
+        // so, when the loop ends, remainingZeros == 0 implies z == 0.
         for (int i = BigInteger.bitLengthForLong(remainingZeros) - 1; i >= 0; i--) {
             final int exp = 1 << i;
             qr = intVal.divideAndRemainder(fiveToTwoToThe(i));
