@@ -1815,10 +1815,10 @@ void MacroAssembler::lookup_secondary_supers_table_var(Register r_sub_klass,
   // the secondary supers.
 
   // This next instruction is equivalent to:
-  // mov(r_array_index, (u1)(Klass::SECONDARY_SUPERS_TABLE_SIZE - 1));
-  // sub(slot, r_array_index, slot);
-  eor(slot, slot, (u1)(Klass::SECONDARY_SUPERS_TABLE_SIZE - 1));
-  lslv(temp2, r_bitmap, slot);
+  // mov(tmp_reg, (u1)(Klass::SECONDARY_SUPERS_TABLE_SIZE - 1));
+  // sub(temp2, r_array_index, tmp_reg);
+  eor(temp2, slot, (u1)(Klass::SECONDARY_SUPERS_TABLE_SIZE - 1));
+  lslv(temp2, r_bitmap, temp2);
   tbz(temp2, Klass::SECONDARY_SUPERS_TABLE_SIZE - 1, L_fallthrough);
 
   bool must_save_v0 = (vtemp == fnoreg);
@@ -1860,7 +1860,6 @@ void MacroAssembler::lookup_secondary_supers_table_var(Register r_sub_klass,
   cbz(result, L_success ? *L_success : L_fallthrough); // Found a match
 
   // Is there another entry to check? Consult the bitmap.
-  eor(slot, slot, (u1)(Klass::SECONDARY_SUPERS_TABLE_SIZE - 1));
   rorv(r_bitmap, r_bitmap, slot);
   // rol(r_bitmap, r_bitmap, 1);
   tbz(r_bitmap, 1, L_fallthrough);
