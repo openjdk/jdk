@@ -178,5 +178,5 @@ ifeq ($(OPENJDK_BUILD_OS), windows)
 endif
 
 ifneq ($(TIDY_HOME), )
-  TIDY := $(TIDY_HOME)/bin/tidy
+  TIDY := $(TIDY_HOME)
 endif
