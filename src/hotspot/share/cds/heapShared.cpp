@@ -854,6 +854,9 @@ static bool mark_for_aot_initialization(InstanceKlass* buffered_ik) {
     }
 
     buffered_ik->set_has_aot_initialized_mirror();
+    if (AOTClassInitializer::is_runtime_setup_required(ArchiveBuilder::current()->get_source_addr(buffered_ik))) {
+      buffered_ik->set_is_runtime_setup_required();
+    }
     made_progress = true;
 
     InstanceKlass* super = buffered_ik->java_super();

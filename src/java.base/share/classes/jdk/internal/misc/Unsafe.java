@@ -57,6 +57,10 @@ public final class Unsafe {
 
     private static native void registerNatives();
     static {
+        runtimeSetup();
+    }
+
+    private static void runtimeSetup() {
         registerNatives();
     }
 

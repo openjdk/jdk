@@ -335,14 +335,6 @@ static void call_initPhase3(TRAPS) {
                                          vmSymbols::void_method_signature(), CHECK);
 }
 
-static void call_register_natives_for_aot_inited_class(InstanceKlass* ik, TRAPS) {
-  assert(ik->has_aot_initialized_mirror(), "sanity");
-  JavaValue result(T_VOID);
-  TempNewSymbol method_name = SymbolTable::new_symbol("registerNatives");
-  JavaCalls::call_static(&result, ik, method_name,
-                         vmSymbols::void_method_signature(), CHECK);
-}
-
 void Threads::initialize_java_lang_classes(JavaThread* main_thread, TRAPS) {
   TraceTime timer("Initialize java.lang classes", TRACETIME_LOG(Info, startuptime));
 
@@ -355,13 +347,6 @@ void Threads::initialize_java_lang_classes(JavaThread* main_thread, TRAPS) {
   initialize_class(vmSymbols::java_lang_System(), CHECK);
   // The VM creates & returns objects of this class. Make sure it's initialized.
   initialize_class(vmSymbols::java_lang_Class(), CHECK);
-
-  if (CDSConfig::is_loading_invokedynamic()) {
-    // The <clinit> of these two classes won't be executed, but we still need to register
-    // their natives.
-    call_register_natives_for_aot_inited_class(vmClasses::Class_klass(), CHECK);
-    call_register_natives_for_aot_inited_class(vmClasses::internal_Unsafe_klass(), CHECK);
-  }
 
   initialize_class(vmSymbols::java_lang_ThreadGroup(), CHECK);
   Handle thread_group = create_initial_thread_group(CHECK);

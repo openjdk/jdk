@@ -27,7 +27,10 @@
 #include "cds/archiveBuilder.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/heapShared.hpp"
+#include "classfile/vmSymbols.hpp"
 #include "oops/instanceKlass.inline.hpp"
+#include "oops/symbol.hpp"
+#include "runtime/javaCalls.hpp"
 
 class AOTClassInitializer::AllowedSpec {
   const char* _class_name;
@@ -232,6 +235,28 @@ bool AOTClassInitializer::can_archive_initialized_mirror(InstanceKlass* ik) {
   }
 
   return false;
+}
+
+// TODO: currently we have a hard-coded list. We should turn this into
+// an annotation: @jdk.internal.vm.annotation.RuntimeSetupRequired
+bool AOTClassInitializer::is_runtime_setup_required(InstanceKlass* ik) {
+  return ik == vmClasses::Class_klass() ||
+         ik == vmClasses::internal_Unsafe_klass() ||
+         ik == vmClasses::ConcurrentHashMap_klass();
+}
+
+void AOTClassInitializer::call_runtime_setup(InstanceKlass* ik, TRAPS) {
+  assert(ik->has_aot_initialized_mirror(), "sanity");
+  if (ik->is_runtime_setup_required()) {
+    if (log_is_enabled(Info, cds, init)) {
+      ResourceMark rm;
+      log_info(cds, init)("Calling %s::runtimeSetup()", ik->external_name());
+    }
+    JavaValue result(T_VOID);
+    JavaCalls::call_static(&result, ik,
+                           vmSymbols::runtimeSetup(),
+                           vmSymbols::void_method_signature(), CHECK);
+  }
 }
 
 #ifdef ASSERT
