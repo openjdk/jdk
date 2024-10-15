@@ -137,7 +137,7 @@ private:
   PipeChannel _pipe;
 
 public:
-  // for v1 pipe must be write-only.
+  // for v1 pipe must be write-only
   void open_pipe(const char* pipe_name, bool write_only) {
     _pipe.open(pipe_name, write_only);
   }
