@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ import javax.security.auth.DestroyFailedException;
 
 public class KeyDestructionTest {
     public static void main(String[] args) throws Exception {
-        KeyPair keypair = generateKeyPair("RSA", 1024);
+        KeyPair keypair = generateKeyPair("RSA", 2048);
 
         // Check keys that support and have implemented key destruction
         testKeyDestruction(new MyDestroyableSecretKey());

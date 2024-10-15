@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ public class NonStandardNames {
         X500Name n = new X500Name("cn=Me");
 
         CertAndKeyGen cakg = new CertAndKeyGen("RSA", "SHA256withRSA");
-        cakg.generate(1024);
+        cakg.generate(2048);
         X509Certificate cert = cakg.getSelfCertificate(n, 1000);
 
         MessageDigest md = MessageDigest.getInstance("SHA-256");

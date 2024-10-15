@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,8 +39,8 @@ public class DHKeyAgreementPadding {
 
     public static void main(String[] args) throws Exception {
 
-        byte[] aliceSecret = new byte[80];
-        byte[] bobSecret = new byte[80];
+        byte[] aliceSecret = new byte[256];
+        byte[] bobSecret = new byte[256];
 
         KeyAgreement alice = KeyAgreement.getInstance("DiffieHellman");
         KeyAgreement bob = KeyAgreement.getInstance("DiffieHellman");
@@ -48,7 +48,7 @@ public class DHKeyAgreementPadding {
         // The probability of an error is 0.2% or 1/500. Try more times.
         for (int i = 0; i < 5000; i++) {
             KeyPairGenerator keyPairGen = KeyPairGenerator.getInstance("DiffieHellman");
-            keyPairGen.initialize(512);
+            keyPairGen.initialize(2048);
             KeyPair aliceKeyPair = keyPairGen.generateKeyPair();
             KeyPair bobKeyPair = keyPairGen.generateKeyPair();
 

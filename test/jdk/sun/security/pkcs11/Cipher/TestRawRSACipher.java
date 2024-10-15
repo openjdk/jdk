@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ public class TestRawRSACipher extends PKCS11Test {
             return;
         }
 
-        final int KEY_LEN = 1024;
+        final int KEY_LEN = 2048;
         KeyPairGenerator kpGen = KeyPairGenerator.getInstance("RSA", p);
         kpGen.initialize(KEY_LEN);
         KeyPair kp = kpGen.generateKeyPair();

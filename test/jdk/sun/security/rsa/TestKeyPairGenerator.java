@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,8 +113,7 @@ public class TestKeyPairGenerator {
         long start = System.currentTimeMillis();
         provider = Security.getProvider("SunRsaSign");
         data = new byte[2048];
-        // keypair generation is very slow, test only a few short keys
-        int[] keyLengths = {512, 512, 1024};
+        int[] keyLengths = {2048, 2048, 3072};
         BigInteger[] pubExps = {null, BigInteger.valueOf(3), null};
         KeyPair[] keyPairs = new KeyPair[3];
         new Random().nextBytes(data);

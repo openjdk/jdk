@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,7 @@ public class PBEKeyCleanupTest {
     }
 
     private static void testPBKSecret(String algorithm) throws Exception {
-        byte[] salt = new byte[8];
+        byte[] salt = new byte[16];
         new Random().nextBytes(salt);
         char[] password = new char[] {'f', 'o', 'o'};
         PBEKeySpec pbeKeySpec = new PBEKeySpec(PASS_PHRASE.toCharArray(), salt,

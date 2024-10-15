@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,8 +34,8 @@ import java.security.interfaces.*;
 public class TestKeyPairGeneratorLength {
 
     public static void main(String[] args) throws Exception {
-        test(512);
-        test(513);
+        test(2048);
+        test(2049);
         System.out.println("Done.");
     }
 
