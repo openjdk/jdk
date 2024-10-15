@@ -56,7 +56,7 @@ import sun.awt.SunToolkit;
  * @test
  * @bug 4813288 4866704
  * @summary Test for "modal exclusion" functionality
- * @library /open/test/jdk/java/awt/regtesthelpers /open/test/lib
+ * @library /java/awt/regtesthelpers /open/test/lib
  * @build PassFailJFrame
  * @modules java.desktop/sun.awt
  * @run main/manual ModalExcludedTest
