@@ -406,6 +406,7 @@ public class ML_DSA {
     private final int omega;
     private final int s1PackedLength;
     private final int s2PackedLength;
+    private final int t0PackedLength;
     private final int s1s2CoeffSize;
     private final int t0CoeffSize = 13;
     private final int privateKeyLength;
@@ -433,6 +434,7 @@ public class ML_DSA {
                 signatureLength = 2420;
                 s1PackedLength = 384;
                 s2PackedLength = 384;
+                t0PackedLength = 1664;
                 s1s2CoeffSize = 3;
                 wCoeffSize = 6;
                 break;
@@ -453,6 +455,7 @@ public class ML_DSA {
                 signatureLength = 3293;
                 s1PackedLength = 640;
                 s2PackedLength = 768;
+                t0PackedLength = 2496;
                 s1s2CoeffSize = 4;
                 wCoeffSize = 4;
                 break;
@@ -473,6 +476,7 @@ public class ML_DSA {
                 signatureLength = 4595;
                 s1PackedLength = 672;
                 s2PackedLength = 768;
+                t0PackedLength = 3328;
                 s1s2CoeffSize = 3;
                 wCoeffSize = 4;
                 break;
@@ -482,6 +486,18 @@ public class ML_DSA {
     }
 
     public record ML_DSA_PrivateKey(byte[] rho, byte[] k, byte[] tr, int[][] s1, int[][] s2, int[][] t0) {
+        void destroy() {
+            Arrays.fill(k, (byte)0);
+            for (var b : s1) {
+                Arrays.fill(b, (byte) 0);
+            }
+            for (var b : s2) {
+                Arrays.fill(b, (byte) 0);
+            }
+            for (var b : t0) {
+                Arrays.fill(b, (byte) 0);
+            }
+        }
     }
 
     public record ML_DSA_PublicKey(byte[] rho, int[][] t1) {
@@ -607,6 +623,7 @@ public class ML_DSA {
                     continue;
                 }
             }
+            sk.destroy();
             return new ML_DSA_Signature(commitmentHash, z, h);
         }
     }
@@ -687,24 +704,22 @@ public class ML_DSA {
         return result;
     }
 
-    public byte[] bitPack(int[][] vector, int bitsPerCoeff, int maxValue) {
+    public void bitPack(int[][] vector, int bitsPerCoeff, int maxValue,
+            byte[] output, int offset) {
         int vecLen = vector.length;
-        byte[] result = new byte[(vecLen * mlDsa_n * bitsPerCoeff) / 8];
         int acc = 0;
         int shift = 0;
-        int i = 0;
         for (int[] poly : vector) {
             for (int m = 0; m < mlDsa_n; m++) {
                 acc += (maxValue - poly[m]) << shift;
                 shift += bitsPerCoeff;
                 while (shift >= 8) {
-                    result[i++] = (byte) acc;
+                    output[offset++] = (byte) acc;
                     acc >>= 8;
                     shift -= 8;
                 }
             }
         }
-        return result;
     }
 
     public int[][] t1Unpack(byte[] v) {
@@ -722,18 +737,17 @@ public class ML_DSA {
         return t1;
     }
 
-    public int[][] bitUnpack(byte[] v, int dim, int maxValue, int bitsPerCoeff) {
+    public int[][] bitUnpack(byte[] v, int offset, int dim, int maxValue, int bitsPerCoeff) {
         int[][] res = new int[dim][mlDsa_n];
 
         int mask = (1 << bitsPerCoeff) - 1;
         int top = 0;
         int shift = 0;
         int acc = 0;
-        int index = 0;
         for (int i = 0; i < dim; i++) {
             for (int j = 0; j < mlDsa_n; j++) {
                 while (top - shift < bitsPerCoeff) {
-                    acc += ((v[index++] & 0xff) << top);
+                    acc += ((v[offset++] & 0xff) << top);
                     top += 8;
                 }
                 res[i][j] = maxValue - ((acc >> shift) & mask);
@@ -748,44 +762,42 @@ public class ML_DSA {
         return res;
     }
 
-    private byte[] hintBitPack(boolean[][] h) {
-        byte[] y = new byte[omega + mlDsa_k];
+    private void hintBitPack(boolean[][] h, byte[] buffer, int offset) {
         int idx = 0;
         for (int i = 0; i < mlDsa_k; i++) {
             for (int j = 0; j < mlDsa_n; j++) {
                 if (h[i][j]) {
-                    y[idx] = (byte)j;
+                    buffer[offset + idx] = (byte)j;
                     idx++;
                 }
             }
-            y[omega + i] = (byte)idx;
+            buffer[offset + omega + i] = (byte)idx;
         }
-        return y;
     }
 
-    private boolean[][] hintBitUnpack(byte[] y) {
+    private boolean[][] hintBitUnpack(byte[] y, int offset) {
         boolean[][] h = new boolean[mlDsa_k][mlDsa_n];
         int idx = 0;
         for (int i = 0; i < mlDsa_k; i++) {
-            int j = y[omega + i];
+            int j = y[offset + omega + i];
             if (j < idx || j > omega) {
                 return null;
             }
             int first = idx;
             while (idx < j) {
                 if (idx > first) {
-                    if ((y[idx - 1] & 0xff) >= (y[idx] & 0xff)) {
+                    if ((y[offset + idx - 1] & 0xff) >= (y[offset + idx] & 0xff)) {
                         return null;
                     }
                 }
-                int hintIndex = y[idx] & 0xff;
+                int hintIndex = y[offset + idx] & 0xff;
                 h[i][hintIndex] = true;
                 idx++;
             }
         }
 
         while (idx < omega) {
-            if (y[idx] != 0) {
+            if (y[offset + idx] != 0) {
                 return null;
             }
             idx++;
@@ -817,19 +829,22 @@ public class ML_DSA {
 
     public byte[] skEncode(ML_DSA_PrivateKey key) {
 
-        byte[] s1Packed = bitPack(key.s1, s1s2CoeffSize, eta);
-        byte[] s2Packed = bitPack(key.s2, s1s2CoeffSize, eta);
-        byte[] t0Packed = bitPack(key.t0, t0CoeffSize, 1 << 12);
-
         byte[] skBytes = new byte[mlDsaASeedLength + mlDsaKLength + key.tr.length +
-            s1PackedLength + s2PackedLength + t0Packed.length];
+                s1PackedLength + s2PackedLength + t0PackedLength];
 
-        System.arraycopy(key.rho, 0, skBytes, 0, mlDsaASeedLength);
-        System.arraycopy(key.k, 0, skBytes, mlDsaASeedLength, mlDsaKLength);
-        System.arraycopy(key.tr, 0, skBytes, mlDsaASeedLength + mlDsaKLength, mlDsaTrLength);
-        System.arraycopy(s1Packed, 0, skBytes, mlDsaASeedLength + mlDsaKLength + key.tr.length, s1PackedLength);
-        System.arraycopy(s2Packed, 0, skBytes, mlDsaASeedLength + mlDsaKLength + key.tr.length + s1PackedLength, s2PackedLength);
-        System.arraycopy(t0Packed, 0, skBytes, mlDsaASeedLength + mlDsaKLength + key.tr.length + s1PackedLength + s2PackedLength, t0Packed.length);
+        int pos = 0;
+        System.arraycopy(key.rho, 0, skBytes, pos, mlDsaASeedLength);
+        pos += mlDsaASeedLength;
+        System.arraycopy(key.k, 0, skBytes, pos, mlDsaKLength);
+        pos += mlDsaKLength;
+        System.arraycopy(key.tr, 0, skBytes, pos, mlDsaTrLength);
+        pos += mlDsaTrLength;
+
+        bitPack(key.s1, s1s2CoeffSize, eta, skBytes, pos);
+        pos += s1PackedLength;
+        bitPack(key.s2, s1s2CoeffSize, eta, skBytes, pos);
+        pos += s2PackedLength;
+        bitPack(key.t0, t0CoeffSize, 1 << 12, skBytes, pos);
 
         return skBytes;
     }
@@ -847,20 +862,16 @@ public class ML_DSA {
         //Parse s1
         int start = mlDsaASeedLength + mlDsaKLength + mlDsaTrLength;
         int end = start + (32 * mlDsa_l * s1s2CoeffSize);
-        byte[] y = Arrays.copyOfRange(sk, start, end);
-        int[][] s1 = bitUnpack(y, mlDsa_l, eta, s1s2CoeffSize);
+        int[][] s1 = bitUnpack(sk, start, mlDsa_l, eta, s1s2CoeffSize);
 
         //Parse s2
         start = end;
         end += 32 * s1s2CoeffSize * mlDsa_k;
-        byte[] z = Arrays.copyOfRange(sk, start, end);
-        int[][] s2 = bitUnpack(z, mlDsa_k, eta, s1s2CoeffSize);
+        int[][] s2 = bitUnpack(sk, start, mlDsa_k, eta, s1s2CoeffSize);
 
         //Parse t0
         start = end;
-        end += 32 * mlDsa_d * mlDsa_k;
-        byte[] w = Arrays.copyOfRange(sk, start, end);
-        int[][] t0 = bitUnpack(w, mlDsa_k, 1 << 12, t0CoeffSize);
+        int[][] t0 = bitUnpack(sk, start, mlDsa_k, 1 << 12, t0CoeffSize);
 
         return new ML_DSA_PrivateKey(rho, k, tr, s1, s2, t0);
     }
@@ -869,13 +880,12 @@ public class ML_DSA {
         int cSize = lambda / 4;
         int zSize = mlDsa_l * 32 * (1 + gamma1Bits);
 
-        byte[] zPacked = bitPack(sig.response, gamma1Bits + 1, gamma1);
-        byte[] hPacked = hintBitPack(sig.hint);
-
         byte[] sigBytes = new byte[cSize + zSize + omega + mlDsa_k];
+
         System.arraycopy(sig.commitmentHash, 0, sigBytes, 0, cSize);
-        System.arraycopy(zPacked, 0, sigBytes, cSize, zSize);
-        System.arraycopy(hPacked, 0, sigBytes, cSize + zSize, omega + mlDsa_k);
+        bitPack(sig.response, gamma1Bits + 1, gamma1, sigBytes, cSize);
+        hintBitPack(sig.hint, sigBytes, cSize + zSize);
+
         return sigBytes;
     }
 
@@ -886,14 +896,11 @@ public class ML_DSA {
         //Decode z
         int start = lambda / 4;
         int end = start + (32 * mlDsa_l * (1 + gamma1Bits));
-        byte[] x = Arrays.copyOfRange(sig, start, end);
-        int[][] z = bitUnpack(x, mlDsa_l, gamma1, gamma1Bits + 1);
+        int[][] z = bitUnpack(sig, start, mlDsa_l, gamma1, gamma1Bits + 1);
 
         //Decode h
         start = end;
-        end += omega + mlDsa_k;
-        byte[] y = Arrays.copyOfRange(sig, start, end);
-        boolean[][] h = hintBitUnpack(y);
+        boolean[][] h = hintBitUnpack(sig, start);
         return new ML_DSA_Signature(cTilde, z, h);
     }
 
@@ -1081,7 +1088,7 @@ public class ML_DSA {
             }
             xof.reset();
         }
-        return bitUnpack(v, mlDsa_l, gamma1, c);
+        return bitUnpack(v, 0, mlDsa_l, gamma1, c);
     }
 
     /*

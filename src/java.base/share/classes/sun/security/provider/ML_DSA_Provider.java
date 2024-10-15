@@ -28,6 +28,7 @@ package sun.security.provider;
 import sun.security.jca.JCAUtil;
 import java.security.*;
 import java.security.SecureRandom;
+import java.util.Arrays;
 
 public class ML_DSA_Provider {
 
@@ -55,9 +56,14 @@ public class ML_DSA_Provider {
             r.nextBytes(seed);
             ML_DSA mlDsa = new ML_DSA(name2int(name));
             ML_DSA.ML_DSA_KeyPair kp = mlDsa.generateKeyPairInternal(seed);
-            return new byte[][] {
-                    mlDsa.pkEncode(kp.publicKey()),
-                    mlDsa.skEncode(kp.privateKey()) };
+            try {
+                return new byte[][]{
+                        mlDsa.pkEncode(kp.publicKey()),
+                        mlDsa.skEncode(kp.privateKey())};
+            } finally {
+                kp.privateKey().destroy();
+                Arrays.fill(seed, (byte)0);
+            }
         }
     }
 
