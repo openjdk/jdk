@@ -288,7 +288,6 @@ private:
   ShenandoahHeap* const _heap;
   ShenandoahRegionPartitions _partitions;
   ShenandoahHeapRegion** _trash_regions;
-  size_t _retired_old_regions;
 
   HeapWord* allocate_aligned_plab(size_t size, ShenandoahAllocRequest& req, ShenandoahHeapRegion* r);
 
@@ -303,8 +302,10 @@ private:
   // from right-to-left or left-to-right, we reset the value of this counter to _InitialAllocBiasWeight.
   ssize_t _alloc_bias_weight;
 
-  const ssize_t _InitialAllocBiasWeight = 256;
+  const ssize_t INITIAL_ALLOC_BIAS_WEIGHT = 256;
 
+  // Increases used memory for the partition if the allocation is successful. `in_new_region` will be set
+  // if this is the first allocation in the region.
   HeapWord* try_allocate_in(ShenandoahHeapRegion* region, ShenandoahAllocRequest& req, bool& in_new_region);
 
   // While holding the heap lock, allocate memory for a single object or LAB  which is to be entirely contained
@@ -328,6 +329,27 @@ private:
   // the Mutator free set into the Collector or OldCollector free set.
   void flip_to_gc(ShenandoahHeapRegion* r);
   void flip_to_old_gc(ShenandoahHeapRegion* r);
+
+  // Handle allocation for mutator.
+  HeapWord* allocate_for_mutator(ShenandoahAllocRequest &req, bool &in_new_region);
+
+  // Update allocation bias and decided whether to allocate from the left or right side of the heap.
+  void update_allocation_bias();
+
+  // Search for regions to satisfy allocation request starting from the right, moving to the left.
+  HeapWord* allocate_from_right_to_left(ShenandoahAllocRequest& req, bool& in_new_region);
+
+  // Search for regions to satisfy allocation request starting from the left, moving to the right.
+  HeapWord* allocate_from_left_to_right(ShenandoahAllocRequest& req, bool& in_new_region);
+
+  // Handle allocation for collector (for evacuation).
+  HeapWord* allocate_for_collector(ShenandoahAllocRequest& req, bool& in_new_region);
+
+  // Return true if the respective generation for this request has free regions.
+  bool can_allocate_in_new_region(const ShenandoahAllocRequest& req);
+
+  // Attempt to allocate memory for an evacuation from the mutator's partition.
+  HeapWord* try_allocate_from_mutator(ShenandoahAllocRequest& req, bool& in_new_region);
 
   void clear_internal();
   void try_recycle_trashed(ShenandoahHeapRegion *r);
