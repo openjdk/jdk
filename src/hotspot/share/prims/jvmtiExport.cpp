@@ -1075,6 +1075,16 @@ bool JvmtiExport::has_early_class_hook_env() {
   return false;
 }
 
+bool JvmtiExport::has_early_vmstart_env() {
+  JvmtiEnvIterator it;
+  for (JvmtiEnv* env = it.first(); env != nullptr; env = it.next(env)) {
+    if (env->early_vmstart_env()) {
+      return true;
+    }
+  }
+  return false;
+}
+
 bool JvmtiExport::_should_post_class_file_load_hook = false;
 
 // This flag is read by C2 during VM internal objects allocation

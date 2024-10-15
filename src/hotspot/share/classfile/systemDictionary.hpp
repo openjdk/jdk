@@ -76,6 +76,7 @@ class EventClassLoad;
 class Symbol;
 
 class SystemDictionary : AllStatic {
+  friend class AOTLinkedClassBulkLoader;
   friend class BootstrapInfo;
   friend class vmClasses;
   friend class VMStructs;
@@ -292,6 +293,9 @@ public:
   static void add_nest_host_error(const constantPoolHandle& pool, int which,
                                   const char* message);
   static const char* find_nest_host_error(const constantPoolHandle& pool, int which);
+
+  static void add_to_initiating_loader(JavaThread* current, InstanceKlass* k,
+                                       ClassLoaderData* loader_data) NOT_CDS_RETURN;
 
   static OopHandle  _java_system_loader;
   static OopHandle  _java_platform_loader;

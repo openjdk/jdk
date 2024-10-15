@@ -39,6 +39,7 @@
 #include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/compressedOops.inline.hpp"
+#include "oops/klass.inline.hpp"
 #include "runtime/arguments.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/debug.hpp"

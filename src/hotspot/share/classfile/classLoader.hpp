@@ -140,6 +140,7 @@ public:
 class ClassLoader: AllStatic {
  public:
   enum ClassLoaderType {
+    OTHER = 0,
     BOOT_LOADER = 1,      /* boot loader */
     PLATFORM_LOADER  = 2, /* PlatformClassLoader */
     APP_LOADER  = 3       /* AppClassLoader */

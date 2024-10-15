@@ -96,8 +96,8 @@
            range(0, 2)                                                      \
                                                                             \
   /*========== New "AOT" flags =========================================*/  \
-  /* These are aliases of -Xshare:dump, -XX:SharedArchiveFile=..., etc. */  \
-  /* See CDSConfig::check_flag_aliases().                               */  \
+  /* The following 3 flags are aliases of -Xshare:dump,                 */  \
+  /* -XX:SharedArchiveFile=..., etc. See CDSConfig::check_flag_aliases()*/  \
                                                                             \
   product(ccstr, AOTMode, nullptr,                                          \
           "Specifies how AOTCache should be created or used. Valid values " \
@@ -109,6 +109,11 @@
                                                                             \
   product(ccstr, AOTCache, nullptr,                                         \
           "Cache for improving start up and warm up")                       \
+                                                                            \
+  product(bool, AOTClassLinking, false,                                     \
+          "Load/link all archived classes for the boot/platform/app "       \
+          "loaders before application main")                                \
+
 // end of CDS_FLAGS
 
 DECLARE_FLAGS(CDS_FLAGS)

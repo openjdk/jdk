@@ -190,13 +190,20 @@ public class ClassPathAttr {
     Files.copy(Paths.get(cp), Paths.get(nonExistPath),
                StandardCopyOption.REPLACE_EXISTING);
 
-    TestCommon.run(
+    CDSTestUtils.Result result = TestCommon.run(
         "-Xlog:class+path",
         "-cp", cp,
-        "CpAttr6")
-      .assertNormalExit(output -> {
-          output.shouldMatch("Archived non-system classes are disabled because the file .*cpattrX.jar exists");
-        });
+        "CpAttr6");
+    if (CDSTestUtils.isAOTClassLinkingEnabled()) {
+        result.assertAbnormalExit(output -> {
+                output.shouldMatch("CDS archive has aot-linked classes. It cannot be used because the file .*cpattrX.jar exists");
+            });
+
+    } else {
+        result.assertNormalExit(output -> {
+                output.shouldMatch("Archived non-system classes are disabled because the file .*cpattrX.jar exists");
+            });
+    }
   }
 
   static void testClassPathAttrJarOnCP() throws Exception {

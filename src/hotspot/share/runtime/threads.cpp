@@ -24,6 +24,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/aotLinkedClassBulkLoader.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/metaspaceShared.hpp"
@@ -732,6 +733,10 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // This will initialize the module system.  Only java.base classes can be
   // loaded until phase 2 completes
   call_initPhase2(CHECK_JNI_ERR);
+
+  if (CDSConfig::is_using_aot_linked_classes()) {
+    AOTLinkedClassBulkLoader::load_non_javabase_classes(THREAD);
+  }
 
   JFR_ONLY(Jfr::on_create_vm_2();)
 

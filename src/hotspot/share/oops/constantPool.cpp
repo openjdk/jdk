@@ -502,7 +502,7 @@ void ConstantPool::remove_resolved_klass_if_non_deterministic(int cp_index) {
                 (!k->is_instance_klass() || pool_holder()->is_subtype_of(k)) ? "" : " (not supertype)");
     } else {
       Symbol* name = klass_name_at(cp_index);
-      log.print("    %s", name->as_C_string());
+      log.print(" => %s", name->as_C_string());
     }
   }
 

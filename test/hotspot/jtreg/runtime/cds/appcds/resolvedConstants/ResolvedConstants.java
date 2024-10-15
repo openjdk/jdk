@@ -26,6 +26,7 @@
  * @test
  * @summary Dump time resolutiom of constant pool entries.
  * @requires vm.cds
+ * @requires vm.cds.supports.aot.class.linking
  * @requires vm.compMode != "Xcomp"
  * @library /test/lib
  * @build ResolvedConstants
@@ -42,8 +43,14 @@ public class ResolvedConstants {
     static final String appJar = ClassFileInstaller.getJarPath("app.jar");
     static final String mainClass = ResolvedConstantsApp.class.getName();
 
+    static boolean aotClassLinking;
     public static void main(String[] args) throws Exception {
-        // dump class list
+        test(false);
+        test(true);
+    }
+
+    static void test(boolean testMode) throws Exception {
+        aotClassLinking = testMode;
         CDSTestUtils.dumpClassList(classList, "-cp", appJar, mainClass)
             .assertNormalExit(output -> {
                 output.shouldContain("Hello ResolvedConstantsApp");
@@ -53,77 +60,94 @@ public class ResolvedConstants {
             .addPrefix("-XX:ExtraSharedClassListFile=" + classList,
                        "-cp", appJar,
                        "-Xlog:cds+resolve=trace");
+        if (aotClassLinking) {
+            opts.addPrefix("-XX:+AOTClassLinking");
+        } else {
+            opts.addPrefix("-XX:-AOTClassLinking");
+        }
+
         CDSTestUtils.createArchiveAndCheck(opts)
           // Class References ---
 
             // Always resolve reference when a class references itself
-            .shouldMatch("cds,resolve.*archived klass.* ResolvedConstantsApp app => ResolvedConstantsApp app")
+            .shouldMatch(ALWAYS("klass.* ResolvedConstantsApp app => ResolvedConstantsApp app"))
 
             // Always resolve reference when a class references a super class
-            .shouldMatch("cds,resolve.*archived klass.* ResolvedConstantsApp app => java/lang/Object boot")
-            .shouldMatch("cds,resolve.*archived klass.* ResolvedConstantsBar app => ResolvedConstantsFoo app")
+            .shouldMatch(ALWAYS("klass.* ResolvedConstantsApp app => java/lang/Object boot"))
+            .shouldMatch(ALWAYS("klass.* ResolvedConstantsBar app => ResolvedConstantsFoo app"))
 
             // Always resolve reference when a class references a super interface
-            .shouldMatch("cds,resolve.*archived klass.* ResolvedConstantsApp app => java/lang/Runnable boot")
+            .shouldMatch(ALWAYS("klass.* ResolvedConstantsApp app => java/lang/Runnable boot"))
 
-            // java/lang/System is in the root loader but ResolvedConstantsApp is loaded by the app loader.
-            // Even though System is in the vmClasses list, when ResolvedConstantsApp looks up
-            // "java/lang/System" in its ConstantPool, the app loader may not have resolved the System
-            // class yet (i.e., there's no initiaited class entry for System in the app loader's dictionary)
-            .shouldMatch("cds,resolve.*reverted klass.* ResolvedConstantsApp .*java/lang/System")
+            // Without -XX:+AOTClassLinking:
+            //   java/lang/System is in the boot loader but ResolvedConstantsApp is loaded by the app loader.
+            //   Even though System is in the vmClasses list, when ResolvedConstantsApp looks up
+            //   "java/lang/System" in its ConstantPool, the app loader may not have resolved the System
+            //   class yet (i.e., there's no initiaited class entry for System in the app loader's dictionary)
+            .shouldMatch(AOTLINK_ONLY("klass.* ResolvedConstantsApp .*java/lang/System"))
 
           // Field References ---
 
             // Always resolve references to fields in the current class or super class(es)
-            .shouldMatch("cds,resolve.*archived field.* ResolvedConstantsBar => ResolvedConstantsBar.b:I")
-            .shouldMatch("cds,resolve.*archived field.* ResolvedConstantsBar => ResolvedConstantsBar.a:I")
-            .shouldMatch("cds,resolve.*archived field.* ResolvedConstantsBar => ResolvedConstantsFoo.a:I")
+            .shouldMatch(ALWAYS("field.* ResolvedConstantsBar => ResolvedConstantsBar.b:I"))
+            .shouldMatch(ALWAYS("field.* ResolvedConstantsBar => ResolvedConstantsBar.a:I"))
+            .shouldMatch(ALWAYS("field.* ResolvedConstantsBar => ResolvedConstantsFoo.a:I"))
+            .shouldMatch(ALWAYS("field.* ResolvedConstantsFoo => ResolvedConstantsFoo.a:I"))
 
-            // Do not resolve field references to child classes
-            .shouldMatch("cds,resolve.*archived field.* ResolvedConstantsFoo => ResolvedConstantsFoo.a:I")
-            .shouldMatch("cds,resolve.*reverted field.* ResolvedConstantsFoo    ResolvedConstantsBar.a:I")
-            .shouldMatch("cds,resolve.*reverted field.* ResolvedConstantsFoo    ResolvedConstantsBar.b:I")
+            // Resolve field references to child classes ONLY when using -XX:+AOTClassLinking
+            .shouldMatch(AOTLINK_ONLY("field.* ResolvedConstantsFoo => ResolvedConstantsBar.a:I"))
+            .shouldMatch(AOTLINK_ONLY("field.* ResolvedConstantsFoo => ResolvedConstantsBar.b:I"))
 
-            // Do not resolve field references to unrelated classes
-            .shouldMatch("cds,resolve.*reverted field.* ResolvedConstantsApp    ResolvedConstantsBar.a:I")
-            .shouldMatch("cds,resolve.*reverted field.* ResolvedConstantsApp    ResolvedConstantsBar.b:I")
+            // Resolve field references to unrelated classes ONLY when using -XX:+AOTClassLinking
+            .shouldMatch(AOTLINK_ONLY("field.* ResolvedConstantsApp => ResolvedConstantsBar.a:I"))
+            .shouldMatch(AOTLINK_ONLY("field.* ResolvedConstantsApp => ResolvedConstantsBar.b:I"))
 
           // Method References ---
 
             // Should resolve references to own constructor
-            .shouldMatch("cds,resolve.*archived method .* ResolvedConstantsApp ResolvedConstantsApp.<init>:")
+            .shouldMatch(ALWAYS("method.* ResolvedConstantsApp ResolvedConstantsApp.<init>:"))
             // Should resolve references to super constructor
-            .shouldMatch("cds,resolve.*archived method .* ResolvedConstantsApp java/lang/Object.<init>:")
+            .shouldMatch(ALWAYS("method.* ResolvedConstantsApp java/lang/Object.<init>:"))
 
             // Should resolve interface methods in VM classes
-            .shouldMatch("cds,resolve.*archived interface method .* ResolvedConstantsApp java/lang/Runnable.run:")
+            .shouldMatch(ALWAYS("interface method .* ResolvedConstantsApp java/lang/Runnable.run:"))
 
             // Should resolve references to own non-static method (private or public)
-            .shouldMatch("archived method.*: ResolvedConstantsBar ResolvedConstantsBar.doBar:")
-            .shouldMatch("archived method.*: ResolvedConstantsApp ResolvedConstantsApp.privateInstanceCall:")
-            .shouldMatch("archived method.*: ResolvedConstantsApp ResolvedConstantsApp.publicInstanceCall:")
+            .shouldMatch(ALWAYS("method.*: ResolvedConstantsBar ResolvedConstantsBar.doBar:"))
+            .shouldMatch(ALWAYS("method.*: ResolvedConstantsApp ResolvedConstantsApp.privateInstanceCall:"))
+            .shouldMatch(ALWAYS("method.*: ResolvedConstantsApp ResolvedConstantsApp.publicInstanceCall:"))
 
             // Should not resolve references to static method
-            .shouldNotMatch(" archived method CP entry.*: ResolvedConstantsApp ResolvedConstantsApp.staticCall:")
+            .shouldNotMatch(ALWAYS("method.*: ResolvedConstantsApp ResolvedConstantsApp.staticCall:"))
 
             // Should resolve references to method in super type
-            .shouldMatch(" archived method CP entry.*: ResolvedConstantsBar ResolvedConstantsFoo.doBar:")
+            .shouldMatch(ALWAYS("method.*: ResolvedConstantsBar ResolvedConstantsFoo.doBar:"))
 
-            // App class cannot resolve references to methods in boot classes:
+            // Without -XX:+AOTClassLinking App class cannot resolve references to methods in boot classes:
             //    When the app class loader tries to resolve a class X that's normally loaded by
             //    the boot loader, it's possible for the app class loader to get a different copy of
             //    X (by using MethodHandles.Lookup.defineClass(), etc). Therefore, let's be on
             //    the side of safety and revert all such references.
-            //
-            //    This will be addressed in JDK-8315737.
-            .shouldMatch("reverted method.*: ResolvedConstantsApp java/io/PrintStream.println:")
-            .shouldMatch("reverted method.*: ResolvedConstantsBar java/lang/Class.getName:")
+            .shouldMatch(AOTLINK_ONLY("method.*: ResolvedConstantsApp java/io/PrintStream.println:"))
+            .shouldMatch(AOTLINK_ONLY("method.*: ResolvedConstantsBar java/lang/Class.getName:"))
 
-            // Should not resolve methods in unrelated classes.
-            .shouldMatch("reverted method.*: ResolvedConstantsApp ResolvedConstantsBar.doit:")
+            // Resole resolve methods in unrelated classes ONLY when using -XX:+AOTClassLinking
+            .shouldMatch(AOTLINK_ONLY("method.*: ResolvedConstantsApp ResolvedConstantsBar.doit:"))
 
           // End ---
             ;
+    }
+
+    static String ALWAYS(String s) {
+        return "cds,resolve.*archived " + s;
+    }
+
+    static String AOTLINK_ONLY(String s) {
+        if (aotClassLinking) {
+            return ALWAYS(s);
+        } else {
+            return "cds,resolve.*reverted " + s;
+        }
     }
 }
 
