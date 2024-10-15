@@ -28,9 +28,11 @@
  * @summary Writing forward on array creates cyclic dependency
  *          which leads to wrong result, when ignored.
  * @library /test/lib /
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+AlignVector -XX:+VerifyAlignVector
- *                   TestCyclicDependency
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-AlignVector
+ *                   TestCyclicDependency
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+AlignVector
+ *                   TestCyclicDependency
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+AlignVector -XX:+VerifyAlignVector
  *                   TestCyclicDependency
  */
 
