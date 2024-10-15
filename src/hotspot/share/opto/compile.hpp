@@ -391,6 +391,8 @@ class Compile : public Phase {
   DEBUG_ONLY(Unique_Node_List* _modified_nodes;)   // List of nodes which inputs were modified
   DEBUG_ONLY(bool       _phase_optimize_finished;) // Used for live node verification while creating new nodes
 
+  DEBUG_ONLY(bool       _phase_verify_ideal_loop;) // Are we in PhaseIdealLoop verification?
+
   // Arenas for new-space and old-space nodes.
   // Swapped between using _node_arena.
   // The lifetime of the old-space nodes is during xform.
@@ -786,6 +788,12 @@ private:
   void   set_post_loop_opts_phase() { _post_loop_opts_phase = true;  }
   void reset_post_loop_opts_phase() { _post_loop_opts_phase = false; }
 
+#ifdef ASSERT
+  bool       phase_verify_ideal_loop() const { return _phase_verify_ideal_loop; }
+  void   set_phase_verify_ideal_loop() { _phase_verify_ideal_loop = true; }
+  void reset_phase_verify_ideal_loop() { _phase_verify_ideal_loop = false; }
+#endif
+
   bool       allow_macro_nodes() { return _allow_macro_nodes;  }
   void reset_allow_macro_nodes() { _allow_macro_nodes = false;  }
 
@@ -815,7 +823,7 @@ private:
   ciEnv*      env() const            { return _env; }
   CompileLog* log() const            { return _log; }
 
-  bool        failing() const        {
+  bool        failing_internal() const {
     return _env->failing() ||
            _failure_reason.get() != nullptr;
   }
@@ -827,6 +835,27 @@ private:
 
   const CompilationFailureInfo* first_failure_details() const { return _first_failure_details; }
 
+  bool failing() {
+    if (failing_internal()) {
+      return true;
+    }
+#ifdef ASSERT
+    // Disable stress code for PhaseIdealLoop verification (would have cascading effects).
+    if (phase_verify_ideal_loop()) {
+      return false;
+    }
+    if (StressBailout) {
+      return fail_randomly();
+    }
+#endif
+    return false;
+  }
+
+#ifdef ASSERT
+  bool fail_randomly();
+  bool failure_is_artificial();
+#endif
+
   bool failure_reason_is(const char* r) const {
     return (r == _failure_reason.get()) ||
            (r != nullptr &&
@@ -834,11 +863,11 @@ private:
             strcmp(r, _failure_reason.get()) == 0);
   }
 
-  void record_failure(const char* reason);
-  void record_method_not_compilable(const char* reason) {
+  void record_failure(const char* reason DEBUG_ONLY(COMMA bool allow_multiple_failures = false));
+  void record_method_not_compilable(const char* reason DEBUG_ONLY(COMMA bool allow_multiple_failures = false)) {
     env()->record_method_not_compilable(reason);
     // Record failure reason.
-    record_failure(reason);
+    record_failure(reason DEBUG_ONLY(COMMA allow_multiple_failures));
   }
   bool check_node_count(uint margin, const char* reason) {
     if (oom()) {

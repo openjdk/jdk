@@ -315,8 +315,7 @@ public final class AnnotationReader {
             case TypeAnnotation.TypeParameterTarget tpt -> buf.writeU1(tpt.typeParameterIndex());
             case TypeAnnotation.SupertypeTarget st -> buf.writeU2(st.supertypeIndex());
             case TypeAnnotation.TypeParameterBoundTarget tpbt -> {
-                buf.writeU1(tpbt.typeParameterIndex());
-                buf.writeU1(tpbt.boundIndex());
+                buf.writeU1U1(tpbt.typeParameterIndex(), tpbt.boundIndex());
             }
             case TypeAnnotation.EmptyTarget _ -> {
                 // nothing to write
@@ -327,9 +326,7 @@ public final class AnnotationReader {
                 buf.writeU2(lvt.table().size());
                 for (var e : lvt.table()) {
                     int startPc = labelToBci(lr, e.startLabel(), ta);
-                    buf.writeU2(startPc);
-                    buf.writeU2(labelToBci(lr, e.endLabel(), ta) - startPc);
-                    buf.writeU2(e.index());
+                    buf.writeU2U2U2(startPc, labelToBci(lr, e.endLabel(), ta) - startPc, e.index());
                 }
             }
             case TypeAnnotation.CatchTarget ct -> buf.writeU2(ct.exceptionTableIndex());
@@ -343,8 +340,7 @@ public final class AnnotationReader {
         // target_path
         buf.writeU1(ta.targetPath().size());
         for (TypeAnnotation.TypePathComponent component : ta.targetPath()) {
-            buf.writeU1(component.typePathKind().tag());
-            buf.writeU1(component.typeArgumentIndex());
+            buf.writeU1U1(component.typePathKind().tag(), component.typeArgumentIndex());
         }
 
         // annotation data

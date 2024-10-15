@@ -1972,12 +1972,16 @@ const TypeVectMask* Matcher::predicate_reg_type(const Type* elemTy, int length) 
 
 // Vector calling convention not yet implemented.
 bool Matcher::supports_vector_calling_convention(void) {
-  return false;
+  return EnableVectorSupport && UseVectorStubs;
 }
 
 OptoRegPair Matcher::vector_return_value(uint ideal_reg) {
-  Unimplemented();
-  return OptoRegPair(0, 0);
+  assert(EnableVectorSupport && UseVectorStubs, "sanity");
+  assert(ideal_reg == Op_VecA, "sanity");
+  // check more info at https://github.com/riscv-non-isa/riscv-elf-psabi-doc/blob/master/riscv-cc.adoc
+  int lo = V8_num;
+  int hi = V8_K_num;
+  return OptoRegPair(hi, lo);
 }
 
 // Is this branch offset short enough that a short branch can be used?
@@ -10069,6 +10073,23 @@ instruct CallLeafDirect(method meth, rFlagsReg cr)
   ins_cost(BRANCH_COST);
 
   format %{ "CALL, runtime leaf $meth\t#@CallLeafDirect" %}
+
+  ins_encode(riscv_enc_java_to_runtime(meth));
+
+  ins_pipe(pipe_class_call);
+%}
+
+// Call Runtime Instruction without safepoint and with vector arguments
+
+instruct CallLeafDirectVector(method meth, rFlagsReg cr)
+%{
+  match(CallLeafVector);
+
+  effect(USE meth, KILL cr);
+
+  ins_cost(BRANCH_COST);
+
+  format %{ "CALL, runtime leaf vector $meth" %}
 
   ins_encode(riscv_enc_java_to_runtime(meth));
 

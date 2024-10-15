@@ -1464,7 +1464,8 @@ IfTrueNode* PhaseIdealLoop::create_initialized_assertion_predicate(IfNode* templ
                                                                    Node* new_stride, Node* control) {
   assert(assertion_predicate_has_loop_opaque_node(template_assertion_predicate),
          "must find OpaqueLoop* nodes for Template Assertion Predicate");
-  InitializedAssertionPredicate initialized_assertion_predicate(template_assertion_predicate, new_init, new_stride, this);
+  InitializedAssertionPredicateCreator initialized_assertion_predicate(template_assertion_predicate, new_init,
+                                                                       new_stride, this);
   IfTrueNode* success_proj = initialized_assertion_predicate.create(control);
   assert(!assertion_predicate_has_loop_opaque_node(success_proj->in(0)->as_If()),
          "Initialized Assertion Predicates do not have OpaqueLoop* nodes in the bool expression anymore");

@@ -2721,7 +2721,7 @@ typedef void (MacroAssembler::* mem_vector_insn)(FloatRegister Rt,
   {
     Address addr = mem2address(opcode, base, index, scale, disp);
     if (addr.getMode() == Address::base_plus_offset) {
-      // Fix up any out-of-range offsets.
+      /* Fix up any out-of-range offsets. */
       assert_different_registers(rscratch1, base);
       assert_different_registers(rscratch1, reg);
       addr = __ legitimize_address(addr, size_in_memory, rscratch1);
@@ -2762,11 +2762,7 @@ typedef void (MacroAssembler::* mem_vector_insn)(FloatRegister Rt,
                         int opcode, Register base, int index, int size, int disp)
   {
     if (index == -1) {
-      // Fix up any out-of-range offsets.
-      assert_different_registers(rscratch1, base);
-      Address addr = Address(base, disp);
-      addr = __ legitimize_address(addr, (1 << T), rscratch1);
-      (masm->*insn)(reg, T, addr);
+      (masm->*insn)(reg, T, Address(base, disp));
     } else {
       assert(disp == 0, "unsupported address mode");
       (masm->*insn)(reg, T, Address(base, as_Register(index), Address::lsl(size)));
@@ -2821,7 +2817,7 @@ encode %{
 
   // This encoding class is generated automatically from ad_encode.m4.
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-  enc_class aarch64_enc_ldrsbw(iRegI dst, memory mem) %{
+  enc_class aarch64_enc_ldrsbw(iRegI dst, memory1 mem) %{
     Register dst_reg = as_Register($dst$$reg);
     loadStore(masm, &MacroAssembler::ldrsbw, dst_reg, $mem->opcode(),
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 1);
@@ -2829,7 +2825,7 @@ encode %{
 
   // This encoding class is generated automatically from ad_encode.m4.
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-  enc_class aarch64_enc_ldrsb(iRegI dst, memory mem) %{
+  enc_class aarch64_enc_ldrsb(iRegI dst, memory1 mem) %{
     Register dst_reg = as_Register($dst$$reg);
     loadStore(masm, &MacroAssembler::ldrsb, dst_reg, $mem->opcode(),
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 1);
@@ -2837,7 +2833,7 @@ encode %{
 
   // This encoding class is generated automatically from ad_encode.m4.
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-  enc_class aarch64_enc_ldrb(iRegI dst, memory mem) %{
+  enc_class aarch64_enc_ldrb(iRegI dst, memory1 mem) %{
     Register dst_reg = as_Register($dst$$reg);
     loadStore(masm, &MacroAssembler::ldrb, dst_reg, $mem->opcode(),
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 1);
@@ -2845,7 +2841,7 @@ encode %{
 
   // This encoding class is generated automatically from ad_encode.m4.
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-  enc_class aarch64_enc_ldrb(iRegL dst, memory mem) %{
+  enc_class aarch64_enc_ldrb(iRegL dst, memory1 mem) %{
     Register dst_reg = as_Register($dst$$reg);
     loadStore(masm, &MacroAssembler::ldrb, dst_reg, $mem->opcode(),
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 1);
@@ -2853,7 +2849,7 @@ encode %{
 
   // This encoding class is generated automatically from ad_encode.m4.
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-  enc_class aarch64_enc_ldrshw(iRegI dst, memory mem) %{
+  enc_class aarch64_enc_ldrshw(iRegI dst, memory2 mem) %{
     Register dst_reg = as_Register($dst$$reg);
     loadStore(masm, &MacroAssembler::ldrshw, dst_reg, $mem->opcode(),
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 2);
@@ -2861,7 +2857,7 @@ encode %{
 
   // This encoding class is generated automatically from ad_encode.m4.
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-  enc_class aarch64_enc_ldrsh(iRegI dst, memory mem) %{
+  enc_class aarch64_enc_ldrsh(iRegI dst, memory2 mem) %{
     Register dst_reg = as_Register($dst$$reg);
     loadStore(masm, &MacroAssembler::ldrsh, dst_reg, $mem->opcode(),
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 2);
@@ -2869,7 +2865,7 @@ encode %{
 
   // This encoding class is generated automatically from ad_encode.m4.
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-  enc_class aarch64_enc_ldrh(iRegI dst, memory mem) %{
+  enc_class aarch64_enc_ldrh(iRegI dst, memory2 mem) %{
     Register dst_reg = as_Register($dst$$reg);
     loadStore(masm, &MacroAssembler::ldrh, dst_reg, $mem->opcode(),
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 2);
@@ -2877,7 +2873,7 @@ encode %{
 
   // This encoding class is generated automatically from ad_encode.m4.
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-  enc_class aarch64_enc_ldrh(iRegL dst, memory mem) %{
+  enc_class aarch64_enc_ldrh(iRegL dst, memory2 mem) %{
     Register dst_reg = as_Register($dst$$reg);
     loadStore(masm, &MacroAssembler::ldrh, dst_reg, $mem->opcode(),
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 2);
@@ -2885,7 +2881,7 @@ encode %{
 
   // This encoding class is generated automatically from ad_encode.m4.
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-  enc_class aarch64_enc_ldrw(iRegI dst, memory mem) %{
+  enc_class aarch64_enc_ldrw(iRegI dst, memory4 mem) %{
     Register dst_reg = as_Register($dst$$reg);
     loadStore(masm, &MacroAssembler::ldrw, dst_reg, $mem->opcode(),
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 4);
@@ -2893,7 +2889,7 @@ encode %{
 
   // This encoding class is generated automatically from ad_encode.m4.
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-  enc_class aarch64_enc_ldrw(iRegL dst, memory mem) %{
+  enc_class aarch64_enc_ldrw(iRegL dst, memory4 mem) %{
     Register dst_reg = as_Register($dst$$reg);
     loadStore(masm, &MacroAssembler::ldrw, dst_reg, $mem->opcode(),
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 4);
@@ -2901,7 +2897,7 @@ encode %{
 
   // This encoding class is generated automatically from ad_encode.m4.
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-  enc_class aarch64_enc_ldrsw(iRegL dst, memory mem) %{
+  enc_class aarch64_enc_ldrsw(iRegL dst, memory4 mem) %{
     Register dst_reg = as_Register($dst$$reg);
     loadStore(masm, &MacroAssembler::ldrsw, dst_reg, $mem->opcode(),
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 4);
@@ -2909,7 +2905,7 @@ encode %{
 
   // This encoding class is generated automatically from ad_encode.m4.
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-  enc_class aarch64_enc_ldr(iRegL dst, memory mem) %{
+  enc_class aarch64_enc_ldr(iRegL dst, memory8 mem) %{
     Register dst_reg = as_Register($dst$$reg);
     loadStore(masm, &MacroAssembler::ldr, dst_reg, $mem->opcode(),
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 8);
@@ -2917,7 +2913,7 @@ encode %{
 
   // This encoding class is generated automatically from ad_encode.m4.
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-  enc_class aarch64_enc_ldrs(vRegF dst, memory mem) %{
+  enc_class aarch64_enc_ldrs(vRegF dst, memory4 mem) %{
     FloatRegister dst_reg = as_FloatRegister($dst$$reg);
     loadStore(masm, &MacroAssembler::ldrs, dst_reg, $mem->opcode(),
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 4);
@@ -2925,7 +2921,7 @@ encode %{
 
   // This encoding class is generated automatically from ad_encode.m4.
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-  enc_class aarch64_enc_ldrd(vRegD dst, memory mem) %{
+  enc_class aarch64_enc_ldrd(vRegD dst, memory8 mem) %{
     FloatRegister dst_reg = as_FloatRegister($dst$$reg);
     loadStore(masm, &MacroAssembler::ldrd, dst_reg, $mem->opcode(),
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 8);
@@ -2933,7 +2929,7 @@ encode %{
 
   // This encoding class is generated automatically from ad_encode.m4.
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-  enc_class aarch64_enc_strb(iRegI src, memory mem) %{
+  enc_class aarch64_enc_strb(iRegI src, memory1 mem) %{
     Register src_reg = as_Register($src$$reg);
     loadStore(masm, &MacroAssembler::strb, src_reg, $mem->opcode(),
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 1);
@@ -2941,14 +2937,14 @@ encode %{
 
   // This encoding class is generated automatically from ad_encode.m4.
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-  enc_class aarch64_enc_strb0(memory mem) %{
+  enc_class aarch64_enc_strb0(memory1 mem) %{
     loadStore(masm, &MacroAssembler::strb, zr, $mem->opcode(),
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 1);
   %}
 
   // This encoding class is generated automatically from ad_encode.m4.
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-  enc_class aarch64_enc_strh(iRegI src, memory mem) %{
+  enc_class aarch64_enc_strh(iRegI src, memory2 mem) %{
     Register src_reg = as_Register($src$$reg);
     loadStore(masm, &MacroAssembler::strh, src_reg, $mem->opcode(),
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 2);
@@ -2956,14 +2952,14 @@ encode %{
 
   // This encoding class is generated automatically from ad_encode.m4.
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-  enc_class aarch64_enc_strh0(memory mem) %{
+  enc_class aarch64_enc_strh0(memory2 mem) %{
     loadStore(masm, &MacroAssembler::strh, zr, $mem->opcode(),
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 2);
   %}
 
   // This encoding class is generated automatically from ad_encode.m4.
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-  enc_class aarch64_enc_strw(iRegI src, memory mem) %{
+  enc_class aarch64_enc_strw(iRegI src, memory4 mem) %{
     Register src_reg = as_Register($src$$reg);
     loadStore(masm, &MacroAssembler::strw, src_reg, $mem->opcode(),
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 4);
@@ -2971,14 +2967,14 @@ encode %{
 
   // This encoding class is generated automatically from ad_encode.m4.
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-  enc_class aarch64_enc_strw0(memory mem) %{
+  enc_class aarch64_enc_strw0(memory4 mem) %{
     loadStore(masm, &MacroAssembler::strw, zr, $mem->opcode(),
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 4);
   %}
 
   // This encoding class is generated automatically from ad_encode.m4.
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-  enc_class aarch64_enc_str(iRegL src, memory mem) %{
+  enc_class aarch64_enc_str(iRegL src, memory8 mem) %{
     Register src_reg = as_Register($src$$reg);
     // we sometimes get asked to store the stack pointer into the
     // current thread -- we cannot do that directly on AArch64
@@ -2993,14 +2989,14 @@ encode %{
 
   // This encoding class is generated automatically from ad_encode.m4.
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-  enc_class aarch64_enc_str0(memory mem) %{
+  enc_class aarch64_enc_str0(memory8 mem) %{
     loadStore(masm, &MacroAssembler::str, zr, $mem->opcode(),
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 8);
   %}
 
   // This encoding class is generated automatically from ad_encode.m4.
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-  enc_class aarch64_enc_strs(vRegF src, memory mem) %{
+  enc_class aarch64_enc_strs(vRegF src, memory4 mem) %{
     FloatRegister src_reg = as_FloatRegister($src$$reg);
     loadStore(masm, &MacroAssembler::strs, src_reg, $mem->opcode(),
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 4);
@@ -3008,7 +3004,7 @@ encode %{
 
   // This encoding class is generated automatically from ad_encode.m4.
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-  enc_class aarch64_enc_strd(vRegD src, memory mem) %{
+  enc_class aarch64_enc_strd(vRegD src, memory8 mem) %{
     FloatRegister src_reg = as_FloatRegister($src$$reg);
     loadStore(masm, &MacroAssembler::strd, src_reg, $mem->opcode(),
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 8);
@@ -3016,7 +3012,7 @@ encode %{
 
   // This encoding class is generated automatically from ad_encode.m4.
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-  enc_class aarch64_enc_strb0_ordered(memory mem) %{
+  enc_class aarch64_enc_strb0_ordered(memory4 mem) %{
       __ membar(Assembler::StoreStore);
       loadStore(masm, &MacroAssembler::strb, zr, $mem->opcode(),
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 1);
@@ -3218,7 +3214,7 @@ encode %{
 
   // synchronized read/update encodings
 
-  enc_class aarch64_enc_ldaxr(iRegL dst, memory mem) %{
+  enc_class aarch64_enc_ldaxr(iRegL dst, memory8 mem) %{
     Register dst_reg = as_Register($dst$$reg);
     Register base = as_Register($mem$$base);
     int index = $mem$$index;
@@ -3246,7 +3242,7 @@ encode %{
     }
   %}
 
-  enc_class aarch64_enc_stlxr(iRegLNoSp src, memory mem) %{
+  enc_class aarch64_enc_stlxr(iRegLNoSp src, memory8 mem) %{
     Register src_reg = as_Register($src$$reg);
     Register base = as_Register($mem$$base);
     int index = $mem$$index;
@@ -4174,10 +4170,60 @@ operand immIU7()
   interface(CONST_INTER);
 %}
 
-// Offset for immediate loads and stores
+// Offset for scaled or unscaled immediate loads and stores
 operand immIOffset()
 %{
-  predicate(n->get_int() >= -256 && n->get_int() <= 65520);
+  predicate(Address::offset_ok_for_immed(n->get_int(), 0));
+  match(ConI);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+operand immIOffset1()
+%{
+  predicate(Address::offset_ok_for_immed(n->get_int(), 0));
+  match(ConI);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+operand immIOffset2()
+%{
+  predicate(Address::offset_ok_for_immed(n->get_int(), 1));
+  match(ConI);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+operand immIOffset4()
+%{
+  predicate(Address::offset_ok_for_immed(n->get_int(), 2));
+  match(ConI);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+operand immIOffset8()
+%{
+  predicate(Address::offset_ok_for_immed(n->get_int(), 3));
+  match(ConI);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+operand immIOffset16()
+%{
+  predicate(Address::offset_ok_for_immed(n->get_int(), 4));
   match(ConI);
 
   op_cost(0);
@@ -4188,6 +4234,56 @@ operand immIOffset()
 operand immLOffset()
 %{
   predicate(n->get_long() >= -256 && n->get_long() <= 65520);
+  match(ConL);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+operand immLoffset1()
+%{
+  predicate(Address::offset_ok_for_immed(n->get_long(), 0));
+  match(ConL);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+operand immLoffset2()
+%{
+  predicate(Address::offset_ok_for_immed(n->get_long(), 1));
+  match(ConL);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+operand immLoffset4()
+%{
+  predicate(Address::offset_ok_for_immed(n->get_long(), 2));
+  match(ConL);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+operand immLoffset8()
+%{
+  predicate(Address::offset_ok_for_immed(n->get_long(), 3));
+  match(ConL);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+operand immLoffset16()
+%{
+  predicate(Address::offset_ok_for_immed(n->get_long(), 4));
   match(ConL);
 
   op_cost(0);
@@ -5107,7 +5203,7 @@ operand indIndex(iRegP reg, iRegL lreg)
   %}
 %}
 
-operand indOffI(iRegP reg, immIOffset off)
+operand indOffI1(iRegP reg, immIOffset1 off)
 %{
   constraint(ALLOC_IN_RC(ptr_reg));
   match(AddP reg off);
@@ -5121,7 +5217,119 @@ operand indOffI(iRegP reg, immIOffset off)
   %}
 %}
 
-operand indOffL(iRegP reg, immLOffset off)
+operand indOffI2(iRegP reg, immIOffset2 off)
+%{
+  constraint(ALLOC_IN_RC(ptr_reg));
+  match(AddP reg off);
+  op_cost(0);
+  format %{ "[$reg, $off]" %}
+  interface(MEMORY_INTER) %{
+    base($reg);
+    index(0xffffffff);
+    scale(0x0);
+    disp($off);
+  %}
+%}
+
+operand indOffI4(iRegP reg, immIOffset4 off)
+%{
+  constraint(ALLOC_IN_RC(ptr_reg));
+  match(AddP reg off);
+  op_cost(0);
+  format %{ "[$reg, $off]" %}
+  interface(MEMORY_INTER) %{
+    base($reg);
+    index(0xffffffff);
+    scale(0x0);
+    disp($off);
+  %}
+%}
+
+operand indOffI8(iRegP reg, immIOffset8 off)
+%{
+  constraint(ALLOC_IN_RC(ptr_reg));
+  match(AddP reg off);
+  op_cost(0);
+  format %{ "[$reg, $off]" %}
+  interface(MEMORY_INTER) %{
+    base($reg);
+    index(0xffffffff);
+    scale(0x0);
+    disp($off);
+  %}
+%}
+
+operand indOffI16(iRegP reg, immIOffset16 off)
+%{
+  constraint(ALLOC_IN_RC(ptr_reg));
+  match(AddP reg off);
+  op_cost(0);
+  format %{ "[$reg, $off]" %}
+  interface(MEMORY_INTER) %{
+    base($reg);
+    index(0xffffffff);
+    scale(0x0);
+    disp($off);
+  %}
+%}
+
+operand indOffL1(iRegP reg, immLoffset1 off)
+%{
+  constraint(ALLOC_IN_RC(ptr_reg));
+  match(AddP reg off);
+  op_cost(0);
+  format %{ "[$reg, $off]" %}
+  interface(MEMORY_INTER) %{
+    base($reg);
+    index(0xffffffff);
+    scale(0x0);
+    disp($off);
+  %}
+%}
+
+operand indOffL2(iRegP reg, immLoffset2 off)
+%{
+  constraint(ALLOC_IN_RC(ptr_reg));
+  match(AddP reg off);
+  op_cost(0);
+  format %{ "[$reg, $off]" %}
+  interface(MEMORY_INTER) %{
+    base($reg);
+    index(0xffffffff);
+    scale(0x0);
+    disp($off);
+  %}
+%}
+
+operand indOffL4(iRegP reg, immLoffset4 off)
+%{
+  constraint(ALLOC_IN_RC(ptr_reg));
+  match(AddP reg off);
+  op_cost(0);
+  format %{ "[$reg, $off]" %}
+  interface(MEMORY_INTER) %{
+    base($reg);
+    index(0xffffffff);
+    scale(0x0);
+    disp($off);
+  %}
+%}
+
+operand indOffL8(iRegP reg, immLoffset8 off)
+%{
+  constraint(ALLOC_IN_RC(ptr_reg));
+  match(AddP reg off);
+  op_cost(0);
+  format %{ "[$reg, $off]" %}
+  interface(MEMORY_INTER) %{
+    base($reg);
+    index(0xffffffff);
+    scale(0x0);
+    disp($off);
+  %}
+%}
+
+operand indOffL16(iRegP reg, immLoffset16 off)
 %{
   constraint(ALLOC_IN_RC(ptr_reg));
   match(AddP reg off);
@@ -5497,7 +5705,10 @@ operand iRegL2P(iRegL reg) %{
   interface(REG_INTER)
 %}
 
-opclass vmem(indirect, indIndex, indOffI, indOffL, indOffIN, indOffLN);
+opclass vmem2(indirect, indIndex, indOffI2, indOffL2);
+opclass vmem4(indirect, indIndex, indOffI4, indOffL4);
+opclass vmem8(indirect, indIndex, indOffI8, indOffL8);
+opclass vmem16(indirect, indIndex, indOffI16, indOffL16);
 
 //----------OPERAND CLASSES----------------------------------------------------
 // Operand Classes are groups of operands that are used as to simplify
@@ -5509,9 +5720,23 @@ opclass vmem(indirect, indIndex, indOffI, indOffL, indOffIN, indOffLN);
 // memory is used to define read/write location for load/store
 // instruction defs. we can turn a memory op into an Address
 
-opclass memory(indirect, indIndexScaled, indIndexScaledI2L, indIndexI2L, indIndex, indOffI, indOffL,
-               indirectN, indIndexScaledN, indIndexScaledI2LN, indIndexI2LN, indIndexN, indOffIN,
-               indOffLN, indirectX2P, indOffX2P);
+opclass memory1(indirect, indIndexScaled, indIndexScaledI2L, indIndexI2L, indIndex, indOffI1, indOffL1,
+                indirectN, indIndexScaledN, indIndexScaledI2LN, indIndexI2LN, indIndexN, indirectX2P, indOffX2P);
+
+opclass memory2(indirect, indIndexScaled, indIndexScaledI2L, indIndexI2L, indIndex, indOffI2, indOffL2,
+                indirectN, indIndexScaledN, indIndexScaledI2LN, indIndexI2LN, indIndexN, indirectX2P, indOffX2P);
+
+opclass memory4(indirect, indIndexScaled, indIndexScaledI2L, indIndexI2L, indIndex, indOffI4, indOffL4,
+                indirectN, indIndexScaledN, indIndexScaledI2LN, indIndexI2LN, indIndexN, indOffIN, indOffLN, indirectX2P, indOffX2P);
+
+opclass memory8(indirect, indIndexScaled, indIndexScaledI2L, indIndexI2L, indIndex, indOffI8, indOffL8,
+                indirectN, indIndexScaledN, indIndexScaledI2LN, indIndexI2LN, indIndexN, indOffIN, indOffLN, indirectX2P, indOffX2P);
+
+// All of the memory operands. For the pipeline description.
+opclass memory(indirect, indIndexScaled, indIndexScaledI2L, indIndexI2L, indIndex,
+               indOffI1, indOffL1, indOffI2, indOffL2, indOffI4, indOffL4, indOffI8, indOffL8,
+               indirectN, indIndexScaledN, indIndexScaledI2LN, indIndexI2LN, indIndexN, indOffIN, indOffLN, indirectX2P, indOffX2P);
+
 
 opclass memory_noindex(indirect, indOffI, indOffL,
                        indirectN, indOffIN,
@@ -6217,7 +6442,7 @@ define %{
 // Load Instructions
 
 // Load Byte (8 bit signed)
-instruct loadB(iRegINoSp dst, memory mem)
+instruct loadB(iRegINoSp dst, memory1 mem)
 %{
   match(Set dst (LoadB mem));
   predicate(!needs_acquiring_load(n));
@@ -6231,7 +6456,7 @@ instruct loadB(iRegINoSp dst, memory mem)
 %}
 
 // Load Byte (8 bit signed) into long
-instruct loadB2L(iRegLNoSp dst, memory mem)
+instruct loadB2L(iRegLNoSp dst, memory1 mem)
 %{
   match(Set dst (ConvI2L (LoadB mem)));
   predicate(!needs_acquiring_load(n->in(1)));
@@ -6245,7 +6470,7 @@ instruct loadB2L(iRegLNoSp dst, memory mem)
 %}
 
 // Load Byte (8 bit unsigned)
-instruct loadUB(iRegINoSp dst, memory mem)
+instruct loadUB(iRegINoSp dst, memory1 mem)
 %{
   match(Set dst (LoadUB mem));
   predicate(!needs_acquiring_load(n));
@@ -6259,7 +6484,7 @@ instruct loadUB(iRegINoSp dst, memory mem)
 %}
 
 // Load Byte (8 bit unsigned) into long
-instruct loadUB2L(iRegLNoSp dst, memory mem)
+instruct loadUB2L(iRegLNoSp dst, memory1 mem)
 %{
   match(Set dst (ConvI2L (LoadUB mem)));
   predicate(!needs_acquiring_load(n->in(1)));
@@ -6273,7 +6498,7 @@ instruct loadUB2L(iRegLNoSp dst, memory mem)
 %}
 
 // Load Short (16 bit signed)
-instruct loadS(iRegINoSp dst, memory mem)
+instruct loadS(iRegINoSp dst, memory2 mem)
 %{
   match(Set dst (LoadS mem));
   predicate(!needs_acquiring_load(n));
@@ -6287,7 +6512,7 @@ instruct loadS(iRegINoSp dst, memory mem)
 %}
 
 // Load Short (16 bit signed) into long
-instruct loadS2L(iRegLNoSp dst, memory mem)
+instruct loadS2L(iRegLNoSp dst, memory2 mem)
 %{
   match(Set dst (ConvI2L (LoadS mem)));
   predicate(!needs_acquiring_load(n->in(1)));
@@ -6301,7 +6526,7 @@ instruct loadS2L(iRegLNoSp dst, memory mem)
 %}
 
 // Load Char (16 bit unsigned)
-instruct loadUS(iRegINoSp dst, memory mem)
+instruct loadUS(iRegINoSp dst, memory2 mem)
 %{
   match(Set dst (LoadUS mem));
   predicate(!needs_acquiring_load(n));
@@ -6315,7 +6540,7 @@ instruct loadUS(iRegINoSp dst, memory mem)
 %}
 
 // Load Short/Char (16 bit unsigned) into long
-instruct loadUS2L(iRegLNoSp dst, memory mem)
+instruct loadUS2L(iRegLNoSp dst, memory2 mem)
 %{
   match(Set dst (ConvI2L (LoadUS mem)));
   predicate(!needs_acquiring_load(n->in(1)));
@@ -6329,7 +6554,7 @@ instruct loadUS2L(iRegLNoSp dst, memory mem)
 %}
 
 // Load Integer (32 bit signed)
-instruct loadI(iRegINoSp dst, memory mem)
+instruct loadI(iRegINoSp dst, memory4 mem)
 %{
   match(Set dst (LoadI mem));
   predicate(!needs_acquiring_load(n));
@@ -6343,7 +6568,7 @@ instruct loadI(iRegINoSp dst, memory mem)
 %}
 
 // Load Integer (32 bit signed) into long
-instruct loadI2L(iRegLNoSp dst, memory mem)
+instruct loadI2L(iRegLNoSp dst, memory4 mem)
 %{
   match(Set dst (ConvI2L (LoadI mem)));
   predicate(!needs_acquiring_load(n->in(1)));
@@ -6357,7 +6582,7 @@ instruct loadI2L(iRegLNoSp dst, memory mem)
 %}
 
 // Load Integer (32 bit unsigned) into long
-instruct loadUI2L(iRegLNoSp dst, memory mem, immL_32bits mask)
+instruct loadUI2L(iRegLNoSp dst, memory4 mem, immL_32bits mask)
 %{
   match(Set dst (AndL (ConvI2L (LoadI mem)) mask));
   predicate(!needs_acquiring_load(n->in(1)->in(1)->as_Load()));
@@ -6371,7 +6596,7 @@ instruct loadUI2L(iRegLNoSp dst, memory mem, immL_32bits mask)
 %}
 
 // Load Long (64 bit signed)
-instruct loadL(iRegLNoSp dst, memory mem)
+instruct loadL(iRegLNoSp dst, memory8 mem)
 %{
   match(Set dst (LoadL mem));
   predicate(!needs_acquiring_load(n));
@@ -6385,7 +6610,7 @@ instruct loadL(iRegLNoSp dst, memory mem)
 %}
 
 // Load Range
-instruct loadRange(iRegINoSp dst, memory mem)
+instruct loadRange(iRegINoSp dst, memory4 mem)
 %{
   match(Set dst (LoadRange mem));
 
@@ -6398,7 +6623,7 @@ instruct loadRange(iRegINoSp dst, memory mem)
 %}
 
 // Load Pointer
-instruct loadP(iRegPNoSp dst, memory mem)
+instruct loadP(iRegPNoSp dst, memory8 mem)
 %{
   match(Set dst (LoadP mem));
   predicate(!needs_acquiring_load(n) && (n->as_Load()->barrier_data() == 0));
@@ -6412,7 +6637,7 @@ instruct loadP(iRegPNoSp dst, memory mem)
 %}
 
 // Load Compressed Pointer
-instruct loadN(iRegNNoSp dst, memory mem)
+instruct loadN(iRegNNoSp dst, memory4 mem)
 %{
   match(Set dst (LoadN mem));
   predicate(!needs_acquiring_load(n) && n->as_Load()->barrier_data() == 0);
@@ -6426,7 +6651,7 @@ instruct loadN(iRegNNoSp dst, memory mem)
 %}
 
 // Load Klass Pointer
-instruct loadKlass(iRegPNoSp dst, memory mem)
+instruct loadKlass(iRegPNoSp dst, memory8 mem)
 %{
   match(Set dst (LoadKlass mem));
   predicate(!needs_acquiring_load(n));
@@ -6440,7 +6665,7 @@ instruct loadKlass(iRegPNoSp dst, memory mem)
 %}
 
 // Load Narrow Klass Pointer
-instruct loadNKlass(iRegNNoSp dst, memory mem)
+instruct loadNKlass(iRegNNoSp dst, memory4 mem)
 %{
   match(Set dst (LoadNKlass mem));
   predicate(!needs_acquiring_load(n) && !UseCompactObjectHeaders);
@@ -6468,7 +6693,7 @@ instruct loadNKlassCompactHeaders(iRegNNoSp dst, memory_noindex mem)
 %}
 
 // Load Float
-instruct loadF(vRegF dst, memory mem)
+instruct loadF(vRegF dst, memory4 mem)
 %{
   match(Set dst (LoadF mem));
   predicate(!needs_acquiring_load(n));
@@ -6482,7 +6707,7 @@ instruct loadF(vRegF dst, memory mem)
 %}
 
 // Load Double
-instruct loadD(vRegD dst, memory mem)
+instruct loadD(vRegD dst, memory8 mem)
 %{
   match(Set dst (LoadD mem));
   predicate(!needs_acquiring_load(n));
@@ -6686,7 +6911,7 @@ instruct loadConD(vRegD dst, immD con) %{
 // Store Instructions
 
 // Store CMS card-mark Immediate
-instruct storeimmCM0(immI0 zero, memory mem)
+instruct storeimmCM0(immI0 zero, memory1 mem)
 %{
   match(Set mem (StoreCM mem zero));
 
@@ -6701,7 +6926,7 @@ instruct storeimmCM0(immI0 zero, memory mem)
 
 // Store CMS card-mark Immediate with intervening StoreStore
 // needed when using CMS with no conditional card marking
-instruct storeimmCM0_ordered(immI0 zero, memory mem)
+instruct storeimmCM0_ordered(immI0 zero, memory1 mem)
 %{
   match(Set mem (StoreCM mem zero));
 
@@ -6716,7 +6941,7 @@ instruct storeimmCM0_ordered(immI0 zero, memory mem)
 %}
 
 // Store Byte
-instruct storeB(iRegIorL2I src, memory mem)
+instruct storeB(iRegIorL2I src, memory1 mem)
 %{
   match(Set mem (StoreB mem src));
   predicate(!needs_releasing_store(n));
@@ -6730,7 +6955,7 @@ instruct storeB(iRegIorL2I src, memory mem)
 %}
 
 
-instruct storeimmB0(immI0 zero, memory mem)
+instruct storeimmB0(immI0 zero, memory1 mem)
 %{
   match(Set mem (StoreB mem zero));
   predicate(!needs_releasing_store(n));
@@ -6744,7 +6969,7 @@ instruct storeimmB0(immI0 zero, memory mem)
 %}
 
 // Store Char/Short
-instruct storeC(iRegIorL2I src, memory mem)
+instruct storeC(iRegIorL2I src, memory2 mem)
 %{
   match(Set mem (StoreC mem src));
   predicate(!needs_releasing_store(n));
@@ -6757,7 +6982,7 @@ instruct storeC(iRegIorL2I src, memory mem)
   ins_pipe(istore_reg_mem);
 %}
 
-instruct storeimmC0(immI0 zero, memory mem)
+instruct storeimmC0(immI0 zero, memory2 mem)
 %{
   match(Set mem (StoreC mem zero));
   predicate(!needs_releasing_store(n));
@@ -6772,7 +6997,7 @@ instruct storeimmC0(immI0 zero, memory mem)
 
 // Store Integer
 
-instruct storeI(iRegIorL2I src, memory mem)
+instruct storeI(iRegIorL2I src, memory4 mem)
 %{
   match(Set mem(StoreI mem src));
   predicate(!needs_releasing_store(n));
@@ -6785,7 +7010,7 @@ instruct storeI(iRegIorL2I src, memory mem)
   ins_pipe(istore_reg_mem);
 %}
 
-instruct storeimmI0(immI0 zero, memory mem)
+instruct storeimmI0(immI0 zero, memory4 mem)
 %{
   match(Set mem(StoreI mem zero));
   predicate(!needs_releasing_store(n));
@@ -6799,7 +7024,7 @@ instruct storeimmI0(immI0 zero, memory mem)
 %}
 
 // Store Long (64 bit signed)
-instruct storeL(iRegL src, memory mem)
+instruct storeL(iRegL src, memory8 mem)
 %{
   match(Set mem (StoreL mem src));
   predicate(!needs_releasing_store(n));
@@ -6813,7 +7038,7 @@ instruct storeL(iRegL src, memory mem)
 %}
 
 // Store Long (64 bit signed)
-instruct storeimmL0(immL0 zero, memory mem)
+instruct storeimmL0(immL0 zero, memory8 mem)
 %{
   match(Set mem (StoreL mem zero));
   predicate(!needs_releasing_store(n));
@@ -6827,7 +7052,7 @@ instruct storeimmL0(immL0 zero, memory mem)
 %}
 
 // Store Pointer
-instruct storeP(iRegP src, memory mem)
+instruct storeP(iRegP src, memory8 mem)
 %{
   match(Set mem (StoreP mem src));
   predicate(!needs_releasing_store(n) && n->as_Store()->barrier_data() == 0);
@@ -6841,7 +7066,7 @@ instruct storeP(iRegP src, memory mem)
 %}
 
 // Store Pointer
-instruct storeimmP0(immP0 zero, memory mem)
+instruct storeimmP0(immP0 zero, memory8 mem)
 %{
   match(Set mem (StoreP mem zero));
   predicate(!needs_releasing_store(n) && n->as_Store()->barrier_data() == 0);
@@ -6855,7 +7080,7 @@ instruct storeimmP0(immP0 zero, memory mem)
 %}
 
 // Store Compressed Pointer
-instruct storeN(iRegN src, memory mem)
+instruct storeN(iRegN src, memory4 mem)
 %{
   match(Set mem (StoreN mem src));
   predicate(!needs_releasing_store(n) && n->as_Store()->barrier_data() == 0);
@@ -6868,7 +7093,7 @@ instruct storeN(iRegN src, memory mem)
   ins_pipe(istore_reg_mem);
 %}
 
-instruct storeImmN0(immN0 zero, memory mem)
+instruct storeImmN0(immN0 zero, memory4 mem)
 %{
   match(Set mem (StoreN mem zero));
   predicate(!needs_releasing_store(n) && n->as_Store()->barrier_data() == 0);
@@ -6882,7 +7107,7 @@ instruct storeImmN0(immN0 zero, memory mem)
 %}
 
 // Store Float
-instruct storeF(vRegF src, memory mem)
+instruct storeF(vRegF src, memory4 mem)
 %{
   match(Set mem (StoreF mem src));
   predicate(!needs_releasing_store(n));
@@ -6899,7 +7124,7 @@ instruct storeF(vRegF src, memory mem)
 // implement storeImmF0 and storeFImmPacked
 
 // Store Double
-instruct storeD(vRegD src, memory mem)
+instruct storeD(vRegD src, memory8 mem)
 %{
   match(Set mem (StoreD mem src));
   predicate(!needs_releasing_store(n));
@@ -6913,7 +7138,7 @@ instruct storeD(vRegD src, memory mem)
 %}
 
 // Store Compressed Klass Pointer
-instruct storeNKlass(iRegN src, memory mem)
+instruct storeNKlass(iRegN src, memory4 mem)
 %{
   predicate(!needs_releasing_store(n));
   match(Set mem (StoreNKlass mem src));
@@ -6932,7 +7157,7 @@ instruct storeNKlass(iRegN src, memory mem)
 // prefetch instructions
 // Must be safe to execute with invalid address (cannot fault).
 
-instruct prefetchalloc( memory mem ) %{
+instruct prefetchalloc( memory8 mem ) %{
   match(PrefetchAllocation mem);
 
   ins_cost(INSN_COST);
@@ -7504,7 +7729,7 @@ instruct popCountI(iRegINoSp dst, iRegIorL2I src, vRegF tmp) %{
   ins_pipe(pipe_class_default);
 %}
 
-instruct popCountI_mem(iRegINoSp dst, memory mem, vRegF tmp) %{
+instruct popCountI_mem(iRegINoSp dst, memory4 mem, vRegF tmp) %{
   match(Set dst (PopCountI (LoadI mem)));
   effect(TEMP tmp);
   ins_cost(INSN_COST * 13);
@@ -7545,7 +7770,7 @@ instruct popCountL(iRegINoSp dst, iRegL src, vRegD tmp) %{
   ins_pipe(pipe_class_default);
 %}
 
-instruct popCountL_mem(iRegINoSp dst, memory mem, vRegD tmp) %{
+instruct popCountL_mem(iRegINoSp dst, memory8 mem, vRegD tmp) %{
   match(Set dst (PopCountL (LoadL mem)));
   effect(TEMP tmp);
   ins_cost(INSN_COST * 13);
@@ -16698,7 +16923,7 @@ instruct compressBitsI_reg(iRegINoSp dst, iRegIorL2I src, iRegIorL2I mask,
   ins_pipe(pipe_slow);
 %}
 
-instruct compressBitsI_memcon(iRegINoSp dst, memory mem, immI mask,
+instruct compressBitsI_memcon(iRegINoSp dst, memory4 mem, immI mask,
                            vRegF tdst, vRegF tsrc, vRegF tmask) %{
   match(Set dst (CompressBits (LoadI mem) mask));
   effect(TEMP tdst, TEMP tsrc, TEMP tmask);
@@ -16735,7 +16960,7 @@ instruct compressBitsL_reg(iRegLNoSp dst, iRegL src, iRegL mask,
   ins_pipe(pipe_slow);
 %}
 
-instruct compressBitsL_memcon(iRegLNoSp dst, memory mem, immL mask,
+instruct compressBitsL_memcon(iRegLNoSp dst, memory8 mem, immL mask,
                            vRegF tdst, vRegF tsrc, vRegF tmask) %{
   match(Set dst (CompressBits (LoadL mem) mask));
   effect(TEMP tdst, TEMP tsrc, TEMP tmask);
@@ -16772,7 +16997,7 @@ instruct expandBitsI_reg(iRegINoSp dst, iRegIorL2I src, iRegIorL2I mask,
   ins_pipe(pipe_slow);
 %}
 
-instruct expandBitsI_memcon(iRegINoSp dst, memory mem, immI mask,
+instruct expandBitsI_memcon(iRegINoSp dst, memory4 mem, immI mask,
                          vRegF tdst, vRegF tsrc, vRegF tmask) %{
   match(Set dst (ExpandBits (LoadI mem) mask));
   effect(TEMP tdst, TEMP tsrc, TEMP tmask);
@@ -16810,7 +17035,7 @@ instruct expandBitsL_reg(iRegLNoSp dst, iRegL src, iRegL mask,
 %}
 
 
-instruct expandBitsL_memcon(iRegINoSp dst, memory mem, immL mask,
+instruct expandBitsL_memcon(iRegINoSp dst, memory8 mem, immL mask,
                          vRegF tdst, vRegF tsrc, vRegF tmask) %{
   match(Set dst (ExpandBits (LoadL mem) mask));
   effect(TEMP tdst, TEMP tsrc, TEMP tmask);

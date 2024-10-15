@@ -194,6 +194,9 @@ void Matcher::match( ) {
   }
   // One-time initialization of some register masks.
   init_spill_mask( C->root()->in(1) );
+  if (C->failing()) {
+    return;
+  }
   _return_addr_mask = return_addr();
 #ifdef _LP64
   // Pointers take 2 slots in 64-bit land
@@ -287,10 +290,16 @@ void Matcher::match( ) {
     // preserve area, locks & pad2.
 
     OptoReg::Name reg1 = warp_incoming_stk_arg(vm_parm_regs[i].first());
+    if (C->failing()) {
+      return;
+    }
     if( OptoReg::is_valid(reg1))
       _calling_convention_mask[i].Insert(reg1);
 
     OptoReg::Name reg2 = warp_incoming_stk_arg(vm_parm_regs[i].second());
+    if (C->failing()) {
+      return;
+    }
     if( OptoReg::is_valid(reg2))
       _calling_convention_mask[i].Insert(reg2);
 
@@ -386,7 +395,7 @@ void Matcher::match( ) {
       // Don't set control, it will confuse GCM since there are no uses.
       // The control will be set when this node is used first time
       // in find_base_for_derived().
-      assert(_mach_null != nullptr, "");
+      assert(_mach_null != nullptr || C->failure_is_artificial(), ""); // bailouts are handled below.
 
       C->set_root(xroot->is_Root() ? xroot->as_Root() : nullptr);
 
@@ -404,7 +413,7 @@ void Matcher::match( ) {
       assert(C->failure_reason() != nullptr, "graph lost: reason unknown");
       ss.print("graph lost: reason unknown");
     }
-    C->record_method_not_compilable(ss.as_string());
+    C->record_method_not_compilable(ss.as_string() DEBUG_ONLY(COMMA true));
   }
   if (C->failing()) {
     // delete old;
@@ -1439,10 +1448,16 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
       }
       // Grab first register, adjust stack slots and insert in mask.
       OptoReg::Name reg1 = warp_outgoing_stk_arg(first, begin_out_arg_area, out_arg_limit_per_call );
+      if (C->failing()) {
+        return nullptr;
+      }
       if (OptoReg::is_valid(reg1))
         rm->Insert( reg1 );
       // Grab second register (if any), adjust stack slots and insert in mask.
       OptoReg::Name reg2 = warp_outgoing_stk_arg(second, begin_out_arg_area, out_arg_limit_per_call );
+      if (C->failing()) {
+        return nullptr;
+      }
       if (OptoReg::is_valid(reg2))
         rm->Insert( reg2 );
     } // End of for all arguments
@@ -2679,6 +2694,10 @@ bool Matcher::gen_narrow_oop_implicit_null_checks() {
 
 // Compute RegMask for an ideal register.
 const RegMask* Matcher::regmask_for_ideal_register(uint ideal_reg, Node* ret) {
+  assert(!C->failing_internal() || C->failure_is_artificial(), "already failing.");
+  if (C->failing()) {
+    return nullptr;
+  }
   const Type* t = Type::mreg2type[ideal_reg];
   if (t == nullptr) {
     assert(ideal_reg >= Op_VecA && ideal_reg <= Op_VecZ, "not a vector: %d", ideal_reg);
@@ -2709,7 +2728,10 @@ const RegMask* Matcher::regmask_for_ideal_register(uint ideal_reg, Node* ret) {
     default: ShouldNotReachHere();
   }
   MachNode* mspill = match_tree(spill);
-  assert(mspill != nullptr, "matching failed: %d", ideal_reg);
+  assert(mspill != nullptr || C->failure_is_artificial(), "matching failed: %d", ideal_reg);
+  if (C->failing()) {
+    return nullptr;
+  }
   // Handle generic vector operand case
   if (Matcher::supports_generic_vector_operands && t->isa_vect()) {
     specialize_mach_node(mspill);
@@ -2855,7 +2877,7 @@ bool Matcher::is_encode_and_store_pattern(const Node* n, const Node* m) {
 
 #ifdef ASSERT
 bool Matcher::verify_after_postselect_cleanup() {
-  assert(!C->failing(), "sanity");
+  assert(!C->failing_internal() || C->failure_is_artificial(), "sanity");
   if (supports_generic_vector_operands) {
     Unique_Node_List useful;
     C->identify_useful_nodes(useful);
