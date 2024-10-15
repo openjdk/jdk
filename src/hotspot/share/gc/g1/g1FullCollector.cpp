@@ -172,7 +172,6 @@ public:
 
   bool do_heap_region(G1HeapRegion* hr) {
     hr->prepare_for_full_gc();
-    hr->uninstall_group_cardset();
     G1CollectedHeap::heap()->prepare_region_for_full_compaction(hr);
     _collector->before_marking_update_attribute_table(hr);
     return false;

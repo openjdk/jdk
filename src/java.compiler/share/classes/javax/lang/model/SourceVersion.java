@@ -70,8 +70,14 @@ public enum SourceVersion {
      *  21: pattern matching for switch and record patterns (string
      *      templates in preview, unnamed patterns and variables in
      *      preview, unnamed classes and instance main methods in preview)
-     *  22: Unnamed Variables & Patterns (Statements before super(...)
-     *      in Preview)
+     *  22: unnamed variables & patterns (statements before super(...)
+     *      in preview, string templates in second preview, implicitly
+     *      declared classes and instance main methods in second preview)
+     *  23: no changes (primitive Types in Patterns, instanceof, and
+     *      switch in preview, module Import Declarations in preview,
+     *      implicitly declared classes and instance main in third
+     *      preview, flexible constructor bodies in second preview)
+     *  24: tbd
      */
 
     /**
@@ -202,7 +208,7 @@ public enum SourceVersion {
      * @see <a href="https://openjdk.org/jeps/213">
      * JEP 213: Milling Project Coin</a>
      */
-     RELEASE_9,
+    RELEASE_9,
 
     /**
      * The version introduced by the Java Platform, Standard Edition
@@ -470,7 +476,7 @@ public enum SourceVersion {
      *
      * @apiNote This method is included alongside {@link latest} to
      * allow identification of situations where the language model API
-     * is running on a platform version different than the latest
+     * is running on a platform version different from the latest
      * version modeled by the API. One way that sort of situation can
      * occur is if an IDE or similar tool is using the API to model
      * source version <i>N</i> while running on platform version
@@ -496,8 +502,7 @@ public enum SourceVersion {
      * followed only by characters for which {@link
      * Character#isJavaIdentifierPart(int)} returns {@code true}.
      * This pattern matches regular identifiers, keywords, contextual
-     * keywords, and the literals {@code "true"},
-     * {@code "false"}, {@code "null"}.
+     * keywords, boolean literals, and the null literal.
      *
      * The method returns {@code false} for all other strings.
      *
@@ -590,14 +595,14 @@ public enum SourceVersion {
     }
 
     /**
-     * Returns whether or not {@code s} is a keyword, boolean literal,
-     * or null literal in the latest source version.
+     * Returns whether or not {@code s} is a keyword, a boolean literal,
+     * or the null literal in the latest source version.
      * This method returns {@code false} for <i>contextual
      * keywords</i>.
      *
      * @param s the string to check
-     * @return {@code true} if {@code s} is a keyword, or boolean
-     * literal, or null literal, {@code false} otherwise.
+     * @return {@code true} if {@code s} is a keyword, a boolean
+     * literal, or the null literal, {@code false} otherwise.
      * @jls 3.9 Keywords
      * @jls 3.10.3 Boolean Literals
      * @jls 3.10.8 The Null Literal
@@ -607,15 +612,15 @@ public enum SourceVersion {
     }
 
     /**
-     * Returns whether or not {@code s} is a keyword, boolean literal,
-     * or null literal in the given source version.
+     * Returns whether or not {@code s} is a keyword, a boolean literal,
+     * or the null literal in the given source version.
      * This method returns {@code false} for <i>contextual
      * keywords</i>.
      *
      * @param s the string to check
      * @param version the version to use
-     * @return {@code true} if {@code s} is a keyword, or boolean
-     * literal, or null literal, {@code false} otherwise.
+     * @return {@code true} if {@code s} is a keyword, a boolean
+     * literal, or the null literal, {@code false} otherwise.
      * @jls 3.9 Keywords
      * @jls 3.10.3 Boolean Literals
      * @jls 3.10.8 The Null Literal

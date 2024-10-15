@@ -149,7 +149,7 @@ $(eval $(call SetupJarArchive, BUILD_JDK_JAR, \
     SRCS := $(MICROBENCHMARK_CLASSES) $(JMH_UNPACKED_DIR), \
     BIN := $(MICROBENCHMARK_JAR_BIN), \
     SUFFIXES := .*, \
-    EXCLUDE_FILES:= _the.BUILD_JDK_MICROBENCHMARK_batch \
+    EXCLUDE_FILES := _the.BUILD_JDK_MICROBENCHMARK_batch \
         _the.BUILD_JDK_MICROBENCHMARK.vardeps _unpacked.marker, \
     EXTRA_MANIFEST_ATTR := $(MICROBENCHMARK_MANIFEST), \
     JARMAIN := org.openjdk.jmh.Main, \

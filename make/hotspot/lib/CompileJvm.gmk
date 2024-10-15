@@ -282,7 +282,7 @@ ifneq ($(GENERATE_COMPILE_COMMANDS_ONLY), true)
     ifeq ($(JVM_VARIANT), $(JVM_VARIANT_MAIN))
       $(eval $(call SetupCopyFiles, COPY_JVM_LIB, \
           DEST := $(LIB_OUTPUTDIR), \
-          FILES :=$(BUILD_LIBJVM_IMPORT_LIBRARY), \
+          FILES := $(BUILD_LIBJVM_IMPORT_LIBRARY), \
       ))
       TARGETS += $(COPY_JVM_LIB)
     endif

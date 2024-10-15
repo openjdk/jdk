@@ -569,7 +569,7 @@ public class Signatures {
                 // empty parameters are added without packing
                 target.add(parameters);
             } else {
-                target.add(new HtmlTree(HtmlTag.WBR))
+                target.add(HtmlTree.WBR())
                         .add(HtmlTree.SPAN(HtmlStyles.parameters, parameters));
             }
 

@@ -201,7 +201,7 @@ public class SourceToHTMLConverter {
                     .resolve(configuration.docPaths.forPackage(te))
                     .invert();
             Content body = getHeader();
-            var pre = new HtmlTree(HtmlTag.PRE);
+            var pre = HtmlTree.PRE();
             try (var reader = new LineNumberReader(r)) {
                 while ((line = reader.readLine()) != null) {
                     addLineNo(pre, lineno);
@@ -246,7 +246,7 @@ public class SourceToHTMLConverter {
      * @return the header content for the HTML file
      */
     private static Content getHeader() {
-        return new HtmlTree(HtmlTag.BODY).setStyle(HtmlStyles.sourcePage);
+        return HtmlTree.BODY(HtmlStyles.sourcePage);
     }
 
     /**

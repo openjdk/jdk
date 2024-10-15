@@ -33,6 +33,8 @@ import java.lang.classfile.instruction.LabelTarget;
 import java.util.Objects;
 import java.lang.classfile.Instruction;
 
+import static java.util.Objects.requireNonNull;
+
 public final class BlockCodeBuilderImpl
         extends NonterminalCodeBuilder
         implements CodeBuilder.BlockCodeBuilder {
@@ -80,12 +82,12 @@ public final class BlockCodeBuilderImpl
 
     @Override
     public CodeBuilder with(CodeElement element) {
-        parent.with(element);
+        parent.with(requireNonNull(element));
 
         hasInstructions |= element instanceof Instruction;
 
         if (reachable) {
-            if (element instanceof Instruction i && i.opcode().isUnconditionalBranch())
+            if (element instanceof Instruction i && BytecodeHelpers.isUnconditionalBranch(i.opcode()))
                 reachable = false;
         }
         else if (element instanceof LabelTarget) {

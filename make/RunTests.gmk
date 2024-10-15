@@ -104,7 +104,8 @@ ifneq ($(wildcard $(JTREG_FAILURE_HANDLER)), )
       -observerDir:$(JTREG_FAILURE_HANDLER) \
       -timeoutHandler:jdk.test.failurehandler.jtreg.GatherProcessInfoTimeoutHandler \
       -observer:jdk.test.failurehandler.jtreg.GatherDiagnosticInfoObserver \
-      -timeoutHandlerTimeout:$(JTREG_FAILURE_HANDLER_TIMEOUT)
+      -timeoutHandlerTimeout:$(JTREG_FAILURE_HANDLER_TIMEOUT) \
+      #
 endif
 
 GTEST_LAUNCHER_DIRS := $(patsubst %/gtestLauncher, %, \
@@ -500,7 +501,7 @@ define SetupRunGtestTestBody
   endif
 
   ifneq ($$(GTEST_REPEAT), )
-    $1_GTEST_REPEAT :=--gtest_repeat=$$(GTEST_REPEAT)
+    $1_GTEST_REPEAT := --gtest_repeat=$$(GTEST_REPEAT)
   endif
 
   run-test-$1: pre-run-test

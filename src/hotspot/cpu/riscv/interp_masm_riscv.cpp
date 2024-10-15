@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -750,8 +750,8 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
 
     if (DiagnoseSyncOnValueBasedClasses != 0) {
       load_klass(tmp, obj_reg);
-      lwu(tmp, Address(tmp, Klass::access_flags_offset()));
-      test_bit(tmp, tmp, exact_log2(JVM_ACC_IS_VALUE_BASED_CLASS));
+      lbu(tmp, Address(tmp, Klass::misc_flags_offset()));
+      test_bit(tmp, tmp, exact_log2(KlassFlags::_misc_is_value_based_class));
       bnez(tmp, slow_case);
     }
 

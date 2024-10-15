@@ -73,7 +73,7 @@ private:
 
   bool should_scan_page(ZPage* page) const;
 
-  bool scan_page(ZPage* page) const;
+  bool scan_page_and_clear_remset(ZPage* page) const;
   bool scan_forwarding(ZForwarding* forwarding, void* context) const;
 
 public:

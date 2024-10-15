@@ -88,34 +88,27 @@
 // At command line specify the parameters: -XX:+FullGCALot -XX:FullGCALotStart=100000000
 
 
+#define C2_BLOB_FIELD_DEFINE(name, type) \
+  type OptoRuntime:: BLOB_FIELD_NAME(name)  = nullptr;
+#define C2_STUB_FIELD_NAME(name) _ ## name ## _Java
+#define C2_STUB_FIELD_DEFINE(name, f, t, r) \
+  address OptoRuntime:: C2_STUB_FIELD_NAME(name) = nullptr;
+#define C2_JVMTI_STUB_FIELD_DEFINE(name) \
+  address OptoRuntime:: STUB_FIELD_NAME(name) = nullptr;
+C2_STUBS_DO(C2_BLOB_FIELD_DEFINE, C2_STUB_FIELD_DEFINE, C2_JVMTI_STUB_FIELD_DEFINE)
+#undef C2_BLOB_FIELD_DEFINE
+#undef C2_STUB_FIELD_DEFINE
+#undef C2_JVMTI_STUB_FIELD_DEFINE
 
-
-// Compiled code entry points
-address OptoRuntime::_new_instance_Java                           = nullptr;
-address OptoRuntime::_new_array_Java                              = nullptr;
-address OptoRuntime::_new_array_nozero_Java                       = nullptr;
-address OptoRuntime::_multianewarray2_Java                        = nullptr;
-address OptoRuntime::_multianewarray3_Java                        = nullptr;
-address OptoRuntime::_multianewarray4_Java                        = nullptr;
-address OptoRuntime::_multianewarray5_Java                        = nullptr;
-address OptoRuntime::_multianewarrayN_Java                        = nullptr;
-address OptoRuntime::_vtable_must_compile_Java                    = nullptr;
-address OptoRuntime::_complete_monitor_locking_Java               = nullptr;
-address OptoRuntime::_monitor_notify_Java                         = nullptr;
-address OptoRuntime::_monitor_notifyAll_Java                      = nullptr;
-address OptoRuntime::_rethrow_Java                                = nullptr;
-
-address OptoRuntime::_slow_arraycopy_Java                         = nullptr;
-address OptoRuntime::_register_finalizer_Java                     = nullptr;
-#if INCLUDE_JVMTI
-address OptoRuntime::_notify_jvmti_vthread_start                  = nullptr;
-address OptoRuntime::_notify_jvmti_vthread_end                    = nullptr;
-address OptoRuntime::_notify_jvmti_vthread_mount                  = nullptr;
-address OptoRuntime::_notify_jvmti_vthread_unmount                = nullptr;
-#endif
-
-UncommonTrapBlob*   OptoRuntime::_uncommon_trap_blob;
-ExceptionBlob*      OptoRuntime::_exception_blob;
+#define C2_BLOB_NAME_DEFINE(name, type)  "C2 Runtime " # name "_blob",
+#define C2_STUB_NAME_DEFINE(name, f, t, r)  "C2 Runtime " # name,
+#define C2_JVMTI_STUB_NAME_DEFINE(name)  "C2 Runtime " # name,
+const char* OptoRuntime::_stub_names[] = {
+  C2_STUBS_DO(C2_BLOB_NAME_DEFINE, C2_STUB_NAME_DEFINE, C2_JVMTI_STUB_NAME_DEFINE)
+};
+#undef C2_BLOB_NAME_DEFINE
+#undef C2_STUB_NAME_DEFINE
+#undef C2_JVMTI_STUB_NAME_DEFINE
 
 // This should be called in an assertion at the start of OptoRuntime routines
 // which are entered from compiled code (all of them)
@@ -132,46 +125,72 @@ static bool check_compiled_frame(JavaThread* thread) {
 }
 #endif // ASSERT
 
-
+/*
 #define gen(env, var, type_func_gen, c_func, fancy_jump, pass_tls, return_pc) \
   var = generate_stub(env, type_func_gen, CAST_FROM_FN_PTR(address, c_func), #var, fancy_jump, pass_tls, return_pc); \
   if (var == nullptr) { return false; }
+*/
+
+#define GEN_C2_BLOB(name, type)                    \
+  generate_ ## name ## _blob();
+
+// a few helper macros to conjure up generate_stub call arguments
+#define C2_STUB_FIELD_NAME(name) _ ## name ## _Java
+#define C2_STUB_TYPEFUNC(name) name ## _Type
+#define C2_STUB_C_FUNC(name) CAST_FROM_FN_PTR(address, name ## _C)
+#define C2_STUB_NAME(name) stub_name(OptoStubId::name ## _id)
+
+// Almost all the C functions targeted from the generated stubs are
+// implemented locally to OptoRuntime with names that can be generated
+// from the stub name by appending suffix '_C'. However, in two cases
+// a common target method also needs to be called from shared runtime
+// stubs. In these two cases the opto stubs rely on method
+// imlementations defined in class SharedRuntime. The following
+// defines temporarily rebind the generated names to reference the
+// relevant implementations.
+
+#define GEN_C2_STUB(name, fancy_jump, pass_tls, pass_retpc  )         \
+  C2_STUB_FIELD_NAME(name) =                                          \
+    generate_stub(env,                                                  \
+                  C2_STUB_TYPEFUNC(name),                             \
+                  C2_STUB_C_FUNC(name),                               \
+                  C2_STUB_NAME(name),                                 \
+                  fancy_jump,                                           \
+                  pass_tls,                                             \
+                  pass_retpc);                                          \
+  if (C2_STUB_FIELD_NAME(name) == nullptr) { return false; }          \
+
+#define C2_JVMTI_STUB_C_FUNC(name) CAST_FROM_FN_PTR(address, SharedRuntime::name)
+
+#define GEN_C2_JVMTI_STUB(name)                                       \
+  STUB_FIELD_NAME(name) =                                               \
+    generate_stub(env,                                                  \
+                  notify_jvmti_vthread_Type,                            \
+                  C2_JVMTI_STUB_C_FUNC(name),                         \
+                  C2_STUB_NAME(name),                                 \
+                  0,                                                    \
+                  true,                                                 \
+                  false);                                               \
+  if (STUB_FIELD_NAME(name) == nullptr) { return false; }               \
 
 bool OptoRuntime::generate(ciEnv* env) {
 
-  generate_uncommon_trap_blob();
-  generate_exception_blob();
-
-  // Note: tls: Means fetching the return oop out of the thread-local storage
-  //
-  //   variable/name                       type-function-gen              , runtime method                  ,fncy_jp, tls,retpc
-  // -------------------------------------------------------------------------------------------------------------------------------
-  gen(env, _new_instance_Java              , new_instance_Type            , new_instance_C                  ,    0 , true, false);
-  gen(env, _new_array_Java                 , new_array_Type               , new_array_C                     ,    0 , true, false);
-  gen(env, _new_array_nozero_Java          , new_array_Type               , new_array_nozero_C              ,    0 , true, false);
-  gen(env, _multianewarray2_Java           , multianewarray2_Type         , multianewarray2_C               ,    0 , true, false);
-  gen(env, _multianewarray3_Java           , multianewarray3_Type         , multianewarray3_C               ,    0 , true, false);
-  gen(env, _multianewarray4_Java           , multianewarray4_Type         , multianewarray4_C               ,    0 , true, false);
-  gen(env, _multianewarray5_Java           , multianewarray5_Type         , multianewarray5_C               ,    0 , true, false);
-  gen(env, _multianewarrayN_Java           , multianewarrayN_Type         , multianewarrayN_C               ,    0 , true, false);
-#if INCLUDE_JVMTI
-  gen(env, _notify_jvmti_vthread_start     , notify_jvmti_vthread_Type    , SharedRuntime::notify_jvmti_vthread_start, 0, true, false);
-  gen(env, _notify_jvmti_vthread_end       , notify_jvmti_vthread_Type    , SharedRuntime::notify_jvmti_vthread_end,   0, true, false);
-  gen(env, _notify_jvmti_vthread_mount     , notify_jvmti_vthread_Type    , SharedRuntime::notify_jvmti_vthread_mount, 0, true, false);
-  gen(env, _notify_jvmti_vthread_unmount   , notify_jvmti_vthread_Type    , SharedRuntime::notify_jvmti_vthread_unmount, 0, true, false);
-#endif
-  gen(env, _complete_monitor_locking_Java  , complete_monitor_enter_Type  , SharedRuntime::complete_monitor_locking_C, 0, false, false);
-  gen(env, _monitor_notify_Java            , monitor_notify_Type          , monitor_notify_C                ,    0 , false, false);
-  gen(env, _monitor_notifyAll_Java         , monitor_notify_Type          , monitor_notifyAll_C             ,    0 , false, false);
-  gen(env, _rethrow_Java                   , rethrow_Type                 , rethrow_C                       ,    2 , true , true );
-
-  gen(env, _slow_arraycopy_Java            , slow_arraycopy_Type          , SharedRuntime::slow_arraycopy_C ,    0 , false, false);
-  gen(env, _register_finalizer_Java        , register_finalizer_Type      , register_finalizer              ,    0 , false, false);
+  C2_STUBS_DO(GEN_C2_BLOB, GEN_C2_STUB, GEN_C2_JVMTI_STUB)
 
   return true;
 }
 
-#undef gen
+#undef GEN_C2_BLOB
+
+#undef C2_STUB_FIELD_NAME
+#undef C2_STUB_TYPEFUNC
+#undef C2_STUB_C_FUNC
+#undef C2_STUB_NAME
+#undef GEN_C2_STUB
+
+#undef C2_JVMTI_STUB_C_FUNC
+#undef GEN_C2_JVMTI_STUB
+// #undef gen
 
 
 // Helper method to do generation of RunTimeStub's
@@ -199,6 +218,19 @@ const char* OptoRuntime::stub_name(address entry) {
   // Fast implementation for product mode (maybe it should be inlined too)
   return "runtime stub";
 #endif
+}
+
+// local methods passed as arguments to stub generator that forward
+// control to corresponding JRT methods of SharedRuntime
+
+void OptoRuntime::slow_arraycopy_C(oopDesc* src,  jint src_pos,
+                                   oopDesc* dest, jint dest_pos,
+                                   jint length, JavaThread* thread) {
+  SharedRuntime::slow_arraycopy_C(src,  src_pos, dest, dest_pos, length, thread);
+}
+
+void OptoRuntime::complete_monitor_locking_C(oopDesc* obj, BasicLock* lock, JavaThread* current) {
+  SharedRuntime::complete_monitor_locking_C(obj, lock, current);
 }
 
 
@@ -529,6 +561,10 @@ const TypeFunc *OptoRuntime::new_array_Type() {
   return TypeFunc::make(domain, range);
 }
 
+const TypeFunc *OptoRuntime::new_array_nozero_Type() {
+  return new_array_Type();
+}
+
 const TypeFunc *OptoRuntime::multianewarray_Type(int ndim) {
   // create input type (domain)
   const int nargs = ndim + 1;
@@ -607,6 +643,9 @@ const TypeFunc *OptoRuntime::complete_monitor_enter_Type() {
   return TypeFunc::make(domain,range);
 }
 
+const TypeFunc *OptoRuntime::complete_monitor_locking_Type() {
+  return complete_monitor_enter_Type();
+}
 
 //-----------------------------------------------------------------------------
 const TypeFunc *OptoRuntime::complete_monitor_exit_Type() {
@@ -635,6 +674,10 @@ const TypeFunc *OptoRuntime::monitor_notify_Type() {
   fields = TypeTuple::fields(0);
   const TypeTuple *range = TypeTuple::make(TypeFunc::Parms+0, fields);
   return TypeFunc::make(domain, range);
+}
+
+const TypeFunc *OptoRuntime::monitor_notifyAll_Type() {
+  return monitor_notify_Type();
 }
 
 const TypeFunc* OptoRuntime::flush_windows_Type() {
@@ -1827,7 +1870,7 @@ const TypeFunc *OptoRuntime::dtrace_object_alloc_Type() {
 }
 
 
-JRT_ENTRY_NO_ASYNC(void, OptoRuntime::register_finalizer(oopDesc* obj, JavaThread* current))
+JRT_ENTRY_NO_ASYNC(void, OptoRuntime::register_finalizer_C(oopDesc* obj, JavaThread* current))
   assert(oopDesc::is_oop(obj), "must be a valid oop");
   assert(obj->klass()->has_finalizer(), "shouldn't be here otherwise");
   InstanceKlass::register_finalizer(instanceOop(obj), CHECK);

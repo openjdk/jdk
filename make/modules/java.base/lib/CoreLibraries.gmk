@@ -63,7 +63,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJAVA, \
     DISABLED_WARNINGS_clang_TimeZone_md.c := unused-variable, \
     JDK_LIBS := libjvm, \
     LIBS_linux := $(LIBDL), \
-    LIBS_aix := $(LIBDL) $(LIBM),\
+    LIBS_aix := $(LIBDL) $(LIBM), \
     LIBS_macosx := \
         -framework CoreFoundation \
         -framework Foundation \

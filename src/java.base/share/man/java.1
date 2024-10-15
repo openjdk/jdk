@@ -3749,12 +3749,6 @@ future JDK release.
 They\[aq]re still accepted and acted upon, but a warning is issued when
 they\[aq]re used.
 .TP
-\f[V]-Xfuture\f[R]
-Enables strict class-file format checks that enforce close conformance
-to the class-file format specification.
-Developers should use this flag when developing new code.
-Stricter checks may become the default in future releases.
-.TP
 \f[V]-Xloggc:\f[R]\f[I]filename\f[R]
 Sets the file to which verbose GC events information should be
 redirected for logging.
@@ -3920,6 +3914,16 @@ of objects reachable from the old generation space into the young
 generation space.
 To disable GC of the young generation before each full GC, specify the
 option \f[V]-XX:-ScavengeBeforeFullGC\f[R].
+.TP
+\f[V]-Xfuture\f[R]
+Enables strict class-file format checks that enforce close conformance
+to the class-file format specification.
+Developers should use this flag when developing new code.
+Stricter checks may become the default in future releases.
+.RS
+.PP
+Use the option \f[V]-Xverify:all\f[R] instead.
+.RE
 .PP
 For the lists and descriptions of options removed in previous releases
 see the \f[I]Removed Java Options\f[R] section in:
@@ -4825,7 +4829,7 @@ level to a file called \f[V]gc.txt\f[R] with no decorations.
 The default configuration for all other messages at level
 \f[V]warning\f[R] is still in effect.
 .TP
-\f[V]-Xlog:gc=trace:file=gctrace.txt:uptimemillis,pids:filecount=5,filesize=1024\f[R]
+\f[V]-Xlog:gc=trace:file=gctrace.txt:uptimemillis,pid:filecount=5,filesize=1024\f[R]
 Logs messages tagged with the \f[V]gc\f[R] tag using the \f[V]trace\f[R]
 level to a rotating file set with 5 files with size 1 MB with the base
 name \f[V]gctrace.txt\f[R] and uses decorations \f[V]uptimemillis\f[R]

@@ -828,7 +828,7 @@ static void *thread_native_entry(Thread *thread) {
   OSThread* osthread = thread->osthread();
   Monitor* sync = osthread->startThread_lock();
 
-  osthread->set_thread_id(checked_cast<OSThread::thread_id_t>(os::current_thread_id()));
+  osthread->set_thread_id(checked_cast<pid_t>(os::current_thread_id()));
 
   if (UseNUMA) {
     int lgrp_id = os::numa_get_group_id();
@@ -4613,7 +4613,7 @@ static void workaround_expand_exec_shield_cs_limit() {
     return; // No matter, we tried, best effort.
   }
 
-  MemTracker::record_virtual_memory_type((address)codebuf, mtInternal);
+  MemTracker::record_virtual_memory_tag((address)codebuf, mtInternal);
 
   log_info(os)("[CS limit NX emulation work-around, exec code at: %p]", codebuf);
 
@@ -5062,16 +5062,6 @@ int os::open(const char *path, int oflag, int mode) {
 #endif
 
   return fd;
-}
-
-// return current position of file pointer
-jlong os::current_file_offset(int fd) {
-  return (jlong)::lseek(fd, (off_t)0, SEEK_CUR);
-}
-
-// move file pointer to the specified offset
-jlong os::seek_to_file_offset(int fd, jlong offset) {
-  return (jlong)::lseek(fd, (off_t)offset, SEEK_SET);
 }
 
 static jlong slow_thread_cpu_time(Thread *thread, bool user_sys_cpu_time);
