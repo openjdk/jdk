@@ -327,11 +327,9 @@ void PatchingStub::emit_code(LIR_Assembler* ce) {
       assert(a_byte == *start++, "should be the same code");
     }
 #endif
-  } else if (_id == load_mirror_id || _id == load_appendix_id) {
-    // Produce a copy of the load mirror / appendix instruction.
-    // 8-byte align the address of the oop immediate to guarantee atomicity
-    // when patching since the GC might walk nmethod oops concurrently.
-    __ align(8, __ offset() + NativeMovConstReg::data_offset_rex);
+  } else if (_id == load_mirror_id) {
+    // produce a copy of the load mirror instruction for use by the being
+    // initialized case
 #ifdef ASSERT
     address start = __ pc();
 #endif
@@ -412,7 +410,7 @@ void PatchingStub::emit_code(LIR_Assembler* ce) {
     case access_field_id:  target = Runtime1::entry_for(C1StubId::access_field_patching_id); break;
     case load_klass_id:    target = Runtime1::entry_for(C1StubId::load_klass_patching_id); reloc_type = relocInfo::metadata_type; break;
     case load_mirror_id:   target = Runtime1::entry_for(C1StubId::load_mirror_patching_id); reloc_type = relocInfo::oop_type; break;
-    case load_appendix_id: target = Runtime1::entry_for(C1StubId::load_appendix_patching_id); reloc_type = relocInfo::oop_type; break;
+    case load_appendix_id:      target = Runtime1::entry_for(C1StubId::load_appendix_patching_id); reloc_type = relocInfo::oop_type; break;
     default: ShouldNotReachHere();
   }
   __ bind(call_patch);
