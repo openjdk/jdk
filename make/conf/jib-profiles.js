@@ -1280,7 +1280,7 @@ var getJibProfilesDependencies = function (input, common) {
             ext: "tar.gz",
             revision: "5.9.20+1",
             environment_path: input.get("tidy", "home_path") + "/bin/tidy",
-            configure_args: "TIDY=" + input.get("tidy", "home_path") +"/bin/tidy",
+            configure_args: "TIDY=" + input.get("tidy", "home_path") + "/bin/tidy",
             module: "tidy-html-" + (input.target_os === "macosx" ? input.target_os : input.target_platform),
         },
     };
