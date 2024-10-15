@@ -46,7 +46,7 @@ import jdk.internal.classfile.impl.Util;
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * Models the {@code Module} attribute {@jvms 4.7.25}, which can
+ * Models the {@code Module} attribute (JVMS {@jvms 4.7.25}), which can
  * appear on classes that represent module descriptors.
  * Delivered as a {@link java.lang.classfile.ClassElement} when
  * traversing the elements of a {@link java.lang.classfile.ClassModel}.

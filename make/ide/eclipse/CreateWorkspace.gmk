@@ -55,7 +55,7 @@ FindModuleNativeDirs = \
 
 # Taken from JdkNativeCompilation.gmk
 FindJavaHeaderDir = \
-    $(if $(strip $1),$(wildcard $(SUPPORT_OUTPUTDIR)/headers/$(strip $1)))
+    $(if $(strip $1), $(wildcard $(SUPPORT_OUTPUTDIR)/headers/$(strip $1)))
 
 JAVA_DIRS := $(strip $(foreach module, $(call FindAllModules), \
     $(patsubst $(TOPDIR)/%,%,$(filter-out $(OUTPUTDIR)%, \
@@ -112,7 +112,7 @@ define SetupEclipseWorkspaceBody
 
     # Eclipse crashes when processing multiple module-info.java files
     # This is an annoying bug that has not been fixed for some time now
-    $1_CLASSPATH += $$(foreach src,$(JAVA_DIRS), \
+    $1_CLASSPATH += $$(foreach src, $(JAVA_DIRS), \
         <classpathentry excluding="module-info.java|module-info.java.extra" kind="src" path="$$(src)"/>$$(NEWLINE))
 
     $$(eval $$(call SetupTextFileProcessing, $1_CREATE_CLASSPATH_FILE, \
@@ -157,7 +157,7 @@ define SetupEclipseWorkspaceBody
         <entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="src/hotspot"/>$$(NEWLINE)
 
     ifneq ($$(findstring $$($1_NATURE), NATIVE MIXED), )
-      $1_NATIVE_SRCS += $$(foreach src,$(NATIVE_DIRS), \
+      $1_NATIVE_SRCS += $$(foreach src, $(NATIVE_DIRS), \
           <entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="$$(strip $$(src))"/>$$(NEWLINE))
     endif
 
@@ -188,7 +188,7 @@ define SetupEclipseWorkspaceBody
     $1_PLAIN_MAKE_TARGETS := update-build-docs docs gensrc gendata copy java \
         launchers libs hotspot jdk product-images product-bundles all-images test-image clean
 
-    $1_MATCHING_MAKE_TARGETS += $$(foreach name,$$($1_PLAIN_MAKE_TARGETS), \
+    $1_MATCHING_MAKE_TARGETS += $$(foreach name, $$($1_PLAIN_MAKE_TARGETS), \
       <target name="$$(strip $$(name))" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder"> \
           <buildCommand>$$($1_MAKE)</buildCommand> \
           <buildArguments>-C $$(call FixPath, $(TOPDIR))</buildArguments> \
@@ -292,7 +292,7 @@ define SetupEclipseWorkspaceBody
   endif
 
   ifneq ($$(findstring $$($1_NATURE), JAVA MIXED), )
-    $1_LINKED_RESOURCES += $$(foreach src,$(JAVA_DIRS), \
+    $1_LINKED_RESOURCES += $$(foreach src, $(JAVA_DIRS), \
         <link> \
             <name>$$(strip $$(src))</name> \
             <type>2</type> \
@@ -317,7 +317,7 @@ define SetupEclipseWorkspaceBody
   endif
 
   ifneq ($$(findstring $$($1_NATURE), NATIVE MIXED), )
-    $1_LINKED_RESOURCES += $$(foreach src,$(NATIVE_DIRS), \
+    $1_LINKED_RESOURCES += $$(foreach src, $(NATIVE_DIRS), \
         <link> \
             <name>$$(strip $$(src))</name> \
             <type>2</type> \

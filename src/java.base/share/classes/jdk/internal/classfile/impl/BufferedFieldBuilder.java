@@ -24,6 +24,7 @@
  */
 package jdk.internal.classfile.impl;
 
+import java.lang.reflect.AccessFlag;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -32,6 +33,8 @@ import java.util.function.Consumer;
 import java.lang.classfile.*;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.lang.classfile.constantpool.Utf8Entry;
+
+import static java.util.Objects.requireNonNull;
 
 public final class BufferedFieldBuilder
         implements TerminalFieldBuilder {
@@ -48,9 +51,9 @@ public final class BufferedFieldBuilder
                                 Utf8Entry type) {
         this.constantPool = constantPool;
         this.context = context;
-        this.name = name;
-        this.desc = type;
-        this.flags = AccessFlags.ofField();
+        this.name = requireNonNull(name);
+        this.desc = requireNonNull(type);
+        this.flags = new AccessFlagsImpl(AccessFlag.Location.FIELD);
     }
 
     @Override
@@ -60,7 +63,7 @@ public final class BufferedFieldBuilder
 
     @Override
     public FieldBuilder with(FieldElement element) {
-        elements.add(element);
+        elements.add(requireNonNull(element));
         if (element instanceof AccessFlags f) this.flags = f;
         return this;
     }
@@ -78,7 +81,7 @@ public final class BufferedFieldBuilder
             extends AbstractUnboundModel<FieldElement>
             implements FieldModel {
         public Model() {
-            super(elements);
+            super(BufferedFieldBuilder.this.elements);
         }
 
         @Override
@@ -103,12 +106,7 @@ public final class BufferedFieldBuilder
 
         @Override
         public void writeTo(DirectClassBuilder builder) {
-            builder.withField(name, desc, new Consumer<>() {
-                @Override
-                public void accept(FieldBuilder fieldBuilder) {
-                    elements.forEach(fieldBuilder);
-                }
-            });
+            builder.withField(name, desc, Util.writingAll(this));
         }
 
         @Override

@@ -38,6 +38,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 
+import static java.util.Objects.requireNonNull;
+
 public final class BufferedCodeBuilder
         implements TerminalCodeBuilder {
     private final SplitConstantPool constantPool;
@@ -121,7 +123,7 @@ public final class BufferedCodeBuilder
     public CodeBuilder with(CodeElement element) {
         if (finished)
             throw new IllegalStateException("Can't add elements after traversal");
-        elements.add(element);
+        elements.add(requireNonNull(element));
         return this;
     }
 
@@ -148,7 +150,7 @@ public final class BufferedCodeBuilder
             implements CodeModel {
 
         private Model() {
-            super(elements);
+            super(BufferedCodeBuilder.this.elements);
         }
 
         @Override
@@ -173,12 +175,7 @@ public final class BufferedCodeBuilder
 
         @Override
         public void writeTo(DirectMethodBuilder builder) {
-            builder.withCode(new Consumer<>() {
-                @Override
-                public void accept(CodeBuilder cb) {
-                    forEach(cb);
-                }
-            });
+            builder.withCode(Util.writingAll(this));
         }
 
         @Override

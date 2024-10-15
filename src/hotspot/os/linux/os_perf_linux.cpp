@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -430,7 +430,10 @@ static int get_boot_time(uint64_t* time) {
 }
 
 static int perf_context_switch_rate(double* rate) {
+  PRAGMA_DIAG_PUSH
+  PRAGMA_ZERO_AS_NULL_POINTER_CONSTANT_IGNORED
   static pthread_mutex_t contextSwitchLock = PTHREAD_MUTEX_INITIALIZER;
+  PRAGMA_DIAG_POP
   static uint64_t      bootTime;
   static uint64_t      lastTimeNanos;
   static uint64_t      lastSwitches;

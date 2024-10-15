@@ -34,6 +34,8 @@ import java.util.function.Consumer;
 
 import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.constantpool.Utf8Entry;
+
+import jdk.internal.classfile.impl.AccessFlagsImpl;
 import jdk.internal.classfile.impl.ChainedClassBuilder;
 import jdk.internal.classfile.impl.DirectClassBuilder;
 import jdk.internal.classfile.impl.Util;
@@ -73,7 +75,7 @@ public sealed interface ClassBuilder
      * @return this builder
      */
     default ClassBuilder withFlags(int flags) {
-        return with(AccessFlags.ofClass(flags));
+        return with(new AccessFlagsImpl(AccessFlag.Location.CLASS, flags));
     }
 
     /**
@@ -82,7 +84,7 @@ public sealed interface ClassBuilder
      * @return this builder
      */
     default ClassBuilder withFlags(AccessFlag... flags) {
-        return with(AccessFlags.ofClass(flags));
+        return with(new AccessFlagsImpl(AccessFlag.Location.CLASS, flags));
     }
 
     /**
@@ -163,7 +165,7 @@ public sealed interface ClassBuilder
     default ClassBuilder withField(Utf8Entry name,
                                    Utf8Entry descriptor,
                                    int flags) {
-        return withField(name, descriptor, fb -> fb.withFlags(flags));
+        return withField(name, descriptor, Util.buildingFlags(flags));
     }
 
     /**
@@ -192,7 +194,9 @@ public sealed interface ClassBuilder
     default ClassBuilder withField(String name,
                                    ClassDesc descriptor,
                                    int flags) {
-        return withField(name, descriptor, fb -> fb.withFlags(flags));
+        return withField(constantPool().utf8Entry(name),
+                         constantPool().utf8Entry(descriptor),
+                         flags);
     }
 
     /**
@@ -239,7 +243,7 @@ public sealed interface ClassBuilder
                                         Utf8Entry descriptor,
                                         int methodFlags,
                                         Consumer<? super CodeBuilder> handler) {
-        return withMethod(name, descriptor, methodFlags, mb -> mb.withCode(handler));
+        return withMethod(name, descriptor, methodFlags, Util.buildingCode(handler));
     }
 
     /**
@@ -274,10 +278,7 @@ public sealed interface ClassBuilder
                                         MethodTypeDesc descriptor,
                                         int methodFlags,
                                         Consumer<? super CodeBuilder> handler) {
-        return withMethodBody(constantPool().utf8Entry(name),
-                              constantPool().utf8Entry(descriptor),
-                              methodFlags,
-                              handler);
+        return withMethod(name, descriptor, methodFlags, Util.buildingCode(handler));
     }
 
     /**

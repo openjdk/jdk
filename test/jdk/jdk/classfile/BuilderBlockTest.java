@@ -28,7 +28,6 @@
  * @run junit BuilderBlockTest
  */
 import java.io.IOException;
-import java.lang.classfile.AccessFlags;
 import java.lang.classfile.Attributes;
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.ClassTransform;
@@ -53,6 +52,8 @@ import helpers.ByteArrayClassLoader;
 import jdk.internal.classfile.impl.LabelImpl;
 import org.junit.jupiter.api.Test;
 
+import static java.lang.classfile.ClassFile.ACC_PUBLIC;
+import static java.lang.classfile.ClassFile.ACC_STATIC;
 import static java.lang.constant.ConstantDescs.CD_int;
 import static java.lang.constant.ConstantDescs.CD_void;
 
@@ -116,7 +117,7 @@ class BuilderBlockTest {
         byte[] bytes = ClassFile.of().build(ClassDesc.of("Foo"), cb -> {
             cb.withFlags(AccessFlag.PUBLIC);
             cb.withMethod("foo", MethodTypeDesc.of(CD_int, CD_int),
-                          AccessFlags.ofMethod(AccessFlag.PUBLIC, AccessFlag.STATIC).flagsMask(),
+                          ACC_PUBLIC | ACC_STATIC,
                           mb -> mb.withCode(xb -> xb.iload(0)
                                                     .ifThen(xxb -> xxb.iconst_1().ireturn())
                                                     .iconst_2()
@@ -135,7 +136,7 @@ class BuilderBlockTest {
         byte[] bytes = ClassFile.of().build(ClassDesc.of("Foo"), cb -> {
             cb.withFlags(AccessFlag.PUBLIC);
             cb.withMethod("foo", MethodTypeDesc.of(CD_int, CD_int),
-                          AccessFlags.ofMethod(AccessFlag.PUBLIC, AccessFlag.STATIC).flagsMask(),
+                          ACC_PUBLIC | ACC_STATIC,
                           mb -> mb.withCode(xb -> xb.iload(0)
                                                     .ifThenElse(xxb -> xxb.iconst_1().ireturn(),
                                                                 xxb -> xxb.iconst_2().ireturn())));
@@ -153,7 +154,7 @@ class BuilderBlockTest {
         ClassFile.of().build(ClassDesc.of("Foo"), cb -> {
             cb.withFlags(AccessFlag.PUBLIC);
             cb.withMethod("foo", MethodTypeDesc.of(CD_int, CD_int, CD_int),
-                    AccessFlags.ofMethod(AccessFlag.PUBLIC, AccessFlag.STATIC).flagsMask(),
+                    ACC_PUBLIC | ACC_STATIC,
                     mb -> mb.withCode(xb -> {
                         xb.iload(0);
                         xb.iload(1);
@@ -173,7 +174,7 @@ class BuilderBlockTest {
         byte[] bytes = ClassFile.of().build(ClassDesc.of("Foo"), cb -> {
             cb.withFlags(AccessFlag.PUBLIC);
             cb.withMethod("foo", MethodTypeDesc.of(CD_int, CD_int),
-                          AccessFlags.ofMethod(AccessFlag.PUBLIC, AccessFlag.STATIC).flagsMask(),
+                          ACC_PUBLIC | ACC_STATIC,
                           mb -> mb.withCode(xb -> xb.iload(0)
                                                     .ifThenElse(xxb -> xxb.iconst_1().istore(2),
                                                                 xxb -> xxb.iconst_2().istore(2))
@@ -193,7 +194,7 @@ class BuilderBlockTest {
         byte[] bytes = ClassFile.of().build(ClassDesc.of("Foo"), cb -> {
             cb.withFlags(AccessFlag.PUBLIC);
             cb.withMethod("foo", MethodTypeDesc.of(CD_int, CD_int),
-                    AccessFlags.ofMethod(AccessFlag.PUBLIC, AccessFlag.STATIC).flagsMask(),
+                    ACC_PUBLIC | ACC_STATIC,
                     mb -> mb.withCode(xb -> xb.iload(0)
                             .ifThenElse(xxb -> xxb.iconst_1().istore(2).goto_(xxb.breakLabel()),
                                     xxb -> xxb.iconst_2().istore(2).goto_(xxb.breakLabel()))
@@ -212,7 +213,7 @@ class BuilderBlockTest {
         byte[] bytes = ClassFile.of().build(ClassDesc.of("Foo"), cb -> {
             cb.withFlags(AccessFlag.PUBLIC);
             cb.withMethod("foo", MethodTypeDesc.of(CD_int, CD_int, CD_int),
-                    AccessFlags.ofMethod(AccessFlag.PUBLIC, AccessFlag.STATIC).flagsMask(),
+                    ACC_PUBLIC | ACC_STATIC,
                     mb -> mb.withCode(xb ->
                             xb.iload(0)
                             .iload(1)
@@ -237,7 +238,7 @@ class BuilderBlockTest {
         ClassFile.of().build(ClassDesc.of("Foo"), cb -> {
             cb.withFlags(AccessFlag.PUBLIC);
             cb.withMethod("foo", MethodTypeDesc.of(CD_int, CD_int, CD_int),
-                    AccessFlags.ofMethod(AccessFlag.PUBLIC, AccessFlag.STATIC).flagsMask(),
+                    ACC_PUBLIC | ACC_STATIC,
                     mb -> mb.withCode(xb -> {
                         xb.iload(0);
                         xb.iload(1);
@@ -258,9 +259,9 @@ class BuilderBlockTest {
         ClassFile.of().build(ClassDesc.of("Foo"), cb -> {
             cb.withMethod("foo", MethodTypeDesc.ofDescriptor("(IJI)V"), ClassFile.ACC_STATIC,
                           mb -> mb.withCode(xb -> {
-                              int slot1 = xb.allocateLocal(TypeKind.IntType);
-                              int slot2 = xb.allocateLocal(TypeKind.LongType);
-                              int slot3 = xb.allocateLocal(TypeKind.IntType);
+                              int slot1 = xb.allocateLocal(TypeKind.INT);
+                              int slot2 = xb.allocateLocal(TypeKind.LONG);
+                              int slot3 = xb.allocateLocal(TypeKind.INT);
 
                               assertEquals(slot1, 4);
                               assertEquals(slot2, 5);
@@ -276,15 +277,15 @@ class BuilderBlockTest {
             cb.withMethod("foo", MethodTypeDesc.ofDescriptor("(IJI)V"), ClassFile.ACC_STATIC,
                           mb -> mb.withCode(xb -> {
                               xb.block(bb -> {
-                                  int slot1 = bb.allocateLocal(TypeKind.IntType);
-                                  int slot2 = bb.allocateLocal(TypeKind.LongType);
-                                  int slot3 = bb.allocateLocal(TypeKind.IntType);
+                                  int slot1 = bb.allocateLocal(TypeKind.INT);
+                                  int slot2 = bb.allocateLocal(TypeKind.LONG);
+                                  int slot3 = bb.allocateLocal(TypeKind.INT);
 
                                   assertEquals(slot1, 4);
                                   assertEquals(slot2, 5);
                                   assertEquals(slot3, 7);
                               });
-                              int slot4 = xb.allocateLocal(TypeKind.IntType);
+                              int slot4 = xb.allocateLocal(TypeKind.INT);
                               assertEquals(slot4, 4);
                               xb.return_();
                           }));
@@ -298,20 +299,20 @@ class BuilderBlockTest {
                           mb -> mb.withCode(xb -> {
                               xb.iconst_0();
                               xb.ifThenElse(bb -> {
-                                                int slot1 = bb.allocateLocal(TypeKind.IntType);
-                                                int slot2 = bb.allocateLocal(TypeKind.LongType);
-                                                int slot3 = bb.allocateLocal(TypeKind.IntType);
+                                                int slot1 = bb.allocateLocal(TypeKind.INT);
+                                                int slot2 = bb.allocateLocal(TypeKind.LONG);
+                                                int slot3 = bb.allocateLocal(TypeKind.INT);
 
                                                 assertEquals(slot1, 4);
                                                 assertEquals(slot2, 5);
                                                 assertEquals(slot3, 7);
                                             },
                                             bb -> {
-                                                int slot1 = bb.allocateLocal(TypeKind.IntType);
+                                                int slot1 = bb.allocateLocal(TypeKind.INT);
 
                                                 assertEquals(slot1, 4);
                                             });
-                              int slot4 = xb.allocateLocal(TypeKind.IntType);
+                              int slot4 = xb.allocateLocal(TypeKind.INT);
                               assertEquals(slot4, 4);
                               xb.return_();
                           }));
@@ -334,7 +335,7 @@ class BuilderBlockTest {
                     && se.utf8().equalsString("Output")) {
                 assertFalse(foundItem);
                 foundItem = true;
-                var i = cob.allocateLocal(TypeKind.IntType);
+                var i = cob.allocateLocal(TypeKind.INT);
                 assertEquals(7, i, "Allocated new int slot");
             }
         }
@@ -372,8 +373,8 @@ class BuilderBlockTest {
         ClassTransform bufferingTransform = (clb, cle) -> {
             if (cle instanceof MethodModel mm && mm.methodName().equalsString("work")) {
                 clb.withMethodBody(mm.methodName(), mm.methodType(), mm.flags().flagsMask(), cob -> {
-                    int d = cob.allocateLocal(TypeKind.IntType);
-                    int e = cob.allocateLocal(TypeKind.IntType);
+                    int d = cob.allocateLocal(TypeKind.INT);
+                    int e = cob.allocateLocal(TypeKind.INT);
 
                     assertEquals(5, d);
                     assertEquals(6, e);

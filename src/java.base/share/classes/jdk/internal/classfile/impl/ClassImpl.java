@@ -101,7 +101,7 @@ public final class ClassImpl
 
     @Override
     public AccessFlags flags() {
-        return AccessFlags.ofClass(reader.flags());
+        return new AccessFlagsImpl(AccessFlag.Location.CLASS, reader.flags());
     }
 
     @Override

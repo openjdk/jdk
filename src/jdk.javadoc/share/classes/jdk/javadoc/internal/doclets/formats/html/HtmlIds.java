@@ -33,6 +33,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
@@ -46,10 +47,10 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeVariable;
 import javax.lang.model.util.SimpleTypeVisitor9;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
 import jdk.javadoc.internal.doclets.toolkit.util.SummaryAPIListBuilder;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
+import jdk.javadoc.internal.html.HtmlId;
 
 /**
  * Centralized constants and factory methods for HTML ids.
@@ -459,6 +460,22 @@ public class HtmlIds {
         String base = text.replaceAll("\\s+", "");
         int count = counts.compute(base, (k, v) -> v == null ? 0 : v + 1);
         return HtmlId.of(count == 0 ? base : base + "-" + count);
+    }
+
+    /**
+     * Returns an id for text documenting a type parameter of a class or method.
+     *
+     * @param paramName the name of the type parameter
+     * @param owner the enclosing element
+     *
+     * @return the id
+     */
+    public HtmlId forTypeParam(String paramName, Element owner) {
+        if (utils.isExecutableElement(owner)) {
+            return HtmlId.of(forMember((ExecutableElement) owner).getFirst().name()
+                    + "-type-param-" + paramName);
+        }
+        return HtmlId.of("type-param-" + paramName);
     }
 
     /**

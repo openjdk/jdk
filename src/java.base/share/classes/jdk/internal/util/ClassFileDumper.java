@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 package jdk.internal.util;
 
 import jdk.internal.misc.VM;
-import sun.security.action.GetPropertyAction;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -80,7 +79,11 @@ public final class ClassFileDumper {
     private final AtomicInteger counter = new AtomicInteger();
 
     private ClassFileDumper(String key, String path) {
-        String value = GetPropertyAction.privilegedGetProperty(key);
+        /*
+         * GetPropertyAction.privilegedGetProperty cannot be used here, Using VM.getSavedProperty to avoid a bootstrap
+         * circularity issue in the java/lang/String/concat/WithSecurityManager.java test
+         */
+        String value = VM.getSavedProperty(key);
         this.key = key;
         boolean enabled = value != null && value.isEmpty() ? true : Boolean.parseBoolean(value);
         if (enabled) {

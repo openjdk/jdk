@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ import jdk.test.lib.process.ProcessTools;
 public class JImageToolTest {
     private static void jimage(String... jimageArgs) throws Exception {
         ArrayList<String> args = new ArrayList<>();
-        args.add("-ms64m");
+        args.add("-Xms64m");
         args.add("jdk.tools.jimage.Main");
         args.addAll(Arrays.asList(jimageArgs));
 

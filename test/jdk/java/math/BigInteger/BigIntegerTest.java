@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -293,8 +293,30 @@ public class BigIntegerTest {
         report("squareRootSmall", failCount);
     }
 
+    private static void perfectSquaresLong() {
+        /* For every long value n in [0, 2^32) such that x == n * n,
+         * n - 1 <= (long) Math.sqrt(x >= 0 ? x : x + 0x1p64) <= n
+         * must be true.
+         * This property is used to implement MutableBigInteger.unsignedLongSqrt().
+         */
+        int failCount = 0;
+
+        long limit = 1L << 32;
+        for (long n = 0; n < limit; n++) {
+            long x = n * n;
+            long s = (long) Math.sqrt(x >= 0 ? x : x + 0x1p64);
+            if (!(s == n || s == n - 1)) {
+                failCount++;
+                System.err.println(s + "^2 != " + x + " && (" + s + "+1)^2 != " + x);
+            }
+        }
+
+        report("perfectSquaresLong", failCount);
+    }
+
     public static void squareRoot() {
         squareRootSmall();
+        perfectSquaresLong();
 
         ToIntFunction<BigInteger> f = (n) -> {
             int failCount = 0;

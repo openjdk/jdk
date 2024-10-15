@@ -24,6 +24,7 @@
  */
 package jdk.internal.classfile.impl;
 
+import java.lang.reflect.AccessFlag;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -48,7 +49,7 @@ public final class FieldImpl
 
     @Override
     public AccessFlags flags() {
-        return AccessFlags.ofField(reader.readU2(startPos));
+        return new AccessFlagsImpl(AccessFlag.Location.FIELD, reader.readU2(startPos));
     }
 
     @Override
@@ -83,9 +84,9 @@ public final class FieldImpl
             reader.copyBytesTo(buf, startPos, endPos - startPos);
         }
         else {
-            buf.writeU2(flags().flagsMask());
-            buf.writeIndex(fieldName());
-            buf.writeIndex(fieldType());
+            buf.writeU2U2U2(flags().flagsMask(),
+                    buf.cpIndex(fieldName()),
+                    buf.cpIndex(fieldType()));
             Util.writeAttributes(buf, attributes());
         }
     }
@@ -98,12 +99,7 @@ public final class FieldImpl
             builder.withField(this);
         }
         else {
-            builder.withField(fieldName(), fieldType(), new Consumer<>() {
-                @Override
-                public void accept(FieldBuilder fb) {
-                    FieldImpl.this.forEach(fb);
-                }
-            });
+            builder.withField(fieldName(), fieldType(), Util.writingAll(this));
         }
     }
 

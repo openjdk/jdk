@@ -529,28 +529,6 @@ void G1HeapRegionManager::iterate(G1HeapRegionIndexClosure* blk) const {
   }
 }
 
-uint G1HeapRegionManager::find_highest_free(bool* expanded) {
-  // Loop downwards from the highest region index, looking for an
-  // entry which is either free or not yet committed.  If not yet
-  // committed, expand at that index.
-  for (uint curr = reserved_length(); curr-- > 0;) {
-    G1HeapRegion* hr = _regions.get_by_index(curr);
-    if (hr == nullptr || !is_available(curr)) {
-      // Found uncommitted and free region, expand to make it available for use.
-      expand_exact(curr, 1, nullptr);
-      assert(at(curr)->is_free(), "Region (%u) must be available and free after expand", curr);
-
-      *expanded = true;
-      return curr;
-    }
-    if (hr->is_free()) {
-      *expanded = false;
-      return curr;
-    }
-  }
-  return G1_NO_HRM_INDEX;
-}
-
 bool G1HeapRegionManager::allocate_containing_regions(MemRegion range, size_t* commit_count, WorkerThreads* pretouch_workers) {
   size_t commits = 0;
   uint start_index = (uint)_regions.get_index_by_address(range.start());

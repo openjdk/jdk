@@ -26,6 +26,8 @@
 package java.lang.classfile;
 
 import java.lang.classfile.constantpool.Utf8Entry;
+
+import jdk.internal.classfile.impl.AccessFlagsImpl;
 import jdk.internal.classfile.impl.ChainedFieldBuilder;
 import jdk.internal.classfile.impl.TerminalFieldBuilder;
 import java.lang.reflect.AccessFlag;
@@ -55,7 +57,7 @@ public sealed interface FieldBuilder
      * @return this builder
      */
     default FieldBuilder withFlags(int flags) {
-        return with(AccessFlags.ofField(flags));
+        return with(new AccessFlagsImpl(AccessFlag.Location.FIELD, flags));
     }
 
     /**
@@ -64,7 +66,7 @@ public sealed interface FieldBuilder
      * @return this builder
      */
     default FieldBuilder withFlags(AccessFlag... flags) {
-        return with(AccessFlags.ofField(flags));
+        return with(new AccessFlagsImpl(AccessFlag.Location.FIELD, flags));
     }
 
 }

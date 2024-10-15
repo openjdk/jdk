@@ -141,7 +141,7 @@ instruct zLoadPNullCheck(rFlagsReg cr, memory op, immP0 zero)
   ins_encode %{
     // A null pointer will have all address bits 0. This mask sign extends
     // all address bits, so we can test if the address is 0.
-    __ testq($op$$Address, ZBarrierSetAssembler::_zpointer_address_mask);
+    __ testq($op$$Address, ZBarrierSetAssembler::ZPointerAddressMask);
   %}
   ins_pipe(ialu_cr_reg_imm);
 %}
@@ -212,8 +212,7 @@ instruct zCompareAndSwapP(rRegI res, indirect mem, rRegP newval, rRegP tmp, rax_
 
   format %{ "lock\n\t"
             "cmpxchgq $newval, $mem\n\t"
-            "sete     $res\n\t"
-            "movzbl   $res, $res" %}
+            "setcc $res \t# emits sete + movzbl or setzue for APX" %}
 
   ins_encode %{
     assert_different_registers($oldval$$Register, $mem$$Register);
@@ -222,8 +221,7 @@ instruct zCompareAndSwapP(rRegI res, indirect mem, rRegP newval, rRegP tmp, rax_
     z_color(masm, this, $oldval$$Register);
     __ lock();
     __ cmpxchgptr($tmp$$Register, mem_addr);
-    __ setb(Assembler::equal, $res$$Register);
-    __ movzbl($res$$Register, $res$$Register);
+    __ setcc(Assembler::equal, $res$$Register);
   %}
 
   ins_pipe(pipe_cmpxchg);

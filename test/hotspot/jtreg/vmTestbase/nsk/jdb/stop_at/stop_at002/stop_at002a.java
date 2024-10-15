@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,6 +20,8 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+//    THIS TEST IS LINE NUMBER SENSITIVE
 
 package nsk.jdb.stop_at.stop_at002;
 
@@ -59,7 +61,7 @@ public class stop_at002a {
         class DeeperNested {
             class  DeepestNested {
                 public void foo(boolean input) {
-                    flag = input; /* <--------  This is line number 43 */
+                    flag = input; /* <--------  This is line number 64 */
                 }
             }
         }
@@ -73,7 +75,7 @@ public class stop_at002a {
                 content = "";
             }
             public void foo(String input) {
-                content += input; /* <--------  This is line number 57 */
+                content += input; /* <--------  This is line number 78 */
             }
         }
     }

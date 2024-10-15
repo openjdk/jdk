@@ -128,14 +128,14 @@ TOOL_PUBLICSUFFIXLIST = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_clas
 TOOL_FIXUPPANDOC = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
     build.tools.fixuppandoc.Main
 
-##########################################################################################
+################################################################################
 
 # Executable javascript filter for man page generation using pandoc.
 
 PANDOC_TROFF_MANPAGE_FILTER := $(BUILDTOOLS_OUTPUTDIR)/manpages/pandoc-troff-manpage-filter
 PANDOC_HTML_MANPAGE_FILTER := $(BUILDTOOLS_OUTPUTDIR)/manpages/pandoc-html-manpage-filter
 
-##########################################################################################
+################################################################################
 
 # Hook to include the corresponding custom post file, if present.
 $(eval $(call IncludeCustomExtension, ToolsJdk-post.gmk))

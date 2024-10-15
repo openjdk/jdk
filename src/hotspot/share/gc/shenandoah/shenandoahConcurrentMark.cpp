@@ -179,7 +179,7 @@ private:
   SATBMarkQueueSet& _qset;
 public:
   ShenandoahFlushSATBHandshakeClosure(SATBMarkQueueSet& qset) :
-    HandshakeClosure("Shenandoah Flush SATB Handshake"),
+    HandshakeClosure("Shenandoah Flush SATB"),
     _qset(qset) {}
 
   void do_thread(Thread* thread) {
@@ -206,7 +206,10 @@ void ShenandoahConcurrentMark::concurrent_mark() {
     }
 
     size_t before = qset.completed_buffers_num();
-    Handshake::execute(&flush_satb);
+    {
+      ShenandoahTimingsTracker t(ShenandoahPhaseTimings::conc_mark_satb_flush, true);
+      Handshake::execute(&flush_satb);
+    }
     size_t after = qset.completed_buffers_num();
 
     if (before == after) {
@@ -222,8 +225,7 @@ void ShenandoahConcurrentMark::finish_mark() {
   assert(Thread::current()->is_VM_thread(), "Must by VM Thread");
   finish_mark_work();
   assert(task_queues()->is_empty(), "Should be empty");
-  TASKQUEUE_STATS_ONLY(task_queues()->print_taskqueue_stats());
-  TASKQUEUE_STATS_ONLY(task_queues()->reset_taskqueue_stats());
+  TASKQUEUE_STATS_ONLY(task_queues()->print_and_reset_taskqueue_stats(""));
 
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   heap->set_concurrent_mark_in_progress(false);

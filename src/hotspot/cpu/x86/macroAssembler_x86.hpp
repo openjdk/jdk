@@ -2148,12 +2148,13 @@ public:
 
   void check_stack_alignment(Register sp, const char* msg, unsigned bias = 0, Register tmp = noreg);
 
-  void lightweight_lock(Register obj, Register reg_rax, Register thread, Register tmp, Label& slow);
+  void lightweight_lock(Register basic_lock, Register obj, Register reg_rax, Register thread, Register tmp, Label& slow);
   void lightweight_unlock(Register obj, Register reg_rax, Register thread, Register tmp, Label& slow);
 
 #ifdef _LP64
   void save_legacy_gprs();
   void restore_legacy_gprs();
+  void setcc(Assembler::Condition comparison, Register dst);
 #endif
 };
 

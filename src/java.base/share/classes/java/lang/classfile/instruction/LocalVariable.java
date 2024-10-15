@@ -36,6 +36,7 @@ import java.lang.constant.ClassDesc;
 import jdk.internal.classfile.impl.AbstractPseudoInstruction;
 import jdk.internal.classfile.impl.BoundLocalVariable;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
+import jdk.internal.classfile.impl.Util;
 import jdk.internal.javac.PreviewFeature;
 
 /**
@@ -70,7 +71,7 @@ public sealed interface LocalVariable extends PseudoInstruction
      * {@return the local variable type, as a symbolic descriptor}
      */
     default ClassDesc typeSymbol() {
-        return ClassDesc.ofDescriptor(type().stringValue());
+        return Util.fieldTypeSymbol(type());
     }
 
     /**
@@ -91,6 +92,7 @@ public sealed interface LocalVariable extends PseudoInstruction
      * @param descriptorEntry the local variable descriptor
      * @param startScope the start range of the local variable scope
      * @param endScope the end range of the local variable scope
+     * @throws IllegalArgumentException if {@code slot} is out of range
      */
     static LocalVariable of(int slot, Utf8Entry nameEntry, Utf8Entry descriptorEntry, Label startScope, Label endScope) {
         return new AbstractPseudoInstruction.UnboundLocalVariable(slot, nameEntry, descriptorEntry,
@@ -105,11 +107,12 @@ public sealed interface LocalVariable extends PseudoInstruction
      * @param descriptor the local variable descriptor
      * @param startScope the start range of the local variable scope
      * @param endScope the end range of the local variable scope
+     * @throws IllegalArgumentException if {@code slot} is out of range
      */
     static LocalVariable of(int slot, String name, ClassDesc descriptor, Label startScope, Label endScope) {
         return of(slot,
                   TemporaryConstantPool.INSTANCE.utf8Entry(name),
-                  TemporaryConstantPool.INSTANCE.utf8Entry(descriptor.descriptorString()),
+                  TemporaryConstantPool.INSTANCE.utf8Entry(descriptor),
                   startScope, endScope);
     }
 }

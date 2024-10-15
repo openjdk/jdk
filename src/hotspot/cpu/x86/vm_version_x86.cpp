@@ -53,13 +53,13 @@ const char* VM_Version::_features_names[] = { CPU_FEATURE_FLAGS(DECLARE_CPU_FEAT
 #undef DECLARE_CPU_FEATURE_FLAG
 
 // Address of instruction which causes SEGV
-address VM_Version::_cpuinfo_segv_addr = 0;
+address VM_Version::_cpuinfo_segv_addr = nullptr;
 // Address of instruction after the one which causes SEGV
-address VM_Version::_cpuinfo_cont_addr = 0;
+address VM_Version::_cpuinfo_cont_addr = nullptr;
 // Address of instruction which causes APX specific SEGV
-address VM_Version::_cpuinfo_segv_addr_apx = 0;
+address VM_Version::_cpuinfo_segv_addr_apx = nullptr;
 // Address of instruction after the one which causes APX specific SEGV
-address VM_Version::_cpuinfo_cont_addr_apx = 0;
+address VM_Version::_cpuinfo_cont_addr_apx = nullptr;
 
 static BufferBlob* stub_blob;
 static const int stub_size = 2000;
@@ -437,6 +437,7 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     __ cmpl(rax, 0x80000);
     __ jcc(Assembler::notEqual, vector_save_restore);
 
+#ifndef PRODUCT
     bool save_apx = UseAPX;
     VM_Version::set_apx_cpuFeatures();
     UseAPX = true;
@@ -453,6 +454,7 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     __ movq(Address(rsi, 8), r31);
 
     UseAPX = save_apx;
+#endif
 #endif
     __ bind(vector_save_restore);
     //
@@ -1043,6 +1045,10 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(UseAPX, false);
   } else if (FLAG_IS_DEFAULT(UseAPX)) {
     FLAG_SET_DEFAULT(UseAPX, apx_supported ? true : false);
+  }
+
+  if (!UseAPX) {
+    _features &= ~CPU_APX_F;
   }
 
   if (UseAVX < 2) {

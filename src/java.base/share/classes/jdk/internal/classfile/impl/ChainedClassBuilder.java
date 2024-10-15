@@ -24,11 +24,14 @@
  */
 package jdk.internal.classfile.impl;
 
+import java.lang.constant.MethodTypeDesc;
 import java.util.function.Consumer;
 
 import java.lang.classfile.*;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.lang.classfile.constantpool.Utf8Entry;
+
+import static java.util.Objects.requireNonNull;
 
 public final class ChainedClassBuilder
         implements ClassBuilder, Consumer<ClassElement> {
@@ -46,7 +49,7 @@ public final class ChainedClassBuilder
 
     @Override
     public ClassBuilder with(ClassElement element) {
-        consumer.accept(element);
+        consumer.accept(requireNonNull(element));
         return this;
     }
 

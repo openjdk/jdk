@@ -27,7 +27,7 @@ package sun.font;
 
 import sun.awt.OSInfo;
 
-@SuppressWarnings("removal")
+@SuppressWarnings({"removal", "restricted"})
 public class FontManagerNativeLibrary {
     static {
         java.security.AccessController.doPrivileged(
