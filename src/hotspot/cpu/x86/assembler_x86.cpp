@@ -7105,7 +7105,7 @@ void Assembler::subl(Register dst, Register src) {
   emit_arith(0x2B, 0xC0, dst, src);
 }
 
-void Assembler::esubl(Register dst, Register src2, Register src1, bool no_flags) {
+void Assembler::esubl(Register dst, Register src1, Register src2, bool no_flags) {
   InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   (void) evex_prefix_and_encode_ndd(src1->encoding(), dst->encoding(), src2->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F_3C, &attributes, no_flags);
   // opcode matches gcc
@@ -14810,7 +14810,7 @@ void Assembler::imulq(Register dst, Register src, int value) {
 
 void Assembler::eimulq(Register dst, Register src, int value, bool no_flags) {
   InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
-  int encode = vex_prefix_and_encode(dst->encoding(), 0, src->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F_3C, &attributes, /* src_is_gpr */ true, /* nds_is_ndd */ false, no_flags);
+  int encode = evex_prefix_and_encode(dst->encoding(), 0, src->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F_3C, &attributes, /* src_is_gpr */ true, /* nds_is_ndd */ false, no_flags);
   if (is8bit(value)) {
     emit_int24(0x6B, (0xC0 | encode), (value & 0xFF));
   } else {
@@ -14829,7 +14829,7 @@ void Assembler::imulq(Register dst, Address src) {
 void Assembler::eimulq(Register dst, Address src, bool no_flags) {
   InstructionMark im(this);
   InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
-  vex_prefix(src, 0, dst->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F, &attributes, /* nds_is_ndd */ false, no_flags);
+  evex_prefix(src, 0, dst->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F, &attributes, /* nds_is_ndd */ false, no_flags);
   emit_int8((unsigned char)0xAF);
   emit_operand(dst, src, 0);
 }
