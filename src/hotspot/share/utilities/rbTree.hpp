@@ -46,8 +46,6 @@ class RBTree {
   friend class RBTreeTest;
   friend class NMTVMATreeTest;
   enum Color { BLACK, RED };
-  static constexpr int LEFT = 0;
-  static constexpr int RIGHT = 1;
   ALLOCATOR _allocator;
   size_t _num_nodes;
 
@@ -59,19 +57,18 @@ public:
     RBNode* _parent;
     RBNode* _left;
     RBNode* _right;
-    RBNode* _children[2];
     Color _color;
 
     K _key;
     V _value;
 
   public:
-    RBNode(const K &k, const V &v)
+    RBNode(const K& k, const V& v)
         : _parent(nullptr), _left(nullptr), _right(nullptr), _color(Color::RED),
           _key(k), _value(v) {}
 
-    const K &key() const { return _key; }
-    V &val() { return _value; }
+    const K& key() const { return _key; }
+    V& val() { return _value; }
 
     RBNode* left() { return _left; }
     RBNode* right() { return _right; }
@@ -94,9 +91,6 @@ public:
     }
 
     RBNode* sibling() {
-      if (_parent == nullptr) {
-        return nullptr;
-      }
       if (this == _parent->left()) {
         return _parent->right();
       }
@@ -104,9 +98,6 @@ public:
     }
 
     RBNode* close_nephew() {
-      if (_parent == nullptr) {
-        return nullptr;
-      }
       if (this == _parent->left()) {
         return _parent->right()->left();
       }
@@ -114,9 +105,6 @@ public:
     }
 
     RBNode* distant_nephew() {
-      if (_parent == nullptr) {
-        return nullptr;
-      }
       if (this == _parent->left()) {
         return _parent->right()->right();
       }
@@ -124,9 +112,6 @@ public:
     }
 
     RBNode* uncle() {
-      if (_parent == nullptr || _parent->parent() == nullptr) {
-        return nullptr;
-      }
       RBNode* grandparent = _parent->parent();
       if (_parent == grandparent->left()) {
         return grandparent->right();
@@ -180,7 +165,8 @@ public:
       return old_left;
     }
 
-    template <typename F> void visit_in_order_inner(F f) {
+    template <typename F>
+    void visit_in_order_inner(F f) {
       if (_left != nullptr) {
         _left->visit_in_order_inner(f);
       }
@@ -191,7 +177,8 @@ public:
     }
 
     // Visit all RBNodes in ascending order whose keys are in range [from, to).
-    template <typename F> void visit_range_in_order_inner(const K& from, const K& to, F f) {
+    template <typename F>
+    void visit_range_in_order_inner(const K& from, const K& to, F f) {
       int cmp_from = COMPARATOR::cmp(from, key());
       int cmp_to = COMPARATOR::cmp(to, key());
       if (_left != nullptr && cmp_from < 0) { // from < key
@@ -243,7 +230,7 @@ public:
 private:
   RBNode* _root;
 
-  RBNode* allocate_node(const K &k, const V &v) {
+  RBNode* allocate_node(const K& k, const V& v) {
     void* node_place = _allocator.allocate(sizeof(RBNode));
     if (node_place != nullptr) {
       _num_nodes++;
@@ -251,20 +238,20 @@ private:
     return new (node_place) RBNode(k, v);
   }
 
-  void free_node(RBNode *node) {
+  void free_node(RBNode* node) {
     _allocator.free(node);
     _num_nodes--;
   }
 
-  inline bool is_black(RBNode *node) {
+  inline bool is_black(RBNode* node) {
     return node == nullptr || node->color() == BLACK;
   }
 
-  inline bool is_red(RBNode *node) {
+  inline bool is_red(RBNode* node) {
     return node != nullptr && node->color() == RED;
   }
 
-  RBNode* find(RBNode* curr, const K &k) {
+  RBNode* find(RBNode* curr, const K& k) {
     while (curr != nullptr) {
       int key_cmp_k = COMPARATOR::cmp(k, curr->key());
 
@@ -280,7 +267,7 @@ private:
     return nullptr;
   }
 
-  RBNode* insert_node(const K &k, const V &v, bool replace) {
+  RBNode* insert_node(const K& k, const V& v, bool replace) {
     RBNode* curr = _root;
     if (curr == nullptr) { // Tree is empty
       _root = allocate_node(k, v);
@@ -378,11 +365,10 @@ private:
     }
   }
 
-  void remove_inner(RBNode *node) {
-    RBNode *parent = node->parent();
+  void remove_inner(RBNode* node) {
+    RBNode* parent = node->parent();
     while (parent != nullptr) {
-
-      RBNode *sibling = node->sibling();
+      RBNode* sibling = node->sibling();
       if (is_red(sibling)) { // Sibling red, parent and nephews must be black
         // Rotate so sibling becomes parent, swap parent and sibling colors
         parent->_color = RED;
@@ -400,8 +386,8 @@ private:
         }
       }
 
-      RBNode *close_nephew = node->close_nephew();
-      RBNode *distant_nephew = node->distant_nephew();
+      RBNode* close_nephew = node->close_nephew();
+      RBNode* distant_nephew = node->distant_nephew();
       if (is_red(distant_nephew) || is_red(close_nephew)) {
         if (is_black(distant_nephew)) { // close red, distant black,
           // Rotate sibling down and inner nephew up
@@ -444,8 +430,8 @@ private:
       parent = node->parent();
     }
   }
-  
-  void remove_all_inner(RBNode *node) {
+
+  void remove_all_inner(RBNode* node) {
     if (node == nullptr)
       return;
     remove_all_inner(node->left());
@@ -460,19 +446,18 @@ public:
 
   size_t num_nodes() const { return _num_nodes; }
 
-  void insert(const K &k, const V &v) {
+  void insert(const K& k, const V& v) {
     RBNode* node = insert_node(k, v, false);
     fix_violations(node);
   }
 
-  void upsert(const K &k, const V &v) {
+  void upsert(const K& k, const V& v) {
     RBNode* node = insert_node(k, v, true);
     fix_violations(node);
-    // verify_tree();
   }
 
 
-  bool remove(const K &k) {
+  bool remove(const K& k) {
     RBNode* node = find(_root, k);
     if (node == nullptr) {
       return false;
@@ -580,7 +565,7 @@ public:
     }
 
     int black_nodes = 0;
-    RBNode *node = _root;
+    RBNode* node = _root;
     while (node != nullptr) {
       if (node->color() == BLACK) {
         black_nodes++;
@@ -603,8 +588,8 @@ public:
 
 class RBTreeCHeapAllocator {
 public:
-  void *allocate(size_t sz) {
-    void *allocation = os::malloc(sz, mtNMT);
+  void* allocate(size_t sz) {
+    void* allocation = os::malloc(sz, mtNMT);
     if (allocation == nullptr) {
       vm_exit_out_of_memory(sz, OOM_MALLOC_ERROR,
                             "red-black tree failed allocation");
@@ -612,7 +597,7 @@ public:
     return allocation;
   }
 
-  void free(void *ptr) { os::free(ptr); }
+  void free(void* ptr) { os::free(ptr); }
 };
 
 template <typename K, typename V, typename COMPARATOR>
