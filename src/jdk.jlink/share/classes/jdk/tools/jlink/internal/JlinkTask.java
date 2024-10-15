@@ -638,7 +638,7 @@ public class JlinkTask {
 
         // Perform some sanity checks for linkable JDK runtimes
         if (config.linkFromRuntimeImage()) {
-            sanityChecksLinkableJDKRuntime(log, cf);
+            sanityChecksLinkableJDKRuntime(log, cf, verbose);
         }
 
         if (verbose && log != null) {
@@ -727,7 +727,8 @@ public class JlinkTask {
      * @throws IOException
      */
     private static void sanityChecksLinkableJDKRuntime(PrintWriter log,
-                                                       Configuration cf) throws IOException {
+                                                       Configuration cf,
+                                                       boolean verbose) throws IOException {
         // Catch the case where we don't have a linkable JDK runtime. If so,
         // we don't have the per module resource diffs in the modules image
         String resourceName = String.format(DIFF_PATTERN, "java.base");
@@ -745,7 +746,7 @@ public class JlinkTask {
 
         // Print info message indicating jlink is performed on a linkable JDK
         // runtime
-        if (log != null) {
+        if (log != null && verbose) {
             log.println(taskHelper.getMessage("runtime.link.info"));
         }
     }
