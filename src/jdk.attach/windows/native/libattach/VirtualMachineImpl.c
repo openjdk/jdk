@@ -453,7 +453,7 @@ JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_enqueue
     strcpy(data.jvmLib, "jvm");
     strcpy(data.func1, "JVM_EnqueueOperation");
     strcpy(data.func2, "_JVM_EnqueueOperation@20");
-    strcpy(data.func_v2, "JVM_EnqueueOperation2");
+    strcpy(data.func_v2, "JVM_EnqueueOperation_v2");
 
     /*
      * Command and arguments
