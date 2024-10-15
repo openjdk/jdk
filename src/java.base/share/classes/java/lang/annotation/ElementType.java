@@ -39,22 +39,24 @@ package java.lang.annotation;
  * public @interface MyAnnotation {}
  * }
  *
- * <h2>Declaration annotations and type-use annotations</h2>
+ * <h2 id="kinds-of-annotations">Declaration annotations and type-use
+ * annotations</h2>
  *
  * <p>Most annotations in Java code are <b>declaration
  * annotations</b>, which act like modifiers of declarations (such as
- * a field declaration). The constants of this class cover all ten
- * kinds of annotatable declarations, plus a subcategory of {@link
- * #TYPE} called {@link #ANNOTATION_TYPE}. An annotation interface can
- * be used as a declaration annotation if it either omits {@code
- * @Target}, or uses it to list which specific kinds of declarations
- * it should apply to.
+ * a field or method declaration). The constants of this class cover
+ * all ten kinds of annotatable declarations, plus a subcategory of
+ * {@link #TYPE} called {@link #ANNOTATION_TYPE}. An annotation
+ * interface can be used as a declaration annotation if it either
+ * omits {@link java.lang.annotation.Target @Target}, or uses it to
+ * list which specific kinds of declarations it should apply to.
  *
  * <p>There are also <b>type-use annotations</b> (sometimes called
  * "type annotations"), which can appear anywhere a Java type is being
- * indicated (normally, immediately preceding that type). To enable
- * use as a type-use annotation, an annotation interface must
- * explicitly include {@link #TYPE_USE} in its list of targets. 
+ * indicated (normally, immediately preceding that type). To be used
+ * as a type-use annotation, an annotation interface must use {@link
+ * java.lang.annotation.Target @Target} and include {@link #TYPE_USE}
+ * explicitly.
  *
  * <h3 id="ambiguous">Ambiguous contexts</h3>
  *
@@ -94,7 +96,7 @@ package java.lang.annotation;
  */
 public enum ElementType {
 
-    /** 
+    /**
      * The declaration of a named class or interface. Classes without
      * names, such as an anonymous class or an enum constant with a
      * class body, cannot be annotated.
@@ -128,10 +130,9 @@ public enum ElementType {
      */
     METHOD,
 
-    /** 
-     * The declaration of a formal parameter (of a method, constructor,
-     * or lambda expression), exception parameter, or receiver
-     * parameter.
+    /**
+     * The declaration of a formal parameter of a method, constructor,
+     * or lambda expression, or of an exception parameter.
      *
      * <p>Any annotation valid for a parameter declaration may also
      * appear on the declaration of a record component. Unless the
@@ -161,7 +162,7 @@ public enum ElementType {
      */
     LOCAL_VARIABLE,
 
-    /** 
+    /**
      * The declaration of an annotation interface (a subcategory of
      * {@link #TYPE}). An annotation that itself appears on the
      * declaration of an annotation interface is sometimes informally
@@ -192,13 +193,13 @@ public enum ElementType {
      * annotation" (sometimes called just "type annotation", but be
      * careful not to confuse this with {@link #TYPE}, which is only
      * for <em>class</em> declarations).
-     * 
+     *
      * <p>This is a very broad category: {@jls 4.11} lists seventeen
      * kinds of type contexts, followed by five more locations where
      * type-use annotations can also legally appear. Six of these
      * locations are also annotatable <em>declarations</em>
      * themselves; see <a href="#ambiguous">ambiguous cases</a> above.
-     * 
+     *
      * <p>In addition, specifying this target automatically includes
      * the declaration targets {@link #TYPE} and {@link
      * #TYPE_PARAMETER}, though these are not type contexts.
