@@ -29,7 +29,7 @@ import java.awt.TextArea;
  * @test
  * @bug 4992455
  * @summary REGRESSION: TextArea does not wrap text in JDK 1.5 as JDK 1.4.x
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual WordWrappingTest
 */
@@ -41,7 +41,7 @@ public class WordWrappingTest {
                 One of them has a vertical scrollbar only. Another has no
                 scrollbars at all.
                 If their text is not wrapped at word boundaries and you partially see
-                mentioned text the test failed
+                mentioned text, the test failed.
                 """;
 
     public static void main(String[] args) throws Exception {

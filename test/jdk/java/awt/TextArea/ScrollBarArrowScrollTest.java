@@ -29,7 +29,7 @@ import java.awt.TextArea;
  * @bug 6175401
  * @summary Keeping the left arrow pressedon horiz scrollbar
  *          does not scroll the text in TextArea, XToolkit
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual ScrollBarArrowScrollTest
 */
@@ -37,7 +37,7 @@ import java.awt.TextArea;
 
 public class ScrollBarArrowScrollTest extends Frame {
     private static final String INSTRUCTIONS = """
-                1) Make sure, that the TextArea component has a focus.
+                1) Make sure, that the TextArea component has focus.
                 2) Press 'END' key in order to keep cursor at the end
                    of the text of the TextArea component.
                 3) Click on the left arrow on the horizontal scrollbar
@@ -59,7 +59,6 @@ public class ScrollBarArrowScrollTest extends Frame {
     public ScrollBarArrowScrollTest() {
         TextArea textarea = new TextArea("Very very very long string !!!! ", 10, 3);
         add(textarea);
-        setSize(200, 200);
         pack();
 
     }
