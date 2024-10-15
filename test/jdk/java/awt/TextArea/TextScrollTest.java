@@ -30,7 +30,7 @@ import java.awt.TextArea;
  * @test
  * @bug 4127272
  * @summary TextArea displays head of text when scrolling horizontal bar.
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual TextScrollTest
  */

@@ -33,7 +33,7 @@ import java.awt.TextArea;
  * @summary Make sure that the TextArea has both horizontal and
  * vertical scrollbars when bad scrollbar arguments are passed
  * into the constructor.
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual TextAreaScrollbarTest
  */
@@ -110,7 +110,7 @@ class TestFrame extends Frame {
         add(new Label("Both scrollbars: TextArea(text, rows, columns)"));
         add(t10);
 
-        setSize(600,600);
+        setSize(600, 600);
     }
 }
 

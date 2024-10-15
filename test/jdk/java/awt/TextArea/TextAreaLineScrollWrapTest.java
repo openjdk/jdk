@@ -28,7 +28,7 @@ import java.awt.TextArea;
  * @test
  * @bug 4776535
  * @summary Regression: line should not wrap around into multi lines in TextArea.
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual TextAreaLineScrollWrapTest
  */
