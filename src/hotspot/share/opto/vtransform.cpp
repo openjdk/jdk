@@ -280,6 +280,7 @@ bool VTransformGraph::has_store_to_load_forwarding_failure(const VLoopAnalyzer& 
   GrowableArray<VPointerRecord> records;
   for (int i = 0; i < _schedule.length(); i++) {
     VTransformNode* vtn = _schedule.at(i);
+    // TODO: refactor somehow! is_load_or_store_in_loop
     VTransformStoreVectorNode* store = vtn->isa_StoreVector();
     if (store != nullptr) {
       StoreNode* s0 = store->nodes().at(0)->as_Store();
@@ -295,7 +296,9 @@ bool VTransformGraph::has_store_to_load_forwarding_failure(const VLoopAnalyzer& 
       continue;
     }
     VTransformScalarNode* scalar = vtn->isa_Scalar();
-    if (scalar != nullptr && scalar->node()->is_Mem()) {
+    if (scalar != nullptr &&
+        scalar->node()->is_Mem() &&
+        _vloop_analyzer.vloop().in_bb(scalar->node())) {
       MemNode* m0 = scalar->node()->as_Mem();
       const VPointer& p = vloop_analyzer.vpointers().vpointer(m0);
       records.push(VPointerRecord(p, 0, 1, i));
