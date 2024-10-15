@@ -577,10 +577,21 @@ void frame::interpreter_frame_print_on(outputStream* st) const {
        current < interpreter_frame_monitor_begin();
        current = next_monitor_in_interpreter_frame(current)) {
     st->print(" - obj    [%s", current->obj() == nullptr ? "null" : "");
-    if (current->obj() != nullptr) current->obj()->print_value_on(st);
+    oop obj = current->obj();
+    if (obj != nullptr) {
+      if (!is_heap_frame()) {
+        obj->print_value_on(st);
+      } else {
+        // Might be an invalid oop. We don't have the
+        // stackChunk to correct it so just print address.
+        st->print(INTPTR_FORMAT, p2i(obj));
+      }
+    }
     st->print_cr("]");
     st->print(" - lock   [");
-    current->lock()->print_on(st, current->obj());
+    if (!is_heap_frame()) {
+      current->lock()->print_on(st, obj);
+    }
     st->print_cr("]");
   }
   // monitor

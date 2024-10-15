@@ -39,6 +39,7 @@
 #include "gc/shared/tlab_globals.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/interpreter.hpp"
+#include "interpreter/interpreterRuntime.hpp"
 #include "jvm.h"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
@@ -5325,6 +5326,38 @@ void MacroAssembler::tlab_allocate(Register obj,
                                    Label& slow_case) {
   BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
   bs->tlab_allocate(this, obj, var_size_in_bytes, con_size_in_bytes, t1, t2, slow_case);
+}
+
+void MacroAssembler::inc_held_monitor_count() {
+  Address dst = Address(rthread, JavaThread::held_monitor_count_offset());
+#ifdef ASSERT
+  ldr(rscratch2, dst);
+  increment(rscratch2);
+  str(rscratch2, dst);
+  Label ok;
+  tbz(rscratch2, 63, ok);
+  STOP("assert(held monitor count underflow)");
+  should_not_reach_here();
+  bind(ok);
+#else
+  increment(dst);
+#endif
+}
+
+void MacroAssembler::dec_held_monitor_count() {
+  Address dst = Address(rthread, JavaThread::held_monitor_count_offset());
+#ifdef ASSERT
+  ldr(rscratch2, dst);
+  decrement(rscratch2);
+  str(rscratch2, dst);
+  Label ok;
+  tbz(rscratch2, 63, ok);
+  STOP("assert(held monitor count underflow)");
+  should_not_reach_here();
+  bind(ok);
+#else
+  decrement(dst);
+#endif
 }
 
 void MacroAssembler::verify_tlab() {

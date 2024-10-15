@@ -65,6 +65,21 @@ public:
   }
 };
 
+class LockStackOopIterator : public OopIterator {
+private:
+  const stackChunkOop _chunk;
+public:
+  LockStackOopIterator(const stackChunkOop chunk) : _chunk(chunk) {}
+
+  virtual void oops_do(OopClosure* cl) override {
+    int cnt = _chunk->lockstack_size();
+    oop* lockstack_start = (oop*)_chunk->start_address();
+    for (int i = 0; i < cnt; i++) {
+      cl->do_oop(&lockstack_start[i]);
+    }
+  }
+};
+
 frame stackChunkOopDesc::top_frame(RegisterMap* map) {
   assert(!is_empty(), "");
   StackChunkFrameStream<ChunkFrames::Mixed> fs(this);
@@ -224,6 +239,14 @@ public:
 
     return true;
   }
+
+  bool do_lockstack() {
+    BarrierSetStackChunk* bs_chunk = BarrierSet::barrier_set()->barrier_set_stack_chunk();
+    LockStackOopIterator iterator(_chunk);
+    bs_chunk->encode_gc_mode(_chunk, &iterator);
+
+    return true;
+  }
 };
 
 bool stackChunkOopDesc::try_acquire_relativization() {
@@ -298,6 +321,7 @@ void stackChunkOopDesc::relativize_derived_pointers_concurrently() {
   DerivedPointersSupport::RelativizeClosure derived_cl;
   EncodeGCModeConcurrentFrameClosure<decltype(derived_cl)> frame_cl(this, &derived_cl);
   iterate_stack(&frame_cl);
+  frame_cl.do_lockstack();
 
   release_relativization();
 }
@@ -320,6 +344,14 @@ public:
 
     return true;
   }
+
+  bool do_lockstack() {
+    BarrierSetStackChunk* bs_chunk = BarrierSet::barrier_set()->barrier_set_stack_chunk();
+    LockStackOopIterator iterator(_chunk);
+    bs_chunk->encode_gc_mode(_chunk, &iterator);
+
+    return true;
+  }
 };
 
 void stackChunkOopDesc::transform() {
@@ -332,6 +364,7 @@ void stackChunkOopDesc::transform() {
 
   TransformStackChunkClosure closure(this);
   iterate_stack(&closure);
+  closure.do_lockstack();
 }
 
 template <stackChunkOopDesc::BarrierType barrier, bool compressedOopsWithBitmap>
@@ -407,6 +440,35 @@ void stackChunkOopDesc::fix_thawed_frame(const frame& f, const RegisterMapT* map
 
 template void stackChunkOopDesc::fix_thawed_frame(const frame& f, const RegisterMap* map);
 template void stackChunkOopDesc::fix_thawed_frame(const frame& f, const SmallRegisterMap* map);
+
+void stackChunkOopDesc::copy_lockstack(oop* dst) {
+  int cnt = lockstack_size();
+
+  if (!(is_gc_mode() || requires_barriers())) {
+    oop* lockstack_start = (oop*)start_address();
+    for (int i = 0; i < cnt; i++) {
+      dst[i] = lockstack_start[i];
+      assert(oopDesc::is_oop(dst[i]), "not an oop");
+    }
+    return;
+  }
+
+  if (has_bitmap() && UseCompressedOops) {
+    intptr_t* lockstack_start = start_address();
+    for (int i = 0; i < cnt; i++) {
+      oop mon_owner = HeapAccess<>::oop_load((narrowOop*)&lockstack_start[i]);
+      assert(oopDesc::is_oop(mon_owner), "not an oop");
+      dst[i] = mon_owner;
+    }
+  } else {
+    intptr_t* lockstack_start = start_address();
+    for (int i = 0; i < cnt; i++) {
+      oop mon_owner = HeapAccess<>::oop_load((oop*)&lockstack_start[i]);
+      assert(oopDesc::is_oop(mon_owner), "not an oop");
+      dst[i] = mon_owner;
+    }
+  }
+}
 
 void stackChunkOopDesc::print_on(bool verbose, outputStream* st) const {
   if (*((juint*)this) == badHeapWordVal) {

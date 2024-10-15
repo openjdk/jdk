@@ -1241,8 +1241,8 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg) {
       jcc(Assembler::notZero, slow_case);
 
       bind(count_locking);
+      inc_held_monitor_count();
     }
-    inc_held_monitor_count();
     jmp(done);
 
     bind(slow_case);
@@ -1321,8 +1321,8 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg) {
       jcc(Assembler::notZero, slow_case);
 
       bind(count_locking);
+      dec_held_monitor_count();
     }
-    dec_held_monitor_count();
     jmp(done);
 
     bind(slow_case);

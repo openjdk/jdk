@@ -137,7 +137,7 @@ public:
 
 private:
   // Shared implementation between the different LockingMode.
-  static ObjectMonitor* inflate_impl(oop obj, const InflateCause cause);
+  static ObjectMonitor* inflate_impl(JavaThread* inflating_thread, oop obj, const InflateCause cause);
 
 public:
   // This version is only for internal use
@@ -168,9 +168,12 @@ public:
   template <typename OwnerFilter>
   static void owned_monitors_iterate_filtered(MonitorClosure* closure, OwnerFilter filter);
 
-  // Iterate ObjectMonitors where the owner == thread; this does NOT include
+  // Iterate ObjectMonitors where the owner is thread; this does NOT include
   // ObjectMonitors where owner is set to a stack lock address in thread.
   static void owned_monitors_iterate(MonitorClosure* m, JavaThread* thread);
+
+  // Iterate ObjectMonitors where the owner is vthread.
+  static void owned_monitors_iterate(MonitorClosure* m, oop vthread);
 
   // Iterate ObjectMonitors owned by any thread.
   static void owned_monitors_iterate(MonitorClosure* closure);

@@ -358,7 +358,7 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
                                    JavaThread* java_thread,
                                    javaVFrame *jvf,
                                    GrowableArray<jvmtiMonitorStackDepthInfo*>* owned_monitors_list,
-                                   jint depth);
+                                   jint depth, oop vthread = nullptr);
  public:
   static javaVFrame* jvf_for_thread_and_depth(JavaThread* java_thread, jint depth);
 
@@ -422,8 +422,8 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
                                            jobject* monitor_ptr, bool is_virtual);
   jvmtiError get_owned_monitors(JavaThread* calling_thread, JavaThread* java_thread,
                                 GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list);
-  jvmtiError get_owned_monitors(JavaThread* calling_thread, JavaThread* java_thread, javaVFrame* jvf,
-                                GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list);
+  jvmtiError get_owned_monitors(JavaThread* calling_thread, JavaThread* carrier, javaVFrame* jvf,
+                                GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list, oop vthread);
   static jvmtiError check_top_frame(Thread* current_thread, JavaThread* java_thread,
                                     jvalue value, TosState tos, Handle* ret_ob_h);
   jvmtiError force_early_return(jthread thread, jvalue value, TosState tos);

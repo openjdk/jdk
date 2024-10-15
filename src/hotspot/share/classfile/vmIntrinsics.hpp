@@ -298,6 +298,8 @@ class methodHandle;
                                                                                                                         \
   do_intrinsic(_setCurrentThread,         java_lang_Thread,       setCurrentThread_name, thread_void_signature,   F_RN) \
    do_name(     setCurrentThread_name,                           "setCurrentThread")                                    \
+  do_intrinsic(_setCurrentLockId,         java_lang_Thread,       setCurrentLockId_name, long_void_signature,     F_SN) \
+   do_name(     setCurrentLockId_name,                           "setCurrentLockId")                                    \
                                                                                                                         \
   /* reflective intrinsics, for java/lang/Class, etc. */                                                                \
   do_intrinsic(_isAssignableFrom,         java_lang_Class,        isAssignableFrom_name, class_boolean_signature, F_RN) \

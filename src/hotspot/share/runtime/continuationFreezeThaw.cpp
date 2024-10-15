@@ -378,6 +378,9 @@ protected:
 
   intptr_t* _bottom_address;
 
+  // Used to support freezing with held monitors
+  int _monitors_in_lockstack;
+
   int _freeze_size; // total size of all frames plus metadata in words.
   int _total_align_size;
 
@@ -442,6 +445,8 @@ private:
   freeze_result recurse_freeze_compiled_frame(frame& f, frame& caller, int callee_argsize, bool callee_interpreted);
   NOINLINE freeze_result recurse_freeze_stub_frame(frame& f, frame& caller);
   NOINLINE void finish_freeze(const frame& f, const frame& top);
+
+  void freeze_lockstack();
 
   inline bool stack_overflow();
 
@@ -516,12 +521,27 @@ FreezeBase::FreezeBase(JavaThread* thread, ContinuationWrapper& cont, intptr_t* 
   log_develop_trace(continuations)("freeze size: %d argsize: %d top: " INTPTR_FORMAT " bottom: " INTPTR_FORMAT,
     cont_size(), _cont.argsize(), p2i(_cont_stack_top), p2i(_cont_stack_bottom));
   assert(cont_size() > 0, "");
+
+  if (LockingMode != LM_LIGHTWEIGHT) {
+    _monitors_in_lockstack = 0;
+  } else {
+    _monitors_in_lockstack = _thread->lock_stack().monitor_count();
+  }
 }
 
 void FreezeBase::init_rest() { // we want to postpone some initialization after chunk handling
   _freeze_size = 0;
   _total_align_size = 0;
   NOT_PRODUCT(_frames = 0;)
+}
+
+void FreezeBase::freeze_lockstack() {
+  stackChunkOop chunk = _cont.tail();
+  assert(chunk->sp_address() - chunk->start_address() >= _monitors_in_lockstack, "no room for lockstack");
+
+  _thread->lock_stack().move_to_address((oop*)chunk->start_address());
+  chunk->set_lockstack_size((uint8_t)_monitors_in_lockstack);
+  chunk->set_has_lockstack(true);
 }
 
 void FreezeBase::copy_to_chunk(intptr_t* from, intptr_t* to, int size) {
@@ -554,7 +574,7 @@ freeze_result Freeze<ConfigT>::try_freeze_fast() {
   DEBUG_ONLY(_fast_freeze_size = size_if_fast_freeze_available();)
   assert(_fast_freeze_size == 0, "");
 
-  stackChunkOop chunk = allocate_chunk(cont_size() + frame::metadata_words, _cont.argsize() + frame::metadata_words_at_top);
+  stackChunkOop chunk = allocate_chunk(cont_size() + frame::metadata_words + _monitors_in_lockstack, _cont.argsize() + frame::metadata_words_at_top);
   if (freeze_fast_new_chunk(chunk)) {
     return freeze_ok;
   }
@@ -586,6 +606,8 @@ int FreezeBase::size_if_fast_freeze_available() {
   if (!chunk->is_empty()) {
     total_size_needed -= _cont.argsize() + frame::metadata_words_at_top;
   }
+
+  total_size_needed += _monitors_in_lockstack;
 
   int chunk_free_room = chunk_sp - frame::metadata_words_at_bottom;
   bool available = chunk_free_room >= total_size_needed;
@@ -668,7 +690,7 @@ bool FreezeBase::freeze_fast_new_chunk(stackChunkOop chunk) {
 
   // in a fresh chunk, we freeze *with* the bottom-most frame's stack arguments.
   // They'll then be stored twice: in the chunk and in the parent chunk's top frame
-  const int chunk_start_sp = cont_size() + frame::metadata_words;
+  const int chunk_start_sp = cont_size() + frame::metadata_words + _monitors_in_lockstack;
   assert(chunk_start_sp == chunk->stack_size(), "");
 
   DEBUG_ONLY(_orig_chunk_sp = chunk->start_address() + chunk_start_sp;)
@@ -697,7 +719,7 @@ void FreezeBase::freeze_fast_copy(stackChunkOop chunk, int chunk_start_sp CONT_J
   assert(chunk_start_sp >= cont_size(), "no room in the chunk");
 
   const int chunk_new_sp = chunk_start_sp - cont_size(); // the chunk's new sp, after freeze
-  assert(!(_fast_freeze_size > 0) || _orig_chunk_sp - (chunk->start_address() + chunk_new_sp) == _fast_freeze_size, "");
+  assert(!(_fast_freeze_size > 0) || (_orig_chunk_sp - (chunk->start_address() + chunk_new_sp)) == (_fast_freeze_size - _monitors_in_lockstack), "");
 
   intptr_t* chunk_top = chunk->start_address() + chunk_new_sp;
 #ifdef ASSERT
@@ -737,6 +759,10 @@ void FreezeBase::freeze_fast_copy(stackChunkOop chunk, int chunk_start_sp CONT_J
   // set chunk->pc to the return address of the topmost frame in the chunk
   chunk->set_pc(ContinuationHelper::return_address_at(
                   _cont_stack_top - frame::sender_sp_ret_address_offset()));
+
+  if (_monitors_in_lockstack > 0) {
+    freeze_lockstack();
+  }
 
   _cont.write();
 
@@ -962,6 +988,8 @@ freeze_result FreezeBase::finalize_freeze(const frame& callee, frame& caller, in
           || unextended_sp == chunk->to_offset(StackChunkFrameStream<ChunkFrames::Mixed>(chunk).unextended_sp()), "");
   assert(chunk != nullptr || unextended_sp < _freeze_size, "");
 
+  _freeze_size += _monitors_in_lockstack;
+
   // _barriers can be set to true by an allocation in freeze_fast, in which case the chunk is available
   bool allocated_old_in_freeze_fast = _barriers;
   assert(!allocated_old_in_freeze_fast || (unextended_sp >= _freeze_size && chunk->is_empty()),
@@ -1021,12 +1049,16 @@ freeze_result FreezeBase::finalize_freeze(const frame& callee, frame& caller, in
   // will either see no continuation or a consistent chunk.
   unwind_frames();
 
-  chunk->set_max_thawing_size(chunk->max_thawing_size() + _freeze_size - frame::metadata_words);
+  chunk->set_max_thawing_size(chunk->max_thawing_size() + _freeze_size - _monitors_in_lockstack - frame::metadata_words);
 
   if (lt.develop_is_enabled()) {
     LogStream ls(lt);
     ls.print_cr("top chunk:");
     chunk->print_on(&ls);
+  }
+
+  if (_monitors_in_lockstack > 0) {
+    freeze_lockstack();
   }
 
   // The topmost existing frame in the chunk; or an empty frame if the chunk is empty
@@ -1264,6 +1296,8 @@ NOINLINE void FreezeBase::finish_freeze(const frame& f, const frame& top) {
 
   chunk->set_max_thawing_size(chunk->max_thawing_size() + _total_align_size);
 
+  assert(chunk->sp_address() - chunk->start_address() >= _monitors_in_lockstack, "clash with lockstack");
+
   // At this point the chunk is consistent
 
   if (UNLIKELY(_barriers)) {
@@ -1327,6 +1361,7 @@ class StackChunkAllocator : public MemAllocator {
 
     // zero out fields (but not the stack)
     const size_t hs = oopDesc::header_size();
+    oopDesc::set_klass_gap(mem, 0);
     Copy::fill_to_aligned_words(mem + hs, vmClasses::StackChunk_klass()->size_helper() - hs);
 
     int bottom = (int)_stack_size - _argsize_md;
@@ -1435,6 +1470,7 @@ stackChunkOop Freeze<ConfigT>::allocate_chunk(size_t stack_size, int argsize_md)
   assert(chunk->is_empty(), "");
   assert(chunk->flags() == 0, "");
   assert(chunk->is_gc_mode() == false, "");
+  assert(chunk->lockstack_size() == 0, "");
 
   // fields are uninitialized
   chunk->set_parent_access<IS_DEST_UNINITIALIZED>(_cont.last_nonempty_chunk());
@@ -1590,8 +1626,10 @@ static inline int freeze_internal(JavaThread* current, intptr_t* const sp) {
 
   assert(entry->is_virtual_thread() == (entry->scope(current) == java_lang_VirtualThread::vthread_scope()), "");
 
-  assert(monitors_on_stack(current) == ((current->held_monitor_count() - current->jni_monitor_count()) > 0),
+  assert(LOOM_MONITOR_SUPPORT_ONLY(LockingMode != LM_LEGACY ||) (monitors_on_stack(current) == ((current->held_monitor_count() - current->jni_monitor_count()) > 0)),
          "Held monitor count and locks on stack invariant: " INT64_FORMAT " JNI: " INT64_FORMAT, (int64_t)current->held_monitor_count(), (int64_t)current->jni_monitor_count());
+  LOOM_MONITOR_SUPPORT_ONLY(assert(LockingMode == LM_LEGACY || (current->held_monitor_count() == 0 && current->jni_monitor_count() == 0),
+         "Held monitor count should only be used for LM_LEGACY: " INT64_FORMAT " JNI: " INT64_FORMAT, (int64_t)current->held_monitor_count(), (int64_t)current->jni_monitor_count());)
 
   if (entry->is_pinned() || current->held_monitor_count() > 0) {
     log_develop_debug(continuations)("PINNED due to critical section/hold monitor");
@@ -1778,11 +1816,10 @@ protected:
   inline void prefetch_chunk_pd(void* start, int size_words);
   void patch_return(intptr_t* sp, bool is_last);
 
-  // slow path
-  NOINLINE intptr_t* thaw_slow(stackChunkOop chunk, bool return_barrier);
+  void recurse_thaw(const frame& heap_frame, frame& caller, int num_frames, bool top);
+  void finish_thaw(frame& f);
 
 private:
-  void recurse_thaw(const frame& heap_frame, frame& caller, int num_frames, bool top);
   template<typename FKind> bool recurse_thaw_java_frame(frame& caller, int num_frames);
   void finalize_thaw(frame& entry, int argsize);
 
@@ -1796,7 +1833,6 @@ private:
   NOINLINE void recurse_thaw_interpreted_frame(const frame& hf, frame& caller, int num_frames);
   void recurse_thaw_compiled_frame(const frame& hf, frame& caller, int num_frames, bool stub_caller);
   void recurse_thaw_stub_frame(const frame& hf, frame& caller, int num_frames);
-  void finish_thaw(frame& f);
 
   void push_return_frame(frame& f);
   inline frame new_entry_frame();
@@ -1826,6 +1862,7 @@ public:
 
   inline intptr_t* thaw(Continuation::thaw_kind kind);
   NOINLINE intptr_t* thaw_fast(stackChunkOop chunk);
+  NOINLINE intptr_t* thaw_slow(stackChunkOop chunk, bool return_barrier);
   inline void patch_caller_links(intptr_t* sp, intptr_t* bottom);
 };
 
@@ -2018,7 +2055,39 @@ inline bool ThawBase::seen_by_gc() {
   return _barriers || _cont.tail()->is_gc_mode();
 }
 
-NOINLINE intptr_t* ThawBase::thaw_slow(stackChunkOop chunk, bool return_barrier) {
+template <typename ConfigT>
+NOINLINE intptr_t* Thaw<ConfigT>::thaw_slow(stackChunkOop chunk, bool return_barrier) {
+  bool retry_fast_path = false;
+
+  // Call this first to avoid racing with GC threads later when modifying the chunk flags.
+#if INCLUDE_ZGC || INCLUDE_SHENANDOAHGC
+  if (UseZGC || UseShenandoahGC) {
+    _cont.tail()->relativize_derived_pointers_concurrently();
+  }
+#endif
+
+  // On first thaw after freeze restore oops to the lockstack if any.
+  assert(chunk->lockstack_size() == 0 || !return_barrier, "");
+  if (!return_barrier && chunk->lockstack_size() > 0) {
+    int lockStackSize = chunk->lockstack_size();
+    assert(lockStackSize > 0, "should be");
+
+    oop tmp_lockstack[8];
+    chunk->copy_lockstack(tmp_lockstack);
+    _thread->lock_stack().move_from_address(tmp_lockstack, lockStackSize);
+
+    chunk->set_lockstack_size(0);
+    chunk->set_has_lockstack(false);
+    retry_fast_path = true;
+  }
+
+  // Retry the fast path now that we possibly cleared FLAG_HAS_LOCKSTACK
+  // flags from the stackChunk.
+  if (retry_fast_path && can_thaw_fast(chunk)) {
+    intptr_t* sp = thaw_fast(chunk);
+    return sp;
+  }
+
   LogTarget(Trace, continuations) lt;
   if (lt.develop_is_enabled()) {
     LogStream ls(lt);
@@ -2048,12 +2117,6 @@ NOINLINE intptr_t* ThawBase::thaw_slow(stackChunkOop chunk, bool return_barrier)
     assert(heap_frame.is_heap_frame(), "should have created a relative frame");
     heap_frame.print_value_on(&ls);
   }
-
-#if INCLUDE_ZGC || INCLUDE_SHENANDOAHGC
-  if (UseZGC || UseShenandoahGC) {
-    _cont.tail()->relativize_derived_pointers_concurrently();
-  }
-#endif
 
   frame caller; // the thawed caller on the stack
   recurse_thaw(heap_frame, caller, num_frames, true);

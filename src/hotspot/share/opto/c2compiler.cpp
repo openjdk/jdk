@@ -730,6 +730,7 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_currentCarrierThread:
   case vmIntrinsics::_currentThread:
   case vmIntrinsics::_setCurrentThread:
+  case vmIntrinsics::_setCurrentLockId:
   case vmIntrinsics::_scopedValueCache:
   case vmIntrinsics::_setScopedValueCache:
   case vmIntrinsics::_Continuation_pin:

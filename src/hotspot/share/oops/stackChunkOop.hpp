@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +58,7 @@ private:
   static const uint8_t FLAG_NOTIFY_RELATIVIZE = 1 << 2; // Someone is waiting for relativization to complete
   static const uint8_t FLAG_GC_MODE = 1 << 3; // Once true it and FLAG_HAS_INTERPRETED_FRAMES can't change
   static const uint8_t FLAG_HAS_BITMAP = 1 << 4; // Can only be true if FLAG_GC_MODE is true
+  static const uint8_t FLAG_HAS_LOCKSTACK = 1 << 5; // LockStack was copied into stackChunk
 
   bool try_acquire_relativization();
   void release_relativization();
@@ -90,6 +91,9 @@ public:
 
   inline int max_thawing_size() const;
   inline void set_max_thawing_size(int value);
+
+  inline uint8_t lockstack_size() const;
+  inline void set_lockstack_size(uint8_t value);
 
   inline oop cont() const;
   template<typename P>
@@ -127,6 +131,9 @@ public:
   inline bool has_mixed_frames() const;
   inline void set_has_mixed_frames(bool value);
 
+  inline bool has_lockstack() const;
+  inline void set_has_lockstack(bool value);
+
   inline bool is_gc_mode() const;
   inline bool is_gc_mode_acquire() const;
   inline void set_gc_mode(bool value);
@@ -146,6 +153,11 @@ public:
 
   template <typename RegisterMapT>
   void fix_thawed_frame(const frame& f, const RegisterMapT* map);
+
+  void copy_lockstack(oop* start);
+
+  template <typename OopT, class StackChunkLockStackClosureType>
+  inline void iterate_lockstack(StackChunkLockStackClosureType* closure);
 
   template <class StackChunkFrameClosureType>
   inline void iterate_stack(StackChunkFrameClosureType* closure);

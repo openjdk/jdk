@@ -163,6 +163,23 @@ void InstanceStackChunkKlass::oop_oop_iterate_stack_slow(stackChunkOop chunk, Oo
   chunk->iterate_stack(&frame_closure);
 }
 
+template <typename OopT>
+void InstanceStackChunkKlass::oop_oop_iterate_lockstack(stackChunkOop chunk, OopIterateClosure* closure, MemRegion mr) {
+  if (LockingMode != LM_LIGHTWEIGHT) {
+    return;
+  }
+
+  StackChunkOopIterateFilterClosure<OopIterateClosure> cl(closure, mr);
+  if (chunk->has_bitmap()) {
+    chunk->iterate_lockstack<OopT>(&cl);
+  } else {
+    chunk->iterate_lockstack<oop>(&cl);
+  }
+}
+
+template void InstanceStackChunkKlass::oop_oop_iterate_lockstack<oop>(stackChunkOop chunk, OopIterateClosure* closure, MemRegion mr);
+template void InstanceStackChunkKlass::oop_oop_iterate_lockstack<narrowOop>(stackChunkOop chunk, OopIterateClosure* closure, MemRegion mr);
+
 #ifdef ASSERT
 
 class DescribeStackChunkClosure {

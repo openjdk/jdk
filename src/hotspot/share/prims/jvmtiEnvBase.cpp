@@ -1016,18 +1016,18 @@ JvmtiEnvBase::get_owned_monitors(JavaThread *calling_thread, JavaThread* java_th
 }
 
 jvmtiError
-JvmtiEnvBase::get_owned_monitors(JavaThread* calling_thread, JavaThread* java_thread, javaVFrame* jvf,
-                                 GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list) {
+JvmtiEnvBase::get_owned_monitors(JavaThread* calling_thread, JavaThread* carrier, javaVFrame* jvf,
+                                 GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list, oop vthread) {
   jvmtiError err = JVMTI_ERROR_NONE;
   Thread *current_thread = Thread::current();
-  assert(java_thread->is_handshake_safe_for(current_thread),
+  assert(carrier == nullptr || carrier->is_handshake_safe_for(current_thread),
          "call by myself or at handshake");
 
   int depth = 0;
   for ( ; jvf != nullptr; jvf = jvf->java_sender()) {
     if (MaxJavaStackTraceDepth == 0 || depth++ < MaxJavaStackTraceDepth) {  // check for stack too deep
       // Add locked objects for this frame into list.
-      err = get_locked_objects_in_frame(calling_thread, java_thread, jvf, owned_monitors_list, depth - 1);
+      err = get_locked_objects_in_frame(calling_thread, carrier, jvf, owned_monitors_list, depth - 1, vthread);
       if (err != JVMTI_ERROR_NONE) {
         return err;
       }
@@ -1036,7 +1036,7 @@ JvmtiEnvBase::get_owned_monitors(JavaThread* calling_thread, JavaThread* java_th
 
   // Get off stack monitors. (e.g. acquired via jni MonitorEnter).
   JvmtiMonitorClosure jmc(calling_thread, owned_monitors_list, this);
-  ObjectSynchronizer::owned_monitors_iterate(&jmc, java_thread);
+  ObjectSynchronizer::owned_monitors_iterate(&jmc, carrier != nullptr ? carrier->threadObj() : vthread);
   err = jmc.error();
 
   return err;
@@ -1044,8 +1044,9 @@ JvmtiEnvBase::get_owned_monitors(JavaThread* calling_thread, JavaThread* java_th
 
 // Save JNI local handles for any objects that this frame owns.
 jvmtiError
-JvmtiEnvBase::get_locked_objects_in_frame(JavaThread* calling_thread, JavaThread* java_thread,
-                                 javaVFrame *jvf, GrowableArray<jvmtiMonitorStackDepthInfo*>* owned_monitors_list, jint stack_depth) {
+JvmtiEnvBase::get_locked_objects_in_frame(JavaThread* calling_thread, JavaThread* target,
+                                 javaVFrame *jvf, GrowableArray<jvmtiMonitorStackDepthInfo*>* owned_monitors_list,
+                                 jint stack_depth, oop vthread) {
   jvmtiError err = JVMTI_ERROR_NONE;
   Thread* current_thread = Thread::current();
   ResourceMark rm(current_thread);
@@ -1062,9 +1063,9 @@ JvmtiEnvBase::get_locked_objects_in_frame(JavaThread* calling_thread, JavaThread
     // at a safepoint or the calling thread is operating on itself so
     // it cannot leave the underlying wait() call.
     // Save object of current wait() call (if any) for later comparison.
-    ObjectMonitor *mon = java_thread->current_waiting_monitor();
-    if (mon != nullptr) {
-      wait_obj = mon->object();
+    if (target != nullptr) {
+      ObjectMonitor *mon = target->current_waiting_monitor();
+      if (mon != nullptr) wait_obj = mon->object();
     }
   }
   oop pending_obj = nullptr;
@@ -1073,9 +1074,9 @@ JvmtiEnvBase::get_locked_objects_in_frame(JavaThread* calling_thread, JavaThread
     // at a safepoint or the calling thread is operating on itself so
     // it cannot leave the underlying enter() call.
     // Save object of current enter() call (if any) for later comparison.
-    ObjectMonitor *mon = java_thread->current_pending_monitor();
-    if (mon != nullptr) {
-      pending_obj = mon->object();
+    if (target != nullptr) {
+      ObjectMonitor *mon = target->current_pending_monitor();
+      if (mon != nullptr) pending_obj = mon->object();
     }
   }
 
@@ -2501,18 +2502,18 @@ GetOwnedMonitorInfoClosure::do_thread(Thread *target) {
 
 void
 GetOwnedMonitorInfoClosure::do_vthread(Handle target_h) {
-  assert(_target_jt != nullptr, "sanity check");
   Thread* current = Thread::current();
   ResourceMark rm(current); // vframes are resource allocated
   HandleMark hm(current);
 
   javaVFrame *jvf = JvmtiEnvBase::get_vthread_jvf(target_h());
 
-  if (!_target_jt->is_exiting() && _target_jt->threadObj() != nullptr) {
+  if (_target_jt == nullptr || (!_target_jt->is_exiting() && _target_jt->threadObj() != nullptr)) {
     _result = ((JvmtiEnvBase *)_env)->get_owned_monitors(_calling_thread,
                                                          _target_jt,
                                                          jvf,
-                                                         _owned_monitors_list);
+                                                         _owned_monitors_list,
+                                                         target_h());
   }
 }
 

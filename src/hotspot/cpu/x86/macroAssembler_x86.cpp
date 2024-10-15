@@ -3033,25 +3033,13 @@ void MacroAssembler::pop_cont_fastpath() {
 }
 
 void MacroAssembler::inc_held_monitor_count() {
-#ifndef _LP64
-  Register thread = rax;
-  push(thread);
-  get_thread(thread);
-  incrementl(Address(thread, JavaThread::held_monitor_count_offset()));
-  pop(thread);
-#else // LP64
+#ifdef _LP64
   incrementq(Address(r15_thread, JavaThread::held_monitor_count_offset()));
 #endif
 }
 
 void MacroAssembler::dec_held_monitor_count() {
-#ifndef _LP64
-  Register thread = rax;
-  push(thread);
-  get_thread(thread);
-  decrementl(Address(thread, JavaThread::held_monitor_count_offset()));
-  pop(thread);
-#else // LP64
+#ifdef _LP64
   decrementq(Address(r15_thread, JavaThread::held_monitor_count_offset()));
 #endif
 }

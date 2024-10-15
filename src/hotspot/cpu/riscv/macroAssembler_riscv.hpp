@@ -788,6 +788,8 @@ public:
 
   void push_cont_fastpath(Register java_thread);
   void pop_cont_fastpath(Register java_thread);
+  void inc_held_monitor_count(Register tmp = t0);
+  void dec_held_monitor_count(Register tmp = t0);
 
   // if heap base register is used - reinit it with the correct value
   void reinit_heapbase();

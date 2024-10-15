@@ -41,6 +41,7 @@
 #include "runtime/stackOverflow.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/threadHeapSampler.hpp"
+#include "runtime/threadIdentifier.hpp"
 #include "runtime/threadStatisticalInfo.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -159,7 +160,18 @@ class JavaThread: public Thread {
   // One-element thread local free list
   JNIHandleBlock* _free_handle_block;
 
+  // ID used as owner for inflated monitors. Same as the j.l.Thread.tid of the
+  // current _vthread object, except during creation of the primordial and JNI
+  // attached thread cases where this field can have a temporal value.
+  int64_t _lock_id;
+
  public:
+  void set_lock_id(int64_t tid) {
+    assert(tid >= ThreadIdentifier::initial() && tid < ThreadIdentifier::current(), "invalid tid");
+    _lock_id = tid;
+  }
+  int64_t lock_id() const { return _lock_id; }
+
   // For tracking the heavyweight monitor the thread is pending on.
   ObjectMonitor* current_pending_monitor() {
     // Use Atomic::load() to prevent data race between concurrent modification and
@@ -628,7 +640,7 @@ private:
 
   intx held_monitor_count() { return _held_monitor_count; }
   intx jni_monitor_count()  { return _jni_monitor_count;  }
-  void clear_jni_monitor_count() { _jni_monitor_count = 0;   }
+  void clear_jni_monitor_count() { _jni_monitor_count = 0; }
 
   // Support for SharedRuntime::monitor_exit_helper()
   ObjectMonitor* unlocked_inflated_monitor() const { return _unlocked_inflated_monitor; }
@@ -842,6 +854,8 @@ private:
   }
   static ByteSize doing_unsafe_access_offset() { return byte_offset_of(JavaThread, _doing_unsafe_access); }
   NOT_PRODUCT(static ByteSize requires_cross_modify_fence_offset()  { return byte_offset_of(JavaThread, _requires_cross_modify_fence); })
+
+  static ByteSize lock_id_offset()            { return byte_offset_of(JavaThread, _lock_id); }
 
   static ByteSize cont_entry_offset()         { return byte_offset_of(JavaThread, _cont_entry); }
   static ByteSize cont_fastpath_offset()      { return byte_offset_of(JavaThread, _cont_fastpath); }

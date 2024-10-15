@@ -518,6 +518,7 @@ class SerializeClosure;
   template(checkIndex_name,                           "checkIndex")                               \
   template(jfr_epoch_name,                            "jfr_epoch")                                \
   template(maxThawingSize_name,                       "maxThawingSize")                           \
+  template(lockStackSize_name,                        "lockStackSize")                            \
                                                                                                   \
   /* name symbols needed by intrinsics */                                                         \
   VM_INTRINSICS_DO(VM_INTRINSIC_IGNORE, VM_SYMBOL_IGNORE, template, VM_SYMBOL_IGNORE, VM_ALIAS_IGNORE) \
