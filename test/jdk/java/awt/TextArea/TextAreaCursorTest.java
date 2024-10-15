@@ -33,8 +33,8 @@ import java.awt.event.ActionListener;
 /*
  * @test
  * @bug 4060320
- * @summary Test textarea cursor shape on its scrollbars
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @summary Test TextArea cursor shape on its scrollbars
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual TextAreaCursorTest
  */

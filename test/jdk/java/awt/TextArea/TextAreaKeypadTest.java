@@ -29,7 +29,7 @@ import java.awt.TextArea;
  * @test
  * @bug 6240876
  * @summary Number pad up & down arrows don't work in XToolkit TextArea
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual TextAreaKeypadTest
  */
@@ -52,7 +52,7 @@ public class TextAreaKeypadTest {
     }
 
     public static Frame createGUI() {
-        Frame frame = new Frame();
+        Frame frame = new Frame("TextAreaKeypadTest");
         frame.setLayout(new BorderLayout());
         TextArea area = new TextArea("One\nTwo\nThree", 3, 3, TextArea.SCROLLBARS_NONE);
         frame.add("Center", area);

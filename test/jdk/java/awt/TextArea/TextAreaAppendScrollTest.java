@@ -31,7 +31,7 @@ import java.awt.event.ActionListener;
  * @test
  * @bug 5003402
  * @summary TextArea must scroll automatically when calling append and select, even when not in focus
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual TextAreaAppendScrollTest
  */

@@ -33,7 +33,7 @@ import java.awt.TextField;
  * @test
  * @bug 4095946
  * @summary 592677:TEXTFIELD TAB SELECTION CONFUSING; REMOVE ES_NOHIDESEL STYLE IN
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual TextAreaSelectionTest
  */
