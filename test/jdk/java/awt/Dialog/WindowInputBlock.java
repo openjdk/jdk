@@ -39,7 +39,7 @@ import javax.swing.JTextField;
  * @test
  * @bug 4124096
  * @summary Modal JDialog is not modal on Solaris
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual WindowInputBlock
  */

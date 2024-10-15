@@ -41,7 +41,7 @@ import java.awt.print.PrinterJob;
  * @requires (os.family == "windows")
  * @summary Tests that native dialogs (file, page, print) appear or
     don't appear on the windows taskbar depending of their parent
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual TaskbarIconTest
 */

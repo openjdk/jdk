@@ -36,7 +36,7 @@ import java.awt.event.ActionListener;
  * @test
  * @bug 4105025 4153487 4177107 4146229 4119383 4181310 4152317
  * @summary Test: FileDialogTest
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual FileDialogTest
  */
