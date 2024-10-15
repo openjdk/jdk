@@ -168,9 +168,8 @@ TARGETS += $(copy-from-jdk-image)
 $(copy-from-jdk-image): | static-jdk-info
 
 $(eval $(call SetupCopyFiles, copy-static-launcher, \
-    SRC := $(dir $(JAVA_LAUNCHER)), \
-    DEST := $(STATIC_JDK_IMAGE_DIR)/bin, \
     FILES := $(JAVA_LAUNCHER), \
+    DEST := $(STATIC_JDK_IMAGE_DIR)/bin, \
 ))
 
 TARGETS += $(copy-static-launcher)
