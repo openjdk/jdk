@@ -42,6 +42,7 @@ public class HttpRestConnector implements JMXConnector {
 
     protected boolean connected;
     protected JMXServiceURL url;
+    protected String baseURL;
     protected Map<String,?> env;
     protected HttpRestConnection connection;
 
@@ -52,7 +53,25 @@ public class HttpRestConnector implements JMXConnector {
             this.env = new HashMap<String,Object>();
         }
         System.err.println("XXXXX HttpRestConnector url=" + url);
-            new Exception().printStackTrace(System.err);
+        fixURL();
+    }
+
+    private void fixURL() {
+        // Given JMXServiceURL may be basic, e.g. "service:jmx:http://hostname:port"
+        // Or may include more detail, e.g. "hostname:port/jmx/servers/platform".
+        // Normalise our baseURL to end with /jmx/servers/
+
+        // Convert to just http....
+        baseURL = url.toString().substring(12);
+        // or rebuild from host/port/protocol
+
+        String path = url.getURLPath(); // e.g. /jmx/servers/platform
+        System.err.println("ZZZZZZ path=" + path);
+
+        if (path.isEmpty()) {
+            path = "/jmx/servers/platform";
+            baseURL = baseURL + path;
+        }
     }
 
     public void connect() throws IOException {
@@ -63,26 +82,6 @@ public class HttpRestConnector implements JMXConnector {
         if (connected) {
             return;
         }
-        // Connect and verify available servers
-        // JMXServiceURL e.g. service:jmx:http://hostname:1234
-        // Normalise our baseURL to end with /jmx/servers/ including final /
-        String baseURL = url.toString();
-        // Convert to just http....
-        baseURL = baseURL.substring(12); // or rebuild from host/port/protocol
-
-        System.err.println("connect: " + baseURL);
-        // Possibly just require URL to end in /jmx/servers/ plus optional mbserver name
-        if (!baseURL.endsWith("/")) {
-            baseURL = baseURL + "/";
-        }
-        if (!baseURL.endsWith("/jmx/servers/")) {
-            baseURL = baseURL + "jmx/servers/"; // stops you giving a mbserver name
-        }
-        // Force to /platform/ MBeanServer.
-        if (!baseURL.endsWith("/platform/")) {
-            baseURL = baseURL + "platform/";
-        }
-
         connection = new HttpRestConnection(baseURL, env); 
         connection.setup();
         connected = true;

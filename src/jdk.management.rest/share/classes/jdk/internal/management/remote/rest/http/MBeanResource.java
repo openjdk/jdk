@@ -826,30 +826,29 @@ public class MBeanResource implements RestResource {
                 // javax.management.Notification[source=java.lang:type=GarbageCollector,name=G1 Young Generation][type=com.sun.management.gc.notification][message=G1 Young Generation]
                 // is class javax.management.Notification
 
-
-/*                JSONMapper typeMapper = JSONMappingFactory.INSTANCE.getTypeMapper(n.getClass());
+                JSONMapper typeMapper = JSONMappingFactory.INSTANCE.getTypeMapper(n.getClass());
                 if (typeMapper != null) {
                     try {
-                        System.err.println("NOTIF: " + n);
+                        System.err.println("XXX MBeanResource.doPollNotifications: " + n);
                         JSONElement json = typeMapper.toJsonValue(n);
                         if (json != null) {
-                            System.err.println("NOTIF: " + json.toJsonString());
+                            System.err.println("XXX MBeanResource.doPollNotifications: json = " + json.toJsonString());
                             result.add(json);
                         }
                     } catch (JSONMappingException jme) {
                         jme.printStackTrace(System.err);
                     }
-                } else { */
-                    System.err.println("XXX no mapper for: " + n.getClass());
+                } else {
+                    System.err.println("XXX  MBeanResource.doPollNotifications: no mapper for: " + n.getClass());
                     JSONObject json = new JSONObject();
                     json.put("source", n.getSource().toString());
                     json.put("type", n.getType());
                     json.put("sequenceNumber", n.getSequenceNumber());
                     json.put("timeStamp", n.getTimeStamp());
                     json.put("message", n.getMessage());
-                    System.err.println("XXX NOTIF: " + json.toJsonString());
+                    System.err.println("XXX MBeanResource.doPollNotifications: " + json.toJsonString());
                     result.add(json);
-//                }
+                }
             }
             list.clear();
         }

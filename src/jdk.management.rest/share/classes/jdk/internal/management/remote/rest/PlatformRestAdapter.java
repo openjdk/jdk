@@ -147,7 +147,7 @@ public final class PlatformRestAdapter {
 //            addr = InetAddress.getLoopbackAddress();
 
             InetSocketAddress socketAddress = new InetSocketAddress(addr, port);
-            System.err.println("XXX PlatformRestAdapter.init using inetaddress " + addr + " = " + socketAddress);
+//            System.err.println("XXX PlatformRestAdapter.init using inetaddress " + addr + " = " + socketAddress);
 
             boolean useSSL = Boolean.parseBoolean(properties.getProperty(
                     PropertyNames.USE_SSL, DefaultValues.USE_SSL));
@@ -165,7 +165,6 @@ public final class PlatformRestAdapter {
             httpServer.setExecutor(Executors.newFixedThreadPool(maxThreadCount, new HttpThreadFactory()));
             httpServer.start();
             startDefaultRestAdapter(mbeanServer, properties);
-            System.err.println("XXXX PRA.init httpserver address = " + httpServer.getAddress() + " ");
         }
     }
 
@@ -254,7 +253,6 @@ public final class PlatformRestAdapter {
             // throw new IllegalArgumentException("MBeanServer already registered at " + server.getUrl());
         }
             MBeanServerResource adapter = new MBeanServerResource(httpServer, mbeanServer, context, env);
-            System.err.println("XXXX PlatformRestAdapter.newRestAdapter starting adapter = " + adapter);
             adapter.start();
             restAdapters.add(adapter);
             return adapter;
@@ -298,7 +296,7 @@ public final class PlatformRestAdapter {
     }
 
     public static synchronized String getBaseURL() {
-        return getDomain() + "/jmx/servers"; // XXX
+        return getDomain() + "/jmx/servers";
     }
 
     public static synchronized JMXServiceURL getJMXServiceURL() {

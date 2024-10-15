@@ -45,6 +45,8 @@ import java.util.Hashtable;
 import java.util.Map;
 import java.util.Set;
 
+import java.lang.management.ManagementFactory;
+
 import javax.management.InstanceNotFoundException;
 import javax.management.MBeanServer;
 import javax.management.remote.JMXAuthenticator;
@@ -331,8 +333,12 @@ public class HttpConnectorServer extends JMXConnectorServer {
 
         try {
             // Create a REST Adapter.
-
-            rest = PlatformRestAdapter.newRestAdapter(getMBeanServer(), "platform" /* context */,  null /*env */);
+            String serverName = null; // platform
+            if (getMBeanServer() == ManagementFactory.getPlatformMBeanServer()) {
+                serverName = "platform";
+                System.err.println("XXXX HTTPConnServer start server = platform: " + getMBeanServer());
+            }
+            rest = PlatformRestAdapter.newRestAdapter(getMBeanServer(), serverName /* context */,  null /*env */);
             String a = rest.getUrl();
             System.err.println("XXXX HTTPConnServer start a = " + a);
             address = new JMXServiceURL("service:jmx:" + a);

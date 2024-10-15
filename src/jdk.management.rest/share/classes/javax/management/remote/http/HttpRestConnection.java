@@ -920,7 +920,7 @@ private static void printStack(Thread t, StackTraceElement[] stack) {
                             for (JSONElement json : j) {
                                 if (json != null && json instanceof JSONObject) {
                                     Notification n = decodeNotification((JSONObject) json);
-                                    System.err.println("GOT: " + n);
+                                    System.err.println("HttpRestConnection NotifPollder got: " + n);
                                     listener.handleNotification(n, handback);
                                 }
                             }
