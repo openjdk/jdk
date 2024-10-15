@@ -30,6 +30,7 @@
 #include "nmt/nmtTreap.hpp"
 #include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/rbTree.hpp"
 #include <cstdint>
 
 // A VMATree stores a sequence of points on the natural number line.
@@ -134,8 +135,10 @@ private:
   };
 
 public:
-  using VMATreap = TreapCHeap<position, IntervalChange, PositionComparator>;
-  using TreapNode = VMATreap::TreapNode;
+  using VMATreap = RBTreeCHeap<position, IntervalChange, PositionComparator>;
+  using TreapNode = VMATreap::RBNode;
+  // using VMATreap = TreapCHeap<position, IntervalChange, PositionComparator>;
+  // using TreapNode = VMATreap::TreapNode;
 
 private:
   VMATreap _tree;
