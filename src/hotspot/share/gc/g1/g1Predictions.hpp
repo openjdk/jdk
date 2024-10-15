@@ -49,8 +49,8 @@ private:
   }
 
 public:
-  G1Predictions(double sigma_scale) : _stddev_scale(sigma_scale) {
-    assert(sigma_scale >= 0.0, "must be larger than or equal to zero");
+  G1Predictions(double stddev_scale) : _stddev_scale(stddev_scale) {
+    assert(stddev_scale >= 0.0, "must be");
   }
 
   double predict(TruncatedSeq const* seq) const {
