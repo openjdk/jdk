@@ -185,11 +185,34 @@ JNIEXPORT jint JNICALL
 Java_sun_nio_ch_UnixFileDispatcherImpl_available0(JNIEnv *env, jobject this, jobject fdo)
 {
     jint fd = fdval(env, fdo);
-    jlong available;
-    if (handleAvailable(fd, &available) == 0) {
-        JNU_ThrowIOExceptionWithLastError(env, "Available failed");
-        return -1;
+    struct stat fbuf;
+    jlong size = -1;
+
+    if (fstat(fd, &fbuf) != -1) {
+        int mode = fbuf.st_mode;
+        if (S_ISCHR(mode) || S_ISFIFO(mode) || S_ISSOCK(mode)) {
+            int n = ioctl(fd, FIONREAD, &n);
+            if (n >= 0) {
+                return n;
+            }
+        } else if (S_ISREG(mode)) {
+            size = fbuf.st_size;
+        }
     }
+
+    jlong position;
+    if ((position = lseek(fd, 0, SEEK_CUR)) == -1) {
+        return 0;
+    }
+
+    if (size < position) {
+        if ((size = lseek(fd, 0, SEEK_END)) == -1)
+            return 0;
+        else if (lseek(fd, position, SEEK_SET) == -1)
+            return 0;
+    }
+
+    jlong available = size - position;
     return available > java_lang_Integer_MAX_VALUE ?
         java_lang_Integer_MAX_VALUE : (jint)available;
 }

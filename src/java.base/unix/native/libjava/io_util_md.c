@@ -197,7 +197,7 @@ handleWrite(FD fd, const void *buf, jint len)
     return result;
 }
 
-JNIEXPORT jint
+jint
 handleAvailable(FD fd, jlong *pbytes)
 {
     int mode;
