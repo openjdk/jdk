@@ -32,12 +32,16 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.List;
+import jdk.test.lib.JDKToolFinder;
 
 /**
  * Helper class for compilation of Java and Jasm {@link SourceCode}.
  */
 class Compile {
     private static final int COMPILE_TIMEOUT = 60;
+
+    private static final String JAVA_PATH = JDKToolFinder.getJDKTool("java");
+    private static final String JAVAC_PATH = JDKToolFinder.getJDKTool("javac");
 
     /**
      * Compile all sources in {@code javaSources}. First write them to the {@code sourceDir},
@@ -62,7 +66,7 @@ class Compile {
     private static void compileJavaFiles(List<Path> paths, Path classesDir) {
         List<String> command = new ArrayList<>();
 
-        command.add("%s/bin/javac".formatted(System.getProperty("compile.jdk")));
+        command.add(JAVAC_PATH);
         command.add("-classpath");
         // Note: the backslashes from windows paths must be escaped!
         command.add(Utils.getEscapedClassPathAndClassesDir(classesDir));
@@ -98,7 +102,7 @@ class Compile {
     private static void compileJasmFiles(List<Path> paths, Path classesDir) {
         List<String> command = new ArrayList<>();
 
-        command.add("%s/bin/java".formatted(System.getProperty("compile.jdk")));
+        command.add(JAVA_PATH);
         command.add("-classpath");
         command.add(getAsmToolsPath());
         command.add("org.openjdk.asmtools.jasm.Main");
