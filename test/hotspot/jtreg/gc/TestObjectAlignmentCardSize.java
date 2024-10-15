@@ -48,7 +48,7 @@ public class TestObjectAlignmentCardSize {
     if (shouldSucceed) {
       output.shouldHaveExitValue(0);
     } else {
-      output.shouldContain("Error occurred during initialization of VM");
+      output.shouldContain("Invalid combination of GCCardSizeInBytes and ObjectAlignmentInBytes");
       output.shouldNotHaveExitValue(0);
     }
   }
