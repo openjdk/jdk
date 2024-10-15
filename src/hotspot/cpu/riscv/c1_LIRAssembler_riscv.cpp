@@ -96,8 +96,8 @@ void LIR_Assembler::clinit_barrier(ciMethod* method) {
 
   Label L_skip_barrier;
 
-  __ mov_metadata(t0, method->holder()->constant_encoding());
-  __ clinit_barrier(t0, t1, &L_skip_barrier /* L_fast_path */);
+  __ mov_metadata(t1, method->holder()->constant_encoding());
+  __ clinit_barrier(t1, t0, &L_skip_barrier /* L_fast_path */);
   __ far_jump(RuntimeAddress(SharedRuntime::get_handle_wrong_method_stub()));
   __ bind(L_skip_barrier);
 }
