@@ -100,4 +100,3 @@ public class SHA3Parallel {
         }
     }
 }
-
