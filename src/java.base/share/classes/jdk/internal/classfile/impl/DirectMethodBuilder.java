@@ -30,6 +30,8 @@ import java.lang.classfile.constantpool.Utf8Entry;
 import java.lang.constant.MethodTypeDesc;
 import java.util.function.Consumer;
 
+import static java.util.Objects.requireNonNull;
+
 public final class DirectMethodBuilder
         extends AbstractDirectBuilder<MethodModel>
         implements TerminalMethodBuilder, Util.Writable {
@@ -47,8 +49,8 @@ public final class DirectMethodBuilder
                                MethodModel original) {
         super(constantPool, context);
         setOriginal(original);
-        this.name = nameInfo;
-        this.desc = typeInfo;
+        this.name = requireNonNull(nameInfo);
+        this.desc = requireNonNull(typeInfo);
         this.flags = flags;
     }
 
@@ -106,7 +108,7 @@ public final class DirectMethodBuilder
         if (element instanceof AbstractElement ae) {
             ae.writeTo(this);
         } else {
-            writeAttribute((CustomAttribute<?>) element);
+            writeAttribute((CustomAttribute<?>) requireNonNull(element));
         }
         return this;
     }

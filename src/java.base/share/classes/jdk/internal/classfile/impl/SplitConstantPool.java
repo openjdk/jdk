@@ -37,6 +37,7 @@ import java.util.List;
 import jdk.internal.constant.ConstantUtils;
 
 import static java.lang.classfile.constantpool.PoolEntry.*;
+import static java.util.Objects.requireNonNull;
 
 public final class SplitConstantPool implements ConstantPoolBuilder {
 
@@ -121,6 +122,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
 
     @Override
     public boolean canWriteDirect(ConstantPool other) {
+        requireNonNull(other);
         return this == other || parent == other;
     }
 

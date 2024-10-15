@@ -28,6 +28,8 @@ import java.lang.classfile.*;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.util.function.Consumer;
 
+import static java.util.Objects.requireNonNull;
+
 public final class ChainedMethodBuilder implements MethodBuilder {
     final TerminalMethodBuilder terminal;
     final Consumer<MethodElement> consumer;
@@ -43,7 +45,7 @@ public final class ChainedMethodBuilder implements MethodBuilder {
 
     @Override
     public MethodBuilder with(MethodElement element) {
-        consumer.accept(element);
+        consumer.accept(requireNonNull(element));
         return this;
     }
 

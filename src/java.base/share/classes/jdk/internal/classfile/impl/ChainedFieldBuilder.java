@@ -29,6 +29,8 @@ import java.lang.classfile.FieldElement;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.util.function.Consumer;
 
+import static java.util.Objects.requireNonNull;
+
 public final class ChainedFieldBuilder implements FieldBuilder {
     private final TerminalFieldBuilder terminal;
     private final Consumer<FieldElement> consumer;
@@ -49,7 +51,7 @@ public final class ChainedFieldBuilder implements FieldBuilder {
 
     @Override
     public FieldBuilder with(FieldElement element) {
-        consumer.accept(element);
+        consumer.accept(requireNonNull(element));
         return this;
     }
 

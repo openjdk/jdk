@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,8 @@ import java.util.function.Function;
 import jdk.internal.classfile.impl.ClassRemapperImpl;
 import jdk.internal.javac.PreviewFeature;
 
+import static java.util.Objects.requireNonNull;
+
 /**
  * {@code ClassRemapper} is a {@link ClassTransform}, {@link FieldTransform},
  * {@link MethodTransform} and {@link CodeTransform}
@@ -65,6 +67,7 @@ public sealed interface ClassRemapper extends ClassTransform permits ClassRemapp
      * @return new instance of {@code ClassRemapper}
      */
     static ClassRemapper of(Map<ClassDesc, ClassDesc> classMap) {
+        requireNonNull(classMap);
         return of(desc -> classMap.getOrDefault(desc, desc));
     }
 
@@ -76,7 +79,7 @@ public sealed interface ClassRemapper extends ClassTransform permits ClassRemapp
      * @return new instance of {@code ClassRemapper}
      */
     static ClassRemapper of(Function<ClassDesc, ClassDesc> mapFunction) {
-        return new ClassRemapperImpl(mapFunction);
+        return new ClassRemapperImpl(requireNonNull(mapFunction));
     }
 
     /**

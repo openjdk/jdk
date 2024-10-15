@@ -39,6 +39,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
 
+import static java.util.Objects.requireNonNull;
+
 public final class DirectClassBuilder
         extends AbstractDirectBuilder<ClassModel>
         implements ClassBuilder {
@@ -76,7 +78,7 @@ public final class DirectClassBuilder
         if (element instanceof AbstractElement ae) {
             ae.writeTo(this);
         } else {
-            writeAttribute((CustomAttribute<?>) element);
+            writeAttribute((CustomAttribute<?>) requireNonNull(element));
         }
         return this;
     }
@@ -169,6 +171,7 @@ public final class DirectClassBuilder
     public void setSizeHint(int sizeHint) {
         this.sizeHint = sizeHint;
     }
+
 
     public byte[] build() {
 
