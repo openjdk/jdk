@@ -475,7 +475,7 @@ GetJVMPath(const char *jrepath, const char *jvmtype,
 }
 
 /*
- * Find path to JRE based on .exe's location or registry settings.
+ * Find path to JRE based on the location of the launcher executable.
  */
 static jboolean
 GetJREPath(char *path, jint pathsize, jboolean speculative)
@@ -486,10 +486,6 @@ GetJREPath(char *path, jint pathsize, jboolean speculative)
     JLI_TraceLauncher("Attempt to get JRE path from launcher executable path\n");
 
     if (GetApplicationHome(path, pathsize)) {
-        if (JLI_IsStaticallyLinked()) {
-            return JNI_TRUE;
-        }
-
         /* Is JRE co-located with the application? */
         JLI_Snprintf(libjava, sizeof(libjava), "%s/lib/" JAVA_DLL, path);
         if (access(libjava, F_OK) == 0) {
