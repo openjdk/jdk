@@ -122,7 +122,7 @@ enum class AOTLinkedClassCategory : int {
   BOOT1,       // Only java.base classes are loaded in the 1st phase
   BOOT2,       // All boots classes that not in java.base are loaded in the 2nd phase
   PLATFORM,
-  APP,    
+  APP,
   UNREGISTERED // classes loaded outside of the boot/platform/app loaders; currently not supported by AOTClassLinker
 };
 
