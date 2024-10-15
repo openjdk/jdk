@@ -34,7 +34,7 @@ import java.awt.event.ActionListener;
  * @test
  * @bug 4070085
  * @summary Java program locks up X server
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual MenuAndModalDialogTest
  */

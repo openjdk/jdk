@@ -28,7 +28,7 @@ import java.awt.Frame;
  * @test
  * @bug 4177831
  * @summary solaris: default FileDialog title is not empty
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual FileDialogEmptyTitleTest
  */

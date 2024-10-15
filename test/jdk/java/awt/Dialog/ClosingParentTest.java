@@ -32,8 +32,8 @@ import java.awt.event.WindowAdapter;
 /*
  * @test
  * @bug 4336913
- * @summary On Win32, disable parent window controls while modal dialog is being created.
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @summary On Windows, disable parent window controls while modal dialog is being created.
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual ClosingParentTest
  */

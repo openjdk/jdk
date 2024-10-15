@@ -34,7 +34,7 @@ import java.awt.event.ActionListener;
  * @requires (os.family == "windows")
  * @summary Verify that FileDialog matches the look
     of the native windows FileDialog
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual FileDialogUIUpdate
  */
