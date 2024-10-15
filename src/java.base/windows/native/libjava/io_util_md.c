@@ -290,7 +290,7 @@ handleNonSeekAvailable(FD, long *);
 static int
 handleStdinAvailable(FD, long *);
 
-JNIEXPORT int
+int
 handleAvailable(FD fd, jlong *pbytes) {
     HANDLE h = (HANDLE)fd;
     DWORD type = 0;

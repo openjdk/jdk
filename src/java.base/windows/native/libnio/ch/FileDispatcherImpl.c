@@ -398,17 +398,34 @@ JNIEXPORT jint JNICALL
 Java_sun_nio_ch_FileDispatcherImpl_available0(JNIEnv *env, jobject this, jobject fdo)
 {
     HANDLE handle = (HANDLE)(handleval(env, fdo));
-    jlong available;
-    if (handleAvailable((jlong)handle, &available)) {
+    DWORD type = GetFileType(handle);
+    jlong available = 0;
+
+    // Calculate the number of bytes available for a regular file,
+    // and return the default (zero) for other types.
+    if (type == FILE_TYPE_DISK) {
+        jlong current, end;
+        LARGE_INTEGER distance, pos, filesize;
+        distance.QuadPart = 0;
+        if (SetFilePointerEx(handle, distance, &pos, FILE_CURRENT) == 0) {
+            JNU_ThrowIOExceptionWithLastError(env, "Available failed");
+            return IOS_THROWN;
+        }
+        current = (jlong)pos.QuadPart;
+        if (GetFileSizeEx(handle, &filesize) == 0) {
+            JNU_ThrowIOExceptionWithLastError(env, "Available failed");
+            return IOS_THROWN;
+        }
+        end = (jlong)filesize.QuadPart;
+        available = end - current;
         if (available > java_lang_Integer_MAX_VALUE) {
             available = java_lang_Integer_MAX_VALUE;
         } else if (available < 0) {
             available = 0;
         }
-        return (jint)available;
     }
-    // Silently ignore failure of handleAvailable and return zero
-    return 0;
+
+    return (jint)available;
 }
 
 
