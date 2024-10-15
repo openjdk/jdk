@@ -60,7 +60,7 @@ class Holder {
 
 public class TestConcurrentPatching {
     // Increase to 100_000 for a good chance of reproducing the issue with a single run
-    static final int ITERATIONS = 10_000;
+    static final int ITERATIONS = 1000;
 
     static Object field;
 

@@ -1268,6 +1268,8 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* current, C1StubId stub_id ))
         }
       }
     }
+    // Keep holding the Patching_lock when walking oops because another thread
+    // might update immediate oops in the patch body concurrently and non-atomic.
 
     // If we are patching in a non-perm oop, make sure the nmethod
     // is on the right list.
