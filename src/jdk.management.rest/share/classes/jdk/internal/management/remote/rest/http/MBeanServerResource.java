@@ -62,6 +62,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 
+/**
+ * An MBeanServerResoure implements the Rest Adapter.
+ * Created by PlatformRestAdapter.
+ */
 public final class MBeanServerResource implements RestResource, JmxRestAdapter {
 
     // Initialization parameters
@@ -92,11 +96,18 @@ public final class MBeanServerResource implements RestResource, JmxRestAdapter {
         mBeanServerDelegateMBean = JMX.newMBeanProxy(mbeanServer,
                 MBeanServerDelegate.DELEGATE_NAME, MBeanServerDelegateMBean.class);
 
+//        if (context == null) {
+//            throw new NullPointerException("missing context");
+//        }
+//        this.contextStr = context;
+
+// KJW If we can't add a new context to httpserver at this point, we have to trust the given context works: XXXX
         if (context == null || context.isEmpty()) {
             contextStr = "server-" + resourceNumber.getAndIncrement();
         } else {
             contextStr = context;
         }
+
         // setup authentication
         if (env.get("jmx.remote.x.authentication") != null) {
             authenticator = (JMXAuthenticator) env.get("jmx.remote.authenticator");
@@ -160,6 +171,7 @@ public final class MBeanServerResource implements RestResource, JmxRestAdapter {
 
         String path = URLDecoder.decode(exchange.getRequestURI().getPath(), StandardCharsets.UTF_8.displayName());
         String pathPrefix = httpContext.getPath();
+
         // Route request to appropriate resource
         if (path.matches(pathPrefix + "/?$")) {
             RestResource.super.handle(exchange);
@@ -173,10 +185,16 @@ public final class MBeanServerResource implements RestResource, JmxRestAdapter {
     @Override
     public synchronized void start() {
         if (!started) {
+            try {
             httpContext = httpServer.createContext("/jmx/servers/" + contextStr, this);
+
             if (env.get("jmx.remote.x.authentication") != null) {
                 httpContext.setAuthenticator(new RestAuthenticator("jmx-rest"));
             }
+            } catch (IllegalArgumentException iae) {
+                System.err.println("XXXX MBeanServerResource.started context = /jmx/servers/" + contextStr + " gets: " + iae);
+            }
+            System.err.println("XXXX MBeanServerResource.started context = /jmx/servers/" + contextStr);
             started = true;
         }
     }

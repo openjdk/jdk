@@ -72,6 +72,8 @@ public final class PlatformRestAdapter {
     private static List<MBeanServerResource> restAdapters = new CopyOnWriteArrayList<>();
     private static final int maxThreadCount = 5;
 
+    private static InetAddress addr;
+
     private PlatformRestAdapter() {
     }
 
@@ -121,8 +123,7 @@ public final class PlatformRestAdapter {
      *                   If null or if any of the properties is not specified, default values will be assumed.
      * @throws IOException If the server could not be created
      */
-    public static synchronized void init(Properties properties) throws IOException {
-        System.err.println("XXXX PlatformRestAdapter.init()");
+    public static synchronized void init(MBeanServer mbeanServer, Properties properties) throws IOException {
         if (httpServer == null) {
             if (properties == null || properties.isEmpty()) {
                 properties = new Properties();
@@ -141,24 +142,30 @@ public final class PlatformRestAdapter {
             }
 
             String host = properties.getProperty(ConnectorBootstrap.PropertyNames.HOST, DefaultValues.HOST);
+            host = "localhost";
+            addr = InetAddress.getByName(host);
+//            addr = InetAddress.getLoopbackAddress();
+
+            InetSocketAddress socketAddress = new InetSocketAddress(addr, port);
+            System.err.println("XXX PlatformRestAdapter.init using inetaddress " + addr + " = " + socketAddress);
 
             boolean useSSL = Boolean.parseBoolean(properties.getProperty(
                     PropertyNames.USE_SSL, DefaultValues.USE_SSL));
             if (useSSL) {
                 // Do not fall back to plain HTTP if SSL was requested.
                 SSLContext ctx = getSSLContext(properties);
-                HttpsServer server = HttpsServer.create(new InetSocketAddress(host, port), 0);
+                HttpsServer server = HttpsServer.create(socketAddress, 0);
                 server.setHttpsConfigurator(new HttpsConfigurator(ctx));
                 httpServer = server;
             } else {
-                httpServer = HttpServer.create(new InetSocketAddress(host, port), 0);
+                httpServer = HttpServer.create(socketAddress, 0); 
             }
 
-            System.err.println("XXXX PRA.init httpserver = " + httpServer);
             new MBeanServerCollectionResource(restAdapters, httpServer);
             httpServer.setExecutor(Executors.newFixedThreadPool(maxThreadCount, new HttpThreadFactory()));
             httpServer.start();
-            startDefaultRestAdapter(properties);
+            startDefaultRestAdapter(mbeanServer, properties);
+            System.err.println("XXXX PRA.init httpserver address = " + httpServer.getAddress() + " ");
         }
     }
 
@@ -166,7 +173,7 @@ public final class PlatformRestAdapter {
         return httpServer!=null;
     }
 
-    private static void startDefaultRestAdapter(Properties properties) {
+    private static void startDefaultRestAdapter(MBeanServer mbeanServer, Properties properties) {
         env = new HashMap<>();
         // Do we use authentication?
         final String useAuthenticationStr
@@ -192,7 +199,13 @@ public final class PlatformRestAdapter {
                 env.put("jmx.remote.x.password.file", passwordFileName);
             }
         }
-        MBeanServerResource adapter = new MBeanServerResource(httpServer, ManagementFactory.getPlatformMBeanServer(), "platform", env);
+        String serverName = null;
+        //MBeanServerResource adapter = new MBeanServerResource(httpServer, ManagementFactory.getPlatformMBeanServer(), serverName, env);
+        if (mbeanServer == null) {
+            mbeanServer = ManagementFactory.getPlatformMBeanServer();
+            serverName = "platform";
+        }
+        MBeanServerResource adapter = new MBeanServerResource(httpServer, mbeanServer, serverName, env);
         adapter.start();
         restAdapters.add(adapter);
     }
@@ -220,7 +233,7 @@ public final class PlatformRestAdapter {
             // A possible call via JMXConnectorServerFactory.newJMXConnectorServer() then to HttpConnectorServer.start()
             // means we need to start http server if needed now.
             try {
-                init(new Properties());
+                init(mbeanServer, new Properties());
             } catch (IOException ioe) {
                 ioe.printStackTrace(System.err);
             }
@@ -234,16 +247,17 @@ public final class PlatformRestAdapter {
         if (env == null) {
             env = new HashMap<>();
         }
-        System.err.println("XXXX PlatformRestAdapter.newRestAdapter MBSResource server = " + server);
-        if (server == null) {
+        System.err.println("XXXX PlatformRestAdapter.newRestAdapter existing MBSResource for MBS " + mbeanServer + ", server = " + server);
+        if (server != null) {
+            // server exists for same MBeanServer
+            restAdapters.remove(server);
+            // throw new IllegalArgumentException("MBeanServer already registered at " + server.getUrl());
+        }
             MBeanServerResource adapter = new MBeanServerResource(httpServer, mbeanServer, context, env);
-            System.err.println("XXXX PlatformRestAdapter.newRestAdapter adapter = " + adapter);
+            System.err.println("XXXX PlatformRestAdapter.newRestAdapter starting adapter = " + adapter);
             adapter.start();
             restAdapters.add(adapter);
             return adapter;
-        } else {
-            throw new IllegalArgumentException("MBeanServer already registered at " + server.getUrl());
-        }
     }
 
     private static boolean areMBeanServersEqual(MBeanServer server1, MBeanServer server2) {
@@ -271,18 +285,20 @@ public final class PlatformRestAdapter {
         if (httpServer == null) {
             throw new IllegalStateException("Platform rest adapter not initialized");
         }
-        try {
+//        try {
             if (httpServer instanceof HttpsServer) {
-                return "https://" + InetAddress.getLocalHost().getCanonicalHostName() + ":" + httpServer.getAddress().getPort();
+                // return "https://" + InetAddress.getLocalHost().getCanonicalHostName() + ":" + httpServer.getAddress().getPort();
+                return "https://" + addr.getHostName() + ":" + httpServer.getAddress().getPort();
             }
-            return "http://" + InetAddress.getLocalHost().getCanonicalHostName() + ":" + httpServer.getAddress().getPort();
-        } catch (UnknownHostException ex) {
-            return "http://localhost" + ":" + httpServer.getAddress().getPort();
-        }
+            // return "http://" + InetAddress.getLocalHost().getCanonicalHostName() + ":" + httpServer.getAddress().getPort();
+            return "http://" + addr.getHostName() + ":" + httpServer.getAddress().getPort();
+//        } catch (UnknownHostException ex) {
+//            return "http://localhost" + ":" + httpServer.getAddress().getPort();
+//        }
     }
 
     public static synchronized String getBaseURL() {
-        return getDomain() + "/jmx/servers";
+        return getDomain() + "/jmx/servers"; // XXX
     }
 
     public static synchronized JMXServiceURL getJMXServiceURL() {
@@ -362,7 +378,8 @@ public final class PlatformRestAdapter {
     static interface DefaultValues {
 
         public static final String REST_PORT = "0";
-        public static final String HOST = "127.0.0.1";
+        //public static final String HOST = "127.0.0.1";
+        public static final String HOST = "localhost";
         public static final String USE_SSL = "false";
         public static final String USE_AUTHENTICATION = "false";
         public static final String PASSWORD_FILE_NAME = "jmxremote.password";

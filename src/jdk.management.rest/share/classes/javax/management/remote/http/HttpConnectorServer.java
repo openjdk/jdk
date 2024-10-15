@@ -329,11 +329,12 @@ public class HttpConnectorServer extends JMXConnectorServer {
             }
         }
 
-
         try {
+            // Create a REST Adapter.
 
-            rest = PlatformRestAdapter.newRestAdapter(getMBeanServer(), null /* context */,  null /*env */);
-            String a = rest.getUrl(); // getJMXServiceURL();
+            rest = PlatformRestAdapter.newRestAdapter(getMBeanServer(), "platform" /* context */,  null /*env */);
+            String a = rest.getUrl();
+            System.err.println("XXXX HTTPConnServer start a = " + a);
             address = new JMXServiceURL("service:jmx:" + a);
 
         synchronized(openedServers) {

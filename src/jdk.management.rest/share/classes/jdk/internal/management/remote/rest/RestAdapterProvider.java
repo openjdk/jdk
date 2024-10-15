@@ -37,7 +37,7 @@ public class RestAdapterProvider extends AgentProvider {
     @Override
     public synchronized void startAgent() {
         try {
-            PlatformRestAdapter.init(null);
+            PlatformRestAdapter.init(null, null);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -46,7 +46,7 @@ public class RestAdapterProvider extends AgentProvider {
     @Override
     public synchronized void startAgent(Properties props) {
         try {
-            PlatformRestAdapter.init(props);
+            PlatformRestAdapter.init(null, props);
         } catch (Throwable e)  {
             throw new RuntimeException(e);
         }

@@ -697,7 +697,6 @@ public class JMXConnectorFactory {
                                          ConnectorFactory<P,C> factory)
         throws IOException {
 
-        System.err.println("XXXX JMXCF.getConnectorAsService: p = " + providerClass + " URL: " + url);
         // sanity check
         if (JMXConnectorProvider.class != providerClass
             && JMXConnectorServerProvider.class != providerClass) {
@@ -740,7 +739,6 @@ public class JMXConnectorFactory {
             Class<?> providerClass;
             try {
                 providerClass = Class.forName(className, true, loader);
-                System.err.println("XXXX JMXCF.getProvider " + protocol + " =  " + providerClass);
             } catch (ClassNotFoundException e) {
                 //Add trace.
                 continue;

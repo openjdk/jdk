@@ -102,9 +102,25 @@ public class HttpRestConnection implements MBeanServerConnection {
         System.err.println("XXXX HttpRestConnection created on baseURL " + baseURL);
     }
 
+private static void stacks() {
+    for (Map.Entry<Thread, StackTraceElement[]> s : Thread.getAllStackTraces().entrySet()) {
+        printStack(s.getKey(), s.getValue());
+    }   
+}   
+
+private static void printStack(Thread t, StackTraceElement[] stack) {
+    System.out.println("\t" + t + " stack: (length = " + stack.length + ")");                                                                       
+    if (t != null)      { 
+        for (StackTraceElement stack1 : stack) {
+            System.out.println("\t" + stack1);
+        }                                                                                                                                        
+        System.out.println();                                                                                                                   
+    }                                                                                                                                        
+}
+
     public void setup() throws IOException { 
         // Fetch /jmx/servers/platform, populate basic info and MBeans.
-   
+        System.err.println("XXXX HttpRestConnection setup " + url(baseURL)); 
         JSONObject jo = (JSONObject) getJSONForURL(url(baseURL));
         if (jo == null) {
             throw new IOException("cannot read JSON from base URL");
@@ -149,6 +165,7 @@ public class HttpRestConnection implements MBeanServerConnection {
                     try {
                         objectRefMap.put(new ObjectName(name), href);
                         objectInfoRefMap.put(new ObjectName(name), href + "/info");
+                        System.err.println("XXXX readMBeans: " + name);
                     } catch (Exception e) {
                         throw new IOException(e);
                     }
@@ -1050,12 +1067,16 @@ public class HttpRestConnection implements MBeanServerConnection {
 
     protected static URL url(String baseURL, String s) {
         // Return a URL by adding given String to baseURL.
-        return url(baseURL + s);
+        return url(baseURL + 
+                   ((!baseURL.endsWith("/") && !s.startsWith("/")) ? "/" : "")
+                   + s);
     }
 
     protected JSONObject objectForName(ObjectName name) {
         // Info for attributes may be rapidly changing, so fetch eatch time.
         // Some info, e.g. Operations, is likely to be static.
+
+        // ObjectName can be a full name, but also a pattern like: ":type=Type".
         synchronized(objectMap) {
         try {
             // Could check if Object is already known:

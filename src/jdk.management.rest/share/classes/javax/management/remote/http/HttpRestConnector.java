@@ -52,6 +52,7 @@ public class HttpRestConnector implements JMXConnector {
             this.env = new HashMap<String,Object>();
         }
         System.err.println("XXXXX HttpRestConnector url=" + url);
+            new Exception().printStackTrace(System.err);
     }
 
     public void connect() throws IOException {
@@ -66,10 +67,9 @@ public class HttpRestConnector implements JMXConnector {
         // JMXServiceURL e.g. service:jmx:http://hostname:1234
         // Normalise our baseURL to end with /jmx/servers/ including final /
         String baseURL = url.toString();
-        if (!baseURL.startsWith("service:jmx:")) {
-            throw new IOException("URL beginning service:jmx: expected");
-        }
+        // Convert to just http....
         baseURL = baseURL.substring(12); // or rebuild from host/port/protocol
+
         System.err.println("connect: " + baseURL);
         // Possibly just require URL to end in /jmx/servers/ plus optional mbserver name
         if (!baseURL.endsWith("/")) {
@@ -82,7 +82,8 @@ public class HttpRestConnector implements JMXConnector {
         if (!baseURL.endsWith("/platform/")) {
             baseURL = baseURL + "platform/";
         }
-        connection = new HttpRestConnection(baseURL, env);
+
+        connection = new HttpRestConnection(baseURL, env); 
         connection.setup();
         connected = true;
     }
