@@ -22,10 +22,17 @@
  */
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
+import jdk.jpackage.internal.AppImageFile;
+import jdk.jpackage.internal.ApplicationLayout;
+import jdk.jpackage.internal.PackageFile;
 import jdk.jpackage.test.Annotations;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.Functional.ThrowingConsumer;
@@ -41,7 +48,7 @@ import jdk.jpackage.test.TKit;
  * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile InOutPathTest.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
- *  --jpt-run=jdk.jpackage.tests.InOutPathTest
+ *  --jpt-run=InOutPathTest
  */
 public final class InOutPathTest {
 
@@ -56,7 +63,8 @@ public final class InOutPathTest {
                 {appImage, wrap(cmd -> {
                     outputDirInInputDir(cmd);
                     tempDirInInputDir(cmd);
-                })},}));
+                })},
+            }));
         }
 
         return data;
@@ -79,17 +87,27 @@ public final class InOutPathTest {
     private static void runTest(boolean appImage,
             ThrowingConsumer<JPackageCommand> configure) throws Throwable {
         ThrowingConsumer<JPackageCommand> configureWrapper = cmd -> {
-            cmd.setFakeRuntime();
             configure.accept(cmd);
+            if (cmd.hasArgument("--temp")) {
+                // If temp directory specified always create Java runtime to
+                // make use of it
+                cmd.ignoreDefaultRuntime(true);
+            } else {
+                cmd.setFakeRuntime();
+            }
         };
 
         if (appImage) {
-            JPackageCommand cmd = JPackageCommand.helloAppImage();
+            JPackageCommand cmd = JPackageCommand.helloAppImage(JAR_NAME + ":");
             configureWrapper.accept(cmd);
             cmd.executeAndAssertHelloAppImageCreated();
+            verifyAppImage(cmd);
         } else {
-            new PackageTest().configureHelloApp().addInitializer(
-                    configureWrapper).run();
+            new PackageTest()
+                    .configureHelloApp(JAR_NAME + ":")
+                    .addInitializer(configureWrapper)
+                    .addInstallVerifier(InOutPathTest::verifyAppImage)
+                    .run();
         }
     }
 
@@ -107,10 +125,36 @@ public final class InOutPathTest {
         cmd.setArgumentValue("--temp", tmpDir);
     }
 
+    private static void verifyAppImage(JPackageCommand cmd) throws IOException {
+        final Path rootDir = cmd.isImagePackageType() ? cmd.outputBundle() : cmd.
+                pathToUnpackedPackageFile(cmd.appInstallationDirectory());
+        final Path appDir = ApplicationLayout.platformAppImage().resolveAt(
+                rootDir).appDirectory();
+
+        final var knownFiles = Set.of(
+                JAR_NAME,
+                PackageFile.getPathInAppImage(Path.of("")).getFileName().toString(),
+                AppImageFile.getPathInAppImage(Path.of("")).getFileName().toString(),
+                cmd.name() + ".cfg"
+        );
+
+        TKit.assertFileExists(appDir.resolve(JAR_NAME));
+
+        try (Stream<Path> actualFilesStream = Files.list(appDir)) {
+            var unexpectedFiles = actualFilesStream.map(path -> {
+                return path.getFileName().toString();
+            }).filter(Predicate.not(knownFiles::contains)).toList();
+            TKit.assertStringListEquals(List.of(), unexpectedFiles,
+                    "Check there are no unexpected files in app image");
+        }
+    }
+
     private final static record Envelope(ThrowingConsumer<JPackageCommand> value) {
 
     }
 
     private final boolean appImage;
     private final ThrowingConsumer<JPackageCommand> configure;
+
+    private final static String JAR_NAME = "duke.jar";
 }
