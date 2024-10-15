@@ -66,6 +66,8 @@ import java.lang.classfile.Label;
 import java.lang.classfile.Opcode;
 import java.lang.classfile.TypeKind;
 
+import static java.util.Objects.requireNonNull;
+
 public abstract sealed class AbstractInstruction
         extends AbstractElement
         implements Instruction {
@@ -247,6 +249,9 @@ public abstract sealed class AbstractInstruction
 
     public record SwitchCaseImpl(int caseValue, Label target)
             implements SwitchCase {
+        public SwitchCaseImpl {
+            requireNonNull(target);
+        }
     }
 
     public static final class BoundLookupSwitchInstruction
@@ -801,7 +806,12 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public void writeTo(DirectCodeBuilder writer) {
-            writer.writeLocalVar(op, slot);
+            var op = this.op;
+            if (op.sizeIfFixed() == 1) {
+                writer.writeBytecode(op);
+            } else {
+                writer.writeLocalVar(op, slot);
+            }
         }
 
         @Override
@@ -832,7 +842,12 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public void writeTo(DirectCodeBuilder writer) {
-            writer.writeLocalVar(op, slot);
+            var op = this.op;
+            if (op.sizeIfFixed() == 1) {
+                writer.writeBytecode(op);
+            } else {
+                writer.writeLocalVar(op, slot);
+            }
         }
 
         @Override
@@ -848,9 +863,9 @@ public abstract sealed class AbstractInstruction
         final int constant;
 
         public UnboundIncrementInstruction(int slot, int constant) {
-            super(slot <= 255 && constant < 128 && constant > -127
-                  ? Opcode.IINC
-                  : Opcode.IINC_W);
+            super(BytecodeHelpers.validateAndIsWideIinc(slot, constant)
+                  ? Opcode.IINC_W
+                  : Opcode.IINC);
             this.slot = slot;
             this.constant = constant;
         }
@@ -867,7 +882,7 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public void writeTo(DirectCodeBuilder writer) {
-            writer.writeIncrement(slot, constant);
+            writer.writeIncrement(op == Opcode.IINC_W, slot, constant);
         }
 
         @Override
@@ -882,7 +897,7 @@ public abstract sealed class AbstractInstruction
 
         public UnboundBranchInstruction(Opcode op, Label target) {
             super(op);
-            this.target = target;
+            this.target = requireNonNull(target);
         }
 
         @Override
@@ -909,7 +924,7 @@ public abstract sealed class AbstractInstruction
 
         public UnboundLookupSwitchInstruction(Label defaultTarget, List<SwitchCase> cases) {
             super(Opcode.LOOKUPSWITCH);
-            this.defaultTarget = defaultTarget;
+            this.defaultTarget = requireNonNull(defaultTarget);
             this.cases = List.copyOf(cases);
         }
 
@@ -945,7 +960,7 @@ public abstract sealed class AbstractInstruction
             super(Opcode.TABLESWITCH);
             this.lowValue = lowValue;
             this.highValue = highValue;
-            this.defaultTarget = defaultTarget;
+            this.defaultTarget = requireNonNull(defaultTarget);
             this.cases = List.copyOf(cases);
         }
 
@@ -1020,7 +1035,7 @@ public abstract sealed class AbstractInstruction
         public UnboundFieldInstruction(Opcode op,
                                        FieldRefEntry fieldEntry) {
             super(op);
-            this.fieldEntry = fieldEntry;
+            this.fieldEntry = requireNonNull(fieldEntry);
         }
 
         @Override
@@ -1045,7 +1060,7 @@ public abstract sealed class AbstractInstruction
 
         public UnboundInvokeInstruction(Opcode op, MemberRefEntry methodEntry) {
             super(op);
-            this.methodEntry = methodEntry;
+            this.methodEntry = requireNonNull(methodEntry);
         }
 
         @Override
@@ -1061,7 +1076,7 @@ public abstract sealed class AbstractInstruction
         @Override
         public int count() {
             return op == Opcode.INVOKEINTERFACE
-                   ? Util.parameterSlots(Util.methodTypeSymbol(methodEntry.nameAndType())) + 1
+                   ? Util.parameterSlots(Util.methodTypeSymbol(methodEntry.type())) + 1
                    : 0;
         }
 
@@ -1085,7 +1100,7 @@ public abstract sealed class AbstractInstruction
 
         public UnboundInvokeDynamicInstruction(InvokeDynamicEntry indyEntry) {
             super(Opcode.INVOKEDYNAMIC);
-            this.indyEntry = indyEntry;
+            this.indyEntry = requireNonNull(indyEntry);
         }
 
         @Override
@@ -1110,7 +1125,7 @@ public abstract sealed class AbstractInstruction
 
         public UnboundNewObjectInstruction(ClassEntry classEntry) {
             super(Opcode.NEW);
-            this.classEntry = classEntry;
+            this.classEntry = requireNonNull(classEntry);
         }
 
         @Override
@@ -1135,7 +1150,7 @@ public abstract sealed class AbstractInstruction
 
         public UnboundNewPrimitiveArrayInstruction(TypeKind typeKind) {
             super(Opcode.NEWARRAY);
-            this.typeKind = typeKind;
+            this.typeKind = requireNonNull(typeKind);
         }
 
         @Override
@@ -1160,7 +1175,7 @@ public abstract sealed class AbstractInstruction
 
         public UnboundNewReferenceArrayInstruction(ClassEntry componentTypeEntry) {
             super(Opcode.ANEWARRAY);
-            this.componentTypeEntry = componentTypeEntry;
+            this.componentTypeEntry = requireNonNull(componentTypeEntry);
         }
 
         @Override
@@ -1187,7 +1202,7 @@ public abstract sealed class AbstractInstruction
         public UnboundNewMultidimensionalArrayInstruction(ClassEntry arrayTypeEntry,
                                                           int dimensions) {
             super(Opcode.MULTIANEWARRAY);
-            this.arrayTypeEntry = arrayTypeEntry;
+            this.arrayTypeEntry = requireNonNull(arrayTypeEntry);
             this.dimensions = dimensions;
         }
 
@@ -1245,7 +1260,7 @@ public abstract sealed class AbstractInstruction
 
         public UnboundTypeCheckInstruction(Opcode op, ClassEntry typeEntry) {
             super(op);
-            this.typeEntry = typeEntry;
+            this.typeEntry = requireNonNull(typeEntry);
         }
 
         @Override
@@ -1347,7 +1362,7 @@ public abstract sealed class AbstractInstruction
 
         public UnboundLoadConstantInstruction(Opcode op, LoadableConstantEntry constant) {
             super(op);
-            this.constant = constant;
+            this.constant = requireNonNull(constant);
         }
 
         @Override
@@ -1395,7 +1410,7 @@ public abstract sealed class AbstractInstruction
 
         public UnboundJsrInstruction(Opcode op, Label target) {
             super(op);
-            this.target = target;
+            this.target = requireNonNull(target);
         }
 
         @Override

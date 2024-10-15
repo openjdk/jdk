@@ -303,6 +303,31 @@ class ConcreteRegisterImpl : public AbstractRegisterImpl {
   static const int max_fpr;
 };
 
+typedef AbstractRegSet<Register> RegSet;
+typedef AbstractRegSet<FloatRegister> FloatRegSet;
+
+template <>
+inline Register AbstractRegSet<Register>::first() {
+  if (_bitset == 0) { return noreg; }
+  return as_Register(count_trailing_zeros(_bitset));
+}
+
+
+template <>
+inline FloatRegister AbstractRegSet<FloatRegister>::first() {
+  uint32_t first = _bitset & -_bitset;
+  return first ? as_FloatRegister(exact_log2(first)) : fnoreg;
+}
+
+template <>
+inline FloatRegister AbstractRegSet<FloatRegister>::last() {
+  if (_bitset == 0) { return fnoreg; }
+  int last = max_size() - 1 - count_leading_zeros(_bitset);
+  return as_FloatRegister(last);
+}
+
+
+
 class VFPSystemRegisterImpl;
 typedef VFPSystemRegisterImpl* VFPSystemRegister;
 class VFPSystemRegisterImpl : public AbstractRegisterImpl {
