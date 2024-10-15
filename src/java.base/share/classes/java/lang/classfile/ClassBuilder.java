@@ -194,7 +194,9 @@ public sealed interface ClassBuilder
     default ClassBuilder withField(String name,
                                    ClassDesc descriptor,
                                    int flags) {
-        return withField(name, descriptor, Util.buildingFlags(flags));
+        return withField(constantPool().utf8Entry(name),
+                         constantPool().utf8Entry(descriptor),
+                         flags);
     }
 
     /**

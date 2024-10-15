@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,8 @@
  */
 
 package nsk.jvmti.SetFieldModificationWatch;
+
+import jdk.test.lib.thread.TestThreadFactory;
 
 import java.io.PrintStream;
 
@@ -62,7 +64,7 @@ public class setfmodw001 {
     public static int run(String argv[], PrintStream ref) {
         setfmodw001 t = new setfmodw001();
         setfmodw001a t_a = new setfmodw001a();
-        setfmodw001b t_b = new setfmodw001b();
+        Thread t_b = TestThreadFactory.newThread(new setfmodw001b());
         t_b.start();
         synchronized (lock) {
             fld1 = fld1 + 1;
@@ -111,7 +113,7 @@ class setfmodw001a {
     int fld = 2;
 }
 
-class setfmodw001b extends Thread {
+class setfmodw001b implements Runnable  {
     float fld4;
     public void run() {
         synchronized (setfmodw001.lock) {

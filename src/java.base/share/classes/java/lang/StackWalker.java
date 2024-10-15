@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -170,7 +170,7 @@ public final class StackWalker {
          *
          * @see MethodType#fromMethodDescriptorString(String, ClassLoader)
          * @see MethodType#toMethodDescriptorString()
-         * @jvms 4.3.3 Method Descriptor
+         * @jvms 4.3.3 Method Descriptors
          *
          * @since 10
          */

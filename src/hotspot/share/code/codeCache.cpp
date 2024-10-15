@@ -1767,9 +1767,13 @@ void CodeCache::print_codelist(outputStream* st) {
     nmethod* nm = iter.method();
     ResourceMark rm;
     char* method_name = nm->method()->name_and_sig_as_C_string();
-    st->print_cr("%d %d %d %s [" INTPTR_FORMAT ", " INTPTR_FORMAT " - " INTPTR_FORMAT "]",
+    const char* jvmci_name = nullptr;
+#if INCLUDE_JVMCI
+    jvmci_name = nm->jvmci_name();
+#endif
+    st->print_cr("%d %d %d %s%s%s [" INTPTR_FORMAT ", " INTPTR_FORMAT " - " INTPTR_FORMAT "]",
                  nm->compile_id(), nm->comp_level(), nm->get_state(),
-                 method_name,
+                 method_name, jvmci_name ? " jvmci_name=" : "", jvmci_name ? jvmci_name : "",
                  (intptr_t)nm->header_begin(), (intptr_t)nm->code_begin(), (intptr_t)nm->code_end());
   }
 }
@@ -1811,12 +1815,20 @@ void CodeCache::write_perf_map(const char* filename, outputStream* st) {
   while (iter.next()) {
     CodeBlob *cb = iter.method();
     ResourceMark rm;
-    const char* method_name =
-      cb->is_nmethod() ? cb->as_nmethod()->method()->external_name()
-                       : cb->name();
-    fs.print_cr(INTPTR_FORMAT " " INTPTR_FORMAT " %s",
+    const char* method_name = nullptr;
+    const char* jvmci_name = nullptr;
+    if (cb->is_nmethod()) {
+      nmethod* nm = cb->as_nmethod();
+      method_name = nm->method()->external_name();
+#if INCLUDE_JVMCI
+      jvmci_name = nm->jvmci_name();
+#endif
+    } else {
+      method_name = cb->name();
+    }
+    fs.print_cr(INTPTR_FORMAT " " INTPTR_FORMAT " %s%s%s",
                 (intptr_t)cb->code_begin(), (intptr_t)cb->code_size(),
-                method_name);
+                method_name, jvmci_name ? " jvmci_name=" : "", jvmci_name ? jvmci_name : "");
   }
 }
 #endif // LINUX

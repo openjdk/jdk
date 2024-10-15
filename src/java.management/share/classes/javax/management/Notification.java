@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,46 +53,9 @@ import com.sun.jmx.mbeanserver.GetPropertyAction;
  *
  * @since 1.5
  */
-@SuppressWarnings("serial")  // serialVersionUID is not constant
 public class Notification extends EventObject {
 
-    // Serialization compatibility stuff:
-    // Two serial forms are supported in this class. The selected form depends
-    // on system property "jmx.serial.form":
-    //  - "1.0" for JMX 1.0
-    //  - any other value for JMX 1.1 and higher
-    //
-    // Serial version for old serial form
-    private static final long oldSerialVersionUID = 1716977971058914352L;
-    //
-    // Serial version for new serial form
-    private static final long newSerialVersionUID = -7516092053498031989L;
-    //
-    // Serializable fields in old serial form
-    private static final ObjectStreamField[] oldSerialPersistentFields =
-    {
-        new ObjectStreamField("message", String.class),
-        new ObjectStreamField("sequenceNumber", Long.TYPE),
-        new ObjectStreamField("source", Object.class),
-        new ObjectStreamField("sourceObjectName", ObjectName.class),
-        new ObjectStreamField("timeStamp", Long.TYPE),
-        new ObjectStreamField("type", String.class),
-        new ObjectStreamField("userData", Object.class)
-    };
-    //
-    // Serializable fields in new serial form
-    private static final ObjectStreamField[] newSerialPersistentFields =
-    {
-        new ObjectStreamField("message", String.class),
-        new ObjectStreamField("sequenceNumber", Long.TYPE),
-        new ObjectStreamField("source", Object.class),
-        new ObjectStreamField("timeStamp", Long.TYPE),
-        new ObjectStreamField("type", String.class),
-        new ObjectStreamField("userData", Object.class)
-    };
-    //
-    // Actual serial version and serial form
-    private static final long serialVersionUID;
+    private static final long serialVersionUID = -7516092053498031989L;
     /**
      * @serialField type String The notification type.
      *              A string expressed in a dot notation similar to Java properties.
@@ -108,28 +71,15 @@ public class Notification extends EventObject {
      * @serialField message String The notification message.
      * @serialField source Object The object on which the notification initially occurred.
      */
-    private static final ObjectStreamField[] serialPersistentFields;
-    private static boolean compat = false;
-    static {
-        try {
-            GetPropertyAction act = new GetPropertyAction("jmx.serial.form");
-            @SuppressWarnings("removal")
-            String form = AccessController.doPrivileged(act);
-            compat = (form != null && form.equals("1.0"));
-        } catch (Exception e) {
-            // OK: exception means no compat with 1.0, too bad
-        }
-        if (compat) {
-            serialPersistentFields = oldSerialPersistentFields;
-            serialVersionUID = oldSerialVersionUID;
-        } else {
-            serialPersistentFields = newSerialPersistentFields;
-            serialVersionUID = newSerialVersionUID;
-        }
-    }
-    //
-    // END Serialization compatibility stuff
-
+    private static final ObjectStreamField[] serialPersistentFields =
+    {
+        new ObjectStreamField("message", String.class),
+        new ObjectStreamField("sequenceNumber", Long.TYPE),
+        new ObjectStreamField("source", Object.class),
+        new ObjectStreamField("timeStamp", Long.TYPE),
+        new ObjectStreamField("type", String.class),
+        new ObjectStreamField("userData", Object.class)
+    };
     /**
      * @serial The notification type.
      *         A string expressed in a dot notation similar to Java properties.
@@ -378,21 +328,6 @@ public class Notification extends EventObject {
      */
     private void writeObject(ObjectOutputStream out)
             throws IOException {
-        if (compat) {
-            // Serializes this instance in the old serial form
-            //
-            ObjectOutputStream.PutField fields = out.putFields();
-            fields.put("type", type);
-            fields.put("sequenceNumber", sequenceNumber);
-            fields.put("timeStamp", timeStamp);
-            fields.put("userData", userData);
-            fields.put("message", message);
-            fields.put("source", source);
-            out.writeFields();
-        } else {
-            // Serializes this instance in the new serial form
-            //
-            out.defaultWriteObject();
-        }
+      out.defaultWriteObject();
     }
 }

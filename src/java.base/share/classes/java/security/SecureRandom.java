@@ -225,8 +225,8 @@ public class SecureRandom extends java.util.Random {
         if (provider == null || algorithm == null) {
             return false;
         } else {
-            return Boolean.parseBoolean(provider.getProperty(
-                    "SecureRandom." + algorithm + " ThreadSafe", "false"));
+            Service service = provider.getService("SecureRandom", algorithm);
+            return Boolean.parseBoolean(service.getAttribute("ThreadSafe"));
         }
     }
 
