@@ -36,7 +36,7 @@ import java.awt.event.ItemListener;
 /*
  * @test
  * @bug 4814163 5005195
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @summary Tests events fired by CheckboxMenuItem
  * @run main/manual CheckboxMenuItemEventsTest

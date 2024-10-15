@@ -32,7 +32,7 @@ import java.awt.event.ActionListener;
  * @test
  * @bug 6401956
  * @summary The right mark of the CheckboxMenu item is broken
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual AppearanceIfLargeFont
  */
