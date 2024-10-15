@@ -66,6 +66,8 @@ class VTransformVectorNode;
 class VTransformElementWiseVectorNode;
 class VTransformBoolVectorNode;
 class VTransformReductionVectorNode;
+class VTransformLoadVectorNode;
+class VTransformStoreVectorNode;
 
 // Result from VTransformNode::apply
 class VTransformApplyResult {
@@ -157,6 +159,7 @@ public:
   const GrowableArray<VTransformNode*>& vtnodes() const { return _vtnodes; }
 
   bool schedule();
+  bool has_store_to_load_forwarding_failure(const VLoopAnalyzer& vloop_analyzer) const;
   void apply_memops_reordering_with_schedule() const;
   void apply_vectorization_for_each_vtnode(uint& max_vector_length, uint& max_vector_width) const;
 
@@ -221,6 +224,7 @@ public:
   VTransformGraph& graph() { return _graph; }
 
   bool schedule() { return _graph.schedule(); }
+  bool has_store_to_load_forwarding_failure() const { return _graph.has_store_to_load_forwarding_failure(_vloop_analyzer); }
   void apply();
 
 private:
@@ -310,6 +314,8 @@ public:
   virtual VTransformElementWiseVectorNode* isa_ElementWiseVector() { return nullptr; }
   virtual VTransformBoolVectorNode* isa_BoolVector() { return nullptr; }
   virtual VTransformReductionVectorNode* isa_ReductionVector() { return nullptr; }
+  virtual VTransformLoadVectorNode* isa_LoadVector() { return nullptr; }
+  virtual VTransformStoreVectorNode* isa_StoreVector() { return nullptr; }
 
   virtual VTransformApplyResult apply(const VLoopAnalyzer& vloop_analyzer,
                                       const GrowableArray<Node*>& vnode_idx_to_transformed_node) const = 0;
@@ -472,6 +478,7 @@ public:
   VTransformLoadVectorNode(VTransform& vtransform, uint number_of_nodes) :
     VTransformVectorNode(vtransform, 3, number_of_nodes) {}
   LoadNode::ControlDependency control_dependency() const;
+  virtual VTransformLoadVectorNode* isa_LoadVector() override { return this; }
   virtual VTransformApplyResult apply(const VLoopAnalyzer& vloop_analyzer,
                                       const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "LoadVector"; };)
@@ -482,6 +489,7 @@ public:
   // req = 4 -> [ctrl, mem, adr, val]
   VTransformStoreVectorNode(VTransform& vtransform, uint number_of_nodes) :
     VTransformVectorNode(vtransform, 4, number_of_nodes) {}
+  virtual VTransformStoreVectorNode* isa_StoreVector() override { return this; }
   virtual VTransformApplyResult apply(const VLoopAnalyzer& vloop_analyzer,
                                       const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "StoreVector"; };)

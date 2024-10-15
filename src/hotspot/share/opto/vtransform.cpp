@@ -144,6 +144,205 @@ void VTransformApplyResult::trace(VTransformNode* vtnode) const {
 }
 #endif
 
+// We use two comparisons, because a subtraction could underflow.
+#define RETURN_CMP_VALUE_IF_NOT_EQUAL(a, b) \
+  if (a < b) { return -1; }                 \
+  if (a > b) { return  1; }
+
+// Helper-class for VTransformGraph::has_store_to_load_forwarding_failure.
+// It represents a memory region: [ptr, ptr + memory_size)
+class VPointerRecord : public StackObj {
+private:
+  Node* _base;        // ptr = base + offset + invar + scale * iv
+  int _scale;
+  Node* _invar;
+  int _offset;
+  uint _memory_size;
+  bool _is_load;      // load or store?
+  uint _order;        // order in schedule
+
+public:
+  VPointerRecord() {} // empty constructor for GrowableArray
+  VPointerRecord(const VPointer& vpointer, int iv_offset, int vector_length, uint order) :
+    _base(vpointer.base()),
+    _scale(vpointer.scale_in_bytes()),
+    _invar(vpointer.invar()),
+    _offset(vpointer.offset_in_bytes() + _scale * iv_offset),
+    _memory_size(vpointer.memory_size() * vector_length),
+    _is_load(vpointer.mem()->is_Load()),
+    _order(order) {}
+
+    Node* base()       const { return _base; }
+    int scale()        const { return _scale; }
+    Node* invar()      const { return _invar; }
+    int offset()       const { return _offset; }
+    uint memory_size() const { return _memory_size; }
+    bool is_load()     const { return _is_load; }
+    uint order()       const { return _order; }
+
+    static int cmp_for_sort_by_group(VPointerRecord* r1, VPointerRecord* r2) {
+      RETURN_CMP_VALUE_IF_NOT_EQUAL(r1->base()->_idx, r2->base()->_idx);
+      RETURN_CMP_VALUE_IF_NOT_EQUAL(r1->scale(),      r2->scale());
+      int r1_inva_idx = r1->invar() == nullptr ? 0 : r1->invar()->_idx;
+      int r2_inva_idx = r2->invar() == nullptr ? 0 : r2->invar()->_idx;
+      RETURN_CMP_VALUE_IF_NOT_EQUAL(r1_inva_idx,      r2_inva_idx);
+      return 0; // equal
+    }
+
+    static int cmp_for_sort(VPointerRecord* r1, VPointerRecord* r2) {
+      int cmp_group = cmp_for_sort_by_group(r1, r2);
+      if (cmp_group != 0) { return cmp_group; }
+
+      RETURN_CMP_VALUE_IF_NOT_EQUAL(r1->offset(),     r2->offset());
+      return 0; // equal
+    }
+
+    enum Aliasing { DIFFERENT_GROUP, BEFORE, EXACT_OVERLAP, PARTIAL_OVERLAP, AFTER };
+
+    Aliasing aliasing(VPointerRecord& other) {
+      VPointerRecord* p1 = this;
+      VPointerRecord* p2 = &other;
+      if (cmp_for_sort_by_group(p1, p2) != 0) { return DIFFERENT_GROUP; }
+
+      jlong offset1 = p1->offset();
+      jlong offset2 = p2->offset();
+      jlong memory_size1 = p1->memory_size();
+      jlong memory_size2 = p2->memory_size();
+
+      if (offset1 >= offset2 + memory_size2) { return AFTER; }
+      if (offset2 >= offset1 + memory_size1) { return BEFORE; }
+      if (offset1 == offset2 && memory_size1 == memory_size2) { return EXACT_OVERLAP; }
+      return PARTIAL_OVERLAP;
+    }
+
+#ifndef PRODUCT
+  void print() const {
+    tty->print("VPointerRecord[%s %dbytes, order(%4d), base",
+               _is_load ? "load " : "store", _memory_size, _order);
+    VPointer::print_con_or_idx(_base);
+    tty->print(" + offset(%4d)", _offset);
+    tty->print(" + invar");
+    VPointer::print_con_or_idx(_invar);
+    tty->print_cr(" + scale(%4d) * iv]", _scale);
+  }
+#endif
+};
+
+// Store-to-load-forwarding is a CPU memory optimization, where a load can directly fetch
+// its value from the store-buffer, rather than from the L1 cache. This is many CPU cycles
+// faster. However, this optimization comes with some restrictions, depending on the CPU.
+// Generally, Store-to-load forwarding works if the load and store memory regions match
+// exactly (same start and width). Generally problematic are partial overlaps - though
+// some CPU's can handle even some subsets of these cases. We conservatively assume that
+// all such partial overlaps lead to a store-to-load-forwarding failure, which means the
+// load has to stall until the store goes from the store-buffer into the L1 cache, incuring
+// a penalty of many CPU cycles.
+//
+// Unfortunately, vectorization can introduce such store-to-load-forwarding failures.
+// Example:
+//   for (int i = 10; i < SIZE; i++) {
+//       aI[i] = aI[i - 3] + 1;
+//   }
+//
+// Assume we have a 2-element vectors (2*4 = 8 bytes). This gives us this machine code:
+//   load_8_bytes( ptr + -12)
+//   store_8_bytes(ptr + 0)
+//   load_8_bytes( ptr + -4)
+//   store_8_bytes(ptr + 8)
+//   load_8_bytes( ptr + 4)
+//   store_8_bytes(ptr + 16)
+//   ...
+//
+// We see that eventually all loads are dependent on earlier stores, but the values cannot
+// be forwarded because there is some partial overlap.
+//
+// Preferrably, we would have some latency-based cost-model that accounts for such forwarding
+// failures, and decides if vectorization with forwarding failures is still profitable. For
+// now we go with a simpler huristic: we simply forbid vectorization if we can PROVE that
+// there will be a forwarding failure. This approach has at least 2 possible weaknesses:
+//  (1) There may be forwarding failures in cases where we cannot prove it.
+//      Example:
+//        for (int i = 10; i < SIZE; i++) {
+//            bI[i] = aI[i - 3] + 1;
+//        }
+//
+//      We do not know if aI and bI refer to the same array or not. However, it is reasonable
+//      to assume that if we have two different array references, that they most likely refer
+//      to different arrays, where we would have no forwarding failures.
+//  (2) There could be some loops where vectorization introduces forwarding failures, and thus
+//      the latency of the loop body is high, but this does not matter because it is dominated
+//      by other latency/throughput based costs in the loop body. This is a very rare case,
+//      and we can reasonably ignore it.
+//
+bool VTransformGraph::has_store_to_load_forwarding_failure(const VLoopAnalyzer& vloop_analyzer) const {
+  // Collect all pointers for scalar and vector loads/stores.
+  ResourceMark rm;
+  GrowableArray<VPointerRecord> records;
+  for (int i = 0; i < _schedule.length(); i++) {
+    VTransformNode* vtn = _schedule.at(i);
+    VTransformStoreVectorNode* store = vtn->isa_StoreVector();
+    if (store != nullptr) {
+      StoreNode* s0 = store->nodes().at(0)->as_Store();
+      const VPointer& p = vloop_analyzer.vpointers().vpointer(s0);
+      records.push(VPointerRecord(p, 0, store->nodes().length(), i));
+      continue;
+    }
+    VTransformLoadVectorNode* load = vtn->isa_LoadVector();
+    if (load != nullptr) {
+      LoadNode* l0 = load->nodes().at(0)->as_Load();
+      const VPointer& p = vloop_analyzer.vpointers().vpointer(l0);
+      records.push(VPointerRecord(p, 0, load->nodes().length(), i));
+      continue;
+    }
+    VTransformScalarNode* scalar = vtn->isa_Scalar();
+    if (scalar != nullptr && scalar->node()->is_Mem()) {
+      MemNode* m0 = scalar->node()->as_Mem();
+      const VPointer& p = vloop_analyzer.vpointers().vpointer(m0);
+      records.push(VPointerRecord(p, 0, 1, i));
+      continue;
+    }
+  }
+
+  // Sort the pointers by group (same base, invar and stride), and by offset.
+  records.sort(VPointerRecord::cmp_for_sort);
+
+  // For all pairs of pointers in the same group, check if they have partial overlap.
+  for (int i = 0; i < records.length(); i++) {
+    VPointerRecord& record1 = records.at(i);
+
+    for(int j = i + 1; j < records.length(); j++) {
+      VPointerRecord& record2 = records.at(j);
+
+      const VPointerRecord::Aliasing aliasing = record1.aliasing(record2);
+      if (aliasing == VPointerRecord::Aliasing::DIFFERENT_GROUP ||
+          aliasing == VPointerRecord::Aliasing::BEFORE) {
+        break; // We have reached the next group or pointers that are always after.
+      } else if (aliasing == VPointerRecord::Aliasing::EXACT_OVERLAP) {
+        continue;
+      } else {
+        assert(aliasing == VPointerRecord::Aliasing::PARTIAL_OVERLAP, "no other case can happen");
+        if ((record1.is_load() && !record2.is_load() && record1.order() > record2.order()) ||
+            (!record1.is_load() && record2.is_load() && record1.order() < record2.order())) {
+          // We predict that this leads to a store-to-load-forwarding failure penalty.
+#ifndef PRODUCT
+          if (_trace._rejections) {
+            tty->print_cr("VTransformGraph::has_store_to_load_forwarding_failure:");
+            tty->print_cr("  Partial overlap of store->load. We predict that this leads to");
+            tty->print_cr("  a store-to-load-forwarding failure penalty which makes");
+            tty->print_cr("  vectorization unprofitable. These are the two pointers:");
+            record1.print();
+            record2.print();
+          }
+#endif
+          return true;
+        }
+      }
+    }
+  }
+
+  return false;
+}
+
 Node* VTransformNode::find_transformed_input(int i, const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
   Node* n = vnode_idx_to_transformed_node.at(in(i)->_idx);
   assert(n != nullptr, "must find input IR node");
