@@ -5738,9 +5738,9 @@ opclass memory(indirect, indIndexScaled, indIndexScaledI2L, indIndexI2L, indInde
                indirectN, indIndexScaledN, indIndexScaledI2LN, indIndexI2LN, indIndexN, indOffIN, indOffLN, indirectX2P, indOffX2P);
 
 
-opclass memory_noindex(indirect, indOffI, indOffL,
-                       indirectN, indOffIN,
-                       indOffLN, indirectX2P, indOffX2P);
+opclass memory_noindex(indirect,
+                       indOffI1, indOffL1,indOffI2, indOffL2, indOffI4, indOffL4, indOffI8, indOffL8,
+                       indirectN, indOffIN, indOffLN, indirectX2P, indOffX2P);
 
 // iRegIorL2I is used for src inputs in rules for 32 bit int (I)
 // operations. it allows the src to be either an iRegI or a (ConvL2I
