@@ -25,11 +25,11 @@
  */
 package jdk.internal.classfile.impl;
 
-import java.lang.constant.*;
 import java.lang.classfile.BootstrapMethodEntry;
 import java.lang.classfile.Opcode;
 import java.lang.classfile.TypeKind;
 import java.lang.classfile.constantpool.*;
+import java.lang.constant.*;
 import java.lang.invoke.MethodHandleInfo;
 import java.util.ArrayList;
 import java.util.List;

@@ -40,7 +40,6 @@ import java.lang.classfile.constantpool.*;
 import java.lang.classfile.instruction.*;
 
 import jdk.internal.classfile.impl.*;
-import jdk.internal.classfile.impl.TransformImpl;
 import jdk.internal.javac.PreviewFeature;
 
 import static java.util.Objects.requireNonNull;

@@ -29,10 +29,10 @@ import java.lang.classfile.*;
 import java.lang.classfile.constantpool.*;
 import java.util.List;
 
+import jdk.internal.access.SharedSecrets;
+
 import static java.lang.classfile.AnnotationValue.*;
 import static java.lang.classfile.TypeAnnotation.TargetInfo.*;
-
-import jdk.internal.access.SharedSecrets;
 
 public final class AnnotationReader {
     private AnnotationReader() { }
