@@ -600,6 +600,32 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         @Override
+        public boolean equalsSymbol(ClassDesc symbol) {
+            if (symbol.isPrimitive()) // implicit null check
+                return false;
+
+            var mySym = this.sym;
+            if (mySym != null)
+                return mySym.equals(symbol);
+
+            boolean equals;
+            if (isArrayDescriptor(ref1)) {
+                if (!symbol.isArray())
+                    return false;
+                equals = ref1.equalsString(symbol.descriptorString());
+            } else {
+                if (!symbol.isClassOrInterface())
+                    return false;
+                var desc = symbol.descriptorString();
+                equals = ref1.equalsRegion(desc, 1, desc.length() - 1);
+            }
+
+            if (equals)
+                this.sym = symbol;
+            return equals;
+        }
+
+        @Override
         public boolean equals(Object o) {
             if (o == this) return true;
             if (o instanceof ClassEntryImpl other) {
