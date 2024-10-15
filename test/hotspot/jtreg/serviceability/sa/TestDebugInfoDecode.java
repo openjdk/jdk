@@ -107,7 +107,7 @@ public class TestDebugInfoDecode {
         if (args == null || args.length == 0) {
             try {
                 theApp = new LingeredApp();
-                LingeredApp.startApp(theApp);
+                LingeredApp.startApp(theApp, "-Xmx1g", "-Xcomp");
                 createAnotherToAttach(theApp.getPid());
             } finally {
                 LingeredApp.stopApp(theApp);
