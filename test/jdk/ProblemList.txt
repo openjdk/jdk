@@ -644,8 +644,6 @@ sun/security/provider/PolicyParser/PrincipalExpansionError.java 8039280 generic-
 
 sun/security/pkcs11/sslecc/ClientJSSEServerJSSE.java            8316183 linux-ppc64le
 
-sun/security/tools/keytool/GenKeyPairSigner.java                8342002 generic-all
-
 ############################################################################
 
 # jdk_sound

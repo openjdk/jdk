@@ -744,9 +744,6 @@ public class Desktop {
      *
      * @param openURIHandler handler
      *
-     * {@code RuntimePermission("canProcessApplicationEvents")}
-     * permission, or the calling thread is not allowed to create a
-     * subprocess
      * @throws UnsupportedOperationException if the current platform
      * does not support the {@link Desktop.Action#APP_OPEN_URI} action
      * @since 9
