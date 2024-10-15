@@ -1,0 +1,194 @@
+public super class ComplexLockingAndMultiThreading
+  version 52:0
+{
+  private static final Field lock:"Ljava/lang/Object;";
+
+  public Method "<init>":"()V"
+    stack  1 locals  1
+  {
+         aload_0;
+         invokespecial     Method java/lang/Object."<init>":"()V";
+         return;
+  }
+  public static Method main:"([Ljava/lang/String;)V"
+    stack  5 locals  7
+  {
+         bipush            10;
+         anewarray         class java/lang/Thread;
+         astore_1;
+         iconst_0;
+         istore_2;
+  L8:    stack_frame_type  append;
+         locals_map        class "[Ljava/lang/Thread;", int;
+         iload_2;
+         aload_1;
+         arraylength;
+         if_icmpge         L41;
+         aload_1;
+         iload_2;
+         new               class java/lang/Thread;
+         dup;
+         invokedynamic     InvokeDynamic REF_invokeStatic:Method java/lang/invoke/LambdaMetafactory.metafactory:
+                           "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;":
+                           run:"()Ljava/lang/Runnable;" {
+                             MethodType "()V",
+                             MethodHandle REF_invokeStatic:Method ComplexLockingAndMultiThreading.lambda$main$0:"()V",
+                             MethodType "()V"
+                           };
+         invokespecial     Method java/lang/Thread."<init>":"(Ljava/lang/Runnable;)V";
+         aastore;
+         aload_1;
+         iload_2;
+         aaload;
+         invokevirtual     Method java/lang/Thread.start:"()V";
+         iinc              2, 1;
+         goto              L8;
+  L41:   stack_frame_type  chop1;
+         aload_1;
+         astore_2;
+         aload_2;
+         arraylength;
+         istore_3;
+         iconst_0;
+         istore            4;
+  L49:   stack_frame_type  append;
+         locals_map        class "[Ljava/lang/Thread;", int, int;
+         iload             4;
+         iload_3;
+         if_icmpge         L93;
+         aload_2;
+         iload             4;
+         aaload;
+         astore            5;
+         try               T0;
+         aload             5;
+         invokevirtual     Method java/lang/Thread.join:"()V";
+         endtry            T0;
+         goto              L87;
+         catch             T0 java/lang/InterruptedException;
+         stack_frame_type  full;
+         locals_map        class "[Ljava/lang/String;", class "[Ljava/lang/Thread;", class "[Ljava/lang/Thread;", int, int, class java/lang/Thread;
+         stack_map         class java/lang/InterruptedException;
+         astore            6;
+         getstatic         Field java/lang/System.out:"Ljava/io/PrintStream;";
+         aload             6;
+         invokevirtual     Method java/lang/InterruptedException.getMessage:"()Ljava/lang/String;";
+         invokedynamic     InvokeDynamic REF_invokeStatic:Method java/lang/invoke/StringConcatFactory.makeConcatWithConstants:
+                           "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;":
+                           makeConcatWithConstants:"(Ljava/lang/String;)Ljava/lang/String;" {
+                             String "Thread interrupted: \u0001"
+                           };
+         invokevirtual     Method java/io/PrintStream.println:"(Ljava/lang/String;)V";
+  L87:   stack_frame_type  chop1;
+         iinc              4, 1;
+         goto              L49;
+  L93:   stack_frame_type  chop3;
+         getstatic         Field java/lang/System.out:"Ljava/io/PrintStream;";
+         ldc               String "All threads completed.";
+         invokevirtual     Method java/io/PrintStream.println:"(Ljava/lang/String;)V";
+         return;
+  }
+  private static synchronized Method synchronizedMethod:"()V"
+    stack  2 locals  4100
+  {
+         getstatic         Field lock:"Ljava/lang/Object;";
+         dup;
+         astore_0;
+         monitorenter;
+         try               T0;
+         iconst_0;
+         istore_1;
+  L8:    stack_frame_type  append;
+         locals_map        class java/lang/Object, int;
+         iload_1;
+         sipush            10000;
+         if_icmpge         L21;
+         iinc              1, 1;
+         goto              L8;
+  L21:   stack_frame_type  chop1;
+         iconst_0;
+         istore_1;
+  L23:   stack_frame_type  append;
+         locals_map        int;
+         iload_1;
+         iinc              1, 1;
+         ldc               int 93724;
+         if_icmplt         L23;
+         aload_0;
+         monitorexit;
+         endtry            T0;
+         goto              L42;
+         catch             T0 #0;
+         catch             T1 #0;
+         try               T1;
+         stack_frame_type  full;
+         locals_map        class java/lang/Object;
+         stack_map         class java/lang/Throwable;
+         astore_2;
+         aload_0;
+         monitorexit;
+         endtry            T1;
+         aload_2;
+         athrow;
+  L42:   stack_frame_type  chop1;
+         getstatic         Field lock:"Ljava/lang/Object;";
+         dup;
+         astore_0;
+         monitorenter;
+         try               T2;
+         iconst_0;
+         istore_1;
+  L50:   stack_frame_type  append;
+         locals_map        class java/lang/Object, int;
+         iload_1;
+         sipush            27000;
+         if_icmpge         L63;
+         iinc              1, 1;
+         goto              L50;
+  L63:   stack_frame_type  chop1;
+         aload_0;
+         monitorexit;
+         endtry            T2;
+         goto              L73;
+         catch             T2 #0;
+         catch             T3 #0;
+         try               T3;
+         stack_frame_type  stack1;
+         stack_map         class java/lang/Throwable;
+         astore_3;
+         aload_0;
+         monitorexit;
+         endtry            T3;
+         aload_3;
+         athrow;
+  L73:   stack_frame_type  chop1;
+         return;
+  }
+  private static synthetic Method lambda$main$0:"()V"
+    stack  2 locals  1
+  {
+         iconst_0;
+         istore_0;
+  L2:    stack_frame_type  append;
+         locals_map        int;
+         iload_0;
+         sipush            10000;
+         if_icmpge         L18;
+         invokestatic      Method synchronizedMethod:"()V";
+         iinc              0, 1;
+         goto              L2;
+  L18:   stack_frame_type  chop1;
+         return;
+  }
+  static Method "<clinit>":"()V"
+    stack  2 locals  0
+  {
+         new               class java/lang/Object;
+         dup;
+         invokespecial     Method java/lang/Object."<init>":"()V";
+         putstatic         Field lock:"Ljava/lang/Object;";
+         return;
+  }
+
+  public static final InnerClass Lookup = class java/lang/invoke/MethodHandles$Lookup of class java/lang/invoke/MethodHandles;
+} // end Class ComplexLockingAndMultiThreading compiled from "ComplexLockingAndMultiThreading.java"

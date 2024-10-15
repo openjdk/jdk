@@ -24,20 +24,18 @@
 /*
  * @test
  * @bug 8335662
- * @summary Execute main() method
+ * @summary Run test with multi threading and complex locking
+ *          to trigger OSR with large number of locals
+ * @compile ComplexLockingAndMultiThreading.jasm
  *
  * @run main/othervm -XX:+UseOnStackReplacement -XX:TieredStopAtLevel=1
- *      Test8335662
+ *      TestComplexLockingAndMultiThreading
  */
 
-import java.lang.reflect.Method;
-
-public class Test8335662 {
+public class TestComplexLockingAndMultiThreading {
 
     public static void main(String... argv) throws Exception {
-        Object[] methodArgs = new Object[]{null};
-        Method m = ComplexLockingAndMultiThreading.class.getMethod("main", String[].class);
-        m.invoke(null, methodArgs);
+        ComplexLockingAndMultiThreading.main(argv);
     }
 
 }
