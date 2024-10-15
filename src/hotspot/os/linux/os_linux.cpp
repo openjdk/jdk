@@ -5053,16 +5053,6 @@ int os::open(const char *path, int oflag, int mode) {
   return fd;
 }
 
-// return current position of file pointer
-jlong os::current_file_offset(int fd) {
-  return (jlong)::lseek(fd, (off_t)0, SEEK_CUR);
-}
-
-// move file pointer to the specified offset
-jlong os::seek_to_file_offset(int fd, jlong offset) {
-  return (jlong)::lseek(fd, (off_t)offset, SEEK_SET);
-}
-
 static jlong slow_thread_cpu_time(Thread *thread, bool user_sys_cpu_time);
 
 static jlong fast_cpu_time(Thread *thread) {

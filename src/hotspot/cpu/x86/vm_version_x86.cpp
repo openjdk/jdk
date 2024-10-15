@@ -437,6 +437,7 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     __ cmpl(rax, 0x80000);
     __ jcc(Assembler::notEqual, vector_save_restore);
 
+#ifndef PRODUCT
     bool save_apx = UseAPX;
     VM_Version::set_apx_cpuFeatures();
     UseAPX = true;
@@ -453,6 +454,7 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     __ movq(Address(rsi, 8), r31);
 
     UseAPX = save_apx;
+#endif
 #endif
     __ bind(vector_save_restore);
     //
