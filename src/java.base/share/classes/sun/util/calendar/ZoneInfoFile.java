@@ -289,9 +289,7 @@ public final class ZoneInfoFile {
             }
         }
         // old us time-zone names
-        for (var key : ZoneId.SHORT_IDS.keySet()) {
-            aliases.put(key, ZoneId.SHORT_IDS.get(key));
-        }
+        aliases.putAll(ZoneId.SHORT_IDS);
     }
 
     /////////////////////////Ser/////////////////////////////////
