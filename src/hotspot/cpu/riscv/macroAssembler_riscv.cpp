@@ -941,7 +941,7 @@ void MacroAssembler::li(Register Rd, int64_t imm) {
 
 void MacroAssembler::load_link_jump(const address source, Register temp) {
   assert(temp != noreg && temp != x0, "expecting a register");
-  assert(temp != x5 && temp != x1, "temp register must not be x1/x5.");
+  assert(temp != x5, "temp register must not be x5.");
   assert_cond(source != nullptr);
   int64_t distance = source - pc();
   assert(is_simm32(distance), "Must be");
@@ -1015,7 +1015,7 @@ void MacroAssembler::jr(Register Rd, int32_t offset) {
 void MacroAssembler::call(const address dest, Register temp) {
   assert_cond(dest != nullptr);
   assert(temp != noreg, "expecting a register");
-  assert(temp != x1 && temp != x5, "temp register must not be x1/x5.");
+  assert(temp != x5, "temp register must not be x5.");
   int32_t offset = 0;
   la(temp, dest, offset);
   jalr(temp, offset);
@@ -1023,12 +1023,12 @@ void MacroAssembler::call(const address dest, Register temp) {
 
 void MacroAssembler::jalr(Register Rs, int32_t offset) {
   assert(Rs != noreg, "expecting a register");
-  assert(Rs != x1 && Rs != x5, "Rs register must not be x1/x5.");
+  assert(Rs != x5, "Rs register must not be x5.");
   Assembler::jalr(x1, Rs, offset);
 }
 
 void MacroAssembler::rt_call(address dest, Register tmp) {
-  assert(tmp != x1 && tmp != x5, "tmp register must not be x1/x5.");
+  assert(tmp != x5, "tmp register must not be x5.");
   CodeBlob *cb = CodeCache::find_blob(dest);
   RuntimeAddress target(dest);
   if (cb) {
@@ -1768,7 +1768,7 @@ void MacroAssembler::pop_CPU_state(bool restore_vectors, int vector_size_in_byte
 
 static int patch_offset_in_jal(address branch, int64_t offset) {
   assert(Assembler::is_simm21(offset) && ((offset % 2) == 0),
-         "offset is too large to be patched in one jal instruction!\n");
+         "offset (%ld) is too large to be patched in one jal instruction!\n", offset);
   Assembler::patch(branch, 31, 31, (offset >> 20) & 0x1);                       // offset[20]    ==> branch[31]
   Assembler::patch(branch, 30, 21, (offset >> 1)  & 0x3ff);                     // offset[10:1]  ==> branch[30:21]
   Assembler::patch(branch, 20, 20, (offset >> 11) & 0x1);                       // offset[11]    ==> branch[20]
@@ -3664,6 +3664,7 @@ void MacroAssembler::far_jump(const Address &entry, Register tmp) {
 }
 
 void MacroAssembler::far_call(const Address &entry, Register tmp) {
+  assert(tmp != x5, "tmp register must not be x5.");
   assert(CodeCache::find_blob(entry.target()) != nullptr,
          "destination of far call not found in code cache");
   assert(entry.rspec().type() == relocInfo::external_word_type

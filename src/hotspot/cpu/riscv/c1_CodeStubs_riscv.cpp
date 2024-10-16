@@ -93,8 +93,8 @@ void RangeCheckStub::emit_code(LIR_Assembler* ce) {
     stub_id = C1StubId::throw_range_check_failed_id;
   }
   // t0 and t1 are used as args in generate_exception_throw，
-  // so use x9 as the tmp register for rt_call.
-  __ rt_call(Runtime1::entry_for(stub_id), x9);
+  // so use x1/ra as the tmp register for rt_call.
+  __ rt_call(Runtime1::entry_for(stub_id), ra);
   ce->add_call_info_here(_info);
   ce->verify_oop_map(_info);
   debug_only(__ should_not_reach_here());
