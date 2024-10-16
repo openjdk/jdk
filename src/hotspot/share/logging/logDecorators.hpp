@@ -76,22 +76,19 @@ class LogDecorators {
 
     DefaultUndecoratedSelection() : _selection(LogSelection::Invalid) {}
 
-  public:
-    template<typename... Tags>
-    DefaultUndecoratedSelection(LogLevelType level, LogTagType first, Tags... rest) : _selection(LogSelection::Invalid) {
-      static_assert(1 + sizeof...(rest) <= LogTag::MaxTags + 1,
-                    "Too many tags specified!");
-
-      LogTagType tag_arr[LogTag::MaxTags + 1] = { first, rest... };
-
-      if (sizeof...(rest) == LogTag::MaxTags) {
-        assert(tag_arr[sizeof...(rest)] == LogTag::__NO_TAG,
-               "Too many tags specified! Can only have up to " SIZE_FORMAT " tags in a tag set.", LogTag::MaxTags);
-      }
-
+    DefaultUndecoratedSelection(LogLevelType level, LogTagType t0, LogTagType t1, LogTagType t2,
+                                LogTagType t3, LogTagType t4) : _selection(LogSelection::Invalid) {
+      LogTagType tag_arr[LogTag::MaxTags] = { t0, t1, t2, t3, t4 };
       _selection = LogSelection(tag_arr, false, level);
     }
 
+  public:
+    template <LogLevelType Level, LogTagType T0, LogTagType T1 = LogTag::__NO_TAG, LogTagType T2 = LogTag::__NO_TAG,
+              LogTagType T3 = LogTag::__NO_TAG, LogTagType T4 = LogTag::__NO_TAG, LogTagType GuardTag = LogTag::__NO_TAG>
+    static DefaultUndecoratedSelection make() {
+      STATIC_ASSERT(GuardTag == LogTag::__NO_TAG);
+      return DefaultUndecoratedSelection(Level, T0, T1, T2, T3, T4);
+    }
     const LogSelection& selection() const { return _selection; }
   };
 

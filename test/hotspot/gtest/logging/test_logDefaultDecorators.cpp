@@ -34,9 +34,9 @@ class TestLogDecorators : public testing::Test {
 
   static const size_t defaults_cnt = 3;
   LD::DefaultUndecoratedSelection defaults[defaults_cnt] = {
-    { LogLevelType::Trace, LogTagType::_gc },
-    { LogLevelType::Trace, LogTagType::_jit },
-    { LogLevelType::NotMentioned, LogTagType::_ref },
+    LD::DefaultUndecoratedSelection::make<LogLevelType::Trace, LOG_TAGS(gc)>(),
+    LD::DefaultUndecoratedSelection::make<LogLevelType::Trace, LOG_TAGS(jit)>(),
+    LD::DefaultUndecoratedSelection::make<LogLevelType::NotMentioned, LOG_TAGS(ref)>(),
   };
 
 public:

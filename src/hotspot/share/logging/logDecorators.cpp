@@ -26,8 +26,6 @@
 #include "runtime/os.hpp"
 
 const LogLevelType AnyLevel = LogLevelType::NotMentioned;
-#define UNDECORATED_DEFAULTS \
-  UNDECORATED_DEFAULT(AnyLevel, LOG_TAGS(jit, inlining))
 
 template <LogDecorators::Decorator d>
 struct AllBitmask {
@@ -49,12 +47,18 @@ const char* LogDecorators::_name[][2] = {
 #undef DECORATOR
 };
 
+#define UNDECORATED_DEFAULTS \
+  UNDECORATED_DEFAULT(AnyLevel, LOG_TAGS(jit, inlining))
+
 const LogDecorators::DefaultUndecoratedSelection LogDecorators::default_decorators[] = {
-#define UNDECORATED_DEFAULT(level, ...) LogDecorators::DefaultUndecoratedSelection(level, __VA_ARGS__),
+#define UNDECORATED_DEFAULT(level, ...) LogDecorators::DefaultUndecoratedSelection::make<level, __VA_ARGS__>(),
   UNDECORATED_DEFAULTS
-#undef UNDECORATED_TAGSET
+#undef UNDECORATED_DEFAULT
 };
-const size_t LogDecorators::number_of_default_decorators = sizeof(default_decorators) / sizeof(LogDecorators::DefaultUndecoratedSelection);
+
+#undef UNDERCORATED_DEFAULTS
+
+const size_t LogDecorators::number_of_default_decorators = ARRAY_SIZE(default_decorators);
 
 LogDecorators::Decorator LogDecorators::from_string(const char* str) {
   for (size_t i = 0; i < Count; i++) {
