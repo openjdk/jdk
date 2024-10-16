@@ -223,9 +223,7 @@ public sealed interface ConstantPoolBuilder
      * @param type the symbolic descriptor for a field type
      */
     default NameAndTypeEntry nameAndTypeEntry(String name, ClassDesc type) {
-        var ret = (NameAndTypeEntryImpl)nameAndTypeEntry(utf8Entry(name), utf8Entry(type.descriptorString()));
-        ret.typeSym = type;
-        return ret;
+        return nameAndTypeEntry(utf8Entry(name), utf8Entry(type));
     }
 
     /**
@@ -238,9 +236,7 @@ public sealed interface ConstantPoolBuilder
      * @param type the symbolic descriptor for a method type
      */
     default NameAndTypeEntry nameAndTypeEntry(String name, MethodTypeDesc type) {
-        var ret = (NameAndTypeEntryImpl)nameAndTypeEntry(utf8Entry(name), utf8Entry(type.descriptorString()));
-        ret.typeSym = type;
-        return ret;
+        return nameAndTypeEntry(utf8Entry(name), utf8Entry(type));
     }
 
     /**
@@ -365,7 +361,7 @@ public sealed interface ConstantPoolBuilder
      * it is returned; otherwise, a new entry is added and the new entry is
      * returned.
      *
-     * @param refKind the reference kind of the method handle {@jvms 4.4.8}
+     * @param refKind the reference kind of the method handle (JVMS {@jvms 4.4.8})
      * @param reference the constant pool entry describing the field or method
      */
     MethodHandleEntry methodHandleEntry(int refKind, MemberRefEntry reference);
@@ -474,10 +470,11 @@ public sealed interface ConstantPoolBuilder
     }
 
     /**
-     * {@return A {@link ConstantValueEntry} descripbing the provided
+     * {@return A {@link ConstantValueEntry} describing the provided
      * Integer, Long, Float, Double, or String constant}
      *
      * @param c the constant
+     * @see ConstantValueEntry#constantValue()
      */
     default ConstantValueEntry constantValueEntry(ConstantDesc c) {
         if (c instanceof Integer i) return intEntry(i);

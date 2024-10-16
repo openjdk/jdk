@@ -83,7 +83,17 @@ public class HtmlTree extends Content {
      *
      * @param tag the name
      */
-    public HtmlTree(HtmlTag tag) {
+    public static HtmlTree of(HtmlTag tag) {
+        return new HtmlTree(tag);
+    }
+
+    /**
+     * Creates an {@code HTMLTree} object representing an HTML element
+     * with the given name.
+     *
+     * @param tag the name
+     */
+    HtmlTree(HtmlTag tag) {
         this.tag = Objects.requireNonNull(tag);
     }
 
@@ -366,6 +376,46 @@ public class HtmlTree extends Content {
     }
 
     /**
+     * Creates an HTML {@code BODY} element with the given style.
+     *
+     * @param style the style
+     * @return the element
+     */
+    public static HtmlTree BODY(HtmlStyle style) {
+        return new HtmlTree(HtmlTag.BODY)
+                .setStyle(style);
+    }
+
+    private static final HtmlTree BR_INSTANCE = unmodifiableTree(HtmlTag.BR);
+
+    /**
+     * {@return an HTML {@code BR} element}
+     */
+    public static HtmlTree BR() {
+        return BR_INSTANCE;
+    }
+
+    /**
+     * Creates an HTML {@code BUTTON} element with the given id.
+     *
+     * @param id the id
+     * @return the element
+     */
+    public static HtmlTree BUTTON(HtmlId id) {
+        return new HtmlTree(HtmlTag.BUTTON).setId(id);
+    }
+
+    /**
+     * Creates an HTML {@code BUTTON} element with the given style.
+     *
+     * @param style the style
+     * @return the element
+     */
+    public static HtmlTree BUTTON(HtmlStyle style) {
+        return new HtmlTree(HtmlTag.BUTTON).setStyle(style);
+    }
+
+    /**
      * Creates an HTML {@code CAPTION} element with the given content.
      *
      * @param body content for the element
@@ -377,6 +427,15 @@ public class HtmlTree extends Content {
     }
 
     /**
+     * Creates an empty HTML {@code CODE} element.
+     *
+     * @return the element
+     */
+    public static HtmlTree CODE() {
+        return new HtmlTree(HtmlTag.CODE);
+    }
+
+    /**
      * Creates an HTML {@code CODE} element with the given content.
      *
      * @param body content for the element
@@ -385,6 +444,15 @@ public class HtmlTree extends Content {
     public static HtmlTree CODE(Content body) {
         return new HtmlTree(HtmlTag.CODE)
                 .add(body);
+    }
+
+    /**
+     * Creates an empty HTML {@code DD} element.
+     *
+     * @return the element
+     */
+    public static HtmlTree DD() {
+        return new HtmlTree(HtmlTag.DD);
     }
 
     /**
@@ -418,27 +486,14 @@ public class HtmlTree extends Content {
     }
 
     /**
-     * Creates an HTML {@code DL} element with the given style.
+     * Creates an HTML {@code DIV} element with the given id.
      *
-     * @param style the style
+     * @param id the id
      * @return the element
      */
-    public static HtmlTree DL(HtmlStyle style) {
-        return new HtmlTree(HtmlTag.DL)
-                .setStyle(style);
-    }
-
-    /**
-     * Creates an HTML {@code DL} element with the given style and content.
-     *
-     * @param style the style
-     * @param body  the content
-     * @return the element
-     */
-    public static HtmlTree DL(HtmlStyle style, Content body) {
-        return new HtmlTree(HtmlTag.DL)
-                .setStyle(style)
-                .add(body);
+    public static HtmlTree DIV(HtmlId id) {
+        return new HtmlTree(HtmlTag.DIV)
+                .setId(id);
     }
 
     /**
@@ -477,6 +532,30 @@ public class HtmlTree extends Content {
     }
 
     /**
+     * Creates an HTML {@code DL} element with the given style.
+     *
+     * @param style the style
+     * @return the element
+     */
+    public static HtmlTree DL(HtmlStyle style) {
+        return new HtmlTree(HtmlTag.DL)
+                .setStyle(style);
+    }
+
+    /**
+     * Creates an HTML {@code DL} element with the given style and content.
+     *
+     * @param style the style
+     * @param body  the content
+     * @return the element
+     */
+    public static HtmlTree DL(HtmlStyle style, Content body) {
+        return new HtmlTree(HtmlTag.DL)
+                .setStyle(style)
+                .add(body);
+    }
+
+    /**
      * Creates an HTML {@code DT} element with the given content.
      *
      * @param body the content
@@ -484,6 +563,17 @@ public class HtmlTree extends Content {
      */
     public static HtmlTree DT(Content body) {
         return new HtmlTree(HtmlTag.DT)
+                .add(body);
+    }
+
+    /**
+     * Creates an HTML {@code EM} element with the given content.
+     *
+     * @param body content for the element
+     * @return the element
+     */
+    public static HtmlTree EM(String body) {
+        return new HtmlTree(HtmlTag.EM)
                 .add(body);
     }
 
@@ -573,6 +663,15 @@ public class HtmlTree extends Content {
         };
     }
 
+    private static final HtmlTree HR_INSTANCE = unmodifiableTree(HtmlTag.HR);
+
+    /**
+     * {@return an HTML {@code HR} element}
+     */
+    public static HtmlTree HR() {
+        return HR_INSTANCE;
+    }
+
     /**
      * Creates an HTML {@code HTML} element with the given {@code lang} attribute,
      * and {@code HEAD} and {@code BODY} contents.
@@ -628,6 +727,27 @@ public class HtmlTree extends Content {
         return new HtmlTree(HtmlTag.LABEL)
                 .put(HtmlAttr.FOR, forLabel)
                 .add(body);
+    }
+
+    /**
+     * Creates an empty HTML {@code LI} element.
+     *
+     * @return the element
+     */
+    public static HtmlTree LI() {
+        return new HtmlTree(HtmlTag.LI);
+    }
+
+
+    /**
+     * Creates an HTML {@code LI} element with the given style.
+     *
+     * @param style the style
+     * @return the element
+     */
+    public static HtmlTree LI(HtmlStyle style) {
+        return new HtmlTree(HtmlTag.LI)
+                .setStyle(style);
     }
 
     /**
@@ -774,6 +894,25 @@ public class HtmlTree extends Content {
     public static HtmlTree P(HtmlStyle style, Content body) {
         return P(body)
                 .setStyle(style);
+    }
+
+    /**
+     * Creates an empty HTML {@code PRE} element.
+     *
+     * @return the element
+     */
+    public static HtmlTree PRE() {
+        return new HtmlTree(HtmlTag.PRE);
+    }
+
+    /**
+     * Creates an HTML {@code PRE} element with the given style
+     *
+     * @param style  the style
+     * @return the element
+     */
+    public static HtmlTree PRE(HtmlStyle style) {
+        return new HtmlTree(HtmlTag.PRE).setStyle(style);
     }
 
     /**
@@ -972,6 +1111,15 @@ public class HtmlTree extends Content {
     }
 
     /**
+     * Creates an empty HTML {@code UL} element.
+     *
+     * @return the element
+     */
+    public static HtmlTree UL() {
+        return new HtmlTree(HtmlTag.UL);
+    }
+
+    /**
      * Creates an HTML {@code UL} element with the given style.
      *
      * @param style the style
@@ -979,6 +1127,19 @@ public class HtmlTree extends Content {
      */
     public static HtmlTree UL(HtmlStyle style) {
         return new HtmlTree(HtmlTag.UL)
+                .setStyle(style);
+    }
+
+    /**
+     * Creates an HTML {@code UL} element with the given id and style.
+     *
+     * @param id the id
+     * @param style the style
+     * @return the element
+     */
+    public static HtmlTree UL(HtmlId id, HtmlStyle style) {
+        return new HtmlTree(HtmlTag.UL)
+                .setId(id)
                 .setStyle(style);
     }
 
@@ -1013,6 +1174,15 @@ public class HtmlTree extends Content {
         return new HtmlTree(HtmlTag.UL)
                 .setStyle(style)
                 .addAll(items, mapper);
+    }
+
+    private static final HtmlTree WBR_INSTANCE = unmodifiableTree(HtmlTag.WBR);
+
+    /**
+     * {@return an HTML {@code WBR} element}
+     */
+    public static HtmlTree WBR() {
+        return WBR_INSTANCE;
     }
 
     @Override
@@ -1151,5 +1321,18 @@ public class HtmlTree extends Content {
         rawString = rawString.replaceAll("\\b\\s{2,}\\b", " ");
         // remove extra whitespaces
         return rawString.trim();
+    }
+
+    private static HtmlTree unmodifiableTree(HtmlTag tag) {
+        return new HtmlTree(tag) {
+            @Override
+            public HtmlTree add(Content c) {
+                throw new UnsupportedOperationException(this.tag + " add");
+            }
+            @Override
+            public HtmlTree put(HtmlAttr attrName, String attrValue) {
+                throw new UnsupportedOperationException(this.tag + " put");
+            }
+        };
     }
 }

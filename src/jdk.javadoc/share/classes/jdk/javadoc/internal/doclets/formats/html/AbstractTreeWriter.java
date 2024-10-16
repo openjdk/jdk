@@ -79,10 +79,9 @@ public abstract class AbstractTreeWriter extends HtmlDocletWriter {
     protected void addLevelInfo(TypeElement parent, Collection<TypeElement> collection,
                                 Hierarchy hierarchy, Content content) {
         if (!collection.isEmpty()) {
-            var ul = new HtmlTree(HtmlTag.UL);
+            var ul = HtmlTree.UL();
             for (TypeElement local : collection) {
-                var li = new HtmlTree(HtmlTag.LI);
-                li.setStyle(HtmlStyles.circle);
+                var li = HtmlTree.LI(HtmlStyles.circle);
                 addPartialInfo(local, li);
                 addExtendsImplements(parent, local, li);
                 addLevelInfo(local, hierarchy.subtypes(local), hierarchy, li);   // Recurse

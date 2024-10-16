@@ -98,6 +98,7 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
     final int instanceKlassFieldInfoStreamOffset = getFieldOffset("InstanceKlass::_fieldinfo_stream", Integer.class, "Array<u1>*");
     final int instanceKlassAnnotationsOffset = getFieldOffset("InstanceKlass::_annotations", Integer.class, "Annotations*");
     final int instanceKlassMiscFlagsOffset = getFieldOffset("InstanceKlass::_misc_flags._flags", Integer.class, "u2");
+    final int klassMiscFlagsOffset = getFieldOffset("Klass::_misc_flags._flags", Integer.class, "u1");
     final int klassVtableStartOffset = getFieldValue("CompilerToVM::Data::Klass_vtable_start_offset", Integer.class, "int");
     final int klassVtableLengthOffset = getFieldValue("CompilerToVM::Data::Klass_vtable_length_offset", Integer.class, "int");
 
@@ -113,10 +114,10 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
     final int arrayU1DataOffset = getFieldOffset("Array<u1>::_data", Integer.class);
     final int arrayU2DataOffset = getFieldOffset("Array<u2>::_data", Integer.class);
 
-    final int jvmAccHasFinalizer = getConstant("JVM_ACC_HAS_FINALIZER", Integer.class);
+    final int jvmAccHasFinalizer = getConstant("KlassFlags::_misc_has_finalizer", Integer.class);
     final int jvmFieldFlagInternalShift = getConstant("FieldInfo::FieldFlags::_ff_injected", Integer.class);
     final int jvmFieldFlagStableShift = getConstant("FieldInfo::FieldFlags::_ff_stable", Integer.class);
-    final int jvmAccIsCloneableFast = getConstant("JVM_ACC_IS_CLONEABLE_FAST", Integer.class);
+    final int jvmAccIsCloneableFast = getConstant("KlassFlags::_misc_is_cloneable_fast", Integer.class);
 
     // These modifiers are not public in Modifier so we get them via vmStructs.
     final int jvmAccSynthetic = getConstant("JVM_ACC_SYNTHETIC", Integer.class);

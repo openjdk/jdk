@@ -36,6 +36,8 @@ import static java.util.stream.Collectors.joining;
 import static jdk.internal.constant.ConstantUtils.MAX_ARRAY_TYPE_DESC_DIMENSIONS;
 import static jdk.internal.constant.ConstantUtils.arrayDepth;
 import static jdk.internal.constant.ConstantUtils.binaryToInternal;
+import static jdk.internal.constant.ConstantUtils.concat;
+import static jdk.internal.constant.ConstantUtils.forPrimitiveType;
 import static jdk.internal.constant.ConstantUtils.internalToBinary;
 import static jdk.internal.constant.ConstantUtils.validateBinaryClassName;
 import static jdk.internal.constant.ConstantUtils.validateInternalClassName;
@@ -82,7 +84,7 @@ public sealed interface ClassDesc
      */
     static ClassDesc of(String name) {
         validateBinaryClassName(name);
-        return ClassDesc.ofDescriptor("L" + binaryToInternal(name) + ";");
+        return ClassDesc.ofDescriptor(concat("L", binaryToInternal(name), ";"));
     }
 
     /**
@@ -108,7 +110,7 @@ public sealed interface ClassDesc
      */
     static ClassDesc ofInternalName(String name) {
         validateInternalClassName(name);
-        return ClassDesc.ofDescriptor("L" + name + ";");
+        return ClassDesc.ofDescriptor(concat("L", name, ";"));
     }
 
     /**
@@ -131,8 +133,8 @@ public sealed interface ClassDesc
             return of(className);
         }
         validateMemberName(className, false);
-        return ofDescriptor("L" + binaryToInternal(packageName) +
-                "/" + className + ";");
+        return ofDescriptor('L' + binaryToInternal(packageName) +
+                '/' + className + ';');
     }
 
     /**
@@ -164,7 +166,7 @@ public sealed interface ClassDesc
     static ClassDesc ofDescriptor(String descriptor) {
         // implicit null-check
         return (descriptor.length() == 1)
-               ? Wrapper.forPrimitiveType(descriptor.charAt(0)).basicClassDescriptor()
+               ? forPrimitiveType(descriptor, 0)
                // will throw IAE on descriptor.length == 0 or if array dimensions too long
                : ReferenceClassDescImpl.of(descriptor);
     }
@@ -360,7 +362,7 @@ public sealed interface ClassDesc
             ClassDesc c = this;
             for (int i=0; i<depth; i++)
                 c = c.componentType();
-            return c.displayName() + "[]".repeat(depth);
+            return c.displayName().concat("[]".repeat(depth));
         }
         else
             throw new IllegalStateException(descriptorString());

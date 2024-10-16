@@ -51,7 +51,7 @@ void _SCDynamicStoreCallBack(SCDynamicStoreRef store, CFArrayRef changedKeys, vo
         jmethodID jm_Config_refresh = (*env)->GetStaticMethodID(env, jc_Config, "refresh", "()V");
         CHECK_NULL(jm_Config_refresh);
         (*env)->CallStaticVoidMethod(env, jc_Config, jm_Config_refresh);
-        if ((*env)->ExceptionOccurred(env) != NULL) {
+        if ((*env)->ExceptionCheck(env)) {
             (*env)->ExceptionClear(env);
         }
         if (createdFromAttach) {

@@ -1615,7 +1615,7 @@ class RecordCompilationTests extends CompilationTestCase {
         }
         assert tAnno != null;
         Assert.check(tAnno.targetInfo().targetType().name().equals(positionType));
-        String annotationName = tAnno.classSymbol().displayName();
+        String annotationName = tAnno.annotation().classSymbol().displayName();
         Assert.check(annotationName.startsWith(annoName));
     }
     private void checkAnno(Attribute<?> rAnnos,

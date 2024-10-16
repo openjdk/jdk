@@ -59,6 +59,7 @@ import static com.sun.tools.javac.parser.Tokens.TokenKind.EQ;
 import static com.sun.tools.javac.parser.Tokens.TokenKind.GT;
 import static com.sun.tools.javac.parser.Tokens.TokenKind.IMPORT;
 import static com.sun.tools.javac.parser.Tokens.TokenKind.LT;
+import com.sun.tools.javac.parser.VirtualParser.VirtualScanner;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
 import static com.sun.tools.javac.resources.CompilerProperties.Fragments.ImplicitAndExplicitNotAllowed;
 import static com.sun.tools.javac.resources.CompilerProperties.Fragments.VarAndExplicitNotAllowed;
@@ -456,9 +457,13 @@ public class JavacParser implements Parser {
     }
 
     protected JCErroneous syntaxError(int pos, List<? extends JCTree> errs, Error errorKey) {
+        return syntaxError(pos, errs, errorKey, false);
+    }
+
+    private JCErroneous syntaxError(int pos, List<? extends JCTree> errs, Error errorKey, boolean noEofError) {
         setErrorEndPos(pos);
         JCErroneous err = F.at(pos).Erroneous(errs);
-        reportSyntaxError(err, errorKey);
+        reportSyntaxError(err, errorKey, noEofError);
         if (errs != null) {
             JCTree last = errs.last();
             if (last != null)
@@ -485,9 +490,13 @@ public class JavacParser implements Parser {
      * arguments, unless one was already reported at the same position.
      */
     protected void reportSyntaxError(JCDiagnostic.DiagnosticPosition diagPos, Error errorKey) {
+        reportSyntaxError(diagPos, errorKey, false);
+    }
+
+    private void reportSyntaxError(JCDiagnostic.DiagnosticPosition diagPos, Error errorKey, boolean noEofError) {
         int pos = diagPos.getPreferredPosition();
         if (pos > S.errPos() || pos == Position.NOPOS) {
-            if (token.kind == EOF) {
+            if (token.kind == EOF && !noEofError) {
                 log.error(DiagnosticFlag.SYNTAX, diagPos, Errors.PrematureEof);
             } else {
                 log.error(DiagnosticFlag.SYNTAX, diagPos, errorKey);
@@ -4092,6 +4101,13 @@ public class JavacParser implements Parser {
                     checkSourceLevel(token.pos, Feature.IMPLICIT_CLASSES);
                     defs.appendList(topLevelMethodOrFieldDeclaration(mods, docComment));
                     isImplicitClass = true;
+                } else if (isDefiniteStatementStartToken()) {
+                    int startPos = token.pos;
+                    List<JCStatement> statements = blockStatement();
+                    defs.append(syntaxError(startPos,
+                                            statements,
+                                            Errors.StatementNotExpected,
+                                            true));
                 } else {
                     JCTree def = typeDeclaration(mods, docComment);
                     if (def instanceof JCExpressionStatement statement)
@@ -4324,6 +4340,9 @@ public class JavacParser implements Parser {
             JCDiagnostic.Error error;
             if (parseModuleInfo) {
                 error = Errors.ExpectedModuleOrOpen;
+            } else if (Feature.IMPLICIT_CLASSES.allowedInSource(source) &&
+                       (!preview.isPreview(Feature.IMPLICIT_CLASSES) || preview.isEnabled())) {
+                error = Errors.ClassMethodOrFieldExpected;
             } else if (allowRecords) {
                 error = Errors.Expected4(CLASS, INTERFACE, ENUM, "record");
             } else {
@@ -4906,6 +4925,12 @@ public class JavacParser implements Parser {
 
                 return defs;
             }
+        } else if (token.kind == LPAREN && type.hasTag(IDENT)) {
+            log.error(DiagnosticFlag.SYNTAX, pos, Errors.InvalidMethDeclRetTypeReq);
+
+            return List.of(methodDeclaratorRest(
+                    pos, mods, null, names.init, typarams,
+                    false, true, false, dc));
         }
 
         return List.of(F.Erroneous());
@@ -5019,13 +5044,17 @@ public class JavacParser implements Parser {
             // Parsing formalParameters sets the receiverParam, if present
             List<JCVariableDecl> params = List.nil();
             List<JCExpression> thrown = List.nil();
+            boolean unclosedParameterList;
             if (!isRecord || name != names.init || token.kind == LPAREN) {
                 params = formalParameters();
+                unclosedParameterList = token.pos == endPosTable.errorEndPos;
                 if (!isVoid) type = bracketsOpt(type);
                 if (token.kind == THROWS) {
                     nextToken();
                     thrown = qualidentList(true);
                 }
+            } else {
+                unclosedParameterList = false;
             }
 
             saveDanglingDocComments(dc);
@@ -5039,14 +5068,18 @@ public class JavacParser implements Parser {
                 if (token.kind == DEFAULT) {
                     accept(DEFAULT);
                     defaultValue = annotationValue();
+                    accept(SEMI);
                 } else {
                     defaultValue = null;
+                    accept(SEMI, tk -> Errors.Expected2(LBRACE, SEMI));
                 }
-                accept(SEMI);
                 if (token.pos <= endPosTable.errorEndPos) {
                     // error recovery
-                    skip(false, true, false, false);
-                    if (token.kind == LBRACE) {
+                    // look if there is a probable missing opening brace,
+                    // and if yes, parse as a block
+                    boolean parseAsBlock = openingBraceMissing(unclosedParameterList);
+
+                    if (parseAsBlock) {
                         body = block();
                     }
                 }
@@ -5060,6 +5093,84 @@ public class JavacParser implements Parser {
             return result;
         } finally {
             this.receiverParam = prevReceiverParam;
+        }
+    }
+
+    /**
+     * After seeing a method header, and not seeing an opening left brace,
+     * attempt to estimate if acting as if the left brace was present and
+     * parsing the upcoming code will get better results than not parsing
+     * the code as a block.
+     *
+     * The estimate is as follows:
+     * - tokens are skipped until member, statement or identifier is found,
+     * - then, if there is a left brace, parse as a block,
+     * - otherwise, if the head was broken, do not parse as a block,
+     * - otherwise, look at the next token and:
+     *   - if it definitelly starts a statement, parse as a block,
+     *   - otherwise, if it is a closing/right brace, count opening and closing
+     *     braces in the rest of the file, to see if imaginarily "adding" an opening
+     *     brace would lead to a balanced count - if yes, parse as a block,
+     *   - otherwise, speculatively parse the following code as a block, and if
+     *     it contains statements that cannot be members, parse as a block,
+     *   - otherwise, don't parse as a block.
+     *
+     * @param unclosedParameterList whether there was a serious problem in the
+     *                              parameters list
+     * @return true if and only if the following code should be parsed as a block.
+     */
+    private boolean openingBraceMissing(boolean unclosedParameterList) {
+        skip(false, true, !unclosedParameterList, !unclosedParameterList);
+
+        if (token.kind == LBRACE) {
+            return true;
+        } else if (unclosedParameterList) {
+            return false;
+        } else {
+            return switch (token.kind) {
+                //definitelly sees a statement:
+                case CASE, DEFAULT, IF, FOR, WHILE, DO, TRY, SWITCH,
+                    RETURN, THROW, BREAK, CONTINUE, ELSE, FINALLY,
+                    CATCH, THIS, SUPER, NEW -> true;
+                case RBRACE -> {
+                    //check if adding an opening brace would balance out
+                    //the opening and closing braces:
+                    int braceBalance = 1;
+                    VirtualScanner virtualScanner = new VirtualScanner(S);
+
+                    virtualScanner.nextToken();
+
+                    while (virtualScanner.token().kind != TokenKind.EOF) {
+                        switch (virtualScanner.token().kind) {
+                            case LBRACE -> braceBalance++;
+                            case RBRACE -> braceBalance--;
+                        }
+                        virtualScanner.nextToken();
+                    }
+
+                    yield braceBalance == 0;
+                }
+                default -> {
+                    //speculatively try to parse as a block, and check
+                    //if the result would suggest there is a block
+                    //e.g.: it contains a statement that is not
+                    //a member declaration
+                    JavacParser speculative = new VirtualParser(this);
+                    JCBlock speculativeResult =
+                            speculative.block();
+                    if (!speculativeResult.stats.isEmpty()) {
+                        JCStatement last = speculativeResult.stats.last();
+                        yield !speculativeResult.stats.stream().allMatch(s -> s.hasTag(VARDEF) ||
+                                s.hasTag(CLASSDEF) ||
+                                s.hasTag(BLOCK) ||
+                                s == last) ||
+                            !(last instanceof JCExpressionStatement exprStatement &&
+                            exprStatement.expr.hasTag(ERRONEOUS));
+                    } else {
+                        yield false;
+                    }
+                }
+            };
         }
     }
 

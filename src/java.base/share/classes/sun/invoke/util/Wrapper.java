@@ -304,21 +304,6 @@ public enum Wrapper {
         throw newIllegalArgumentException("not primitive: " + type);
     }
 
-    /** Return the wrapper that corresponds to the provided basic type char.
-     *  The basic type char must be for one of the eight primitive types, or void.
-     *  @throws IllegalArgumentException for unexpected types
-     */
-    public static Wrapper forPrimitiveType(char basicTypeChar) {
-        Wrapper w = FROM_CHAR[(basicTypeChar + (basicTypeChar >> 1)) & 0xf];
-        if (w == null || w.basicTypeChar != basicTypeChar) {
-            throw basicTypeError(basicTypeChar);
-        }
-        if (w == OBJECT) {
-            throw newIllegalArgumentException("not primitive: " + basicTypeChar);
-        }
-        return w;
-    }
-
     /** Return the wrapper that wraps values into the given wrapper type.
      *  If it is {@code Object}, return {@code OBJECT}.
      *  Otherwise, it must be a wrapper type.

@@ -224,6 +224,7 @@ public class LinkTaglet extends BaseTaglet {
                 labelContent = plainOrCode(isPlain, Text.of(utils.getSimpleName(refClass)));
             }
             return htmlWriter.getLink(new HtmlLinkInfo(config, HtmlLinkInfo.Kind.PLAIN, refClass)
+                    .skipPreview(isPlain)
                     .label(labelContent));
         } else if (refMem == null) {
             // This is a fragment reference since refClass and refFragment are not null but refMem is null.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,8 @@
  */
 
 package nsk.jvmti.ClearFieldModificationWatch;
+
+import jdk.test.lib.thread.TestThreadFactory;
 
 import java.io.PrintStream;
 
@@ -58,7 +60,7 @@ public class clrfmodw001 {
     public static int run(String argv[], PrintStream ref) {
         clrfmodw001 t = new clrfmodw001();
         clrfmodw001a t_a = new clrfmodw001a();
-        clrfmodw001b t_b = new clrfmodw001b();
+        Thread t_b = TestThreadFactory.newThread(new clrfmodw001b());
         for (int i = 0; i < 5; i++) {
             setWatch(i);
         }
@@ -91,7 +93,7 @@ class clrfmodw001a {
     int fld = 2;
 }
 
-class clrfmodw001b extends Thread {
+class clrfmodw001b implements Runnable {
     float fld4;
     public void run() {
         clrfmodw001.clearWatch(4);

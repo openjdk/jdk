@@ -882,11 +882,9 @@ static void X11SD_GetRasInfo(JNIEnv *env,
     } else
 #endif /* MITSHM */
     if (xpriv->lockType == X11SD_LOCK_BY_XIMAGE) {
-        int x, y, w, h;
+        int x, y;
         x = pRasInfo->bounds.x1;
         y = pRasInfo->bounds.y1;
-        w = pRasInfo->bounds.x2 - x;
-        h = pRasInfo->bounds.y2 - y;
 
         xpriv->img = X11SD_GetImage(env, xsdo, &pRasInfo->bounds, lockFlags);
         if (xpriv->img) {

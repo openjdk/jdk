@@ -277,14 +277,14 @@ private:
   // While holding the heap lock, allocate memory for a single object or LAB  which is to be entirely contained
   // within a single HeapRegion as characterized by req.
   //
-  // Precondition: req.size() <= ShenandoahHeapRegion::humongous_threshold_words().
+  // Precondition: !ShenandoahHeapRegion::requires_humongous(req.size())
   HeapWord* allocate_single(ShenandoahAllocRequest& req, bool& in_new_region);
 
   // While holding the heap lock, allocate memory for a humongous object which spans one or more regions that
   // were previously empty.  Regions that represent humongous objects are entirely dedicated to the humongous
   // object.  No other objects are packed into these regions.
   //
-  // Precondition: req.size() > ShenandoahHeapRegion::humongous_threshold_words().
+  // Precondition: ShenandoahHeapRegion::requires_humongous(req.size())
   HeapWord* allocate_contiguous(ShenandoahAllocRequest& req);
 
   // Change region r from the Mutator partition to the GC's Collector partition.  This requires that the region is entirely empty.

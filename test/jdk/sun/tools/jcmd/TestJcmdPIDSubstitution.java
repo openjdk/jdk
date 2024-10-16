@@ -51,6 +51,8 @@ public class TestJcmdPIDSubstitution {
         verifyOutputFilenames("GC.heap_dump", FILENAME);
         if (Platform.isLinux()) {
             verifyOutputFilenames("Compiler.perfmap", FILENAME);
+        }
+        if (Platform.isLinux() || Platform.isWindows()) {
             verifyOutputFilenames("System.dump_map", "-F=%s".formatted(FILENAME));
         }
     }

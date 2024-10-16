@@ -24,7 +24,7 @@
 /*
  * @test id=default
  * @summary Test virtual threads using Object.wait/notifyAll
- * @modules java.base/java.lang:+open
+ * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
  * @run junit/othervm --enable-native-access=ALL-UNNAMED MonitorWaitNotify
  */
@@ -46,8 +46,7 @@ import java.util.stream.Stream;
 import java.util.stream.Collectors;
 
 import jdk.test.lib.thread.VThreadScheduler;
-import jdk.test.lib.thread.VThreadRunner;
-import jdk.test.lib.thread.VThreadRunner;
+import jdk.test.lib.thread.VThreadRunner;   // ensureParallelism requires jdk.management
 import jdk.test.lib.thread.VThreadPinner;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeAll;

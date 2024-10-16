@@ -967,6 +967,10 @@ class G1MergeHeapRootsTask : public WorkerTask {
       _merged[G1GCPhaseTimes::MergeRSCards] += increment;
     }
 
+    void dec_remset_cards(size_t decrement) {
+      _merged[G1GCPhaseTimes::MergeRSCards] -= decrement;
+    }
+
     size_t merged(uint i) const { return _merged[i]; }
   };
 
@@ -1091,6 +1095,11 @@ class G1MergeHeapRootsTask : public WorkerTask {
 
     G1MergeCardSetStats stats() {
       _merge_card_set_cache.flush();
+      // Compensation for the dummy cards that were initially pushed into the
+      // card cache.
+      // We do not need to compensate for the other counters because the dummy
+      // card mark will never update another counter because it is initally "dirty".
+      _stats.dec_remset_cards(G1MergeCardSetCache::CacheSize);
       return _stats;
     }
   };
@@ -1378,6 +1387,10 @@ public:
         G1MergeCardSetClosure merge(_scan_state);
         G1ClearBitmapClosure clear(g1h);
         G1CombinedClosure combined(&merge, &clear);
+
+        if (_initial_evacuation) {
+          G1HeapRegionRemSet::iterate_for_merge(g1h->young_regions_cardset(), merge);
+        }
 
         g1h->collection_set_iterate_increment_from(&combined, nullptr, worker_id);
         G1MergeCardSetStats stats = merge.stats();

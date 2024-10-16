@@ -988,17 +988,23 @@ public final class Locale implements Cloneable, Serializable {
             if (locale != null) {
                 return locale;
             }
-            return LOCALE_CACHE.computeIfAbsent(baseloc, LOCALE_CREATOR);
+            return LocaleCache.cache(baseloc);
         } else {
             LocaleKey key = new LocaleKey(baseloc, extensions);
-            return LOCALE_CACHE.computeIfAbsent(key, LOCALE_CREATOR);
+            return LocaleCache.cache(key);
         }
     }
 
-    private static final ReferencedKeyMap<Object, Locale> LOCALE_CACHE
-            = ReferencedKeyMap.create(true, ReferencedKeyMap.concurrentHashMapSupplier());
+    private static final class LocaleCache implements Function<Object, Locale> {
+        private static final ReferencedKeyMap<Object, Locale> LOCALE_CACHE
+                = ReferencedKeyMap.create(true, ReferencedKeyMap.concurrentHashMapSupplier());
 
-    private static final Function<Object, Locale> LOCALE_CREATOR = new Function<>() {
+        private static final Function<Object, Locale> LOCALE_CREATOR = new LocaleCache();
+
+        public static Locale cache(Object key) {
+            return LOCALE_CACHE.computeIfAbsent(key, LOCALE_CREATOR);
+        }
+
         @Override
         public Locale apply(Object key) {
             if (key instanceof BaseLocale base) {
@@ -1007,7 +1013,7 @@ public final class Locale implements Cloneable, Serializable {
             LocaleKey lk = (LocaleKey)key;
             return new Locale(lk.base, lk.exts);
         }
-    };
+    }
 
     private static final class LocaleKey {
 
@@ -2318,12 +2324,11 @@ public final class Locale implements Cloneable, Serializable {
             // If we cannot get the message format pattern, then we use a simple
             // hard-coded pattern.  This should not occur in practice unless the
             // installation is missing some core files (FormatData etc.).
-            StringBuilder result = new StringBuilder();
-            result.append((String)displayNames[1]);
-            if (displayNames.length > 2) {
-                result.append(" (");
-                result.append((String)displayNames[2]);
-                result.append(')');
+            StringBuilder result = new StringBuilder((String) displayNames[1]);
+            if (displayNames[2] != null) {
+                result.append(" (")
+                        .append((String) displayNames[2])
+                        .append(')');
             }
             return result.toString();
         }

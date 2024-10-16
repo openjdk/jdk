@@ -109,7 +109,7 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
         }
         String signature = utils.flatSignature((ExecutableElement) member, typeElement);
         if (signature.length() > 2) {
-            content.add(new HtmlTree(HtmlTag.WBR));
+            content.add(HtmlTree.WBR());
         }
         content.add(signature);
 
@@ -144,7 +144,7 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
         // Add explicit line break between method type parameters and
         // return type in member summary table to avoid random wrapping.
         if (typeParameters.charCount() > 10) {
-            target.add(new HtmlTree(HtmlTag.BR));
+            target.add(HtmlTree.BR());
         } else {
             target.add(Entity.NO_BREAK_SPACE);
         }
@@ -233,7 +233,7 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
         Content params = getParameters(member, false);
         if (params.charCount() > 2) {
             // only add <wbr> for non-empty parameters
-            target.add(new HtmlTree(HtmlTag.WBR));
+            target.add(HtmlTree.WBR());
         }
         target.add(params);
     }

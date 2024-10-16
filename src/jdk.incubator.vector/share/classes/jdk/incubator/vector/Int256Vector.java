@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -503,9 +503,16 @@ final class Int256Vector extends IntVector {
                                    VectorMask<Integer> m) {
         return (Int256Vector)
             super.selectFromTemplate((Int256Vector) v,
-                                     (Int256Mask) m);  // specialize
+                                     Int256Mask.class, (Int256Mask) m);  // specialize
     }
 
+    @Override
+    @ForceInline
+    public Int256Vector selectFrom(Vector<Integer> v1,
+                                   Vector<Integer> v2) {
+        return (Int256Vector)
+            super.selectFromTemplate((Int256Vector) v1, (Int256Vector) v2);  // specialize
+    }
 
     @ForceInline
     @Override
@@ -842,6 +849,13 @@ final class Int256Vector extends IntVector {
                 throw new IllegalArgumentException("VectorShuffle length and species length differ");
             int[] shuffleArray = toArray();
             return s.shuffleFromArray(shuffleArray, 0).check(s);
+        }
+
+        @Override
+        @ForceInline
+        public Int256Shuffle wrapIndexes() {
+            return VectorSupport.wrapShuffleIndexes(ETYPE, Int256Shuffle.class, this, VLENGTH,
+                                                    (s) -> ((Int256Shuffle)(((AbstractShuffle<Integer>)(s)).wrapIndexesTemplate())));
         }
 
         @ForceInline

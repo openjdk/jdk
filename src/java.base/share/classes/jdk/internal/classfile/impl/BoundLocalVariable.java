@@ -46,7 +46,7 @@ public final class BoundLocalVariable
 
     @Override
     public ClassDesc typeSymbol() {
-        return ClassDesc.ofDescriptor(type().stringValue());
+        return Util.fieldTypeSymbol(type());
     }
 
     @Override
