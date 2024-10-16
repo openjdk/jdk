@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -346,10 +346,14 @@ handleNonSeekAvailable(FD fd, long *pbytes) {
         /* PeekNamedPipe fails when at EOF.  In that case we
          * simply make *pbytes = 0 which is consistent with the
          * behavior we get on Solaris when an fd is at EOF.
-         * The only alternative is to raise and Exception,
-         * which isn't really warranted.
+         * The only alternative is to raise an Exception,
+         * which isn't really warranted. It also fails if the
+         * handle is to the NUL device (ERROR_INVALID_FUNCTION),
+         * so *pbytes = 0 is also set in that case.
          */
-        if (GetLastError() != ERROR_BROKEN_PIPE) {
+        DWORD lastError = GetLastError();
+        if (lastError != ERROR_BROKEN_PIPE &&
+            lastError != ERROR_INVALID_FUNCTION) {
             return FALSE;
         }
         *pbytes = 0;
