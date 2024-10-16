@@ -2125,7 +2125,6 @@ enum SSLCipher {
                         "fragment (" + bb.remaining() + "). Needs to be " +
                         "more than tag size (" + tagSize + ") for " +
                         ContentType.nameOf(contentType) + " content");
-
                 }
 
                 byte[] sn = sequence;
@@ -2385,7 +2384,6 @@ enum SSLCipher {
                         "fragment (" + bb.remaining() + "). Needs to be " +
                         "more than tag size (" + tagSize + ") for " +
                         ContentType.nameOf(contentType) + " content");
-
                 }
 
                 byte[] sn = sequence;
