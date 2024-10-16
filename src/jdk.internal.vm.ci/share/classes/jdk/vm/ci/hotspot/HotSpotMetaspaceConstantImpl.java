@@ -43,7 +43,7 @@ final class HotSpotMetaspaceConstantImpl implements HotSpotMetaspaceConstant, VM
     private HotSpotMetaspaceConstantImpl(MetaspaceObject metaspaceObject, boolean compressed) {
         this.metaspaceObject = metaspaceObject;
         this.compressed = compressed;
-        if (compressed && !isCompressible()) {
+        if (compressed && !canBeStoredInCompressibleMetaSpace()) {
             throw new IllegalArgumentException("constant cannot be compressed: " + metaspaceObject);
         }
     }
@@ -91,6 +91,10 @@ final class HotSpotMetaspaceConstantImpl implements HotSpotMetaspaceConstant, VM
         if (compressed) {
             return false;
         }
+        return canBeStoredInCompressibleMetaSpace();
+    }
+
+    private boolean canBeStoredInCompressibleMetaSpace() {
         if (metaspaceObject instanceof HotSpotResolvedJavaType t && !t.isArray()) {
             // As of JDK-8338526, interface and abstract types are not stored
             // in compressible metaspace.
