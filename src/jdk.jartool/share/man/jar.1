@@ -127,15 +127,20 @@ You can use the following options to customize the actions of any
 operation mode included in the \f[V]jar\f[R] command.
 .TP
 \f[V]-C\f[R] \f[I]DIR\f[R]
-Changes the specified directory and includes the \f[I]files\f[R]
-specified at the end of the command line.
-When used in extract mode, extracts the JAR file to the specified
-directory.
+When used with the create operation mode, this option changes the
+specified directory and includes the \f[I]files\f[R] specified at the
+end of the command line.
 .RS
 .PP
 \f[V]jar\f[R] [\f[I]OPTION\f[R] ...]
 [ [\f[V]--release\f[R] \f[I]VERSION\f[R]] [\f[V]-C\f[R] \f[I]dir\f[R]]
 \f[I]files\f[R]]
+.PP
+When used with the extract operation mode, this option considers the
+specified directory as the destination directory into which the JAR file
+will be extracted.
+Unlike with the create operation mode, this option can be specified only
+once with the extract operation mode.
 .RE
 .TP
 \f[V]-f\f[R] \f[I]FILE\f[R] or \f[V]--file=\f[R]\f[I]FILE\f[R]
