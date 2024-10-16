@@ -58,10 +58,10 @@ class RegionsTree : public VMATree {
       inline VMATree::StateType out_state() { return _node->val().out.type(); }
       inline size_t distance_from(NodeHelper& other) { return position() - other.position(); }
       inline NativeCallStackStorage::StackIndex out_stack_index() { return _node->val().out.stack(); }
-      inline MemTag in_flag() { return _node->val().in.mem_tag(); }
-      inline MemTag out_flag() { return _node->val().out.mem_tag(); }
-      inline void set_in_flag(MemTag flag) { _node->val().in.set_flag(flag); }
-      inline void set_out_flag(MemTag flag) { _node->val().out.set_flag(flag); }
+      inline MemTag in_tag() { return _node->val().in.mem_tag(); }
+      inline MemTag out_tag() { return _node->val().out.mem_tag(); }
+      inline void set_in_tag(MemTag tag) { _node->val().in.set_tag(tag); }
+      inline void set_out_tag(MemTag tag) { _node->val().out.set_tag(tag); }
       inline void print_on(outputStream* st) {
         auto st_str = [&](int s){
           return s == (int)VMATree::StateType::Released ? "Rl" :
@@ -71,9 +71,9 @@ class RegionsTree : public VMATree {
                      "%s, %s <|> %s, %s",
                      p2i((address)position()),
                      st_str((int)in_state()),
-                     NMTUtil::tag_to_name(in_flag()),
+                     NMTUtil::tag_to_name(in_tag()),
                      st_str((int)out_state()),
-                     NMTUtil::tag_to_name(out_flag())
+                     NMTUtil::tag_to_name(out_tag())
                      );
       }
     };
@@ -119,7 +119,7 @@ class RegionsTree : public VMATree {
     size_t rgn_size = 0;
     size_t comm_size = 0;
     size_t base = 0;
-    MemTag flag = mtNone;
+
     visit_in_order([&](Node* node) {
       NodeHelper curr(node);
       if (prev.is_valid()) {
@@ -129,14 +129,14 @@ class RegionsTree : public VMATree {
         rgn_size = 0;
       }
       prev = curr;
-      if (curr.is_released_begin() || begin_node.out_flag() != curr.out_flag()) {
+      if (curr.is_released_begin() || begin_node.out_tag() != curr.out_tag()) {
         auto st = stack(curr);
         size_t r_size = curr.distance_from(begin_node);
         if (rgn_size == 0) {
           prev.clear_node();
           return true;
         }
-        ReservedMemoryRegion rmr((address)begin_node.position(), rgn_size, st, begin_node.out_flag());
+        ReservedMemoryRegion rmr((address)begin_node.position(), rgn_size, st, begin_node.out_tag());
         if (!func(rmr))
           return false;
         rgn_size = 0;
@@ -152,8 +152,8 @@ class RegionsTree : public VMATree {
     });
   }
 
-  inline RegionData make_region_data(const NativeCallStack& ncs, MemTag flag) {
-    return RegionData(_ncs_storage.push(ncs), flag);
+  inline RegionData make_region_data(const NativeCallStack& ncs, MemTag tag) {
+    return RegionData(_ncs_storage.push(ncs), tag);
   }
 
   inline const NativeCallStack stack(NodeHelper& node) {

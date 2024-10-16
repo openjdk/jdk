@@ -123,8 +123,6 @@ private:
     NativeCallStackStorage::StackIndex stack() const {
      return sidx;
     }
-
-    void set_flag(MemTag mem_tag) { type_flag[1] = (uint8_t)mem_tag;}
   };
 
   // An IntervalChange indicates a change in state between two intervals. The incoming state

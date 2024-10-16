@@ -38,15 +38,11 @@ ReservedMemoryRegion RegionsTree::find_reserved_region(address addr) {
 }
 
 VMATree::SummaryDiff RegionsTree::commit_region(address addr, size_t size, const NativeCallStack& stack) {
-  //TODO: This part should be removed after 8335091
-  ReservedMemoryRegion rgn = find_reserved_region(addr);
-  return commit_mapping((VMATree::position)addr, size, make_region_data(stack, rgn.mem_tag()));
+  return commit_mapping((VMATree::position)addr, size, make_region_data(stack, mtNone), /*use tag inplace*/ true);
 }
 
 VMATree::SummaryDiff RegionsTree::uncommit_region(address addr, size_t size) {
-  //TODO: This part will be removed when 8335091 merged.
-  ReservedMemoryRegion rgn = find_reserved_region(addr);
-  return reserve_mapping((VMATree::position)addr, size, make_region_data(NativeCallStack::empty_stack(), rgn.mem_tag()));
+  return uncommit_mapping((VMATree::position)addr, size, make_region_data(NativeCallStack::empty_stack(), mtNone));
 }
 
 

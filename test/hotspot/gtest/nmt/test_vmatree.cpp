@@ -198,6 +198,7 @@ TEST_VM_F(NMTVMATreeTest, UseFlagInplace) {
         EXPECT_EQ(VMATree::StateType::Reserved, node->val().out.type());
       }
     }
+    return true;
   });
 }
 
