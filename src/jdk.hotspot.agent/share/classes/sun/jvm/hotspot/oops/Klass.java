@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -230,6 +230,4 @@ public class Klass extends Metadata implements ClassConstants {
   public boolean isAbstract()               { return getAccessFlagsObj().isAbstract(); }
   public boolean isSuper()                  { return getAccessFlagsObj().isSuper(); }
   public boolean isSynthetic()              { return getAccessFlagsObj().isSynthetic(); }
-  public boolean hasFinalizer()             { return getAccessFlagsObj().hasFinalizer(); }
-  public boolean isCloneable()              { return getAccessFlagsObj().isCloneable(); }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,18 +99,18 @@ public class ClassfileBenchmark {
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
     public void transformWithSharedCP(Blackhole bh) {
-        bh.consume(sharedCP.transform(benchModel, threeLevelNoop));
+        bh.consume(sharedCP.transformClass(benchModel, threeLevelNoop));
     }
 
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
     public void transformWithNewCP(Blackhole bh) {
-        bh.consume(newCP.transform(benchModel, threeLevelNoop));
+        bh.consume(newCP.transformClass(benchModel, threeLevelNoop));
     }
 
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
     public void transformWithAddedNOP(Blackhole bh) {
-        bh.consume(sharedCP.transform(benchModel, addNOP));
+        bh.consume(sharedCP.transformClass(benchModel, addNOP));
     }
 }

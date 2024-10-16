@@ -32,7 +32,8 @@ choose `File -> Open Workspace...` in Visual Studio Code.
 The main `vscode-project` target configures the default C++ support in Visual
 Studio Code. There are also other source indexers that can be installed, that
 may provide additional features. It's currently possible to generate
-configuration for two such indexers, [clangd](https://clang.llvm.org/extra/clangd/)
+configuration for three such indexers, [clangd](https://clang.llvm.org/extra/clangd/),
+[ccls](https://github.com/MaskRay/ccls/wiki/Visual-Studio-Code)
 and [rtags](https://github.com/Andersbakken/rtags). These can be configured by
 appending the name of the indexer to the make target, such as:
 

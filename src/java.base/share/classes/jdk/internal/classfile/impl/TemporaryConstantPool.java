@@ -50,6 +50,7 @@ import java.lang.classfile.constantpool.Utf8Entry;
 
 import java.lang.constant.MethodTypeDesc;
 import java.util.List;
+import java.util.Objects;
 
 public final class TemporaryConstantPool implements ConstantPoolBuilder {
 
@@ -187,16 +188,7 @@ public final class TemporaryConstantPool implements ConstantPoolBuilder {
 
     @Override
     public boolean canWriteDirect(ConstantPool constantPool) {
+        Objects.requireNonNull(constantPool);
         return false;
-    }
-
-    @Override
-    public boolean writeBootstrapMethods(BufWriter buf) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void writeTo(BufWriter buf) {
-        throw new UnsupportedOperationException();
     }
 }

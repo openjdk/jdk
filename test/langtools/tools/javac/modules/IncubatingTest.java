@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -266,7 +266,7 @@ public class IncubatingTest extends ModuleTestBase {
     private void addModuleResolutionAttribute(Path classfile, int resolution_flags) throws Exception {
         ClassModel cm = ClassFile.of().parse(classfile);
         ModuleResolutionAttribute modRAttr = ModuleResolutionAttribute.of(resolution_flags);
-        byte[] newBytes = ClassFile.of().transform(cm, ClassTransform.dropping(ce -> ce instanceof ModuleResolutionAttribute).
+        byte[] newBytes = ClassFile.of().transformClass(cm, ClassTransform.dropping(ce -> ce instanceof ModuleResolutionAttribute).
                 andThen(ClassTransform.endHandler(classBuilder -> classBuilder.with(modRAttr))));
         try (OutputStream out = Files.newOutputStream(classfile)) {
             out.write(newBytes);

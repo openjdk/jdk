@@ -99,8 +99,13 @@ public class WhiteBox {
   }
 
   // Runtime
-  // Make sure class name is in the correct format
+
+  // Returns the potentially abridged form of `str` as it would be
+  // printed by the VM.
+  public native String printString(String str, int maxLength);
+
   public int countAliveClasses(String name) {
+    // Make sure class name is in the correct format
     return countAliveClasses0(name.replace('.', '/'));
   }
   private native int countAliveClasses0(String name);
@@ -118,6 +123,8 @@ public class WhiteBox {
     Objects.requireNonNull(obj);
     return isMonitorInflated0(obj);
   }
+
+  public native long getInUseMonitorCount();
 
   public native int getLockStackCapacity();
 
@@ -762,6 +769,7 @@ public class WhiteBox {
   public native void printOsInfo();
   public native long hostPhysicalMemory();
   public native long hostPhysicalSwap();
+  public native int hostCPUs();
 
   // Decoder
   public native void disableElfSectionCache();
@@ -798,4 +806,5 @@ public class WhiteBox {
   public native boolean setVirtualThreadsNotifyJvmtiMode(boolean enabled);
 
   public native void preTouchMemory(long addr, long size);
+  public native long rss();
 }

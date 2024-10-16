@@ -717,6 +717,14 @@ void ArchiveBuilder::write_pointer_in_buffer(address* ptr_location, address src_
   }
 }
 
+void ArchiveBuilder::mark_and_relocate_to_buffered_addr(address* ptr_location) {
+  assert(*ptr_location != nullptr, "sanity");
+  if (!is_in_mapped_static_archive(*ptr_location)) {
+    *ptr_location = get_buffered_addr(*ptr_location);
+  }
+  ArchivePtrMarker::mark_pointer(ptr_location);
+}
+
 address ArchiveBuilder::get_buffered_addr(address src_addr) const {
   SourceObjInfo* p = _src_obj_table.get(src_addr);
   assert(p != nullptr, "src_addr " INTPTR_FORMAT " is used but has not been archived",
@@ -754,6 +762,16 @@ void ArchiveBuilder::make_klasses_shareable() {
   int num_unregistered_klasses = 0;
   int num_obj_array_klasses = 0;
   int num_type_array_klasses = 0;
+
+  for (int i = 0; i < klasses()->length(); i++) {
+    // Some of the code in ConstantPool::remove_unshareable_info() requires the classes
+    // to be in linked state, so it must be call here before the next loop, which returns
+    // all classes to unlinked state.
+    Klass* k = get_buffered_addr(klasses()->at(i));
+    if (k->is_instance_klass()) {
+      InstanceKlass::cast(k)->constants()->remove_unshareable_info();
+    }
+  }
 
   for (int i = 0; i < klasses()->length(); i++) {
     const char* type;
@@ -1086,6 +1104,17 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
 
     LogStreamHandle(Info, cds, map) st;
 
+    HeapRootSegments segments = heap_info->heap_root_segments();
+    assert(segments.base_offset() == 0, "Sanity");
+
+    for (size_t seg_idx = 0; seg_idx < segments.count(); seg_idx++) {
+      address requested_start = ArchiveHeapWriter::buffered_addr_to_requested_addr(start);
+      st.print_cr(PTR_FORMAT ": Heap roots segment [%d]",
+                  p2i(requested_start), segments.size_in_elems(seg_idx));
+      start += segments.size_in_bytes(seg_idx);
+    }
+    log_heap_roots();
+
     while (start < end) {
       size_t byte_size;
       oop source_oop = ArchiveHeapWriter::buffered_addr_to_source_obj(start);
@@ -1096,12 +1125,6 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
         // This is a regular oop that got archived.
         print_oop_with_requested_addr_cr(&st, source_oop, false);
         byte_size = source_oop->size() * BytesPerWord;
-      } else if (start == ArchiveHeapWriter::buffered_heap_roots_addr()) {
-        // HeapShared::roots() is copied specially, so it doesn't exist in
-        // ArchiveHeapWriter::BufferOffsetToSourceObjectTable.
-        // See ArchiveHeapWriter::copy_roots_to_buffer().
-        st.print_cr("HeapShared::roots[%d]", HeapShared::pending_roots()->length());
-        byte_size = ArchiveHeapWriter::heap_roots_word_size() * BytesPerWord;
       } else if ((byte_size = ArchiveHeapWriter::get_filler_size_at(start)) > 0) {
         // We have a filler oop, which also does not exist in BufferOffsetToSourceObjectTable.
         st.print_cr("filler " SIZE_FORMAT " bytes", byte_size);
@@ -1114,8 +1137,6 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
 
       if (source_oop != nullptr) {
         log_oop_details(heap_info, source_oop, /*buffered_addr=*/start);
-      } else if (start == ArchiveHeapWriter::buffered_heap_roots_addr()) {
-        log_heap_roots();
       }
       start = oop_end;
     }
@@ -1255,7 +1276,7 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
         // longs and doubles will be split into two words.
         unitsize = sizeof(narrowOop);
       }
-      os::print_hex_dump(&lsh, base, top, unitsize, 32, requested_base);
+      os::print_hex_dump(&lsh, base, top, unitsize, /* print_ascii=*/true, /* bytes_per_line=*/32, requested_base);
     }
   }
 
@@ -1274,9 +1295,9 @@ public:
 
     address header = address(mapinfo->header());
     address header_end = header + mapinfo->header()->header_size();
-    log_region("header", header, header_end, 0);
+    log_region("header", header, header_end, nullptr);
     log_header(mapinfo);
-    log_as_hex(header, header_end, 0);
+    log_as_hex(header, header_end, nullptr);
 
     DumpRegion* rw_region = &builder->_rw_region;
     DumpRegion* ro_region = &builder->_ro_region;
@@ -1285,8 +1306,8 @@ public:
     log_metaspace_region("ro region", ro_region, &builder->_ro_src_objs);
 
     address bitmap_end = address(bitmap + bitmap_size_in_bytes);
-    log_region("bitmap", address(bitmap), bitmap_end, 0);
-    log_as_hex((address)bitmap, bitmap_end, 0);
+    log_region("bitmap", address(bitmap), bitmap_end, nullptr);
+    log_as_hex((address)bitmap, bitmap_end, nullptr);
 
 #if INCLUDE_CDS_JAVA_HEAP
     if (heap_info->is_used()) {
@@ -1394,10 +1415,3 @@ void ArchiveBuilder::report_out_of_space(const char* name, size_t needed_bytes) 
   log_error(cds)("Unable to allocate from '%s' region: Please reduce the number of shared classes.", name);
   MetaspaceShared::unrecoverable_writing_error();
 }
-
-
-#ifndef PRODUCT
-void ArchiveBuilder::assert_is_vm_thread() {
-  assert(Thread::current()->is_VM_thread(), "ArchiveBuilder should be used only inside the VMThread");
-}
-#endif

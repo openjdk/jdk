@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -195,7 +195,7 @@ class PackageSnippets {
                 builder.with(element);
         };
         var cc = ClassFile.of();
-        byte[] newBytes = cc.transform(cc.parse(bytes), ct);
+        byte[] newBytes = cc.transformClass(cc.parse(bytes), ct);
         // @end
     }
 
@@ -346,7 +346,7 @@ class PackageSnippets {
 
     void codeRelabeling(ClassModel classModel) {
         // @start region="codeRelabeling"
-        byte[] newBytes = ClassFile.of().transform(classModel,
+        byte[] newBytes = ClassFile.of().transformClass(classModel,
                 ClassTransform.transformingMethodBodies(
                         CodeTransform.ofStateful(CodeRelabeler::of)));
         // @end
@@ -360,7 +360,7 @@ class PackageSnippets {
         var targetFieldNames = target.fields().stream().map(f -> f.fieldName().stringValue()).collect(Collectors.toSet());
         var targetMethods = target.methods().stream().map(m -> m.methodName().stringValue() + m.methodType().stringValue()).collect(Collectors.toSet());
         var instrumentorClassRemapper = ClassRemapper.of(Map.of(instrumentor.thisClass().asSymbol(), target.thisClass().asSymbol()));
-        return ClassFile.of().transform(target,
+        return ClassFile.of().transformClass(target,
                 ClassTransform.transformingMethods(
                         instrumentedMethodsFilter,
                         (mb, me) -> {
@@ -381,7 +381,7 @@ class PackageSnippets {
                                                 var storeStack = new ArrayDeque<StoreInstruction>();
                                                 int slot = 0;
                                                 if (!mm.flags().has(AccessFlag.STATIC))
-                                                    storeStack.push(StoreInstruction.of(TypeKind.ReferenceType, slot++));
+                                                    storeStack.push(StoreInstruction.of(TypeKind.REFERENCE, slot++));
                                                 for (var pt : mm.methodTypeSymbol().parameterList()) {
                                                     var tk = TypeKind.from(pt);
                                                     storeStack.push(StoreInstruction.of(tk, slot));

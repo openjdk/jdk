@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
  */
 package jdk.internal.classfile.impl;
 
+import java.lang.classfile.ClassFileBuilder;
+import java.lang.classfile.ClassFileTransform;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -32,7 +34,6 @@ import java.lang.classfile.ClassBuilder;
 import java.lang.classfile.ClassElement;
 import java.lang.classfile.ClassTransform;
 import java.lang.classfile.ClassFileElement;
-import java.lang.classfile.ClassFileTransform;
 import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.CodeElement;
 import java.lang.classfile.CodeModel;
@@ -46,7 +47,7 @@ import java.lang.classfile.MethodElement;
 import java.lang.classfile.MethodModel;
 import java.lang.classfile.MethodTransform;
 
-public class TransformImpl {
+public final class TransformImpl {
     // ClassTransform
 
     private TransformImpl() {
@@ -58,7 +59,23 @@ public class TransformImpl {
 
     private static final Runnable NOTHING = () -> { };
 
-    interface UnresolvedClassTransform extends ClassTransform {
+    public static <E extends ClassFileElement, B extends ClassFileBuilder<E, B>>
+            ResolvedTransform<E> resolve(ClassFileTransform<?, E, B> transform, B builder) {
+        if (transform instanceof ResolvableTransform) {
+            @SuppressWarnings("unchecked")
+            var ut = (ResolvableTransform<E, B>) transform;
+            return ut.resolve(builder);
+        }
+        return new ResolvedTransform<>(e -> transform.accept(builder, e),
+            () -> transform.atEnd(builder),
+            () -> transform.atStart(builder));
+    }
+
+    interface ResolvableTransform<E extends ClassFileElement, B extends ClassFileBuilder<E, B>> {
+        ResolvedTransform<E> resolve(B builder);
+    }
+
+    interface UnresolvedClassTransform extends ClassTransform, ResolvableTransform<ClassElement, ClassBuilder> {
         @Override
         default void accept(ClassBuilder builder, ClassElement element) {
             throw new UnsupportedOperationException("transforms must be resolved before running");
@@ -75,12 +92,11 @@ public class TransformImpl {
         }
     }
 
-    public record ResolvedTransformImpl<E extends ClassFileElement>(Consumer<E> consumer,
+    public record ResolvedTransform<E extends ClassFileElement>(Consumer<E> consumer,
                                      Runnable endHandler,
-                                     Runnable startHandler)
-            implements ClassFileTransform.ResolvedTransform<E> {
+                                     Runnable startHandler) {
 
-        public ResolvedTransformImpl(Consumer<E> consumer) {
+        public ResolvedTransform(Consumer<E> consumer) {
             this(consumer, NOTHING, NOTHING);
         }
     }
@@ -89,13 +105,13 @@ public class TransformImpl {
                                         ClassTransform next)
             implements UnresolvedClassTransform {
         @Override
-        public ResolvedTransformImpl<ClassElement> resolve(ClassBuilder builder) {
-            ResolvedTransform<ClassElement> downstream = next.resolve(builder);
+        public ResolvedTransform<ClassElement> resolve(ClassBuilder builder) {
+            ResolvedTransform<ClassElement> downstream = TransformImpl.resolve(next, builder);
             ClassBuilder chainedBuilder = new ChainedClassBuilder(builder, downstream.consumer());
-            ResolvedTransform<ClassElement> upstream = t.resolve(chainedBuilder);
-            return new ResolvedTransformImpl<>(upstream.consumer(),
+            ResolvedTransform<ClassElement> upstream = TransformImpl.resolve(t, chainedBuilder);
+            return new ResolvedTransform<>(upstream.consumer(),
                                           chainRunnable(upstream.endHandler(), downstream.endHandler()),
-                                          chainRunnable(upstream.startHandler(), downstream.startHandler()));
+                                          chainRunnable(downstream.startHandler(), upstream.startHandler()));
         }
     }
 
@@ -103,7 +119,7 @@ public class TransformImpl {
             implements UnresolvedClassTransform {
         @Override
         public ResolvedTransform<ClassElement> resolve(ClassBuilder builder) {
-            return supplier.get().resolve(builder);
+            return TransformImpl.resolve(supplier.get(), builder);
         }
     }
 
@@ -112,7 +128,7 @@ public class TransformImpl {
             implements UnresolvedClassTransform {
         @Override
         public ResolvedTransform<ClassElement> resolve(ClassBuilder builder) {
-            return new ResolvedTransformImpl<>(ce -> {
+            return new ResolvedTransform<>(ce -> {
                 if (ce instanceof MethodModel mm && filter.test(mm))
                     builder.transformMethod(mm, transform);
                 else
@@ -135,7 +151,7 @@ public class TransformImpl {
             implements UnresolvedClassTransform {
         @Override
         public ResolvedTransform<ClassElement> resolve(ClassBuilder builder) {
-            return new ResolvedTransformImpl<>(ce -> {
+            return new ResolvedTransform<>(ce -> {
                 if (ce instanceof FieldModel fm && filter.test(fm))
                     builder.transformField(fm, transform);
                 else
@@ -155,7 +171,7 @@ public class TransformImpl {
 
     // MethodTransform
 
-    interface UnresolvedMethodTransform extends MethodTransform {
+    interface UnresolvedMethodTransform extends MethodTransform, ResolvableTransform<MethodElement, MethodBuilder> {
         @Override
         default void accept(MethodBuilder builder, MethodElement element) {
             throw new UnsupportedOperationException("transforms must be resolved before running");
@@ -177,12 +193,12 @@ public class TransformImpl {
             implements TransformImpl.UnresolvedMethodTransform {
         @Override
         public ResolvedTransform<MethodElement> resolve(MethodBuilder builder) {
-            ResolvedTransform<MethodElement> downstream = next.resolve(builder);
+            ResolvedTransform<MethodElement> downstream = TransformImpl.resolve(next, builder);
             MethodBuilder chainedBuilder = new ChainedMethodBuilder(builder, downstream.consumer());
-            ResolvedTransform<MethodElement> upstream = t.resolve(chainedBuilder);
-            return new ResolvedTransformImpl<>(upstream.consumer(),
+            ResolvedTransform<MethodElement> upstream = TransformImpl.resolve(t, chainedBuilder);
+            return new ResolvedTransform<>(upstream.consumer(),
                                            chainRunnable(upstream.endHandler(), downstream.endHandler()),
-                                           chainRunnable(upstream.startHandler(), downstream.startHandler()));
+                                           chainRunnable(downstream.startHandler(), upstream.startHandler()));
         }
     }
 
@@ -190,7 +206,7 @@ public class TransformImpl {
             implements TransformImpl.UnresolvedMethodTransform {
         @Override
         public ResolvedTransform<MethodElement> resolve(MethodBuilder builder) {
-            return supplier.get().resolve(builder);
+            return TransformImpl.resolve(supplier.get(), builder);
         }
     }
 
@@ -198,7 +214,7 @@ public class TransformImpl {
             implements TransformImpl.UnresolvedMethodTransform {
         @Override
         public ResolvedTransform<MethodElement> resolve(MethodBuilder builder) {
-            return new ResolvedTransformImpl<>(me -> {
+            return new ResolvedTransform<>(me -> {
                 if (me instanceof CodeModel cm) {
                     builder.transformCode(cm, xform);
                 }
@@ -219,7 +235,7 @@ public class TransformImpl {
 
     // FieldTransform
 
-    interface UnresolvedFieldTransform extends FieldTransform {
+    interface UnresolvedFieldTransform extends FieldTransform, ResolvableTransform<FieldElement, FieldBuilder> {
         @Override
         default void accept(FieldBuilder builder, FieldElement element) {
             throw new UnsupportedOperationException("transforms must be resolved before running");
@@ -240,12 +256,12 @@ public class TransformImpl {
             implements UnresolvedFieldTransform {
         @Override
         public ResolvedTransform<FieldElement> resolve(FieldBuilder builder) {
-            ResolvedTransform<FieldElement> downstream = next.resolve(builder);
+            ResolvedTransform<FieldElement> downstream = TransformImpl.resolve(next, builder);
             FieldBuilder chainedBuilder = new ChainedFieldBuilder(builder, downstream.consumer());
-            ResolvedTransform<FieldElement> upstream = t.resolve(chainedBuilder);
-            return new ResolvedTransformImpl<>(upstream.consumer(),
+            ResolvedTransform<FieldElement> upstream = TransformImpl.resolve(t, chainedBuilder);
+            return new ResolvedTransform<>(upstream.consumer(),
                                            chainRunnable(upstream.endHandler(), downstream.endHandler()),
-                                           chainRunnable(upstream.startHandler(), downstream.startHandler()));
+                                           chainRunnable(downstream.startHandler(), upstream.startHandler()));
         }
     }
 
@@ -253,13 +269,13 @@ public class TransformImpl {
             implements UnresolvedFieldTransform {
         @Override
         public ResolvedTransform<FieldElement> resolve(FieldBuilder builder) {
-            return supplier.get().resolve(builder);
+            return TransformImpl.resolve(supplier.get(), builder);
         }
     }
 
     // CodeTransform
 
-    interface UnresolvedCodeTransform extends CodeTransform {
+    interface UnresolvedCodeTransform extends CodeTransform, ResolvableTransform<CodeElement, CodeBuilder> {
         @Override
         default void accept(CodeBuilder builder, CodeElement element) {
             throw new UnsupportedOperationException("transforms must be resolved before running");
@@ -280,12 +296,12 @@ public class TransformImpl {
             implements UnresolvedCodeTransform {
         @Override
         public ResolvedTransform<CodeElement> resolve(CodeBuilder builder) {
-            ResolvedTransform<CodeElement> downstream = next.resolve(builder);
+            ResolvedTransform<CodeElement> downstream = TransformImpl.resolve(next, builder);
             CodeBuilder chainedBuilder = new ChainedCodeBuilder(builder, downstream.consumer());
-            ResolvedTransform<CodeElement> upstream = t.resolve(chainedBuilder);
-            return new ResolvedTransformImpl<>(upstream.consumer(),
+            ResolvedTransform<CodeElement> upstream = TransformImpl.resolve(t, chainedBuilder);
+            return new ResolvedTransform<>(upstream.consumer(),
                                          chainRunnable(upstream.endHandler(), downstream.endHandler()),
-                                         chainRunnable(upstream.startHandler(), downstream.startHandler()));
+                                         chainRunnable(downstream.startHandler(), upstream.startHandler()));
         }
     }
 
@@ -293,7 +309,7 @@ public class TransformImpl {
             implements UnresolvedCodeTransform {
         @Override
         public ResolvedTransform<CodeElement> resolve(CodeBuilder builder) {
-            return supplier.get().resolve(builder);
+            return TransformImpl.resolve(supplier.get(), builder);
         }
     }
 }

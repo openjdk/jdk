@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @library /java/security/testlibrary
  * @bug 6251120 8231950 8242151
  * @summary Testing keytool
  *
@@ -1864,173 +1865,5 @@ public class KeyToolTest {
 class TestException extends Exception {
     public TestException(String e) {
         super(e);
-    }
-}
-
-/**
- * HumanInputStream tries to act like a human sitting in front of a computer
- * terminal typing on the keyboard while the keytool program is running.
- *
- * keytool has called InputStream.read() and BufferedReader.readLine() in
- * various places. a call to B.readLine() will try to buffer as much input as
- * possible. Thus, a trivial InputStream will find it impossible to feed
- * anything to I.read() after a B.readLine() call.
- *
- * This is why i create HumanInputStream, which will only send a single line
- * to B.readLine(), no more, no less, and the next I.read() can have a chance
- * to read the exact character right after "\n".
- *
- * I don't know why HumanInputStream works.
- */
-class HumanInputStream extends InputStream {
-    byte[] src;
-    int pos;
-    int length;
-    boolean inLine;
-    int stopIt;
-
-    public HumanInputStream(String input) {
-        src = input.getBytes();
-        pos = 0;
-        length = src.length;
-        stopIt = 0;
-        inLine = false;
-    }
-
-    // the trick: when called through read(byte[], int, int),
-    // return -1 twice after "\n"
-
-    @Override public int read() throws IOException {
-        int re;
-        if(pos < length) {
-            re = src[pos];
-            if(inLine) {
-                if(stopIt > 0) {
-                    stopIt--;
-                    re = -1;
-                } else {
-                    if(re == '\n') {
-                        stopIt = 2;
-                    }
-                    pos++;
-                }
-            } else {
-                pos++;
-            }
-        } else {
-            re = -1;//throw new IOException("NO MORE TO READ");
-        }
-        //if (re < 32) System.err.printf("[%02d]", re);
-        //else System.err.printf("[%c]", (char)re);
-        return re;
-    }
-    @Override public int read(byte[] buffer, int offset, int len) {
-        inLine = true;
-        try {
-            int re = super.read(buffer, offset, len);
-            return re;
-        } catch(Exception e) {
-            throw new RuntimeException("HumanInputStream error");
-        } finally {
-            inLine = false;
-        }
-    }
-    @Override public int available() {
-        if(pos < length) return 1;
-        return 0;
-    }
-
-    // test part
-    static void assertTrue(boolean bool) {
-        if(!bool)
-            throw new RuntimeException();
-    }
-
-    public static void test() throws Exception {
-
-        class Tester {
-            HumanInputStream is;
-            BufferedReader reader;
-            Tester(String s) {
-                is = new HumanInputStream(s);
-                reader = new BufferedReader(new InputStreamReader(is));
-            }
-
-            // three kinds of test method
-            // 1. read byte by byte from InputStream
-            void testStreamReadOnce(int expection) throws Exception {
-                assertTrue(is.read() == expection);
-            }
-            void testStreamReadMany(String expection) throws Exception {
-                char[] keys = expection.toCharArray();
-                for(int i=0; i<keys.length; i++) {
-                    assertTrue(is.read() == keys[i]);
-                }
-            }
-            // 2. read a line with a newly created Reader
-            void testReaderReadline(String expection) throws Exception {
-                String s = new BufferedReader(new InputStreamReader(is)).readLine();
-                if(s == null) assertTrue(expection == null);
-                else assertTrue(s.equals(expection));
-            }
-            // 3. read a line with the old Reader
-            void testReaderReadline2(String expection) throws Exception  {
-                String s = reader.readLine();
-                if(s == null) assertTrue(expection == null);
-                else assertTrue(s.equals(expection));
-            }
-        }
-
-        Tester test;
-
-        test = new Tester("111\n222\n\n444\n\n");
-        test.testReaderReadline("111");
-        test.testReaderReadline("222");
-        test.testReaderReadline("");
-        test.testReaderReadline("444");
-        test.testReaderReadline("");
-        test.testReaderReadline(null);
-
-        test = new Tester("111\n222\n\n444\n\n");
-        test.testReaderReadline2("111");
-        test.testReaderReadline2("222");
-        test.testReaderReadline2("");
-        test.testReaderReadline2("444");
-        test.testReaderReadline2("");
-        test.testReaderReadline2(null);
-
-        test = new Tester("111\n222\n\n444\n\n");
-        test.testReaderReadline2("111");
-        test.testReaderReadline("222");
-        test.testReaderReadline2("");
-        test.testReaderReadline2("444");
-        test.testReaderReadline("");
-        test.testReaderReadline2(null);
-
-        test = new Tester("1\n2");
-        test.testStreamReadMany("1\n2");
-        test.testStreamReadOnce(-1);
-
-        test = new Tester("12\n234");
-        test.testStreamReadOnce('1');
-        test.testReaderReadline("2");
-        test.testStreamReadOnce('2');
-        test.testReaderReadline2("34");
-        test.testReaderReadline2(null);
-
-        test = new Tester("changeit\n");
-        test.testStreamReadMany("changeit\n");
-        test.testReaderReadline(null);
-
-        test = new Tester("changeit\nName\nCountry\nYes\n");
-        test.testStreamReadMany("changeit\n");
-        test.testReaderReadline("Name");
-        test.testReaderReadline("Country");
-        test.testReaderReadline("Yes");
-        test.testReaderReadline(null);
-
-        test = new Tester("Me\nHere\n");
-        test.testReaderReadline2("Me");
-        test.testReaderReadline2("Here");
     }
 }

@@ -235,14 +235,16 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
       CFLAGS_WARNINGS_ARE_ERRORS="-Werror"
 
       # Additional warnings that are not activated by -Wall and -Wextra
-      WARNINGS_ENABLE_ADDITIONAL="-Wpointer-arith -Wsign-compare \
-          -Wunused-function -Wundef -Wunused-value -Wreturn-type \
-          -Wtrampolines"
+      WARNINGS_ENABLE_ADDITIONAL="-Wpointer-arith -Wreturn-type -Wsign-compare \
+          -Wtrampolines -Wundef -Wunused-const-variable=1 -Wunused-function \
+          -Wunused-result -Wunused-value"
       WARNINGS_ENABLE_ADDITIONAL_CXX="-Woverloaded-virtual -Wreorder"
       WARNINGS_ENABLE_ALL_CFLAGS="-Wall -Wextra -Wformat=2 $WARNINGS_ENABLE_ADDITIONAL"
       WARNINGS_ENABLE_ALL_CXXFLAGS="$WARNINGS_ENABLE_ALL_CFLAGS $WARNINGS_ENABLE_ADDITIONAL_CXX"
 
-      DISABLED_WARNINGS="unused-parameter unused"
+      # These warnings will never be turned on, since they generate too many
+      # false positives.
+      DISABLED_WARNINGS="unused-parameter"
       # gcc10/11 on ppc generate lots of abi warnings about layout of aggregates containing vectors
       if test "x$OPENJDK_TARGET_CPU_ARCH" = "xppc"; then
         DISABLED_WARNINGS="$DISABLED_WARNINGS psabi"
@@ -259,7 +261,9 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
           -Wunused-function -Wundef -Wunused-value -Woverloaded-virtual"
       WARNINGS_ENABLE_ALL="-Wall -Wextra -Wformat=2 $WARNINGS_ENABLE_ADDITIONAL"
 
-      DISABLED_WARNINGS="unknown-warning-option unused-parameter unused"
+      # These warnings will never be turned on, since they generate too many
+      # false positives.
+      DISABLED_WARNINGS="unknown-warning-option unused-parameter"
       ;;
   esac
   AC_SUBST(DISABLE_WARNING_PREFIX)
@@ -476,7 +480,7 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
   # Always enable optional macros for VM.
   ALWAYS_CFLAGS_JVM="-D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS -D__STDC_CONSTANT_MACROS"
 
-  ###############################################################################
+  ##############################################################################
 
   # Adjust flags according to debug level.
   # Setup debug/release defines
@@ -502,15 +506,15 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
   elif test "x$TOOLCHAIN_TYPE" = xclang; then
     ALWAYS_DEFINES_JVM="-D_GNU_SOURCE"
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
-    # Access APIs for Windows 8 and above
-    # see https://docs.microsoft.com/en-us/cpp/porting/modifying-winver-and-win32-winnt?view=msvc-170
-    ALWAYS_DEFINES_JDK="-DWIN32_LEAN_AND_MEAN -D_WIN32_WINNT=0x0602 \
-        -D_CRT_SECURE_NO_WARNINGS -D_CRT_NONSTDC_NO_DEPRECATE -DWIN32 -DIAL"
-    ALWAYS_DEFINES_JVM="-DNOMINMAX -DWIN32_LEAN_AND_MEAN -D_WIN32_WINNT=0x0602 \
-        -D_CRT_SECURE_NO_WARNINGS -D_CRT_NONSTDC_NO_DEPRECATE"
+    # _WIN32_WINNT=0x0602 means access APIs for Windows 8 and above. See
+    # https://docs.microsoft.com/en-us/cpp/porting/modifying-winver-and-win32-winnt?view=msvc-170
+    ALWAYS_DEFINES="-DWIN32_LEAN_AND_MEAN -D_WIN32_WINNT=0x0602 \
+        -D_CRT_DECLARE_NONSTDC_NAMES -D_CRT_NONSTDC_NO_WARNINGS -D_CRT_SECURE_NO_WARNINGS"
+    ALWAYS_DEFINES_JDK="$ALWAYS_DEFINES -DWIN32 -DIAL"
+    ALWAYS_DEFINES_JVM="$ALWAYS_DEFINES -DNOMINMAX"
   fi
 
-  ###############################################################################
+  ##############################################################################
   #
   #
   # CFLAGS BASIC

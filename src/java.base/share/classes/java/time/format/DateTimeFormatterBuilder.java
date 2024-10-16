@@ -121,6 +121,8 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jdk.internal.util.DecimalDigits;
+
 import sun.text.spi.JavaTimeDateTimePatternProvider;
 import sun.util.locale.provider.CalendarDataUtility;
 import sun.util.locale.provider.LocaleProviderAdapter;
@@ -2908,24 +2910,6 @@ public final class DateTimeFormatterBuilder {
             return new NumberPrinterParser(field, minWidth, maxWidth, signStyle, this.subsequentWidth + subsequentWidth);
         }
 
-        /*
-         * Copied from Long.stringSize
-         */
-        private static int stringSize(long x) {
-            int d = 1;
-            if (x >= 0) {
-                d = 0;
-                x = -x;
-            }
-            long p = -10;
-            for (int i = 1; i < 19; i++) {
-                if (x > p)
-                    return i + d;
-                p = 10 * p;
-            }
-            return 19 + d;
-        }
-
         @Override
         public boolean format(DateTimePrintContext context, StringBuilder buf) {
             Long valueLong = context.getValue(field);
@@ -2934,7 +2918,7 @@ public final class DateTimeFormatterBuilder {
             }
             long value = getValue(context, valueLong);
             DecimalStyle decimalStyle = context.getDecimalStyle();
-            int size = stringSize(value);
+            int size = DecimalDigits.stringSize(value);
             if (value < 0) {
                 size--;
             }
@@ -2965,8 +2949,9 @@ public final class DateTimeFormatterBuilder {
                 }
             }
             char zeroDigit = decimalStyle.getZeroDigit();
-            for (int i = 0; i < minWidth - size; i++) {
-                buf.append(zeroDigit);
+            int zeros = minWidth - size;
+            if (zeros > 0) {
+                buf.repeat(zeroDigit, zeros);
             }
             if (zeroDigit == '0' && value != Long.MIN_VALUE) {
                 buf.append(Math.abs(value));
@@ -3368,17 +3353,6 @@ public final class DateTimeFormatterBuilder {
             return false;
         }
 
-        // Simplified variant of Integer.stringSize that assumes positive values
-        private static int stringSize(int x) {
-            int p = 10;
-            for (int i = 1; i < 10; i++) {
-                if (x < p)
-                    return i;
-                p = 10 * p;
-            }
-            return 10;
-        }
-
         private static final int[] TENS = new int[] {
             1,
             10,
@@ -3399,7 +3373,7 @@ public final class DateTimeFormatterBuilder {
             }
             int val = field.range().checkValidIntValue(value, field);
             DecimalStyle decimalStyle = context.getDecimalStyle();
-            int stringSize = stringSize(val);
+            int stringSize = DecimalDigits.stringSize(val);
             char zero = decimalStyle.getZeroDigit();
             if (val == 0 || stringSize < 10 - maxWidth) {
                 // 0 or would round down to 0
@@ -3410,17 +3384,16 @@ public final class DateTimeFormatterBuilder {
                     if (decimalPoint) {
                         buf.append(decimalStyle.getDecimalSeparator());
                     }
-                    for (int i = 0; i < width; i++) {
-                        buf.append(zero);
-                    }
+                    buf.repeat(zero, width);
                 }
             } else {
                 if (decimalPoint) {
                     buf.append(decimalStyle.getDecimalSeparator());
                 }
                 // add leading zeros
-                for (int i = 9 - stringSize; i > 0; i--) {
-                    buf.append(zero);
+                int zeros = 9 - stringSize;
+                if (zeros > 0) {
+                    buf.repeat(zero, zeros);
                 }
                 // truncate unwanted digits
                 if (maxWidth < 9) {
@@ -3594,9 +3567,7 @@ public final class DateTimeFormatterBuilder {
                     if (decimalPoint) {
                         buf.append(decimalStyle.getDecimalSeparator());
                     }
-                    for (int i = 0; i < minWidth; i++) {
-                        buf.append(decimalStyle.getZeroDigit());
-                    }
+                    buf.repeat(decimalStyle.getZeroDigit(), minWidth);
                 }
             } else {
                 int outputScale = Math.clamp(fraction.scale(), minWidth, maxWidth);

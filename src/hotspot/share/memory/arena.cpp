@@ -44,6 +44,19 @@ STATIC_ASSERT(is_aligned((int)Chunk::init_size, ARENA_AMALLOC_ALIGNMENT));
 STATIC_ASSERT(is_aligned((int)Chunk::medium_size, ARENA_AMALLOC_ALIGNMENT));
 STATIC_ASSERT(is_aligned((int)Chunk::size, ARENA_AMALLOC_ALIGNMENT));
 
+
+const char* Arena::tag_name[] = {
+#define ARENA_TAG_STRING(name, str, desc) XSTR(name),
+  DO_ARENA_TAG(ARENA_TAG_STRING)
+#undef ARENA_TAG_STRING
+};
+
+const char* Arena::tag_desc[] = {
+#define ARENA_TAG_DESC(name, str, desc) XSTR(desc),
+  DO_ARENA_TAG(ARENA_TAG_DESC)
+#undef ARENA_TAG_DESC
+};
+
 // MT-safe pool of same-sized chunks to reduce malloc/free thrashing
 // NB: not using Mutex because pools are used before Threads are initialized
 class ChunkPool {
@@ -209,28 +222,24 @@ void Chunk::next_chop(Chunk* k) {
   k->_next = nullptr;
 }
 
-Arena::Arena(MEMFLAGS flag, Tag tag, size_t init_size) : _flags(flag), _tag(tag), _size_in_bytes(0)  {
+Arena::Arena(MemTag mem_tag, Tag tag, size_t init_size) :
+  _mem_tag(mem_tag), _tag(tag),
+  _size_in_bytes(0),
+  _first(nullptr), _chunk(nullptr),
+  _hwm(nullptr), _max(nullptr)
+{
   init_size = ARENA_ALIGN(init_size);
   _chunk = ChunkPool::allocate_chunk(init_size, AllocFailStrategy::EXIT_OOM);
   _first = _chunk;
   _hwm = _chunk->bottom();      // Save the cached hwm, max
   _max = _chunk->top();
-  MemTracker::record_new_arena(flag);
+  MemTracker::record_new_arena(mem_tag);
   set_size_in_bytes(init_size);
-}
-
-Arena::Arena(MEMFLAGS flag, Tag tag) : _flags(flag), _tag(tag), _size_in_bytes(0) {
-  _chunk = ChunkPool::allocate_chunk(Chunk::init_size, AllocFailStrategy::EXIT_OOM);
-  _first = _chunk;
-  _hwm = _chunk->bottom();      // Save the cached hwm, max
-  _max = _chunk->top();
-  MemTracker::record_new_arena(flag);
-  set_size_in_bytes(Chunk::init_size);
 }
 
 Arena::~Arena() {
   destruct_contents();
-  MemTracker::record_arena_free(_flags);
+  MemTracker::record_arena_free(_mem_tag);
 }
 
 // Destroy this arenas contents and reset to empty
@@ -250,8 +259,8 @@ void Arena::set_size_in_bytes(size_t size) {
   if (_size_in_bytes != size) {
     ssize_t delta = size - size_in_bytes();
     _size_in_bytes = size;
-    MemTracker::record_arena_size_change(delta, _flags);
-    if (CompilationMemoryStatistic::enabled() && _flags == mtCompiler) {
+    MemTracker::record_arena_size_change(delta, _mem_tag);
+    if (CompilationMemoryStatistic::enabled() && _mem_tag == mtCompiler) {
       Thread* const t = Thread::current();
       if (t != nullptr && t->is_Compiler_thread()) {
         CompilationMemoryStatistic::on_arena_change(delta, this);
@@ -277,7 +286,7 @@ void* Arena::grow(size_t x, AllocFailType alloc_failmode) {
   // (Note: all chunk sizes have to be 64-bit aligned)
   size_t len = MAX2(ARENA_ALIGN(x), (size_t) Chunk::size);
 
-  if (MemTracker::check_exceeds_limit(x, _flags)) {
+  if (MemTracker::check_exceeds_limit(x, _mem_tag)) {
     return nullptr;
   }
 
@@ -302,8 +311,6 @@ void* Arena::grow(size_t x, AllocFailType alloc_failmode) {
   return result;
 }
 
-
-
 // Reallocate storage in Arena.
 void *Arena::Arealloc(void* old_ptr, size_t old_size, size_t new_size, AllocFailType alloc_failmode) {
   if (new_size == 0) {
@@ -315,21 +322,21 @@ void *Arena::Arealloc(void* old_ptr, size_t old_size, size_t new_size, AllocFail
     return Amalloc(new_size, alloc_failmode); // as with realloc(3), a null old ptr is equivalent to malloc(3)
   }
   char *c_old = (char*)old_ptr; // Handy name
-  // Stupid fast special case
-  if( new_size <= old_size ) {  // Shrink in-place
-    if( c_old+old_size == _hwm) // Attempt to free the excess bytes
-      _hwm = c_old+new_size;    // Adjust hwm
-    return c_old;
-  }
 
-  // make sure that new_size is legal
+  // Make sure that new_size is legal
   size_t corrected_new_size = ARENA_ALIGN(new_size);
 
-  // See if we can resize in-place
-  if( (c_old+old_size == _hwm) &&       // Adjusting recent thing
-      (c_old+corrected_new_size <= _max) ) {      // Still fits where it sits
-    _hwm = c_old+corrected_new_size;      // Adjust hwm
-    return c_old;               // Return old pointer
+  // Reallocating the latest allocation?
+  if (c_old + old_size == _hwm) {
+    assert(_chunk->bottom() <= c_old, "invariant");
+
+    // Reallocate in place if it fits. Also handles shrinking
+    if (pointer_delta(_max, c_old, 1) >= corrected_new_size) {
+      _hwm = c_old + corrected_new_size;
+      return c_old;
+    }
+  } else if (new_size <= old_size) { // Shrink in place
+    return c_old;
   }
 
   // Oops, got to relocate guts

@@ -110,6 +110,7 @@ class outputStream;
   LOG_TAG(jvmti) \
   LOG_TAG(lambda) \
   LOG_TAG(library) \
+  LOG_TAG(link) \
   LOG_TAG(liveness) \
   LOG_TAG(load) /* Trace all classes loaded */ \
   LOG_TAG(loader) \
@@ -129,6 +130,7 @@ class outputStream;
   LOG_TAG(module) \
   LOG_TAG(monitorinflation) \
   LOG_TAG(monitormismatch) \
+  LOG_TAG(monitortable) \
   LOG_TAG(native) \
   LOG_TAG(nestmates) \
   LOG_TAG(nmethod) \

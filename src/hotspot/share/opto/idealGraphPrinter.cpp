@@ -143,21 +143,24 @@ void IdealGraphPrinter::init(const char* file_name, bool use_multiple_files, boo
   _depth = 0;
   _current_method = nullptr;
   _network_stream = nullptr;
+  _append = append;
 
   if (file_name != nullptr) {
-    init_file_stream(file_name, use_multiple_files, append);
+    init_file_stream(file_name, use_multiple_files);
   } else {
     init_network_stream();
   }
   _xml = new (mtCompiler) xmlStream(_output);
-  if (!append) {
+  if (!_append) {
     head(TOP_ELEMENT);
   }
 }
 
 // Destructor, close file or network stream
 IdealGraphPrinter::~IdealGraphPrinter() {
-  tail(TOP_ELEMENT);
+  if (!_append) {
+    tail(TOP_ELEMENT);
+  }
 
   // tty->print_cr("Walk time: %d", (int)_walk_time.milliseconds());
   // tty->print_cr("Output time: %d", (int)_output_time.milliseconds());
@@ -860,10 +863,10 @@ void IdealGraphPrinter::print(const char *name, Node *node) {
   _xml->flush();
 }
 
-void IdealGraphPrinter::init_file_stream(const char* file_name, bool use_multiple_files, bool append) {
+void IdealGraphPrinter::init_file_stream(const char* file_name, bool use_multiple_files) {
   ThreadCritical tc;
   if (use_multiple_files && _file_count != 0) {
-    assert(!append, "append should only be used for debugging with a single file");
+    assert(!_append, "append should only be used for debugging with a single file");
     ResourceMark rm;
     stringStream st;
     const char* dot = strrchr(file_name, '.');
@@ -875,10 +878,10 @@ void IdealGraphPrinter::init_file_stream(const char* file_name, bool use_multipl
     }
     _output = new (mtCompiler) fileStream(st.as_string(), "w");
   } else {
-    _output = new (mtCompiler) fileStream(file_name, append ? "a" : "w");
+    _output = new (mtCompiler) fileStream(file_name, _append ? "a" : "w");
   }
   if (use_multiple_files) {
-    assert(!append, "append should only be used for debugging with a single file");
+    assert(!_append, "append should only be used for debugging with a single file");
     _file_count++;
   }
 }
@@ -909,9 +912,16 @@ void IdealGraphPrinter::update_compiled_method(ciMethod* current_method) {
   assert(C != nullptr, "must already be set");
   if (current_method != _current_method) {
     // If a different method, end the old and begin with the new one.
-    end_method();
-    _current_method = nullptr;
-    begin_method();
+    if (_append) {
+      // Do not call `end_method` if we are appending, just update `_current_method`,
+      // because `begin_method` is not called in the constructor in append mode.
+      _current_method = current_method;
+    } else {
+      // End the old method and begin a new one.
+      // Don't worry about `_current_method`, `end_method` will clear it.
+      end_method();
+      begin_method();
+    }
   }
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -521,8 +521,6 @@ public abstract sealed class Reference<T>
      *
      * @return never returns normally
      * @throws  CloneNotSupportedException always
-     *
-     * @since 11
      */
     @Override
     protected Object clone() throws CloneNotSupportedException {

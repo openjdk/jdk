@@ -97,12 +97,10 @@ public record ClassRemapperImpl(Function<ClassDesc, ClassDesc> mapFunction) impl
         switch (cle) {
             case FieldModel fm ->
                 clb.withField(fm.fieldName().stringValue(), map(
-                        fm.fieldTypeSymbol()), fb ->
-                                fm.forEachElement(asFieldTransform().resolve(fb).consumer()));
+                        fm.fieldTypeSymbol()), fb -> fb.transform(fm, asFieldTransform()));
             case MethodModel mm ->
                 clb.withMethod(mm.methodName().stringValue(), mapMethodDesc(
-                        mm.methodTypeSymbol()), mm.flags().flagsMask(), mb ->
-                                mm.forEachElement(asMethodTransform().resolve(mb).consumer()));
+                        mm.methodTypeSymbol()), mm.flags().flagsMask(), mb -> mb.transform(mm, asMethodTransform()));
             case Superclass sc ->
                 clb.withSuperclass(map(sc.superclassEntry().asSymbol()));
             case Interfaces ins ->
@@ -260,8 +258,7 @@ public record ClassRemapperImpl(Function<ClassDesc, ClassDesc> mapFunction) impl
                     cob.localVariableType(c.slot(), c.name().stringValue(),
                             mapSignature(c.signatureSymbol()), c.startScope(), c.endScope());
                 case LoadConstantInstruction ldc ->
-                    cob.loadConstant(ldc.opcode(),
-                            mapConstantValue(ldc.constantValue()));
+                    cob.ldc(mapConstantValue(ldc.constantValue()));
                 case RuntimeVisibleTypeAnnotationsAttribute aa ->
                     cob.with(RuntimeVisibleTypeAnnotationsAttribute.of(
                             mapTypeAnnotations(aa.annotations())));
@@ -403,9 +400,7 @@ public record ClassRemapperImpl(Function<ClassDesc, ClassDesc> mapFunction) impl
 
     List<TypeAnnotation> mapTypeAnnotations(List<TypeAnnotation> typeAnnotations) {
         return typeAnnotations.stream().map(a -> TypeAnnotation.of(a.targetInfo(),
-                a.targetPath(), map(a.classSymbol()),
-                a.elements().stream().map(el -> AnnotationElement.of(el.name(),
-                        mapAnnotationValue(el.value()))).toList())).toList();
+                a.targetPath(), mapAnnotation(a.annotation()))).toList();
     }
 
     List<Signature.TypeParam> mapTypeParams(List<Signature.TypeParam> typeParams) {

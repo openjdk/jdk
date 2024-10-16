@@ -30,13 +30,19 @@
  *
  * @run clean ThreadPoolAccTest
  * @run build ThreadPoolAccTest
+ *
+ * @run main/othervm ThreadPoolAccTest
  * @run main/othervm -Djava.security.manager=allow ThreadPoolAccTest
+ * @run main/othervm -Djava.security.manager=allow -DThreadPoolAccTest.useGetSubjectACC=true ThreadPoolAccTest
+ * @run main/othervm/policy=all.policy ThreadPoolAccTest
+ * @run main/othervm/policy=all.policy -DThreadPoolAccTest.useGetSubjectACC=true ThreadPoolAccTest
  */
 
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Date;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import javax.management.MBeanServer;
 import javax.management.MBeanServerFactory;
 import javax.management.ObjectName;
@@ -67,7 +73,9 @@ public class ThreadPoolAccTest {
             return "";
         }
         private void setPrincipal() {
-            Subject subject = Subject.getSubject(AccessController.getContext());
+            // Use Subject.current() unless test Property is set.
+            Subject subject = Boolean.getBoolean("ThreadPoolAccTest.useGetSubjectACC") ?
+                              Subject.getSubject(AccessController.getContext()) : Subject.current();
             Set<JMXPrincipal> principals = subject.getPrincipals(JMXPrincipal.class);
             principal = principals.iterator().next().getName();
         }
@@ -136,7 +144,9 @@ public class ThreadPoolAccTest {
                         return null;
                     }
                 };
-                Subject.doAs(subject, action);
+                // Subject.doAs(subject, action);
+                Callable<Void> c = (Callable<Void>) () -> action.run();
+                Subject.callAs(subject, c);
             }
 
             sleep(500); // wait for getX method to be called, which calls setPrincipal

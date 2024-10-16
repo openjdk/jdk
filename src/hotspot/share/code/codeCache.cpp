@@ -165,8 +165,8 @@ class CodeBlob_sizes {
 // Iterate over all CodeBlobs (cb) on the given CodeHeap
 #define FOR_ALL_BLOBS(cb, heap) for (CodeBlob* cb = first_blob(heap); cb != nullptr; cb = next_blob(heap, cb))
 
-address CodeCache::_low_bound = 0;
-address CodeCache::_high_bound = 0;
+address CodeCache::_low_bound = nullptr;
+address CodeCache::_high_bound = nullptr;
 volatile int CodeCache::_number_of_nmethods_with_dependencies = 0;
 ExceptionCache* volatile CodeCache::_exception_cache_purge_list = nullptr;
 
@@ -205,7 +205,7 @@ void CodeCache::initialize_heaps() {
   const bool cache_size_set   = FLAG_IS_CMDLINE(ReservedCodeCacheSize);
   const size_t ps             = page_size(false, 8);
   const size_t min_size       = MAX2(os::vm_allocation_granularity(), ps);
-  const size_t min_cache_size = CodeCacheMinimumUseSpace DEBUG_ONLY(* 3); // Make sure we have enough space for VM internal code
+  const size_t min_cache_size = CompilerConfig::min_code_cache_size(); // Make sure we have enough space for VM internal code
   size_t cache_size           = align_up(ReservedCodeCacheSize, min_size);
 
   // Prerequisites
@@ -227,6 +227,11 @@ void CodeCache::initialize_heaps() {
 
   if (!non_nmethod.set) {
     non_nmethod.size += compiler_buffer_size;
+    // Further down, just before FLAG_SET_ERGO(), all segment sizes are
+    // aligned down to the next lower multiple of min_size. For large page
+    // sizes, this may result in (non_nmethod.size == 0) which is not acceptable.
+    // Therefore, force non_nmethod.size to at least min_size.
+    non_nmethod.size = MAX2(non_nmethod.size, min_size);
   }
 
   if (!profiled.set && !non_profiled.set) {
@@ -1762,9 +1767,13 @@ void CodeCache::print_codelist(outputStream* st) {
     nmethod* nm = iter.method();
     ResourceMark rm;
     char* method_name = nm->method()->name_and_sig_as_C_string();
-    st->print_cr("%d %d %d %s [" INTPTR_FORMAT ", " INTPTR_FORMAT " - " INTPTR_FORMAT "]",
+    const char* jvmci_name = nullptr;
+#if INCLUDE_JVMCI
+    jvmci_name = nm->jvmci_name();
+#endif
+    st->print_cr("%d %d %d %s%s%s [" INTPTR_FORMAT ", " INTPTR_FORMAT " - " INTPTR_FORMAT "]",
                  nm->compile_id(), nm->comp_level(), nm->get_state(),
-                 method_name,
+                 method_name, jvmci_name ? " jvmci_name=" : "", jvmci_name ? jvmci_name : "",
                  (intptr_t)nm->header_begin(), (intptr_t)nm->code_begin(), (intptr_t)nm->code_end());
   }
 }
@@ -1783,20 +1792,22 @@ void CodeCache::log_state(outputStream* st) {
 }
 
 #ifdef LINUX
-void CodeCache::write_perf_map(const char* filename) {
+void CodeCache::write_perf_map(const char* filename, outputStream* st) {
   MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-
-  // Perf expects to find the map file at /tmp/perf-<pid>.map
-  // if the file name is not specified.
-  char fname[32];
+  char fname[JVM_MAXPATHLEN];
   if (filename == nullptr) {
-    jio_snprintf(fname, sizeof(fname), "/tmp/perf-%d.map", os::current_process_id());
+    // Invocation outside of jcmd requires pid substitution.
+    if (!Arguments::copy_expand_pid(DEFAULT_PERFMAP_FILENAME,
+                                    strlen(DEFAULT_PERFMAP_FILENAME),
+                                    fname, JVM_MAXPATHLEN)) {
+      st->print_cr("Warning: Not writing perf map as pid substitution failed.");
+      return;
+    }
     filename = fname;
   }
-
   fileStream fs(filename, "w");
   if (!fs.is_open()) {
-    log_warning(codecache)("Failed to create %s for perf map", filename);
+    st->print_cr("Warning: Failed to create %s for perf map", filename);
     return;
   }
 
@@ -1804,12 +1815,20 @@ void CodeCache::write_perf_map(const char* filename) {
   while (iter.next()) {
     CodeBlob *cb = iter.method();
     ResourceMark rm;
-    const char* method_name =
-      cb->is_nmethod() ? cb->as_nmethod()->method()->external_name()
-                       : cb->name();
-    fs.print_cr(INTPTR_FORMAT " " INTPTR_FORMAT " %s",
+    const char* method_name = nullptr;
+    const char* jvmci_name = nullptr;
+    if (cb->is_nmethod()) {
+      nmethod* nm = cb->as_nmethod();
+      method_name = nm->method()->external_name();
+#if INCLUDE_JVMCI
+      jvmci_name = nm->jvmci_name();
+#endif
+    } else {
+      method_name = cb->name();
+    }
+    fs.print_cr(INTPTR_FORMAT " " INTPTR_FORMAT " %s%s%s",
                 (intptr_t)cb->code_begin(), (intptr_t)cb->code_size(),
-                method_name);
+                method_name, jvmci_name ? " jvmci_name=" : "", jvmci_name ? jvmci_name : "");
   }
 }
 #endif // LINUX

@@ -68,7 +68,11 @@ private:
                                        // for shared classes from this module
   Symbol*          _name;              // name of this module
   ClassLoaderData* _loader_data;
-  GrowableArray<ModuleEntry*>* _reads; // list of modules that are readable by this module
+
+  union {
+    GrowableArray<ModuleEntry*>* _reads;  // list of modules that are readable by this module
+    Array<ModuleEntry*>* _archived_reads; // List of readable modules stored in the CDS archive
+  };
   Symbol* _version;                    // module version number
   Symbol* _location;                   // module location
   CDS_ONLY(int _shared_path_index;)    // >=0 if classes in this module are in CDS archive
@@ -77,6 +81,7 @@ private:
   bool _must_walk_reads;               // walk module's reads list at GC safepoints to purge out dead modules
   bool _is_open;                       // whether the packages in the module are all unqualifiedly exported
   bool _is_patched;                    // whether the module is patched via --patch-module
+  DEBUG_ONLY(bool _reads_is_archived);
   CDS_JAVA_HEAP_ONLY(int _archived_module_index;)
 
   JFR_ONLY(DEFINE_TRACE_ID_FIELD;)
@@ -115,6 +120,22 @@ public:
 
   bool             can_read(ModuleEntry* m) const;
   bool             has_reads_list() const;
+  GrowableArray<ModuleEntry*>* reads() const {
+    assert(!_reads_is_archived, "sanity");
+    return _reads;
+  }
+  void set_reads(GrowableArray<ModuleEntry*>* r) {
+    _reads = r;
+    DEBUG_ONLY(_reads_is_archived = false);
+  }
+  Array<ModuleEntry*>* archived_reads() const {
+    assert(_reads_is_archived, "sanity");
+    return _archived_reads;
+  }
+  void set_archived_reads(Array<ModuleEntry*>* r) {
+    _archived_reads = r;
+    DEBUG_ONLY(_reads_is_archived = true);
+  }
   void             add_read(ModuleEntry* m);
   void             set_read_walk_required(ClassLoaderData* m_loader_data);
 

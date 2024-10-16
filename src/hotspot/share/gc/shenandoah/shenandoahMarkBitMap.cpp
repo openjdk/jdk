@@ -122,7 +122,7 @@ void ShenandoahMarkBitMap::clear_range_large(MemRegion mr) {
 
 #ifdef ASSERT
 void ShenandoahMarkBitMap::check_mark(HeapWord* addr) const {
-  assert(ShenandoahHeap::heap()->is_in(addr),
+  assert(ShenandoahHeap::heap()->is_in_reserved(addr),
          "Trying to access bitmap " PTR_FORMAT " for address " PTR_FORMAT " not in the heap.",
          p2i(this), p2i(addr));
 }

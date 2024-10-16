@@ -393,6 +393,7 @@ void Threads::initialize_java_lang_classes(JavaThread* main_thread, TRAPS) {
   initialize_class(vmSymbols::java_lang_ClassCastException(), CHECK);
   initialize_class(vmSymbols::java_lang_ArrayStoreException(), CHECK);
   initialize_class(vmSymbols::java_lang_ArithmeticException(), CHECK);
+  initialize_class(vmSymbols::java_lang_ArrayIndexOutOfBoundsException(), CHECK);
   initialize_class(vmSymbols::java_lang_StackOverflowError(), CHECK);
   initialize_class(vmSymbols::java_lang_IllegalMonitorStateException(), CHECK);
   initialize_class(vmSymbols::java_lang_IllegalArgumentException(), CHECK);
@@ -818,7 +819,13 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 #endif
 
   if (CDSConfig::is_dumping_static_archive()) {
-    MetaspaceShared::preload_and_dump();
+    MetaspaceShared::preload_and_dump(CHECK_JNI_ERR);
+  }
+
+  if (log_is_enabled(Info, perf, class, link)) {
+    LogStreamHandle(Info, perf, class, link) log;
+    log.print_cr("At VM initialization completion:");
+    ClassLoader::print_counters(&log);
   }
 
   return JNI_OK;
@@ -978,6 +985,7 @@ jboolean Threads::is_supported_jni_version(jint version) {
   if (version == JNI_VERSION_19) return JNI_TRUE;
   if (version == JNI_VERSION_20) return JNI_TRUE;
   if (version == JNI_VERSION_21) return JNI_TRUE;
+  if (version == JNI_VERSION_24) return JNI_TRUE;
   return JNI_FALSE;
 }
 
@@ -1020,7 +1028,9 @@ void Threads::add(JavaThread* p, bool force_daemon) {
 void Threads::remove(JavaThread* p, bool is_daemon) {
   // Extra scope needed for Thread_lock, so we can check
   // that we do not remove thread without safepoint code notice
-  { MonitorLocker ml(Threads_lock);
+  {
+    ConditionalMutexLocker throttle_ml(ThreadsLockThrottle_lock, UseThreadsLockThrottleLock);
+    MonitorLocker ml(Threads_lock);
 
     if (ThreadIdTable::is_initialized()) {
       // This cleanup must be done before the current thread's GC barrier
@@ -1068,7 +1078,7 @@ void Threads::remove(JavaThread* p, bool is_daemon) {
 
     // Notify threads waiting in EscapeBarriers
     EscapeBarrier::thread_removed(p);
-  } // unlock Threads_lock
+  } // unlock Threads_lock and ThreadsLockThrottle_lock
 
   // Reduce the ObjectMonitor ceiling for the exiting thread.
   ObjectSynchronizer::dec_in_use_list_ceiling();
@@ -1326,8 +1336,11 @@ void Threads::print_on(outputStream* st, bool print_stacks,
           if (p->is_vthread_mounted()) {
             const oop vt = p->vthread();
             assert(vt != nullptr, "vthread should not be null when vthread is mounted");
-            st->print_cr("   Mounted virtual thread \"%s\" #" INT64_FORMAT, JavaThread::name_for(vt), (int64_t)java_lang_Thread::thread_id(vt));
-            p->print_vthread_stack_on(st);
+            // JavaThread._vthread can refer to the carrier thread. Print only if _vthread refers to a virtual thread.
+            if (vt != thread_oop) {
+              st->print_cr("   Mounted virtual thread #" INT64_FORMAT, (int64_t)java_lang_Thread::thread_id(vt));
+              p->print_vthread_stack_on(st);
+            }
           }
         }
       }

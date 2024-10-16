@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,8 @@ public class JdwpListenTest {
 
     // Set to true to allow testing of attach from wrong address (expected to fail).
     // It's off by default as it causes test time increase and test interference (see JDK-8231915).
-    private static boolean allowNegativeTesting = false;
+    private static boolean allowNegativeTesting =
+        "true".equalsIgnoreCase(System.getProperty("jdk.jdi.allowNegativeTesting"));
 
     public static void main(String[] args) throws Exception {
         List<InetAddress> addresses = Utils.getAddressesWithSymbolicAndNumericScopes();

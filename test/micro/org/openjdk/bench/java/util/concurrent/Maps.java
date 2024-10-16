@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Alibaba Group Holding Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +36,7 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
 
+import java.util.Enumeration;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -125,6 +127,21 @@ public class Maps {
         }
         map.putAll(staticMap);
         return map;
+    }
+
+    @Benchmark
+    public int testConcurrentHashMapIterators() {
+        ConcurrentHashMap<Integer, Integer> map = (ConcurrentHashMap<Integer, Integer>) staticMap;
+        int sum = 0;
+        Enumeration it = map.elements();
+        while (it.hasMoreElements()) {
+            sum += (int) it.nextElement();
+        }
+        it = map.keys();
+        while (it.hasMoreElements()) {
+            sum += (int) it.nextElement();
+        }
+        return sum;
     }
 
     private static class SimpleRandom {

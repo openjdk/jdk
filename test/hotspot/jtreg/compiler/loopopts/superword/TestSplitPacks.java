@@ -37,7 +37,6 @@ import java.nio.ByteOrder;
  * @bug 8326139
  * @summary Test splitting packs in SuperWord
  * @library /test/lib /
- * @requires vm.compiler2.enabled
  * @run driver compiler.loopopts.superword.TestSplitPacks
  */
 
@@ -71,7 +70,7 @@ public class TestSplitPacks {
     }
 
     public static void main(String[] args) {
-        TestFramework.runWithFlags("-XX:LoopUnrollLimit=1000");
+        TestFramework.runWithFlags("-XX:+IgnoreUnrecognizedVMOptions", "-XX:LoopUnrollLimit=1000");
     }
 
     public TestSplitPacks() {

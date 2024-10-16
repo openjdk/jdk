@@ -422,10 +422,6 @@
           "Initial ratio of young generation/survivor space size")          \
           range(0, max_uintx)                                               \
                                                                             \
-  product(size_t, BaseFootPrintEstimate, 256*M,                             \
-          "Estimate of footprint other than Java Heap")                     \
-          range(0, max_uintx)                                               \
-                                                                            \
   product(bool, UseGCOverheadLimit, true,                                   \
           "Use policy to limit of proportion of time spent in GC "          \
           "before an OutOfMemory error is thrown")                          \
@@ -539,10 +535,6 @@
   product(size_t, SoftMaxHeapSize, 0, MANAGEABLE,                           \
           "Soft limit for maximum heap size (in bytes)")                    \
           constraint(SoftMaxHeapSizeConstraintFunc,AfterMemoryInit)         \
-                                                                            \
-  product(size_t, OldSize, ScaleForWordSize(4*M),                           \
-          "(Deprecated) Initial tenured generation size (in bytes)")        \
-          range(0, max_uintx)                                               \
                                                                             \
   product(size_t, NewSize, ScaleForWordSize(1*M),                           \
           "Initial new generation size (in bytes)")                         \

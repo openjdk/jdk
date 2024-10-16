@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,14 +32,15 @@ import javax.lang.model.element.*;
 import javax.lang.model.SourceVersion;
 
 /**
- * The interface for an annotation processor.
+ * The interface for an <dfn>{@index "annotation processor"}</dfn>.
  *
- * <p>Annotation processing happens in a sequence of {@linkplain
- * javax.annotation.processing.RoundEnvironment rounds}.  On each
- * round, a processor may be asked to {@linkplain #process process} a
- * subset of the annotations found on the source and class files
- * produced by a prior round.  The inputs to the first round of
- * processing are the initial inputs to a run of the tool; these
+ * <p>Annotation processing happens in a sequence of <dfn>rounds</dfn>.
+ * On each
+ * {@linkplain RoundEnvironment round}, a processor may be asked to {@linkplain #process process} a
+ * subset of the annotations found on the
+ * {@linkplain RoundEnvironment#getRootElements() source and class files
+ * produced by a prior round}.  The inputs to the first round of
+ * processing are the <dfn>{@index "initial inputs"}</dfn> to a run of the tool; these
  * initial inputs can be regarded as the output of a virtual zeroth
  * round of processing.  If a processor was asked to process on a
  * given round, it will be asked to process on subsequent rounds,
@@ -77,7 +78,7 @@ import javax.lang.model.SourceVersion;
  * protocol being followed, then the processor's behavior is not
  * defined by this interface specification.
  *
- * <p> The tool uses a <i>discovery process</i> to find annotation
+ * <p> The tool uses a <dfn>{@index "discovery process"}</dfn> to find annotation
  * processors and decide whether or not they should be run.  By
  * configuring the tool, the set of potential processors can be
  * controlled.  For example, for a {@link javax.tools.JavaCompiler

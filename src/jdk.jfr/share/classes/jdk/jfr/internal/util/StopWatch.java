@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,7 @@ public final class StopWatch {
         for (int i = 0; i < timings.size() - 1; i++) {
             Timing current = timings.get(i);
             Timing next = timings.get(i + 1);
-            Duration d = Duration.between(current.start(), next.start());
+            Duration d = current.start().until(next.start());
             sb.add(current.name() + "=" + ValueFormatter.formatDuration(d));
         }
         return sb.toString();

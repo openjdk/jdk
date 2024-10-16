@@ -138,9 +138,11 @@ void DCmd::register_dcmds(){
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<PerfMapDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<TrimCLibcHeapDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<MallocInfoDcmd>(full_export, true, false));
+#endif // LINUX
+#if defined(LINUX) || defined(_WIN64)
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<SystemMapDCmd>(full_export, true,false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<SystemDumpMapDCmd>(full_export, true,false));
-#endif // LINUX
+#endif // LINUX or WINDOWS
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CodeHeapAnalyticsDCmd>(full_export, true, false));
 
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CompilerDirectivesPrintDCmd>(full_export, true, false));
@@ -473,7 +475,7 @@ void FinalizerInfoDCmd::execute(DCmdSource source, TRAPS) {
 #if INCLUDE_SERVICES // Heap dumping/inspection supported
 HeapDumpDCmd::HeapDumpDCmd(outputStream* output, bool heap) :
                            DCmdWithParser(output, heap),
-  _filename("filename","Name of the dump file", "STRING",true),
+  _filename("filename","Name of the dump file", "FILE",true),
   _all("-all", "Dump all objects, including unreachable objects",
        "BOOLEAN", false, "false"),
   _gzip("-gz", "If specified, the heap dump is written in gzipped format "
@@ -852,20 +854,15 @@ void CodeCacheDCmd::execute(DCmdSource source, TRAPS) {
 }
 
 #ifdef LINUX
-#define DEFAULT_PERFMAP_FILENAME "/tmp/perf-<pid>.map"
-
 PerfMapDCmd::PerfMapDCmd(outputStream* output, bool heap) :
              DCmdWithParser(output, heap),
-  _filename("filename", "Name of the map file", "STRING", false, DEFAULT_PERFMAP_FILENAME)
+  _filename("filename", "Name of the map file", "FILE", false, DEFAULT_PERFMAP_FILENAME)
 {
   _dcmdparser.add_dcmd_argument(&_filename);
 }
 
 void PerfMapDCmd::execute(DCmdSource source, TRAPS) {
-  // The check for _filename.is_set() is because we don't want to use
-  // DEFAULT_PERFMAP_FILENAME, since it is meant as a description
-  // of the default, not the actual default.
-  CodeCache::write_perf_map(_filename.is_set() ? _filename.value() : nullptr);
+  CodeCache::write_perf_map(_filename.value(), output());
 }
 #endif // LINUX
 
@@ -904,7 +901,6 @@ void EventLogDCmd::execute(DCmdSource source, TRAPS) {
   int max = -1;
   if (max_value != nullptr) {
     char* endptr = nullptr;
-    int max;
     if (!parse_integer(max_value, &max)) {
       output()->print_cr("Invalid max option: \"%s\".", max_value);
       return;
@@ -992,17 +988,17 @@ public:
 };
 
 void ClassesDCmd::execute(DCmdSource source, TRAPS) {
-  VM_PrintClasses vmop(output(), _verbose.is_set());
+  VM_PrintClasses vmop(output(), _verbose.value());
   VMThread::execute(&vmop);
 }
 
 #if INCLUDE_CDS
-#define DEFAULT_CDS_ARCHIVE_FILENAME "java_pid<pid>_<subcmd>.jsa"
+#define DEFAULT_CDS_ARCHIVE_FILENAME "java_pid%p_<subcmd>.jsa"
 
 DumpSharedArchiveDCmd::DumpSharedArchiveDCmd(outputStream* output, bool heap) :
                                      DCmdWithParser(output, heap),
   _suboption("subcmd", "static_dump | dynamic_dump", "STRING", true),
-  _filename("filename", "Name of shared archive to be dumped", "STRING", false,
+  _filename("filename", "Name of shared archive to be dumped", "FILE", false,
             DEFAULT_CDS_ARCHIVE_FILENAME)
 {
   _dcmdparser.add_dcmd_argument(&_suboption);
@@ -1040,7 +1036,7 @@ void DumpSharedArchiveDCmd::execute(DCmdSource source, TRAPS) {
   // call CDS.dumpSharedArchive
   Handle fileh;
   if (file != nullptr) {
-    fileh =  java_lang_String::create_from_str(_filename.value(), CHECK);
+    fileh = java_lang_String::create_from_str(file, CHECK);
   }
   Symbol* cds_name  = vmSymbols::jdk_internal_misc_CDS();
   Klass*  cds_klass = SystemDictionary::resolve_or_fail(cds_name, true /*throw error*/,  CHECK);
@@ -1105,7 +1101,7 @@ ThreadDumpToFileDCmd::ThreadDumpToFileDCmd(outputStream* output, bool heap) :
                                            DCmdWithParser(output, heap),
   _overwrite("-overwrite", "May overwrite existing file", "BOOLEAN", false, "false"),
   _format("-format", "Output format (\"plain\" or \"json\")", "STRING", false, "plain"),
-  _filepath("filepath", "The file path to the output file", "STRING", true) {
+  _filepath("filepath", "The file path to the output file", "FILE", true) {
   _dcmdparser.add_dcmd_option(&_overwrite);
   _dcmdparser.add_dcmd_option(&_format);
   _dcmdparser.add_dcmd_argument(&_filepath);
@@ -1178,47 +1174,40 @@ void CompilationMemoryStatisticDCmd::execute(DCmdSource source, TRAPS) {
   CompilationMemoryStatistic::print_all_by_size(output(), human_readable, minsize);
 }
 
-#ifdef LINUX
+#if defined(LINUX) || defined(_WIN64)
 
-SystemMapDCmd::SystemMapDCmd(outputStream* output, bool heap) :
-    DCmdWithParser(output, heap),
-  _human_readable("-H", "Human readable format", "BOOLEAN", false, "false") {
-  _dcmdparser.add_dcmd_option(&_human_readable);
-}
+SystemMapDCmd::SystemMapDCmd(outputStream* output, bool heap) : DCmd(output, heap) {}
 
 void SystemMapDCmd::execute(DCmdSource source, TRAPS) {
-  MemMapPrinter::print_all_mappings(output(), _human_readable.value());
+  MemMapPrinter::print_all_mappings(output());
 }
 
-static constexpr char default_filename[] = "vm_memory_map_<pid>.txt";
+static constexpr char default_filename[] = "vm_memory_map_%p.txt";
 
 SystemDumpMapDCmd::SystemDumpMapDCmd(outputStream* output, bool heap) :
-    DCmdWithParser(output, heap),
-  _human_readable("-H", "Human readable format", "BOOLEAN", false, "false"),
-  _filename("-F", "file path", "STRING", false, default_filename) {
-  _dcmdparser.add_dcmd_option(&_human_readable);
+  DCmdWithParser(output, heap),
+  _filename("-F", "file path", "FILE", false, default_filename) {
   _dcmdparser.add_dcmd_option(&_filename);
 }
 
 void SystemDumpMapDCmd::execute(DCmdSource source, TRAPS) {
-  stringStream defaultname;
-  const char* name = nullptr;
-  if (::strcmp(default_filename, _filename.value()) == 0) {
-    defaultname.print("vm_memory_map_%d.txt", os::current_process_id());
-    name = defaultname.base();
-  } else {
-    name = _filename.value();
+  const char* name = _filename.value();
+  if (name == nullptr || name[0] == 0) {
+    output()->print_cr("filename is empty or not specified.  No file written");
+    return;
   }
   fileStream fs(name);
   if (fs.is_open()) {
     if (!MemTracker::enabled()) {
       output()->print_cr("(NMT is disabled, will not annotate mappings).");
     }
-    MemMapPrinter::print_all_mappings(&fs, _human_readable.value());
+    MemMapPrinter::print_all_mappings(&fs);
+#ifndef _WIN64
     // For the readers convenience, resolve path name.
     char tmp[JVM_MAXPATHLEN];
     const char* absname = os::Posix::realpath(name, tmp, sizeof(tmp));
     name = absname != nullptr ? absname : name;
+#endif
     output()->print_cr("Memory map dumped to \"%s\".", name);
   } else {
     output()->print_cr("Failed to open \"%s\" for writing (%s).", name, os::strerror(errno));

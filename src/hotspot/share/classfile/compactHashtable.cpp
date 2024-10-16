@@ -431,10 +431,10 @@ void HashtableTextDump::get_utf8(char* utf8_buffer, int utf8_length) {
 }
 
 // NOTE: the content is NOT the same as
-// UTF8::as_quoted_ascii(const char* utf8_str, int utf8_length, char* buf, int buflen).
+// UTF8::as_quoted_ascii(const char* utf8_str, int utf8_length, char* buf, size_t buflen).
 // We want to escape \r\n\t so that output [1] is more readable; [2] can be more easily
 // parsed by scripts; [3] quickly processed by HashtableTextDump::get_utf8()
-void HashtableTextDump::put_utf8(outputStream* st, const char* utf8_string, int utf8_length) {
+void HashtableTextDump::put_utf8(outputStream* st, const char* utf8_string, size_t utf8_length) {
   const char *c = utf8_string;
   const char *end = c + utf8_length;
   for (; c < end; c++) {

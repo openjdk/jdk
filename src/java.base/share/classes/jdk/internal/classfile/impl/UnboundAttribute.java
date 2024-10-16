@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,15 +29,12 @@ import java.util.List;
 import java.util.Optional;
 
 import java.lang.classfile.Annotation;
-import java.lang.classfile.AnnotationElement;
 import java.lang.classfile.AnnotationValue;
 import java.lang.classfile.Attribute;
 import java.lang.classfile.AttributeMapper;
 import java.lang.classfile.Attributes;
 import java.lang.classfile.BootstrapMethodEntry;
-import java.lang.classfile.BufWriter;
 import java.lang.classfile.constantpool.ClassEntry;
-import java.lang.classfile.Label;
 import java.lang.classfile.TypeAnnotation;
 import java.lang.classfile.attribute.AnnotationDefaultAttribute;
 import java.lang.classfile.attribute.BootstrapMethodsAttribute;
@@ -93,9 +90,13 @@ import java.lang.classfile.constantpool.NameAndTypeEntry;
 import java.lang.classfile.constantpool.PackageEntry;
 import java.lang.classfile.constantpool.Utf8Entry;
 
+import jdk.internal.access.SharedSecrets;
+
+import static java.util.Objects.requireNonNull;
+
 public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         extends AbstractElement
-        implements Attribute<T> {
+        implements Attribute<T>, Util.Writable {
     protected final AttributeMapper<T> mapper;
 
     public UnboundAttribute(AttributeMapper<T> mapper) {
@@ -114,7 +115,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
 
     @Override
     @SuppressWarnings("unchecked")
-    public void writeTo(BufWriter buf) {
+    public void writeTo(BufWriterImpl buf) {
         mapper.writeAttribute(buf, (T) this);
     }
 
@@ -150,7 +151,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
 
         public UnboundConstantValueAttribute(ConstantValueEntry entry) {
             super(Attributes.constantValue());
-            this.entry = entry;
+            this.entry = requireNonNull(entry);
         }
 
         @Override
@@ -183,7 +184,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
 
         public UnboundSignatureAttribute(Utf8Entry signature) {
             super(Attributes.signature());
-            this.signature = signature;
+            this.signature = requireNonNull(signature);
         }
 
         @Override
@@ -215,7 +216,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
 
         public UnboundAnnotationDefaultAttribute(AnnotationValue annotationDefault) {
             super(Attributes.annotationDefault());
-            this.annotationDefault = annotationDefault;
+            this.annotationDefault = requireNonNull(annotationDefault);
         }
 
         @Override
@@ -230,7 +231,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
 
         public UnboundSourceFileAttribute(Utf8Entry sourceFile) {
             super(Attributes.sourceFile());
-            this.sourceFile = sourceFile;
+            this.sourceFile = requireNonNull(sourceFile);
         }
 
         @Override
@@ -295,7 +296,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
 
         public UnboundEnclosingMethodAttribute(ClassEntry classEntry, NameAndTypeEntry method) {
             super(Attributes.enclosingMethod());
-            this.classEntry = classEntry;
+            this.classEntry = requireNonNull(classEntry);
             this.method = method;
         }
 
@@ -333,7 +334,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
 
         public UnboundModuleTargetAttribute(Utf8Entry moduleTarget) {
             super(Attributes.moduleTarget());
-            this.moduleTarget = moduleTarget;
+            this.moduleTarget = requireNonNull(moduleTarget);
         }
 
         @Override
@@ -349,7 +350,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
 
         public UnboundModuleMainClassAttribute(ClassEntry mainClass) {
             super(Attributes.moduleMainClass());
-            this.mainClass = mainClass;
+            this.mainClass = requireNonNull(mainClass);
         }
 
         @Override
@@ -366,7 +367,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
 
         public UnboundModuleHashesAttribute(Utf8Entry algorithm, List<ModuleHashInfo> hashes) {
             super(Attributes.moduleHashes());
-            this.algorithm = algorithm;
+            this.algorithm = requireNonNull(algorithm);
             this.hashes = List.copyOf(hashes);
         }
 
@@ -452,7 +453,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
 
         public UnboundNestHostAttribute(ClassEntry hostEntry) {
             super(Attributes.nestHost());
-            this.hostEntry = hostEntry;
+            this.hostEntry = requireNonNull(hostEntry);
         }
 
         @Override
@@ -468,7 +469,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
 
         public UnboundCompilationIDAttribute(Utf8Entry idEntry) {
             super(Attributes.compilationId());
-            this.idEntry = idEntry;
+            this.idEntry = requireNonNull(idEntry);
         }
 
         @Override
@@ -484,7 +485,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
 
         public UnboundSourceIDAttribute(Utf8Entry idEntry) {
             super(Attributes.sourceId());
-            this.idEntry = idEntry;
+            this.idEntry = requireNonNull(idEntry);
         }
 
         @Override
@@ -500,7 +501,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
 
         public UnboundSourceDebugExtensionAttribute(byte[] contents) {
             super(Attributes.sourceDebugExtension());
-            this.contents = contents;
+            this.contents = requireNonNull(contents);
         }
 
         @Override
@@ -612,7 +613,13 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
 
         public UnboundRuntimeVisibleParameterAnnotationsAttribute(List<List<Annotation>> elements) {
             super(Attributes.runtimeVisibleParameterAnnotations());
-            this.elements = List.copyOf(elements);
+            // deep copy
+            var array = elements.toArray().clone();
+            for (int i = 0; i < array.length; i++) {
+                array[i] = List.copyOf((List<?>) array[i]);
+            }
+
+            this.elements = SharedSecrets.getJavaUtilCollectionAccess().listFromTrustedArray(array);
         }
 
         @Override
@@ -628,7 +635,13 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
 
         public UnboundRuntimeInvisibleParameterAnnotationsAttribute(List<List<Annotation>> elements) {
             super(Attributes.runtimeInvisibleParameterAnnotations());
-            this.elements = List.copyOf(elements);
+            // deep copy
+            var array = elements.toArray().clone();
+            for (int i = 0; i < array.length; i++) {
+                array[i] = List.copyOf((List<?>) array[i]);
+            }
+
+            this.elements = SharedSecrets.getJavaUtilCollectionAccess().listFromTrustedArray(array);
         }
 
         @Override
@@ -679,7 +692,13 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
                                         Optional<ClassEntry> outerClass,
                                         Optional<Utf8Entry> innerName,
                                         int flagsMask)
-            implements InnerClassInfo {}
+            implements InnerClassInfo {
+        public UnboundInnerClassInfo {
+            requireNonNull(innerClass);
+            requireNonNull(outerClass);
+            requireNonNull(innerName);
+        }
+    }
 
     public record UnboundLineNumberInfo(int startPc, int lineNumber)
             implements LineNumberInfo { }
@@ -688,138 +707,95 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
                                            Utf8Entry name,
                                            Utf8Entry type,
                                            int slot)
-            implements LocalVariableInfo { }
+            implements LocalVariableInfo {
+        public UnboundLocalVariableInfo {
+            requireNonNull(name);
+            requireNonNull(type);
+        }
+    }
 
     public record UnboundLocalVariableTypeInfo(int startPc, int length,
                                                Utf8Entry name,
                                                Utf8Entry signature,
                                                int slot)
-            implements LocalVariableTypeInfo { }
+            implements LocalVariableTypeInfo {
+        public UnboundLocalVariableTypeInfo {
+            requireNonNull(name);
+            requireNonNull(signature);
+        }
+    }
 
     public record UnboundMethodParameterInfo(Optional<Utf8Entry> name, int flagsMask)
-            implements MethodParameterInfo {}
+            implements MethodParameterInfo {
+        public UnboundMethodParameterInfo {
+            requireNonNull(name);
+        }
+    }
 
     public record UnboundModuleExportInfo(PackageEntry exportedPackage,
                                           int exportsFlagsMask,
                                           List<ModuleEntry> exportsTo)
             implements ModuleExportInfo {
-        public UnboundModuleExportInfo(PackageEntry exportedPackage, int exportsFlagsMask,
-                                       List<ModuleEntry> exportsTo) {
-            this.exportedPackage = exportedPackage;
-            this.exportsFlagsMask = exportsFlagsMask;
-            this.exportsTo = List.copyOf(exportsTo);
+        public UnboundModuleExportInfo {
+            requireNonNull(exportedPackage);
+            exportsTo = List.copyOf(exportsTo);
         }
     }
 
     public record UnboundModuleHashInfo(ModuleEntry moduleName,
-                                        byte[] hash) implements ModuleHashInfo { }
+                                        byte[] hash) implements ModuleHashInfo {
+        public UnboundModuleHashInfo {
+            requireNonNull(moduleName);
+            requireNonNull(hash);
+        }
+    }
 
     public record UnboundModuleOpenInfo(PackageEntry openedPackage, int opensFlagsMask,
                                         List<ModuleEntry> opensTo)
             implements ModuleOpenInfo {
-        public UnboundModuleOpenInfo(PackageEntry openedPackage, int opensFlagsMask,
-                                     List<ModuleEntry> opensTo) {
-            this.openedPackage = openedPackage;
-            this.opensFlagsMask = opensFlagsMask;
-            this.opensTo = List.copyOf(opensTo);
+        public UnboundModuleOpenInfo {
+            requireNonNull(openedPackage);
+            opensTo = List.copyOf(opensTo);
         }
     }
 
     public record UnboundModuleProvideInfo(ClassEntry provides,
                                            List<ClassEntry> providesWith)
             implements ModuleProvideInfo {
-        public UnboundModuleProvideInfo(ClassEntry provides, List<ClassEntry> providesWith) {
-            this.provides = provides;
-            this.providesWith = List.copyOf(providesWith);
+        public UnboundModuleProvideInfo {
+            requireNonNull(provides);
+            providesWith = List.copyOf(providesWith);
         }
     }
 
     public record UnboundModuleRequiresInfo(ModuleEntry requires, int requiresFlagsMask,
                                             Optional<Utf8Entry> requiresVersion)
-            implements ModuleRequireInfo {}
+            implements ModuleRequireInfo {
+        public UnboundModuleRequiresInfo {
+            requireNonNull(requires);
+            requireNonNull(requiresVersion);
+        }
+    }
 
     public record UnboundRecordComponentInfo(Utf8Entry name,
                                              Utf8Entry descriptor,
                                              List<Attribute<?>> attributes)
             implements RecordComponentInfo {
-        public UnboundRecordComponentInfo(Utf8Entry name, Utf8Entry descriptor, List<Attribute<?>> attributes) {
-            this.name = name;
-            this.descriptor = descriptor;
-            this.attributes = List.copyOf(attributes);
+        public UnboundRecordComponentInfo {
+            requireNonNull(name);
+            requireNonNull(descriptor);
+            attributes = List.copyOf(attributes);
         }
     }
 
     public record UnboundTypeAnnotation(TargetInfo targetInfo,
                                         List<TypePathComponent> targetPath,
-                                        Utf8Entry className,
-                                        List<AnnotationElement> elements) implements TypeAnnotation {
+                                        Annotation annotation) implements TypeAnnotation {
 
-        public UnboundTypeAnnotation(TargetInfo targetInfo, List<TypePathComponent> targetPath,
-                                     Utf8Entry className, List<AnnotationElement> elements) {
-            this.targetInfo = targetInfo;
-            this.targetPath = List.copyOf(targetPath);
-            this.className = className;
-            this.elements = List.copyOf(elements);
-        }
-
-        private int labelToBci(LabelContext lr, Label label) {
-            //helper method to avoid NPE
-            if (lr == null) throw new IllegalArgumentException("Illegal targetType '%s' in TypeAnnotation outside of Code attribute".formatted(targetInfo.targetType()));
-            return lr.labelToBci(label);
-        }
-
-        @Override
-        public void writeTo(BufWriter buf) {
-            LabelContext lr = ((BufWriterImpl) buf).labelContext();
-            // target_type
-            buf.writeU1(targetInfo.targetType().targetTypeValue());
-
-            // target_info
-            switch (targetInfo) {
-                case TypeParameterTarget tpt -> buf.writeU1(tpt.typeParameterIndex());
-                case SupertypeTarget st -> buf.writeU2(st.supertypeIndex());
-                case TypeParameterBoundTarget tpbt -> {
-                    buf.writeU1(tpbt.typeParameterIndex());
-                    buf.writeU1(tpbt.boundIndex());
-                }
-                case EmptyTarget et -> {
-                    // nothing to write
-                }
-                case FormalParameterTarget fpt -> buf.writeU1(fpt.formalParameterIndex());
-                case ThrowsTarget tt -> buf.writeU2(tt.throwsTargetIndex());
-                case LocalVarTarget lvt -> {
-                    buf.writeU2(lvt.table().size());
-                    for (var e : lvt.table()) {
-                        int startPc = labelToBci(lr, e.startLabel());
-                        buf.writeU2(startPc);
-                        buf.writeU2(labelToBci(lr, e.endLabel()) - startPc);
-                        buf.writeU2(e.index());
-                    }
-                }
-                case CatchTarget ct -> buf.writeU2(ct.exceptionTableIndex());
-                case OffsetTarget ot -> buf.writeU2(labelToBci(lr, ot.target()));
-                case TypeArgumentTarget tat -> {
-                    buf.writeU2(labelToBci(lr, tat.target()));
-                    buf.writeU1(tat.typeArgumentIndex());
-                }
-            }
-
-            // target_path
-            buf.writeU1(targetPath().size());
-            for (TypePathComponent component : targetPath()) {
-                buf.writeU1(component.typePathKind().tag());
-                buf.writeU1(component.typeArgumentIndex());
-            }
-
-            // type_index
-            buf.writeIndex(className);
-
-            // element_value_pairs
-            buf.writeU2(elements.size());
-            for (AnnotationElement pair : elements()) {
-                buf.writeIndex(pair.name());
-                pair.value().writeTo(buf);
-            }
+        public UnboundTypeAnnotation {
+            requireNonNull(targetInfo);
+            targetPath = List.copyOf(targetPath);
+            requireNonNull(annotation);
         }
     }
 
@@ -846,7 +822,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
                                       Collection<ModuleProvideInfo> provides)
         {
             super(Attributes.module());
-            this.moduleName = moduleName;
+            this.moduleName = requireNonNull(moduleName);
             this.moduleFlags = moduleFlags;
             this.moduleVersion = moduleVersion;
             this.requires = List.copyOf(requires);
@@ -904,16 +880,15 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
             super(mapper);
         }
 
-        public abstract void writeBody(BufWriter b);
+        public abstract void writeBody(BufWriterImpl b);
 
         @Override
-        public void writeTo(BufWriter b) {
+        public void writeTo(BufWriterImpl b) {
             b.writeIndex(b.constantPool().utf8Entry(mapper.name()));
-            b.writeInt(0);
-            int start = b.size();
+            int lengthIndex = b.skip(4);
             writeBody(b);
-            int written = b.size() - start;
-            b.patchInt(start - 4, 4, written);
+            int written = b.size() - lengthIndex - 4;
+            b.patchInt(lengthIndex, written);
         }
     }
 

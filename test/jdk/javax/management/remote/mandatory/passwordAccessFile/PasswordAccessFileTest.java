@@ -30,6 +30,8 @@
  *
  * @run clean PasswordAccessFileTest SimpleStandard SimpleStandardMBean
  * @run build PasswordAccessFileTest SimpleStandard SimpleStandardMBean
+ *
+ * @run main/othervm PasswordAccessFileTest
  * @run main/othervm -Djava.security.manager=allow PasswordAccessFileTest
  */
 

@@ -670,7 +670,7 @@ public class ForkJoinPool extends AbstractExecutorService {
      * period given by field keepAlive (default 60sec), which applies
      * to the first timeout of a quiescent pool. Subsequent cases use
      * minimal delays such that, if still quiescent, all will be
-     * released soon therafter. This is checked by setting the
+     * released soon thereafter. This is checked by setting the
      * "source" field of signallee to an invalid value, that will
      * remain invalid only if it did not process any tasks.
      *
@@ -855,7 +855,7 @@ public class ForkJoinPool extends AbstractExecutorService {
      * non-workers (which comply with Future.get() specs). Internal
      * usages of ForkJoinTasks ignore interrupt status when executing
      * or awaiting completion.  Otherwise, reporting task results or
-     * exceptions is preferred to throwing InterruptedExecptions,
+     * exceptions is preferred to throwing InterruptedExceptions,
      * which are in turn preferred to timeouts. Similarly, completion
      * status is preferred to reporting cancellation.  Cancellation is
      * reported as an unchecked exception by join(), and by worker

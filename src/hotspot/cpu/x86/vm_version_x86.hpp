@@ -635,7 +635,7 @@ public:
   static void set_cpuinfo_cont_addr_apx(address pc) { _cpuinfo_cont_addr_apx = pc; }
   static address  cpuinfo_cont_addr_apx()           { return _cpuinfo_cont_addr_apx; }
 
-  static void clear_apx_test_state();
+  LP64_ONLY(static void clear_apx_test_state());
 
   static void clean_cpuFeatures()   { _features = 0; }
   static void set_avx_cpuFeatures() { _features = (CPU_SSE | CPU_SSE2 | CPU_AVX | CPU_VZEROUPPER ); }

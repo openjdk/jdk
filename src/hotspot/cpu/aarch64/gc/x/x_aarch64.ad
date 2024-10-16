@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,13 @@ instruct xLoadP(iRegPNoSp dst, memory8 mem, rFlagsReg cr)
   format %{ "ldr  $dst, $mem" %}
 
   ins_encode %{
-    const Address ref_addr = mem2address($mem->opcode(), as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp);
+    Address ref_addr = mem2address($mem->opcode(), as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp);
+    if (ref_addr.getMode() == Address::base_plus_offset) {
+      // Fix up any out-of-range offsets.
+      assert_different_registers(rscratch1, as_Register($mem$$base));
+      assert_different_registers(rscratch1, $dst$$Register);
+      ref_addr = __ legitimize_address(ref_addr, 8, rscratch1);
+    }
     __ ldr($dst$$Register, ref_addr);
     x_load_barrier(masm, this, ref_addr, $dst$$Register, rscratch2 /* tmp */, barrier_data());
   %}

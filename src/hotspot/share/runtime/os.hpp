@@ -231,7 +231,7 @@ class os: AllStatic {
                            char *addr, size_t bytes, bool read_only = false,
                            bool allow_exec = false);
   static bool   pd_unmap_memory(char *addr, size_t bytes);
-  static void   pd_free_memory(char *addr, size_t bytes, size_t alignment_hint);
+  static void   pd_disclaim_memory(char *addr, size_t bytes);
   static void   pd_realign_memory(char *addr, size_t bytes, size_t alignment_hint);
 
   // Returns 0 if pretouch is done via platform dependent method, or otherwise
@@ -336,6 +336,7 @@ class os: AllStatic {
   // than "free" memory (`MemFree` in `/proc/meminfo`) because Linux can free memory
   // aggressively (e.g. clear caches) so that it becomes available.
   static julong available_memory();
+  static julong used_memory();
   static julong free_memory();
 
   static jlong total_swap_space();
@@ -344,6 +345,7 @@ class os: AllStatic {
   static julong physical_memory();
   static bool has_allocatable_memory_limit(size_t* limit);
   static bool is_server_class_machine();
+  static size_t rss();
 
   // Returns the id of the processor on which the calling thread is currently executing.
   // The returned value is guaranteed to be between 0 and (os::processor_count() - 1).
@@ -448,14 +450,14 @@ class os: AllStatic {
   inline static size_t cds_core_region_alignment();
 
   // Reserves virtual memory.
-  static char*  reserve_memory(size_t bytes, bool executable = false, MEMFLAGS flags = mtNone);
+  static char*  reserve_memory(size_t bytes, bool executable = false, MemTag mem_tag = mtNone);
 
   // Reserves virtual memory that starts at an address that is aligned to 'alignment'.
   static char*  reserve_memory_aligned(size_t size, size_t alignment, bool executable = false);
 
   // Attempts to reserve the virtual memory at [addr, addr + bytes).
   // Does not overwrite existing mappings.
-  static char*  attempt_reserve_memory_at(char* addr, size_t bytes, bool executable = false, MEMFLAGS flag = mtNone);
+  static char*  attempt_reserve_memory_at(char* addr, size_t bytes, bool executable = false, MemTag mem_tag = mtNone);
 
   // Given an address range [min, max), attempts to reserve memory within this area, with the given alignment.
   // If randomize is true, the location will be randomized.
@@ -507,18 +509,18 @@ class os: AllStatic {
   static int create_file_for_heap(const char* dir);
   // Map memory to the file referred by fd. This function is slightly different from map_memory()
   // and is added to be used for implementation of -XX:AllocateHeapAt
-  static char* map_memory_to_file(size_t size, int fd, MEMFLAGS flag = mtNone);
-  static char* map_memory_to_file_aligned(size_t size, size_t alignment, int fd, MEMFLAGS flag = mtNone);
+  static char* map_memory_to_file(size_t size, int fd, MemTag mem_tag = mtNone);
+  static char* map_memory_to_file_aligned(size_t size, size_t alignment, int fd, MemTag mem_tag = mtNone);
   static char* map_memory_to_file(char* base, size_t size, int fd);
-  static char* attempt_map_memory_to_file_at(char* base, size_t size, int fd, MEMFLAGS flag = mtNone);
+  static char* attempt_map_memory_to_file_at(char* base, size_t size, int fd, MemTag mem_tag = mtNone);
   // Replace existing reserved memory with file mapping
   static char* replace_existing_mapping_with_file_mapping(char* base, size_t size, int fd);
 
   static char*  map_memory(int fd, const char* file_name, size_t file_offset,
                            char *addr, size_t bytes, bool read_only = false,
-                           bool allow_exec = false, MEMFLAGS flags = mtNone);
+                           bool allow_exec = false, MemTag mem_tag = mtNone);
   static bool   unmap_memory(char *addr, size_t bytes);
-  static void   free_memory(char *addr, size_t bytes, size_t alignment_hint);
+  static void   disclaim_memory(char *addr, size_t bytes);
   static void   realign_memory(char *addr, size_t bytes, size_t alignment_hint);
 
   // NUMA-specific interface
@@ -854,10 +856,10 @@ class os: AllStatic {
   // return current frame. pc() and sp() are set to null on failure.
   static frame      current_frame();
 
-  static void print_hex_dump(outputStream* st, address start, address end, int unitsize,
-                             int bytes_per_line, address logical_start);
-  static void print_hex_dump(outputStream* st, address start, address end, int unitsize) {
-    print_hex_dump(st, start, end, unitsize, /*bytes_per_line=*/16, /*logical_start=*/start);
+  static void print_hex_dump(outputStream* st, const_address start, const_address end, int unitsize, bool print_ascii,
+                             int bytes_per_line, const_address logical_start, const_address highlight_address = nullptr);
+  static void print_hex_dump(outputStream* st, const_address start, const_address end, int unitsize, bool print_ascii = true, const_address highlight_address = nullptr) {
+    print_hex_dump(st, start, end, unitsize, print_ascii, /*bytes_per_line=*/16, /*logical_start=*/start, highlight_address);
   }
 
   // returns a string to describe the exception/signal;
@@ -898,16 +900,16 @@ class os: AllStatic {
   static int get_native_stack(address* stack, int size, int toSkip = 0);
 
   // General allocation (must be MT-safe)
-  static void* malloc  (size_t size, MEMFLAGS flags, const NativeCallStack& stack);
-  static void* malloc  (size_t size, MEMFLAGS flags);
-  static void* realloc (void *memblock, size_t size, MEMFLAGS flag, const NativeCallStack& stack);
-  static void* realloc (void *memblock, size_t size, MEMFLAGS flag);
+  static void* malloc  (size_t size, MemTag mem_tag, const NativeCallStack& stack);
+  static void* malloc  (size_t size, MemTag mem_tag);
+  static void* realloc (void *memblock, size_t size, MemTag mem_tag, const NativeCallStack& stack);
+  static void* realloc (void *memblock, size_t size, MemTag mem_tag);
 
   // handles null pointers
   static void  free    (void *memblock);
-  static char* strdup(const char *, MEMFLAGS flags = mtInternal);  // Like strdup
+  static char* strdup(const char *, MemTag mem_tag = mtInternal);  // Like strdup
   // Like strdup, but exit VM when strdup() returns null
-  static char* strdup_check_oom(const char*, MEMFLAGS flags = mtInternal);
+  static char* strdup_check_oom(const char*, MemTag mem_tag = mtInternal);
 
   // SocketInterface (ex HPI SocketInterface )
   static int socket_close(int fd);

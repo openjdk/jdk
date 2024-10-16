@@ -29,18 +29,18 @@
 
 using NCSS = NativeCallStackStorage;
 
-class NativeCallStackStorageTest : public testing::Test {};
+class NMTNativeCallStackStorageTest : public testing::Test {};
 
-TEST_VM_F(NativeCallStackStorageTest, DoNotStoreStackIfNotDetailed) {
+TEST_VM_F(NMTNativeCallStackStorageTest, DoNotStoreStackIfNotDetailed) {
   NativeCallStack ncs{};
   NCSS ncss(false);
   NCSS::StackIndex si = ncss.push(ncs);
-  EXPECT_TRUE(si.is_invalid());
+  EXPECT_TRUE(NCSS::is_invalid(si));
   NativeCallStack ncs_received = ncss.get(si);
   EXPECT_TRUE(ncs_received.is_empty());
 }
 
-TEST_VM_F(NativeCallStackStorageTest, CollisionsReceiveDifferentIndexes) {
+TEST_VM_F(NMTNativeCallStackStorageTest, CollisionsReceiveDifferentIndexes) {
   constexpr const int nr_of_stacks = 10;
   NativeCallStack ncs_arr[nr_of_stacks];
   for (int i = 0; i < nr_of_stacks; i++) {
@@ -57,7 +57,7 @@ TEST_VM_F(NativeCallStackStorageTest, CollisionsReceiveDifferentIndexes) {
   for (int i = 0; i < nr_of_stacks; i++) {
     for (int j = 0; j < nr_of_stacks; j++) {
       if (i == j) continue;
-      EXPECT_FALSE(NCSS::StackIndex::equals(si_arr[i],si_arr[j]));
+      EXPECT_FALSE(NCSS::equals(si_arr[i],si_arr[j]));
     }
   }
 }
