@@ -410,7 +410,7 @@ TEST_VM(os, jio_snprintf) {
 #endif
 
 TEST_VM(os, realpath) {
-  // POSIX requires that the file exists; Windows tests for a valid drive letter 
+  // POSIX requires that the file exists; Windows tests for a valid drive letter
   // but may or may not test if the file exists. */
   static const char* nosuchpath = "/1234567890123456789";
   static const char* tmppath = "/tmp";
