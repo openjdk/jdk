@@ -89,6 +89,7 @@ class LogDecorators {
       STATIC_ASSERT(GuardTag == LogTag::__NO_TAG);
       return DefaultUndecoratedSelection(Level, T0, T1, T2, T3, T4);
     }
+
     const LogSelection& selection() const { return _selection; }
   };
 
