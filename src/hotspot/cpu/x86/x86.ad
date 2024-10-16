@@ -1950,6 +1950,20 @@ bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
         return false;
       }
       break;
+    case Op_SelectFromTwoVector:
+       if (size_in_bits < 128 || (size_in_bits < 512 && !VM_Version::supports_avx512vl())) {
+         return false;
+       }
+       if (bt == T_SHORT && !VM_Version::supports_avx512bw()) {
+         return false;
+       }
+       if (bt == T_BYTE && !VM_Version::supports_avx512_vbmi()) {
+         return false;
+       }
+       if ((bt == T_INT || bt == T_FLOAT || bt == T_DOUBLE) && !VM_Version::supports_evex()) {
+         return false;
+       }
+       break;
     case Op_MaskAll:
       if (!VM_Version::supports_evex()) {
         return false;
@@ -2255,10 +2269,6 @@ bool Matcher::is_generic_vector(MachOper* opnd) {
 
 const RegMask* Matcher::predicate_reg_mask(void) {
   return &_VECTMASK_REG_mask;
-}
-
-const TypeVectMask* Matcher::predicate_reg_type(const Type* elemTy, int length) {
-  return new TypeVectMask(elemTy, length);
 }
 
 // Max vector size in bytes. 0 if not supported.
@@ -10802,4 +10812,16 @@ instruct vector_saturating_unsigned_subword_masked_mem(vec dst, memory src, kReg
                               $dst$$XMMRegister, $src$$Address, true, true, vlen_enc);
   %}
   ins_pipe( pipe_slow );
+%}
+
+instruct vector_selectfrom_twovectors_reg_evex(vec index, vec src1, vec src2)
+%{
+  match(Set index (SelectFromTwoVector (Binary index src1) src2));
+  format %{ "select_from_two_vector $index, $src1, $src2 \t!" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ select_from_two_vectors_evex(bt, $index$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vlen_enc);
+  %}
+  ins_pipe(pipe_slow);
 %}

@@ -238,8 +238,6 @@ class JavaThread: public Thread {
   // Safepoint support
  public:                                                        // Expose _thread_state for SafeFetchInt()
   volatile JavaThreadState _thread_state;
- private:
-  SafepointMechanism::ThreadData _poll_data;
   ThreadSafepointState*          _safepoint_state;              // Holds information about a thread during a safepoint
   address                        _saved_exception_pc;           // Saved pc of instruction where last implicit exception happened
   NOT_PRODUCT(bool               _requires_cross_modify_fence;) // State used by VerifyCrossModifyFence
@@ -598,6 +596,22 @@ private:
 
   SafepointMechanism::ThreadData* poll_data() { return &_poll_data; }
 
+  static ByteSize polling_word_offset() {
+    ByteSize offset = byte_offset_of(Thread, _poll_data) +
+                      byte_offset_of(SafepointMechanism::ThreadData, _polling_word);
+    // At least on x86_64, safepoint polls encode the offset as disp8 imm.
+    assert(in_bytes(offset) < 128, "Offset >= 128");
+    return offset;
+  }
+
+  static ByteSize polling_page_offset() {
+    ByteSize offset = byte_offset_of(Thread, _poll_data) +
+                      byte_offset_of(SafepointMechanism::ThreadData, _polling_page);
+    // At least on x86_64, safepoint polls encode the offset as disp8 imm.
+    assert(in_bytes(offset) < 128, "Offset >= 128");
+    return offset;
+  }
+
   void set_requires_cross_modify_fence(bool val) PRODUCT_RETURN NOT_PRODUCT({ _requires_cross_modify_fence = val; })
 
   // Continuation support
@@ -787,8 +801,6 @@ private:
   static ByteSize vm_result_offset()             { return byte_offset_of(JavaThread, _vm_result); }
   static ByteSize vm_result_2_offset()           { return byte_offset_of(JavaThread, _vm_result_2); }
   static ByteSize thread_state_offset()          { return byte_offset_of(JavaThread, _thread_state); }
-  static ByteSize polling_word_offset()          { return byte_offset_of(JavaThread, _poll_data) + byte_offset_of(SafepointMechanism::ThreadData, _polling_word);}
-  static ByteSize polling_page_offset()          { return byte_offset_of(JavaThread, _poll_data) + byte_offset_of(SafepointMechanism::ThreadData, _polling_page);}
   static ByteSize saved_exception_pc_offset()    { return byte_offset_of(JavaThread, _saved_exception_pc); }
   static ByteSize osthread_offset()              { return byte_offset_of(JavaThread, _osthread); }
 #if INCLUDE_JVMCI

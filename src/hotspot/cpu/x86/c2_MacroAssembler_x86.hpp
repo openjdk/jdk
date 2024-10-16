@@ -580,4 +580,7 @@ public:
 
   void evmasked_saturating_unsigned_op(int ideal_opc, BasicType elem_bt, KRegister mask, XMMRegister dst, XMMRegister src1,
                                        Address src2, bool merge, int vlen_enc);
+
+  void select_from_two_vectors_evex(BasicType elem_bt, XMMRegister dst, XMMRegister src1, XMMRegister src2, int vlen_enc);
+
 #endif // CPU_X86_C2_MACROASSEMBLER_X86_HPP
