@@ -157,7 +157,7 @@ public final class InOutPathTest {
                 return path.getFileName().toString();
             }).filter(Predicate.not(knownFiles::contains)).toList();
             TKit.assertStringListEquals(List.of(), unexpectedFiles,
-                    "Check there are no unexpected files in app image");
+                    "Check there are no unexpected files in `app` folder");
         }
     }
 

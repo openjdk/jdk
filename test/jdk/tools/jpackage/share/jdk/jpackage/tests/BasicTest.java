@@ -274,7 +274,7 @@ public final class BasicTest {
                     .removeArgumentWithValue("--dest")
                     .setArgumentValue("--input", execDir.relativize(cmd.inputDir()))
                     .setDirectory(execDir)
-                    Force to use jpackage as executable because we need to
+                    // Force to use jpackage as executable because we need to
                     // change the current directory.
                     .useToolProvider(false);
 
