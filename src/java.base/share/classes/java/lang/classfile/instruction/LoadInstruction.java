@@ -62,9 +62,12 @@ public sealed interface LoadInstruction extends Instruction
      *
      * @param kind the type of the value to be loaded
      * @param slot the local variable slot to load from
+     * @throws IllegalArgumentException if {@code kind} is
+     *         {@link TypeKind#VOID void} or {@code slot} is out of range
      */
     static LoadInstruction of(TypeKind kind, int slot) {
-        return of(BytecodeHelpers.loadOpcode(kind, slot), slot);
+        var opcode = BytecodeHelpers.loadOpcode(kind, slot); // validates slot, trusted
+        return new AbstractInstruction.UnboundLoadInstruction(opcode, slot);
     }
 
     /**
@@ -74,10 +77,11 @@ public sealed interface LoadInstruction extends Instruction
      *           which must be of kind {@link Opcode.Kind#LOAD}
      * @param slot the local variable slot to load from
      * @throws IllegalArgumentException if the opcode kind is not
-     *         {@link Opcode.Kind#LOAD}.
+     *         {@link Opcode.Kind#LOAD} or {@code slot} is out of range
      */
     static LoadInstruction of(Opcode op, int slot) {
         Util.checkKind(op, Opcode.Kind.LOAD);
+        BytecodeHelpers.validateSlot(op, slot, true);
         return new AbstractInstruction.UnboundLoadInstruction(op, slot);
     }
 }

@@ -187,7 +187,7 @@ class HandleArea: public Arena {
   HandleArea* _prev;          // link to outer (older) area
  public:
   // Constructor
-  HandleArea(MEMFLAGS flags, HandleArea* prev) : Arena(flags, Tag::tag_ha, Chunk::tiny_size) {
+  HandleArea(MemTag mem_tag, HandleArea* prev) : Arena(mem_tag, Tag::tag_ha, Chunk::tiny_size) {
     debug_only(_handle_mark_nesting    = 0);
     debug_only(_no_handle_mark_nesting = 0);
     _prev = prev;
