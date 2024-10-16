@@ -35,7 +35,7 @@ public class GCDuringDumpTransformer implements ClassFileTransformer {
     static boolean TEST_WITH_EXCEPTION = Boolean.getBoolean("test.with.exception");
     static boolean TEST_WITH_OOM = Boolean.getBoolean("test.with.oom");
 
-    static final int WASTE_SIZE = 64 * 1024;
+    static final int WASTE_SIZE = 32 * 1024;
     static List<byte[]> waste = new ArrayList();
     static Object sink;
 
