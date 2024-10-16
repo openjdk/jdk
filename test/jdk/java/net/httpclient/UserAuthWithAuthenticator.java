@@ -28,7 +28,17 @@
  * @library /test/lib /test/jdk/java/net/httpclient /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext jdk.httpclient.test.lib.common.HttpServerAdapters
  *        jdk.httpclient.test.lib.http2.Http2TestServer
- * @run main/othervm UserAuthWithAuthenticator
+ *        jdk.test.lib.net.IPSupport
+ *
+ * @modules java.net.http/jdk.internal.net.http.common
+ *          java.net.http/jdk.internal.net.http.frame
+ *          java.net.http/jdk.internal.net.http.hpack
+ *          java.logging
+ *          java.base/sun.net.www.http
+ *          java.base/sun.net.www
+ *          java.base/sun.net
+ *
+ * @run main/othervm  -Djdk.httpclient.HttpClient.log=errors,requests,headers,ssl,trace,all UserAuthWithAuthenticator
  */
 
 import java.io.*;
@@ -39,10 +49,20 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
+import javax.net.ssl.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.regex.*;
 import java.util.*;
+import jdk.test.lib.net.SimpleSSLContext;
+import jdk.test.lib.net.URIBuilder;
+import jdk.test.lib.net.IPSupport;
+import jdk.httpclient.test.lib.common.HttpServerAdapters;
+import jdk.httpclient.test.lib.common.HttpServerAdapters.HttpTestHandler;
+import jdk.httpclient.test.lib.common.HttpServerAdapters.HttpTestExchange;
+import jdk.httpclient.test.lib.common.HttpServerAdapters.HttpTestServer;
+import jdk.httpclient.test.lib.http2.Http2TestServer;
+import com.sun.net.httpserver.BasicAuthenticator;
 
 import jdk.test.lib.net.URIBuilder;
 
@@ -50,24 +70,98 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
 
 public class UserAuthWithAuthenticator {
 
-    static HttpTestServer initServer(boolean h2, InetAddress addr, 
-                                     ExecutorService e) throws Exception {
-        HttpTestServer s = null;
-        InetSocketAddress ia = new InetSocketAddress (addr, 0);
+    static class AuthTestHandler implements HttpTestHandler {
+        volatile String authValue;
+        final String response = "Hello world";
 
-        if (!h2) {
-            s = HttpTestServer.of(getHttpsServer(ia, e, ctx));
-            HttpTestHandler h = new HttpTestEchoHandler();
-            s.addHandler(h, "/test1");
-            s.start();
-            return s;
-        } else {
-            s = HttpTestServer.of(new Http2TestServer(addr, sni, true, 0, e,
-                        10, null, ctx, false));
-            HttpTestHandler h = new HttpTestEchoHandler();
-            s.addHandler(h, "/test1");
-            s.start();
-            return s;
+        @Override
+        public void handle(HttpTestExchange t) throws IOException {
+            try (InputStream is = t.getRequestBody();
+                 OutputStream os = t.getResponseBody()) {
+                byte[] bytes = is.readAllBytes();
+                authValue = t.getRequestHeaders().firstValue("Authorization").orElse("");
+                t.sendResponseHeaders(200, response.length());
+                os.write(response.getBytes(US_ASCII));
+                t.close();
+            }
+        }
+
+        String authValue() {return authValue;}
+    }
+
+    // if useHeader is true, we expect the Authenticator was not called
+    // and the user set header used. If false, Authenticator must
+    // be called and the user set header not used.
+
+    static void h2Test(final boolean useHeader) throws Exception {
+        SSLContext ctx;
+        HttpTestServer h2s = null;
+        HttpClient client = null;
+        ExecutorService ex=null;
+        try {
+            ctx = new SimpleSSLContext().get();
+            ex = Executors.newCachedThreadPool();
+            InetAddress addr = InetAddress.getLoopbackAddress();
+
+            h2s = HttpTestServer.of(new Http2TestServer(addr, "::1", true, 0, ex,
+                    10, null, ctx, false));
+            AuthTestHandler h = new AuthTestHandler();
+            var context = h2s.addHandler(h, "/test1");
+            context.setAuthenticator(new BasicAuthenticator("realm") {
+                public boolean checkCredentials(String username, String password) {
+                    if (useHeader) {
+                        return username.equals("user") && password.equals("pwd");
+                    } else {
+                        return username.equals("serverUser") && password.equals("serverPwd");
+                    }
+                }
+            });
+            h2s.start();
+
+            int port = h2s.getAddress().getPort();
+            ServerAuth sa = new ServerAuth();
+            var plainCreds = "user:pwd";
+            var encoded = java.util.Base64.getEncoder().encodeToString(plainCreds.getBytes(US_ASCII));
+
+            URI uri = URIBuilder.newBuilder()
+                 .scheme("https")
+                 .host(addr.getHostAddress())
+                 .port(port)
+                 .path("/test1/foo.txt")
+                 .build();
+
+            HttpClient.Builder builder = HttpClient.newBuilder()
+                    .sslContext(ctx)
+                    .executor(ex);
+
+            //if (!useHeader) {
+                builder.authenticator(sa);
+            //}
+            client = builder.build();
+
+            HttpRequest req = HttpRequest.newBuilder(uri)
+                    .version(HttpClient.Version.HTTP_2)
+                    .header(useHeader ? "Authorization" : "X-Ignore", encoded)
+                    .GET()
+                    .build();
+
+            HttpResponse<String> resp = client.send(req, HttpResponse.BodyHandlers.ofString());
+            if (useHeader) {
+                assertTrue(h.authValue() == null, "Expected user set header to be set");
+                assertTrue(!sa.wasCalled(), "Expected authenticator not to be called");
+                System.out.println("h2Test: using user set header OK");
+            } else {
+                assertTrue(!h.authValue().equals(encoded), "Expected user set header to not be set");
+                assertTrue(sa.wasCalled(), "Expected authenticator to be called");
+                System.out.println("h2Test: using authenticator OK");
+            }
+        } finally {
+            if (h2s != null)
+                h2s.stop();
+            if (client != null)
+                client.close();
+            if (ex != null)
+                ex.shutdown();
         }
     }
 
@@ -119,6 +213,8 @@ public class UserAuthWithAuthenticator {
         testServerWithProxy();
         testServerWithProxyError();
         testServerOnlyAuthenticator();
+        h2Test(true);
+        h2Test(false);
     }
 
     static void testServerWithProxy() throws IOException, InterruptedException {
@@ -352,13 +448,20 @@ public class UserAuthWithAuthenticator {
     }
 
     static class ServerAuth extends Authenticator {
+        private volatile boolean called = false;
+
         @Override
         protected PasswordAuthentication getPasswordAuthentication() {
+            called = true;
             if (getRequestorType() != RequestorType.SERVER) {
                 // We only want to handle server authentication here
                 return null;
             }
             return new PasswordAuthentication("serverUser", "serverPwd".toCharArray());
+        }
+
+        boolean wasCalled() {
+            return called;
         }
     }
 
