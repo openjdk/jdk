@@ -41,89 +41,144 @@ import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
 /**
- * A thin, atomic, thread-safe, set-at-most-once, stable holder capable of holding
- * underlying data, eligible for certain JVM optimizations if set to a value.
- * <p>
- * A stable value is said to be monotonic because the state of a stable value can only go
- * from <em>unset</em> to <em>set</em> and consequently, the underlying data can only be
- * set at most once.
- * <p>
- * StableValue is mainly intended to be a member of a holding class and is usually neither
- * exposed directly via accessors nor passed as a method parameter.
- *
- *
- * <h2 id="factories">Factories</h2>
- * <p>
- * To create a new fresh (unset) StableValue, use the
- * {@linkplain StableValue#of() StableValue::of} factory.
- * <p>
- * This class also contains a number of convenience methods for creating constructs
- * involving stable values:
+ * Stable values are objects that represent immutable data and are treated as constants
+ * by the JVM, enabling the same performance optimizations that are possible by marking
+ * a field final. Yet, stable values offer greater flexibility as to the timing of
+ * initialization compared to final fields.
+ *<p>
+ * There are several variants of stable value objects:
  * <ul>
- *     <li>
- * A stable (also called "cached" or "memoized") Supplier, where a given {@code original}
- * Supplier is guaranteed to be successfully invoked at most once even in a multithreaded
- * environment, can be created like this:
- * {@snippet lang = java:
- *     Supplier<T> stable = StableValue.ofSupplier(original);
- *}
- *     </li>
- *
- *     <li>
- * A stable (also called "cached" or "memoized") IntFunction, for the allowed given
- * {@code size} input values {@code [0, size)} and where the given {@code original}
- * IntFunction is guaranteed to be successfully invoked at most once per inout index even
- * in a multithreaded environment, can be created like this:
- * {@snippet lang = java:
- *     IntFunction<R> stable = StableValue.ofIntFunction(size, original);
- *}
- *     </li>
- *
- *     <li>
- * A stable (also called "cached" or "memoized") Function, for the given set of allowed
- * {@code inputs} and where the given {@code original} function is guaranteed to be
- * successfully invoked at most once per input value even in a multithreaded environment,
- * can be created like this:
- * {@snippet lang = java :
- *    Function<T, R> stable = StableValue.stableFunction(inputs, original);
- * }
- *     </li>
- *
- *     <li>
- * A stable List of stable elements with a given {@code size} and given {@code mapper} can
- * be created the following way:
- * {@snippet lang = java:
- *     List<E> stableList = StableValue.ofList(size, mapper);
- *}
- * The list can be used to model stable one-dimensional arrays. If two- or more
- * dimensional arrays are to be modeled, a List of List of ... of E can be used.
- *     </li>
- *
- *     <li>
- * A stable Map with a given set of {@code keys} and given {@code mapper} associated with
- * stable values can be created like this:
- * {@snippet lang = java :
- *     Map<K, V> stableMap = StableValue.stableMap(keys, mapper);
- * }
- *     </li>
- *
+ *     <li>Stable value: {@linkplain StableValue {@code StableValue<T>}}</li>
+ *     <li>Stable supplier: {@linkplain Supplier {@code Supplier<T>}}</li>
+ *     <li>Stable int function: {@linkplain IntFunction {@code IntFunction<R>}}</li>
+ *     <li>Stable list: {@linkplain List {@code List<E>}}</li>
+ *     <li>Stable function: {@linkplain Function {@code Function<T, R>}}</li>
+ *     <li>Stable map: {@linkplain Map {@code Map<K, V>}}</li>
  * </ul>
- * <p>
- * The constructs above are eligible for similar JVM optimizations as StableValue
- * instances.
+ *<p>
+ * A <em>stable value</em> ({@linkplain StableValue}) can be used to defer initialization
+ * of data while retaining the same performance as if a field was declared {@code final}:
+ * {@snippet lang = java:
+ *    class Component {
+ *
+ *        private final StableValue<Logger> logger = StableValue.of();
+ *
+ *        Logger getLogger() {
+ *            return logger.computeIfUnset( () -> Logger.getLogger("org.app.Component") );
+ *        }
+ *
+ *        void process() {
+ *            getLogger().info("Process started");
+ *            // ...
+ *        }
+ *
+ *    }
+ *}
+ *<p>
+ * A {@linkplain StableValue} is mainly intended to be a member of a holding class and is
+ * usually neither exposed directly via accessors nor passed as a method parameter.
+ *<p>
+ * A <em>stable supplier</em> allows a more convenient construct where a field declaration
+ * can also specify how the underlying data of a stable value is to be initialized, but
+ * without actually initializing its underlying data upfront:
+ * {@snippet lang = java:
+ *     class Component {
+ *
+ *         private final Supplier<Logger> logger =
+ *             StableValue.ofSupplier( () -> Logger.getLogger("org.app.Component") );
+ *
+ *         void process() {
+ *            logger.get().info("Process started");
+ *            // ...
+ *         }
+ *     }
+ *}
+ * This also allows the stable supplier to be accessed directly, without going through
+ * an accessor method like {@code getLogger()}.
+ *<p>
+ * A <em>stable int function</em> stores values in an array of stable values where
+ * the underlying values are computed the first time a particular input value is seen.
+ * When the stable int function is first created --
+ * via the {@linkplain StableValue#ofIntFunction(int, IntFunction)} factory -- the input
+ * range (i.e. {@code [0, size)}) is specified together with an original
+ * {@linkplain IntFunction} which is invoked at most once per input value. In effect,
+ * the stable int function will act like a cache for the original {@code IntFunction}:
+ * {@snippet lang = java:
+ *     class SqrtUtil {
+ *
+ *         private static final IntFunction<Double> SQRT =
+ *             StableValue.ofIntFunction(10, Math::sqrt);
+ *
+ *         double sqrt9() {
+ *             return SQRT.apply(9); // Constant folds to 3.0
+ *         }
+ *
+ *     }
+ *}
+ *<p>
+ * a <em>stable list</em> is similar to a stable int function, but provides a full
+ * implementation of an immutable {@linkplain List}. This is useful when interacting with
+ * collection based methods. Here is an example how a stable list can be used to hold
+ * a pool of order controllers:
+ * {@snippet lang = java:
+ *    class Application {
+ *        static final List<OrderController> ORDER_CONTROLLERS =
+ *                StableValue.ofList(POOL_SIZE, OrderController::new);
+ *
+ *        public static OrderController orderController() {
+ *            long index = Thread.currentThread().threadId() % POOL_SIZE;
+ *            return ORDER_CONTROLLERS.get((int) index);
+ *        }
+ *    }
+ * }
+ *<p>
+ * A <em>stable function</em> stores values in an array of stable values where
+ * the underlying values are computed the first time a particular input value is seen.
+ * When the stable function is first created --
+ * via the {@linkplain StableValue#ofFunction(Set, Function)} factory -- the input set
+ * is specified together with an original {@linkplain Function} which is invoked
+ * at most once per input value. In effect, the stable function will act like a
+ * cache for the original {@code Function}:
+ * {@snippet lang = java:
+ *     class SqrtUtil {
+ *
+ *         private static final Function<Integer, Double> SQRT =
+ *             StableValue.ofFunction(Set.of(1, 2, 4, 8, 16, 32), Math::sqrt);
+ *
+ *         double sqrt16() {
+ *             return SQRT.apply(16); // Constant folds to 4.0
+ *         }
+ *
+ *     }
+ *}
+ *<p>
+ * a <em>stable map</em> is similar to a stable function, but provides a full
+ * implementation of an immutable {@linkplain Map}. This is useful when interacting with
+ * collections. Here is how a stable map can be used as a cache for square root values:
+ * {@snippet lang = java:
+ *     class SqrtUtil {
+ *
+ *         private static final Map<Integer, Double> SQRT =
+ *             StableValue.ofMap(Set.of(1, 2, 4, 8, 16, 32), Math::sqrt);
+ *
+ *         double sqrt16() {
+ *             return SQRT.apply(16); // Constant folds to 4.0
+ *         }
+ *
+ *     }
+ *}
  *
  * <h2 id="memory-consistency">Memory Consistency Properties</h2>
  * Actions on a presumptive underlying data in a thread prior to calling a method that
  * <i>sets</i> the underlying data are seen by any other thread that <i>observes</i> a
  * set underlying data.
- *
+ * <p>
  * More generally, the action of attempting to interact (i.e. via load or store operations)
  * with a StableValue's underlying data (e.g. via {@link StableValue#trySet} or
  * {@link StableValue#orElseThrow()}) forms a
  * <a href="{@docRoot}/java.base/java/util/concurrent/package-summary.html#MemoryVisibility"><i>happens-before</i></a>
  * relation between any other attempt to interact with the StableValue's underlying data.
- *
- * <h2 id="nullability">Nullability</h2>
+ * <p>
  * Except for a StableValue's underlying data itself, all method parameters must be
  * <em>non-null</em> or a {@link NullPointerException} will be thrown.
  *
@@ -149,17 +204,17 @@ public sealed interface StableValue<T>
     // Principal methods
 
     /**
-     * {@return {@code true} if the underlying data was set to the provided {@code value},
-     * otherwise returns {@code false}}
+     * {@return {@code true} if the underlying data was set to the provided
+     * {@code underlyingData}, otherwise returns {@code false}}
      * <p>
      * When this method returns, the underlying data is always set.
      *
-     * @param value to set (nullable)
+     * @param underlyingData to set
      */
-    boolean trySet(T value);
+    boolean trySet(T underlyingData);
 
     /**
-     * {@return the underlying data (nullable) if set, otherwise return the
+     * {@return the underlying data if set, otherwise return the
      * {@code other} value}
      *
      * @param other to return if the underlying data is not set
@@ -180,7 +235,7 @@ public sealed interface StableValue<T>
 
     /**
      * {@return the underlying data if set, otherwise attempts to compute and set
-     * new (nullable) underlying data using the provided {@code supplier}, returning the
+     * new underlying data using the provided {@code supplier}, returning the
      * newly set underlying data}
      * <p>
      * The provided {@code supplier} is guaranteed to be invoked at most once if it
@@ -220,17 +275,17 @@ public sealed interface StableValue<T>
     // Convenience methods
 
     /**
-     * Sets the underlying data to the provided {@code value}, or, if already set,
-     * throws {@link IllegalStateException}}
+     * Sets the underlying data to the provided {@code underlyingData}, or,
+     * if already set, throws {@link IllegalStateException}}
      * <p>
      * When this method returns (or throws an Exception), the underlying data is always set.
      *
-     * @param value to set (nullable)
+     * @param underlyingData to set
      * @throws IllegalStateException if the underlying data is already set
      */
-    default void setOrThrow(T value) {
-        if (!trySet(value)) {
-            throw new IllegalStateException("Cannot set the underlying data to " + value +
+    default void setOrThrow(T underlyingData) {
+        if (!trySet(underlyingData)) {
+            throw new IllegalStateException("Cannot set the underlying data to " + underlyingData +
                     " because the underlying data is already set: " + this);
         }
     }
@@ -238,9 +293,11 @@ public sealed interface StableValue<T>
     // Factories
 
     /**
-     * {@return a fresh stable value with no underlying data set}
+     * {@return a new thin, atomic, thread-safe, set-at-most-once, {@linkplain StableValue}
+     * with no underlying data eligible for certain JVM optimizations once the
+     * underlying data is set}
      *
-     * @param <T> type of the holder value
+     * @param <T> type of the underlying data
      */
     static <T> StableValue<T> of() {
         return StableValueFactories.of();

@@ -69,14 +69,14 @@ public final class StableValueImpl<T> implements StableValue<T> {
 
     @ForceInline
     @Override
-    public boolean trySet(T newValue) {
-        if (underlyingData != null) {
+    public boolean trySet(T underlyingData) {
+        if (this.underlyingData != null) {
             return false;
         }
         // Mutual exclusion is required here as `computeIfUnset` might also
         // attempt to modify the `wrappedValue`
         synchronized (this) {
-            return wrapAndCas(newValue);
+            return wrapAndCas(underlyingData);
         }
     }
 
