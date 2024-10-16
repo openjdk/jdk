@@ -34,6 +34,7 @@ import java.util.Random;
  * @bug 8328528
  * @summary test the long typed parallel iv replacing transformation for int counted loop
  * @library /test/lib /
+ * @requires vm.compiler2.enabled
  * @run driver compiler.loopopts.parallel_iv.TestParallelIvInIntCountedLoop
  */
 public class TestParallelIvInIntCountedLoop {
