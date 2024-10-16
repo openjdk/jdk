@@ -765,7 +765,7 @@ void MetaspaceShared::exercise_runtime_cds_code(TRAPS) {
   CDSProtectionDomain::create_jar_manifest(dummy, strlen(dummy), CHECK);
 
   // Exercise FileSystem and URL code
-  CDSProtectionDomain::get_shared_jar_url_helper("dummy.jar", Handle(), CHECK);
+  CDSProtectionDomain::to_file_URL("dummy.jar", Handle(), CHECK);
 }
 
 void MetaspaceShared::preload_and_dump_impl(StaticArchiveBuilder& builder, TRAPS) {

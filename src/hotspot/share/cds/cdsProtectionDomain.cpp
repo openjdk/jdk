@@ -200,7 +200,7 @@ Handle CDSProtectionDomain::get_shared_jar_url(int shared_path_index, TRAPS) {
   Handle url_h;
   if (shared_jar_url(shared_path_index) == nullptr) {
     const char* path = FileMapInfo::shared_path_name(shared_path_index);
-    oop result_oop = get_shared_jar_url_helper(path, url_h, CHECK_(url_h));
+    oop result_oop = to_file_URL(path, url_h, CHECK_(url_h));
     atomic_set_shared_jar_url(shared_path_index, result_oop);
   }
 
@@ -209,7 +209,7 @@ Handle CDSProtectionDomain::get_shared_jar_url(int shared_path_index, TRAPS) {
   return url_h;
 }
 
-oop CDSProtectionDomain::get_shared_jar_url_helper(const char* path, Handle url_h, TRAPS) {
+oop CDSProtectionDomain::to_file_URL(const char* path, Handle url_h, TRAPS) {
   JavaValue result(T_OBJECT);
   Handle path_string = java_lang_String::create_from_str(path, CHECK_NULL);
   JavaCalls::call_static(&result,
