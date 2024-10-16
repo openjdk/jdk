@@ -30,11 +30,14 @@ import java.net.URI;
 import java.net.InetSocketAddress;
 import java.net.http.HttpClient.Version;
 import java.net.http.HttpHeaders;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.BiPredicate;
 import javax.net.ssl.SSLSession;
 
 import jdk.internal.net.http.common.HttpHeadersBuilder;
 import jdk.internal.net.http.quic.VariableLengthEncoder;
+import jdk.internal.net.http.frame.Http2Frame;
 
 public interface Http2TestExchange {
 
@@ -55,6 +58,12 @@ public interface Http2TestExchange {
     OutputStream getResponseBody();
 
     void sendResponseHeaders(int rCode, long responseLength) throws IOException;
+
+    default void sendResponseHeaders(int rCode, long responseLength,
+                                     BiPredicate<CharSequence, CharSequence> insertionPolicy)
+            throws IOException {
+        sendResponseHeaders(rCode, responseLength);
+    }
 
     InetSocketAddress getRemoteAddress();
 
@@ -175,6 +184,10 @@ public interface Http2TestExchange {
 
     default void requestStopSending(long errorCode) {
         throw new UnsupportedOperationException("sendStopSendingFrame with " + getExchangeVersion());
+    }
+
+    default void sendFrames(List<Http2Frame> frames) throws IOException {
+        throw new UnsupportedOperationException("not implemented");
     }
 
     /**

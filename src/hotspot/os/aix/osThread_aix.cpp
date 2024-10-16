@@ -40,7 +40,6 @@ OSThread::OSThread()
     _ucontext(nullptr),
     _expanding_stack(0),
     _alt_sig_stack(nullptr),
-    _last_cpu_times(),
     _startThread_lock(new Monitor(Mutex::event, "startThread_lock")) {
   sigemptyset(&_caller_sigmask);
 }

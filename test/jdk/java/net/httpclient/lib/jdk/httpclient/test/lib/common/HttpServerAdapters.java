@@ -565,12 +565,13 @@ public interface HttpServerAdapters {
                 return exchange.getRemoteAddress();
             }
             @Override
-            public String getConnectionKey() {
-                return exchange.getConnectionKey();
-            }
-            @Override
             public InetSocketAddress getLocalAddress() {
                 return exchange.getLocalAddress();
+            }
+
+            @Override
+            public String getConnectionKey() {
+                return exchange.getConnectionKey();
             }
 
             @Override

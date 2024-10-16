@@ -131,13 +131,6 @@ class OSThread : public OSThreadBase {
     return _startThread_lock;
   }
 
-  // The last measured values of cpu timing to prevent the "stale
-  // value return" bug in thread_cpu_time.
-  volatile struct {
-    jlong sys;
-    jlong user;
-  } _last_cpu_times;
-
   // Printing
   uintx thread_id_for_printing() const override {
     return (uintx)_thread_id;

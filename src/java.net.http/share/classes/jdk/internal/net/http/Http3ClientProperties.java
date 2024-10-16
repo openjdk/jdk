@@ -121,10 +121,10 @@ public final class Http3ClientProperties {
         long encoderTableCapacityLimit = Utils.getLongProperty(
                 "jdk.httpclient.qpack.encoderTableCapacityLimit",
                 defaultEncoderTableCapacityLimit);
-        long defaultDecoderMaxFieldSectionSize = 393216; // 384kB
-        long decoderMaxFieldSectionSize = Utils.getLongProperty(
-                "jdk.http.maxHeaderSize",
-                defaultDecoderMaxFieldSectionSize);
+        int defaultDecoderMaxFieldSectionSize = 393216; // 384kB
+        long decoderMaxFieldSectionSize = Utils.getIntegerNetProperty(
+                "jdk.http.maxHeaderSize", Integer.MIN_VALUE, Integer.MAX_VALUE,
+                defaultDecoderMaxFieldSectionSize, true);
         // Percentage of occupied space in the dynamic table that when
         // exceeded the dynamic table draining index starts increasing
         int drainingThreshold = Utils.getIntegerProperty(
