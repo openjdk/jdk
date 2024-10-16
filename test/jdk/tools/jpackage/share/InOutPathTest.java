@@ -34,6 +34,7 @@ import jdk.jpackage.internal.AppImageFile;
 import jdk.jpackage.internal.ApplicationLayout;
 import jdk.jpackage.internal.PackageFile;
 import jdk.jpackage.test.Annotations;
+import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.Functional.ThrowingConsumer;
 import jdk.jpackage.test.JPackageCommand;
@@ -57,28 +58,27 @@ public final class InOutPathTest {
     public static Collection input() {
         List<Object[]> data = new ArrayList<>();
 
-        for (boolean appImage : List.of(true, false)) {
-            data.addAll(List.of(new Object[][]{
-                {appImage, wrap(InOutPathTest::outputDirInInputDir, "--dest:subdir")},
-                {appImage, wrap(InOutPathTest::outputDirSameAsInputDir, "--dest:same")},
-                {appImage, wrap(InOutPathTest::tempDirInInputDir, "--temp")},
-                {appImage, wrap(cmd -> {
-                    outputDirInInputDir(cmd);
-                    tempDirInInputDir(cmd);
-                }, "--dest:subdir and --temp")},
-            }));
-        }
+        data.addAll(List.of(new Object[][]{
+            {wrap(InOutPathTest::outputDirInInputDir, "--dest:subdir")},
+            {wrap(InOutPathTest::outputDirSameAsInputDir, "--dest:same")},
+            {wrap(InOutPathTest::tempDirInInputDir, "--temp")},
+            {wrap(cmd -> {
+                outputDirInInputDir(cmd);
+                tempDirInInputDir(cmd);
+            }, "--dest:subdir and --temp")},
+        }));
 
         return data;
     }
 
-    public InOutPathTest(Boolean appImage, Envelope configure) {
-        this.appImage = appImage;
+    public InOutPathTest(Envelope configure) {
         this.configure = configure.value;
     }
 
     @Test
-    public void test() throws Throwable {
+    @Parameter("true")
+    @Parameter("false")
+    public void test(boolean appImage) throws Throwable {
         runTest(appImage, configure);
     }
 
@@ -171,7 +171,6 @@ public final class InOutPathTest {
         }
     }
 
-    private final boolean appImage;
     private final ThrowingConsumer<JPackageCommand> configure;
 
     private final static String JAR_NAME = "duke.jar";
