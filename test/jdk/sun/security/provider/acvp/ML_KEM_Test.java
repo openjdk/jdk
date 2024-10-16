@@ -31,6 +31,7 @@ import java.security.spec.NamedParameterSpec;
 import java.util.HexFormat;
 import java.util.List;
 
+// JSON spec at https://pages.nist.gov/ACVP/draft-celi-acvp-ml-kem.html
 public class ML_KEM_Test implements Launcher.Test {
 
     @Override

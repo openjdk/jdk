@@ -28,6 +28,8 @@ import java.util.Arrays;
 import java.util.HexFormat;
 import java.util.List;
 
+// JSON spec at https://pages.nist.gov/ACVP/draft-celi-acvp-sha.html
+// and https://pages.nist.gov/ACVP/draft-celi-acvp-sha3.html
 public class SHA_Test implements Launcher.Test {
 
     @Override

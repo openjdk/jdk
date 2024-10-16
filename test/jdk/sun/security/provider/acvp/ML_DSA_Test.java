@@ -30,6 +30,7 @@ import java.security.spec.NamedParameterSpec;
 import java.util.HexFormat;
 import java.util.List;
 
+// JSON spec at https://pages.nist.gov/ACVP/draft-celi-acvp-ml-dsa.html
 public class ML_DSA_Test implements Launcher.Test {
 
     @Override

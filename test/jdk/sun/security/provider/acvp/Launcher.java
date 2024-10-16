@@ -68,7 +68,9 @@ public class Launcher {
         // registered.
         //
         // Tests are including in this directory and each must implement
-        // the Launcher.Test interface.
+        // the Launcher.Test interface. Tests for each algorithm must be
+        // compliant to its specification linked from
+        // https://github.com/usnistgov/ACVP?tab=readme-ov-file#supported-algorithms.
 
         var testDataProp = System.getProperty("acvp.test.data");
         Path dataPath = testDataProp != null
