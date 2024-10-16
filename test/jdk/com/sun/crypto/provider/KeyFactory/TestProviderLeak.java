@@ -108,7 +108,7 @@ public class TestProviderLeak {
         final SecretKeyFactory skf =
             SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1", "SunJCE");
         final PBEKeySpec pbeKS = new PBEKeySpec(
-            "passPhrase".toCharArray(), new byte [16], 5, 512);
+            "passPhrase".toCharArray(), new byte [16], 1000, 512);
 
         ExecutorService executor = Executors.newSingleThreadExecutor();
         Callable<SecretKey> task = new Callable<SecretKey>() {
