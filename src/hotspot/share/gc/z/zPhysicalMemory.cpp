@@ -55,6 +55,11 @@ ZPhysicalMemory::ZPhysicalMemory(const ZPhysicalMemory& pmem)
 }
 
 const ZPhysicalMemory& ZPhysicalMemory::operator=(const ZPhysicalMemory& pmem) {
+  // Check for self-assignment
+  if (this == &pmem) {
+    return *this;
+  }
+
   // Free and copy segments
   _segments.clear_and_deallocate();
   _segments.reserve(pmem.nsegments());
