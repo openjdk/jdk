@@ -24,9 +24,8 @@
  */
 package jdk.internal.classfile.impl;
 
-import java.lang.classfile.*;
+import java.lang.classfile.BootstrapMethodEntry;
 import java.lang.classfile.constantpool.*;
-
 import java.lang.constant.MethodTypeDesc;
 import java.util.List;
 import java.util.Objects;

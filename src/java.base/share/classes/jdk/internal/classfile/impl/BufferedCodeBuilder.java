@@ -24,7 +24,12 @@
  */
 package jdk.internal.classfile.impl;
 
-import java.lang.classfile.*;
+import java.lang.classfile.CodeBuilder;
+import java.lang.classfile.CodeElement;
+import java.lang.classfile.CodeModel;
+import java.lang.classfile.Label;
+import java.lang.classfile.MethodModel;
+import java.lang.classfile.TypeKind;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.lang.classfile.instruction.ExceptionCatch;
 import java.util.ArrayList;

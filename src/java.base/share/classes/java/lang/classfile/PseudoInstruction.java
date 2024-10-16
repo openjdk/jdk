@@ -25,7 +25,12 @@
 package java.lang.classfile;
 
 import java.lang.classfile.attribute.CodeAttribute;
-import java.lang.classfile.instruction.*;
+import java.lang.classfile.instruction.CharacterRange;
+import java.lang.classfile.instruction.ExceptionCatch;
+import java.lang.classfile.instruction.LabelTarget;
+import java.lang.classfile.instruction.LineNumber;
+import java.lang.classfile.instruction.LocalVariable;
+import java.lang.classfile.instruction.LocalVariableType;
 
 import jdk.internal.classfile.impl.AbstractPseudoInstruction;
 import jdk.internal.javac.PreviewFeature;

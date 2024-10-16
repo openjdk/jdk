@@ -31,7 +31,6 @@ import java.util.List;
 import java.util.Optional;
 
 import jdk.internal.classfile.impl.BufferedCodeBuilder;
-import jdk.internal.classfile.impl.CodeImpl;
 import jdk.internal.javac.PreviewFeature;
 
 /**

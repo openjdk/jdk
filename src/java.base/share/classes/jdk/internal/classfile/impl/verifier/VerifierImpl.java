@@ -34,12 +34,13 @@ import java.util.function.Consumer;
 
 import jdk.internal.classfile.impl.ClassHierarchyImpl;
 import jdk.internal.classfile.impl.RawBytecodeHelper;
-import jdk.internal.classfile.impl.verifier.VerificationWrapper.ConstantPoolWrapper;
 import jdk.internal.classfile.impl.verifier.VerificationSignature.BasicType;
+import jdk.internal.classfile.impl.verifier.VerificationWrapper.ConstantPoolWrapper;
 
-import static jdk.internal.classfile.impl.RawBytecodeHelper.*;
-import static jdk.internal.classfile.impl.verifier.VerificationSignature.BasicType.*;
+import static jdk.internal.classfile.impl.RawBytecodeHelper.ILLEGAL;
 import static jdk.internal.classfile.impl.verifier.VerificationFrame.FLAG_THIS_UNINIT;
+import static jdk.internal.classfile.impl.verifier.VerificationSignature.BasicType.T_BOOLEAN;
+import static jdk.internal.classfile.impl.verifier.VerificationSignature.BasicType.T_LONG;
 
 /**
  * VerifierImpl performs selected checks and verifications of the class file

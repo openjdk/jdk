@@ -25,8 +25,8 @@
 package java.lang.classfile.attribute;
 
 import java.lang.classfile.Attribute;
-import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.MethodElement;
+import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.constant.ClassDesc;
 import java.util.Arrays;
 import java.util.List;

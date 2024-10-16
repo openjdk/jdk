@@ -24,16 +24,14 @@
  */
 package jdk.internal.classfile.impl;
 
-import java.lang.classfile.*;
+import java.lang.classfile.CodeBuilder;
+import java.lang.classfile.CodeElement;
+import java.lang.classfile.Label;
+import java.lang.classfile.Opcode;
+import java.lang.classfile.TypeKind;
 import java.lang.classfile.components.CodeStackTracker;
 import java.lang.classfile.instruction.*;
-import java.util.AbstractCollection;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Consumer;
 
 public final class CodeStackTrackerImpl implements CodeStackTracker {

@@ -26,9 +26,9 @@ package java.lang.classfile.instruction;
 
 import java.lang.classfile.CodeElement;
 import java.lang.classfile.CodeModel;
-import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.Label;
 import java.lang.classfile.PseudoInstruction;
+import java.lang.classfile.constantpool.ClassEntry;
 import java.util.Optional;
 
 import jdk.internal.classfile.impl.AbstractPseudoInstruction;

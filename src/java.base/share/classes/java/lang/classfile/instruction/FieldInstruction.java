@@ -26,9 +26,9 @@ package java.lang.classfile.instruction;
 
 import java.lang.classfile.CodeElement;
 import java.lang.classfile.CodeModel;
-import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.Instruction;
 import java.lang.classfile.Opcode;
+import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.constantpool.FieldRefEntry;
 import java.lang.classfile.constantpool.NameAndTypeEntry;
 import java.lang.classfile.constantpool.Utf8Entry;

@@ -25,6 +25,8 @@
 
 package java.lang.classfile;
 
+import java.lang.classfile.constantpool.*;
+import java.lang.classfile.instruction.*;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDesc;
 import java.lang.constant.ConstantDescs;
@@ -35,9 +37,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
-
-import java.lang.classfile.constantpool.*;
-import java.lang.classfile.instruction.*;
 
 import jdk.internal.classfile.impl.*;
 import jdk.internal.javac.PreviewFeature;

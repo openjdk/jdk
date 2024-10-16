@@ -24,13 +24,7 @@
  */
 package java.lang.classfile;
 
-import java.lang.classfile.constantpool.AnnotationConstantValueEntry;
-import java.lang.classfile.constantpool.DoubleEntry;
-import java.lang.classfile.constantpool.DynamicConstantPoolEntry;
-import java.lang.classfile.constantpool.FloatEntry;
-import java.lang.classfile.constantpool.IntegerEntry;
-import java.lang.classfile.constantpool.LongEntry;
-import java.lang.classfile.constantpool.Utf8Entry;
+import java.lang.classfile.constantpool.*;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.Constable;
 import java.util.ArrayList;

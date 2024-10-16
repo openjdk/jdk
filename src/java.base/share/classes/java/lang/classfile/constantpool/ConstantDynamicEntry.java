@@ -29,8 +29,8 @@ import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDesc;
 import java.lang.constant.DynamicConstantDesc;
 
-import jdk.internal.classfile.impl.Util;
 import jdk.internal.classfile.impl.AbstractPoolEntry;
+import jdk.internal.classfile.impl.Util;
 import jdk.internal.javac.PreviewFeature;
 
 /**

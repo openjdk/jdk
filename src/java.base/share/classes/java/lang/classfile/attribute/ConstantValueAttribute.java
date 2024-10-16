@@ -24,10 +24,10 @@
  */
 package java.lang.classfile.attribute;
 
-import java.lang.constant.ConstantDesc;
 import java.lang.classfile.Attribute;
 import java.lang.classfile.FieldElement;
 import java.lang.classfile.constantpool.ConstantValueEntry;
+import java.lang.constant.ConstantDesc;
 
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.TemporaryConstantPool;

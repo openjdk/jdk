@@ -34,7 +34,6 @@ import jdk.internal.classfile.impl.ClassHierarchyImpl;
 import jdk.internal.classfile.impl.Util;
 
 import static jdk.internal.classfile.impl.verifier.VerifierImpl.*;
-import static jdk.internal.classfile.impl.verifier.VerificationSignature.BasicType.*;
 
 /**
  * @see <a href="https://raw.githubusercontent.com/openjdk/jdk/master/src/hotspot/share/classfile/verificationType.hpp">hotspot/share/classfile/verificationType.hpp</a>

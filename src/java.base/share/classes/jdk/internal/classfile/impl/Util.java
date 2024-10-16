@@ -27,7 +27,10 @@ package jdk.internal.classfile.impl;
 import java.lang.classfile.*;
 import java.lang.classfile.attribute.CodeAttribute;
 import java.lang.classfile.components.ClassPrinter;
-import java.lang.classfile.constantpool.*;
+import java.lang.classfile.constantpool.ClassEntry;
+import java.lang.classfile.constantpool.ModuleEntry;
+import java.lang.classfile.constantpool.PoolEntry;
+import java.lang.classfile.constantpool.Utf8Entry;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.constant.ModuleDesc;
@@ -43,10 +46,6 @@ import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 
 import static java.lang.classfile.ClassFile.ACC_STATIC;
-import java.lang.classfile.attribute.CodeAttribute;
-import java.lang.classfile.components.ClassPrinter;
-import java.util.function.Consumer;
-
 import static jdk.internal.constant.PrimitiveClassDescImpl.CD_double;
 import static jdk.internal.constant.PrimitiveClassDescImpl.CD_long;
 import static jdk.internal.constant.PrimitiveClassDescImpl.CD_void;

@@ -24,17 +24,17 @@
  */
 package java.lang.classfile;
 
-import java.lang.classfile.attribute.ModuleAttribute;
+import java.io.IOException;
 import java.lang.classfile.attribute.CharacterRangeInfo;
 import java.lang.classfile.attribute.LocalVariableInfo;
 import java.lang.classfile.attribute.LocalVariableTypeInfo;
+import java.lang.classfile.attribute.ModuleAttribute;
 import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.lang.classfile.constantpool.Utf8Entry;
 import java.lang.classfile.instruction.ExceptionCatch;
 import java.lang.constant.ClassDesc;
 import java.lang.reflect.AccessFlag;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;

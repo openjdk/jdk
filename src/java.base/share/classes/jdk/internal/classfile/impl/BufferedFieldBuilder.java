@@ -24,7 +24,11 @@
  */
 package jdk.internal.classfile.impl;
 
-import java.lang.classfile.*;
+import java.lang.classfile.AccessFlags;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.FieldBuilder;
+import java.lang.classfile.FieldElement;
+import java.lang.classfile.FieldModel;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.lang.classfile.constantpool.Utf8Entry;
 import java.lang.reflect.AccessFlag;

@@ -24,8 +24,8 @@
  */
 package jdk.internal.classfile.impl;
 
-import java.lang.constant.*;
 import java.lang.classfile.constantpool.*;
+import java.lang.constant.*;
 import java.lang.invoke.TypeDescriptor;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;

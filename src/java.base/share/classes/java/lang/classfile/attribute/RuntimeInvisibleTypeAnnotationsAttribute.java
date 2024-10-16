@@ -25,7 +25,12 @@
 
 package java.lang.classfile.attribute;
 
-import java.lang.classfile.*;
+import java.lang.classfile.Attribute;
+import java.lang.classfile.ClassElement;
+import java.lang.classfile.CodeElement;
+import java.lang.classfile.FieldElement;
+import java.lang.classfile.MethodElement;
+import java.lang.classfile.TypeAnnotation;
 import java.util.List;
 
 import jdk.internal.classfile.impl.BoundAttribute;

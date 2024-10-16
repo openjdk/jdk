@@ -24,13 +24,17 @@
  */
 package jdk.internal.classfile.impl;
 
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
+import java.lang.classfile.constantpool.ClassEntry;
+import java.lang.classfile.constantpool.ConstantValueEntry;
+import java.lang.classfile.constantpool.ModuleEntry;
+import java.lang.classfile.constantpool.NameAndTypeEntry;
+import java.lang.classfile.constantpool.PackageEntry;
+import java.lang.classfile.constantpool.Utf8Entry;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
-
-import java.lang.classfile.*;
-import java.lang.classfile.attribute.*;
-import java.lang.classfile.constantpool.*;
 
 import jdk.internal.access.SharedSecrets;
 

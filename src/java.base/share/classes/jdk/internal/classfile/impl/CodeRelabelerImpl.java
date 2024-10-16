@@ -29,7 +29,6 @@ import java.lang.classfile.CodeElement;
 import java.lang.classfile.Label;
 import java.lang.classfile.components.CodeRelabeler;
 import java.lang.classfile.instruction.*;
-
 import java.util.function.BiFunction;
 
 public record CodeRelabelerImpl(BiFunction<Label, CodeBuilder, Label> mapFunction) implements CodeRelabeler {

@@ -24,7 +24,11 @@
  */
 package jdk.internal.classfile.impl;
 
-import java.lang.classfile.*;
+import java.lang.classfile.CodeBuilder;
+import java.lang.classfile.CodeModel;
+import java.lang.classfile.CodeTransform;
+import java.lang.classfile.MethodBuilder;
+import java.lang.classfile.MethodElement;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.util.function.Consumer;
 
