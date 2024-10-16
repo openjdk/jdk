@@ -210,13 +210,6 @@ public class ClassLoaders {
         protected Package defineOrCheckPackage(String pn, Manifest man, URL url) {
             return super.defineOrCheckPackage(pn, man, url);
         }
-
-        /**
-         * Called by the VM, during -Xshare:dump
-         */
-        private void resetArchivedStates() {
-            setClassPath(null);
-        }
     }
 
     /**

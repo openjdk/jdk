@@ -692,14 +692,24 @@ SafePointNode* PhaseIdealLoop::find_safepoint(Node* back_control, Node* x, Ideal
 
     // We can only use that safepoint if there's no side effect between the backedge and the safepoint.
 
-    // mm is used for book keeping
+    // mm is the memory state at the safepoint (when it's a MergeMem)
+    // no_side_effect_since_safepoint() goes over the memory state at the backedge. It resets the mm input for each
+    // component of the memory state it encounters so it points to the base memory. Once no_side_effect_since_safepoint()
+    // is done, if no side effect after the safepoint was found, mm should transform to the base memory: the states at
+    // the backedge and safepoint are the same so all components of the memory state at the safepoint should have been
+    // reset.
     MergeMemNode* mm = nullptr;
 #ifdef ASSERT
     if (mem->is_MergeMem()) {
       mm = mem->clone()->as_MergeMem();
       _igvn._worklist.push(mm);
       for (MergeMemStream mms(mem->as_MergeMem()); mms.next_non_empty(); ) {
-        if (mms.alias_idx() != Compile::AliasIdxBot && loop != get_loop(ctrl_or_self(mms.memory()))) {
+        // Loop invariant memory state won't be reset by no_side_effect_since_safepoint(). Do it here.
+        // Escape Analysis can add state to mm that it doesn't add to the backedge memory Phis, breaking verification
+        // code that relies on mm. Clear that extra state here.
+        if (mms.alias_idx() != Compile::AliasIdxBot &&
+            (loop != get_loop(ctrl_or_self(mms.memory())) ||
+             (mms.adr_type()->isa_oop_ptr() && mms.adr_type()->is_known_instance()))) {
           mm->set_memory_at(mms.alias_idx(), mem->as_MergeMem()->base_memory());
         }
       }
@@ -1918,11 +1928,27 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
   //     Since stride > 0 and limit_correction <= stride + 1, we can restate this with no over- or underflow into:
   //         max_int - canonicalized_correction - limit_correction >= limit
   //     Since canonicalized_correction and limit_correction are both constants, we can replace them with a new constant:
-  //         final_correction = canonicalized_correction + limit_correction
+  //         (v) final_correction = canonicalized_correction + limit_correction
+  //
   //     which gives us:
   //
   //     Final predicate condition:
   //         max_int - final_correction >= limit
+  //
+  //     However, we need to be careful that (v) does not over- or underflow.
+  //     We know that:
+  //         canonicalized_correction = stride - 1
+  //     and
+  //         limit_correction <= stride + 1
+  //     and thus
+  //         canonicalized_correction + limit_correction <= 2 * stride
+  //     To prevent an over- or underflow of (v), we must ensure that
+  //         2 * stride <= max_int
+  //     which can safely be checked without over- or underflow with
+  //         (vi) stride != min_int AND abs(stride) <= max_int / 2
+  //
+  //     We could try to further optimize the cases where (vi) does not hold but given that such large strides are
+  //     very uncommon and the loop would only run for a very few iterations anyway, we simply bail out if (vi) fails.
   //
   // (2) Loop Limit Check Predicate for (ii):
   //     Using (ii): init < limit
@@ -1954,6 +1980,10 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
   //            there is no overflow of the iv phi after the first iteration. In this case, we don't need to check (ii)
   //            again and can skip the predicate.
 
+  // Check (vi) and bail out if the stride is too big.
+  if (stride_con == min_signed_integer(iv_bt) || (ABS(stride_con) > max_signed_integer(iv_bt) / 2)) {
+    return false;
+  }
 
   // Accounting for (LE3) and (LE4) where we use pre-incremented phis in the loop exit check.
   const jlong limit_correction_for_pre_iv_exit_check = (phi_incr != nullptr) ? stride_con : 0;
@@ -4319,13 +4349,21 @@ void PhaseIdealLoop::mark_loop_associated_parse_predicates_useful() {
   }
 }
 
+// This visitor marks all visited Parse Predicates useful.
+class ParsePredicateUsefulMarker : public PredicateVisitor {
+ public:
+  using PredicateVisitor::visit;
+
+  void visit(const ParsePredicate& parse_predicate) override {
+    parse_predicate.head()->mark_useful();
+  }
+};
+
 void PhaseIdealLoop::mark_useful_parse_predicates_for_loop(IdealLoopTree* loop) {
   Node* entry = loop->_head->as_Loop()->skip_strip_mined()->in(LoopNode::EntryControl);
-  const Predicates predicates(entry);
-  ParsePredicateIterator iterator(predicates);
-  while (iterator.has_next()) {
-    iterator.next()->mark_useful();
-  }
+  const PredicateIterator predicate_iterator(entry);
+  ParsePredicateUsefulMarker useful_marker;
+  predicate_iterator.for_each(useful_marker);
 }
 
 void PhaseIdealLoop::add_useless_parse_predicates_to_igvn_worklist() {
@@ -4915,7 +4953,9 @@ void PhaseIdealLoop::verify() const {
   bool success = true;
 
   PhaseIdealLoop phase_verify(_igvn, this);
-  if (C->failing()) return;
+  if (C->failing_internal()) {
+    return;
+  }
 
   // Verify ctrl and idom of every node.
   success &= verify_idom_and_nodes(C->root(), &phase_verify);
@@ -6267,6 +6307,43 @@ void PhaseIdealLoop::build_loop_late_post(Node *n) {
   build_loop_late_post_work(n, true);
 }
 
+// Class to visit all predicates in a predicate chain to find out which are dominated by a given node. Keeps track of
+// the entry to the earliest predicate that is still dominated by the given dominator. This class is used when trying to
+// legally skip all predicates when figuring out the latest placement such that a node does not interfere with Loop
+// Predication or creating a Loop Limit Check Predicate later.
+class DominatedPredicates : public UnifiedPredicateVisitor {
+  Node* const _dominator;
+  Node* _earliest_dominated_predicate_entry;
+  bool _should_continue;
+  PhaseIdealLoop* const _phase;
+
+ public:
+  DominatedPredicates(Node* dominator, Node* start_node, PhaseIdealLoop* phase)
+      : _dominator(dominator),
+        _earliest_dominated_predicate_entry(start_node),
+        _should_continue(true),
+        _phase(phase) {}
+  NONCOPYABLE(DominatedPredicates);
+
+  bool should_continue() const override {
+    return _should_continue;
+  }
+
+  // Returns the entry to the earliest predicate that is still dominated by the given dominator (all could be dominated).
+  Node* earliest_dominated_predicate_entry() const {
+    return _earliest_dominated_predicate_entry;
+  }
+
+  void visit_predicate(const Predicate& predicate) override {
+    Node* entry = predicate.entry();
+    if (_phase->is_strict_dominator(entry, _dominator)) {
+      _should_continue = false;
+    } else {
+      _earliest_dominated_predicate_entry = entry;
+    }
+  }
+};
+
 void PhaseIdealLoop::build_loop_late_post_work(Node *n, bool pinned) {
 
   if (n->req() == 2 && (n->Opcode() == Op_ConvI2L || n->Opcode() == Op_CastII) && !C->major_progress() && !_verify_only) {
@@ -6378,14 +6455,10 @@ void PhaseIdealLoop::build_loop_late_post_work(Node *n, bool pinned) {
     // Move the node above predicates as far up as possible so a
     // following pass of Loop Predication doesn't hoist a predicate
     // that depends on it above that node.
-    PredicateEntryIterator predicate_iterator(least);
-    while (predicate_iterator.has_next()) {
-      Node* next_predicate_entry = predicate_iterator.next_entry();
-      if (is_strict_dominator(next_predicate_entry, early)) {
-        break;
-      }
-      least = next_predicate_entry;
-    }
+    const PredicateIterator predicate_iterator(least);
+    DominatedPredicates dominated_predicates(early, least, this);
+    predicate_iterator.for_each(dominated_predicates);
+    least = dominated_predicates.earliest_dominated_predicate_entry();
   }
   // Try not to place code on a loop entry projection
   // which can inhibit range check elimination.
