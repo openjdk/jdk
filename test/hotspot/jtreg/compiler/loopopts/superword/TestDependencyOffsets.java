@@ -525,118 +525,45 @@ public class TestDependencyOffsets {
             throw new RuntimeException("Test requires exactly one argument!");
         }
 
-        switch (args[0]) {
-        case "vanilla-A":
-            framework.addFlags("-XX:+AlignVector");
-            break;
-        case "vanilla-U":
-            framework.addFlags("-XX:-AlignVector");
-            break;
-        case "sse4-v016-A":
-            framework.addFlags("-XX:UseSSE=4", "-XX:MaxVectorSize=16", "-XX:+AlignVector");
-            break;
-        case "sse4-v016-U":
-            framework.addFlags("-XX:UseSSE=4", "-XX:MaxVectorSize=16", "-XX:-AlignVector");
-            break;
-        case "sse4-v008-A":
-            framework.addFlags("-XX:UseSSE=4", "-XX:MaxVectorSize=8", "-XX:+AlignVector");
-            break;
-        case "sse4-v008-U":
-            framework.addFlags("-XX:UseSSE=4", "-XX:MaxVectorSize=8", "-XX:-AlignVector");
-            break;
-        case "sse4-v004-A":
-            framework.addFlags("-XX:UseSSE=4", "-XX:MaxVectorSize=4", "-XX:+AlignVector");
-            break;
-        case "sse4-v004-U":
-            framework.addFlags("-XX:UseSSE=4", "-XX:MaxVectorSize=4", "-XX:-AlignVector");
-            break;
-        case "sse4-v002-A":
-            framework.addFlags("-XX:UseSSE=4", "-XX:MaxVectorSize=4", "-XX:+AlignVector");
-            break;
-        case "sse4-v002-U":
-            framework.addFlags("-XX:UseSSE=4", "-XX:MaxVectorSize=4", "-XX:-AlignVector");
-            break;
-        case "avx1-v032-A":
-            framework.addFlags("-XX:UseAVX=1", "-XX:MaxVectorSize=32", "-XX:+AlignVector");
-            break;
-        case "avx1-v032-U":
-            framework.addFlags("-XX:UseAVX=1", "-XX:MaxVectorSize=32", "-XX:-AlignVector");
-            break;
-        case "avx1-v016-A":
-            framework.addFlags("-XX:UseAVX=1", "-XX:MaxVectorSize=16", "-XX:+AlignVector");
-            break;
-        case "avx1-v016-U":
-            framework.addFlags("-XX:UseAVX=1", "-XX:MaxVectorSize=16", "-XX:-AlignVector");
-            break;
-        case "avx2-v032-A":
-            framework.addFlags("-XX:UseAVX=2", "-XX:MaxVectorSize=32", "-XX:+AlignVector");
-            break;
-        case "avx2-v032-U":
-            framework.addFlags("-XX:UseAVX=2", "-XX:MaxVectorSize=32", "-XX:-AlignVector");
-            break;
-        case "avx2-v016-A":
-            framework.addFlags("-XX:UseAVX=2", "-XX:MaxVectorSize=16", "-XX:+AlignVector");
-            break;
-        case "avx2-v016-U":
-            framework.addFlags("-XX:UseAVX=2", "-XX:MaxVectorSize=16", "-XX:-AlignVector");
-            break;
-        case "avx512-v064-A":
-            framework.addFlags("-XX:UseAVX=3", "-XX:+UseKNLSetting", "-XX:MaxVectorSize=64", "-XX:+AlignVector");
-            break;
-        case "avx512-v064-U":
-            framework.addFlags("-XX:UseAVX=3", "-XX:+UseKNLSetting", "-XX:MaxVectorSize=64", "-XX:-AlignVector");
-            break;
-        case "avx512-v032-A":
-            framework.addFlags("-XX:UseAVX=3", "-XX:+UseKNLSetting", "-XX:MaxVectorSize=32", "-XX:+AlignVector");
-            break;
-        case "avx512-v032-U":
-            framework.addFlags("-XX:UseAVX=3", "-XX:+UseKNLSetting", "-XX:MaxVectorSize=32", "-XX:-AlignVector");
-            break;
-        case "avx512bw-v064-A":
-            framework.addFlags("-XX:UseAVX=3", "-XX:MaxVectorSize=64", "-XX:+AlignVector");
-            break;
-        case "avx512bw-v064-U":
-            framework.addFlags("-XX:UseAVX=3", "-XX:MaxVectorSize=64", "-XX:-AlignVector");
-            break;
-        case "avx512bw-v032-A":
-            framework.addFlags("-XX:UseAVX=3", "-XX:MaxVectorSize=32", "-XX:+AlignVector");
-            break;
-        case "avx512bw-v032-U":
-            framework.addFlags("-XX:UseAVX=3", "-XX:MaxVectorSize=32", "-XX:-AlignVector");
-            break;
-        case "vec-v064-A":
-            framework.addFlags("-XX:MaxVectorSize=64", "-XX:+AlignVector");
-            break;
-        case "vec-v064-U":
-            framework.addFlags("-XX:MaxVectorSize=64", "-XX:-AlignVector");
-            break;
-        case "vec-v032-A":
-            framework.addFlags("-XX:MaxVectorSize=32", "-XX:+AlignVector");
-            break;
-        case "vec-v032-U":
-            framework.addFlags("-XX:MaxVectorSize=32", "-XX:-AlignVector");
-            break;
-        case "vec-v016-A":
-            framework.addFlags("-XX:MaxVectorSize=16", "-XX:+AlignVector");
-            break;
-        case "vec-v016-U":
-            framework.addFlags("-XX:MaxVectorSize=16", "-XX:-AlignVector");
-            break;
-        case "vec-v008-A":
-            framework.addFlags("-XX:MaxVectorSize=8", "-XX:+AlignVector");
-            break;
-        case "vec-v008-U":
-            framework.addFlags("-XX:MaxVectorSize=8", "-XX:-AlignVector");
-            break;
-        case "vec-v004-A":
-            framework.addFlags("-XX:MaxVectorSize=4", "-XX:+AlignVector");
-            break;
-        case "vec-v004-U":
-            framework.addFlags("-XX:MaxVectorSize=4", "-XX:-AlignVector");
-            break;
-        default:
-            throw new RuntimeException("Test argument not recognized: " + args[0]);
-        }
+        String[] flags = switch (args[0]) {
+            case "vanilla-A" -> new String[] {"-XX:+AlignVector"};
+            case "vanilla-U" -> new String[] {"-XX:-AlignVector"};
+            case "sse4-v016-A" -> new String[] {"-XX:UseSSE=4", "-XX:MaxVectorSize=16", "-XX:+AlignVector"};
+            case "sse4-v016-U" -> new String[] {"-XX:UseSSE=4", "-XX:MaxVectorSize=16", "-XX:-AlignVector"};
+            case "sse4-v008-A" -> new String[] {"-XX:UseSSE=4", "-XX:MaxVectorSize=8", "-XX:+AlignVector"};
+            case "sse4-v008-U" -> new String[] {"-XX:UseSSE=4", "-XX:MaxVectorSize=8", "-XX:-AlignVector"};
+            case "sse4-v004-A" -> new String[] {"-XX:UseSSE=4", "-XX:MaxVectorSize=4", "-XX:+AlignVector"};
+            case "sse4-v004-U" -> new String[] {"-XX:UseSSE=4", "-XX:MaxVectorSize=4", "-XX:-AlignVector"};
+            case "sse4-v002-A" -> new String[] {"-XX:UseSSE=4", "-XX:MaxVectorSize=4", "-XX:+AlignVector"};
+            case "sse4-v002-U" -> new String[] {"-XX:UseSSE=4", "-XX:MaxVectorSize=4", "-XX:-AlignVector"};
+            case "avx1-v032-A" -> new String[] {"-XX:UseAVX=1", "-XX:MaxVectorSize=32", "-XX:+AlignVector"};
+            case "avx1-v032-U" -> new String[] {"-XX:UseAVX=1", "-XX:MaxVectorSize=32", "-XX:-AlignVector"};
+            case "avx1-v016-A" -> new String[] {"-XX:UseAVX=1", "-XX:MaxVectorSize=16", "-XX:+AlignVector"};
+            case "avx1-v016-U" -> new String[] {"-XX:UseAVX=1", "-XX:MaxVectorSize=16", "-XX:-AlignVector"};
+            case "avx2-v032-A" -> new String[] {"-XX:UseAVX=2", "-XX:MaxVectorSize=32", "-XX:+AlignVector"};
+            case "avx2-v032-U" -> new String[] {"-XX:UseAVX=2", "-XX:MaxVectorSize=32", "-XX:-AlignVector"};
+            case "avx2-v016-A" -> new String[] {"-XX:UseAVX=2", "-XX:MaxVectorSize=16", "-XX:+AlignVector"};
+            case "avx2-v016-U" -> new String[] {"-XX:UseAVX=2", "-XX:MaxVectorSize=16", "-XX:-AlignVector"};
+            case "avx512-v064-A" -> new String[] {"-XX:UseAVX=3", "-XX:+UseKNLSetting", "-XX:MaxVectorSize=64", "-XX:+AlignVector"};
+            case "avx512-v064-U" -> new String[] {"-XX:UseAVX=3", "-XX:+UseKNLSetting", "-XX:MaxVectorSize=64", "-XX:-AlignVector"};
+            case "avx512-v032-A" -> new String[] {"-XX:UseAVX=3", "-XX:+UseKNLSetting", "-XX:MaxVectorSize=32", "-XX:+AlignVector"};
+            case "avx512-v032-U" -> new String[] {"-XX:UseAVX=3", "-XX:+UseKNLSetting", "-XX:MaxVectorSize=32", "-XX:-AlignVector"};
+            case "avx512bw-v064-A" -> new String[] {"-XX:UseAVX=3", "-XX:MaxVectorSize=64", "-XX:+AlignVector"};
+            case "avx512bw-v064-U" -> new String[] {"-XX:UseAVX=3", "-XX:MaxVectorSize=64", "-XX:-AlignVector"};
+            case "avx512bw-v032-A" -> new String[] {"-XX:UseAVX=3", "-XX:MaxVectorSize=32", "-XX:+AlignVector"};
+            case "avx512bw-v032-U" -> new String[] {"-XX:UseAVX=3", "-XX:MaxVectorSize=32", "-XX:-AlignVector"};
+            case "vec-v064-A" -> new String[] {"-XX:MaxVectorSize=64", "-XX:+AlignVector"};
+            case "vec-v064-U" -> new String[] {"-XX:MaxVectorSize=64", "-XX:-AlignVector"};
+            case "vec-v032-A" -> new String[] {"-XX:MaxVectorSize=32", "-XX:+AlignVector"};
+            case "vec-v032-U" -> new String[] {"-XX:MaxVectorSize=32", "-XX:-AlignVector"};
+            case "vec-v016-A" -> new String[] {"-XX:MaxVectorSize=16", "-XX:+AlignVector"};
+            case "vec-v016-U" -> new String[] {"-XX:MaxVectorSize=16", "-XX:-AlignVector"};
+            case "vec-v008-A" -> new String[] {"-XX:MaxVectorSize=8", "-XX:+AlignVector"};
+            case "vec-v008-U" -> new String[] {"-XX:MaxVectorSize=8", "-XX:-AlignVector"};
+            case "vec-v004-A" -> new String[] {"-XX:MaxVectorSize=4", "-XX:+AlignVector"};
+            case "vec-v004-U" -> new String[] {"-XX:MaxVectorSize=4", "-XX:-AlignVector"};
+            default -> { throw new RuntimeException("Test argument not recognized: " + args[0]); }
+        };
         framework.start();
     }
 }
