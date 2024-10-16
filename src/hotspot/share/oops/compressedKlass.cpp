@@ -178,10 +178,6 @@ void CompressedKlassPointers::initialize_for_given_encoding(address addr, size_t
 
   calc_lowest_highest_narrow_klass_id();
 
-#ifdef ASSERT
-  sanity_check_after_initialization();
-#endif
-
   DEBUG_ONLY(sanity_check_after_initialization();)
 }
 
