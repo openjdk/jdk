@@ -411,8 +411,9 @@ static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptr
   // with the haystack bytes.  After the copy completes, we adjust the haystack pointer
   // to the valid haystack bytes on the stack.
   {
+    const Register tmp = rax;
     const Register haystack = rbx;
-    copy_to_stack(haystack, haystack_len, false, rax, XMM_TMP1, _masm);
+    copy_to_stack(haystack, haystack_len, false, tmp, XMM_TMP1, _masm);
   }
 
   // Dispatch to handlers for small needle and small haystack
@@ -1565,7 +1566,7 @@ static void highly_optimized_short_cases(StrIntrinsicNode::ArgEncoding ae, Regis
   assert((COPIED_HAYSTACK_STACK_OFFSET == 0), "Must be zero!");
   assert((COPIED_HAYSTACK_STACK_SIZE == 64), "Must be 64!");
 
-  // Copy incoming haystack onto stack
+  // Copy incoming haystack onto stack (haystack <= 32 bytes)
   __ subptr(rsp, COPIED_HAYSTACK_STACK_SIZE);
   copy_to_stack(haystack, haystack_len, isU, tmp, XMM0, _masm);
 
@@ -1631,7 +1632,7 @@ static void highly_optimized_short_cases(StrIntrinsicNode::ArgEncoding ae, Regis
 
 
 
-// Copy the small (< 32 byte) haystack to the stack.  Allows for vector reads without page fault
+// Copy the small (<= 32 byte) haystack to the stack.  Allows for vector reads without page fault
 // Only done for small haystacks
 // NOTE: This code assumes that the haystack points to a java array type AND there are
 //       at least 8 bytes of header preceeding the haystack pointer.
