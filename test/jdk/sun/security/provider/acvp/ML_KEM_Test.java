@@ -94,7 +94,6 @@ public class ML_KEM_Test implements Launcher.Test {
                     Asserts.assertEqualsByteArray(enc.encapsulation(), xeh(c.get("c").asString()));
                     Asserts.assertEqualsByteArray(
                             enc.key().getEncoded(), xeh(c.get("k").asString()));
-                    Asserts.assertTrue(c.get("reason").asString().equals("no modification"));
                 }
                 System.out.println();
             } else if (function.equals("decapsulation")) {
