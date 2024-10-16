@@ -269,10 +269,13 @@ public final class BasicTest {
             cmdNoOutputDir
                     .clearArguments()
                     .addArguments(cmd.getAllArguments())
+                    // Restore the value of `--type` parameter.
+                    .setPackageType(pkgType)
                     .removeArgumentWithValue("--dest")
                     .setArgumentValue("--input", execDir.relativize(cmd.inputDir()))
-                    .setPackageType(pkgType)
                     .setDirectory(execDir)
+                    // Force to use jpackage as execuitable because we need to
+                    // change the current directory.
                     .useToolProvider(false);
 
             Optional.ofNullable(cmdNoOutputDir.getArgumentValue("--runtime-image",
@@ -301,6 +304,7 @@ public final class BasicTest {
             new PackageTest()
                     .addInitializer(initializer)
                     .addInstallVerifier(HelloApp::executeLauncherAndVerifyOutput)
+                    // Prevent adding `--dest` parameter to jpackage command line.
                     .ignoreBundleOutputDir()
                     .run(CREATE_AND_UNPACK);
         }
