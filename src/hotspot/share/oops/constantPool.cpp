@@ -24,9 +24,9 @@
 
 #include "precompiled.hpp"
 #include "cds/aotConstantPoolResolver.hpp"
-#include "cds/archiveHeapWriter.hpp"
-#include "cds/archiveHeapLoader.hpp"
 #include "cds/archiveBuilder.hpp"
+#include "cds/archiveHeapLoader.hpp"
+#include "cds/archiveHeapWriter.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/heapShared.hpp"
 #include "classfile/classLoader.hpp"

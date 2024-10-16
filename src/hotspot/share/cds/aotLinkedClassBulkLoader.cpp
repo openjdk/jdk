@@ -286,7 +286,7 @@ void AOTLinkedClassBulkLoader::load_hidden_class(ClassLoaderData* loader_data, I
       if (HAS_PENDING_EXCEPTION) {
         CLEAR_PENDING_EXCEPTION;
       }
-    )};
+    });
 }
 
 void AOTLinkedClassBulkLoader::finish_loading_javabase_classes(TRAPS) {
