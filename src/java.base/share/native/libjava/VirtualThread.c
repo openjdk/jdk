@@ -45,3 +45,10 @@ JNIEXPORT void JNICALL
 Java_java_lang_VirtualThread_registerNatives(JNIEnv *env, jclass clazz) {
     (*env)->RegisterNatives(env, clazz, methods, (sizeof(methods)/sizeof(methods[0])));
 }
+
+JNIEXPORT void JNICALL
+Java_java_lang_VirtualThread_virtualThreadPinnedEvent(JNIEnv *env, jclass ignored,
+                                                      jint reasonCode, jstring reasonString)
+{
+    JVM_VirtualThreadPinnedEvent(reasonCode, reasonString);
+}

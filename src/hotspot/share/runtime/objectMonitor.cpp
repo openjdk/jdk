@@ -119,6 +119,15 @@ OopStorage* ObjectMonitor::_oop_storage = nullptr;
 OopHandle ObjectMonitor::_vthread_cxq_head;
 ParkEvent* ObjectMonitor::_vthread_unparker_ParkEvent = nullptr;
 
+static void post_virtual_thread_pinned_event(JavaThread* current, const char* reason) {
+  EventVirtualThreadPinned e;
+  if (e.should_commit()) {
+    e.set_pinnedReason(reason);
+    e.set_carrierThread(JFR_JVM_THREAD_ID(current));
+    e.commit();
+  }
+}
+
 // -----------------------------------------------------------------------------
 // Theory of operations -- Monitors lists, thread residency, etc:
 //
@@ -518,6 +527,11 @@ void ObjectMonitor::enter_with_contention_mark(JavaThread *current, ObjectMonito
         assert((acquired && current->preemption_cancelled() && state == java_lang_VirtualThread::RUNNING) ||
                (!acquired && !current->preemption_cancelled() && state == java_lang_VirtualThread::BLOCKING), "invariant");
         return;
+      }
+      if (result == freeze_pinned_native) {
+        post_virtual_thread_pinned_event(current, "Native frame or <clinit> on stack");
+      } else if (result == freeze_unsupported) {
+        post_virtual_thread_pinned_event(current, "Native frame or <clinit> or monitors on stack");
       }
     }
 
@@ -1676,6 +1690,16 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
       current->set_current_waiting_monitor(nullptr);
       return;
     }
+    if (result == freeze_pinned_native || result == freeze_unsupported) {
+      const Klass* monitor_klass = object()->klass();
+      if (!is_excluded(monitor_klass)) {
+        if (result == freeze_pinned_native) {
+          post_virtual_thread_pinned_event(current,"Native frame or <clinit> on stack");
+        } else if (result == freeze_unsupported) {
+          post_virtual_thread_pinned_event(current, "Native frame or <clinit> or monitors on stack");
+        }
+      }
+    }
   }
 
   // create a node to be put into the queue
@@ -1856,7 +1880,6 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
   // NOTE: Spurious wake up will be consider as timeout.
   // Monitor notify has precedence over thread interrupt.
 }
-
 
 // Consider:
 // If the lock is cool (cxq == null && succ == null) and we're on an MP system

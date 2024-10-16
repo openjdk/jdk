@@ -25,6 +25,7 @@
 
 package sun.security.ssl;
 
+import java.lang.invoke.MethodHandles;
 import java.net.Socket;
 import java.security.*;
 import java.security.cert.*;
@@ -50,6 +51,14 @@ import sun.security.validator.*;
  */
 final class X509TrustManagerImpl extends X509ExtendedTrustManager
         implements X509TrustManager {
+
+    static {
+        try {
+            MethodHandles.lookup().ensureInitialized(AnchorCertificates.class);
+        } catch (IllegalAccessException e) {
+            throw new ExceptionInInitializerError(e);
+        }
+    }
 
     private final String validatorType;
 

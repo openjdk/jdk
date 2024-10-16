@@ -42,7 +42,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import jdk.internal.event.VirtualThreadEndEvent;
-import jdk.internal.event.VirtualThreadPinnedEvent;
 import jdk.internal.event.VirtualThreadStartEvent;
 import jdk.internal.event.VirtualThreadSubmitFailedEvent;
 import jdk.internal.misc.CarrierThread;
@@ -70,7 +69,6 @@ final class VirtualThread extends BaseVirtualThread {
     private static final ContinuationScope VTHREAD_SCOPE = new ContinuationScope("VirtualThreads");
     private static final ForkJoinPool DEFAULT_SCHEDULER = createDefaultScheduler();
     private static final ScheduledExecutorService[] DELAYED_TASK_SCHEDULERS = createDelayedTaskSchedulers();
-    private static final int TRACE_PINNING_MODE = tracePinningMode();
 
     private static final long STATE = U.objectFieldOffset(VirtualThread.class, "state");
     private static final long PARK_PERMIT = U.objectFieldOffset(VirtualThread.class, "parkPermit");
@@ -186,7 +184,6 @@ final class VirtualThread extends BaseVirtualThread {
     // termination object when joining, created lazily if needed
     private volatile CountDownLatch termination;
 
-
     /**
      * Returns the default scheduler.
      */
@@ -241,18 +238,8 @@ final class VirtualThread extends BaseVirtualThread {
         }
         @Override
         protected void onPinned(Continuation.Pinned reason) {
-            if (TRACE_PINNING_MODE > 0) {
-                boolean printAll = (TRACE_PINNING_MODE == 1);
-                VirtualThread vthread = (VirtualThread) Thread.currentThread();
-                int oldState = vthread.state();
-                try {
-                    // avoid printing when in transition states
-                    vthread.setState(RUNNING);
-                    PinnedThreadPrinter.printStackTrace(System.out, reason, printAll);
-                } finally {
-                    vthread.setState(oldState);
-                }
-            }
+            // emit JFR event
+            virtualThreadPinnedEvent(reason.reasonCode(), reason.reasonString());
         }
         private static Runnable wrap(VirtualThread vthread, Runnable task) {
             return new Runnable() {
@@ -263,6 +250,13 @@ final class VirtualThread extends BaseVirtualThread {
             };
         }
     }
+
+    /**
+     * jdk.VirtualThreadPinned is emitted by HotSpot VM when pinned. Call into VM to
+     * emit event to avoid having a JFR event in Java with the same name (but different ID)
+     * to events emitted by the VM.
+     */
+    private static native void virtualThreadPinnedEvent(int reason, String reasonString);
 
     /**
      * Runs or continues execution on the current thread. The virtual thread is mounted
@@ -848,14 +842,6 @@ final class VirtualThread extends BaseVirtualThread {
     private void parkOnCarrierThread(boolean timed, long nanos) {
         assert state() == RUNNING;
 
-        VirtualThreadPinnedEvent event;
-        try {
-            event = new VirtualThreadPinnedEvent();
-            event.begin();
-        } catch (OutOfMemoryError e) {
-            event = null;
-        }
-
         setState(timed ? TIMED_PINNED : PINNED);
         try {
             if (!parkPermit) {
@@ -871,14 +857,6 @@ final class VirtualThread extends BaseVirtualThread {
 
         // consume parking permit
         setParkPermit(false);
-
-        if (event != null) {
-            try {
-                event.commit();
-            } catch (OutOfMemoryError e) {
-                // ignore
-            }
-        }
     }
 
     /**
@@ -1507,9 +1485,6 @@ final class VirtualThread extends BaseVirtualThread {
 
         // ensure VTHREAD_GROUP is created, may be accessed by JVMTI
         var group = Thread.virtualThreadGroup();
-
-        // ensure VirtualThreadPinnedEvent is loaded/initialized
-        U.ensureClassInitialized(VirtualThreadPinnedEvent.class);
     }
 
     /**
@@ -1587,22 +1562,6 @@ final class VirtualThread extends BaseVirtualThread {
             schedulers[i] = stpe;
         }
         return schedulers;
-    }
-
-    /**
-     * Reads the value of the jdk.tracePinnedThreads property to determine if stack
-     * traces should be printed when a carrier thread is pinned when a virtual thread
-     * attempts to park.
-     */
-    private static int tracePinningMode() {
-        String propValue = GetPropertyAction.privilegedGetProperty("jdk.tracePinnedThreads");
-        if (propValue != null) {
-            if (propValue.length() == 0 || "full".equalsIgnoreCase(propValue))
-                return 1;
-            if ("short".equalsIgnoreCase(propValue))
-                return 2;
-        }
-        return 0;
     }
 
     /**

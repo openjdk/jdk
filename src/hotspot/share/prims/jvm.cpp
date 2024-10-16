@@ -3979,6 +3979,20 @@ JVM_ENTRY(void, JVM_VirtualThreadDisableSuspend(JNIEnv* env, jclass clazz, jbool
 #endif
 JVM_END
 
+JVM_ENTRY_NO_ENV(void, JVM_VirtualThreadPinnedEvent(jint reasonCode, jstring reasonString))
+#if INCLUDE_JFR
+  EventVirtualThreadPinned e;
+  if (e.should_commit()) {
+    ResourceMark rm(THREAD);
+    // ignore reason code for now
+    const char *reason = java_lang_String::as_utf8_string(JNIHandles::resolve_non_null(reasonString));
+    e.set_pinnedReason(reason);
+    e.set_carrierThread(JFR_JVM_THREAD_ID(THREAD));
+    e.commit();
+  }
+#endif
+JVM_END
+
 JVM_ENTRY(jobject, JVM_TakeVirtualThreadListToUnblock(JNIEnv* env, jclass ignored))
   ParkEvent* parkEvent = ObjectMonitor::vthread_unparker_ParkEvent();
   assert(parkEvent != nullptr, "not initialized");

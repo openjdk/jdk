@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,21 @@
 
 #include "jni.h"
 
-JNIEXPORT void JNICALL Java_TracePinnedThreads_invokePark(JNIEnv *env, jclass clazz) {
-    jmethodID mid = (*env)->GetStaticMethodID(env, clazz, "park", "()V");
+JNIEXPORT void JNICALL
+Java_SynchronizedNative_runWithSynchronizedNative(JNIEnv *env, jobject obj, jobject task) {
+    jclass clazz = (*env)->GetObjectClass(env, obj);
+    jmethodID mid = (*env)->GetMethodID(env, clazz, "run", "(Ljava/lang/Runnable;)V");
     if (mid != NULL) {
-        (*env)->CallStaticVoidMethod(env, clazz, mid);
+        (*env)->CallVoidMethod(env, obj, mid, task);
+    }
+}
+
+JNIEXPORT void JNICALL
+Java_SynchronizedNative_runWithMonitorEnteredInNative(JNIEnv *env, jobject obj, jobject lock, jobject task) {
+    jclass clazz = (*env)->GetObjectClass(env, obj);
+    jmethodID mid = (*env)->GetMethodID(env, clazz, "run", "(Ljava/lang/Runnable;)V");
+    if (mid != NULL && (*env)->MonitorEnter(env, lock) == 0) {
+        (*env)->CallVoidMethod(env, obj, mid, task);
+        (*env)->MonitorExit(env, lock);  // can be called with pending exception
     }
 }

@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -22,10 +20,20 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.internal.event;
 
-/**
- * Event recording that a virtual thread has parked on its carrier thread.
- */
-public class VirtualThreadPinnedEvent extends Event {
+import java.lang.management.ManagementFactory;
+import com.sun.management.HotSpotDiagnosticMXBean;
+
+class LockingMode {
+    private LockingMode() { }
+
+    /**
+     * Returns true if using legacy locking mode.
+     */
+    static boolean isLegacy() {
+        return ManagementFactory.getPlatformMXBean(HotSpotDiagnosticMXBean.class)
+                .getVMOption("LockingMode")
+                .getValue()
+                .equals("1");
+    }
 }
