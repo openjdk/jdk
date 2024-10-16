@@ -1720,6 +1720,11 @@ Node* LoadNode::split_through_phi(PhaseGVN* phase, bool ignore_missing_instance_
     return nullptr;
   }
 
+  // Avoid infinite split
+  if (region != mem->in(0)) {
+    return nullptr;
+  }
+
   Node* phi = nullptr;
   const Type* this_type = this->bottom_type();
   if (t_oop != nullptr && (t_oop->is_known_instance_field() || load_boxed_values)) {
