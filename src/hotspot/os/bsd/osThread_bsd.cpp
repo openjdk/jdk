@@ -37,7 +37,6 @@ OSThread::OSThread()
         nullptr
 #endif
     ),
-    _thread_type(),
     _pthread_id(nullptr),
     _unique_thread_id(0),
     _caller_sigmask(),

@@ -32,7 +32,6 @@
 
 OSThread::OSThread()
   : _thread_id(0),
-    _thread_type(),
     _kernel_thread_id(0),
     _caller_sigmask(),
     sr(),
