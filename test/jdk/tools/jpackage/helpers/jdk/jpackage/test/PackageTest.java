@@ -126,11 +126,11 @@ public final class PackageTest extends RunnablePackageTest {
         expectedJPackageExitCode = v;
         return this;
     }
-    
+
     public PackageTest ignoreBundleOutputDir() {
         return ignoreBundleOutputDir(true);
     }
-    
+
     public PackageTest ignoreBundleOutputDir(boolean v) {
         ignoreBundleOutputDir = v;
         return this;

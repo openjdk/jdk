@@ -38,7 +38,7 @@ public class CommandArguments<T> {
         args.clear();
         return (T) this;
     }
-    
+
     final public T addArgument(String v) {
         args.add(v);
         return (T) this;

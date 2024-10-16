@@ -88,8 +88,8 @@ public final class InOutPathTest {
     private static void runTest(boolean appImage,
             ThrowingConsumer<JPackageCommand> configure) throws Throwable {
         ThrowingConsumer<JPackageCommand> configureWrapper = cmd -> {
-            // Make sure the input directory is empty in every test run. 
-            // This is needed because jpackage output directories in this test 
+            // Make sure the input directory is empty in every test run.
+            // This is needed because jpackage output directories in this test
             // are subdirectories of the input directory.
             cmd.setInputToEmptyDirectory();
             configure.accept(cmd);

@@ -298,7 +298,7 @@ public final class BasicTest {
             initializer.accept(cmdNoOutputDir);
             cmdNoOutputDir.executeAndAssertHelloAppImageCreated();
         } else {
-            // Save time by packing non-functional runtime. 
+            // Save time by packing non-functional runtime.
             // Build the runtime in app image only. This is sufficient coverage.
             cmd.setFakeRuntime();
             new PackageTest()

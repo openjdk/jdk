@@ -202,7 +202,7 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
         var path = getArgumentValue("--dest", () -> Path.of("."), Path::of);
         return Optional.ofNullable(executeInDirectory).map(base -> {
             return base.resolve(path);
-        }).orElse(path);        
+        }).orElse(path);
     }
 
     public Path inputDir() {
