@@ -1413,15 +1413,12 @@ void PhaseIterGVN::subsume_node( Node *old, Node *nn ) {
 
   // Search for instance field data PhiNodes in the same region pointing to the old
   // memory PhiNode and update their instance memory ids to point to the new node.
-  if (old->is_Phi() && old->in(0) != nullptr) {
+  if (old->is_Phi() && old->as_Phi()->type()->has_memory() && old->in(0) != nullptr) {
     Node* region = old->in(0);
     for (DUIterator_Fast imax, i = region->fast_outs(imax); i < imax; i++) {
       PhiNode* phi = region->fast_out(i)->isa_Phi();
       if (phi != nullptr && phi->inst_mem_id() == (int)old->_idx) {
         phi->set_inst_mem_id((int)nn->_idx);
-        if (phi->inst_id() == (int)old->_idx) {
-          phi->set_inst_id((int)nn->_idx);
-        }
       }
     }
   }

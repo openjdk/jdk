@@ -288,11 +288,7 @@ public:
   virtual int store_Opcode() const = 0;
 
   // Check if the load's memory input is a Phi node with the same control.
-  bool is_instance_field_load_with_local_phi();
-  bool is_boxed_value_load_with_local_phi(PhaseGVN* phase);
-  // Search for an existing data phi which was generated before for the same
-  // instance's field or boxed value to avoid infinite generation of phis in a loop.
-  Node* phi_or_self(PhaseGVN* phase);
+  bool is_instance_field_load_with_local_phi(Node* ctrl);
 
   Node* convert_to_unsigned_load(PhaseGVN& gvn);
   Node* convert_to_signed_load(PhaseGVN& gvn);
