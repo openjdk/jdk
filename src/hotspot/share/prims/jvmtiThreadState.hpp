@@ -361,7 +361,7 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
   // For synchronization between NotifyFramePop and FramePop posting code.
   void set_top_frame_is_exiting() { _top_frame_is_exiting = true;  }
   void clr_top_frame_is_exiting() { _top_frame_is_exiting = false; }
-  bool is_top_frame_is_exiting()  { return _top_frame_is_exiting;  }
+  bool top_frame_is_exiting()     { return _top_frame_is_exiting;  }
 
   // Setter and getter method is used to send redefined class info
   // when class file load hook event is posted.

@@ -54,7 +54,7 @@ public class NotifyFramePopStressTest {
         Thread testThread = Thread.currentThread();
         Thread controlThread = new Thread(() -> control(testThread), "Control Thread");
 
-        setFramePopNotificationMode(testThread, true);
+        setFramePopNotificationMode(testThread);
         controlThread.start();
         sleep(10);
 
@@ -114,7 +114,7 @@ public class NotifyFramePopStressTest {
     private native static int getPopCount();
     private native static boolean failed();
     private native static boolean canGenerateFramePopEvents();
-    private native static void setFramePopNotificationMode(Thread thread, boolean enabled);
+    private native static void setFramePopNotificationMode(Thread thread);
     private native static boolean notifyFramePop(Thread thread);
 
     private static void log(String msg) {

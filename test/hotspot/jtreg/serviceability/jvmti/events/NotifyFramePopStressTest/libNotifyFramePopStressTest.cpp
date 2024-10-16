@@ -131,9 +131,8 @@ Java_NotifyFramePopStressTest_canGenerateFramePopEvents(JNIEnv *env, jclass cls)
 }
 
 JNIEXPORT void JNICALL
-Java_NotifyFramePopStressTest_setFramePopNotificationMode(JNIEnv *env, jclass cl, jthread thread, jboolean enable) {
-  jvmtiEventMode mode = enable ? JVMTI_ENABLE : JVMTI_DISABLE;
-  set_event_notification_mode(jvmti, env, mode, JVMTI_EVENT_FRAME_POP, thread);
+Java_NotifyFramePopStressTest_setFramePopNotificationMode(JNIEnv *env, jclass cl, jthread thread) {
+  set_event_notification_mode(jvmti, env, JVMTI_ENABLE, JVMTI_EVENT_FRAME_POP, thread);
 }
 
 /*
@@ -153,7 +152,7 @@ Java_NotifyFramePopStressTest_notifyFramePop(JNIEnv *jni, jclass cls, jthread th
   name = get_method_name(jvmti, jni, method);
 
   // We only want to do a NotifyFramePop once for the main method. The sole purpose is
-  // to force the thread into interpOnly mode, which seems to help the tests's timing
+  // to force the thread into interpOnly mode, which seems to help the test's timing
   // in a way that makes it more likely to reproduce the issue.
   isMain = (strcmp(name, "main") == 0);
   if (isMain) {
