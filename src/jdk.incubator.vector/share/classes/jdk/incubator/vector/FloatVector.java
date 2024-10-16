@@ -2247,17 +2247,18 @@ public abstract class FloatVector extends AbstractVector<Float> {
      */
     @Override
     public abstract
-    FloatVector rearrange(VectorShuffle<Float> m);
+    FloatVector rearrange(VectorShuffle<Float> shuffle);
 
     /*package-private*/
     @ForceInline
     final
     <S extends VectorShuffle<Float>>
     FloatVector rearrangeTemplate(Class<S> shuffletype, S shuffle) {
-        shuffle.checkIndexes();
+        @SuppressWarnings("unchecked")
+        S ws = (S) shuffle.wrapIndexes();
         return VectorSupport.rearrangeOp(
             getClass(), shuffletype, null, float.class, length(),
-            this, shuffle, null,
+            this, ws, null,
             (v1, s_, m_) -> v1.uOp((i, a) -> {
                 int ei = s_.laneSource(i);
                 return v1.lane(ei);
@@ -2282,17 +2283,14 @@ public abstract class FloatVector extends AbstractVector<Float> {
                                            M m) {
 
         m.check(masktype, this);
-        VectorMask<Float> valid = shuffle.laneIsValid();
-        if (m.andNot(valid).anyTrue()) {
-            shuffle.checkIndexes();
-            throw new AssertionError();
-        }
+        @SuppressWarnings("unchecked")
+        S ws = (S) shuffle.wrapIndexes();
         return VectorSupport.rearrangeOp(
                    getClass(), shuffletype, masktype, float.class, length(),
-                   this, shuffle, m,
+                   this, ws, m,
                    (v1, s_, m_) -> v1.uOp((i, a) -> {
                         int ei = s_.laneSource(i);
-                        return ei < 0  || !m_.laneIsSet(i) ? 0 : v1.lane(ei);
+                        return !m_.laneIsSet(i) ? 0 : v1.lane(ei);
                    }));
     }
 
@@ -2405,7 +2403,10 @@ public abstract class FloatVector extends AbstractVector<Float> {
     /*package-private*/
     @ForceInline
     final FloatVector selectFromTemplate(FloatVector v) {
-        return v.rearrange(this.toShuffle());
+        return (FloatVector)VectorSupport.selectFromOp(getClass(), null, float.class,
+                                                        length(), this, v, null,
+                                                        (v1, v2, _m) ->
+                                                         v2.rearrange(v1.toShuffle()));
     }
 
     /**
@@ -2417,9 +2418,15 @@ public abstract class FloatVector extends AbstractVector<Float> {
 
     /*package-private*/
     @ForceInline
-    final FloatVector selectFromTemplate(FloatVector v,
-                                                  AbstractMask<Float> m) {
-        return v.rearrange(this.toShuffle(), m);
+    final
+    <M extends VectorMask<Float>>
+    FloatVector selectFromTemplate(FloatVector v,
+                                            Class<M> masktype, M m) {
+        m.check(masktype, this);
+        return (FloatVector)VectorSupport.selectFromOp(getClass(), masktype, float.class,
+                                                        length(), this, v, m,
+                                                        (v1, v2, _m) ->
+                                                         v2.rearrange(v1.toShuffle(), _m));
     }
 
     /// Ternary operations

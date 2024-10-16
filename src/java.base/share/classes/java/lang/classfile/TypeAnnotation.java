@@ -31,30 +31,9 @@ import java.lang.classfile.attribute.RuntimeInvisibleTypeAnnotationsAttribute;
 import java.lang.classfile.attribute.RuntimeVisibleTypeAnnotationsAttribute;
 import jdk.internal.classfile.impl.TargetInfoImpl;
 import jdk.internal.classfile.impl.UnboundAttribute;
-
-import static java.lang.classfile.ClassFile.TAT_CAST;
-import static java.lang.classfile.ClassFile.TAT_CLASS_EXTENDS;
-import static java.lang.classfile.ClassFile.TAT_CLASS_TYPE_PARAMETER;
-import static java.lang.classfile.ClassFile.TAT_CLASS_TYPE_PARAMETER_BOUND;
-import static java.lang.classfile.ClassFile.TAT_CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT;
-import static java.lang.classfile.ClassFile.TAT_CONSTRUCTOR_REFERENCE;
-import static java.lang.classfile.ClassFile.TAT_CONSTRUCTOR_REFERENCE_TYPE_ARGUMENT;
-import static java.lang.classfile.ClassFile.TAT_EXCEPTION_PARAMETER;
-import static java.lang.classfile.ClassFile.TAT_FIELD;
-import static java.lang.classfile.ClassFile.TAT_INSTANCEOF;
-import static java.lang.classfile.ClassFile.TAT_LOCAL_VARIABLE;
-import static java.lang.classfile.ClassFile.TAT_METHOD_FORMAL_PARAMETER;
-import static java.lang.classfile.ClassFile.TAT_METHOD_INVOCATION_TYPE_ARGUMENT;
-import static java.lang.classfile.ClassFile.TAT_METHOD_RECEIVER;
-import static java.lang.classfile.ClassFile.TAT_METHOD_REFERENCE;
-import static java.lang.classfile.ClassFile.TAT_METHOD_REFERENCE_TYPE_ARGUMENT;
-import static java.lang.classfile.ClassFile.TAT_METHOD_RETURN;
-import static java.lang.classfile.ClassFile.TAT_METHOD_TYPE_PARAMETER;
-import static java.lang.classfile.ClassFile.TAT_METHOD_TYPE_PARAMETER_BOUND;
-import static java.lang.classfile.ClassFile.TAT_NEW;
-import static java.lang.classfile.ClassFile.TAT_RESOURCE_VARIABLE;
-import static java.lang.classfile.ClassFile.TAT_THROWS;
 import jdk.internal.javac.PreviewFeature;
+
+import static java.lang.classfile.TypeAnnotation.TargetInfo.*;
 
 /**
  * Models a {@code type_annotation} structure (JVMS {@jvms 4.7.20}). This model
@@ -87,70 +66,70 @@ public sealed interface TypeAnnotation
     @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     public enum TargetType {
         /** For annotations on a class type parameter declaration. */
-        CLASS_TYPE_PARAMETER(TAT_CLASS_TYPE_PARAMETER, 1),
+        CLASS_TYPE_PARAMETER(TARGET_CLASS_TYPE_PARAMETER, 1),
 
         /** For annotations on a method type parameter declaration. */
-        METHOD_TYPE_PARAMETER(TAT_METHOD_TYPE_PARAMETER, 1),
+        METHOD_TYPE_PARAMETER(TARGET_METHOD_TYPE_PARAMETER, 1),
 
         /** For annotations on the type of an "extends" or "implements" clause. */
-        CLASS_EXTENDS(TAT_CLASS_EXTENDS, 2),
+        CLASS_EXTENDS(TARGET_CLASS_EXTENDS, 2),
 
         /** For annotations on a bound of a type parameter of a class. */
-        CLASS_TYPE_PARAMETER_BOUND(TAT_CLASS_TYPE_PARAMETER_BOUND, 2),
+        CLASS_TYPE_PARAMETER_BOUND(TARGET_CLASS_TYPE_PARAMETER_BOUND, 2),
 
         /** For annotations on a bound of a type parameter of a method. */
-        METHOD_TYPE_PARAMETER_BOUND(TAT_METHOD_TYPE_PARAMETER_BOUND, 2),
+        METHOD_TYPE_PARAMETER_BOUND(TARGET_METHOD_TYPE_PARAMETER_BOUND, 2),
 
         /** For annotations on a field. */
-        FIELD(TAT_FIELD, 0),
+        FIELD(TARGET_FIELD, 0),
 
         /** For annotations on a method return type. */
-        METHOD_RETURN(TAT_METHOD_RETURN, 0),
+        METHOD_RETURN(TARGET_METHOD_RETURN, 0),
 
         /** For annotations on the method receiver. */
-        METHOD_RECEIVER(TAT_METHOD_RECEIVER, 0),
+        METHOD_RECEIVER(TARGET_METHOD_RECEIVER, 0),
 
         /** For annotations on a method parameter. */
-        METHOD_FORMAL_PARAMETER(TAT_METHOD_FORMAL_PARAMETER, 1),
+        METHOD_FORMAL_PARAMETER(TARGET_METHOD_FORMAL_PARAMETER, 1),
 
         /** For annotations on a throws clause in a method declaration. */
-        THROWS(TAT_THROWS, 2),
+        THROWS(TARGET_THROWS, 2),
 
         /** For annotations on a local variable. */
-        LOCAL_VARIABLE(TAT_LOCAL_VARIABLE, -1),
+        LOCAL_VARIABLE(TARGET_LOCAL_VARIABLE, -1),
 
         /** For annotations on a resource variable. */
-        RESOURCE_VARIABLE(TAT_RESOURCE_VARIABLE, -1),
+        RESOURCE_VARIABLE(TARGET_RESOURCE_VARIABLE, -1),
 
         /** For annotations on an exception parameter. */
-        EXCEPTION_PARAMETER(TAT_EXCEPTION_PARAMETER, 2),
+        EXCEPTION_PARAMETER(TARGET_EXCEPTION_PARAMETER, 2),
 
         /** For annotations on a type test. */
-        INSTANCEOF(TAT_INSTANCEOF, 2),
+        INSTANCEOF(TARGET_INSTANCEOF, 2),
 
         /** For annotations on an object creation expression. */
-        NEW(TAT_NEW, 2),
+        NEW(TARGET_NEW, 2),
 
         /** For annotations on a constructor reference receiver. */
-        CONSTRUCTOR_REFERENCE(TAT_CONSTRUCTOR_REFERENCE, 2),
+        CONSTRUCTOR_REFERENCE(TARGET_CONSTRUCTOR_REFERENCE, 2),
 
         /** For annotations on a method reference receiver. */
-        METHOD_REFERENCE(TAT_METHOD_REFERENCE, 2),
+        METHOD_REFERENCE(TARGET_METHOD_REFERENCE, 2),
 
         /** For annotations on a typecast. */
-        CAST(TAT_CAST, 3),
+        CAST(TARGET_CAST, 3),
 
         /** For annotations on a type argument of an object creation expression. */
-        CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT(TAT_CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT, 3),
+        CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT(TARGET_CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT, 3),
 
         /** For annotations on a type argument of a method call. */
-        METHOD_INVOCATION_TYPE_ARGUMENT(TAT_METHOD_INVOCATION_TYPE_ARGUMENT, 3),
+        METHOD_INVOCATION_TYPE_ARGUMENT(TARGET_METHOD_INVOCATION_TYPE_ARGUMENT, 3),
 
         /** For annotations on a type argument of a constructor reference. */
-        CONSTRUCTOR_REFERENCE_TYPE_ARGUMENT(TAT_CONSTRUCTOR_REFERENCE_TYPE_ARGUMENT, 3),
+        CONSTRUCTOR_REFERENCE_TYPE_ARGUMENT(TARGET_CONSTRUCTOR_REFERENCE_TYPE_ARGUMENT, 3),
 
         /** For annotations on a type argument of a method reference. */
-        METHOD_REFERENCE_TYPE_ARGUMENT(TAT_METHOD_REFERENCE_TYPE_ARGUMENT, 3);
+        METHOD_REFERENCE_TYPE_ARGUMENT(TARGET_METHOD_REFERENCE_TYPE_ARGUMENT, 3);
 
         private final int targetTypeValue;
         private final int sizeIfFixed;
@@ -162,6 +141,11 @@ public sealed interface TypeAnnotation
 
         /**
          * {@return the target type value}
+         *
+         * @apiNote
+         * {@code TARGET_}-prefixed constants in {@link TargetInfo}, such as {@link
+         * TargetInfo#TARGET_CLASS_TYPE_PARAMETER}, describe the possible return
+         * values of this method.
          */
         public int targetTypeValue() {
             return targetTypeValue;
@@ -213,6 +197,146 @@ public sealed interface TypeAnnotation
      */
     @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface TargetInfo {
+
+        /**
+         * The {@linkplain TargetType#targetTypeValue() value} of type annotation {@linkplain
+         * #targetType target type} {@link TargetType#CLASS_TYPE_PARAMETER CLASS_TYPE_PARAMETER}.
+         */
+        int TARGET_CLASS_TYPE_PARAMETER = 0x00;
+
+        /**
+         * The {@linkplain TargetType#targetTypeValue() value} of type annotation {@linkplain
+         * #targetType target type} {@link TargetType#METHOD_TYPE_PARAMETER METHOD_TYPE_PARAMETER}.
+         */
+        int TARGET_METHOD_TYPE_PARAMETER = 0x01;
+
+        /**
+         * The {@linkplain TargetType#targetTypeValue() value} of type annotation {@linkplain
+         * #targetType target type} {@link TargetType#CLASS_EXTENDS CLASS_EXTENDS}.
+         */
+        int TARGET_CLASS_EXTENDS = 0x10;
+
+        /**
+         * The {@linkplain TargetType#targetTypeValue() value} of type annotation {@linkplain
+         * #targetType target type} {@link TargetType#CLASS_TYPE_PARAMETER_BOUND
+         * CLASS_TYPE_PARAMETER_BOUND}.
+         */
+        int TARGET_CLASS_TYPE_PARAMETER_BOUND = 0x11;
+
+        /**
+         * The {@linkplain TargetType#targetTypeValue() value} of type annotation {@linkplain
+         * #targetType target type} {@link TargetType#METHOD_TYPE_PARAMETER_BOUND
+         * METHOD_TYPE_PARAMETER_BOUND}.
+         */
+        int TARGET_METHOD_TYPE_PARAMETER_BOUND = 0x12;
+
+        /**
+         * The {@linkplain TargetType#targetTypeValue() value} of type annotation {@linkplain
+         * #targetType target type} {@link TargetType#FIELD FIELD}.
+         */
+        int TARGET_FIELD = 0x13;
+
+        /**
+         * The {@linkplain TargetType#targetTypeValue() value} of type annotation {@linkplain
+         * #targetType target type} {@link TargetType#METHOD_RETURN METHOD_RETURN}.
+         */
+        int TARGET_METHOD_RETURN = 0x14;
+
+        /**
+         * The {@linkplain TargetType#targetTypeValue() value} of type annotation {@linkplain
+         * #targetType target type} {@link TargetType#METHOD_RECEIVER METHOD_RECEIVER}.
+         */
+        int TARGET_METHOD_RECEIVER = 0x15;
+
+        /**
+         * The {@linkplain TargetType#targetTypeValue() value} of type annotation {@linkplain
+         * #targetType target type} {@link TargetType#METHOD_FORMAL_PARAMETER
+         * METHOD_FORMAL_PARAMETER}.
+         */
+        int TARGET_METHOD_FORMAL_PARAMETER = 0x16;
+
+        /**
+         * The {@linkplain TargetType#targetTypeValue() value} of type annotation {@linkplain
+         * #targetType target type} {@link TargetType#THROWS THROWS}.
+         */
+        int TARGET_THROWS = 0x17;
+
+        /**
+         * The {@linkplain TargetType#targetTypeValue() value} of type annotation {@linkplain
+         * #targetType target type} {@link TargetType#LOCAL_VARIABLE LOCAL_VARIABLE}.
+         */
+        int TARGET_LOCAL_VARIABLE = 0x40;
+
+        /**
+         * The {@linkplain TargetType#targetTypeValue() value} of type annotation {@linkplain
+         * #targetType target type} {@link TargetType#RESOURCE_VARIABLE RESOURCE_VARIABLE}.
+         */
+        int TARGET_RESOURCE_VARIABLE = 0x41;
+
+        /**
+         * The {@linkplain TargetType#targetTypeValue() value} of type annotation {@linkplain
+         * #targetType target type} {@link TargetType#EXCEPTION_PARAMETER EXCEPTION_PARAMETER}.
+         */
+        int TARGET_EXCEPTION_PARAMETER = 0x42;
+
+        /**
+         * The {@linkplain TargetType#targetTypeValue() value} of type annotation {@linkplain
+         * #targetType target type} {@link TargetType#INSTANCEOF INSTANCEOF}.
+         */
+        int TARGET_INSTANCEOF = 0x43;
+
+        /**
+         * The {@linkplain TargetType#targetTypeValue() value} of type annotation {@linkplain
+         * #targetType target type} {@link TargetType#NEW NEW}.
+         */
+        int TARGET_NEW = 0x44;
+
+        /**
+         * The {@linkplain TargetType#targetTypeValue() value} of type annotation {@linkplain
+         * #targetType target type} {@link TargetType#CONSTRUCTOR_REFERENCE
+         * CONSTRUCTOR_REFERENCE}.
+         */
+        int TARGET_CONSTRUCTOR_REFERENCE = 0x45;
+
+        /**
+         * The {@linkplain TargetType#targetTypeValue() value} of type annotation {@linkplain
+         * #targetType target type} {@link TargetType#METHOD_REFERENCE METHOD_REFERENCE}.
+         */
+        int TARGET_METHOD_REFERENCE = 0x46;
+
+        /**
+         * The {@linkplain TargetType#targetTypeValue() value} of type annotation {@linkplain
+         * #targetType target type} {@link TargetType#CAST CAST}.
+         */
+        int TARGET_CAST = 0x47;
+
+        /**
+         * The {@linkplain TargetType#targetTypeValue() value} of type annotation {@linkplain
+         * #targetType target type} {@link TargetType#CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT
+         * CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT}.
+         */
+        int TARGET_CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT = 0x48;
+
+        /**
+         * The {@linkplain TargetType#targetTypeValue() value} of type annotation {@linkplain
+         * #targetType target type} {@link TargetType#METHOD_INVOCATION_TYPE_ARGUMENT
+         * METHOD_INVOCATION_TYPE_ARGUMENT}.
+         */
+        int TARGET_METHOD_INVOCATION_TYPE_ARGUMENT = 0x49;
+
+        /**
+         * The {@linkplain TargetType#targetTypeValue() value} of type annotation {@linkplain
+         * #targetType target type} {@link TargetType#CONSTRUCTOR_REFERENCE_TYPE_ARGUMENT
+         * CONSTRUCTOR_REFERENCE_TYPE_ARGUMENT}.
+         */
+        int TARGET_CONSTRUCTOR_REFERENCE_TYPE_ARGUMENT = 0x4A;
+
+        /**
+         * The {@linkplain TargetType#targetTypeValue() value} of type annotation {@linkplain
+         * #targetType target type} {@link TargetType#METHOD_REFERENCE_TYPE_ARGUMENT
+         * METHOD_REFERENCE_TYPE_ARGUMENT}.
+         */
+        int TARGET_METHOD_REFERENCE_TYPE_ARGUMENT = 0x4B;
 
         /**
          * {@return the type of the target}

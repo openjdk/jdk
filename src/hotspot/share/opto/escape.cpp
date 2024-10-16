@@ -4009,10 +4009,6 @@ void ConnectionGraph::move_inst_mem(Node* n, GrowableArray<PhiNode *>  &orig_phi
       --i;
 #ifdef ASSERT
     } else if (use->is_Mem()) {
-      if (use->Opcode() == Op_StoreCM && use->in(MemNode::OopStore) == n) {
-        // Don't move related cardmark.
-        continue;
-      }
       // Memory nodes should have new memory input.
       tp = igvn->type(use->in(MemNode::Address))->isa_ptr();
       assert(tp != nullptr, "ptr type");
@@ -4564,7 +4560,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
           // They overwrite memory edge corresponding to destination array,
           memnode_worklist.append_if_missing(use);
         } else if (!(op == Op_CmpP || op == Op_Conv2B ||
-              op == Op_CastP2X || op == Op_StoreCM ||
+              op == Op_CastP2X ||
               op == Op_FastLock || op == Op_AryEq ||
               op == Op_StrComp || op == Op_CountPositives ||
               op == Op_StrCompressedCopy || op == Op_StrInflatedCopy ||
@@ -4703,9 +4699,6 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
       if (use->is_Phi() || use->is_ClearArray()) {
         memnode_worklist.append_if_missing(use);
       } else if (use->is_Mem() && use->in(MemNode::Memory) == n) {
-        if (use->Opcode() == Op_StoreCM) { // Ignore cardmark stores
-          continue;
-        }
         memnode_worklist.append_if_missing(use);
       } else if (use->is_MemBar() || use->is_CallLeaf()) {
         if (use->in(TypeFunc::Memory) == n) { // Ignore precedent edge

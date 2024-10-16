@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.List;
 
 import jdk.test.lib.compiler.CompilerUtils;
 import jdk.test.lib.process.ProcessTools;
@@ -52,9 +51,8 @@ public class DynStatic {
         Paths.get(TEST_SRC, "DynSignedProvFirst.java");
     private static final Path STATIC_SRC =
         Paths.get(TEST_SRC, "StaticSignedProvFirst.java");
-
-    private static final String STATIC_PROPS =
-        Paths.get(TEST_SRC, "Static.props").toString();
+    private static final Path STATIC_PROPS =
+        Paths.get(TEST_SRC, "Static.props");
 
     public static void main(String[] args) throws Exception {
 
@@ -89,7 +87,7 @@ public class DynStatic {
         // Run the StaticSignedProvFirst test program
         ProcessTools.executeTestJava("-classpath",
             TEST_CLASSES.toString() + File.pathSeparator + "exp.jar",
-            "-Djava.security.properties=file:" + STATIC_PROPS,
+            "-Djava.security.properties=" + STATIC_PROPS.toUri(),
             "StaticSignedProvFirst")
             .shouldContain("test passed");
     }
