@@ -1244,9 +1244,9 @@ public class TestAlignVector {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_B, IRNode.VECTOR_SIZE + "min(max_byte, 16)", "> 0",
-                  IRNode.ADD_VB,        IRNode.VECTOR_SIZE + "min(max_byte, 16)", "> 0",
-                  IRNode.STORE_VECTOR,                                            "> 0"},
+    @IR(counts = {IRNode.LOAD_VECTOR_B, IRNode.VECTOR_SIZE + "min(max_byte, 8)", "> 0",
+                  IRNode.ADD_VB,        IRNode.VECTOR_SIZE + "min(max_byte, 8)", "> 0",
+                  IRNode.STORE_VECTOR,                                           "> 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
         applyIfPlatform = {"64-bit", "true"},
         applyIf = {"AlignVector", "false"})
@@ -1258,7 +1258,7 @@ public class TestAlignVector {
         applyIf = {"AlignVector", "true"})
     static Object[] test14dB(byte[] a) {
         // non-power-of-2 stride
-        for (int i = 0; i < RANGE-20; i+=17) {
+        for (int i = 0; i < RANGE-20; i+=9) {
             a[i+0]++;
             a[i+1]++;
             a[i+2]++;
@@ -1267,22 +1267,14 @@ public class TestAlignVector {
             a[i+5]++;
             a[i+6]++;
             a[i+7]++;
-            a[i+8]++;
-            a[i+9]++;
-            a[i+10]++;
-            a[i+11]++;
-            a[i+12]++;
-            a[i+13]++;
-            a[i+14]++;
-            a[i+15]++;
         }
         return new Object[]{ a };
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_B, IRNode.VECTOR_SIZE + "min(max_byte, 16)", "> 0",
-                  IRNode.ADD_VB,        IRNode.VECTOR_SIZE + "min(max_byte, 16)", "> 0",
-                  IRNode.STORE_VECTOR,                                            "> 0"},
+    @IR(counts = {IRNode.LOAD_VECTOR_B, IRNode.VECTOR_SIZE + "min(max_byte, 8)", "> 0",
+                  IRNode.ADD_VB,        IRNode.VECTOR_SIZE + "min(max_byte, 8)", "> 0",
+                  IRNode.STORE_VECTOR,                                           "> 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
         applyIfPlatform = {"64-bit", "true"},
         applyIf = {"AlignVector", "false"})
@@ -1294,7 +1286,7 @@ public class TestAlignVector {
         applyIf = {"AlignVector", "true"})
     static Object[] test14eB(byte[] a) {
         // non-power-of-2 stride
-        for (int i = 0; i < RANGE-32; i+=31) {
+        for (int i = 0; i < RANGE-32; i+=11) {
             a[i+0]++;
             a[i+1]++;
             a[i+2]++;
@@ -1303,22 +1295,14 @@ public class TestAlignVector {
             a[i+5]++;
             a[i+6]++;
             a[i+7]++;
-            a[i+8]++;
-            a[i+9]++;
-            a[i+10]++;
-            a[i+11]++;
-            a[i+12]++;
-            a[i+13]++;
-            a[i+14]++;
-            a[i+15]++;
         }
         return new Object[]{ a };
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_B, IRNode.VECTOR_SIZE + "min(max_byte, 16)", "> 0",
-                  IRNode.ADD_VB,        IRNode.VECTOR_SIZE + "min(max_byte, 16)", "> 0",
-                  IRNode.STORE_VECTOR,                                            "> 0"},
+    @IR(counts = {IRNode.LOAD_VECTOR_B, IRNode.VECTOR_SIZE + "min(max_byte, 8)", "> 0",
+                  IRNode.ADD_VB,        IRNode.VECTOR_SIZE + "min(max_byte, 8)", "> 0",
+                  IRNode.STORE_VECTOR,                                           "> 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
         applyIfPlatform = {"64-bit", "true"},
         applyIf = {"AlignVector", "false"})
@@ -1330,7 +1314,7 @@ public class TestAlignVector {
         applyIf = {"AlignVector", "true"})
     static Object[] test14fB(byte[] a) {
         // non-power-of-2 stride
-        for (int i = 0; i < RANGE-40; i+=33) {
+        for (int i = 0; i < RANGE-40; i+=12) {
             a[i+0]++;
             a[i+1]++;
             a[i+2]++;
@@ -1339,14 +1323,6 @@ public class TestAlignVector {
             a[i+5]++;
             a[i+6]++;
             a[i+7]++;
-            a[i+8]++;
-            a[i+9]++;
-            a[i+10]++;
-            a[i+11]++;
-            a[i+12]++;
-            a[i+13]++;
-            a[i+14]++;
-            a[i+15]++;
         }
         return new Object[]{ a };
     }
