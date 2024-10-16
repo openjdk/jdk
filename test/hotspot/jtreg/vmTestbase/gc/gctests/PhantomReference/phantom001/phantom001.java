@@ -179,8 +179,9 @@ public class phantom001 extends ThreadedGCTest {
                 progress("Waiting for finalization: " + type);
                 WhiteBox.getWhiteBox().fullGC();
                 for (int checks = 0; !finalized && !shouldTerminate(); ++checks) {
-                    // There are scenarios where one WB.fillGC() isn't enough,
-                    // but 10 iterations really ought to be sufficient.
+                    // Wait for up to 10 iterations that the finalizer has been run,
+                    // this ought to be sufficient. Full GCs of other threads might
+                    // starve out the finalizer thread, requiring more waiting.
                     if (checks > 10) {
                         fail("Waiting for finalization: " + type);
                         return;
