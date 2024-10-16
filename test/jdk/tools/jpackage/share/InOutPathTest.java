@@ -124,7 +124,7 @@ public final class InOutPathTest {
         TKit.createDirectories(outputDir);
         cmd.setArgumentValue("--dest", outputDir);
     }
-    
+
     private static void outputDirSameAsInputDir(JPackageCommand cmd) throws
             IOException {
         // Set output dir the same as the input dir
