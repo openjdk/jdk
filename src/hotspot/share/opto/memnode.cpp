@@ -1736,7 +1736,7 @@ Node* LoadNode::split_through_phi(PhaseGVN* phase, bool ignore_missing_instance_
   } else {
     assert(base->in(0) == mem->in(0), "sanity");
     region = mem->in(0);
-    mem_id = mem->_idx;
+    mem_id = t_oop->is_known_instance_field() ? mem->_idx : base->_idx;
   }
 
   PhaseIterGVN* igvn = phase->is_IterGVN();

@@ -1419,6 +1419,9 @@ void PhaseIterGVN::subsume_node( Node *old, Node *nn ) {
       PhiNode* phi = region->fast_out(i)->isa_Phi();
       if (phi != nullptr && phi->inst_mem_id() == (int)old->_idx) {
         phi->set_inst_mem_id((int)nn->_idx);
+        if (phi->inst_id() == (int)old->_idx) {
+          phi->set_inst_id((int)nn->_idx);
+        }
       }
     }
   }

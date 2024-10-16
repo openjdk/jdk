@@ -242,6 +242,7 @@ public:
   virtual const TypePtr *adr_type() const { verify_adr_type(true); return _adr_type; }
 
   void  set_inst_mem_id(int inst_mem_id) { _inst_mem_id = inst_mem_id; }
+  void  set_inst_id(int inst_id)         { _inst_id = inst_id; }
   int inst_mem_id() const { return _inst_mem_id; }
   int inst_id()     const { return _inst_id; }
   int inst_index()  const { return _inst_index; }
