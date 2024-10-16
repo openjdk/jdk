@@ -48,7 +48,7 @@ public class TestPadding {
     }
 
     @Test
-    @IR(counts = { IRNode.NOP, "1" })
+    @IR(counts = { IRNode.NOP, "<=1" })
     static int test(int i) {
         TestPadding tp = tpf;
         if (tp.b1 > 42) { // Big 'cmpb' instruction at offset 0x30

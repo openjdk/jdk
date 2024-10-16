@@ -995,7 +995,7 @@ void ShenandoahBarrierC2Support::call_lrb_stub(Node*& ctrl, Node*& val, Node* lo
       name = "load_reference_barrier_phantom";
     }
   }
-  Node* call = new CallLeafNode(ShenandoahBarrierSetC2::shenandoah_load_reference_barrier_Type(), calladdr, name, TypeRawPtr::BOTTOM);
+  Node* call = new CallLeafNode(ShenandoahBarrierSetC2::load_reference_barrier_Type(), calladdr, name, TypeRawPtr::BOTTOM);
 
   call->init_req(TypeFunc::Control, ctrl);
   call->init_req(TypeFunc::I_O, phase->C->top());
