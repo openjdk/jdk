@@ -1103,7 +1103,7 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* current, C1StubId stub_id ))
   // Now copy code back
 
   {
-    MutexLocker ml_patch (current, Patching_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker ml_code (current, CodeCache_lock, Mutex::_no_safepoint_check_flag);
     //
     // Deoptimization may have happened while we waited for the lock.
     // In that case we don't bother to do any patching we just return
@@ -1268,20 +1268,14 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* current, C1StubId stub_id ))
         }
       }
     }
-    // Keep holding the Patching_lock when walking oops because another thread
-    // might update immediate oops in the patch body concurrently and non-atomic.
-
     // If we are patching in a non-perm oop, make sure the nmethod
     // is on the right list.
-    {
-      MutexLocker ml_code (current, CodeCache_lock, Mutex::_no_safepoint_check_flag);
-      nmethod* nm = CodeCache::find_nmethod(caller_frame.pc());
-      guarantee(nm != nullptr, "only nmethods can contain non-perm oops");
+    nmethod* nm = CodeCache::find_nmethod(caller_frame.pc());
+    guarantee(nm != nullptr, "only nmethods can contain non-perm oops");
 
-      // Since we've patched some oops in the nmethod,
-      // (re)register it with the heap.
-      Universe::heap()->register_nmethod(nm);
-    }
+    // Since we've patched some oops in the nmethod,
+    // (re)register it with the heap.
+    Universe::heap()->register_nmethod(nm);
   }
 JRT_END
 
