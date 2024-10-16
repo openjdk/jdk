@@ -503,7 +503,7 @@ final class ShortMaxVector extends ShortVector {
                                    VectorMask<Short> m) {
         return (ShortMaxVector)
             super.selectFromTemplate((ShortMaxVector) v,
-                                     (ShortMaxMask) m);  // specialize
+                                     ShortMaxMask.class, (ShortMaxMask) m);  // specialize
     }
 
 
@@ -828,6 +828,13 @@ final class ShortMaxVector extends ShortVector {
                 throw new IllegalArgumentException("VectorShuffle length and species length differ");
             int[] shuffleArray = toArray();
             return s.shuffleFromArray(shuffleArray, 0).check(s);
+        }
+
+        @Override
+        @ForceInline
+        public ShortMaxShuffle wrapIndexes() {
+            return VectorSupport.wrapShuffleIndexes(ETYPE, ShortMaxShuffle.class, this, VLENGTH,
+                                                    (s) -> ((ShortMaxShuffle)(((AbstractShuffle<Short>)(s)).wrapIndexesTemplate())));
         }
 
         @ForceInline

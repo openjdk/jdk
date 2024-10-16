@@ -84,7 +84,7 @@ public final class EventClassBuilder {
             int index = 0;
             for (ValueDescriptor v : fields) {
                 codeBuilder.iload(1);
-                codeBuilder.ldc(index);
+                codeBuilder.loadConstant(index);
                 Label notEqual = codeBuilder.newLabel();
                 codeBuilder.if_icmpne(notEqual);
                 codeBuilder.aload(0); // this

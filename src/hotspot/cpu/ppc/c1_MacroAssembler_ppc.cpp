@@ -92,7 +92,7 @@ void C1_MacroAssembler::lock_object(Register Rmark, Register Roop, Register Rbox
   }
 
   if (LockingMode == LM_LIGHTWEIGHT) {
-    lightweight_lock(Roop, Rmark, Rscratch, slow_int);
+    lightweight_lock(Rbox, Roop, Rmark, Rscratch, slow_int);
   } else if (LockingMode == LM_LEGACY) {
     // ... and mark it unlocked.
     ori(Rmark, Rmark, markWord::unlocked_value);

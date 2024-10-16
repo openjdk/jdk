@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ class MemBaseline {
     by_address,      // by memory address
     by_size,         // by memory size
     by_site,         // by call site where the memory is allocated from
-    by_site_and_type // by call site and memory type
+    by_site_and_type // by call site and memory tag
   };
 
  private:
@@ -144,14 +144,14 @@ class MemBaseline {
     return bl->_malloc_memory_snapshot.malloc_overhead();
   }
 
-  MallocMemory* malloc_memory(MEMFLAGS flag) {
+  MallocMemory* malloc_memory(MemTag mem_tag) {
     assert(baseline_type() != Not_baselined, "Not yet baselined");
-    return _malloc_memory_snapshot.by_type(flag);
+    return _malloc_memory_snapshot.by_type(mem_tag);
   }
 
-  VirtualMemory* virtual_memory(MEMFLAGS flag) {
+  VirtualMemory* virtual_memory(MemTag mem_tag) {
     assert(baseline_type() != Not_baselined, "Not yet baselined");
-    return _virtual_memory_snapshot.by_type(flag);
+    return _virtual_memory_snapshot.by_type(mem_tag);
   }
 
 
@@ -203,7 +203,7 @@ class MemBaseline {
   void malloc_sites_to_size_order();
   // Sort allocation sites in call site address order
   void malloc_sites_to_allocation_site_order();
-  // Sort allocation sites in call site address and memory type order
+  // Sort allocation sites in call site address and memory tag order
   void malloc_sites_to_allocation_site_and_type_order();
 
   // Sort allocation sites in reserved size order

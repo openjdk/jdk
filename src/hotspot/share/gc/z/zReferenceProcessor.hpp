@@ -36,8 +36,8 @@ class ZReferenceProcessor : public ReferenceDiscoverer {
   friend class ZReferenceProcessorTask;
 
 private:
-  static const size_t reference_type_count = REF_PHANTOM + 1;
-  typedef size_t Counters[reference_type_count];
+  static const size_t ReferenceTypeCount = REF_PHANTOM + 1;
+  typedef size_t Counters[ReferenceTypeCount];
 
   ZWorkers* const      _workers;
   ReferencePolicy*     _soft_reference_policy;

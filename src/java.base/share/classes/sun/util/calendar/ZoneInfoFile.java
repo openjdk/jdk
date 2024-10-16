@@ -234,9 +234,8 @@ public final class ZoneInfoFile {
     private static void addOldMapping() {
         for (var key : ZoneId.SHORT_IDS.keySet()) {
             switch (key) {
-                case "EST" -> zones.put(key, new ZoneInfo(key, -18000000));
-                case "HST" -> zones.put(key, new ZoneInfo(key, -36000000));
-                case "MST" -> zones.put(key, new ZoneInfo(key, -25200000));
+                case "EST" -> aliases.put("EST", "America/Panama");
+                case "MST" -> aliases.put("MST", "America/Phoenix");
                 default -> aliases.put(key, ZoneId.SHORT_IDS.get(key));
             }
         }

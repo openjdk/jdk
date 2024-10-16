@@ -22,7 +22,7 @@
  */
 
 #include "precompiled.hpp"
-#include "nmt/memflags.hpp"
+#include "nmt/memTag.hpp"
 #include "runtime/os.hpp"
 #include "utilities/utf8.hpp"
 #include "unittest.hpp"

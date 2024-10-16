@@ -138,9 +138,11 @@ void DCmd::register_dcmds(){
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<PerfMapDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<TrimCLibcHeapDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<MallocInfoDcmd>(full_export, true, false));
+#endif // LINUX
+#if defined(LINUX) || defined(_WIN64)
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<SystemMapDCmd>(full_export, true,false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<SystemDumpMapDCmd>(full_export, true,false));
-#endif // LINUX
+#endif // LINUX or WINDOWS
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CodeHeapAnalyticsDCmd>(full_export, true, false));
 
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CompilerDirectivesPrintDCmd>(full_export, true, false));
@@ -899,7 +901,6 @@ void EventLogDCmd::execute(DCmdSource source, TRAPS) {
   int max = -1;
   if (max_value != nullptr) {
     char* endptr = nullptr;
-    int max;
     if (!parse_integer(max_value, &max)) {
       output()->print_cr("Invalid max option: \"%s\".", max_value);
       return;
@@ -1173,7 +1174,7 @@ void CompilationMemoryStatisticDCmd::execute(DCmdSource source, TRAPS) {
   CompilationMemoryStatistic::print_all_by_size(output(), human_readable, minsize);
 }
 
-#ifdef LINUX
+#if defined(LINUX) || defined(_WIN64)
 
 SystemMapDCmd::SystemMapDCmd(outputStream* output, bool heap) : DCmd(output, heap) {}
 
@@ -1191,16 +1192,22 @@ SystemDumpMapDCmd::SystemDumpMapDCmd(outputStream* output, bool heap) :
 
 void SystemDumpMapDCmd::execute(DCmdSource source, TRAPS) {
   const char* name = _filename.value();
+  if (name == nullptr || name[0] == 0) {
+    output()->print_cr("filename is empty or not specified.  No file written");
+    return;
+  }
   fileStream fs(name);
   if (fs.is_open()) {
     if (!MemTracker::enabled()) {
       output()->print_cr("(NMT is disabled, will not annotate mappings).");
     }
     MemMapPrinter::print_all_mappings(&fs);
+#ifndef _WIN64
     // For the readers convenience, resolve path name.
     char tmp[JVM_MAXPATHLEN];
     const char* absname = os::Posix::realpath(name, tmp, sizeof(tmp));
     name = absname != nullptr ? absname : name;
+#endif
     output()->print_cr("Memory map dumped to \"%s\".", name);
   } else {
     output()->print_cr("Failed to open \"%s\" for writing (%s).", name, os::strerror(errno));
