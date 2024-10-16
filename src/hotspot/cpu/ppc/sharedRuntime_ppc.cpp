@@ -1863,6 +1863,7 @@ static void gen_continuation_enter(MacroAssembler* masm,
   // --- Normal exit (resolve/thawing)
 
   __ bind(L_exit);
+  ContinuationEntry::_cleanup_offset = __ pc() - start;
   continuation_enter_cleanup(masm);
 
   // Pop frame and return
@@ -2731,6 +2732,11 @@ uint SharedRuntime::out_preserve_stack_slots() {
 #else
   return 0;
 #endif
+}
+
+VMReg SharedRuntime::thread_register() {
+  Unimplemented();
+  return nullptr;
 }
 
 #if defined(COMPILER1) || defined(COMPILER2)

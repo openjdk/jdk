@@ -60,6 +60,9 @@
 #include "utilities/debug.hpp"
 #include "utilities/decoder.hpp"
 #include "utilities/formatBuffer.hpp"
+#ifdef COMPILER1
+#include "c1/c1_Runtime1.hpp"
+#endif
 
 RegisterMap::RegisterMap(JavaThread *thread, UpdateMap update_map, ProcessFrames process_frames, WalkContinuation walk_cont) {
   _thread         = thread;
@@ -497,6 +500,35 @@ jint frame::interpreter_frame_expression_stack_size() const {
   return (jint)stack_size;
 }
 
+#ifdef ASSERT
+static address get_register_address_in_stub(const frame& stub_fr, VMReg reg) {
+  RegisterMap map(nullptr,
+                  RegisterMap::UpdateMap::include,
+                  RegisterMap::ProcessFrames::skip,
+                  RegisterMap::WalkContinuation::skip);
+  stub_fr.oop_map()->update_register_map(&stub_fr, &map);
+  return map.location(reg, stub_fr.sp());
+}
+#endif
+
+JavaThread** frame::saved_thread_address(const frame& f) {
+  CodeBlob* cb = f.cb();
+  assert(cb != nullptr && cb->is_runtime_stub(), "invalid frame");
+
+  JavaThread** thread_addr;
+#ifdef COMPILER1
+  if (cb == Runtime1::blob_for(C1StubId::monitorenter_id) ||
+      cb == Runtime1::blob_for(C1StubId::monitorenter_nofpu_id)) {
+    thread_addr = (JavaThread**)(f.sp() + Runtime1::runtime_blob_current_thread_offset(f));
+  } else
+#endif
+  {
+    // c2 only saves rbp in the stub frame so nothing to do.
+    thread_addr = nullptr;
+  }
+  assert(get_register_address_in_stub(f, SharedRuntime::thread_register()) == (address)thread_addr, "wrong thread address");
+  return thread_addr;
+}
 
 // (frame::interpreter_frame_sender_sp accessor is in frame_<arch>.cpp)
 
@@ -1096,7 +1128,7 @@ oop frame::retrieve_receiver(RegisterMap* reg_map) {
 }
 
 
-BasicLock* frame::get_native_monitor() {
+BasicLock* frame::get_native_monitor() const {
   nmethod* nm = (nmethod*)_cb;
   assert(_cb != nullptr && _cb->is_nmethod() && nm->method()->is_native(),
          "Should not call this unless it's a native nmethod");
@@ -1105,7 +1137,7 @@ BasicLock* frame::get_native_monitor() {
   return (BasicLock*) &sp()[byte_offset / wordSize];
 }
 
-oop frame::get_native_receiver() {
+oop frame::get_native_receiver() const {
   nmethod* nm = (nmethod*)_cb;
   assert(_cb != nullptr && _cb->is_nmethod() && nm->method()->is_native(),
          "Should not call this unless it's a native nmethod");
@@ -1351,9 +1383,14 @@ public:
 
 // callers need a ResourceMark because of name_and_sig_as_C_string() usage,
 // RA allocated string is returned to the caller
-void frame::describe(FrameValues& values, int frame_no, const RegisterMap* reg_map) {
+void frame::describe(FrameValues& values, int frame_no, const RegisterMap* reg_map, bool top) {
   // boundaries: sp and the 'real' frame pointer
   values.describe(-1, sp(), err_msg("sp for #%d", frame_no), 0);
+  if (top) {
+    values.describe(-1, sp() - 1, err_msg("sp[-1] for #%d", frame_no), 0);
+    values.describe(-1, sp() - 2, err_msg("sp[-2] for #%d", frame_no), 0);
+  }
+
   intptr_t* frame_pointer = real_fp(); // Note: may differ from fp()
 
   // print frame info at the highest boundary
@@ -1425,7 +1462,7 @@ void frame::describe(FrameValues& values, int frame_no, const RegisterMap* reg_m
   } else if (is_entry_frame()) {
     // For now just label the frame
     values.describe(-1, info_address, err_msg("#%d entry frame", frame_no), 2);
-  } else if (cb()->is_nmethod()) {
+  } else if (is_compiled_frame()) {
     // For now just label the frame
     nmethod* nm = cb()->as_nmethod();
     values.describe(-1, info_address,
@@ -1528,17 +1565,16 @@ void frame::describe(FrameValues& values, int frame_no, const RegisterMap* reg_m
         oop_map()->all_type_do(this, OopMapValue::callee_saved_value, &valuesFn);
       }
     }
-
-    if (nm->method()->is_continuation_enter_intrinsic()) {
-      ContinuationEntry* ce = Continuation::get_continuation_entry_for_entry_frame(reg_map->thread(), *this); // (ContinuationEntry*)unextended_sp();
-      ce->describe(values, frame_no);
-    }
   } else if (is_native_frame()) {
     // For now just label the frame
     nmethod* nm = cb()->as_nmethod_or_null();
     values.describe(-1, info_address,
                     FormatBuffer<1024>("#%d nmethod " INTPTR_FORMAT " for native method %s", frame_no,
                                        p2i(nm), nm->method()->name_and_sig_as_C_string()), 2);
+    if (nm->method()->is_continuation_enter_intrinsic()) {
+      ContinuationEntry* ce = Continuation::get_continuation_entry_for_entry_frame(reg_map->thread(), *this); // (ContinuationEntry*)unextended_sp();
+      ce->describe(values, frame_no);
+    }
   } else {
     // provide default info if not handled before
     char *info = (char *) "special frame";

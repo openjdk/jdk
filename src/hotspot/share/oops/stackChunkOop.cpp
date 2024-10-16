@@ -518,9 +518,9 @@ public:
   int _num_interpreted_frames;
   int _num_i2c;
 
-  VerifyStackChunkFrameClosure(stackChunkOop chunk, int num_frames, int size)
+  VerifyStackChunkFrameClosure(stackChunkOop chunk)
     : _chunk(chunk), _sp(nullptr), _cb(nullptr), _callee_interpreted(false),
-      _size(size), _argsize(0), _num_oops(0), _num_frames(num_frames), _num_interpreted_frames(0), _num_i2c(0) {}
+      _size(0), _argsize(0), _num_oops(0), _num_frames(0), _num_interpreted_frames(0), _num_i2c(0) {}
 
   template <ChunkFrames frame_kind, typename RegisterMapT>
   bool do_frame(const StackChunkFrameStream<frame_kind>& f, const RegisterMapT* map) {
@@ -614,11 +614,8 @@ bool stackChunkOopDesc::verify(size_t* out_size, int* out_oops, int* out_frames,
   assert((size == 0) == is_empty(), "");
 
   const StackChunkFrameStream<ChunkFrames::Mixed> first(this);
-  const bool has_safepoint_stub_frame = first.is_stub();
 
-  VerifyStackChunkFrameClosure closure(this,
-                                       has_safepoint_stub_frame ? 1 : 0, // Iterate_stack skips the safepoint stub
-                                       has_safepoint_stub_frame ? first.frame_size() : 0);
+  VerifyStackChunkFrameClosure closure(this);
   iterate_stack(&closure);
 
   assert(!is_empty() || closure._cb == nullptr, "");

@@ -530,6 +530,8 @@ class java_lang_VirtualThread : AllStatic {
   static int _carrierThread_offset;
   static int _continuation_offset;
   static int _state_offset;
+  static int _next_offset;
+  static int _onWaitingList_offset;
   JFR_ONLY(static int _jfr_epoch_offset;)
  public:
   enum {
@@ -545,6 +547,9 @@ class java_lang_VirtualThread : AllStatic {
     UNPARKED      = 9,
     YIELDING      = 10,
     YIELDED       = 11,
+    BLOCKING      = 12,
+    BLOCKED       = 13,
+    UNBLOCKED     = 14,
     TERMINATED    = 99,
 
     // additional state bits
@@ -564,6 +569,12 @@ class java_lang_VirtualThread : AllStatic {
   static oop carrier_thread(oop vthread);
   static oop continuation(oop vthread);
   static int state(oop vthread);
+  static void set_state(oop vthread, int state);
+  static int cmpxchg_state(oop vthread, int old_state, int new_state);
+  static oop next(oop vthread);
+  static void set_next(oop vthread, oop next_vthread);
+  static bool set_onWaitingList(oop vthread, OopHandle& list_head);
+  static bool is_preempted(oop vthread);
   static JavaThreadStatus map_state_to_thread_status(int state);
 };
 

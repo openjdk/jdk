@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,9 +36,10 @@
 #include "oops/access.inline.hpp"
 #include "oops/instanceStackChunkKlass.inline.hpp"
 #include "runtime/continuationJavaClasses.inline.hpp"
-#include "runtime/frame.inline.hpp"
+#include "runtime/frame.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/objectMonitor.hpp"
 #include "runtime/registerMap.hpp"
 #include "runtime/smallRegisterMap.inline.hpp"
 #include "utilities/macros.hpp"
@@ -90,6 +91,9 @@ inline void stackChunkOopDesc::set_max_thawing_size(int value)  {
 
 inline uint8_t stackChunkOopDesc::lockstack_size() const         { return jdk_internal_vm_StackChunk::lockStackSize(as_oop()); }
 inline void stackChunkOopDesc::set_lockstack_size(uint8_t value) { jdk_internal_vm_StackChunk::set_lockStackSize(this, value); }
+
+inline ObjectWaiter* stackChunkOopDesc::object_waiter() const       { return (ObjectWaiter*)jdk_internal_vm_StackChunk::objectWaiter(as_oop()); }
+inline void stackChunkOopDesc::set_object_waiter(ObjectWaiter* obj) { jdk_internal_vm_StackChunk::set_objectWaiter(this, (address)obj); }
 
 inline oop stackChunkOopDesc::cont() const                {
   if (UseZGC && !ZGenerational) {
@@ -170,8 +174,19 @@ inline void stackChunkOopDesc::clear_flags() {
 
 inline bool stackChunkOopDesc::has_mixed_frames() const { return is_flag(FLAG_HAS_INTERPRETED_FRAMES); }
 inline void stackChunkOopDesc::set_has_mixed_frames(bool value) {
-  assert((flags() & ~FLAG_HAS_INTERPRETED_FRAMES) == 0, "other flags should not be set");
+  assert((flags() & ~(FLAG_HAS_INTERPRETED_FRAMES | FLAG_PREEMPTED)) == 0, "other flags should not be set");
   set_flag(FLAG_HAS_INTERPRETED_FRAMES, value);
+}
+
+inline bool stackChunkOopDesc::preempted() const { return is_flag(FLAG_PREEMPTED); }
+inline void stackChunkOopDesc::set_preempted(bool value) {
+  assert(preempted() != value, "");
+  set_flag(FLAG_PREEMPTED, value);
+}
+
+inline ObjectMonitor* stackChunkOopDesc::current_pending_monitor() const {
+  ObjectWaiter* waiter = object_waiter();
+  return waiter != nullptr ? waiter->monitor() : nullptr;
 }
 
 inline bool stackChunkOopDesc::has_lockstack() const         { return is_flag(FLAG_HAS_LOCKSTACK); }
@@ -229,15 +244,14 @@ inline void stackChunkOopDesc::iterate_stack(StackChunkFrameClosureType* closure
                          RegisterMap::ProcessFrames::skip,
                          RegisterMap::WalkContinuation::include);
     full_map.set_include_argument_oops(false);
+    closure->do_frame(f, map);
 
     f.next(&full_map);
-
     assert(!f.is_done(), "");
     assert(f.is_compiled(), "");
 
     should_continue = closure->do_frame(f, &full_map);
     f.next(map);
-    f.handle_deopted(); // the stub caller might be deoptimized (as it's not at a call)
   }
   assert(!f.is_stub(), "");
 
@@ -298,7 +312,7 @@ inline MemRegion stackChunkOopDesc::range() {
 }
 
 inline int stackChunkOopDesc::relativize_usp_offset(const frame& fr, const int usp_offset_in_bytes) const {
-  assert(fr.is_compiled_frame() || fr.cb()->is_safepoint_stub(), "");
+  assert(fr.is_compiled_frame() || fr.cb()->is_runtime_stub(), "");
   assert(is_in_chunk(fr.unextended_sp()), "");
 
   intptr_t* base = fr.real_fp(); // equal to the caller's sp

@@ -30,6 +30,7 @@
 #include "memory/allocation.hpp"
 #include "oops/oop.hpp"
 #include "oops/oopHandle.hpp"
+#include "runtime/continuationEntry.hpp"
 #include "runtime/frame.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/handshake.hpp"
@@ -51,7 +52,6 @@
 #endif
 
 class AsyncExceptionHandshake;
-class ContinuationEntry;
 class DeoptResourceMark;
 class InternalOOMEMark;
 class JNIHandleBlock;
@@ -326,6 +326,8 @@ class JavaThread: public Thread {
   bool                  _is_in_tmp_VTMS_transition;      // thread is in temporary virtual thread mount state transition
   bool                  _is_disable_suspend;             // JVMTI suspend is temporarily disabled; used on current thread only
   bool                  _VTMS_transition_mark;           // used for sync between VTMS transitions and disablers
+  bool                  _pending_jvmti_unmount_event;    // When preempting we post unmount event at unmount end rather than start
+  ObjectMonitor*        _contended_entered_monitor;      // Monitor por pending monitor_contended_entered callback
 #ifdef ASSERT
   bool                  _is_VTMS_transition_disabler;    // thread currently disabled VTMS transitions
 #endif
@@ -475,6 +477,22 @@ class JavaThread: public Thread {
   intx _held_monitor_count;  // used by continuations for fast lock detection
   intx _jni_monitor_count;
   ObjectMonitor* _unlocked_inflated_monitor;
+
+  // This is the field we poke in the interpreter and native
+  // wrapper (Object.wait) to check for preemption.
+  address _preempt_alternate_return;
+  // When preempting on monitorenter we could have acquired the
+  // monitor after freezing all vthread frames. In that case we
+  // set this field so that in the preempt stub we call thaw again
+  // instead of unmounting.
+  bool _preemption_cancelled;
+
+ public:
+  bool preemption_cancelled()           { return _preemption_cancelled; }
+  void set_preemption_cancelled(bool b) { _preemption_cancelled = b; }
+
+  bool preempting()           { return _preempt_alternate_return != nullptr; }
+  void set_preempt_alternate_return(address val) { _preempt_alternate_return = val; }
 
 private:
 
@@ -699,11 +717,18 @@ private:
   bool VTMS_transition_mark() const              { return Atomic::load(&_VTMS_transition_mark); }
   void set_VTMS_transition_mark(bool val)        { Atomic::store(&_VTMS_transition_mark, val); }
 
+  bool pending_jvmti_unmount_event()             { return _pending_jvmti_unmount_event; }
+  void set_pending_jvmti_unmount_event(bool val) { _pending_jvmti_unmount_event = val; }
+
+  bool pending_contended_entered_event()         { return _contended_entered_monitor != nullptr; }
+  ObjectMonitor* contended_entered_monitor()     { return _contended_entered_monitor; }
 #ifdef ASSERT
   bool is_VTMS_transition_disabler() const       { return _is_VTMS_transition_disabler; }
   void set_is_VTMS_transition_disabler(bool val);
 #endif
 #endif
+
+  void set_contended_entered_monitor(ObjectMonitor* val) NOT_JVMTI_RETURN JVMTI_ONLY({ _contended_entered_monitor = val; })
 
   // Support for object deoptimization and JFR suspension
   void handle_special_runtime_exit_condition();
@@ -861,6 +886,8 @@ private:
   static ByteSize cont_fastpath_offset()      { return byte_offset_of(JavaThread, _cont_fastpath); }
   static ByteSize held_monitor_count_offset() { return byte_offset_of(JavaThread, _held_monitor_count); }
   static ByteSize jni_monitor_count_offset()  { return byte_offset_of(JavaThread, _jni_monitor_count); }
+  static ByteSize preemption_cancelled_offset()  { return byte_offset_of(JavaThread, _preemption_cancelled); }
+  static ByteSize preempt_alternate_return_offset() { return byte_offset_of(JavaThread, _preempt_alternate_return); }
   static ByteSize unlocked_inflated_monitor_offset() { return byte_offset_of(JavaThread, _unlocked_inflated_monitor); }
 
 #if INCLUDE_JVMTI
@@ -1279,6 +1306,16 @@ class JNIHandleMark : public StackObj {
     thread->push_jni_handle_block();
   }
   ~JNIHandleMark() { _thread->pop_jni_handle_block(); }
+};
+
+class NoPreemptMark {
+  ContinuationEntry* _ce;
+  bool _unpin;
+ public:
+  NoPreemptMark(JavaThread* thread) : _ce(thread->last_continuation()), _unpin(false) {
+    if (_ce != nullptr) _unpin = _ce->pin();
+  }
+  ~NoPreemptMark() { if (_unpin) _ce->unpin(); }
 };
 
 #endif // SHARE_RUNTIME_JAVATHREAD_HPP

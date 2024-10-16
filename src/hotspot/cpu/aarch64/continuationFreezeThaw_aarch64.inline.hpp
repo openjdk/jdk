@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,6 +129,12 @@ void FreezeBase::adjust_interpreted_frame_unextended_sp(frame& f) {
   }
 }
 
+inline void FreezeBase::prepare_freeze_interpreted_top_frame(const frame& f) {
+  assert(*f.addr_at(frame::interpreter_frame_last_sp_offset) == 0, "should be null for top frame");
+  intptr_t* lspp = f.addr_at(frame::interpreter_frame_last_sp_offset);
+  *lspp = f.unextended_sp() - f.fp();
+}
+
 inline void FreezeBase::relativize_interpreted_frame_metadata(const frame& f, const frame& hf) {
   assert(hf.fp() == hf.unextended_sp() + (f.fp() - f.unextended_sp()), "");
   assert((f.at(frame::interpreter_frame_last_sp_offset) != 0)
@@ -235,7 +241,7 @@ template<typename FKind> frame ThawBase::new_stack_frame(const frame& hf, frame&
     int fsize = FKind::size(hf);
     intptr_t* frame_sp = caller.unextended_sp() - fsize;
     if (bottom || caller.is_interpreted_frame()) {
-      int argsize = hf.compiled_frame_stack_argsize();
+      int argsize = FKind::stack_argsize(hf);
 
       fsize += argsize;
       frame_sp   -= argsize;
@@ -253,7 +259,7 @@ template<typename FKind> frame ThawBase::new_stack_frame(const frame& hf, frame&
       fp = frame_sp + FKind::size(hf) - frame::sender_sp_offset;
     } else {
       fp = FKind::stub
-        ? frame_sp + fsize - frame::sender_sp_offset // on AArch64, this value is used for the safepoint stub
+        ? frame_sp + fsize - frame::sender_sp_offset // fp always points to the address below the pushed return pc. We need correct address.
         : *(intptr_t**)(hf.sp() - frame::sender_sp_offset); // we need to re-read fp because it may be an oop and we might have fixed the frame.
     }
     return frame(frame_sp, frame_sp, fp, hf.pc(), hf.cb(), hf.oop_map(), false); // TODO PERF : this computes deopt state; is it necessary?
@@ -275,6 +281,44 @@ inline intptr_t* ThawBase::align(const frame& hf, intptr_t* frame_sp, frame& cal
 
 inline void ThawBase::patch_pd(frame& f, const frame& caller) {
   patch_callee_link(caller, caller.fp());
+}
+
+inline void ThawBase::patch_pd(frame& f, intptr_t* caller_sp) {
+  intptr_t* fp = caller_sp - frame::sender_sp_offset;
+  patch_callee_link(f, fp);
+}
+
+inline intptr_t* ThawBase::possibly_adjust_frame(frame& top) {
+  intptr_t* sp = top.sp();
+  CodeBlob* cb = top.cb();
+
+  if (cb->frame_size() == 2) {
+    // C2 runtime stub case. For aarch64 the real size of the c2 runtime stub is 2 words bigger
+    // than what we think, i.e. size is 4. This is because the _last_Java_sp is not set to the
+    // sp right before making the call to the VM, but rather it is artificially set 2 words above
+    // this real sp so that we can store the return address at last_Java_sp[-1], and keep this
+    // property where we can retrieve the last_Java_pc from the last_Java_sp. But that means that
+    // once we return to the runtime stub, the code will adjust sp according to this real size.
+    // So we must adjust the frame size back here and we copy lr/rfp again.
+    sp -= 2;
+    sp[-2] = sp[0];
+    sp[-1] = sp[1];
+
+    log_develop_trace(continuations, preempt)("adjusted sp for c2 runtime stub, initial sp: " INTPTR_FORMAT " final sp: " INTPTR_FORMAT
+                                              " fp: " INTPTR_FORMAT, p2i(sp + frame::metadata_words), p2i(sp), sp[-2]);
+  }
+  return sp;
+}
+
+inline intptr_t* ThawBase::push_cleanup_continuation() {
+  frame enterSpecial = new_entry_frame();
+  intptr_t* sp = enterSpecial.sp();
+
+  sp[-1] = (intptr_t)ContinuationEntry::cleanup_pc();
+  sp[-2] = (intptr_t)enterSpecial.fp();
+
+  log_develop_trace(continuations, preempt)("push_cleanup_continuation initial sp: " INTPTR_FORMAT " final sp: " INTPTR_FORMAT, p2i(sp + 2 * frame::metadata_words), p2i(sp));
+  return sp;
 }
 
 inline void ThawBase::derelativize_interpreted_frame_metadata(const frame& hf, const frame& f) {

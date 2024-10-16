@@ -36,6 +36,8 @@ class frame;
 class MemRegion;
 class RegisterMap;
 class VMRegImpl;
+class ObjectMonitor;
+class ObjectWaiter;
 typedef VMRegImpl* VMReg;
 
 // A continuation stack-chunk oop.
@@ -59,6 +61,7 @@ private:
   static const uint8_t FLAG_GC_MODE = 1 << 3; // Once true it and FLAG_HAS_INTERPRETED_FRAMES can't change
   static const uint8_t FLAG_HAS_BITMAP = 1 << 4; // Can only be true if FLAG_GC_MODE is true
   static const uint8_t FLAG_HAS_LOCKSTACK = 1 << 5; // LockStack was copied into stackChunk
+  static const uint8_t FLAG_PREEMPTED = 1 << 6; // Continuation was unmounted from inside VM
 
   bool try_acquire_relativization();
   void release_relativization();
@@ -95,6 +98,11 @@ public:
   inline uint8_t lockstack_size() const;
   inline void set_lockstack_size(uint8_t value);
 
+  inline ObjectWaiter* object_waiter() const;
+  inline void set_object_waiter(ObjectWaiter* obj_waiter);
+
+  inline ObjectMonitor* current_pending_monitor() const;
+
   inline oop cont() const;
   template<typename P>
   inline oop cont() const;
@@ -130,6 +138,9 @@ public:
 
   inline bool has_mixed_frames() const;
   inline void set_has_mixed_frames(bool value);
+
+  inline bool preempted() const;
+  inline void set_preempted(bool value);
 
   inline bool has_lockstack() const;
   inline void set_has_lockstack(bool value);

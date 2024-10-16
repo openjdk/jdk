@@ -456,6 +456,8 @@ JavaThread::JavaThread(MemTag mem_tag) :
   _is_in_tmp_VTMS_transition(false),
   _is_disable_suspend(false),
   _VTMS_transition_mark(false),
+  _pending_jvmti_unmount_event(false),
+  _contended_entered_monitor(nullptr),
 #ifdef ASSERT
   _is_VTMS_transition_disabler(false),
 #endif
@@ -495,6 +497,9 @@ JavaThread::JavaThread(MemTag mem_tag) :
   _held_monitor_count(0),
   _jni_monitor_count(0),
   _unlocked_inflated_monitor(nullptr),
+
+  _preempt_alternate_return(nullptr),
+  _preemption_cancelled(false),
 
   _handshake(this),
 
@@ -1170,6 +1175,7 @@ void JavaThread::send_async_exception(JavaThread* target, oop java_throwable) {
 
 #if INCLUDE_JVMTI
 void JavaThread::set_is_in_VTMS_transition(bool val) {
+  assert(is_in_VTMS_transition() != val, "already %s transition", val ? "inside" : "outside");
   _is_in_VTMS_transition = val;
 }
 

@@ -241,7 +241,7 @@ public:
     frame f = fs.to_frame();
     _st->print_cr("-- frame sp: " PTR_FORMAT " interpreted: %d size: %d argsize: %d",
                   p2i(fs.sp()), fs.is_interpreted(), f.frame_size(),
-                  fs.is_interpreted() ? 0 : f.compiled_frame_stack_argsize());
+                  fs.is_interpreted() || fs.is_stub() ? 0 : f.compiled_frame_stack_argsize());
   #ifdef ASSERT
     f.print_value_on(_st);
   #else

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -495,6 +495,7 @@ JvmtiVTMSTransitionDisabler::finish_VTMS_transition(jthread vthread, bool is_mou
   JavaThread* thread = JavaThread::current();
 
   assert(thread->is_in_VTMS_transition(), "sanity check");
+  assert(!thread->is_in_tmp_VTMS_transition(), "sanity check");
   thread->set_is_in_VTMS_transition(false);
   oop vt = JNIHandles::resolve_external_guard(vthread);
   java_lang_Thread::set_is_in_VTMS_transition(vt, false);
@@ -663,6 +664,12 @@ JvmtiVTMSTransitionDisabler::VTMS_unmount_end(jobject vthread) {
   assert(thread->is_in_VTMS_transition(), "sanity check");
   assert(!thread->is_in_tmp_VTMS_transition(), "sanity check");
   finish_VTMS_transition(vthread, /* is_mount */ false);
+
+  if (thread->pending_jvmti_unmount_event()) {
+    assert(java_lang_VirtualThread::is_preempted(JNIHandles::resolve(vthread)), "should be marked preempted");
+    JvmtiExport::post_vthread_unmount(vthread);
+    thread->set_pending_jvmti_unmount_event(false);
+  }
 }
 
 

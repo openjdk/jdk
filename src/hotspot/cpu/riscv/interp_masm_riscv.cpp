@@ -726,7 +726,7 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
 {
   assert(lock_reg == c_rarg1, "The argument is only for looks. It must be c_rarg1");
   if (LockingMode == LM_MONITOR) {
-    call_VM(noreg,
+    call_VM_preemptable(noreg,
             CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter),
             lock_reg);
   } else {
@@ -796,7 +796,7 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
     bind(slow_case);
 
     // Call the runtime routine for slow case
-    call_VM(noreg,
+    call_VM_preemptable(noreg,
             CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter),
             lock_reg);
 
@@ -1575,6 +1575,54 @@ void InterpreterMacroAssembler::call_VM_base(Register oop_result,
 // interpreter specific
   restore_bcp();
   restore_locals();
+}
+
+void InterpreterMacroAssembler::call_VM_preemptable(Register oop_result,
+                                                    address entry_point,
+                                                    Register arg_1) {
+  assert(arg_1 == c_rarg1, "");
+  Label resume_pc, not_preempted;
+
+#ifdef ASSERT
+  {
+    Label L;
+    ld(t0, Address(xthread, JavaThread::preempt_alternate_return_offset()));
+    beqz(t0, L);
+    stop("Should not have alternate return address set");
+    bind(L);
+  }
+#endif /* ASSERT */
+
+  push_cont_fastpath();
+
+  // Make VM call. In case of preemption set last_pc to the one we want to resume to.
+  la(t0, resume_pc);
+  sd(t0, Address(xthread, JavaThread::last_Java_pc_offset()));
+  call_VM_base(oop_result, noreg, noreg, entry_point, 1, false /*check_exceptions*/);
+
+  pop_cont_fastpath();
+
+  // Check if preempted.
+  ld(t0, Address(xthread, JavaThread::preempt_alternate_return_offset()));
+  beqz(t0, not_preempted);
+  sd(zr, Address(xthread, JavaThread::preempt_alternate_return_offset()));
+  jr(t0);
+
+  // In case of preemption, this is where we will resume once we finally acquire the monitor.
+  bind(resume_pc);
+  restore_after_resume(false /* is_native */);
+
+  bind(not_preempted);
+}
+
+void InterpreterMacroAssembler::restore_after_resume(bool is_native) {
+  la(t0, ExternalAddress(Interpreter::cont_resume_interpreter_adapter()));
+  jalr(t0);
+  if (is_native) {
+    // On resume we need to set up stack as expected
+    push(dtos);
+    push(ltos);
+  }
 }
 
 void InterpreterMacroAssembler::profile_obj_type(Register obj, const Address& mdo_addr, Register tmp) {

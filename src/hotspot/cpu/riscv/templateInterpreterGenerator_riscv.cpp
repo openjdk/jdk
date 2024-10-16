@@ -540,6 +540,38 @@ address TemplateInterpreterGenerator::generate_safept_entry_for(TosState state,
   return entry;
 }
 
+address TemplateInterpreterGenerator::generate_cont_resume_interpreter_adapter() {
+  if (!Continuations::enabled()) return nullptr;
+  address start = __ pc();
+
+  __ restore_bcp();
+  __ restore_locals();
+
+  // Restore constant pool cache
+  __ ld(xcpool, Address(fp, frame::interpreter_frame_cache_offset * wordSize));
+
+  // Restore Java expression stack pointer
+  __ ld(t0, Address(fp, frame::interpreter_frame_last_sp_offset * wordSize));
+  __ shadd(esp, t0, fp, t0, Interpreter::logStackElementSize);
+  // and NULL it as marker that esp is now tos until next java call
+  __ sd(zr, Address(fp, frame::interpreter_frame_last_sp_offset * wordSize));
+
+  // Restore machine SP
+  __ ld(t0, Address(fp, frame::interpreter_frame_extended_sp_offset * wordSize));
+  __ shadd(sp, t0, fp, t0, LogBytesPerWord);
+
+  // Restore method
+  __ ld(xmethod, Address(fp, frame::interpreter_frame_method_offset * wordSize));
+
+  // Restore dispatch
+  __ la(xdispatch, ExternalAddress((address)Interpreter::dispatch_table()));
+
+  __ ret();
+
+  return start;
+}
+
+
 // Helpers for commoning out cases in the various type of method entries.
 //
 

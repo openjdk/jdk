@@ -232,11 +232,15 @@ public:
 // have to pass through, and we must also be able to deal with
 // asynchronous exceptions. The caller is responsible for checking
 // the thread's pending exception if needed.
+// When using ObjectLocker the top native frames in the stack will
+// not be seen in case we attempt preemption, since we start walking
+// from the last Java anchor, so we disable it with NoPreemptMark.
 class ObjectLocker : public StackObj {
  private:
   JavaThread* _thread;
   Handle      _obj;
   BasicLock   _lock;
+  NoPreemptMark _npm;
  public:
   ObjectLocker(Handle obj, JavaThread* current);
   ~ObjectLocker();
