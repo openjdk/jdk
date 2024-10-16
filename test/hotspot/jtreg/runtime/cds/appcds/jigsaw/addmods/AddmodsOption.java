@@ -151,8 +151,14 @@ public class AddmodsOption {
             "-XX:+UnlockExperimentalVMOptions",
             "-XX:+EagerJVMCI", "-XX:+UseJVMCICompiler",
             "-version");
-        oa.shouldHaveExitValue(0)
-          .shouldMatch("cds,module.*Restored from archive: entry.0x.*name jdk.internal.vm.ci");
+        try {
+            oa.shouldHaveExitValue(0)
+              .shouldMatch("cds,module.*Restored from archive: entry.0x.*name jdk.internal.vm.ci");
+        } catch (RuntimeException re) {
+            // JVMCI compile may not be available
+            oa.shouldHaveExitValue(1)
+              .shouldContain("Cannot use JVMCI compiler: No JVMCI compiler found");
+        }
 
         // dump an archive with multiple modules in -add-modules
         archiveName = TestCommon.getNewArchiveName("muti-modules");

@@ -369,34 +369,6 @@ public final class ModuleBootstrap {
             roots = null;
         }
 
-        // Setup a set of modules for archiving.
-        Set<String> archiveRoots = new HashSet<>();
-        if (CDS.isDumpingStaticArchive()) {
-            canArchive = true;
-            // Only archive the modules which are in the runtime image.
-            // Check mainModule first.
-            if (mainModule != null) {
-                if (isModuleInRuntimeImage(systemModuleFinder, mainModule)) {
-                    archiveRoots.add(mainModule);
-                } else {
-                    canArchive = false;
-                }
-            }
-            // Check the modules from addModules.
-            if (canArchive && addModules.size() != 0) {
-                for (String mod : addModules) {
-                    if (isModuleInRuntimeImage(SystemModuleFinders.ofSystem(), mod)) {
-                        archiveRoots.add(mod);
-                    } else {
-                        canArchive = false;
-                        break;
-                    }
-                }
-            }
-        }
-        if (CDS.isDumpingStaticArchive() && !canArchive) {
-            archiveRoots = null;
-        }
         Counters.add("jdk.module.boot.3.optionsAndRootsTime");
 
         // Step 4: Resolve the root modules, with service binding, to create
@@ -410,10 +382,6 @@ public final class ModuleBootstrap {
         } else {
             if (archivedModuleGraph != null) {
                 cf = archivedModuleGraph.configuration();
-            } else if (CDS.isDumpingStaticArchive() && canArchive &&
-                       (addModules.size() > 0) && (archiveRoots.size() > 0)) {
-                // Create configuration for archiving the modules in the addModules.
-                cf = Modules.newBootLayerConfiguration(SystemModuleFinders.ofSystem(), archiveRoots, traceOutput);
             } else {
                 Map<String, Set<String>> map = systemModules.moduleReads();
                 cf = JLMA.newConfiguration(systemModuleFinder, map);
@@ -496,7 +464,7 @@ public final class ModuleBootstrap {
 
         if (CDS.isDumpingStaticArchive()
                 && !haveUpgradeModulePath
-                && addModules.isEmpty()
+                && (addModules.isEmpty() || addModulesFromRuntimeImage(addModules))
                 && allJrtOrModularJar(cf)) {
             assert !isPatched;
 
@@ -510,7 +478,7 @@ public final class ModuleBootstrap {
                                         clf,
                                         mainModule,
                                         addModules);
-            if (!hasSplitPackages && !configHasIncubatorModules) {
+            if (!hasSplitPackages && !hasIncubatorModules) {
                 ArchivedBootLayer.archive(bootLayer);
             }
         }
@@ -526,16 +494,27 @@ public final class ModuleBootstrap {
     }
 
     /**
+     * Check if all addModules are from the runtime image.
+     */
+    private static boolean addModulesFromRuntimeImage(Set<String> addModules) {
+        for (String mod : addModules) {
+            if (!isModuleInRuntimeImage(SystemModuleFinders.ofSystem(), mod)) {
+                return false;
+            }
+        }
+        return true;
+    }
+    /**
      * Check if a module is in the runtime image.
      */
     private static boolean isModuleInRuntimeImage(ModuleFinder finder, String moduleName) {
         String scheme = finder.find(moduleName)
-                .stream()
-                .map(ModuleReference::location)
-                .flatMap(Optional::stream)
-                .findAny()
-                .map(URI::getScheme)
-                .orElse(null);
+                              .stream()
+                              .map(ModuleReference::location)
+                              .flatMap(Optional::stream)
+                              .findAny()
+                              .map(URI::getScheme)
+                              .orElse(null);
         if ("jrt".equalsIgnoreCase(scheme))
             return true;
         else
@@ -1039,7 +1018,7 @@ public final class ModuleBootstrap {
     /**
      * Checks incubating status of modules in the configuration
      */
-    private static boolean checkIncubatingStatus(Configuration cf) {
+    private static void checkIncubatingStatus(Configuration cf) {
         String incubating = null;
         for (ResolvedModule resolvedModule : cf.modules()) {
             ModuleReference mref = resolvedModule.reference();
@@ -1054,11 +1033,8 @@ public final class ModuleBootstrap {
                 }
             }
         }
-        if (incubating != null) {
+        if (incubating != null)
             warn("Using incubator modules: " + incubating);
-            return true;
-        }
-        return false;
     }
 
     /**

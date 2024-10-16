@@ -30,6 +30,7 @@
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoaderDataShared.hpp"
+#include "classfile/classLoaderExt.hpp"
 #include "classfile/javaAssertions.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/javaClasses.inline.hpp"
@@ -51,7 +52,6 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/jniHandles.inline.hpp"
-#include "utilities/defaultStream.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/stringUtils.hpp"
 #include "utilities/utf8.hpp"
@@ -567,7 +567,6 @@ void Modules::verify_archived_modules() {
 
 char* Modules::_archived_main_module_name = nullptr;
 char* Modules::_archived_addmods_names = nullptr;
-#endif
 
 void Modules::dump_main_module_name() {
   const char* module_name = Arguments::get_property("jdk.module.main");
@@ -643,15 +642,11 @@ void Modules::serialize_addmods_names(SerializeClosure* soc) {
     }
     if (disable) {
       log_info(cds)("Disabling optimized module handling");
-      MetaspaceShared::disable_optimized_module_handling();
+      CDSConfig::stop_using_optimized_module_handling();
     }
-    log_info(cds)("optimized module handling: %s", MetaspaceShared::use_optimized_module_handling() ? "enabled" : "disabled");
-    log_info(cds)("full module graph: %s", CDSConfig::is_loading_full_module_graph() ? "enabled" : "disabled");
+    log_info(cds)("optimized module handling: %s", CDSConfig::is_using_optimized_module_handling() ? "enabled" : "disabled");
+    log_info(cds)("full module graph: %s", CDSConfig::is_using_full_module_graph() ? "enabled" : "disabled");
   }
-}
-
-static int compare_module_names(char** s1, char** s2) {
-  return ::strcmp(*s1, *s2);
 }
 
 const char* Modules::get_addmods_names_as_sorted_string() {
@@ -660,7 +655,7 @@ const char* Modules::get_addmods_names_as_sorted_string() {
   const int extra_symbols_count = 2; // includes '.', '\0'
   size_t prop_len = strlen("jdk.module.addmods") + max_digits + extra_symbols_count;
   char* prop_name = resource_allocate_bytes(prop_len);
-  GrowableArray<char*> list;
+  GrowableArray<const char*> list;
   for (unsigned int i = 0; i < Arguments::addmods_count(); i++) {
     jio_snprintf(prop_name, prop_len, "jdk.module.addmods.%d", i);
     const char* prop_value = Arguments::get_property(prop_name);
@@ -689,7 +684,7 @@ const char* Modules::get_addmods_names_as_sorted_string() {
   // list[2] = "java.base"
   // list[3] = ""
   // list[4] = ""
-  list.sort(compare_module_names);
+  list.sort(ClassLoaderExt::compare_module_names);
 
   const char* prefix = "";
   stringStream st;

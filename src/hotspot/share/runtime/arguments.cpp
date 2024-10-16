@@ -338,13 +338,7 @@ bool Arguments::is_internal_module_property(const char* property) {
 }
 
 bool Arguments::is_add_modules_property(const char* key) {
-  if (strncmp(key, MODULE_PROPERTY_PREFIX, MODULE_PROPERTY_PREFIX_LEN) == 0) {
-    const char* property_suffix = key + MODULE_PROPERTY_PREFIX_LEN;
-    if (matches_property_suffix(property_suffix, ADDMODS, ADDMODS_LEN)) {
-      return true;
-    }
-  }
-  return false;
+  return (strcmp(key, MODULE_PROPERTY_PREFIX ADDMODS) == 0);
 }
 
 // Return true if the key matches the --module-path property name ("jdk.module.path").
@@ -1269,20 +1263,6 @@ bool Arguments::add_property(const char* prop, PropertyWriteable writeable, Prop
 
     value = &prop[key_len + 1];
   }
-
-#if INCLUDE_CDS
-  if (is_internal_module_property(key) && !is_add_modules_property(key)) {
-    MetaspaceShared::disable_optimized_module_handling();
-    log_info(cds)("optimized module handling: disabled due to incompatible property: %s=%s", key, value);
-  }
-  if (strcmp(key, "jdk.module.showModuleResolution") == 0 ||
-      strcmp(key, "jdk.module.validation") == 0 ||
-      strcmp(key, "java.system.class.loader") == 0) {
-    CDSConfig::disable_loading_full_module_graph();
-    CDSConfig::disable_dumping_full_module_graph();
-    log_info(cds)("full module graph: disabled due to incompatible property: %s=%s", key, value);
-  }
-#endif
 
   if (internal == ExternalProperty) {
     CDSConfig::check_incompatible_property(key, value);
