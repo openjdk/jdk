@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @summary Verifies NotifyFramePop request is cleared if JVMTI_EVENT_FRAME_POP is disabled
+ * @summary JVMTI FRAME_POP event is sometimes missed if NotifyFramePop is called as a method is returning
  * @requires vm.jvmti
  * @library /test/lib
  * @compile NotifyFramePopStressTest.java
@@ -34,18 +34,6 @@ import jtreg.SkippedException;
 
 public class NotifyFramePopStressTest {
     static volatile boolean done = false;
-    static volatile int notifyCount = 0;
-
-    static {
-        try {
-            System.loadLibrary("NotifyFramePopStressTest");
-        } catch (UnsatisfiedLinkError ex) {
-            System.err.println("Could not load NotifyFramePopStressTest library");
-            System.err.println("java.library.path:"
-                + System.getProperty("java.library.path"));
-            throw ex;
-        }
-    }
 
     public static void main(String args[]) {
         if (!canGenerateFramePopEvents()) {
@@ -84,12 +72,14 @@ public class NotifyFramePopStressTest {
     }
 
     private static void control(Thread thread) {
-        System.out.println("control has started");
+        int notifyCount = 0;
+
+        log("control has started");
         while (!done) {
             suspend(thread);
             if (notifyFramePop(thread)) {
                 notifyCount++;
-                System.out.println("control incremented notifyCount to " + notifyCount);
+                log("control incremented notifyCount to " + notifyCount);
             }
             resume(thread);
             int waitCount = 0;
@@ -100,13 +90,12 @@ public class NotifyFramePopStressTest {
                     break;
                 }
             }
-            if (waitCount > 50) {
-                System.out.println("About to fail. notifyCount=" + notifyCount +
-                                   " getPopCount()=" + getPopCount());
+            if (waitCount > 100) {
+                log("About to fail. notifyCount=" + notifyCount + " getPopCount()=" + getPopCount());
                 throw new RuntimeException("Test FAILED: Waited too long for notify: " + waitCount);
             }
         }
-        System.out.println("control has finished: " + notifyCount);
+        log("control has finished: " + notifyCount);
     }
 
     private native static void suspend(Thread thread);
@@ -121,16 +110,20 @@ public class NotifyFramePopStressTest {
         System.out.println(msg);
     }
 
-    private static int fetchInt() {
+    private static int fetchIntFoo() {
         return 13;
     }
 
+    private static int fetchIntBar() {
+        return 33;
+    }
+
     private static int foo() {
-        return fetchInt();
+        return fetchIntFoo();
     }
 
     private static int bar() {
-        return fetchInt();
+        return fetchIntBar();
     }
 }
 

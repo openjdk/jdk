@@ -30,25 +30,13 @@
 extern "C" {
 #endif
 
-#ifndef JNI_ENV_ARG
-
-#ifdef __cplusplus
-#define JNI_ENV_ARG(x, y) y
-#define JNI_ENV_PTR(x) x
-#else
-#define JNI_ENV_ARG(x,y) x, y
-#define JNI_ENV_PTR(x) (*x)
-#endif
-
-#endif
-
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jvmtiCapabilities caps;
 static jvmtiEventCallbacks callbacks;
-static volatile jint popCount = 0;
-static char* lastNotifyMethod;
+static volatile jint pop_count = 0;
+static char* volatile last_notify_method;
+static volatile jboolean failed = JNI_FALSE;
 static jboolean seenMain = JNI_FALSE;
-static jboolean failed = JNI_FALSE;
 
 static jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved);
 
@@ -71,29 +59,32 @@ static void JNICALL
 FramePop(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread,
          jmethodID method, jboolean wasPoppedByException) {
   jvmtiError err;
-  jclass cls = NULL;
-  char* csig = NULL;
-  char* name = NULL;
+  jclass cls = nullptr;
+  char* csig = nullptr;
+  char* name = nullptr;
 
-  popCount++;
+  pop_count++;
 
   err =jvmti->GetMethodDeclaringClass(method, &cls);
   check_jvmti_status(jni, err, "FramePop: Failed in JVMTI GetMethodDeclaringClass");
 
-  err =jvmti->GetClassSignature(cls, &csig, NULL);
+  err =jvmti->GetClassSignature(cls, &csig, nullptr);
   check_jvmti_status(jni, err, "FramePop: Failed in JVMTI GetClassSignature");
 
   name = get_method_name(jvmti, jni, method);
-  LOG("FramePop(%d) event from method: %s %s\n", popCount, csig, name);
+  LOG("FramePop(%d) event from method: %s %s\n", pop_count, csig, name);
 
   if (strcmp(name, "main") != 0) { // ignore FRAME_POP for main that comes in as the test exits
-    if (strcmp(name, lastNotifyMethod) != 0) {
-      LOG("ERROR: FramePop event is for wrong method: expected %s, got %s\n", lastNotifyMethod, name);
+    if (strcmp(name, (char*)last_notify_method) != 0) {
+      LOG("ERROR: FramePop event is for wrong method: expected %s, got %s\n", last_notify_method, name);
       failed = JNI_TRUE;
-      fatal(jni, "DBG: FramePop event in wrong method\n");
+      deallocate(jvmti, jni, csig);
+      deallocate(jvmti, jni, name);
+      deallocate(jvmti, jni, (void*)last_notify_method);
+      fatal(jni, "FramePop event in wrong method\n");
     }
-    deallocate(jvmti, jni, lastNotifyMethod);
   }
+  deallocate(jvmti, jni, (void*)last_notify_method);
   deallocate(jvmti, jni, csig);
   deallocate(jvmti, jni, name);
 }
@@ -103,8 +94,8 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   jint res;
   jvmtiError err;
 
-  res = JNI_ENV_PTR(jvm)->GetEnv(JNI_ENV_ARG(jvm, (void **) &jvmti), JVMTI_VERSION_9);
-  if (res != JNI_OK || jvmti == NULL) {
+  res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_9);
+  if (res != JNI_OK || jvmti == nullptr) {
     LOG("GetEnv(JVMTI_VERSION_9) failedL error(%d)", res);
     return JNI_ERR;
   }
@@ -157,6 +148,7 @@ Java_NotifyFramePopStressTest_notifyFramePop(JNIEnv *jni, jclass cls, jthread th
   isMain = (strcmp(name, "main") == 0);
   if (isMain) {
     if (seenMain) {
+      deallocate(jvmti, jni, name);
       return JNI_FALSE; // Only do NotifyFramePop once for main()
     } else {
       seenMain = JNI_TRUE;
@@ -165,6 +157,8 @@ Java_NotifyFramePopStressTest_notifyFramePop(JNIEnv *jni, jclass cls, jthread th
 
   err= jvmti->NotifyFramePop(thread, 0);
   if (err == JVMTI_ERROR_OPAQUE_FRAME || err == JVMTI_ERROR_DUPLICATE) {
+    LOG("\nNotifyFramePop for method %d returned acceptable error: %s\n", name, TranslateError(err));
+    deallocate(jvmti, jni, name);
     return JNI_FALSE;
   }
   check_jvmti_status(jni, err, "notifyFramePop: Failed in JVMTI notifyFramePop");
@@ -175,7 +169,7 @@ Java_NotifyFramePopStressTest_notifyFramePop(JNIEnv *jni, jclass cls, jthread th
     deallocate(jvmti, jni, name);
     return JNI_FALSE;
   } else {
-    lastNotifyMethod = name;
+    last_notify_method = name;
     return JNI_TRUE;
   }
 }
@@ -192,7 +186,7 @@ Java_NotifyFramePopStressTest_resume(JNIEnv *jni, jclass cls, jthread thread) {
 
 JNIEXPORT jint JNICALL
 Java_NotifyFramePopStressTest_getPopCount(JNIEnv *env, jclass cls) {
-  return popCount;
+  return pop_count;
 }
 
 JNIEXPORT jboolean JNICALL
