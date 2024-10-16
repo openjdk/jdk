@@ -23,7 +23,7 @@
 
 #include "precompiled.hpp"
 
-#if defined(X86)
+#if defined(X86) && !defined(ZERO)
 
 #include "utilities/vmassert_uninstall.hpp"
 #include <unordered_map>
@@ -90,7 +90,8 @@ TEST_VM(AssemblerX86, validate) {
   MacroAssembler _masm(&code);
   address entry = __ pc();
 
-  // python x86-asmtest.py | expand > asmtest.out.h
+  // To build asmtest.out.h, ensure you have binutils version 2.34 or higher, then run:
+  // python3 x86-asmtest.py | expand > asmtest.out.h
 #include "asmtest.out.h"
 
   asm_check((const uint8_t *)entry, (const uint8_t *)insns, insns_lens, insns_strs, sizeof(insns_lens) / sizeof(insns_lens[0]));
