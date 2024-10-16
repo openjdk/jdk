@@ -280,29 +280,13 @@ bool VTransformGraph::has_store_to_load_forwarding_failure(const VLoopAnalyzer& 
   GrowableArray<VPointerRecord> records;
   for (int i = 0; i < _schedule.length(); i++) {
     VTransformNode* vtn = _schedule.at(i);
-    // TODO: refactor somehow! is_load_or_store_in_loop
-    VTransformStoreVectorNode* store = vtn->isa_StoreVector();
-    if (store != nullptr) {
-      StoreNode* s0 = store->nodes().at(0)->as_Store();
-      const VPointer& p = vloop_analyzer.vpointers().vpointer(s0);
-      records.push(VPointerRecord(p, 0, store->nodes().length(), i));
-      continue;
-    }
-    VTransformLoadVectorNode* load = vtn->isa_LoadVector();
-    if (load != nullptr) {
-      LoadNode* l0 = load->nodes().at(0)->as_Load();
-      const VPointer& p = vloop_analyzer.vpointers().vpointer(l0);
-      records.push(VPointerRecord(p, 0, load->nodes().length(), i));
-      continue;
-    }
-    VTransformScalarNode* scalar = vtn->isa_Scalar();
-    if (scalar != nullptr &&
-        scalar->node()->is_Mem() &&
-        _vloop_analyzer.vloop().in_bb(scalar->node())) {
-      MemNode* m0 = scalar->node()->as_Mem();
-      const VPointer& p = vloop_analyzer.vpointers().vpointer(m0);
-      records.push(VPointerRecord(p, 0, 1, i));
-      continue;
+    if (vtn->is_load_or_store_in_loop()) {
+      const VPointer& p = vtn->vpointer(vloop_analyzer);
+      if (p.valid()) {
+        VTransformVectorNode* vector = vtn->isa_Vector();
+        uint vector_length = vector != nullptr ? vector->nodes().length() : 1;
+        records.push(VPointerRecord(p, 0, vector_length, i));
+      }
     }
   }
 

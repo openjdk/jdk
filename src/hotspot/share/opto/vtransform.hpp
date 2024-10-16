@@ -317,6 +317,9 @@ public:
   virtual VTransformLoadVectorNode* isa_LoadVector() { return nullptr; }
   virtual VTransformStoreVectorNode* isa_StoreVector() { return nullptr; }
 
+  virtual bool is_load_or_store_in_loop() const { return false; }
+  virtual const VPointer& vpointer(const VLoopAnalyzer& vloop_analyzer) const { ShouldNotReachHere(); }
+
   virtual VTransformApplyResult apply(const VLoopAnalyzer& vloop_analyzer,
                                       const GrowableArray<Node*>& vnode_idx_to_transformed_node) const = 0;
 
@@ -339,6 +342,8 @@ public:
     VTransformNode(vtransform, n->req()), _node(n) {}
   Node* node() const { return _node; }
   virtual VTransformScalarNode* isa_Scalar() override { return this; }
+  virtual bool is_load_or_store_in_loop() const { return _node->is_Load() || _node->is_Store(); }
+  virtual const VPointer& vpointer(const VLoopAnalyzer& vloop_analyzer) const override { return vloop_analyzer.vpointers().vpointer(node()->as_Mem()); }
   virtual VTransformApplyResult apply(const VLoopAnalyzer& vloop_analyzer,
                                       const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "Scalar"; };)
@@ -353,6 +358,7 @@ public:
   VTransformInputScalarNode(VTransform& vtransform, Node* n) :
     VTransformScalarNode(vtransform, n) {}
   virtual VTransformInputScalarNode* isa_InputScalar() override { return this; }
+  virtual bool is_load_or_store_in_loop() const { return false; }
   NOT_PRODUCT(virtual const char* name() const override { return "InputScalar"; };)
 };
 
@@ -479,6 +485,8 @@ public:
     VTransformVectorNode(vtransform, 3, number_of_nodes) {}
   LoadNode::ControlDependency control_dependency() const;
   virtual VTransformLoadVectorNode* isa_LoadVector() override { return this; }
+  virtual bool is_load_or_store_in_loop() const { return true; }
+  virtual const VPointer& vpointer(const VLoopAnalyzer& vloop_analyzer) const override { return vloop_analyzer.vpointers().vpointer(nodes().at(0)->as_Mem()); }
   virtual VTransformApplyResult apply(const VLoopAnalyzer& vloop_analyzer,
                                       const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "LoadVector"; };)
@@ -490,6 +498,8 @@ public:
   VTransformStoreVectorNode(VTransform& vtransform, uint number_of_nodes) :
     VTransformVectorNode(vtransform, 4, number_of_nodes) {}
   virtual VTransformStoreVectorNode* isa_StoreVector() override { return this; }
+  virtual bool is_load_or_store_in_loop() const { return true; }
+  virtual const VPointer& vpointer(const VLoopAnalyzer& vloop_analyzer) const override { return vloop_analyzer.vpointers().vpointer(nodes().at(0)->as_Mem()); }
   virtual VTransformApplyResult apply(const VLoopAnalyzer& vloop_analyzer,
                                       const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "StoreVector"; };)
