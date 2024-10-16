@@ -126,17 +126,16 @@ int LogFileStreamOutput::write_internal_line(const LogDecorations& decorations, 
     int decorator_padding = 0;
     if (use_decorations) {
       WRITE_LOG_WITH_RESULT_CHECK(write_decorations(decorations), decorator_padding);
+      WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, " "), written);
     }
     written += decorator_padding;
-    WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, " "), written);
     WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, "%s\n", msg), written_tmp);
     while (written_tmp < msg_len) {
       msg = base + written_tmp;
 
       if (use_decorations) {
-        WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, "[%*c]", decorator_padding - 2, ' '), written);
+        WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, "[%*c] ", decorator_padding - 2, ' '), written);
       }
-      WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, " "), written);
       WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, "%s\n", msg), written_tmp);
     }
     written += written_tmp;
