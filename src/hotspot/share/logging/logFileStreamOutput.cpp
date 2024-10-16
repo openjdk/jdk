@@ -165,11 +165,14 @@ int LogFileStreamOutput::write_internal_line(const LogDecorations& decorations, 
 }
 
 int LogFileStreamOutput::write_internal(const LogDecorations& decorations, const char* msg) {
-  int msg_len = (int)strlen(msg);
+  int msg_len = checked_cast<int>(strlen(msg));
 
-  // Do not do anything if foldmultilines has been specified
+  // Do not handle multiline messages if foldmultilines has been specified
   if (_fold_multilines) return write_internal_line(decorations, msg, msg_len);
 
+  // Handle multiline strings: split the string replacing newlines with terminators,
+  // and then force write_internal_line to print all of them (i.e. not stopping at the
+  // first null but until msg_len bytes are printed)
   char* dupstr = os::strdup_check_oom(msg, mtLogging);
   char* tmp = dupstr;
 
