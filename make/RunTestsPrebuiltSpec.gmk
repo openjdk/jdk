@@ -176,7 +176,3 @@ ULIMIT := ulimit
 ifeq ($(OPENJDK_BUILD_OS), windows)
   PATHTOOL := cygpath
 endif
-
-ifneq ($(TIDY_HOME), )
-  TIDY := $(TIDY_HOME)
-endif
