@@ -34,6 +34,11 @@ public class CommandArguments<T> {
         args = new ArrayList<>();
     }
 
+    final public T clearArguments() {
+        args.clear();
+        return (T) this;
+    }
+    
     final public T addArgument(String v) {
         args.add(v);
         return (T) this;
