@@ -36,6 +36,12 @@ inline oop Klass::klass_holder() const {
   return class_loader_data()->holder();
 }
 
+inline void Klass::keep_alive() const {
+  // Resolving the holder (a WeakHandle) will keep the klass alive until the next safepoint.
+  // Making the klass's CLD handle oops (e.g. the java_mirror), safe to store in the object graph.
+  static_cast<void>(klass_holder());
+}
+
 inline bool Klass::is_non_strong_hidden() const {
   return is_hidden() && class_loader_data()->has_class_mirror_holder();
 }

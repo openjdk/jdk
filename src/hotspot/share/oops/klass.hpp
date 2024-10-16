@@ -586,6 +586,8 @@ protected:
 
   inline oop klass_holder() const;
 
+  inline void keep_alive() const;
+
  protected:
 
   // Error handling when length > max_length or length < 0
