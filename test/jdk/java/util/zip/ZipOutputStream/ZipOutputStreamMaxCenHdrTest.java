@@ -32,7 +32,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import java.io.*;
+import java.io.BufferedOutputStream;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
@@ -64,6 +65,13 @@ public class ZipOutputStreamMaxCenHdrTest {
 
     // ZIP file to be used by the tests
     static final Path ZIP_FILE = Path.of("maxCENHdrTest.zip");
+    // Zip Entry name used by tests
+    static final String ENTRY_NAME = "EntryName";
+    // Zip Entry comment used by tests
+    static final String ENTRY_COMMENT = "A Comment";
+    // Max length minus the size of the ENTRY_NAME or ENTRY_COMMENT
+    static final int MAX_FIElD_LEN_MINUS_ENTRY_NAME =
+            MAX_NAME_COMMENT_EXTRA_SIZE - 9;
 
     /**
      * Clean up prior to test run
@@ -81,15 +89,17 @@ public class ZipOutputStreamMaxCenHdrTest {
      * the ZipOutputStream is closed.
      */
     @ParameterizedTest
-    @ValueSource(ints = {MAX_COMBINED_CEN_HEADER_SIZE,
-            MAX_COMBINED_CEN_HEADER_SIZE - 1,
-            MAX_NAME_COMMENT_EXTRA_SIZE,
-            MAX_NAME_COMMENT_EXTRA_SIZE - 1})
+    @ValueSource(ints = {MAX_NAME_COMMENT_EXTRA_SIZE,
+            MAX_FIElD_LEN_MINUS_ENTRY_NAME + 1,
+            MAX_FIElD_LEN_MINUS_ENTRY_NAME,
+            MAX_FIElD_LEN_MINUS_ENTRY_NAME - 1})
     void setCommentTest(int length) throws IOException {
-        boolean expectZipException = length > MAX_NAME_COMMENT_EXTRA_SIZE;
         final byte[] bytes = new byte[length];
         Arrays.fill(bytes, (byte) 'a');
-        ZipEntry zipEntry = new ZipEntry("");
+        boolean expectZipException =  length + ENTRY_NAME.length() > MAX_NAME_COMMENT_EXTRA_SIZE ;
+        ZipEntry zipEntry = new ZipEntry(ENTRY_NAME);
+        String comment = new String(bytes, StandardCharsets.UTF_8);
+        System.out.printf("Comment Len= %s, exception: %s%n", comment.length(), expectZipException);
         // The comment length will trigger the ZipException
         zipEntry.setComment(new String(bytes, StandardCharsets.UTF_8));
         boolean receivedException = writeZipEntry(zipEntry, expectZipException);
@@ -102,16 +112,19 @@ public class ZipOutputStreamMaxCenHdrTest {
      * the ZipOutputStream is closed.
      */
     @ParameterizedTest
-    @ValueSource(ints = {MAX_COMBINED_CEN_HEADER_SIZE,
-            MAX_COMBINED_CEN_HEADER_SIZE - 1,
-            MAX_NAME_COMMENT_EXTRA_SIZE,
-            MAX_NAME_COMMENT_EXTRA_SIZE - 1})
+    @ValueSource(ints = {MAX_NAME_COMMENT_EXTRA_SIZE,
+            MAX_FIElD_LEN_MINUS_ENTRY_NAME + 1,
+            MAX_FIElD_LEN_MINUS_ENTRY_NAME,
+            MAX_FIElD_LEN_MINUS_ENTRY_NAME - 1})
     void setNameTest(int length) throws IOException {
-        boolean expectZipException = length > MAX_NAME_COMMENT_EXTRA_SIZE;
+        boolean expectZipException = length + ENTRY_COMMENT.length() > MAX_NAME_COMMENT_EXTRA_SIZE;
         final byte[] bytes = new byte[length];
         Arrays.fill(bytes, (byte) 'a');
+        String name = new String(bytes, StandardCharsets.UTF_8);
         // The name length will trigger the ZipException
-        ZipEntry zipEntry = new ZipEntry(new String(bytes, StandardCharsets.UTF_8));
+        ZipEntry zipEntry = new ZipEntry(name);
+        zipEntry.setComment(ENTRY_COMMENT);
+        System.out.printf("name Len= %s, exception: %s%n", name.length(), expectZipException);
         boolean receivedException = writeZipEntry(zipEntry, expectZipException);
         assertEquals(receivedException, expectZipException);
     }
@@ -122,20 +135,21 @@ public class ZipOutputStreamMaxCenHdrTest {
      * the ZipOutputStream is closed.
      */
     @ParameterizedTest
-    @ValueSource(ints = {MAX_COMBINED_CEN_HEADER_SIZE,
-            MAX_COMBINED_CEN_HEADER_SIZE - 1,
-            MAX_NAME_COMMENT_EXTRA_SIZE,
-            MAX_NAME_COMMENT_EXTRA_SIZE - 1})
+    @ValueSource(ints = {MAX_NAME_COMMENT_EXTRA_SIZE,
+            MAX_FIElD_LEN_MINUS_ENTRY_NAME + 1,
+            MAX_FIElD_LEN_MINUS_ENTRY_NAME,
+            MAX_FIElD_LEN_MINUS_ENTRY_NAME - 1})
     void setExtraTest(int length) throws IOException {
-        boolean expectZipException = length > MAX_NAME_COMMENT_EXTRA_SIZE;
         final byte[] bytes = new byte[length];
+        boolean expectZipException =  length + ENTRY_NAME.length() > MAX_NAME_COMMENT_EXTRA_SIZE ;
         // Little-endian ByteBuffer for updating the header fields
         ByteBuffer buffer = ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN);
         // We use the 'unknown' tag, specified in APPNOTE.TXT, 4.6.1 Third party mappings'
         buffer.putShort(UNKNOWN_ZIP_TAG);
         // Size of the actual (empty) data
         buffer.putShort((short) (length - 2 * Short.BYTES));
-        ZipEntry zipEntry = new ZipEntry("");
+        ZipEntry zipEntry = new ZipEntry(ENTRY_NAME);
+        System.out.printf("extra Len= %s, exception: %s%n", bytes.length, expectZipException);
         // The extra data length will trigger the ZipException
         zipEntry.setExtra(bytes);
         boolean receivedException = writeZipEntry(zipEntry, expectZipException);
@@ -154,9 +168,8 @@ public class ZipOutputStreamMaxCenHdrTest {
         boolean receivedException = false;
         try (ZipOutputStream zos = new ZipOutputStream(
                 new BufferedOutputStream(Files.newOutputStream(ZIP_FILE)))) {
-            zos.putNextEntry(zipEntry);
             if (expectZipException) {
-                ZipException ex = assertThrows(ZipException.class, zos::close);
+                ZipException ex = assertThrows(ZipException.class, () -> zos.putNextEntry(zipEntry));
                 assertTrue(ex.getMessage().matches(".*bad header size.*"),
                         "Unexpected ZipException message: " + ex.getMessage());
                 receivedException = true;
