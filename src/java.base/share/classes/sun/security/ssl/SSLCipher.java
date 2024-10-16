@@ -1606,7 +1606,8 @@ enum SSLCipher {
                         "Insufficient buffer remaining for AEAD cipher " +
                         "fragment (" + bb.remaining() + "). Needs to be " +
                         "more than or equal to IV size (" + recordIvSize +
-                         ") + tag size (" + tagSize + ")");
+                         ") + tag size (" + tagSize + ") for " +
+                        ContentType.nameOf(contentType) + " content");
                 }
 
                 // initialize the AEAD cipher for the unique IV
@@ -1862,7 +1863,8 @@ enum SSLCipher {
                     throw new BadPaddingException(
                         "Insufficient buffer remaining for AEAD cipher " +
                         "fragment (" + bb.remaining() + "). Needs to be " +
-                        "more than tag size (" + tagSize + ")");
+                        "more than tag size (" + tagSize + ") for " +
+                        ContentType.nameOf(contentType) + " content");
                 }
 
                 byte[] sn = sequence;
@@ -2121,7 +2123,9 @@ enum SSLCipher {
                     throw new BadPaddingException(
                         "Insufficient buffer remaining for AEAD cipher " +
                         "fragment (" + bb.remaining() + "). Needs to be " +
-                        "more than tag size (" + tagSize + ")");
+                        "more than tag size (" + tagSize + ") for " +
+                        ContentType.nameOf(contentType) + " content");
+
                 }
 
                 byte[] sn = sequence;
@@ -2379,7 +2383,9 @@ enum SSLCipher {
                     throw new BadPaddingException(
                         "Insufficient buffer remaining for AEAD cipher " +
                         "fragment (" + bb.remaining() + "). Needs to be " +
-                        "more than tag size (" + tagSize + ")");
+                        "more than tag size (" + tagSize + ") for " +
+                        ContentType.nameOf(contentType) + " content");
+
                 }
 
                 byte[] sn = sequence;
