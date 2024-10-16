@@ -211,7 +211,7 @@ class PackageSnippets {
         // @start region="fooToBarTransform"
         CodeTransform fooToBar = (b, e) -> {
             if (e instanceof InvokeInstruction i
-                    && i.owner().asInternalName().equals("Foo")
+                    && i.owner().equalsSymbol(CD_Foo)
                     && i.opcode() == Opcode.INVOKESTATIC)
                         b.invoke(i.opcode(), CD_Bar, i.name().stringValue(), i.typeSymbol(), i.isInterface());
             else b.with(e);
@@ -325,7 +325,7 @@ class PackageSnippets {
                                       if (me instanceof CodeModel xm) {
                                           methodBuilder.withCode(codeBuilder -> {
                                               for (CodeElement e : xm) {
-                                                  if (e instanceof InvokeInstruction i && i.owner().asInternalName().equals("Foo")
+                                                  if (e instanceof InvokeInstruction i && i.owner().equalsSymbol(CD_Foo)
                                                                                && i.opcode() == Opcode.INVOKESTATIC)
                                                               codeBuilder.invoke(i.opcode(), CD_Bar,
                                                                                             i.name().stringValue(), i.typeSymbol(), i.isInterface());

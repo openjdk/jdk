@@ -491,6 +491,18 @@ public abstract sealed class AbstractPoolEntry {
             typeSym = ret;
             return ret;
         }
+
+        /**
+         * Compares this utf8's content with given
+         * descriptor. Caches this descriptor if matches.
+         */
+        boolean equalsArrayClassDescriptor(ClassDesc sym) {
+            if (equalsString(sym.descriptorString())) {
+                typeSym = sym;
+                return true;
+            }
+            return false;
+        }
     }
 
     abstract static sealed class AbstractRefEntry<T extends PoolEntry> extends AbstractPoolEntry {
@@ -608,11 +620,21 @@ public abstract sealed class AbstractPoolEntry {
             if (mySym != null)
                 return mySym.equals(symbol);
 
+            // Note: for a ClassEntry read from bytes, it will not get a symbol until
+            // it matches a ClassDesc. So the huge block below will be called multiple times.
             boolean equals;
             if (isArrayDescriptor(ref1)) {
                 if (!symbol.isArray())
                     return false;
-                equals = ref1.equalsString(symbol.descriptorString());
+
+                // fetch upstream symbol first
+                if (ref1.typeSym instanceof ClassDesc upstreamSym) {
+                    // skip the regular cache process; upstream symbol always reusable
+                    this.sym = upstreamSym;
+                    return upstreamSym.equals(symbol);
+                }
+
+                equals = ref1.equalsArrayClassDescriptor(symbol); // ref1 caches compatible symbol
             } else {
                 if (!symbol.isClassOrInterface())
                     return false;

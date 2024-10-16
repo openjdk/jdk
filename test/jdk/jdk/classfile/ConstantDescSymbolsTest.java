@@ -43,6 +43,7 @@ import java.lang.classfile.ClassFile;
 import java.util.stream.Stream;
 
 import jdk.internal.classfile.impl.AbstractPoolEntry;
+import jdk.internal.classfile.impl.Util;
 import jdk.internal.constant.ConstantUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -180,11 +181,13 @@ final class ConstantDescSymbolsTest {
         return Stream.of(
                 Arguments.of(true, cp.classEntry(CD_Object), CD_Object),
                 Arguments.of(true, cp.classEntry(CD_Object.arrayType()), CD_Object.arrayType()),
+                Arguments.of(true, cp.classEntry(cp.utf8Entry(CD_Object.arrayType())), CD_Object.arrayType()),
                 Arguments.of(true, cp.classEntry(cp.utf8Entry("java/lang/Thread")), ClassDesc.of("java.lang.Thread")),
                 Arguments.of(true, cp.classEntry(cp.utf8Entry("[[Ljava/lang/invoke/MethodHandle;")), ClassDesc.of("java.lang.invoke.MethodHandle").arrayType(2)),
                 Arguments.of(false, cp.classEntry(CD_Object), CD_String),
                 Arguments.of(false, cp.classEntry(cp.utf8Entry("")), CD_Object),
                 Arguments.of(false, cp.classEntry(cp.utf8Entry("&*$#@;;))")), CD_String),
+                Arguments.of(false, cp.classEntry(cp.utf8Entry("[&*$#@;;))")), CD_String.arrayType()),
                 Arguments.of(false, cp.classEntry(CD_Object.arrayType()), CD_String.arrayType()),
                 Arguments.of(false, cp.classEntry(cp.utf8Entry("Ljava/lang/Object;")), CD_String.arrayType()),
                 Arguments.of(false, cp.classEntry(cp.utf8Entry("java/lang/Object")), CD_String.arrayType()),
@@ -200,6 +203,10 @@ final class ConstantDescSymbolsTest {
         assertEquals(result, ce.equalsSymbol(cd));
         if (noCache) {
             assertEquals(result, accessCachedClassDesc(ce) != null, () -> "cache presence after test with result " + result);
+            if (result && cd.isArray()) {
+                // Reuse cache from utf8
+                assertSame(accessCachedClassDesc(ce), Util.fieldTypeSymbol(ce.name()));
+            }
         }
     }
 
