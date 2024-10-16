@@ -29,21 +29,21 @@
 #include "gc/shenandoah/shenandoahNumberSeq.hpp"
 
 enum CardStatType {
-  DIRTY_RUN           = 0,
-  CLEAN_RUN           = 1,
-  DIRTY_CARDS         = 2,
-  CLEAN_CARDS         = 3,
-  MAX_DIRTY_RUN       = 4,
-  MAX_CLEAN_RUN       = 5,
-  DIRTY_SCAN_OBJS     = 6,
-  ALTERNATIONS        = 7,
-  MAX_CARD_STAT_TYPE  = 8
+  DIRTY_RUN,
+  CLEAN_RUN,
+  DIRTY_CARDS,
+  CLEAN_CARDS,
+  MAX_DIRTY_RUN,
+  MAX_CLEAN_RUN,
+  DIRTY_SCAN_OBJS,
+  ALTERNATIONS,
+  MAX_CARD_STAT_TYPE
 };
 
 enum CardStatLogType {
-  CARD_STAT_SCAN_RS       = 0,
-  CARD_STAT_UPDATE_REFS   = 1,
-  MAX_CARD_STAT_LOG_TYPE  = 2
+  CARD_STAT_SCAN_RS,
+  CARD_STAT_UPDATE_REFS,
+  MAX_CARD_STAT_LOG_TYPE
 };
 
 class ShenandoahCardStats: public CHeapObj<mtGC> {
