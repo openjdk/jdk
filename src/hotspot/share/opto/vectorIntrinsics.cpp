@@ -2873,7 +2873,7 @@ static Node* LowerSelectFromTwoVectorOperation(PhaseGVN& phase, Node* index_vec,
   // Wrap indexes into two vector index range [0, VLEN * 2)
   Node* two_vect_lane_cnt_m1 = phase.makecon(TypeInt::make(2 * num_elem - 1));
   Node* bcast_two_vect_lane_cnt_m1_vec = phase.transform(VectorNode::scalar2vector(two_vect_lane_cnt_m1, num_elem,
-                                                                                   Type::get_const_basic_type(T_BYTE), false));
+                                                                                   T_BYTE, false));
   index_byte_vec = phase.transform(VectorNode::make(Op_AndV, index_byte_vec, bcast_two_vect_lane_cnt_m1_vec,
                                                     index_byte_vec->bottom_type()->is_vect()));
 
@@ -2884,7 +2884,7 @@ static Node* LowerSelectFromTwoVectorOperation(PhaseGVN& phase, Node* index_vec,
   const TypeVect* vmask_type = TypeVect::makemask(T_BYTE, num_elem);
   Node* lane_cnt_m1 = phase.makecon(TypeInt::make(num_elem - 1));
   Node* bcast_lane_cnt_m1_vec = phase.transform(VectorNode::scalar2vector(lane_cnt_m1, num_elem,
-                                                                          Type::get_const_basic_type(T_BYTE), false));
+                                                                          T_BYTE, false));
   Node* mask = phase.transform(new VectorMaskCmpNode(pred, index_byte_vec, bcast_lane_cnt_m1_vec, pred_node, vmask_type));
 
   // Rearrange expects the indexes to lie within single vector index range [0, VLEN).
@@ -3012,7 +3012,7 @@ bool LibraryCallKit::inline_vector_select_from_two_vectors() {
     }
     int indexRangeMask = 2 * num_elem - 1;
     Node* wrap_mask = gvn().makecon(TypeInteger::make(indexRangeMask, indexRangeMask, Type::WidenMin, index_elem_bt != T_LONG ? T_INT : index_elem_bt));
-    Node* wrap_mask_vec = gvn().transform(VectorNode::scalar2vector(wrap_mask, num_elem, Type::get_const_basic_type(index_elem_bt), false));
+    Node* wrap_mask_vec = gvn().transform(VectorNode::scalar2vector(wrap_mask, num_elem, index_elem_bt, false));
     opd1 = gvn().transform(VectorNode::make(Op_AndV, opd1, wrap_mask_vec, opd1->bottom_type()->is_vect()));
     operation = gvn().transform(VectorNode::make(Op_SelectFromTwoVector, opd1, opd2, opd3, vt));
   }
