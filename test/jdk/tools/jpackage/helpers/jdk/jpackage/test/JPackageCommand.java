@@ -52,6 +52,7 @@ import jdk.jpackage.internal.PackageFile;
 import static jdk.jpackage.test.AdditionalLauncher.forEachAdditionalLauncher;
 import jdk.jpackage.test.Functional.ThrowingConsumer;
 import jdk.jpackage.test.Functional.ThrowingFunction;
+import jdk.jpackage.test.Functional.ThrowingRunnable;
 import jdk.jpackage.test.Functional.ThrowingSupplier;
 
 /**
@@ -766,18 +767,19 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
         executePrerequisiteActions();
 
         if (hasArgument("--dest")) {
-            if (isImagePackageType()) {
-                TKit.deleteDirectoryContentsRecursive(outputDir());
-            } else {
-                nullableOutputBundle().ifPresent(path -> {
-                    if (ThrowingSupplier.toSupplier(() -> TKit.deleteIfExists(
-                            path)).get()) {
+            nullableOutputBundle().ifPresent(path -> {
+                ThrowingRunnable.toRunnable(() -> {
+                    if (Files.isDirectory(path)) {
+                        TKit.deleteDirectoryRecursive(path, String.format(
+                                "Delete [%s] folder before running jpackage",
+                                path));
+                    } else if (TKit.deleteIfExists(path)) {
                         TKit.trace(String.format(
                                 "Deleted [%s] file before running jpackage",
                                 path));
                     }
-                });
-            }
+                }).run();
+            });
         }
 
         Path resourceDir = getArgumentValue("--resource-dir", () -> null, Path::of);
