@@ -2095,4 +2095,47 @@ void VectorBoxAllocateNode::dump_spec(outputStream *st) const {
   CallStaticJavaNode::dump_spec(st);
 }
 
+Node* UMinVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  bool match1 = in(1)->Opcode() == Op_UMinV || in(1)->Opcode() == Op_UMaxV;
+  bool match2 = in(2)->Opcode() == Op_UMinV || in(2)->Opcode() == Op_UMaxV;
+  // UMin (UMin(a, b), UMax(a, b))  => UMin(a, b)
+  // UMin (UMin(a, b), UMax(b, a))  => UMin(a, b)
+  if (match1 && match2) {
+    if ((in(1)->in(1) == in(2)->in(1) && in(1)->in(2) == in(2)->in(2)) ||
+         (in(1)->in(2) == in(2)->in(1) && in(1)->in(1) == in(2)->in(2))) {
+      return new UMinVNode(in(1)->in(1), in(1)->in(2), vect_type());
+    }
+  }
+  return nullptr;
+}
+
+Node* UMinVNode::Identity(PhaseGVN* phase) {
+  // UMin (a, a) => a
+  if (in(1) == in(2)) {
+    return in(1);
+  }
+  return this;
+}
+
+Node* UMaxVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  bool match1 = in(1)->Opcode() == Op_UMinV || in(1)->Opcode() == Op_UMaxV;
+  bool match2 = in(2)->Opcode() == Op_UMinV || in(2)->Opcode() == Op_UMaxV;
+  // UMax (UMin(a, b), UMax(a, b))  => UMax(a, b)
+  // UMax (UMin(a, b), UMax(b, a))  => UMax(a, b)
+  if (match1 && match2) {
+    if ((in(1)->in(1) == in(2)->in(1) && in(1)->in(2) == in(2)->in(2)) ||
+         (in(1)->in(2) == in(2)->in(1) && in(1)->in(1) == in(2)->in(2))) {
+      return new UMaxVNode(in(1)->in(1), in(1)->in(2), vect_type());
+    }
+  }
+  return nullptr;
+}
+
+Node* UMaxVNode::Identity(PhaseGVN* phase) {
+  // UMax (a, a) => a
+  if (in(1) == in(2)) {
+    return in(1);
+  }
+  return this;
+}
 #endif // !PRODUCT

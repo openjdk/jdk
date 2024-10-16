@@ -208,6 +208,8 @@ bool VectorSupport::has_scalar_op(jint id) {
     case VECTOR_OP_SUADD:
     case VECTOR_OP_SSUB:
     case VECTOR_OP_SUSUB:
+    case VECTOR_OP_UMIN:
+    case VECTOR_OP_UMAX:
       return false;
     default:
       return true;
@@ -219,6 +221,8 @@ bool VectorSupport::is_unsigned_op(jint id) {
   switch (vop) {
     case VECTOR_OP_SUADD:
     case VECTOR_OP_SUSUB:
+    case VECTOR_OP_UMIN:
+    case VECTOR_OP_UMAX:
       return true;
     default:
       return false;

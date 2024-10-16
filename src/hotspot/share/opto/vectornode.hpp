@@ -158,6 +158,16 @@ class SaturatingVectorNode : public VectorNode {
 
   // Needed for proper cloning.
   virtual uint size_of() const { return sizeof(*this); }
+
+#ifndef PRODUCT
+  // Print node specific info
+  virtual void dump_spec(outputStream *st) const {
+    TypeNode::dump_spec(st);
+    st->print("%s", _is_unsigned ? "{unsigned_vector_node}" : "{signed_vector_node}");
+  }
+#endif
+  virtual uint hash() const { return Node::hash() + _is_unsigned; }
+
   bool is_unsigned() { return _is_unsigned; }
 };
 
@@ -598,6 +608,8 @@ class UMinVNode : public VectorNode {
   UMinVNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2 ,vt) {
     assert(is_integral_type(vt->element_basic_type()), "");
   }
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+  virtual Node* Identity(PhaseGVN* phase);
   virtual int Opcode() const;
 };
 
@@ -614,6 +626,8 @@ class UMaxVNode : public VectorNode {
   UMaxVNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {
     assert(is_integral_type(vt->element_basic_type()), "");
   }
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+  virtual Node* Identity(PhaseGVN* phase);
   virtual int Opcode() const;
 };
 

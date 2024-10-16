@@ -249,6 +249,46 @@ public class IRNode {
         vectorNode(ADD_VL, "AddVL", TYPE_LONG);
     }
 
+    public static final String SADD_VB = VECTOR_PREFIX + "SADD_VB" + POSTFIX;
+    static {
+        vectorNode(SADD_VB, "SaturatingAddV", TYPE_BYTE);
+    }
+
+    public static final String SADD_VS = VECTOR_PREFIX + "SADD_VS" + POSTFIX;
+    static {
+        vectorNode(SADD_VS, "SaturatingAddV", TYPE_SHORT);
+    }
+
+    public static final String SADD_VI = VECTOR_PREFIX + "SADD_VI" + POSTFIX;
+    static {
+        vectorNode(SADD_VI, "SaturatingAddV", TYPE_INT);
+    }
+
+    public static final String SADD_VL = VECTOR_PREFIX + "SADD_VL" + POSTFIX;
+    static {
+        vectorNode(SADD_VL, "SaturatingAddV", TYPE_LONG);
+    }
+
+    public static final String SSUB_VB = VECTOR_PREFIX + "SSUB_VB" + POSTFIX;
+    static {
+        vectorNode(SSUB_VB, "SaturatingSubV", TYPE_BYTE);
+    }
+
+    public static final String SSUB_VS = VECTOR_PREFIX + "SSUB_VS" + POSTFIX;
+    static {
+        vectorNode(SSUB_VS, "SaturatingSubV", TYPE_SHORT);
+    }
+
+    public static final String SSUB_VI = VECTOR_PREFIX + "SSUB_VI" + POSTFIX;
+    static {
+        vectorNode(SSUB_VI, "SaturatingSubV", TYPE_INT);
+    }
+
+    public static final String SSUB_VL = VECTOR_PREFIX + "SSUB_VL" + POSTFIX;
+    static {
+        vectorNode(SSUB_VL, "SaturatingSubV", TYPE_LONG);
+    }
+
     public static final String ADD_REDUCTION_V = PREFIX + "ADD_REDUCTION_V" + POSTFIX;
     static {
         beforeMatchingNameRegex(ADD_REDUCTION_V, "AddReductionV(B|S|I|L|F|D)");
@@ -1106,6 +1146,46 @@ public class IRNode {
     public static final String MIN_VL = VECTOR_PREFIX + "MIN_VL" + POSTFIX;
     static {
         vectorNode(MIN_VL, "MinV", TYPE_LONG);
+    }
+
+    public static final String UMIN_VB = VECTOR_PREFIX + "UMIN_VB" + POSTFIX;
+    static {
+        vectorNode(UMIN_VB, "UMinV", TYPE_BYTE);
+    }
+
+    public static final String UMIN_VS = VECTOR_PREFIX + "UMIN_VS" + POSTFIX;
+    static {
+        vectorNode(UMIN_VS, "UMinV", TYPE_SHORT);
+    }
+
+    public static final String UMIN_VI = VECTOR_PREFIX + "UMIN_VI" + POSTFIX;
+    static {
+        vectorNode(UMIN_VI, "UMinV", TYPE_INT);
+    }
+
+    public static final String UMIN_VL = VECTOR_PREFIX + "UMIN_VL" + POSTFIX;
+    static {
+        vectorNode(UMIN_VL, "UMinV", TYPE_LONG);
+    }
+
+    public static final String UMAX_VB = VECTOR_PREFIX + "UMAX_VB" + POSTFIX;
+    static {
+        vectorNode(UMAX_VB, "UMaxV", TYPE_BYTE);
+    }
+
+    public static final String UMAX_VS = VECTOR_PREFIX + "UMAX_VS" + POSTFIX;
+    static {
+        vectorNode(UMAX_VS, "UMaxV", TYPE_SHORT);
+    }
+
+    public static final String UMAX_VI = VECTOR_PREFIX + "UMAX_VI" + POSTFIX;
+    static {
+        vectorNode(UMAX_VI, "UMaxV", TYPE_INT);
+    }
+
+    public static final String UMAX_VL = VECTOR_PREFIX + "UMAX_VL" + POSTFIX;
+    static {
+        vectorNode(UMAX_VL, "UMaxV", TYPE_LONG);
     }
 
     public static final String MOD_I = PREFIX + "MOD_I" + POSTFIX;
