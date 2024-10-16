@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,8 @@ import sun.security.util.SignatureUtil;
 public class SignatureGetInstance {
 
     private static final String SIGALG = "RSASSA-PSS";
+    private static final PSSParameterSpec SHA224_PSS_PARAM_SPEC = new PSSParameterSpec
+            ("SHA-224", "MGF1", MGF1ParameterSpec.SHA224, 20, 1);
 
     public static void main(String[] args) throws Exception {
         Provider testProvider = new TestProvider();
@@ -84,7 +86,7 @@ public class SignatureGetInstance {
     private static void testDblInit(PrivateKey key1, PublicKey key2,
             boolean shouldPass, String expectedProvName) throws Exception {
         Signature sig = Signature.getInstance(SIGALG);
-        SignatureUtil.initSignWithParam(sig, key1, PSSParameterSpec.DEFAULT, null);
+        SignatureUtil.initSignWithParam(sig, key1, SHA224_PSS_PARAM_SPEC, null);
         try {
             sig.initVerify(key2);
             if (!shouldPass) {
@@ -107,7 +109,7 @@ public class SignatureGetInstance {
         } else {
             sig = Signature.getInstance(SIGALG, provName);
         }
-        AlgorithmParameterSpec params = PSSParameterSpec.DEFAULT;
+        AlgorithmParameterSpec params = SHA224_PSS_PARAM_SPEC;
         boolean doSign = (key instanceof PrivateKey);
         try {
             if (doSign) {

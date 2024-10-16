@@ -192,7 +192,7 @@ public class KeyToolTest {
             // SunPKCS11-NSS does not support SHA256withDSA yet.
             if (cmd.contains("p11-nss.txt") && cmd.contains("-genkey")
                     && cmd.contains("DSA")) {
-                cmd += " -sigalg SHA1withDSA -keysize 1024";
+                cmd += " -sigalg SHA256withDSA -keysize 1024";
             }
             test(input, cmd);
         } catch(Exception e) {
@@ -954,7 +954,7 @@ public class KeyToolTest {
                 "-keypass changeit -selfcert -dname CN=NewName");
         // sig not compatible
         testFail("", "-keystore x.jks -storetype JKS -storepass changeit " +
-                "-keypass changeit -selfcert -sigalg MD5withRSA");
+                "-keypass changeit -selfcert -sigalg SHA256withRSA");
         // bad pass
         testFail("", "-keystore x.jks -storetype JKS -storepass wrong " +
                 "-keypass changeit -selfcert");
@@ -1062,10 +1062,10 @@ public class KeyToolTest {
                 "-keypass changeit -genkeypair -keyalg DSA -dname CN=olala -keysize 999 " +
                 "-alias n5");
         testOK("", "-keystore x.jks -storetype JKS -storepass changeit " +
-                "-keypass changeit -genkeypair -keyalg DSA -dname CN=olala -keysize 512 " +
+                "-keypass changeit -genkeypair -keyalg DSA -dname CN=olala -keysize 2048 " +
                 "-alias n6");
         testOK("", "-keystore x.jks -storetype JKS -storepass changeit " +
-                "-keypass changeit -genkeypair -keyalg DSA -dname CN=olala -keysize 1024 " +
+                "-keypass changeit -genkeypair -keyalg DSA -dname CN=olala -keysize 3072 " +
                 "-alias n7");
         testFail("", "-keystore x.jks -storetype JKS -storepass changeit " +
                 "-keypass changeit -genkeypair -keyalg DSA -dname CN=olala " +
@@ -1075,7 +1075,7 @@ public class KeyToolTest {
                 "-sigalg MD2withRSA -alias n9");
         testOK("", "-keystore x.jks -storetype JKS -storepass changeit " +
                 "-keypass changeit -genkeypair -dname CN=olala -keyalg RSA " +
-                "-sigalg MD5withRSA -alias n10");
+                "-sigalg SHA256withRSA -alias n10");
         testOK("", "-keystore x.jks -storetype JKS -storepass changeit " +
                 "-keypass changeit -genkeypair -dname CN=olala -keyalg RSA " +
                 "-sigalg SHA1withRSA -alias n11");
@@ -1152,16 +1152,16 @@ public class KeyToolTest {
         remove("csr1");
         // PrivateKeyEntry can do certreq
         testOK("", "-keystore x.jks -storetype JKS -storepass changeit " +
-                "-keypass changeit -genkeypair -keyalg DSA -dname CN=olala -keysize 1024");
+                "-keypass changeit -genkeypair -keyalg DSA -dname CN=olala -keysize 2048");
         testOK("", "-keystore x.jks -storetype JKS -storepass changeit " +
                 "-certreq -file csr1 -alias mykey");
         testOK("", "-keystore x.jks -storetype JKS -storepass changeit " +
                 "-certreq -file csr1");
         testOK("", "-keystore x.jks -storetype JKS -storepass changeit " +
-                "-certreq -file csr1 -sigalg SHA1withDSA");
+                "-certreq -file csr1 -sigalg SHA256withDSA");
         // unmatched sigalg
         testFail("", "-keystore x.jks -storetype JKS -storepass changeit " +
-                "-certreq -file csr1 -sigalg MD5withRSA");
+                "-certreq -file csr1 -sigalg SHA256withRSA");
         // misc test
         // bad storepass
         testFail("", "-keystore x.jks -storetype JKS -storepass badstorepass " +
@@ -1192,9 +1192,9 @@ public class KeyToolTest {
                 "-certreq -file csr1");
         // unmatched sigalg
         testFail("", "-keystore x.jks -storetype JKS -storepass changeit " +
-                "-certreq -file csr1 -sigalg SHA1withDSA");
+                "-certreq -file csr1 -sigalg SHA256withDSA");
         testOK("", "-keystore x.jks -storetype JKS -storepass changeit " +
-                "-certreq -file csr1 -sigalg MD5withRSA");
+                "-certreq -file csr1 -sigalg SHA256withRSA");
         // TrustedCertificateEntry cannot do certreq
         testOK("", "-keystore x.jks -storetype JKS -storepass changeit " +
                 "-exportcert -file x.jks.p1.cert");
@@ -1221,7 +1221,7 @@ public class KeyToolTest {
                 "-export -file mykey.cert -alias mykey");
         testOK("", "-keystore x.jks -storetype JKS -storepass changeit " +
                 "-keypass changeit -genkeypair -dname CN=weak -keyalg rsa " +
-                "-keysize 512 -sigalg MD5withRSA -alias myweakkey");
+                "-keysize 2048 -sigalg SHA256withRSA -alias myweakkey");
         testOK("", "-keystore x.jks -storetype JKS -storepass changeit " +
                 "-export -file myweakkey.cert -alias myweakkey");
         testFail("", "-printcert -file badkeystore");
@@ -1673,30 +1673,30 @@ public class KeyToolTest {
         remove("x.jks");
         testOK("", "-help");
 
-        //   2. keytool -genkey -keyalg DSA -v -keysize 512 Enter "a" for the keystore
+        //   2. keytool -genkey -keyalg DSA -v -keysize 2048 Enter "a" for the keystore
         // password. Check error (password too short). Enter "password" for
         // the keystore password. Hit 'return' for "first and last name",
         // "organizational unit", "City", "State", and "Country Code".
         // Type "yes" when they ask you if everything is correct.
         // Type 'return' for new key password.
         testOK("a\npassword\npassword\nMe\nHere\nNow\nPlace\nPlace\nUS\nyes\n\n",
-                "-genkey -keyalg DSA -v -keysize 512 -keystore x.jks -storetype JKS");
+                "-genkey -keyalg DSA -v -keysize 2048 -keystore x.jks -storetype JKS");
         //   3. keytool -list -v -storepass password
         testOK("", "-list -v -storepass password -keystore x.jks -storetype JKS");
         //   4. keytool -list -v Type "a" for the keystore password.
         // Check error (wrong keystore password).
         testFail("a\n", "-list -v -keystore x.jks -storetype JKS");
         assertTrue(ex.indexOf("password was incorrect") != -1);
-        //   5. keytool - -keyalg DSA -v -keysize 512 Enter "password" as the password.
+        //   5. keytool - -keyalg DSA -v -keysize 2048 Enter "password" as the password.
         // Check error (alias 'mykey' already exists).
-        testFail("password\n", "-genkey -keyalg DSA -v -keysize 512" +
+        testFail("password\n", "-genkey -keyalg DSA -v -keysize 2048" +
                 " -keystore x.jks -storetype JKS");
         assertTrue(ex.indexOf("alias <mykey> already exists") != -1);
-        //   6. keytool -genkey -keyalg DSA -v -keysize 512 -alias mykey2 -storepass password
+        //   6. keytool -genkey -keyalg DSA -v -keysize 2048 -alias mykey2 -storepass password
         // Hit 'return' for "first and last name", "organizational unit", "City",
         // "State", and "Country Code". Type "yes" when they ask you if
         // everything is correct. Type 'return' for new key password.
-        testOK("\n\n\n\n\n\nyes\n\n", "-genkey -keyalg DSA -v -keysize 512 -alias mykey2" +
+        testOK("\n\n\n\n\n\nyes\n\n", "-genkey -keyalg DSA -v -keysize 2048 -alias mykey2" +
                 " -storepass password -keystore x.jks -storetype JKS");
         //   7. keytool -list -v Type 'password' for the store password.
         testOK("password\n", "-list -v -keystore x.jks -storetype JKS");
@@ -1777,7 +1777,7 @@ public class KeyToolTest {
         //   1. sccs edit cert8.db key3.db
         //Runtime.getRuntime().exec("/usr/bin/sccs edit cert8.db key3.db");
         testOK("", p11Arg + ("-storepass test12 -genkey -alias genkey" +
-                " -dname cn=genkey -keysize 512 -keyalg rsa"));
+                " -dname cn=genkey -keysize 2048 -keyalg rsa"));
         testOK("", p11Arg + "-storepass test12 -list");
         testOK("", p11Arg + "-storepass test12 -list -alias genkey");
         testOK("", p11Arg +

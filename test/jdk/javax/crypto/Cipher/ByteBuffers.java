@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,11 +46,11 @@ public class ByteBuffers {
         byte[] t = new byte[n];
         random.nextBytes(t);
 
-        byte[] keyBytes = new byte[8];
+        byte[] keyBytes = new byte[16];
         random.nextBytes(keyBytes);
-        SecretKey key = new SecretKeySpec(keyBytes, "DES");
+        SecretKey key = new SecretKeySpec(keyBytes, "AES");
 
-        Cipher cipher = Cipher.getInstance("DES/ECB/NoPadding");
+        Cipher cipher = Cipher.getInstance("AES/ECB/NoPadding");
         cipher.init(Cipher.ENCRYPT_MODE, key);
 
         byte[] outBytes = cipher.doFinal(t);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,7 +87,7 @@ public class TestKeyPairGenerator {
     // regression test for 4865198
     private static void testInvalidSignature(KeyPair kp1, KeyPair kp2) throws Exception {
         System.out.println("Testing signature with incorrect key...");
-        Signature sig = Signature.getInstance("MD5withRSA", provider);
+        Signature sig = Signature.getInstance("Sha224withRSA", provider);
         sig.initSign(kp1.getPrivate());
         byte[] data = new byte[100];
         sig.update(data);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ import javax.crypto.*;
 import javax.crypto.spec.*;
 
 public class GetKeySpecInvalidEncoding {
-    private static final String cipherAlg = "PBEWithMD5AndDES";
+    private static final String cipherAlg = "PBEWithSHA1AndDESede";
     private static final char[] passwd = { 'p','a','s','s', 'w', 'd' };
     private static AlgorithmParameters GOOD_PARAMS;
 

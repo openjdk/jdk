@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,9 +71,9 @@ public class PKCS10AttrEncoding {
 
         X500Name subject = new X500Name("cn=Test");
         KeyPairGenerator keyGen = KeyPairGenerator.getInstance("DSA");
-        String sigAlg = "DSA";
+        String sigAlg = "Sha256withDSA";
 
-        keyGen.initialize(512);
+        keyGen.initialize(2048);
 
         KeyPair pair = keyGen.generateKeyPair();
         X509Key publicKey = (X509Key) pair.getPublic();

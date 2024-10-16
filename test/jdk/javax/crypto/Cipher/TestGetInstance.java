@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,52 +46,52 @@ public class TestGetInstance {
 
         Cipher c;
 
-        c = Cipher.getInstance("PBEWithMD5AndTripleDES");
+        c = Cipher.getInstance("PBEWithHmacSHA1AndAES_128");
         same(p, c.getProvider());
 
-        c = Cipher.getInstance("des", "SunJCE");
+        c = Cipher.getInstance("aes", "SunJCE");
         same(p, c.getProvider());
-        c = Cipher.getInstance("des/cbc/pkcs5padding", "SunJCE");
+        c = Cipher.getInstance("aes/cbc/pkcs5padding", "SunJCE");
         same(p, c.getProvider());
 
-        c = Cipher.getInstance("des", p);
+        c = Cipher.getInstance("aes", p);
         same(p, c.getProvider());
-        c = Cipher.getInstance("des/cbc/pkcs5padding", p);
+        c = Cipher.getInstance("aes/cbc/pkcs5padding", p);
         same(p, c.getProvider());
 
         try {
-            c = Cipher.getInstance("DES/XYZ/PKCS5Padding");
+            c = Cipher.getInstance("AES/XYZ/PKCS5Padding");
             throw new AssertionError();
         } catch (NoSuchAlgorithmException e) {
             System.out.println(e);
         }
         try {
-            c = Cipher.getInstance("DES/XYZ/PKCS5Padding", "SunJCE");
+            c = Cipher.getInstance("AES/XYZ/PKCS5Padding", "SunJCE");
             throw new AssertionError();
         } catch (NoSuchAlgorithmException e) {
             System.out.println(e);
         }
         try {
-            c = Cipher.getInstance("DES/XYZ/PKCS5Padding", p);
+            c = Cipher.getInstance("AES/XYZ/PKCS5Padding", p);
             throw new AssertionError();
         } catch (NoSuchAlgorithmException e) {
             System.out.println(e);
         }
 
         try {
-            c = Cipher.getInstance("DES/CBC/XYZPadding");
+            c = Cipher.getInstance("AES/CBC/XYZPadding");
             throw new AssertionError();
         } catch (NoSuchAlgorithmException e) {
             System.out.println(e);
         }
         try {
-            c = Cipher.getInstance("DES/CBC/XYZPadding", "SunJCE");
+            c = Cipher.getInstance("AES/CBC/XYZPadding", "SunJCE");
             throw new AssertionError();
         } catch (NoSuchPaddingException e) {
             System.out.println(e);
         }
         try {
-            c = Cipher.getInstance("DES/CBC/XYZPadding", p);
+            c = Cipher.getInstance("AES/CBC/XYZPadding", p);
             throw new AssertionError();
         } catch (NoSuchPaddingException e) {
             System.out.println(e);

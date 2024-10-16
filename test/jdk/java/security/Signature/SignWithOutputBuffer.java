@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,10 +37,10 @@ public class SignWithOutputBuffer {
         int numBytes;
 
         KeyPairGenerator kpGen = KeyPairGenerator.getInstance("DSA");
-        kpGen.initialize(512);
+        kpGen.initialize(2048);
         KeyPair kp = kpGen.genKeyPair();
 
-        Signature sig = Signature.getInstance("DSS");
+        Signature sig = Signature.getInstance("SHA224withDSA");
         sig.initSign(kp.getPrivate());
         sig.update((byte)0xff);
 
@@ -55,10 +55,10 @@ public class SignWithOutputBuffer {
         }
 
         // Now repeat the same with a buffer that's big enough
-        sig = Signature.getInstance("DSS");
+        sig = Signature.getInstance("SHA224withDSA");
         sig.initSign(kp.getPrivate());
         sig.update((byte)0xff);
-        out = new byte[48];
+        out = new byte[64];
         numBytes = sig.sign(out, 0, out.length);
 
         System.out.println("Signature len="+numBytes);

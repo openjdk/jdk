@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,13 +32,15 @@ public class InitAgain {
 
     public static void main(String[] args) throws Exception {
 
+        PSSParameterSpec SHA224_PSS_PARAM_SPEC = new PSSParameterSpec
+                ("SHA224", "MGF1", MGF1ParameterSpec.SHA1, 20, 1);
         byte[] msg = "hello".getBytes();
 
         Signature s1 = Signature.getInstance("RSASSA-PSS");
         Signature s2 = Signature.getInstance("RSASSA-PSS");
 
-        s1.setParameter(PSSParameterSpec.DEFAULT);
-        s2.setParameter(PSSParameterSpec.DEFAULT);
+        s1.setParameter(SHA224_PSS_PARAM_SPEC);
+        s2.setParameter(SHA224_PSS_PARAM_SPEC);
 
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
         kpg.initialize(1024);
