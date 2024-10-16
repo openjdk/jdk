@@ -466,7 +466,7 @@ void PhaseIdealLoop::clone_parse_and_assertion_predicates_to_unswitched_loop(Ide
 
   const Predicates predicates(entry);
   const PredicateBlock* short_running_loop_predicate_block = predicates.short_running_loop_predicate_block();
-  if (short_running_loop_predicate_block->has_parse_predicate() && !head->is_CountedLoop()) {
+  if (short_running_loop_predicate_block->has_parse_predicate()) {
     clone_parse_predicate_to_unswitched_loops(short_running_loop_predicate_block, Deoptimization::Reason_short_running_loop,
                                               iffast_pred, ifslow_pred);
   }

@@ -690,9 +690,9 @@ class PredicateIterator : public StackObj {
     PredicateBlockIterator profiled_loop_predicate_iterator(current, Deoptimization::Reason_profile_predicate);
     current = profiled_loop_predicate_iterator.for_each(predicate_visitor);
     PredicateBlockIterator loop_predicate_iterator(current, Deoptimization::Reason_predicate);
-    return loop_predicate_iterator.for_each(predicate_visitor);
+    current = loop_predicate_iterator.for_each(predicate_visitor);
     PredicateBlockIterator short_running_loop_predicate_iterator(current, Deoptimization::Reason_short_running_loop);
-    current = short_running_loop_predicate_iterator.for_each(predicate_visitor);
+    return short_running_loop_predicate_iterator.for_each(predicate_visitor);
   }
 };
 
