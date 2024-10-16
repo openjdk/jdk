@@ -28,6 +28,8 @@ package java.nio;
 import java.io.FileDescriptor;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+
+import jdk.internal.access.foreign.MappedMemoryUtilsProxy;
 import jdk.internal.misc.Blocker;
 import jdk.internal.misc.Unsafe;
 
@@ -125,7 +127,6 @@ import jdk.internal.misc.Unsafe;
     private static native void registerNatives();
     static {
         registerNatives();
-        isLoaded0(0, 0, 0);
     }
 
     // utility methods
@@ -176,4 +177,26 @@ import jdk.internal.misc.Unsafe;
         // pageSize must be a power of 2
         return address & ~(pageSize - 1);
     }
+
+    static final MappedMemoryUtilsProxy PROXY = new MappedMemoryUtilsProxy() {
+        @Override
+        public boolean isLoaded(long address, boolean isSync, long size) {
+            return MappedMemoryUtils.isLoaded(address, isSync, size);
+        }
+
+        @Override
+        public void load(long address, boolean isSync, long size) {
+            MappedMemoryUtils.load(address, isSync, size);
+        }
+
+        @Override
+        public void unload(long address, boolean isSync, long size) {
+            MappedMemoryUtils.unload(address, isSync, size);
+        }
+
+        @Override
+        public void force(FileDescriptor fd, long address, boolean isSync, long index, long length) {
+            MappedMemoryUtils.force(fd, address, isSync, index, length);
+        }
+    };
 }

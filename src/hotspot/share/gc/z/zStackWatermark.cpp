@@ -130,7 +130,7 @@ void ZStackWatermark::save_old_watermark() {
   } else {
     // Found none too replace - push it to the top
     _old_watermarks_newest++;
-    assert(_old_watermarks_newest < _old_watermarks_max, "Unexpected amount of old watermarks");
+    assert(_old_watermarks_newest < OldWatermarksMax, "Unexpected amount of old watermarks");
   }
 
   // Install old watermark
