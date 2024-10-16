@@ -34,7 +34,7 @@ import java.util.Random;
 @Warmup(iterations = 3, time = 1, timeUnit = TimeUnit.SECONDS)
 @Measurement(iterations = 10, time = 1, timeUnit = TimeUnit.SECONDS)
 @Fork(value = 1)
-public abstract class VectorLoadToStoreForwarding {
+public abstract class VectorStoreToLoadForwarding {
     @Param({"2048"})
     public int SIZE;
 
@@ -203,10 +203,10 @@ public abstract class VectorLoadToStoreForwarding {
     @Fork(value = 1, jvmArgsPrepend = {
         "-XX:+UseSuperWord"
     })
-    public static class VectorLoadToStoreForwardingSuperWord extends VectorLoadToStoreForwarding {}
+    public static class VectorStoreToLoadForwardingSuperWord extends VectorStoreToLoadForwarding {}
 
     @Fork(value = 1, jvmArgsPrepend = {
         "-XX:-UseSuperWord"
     })
-    public static class VectorLoadToStoreForwardingNoSuperWord extends VectorLoadToStoreForwarding {}
+    public static class VectorStoreToLoadForwardingNoSuperWord extends VectorStoreToLoadForwarding {}
 }
