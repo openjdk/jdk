@@ -231,16 +231,6 @@ public final class ZoneInfoFile {
         });
     }
 
-    private static void addOldMapping() {
-        for (var key : ZoneId.SHORT_IDS.keySet()) {
-            switch (key) {
-                case "EST" -> aliases.put("EST", "America/Panama");
-                case "MST" -> aliases.put("MST", "America/Phoenix");
-                default -> aliases.put(key, ZoneId.SHORT_IDS.get(key));
-            }
-        }
-    }
-
     /**
      * Loads the rules from a DateInputStream
      *
@@ -299,7 +289,9 @@ public final class ZoneInfoFile {
             }
         }
         // old us time-zone names
-        addOldMapping();
+        for (var key : ZoneId.SHORT_IDS.keySet()) {
+            aliases.put(key, ZoneId.SHORT_IDS.get(key));
+        }
     }
 
     /////////////////////////Ser/////////////////////////////////
