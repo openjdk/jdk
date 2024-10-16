@@ -839,7 +839,6 @@ ciMethod* ciMethod::resolve_invoke(ciKlass* caller, ciKlass* exact_receiver, boo
     // Don't return abstract methods because they aren't optimizable or interesting.
     return nullptr;
   }
-
   return result;
 }
 
