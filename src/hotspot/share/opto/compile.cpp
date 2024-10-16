@@ -796,9 +796,11 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
     JVMState* jvms = build_start_state(start(), tf());
     if ((jvms = cg->generate(jvms)) == nullptr) {
       assert(failure_reason() != nullptr, "expect reason for parse failure");
-      stringStream ss;
-      ss.print("method parse failed: %s", failure_reason());
-      record_method_not_compilable(ss.as_string());
+      if (strcmp(failure_reason(), ciEnv::old_method_reason()) != 0) {
+        stringStream ss;
+        ss.print("method parse failed: %s", failure_reason());
+        record_method_not_compilable(ss.as_string());
+      }
       return;
     }
     GraphKit kit(jvms);

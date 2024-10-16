@@ -931,10 +931,12 @@ JVMState* PredictedCallGenerator::generate(JVMState* jvms) {
   // Make the hot call:
   JVMState* new_jvms = _if_hit->generate(kit.sync_jvms());
   if (new_jvms == nullptr) {
+    if (kit.failing()) return nullptr;
     // Inline failed, so make a direct call.
     assert(_if_hit->is_inline(), "must have been a failed inline");
     CallGenerator* cg = CallGenerator::for_direct_call(_if_hit->method());
     new_jvms = cg->generate(kit.sync_jvms());
+    if (kit.failing()) return nullptr;
   }
   kit.add_exception_states_from(new_jvms);
   kit.set_jvms(new_jvms);

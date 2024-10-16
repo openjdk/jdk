@@ -578,7 +578,6 @@ Compilation::Compilation(AbstractCompiler* compiler, ciEnv* env, ciMethod* metho
 , _has_monitors(method->is_synchronized() || method->has_monitor_bytecodes())
 , _has_scoped_access(method->is_scoped())
 , _install_code(install_code)
-, _bailout_msg(nullptr)
 , _first_failure_details(nullptr)
 , _exception_info_list(nullptr)
 , _allocator(nullptr)
@@ -607,7 +606,9 @@ Compilation::Compilation(AbstractCompiler* compiler, ciEnv* env, ciMethod* metho
 
   compile_method();
   if (bailed_out()) {
-    _env->record_method_not_compilable(bailout_msg());
+    if (strcmp(bailout_msg(), ciEnv::old_method_reason()) != 0) {
+      _env->record_method_not_compilable(bailout_msg());
+    }
     if (is_profiling()) {
       // Compilation failed, create MDO, which would signal the interpreter
       // to start profiling on its own.
@@ -649,7 +650,7 @@ void Compilation::bailout(const char* msg) {
   if (!bailed_out()) {
     // keep first bailout message
     if (PrintCompilation || PrintBailouts) tty->print_cr("compilation bailout: %s", msg);
-    _bailout_msg = msg;
+    _env->record_failure(msg);
     if (CaptureBailoutInformation) {
       _first_failure_details = new CompilationFailureInfo(msg);
     }

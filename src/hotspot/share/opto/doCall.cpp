@@ -592,6 +592,7 @@ void Parse::do_call() {
     callee = C->optimize_virtual_call(method(), klass, holder, orig_callee,
                                       receiver_type, is_virtual,
                                       call_does_dispatch, vtable_index);  // out-parameters
+    if (failing()) return;
     speculative_receiver_type = receiver_type != nullptr ? receiver_type->speculative_type() : nullptr;
   }
 
@@ -1116,6 +1117,8 @@ ciMethod* Compile::optimize_virtual_call(ciMethod* caller, ciInstanceKlass* klas
   if (optimized_virtual_method != nullptr) {
     callee             = optimized_virtual_method;
     call_does_dispatch = false;
+  } else if (failing()) {
+    return nullptr;
   } else if (!UseInlineCaches && is_virtual && callee->is_loaded()) {
     // We can make a vtable call at this site
     vtable_index = callee->resolve_vtable_index(caller->holder(), holder);
@@ -1184,6 +1187,8 @@ ciMethod* Compile::optimize_inlining(ciMethod* caller, ciInstanceKlass* klass, c
     }
     return cha_monomorphic_target;
   }
+
+  if (failing()) return nullptr;
 
   // If the type is exact, we can still bind the method w/o a vcall.
   // (This case comes after CHA so we can see how much extra work it does.)

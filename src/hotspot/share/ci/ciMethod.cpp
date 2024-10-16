@@ -745,6 +745,7 @@ ciMethod* ciMethod::find_monomorphic_target(ciInstanceKlass* caller,
 
   // Redefinition support.
   if (this->is_old() || root_m->is_old() || target->is_old()) {
+    CURRENT_THREAD_ENV->record_failure(ciEnv::old_method_reason());
     return nullptr;
   }
 
@@ -827,6 +828,7 @@ ciMethod* ciMethod::resolve_invoke(ciKlass* caller, ciKlass* exact_receiver, boo
   if (m != get_Method()) {
     // Redefinition support.
     if (this->is_old() || m->is_old()) {
+      CURRENT_THREAD_ENV->record_failure(ciEnv::old_method_reason());
       return nullptr;
     }
 
