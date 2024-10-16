@@ -88,7 +88,7 @@ class RegionsTree : public VMATree {
 
   template<typename F> // F == bool(*)(CommittedMemoryRegion&)
   void visit_committed_regions(position start, size_t size, F func) {
-    size_t end = start + size;
+    size_t end = start + size + 1;
     size_t comm_size = 0;
     size_t base = start;
 

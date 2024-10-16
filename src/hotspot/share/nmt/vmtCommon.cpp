@@ -290,7 +290,7 @@ address ReservedMemoryRegion::thread_stack_uncommitted_bottom() const {
       // committed stack guard pages, skip them
       bottom = crgn.base() + crgn.size();
     } else {
-      assert(top == committed_top, "Sanity");
+      assert(top == committed_top, "Sanity, top=" INTPTR_FORMAT " , com-top=" INTPTR_FORMAT, p2i(top), p2i(committed_top));
       return false;;
     }
     return true;
@@ -359,7 +359,7 @@ public:
         if (stack_bottom + stack_size < committed_start + committed_size) {
           committed_size = stack_bottom + stack_size - committed_start;
         }
-        region->add_committed_region(committed_start, committed_size, ncs);
+        VirtualMemoryTracker::Instance::add_committed_region(committed_start, committed_size, ncs);
         DEBUG_ONLY(found_stack = true;)
       }
 #ifdef ASSERT

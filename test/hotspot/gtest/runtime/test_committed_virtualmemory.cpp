@@ -44,11 +44,8 @@ public:
     VirtualMemoryTracker::Instance::snapshot_thread_stacks();
 
     ReservedMemoryRegion rmr_found = VirtualMemoryTracker::Instance::tree()->find_reserved_region(stack_end);
-    ReservedMemoryRegion* rmr = &rmr_found;
-    ASSERT_TRUE(rmr != nullptr);
-
-    ASSERT_EQ(rmr->base(), stack_end);
-    ASSERT_EQ(rmr->size(), stack_size);
+    ASSERT_TRUE(rmr_found.is_valid());
+    ASSERT_EQ(rmr_found.base(), stack_end);
 
     int i = 0;
     address i_addr = (address)&i;
@@ -57,7 +54,6 @@ public:
     // stack grows downward
     address stack_top = stack_end + stack_size;
     bool found_stack_top = false;
-
     VirtualMemoryTracker::Instance::tree()->visit_committed_regions((VMATree::position)rmr_found.base(), rmr_found.size(), [&](const CommittedMemoryRegion& cmr) {
       if (cmr.base() + cmr.size() == stack_top) {
         EXPECT_TRUE(cmr.size() <= stack_size);
@@ -73,8 +69,8 @@ public:
 
     // stack and guard pages may be contiguous as one region
     ASSERT_TRUE(i >= 1);
-    ASSERT_TRUE(found_stack_top);
     ASSERT_TRUE(found_i_addr);
+    ASSERT_TRUE(found_stack_top);
   }
 
   static void check_covered_pages(address addr, size_t size, address base, size_t touch_pages, int* page_num) {
@@ -109,11 +105,12 @@ public:
     VirtualMemoryTracker::Instance::snapshot_thread_stacks();
 
     ReservedMemoryRegion rmr_found = VirtualMemoryTracker::Instance::tree()->find_reserved_region((address)base);
-    ReservedMemoryRegion* rmr = &rmr_found;
-    ASSERT_TRUE(rmr != nullptr);
+    ASSERT_TRUE(rmr_found.is_valid());
+    ASSERT_EQ(rmr_found.base(), (address)base);
+
 
     bool precise_tracking_supported = false;
-    VirtualMemoryTracker::Instance::tree()->visit_committed_regions((VMATree::position)rmr_found.base(), rmr_found.size(), [&](const CommittedMemoryRegion& cmr){
+    VirtualMemoryTracker::Instance::tree()->visit_committed_regions((VMATree::position)rmr_found.base(), size, [&](const CommittedMemoryRegion& cmr){
       if (cmr.size() == size) {
         return false;
       } else {
@@ -232,7 +229,7 @@ public:
   }
 };
 
-TEST_VM(CommittedVirtualMemoryTracker, test_committed_virtualmemory_region) {
+TEST_VM(NMTCommittedVirtualMemoryTracker, test_committed_virtualmemory_region) {
   //  This tests the VM-global NMT facility. The test must *not* modify global state,
   //  since that interferes with other tests!
   // The gtestLauncher are called with and without -XX:NativeMemoryTracking during jtreg-controlled
@@ -249,9 +246,7 @@ TEST_VM(CommittedVirtualMemoryTracker, test_committed_virtualmemory_region) {
 }
 
 #if !defined(_WINDOWS) && !defined(_AIX)
-TEST_VM(CommittedVirtualMemory, test_committed_in_range){
-  tty->print_cr("skipped due to VMATree.");
-  return;
+TEST_VM(NMTCommittedVirtualMemory, test_committed_in_range){
   CommittedVirtualMemoryTest::test_committed_in_range(1024, 1024);
   CommittedVirtualMemoryTest::test_committed_in_range(2, 1);
 }
