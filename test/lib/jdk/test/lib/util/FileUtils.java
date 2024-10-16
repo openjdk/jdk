@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 package jdk.test.lib.util;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
@@ -33,6 +34,7 @@ import java.lang.management.ManagementFactory;
 import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
@@ -415,7 +417,29 @@ public final class FileUtils {
         Files.write(path, lines);
     }
 
+    // Create a link from "junction" to the real path of "target"
+    public static boolean createDirectoryJunction(String junction, String target)
+        throws IOException
+    {
+        // Convert "target" to its real path
+        target = new File(target).getAbsolutePath().toString();
+
+        // Create a directory junction or a symbolic link
+        if (IS_WINDOWS) {
+            if (!nativeLibLoaded) {
+                System.loadLibrary("FileUtils");
+                nativeLibLoaded = true;
+            }
+            return createWinDirectoryJunction(junction, target);
+        } else {
+            Files.createSymbolicLink(Path.of(junction), Path.of(target));
+            return Files.exists(Path.of(junction), LinkOption.NOFOLLOW_LINKS);
+        }
+    }
+
     private static native long getWinProcessHandleCount();
+    private static native boolean createWinDirectoryJunction(String junction,
+        String target) throws IOException;
 
     // Possible command locations and arguments
     static String[][] lsCommands = new String[][] {
