@@ -38,6 +38,7 @@ import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.Functional.ThrowingConsumer;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.PackageTest;
+import static jdk.jpackage.test.RunnablePackageTest.Action.CREATE_AND_UNPACK;
 import jdk.jpackage.test.TKit;
 
 /*
@@ -58,12 +59,12 @@ public final class InOutPathTest {
 
         for (boolean appImage : List.of(true, false)) {
             data.addAll(List.of(new Object[][]{
-                {appImage, wrap(InOutPathTest::outputDirInInputDir)},
-                {appImage, wrap(InOutPathTest::tempDirInInputDir)},
+                {appImage, wrap(InOutPathTest::outputDirInInputDir, "--dest")},
+                {appImage, wrap(InOutPathTest::tempDirInInputDir, "--temp")},
                 {appImage, wrap(cmd -> {
                     outputDirInInputDir(cmd);
                     tempDirInInputDir(cmd);
-                })},
+                }, "--dest and --temp")},
             }));
         }
 
@@ -80,13 +81,17 @@ public final class InOutPathTest {
         runTest(appImage, configure);
     }
 
-    private static Envelope wrap(ThrowingConsumer<JPackageCommand> v) {
-        return new Envelope(v);
+    private static Envelope wrap(ThrowingConsumer<JPackageCommand> v, String label) {
+        return new Envelope(v, label);
     }
 
     private static void runTest(boolean appImage,
             ThrowingConsumer<JPackageCommand> configure) throws Throwable {
         ThrowingConsumer<JPackageCommand> configureWrapper = cmd -> {
+            // Make sure the input directory is empty in every test run. 
+            // This is needed because jpackage output directories in this test 
+            // are subdirectories of the input directory.
+            cmd.setInputToEmptyDirectory();
             configure.accept(cmd);
             if (cmd.hasArgument("--temp")) {
                 // If temp directory specified always create Java runtime to
@@ -107,7 +112,7 @@ public final class InOutPathTest {
                     .configureHelloApp(JAR_NAME + ":")
                     .addInitializer(configureWrapper)
                     .addInstallVerifier(InOutPathTest::verifyAppImage)
-                    .run();
+                    .run(CREATE_AND_UNPACK);
         }
     }
 
@@ -126,8 +131,8 @@ public final class InOutPathTest {
     }
 
     private static void verifyAppImage(JPackageCommand cmd) throws IOException {
-        final Path rootDir = cmd.isImagePackageType() ? cmd.outputBundle() : cmd.
-                pathToUnpackedPackageFile(cmd.appInstallationDirectory());
+        final Path rootDir = cmd.isImagePackageType() ? cmd.outputBundle() : cmd.pathToUnpackedPackageFile(
+                cmd.appInstallationDirectory());
         final Path appDir = ApplicationLayout.platformAppImage().resolveAt(
                 rootDir).appDirectory();
 
@@ -149,8 +154,14 @@ public final class InOutPathTest {
         }
     }
 
-    private final static record Envelope(ThrowingConsumer<JPackageCommand> value) {
-
+    private final static record Envelope(ThrowingConsumer<JPackageCommand> value, String label) {
+        @Override
+        public String toString() {
+            // Will produce the same test description for the same label every
+            // time it's executed.
+            // The test runner will keep the same test output directory.
+            return label;
+        }
     }
 
     private final boolean appImage;
