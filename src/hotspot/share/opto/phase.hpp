@@ -58,6 +58,7 @@ public:
     Coalesce,                         // Coalescing copies
     Ideal_Loop,                       // Find idealized trip-counted loops
     Macro_Expand,                     // Expand macro nodes
+    Lower,                            // Backend-dependent Ideal node lowering
     Peephole,                         // Apply peephole optimizations
     Vector,
     Output,
@@ -88,6 +89,7 @@ public:
       _t_iterGVN2,
       _t_macroExpand,
       _t_barrierExpand,
+      _t_lower,
       _t_graphReshaping,
     _t_matcher,
       _t_postselect_cleanup,

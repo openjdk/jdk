@@ -2458,6 +2458,17 @@ void Compile::Optimize() {
     if (failing()) return;
   }
 
+  // Lower nodes and match backend-specific patterns with Ideal nodes
+  {
+    TracePhase tp("lower", &timers[_t_lower]);
+    print_method(PHASE_BEFORE_LOWERING, 3);
+
+    PhaseLowering lower(&igvn);
+    lower.lower();
+
+    print_method(PHASE_AFTER_LOWERING, 2);
+  }
+
   DEBUG_ONLY( _modified_nodes = nullptr; )
 
   assert(igvn._worklist.size() == 0, "not empty");
