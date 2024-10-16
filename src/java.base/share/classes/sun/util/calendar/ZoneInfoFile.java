@@ -281,12 +281,11 @@ public final class ZoneInfoFile {
         if (USE_OLDMAPPING) {
             aliases.put("EST", "America/New_York");
             aliases.put("MST", "America/Denver");
-            aliases.put("HST", "Pacific/Honolulu");
         } else {
-            zones.put("EST", new ZoneInfo("EST", -18000000));
-            zones.put("MST", new ZoneInfo("MST", -25200000));
-            zones.put("HST", new ZoneInfo("HST", -36000000));
+            aliases.put("EST", "America/Panama");
+            aliases.put("MST", "America/Phoenix");
         }
+        aliases.put("HST", "Pacific/Honolulu");
     }
 
     public static boolean useOldMapping() {
