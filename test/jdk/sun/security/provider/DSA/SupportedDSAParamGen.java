@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
  * @run main/timeout=300 SupportedDSAParamGen 1024 160
  * @run main/timeout=300 SupportedDSAParamGen 2048 224
  * @run main/timeout=300 SupportedDSAParamGen 2048 256
+ * @run main/timeout=300 SupportedDSAParamGen 3072 256
  */
 import java.security.*;
 import java.security.spec.*;
