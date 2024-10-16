@@ -410,8 +410,9 @@ public abstract class HttpClient implements AutoCloseable {
         /**
          * Sets an authenticator to use for HTTP authentication.
          *
-         * @apiNote
-         * If a {@link HttpRequest} has an {@code Authorization} or {@code
+         * @implNote
+         * In the JDK built-in implementation of the {@code HttpClient},
+         * if a {@link HttpRequest} has an {@code Authorization} or {@code
          * Proxy-Authorization} header set then its value will be used and
          * the {@link Authenticator} will not be invoked for the corresponding
          * authentication.
