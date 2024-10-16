@@ -1962,9 +1962,14 @@ private:
   void vpermilps(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void vpermilpd(XMMRegister dst, XMMRegister src, int imm8, int vector_len);
   void vpermpd(XMMRegister dst, XMMRegister src, int imm8, int vector_len);
-  void evpermi2q(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
-  void evpermt2b(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void evpmultishiftqb(XMMRegister dst, XMMRegister ctl, XMMRegister src, int vector_len);
+  void evpermi2b(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void evpermi2w(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void evpermi2d(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void evpermi2q(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void evpermi2ps(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void evpermi2pd(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void evpermt2b(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
 
   void pause();
 

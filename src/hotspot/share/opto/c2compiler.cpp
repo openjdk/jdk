@@ -818,6 +818,7 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_VectorLoadMaskedOp:
   case vmIntrinsics::_VectorStoreOp:
   case vmIntrinsics::_VectorStoreMaskedOp:
+  case vmIntrinsics::_VectorSelectFromTwoVectorOp:
   case vmIntrinsics::_VectorGatherOp:
   case vmIntrinsics::_VectorScatterOp:
   case vmIntrinsics::_VectorReductionCoerced:

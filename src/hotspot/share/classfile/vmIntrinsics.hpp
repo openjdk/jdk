@@ -981,6 +981,17 @@ class methodHandle;
                                         "Ljdk/internal/vm/vector/VectorSupport$Vector;")                                                       \
    do_name(vector_ternary_op_name,     "ternaryOp")                                                                                            \
                                                                                                                                                \
+  do_intrinsic(_VectorSelectFromTwoVectorOp, jdk_internal_vm_vector_VectorSupport, vector_select_from_op_name, vector_select_from_op_sig, F_S) \
+   do_signature(vector_select_from_op_sig, "(Ljava/lang/Class;"                                                                                \
+                                            "Ljava/lang/Class;"                                                                                \
+                                            "I"                                                                                                \
+                                            "Ljdk/internal/vm/vector/VectorSupport$Vector;"                                                    \
+                                            "Ljdk/internal/vm/vector/VectorSupport$Vector;"                                                    \
+                                            "Ljdk/internal/vm/vector/VectorSupport$Vector;"                                                    \
+                                            "Ljdk/internal/vm/vector/VectorSupport$SelectFromTwoVector;)"                                      \
+                                            "Ljdk/internal/vm/vector/VectorSupport$Vector;")                                                   \
+   do_name(vector_select_from_op_name,     "selectFromTwoVectorOp")                                                                            \
+                                                                                                                                               \
   do_intrinsic(_VectorFromBitsCoerced, jdk_internal_vm_vector_VectorSupport, vector_frombits_coerced_name, vector_frombits_coerced_sig, F_S)   \
    do_signature(vector_frombits_coerced_sig, "(Ljava/lang/Class;"                                                                              \
                                                "Ljava/lang/Class;"                                                                             \
