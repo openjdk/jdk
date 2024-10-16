@@ -68,9 +68,6 @@ JAVA_FLAGS_SMALL := -XX:+UseSerialGC -Xms32M -Xmx512M -XX:TieredStopAtLevel=1
 BUILDJDK_JAVA_FLAGS_SMALL := -Xms32M -Xmx512M -XX:TieredStopAtLevel=1
 BUILD_JAVA_FLAGS := $(JAVA_FLAGS_BIG)
 
-# Express that testing needs additional dependencies
-TEST_DEPS :=
-
 ################################################################################
 # Hard-coded values copied from spec.gmk.in.
 X :=
