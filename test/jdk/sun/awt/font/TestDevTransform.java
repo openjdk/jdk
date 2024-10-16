@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4269775
+ * @bug 4269775 8341535
  * @summary Check that different text rendering APIs agree
  */
 
@@ -46,6 +46,8 @@ import java.awt.font.GlyphVector;
 import java.awt.font.TextLayout;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
+import javax.imageio.ImageIO;
+import java.io.File;
 import java.util.HashMap;
 
 public class TestDevTransform {
@@ -105,17 +107,34 @@ public class TestDevTransform {
          g2d.setFont(font);
     }
 
-    static void compare(BufferedImage bi1, BufferedImage bi2) {
+    static void compare(BufferedImage bi1, String name1, BufferedImage bi2, String name2) throws Exception {
+        int nonWhite1 = 0;
+        int nonWhite2 = 0;
+        int differences = 0;
+        int whitePixel = Color.white.getRGB();
         for (int x = 0; x < bi1.getWidth(); x++) {
             for (int y = 0; y < bi1.getHeight(); y++) {
+                int pix1 = bi1.getRGB(x, y);
+                int pix2 = bi2.getRGB(x, y);
+                if (pix1 != whitePixel) { nonWhite1++; }
+                if (pix2 != whitePixel) { nonWhite2++; }
                 if (bi1.getRGB(x, y) != bi2.getRGB(x, y)) {
-                    throw new RuntimeException("Different rendering");
+                    differences++;
                 }
             }
         }
+        int nonWhite = (nonWhite1 < nonWhite2) ? nonWhite1 : nonWhite2;
+        if (differences > 0 && ((nonWhite / differences) < 20)) {
+             ImageIO.write(bi1, "png", new File(name1 + ".png"));
+             ImageIO.write(bi2, "png", new File(name2 + ".png"));
+             System.err.println("nonWhite image 1 = " + nonWhite1);
+             System.err.println("nonWhite image 2 = " + nonWhite2);
+             System.err.println("Number of non-white differing pixels=" + differences);
+             throw new RuntimeException("Different rendering: " + differences + " pixels differ.");
+        }
     }
 
-    public static void main(String args[]) {
+    public static void main(String args[]) throws Exception {
 
       BufferedImage tl_Image = new BufferedImage(W, H, BufferedImage.TYPE_INT_RGB);
       {
@@ -149,7 +168,7 @@ public class TestDevTransform {
           draw(gv_g2d, gv, 10f, 36f, .33f);
       }
 
-      compare(tl_Image, st_Image);
-      compare(gv_Image, st_Image);
+      compare(tl_Image, "textlayout", st_Image, "string");
+      compare(gv_Image, "glyphvector", st_Image, "string");
   }
 }

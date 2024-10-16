@@ -163,6 +163,7 @@ public abstract sealed class AbstractPseudoInstruction
         protected final Label endScope;
 
         public AbstractLocalPseudo(int slot, Utf8Entry name, Utf8Entry descriptor, Label startScope, Label endScope) {
+            BytecodeHelpers.validateSlot(slot);
             this.slot = slot;
             this.name = name;
             this.descriptor = descriptor;
@@ -199,11 +200,8 @@ public abstract sealed class AbstractPseudoInstruction
                 return false;
             }
             int length = endBci - startBci;
-            b.writeU2(startBci);
-            b.writeU2(length);
-            b.writeIndex(name);
-            b.writeIndex(descriptor);
-            b.writeU2(slot());
+            b.writeU2U2(startBci, length);
+            b.writeU2U2U2(b.cpIndex(name), b.cpIndex(descriptor), slot());
             return true;
         }
     }

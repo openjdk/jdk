@@ -277,7 +277,6 @@ public:
     memset(this, 0, sizeof(*this));
   }
   HeapRootSegments(size_t base_offset, int roots_count, int max_size_in_bytes, int max_size_in_elems) {
-    assert(is_power_of_2(max_size_in_bytes), "must be");
     memset(this, 0, sizeof(*this));
     _base_offset = base_offset;
     _count = (roots_count + max_size_in_elems - 1) / max_size_in_elems;

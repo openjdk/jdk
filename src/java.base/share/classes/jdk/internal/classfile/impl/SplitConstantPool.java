@@ -34,7 +34,6 @@ import java.lang.classfile.ClassReader;
 import java.lang.classfile.BootstrapMethodEntry;
 import java.lang.classfile.attribute.BootstrapMethodsAttribute;
 import java.lang.classfile.constantpool.*;
-import java.util.Objects;
 
 import jdk.internal.constant.ConstantUtils;
 
@@ -87,20 +86,27 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
     @Override
     public PoolEntry entryByIndex(int index) {
         if (index <= 0 || index >= size()) {
-            throw new ConstantPoolException("Bad CP index: " + index);
+            throw badCP(index);
         }
         PoolEntry pe = (index < parentSize)
                ? parent.entryByIndex(index)
                : myEntries[index - parentSize];
         if (pe == null) {
-            throw new ConstantPoolException("Unusable CP index: " + index);
+            throw unusableCP(index);
         }
         return pe;
     }
 
+    private static ConstantPoolException badCP(int index) {
+        return new ConstantPoolException("Bad CP index: " + index);
+    }
+
+    private static ConstantPoolException unusableCP(int index) {
+        return new ConstantPoolException("Unusable CP index: " + index);
+    }
+
     @Override
     public <T extends PoolEntry> T entryByIndex(int index, Class<T> cls) {
-        Objects.requireNonNull(cls);
         return ClassReaderImpl.checkType(entryByIndex(index), index, cls);
     }
 
@@ -165,8 +171,10 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
     }
 
     private EntryMap map() {
+        int parentSize = this.parentSize;
+        var map = this.map;
         if (map == null) {
-            map = new EntryMap(Math.max(size, 1024), .75f);
+            this.map = map = new EntryMap(Math.max(size, 1024), .75f);
 
             // Doing a full scan here yields fall-off-the-cliff performance results,
             // especially if we only need a few entries that are already
@@ -203,8 +211,10 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
     }
 
     private EntryMap bsmMap() {
+        int bsmSize = this.bsmSize;
+        var bsmMap = this.bsmMap;
         if (bsmMap == null) {
-            bsmMap = new EntryMap(Math.max(bsmSize, 16), .75f);
+            this.bsmMap = bsmMap = new EntryMap(Math.max(bsmSize, 16), .75f);
             for (int i=0; i<parentBsmSize; i++) {
                 BootstrapMethodEntryImpl bsm = parent.bootstrapMethodEntry(i);
                 bsmMap.put(bsm.hash, bsm.index);
