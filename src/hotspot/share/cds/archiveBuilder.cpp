@@ -859,6 +859,12 @@ void ArchiveBuilder::make_klasses_shareable() {
           type = "bad";
           assert(0, "shouldn't happen");
         }
+        if (CDSConfig::is_dumping_invokedynamic()) {
+          assert(HeapShared::is_archivable_hidden_klass(ik), "sanity");
+        } else {
+          // Legacy CDS support for lambda proxies
+          assert(HeapShared::is_lambda_proxy_klass(ik), "sanity");
+        }
       } else if (ik->is_shared_boot_class()) {
         type = "boot";
         ADD_COUNT(num_boot_klasses);

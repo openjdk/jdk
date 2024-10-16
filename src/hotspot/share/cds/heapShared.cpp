@@ -443,8 +443,13 @@ bool HeapShared::is_lambda_proxy_klass(InstanceKlass* ik) {
   return ik->is_hidden() && (ik->name()->index_of_at(0, "$$Lambda+", 9) > 0);
 }
 
+bool HeapShared::is_string_concat_klass(InstanceKlass* ik) {
+  return ik->is_hidden() && ik->name()->starts_with("java/lang/String$$StringConcat");
+}
+
 bool HeapShared::is_archivable_hidden_klass(InstanceKlass* ik) {
-  return CDSConfig::is_dumping_invokedynamic() && (is_lambda_form_klass(ik) || is_lambda_proxy_klass(ik));
+  return CDSConfig::is_dumping_invokedynamic() &&
+    (is_lambda_form_klass(ik) || is_lambda_proxy_klass(ik) || is_string_concat_klass(ik));
 }
 
 void HeapShared::copy_aot_initialized_mirror(Klass* orig_k, oop orig_mirror, oop m) {
