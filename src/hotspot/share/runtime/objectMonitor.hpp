@@ -48,15 +48,19 @@ class ContinuationWrapper;
 
 class ObjectWaiter : public CHeapObj<mtThread> {
  public:
-  enum TStates { TS_UNDEF, TS_READY, TS_RUN, TS_WAIT, TS_ENTER, TS_CXQ };
+  enum TStates : uint8_t { TS_UNDEF, TS_READY, TS_RUN, TS_WAIT, TS_ENTER, TS_CXQ };
   ObjectWaiter* volatile _next;
   ObjectWaiter* volatile _prev;
   JavaThread*     _thread;
   OopHandle      _vthread;
   ObjectMonitor* _monitor;
   uint64_t  _notifier_tid;
-  volatile int  _notified;
+  int         _recursions;
   volatile TStates TState;
+  volatile bool _notified;
+  bool           _is_wait;
+  bool        _at_reenter;
+  bool       _interrupted;
   bool            _active;    // Contention monitoring is enabled
  public:
   ObjectWaiter(JavaThread* current);
@@ -66,6 +70,10 @@ class ObjectWaiter : public CHeapObj<mtThread> {
   bool is_vthread()    { return _thread == nullptr; }
   uint8_t state()      { return TState; }
   ObjectMonitor* monitor() { return _monitor; }
+  bool is_monitorenter()   { return !_is_wait; }
+  bool is_wait()           { return _is_wait; }
+  bool notified()          { return _notified; }
+  bool at_reenter()        { return _at_reenter; }
   oop vthread();
   void wait_reenter_begin(ObjectMonitor *mon);
   void wait_reenter_end(ObjectMonitor *mon);
@@ -337,14 +345,13 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   // Simply set _next_om field to new_value.
   void set_next_om(ObjectMonitor* new_value);
 
-  int       waiters() const;
-
   int       contentions() const;
   void      add_to_contentions(int value);
   intx      recursions() const                                         { return _recursions; }
   void      set_recursions(size_t recursions);
 
   // JVM/TI GetObjectMonitorUsage() needs this:
+  int waiters() const;
   ObjectWaiter* first_waiter()                                         { return _WaitSet; }
   ObjectWaiter* next_waiter(ObjectWaiter* o)                           { return o->_next; }
   JavaThread* thread_of_waiter(ObjectWaiter* o)                        { return o->_thread; }
@@ -411,7 +418,9 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   void      ReenterI(JavaThread* current, ObjectWaiter* current_node);
   void      UnlinkAfterAcquire(JavaThread* current, ObjectWaiter* current_node);
 
-  bool      VThreadMonitorEnter(JavaThread* current);
+  bool      VThreadMonitorEnter(JavaThread* current, ObjectWaiter* node = nullptr);
+  void      VThreadWait(JavaThread* current, jlong millis);
+  bool      VThreadWaitReenter(JavaThread* current, ObjectWaiter* node, ContinuationWrapper& cont);
   void      VThreadEpilog(JavaThread* current, ObjectWaiter* node);
 
   enum class TryLockResult { Interference = -1, HasOwner = 0, Success = 1 };

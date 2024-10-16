@@ -142,7 +142,9 @@ inline void FreezeBase::relativize_interpreted_frame_metadata(const frame& f, co
   assert((intptr_t*)hf.at_relative(frame::interpreter_frame_last_sp_offset) == hf.unextended_sp(), "");
 
   // Make sure that locals is already relativized.
-  assert((*hf.addr_at(frame::interpreter_frame_locals_offset) == frame::sender_sp_offset + f.interpreter_frame_method()->max_locals() - 1), "");
+  DEBUG_ONLY(Method* m = f.interpreter_frame_method();)
+  DEBUG_ONLY(int max_locals = !m->is_native() ? m->max_locals() : m->size_of_parameters() + 2;)
+  assert((*hf.addr_at(frame::interpreter_frame_locals_offset) == frame::sender_sp_offset + max_locals - 1), "");
 
   // Make sure that monitor_block_top is already relativized.
   assert(hf.at_absolute(frame::interpreter_frame_monitor_block_top_offset) <= frame::interpreter_frame_initial_sp_offset, "");
@@ -213,7 +215,6 @@ template<typename FKind> frame ThawBase::new_stack_frame(const frame& hf, frame&
     // If caller is interpreted it already made room for the callee arguments
     int overlap = caller.is_interpreted_frame() ? ContinuationHelper::InterpretedFrame::stack_argsize(hf) : 0;
     const int fsize = (int)(ContinuationHelper::InterpretedFrame::frame_bottom(hf) - hf.unextended_sp() - overlap);
-    const int locals = hf.interpreter_frame_method()->max_locals();
     intptr_t* frame_sp = caller.unextended_sp() - fsize;
     intptr_t* fp = frame_sp + (hf.fp() - heap_sp);
     DEBUG_ONLY(intptr_t* unextended_sp = fp + *hf.addr_at(frame::interpreter_frame_last_sp_offset);)
@@ -223,7 +224,9 @@ template<typename FKind> frame ThawBase::new_stack_frame(const frame& hf, frame&
     // we need to set the locals so that the caller of new_stack_frame() can call
     // ContinuationHelper::InterpretedFrame::frame_bottom
     intptr_t locals_offset = *hf.addr_at(frame::interpreter_frame_locals_offset);
-    assert((int)locals_offset == frame::sender_sp_offset + locals - 1, "");
+    DEBUG_ONLY(Method* m = hf.interpreter_frame_method();)
+    DEBUG_ONLY(const int max_locals = !m->is_native() ? m->max_locals() : m->size_of_parameters() + 2;)
+    assert((int)locals_offset == frame::sender_sp_offset + max_locals - 1, "");
     // copy relativized locals from the heap frame
     *f.addr_at(frame::interpreter_frame_locals_offset) = locals_offset;
     return f;
@@ -248,7 +251,7 @@ template<typename FKind> frame ThawBase::new_stack_frame(const frame& hf, frame&
       // we need to recreate a "real" frame pointer, pointing into the stack
       fp = frame_sp + FKind::size(hf) - frame::sender_sp_offset;
     } else {
-      fp = FKind::stub
+      fp = FKind::stub || FKind::native
         ? frame_sp + fsize - frame::sender_sp_offset // fp always points to the address below the pushed return pc. We need correct address.
         : *(intptr_t**)(hf.sp() - frame::sender_sp_offset); // we need to re-read fp because it may be an oop and we might have fixed the frame.
     }

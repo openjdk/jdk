@@ -112,6 +112,16 @@ final class VirtualThread extends BaseVirtualThread {
      *   BLOCKED -> UNBLOCKED      // unblocked, may be scheduled to continue
      * UNBLOCKED -> RUNNING        // continue execution after blocked on monitor enter
      *
+     *   RUNNING -> WAITING        // transitional state during wait on monitor
+     *   WAITING -> WAITED         // waiting on monitor
+     *    WAITED -> BLOCKED        // notified, waiting to be unblocked by monitor owner
+     *    WAITED -> UNBLOCKED      // timed-out/interrupted
+     *
+     *       RUNNING -> TIMED_WAITING   // transition state during timed-waiting on monitor
+     * TIMED_WAITING -> TIMED_WAITED    // timed-waiting on monitor
+     *  TIMED_WAITED -> BLOCKED         // notified, waiting to be unblocked by monitor owner
+     *  TIMED_WAITED -> UNBLOCKED       // timed-out/interrupted
+     *
      *  RUNNING -> YIELDING        // Thread.yield
      * YIELDING -> YIELDED         // cont.yield successful, may be scheduled to continue
      * YIELDING -> RUNNING         // cont.yield failed
@@ -139,6 +149,12 @@ final class VirtualThread extends BaseVirtualThread {
     private static final int BLOCKED   = 13;        // unmounted
     private static final int UNBLOCKED = 14;        // unmounted but runnable
 
+    // monitor wait/timed-wait
+    private static final int WAITING       = 15;
+    private static final int WAIT          = 16;    // waiting in Object.wait
+    private static final int TIMED_WAITING = 17;
+    private static final int TIMED_WAIT    = 18;    // waiting in timed-Object.wait
+
     private static final int TERMINATED = 99;  // final state
 
     // can be suspended from scheduling when unmounted
@@ -155,6 +171,14 @@ final class VirtualThread extends BaseVirtualThread {
 
     // next virtual thread on the list of virtual threads waiting to be unblocked
     private volatile VirtualThread next;
+
+    // notified by Object.notify/notifyAll while waiting in Object.wait
+    private volatile boolean notified;
+
+    // timed-wait support
+    private long waitTimeout;
+    private byte timedWaitNonce;
+    private volatile Future<?> waitTimeoutTask;
 
     // carrier thread when mounted, accessed by VM
     private volatile Thread carrierThread;
@@ -608,6 +632,44 @@ final class VirtualThread extends BaseVirtualThread {
             return;
         }
 
+        // Object.wait
+        if (s == WAITING || s == TIMED_WAITING) {
+            byte nonce;
+            int newState;
+            if (s == WAITING) {
+                nonce = 0;  // not used
+                setState(newState = WAIT);
+            } else {
+                // synchronize with timeout task (previous timed-wait may be running)
+                synchronized (timedWaitLock()) {
+                    nonce = ++timedWaitNonce;
+                    setState(newState = TIMED_WAIT);
+                }
+            }
+
+            // may have been notified while in transition to wait state
+            if (notified && compareAndSetState(newState, BLOCKED)) {
+                // may have even been unblocked already
+                if (blockPermit && compareAndSetState(BLOCKED, UNBLOCKED)) {
+                    submitRunContinuation();
+                }
+                return;
+            }
+
+            // may have been interrupted while in transition to wait state
+            if (interrupted && compareAndSetState(newState, UNBLOCKED)) {
+                submitRunContinuation();
+                return;
+            }
+
+            // schedule wakeup
+            if (newState == TIMED_WAIT) {
+                assert waitTimeout > 0;
+                waitTimeoutTask = schedule(() -> waitTimeoutExpired(nonce), waitTimeout, MILLISECONDS);
+            }
+            return;
+        }
+
         assert false;
     }
 
@@ -900,6 +962,58 @@ final class VirtualThread extends BaseVirtualThread {
     }
 
     /**
+     * Invoked by timer thread when wait timeout for virtual thread has expired.
+     * If the virtual thread is in timed-wait then this method will unblock the thread
+     * and submit its task so that it continues and attempts to reenter the monitor.
+     * This method does nothing if the thread has been woken by notify or interrupt.
+     */
+    private void waitTimeoutExpired(byte nounce) {
+        assert !Thread.currentThread().isVirtual();
+        for (;;) {
+            boolean unblocked = false;
+            synchronized (timedWaitLock()) {
+                if (nounce != timedWaitNonce) {
+                    // this timeout task is for a past timed-wait
+                    return;
+                }
+                int s = state();
+                if (s == TIMED_WAIT) {
+                    unblocked = compareAndSetState(TIMED_WAIT, UNBLOCKED);
+                } else if (s != (TIMED_WAIT | SUSPENDED)) {
+                    // notified or interrupted, no longer waiting
+                    return;
+                }
+            }
+            if (unblocked) {
+                submitRunContinuation();
+                return;
+            }
+            // need to retry when thread is suspended in time-wait
+            Thread.yield();
+        }
+    }
+
+    /**
+     * Invoked by Object.wait to cancel the wait timer.
+     */
+    void cancelWaitTimeout() {
+        assert Thread.currentThread() == this;
+        Future<?> timeoutTask = this.waitTimeoutTask;
+        if (timeoutTask != null) {
+            // Pin the continuation to prevent the virtual thread from unmounting
+            // when there is contention removing the task. This avoids deadlock that
+            // could arise due to carriers and virtual threads contending for a
+            // lock on the delay queue.
+            Continuation.pin();
+            try {
+                timeoutTask.cancel(false);
+            } finally {
+                Continuation.unpin();
+            }
+        }
+    }
+
+    /**
      * Attempts to yield the current virtual thread (Thread.yield).
      */
     void tryYield() {
@@ -1028,6 +1142,13 @@ final class VirtualThread extends BaseVirtualThread {
 
             // make available parking permit, unpark thread if parked
             unpark();
+
+            // if thread is waiting in Object.wait then schedule to try to reenter
+            int s = state();
+            if ((s == WAIT || s == TIMED_WAIT) && compareAndSetState(s, UNBLOCKED)) {
+                submitRunContinuation();
+            }
+
         } else {
             interrupted = true;
             carrierThread.setInterrupt();
@@ -1095,14 +1216,18 @@ final class VirtualThread extends BaseVirtualThread {
                 return Thread.State.RUNNABLE;
             case PARKING:
             case TIMED_PARKING:
+            case WAITING:
+            case TIMED_WAITING:
             case YIELDING:
                 // runnable, in transition
                 return Thread.State.RUNNABLE;
             case PARKED:
             case PINNED:
+            case WAIT:
                 return Thread.State.WAITING;
             case TIMED_PARKED:
             case TIMED_PINNED:
+            case TIMED_WAIT:
                 return Thread.State.TIMED_WAITING;
             case BLOCKING:
             case BLOCKED:
@@ -1152,13 +1277,13 @@ final class VirtualThread extends BaseVirtualThread {
             case RUNNING, PINNED, TIMED_PINNED -> {
                 return null;   // mounted
             }
-            case PARKED, TIMED_PARKED, BLOCKED -> {
+            case PARKED, TIMED_PARKED, BLOCKED, WAIT, TIMED_WAIT -> {
                 // unmounted, not runnable
             }
             case UNPARKED, UNBLOCKED, YIELDED -> {
                 // unmounted, runnable
             }
-            case PARKING, TIMED_PARKING, BLOCKING, YIELDING -> {
+            case PARKING, TIMED_PARKING, BLOCKING, YIELDING, WAITING, TIMED_WAITING -> {
                 return null;  // in transition
             }
             default -> throw new InternalError("" + initialState);
@@ -1190,6 +1315,11 @@ final class VirtualThread extends BaseVirtualThread {
             case BLOCKED -> {
                 // resubmit if unblocked while suspended
                 yield blockPermit && compareAndSetState(BLOCKED, UNBLOCKED);
+            }
+            case WAIT, TIMED_WAIT -> {
+                // resubmit if notified or interrupted while waiting (Object.wait)
+                // waitTimeoutExpired will retry if the timed expired when suspended
+                yield (notified || interrupted) && compareAndSetState(initialState, UNBLOCKED);
             }
             default -> throw new InternalError();
         };
@@ -1283,6 +1413,14 @@ final class VirtualThread extends BaseVirtualThread {
     private Object carrierThreadAccessLock() {
         // return interruptLock as unmount has to coordinate with interrupt
         return interruptLock;
+    }
+
+    /**
+     * Returns a lock object to coordinating timed-wait setup and timeout handling.
+     */
+    private Object timedWaitLock() {
+        // use this object for now to avoid the overhead of introducing another lock
+        return runContinuation;
     }
 
     /**

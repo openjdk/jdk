@@ -1049,7 +1049,10 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
    // It is enough that the pc() points into the right code
    // segment. It does not have to be the correct return pc.
-   __ set_last_Java_frame(rsp, rbp, (address) __ pc(), rscratch1);
+   // For convenience we use the pc we want to resume to in
+   // case of preemption on Object.wait.
+   Label native_return;
+   __ set_last_Java_frame(rsp, rbp, native_return, rscratch1);
 #endif // _LP64
 
   // change thread state
@@ -1069,10 +1072,14 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ movl(Address(thread, JavaThread::thread_state_offset()),
           _thread_in_native);
 
+  __ push_cont_fastpath();
+
   // Call the native method.
   __ call(rax);
   // 32: result potentially in rdx:rax or ST0
   // 64: result potentially in rax or xmm0
+
+  __ pop_cont_fastpath();
 
   // Verify or restore cpu control state after JNI call
   __ restore_cpu_control_state_after_jni(rscratch1);
@@ -1097,10 +1104,10 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     Label push_double;
     ExternalAddress float_handler(AbstractInterpreter::result_handler(T_FLOAT));
     ExternalAddress double_handler(AbstractInterpreter::result_handler(T_DOUBLE));
-    __ cmpptr(Address(rbp, (frame::interpreter_frame_oop_temp_offset + 1)*wordSize),
+    __ cmpptr(Address(rbp, (frame::interpreter_frame_result_handler_offset)*wordSize),
               float_handler.addr(), noreg);
     __ jcc(Assembler::equal, push_double);
-    __ cmpptr(Address(rbp, (frame::interpreter_frame_oop_temp_offset + 1)*wordSize),
+    __ cmpptr(Address(rbp, (frame::interpreter_frame_result_handler_offset)*wordSize),
               double_handler.addr(), noreg);
     __ jcc(Assembler::notEqual, L);
     __ bind(push_double);
@@ -1169,6 +1176,24 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
   // change thread state
   __ movl(Address(thread, JavaThread::thread_state_offset()), _thread_in_Java);
+
+#ifdef _LP64
+  if (LockingMode != LM_LEGACY) {
+    // Check preemption for Object.wait()
+    Label not_preempted;
+    __ movptr(rscratch1, Address(r15_thread, JavaThread::preempt_alternate_return_offset()));
+    __ cmpptr(rscratch1, NULL_WORD);
+    __ jccb(Assembler::equal, not_preempted);
+    __ movptr(Address(r15_thread, JavaThread::preempt_alternate_return_offset()), NULL_WORD);
+    __ jmp(rscratch1);
+    __ bind(native_return);
+    __ restore_after_resume(true /* is_native */);
+    __ bind(not_preempted);
+  } else {
+    // any pc will do so just use this one for LM_LEGACY to keep code together.
+    __ bind(native_return);
+  }
+#endif // _LP64
 
   // reset_last_Java_frame
   __ reset_last_Java_frame(thread, true);

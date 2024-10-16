@@ -327,6 +327,7 @@ class JavaThread: public Thread {
   bool                  _is_disable_suspend;             // JVMTI suspend is temporarily disabled; used on current thread only
   bool                  _VTMS_transition_mark;           // used for sync between VTMS transitions and disablers
   bool                  _pending_jvmti_unmount_event;    // When preempting we post unmount event at unmount end rather than start
+  bool                  _on_monitor_waited_event;        // Avoid callee arg processing for enterSpecial when posting waited event
   ObjectMonitor*        _contended_entered_monitor;      // Monitor por pending monitor_contended_entered callback
 #ifdef ASSERT
   bool                  _is_VTMS_transition_disabler;    // thread currently disabled VTMS transitions
@@ -486,10 +487,16 @@ class JavaThread: public Thread {
   // set this field so that in the preempt stub we call thaw again
   // instead of unmounting.
   bool _preemption_cancelled;
+  // For Object.wait() we set this field to know if we need to
+  // throw IE at the end of thawing before returning to Java.
+  bool _pending_interrupted_exception;
 
  public:
   bool preemption_cancelled()           { return _preemption_cancelled; }
   void set_preemption_cancelled(bool b) { _preemption_cancelled = b; }
+
+  bool pending_interrupted_exception()           { return _pending_interrupted_exception; }
+  void set_pending_interrupted_exception(bool b) { _pending_interrupted_exception = b; }
 
   bool preempting()           { return _preempt_alternate_return != nullptr; }
   void set_preempt_alternate_return(address val) { _preempt_alternate_return = val; }
@@ -719,6 +726,9 @@ private:
 
   bool pending_jvmti_unmount_event()             { return _pending_jvmti_unmount_event; }
   void set_pending_jvmti_unmount_event(bool val) { _pending_jvmti_unmount_event = val; }
+
+  bool on_monitor_waited_event()             { return _on_monitor_waited_event; }
+  void set_on_monitor_waited_event(bool val) { _on_monitor_waited_event = val; }
 
   bool pending_contended_entered_event()         { return _contended_entered_monitor != nullptr; }
   ObjectMonitor* contended_entered_monitor()     { return _contended_entered_monitor; }
@@ -1316,6 +1326,15 @@ class NoPreemptMark {
     if (_ce != nullptr) _unpin = _ce->pin();
   }
   ~NoPreemptMark() { if (_unpin) _ce->unpin(); }
+};
+
+class ThreadOnMonitorWaitedEvent {
+  JavaThread* _thread;
+ public:
+  ThreadOnMonitorWaitedEvent(JavaThread* thread) : _thread(thread) {
+    JVMTI_ONLY(_thread->set_on_monitor_waited_event(true);)
+  }
+  ~ThreadOnMonitorWaitedEvent() { JVMTI_ONLY(_thread->set_on_monitor_waited_event(false);) }
 };
 
 #endif // SHARE_RUNTIME_JAVATHREAD_HPP

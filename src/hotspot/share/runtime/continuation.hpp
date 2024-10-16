@@ -62,6 +62,11 @@ enum freeze_result {
 class Continuation : AllStatic {
 public:
 
+  enum preempt_kind {
+    freeze_on_monitorenter = 1,
+    freeze_on_wait         = 2
+  };
+
   enum thaw_kind {
     thaw_top = 0,
     thaw_return_barrier = 1,

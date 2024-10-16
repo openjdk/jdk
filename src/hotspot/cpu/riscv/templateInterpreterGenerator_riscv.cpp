@@ -1125,6 +1125,8 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // result handler is in x10
   // set result handler
   __ mv(result_handler, x10);
+  __ sd(x10, Address(fp, frame::interpreter_frame_result_handler_offset * wordSize));
+
   // pass mirror handle if static call
   {
     Label L;
@@ -1163,6 +1165,8 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
   // It is enough that the pc() points into the right code
   // segment. It does not have to be the correct return pc.
+  // For convenience we use the pc we want to resume to in
+  // case of preemption on Object.wait.
   Label native_return;
   __ set_last_Java_frame(esp, fp, native_return, x30);
 
@@ -1184,9 +1188,13 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
   __ sw(t0, Address(t1));
 
+  __ push_cont_fastpath();
+
   // Call the native method.
   __ jalr(x28);
-  __ bind(native_return);
+
+  __ pop_cont_fastpath();
+
   __ get_method(xmethod);
   // result potentially in x10 or f10
 
@@ -1252,6 +1260,21 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ mv(t0, _thread_in_Java);
   __ sw(t0, Address(xthread, JavaThread::thread_state_offset()));
 
+  if (LockingMode != LM_LEGACY) {
+    // Check preemption for Object.wait()
+    Label not_preempted;
+    __ ld(t0, Address(xthread, JavaThread::preempt_alternate_return_offset()));
+    __ beqz(t0, not_preempted);
+    __ sd(zr, Address(xthread, JavaThread::preempt_alternate_return_offset()));
+    __ jr(t0);
+    __ bind(native_return);
+    __ restore_after_resume(true /* is_native */);
+    __ bind(not_preempted);
+  } else {
+    // any pc will do so just use this one for LM_LEGACY to keep code together.
+    __ bind(native_return);
+  }
+
   // reset_last_Java_frame
   __ reset_last_Java_frame(true);
 
@@ -1270,6 +1293,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   {
     Label no_oop;
     __ la(t, ExternalAddress(AbstractInterpreter::result_handler(T_OBJECT)));
+    __ ld(result_handler, Address(fp, frame::interpreter_frame_result_handler_offset * wordSize));
     __ bne(t, result_handler, no_oop);
     // Unbox oop result, e.g. JNIHandles::resolve result.
     __ pop(ltos);

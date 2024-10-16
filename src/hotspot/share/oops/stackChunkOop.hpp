@@ -102,6 +102,7 @@ public:
   inline void set_object_waiter(ObjectWaiter* obj_waiter);
 
   inline ObjectMonitor* current_pending_monitor() const;
+  inline ObjectMonitor* current_waiting_monitor() const;
 
   inline oop cont() const;
   template<typename P>

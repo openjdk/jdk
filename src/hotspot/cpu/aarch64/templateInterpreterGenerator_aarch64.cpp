@@ -1348,6 +1348,8 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // result handler is in r0
   // set result handler
   __ mov(result_handler, r0);
+  __ str(r0, Address(rfp, frame::interpreter_frame_result_handler_offset * wordSize));
+
   // pass mirror handle if static call
   {
     Label L;
@@ -1383,9 +1385,10 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // pass JNIEnv
   __ add(c_rarg0, rthread, in_bytes(JavaThread::jni_environment_offset()));
 
-  // Set the last Java PC in the frame anchor to be the return address from
-  // the call to the native method: this will allow the debugger to
-  // generate an accurate stack trace.
+  // It is enough that the pc() points into the right code
+  // segment. It does not have to be the correct return pc.
+  // For convenience we use the pc we want to resume to in
+  // case of preemption on Object.wait.
   Label native_return;
   __ set_last_Java_frame(esp, rfp, native_return, rscratch1);
 
@@ -1406,9 +1409,13 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ lea(rscratch2, Address(rthread, JavaThread::thread_state_offset()));
   __ stlrw(rscratch1, rscratch2);
 
+  __ push_cont_fastpath();
+
   // Call the native method.
   __ blr(r10);
-  __ bind(native_return);
+
+  __ pop_cont_fastpath();
+
   __ get_method(rmethod);
   // result potentially in r0 or v0
 
@@ -1466,6 +1473,21 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ lea(rscratch2, Address(rthread, JavaThread::thread_state_offset()));
   __ stlrw(rscratch1, rscratch2);
 
+  if (LockingMode != LM_LEGACY) {
+    // Check preemption for Object.wait()
+    Label not_preempted;
+    __ ldr(rscratch1, Address(rthread, JavaThread::preempt_alternate_return_offset()));
+    __ cbz(rscratch1, not_preempted);
+    __ str(zr, Address(rthread, JavaThread::preempt_alternate_return_offset()));
+    __ br(rscratch1);
+    __ bind(native_return);
+    __ restore_after_resume(true /* is_native */);
+    __ bind(not_preempted);
+  } else {
+    // any pc will do so just use this one for LM_LEGACY to keep code together.
+    __ bind(native_return);
+  }
+
   // reset_last_Java_frame
   __ reset_last_Java_frame(true);
 
@@ -1484,6 +1506,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   {
     Label no_oop;
     __ adr(t, ExternalAddress(AbstractInterpreter::result_handler(T_OBJECT)));
+    __ ldr(result_handler, Address(rfp, frame::interpreter_frame_result_handler_offset*wordSize));
     __ cmp(t, result_handler);
     __ br(Assembler::NE, no_oop);
     // Unbox oop result, e.g. JNIHandles::resolve result.

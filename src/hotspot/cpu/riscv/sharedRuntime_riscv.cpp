@@ -1639,11 +1639,20 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   }
 
   // Change state to native (we save the return address in the thread, since it might not
-  // be pushed on the stack when we do a stack traversal).
-  // We use the same pc/oopMap repeatedly when we call out
+  // be pushed on the stack when we do a stack traversal). It is enough that the pc()
+  // points into the right code segment. It does not have to be the correct return pc.
+  // We use the same pc/oopMap repeatedly when we call out.
 
   Label native_return;
-  __ set_last_Java_frame(sp, noreg, native_return, t0);
+  if (LockingMode != LM_LEGACY && method->is_object_wait0()) {
+    // For convenience we use the pc we want to resume to in case of preemption on Object.wait.
+    __ set_last_Java_frame(sp, noreg, native_return, t0);
+  } else {
+    intptr_t the_pc = (intptr_t) __ pc();
+    oop_maps->add_gc_map(the_pc - start, map);
+
+    __ set_last_Java_frame(sp, noreg, __ pc(), t0);
+  }
 
   Label dtrace_method_entry, dtrace_method_entry_done;
   if (DTraceMethodProbes) {
@@ -1745,11 +1754,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   __ rt_call(native_func);
 
-  __ bind(native_return);
-
-  intptr_t return_pc = (intptr_t) __ pc();
-  oop_maps->add_gc_map(return_pc - start, map);
-
   // Verify or restore cpu control state after JNI call
   __ restore_cpu_control_state_after_jni(t0);
 
@@ -1799,6 +1803,18 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   __ membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
   __ sw(t0, Address(t1));
   __ bind(after_transition);
+
+  if (LockingMode != LM_LEGACY && method->is_object_wait0()) {
+    // Check preemption for Object.wait()
+    __ ld(t0, Address(xthread, JavaThread::preempt_alternate_return_offset()));
+    __ beqz(t0, native_return);
+    __ sd(zr, Address(xthread, JavaThread::preempt_alternate_return_offset()));
+    __ jr(t0);
+    __ bind(native_return);
+
+    intptr_t the_pc = (intptr_t) __ pc();
+    oop_maps->add_gc_map(the_pc - start, map);
+  }
 
   Label reguard;
   Label reguard_done;

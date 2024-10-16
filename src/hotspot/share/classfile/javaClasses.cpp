@@ -2024,6 +2024,8 @@ int java_lang_VirtualThread::_continuation_offset;
 int java_lang_VirtualThread::_state_offset;
 int java_lang_VirtualThread::_next_offset;
 int java_lang_VirtualThread::_onWaitingList_offset;
+int java_lang_VirtualThread::_notified_offset;
+int java_lang_VirtualThread::_waitTimeout_offset;
 
 #define VTHREAD_FIELDS_DO(macro) \
   macro(static_vthread_scope_offset,       k, "VTHREAD_SCOPE",      continuationscope_signature, true);  \
@@ -2031,7 +2033,10 @@ int java_lang_VirtualThread::_onWaitingList_offset;
   macro(_continuation_offset,              k, "cont",               continuation_signature,      false); \
   macro(_state_offset,                     k, "state",              int_signature,               false); \
   macro(_next_offset,                      k, "next",               vthread_signature,           false); \
-  macro(_onWaitingList_offset,             k, "onWaitingList",      bool_signature,              false);
+  macro(_onWaitingList_offset,             k, "onWaitingList",      bool_signature,              false); \
+  macro(_notified_offset,                  k, "notified",           bool_signature,              false); \
+  macro(_waitTimeout_offset,               k, "waitTimeout",        long_signature,              false);
+
 
 void java_lang_VirtualThread::compute_offsets() {
   InstanceKlass* k = vmClasses::VirtualThread_klass();
@@ -2090,6 +2095,18 @@ bool java_lang_VirtualThread::set_onWaitingList(oop vthread, OopHandle& list_hea
   return false; // already on waiting list
 }
 
+void java_lang_VirtualThread::set_notified(oop vthread, jboolean value) {
+  vthread->bool_field_put_volatile(_notified_offset, value);
+}
+
+jlong java_lang_VirtualThread::waitTimeout(oop vthread) {
+  return vthread->long_field(_waitTimeout_offset);
+}
+
+void java_lang_VirtualThread::set_waitTimeout(oop vthread, jlong value) {
+  vthread->long_field_put(_waitTimeout_offset, value);
+}
+
 JavaThreadStatus java_lang_VirtualThread::map_state_to_thread_status(int state) {
   JavaThreadStatus status = JavaThreadStatus::NEW;
   switch (state & ~SUSPENDED) {
@@ -2104,6 +2121,8 @@ JavaThreadStatus java_lang_VirtualThread::map_state_to_thread_status(int state) 
     case YIELDING:
     case YIELDED:
     case UNBLOCKED:
+    case WAITING:
+    case TIMED_WAITING:
       status = JavaThreadStatus::RUNNABLE;
       break;
     case PARKED:
@@ -2117,6 +2136,12 @@ JavaThreadStatus java_lang_VirtualThread::map_state_to_thread_status(int state) 
     case BLOCKING:
     case BLOCKED:
       status = JavaThreadStatus::BLOCKED_ON_MONITOR_ENTER;
+      break;
+    case WAIT:
+      status = JavaThreadStatus::IN_OBJECT_WAIT;
+      break;
+    case TIMED_WAIT:
+      status = JavaThreadStatus::IN_OBJECT_WAIT_TIMED;
       break;
     case TERMINATED:
       status = JavaThreadStatus::TERMINATED;

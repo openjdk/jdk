@@ -2186,10 +2186,16 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   // points into the right code segment. It does not have to be the correct return pc.
   // We use the same pc/oopMap repeatedly when we call out
 
-  intptr_t the_pc = (intptr_t) __ pc();
-  oop_maps->add_gc_map(the_pc - start, map);
+  Label native_return;
+  if (LockingMode != LM_LEGACY && method->is_object_wait0()) {
+    // For convenience we use the pc we want to resume to in case of preemption on Object.wait.
+    __ set_last_Java_frame(rsp, noreg, native_return, rscratch1);
+  } else {
+    intptr_t the_pc = (intptr_t) __ pc();
+    oop_maps->add_gc_map(the_pc - start, map);
 
-  __ set_last_Java_frame(rsp, noreg, (address)the_pc, rscratch1);
+    __ set_last_Java_frame(rsp, noreg, __ pc(), rscratch1);
+  }
 
   // We have all of the arguments setup at this point. We must not touch any register
   // argument registers at this point (what if we save/restore them there are no oop?
@@ -2372,6 +2378,20 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   // change thread state
   __ movl(Address(r15_thread, JavaThread::thread_state_offset()), _thread_in_Java);
   __ bind(after_transition);
+
+  if (LockingMode != LM_LEGACY && method->is_object_wait0()) {
+    // Check preemption for Object.wait()
+    __ movptr(rscratch1, Address(r15_thread, JavaThread::preempt_alternate_return_offset()));
+    __ cmpptr(rscratch1, NULL_WORD);
+    __ jccb(Assembler::equal, native_return);
+    __ movptr(Address(r15_thread, JavaThread::preempt_alternate_return_offset()), NULL_WORD);
+    __ jmp(rscratch1);
+    __ bind(native_return);
+
+    intptr_t the_pc = (intptr_t) __ pc();
+    oop_maps->add_gc_map(the_pc - start, map);
+  }
+
 
   Label reguard;
   Label reguard_done;
