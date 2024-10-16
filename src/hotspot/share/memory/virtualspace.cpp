@@ -641,9 +641,7 @@ ReservedHeapSpace::ReservedHeapSpace(size_t size, size_t alignment, size_t page_
   guarantee(is_aligned(size, alignment), "set by caller");
 
   if (UseCompressedOops) {
-#ifndef _LP64
-    NOT_LP64(ShouldNotReachHere();)
-#else
+#ifdef _LP64
     initialize_compressed_heap(size, alignment, page_size);
     if (_size > size) {
       // We allocated heap with noaccess prefix.
@@ -651,6 +649,8 @@ ReservedHeapSpace::ReservedHeapSpace(size_t size, size_t alignment, size_t page_
       // if we had to try at arbitrary address.
       establish_noaccess_prefix();
     }
+#else
+    ShouldNotReachHere();
 #endif // _LP64
   } else {
     initialize(size, alignment, page_size, nullptr, false);
