@@ -25,7 +25,9 @@ package jdk.vm.ci.hotspot;
 import jdk.vm.ci.meta.Constant;
 
 /**
- * Marker interface for hotspot specific constants.
+ * A value in a space managed by Hotspot (e.g. heap or metaspace).
+ * Some of these values can be referenced with a compressed pointer
+ * instead of a full word-sized pointer.
  */
 public interface HotSpotConstant extends Constant {
 
@@ -42,8 +44,7 @@ public interface HotSpotConstant extends Constant {
     /**
      * Gets a compressed version of this uncompressed constant.
      *
-     * @throws IllegalArgumentException if this is a compressed constant
-     *         or this constant is not compressible
+     * @throws IllegalArgumentException if this constant is not compressible
      */
     Constant compress();
 
