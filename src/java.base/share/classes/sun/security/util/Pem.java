@@ -254,15 +254,15 @@ public class Pem {
         String footer = sb.toString();
         if (footer.length() < 14 || !footer.startsWith("-----END ") ||
             !footer.endsWith("-----")) {
-            throw new IOException("Illegal footer: " + footer);
+            throw new IllegalArgumentException("Illegal footer: " + footer);
         }
 
         // Verify the object type in the header and the footer are the same.
         String headerType = header.substring(11, header.length() - 5);
         String footerType = footer.substring(9, footer.length() - 5);
         if (!headerType.equals(footerType)) {
-            throw new IOException("Header and footer do not match: " +
-                headerType + " " + footerType);
+            throw new IllegalArgumentException("Header and footer do not " +
+                "match: " + headerType + " " + footerType);
         }
 
         return new PEMRecord(header, data);

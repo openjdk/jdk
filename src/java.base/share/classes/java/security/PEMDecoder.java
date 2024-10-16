@@ -40,7 +40,7 @@ import java.util.Base64;
 import java.util.Objects;
 
 /**
- * PEMDecoder is an immutable Privacy-Enhanced Mail (PEM) decoding class.
+ * {@code PEMDecoder} is an immutable Privacy-Enhanced Mail (PEM) decoding class.
  * PEM is a textual encoding used for storing and transferring security
  * objects, such as asymmetric keys, certificates, and certificate revocation
  * lists (CRL). Defined in RFC 1421 and RFC 7468, PEM consists of a
@@ -49,14 +49,14 @@ import java.util.Objects;
  * <p>
  * Decoding methods return a class that matches the data type and implements
  * {@link DEREncodable}.
- * If a return class is specified, an IllegalAlgorithmException is thrown if
- * data is not valid for the class.
+ * If a return class is specified, an {@link IllegalArgumentException}
+ * is thrown if data is not valid for the class.
  * <p>
- * When passing input data into {@code decode}, the application is responsible
- * for processing input data non-PEM text. All data before the PEM
- * header will be ignored.
+ * When passing input data into any {@code decode} methods, any non-PEM data
+ * prior to the PEM header will be ignored.  If that data is important to the
+ * application, it should be parsed before decoding.
  * <p>
- * A new immutable PEMDecoder instance is returned by
+ * A new immutable {@code PEMDecoder} instance is returned by
  * {@linkplain #withFactory} and/or {@linkplain #withDecryption}.  Configuring
  * an instance for decryption does not prevent decoding with unencrypted PEM.
  * Any encrypted PEM that does not use the configured password will cause an
@@ -64,7 +64,7 @@ import java.util.Objects;
  * {@link EncryptedPrivateKeyInfo} with encrypted PEM.  EncryptedPrivateKeyInfo
  * methods must be used to retrieve the {@link PrivateKey}.
  * <p>
- * PEMDecoder supports the follow types:
+ * {@code PEMDecoder} supports the follow types:
  * <pre>
  *     PRIVATE KEY, RSA PRIVATE KEY, PUBLIC KEY, CERTIFICATE, CRL, and
  *     ENCRYPTED PRIVATE KEY.
@@ -88,7 +88,8 @@ public final class PEMDecoder {
     private final static PEMDecoder PEM_DECODER = new PEMDecoder(null, null);
 
     /**
-     * Creates a immutable instance with a specific KeyFactory and/or password.
+     * Creates an immutable instance with a specific KeyFactory and/or
+     * password.
      * @param withFactory KeyFactory provider
      * @param withPassword char[] password for EncryptedPrivateKeyInfo
      *                    decryption
@@ -99,10 +100,10 @@ public final class PEMDecoder {
     }
 
     /**
-     * Returns an instance of PEMDecoder.  This instance may be repeatedly used
+     * Returns an instance of {@code PEMDecoder}.  This instance may be repeatedly used
      * to decode different PEM text.
      *
-     * @return returns a PEMDecoder
+     * @return returns a {@code PEMDecoder}
      */
     public static PEMDecoder of() {
         return PEM_DECODER;
@@ -194,7 +195,8 @@ public final class PEMDecoder {
     /**
      * Decodes and returns a {@link DEREncodable} from the given
      * {@code InputStream}.
-     * The method will read the {@code InputStream} until PEM data is
+     *
+     * <p>The method will read the {@code InputStream} until PEM data is
      * found or until the end of the stream.  Non-PEM data in the
      * {@code InputStream} before the PEM header will be ignored by the decoder.
      *
@@ -353,8 +355,13 @@ public final class PEMDecoder {
     }
 
     /**
-     * Configures and return a new PEMDecoder instance from the current instance
-     * that will use Factory classes from the specified Provider.
+     * Configures and returns a new {@code PEMDecoder} instance from the
+     * current instance that will use Factory classes from the specified
+     * {@link Provider}.  Any errors using the {@code provider} will occur
+     * during decoding.
+     *
+     * <p>If {@code params} is {@code null}, a new instance is returned with
+     * the default provider configuration.
      *
      * @param provider the Factory provider.
      * @return a new PEM decoder instance.
@@ -364,11 +371,12 @@ public final class PEMDecoder {
     }
 
     /**
-     * Returns a new PEMDecoder instance from the current instance configured
-     * to decrypt encrypted PEM data with given password.
+     * Returns a new {@code PEMDecoder} instance from the current instance
+     * configured to decrypt encrypted PEM data with given password.
      * Non-encrypted PEM may still be decoded from this instance.
      *
-     * @param password the password to decrypt encrypted PEM data.
+     * @param password the password to decrypt encrypted PEM data.  This array
+     *                 is cloned and stored in the new instance.
      * @return the decoder
      * @throws NullPointerException if password is null.
      */

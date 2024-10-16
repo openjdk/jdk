@@ -150,8 +150,8 @@ public final class PEMEncoder {
     public String encodeToString(DEREncodable de) {
         Objects.requireNonNull(de);
         return switch (de) {
-            case PublicKey pu -> build(null, pu.getEncoded());
-            case PrivateKey pr -> build(pr.getEncoded(), null);
+            case PublicKey pu -> buildKey(null, pu.getEncoded());
+            case PrivateKey pr -> buildKey(pr.getEncoded(), null);
             case KeyPair kp -> {
                 if (kp.getPublic() == null) {
                     throw new IllegalArgumentException("KeyPair does not " +
@@ -162,11 +162,13 @@ public final class PEMEncoder {
                     throw new IllegalArgumentException("KeyPair does not " +
                         "contain PrivateKey.");
                 }
-                yield build(kp.getPrivate().getEncoded(),
+                yield buildKey(kp.getPrivate().getEncoded(),
                     kp.getPublic().getEncoded());
             }
-            case X509EncodedKeySpec x -> build(null, x.getEncoded());
-            case PKCS8EncodedKeySpec p -> build(p.getEncoded(), null);
+            case X509EncodedKeySpec x ->
+                buildKey(null, x.getEncoded());
+            case PKCS8EncodedKeySpec p ->
+                buildKey(p.getEncoded(), null);
             case EncryptedPrivateKeyInfo epki -> {
                 try {
                     yield pemEncoded(new PEMRecord(
@@ -177,6 +179,10 @@ public final class PEMEncoder {
             }
             case X509Certificate c -> {
                 try {
+                    if (isEncrypted()) {
+                        throw new IllegalArgumentException("Certificates " +
+                            "cannot be encrypted");
+                    }
                     yield pemEncoded(new PEMRecord(PEMRecord.CERTIFICATE,
                         c.getEncoded()));
                 } catch (CertificateEncodingException e) {
@@ -185,6 +191,10 @@ public final class PEMEncoder {
             }
             case X509CRL crl -> {
                 try {
+                    if (isEncrypted()) {
+                        throw new IllegalArgumentException("CRLs cannot be " +
+                            "encrypted");
+                    }
                     yield pemEncoded(new PEMRecord(PEMRecord.X509_CRL,
                         crl.getEncoded()));
                 } catch (CRLException e) {
@@ -197,7 +207,7 @@ public final class PEMEncoder {
     }
 
     /**
-     * Encoded a given {@code DEREncodable} into PEM.
+     * Encodes a given {@code DEREncodable} into PEM.
      *
      * @param de the object that implements DEREncodable.
      * @return a PEM encoded byte[] of the given DEREncodable.
@@ -226,21 +236,28 @@ public final class PEMEncoder {
      * AlgorithmParameterSpec, Provider)} and use the returned object with
      * {@link #encode(DEREncodable)}.
      *
-     * @param password the password
+     * @param password sets the encryption password.  The array is cloned and
+     *                stored in the new instance.
      * @return a new PEMEncoder
      * @throws NullPointerException if password is null.
      */
     public PEMEncoder withEncryption(char[] password) {
         // PBEKeySpec clones the password
+        Objects.requireNonNull(password);
         return new PEMEncoder(new PBEKeySpec(password));
     }
 
     /**
      * Build PEM encoding.
      */
-    private String build(byte[] privateBytes, byte[] publicBytes) {
+    private String buildKey(byte[] privateBytes, byte[] publicBytes) {
         DerOutputStream out = new DerOutputStream();
         Cipher cipher;
+
+        if (privateBytes == null && publicBytes == null) {
+            throw new IllegalArgumentException("No encoded data given by the " +
+                "DEREncodable.");
+        }
 
         // If `keySpec` is non-null, then `key` hasn't been established.
         // Setting a `key' prevents repeated key generations operations.
@@ -297,19 +314,45 @@ public final class PEMEncoder {
 
         // X509 only
         if (publicBytes != null && privateBytes == null) {
+            if (publicBytes.length == 0) {
+                throw new IllegalArgumentException("No public key encoding " +
+                    "given by the DEREncodable.");
+            }
+
             return pemEncoded(new PEMRecord(PEMRecord.PUBLIC_KEY, publicBytes));
         }
+
         // PKCS8 only
         if (publicBytes == null && privateBytes != null) {
+            if (privateBytes.length == 0) {
+                throw new IllegalArgumentException("No private key encoding " +
+                    "given by the DEREncodable.");
+            }
+
             return pemEncoded(new PEMRecord(PEMRecord.PRIVATE_KEY,
                 privateBytes));
         }
+
         // OAS
         try {
+            if (privateBytes.length == 0) {
+                throw new IllegalArgumentException("No private key encoding " +
+                    "given by the DEREncodable.");
+            }
+
+            if (publicBytes.length == 0) {
+                throw new IllegalArgumentException("No public key encoding " +
+                    "given by the DEREncodable.");
+            }
+
             return pemEncoded(new PEMRecord(PEMRecord.PRIVATE_KEY,
                 PKCS8Key.getEncoded(publicBytes, privateBytes)));
         } catch (IOException e) {
             throw new IllegalArgumentException(e);
         }
+    }
+
+    private boolean isEncrypted() {
+        return (key != null || keySpec != null);
     }
 }

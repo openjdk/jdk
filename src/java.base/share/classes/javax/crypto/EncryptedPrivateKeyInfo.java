@@ -334,9 +334,11 @@ public final class EncryptedPrivateKeyInfo implements DEREncodable {
      * @param params the parameters used with the PBE encryption.
      * @param provider the Provider that will perform the encryption.
      * @return an EncryptedPrivateKeyInfo.
-     * @throws IllegalArgumentException when arguments passed are incorrect.
+     * @throws IllegalArgumentException on initialization errors based on the
+     * arguments passed to the method.
      * @throws SecurityException on a cryptographic errors.
-     * @throws NullPointerException if an argument passed in is unexpectedly null.
+     * @throws NullPointerException if an argument passed in is unexpectedly
+     * null.
      *
      * @since 24
      */
@@ -375,8 +377,9 @@ public final class EncryptedPrivateKeyInfo implements DEREncodable {
                 cipher.getParameters());
             algId.encode(out);
             out.putOctetString(encryptedData);
-        } catch (InvalidAlgorithmParameterException |
-                 IllegalBlockSizeException | BadPaddingException |
+        } catch (InvalidAlgorithmParameterException e) {
+            throw new IllegalArgumentException(e);
+        } catch (IllegalBlockSizeException | BadPaddingException |
                  InvalidKeyException e) {
             throw new SecurityException(e);
         }
@@ -394,10 +397,13 @@ public final class EncryptedPrivateKeyInfo implements DEREncodable {
      * AlgorithmParameterSpec of that provider.
      *
      * @param key The PrivateKey object to encrypt.
-     * @param password the password used in the PBE encryption.
+     * @param password the password used in the PBE encryption.  This array is
+     *                 cloned before being used.
      * @return an EncryptedPrivateKeyInfo.
-     * @throws IllegalArgumentException when arguments passed are incorrect.
-     * @throws SecurityException on a cryptographic errors.
+     * @throws IllegalArgumentException on initialization errors based on the
+     * arguments passed to the method.
+     * @throws SecurityException on a encryption errors.
+     * @throws NullPointerException when the password is null.
      *
      * @since 24
      */

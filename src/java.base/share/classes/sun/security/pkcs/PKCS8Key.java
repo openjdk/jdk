@@ -64,10 +64,10 @@ public class PKCS8Key implements PrivateKey, InternalPrivateKey {
     /* The algorithm information (name, parameters, etc). */
     protected AlgorithmId algid;
 
-    /* The key bytes, without the algorithm information */
+    /* The key bytes in octet form for the algorithm subclasses to decode */
     protected byte[] privKeyMaterial;
 
-    /* The encoded for the key. Created on demand by encode(). */
+    /* The pkcs8 encoding of this key(s). Created on demand. */
     protected byte[] encodedKey;
 
     /* The encoded x509 public key for v2 */

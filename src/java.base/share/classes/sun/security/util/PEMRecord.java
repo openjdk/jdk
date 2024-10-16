@@ -50,6 +50,9 @@ public record PEMRecord(String id, String pem) {
      * @param pem The Base64 encoded data only in byte[] format
      */
     public PEMRecord(String id, byte[] pem) {
+        if (pem == null) {
+            throw new IllegalArgumentException("failed");
+        }
         this(id, new String(pem, StandardCharsets.ISO_8859_1));
     }
 
