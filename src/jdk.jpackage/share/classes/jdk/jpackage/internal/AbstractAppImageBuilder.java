@@ -28,17 +28,16 @@ package jdk.jpackage.internal;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.Map;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.stream.Stream;
 import static jdk.jpackage.internal.OverridableResource.createResource;
 import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
 import static jdk.jpackage.internal.StandardBundlerParam.ICON;
 import static jdk.jpackage.internal.StandardBundlerParam.SOURCE_DIR;
 import static jdk.jpackage.internal.StandardBundlerParam.APP_CONTENT;
+import static jdk.jpackage.internal.StandardBundlerParam.OUTPUT_DIR;
 import static jdk.jpackage.internal.StandardBundlerParam.TEMP_ROOT;
 import jdk.jpackage.internal.resources.ResourceLocator;
 
@@ -82,8 +81,8 @@ public abstract class AbstractAppImageBuilder {
 
             final var theInputPath = inputPath;
 
-            var excludes = Stream.of(TEMP_ROOT.fetchFrom(params), root.getParent()).map(path -> {
-                path = path.toAbsolutePath();
+            var excludes = Stream.of(TEMP_ROOT, OUTPUT_DIR).map(param -> {
+                var path = param.fetchFrom(params).toAbsolutePath();
                 if (!path.startsWith(theInputPath)) {
                     path = null;
                 }
