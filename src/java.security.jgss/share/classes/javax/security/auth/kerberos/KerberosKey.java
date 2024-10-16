@@ -264,9 +264,9 @@ public class KerberosKey implements SecretKey {
         if (destroyed) {
             return "Destroyed KerberosKey";
         }
-        return "Kerberos Principal " + principal +
-                "Key Version " + versionNum +
-                "key "  + key.toString();
+        return "KerberosKey: principal " + principal +
+                ", version " + versionNum +
+                ", key "  + key.toString();
     }
 
     /**
