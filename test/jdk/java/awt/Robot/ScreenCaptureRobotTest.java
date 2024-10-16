@@ -33,7 +33,6 @@ import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Robot;
 import java.awt.image.BufferedImage;
-import java.awt.image.PixelGrabber;
 
 /*
  * @test
@@ -45,7 +44,7 @@ import java.awt.image.PixelGrabber;
  */
 public class ScreenCaptureRobotTest {
 
-    private static long delay = 500;
+    private static int delay = 500;
     private static Frame frame;
     private static volatile Canvas canvas;
     private static BufferedImage realImage;
@@ -62,7 +61,7 @@ public class ScreenCaptureRobotTest {
     }
 
     private static void initializeGUI() {
-        frame = new Frame("Test frame");
+        frame = new Frame("ScreenCaptureRobotTest Frame");
         realImage = GraphicsEnvironment.getLocalGraphicsEnvironment()
                 .getDefaultScreenDevice().getDefaultConfiguration()
                 .createCompatibleImage(200, 100);
@@ -89,7 +88,8 @@ public class ScreenCaptureRobotTest {
     private static void doTest() throws Exception {
         Robot robot;
         robot = new Robot();
-        Thread.sleep(delay);
+        robot.delay(delay);
+        robot.waitForIdle();
 
         Point pnt = canvas.getLocationOnScreen();
         Rectangle rect = new Rectangle(pnt.x + 10, pnt.y + 10, 200, 100);
@@ -107,9 +107,9 @@ public class ScreenCaptureRobotTest {
     }
 
     private static boolean compareImages(BufferedImage capturedImg,
-            BufferedImage realImg) throws InterruptedException {
-        int[] capturedPixels;
-        int[] realPixels;
+            BufferedImage realImg) {
+        int capturedPixel;
+        int realPixel;
         int imgWidth;
         int imgHeight;
         int toleranceLevel = 0;
@@ -118,31 +118,25 @@ public class ScreenCaptureRobotTest {
         imgWidth = capturedImg.getWidth(null);
         imgHeight = capturedImg.getHeight(null);
 
-        capturedPixels = new int[imgWidth * imgHeight];
-        realPixels = new int[imgWidth * imgHeight];
-
-        // Extracting Pixels from Captured Image
-        PixelGrabber pgCapturedImg = new PixelGrabber(capturedImg, 0, 0,
-                imgWidth, imgHeight, capturedPixels, 0, imgWidth);
-        pgCapturedImg.grabPixels();
-        // Extracting Pixels from Real Image
-        PixelGrabber pgRealImg = new PixelGrabber(realImg, 0, 0, imgWidth,
-                imgHeight, realPixels, 0, imgWidth);
-        pgRealImg.grabPixels();
-
-        for (int i = 0; i < (imgWidth * imgHeight); i++) {
-            if (capturedPixels[i] != realPixels[i]) {
-                toleranceLevel++;
+        // Loop through each pixel in both images
+        for (int i = 0; i < (imgWidth); i++) {
+            for (int j = 0; j < (imgHeight); j++) {
+                // Get the RGB values of each pixel in both images
+                capturedPixel = capturedImg.getRGB(i, j);
+                realPixel = realImg.getRGB(i, j);
+                // Compare the pixel values
+                if (capturedPixel != realPixel) {
+                    toleranceLevel++;
+                }
             }
         }
 
         difference = toleranceLevel;
-        if (toleranceLevel > 100) {
+        if (toleranceLevel > 10) {
             result = false;
         }
         System.out.println("\nCaptured Image differs from Real Image by "
                 + toleranceLevel + " Pixels\n");
-
         return result;
     }
 
