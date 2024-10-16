@@ -1519,9 +1519,7 @@ public:
   void evpsraq(XMMRegister dst, XMMRegister nds, XMMRegister shift, int vector_len);
   void evpsraq(XMMRegister dst, XMMRegister nds, int         shift, int vector_len);
 
-  void evpsllw(XMMRegister dst, KRegister mask, XMMRegister src, int shift, bool merge, int vector_len) {
-    Assembler::evpsllw(dst, mask, src, shift, merge, vector_len);
-  }
+  using Assembler::evpsllw;
   void evpsllw(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int vector_len, bool is_varshift) {
     if (!is_varshift) {
       Assembler::evpsllw(dst, mask, nds, src, merge, vector_len);
@@ -1566,9 +1564,7 @@ public:
       Assembler::evpsrlvq(dst, mask, nds, src, merge, vector_len);
     }
   }
-  void evpsraw(XMMRegister dst, KRegister mask, XMMRegister src, int shift, bool merge, int vector_len) {
-    Assembler::evpsraw(dst, mask, src, shift, merge, vector_len);
-  }
+  using Assembler::evpsraw;
   void evpsraw(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int vector_len, bool is_varshift) {
     if (!is_varshift) {
       Assembler::evpsraw(dst, mask, nds, src, merge, vector_len);
@@ -1576,9 +1572,7 @@ public:
       Assembler::evpsravw(dst, mask, nds, src, merge, vector_len);
     }
   }
-  void evpsrad(XMMRegister dst, KRegister mask, XMMRegister src, int shift, bool merge, int vector_len) {
-    Assembler::evpsrad(dst, mask, src, shift, merge, vector_len);
-  }
+  using Assembler::evpsrad;
   void evpsrad(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int vector_len, bool is_varshift) {
     if (!is_varshift) {
       Assembler::evpsrad(dst, mask, nds, src, merge, vector_len);

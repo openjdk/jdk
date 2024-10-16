@@ -82,10 +82,8 @@ static address permsAndRotsAddr() {
 
 void StubGenerator::generate_sha3_stubs() {
   if (UseSHA3Intrinsics) {
-    if (VM_Version::supports_evex()) {
-      StubRoutines::_sha3_implCompress     = generate_sha3_implCompress(false,   "sha3_implCompress");
-      StubRoutines::_sha3_implCompressMB   = generate_sha3_implCompress(true,    "sha3_implCompressMB");
-    }
+    StubRoutines::_sha3_implCompress   = generate_sha3_implCompress(false,"sha3_implCompress");
+    StubRoutines::_sha3_implCompressMB = generate_sha3_implCompress(true, "sha3_implCompressMB");
   }
 }
 
@@ -137,16 +135,16 @@ address StubGenerator::generate_sha3_implCompress(bool multiBlock, const char *n
   __ lea(round_consts, ExternalAddress(round_constsAddr()));
 
   // set up the masks
-  __ mov64(rax,1);
-  __ kmovbl(k1, rax);
-  __ addl(rax,2);
-  __ kmovbl(k2, rax);
-  __ addl(rax, 4);
-  __ kmovbl(k3, rax);
-  __ addl(rax, 8);
-  __ kmovbl(k4, rax);
-  __ addl(rax, 16);
-  __ kmovbl(k5, rax);
+  __ mov64(rax, 0x1F);
+  __ kmovwl(k5, rax);
+  __ shrl(rax, 1);
+  __ kmovwl(k4, rax);
+  __ shrl(rax, 1);
+  __ kmovwl(k3, rax);
+  __ shrl(rax, 1);
+  __ kmovwl(k2, rax);
+  __ shrl(rax, 1);
+  __ kmovwl(k1, rax);
 
   // load the state
   __ evmovdquq(xmm0, k5, Address(state, 0), false, Assembler::AVX_512bit);
