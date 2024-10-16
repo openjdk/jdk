@@ -410,29 +410,30 @@ TEST_VM(os, jio_snprintf) {
 #endif
 
 TEST_VM(os, realpath) {
-  /* POSIX requires that the file exists, Windows doesn't */
+  // POSIX requires that the file exists; Windows tests for a valid drive letter 
+  // but may or may not test if the file exists. */
   static const char* nosuchpath = "/1234567890123456789";
   static const char* tmppath = "/tmp";
 
   char buffer[MAX_PATH];
 
-  /* test a non-existant path, but provide a short buffer */
+  // Test a non-existant path, but provide a short buffer.
   errno = 0;
   const char* returnedBuffer = os::realpath(nosuchpath, buffer, sizeof(nosuchpath) - 2);
-  /* Returns ENOENT on Linux, ENAMETOOLONG on Windows */
+  // Reports ENOENT on Linux, ENAMETOOLONG on Windows.
   EXPECT_TRUE(returnedBuffer == nullptr);
-#if defined(_WINDOWS)
+#ifdef _WINDOWS
   EXPECT_TRUE(errno == ENAMETOOLONG);
 #else
   EXPECT_TRUE(errno == ENOENT);
 #endif
 
-  /* test a non-existant path, but provide an adequate buffer */
+  // Test a non-existant path, but provide an adequate buffer.
   errno = 0;
   buffer[0] = 0;
   returnedBuffer = os::realpath(nosuchpath, buffer, sizeof(nosuchpath) + 3);
-  /* Returns ENOENT on Linux, 0 on SOME versions of Windows */
-#if defined(_WINDOWS)
+  // Reports ENOENT on Linux, may return 0 (and report an error) or buffer on some versions of Windows.
+#ifdef _WINDOWS
   if (returnedBuffer != nullptr) {
     EXPECT_TRUE(returnedBuffer == buffer);
   } else {
@@ -443,29 +444,29 @@ TEST_VM(os, realpath) {
   EXPECT_TRUE(errno == ENOENT);
 #endif
 
-  /* test an existing path using a large buffer */
+  // Test an existing path using a large buffer.
   errno = 0;
   returnedBuffer = os::realpath(tmppath, buffer, MAX_PATH);
   EXPECT_TRUE(returnedBuffer == buffer);
 
-  /* test an existing path using a buffer that is too small on a normal macOS install */
+  // Test an existing path using a buffer that is too small on a normal macOS install.
   errno = 0;
   returnedBuffer = os::realpath(tmppath, buffer, strlen(tmppath) + 3);
-  /* on MacOS, /tmp is a symlink to /private/tmp, so doesn't fit in a small buffer. */
-#if !defined(__APPLE__)
+  // On MacOS, /tmp is a symlink to /private/tmp, so doesn't fit in a small buffer.
+#ifndef __APPLE__
   EXPECT_TRUE(returnedBuffer == buffer);
 #else
   EXPECT_TRUE(returnedBuffer == nullptr);
   EXPECT_TRUE(errno == ENAMETOOLONG);
 #endif
 
-  /* test an existing path using a buffer that is too small */
+  // Test an existing path using a buffer that is too small.
   errno = 0;
   returnedBuffer = os::realpath(tmppath, buffer, strlen(tmppath) - 1);
   EXPECT_TRUE(returnedBuffer == nullptr);
   EXPECT_TRUE(errno == ENAMETOOLONG);
 
-  /* the following tests cause an assert inside os::realpath() in fastdebug mode */
+  // The following tests cause an assert inside os::realpath() in fastdebug mode:
 #ifndef ASSERT
   errno = 0;
   returnedBuffer = os::realpath(nullptr, buffer, sizeof(buffer));
