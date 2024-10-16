@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,15 +81,17 @@ public abstract class AbstractAppImageBuilder {
 
             final var theInputPath = inputPath;
 
-            var excludes = Stream.of(TEMP_ROOT, OUTPUT_DIR).map(param -> {
-                var path = param.fetchFrom(params).toAbsolutePath();
-                if (!path.startsWith(theInputPath)) {
+            var excludes = Stream.of(TEMP_ROOT.fetchFrom(params),
+                    OUTPUT_DIR.fetchFrom(params), root).map(path -> {
+                path = path.toAbsolutePath();
+                if (!path.startsWith(theInputPath) || path.equals(theInputPath)) {
                     path = null;
                 }
                 return path;
             }).filter(Objects::nonNull).toList();
 
-            IOUtils.copyRecursive(inputPath, appLayout.appDirectory().toAbsolutePath(), excludes);
+            IOUtils.copyRecursive(inputPath,
+                    appLayout.appDirectory().toAbsolutePath(), excludes);
         }
 
         AppImageFile.save(root, params);

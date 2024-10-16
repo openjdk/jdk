@@ -59,12 +59,13 @@ public final class InOutPathTest {
 
         for (boolean appImage : List.of(true, false)) {
             data.addAll(List.of(new Object[][]{
-                {appImage, wrap(InOutPathTest::outputDirInInputDir, "--dest")},
+                {appImage, wrap(InOutPathTest::outputDirInInputDir, "--dest:subdir")},
+                {appImage, wrap(InOutPathTest::outputDirSameAsInputDir, "--dest:same")},
                 {appImage, wrap(InOutPathTest::tempDirInInputDir, "--temp")},
                 {appImage, wrap(cmd -> {
                     outputDirInInputDir(cmd);
                     tempDirInInputDir(cmd);
-                }, "--dest and --temp")},
+                }, "--dest:subdir and --temp")},
             }));
         }
 
@@ -122,6 +123,12 @@ public final class InOutPathTest {
         Path outputDir = cmd.inputDir().resolve("out");
         TKit.createDirectories(outputDir);
         cmd.setArgumentValue("--dest", outputDir);
+    }
+    
+    private static void outputDirSameAsInputDir(JPackageCommand cmd) throws
+            IOException {
+        // Set output dir the same as the input dir
+        cmd.setArgumentValue("--dest", cmd.inputDir());
     }
 
     private static void tempDirInInputDir(JPackageCommand cmd) {
