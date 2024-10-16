@@ -112,6 +112,7 @@ class ConvF2HFNode : public ConvertNode {
   virtual int Opcode() const;
   virtual const Type* in_type() const { return TypeInt::FLOAT; }
   virtual const Type* Value(PhaseGVN* phase) const;
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
 };
 
 //------------------------------ConvF2INode------------------------------------
@@ -211,6 +212,30 @@ class ConvL2INode : public ConvertNode {
   virtual Node* Identity(PhaseGVN* phase);
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+};
+
+
+//-----------------------------ReinterpretS2HFNode ---------------------------
+// Reinterpret Short to Half Float
+class ReinterpretS2HFNode : public Node {
+  public:
+  ReinterpretS2HFNode(Node* in1) : Node(0, in1) {}
+  virtual int Opcode() const;
+  virtual const Type* bottom_type() const { return Type::FLOAT; }
+  virtual const Type* Value(PhaseGVN* phase) const;
+  virtual Node* Identity(PhaseGVN* phase);
+  virtual uint  ideal_reg() const { return Op_RegF; }
+};
+
+//-----------------------------ReinterpretS2HFNode ---------------------------
+// Reinterpret Half Float to Short
+class ReinterpretHF2SNode : public Node {
+  public:
+  ReinterpretHF2SNode( Node *in1 ) : Node(0,in1) {}
+  virtual int Opcode() const;
+  virtual const Type* Value(PhaseGVN* phase) const;
+  virtual const Type* bottom_type() const { return TypeInt::SHORT; }
+  virtual uint  ideal_reg() const { return Op_RegI; }
 };
 
 class RoundDNode : public Node {

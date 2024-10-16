@@ -130,6 +130,14 @@ public:
   virtual uint  ideal_reg() const { return Op_RegD; }
 };
 
+//------------------------------SubHFNode--------------------------------------
+// Subtract 2 half floats
+class SubHFNode : public SubFNode {
+public:
+  SubHFNode(Node* in1, Node* in2) : SubFNode(in1, in2) {}
+  virtual int Opcode() const;
+};
+
 //------------------------------CmpNode---------------------------------------
 // Compare 2 values, returning condition codes (-1, 0 or 1).
 class CmpNode : public SubNode {
@@ -526,6 +534,14 @@ public:
   const Type *bottom_type() const { return Type::FLOAT; }
   virtual uint ideal_reg() const { return Op_RegF; }
   virtual const Type* Value(PhaseGVN* phase) const;
+};
+
+//------------------------------SqrtHFNode-------------------------------------
+// square root of a half-precision float
+class SqrtHFNode : public SqrtFNode {
+public:
+  SqrtHFNode(Compile* C, Node* c, Node* in1) : SqrtFNode(C, c, in1) {}
+  virtual int Opcode() const;
 };
 
 //-------------------------------ReverseBytesINode--------------------------------

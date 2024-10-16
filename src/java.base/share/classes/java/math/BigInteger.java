@@ -4396,6 +4396,30 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     }
 
     /**
+     * Converts this BigInteger to a {@code Float16}.  This
+     * conversion is similar to the
+     * <i>narrowing primitive conversion</i> from {@code double} to
+     * {@code float} as defined in
+     * <cite>The Java Language Specification</cite>:
+     * if this BigInteger has too great a magnitude
+     * to represent as a {@code Float16}, it will be converted to
+     * {@link Float16#NEGATIVE_INFINITY} or {@link
+     * Float16#POSITIVE_INFINITY} as appropriate.  Note that even when
+     * the return value is finite, this conversion can lose
+     * information about the precision of the BigInteger value.
+     *
+     * @return this BigInteger converted to a {@code Float16}.
+     * @jls 5.1.3 Narrowing Primitive Conversion
+     */
+    public Float16 float16Value() {
+        return signum == 0 || mag.length == 1
+                ? Float16.valueOf(longValue())  // might return infinities
+                : signum > 0
+                ? Float16.POSITIVE_INFINITY
+                : Float16.NEGATIVE_INFINITY;
+    }
+
+    /**
      * Converts this BigInteger to a {@code float}.  This
      * conversion is similar to the
      * <i>narrowing primitive conversion</i> from {@code double} to

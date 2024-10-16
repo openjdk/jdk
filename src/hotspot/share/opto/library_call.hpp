@@ -289,6 +289,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_unsafe_load_store(BasicType type,  LoadStoreKind kind, AccessKind access_kind);
   bool inline_unsafe_fence(vmIntrinsics::ID id);
   bool inline_onspinwait();
+  bool inline_fp16_operations(vmIntrinsics::ID id, int num_args);
   bool inline_fp_conversions(vmIntrinsics::ID id);
   bool inline_fp_range_check(vmIntrinsics::ID id);
   bool inline_number_methods(vmIntrinsics::ID id);

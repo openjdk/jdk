@@ -80,6 +80,8 @@ class SerializeClosure;
   template(java_lang_Character_CharacterCache,        "java/lang/Character$CharacterCache")       \
   template(java_lang_CharacterDataLatin1,             "java/lang/CharacterDataLatin1")            \
   template(java_lang_Float,                           "java/lang/Float")                          \
+  template(java_lang_Float16,                         "java/lang/Float16")                        \
+  template(java_lang_Float16_signature,               "Ljava/lang/Float16;")                      \
   template(java_lang_Double,                          "java/lang/Double")                         \
   template(java_lang_Byte,                            "java/lang/Byte")                           \
   template(java_lang_Byte_ByteCache,                  "java/lang/Byte$ByteCache")                 \
@@ -136,6 +138,7 @@ class SerializeClosure;
   template(java_util_Properties,                      "java/util/Properties")                     \
   template(java_util_DualPivotQuicksort,              "java/util/DualPivotQuicksort")             \
   template(jdk_internal_misc_Signal,                  "jdk/internal/misc/Signal")                 \
+  template(jdk_internal_math_Float16Math,             "jdk/internal/math/Float16Math")            \
   template(jdk_internal_util_Preconditions,           "jdk/internal/util/Preconditions")          \
   template(java_lang_AssertionStatusDirectives,       "java/lang/AssertionStatusDirectives")      \
   template(jdk_internal_vm_PostVMInitHook,            "jdk/internal/vm/PostVMInitHook")           \

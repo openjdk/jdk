@@ -77,6 +77,15 @@ public:
   virtual uint ideal_reg() const { return Op_RegF; }
 };
 
+
+//------------------------------DivHFNode--------------------------------------
+// Half float division
+class DivHFNode : public DivFNode {
+public:
+  DivHFNode(Node* c, Node* dividend, Node* divisor) : DivFNode(c, dividend, divisor) {}
+  virtual int Opcode() const;
+};
+
 //------------------------------DivDNode---------------------------------------
 // Double division
 class DivDNode : public Node {

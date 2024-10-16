@@ -585,6 +585,8 @@ class Assembler : public AbstractAssembler  {
     VEX_OPCODE_0F_38 = 0x2,
     VEX_OPCODE_0F_3A = 0x3,
     VEX_OPCODE_0F_3C = 0x4,
+    VEX_OPCODE_MAP5  = 0x5,
+    VEX_OPCODE_MAP6  = 0x6,
     VEX_OPCODE_MASK  = 0x1F
   };
 
@@ -1808,6 +1810,9 @@ private:
   void movsbl(Register dst, Address src);
   void movsbl(Register dst, Register src);
 
+  void vmovw(XMMRegister dst, Register src);
+  void vmovw(Register dst, XMMRegister src);
+
 #ifdef _LP64
   void movsbq(Register dst, Address src);
   void movsbq(Register dst, Register src);
@@ -2670,6 +2675,33 @@ private:
   void vpaddw(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
   void vpaddd(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
   void vpaddq(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
+
+  // FP16 instructions
+  void eaddsh(XMMRegister dst, XMMRegister nds, XMMRegister src);
+  void esubsh(XMMRegister dst, XMMRegister nds, XMMRegister src);
+  void emulsh(XMMRegister dst, XMMRegister nds, XMMRegister src);
+  void edivsh(XMMRegister dst, XMMRegister nds, XMMRegister src);
+  void emaxsh(XMMRegister dst, XMMRegister nds, XMMRegister src);
+  void eminsh(XMMRegister dst, XMMRegister nds, XMMRegister src);
+  void esqrtsh(XMMRegister dst, XMMRegister src);
+  void efmadd132sh(XMMRegister dst, XMMRegister src1, XMMRegister src2);
+
+  void evaddph(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void evaddph(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
+  void evsubph(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void evsubph(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
+  void evdivph(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void evdivph(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
+  void evmulph(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void evmulph(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
+  void evminph(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void evminph(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
+  void evmaxph(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void evmaxph(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
+  void evfmadd132ph(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void evfmadd132ph(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
+  void evsqrtph(XMMRegister dst, XMMRegister src1, int vector_len);
+  void evsqrtph(XMMRegister dst, Address src1, int vector_len);
 
   // Leaf level assembler routines for masked operations.
   void evpaddb(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int vector_len);
