@@ -56,6 +56,8 @@
 #define ZIP64_EXTHDR 24       // EXT header size
 #define ZIP64_EXTID   1       // Extra field Zip64 header ID
 
+#define ZIP64_EXTMAXLEN 32    // Maximum Zip64 extra field length
+
 #define ZIP64_MAGICVAL 0xffffffffLL
 #define ZIP64_MAGICCOUNT 0xffff
 
@@ -137,6 +139,12 @@
 #define ZIP64_LOCDSK(b) LG(b, 4)      /* disk number start */
 #define ZIP64_LOCOFF(b) LL(b, 8)      /* offset of zip64 end */
 #define ZIP64_LOCTOT(b) LG(b, 16)     /* total number of disks */
+
+/*
+ * Macros for getting Extensible Data Fields
+ */
+#define ZIPEXT_HDR(b) SH(b, 0)      /* Header ID */
+#define ZIPEXT_SIZ(b) SH(b, 2)      /* Data Size */
 
 /*
  * A comment of maximum length of 64kb can follow the END record. This
