@@ -76,6 +76,7 @@ public class MouseEnteredTest extends JFrame implements ActionListener {
     static MouseListener ml = new MouseEnteredTest.MouseEventListener();
 
     public MouseEnteredTest() {
+        setTitle("MouseEnteredTest");
         JPopupMenu.setDefaultLightWeightPopupEnabled(false);
         setJMenuBar(getMyMenuBar());
         getContentPane().add("Center", new JTextArea());
@@ -93,7 +94,7 @@ public class MouseEnteredTest extends JFrame implements ActionListener {
             Robot robot = new Robot();
             robot.setAutoWaitForIdle(true);
             robot.waitForIdle();
-            robot.delay(250);
+            robot.delay(1000);
 
             EventQueue.invokeAndWait(() -> {
                 p = m.getLocationOnScreen();

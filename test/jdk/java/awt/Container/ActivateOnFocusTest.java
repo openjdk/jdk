@@ -60,6 +60,8 @@ public class ActivateOnFocusTest {
 
             Robot robot = new Robot();
             robot.waitForIdle();
+            robot.delay(1000);
+
             EventQueue.invokeAndWait(() -> {
                 p = mf1.mb.getLocationOnScreen();
             });
@@ -69,8 +71,9 @@ public class ActivateOnFocusTest {
             robot.mouseMove(p.x + 5, p.y + 5);
             robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-            robot.delay(250);
             robot.waitForIdle();
+            robot.delay(250);
+
         } finally {
             if (mf1 != null) {
                 EventQueue.invokeAndWait(mf1::dispose);

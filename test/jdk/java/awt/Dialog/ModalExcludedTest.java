@@ -68,7 +68,7 @@ public class ModalExcludedTest {
                 A window, a modeless dialog and a modal dialog will appear
                 Make sure the frame and the modeless dialog are inaccessible,
                 i.e. receive no mouse and keyboard events. MousePressed and
-                KeyPressed events are logged in the text area below - use it
+                KeyPressed events are logged in the text area - use it
                 to watch events
             Close all 3 windows
 
