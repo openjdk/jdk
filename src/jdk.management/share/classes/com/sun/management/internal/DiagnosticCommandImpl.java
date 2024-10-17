@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -317,7 +317,7 @@ public class DiagnosticCommandImpl extends NotificationEmitterSupport
             for (DiagnosticCommandArgumentInfo arginfo : w.info.getArgumentsInfo()) {
                 HashMap<String, Object> argmap = new HashMap<>();
                 argmap.put("dcmd.arg.name", arginfo.getName());
-                argmap.put("dcmd.arg.type", arginfo.getType());
+                argmap.put("dcmd.arg.type", sanitiseType(arginfo.getType()));
                 argmap.put("dcmd.arg.description", arginfo.getDescription());
                 argmap.put("dcmd.arg.isMandatory", arginfo.isMandatory());
                 argmap.put("dcmd.arg.isMultiple", arginfo.isMultiple());
@@ -333,6 +333,22 @@ public class DiagnosticCommandImpl extends NotificationEmitterSupport
             map.put("dcmd.arguments", new ImmutableDescriptor(allargmap));
         }
         return new ImmutableDescriptor(map);
+    }
+
+    // Type names that will be published in dcmd.arg.type:
+    private static final String [] publicTypes = new String [] { "INT", "STRING", "BOOLEAN", "STRING SET", "MEMORY SIZE", "NANOTIME" };
+
+    private static final String sanitiseType(String typeName) {
+        // For any typeName not in the set to be made public, return "STRING".
+        if (typeName == null) {
+            return null;
+        }
+        for (String t : publicTypes) {
+            if (typeName.equals(t)) {
+                return t;
+            }
+        }
+        return "STRING";
     }
 
     private static final String notifName =
