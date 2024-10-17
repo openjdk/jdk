@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -284,7 +284,7 @@ public class BasicTest {
         ClassDesc childCd = ClassDesc.of("BasicTest$Child");
         var objMtd = MethodTypeDesc.of(CD_Object);
         var integerMtd = MethodTypeDesc.of(CD_Integer);
-        var intMtd = MethodTypeDesc.of(CD_int);
+        var intMtd = MTD_int;
         var classfile = ClassFile.of(ClassFile.ClassHierarchyResolverOption.of(ClassHierarchyResolver.defaultResolver().orElse(
                 ClassHierarchyResolver.of(List.of(baseCd, childCd), Map.ofEntries(Map.entry(baseCd, CD_Object),
                         Map.entry(childCd, CD_Object))))));
