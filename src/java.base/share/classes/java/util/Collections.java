@@ -5796,35 +5796,35 @@ public class Collections {
         // achieved by iterating the smaller collection.
         Collection<?> iterate = c1;
 
+        int c1size = c1.size();
+        int c2size = c2.size();
+        if (c1size == 0 || c2size == 0) {
+            // At least one collection is empty. Nothing will match.
+            return true;
+        }
+        
         // Performance optimization cases. The heuristics:
         //   1. Generally iterate over c1.
         //   2. If c1 is a Set then iterate over c2.
         //   3. If either collection is empty then result is always true.
         //   4. Iterate over the smaller Collection.
-        if (c1 instanceof Set) {
-            // Use c1 for contains as a Set's contains() is expected to perform
-            // better than O(N/2)
-            iterate = c2;
-            contains = c1;
-        } else if (!(c2 instanceof Set)) {
+       if (!(c1 instanceof Set ^ c2 instanceof Set)) {
             // Both are mere Collections. Iterate over smaller collection.
             // Example: If c1 contains 3 elements and c2 contains 50 elements and
             // assuming contains() requires ceiling(N/2) comparisons then
             // checking for all c1 elements in c2 would require 75 comparisons
             // (3 * ceiling(50/2)) vs. checking all c2 elements in c1 requiring
             // 100 comparisons (50 * ceiling(3/2)).
-            int c1size = c1.size();
-            int c2size = c2.size();
-            if (c1size == 0 || c2size == 0) {
-                // At least one collection is empty. Nothing will match.
-                return true;
-            }
-
             if (c1size > c2size) {
                 iterate = c2;
                 contains = c1;
             }
-        }
+        } else if (c1 instanceof Set) {
+            // Use c1 for contains as a Set's contains() is expected to perform
+            // better than O(N/2)
+            iterate = c2;
+            contains = c1;
+        } 
 
         for (Object e : iterate) {
             if (contains.contains(e)) {
