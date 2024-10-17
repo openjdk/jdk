@@ -33,6 +33,8 @@ import java.lang.classfile.Label;
 import jdk.internal.classfile.impl.CodeRelabelerImpl;
 import jdk.internal.javac.PreviewFeature;
 
+import static java.util.Objects.requireNonNull;
+
 /**
  * A code relabeler is a {@link CodeTransform} replacing all occurrences
  * of {@link java.lang.classfile.Label} in the transformed code with new instances.
@@ -62,6 +64,7 @@ public sealed interface CodeRelabeler extends CodeTransform permits CodeRelabele
      * @return a new instance of CodeRelabeler
      */
     static CodeRelabeler of(Map<Label, Label> map) {
+        requireNonNull(map);
         return of((l, cob) -> map.computeIfAbsent(l, ll -> cob.newLabel()));
     }
 
@@ -72,6 +75,6 @@ public sealed interface CodeRelabeler extends CodeTransform permits CodeRelabele
      * @return a new instance of CodeRelabeler
      */
     static CodeRelabeler of(BiFunction<Label, CodeBuilder, Label> mapFunction) {
-        return new CodeRelabelerImpl(mapFunction);
+        return new CodeRelabelerImpl(requireNonNull(mapFunction));
     }
 }

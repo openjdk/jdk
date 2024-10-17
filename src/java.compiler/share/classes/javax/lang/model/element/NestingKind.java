@@ -26,7 +26,7 @@
 package javax.lang.model.element;
 
 /**
- * The <i>nesting kind</i> of a type element.
+ * The <dfn>nesting kind</dfn> of a type element.
  * Type elements come in four varieties:
  * top-level, member, local, and anonymous.
  * <i>Nesting kind</i> is a non-standard term used here to denote this
@@ -107,7 +107,7 @@ public enum NestingKind {
 
     /**
      * Does this constant correspond to a nested type element?
-     * A <i>nested</i> type element is any that is not top-level.
+     * A <dfn>nested</dfn> type element is any that is not top-level.
      * More specifically, an <i>inner</i> type element is any nested type element that
      * is not {@linkplain Modifier#STATIC static}.
      * @return whether or not the constant is nested
