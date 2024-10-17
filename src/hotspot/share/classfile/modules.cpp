@@ -694,7 +694,7 @@ const char* Modules::get_addmods_names_as_sorted_string() {
     if (strcmp(m, last_string) != 0) { // filter out duplicates
       st.print("%s%s", prefix, m);
       last_string = m;
-      prefix = ",";
+      prefix = "\n";
     }
   }
 
