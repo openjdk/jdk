@@ -1874,6 +1874,10 @@ void JvmtiExport::post_method_exit(JavaThread* thread, Method* method, frame cur
     }
   }
 
+  // Do not allow NotifyFramePop to add new FramePop event request at
+  // depth 0 as it is already late in the method exiting dance.
+  state->set_top_frame_is_exiting();
+
   // Deferred transition to VM, so we can stash away the return oop before GC
   // Note that this transition is not needed when throwing an exception, because
   // there is no oop to retain.
@@ -1881,6 +1885,10 @@ void JvmtiExport::post_method_exit(JavaThread* thread, Method* method, frame cur
   JRT_BLOCK
     post_method_exit_inner(thread, mh, state, exception_exit, current_frame, value);
   JRT_BLOCK_END
+
+  // The JRT_BLOCK_END can safepoint in ThreadInVMfromJava desctructor. Now it is safe to allow
+  // adding FramePop event requests as no safepoint can happen before removing activation.
+  state->clr_top_frame_is_exiting();
 
   if (result.not_null() && !mh->is_native()) {
     // We have to restore the oop on the stack for interpreter frames

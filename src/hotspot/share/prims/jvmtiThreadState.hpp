@@ -190,6 +190,7 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
   bool              _pending_interp_only_mode;
   bool              _pending_step_for_popframe;
   bool              _pending_step_for_earlyret;
+  bool              _top_frame_is_exiting;
   int               _hide_level;
 
  public:
@@ -356,6 +357,11 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
   void clr_pending_step_for_earlyret() { _pending_step_for_earlyret = false; }
   bool is_pending_step_for_earlyret()  { return _pending_step_for_earlyret;  }
   void process_pending_step_for_earlyret();
+
+  // For synchronization between NotifyFramePop and FramePop posting code.
+  void set_top_frame_is_exiting() { _top_frame_is_exiting = true;  }
+  void clr_top_frame_is_exiting() { _top_frame_is_exiting = false; }
+  bool top_frame_is_exiting()     { return _top_frame_is_exiting;  }
 
   // Setter and getter method is used to send redefined class info
   // when class file load hook event is posted.
