@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -48,6 +48,11 @@ address StubRoutines::aarch64::_zero_blocks = nullptr;
 address StubRoutines::aarch64::_count_positives = nullptr;
 address StubRoutines::aarch64::_count_positives_long = nullptr;
 address StubRoutines::aarch64::_large_array_equals = nullptr;
+address StubRoutines::aarch64::_large_arrays_hashcode_boolean = nullptr;
+address StubRoutines::aarch64::_large_arrays_hashcode_byte = nullptr;
+address StubRoutines::aarch64::_large_arrays_hashcode_char = nullptr;
+address StubRoutines::aarch64::_large_arrays_hashcode_int = nullptr;
+address StubRoutines::aarch64::_large_arrays_hashcode_short = nullptr;
 address StubRoutines::aarch64::_compare_long_string_LL = nullptr;
 address StubRoutines::aarch64::_compare_long_string_UU = nullptr;
 address StubRoutines::aarch64::_compare_long_string_LU = nullptr;
