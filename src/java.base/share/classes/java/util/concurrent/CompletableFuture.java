@@ -35,6 +35,8 @@
 
 package java.util.concurrent;
 
+import jdk.internal.invoke.MhUtil;
+
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.util.concurrent.locks.LockSupport;
@@ -3079,14 +3081,10 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
     private static final VarHandle STACK;
     private static final VarHandle NEXT;
     static {
-        try {
-            MethodHandles.Lookup l = MethodHandles.lookup();
-            RESULT = l.findVarHandle(CompletableFuture.class, "result", Object.class);
-            STACK = l.findVarHandle(CompletableFuture.class, "stack", Completion.class);
-            NEXT = l.findVarHandle(Completion.class, "next", Completion.class);
-        } catch (ReflectiveOperationException e) {
-            throw new ExceptionInInitializerError(e);
-        }
+        MethodHandles.Lookup l = MethodHandles.lookup();
+        RESULT = MhUtil.findVarHandle(l, "result", Object.class);
+        STACK = MhUtil.findVarHandle(l, "stack", Completion.class);
+        NEXT = MhUtil.findVarHandle(l, Completion.class, "next", Completion.class);
 
         // Reduce the risk of rare disastrous classloading in first call to
         // LockSupport.park: https://bugs.openjdk.org/browse/JDK-8074773

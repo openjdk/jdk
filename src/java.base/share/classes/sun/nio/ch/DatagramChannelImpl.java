@@ -68,13 +68,13 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 
 import jdk.internal.access.JavaNioAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.ref.CleanerFactory;
+import jdk.internal.invoke.MhUtil;
 import sun.net.ResourceManager;
 import sun.net.ext.ExtendedSocketOptions;
 import sun.net.util.IPAddressUtil;
@@ -149,15 +149,8 @@ class DatagramChannelImpl
     private InetSocketAddress initialLocalAddress;
 
     // Socket adaptor, created lazily
-    private static final VarHandle SOCKET;
-    static {
-        try {
-            MethodHandles.Lookup l = MethodHandles.lookup();
-            SOCKET = l.findVarHandle(DatagramChannelImpl.class, "socket", DatagramSocket.class);
-        } catch (Exception e) {
-            throw new InternalError(e);
-        }
-    }
+    private static final VarHandle SOCKET = MhUtil.findVarHandle(
+            MethodHandles.lookup(), "socket", DatagramSocket.class);
     private volatile DatagramSocket socket;
 
     // Multicast support

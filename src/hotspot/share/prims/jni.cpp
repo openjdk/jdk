@@ -444,9 +444,11 @@ JNI_ENTRY(jobject, jni_ToReflectedMethod(JNIEnv *env, jclass cls, jmethodID meth
   methodHandle m (THREAD, Method::resolve_jmethod_id(method_id));
   assert(m->is_static() == (isStatic != 0), "jni_ToReflectedMethod access flags doesn't match");
   oop reflection_method;
-  if (m->is_initializer()) {
+  if (m->is_object_initializer()) {
     reflection_method = Reflection::new_constructor(m, CHECK_NULL);
   } else {
+    // Note: Static initializers can theoretically be here, if JNI users manage
+    // to get their jmethodID. Record them as plain methods.
     reflection_method = Reflection::new_method(m, false, CHECK_NULL);
   }
   ret = JNIHandles::make_local(THREAD, reflection_method);

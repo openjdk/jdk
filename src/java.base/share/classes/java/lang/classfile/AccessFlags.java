@@ -24,9 +24,10 @@
  */
 package java.lang.classfile;
 
-import java.util.Set;
-import jdk.internal.classfile.impl.AccessFlagsImpl;
 import java.lang.reflect.AccessFlag;
+import java.util.Set;
+
+import jdk.internal.classfile.impl.AccessFlagsImpl;
 import jdk.internal.javac.PreviewFeature;
 
 /**

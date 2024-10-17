@@ -61,3 +61,11 @@ JRT_LEAF(void, G1BarrierSetRuntime::write_ref_field_post_entry(volatile G1CardTa
   G1DirtyCardQueue& queue = G1ThreadLocalData::dirty_card_queue(thread);
   G1BarrierSet::dirty_card_queue_set().enqueue(queue, card_addr);
 JRT_END
+
+JRT_LEAF(void, G1BarrierSetRuntime::clone(oopDesc* src, oopDesc* dst, size_t size))
+  HeapAccess<>::clone(src, dst, size);
+JRT_END
+
+address G1BarrierSetRuntime::clone_addr() {
+  return reinterpret_cast<address>(clone);
+}

@@ -28,6 +28,7 @@ import java.lang.classfile.CodeElement;
 import java.lang.classfile.CodeModel;
 import java.lang.classfile.Instruction;
 import java.lang.classfile.Opcode;
+
 import jdk.internal.classfile.impl.AbstractInstruction;
 import jdk.internal.javac.PreviewFeature;
 
@@ -58,6 +59,7 @@ public sealed interface IncrementInstruction extends Instruction
      *
      * @param slot the local variable slot to increment
      * @param constant the value to increment by
+     * @throws IllegalArgumentException if {@code slot} or {@code constant} is out of range
      */
     static IncrementInstruction of(int slot, int constant) {
         return new AbstractInstruction.UnboundIncrementInstruction(slot, constant);

@@ -1526,7 +1526,7 @@ public final class StringConcatFactory {
                      * length = length(this.length, arg0, arg1, ..., argN);
                      */
                     if (staticConcat) {
-                        cb.ldc(length);
+                        cb.loadConstant(length);
                     } else {
                         cb.aload(thisSlot)
                           .getfield(concatClass, "length", CD_int);
@@ -1549,7 +1549,7 @@ public final class StringConcatFactory {
                      * length -= suffix.length();
                      */
                     if (staticConcat) {
-                        cb.ldc(constants[paramCount].length())
+                        cb.loadConstant(constants[paramCount].length())
                           .isub()
                           .istore(lengthSlot);
                     } else {
@@ -1557,7 +1557,7 @@ public final class StringConcatFactory {
                           .getfield(concatClass, "constants", CD_Array_String)
                           .dup()
                           .astore(constantsSlot)
-                          .ldc(paramCount)
+                          .loadConstant(paramCount)
                           .aaload()
                           .dup()
                           .astore(suffixSlot)
@@ -1572,7 +1572,7 @@ public final class StringConcatFactory {
                      *  buf = newArrayWithSuffix(suffix, length, coder)
                      */
                     if (staticConcat) {
-                        cb.ldc(constants[paramCount]);
+                        cb.loadConstant(constants[paramCount]);
                     } else {
                         cb.aload(suffixSlot);
                     }
@@ -1759,10 +1759,10 @@ public final class StringConcatFactory {
                           .loadLocal(kind, cb.parameterSlot(i));
 
                         if (staticConcat) {
-                            cb.ldc(constants[i - 3]);
+                            cb.loadConstant(constants[i - 3]);
                         } else {
                             cb.aload(constantsSlot)
-                              .ldc(i - 4)
+                              .loadConstant(i - 4)
                               .aaload();
                         }
 

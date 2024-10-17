@@ -24,6 +24,7 @@
  */
 package jdk.internal.net.http.hpack;
 
+import java.net.ProtocolException;
 import java.nio.ByteBuffer;
 
 /**
@@ -292,4 +293,17 @@ public interface DecodingCallback {
      *         new capacity of the header table
      */
     default void onSizeUpdate(int capacity) { }
+
+    default void onMaxHeaderListSizeReached(long size, int maxHeaderListSize)
+        throws ProtocolException {
+        throw new ProtocolException(String
+                .format("Size exceeds MAX_HEADERS_LIST_SIZE: %s > %s",
+                        size, maxHeaderListSize));
+    }
+
+    default void onMaxLiteralWithIndexingReached(long indexed, int maxIndexed)
+            throws ProtocolException {
+        throw new ProtocolException(String.format("Too many literal with indexing: %s > %s",
+                indexed, maxIndexed));
+    }
 }

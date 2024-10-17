@@ -635,8 +635,11 @@ void LightweightSynchronizer::enter_for(Handle obj, BasicLock* lock, JavaThread*
     bool entered = monitor->enter_for(locking_thread);
     assert(entered, "recursive ObjectMonitor::enter_for must succeed");
   } else {
-    // It is assumed that enter_for must enter on an object without contention.
-    monitor = inflate_and_enter(obj(), ObjectSynchronizer::inflate_cause_monitor_enter, locking_thread, current);
+    do {
+      // It is assumed that enter_for must enter on an object without contention.
+      monitor = inflate_and_enter(obj(), ObjectSynchronizer::inflate_cause_monitor_enter, locking_thread, current);
+      // But there may still be a race with deflation.
+    } while (monitor == nullptr);
   }
 
   assert(monitor != nullptr, "LightweightSynchronizer::enter_for must succeed");

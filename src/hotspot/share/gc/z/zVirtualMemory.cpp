@@ -27,6 +27,7 @@
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zAddressSpaceLimit.hpp"
 #include "gc/z/zGlobals.hpp"
+#include "gc/z/zInitialize.hpp"
 #include "gc/z/zNMT.hpp"
 #include "gc/z/zVirtualMemory.inline.hpp"
 #include "utilities/align.hpp"
@@ -44,7 +45,7 @@ ZVirtualMemoryManager::ZVirtualMemoryManager(size_t max_capacity)
 
   // Reserve address space
   if (!reserve(max_capacity)) {
-    log_error_pd(gc)("Failed to reserve enough address space for Java heap");
+    ZInitialize::error_d("Failed to reserve enough address space for Java heap");
     return;
   }
 

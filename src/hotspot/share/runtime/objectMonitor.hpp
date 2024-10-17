@@ -179,7 +179,6 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
 
   ObjectWaiter* volatile _cxq;      // LL of recently-arrived threads blocked on entry.
   JavaThread* volatile _succ;       // Heir presumptive thread - used for futile wakeup throttling
-  JavaThread* volatile _Responsible;
 
   volatile int _SpinDuration;
 
@@ -348,7 +347,7 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   void      enter_for_with_contention_mark(JavaThread* locking_thread, ObjectMonitorContentionMark& contention_mark);
   bool      enter_for(JavaThread* locking_thread);
   bool      enter(JavaThread* current);
-  bool      try_enter(JavaThread* current);
+  bool      try_enter(JavaThread* current, bool check_for_recursion = true);
   bool      spin_enter(JavaThread* current);
   void      enter_with_contention_mark(JavaThread* current, ObjectMonitorContentionMark& contention_mark);
   void      exit(JavaThread* current, bool not_suspended = true);
@@ -377,6 +376,7 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
 
   enum class TryLockResult { Interference = -1, HasOwner = 0, Success = 1 };
 
+  bool           TryLockWithContentionMark(JavaThread* locking_thread, ObjectMonitorContentionMark& contention_mark);
   TryLockResult  TryLock(JavaThread* current);
 
   bool      TrySpin(JavaThread* current);
@@ -395,12 +395,17 @@ class ObjectMonitorContentionMark : StackObj {
   DEBUG_ONLY(friend class ObjectMonitor;)
 
   ObjectMonitor* _monitor;
+  bool _extended;
 
   NONCOPYABLE(ObjectMonitorContentionMark);
 
  public:
   explicit ObjectMonitorContentionMark(ObjectMonitor* monitor);
   ~ObjectMonitorContentionMark();
+
+  // Extends the contention scope beyond this objects lifetime.
+  // Requires manual decrement of the contentions counter.
+  void extend();
 };
 
 #endif // SHARE_RUNTIME_OBJECTMONITOR_HPP

@@ -172,6 +172,8 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
      */
     private static final int bufSize4ES;
 
+    private static final int maxHeaderSize;
+
     /*
      * Restrict setting of request headers through the public api
      * consistent with JavaScript XMLHttpRequest2 with a few
@@ -288,6 +290,19 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
         } else {
             restrictedHeaderSet = null;
         }
+
+        int defMaxHeaderSize = 384 * 1024;
+        String maxHeaderSizeStr = getNetProperty("jdk.http.maxHeaderSize");
+        int maxHeaderSizeVal = defMaxHeaderSize;
+        if (maxHeaderSizeStr != null) {
+            try {
+                maxHeaderSizeVal = Integer.parseInt(maxHeaderSizeStr);
+            } catch (NumberFormatException n) {
+                maxHeaderSizeVal = defMaxHeaderSize;
+            }
+        }
+        if (maxHeaderSizeVal < 0) maxHeaderSizeVal = 0;
+        maxHeaderSize = maxHeaderSizeVal;
     }
 
     static final String httpVersion = "HTTP/1.1";
@@ -754,7 +769,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                 }
                 ps = (PrintStream) http.getOutputStream();
                 connected=true;
-                responses = new MessageHeader();
+                responses = new MessageHeader(maxHeaderSize);
                 setRequests=false;
                 writeRequests();
             }
@@ -912,7 +927,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
             throws IOException {
         super(checkURL(u));
         requests = new MessageHeader();
-        responses = new MessageHeader();
+        responses = new MessageHeader(maxHeaderSize);
         userHeaders = new MessageHeader();
         this.handler = handler;
         instProxy = p;
@@ -2810,7 +2825,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
         }
 
         // clear out old response headers!!!!
-        responses = new MessageHeader();
+        responses = new MessageHeader(maxHeaderSize);
         if (stat == HTTP_USE_PROXY) {
             /* This means we must re-request the resource through the
              * proxy denoted in the "Location:" field of the response.
@@ -3000,7 +3015,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
             } catch (IOException e) { }
         }
         responseCode = -1;
-        responses = new MessageHeader();
+        responses = new MessageHeader(maxHeaderSize);
         connected = false;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,9 +45,10 @@ import static java.lang.String.LATIN1;
 import static java.lang.String.UTF16;
 
 /**
- * The {@code Integer} class wraps a value of the primitive type
- * {@code int} in an object. An object of type {@code Integer}
- * contains a single field whose type is {@code int}.
+ * The {@code Integer} class is the {@linkplain
+ * java.lang##wrapperClass wrapper class} for values of the primitive
+ * type {@code int}. An object of type {@code Integer} contains a
+ * single field whose type is {@code int}.
  *
  * <p>In addition, this class provides several methods for converting
  * an {@code int} to a {@code String} and a {@code String} to an
@@ -63,8 +64,9 @@ import static java.lang.String.UTF16;
  * <p>Implementation note: The implementations of the "bit twiddling"
  * methods (such as {@link #highestOneBit(int) highestOneBit} and
  * {@link #numberOfTrailingZeros(int) numberOfTrailingZeros}) are
- * based on material from Henry S. Warren, Jr.'s <i>Hacker's
- * Delight</i>, (Addison Wesley, 2002).
+ * based on material from Henry S. Warren, Jr.'s <cite>Hacker's
+ * Delight</cite>, (Addison Wesley, 2002) and <cite>Hacker's
+ * Delight, Second Edition</cite>, (Pearson Education, 2013).
  *
  * @author  Lee Boynton
  * @author  Arthur van Hoff
@@ -1736,7 +1738,7 @@ public final class Integer extends Number
      * compress(expand(x, m), m) == x & compress(m, m)
      * }
      * <p>
-     * The Sheep And Goats (SAG) operation (see Hacker's Delight, section 7.7)
+     * The Sheep And Goats (SAG) operation (see Hacker's Delight, Second Edition, section 7.7)
      * can be implemented as follows:
      * {@snippet lang="java" :
      * int compressLeft(int i, int mask) {

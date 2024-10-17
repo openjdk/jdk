@@ -25,14 +25,13 @@
 
 package java.lang.classfile;
 
-import java.util.function.Consumer;
-
 import java.lang.classfile.constantpool.Utf8Entry;
+import java.lang.reflect.AccessFlag;
+import java.util.function.Consumer;
 
 import jdk.internal.classfile.impl.AccessFlagsImpl;
 import jdk.internal.classfile.impl.ChainedMethodBuilder;
 import jdk.internal.classfile.impl.TerminalMethodBuilder;
-import java.lang.reflect.AccessFlag;
 import jdk.internal.javac.PreviewFeature;
 
 /**

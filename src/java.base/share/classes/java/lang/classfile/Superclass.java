@@ -25,6 +25,7 @@
 package java.lang.classfile;
 
 import java.lang.classfile.constantpool.ClassEntry;
+
 import jdk.internal.classfile.impl.SuperclassImpl;
 import jdk.internal.javac.PreviewFeature;
 

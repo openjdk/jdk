@@ -1355,9 +1355,12 @@ public class AllocationMergesTests {
     }
 
     @Test
-    @IR(counts = { IRNode.ALLOC, "1" })
-    // The last allocation won't be reduced because it would cause the creation
-    // of a nested SafePointScalarMergeNode.
+    // Using G1, all allocations are reduced.
+    @IR(applyIf = {"UseG1GC", "true"}, failOn = { IRNode.ALLOC })
+    // Otherwise, the last allocation won't be reduced because it would cause
+    // the creation of a nested SafePointScalarMergeNode. This is caused by the
+    // store barrier corresponding to 'C.other = B'.
+    @IR(applyIf = {"UseG1GC", "false"}, counts = { IRNode.ALLOC, "1" })
     int testReReduce_C2(boolean cond1, int x, int y) { return testReReduce(cond1, x, y); }
 
     @DontCompile

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,20 +102,18 @@ public class ChoiceCallback implements Callback, java.io.Serializable {
     public ChoiceCallback(String prompt, String[] choices,
                 int defaultChoice, boolean multipleSelectionsAllowed) {
 
-        if (prompt == null || prompt.isEmpty() ||
-            choices == null || choices.length == 0 ||
-            defaultChoice < 0 || defaultChoice >= choices.length)
-            throw new IllegalArgumentException();
-
+        choices = (choices == null || choices.length == 0 ? choices :
+                choices.clone());
+        String errMsg = doSanityCheck(prompt, choices, defaultChoice,
+                multipleSelectionsAllowed);
+        if (errMsg != null) {
+            throw new IllegalArgumentException(errMsg);
+        }
         this.prompt = prompt;
         this.defaultChoice = defaultChoice;
         this.multipleSelectionsAllowed = multipleSelectionsAllowed;
 
-        this.choices = choices.clone();
-        for (int i = 0; i < choices.length; i++) {
-            if (choices[i] == null || choices[i].isEmpty())
-                throw new IllegalArgumentException();
-        }
+        this.choices = choices;
     }
 
     /**
@@ -183,9 +181,11 @@ public class ChoiceCallback implements Callback, java.io.Serializable {
      * @see #getSelectedIndexes
      */
     public void setSelectedIndexes(int[] selections) {
-        if (!multipleSelectionsAllowed)
+        if (!multipleSelectionsAllowed) {
             throw new UnsupportedOperationException();
-        this.selections = selections == null ? null : selections.clone();
+        }
+        this.selections = ((selections == null || selections.length == 0) ?
+                selections : selections.clone());
     }
 
     /**
@@ -211,26 +211,35 @@ public class ChoiceCallback implements Callback, java.io.Serializable {
     private void readObject(ObjectInputStream stream)
             throws IOException, ClassNotFoundException {
         stream.defaultReadObject();
+        choices = (choices == null || choices.length == 0 ?
+                choices :  choices.clone());
+        String errMsg = doSanityCheck(prompt, choices, defaultChoice,
+                multipleSelectionsAllowed);
+        if (errMsg != null) {
+            throw new InvalidObjectException(errMsg);
+        }
 
+        selections = (selections == null || selections.length == 0 ?
+                selections :  selections.clone());
+        if (selections != null && selections.length > 1 &&
+                !multipleSelectionsAllowed) {
+            throw new InvalidObjectException("Multiple selections not allowed");
+        }
+    }
+
+    private static String doSanityCheck(String prompt, String[] choices,
+            int defaultChoice, boolean allowMultiple) {
         if ((prompt == null) || prompt.isEmpty() ||
                 (choices == null) || (choices.length == 0) ||
                 (defaultChoice < 0) || (defaultChoice >= choices.length)) {
-            throw new InvalidObjectException(
-                    "Missing/invalid prompt/choices");
+            return "Missing/invalid prompt/choices";
         }
 
-        choices = choices.clone();
         for (int i = 0; i < choices.length; i++) {
-            if ((choices[i] == null) || choices[i].isEmpty())
-                throw new InvalidObjectException("Null/empty choices");
-        }
-
-        if (selections != null) {
-            selections = selections.clone();
-            if (!multipleSelectionsAllowed && (selections.length != 1)) {
-                throw new InvalidObjectException(
-                        "Multiple selections not allowed");
+            if ((choices[i] == null) || choices[i].isEmpty()) {
+                return "Null/empty choices value";
             }
         }
+        return null;
     }
 }

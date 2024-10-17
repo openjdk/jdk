@@ -45,14 +45,6 @@ InstanceKlass* vmClasses::_klasses[static_cast<int>(vmClassID::LIMIT)]
                                                  =  { nullptr /*, nullptr...*/ };
 InstanceKlass* vmClasses::_box_klasses[T_VOID+1] =  { nullptr /*, nullptr...*/ };
 
-
-// CDS: scan and relocate all classes referenced by _klasses[].
-void vmClasses::metaspace_pointers_do(MetaspaceClosure* it) {
-  for (auto id : EnumRange<vmClassID>{}) {
-    it->push(klass_addr_at(id));
-  }
-}
-
 bool vmClasses::is_loaded(InstanceKlass* klass) {
   return klass != nullptr && klass->is_loaded();
 }
@@ -205,8 +197,6 @@ void vmClasses::resolve_all(TRAPS) {
   _box_klasses[T_SHORT]   = vmClasses::Short_klass();
   _box_klasses[T_INT]     = vmClasses::Integer_klass();
   _box_klasses[T_LONG]    = vmClasses::Long_klass();
-  //_box_klasses[T_OBJECT]  = vmClasses::object_klass();
-  //_box_klasses[T_ARRAY]   = vmClasses::object_klass();
 
 #ifdef ASSERT
   if (CDSConfig::is_using_archive()) {

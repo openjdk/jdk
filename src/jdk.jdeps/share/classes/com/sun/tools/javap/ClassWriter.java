@@ -741,7 +741,7 @@ public class ClassWriter extends BasicWriter {
      */
     String getConstantValue(ClassDesc d, ConstantValueEntry cpInfo) {
         switch (cpInfo.tag()) {
-            case ClassFile.TAG_INTEGER: {
+            case PoolEntry.TAG_INTEGER: {
                 var val = (Integer)cpInfo.constantValue();
                 switch (d.descriptorString()) {
                     case "C":
@@ -755,7 +755,7 @@ public class ClassWriter extends BasicWriter {
                         return String.valueOf(val);
                 }
             }
-            case ClassFile.TAG_STRING:
+            case PoolEntry.TAG_STRING:
                 return getConstantStringValue(cpInfo.constantValue().toString());
             default:
                 return constantWriter.stringValue(cpInfo);

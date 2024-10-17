@@ -26,9 +26,11 @@ package java.lang.classfile.instruction;
 
 import java.lang.classfile.CodeElement;
 import java.lang.classfile.CodeModel;
-import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.Instruction;
+import java.lang.classfile.constantpool.ClassEntry;
+
 import jdk.internal.classfile.impl.AbstractInstruction;
+import jdk.internal.classfile.impl.BytecodeHelpers;
 import jdk.internal.javac.PreviewFeature;
 
 /**
@@ -58,9 +60,11 @@ public sealed interface NewMultiArrayInstruction extends Instruction
      *
      * @param arrayTypeEntry the type of the array
      * @param dimensions the number of dimensions of the array
+     * @throws IllegalArgumentException if {@code dimensions} is out of range
      */
     static NewMultiArrayInstruction of(ClassEntry arrayTypeEntry,
                                        int dimensions) {
+        BytecodeHelpers.validateMultiArrayDimensions(dimensions);
         return new AbstractInstruction.UnboundNewMultidimensionalArrayInstruction(arrayTypeEntry, dimensions);
     }
 }

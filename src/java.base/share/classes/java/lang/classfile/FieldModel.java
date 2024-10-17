@@ -25,10 +25,10 @@
 
 package java.lang.classfile;
 
+import java.lang.classfile.constantpool.Utf8Entry;
 import java.lang.constant.ClassDesc;
 import java.util.Optional;
 
-import java.lang.classfile.constantpool.Utf8Entry;
 import jdk.internal.classfile.impl.BufferedFieldBuilder;
 import jdk.internal.classfile.impl.FieldImpl;
 import jdk.internal.classfile.impl.Util;

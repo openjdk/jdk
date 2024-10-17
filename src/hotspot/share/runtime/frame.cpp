@@ -719,6 +719,8 @@ void frame::print_on_error(outputStream* st, char* buf, int buflen, bool verbose
       st->print("v  ~MethodHandlesAdapterBlob " PTR_FORMAT, p2i(pc()));
     } else if (_cb->is_uncommon_trap_stub()) {
       st->print("v  ~UncommonTrapBlob " PTR_FORMAT, p2i(pc()));
+    } else if (_cb->is_upcall_stub()) {
+      st->print("v  ~UpcallStub::%s " PTR_FORMAT, _cb->name(), p2i(pc()));
     } else {
       st->print("v  blob " PTR_FORMAT, p2i(pc()));
     }
@@ -1116,6 +1118,19 @@ void frame::oops_entry_do(OopClosure* f, const RegisterMap* map) const {
   entry_frame_call_wrapper()->oops_do(f);
 }
 
+void frame::oops_upcall_do(OopClosure* f, const RegisterMap* map) const {
+  assert(map != nullptr, "map must be set");
+  if (map->include_argument_oops()) {
+    // Upcall stubs call a MethodHandle impl method of which only the receiver
+    // is ever an oop.
+    // Currently we should not be able to get here, since there are no
+    // safepoints in the one resolve stub we can get into (handle_wrong_method)
+    // Leave this here as a trap in case we ever do:
+    ShouldNotReachHere(); // not implemented
+  }
+  _cb->as_upcall_stub()->oops_do(f, *this);
+}
+
 bool frame::is_deoptimized_frame() const {
   assert(_deopt_state != unknown, "not answerable");
   if (_deopt_state == is_deoptimized) {
@@ -1147,7 +1162,7 @@ void frame::oops_do_internal(OopClosure* f, NMethodClosure* cf,
   } else if (is_entry_frame()) {
     oops_entry_do(f, map);
   } else if (is_upcall_stub_frame()) {
-    _cb->as_upcall_stub()->oops_do(f, *this);
+    oops_upcall_do(f, map);
   } else if (CodeCache::contains(pc())) {
     oops_nmethod_do(f, cf, df, derived_mode, map);
   } else {

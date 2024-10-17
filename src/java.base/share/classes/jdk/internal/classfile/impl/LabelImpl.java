@@ -24,8 +24,6 @@
  */
 package jdk.internal.classfile.impl;
 
-import java.util.Objects;
-
 import java.lang.classfile.Label;
 import java.lang.classfile.instruction.LabelTarget;
 
@@ -52,7 +50,7 @@ public final class LabelImpl
     private int bci;
 
     public LabelImpl(LabelContext labelContext, int bci) {
-        this.labelContext = Objects.requireNonNull(labelContext);
+        this.labelContext = labelContext;
         this.bci = bci;
     }
 

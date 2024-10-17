@@ -660,7 +660,7 @@ public:
   inline void conc_update_with_forwarded(T* p);
 
   template <class T>
-  inline void update_with_forwarded(T* p);
+  inline void non_conc_update_with_forwarded(T* p);
 
   static inline void atomic_update_oop(oop update,       oop* addr,       oop compare);
   static inline void atomic_update_oop(oop update, narrowOop* addr,       oop compare);

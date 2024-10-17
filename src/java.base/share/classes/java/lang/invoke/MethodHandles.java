@@ -39,7 +39,9 @@ import sun.invoke.util.Wrapper;
 import sun.reflect.misc.ReflectUtil;
 import sun.security.util.SecurityConstants;
 
+import java.lang.classfile.ClassFile;
 import java.lang.classfile.ClassModel;
+import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
 import java.lang.invoke.LambdaForm.BasicType;
 import java.lang.invoke.MethodHandleImpl.Intrinsic;
@@ -2242,85 +2244,70 @@ public class MethodHandles {
         private static final ClassFileDumper DEFAULT_DUMPER = ClassFileDumper.getInstance(
                 "jdk.invoke.MethodHandle.dumpClassFiles", "DUMP_CLASS_FILES");
 
-        static class ClassFile {
-            final String name;  // internal name
-            final int accessFlags;
-            final byte[] bytes;
-            ClassFile(String name, int accessFlags, byte[] bytes) {
-                this.name = name;
-                this.accessFlags = accessFlags;
-                this.bytes = bytes;
+        /**
+         * This method checks the class file version and the structure of `this_class`.
+         * and checks if the bytes is a class or interface (ACC_MODULE flag not set)
+         * that is in the named package.
+         *
+         * @throws IllegalArgumentException if ACC_MODULE flag is set in access flags
+         * or the class is not in the given package name.
+         */
+        static String validateAndFindInternalName(byte[] bytes, String pkgName) {
+            int magic = readInt(bytes, 0);
+            if (magic != ClassFile.MAGIC_NUMBER) {
+                throw new ClassFormatError("Incompatible magic value: " + magic);
+            }
+            // We have to read major and minor this way as ClassFile API throws IAE
+            // yet we want distinct ClassFormatError and UnsupportedClassVersionError
+            int minor = readUnsignedShort(bytes, 4);
+            int major = readUnsignedShort(bytes, 6);
+
+            if (!VM.isSupportedClassFileVersion(major, minor)) {
+                throw new UnsupportedClassVersionError("Unsupported class file version " + major + "." + minor);
             }
 
-            static ClassFile newInstanceNoCheck(String name, byte[] bytes) {
-                return new ClassFile(name, 0, bytes);
+            String name;
+            ClassDesc sym;
+            int accessFlags;
+            try {
+                ClassModel cm = ClassFile.of().parse(bytes);
+                var thisClass = cm.thisClass();
+                name = thisClass.asInternalName();
+                sym = thisClass.asSymbol();
+                accessFlags = cm.flags().flagsMask();
+            } catch (IllegalArgumentException e) {
+                ClassFormatError cfe = new ClassFormatError();
+                cfe.initCause(e);
+                throw cfe;
+            }
+            // must be a class or interface
+            if ((accessFlags & ACC_MODULE) != 0) {
+                throw newIllegalArgumentException("Not a class or interface: ACC_MODULE flag is set");
             }
 
-            /**
-             * This method checks the class file version and the structure of `this_class`.
-             * and checks if the bytes is a class or interface (ACC_MODULE flag not set)
-             * that is in the named package.
-             *
-             * @throws IllegalArgumentException if ACC_MODULE flag is set in access flags
-             * or the class is not in the given package name.
-             */
-            static ClassFile newInstance(byte[] bytes, String pkgName) {
-                var cf = readClassFile(bytes);
-
-                // check if it's in the named package
-                int index = cf.name.lastIndexOf('/');
-                String pn = (index == -1) ? "" : cf.name.substring(0, index).replace('/', '.');
-                if (!pn.equals(pkgName)) {
-                    throw newIllegalArgumentException(cf.name + " not in same package as lookup class");
-                }
-                return cf;
+            String pn = sym.packageName();
+            if (!pn.equals(pkgName)) {
+                throw newIllegalArgumentException(name + " not in same package as lookup class");
             }
 
-            private static ClassFile readClassFile(byte[] bytes) {
-                int magic = readInt(bytes, 0);
-                if (magic != 0xCAFEBABE) {
-                    throw new ClassFormatError("Incompatible magic value: " + magic);
-                }
-                int minor = readUnsignedShort(bytes, 4);
-                int major = readUnsignedShort(bytes, 6);
-                if (!VM.isSupportedClassFileVersion(major, minor)) {
-                    throw new UnsupportedClassVersionError("Unsupported class file version " + major + "." + minor);
-                }
+            return name;
+        }
 
-                String name;
-                int accessFlags;
-                try {
-                    ClassModel cm = java.lang.classfile.ClassFile.of().parse(bytes);
-                    name = cm.thisClass().asInternalName();
-                    accessFlags = cm.flags().flagsMask();
-                } catch (IllegalArgumentException e) {
-                    ClassFormatError cfe = new ClassFormatError();
-                    cfe.initCause(e);
-                    throw cfe;
-                }
-                // must be a class or interface
-                if ((accessFlags & ACC_MODULE) != 0) {
-                    throw newIllegalArgumentException("Not a class or interface: ACC_MODULE flag is set");
-                }
-                return new ClassFile(name, accessFlags, bytes);
+        private static int readInt(byte[] bytes, int offset) {
+            if ((offset + 4) > bytes.length) {
+                throw new ClassFormatError("Invalid ClassFile structure");
             }
+            return ((bytes[offset] & 0xFF) << 24)
+                    | ((bytes[offset + 1] & 0xFF) << 16)
+                    | ((bytes[offset + 2] & 0xFF) << 8)
+                    | (bytes[offset + 3] & 0xFF);
+        }
 
-            private static int readInt(byte[] bytes, int offset) {
-                if ((offset+4) > bytes.length) {
-                    throw new ClassFormatError("Invalid ClassFile structure");
-                }
-                return ((bytes[offset] & 0xFF) << 24)
-                        | ((bytes[offset + 1] & 0xFF) << 16)
-                        | ((bytes[offset + 2] & 0xFF) << 8)
-                        | (bytes[offset + 3] & 0xFF);
+        private static int readUnsignedShort(byte[] bytes, int offset) {
+            if ((offset+2) > bytes.length) {
+                throw new ClassFormatError("Invalid ClassFile structure");
             }
-
-            private static int readUnsignedShort(byte[] bytes, int offset) {
-                if ((offset+2) > bytes.length) {
-                    throw new ClassFormatError("Invalid ClassFile structure");
-                }
-                return ((bytes[offset] & 0xFF) << 8) | (bytes[offset + 1] & 0xFF);
-            }
+            return ((bytes[offset] & 0xFF) << 8) | (bytes[offset + 1] & 0xFF);
         }
 
         /*
@@ -2334,23 +2321,22 @@ public class MethodHandles {
          * {@code bytes} denotes a class in a different package than the lookup class
          */
         private ClassDefiner makeClassDefiner(byte[] bytes) {
-            ClassFile cf = ClassFile.newInstance(bytes, lookupClass().getPackageName());
-            return new ClassDefiner(this, cf, STRONG_LOADER_LINK, defaultDumper());
+            var internalName = validateAndFindInternalName(bytes, lookupClass().getPackageName());
+            return new ClassDefiner(this, internalName, bytes, STRONG_LOADER_LINK, defaultDumper());
         }
 
         /**
          * Returns a ClassDefiner that creates a {@code Class} object of a normal class
          * from the given bytes.  No package name check on the given bytes.
          *
-         * @param name    internal name
+         * @param internalName internal name
          * @param bytes   class bytes
          * @param dumper  dumper to write the given bytes to the dumper's output directory
          * @return ClassDefiner that defines a normal class of the given bytes.
          */
-        ClassDefiner makeClassDefiner(String name, byte[] bytes, ClassFileDumper dumper) {
+        ClassDefiner makeClassDefiner(String internalName, byte[] bytes, ClassFileDumper dumper) {
             // skip package name validation
-            ClassFile cf = ClassFile.newInstanceNoCheck(name, bytes);
-            return new ClassDefiner(this, cf, STRONG_LOADER_LINK, dumper);
+            return new ClassDefiner(this, internalName, bytes, STRONG_LOADER_LINK, dumper);
         }
 
         /**
@@ -2368,8 +2354,8 @@ public class MethodHandles {
          * {@code bytes} denotes a class in a different package than the lookup class
          */
         ClassDefiner makeHiddenClassDefiner(byte[] bytes, ClassFileDumper dumper) {
-            ClassFile cf = ClassFile.newInstance(bytes, lookupClass().getPackageName());
-            return makeHiddenClassDefiner(cf, false, dumper, 0);
+            var internalName = validateAndFindInternalName(bytes, lookupClass().getPackageName());
+            return makeHiddenClassDefiner(internalName, bytes, false, dumper, 0);
         }
 
         /**
@@ -2391,51 +2377,53 @@ public class MethodHandles {
         private ClassDefiner makeHiddenClassDefiner(byte[] bytes,
                                                     boolean accessVmAnnotations,
                                                     int flags) {
-            ClassFile cf = ClassFile.newInstance(bytes, lookupClass().getPackageName());
-            return makeHiddenClassDefiner(cf, accessVmAnnotations, defaultDumper(), flags);
+            var internalName = validateAndFindInternalName(bytes, lookupClass().getPackageName());
+            return makeHiddenClassDefiner(internalName, bytes, accessVmAnnotations, defaultDumper(), flags);
         }
 
         /**
          * Returns a ClassDefiner that creates a {@code Class} object of a hidden class
          * from the given bytes and the given options.  No package name check on the given bytes.
          *
-         * @param name    internal name that specifies the prefix of the hidden class
+         * @param internalName internal name that specifies the prefix of the hidden class
          * @param bytes   class bytes
          * @param dumper  dumper to write the given bytes to the dumper's output directory
          * @return ClassDefiner that defines a hidden class of the given bytes and options.
          */
-        ClassDefiner makeHiddenClassDefiner(String name, byte[] bytes, ClassFileDumper dumper) {
+        ClassDefiner makeHiddenClassDefiner(String internalName, byte[] bytes, ClassFileDumper dumper) {
             Objects.requireNonNull(dumper);
             // skip name and access flags validation
-            return makeHiddenClassDefiner(ClassFile.newInstanceNoCheck(name, bytes), false, dumper, 0);
+            return makeHiddenClassDefiner(internalName, bytes, false, dumper, 0);
         }
 
         /**
          * Returns a ClassDefiner that creates a {@code Class} object of a hidden class
          * from the given bytes and the given options.  No package name check on the given bytes.
          *
-         * @param name    internal name that specifies the prefix of the hidden class
+         * @param internalName internal name that specifies the prefix of the hidden class
          * @param bytes   class bytes
          * @param flags   class options flag mask
          * @param dumper  dumper to write the given bytes to the dumper's output directory
          * @return ClassDefiner that defines a hidden class of the given bytes and options.
          */
-        ClassDefiner makeHiddenClassDefiner(String name, byte[] bytes, ClassFileDumper dumper, int flags) {
+        ClassDefiner makeHiddenClassDefiner(String internalName, byte[] bytes, ClassFileDumper dumper, int flags) {
             Objects.requireNonNull(dumper);
             // skip name and access flags validation
-            return makeHiddenClassDefiner(ClassFile.newInstanceNoCheck(name, bytes), false, dumper, flags);
+            return makeHiddenClassDefiner(internalName, bytes, false, dumper, flags);
         }
 
         /**
          * Returns a ClassDefiner that creates a {@code Class} object of a hidden class
          * from the given class file and options.
          *
-         * @param cf ClassFile
+         * @param internalName internal name
+         * @param bytes Class byte array
          * @param flags class option flag mask
          * @param accessVmAnnotations true to give the hidden class access to VM annotations
          * @param dumper dumper to write the given bytes to the dumper's output directory
          */
-        private ClassDefiner makeHiddenClassDefiner(ClassFile cf,
+        private ClassDefiner makeHiddenClassDefiner(String internalName,
+                                                    byte[] bytes,
                                                     boolean accessVmAnnotations,
                                                     ClassFileDumper dumper,
                                                     int flags) {
@@ -2446,27 +2434,12 @@ public class MethodHandles {
                 flags |= ACCESS_VM_ANNOTATIONS;
             }
 
-            return new ClassDefiner(this, cf, flags, dumper);
+            return new ClassDefiner(this, internalName, bytes, flags, dumper);
         }
 
-        static class ClassDefiner {
-            private final Lookup lookup;
-            private final String name;  // internal name
-            private final byte[] bytes;
-            private final int classFlags;
-            private final ClassFileDumper dumper;
-
-            private ClassDefiner(Lookup lookup, ClassFile cf, int flags, ClassFileDumper dumper) {
-                assert ((flags & HIDDEN_CLASS) != 0 || (flags & STRONG_LOADER_LINK) == STRONG_LOADER_LINK);
-                this.lookup = lookup;
-                this.bytes = cf.bytes;
-                this.name = cf.name;
-                this.classFlags = flags;
-                this.dumper = dumper;
-            }
-
-            String internalName() {
-                return name;
+        record ClassDefiner(Lookup lookup, String internalName, byte[] bytes, int classFlags, ClassFileDumper dumper) {
+            ClassDefiner {
+                assert ((classFlags & HIDDEN_CLASS) != 0 || (classFlags & STRONG_LOADER_LINK) == STRONG_LOADER_LINK);
             }
 
             Class<?> defineClass(boolean initialize) {
@@ -2495,7 +2468,7 @@ public class MethodHandles {
                 Class<?> c = null;
                 try {
                     c = SharedSecrets.getJavaLangAccess()
-                            .defineClass(loader, lookupClass, name, bytes, pd, initialize, classFlags, classData);
+                            .defineClass(loader, lookupClass, internalName, bytes, pd, initialize, classFlags, classData);
                     assert !isNestmate() || c.getNestHost() == lookupClass.getNestHost();
                     return c;
                 } finally {

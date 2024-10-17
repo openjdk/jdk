@@ -97,18 +97,6 @@ void ShenandoahKeepAliveClosure::do_oop_work(T* p) {
   }
 }
 
-ShenandoahUpdateRefsClosure::ShenandoahUpdateRefsClosure() :
-  _heap(ShenandoahHeap::heap()) {
-}
-
-template <class T>
-void ShenandoahUpdateRefsClosure::do_oop_work(T* p) {
-  _heap->update_with_forwarded(p);
-}
-
-void ShenandoahUpdateRefsClosure::do_oop(oop* p)       { do_oop_work(p); }
-void ShenandoahUpdateRefsClosure::do_oop(narrowOop* p) { do_oop_work(p); }
-
 template <bool concurrent, bool stable_thread>
 ShenandoahEvacuateUpdateRootClosureBase<concurrent, stable_thread>::ShenandoahEvacuateUpdateRootClosureBase() :
   _heap(ShenandoahHeap::heap()), _thread(stable_thread ? Thread::current() : nullptr) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -241,6 +241,7 @@ public interface HttpServerAdapters {
         public abstract void close();
         public abstract InetSocketAddress getRemoteAddress();
         public abstract String getConnectionKey();
+        public abstract InetSocketAddress getLocalAddress();
         public void serverPush(URI uri, HttpHeaders headers, byte[] body) {
             ByteArrayInputStream bais = new ByteArrayInputStream(body);
             serverPush(uri, headers, bais);
@@ -303,7 +304,10 @@ public interface HttpServerAdapters {
             public InetSocketAddress getRemoteAddress() {
                 return exchange.getRemoteAddress();
             }
-
+            @Override
+            public InetSocketAddress getLocalAddress() {
+                return exchange.getLocalAddress();
+            }
             @Override
             public URI getRequestURI() { return exchange.getRequestURI(); }
             @Override
@@ -369,6 +373,10 @@ public interface HttpServerAdapters {
             @Override
             public InetSocketAddress getRemoteAddress() {
                 return exchange.getRemoteAddress();
+            }
+            @Override
+            public InetSocketAddress getLocalAddress() {
+                return exchange.getLocalAddress();
             }
 
             @Override

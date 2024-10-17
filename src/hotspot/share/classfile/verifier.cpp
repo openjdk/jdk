@@ -32,6 +32,7 @@
 #include "classfile/stackMapTableFormat.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "classfile/systemDictionaryShared.hpp"
 #include "classfile/verifier.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -212,6 +213,11 @@ bool Verifier::verify(InstanceKlass* klass, bool should_verify_class, TRAPS) {
          exception_name == vmSymbols::java_lang_ClassFormatError())) {
       log_info(verification)("Fail over class verification to old verifier for: %s", klass->external_name());
       log_info(class, init)("Fail over class verification to old verifier for: %s", klass->external_name());
+      // Exclude any classes that fail over during dynamic dumping
+      if (CDSConfig::is_dumping_dynamic_archive()) {
+        SystemDictionaryShared::warn_excluded(klass, "Failed over class verification while dynamic dumping");
+        SystemDictionaryShared::set_excluded(klass);
+      }
       message_buffer = NEW_RESOURCE_ARRAY(char, message_buffer_len);
       exception_message = message_buffer;
       exception_name = inference_verify(

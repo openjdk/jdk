@@ -354,9 +354,9 @@ public:
 class VTransformReplicateNode : public VTransformNode {
 private:
   int _vlen;
-  const Type* _element_type;
+  BasicType _element_type;
 public:
-  VTransformReplicateNode(VTransform& vtransform, int vlen, const Type* element_type) :
+  VTransformReplicateNode(VTransform& vtransform, int vlen, BasicType element_type) :
     VTransformNode(vtransform, 2), _vlen(vlen), _element_type(element_type) {}
   virtual VTransformApplyResult apply(const VLoopAnalyzer& vloop_analyzer,
                                       const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;

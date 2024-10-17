@@ -771,6 +771,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
             // TODO this should be the default for every case.
             switch (runningWM) {
                 case XWM.CDE_WM:
+                case XWM.KDE2_WM:
                 case XWM.MOTIF_WM:
                 case XWM.METACITY_WM:
                 case XWM.MUTTER_WM:

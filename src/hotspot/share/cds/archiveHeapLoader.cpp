@@ -376,13 +376,12 @@ void ArchiveHeapLoader::finish_initialization() {
     intptr_t bottom = is_loaded() ? _loaded_heap_bottom : _mapped_heap_bottom;
 
     // The heap roots are stored in one or more segments that are laid out consecutively.
-    // The byte size of each segment (except for the last one) is max_size.
+    // The size of each segment (except for the last one) is max_size_in_{elems,bytes}.
     HeapRootSegments segments = FileMapInfo::current_info()->heap_root_segments();
-    int max_size = segments.max_size_in_bytes();
-    HeapShared::init_root_segment_sizes(max_size);
+    HeapShared::init_root_segment_sizes(segments.max_size_in_elems());
     intptr_t first_segment_addr = bottom + segments.base_offset();
     for (size_t c = 0; c < segments.count(); c++) {
-      oop segment_oop = cast_to_oop(first_segment_addr + (c * max_size));
+      oop segment_oop = cast_to_oop(first_segment_addr + (c * segments.max_size_in_bytes()));
       assert(segment_oop->is_objArray(), "Must be");
       HeapShared::add_root_segment((objArrayOop)segment_oop);
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "c1/c1_ValueType.hpp"
 #include "oops/method.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/macros.hpp"
 
 class BlockBegin;
 class BlockList;
@@ -1122,7 +1123,7 @@ class LIR_Op: public CompilationResourceObj {
   }
 #endif
 
-  virtual const char * name() const PRODUCT_RETURN0;
+  virtual const char * name() const PRODUCT_RETURN_NULL;
   virtual void visit(LIR_OpVisitState* state);
 
   int id()             const                  { return _id;     }
@@ -1400,7 +1401,7 @@ class LIR_Op1: public LIR_Op {
   virtual bool is_patching() { return _patch != lir_patch_none; }
   virtual void emit_code(LIR_Assembler* masm);
   virtual LIR_Op1* as_Op1() { return this; }
-  virtual const char * name() const PRODUCT_RETURN0;
+  virtual const char * name() const PRODUCT_RETURN_NULL;
 
   void set_in_opr(LIR_Opr opr) { _opr = opr; }
 
@@ -2033,8 +2034,9 @@ class LIR_OpProfileCall : public LIR_Op {
   virtual void print_instr(outputStream* out) const PRODUCT_RETURN;
   bool should_profile_receiver_type() const {
     bool callee_is_static = _profiled_callee->is_loaded() && _profiled_callee->is_static();
+    bool callee_is_private = _profiled_callee->is_loaded() && _profiled_callee->is_private();
     Bytecodes::Code bc = _profiled_method->java_code_at_bci(_profiled_bci);
-    bool call_is_virtual = (bc == Bytecodes::_invokevirtual && !_profiled_callee->can_be_statically_bound()) || bc == Bytecodes::_invokeinterface;
+    bool call_is_virtual = (bc == Bytecodes::_invokevirtual && !callee_is_private) || bc == Bytecodes::_invokeinterface;
     return C1ProfileVirtualCalls && call_is_virtual && !callee_is_static;
   }
 };

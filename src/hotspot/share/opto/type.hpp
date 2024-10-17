@@ -784,112 +784,96 @@ public:
 //------------------------------TypeVect---------------------------------------
 // Class of Vector Types
 class TypeVect : public Type {
-  const Type*   _elem;  // Vector's element type
-  const uint  _length;  // Elements in vector (power of 2)
+  const BasicType _elem_bt;  // Vector's element type
+  const uint _length;  // Elements in vector (power of 2)
 
 protected:
-  TypeVect(TYPES t, const Type* elem, uint length) : Type(t),
-    _elem(elem), _length(length) {}
+  TypeVect(TYPES t, BasicType elem_bt, uint length) : Type(t),
+    _elem_bt(elem_bt), _length(length) {}
 
 public:
-  const Type* element_type() const { return _elem; }
-  BasicType element_basic_type() const { return _elem->array_element_basic_type(); }
+  BasicType element_basic_type() const { return _elem_bt; }
   uint length() const { return _length; }
   uint length_in_bytes() const {
-   return _length * type2aelembytes(element_basic_type());
+    return _length * type2aelembytes(element_basic_type());
   }
 
-  virtual bool eq(const Type *t) const;
+  virtual bool eq(const Type* t) const;
   virtual uint hash() const;             // Type specific hashing
   virtual bool singleton(void) const;    // TRUE if type is a singleton
   virtual bool empty(void) const;        // TRUE if type is vacuous
 
-  static const TypeVect *make(const BasicType elem_bt, uint length, bool is_mask = false) {
-    // Use bottom primitive type.
-    return make(get_const_basic_type(elem_bt), length, is_mask);
-  }
-  // Used directly by Replicate nodes to construct singleton vector.
-  static const TypeVect *make(const Type* elem, uint length, bool is_mask = false);
+  static const TypeVect* make(const BasicType elem_bt, uint length, bool is_mask = false);
+  static const TypeVect* makemask(const BasicType elem_bt, uint length);
 
-  static const TypeVect *makemask(const BasicType elem_bt, uint length) {
-    // Use bottom primitive type.
-    return makemask(get_const_basic_type(elem_bt), length);
-  }
-  static const TypeVect *makemask(const Type* elem, uint length);
+  virtual const Type* xmeet( const Type *t) const;
+  virtual const Type* xdual() const;     // Compute dual right now.
 
-
-  virtual const Type *xmeet( const Type *t) const;
-  virtual const Type *xdual() const;     // Compute dual right now.
-
-  static const TypeVect *VECTA;
-  static const TypeVect *VECTS;
-  static const TypeVect *VECTD;
-  static const TypeVect *VECTX;
-  static const TypeVect *VECTY;
-  static const TypeVect *VECTZ;
-  static const TypeVect *VECTMASK;
+  static const TypeVect* VECTA;
+  static const TypeVect* VECTS;
+  static const TypeVect* VECTD;
+  static const TypeVect* VECTX;
+  static const TypeVect* VECTY;
+  static const TypeVect* VECTZ;
+  static const TypeVect* VECTMASK;
 
 #ifndef PRODUCT
-  virtual void dump2(Dict &d, uint, outputStream *st) const; // Specialized per-Type dumping
+  virtual void dump2(Dict& d, uint, outputStream* st) const; // Specialized per-Type dumping
 #endif
 };
 
 class TypeVectA : public TypeVect {
   friend class TypeVect;
-  TypeVectA(const Type* elem, uint length) : TypeVect(VectorA, elem, length) {}
+  TypeVectA(BasicType elem_bt, uint length) : TypeVect(VectorA, elem_bt, length) {}
 };
 
 class TypeVectS : public TypeVect {
   friend class TypeVect;
-  TypeVectS(const Type* elem, uint length) : TypeVect(VectorS, elem, length) {}
+  TypeVectS(BasicType elem_bt, uint length) : TypeVect(VectorS, elem_bt, length) {}
 };
 
 class TypeVectD : public TypeVect {
   friend class TypeVect;
-  TypeVectD(const Type* elem, uint length) : TypeVect(VectorD, elem, length) {}
+  TypeVectD(BasicType elem_bt, uint length) : TypeVect(VectorD, elem_bt, length) {}
 };
 
 class TypeVectX : public TypeVect {
   friend class TypeVect;
-  TypeVectX(const Type* elem, uint length) : TypeVect(VectorX, elem, length) {}
+  TypeVectX(BasicType elem_bt, uint length) : TypeVect(VectorX, elem_bt, length) {}
 };
 
 class TypeVectY : public TypeVect {
   friend class TypeVect;
-  TypeVectY(const Type* elem, uint length) : TypeVect(VectorY, elem, length) {}
+  TypeVectY(BasicType elem_bt, uint length) : TypeVect(VectorY, elem_bt, length) {}
 };
 
 class TypeVectZ : public TypeVect {
   friend class TypeVect;
-  TypeVectZ(const Type* elem, uint length) : TypeVect(VectorZ, elem, length) {}
+  TypeVectZ(BasicType elem_bt, uint length) : TypeVect(VectorZ, elem_bt, length) {}
 };
 
 class TypeVectMask : public TypeVect {
 public:
   friend class TypeVect;
-  TypeVectMask(const Type* elem, uint length) : TypeVect(VectorMask, elem, length) {}
-  virtual bool eq(const Type *t) const;
-  virtual const Type *xdual() const;
+  TypeVectMask(BasicType elem_bt, uint length) : TypeVect(VectorMask, elem_bt, length) {}
   static const TypeVectMask* make(const BasicType elem_bt, uint length);
-  static const TypeVectMask* make(const Type* elem, uint length);
 };
 
 // Set of implemented interfaces. Referenced from TypeOopPtr and TypeKlassPtr.
 class TypeInterfaces : public Type {
 private:
-  GrowableArray<ciInstanceKlass*> _list;
+  GrowableArrayFromArray<ciInstanceKlass*> _interfaces;
   uint _hash;
   ciInstanceKlass* _exact_klass;
   DEBUG_ONLY(bool _initialized;)
 
   void initialize();
 
-  void add(ciInstanceKlass* interface);
   void verify() const NOT_DEBUG_RETURN;
   void compute_hash();
   void compute_exact_klass();
-  TypeInterfaces();
-  TypeInterfaces(GrowableArray<ciInstanceKlass*>* interfaces);
+
+  TypeInterfaces(ciInstanceKlass** interfaces_base, int nb_interfaces);
 
   NONCOPYABLE(TypeInterfaces);
 public:
@@ -904,12 +888,13 @@ public:
   bool contains(const TypeInterfaces* other) const {
     return intersection_with(other)->eq(other);
   }
-  bool empty() const { return _list.length() == 0; }
+  bool empty() const { return _interfaces.length() == 0; }
 
   ciInstanceKlass* exact_klass() const;
   void verify_is_loaded() const NOT_DEBUG_RETURN;
 
   static int compare(ciInstanceKlass* const& k1, ciInstanceKlass* const& k2);
+  static int compare(ciInstanceKlass** k1, ciInstanceKlass** k2);
 
   const Type* xmeet(const Type* t) const;
 

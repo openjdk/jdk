@@ -1363,7 +1363,7 @@ public class TestAlignVector {
     static Object[] test17a(long[] a) {
         // Unsafe: vectorizes with profiling (not xcomp)
         for (int i = 0; i < RANGE; i++) {
-            int adr = UNSAFE.ARRAY_LONG_BASE_OFFSET + 8 * i;
+            long adr = UNSAFE.ARRAY_LONG_BASE_OFFSET + 8L * i;
             long v = UNSAFE.getLongUnaligned(a, adr);
             UNSAFE.putLongUnaligned(a, adr, v + 1);
         }
@@ -1375,7 +1375,7 @@ public class TestAlignVector {
     static Object[] test17b(long[] a) {
         // Not alignable
         for (int i = 0; i < RANGE-1; i++) {
-            int adr = UNSAFE.ARRAY_LONG_BASE_OFFSET + 8 * i + 1;
+            long adr = UNSAFE.ARRAY_LONG_BASE_OFFSET + 8L * i + 1;
             long v = UNSAFE.getLongUnaligned(a, adr);
             UNSAFE.putLongUnaligned(a, adr, v + 1);
         }
@@ -1392,7 +1392,7 @@ public class TestAlignVector {
     static Object[] test17c(long[] a) {
         // Unsafe: aligned vectorizes
         for (int i = 0; i < RANGE-1; i+=4) {
-            int adr = UNSAFE.ARRAY_LONG_BASE_OFFSET + 8 * i;
+            long adr = UNSAFE.ARRAY_LONG_BASE_OFFSET + 8L * i;
             long v0 = UNSAFE.getLongUnaligned(a, adr + 0);
             long v1 = UNSAFE.getLongUnaligned(a, adr + 8);
             UNSAFE.putLongUnaligned(a, adr + 0, v0 + 1);
@@ -1422,7 +1422,7 @@ public class TestAlignVector {
     static Object[] test17d(long[] a) {
         // Not alignable
         for (int i = 0; i < RANGE-1; i+=4) {
-            int adr = UNSAFE.ARRAY_LONG_BASE_OFFSET + 8 * i + 1;
+            long adr = UNSAFE.ARRAY_LONG_BASE_OFFSET + 8L * i + 1;
             long v0 = UNSAFE.getLongUnaligned(a, adr + 0);
             long v1 = UNSAFE.getLongUnaligned(a, adr + 8);
             UNSAFE.putLongUnaligned(a, adr + 0, v0 + 1);

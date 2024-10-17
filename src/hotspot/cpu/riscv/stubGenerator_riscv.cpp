@@ -2428,6 +2428,14 @@ class StubGenerator: public StubCodeGenerator {
       __ la(t1, ExternalAddress(bs_asm->patching_epoch_addr()));
       __ lwu(t1, t1);
       __ sw(t1, thread_epoch_addr);
+      // There are two ways this can work:
+      // - The writer did system icache shootdown after the instruction stream update.
+      //   Hence do nothing.
+      // - The writer trust us to make sure our icache is in sync before entering.
+      //   Hence use cmodx fence (fence.i, may change).
+      if (UseCtxFencei) {
+        __ cmodx_fence();
+      }
       __ membar(__ LoadLoad);
     }
 
@@ -4474,7 +4482,7 @@ class StubGenerator: public StubCodeGenerator {
     RegSet reg_cache_saved_regs = RegSet::of(x24, x25, x26, x27); // s8, s9, s10, s11
     RegSet reg_cache_regs;
     reg_cache_regs += reg_cache_saved_regs;
-    reg_cache_regs += RegSet::of(x28, x29, x30, x31); // t3, t4, t5, t6
+    reg_cache_regs += RegSet::of(t3, t4, t5, t6);
     BufRegCache reg_cache(_masm, reg_cache_regs);
 
     RegSet saved_regs;
@@ -5454,8 +5462,8 @@ class StubGenerator: public StubCodeGenerator {
     Register isMIME = c_rarg6;
 
     Register codec     = c_rarg7;
-    Register dstBackup = x31;
-    Register length    = x28;     // t3, total length of src data in bytes
+    Register dstBackup = t6;
+    Register length    = t3;     // total length of src data in bytes
 
     Label ProcessData, Exit;
     Label ProcessScalar, ScalarLoop;
@@ -5490,7 +5498,7 @@ class StubGenerator: public StubCodeGenerator {
       Register stepSrcM1 = send;
       Register stepSrcM2 = doff;
       Register stepDst   = isURL;
-      Register size      = x29;   // t4
+      Register size      = t4;
 
       __ mv(size, MaxVectorSize * 2);
       __ mv(stepSrcM1, MaxVectorSize * 4);
@@ -5542,7 +5550,7 @@ class StubGenerator: public StubCodeGenerator {
     // scalar version
     {
       Register byte0 = soff, byte1 = send, byte2 = doff, byte3 = isURL;
-      Register combined32Bits = x29; // t5
+      Register combined32Bits = t4;
 
       // encoded:   [byte0[5:0] : byte1[5:0] : byte2[5:0]] : byte3[5:0]] =>
       // plain:     [byte0[5:0]+byte1[5:4] : byte1[3:0]+byte2[5:2] : byte2[1:0]+byte3[5:0]]
@@ -5700,10 +5708,10 @@ class StubGenerator: public StubCodeGenerator {
     Register nmax  = c_rarg4;
     Register base  = c_rarg5;
     Register count = c_rarg6;
-    Register temp0 = x28; // t3
-    Register temp1 = x29; // t4
-    Register temp2 = x30; // t5
-    Register temp3 = x31; // t6
+    Register temp0 = t3;
+    Register temp1 = t4;
+    Register temp2 = t5;
+    Register temp3 = t6;
 
     VectorRegister vzero = v31;
     VectorRegister vbytes = v8; // group: v8, v9, v10, v11
@@ -6063,6 +6071,58 @@ static const int64_t right_3_bits = right_n_bits(3);
     return start;
   }
 
+  void generate_vector_math_stubs() {
+    if (!UseRVV) {
+      log_info(library)("vector is not supported, skip loading vector math (sleef) library!");
+      return;
+    }
+
+    // Get native vector math stub routine addresses
+    void* libsleef = nullptr;
+    char ebuf[1024];
+    char dll_name[JVM_MAXPATHLEN];
+    if (os::dll_locate_lib(dll_name, sizeof(dll_name), Arguments::get_dll_dir(), "sleef")) {
+      libsleef = os::dll_load(dll_name, ebuf, sizeof ebuf);
+    }
+    if (libsleef == nullptr) {
+      log_info(library)("Failed to load native vector math (sleef) library, %s!", ebuf);
+      return;
+    }
+
+    // Method naming convention
+    //   All the methods are named as <OP><T>_<U><suffix>
+    //
+    //   Where:
+    //     <OP>     is the operation name, e.g. sin, cos
+    //     <T>      is to indicate float/double
+    //              "fx/dx" for vector float/double operation
+    //     <U>      is the precision level
+    //              "u10/u05" represents 1.0/0.5 ULP error bounds
+    //               We use "u10" for all operations by default
+    //               But for those functions do not have u10 support, we use "u05" instead
+    //     <suffix> rvv, indicates riscv vector extension
+    //
+    //   e.g. sinfx_u10rvv is the method for computing vector float sin using rvv instructions
+    //
+    log_info(library)("Loaded library %s, handle " INTPTR_FORMAT, JNI_LIB_PREFIX "sleef" JNI_LIB_SUFFIX, p2i(libsleef));
+
+    for (int op = 0; op < VectorSupport::NUM_VECTOR_OP_MATH; op++) {
+      int vop = VectorSupport::VECTOR_OP_MATH_START + op;
+      if (vop == VectorSupport::VECTOR_OP_TANH) { // skip tanh because of performance regression
+        continue;
+      }
+
+      // The native library does not support u10 level of "hypot".
+      const char* ulf = (vop == VectorSupport::VECTOR_OP_HYPOT) ? "u05" : "u10";
+
+      snprintf(ebuf, sizeof(ebuf), "%sfx_%srvv", VectorSupport::mathname[op], ulf);
+      StubRoutines::_vector_f_math[VectorSupport::VEC_SIZE_SCALABLE][op] = (address)os::dll_lookup(libsleef, ebuf);
+
+      snprintf(ebuf, sizeof(ebuf), "%sdx_%srvv", VectorSupport::mathname[op], ulf);
+      StubRoutines::_vector_d_math[VectorSupport::VEC_SIZE_SCALABLE][op] = (address)os::dll_lookup(libsleef, ebuf);
+    }
+  }
+
 #endif // COMPILER2
 
   /**
@@ -6084,26 +6144,17 @@ static const int64_t right_3_bits = right_n_bits(3);
 
     address start = __ pc();
 
+    // input parameters
     const Register crc    = c_rarg0;  // crc
     const Register buf    = c_rarg1;  // source java byte array address
     const Register len    = c_rarg2;  // length
-    const Register table0 = c_rarg3;  // crc_table address
-    const Register table1 = c_rarg4;
-    const Register table2 = c_rarg5;
-    const Register table3 = c_rarg6;
-
-    const Register tmp1 = c_rarg7;
-    const Register tmp2 = t2;
-    const Register tmp3 = x28; // t3
-    const Register tmp4 = x29; // t4
-    const Register tmp5 = x30; // t5
-    const Register tmp6 = x31; // t6
 
     BLOCK_COMMENT("Entry:");
     __ enter(); // required for proper stackwalking of RuntimeStub frame
 
-    __ kernel_crc32(crc, buf, len, table0, table1, table2,
-                    table3, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6);
+    __ kernel_crc32(crc, buf, len,
+                    c_rarg3, c_rarg4, c_rarg5, c_rarg6, // tmp's for tables
+                    c_rarg7, t2, t3, t4, t5, t6);       // misc tmps
 
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret();
@@ -6121,6 +6172,29 @@ static const int64_t right_3_bits = right_n_bits(3);
     __ verify_oop(x10); // return a exception oop in a0
     __ rt_call(CAST_FROM_FN_PTR(address, UpcallLinker::handle_uncaught_exception));
     __ should_not_reach_here();
+
+    return start;
+  }
+
+  // load Method* target of MethodHandle
+  // j_rarg0 = jobject receiver
+  // xmethod = Method* result
+  address generate_upcall_stub_load_target() {
+
+    StubCodeMark mark(this, "StubRoutines", "upcall_stub_load_target");
+    address start = __ pc();
+
+    __ resolve_global_jobject(j_rarg0, t0, t1);
+      // Load target method from receiver
+    __ load_heap_oop(xmethod, Address(j_rarg0, java_lang_invoke_MethodHandle::form_offset()), t0, t1);
+    __ load_heap_oop(xmethod, Address(xmethod, java_lang_invoke_LambdaForm::vmentry_offset()), t0, t1);
+    __ load_heap_oop(xmethod, Address(xmethod, java_lang_invoke_MemberName::method_offset()), t0, t1);
+    __ access_load_at(T_ADDRESS, IN_HEAP, xmethod,
+                      Address(xmethod, java_lang_invoke_ResolvedMethodName::vmtarget_offset()),
+                      noreg, noreg);
+    __ sd(xmethod, Address(xthread, JavaThread::callee_target_offset())); // just in case callee is deoptimized
+
+    __ ret();
 
     return start;
   }
@@ -6190,6 +6264,7 @@ static const int64_t right_3_bits = right_n_bits(3);
 #endif // COMPILER2
 
     StubRoutines::_upcall_stub_exception_handler = generate_upcall_stub_exception_handler();
+    StubRoutines::_upcall_stub_load_target = generate_upcall_stub_load_target();
 
     StubRoutines::riscv::set_completed();
   }
@@ -6267,6 +6342,8 @@ static const int64_t right_3_bits = right_n_bits(3);
     generate_compare_long_strings();
 
     generate_string_indexof_stubs();
+
+    generate_vector_math_stubs();
 
 #endif // COMPILER2
   }

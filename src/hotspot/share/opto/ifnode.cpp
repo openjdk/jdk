@@ -840,9 +840,9 @@ bool IfNode::is_dominator_unc(CallStaticJavaNode* dom_unc, CallStaticJavaNode* u
 }
 
 // Return projection that leads to an uncommon trap if any
-ProjNode* IfNode::uncommon_trap_proj(CallStaticJavaNode*& call) const {
+ProjNode* IfNode::uncommon_trap_proj(CallStaticJavaNode*& call, Deoptimization::DeoptReason reason) const {
   for (int i = 0; i < 2; i++) {
-    call = proj_out(i)->is_uncommon_trap_proj();
+    call = proj_out(i)->is_uncommon_trap_proj(reason);
     if (call != nullptr) {
       return proj_out(i);
     }
@@ -1848,6 +1848,9 @@ void IfNode::dump_spec(outputStream* st) const {
       break;
     case AssertionPredicateType::LastValue:
       st->print("#Last Value Assertion Predicate  ");
+      break;
+    case AssertionPredicateType::FinalIv:
+      st->print("#Final IV Assertion Predicate  ");
       break;
     case AssertionPredicateType::None:
       // No Assertion Predicate

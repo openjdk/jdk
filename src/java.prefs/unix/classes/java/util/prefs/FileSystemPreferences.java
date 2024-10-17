@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -957,6 +957,8 @@ class FileSystemPreferences extends AbstractPreferences {
             try {
                 Thread.sleep(sleepTime);
             } catch(InterruptedException e) {
+                // Don't lose the interrupt.
+                Thread.currentThread().interrupt();
                 checkLockFile0ErrorCode(errorCode);
                 return false;
             }

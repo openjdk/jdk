@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,12 +43,12 @@ import static java.lang.constant.ConstantDescs.CD_char;
 import static java.lang.constant.ConstantDescs.DEFAULT_NAME;
 
 /**
- * The {@code Character} class wraps a value of the primitive
- * type {@code char} in an object. An object of class
- * {@code Character} contains a single field whose type is
- * {@code char}.
- * <p>
- * In addition, this class provides a large number of static methods for
+ * The {@code Character} class is the {@linkplain
+ * java.lang##wrapperClass wrapper class} for values of the primitive
+ * type {@code char}. An object of type {@code Character} contains a
+ * single field whose type is {@code char}.
+ *
+ * <p>In addition, this class provides a large number of static methods for
  * determining a character's category (lowercase letter, digit, etc.)
  * and for converting characters from uppercase to lowercase and vice
  * versa.

@@ -46,8 +46,10 @@
 class Argument {
  public:
   enum {
-    n_int_register_parameters_c   = 8, // x10, x11, ... x17 (c_rarg0, c_rarg1, ...)
-    n_float_register_parameters_c = 8, // f10, f11, ... f17 (c_farg0, c_farg1, ... )
+    // check more info at https://github.com/riscv-non-isa/riscv-elf-psabi-doc/blob/master/riscv-cc.adoc
+    n_int_register_parameters_c   = 8,   // x10, x11, ... x17 (c_rarg0, c_rarg1, ...)
+    n_float_register_parameters_c = 8,   // f10, f11, ... f17 (c_farg0, c_farg1, ... )
+    n_vector_register_parameters_c = 16,  // v8, v9, ... v23
 
     n_int_register_parameters_j   = 8, // x11, ... x17, x10 (j_rarg0, j_rarg1, ...)
     n_float_register_parameters_j = 8  // f10, f11, ... f17 (j_farg0, j_farg1, ...)
@@ -143,6 +145,10 @@ constexpr Register x19_sender_sp = x19; // Sender's SP while in interpreter
 constexpr Register t0 = x5;
 constexpr Register t1 = x6;
 constexpr Register t2 = x7;
+constexpr Register t3 = x28;
+constexpr Register t4 = x29;
+constexpr Register t5 = x30;
+constexpr Register t6 = x31;
 
 const Register g_INTArgReg[Argument::n_int_register_parameters_c] = {
   c_rarg0, c_rarg1, c_rarg2, c_rarg3, c_rarg4, c_rarg5, c_rarg6, c_rarg7
@@ -702,6 +708,16 @@ public:
     patch((address)&insn, 23, 20, successor);   // succ
     patch((address)&insn, 27, 24, predecessor); // pred
     patch((address)&insn, 31, 28, 0b0000);      // fm
+    emit(insn);
+  }
+
+  void fencei() {
+    unsigned insn = 0;
+    patch((address)&insn,  6,  0, 0b0001111);      // opcode
+    patch((address)&insn, 11,  7, 0b00000);        // rd
+    patch((address)&insn, 14, 12, 0b001);          // func
+    patch((address)&insn, 19, 15, 0b00000);        // rs1
+    patch((address)&insn, 31, 20, 0b000000000000); // fm
     emit(insn);
   }
 

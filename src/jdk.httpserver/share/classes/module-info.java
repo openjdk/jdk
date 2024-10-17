@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,6 +69,16 @@
  * The maxiumum number of header fields accepted in a request. If this limit is exceeded
  * while the headers are being read, then the connection is terminated and the request ignored.
  * If the value is less than or equal to zero, then the default value is used.
+ * </li>
+ * <li><p><b>{@systemProperty sun.net.httpserver.maxReqHeaderSize}</b> (default: 393216 or 384kB)<br>
+ *  The maximum header field section size that the server is prepared to accept.
+ *  This is computed as the sum of the size of the header name, plus
+ *  the size of the header value, plus an overhead of 32 bytes for
+ *  each field section line. The request line counts as a first field section line,
+ *  where the name is empty and the value is the whole line.
+ *  If this limit is exceeded while the headers are being read, then the connection
+ *  is terminated and the request ignored.
+ *  If the value is less than or equal to zero, there is no limit.
  * </li>
  * <li><p><b>{@systemProperty sun.net.httpserver.maxReqTime}</b> (default: -1)<br>
  * The maximum time in milliseconds allowed to receive a request headers and body.

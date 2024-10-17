@@ -24,9 +24,9 @@
  */
 package java.lang.classfile;
 
+import java.lang.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
 import java.util.function.Supplier;
 
-import java.lang.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
 import jdk.internal.javac.PreviewFeature;
 
 /**

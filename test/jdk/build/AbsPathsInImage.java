@@ -40,7 +40,7 @@ import java.util.zip.ZipInputStream;
  * @bug 8226346
  * @summary Check all output files for absolute path fragments
  * @requires !vm.debug
- * @run main AbsPathsInImage
+ * @run main/othervm -Xmx900m AbsPathsInImage
  */
 public class AbsPathsInImage {
 

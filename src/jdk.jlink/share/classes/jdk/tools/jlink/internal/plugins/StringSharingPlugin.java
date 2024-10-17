@@ -51,6 +51,8 @@ import jdk.tools.jlink.internal.ResourcePoolManager;
 import jdk.tools.jlink.internal.ResourcePrevisitor;
 import jdk.tools.jlink.internal.StringTable;
 
+import static java.lang.classfile.constantpool.PoolEntry.*;
+
 /**
  *
  * A Plugin that stores the image classes constant pool UTF_8 entries into the
@@ -214,7 +216,7 @@ public class StringSharingPlugin extends AbstractPlugin implements ResourcePrevi
                 int tag = stream.readUnsignedByte();
                 byte[] arr;
                 switch (tag) {
-                    case ClassFile.TAG_UTF8: {
+                    case TAG_UTF8: {
                         String original = stream.readUTF();
                         // 2 cases, a Descriptor or a simple String
                         if (descriptorIndexes.contains(i)) {
@@ -238,8 +240,8 @@ public class StringSharingPlugin extends AbstractPlugin implements ResourcePrevi
 
                         break;
                     }
-                    case ClassFile.TAG_LONG:
-                    case ClassFile.TAG_DOUBLE:
+                    case TAG_LONG:
+                    case TAG_DOUBLE:
                         i++;
                     default: {
                         out.write(tag);

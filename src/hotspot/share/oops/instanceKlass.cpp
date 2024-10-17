@@ -2721,6 +2721,13 @@ static void clear_all_breakpoints(Method* m) {
 #endif
 
 void InstanceKlass::unload_class(InstanceKlass* ik) {
+
+  if (ik->is_scratch_class()) {
+    assert(ik->dependencies().is_empty(), "dependencies should be empty for scratch classes");
+    return;
+  }
+  assert(ik->is_loaded(), "class should be loaded " PTR_FORMAT, p2i(ik));
+
   // Release dependencies.
   ik->dependencies().remove_all_dependents();
 
@@ -4096,7 +4103,7 @@ void InstanceKlass::set_init_state(ClassState state) {
   assert(good_state || state == allocated, "illegal state transition");
 #endif
   assert(_init_thread == nullptr, "should be cleared before state change");
-  _init_state = state;
+  Atomic::release_store(&_init_state, state);
 }
 
 #if INCLUDE_JVMTI

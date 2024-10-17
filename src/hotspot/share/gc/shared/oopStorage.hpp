@@ -288,7 +288,7 @@ private:
   Block* block_for_allocation();
   void  log_block_transition(Block* block, const char* new_state) const;
 
-  Block* find_block_or_null(const oop* ptr) const;
+  Block* block_for_ptr(const oop* ptr) const;
   void delete_empty_block(const Block& block);
   bool reduce_deferred_updates();
   void record_needs_cleanup();

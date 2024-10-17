@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,11 +21,14 @@
  * questions.
  */
 
+import jdk.internal.util.ArraysSupport;
+
 /**
  * @test
  * @bug 8149330 8218227
  * @summary Capacity should not get close to Integer.MAX_VALUE unless
  *          necessary
+ * @modules java.base/jdk.internal.util
  * @requires (sun.arch.data.model == "64" & os.maxMemory >= 8G)
  * @run main/othervm -Xms6G -Xmx6G -XX:+CompactStrings HugeCapacity true
  * @run main/othervm -Xms6G -Xmx6G -XX:-CompactStrings HugeCapacity false
@@ -75,7 +78,7 @@ public class HugeCapacity {
 
     private static void testHugeInitialString() {
         try {
-            String str = "Z".repeat(Integer.MAX_VALUE - 8);
+            String str = "Z".repeat(ArraysSupport.SOFT_MAX_ARRAY_LENGTH);
             StringBuilder sb = new StringBuilder(str);
         } catch (OutOfMemoryError ignore) {
         } catch (Throwable unexpected) {

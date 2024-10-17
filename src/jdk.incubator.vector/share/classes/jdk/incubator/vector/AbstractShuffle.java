@@ -133,7 +133,7 @@ abstract class AbstractShuffle<E> extends VectorShuffle<E> {
     }
 
     @ForceInline
-    public final VectorShuffle<E> wrapIndexes() {
+    public final VectorShuffle<E> wrapIndexesTemplate() {
         Vector<E> shufvec = this.toVector();
         VectorMask<E> vecmask = shufvec.compare(VectorOperators.LT, vspecies().zero());
         if (vecmask.anyTrue()) {

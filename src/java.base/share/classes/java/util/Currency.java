@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,7 +108,7 @@ import sun.util.logging.PlatformLogger;
  * with {@code Currency} or monetary values as it provides better handling of floating
  * point numbers and their operations.
  *
- * @spec http://www.iso.org/iso/home/standards/currency_codes.htm ISO - ISO 4217 - Currency codes
+ * @spec https://www.iso.org/iso-4217-currency-codes.html ISO - ISO 4217 - Currency codes
  * @see java.math.BigDecimal
  * @since 1.4
  */

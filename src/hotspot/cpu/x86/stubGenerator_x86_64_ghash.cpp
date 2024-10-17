@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2019, 2021, Intel Corporation. All rights reserved.
+* Copyright (c) 2019, 2024, Intel Corporation. All rights reserved.
 *
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
@@ -57,7 +57,10 @@ address StubGenerator::ghash_byte_swap_mask_addr() {
 
 // Polynomial x^128+x^127+x^126+x^121+1
 ATTRIBUTE_ALIGNED(16) static const uint64_t GHASH_POLYNOMIAL[] = {
-    0x0000000000000001UL, 0xC200000000000000UL,
+    0x0000000000000001ULL, 0xC200000000000000ULL,
+    0x0000000000000001ULL, 0xC200000000000000ULL,
+    0x0000000000000001ULL, 0xC200000000000000ULL,
+    0x0000000000000001ULL, 0xC200000000000000ULL
 };
 address StubGenerator::ghash_polynomial_addr() {
   return (address)GHASH_POLYNOMIAL;

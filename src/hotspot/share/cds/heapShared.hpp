@@ -291,8 +291,7 @@ private:
 
   static GrowableArrayCHeap<oop, mtClassShared>* _pending_roots;
   static GrowableArrayCHeap<OopHandle, mtClassShared>* _root_segments;
-  static int _root_segment_max_size_shift;
-  static int _root_segment_max_size_mask;
+  static int _root_segment_max_size_elems;
   static OopHandle _scratch_basic_type_mirrors[T_VOID+1];
   static MetaspaceObjToOopHandleTable* _scratch_java_mirror_table;
   static MetaspaceObjToOopHandleTable* _scratch_references_table;
@@ -407,6 +406,8 @@ private:
   // Run-time only
   static void clear_root(int index);
 
+  static void get_segment_indexes(int index, int& segment_index, int& internal_index);
+
   static void setup_test_class(const char* test_class_name) PRODUCT_RETURN;
 #endif // INCLUDE_CDS_JAVA_HEAP
 
@@ -425,7 +426,7 @@ private:
   static void init_for_dumping(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
   static void write_subgraph_info_table() NOT_CDS_JAVA_HEAP_RETURN;
   static void add_root_segment(objArrayOop segment_oop) NOT_CDS_JAVA_HEAP_RETURN;
-  static void init_root_segment_sizes(int max_size) NOT_CDS_JAVA_HEAP_RETURN;
+  static void init_root_segment_sizes(int max_size_elems) NOT_CDS_JAVA_HEAP_RETURN;
   static void serialize_tables(SerializeClosure* soc) NOT_CDS_JAVA_HEAP_RETURN;
 
 #ifndef PRODUCT

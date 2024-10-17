@@ -27,6 +27,7 @@ package java.lang.classfile;
 import java.lang.classfile.attribute.RuntimeInvisibleTypeAnnotationsAttribute;
 import java.lang.classfile.attribute.RuntimeVisibleTypeAnnotationsAttribute;
 import java.lang.classfile.attribute.StackMapTableAttribute;
+
 import jdk.internal.javac.PreviewFeature;
 
 /**

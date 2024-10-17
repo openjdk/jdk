@@ -1043,8 +1043,9 @@ public class DocCommentTester {
                     .replaceAll("(\\{@value\\s+[^}]+)\\s+(})", "$1$2");
         }
 
+        // See comment in MarkdownTest for explanation of dummy and Override
         String normalizeFragment(String s) {
-            return s.replaceAll("\n[ \t]+@(?!([@*]|dummy))", "\n@");
+            return s.replaceAll("\n[ \t]+@(?!([@*]|(dummy|Override)))", "\n@");
         }
 
         int copyLiteral(String s, int start, StringBuilder sb) {

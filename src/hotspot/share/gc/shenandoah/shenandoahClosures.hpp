@@ -77,18 +77,6 @@ public:
   inline void do_nmethod(nmethod* nm);
 };
 
-class ShenandoahUpdateRefsClosure: public ShenandoahOopClosureBase {
-private:
-  ShenandoahHeap* _heap;
-public:
-  inline ShenandoahUpdateRefsClosure();
-  inline void do_oop(oop* p);
-  inline void do_oop(narrowOop* p);
-private:
-  template <class T>
-  inline void do_oop_work(T* p);
-};
-
 template <bool concurrent, bool stable_thread>
 class ShenandoahEvacuateUpdateRootClosureBase : public ShenandoahOopClosureBase {
 protected:

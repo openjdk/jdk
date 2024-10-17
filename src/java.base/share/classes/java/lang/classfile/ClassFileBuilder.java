@@ -24,10 +24,9 @@
  */
 package java.lang.classfile;
 
+import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.lang.constant.ClassDesc;
 import java.util.function.Consumer;
-
-import java.lang.classfile.constantpool.ConstantPoolBuilder;
 
 import jdk.internal.classfile.impl.TransformImpl;
 import jdk.internal.javac.PreviewFeature;

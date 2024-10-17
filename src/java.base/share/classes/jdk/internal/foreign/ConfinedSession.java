@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package jdk.internal.foreign;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 
+import jdk.internal.invoke.MhUtil;
 import jdk.internal.vm.annotation.ForceInline;
 
 /**
@@ -40,15 +41,8 @@ final class ConfinedSession extends MemorySessionImpl {
 
     private int asyncReleaseCount = 0;
 
-    static final VarHandle ASYNC_RELEASE_COUNT;
-
-    static {
-        try {
-            ASYNC_RELEASE_COUNT = MethodHandles.lookup().findVarHandle(ConfinedSession.class, "asyncReleaseCount", int.class);
-        } catch (Throwable ex) {
-            throw new ExceptionInInitializerError(ex);
-        }
-    }
+    static final VarHandle ASYNC_RELEASE_COUNT= MhUtil.findVarHandle(
+            MethodHandles.lookup(), "asyncReleaseCount", int.class);
 
     public ConfinedSession(Thread owner) {
         super(owner, new ConfinedResourceList());

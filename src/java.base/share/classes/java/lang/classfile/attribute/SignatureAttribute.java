@@ -25,15 +25,10 @@
 
 package java.lang.classfile.attribute;
 
-import java.lang.classfile.Attribute;
-import java.lang.classfile.ClassElement;
-import java.lang.classfile.ClassSignature;
-import java.lang.classfile.FieldElement;
-import java.lang.classfile.MethodElement;
+import java.lang.classfile.*;
 import java.lang.classfile.constantpool.Utf8Entry;
+
 import jdk.internal.classfile.impl.BoundAttribute;
-import java.lang.classfile.MethodSignature;
-import java.lang.classfile.Signature;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.classfile.impl.UnboundAttribute;
 import jdk.internal.javac.PreviewFeature;

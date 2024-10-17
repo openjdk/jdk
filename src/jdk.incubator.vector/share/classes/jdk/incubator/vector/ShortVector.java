@@ -536,6 +536,19 @@ public abstract class ShortVector extends AbstractVector<Short> {
         return r;
     }
 
+    static ShortVector selectFromTwoVectorHelper(Vector<Short> indexes, Vector<Short> src1, Vector<Short> src2) {
+        int vlen = indexes.length();
+        short[] res = new short[vlen];
+        short[] vecPayload1 = ((ShortVector)indexes).vec();
+        short[] vecPayload2 = ((ShortVector)src1).vec();
+        short[] vecPayload3 = ((ShortVector)src2).vec();
+        for (int i = 0; i < vlen; i++) {
+            int wrapped_index = VectorIntrinsics.wrapToRange((int)vecPayload1[i], 2 * vlen);
+            res[i] = wrapped_index >= vlen ? vecPayload3[wrapped_index - vlen] : vecPayload2[wrapped_index];
+        }
+        return ((ShortVector)src1).vectorFactory(res);
+    }
+
     // Static factories (other than memory operations)
 
     // Note: A surprising behavior in javadoc
@@ -2394,17 +2407,18 @@ public abstract class ShortVector extends AbstractVector<Short> {
      */
     @Override
     public abstract
-    ShortVector rearrange(VectorShuffle<Short> m);
+    ShortVector rearrange(VectorShuffle<Short> shuffle);
 
     /*package-private*/
     @ForceInline
     final
     <S extends VectorShuffle<Short>>
     ShortVector rearrangeTemplate(Class<S> shuffletype, S shuffle) {
-        shuffle.checkIndexes();
+        @SuppressWarnings("unchecked")
+        S ws = (S) shuffle.wrapIndexes();
         return VectorSupport.rearrangeOp(
             getClass(), shuffletype, null, short.class, length(),
-            this, shuffle, null,
+            this, ws, null,
             (v1, s_, m_) -> v1.uOp((i, a) -> {
                 int ei = s_.laneSource(i);
                 return v1.lane(ei);
@@ -2429,17 +2443,14 @@ public abstract class ShortVector extends AbstractVector<Short> {
                                            M m) {
 
         m.check(masktype, this);
-        VectorMask<Short> valid = shuffle.laneIsValid();
-        if (m.andNot(valid).anyTrue()) {
-            shuffle.checkIndexes();
-            throw new AssertionError();
-        }
+        @SuppressWarnings("unchecked")
+        S ws = (S) shuffle.wrapIndexes();
         return VectorSupport.rearrangeOp(
                    getClass(), shuffletype, masktype, short.class, length(),
-                   this, shuffle, m,
+                   this, ws, m,
                    (v1, s_, m_) -> v1.uOp((i, a) -> {
                         int ei = s_.laneSource(i);
-                        return ei < 0  || !m_.laneIsSet(i) ? 0 : v1.lane(ei);
+                        return !m_.laneIsSet(i) ? 0 : v1.lane(ei);
                    }));
     }
 
@@ -2552,7 +2563,10 @@ public abstract class ShortVector extends AbstractVector<Short> {
     /*package-private*/
     @ForceInline
     final ShortVector selectFromTemplate(ShortVector v) {
-        return v.rearrange(this.toShuffle());
+        return (ShortVector)VectorSupport.selectFromOp(getClass(), null, short.class,
+                                                        length(), this, v, null,
+                                                        (v1, v2, _m) ->
+                                                         v2.rearrange(v1.toShuffle()));
     }
 
     /**
@@ -2564,9 +2578,31 @@ public abstract class ShortVector extends AbstractVector<Short> {
 
     /*package-private*/
     @ForceInline
-    final ShortVector selectFromTemplate(ShortVector v,
-                                                  AbstractMask<Short> m) {
-        return v.rearrange(this.toShuffle(), m);
+    final
+    <M extends VectorMask<Short>>
+    ShortVector selectFromTemplate(ShortVector v,
+                                            Class<M> masktype, M m) {
+        m.check(masktype, this);
+        return (ShortVector)VectorSupport.selectFromOp(getClass(), masktype, short.class,
+                                                        length(), this, v, m,
+                                                        (v1, v2, _m) ->
+                                                         v2.rearrange(v1.toShuffle(), _m));
+    }
+
+
+    /**
+     * {@inheritDoc} <!--workaround-->
+     */
+    @Override
+    public abstract
+    ShortVector selectFrom(Vector<Short> v1, Vector<Short> v2);
+
+
+    /*package-private*/
+    @ForceInline
+    final ShortVector selectFromTemplate(ShortVector v1, ShortVector v2) {
+        return VectorSupport.selectFromTwoVectorOp(getClass(), short.class, length(), this, v1, v2,
+                                                   (vec1, vec2, vec3) -> selectFromTwoVectorHelper(vec1, vec2, vec3));
     }
 
     /// Ternary operations

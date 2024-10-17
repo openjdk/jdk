@@ -254,6 +254,8 @@ public:
   Label* entry();
   // Return point from the stub (typically end of barrier).
   Label* continuation();
+  // High-level, GC-specific barrier flags.
+  uint8_t barrier_data() const;
 
   // Preserve the value in reg across runtime calls in this barrier.
   void preserve(Register reg);
@@ -340,6 +342,8 @@ public:
   // Estimated size of the node barrier in number of C2 Ideal nodes.
   // This is used to guide heuristics in C2, e.g. whether to unroll a loop.
   virtual uint estimated_barrier_size(const Node* node) const { return 0; }
+  // Whether the given store can be used to initialize a newly allocated object.
+  virtual bool can_initialize_object(const StoreNode* store) const { return true; }
 
   enum CompilePhase {
     BeforeOptimize,

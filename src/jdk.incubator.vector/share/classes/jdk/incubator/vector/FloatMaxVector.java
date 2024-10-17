@@ -490,9 +490,16 @@ final class FloatMaxVector extends FloatVector {
                                    VectorMask<Float> m) {
         return (FloatMaxVector)
             super.selectFromTemplate((FloatMaxVector) v,
-                                     (FloatMaxMask) m);  // specialize
+                                     FloatMaxMask.class, (FloatMaxMask) m);  // specialize
     }
 
+    @Override
+    @ForceInline
+    public FloatMaxVector selectFrom(Vector<Float> v1,
+                                   Vector<Float> v2) {
+        return (FloatMaxVector)
+            super.selectFromTemplate((FloatMaxVector) v1, (FloatMaxVector) v2);  // specialize
+    }
 
     @ForceInline
     @Override
@@ -816,6 +823,13 @@ final class FloatMaxVector extends FloatVector {
                 throw new IllegalArgumentException("VectorShuffle length and species length differ");
             int[] shuffleArray = toArray();
             return s.shuffleFromArray(shuffleArray, 0).check(s);
+        }
+
+        @Override
+        @ForceInline
+        public FloatMaxShuffle wrapIndexes() {
+            return VectorSupport.wrapShuffleIndexes(ETYPE, FloatMaxShuffle.class, this, VLENGTH,
+                                                    (s) -> ((FloatMaxShuffle)(((AbstractShuffle<Float>)(s)).wrapIndexesTemplate())));
         }
 
         @ForceInline

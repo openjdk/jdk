@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,8 @@ import java.util.Arrays;
 import javax.crypto.SecretKey;
 import javax.security.auth.Destroyable;
 import javax.security.auth.DestroyFailedException;
-import sun.security.util.HexDumpEncoder;
+
+import sun.security.jgss.krb5.Krb5Util;
 import sun.security.krb5.Asn1Exception;
 import sun.security.krb5.PrincipalName;
 import sun.security.krb5.EncryptionKey;
@@ -225,15 +226,8 @@ class KeyImpl implements SecretKey, Destroyable, Serializable {
     }
 
     public String toString() {
-        HexDumpEncoder hd = new HexDumpEncoder();
-        return "EncryptionKey: keyType=" + keyType
-                          + " keyBytes (hex dump)="
-                          + (keyBytes == null || keyBytes.length == 0 ?
-                             " Empty Key" :
-                             '\n' + hd.encodeBuffer(keyBytes)
-                          + '\n');
-
-
+        return "keyType=" + keyType
+                + ", " + Krb5Util.keyInfo(keyBytes);
     }
 
     public int hashCode() {

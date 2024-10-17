@@ -385,9 +385,9 @@ class StackMapsTest {
                                     StackMapTableAttribute.of(List.of(
                                     StackMapFrameInfo.of(f2,
                                             List.of(),
-                                            List.of(StackMapFrameInfo.SimpleVerificationTypeInfo.ITEM_LONG)),
+                                            List.of(StackMapFrameInfo.SimpleVerificationTypeInfo.LONG)),
                                     StackMapFrameInfo.of(f3,
-                                            List.of(StackMapFrameInfo.SimpleVerificationTypeInfo.ITEM_LONG),
+                                            List.of(StackMapFrameInfo.SimpleVerificationTypeInfo.LONG),
                                             List.of()))));
                         }
                 ));

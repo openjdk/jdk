@@ -25,6 +25,7 @@
 package java.lang.classfile.instruction;
 
 import java.lang.classfile.Label;
+
 import jdk.internal.classfile.impl.AbstractInstruction;
 import jdk.internal.javac.PreviewFeature;
 

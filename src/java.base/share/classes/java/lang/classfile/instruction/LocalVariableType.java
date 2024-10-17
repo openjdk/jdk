@@ -89,6 +89,7 @@ public sealed interface LocalVariableType extends PseudoInstruction
      * @param signatureEntry the local variable signature
      * @param startScope the start range of the local variable scope
      * @param endScope the end range of the local variable scope
+     * @throws IllegalArgumentException if {@code slot} is out of range
      */
     static LocalVariableType of(int slot, Utf8Entry nameEntry, Utf8Entry signatureEntry, Label startScope, Label endScope) {
         return new AbstractPseudoInstruction.UnboundLocalVariableType(slot, nameEntry, signatureEntry,
@@ -103,6 +104,7 @@ public sealed interface LocalVariableType extends PseudoInstruction
      * @param signature the local variable signature
      * @param startScope the start range of the local variable scope
      * @param endScope the end range of the local variable scope
+     * @throws IllegalArgumentException if {@code slot} is out of range
      */
     static LocalVariableType of(int slot, String name, Signature signature, Label startScope, Label endScope) {
         return of(slot,

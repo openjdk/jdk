@@ -187,4 +187,19 @@ public class Krb5Util {
             KeyTab ktab, PrincipalName cname) {
         return snapshotFromJavaxKeyTab(ktab).readServiceKeys(cname);
     }
+
+    public static String keyInfo(byte[] data) {
+        if (data == null) {
+            return "null key";
+        } else if (data.length == 0) {
+            return "empty key";
+        } else {
+            for (byte b : data) {
+                if (b != 0) {
+                    return data.length + "-byte key";
+                }
+            }
+            return data.length + "-byte zero key";
+        }
+    }
 }

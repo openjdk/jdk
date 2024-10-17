@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,27 +78,16 @@ void ZPage::reset_seqnum() {
   Atomic::store(&_seqnum_other, ZGeneration::generation(_generation_id == ZGenerationId::young ? ZGenerationId::old : ZGenerationId::young)->seqnum());
 }
 
-void ZPage::remset_initialize() {
-  // Remsets should only be initialized once and only for old pages.
+void ZPage::remset_alloc() {
+  // Remsets should only be allocated/initialized once and only for old pages.
   assert(!_remembered_set.is_initialized(), "Should not be initialized");
   assert(is_old(), "Only old pages need a remset");
 
   _remembered_set.initialize(size());
 }
 
-void ZPage::remset_initialize_or_verify_cleared() {
-  assert(is_old(), "Only old pages need a remset");
-
-  if (_remembered_set.is_initialized()) {
-    verify_remset_cleared_current();
-    verify_remset_cleared_previous();
-  } else {
-    remset_initialize();
-  }
-}
-
-void ZPage::remset_clear() {
-  _remembered_set.clear_all();
+void ZPage::remset_delete() {
+  _remembered_set.delete_all();
 }
 
 void ZPage::reset(ZPageAge age) {
@@ -123,7 +112,6 @@ void ZPage::reset_top_for_allocation() {
 void ZPage::reset_type_and_size(ZPageType type) {
   _type = type;
   _livemap.resize(object_max_count());
-  _remembered_set.resize(size());
 }
 
 ZPage* ZPage::retype(ZPageType type) {
@@ -214,10 +202,6 @@ void ZPage::verify_remset_cleared_previous() const {
   if (ZVerifyRemembered && !is_remset_cleared_previous()) {
     fatal_msg(" previous remset bits should be cleared");
   }
-}
-
-void ZPage::clear_remset_current() {
-  _remembered_set.clear_current();
 }
 
 void ZPage::clear_remset_previous() {

@@ -35,6 +35,8 @@
 
 package java.util.concurrent.atomic;
 
+import jdk.internal.invoke.MhUtil;
+
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.util.Arrays;
@@ -138,15 +140,8 @@ abstract class Striped64 extends Number {
         }
 
         // VarHandle mechanics
-        private static final VarHandle VALUE;
-        static {
-            try {
-                MethodHandles.Lookup l = MethodHandles.lookup();
-                VALUE = l.findVarHandle(Cell.class, "value", long.class);
-            } catch (ReflectiveOperationException e) {
-                throw new ExceptionInInitializerError(e);
-            }
-        }
+        private static final VarHandle VALUE = MhUtil.findVarHandle(
+                MethodHandles.lookup(), "value", long.class);
     }
 
     /** Number of CPUS, to place bound on table size */
@@ -381,14 +376,12 @@ abstract class Striped64 extends Number {
     private static final VarHandle CELLSBUSY;
     private static final VarHandle THREAD_PROBE;
     static {
-        try {
-            MethodHandles.Lookup l1 = MethodHandles.lookup();
-            BASE = l1.findVarHandle(Striped64.class,
-                    "base", long.class);
-            CELLSBUSY = l1.findVarHandle(Striped64.class,
-                    "cellsBusy", int.class);
+        MethodHandles.Lookup l1 = MethodHandles.lookup();
+
+        BASE = MhUtil.findVarHandle(l1, "base", long.class);
+        CELLSBUSY = MhUtil.findVarHandle(l1, "cellsBusy", int.class);
             @SuppressWarnings("removal")
-            MethodHandles.Lookup l2 = java.security.AccessController.doPrivileged(
+        MethodHandles.Lookup l2 = java.security.AccessController.doPrivileged(
                     new java.security.PrivilegedAction<>() {
                         public MethodHandles.Lookup run() {
                             try {
@@ -397,11 +390,7 @@ abstract class Striped64 extends Number {
                                 throw new ExceptionInInitializerError(e);
                             }
                         }});
-            THREAD_PROBE = l2.findVarHandle(Thread.class,
-                    "threadLocalRandomProbe", int.class);
-        } catch (ReflectiveOperationException e) {
-            throw new ExceptionInInitializerError(e);
-        }
+        THREAD_PROBE = MhUtil.findVarHandle(l2, "threadLocalRandomProbe", int.class);
     }
 
 }

@@ -24,17 +24,16 @@
  */
 package java.lang.classfile.attribute;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
-
+import java.lang.classfile.ClassFile;
 import java.lang.classfile.constantpool.ModuleEntry;
 import java.lang.classfile.constantpool.PackageEntry;
 import java.lang.constant.ModuleDesc;
 import java.lang.constant.PackageDesc;
 import java.lang.reflect.AccessFlag;
+import java.util.Collection;
+import java.util.List;
+import java.util.Set;
 
-import java.lang.classfile.ClassFile;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.classfile.impl.UnboundAttribute;
 import jdk.internal.classfile.impl.Util;

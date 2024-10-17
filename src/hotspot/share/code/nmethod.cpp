@@ -2048,7 +2048,7 @@ bool nmethod::make_not_entrant() {
   } // leave critical region under NMethodState_lock
 
 #if INCLUDE_JVMCI
-  // Invalidate can't occur while holding the Patching lock
+  // Invalidate can't occur while holding the NMethodState_lock
   JVMCINMethodData* nmethod_data = jvmci_nmethod_data();
   if (nmethod_data != nullptr) {
     nmethod_data->invalidate_nmethod_mirror(this);

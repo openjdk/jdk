@@ -24,11 +24,11 @@
  */
 package java.lang.classfile.attribute;
 
+import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.constant.ClassDesc;
 import java.util.Arrays;
 import java.util.List;
 
-import java.lang.classfile.constantpool.ClassEntry;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.classfile.impl.UnboundAttribute;
 import jdk.internal.classfile.impl.Util;

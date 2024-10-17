@@ -508,7 +508,9 @@ InstanceKlass* ClassListParser::load_class_from_source(Symbol* class_name, TRAPS
     THROW_NULL(vmSymbols::java_lang_ClassNotFoundException());
   }
 
-  InstanceKlass* k = UnregisteredClasses::load_class(class_name, _source, CHECK_NULL);
+  ResourceMark rm;
+  char * source_path = os::strdup_check_oom(ClassLoader::uri_to_path(_source));
+  InstanceKlass* k = UnregisteredClasses::load_class(class_name, source_path, CHECK_NULL);
   if (k->local_interfaces()->length() != _interfaces->length()) {
     print_specified_interfaces();
     print_actual_interfaces(k);

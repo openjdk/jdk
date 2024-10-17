@@ -24,14 +24,14 @@
  */
 package java.lang.classfile.instruction;
 
-import java.lang.constant.ConstantDesc;
-
 import java.lang.classfile.CodeElement;
 import java.lang.classfile.CodeModel;
 import java.lang.classfile.Instruction;
 import java.lang.classfile.Opcode;
 import java.lang.classfile.TypeKind;
 import java.lang.classfile.constantpool.LoadableConstantEntry;
+import java.lang.constant.ConstantDesc;
+
 import jdk.internal.classfile.impl.AbstractInstruction;
 import jdk.internal.classfile.impl.BytecodeHelpers;
 import jdk.internal.classfile.impl.Util;

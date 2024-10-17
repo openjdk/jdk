@@ -25,11 +25,11 @@
 
 package java.lang.classfile;
 
-import java.util.List;
-
 import java.lang.classfile.constantpool.ConstantPool;
 import java.lang.classfile.constantpool.LoadableConstantEntry;
 import java.lang.classfile.constantpool.MethodHandleEntry;
+import java.util.List;
+
 import jdk.internal.classfile.impl.BootstrapMethodEntryImpl;
 import jdk.internal.javac.PreviewFeature;
 

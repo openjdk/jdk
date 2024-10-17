@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,8 +44,10 @@ class Request {
     private SocketChannel chan;
     private InputStream is;
     private OutputStream os;
+    private final int maxReqHeaderSize;
 
     Request (InputStream rawInputStream, OutputStream rawout) throws IOException {
+        this.maxReqHeaderSize = ServerConfig.getMaxReqHeaderSize();
         is = rawInputStream;
         os = rawout;
         do {
@@ -75,6 +77,7 @@ class Request {
     public String readLine () throws IOException {
         boolean gotCR = false, gotLF = false;
         pos = 0; lineBuf = new StringBuffer();
+        long lsize = 32;
         while (!gotLF) {
             int c = is.read();
             if (c == -1) {
@@ -87,20 +90,27 @@ class Request {
                     gotCR = false;
                     consume (CR);
                     consume (c);
+                    lsize = lsize + 2;
                 }
             } else {
                 if (c == CR) {
                     gotCR = true;
                 } else {
                     consume (c);
+                    lsize = lsize + 1;
                 }
+            }
+            if (maxReqHeaderSize > 0 && lsize > maxReqHeaderSize) {
+                throw new IOException("Maximum header (" +
+                        "sun.net.httpserver.maxReqHeaderSize) exceeded, " +
+                        ServerConfig.getMaxReqHeaderSize() + ".");
             }
         }
         lineBuf.append (buf, 0, pos);
         return new String (lineBuf);
     }
 
-    private void consume (int c) {
+    private void consume (int c) throws IOException {
         if (pos == BUF_LEN) {
             lineBuf.append (buf);
             pos = 0;
@@ -138,13 +148,22 @@ class Request {
             len = 1;
             firstc = c;
         }
+        long hsize = startLine.length() + 32L;
 
         while (firstc != LF && firstc != CR && firstc >= 0) {
             int keyend = -1;
             int c;
             boolean inKey = firstc > ' ';
             s[len++] = (char) firstc;
+            hsize = hsize + 1;
     parseloop:{
+                // We start parsing for a new name value pair here.
+                // The max header size includes an overhead of 32 bytes per
+                // name value pair.
+                // See SETTINGS_MAX_HEADER_LIST_SIZE, RFC 9113, section 6.5.2.
+                long maxRemaining = maxReqHeaderSize > 0
+                        ? maxReqHeaderSize - hsize - 32
+                        : Long.MAX_VALUE;
                 while ((c = is.read()) >= 0) {
                     switch (c) {
                       /*fallthrough*/
@@ -178,6 +197,11 @@ class Request {
                         s = ns;
                     }
                     s[len++] = (char) c;
+                    if (maxReqHeaderSize > 0 && len > maxRemaining) {
+                        throw new IOException("Maximum header (" +
+                                "sun.net.httpserver.maxReqHeaderSize) exceeded, " +
+                                ServerConfig.getMaxReqHeaderSize() + ".");
+                    }
                 }
                 firstc = -1;
             }
@@ -205,6 +229,13 @@ class Request {
                         "sun.net.httpserver.maxReqHeaders) exceeded, " +
                         ServerConfig.getMaxReqHeaders() + ".");
             }
+            hsize = hsize + len + 32;
+            if (maxReqHeaderSize > 0 && hsize > maxReqHeaderSize) {
+                throw new IOException("Maximum header (" +
+                        "sun.net.httpserver.maxReqHeaderSize) exceeded, " +
+                        ServerConfig.getMaxReqHeaderSize() + ".");
+            }
+
             if (k == null) {  // Headers disallows null keys, use empty string
                 k = "";       // instead to represent invalid key
             }

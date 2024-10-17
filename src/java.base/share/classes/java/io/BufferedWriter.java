@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,25 +37,31 @@ import jdk.internal.misc.VM;
  * <p> The buffer size may be specified, or the default size may be accepted.
  * The default is large enough for most purposes.
  *
- * <p> A newLine() method is provided, which uses the platform's own notion of
- * line separator as defined by the system property {@code line.separator}.
- * Not all platforms use the newline character ('\n') to terminate lines.
- * Calling this method to terminate each output line is therefore preferred to
- * writing a newline character directly.
+ * <p> A {@code newLine()} method is provided, which uses the platform's own
+ * notion of line separator as defined by the system property
+ * {@linkplain System#lineSeparator() line.separator}. Not all platforms use the newline character ('\n')
+ * to terminate lines. Calling this method to terminate each output line is
+ * therefore preferred to writing a newline character directly.
  *
- * <p> In general, a Writer sends its output immediately to the underlying
- * character or byte stream.  Unless prompt output is required, it is advisable
- * to wrap a BufferedWriter around any Writer whose write() operations may be
- * costly, such as FileWriters and OutputStreamWriters.  For example,
+ * <p> In general, a {@code Writer} sends its output immediately to the
+ * underlying character or byte stream.  Unless prompt output is required, it
+ * is advisable to wrap a {@code BufferedWriter} around any {@code Writer} whose
+ * {@code write()} operations may be costly, such as {@code FileWriter}s and
+ * {@code OutputStreamWriter}s.  For example,
  *
  * {@snippet lang=java :
  *     PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter("foo.out")));
  * }
  *
- * will buffer the PrintWriter's output to the file.  Without buffering, each
- * invocation of a print() method would cause characters to be converted into
- * bytes that would then be written immediately to the file, which can be very
- * inefficient.
+ * will buffer the {@code PrintWriter}'s output to the file.  Without buffering,
+ * each invocation of a {@code print()} method would cause characters to be
+ * converted into bytes that would then be written immediately to the file,
+ * which can be very inefficient.
+ *
+ * @apiNote
+ * Once wrapped in a {@code BufferedWriter}, the underlying
+ * {@code Writer} should not be used directly nor wrapped with
+ * another writer.
  *
  * @see PrintWriter
  * @see FileWriter

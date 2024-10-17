@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -150,12 +150,9 @@ public final class Memory {
          *  @return length of array
          */
         public static int getArrayLength(long memory, long objectSize) {
-                int referenceSize = getReferenceSize();
                 int arrayExtraSize = getArrayExtraSize();
-                return (int) Math.min(
-                                (memory - arrayExtraSize) / (objectSize + referenceSize),
-                                Integer.MAX_VALUE
-                                );
+                return (int) Math.min((memory - arrayExtraSize) / objectSize,
+                        Integer.MAX_VALUE);
         }
 
         /**
@@ -166,7 +163,7 @@ public final class Memory {
          *  @return size of array
          */
         public static long getArraySize(int length, long objectSize) {
-                return getObjectExtraSize() + length * (objectSize + getReferenceSize());
+                return getArrayExtraSize() + length * objectSize;
         }
 
         /**

@@ -420,7 +420,6 @@ JNIEXPORT jlongArray JNICALL Java_sun_jvm_hotspot_debugger_linux_LinuxDebuggerLo
   jboolean isCopy;
   jlongArray array;
   jlong *regs;
-  int i;
 
   struct ps_prochandle* ph = get_proc_handle(env, this_obj);
   if (get_lwp_regs(ph, lwp_id, &gregs) != true) {

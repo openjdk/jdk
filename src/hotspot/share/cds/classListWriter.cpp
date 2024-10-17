@@ -174,6 +174,8 @@ void ClassListWriter::write_to_stream(const InstanceKlass* k, outputStream* stre
       }
     }
 
+    // NB: the string following "source: " is not really a proper file name, but rather
+    // a truncated URI referring to a file. It must be decoded after reading.
 #ifdef _WINDOWS
     // "file:/C:/dir/foo.jar" -> "C:/dir/foo.jar"
     stream->print(" source: %s", cfs->source() + 6);

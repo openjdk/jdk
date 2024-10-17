@@ -24,12 +24,12 @@
  */
 package java.lang.classfile.attribute;
 
-import java.lang.constant.ClassDesc;
-import java.util.List;
-
 import java.lang.classfile.Attribute;
 import java.lang.classfile.AttributedElement;
 import java.lang.classfile.constantpool.Utf8Entry;
+import java.lang.constant.ClassDesc;
+import java.util.List;
+
 import jdk.internal.classfile.impl.BoundRecordComponentInfo;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.classfile.impl.UnboundAttribute;

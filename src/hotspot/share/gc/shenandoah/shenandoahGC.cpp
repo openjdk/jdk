@@ -29,6 +29,7 @@
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahGC.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
+#include "gc/shenandoah/shenandoahOopClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
@@ -66,13 +67,13 @@ public:
     assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Must be at a safepoint");
     ShenandoahParallelWorkerSession worker_session(worker_id);
 
-    ShenandoahUpdateRefsClosure cl;
+    ShenandoahNonConcUpdateRefsClosure cl;
     if (_check_alive) {
       ShenandoahForwardedIsAliveClosure is_alive;
-      _root_updater->roots_do<ShenandoahForwardedIsAliveClosure, ShenandoahUpdateRefsClosure>(worker_id, &is_alive, &cl);
+      _root_updater->roots_do<ShenandoahForwardedIsAliveClosure, ShenandoahNonConcUpdateRefsClosure>(worker_id, &is_alive, &cl);
     } else {
-      AlwaysTrueClosure always_true;;
-      _root_updater->roots_do<AlwaysTrueClosure, ShenandoahUpdateRefsClosure>(worker_id, &always_true, &cl);
+      AlwaysTrueClosure always_true;
+      _root_updater->roots_do<AlwaysTrueClosure, ShenandoahNonConcUpdateRefsClosure>(worker_id, &always_true, &cl);
     }
   }
 };

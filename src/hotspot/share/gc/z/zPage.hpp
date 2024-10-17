@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -155,9 +155,8 @@ public:
   void clear_remset_range_non_par_current(uintptr_t l_offset, size_t size);
   void swap_remset_bitmaps();
 
-  void remset_initialize();
-  void remset_initialize_or_verify_cleared();
-  void remset_clear();
+  void remset_alloc();
+  void remset_delete();
 
   ZBitMap::ReverseIterator remset_reverse_iterator_previous();
   BitMap::Iterator remset_iterator_limited_current(uintptr_t l_offset, size_t size);
@@ -182,7 +181,6 @@ public:
   void verify_remset_cleared_current() const;
   void verify_remset_cleared_previous() const;
 
-  void clear_remset_current();
   void clear_remset_previous();
 
   void* remset_current();

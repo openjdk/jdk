@@ -223,6 +223,7 @@ void ArchiveHeapWriter::copy_roots_to_buffer(GrowableArrayCHeap<oop, mtClassShar
                             MIN_GC_REGION_ALIGNMENT,
                             max_elem_count);
 
+  int root_index = 0;
   for (size_t seg_idx = 0; seg_idx < segments.count(); seg_idx++) {
     int size_elems = segments.size_in_elems(seg_idx);
     size_t size_bytes = segments.size_in_bytes(seg_idx);
@@ -235,7 +236,6 @@ void ArchiveHeapWriter::copy_roots_to_buffer(GrowableArrayCHeap<oop, mtClassShar
            "Roots segment " SIZE_FORMAT " start is not aligned: " SIZE_FORMAT,
            segments.count(), oop_offset);
 
-    int root_index = 0;
     objArrayOop seg_oop = allocate_root_segment(oop_offset, size_elems);
     for (int i = 0; i < size_elems; i++) {
       root_segment_at_put(seg_oop, i, roots->at(root_index++));
@@ -244,6 +244,8 @@ void ArchiveHeapWriter::copy_roots_to_buffer(GrowableArrayCHeap<oop, mtClassShar
     log_info(cds, heap)("archived obj root segment [%d] = " SIZE_FORMAT " bytes, obj = " PTR_FORMAT,
                         size_elems, size_bytes, p2i(seg_oop));
   }
+
+  assert(root_index == roots->length(), "Post-condition: All roots are handled");
 
   _heap_root_segments = segments;
 }

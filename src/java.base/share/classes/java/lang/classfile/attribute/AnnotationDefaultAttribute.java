@@ -29,6 +29,7 @@ import java.lang.classfile.AnnotationValue;
 import java.lang.classfile.Attribute;
 import java.lang.classfile.MethodElement;
 import java.lang.classfile.MethodModel;
+
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.UnboundAttribute;
 import jdk.internal.javac.PreviewFeature;
@@ -66,5 +67,4 @@ public sealed interface AnnotationDefaultAttribute
     static AnnotationDefaultAttribute of(AnnotationValue annotationDefault) {
         return new UnboundAttribute.UnboundAnnotationDefaultAttribute(annotationDefault);
     }
-
 }

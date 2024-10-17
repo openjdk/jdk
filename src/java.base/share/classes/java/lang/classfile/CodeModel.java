@@ -25,13 +25,12 @@
 
 package java.lang.classfile;
 
+import java.lang.classfile.attribute.CodeAttribute;
+import java.lang.classfile.instruction.ExceptionCatch;
 import java.util.List;
 import java.util.Optional;
 
-import java.lang.classfile.attribute.CodeAttribute;
 import jdk.internal.classfile.impl.BufferedCodeBuilder;
-import jdk.internal.classfile.impl.CodeImpl;
-import java.lang.classfile.instruction.ExceptionCatch;
 import jdk.internal.javac.PreviewFeature;
 
 /**

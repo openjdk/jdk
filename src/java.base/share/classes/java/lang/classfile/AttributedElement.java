@@ -24,14 +24,16 @@
  */
 package java.lang.classfile;
 
+import java.lang.classfile.attribute.RecordComponentInfo;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import java.lang.classfile.attribute.RecordComponentInfo;
 import jdk.internal.classfile.impl.AbstractUnboundModel;
 import jdk.internal.javac.PreviewFeature;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * A {@link ClassFileElement} describing an entity that has attributes, such
@@ -58,6 +60,7 @@ public sealed interface AttributedElement extends ClassFileElement
      * is not present
      */
     default <T extends Attribute<T>> Optional<T> findAttribute(AttributeMapper<T> attr) {
+        requireNonNull(attr);
         for (Attribute<?> la : attributes()) {
             if (la.attributeMapper() == attr) {
                 @SuppressWarnings("unchecked")
@@ -76,6 +79,7 @@ public sealed interface AttributedElement extends ClassFileElement
      * is not present
      */
     default <T extends Attribute<T>> List<T> findAttributes(AttributeMapper<T> attr) {
+        requireNonNull(attr);
         var list = new ArrayList<T>();
         for (var a : attributes()) {
             if (a.attributeMapper() == attr) {

@@ -25,14 +25,18 @@
 
 package jdk.jfr.internal.dcmd;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.StringJoiner;
+
+import jdk.jfr.internal.JVM;
 import jdk.jfr.internal.util.SpellChecker;
 import jdk.jfr.internal.util.TimespanUnit;
+import jdk.jfr.internal.util.ValueFormatter;
 
 final class ArgumentParser {
     private final Map<String, Object> options = new HashMap<>();
@@ -226,8 +230,52 @@ final class ArgumentParser {
             case "BOOLEAN" -> parseBoolean(name, text);
             case "NANOTIME" -> parseNanotime(name, text);
             case "MEMORY SIZE" -> parseMemorySize(name, text);
+            case "FILE" -> text == null ? "" : parseFilename(text);
             default -> throw new InternalError("Unknown type: " + type);
         };
+    }
+
+    /**
+     * Expands filename arguments replacing '%p' with the PID
+     * and '%t' with the time in 'yyyy_MM_dd_HH_mm_ss' format.
+     * @param filename a filename to be expanded
+     * @return filename with expanded arguments
+     */
+    private String parseFilename(String filename) {
+        if (filename == null || filename.indexOf('%') == -1) {
+            return filename;
+        }
+
+        String pid = null;
+        String time = null;
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < filename.length(); i++) {
+            char c = filename.charAt(i);
+            if (c == '%' && i < filename.length() - 1) {
+                char nc = filename.charAt(i + 1);
+                if (nc == '%') { // %% ==> %
+                    sb.append('%');
+                    i++;
+                } else if (nc == 'p') {
+                    if (pid == null) {
+                        pid = JVM.getPid();
+                    }
+                    sb.append(pid);
+                    i++;
+                } else if (nc == 't') {
+                    if (time == null) {
+                        time = ValueFormatter.formatDateTime(LocalDateTime.now());
+                    }
+                    sb.append(time);
+                    i++;
+                } else {
+                    sb.append('%');
+                }
+            } else {
+                sb.append(c);
+            }
+        }
+        return sb.toString();
     }
 
     private Long parseLong(String name, String text) {

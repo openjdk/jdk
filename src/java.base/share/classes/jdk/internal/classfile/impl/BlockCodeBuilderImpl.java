@@ -26,12 +26,13 @@ package jdk.internal.classfile.impl;
 
 import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.CodeElement;
+import java.lang.classfile.Instruction;
 import java.lang.classfile.Label;
 import java.lang.classfile.TypeKind;
 import java.lang.classfile.instruction.LabelTarget;
-
 import java.util.Objects;
-import java.lang.classfile.Instruction;
+
+import static java.util.Objects.requireNonNull;
 
 public final class BlockCodeBuilderImpl
         extends NonterminalCodeBuilder
@@ -80,7 +81,7 @@ public final class BlockCodeBuilderImpl
 
     @Override
     public CodeBuilder with(CodeElement element) {
-        parent.with(element);
+        parent.with(requireNonNull(element));
 
         hasInstructions |= element instanceof Instruction;
 

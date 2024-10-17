@@ -535,6 +535,19 @@ static double calculate_young_to_old_worker_ratio(const ZDirectorStats& stats) {
   const size_t reclaimed_per_old_gc = stats._old_stats._stat_heap._reclaimed_avg;
   const double current_young_bytes_freed_per_gc_time = double(reclaimed_per_young_gc) / double(young_gc_time);
   const double current_old_bytes_freed_per_gc_time = double(reclaimed_per_old_gc) / double(old_gc_time);
+
+  if (current_young_bytes_freed_per_gc_time == 0.0) {
+    if (current_old_bytes_freed_per_gc_time == 0.0) {
+      // Neither young nor old collections have reclaimed any memory.
+      // Give them equal priority.
+      return 1.0;
+    }
+
+    // Only old collections have reclaimed memory.
+    // Prioritize old.
+    return ZOldGCThreads;
+  }
+
   const double old_vs_young_efficiency_ratio = current_old_bytes_freed_per_gc_time / current_young_bytes_freed_per_gc_time;
 
   return old_vs_young_efficiency_ratio;
