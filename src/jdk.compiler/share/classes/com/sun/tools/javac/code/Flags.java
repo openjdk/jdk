@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -196,6 +196,13 @@ public class Flags {
     /** Flag that marks bridge methods.
      */
     public static final long BRIDGE          = 1L<<31;
+
+    /**
+     * Flag marking a basic for() loop iteration variable (i.e., a variable declared
+     * in the init section of the loop) that is allowed to be captured by a nested
+     * class or lambda even when the variable is neither final nor effectively final.
+     */
+    public static final long FOR_LOOP_BODY_MAY_CAPTURE = 1L<<32;
 
     /** Flag that marks formal parameters.
      */
@@ -518,6 +525,7 @@ public class Flags {
         UNATTRIBUTED(Flags.UNATTRIBUTED),
         ANONCONSTR(Flags.ANONCONSTR),
         ACYCLIC(Flags.ACYCLIC),
+        FOR_LOOP_BODY_MAY_CAPTURE(Flags.FOR_LOOP_BODY_MAY_CAPTURE),
         PARAMETER(Flags.PARAMETER),
         VARARGS(Flags.VARARGS),
         ACYCLIC_ANN(Flags.ACYCLIC_ANN),
