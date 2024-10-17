@@ -52,6 +52,11 @@ class G1HeapSizingPolicy: public CHeapObj<mtGC> {
   G1HeapSizingPolicy(const G1CollectedHeap* g1h, const G1Analytics* analytics);
 public:
 
+  // Use Adaptable Heap Sizing to determine an appropriate amount to expand
+  // or shrink by. Return a positive value to indicate a suggested expansion,
+  // and a negative value to indicate a suggested shrinking.
+  virtual int64_t resize_amount_ahs();
+
   // If an expansion would be appropriate, because recent GC overhead had
   // exceeded the desired limit, return an amount to expand by.
   size_t young_collection_expansion_amount();
