@@ -21,78 +21,181 @@
  * questions.
  */
 
+import java.awt.AWTEvent;
+import java.awt.Button;
+import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dialog;
-import java.awt.EventQueue;
+import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.FontMetrics;
 import java.awt.Frame;
+import java.awt.Graphics;
 import java.awt.Label;
+import java.awt.Toolkit;
+import java.awt.event.ActionEvent;
+import java.awt.event.MouseEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.FocusEvent;
+import java.awt.event.MouseAdapter;
 
 /*
  * @test
  * @bug 4193022
  * @summary Test for bug(s): 4193022, disposing dialog leaks memory
- * @key headful
- * @run main/othervm -Xmx128m DialogDisposeLeak
+ * @library /java/awt/regtesthelpers
+ * @build PassFailJFrame
+ * @run main/manual DialogDisposeLeak
  */
 
 public class DialogDisposeLeak {
-    static Frame frame;
+    private static final String INSTRUCTIONS = """
+            Click on the Dialog... button in the frame that appears.
+            Now dismiss the dialog by clicking on the label in the dialog.
+
+            Repeat this around 10 times. At some point the label in the frame should change
+            to indicated that the dialog has been garbage collected and the test passed.
+            """;
 
     public static void main(String args[]) throws Exception {
-        EventQueue.invokeLater(() -> {
-            try {
-                frame = new DisposeFrame();
-            } catch (Exception e) {
-                throw new RuntimeException("Test failed.");
-            } finally {
-                if (!DisposeFrame.passed) {
-                    throw new RuntimeException("Test failed.");
-                }
-            }
-        });
+        Frame frame = new DisposeFrame();
+        PassFailJFrame.builder()
+                .title("DialogDisposeLeak")
+                .instructions(INSTRUCTIONS)
+                .columns(35)
+                .testUI(frame)
+                .build()
+                .awaitAndCheck();
     }
 }
 
 class DisposeFrame extends Frame {
     Label label = new Label("Test not passed yet");
-    static boolean passed;
 
     DisposeFrame() {
         super("DisposeLeak test");
-        passed = false;
         setLayout(new FlowLayout());
+        Button btn = new Button("Dialog...");
+        add(btn);
+        btn.addActionListener(ev -> {
+                    Dialog dlg = new DisposeDialog(DisposeFrame.this);
+                    dlg.setVisible(true);
+                }
+        );
         add(label);
         pack();
-
-        for (int i = 0; !passed && i < 10; i++) {
-            Dialog dlg = new DisposeDialog(this);
-            dlg.setVisible(true);
-        }
     }
 
     public void testOK() {
-        passed = true;
         label.setText("Test has passed. Dialog finalized.");
     }
 }
 
 class DisposeDialog extends Dialog {
     DisposeDialog(Frame frame) {
-        super(frame, "DisposeDialog", false);
+        super(frame, "DisposeDialog", true);
 
         setLayout(new FlowLayout());
-        setVisible(false);
-        dispose();
-        // try to force GC and finalization
-        for (int n = 0; n < 100; n++) {
-            byte bytes[] = new byte[1024 * 1024 * 8];
-            System.gc();
-            pack();
-        }
+        LightweightComp lw = new LightweightComp("Click here to dispose");
+        lw.addMouseListener(
+                new MouseAdapter() {
+                    public void mouseEntered(MouseEvent ev) {
+                        System.out.println("Entered lw");
+                    }
+
+                    public void mouseExited(MouseEvent ev) {
+                        System.out.println("Exited lw");
+                    }
+
+                    public void mouseReleased(MouseEvent ev) {
+                        System.out.println("Released lw");
+                        DisposeDialog.this.dispose();
+                        // try to force GC and finalization
+                        for (int n = 0; n < 100; n++) {
+                            byte bytes[] = new byte[1024 * 1024 * 8];
+                            System.gc();
+                        }
+                    }
+                }
+        );
+        add(lw);
+        pack();
     }
 
-    @SuppressWarnings("removal")
     public void finalize() {
         ((DisposeFrame) getParent()).testOK();
     }
 }
+
+// simple lightweight component, focus traversable, highlights upon focus
+class LightweightComp extends Component {
+    FontMetrics fm;
+    String label;
+    private static final int FOCUS_GONE = 0;
+    private static final int FOCUS_TEMP = 1;
+    private static final int FOCUS_HAVE = 2;
+    int focusLevel = FOCUS_GONE;
+    public static int nameCounter = 0;
+
+    public LightweightComp(String lwLabel) {
+        label = lwLabel;
+        enableEvents(AWTEvent.FOCUS_EVENT_MASK | AWTEvent.MOUSE_EVENT_MASK);
+        setName("lw" + Integer.toString(nameCounter++));
+    }
+
+    public Dimension getPreferredSize() {
+        if (fm == null) fm = Toolkit.getDefaultToolkit().getFontMetrics(getFont());
+        return new Dimension(fm.stringWidth(label) + 2, fm.getHeight() + 2);
+    }
+
+    public void paint(Graphics g) {
+        Dimension s = getSize();
+
+        // erase the background
+        g.setColor(getBackground());
+        g.fillRect(0, 0, s.width, s.height);
+
+        g.setColor(getForeground());
+
+        // draw the string
+        g.drawString(label, 2, fm.getHeight());
+
+        // draw a focus rectangle
+        if (focusLevel > FOCUS_GONE) {
+            if (focusLevel == FOCUS_TEMP) {
+                g.setColor(Color.gray);
+            } else {
+                g.setColor(Color.blue);
+            }
+        } else {
+            g.setColor(Color.black);
+        }
+        g.drawRect(1, 1, s.width - 2, s.height - 2);
+    }
+
+    public boolean isFocusTraversable() {
+        return true;
+    }
+
+    protected void processFocusEvent(FocusEvent e) {
+        super.processFocusEvent(e);
+        if (e.getID() == FocusEvent.FOCUS_GAINED) {
+            focusLevel = FOCUS_HAVE;
+        } else {
+            if (e.isTemporary()) {
+                focusLevel = FOCUS_TEMP;
+            } else {
+                focusLevel = FOCUS_GONE;
+            }
+        }
+        repaint();
+    }
+
+    protected void processMouseEvent(MouseEvent e) {
+        if (e.getID() == MouseEvent.MOUSE_PRESSED) {
+            requestFocus();
+        }
+        super.processMouseEvent(e);
+    }
+}
+
