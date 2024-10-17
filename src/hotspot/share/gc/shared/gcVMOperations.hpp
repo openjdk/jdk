@@ -180,16 +180,22 @@ class VM_GC_HeapInspection: public VM_GC_Operation {
 };
 
 class VM_CollectForAllocation : public VM_GC_Operation {
+ static volatile bool _collect_for_allocation_started;
+ static WaitBarrierDefault* _collect_for_allocation_barrier;
  protected:
   size_t    _word_size; // Size of object to be allocated (in number of words)
   HeapWord* _result;    // Allocation result (null if allocation failed)
-
  public:
   VM_CollectForAllocation(size_t word_size, uint gc_count_before, GCCause::Cause cause);
 
   HeapWord* result() const {
     return _result;
   }
+
+  static bool try_set_collect_for_allocation_started();
+  static void unset_collect_for_allocation_started();
+  static bool is_collect_for_allocation_started();
+  static void wait_at_collect_for_allocation_barrier();
 };
 
 class VM_CollectForMetadataAllocation: public VM_GC_Operation {

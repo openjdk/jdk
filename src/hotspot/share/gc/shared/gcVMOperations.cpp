@@ -39,6 +39,7 @@
 #include "memory/universe.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "utilities/dtrace.hpp"
@@ -193,6 +194,36 @@ void VM_GC_HeapInspection::doit() {
     inspect.heap_inspection(_out, nullptr);
   }
 }
+
+volatile bool VM_CollectForAllocation::_collect_for_allocation_started = false;
+WaitBarrierDefault* VM_CollectForAllocation::_collect_for_allocation_barrier = new WaitBarrierDefault();
+
+bool VM_CollectForAllocation::try_set_collect_for_allocation_started() {
+  assert(Thread::current()->is_Java_thread(), "Must be");
+  bool success = Atomic::cmpxchg(&_collect_for_allocation_started, false, true, memory_order_relaxed) == false;
+  if (success) {
+    _collect_for_allocation_barrier->arm(1);
+  }
+  return success;
+}
+
+void VM_CollectForAllocation::unset_collect_for_allocation_started() {
+  assert(Atomic::load(&_collect_for_allocation_started), "Must be");
+  _collect_for_allocation_barrier->disarm();
+  OrderAccess::fence();
+  Atomic::store(&_collect_for_allocation_started, false);
+}
+
+bool VM_CollectForAllocation::is_collect_for_allocation_started() {
+  return Atomic::load(&_collect_for_allocation_started);
+}
+
+void VM_CollectForAllocation::wait_at_collect_for_allocation_barrier() {
+  assert(Thread::current()->is_Java_thread(), "Must be");
+  ThreadBlockInVM tbivm(JavaThread::current());
+  _collect_for_allocation_barrier->wait(1);
+}
+
 
 VM_CollectForMetadataAllocation::VM_CollectForMetadataAllocation(ClassLoaderData* loader_data,
                                                                  size_t size,
