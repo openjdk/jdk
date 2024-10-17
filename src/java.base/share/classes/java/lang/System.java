@@ -37,6 +37,7 @@ import java.io.PrintStream;
 import java.lang.annotation.Annotation;
 import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.StringConcatFactory;
 import java.lang.module.ModuleDescriptor;
@@ -2228,21 +2229,15 @@ public final class System {
         // system properties, java.lang and other core classes are now initialized
         VM.initLevel(VM.JAVA_LANG_SYSTEM_INITED);
 
-        try {
-            initJSR292Classes();
-        } catch (Throwable ex) {
-            throw new InternalError(ex);
-        }
-        VM.initLevel(VM.JAVA_LANG_INVOKE_INITED);
+        initJavaLangInvokeClasses();
     }
 
     // do phase1 initializations specific to JSR 292 APIs
-    private static void initJSR292Classes() throws Throwable {
-        var mh = java.lang.invoke.MethodHandles.identity(int.class);
-        int z = 0;
-        z |= (int) mh.invokeExact(z);
-        z |= (Integer) mh.invoke((Object)0);
-        if (z != 0)  throw new AssertionError();
+    private static void initJavaLangInvokeClasses() {
+        // Merely touching MethodHandles is enough to warm up the
+        // java.lang.invoke subsystem.
+        MethodHandles.identity(int.class);
+        VM.initLevel(VM.JAVA_LANG_INVOKE_INITED);
     }
 
     /**

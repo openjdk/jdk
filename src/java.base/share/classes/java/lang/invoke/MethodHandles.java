@@ -8140,4 +8140,44 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
     public static VarHandle dropCoordinates(VarHandle target, int pos, Class<?>... valueTypes) {
         return VarHandles.dropCoordinates(target, pos, valueTypes);
     }
+
+    // During VM bootstrap, java.lang.System (indirectly) calls this
+    // method in order to inititalize the java.lang.invoke subsystem.
+    private static void initializeViaSmokeTest() throws Throwable {
+        // First exercise the direct method handle infrastructure.
+        var MT_identity = MethodType.methodType(MethodHandle.class, Class.class);
+        var MH_identity = publicLookup().findStatic(MethodHandles.class, "identity", MT_identity);
+        // Get a MH from a combinator, two ways; make sure it is the same both ways.
+        var intid = (MethodHandle) MH_identity.invoke(int.class);
+        var mh = identity(int.class);
+        int z = 0;  // should always be zero, badness detected if non-zero
+        if (intid != mh)  z |= 1;
+        // Invoke the MH directly.  Only zeroes should come out.
+        z |= (int) mh.invokeExact(z);
+        assert z == 0;
+        z |= (Integer) mh.invoke((Object)0);
+        assert z == 0;
+        z |= (int) new MutableCallSite(mh).dynamicInvoker().invoke(z);
+        assert z == 0;
+        // Run the MH through a call site, two ways.
+        intid = new ConstantCallSite(intid).dynamicInvoker();
+        if (intid != mh)  z |= 2;
+        assert z == 0;
+        z |= (int) new MutableCallSite(mh).dynamicInvoker().invoke(z);
+        assert z == 0;
+        // Try out a VH
+        int[] a = { -1 };
+        var vh = arrayElementVarHandle(int[].class);
+        vh.set(a, 0, z);
+        z |= a[0];
+        assert z == 0;
+        // Mix a VH into a MH
+        z |= (int) vh.toMethodHandle(VarHandle.AccessMode.GET).bindTo(a).invokeExact(0);
+        // Z must still be zero.
+        if (z != 0)  throw new AssertionError();
+    }
+    static {
+        try { initializeViaSmokeTest(); }
+        catch (Throwable ex) { throw new InternalError(ex); }
+    }
 }

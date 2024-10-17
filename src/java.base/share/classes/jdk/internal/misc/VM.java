@@ -59,6 +59,7 @@ public class VM {
     private static volatile int initLevel;
     private static final @Stable boolean[] initLevelReached = new boolean[INIT_LEVEL_LIMIT];
     private static final Object lock = new Object();
+    private static @Stable boolean isAOTCacheInited;  // independent sub-state
 
     /**
      * Sets the init level.
@@ -100,19 +101,28 @@ public class VM {
         return initLevelReached[level];
     }
 
-    private static @Stable boolean isAOTCacheInited;
-    public static void setAOTCacheInited() {
+    // TO DO: maybe hook something like this logic into AOT assembly shutdown:
+    //private static void shutdownAOTAssembly() { setAOTCacheInited(); }
+    static void setAOTCacheInited() {
         if (isAOTCacheInited) {
             throw new InternalError("AOT cache already inited");
         }
-        isAOTCacheInited = true;
+        isAOTCacheInited = CDS.isDumpingStaticArchive() ? false : true;
+        // Note: this is not just another state such as
+        // AOT_ASSEMBLY_DONE < VM_STARTED.
+        //
+        // That is because the AOT assembly phase runs up from
+        // VM_STARTED through SYSTEM_BOOTED in order to synthesize an
+        // AOT cache full of loaded classes and other goodies.
+        // Thus, the true set of states is roughly the cross
+        // product (initLevel, inassembly = !isAOTCacheInited).
     }
 
     /**
      * Returns {@code true} if the AOT cache has been initialized.
      * This is almost always {@code true}, but may be false during a
-     * special run of the VM called the "assembly phase", which
-     * populates an AOT cache.  If there was never an AOT cache for
+     * special run of the VM called the "AOT assembly phase", which
+     * populates an AOT cache.  If there never was an AOT cache for
      * this run of the VM, the boolean is also {@code true}, as if
      * there was a very tiny AOT cache that was instantaneously
      * initialized.

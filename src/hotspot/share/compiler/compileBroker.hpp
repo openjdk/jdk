@@ -288,6 +288,10 @@ public:
     standard_entry_bci = InvocationEntryBci
   };
 
+  static bool is_initialized() {
+    return Atomic::load_acquire(&_initialized);
+  }
+
   static AbstractCompiler* compiler(int comp_level) {
     if (is_c2_compile(comp_level)) return _compilers[1]; // C2
     if (is_c1_compile(comp_level)) return _compilers[0]; // C1
