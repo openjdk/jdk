@@ -6255,7 +6255,7 @@ instruct divI_reg_imm16(roddRegI dst, iRegI src1, immI16 src2, revenRegI tmp, fl
 
 // Unsigned Integer Register Division
 // NOTE: z_dlr requires even-odd pair. remainder will be in even register(r4) & quotient will be stored in odd register(r5)
-// for dividend, leftmost 32bits will be in r4 and rightmost 32bits will be in r5 register.
+// for dividend, upper 32bits will be in r4 and lower 32bits will be in r5 register.
 instruct udivI_reg_reg(roddRegI r5_rodd_dst, iRegI src2, revenRegI r4_reven_tmp, flagsReg cr) %{
   match(Set r5_rodd_dst (UDivI r5_rodd_dst src2));
   effect(TEMP r4_reven_tmp, KILL cr);
@@ -6269,7 +6269,7 @@ instruct udivI_reg_reg(roddRegI r5_rodd_dst, iRegI src2, revenRegI r4_reven_tmp,
     assert(r4_reven_tmp->successor() == r5_rodd_dst, "even-odd pair required for the instruction");
 
     __ block_comment("unsigned_div_int {");
-    __ z_lhi(r4_reven_tmp, 0); // make leftmost 32bits 0
+    __ z_lhi(r4_reven_tmp, 0); // make upper 32bits 0
     __ z_dlr(r4_reven_tmp, b);
     __ block_comment("} unsigned_div_int");
   %}
@@ -6334,7 +6334,7 @@ instruct divL_reg_reg(roddRegL dst, iRegL src, revenRegL tmp, flagsReg cr) %{
 
 // Register Unsigned Long Division
 // NOTE: z_dlgr requires even-odd pair. remainder will be in even register(r4) & quotient will be stored in odd register(r5)
-// for dividend, leftmost 64bits will be in r4 and rightmost 64bits will be in r5 register.
+// for dividend, upper 64bits will be in r4 and lower 64bits will be in r5 register.
 instruct udivL_reg_reg(roddRegL r5_rodd_dst, iRegL src, revenRegL r4_reven_tmp, flagsReg cr) %{
   match(Set r5_rodd_dst (UDivL r5_rodd_dst src));
   effect(TEMP r4_reven_tmp, KILL cr);
@@ -6347,7 +6347,7 @@ instruct udivL_reg_reg(roddRegL r5_rodd_dst, iRegL src, revenRegL r4_reven_tmp, 
     Register r4_reven_tmp = $r4_reven_tmp$$Register;
     assert_different_registers(r5_rodd_dst, r4_reven_tmp, b);
     __ block_comment("unsigned_div_long {");
-    __ z_lghi(r4_reven_tmp, 0); // make leftmost 64bits 0
+    __ z_lghi(r4_reven_tmp, 0); // make upper 64bits 0
     __ z_dlgr(r4_reven_tmp, b);
     __ block_comment("} unsigned_div_long");
   %}
@@ -6421,7 +6421,7 @@ instruct modI_reg_reg(revenRegI dst, iRegI src1, noOdd_iRegI src2, roddRegI tmp,
 
 // Register Unsigned Integer Remainder
 // NOTE: z_dlr requires even-odd pair. remainder will be in even register(r4) & quotient will be stored in odd register(r5)
-// for dividend, leftmost 32bits will be in r4 and rightmost 32bits will be in r5 register.
+// for dividend, upper 32bits will be in r4 and lower 32bits will be in r5 register.
 instruct umodI_reg_reg(revenRegI r4_reven_dst, iRegI src2, roddRegI r5_rodd_tmp, flagsReg cr) %{
   match(Set r4_reven_dst (UModI r4_reven_dst src2));
   effect(TEMP r5_rodd_tmp, KILL cr);
@@ -6436,8 +6436,8 @@ instruct umodI_reg_reg(revenRegI r4_reven_dst, iRegI src2, roddRegI r5_rodd_tmp,
     assert(r4_reven_dst->successor() == r5_rodd_tmp, "must be an even-odd pair");
 
     __ block_comment("unsigned_mod_integer {");
-    __ z_lr(r5_rodd_tmp, r4_reven_dst); // load rightmost 32bits in odd register
-    __ z_lhi(r4_reven_dst, 0);          // make leftmost  32bits 0
+    __ z_lr(r5_rodd_tmp, r4_reven_dst); // load lower 32bits in odd register
+    __ z_lhi(r4_reven_dst, 0);          // make upper 32bits 0
     __ z_dlr(r4_reven_dst, b);
     __ block_comment("} unsigned_mod_integer");
   %}
@@ -6509,7 +6509,7 @@ instruct modL_reg_reg(revenRegL dst, roddRegL src1, iRegL src2, flagsReg cr) %{
 
 // Register Unsigned Long Remainder
 // NOTE: z_dlgr requires even-odd pair. remainder will be in even register(r4) & quotient will be stored in odd register(r5)
-// for dividend, leftmost 64bits will be in r4 and rightmost 64bits will be in r5 register.
+// for dividend, upper 64bits will be in r4 and lower 64bits will be in r5 register.
 instruct umodL_reg_reg(revenRegL r4_reven_dst, roddRegL r5_rodd_tmp, iRegL src2, flagsReg cr) %{
   match(Set r4_reven_dst (UModL r4_reven_dst src2));
   effect(TEMP r5_rodd_tmp, KILL cr);
@@ -6524,8 +6524,8 @@ instruct umodL_reg_reg(revenRegL r4_reven_dst, roddRegL r5_rodd_tmp, iRegL src2,
     assert(r4_reven_dst->successor() == r5_rodd_tmp, "instruction requires an even-odd pair" );
 
     __ block_comment("unsigned_mod_long {");
-    __ z_lgr(r5_rodd_tmp, r4_reven_dst); // load rightmost 64bits in even register
-    __ z_lghi(r4_reven_dst, 0);          // make leftmost 64bits 0
+    __ z_lgr(r5_rodd_tmp, r4_reven_dst); // load lower 64bits in even register
+    __ z_lghi(r4_reven_dst, 0);          // make upper 64bits 0
     __ z_dlgr(r4_reven_dst, b);
     __ block_comment("} unsigned_mod_long");
   %}
