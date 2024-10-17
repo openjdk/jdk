@@ -31,7 +31,7 @@ import java.nio.file.Path;
  * Test framework for performing tests on the generated documentation.
  */
 public class DocTester {
-    private final static String DIR = System.getenv("DOCS_IMAGE_DIR");
+    private final static String DIR = System.getenv("DOCS_JDK_IMAGE_DIR");
     private static final Path firstCandidate = Path.of(System.getProperty("test.jdk"))
             .getParent().resolve("docs");
 
