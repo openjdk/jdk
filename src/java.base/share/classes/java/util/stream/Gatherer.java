@@ -195,7 +195,7 @@ import java.util.function.Supplier;
  * @param <A> the potentially mutable state type of the gatherer operation
  *            (often hidden as an implementation detail)
  * @param <R> the type of output elements from the gatherer operation
- * @since 22
+ * @since 24
  */
 @PreviewFeature(feature = PreviewFeature.Feature.STREAM_GATHERERS)
 public interface Gatherer<T, A, R> {
@@ -481,7 +481,7 @@ public interface Gatherer<T, A, R> {
      * A Downstream object is the next stage in a pipeline of operations,
      * to which elements can be sent.
      * @param <T> the type of elements this downstream accepts
-     * @since 22
+     * @since 24
      */
     @FunctionalInterface
     @PreviewFeature(feature = PreviewFeature.Feature.STREAM_GATHERERS)
@@ -524,7 +524,7 @@ public interface Gatherer<T, A, R> {
      * @param <A> the type of state used by this integrator
      * @param <T> the type of elements this integrator consumes
      * @param <R> the type of results this integrator can produce
-     * @since 22
+     * @since 24
      */
     @FunctionalInterface
     @PreviewFeature(feature = PreviewFeature.Feature.STREAM_GATHERERS)
@@ -584,7 +584,7 @@ public interface Gatherer<T, A, R> {
          * @param <A> the type of state used by this integrator
          * @param <T> the type of elements this greedy integrator receives
          * @param <R> the type of results this greedy integrator can produce
-         * @since 22
+         * @since 24
          */
         @FunctionalInterface
         @PreviewFeature(feature = PreviewFeature.Feature.STREAM_GATHERERS)

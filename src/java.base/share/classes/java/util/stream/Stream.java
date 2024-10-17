@@ -1096,7 +1096,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      * @param <R> The element type of the new stream
      * @param gatherer a gatherer
      * @return the new stream
-     * @since 22
+     * @since 24
      */
     @PreviewFeature(feature = PreviewFeature.Feature.STREAM_GATHERERS)
     default <R> Stream<R> gather(Gatherer<? super T, ?, R> gatherer) {
