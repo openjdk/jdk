@@ -1,4 +1,4 @@
-## PC/SC Lite v1.9.9
+## PC/SC Lite v2.3.0
 
 ### PC/SC Lite Notice
 ```
@@ -9,19 +9,19 @@ Only 3 header files are included in this distribution: winscard.h, wintypes.h, p
 Copyright for winscard.h:
  * Copyright (C) 1999-2003
  *  David Corcoran <corcoran@musclecard.com>
- * Copyright (C) 2002-2009
+ * Copyright (C) 2002-2018
  *  Ludovic Rousseau <ludovic.rousseau@free.fr>
 
 Copyright for wintypes.h:
  * Copyright (C) 1999
  *  David Corcoran <corcoran@musclecard.com>
- * Copyright (C) 2002-2011
+ * Copyright (C) 2002-2018
  *  Ludovic Rousseau <ludovic.rousseau@free.fr>
 
 Copyright for pcsclite.h:
  * Copyright (C) 1999-2004
  *  David Corcoran <corcoran@musclecard.com>
- * Copyright (C) 2002-2011
+ * Copyright (C) 2002-2024
  *  Ludovic Rousseau <ludovic.rousseau@free.fr>
  * Copyright (C) 2005
  *  Martin Paljak <martin@paljak.pri.ee>
