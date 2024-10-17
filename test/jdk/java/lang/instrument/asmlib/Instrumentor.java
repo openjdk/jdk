@@ -133,7 +133,7 @@ public class Instrumentor {
                         }
                     }));
 
-                    builder.withMethod(newName, mt, mm.flags().flagsMask(), mm::forEachElement);
+                    builder.withMethod(newName, mt, mm.flags().flagsMask(), mm::forEach);
                 } else {
                     builder.accept(element);
                 }

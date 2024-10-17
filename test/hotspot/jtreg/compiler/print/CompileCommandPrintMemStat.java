@@ -77,16 +77,17 @@ public class CompileCommandPrintMemStat {
 
         // Should see final report
         // Looks like this:
-        // total     NA        RA        result  #nodes  limit   time    type  #rc thread              method
-        // 2149912   0         1986272   ok      -       -       0.101   c1    1   0x000000015180a600  jdk/internal/org/objectweb/asm/Frame::execute((IILjdk/internal/org/objectweb/asm/Symbol;Ljdk/internal/org/objectweb/asm/SymbolTable;)V)        oa.shouldMatch("total.*method");
+        // total     Others    RA        HA        NA        result  #nodes  limit   time    type  #rc thread             method
+        // 523648    32728     490920    0         0         ok      -       -       0.250   c1    1   0x00007f4ec00d4ac0 java/lang/Class::descriptorString(()Ljava/lang/String;)
         // or
-        // 537784    98184     208536    ok      267     -       0.096   c2    1   0x0000000153019c00  jdk/internal/classfile/impl/BufWriterImpl::writeU1((I)V) 4521912   0         1986272   ok      -       -       0.101   c1    1   0x000000015180a600  jdk/internal/org/objectweb/asm/Frame::execute((IILjdk/internal/org/objectweb/asm/Symbol;Ljdk/internal/org/objectweb/asm/SymbolTable;)V)        oa.shouldMatch("total.*method");
-        oa.shouldMatch("\\d+ +\\d+ +\\d+ +ok +(\\d+|-) +.*" + expectedNameIncl + ".*");
+        // 1898600   853176    750872    0         294552    ok      934     -       1.501   c2    1   0x00007f4ec00d3330 java/lang/String::replace((CC)Ljava/lang/String;)
+        oa.shouldMatch("total.*method");
+        oa.shouldMatch("\\d+ +(\\d+ +){4}ok +(\\d+|-) +.*" + expectedNameIncl + ".*");
 
         // In debug builds, we have a default memory limit enabled. That implies MemStat. Therefore we
         // expect to see all methods, not just the one we specified on the command line.
         if (Platform.isDebugBuild()) {
-            oa.shouldMatch("\\d+ +\\d+ +\\d+ +ok +(\\d+|-) +.*" + expectedNameExcl + ".*");
+            oa.shouldMatch("\\d+ +(\\d+ +){4}ok +(\\d+|-) +.*" + expectedNameExcl + ".*");
         } else {
             oa.shouldNotMatch(".*" + expectedNameExcl + ".*");
         }

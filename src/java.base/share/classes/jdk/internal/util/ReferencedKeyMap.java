@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -219,8 +219,14 @@ public final class ReferencedKeyMap<K, V> implements Map<K, V> {
 
     @Override
     public V get(Object key) {
-        Objects.requireNonNull(key, "key must not be null");
         removeStaleReferences();
+        return getNoCheckStale(key);
+    }
+
+    // Internal get(key) without removing stale references that would modify the keyset.
+    // Use when iterating or streaming over the keys to avoid ConcurrentModificationException.
+    private V getNoCheckStale(Object key) {
+        Objects.requireNonNull(key, "key must not be null");
         return map.get(lookupKey(key));
     }
 
@@ -291,7 +297,7 @@ public final class ReferencedKeyMap<K, V> implements Map<K, V> {
     public Set<Entry<K, V>> entrySet() {
         removeStaleReferences();
         return filterKeySet()
-                .map(k -> new AbstractMap.SimpleEntry<>(k, get(k)))
+                .map(k -> new AbstractMap.SimpleEntry<>(k, getNoCheckStale(k)))
                 .collect(Collectors.toSet());
     }
 
@@ -335,7 +341,7 @@ public final class ReferencedKeyMap<K, V> implements Map<K, V> {
     public String toString() {
         removeStaleReferences();
         return filterKeySet()
-                .map(k -> k + "=" + get(k))
+                .map(k -> k + "=" + getNoCheckStale(k))
                 .collect(Collectors.joining(", ", "{", "}"));
     }
 

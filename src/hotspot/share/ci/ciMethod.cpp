@@ -109,7 +109,8 @@ ciMethod::ciMethod(const methodHandle& h_m, ciInstanceKlass* holder) :
   ciEnv *env = CURRENT_ENV;
   if (env->jvmti_can_hotswap_or_post_breakpoint()) {
     // 6328518 check hotswap conditions under the right lock.
-    MutexLocker locker(Compile_lock);
+    bool should_take_Compile_lock = !Compile_lock->owned_by_self();
+    ConditionalMutexLocker locker(Compile_lock, should_take_Compile_lock, Mutex::_safepoint_check_flag);
     if (Dependencies::check_evol_method(h_m()) != nullptr) {
       _is_c1_compilable = false;
       _is_c2_compilable = false;
@@ -781,6 +782,22 @@ bool ciMethod::can_omit_stack_trace() const {
 }
 
 // ------------------------------------------------------------------
+// ciMethod::equals
+//
+// Returns true if the methods are the same, taking redefined methods
+// into account.
+bool ciMethod::equals(const ciMethod* m) const {
+  if (this == m) return true;
+  VM_ENTRY_MARK;
+  Method* m1 = this->get_Method();
+  Method* m2 = m->get_Method();
+  if (m1->is_old()) m1 = m1->get_new_method();
+  if (m2->is_old()) m2 = m2->get_new_method();
+  return m1 == m2;
+}
+
+
+// ------------------------------------------------------------------
 // ciMethod::resolve_invoke
 //
 // Given a known receiver klass, find the target for the call.
@@ -957,6 +974,14 @@ bool ciMethod::is_compiled_lambda_form() const {
 //
 bool ciMethod::is_object_initializer() const {
    return name() == ciSymbols::object_initializer_name();
+}
+
+// ------------------------------------------------------------------
+// ciMethod::is_scoped
+//
+// Return true for methods annotated with @Scoped
+bool ciMethod::is_scoped() const {
+   return get_Method()->is_scoped();
 }
 
 // ------------------------------------------------------------------

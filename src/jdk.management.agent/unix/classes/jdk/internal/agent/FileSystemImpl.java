@@ -31,7 +31,7 @@ import java.io.IOException;
 /*
  * Linux implementation of jdk.internal.agent.FileSystem
  */
-@SuppressWarnings("removal")
+@SuppressWarnings({"removal", "restricted"})
 public class FileSystemImpl extends FileSystem {
 
     public boolean supportsFileSecurity(File f) throws IOException {

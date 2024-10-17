@@ -84,7 +84,7 @@ jobs:
           - target-cpu: riscv64
             gnu-arch: riscv64
             debian-arch: riscv64
-            debian-repository: https://httpredir.debian.org/debian/
+            debian-repository: https://snapshot.debian.org/archive/debian/20240228T034848Z/
             debian-version: sid
             tolerate-sysroot-errors: true
 

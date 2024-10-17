@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,13 +95,13 @@ public class AnnotationWriter extends BasicWriter {
         write(annot, true, false, lr);
         println();
         indent(+1);
-        write(annot, true);
+        write(annot.annotation(), true);
         indent(-1);
     }
 
     public void write(TypeAnnotation annot, boolean showOffsets,
             boolean resolveIndices, CodeAttribute lr) {
-        write(annot, resolveIndices);
+        write(annot.annotation(), resolveIndices);
         print(": ");
         write(annot.targetInfo(), annot.targetPath(), showOffsets, lr);
     }

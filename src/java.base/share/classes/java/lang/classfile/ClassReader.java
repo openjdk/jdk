@@ -189,19 +189,4 @@ public sealed interface ClassReader extends ConstantPool
      * @param len the length of the range
      */
     void copyBytesTo(BufWriter buf, int offset, int len);
-
-    /**
-     * Compare a range of bytes from the classfile to a range of bytes within
-     * a {@link BufWriter}.
-     *
-     * @param bufWriter the {@linkplain BufWriter}
-     * @param bufWriterOffset the offset within the {@linkplain BufWriter}
-     * @param classReaderOffset the offset within the classfile
-     * @param length the length of the range
-     * @return whether the two ranges were identical
-     */
-    boolean compare(BufWriter bufWriter,
-                    int bufWriterOffset,
-                    int classReaderOffset,
-                    int length);
 }

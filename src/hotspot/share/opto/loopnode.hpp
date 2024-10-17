@@ -611,6 +611,7 @@ public:
       _head(head), _tail(tail),
       _phase(phase),
       _local_loop_unroll_limit(0), _local_loop_unroll_factor(0),
+      _body(Compile::current()->comp_arena()),
       _nest(0), _irreducible(0), _has_call(0), _has_sfpt(0), _rce_candidate(0),
       _has_range_checks(0), _has_range_checks_computed(0),
       _safepts(nullptr),
@@ -840,6 +841,8 @@ class PhaseIdealLoop : public PhaseTransform {
   uint *_preorders;
   uint _max_preorder;
 
+  ReallocMark _nesting; // Safety checks for arena reallocation
+
   const PhaseIdealLoop* _verify_me;
   bool _verify_only;
 
@@ -852,6 +855,7 @@ class PhaseIdealLoop : public PhaseTransform {
 
   // Allocate _preorders[] array
   void reallocate_preorders() {
+    _nesting.check(); // Check if a potential re-allocation in the resource arena is safe
     if ( _max_preorder < C->unique() ) {
       _preorders = REALLOC_RESOURCE_ARRAY(uint, _preorders, _max_preorder, C->unique());
       _max_preorder = C->unique();
@@ -862,6 +866,7 @@ class PhaseIdealLoop : public PhaseTransform {
   // Check to grow _preorders[] array for the case when build_loop_tree_impl()
   // adds new nodes.
   void check_grow_preorders( ) {
+    _nesting.check(); // Check if a potential re-allocation in the resource arena is safe
     if ( _max_preorder < C->unique() ) {
       uint newsize = _max_preorder<<1;  // double size of array
       _preorders = REALLOC_RESOURCE_ARRAY(uint, _preorders, _max_preorder, newsize);
@@ -933,8 +938,6 @@ private:
     return ctrl;
   }
 
-  Node* cast_incr_before_loop(Node* incr, Node* ctrl, Node* loop);
-
 #ifdef ASSERT
   void ensure_zero_trip_guard_proj(Node* node, bool is_main_loop);
 #endif
@@ -947,14 +950,15 @@ private:
                                               LoopNode* outer_main_head, uint dd_main_head, uint idx_before_pre_post,
                                               uint idx_after_post_before_pre, Node* zero_trip_guard_proj_main,
                                               Node* zero_trip_guard_proj_post, const Node_List& old_new);
-  Node* clone_assertion_predicate_and_initialize(Node* iff, Node* new_init, Node* new_stride, Node* predicate,
-                                                 Node* uncommon_proj, Node* control, IdealLoopTree* outer_loop,
-                                                 Node* input_proj);
+  Node* clone_template_assertion_predicate(IfNode* iff, Node* new_init, Node* predicate, Node* uncommon_proj, Node* control,
+                                           IdealLoopTree* outer_loop, Node* input_proj);
+  IfTrueNode* create_initialized_assertion_predicate(IfNode* template_assertion_predicate, Node* new_init,
+                                                     Node* new_stride, Node* control);
   static void count_opaque_loop_nodes(Node* n, uint& init, uint& stride);
   static bool assertion_predicate_has_loop_opaque_node(IfNode* iff);
   static void get_assertion_predicates(Node* predicate, Unique_Node_List& list, bool get_opaque = false);
   void update_main_loop_assertion_predicates(Node* ctrl, CountedLoopNode* loop_head, Node* init, int stride_con);
-  void copy_assertion_predicates_to_post_loop(LoopNode* main_loop_head, CountedLoopNode* post_loop_head, Node* init,
+  void copy_assertion_predicates_to_post_loop(LoopNode* main_loop_head, CountedLoopNode* post_loop_head,
                                               Node* stride);
   void initialize_assertion_predicates_for_peeled_loop(const PredicateBlock* predicate_block, LoopNode* outer_loop_head,
                                                        int dd_outer_loop_head, Node* init, Node* stride,
@@ -962,10 +966,6 @@ private:
                                                        const Node_List& old_new);
   void insert_loop_limit_check_predicate(ParsePredicateSuccessProj* loop_limit_check_parse_proj, Node* cmp_limit,
                                          Node* bol);
-#ifdef ASSERT
-  bool only_has_infinite_loops();
-#endif
-
   void log_loop_tree();
 
 public:
@@ -1072,7 +1072,7 @@ private:
 
   // Place 'n' in some loop nest, where 'n' is a CFG node
   void build_loop_tree();
-  int build_loop_tree_impl( Node *n, int pre_order );
+  int build_loop_tree_impl(Node* n, int pre_order);
   // Insert loop into the existing loop tree.  'innermost' is a leaf of the
   // loop tree, not the root.
   IdealLoopTree *sort( IdealLoopTree *loop, IdealLoopTree *innermost );
@@ -1179,6 +1179,16 @@ public:
     return find_non_split_ctrl(dom_lca_internal(n1, n2));
   }
   Node *dom_lca_internal( Node *n1, Node *n2 ) const;
+
+  Node* dominated_node(Node* c1, Node* c2) {
+    assert(is_dominator(c1, c2) || is_dominator(c2, c1), "nodes must be related");
+    return is_dominator(c1, c2) ? c2 : c1;
+  }
+
+  // Return control node that's dominated by the 2 others
+  Node* dominated_node(Node* c1, Node* c2, Node* c3) {
+    return dominated_node(c1, dominated_node(c2, c3));
+  }
 
   // Build and verify the loop tree without modifying the graph.  This
   // is useful to verify that all inputs properly dominate their uses.
@@ -1528,6 +1538,8 @@ public:
   // Attempt to use a conditional move instead of a phi/branch
   Node *conditional_move( Node *n );
 
+  bool split_thru_phi_could_prevent_vectorization(Node* n, Node* n_blk);
+
   // Check for aggressive application of 'split-if' optimization,
   // using basic block level info.
   void  split_if_with_blocks     ( VectorSet &visited, Node_Stack &nstack);
@@ -1572,7 +1584,7 @@ private:
   bool identical_backtoback_ifs(Node *n);
   bool can_split_if(Node *n_ctrl);
   bool cannot_split_division(const Node* n, const Node* region) const;
-  static bool is_divisor_counted_loop_phi(const Node* divisor, const Node* loop);
+  static bool is_divisor_loop_phi(const Node* divisor, const Node* loop);
   bool loop_phi_backedge_type_contains_zero(const Node* phi_divisor, const Type* zero) const;
 
   // Determine if a method is too big for a/another round of split-if, based on
@@ -1769,7 +1781,7 @@ public:
   bool clone_cmp_loadklass_down(Node* n, const Node* blk1, const Node* blk2);
   void clone_loadklass_nodes_at_cmp_index(const Node* n, Node* cmp, int i);
   bool clone_cmp_down(Node* n, const Node* blk1, const Node* blk2);
-  void clone_template_assertion_predicate_expression_down(Node* node);
+  void clone_template_assertion_expression_down(Node* node);
 
   Node* similar_subtype_check(const Node* x, Node* r_in);
 
@@ -1778,6 +1790,8 @@ public:
   bool can_move_to_inner_loop(Node* n, LoopNode* n_loop, Node* x);
 
   void pin_array_access_nodes_dependent_on(Node* ctrl);
+
+  Node* ensure_node_and_inputs_are_above_pre_end(CountedLoopEndNode* pre_end, Node* node);
 };
 
 

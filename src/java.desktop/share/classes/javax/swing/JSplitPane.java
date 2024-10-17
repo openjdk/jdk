@@ -26,6 +26,7 @@
 package javax.swing;
 
 import java.awt.Component;
+import java.awt.ComponentOrientation;
 import java.awt.Graphics;
 import java.beans.BeanProperty;
 import java.beans.ConstructorProperties;
@@ -360,6 +361,32 @@ public class JSplitPane extends JComponent implements Accessible
             setRightComponent(newRightComponent);
         updateUI();
 
+    }
+
+    /**
+     * {@inheritDoc}
+     * @param orientation {@inheritDoc}
+     */
+    @Override
+    public void setComponentOrientation(ComponentOrientation orientation) {
+        super.setComponentOrientation(orientation);
+        Component leftComponent = this.getLeftComponent();
+        Component rightComponent = this.getRightComponent();
+        if (!this.getComponentOrientation().isLeftToRight()) {
+            if (rightComponent != null) {
+                setLeftComponent(rightComponent);
+            }
+            if (leftComponent != null) {
+                setRightComponent(leftComponent);
+            }
+        } else {
+            if (leftComponent != null) {
+                setLeftComponent(leftComponent);
+            }
+            if (rightComponent != null) {
+                setRightComponent(rightComponent);
+            }
+        }
     }
 
     /**

@@ -59,10 +59,13 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBSAPROC, \
     OPTIMIZATION := HIGH, \
     EXTRA_HEADER_DIRS := java.base:libjvm, \
     DISABLED_WARNINGS_gcc := sign-compare, \
+    DISABLED_WARNINGS_gcc_LinuxDebuggerLocal.cpp := unused-variable, \
     DISABLED_WARNINGS_gcc_ps_core.c := pointer-arith, \
-    DISABLED_WARNINGS_clang_ps_core.c := pointer-arith, \
+    DISABLED_WARNINGS_gcc_symtab.c := unused-but-set-variable, \
     DISABLED_WARNINGS_clang := sign-compare, \
     DISABLED_WARNINGS_clang_libproc_impl.c := format-nonliteral, \
+    DISABLED_WARNINGS_clang_MacosxDebuggerLocal.m := unused-variable, \
+    DISABLED_WARNINGS_clang_ps_core.c := pointer-arith, \
     DISABLED_WARNINGS_clang_sadis.c := format-nonliteral, \
     CFLAGS := $(LIBSAPROC_CFLAGS), \
     CXXFLAGS := $(LIBSAPROC_CFLAGS) $(LIBSAPROC_CXXFLAGS), \

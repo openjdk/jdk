@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.file.Path;
+
+import jdk.jfr.internal.management.HiddenWait;
 import jdk.jfr.internal.util.Utils;
 
 public final class RecordingInput implements DataInput, AutoCloseable {
@@ -67,6 +69,7 @@ public final class RecordingInput implements DataInput, AutoCloseable {
     }
     private final int blockSize;
     private final FileAccess fileAccess;
+    private final HiddenWait threadSleeper = new HiddenWait();
     private long pollCount = 1000;
     private RandomAccessFile file;
     private String filename;
@@ -453,6 +456,6 @@ public final class RecordingInput implements DataInput, AutoCloseable {
         if (pollCount < 0) {
             throw new IOException("Recording file is stuck in locked stream state.");
         }
-        Utils.takeNap(1);
+        threadSleeper.takeNap(1);
     }
 }

@@ -33,10 +33,10 @@ package jdk.internal.classfile.impl;
  * element is the hash and the second is the mapped index.  To look something up
  * in the map, provide a hash value and an index to map it to, and invoke
  * firstToken(hash).  This returns an opaque token that can be provided to
- * nextToken(hash, token) to get the next candidate, or to getElementByToken(token)
- * or getIndexByToken to get the mapped element or index.
+ * nextToken(hash, token) to get the next candidate, or to getIndexByToken to
+ * get the mapped element or index.
  */
-public abstract class EntryMap<T> {
+public final class EntryMap {
     public static final int NO_VALUE = -1;
 
     /**
@@ -77,8 +77,6 @@ public abstract class EntryMap<T> {
         data = new int[capacity * 2];
     }
 
-    protected abstract T fetchElement(int index);
-
     public int firstToken(int hash) {
         if (hash == 0)
             throw new IllegalArgumentException("hash must be nonzero");
@@ -108,10 +106,6 @@ public abstract class EntryMap<T> {
 
     public int getIndexByToken(int token) {
         return data[token + 1];
-    }
-
-    public T getElementByToken(int token) {
-        return fetchElement(data[token + 1]);
     }
 
     public void put(int hash, int index) {

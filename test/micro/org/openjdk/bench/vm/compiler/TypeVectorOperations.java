@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,9 @@ public abstract class TypeVectorOperations {
     @Param({"512", /* "1024", */ "2048"})
     public int COUNT;
 
+    private boolean[] boolsA;
+    private boolean[] boolsB;
+    private boolean[] resZ;
     private byte[] bytesA;
     private byte[] bytesB;
     private byte[] resB;
@@ -58,6 +61,9 @@ public abstract class TypeVectorOperations {
 
     @Setup
     public void init() {
+        boolsA = new boolean[COUNT];
+        boolsB = new boolean[COUNT];
+        resZ = new boolean[COUNT];
         bytesA = new byte[COUNT];
         bytesB = new byte[COUNT];
         resB = new byte[COUNT];
@@ -73,6 +79,8 @@ public abstract class TypeVectorOperations {
         resF = new float[COUNT];
 
         for (int i = 0; i < COUNT; i++) {
+            boolsA[i] = r.nextBoolean();
+            boolsB[i] = r.nextBoolean();
             shorts[i] = (short) r.nextInt(Short.MAX_VALUE + 1);
             ints[i] = r.nextInt();
             longs[i] = r.nextLong();
@@ -363,6 +371,13 @@ public abstract class TypeVectorOperations {
     public void convertS2L() {
         for (int i = 0; i < COUNT; i++) {
             resL[i] = (long) shorts[i];
+        }
+    }
+
+    @Benchmark
+    public void andZ() {
+        for (int i = 0; i < COUNT; i++) {
+            resZ[i] = boolsA[i] & boolsB[i];
         }
     }
 

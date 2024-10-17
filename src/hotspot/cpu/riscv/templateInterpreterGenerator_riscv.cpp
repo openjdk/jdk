@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -27,6 +27,7 @@
 #include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "classfile/javaClasses.hpp"
+#include "compiler/disassembler.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/bytecodeTracer.hpp"
@@ -70,7 +71,7 @@
 // Max size with JVMTI
 int TemplateInterpreter::InterpreterCodeSize = 256 * 1024;
 
-#define __ _masm->
+#define __ Disassembler::hook<InterpreterMacroAssembler>(__FILE__, __LINE__, _masm)->
 
 //-----------------------------------------------------------------------------
 
@@ -658,8 +659,8 @@ void TemplateInterpreterGenerator::generate_stack_overflow_check(void) {
 
   // Note: the restored frame is not necessarily interpreted.
   // Use the shared runtime version of the StackOverflowError.
-  assert(StubRoutines::throw_StackOverflowError_entry() != nullptr, "stub not yet generated");
-  __ far_jump(RuntimeAddress(StubRoutines::throw_StackOverflowError_entry()));
+  assert(SharedRuntime::throw_StackOverflowError_entry() != nullptr, "stub not yet generated");
+  __ far_jump(RuntimeAddress(SharedRuntime::throw_StackOverflowError_entry()));
 
   // all done with frame size check
   __ bind(after_frame_check);
@@ -1111,8 +1112,8 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   {
     Label L;
     __ ld(x28, Address(xmethod, Method::native_function_offset()));
-    address unsatisfied = (SharedRuntime::native_method_throw_unsatisfied_link_error_entry());
-    __ mv(t, unsatisfied);
+    ExternalAddress unsatisfied(SharedRuntime::native_method_throw_unsatisfied_link_error_entry());
+    __ la(t, unsatisfied);
     __ load_long_misaligned(t1, Address(t, 0), t0, 2); // 2 bytes aligned, but not 4 or 8
 
     __ bne(x28, t1, L);
@@ -1748,13 +1749,21 @@ void TemplateInterpreterGenerator::set_vtos_entry_points(Template* t,
                                                          address& vep) {
   assert(t != nullptr && t->is_valid() && t->tos_in() == vtos, "illegal template");
   Label L;
-  aep = __ pc();  __ push_ptr();  __ j(L);
-  fep = __ pc();  __ push_f();    __ j(L);
-  dep = __ pc();  __ push_d();    __ j(L);
-  lep = __ pc();  __ push_l();    __ j(L);
-  bep = cep = sep =
-  iep = __ pc();  __ push_i();
-  vep = __ pc();
+  aep = __ pc();     // atos entry point
+      __ push_ptr();
+      __ j(L);
+  fep = __ pc();     // ftos entry point
+      __ push_f();
+      __ j(L);
+  dep = __ pc();     // dtos entry point
+      __ push_d();
+      __ j(L);
+  lep = __ pc();     // ltos entry point
+      __ push_l();
+      __ j(L);
+  bep = cep = sep = iep = __ pc();     // [bcsi]tos entry point
+      __ push_i();
+  vep = __ pc();     // vtos entry point
   __ bind(L);
   generate_and_dispatch(t);
 }
@@ -1815,7 +1824,7 @@ void TemplateInterpreterGenerator::trace_bytecode(Template* t) {
   // the tosca in-state for the given template.
 
   assert(Interpreter::trace_code(t->tos_in()) != nullptr, "entry must have been generated");
-  __ call(Interpreter::trace_code(t->tos_in()));
+  __ rt_call(Interpreter::trace_code(t->tos_in()));
   __ reinit_heapbase();
 }
 

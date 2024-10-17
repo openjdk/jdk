@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,7 @@ public final class CodeLocalsShifterImpl implements CodeLocalsShifter {
                         shift(cob, si.slot(), si.typeKind()));
             case IncrementInstruction ii ->
                 cob.iinc(
-                        shift(cob, ii.slot(), TypeKind.IntType),
+                        shift(cob, ii.slot(), TypeKind.INT),
                         ii.constant());
             case LocalVariable lv ->
                 cob.localVariable(
@@ -73,7 +73,7 @@ public final class CodeLocalsShifterImpl implements CodeLocalsShifter {
                         shift(cob, lvt.slot(),
                                 (lvt.signatureSymbol() instanceof Signature.BaseTypeSig bsig)
                                         ? TypeKind.fromDescriptor(bsig.signatureString())
-                                        : TypeKind.ReferenceType),
+                                        : TypeKind.REFERENCE),
                         lvt.name(),
                         lvt.signature(),
                         lvt.startScope(),
@@ -83,7 +83,7 @@ public final class CodeLocalsShifterImpl implements CodeLocalsShifter {
     }
 
     private int shift(CodeBuilder cob, int slot, TypeKind tk) {
-        if (tk == TypeKind.VoidType)  throw new IllegalArgumentException("Illegal local void type");
+        if (tk == TypeKind.VOID)  throw new IllegalArgumentException("Illegal local void type");
         if (slot >= fixed) {
             int key = 2*slot - fixed + tk.slotSize() - 1;
             if (key >= locals.length) locals = Arrays.copyOf(locals, key + 20);

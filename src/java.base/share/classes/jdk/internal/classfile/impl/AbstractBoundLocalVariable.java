@@ -24,12 +24,11 @@
  */
 package jdk.internal.classfile.impl;
 
-import java.lang.classfile.BufWriter;
 import java.lang.classfile.Label;
 import java.lang.classfile.constantpool.Utf8Entry;
 
 public class AbstractBoundLocalVariable
-        extends AbstractElement {
+        extends AbstractElement implements Util.WritableLocalVariable {
     protected final CodeImpl code;
     protected final int offset;
     private Utf8Entry nameEntry;
@@ -80,8 +79,9 @@ public class AbstractBoundLocalVariable
         return code.classReader.readU2(offset + 8);
     }
 
-    public boolean writeTo(BufWriter b) {
-        var lc = ((BufWriterImpl)b).labelContext();
+    @Override
+    public boolean writeLocalTo(BufWriterImpl b) {
+        var lc = b.labelContext();
         int startBci = lc.labelToBci(startScope());
         int endBci = lc.labelToBci(endScope());
         if (startBci == -1 || endBci == -1) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -155,10 +155,27 @@ import java.security.ProtectionDomain;
  * logging or debugging of format corruptions.
  *
  * <P>
- * Note the term <i>class file</i> is used as defined in section 3.1 of
- * <cite>The Java Virtual Machine Specification</cite>, to mean a
- * sequence of bytes in class file format, whether or not they reside in a
+ * Note the term <i>class file</i> is used as defined in chapter {@jvms 4} The
+ * {@code class} File Format of <cite>The Java Virtual Machine Specification</cite>,
+ * to mean a sequence of bytes in class file format, whether or not they reside in a
  * file.
+ *
+ * @apiNote
+ * Great care must be taken when transforming core JDK classes which are at the
+ * same time required during the transformation process as this can lead to class
+ * circularity or linkage errors.
+ *
+ * <P>
+ * If for example the invocation of {@link #transform transform()} for a class
+ * {@code C} requires loading or resolving the same class {@code C},
+ * an error is thrown that is an instance of {@link LinkageError} (or a subclass).
+ * If the {@link LinkageError} occurs during reference resolution (see section
+ * {@jvms 5.4.3} Resolution of <cite>The Java Virtual Machine Specification</cite>)
+ * for a class {@code D}, the resolution of the corresponding reference in class
+ * {@code D} will permanently fail with the same error at any subsequent attempt.
+ * This means that a {@link LinkageError} triggered during transformation of
+ * {@code C} in a class {@code D} not directly related to {@code C} can repeatedly
+ * occur later in arbitrary user code which uses {@code D}.
  *
  * @see     java.lang.instrument.Instrumentation
  * @since   1.5

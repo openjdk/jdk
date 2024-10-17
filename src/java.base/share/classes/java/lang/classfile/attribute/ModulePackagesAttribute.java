@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ import jdk.internal.classfile.impl.UnboundAttribute;
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * Models the {@code ModulePackages} attribute {@jvms 4.7.26}, which can
+ * Models the {@code ModulePackages} attribute (JVMS {@jvms 4.7.26}), which can
  * appear on classes that represent module descriptors.
  * Delivered as a {@link java.lang.classfile.ClassElement} when
  * traversing the elements of a {@link java.lang.classfile.ClassModel}.

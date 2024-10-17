@@ -62,7 +62,7 @@ class OptionsTest {
     @MethodSource("corpus")
     void testAttributesProcessingOptionOnTransform(Path path) throws Exception {
         testNoUnstable(path, ClassFile.of().parse(
-                ClassFile.of(ClassFile.AttributesProcessingOption.DROP_UNSTABLE_ATRIBUTES).transformClass(
+                ClassFile.of(ClassFile.AttributesProcessingOption.DROP_UNSTABLE_ATTRIBUTES).transformClass(
                             ClassFile.of().parse(path),
                             ClassTransform.transformingMethodBodies(CodeTransform.ACCEPT_ALL))));
     }
@@ -117,6 +117,6 @@ class OptionsTest {
         if (e instanceof AttributedElement ae) ae.attributes().forEach(a ->
                 assertTrue(AttributeMapper.AttributeStability.UNSTABLE.ordinal() >= a.attributeMapper().stability().ordinal(),
                            () -> "class " + path + " contains unexpected " + a));
-        if (e instanceof CompoundElement ce) ce.forEachElement(ee -> testNoUnstable(path, (ClassFileElement)ee));
+        if (e instanceof CompoundElement ce) ce.forEach(ee -> testNoUnstable(path, (ClassFileElement)ee));
     }
 }

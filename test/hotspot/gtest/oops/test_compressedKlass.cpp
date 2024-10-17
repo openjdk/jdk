@@ -1,0 +1,79 @@
+/*
+ * Copyright (c) 2024, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+#include "precompiled.hpp"
+#include "oops/compressedKlass.inline.hpp"
+#include "utilities/globalDefinitions.hpp"
+
+#include "unittest.hpp"
+
+TEST_VM(CompressedKlass, basics) {
+  if (!UseCompressedClassPointers) {
+    return;
+  }
+  ASSERT_LE((address)0, CompressedKlassPointers::base());
+  ASSERT_LE(CompressedKlassPointers::base(), CompressedKlassPointers::klass_range_start());
+  ASSERT_LT(CompressedKlassPointers::klass_range_start(), CompressedKlassPointers::klass_range_end());
+  ASSERT_LE(CompressedKlassPointers::klass_range_end(), CompressedKlassPointers::encoding_range_end());
+  switch (CompressedKlassPointers::shift()) {
+  case 0:
+    ASSERT_EQ(CompressedKlassPointers::encoding_range_end() - CompressedKlassPointers::base(), (ptrdiff_t)(4 * G));
+    break;
+  case 3:
+    ASSERT_EQ(CompressedKlassPointers::encoding_range_end() - CompressedKlassPointers::base(), (ptrdiff_t)(32 * G));
+    break;
+  default:
+    ShouldNotReachHere();
+  }
+}
+
+TEST_VM(CompressedKlass, test_too_low_address) {
+  if (!UseCompressedClassPointers) {
+    return;
+  }
+  address really_low = (address) 32;
+  ASSERT_FALSE(CompressedKlassPointers::is_encodable(really_low));
+  address low = CompressedKlassPointers::klass_range_start() - 1;
+  ASSERT_FALSE(CompressedKlassPointers::is_encodable(low));
+}
+
+TEST_VM(CompressedKlass, test_too_high_address) {
+  if (!UseCompressedClassPointers) {
+    return;
+  }
+  address really_high = (address) UINTPTR_MAX;
+  ASSERT_FALSE(CompressedKlassPointers::is_encodable(really_high));
+  address high = CompressedKlassPointers::klass_range_end();
+  ASSERT_FALSE(CompressedKlassPointers::is_encodable(high));
+}
+
+TEST_VM(CompressedKlass, test_good_address) {
+  if (!UseCompressedClassPointers) {
+    return;
+  }
+  address addr = CompressedKlassPointers::klass_range_start();
+  ASSERT_TRUE(CompressedKlassPointers::is_encodable(addr));
+  addr = CompressedKlassPointers::klass_range_end() - 1;
+  ASSERT_TRUE(CompressedKlassPointers::is_encodable(addr));
+}

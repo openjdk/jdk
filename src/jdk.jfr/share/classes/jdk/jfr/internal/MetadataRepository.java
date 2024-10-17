@@ -47,6 +47,7 @@ import jdk.jfr.Period;
 import jdk.jfr.ValueDescriptor;
 import jdk.jfr.internal.consumer.RepositoryFiles;
 import jdk.jfr.internal.event.EventConfiguration;
+import jdk.jfr.internal.management.HiddenWait;
 import jdk.jfr.internal.periodic.PeriodicEvents;
 import jdk.jfr.internal.util.Utils;
 
@@ -57,6 +58,7 @@ public final class MetadataRepository {
     private final Map<String, EventType> nativeEventTypes = LinkedHashMap.newHashMap(150);
     private final Map<String, EventControl> nativeControls = LinkedHashMap.newHashMap(150);
     private final SettingsManager settingsManager = new SettingsManager();
+    private final HiddenWait threadSleeper = new HiddenWait();
     private Constructor<EventConfiguration> cachedEventConfigurationConstructor;
     private boolean staleMetadata = true;
     private boolean unregistered;
@@ -341,7 +343,7 @@ public final class MetadataRepository {
                 lastMillis = millis;
                 return;
             }
-            Utils.takeNap(1);
+            threadSleeper.takeNap(1);
         }
     }
 

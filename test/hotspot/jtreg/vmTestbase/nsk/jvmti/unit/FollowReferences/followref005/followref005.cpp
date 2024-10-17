@@ -88,7 +88,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
     }
 
     printf(">>> Let debugee to finish\n");
-    fflush(0);
+    fflush(nullptr);
 
     if (!NSK_VERIFY(nsk_jvmti_waitForSync(g_timeout))) {
         return;
