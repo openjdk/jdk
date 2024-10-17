@@ -154,7 +154,9 @@ public class UserAuthWithAuthenticator {
                 assertTrue(!sa.wasCalled(), "Expected authenticator not to be called");
                 System.out.println("h2Test: using user set header OK");
             } else {
+                assertTrue(resp.statusCode() == 200, "Expected 200 response");
                 assertTrue(!h.authValue().equals(encoded), "Expected user set header to not be set");
+                assertTrue(h.authValue().equals(sa.authValue()), "Expected auth value from Authenticator");
                 assertTrue(sa.wasCalled(), "Expected authenticator to be called");
                 System.out.println("h2Test: using authenticator OK");
             }
@@ -453,6 +455,8 @@ public class UserAuthWithAuthenticator {
     static class ServerAuth extends Authenticator {
         private volatile boolean called = false;
 
+        private static String USER = "serverUser";
+        private static String PASS = "serverPwd";
         @Override
         protected PasswordAuthentication getPasswordAuthentication() {
             called = true;
@@ -460,9 +464,13 @@ public class UserAuthWithAuthenticator {
                 // We only want to handle server authentication here
                 return null;
             }
-            return new PasswordAuthentication("serverUser", "serverPwd".toCharArray());
+            return new PasswordAuthentication(USER, PASS.toCharArray());
         }
 
+        String authValue() {
+            var plainCreds = USER + ":" + PASS;
+            return java.util.Base64.getEncoder().encodeToString(plainCreds.getBytes(US_ASCII));
+        }
         boolean wasCalled() {
             return called;
         }
