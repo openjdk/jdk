@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.events.XMLEvent;
 
 import org.testng.Assert;
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 import com.sun.org.apache.xerces.internal.impl.XMLEntityManager;
@@ -40,12 +39,10 @@ import com.sun.org.apache.xerces.internal.impl.XMLEntityManager;
  * @test
  * @bug 8153781
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow stream.XMLEventReaderTest.Bug8153781
  * @run testng/othervm stream.XMLEventReaderTest.Bug8153781
  * @summary Test if method skipDTD of class XMLDTDScannerImpl will correctly skip the DTD section,
  *          even if a call to XMLEntityScanner.scanData for skipping to the closing ']' returns true.
  */
-@Listeners({jaxp.library.BasePolicy.class})
 public class Bug8153781 {
     public static int DOCTYPE_SECTION_LENGTH = XMLEntityManager.DEFAULT_BUFFER_SIZE * 2;
     public static int DOCUMENT_LENGTH = DOCTYPE_SECTION_LENGTH + 4096;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -823,22 +823,19 @@ public class Logger {
 
     /**
      * Create an anonymous Logger.  The newly created Logger is not
-     * registered in the LogManager namespace.  There will be no
-     * access checks on updates to the logger.
+     * registered in the LogManager namespace.
      * <p>
-     * This factory method is primarily intended for use from applets.
+     * This factory method was primarily intended for use from applets.
      * Because the resulting Logger is anonymous it can be kept private
-     * by the creating class.  This removes the need for normal security
-     * checks, which in turn allows untrusted applet code to update
-     * the control state of the Logger.  For example an applet can do
+     * by the creating class.  This removed the need for normal security
+     * checks, which in turn allowed untrusted applet code to update
+     * the control state of the Logger.  For example an applet could do
      * a setLevel or an addHandler on an anonymous Logger.
      * <p>
      * Even although the new logger is anonymous, it is configured
      * to have the root logger ("") as its parent.  This means that
      * by default it inherits its effective level and handlers
-     * from the root logger. Changing its parent via the
-     * {@link #setParent(java.util.logging.Logger) setParent} method
-     * will still require the security permission specified by that method.
+     * from the root logger.
      *
      * @return a newly created private Logger
      */
@@ -848,22 +845,19 @@ public class Logger {
 
     /**
      * Create an anonymous Logger.  The newly created Logger is not
-     * registered in the LogManager namespace.  There will be no
-     * access checks on updates to the logger.
+     * registered in the LogManager namespace.
      * <p>
-     * This factory method is primarily intended for use from applets.
+     * This factory method was primarily intended for use from applets.
      * Because the resulting Logger is anonymous it can be kept private
-     * by the creating class.  This removes the need for normal security
-     * checks, which in turn allows untrusted applet code to update
-     * the control state of the Logger.  For example an applet can do
+     * by the creating class.  This removed the need for normal security
+     * checks, which in turn allowed untrusted applet code to update
+     * the control state of the Logger.  For example an applet could do
      * a setLevel or an addHandler on an anonymous Logger.
      * <p>
      * Even although the new logger is anonymous, it is configured
      * to have the root logger ("") as its parent.  This means that
      * by default it inherits its effective level and handlers
-     * from the root logger.  Changing its parent via the
-     * {@link #setParent(java.util.logging.Logger) setParent} method
-     * will still require the security permission specified by that method.
+     * from the root logger.
      *
      * @param   resourceBundleName  name of ResourceBundle to be used for localizing
      *                          messages for this logger.
@@ -934,11 +928,8 @@ public class Logger {
      * be published.
      *
      * @param   newFilter  a filter object (may be null)
-     * @throws  SecurityException if a security manager exists,
-     *          this logger is not anonymous, and the caller
-     *          does not have LoggingPermission("control").
      */
-    public void setFilter(Filter newFilter) throws SecurityException {
+    public void setFilter(Filter newFilter) {
         checkPermission();
         config.setFilter(newFilter);
     }
@@ -1997,11 +1988,8 @@ public class Logger {
      * (non-null) level value.
      *
      * @param newLevel   the new value for the log level (may be null)
-     * @throws  SecurityException if a security manager exists,
-     *          this logger is not anonymous, and the caller
-     *          does not have LoggingPermission("control").
      */
-    public void setLevel(Level newLevel) throws SecurityException {
+    public void setLevel(Level newLevel) {
         checkPermission();
         synchronized (treeLock) {
             config.setLevelObject(newLevel);
@@ -2056,11 +2044,8 @@ public class Logger {
      * that essentially act as default handlers for all loggers.
      *
      * @param   handler a logging Handler
-     * @throws  SecurityException if a security manager exists,
-     *          this logger is not anonymous, and the caller
-     *          does not have LoggingPermission("control").
      */
-    public void addHandler(Handler handler) throws SecurityException {
+    public void addHandler(Handler handler) {
         Objects.requireNonNull(handler);
         checkPermission();
         config.addHandler(handler);
@@ -2072,11 +2057,8 @@ public class Logger {
      * Returns silently if the given Handler is not found or is null
      *
      * @param   handler a logging Handler
-     * @throws  SecurityException if a security manager exists,
-     *          this logger is not anonymous, and the caller
-     *          does not have LoggingPermission("control").
      */
-    public void removeHandler(Handler handler) throws SecurityException {
+    public void removeHandler(Handler handler) {
         checkPermission();
         if (handler == null) {
             return;
@@ -2107,9 +2089,6 @@ public class Logger {
      *
      * @param useParentHandlers   true if output is to be sent to the
      *          logger's parent.
-     * @throws  SecurityException if a security manager exists,
-     *          this logger is not anonymous, and the caller
-     *          does not have LoggingPermission("control").
      */
     public void setUseParentHandlers(boolean useParentHandlers) {
         checkPermission();
@@ -2318,9 +2297,6 @@ public class Logger {
      *         {@linkplain ResourceBundle#getBaseBundleName base name},
      *         or if this logger already has a resource bundle set but
      *         the given bundle has a different base name.
-     * @throws SecurityException if a security manager exists,
-     *         this logger is not anonymous, and the caller
-     *         does not have LoggingPermission("control").
      * @since 1.8
      */
     public void setResourceBundle(ResourceBundle bundle) {
@@ -2377,8 +2353,6 @@ public class Logger {
      * It should not be called from application code.
      *
      * @param  parent   the new parent logger
-     * @throws  SecurityException  if a security manager exists and if
-     *          the caller does not have LoggingPermission("control").
      */
     public void setParent(Logger parent) {
         if (parent == null) {

@@ -27,8 +27,8 @@
  * @author Ann Wollrath
  *
  * @build UseDynamicProxies UseDynamicProxies_Stub
- * @run main/othervm/policy=security.policy/timeout=240 UseDynamicProxies true
- * @run main/othervm/policy=security.policy/timeout=240 UseDynamicProxies
+ * @run main/othervm/timeout=240 UseDynamicProxies true
+ * @run main/othervm/timeout=240 UseDynamicProxies
  * false
  */
 
@@ -62,10 +62,6 @@ public class UseDynamicProxies implements RemoteInterface {
         try {
             System.setProperty("java.rmi.server.ignoreStubClasses", args[0]);
             boolean ignoreStubClasses = Boolean.parseBoolean(args[0]);
-
-            if (System.getSecurityManager() == null) {
-                System.setSecurityManager(new SecurityManager());
-            }
 
             System.err.println("export object");
             server = new UseDynamicProxies();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,6 @@ import java.io.File;
 import java.io.PrintStream;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;
-import java.security.Permission;
-import java.security.Policy;
-import java.security.ProtectionDomain;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -46,7 +43,7 @@ import java.util.logging.Logger;
  *          caused by synchronization issues in Logger and LogManager.
  * @modules java.logging
  *          java.management
- * @run main/othervm -Djava.security.manager=allow TestLogConfigurationDeadLockWithConf
+ * @run main/othervm TestLogConfigurationDeadLockWithConf
  * @author danielfuchs
  * @key randomness
  */
@@ -74,8 +71,6 @@ public class TestLogConfigurationDeadLockWithConf {
     static final AtomicLong checkCount = new AtomicLong(0);
 
     /**
-     * This test will run both with and without a security manager.
-     *
      * The test starts a number of threads that will call
      *     LogManager.readConfiguration() concurrently (ReadConf), then starts
      *     a number of threads that will create new loggers concurrently
@@ -85,11 +80,7 @@ public class TestLogConfigurationDeadLockWithConf {
      * If after 4secs no deadlock was detected and no exception was thrown
      * then the test is considered a success and passes.
      *
-     * This procedure is done twice: once without a security manager and once
-     * again with a security manager - which means the test takes ~8secs to
-     * run.
-     *
-     * Note that 8sec may not be enough to detect issues if there are some.
+     * Note that 4sec may not be enough to detect issues if there are some.
      * This is a best effort test.
      *
      * @param args the command line arguments
@@ -109,22 +100,6 @@ public class TestLogConfigurationDeadLockWithConf {
 
         System.setProperty("java.util.logging.config.file",
                config.getAbsolutePath());
-
-        // test without security
-        System.out.println("No security");
-        test();
-
-        // test with security
-        System.out.println("\nWith security");
-        Policy.setPolicy(new Policy() {
-            @Override
-            public boolean implies(ProtectionDomain domain, Permission permission) {
-                if (super.implies(domain, permission)) return true;
-                // System.out.println("Granting " + permission);
-                return true; // all permissions
-            }
-        });
-        System.setSecurityManager(new SecurityManager());
         test();
     }
 

@@ -55,8 +55,6 @@ public class EchoImpl
          */
         Object dummy = new Object();
 
-        TestLibrary.suggestSecurityManager("java.rmi.RMISecurityManager");
-
         try {
             String protocol = "";
             if (args.length >= 1)

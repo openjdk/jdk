@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,10 @@
 
 package stream.XMLInputFactoryTest;
 
-import static jaxp.library.JAXPTestUtilities.runWithTmpPermission;
-import static jaxp.library.JAXPTestUtilities.setSystemProperty;
-
 import java.util.PropertyPermission;
-
 import javax.xml.stream.XMLInputFactory;
-
+import static jaxp.library.JAXPTestUtilities.setSystemProperty;
 import org.testng.Assert;
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
@@ -39,11 +34,9 @@ import org.testng.annotations.Test;
  * @bug 6756677
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
  * @compile MyInputFactory.java
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow stream.XMLInputFactoryTest.Bug6756677Test
  * @run testng/othervm stream.XMLInputFactoryTest.Bug6756677Test
  * @summary Test XMLInputFactory.newFactory(String factoryId, ClassLoader classLoader).
  */
-@Listeners({jaxp.library.BasePolicy.class})
 public class Bug6756677Test {
 
     @Test
@@ -51,8 +44,7 @@ public class Bug6756677Test {
         String myFactory = "stream.XMLInputFactoryTest.MyInputFactory";
         try {
             setSystemProperty("MyInputFactory", myFactory);
-            XMLInputFactory xif = runWithTmpPermission(() -> XMLInputFactory.newInstance("MyInputFactory", null),
-                    new PropertyPermission("MyInputFactory", "read"));
+            XMLInputFactory xif = XMLInputFactory.newInstance("MyInputFactory", null);
             System.out.println(xif.getClass().getName());
             Assert.assertTrue(xif.getClass().getName().equals(myFactory));
 
@@ -68,8 +60,7 @@ public class Bug6756677Test {
         ClassLoader cl = null;
         try {
             setSystemProperty("MyInputFactory", myFactory);
-            XMLInputFactory xif = runWithTmpPermission(() -> XMLInputFactory.newFactory("MyInputFactory", cl),
-                    new PropertyPermission("MyInputFactory", "read"));
+            XMLInputFactory xif = XMLInputFactory.newFactory("MyInputFactory", cl);
             System.out.println(xif.getClass().getName());
             Assert.assertTrue(xif.getClass().getName().equals(myFactory));
 

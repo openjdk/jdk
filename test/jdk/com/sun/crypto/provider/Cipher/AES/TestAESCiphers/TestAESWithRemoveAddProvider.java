@@ -29,7 +29,6 @@ import java.security.Provider;
  * @bug 8044193
  * @summary Test AES ciphers with different modes and padding schemes after
  *  remove default provider then add it back.
- * @run main/othervm/policy=testAES.policy TestAESWithRemoveAddProvider
  */
 
 public class TestAESWithRemoveAddProvider extends Dynamic {

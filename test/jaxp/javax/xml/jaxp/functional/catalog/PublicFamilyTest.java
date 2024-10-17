@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,21 +30,18 @@ import static catalog.ResolutionChecker.checkPubIdResolution;
 import javax.xml.catalog.CatalogException;
 import javax.xml.catalog.CatalogResolver;
 
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
  * @test
  * @bug 8077931
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow catalog.PublicFamilyTest
  * @run testng/othervm catalog.PublicFamilyTest
  * @summary Get matched URIs from public and delegatePublic entries.
  *          It tests the resolution priorities among the public family entries.
  *          The test rule is based on OASIS Standard V1.1 section 7.1.2.
  *          "Resolution of External Identifiers".
  */
-@Listeners({jaxp.library.FilePolicy.class})
 public class PublicFamilyTest {
 
     /*

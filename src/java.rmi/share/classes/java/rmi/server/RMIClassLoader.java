@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,9 +39,7 @@ import java.util.ServiceLoader;
  * the location from which an existing class should be loaded by
  * remote parties.  These methods are used by the RMI runtime when
  * marshalling and unmarshalling classes contained in the arguments
- * and return values of remote method calls, and they also may be
- * invoked directly by applications in order to mimic RMI's dynamic
- * class loading behavior.
+ * and return values of remote method calls.
  *
  * <p>The implementation of the following static methods
  *
@@ -324,14 +322,6 @@ public class RMIClassLoader {
      * {@link RMIClassLoaderSpi#getClassLoader(String)} method
      * of the provider instance, passing <code>codebase</code> as the argument.
      *
-     * <p>If there is a security manager, its <code>checkPermission</code>
-     * method will be invoked with a
-     * <code>RuntimePermission("getClassLoader")</code> permission;
-     * this could result in a <code>SecurityException</code>.
-     * The provider implementation of this method may also perform further
-     * security checks to verify that the calling context has permission to
-     * connect to all of the URLs in the codebase URL path.
-     *
      * @param   codebase the list of URLs (space-separated) from which
      * the returned class loader will load classes from, or <code>null</code>
      *
@@ -343,15 +333,10 @@ public class RMIClassLoader {
      * if <code>codebase</code> is <code>null</code> and a provider-specific
      * URL used to identify the class loader is invalid
      *
-     * @throws  SecurityException if there is a security manager and the
-     * invocation of its <code>checkPermission</code> method fails, or
-     * if the caller does not have permission to connect to all of the
-     * URLs in the codebase URL path
-     *
      * @since   1.3
      */
     public static ClassLoader getClassLoader(String codebase)
-        throws MalformedURLException, SecurityException
+        throws MalformedURLException
     {
         return provider.getClassLoader(codebase);
     }
@@ -403,11 +388,6 @@ public class RMIClassLoader {
      * will use the canonical instance of the default provider
      * as the service provider instance.
      *
-     * <p>If there is a security manager, its
-     * <code>checkPermission</code> method will be invoked with a
-     * <code>RuntimePermission("setFactory")</code> permission; this
-     * could result in a <code>SecurityException</code>.
-     *
      * <p>The default service provider instance implements
      * {@link RMIClassLoaderSpi} as follows:
      *
@@ -437,21 +417,7 @@ public class RMIClassLoader {
      * <li><p>Otherwise, if the class loader is an instance of
      * <code>URLClassLoader</code>, then the returned string is a
      * space-separated list of the external forms of the URLs returned
-     * by invoking the <code>getURLs</code> methods of the loader.  If
-     * the <code>URLClassLoader</code> was created by this provider to
-     * service an invocation of its <code>loadClass</code> or
-     * <code>loadProxyClass</code> methods, then no permissions are
-     * required to get the associated codebase string.  If it is an
-     * arbitrary other <code>URLClassLoader</code> instance, then if
-     * there is a security manager, its <code>checkPermission</code>
-     * method will be invoked once for each URL returned by the
-     * <code>getURLs</code> method, with the permission returned by
-     * invoking <code>openConnection().getPermission()</code> on each
-     * URL; if any of those invocations throws a
-     * <code>SecurityException</code> or an <code>IOException</code>,
-     * then the value of the <code>java.rmi.server.codebase</code>
-     * property (or possibly an earlier cached value) is returned, or
-     * <code>null</code> is returned if that property is not set.
+     * by invoking the <code>getURLs</code> methods of the loader.
      *
      * <li><p>Finally, if the class loader is not an instance of
      * <code>URLClassLoader</code>, then the value of the
@@ -464,38 +430,15 @@ public class RMIClassLoader {
      * <p>For the implementations of the methods described below,
      * which all take a <code>String</code> parameter named
      * <code>codebase</code> that is a space-separated list of URLs,
-     * each invocation has an associated <i>codebase loader</i> that
-     * is identified using the <code>codebase</code> argument in
-     * conjunction with the current thread's context class loader (see
-     * {@link Thread#getContextClassLoader()}).  When there is a
-     * security manager, this provider maintains an internal table of
-     * class loader instances (which are at least instances of {@link
-     * java.net.URLClassLoader}) keyed by the pair of their parent
-     * class loader and their codebase URL path (an ordered list of
-     * URLs).  If the <code>codebase</code> argument is <code>null</code>,
-     * the codebase URL path is the value of the system property
-     * <code>java.rmi.server.codebase</code> or possibly an
-     * earlier cached value.  For a given codebase URL path passed as the
-     * <code>codebase</code> argument to an invocation of one of the
-     * below methods in a given context, the codebase loader is the
-     * loader in the table with the specified codebase URL path and
-     * the current thread's context class loader as its parent.  If no
-     * such loader exists, then one is created and added to the table.
-     * The table does not maintain strong references to its contained
-     * loaders, in order to allow them and their defined classes to be
-     * garbage collected when not otherwise reachable.  In order to
-     * prevent arbitrary untrusted code from being implicitly loaded
-     * into a virtual machine with no security manager, if there is no
-     * security manager set, the codebase loader is just the current
-     * thread's context class loader (the supplied codebase URL path
-     * is ignored, so remote class loading is disabled).
+     * the <code>codebase</code> argument is ignored. Class loading
+     * proceeds using the the current thread's context class loader
+     * (see {@link Thread#getContextClassLoader()}), which is also
+     * considered to be the codebase loader, irrespective of any
+     * value passed as the <code>codebase</code> argument.
      *
      * <p>The <b>{@link RMIClassLoaderSpi#getClassLoader(String)
-     * getClassLoader}</b> method returns the codebase loader for the
-     * specified codebase URL path.  If there is a security manager,
-     * then if the calling context does not have permission to connect
-     * to all of the URLs in the codebase URL path, a
-     * <code>SecurityException</code> will be thrown.
+     * getClassLoader}</b> method returns the current thread's
+     * context class loader.
      *
      * <p>The <b>{@link
      * RMIClassLoaderSpi#loadClass(String,String,ClassLoader)
@@ -507,7 +450,7 @@ public class RMIClassLoader {
      * If the <code>defaultLoader</code> argument is
      * non-<code>null</code>, it first attempts to load the class with the
      * specified <code>name</code> using the
-     * <code>defaultLoader</code>, such as by evaluating
+     * <code>defaultLoader</code>, as if by evaluating
      *
      * <pre>
      *     Class.forName(name, false, defaultLoader)
@@ -519,12 +462,8 @@ public class RMIClassLoader {
      * thrown, that exception is thrown to the caller.
      *
      * <p>Next, the <code>loadClass</code> method attempts to load the
-     * class with the specified <code>name</code> using the codebase
-     * loader for the specified codebase URL path.
-     * If there is a security manager, then the calling context
-     * must have permission to connect to all of the URLs in the
-     * codebase URL path; otherwise, the current thread's context
-     * class loader will be used instead of the codebase loader.
+     * class with the specified <code>name</code> using the current
+     * thread's context class loader.
      *
      * </blockquote>
      *
@@ -596,9 +535,6 @@ public class RMIClassLoader {
      *
      * @return  the canonical instance of the default service provider
      *
-     * @throws  SecurityException if there is a security manager and the
-     * invocation of its <code>checkPermission</code> method fails
-     *
      * @since   1.4
      */
     public static RMIClassLoaderSpi getDefaultProviderInstance() {
@@ -611,20 +547,19 @@ public class RMIClassLoader {
     }
 
     /**
-     * Returns the security context of the given class loader.
+     * Always returns null.
      *
      * @param   loader a class loader from which to get the security context
      *
-     * @return  the security context
+     * @return  null
      *
-     * @deprecated no replacement.  As of the Java 2 platform v1.2, RMI no
-     * longer uses this method to obtain a class loader's security context.
-     * @see java.lang.SecurityManager#getSecurityContext()
+     * @deprecated no replacement. This method has no purpose in the absence
+     * of a Security Manager.
      */
     @Deprecated
     public static Object getSecurityContext(ClassLoader loader)
     {
-        return sun.rmi.server.LoaderHandler.getSecurityContext(loader);
+        return null;
     }
 
     /**

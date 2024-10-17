@@ -1,3 +1,0 @@
-// policy file that does not grant any permissions
-grant {
-};

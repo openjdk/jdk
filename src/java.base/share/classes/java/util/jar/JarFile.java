@@ -248,8 +248,6 @@ public class JarFile extends ZipFile {
      * it is signed.
      * @param name the name of the jar file to be opened for reading
      * @throws IOException if an I/O error has occurred
-     * @throws SecurityException if access to the file is denied
-     *         by the SecurityManager
      */
     public JarFile(String name) throws IOException {
         this(new File(name), true, ZipFile.OPEN_READ);
@@ -262,8 +260,6 @@ public class JarFile extends ZipFile {
      * @param verify whether or not to verify the jar file if
      * it is signed.
      * @throws IOException if an I/O error has occurred
-     * @throws SecurityException if access to the file is denied
-     *         by the SecurityManager
      */
     public JarFile(String name, boolean verify) throws IOException {
         this(new File(name), verify, ZipFile.OPEN_READ);
@@ -275,8 +271,6 @@ public class JarFile extends ZipFile {
      * it is signed.
      * @param file the jar file to be opened for reading
      * @throws IOException if an I/O error has occurred
-     * @throws SecurityException if access to the file is denied
-     *         by the SecurityManager
      */
     public JarFile(File file) throws IOException {
         this(file, true, ZipFile.OPEN_READ);
@@ -289,8 +283,6 @@ public class JarFile extends ZipFile {
      * @param verify whether or not to verify the jar file if
      * it is signed.
      * @throws IOException if an I/O error has occurred
-     * @throws SecurityException if access to the file is denied
-     *         by the SecurityManager.
      */
     public JarFile(File file, boolean verify) throws IOException {
         this(file, verify, ZipFile.OPEN_READ);
@@ -308,8 +300,6 @@ public class JarFile extends ZipFile {
      * @throws IOException if an I/O error has occurred
      * @throws IllegalArgumentException
      *         if the {@code mode} argument is invalid
-     * @throws SecurityException if access to the file is denied
-     *         by the SecurityManager
      * @since 1.3
      */
     public JarFile(File file, boolean verify, int mode) throws IOException {
@@ -336,8 +326,6 @@ public class JarFile extends ZipFile {
      * @throws IOException if an I/O error has occurred
      * @throws IllegalArgumentException
      *         if the {@code mode} argument is invalid
-     * @throws SecurityException if access to the file is denied
-     *         by the SecurityManager
      * @throws NullPointerException if {@code version} is {@code null}
      * @since 9
      */

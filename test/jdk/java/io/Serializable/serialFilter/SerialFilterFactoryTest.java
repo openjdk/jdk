@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,9 +36,6 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serial;
 import java.io.Serializable;
-import java.io.SerializablePermission;
-import java.security.AccessControlException;
-import java.security.Permission;
 import java.util.function.BinaryOperator;
 
 /* @test
@@ -48,11 +45,6 @@ import java.util.function.BinaryOperator;
  *                     -Djava.util.logging.config.file=${test.src}/logging.properties SerialFilterFactoryTest
  * @run testng/othervm -Djdk.serialFilterFactory=SerialFilterFactoryTest$NotMyFilterFactory
  *                     -Djava.util.logging.config.file=${test.src}/logging.properties SerialFilterFactoryTest
- * @run testng/othervm/policy=security.policy
- *        -Djava.security.properties=${test.src}/java.security-extra-factory
- *        -Djava.security.debug=properties SerialFilterFactoryTest
- * @run testng/othervm/policy=security.policy SerialFilterFactoryTest
- * @run testng/othervm/policy=security.policy.without.globalFilter SerialFilterFactoryTest
  *
  * @summary Test Context-specific Deserialization Filters
  */
@@ -117,25 +109,6 @@ public class SerialFilterFactoryTest {
         return !(ObjectInputFilter.Config.getSerialFilterFactory() instanceof NotMyFilterFactory);
     }
 
-    /**
-     * Returns true if serialFilter actions are ok, either no SM or SM has serialFilter Permission
-     */
-    @SuppressWarnings("removal")
-    private static boolean hasFilterPerm() {
-        boolean hasSerialPerm = true;
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            try {
-                Permission p = new SerializablePermission("serialFilter");
-                sm.checkPermission(p);
-                hasSerialPerm = true;
-            } catch (AccessControlException ace2) {
-                hasSerialPerm = false;      // SM and serialFilter not allowed
-            }
-        }
-        return hasSerialPerm;
-    }
-
     @DataProvider(name="FilterCases")
     static Object[][] filterCases() {
         if (isValidFilterFactory()) {
@@ -165,10 +138,6 @@ public class SerialFilterFactoryTest {
     @Test
     @SuppressWarnings("removal")
     void testSecondSetShouldThrow() {
-        if (System.getSecurityManager() != null) {
-            // Skip test when running with SM
-            return;
-        }
         var currFF = Config.getSerialFilterFactory();
         if (currFF.getClass().getClassLoader() == null) {
             try {
@@ -206,16 +175,8 @@ public class SerialFilterFactoryTest {
         // Set the Filter Factory and System-wide filter
         ObjectInputFilter configFilter;
         MyFilterFactory factory;
-        try {
-            configFilter = setupFilter(dynFilter);
-            factory = setupFilterFactory(dynFilterFactory);
-            Assert.assertTrue(hasFilterPerm(),
-                    "setSerialFilterFactory and setFilterFactory succeeded without serialFilter permission");
-        } catch (AccessControlException ace) {
-            Assert.assertFalse(hasFilterPerm(),
-                    "setSerialFilterFactory failed even with serialFilter permission");
-            return;         // test complete
-        }
+        configFilter = setupFilter(dynFilter);
+        factory = setupFilterFactory(dynFilterFactory);
         factory.reset();
 
         InputStream is = new ByteArrayInputStream(simpleStream);
@@ -265,12 +226,9 @@ public class SerialFilterFactoryTest {
     // throws IllegalStateException with the specific message
     @Test(dependsOnMethods="testCase")
     void testSetFactoryAfterDeserialization() {
-        if (hasFilterPerm()) {
-            // Only test if is allowed by SM.
-            BinaryOperator<ObjectInputFilter> factory = Config.getSerialFilterFactory();
-            IllegalStateException ise = Assert.expectThrows(IllegalStateException.class, () -> Config.setSerialFilterFactory(factory));
-            Assert.assertTrue(ise.getMessage().startsWith("Cannot replace filter factory: "));
-        }
+        BinaryOperator<ObjectInputFilter> factory = Config.getSerialFilterFactory();
+        IllegalStateException ise = Assert.expectThrows(IllegalStateException.class, () -> Config.setSerialFilterFactory(factory));
+        Assert.assertTrue(ise.getMessage().startsWith("Cannot replace filter factory: "));
     }
 
 
@@ -278,20 +236,18 @@ public class SerialFilterFactoryTest {
     // a non-null filter.  And does allow a null filter to replace a null filter
     @Test
     void testDisableFailFilter() throws IOException {
-        if (hasFilterPerm()) {
-            // Only test if is allowed by SM.
-            ObjectInputFilter curr = null;
-            try (ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(simpleStream))) {
-                curr = ois.getObjectInputFilter();
-                // Try to set the filter to null
-                ois.setObjectInputFilter(null);
-                if (curr != null) {
-                    Assert.fail("setting filter to null after a non-null filter should throw");
-                }
-            } catch (IllegalStateException ise) {
-                if (curr == null) {
-                    Assert.fail("setting filter to null after a null filter should not throw");
-                }
+        // Only test if is allowed by SM.
+        ObjectInputFilter curr = null;
+        try (ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(simpleStream))) {
+            curr = ois.getObjectInputFilter();
+            // Try to set the filter to null
+            ois.setObjectInputFilter(null);
+            if (curr != null) {
+                Assert.fail("setting filter to null after a non-null filter should throw");
+            }
+        } catch (IllegalStateException ise) {
+            if (curr == null) {
+                Assert.fail("setting filter to null after a null filter should not throw");
             }
         }
     }

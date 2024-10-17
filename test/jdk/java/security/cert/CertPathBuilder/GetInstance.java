@@ -26,7 +26,7 @@
  * @bug 4408997
  * @summary Should be able to pass a Provider object to getInstance().
  * @compile StubProvider.java StubProviderImpl.java
- * @run main/othervm/policy=provider.policy GetInstance
+ * @run main GetInstance
  * The test passes if it returns.
  * The test fails if an exception is thrown.
  */

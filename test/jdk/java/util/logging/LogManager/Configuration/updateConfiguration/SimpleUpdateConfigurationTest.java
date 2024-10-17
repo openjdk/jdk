@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,24 +23,14 @@
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.FileOutputStream;
-import java.io.FilePermission;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.security.CodeSource;
-import java.security.Permission;
-import java.security.PermissionCollection;
-import java.security.Permissions;
-import java.security.Policy;
-import java.security.ProtectionDomain;
 import java.util.Arrays;
-import java.util.Enumeration;
 import java.util.Objects;
 import java.util.Properties;
-import java.util.PropertyPermission;
 import java.util.concurrent.Callable;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -49,43 +39,30 @@ import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
-import java.util.logging.LoggingPermission;
 
 /**
  * @test
  * @bug 8033661
  * @summary tests LogManager.updateConfiguration(Function) method
- * @run main/othervm SimpleUpdateConfigurationTest UNSECURE
- * @run main/othervm -Djava.security.manager=allow SimpleUpdateConfigurationTest SECURE
+ * @run main/othervm SimpleUpdateConfigurationTest
  * @author danielfuchs
  */
 public class SimpleUpdateConfigurationTest {
 
-    /**
-     * We will test updateConfiguration in
-     * two configurations:
-     * UNSECURE: No security manager.
-     * SECURE: With the security manager present - and the required
-     *         permissions granted.
-     */
-    public static enum TestCase {
-        UNSECURE, SECURE;
-        public void execute(Runnable run) {
-            System.out.println("Running test case: " + name());
-            try {
-               Configure.setUp(this);
-               Configure.doPrivileged(run, SimplePolicy.allowControl);
-            } finally {
-               Configure.doPrivileged(() -> {
-                   try {
-                       setSystemProperty("java.util.logging.config.file", null);
-                       LogManager.getLogManager().readConfiguration();
-                       System.gc();
-                   } catch (Exception x) {
-                       throw new RuntimeException(x);
-                   }
-               }, SimplePolicy.allowAll);
-            }
+    // We will test updateConfiguration
+    public static void execute(Runnable run) {
+        try {
+           Configure.doPrivileged(run);
+        } finally {
+           Configure.doPrivileged(() -> {
+               try {
+                   setSystemProperty("java.util.logging.config.file", null);
+                   LogManager.getLogManager().readConfiguration();
+                   System.gc();
+               } catch (Exception x) {
+                   throw new RuntimeException(x);
+               }
+           });
         }
     }
 
@@ -121,7 +98,7 @@ public class SimpleUpdateConfigurationTest {
                 props.store(fos, name);
             }
             return p.toString();
-        }, SimplePolicy.allowAll);
+        });
     }
 
     static void setSystemProperty(String name, String value)
@@ -131,7 +108,7 @@ public class SimpleUpdateConfigurationTest {
                 System.clearProperty(name);
             else
                 System.setProperty(name, value);
-        }, SimplePolicy.allowAll);
+        });
     }
 
     static String trim(String value) {
@@ -472,49 +449,16 @@ public class SimpleUpdateConfigurationTest {
                     } catch (Exception x) {
                         throw new RuntimeException(x);
                     }
-                }, SimplePolicy.allowAll);
+                });
             }
         }
     }
 
     public static void main(String[] args) throws Exception {
-        if (args == null || args.length == 0) {
-            args = new String[] { "UNSECURE", "SECURE" };
-        }
-        for (String test : args) {
-            TestCase.valueOf(test).execute(SimpleUpdateConfigurationTest::testUpdateConfiguration);
-        }
+        execute(SimpleUpdateConfigurationTest::testUpdateConfiguration);
     }
 
     static class Configure {
-        static Policy policy = null;
-        static void setUp(TestCase test) {
-            switch (test) {
-                case SECURE:
-                    if (policy == null && System.getSecurityManager() != null) {
-                        throw new IllegalStateException("SecurityManager already set");
-                    } else if (policy == null) {
-                        policy = new SimplePolicy(TestCase.SECURE);
-                        Policy.setPolicy(policy);
-                        System.setSecurityManager(new SecurityManager());
-                    }
-                    if (System.getSecurityManager() == null) {
-                        throw new IllegalStateException("No SecurityManager.");
-                    }
-                    if (policy == null) {
-                        throw new IllegalStateException("policy not configured");
-                    }
-                    break;
-                case UNSECURE:
-                    if (System.getSecurityManager() != null) {
-                        throw new IllegalStateException("SecurityManager already set");
-                    }
-                    break;
-                default:
-                    throw new InternalError("No such testcase: " + test);
-            }
-        }
-
         static void updateConfigurationWith(Properties propertyFile,
                 Function<String,BiFunction<String,String,String>> remapper) {
             try {
@@ -527,22 +471,11 @@ public class SimpleUpdateConfigurationTest {
             }
         }
 
-        static void doPrivileged(Runnable run, ThreadLocal<AtomicBoolean> granter) {
-            final boolean old = granter.get().getAndSet(true);
-            try {
-                run.run();
-            } finally {
-                granter.get().set(old);
-            }
+        static void doPrivileged(Runnable run) {
+            run.run();
         }
-        static <T> T callPrivileged(Callable<T> call,
-                ThreadLocal<AtomicBoolean> granter) throws Exception {
-            final boolean old = granter.get().getAndSet(true);
-            try {
-                return call.call();
-            } finally {
-                granter.get().set(old);
-            }
+        static <T> T callPrivileged(Callable<T> call) throws Exception {
+            return call.call();
         }
     }
 
@@ -622,101 +555,4 @@ public class SimpleUpdateConfigurationTest {
             System.out.println("Got expected " + msg + ": " + deepToString(received));
         }
     }
-
-    final static class PermissionsBuilder {
-        final Permissions perms;
-        public PermissionsBuilder() {
-            this(new Permissions());
-        }
-        public PermissionsBuilder(Permissions perms) {
-            this.perms = perms;
-        }
-        public PermissionsBuilder add(Permission p) {
-            perms.add(p);
-            return this;
-        }
-        public PermissionsBuilder addAll(PermissionCollection col) {
-            if (col != null) {
-                for (Enumeration<Permission> e = col.elements(); e.hasMoreElements(); ) {
-                    perms.add(e.nextElement());
-                }
-            }
-            return this;
-        }
-        public Permissions toPermissions() {
-            final PermissionsBuilder builder = new PermissionsBuilder();
-            builder.addAll(perms);
-            return builder.perms;
-        }
-    }
-
-    public static class SimplePolicy extends Policy {
-
-        static final Policy DEFAULT_POLICY = Policy.getPolicy();
-
-        final Permissions basic;
-        final Permissions control;
-        final Permissions all;
-        public final static ThreadLocal<AtomicBoolean> allowAll =
-                new ThreadLocal<AtomicBoolean>() {
-            @Override
-            protected AtomicBoolean initialValue() {
-                return new AtomicBoolean();
-            }
-        };
-        public final static ThreadLocal<AtomicBoolean> allowControl =
-                new ThreadLocal<AtomicBoolean>() {
-            @Override
-            protected AtomicBoolean initialValue() {
-                return new AtomicBoolean();
-            }
-        };
-        public SimplePolicy(TestCase test) {
-            basic = new Permissions();
-            control = new Permissions();
-            control.add(new LoggingPermission("control", null));
-
-            // These permissions are required to call updateConfiguration(Function)
-            control.add(new PropertyPermission("java.util.logging.config.file", "read"));
-            control.add(new PropertyPermission("java.home", "read"));
-            control.add(new FilePermission(
-                    Paths.get(System.getProperty("user.dir", "."),"-").toString(), "read"));
-            control.add(new FilePermission(
-                    Paths.get(System.getProperty("java.home"),"conf","-").toString(), "read"));
-
-            // these are used for configuring the test itself...
-            all = new Permissions();
-            all.add(new java.security.AllPermission());
-
-        }
-
-        @Override
-        public boolean implies(ProtectionDomain domain, Permission permission) {
-            return getPermissions(domain).implies(permission) || DEFAULT_POLICY.implies(domain, permission);
-        }
-
-        public PermissionCollection permissions() {
-            PermissionsBuilder builder = new PermissionsBuilder();
-            if (allowAll.get().get()) {
-                builder.addAll(all);
-            } else {
-                builder.addAll(basic);
-                if (allowControl.get().get()) {
-                    builder.addAll(control);
-                }
-            }
-            return builder.toPermissions();
-        }
-
-        @Override
-        public PermissionCollection getPermissions(CodeSource codesource) {
-            return permissions();
-        }
-
-        @Override
-        public PermissionCollection getPermissions(ProtectionDomain domain) {
-            return permissions();
-        }
-    }
-
 }

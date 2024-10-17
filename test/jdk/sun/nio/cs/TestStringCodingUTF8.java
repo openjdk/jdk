@@ -24,7 +24,7 @@
 /* @test
    @bug 7040220 8054307
    @summary Test if StringCoding and NIO result have the same de/encoding result for UTF-8
- * @run main/othervm/timeout=2000 -Djava.security.manager=allow TestStringCodingUTF8
+ * @run main/othervm/timeout=2000 TestStringCodingUTF8
  * @key randomness
  */
 
@@ -34,10 +34,6 @@ import java.nio.charset.*;
 
 public class TestStringCodingUTF8 {
     public static void main(String[] args) throws Throwable {
-        test("UTF-8");
-        test("CESU-8");
-        // security manager on
-        System.setSecurityManager(new PermissiveSecurityManger());
         test("UTF-8");
         test("CESU-8");
     }

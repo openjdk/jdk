@@ -33,14 +33,6 @@
  *        com.bar.*
  *        com.foo.*
  * @run main/othervm PermissionTest
- * @run main/othervm/fail/java.security.policy=dummy.policy
- *                        -Djava.security.manager
- *                        -Djava.locale.providers=CLDR,SPI
- *                        PermissionTest
- * @run main/othervm/java.security.policy=localeServiceProvider.policy
- *                   -Djava.security.manager
- *                   -Djava.locale.providers=CLDR,SPI
- *                   PermissionTest
  */
 
 import com.bar.CalendarDataProviderImpl;
@@ -59,7 +51,6 @@ import com.foo.NumberFormatProviderImpl;
 
 public class PermissionTest{
 
-    //  Make sure provider impls can be instantiated under a security manager.ZZ
     BreakIteratorProviderImpl breakIP = new BreakIteratorProviderImpl();
     CollatorProviderImpl collatorP = new CollatorProviderImpl();
     DateFormatProviderImpl dateFP = new DateFormatProviderImpl();

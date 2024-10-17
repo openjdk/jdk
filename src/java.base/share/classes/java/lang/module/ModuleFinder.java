@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,9 +99,6 @@ public interface ModuleFinder {
      *
      * @throws FindException
      *         If an error occurs finding the module
-     *
-     * @throws SecurityException
-     *         If denied by the security manager
      */
     Optional<ModuleReference> find(String name);
 
@@ -123,9 +120,6 @@ public interface ModuleFinder {
      *
      * @throws FindException
      *         If an error occurs finding all modules
-     *
-     * @throws SecurityException
-     *         If denied by the security manager
      */
     Set<ModuleReference> findAll();
 
@@ -134,16 +128,7 @@ public interface ModuleFinder {
      * system modules are the modules in the Java run-time image.
      * The module finder will always find {@code java.base}.
      *
-     * <p> If there is a security manager set then its {@link
-     * SecurityManager#checkPermission(Permission) checkPermission} method is
-     * invoked to check that the caller has been granted
-     * {@link RuntimePermission RuntimePermission("accessSystemModules")}
-     * to access the system modules. </p>
-     *
      * @return A {@code ModuleFinder} that locates the system modules
-     *
-     * @throws SecurityException
-     *         If denied by the security manager
      */
     @SuppressWarnings("removal")
     static ModuleFinder ofSystem() {

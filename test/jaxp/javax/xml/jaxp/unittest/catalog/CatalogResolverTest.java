@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@ import javax.xml.catalog.CatalogResolver.NotFoundAction;
 import org.testng.Assert;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.xml.sax.InputSource;
 
@@ -45,7 +44,6 @@ import org.xml.sax.InputSource;
  * @summary Tests CatalogResolver functions. See CatalogTest for existing basic
  * functional tests.
  */
-@Listeners({jaxp.library.FilePolicy.class})
 public class CatalogResolverTest extends CatalogSupportBase {
     static final String KEY_FILES = "javax.xml.catalog.files";
     static final String SYSTEM_ID = "http://openjdk_java_net/xml/catalog/dtd/system.dtd";

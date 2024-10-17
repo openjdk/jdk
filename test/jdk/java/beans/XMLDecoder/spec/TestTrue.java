@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @summary Tests <true> element
- * @run main/othervm -Djava.security.manager=allow TestTrue
+ * @run main/othervm TestTrue
  * @author Sergey Malenkov
  */
 
@@ -37,7 +37,7 @@ public final class TestTrue extends AbstractTest {
             + "</java>";
 
     public static void main(String[] args) {
-        new TestTrue().test(true);
+        new TestTrue().test();
     }
 
     @Override

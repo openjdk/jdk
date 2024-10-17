@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,18 +65,7 @@ public class FontFile {
            System.out.println("File not available : can't run test");
            return;
         }
-        System.out.println("File is available. Verify no access under SM");
-
-        System.setSecurityManager(new SecurityManager());
-
-
-        // Check cannot read file.
-        try {
-            new FileInputStream(name);
-            throw new Error("Something wrong with test environment");
-        } catch (SecurityException exc) {
-            // Good.
-        }
+        System.out.println("File is available.");
 
         try {
             Font font = Font.createFont(Font.TRUETYPE_FONT,
@@ -98,7 +87,8 @@ public class FontFile {
           System.err.println(font.getFontName());
           throw new RuntimeException("No expected exception");
         }  catch (IOException e) {
-          System.err.println("Test passed.");
+            System.out.println("Expected IOException: "+ e);
+            System.err.println("Test passed.");
         }
     }
 }

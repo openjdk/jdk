@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,10 @@ import java.util.concurrent.ConcurrentHashMap;
  * <pre>
  *  DelegationPermission("\"backup/bar.example.com@EXAMPLE.COM\" \"nfs/home.EXAMPLE.COM@EXAMPLE.COM\"");
  * </pre>
+ *
+ * @apiNote
+ * This permission cannot be used for controlling access to resources anymore
+ * as the Security Manager is no longer supported.
  *
  * @since 1.4
  */

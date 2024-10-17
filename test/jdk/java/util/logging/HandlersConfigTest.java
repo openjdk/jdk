@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,8 @@
  *          as specified in javadoc and that no special
  *          logging permission is required for instantiating them.
  * @modules java.logging/java.util.logging:open
- * @run main/othervm -Djava.security.manager=allow HandlersConfigTest default
- * @run main/othervm -Djava.security.manager=allow HandlersConfigTest configured
+ * @run main/othervm HandlersConfigTest default
+ * @run main/othervm HandlersConfigTest configured
  */
 
 import java.io.IOException;
@@ -99,14 +99,6 @@ public abstract class HandlersConfigTest implements Runnable {
         } catch (IOException e) {
             throw new AssertionError(e);
         }
-
-        // activate security
-        System.setSecurityManager(new SecurityManager() {
-            @Override
-            public void checkConnect(String host, int port) {
-                // allow socket connections
-            }
-        });
 
         // initialize logging system
         LogManager.getLogManager();

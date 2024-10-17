@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,6 @@ import javax.xml.transform.stream.StreamSource;
 
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.w3c.dom.DOMConfiguration;
 import org.w3c.dom.DOMImplementation;
@@ -66,11 +65,9 @@ import org.xml.sax.SAXException;
  * @test
  * @bug 6439439 8087303 8174025 8223291 8249867 8261209 8260858 8265073
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow common.prettyprint.PrettyPrintTest
  * @run testng/othervm common.prettyprint.PrettyPrintTest
  * @summary Test serializing xml and html with indentation.
  */
-@Listeners({jaxp.library.FilePolicy.class})
 public class PrettyPrintTest {
 
     private static final String DOM_FORMAT_PRETTY_PRINT = "format-pretty-print";

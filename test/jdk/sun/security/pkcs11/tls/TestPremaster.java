@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@
  * @modules java.base/sun.security.internal.spec
  *          jdk.crypto.cryptoki
  * @run main/othervm TestPremaster
- * @run main/othervm -Djava.security.manager=allow TestPremaster sm policy
  */
 
 import java.security.Provider;

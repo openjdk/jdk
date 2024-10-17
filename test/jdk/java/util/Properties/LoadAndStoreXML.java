@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 8000354 8000685 8004371 8043119 8276207
  * @summary Basic test of storeToXML and loadToXML
- * @run main/othervm -Djava.security.manager=allow LoadAndStoreXML
+ * @run main/othervm LoadAndStoreXML
  */
 
 import java.io.ByteArrayInputStream;
@@ -38,47 +38,11 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.security.CodeSource;
-import java.security.Permission;
-import java.security.PermissionCollection;
-import java.security.Permissions;
-import java.security.Policy;
-import java.security.ProtectionDomain;
 import java.util.InvalidPropertiesFormatException;
 import java.util.Properties;
-import java.util.PropertyPermission;
 
 public class LoadAndStoreXML {
     static final String bomChar = "\uFEFF";
-
-    /**
-     * Simple policy implementation that grants a set of permissions to
-     * all code sources and protection domains.
-     */
-    static class SimplePolicy extends Policy {
-        private final Permissions perms;
-
-        public SimplePolicy(Permission...permissions) {
-            perms = new Permissions();
-            for (Permission permission : permissions)
-                perms.add(permission);
-        }
-
-        @Override
-        public PermissionCollection getPermissions(CodeSource cs) {
-            return perms;
-        }
-
-        @Override
-        public PermissionCollection getPermissions(ProtectionDomain pd) {
-            return perms;
-        }
-
-        @Override
-        public boolean implies(ProtectionDomain pd, Permission p) {
-            return perms.implies(p);
-        }
-    }
 
     /**
      * A {@code ByteArrayInputStream} that allows testing if the
@@ -270,7 +234,6 @@ public class LoadAndStoreXML {
     }
 
     public static void main(String[] args) throws IOException {
-
         testLoadAndStore("UTF-8", false);
         testLoadAndStore("UTF-16", false);
         testLoadAndStore("UTF-16BE", false);
@@ -287,20 +250,5 @@ public class LoadAndStoreXML {
         String subdir = "invalidxml";
         Path dir = (src == null) ? Paths.get(subdir) : Paths.get(src, subdir);
         testLoadWithMalformedDoc(dir);
-
-        // re-run sanity test with security manager
-        Policy orig = Policy.getPolicy();
-        Policy p = new SimplePolicy(new RuntimePermission("setSecurityManager"),
-                                    new PropertyPermission("line.separator", "read"));
-        Policy.setPolicy(p);
-        System.setSecurityManager(new SecurityManager());
-        try {
-            testLoadAndStore("UTF-8", false);
-        } finally {
-            // turn off security manager and restore policy
-            System.setSecurityManager(null);
-            Policy.setPolicy(orig);
-        }
-
     }
 }
