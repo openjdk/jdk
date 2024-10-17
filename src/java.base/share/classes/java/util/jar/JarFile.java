@@ -598,7 +598,7 @@ public class JarFile extends ZipFile {
 
     private JarEntry getVersionedEntry(String name, JarEntry defaultEntry) {
         if (!name.startsWith(META_INF)) {
-            int[] versions = JUZFA.getMetaInfVersions(this);
+            int[] versions = JUZFA.getMetaInfVersions(this, name);
             if (BASE_VERSION_FEATURE < versionFeature && versions.length > 0) {
                 // search for versioned entry
                 for (int i = versions.length - 1; i >= 0; i--) {
