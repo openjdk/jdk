@@ -415,6 +415,20 @@ public class HKDFExhaustiveTest {
             KdfExpandVerifierImpl.expand(
                 SECRET_KEY_SPEC_KEYS.getFirst(), RAW_DATA.getFirst(), NEGATIVE_LENGTH),
         IllegalArgumentException.class);
+
+    // NEGATIVE TestCase: Expand - PRK value too short
+    Utils.runAndCheckException(
+        () ->
+            hk.deriveKey(
+                "OKM",
+                KdfExpandVerifierImpl.expand(
+                    new SecretKeySpec(new byte[] {0x00}, "PRK"), null, 32)),
+        InvalidAlgorithmParameterException.class);
+
+    // NEGATIVE TestCase: Expand - length greater than 255 > hmacLen
+    Utils.runAndCheckException(
+        () -> hk.deriveKey("OKM", KdfExpandVerifierImpl.expand(prk, null, 8162)),
+        InvalidAlgorithmParameterException.class);
   }
 
   private static void testDeriveKeyDataWithExpand(KDF hk)

@@ -29,14 +29,10 @@
  * @enablePreview
  */
 
-import jdk.test.lib.Asserts;
-import jdk.test.lib.Utils;
-
+import java.util.HexFormat;
 import javax.crypto.KDF;
 import javax.crypto.spec.HKDFParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
-import java.security.InvalidAlgorithmParameterException;
-import java.util.HexFormat;
+import jdk.test.lib.Asserts;
 
 public class HKDFBasicFunctionsTest {
     public static void main(String[] args) throws Exception {
@@ -75,14 +71,6 @@ public class HKDFBasicFunctionsTest {
         test(HKDFParameterSpec.ofExtract().thenExpand(null, 32));
         // test extract with zero-length salt
         test(HKDFParameterSpec.ofExtract().addIKM(ikm).addSalt(new byte[0]).extractOnly());
-
-        // EXPECTED EXCEPTIONS
-
-        // short PRK should throw IAPE
-        Utils.runAndCheckException(() -> test(HKDFParameterSpec.expandOnly(new SecretKeySpec(new byte[] {0x00}, "PRK"), null, 32)), InvalidAlgorithmParameterException.class);
-
-        // long length should throw IAPE; 8162 is greater than 255 * hmacLen
-        Utils.runAndCheckException(() -> test(HKDFParameterSpec.expandOnly(new SecretKeySpec(expectedPrk, "PRK"), null, 8162 )), InvalidAlgorithmParameterException.class);
     }
 
     static void test(HKDFParameterSpec p) throws Exception {
