@@ -34,6 +34,7 @@
 // Walk over all Initialized Assertion Predicates and return the entry into the first Initialized Assertion Predicate
 // (i.e. not belonging to an Initialized Assertion Predicate anymore)
 Node* AssertionPredicatesWithHalt::find_entry(Node* start_proj) {
+  assert(start_proj != nullptr, "should not be null");
   Node* entry = start_proj;
   while (AssertionPredicateWithHalt::is_predicate(entry)) {
     entry = entry->in(0)->in(0);
@@ -42,7 +43,7 @@ Node* AssertionPredicatesWithHalt::find_entry(Node* start_proj) {
 }
 
 bool AssertionPredicateWithHalt::is_predicate(const Node* maybe_success_proj) {
-  if (maybe_success_proj == nullptr || !maybe_success_proj->is_IfProj() || !maybe_success_proj->in(0)->is_If()) {
+  if (!AssertionPredicate::may_be_predicate_if(maybe_success_proj)) {
     return false;
   }
   return has_assertion_predicate_opaque(maybe_success_proj) && has_halt(maybe_success_proj);
@@ -130,10 +131,15 @@ bool RuntimePredicate::is_predicate(Node* node, Deoptimization::DeoptReason deop
   return RegularPredicateWithUCT::is_predicate(node, deopt_reason);
 }
 
+// An Assertion Predicate has always a true projection on the success path.
+bool AssertionPredicate::may_be_predicate_if(const Node* node) {
+  return node->is_IfTrue() && RegularPredicate::may_be_predicate_if(node->as_IfProj());
+}
+
 // A Template Assertion Predicate has an If/RangeCheckNode and either an UCT or a halt node depending on where it
 // was created.
 bool TemplateAssertionPredicate::is_predicate(Node* node) {
-  if (!RegularPredicate::may_be_predicate_if(node)) {
+  if (!AssertionPredicate::may_be_predicate_if(node)) {
     return false;
   }
   IfNode* if_node = node->in(0)->as_If();
