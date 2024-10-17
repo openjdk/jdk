@@ -29,7 +29,6 @@
 
 
 class TestLogDecorators : public testing::Test {
-  using DefaultDecorator = LogDecorators::DefaultUndecoratedSelection;
   using LD = LogDecorators;
 
   static const size_t defaults_cnt = 3;
