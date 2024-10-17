@@ -59,32 +59,30 @@ static void JNICALL
 FramePop(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread,
          jmethodID method, jboolean wasPoppedByException) {
   jvmtiError err;
+  char* expected_method = (char*)last_notify_method;
   jclass cls = nullptr;
   char* csig = nullptr;
   char* name = nullptr;
 
   pop_count++;
 
-  err =jvmti->GetMethodDeclaringClass(method, &cls);
+  err = jvmti->GetMethodDeclaringClass(method, &cls);
   check_jvmti_status(jni, err, "FramePop: Failed in JVMTI GetMethodDeclaringClass");
 
-  err =jvmti->GetClassSignature(cls, &csig, nullptr);
+  err = jvmti->GetClassSignature(cls, &csig, nullptr);
   check_jvmti_status(jni, err, "FramePop: Failed in JVMTI GetClassSignature");
 
   name = get_method_name(jvmti, jni, method);
   LOG("FramePop(%d) event from method: %s %s\n", pop_count, csig, name);
 
   if (strcmp(name, "main") != 0) { // ignore FRAME_POP for main that comes in as the test exits
-    if (strcmp(name, (char*)last_notify_method) != 0) {
+    if (strcmp(name, (char*)expected_method) != 0) {
       LOG("ERROR: FramePop event is for wrong method: expected %s, got %s\n", last_notify_method, name);
       failed = JNI_TRUE;
       deallocate(jvmti, jni, csig);
       deallocate(jvmti, jni, name);
-      deallocate(jvmti, jni, (void*)last_notify_method);
-      fatal(jni, "FramePop event in wrong method\n");
     }
   }
-  deallocate(jvmti, jni, (void*)last_notify_method);
   deallocate(jvmti, jni, csig);
   deallocate(jvmti, jni, name);
 }
@@ -96,7 +94,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
   res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_9);
   if (res != JNI_OK || jvmti == nullptr) {
-    LOG("GetEnv(JVMTI_VERSION_9) failedL error(%d)", res);
+    LOG("GetEnv(JVMTI_VERSION_9) failed error(%d)", res);
     return JNI_ERR;
   }
   err = jvmti->GetPotentialCapabilities(&caps);
@@ -157,7 +155,7 @@ Java_NotifyFramePopStressTest_notifyFramePop(JNIEnv *jni, jclass cls, jthread th
 
   err= jvmti->NotifyFramePop(thread, 0);
   if (err == JVMTI_ERROR_OPAQUE_FRAME || err == JVMTI_ERROR_DUPLICATE) {
-    LOG("\nNotifyFramePop for method %d returned acceptable error: %s\n", name, TranslateError(err));
+    //LOG("\nNotifyFramePop for method %s returned acceptable error: %s\n", name, TranslateError(err));
     deallocate(jvmti, jni, name);
     return JNI_FALSE;
   }
@@ -169,7 +167,9 @@ Java_NotifyFramePopStressTest_notifyFramePop(JNIEnv *jni, jclass cls, jthread th
     deallocate(jvmti, jni, name);
     return JNI_FALSE;
   } else {
+    char* old_notify_method = (char*)last_notify_method;
     last_notify_method = name;
+    deallocate(jvmti, jni, old_notify_method);
     return JNI_TRUE;
   }
 }

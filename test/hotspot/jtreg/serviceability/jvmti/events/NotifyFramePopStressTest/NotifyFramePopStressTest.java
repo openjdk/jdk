@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @bug 8340698
  * @summary JVMTI FRAME_POP event is sometimes missed if NotifyFramePop is called as a method is returning
  * @requires vm.jvmti
  * @library /test/lib
