@@ -23,7 +23,7 @@
 
 /*
  * @test
- * // [@]bug NNNN
+ * @bug 8342075
  * @summary checks connection flow control
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.http2.Http2TestServer jdk.test.lib.net.SimpleSSLContext
