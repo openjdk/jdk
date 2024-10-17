@@ -92,6 +92,7 @@ class DisposeFrame extends Frame {
 class DisposeDialog extends Dialog {
     DisposeDialog(Frame frame) {
         super(frame, "DisposeDialog", true);
+        setLocation(frame.getX(), frame.getY());
 
         setLayout(new FlowLayout());
         LightweightComp lw = new LightweightComp("Click here to dispose");
