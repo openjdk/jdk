@@ -599,7 +599,11 @@ public class TestDependencyOffsets {
 
     static record CPUConstraintForType(String description, String[] cpuFeatures, int platformVectorWidth) {}
 
-    static record Type (String name, int size, String value, String operator, String ir_node) {
+    static record Type (String name, int size, String value, String operator, String irNode) {
+        String letter() {
+            return name.substring(0, 1).toUpperCase();
+        }
+
         String generateInit() {
             return String.format("""
                        static void init(%s[] a, %s[] b) {
@@ -778,6 +782,7 @@ public class TestDependencyOffsets {
                 int byte_offset = offset * type.size;
 
                 // -XX:-AlignVector
+                IRRule r1 = new IRRule(type, constraint, type.irNode);
                 if (0 < byte_offset && byte_offset < constraint.platformVectorWidth) {
                     // Vectors have to be shorter to avoid cyclic dependency.
                     int log2 = 31 - Integer.numberOfLeadingZeros(offset);
@@ -787,6 +792,7 @@ public class TestDependencyOffsets {
                 } else {
                     // Expect maximal vector size
                 }
+                r1.generate(builder);
             }
             return builder.toString();
         }
@@ -804,5 +810,57 @@ public class TestDependencyOffsets {
         }
 
         return tests;
+    }
+
+    static class IRRule {
+        Type type;
+        CPUConstraintForType constraint;
+        String irNode;
+        String size;
+
+        IRRule(Type type, CPUConstraintForType constraint, String irNode) {
+            this.type = type;
+            this.constraint = constraint;
+            this.irNode = irNode;
+            this.size = null;
+        }
+
+        void setSize(String size) {
+            this.size = size;
+	}
+
+        void generate(StringBuilder builder) {
+            builder.append(counts());
+
+            // TODO other conditions
+
+            // cpu features
+            builder.append("        applyIfCPUFeature");
+            builder.append(constraint.cpuFeatures.length > 2 ? "And" : "");
+            builder.append(" = {");
+            builder.append(Arrays.stream(constraint.cpuFeatures).map(c -> "\"" + c + "\"")
+                                                                .collect(Collectors.joining(", ")));
+            builder.append("})");
+        }
+
+        String counts() {
+            if (size == null) {
+               return String.format("""
+                       @IR(counts = {IRNode.LOAD_VECTOR_%s, ">0",
+                                     IRNode.%s, ">0",
+                                     IRNode.STORE_VECTOR, ">0"},
+                   """,
+                   type.letter(),
+                   irNode);
+            } else {
+               return String.format("""
+                       @IR(counts = {IRNode.LOAD_VECTOR_%s, IRNode.VECTOR_SIZE + "%s", ">0",
+                                     IRNode.%s, IRNode.VECTOR_SIZE + "%s", ">0",
+                                     IRNode.STORE_VECTOR, ">0"},
+                   """,
+                   type.letter(), size,
+                   irNode, size);
+            }
+        }
     }
 }
