@@ -78,7 +78,7 @@ public class SystemMapTestBase {
     private static final String winbase = range + space + someSize + space + winprot + space;
 
     private static final String winimage     = winbase + "c-img" + space + someNumber + space;
-    private static final String wincommitted = winbase + "c-pvt" + space + someNumber + space;
+    private static final String wincommitted = winbase + "(c-pvt|c-map)" + space + someNumber + space;
     private static final String winreserved  = winbase + "r-pvt" + space + someNumber + space;
 
     private static final String shouldMatchUnconditionally_windows[] = {
