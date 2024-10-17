@@ -597,6 +597,8 @@ public class TestDependencyOffsets {
         comp.invoke("InnerTest", "main", new Object[] {null});
     }
 
+    static record CPUConstraintForType(String name, String[] cpuFeatures, int platformVectorWidth) {}
+
     static record Type (String name, int size, String value, String operator, String ir_node) {
         String generateInit() {
             return String.format("""
@@ -623,6 +625,41 @@ public class TestDependencyOffsets {
                        }
                    """,
                    name, name, name, name);
+        }
+
+        /*
+         * On every platform (identified by CPU features), and every type, we know that MaxVectorSize <= platformVectorWidth.
+         * Note, that on some platform, the platformVectorWidth for different types may be different:
+         * Example: avx has 16 for int, but 32 for float.
+         */
+        List<CPUConstraintForType> cpuConstraints() {
+            List<CPUConstraintForType> constraints = new ArrayList<CPUConstraintForType>();
+
+            //                                           Name for the platform              CPU features that identify this platform           Platform vector witdth
+            switch(name) {
+            case "byte", "char", "short":
+                constraints.add(new CPUConstraintForType("sse4.1 to avx",                   new String[]{"sse4.1", "true", "avx2", "false"},   16));
+                constraints.add(new CPUConstraintForType("avx2 to avx512 without avx512bw", new String[]{"avx2", "true", "avx512bw", "false"}, 32));
+                constraints.add(new CPUConstraintForType("avx512bw",                        new String[]{"avx512bw", "true"},                  64));
+                break;
+            case "float", "double":
+                constraints.add(new CPUConstraintForType("sse4.1",                          new String[]{"sse4.1", "true", "avx", "false"},    16));
+                constraints.add(new CPUConstraintForType("avx and avx2",                    new String[]{"avx", "true", "avx512", "false"},    32));
+                constraints.add(new CPUConstraintForType("avx512",                          new String[]{"avx512", "true"},                    64));
+                break;
+            case "int", "long":
+                constraints.add(new CPUConstraintForType("sse4.1 to avx",                   new String[]{"sse4.1", "true", "avx2", "false"},   16));
+                constraints.add(new CPUConstraintForType("avx2",                            new String[]{"avx2", "true", "avx512", "false"},   32));
+                constraints.add(new CPUConstraintForType("avx512",                          new String[]{"avx512", "true"},                    64));
+                break;
+            default:
+                throw new RuntimeException("Unexpected type name " + name);
+            }
+
+            constraints.add(new CPUConstraintForType(    "asimd",                           new String[]{"asimd", "true", "sve", "false"},     16));
+            constraints.add(new CPUConstraintForType(    "sve",                             new String[]{"sve", "true"},                       256));
+
+            return constraints;
         }
     }
 
