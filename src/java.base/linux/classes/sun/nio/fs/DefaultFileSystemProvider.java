@@ -50,4 +50,12 @@ public class DefaultFileSystemProvider {
     public static FileSystem theFileSystem() {
         return INSTANCE.theFileSystem();
     }
+
+    /**
+     * This method is from java8 API to be compatible against runtime.
+     * Returns the default FileSystemProvider.
+     */
+    public static FileSystemProvider create() {
+        return INSTANCE;
+    }
 }
