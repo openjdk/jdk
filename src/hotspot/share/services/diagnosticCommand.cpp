@@ -129,6 +129,7 @@ void DCmd::register_dcmds(){
 #endif // INCLUDE_JVMTI
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ThreadDumpDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ThreadDumpToFileDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<VThreadSummaryDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ClassLoaderStatsDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ClassLoaderHierarchyDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CompileQueueDCmd>(full_export, true, false));
@@ -1123,7 +1124,6 @@ void ThreadDumpToFileDCmd::dumpToFile(Symbol* name, Symbol* signature, const cha
 
   Symbol* sym = vmSymbols::jdk_internal_vm_ThreadDumper();
   Klass* k = SystemDictionary::resolve_or_fail(sym, true, CHECK);
-  InstanceKlass* ik = InstanceKlass::cast(k);
   if (HAS_PENDING_EXCEPTION) {
     java_lang_Throwable::print(PENDING_EXCEPTION, output());
     output()->cr();
@@ -1140,6 +1140,46 @@ void ThreadDumpToFileDCmd::dumpToFile(Symbol* name, Symbol* signature, const cha
                          k,
                          name,
                          signature,
+                         &args,
+                         THREAD);
+  if (HAS_PENDING_EXCEPTION) {
+    java_lang_Throwable::print(PENDING_EXCEPTION, output());
+    output()->cr();
+    CLEAR_PENDING_EXCEPTION;
+    return;
+  }
+
+  // check that result is byte array
+  oop res = cast_to_oop(result.get_jobject());
+  assert(res->is_typeArray(), "just checking");
+  assert(TypeArrayKlass::cast(res->klass())->element_type() == T_BYTE, "just checking");
+
+  // copy the bytes to the output stream
+  typeArrayOop ba = typeArrayOop(res);
+  jbyte* addr = typeArrayOop(res)->byte_at_addr(0);
+  output()->print_raw((const char*)addr, ba->length());
+}
+
+void VThreadSummaryDCmd::execute(DCmdSource source, TRAPS) {
+  ResourceMark rm(THREAD);
+  HandleMark hm(THREAD);
+
+  Symbol* sym = vmSymbols::jdk_internal_vm_VThreadSummary();
+  Klass* k = SystemDictionary::resolve_or_fail(sym, true, CHECK);
+  if (HAS_PENDING_EXCEPTION) {
+    java_lang_Throwable::print(PENDING_EXCEPTION, output());
+    output()->cr();
+    CLEAR_PENDING_EXCEPTION;
+    return;
+  }
+
+  // invoke VThreadSummary.print method
+  JavaValue result(T_OBJECT);
+  JavaCallArguments args;
+  JavaCalls::call_static(&result,
+                         k,
+                         vmSymbols::print_name(),
+                         vmSymbols::void_byte_array_signature(),
                          &args,
                          THREAD);
   if (HAS_PENDING_EXCEPTION) {
