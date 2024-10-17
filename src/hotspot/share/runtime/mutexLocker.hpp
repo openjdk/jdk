@@ -28,6 +28,7 @@
 #include "memory/allocation.hpp"
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/mutex.hpp"
+#include "runtime/thread.hpp"
 
 // Mutexes used in the VM.
 
@@ -115,6 +116,7 @@ extern Mutex*   SharedDecoder_lock;              // serializes access to the dec
 extern Mutex*   DCmdFactory_lock;                // serialize access to DCmdFactory information
 extern Mutex*   NMTQuery_lock;                   // serialize NMT Dcmd queries
 extern Mutex*   NMTCompilationCostHistory_lock;  // guards NMT compilation cost history
+extern Mutex*   NmtVirtualMemory_lock;           // guards NMT virtual memory updates
 #if INCLUDE_CDS
 #if INCLUDE_JVMTI
 extern Mutex*   CDSClassFileStream_lock;         // FileMapInfo::open_stream_for_jvmti
