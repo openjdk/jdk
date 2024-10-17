@@ -41,7 +41,7 @@ public class FoldMultilinesTest {
     private static String XLOG_BASE = "-Xlog:exceptions=info:";
     private static String EXCEPTION_MESSAGE = "line 1\nline 2\\nstring";
     private static String FOLDED_EXCEPTION_MESSAGE = "line 1\\nline 2\\\\nstring";
-    private static Pattern NEWLINE_LOG_PATTERN = Pattern.compile("line 1\\R\\[[0-9]*\\.?[0-9]*s\\]\\[info\\]\\[exceptions\\] line 2\\\\nstring", Pattern.MULTILINE);
+    private static Pattern NEWLINE_LOG_PATTERN = Pattern.compile("line 1\\n\\[\\s+\\] line 2\\\\nstring", Pattern.MULTILINE);
 
     private static String getLog(String out, OutputAnalyzer output) throws Exception {
         return switch (out) {
@@ -63,8 +63,9 @@ public class FoldMultilinesTest {
     private static void analyzeFoldMultilinesOff(ProcessBuilder pb, String out) throws Exception {
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
-        if (!NEWLINE_LOG_PATTERN.matcher(getLog(out, output)).find()) {
-            throw new RuntimeException(out + ": foldmultilines=false did not work.");
+        String st = getLog(out, output);
+        if (!NEWLINE_LOG_PATTERN.matcher(st).find()) {
+            throw new RuntimeException(out + ": foldmultilines=false did not work." + st);
         }
     }
 
