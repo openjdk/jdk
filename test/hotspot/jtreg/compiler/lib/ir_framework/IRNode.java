@@ -249,46 +249,6 @@ public class IRNode {
         vectorNode(ADD_VL, "AddVL", TYPE_LONG);
     }
 
-    public static final String SADD_VB = VECTOR_PREFIX + "SADD_VB" + POSTFIX;
-    static {
-        vectorNode(SADD_VB, "SaturatingAddV", TYPE_BYTE);
-    }
-
-    public static final String SADD_VS = VECTOR_PREFIX + "SADD_VS" + POSTFIX;
-    static {
-        vectorNode(SADD_VS, "SaturatingAddV", TYPE_SHORT);
-    }
-
-    public static final String SADD_VI = VECTOR_PREFIX + "SADD_VI" + POSTFIX;
-    static {
-        vectorNode(SADD_VI, "SaturatingAddV", TYPE_INT);
-    }
-
-    public static final String SADD_VL = VECTOR_PREFIX + "SADD_VL" + POSTFIX;
-    static {
-        vectorNode(SADD_VL, "SaturatingAddV", TYPE_LONG);
-    }
-
-    public static final String SSUB_VB = VECTOR_PREFIX + "SSUB_VB" + POSTFIX;
-    static {
-        vectorNode(SSUB_VB, "SaturatingSubV", TYPE_BYTE);
-    }
-
-    public static final String SSUB_VS = VECTOR_PREFIX + "SSUB_VS" + POSTFIX;
-    static {
-        vectorNode(SSUB_VS, "SaturatingSubV", TYPE_SHORT);
-    }
-
-    public static final String SSUB_VI = VECTOR_PREFIX + "SSUB_VI" + POSTFIX;
-    static {
-        vectorNode(SSUB_VI, "SaturatingSubV", TYPE_INT);
-    }
-
-    public static final String SSUB_VL = VECTOR_PREFIX + "SSUB_VL" + POSTFIX;
-    static {
-        vectorNode(SSUB_VL, "SaturatingSubV", TYPE_LONG);
-    }
-
     public static final String ADD_REDUCTION_V = PREFIX + "ADD_REDUCTION_V" + POSTFIX;
     static {
         beforeMatchingNameRegex(ADD_REDUCTION_V, "AddReductionV(B|S|I|L|F|D)");
