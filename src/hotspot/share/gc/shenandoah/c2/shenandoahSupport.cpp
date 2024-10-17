@@ -1041,6 +1041,7 @@ void ShenandoahBarrierC2Support::fix_ctrl(Node* barrier, Node* region, const Mem
     Node* u = ctrl->fast_out(i);
     if (u->_idx < last &&
         u != barrier &&
+        !u->depends_only_on_test() && // preserve dependency on test
         !uses_to_ignore.member(u) &&
         (u->in(0) != ctrl || (!u->is_Region() && !u->is_Phi())) &&
         (ctrl->Opcode() != Op_CatchProj || u->Opcode() != Op_CreateEx)) {
