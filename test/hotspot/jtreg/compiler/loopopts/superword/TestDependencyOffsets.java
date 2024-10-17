@@ -528,12 +528,21 @@ public class TestDependencyOffsets {
                        framework.start();
                    }
 
+               // ------------------------- Init ---------------------------
+               %s
+
+               // ------------------------- Verify -------------------------
+               %s
+
+               // ------------------------- Tests --------------------------
                %s
                }
                """,
                SIZE,
                comp.getEscapedClassPathOfCompiledClasses(),
                Arrays.stream(flags).map(s -> "\"" + s + "\"").collect(Collectors.joining(", ")),
+               Arrays.stream(types).map(type -> type.generateInit()).collect(Collectors.joining("\n")),
+               Arrays.stream(types).map(type -> type.generateVerify()).collect(Collectors.joining("\n")),
                getTests().stream().map(test -> test.generate()).collect(Collectors.joining("\n")));
     }
 
@@ -588,7 +597,34 @@ public class TestDependencyOffsets {
         comp.invoke("InnerTest", "main", new Object[] {null});
     }
 
-    static record Type (String name, int size, String value, String operator, String ir_node) {}
+    static record Type (String name, int size, String value, String operator, String ir_node) {
+        String generateInit() {
+            return String.format("""
+                       static void init(%s[] a, %s[] b) {
+                           for (int i = 0; i < SIZE; i++) {
+                               a[i] = (%s)(2 * i);
+                               b[i] = (%s)(3 * i);
+                           }
+                       }
+                   """,
+                   name, name, name, name);
+        }
+
+        String generateVerify() {
+            return String.format("""
+                       static void verify(String context, %s[] aTest, %s[] bTest, %s[] aGold, %s[] bGold) {
+                           for (int i = 0; i < SIZE; i++) {
+                               if (aTest[i] != aGold[i] || bTest[i] != bGold[i]) {
+                                   throw new RuntimeException("Wrong result in " + context + " at i=" + i + ": " +
+                                                              "aTest=" + aTest[i] + ", aGold=" + aGold[i] +
+                                                              "bTest=" + bTest[i] + ", bGold=" + bGold[i]);
+                               }
+                           }
+                       }
+                   """,
+                   name, name, name, name);
+        }
+    }
 
     static Type[] types = new Type[] {
         new Type("int",    4, "-11",    "*", "MUL_VI"),
@@ -642,8 +678,19 @@ public class TestDependencyOffsets {
             int start = offset >= 0 ? 0 : -offset;
             String end = offset >=0 ? "SIZE - " + offset : "SIZE";
             return String.format("""
+                       // test%d: type=%s, offset=%d
+                       static %s[] aGold%d = new %s[SIZE];
+                       static %s[] bGold%d = new %s[SIZE];
+                       static %s[] aTest%d = new %s[SIZE];
+                       static %s[] bTest%d = new %s[SIZE];
+
+                       static {
+                           init(aGold%d, bGold%d);
+                           test%d(aGold%d, bGold%d);
+                       }
+
                        @Test
-                       public static void test%s(%s[] a, %s[] b) {
+                       public static void test%d(%s[] a, %s[] b) {
                            for (int i = %d; i < %s; i++) {
                                a[i + %d] = (%s)(%s[i] %s %s);
                            }
@@ -651,16 +698,25 @@ public class TestDependencyOffsets {
 
                        @Run(test = "test%s")
                        public static void run%s() {
-                           %s[] a = new %s[SIZE];
-                           // init
-                           test%s(a, a);
-                           // verify
+                           init(aTest%d, bTest%d);
+                           test%d(aTest%d, aTest%d);
+                           verify("test%d", aTest%d, bTest%d, aGold%d, bGold%d);
                        }
                    """,
+                   // title
+                   id, type.name, offset,
+                   // static
+                   type.name, id, type.name,
+                   type.name, id, type.name,
+                   type.name, id, type.name,
+                   type.name, id, type.name,
+                   id, id, id, id, id,
+                   // test
                    id, type.name, type.name,
                    start, end,
                    offset, type.name, "a", type.operator, type.value,
-                   id, id, type.name, type.name, id);
+                   // run
+                   id, id, id, id, id, id, id, id, id, id, id, id);
             // TODO a vs b
         }
     }
