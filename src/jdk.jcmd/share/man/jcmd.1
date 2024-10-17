@@ -973,14 +973,6 @@ Impact: Medium --- pause time depends on number of loaded classes
 If %p is specified in the filename, it is expanded to the JVM\[aq]s PID.
 (FILE, \[dq]java_pid%p_<subcmd>.jsa\[dq])
 .PP
-If \f[V]filename\f[R] is not specified, a default file name is chosen
-using the pid of the target JVM process.
-For example, java_pid1234_static.jsa, java_pid5678_dynamic.jsa, etc.
-.PP
-If \f[V]filename\f[R] is not specified as an absolute path, the archive
-file is created in a directory relative to the current directory of the
-target JVM process.
-.PP
 If \f[V]dynamic_dump\f[R] is specified, the target JVM must be started
 with the JVM option \f[V]-XX:+RecordDynamicDumpInfo\f[R].
 .RE
