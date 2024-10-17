@@ -583,10 +583,7 @@ JvmtiEnvBase::jvf_for_thread_and_depth(JavaThread* java_thread, jint depth) {
                       RegisterMap::WalkContinuation::include);
   javaVFrame *jvf = java_thread->last_java_vframe(&reg_map);
 
-  // There should not be any VTMS transition here. This is for safety.
-  if (java_thread->is_in_VTMS_transition()) {
-    jvf = JvmtiEnvBase::check_and_skip_hidden_frames(java_thread, jvf);
-  }
+  jvf = JvmtiEnvBase::check_and_skip_hidden_frames(java_thread, jvf);
   for (int d = 0; jvf != nullptr && d < depth; d++) {
     jvf = jvf->java_sender();
   }
@@ -656,7 +653,8 @@ JavaThread* JvmtiEnvBase::get_JavaThread_or_null(oop vthread) {
 
 javaVFrame*
 JvmtiEnvBase::skip_top_jvmti_annotated_frames(javaVFrame* jvf) {
-  // The yield and yield0 may appear in an unmounted continuation.
+  // The yield and yield0 may appear in an unmounted virtual thread.
+  // The notifyJvmti* may appear in both carrier or virtual threads.
   for ( ; jvf != nullptr && jvf->method()->jvmti_mount_transition(); jvf = jvf->java_sender()) {
     // skip frame with jvmti_mount_transition() annotated method
   }
@@ -688,8 +686,8 @@ JvmtiEnvBase::check_and_skip_hidden_frames(JavaThread* jt, javaVFrame* jvf) {
   bool is_virtual = java_lang_VirtualThread::is_instance(jt->jvmti_vthread());
 
   if (jt->is_in_VTMS_transition()) {
-    jvf = check_and_skip_hidden_frames(jt->is_in_VTMS_transition(), jvf);
-  } else if (is_virtual) { // filter out pure continuations
+    jvf = check_and_skip_hidden_frames(true, jvf);
+  } else if (is_virtual || jt->last_continuation() == nullptr) { // filter out pure continuations
     jvf = skip_top_jvmti_annotated_frames(jvf);
   }
   return jvf;
@@ -700,7 +698,7 @@ JvmtiEnvBase::check_and_skip_hidden_frames(oop vthread, javaVFrame* jvf) {
   assert(java_lang_VirtualThread::is_instance(vthread), "sanity check");
   if (java_lang_VirtualThread::is_instance(vthread)) { // paranoid check for safety
     if (java_lang_Thread::is_in_VTMS_transition(vthread)) {
-      jvf = check_and_skip_hidden_frames(java_lang_Thread::is_in_VTMS_transition(vthread), jvf);
+      jvf = check_and_skip_hidden_frames(true, jvf);
     } else {
       jvf = skip_top_jvmti_annotated_frames(jvf);
     }
@@ -746,12 +744,8 @@ JvmtiEnvBase::get_cthread_last_java_vframe(JavaThread* jt, RegisterMap* reg_map_
   javaVFrame *jvf = cthread_with_cont ? jt->carrier_last_java_vframe(reg_map_p)
                                       : jt->last_java_vframe(reg_map_p);
 
-  // There should not be any VTMS transition here. This is for safety.
-  if (jt->is_in_VTMS_transition()) {
-    // Skip hidden frames only for carrier threads
-    // which are in non-temporary VTMS transition.
-    jvf = check_and_skip_hidden_frames(jt, jvf);
-  }
+  // Skip hidden frames for carrier threads only.
+  jvf = check_and_skip_hidden_frames(jt, jvf);
   return jvf;
 }
 
@@ -2012,17 +2006,7 @@ void
 JvmtiHandshake::execute(JvmtiUnitedHandshakeClosure* hs_cl, jthread target) {
   JavaThread* current = JavaThread::current();
   HandleMark hm(current);
-  oop thread_oop = JNIHandles::resolve_external_guard(target);
-  bool is_virtual = java_lang_VirtualThread::is_instance(thread_oop);
-
-  // Target can be virtual or platform thread.
-  // Disable VTMS transition for one thread if it is virtual.
-  // Otherwise, disable VTMS transitions for all threads.
-  // For the latter, VTMS transitions are disabled for all threads by several reasons:
-  // - carrier threads can mount virtual threads which may cause incorrect behavior
-  // - it is a good invariant when a thread's handshake can't be impacted by a VTMS transition
-  // - there is no mechanism to disable transitions of a specific carrier thread yet
-  JvmtiVTMSTransitionDisabler disabler(is_virtual ? target : nullptr); // nullptr is to disable all
+  JvmtiVTMSTransitionDisabler disabler(target);
   ThreadsListHandle tlh(current);
   JavaThread* java_thread = nullptr;
   oop thread_obj = nullptr;

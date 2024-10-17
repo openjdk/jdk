@@ -265,6 +265,17 @@ JvmtiVTMSTransitionDisabler::JvmtiVTMSTransitionDisabler(jthread thread)
   if (!sync_protocol_enabled_permanently()) {
     JvmtiVTMSTransitionDisabler::inc_sync_protocol_enabled_count();
   }
+  oop thread_oop = JNIHandles::resolve_external_guard(thread);
+
+  // Target can be virtual or platform thread.
+  // If traget is a platform thread then we have to disable VTMS transitions for all threads.
+  // It is by several reasons:
+  // - carrier threads can mount virtual threads which may cause incorrect behavior
+  // - there is no mechanism to disable transitions for a specific carrier thread yet
+  if (!java_lang_VirtualThread::is_instance(thread_oop)) {
+    _thread = nullptr; // target is a platform thread, switch to disabling VTMS transitions for all threads
+  }
+
   if (_thread != nullptr) {
     VTMS_transition_disable_for_one(); // disable VTMS transitions for one virtual thread
   } else {
