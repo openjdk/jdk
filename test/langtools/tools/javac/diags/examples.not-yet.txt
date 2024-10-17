@@ -22,6 +22,7 @@ compiler.err.limit.pool.in.class                        # UNUSED?
 compiler.err.limit.stack                                # Code
 compiler.err.limit.string                               # Gen
 compiler.err.limit.string.overflow                      # JavaCompiler
+compiler.warn.proc.annotation.array.too.large           # Code
 compiler.err.module.non.zero.opens                      # bad class file
 compiler.err.name.reserved.for.internal.use             # UNUSED
 compiler.err.no.annotation.member
