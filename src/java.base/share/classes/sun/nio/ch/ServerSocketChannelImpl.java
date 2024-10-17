@@ -610,8 +610,15 @@ class ServerSocketChannelImpl
                     if (NativeThread.isVirtualThread(th)) {
                         Poller.stopPoll(fdVal);
                     } else {
-                        nd.preClose(fd);
-                        NativeThread.signal(th);
+                        boolean isAix = System.getProperty("os.name").startsWith("AIX");
+                        if (isAix) {
+                            NativeThread.signal(th);
+                            nd.preClose(fd);
+                        }
+                        else {
+                            nd.preClose(fd);
+                            NativeThread.signal(th);
+                        }
                     }
                 }
             }
