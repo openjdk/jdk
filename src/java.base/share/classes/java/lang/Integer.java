@@ -524,36 +524,31 @@ public final class Integer extends Number
          */
 
         if (s == null) {
-            throw new NumberFormatException("Cannot parse null string");
+            throw NumberFormatException.forNull();
         }
 
-        if (radix < Character.MIN_RADIX) {
-            throw new NumberFormatException(String.format(
-                "radix %s less than Character.MIN_RADIX", radix));
+        if (radix != 10 || !s.isLatin1()) {
+            return parseInt(s, 0, s.length(), radix);
         }
 
-        if (radix > Character.MAX_RADIX) {
-            throw new NumberFormatException(String.format(
-                "radix %s greater than Character.MAX_RADIX", radix));
-        }
-
-        int len = s.length();
+        byte[] value = s.value();
+        int len = value.length;
         if (len == 0) {
             throw NumberFormatException.forInputString("", radix);
         }
         int digit = ~0xFF;
         int i = 0;
-        char firstChar = s.charAt(i++);
+        byte firstChar = value[i++];
         if (firstChar != '-' && firstChar != '+') {
-            digit = digit(firstChar, radix);
+            digit = CharacterDataLatin1.digit(firstChar);
         }
         if (digit >= 0 || digit == ~0xFF && len > 1) {
             int limit = firstChar != '-' ? MIN_VALUE + 1 : MIN_VALUE;
-            int multmin = limit / radix;
+            int multmin = -214748364; // actual limit / 10;
             int result = -(digit & 0xFF);
             boolean inRange = true;
             /* Accumulating negatively avoids surprises near MAX_VALUE */
-            while (i < len && (digit = digit(s.charAt(i++), radix)) >= 0
+            while (i < len && (digit = CharacterDataLatin1.digit(value[i++])) >= 0
                     && (inRange = result > multmin
                         || result == multmin && digit <= radix * multmin - limit)) {
                 result = radix * result - digit;
