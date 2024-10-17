@@ -42,6 +42,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.constant.ReferenceClassDescImpl;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 
@@ -133,10 +134,10 @@ public class Util {
     }
 
     public static String toInternalName(ClassDesc cd) {
-        var desc = cd.descriptorString();
-        if (desc.charAt(0) == 'L')
-            return desc.substring(1, desc.length() - 1);
-        throw new IllegalArgumentException(desc);
+        if (cd instanceof ReferenceClassDescImpl rcd) {
+            return rcd.internalName();
+        }
+        throw new IllegalArgumentException(cd.descriptorString());
     }
 
     public static ClassDesc toClassDesc(String classInternalNameOrArrayDesc) {
@@ -319,15 +320,6 @@ public class Util {
 
     interface WritableLocalVariable {
         boolean writeLocalTo(BufWriterImpl buf);
-    }
-
-    /**
-     * Returns the hash code of an internal name given the class or interface L descriptor.
-     */
-    public static int internalNameHash(String desc) {
-        if (desc.length() > 0xffff)
-            throw new IllegalArgumentException("String too long: ".concat(Integer.toString(desc.length())));
-        return (desc.hashCode() - pow31(desc.length() - 1) * 'L' - ';') * INVERSE_31;
     }
 
     /**
