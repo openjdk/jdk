@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,7 @@ public class CloseFailedClientTest {
      */
     private static final int port = 999;
 
-    private static final String[] protocols = {"rmi", "iiop", "jmxmp"};
+    private static final String[] protocols = {"rmi", "http"};
 
     public static void main(String[] args) throws Exception {
         System.out.println("Test to close a failed client.");
@@ -113,7 +113,7 @@ public class CloseFailedClientTest {
             try {
                 connector.connect();
 
-                throw new RuntimeException("Do not get expected IOEeption.");
+                throw new RuntimeException("Did not get expected IOException.");
             } catch (IOException e) {
                 // OK, the expected IOException is thrown.");
             }
@@ -134,7 +134,7 @@ public class CloseFailedClientTest {
             try {
                 connector.connect();
 
-                throw new RuntimeException("Do not get expected IOEeption.");
+                throw new RuntimeException("Did not get expected IOException.");
             } catch (IOException e) {
                 // OK, the expected IOException is thrown.");
             }

@@ -61,7 +61,7 @@ public class BrokenConnectionTest {
 
         String failed = "";
 
-        final String[] protos = {"rmi", "jmxmp"};
+        final String[] protos = {"rmi", "http"};
 
         for (int i = 0; i < protos.length; i++) {
             final String proto = protos[i];

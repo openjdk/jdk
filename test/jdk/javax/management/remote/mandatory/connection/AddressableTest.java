@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,22 +41,10 @@ import javax.management.remote.*;
 import javax.management.remote.rmi.*;
 
 public class AddressableTest {
-    private static final String[] protocols = {"rmi", "iiop"};
-    private static final String[] prefixes = {"stub", "ior"};
+    private static final String[] protocols = {"rmi", "http"};
+    private static final String[] prefixes = {"stub", "n/a"};
 
     private static final MBeanServer mbs = MBeanServerFactory.createMBeanServer();
-
-    private static boolean isProtocolSupported(String protocol) {
-        if (protocol.equals("rmi"))
-            return true;
-        if (protocol.equals("iiop")) {
-            try {
-                Class.forName("javax.management.remote.rmi._RMIConnectionImpl_Tie");
-                return true;
-            } catch (ClassNotFoundException x) { }
-        }
-        return false;
-    }
 
     public static void main(String[] args) throws Exception {
         System.out.println(">>> test the new interface Addressable.");
@@ -64,18 +52,13 @@ public class AddressableTest {
 
         for (int i = 0; i < protocols.length; i++) {
             String protocol = protocols[i];
-            if (isProtocolSupported(protocol)) {
-                try {
-                    test(protocol, prefixes[i]);
-                    System.out.println(">>> Test successed for "+protocols[i]);
-                } catch (Exception e) {
-                    System.out.println(">>> Test failed for "+protocols[i]);
-                    e.printStackTrace(System.out);
-                    ok = false;
-                }
-            } else {
-                System.out.format(">>> Test skipped for %s, protocol not supported%n",
-                    protocol);
+            try {
+                test(protocol, prefixes[i]);
+                System.out.println(">>> Test successed for "+protocols[i]);
+            } catch (Exception e) {
+                System.out.println(">>> Test failed for "+protocols[i]);
+                e.printStackTrace(System.out);
+                ok = false;
             }
         }
 
@@ -109,7 +92,9 @@ public class AddressableTest {
         int i = clientAddr1.toString().indexOf(prefix);
 
         JMXServiceURL clientAddr2 =
-            new JMXServiceURL("service:jmx:"+proto+":///"+clientAddr1.toString().substring(i));
+            proto.equals("rmi") ? new JMXServiceURL("service:jmx:" + proto + ":///" + clientAddr1.toString().substring(i))
+                                : new JMXServiceURL("service:jmx:" + proto + "://" + clientAddr1.getHost() + ":"
+                                  + clientAddr1.getPort() + clientAddr1.getURLPath());
 
         JMXConnector client2 = JMXConnectorFactory.connect(clientAddr2);
 

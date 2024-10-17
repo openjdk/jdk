@@ -25,6 +25,7 @@
 
 package javax.management.remote.http;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
@@ -48,6 +49,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.management.*;
 import javax.management.MBeanServerConnection;
@@ -71,7 +73,7 @@ import jdk.internal.management.remote.rest.mapper.JSONMappingFactory;
 /**
  * Implementation of MBeanServerConnection using HTTP as a transport.
  */
-public class HttpRestConnection implements MBeanServerConnection {
+public class HttpRestConnection implements MBeanServerConnection, Closeable {
 
     protected String baseURL;
     protected Map<String,?> env;
@@ -79,6 +81,7 @@ public class HttpRestConnection implements MBeanServerConnection {
     protected String defaultDomain;
     protected String[] domains;
     protected int mBeanCount;
+    protected String connectionId;
 
     // ObjectNames map to URLs and JSONObjects:
     protected HashMap<ObjectName,String> objectRefMap;
@@ -87,6 +90,7 @@ public class HttpRestConnection implements MBeanServerConnection {
     protected HashMap<ObjectName,JSONObject> objectInfoMap;
 
     private static final String CHARSET = "UTF-8";
+    private static AtomicInteger id = new AtomicInteger(0); 
 
     /**
      * Construct given a base URL and env.
@@ -99,6 +103,8 @@ public class HttpRestConnection implements MBeanServerConnection {
         objectMap = new HashMap<ObjectName, JSONObject>();
         objectInfoRefMap = new HashMap<ObjectName,String>();
         objectInfoMap = new HashMap<ObjectName, JSONObject>();
+        connectionId = Integer.toString(id.incrementAndGet());
+
         System.err.println("XXXX HttpRestConnection created on baseURL " + baseURL);
     }
 
@@ -142,6 +148,14 @@ private static void printStack(Thread t, StackTraceElement[] stack) {
         }
         readMBeans();
     }
+
+    public void close() throws IOException {
+        // Consider a terminated flag like RMIConnectionImpl.
+    }
+
+     public String getConnectionId() throws IOException {
+         return baseURL + " " + connectionId;
+     }
 
     protected void readMBeans() throws IOException {
         // Fetch jmx/servers/platform/mbeans
@@ -920,7 +934,7 @@ private static void printStack(Thread t, StackTraceElement[] stack) {
                             for (JSONElement json : j) {
                                 if (json != null && json instanceof JSONObject) {
                                     Notification n = decodeNotification((JSONObject) json);
-                                    System.err.println("HttpRestConnection NotifPollder got: " + n);
+                                    System.err.println("HttpRestConnection NotifPoller got: " + n);
                                     listener.handleNotification(n, handback);
                                 }
                             }
@@ -948,7 +962,24 @@ private static void printStack(Thread t, StackTraceElement[] stack) {
         long sequenceNumber = JSONObject.getObjectFieldLong(json, "sequenceNumber");
         long timeStamp = JSONObject.getObjectFieldLong(json, "timeStamp");
         String message = JSONObject.getObjectFieldString(json, "message");
-        Notification n = new Notification(type, source, sequenceNumber, timeStamp, message);
+        ObjectName objectName = null;
+        try {
+            objectName = new ObjectName(source);
+        } catch (MalformedObjectNameException mone) { 
+            mone.printStackTrace(System.err);
+        }
+        Notification n = null;
+
+        switch (type) { 
+            case "JMX.mbean.registered": {
+                n = new javax.management.MBeanServerNotification(type, source, sequenceNumber, objectName);
+                break;
+            }
+            default: {
+                n = new Notification(type, source, sequenceNumber, timeStamp, message);
+            }
+        }
+
         return n;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,7 +72,7 @@ public class ConnectionTest {
 //      // we are in <workspace>/build/test/JTwork/scratch
 //      java.util.logging.LogManager.getLogManager().readConfiguration();
         boolean ok = true;
-        String[] protocols = {"rmi", "iiop", "jmxmp"};
+        String[] protocols = {"rmi", "http"};
         if (args.length > 0)
             protocols = args;
         for (int i = 0; i < protocols.length; i++) {

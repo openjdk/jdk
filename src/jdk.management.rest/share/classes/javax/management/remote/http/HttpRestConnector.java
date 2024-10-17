@@ -25,7 +25,8 @@
 
 package javax.management.remote.http;
 
-import java.io.*;
+import java.io.Closeable;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import javax.management.*;
@@ -38,7 +39,7 @@ import java.net.MalformedURLException;
  * src/java.management.rmi/share/classes/javax/management/remote/rmi/RMIConnection.java
  * src/java.management.rmi/share/classes/javax/management/remote/rmi/RMIConnectionImpl.java
  */
-public class HttpRestConnector implements JMXConnector {
+public class HttpRestConnector implements JMXConnector, JMXAddressable, Closeable {
 
     protected boolean connected;
     protected JMXServiceURL url;
@@ -66,12 +67,16 @@ public class HttpRestConnector implements JMXConnector {
         // or rebuild from host/port/protocol
 
         String path = url.getURLPath(); // e.g. /jmx/servers/platform
-        System.err.println("ZZZZZZ path=" + path);
 
         if (path.isEmpty()) {
             path = "/jmx/servers/platform";
             baseURL = baseURL + path;
         }
+    }
+
+    public JMXServiceURL getAddress() {
+        // JMXAddressable interface
+        return url;
     }
 
     public void connect() throws IOException {
@@ -82,6 +87,7 @@ public class HttpRestConnector implements JMXConnector {
         if (connected) {
             return;
         }
+        System.err.println("XXX HttpRestConnector.connect " + baseURL);
         connection = new HttpRestConnection(baseURL, env); 
         connection.setup();
         connected = true;
@@ -95,9 +101,8 @@ public class HttpRestConnector implements JMXConnector {
     }
 
     public void close() throws IOException {
-        if (!connected) {
-            throw new IOException("Not connected");
-        }
+        // test/jdk/javax/management/remote/mandatory/connection/CloseFailedClientTest
+        // closes a Connector that failed to connect, and expects no IOException.
         connected = false;
     }
 
@@ -105,11 +110,17 @@ public class HttpRestConnector implements JMXConnector {
                                           NotificationFilter filter,
                                           Object handback) {
 
+        if (listener == null) {
+            throw new NullPointerException("listener");
+        }
     }
 
     public void removeConnectionNotificationListener(NotificationListener listener)
             throws ListenerNotFoundException {
 
+        if (listener == null) {
+            throw new NullPointerException("listener");
+        }
     }
 
     public void removeConnectionNotificationListener(NotificationListener l,
@@ -117,12 +128,15 @@ public class HttpRestConnector implements JMXConnector {
                                                      Object handback)
             throws ListenerNotFoundException {
 
+        if (l == null) {
+            throw new NullPointerException("listener");
+        }
     }
 
     public String getConnectionId() throws IOException {
         if (!connected) {
             throw new IOException("Not connected");
         }
-        return null;
+        return connection.getConnectionId();
     }
 }

@@ -83,8 +83,8 @@ public class CloseableTest {
             test(c);
         }
 
-        // Stub classes not present if RMI-IIOP not supported
-        test("org.omg.stub.javax.management.remote.rmi._RMIConnection_Stub");
+        test("javax.management.remote.http.HttpRestConnector");
+        test("javax.management.remote.http.HttpRestConnection");
 
         if (error > 0) {
             final String msg = "\nTest FAILED! Got " + error + " error(s)";
