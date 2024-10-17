@@ -2363,16 +2363,14 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-  void generate_aes_decrypt(const VectorRegister &res, const VectorRegister &vzero,
-    const VectorRegister &vtemp, VectorRegister *working_vregs, int reg_number) {
-    assert(reg_number <= 14, "reg_number should be less than or equal to working_vregs size");
+  void generate_aes_decrypt(const VectorRegister &res, VectorRegister *working_vregs, int reg_number) {
+    assert(reg_number <= 15, "reg_number should be less than or equal to working_vregs size");
 
-    for (int i = 0; i < reg_number; i++) {
-      __ vxor_vv(res, res, working_vregs[i]);
-      __ vaesdm_vv(res, vzero);
-    }
     __ vxor_vv(res, res, working_vregs[reg_number]);
-    __ vaesdf_vv(res, vtemp);
+    for (int i = reg_number - 1; i > 0; i--) {
+      __ vaesdm_vv(res, working_vregs[i]);
+    }
+    __ vaesdf_vv(res, working_vregs[0]);
   }
 
   // Arguments:
@@ -2397,11 +2395,9 @@ class StubGenerator: public StubCodeGenerator {
 
     VectorRegister working_vregs[] = {
       v4, v5, v6, v7, v8, v9, v10, v11,
-      v12, v13, v14, v15, v16, v17
+      v12, v13, v14, v15, v16, v17, v18
     };
-    const VectorRegister res   = v18;
-    const VectorRegister vzero = v19;
-    const VectorRegister vtemp = v20;
+    const VectorRegister res   = v19;
 
     address start = __ pc();
     __ enter(); // required for proper stackwalking of RuntimeStub frame
@@ -2410,40 +2406,33 @@ class StubGenerator: public StubCodeGenerator {
 
     __ vsetivli(x0, 4, Assembler::e32, Assembler::m1);
     __ vle32_v(res, from);
-    __ vmv_v_x(vzero, zr);
-    __ vle32_v(vtemp, key);
-    __ addi(key, key, 16);
-    __ vrev8_v(vtemp, vtemp);
 
     __ mv(t2, 52);
     __ blt(keylen, t2, L_do44);
     __ beq(keylen, t2, L_do52);
     // Else we fallthrough to the biggest case (256-bit key size)
 
-    // Note: the following function performs key += 14*16
-    generate_aes_loadkeys(key, working_vregs, 14);
-    generate_aes_decrypt(res, vzero, vtemp, working_vregs, 13);
-
+    // Note: the following function performs key += 15*16
+    generate_aes_loadkeys(key, working_vregs, 15);
+    generate_aes_decrypt(res, working_vregs, 14);
     __ vse32_v(res, to);
     __ mv(c_rarg0, 0);
     __ leave();
     __ ret();
 
   __ bind(L_do52);
-    // Note: the following function performs key += 12*16
-    generate_aes_loadkeys(key, working_vregs, 12);
-    generate_aes_decrypt(res, vzero, vtemp, working_vregs, 11);
-
+    // Note: the following function performs key += 13*16
+    generate_aes_loadkeys(key, working_vregs, 13);
+    generate_aes_decrypt(res, working_vregs, 12);
     __ vse32_v(res, to);
     __ mv(c_rarg0, 0);
     __ leave();
     __ ret();
 
   __ bind(L_do44);
-    // Note: the following function performs key += 10*16
-    generate_aes_loadkeys(key, working_vregs, 10);
-    generate_aes_decrypt(res, vzero, vtemp, working_vregs, 9);
-
+    // Note: the following function performs key += 11*16
+    generate_aes_loadkeys(key, working_vregs, 11);
+    generate_aes_decrypt(res, working_vregs, 10);
     __ vse32_v(res, to);
     __ mv(c_rarg0, 0);
     __ leave();
