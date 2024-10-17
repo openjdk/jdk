@@ -180,8 +180,8 @@
   }
 
   // Does the CPU supports doubleword multiplication with quadword saturation.
-  static constexpr bool supports_double_word_mult_with_quadword_staturation(void) {
-    return true;
+  static bool supports_doubleword_mult_with_quadword_staturation(void) {
+    return UseAVX > 0;
   }
 
   // Some microarchitectures have mask registers used on vectors

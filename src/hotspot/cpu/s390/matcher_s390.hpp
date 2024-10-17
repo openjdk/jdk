@@ -145,7 +145,7 @@
   }
 
   // Does the CPU supports doubleword multiplication with quadword saturation.
-  static constexpr bool supports_double_word_mult_with_quadword_staturation(void) {
+  static constexpr bool supports_doubleword_mult_with_quadword_staturation(void) {
     return false;
   }
 
