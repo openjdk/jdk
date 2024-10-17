@@ -51,11 +51,11 @@ class ResourceArea: public Arena {
 #endif // ASSERT
 
 public:
-  ResourceArea(MEMFLAGS flags = mtThread) :
-    Arena(flags, Arena::Tag::tag_ra) DEBUG_ONLY(COMMA _nesting(0)) {}
+  ResourceArea(MemTag mem_tag = mtThread) :
+    Arena(mem_tag, Arena::Tag::tag_ra) DEBUG_ONLY(COMMA _nesting(0)) {}
 
-  ResourceArea(size_t init_size, MEMFLAGS flags = mtThread) :
-    Arena(flags, Arena::Tag::tag_ra, init_size) DEBUG_ONLY(COMMA _nesting(0)) {
+  ResourceArea(size_t init_size, MemTag mem_tag = mtThread) :
+    Arena(mem_tag, Arena::Tag::tag_ra, init_size) DEBUG_ONLY(COMMA _nesting(0)) {
   }
 
   char* allocate_bytes(size_t size, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);

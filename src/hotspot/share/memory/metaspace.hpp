@@ -110,12 +110,12 @@ public:
   static size_t max_allocation_word_size();
 
   static MetaWord* allocate(ClassLoaderData* loader_data, size_t word_size,
-                            MetaspaceObj::Type type, TRAPS);
+                            MetaspaceObj::Type type, bool use_class_space, TRAPS);
 
   // Non-TRAPS version of allocate which can be called by a non-Java thread, that returns
   // null on failure.
   static MetaWord* allocate(ClassLoaderData* loader_data, size_t word_size,
-                            MetaspaceObj::Type type);
+                            MetaspaceObj::Type type, bool use_class_space);
 
   // Returns true if the pointer points into class space, non-class metaspace, or the
   // metadata portion of the CDS archive.

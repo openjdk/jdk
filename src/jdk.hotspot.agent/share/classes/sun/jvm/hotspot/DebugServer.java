@@ -28,6 +28,7 @@ import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.oops.*;
 
+@Deprecated(since="24", forRemoval=true)
 public class DebugServer {
   private void usage() {
     System.out.println("usage: java " + getClass().getName() + " <pid> [server id]");
@@ -42,9 +43,11 @@ public class DebugServer {
   }
 
   public static void main(String[] args) {
+    System.err.println("WARNING: DebugServer is deprecated and will be removed in a future release.");
     new DebugServer().run(args);
   }
 
+  @SuppressWarnings("removal")
   private void run(String[] args) {
     if ((args.length < 1) || (args.length > 3)) {
       usage();
