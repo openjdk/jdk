@@ -34,9 +34,11 @@ import jdk.internal.classfile.impl.Util;
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * Models a {@code monitorenter} or {@code monitorexit} instruction in the
- * {@code code} array of a {@code Code} attribute.  Delivered as a {@link
- * CodeElement} when traversing the elements of a {@link CodeModel}.
+ * Models a {@link Opcode#MONITORENTER monitorenter} or {@link Opcode#MONITOREXIT
+ * monitorexit} instruction in the {@code code} array of a {@code Code} attribute.
+ * Corresponding opcodes have a {@linkplain Opcode#kind() kind} of {@link
+ * Opcode.Kind#MONITOR}.  Delivered as a {@link CodeElement} when traversing the
+ * elements of a {@link CodeModel}.
  *
  * @since 22
  */

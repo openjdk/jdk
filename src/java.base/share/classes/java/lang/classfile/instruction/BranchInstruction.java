@@ -24,6 +24,8 @@
  */
 package java.lang.classfile.instruction;
 
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.CodeElement;
 import java.lang.classfile.CodeModel;
 import java.lang.classfile.Instruction;
@@ -36,9 +38,13 @@ import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models a branching instruction (conditional or unconditional) in the {@code
- * code} array of a {@code Code} attribute.  Corresponding opcodes will have a
- * {@code kind} of {@link Opcode.Kind#BRANCH}.  Delivered as a {@link
- * CodeElement} when traversing the elements of a {@link CodeModel}.
+ * code} array of a {@code Code} attribute.  Corresponding opcodes have a
+ * {@linkplain Opcode#kind() kind} of {@link Opcode.Kind#BRANCH}.  Delivered as
+ * a {@link CodeElement} when traversing the elements of a {@link CodeModel}.
+ * <p>
+ * A branch instruction may be rewritten in a {@link CodeBuilder} if the {@link
+ * #target() target} cannot be encoded and the {@link ClassFile.ShortJumpsOption#FIX_SHORT_JUMPS
+ * FIX_SHORT_JUMPS} option is set.
  *
  * @since 22
  */
@@ -58,7 +64,7 @@ public sealed interface BranchInstruction extends Instruction
      *           which must be of kind {@link Opcode.Kind#BRANCH}
      * @param target the target of the branch
      * @throws IllegalArgumentException if the opcode kind is not
-     *         {@link Opcode.Kind#BRANCH}.
+     *         {@link Opcode.Kind#BRANCH}
      */
     static BranchInstruction of(Opcode op, Label target) {
         Util.checkKind(op, Opcode.Kind.BRANCH);

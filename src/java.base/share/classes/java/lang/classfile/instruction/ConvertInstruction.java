@@ -37,9 +37,9 @@ import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models a primitive conversion instruction in the {@code code} array of a
- * {@code Code} attribute, such as {@code i2l}.  Corresponding opcodes will have
- * a {@code kind} of {@link Opcode.Kind#CONVERT}.  Delivered as a {@link
- * CodeElement} when traversing the elements of a {@link CodeModel}.
+ * {@code Code} attribute, such as {@link Opcode#I2L i2l}.  Corresponding opcodes
+ * have a {@linkplain Opcode#kind() kind} of {@link Opcode.Kind#CONVERT}.
+ * Delivered as a {@link CodeElement} when traversing the elements of a {@link CodeModel}.
  *
  * @since 22
  */
@@ -57,10 +57,20 @@ public sealed interface ConvertInstruction extends Instruction
     TypeKind toType();
 
     /**
-     * {@return A conversion instruction}
+     * {@return a conversion instruction} The valid conversions are:
+     * <ul>
+     * <li>{@code fromType} and {@code toType} are both one of {@link TypeKind#INT
+     * int}, {@link TypeKind#LONG long}, {@link TypeKind#FLOAT float}, {@link
+     * TypeKind#DOUBLE double}, and {@code fromType} is different than {@code toType};
+     * <li>{@code fromType} is {@code int}, and {@code toType} is one of
+     * {@link TypeKind#BYTE byte}, {@link TypeKind#SHORT short}, or {@link
+     * TypeKind#CHAR char}.
+     * </ul>
      *
      * @param fromType the type to convert from
      * @param toType the type to convert to
+     * @throws IllegalArgumentException if there is no single instruction
+     *         converting {@code from} to {@code to}
      */
     static ConvertInstruction of(TypeKind fromType, TypeKind toType) {
         return of(BytecodeHelpers.convertOpcode(fromType, toType));

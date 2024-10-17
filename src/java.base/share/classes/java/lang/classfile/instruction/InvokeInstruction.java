@@ -43,9 +43,9 @@ import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models a method invocation instruction in the {@code code} array of a {@code
- * Code} attribute, other than {@code invokedynamic}.  Corresponding opcodes
- * will have a {@code kind} of {@link Opcode.Kind#INVOKE}.  Delivered as a
- * {@link CodeElement} when traversing the elements of a {@link CodeModel}.
+ * Code} attribute, other than {@link InvokeDynamicInstruction invokedynamic}.
+ * Corresponding opcodes have a {@linkplain Opcode#kind() kind} of {@link Opcode.Kind#INVOKE}.
+ * Delivered as a {@link CodeElement} when traversing the elements of a {@link CodeModel}.
  *
  * @since 22
  */
@@ -64,8 +64,10 @@ public sealed interface InvokeInstruction extends Instruction
     boolean isInterface();
 
     /**
-     * {@return the {@code count} value of an {@code invokeinterface} instruction, as defined in JVMS {@jvms 6.5}
+     * {@return the {@code count} value of an {@link Opcode#INVOKEINTERFACE invokeinterface} instruction,
      * or {@code 0} for {@code invokespecial}, {@code invokestatic} and {@code invokevirtual} instructions}
+     *
+     * @jvms 6.5.invokeinterface invokeinterface
      */
     int count();
 

@@ -28,15 +28,16 @@ import java.lang.classfile.CodeElement;
 import java.lang.classfile.CodeModel;
 import java.lang.classfile.Instruction;
 import java.lang.classfile.Label;
+import java.lang.classfile.Opcode;
 import java.util.List;
 
 import jdk.internal.classfile.impl.AbstractInstruction;
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * Models a {@code lookupswitch} instruction in the {@code code} array of a
- * {@code Code} attribute.  Delivered as a {@link CodeElement} when traversing
- * the elements of a {@link CodeModel}.
+ * Models a {@link Opcode#LOOKUPSWITCH lookupswitch} instruction in the {@code
+ * code} array of a {@code Code} attribute.  Delivered as a {@link CodeElement}
+ * when traversing the elements of a {@link CodeModel}.
  *
  * @since 22
  */

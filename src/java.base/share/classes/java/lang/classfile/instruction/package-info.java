@@ -26,7 +26,13 @@
 /**
  * <h2>Provides interfaces describing code instructions for the {@link java.lang.classfile} library.</h2>
  *
- * The {@code java.lang.classfile.attribute} package contains interfaces describing code instructions.
+ * The {@code java.lang.classfile.instruction} package contains interfaces describing code instructions.
+ * <p>
+ * Unless otherwise noted, passing a {@code null} argument to a constructor
+ * or method of any Class-File API class or interface will cause a {@link
+ * java.lang.NullPointerException NullPointerException} to be thrown. Additionally,
+ * invoking a method with an array or collection containing a {@code null} element
+ * will cause a {@code NullPointerException}, unless otherwise specified. </p>
  *
  * @since 22
  */

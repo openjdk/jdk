@@ -37,9 +37,10 @@ import jdk.internal.classfile.impl.Util;
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * Models an {@code instanceof} or {@code checkcast} instruction in the {@code
- * code} array of a {@code Code} attribute.  Delivered as a {@link CodeElement}
- * when traversing the elements of a {@link CodeModel}.
+ * Models an {@link Opcode#INSTANCEOF instanceof} or a {@link Opcode#CHECKCAST checkcast}
+ * instruction in the {@code code} array of a {@code Code} attribute.  Corresponding
+ * opcodes have a {@linkplain Opcode#kind() kind} of {@link Opcode.Kind#TYPE_CHECK}.
+ * Delivered as a {@link CodeElement} when traversing the elements of a {@link CodeModel}.
  *
  * @since 22
  */

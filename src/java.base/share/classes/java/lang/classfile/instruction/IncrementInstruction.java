@@ -34,8 +34,8 @@ import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models a local variable increment instruction in the {@code code} array of a
- * {@code Code} attribute.  Corresponding opcodes will have a {@code kind} of
- * {@link Opcode.Kind#INCREMENT}.  Delivered as a {@link CodeElement} when
+ * {@code Code} attribute.  Corresponding opcodes have a {@linkplain Opcode#kind()
+ * kind} of {@link Opcode.Kind#INCREMENT}.  Delivered as a {@link CodeElement} when
  * traversing the elements of a {@link CodeModel}.
  *
  * @since 22

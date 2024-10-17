@@ -41,8 +41,8 @@ import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models a field access instruction in the {@code code} array of a {@code Code}
- * attribute.  Corresponding opcodes will have a {@code kind} of {@link
- * Opcode.Kind#FIELD_ACCESS}.  Delivered as a {@link CodeElement} when
+ * attribute.  Corresponding opcodes have a {@linkplain Opcode#kind() kind}
+ * of {@link Opcode.Kind#FIELD_ACCESS}.  Delivered as a {@link CodeElement} when
  * traversing the elements of a {@link CodeModel}.
  *
  * @since 22

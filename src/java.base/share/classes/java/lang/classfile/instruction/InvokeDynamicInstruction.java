@@ -27,6 +27,7 @@ package java.lang.classfile.instruction;
 import java.lang.classfile.CodeElement;
 import java.lang.classfile.CodeModel;
 import java.lang.classfile.Instruction;
+import java.lang.classfile.Opcode;
 import java.lang.classfile.constantpool.InvokeDynamicEntry;
 import java.lang.classfile.constantpool.LoadableConstantEntry;
 import java.lang.classfile.constantpool.Utf8Entry;
@@ -41,9 +42,9 @@ import jdk.internal.classfile.impl.Util;
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * Models an {@code invokedynamic} instruction in the {@code code} array of a
- * {@code Code} attribute.  Delivered as a {@link CodeElement} when traversing
- * the elements of a {@link CodeModel}.
+ * Models an {@link Opcode#INVOKEDYNAMIC invokedynamic} instruction in the {@code
+ * code} array of a {@code Code} attribute.  Delivered as a {@link CodeElement}
+ * when traversing the elements of a {@link CodeModel}.
  *
  * @since 22
  */
