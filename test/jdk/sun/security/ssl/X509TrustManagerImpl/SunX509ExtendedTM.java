@@ -540,7 +540,7 @@ import java.math.BigInteger;
  * 0AtPzQLr3iBOYEhO6q08Dx2/Gmk9qD2L9aKujE/XDrPhm7MsiRkY2tvhbdWryLhI
  * V9iLMwHUl5HZ2jSh7zYA4TgZNI8NR69Xz1nWiw2eiQWCPTzzRR1KPw4PWihvXOHp
  * YHKHKLaXRIvXxs3L3FpdYPG0N+5E2w==
- *
+ * -----END CERTIFICATE---
  */
 
 public class SunX509ExtendedTM {
