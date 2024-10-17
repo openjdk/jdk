@@ -331,8 +331,6 @@ void ShenandoahHeap::increase_object_age(oop obj, uint additional_age) {
 // necessarily be determined because of concurrent locking by the
 // mutator
 uint ShenandoahHeap::get_object_age(oop obj) {
-  // This is impossible to do unless we "freeze" ABA-type oscillations
-  // With Lilliput, we can do this more easily.
   markWord w = obj->mark();
   assert(!w.is_marked(), "must not be forwarded");
   if (w.has_monitor()) {

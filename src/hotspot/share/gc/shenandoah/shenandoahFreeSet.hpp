@@ -288,14 +288,12 @@ private:
   ShenandoahHeap* const _heap;
   ShenandoahRegionPartitions _partitions;
   ShenandoahHeapRegion** _trash_regions;
-  size_t _retired_old_regions;
 
   HeapWord* allocate_aligned_plab(size_t size, ShenandoahAllocRequest& req, ShenandoahHeapRegion* r);
 
   // Return the address of memory allocated, setting in_new_region to true iff the allocation is taken
   // from a region that was previously empty.  Return nullptr if memory could not be allocated.
-  inline HeapWord* allocate_from_partition_with_affiliation(ShenandoahFreeSetPartitionId which_partition,
-                                                            ShenandoahAffiliation affiliation,
+  inline HeapWord* allocate_from_partition_with_affiliation(ShenandoahAffiliation affiliation,
                                                             ShenandoahAllocRequest& req, bool& in_new_region);
 
   // We re-evaluate the left-to-right allocation bias whenever _alloc_bias_weight is less than zero.  Each time
@@ -303,8 +301,10 @@ private:
   // from right-to-left or left-to-right, we reset the value of this counter to _InitialAllocBiasWeight.
   ssize_t _alloc_bias_weight;
 
-  const ssize_t _InitialAllocBiasWeight = 256;
+  const ssize_t INITIAL_ALLOC_BIAS_WEIGHT = 256;
 
+  // Increases used memory for the partition if the allocation is successful. `in_new_region` will be set
+  // if this is the first allocation in the region.
   HeapWord* try_allocate_in(ShenandoahHeapRegion* region, ShenandoahAllocRequest& req, bool& in_new_region);
 
   // While holding the heap lock, allocate memory for a single object or LAB  which is to be entirely contained
@@ -329,6 +329,29 @@ private:
   void flip_to_gc(ShenandoahHeapRegion* r);
   void flip_to_old_gc(ShenandoahHeapRegion* r);
 
+  // Handle allocation for mutator.
+  HeapWord* allocate_for_mutator(ShenandoahAllocRequest &req, bool &in_new_region);
+
+  // Update allocation bias and decided whether to allocate from the left or right side of the heap.
+  void update_allocation_bias();
+
+  // Search for regions to satisfy allocation request using iterator.
+  template<typename Iter>
+  HeapWord* allocate_from_regions(Iter& iterator, ShenandoahAllocRequest &req, bool &in_new_region);
+
+  // Handle allocation for collector (for evacuation).
+  HeapWord* allocate_for_collector(ShenandoahAllocRequest& req, bool& in_new_region);
+
+  // Search for allocation in region with same affiliation as request, using given iterator.
+  template<typename Iter>
+  HeapWord* allocate_with_affiliation(Iter& iterator, ShenandoahAffiliation affiliation, ShenandoahAllocRequest& req, bool& in_new_region);
+
+  // Return true if the respective generation for this request has free regions.
+  bool can_allocate_in_new_region(const ShenandoahAllocRequest& req);
+
+  // Attempt to allocate memory for an evacuation from the mutator's partition.
+  HeapWord* try_allocate_from_mutator(ShenandoahAllocRequest& req, bool& in_new_region);
+
   void clear_internal();
   void try_recycle_trashed(ShenandoahHeapRegion *r);
 
@@ -343,7 +366,7 @@ private:
   size_t transfer_empty_regions_from_collector_set_to_mutator_set(ShenandoahFreeSetPartitionId which_collector,
                                                                   size_t max_xfer_regions,
                                                                   size_t& bytes_transferred);
-  size_t transfer_non_empty_regions_from_collector_set_to_mutator_set(ShenandoahFreeSetPartitionId collector_id,
+  size_t transfer_non_empty_regions_from_collector_set_to_mutator_set(ShenandoahFreeSetPartitionId which_collector,
                                                                       size_t max_xfer_regions,
                                                                       size_t& bytes_transferred);
 
@@ -423,7 +446,6 @@ public:
   }
 
   HeapWord* allocate(ShenandoahAllocRequest& req, bool& in_new_region);
-  size_t unsafe_peek_free() const;
 
   /*
    * Internal fragmentation metric: describes how fragmented the heap regions are.
