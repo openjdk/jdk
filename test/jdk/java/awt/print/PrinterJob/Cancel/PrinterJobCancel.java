@@ -32,7 +32,7 @@ import java.awt.print.PrinterJob;
 
 /*
  * @test
- * @bug 4245280
+ * @bug 4245280 8335231
  * @key printer
  * @summary PrinterJob not cancelled when PrinterJob.cancel() is used
  * @library /java/awt/regtesthelpers
