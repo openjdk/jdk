@@ -494,19 +494,30 @@ public final class StringConcatFactory {
         if (paramCount == 0) {
             return MethodHandles.insertArguments(newStringifier(), 0, suffix == null ? "" : suffix);
         }
+
+        String prefix = constants[0];
+        MethodHandle mh;
+        var paramType0 = mt.parameterType(0);
         if (paramCount == 1) {
-            String prefix = constants[0];
             // Empty constants will be
             if (prefix.isEmpty()) {
                 if (suffix.isEmpty()) {
-                    return unaryConcat(mt.parameterType(0));
-                } else if (!mt.hasPrimitives()) {
+                    return unaryConcat(paramType0);
+                }
+
+                if (!mt.hasPrimitives()) {
                     return MethodHandles.insertArguments(simpleConcat(), 1, suffix);
-                } // else fall-through
-            } else if (suffix.isEmpty() && !mt.hasPrimitives()) {
-                // Non-primitive argument
-                return MethodHandles.insertArguments(simpleConcat(), 0, prefix);
-            } // fall-through if there's both a prefix and suffix
+                }
+            } else if (suffix.isEmpty()) {
+                if (!mt.hasPrimitives()) {
+                    // Non-primitive argument
+                    return MethodHandles.insertArguments(simpleConcat(), 0, prefix);
+                }
+            }
+
+            mh = simpleConcat3(paramType0);
+            mh = MethodHandles.insertArguments(mh, 2, suffix);
+            return MethodHandles.insertArguments(mh, 0, prefix);
         } else if (paramCount == 2 && !mt.hasPrimitives() && suffix.isEmpty()
                 && constants[0].isEmpty() && constants[1].isEmpty()) {
             // Two reference arguments, no surrounding constants
@@ -514,6 +525,26 @@ public final class StringConcatFactory {
         }
 
         return null;
+    }
+
+    static MethodHandle simpleConcat3(Class<?> paramType) {
+        MethodHandle mh;
+        if (paramType == byte.class || paramType == short.class || paramType == int.class) {
+            mh = simpleConcat3int();
+        } else if (paramType == long.class) {
+            mh = simpleConcat3long();
+        } else if (paramType == char.class) {
+            mh = simpleConcat3char();
+        } else if (paramType == boolean.class) {
+            mh = simpleConcat3boolean();
+        } else if (paramType == float.class) {
+            mh = simpleConcat3float();
+        } else if (paramType == double.class) {
+            mh = simpleConcat3double();
+        } else {
+            mh = simpleConcat3();
+        }
+        return mh;
     }
 
     /**
@@ -899,9 +930,86 @@ public final class StringConcatFactory {
     private static MethodHandle simpleConcat() {
         MethodHandle mh = SIMPLE_CONCAT;
         if (mh == null) {
-            MethodHandle simpleConcat = JLA.stringConcatHelper("simpleConcat",
+            MethodHandle simpleConcat = JLA.stringConcatHelper("concat",
                     methodType(String.class, Object.class, Object.class));
             SIMPLE_CONCAT = mh = simpleConcat.rebind();
+        }
+        return mh;
+    }
+
+    private @Stable static MethodHandle SIMPLE_CONCAT3_INT;
+    private static MethodHandle simpleConcat3int() {
+        MethodHandle mh = SIMPLE_CONCAT3_INT;
+        if (mh == null) {
+            var simpleConcat = JLA.stringConcatHelper("concat",
+                    methodType(String.class, String.class, int.class, String.class));
+            SIMPLE_CONCAT3_INT = mh = simpleConcat.rebind();
+        }
+        return mh;
+    }
+
+    private @Stable static MethodHandle SIMPLE_CONCAT3_LONG;
+    private static MethodHandle simpleConcat3long() {
+        MethodHandle mh = SIMPLE_CONCAT3_LONG;
+        if (mh == null) {
+            var simpleConcat = JLA.stringConcatHelper("concat",
+                    methodType(String.class, String.class, long.class, String.class));
+            SIMPLE_CONCAT3_LONG = mh = simpleConcat.rebind();
+        }
+        return mh;
+    }
+
+    private @Stable static MethodHandle SIMPLE_CONCAT3_BOOLEAN;
+    private static MethodHandle simpleConcat3boolean() {
+        MethodHandle mh = SIMPLE_CONCAT3_BOOLEAN;
+        if (mh == null) {
+            var simpleConcat = JLA.stringConcatHelper("concat",
+                    methodType(String.class, String.class, boolean.class, String.class));
+            SIMPLE_CONCAT3_BOOLEAN = mh = simpleConcat.rebind();
+        }
+        return mh;
+    }
+
+    private @Stable static MethodHandle SIMPLE_CONCAT3_CHAR;
+    private static MethodHandle simpleConcat3char() {
+        MethodHandle mh = SIMPLE_CONCAT3_CHAR;
+        if (mh == null) {
+            var simpleConcat = JLA.stringConcatHelper("concat",
+                    methodType(String.class, String.class, char.class, String.class));
+            SIMPLE_CONCAT3_CHAR = mh = simpleConcat.rebind();
+        }
+        return mh;
+    }
+
+    private @Stable static MethodHandle SIMPLE_CONCAT3_FLOAT;
+    private static MethodHandle simpleConcat3float() {
+        MethodHandle mh = SIMPLE_CONCAT3_FLOAT;
+        if (mh == null) {
+            var simpleConcat = JLA.stringConcatHelper("concat",
+                    methodType(String.class, String.class, float.class, String.class));
+            SIMPLE_CONCAT3_FLOAT = mh = simpleConcat.rebind();
+        }
+        return mh;
+    }
+
+    private @Stable static MethodHandle SIMPLE_CONCAT3_DOUBLE;
+    private static MethodHandle simpleConcat3double() {
+        MethodHandle mh = SIMPLE_CONCAT3_DOUBLE;
+        if (mh == null) {
+            var simpleConcat = JLA.stringConcatHelper("concat",
+                    methodType(String.class, String.class, double.class, String.class));
+            SIMPLE_CONCAT3_DOUBLE = mh = simpleConcat.rebind();
+        }
+        return mh;
+    }
+
+    private @Stable static MethodHandle SIMPLE_CONCAT3;
+    private static MethodHandle simpleConcat3() {
+        MethodHandle mh = SIMPLE_CONCAT3;
+        if (mh == null) {
+            var simpleConcat = JLA.stringConcatHelper("concat",
+                    methodType(String.class, String.class, Object.class, String.class));
+            SIMPLE_CONCAT3 = mh = simpleConcat.rebind();
         }
         return mh;
     }
@@ -1252,14 +1360,7 @@ public final class StringConcatFactory {
 
         private static MethodHandle generate(Lookup lookup, MethodType args, String[] constants) throws Exception {
             lookup = STR_LOOKUP;
-            final MethodType concatArgs = erasedArgs(args);
-
-            // 1 argument use built-in method
-            if (args.parameterCount() == 1) {
-                Object concat1 = JLA.stringConcat1(constants);
-                var handle = lookup.findVirtual(concat1.getClass(), METHOD_NAME, concatArgs);
-                return handle.bindTo(concat1);
-            }
+            var concatArgs = erasedArgs(args);
 
             boolean forceInline  = concatArgs.parameterCount() <  FORCE_INLINE_THRESHOLD;
             boolean staticConcat = concatArgs.parameterCount() >= CACHE_THRESHOLD;
