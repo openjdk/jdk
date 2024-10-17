@@ -44,12 +44,6 @@ public class DoubleFlagWithIntegerValue {
   }
 
   public static void main(String[] args) throws Exception {
-    // Test double format for -XX:SweeperThreshold
-    testDoubleFlagWithValue("-XX:SweeperThreshold", "10.0");
-
-    // Test integer format -XX:SweeperThreshold
-    testDoubleFlagWithValue("-XX:SweeperThreshold", "10");
-
     // Test double format for -XX:SafepointTimeoutDelay
     testDoubleFlagWithValue("-XX:SafepointTimeoutDelay", "5.0");
 

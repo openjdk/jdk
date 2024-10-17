@@ -521,7 +521,7 @@ static SpecialFlag const special_jvm_flags[] = {
   // -------------- Obsolete Flags - sorted by expired_in --------------
 
   { "MetaspaceReclaimPolicy",       JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::undefined() },
-
+  { "SweeperThreshold",             JDK_Version::undefined(), JDK_Version::jdk(24), JDK_Version::jdk(25) },
   { "UseNotificationThread",        JDK_Version::jdk(23), JDK_Version::jdk(24), JDK_Version::jdk(25) },
   { "PreserveAllAnnotations",       JDK_Version::jdk(23), JDK_Version::jdk(24), JDK_Version::jdk(25) },
   { "UseEmptySlotsInSupers",        JDK_Version::jdk(23), JDK_Version::jdk(24), JDK_Version::jdk(25) },
