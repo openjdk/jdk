@@ -81,6 +81,8 @@ class CodeHeapState : public CHeapObj<mtCode> {
   static void get_HeapStatGlobals(outputStream* out, const char* heapName);
   static void set_HeapStatGlobals(outputStream* out, const char* heapName);
 
+  static void print_MethodlistHeader(outputStream* ast);
+  static void print_address_and_offset(outputStream* ast, address here, address base);
   static void printBox(outputStream* out, const char border, const char* text1, const char* text2);
   static void print_blobType_legend(outputStream* out);
   static void print_space_legend(outputStream* out);
@@ -88,7 +90,7 @@ class CodeHeapState : public CHeapObj<mtCode> {
   static void print_blobType_single(outputStream *ast, u2 /* blobType */ type);
   static void print_count_single(outputStream *ast, unsigned short count);
   static void print_space_single(outputStream *ast, unsigned short space);
-  static void print_age_single(outputStream *ast, int age);
+  static void print_age_single(outputStream *ast, unsigned int age);
   static void print_line_delim(outputStream* out, bufferedStream *sst, char* low_bound, unsigned int ix, unsigned int gpl);
   static void print_line_delim(outputStream* out, outputStream *sst, char* low_bound, unsigned int ix, unsigned int gpl);
   static void print_aggregate_missing(outputStream* out, const char* heapName);
@@ -120,9 +122,9 @@ class CodeHeapState : public CHeapObj<mtCode> {
 class StatElement : public CHeapObj<mtCode> {
   public:
     // A note on ages: The compilation_id easily overflows unsigned short in large systems
-    int       t1_age;      // oldest compilation_id of tier1 nMethods.
-    int       t2_age;      // oldest compilation_id of tier2 nMethods.
-    int       tx_age;      // oldest compilation_id of inactive/not entrant nMethods.
+    unsigned int       t1_age;      // oldest compilation_id of tier1 nMethods.
+    unsigned int       t2_age;      // oldest compilation_id of tier2 nMethods.
+    unsigned int       tx_age;      // oldest compilation_id of inactive/not entrant nMethods.
     unsigned short     t1_space;    // in units of _segment_size to "prevent" overflow
     unsigned short     t2_space;    // in units of _segment_size to "prevent" overflow
     unsigned short     tx_space;    // in units of _segment_size to "prevent" overflow
