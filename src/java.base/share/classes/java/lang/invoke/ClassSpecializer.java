@@ -42,8 +42,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import jdk.internal.constant.ClassOrInterfaceDescImpl;
+import jdk.internal.constant.ConstantUtils;
 import jdk.internal.constant.MethodTypeDescImpl;
-import jdk.internal.constant.ReferenceClassDescImpl;
 import jdk.internal.loader.BootLoader;
 import jdk.internal.vm.annotation.Stable;
 import sun.invoke.util.BytecodeName;
@@ -65,8 +66,8 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
 /*non-public*/
 abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesData> {
 
-    private static final ClassDesc CD_LambdaForm = ReferenceClassDescImpl.ofValidated("Ljava/lang/invoke/LambdaForm;");
-    private static final ClassDesc CD_BoundMethodHandle = ReferenceClassDescImpl.ofValidated("Ljava/lang/invoke/BoundMethodHandle;");
+    private static final ClassDesc CD_LambdaForm = ClassOrInterfaceDescImpl.ofValidated("Ljava/lang/invoke/LambdaForm;");
+    private static final ClassDesc CD_BoundMethodHandle = ClassOrInterfaceDescImpl.ofValidated("Ljava/lang/invoke/BoundMethodHandle;");
 
     private final Class<T> topClass;
     private final Class<K> keyType;
@@ -974,7 +975,7 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
              : cls == MethodType.class ? CD_MethodType
              : cls == LambdaForm.class ? CD_LambdaForm
              : cls == BoundMethodHandle.class ? CD_BoundMethodHandle
-             : ReferenceClassDescImpl.ofValidated(cls.descriptorString());
+             : ConstantUtils.referenceClassDesc(cls.descriptorString());
     }
 
     static MethodTypeDesc methodDesc(MethodType mt) {
