@@ -586,13 +586,41 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JMOD_OPTIONS],
 ################################################################################
 #
 # jlink options.
-# We always keep packaged modules in JDK image.
 #
 AC_DEFUN_ONCE([JDKOPT_SETUP_JLINK_OPTIONS],
 [
-  UTIL_ARG_ENABLE(NAME: keep-packaged-modules, DEFAULT: true,
+
+  ################################################################################
+  #
+  # Configure option for runtime image based linkable jimage.
+  #
+  # Determines whether or not a run-time linkable JDK image is being
+  # produced from the product image. If set to 'true, changes the *default*
+  # of packaged modules to 'false'.
+  #
+  UTIL_ARG_ENABLE(NAME: linkable-runtime, DEFAULT: false,
+      RESULT: JLINK_PRODUCE_LINKABLE_RUNTIME,
+      DESC: [enable JDK linkable runtime],
+      CHECKING_MSG: [whether or not JDK linkable runtime should be produced])
+  AC_SUBST(JLINK_PRODUCE_LINKABLE_RUNTIME)
+
+  if test "x$JLINK_PRODUCE_LINKABLE_RUNTIME" = xtrue; then
+    DEFAULT_PACKAGED_MODULES=false
+  else
+    DEFAULT_PACKAGED_MODULES=true
+  fi
+
+  ################################################################################
+  #
+  # Configure option for packaged modules
+  #
+  # We keep packaged modules in JDK image unless a runtime linkable image
+  # is requested.
+  #
+  UTIL_ARG_ENABLE(NAME: keep-packaged-modules, DEFAULT: $DEFAULT_PACKAGED_MODULES,
       RESULT: JLINK_KEEP_PACKAGED_MODULES,
       DESC: [enable keeping of packaged modules in jdk image],
+      DEFAULT_DESC: [enabled by default unless --enable-runtime-link-image is set],
       CHECKING_MSG: [if packaged modules are kept])
   AC_SUBST(JLINK_KEEP_PACKAGED_MODULES)
 ])
