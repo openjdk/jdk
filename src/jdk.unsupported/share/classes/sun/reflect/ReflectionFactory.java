@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,9 @@
 
 package sun.reflect;
 
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.ObjectStreamField;
 import java.io.OptionalDataException;
 import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Constructor;
@@ -158,6 +161,38 @@ public class ReflectionFactory {
     }
 
     /**
+     * Returns a direct MethodHandle for a variation of {@code readObject}
+     * which always initializes its fields from the stream
+     * {@link ObjectInputStream#readFields()} mechanism.
+     * <p>
+     * The generated method will accept the instance as its first argument
+     * and the {@code ObjectInputStream} as its second argument.
+     * The return type of the method is {@code void}.
+     *
+     * @param cl a Serializable class
+     * @return  a direct MethodHandle for the synthetic {@code readObject} method
+     *          or {@code null} if the class is not serializable
+     *
+     * @since 24
+     */
+    public final MethodHandle defaultReadObjectForSerialization(Class<?> cl) {
+        return delegate.defaultReadObjectForSerialization(cl);
+    }
+
+    /**
+     * {@return the declared <code>serialPersistentFields</code> from a serializable class,
+     * or <code>null</code> if none is declared or the class is not a valid
+     * serializable class}
+     *
+     * @param cl a Serializable class
+     *
+     * @since 24
+     */
+    public final ObjectStreamField[] serialPersistentFields(Class<?> cl) {
+        return delegate.serialPersistentFields(cl);
+    }
+
+    /**
      * Returns a direct MethodHandle for the {@code writeObject} method on
      * a Serializable class.
      * The first argument of {@link MethodHandle#invoke} is the serializable
@@ -170,6 +205,25 @@ public class ReflectionFactory {
      */
     public final MethodHandle writeObjectForSerialization(Class<?> cl) {
         return delegate.writeObjectForSerialization(cl);
+    }
+
+    /**
+     * Returns a direct MethodHandle for a variation of {@code writeObject}
+     * which always writes its fields to the stream
+     * {@link ObjectOutputStream#putFields()} mechanism.
+     * <p>
+     * The generated method will accept the instance as its first argument
+     * and the {@code ObjectOutputStream} as its second argument.
+     * The return type of the method is {@code void}.
+     *
+     * @param cl a Serializable class
+     * @return  a direct MethodHandle for the synthetic {@code writeObject} method
+     *          or {@code null} if the class is not serializable
+     *
+     * @since 24
+     */
+    public final MethodHandle defaultWriteObjectForSerialization(Class<?> cl) {
+        return delegate.defaultWriteObjectForSerialization(cl);
     }
 
     /**
