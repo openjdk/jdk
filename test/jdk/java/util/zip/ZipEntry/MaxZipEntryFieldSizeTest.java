@@ -62,7 +62,7 @@ public class MaxZipEntryFieldSizeTest {
     // Zip Entry name used by tests
     static final String ENTRY_NAME = "EntryName";
     // Max length minus the size of the ENTRY_NAME or ENTRY_COMMENT
-    static final int MAX_FIElD_LEN_MINUS_ENTRY_NAME =
+    static final int MAX_FIELD_LEN_MINUS_ENTRY_NAME =
             MAX_NAME_COMMENT_EXTRA_SIZE - 9;
 
     /**
@@ -83,8 +83,8 @@ public class MaxZipEntryFieldSizeTest {
     @ValueSource(ints = {MAX_COMBINED_CEN_HEADER_SIZE,
             MAX_NAME_COMMENT_EXTRA_SIZE,
             MAX_NAME_COMMENT_EXTRA_SIZE + 1,
-            MAX_FIElD_LEN_MINUS_ENTRY_NAME,
-            MAX_FIElD_LEN_MINUS_ENTRY_NAME - 1})
+            MAX_FIELD_LEN_MINUS_ENTRY_NAME,
+            MAX_FIELD_LEN_MINUS_ENTRY_NAME - 1})
     void setCommentLengthTest(int length) {
         final byte[] bytes = new byte[length];
         Arrays.fill(bytes, (byte) 'a');
@@ -107,8 +107,8 @@ public class MaxZipEntryFieldSizeTest {
     @ValueSource(ints = {MAX_COMBINED_CEN_HEADER_SIZE,
             MAX_NAME_COMMENT_EXTRA_SIZE,
             MAX_NAME_COMMENT_EXTRA_SIZE + 1,
-            MAX_FIElD_LEN_MINUS_ENTRY_NAME,
-            MAX_FIElD_LEN_MINUS_ENTRY_NAME - 1})
+            MAX_FIELD_LEN_MINUS_ENTRY_NAME,
+            MAX_FIELD_LEN_MINUS_ENTRY_NAME - 1})
     void setNameLengthTest(int length) {
         boolean expectException = length > MAX_NAME_COMMENT_EXTRA_SIZE;
         final byte[] bytes = new byte[length];
@@ -129,8 +129,8 @@ public class MaxZipEntryFieldSizeTest {
     @ValueSource(ints = {MAX_COMBINED_CEN_HEADER_SIZE,
             MAX_NAME_COMMENT_EXTRA_SIZE,
             MAX_NAME_COMMENT_EXTRA_SIZE + 1,
-            MAX_FIElD_LEN_MINUS_ENTRY_NAME,
-            MAX_FIElD_LEN_MINUS_ENTRY_NAME - 1})
+            MAX_FIELD_LEN_MINUS_ENTRY_NAME,
+            MAX_FIELD_LEN_MINUS_ENTRY_NAME - 1})
     void setExtraLengthTest(int length) {
         final byte[] bytes = new byte[length];
         boolean expectException = length > MAX_NAME_COMMENT_EXTRA_SIZE;

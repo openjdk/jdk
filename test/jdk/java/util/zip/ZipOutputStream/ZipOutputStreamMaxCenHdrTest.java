@@ -70,7 +70,7 @@ public class ZipOutputStreamMaxCenHdrTest {
     // Zip Entry comment used by tests
     static final String ENTRY_COMMENT = "A Comment";
     // Max length minus the size of the ENTRY_NAME or ENTRY_COMMENT
-    static final int MAX_FIElD_LEN_MINUS_ENTRY_NAME =
+    static final int MAX_FIELD_LEN_MINUS_ENTRY_NAME =
             MAX_NAME_COMMENT_EXTRA_SIZE - 9;
 
     /**
@@ -90,9 +90,9 @@ public class ZipOutputStreamMaxCenHdrTest {
      */
     @ParameterizedTest
     @ValueSource(ints = {MAX_NAME_COMMENT_EXTRA_SIZE,
-            MAX_FIElD_LEN_MINUS_ENTRY_NAME + 1,
-            MAX_FIElD_LEN_MINUS_ENTRY_NAME,
-            MAX_FIElD_LEN_MINUS_ENTRY_NAME - 1})
+            MAX_FIELD_LEN_MINUS_ENTRY_NAME + 1,
+            MAX_FIELD_LEN_MINUS_ENTRY_NAME,
+            MAX_FIELD_LEN_MINUS_ENTRY_NAME - 1})
     void setCommentTest(int length) throws IOException {
         final byte[] bytes = new byte[length];
         Arrays.fill(bytes, (byte) 'a');
@@ -113,9 +113,9 @@ public class ZipOutputStreamMaxCenHdrTest {
      */
     @ParameterizedTest
     @ValueSource(ints = {MAX_NAME_COMMENT_EXTRA_SIZE,
-            MAX_FIElD_LEN_MINUS_ENTRY_NAME + 1,
-            MAX_FIElD_LEN_MINUS_ENTRY_NAME,
-            MAX_FIElD_LEN_MINUS_ENTRY_NAME - 1})
+            MAX_FIELD_LEN_MINUS_ENTRY_NAME + 1,
+            MAX_FIELD_LEN_MINUS_ENTRY_NAME,
+            MAX_FIELD_LEN_MINUS_ENTRY_NAME - 1})
     void setNameTest(int length) throws IOException {
         boolean expectZipException = length + ENTRY_COMMENT.length() > MAX_NAME_COMMENT_EXTRA_SIZE;
         final byte[] bytes = new byte[length];
@@ -136,9 +136,9 @@ public class ZipOutputStreamMaxCenHdrTest {
      */
     @ParameterizedTest
     @ValueSource(ints = {MAX_NAME_COMMENT_EXTRA_SIZE,
-            MAX_FIElD_LEN_MINUS_ENTRY_NAME + 1,
-            MAX_FIElD_LEN_MINUS_ENTRY_NAME,
-            MAX_FIElD_LEN_MINUS_ENTRY_NAME - 1})
+            MAX_FIELD_LEN_MINUS_ENTRY_NAME + 1,
+            MAX_FIELD_LEN_MINUS_ENTRY_NAME,
+            MAX_FIELD_LEN_MINUS_ENTRY_NAME - 1})
     void setExtraTest(int length) throws IOException {
         final byte[] bytes = new byte[length];
         boolean expectZipException =  length + ENTRY_NAME.length() > MAX_NAME_COMMENT_EXTRA_SIZE ;
