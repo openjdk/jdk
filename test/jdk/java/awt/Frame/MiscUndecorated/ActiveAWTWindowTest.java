@@ -25,21 +25,30 @@
  * @test
  * @key headful
  * @summary To check proper WINDOW_EVENTS are triggered when Frame gains or losses the focus
- * @author Jitender(jitender.singh@eng.sun.com) area=AWT
- * @author yan
  * @library /lib/client
  * @build ExtendedRobot
  * @run main ActiveAWTWindowTest
  */
 
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.BorderLayout;
+import java.awt.Button;
+import java.awt.Color;
+import java.awt.EventQueue;
+import java.awt.FlowLayout;
+import java.awt.Frame;
+import java.awt.TextField;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.InputEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowFocusListener;
 
 public class ActiveAWTWindowTest {
 
-    private Frame frame, frame2;
-    private Button button, button2;
-    private TextField textField, textField2;
+    private volatile Frame frame, frame2;
+    private volatile Button button, button2;
+    private volatile TextField textField, textField2;
     private volatile int eventType;
     private final Object lock1 = new Object();
     private final Object lock2 = new Object();
@@ -47,12 +56,12 @@ public class ActiveAWTWindowTest {
     private boolean passed = true;
     private final int delay = 150;
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         ActiveAWTWindowTest test = new ActiveAWTWindowTest();
         try {
             test.doTest();
         } finally {
-            EventQueue.invokeLater(() -> {
+            EventQueue.invokeAndWait(() -> {
                 if (test.frame != null) {
                     test.frame.dispose();
                 }
