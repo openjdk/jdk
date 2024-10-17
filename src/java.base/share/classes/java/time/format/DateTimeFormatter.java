@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2004,15 +2004,7 @@ public final class DateTimeFormatter {
      * @throws DateTimeParseException if unable to parse the requested result
      */
     public <T> T parse(CharSequence text, TemporalQuery<T> query) {
-        Objects.requireNonNull(text, "text");
-        Objects.requireNonNull(query, "query");
-        try {
-            return parseResolved0(text, null).query(query);
-        } catch (DateTimeParseException ex) {
-            throw ex;
-        } catch (RuntimeException ex) {
-            throw createError(text, ex);
-        }
+        return printerParser.parse(text, this, query);
     }
 
     /**
@@ -2069,7 +2061,7 @@ public final class DateTimeFormatter {
         }
     }
 
-    private DateTimeParseException createError(CharSequence text, RuntimeException ex) {
+    DateTimeParseException createError(CharSequence text, RuntimeException ex) {
         String abbr;
         if (text.length() > 64) {
             abbr = text.subSequence(0, 64).toString() + "...";
@@ -2093,7 +2085,7 @@ public final class DateTimeFormatter {
      * @throws DateTimeException if an error occurs while resolving the date or time
      * @throws IndexOutOfBoundsException if the position is invalid
      */
-    private TemporalAccessor parseResolved0(final CharSequence text, final ParsePosition position) {
+    TemporalAccessor parseResolved0(final CharSequence text, final ParsePosition position) {
         ParsePosition pos = (position != null ? position : new ParsePosition(0));
         DateTimeParseContext context = parseUnresolved0(text, pos);
         if (context == null || pos.getErrorIndex() >= 0 || (position == null && pos.getIndex() < text.length())) {

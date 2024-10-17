@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -274,6 +274,13 @@ final class DateTimePrintContext {
      */
     void endOptional() {
         this.optional--;
+    }
+
+    /**
+     * isOption segment of the input.
+     */
+    boolean isSupported(TemporalField field) {
+        return optional == 0 || temporal.isSupported(field);
     }
 
     /**
