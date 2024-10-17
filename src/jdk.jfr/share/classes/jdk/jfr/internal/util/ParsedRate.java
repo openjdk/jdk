@@ -24,9 +24,9 @@
  */
 package jdk.jfr.internal.util;
 
-public record Rate(long amount, TimespanUnit unit) {
+public record ParsedRate(long amount, TimespanUnit unit) {
 
-    public static Rate of(String text) {
+    public static ParsedRate of(String text) {
         String[] splitted = text.split("/");
         if (splitted.length != 2) {
             return null;
@@ -40,7 +40,7 @@ public record Rate(long amount, TimespanUnit unit) {
         try {
             long v = Long.parseLong(value);
             if (v >= 0) {
-                return new Rate(v, tu);
+                return new ParsedRate(v, tu);
             }
         } catch (NumberFormatException nfe) {
             // Ignore
@@ -48,7 +48,8 @@ public record Rate(long amount, TimespanUnit unit) {
         return null;
     }
 
-    public boolean isHigher(Rate that) {
+    public boolean isHigher(ParsedRate
+     that) {
         return this.inNanos() > that.inNanos();
     }
 

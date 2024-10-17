@@ -39,7 +39,7 @@ import jdk.jfr.Name;
 import jdk.jfr.internal.PlatformEventType;
 import jdk.jfr.internal.Throttle;
 import jdk.jfr.internal.Type;
-import jdk.jfr.internal.util.Rate;
+import jdk.jfr.internal.util.ParsedRate;
 import jdk.jfr.internal.util.TimespanUnit;
 import jdk.jfr.internal.util.Utils;
 
@@ -58,10 +58,10 @@ public final class ThrottleSetting extends JDKSettingControl {
 
     @Override
     public String combine(Set<String> values) {
-        Rate max = null;
+        ParsedRate max = null;
         String text = null;
         for (String value : values) {
-            Rate rate = Rate.of(value);
+            ParsedRate rate = ParsedRate.of(value);
             if (rate != null) {
                 if (max == null || rate.isHigher(max)) {
                     text = value;
@@ -81,7 +81,7 @@ public final class ThrottleSetting extends JDKSettingControl {
             return;
         }
 
-        Rate rate = Rate.of(value);
+        ParsedRate rate = ParsedRate.of(value);
         if (rate != null) {
             long millis = 1000;
             long samples = rate.amount();
