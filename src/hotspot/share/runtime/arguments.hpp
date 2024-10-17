@@ -196,6 +196,8 @@ class Arguments : AllStatic {
   static int    _num_jvm_args;
   // string containing all java command (class/jarfile name and app args)
   static char* _java_command;
+  // number of unique modules specified in the --add-modules option
+  static unsigned int _addmods_count;
 
   // Property list
   static SystemProperty* _system_properties;
@@ -461,6 +463,8 @@ class Arguments : AllStatic {
   static int  PropertyList_readable_count(SystemProperty* pl);
 
   static bool is_internal_module_property(const char* option);
+  static bool is_add_modules_property(const char* key);
+  static unsigned int addmods_count() { return  _addmods_count; }
   static bool is_module_path_property(const char* key);
 
   // Miscellaneous System property value getter and setters.
