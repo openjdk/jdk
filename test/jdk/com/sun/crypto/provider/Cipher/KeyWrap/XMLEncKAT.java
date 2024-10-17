@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,7 +111,8 @@ public class XMLEncKAT {
         String cKeyAlg, String[] base64Wrapped) throws Exception {
         System.out.println("Testing " + cAlg + " Cipher with " +
             8*cKeyVal.length + "-bit key");
-        Cipher c = Cipher.getInstance(cAlg, "SunJCE");
+        Cipher c = Cipher.getInstance(cAlg,
+                System.getProperty("test.provider.name", "SunJCE"));
         SecretKey cKey = new SecretKeySpec(cKeyVal, cKeyAlg);
         c.init(Cipher.UNWRAP_MODE, cKey);
         Key[] key = new SecretKey[base64Wrapped.length];

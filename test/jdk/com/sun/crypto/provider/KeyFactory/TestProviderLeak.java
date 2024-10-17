@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,7 +106,8 @@ public class TestProviderLeak {
     public static void main(String [] args) throws Exception {
         // Prepare the test
         final SecretKeyFactory skf =
-            SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1", "SunJCE");
+            SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1",
+                    System.getProperty("test.provider.name", "SunJCE"));
         final PBEKeySpec pbeKS = new PBEKeySpec(
             "passPhrase".toCharArray(), new byte [] { 0 }, 5, 512);
 

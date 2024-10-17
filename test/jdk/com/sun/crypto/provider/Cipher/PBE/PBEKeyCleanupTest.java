@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,8 @@ import javax.crypto.spec.PBEKeySpec;
  */
 public class PBEKeyCleanupTest {
 
-    private final static String SunJCEProvider = "SunJCE";
+    private final static String PROVIDER_NAME =
+                            System.getProperty("test.provider.name", "SunJCE");
 
     private static final String PASS_PHRASE = "some hidden string";
     private static final int ITERATION_COUNT = 1000;
@@ -60,7 +61,7 @@ public class PBEKeyCleanupTest {
         char[] password = new char[] {'f', 'o', 'o'};
         PBEKeySpec pbeKeySpec = new PBEKeySpec(password);
         SecretKeyFactory keyFac =
-                SecretKeyFactory.getInstance(algorithm, SunJCEProvider);
+                SecretKeyFactory.getInstance(algorithm, PROVIDER_NAME);
 
         testCleanupSecret(algorithm, keyFac.generateSecret(pbeKeySpec));
     }
@@ -72,7 +73,7 @@ public class PBEKeyCleanupTest {
         PBEKeySpec pbeKeySpec = new PBEKeySpec(PASS_PHRASE.toCharArray(), salt,
                 ITERATION_COUNT, KEY_SIZE);
         SecretKeyFactory keyFac =
-                SecretKeyFactory.getInstance(algorithm, SunJCEProvider);
+                SecretKeyFactory.getInstance(algorithm, PROVIDER_NAME);
 
         testCleanupSecret(algorithm, keyFac.generateSecret(pbeKeySpec));
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,8 @@ public class TestKeyPairGeneratorInit {
 
     public static void main(String[] args) throws Exception {
         KeyPairGenerator kpg =
-            KeyPairGenerator.getInstance("RSA", "SunRsaSign");
+            KeyPairGenerator.getInstance("RSA",
+                    System.getProperty("test.provider.name", "SunRsaSign"));
         MySecureRandom rnd = new MySecureRandom();
         kpg.initialize(2048, rnd);
         System.out.println("Generate keypair then check");

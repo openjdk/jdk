@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,7 +85,7 @@ public class TestEC {
     }
 
     public static void main0(String[] args) throws Exception {
-        Provider p = Security.getProvider("SunEC");
+        Provider p = Security.getProvider(System.getProperty("test.provider.name", "SunEC"));
 
         if (p == null) {
             throw new NoSuchProviderException("Can't get SunEC provider");

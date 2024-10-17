@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,7 +63,8 @@ public class TestRSACipherWrap extends PKCS11Test {
 
         for (String rsaAlgo: RSA_ALGOS) {
             Cipher cipherPKCS11 = Cipher.getInstance(rsaAlgo, p);
-            Cipher cipherJce = Cipher.getInstance(rsaAlgo, "SunJCE");
+            Cipher cipherJce = Cipher.getInstance(rsaAlgo,
+                                System.getProperty("test.provider.name", "SunJCE"));
 
             String algos[] = {"AES", "RC2", "Blowfish"};
             int keySizes[] = {128, 256};

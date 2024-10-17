@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -220,7 +220,8 @@ public class TestGeneral {
         SecretKey aes256 = new SecretKeySpec(DATA_32, "AES");
         SecretKey any256 = new SecretKeySpec(DATA_32, "ANY");
         PrivateKey priv = KeyPairGenerator.getInstance
-                ("RSA", "SunRsaSign").generateKeyPair().getPrivate();
+                ("RSA", System.getProperty("test.provider.name", "SunRsaSign"))
+                .generateKeyPair().getPrivate();
 
         String[] algos = {
             "AES/KW/PKCS5Padding", "AES/KW/NoPadding", "AES/KWP/NoPadding"
@@ -228,7 +229,8 @@ public class TestGeneral {
 
         for (String a : algos) {
             System.out.println("Testing " + a);
-            Cipher c = Cipher.getInstance(a, "SunJCE");
+            Cipher c = Cipher.getInstance(a,
+                    System.getProperty("test.provider.name", "SunJCE"));
 
             int blkSize = c.getBlockSize();
 
