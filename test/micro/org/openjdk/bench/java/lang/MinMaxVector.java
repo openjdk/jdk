@@ -29,7 +29,7 @@ public class MinMaxVector
 {
     @State(Scope.Thread)
     public static class LoopState {
-        @Param({"1000"})
+        @Param({"2048"})
         int size;
 
         /**
