@@ -74,10 +74,9 @@ public class SerializationTest {
                 // Offset equal to pattern length
                 new MessageFormat("{0}"),
                 // Offset equal to pattern length (variation)
-                new MessageFormat("{1}X"),
+                new MessageFormat("X{0}"),
                 // Offset 1 under pattern length (variation)
-                new MessageFormat("{1}XX")
-
+                new MessageFormat("X{0}X")
         );
     }
 
