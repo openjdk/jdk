@@ -610,14 +610,14 @@ void ZBarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm, R
 
   // Resolve global handle
   __ ld(dst, 0, dst);
-  __ ld(tmp, load_bad_mask.disp(), load_bad_mask.base());
+  __ ld(tmp, load_bad_mask);
   __ b(check_color);
 
   __ bind(weak_tagged);
 
   // Resolve weak handle
   __ ld(dst, 0, dst);
-  __ ld(tmp, mark_bad_mask.disp(), mark_bad_mask.base());
+  __ ld(tmp, mark_bad_mask);
 
   __ bind(check_color);
   __ and_(tmp, tmp, dst);
