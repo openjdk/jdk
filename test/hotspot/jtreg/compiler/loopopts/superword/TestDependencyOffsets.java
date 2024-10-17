@@ -760,6 +760,9 @@ public class TestDependencyOffsets {
             // TODO a vs b
         }
 
+        /*
+         * TODO description
+         */
         String generateIRRules() {
             StringBuilder builder = new StringBuilder();
             for (CPUConstraintForType constraint : type.cpuConstraints()) {
@@ -767,6 +770,23 @@ public class TestDependencyOffsets {
                 builder.append("    // CPU: " + constraint.description +
                                " -> platformVectorWidth=" + constraint.platformVectorWidth +
                                " -> max " + elements + " elements in vector\n");
+                // General condition for vectorization:
+                //   at least 4 bytes:    width >= 4
+                //   at least 2 elements: width >= 2 * type.size
+                int minVectorSize = Math.max(4, 2 * type.size);
+
+                int byte_offset = offset * type.size;
+
+                // -XX:-AlignVector
+                if (0 < byte_offset && byte_offset < constraint.platformVectorWidth) {
+                    // Vectors have to be shorter to avoid cyclic dependency.
+                    int log2 = 31 - Integer.numberOfLeadingZeros(offset);
+                    int floor_pow2 = 1 << log2;
+                    builder.append("    //   Vectors must have at most " + floor_pow2 +
+                                   " elements to avoid cyclic dependency.\n");
+                } else {
+                    // Expect maximal vector size
+                }
             }
             return builder.toString();
         }
