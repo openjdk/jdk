@@ -127,18 +127,17 @@ You can use the following options to customize the actions of any
 operation mode included in the \f[V]jar\f[R] command.
 .TP
 \f[V]-C\f[R] \f[I]DIR\f[R]
-When used with the create operation mode, this option changes the
-specified directory and includes the \f[I]files\f[R] specified at the
-end of the command line.
+When used with the create operation mode, changes the specified
+directory and includes the \f[I]files\f[R] specified at the end of the
+command line.
 .RS
 .PP
 \f[V]jar\f[R] [\f[I]OPTION\f[R] ...]
 [ [\f[V]--release\f[R] \f[I]VERSION\f[R]] [\f[V]-C\f[R] \f[I]dir\f[R]]
 \f[I]files\f[R]]
 .PP
-When used with the extract operation mode, this option considers the
-specified directory as the destination directory into which the JAR file
-will be extracted.
+When used with the extract operation mode, specifies the destination
+directory where the JAR file will be extracted.
 Unlike with the create operation mode, this option can be specified only
 once with the extract operation mode.
 .RE
@@ -212,7 +211,7 @@ time-zone format, to use for the timestamp of the entries, e.g.
 .SH OPERATION MODIFIERS VALID ONLY IN EXTRACT MODE
 .TP
 \f[V]--dir\f[R] \f[I]DIR\f[R]
-Directory into which the jar will be extracted.
+Directory into which the JAR file will be extracted.
 .SH OTHER OPTIONS
 .PP
 The following options are recognized by the \f[V]jar\f[R] command and
@@ -354,7 +353,7 @@ If one or more entries in the arg file cannot be found then the jar
 command fails without creating the JAR file.
 .RE
 .IP \[bu] 2
-Extract a JAR file \f[V]foo.jar\f[R] to \f[V]/tmp/bar/\f[R] directory:
+Extract the JAR file \f[V]foo.jar\f[R] to \f[V]/tmp/bar/\f[R] directory:
 .RS 2
 .RS
 .PP
