@@ -53,7 +53,8 @@ final class AixPollPort
     // pollset ID
     private final int pollset;
 
-    private static final int ENOENT     = 2;
+    private static final int ENOENT = 2;
+
     // true if port is closed
     private boolean closed;
 
