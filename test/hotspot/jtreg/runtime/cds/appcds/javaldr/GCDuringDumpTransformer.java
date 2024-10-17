@@ -35,7 +35,7 @@ public class GCDuringDumpTransformer implements ClassFileTransformer {
     static boolean TEST_WITH_EXCEPTION = Boolean.getBoolean("test.with.exception");
     static boolean TEST_WITH_OOM = Boolean.getBoolean("test.with.oom");
 
-    static final int WASTE_SIZE = 32 * 1024;
+    static final int WASTE_SIZE = 1024;
     static List<byte[]> waste = new ArrayList();
     static Object sink;
 
@@ -62,12 +62,13 @@ public class GCDuringDumpTransformer implements ClassFileTransformer {
               return new byte[] {1, 2, 3, 4, 5, 6, 7, 8};
             }
             if (TEST_WITH_OOM) {
-                // Fill until OOM with 1/4 waste size. This would guarantee
-                // that we will not be able to satisfy WASTE_SIZE allocation
-                // after we caught the OOM.
+                // Fill until OOM and fail. This sets up heap for secondary OOM
+                // later on, which should be caught by CDS code. The size of waste
+                // array defines how much max free space would be left for later
+                // code to run with.
                 System.out.println("Fill objects until OOM");
                 while (true) {
-                    waste.add(new byte[WASTE_SIZE / 4]);
+                    waste.add(new byte[WASTE_SIZE]);
                 }
             }
         }
