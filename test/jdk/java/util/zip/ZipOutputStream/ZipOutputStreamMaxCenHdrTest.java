@@ -173,6 +173,8 @@ public class ZipOutputStreamMaxCenHdrTest {
                 assertTrue(ex.getMessage().matches(".*bad header size.*"),
                         "Unexpected ZipException message: " + ex.getMessage());
                 receivedException = true;
+            } else {
+                zos.putNextEntry(zipEntry);
             }
         } catch (Exception e) {
             throw new RuntimeException("Received Unexpected Exception", e);
