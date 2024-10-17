@@ -2408,30 +2408,6 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
         }
     }
 
-    public static class UnknownType extends Type {
-
-        public UnknownType() {
-            // Unknown is a synthesized internal type, so it cannot be
-            // annotated.
-            super(null, List.nil());
-        }
-
-        @Override
-        public TypeTag getTag() {
-            return UNKNOWN;
-        }
-
-        @Override @DefinedBy(Api.LANGUAGE_MODEL)
-        public <R, P> R accept(TypeVisitor<R, P> v, P p) {
-            return v.visitUnknown(this, p);
-        }
-
-        @Override
-        public boolean isPartial() {
-            return true;
-        }
-    }
-
     /**
      * A visitor for types.  A visitor is used to implement operations
      * (or relations) on types.  Most common operations on types are
