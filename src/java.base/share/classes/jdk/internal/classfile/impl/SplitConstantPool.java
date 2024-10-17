@@ -24,16 +24,15 @@
  */
 package jdk.internal.classfile.impl;
 
+import java.lang.classfile.Attributes;
+import java.lang.classfile.BootstrapMethodEntry;
+import java.lang.classfile.ClassReader;
+import java.lang.classfile.attribute.BootstrapMethodsAttribute;
+import java.lang.classfile.constantpool.*;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.util.Arrays;
 import java.util.List;
-
-import java.lang.classfile.Attributes;
-import java.lang.classfile.ClassReader;
-import java.lang.classfile.BootstrapMethodEntry;
-import java.lang.classfile.attribute.BootstrapMethodsAttribute;
-import java.lang.classfile.constantpool.*;
 
 import jdk.internal.constant.ConstantUtils;
 
