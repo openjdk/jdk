@@ -334,16 +334,8 @@ public class ReflectionFactory {
 
     private final Constructor<?> generateConstructor(Class<?> cl,
                                                      Constructor<?> constructorToCall) {
-        ConstructorAccessor acc;
-        if (useOldSerializableConstructor()) {
-            acc = new SerializationConstructorAccessorGenerator().
-                                generateSerializationConstructor(cl,
-                                                                 constructorToCall.getParameterTypes(),
-                                                                 constructorToCall.getModifiers(),
-                                                                 constructorToCall.getDeclaringClass());
-        } else {
-            acc = MethodHandleAccessorFactory.newSerializableConstructorAccessor(cl, constructorToCall);
-        }
+        ConstructorAccessor acc = MethodHandleAccessorFactory
+                .newSerializableConstructorAccessor(cl, constructorToCall);
         // Unlike other root constructors, this constructor is not copied for mutation
         // but directly mutated, as it is not cached. To cache this constructor,
         // setAccessible call must be done on a copy and return that copy instead.
@@ -507,10 +499,6 @@ public class ReflectionFactory {
         return config().useNativeAccessorOnly;
     }
 
-    static boolean useOldSerializableConstructor() {
-        return config().useOldSerializableConstructor;
-    }
-
     private static boolean disableSerialConstructorChecks() {
         return config().disableSerialConstructorChecks;
     }
@@ -527,7 +515,6 @@ public class ReflectionFactory {
     private static @Stable Config config;
 
     private static final Config DEFAULT_CONFIG = new Config(false, // useNativeAccessorOnly
-                                                            false,  // useOldSerializeableConstructor
                                                             false); // disableSerialConstructorChecks
 
     /**
@@ -542,7 +529,6 @@ public class ReflectionFactory {
      * is to override them.
      */
     private record Config(boolean useNativeAccessorOnly,
-                          boolean useOldSerializableConstructor,
                           boolean disableSerialConstructorChecks) {
     }
 
@@ -566,12 +552,10 @@ public class ReflectionFactory {
         Properties props = GetPropertyAction.privilegedGetProperties();
         boolean useNativeAccessorOnly =
             "true".equals(props.getProperty("jdk.reflect.useNativeAccessorOnly"));
-        boolean useOldSerializableConstructor =
-            "true".equals(props.getProperty("jdk.reflect.useOldSerializableConstructor"));
         boolean disableSerialConstructorChecks =
             "true".equals(props.getProperty("jdk.disableSerialConstructorChecks"));
 
-        return new Config(useNativeAccessorOnly, useOldSerializableConstructor, disableSerialConstructorChecks);
+        return new Config(useNativeAccessorOnly, disableSerialConstructorChecks);
     }
 
     /**
