@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8329817 8334432 8339076
+ * @bug 8329817 8334432 8339076 8341260
  * @modules jdk.incubator.vector
  * @summary Basic tests of Float16 arithmetic and similar operations
  */

@@ -77,10 +77,7 @@ public final class Float16
     private static final long serialVersionUID = 16; // Not needed for a value class?
 
     // Functionality for future consideration:
-    // float16ToShortBits that normalizes NaNs, c.f. floatToIntBits vs floatToRawIntBits
-    // copysign
     // IEEEremainder / remainder operator remainder
-    // signum
 
    /**
     * Returns a {@code Float16} instance wrapping IEEE 754 binary16
@@ -1303,7 +1300,7 @@ public final class Float16
             assert exp <= MAX_EXPONENT && exp >= MIN_EXPONENT;
             // ulp(x) is usually 2^(SIGNIFICAND_WIDTH-1)*(2^ilogb(x))
             // Let float -> float16 conversion handle encoding issues.
-            yield valueOf(Math.scalb(1.0f, exp - (PRECISION - 1)));
+            yield scalb(valueOf(1), exp - (PRECISION - 1));
         }
         };
     }
@@ -1429,5 +1426,47 @@ public final class Float16
         return valueOf(v.doubleValue()
                 * Double.longBitsToDouble((long) (scaleFactor + DoubleConsts_EXP_BIAS) << Double.PRECISION - 1));
     }
+    /**
+     * Returns the first floating-point argument with the sign of the
+     * second floating-point argument.
+     * This method does not require NaN {@code sign}
+     * arguments to be treated as positive values; implementations are
+     * permitted to treat some NaN arguments as positive and other NaN
+     * arguments as negative to allow greater performance.
+     *
+     * @apiNote
+     * This method corresponds to the copySign operation defined in
+     * IEEE 754.
+     *
+     * @param magnitude  the parameter providing the magnitude of the result
+     * @param sign   the parameter providing the sign of the result
+     * @return a value with the magnitude of {@code magnitude}
+     * and the sign of {@code sign}.
+     */
+    public static Float16 copySign(Float16 magnitude, Float16 sign) {
+        return shortBitsToFloat16((short) ((float16ToRawShortBits(sign) &
+                        (Float16Consts.SIGN_BIT_MASK)) |
+                        (float16ToRawShortBits(magnitude) &
+                                (Float16Consts.EXP_BIT_MASK |
+                                        Float16Consts.SIGNIF_BIT_MASK))));
+    }
 
+    /**
+     * Returns the signum function of the argument; zero if the argument
+     * is zero, 1.0 if the argument is greater than zero, -1.0 if the
+     * argument is less than zero.
+     *
+     * <p>Special Cases:
+     * <ul>
+     * <li> If the argument is NaN, then the result is NaN.
+     * <li> If the argument is positive zero or negative zero, then the
+     *      result is the same as the argument.
+     * </ul>
+     *
+     * @param f the floating-point value whose signum is to be returned
+     * @return the signum function of the argument
+     */
+    public static Float16 signum(Float16 f) {
+        return (f.floatValue() == 0.0f || isNaN(f)) ? f : copySign(valueOf(1), f);
+    }
 }
