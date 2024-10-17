@@ -530,7 +530,11 @@ public class FileChannelImpl
         }
     }
 
-    public int available() throws IOException {
+    /**
+     * Returns an estimate of the number of remaining bytes that can be read
+     * from this channel without blocking.
+     */
+    int available() throws IOException {
         ensureOpen();
         synchronized (positionLock) {
             int a = -1;
@@ -549,7 +553,11 @@ public class FileChannelImpl
         }
     }
 
-    public boolean isOther() throws IOException {
+    /**
+     * Tells whether the channel represents something other than a regular
+     * file, directory, or symbolic link.
+     */
+    boolean isOther() throws IOException {
         ensureOpen();
         int ti = -1;
         Boolean isOther = null;
@@ -558,12 +566,7 @@ public class FileChannelImpl
             ti = threads.add();
             if (!isOpen())
                 return false;
-            boolean attempted = Blocker.begin();
-            try {
-                return isOther = nd.isOther(fd);
-            } finally {
-                Blocker.end(attempted);
-            }
+            return isOther = nd.isOther(fd);
         } finally {
             threads.remove(ti);
             endBlocking(isOther != null);

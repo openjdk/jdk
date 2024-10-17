@@ -38,6 +38,7 @@ import java.nio.channels.WritableByteChannel;
 import java.util.Arrays;
 import java.util.Objects;
 import jdk.internal.util.ArraysSupport;
+import jdk.internal.vm.annotation.Stable;
 
 /**
  * An InputStream that reads bytes from a channel.
@@ -53,7 +54,9 @@ class ChannelInputStream extends InputStream {
     private byte[] bs;       // Invoker's previous array
     private byte[] b1;
 
-    private Boolean isOther = null;
+    // if isOther is true, then the file being read is not a regular file,
+    // nor a directory, nor a symbolic link, hence possibly not seekable
+    private @Stable Boolean isOther = null;
 
     /**
      * Initialize a ChannelInputStream that reads from the given channel.

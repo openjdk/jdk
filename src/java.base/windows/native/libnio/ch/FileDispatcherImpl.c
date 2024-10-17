@@ -435,7 +435,8 @@ Java_sun_nio_ch_FileDispatcherImpl_isOther0(JNIEnv *env, jobject this, jobject f
     HANDLE handle = (HANDLE)(handleval(env, fdo));
 
     BY_HANDLE_FILE_INFORMATION finfo;
-    GetFileInformationByHandle(handle, &finfo);
+    if (!GetFileInformationByHandle(handle, &finfo))
+        JNU_ThrowIOExceptionWithLastError(env, "isOther failed");
     DWORD fattr = finfo.dwFileAttributes;
 
     if ((fattr & FILE_ATTRIBUTE_DEVICE) != 0)
