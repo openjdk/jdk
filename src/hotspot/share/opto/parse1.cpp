@@ -986,7 +986,12 @@ void Parse::do_exits() {
   _exits.set_i_o(gvn().transform(iophi));
 
   // Figure out if we need to emit the trailing barrier. The barrier is only
-  // needed in the constructors, and only in three cases:
+  // needed in constructors where the object does not have an Initialization
+  // node. Macro expansion will emit a trailing barrier for Initialize nodes,
+  // so we do not need to emit here.
+  //
+  // Given a constructor without an object Initialize node, the trailing
+  // barrier is needed in three cases:
   //
   // 1. The constructor wrote a final or a @Stable field. All these
   //    initializations must be ordered before any code after the constructor
@@ -1013,11 +1018,12 @@ void Parse::do_exits() {
   // such unusual early publications.  But no barrier is needed on
   // exceptional returns, since they cannot publish normally.
   //
-  if (method()->is_object_initializer() &&
-       (wrote_final() || wrote_stable() ||
+  Node* recorded_alloc = alloc_with_final_or_stable();
+  if (method()->is_object_initializer() && (!recorded_alloc ||
+      !AllocateNode::Ideal_allocation(recorded_alloc)->initialization())
+       && (wrote_final() || wrote_stable() ||
          (AlwaysSafeConstructors && wrote_fields()) ||
          (support_IRIW_for_not_multiple_copy_atomic_cpu && wrote_volatile()))) {
-    Node* recorded_alloc = alloc_with_final_or_stable();
     _exits.insert_mem_bar(UseStoreStoreForCtor ? Op_MemBarStoreStore : Op_MemBarRelease,
                           recorded_alloc);
 

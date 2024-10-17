@@ -24,12 +24,14 @@
 package compiler.c2.irTests;
 
 import compiler.lib.ir_framework.*;
+import jdk.internal.vm.annotation.Stable;
 
 /*
  * @test
  * @bug 8300148
  * @summary Test barriers emitted in constructors
  * @library /test/lib /
+ * @modules java.base/jdk.internal.vm.annotation
  * @requires os.arch=="aarch64" | os.arch=="riscv64" | os.arch=="x86_64" | os.arch=="amd64"
  * @run main compiler.c2.irTests.ConstructorBarriers
  */
@@ -47,6 +49,38 @@ public class ConstructorBarriers {
         public PlainPlain(long i) {
             f1 = i;
             f2 = i;
+        }
+    }
+
+    private static class PlainExtendsPlain extends PlainPlain {
+        long f3;
+        public PlainExtendsPlain(long i) {
+            super(i);
+            f3 = i;
+        }
+    }
+
+    private static class PlainExtendsFinal extends FinalFinal {
+        long f3;
+        public PlainExtendsFinal(long i) {
+            super(i);
+            f3 = i;
+        }
+    }
+
+    private static class PlainExtendsStable extends StableStable {
+        long f3;
+        public PlainExtendsStable(long i) {
+            super(i);
+            f3 = i;
+        }
+    }
+
+    private static class PlainExtendsVolatile extends VolatileVolatile {
+        long f3;
+        public PlainExtendsVolatile(long i) {
+            super(i);
+            f3 = i;
         }
     }
 
@@ -74,6 +108,85 @@ public class ConstructorBarriers {
         public FinalFinal(long i) {
             f1 = i;
             f2 = i;
+        }
+    }
+
+    private static class FinalExtendsPlain extends PlainPlain {
+        final long f3;
+        public FinalExtendsPlain(long i) {
+            super(i);
+            f3 = i;
+        }
+    }
+
+    private static class FinalExtendsFinal extends FinalFinal {
+        final long f3;
+        public FinalExtendsFinal(long i) {
+            super(i);
+            f3 = i;
+        }
+    }
+
+    private static class FinalExtendsStable extends StableStable {
+        final long f3;
+        public FinalExtendsStable(long i) {
+            super(i);
+            f3 = i;
+        }
+    }
+
+    private static class FinalExtendsVolatile extends VolatileVolatile {
+        final long f3;
+        public FinalExtendsVolatile(long i) {
+            super(i);
+            f3 = i;
+        }
+    }
+
+    private static class StableStable {
+        @Stable
+        long f1;
+        @Stable
+        long f2;
+        public StableStable(long i) {
+            f1 = i;
+            f2 = i;
+        }
+    }
+
+    private static class StableExtendsPlain extends PlainPlain {
+        @Stable
+        long f3;
+        public StableExtendsPlain(long i) {
+            super(i);
+            f3 = i;
+        }
+    }
+
+    private static class StableExtendsFinal extends FinalFinal {
+        @Stable
+        long f3;
+        public StableExtendsFinal(long i) {
+            super(i);
+            f3 = i;
+        }
+    }
+
+    private static class StableExtendsStable extends StableStable {
+        @Stable
+        long f3;
+        public StableExtendsStable(long i) {
+            super(i);
+            f3 = i;
+        }
+    }
+
+    private static class StableExtendsVolatile extends VolatileVolatile {
+        @Stable
+        long f3;
+        public StableExtendsVolatile(long i) {
+            super(i);
+            f3 = i;
         }
     }
 
@@ -122,6 +235,38 @@ public class ConstructorBarriers {
         }
     }
 
+    private static class VolatileExtendsPlain extends PlainPlain {
+        volatile long f3;
+        public VolatileExtendsPlain(long i) {
+            super(i);
+            f3 = i;
+        }
+    }
+
+    private static class VolatileExtendsFinal extends FinalFinal {
+        volatile long f3;
+        public VolatileExtendsFinal(long i) {
+            super(i);
+            f3 = i;
+        }
+    }
+
+    private static class VolatileExtendsVolatile extends VolatileVolatile {
+        volatile long f3;
+        public VolatileExtendsVolatile(long i) {
+            super(i);
+            f3 = i;
+        }
+    }
+
+    private static class VolatileExtendsStable extends StableStable {
+        volatile long f3;
+        public VolatileExtendsStable(long i) {
+            super(i);
+            f3 = i;
+        }
+    }
+
     long l = 42;
 
     @DontInline
@@ -135,6 +280,46 @@ public class ConstructorBarriers {
         PlainPlain c = new PlainPlain(l);
         consume(c);
         return c.f1 + c.f2;
+    }
+
+    @Test
+    @IR(counts = {IRNode.MEMBAR_STORESTORE, "1"})
+    @IR(failOn = IRNode.MEMBAR_RELEASE)
+    @IR(failOn = IRNode.MEMBAR_VOLATILE)
+    public long escaping_plainExtendsPlain() {
+        PlainExtendsPlain c = new PlainExtendsPlain(l);
+        consume(c);
+        return c.f1 + c.f2 + c.f3;
+    }
+
+    @Test
+    @IR(counts = {IRNode.MEMBAR_STORESTORE, "1"})
+    @IR(failOn = IRNode.MEMBAR_RELEASE)
+    @IR(failOn = IRNode.MEMBAR_VOLATILE)
+    public long escaping_plainExtendsFinal() {
+        PlainExtendsFinal c = new PlainExtendsFinal(l);
+        consume(c);
+        return c.f1 + c.f2 + c.f3;
+    }
+
+    @Test
+    @IR(counts = {IRNode.MEMBAR_STORESTORE, "1"})
+    @IR(failOn = IRNode.MEMBAR_RELEASE)
+    @IR(failOn = IRNode.MEMBAR_VOLATILE)
+    public long escaping_plainExtendsStable() {
+        PlainExtendsStable c = new PlainExtendsStable(l);
+        consume(c);
+        return c.f1 + c.f2 + c.f3;
+    }
+
+    @Test
+    @IR(counts = {IRNode.MEMBAR_STORESTORE, "1"})
+    @IR(counts = {IRNode.MEMBAR_RELEASE, "2"})
+    @IR(counts = {IRNode.MEMBAR_VOLATILE, "2"})
+    public long escaping_plainExtendsVolatile() {
+        PlainExtendsVolatile c = new PlainExtendsVolatile(l);
+        consume(c);
+        return c.f1 + c.f2 + c.f3;
     }
 
     @Test
@@ -165,6 +350,86 @@ public class ConstructorBarriers {
         FinalFinal c = new FinalFinal(l);
         consume(c);
         return c.f1 + c.f2;
+    }
+
+    @Test
+    @IR(counts = {IRNode.MEMBAR_STORESTORE, "1"})
+    @IR(failOn = IRNode.MEMBAR_RELEASE)
+    @IR(failOn = IRNode.MEMBAR_VOLATILE)
+    public long escaping_finalExtendsPlain() {
+        FinalExtendsPlain c = new FinalExtendsPlain(l);
+        consume(c);
+        return c.f1 + c.f2 + c.f3;
+    }
+
+    @Test
+    @IR(counts = {IRNode.MEMBAR_STORESTORE, "1"})
+    @IR(failOn = IRNode.MEMBAR_RELEASE)
+    @IR(failOn = IRNode.MEMBAR_VOLATILE)
+    public long escaping_finalExtendsFinal() {
+        FinalExtendsFinal c = new FinalExtendsFinal(l);
+        consume(c);
+        return c.f1 + c.f2 + c.f3;
+    }
+
+    @Test
+    @IR(counts = {IRNode.MEMBAR_STORESTORE, "1"})
+    @IR(failOn = IRNode.MEMBAR_RELEASE)
+    @IR(failOn = IRNode.MEMBAR_VOLATILE)
+    public long escaping_finalExtendsStable() {
+        FinalExtendsStable c = new FinalExtendsStable(l);
+        consume(c);
+        return c.f1 + c.f2 + c.f3;
+    }
+
+    @Test
+    @IR(counts = {IRNode.MEMBAR_STORESTORE, "1"})
+    @IR(counts = {IRNode.MEMBAR_RELEASE, "2"})
+    @IR(counts = {IRNode.MEMBAR_VOLATILE, "2"})
+    public long escaping_finalExtendsVolatile() {
+        FinalExtendsVolatile c = new FinalExtendsVolatile(l);
+        consume(c);
+        return c.f1 + c.f2 + c.f3;
+    }
+
+    @Test
+    @IR(counts = {IRNode.MEMBAR_STORESTORE, "1"})
+    @IR(failOn = IRNode.MEMBAR_RELEASE)
+    @IR(failOn = IRNode.MEMBAR_VOLATILE)
+    public long escaping_stableExtendsPlain() {
+        StableExtendsPlain c = new StableExtendsPlain(l);
+        consume(c);
+        return c.f1 + c.f2 + c.f3;
+    }
+
+    @Test
+    @IR(counts = {IRNode.MEMBAR_STORESTORE, "1"})
+    @IR(failOn = IRNode.MEMBAR_RELEASE)
+    @IR(failOn = IRNode.MEMBAR_VOLATILE)
+    public long escaping_stableExtendsFinal() {
+        StableExtendsFinal c = new StableExtendsFinal(l);
+        consume(c);
+        return c.f1 + c.f2 + c.f3;
+    }
+
+    @Test
+    @IR(counts = {IRNode.MEMBAR_STORESTORE, "1"})
+    @IR(failOn = IRNode.MEMBAR_RELEASE)
+    @IR(failOn = IRNode.MEMBAR_VOLATILE)
+    public long escaping_stableExtendsStable() {
+        StableExtendsStable c = new StableExtendsStable(l);
+        consume(c);
+        return c.f1 + c.f2 + c.f3;
+    }
+
+    @Test
+    @IR(counts = {IRNode.MEMBAR_STORESTORE, "1"})
+    @IR(counts = {IRNode.MEMBAR_RELEASE, "2"})
+    @IR(counts = {IRNode.MEMBAR_VOLATILE, "2"})
+    public long escaping_stableExtendsVolatile() {
+        StableExtendsVolatile c = new StableExtendsVolatile(l);
+        consume(c);
+        return c.f1 + c.f2 + c.f3;
     }
 
     @Test
@@ -201,6 +466,46 @@ public class ConstructorBarriers {
     @IR(counts = {IRNode.MEMBAR_RELEASE, "1"})
     @IR(counts = {IRNode.MEMBAR_STORESTORE, "1"})
     @IR(counts = {IRNode.MEMBAR_VOLATILE, "1"})
+    public long escaping_volatileExtendsPlain() {
+        VolatileExtendsPlain c = new VolatileExtendsPlain(l);
+        consume(c);
+        return c.f1 + c.f2 + c.f3;
+    }
+
+    @Test
+    @IR(counts = {IRNode.MEMBAR_RELEASE, "1"})
+    @IR(counts = {IRNode.MEMBAR_STORESTORE, "1"})
+    @IR(counts = {IRNode.MEMBAR_VOLATILE, "1"})
+    public long escaping_volatileExtendsFinal() {
+        VolatileExtendsFinal c = new VolatileExtendsFinal(l);
+        consume(c);
+        return c.f1 + c.f2 + c.f3;
+    }
+
+    @Test
+    @IR(counts = {IRNode.MEMBAR_RELEASE, "1"})
+    @IR(counts = {IRNode.MEMBAR_STORESTORE, "1"})
+    @IR(counts = {IRNode.MEMBAR_VOLATILE, "1"})
+    public long escaping_volatileExtendsStable() {
+        VolatileExtendsStable c = new VolatileExtendsStable(l);
+        consume(c);
+        return c.f1 + c.f2 + c.f3;
+    }
+
+    @Test
+    @IR(counts = {IRNode.MEMBAR_RELEASE, "3"})
+    @IR(counts = {IRNode.MEMBAR_STORESTORE, "1"})
+    @IR(counts = {IRNode.MEMBAR_VOLATILE, "3"})
+    public long escaping_volatileExtendsVolatile() {
+        VolatileExtendsVolatile c = new VolatileExtendsVolatile(l);
+        consume(c);
+        return c.f1 + c.f2 + c.f3;
+    }
+
+    @Test
+    @IR(counts = {IRNode.MEMBAR_RELEASE, "1"})
+    @IR(counts = {IRNode.MEMBAR_STORESTORE, "1"})
+    @IR(counts = {IRNode.MEMBAR_VOLATILE, "1"})
     public long escaping_finalVolatile() {
         FinalVolatile c = new FinalVolatile(l);
         consume(c);
@@ -226,6 +531,37 @@ public class ConstructorBarriers {
 
     @Test
     @IR(failOn = IRNode.MEMBAR)
+    public long non_escaping_plainExtendsPlain() {
+        PlainExtendsPlain c = new PlainExtendsPlain(l);
+        return c.f1 + c.f2 + c.f3;
+    }
+
+    @Test
+    @IR(failOn = IRNode.MEMBAR)
+    public long non_escaping_plainExtendsFinal() {
+        PlainExtendsFinal c = new PlainExtendsFinal(l);
+        return c.f1 + c.f2 + c.f3;
+    }
+
+    @Test
+    @IR(failOn = IRNode.MEMBAR)
+    public long non_escaping_plainExtendsStable() {
+        PlainExtendsStable c = new PlainExtendsStable(l);
+        return c.f1 + c.f2 + c.f3;
+    }
+
+    @Test
+    @IR(failOn = IRNode.MEMBAR_RELEASE)
+    @IR(failOn = IRNode.MEMBAR_STORESTORE)
+    @IR(failOn = IRNode.MEMBAR_VOLATILE)
+    @IR(counts = {IRNode.MEMBAR_ACQUIRE, "2"})
+    public long non_escaping_plainExtendsVolatile() {
+        PlainExtendsVolatile c = new PlainExtendsVolatile(l);
+        return c.f1 + c.f2 + c.f3;
+    }
+
+    @Test
+    @IR(failOn = IRNode.MEMBAR)
     public long non_escaping_plainFinal() {
         PlainFinal c = new PlainFinal(l);
         return c.f1 + c.f2;
@@ -243,6 +579,68 @@ public class ConstructorBarriers {
     public long non_escaping_finalFinal() {
         FinalFinal c = new FinalFinal(l);
         return c.f1 + c.f2;
+    }
+
+    @Test
+    @IR(failOn = IRNode.MEMBAR)
+    public long non_escaping_finalExtendsPlain() {
+        FinalExtendsPlain c = new FinalExtendsPlain(l);
+        return c.f1 + c.f2 + c.f3;
+    }
+
+    @Test
+    @IR(failOn = IRNode.MEMBAR)
+    public long non_escaping_finalExtendsFinal() {
+        FinalExtendsFinal c = new FinalExtendsFinal(l);
+        return c.f1 + c.f2 + c.f3;
+    }
+
+    @Test
+    @IR(failOn = IRNode.MEMBAR)
+    public long non_escaping_finalExtendsStable() {
+        FinalExtendsStable c = new FinalExtendsStable(l);
+        return c.f1 + c.f2 + c.f3;
+    }
+
+    @Test
+    @IR(failOn = IRNode.MEMBAR_RELEASE)
+    @IR(failOn = IRNode.MEMBAR_STORESTORE)
+    @IR(failOn = IRNode.MEMBAR_VOLATILE)
+    @IR(counts = {IRNode.MEMBAR_ACQUIRE, "2"})
+    public long non_escaping_finalExtendsVolatile() {
+        FinalExtendsVolatile c = new FinalExtendsVolatile(l);
+        return c.f1 + c.f2 + c.f3;
+    }
+
+    @Test
+    @IR(failOn = IRNode.MEMBAR)
+    public long non_escaping_stableExtendsPlain() {
+        StableExtendsPlain c = new StableExtendsPlain(l);
+        return c.f1 + c.f2 + c.f3;
+    }
+
+    @Test
+    @IR(failOn = IRNode.MEMBAR)
+    public long non_escaping_stableExtendsFinal() {
+        StableExtendsFinal c = new StableExtendsFinal(l);
+        return c.f1 + c.f2 + c.f3;
+    }
+
+    @Test
+    @IR(failOn = IRNode.MEMBAR)
+    public long non_escaping_stableExtendsStable() {
+        StableExtendsStable c = new StableExtendsStable(l);
+        return c.f1 + c.f2 + c.f3;
+    }
+
+    @Test
+    @IR(failOn = IRNode.MEMBAR_RELEASE)
+    @IR(failOn = IRNode.MEMBAR_STORESTORE)
+    @IR(failOn = IRNode.MEMBAR_VOLATILE)
+    @IR(counts = {IRNode.MEMBAR_ACQUIRE, "2"})
+    public long non_escaping_stableExtendsVolatile() {
+        StableExtendsVolatile c = new StableExtendsVolatile(l);
+        return c.f1 + c.f2 + c.f3;
     }
 
     @Test
@@ -273,6 +671,46 @@ public class ConstructorBarriers {
     public long non_escaping_volatileVolatile() {
         VolatileVolatile c = new VolatileVolatile(l);
         return c.f1 + c.f2;
+    }
+
+    @Test
+    @IR(failOn = IRNode.MEMBAR_RELEASE)
+    @IR(failOn = IRNode.MEMBAR_STORESTORE)
+    @IR(failOn = IRNode.MEMBAR_VOLATILE)
+    @IR(counts = {IRNode.MEMBAR_ACQUIRE, "1"})
+    public long non_escaping_volatileExtendsPlain() {
+        VolatileExtendsPlain c = new VolatileExtendsPlain(l);
+        return c.f1 + c.f2 + c.f3;
+    }
+
+    @Test
+    @IR(failOn = IRNode.MEMBAR_RELEASE)
+    @IR(failOn = IRNode.MEMBAR_STORESTORE)
+    @IR(failOn = IRNode.MEMBAR_VOLATILE)
+    @IR(counts = {IRNode.MEMBAR_ACQUIRE, "1"})
+    public long non_escaping_volatileExtendsFinal() {
+        VolatileExtendsFinal c = new VolatileExtendsFinal(l);
+        return c.f1 + c.f2 + c.f3;
+    }
+
+    @Test
+    @IR(failOn = IRNode.MEMBAR_RELEASE)
+    @IR(failOn = IRNode.MEMBAR_STORESTORE)
+    @IR(failOn = IRNode.MEMBAR_VOLATILE)
+    @IR(counts = {IRNode.MEMBAR_ACQUIRE, "1"})
+    public long non_escaping_volatileExtendsStable() {
+        VolatileExtendsStable c = new VolatileExtendsStable(l);
+        return c.f1 + c.f2 + c.f3;
+    }
+
+    @Test
+    @IR(failOn = IRNode.MEMBAR_RELEASE)
+    @IR(failOn = IRNode.MEMBAR_STORESTORE)
+    @IR(failOn = IRNode.MEMBAR_VOLATILE)
+    @IR(counts = {IRNode.MEMBAR_ACQUIRE, "3"})
+    public long non_escaping_volatileExtendsVolatile() {
+        VolatileExtendsVolatile c = new VolatileExtendsVolatile(l);
+        return c.f1 + c.f2 + c.f3;
     }
 
     @Test
