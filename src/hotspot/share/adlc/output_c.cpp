@@ -1514,6 +1514,7 @@ void ArchDesc::defineExpand(FILE *fp, InstructForm *node) {
   unsigned      i;
 
   // Generate Expand function header
+  // TODO
   fprintf(fp, "MachNode* %sNode::Expand(State* state, Node_List& proj_list, Node* mem) {\n", node->_ident);
   fprintf(fp, "  Compile* C = Compile::current();\n");
   // Generate expand code
@@ -1752,6 +1753,8 @@ void ArchDesc::defineExpand(FILE *fp, InstructForm *node) {
     bool declared_def  = false;
     bool declared_kill = false;
 
+    // NOTE: only plain operands or ungrouped operands are added here,
+    //       grouping operands are not added here.
     while ((comp = node->_components.iter()) != nullptr) {
       // Lookup register class associated with operand type
       Form *form = (Form*)_globalNames[comp->_type];
@@ -1767,6 +1770,7 @@ void ArchDesc::defineExpand(FILE *fp, InstructForm *node) {
           declared_def = true;
         }
         if (op && op->_interface && op->_interface->is_RegInterface()) {
+          // TODO
           fprintf(fp,"  def = new MachTempNode(state->MachOperGenerator(%s));\n",
                   machOperEnum(op->_ident));
           fprintf(fp,"  add_req(def);\n");
@@ -1784,6 +1788,7 @@ void ArchDesc::defineExpand(FILE *fp, InstructForm *node) {
 
         if (!declared_kill) {
           // Define the variable "kill" to hold new MachProjNodes
+          // TODO
           fprintf(fp, "  MachProjNode *kill;\n");
           declared_kill = true;
         }
@@ -1797,6 +1802,7 @@ void ArchDesc::defineExpand(FILE *fp, InstructForm *node) {
                      node->_ident, comp->_type, comp->_name);
         }
 
+        // TODO
         fprintf(fp,"  kill = ");
         fprintf(fp,"new MachProjNode( %s, %d, (%s), Op_%s );\n",
                 machNode, proj_no++, regmask, ideal_type);
@@ -1918,6 +1924,8 @@ private:
   OpClassForm  *_opclass;
   OperandForm  *_operand;
   int           _operand_idx;
+  int           _ungrouped_operands[OperandForm::UNGROUPED_OPER_LIMIT];
+  uint          _ungrouped_operands_num;
   const char   *_local_name;
   const char   *_operand_name;
   bool          _doing_disp;
@@ -1956,6 +1964,7 @@ public:
     _opclass       = nullptr;
     _operand       = nullptr;
     _operand_idx   = 0;
+    _ungrouped_operands_num  = 0;
     _local_name    = "";
     _operand_name  = "";
     _doing_disp    = false;
@@ -1999,16 +2008,20 @@ public:
       else {
         // Lookup its position in (formal) parameter list of encoding
         int   param_no  = _encoding.rep_var_index(rep_var);
-        if ( param_no == -1 ) {
+        int   param_no_grouped = _encoding.rep_var_index_grouped(rep_var);
+        if ( param_no == -1 && param_no_grouped == -1 ) {
           _AD.syntax_err( _encoding._linenum,
-                          "Replacement variable %s not found in enc_class %s.\n",
+                          "1 Replacement variable %s not found in enc_class %s.\n",
                           rep_var, _encoding._name);
         }
+        assert(param_no == -1 || param_no_grouped == -1, "sanity");
 
         // Lookup the corresponding ins_encode parameter
         // This is the argument (actual parameter) to the encoding.
-        const char *inst_rep_var = _ins_encode.rep_var_name(_inst, param_no);
-        if (inst_rep_var == nullptr) {
+        const char *inst_rep_var_ungrouped = param_no != -1 ? _ins_encode.rep_var_name(_inst, param_no) : nullptr;
+        const char *inst_rep_var_grouped = param_no_grouped != -1 ?
+                   _ins_encode.rep_var_name_grouped(_inst, param_no_grouped) : nullptr;
+        if (inst_rep_var_ungrouped == nullptr && inst_rep_var_grouped == nullptr) {
           _AD.syntax_err( _ins_encode._linenum,
                           "Parameter %s not passed to enc_class %s from instruct %s.\n",
                           rep_var, _encoding._name, _inst._ident);
@@ -2016,18 +2029,35 @@ public:
         }
 
         // Check if instruction's actual parameter is a local name in the instruction
+        const char *inst_rep_var = inst_rep_var_ungrouped != nullptr ? inst_rep_var_ungrouped : inst_rep_var_grouped;
         const Form  *local     = _inst._localNames[inst_rep_var];
         OpClassForm *opc       = (local != nullptr) ? local->is_opclass() : nullptr;
         // Note: assert removed to allow constant and symbolic parameters
         // assert( opc, "replacement variable was not found in local names");
         // Lookup the index position iff the replacement variable is a localName
         int idx  = (opc != nullptr) ? _inst.operand_position_format(inst_rep_var) : -1;
+        int idx_grouped  = (opc != nullptr) ? _inst.operand_position_format_grouped(inst_rep_var) : -1;
+        assert(idx == -1 || idx_grouped == -1, "sanity");
 
-        if ( idx != -1 ) {
+        if ( idx != -1 || idx_grouped != -1) {
           // This is a local in the instruction
           // Update local state info.
           _opclass        = opc;
           _operand_idx    = idx;
+          if (idx != -1) {
+            _ungrouped_operands_num = 0;
+          } else {
+            OperandForm *operand = opc->is_operand();
+            assert(operand != nullptr, "sanity");
+            assert(operand->get_ungrouped_operands_num() > 0, "sanity");
+            for (int i = 0; i < (int)operand->get_ungrouped_operands_num(); i++) {
+              const char* ungrouped = OperandForm::get_ungrouped_oper_name(inst_rep_var, i);
+              int ungrouped_idx  = _inst.operand_position_format(ungrouped);
+              assert(ungrouped_idx >= 0 && (uint)ungrouped_idx < _inst.num_unique_opnds(), "sanity");
+              _ungrouped_operands[i] = ungrouped_idx;
+            }
+            _ungrouped_operands_num = operand->get_ungrouped_operands_num();
+          }
           _local_name     = rep_var;
           _operand_name   = inst_rep_var;
 
@@ -2220,6 +2250,7 @@ public:
 
       if ( (*rep_var) == '$' ) {
         // A subfield variable, '$$' prefix
+        // TODO
         emit_field( rep_var );
       } else {
         if (_strings_to_emit.peek() != nullptr &&
@@ -2272,6 +2303,7 @@ public:
             // close up the parens
             fprintf(_fp, ")");
           } else {
+            // TODO
             emit_rep_var( rep_var );
           }
         }
@@ -2335,6 +2367,7 @@ public:
     }
     else {
       // Not an emit# command, just output the replacement string.
+      // TODO
       emit_replacement();
     }
 
@@ -2358,6 +2391,12 @@ private:
     if (strcmp(rep_var,"$VectorRegister") == 0)   return "as_VectorRegister";
     if (strcmp(rep_var,"$VectorSRegister") == 0)  return "as_VectorSRegister";
 #endif
+
+#if defined(RISCV64)
+    if (strcmp(rep_var,"$VectorRegister") == 0)   return "as_VectorRegister";
+    if (strcmp(rep_var,"$VectorRegisterGroup") == 0)   return "as_VectorRegisterGroup";
+#endif
+
 #if defined(AARCH64)
     if (strcmp(rep_var,"$PRegister") == 0)  return "as_PRegister";
 #endif
@@ -2370,7 +2409,7 @@ private:
     // A subfield variable, '$$subfield'
     if ( strcmp(rep_var, "$reg") == 0 || reg_convert != nullptr) {
       // $reg form or the $Register MacroAssembler type conversions
-      assert( _operand_idx != -1,
+      assert( (_operand_idx != -1) != (_ungrouped_operands_num > 0),
               "Must use this subfield after operand");
       if( _reg_status == LITERAL_NOT_SEEN ) {
         if (_processing_noninput) {
@@ -2383,9 +2422,21 @@ private:
             fprintf(_fp, "%s_enc", first->_regname);
           }
         } else {
+          // TODO
           fprintf(_fp,"->%s(ra_,this", reg_convert != nullptr ? reg_convert : "reg");
           // Add parameter for index position, if not result operand
-          if( _operand_idx != 0 ) fprintf(_fp,",idx%d", _operand_idx);
+          if (_ungrouped_operands_num == 0) {
+            assert(_operand_idx != -1, "sanity");
+            if( _operand_idx != 0 ) fprintf(_fp,",idx%d", _operand_idx);
+          } else {
+            assert(_operand_idx == -1, "sanity");
+            assert(_ungrouped_operands_num > 0 && _ungrouped_operands_num <= OperandForm::UNGROUPED_OPER_LIMIT, "sanity");
+            fprintf(_fp, ",%d", _ungrouped_operands_num);
+            for (int i = 0; i < (int)_ungrouped_operands_num; i++) {
+              assert(_ungrouped_operands[i] >= 0, "sanity");
+              fprintf(_fp,",idx%d", _ungrouped_operands[i]);
+            }
+          }
           fprintf(_fp,")");
           fprintf(_fp, "/* %s */", _operand_name);
         }
@@ -2476,13 +2527,26 @@ private:
     else {
       // Lookup its position in parameter list
       int   param_no  = _encoding.rep_var_index(rep_var);
-      if ( param_no == -1 ) {
+      int   param_no_grouped  = _encoding.rep_var_index_grouped(rep_var);
+      if ( param_no == -1 && param_no_grouped == -1 ) {
         _AD.syntax_err( _encoding._linenum,
-                        "Replacement variable %s not found in enc_class %s.\n",
+                        "2 Replacement variable %s not found in enc_class %s.\n",
                         rep_var, _encoding._name);
       }
+      assert(param_no == -1 || param_no_grouped == -1, "sanity");
+
       // Lookup the corresponding ins_encode parameter
-      const char *inst_rep_var = _ins_encode.rep_var_name(_inst, param_no);
+      const char *inst_rep_var_ungrouped = param_no != -1 ? _ins_encode.rep_var_name(_inst, param_no) : nullptr;
+      const char *inst_rep_var_grouped = param_no_grouped != -1 ?
+                 _ins_encode.rep_var_name_grouped(_inst, param_no_grouped) : nullptr;
+      if (inst_rep_var_ungrouped == nullptr && inst_rep_var_grouped == nullptr) {
+        _AD.syntax_err( _ins_encode._linenum,
+                        "Parameter %s not passed to enc_class %s from instruct %s.\n",
+                        rep_var, _encoding._name, _inst._ident);
+        assert(false, "inst_rep_var == null, cannot continue.");
+      }
+
+      const char *inst_rep_var = inst_rep_var_ungrouped != nullptr ? inst_rep_var_ungrouped : inst_rep_var_grouped;
 
       // Check if instruction's actual parameter is a local name in the instruction
       const Form  *local     = _inst._localNames[inst_rep_var];
@@ -2491,14 +2555,30 @@ private:
       // assert( opc, "replacement variable was not found in local names");
       // Lookup the index position iff the replacement variable is a localName
       int idx  = (opc != nullptr) ? _inst.operand_position_format(inst_rep_var) : -1;
-      if( idx != -1 ) {
-        if (_inst.is_noninput_operand(idx)) {
+      int idx_grouped  = (opc != nullptr) ? _inst.operand_position_format_grouped(inst_rep_var) : -1;
+      assert(idx == -1 || idx_grouped == -1, "sanity");
+
+      if ( idx != -1 || idx_grouped != -1) {
+        if ((idx != -1 && _inst.is_noninput_operand(idx))) {
           // This operand isn't a normal input so printing it is done
           // specially.
           _processing_noninput = true;
         } else {
           // Output the emit code for this operand
-          fprintf(_fp,"opnd_array(%d)",idx);
+          // TODO
+          if (idx != -1) {
+            fprintf(_fp,"opnd_array(%d)",idx);
+          } else {
+            OperandForm *operand = opc->is_operand();
+            assert(operand != nullptr, "sanity");
+            assert(operand->get_ungrouped_operands_num() > 0, "sanity");
+            // Pass `- 1` below, because in _inst.operand_position_format_grouped above
+            // returned `idx_grouped` will start from 1 rather 0 for non-DEF operand,
+            // and for grouping operand, only TEMP is supported.
+            assert(idx_grouped >= 1, "sanity");
+            fprintf(_fp,"opnd_array(%d",idx_grouped + _inst.num_unique_opnds() - 1);
+            fprintf(_fp,")");
+          }
         }
         assert( _operand == opc->is_operand(),
                 "Previous emit $operand does not match current");
@@ -2670,6 +2750,7 @@ void ArchDesc::defineEmit(FILE* fp, InstructForm& inst) {
 
   // (1)
   // Output instruction's emit prototype
+  // TODO
   fprintf(fp, "void %sNode::emit(C2_MacroAssembler* masm, PhaseRegAlloc* ra_) const {\n", inst._ident);
 
   // If user did not define an encode section,
@@ -2720,6 +2801,7 @@ void ArchDesc::defineEmit(FILE* fp, InstructForm& inst) {
     while ((ec_code = encoding->_code.iter()) != nullptr) {
       if (!encoding->_code.is_signal(ec_code)) {
         // Emit pending code
+        // TODO
         pending.emit();
         pending.clear();
         // Emit this code section
@@ -2728,6 +2810,7 @@ void ArchDesc::defineEmit(FILE* fp, InstructForm& inst) {
         // A replacement variable or one of its subfields
         // Obtain replacement variable from list
         ec_rep_var  = encoding->_rep_vars.iter();
+        // TODO
         pending.add_rep_var(ec_rep_var);
       }
     }
@@ -3902,6 +3985,33 @@ void ArchDesc::buildMachOperGenerator(FILE *fp_cpp) {
   fprintf(fp_cpp, "};\n");
 }
 
+int ArchDesc::buildMachNode(FILE *fp_cpp, InstructForm *inst, ComponentList& comp_list, const char *indent, int start_index) {
+  bool           dont_care = false;
+  Component     *comp      = nullptr;
+  comp_list.reset();
+  if ( comp_list.match_iter() != nullptr )    dont_care = true;
+
+  // Insert operands that are not in match-rule.
+  // Only insert a DEF if the do_care flag is set
+  comp_list.reset();
+  int         index = -1;
+  while ( (comp = comp_list.post_match_iter()) ) {
+    // Check if we don't care about DEFs or KILLs that are not USEs
+    if ( dont_care && (! comp->isa(Component::USE)) ) {
+      continue;
+    }
+    dont_care = true;
+    // For each operand not in the match rule, call MachOperGenerator
+    // with the enum for the opcode that needs to be built.
+    ComponentList clist = comp_list;
+    index  = clist.operand_position(comp->_name, comp->_usedef, inst);
+    const char *opcode = machOperEnum(comp->_type);
+    // TODO
+    fprintf(fp_cpp, "%s node->set_opnd_array(%d, ", indent, start_index + index);
+    fprintf(fp_cpp, "MachOperGenerator(%s));\n", opcode);
+  }
+  return start_index + index;
+}
 
 //---------------------------buildMachNode-------------------------------------
 // Build a new MachNode, for MachNodeGenerator or cisc-spilling
@@ -3916,29 +4026,15 @@ void ArchDesc::buildMachNode(FILE *fp_cpp, InstructForm *inst, const char *inden
     // Instruction that contains operands which are not in match rule.
     //
     // Check if the first post-match component may be an interesting def
-    bool           dont_care = false;
-    ComponentList &comp_list = inst->_components;
-    Component     *comp      = nullptr;
-    comp_list.reset();
-    if ( comp_list.match_iter() != nullptr )    dont_care = true;
-
-    // Insert operands that are not in match-rule.
-    // Only insert a DEF if the do_care flag is set
-    comp_list.reset();
-    while ( (comp = comp_list.post_match_iter()) ) {
-      // Check if we don't care about DEFs or KILLs that are not USEs
-      if ( dont_care && (! comp->isa(Component::USE)) ) {
-        continue;
-      }
-      dont_care = true;
-      // For each operand not in the match rule, call MachOperGenerator
-      // with the enum for the opcode that needs to be built.
-      ComponentList clist = inst->_components;
-      int         index  = clist.operand_position(comp->_name, comp->_usedef, inst);
-      const char *opcode = machOperEnum(comp->_type);
-      fprintf(fp_cpp, "%s node->set_opnd_array(%d, ", indent, index);
-      fprintf(fp_cpp, "MachOperGenerator(%s));\n", opcode);
-      }
+    int index = buildMachNode(fp_cpp, inst, inst->_components, indent);
+    if (inst->_components_grouped.count() > 0) {
+      fprintf(fp_cpp,"%s // Below are grouping operands\n", indent);
+      assert(index + 1 == inst->num_unique_opnds(), "sanity");
+      // Not pass `index + 1` as the start_index below, because in buildMachNode(..., start_idx)
+      // returned `idx_grouped` will start from 1 rather 0 for non-DEF operand,
+      // and for grouping operand, only TEMP is supported.
+      buildMachNode(fp_cpp, inst, inst->_components_grouped, indent, index);
+    }
   }
   else if ( inst->is_chain_of_constant(_globalNames, opType) ) {
     // An instruction that chains from a constant!
@@ -4145,11 +4241,13 @@ void ArchDesc::buildMachNodeGenerator(FILE *fp_cpp) {
     char       *opType  = nullptr;
 
     // Generate the case statement for this instruction
+    // TODO
     fprintf(fp_cpp, "  case %s_rule:", opClass);
 
     // Start local scope
     fprintf(fp_cpp, " {\n");
     // Generate code to construct the new MachNode
+    // TODO
     buildMachNode(fp_cpp, inst, "     ");
     // Return result and exit scope
     fprintf(fp_cpp, "      return node;\n");

@@ -94,6 +94,7 @@ public:
   // Public Data
   const char    *_ident;               // Name of this instruction
   NameList       _parameters;          // Locally defined names
+  NameList       _parameters_grouped;
   FormDict       _localNames;          // Table of operands & their types
   MatchRule     *_matrule;             // Matching rule for this instruction
   Opcode        *_opcode;              // Encoding of the opcode for instruction
@@ -116,6 +117,7 @@ public:
   uint           _num_uniq;            // Number  of unique operands
   ComponentList  _components;          // List of Components matches MachNode's
                                        // operand structure
+  ComponentList  _components_grouped;
 
   bool           _has_call;            // contain a call and caller save registers should be saved?
 
@@ -207,6 +209,7 @@ public:
   virtual const char *cost();      // Access ins_cost attribute
   virtual uint        num_opnds(); // Count of num_opnds for MachNode class
                                    // Counts USE_DEF opnds twice.  See also num_unique_opnds().
+  virtual uint        num_opnds_grouped();
   virtual uint        num_post_match_opnds();
   virtual uint        num_consts(FormDict &globals) const;// Constants in match rule
   // Constants in match rule with specified type
@@ -230,6 +233,7 @@ public:
   // Return zero-based position in component list; -1 if not in list.
   virtual int         operand_position(const char *name, int usedef);
   virtual int         operand_position_format(const char *name);
+  virtual int         operand_position_format_grouped(const char *name);
 
   // Return zero-based position in component list; -1 if not in list.
   virtual int         label_position();
@@ -311,6 +315,9 @@ public:
   virtual void dump();             // Debug printer
   virtual void output(FILE *fp);   // Write to output files
   virtual void forms_do(FormClosure *f);
+
+private:
+  bool build_components(NameList& params, ComponentList& components);
 };
 
 //------------------------------EncodeForm-------------------------------------
@@ -343,6 +350,8 @@ public:
   // NameList for parameter type and name
   NameList       _parameter_type;
   NameList       _parameter_name;
+  NameList       _parameter_type_grouped;
+  NameList       _parameter_name_grouped;
 
   // Breakdown the encoding into strings separated by $replacement_variables
   // There is an entry in _strings, perhaps null, that precedes each _rep_vars
@@ -363,10 +372,12 @@ public:
   // --------------------------- Parameters
   // Add a parameter <type,name> pair
   void add_parameter(const char *parameter_type, const char *parameter_name);
+  void add_parameter_grouped(const char *parameter_type, const char *parameter_name);
   // Verify operand types in parameter list
   bool check_parameter_types(FormDict &globals);
   // Obtain the zero-based index corresponding to a replacement variable
   int         rep_var_index(const char *rep_var);
+  int         rep_var_index_grouped(const char *rep_var);
   int         num_args() { return _parameter_name.count(); }
 
   // --------------------------- Code Block
@@ -380,6 +391,9 @@ public:
   void dump();
   void output(FILE *fp);
   virtual void forms_do(FormClosure* f);
+
+private:
+  static int rep_var_index(const char *rep_var, NameList& parameter);
 };
 
 //------------------------------MachNode---------------------------------------
@@ -438,6 +452,7 @@ private:
   // The encodings can only have the values predefined by the ADLC:
   // blank, RegReg, RegMem, MemReg, ...
   NameList    _encoding;
+  NameList    _encoding_grouped;
   // NameList    _parameter;
   // The parameters for each encoding are preceded by a NameList::_signal
   // and follow the parameters for the previous encoding.
@@ -451,6 +466,7 @@ public:
 
   // Add "encode class name" and its parameters
   NameAndList  *add_encode(char *encode_method_name);
+  NameAndList  *add_encode_grouped(char *encode_method_name);
   // Parameters are added to the returned "NameAndList" by the parser
 
   // Access the list of encodings
@@ -467,11 +483,15 @@ public:
   //
   // Obtain parameter name from zero based index
   const char   *rep_var_name(InstructForm &inst, uint param_no);
+  const char   *rep_var_name_grouped(InstructForm &inst, uint param_no);
   // ---------------------------
 
   void dump();
   void output(FILE *fp);
   virtual void forms_do(FormClosure *f);
+
+private:
+  const char *rep_var_name(InstructForm &inst, uint param_no, NameList& encoding);
 };
 
 //------------------------------Effect-----------------------------------------
@@ -595,8 +615,13 @@ public:
 
 //------------------------------OperandForm------------------------------------
 class OperandForm : public OpClassForm {
+public:
+  static constexpr uint UNGROUPED_OPER_LIMIT = 8;
+
 private:
   bool         _ideal_only; // Not a user-defined instruction
+  OperandForm  *_ungrouped_operands[UNGROUPED_OPER_LIMIT];
+  uint         _ungrouped_operands_num;
 
 public:
   // Public Data
@@ -701,6 +726,10 @@ public:
   const char         *reduce_right(FormDict &globals)  const;
   const char         *reduce_left(FormDict &globals)   const;
 
+  void                append_ungrouped_operand(OperandForm *oper);
+  OperandForm*        get_ungrouped_operand(int idx);
+  uint                get_ungrouped_operands_num();
+  static const char  *get_ungrouped_oper_name(const char *name, int idx);
 
   // --------------------------- FILE *output_routines
   //

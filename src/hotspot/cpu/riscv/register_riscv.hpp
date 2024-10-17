@@ -372,6 +372,40 @@ constexpr VectorRegister v29    = as_VectorRegister(29);
 constexpr VectorRegister v30    = as_VectorRegister(30);
 constexpr VectorRegister v31    = as_VectorRegister(31);
 
+class VectorRegisterGroup {
+  GrowableArray<int> _encodings;
+  int _lmul;
+
+  explicit VectorRegisterGroup(GrowableArray<int> encodings) : _encodings(encodings) {
+    _lmul = encodings.length();
+  }
+
+public:
+  enum {
+    number_of_registers    = 32,
+    max_slots_per_register = 4
+  };
+
+  inline friend VectorRegisterGroup as_VectorRegisterGroup(GrowableArray<int> encodings);
+
+  int operator==(const VectorRegisterGroup r) const { return true; }
+  int operator!=(const VectorRegisterGroup r) const { return false; }
+
+  VectorRegister as_vreg() {
+    return as_VectorRegister(_encodings.at(0));
+  }
+  VectorRegister as_half_vreg() {
+    return as_VectorRegister(_encodings.at(0) + _lmul/2);
+  }
+  int lmul() {
+    return _lmul;
+  }
+};
+
+inline VectorRegisterGroup as_VectorRegisterGroup(GrowableArray<int> encodings) {
+  return VectorRegisterGroup(encodings);
+}
+
 // Need to know the total number of registers of all sorts for SharedInfo.
 // Define a class that exports it.
 class ConcreteRegisterImpl : public AbstractRegisterImpl {
