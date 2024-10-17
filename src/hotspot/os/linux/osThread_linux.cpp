@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,11 +38,9 @@ OSThread::OSThread()
     _siginfo(nullptr),
     _ucontext(nullptr),
     _expanding_stack(0),
-    _alt_sig_stack(nullptr),
-    _startThread_lock(new Monitor(Mutex::event, "startThread_lock")) {
+    _alt_sig_stack(nullptr) {
   sigemptyset(&_caller_sigmask);
 }
 
 OSThread::~OSThread() {
-  delete _startThread_lock;
 }

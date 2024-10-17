@@ -672,7 +672,8 @@ static void *thread_native_entry(Thread *thread) {
   // Initialize floating point control register.
   os::Aix::init_thread_fpu_state();
 
-  assert(osthread->get_state() == RUNNABLE, "invalid os thread state");
+  // handshaking with parent thread
+  osthread->wait_for_start();
 
   // Call one more level start routine.
   thread->call_run();
@@ -701,9 +702,6 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
   // Set the correct thread state.
   osthread->set_thread_type(thr_type);
 
-  // Initial state is ALLOCATED but not INITIALIZED
-  osthread->set_state(ALLOCATED);
-
   thread->set_osthread(osthread);
 
   // Init thread attributes.
@@ -715,9 +713,6 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
   // Make sure we run in 1:1 kernel-user-thread mode.
   guarantee(pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM) == 0, "???");
   guarantee(pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED) == 0, "???");
-
-  // Start in suspended state, and in os::thread_start, wake the thread up.
-  guarantee(pthread_attr_setsuspendstate_np(&attr, PTHREAD_CREATE_SUSPENDED_NP) == 0, "???");
 
   // Calculate stack size if it's not specified by caller.
   size_t stack_size = os::Posix::get_initial_stack_size(thr_type, req_stack_size);
@@ -787,8 +782,9 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
     return false;
   }
 
-  // OSThread::thread_id is the pthread id.
-  osthread->set_thread_id(tid);
+  // The new thread won't proceed past initialization until
+  // os::start_thread() is called later.
+  osthread->wait_for_init();
 
   return true;
 }
@@ -848,11 +844,6 @@ bool os::create_attached_thread(JavaThread* thread) {
                        p2i(thread->stack_base()), p2i(thread->stack_end()), thread->stack_size() / K);
 
   return true;
-}
-
-void os::pd_start_thread(Thread* thread) {
-  int status = pthread_continue_np(thread->osthread()->pthread_id());
-  assert(status == 0, "thr_continue failed");
 }
 
 // Free OS resources related to the OSThread

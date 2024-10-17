@@ -523,15 +523,15 @@ static unsigned __stdcall thread_native_entry(void* t) {
   thread->record_stack_base_and_size();
   thread->initialize_thread_current();
 
-  OSThread* osthr = thread->osthread();
-  assert(osthr->get_state() == RUNNABLE, "invalid os thread state");
-
   if (UseNUMA) {
     int lgrp_id = os::numa_get_group_id();
     if (lgrp_id != -1) {
       thread->set_lgrp_id(lgrp_id);
     }
   }
+
+  // handshaking with parent thread
+  thread->osthread()->wait_for_start();
 
   // Diagnostic code to investigate JDK-6573254
   int res = 30115;  // non-java thread
@@ -597,9 +597,6 @@ static OSThread* create_os_thread(Thread* thread, HANDLE thread_handle,
     }
   }
 
-  // Initial thread state is INITIALIZED, not SUSPENDED
-  osthread->set_state(INITIALIZED);
-
   return osthread;
 }
 
@@ -663,7 +660,6 @@ static char* describe_beginthreadex_attributes(char* buf, size_t buflen,
   ss.print("flags: ");
   #define PRINT_FLAG(f) if (initflag & f) ss.print( #f " ");
   #define ALL(X) \
-    X(CREATE_SUSPENDED) \
     X(STACK_SIZE_PARAM_IS_A_RESERVATION)
   ALL(PRINT_FLAG)
   #undef ALL
@@ -681,9 +677,6 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
   if (osthread == nullptr) {
     return false;
   }
-
-  // Initial state is ALLOCATED but not INITIALIZED
-  osthread->set_state(ALLOCATED);
 
   // Initialize the JDK library's interrupt event.
   // This should really be done when OSThread is constructed,
@@ -746,7 +739,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
   // document because JVM uses C runtime library. The good news is that the
   // flag appears to work with _beginthredex() as well.
 
-  const unsigned initflag = CREATE_SUSPENDED | STACK_SIZE_PARAM_IS_A_RESERVATION;
+  const unsigned initflag = STACK_SIZE_PARAM_IS_A_RESERVATION;
   HANDLE thread_handle;
   int limit = 3;
   do {
@@ -785,10 +778,10 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
   osthread->set_thread_handle(thread_handle);
   osthread->set_thread_id(thread_id);
 
-  // Thread state now is INITIALIZED, not SUSPENDED
-  osthread->set_state(INITIALIZED);
+  // The new thread won't proceed past initialization until
+  // os::start_thread() is called later.
+  osthread->wait_for_init();
 
-  // The thread is returned suspended (in state INITIALIZED), and is started higher up in the call chain
   return true;
 }
 
@@ -3983,19 +3976,6 @@ char* os::non_memory_address_word() {
   return (char*)-1;
 #endif
 }
-
-#define MAX_ERROR_COUNT 100
-#define SYS_THREAD_ERROR 0xffffffffUL
-
-void os::pd_start_thread(Thread* thread) {
-  DWORD ret = ResumeThread(thread->osthread()->thread_handle());
-  // Returns previous suspend state:
-  // 0:  Thread was not suspended
-  // 1:  Thread is running now
-  // >1: Thread is still suspended.
-  assert(ret != SYS_THREAD_ERROR, "StartThread failed"); // should propagate back
-}
-
 
 // Short sleep, direct OS call.
 //

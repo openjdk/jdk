@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,47 @@
 #include "precompiled.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/osThreadBase.hpp"
+
+OSThreadBase::OSThreadBase() :
+  _state(ALLOCATED),
+  _startThread_lock(new Monitor(Mutex::event, "startThread_lock")) {
+}
+
+OSThreadBase::~OSThreadBase() {
+  delete _startThread_lock;
+}
+
+// Called by the creating thread to wait until the new thread has performed
+// basic initialization.
+void OSThreadBase::wait_for_init() {
+  MutexLocker ml(_startThread_lock, Mutex::_no_safepoint_check_flag);
+  while (_state == ALLOCATED) {
+    _startThread_lock->wait_without_safepoint_check();
+  }
+}
+
+// Called by the native thread entry routine to inform the parent it is
+// initialized and then wait for os::start_thread() to be called.
+void OSThreadBase::wait_for_start() {
+    MutexLocker ml(_startThread_lock, Mutex::_no_safepoint_check_flag);
+
+    // notify parent thread in wait_for_init()
+    set_state(INITIALIZED);
+    _startThread_lock->notify_all();
+
+    // wait until os::start_thread()
+    while (_state == INITIALIZED) {
+      _startThread_lock->wait_without_safepoint_check();
+    }
+}
+
+// Called by os::start_thread to allow the new thread to commence execution
+// after basic initialization
+void OSThreadBase::start_thread() {
+  MutexLocker ml(_startThread_lock, Mutex::_no_safepoint_check_flag);
+  set_state(RUNNABLE);
+  _startThread_lock->notify();
+}
 
 // Printing
 void OSThreadBase::print_on(outputStream *st) const {

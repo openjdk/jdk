@@ -586,7 +586,6 @@ class os: AllStatic {
 #endif
 
   static bool create_attached_thread(JavaThread* thread);
-  static void pd_start_thread(Thread* thread);
   static void start_thread(Thread* thread);
 
   // Returns true if successful.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,15 +122,6 @@ public:
 
   void set_alt_sig_stack(address val)     { _alt_sig_stack = val; }
   address alt_sig_stack(void)             { return _alt_sig_stack; }
-
-private:
-  Monitor* _startThread_lock;     // sync parent and child in thread creation
-
-public:
-
-  Monitor* startThread_lock() const {
-    return _startThread_lock;
-  }
 
   uintx thread_id_for_printing() const override {
     return (uintx)_thread_id;

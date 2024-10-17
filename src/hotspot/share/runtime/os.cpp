@@ -839,11 +839,7 @@ int os::random() {
   }
 }
 
-// The INITIALIZED state is distinguished from the SUSPENDED state because the
-// conditions in which a thread is first started are different from those in which
-// a suspension is resumed.  These differences make it hard for us to apply the
-// tougher checks when starting threads that we want to do when resuming them.
-// However, when start_thread is called as a result of Thread.start, on a Java
+// When start_thread is called as a result of Thread.start, on a Java
 // thread, the operation is synchronized on the Java Thread object.  So there
 // cannot be a race to start the thread and hence for the thread to exit while
 // we are working on it.  Non-Java threads that start Java threads either have
@@ -851,9 +847,7 @@ int os::random() {
 // locking.
 
 void os::start_thread(Thread* thread) {
-  OSThread* osthread = thread->osthread();
-  osthread->set_state(RUNNABLE);
-  pd_start_thread(thread);
+  thread->osthread()->start_thread();
 }
 
 void os::abort(bool dump_core) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,18 +56,22 @@ typedef int (*OSThreadStartFunc)(void*);
 class OSThreadBase: public CHeapObj<mtThread> {
   friend class VMStructs;
   friend class JVMCIVMStructs;
+  friend class os;
  private:
   volatile ThreadState _state;    // Thread state *hint*
+  Monitor* _startThread_lock;     // Sync parent and child in thread creation
+  void wait_for_init();           // Wait until the new thread has initialized
+  void start_thread();            // Allow the new thread to proceed after init
 
-  // Methods
  public:
-  OSThreadBase() {}
-  virtual ~OSThreadBase() {}
+  OSThreadBase();
+  ~OSThreadBase();
   NONCOPYABLE(OSThreadBase);
 
-  void set_state(ThreadState state)                { _state = state; }
-  ThreadState get_state()                          { return _state; }
+  void set_state(ThreadState state) { _state = state; }
+  ThreadState get_state()           { return _state; }
 
+  void wait_for_start();         // Make the new thread wait for os::start_thread
 
   virtual uintx thread_id_for_printing() const = 0;
 

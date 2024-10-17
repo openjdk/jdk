@@ -815,8 +815,6 @@ static void *thread_native_entry(Thread *thread) {
   thread->initialize_thread_current();
 
   OSThread* osthread = thread->osthread();
-  Monitor* sync = osthread->startThread_lock();
-
   osthread->set_thread_id(checked_cast<pid_t>(os::current_thread_id()));
 
   if (UseNUMA) {
@@ -832,18 +830,7 @@ static void *thread_native_entry(Thread *thread) {
   os::Linux::init_thread_fpu_state();
 
   // handshaking with parent thread
-  {
-    MutexLocker ml(sync, Mutex::_no_safepoint_check_flag);
-
-    // notify parent thread
-    osthread->set_state(INITIALIZED);
-    sync->notify_all();
-
-    // wait until os::start_thread()
-    while (osthread->get_state() == INITIALIZED) {
-      sync->wait_without_safepoint_check();
-    }
-  }
+  osthread->wait_for_start();
 
   log_info(os, thread)("Thread is alive (tid: " UINTX_FORMAT ", pthread id: " UINTX_FORMAT ").",
     os::current_thread_id(), (uintx) pthread_self());
@@ -977,9 +964,6 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
   // set the correct thread state
   osthread->set_thread_type(thr_type);
 
-  // Initial state is ALLOCATED but not INITIALIZED
-  osthread->set_state(ALLOCATED);
-
   thread->set_osthread(osthread);
 
   // init thread attributes
@@ -1091,19 +1075,11 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
     // Store pthread info into the OSThread
     osthread->set_pthread_id(tid);
 
-    // Wait until child thread is either initialized or aborted
-    {
-      Monitor* sync_with_child = osthread->startThread_lock();
-      MutexLocker ml(sync_with_child, Mutex::_no_safepoint_check_flag);
-      while ((state = osthread->get_state()) == ALLOCATED) {
-        sync_with_child->wait_without_safepoint_check();
-      }
-    }
+    // The new thread won't proceed past initialization until
+    // os::start_thread() is called later.
+    osthread->wait_for_init();
   }
 
-  // The thread is returned suspended (in state INITIALIZED),
-  // and is started higher up in the call chain
-  assert(state == INITIALIZED, "race condition");
   return true;
 }
 
@@ -1177,14 +1153,6 @@ bool os::create_attached_thread(JavaThread* thread) {
                        p2i(thread->stack_base()), p2i(thread->stack_end()), thread->stack_size() / K);
 
   return true;
-}
-
-void os::pd_start_thread(Thread* thread) {
-  OSThread * osthread = thread->osthread();
-  assert(osthread->get_state() != INITIALIZED, "just checking");
-  Monitor* sync_with_child = osthread->startThread_lock();
-  MutexLocker ml(sync_with_child, Mutex::_no_safepoint_check_flag);
-  sync_with_child->notify();
 }
 
 // Free Linux resources related to the OSThread
