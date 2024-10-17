@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -567,6 +567,32 @@ public abstract class VectorOperators {
     /** Produce {@code a^b}.  Integral only. */
     public static final /*bitwise*/ Associative XOR = assoc("XOR", "^", VectorSupport.VECTOR_OP_XOR, VO_NOFP+VO_ASSOC);
 
+    /** Produce saturating {@code a+b}.  Integral only.
+     * @see VectorMath#addSaturating(int, int)
+     */
+    public static final Binary SADD = binary("SADD", "+", VectorSupport.VECTOR_OP_SADD, VO_NOFP);
+    /** Produce saturating unsigned {@code a+b}.  Integral only.
+     * @see VectorMath#addSaturatingUnsigned(int, int)
+     */
+    public static final Binary SUADD = binary("SUADD", "+", VectorSupport.VECTOR_OP_SUADD, VO_NOFP);
+    /** Produce saturating {@code a-b}.  Integral only.
+     * @see VectorMath#subSaturating(int, int)
+     */
+    public static final Binary SSUB = binary("SSUB", "-", VectorSupport.VECTOR_OP_SSUB, VO_NOFP);
+    /** Produce saturating unsigned {@code a-b}.  Integral only.
+     * @see VectorMath#subSaturatingUnsigned(int, int)
+     */
+    public static final Binary SUSUB = binary("SUSUB", "-", VectorSupport.VECTOR_OP_SUSUB, VO_NOFP);
+    /** Produce unsigned {@code min(a,b)}.  Integral only.
+     * @see VectorMath#minUnsigned(int, int) (int, int)
+     */
+    public static final Associative UMIN = assoc("UMIN", "umin", VectorSupport.VECTOR_OP_UMIN, VO_NOFP+VO_ASSOC);
+    /** Produce unsigned {@code max(a,b)}.  Integral only.
+     * @see VectorMath#maxUnsigned(int, int) (int, int)
+     */
+    public static final Associative UMAX = assoc("UMAX", "umax", VectorSupport.VECTOR_OP_UMAX, VO_NOFP+VO_ASSOC);
+
+
     /** Produce {@code a<<(n&(ESIZE*8-1))}.  Integral only. */
     public static final /*bitwise*/ Binary LSHL = binary("LSHL", "<<", VectorSupport.VECTOR_OP_LSHIFT, VO_SHIFT);
     /** Produce {@code a>>(n&(ESIZE*8-1))}.  Integral only. */
@@ -636,22 +662,22 @@ public abstract class VectorOperators {
      * @see java.lang.Integer#compareUnsigned
      * @see java.lang.Long#compareUnsigned
      */
-    public static final Comparison UNSIGNED_LT = compare("UNSIGNED_LT", "<",  VectorSupport.BT_ult, VO_NOFP);
+    public static final Comparison ULT = compare("ULT", "<",  VectorSupport.BT_ult, VO_NOFP);
     /** Unsigned compare {@code a<=b}.  Integral only.
      * @see java.lang.Integer#compareUnsigned
      * @see java.lang.Long#compareUnsigned
      */
-    public static final Comparison UNSIGNED_LE = compare("UNSIGNED_LE", "<=", VectorSupport.BT_ule, VO_NOFP);
+    public static final Comparison ULE = compare("ULE", "<=", VectorSupport.BT_ule, VO_NOFP);
     /** Unsigned compare {@code a>b}.  Integral only.
      * @see java.lang.Integer#compareUnsigned
      * @see java.lang.Long#compareUnsigned
      */
-    public static final Comparison UNSIGNED_GT = compare("UNSIGNED_GT", ">",  VectorSupport.BT_ugt, VO_NOFP);
+    public static final Comparison UGT = compare("UGT", ">",  VectorSupport.BT_ugt, VO_NOFP);
     /** Unsigned compare {@code a>=b}.  Integral only.
      * @see java.lang.Integer#compareUnsigned
      * @see java.lang.Long#compareUnsigned
      */
-    public static final Comparison UNSIGNED_GE = compare("UNSIGNED_GE", ">=", VectorSupport.BT_uge, VO_NOFP);
+    public static final Comparison UGE = compare("UGE", ">=", VectorSupport.BT_uge, VO_NOFP);
 
     // Conversion operators
 
