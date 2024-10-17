@@ -2739,14 +2739,14 @@ void MacroAssembler::compiler_fast_unlock_object(ConditionRegister flag, Registe
   // Check if there is a successor.
   ld(temp, in_bytes(ObjectMonitor::succ_offset()), current_header);
   cmpdi(flag, temp, 0);
-  bne(flag, success);  // If so we are done.
+  // Invert equal bit
+  crnand(flag, Assembler::equal, flag, Assembler::equal);
+  beq(flag, success);  // If there is a successor we are done.
 
   // Save the monitor pointer in the current thread, so we can try
   // to reacquire the lock in SharedRuntime::monitor_exit_helper().
   std(current_header, in_bytes(JavaThread::unlocked_inflated_monitor_offset()), R16_thread);
-
-  crxor(flag, Assembler::equal, flag, Assembler::equal); // Set flag = NE => slow path
-  b(failure);
+  b(failure); // flag == NE
 
   // flag == EQ indicates success, decrement held monitor count
   // flag == NE indicates failure
@@ -3053,7 +3053,6 @@ void MacroAssembler::compiler_fast_unlock_lightweight_object(ConditionRegister f
 
     bind(not_recursive);
 
-    Label set_eq_unlocked;
     const Register t2 = tmp2;
 
     // Set owner to null.
@@ -3075,17 +3074,14 @@ void MacroAssembler::compiler_fast_unlock_lightweight_object(ConditionRegister f
     // Check if there is a successor.
     ld(t, in_bytes(ObjectMonitor::succ_offset()), monitor);
     cmpdi(CCR0, t, 0);
-    bne(CCR0, set_eq_unlocked); // If so we are done.
+    // Invert equal bit
+    crnand(flag, Assembler::equal, flag, Assembler::equal);
+    beq(CCR0, unlocked); // If there is a successor we are done.
 
     // Save the monitor pointer in the current thread, so we can try
     // to reacquire the lock in SharedRuntime::monitor_exit_helper().
     std(monitor, in_bytes(JavaThread::unlocked_inflated_monitor_offset()), R16_thread);
-
-    crxor(CCR0, Assembler::equal, CCR0, Assembler::equal); // Set flag = NE => slow path
-    b(slow_path);
-
-    bind(set_eq_unlocked);
-    crorc(CCR0, Assembler::equal, CCR0, Assembler::equal); // Set flag = EQ => fast path
+    b(slow_path); // flag == NE
   }
 
   bind(unlocked);
