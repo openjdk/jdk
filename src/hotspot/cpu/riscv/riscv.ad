@@ -10098,11 +10098,11 @@ instruct partialSubtypeCheck(iRegP_R15 result, iRegP_R14 sub, iRegP_R10 super, i
 %}
 
 instruct partialSubtypeCheckConstSuper(iRegP_R14 sub, iRegP_R10 super_reg, immP super_con, iRegP_R15 result,
-                                       iRegP_R11 tmpR11, iRegP_R12 tmpR12, iRegP_R13 tmpR13, iRegP_R16 tmpR16)
+                                       iRegP_R11 tmpR11, iRegP_R12 tmpR12, iRegP_R13 tmpR13, iRegP_R16 tmpR16, rFlagsReg cr)
 %{
   predicate(UseSecondarySupersTable);
   match(Set result (PartialSubtypeCheck sub (Binary super_reg super_con)));
-  effect(TEMP tmpR11, TEMP tmpR12, TEMP tmpR13, TEMP tmpR16);
+  effect(TEMP tmpR11, TEMP tmpR12, TEMP tmpR13, TEMP tmpR16, KILL cr);
 
   ins_cost(7 * DEFAULT_COST); // needs to be less than competing nodes
   format %{ "partialSubtypeCheck $result, $sub, $super_reg, $super_con" %}
@@ -10379,12 +10379,12 @@ instruct stringL_indexof_char(iRegP_R11 str1, iRegI_R12 cnt1, iRegI_R13 ch,
 
 // clearing of an array
 instruct clearArray_reg_reg(iRegL_R29 cnt, iRegP_R28 base, iRegP_R30 tmp1,
-                            iRegP_R31 tmp2, Universe dummy)
+                            iRegP_R31 tmp2, rFlagsReg cr, Universe dummy)
 %{
   // temp registers must match the one used in StubGenerator::generate_zero_blocks()
   predicate(UseBlockZeroing || !UseRVV);
   match(Set dummy (ClearArray cnt base));
-  effect(USE_KILL cnt, USE_KILL base, TEMP tmp1, TEMP tmp2);
+  effect(USE_KILL cnt, USE_KILL base, TEMP tmp1, TEMP tmp2, KILL cr);
 
   ins_cost(4 * DEFAULT_COST);
   format %{ "ClearArray $cnt, $base\t#@clearArray_reg_reg" %}
