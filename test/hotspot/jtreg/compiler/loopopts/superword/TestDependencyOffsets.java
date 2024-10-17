@@ -22,6 +22,7 @@
  */
 
 /*
+ * TODO fix up
  * Summary:
  *   Test SuperWord vectorization with different access offsets
  *   and various MaxVectorSize values, and +- AlignVector.
@@ -496,38 +497,44 @@ package compiler.loopopts.superword;
 import compiler.lib.ir_framework.*;
 import compiler.lib.compile_framework.*;
 
+import jdk.test.lib.Utils;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.Random;
 
 public class TestDependencyOffsets {
+    private static final Random RANDOM = Utils.getRandomInstance();
+    private static final int SIZE = 10_000 + RANDOM.nextInt(1000);
+
     private static String generate(CompileFramework comp, String[] flags) {
+        for (TestDefinition test : getTests()) {
+        }
+
         return String.format("""
                import compiler.lib.ir_framework.*;
 
                public class InnerTest {
+                   private static int SIZE = %s;
+
                    public static void main(String args[]) {
                        TestFramework framework = new TestFramework(InnerTest.class);
                        framework.addFlags("-classpath", "%s");
                        framework.addFlags(%s);
+                       framework.setDefaultWarmup(0);
                        framework.start();
                    }
 
-                   @Test
-                   @IR(counts = {IRNode.LOAD_VECTOR_F, "> 0"},
-                       applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
-                   static float[] test() {
-                       float[] a = new float[1024*8];
-                       for (int i = 0; i < a.length; i++) {
-                           a[i]++;
-                       }
-                       return a;
-                   }
+               %s
                }
                """,
+               SIZE,
                comp.getEscapedClassPathOfCompiledClasses(),
-               Arrays.stream(flags).map(s -> "\"" + s + "\"").collect(Collectors.joining(", ")));
+               Arrays.stream(flags).map(s -> "\"" + s + "\"").collect(Collectors.joining(", ")),
+               getTests().stream().map(test -> test.generate()).collect(Collectors.joining("\n")));
     }
 
     public static void main(String args[]) {
@@ -593,15 +600,82 @@ public class TestDependencyOffsets {
         new Type("double", 8, "1.001",  "*", "MUL_VD"),
     };
 
-    static List<int> getOffsets() {
-        List<int> offsets = new ArrayList<int>();
+    static List<Integer> getOffsets() {
+        // Some carefully hand-picked values
+        int[] always = new int[] {
+            0,
+            -1, 1,
+            -2, 2,     // 2^1
+            -3, 3,
+            -4, 4,     // 2^2
+            -7, 7,
+            -8, 8,     // 2^3
+            -14, 14,
+            -16, 16,   // 2^4
+            -18, 18,
+            -20, 20,
+            -31, 31,
+            -32, 32,   // 2^5
+            -63, 63,
+            -64, 64,   // 2^6
+            -65, 65,
+            -128, 128, // 2^7
+            -129, 129,
+            -192, 192, // 3 * 64
+        };
+        Set<Integer> set = Arrays.stream(always).boxed().collect(Collectors.toSet());
+
+        // Sample some random values on an exponental scale
+        for (int i = 0; i < 10; i++) {
+            int base = 4 << i;
+            int offset = base + RANDOM.nextInt(base);
+            set.add(offset);
+            set.add(-offset);
+        }
+
+        List<Integer> offsets = new ArrayList<Integer>(set);
         return offsets;
     }
 
-    static record TestDefinition (int id, int offset) {}
+    static record TestDefinition (int id, Type type, int offset) {
+        String generate() {
+            int start = offset >= 0 ? 0 : -offset;
+            String end = offset >=0 ? "SIZE - " + offset : "SIZE";
+            return String.format("""
+                       @Test
+                       public static void test%s(%s[] a, %s[] b) {
+                           for (int i = %d; i < %s; i++) {
+                               a[i + %d] = (%s)(%s[i] %s %s);
+                           }
+                       }
+
+                       @Run(test = "test%s")
+                       public static void run%s() {
+                           %s[] a = new %s[SIZE];
+                           // init
+                           test%s(a, a);
+                           // verify
+                       }
+                   """,
+                   id, type.name, type.name,
+                   start, end,
+                   offset, type.name, "a", type.operator, type.value,
+                   id, id, type.name, type.name, id);
+            // TODO a vs b
+        }
+    }
 
     static List<TestDefinition> getTests() {
         List<TestDefinition> tests = new ArrayList<TestDefinition>();
+
+        // Cross product of all types and offsets.
+        int id = 0;
+        for (Type type : types) {
+            for (int offset : getOffsets()) {
+                tests.add(new TestDefinition(id++, type, offset));
+            }
+        }
+
         return tests;
     }
 }
