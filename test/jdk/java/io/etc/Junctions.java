@@ -47,6 +47,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @test
  * @bug 1234567
  * @summary Verifies java.io support for Windows directory junctions
+ * @requires os.family == "windows"
  * @library /test/lib
  * @run junit/othervm/native Junctions
  */
