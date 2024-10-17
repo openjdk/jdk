@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,14 +33,28 @@ import jdk.internal.net.http.common.Utils;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 
+/**
+ * A class that tracks the amount of flow controlled
+ * data received on an HTTP/2 connection
+ */
 abstract class WindowUpdateSender {
 
     final Logger debug =
             Utils.getDebugLogger(this::dbgString, Utils.DEBUG);
 
+    // The threshold at which window updates are sent in bytes
     final int limit;
+    // The flow control window in bytes
+    final int windowSize;
     final Http2Connection connection;
+    // The amount of flow controlled data received and processed, in bytes,
+    // since the start of the window.
+    // The window is exhausted when received + unprocessed >= windowSize
     final AtomicInteger received = new AtomicInteger();
+    // The amount of flow controlled data received and unprocessed, in bytes,
+    // since the start of the window.
+    // The window is exhausted when received + unprocessed >= windowSize
+    final AtomicInteger unprocessed = new AtomicInteger();
     final ReentrantLock sendLock = new ReentrantLock();
 
     WindowUpdateSender(Http2Connection connection) {
@@ -53,6 +67,7 @@ abstract class WindowUpdateSender {
 
     WindowUpdateSender(Http2Connection connection, int maxFrameSize, int initWindowSize) {
         this.connection = connection;
+        this.windowSize = initWindowSize;
         int v0 = Math.max(0, initWindowSize - maxFrameSize);
         int v1 = (initWindowSize + (maxFrameSize - 1)) / maxFrameSize;
         v1 = v1 * maxFrameSize / 2;
@@ -66,16 +81,116 @@ abstract class WindowUpdateSender {
                       maxFrameSize, initWindowSize, limit);
     }
 
+    // O for the connection window, > 0 for a stream window
     abstract int getStreamId();
 
+
+    /**
+     * {@return {@code true} if buffering the given amount of
+     * flow controlled data would not exceed the flow control
+     * window}
+     * <p>
+     * This method is called before buffering and processing
+     * a DataFrame. The count of unprocessed bytes is incremented
+     * by the given amount, and checked against the number of
+     * available bytes in the flow control window.
+     * <p>
+     * This method returns {@code true} if the bytes can be buffered
+     * without exceeding the flow control window, {@code false}
+     * if the flow control window is exceeded and corrective
+     * action (close/reset) has been taken.
+     * <p>
+     * When this method returns true, either {@link #processed(int)}
+     * or {@link #released(int)} must eventually be called to release
+     * the bytes from the flow control window.
+     *
+     * @implSpec
+     * an HTTP/2 endpoint may disable its own flow control
+     * (see <a href="https://www.rfc-editor.org/rfc/rfc9113.html#section-5.2.1">
+     *     RFC 9113, section 5.2.1</a>), in which case this
+     * method may return true even if the flow control window would
+     * be exceeded: that is, the flow control window is exceeded but
+     * the endpoint decided to take no corrective action.
+     *
+     * @param  len a number of unprocessed bytes, which
+     *             the caller wants to buffer.
+     */
+    boolean canBufferUnprocessedBytes(int len) {
+        return !checkWindowSizeExceeded(unprocessed.addAndGet(len));
+    }
+
+    // adds the provided amount to the amount of already
+    // received and processed bytes and checks whether the
+    // flow control window is exceeded. If so, take
+    // corrective actions and return true.
+    private boolean checkWindowSizeExceeded(int len) {
+        int rcv = Math.addExact(received.get(), len);
+        return rcv > windowSize && windowSizeExceeded(rcv);
+    }
+
+    /**
+     * Called after unprocessed buffered bytes have been
+     * processed, to release part of the flow control window
+     *
+     * @apiNote this method is called only when releasing bytes
+     * that where buffered after calling
+     * {@link #canBufferUnprocessedBytes(int)}.
+     *
+     * @param delta the amount of processed bytes to release
+     */
+    void processed(int delta) {
+        int rest = unprocessed.addAndGet(-delta);
+        assert rest >= 0;
+        update(delta);
+    }
+
+    /**
+     * Called when it is desired to release unprocessed bytes
+     * without processing them, or without triggering the
+     * sending of a window update. This method can be called
+     * instead of calling {@link #processed(int)}.
+     * When this method is called instead of calling {@link #processed(int)},
+     * it should generally be followed by a call to {@link #update(int)},
+     * unless the stream or connection is being closed.
+     *
+     * @apiNote this method should only be called to release bytes that
+     * have been buffered after calling {@link
+     * #canBufferUnprocessedBytes(int)}.
+     *
+     * @param delta the amount of bytes to release from the window
+     *
+     * @return the amount of remaining unprocessed bytes
+     */
+    int released(int delta) {
+        int rest = unprocessed.addAndGet(-delta);
+        assert rest >= 0;
+        return rest;
+    }
+
+    /**
+     * This method is called to update the flow control window,
+     * and possibly send a window update
+     *
+     * @apiNote this method can be called directly if a frame is
+     * dropped before calling {@link #canBufferUnprocessedBytes(int)}.
+     * Otherwise, either {@link #processed(int)} or {@link #released(int)}
+     * should be called, depending on whether sending a window update
+     * is desired or not. It is typically not desired to send an update
+     * if the stream or connection is being closed.
+     *
+     * @param delta the amount of bytes released from the window.
+     */
     void update(int delta) {
         int rcv = received.addAndGet(delta);
         if (debug.on()) debug.log("update: %d, received: %d, limit: %d", delta, rcv, limit);
+        if (rcv > windowSize && windowSizeExceeded(rcv)) {
+            return;
+        }
         if (rcv > limit) {
             sendLock.lock();
             try {
                 int tosend = received.get();
-                if( tosend > limit) {
+                if (tosend > limit) {
                     received.getAndAdd(-tosend);
                     sendWindowUpdate(tosend);
                 }
@@ -87,6 +202,7 @@ abstract class WindowUpdateSender {
 
     void sendWindowUpdate(int delta) {
         if (debug.on()) debug.log("sending window update: %d", delta);
+        assert delta > 0 : "illegal window update delta: " + delta;
         connection.sendUnorderedFrame(new WindowUpdateFrame(getStreamId(), delta));
     }
 
@@ -103,5 +219,17 @@ abstract class WindowUpdateSender {
             return streamId == 0 ? dbg : (dbgString = dbg);
         }
     }
+
+    /**
+     * Called when the flow control window size is exceeded
+     * This method may return false if flow control is disabled
+     * in this endpoint.
+     *
+     * @param received the amount of data received, which is greater
+     *                 than {@code windowSize}
+     * @return {@code true} if the error was reported to the peer
+     *         and no further window update should be sent.
+     */
+    protected abstract boolean windowSizeExceeded(int received);
 
 }
