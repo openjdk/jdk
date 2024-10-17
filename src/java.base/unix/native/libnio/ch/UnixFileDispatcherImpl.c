@@ -23,6 +23,7 @@
  * questions.
  */
 
+#include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <sys/uio.h>
 #include <sys/stat.h>
@@ -41,8 +42,10 @@
 #include "nio.h"
 #include "nio_util.h"
 #include "sun_nio_ch_UnixFileDispatcherImpl.h"
+#include "java_lang_Integer.h"
 #include "java_lang_Long.h"
 #include <assert.h>
+#include "io_util_md.h"
 
 #if defined(_AIX)
   #define statvfs statvfs64
@@ -176,6 +179,57 @@ Java_sun_nio_ch_UnixFileDispatcherImpl_size0(JNIEnv *env, jobject this, jobject 
 #endif
 
     return fbuf.st_size;
+}
+
+JNIEXPORT jint JNICALL
+Java_sun_nio_ch_UnixFileDispatcherImpl_available0(JNIEnv *env, jobject this, jobject fdo)
+{
+    jint fd = fdval(env, fdo);
+    struct stat fbuf;
+    jlong size = -1;
+
+    if (fstat(fd, &fbuf) != -1) {
+        int mode = fbuf.st_mode;
+        if (S_ISCHR(mode) || S_ISFIFO(mode) || S_ISSOCK(mode)) {
+            int n = ioctl(fd, FIONREAD, &n);
+            if (n >= 0) {
+                return n;
+            }
+        } else if (S_ISREG(mode)) {
+            size = fbuf.st_size;
+        }
+    }
+
+    jlong position;
+    if ((position = lseek(fd, 0, SEEK_CUR)) == -1) {
+        return 0;
+    }
+
+    if (size < position) {
+        if ((size = lseek(fd, 0, SEEK_END)) == -1)
+            return 0;
+        else if (lseek(fd, position, SEEK_SET) == -1)
+            return 0;
+    }
+
+    jlong available = size - position;
+    return available > java_lang_Integer_MAX_VALUE ?
+        java_lang_Integer_MAX_VALUE : (jint)available;
+}
+
+JNIEXPORT jboolean JNICALL
+Java_sun_nio_ch_UnixFileDispatcherImpl_isOther0(JNIEnv *env, jobject this, jobject fdo)
+{
+    jint fd = fdval(env, fdo);
+    struct stat fbuf;
+
+    if (fstat(fd, &fbuf) == -1)
+        handle(env, -1, "isOther failed");
+
+    if (S_ISREG(fbuf.st_mode) || S_ISDIR(fbuf.st_mode) || S_ISLNK(fbuf.st_mode))
+        return JNI_FALSE;
+
+    return JNI_TRUE;
 }
 
 JNIEXPORT jint JNICALL
