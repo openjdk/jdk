@@ -1198,7 +1198,12 @@ InstanceKlass* ClassLoader::load_class(Symbol* name, PackageEntry* pkg_entry, bo
     return nullptr;
   }
 
-  stream->set_verify(ClassLoaderExt::should_verify(classpath_index));
+  // For CDS, don't verify app class loaders if they are shared, else let Verifier::should_verify_for() figure it out.
+  bool should_verify =
+    CDS_ONLY(classpath_index >= ClassLoaderExt::app_class_paths_start_index();)
+    NOT_CDS(ClassFileStream::should_verify;)
+
+  stream->set_verify(should_verify);
 
   ClassLoaderData* loader_data = ClassLoaderData::the_null_class_loader_data();
   Handle protection_domain;
