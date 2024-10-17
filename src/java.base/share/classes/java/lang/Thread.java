@@ -2084,14 +2084,16 @@ public class Thread implements Runnable {
     }
 
     /**
-     * Throws {@code SecurityException}.
+     * This method is a no-op and returns normally.
      *
-     * @throws  SecurityException always
+     * @apiNote This method originally determined if the currently running
+     * thread had permission to modify this thread. This method was only useful
+     * in conjunction with {@linkplain SecurityManager the Security Manager},
+     * which is no longer supported. There is no replacement for the Security
+     * Manager or this method.
      */
     @Deprecated(since="17", forRemoval=true)
-    public final void checkAccess() {
-        throw new SecurityException();
-    }
+    public final void checkAccess() { }
 
     /**
      * Returns a string representation of this thread. The string representation
