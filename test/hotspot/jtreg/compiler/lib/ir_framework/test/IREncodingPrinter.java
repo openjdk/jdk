@@ -109,7 +109,8 @@ public class IREncodingPrinter {
         "sve",
         // Riscv64
         "rvv",
-        "zvbb"
+        "zvbb",
+        "zvfh"
     ));
 
     public IREncodingPrinter() {
