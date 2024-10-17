@@ -57,7 +57,6 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.util.HashSet;
 import java.util.List;
-import java.nio.ByteOrder;
 import java.util.Objects;
 import java.util.Set;
 
@@ -200,7 +199,7 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
                     lastUnpaddedOffset = offset;
                 }
             }
-            checkGroupSize(sl, lastUnpaddedOffset);
+            checkGroup(sl, lastUnpaddedOffset);
         } else if (layout instanceof UnionLayout ul) {
             checkHasNaturalAlignment(layout);
             long maxUnpaddedLayout = 0;
@@ -210,15 +209,22 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
                     maxUnpaddedLayout = Long.max(maxUnpaddedLayout, member.byteSize());
                 }
             }
-            checkGroupSize(ul, maxUnpaddedLayout);
+            checkGroup(ul, maxUnpaddedLayout);
         } else if (layout instanceof SequenceLayout sl) {
             checkHasNaturalAlignment(layout);
+            if (sl.elementLayout() instanceof PaddingLayout pl) {
+                throw memberException(sl, pl,
+                        "not supported because a sequence of a padding layout is not allowed");
+            }
             checkLayoutRecursive(sl.elementLayout());
         }
     }
 
-    // check for trailing padding
-    private void checkGroupSize(GroupLayout gl, long maxUnpaddedOffset) {
+    // check elements are not all padding layouts and for trailing padding
+    private void checkGroup(GroupLayout gl, long maxUnpaddedOffset) {
+        if (!gl.memberLayouts().isEmpty() && gl.memberLayouts().stream().allMatch(e -> e instanceof PaddingLayout)) {
+            throw new IllegalArgumentException("Layout '" + gl + "' is non-empty and only has padding layouts");
+        }
         long expectedSize = Utils.alignUp(maxUnpaddedOffset, gl.byteAlignment());
         if (gl.byteSize() != expectedSize) {
             throw new IllegalArgumentException("Layout '" + gl + "' has unexpected size: "
@@ -232,9 +238,16 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
                                           long lastUnpaddedOffset, long offset) {
         long expectedOffset = Utils.alignUp(lastUnpaddedOffset, memberLayout.byteAlignment());
         if (expectedOffset != offset) {
-            throw new IllegalArgumentException("Member layout '" + memberLayout + "', of '" + parent + "'" +
-                    " found at unexpected offset: " + offset + " != " + expectedOffset);
+            throw memberException(parent, memberLayout,
+                    "found at unexpected offset: " + offset + " != " + expectedOffset);
         }
+    }
+
+    private static IllegalArgumentException memberException(MemoryLayout parent,
+                                                            MemoryLayout member,
+                                                            String info) {
+        return new IllegalArgumentException(
+                "Member layout '" + member + "', of '" + parent + "' " + info);
     }
 
     private void checkSupported(ValueLayout valueLayout) {
