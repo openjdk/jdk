@@ -369,12 +369,6 @@ class RuntimePredicate : public Predicate {
   static bool is_predicate(Node* node, Deoptimization::DeoptReason deopt_reason);
 };
 
-// Utility class to represent an Assertion Predicate.
-class AssertionPredicate : public StackObj {
- public:
-  static bool may_be_predicate_if(const Node* node);
-};
-
 // Class to represent a Template Assertion Predicate.
 class TemplateAssertionPredicate : public Predicate {
   IfTrueNode* _success_proj;
