@@ -24,16 +24,16 @@
  */
 package java.lang.classfile.components;
 
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.CodeModel;
+import java.lang.classfile.CompoundElement;
+import java.lang.classfile.FieldModel;
+import java.lang.classfile.MethodModel;
 import java.lang.constant.ConstantDesc;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
-import java.lang.classfile.ClassModel;
-import java.lang.classfile.FieldModel;
-import java.lang.classfile.MethodModel;
-import java.lang.classfile.CodeModel;
-import java.lang.classfile.CompoundElement;
 
 import jdk.internal.classfile.impl.ClassPrinterImpl;
 import jdk.internal.javac.PreviewFeature;
