@@ -781,6 +781,7 @@ VectorNode* VectorNode::make(int vopc, Node* n1, Node* n2, Node* n3, const TypeV
   switch (vopc) {
   case Op_FmaVD: return new FmaVDNode(n1, n2, n3, vt);
   case Op_FmaVF: return new FmaVFNode(n1, n2, n3, vt);
+  case Op_SelectFromTwoVector: return new SelectFromTwoVectorNode(n1, n2, n3, vt);
   case Op_SignumVD: return new SignumVDNode(n1, n2, n3, vt);
   case Op_SignumVF: return new SignumVFNode(n1, n2, n3, vt);
   default:
@@ -2077,6 +2078,7 @@ Node* VectorBlendNode::Identity(PhaseGVN* phase) {
   }
   return this;
 }
+
 
 #ifndef PRODUCT
 void VectorBoxAllocateNode::dump_spec(outputStream *st) const {

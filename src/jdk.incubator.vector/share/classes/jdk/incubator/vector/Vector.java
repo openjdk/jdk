@@ -2757,6 +2757,61 @@ public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vec
     public abstract Vector<E> selectFrom(Vector<E> v);
 
     /**
+     * Using values stored in the lanes of this vector,
+     * assemble values stored in the second vector {@code v1}
+     * and third vector {@code v2}. The second and third vectors thus
+     * serve as a table, whose elements are selected by indexes
+     * in this vector.
+     *
+     * This is a cross-lane operation that rearranges the lane
+     * elements of the argument vectors, under the control of
+     * this vector.
+     *
+     * For each lane {@code N} of this vector, and for each lane
+     * value {@code I=wrapIndex(this.lane(N)} in this vector,
+     * the output lane {@code N} obtains the value from
+     * the second vector at lane {@code I} if {@code I < VLENGTH}.
+     * Otherwise, the output lane {@code N} obtains the value from
+     * the third vector at lane {@code I - VLENGTH}.
+     *
+     * Here, {@code VLENGTH} is the result of {@code this.length()},
+     * and for integral values {@code wrapIndex} computes the result of
+     * {@code Math.floorMod(E, 2 * VLENGTH)}, where {@code E} is the index
+     * to be wrapped. As long as {@code VLENGTH} is a power of two, then the
+     * result is also equal to {@code E & (2 * VLENGTH - 1)}.
+     *
+     * For floating point values {@code wrapIndex} computes
+     * {@code Math.floorMod(convert(E), 2 * VLENGTH)}, where {@code convert}
+     * converts the floating point value to an integral value with the same
+     * number of representational bits - as in converting a double value to
+     * a long value ({@code (long)doubleVal}), or a float value to an int value
+     * ({@code (int)floatVal}).
+     *
+     * In this way, the result contains only values stored in the
+     * argument vectors {@code v1} and {@code v2}, but presented in
+     * an order which depends on the index values in {@code this}.
+     *
+     * The result for integral values is the same as the expression
+     * {@snippet lang=java :
+     * v1.rearrange(
+     * this.lanewise(VectorOperators.AND, 2 * VLENGTH - 1).toShuffle(),
+     * v2)
+     * }
+     * when {@code VLENGTH} is a power of two.
+     * The lane-wise {@code AND} operation results in a vector whose
+     * elements are in the range {@code [0, 2 * VLENGTH - 1])}. The shuffle
+     * conversion results in a partially wrapped shuffle whose indexes are
+     * in the range {@code [-VLENGTH, VLENGTH - 1])}, where exceptional
+     * indexes are used to select elements in the third vector.
+     *
+     * @param v1 the first input vector
+     * @param v2 the second input vector
+     * @return the rearrangement of lane elements of {@code v1} and {@code v2}
+     * @see #rearrange(VectorShuffle,Vector)
+     */
+    public abstract Vector<E> selectFrom(Vector<E> v1, Vector<E> v2);
+
+    /**
      * Using index values stored in the lanes of this vector,
      * assemble values stored in second vector, under the control
      * of a mask.
