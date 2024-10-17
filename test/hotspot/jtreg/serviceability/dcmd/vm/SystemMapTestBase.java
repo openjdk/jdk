@@ -35,19 +35,6 @@ public class SystemMapTestBase {
     private static final String pagesize = "(4K|8K|16K|64K|2M|16M|64M)";
     private static final String prot = "[rwsxp-]+";
 
-    private static final String regexBase = range + space +
-            someSize + space +
-            prot + space +
-            someSize + space +
-            someSize + space +
-            pagesize + space;
-
-    private static final String regexBase_committed = regexBase + "com.*";
-    private static final String regexBase_shared_and_committed = regexBase + "shrd,com.*";
-
-    // java heap is either committed, non-shared, or - in case of ZGC - committed and shared.
-    private static final String regexBase_java_heap = regexBase + "(shrd,)?com.*";
-
     interface MapPatterns {
         String[] shouldMatchUnconditionally();
         String[] shouldMatchIfNMTIsEnabled();
@@ -76,7 +63,20 @@ public class SystemMapTestBase {
     }
     private static class LinuxPatterns implements MapPatterns {
 
-        private static final String shouldMatchUnconditionally_linux[] = {
+        private static final String regexBase = range + space +
+        someSize + space +
+        prot + space +
+        someSize + space +
+        someSize + space +
+        pagesize + space;
+
+private static final String regexBase_committed = regexBase + "com.*";
+private static final String regexBase_shared_and_committed = regexBase + "shrd,com.*";
+
+// java heap is either committed, non-shared, or - in case of ZGC - committed and shared.
+private static final String regexBase_java_heap = regexBase + "(shrd,)?com.*";
+
+        static final String shouldMatchUnconditionally_linux[] = {
             // java launcher
             regexBase_committed + "/bin/java",
             // libjvm
@@ -87,7 +87,7 @@ public class SystemMapTestBase {
             regexBase_shared_and_committed + "hsperfdata_.*"
         };
 
-        private static final String shouldMatchIfNMTIsEnabled_linux[] = {
+        static final String shouldMatchIfNMTIsEnabled_linux[] = {
             regexBase_java_heap + "JAVAHEAP.*",
             // metaspace
             regexBase_committed + "META.*",
@@ -109,24 +109,23 @@ public class SystemMapTestBase {
 
     private static class WindowsPatterns implements MapPatterns {
 
-        // windows:
-        private static final String winprot = "[\\-rwxcin]*";
-        private static final String wintype = "[rc]-(img|map|pvt)";
+        static final String winprot = "[\\-rwxcin]*";
+        static final String wintype = "[rc]-(img|map|pvt)";
 
-        private static final String winbase = range + space + someSize + space + winprot + space;
+        static final String winbase = range + space + someSize + space + winprot + space;
 
-        private static final String winimage     = winbase + "c-img" + space + someNumber + space;
-        private static final String wincommitted = winbase + "(c-pvt|c-map)" + space + someNumber + space;
-        private static final String winreserved  = winbase + "r-pvt" + space + someNumber + space;
+        static final String winimage     = winbase + "c-img" + space + someNumber + space;
+        static final String wincommitted = winbase + "(c-pvt|c-map)" + space + someNumber + space;
+        static final String winreserved  = winbase + "r-pvt" + space + someNumber + space;
 
-        private static final String shouldMatchUnconditionally_windows[] = {
+        static final String shouldMatchUnconditionally_windows[] = {
             // java launcher
             winimage + ".*[\\/\\\\]bin[\\/\\\\]java[.]exe",
             // libjvm
             winimage + ".*[\\/\\\\]bin[\\/\\\\].*[\\/\\\\]jvm.dll"
         };
 
-        private static final String shouldMatchIfNMTIsEnabled_windows[] = {
+        static final String shouldMatchIfNMTIsEnabled_windows[] = {
             wincommitted + "JAVAHEAP.*",
             // metaspace
             wincommitted + "META.*",
@@ -149,15 +148,15 @@ public class SystemMapTestBase {
     private static class MacOSPatterns implements MapPatterns {
 
         // macOS:
-        private static final String macprot =  "[\\-rwx]*/[\\-rwx]*";
+        static final String macprot =  "[\\-rwx]*/[\\-rwx]*";
 
-        private static final String macow = "cow";
-        private static final String macprivate = "prv";
-        private static final String macprivatealiased = "p/a";
+        static final String macow = "cow";
+        static final String macprivate = "prv";
+        static final String macprivatealiased = "p/a";
 
-        private static final String macOSbase = range + space + macprot + space;
+        static final String macOSbase = range + space + macprot + space;
 
-        private static final String shouldMatchUnconditionally_macOS[] = {
+        static final String shouldMatchUnconditionally_macOS[] = {
             // java launcher
             macOSbase + macow + space + "/.*/bin/java",
             // libjvm
@@ -168,7 +167,7 @@ public class SystemMapTestBase {
             macOSbase + macprivate + space + ".*/.*/hsperfdata_.*"
         };
 
-        private static final String shouldMatchIfNMTIsEnabled_macOS[] = {
+        static final String shouldMatchIfNMTIsEnabled_macOS[] = {
             macOSbase + macprivate + space + "JAVAHEAP.*",
             // metaspace
             macOSbase + macprivate + space + "META.*",
