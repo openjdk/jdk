@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,43 +22,53 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
 package jdk.jpackage.internal;
 
-import java.io.IOException;
 import java.nio.file.Path;
-import java.util.Map;
 
+interface Workshop {
 
-/**
- * AbstractBundler
- *
- * This is the base class all bundlers extend from.
- * It contains methods and parameters common to all bundlers.
- * The concrete implementations are in the platform specific bundlers.
- */
-abstract class AbstractBundler implements Bundler {
+    Path buildRoot();
 
-    static final BundlerParamInfo<Path> IMAGES_ROOT =
-            new BundlerParamInfo<>(
-            "imagesRoot",
-            Path.class,
-            params ->
-                StandardBundlerParam.TEMP_ROOT.fetchFrom(params).resolve("images"),
-            (s, p) -> null);
+    Path resourceDir();
 
-    @Override
-    public String toString() {
-        return getName();
+    /**
+     * Returns path to application image directory. When building app image this is the path to a
+     * directory where it is assembled. When building a package this is the path to the source app
+     * image.
+     */
+    default Path appImageDir() {
+        return buildRoot().resolve("image");
     }
 
-    @Override
-    public void cleanup(Map<String, ? super Object> params) {
-        try {
-            IOUtils.deleteRecursive(
-                    StandardBundlerParam.TEMP_ROOT.fetchFrom(params));
-        } catch (IOException e) {
-            Log.verbose(e.getMessage());
+    default Path configDir() {
+        return buildRoot().resolve("config");
+    }
+
+    default OverridableResource createResource(String defaultName) {
+        return new OverridableResource(defaultName).setResourceDir(resourceDir());
+    }
+
+    record Impl(Path buildRoot, Path resourceDir) implements Workshop {
+
+    }
+
+    static class Proxy implements Workshop {
+
+        Proxy(Workshop target) {
+            this.target = target;
         }
+
+        @Override
+        public Path buildRoot() {
+            return target.buildRoot();
+        }
+
+        @Override
+        public Path resourceDir() {
+            return target.resourceDir();
+        }
+
+        private final Workshop target;
     }
 }
