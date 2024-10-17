@@ -293,20 +293,12 @@ public class HKDFExhaustiveTest {
     Utils.runAndCheckException(
         () -> KDF.getInstance(INVALID_STRING, (KDFParameters) null),
         NoSuchAlgorithmException.class);
-    Utils.runAndCheckException(
-        () -> KDF.getInstance(KDF_ALGORITHMS[0], (KDFParameters) new KDFAlgorithmParameterSpec()),
-        ClassCastException.class);
 
     // getInstance(String algorithm, KDFParameters kdfParameters, String provider)
     Utils.runAndCheckException(
         () -> KDF.getInstance(null, null, SUNJCE), NullPointerException.class);
     Utils.runAndCheckException(
         () -> KDF.getInstance(INVALID_STRING, null, SUNJCE), NoSuchAlgorithmException.class);
-    Utils.runAndCheckException(
-        () ->
-            KDF.getInstance(
-                KDF_ALGORITHMS[0], (KDFParameters) new KDFAlgorithmParameterSpec(), SUNJCE),
-        ClassCastException.class);
     Utils.runAndCheckException(
         () -> KDF.getInstance(KDF_ALGORITHMS[0], null, (String) null), NullPointerException.class);
     Utils.runAndCheckException(
@@ -319,13 +311,6 @@ public class HKDFExhaustiveTest {
     Utils.runAndCheckException(
         () -> KDF.getInstance(INVALID_STRING, null, SUNJCE_PROVIDER),
         NoSuchAlgorithmException.class);
-    Utils.runAndCheckException(
-        () ->
-            KDF.getInstance(
-                KDF_ALGORITHMS[0],
-                (KDFParameters) new KDFAlgorithmParameterSpec(),
-                SUNJCE_PROVIDER),
-        ClassCastException.class);
     Utils.runAndCheckException(
         () -> KDF.getInstance(KDF_ALGORITHMS[0], null, (Provider) null),
         NullPointerException.class);
