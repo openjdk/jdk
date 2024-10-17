@@ -143,7 +143,11 @@ class Instruction(object):
         return f'__ {self._name}(' + ', '.join([op.cstr() for op in self.operands]) + ');'
 
     def astr(self):
-        return f'{self._aname} ' + ', '.join([op.astr() for op in self.operands])
+        # JDK assembler uses 'cl' for shift instructions with one operand by default
+        cl_str = (', cl' if (self._name == 'shll' or self._name == 'shlq' or self._name == 'shrl' or self._name == 'shrq' or
+                             self._name == 'rorl' or self._name == 'rorq' or self._name == 'roll' or self._name == 'rolq' or
+                             self._name == 'sarl' or self._name == 'sarq') and len(self.operands) == 1 else '')
+        return f'{self._aname} ' + ', '.join([op.astr() for op in self.operands]) + cl_str
 
 class RegInstruction(Instruction):
     def __init__(self, name, aname, width, reg):

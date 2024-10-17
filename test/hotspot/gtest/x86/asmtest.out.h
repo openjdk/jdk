@@ -6545,150 +6545,150 @@
     __ notl(r30);                                      //    not r30d    IID6343
     __ notl(r31);                                      //    not r31d    IID6344
 #endif // _LP64
-    __ roll(rcx);                                      //    rol ecx    IID6345
-    __ roll(rdx);                                      //    rol edx    IID6346
-    __ roll(rbx);                                      //    rol ebx    IID6347
+    __ roll(rcx);                                      //    rol ecx, cl    IID6345
+    __ roll(rdx);                                      //    rol edx, cl    IID6346
+    __ roll(rbx);                                      //    rol ebx, cl    IID6347
 #ifdef _LP64
-    __ roll(r8);                                       //    rol r8d    IID6348
-    __ roll(r9);                                       //    rol r9d    IID6349
-    __ roll(r10);                                      //    rol r10d    IID6350
-    __ roll(r11);                                      //    rol r11d    IID6351
-    __ roll(r12);                                      //    rol r12d    IID6352
-    __ roll(r13);                                      //    rol r13d    IID6353
-    __ roll(r14);                                      //    rol r14d    IID6354
-    __ roll(r15);                                      //    rol r15d    IID6355
-    __ roll(r16);                                      //    rol r16d    IID6356
-    __ roll(r17);                                      //    rol r17d    IID6357
-    __ roll(r18);                                      //    rol r18d    IID6358
-    __ roll(r19);                                      //    rol r19d    IID6359
-    __ roll(r20);                                      //    rol r20d    IID6360
-    __ roll(r21);                                      //    rol r21d    IID6361
-    __ roll(r22);                                      //    rol r22d    IID6362
-    __ roll(r23);                                      //    rol r23d    IID6363
-    __ roll(r24);                                      //    rol r24d    IID6364
-    __ roll(r25);                                      //    rol r25d    IID6365
-    __ roll(r26);                                      //    rol r26d    IID6366
-    __ roll(r27);                                      //    rol r27d    IID6367
-    __ roll(r28);                                      //    rol r28d    IID6368
-    __ roll(r29);                                      //    rol r29d    IID6369
-    __ roll(r30);                                      //    rol r30d    IID6370
-    __ roll(r31);                                      //    rol r31d    IID6371
+    __ roll(r8);                                       //    rol r8d, cl    IID6348
+    __ roll(r9);                                       //    rol r9d, cl    IID6349
+    __ roll(r10);                                      //    rol r10d, cl    IID6350
+    __ roll(r11);                                      //    rol r11d, cl    IID6351
+    __ roll(r12);                                      //    rol r12d, cl    IID6352
+    __ roll(r13);                                      //    rol r13d, cl    IID6353
+    __ roll(r14);                                      //    rol r14d, cl    IID6354
+    __ roll(r15);                                      //    rol r15d, cl    IID6355
+    __ roll(r16);                                      //    rol r16d, cl    IID6356
+    __ roll(r17);                                      //    rol r17d, cl    IID6357
+    __ roll(r18);                                      //    rol r18d, cl    IID6358
+    __ roll(r19);                                      //    rol r19d, cl    IID6359
+    __ roll(r20);                                      //    rol r20d, cl    IID6360
+    __ roll(r21);                                      //    rol r21d, cl    IID6361
+    __ roll(r22);                                      //    rol r22d, cl    IID6362
+    __ roll(r23);                                      //    rol r23d, cl    IID6363
+    __ roll(r24);                                      //    rol r24d, cl    IID6364
+    __ roll(r25);                                      //    rol r25d, cl    IID6365
+    __ roll(r26);                                      //    rol r26d, cl    IID6366
+    __ roll(r27);                                      //    rol r27d, cl    IID6367
+    __ roll(r28);                                      //    rol r28d, cl    IID6368
+    __ roll(r29);                                      //    rol r29d, cl    IID6369
+    __ roll(r30);                                      //    rol r30d, cl    IID6370
+    __ roll(r31);                                      //    rol r31d, cl    IID6371
 #endif // _LP64
-    __ rorl(rcx);                                      //    ror ecx    IID6372
-    __ rorl(rdx);                                      //    ror edx    IID6373
-    __ rorl(rbx);                                      //    ror ebx    IID6374
+    __ rorl(rcx);                                      //    ror ecx, cl    IID6372
+    __ rorl(rdx);                                      //    ror edx, cl    IID6373
+    __ rorl(rbx);                                      //    ror ebx, cl    IID6374
 #ifdef _LP64
-    __ rorl(r8);                                       //    ror r8d    IID6375
-    __ rorl(r9);                                       //    ror r9d    IID6376
-    __ rorl(r10);                                      //    ror r10d    IID6377
-    __ rorl(r11);                                      //    ror r11d    IID6378
-    __ rorl(r12);                                      //    ror r12d    IID6379
-    __ rorl(r13);                                      //    ror r13d    IID6380
-    __ rorl(r14);                                      //    ror r14d    IID6381
-    __ rorl(r15);                                      //    ror r15d    IID6382
-    __ rorl(r16);                                      //    ror r16d    IID6383
-    __ rorl(r17);                                      //    ror r17d    IID6384
-    __ rorl(r18);                                      //    ror r18d    IID6385
-    __ rorl(r19);                                      //    ror r19d    IID6386
-    __ rorl(r20);                                      //    ror r20d    IID6387
-    __ rorl(r21);                                      //    ror r21d    IID6388
-    __ rorl(r22);                                      //    ror r22d    IID6389
-    __ rorl(r23);                                      //    ror r23d    IID6390
-    __ rorl(r24);                                      //    ror r24d    IID6391
-    __ rorl(r25);                                      //    ror r25d    IID6392
-    __ rorl(r26);                                      //    ror r26d    IID6393
-    __ rorl(r27);                                      //    ror r27d    IID6394
-    __ rorl(r28);                                      //    ror r28d    IID6395
-    __ rorl(r29);                                      //    ror r29d    IID6396
-    __ rorl(r30);                                      //    ror r30d    IID6397
-    __ rorl(r31);                                      //    ror r31d    IID6398
+    __ rorl(r8);                                       //    ror r8d, cl    IID6375
+    __ rorl(r9);                                       //    ror r9d, cl    IID6376
+    __ rorl(r10);                                      //    ror r10d, cl    IID6377
+    __ rorl(r11);                                      //    ror r11d, cl    IID6378
+    __ rorl(r12);                                      //    ror r12d, cl    IID6379
+    __ rorl(r13);                                      //    ror r13d, cl    IID6380
+    __ rorl(r14);                                      //    ror r14d, cl    IID6381
+    __ rorl(r15);                                      //    ror r15d, cl    IID6382
+    __ rorl(r16);                                      //    ror r16d, cl    IID6383
+    __ rorl(r17);                                      //    ror r17d, cl    IID6384
+    __ rorl(r18);                                      //    ror r18d, cl    IID6385
+    __ rorl(r19);                                      //    ror r19d, cl    IID6386
+    __ rorl(r20);                                      //    ror r20d, cl    IID6387
+    __ rorl(r21);                                      //    ror r21d, cl    IID6388
+    __ rorl(r22);                                      //    ror r22d, cl    IID6389
+    __ rorl(r23);                                      //    ror r23d, cl    IID6390
+    __ rorl(r24);                                      //    ror r24d, cl    IID6391
+    __ rorl(r25);                                      //    ror r25d, cl    IID6392
+    __ rorl(r26);                                      //    ror r26d, cl    IID6393
+    __ rorl(r27);                                      //    ror r27d, cl    IID6394
+    __ rorl(r28);                                      //    ror r28d, cl    IID6395
+    __ rorl(r29);                                      //    ror r29d, cl    IID6396
+    __ rorl(r30);                                      //    ror r30d, cl    IID6397
+    __ rorl(r31);                                      //    ror r31d, cl    IID6398
 #endif // _LP64
-    __ sarl(rcx);                                      //    sar ecx    IID6399
-    __ sarl(rdx);                                      //    sar edx    IID6400
-    __ sarl(rbx);                                      //    sar ebx    IID6401
+    __ sarl(rcx);                                      //    sar ecx, cl    IID6399
+    __ sarl(rdx);                                      //    sar edx, cl    IID6400
+    __ sarl(rbx);                                      //    sar ebx, cl    IID6401
 #ifdef _LP64
-    __ sarl(r8);                                       //    sar r8d    IID6402
-    __ sarl(r9);                                       //    sar r9d    IID6403
-    __ sarl(r10);                                      //    sar r10d    IID6404
-    __ sarl(r11);                                      //    sar r11d    IID6405
-    __ sarl(r12);                                      //    sar r12d    IID6406
-    __ sarl(r13);                                      //    sar r13d    IID6407
-    __ sarl(r14);                                      //    sar r14d    IID6408
-    __ sarl(r15);                                      //    sar r15d    IID6409
-    __ sarl(r16);                                      //    sar r16d    IID6410
-    __ sarl(r17);                                      //    sar r17d    IID6411
-    __ sarl(r18);                                      //    sar r18d    IID6412
-    __ sarl(r19);                                      //    sar r19d    IID6413
-    __ sarl(r20);                                      //    sar r20d    IID6414
-    __ sarl(r21);                                      //    sar r21d    IID6415
-    __ sarl(r22);                                      //    sar r22d    IID6416
-    __ sarl(r23);                                      //    sar r23d    IID6417
-    __ sarl(r24);                                      //    sar r24d    IID6418
-    __ sarl(r25);                                      //    sar r25d    IID6419
-    __ sarl(r26);                                      //    sar r26d    IID6420
-    __ sarl(r27);                                      //    sar r27d    IID6421
-    __ sarl(r28);                                      //    sar r28d    IID6422
-    __ sarl(r29);                                      //    sar r29d    IID6423
-    __ sarl(r30);                                      //    sar r30d    IID6424
-    __ sarl(r31);                                      //    sar r31d    IID6425
+    __ sarl(r8);                                       //    sar r8d, cl    IID6402
+    __ sarl(r9);                                       //    sar r9d, cl    IID6403
+    __ sarl(r10);                                      //    sar r10d, cl    IID6404
+    __ sarl(r11);                                      //    sar r11d, cl    IID6405
+    __ sarl(r12);                                      //    sar r12d, cl    IID6406
+    __ sarl(r13);                                      //    sar r13d, cl    IID6407
+    __ sarl(r14);                                      //    sar r14d, cl    IID6408
+    __ sarl(r15);                                      //    sar r15d, cl    IID6409
+    __ sarl(r16);                                      //    sar r16d, cl    IID6410
+    __ sarl(r17);                                      //    sar r17d, cl    IID6411
+    __ sarl(r18);                                      //    sar r18d, cl    IID6412
+    __ sarl(r19);                                      //    sar r19d, cl    IID6413
+    __ sarl(r20);                                      //    sar r20d, cl    IID6414
+    __ sarl(r21);                                      //    sar r21d, cl    IID6415
+    __ sarl(r22);                                      //    sar r22d, cl    IID6416
+    __ sarl(r23);                                      //    sar r23d, cl    IID6417
+    __ sarl(r24);                                      //    sar r24d, cl    IID6418
+    __ sarl(r25);                                      //    sar r25d, cl    IID6419
+    __ sarl(r26);                                      //    sar r26d, cl    IID6420
+    __ sarl(r27);                                      //    sar r27d, cl    IID6421
+    __ sarl(r28);                                      //    sar r28d, cl    IID6422
+    __ sarl(r29);                                      //    sar r29d, cl    IID6423
+    __ sarl(r30);                                      //    sar r30d, cl    IID6424
+    __ sarl(r31);                                      //    sar r31d, cl    IID6425
 #endif // _LP64
-    __ shll(rcx);                                      //    shl ecx    IID6426
-    __ shll(rdx);                                      //    shl edx    IID6427
-    __ shll(rbx);                                      //    shl ebx    IID6428
+    __ shll(rcx);                                      //    shl ecx, cl    IID6426
+    __ shll(rdx);                                      //    shl edx, cl    IID6427
+    __ shll(rbx);                                      //    shl ebx, cl    IID6428
 #ifdef _LP64
-    __ shll(r8);                                       //    shl r8d    IID6429
-    __ shll(r9);                                       //    shl r9d    IID6430
-    __ shll(r10);                                      //    shl r10d    IID6431
-    __ shll(r11);                                      //    shl r11d    IID6432
-    __ shll(r12);                                      //    shl r12d    IID6433
-    __ shll(r13);                                      //    shl r13d    IID6434
-    __ shll(r14);                                      //    shl r14d    IID6435
-    __ shll(r15);                                      //    shl r15d    IID6436
-    __ shll(r16);                                      //    shl r16d    IID6437
-    __ shll(r17);                                      //    shl r17d    IID6438
-    __ shll(r18);                                      //    shl r18d    IID6439
-    __ shll(r19);                                      //    shl r19d    IID6440
-    __ shll(r20);                                      //    shl r20d    IID6441
-    __ shll(r21);                                      //    shl r21d    IID6442
-    __ shll(r22);                                      //    shl r22d    IID6443
-    __ shll(r23);                                      //    shl r23d    IID6444
-    __ shll(r24);                                      //    shl r24d    IID6445
-    __ shll(r25);                                      //    shl r25d    IID6446
-    __ shll(r26);                                      //    shl r26d    IID6447
-    __ shll(r27);                                      //    shl r27d    IID6448
-    __ shll(r28);                                      //    shl r28d    IID6449
-    __ shll(r29);                                      //    shl r29d    IID6450
-    __ shll(r30);                                      //    shl r30d    IID6451
-    __ shll(r31);                                      //    shl r31d    IID6452
+    __ shll(r8);                                       //    shl r8d, cl    IID6429
+    __ shll(r9);                                       //    shl r9d, cl    IID6430
+    __ shll(r10);                                      //    shl r10d, cl    IID6431
+    __ shll(r11);                                      //    shl r11d, cl    IID6432
+    __ shll(r12);                                      //    shl r12d, cl    IID6433
+    __ shll(r13);                                      //    shl r13d, cl    IID6434
+    __ shll(r14);                                      //    shl r14d, cl    IID6435
+    __ shll(r15);                                      //    shl r15d, cl    IID6436
+    __ shll(r16);                                      //    shl r16d, cl    IID6437
+    __ shll(r17);                                      //    shl r17d, cl    IID6438
+    __ shll(r18);                                      //    shl r18d, cl    IID6439
+    __ shll(r19);                                      //    shl r19d, cl    IID6440
+    __ shll(r20);                                      //    shl r20d, cl    IID6441
+    __ shll(r21);                                      //    shl r21d, cl    IID6442
+    __ shll(r22);                                      //    shl r22d, cl    IID6443
+    __ shll(r23);                                      //    shl r23d, cl    IID6444
+    __ shll(r24);                                      //    shl r24d, cl    IID6445
+    __ shll(r25);                                      //    shl r25d, cl    IID6446
+    __ shll(r26);                                      //    shl r26d, cl    IID6447
+    __ shll(r27);                                      //    shl r27d, cl    IID6448
+    __ shll(r28);                                      //    shl r28d, cl    IID6449
+    __ shll(r29);                                      //    shl r29d, cl    IID6450
+    __ shll(r30);                                      //    shl r30d, cl    IID6451
+    __ shll(r31);                                      //    shl r31d, cl    IID6452
 #endif // _LP64
-    __ shrl(rcx);                                      //    shr ecx    IID6453
-    __ shrl(rdx);                                      //    shr edx    IID6454
-    __ shrl(rbx);                                      //    shr ebx    IID6455
+    __ shrl(rcx);                                      //    shr ecx, cl    IID6453
+    __ shrl(rdx);                                      //    shr edx, cl    IID6454
+    __ shrl(rbx);                                      //    shr ebx, cl    IID6455
 #ifdef _LP64
-    __ shrl(r8);                                       //    shr r8d    IID6456
-    __ shrl(r9);                                       //    shr r9d    IID6457
-    __ shrl(r10);                                      //    shr r10d    IID6458
-    __ shrl(r11);                                      //    shr r11d    IID6459
-    __ shrl(r12);                                      //    shr r12d    IID6460
-    __ shrl(r13);                                      //    shr r13d    IID6461
-    __ shrl(r14);                                      //    shr r14d    IID6462
-    __ shrl(r15);                                      //    shr r15d    IID6463
-    __ shrl(r16);                                      //    shr r16d    IID6464
-    __ shrl(r17);                                      //    shr r17d    IID6465
-    __ shrl(r18);                                      //    shr r18d    IID6466
-    __ shrl(r19);                                      //    shr r19d    IID6467
-    __ shrl(r20);                                      //    shr r20d    IID6468
-    __ shrl(r21);                                      //    shr r21d    IID6469
-    __ shrl(r22);                                      //    shr r22d    IID6470
-    __ shrl(r23);                                      //    shr r23d    IID6471
-    __ shrl(r24);                                      //    shr r24d    IID6472
-    __ shrl(r25);                                      //    shr r25d    IID6473
-    __ shrl(r26);                                      //    shr r26d    IID6474
-    __ shrl(r27);                                      //    shr r27d    IID6475
-    __ shrl(r28);                                      //    shr r28d    IID6476
-    __ shrl(r29);                                      //    shr r29d    IID6477
-    __ shrl(r30);                                      //    shr r30d    IID6478
-    __ shrl(r31);                                      //    shr r31d    IID6479
+    __ shrl(r8);                                       //    shr r8d, cl    IID6456
+    __ shrl(r9);                                       //    shr r9d, cl    IID6457
+    __ shrl(r10);                                      //    shr r10d, cl    IID6458
+    __ shrl(r11);                                      //    shr r11d, cl    IID6459
+    __ shrl(r12);                                      //    shr r12d, cl    IID6460
+    __ shrl(r13);                                      //    shr r13d, cl    IID6461
+    __ shrl(r14);                                      //    shr r14d, cl    IID6462
+    __ shrl(r15);                                      //    shr r15d, cl    IID6463
+    __ shrl(r16);                                      //    shr r16d, cl    IID6464
+    __ shrl(r17);                                      //    shr r17d, cl    IID6465
+    __ shrl(r18);                                      //    shr r18d, cl    IID6466
+    __ shrl(r19);                                      //    shr r19d, cl    IID6467
+    __ shrl(r20);                                      //    shr r20d, cl    IID6468
+    __ shrl(r21);                                      //    shr r21d, cl    IID6469
+    __ shrl(r22);                                      //    shr r22d, cl    IID6470
+    __ shrl(r23);                                      //    shr r23d, cl    IID6471
+    __ shrl(r24);                                      //    shr r24d, cl    IID6472
+    __ shrl(r25);                                      //    shr r25d, cl    IID6473
+    __ shrl(r26);                                      //    shr r26d, cl    IID6474
+    __ shrl(r27);                                      //    shr r27d, cl    IID6475
+    __ shrl(r28);                                      //    shr r28d, cl    IID6476
+    __ shrl(r29);                                      //    shr r29d, cl    IID6477
+    __ shrl(r30);                                      //    shr r30d, cl    IID6478
+    __ shrl(r31);                                      //    shr r31d, cl    IID6479
 #endif // _LP64
     __ incrementl(rcx);                                //    inc ecx    IID6480
     __ incrementl(rdx);                                //    inc edx    IID6481
@@ -6806,63 +6806,63 @@
     __ negl(Address(r30, r31));                        //    neg dword ptr [r30 + r31]    IID6586
     __ negl(Address(r31, rcx));                        //    neg dword ptr [r31 + rcx]    IID6587
 #endif // _LP64
-    __ sarl(Address(rcx, rdx));                        //    sar dword ptr [rcx + rdx]    IID6588
-    __ sarl(Address(rdx, rbx));                        //    sar dword ptr [rdx + rbx]    IID6589
+    __ sarl(Address(rcx, rdx));                        //    sar dword ptr [rcx + rdx], cl    IID6588
+    __ sarl(Address(rdx, rbx));                        //    sar dword ptr [rdx + rbx], cl    IID6589
 #ifdef _LP64
-    __ sarl(Address(rbx, r8));                         //    sar dword ptr [rbx + r8]    IID6590
-    __ sarl(Address(r8, r9));                          //    sar dword ptr [r8 + r9]    IID6591
-    __ sarl(Address(r9, r10));                         //    sar dword ptr [r9 + r10]    IID6592
-    __ sarl(Address(r10, r11));                        //    sar dword ptr [r10 + r11]    IID6593
-    __ sarl(Address(r11, r12));                        //    sar dword ptr [r11 + r12]    IID6594
-    __ sarl(Address(r12, r13));                        //    sar dword ptr [r12 + r13]    IID6595
-    __ sarl(Address(r13, r14));                        //    sar dword ptr [r13 + r14]    IID6596
-    __ sarl(Address(r14, r15));                        //    sar dword ptr [r14 + r15]    IID6597
-    __ sarl(Address(r15, r16));                        //    sar dword ptr [r15 + r16]    IID6598
-    __ sarl(Address(r16, r17));                        //    sar dword ptr [r16 + r17]    IID6599
-    __ sarl(Address(r17, r18));                        //    sar dword ptr [r17 + r18]    IID6600
-    __ sarl(Address(r18, r19));                        //    sar dword ptr [r18 + r19]    IID6601
-    __ sarl(Address(r19, r20));                        //    sar dword ptr [r19 + r20]    IID6602
-    __ sarl(Address(r20, r21));                        //    sar dword ptr [r20 + r21]    IID6603
-    __ sarl(Address(r21, r22));                        //    sar dword ptr [r21 + r22]    IID6604
-    __ sarl(Address(r22, r23));                        //    sar dword ptr [r22 + r23]    IID6605
-    __ sarl(Address(r23, r24));                        //    sar dword ptr [r23 + r24]    IID6606
-    __ sarl(Address(r24, r25));                        //    sar dword ptr [r24 + r25]    IID6607
-    __ sarl(Address(r25, r26));                        //    sar dword ptr [r25 + r26]    IID6608
-    __ sarl(Address(r26, r27));                        //    sar dword ptr [r26 + r27]    IID6609
-    __ sarl(Address(r27, r28));                        //    sar dword ptr [r27 + r28]    IID6610
-    __ sarl(Address(r28, r29));                        //    sar dword ptr [r28 + r29]    IID6611
-    __ sarl(Address(r29, r30));                        //    sar dword ptr [r29 + r30]    IID6612
-    __ sarl(Address(r30, r31));                        //    sar dword ptr [r30 + r31]    IID6613
-    __ sarl(Address(r31, rcx));                        //    sar dword ptr [r31 + rcx]    IID6614
+    __ sarl(Address(rbx, r8));                         //    sar dword ptr [rbx + r8], cl    IID6590
+    __ sarl(Address(r8, r9));                          //    sar dword ptr [r8 + r9], cl    IID6591
+    __ sarl(Address(r9, r10));                         //    sar dword ptr [r9 + r10], cl    IID6592
+    __ sarl(Address(r10, r11));                        //    sar dword ptr [r10 + r11], cl    IID6593
+    __ sarl(Address(r11, r12));                        //    sar dword ptr [r11 + r12], cl    IID6594
+    __ sarl(Address(r12, r13));                        //    sar dword ptr [r12 + r13], cl    IID6595
+    __ sarl(Address(r13, r14));                        //    sar dword ptr [r13 + r14], cl    IID6596
+    __ sarl(Address(r14, r15));                        //    sar dword ptr [r14 + r15], cl    IID6597
+    __ sarl(Address(r15, r16));                        //    sar dword ptr [r15 + r16], cl    IID6598
+    __ sarl(Address(r16, r17));                        //    sar dword ptr [r16 + r17], cl    IID6599
+    __ sarl(Address(r17, r18));                        //    sar dword ptr [r17 + r18], cl    IID6600
+    __ sarl(Address(r18, r19));                        //    sar dword ptr [r18 + r19], cl    IID6601
+    __ sarl(Address(r19, r20));                        //    sar dword ptr [r19 + r20], cl    IID6602
+    __ sarl(Address(r20, r21));                        //    sar dword ptr [r20 + r21], cl    IID6603
+    __ sarl(Address(r21, r22));                        //    sar dword ptr [r21 + r22], cl    IID6604
+    __ sarl(Address(r22, r23));                        //    sar dword ptr [r22 + r23], cl    IID6605
+    __ sarl(Address(r23, r24));                        //    sar dword ptr [r23 + r24], cl    IID6606
+    __ sarl(Address(r24, r25));                        //    sar dword ptr [r24 + r25], cl    IID6607
+    __ sarl(Address(r25, r26));                        //    sar dword ptr [r25 + r26], cl    IID6608
+    __ sarl(Address(r26, r27));                        //    sar dword ptr [r26 + r27], cl    IID6609
+    __ sarl(Address(r27, r28));                        //    sar dword ptr [r27 + r28], cl    IID6610
+    __ sarl(Address(r28, r29));                        //    sar dword ptr [r28 + r29], cl    IID6611
+    __ sarl(Address(r29, r30));                        //    sar dword ptr [r29 + r30], cl    IID6612
+    __ sarl(Address(r30, r31));                        //    sar dword ptr [r30 + r31], cl    IID6613
+    __ sarl(Address(r31, rcx));                        //    sar dword ptr [r31 + rcx], cl    IID6614
 #endif // _LP64
-    __ shrl(Address(rcx, rdx));                        //    shr dword ptr [rcx + rdx]    IID6615
-    __ shrl(Address(rdx, rbx));                        //    shr dword ptr [rdx + rbx]    IID6616
+    __ shrl(Address(rcx, rdx));                        //    shr dword ptr [rcx + rdx], cl    IID6615
+    __ shrl(Address(rdx, rbx));                        //    shr dword ptr [rdx + rbx], cl    IID6616
 #ifdef _LP64
-    __ shrl(Address(rbx, r8));                         //    shr dword ptr [rbx + r8]    IID6617
-    __ shrl(Address(r8, r9));                          //    shr dword ptr [r8 + r9]    IID6618
-    __ shrl(Address(r9, r10));                         //    shr dword ptr [r9 + r10]    IID6619
-    __ shrl(Address(r10, r11));                        //    shr dword ptr [r10 + r11]    IID6620
-    __ shrl(Address(r11, r12));                        //    shr dword ptr [r11 + r12]    IID6621
-    __ shrl(Address(r12, r13));                        //    shr dword ptr [r12 + r13]    IID6622
-    __ shrl(Address(r13, r14));                        //    shr dword ptr [r13 + r14]    IID6623
-    __ shrl(Address(r14, r15));                        //    shr dword ptr [r14 + r15]    IID6624
-    __ shrl(Address(r15, r16));                        //    shr dword ptr [r15 + r16]    IID6625
-    __ shrl(Address(r16, r17));                        //    shr dword ptr [r16 + r17]    IID6626
-    __ shrl(Address(r17, r18));                        //    shr dword ptr [r17 + r18]    IID6627
-    __ shrl(Address(r18, r19));                        //    shr dword ptr [r18 + r19]    IID6628
-    __ shrl(Address(r19, r20));                        //    shr dword ptr [r19 + r20]    IID6629
-    __ shrl(Address(r20, r21));                        //    shr dword ptr [r20 + r21]    IID6630
-    __ shrl(Address(r21, r22));                        //    shr dword ptr [r21 + r22]    IID6631
-    __ shrl(Address(r22, r23));                        //    shr dword ptr [r22 + r23]    IID6632
-    __ shrl(Address(r23, r24));                        //    shr dword ptr [r23 + r24]    IID6633
-    __ shrl(Address(r24, r25));                        //    shr dword ptr [r24 + r25]    IID6634
-    __ shrl(Address(r25, r26));                        //    shr dword ptr [r25 + r26]    IID6635
-    __ shrl(Address(r26, r27));                        //    shr dword ptr [r26 + r27]    IID6636
-    __ shrl(Address(r27, r28));                        //    shr dword ptr [r27 + r28]    IID6637
-    __ shrl(Address(r28, r29));                        //    shr dword ptr [r28 + r29]    IID6638
-    __ shrl(Address(r29, r30));                        //    shr dword ptr [r29 + r30]    IID6639
-    __ shrl(Address(r30, r31));                        //    shr dword ptr [r30 + r31]    IID6640
-    __ shrl(Address(r31, rcx));                        //    shr dword ptr [r31 + rcx]    IID6641
+    __ shrl(Address(rbx, r8));                         //    shr dword ptr [rbx + r8], cl    IID6617
+    __ shrl(Address(r8, r9));                          //    shr dword ptr [r8 + r9], cl    IID6618
+    __ shrl(Address(r9, r10));                         //    shr dword ptr [r9 + r10], cl    IID6619
+    __ shrl(Address(r10, r11));                        //    shr dword ptr [r10 + r11], cl    IID6620
+    __ shrl(Address(r11, r12));                        //    shr dword ptr [r11 + r12], cl    IID6621
+    __ shrl(Address(r12, r13));                        //    shr dword ptr [r12 + r13], cl    IID6622
+    __ shrl(Address(r13, r14));                        //    shr dword ptr [r13 + r14], cl    IID6623
+    __ shrl(Address(r14, r15));                        //    shr dword ptr [r14 + r15], cl    IID6624
+    __ shrl(Address(r15, r16));                        //    shr dword ptr [r15 + r16], cl    IID6625
+    __ shrl(Address(r16, r17));                        //    shr dword ptr [r16 + r17], cl    IID6626
+    __ shrl(Address(r17, r18));                        //    shr dword ptr [r17 + r18], cl    IID6627
+    __ shrl(Address(r18, r19));                        //    shr dword ptr [r18 + r19], cl    IID6628
+    __ shrl(Address(r19, r20));                        //    shr dword ptr [r19 + r20], cl    IID6629
+    __ shrl(Address(r20, r21));                        //    shr dword ptr [r20 + r21], cl    IID6630
+    __ shrl(Address(r21, r22));                        //    shr dword ptr [r21 + r22], cl    IID6631
+    __ shrl(Address(r22, r23));                        //    shr dword ptr [r22 + r23], cl    IID6632
+    __ shrl(Address(r23, r24));                        //    shr dword ptr [r23 + r24], cl    IID6633
+    __ shrl(Address(r24, r25));                        //    shr dword ptr [r24 + r25], cl    IID6634
+    __ shrl(Address(r25, r26));                        //    shr dword ptr [r25 + r26], cl    IID6635
+    __ shrl(Address(r26, r27));                        //    shr dword ptr [r26 + r27], cl    IID6636
+    __ shrl(Address(r27, r28));                        //    shr dword ptr [r27 + r28], cl    IID6637
+    __ shrl(Address(r28, r29));                        //    shr dword ptr [r28 + r29], cl    IID6638
+    __ shrl(Address(r29, r30));                        //    shr dword ptr [r29 + r30], cl    IID6639
+    __ shrl(Address(r30, r31));                        //    shr dword ptr [r30 + r31], cl    IID6640
+    __ shrl(Address(r31, rcx));                        //    shr dword ptr [r31 + rcx], cl    IID6641
 #endif // _LP64
     __ incrementl(Address(rcx, rdx));                  //    inc dword ptr [rcx + rdx]    IID6642
     __ incrementl(Address(rdx, rbx));                  //    inc dword ptr [rdx + rbx]    IID6643
@@ -12981,141 +12981,141 @@
     __ notq(r29);                                      //    not r29    IID12741
     __ notq(r30);                                      //    not r30    IID12742
     __ notq(r31);                                      //    not r31    IID12743
-    __ rolq(rcx);                                      //    rol rcx    IID12744
-    __ rolq(rdx);                                      //    rol rdx    IID12745
-    __ rolq(rbx);                                      //    rol rbx    IID12746
-    __ rolq(r8);                                       //    rol r8    IID12747
-    __ rolq(r9);                                       //    rol r9    IID12748
-    __ rolq(r10);                                      //    rol r10    IID12749
-    __ rolq(r11);                                      //    rol r11    IID12750
-    __ rolq(r12);                                      //    rol r12    IID12751
-    __ rolq(r13);                                      //    rol r13    IID12752
-    __ rolq(r14);                                      //    rol r14    IID12753
-    __ rolq(r15);                                      //    rol r15    IID12754
-    __ rolq(r16);                                      //    rol r16    IID12755
-    __ rolq(r17);                                      //    rol r17    IID12756
-    __ rolq(r18);                                      //    rol r18    IID12757
-    __ rolq(r19);                                      //    rol r19    IID12758
-    __ rolq(r20);                                      //    rol r20    IID12759
-    __ rolq(r21);                                      //    rol r21    IID12760
-    __ rolq(r22);                                      //    rol r22    IID12761
-    __ rolq(r23);                                      //    rol r23    IID12762
-    __ rolq(r24);                                      //    rol r24    IID12763
-    __ rolq(r25);                                      //    rol r25    IID12764
-    __ rolq(r26);                                      //    rol r26    IID12765
-    __ rolq(r27);                                      //    rol r27    IID12766
-    __ rolq(r28);                                      //    rol r28    IID12767
-    __ rolq(r29);                                      //    rol r29    IID12768
-    __ rolq(r30);                                      //    rol r30    IID12769
-    __ rolq(r31);                                      //    rol r31    IID12770
-    __ rorq(rcx);                                      //    ror rcx    IID12771
-    __ rorq(rdx);                                      //    ror rdx    IID12772
-    __ rorq(rbx);                                      //    ror rbx    IID12773
-    __ rorq(r8);                                       //    ror r8    IID12774
-    __ rorq(r9);                                       //    ror r9    IID12775
-    __ rorq(r10);                                      //    ror r10    IID12776
-    __ rorq(r11);                                      //    ror r11    IID12777
-    __ rorq(r12);                                      //    ror r12    IID12778
-    __ rorq(r13);                                      //    ror r13    IID12779
-    __ rorq(r14);                                      //    ror r14    IID12780
-    __ rorq(r15);                                      //    ror r15    IID12781
-    __ rorq(r16);                                      //    ror r16    IID12782
-    __ rorq(r17);                                      //    ror r17    IID12783
-    __ rorq(r18);                                      //    ror r18    IID12784
-    __ rorq(r19);                                      //    ror r19    IID12785
-    __ rorq(r20);                                      //    ror r20    IID12786
-    __ rorq(r21);                                      //    ror r21    IID12787
-    __ rorq(r22);                                      //    ror r22    IID12788
-    __ rorq(r23);                                      //    ror r23    IID12789
-    __ rorq(r24);                                      //    ror r24    IID12790
-    __ rorq(r25);                                      //    ror r25    IID12791
-    __ rorq(r26);                                      //    ror r26    IID12792
-    __ rorq(r27);                                      //    ror r27    IID12793
-    __ rorq(r28);                                      //    ror r28    IID12794
-    __ rorq(r29);                                      //    ror r29    IID12795
-    __ rorq(r30);                                      //    ror r30    IID12796
-    __ rorq(r31);                                      //    ror r31    IID12797
-    __ sarq(rcx);                                      //    sar rcx    IID12798
-    __ sarq(rdx);                                      //    sar rdx    IID12799
-    __ sarq(rbx);                                      //    sar rbx    IID12800
-    __ sarq(r8);                                       //    sar r8    IID12801
-    __ sarq(r9);                                       //    sar r9    IID12802
-    __ sarq(r10);                                      //    sar r10    IID12803
-    __ sarq(r11);                                      //    sar r11    IID12804
-    __ sarq(r12);                                      //    sar r12    IID12805
-    __ sarq(r13);                                      //    sar r13    IID12806
-    __ sarq(r14);                                      //    sar r14    IID12807
-    __ sarq(r15);                                      //    sar r15    IID12808
-    __ sarq(r16);                                      //    sar r16    IID12809
-    __ sarq(r17);                                      //    sar r17    IID12810
-    __ sarq(r18);                                      //    sar r18    IID12811
-    __ sarq(r19);                                      //    sar r19    IID12812
-    __ sarq(r20);                                      //    sar r20    IID12813
-    __ sarq(r21);                                      //    sar r21    IID12814
-    __ sarq(r22);                                      //    sar r22    IID12815
-    __ sarq(r23);                                      //    sar r23    IID12816
-    __ sarq(r24);                                      //    sar r24    IID12817
-    __ sarq(r25);                                      //    sar r25    IID12818
-    __ sarq(r26);                                      //    sar r26    IID12819
-    __ sarq(r27);                                      //    sar r27    IID12820
-    __ sarq(r28);                                      //    sar r28    IID12821
-    __ sarq(r29);                                      //    sar r29    IID12822
-    __ sarq(r30);                                      //    sar r30    IID12823
-    __ sarq(r31);                                      //    sar r31    IID12824
-    __ shlq(rcx);                                      //    shl rcx    IID12825
-    __ shlq(rdx);                                      //    shl rdx    IID12826
-    __ shlq(rbx);                                      //    shl rbx    IID12827
-    __ shlq(r8);                                       //    shl r8    IID12828
-    __ shlq(r9);                                       //    shl r9    IID12829
-    __ shlq(r10);                                      //    shl r10    IID12830
-    __ shlq(r11);                                      //    shl r11    IID12831
-    __ shlq(r12);                                      //    shl r12    IID12832
-    __ shlq(r13);                                      //    shl r13    IID12833
-    __ shlq(r14);                                      //    shl r14    IID12834
-    __ shlq(r15);                                      //    shl r15    IID12835
-    __ shlq(r16);                                      //    shl r16    IID12836
-    __ shlq(r17);                                      //    shl r17    IID12837
-    __ shlq(r18);                                      //    shl r18    IID12838
-    __ shlq(r19);                                      //    shl r19    IID12839
-    __ shlq(r20);                                      //    shl r20    IID12840
-    __ shlq(r21);                                      //    shl r21    IID12841
-    __ shlq(r22);                                      //    shl r22    IID12842
-    __ shlq(r23);                                      //    shl r23    IID12843
-    __ shlq(r24);                                      //    shl r24    IID12844
-    __ shlq(r25);                                      //    shl r25    IID12845
-    __ shlq(r26);                                      //    shl r26    IID12846
-    __ shlq(r27);                                      //    shl r27    IID12847
-    __ shlq(r28);                                      //    shl r28    IID12848
-    __ shlq(r29);                                      //    shl r29    IID12849
-    __ shlq(r30);                                      //    shl r30    IID12850
-    __ shlq(r31);                                      //    shl r31    IID12851
-    __ shrq(rcx);                                      //    shr rcx    IID12852
-    __ shrq(rdx);                                      //    shr rdx    IID12853
-    __ shrq(rbx);                                      //    shr rbx    IID12854
-    __ shrq(r8);                                       //    shr r8    IID12855
-    __ shrq(r9);                                       //    shr r9    IID12856
-    __ shrq(r10);                                      //    shr r10    IID12857
-    __ shrq(r11);                                      //    shr r11    IID12858
-    __ shrq(r12);                                      //    shr r12    IID12859
-    __ shrq(r13);                                      //    shr r13    IID12860
-    __ shrq(r14);                                      //    shr r14    IID12861
-    __ shrq(r15);                                      //    shr r15    IID12862
-    __ shrq(r16);                                      //    shr r16    IID12863
-    __ shrq(r17);                                      //    shr r17    IID12864
-    __ shrq(r18);                                      //    shr r18    IID12865
-    __ shrq(r19);                                      //    shr r19    IID12866
-    __ shrq(r20);                                      //    shr r20    IID12867
-    __ shrq(r21);                                      //    shr r21    IID12868
-    __ shrq(r22);                                      //    shr r22    IID12869
-    __ shrq(r23);                                      //    shr r23    IID12870
-    __ shrq(r24);                                      //    shr r24    IID12871
-    __ shrq(r25);                                      //    shr r25    IID12872
-    __ shrq(r26);                                      //    shr r26    IID12873
-    __ shrq(r27);                                      //    shr r27    IID12874
-    __ shrq(r28);                                      //    shr r28    IID12875
-    __ shrq(r29);                                      //    shr r29    IID12876
-    __ shrq(r30);                                      //    shr r30    IID12877
-    __ shrq(r31);                                      //    shr r31    IID12878
+    __ rolq(rcx);                                      //    rol rcx, cl    IID12744
+    __ rolq(rdx);                                      //    rol rdx, cl    IID12745
+    __ rolq(rbx);                                      //    rol rbx, cl    IID12746
+    __ rolq(r8);                                       //    rol r8, cl    IID12747
+    __ rolq(r9);                                       //    rol r9, cl    IID12748
+    __ rolq(r10);                                      //    rol r10, cl    IID12749
+    __ rolq(r11);                                      //    rol r11, cl    IID12750
+    __ rolq(r12);                                      //    rol r12, cl    IID12751
+    __ rolq(r13);                                      //    rol r13, cl    IID12752
+    __ rolq(r14);                                      //    rol r14, cl    IID12753
+    __ rolq(r15);                                      //    rol r15, cl    IID12754
+    __ rolq(r16);                                      //    rol r16, cl    IID12755
+    __ rolq(r17);                                      //    rol r17, cl    IID12756
+    __ rolq(r18);                                      //    rol r18, cl    IID12757
+    __ rolq(r19);                                      //    rol r19, cl    IID12758
+    __ rolq(r20);                                      //    rol r20, cl    IID12759
+    __ rolq(r21);                                      //    rol r21, cl    IID12760
+    __ rolq(r22);                                      //    rol r22, cl    IID12761
+    __ rolq(r23);                                      //    rol r23, cl    IID12762
+    __ rolq(r24);                                      //    rol r24, cl    IID12763
+    __ rolq(r25);                                      //    rol r25, cl    IID12764
+    __ rolq(r26);                                      //    rol r26, cl    IID12765
+    __ rolq(r27);                                      //    rol r27, cl    IID12766
+    __ rolq(r28);                                      //    rol r28, cl    IID12767
+    __ rolq(r29);                                      //    rol r29, cl    IID12768
+    __ rolq(r30);                                      //    rol r30, cl    IID12769
+    __ rolq(r31);                                      //    rol r31, cl    IID12770
+    __ rorq(rcx);                                      //    ror rcx, cl    IID12771
+    __ rorq(rdx);                                      //    ror rdx, cl    IID12772
+    __ rorq(rbx);                                      //    ror rbx, cl    IID12773
+    __ rorq(r8);                                       //    ror r8, cl    IID12774
+    __ rorq(r9);                                       //    ror r9, cl    IID12775
+    __ rorq(r10);                                      //    ror r10, cl    IID12776
+    __ rorq(r11);                                      //    ror r11, cl    IID12777
+    __ rorq(r12);                                      //    ror r12, cl    IID12778
+    __ rorq(r13);                                      //    ror r13, cl    IID12779
+    __ rorq(r14);                                      //    ror r14, cl    IID12780
+    __ rorq(r15);                                      //    ror r15, cl    IID12781
+    __ rorq(r16);                                      //    ror r16, cl    IID12782
+    __ rorq(r17);                                      //    ror r17, cl    IID12783
+    __ rorq(r18);                                      //    ror r18, cl    IID12784
+    __ rorq(r19);                                      //    ror r19, cl    IID12785
+    __ rorq(r20);                                      //    ror r20, cl    IID12786
+    __ rorq(r21);                                      //    ror r21, cl    IID12787
+    __ rorq(r22);                                      //    ror r22, cl    IID12788
+    __ rorq(r23);                                      //    ror r23, cl    IID12789
+    __ rorq(r24);                                      //    ror r24, cl    IID12790
+    __ rorq(r25);                                      //    ror r25, cl    IID12791
+    __ rorq(r26);                                      //    ror r26, cl    IID12792
+    __ rorq(r27);                                      //    ror r27, cl    IID12793
+    __ rorq(r28);                                      //    ror r28, cl    IID12794
+    __ rorq(r29);                                      //    ror r29, cl    IID12795
+    __ rorq(r30);                                      //    ror r30, cl    IID12796
+    __ rorq(r31);                                      //    ror r31, cl    IID12797
+    __ sarq(rcx);                                      //    sar rcx, cl    IID12798
+    __ sarq(rdx);                                      //    sar rdx, cl    IID12799
+    __ sarq(rbx);                                      //    sar rbx, cl    IID12800
+    __ sarq(r8);                                       //    sar r8, cl    IID12801
+    __ sarq(r9);                                       //    sar r9, cl    IID12802
+    __ sarq(r10);                                      //    sar r10, cl    IID12803
+    __ sarq(r11);                                      //    sar r11, cl    IID12804
+    __ sarq(r12);                                      //    sar r12, cl    IID12805
+    __ sarq(r13);                                      //    sar r13, cl    IID12806
+    __ sarq(r14);                                      //    sar r14, cl    IID12807
+    __ sarq(r15);                                      //    sar r15, cl    IID12808
+    __ sarq(r16);                                      //    sar r16, cl    IID12809
+    __ sarq(r17);                                      //    sar r17, cl    IID12810
+    __ sarq(r18);                                      //    sar r18, cl    IID12811
+    __ sarq(r19);                                      //    sar r19, cl    IID12812
+    __ sarq(r20);                                      //    sar r20, cl    IID12813
+    __ sarq(r21);                                      //    sar r21, cl    IID12814
+    __ sarq(r22);                                      //    sar r22, cl    IID12815
+    __ sarq(r23);                                      //    sar r23, cl    IID12816
+    __ sarq(r24);                                      //    sar r24, cl    IID12817
+    __ sarq(r25);                                      //    sar r25, cl    IID12818
+    __ sarq(r26);                                      //    sar r26, cl    IID12819
+    __ sarq(r27);                                      //    sar r27, cl    IID12820
+    __ sarq(r28);                                      //    sar r28, cl    IID12821
+    __ sarq(r29);                                      //    sar r29, cl    IID12822
+    __ sarq(r30);                                      //    sar r30, cl    IID12823
+    __ sarq(r31);                                      //    sar r31, cl    IID12824
+    __ shlq(rcx);                                      //    shl rcx, cl    IID12825
+    __ shlq(rdx);                                      //    shl rdx, cl    IID12826
+    __ shlq(rbx);                                      //    shl rbx, cl    IID12827
+    __ shlq(r8);                                       //    shl r8, cl    IID12828
+    __ shlq(r9);                                       //    shl r9, cl    IID12829
+    __ shlq(r10);                                      //    shl r10, cl    IID12830
+    __ shlq(r11);                                      //    shl r11, cl    IID12831
+    __ shlq(r12);                                      //    shl r12, cl    IID12832
+    __ shlq(r13);                                      //    shl r13, cl    IID12833
+    __ shlq(r14);                                      //    shl r14, cl    IID12834
+    __ shlq(r15);                                      //    shl r15, cl    IID12835
+    __ shlq(r16);                                      //    shl r16, cl    IID12836
+    __ shlq(r17);                                      //    shl r17, cl    IID12837
+    __ shlq(r18);                                      //    shl r18, cl    IID12838
+    __ shlq(r19);                                      //    shl r19, cl    IID12839
+    __ shlq(r20);                                      //    shl r20, cl    IID12840
+    __ shlq(r21);                                      //    shl r21, cl    IID12841
+    __ shlq(r22);                                      //    shl r22, cl    IID12842
+    __ shlq(r23);                                      //    shl r23, cl    IID12843
+    __ shlq(r24);                                      //    shl r24, cl    IID12844
+    __ shlq(r25);                                      //    shl r25, cl    IID12845
+    __ shlq(r26);                                      //    shl r26, cl    IID12846
+    __ shlq(r27);                                      //    shl r27, cl    IID12847
+    __ shlq(r28);                                      //    shl r28, cl    IID12848
+    __ shlq(r29);                                      //    shl r29, cl    IID12849
+    __ shlq(r30);                                      //    shl r30, cl    IID12850
+    __ shlq(r31);                                      //    shl r31, cl    IID12851
+    __ shrq(rcx);                                      //    shr rcx, cl    IID12852
+    __ shrq(rdx);                                      //    shr rdx, cl    IID12853
+    __ shrq(rbx);                                      //    shr rbx, cl    IID12854
+    __ shrq(r8);                                       //    shr r8, cl    IID12855
+    __ shrq(r9);                                       //    shr r9, cl    IID12856
+    __ shrq(r10);                                      //    shr r10, cl    IID12857
+    __ shrq(r11);                                      //    shr r11, cl    IID12858
+    __ shrq(r12);                                      //    shr r12, cl    IID12859
+    __ shrq(r13);                                      //    shr r13, cl    IID12860
+    __ shrq(r14);                                      //    shr r14, cl    IID12861
+    __ shrq(r15);                                      //    shr r15, cl    IID12862
+    __ shrq(r16);                                      //    shr r16, cl    IID12863
+    __ shrq(r17);                                      //    shr r17, cl    IID12864
+    __ shrq(r18);                                      //    shr r18, cl    IID12865
+    __ shrq(r19);                                      //    shr r19, cl    IID12866
+    __ shrq(r20);                                      //    shr r20, cl    IID12867
+    __ shrq(r21);                                      //    shr r21, cl    IID12868
+    __ shrq(r22);                                      //    shr r22, cl    IID12869
+    __ shrq(r23);                                      //    shr r23, cl    IID12870
+    __ shrq(r24);                                      //    shr r24, cl    IID12871
+    __ shrq(r25);                                      //    shr r25, cl    IID12872
+    __ shrq(r26);                                      //    shr r26, cl    IID12873
+    __ shrq(r27);                                      //    shr r27, cl    IID12874
+    __ shrq(r28);                                      //    shr r28, cl    IID12875
+    __ shrq(r29);                                      //    shr r29, cl    IID12876
+    __ shrq(r30);                                      //    shr r30, cl    IID12877
+    __ shrq(r31);                                      //    shr r31, cl    IID12878
     __ incrementq(rcx);                                //    inc rcx    IID12879
     __ incrementq(rdx);                                //    inc rdx    IID12880
     __ incrementq(rbx);                                //    inc rbx    IID12881
@@ -13224,60 +13224,60 @@
     __ negq(Address(r29, r30));                        //    neg qword ptr [r29 + r30]    IID12984
     __ negq(Address(r30, r31));                        //    neg qword ptr [r30 + r31]    IID12985
     __ negq(Address(r31, rcx));                        //    neg qword ptr [r31 + rcx]    IID12986
-    __ sarq(Address(rcx, rdx));                        //    sar qword ptr [rcx + rdx]    IID12987
-    __ sarq(Address(rdx, rbx));                        //    sar qword ptr [rdx + rbx]    IID12988
-    __ sarq(Address(rbx, r8));                         //    sar qword ptr [rbx + r8]    IID12989
-    __ sarq(Address(r8, r9));                          //    sar qword ptr [r8 + r9]    IID12990
-    __ sarq(Address(r9, r10));                         //    sar qword ptr [r9 + r10]    IID12991
-    __ sarq(Address(r10, r11));                        //    sar qword ptr [r10 + r11]    IID12992
-    __ sarq(Address(r11, r12));                        //    sar qword ptr [r11 + r12]    IID12993
-    __ sarq(Address(r12, r13));                        //    sar qword ptr [r12 + r13]    IID12994
-    __ sarq(Address(r13, r14));                        //    sar qword ptr [r13 + r14]    IID12995
-    __ sarq(Address(r14, r15));                        //    sar qword ptr [r14 + r15]    IID12996
-    __ sarq(Address(r15, r16));                        //    sar qword ptr [r15 + r16]    IID12997
-    __ sarq(Address(r16, r17));                        //    sar qword ptr [r16 + r17]    IID12998
-    __ sarq(Address(r17, r18));                        //    sar qword ptr [r17 + r18]    IID12999
-    __ sarq(Address(r18, r19));                        //    sar qword ptr [r18 + r19]    IID13000
-    __ sarq(Address(r19, r20));                        //    sar qword ptr [r19 + r20]    IID13001
-    __ sarq(Address(r20, r21));                        //    sar qword ptr [r20 + r21]    IID13002
-    __ sarq(Address(r21, r22));                        //    sar qword ptr [r21 + r22]    IID13003
-    __ sarq(Address(r22, r23));                        //    sar qword ptr [r22 + r23]    IID13004
-    __ sarq(Address(r23, r24));                        //    sar qword ptr [r23 + r24]    IID13005
-    __ sarq(Address(r24, r25));                        //    sar qword ptr [r24 + r25]    IID13006
-    __ sarq(Address(r25, r26));                        //    sar qword ptr [r25 + r26]    IID13007
-    __ sarq(Address(r26, r27));                        //    sar qword ptr [r26 + r27]    IID13008
-    __ sarq(Address(r27, r28));                        //    sar qword ptr [r27 + r28]    IID13009
-    __ sarq(Address(r28, r29));                        //    sar qword ptr [r28 + r29]    IID13010
-    __ sarq(Address(r29, r30));                        //    sar qword ptr [r29 + r30]    IID13011
-    __ sarq(Address(r30, r31));                        //    sar qword ptr [r30 + r31]    IID13012
-    __ sarq(Address(r31, rcx));                        //    sar qword ptr [r31 + rcx]    IID13013
-    __ shrq(Address(rcx, rdx));                        //    shr qword ptr [rcx + rdx]    IID13014
-    __ shrq(Address(rdx, rbx));                        //    shr qword ptr [rdx + rbx]    IID13015
-    __ shrq(Address(rbx, r8));                         //    shr qword ptr [rbx + r8]    IID13016
-    __ shrq(Address(r8, r9));                          //    shr qword ptr [r8 + r9]    IID13017
-    __ shrq(Address(r9, r10));                         //    shr qword ptr [r9 + r10]    IID13018
-    __ shrq(Address(r10, r11));                        //    shr qword ptr [r10 + r11]    IID13019
-    __ shrq(Address(r11, r12));                        //    shr qword ptr [r11 + r12]    IID13020
-    __ shrq(Address(r12, r13));                        //    shr qword ptr [r12 + r13]    IID13021
-    __ shrq(Address(r13, r14));                        //    shr qword ptr [r13 + r14]    IID13022
-    __ shrq(Address(r14, r15));                        //    shr qword ptr [r14 + r15]    IID13023
-    __ shrq(Address(r15, r16));                        //    shr qword ptr [r15 + r16]    IID13024
-    __ shrq(Address(r16, r17));                        //    shr qword ptr [r16 + r17]    IID13025
-    __ shrq(Address(r17, r18));                        //    shr qword ptr [r17 + r18]    IID13026
-    __ shrq(Address(r18, r19));                        //    shr qword ptr [r18 + r19]    IID13027
-    __ shrq(Address(r19, r20));                        //    shr qword ptr [r19 + r20]    IID13028
-    __ shrq(Address(r20, r21));                        //    shr qword ptr [r20 + r21]    IID13029
-    __ shrq(Address(r21, r22));                        //    shr qword ptr [r21 + r22]    IID13030
-    __ shrq(Address(r22, r23));                        //    shr qword ptr [r22 + r23]    IID13031
-    __ shrq(Address(r23, r24));                        //    shr qword ptr [r23 + r24]    IID13032
-    __ shrq(Address(r24, r25));                        //    shr qword ptr [r24 + r25]    IID13033
-    __ shrq(Address(r25, r26));                        //    shr qword ptr [r25 + r26]    IID13034
-    __ shrq(Address(r26, r27));                        //    shr qword ptr [r26 + r27]    IID13035
-    __ shrq(Address(r27, r28));                        //    shr qword ptr [r27 + r28]    IID13036
-    __ shrq(Address(r28, r29));                        //    shr qword ptr [r28 + r29]    IID13037
-    __ shrq(Address(r29, r30));                        //    shr qword ptr [r29 + r30]    IID13038
-    __ shrq(Address(r30, r31));                        //    shr qword ptr [r30 + r31]    IID13039
-    __ shrq(Address(r31, rcx));                        //    shr qword ptr [r31 + rcx]    IID13040
+    __ sarq(Address(rcx, rdx));                        //    sar qword ptr [rcx + rdx], cl    IID12987
+    __ sarq(Address(rdx, rbx));                        //    sar qword ptr [rdx + rbx], cl    IID12988
+    __ sarq(Address(rbx, r8));                         //    sar qword ptr [rbx + r8], cl    IID12989
+    __ sarq(Address(r8, r9));                          //    sar qword ptr [r8 + r9], cl    IID12990
+    __ sarq(Address(r9, r10));                         //    sar qword ptr [r9 + r10], cl    IID12991
+    __ sarq(Address(r10, r11));                        //    sar qword ptr [r10 + r11], cl    IID12992
+    __ sarq(Address(r11, r12));                        //    sar qword ptr [r11 + r12], cl    IID12993
+    __ sarq(Address(r12, r13));                        //    sar qword ptr [r12 + r13], cl    IID12994
+    __ sarq(Address(r13, r14));                        //    sar qword ptr [r13 + r14], cl    IID12995
+    __ sarq(Address(r14, r15));                        //    sar qword ptr [r14 + r15], cl    IID12996
+    __ sarq(Address(r15, r16));                        //    sar qword ptr [r15 + r16], cl    IID12997
+    __ sarq(Address(r16, r17));                        //    sar qword ptr [r16 + r17], cl    IID12998
+    __ sarq(Address(r17, r18));                        //    sar qword ptr [r17 + r18], cl    IID12999
+    __ sarq(Address(r18, r19));                        //    sar qword ptr [r18 + r19], cl    IID13000
+    __ sarq(Address(r19, r20));                        //    sar qword ptr [r19 + r20], cl    IID13001
+    __ sarq(Address(r20, r21));                        //    sar qword ptr [r20 + r21], cl    IID13002
+    __ sarq(Address(r21, r22));                        //    sar qword ptr [r21 + r22], cl    IID13003
+    __ sarq(Address(r22, r23));                        //    sar qword ptr [r22 + r23], cl    IID13004
+    __ sarq(Address(r23, r24));                        //    sar qword ptr [r23 + r24], cl    IID13005
+    __ sarq(Address(r24, r25));                        //    sar qword ptr [r24 + r25], cl    IID13006
+    __ sarq(Address(r25, r26));                        //    sar qword ptr [r25 + r26], cl    IID13007
+    __ sarq(Address(r26, r27));                        //    sar qword ptr [r26 + r27], cl    IID13008
+    __ sarq(Address(r27, r28));                        //    sar qword ptr [r27 + r28], cl    IID13009
+    __ sarq(Address(r28, r29));                        //    sar qword ptr [r28 + r29], cl    IID13010
+    __ sarq(Address(r29, r30));                        //    sar qword ptr [r29 + r30], cl    IID13011
+    __ sarq(Address(r30, r31));                        //    sar qword ptr [r30 + r31], cl    IID13012
+    __ sarq(Address(r31, rcx));                        //    sar qword ptr [r31 + rcx], cl    IID13013
+    __ shrq(Address(rcx, rdx));                        //    shr qword ptr [rcx + rdx], cl    IID13014
+    __ shrq(Address(rdx, rbx));                        //    shr qword ptr [rdx + rbx], cl    IID13015
+    __ shrq(Address(rbx, r8));                         //    shr qword ptr [rbx + r8], cl    IID13016
+    __ shrq(Address(r8, r9));                          //    shr qword ptr [r8 + r9], cl    IID13017
+    __ shrq(Address(r9, r10));                         //    shr qword ptr [r9 + r10], cl    IID13018
+    __ shrq(Address(r10, r11));                        //    shr qword ptr [r10 + r11], cl    IID13019
+    __ shrq(Address(r11, r12));                        //    shr qword ptr [r11 + r12], cl    IID13020
+    __ shrq(Address(r12, r13));                        //    shr qword ptr [r12 + r13], cl    IID13021
+    __ shrq(Address(r13, r14));                        //    shr qword ptr [r13 + r14], cl    IID13022
+    __ shrq(Address(r14, r15));                        //    shr qword ptr [r14 + r15], cl    IID13023
+    __ shrq(Address(r15, r16));                        //    shr qword ptr [r15 + r16], cl    IID13024
+    __ shrq(Address(r16, r17));                        //    shr qword ptr [r16 + r17], cl    IID13025
+    __ shrq(Address(r17, r18));                        //    shr qword ptr [r17 + r18], cl    IID13026
+    __ shrq(Address(r18, r19));                        //    shr qword ptr [r18 + r19], cl    IID13027
+    __ shrq(Address(r19, r20));                        //    shr qword ptr [r19 + r20], cl    IID13028
+    __ shrq(Address(r20, r21));                        //    shr qword ptr [r20 + r21], cl    IID13029
+    __ shrq(Address(r21, r22));                        //    shr qword ptr [r21 + r22], cl    IID13030
+    __ shrq(Address(r22, r23));                        //    shr qword ptr [r22 + r23], cl    IID13031
+    __ shrq(Address(r23, r24));                        //    shr qword ptr [r23 + r24], cl    IID13032
+    __ shrq(Address(r24, r25));                        //    shr qword ptr [r24 + r25], cl    IID13033
+    __ shrq(Address(r25, r26));                        //    shr qword ptr [r25 + r26], cl    IID13034
+    __ shrq(Address(r26, r27));                        //    shr qword ptr [r26 + r27], cl    IID13035
+    __ shrq(Address(r27, r28));                        //    shr qword ptr [r27 + r28], cl    IID13036
+    __ shrq(Address(r28, r29));                        //    shr qword ptr [r28 + r29], cl    IID13037
+    __ shrq(Address(r29, r30));                        //    shr qword ptr [r29 + r30], cl    IID13038
+    __ shrq(Address(r30, r31));                        //    shr qword ptr [r30 + r31], cl    IID13039
+    __ shrq(Address(r31, rcx));                        //    shr qword ptr [r31 + rcx], cl    IID13040
     __ incrementq(Address(rcx, rdx));                  //    inc qword ptr [rcx + rdx]    IID13041
     __ incrementq(Address(rdx, rbx));                  //    inc qword ptr [rdx + rbx]    IID13042
     __ incrementq(Address(rbx, r8));                   //    inc qword ptr [rbx + r8]    IID13043
@@ -21123,150 +21123,150 @@
     0xd5, 0x11, 0xf7, 0xd6,    // IID6343
     0xd5, 0x11, 0xf7, 0xd7,    // IID6344
 #endif // _LP64
-    0xd1, 0xc1,    // IID6345
-    0xd1, 0xc2,    // IID6346
-    0xd1, 0xc3,    // IID6347
+    0xd3, 0xc1,    // IID6345
+    0xd3, 0xc2,    // IID6346
+    0xd3, 0xc3,    // IID6347
 #ifdef _LP64
-    0x41, 0xd1, 0xc0,    // IID6348
-    0x41, 0xd1, 0xc1,    // IID6349
-    0x41, 0xd1, 0xc2,    // IID6350
-    0x41, 0xd1, 0xc3,    // IID6351
-    0x41, 0xd1, 0xc4,    // IID6352
-    0x41, 0xd1, 0xc5,    // IID6353
-    0x41, 0xd1, 0xc6,    // IID6354
-    0x41, 0xd1, 0xc7,    // IID6355
-    0xd5, 0x10, 0xd1, 0xc0,    // IID6356
-    0xd5, 0x10, 0xd1, 0xc1,    // IID6357
-    0xd5, 0x10, 0xd1, 0xc2,    // IID6358
-    0xd5, 0x10, 0xd1, 0xc3,    // IID6359
-    0xd5, 0x10, 0xd1, 0xc4,    // IID6360
-    0xd5, 0x10, 0xd1, 0xc5,    // IID6361
-    0xd5, 0x10, 0xd1, 0xc6,    // IID6362
-    0xd5, 0x10, 0xd1, 0xc7,    // IID6363
-    0xd5, 0x11, 0xd1, 0xc0,    // IID6364
-    0xd5, 0x11, 0xd1, 0xc1,    // IID6365
-    0xd5, 0x11, 0xd1, 0xc2,    // IID6366
-    0xd5, 0x11, 0xd1, 0xc3,    // IID6367
-    0xd5, 0x11, 0xd1, 0xc4,    // IID6368
-    0xd5, 0x11, 0xd1, 0xc5,    // IID6369
-    0xd5, 0x11, 0xd1, 0xc6,    // IID6370
-    0xd5, 0x11, 0xd1, 0xc7,    // IID6371
+    0x41, 0xd3, 0xc0,    // IID6348
+    0x41, 0xd3, 0xc1,    // IID6349
+    0x41, 0xd3, 0xc2,    // IID6350
+    0x41, 0xd3, 0xc3,    // IID6351
+    0x41, 0xd3, 0xc4,    // IID6352
+    0x41, 0xd3, 0xc5,    // IID6353
+    0x41, 0xd3, 0xc6,    // IID6354
+    0x41, 0xd3, 0xc7,    // IID6355
+    0xd5, 0x10, 0xd3, 0xc0,    // IID6356
+    0xd5, 0x10, 0xd3, 0xc1,    // IID6357
+    0xd5, 0x10, 0xd3, 0xc2,    // IID6358
+    0xd5, 0x10, 0xd3, 0xc3,    // IID6359
+    0xd5, 0x10, 0xd3, 0xc4,    // IID6360
+    0xd5, 0x10, 0xd3, 0xc5,    // IID6361
+    0xd5, 0x10, 0xd3, 0xc6,    // IID6362
+    0xd5, 0x10, 0xd3, 0xc7,    // IID6363
+    0xd5, 0x11, 0xd3, 0xc0,    // IID6364
+    0xd5, 0x11, 0xd3, 0xc1,    // IID6365
+    0xd5, 0x11, 0xd3, 0xc2,    // IID6366
+    0xd5, 0x11, 0xd3, 0xc3,    // IID6367
+    0xd5, 0x11, 0xd3, 0xc4,    // IID6368
+    0xd5, 0x11, 0xd3, 0xc5,    // IID6369
+    0xd5, 0x11, 0xd3, 0xc6,    // IID6370
+    0xd5, 0x11, 0xd3, 0xc7,    // IID6371
 #endif // _LP64
-    0xd1, 0xc9,    // IID6372
-    0xd1, 0xca,    // IID6373
-    0xd1, 0xcb,    // IID6374
+    0xd3, 0xc9,    // IID6372
+    0xd3, 0xca,    // IID6373
+    0xd3, 0xcb,    // IID6374
 #ifdef _LP64
-    0x41, 0xd1, 0xc8,    // IID6375
-    0x41, 0xd1, 0xc9,    // IID6376
-    0x41, 0xd1, 0xca,    // IID6377
-    0x41, 0xd1, 0xcb,    // IID6378
-    0x41, 0xd1, 0xcc,    // IID6379
-    0x41, 0xd1, 0xcd,    // IID6380
-    0x41, 0xd1, 0xce,    // IID6381
-    0x41, 0xd1, 0xcf,    // IID6382
-    0xd5, 0x10, 0xd1, 0xc8,    // IID6383
-    0xd5, 0x10, 0xd1, 0xc9,    // IID6384
-    0xd5, 0x10, 0xd1, 0xca,    // IID6385
-    0xd5, 0x10, 0xd1, 0xcb,    // IID6386
-    0xd5, 0x10, 0xd1, 0xcc,    // IID6387
-    0xd5, 0x10, 0xd1, 0xcd,    // IID6388
-    0xd5, 0x10, 0xd1, 0xce,    // IID6389
-    0xd5, 0x10, 0xd1, 0xcf,    // IID6390
-    0xd5, 0x11, 0xd1, 0xc8,    // IID6391
-    0xd5, 0x11, 0xd1, 0xc9,    // IID6392
-    0xd5, 0x11, 0xd1, 0xca,    // IID6393
-    0xd5, 0x11, 0xd1, 0xcb,    // IID6394
-    0xd5, 0x11, 0xd1, 0xcc,    // IID6395
-    0xd5, 0x11, 0xd1, 0xcd,    // IID6396
-    0xd5, 0x11, 0xd1, 0xce,    // IID6397
-    0xd5, 0x11, 0xd1, 0xcf,    // IID6398
+    0x41, 0xd3, 0xc8,    // IID6375
+    0x41, 0xd3, 0xc9,    // IID6376
+    0x41, 0xd3, 0xca,    // IID6377
+    0x41, 0xd3, 0xcb,    // IID6378
+    0x41, 0xd3, 0xcc,    // IID6379
+    0x41, 0xd3, 0xcd,    // IID6380
+    0x41, 0xd3, 0xce,    // IID6381
+    0x41, 0xd3, 0xcf,    // IID6382
+    0xd5, 0x10, 0xd3, 0xc8,    // IID6383
+    0xd5, 0x10, 0xd3, 0xc9,    // IID6384
+    0xd5, 0x10, 0xd3, 0xca,    // IID6385
+    0xd5, 0x10, 0xd3, 0xcb,    // IID6386
+    0xd5, 0x10, 0xd3, 0xcc,    // IID6387
+    0xd5, 0x10, 0xd3, 0xcd,    // IID6388
+    0xd5, 0x10, 0xd3, 0xce,    // IID6389
+    0xd5, 0x10, 0xd3, 0xcf,    // IID6390
+    0xd5, 0x11, 0xd3, 0xc8,    // IID6391
+    0xd5, 0x11, 0xd3, 0xc9,    // IID6392
+    0xd5, 0x11, 0xd3, 0xca,    // IID6393
+    0xd5, 0x11, 0xd3, 0xcb,    // IID6394
+    0xd5, 0x11, 0xd3, 0xcc,    // IID6395
+    0xd5, 0x11, 0xd3, 0xcd,    // IID6396
+    0xd5, 0x11, 0xd3, 0xce,    // IID6397
+    0xd5, 0x11, 0xd3, 0xcf,    // IID6398
 #endif // _LP64
-    0xd1, 0xf9,    // IID6399
-    0xd1, 0xfa,    // IID6400
-    0xd1, 0xfb,    // IID6401
+    0xd3, 0xf9,    // IID6399
+    0xd3, 0xfa,    // IID6400
+    0xd3, 0xfb,    // IID6401
 #ifdef _LP64
-    0x41, 0xd1, 0xf8,    // IID6402
-    0x41, 0xd1, 0xf9,    // IID6403
-    0x41, 0xd1, 0xfa,    // IID6404
-    0x41, 0xd1, 0xfb,    // IID6405
-    0x41, 0xd1, 0xfc,    // IID6406
-    0x41, 0xd1, 0xfd,    // IID6407
-    0x41, 0xd1, 0xfe,    // IID6408
-    0x41, 0xd1, 0xff,    // IID6409
-    0xd5, 0x10, 0xd1, 0xf8,    // IID6410
-    0xd5, 0x10, 0xd1, 0xf9,    // IID6411
-    0xd5, 0x10, 0xd1, 0xfa,    // IID6412
-    0xd5, 0x10, 0xd1, 0xfb,    // IID6413
-    0xd5, 0x10, 0xd1, 0xfc,    // IID6414
-    0xd5, 0x10, 0xd1, 0xfd,    // IID6415
-    0xd5, 0x10, 0xd1, 0xfe,    // IID6416
-    0xd5, 0x10, 0xd1, 0xff,    // IID6417
-    0xd5, 0x11, 0xd1, 0xf8,    // IID6418
-    0xd5, 0x11, 0xd1, 0xf9,    // IID6419
-    0xd5, 0x11, 0xd1, 0xfa,    // IID6420
-    0xd5, 0x11, 0xd1, 0xfb,    // IID6421
-    0xd5, 0x11, 0xd1, 0xfc,    // IID6422
-    0xd5, 0x11, 0xd1, 0xfd,    // IID6423
-    0xd5, 0x11, 0xd1, 0xfe,    // IID6424
-    0xd5, 0x11, 0xd1, 0xff,    // IID6425
+    0x41, 0xd3, 0xf8,    // IID6402
+    0x41, 0xd3, 0xf9,    // IID6403
+    0x41, 0xd3, 0xfa,    // IID6404
+    0x41, 0xd3, 0xfb,    // IID6405
+    0x41, 0xd3, 0xfc,    // IID6406
+    0x41, 0xd3, 0xfd,    // IID6407
+    0x41, 0xd3, 0xfe,    // IID6408
+    0x41, 0xd3, 0xff,    // IID6409
+    0xd5, 0x10, 0xd3, 0xf8,    // IID6410
+    0xd5, 0x10, 0xd3, 0xf9,    // IID6411
+    0xd5, 0x10, 0xd3, 0xfa,    // IID6412
+    0xd5, 0x10, 0xd3, 0xfb,    // IID6413
+    0xd5, 0x10, 0xd3, 0xfc,    // IID6414
+    0xd5, 0x10, 0xd3, 0xfd,    // IID6415
+    0xd5, 0x10, 0xd3, 0xfe,    // IID6416
+    0xd5, 0x10, 0xd3, 0xff,    // IID6417
+    0xd5, 0x11, 0xd3, 0xf8,    // IID6418
+    0xd5, 0x11, 0xd3, 0xf9,    // IID6419
+    0xd5, 0x11, 0xd3, 0xfa,    // IID6420
+    0xd5, 0x11, 0xd3, 0xfb,    // IID6421
+    0xd5, 0x11, 0xd3, 0xfc,    // IID6422
+    0xd5, 0x11, 0xd3, 0xfd,    // IID6423
+    0xd5, 0x11, 0xd3, 0xfe,    // IID6424
+    0xd5, 0x11, 0xd3, 0xff,    // IID6425
 #endif // _LP64
-    0xd1, 0xe1,    // IID6426
-    0xd1, 0xe2,    // IID6427
-    0xd1, 0xe3,    // IID6428
+    0xd3, 0xe1,    // IID6426
+    0xd3, 0xe2,    // IID6427
+    0xd3, 0xe3,    // IID6428
 #ifdef _LP64
-    0x41, 0xd1, 0xe0,    // IID6429
-    0x41, 0xd1, 0xe1,    // IID6430
-    0x41, 0xd1, 0xe2,    // IID6431
-    0x41, 0xd1, 0xe3,    // IID6432
-    0x41, 0xd1, 0xe4,    // IID6433
-    0x41, 0xd1, 0xe5,    // IID6434
-    0x41, 0xd1, 0xe6,    // IID6435
-    0x41, 0xd1, 0xe7,    // IID6436
-    0xd5, 0x10, 0xd1, 0xe0,    // IID6437
-    0xd5, 0x10, 0xd1, 0xe1,    // IID6438
-    0xd5, 0x10, 0xd1, 0xe2,    // IID6439
-    0xd5, 0x10, 0xd1, 0xe3,    // IID6440
-    0xd5, 0x10, 0xd1, 0xe4,    // IID6441
-    0xd5, 0x10, 0xd1, 0xe5,    // IID6442
-    0xd5, 0x10, 0xd1, 0xe6,    // IID6443
-    0xd5, 0x10, 0xd1, 0xe7,    // IID6444
-    0xd5, 0x11, 0xd1, 0xe0,    // IID6445
-    0xd5, 0x11, 0xd1, 0xe1,    // IID6446
-    0xd5, 0x11, 0xd1, 0xe2,    // IID6447
-    0xd5, 0x11, 0xd1, 0xe3,    // IID6448
-    0xd5, 0x11, 0xd1, 0xe4,    // IID6449
-    0xd5, 0x11, 0xd1, 0xe5,    // IID6450
-    0xd5, 0x11, 0xd1, 0xe6,    // IID6451
-    0xd5, 0x11, 0xd1, 0xe7,    // IID6452
+    0x41, 0xd3, 0xe0,    // IID6429
+    0x41, 0xd3, 0xe1,    // IID6430
+    0x41, 0xd3, 0xe2,    // IID6431
+    0x41, 0xd3, 0xe3,    // IID6432
+    0x41, 0xd3, 0xe4,    // IID6433
+    0x41, 0xd3, 0xe5,    // IID6434
+    0x41, 0xd3, 0xe6,    // IID6435
+    0x41, 0xd3, 0xe7,    // IID6436
+    0xd5, 0x10, 0xd3, 0xe0,    // IID6437
+    0xd5, 0x10, 0xd3, 0xe1,    // IID6438
+    0xd5, 0x10, 0xd3, 0xe2,    // IID6439
+    0xd5, 0x10, 0xd3, 0xe3,    // IID6440
+    0xd5, 0x10, 0xd3, 0xe4,    // IID6441
+    0xd5, 0x10, 0xd3, 0xe5,    // IID6442
+    0xd5, 0x10, 0xd3, 0xe6,    // IID6443
+    0xd5, 0x10, 0xd3, 0xe7,    // IID6444
+    0xd5, 0x11, 0xd3, 0xe0,    // IID6445
+    0xd5, 0x11, 0xd3, 0xe1,    // IID6446
+    0xd5, 0x11, 0xd3, 0xe2,    // IID6447
+    0xd5, 0x11, 0xd3, 0xe3,    // IID6448
+    0xd5, 0x11, 0xd3, 0xe4,    // IID6449
+    0xd5, 0x11, 0xd3, 0xe5,    // IID6450
+    0xd5, 0x11, 0xd3, 0xe6,    // IID6451
+    0xd5, 0x11, 0xd3, 0xe7,    // IID6452
 #endif // _LP64
-    0xd1, 0xe9,    // IID6453
-    0xd1, 0xea,    // IID6454
-    0xd1, 0xeb,    // IID6455
+    0xd3, 0xe9,    // IID6453
+    0xd3, 0xea,    // IID6454
+    0xd3, 0xeb,    // IID6455
 #ifdef _LP64
-    0x41, 0xd1, 0xe8,    // IID6456
-    0x41, 0xd1, 0xe9,    // IID6457
-    0x41, 0xd1, 0xea,    // IID6458
-    0x41, 0xd1, 0xeb,    // IID6459
-    0x41, 0xd1, 0xec,    // IID6460
-    0x41, 0xd1, 0xed,    // IID6461
-    0x41, 0xd1, 0xee,    // IID6462
-    0x41, 0xd1, 0xef,    // IID6463
-    0xd5, 0x10, 0xd1, 0xe8,    // IID6464
-    0xd5, 0x10, 0xd1, 0xe9,    // IID6465
-    0xd5, 0x10, 0xd1, 0xea,    // IID6466
-    0xd5, 0x10, 0xd1, 0xeb,    // IID6467
-    0xd5, 0x10, 0xd1, 0xec,    // IID6468
-    0xd5, 0x10, 0xd1, 0xed,    // IID6469
-    0xd5, 0x10, 0xd1, 0xee,    // IID6470
-    0xd5, 0x10, 0xd1, 0xef,    // IID6471
-    0xd5, 0x11, 0xd1, 0xe8,    // IID6472
-    0xd5, 0x11, 0xd1, 0xe9,    // IID6473
-    0xd5, 0x11, 0xd1, 0xea,    // IID6474
-    0xd5, 0x11, 0xd1, 0xeb,    // IID6475
-    0xd5, 0x11, 0xd1, 0xec,    // IID6476
-    0xd5, 0x11, 0xd1, 0xed,    // IID6477
-    0xd5, 0x11, 0xd1, 0xee,    // IID6478
-    0xd5, 0x11, 0xd1, 0xef,    // IID6479
+    0x41, 0xd3, 0xe8,    // IID6456
+    0x41, 0xd3, 0xe9,    // IID6457
+    0x41, 0xd3, 0xea,    // IID6458
+    0x41, 0xd3, 0xeb,    // IID6459
+    0x41, 0xd3, 0xec,    // IID6460
+    0x41, 0xd3, 0xed,    // IID6461
+    0x41, 0xd3, 0xee,    // IID6462
+    0x41, 0xd3, 0xef,    // IID6463
+    0xd5, 0x10, 0xd3, 0xe8,    // IID6464
+    0xd5, 0x10, 0xd3, 0xe9,    // IID6465
+    0xd5, 0x10, 0xd3, 0xea,    // IID6466
+    0xd5, 0x10, 0xd3, 0xeb,    // IID6467
+    0xd5, 0x10, 0xd3, 0xec,    // IID6468
+    0xd5, 0x10, 0xd3, 0xed,    // IID6469
+    0xd5, 0x10, 0xd3, 0xee,    // IID6470
+    0xd5, 0x10, 0xd3, 0xef,    // IID6471
+    0xd5, 0x11, 0xd3, 0xe8,    // IID6472
+    0xd5, 0x11, 0xd3, 0xe9,    // IID6473
+    0xd5, 0x11, 0xd3, 0xea,    // IID6474
+    0xd5, 0x11, 0xd3, 0xeb,    // IID6475
+    0xd5, 0x11, 0xd3, 0xec,    // IID6476
+    0xd5, 0x11, 0xd3, 0xed,    // IID6477
+    0xd5, 0x11, 0xd3, 0xee,    // IID6478
+    0xd5, 0x11, 0xd3, 0xef,    // IID6479
 #endif // _LP64
     0xff, 0xc1,    // IID6480
     0xff, 0xc2,    // IID6481
@@ -21384,63 +21384,63 @@
     0xd5, 0x33, 0xf7, 0x1c, 0x3e,    // IID6586
     0xd5, 0x11, 0xf7, 0x1c, 0x0f,    // IID6587
 #endif // _LP64
-    0xd1, 0x3c, 0x11,    // IID6588
-    0xd1, 0x3c, 0x1a,    // IID6589
+    0xd3, 0x3c, 0x11,    // IID6588
+    0xd3, 0x3c, 0x1a,    // IID6589
 #ifdef _LP64
-    0x42, 0xd1, 0x3c, 0x03,    // IID6590
-    0x43, 0xd1, 0x3c, 0x08,    // IID6591
-    0x43, 0xd1, 0x3c, 0x11,    // IID6592
-    0x43, 0xd1, 0x3c, 0x1a,    // IID6593
-    0x43, 0xd1, 0x3c, 0x23,    // IID6594
-    0x43, 0xd1, 0x3c, 0x2c,    // IID6595
-    0x43, 0xd1, 0x7c, 0x35, 0x00,    // IID6596
-    0x43, 0xd1, 0x3c, 0x3e,    // IID6597
-    0xd5, 0x21, 0xd1, 0x3c, 0x07,    // IID6598
-    0xd5, 0x30, 0xd1, 0x3c, 0x08,    // IID6599
-    0xd5, 0x30, 0xd1, 0x3c, 0x11,    // IID6600
-    0xd5, 0x30, 0xd1, 0x3c, 0x1a,    // IID6601
-    0xd5, 0x30, 0xd1, 0x3c, 0x23,    // IID6602
-    0xd5, 0x30, 0xd1, 0x3c, 0x2c,    // IID6603
-    0xd5, 0x30, 0xd1, 0x7c, 0x35, 0x00,    // IID6604
-    0xd5, 0x30, 0xd1, 0x3c, 0x3e,    // IID6605
-    0xd5, 0x32, 0xd1, 0x3c, 0x07,    // IID6606
-    0xd5, 0x33, 0xd1, 0x3c, 0x08,    // IID6607
-    0xd5, 0x33, 0xd1, 0x3c, 0x11,    // IID6608
-    0xd5, 0x33, 0xd1, 0x3c, 0x1a,    // IID6609
-    0xd5, 0x33, 0xd1, 0x3c, 0x23,    // IID6610
-    0xd5, 0x33, 0xd1, 0x3c, 0x2c,    // IID6611
-    0xd5, 0x33, 0xd1, 0x7c, 0x35, 0x00,    // IID6612
-    0xd5, 0x33, 0xd1, 0x3c, 0x3e,    // IID6613
-    0xd5, 0x11, 0xd1, 0x3c, 0x0f,    // IID6614
+    0x42, 0xd3, 0x3c, 0x03,    // IID6590
+    0x43, 0xd3, 0x3c, 0x08,    // IID6591
+    0x43, 0xd3, 0x3c, 0x11,    // IID6592
+    0x43, 0xd3, 0x3c, 0x1a,    // IID6593
+    0x43, 0xd3, 0x3c, 0x23,    // IID6594
+    0x43, 0xd3, 0x3c, 0x2c,    // IID6595
+    0x43, 0xd3, 0x7c, 0x35, 0x00,    // IID6596
+    0x43, 0xd3, 0x3c, 0x3e,    // IID6597
+    0xd5, 0x21, 0xd3, 0x3c, 0x07,    // IID6598
+    0xd5, 0x30, 0xd3, 0x3c, 0x08,    // IID6599
+    0xd5, 0x30, 0xd3, 0x3c, 0x11,    // IID6600
+    0xd5, 0x30, 0xd3, 0x3c, 0x1a,    // IID6601
+    0xd5, 0x30, 0xd3, 0x3c, 0x23,    // IID6602
+    0xd5, 0x30, 0xd3, 0x3c, 0x2c,    // IID6603
+    0xd5, 0x30, 0xd3, 0x7c, 0x35, 0x00,    // IID6604
+    0xd5, 0x30, 0xd3, 0x3c, 0x3e,    // IID6605
+    0xd5, 0x32, 0xd3, 0x3c, 0x07,    // IID6606
+    0xd5, 0x33, 0xd3, 0x3c, 0x08,    // IID6607
+    0xd5, 0x33, 0xd3, 0x3c, 0x11,    // IID6608
+    0xd5, 0x33, 0xd3, 0x3c, 0x1a,    // IID6609
+    0xd5, 0x33, 0xd3, 0x3c, 0x23,    // IID6610
+    0xd5, 0x33, 0xd3, 0x3c, 0x2c,    // IID6611
+    0xd5, 0x33, 0xd3, 0x7c, 0x35, 0x00,    // IID6612
+    0xd5, 0x33, 0xd3, 0x3c, 0x3e,    // IID6613
+    0xd5, 0x11, 0xd3, 0x3c, 0x0f,    // IID6614
 #endif // _LP64
-    0xd1, 0x2c, 0x11,    // IID6615
-    0xd1, 0x2c, 0x1a,    // IID6616
+    0xd3, 0x2c, 0x11,    // IID6615
+    0xd3, 0x2c, 0x1a,    // IID6616
 #ifdef _LP64
-    0x42, 0xd1, 0x2c, 0x03,    // IID6617
-    0x43, 0xd1, 0x2c, 0x08,    // IID6618
-    0x43, 0xd1, 0x2c, 0x11,    // IID6619
-    0x43, 0xd1, 0x2c, 0x1a,    // IID6620
-    0x43, 0xd1, 0x2c, 0x23,    // IID6621
-    0x43, 0xd1, 0x2c, 0x2c,    // IID6622
-    0x43, 0xd1, 0x6c, 0x35, 0x00,    // IID6623
-    0x43, 0xd1, 0x2c, 0x3e,    // IID6624
-    0xd5, 0x21, 0xd1, 0x2c, 0x07,    // IID6625
-    0xd5, 0x30, 0xd1, 0x2c, 0x08,    // IID6626
-    0xd5, 0x30, 0xd1, 0x2c, 0x11,    // IID6627
-    0xd5, 0x30, 0xd1, 0x2c, 0x1a,    // IID6628
-    0xd5, 0x30, 0xd1, 0x2c, 0x23,    // IID6629
-    0xd5, 0x30, 0xd1, 0x2c, 0x2c,    // IID6630
-    0xd5, 0x30, 0xd1, 0x6c, 0x35, 0x00,    // IID6631
-    0xd5, 0x30, 0xd1, 0x2c, 0x3e,    // IID6632
-    0xd5, 0x32, 0xd1, 0x2c, 0x07,    // IID6633
-    0xd5, 0x33, 0xd1, 0x2c, 0x08,    // IID6634
-    0xd5, 0x33, 0xd1, 0x2c, 0x11,    // IID6635
-    0xd5, 0x33, 0xd1, 0x2c, 0x1a,    // IID6636
-    0xd5, 0x33, 0xd1, 0x2c, 0x23,    // IID6637
-    0xd5, 0x33, 0xd1, 0x2c, 0x2c,    // IID6638
-    0xd5, 0x33, 0xd1, 0x6c, 0x35, 0x00,    // IID6639
-    0xd5, 0x33, 0xd1, 0x2c, 0x3e,    // IID6640
-    0xd5, 0x11, 0xd1, 0x2c, 0x0f,    // IID6641
+    0x42, 0xd3, 0x2c, 0x03,    // IID6617
+    0x43, 0xd3, 0x2c, 0x08,    // IID6618
+    0x43, 0xd3, 0x2c, 0x11,    // IID6619
+    0x43, 0xd3, 0x2c, 0x1a,    // IID6620
+    0x43, 0xd3, 0x2c, 0x23,    // IID6621
+    0x43, 0xd3, 0x2c, 0x2c,    // IID6622
+    0x43, 0xd3, 0x6c, 0x35, 0x00,    // IID6623
+    0x43, 0xd3, 0x2c, 0x3e,    // IID6624
+    0xd5, 0x21, 0xd3, 0x2c, 0x07,    // IID6625
+    0xd5, 0x30, 0xd3, 0x2c, 0x08,    // IID6626
+    0xd5, 0x30, 0xd3, 0x2c, 0x11,    // IID6627
+    0xd5, 0x30, 0xd3, 0x2c, 0x1a,    // IID6628
+    0xd5, 0x30, 0xd3, 0x2c, 0x23,    // IID6629
+    0xd5, 0x30, 0xd3, 0x2c, 0x2c,    // IID6630
+    0xd5, 0x30, 0xd3, 0x6c, 0x35, 0x00,    // IID6631
+    0xd5, 0x30, 0xd3, 0x2c, 0x3e,    // IID6632
+    0xd5, 0x32, 0xd3, 0x2c, 0x07,    // IID6633
+    0xd5, 0x33, 0xd3, 0x2c, 0x08,    // IID6634
+    0xd5, 0x33, 0xd3, 0x2c, 0x11,    // IID6635
+    0xd5, 0x33, 0xd3, 0x2c, 0x1a,    // IID6636
+    0xd5, 0x33, 0xd3, 0x2c, 0x23,    // IID6637
+    0xd5, 0x33, 0xd3, 0x2c, 0x2c,    // IID6638
+    0xd5, 0x33, 0xd3, 0x6c, 0x35, 0x00,    // IID6639
+    0xd5, 0x33, 0xd3, 0x2c, 0x3e,    // IID6640
+    0xd5, 0x11, 0xd3, 0x2c, 0x0f,    // IID6641
 #endif // _LP64
     0xff, 0x04, 0x11,    // IID6642
     0xff, 0x04, 0x1a,    // IID6643
@@ -27557,141 +27557,141 @@
     0xd5, 0x19, 0xf7, 0xd5,    // IID12741
     0xd5, 0x19, 0xf7, 0xd6,    // IID12742
     0xd5, 0x19, 0xf7, 0xd7,    // IID12743
-    0x48, 0xd1, 0xc1,    // IID12744
-    0x48, 0xd1, 0xc2,    // IID12745
-    0x48, 0xd1, 0xc3,    // IID12746
-    0x49, 0xd1, 0xc0,    // IID12747
-    0x49, 0xd1, 0xc1,    // IID12748
-    0x49, 0xd1, 0xc2,    // IID12749
-    0x49, 0xd1, 0xc3,    // IID12750
-    0x49, 0xd1, 0xc4,    // IID12751
-    0x49, 0xd1, 0xc5,    // IID12752
-    0x49, 0xd1, 0xc6,    // IID12753
-    0x49, 0xd1, 0xc7,    // IID12754
-    0xd5, 0x18, 0xd1, 0xc0,    // IID12755
-    0xd5, 0x18, 0xd1, 0xc1,    // IID12756
-    0xd5, 0x18, 0xd1, 0xc2,    // IID12757
-    0xd5, 0x18, 0xd1, 0xc3,    // IID12758
-    0xd5, 0x18, 0xd1, 0xc4,    // IID12759
-    0xd5, 0x18, 0xd1, 0xc5,    // IID12760
-    0xd5, 0x18, 0xd1, 0xc6,    // IID12761
-    0xd5, 0x18, 0xd1, 0xc7,    // IID12762
-    0xd5, 0x19, 0xd1, 0xc0,    // IID12763
-    0xd5, 0x19, 0xd1, 0xc1,    // IID12764
-    0xd5, 0x19, 0xd1, 0xc2,    // IID12765
-    0xd5, 0x19, 0xd1, 0xc3,    // IID12766
-    0xd5, 0x19, 0xd1, 0xc4,    // IID12767
-    0xd5, 0x19, 0xd1, 0xc5,    // IID12768
-    0xd5, 0x19, 0xd1, 0xc6,    // IID12769
-    0xd5, 0x19, 0xd1, 0xc7,    // IID12770
-    0x48, 0xd1, 0xc9,    // IID12771
-    0x48, 0xd1, 0xca,    // IID12772
-    0x48, 0xd1, 0xcb,    // IID12773
-    0x49, 0xd1, 0xc8,    // IID12774
-    0x49, 0xd1, 0xc9,    // IID12775
-    0x49, 0xd1, 0xca,    // IID12776
-    0x49, 0xd1, 0xcb,    // IID12777
-    0x49, 0xd1, 0xcc,    // IID12778
-    0x49, 0xd1, 0xcd,    // IID12779
-    0x49, 0xd1, 0xce,    // IID12780
-    0x49, 0xd1, 0xcf,    // IID12781
-    0xd5, 0x18, 0xd1, 0xc8,    // IID12782
-    0xd5, 0x18, 0xd1, 0xc9,    // IID12783
-    0xd5, 0x18, 0xd1, 0xca,    // IID12784
-    0xd5, 0x18, 0xd1, 0xcb,    // IID12785
-    0xd5, 0x18, 0xd1, 0xcc,    // IID12786
-    0xd5, 0x18, 0xd1, 0xcd,    // IID12787
-    0xd5, 0x18, 0xd1, 0xce,    // IID12788
-    0xd5, 0x18, 0xd1, 0xcf,    // IID12789
-    0xd5, 0x19, 0xd1, 0xc8,    // IID12790
-    0xd5, 0x19, 0xd1, 0xc9,    // IID12791
-    0xd5, 0x19, 0xd1, 0xca,    // IID12792
-    0xd5, 0x19, 0xd1, 0xcb,    // IID12793
-    0xd5, 0x19, 0xd1, 0xcc,    // IID12794
-    0xd5, 0x19, 0xd1, 0xcd,    // IID12795
-    0xd5, 0x19, 0xd1, 0xce,    // IID12796
-    0xd5, 0x19, 0xd1, 0xcf,    // IID12797
-    0x48, 0xd1, 0xf9,    // IID12798
-    0x48, 0xd1, 0xfa,    // IID12799
-    0x48, 0xd1, 0xfb,    // IID12800
-    0x49, 0xd1, 0xf8,    // IID12801
-    0x49, 0xd1, 0xf9,    // IID12802
-    0x49, 0xd1, 0xfa,    // IID12803
-    0x49, 0xd1, 0xfb,    // IID12804
-    0x49, 0xd1, 0xfc,    // IID12805
-    0x49, 0xd1, 0xfd,    // IID12806
-    0x49, 0xd1, 0xfe,    // IID12807
-    0x49, 0xd1, 0xff,    // IID12808
-    0xd5, 0x18, 0xd1, 0xf8,    // IID12809
-    0xd5, 0x18, 0xd1, 0xf9,    // IID12810
-    0xd5, 0x18, 0xd1, 0xfa,    // IID12811
-    0xd5, 0x18, 0xd1, 0xfb,    // IID12812
-    0xd5, 0x18, 0xd1, 0xfc,    // IID12813
-    0xd5, 0x18, 0xd1, 0xfd,    // IID12814
-    0xd5, 0x18, 0xd1, 0xfe,    // IID12815
-    0xd5, 0x18, 0xd1, 0xff,    // IID12816
-    0xd5, 0x19, 0xd1, 0xf8,    // IID12817
-    0xd5, 0x19, 0xd1, 0xf9,    // IID12818
-    0xd5, 0x19, 0xd1, 0xfa,    // IID12819
-    0xd5, 0x19, 0xd1, 0xfb,    // IID12820
-    0xd5, 0x19, 0xd1, 0xfc,    // IID12821
-    0xd5, 0x19, 0xd1, 0xfd,    // IID12822
-    0xd5, 0x19, 0xd1, 0xfe,    // IID12823
-    0xd5, 0x19, 0xd1, 0xff,    // IID12824
-    0x48, 0xd1, 0xe1,    // IID12825
-    0x48, 0xd1, 0xe2,    // IID12826
-    0x48, 0xd1, 0xe3,    // IID12827
-    0x49, 0xd1, 0xe0,    // IID12828
-    0x49, 0xd1, 0xe1,    // IID12829
-    0x49, 0xd1, 0xe2,    // IID12830
-    0x49, 0xd1, 0xe3,    // IID12831
-    0x49, 0xd1, 0xe4,    // IID12832
-    0x49, 0xd1, 0xe5,    // IID12833
-    0x49, 0xd1, 0xe6,    // IID12834
-    0x49, 0xd1, 0xe7,    // IID12835
-    0xd5, 0x18, 0xd1, 0xe0,    // IID12836
-    0xd5, 0x18, 0xd1, 0xe1,    // IID12837
-    0xd5, 0x18, 0xd1, 0xe2,    // IID12838
-    0xd5, 0x18, 0xd1, 0xe3,    // IID12839
-    0xd5, 0x18, 0xd1, 0xe4,    // IID12840
-    0xd5, 0x18, 0xd1, 0xe5,    // IID12841
-    0xd5, 0x18, 0xd1, 0xe6,    // IID12842
-    0xd5, 0x18, 0xd1, 0xe7,    // IID12843
-    0xd5, 0x19, 0xd1, 0xe0,    // IID12844
-    0xd5, 0x19, 0xd1, 0xe1,    // IID12845
-    0xd5, 0x19, 0xd1, 0xe2,    // IID12846
-    0xd5, 0x19, 0xd1, 0xe3,    // IID12847
-    0xd5, 0x19, 0xd1, 0xe4,    // IID12848
-    0xd5, 0x19, 0xd1, 0xe5,    // IID12849
-    0xd5, 0x19, 0xd1, 0xe6,    // IID12850
-    0xd5, 0x19, 0xd1, 0xe7,    // IID12851
-    0x48, 0xd1, 0xe9,    // IID12852
-    0x48, 0xd1, 0xea,    // IID12853
-    0x48, 0xd1, 0xeb,    // IID12854
-    0x49, 0xd1, 0xe8,    // IID12855
-    0x49, 0xd1, 0xe9,    // IID12856
-    0x49, 0xd1, 0xea,    // IID12857
-    0x49, 0xd1, 0xeb,    // IID12858
-    0x49, 0xd1, 0xec,    // IID12859
-    0x49, 0xd1, 0xed,    // IID12860
-    0x49, 0xd1, 0xee,    // IID12861
-    0x49, 0xd1, 0xef,    // IID12862
-    0xd5, 0x18, 0xd1, 0xe8,    // IID12863
-    0xd5, 0x18, 0xd1, 0xe9,    // IID12864
-    0xd5, 0x18, 0xd1, 0xea,    // IID12865
-    0xd5, 0x18, 0xd1, 0xeb,    // IID12866
-    0xd5, 0x18, 0xd1, 0xec,    // IID12867
-    0xd5, 0x18, 0xd1, 0xed,    // IID12868
-    0xd5, 0x18, 0xd1, 0xee,    // IID12869
-    0xd5, 0x18, 0xd1, 0xef,    // IID12870
-    0xd5, 0x19, 0xd1, 0xe8,    // IID12871
-    0xd5, 0x19, 0xd1, 0xe9,    // IID12872
-    0xd5, 0x19, 0xd1, 0xea,    // IID12873
-    0xd5, 0x19, 0xd1, 0xeb,    // IID12874
-    0xd5, 0x19, 0xd1, 0xec,    // IID12875
-    0xd5, 0x19, 0xd1, 0xed,    // IID12876
-    0xd5, 0x19, 0xd1, 0xee,    // IID12877
-    0xd5, 0x19, 0xd1, 0xef,    // IID12878
+    0x48, 0xd3, 0xc1,    // IID12744
+    0x48, 0xd3, 0xc2,    // IID12745
+    0x48, 0xd3, 0xc3,    // IID12746
+    0x49, 0xd3, 0xc0,    // IID12747
+    0x49, 0xd3, 0xc1,    // IID12748
+    0x49, 0xd3, 0xc2,    // IID12749
+    0x49, 0xd3, 0xc3,    // IID12750
+    0x49, 0xd3, 0xc4,    // IID12751
+    0x49, 0xd3, 0xc5,    // IID12752
+    0x49, 0xd3, 0xc6,    // IID12753
+    0x49, 0xd3, 0xc7,    // IID12754
+    0xd5, 0x18, 0xd3, 0xc0,    // IID12755
+    0xd5, 0x18, 0xd3, 0xc1,    // IID12756
+    0xd5, 0x18, 0xd3, 0xc2,    // IID12757
+    0xd5, 0x18, 0xd3, 0xc3,    // IID12758
+    0xd5, 0x18, 0xd3, 0xc4,    // IID12759
+    0xd5, 0x18, 0xd3, 0xc5,    // IID12760
+    0xd5, 0x18, 0xd3, 0xc6,    // IID12761
+    0xd5, 0x18, 0xd3, 0xc7,    // IID12762
+    0xd5, 0x19, 0xd3, 0xc0,    // IID12763
+    0xd5, 0x19, 0xd3, 0xc1,    // IID12764
+    0xd5, 0x19, 0xd3, 0xc2,    // IID12765
+    0xd5, 0x19, 0xd3, 0xc3,    // IID12766
+    0xd5, 0x19, 0xd3, 0xc4,    // IID12767
+    0xd5, 0x19, 0xd3, 0xc5,    // IID12768
+    0xd5, 0x19, 0xd3, 0xc6,    // IID12769
+    0xd5, 0x19, 0xd3, 0xc7,    // IID12770
+    0x48, 0xd3, 0xc9,    // IID12771
+    0x48, 0xd3, 0xca,    // IID12772
+    0x48, 0xd3, 0xcb,    // IID12773
+    0x49, 0xd3, 0xc8,    // IID12774
+    0x49, 0xd3, 0xc9,    // IID12775
+    0x49, 0xd3, 0xca,    // IID12776
+    0x49, 0xd3, 0xcb,    // IID12777
+    0x49, 0xd3, 0xcc,    // IID12778
+    0x49, 0xd3, 0xcd,    // IID12779
+    0x49, 0xd3, 0xce,    // IID12780
+    0x49, 0xd3, 0xcf,    // IID12781
+    0xd5, 0x18, 0xd3, 0xc8,    // IID12782
+    0xd5, 0x18, 0xd3, 0xc9,    // IID12783
+    0xd5, 0x18, 0xd3, 0xca,    // IID12784
+    0xd5, 0x18, 0xd3, 0xcb,    // IID12785
+    0xd5, 0x18, 0xd3, 0xcc,    // IID12786
+    0xd5, 0x18, 0xd3, 0xcd,    // IID12787
+    0xd5, 0x18, 0xd3, 0xce,    // IID12788
+    0xd5, 0x18, 0xd3, 0xcf,    // IID12789
+    0xd5, 0x19, 0xd3, 0xc8,    // IID12790
+    0xd5, 0x19, 0xd3, 0xc9,    // IID12791
+    0xd5, 0x19, 0xd3, 0xca,    // IID12792
+    0xd5, 0x19, 0xd3, 0xcb,    // IID12793
+    0xd5, 0x19, 0xd3, 0xcc,    // IID12794
+    0xd5, 0x19, 0xd3, 0xcd,    // IID12795
+    0xd5, 0x19, 0xd3, 0xce,    // IID12796
+    0xd5, 0x19, 0xd3, 0xcf,    // IID12797
+    0x48, 0xd3, 0xf9,    // IID12798
+    0x48, 0xd3, 0xfa,    // IID12799
+    0x48, 0xd3, 0xfb,    // IID12800
+    0x49, 0xd3, 0xf8,    // IID12801
+    0x49, 0xd3, 0xf9,    // IID12802
+    0x49, 0xd3, 0xfa,    // IID12803
+    0x49, 0xd3, 0xfb,    // IID12804
+    0x49, 0xd3, 0xfc,    // IID12805
+    0x49, 0xd3, 0xfd,    // IID12806
+    0x49, 0xd3, 0xfe,    // IID12807
+    0x49, 0xd3, 0xff,    // IID12808
+    0xd5, 0x18, 0xd3, 0xf8,    // IID12809
+    0xd5, 0x18, 0xd3, 0xf9,    // IID12810
+    0xd5, 0x18, 0xd3, 0xfa,    // IID12811
+    0xd5, 0x18, 0xd3, 0xfb,    // IID12812
+    0xd5, 0x18, 0xd3, 0xfc,    // IID12813
+    0xd5, 0x18, 0xd3, 0xfd,    // IID12814
+    0xd5, 0x18, 0xd3, 0xfe,    // IID12815
+    0xd5, 0x18, 0xd3, 0xff,    // IID12816
+    0xd5, 0x19, 0xd3, 0xf8,    // IID12817
+    0xd5, 0x19, 0xd3, 0xf9,    // IID12818
+    0xd5, 0x19, 0xd3, 0xfa,    // IID12819
+    0xd5, 0x19, 0xd3, 0xfb,    // IID12820
+    0xd5, 0x19, 0xd3, 0xfc,    // IID12821
+    0xd5, 0x19, 0xd3, 0xfd,    // IID12822
+    0xd5, 0x19, 0xd3, 0xfe,    // IID12823
+    0xd5, 0x19, 0xd3, 0xff,    // IID12824
+    0x48, 0xd3, 0xe1,    // IID12825
+    0x48, 0xd3, 0xe2,    // IID12826
+    0x48, 0xd3, 0xe3,    // IID12827
+    0x49, 0xd3, 0xe0,    // IID12828
+    0x49, 0xd3, 0xe1,    // IID12829
+    0x49, 0xd3, 0xe2,    // IID12830
+    0x49, 0xd3, 0xe3,    // IID12831
+    0x49, 0xd3, 0xe4,    // IID12832
+    0x49, 0xd3, 0xe5,    // IID12833
+    0x49, 0xd3, 0xe6,    // IID12834
+    0x49, 0xd3, 0xe7,    // IID12835
+    0xd5, 0x18, 0xd3, 0xe0,    // IID12836
+    0xd5, 0x18, 0xd3, 0xe1,    // IID12837
+    0xd5, 0x18, 0xd3, 0xe2,    // IID12838
+    0xd5, 0x18, 0xd3, 0xe3,    // IID12839
+    0xd5, 0x18, 0xd3, 0xe4,    // IID12840
+    0xd5, 0x18, 0xd3, 0xe5,    // IID12841
+    0xd5, 0x18, 0xd3, 0xe6,    // IID12842
+    0xd5, 0x18, 0xd3, 0xe7,    // IID12843
+    0xd5, 0x19, 0xd3, 0xe0,    // IID12844
+    0xd5, 0x19, 0xd3, 0xe1,    // IID12845
+    0xd5, 0x19, 0xd3, 0xe2,    // IID12846
+    0xd5, 0x19, 0xd3, 0xe3,    // IID12847
+    0xd5, 0x19, 0xd3, 0xe4,    // IID12848
+    0xd5, 0x19, 0xd3, 0xe5,    // IID12849
+    0xd5, 0x19, 0xd3, 0xe6,    // IID12850
+    0xd5, 0x19, 0xd3, 0xe7,    // IID12851
+    0x48, 0xd3, 0xe9,    // IID12852
+    0x48, 0xd3, 0xea,    // IID12853
+    0x48, 0xd3, 0xeb,    // IID12854
+    0x49, 0xd3, 0xe8,    // IID12855
+    0x49, 0xd3, 0xe9,    // IID12856
+    0x49, 0xd3, 0xea,    // IID12857
+    0x49, 0xd3, 0xeb,    // IID12858
+    0x49, 0xd3, 0xec,    // IID12859
+    0x49, 0xd3, 0xed,    // IID12860
+    0x49, 0xd3, 0xee,    // IID12861
+    0x49, 0xd3, 0xef,    // IID12862
+    0xd5, 0x18, 0xd3, 0xe8,    // IID12863
+    0xd5, 0x18, 0xd3, 0xe9,    // IID12864
+    0xd5, 0x18, 0xd3, 0xea,    // IID12865
+    0xd5, 0x18, 0xd3, 0xeb,    // IID12866
+    0xd5, 0x18, 0xd3, 0xec,    // IID12867
+    0xd5, 0x18, 0xd3, 0xed,    // IID12868
+    0xd5, 0x18, 0xd3, 0xee,    // IID12869
+    0xd5, 0x18, 0xd3, 0xef,    // IID12870
+    0xd5, 0x19, 0xd3, 0xe8,    // IID12871
+    0xd5, 0x19, 0xd3, 0xe9,    // IID12872
+    0xd5, 0x19, 0xd3, 0xea,    // IID12873
+    0xd5, 0x19, 0xd3, 0xeb,    // IID12874
+    0xd5, 0x19, 0xd3, 0xec,    // IID12875
+    0xd5, 0x19, 0xd3, 0xed,    // IID12876
+    0xd5, 0x19, 0xd3, 0xee,    // IID12877
+    0xd5, 0x19, 0xd3, 0xef,    // IID12878
     0x48, 0xff, 0xc1,    // IID12879
     0x48, 0xff, 0xc2,    // IID12880
     0x48, 0xff, 0xc3,    // IID12881
@@ -27800,60 +27800,60 @@
     0xd5, 0x3b, 0xf7, 0x5c, 0x35, 0x00,    // IID12984
     0xd5, 0x3b, 0xf7, 0x1c, 0x3e,    // IID12985
     0xd5, 0x19, 0xf7, 0x1c, 0x0f,    // IID12986
-    0x48, 0xd1, 0x3c, 0x11,    // IID12987
-    0x48, 0xd1, 0x3c, 0x1a,    // IID12988
-    0x4a, 0xd1, 0x3c, 0x03,    // IID12989
-    0x4b, 0xd1, 0x3c, 0x08,    // IID12990
-    0x4b, 0xd1, 0x3c, 0x11,    // IID12991
-    0x4b, 0xd1, 0x3c, 0x1a,    // IID12992
-    0x4b, 0xd1, 0x3c, 0x23,    // IID12993
-    0x4b, 0xd1, 0x3c, 0x2c,    // IID12994
-    0x4b, 0xd1, 0x7c, 0x35, 0x00,    // IID12995
-    0x4b, 0xd1, 0x3c, 0x3e,    // IID12996
-    0xd5, 0x29, 0xd1, 0x3c, 0x07,    // IID12997
-    0xd5, 0x38, 0xd1, 0x3c, 0x08,    // IID12998
-    0xd5, 0x38, 0xd1, 0x3c, 0x11,    // IID12999
-    0xd5, 0x38, 0xd1, 0x3c, 0x1a,    // IID13000
-    0xd5, 0x38, 0xd1, 0x3c, 0x23,    // IID13001
-    0xd5, 0x38, 0xd1, 0x3c, 0x2c,    // IID13002
-    0xd5, 0x38, 0xd1, 0x7c, 0x35, 0x00,    // IID13003
-    0xd5, 0x38, 0xd1, 0x3c, 0x3e,    // IID13004
-    0xd5, 0x3a, 0xd1, 0x3c, 0x07,    // IID13005
-    0xd5, 0x3b, 0xd1, 0x3c, 0x08,    // IID13006
-    0xd5, 0x3b, 0xd1, 0x3c, 0x11,    // IID13007
-    0xd5, 0x3b, 0xd1, 0x3c, 0x1a,    // IID13008
-    0xd5, 0x3b, 0xd1, 0x3c, 0x23,    // IID13009
-    0xd5, 0x3b, 0xd1, 0x3c, 0x2c,    // IID13010
-    0xd5, 0x3b, 0xd1, 0x7c, 0x35, 0x00,    // IID13011
-    0xd5, 0x3b, 0xd1, 0x3c, 0x3e,    // IID13012
-    0xd5, 0x19, 0xd1, 0x3c, 0x0f,    // IID13013
-    0x48, 0xd1, 0x2c, 0x11,    // IID13014
-    0x48, 0xd1, 0x2c, 0x1a,    // IID13015
-    0x4a, 0xd1, 0x2c, 0x03,    // IID13016
-    0x4b, 0xd1, 0x2c, 0x08,    // IID13017
-    0x4b, 0xd1, 0x2c, 0x11,    // IID13018
-    0x4b, 0xd1, 0x2c, 0x1a,    // IID13019
-    0x4b, 0xd1, 0x2c, 0x23,    // IID13020
-    0x4b, 0xd1, 0x2c, 0x2c,    // IID13021
-    0x4b, 0xd1, 0x6c, 0x35, 0x00,    // IID13022
-    0x4b, 0xd1, 0x2c, 0x3e,    // IID13023
-    0xd5, 0x29, 0xd1, 0x2c, 0x07,    // IID13024
-    0xd5, 0x38, 0xd1, 0x2c, 0x08,    // IID13025
-    0xd5, 0x38, 0xd1, 0x2c, 0x11,    // IID13026
-    0xd5, 0x38, 0xd1, 0x2c, 0x1a,    // IID13027
-    0xd5, 0x38, 0xd1, 0x2c, 0x23,    // IID13028
-    0xd5, 0x38, 0xd1, 0x2c, 0x2c,    // IID13029
-    0xd5, 0x38, 0xd1, 0x6c, 0x35, 0x00,    // IID13030
-    0xd5, 0x38, 0xd1, 0x2c, 0x3e,    // IID13031
-    0xd5, 0x3a, 0xd1, 0x2c, 0x07,    // IID13032
-    0xd5, 0x3b, 0xd1, 0x2c, 0x08,    // IID13033
-    0xd5, 0x3b, 0xd1, 0x2c, 0x11,    // IID13034
-    0xd5, 0x3b, 0xd1, 0x2c, 0x1a,    // IID13035
-    0xd5, 0x3b, 0xd1, 0x2c, 0x23,    // IID13036
-    0xd5, 0x3b, 0xd1, 0x2c, 0x2c,    // IID13037
-    0xd5, 0x3b, 0xd1, 0x6c, 0x35, 0x00,    // IID13038
-    0xd5, 0x3b, 0xd1, 0x2c, 0x3e,    // IID13039
-    0xd5, 0x19, 0xd1, 0x2c, 0x0f,    // IID13040
+    0x48, 0xd3, 0x3c, 0x11,    // IID12987
+    0x48, 0xd3, 0x3c, 0x1a,    // IID12988
+    0x4a, 0xd3, 0x3c, 0x03,    // IID12989
+    0x4b, 0xd3, 0x3c, 0x08,    // IID12990
+    0x4b, 0xd3, 0x3c, 0x11,    // IID12991
+    0x4b, 0xd3, 0x3c, 0x1a,    // IID12992
+    0x4b, 0xd3, 0x3c, 0x23,    // IID12993
+    0x4b, 0xd3, 0x3c, 0x2c,    // IID12994
+    0x4b, 0xd3, 0x7c, 0x35, 0x00,    // IID12995
+    0x4b, 0xd3, 0x3c, 0x3e,    // IID12996
+    0xd5, 0x29, 0xd3, 0x3c, 0x07,    // IID12997
+    0xd5, 0x38, 0xd3, 0x3c, 0x08,    // IID12998
+    0xd5, 0x38, 0xd3, 0x3c, 0x11,    // IID12999
+    0xd5, 0x38, 0xd3, 0x3c, 0x1a,    // IID13000
+    0xd5, 0x38, 0xd3, 0x3c, 0x23,    // IID13001
+    0xd5, 0x38, 0xd3, 0x3c, 0x2c,    // IID13002
+    0xd5, 0x38, 0xd3, 0x7c, 0x35, 0x00,    // IID13003
+    0xd5, 0x38, 0xd3, 0x3c, 0x3e,    // IID13004
+    0xd5, 0x3a, 0xd3, 0x3c, 0x07,    // IID13005
+    0xd5, 0x3b, 0xd3, 0x3c, 0x08,    // IID13006
+    0xd5, 0x3b, 0xd3, 0x3c, 0x11,    // IID13007
+    0xd5, 0x3b, 0xd3, 0x3c, 0x1a,    // IID13008
+    0xd5, 0x3b, 0xd3, 0x3c, 0x23,    // IID13009
+    0xd5, 0x3b, 0xd3, 0x3c, 0x2c,    // IID13010
+    0xd5, 0x3b, 0xd3, 0x7c, 0x35, 0x00,    // IID13011
+    0xd5, 0x3b, 0xd3, 0x3c, 0x3e,    // IID13012
+    0xd5, 0x19, 0xd3, 0x3c, 0x0f,    // IID13013
+    0x48, 0xd3, 0x2c, 0x11,    // IID13014
+    0x48, 0xd3, 0x2c, 0x1a,    // IID13015
+    0x4a, 0xd3, 0x2c, 0x03,    // IID13016
+    0x4b, 0xd3, 0x2c, 0x08,    // IID13017
+    0x4b, 0xd3, 0x2c, 0x11,    // IID13018
+    0x4b, 0xd3, 0x2c, 0x1a,    // IID13019
+    0x4b, 0xd3, 0x2c, 0x23,    // IID13020
+    0x4b, 0xd3, 0x2c, 0x2c,    // IID13021
+    0x4b, 0xd3, 0x6c, 0x35, 0x00,    // IID13022
+    0x4b, 0xd3, 0x2c, 0x3e,    // IID13023
+    0xd5, 0x29, 0xd3, 0x2c, 0x07,    // IID13024
+    0xd5, 0x38, 0xd3, 0x2c, 0x08,    // IID13025
+    0xd5, 0x38, 0xd3, 0x2c, 0x11,    // IID13026
+    0xd5, 0x38, 0xd3, 0x2c, 0x1a,    // IID13027
+    0xd5, 0x38, 0xd3, 0x2c, 0x23,    // IID13028
+    0xd5, 0x38, 0xd3, 0x2c, 0x2c,    // IID13029
+    0xd5, 0x38, 0xd3, 0x6c, 0x35, 0x00,    // IID13030
+    0xd5, 0x38, 0xd3, 0x2c, 0x3e,    // IID13031
+    0xd5, 0x3a, 0xd3, 0x2c, 0x07,    // IID13032
+    0xd5, 0x3b, 0xd3, 0x2c, 0x08,    // IID13033
+    0xd5, 0x3b, 0xd3, 0x2c, 0x11,    // IID13034
+    0xd5, 0x3b, 0xd3, 0x2c, 0x1a,    // IID13035
+    0xd5, 0x3b, 0xd3, 0x2c, 0x23,    // IID13036
+    0xd5, 0x3b, 0xd3, 0x2c, 0x2c,    // IID13037
+    0xd5, 0x3b, 0xd3, 0x6c, 0x35, 0x00,    // IID13038
+    0xd5, 0x3b, 0xd3, 0x2c, 0x3e,    // IID13039
+    0xd5, 0x19, 0xd3, 0x2c, 0x0f,    // IID13040
     0x48, 0xff, 0x04, 0x11,    // IID13041
     0x48, 0xff, 0x04, 0x1a,    // IID13042
     0x4a, 0xff, 0x04, 0x03,    // IID13043
