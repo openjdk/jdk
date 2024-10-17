@@ -413,9 +413,10 @@ public abstract class HttpClient implements AutoCloseable {
          * @implNote
          * In the JDK built-in implementation of the {@code HttpClient},
          * if a {@link HttpRequest} has an {@code Authorization} or {@code
-         * Proxy-Authorization} header set then its value will be used and
-         * the {@link Authenticator} will not be invoked for the corresponding
-         * authentication.
+         * Proxy-Authorization} header set then its value is used and
+         * the {@link Authenticator} is not invoked for the corresponding
+         * authentication. In this case, any authentication errors are returned
+         * to the user and requests are not automatically retried.
          *
          * @param authenticator the Authenticator
          * @return this builder

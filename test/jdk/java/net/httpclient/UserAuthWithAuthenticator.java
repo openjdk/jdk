@@ -38,7 +38,7 @@
  *          java.base/sun.net.www
  *          java.base/sun.net
  *
- * @run main/othervm  -Djdk.httpclient.HttpClient.log=errors,requests,headers,ssl,trace,all UserAuthWithAuthenticator
+ * @run main/othervm UserAuthWithAuthenticator
  */
 
 import java.io.*;
@@ -69,6 +69,7 @@ import jdk.test.lib.net.URIBuilder;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
 public class UserAuthWithAuthenticator {
+    private static final String AUTH_PREFIX = "Basic ";
 
     static class AuthTestHandler implements HttpTestHandler {
         volatile String authValue;
@@ -79,7 +80,10 @@ public class UserAuthWithAuthenticator {
             try (InputStream is = t.getRequestBody();
                  OutputStream os = t.getResponseBody()) {
                 byte[] bytes = is.readAllBytes();
-                authValue = t.getRequestHeaders().firstValue("Authorization").orElse("");
+                authValue = t.getRequestHeaders()
+                        .firstValue("Authorization")
+                        .orElse(AUTH_PREFIX)
+                        .substring(AUTH_PREFIX.length());
                 t.sendResponseHeaders(200, response.length());
                 os.write(response.getBytes(US_ASCII));
                 t.close();
@@ -134,20 +138,19 @@ public class UserAuthWithAuthenticator {
                     .sslContext(ctx)
                     .executor(ex);
 
-            //if (!useHeader) {
-                builder.authenticator(sa);
-            //}
+            builder.authenticator(sa);
             client = builder.build();
 
             HttpRequest req = HttpRequest.newBuilder(uri)
                     .version(HttpClient.Version.HTTP_2)
-                    .header(useHeader ? "Authorization" : "X-Ignore", encoded)
+                    .header(useHeader ? "Authorization" : "X-Ignore", AUTH_PREFIX + encoded)
                     .GET()
                     .build();
 
             HttpResponse<String> resp = client.send(req, HttpResponse.BodyHandlers.ofString());
             if (useHeader) {
-                assertTrue(h.authValue() == null, "Expected user set header to be set");
+                assertTrue(resp.statusCode() == 200, "Expected 200 response");
+                assertTrue(h.authValue().equals(encoded), "Expected user set header to be set");
                 assertTrue(!sa.wasCalled(), "Expected authenticator not to be called");
                 System.out.println("h2Test: using user set header OK");
             } else {
@@ -231,7 +234,7 @@ public class UserAuthWithAuthenticator {
             var encoded = java.util.Base64.getEncoder().encodeToString(plainCreds.getBytes(US_ASCII));
             var request = HttpRequest.newBuilder().uri(URI.create("http://127.0.0.1/some_url"))
                 .setHeader("User-Agent", "myUserAgent")
-                .setHeader("Authorization", "Basic " + encoded)
+                .setHeader("Authorization", AUTH_PREFIX + encoded)
                 .build();
 
             var response = client.send(request, HttpResponse.BodyHandlers.ofString());
@@ -265,7 +268,7 @@ public class UserAuthWithAuthenticator {
             var encoded1 = java.util.Base64.getEncoder().encodeToString(badCreds.getBytes(US_ASCII));
             var request = HttpRequest.newBuilder().uri(URI.create("http://127.0.0.1/some_url"))
                 .setHeader("User-Agent", "myUserAgent")
-                .setHeader("Proxy-Authorization", "Basic " + encoded1)
+                .setHeader("Proxy-Authorization", AUTH_PREFIX + encoded1)
                 .build();
 
             var response = client.send(request, HttpResponse.BodyHandlers.ofString());
@@ -291,7 +294,7 @@ public class UserAuthWithAuthenticator {
             var encoded = java.util.Base64.getEncoder().encodeToString(plainCreds.getBytes(US_ASCII));
             var request = HttpRequest.newBuilder().uri(URI.create(serverMock.baseURL() + "/some_serv_url"))
                 .setHeader("User-Agent", "myUserAgent")
-                .setHeader("Authorization", "Basic " + encoded)
+                .setHeader("Authorization", AUTH_PREFIX + encoded)
                 .build();
 
             var response = client.send(request, HttpResponse.BodyHandlers.ofString());
