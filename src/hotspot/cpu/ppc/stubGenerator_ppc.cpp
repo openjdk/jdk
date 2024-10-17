@@ -663,7 +663,7 @@ address generate_ghash_processBlocks() {
   VectorRegister vZero = VR11;
   VectorRegister vConst1 = VR12;
   VectorRegister vConst7 = VR13;
-  VectorRegister vConstC2 = VR10;
+  VectorRegister vConstC2 = VR14;
   VectorRegister fromPerm = VR15;
   VectorRegister vTmp3 = VR16;
   VectorRegister vTmp5 = VR17;
@@ -672,15 +672,16 @@ address generate_ghash_processBlocks() {
 
 
  static const unsigned char perm_pattern[16] __attribute__((aligned(16))) = {7, 6, 5, 4, 3, 2, 1, 0, 15, 14, 13, 12, 11, 10, 9, 8};
-
+static const unsigned char perm_pattern2[16] __attribute__((aligned(16))) = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
 // Load the address of perm_pattern
 __ load_const_optimized(temp1, (uintptr_t)&perm_pattern);
+__ load_const_optimized(temp2, (uintptr_t)&perm_pattern2);
 
 // Load the 128-bit vector from memory
 __ vxor(fromPerm, fromPerm, fromPerm);  // Clear the vector register
 __ lvx(fromPerm,  temp1);  // Lo
-  __ li(temp1, 0xc2);
-  __ sldi(temp1, temp1, 56);
+__ li(temp1, 0xc2);
+ __ sldi(temp1, temp1, 56);
   // Load the vector from memory into vConstC2
   __ vxor(vConstC2,vConstC2,vConstC2);
   __ mtvrd(vConstC2, temp1);
@@ -702,7 +703,8 @@ __ lvx(fromPerm,  temp1);  // Lo
   __ vsrab(vMSB, vMSB, vConst7);
   __ vand(vMSB, vMSB, vTmp4); //Carry
   __ vxor(vTmp2, vH_shift, vMSB); // shift H<<<1
-  
+ // vsldoi 19, 0, 18, 8    
+  __ vsldoi(vConstC2, vZero, vConstC2, 8);
   __ vsldoi(vSwappedH, vTmp2, vTmp2, 8); // swap L,H 
   __ vsldoi(vLowerH, vZero, vSwappedH, 8); //H.L
   __ vsldoi(vHigherH, vSwappedH, vZero, 8); //H.H
@@ -711,7 +713,7 @@ __ lvx(fromPerm,  temp1);  // Lo
     __ vxor(vZero, vZero, vZero);
 
     // Calculate the number of blocks
-
+    __ lvx(fromPerm,  temp2);
     __ mtctr(blocks);
     __ li(temp1, 0);
     Label loop;
@@ -720,6 +722,7 @@ __ lvx(fromPerm,  temp1);  // Lo
    // Load immediate value 0 into temp  
     __ vxor(vX,vX,vX);
     __ lvx(vX, temp1, data);
+    __ vec_perm(vX, vX, vX, fromPerm);
     // __ vec_perm(vX, vX, vX, fromPerm);
     __ addi(temp1, temp1, 16);
 
