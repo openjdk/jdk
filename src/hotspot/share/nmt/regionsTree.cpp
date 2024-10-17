@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2023 SAP SE. All rights reserved.
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,26 +19,30 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
-
 #include "precompiled.hpp"
-#include "nmt/nmtCommon.hpp"
-#include "nmt/memTracker.hpp"
-#include "nmt/vmtCommon.hpp"
-#include "runtime/os.hpp"
-#include "unittest.hpp"
+#include "nmt/regionsTree.hpp"
 
-// Tests the assignment operator of ReservedMemoryRegion
-TEST_VM(NMT, ReservedRegionCopy) {
-  address dummy1 = (address)0x10000000;
-  NativeCallStack stack1(&dummy1, 1);
-  ReservedMemoryRegion region1(dummy1, os::vm_page_size(), stack1, mtThreadStack);
-  VirtualMemorySummary::record_reserved_memory(os::vm_page_size(), region1.mem_tag());
-  region1.add_committed_region(dummy1, os::vm_page_size(), stack1);
-  address dummy2 = (address)0x20000000;
-  NativeCallStack stack2(&dummy2, 1);
-  ReservedMemoryRegion region2(dummy2, os::vm_page_size(), stack2, mtCode);
-  VirtualMemorySummary::record_reserved_memory(os::vm_page_size(), region2.mem_tag());
-  region2.add_committed_region(dummy2, os::vm_page_size(), stack2);
+ReservedMemoryRegion RegionsTree::find_reserved_region(address addr) {
+    ReservedMemoryRegion rmr;
+    auto contain_region = [&](ReservedMemoryRegion& region_in_tree) {
+      if (region_in_tree.contain_address(addr)) {
+        rmr = region_in_tree;
+        return false;
+      }
+      return true;
+    };
+    visit_reserved_regions(contain_region);
+    return rmr;
 }
+
+VMATree::SummaryDiff RegionsTree::commit_region(address addr, size_t size, const NativeCallStack& stack) {
+  return commit_mapping((VMATree::position)addr, size, make_region_data(stack, mtNone), /*use tag inplace*/ true);
+}
+
+VMATree::SummaryDiff RegionsTree::uncommit_region(address addr, size_t size) {
+  return uncommit_mapping((VMATree::position)addr, size, make_region_data(NativeCallStack::empty_stack(), mtNone));
+}
+
 

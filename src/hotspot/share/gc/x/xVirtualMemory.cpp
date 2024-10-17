@@ -181,8 +181,7 @@ bool XVirtualMemoryManager::reserve(size_t max_capacity) {
 }
 
 void XVirtualMemoryManager::nmt_reserve(uintptr_t start, size_t size) {
-  MemTracker::record_virtual_memory_reserve((void*)start, size, CALLER_PC);
-  MemTracker::record_virtual_memory_tag((void*)start, mtJavaHeap);
+  MemTracker::record_virtual_memory_reserve((void*)start, size, CALLER_PC, mtJavaHeap);
 }
 
 bool XVirtualMemoryManager::is_initialized() const {
