@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
+import java.net.ProtocolException;
 import java.net.URI;
 import java.net.http.HttpResponse.BodyHandler;
 import java.net.http.HttpResponse.ResponseInfo;
@@ -43,6 +44,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Subscription;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -52,9 +54,12 @@ import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodySubscriber;
+
 import jdk.internal.net.http.common.*;
 import jdk.internal.net.http.frame.*;
 import jdk.internal.net.http.hpack.DecodingCallback;
+
+import static jdk.internal.net.http.Exchange.MAX_NON_FINAL_RESPONSES;
 
 /**
  * Http/2 Stream handling.
@@ -140,6 +145,9 @@ class Stream<T> extends ExchangeImpl<T> {
     private volatile boolean closed;
     private volatile boolean endStreamSent;
     private volatile boolean finalResponseCodeReceived;
+    private volatile boolean trailerReceived;
+    private AtomicInteger nonFinalResponseCount = new AtomicInteger();
+
     // Indicates the first reason that was invoked when sending a ResetFrame
     // to the server. A streamState of 0 indicates that no reset was sent.
     // (see markStream(int code)
@@ -520,16 +528,38 @@ class Stream<T> extends ExchangeImpl<T> {
     // The Hpack decoder decodes into one of these consumers of name,value pairs
 
     DecodingCallback rspHeadersConsumer() {
-        return rspHeadersConsumer::onDecoded;
+        return rspHeadersConsumer;
+    }
+
+    String checkInterimResponseCountExceeded() {
+        // this is also checked by Exchange - but tracking it here too provides
+        // a more informative message.
+        int count = nonFinalResponseCount.incrementAndGet();
+        if (MAX_NON_FINAL_RESPONSES > 0 && (count < 0 || count > MAX_NON_FINAL_RESPONSES)) {
+            return String.format(
+                    "Stream %s PROTOCOL_ERROR: too many interim responses received: %s > %s",
+                    streamid, count, MAX_NON_FINAL_RESPONSES);
+        }
+        return null;
     }
 
     protected void handleResponse(HeaderFrame hf) throws IOException {
         HttpHeaders responseHeaders = responseHeadersBuilder.build();
 
         if (!finalResponseCodeReceived) {
-            responseCode = (int) responseHeaders
-                    .firstValueAsLong(":status")
-                    .orElseThrow(() -> new IOException("no statuscode in response"));
+            try {
+                responseCode = (int) responseHeaders
+                        .firstValueAsLong(":status")
+                        .orElseThrow(() -> new ProtocolException(String.format(
+                                "Stream %s PROTOCOL_ERROR: no status code in response",
+                                streamid)));
+            } catch (ProtocolException cause) {
+                cancelImpl(cause, ResetFrame.PROTOCOL_ERROR);
+                rspHeadersConsumer.reset();
+                return;
+            }
+
+            String protocolErrorMsg = null;
             // If informational code, response is partially complete
             if (responseCode < 100 || responseCode > 199) {
                 this.finalResponseCodeReceived = true;
@@ -537,23 +567,31 @@ class Stream<T> extends ExchangeImpl<T> {
                 // see RFC 9113 section 8.1:
                 // A HEADERS frame with the END_STREAM flag set that carries an
                 // informational status code is malformed
-                String msg = ("Stream %s PROTOCOL_ERROR: " +
-                        "HEADERS frame with status %s has END_STREAM flag set")
-                        .formatted(streamid, responseCode);
+                protocolErrorMsg = String.format(
+                        "Stream %s PROTOCOL_ERROR: " +
+                        "HEADERS frame with status %s has END_STREAM flag set",
+                        streamid, responseCode);
+            } else {
+                protocolErrorMsg = checkInterimResponseCountExceeded();
+            }
+
+            if (protocolErrorMsg != null) {
                 if (debug.on()) {
-                    debug.log(msg);
+                    debug.log(protocolErrorMsg);
                 }
-                cancelImpl(new IOException(msg), ResetFrame.PROTOCOL_ERROR);
+                cancelImpl(new ProtocolException(protocolErrorMsg), ResetFrame.PROTOCOL_ERROR);
+                rspHeadersConsumer.reset();
+                return;
             }
 
             response = new Response(
                     request, exchange, responseHeaders, connection(),
                     responseCode, HttpClient.Version.HTTP_2);
 
-        /* TODO: review if needs to be removed
-           the value is not used, but in case `content-length` doesn't parse as
-           long, there will be NumberFormatException. If left as is, make sure
-           code up the stack handles NFE correctly. */
+            /* TODO: review if needs to be removed
+               the value is not used, but in case `content-length` doesn't parse as
+               long, there will be NumberFormatException. If left as is, make sure
+               code up the stack handles NFE correctly. */
             responseHeaders.firstValueAsLong("content-length");
 
             if (Log.headers()) {
@@ -572,6 +610,15 @@ class Stream<T> extends ExchangeImpl<T> {
                 Log.dumpHeaders(sb, "    ", responseHeaders);
                 Log.logHeaders(sb.toString());
             }
+            if (trailerReceived) {
+                String protocolErrorMsg = String.format(
+                        "Stream %s PROTOCOL_ERROR: trailers already received", streamid);
+                if (debug.on()) {
+                    debug.log(protocolErrorMsg);
+                }
+                cancelImpl(new ProtocolException(protocolErrorMsg), ResetFrame.PROTOCOL_ERROR);
+            }
+            trailerReceived = true;
             rspHeadersConsumer.reset();
         }
 
@@ -1182,7 +1229,7 @@ class Stream<T> extends ExchangeImpl<T> {
 
     /**
      * A List of responses relating to this stream. Normally there is only
-     * one response, but intermediate responses like 100 are allowed
+     * one response, but interim responses like 100 are allowed
      * and must be passed up to higher level before continuing. Deals with races
      * such as if responses are returned before the CFs get created by
      * getResponseAsync()
@@ -1401,7 +1448,7 @@ class Stream<T> extends ExchangeImpl<T> {
         cancelImpl(e, ResetFrame.CANCEL);
     }
 
-    private void cancelImpl(final Throwable e, final int resetFrameErrCode) {
+    void cancelImpl(final Throwable e, final int resetFrameErrCode) {
         errorRef.compareAndSet(null, e);
         if (debug.on()) {
             if (streamid == 0) debug.log("cancelling stream: %s", (Object)e);
@@ -1511,6 +1558,7 @@ class Stream<T> extends ExchangeImpl<T> {
     }
 
     static class PushedStream<T> extends Stream<T> {
+        final Stream<T> parent;
         final PushGroup<T> pushGroup;
         // push streams need the response CF allocated up front as it is
         // given directly to user via the multi handler callback function.
@@ -1520,16 +1568,17 @@ class Stream<T> extends ExchangeImpl<T> {
         volatile HttpResponse.BodyHandler<T> pushHandler;
         private volatile boolean finalPushResponseCodeReceived;
 
-        PushedStream(PushGroup<T> pushGroup,
+        PushedStream(Stream<T> parent,
+                     PushGroup<T> pushGroup,
                      Http2Connection connection,
                      Exchange<T> pushReq) {
             // ## no request body possible, null window controller
             super(connection, pushReq, null);
+            this.parent = parent;
             this.pushGroup = pushGroup;
             this.pushReq = pushReq.request();
             this.pushCF = new MinimalFuture<>();
             this.responseCF = new MinimalFuture<>();
-
         }
 
         CompletableFuture<HttpResponse<T>> responseCF() {
@@ -1617,7 +1666,16 @@ class Stream<T> extends ExchangeImpl<T> {
                     .orElse(-1);
 
                 if (responseCode == -1) {
-                    completeResponseExceptionally(new IOException("No status code"));
+                    cancelImpl(new ProtocolException("No status code"), ResetFrame.PROTOCOL_ERROR);
+                    rspHeadersConsumer.reset();
+                    return;
+                } else if (responseCode >= 100 && responseCode < 200) {
+                    String protocolErrorMsg = checkInterimResponseCountExceeded();
+                    if (protocolErrorMsg != null) {
+                        cancelImpl(new ProtocolException(protocolErrorMsg), ResetFrame.PROTOCOL_ERROR);
+                        rspHeadersConsumer.reset();
+                        return;
+                    }
                 }
 
                 this.finalPushResponseCodeReceived = true;
@@ -1727,7 +1785,9 @@ class Stream<T> extends ExchangeImpl<T> {
         }
     }
 
-    private class HeadersConsumer extends ValidatingHeadersConsumer {
+    private class HeadersConsumer extends ValidatingHeadersConsumer implements DecodingCallback {
+
+        boolean maxHeaderListSizeReached;
 
         @Override
         public void reset() {
@@ -1740,6 +1800,9 @@ class Stream<T> extends ExchangeImpl<T> {
         public void onDecoded(CharSequence name, CharSequence value)
             throws UncheckedIOException
         {
+            if (maxHeaderListSizeReached) {
+                return;
+            }
             try {
                 String n = name.toString();
                 String v = value.toString();
@@ -1761,6 +1824,23 @@ class Stream<T> extends ExchangeImpl<T> {
         @Override
         protected String formatMessage(String message, String header) {
             return "malformed response: " + super.formatMessage(message, header);
+        }
+
+        @Override
+        public void onMaxHeaderListSizeReached(long size, int maxHeaderListSize) throws ProtocolException {
+            if (maxHeaderListSizeReached) return;
+            try {
+                DecodingCallback.super.onMaxHeaderListSizeReached(size, maxHeaderListSize);
+            } catch (ProtocolException cause) {
+                maxHeaderListSizeReached = true;
+                // If this is a push stream: cancel the parent.
+                if (Stream.this instanceof Stream.PushedStream<?> ps) {
+                    ps.parent.onProtocolError(cause);
+                }
+                // cancel the stream, continue processing
+                onProtocolError(cause);
+                reset();
+            }
         }
     }
 

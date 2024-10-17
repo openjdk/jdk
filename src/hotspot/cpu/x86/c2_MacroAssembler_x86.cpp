@@ -6475,3 +6475,30 @@ void C2_MacroAssembler::vector_rearrange_int_float(BasicType bt, XMMRegister dst
     vpermps(dst, shuffle, src, vlen_enc);
   }
 }
+
+void C2_MacroAssembler::select_from_two_vectors_evex(BasicType elem_bt, XMMRegister dst, XMMRegister src1,
+                                                     XMMRegister src2, int vlen_enc) {
+  switch(elem_bt) {
+    case T_BYTE:
+      evpermi2b(dst, src1, src2, vlen_enc);
+      break;
+    case T_SHORT:
+      evpermi2w(dst, src1, src2, vlen_enc);
+      break;
+    case T_INT:
+      evpermi2d(dst, src1, src2, vlen_enc);
+      break;
+    case T_LONG:
+      evpermi2q(dst, src1, src2, vlen_enc);
+      break;
+    case T_FLOAT:
+      evpermi2ps(dst, src1, src2, vlen_enc);
+      break;
+    case T_DOUBLE:
+      evpermi2pd(dst, src1, src2, vlen_enc);
+      break;
+    default:
+      fatal("Unsupported type %s", type2name(elem_bt));
+      break;
+  }
+}
