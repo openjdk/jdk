@@ -739,6 +739,11 @@ define SetupRunJtregTestBody
   # Only the problem list for the current test root should be used.
   $1_JTREG_PROBLEM_LIST := $$(filter $$($1_TEST_ROOT)%, $$($1_JTREG_PROBLEM_LIST))
 
+  # Pass along the path to the tidy html checker
+  ifneq ($$(TIDY), )
+    $1_JTREG_BASIC_OPTIONS += -Dtidy=$$(TIDY)
+  endif
+
   ifneq ($(TEST_JOBS), 0)
     $$(eval $$(call SetJtregValue,$1,JTREG_JOBS,$$(TEST_JOBS)))
   else

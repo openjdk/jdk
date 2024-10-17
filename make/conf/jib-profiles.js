@@ -415,7 +415,7 @@ var getJibProfilesProfiles = function (input, common, data) {
         "linux-x64": {
             target_os: "linux",
             target_cpu: "x64",
-            dependencies: ["devkit", "gtest", "build_devkit", "graphviz", "pandoc"],
+            dependencies: ["devkit", "gtest", "build_devkit", "graphviz", "pandoc", "tidy"],
             configure_args: concat(
                 (input.build_cpu == "x64" ? common.configure_args_64bit
                  : "--openjdk-target=x86_64-linux-gnu"),
@@ -441,7 +441,7 @@ var getJibProfilesProfiles = function (input, common, data) {
         "macosx-x64": {
             target_os: "macosx",
             target_cpu: "x64",
-            dependencies: ["devkit", "gtest", "graphviz", "pandoc"],
+            dependencies: ["devkit", "gtest", "graphviz", "pandoc", "tidy"],
             configure_args: concat(common.configure_args_64bit, "--with-zlib=system",
                 "--with-macosx-version-max=11.00.00",
                 "--enable-compatible-cds-alignment",
@@ -453,7 +453,7 @@ var getJibProfilesProfiles = function (input, common, data) {
         "macosx-aarch64": {
             target_os: "macosx",
             target_cpu: "aarch64",
-            dependencies: ["devkit", "gtest", "graphviz", "pandoc"],
+            dependencies: ["devkit", "gtest", "graphviz", "pandoc", "tidy"],
             configure_args: concat(common.configure_args_64bit,
                 "--with-macosx-version-max=11.00.00"),
         },
@@ -486,7 +486,7 @@ var getJibProfilesProfiles = function (input, common, data) {
         "linux-aarch64": {
             target_os: "linux",
             target_cpu: "aarch64",
-            dependencies: ["devkit", "gtest", "build_devkit", "graphviz", "pandoc"],
+            dependencies: ["devkit", "gtest", "build_devkit", "graphviz", "pandoc", "tidy"],
             configure_args: [
                 "--with-zlib=system",
                 "--disable-dtrace",
@@ -1274,6 +1274,14 @@ var getJibProfilesDependencies = function (input, common) {
             module: "libffi-" + input.target_platform,
             ext: "tar.gz",
             revision: "3.4.2+1.0"
+        },
+        tidy: {
+            organization: common.organization,
+            ext: "tar.gz",
+            revision: "5.9.20+1",
+            environment_path: input.get("tidy", "home_path") + "/bin/tidy",
+            configure_args: "TIDY=" + input.get("tidy", "home_path") + "/bin/tidy",
+            module: "tidy-html-" + (input.target_os === "macosx" ? input.target_os : input.target_platform),
         },
     };
 
