@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -258,7 +258,7 @@ class AquaFileSystemModel extends AbstractTableModel implements PropertyChangeLi
     public void intervalRemoved(final ListDataEvent e) {
     }
 
-    protected void sort(final Vector<Object> v) {
+    protected void sort(final ArrayList<SortableFile> v) {
         if (fSortNames) sSortNames.quickSort(v, 0, v.size() - 1);
         else sSortDates.quickSort(v, 0, v.size() - 1);
     }
@@ -279,7 +279,7 @@ class AquaFileSystemModel extends AbstractTableModel implements PropertyChangeLi
     // @param lo0 left boundary of array partition
     // @param hi0 right boundary of array partition
     abstract static class QuickSort {
-        final void quickSort(final Vector<Object> v, final int lo0, final int hi0) {
+        final void quickSort(final ArrayList<SortableFile> v, final int lo0, final int hi0) {
             int lo = lo0;
             int hi = hi0;
             SortableFile mid;
@@ -287,22 +287,21 @@ class AquaFileSystemModel extends AbstractTableModel implements PropertyChangeLi
             if (hi0 > lo0) {
                 // Arbitrarily establishing partition element as the midpoint of
                 // the array.
-                mid = (SortableFile)v.elementAt((lo0 + hi0) / 2);
+                mid = v.get((lo0 + hi0) / 2);
 
                 // loop through the array until indices cross
                 while (lo <= hi) {
                     // find the first element that is greater than or equal to
                     // the partition element starting from the left Index.
                     //
-                    // Nasty to have to cast here. Would it be quicker
-                    // to copy the vectors into arrays and sort the arrays?
-                    while ((lo < hi0) && lt((SortableFile)v.elementAt(lo), mid)) {
+                    // Would it be quicker to copy the into array and sort it?
+                    while ((lo < hi0) && lt(v.get(lo), mid)) {
                         ++lo;
                     }
 
                     // find an element that is smaller than or equal to
                     // the partition element starting from the right Index.
-                    while ((hi > lo0) && lt(mid, (SortableFile)v.elementAt(hi))) {
+                    while ((hi > lo0) && lt(mid, v.get(hi))) {
                         --hi;
                     }
 
@@ -329,10 +328,10 @@ class AquaFileSystemModel extends AbstractTableModel implements PropertyChangeLi
             }
         }
 
-        private void swap(final Vector<Object> a, final int i, final int j) {
-            final Object T = a.elementAt(i);
-            a.setElementAt(a.elementAt(j), i);
-            a.setElementAt(T, j);
+        private void swap(final ArrayList<SortableFile> a, final int i, final int j) {
+            final SortableFile T = a.get(i);
+            a.set(i, a.get(j));
+            a.set(j, T);
         }
 
         protected abstract boolean lt(SortableFile a, SortableFile b);
@@ -403,12 +402,12 @@ class AquaFileSystemModel extends AbstractTableModel implements PropertyChangeLi
 
             final File[] list = fileSystem.getFiles(currentDirectory, filechooser.isFileHidingEnabled());
 
-            final Vector<Object> acceptsList = new Vector<Object>();
+            final ArrayList<SortableFile> acceptsList = new ArrayList<>();
 
             for (final File element : list) {
                 // Return all files to the file chooser. The UI will disable or enable
                 // the file name if the current filter approves.
-                acceptsList.addElement(new SortableFile(element));
+                acceptsList.add(new SortableFile(element));
             }
 
             // Sort based on settings.
@@ -421,7 +420,7 @@ class AquaFileSystemModel extends AbstractTableModel implements PropertyChangeLi
             for (int i = 0; i < listSize;) {
                 SortableFile f;
                 for (int j = 0; j < 10 && i < listSize; j++, i++) {
-                    f = (SortableFile)acceptsList.elementAt(i);
+                    f = acceptsList.get(i);
                     chunk.addElement(f);
                 }
                 final DoChangeContents runnable = new DoChangeContents(chunk, fid);
