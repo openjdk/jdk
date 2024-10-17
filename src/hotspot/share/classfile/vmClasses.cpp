@@ -23,9 +23,9 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/aotLinkedClassBulkLoader.hpp"
 #include "cds/archiveHeapLoader.hpp"
 #include "cds/cdsConfig.hpp"
-#include "cds/aotLinkedClassBulkLoader.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/dictionary.hpp"

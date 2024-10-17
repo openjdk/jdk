@@ -26,12 +26,12 @@
 #define SHARE_CDS_AOTCLASSLINKER_HPP
 
 #include "interpreter/bytecodes.hpp"
-#include "oops/oopsHierarchy.hpp"
-#include "memory/allStatic.hpp"
 #include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
+#include "oops/oopsHierarchy.hpp"
 #include "utilities/exceptions.hpp"
-#include "utilities/macros.hpp"
 #include "utilities/growableArray.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/resourceHash.hpp"
 
 class AOTLinkedClassTable;

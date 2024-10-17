@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,11 @@ inline MetadataVisitingOopIterateClosure::MetadataVisitingOopIterateClosure(Refe
     ClaimMetadataVisitingOopIterateClosure(ClassLoaderData::_claim_strong, rd) {}
 
 inline void ClaimMetadataVisitingOopIterateClosure::do_cld(ClassLoaderData* cld) {
-  cld->oops_do(this, _claim);
+  if (cld != nullptr) {
+    // Could be null during early VM bootstrap for archived heap objects whose
+    // class has not yet been loaded by CDS.
+    cld->oops_do(this, _claim);
+  }
 }
 
 inline void ClaimMetadataVisitingOopIterateClosure::do_klass(Klass* k) {

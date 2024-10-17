@@ -35,7 +35,9 @@
 #include "cds/heapShared.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "cds/regeneratedClasses.hpp"
+#include "classfile/classLoader.hpp"
 #include "classfile/classLoaderDataShared.hpp"
+#include "classfile/classLoaderExt.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionaryShared.hpp"
@@ -228,6 +230,10 @@ bool ArchiveBuilder::gather_klass_and_symbol(MetaspaceClosure::Ref* ref, bool re
     assert(klass->is_klass(), "must be");
     if (!is_excluded(klass)) {
       _klasses->append(klass);
+      if (klass->is_hidden()) {
+        assert(klass->is_instance_klass(), "must be");
+        assert(SystemDictionaryShared::should_hidden_class_be_archived(InstanceKlass::cast(klass)), "must be");
+      }
     }
     // See RunTimeClassInfo::get_for()
     _estimated_metaspaceobj_bytes += align_up(BytesPerWord, SharedSpaceObjectAlignment);
@@ -782,6 +788,7 @@ void ArchiveBuilder::make_klasses_shareable() {
   DECLARE_INSTANCE_KLASS_COUNTER(num_vm_klasses);
   DECLARE_INSTANCE_KLASS_COUNTER(num_platform_klasses);
   DECLARE_INSTANCE_KLASS_COUNTER(num_app_klasses);
+  DECLARE_INSTANCE_KLASS_COUNTER(num_old_klasses);
   DECLARE_INSTANCE_KLASS_COUNTER(num_hidden_klasses);
   DECLARE_INSTANCE_KLASS_COUNTER(num_enum_klasses);
   DECLARE_INSTANCE_KLASS_COUNTER(num_unregistered_klasses);
@@ -809,6 +816,7 @@ void ArchiveBuilder::make_klasses_shareable() {
     const char* unlinked = "";
     const char* kind = "";
     const char* hidden = "";
+    const char* old = "";
     const char* generated = "";
     const char* aotlinked_msg = "";
     const char* inited_msg = "";
@@ -851,6 +859,12 @@ void ArchiveBuilder::make_klasses_shareable() {
           type = "bad";
           assert(0, "shouldn't happen");
         }
+        if (CDSConfig::is_dumping_invokedynamic()) {
+          assert(HeapShared::is_archivable_hidden_klass(ik), "sanity");
+        } else {
+          // Legacy CDS support for lambda proxies
+          assert(HeapShared::is_lambda_proxy_klass(ik), "sanity");
+        }
       } else if (ik->is_shared_boot_class()) {
         type = "boot";
         ADD_COUNT(num_boot_klasses);
@@ -891,6 +905,11 @@ void ArchiveBuilder::make_klasses_shareable() {
         ADD_COUNT(num_enum_klasses);
       }
 
+      if (!ik->can_be_verified_at_dumptime()) {
+        ADD_COUNT(num_old_klasses);
+        old = " old";
+      }
+
       if (ik->is_generated_shared_class()) {
         generated = " generated";
       }
@@ -907,9 +926,9 @@ void ArchiveBuilder::make_klasses_shareable() {
 
     if (log_is_enabled(Debug, cds, class)) {
       ResourceMark rm;
-      log_debug(cds, class)("klasses[%5d] = " PTR_FORMAT " %-5s %s%s%s%s%s%s%s", i,
+      log_debug(cds, class)("klasses[%5d] = " PTR_FORMAT " %-5s %s%s%s%s%s%s%s%s", i,
                             p2i(to_requested(k)), type, k->external_name(),
-                            kind, hidden, unlinked, generated, aotlinked_msg, inited_msg);
+                            kind, hidden, old, unlinked, generated, aotlinked_msg, inited_msg);
     }
   }
 
@@ -925,6 +944,7 @@ void ArchiveBuilder::make_klasses_shareable() {
   log_info(cds)("      unregistered     " STATS_FORMAT, STATS_PARAMS(unregistered_klasses));
   log_info(cds)("      (enum)           " STATS_FORMAT, STATS_PARAMS(enum_klasses));
   log_info(cds)("      (hidden)         " STATS_FORMAT, STATS_PARAMS(hidden_klasses));
+  log_info(cds)("      (old)            " STATS_FORMAT, STATS_PARAMS(old_klasses));
   log_info(cds)("      (unlinked)       = %5d, boot = %d, plat = %d, app = %d, unreg = %d",
                 num_unlinked_klasses, boot_unlinked, platform_unlinked, app_unlinked, unreg_unlinked);
   log_info(cds)("    obj array classes  = %5d", num_obj_array_klasses);

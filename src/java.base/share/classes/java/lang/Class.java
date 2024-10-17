@@ -231,6 +231,11 @@ public final class Class<T> implements java.io.Serializable,
 
     private static native void registerNatives();
     static {
+        runtimeSetup();
+    }
+
+    // Called from JVM when loading an AOT cache
+    private static void runtimeSetup() {
         registerNatives();
     }
 
@@ -4054,6 +4059,15 @@ public final class Class<T> implements java.io.Serializable,
                         (new ReflectionFactory.GetReflectionFactoryAction());
     }
     private static ReflectionFactory reflectionFactory;
+
+    /**
+     * When CDS is enabled, the Class class may be aot-initialized. However,
+     * we can't archive reflectionFactory, so we reset it to null, so it
+     * will be allocated again at runtime.
+     */
+    private static void resetArchivedStates() {
+        reflectionFactory = null;
+    }
 
     /**
      * Returns the elements of this enum class or null if this

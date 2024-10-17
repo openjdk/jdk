@@ -839,6 +839,7 @@ void InstanceKlass::initialize_from_cds(TRAPS) {
 
     set_init_thread(THREAD);
     set_initialization_state_and_notify(fully_initialized, CHECK);
+    AOTClassInitializer::call_runtime_setup(this, CHECK);
     return;
   }
 
@@ -1649,6 +1650,7 @@ void InstanceKlass::call_class_initializer(TRAPS) {
 #if INCLUDE_CDS
   // This is needed to ensure the consistency of the archived heap objects.
   if (has_aot_initialized_mirror() && CDSConfig::is_loading_heap()) {
+    AOTClassInitializer::call_runtime_setup(this, CHECK);
     return;
   } else if (has_archived_enum_objs()) {
     assert(is_shared(), "must be");
@@ -2568,6 +2570,7 @@ void InstanceKlass::metaspace_pointers_do(MetaspaceClosure* it) {
     }
   }
 
+  it->push(&_nest_host);
   it->push(&_nest_members);
   it->push(&_permitted_subclasses);
   it->push(&_record_components);
@@ -2631,8 +2634,12 @@ void InstanceKlass::remove_unshareable_info() {
   _methods_jmethod_ids = nullptr;
   _jni_ids = nullptr;
   _oop_map_cache = nullptr;
-  // clear _nest_host to ensure re-load at runtime
-  _nest_host = nullptr;
+  if (CDSConfig::is_dumping_invokedynamic() && HeapShared::is_lambda_proxy_klass(this)) {
+    // keep _nest_host
+  } else {
+    // clear _nest_host to ensure re-load at runtime
+    _nest_host = nullptr;
+  }
   init_shared_package_entry();
   _dep_context_last_cleaned = 0;
 

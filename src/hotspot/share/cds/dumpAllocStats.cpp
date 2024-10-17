@@ -115,6 +115,10 @@ void DumpAllocStats::print_stats(int ro_all, int rw_all) {
            _num_method_cp_entries, _num_method_cp_entries_archived,
            percent_of(_num_method_cp_entries_archived, _num_method_cp_entries),
            _num_method_cp_entries_reverted);
+  msg.info("Indy   CP entries = %6d, archived = %6d (%5.1f%%), reverted = %6d",
+           _num_indy_cp_entries, _num_indy_cp_entries_archived,
+           percent_of(_num_indy_cp_entries_archived, _num_indy_cp_entries),
+           _num_indy_cp_entries_reverted);
   msg.info("Platform loader initiated classes = %5d", AOTClassLinker::num_platform_initiated_classes());
   msg.info("App      loader initiated classes = %5d", AOTClassLinker::num_app_initiated_classes());
 }
