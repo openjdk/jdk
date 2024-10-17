@@ -196,6 +196,12 @@ public:
     return *this;
   }
 
+  RegSetIterator operator++(int) {
+    RegSetIterator r = *this;
+    ++(*this);
+    return r;
+  }
+
   RegSetIterator<RegImpl>& operator=(const RegSetIterator<RegImpl>& mit) {
     _regs= mit._regs;
     return *this;

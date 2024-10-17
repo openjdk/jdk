@@ -454,10 +454,8 @@ void Universe::genesis(TRAPS) {
       _the_array_interfaces_array->at_put(1, vmClasses::Serializable_klass());
     }
 
-    if (UseSecondarySupersTable) {
-      Universe::_the_array_interfaces_bitmap = Klass::compute_secondary_supers_bitmap(_the_array_interfaces_array);
-      Universe::_the_empty_klass_bitmap      = Klass::compute_secondary_supers_bitmap(_the_empty_klass_array);
-    }
+    _the_array_interfaces_bitmap = Klass::compute_secondary_supers_bitmap(_the_array_interfaces_array);
+    _the_empty_klass_bitmap      = Klass::compute_secondary_supers_bitmap(_the_empty_klass_array);
 
     initialize_basic_type_klass(_fillerArrayKlass, CHECK);
 
