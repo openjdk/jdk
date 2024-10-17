@@ -33,6 +33,8 @@ import java.security.spec.AlgorithmParameterSpec;
  * <a href="https://tools.ietf.org/rfc/rfc8017.txt">PKCS#1 v2.2</a> standard,
  * such as those for RSA, or RSASSA-PSS algorithms.
  *
+ * @spec https://www.rfc-editor.org/info/rfc8017
+ *      RFC 8017: PKCS #1: RSA Cryptography Specifications Version 2.2
  * @author Jan Luehe
  *
  * @see RSAPublicKey

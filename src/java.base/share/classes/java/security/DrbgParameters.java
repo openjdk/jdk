@@ -227,6 +227,9 @@ import java.util.Objects;
  * Calling {@link SecureRandom#generateSeed(int)} will directly read
  * from this system default entropy source.
  *
+ * @spec https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-90Ar1.pdf
+ *      Recommendation for Random Number Generation Using Deterministic Random Bit Generators
+ *
  * @since 9
  */
 public class DrbgParameters {

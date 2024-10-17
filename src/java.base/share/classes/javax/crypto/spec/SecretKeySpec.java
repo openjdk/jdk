@@ -98,6 +98,8 @@ public class SecretKeySpec implements KeySpec, SecretKey {
      * for information about standard algorithm names.
      * @exception IllegalArgumentException if <code>algorithm</code>
      * is null or <code>key</code> is null or empty.
+     *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      */
     public SecretKeySpec(byte[] key, String algorithm) {
         String errMsg = doSanityCheck(key, algorithm);
@@ -144,6 +146,8 @@ public class SecretKeySpec implements KeySpec, SecretKey {
      * @exception ArrayIndexOutOfBoundsException is thrown if
      * <code>offset</code> or <code>len</code> index bytes outside the
      * <code>key</code>.
+     *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      */
     public SecretKeySpec(byte[] key, int offset, int len, String algorithm) {
         if (key == null || algorithm == null) {
