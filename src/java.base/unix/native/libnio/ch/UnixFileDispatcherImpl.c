@@ -49,6 +49,10 @@
   #define fstatvfs fstatvfs64
 #endif
 
+// MAX_SKIP_BUFFER_SIZE is used to determine the maximum buffer size to
+// use when skipping.
+static const ssize_t MAX_SKIP_BUFFER_SIZE = 4096;
+
 JNIEXPORT jint JNICALL
 Java_sun_nio_ch_UnixFileDispatcherImpl_read0(JNIEnv *env, jclass clazz,
                              jobject fdo, jlong address, jint len)
@@ -390,4 +394,38 @@ Java_sun_nio_ch_UnixFileDispatcherImpl_setDirect0(JNIEnv *env, jclass clazz,
     result = -1;
 #endif
     return result;
+}
+
+JNIEXPORT jlong JNICALL
+Java_sun_nio_ch_UnixFileDispatcherImpl_skip0(JNIEnv *env, jclass cl, jobject fdo, jlong n)
+{
+    if (n < 1)
+        return 0;
+
+    const jint fd = fdval(env, fdo);
+
+    const long bs = n < MAX_SKIP_BUFFER_SIZE ? (long) n : MAX_SKIP_BUFFER_SIZE;
+    char buf[bs];
+    jlong tn = 0;
+
+    for (;;) {
+        const jlong remaining = n - tn;
+        const ssize_t count = remaining < bs ? (ssize_t) remaining : bs;
+        const ssize_t nr = read(fd, buf, count);
+        if (nr < 0) {
+            if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                return tn;
+            } else if (errno == EINTR) {
+                return IOS_INTERRUPTED;
+            } else {
+                JNU_ThrowIOExceptionWithLastError(env, "read");
+                return IOS_THROWN;
+            }
+        }
+        if (nr > 0)
+            tn += nr;
+        if (nr == bs)
+            continue;
+        return tn;
+    }
 }
