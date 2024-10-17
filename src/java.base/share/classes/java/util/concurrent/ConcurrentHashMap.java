@@ -602,6 +602,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
         runtimeSetup();
     }
 
+    // Called from JVM when loading an AOT cache.
     private static void runtimeSetup() {
         NCPU = Runtime.getRuntime().availableProcessors();
     }

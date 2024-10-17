@@ -60,6 +60,7 @@ public final class Unsafe {
         runtimeSetup();
     }
 
+    // Called from JVM when loading an AOT cache
     private static void runtimeSetup() {
         registerNatives();
     }

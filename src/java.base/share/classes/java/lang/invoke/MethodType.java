@@ -48,6 +48,7 @@ import java.util.stream.Stream;
 
 import jdk.internal.util.ReferencedKeySet;
 import jdk.internal.util.ReferenceKey;
+import jdk.internal.misc.CDS;
 import jdk.internal.vm.annotation.Stable;
 import sun.invoke.util.BytecodeDescriptor;
 import sun.invoke.util.VerifyType;
@@ -401,6 +402,10 @@ class MethodType
         }
         MethodType primordialMT = new MethodType(rtype, ptypes);
         if (archivedMethodTypes != null) {
+            // If this JVM process reads from archivedMethodTypes, it never
+            // modifies the table. So there's no need for synchronization.
+            // See copyInternTable() below.
+            assert CDS.isUsingArchive();
             MethodType mt = archivedMethodTypes.get(primordialMT);
             if (mt != null) {
                 return mt;
@@ -1423,6 +1428,14 @@ s.writeObject(this.parameterArray());
     // This is called from C code, at the very end of Java code execution
     // during the AOT cache assembly phase.
     static void createArchivedObjects() {
+        // After the archivedMethodTypes field is assigned, this table
+        // is never modified. So we don't need synchronization when reading from
+        // it (which happens only in a future JVM process, never in the current process).
+        //
+        // @implNote CDS.isDumpingStaticArchive() is mutually exclusive with
+        // CDS.isUsingArchive(); at most one of them can return true for any given JVM
+        // process.
+        assert CDS.isDumpingStaticArchive();
         archivedMethodTypes = copyInternTable();
         internTable.clear();
     }
