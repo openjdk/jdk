@@ -480,7 +480,14 @@ Node* ShenandoahBarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue&
   const TypePtr* adr_type = access.addr().type();
   Node* adr = access.addr().node();
 
+  bool no_keepalive = (decorators & AS_NO_KEEPALIVE) != 0;
+
   if (!access.is_oop()) {
+    return BarrierSetC2::store_at_resolved(access, val);
+  }
+
+  if (no_keepalive) {
+    // No keep-alive means no need for the pre-barrier.
     return BarrierSetC2::store_at_resolved(access, val);
   }
 
@@ -682,7 +689,8 @@ bool ShenandoahBarrierSetC2::is_gc_pre_barrier_node(Node* node) const {
 }
 
 bool ShenandoahBarrierSetC2::is_gc_barrier_node(Node* node) const {
-  return is_shenandoah_lrb_call(node) ||
+  return (node->Opcode() == Op_ShenandoahLoadReferenceBarrier) ||
+         is_shenandoah_lrb_call(node) ||
          is_shenandoah_wb_pre_call(node) ||
          is_shenandoah_clone_call(node);
 }
