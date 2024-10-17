@@ -24,10 +24,11 @@
  */
 package java.lang.classfile.constantpool;
 
+import java.lang.constant.MethodTypeDesc;
+
 import jdk.internal.classfile.impl.AbstractPoolEntry;
 import jdk.internal.classfile.impl.Util;
 import jdk.internal.javac.PreviewFeature;
-import java.lang.constant.MethodTypeDesc;
 
 /**
  * Models a {@code CONSTANT_InterfaceMethodRef_info} constant in the constant pool of a
