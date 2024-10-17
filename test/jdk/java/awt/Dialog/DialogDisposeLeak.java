@@ -110,7 +110,7 @@ class DisposeDialog extends Dialog {
                         DisposeDialog.this.dispose();
                         // try to force GC and finalization
                         for (int n = 0; n < 100; n++) {
-                            byte bytes[] = new byte[1024 * 1024 * 8];
+                            byte[] bytes = new byte[1024 * 1024 * 8];
                             System.gc();
                         }
                     }
@@ -138,7 +138,7 @@ class LightweightComp extends Component {
     public LightweightComp(String lwLabel) {
         label = lwLabel;
         enableEvents(AWTEvent.FOCUS_EVENT_MASK | AWTEvent.MOUSE_EVENT_MASK);
-        setName("lw" + Integer.toString(nameCounter++));
+        setName("lw" + nameCounter++);
     }
 
     public Dimension getPreferredSize() {
