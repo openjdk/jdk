@@ -24,12 +24,12 @@
  */
 package java.lang.classfile.attribute;
 
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.constantpool.Utf8Entry;
+import java.lang.reflect.AccessFlag;
 import java.util.Optional;
 import java.util.Set;
 
-import java.lang.classfile.constantpool.Utf8Entry;
-import java.lang.reflect.AccessFlag;
-import java.lang.classfile.ClassFile;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.classfile.impl.UnboundAttribute;
 import jdk.internal.classfile.impl.Util;
