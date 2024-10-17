@@ -207,8 +207,6 @@ void* MallocTracker::record_free_block(void* memblock) {
 
   deaccount(header->free_info());
 
-  header->mark_block_as_dead();
-
   return (void*)header;
 }
 
@@ -217,97 +215,4 @@ void MallocTracker::deaccount(MallocHeader::FreeInfo free_info) {
   if (MemTracker::tracking_level() == NMT_detail) {
     MallocSiteTable::deallocation_at(free_info.size, free_info.mst_marker);
   }
-}
-
-// Given a pointer, look for the containing malloc block.
-// Print the block. Note that since there is very low risk of memory looking
-// accidentally like a valid malloc block header (canaries and all) so this is not
-// totally failproof and may give a wrong answer. It is safe in that it will never
-// crash, even when encountering unmapped memory.
-bool MallocTracker::print_pointer_information(const void* p, outputStream* st) {
-  assert(MemTracker::enabled(), "NMT not enabled");
-
-#if !INCLUDE_ASAN
-
-  address addr = (address)p;
-
-  // Carefully feel your way upwards and try to find a malloc header. Then check if
-  // we are within the block.
-  // We give preference to found live blocks; but if no live block had been found,
-  // but the pointer points into remnants of a dead block, print that instead.
-  const MallocHeader* likely_dead_block = nullptr;
-  const MallocHeader* likely_live_block = nullptr;
-  {
-    const size_t smallest_possible_alignment = sizeof(void*);
-    const uint8_t* here = align_down(addr, smallest_possible_alignment);
-    const uint8_t* const end = here - (0x1000 + sizeof(MallocHeader)); // stop searching after 4k
-    for (; here >= end; here -= smallest_possible_alignment) {
-      // JDK-8306561: cast to a MallocHeader needs to guarantee it can reside in readable memory
-      if (!os::is_readable_range(here, here + sizeof(MallocHeader))) {
-        // Probably OOB, give up
-        break;
-      }
-      const MallocHeader* const candidate = (const MallocHeader*)here;
-      if (!candidate->looks_valid()) {
-        // This is definitely not a header, go on to the next candidate.
-        continue;
-      }
-
-      // fudge factor:
-      // We don't report blocks for which p is clearly outside of. That would cause us to return true and possibly prevent
-      // subsequent tests of p, see os::print_location(). But if p is just outside of the found block, this may be a
-      // narrow oob error and we'd like to know that.
-      const int fudge = 8;
-      const address start_block = (address)candidate;
-      const address start_payload = (address)(candidate + 1);
-      const address end_payload = start_payload + candidate->size();
-      const address end_payload_plus_fudge = end_payload + fudge;
-      if (addr >= start_block && addr < end_payload_plus_fudge) {
-        // We found a block the pointer is pointing into, or almost into.
-        // If its a live block, we have our info. If its a dead block, we still
-        // may be within the borders of a larger live block we have not found yet -
-        // continue search.
-        if (candidate->is_live()) {
-          likely_live_block = candidate;
-          break;
-        } else {
-          likely_dead_block = candidate;
-          continue;
-        }
-      }
-    }
-  }
-
-  // If we've found a reasonable candidate. Print the info.
-  const MallocHeader* block = likely_live_block != nullptr ? likely_live_block : likely_dead_block;
-  if (block != nullptr) {
-    const char* where = nullptr;
-    const address start_block = (address)block;
-    const address start_payload = (address)(block + 1);
-    const address end_payload = start_payload + block->size();
-    if (addr < start_payload) {
-      where = "into header of";
-    } else if (addr < end_payload) {
-      where = "into";
-    } else {
-      where = "just outside of";
-    }
-    st->print_cr(PTR_FORMAT " %s %s malloced block starting at " PTR_FORMAT ", size " SIZE_FORMAT ", tag %s",
-                 p2i(p), where,
-                 (block->is_dead() ? "dead" : "live"),
-                 p2i(block + 1), // lets print the payload start, not the header
-                 block->size(), NMTUtil::tag_to_enum_name(block->mem_tag()));
-    if (MemTracker::tracking_level() == NMT_detail) {
-      NativeCallStack ncs;
-      if (MallocSiteTable::access_stack(ncs, *block)) {
-        ncs.print_on(st);
-        st->cr();
-      }
-    }
-    return true;
-  }
-
-#endif // !INCLUDE_ASAN
-
-  return false;
 }
