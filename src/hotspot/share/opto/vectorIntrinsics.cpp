@@ -2356,9 +2356,10 @@ bool LibraryCallKit::inline_vector_broadcast_int() {
   }
 
   Node* cnt  = argument(6);
+  const TypeInt* cnt_type = cnt->bottom_type()->isa_int();
+
   ciKlass* vbox_klass = vector_klass->const_oop()->as_instance()->java_lang_Class_klass();
   const TypeInstPtr* vbox_type = TypeInstPtr::make_exact(TypePtr::NotNull, vbox_klass);
-  const TypeInt* cnt_type = cnt->bottom_type()->isa_int();
 
   // If CPU supports vector constant rotate instructions pass it directly
   bool is_const_rotate = is_rotate && cnt_type && cnt_type->is_con() &&
@@ -2838,6 +2839,188 @@ bool LibraryCallKit::inline_vector_extract() {
     }
   }
   set_result(opd);
+  return true;
+}
+
+static Node* LowerSelectFromTwoVectorOperation(PhaseGVN& phase, Node* index_vec, Node* src1, Node* src2, const TypeVect* vt) {
+  int num_elem = vt->length();
+  BasicType elem_bt = vt->element_basic_type();
+
+  // Lower selectFrom operation into its constituent operations.
+  //   SelectFromTwoVectorNode =
+  //     (VectorBlend
+  //         (VectorRearrange SRC1 (WRAPED_INDEX AND (VLEN-1))
+  //         (VectorRearrange SRC2 (WRAPED_INDEX AND (VLEN-1))
+  //      MASK)
+  // Where
+  //   WRAPED_INDEX are computed by wrapping incoming indexes
+  //   to two vector index range [0, VLEN*2) and
+  //   MASK = WRAPED_INDEX < VLEN
+  //
+  // IR lowering prevents intrinsification failure and associated argument
+  // boxing penalties.
+  //
+
+  const TypeVect* index_vect_type = index_vec->bottom_type()->is_vect();
+  BasicType index_elem_bt = index_vect_type->element_basic_type();
+
+  // Downcast index vector to a type agnostic shuffle representation, shuffle
+  // indices are held in a byte vector which are later transformed to target
+  // specific permutation index format by subsequent VectorLoadShuffle.
+  int cast_vopc = VectorCastNode::opcode(0, index_elem_bt, true);
+  Node* index_byte_vec = phase.transform(VectorCastNode::make(cast_vopc, index_vec, T_BYTE, num_elem));
+
+  // Wrap indexes into two vector index range [0, VLEN * 2)
+  Node* two_vect_lane_cnt_m1 = phase.makecon(TypeInt::make(2 * num_elem - 1));
+  Node* bcast_two_vect_lane_cnt_m1_vec = phase.transform(VectorNode::scalar2vector(two_vect_lane_cnt_m1, num_elem,
+                                                                                   T_BYTE, false));
+  index_byte_vec = phase.transform(VectorNode::make(Op_AndV, index_byte_vec, bcast_two_vect_lane_cnt_m1_vec,
+                                                    index_byte_vec->bottom_type()->is_vect()));
+
+  // Compute the blend mask for merging two independently permitted vectors
+  // using shuffle index in two vector index range [0, VLEN * 2).
+  BoolTest::mask pred = BoolTest::le;
+  ConINode* pred_node = phase.makecon(TypeInt::make(pred))->as_ConI();
+  const TypeVect* vmask_type = TypeVect::makemask(T_BYTE, num_elem);
+  Node* lane_cnt_m1 = phase.makecon(TypeInt::make(num_elem - 1));
+  Node* bcast_lane_cnt_m1_vec = phase.transform(VectorNode::scalar2vector(lane_cnt_m1, num_elem,
+                                                                          T_BYTE, false));
+  Node* mask = phase.transform(new VectorMaskCmpNode(pred, index_byte_vec, bcast_lane_cnt_m1_vec, pred_node, vmask_type));
+
+  // Rearrange expects the indexes to lie within single vector index range [0, VLEN).
+  index_byte_vec = phase.transform(VectorNode::make(Op_AndV, index_byte_vec, bcast_lane_cnt_m1_vec,
+                       index_byte_vec->bottom_type()->is_vect()));
+
+  // Load indexes from byte vector and appropriately transform them to target
+  // specific permutation index format.
+  index_vec = phase.transform(new VectorLoadShuffleNode(index_byte_vec, index_vect_type));
+
+  vmask_type = TypeVect::makemask(elem_bt, num_elem);
+  mask = phase.transform(new VectorMaskCastNode(mask, vmask_type));
+
+  Node* p1 = phase.transform(new VectorRearrangeNode(src1, index_vec));
+  Node* p2 = phase.transform(new VectorRearrangeNode(src2, index_vec));
+
+  return new VectorBlendNode(p2, p1, mask);
+}
+
+//  public static
+//  <V extends Vector<E>,
+//   E>
+//  V selectFromTwoVectorOp(Class<? extends V> vClass, Class<E> eClass, int length,
+//                          V v1, V v2, V v3,
+//                          SelectFromTwoVector<V> defaultImpl)
+bool LibraryCallKit::inline_vector_select_from_two_vectors() {
+  const TypeInstPtr* vector_klass = gvn().type(argument(0))->isa_instptr();
+  const TypeInstPtr* elem_klass = gvn().type(argument(1))->isa_instptr();
+  const TypeInt* vlen = gvn().type(argument(2))->isa_int();
+
+  if (vector_klass == nullptr || elem_klass == nullptr || vlen == nullptr || vector_klass->const_oop() == nullptr ||
+      elem_klass->const_oop() == nullptr ||!vlen->is_con()) {
+    log_if_needed("  ** missing constant: vclass=%s etype=%s vlen=%s",
+                    NodeClassNames[argument(0)->Opcode()],
+                    NodeClassNames[argument(1)->Opcode()],
+                    NodeClassNames[argument(2)->Opcode()]);
+    return false; // not enough info for intrinsification
+  }
+
+  if (!is_klass_initialized(vector_klass)) {
+    log_if_needed("  ** klass argument not initialized");
+    return false;
+  }
+
+  ciType* elem_type = elem_klass->const_oop()->as_instance()->java_mirror_type();
+  if (!elem_type->is_primitive_type()) {
+    log_if_needed("  ** not a primitive bt=%d", elem_type->basic_type());
+    return false; // should be primitive type
+  }
+
+  int num_elem = vlen->get_con();
+  if (!is_power_of_2(num_elem)) {
+    log_if_needed("  ** vlen is not power of two=%d", num_elem);
+    return false;
+  }
+
+  BasicType elem_bt = elem_type->basic_type();
+  BasicType index_elem_bt = elem_bt;
+  if (elem_bt == T_FLOAT) {
+    index_elem_bt = T_INT;
+  } else if (elem_bt == T_DOUBLE) {
+    index_elem_bt = T_LONG;
+  }
+
+  bool lowerSelectFromOp = false;
+  if (!arch_supports_vector(Op_SelectFromTwoVector, num_elem, elem_bt, VecMaskNotUsed)) {
+    int cast_vopc = VectorCastNode::opcode(-1, elem_bt, true);
+    if (!arch_supports_vector(Op_VectorMaskCmp, num_elem, T_BYTE, VecMaskNotUsed)            ||
+        !arch_supports_vector(Op_AndV, num_elem, T_BYTE, VecMaskNotUsed)                     ||
+        !arch_supports_vector(Op_VectorMaskCast, num_elem, elem_bt, VecMaskNotUsed)          ||
+        !arch_supports_vector(Op_VectorBlend, num_elem, elem_bt, VecMaskUseLoad)             ||
+        !arch_supports_vector(Op_VectorRearrange, num_elem, elem_bt, VecMaskNotUsed)         ||
+        !arch_supports_vector(cast_vopc, num_elem, T_BYTE, VecMaskNotUsed)                   ||
+        !arch_supports_vector(Op_VectorLoadShuffle, num_elem, index_elem_bt, VecMaskNotUsed) ||
+        !arch_supports_vector(Op_Replicate, num_elem, T_BYTE, VecMaskNotUsed)) {
+      log_if_needed("  ** not supported: opc=%d vlen=%d etype=%s ismask=useload",
+                    Op_SelectFromTwoVector, num_elem, type2name(elem_bt));
+      return false; // not supported
+    }
+    lowerSelectFromOp = true;
+  }
+
+  int cast_vopc = VectorCastNode::opcode(-1, elem_bt, true);
+  if (!lowerSelectFromOp) {
+    if (!arch_supports_vector(Op_AndV, num_elem, index_elem_bt, VecMaskNotUsed)      ||
+        !arch_supports_vector(Op_Replicate, num_elem, index_elem_bt, VecMaskNotUsed) ||
+        (is_floating_point_type(elem_bt) &&
+         !arch_supports_vector(cast_vopc, num_elem, index_elem_bt, VecMaskNotUsed))) {
+      log_if_needed("  ** index wrapping not supported: vlen=%d etype=%s" ,
+                     num_elem, type2name(elem_bt));
+      return false; // not supported
+    }
+  }
+
+  ciKlass* vbox_klass = vector_klass->const_oop()->as_instance()->java_lang_Class_klass();
+  const TypeInstPtr* vbox_type = TypeInstPtr::make_exact(TypePtr::NotNull, vbox_klass);
+
+  Node* opd1 = unbox_vector(argument(3), vbox_type, elem_bt, num_elem);
+  if (opd1 == nullptr) {
+    log_if_needed("  ** unbox failed v1=%s",
+                  NodeClassNames[argument(3)->Opcode()]);
+    return false;
+  }
+  Node* opd2 = unbox_vector(argument(4), vbox_type, elem_bt, num_elem);
+  if (opd2 == nullptr) {
+    log_if_needed("  ** unbox failed v2=%s",
+                  NodeClassNames[argument(4)->Opcode()]);
+    return false;
+  }
+  Node* opd3 = unbox_vector(argument(5), vbox_type, elem_bt, num_elem);
+  if (opd3 == nullptr) {
+    log_if_needed("  ** unbox failed v3=%s",
+                  NodeClassNames[argument(5)->Opcode()]);
+    return false;
+  }
+
+  const TypeVect* vt = TypeVect::make(elem_bt, num_elem);
+
+  Node* operation = nullptr;
+  if (lowerSelectFromOp) {
+    operation = gvn().transform(LowerSelectFromTwoVectorOperation(gvn(), opd1, opd2, opd3, vt));
+  } else {
+    if (index_elem_bt != elem_bt) {
+      opd1 = gvn().transform(VectorCastNode::make(cast_vopc, opd1, index_elem_bt, num_elem));
+    }
+    int indexRangeMask = 2 * num_elem - 1;
+    Node* wrap_mask = gvn().makecon(TypeInteger::make(indexRangeMask, indexRangeMask, Type::WidenMin, index_elem_bt != T_LONG ? T_INT : index_elem_bt));
+    Node* wrap_mask_vec = gvn().transform(VectorNode::scalar2vector(wrap_mask, num_elem, index_elem_bt, false));
+    opd1 = gvn().transform(VectorNode::make(Op_AndV, opd1, wrap_mask_vec, opd1->bottom_type()->is_vect()));
+    operation = gvn().transform(VectorNode::make(Op_SelectFromTwoVector, opd1, opd2, opd3, vt));
+  }
+
+  // Wrap it up in VectorBox to keep object type information.
+  Node* vbox = box_vector(operation, vbox_type, elem_bt, num_elem);
+  set_result(vbox);
+  C->set_max_vector_size(MAX2(C->max_vector_size(), (uint)(num_elem * type2aelembytes(elem_bt))));
   return true;
 }
 

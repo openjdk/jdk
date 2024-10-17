@@ -42,6 +42,7 @@ import java.util.Objects;
 
 import static java.lang.classfile.ClassFile.*;
 import static java.lang.classfile.attribute.StackMapFrameInfo.VerificationTypeInfo.*;
+import static java.util.Objects.requireNonNull;
 
 public class StackMapDecoder {
 
@@ -245,6 +246,9 @@ public class StackMapDecoder {
 
     public static record ObjectVerificationTypeInfoImpl(
             ClassEntry className) implements ObjectVerificationTypeInfo {
+        public ObjectVerificationTypeInfoImpl {
+            requireNonNull(className);
+        }
 
         @Override
         public int tag() { return ITEM_OBJECT; }
@@ -270,6 +274,9 @@ public class StackMapDecoder {
     }
 
     public static record UninitializedVerificationTypeInfoImpl(Label newTarget) implements UninitializedVerificationTypeInfo {
+        public UninitializedVerificationTypeInfoImpl {
+            requireNonNull(newTarget);
+        }
 
         @Override
         public int tag() { return ITEM_UNINITIALIZED; }
@@ -292,6 +299,7 @@ public class StackMapDecoder {
                                            List<VerificationTypeInfo> stack)
             implements StackMapFrameInfo {
         public StackMapFrameImpl {
+            requireNonNull(target);
             locals = List.copyOf(locals);
             stack = List.copyOf(stack);
         }

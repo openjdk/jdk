@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,8 @@ import java.net.URLConnection;
 import java.util.HashMap;
 import java.util.jar.JarFile;
 import java.security.Permission;
+
+import jdk.internal.util.OperatingSystem;
 import sun.net.util.URLUtil;
 
 /* A factory for cached JAR file. This class is used to both retrieve
@@ -148,6 +150,11 @@ class JarFileFactory implements URLJarFile.URLJarFileCloseController {
     }
 
     private URL urlFor(URL url) throws IOException {
+        // for systems other than Windows we don't
+        // do any special conversion
+        if (!OperatingSystem.isWindows()) {
+            return url;
+        }
         if (url.getProtocol().equalsIgnoreCase("file")) {
             // Deal with UNC pathnames specially. See 4180841
 
