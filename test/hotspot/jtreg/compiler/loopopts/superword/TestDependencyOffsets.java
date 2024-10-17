@@ -528,13 +528,13 @@ public class TestDependencyOffsets {
                        framework.start();
                    }
 
-               // ------------------------- Init ---------------------------
+                   // ------------------------- Init ---------------------------
                %s
 
-               // ------------------------- Verify -------------------------
+                   // ------------------------- Verify -------------------------
                %s
 
-               // ------------------------- Tests --------------------------
+                   // ------------------------- Tests --------------------------
                %s
                }
                """,
@@ -597,7 +597,7 @@ public class TestDependencyOffsets {
         comp.invoke("InnerTest", "main", new Object[] {null});
     }
 
-    static record CPUConstraintForType(String name, String[] cpuFeatures, int platformVectorWidth) {}
+    static record CPUConstraintForType(String description, String[] cpuFeatures, int platformVectorWidth) {}
 
     static record Type (String name, int size, String value, String operator, String ir_node) {
         String generateInit() {
@@ -635,7 +635,7 @@ public class TestDependencyOffsets {
         List<CPUConstraintForType> cpuConstraints() {
             List<CPUConstraintForType> constraints = new ArrayList<CPUConstraintForType>();
 
-            //                                           Name for the platform              CPU features that identify this platform           Platform vector witdth
+            //                                           Description for the platform       CPU features that identify this platform           Platform vector witdth
             switch(name) {
             case "byte", "char", "short":
                 constraints.add(new CPUConstraintForType("sse4.1 to avx",                   new String[]{"sse4.1", "true", "avx2", "false"},   16));
@@ -727,6 +727,7 @@ public class TestDependencyOffsets {
                        }
 
                        @Test
+                   %s
                        public static void test%d(%s[] a, %s[] b) {
                            for (int i = %d; i < %s; i++) {
                                a[i + %d] = (%s)(%s[i] %s %s);
@@ -748,6 +749,8 @@ public class TestDependencyOffsets {
                    type.name, id, type.name,
                    type.name, id, type.name,
                    id, id, id, id, id,
+                   // IR rules
+                   generateIRRules(),
                    // test
                    id, type.name, type.name,
                    start, end,
@@ -755,6 +758,17 @@ public class TestDependencyOffsets {
                    // run
                    id, id, id, id, id, id, id, id, id, id, id, id);
             // TODO a vs b
+        }
+
+        String generateIRRules() {
+            StringBuilder builder = new StringBuilder();
+            for (CPUConstraintForType constraint : type.cpuConstraints()) {
+                int elements = constraint.platformVectorWidth / type.size;
+                builder.append("    // CPU: " + constraint.description +
+                               " -> platformVectorWidth=" + constraint.platformVectorWidth +
+                               " -> max " + elements + " elements in vector\n");
+            }
+            return builder.toString();
         }
     }
 
