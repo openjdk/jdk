@@ -501,7 +501,7 @@ final class CertificateMessage {
             try {
                 thisSubjectAltNames = thisCert.getSubjectAlternativeNames();
             } catch (CertificateParsingException cpe) {
-                if (SSLLogger.isOn && SSLLogger.isOn("handshake")) {
+                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
                         "Attempt to obtain subjectAltNames extension failed!");
                 }
@@ -511,7 +511,7 @@ final class CertificateMessage {
             try {
                 prevSubjectAltNames = prevCert.getSubjectAlternativeNames();
             } catch (CertificateParsingException cpe) {
-                if (SSLLogger.isOn && SSLLogger.isOn("handshake")) {
+                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
                         "Attempt to obtain subjectAltNames extension failed!");
                 }

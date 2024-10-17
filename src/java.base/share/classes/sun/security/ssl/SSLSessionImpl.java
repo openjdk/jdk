@@ -218,7 +218,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
         this.identificationProtocol = hc.sslConfig.identificationProtocol;
         this.boundValues = new ConcurrentHashMap<>();
 
-        if (SSLLogger.isOn && SSLLogger.isOn("session")) {
+        if (SSLLogger.isOn && SSLLogger.isOn("ssl,session")) {
              SSLLogger.finest("Session initialized:  " + this);
         }
     }
@@ -251,7 +251,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
         this.maximumPacketSize = baseSession.maximumPacketSize;
         this.boundValues = baseSession.boundValues;
 
-        if (SSLLogger.isOn && SSLLogger.isOn("session")) {
+        if (SSLLogger.isOn && SSLLogger.isOn("ssl,session")) {
              SSLLogger.finest("Session initialized:  " + this);
         }
     }
@@ -953,7 +953,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
     void setSuite(CipherSuite suite) {
        cipherSuite = suite;
 
-        if (SSLLogger.isOn && SSLLogger.isOn("session")) {
+        if (SSLLogger.isOn && SSLLogger.isOn("ssl,session")) {
              SSLLogger.finest("Negotiating session:  " + this);
        }
     }
@@ -1223,7 +1223,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
                 return;
             }
             invalidated = true;
-            if (SSLLogger.isOn && SSLLogger.isOn("session")) {
+            if (SSLLogger.isOn && SSLLogger.isOn("ssl,session")) {
                  SSLLogger.finest("Invalidated session:  " + this);
             }
             for (SSLSessionImpl child : childSessions) {
