@@ -47,7 +47,7 @@ public class TextAreaSelectionTest {
                 you see that the text of the focused component is
                 highlighted, it is ok.
 
-                Try to travers the focus through all components by
+                Try to traverse the focus through all components by
                 pressing CTRL+TAB. If the focused component highlights
                 its selection, the test is passed for a while.
 
