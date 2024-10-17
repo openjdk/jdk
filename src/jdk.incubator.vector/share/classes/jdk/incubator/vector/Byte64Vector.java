@@ -506,6 +506,13 @@ final class Byte64Vector extends ByteVector {
                                      Byte64Mask.class, (Byte64Mask) m);  // specialize
     }
 
+    @Override
+    @ForceInline
+    public Byte64Vector selectFrom(Vector<Byte> v1,
+                                   Vector<Byte> v2) {
+        return (Byte64Vector)
+            super.selectFromTemplate((Byte64Vector) v1, (Byte64Vector) v2);  // specialize
+    }
 
     @ForceInline
     @Override
