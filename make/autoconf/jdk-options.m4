@@ -691,7 +691,8 @@ AC_DEFUN([JDKOPT_ENABLE_DISABLE_CDS_ARCHIVE_COH],
         elif test "x$OPENJDK_TARGET_CPU" != "xx86_64" &&
              test "x$OPENJDK_TARGET_CPU" != "xaarch64" &&
              test "x$OPENJDK_TARGET_CPU" != "xppc64" &&
-             test "x$OPENJDK_TARGET_CPU" != "xppc64le"; then
+             test "x$OPENJDK_TARGET_CPU" != "xppc64le" &&
+             test "x$OPENJDK_TARGET_CPU" != "xriscv64"; then
           AC_MSG_RESULT([no (compact object headers not supported for this platform)])
           AVAILABLE=false
         else
