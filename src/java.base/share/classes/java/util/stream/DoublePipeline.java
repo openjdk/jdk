@@ -348,24 +348,32 @@ abstract class DoublePipeline<E_IN>
     @Override
     public final DoubleStream filter(DoublePredicate predicate) {
         Objects.requireNonNull(predicate);
-        return new StatelessOp<>(this, StreamShape.DOUBLE_VALUE,
-                StreamOpFlag.NOT_SIZED) {
-            @Override
-            Sink<Double> opWrapSink(int flags, Sink<Double> sink) {
-                return new Sink.ChainedDouble<>(sink) {
-                    @Override
-                    public void begin(long size) {
-                        downstream.begin(-1);
-                    }
+        Spliterator.OfDouble spliterator = this.spliterator();
+        long size = spliterator.getExactSizeIfKnown();
 
-                    @Override
-                    public void accept(double t) {
-                        if (predicate.test(t))
-                            downstream.accept(t);
-                    }
-                };
-            }
-        };
+        if (size > 1000) {
+            return this.parallel().filter(predicate);
+        } else {
+            return new StatelessOp<Double>(this, StreamShape.DOUBLE_VALUE,
+                StreamOpFlag.NOT_SIZED) {
+                @Override
+                Sink<Double> opWrapSink(int flags, Sink<Double> sink) {
+                    return new Sink.ChainedDouble<Double>(sink) {
+                        @Override
+                        public void begin(long size) {
+                            downstream.begin(-1);
+                        }
+
+                        @Override
+                        public void accept(double t) {
+                            if (predicate.test(t)) {
+                                downstream.accept(t);
+                            }
+                        }
+                    };
+                }
+            };
+        }
     }
 
     @Override

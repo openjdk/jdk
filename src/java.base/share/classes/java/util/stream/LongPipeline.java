@@ -363,24 +363,32 @@ abstract class LongPipeline<E_IN>
     @Override
     public final LongStream filter(LongPredicate predicate) {
         Objects.requireNonNull(predicate);
-        return new StatelessOp<>(this, StreamShape.LONG_VALUE,
-                StreamOpFlag.NOT_SIZED) {
-            @Override
-            Sink<Long> opWrapSink(int flags, Sink<Long> sink) {
-                return new Sink.ChainedLong<>(sink) {
-                    @Override
-                    public void begin(long size) {
-                        downstream.begin(-1);
-                    }
+        Spliterator.OfLong spliterator = this.spliterator();
+        long size = spliterator.getExactSizeIfKnown();
 
-                    @Override
-                    public void accept(long t) {
-                        if (predicate.test(t))
-                            downstream.accept(t);
-                    }
-                };
-            }
-        };
+        if (size > 1000) {
+            return this.parallel().filter(predicate);
+        } else {
+            return new StatelessOp<Long>(this, StreamShape.LONG_VALUE,
+                StreamOpFlag.NOT_SIZED) {
+                @Override
+                Sink<Long> opWrapSink(int flags, Sink<Long> sink) {
+                    return new Sink.ChainedLong<Long>(sink) {
+                        @Override
+                        public void begin(long size) {
+                            downstream.begin(-1);
+                        }
+
+                        @Override
+                        public void accept(long t) {
+                            if (predicate.test(t)) {
+                                downstream.accept(t);
+                            }
+                        }
+                    };
+                }
+            };
+        }
     }
 
     @Override

@@ -380,24 +380,27 @@ abstract class IntPipeline<E_IN>
     @Override
     public final IntStream filter(IntPredicate predicate) {
         Objects.requireNonNull(predicate);
-        return new StatelessOp<>(this, StreamShape.INT_VALUE,
-                StreamOpFlag.NOT_SIZED) {
-            @Override
-            Sink<Integer> opWrapSink(int flags, Sink<Integer> sink) {
-                return new Sink.ChainedInt<>(sink) {
-                    @Override
-                    public void begin(long size) {
-                        downstream.begin(-1);
-                    }
 
-                    @Override
-                    public void accept(int t) {
-                        if (predicate.test(t))
-                            downstream.accept(t);
-                    }
-                };
-            }
-        };
+        Spliterator.OfInt spliterator = this.spliterator();
+        long size = spliterator.getExactSizeIfKnown();
+
+        if (size > 1000) {
+            return this.parallel().filter(predicate);
+        } else {
+            return new StatelessOp<Integer>(this, StreamShape.INT_VALUE,
+                StreamOpFlag.NOT_SIZED) {
+                @Override
+                Sink<Integer> opWrapSink(int flags, Sink<Integer> sink) {
+                    return new Sink.ChainedInt<Integer>(sink) {
+                        @Override
+                        public void accept(int t) {
+                            if (predicate.test(t))
+                                downstream.accept(t);
+                        }
+                    };
+                }
+            };
+        }
     }
 
     @Override
