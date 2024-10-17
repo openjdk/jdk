@@ -56,6 +56,37 @@ class StringTable : AllStatic {
   static double get_load_factor();
   static double get_dead_factor(size_t num_dead);
 
+  // typedef enum { obj_str, unicode_str, symbol_str, utf8_str } StringType;
+  enum class StringType {
+    OopStr, UnicodeStr, SymbolStr, UTF8Str
+  };
+
+  struct StringWrapperInternal {
+    union {
+      const Handle oop_str;
+      const jchar* unicode_str;
+      const Symbol* symbol_str;
+      const char* utf8_str;
+    };
+    const StringType type;
+
+    StringWrapperInternal(const Handle oop_str)     : oop_str(oop_str),         type(StringType::OopStr)     {}
+    StringWrapperInternal(const jchar* unicode_str) : unicode_str(unicode_str), type(StringType::UnicodeStr) {}
+    StringWrapperInternal(const Symbol* symbol_str) : symbol_str(symbol_str),   type(StringType::SymbolStr)  {}
+    StringWrapperInternal(const char* utf8_str)     : utf8_str(utf8_str),       type(StringType::UTF8Str)    {}
+  };
+
+public:
+  typedef struct StringWrapperInternal StringWrapper;
+
+  static bool wrapped_string_equals(oop java_string, StringWrapper wrapped_str, int len);
+
+private:
+  static unsigned int hash_wrapped_string(StringWrapper wrapped_str, int len);
+  static const jchar *to_unicode(StringWrapper wrapped_str, int len, TRAPS);
+  static Handle to_handle(StringWrapper wrapped_str, int len, TRAPS);
+  static void print_string(StringWrapper wrapped_str, int len, TRAPS);
+
   // GC support
 
   // Callback for GC to notify of changes that might require cleaning or resize.
@@ -65,9 +96,9 @@ class StringTable : AllStatic {
   static void item_added();
   static void item_removed();
 
-  static oop intern(Handle string_or_null_h, const jchar* name, int len, TRAPS);
-  static oop do_intern(Handle string_or_null, const jchar* name, int len, uintx hash, TRAPS);
-  static oop do_lookup(const jchar* name, int len, uintx hash);
+  static oop intern(StringWrapper name, int len, TRAPS);
+  static oop do_intern(StringWrapper name, int len, uintx hash, TRAPS);
+  static oop do_lookup(StringWrapper name, int len, uintx hash);
 
   static void print_table_statistics(outputStream* st);
 
@@ -131,7 +162,7 @@ private:
 #endif // INCLUDE_CDS_JAVA_HEAP
 
  private:
-  static oop lookup_shared(const jchar* name, int len, unsigned int hash) NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
+  static oop lookup_shared(StringWrapper name, int len, unsigned int hash) NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
  public:
   static oop lookup_shared(const jchar* name, int len) NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
   static size_t shared_entry_count() NOT_CDS_JAVA_HEAP_RETURN_(0);

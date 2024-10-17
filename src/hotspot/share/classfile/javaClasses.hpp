@@ -32,6 +32,7 @@
 #include "runtime/handles.hpp"
 #include "runtime/os.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/utf8.hpp"
 #include "utilities/vmEnums.hpp"
 
 class JvmtiThreadState;
@@ -99,7 +100,7 @@ class java_lang_String : AllStatic {
   static oop    create_oop_from_unicode(const jchar* unicode, int len, TRAPS);
   static Handle create_from_str(const char* utf8_str, TRAPS);
   static oop    create_oop_from_str(const char* utf8_str, TRAPS);
-  static Handle create_from_symbol(Symbol* symbol, TRAPS);
+  static Handle create_from_symbol(const Symbol* symbol, TRAPS);
   static Handle create_from_platform_dependent_str(const char* str, TRAPS);
 
   static void set_compact_strings(bool value);
@@ -180,10 +181,22 @@ class java_lang_String : AllStatic {
     return h;
   }
 
+  static unsigned int hash_code(const char *utf8_str, int num_unicode_points) {
+    unsigned int h = 0;
+
+    jchar a;
+    while (num_unicode_points-- > 0) {
+      utf8_str = UTF8::next(utf8_str, &a);
+      h = 31 * h + ((unsigned int)a);
+    }
+    return h;
+  }
+
   static unsigned int hash_code(oop java_string);
   static unsigned int hash_code_noupdate(oop java_string);
 
-  static bool equals(oop java_string, const jchar* chars, int len);
+  static bool equals(oop java_string, const jchar* chars, int num_unicode_points);
+  static bool equals(oop java_string, const char* chars, int num_unicode_points);
   static bool equals(oop str1, oop str2);
   static inline bool value_equals(typeArrayOop str_value1, typeArrayOop str_value2);
 
