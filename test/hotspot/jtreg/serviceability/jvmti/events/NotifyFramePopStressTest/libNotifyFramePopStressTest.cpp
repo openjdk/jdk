@@ -31,7 +31,6 @@ extern "C" {
 #endif
 
 static jvmtiEnv *jvmti = nullptr;
-static jrawMonitorID agent_monitor;
 static jvmtiCapabilities caps;
 static jvmtiEventCallbacks callbacks;
 static volatile jint pop_count = 0;
@@ -76,7 +75,6 @@ FramePop(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread,
   LOG("FramePop(%d) event from method: %s %s\n", pop_count, csig, name);
 
   if (strcmp(name, "main") != 0) { // ignore FRAME_POP for main that comes in as the test exits
-    RawMonitorLocker rml(jvmti, jni, agent_monitor);
     if (strcmp(name, (char*)last_notify_method) != 0) {
       LOG("ERROR: FramePop event is for wrong method: expected %s, got %s\n", last_notify_method, name);
       failed = JNI_TRUE;
@@ -110,7 +108,6 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     err = jvmti->SetEventCallbacks(&callbacks, sizeof(callbacks));
     check_jvmti_error(err, "Agent: SetEventCallbacks failed");
   }
-  agent_monitor = create_raw_monitor(jvmti, "Agent raw monitor");
   return JNI_OK;
 }
 
@@ -167,7 +164,6 @@ Java_NotifyFramePopStressTest_notifyFramePop(JNIEnv *jni, jclass cls, jthread th
     deallocate(jvmti, jni, name);
     return JNI_FALSE;
   } else {
-    RawMonitorLocker rml(jvmti, jni, agent_monitor);
     deallocate(jvmti, jni, last_notify_method);
     last_notify_method = name;
     return JNI_TRUE;
