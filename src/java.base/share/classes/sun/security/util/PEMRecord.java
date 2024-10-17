@@ -26,6 +26,7 @@
 package sun.security.util;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 
 /**
  * A Record for PEM
@@ -50,10 +51,8 @@ public record PEMRecord(String id, String pem) {
      * @param pem The Base64 encoded data only in byte[] format
      */
     public PEMRecord(String id, byte[] pem) {
-        if (pem == null) {
-            throw new IllegalArgumentException("failed");
-        }
-        this(id, new String(pem, StandardCharsets.ISO_8859_1));
+        this(id, new String(Objects.requireNonNull(pem),
+            StandardCharsets.ISO_8859_1));
     }
 
     /**
@@ -63,6 +62,7 @@ public record PEMRecord(String id, String pem) {
      * @param pem     The Base64 encoded data only in byte[] format
      */
     public PEMRecord(String id, String pem) {
+        Objects.requireNonNull(pem);
         if (id.startsWith("-----")) {
             // decode id in the
             this.id = id.substring(11, id.lastIndexOf('-') - 4);
@@ -72,4 +72,6 @@ public record PEMRecord(String id, String pem) {
 
         this.pem = pem;
     }
+
+
 }

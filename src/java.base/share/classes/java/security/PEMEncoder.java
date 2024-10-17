@@ -230,7 +230,7 @@ public final class PEMEncoder {
      * instance.  Other {@link DEREncodable} classes that do not support
      * encrypted PEM will cause encode() to throw an IllegalArgumentException.
      *
-     * <p> Default algorithm defined by Security Property {@code
+     * @implNote Default algorithm defined by Security Property {@code
      * jdk.epkcs8.defaultAlgorithm}.  To configure all the encryption options
      * see {@link EncryptedPrivateKeyInfo#encryptKey(PrivateKey, char[], String,
      * AlgorithmParameterSpec, Provider)} and use the returned object with

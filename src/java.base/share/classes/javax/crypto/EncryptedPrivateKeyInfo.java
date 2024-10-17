@@ -334,10 +334,10 @@ public final class EncryptedPrivateKeyInfo implements DEREncodable {
      * @param params the parameters used with the PBE encryption.
      * @param provider the Provider that will perform the encryption.
      * @return an EncryptedPrivateKeyInfo.
-     * @throws IllegalArgumentException on initialization errors based on the
-     * arguments passed to the method.
+     * @throws IllegalArgumentException when an argument causes an
+     * initialization error.
      * @throws SecurityException on a cryptographic errors.
-     * @throws NullPointerException if an argument passed in is unexpectedly
+     * @throws NullPointerException if the key, password, or algorithm are null.
      * null.
      *
      * @since 24
@@ -348,6 +348,7 @@ public final class EncryptedPrivateKeyInfo implements DEREncodable {
         Provider provider) {
 
         PBEKeySpec keySpec = new PBEKeySpec(password);
+        Objects.requireNonNull(key);
         Objects.requireNonNull(algorithm);
         Cipher cipher;
         SecretKey skey;
@@ -392,7 +393,7 @@ public final class EncryptedPrivateKeyInfo implements DEREncodable {
      * Creates and encrypts an `EncryptedPrivateKeyInfo` from a given PrivateKey
      * and password.
      * <p>
-     * The encryption uses the algorithm set by `jdk.epkcs8.defaultAlgorithm`
+     * @implNote The encryption uses the algorithm set by `jdk.epkcs8.defaultAlgorithm`
      * Security Property by the default provider and default the
      * AlgorithmParameterSpec of that provider.
      *
