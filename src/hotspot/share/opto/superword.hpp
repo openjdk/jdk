@@ -410,9 +410,9 @@ class SuperWord : public ResourceObj {
   PairSet _pairset;
   PackSet _packset;
 
-  // Memory reference, and the alignment width (aw) for which we align the main-loop,
+  // VPointer, and the alignment width (aw) for which we align the main-loop,
   // by adjusting the pre-loop limit.
-  MemNode const* _mem_ref_for_main_loop_alignment;
+  VPointer const* _vpointer_for_main_loop_alignment;
   int _aw_for_main_loop_alignment;
 
  public:
@@ -533,7 +533,9 @@ class SuperWord : public ResourceObj {
            _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_REJECTIONS) ||
            _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_PACKSET) ||
            _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_INFO) ||
-           _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_VERBOSE);
+           _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_VERBOSE) ||
+           _vloop.vtrace().is_trace(TraceAutoVectorizationTag::OPTIMIZATION);
+           _vloop.vtrace().is_trace(TraceAutoVectorizationTag::COST);
   }
 
   bool is_trace_align_vector() const {
@@ -549,8 +551,6 @@ class SuperWord : public ResourceObj {
 
  private:
   bool           _do_vector_loop;  // whether to do vectorization/simd style
-  int            _num_work_vecs;   // Number of non memory vector operations
-  int            _num_reductions;  // Number of reduction expressions applied
 
   // Accessors
   Arena* arena()                   { return &_arena; }
