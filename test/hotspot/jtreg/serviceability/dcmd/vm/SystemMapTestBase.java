@@ -48,109 +48,143 @@ public class SystemMapTestBase {
     // java heap is either committed, non-shared, or - in case of ZGC - committed and shared.
     private static final String regexBase_java_heap = regexBase + "(shrd,)?com.*";
 
-    private static final String shouldMatchUnconditionally_linux[] = {
-        // java launcher
-        regexBase_committed + "/bin/java",
-        // libjvm
-        regexBase_committed + "/lib/.*/libjvm.so",
-        // heap segment, should be part of all user space apps on all architectures OpenJDK supports.
-        regexBase_committed + "\\[heap\\]",
-        // we should see the hs-perf data file, and it should appear as shared as well as committed
-        regexBase_shared_and_committed + "hsperfdata_.*"
+    interface MapPatterns {
+        String[] shouldMatchUnconditionally();
+        String[] shouldMatchIfNMTIsEnabled();
     };
 
-    private static final String shouldMatchIfNMTIsEnabled_linux[] = {
-        regexBase_java_heap + "JAVAHEAP.*",
-        // metaspace
-        regexBase_committed + "META.*",
-        // parts of metaspace should be uncommitted
-        regexBase + "-" + space + "META.*",
-        // code cache
-        regexBase_committed + "CODE.*",
-        // Main thread stack
-        regexBase_committed + "STACK.*main.*"
-    };
-
-    // windows:
-    private static final String winprot = "[\\-rwxcin]*";
-    private static final String wintype = "[rc]-(img|map|pvt)";
-
-    private static final String winbase = range + space + someSize + space + winprot + space;
-
-    private static final String winimage     = winbase + "c-img" + space + someNumber + space;
-    private static final String wincommitted = winbase + "(c-pvt|c-map)" + space + someNumber + space;
-    private static final String winreserved  = winbase + "r-pvt" + space + someNumber + space;
-
-    private static final String shouldMatchUnconditionally_windows[] = {
-        // java launcher
-        winimage + ".*[\\/\\\\]bin[\\/\\\\]java[.]exe",
-        // libjvm
-        winimage + ".*[\\/\\\\]bin[\\/\\\\].*[\\/\\\\]jvm.dll"
-    };
-
-    private static final String shouldMatchIfNMTIsEnabled_windows[] = {
-        wincommitted + "JAVAHEAP.*",
-        // metaspace
-        wincommitted + "META.*",
-        // parts of metaspace should be uncommitted
-        winreserved + "META.*",
-        // code cache
-        wincommitted + "CODE.*",
-        // Main thread stack
-        wincommitted + "STACK-\\d+-main.*"
-    };
-
-    // macOS:
-    private static final String macprot =  "[\\-rwx]*/[\\-rwx]*";
-
-    private static final String macow = "cow";
-    private static final String macprivate = "prv";
-    private static final String macprivatealiased = "p/a";
-
-    private static final String macOSbase = range + space + macprot + space;
-
-    private static final String shouldMatchUnconditionally_macOS[] = {
-        // java launcher
-        macOSbase + macow + space + "/.*/bin/java",
-        // libjvm
-        macOSbase + macow + space + "/.*/lib/server/libjvm.dylib",
-        // heap segment, should be part of all user space apps on all architectures OpenJDK supports.
-       // macOSbase + macprivate + space + "\\[heap\\]",
-        // we should see the hs-perf data file, and it should appear as shared as well as committed
-        macOSbase + macprivate + space + ".*/.*/hsperfdata_.*"
-    };
-
-    private static final String shouldMatchIfNMTIsEnabled_macOS[] = {
-        macOSbase + macprivate + space + "JAVAHEAP.*",
-        // metaspace
-        macOSbase + macprivate + space + "META.*",
-        // parts of metaspace should be uncommitted
-        //regexBase + "-" + space + "META.*",
-        // code cache
-        macOSbase + macprivate + space + "CODE.*",
-        // Main thread stack
-        macOSbase + macprivatealiased + space + "STACK-.*-main.*"
-    };
+    private final MapPatterns patternProvider;
 
     private static final boolean isWindows = Platform.isWindows();
     private static final boolean isMacOS = Platform.isOSX();
 
-    protected static String[] shouldMatchUnconditionally() {
-        if (isWindows) {
-            return shouldMatchUnconditionally_windows;
-        } else if (isMacOS) {
-            return shouldMatchUnconditionally_macOS;
+    protected String[] shouldMatchUnconditionally() {
+        return patternProvider.shouldMatchUnconditionally();
+    }
+    protected String[] shouldMatchIfNMTIsEnabled() {
+        return patternProvider.shouldMatchIfNMTIsEnabled();
+    }
+
+    protected SystemMapTestBase() {
+        if (Platform.isWindows()) {
+            patternProvider = new WindowsPatterns();
+        } else if (Platform.isOSX()) {
+            patternProvider = new MacOSPatterns();
         } else {
+            patternProvider = new LinuxPatterns();
+        }
+    }
+    private static class LinuxPatterns implements MapPatterns {
+
+        private static final String shouldMatchUnconditionally_linux[] = {
+            // java launcher
+            regexBase_committed + "/bin/java",
+            // libjvm
+            regexBase_committed + "/lib/.*/libjvm.so",
+            // heap segment, should be part of all user space apps on all architectures OpenJDK supports.
+            regexBase_committed + "\\[heap\\]",
+            // we should see the hs-perf data file, and it should appear as shared as well as committed
+            regexBase_shared_and_committed + "hsperfdata_.*"
+        };
+
+        private static final String shouldMatchIfNMTIsEnabled_linux[] = {
+            regexBase_java_heap + "JAVAHEAP.*",
+            // metaspace
+            regexBase_committed + "META.*",
+            // parts of metaspace should be uncommitted
+            regexBase + "-" + space + "META.*",
+            // code cache
+            regexBase_committed + "CODE.*",
+            // Main thread stack
+            regexBase_committed + "STACK.*main.*"
+        };
+
+        public String[] shouldMatchUnconditionally() {
             return shouldMatchUnconditionally_linux;
         }
-    }
-    protected static String[] shouldMatchIfNMTIsEnabled() {
-        if (isWindows) {
-            return shouldMatchIfNMTIsEnabled_windows;
-        } else if (isMacOS) {
-            return shouldMatchIfNMTIsEnabled_macOS;
-        } else {
+        public String[] shouldMatchIfNMTIsEnabled() {
             return shouldMatchIfNMTIsEnabled_linux;
         }
-    }
+    };
+
+    private static class WindowsPatterns implements MapPatterns {
+
+        // windows:
+        private static final String winprot = "[\\-rwxcin]*";
+        private static final String wintype = "[rc]-(img|map|pvt)";
+
+        private static final String winbase = range + space + someSize + space + winprot + space;
+
+        private static final String winimage     = winbase + "c-img" + space + someNumber + space;
+        private static final String wincommitted = winbase + "(c-pvt|c-map)" + space + someNumber + space;
+        private static final String winreserved  = winbase + "r-pvt" + space + someNumber + space;
+
+        private static final String shouldMatchUnconditionally_windows[] = {
+            // java launcher
+            winimage + ".*[\\/\\\\]bin[\\/\\\\]java[.]exe",
+            // libjvm
+            winimage + ".*[\\/\\\\]bin[\\/\\\\].*[\\/\\\\]jvm.dll"
+        };
+
+        private static final String shouldMatchIfNMTIsEnabled_windows[] = {
+            wincommitted + "JAVAHEAP.*",
+            // metaspace
+            wincommitted + "META.*",
+            // parts of metaspace should be uncommitted
+            winreserved + "META.*",
+            // code cache
+            wincommitted + "CODE.*",
+            // Main thread stack
+            wincommitted + "STACK-\\d+-main.*"
+        };
+
+        public String[] shouldMatchUnconditionally() {
+            return shouldMatchUnconditionally_windows;
+        }
+        public String[] shouldMatchIfNMTIsEnabled() {
+            return shouldMatchIfNMTIsEnabled_windows;
+        }
+    };
+    
+    private static class MacOSPatterns implements MapPatterns {
+
+        // macOS:
+        private static final String macprot =  "[\\-rwx]*/[\\-rwx]*";
+
+        private static final String macow = "cow";
+        private static final String macprivate = "prv";
+        private static final String macprivatealiased = "p/a";
+
+        private static final String macOSbase = range + space + macprot + space;
+
+        private static final String shouldMatchUnconditionally_macOS[] = {
+            // java launcher
+            macOSbase + macow + space + "/.*/bin/java",
+            // libjvm
+            macOSbase + macow + space + "/.*/lib/server/libjvm.dylib",
+            // heap segment, should be part of all user space apps on all architectures OpenJDK supports.
+        // macOSbase + macprivate + space + "\\[heap\\]",
+            // we should see the hs-perf data file, and it should appear as shared as well as committed
+            macOSbase + macprivate + space + ".*/.*/hsperfdata_.*"
+        };
+
+        private static final String shouldMatchIfNMTIsEnabled_macOS[] = {
+            macOSbase + macprivate + space + "JAVAHEAP.*",
+            // metaspace
+            macOSbase + macprivate + space + "META.*",
+            // parts of metaspace should be uncommitted
+            //regexBase + "-" + space + "META.*",
+            // code cache
+            macOSbase + macprivate + space + "CODE.*",
+            // Main thread stack
+            macOSbase + macprivatealiased + space + "STACK-.*-main.*"
+        };
+
+        public String[] shouldMatchUnconditionally() {
+            return shouldMatchUnconditionally_macOS;
+        }
+        public String[] shouldMatchIfNMTIsEnabled() {
+            return shouldMatchIfNMTIsEnabled_macOS;
+        }
+    };
 }
