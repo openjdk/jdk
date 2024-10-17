@@ -34,6 +34,7 @@ import java.awt.Robot;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.InputEvent;
+import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 
@@ -78,7 +79,7 @@ public class ActivateOnFocusTest {
     }
 }
 
-class MyFrame extends Frame implements ActionListener, WindowListener {
+class MyFrame extends Frame implements ActionListener {
     public Button mb;
     public MyComponent mc1;
     public MyComponent mc2;
@@ -94,7 +95,16 @@ class MyFrame extends Frame implements ActionListener, WindowListener {
         add(mc1);
         mc2 = new MyComponent(Color.blue);
         add(mc2);
-        addWindowListener(this);
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowActivated(WindowEvent e) {
+                mc1.requestFocusInWindow();
+            }
+            @Override
+            public void windowDeactivated(WindowEvent e) {
+                mc2.requestFocusInWindow();
+            }
+        });
         setVisible(true);
     }
 
@@ -103,29 +113,6 @@ class MyFrame extends Frame implements ActionListener, WindowListener {
         mf2.setBounds(200, 200, 300, 300);
         mf2.setVisible(true);
         mf2.mc1.requestFocusInWindow();
-    }
-
-    public void windowOpened(WindowEvent e) {
-    }
-
-    public void windowClosing(WindowEvent e) {
-    }
-
-    public void windowClosed(WindowEvent e) {
-    }
-
-    public void windowIconified(WindowEvent e) {
-    }
-
-    public void windowDeiconified(WindowEvent e) {
-    }
-
-    public void windowActivated(WindowEvent e) {
-        mc1.requestFocusInWindow();
-    }
-
-    public void windowDeactivated(WindowEvent e) {
-        mc2.requestFocusInWindow();
     }
 }
 

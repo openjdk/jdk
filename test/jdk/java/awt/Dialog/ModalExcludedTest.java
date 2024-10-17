@@ -135,195 +135,177 @@ public class ModalExcludedTest {
         buttons.setLayout(new GridLayout(6, 1));
 
         Button b = new Button("Modal dialog w/o modal excluded");
-        b.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent ev) {
-                Frame ff = new Frame("Non-modal-excluded frame");
-                ff.setBounds(400, 0, 200, 100);
-                ff.addWindowListener(wl);
-                ff.addMouseListener(ml);
-                ff.addKeyListener(kl);
-                ff.setVisible(true);
+        b.addActionListener(ev -> {
+            Frame ff = new Frame("Non-modal-excluded frame");
+            ff.setBounds(400, 0, 200, 100);
+            ff.addWindowListener(wl);
+            ff.addMouseListener(ml);
+            ff.addKeyListener(kl);
+            ff.setVisible(true);
 
-                Dialog dd = new Dialog(ff, "Non-modal-excluded dialog", false);
-                dd.setBounds(500, 100, 200, 100);
-                dd.addWindowListener(wl);
-                dd.addMouseListener(ml);
-                dd.addKeyListener(kl);
-                dd.setVisible(true);
+            Dialog dd = new Dialog(ff, "Non-modal-excluded dialog", false);
+            dd.setBounds(500, 100, 200, 100);
+            dd.addWindowListener(wl);
+            dd.addMouseListener(ml);
+            dd.addKeyListener(kl);
+            dd.setVisible(true);
 
-                Dialog d = new Dialog(f, "Modal dialog", true);
-                d.setBounds(600, 200, 200, 100);
-                d.addWindowListener(wl);
-                d.addMouseListener(ml);
-                d.addKeyListener(kl);
-                d.setVisible(true);
-            }
+            Dialog d = new Dialog(f, "Modal dialog", true);
+            d.setBounds(600, 200, 200, 100);
+            d.addWindowListener(wl);
+            d.addMouseListener(ml);
+            d.addKeyListener(kl);
+            d.setVisible(true);
         });
         buttons.add(b);
 
         Button c = new Button("Modal dialog w/ modal excluded");
-        c.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent ev) {
-                JFrame ff = new JFrame("Modal-excluded frame");
-                ff.setBounds(400, 0, 200, 100);
-                ff.addWindowListener(wl);
-                ff.addMouseListener(ml);
-                ff.addKeyListener(kl);
-                JMenuBar mb = new JMenuBar();
-                JMenu m = new JMenu("Test menu");
-                m.add("Test menu item");
-                m.add("Test menu item");
-                m.add("Test menu item");
-                m.add("Test menu item");
-                m.add("Test menu item");
-                m.add("Test menu item");
-                m.add("Test menu item");
-                m.add("Test menu item");
-                m.add("Test menu item");
-                mb.add(m);
-                ff.setJMenuBar(mb);
-                // 1: set visible
-                ff.setVisible(true);
+        c.addActionListener(ev -> {
+            JFrame ff = new JFrame("Modal-excluded frame");
+            ff.setBounds(400, 0, 200, 100);
+            ff.addWindowListener(wl);
+            ff.addMouseListener(ml);
+            ff.addKeyListener(kl);
+            JMenuBar mb = new JMenuBar();
+            JMenu m = new JMenu("Test menu");
+            m.add("Test menu item");
+            m.add("Test menu item");
+            m.add("Test menu item");
+            m.add("Test menu item");
+            m.add("Test menu item");
+            m.add("Test menu item");
+            m.add("Test menu item");
+            m.add("Test menu item");
+            m.add("Test menu item");
+            mb.add(m);
+            ff.setJMenuBar(mb);
+            // 1: set visible
+            ff.setVisible(true);
 
-                Dialog dd = new Dialog(ff, "Modal-excluded dialog", false);
-                dd.setBounds(500, 100, 200, 100);
-                dd.addWindowListener(wl);
-                dd.addMouseListener(ml);
-                dd.addKeyListener(kl);
-                dd.setVisible(true);
-                // dialog should be modal excluded as being a child of the modal excluded frame
-                //          SunToolkit.setModalExcluded(dd);
+            Dialog dd = new Dialog(ff, "Modal-excluded dialog", false);
+            dd.setBounds(500, 100, 200, 100);
+            dd.addWindowListener(wl);
+            dd.addMouseListener(ml);
+            dd.addKeyListener(kl);
+            dd.setVisible(true);
 
-                // 2: set modal excluded
-                SunToolkit.setModalExcluded(ff);
+            // 2: set modal excluded
+            SunToolkit.setModalExcluded(ff);
 
-                Dialog d = new Dialog(f, "Modal dialog", true);
-                d.setBounds(600, 200, 200, 100);
-                d.addWindowListener(wl);
-                d.addMouseListener(ml);
-                d.addKeyListener(kl);
-                d.setVisible(true);
-            }
+            Dialog d = new Dialog(f, "Modal dialog", true);
+            d.setBounds(600, 200, 200, 100);
+            d.addWindowListener(wl);
+            d.addMouseListener(ml);
+            d.addKeyListener(kl);
+            d.setVisible(true);
         });
         buttons.add(c);
 
         Button c1 = new Button("Modal dialog before modal excluded");
-        c1.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent ev) {
-                // 1: create dialog
-                Dialog d = new Dialog(f, "Modal dialog", true);
-                d.setBounds(600, 200, 200, 100);
-                d.addWindowListener(wl);
-                d.addMouseListener(ml);
-                d.addKeyListener(kl);
+        c1.addActionListener(ev -> {
+            // 1: create dialog
+            Dialog d = new Dialog(f, "Modal dialog", true);
+            d.setBounds(600, 200, 200, 100);
+            d.addWindowListener(wl);
+            d.addMouseListener(ml);
+            d.addKeyListener(kl);
 
-                // 2: create frame
-                Frame ff = new Frame("Modal-excluded frame");
-                // 3: set modal excluded
-                SunToolkit.setModalExcluded(ff);
-                ff.setBounds(400, 0, 200, 100);
-                ff.addWindowListener(wl);
-                ff.addMouseListener(ml);
-                ff.addKeyListener(kl);
-                // 4: show frame
-                ff.setVisible(true);
+            // 2: create frame
+            Frame ff = new Frame("Modal-excluded frame");
+            // 3: set modal excluded
+            SunToolkit.setModalExcluded(ff);
+            ff.setBounds(400, 0, 200, 100);
+            ff.addWindowListener(wl);
+            ff.addMouseListener(ml);
+            ff.addKeyListener(kl);
+            // 4: show frame
+            ff.setVisible(true);
 
-                Dialog dd = new Dialog(ff, "Modal-excluded dialog", false);
-                dd.setBounds(500, 100, 200, 100);
-                dd.addWindowListener(wl);
-                dd.addMouseListener(ml);
-                dd.addKeyListener(kl);
-                dd.setVisible(true);
+            Dialog dd = new Dialog(ff, "Modal-excluded dialog", false);
+            dd.setBounds(500, 100, 200, 100);
+            dd.addWindowListener(wl);
+            dd.addMouseListener(ml);
+            dd.addKeyListener(kl);
+            dd.setVisible(true);
 
-                // 5: show dialog
-                d.setVisible(true);
-            }
+            // 5: show dialog
+            d.setVisible(true);
         });
         buttons.add(c1);
 
         Button d = new Button("File dialog w/ modal excluded");
-        d.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent ev) {
-                Frame ff = new Frame("Modal-excluded frame");
-                ff.setBounds(400, 0, 200, 100);
-                ff.addWindowListener(wl);
-                ff.addMouseListener(ml);
-                ff.addKeyListener(kl);
-                // 1: set modal excluded (peer is not created yet)
-                SunToolkit.setModalExcluded(ff);
-                // 2: set visible
-                ff.setVisible(true);
+        d.addActionListener(ev -> {
+            Frame ff = new Frame("Modal-excluded frame");
+            ff.setBounds(400, 0, 200, 100);
+            ff.addWindowListener(wl);
+            ff.addMouseListener(ml);
+            ff.addKeyListener(kl);
+            // 1: set modal excluded (peer is not created yet)
+            SunToolkit.setModalExcluded(ff);
+            // 2: set visible
+            ff.setVisible(true);
 
-                Dialog dd = new Dialog(ff, "Modal-excluded dialog", false);
-                dd.setBounds(500, 100, 200, 100);
-                dd.addWindowListener(wl);
-                dd.addMouseListener(ml);
-                dd.addKeyListener(kl);
-                dd.setVisible(true);
-                SunToolkit.setModalExcluded(dd);
+            Dialog dd = new Dialog(ff, "Modal-excluded dialog", false);
+            dd.setBounds(500, 100, 200, 100);
+            dd.addWindowListener(wl);
+            dd.addMouseListener(ml);
+            dd.addKeyListener(kl);
+            dd.setVisible(true);
+            SunToolkit.setModalExcluded(dd);
 
-                Dialog d = new FileDialog(f, "File dialog");
-                d.setVisible(true);
-            }
+            Dialog d1 = new FileDialog(f, "File dialog");
+            d1.setVisible(true);
         });
         buttons.add(d);
 
         Button e = new Button("Native print dialog w/ modal excluded");
-        e.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent ev) {
-                Frame ff = new Frame("Modal-excluded frame");
-                ff.setBounds(400, 0, 200, 100);
-                ff.addWindowListener(wl);
-                ff.addMouseListener(ml);
-                ff.addKeyListener(kl);
-                ff.setVisible(true);
-                SunToolkit.setModalExcluded(ff);
+        e.addActionListener(ev -> {
+            Frame ff = new Frame("Modal-excluded frame");
+            ff.setBounds(400, 0, 200, 100);
+            ff.addWindowListener(wl);
+            ff.addMouseListener(ml);
+            ff.addKeyListener(kl);
+            ff.setVisible(true);
+            SunToolkit.setModalExcluded(ff);
 
-                Dialog dd = new Dialog(ff, "Modal-excluded dialog", false);
-                dd.setBounds(500, 100, 200, 100);
-                dd.addWindowListener(wl);
-                dd.addMouseListener(ml);
-                dd.addKeyListener(kl);
-                dd.setVisible(true);
-                // dialog should be modal excluded as being child of modal excluded frame
-                //          SunToolkit.setModalExcluded(dd);
+            Dialog dd = new Dialog(ff, "Modal-excluded dialog", false);
+            dd.setBounds(500, 100, 200, 100);
+            dd.addWindowListener(wl);
+            dd.addMouseListener(ml);
+            dd.addKeyListener(kl);
+            dd.setVisible(true);
 
-                JobAttributes jobAttributes = new JobAttributes();
-                jobAttributes.setDialog(JobAttributes.DialogType.NATIVE);
-                PageAttributes pageAttributes = new PageAttributes();
-                PrintJob job = Toolkit.getDefaultToolkit().getPrintJob(f, "Test", jobAttributes, pageAttributes);
-            }
+            JobAttributes jobAttributes = new JobAttributes();
+            jobAttributes.setDialog(JobAttributes.DialogType.NATIVE);
+            PageAttributes pageAttributes = new PageAttributes();
+            PrintJob job = Toolkit.getDefaultToolkit().getPrintJob(f, "Test", jobAttributes, pageAttributes);
         });
         buttons.add(e);
 
         Button g = new Button("Common print dialog w/ modal excluded");
-        g.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent ev) {
-                Frame ff = new Frame("Modal-excluded frame");
-                ff.setBounds(400, 0, 200, 100);
-                ff.addWindowListener(wl);
-                ff.addMouseListener(ml);
-                ff.addKeyListener(kl);
-                ff.setVisible(true);
-                SunToolkit.setModalExcluded(ff);
-                ff.dispose();
-                // modal excluded must still be alive
-                ff.setVisible(true);
+        g.addActionListener(ev -> {
+            Frame ff = new Frame("Modal-excluded frame");
+            ff.setBounds(400, 0, 200, 100);
+            ff.addWindowListener(wl);
+            ff.addMouseListener(ml);
+            ff.addKeyListener(kl);
+            ff.setVisible(true);
+            SunToolkit.setModalExcluded(ff);
+            ff.dispose();
+            // modal excluded must still be alive
+            ff.setVisible(true);
 
-                Dialog dd = new Dialog(ff, "Modal-excluded dialog", false);
-                dd.setBounds(500, 100, 200, 100);
-                dd.addWindowListener(wl);
-                dd.addMouseListener(ml);
-                dd.addKeyListener(kl);
-                dd.setVisible(true);
-                // dialog should be modal excluded as being child of modal excluded frame
-                //          SunToolkit.setModalExcluded(dd);
+            Dialog dd = new Dialog(ff, "Modal-excluded dialog", false);
+            dd.setBounds(500, 100, 200, 100);
+            dd.addWindowListener(wl);
+            dd.addMouseListener(ml);
+            dd.addKeyListener(kl);
+            dd.setVisible(true);
 
-                JobAttributes jobAttributes = new JobAttributes();
-                jobAttributes.setDialog(JobAttributes.DialogType.COMMON);
-                PageAttributes pageAttributes = new PageAttributes();
-                PrintJob job = Toolkit.getDefaultToolkit().getPrintJob(f, "Test", jobAttributes, pageAttributes);
-            }
+            JobAttributes jobAttributes = new JobAttributes();
+            jobAttributes.setDialog(JobAttributes.DialogType.COMMON);
+            PageAttributes pageAttributes = new PageAttributes();
+            PrintJob job = Toolkit.getDefaultToolkit().getPrintJob(f, "Test", jobAttributes, pageAttributes);
         });
         buttons.add(g);
 
