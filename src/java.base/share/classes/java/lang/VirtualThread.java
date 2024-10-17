@@ -215,13 +215,12 @@ final class VirtualThread extends BaseVirtualThread {
                 @Hidden
                 @JvmtiMountTransition
                 public void run() {
-                    // notify JVMTI
-                    vthread.notifyJvmtiStart();
-
-                    vthread.run(task);
-
-                    // notify JVMTI
-                    vthread.notifyJvmtiEnd();
+                    vthread.notifyJvmtiStart(); // notify JVMTI
+                    try {
+                        vthread.run(task);
+                    } finally {
+                        vthread.notifyJvmtiEnd(); // notify JVMTI
+                    }
                 }
             };
         }
@@ -409,18 +408,14 @@ final class VirtualThread extends BaseVirtualThread {
         } catch (Throwable exc) {
             dispatchUncaughtException(exc);
         } finally {
-            try {
-                // pop any remaining scopes from the stack, this may block
-                StackableScope.popAll();
+            // pop any remaining scopes from the stack, this may block
+            StackableScope.popAll();
 
-                // emit JFR event if enabled
-                if (VirtualThreadEndEvent.isTurnedOn()) {
-                    var event = new VirtualThreadEndEvent();
-                    event.javaThreadId = threadId();
-                    event.commit();
-                }
-
-            } finally {
+            // emit JFR event if enabled
+            if (VirtualThreadEndEvent.isTurnedOn()) {
+                var event = new VirtualThreadEndEvent();
+                event.javaThreadId = threadId();
+                event.commit();
             }
         }
     }

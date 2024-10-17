@@ -32,7 +32,7 @@ import java.lang.annotation.*;
  * or ends virtual thread mount state transition (VTMS transition).
  *
  * @implNote
- * This annotation is only used for VirtualThread methods.
+ * This annotation is only used for some VirtualThread and Continuation methods.
  */
 @Target({ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
