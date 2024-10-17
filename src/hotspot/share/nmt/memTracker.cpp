@@ -121,9 +121,7 @@ void MemTracker::final_report(outputStream* output) {
 // Given an unknown pointer, check if it points into a known region; print region if found
 // and return true; false if not found.
 bool MemTracker::print_containing_region(const void* p, outputStream* out) {
-  return enabled() &&
-      (MallocTracker::print_pointer_information(p, out) ||
-       VirtualMemoryTracker::print_containing_region(p, out));
+  return enabled() && VirtualMemoryTracker::print_containing_region(p, out);
 }
 
 void MemTracker::report(bool summary_only, outputStream* output, size_t scale) {
