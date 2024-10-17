@@ -172,10 +172,14 @@ int LogFileStreamOutput::write_internal(const LogDecorations& decorations, const
   // Handle multiline strings: split the string replacing newlines with terminators,
   // and then force write_internal_line to print all of them (i.e. not stopping at the
   // first null but until msg_len bytes are printed)
-  char* dupstr = os::strdup_check_oom(msg, mtLogging);
+  ALLOW_C_FUNCTION(::malloc, char* dupstr = (char*)::malloc(msg_len * sizeof(char));)
+  if (dupstr == nullptr) {
+    return 0;
+  }
+  ALLOW_C_FUNCTION(::memcpy, ::memcpy(dupstr, msg, msg_len);)
   char* tmp = dupstr;
 
-  while (*tmp != '\0') {
+  while (tmp - dupstr < msg_len) {
     if (*tmp == '\n') {
       *tmp = '\0';
     }
@@ -183,7 +187,7 @@ int LogFileStreamOutput::write_internal(const LogDecorations& decorations, const
   }
   int written = write_internal_line(decorations, dupstr, msg_len);
 
-  os::free(dupstr);
+  ALLOW_C_FUNCTION(::free, ::free(dupstr);)
 
   return written;
 }
