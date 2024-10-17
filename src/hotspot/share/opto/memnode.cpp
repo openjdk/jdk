@@ -1564,14 +1564,83 @@ static bool stable_phi(PhiNode* phi, PhaseGVN *phase) {
   return true;
 }
 
+//------------------------------get_region_of_split_through_phi------------------------------
+// Given a base node and a memory node, this function determines the region of split through phi.
+// If the base node is not a phi node, it returns nullptr.
+Node* LoadNode::get_region_of_split_through_base_phi(PhaseGVN* phase, Node *base) {
+  Node* mem        = in(Memory);
+  Node* address    = in(Address);
+  bool base_is_phi = (base != nullptr) && base->is_Phi();
+  Node* region = nullptr;
+  DomResult dom_result = DomResult::Dominate;
+  if (!base_is_phi) {
+    assert(mem->is_Phi(), "memory node should be a Phi");
+    region = mem->in(0);
+    // Skip if the region dominates some control edge of the address.
+    // We will check `dom_result` later.
+    dom_result = MemNode::maybe_all_controls_dominate(address, region);
+  } else if (!mem->is_Phi()) {
+    assert(base_is_phi, "base node should be a Phi");
+    region = base->in(0);
+    // Skip if the region dominates some control edge of the memory.
+    // We will check `dom_result` later.
+    dom_result = MemNode::maybe_all_controls_dominate(mem, region);
+  } else if (base->in(0) != mem->in(0)) {
+    assert(base_is_phi && mem->is_Phi(), "base and memory nodes should be Phi");
+    dom_result = MemNode::maybe_all_controls_dominate(mem, base->in(0));
+    if (dom_result == DomResult::Dominate) {
+      region = base->in(0);
+    } else {
+      dom_result = MemNode::maybe_all_controls_dominate(address, mem->in(0));
+      if (dom_result == DomResult::Dominate) {
+        region = mem->in(0);
+      }
+      // Otherwise we encountered a complex graph.
+    }
+  } else {
+    assert(base->in(0) == mem->in(0), "base and memory nodes should have the same region");
+    region = mem->in(0);
+  }
+
+  PhaseIterGVN* igvn = phase->is_IterGVN();
+  if (dom_result != DomResult::Dominate) {
+    if (dom_result == DomResult::EncounteredDeadCode) {
+      // There is some dead code which eventually will be removed in IGVN.
+      // Once this is the case, we get an unambiguous dominance result.
+      // Push the node to the worklist again until the dead code is removed.
+      igvn->_worklist.push(this);
+    }
+    return nullptr;
+  }
+  return region;
+}
+
+static bool can_split_through_phi_helper(Node *base, Node *mem) {
+  if (base == nullptr || !base->is_Phi()) {
+    return false;
+  }
+
+  if (!mem->is_Phi()) {
+    // Skip if the region dominates some control edge of the memory.
+    if (!MemNode::all_controls_dominate(mem, base->in(0)))
+      return false;
+  } else if (base->in(0) != mem->in(0)) {
+    // Skip if the region dominates some control edge of the memory.
+    if (!MemNode::all_controls_dominate(mem, base->in(0))) {
+      return false; // complex graph
+    }
+  }
+  return true;
+}
+
 //------------------------------split_through_phi------------------------------
 // Check whether a call to 'split_through_phi' would split this load through the
 // Phi *base*. This method is essentially a copy of the validations performed
 // by 'split_through_phi'. The first use of this method was in EA code as part
 // of simplification of allocation merges.
-// Some differences from original method (split_through_phi):
+// The difference from the original method (split_through_phi) is:
 //  - If base->is_CastPP(): base = base->in(1)
-bool LoadNode::can_split_through_phi_base(PhaseGVN* phase) {
+bool LoadNode::can_split_through_phi_base(PhaseGVN* phase, bool nested) {
   Node* mem        = in(Memory);
   Node* address    = in(Address);
   intptr_t ignore  = 0;
@@ -1581,21 +1650,50 @@ bool LoadNode::can_split_through_phi_base(PhaseGVN* phase) {
     base = base->in(1);
   }
 
-  if (req() > 3 || base == nullptr || !base->is_Phi()) {
+  if (req() > 3 || !can_split_through_phi_helper(base, mem)) {
     return false;
   }
 
-  if (!mem->is_Phi()) {
-    if (!MemNode::all_controls_dominate(mem, base->in(0))) {
-      return false;
-    }
-  } else if (base->in(0) != mem->in(0)) {
-    if (!MemNode::all_controls_dominate(mem, base->in(0))) {
-      return false;
+  if (nested) {
+    for (uint i = 1; i < base->req(); i++) {
+      if (base->in(i)->is_Phi()) {
+        // base->in(i) is the parent phi node for base node.
+        Node *mem_node_for_load_after_opt = get_memory_node_for_nestedphi_after_split(phase, base, i);
+        if (!mem_node_for_load_after_opt || !can_split_through_phi_helper(base->in(i), mem_node_for_load_after_opt)) {
+          return false;
+        }
+      }
     }
   }
-
   return true;
+}
+
+//------------------------------get_memory_node_for_nestedphi_after_split------------------------------
+// Given a nestedphi node and its parentphi node, this function pretends that a split has occurred on a load field
+// and returns the memory node of the new load field node that is attached to the parentphi node.
+// Note that this function doesn't actually perform the split.
+// If a split is impossible, it returns nullptr.
+Node* LoadNode::get_memory_node_for_nestedphi_after_split(PhaseGVN* phase, Node *base, uint parent_idx) {
+  Node* mem        = in(Memory);
+  Node* region = get_region_of_split_through_base_phi(phase, base);
+  if (region == nullptr) {
+    return nullptr;
+  }
+
+  Node* in = region->in(parent_idx);
+  if (region->is_CountedLoop() && region->as_Loop()->is_strip_mined() && parent_idx == LoopNode::EntryControl &&
+    in != nullptr && in->is_OuterStripMinedLoop()) {
+    // No node should go in the outer strip mined loop
+    in = in->in(LoopNode::EntryControl);
+  }
+  if (in == nullptr || in == phase->C->top()) {
+    // Dead path?  Use a dead data op
+    return phase->C->top()->in(Memory);
+  } else if (mem->is_Phi() && (mem->in(0) == region)) {
+    return mem->in(parent_idx);
+  }
+
+  return mem;
 }
 
 //------------------------------split_through_phi------------------------------
@@ -1634,7 +1732,7 @@ Node* LoadNode::split_through_phi(PhaseGVN* phase, bool ignore_missing_instance_
     }
     uint cnt = mem->req();
     // Check for loop invariant memory.
-    if (cnt == 3) {
+    if (cnt == 3 && !ignore_missing_instance_id) {
       for (uint i = 1; i < cnt; i++) {
         Node* in = mem->in(i);
         Node*  m = optimize_memory_chain(in, t_oop, this, phase);
@@ -1678,50 +1776,14 @@ Node* LoadNode::split_through_phi(PhaseGVN* phase, bool ignore_missing_instance_
   }
 
   // Select Region to split through.
-  Node* region;
-  DomResult dom_result = DomResult::Dominate;
-  if (!base_is_phi) {
-    assert(mem->is_Phi(), "sanity");
-    region = mem->in(0);
-    // Skip if the region dominates some control edge of the address.
-    // We will check `dom_result` later.
-    dom_result = MemNode::maybe_all_controls_dominate(address, region);
-  } else if (!mem->is_Phi()) {
-    assert(base_is_phi, "sanity");
-    region = base->in(0);
-    // Skip if the region dominates some control edge of the memory.
-    // We will check `dom_result` later.
-    dom_result = MemNode::maybe_all_controls_dominate(mem, region);
-  } else if (base->in(0) != mem->in(0)) {
-    assert(base_is_phi && mem->is_Phi(), "sanity");
-    dom_result = MemNode::maybe_all_controls_dominate(mem, base->in(0));
-    if (dom_result == DomResult::Dominate) {
-      region = base->in(0);
-    } else {
-      dom_result = MemNode::maybe_all_controls_dominate(address, mem->in(0));
-      if (dom_result == DomResult::Dominate) {
-        region = mem->in(0);
-      }
-      // Otherwise we encountered a complex graph.
-    }
-  } else {
-    assert(base->in(0) == mem->in(0), "sanity");
-    region = mem->in(0);
-  }
-
-  PhaseIterGVN* igvn = phase->is_IterGVN();
-  if (dom_result != DomResult::Dominate) {
-    if (dom_result == DomResult::EncounteredDeadCode) {
-      // There is some dead code which eventually will be removed in IGVN.
-      // Once this is the case, we get an unambiguous dominance result.
-      // Push the node to the worklist again until the dead code is removed.
-      igvn->_worklist.push(this);
-    }
+  Node* region = get_region_of_split_through_base_phi(phase, base);
+  if (region == nullptr) {
     return nullptr;
   }
 
   Node* phi = nullptr;
   const Type* this_type = this->bottom_type();
+  PhaseIterGVN* igvn = phase->is_IterGVN();
   if (t_oop != nullptr && (t_oop->is_known_instance_field() || load_boxed_values)) {
     int this_index = C->get_alias_index(t_oop);
     int this_offset = t_oop->offset();
