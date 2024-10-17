@@ -61,6 +61,10 @@ import javax.management.loading.ClassLoaderRepository;
  * <CODE>ObjectName</CODE> is: <BR>
  * <CODE>JMImplementation:type=MBeanServerDelegate</CODE>.</p>
  *
+ * <p>Methods of {@code MBeanServer} and its subclasses may throw
+ * {@link SecurityException} if the implementation doesn't authorize
+ * access to the underlying resource.
+ *
  * @since 1.5
  */
 
