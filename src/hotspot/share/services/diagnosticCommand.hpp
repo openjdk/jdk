@@ -886,27 +886,6 @@ public:
   virtual void execute(DCmdSource source, TRAPS);
 };
 
-#if INCLUDE_JVMTI
-class DebugOnCmdStartDCmd : public DCmd {
-public:
-  DebugOnCmdStartDCmd(outputStream* output, bool heap) : DCmd(output, heap) {}
-  static const char* name() {
-    return "VM.start_java_debugging";
-  }
-  static const char* description() {
-    return "Starts up the Java debugging if the jdwp agentlib was enabled with the option onjcmd=y.";
-  }
-  static const char* impact() {
-    return "High: Switches the VM into Java debug mode.";
-  }
-  static const JavaPermission permission() {
-    JavaPermission p = { "java.lang.management.ManagementPermission", "control", nullptr };
-    return p;
-  }
-  virtual void execute(DCmdSource source, TRAPS);
-};
-#endif // INCLUDE_JVMTI
-
 class EventLogDCmd : public DCmdWithParser {
 protected:
   DCmdArgument<char*> _log;
