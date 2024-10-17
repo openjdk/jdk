@@ -386,6 +386,13 @@ void HeapShared::set_scratch_java_mirror(Klass* k, oop mirror) {
 }
 
 void HeapShared::remove_scratch_objects(Klass* k) {
+  // Klass is being deallocated. Java mirror can still be alive, and it should not
+  // point to dead klass. We need to break the link from mirror to the Klass.
+  // See how InstanceKlass::deallocate_contents does it for normal mirrors.
+  oop mirror = _scratch_java_mirror_table->get_oop(k);
+  if (mirror != nullptr) {
+    java_lang_Class::set_klass(mirror, nullptr);
+  }
   _scratch_java_mirror_table->remove_oop(k);
   if (k->is_instance_klass()) {
     _scratch_references_table->remove(InstanceKlass::cast(k)->constants());
