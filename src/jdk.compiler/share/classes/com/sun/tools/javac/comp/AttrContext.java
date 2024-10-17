@@ -92,6 +92,10 @@ public class AttrContext {
      */
     boolean allowProtectedAccess = false;
 
+    /** Are we attributing a permits clause?
+     */
+    boolean isPermitsClause = false;
+
     /** Are arguments to current function applications boxed into an array for varargs?
      */
     Resolve.MethodResolutionPhase pendingResolutionPhase = null;
@@ -149,6 +153,7 @@ public class AttrContext {
         info.preferredTreeForDiagnostics = preferredTreeForDiagnostics;
         info.visitingServiceImplementation = visitingServiceImplementation;
         info.allowProtectedAccess = allowProtectedAccess;
+        info.isPermitsClause = isPermitsClause;
         return info;
     }
 
