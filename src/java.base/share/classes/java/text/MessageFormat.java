@@ -110,21 +110,21 @@ import java.util.Objects;
  * </pre></blockquote>
  *
  * <p>
- * The <b>ArgumentIndex</b> value is a non-negative integer written
+ * The {@code ArgumentIndex} value is a non-negative integer written
  * using the digits {@code '0'} through {@code '9'}, and represents an index into the
  * {@code arguments} array passed to the {@code format} methods
  * or the result array returned by the {@code parse} methods.
  * <p>
  * Any constructor or method that takes a String pattern parameter will throw an {@code IllegalArgumentException} if the
- * pattern contains an <b>ArgumentIndex</b> value that is equal to or exceeds an implementation limit.
+ * pattern contains an {@code ArgumentIndex} value that is equal to or exceeds an implementation limit.
  * <p>
- * The <b>FormatType</b> and <b>FormatStyle</b> values are used to create
+ * The {@code FormatType} and {@code FormatStyle} values are used to create
  * a {@code Format} instance for the format element. The following
  * table shows how the values map to {@code Format} instances. These values
  * are case-insensitive when passed to {@link #applyPattern(String)}. Combinations
  * not shown in the table are illegal. A <i>SubformatPattern</i> must
  * be a valid pattern string for the {@code Format} subclass used.
- * @implNote For this implementation, the limit of <b>ArgumentIndex</b> is 10,000
+ * @implNote For this implementation, the limit of {@code ArgumentIndex} is 10,000.
  *
  * <table class="plain">
  * <caption style="display:none">Shows how FormatType and FormatStyle values map to Format instances</caption>
