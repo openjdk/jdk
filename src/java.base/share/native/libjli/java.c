@@ -112,10 +112,8 @@ static jboolean ParseArguments(int *pargc, char ***pargv,
 static jboolean InitializeJVM(JavaVM **pvm, JNIEnv **penv,
                               InvocationFunctions *ifn);
 static jstring NewPlatformString(JNIEnv *env, char *s);
-static jclass LoadMainClass(JNIEnv *env, int mode, char *name);
 static void SetupSplashScreenEnvVars(const char *splash_file_path, char *jar_path);
-static jclass GetApplicationClass(JNIEnv *env);
-
+static jobject LocateMainEntry(JNIEnv *env, int mode, char *name);
 static void TranslateApplicationArgs(int jargc, const char **jargv, int *pargc, char ***pargv);
 static jboolean AddApplicationOptions(int cpathc, const char **cpathv);
 
@@ -370,93 +368,6 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argv */
         } \
     } while (JNI_FALSE)
 
-/*
- * Invokes static main(String[]) method if found.
- * Returns 0 with a pending exception if not found. Returns 1 if invoked, maybe
- * a pending exception if the method threw.
- */
-int
-invokeStaticMainWithArgs(JNIEnv *env, jclass mainClass, jobjectArray mainArgs) {
-    jmethodID mainID = (*env)->GetStaticMethodID(env, mainClass, "main",
-                                  "([Ljava/lang/String;)V");
-    if (mainID == NULL) {
-        // static main(String[]) not found
-        return 0;
-    }
-    (*env)->CallStaticVoidMethod(env, mainClass, mainID, mainArgs);
-    return 1; // method was invoked
-}
-
-/*
- * Invokes instance main(String[]) method if found.
- * Returns 0 with a pending exception if not found. Returns 1 if invoked, maybe
- * a pending exception if the method threw.
- */
-int
-invokeInstanceMainWithArgs(JNIEnv *env, jclass mainClass, jobjectArray mainArgs) {
-    jmethodID constructor = (*env)->GetMethodID(env, mainClass, "<init>", "()V");
-    if (constructor == NULL) {
-        // main class' no-arg constructor not found
-        return 0;
-    }
-    jobject mainObject = (*env)->NewObject(env, mainClass, constructor);
-    if (mainObject == NULL) {
-        // main class instance couldn't be constructed
-        return 0;
-    }
-    jmethodID mainID =
-        (*env)->GetMethodID(env, mainClass, "main", "([Ljava/lang/String;)V");
-    if (mainID == NULL) {
-        // instance method main(String[]) method not found
-        return 0;
-    }
-    (*env)->CallVoidMethod(env, mainObject, mainID, mainArgs);
-    return 1; // method was invoked
-}
-
-/*
- * Invokes no-arg static main() method if found.
- * Returns 0 with a pending exception if not found. Returns 1 if invoked, maybe
- * a pending exception if the method threw.
- */
-int
-invokeStaticMainWithoutArgs(JNIEnv *env, jclass mainClass) {
-    jmethodID mainID = (*env)->GetStaticMethodID(env, mainClass, "main",
-                                       "()V");
-    if (mainID == NULL) {
-        // static main() method couldn't be located
-        return 0;
-    }
-    (*env)->CallStaticVoidMethod(env, mainClass, mainID);
-    return 1; // method was invoked
-}
-
-/*
- * Invokes no-arg instance main() method if found.
- * Returns 0 with a pending exception if not found. Returns 1 if invoked, maybe
- * a pending exception if the method threw.
- */
-int
-invokeInstanceMainWithoutArgs(JNIEnv *env, jclass mainClass) {
-    jmethodID constructor = (*env)->GetMethodID(env, mainClass, "<init>", "()V");
-    if (constructor == NULL) {
-        // main class' no-arg constructor not found
-        return 0;
-    }
-    jobject mainObject = (*env)->NewObject(env, mainClass, constructor);
-    if (mainObject == NULL) {
-        // couldn't create instance of main class
-        return 0;
-    }
-    jmethodID mainID = (*env)->GetMethodID(env, mainClass, "main",
-                                 "()V");
-    if (mainID == NULL) {
-        // instance method main() not found
-        return 0;
-    }
-    (*env)->CallVoidMethod(env, mainObject, mainID);
-    return 1; // method was invoked
-}
 
 int
 JavaMain(void* _args)
@@ -470,16 +381,8 @@ JavaMain(void* _args)
 
     JavaVM *vm = 0;
     JNIEnv *env = 0;
-    jclass mainClass = NULL;
-    jclass appClass = NULL; // actual application class being launched
-    jobjectArray mainArgs;
     int ret = 0;
     jlong start = 0, end = 0;
-    jclass helperClass;
-    jfieldID isStaticMainField;
-    jboolean isStaticMain;
-    jfieldID noArgMainField;
-    jboolean noArgMain;
 
     RegisterThread();
 
@@ -562,40 +465,26 @@ JavaMain(void* _args)
 
     ret = 1;
 
-    /*
-     * See bugid 5030265.  The Main-Class name has already been parsed
-     * from the manifest, but not parsed properly for UTF-8 support.
-     * Hence the code here ignores the value previously extracted and
-     * uses the pre-existing code to reextract the value.  This is
-     * possibly an end of release cycle expedient.  However, it has
-     * also been discovered that passing some character sets through
-     * the environment has "strange" behavior on some variants of
-     * Windows.  Hence, maybe the manifest parsing code local to the
-     * launcher should never be enhanced.
-     *
-     * Hence, future work should either:
-     *     1)   Correct the local parsing code and verify that the
-     *          Main-Class attribute gets properly passed through
-     *          all environments,
-     *     2)   Remove the vestages of maintaining main_class through
-     *          the environment (and remove these comments).
-     *
-     * This method also correctly handles launching existing JavaFX
-     * applications that may or may not have a Main-Class manifest entry.
-     */
-    mainClass = LoadMainClass(env, mode, what);
-    CHECK_EXCEPTION_NULL_LEAVE(mainClass);
+    const jobject mainEntry = LocateMainEntry(env, mode, what);
+    CHECK_EXCEPTION_NULL_LEAVE(mainEntry);
+    const jclass mainEntryType = (*env)->GetObjectClass(env, mainEntry); // sun/launcher/LauncherHelper$MainEntry
+    const jfieldID mainClassFid = (*env)->GetFieldID(env, mainEntryType, "mainClass", "Ljava/lang/Class;");
+    CHECK_EXCEPTION_NULL_LEAVE(mainClassFid);
+    const jclass mainClass = (jclass)(*env)->GetObjectField(env, mainEntry, mainClassFid);
+
     /*
      * In some cases when launching an application that needs a helper, e.g., a
-     * JavaFX application with no main method, the mainClass will not be the
+     * JavaFX application with no main method, the main class will not be the
      * applications own main class but rather a helper class. To keep things
      * consistent in the UI we need to track and report the application main class.
      */
-    appClass = GetApplicationClass(env);
+    const jfieldID appClassFid = (*env)->GetFieldID(env, mainEntryType, "appClass", "Ljava/lang/Class;");
+    CHECK_EXCEPTION_NULL_LEAVE(appClassFid);
+    const jclass appClass = (jclass)(*env)->GetObjectField(env, mainEntry, appClassFid);
     CHECK_EXCEPTION_NULL_LEAVE(appClass);
 
     /* Build platform specific argument array */
-    mainArgs = CreateApplicationArgs(env, argv, argc);
+    const jobjectArray mainArgs = CreateApplicationArgs(env, argv, argc);
     CHECK_EXCEPTION_NULL_LEAVE(mainArgs);
 
     if (dryRun) {
@@ -607,42 +496,53 @@ JavaMain(void* _args)
      * PostJVMInit uses the class name as the application name for GUI purposes,
      * for example, on OSX this sets the application name in the menu bar for
      * both SWT and JavaFX. So we'll pass the actual application class here
-     * instead of mainClass as that may be a launcher or helper class instead
+     * instead of main class as that may be a launcher or helper class instead
      * of the application class.
      */
     PostJVMInit(env, appClass, vm);
     CHECK_EXCEPTION_LEAVE(1);
 
+    const jfieldID mainMethodFid = (*env)->GetFieldID(env, mainEntryType, "mainMethod",
+                                                      "Ljava/lang/reflect/Method;");
+    CHECK_EXCEPTION_NULL_LEAVE(mainMethodFid);
+    const jobject mainMethod = (*env)->GetObjectField(env, mainEntry, mainMethodFid);
+    CHECK_EXCEPTION_NULL_LEAVE(mainMethod);
+
+    const jfieldID noArgCtorFid = (*env)->GetFieldID(env, mainEntryType, "noArgConstructor",
+                                                     "Ljava/lang/reflect/Constructor;");
+    CHECK_EXCEPTION_NULL_LEAVE(noArgCtorFid);
+    const jobject noArgCtor = (*env)->GetObjectField(env, mainEntry, noArgCtorFid);
+
+    const jfieldID isNoArgMainFid = (*env)->GetFieldID(env, mainEntryType, "isNoArgMain", "Z");
+    CHECK_EXCEPTION_NULL_LEAVE(isNoArgMainFid);
+    const jboolean isNoArgMain = (*env)->GetBooleanField(env, mainEntry, isNoArgMainFid);
+
     /*
      * The main method is invoked here so that extraneous java stacks are not in
      * the application stack trace.
      */
+    // FromReflectedMethod will internally initialize the class to which the mainMethod belongs
+    const jmethodID mainMethodId = (*env)->FromReflectedMethod(env, mainMethod);
+    CHECK_EXCEPTION_NULL_LEAVE(mainMethodId); // can happen if static initialization of the mainMethod's class failed
 
-    helperClass = GetLauncherHelperClass(env);
-    isStaticMainField = (*env)->GetStaticFieldID(env, helperClass, "isStaticMain", "Z");
-    CHECK_EXCEPTION_NULL_LEAVE(isStaticMainField);
-    isStaticMain = (*env)->GetStaticBooleanField(env, helperClass, isStaticMainField);
-
-    noArgMainField = (*env)->GetStaticFieldID(env, helperClass, "noArgMain", "Z");
-    CHECK_EXCEPTION_NULL_LEAVE(noArgMainField);
-    noArgMain = (*env)->GetStaticBooleanField(env, helperClass, noArgMainField);
-
-    if (isStaticMain) {
-        if (noArgMain) {
-            ret = invokeStaticMainWithoutArgs(env, mainClass);
-        } else {
-            ret = invokeStaticMainWithArgs(env, mainClass, mainArgs);
-        }
-    } else {
-        if (noArgMain) {
-            ret = invokeInstanceMainWithoutArgs(env, mainClass);
-        } else {
-            ret = invokeInstanceMainWithArgs(env, mainClass, mainArgs);
-        }
+    jboolean mainInvoked = JNI_FALSE;
+    if (noArgCtor == NULL) { // static main method
+        isNoArgMain ? (*env)->CallStaticVoidMethod(env, mainClass, mainMethodId)
+                    : (*env)->CallStaticVoidMethod(env, mainClass, mainMethodId, mainArgs);
+        mainInvoked = JNI_TRUE;
+    } else { // instance main method
+        const jmethodID ctorMethodId = (*env)->FromReflectedMethod(env, noArgCtor);
+        CHECK_EXCEPTION_NULL_LEAVE(ctorMethodId);
+        // instantiate the main class instance
+        const jobject mainClassInst = (*env)->NewObject(env, mainClass, ctorMethodId);
+        CHECK_EXCEPTION_NULL_LEAVE(mainClassInst);
+        isNoArgMain ? (*env)->CallVoidMethod(env, mainClassInst, mainMethodId)
+                    : (*env)->CallVoidMethod(env, mainClassInst, mainMethodId, mainArgs);
+        mainInvoked = JNI_TRUE;
     }
-    if (!ret) {
-        // An appropriate main method couldn't be located, check and report
-        // any exception and LEAVE()
+    if (!mainInvoked) {
+        // An appropriate main method wasn't invoked, check and report
+        // any exception and LEAVE().
         CHECK_EXCEPTION_LEAVE(1);
     }
 
@@ -650,7 +550,7 @@ JavaMain(void* _args)
      * The launcher's exit code (in the absence of calls to
      * System.exit) will be non-zero if main threw an exception.
      */
-    if (ret && (*env)->ExceptionOccurred(env) == NULL) {
+    if (mainInvoked && (*env)->ExceptionOccurred(env) == NULL) {
         // main method was invoked and no exception was thrown from it,
         // return success.
         ret = 0;
@@ -659,7 +559,7 @@ JavaMain(void* _args)
         // in the invoked main method, return failure.
         ret = 1;
     }
-    LEAVE();
+    LEAVE(); // exits with the correct "ret" code
 }
 
 /*
@@ -1561,53 +1461,36 @@ NewPlatformStringArray(JNIEnv *env, char **strv, int strc)
 }
 
 /*
- * Calls LauncherHelper::checkAndLoadMain to verify that the main class
- * is present, it is ok to load the main class and then load the main class.
- * For more details refer to the java implementation.
+ * Calls LauncherHelper::locateMainEntry to determine the main method
+ * of the main class. For more details refer to the java implementation
+ * of LauncherHelper::locateMainEntry.
  */
-static jclass
-LoadMainClass(JNIEnv *env, int mode, char *name)
+static jobject
+LocateMainEntry(JNIEnv *env, int mode, char *name)
 {
     jmethodID mid;
     jstring str;
     jobject result;
     jlong start = 0, end = 0;
-    jclass cls = GetLauncherHelperClass(env);
-    NULL_CHECK0(cls);
+    jclass launcherHelperClass = GetLauncherHelperClass(env);
+    NULL_CHECK0(launcherHelperClass);
     if (JLI_IsTraceLauncher()) {
         start = CurrentTimeMicros();
     }
-    NULL_CHECK0(mid = (*env)->GetStaticMethodID(env, cls,
-                "checkAndLoadMain",
-                "(ZILjava/lang/String;)Ljava/lang/Class;"));
+    NULL_CHECK0(mid = (*env)->GetStaticMethodID(env, launcherHelperClass,
+            "locateMainEntry", "(ZILjava/lang/String;)Lsun/launcher/LauncherHelper$MainEntry;"));
 
     NULL_CHECK0(str = NewPlatformString(env, name));
-    NULL_CHECK0(result = (*env)->CallStaticObjectMethod(env, cls, mid,
+    NULL_CHECK0(result = (*env)->CallStaticObjectMethod(env, launcherHelperClass, mid,
                                                         USE_STDERR, mode, str));
 
     if (JLI_IsTraceLauncher()) {
         end = CurrentTimeMicros();
-        printf("%ld micro seconds to load main class\n", (long)(end-start));
+        printf("%ld micro seconds to locate main method\n", (long)(end-start));
         printf("----%s----\n", JLDEBUG_ENV_ENTRY);
     }
 
-    return (jclass)result;
-}
-
-static jclass
-GetApplicationClass(JNIEnv *env)
-{
-    jmethodID mid;
-    jclass appClass;
-    jclass cls = GetLauncherHelperClass(env);
-    NULL_CHECK0(cls);
-    NULL_CHECK0(mid = (*env)->GetStaticMethodID(env, cls,
-                "getApplicationClass",
-                "()Ljava/lang/Class;"));
-
-    appClass = (*env)->CallStaticObjectMethod(env, cls, mid);
-    CHECK_EXCEPTION_RETURN_VALUE(0);
-    return appClass;
+    return (jobject) result;
 }
 
 static char* expandWildcardOnLongOpt(char* arg) {
