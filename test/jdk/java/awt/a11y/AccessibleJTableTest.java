@@ -31,13 +31,15 @@
  * @requires (os.family == "windows" | os.family == "mac")
  */
 
-import javax.swing.*;
-import javax.swing.event.TableModelEvent;
-import javax.swing.event.TableModelListener;
+import javax.swing.JButton;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.SwingUtilities;
 import javax.swing.table.AbstractTableModel;
-import javax.swing.table.TableModel;
 
-import java.awt.*;
+import java.awt.FlowLayout;
+import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.concurrent.CountDownLatch;
@@ -105,7 +107,9 @@ public class AccessibleJTableTest extends AccessibleComponentTest {
                 + "If you can hear second table name: \"second table\" - ctrl+tab further and press PASS, otherwise press FAIL.\n";
 
         JTable table = new JTable(data, columnNames);
+        table.setPreferredScrollableViewportSize(table.getPreferredSize());
         JTable secondTable = new JTable(data, columnNames);
+        secondTable.setPreferredScrollableViewportSize(secondTable.getPreferredSize());
         secondTable.getAccessibleContext().setAccessibleName("Second table");
         JPanel panel = new JPanel();
         panel.setLayout(new FlowLayout());
