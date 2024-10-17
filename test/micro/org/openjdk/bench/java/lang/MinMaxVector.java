@@ -25,7 +25,7 @@ import java.util.stream.LongStream;
 @Fork(2)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @BenchmarkMode(Mode.Throughput)
-public class MinMaxLoopBench
+public class MinMaxVector
 {
     @State(Scope.Thread)
     public static class LoopState {
