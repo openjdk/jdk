@@ -56,7 +56,7 @@ class ChannelInputStream extends InputStream {
 
     // if isOther is true, then the file being read is not a regular file,
     // nor a directory, nor a symbolic link, hence possibly not seekable
-    private @Stable Boolean isOther = null;
+    private @Stable Boolean isOther;
 
     /**
      * Initialize a ChannelInputStream that reads from the given channel.
