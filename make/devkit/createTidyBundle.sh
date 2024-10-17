@@ -27,7 +27,7 @@
 # Creates a tidy bundle in the build directory. A dependency that can be
 # used to validate and correct HTML.
 
-# wget and cmake are required to build tidy.
+# wget, cmake and gcc are required to build tidy.
 
 set -e
 
@@ -76,11 +76,11 @@ case $OS_NAME in
 esac
 
 cd "$SCRIPT_DIR"
-rm -rf $SRC_DIR
+rm -rf "$SRC_DIR"
 
 cd "$INSTALL_PREFIX.."
 PACKAGED_FILE="tidy-html5.tar.gz"
 
-tar -czvf "$PACKAGED_FILE" -C $INSTALL_PREFIX.. tidy
+tar -czvf "$PACKAGED_FILE" -C "$INSTALL_PREFIX.." tidy
 
-echo "Created $INSTALL_PREFIX/../$PACKAGED_FILE"
+echo "Created $INSTALL_PREFIX..$PACKAGED_FILE"
