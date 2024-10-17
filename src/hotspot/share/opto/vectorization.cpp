@@ -31,7 +31,7 @@
 #include "opto/vectorization.hpp"
 
 #ifndef PRODUCT
-static void print_con_or_idx(const Node* n) {
+void VPointer::print_con_or_idx(const Node* n) {
   if (n == nullptr) {
     tty->print("(   0)");
   } else if (n->is_ConI()) {
@@ -1369,12 +1369,12 @@ void VPointer::print() const {
   tty->print("adr: %4d, ", _adr != nullptr ? _adr->_idx : 0);
 
   tty->print(" base");
-  print_con_or_idx(_base);
+  VPointer::print_con_or_idx(_base);
 
   tty->print(" + offset(%4d)", _offset);
 
   tty->print(" + invar");
-  print_con_or_idx(_invar);
+  VPointer::print_con_or_idx(_invar);
 
   tty->print_cr(" + scale(%4d) * iv]", _scale);
 }
@@ -2168,15 +2168,15 @@ void AlignmentSolver::trace_start_solve() const {
 
     // iv = init + pre_iter * pre_stride + main_iter * main_stride
     tty->print("  iv = init");
-    print_con_or_idx(_init_node);
+    VPointer::print_con_or_idx(_init_node);
     tty->print_cr(" + pre_iter * pre_stride(%d) + main_iter * main_stride(%d)",
                   _pre_stride, _main_stride);
 
     // adr = base + offset + invar + scale * iv
     tty->print("  adr = base");
-    print_con_or_idx(_base);
+    VPointer::print_con_or_idx(_base);
     tty->print(" + offset(%d) + invar", _offset);
-    print_con_or_idx(_invar);
+    VPointer::print_con_or_idx(_invar);
     tty->print_cr(" + scale(%d) * iv", _scale);
   }
 }
