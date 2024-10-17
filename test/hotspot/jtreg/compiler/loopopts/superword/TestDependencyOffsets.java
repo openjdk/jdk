@@ -489,6 +489,8 @@
  * @run driver compiler.loopopts.superword.TestDependencyOffsets vec-v004-U
  */
 
+// TODO do we really want to require compiler2?
+
 package compiler.loopopts.superword;
 
 import compiler.lib.ir_framework.*;
@@ -496,6 +498,8 @@ import compiler.lib.compile_framework.*;
 
 import java.util.Arrays;
 import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.List;
 
 public class TestDependencyOffsets {
     private static String generate(CompileFramework comp, String[] flags) {
@@ -575,5 +579,14 @@ public class TestDependencyOffsets {
         comp.addJavaSourceCode("InnerTest", generate(comp, flags));
         comp.compile();
         comp.invoke("InnerTest", "main", new Object[] {null});
+    }
+
+    static record Type (String name, int size, String value, String operator, String ir_node) {}
+
+    static record TestDefinition (int id, int offset) {}
+
+    static List<TestDefinition> getTestList() {
+      List<TestDefinition> tests = new ArrayList<TestDefinition>();
+      return tests;
     }
 }
