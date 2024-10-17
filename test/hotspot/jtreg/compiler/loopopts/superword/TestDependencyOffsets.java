@@ -490,15 +490,26 @@
  */
 
 package compiler.loopopts.superword;
+
 import compiler.lib.ir_framework.*;
 import compiler.lib.compile_framework.*;
 
+import java.util.Arrays;
+import java.util.stream.Collectors;
+
 public class TestDependencyOffsets {
-    private static String generate() {
-        return """
+    private static String generate(CompileFramework comp, String[] flags) {
+        return String.format("""
                import compiler.lib.ir_framework.*;
 
                public class InnerTest {
+                   public static void main(String args[]) {
+                       TestFramework framework = new TestFramework(InnerTest.class);
+                       framework.addFlags("-classpath", "%s");
+                       framework.addFlags(%s);
+                       framework.start();
+                   }
+
                    @Test
                    @IR(counts = {IRNode.LOAD_VECTOR_F, "> 0"},
                        applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
@@ -510,17 +521,12 @@ public class TestDependencyOffsets {
                        return a;
                    }
                }
-               """;
+               """,
+               comp.getEscapedClassPathOfCompiledClasses(),
+               Arrays.stream(flags).map(s -> "\"" + s + "\"").collect(Collectors.joining(", ")));
     }
 
     public static void main(String args[]) {
-        CompileFramework comp = new CompileFramework();
-        comp.addJavaSourceCode("InnerTest", generate());
-        comp.compile();
-
-        TestFramework framework = new TestFramework(comp.getClass("InnerTest"));
-        framework.addFlags("-classpath", comp.getEscapedClassPathOfCompiledClasses());
-
         if (args.length != 1) {
             throw new RuntimeException("Test requires exactly one argument!");
         }
@@ -564,6 +570,10 @@ public class TestDependencyOffsets {
             case "vec-v004-U" -> new String[] {"-XX:MaxVectorSize=4", "-XX:-AlignVector"};
             default -> { throw new RuntimeException("Test argument not recognized: " + args[0]); }
         };
-        framework.start();
+
+        CompileFramework comp = new CompileFramework();
+        comp.addJavaSourceCode("InnerTest", generate(comp, flags));
+        comp.compile();
+        comp.invoke("InnerTest", "main", new Object[] {null});
     }
 }
