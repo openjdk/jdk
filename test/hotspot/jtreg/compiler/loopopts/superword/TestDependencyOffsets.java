@@ -583,10 +583,25 @@ public class TestDependencyOffsets {
 
     static record Type (String name, int size, String value, String operator, String ir_node) {}
 
+    static Type[] types = new Type[] {
+        new Type("int",    4, "-11",    "*", "MUL_VI"),
+        new Type("long",   8, "-11",    "+", "ADD_VL"), // aarch64 NEON does not support MulVL
+        new Type("short",  2, "-11",    "*", "MUL_VS"),
+        new Type("char",   2, "-11",    "*", "MUL_VS"), // char behaves like short
+        new Type("byte",   1, "11",     "*", "MUL_VB"),
+        new Type("float",  4, "1.001f", "*", "MUL_VF"),
+        new Type("double", 8, "1.001",  "*", "MUL_VD"),
+    };
+
+    static List<int> getOffsets() {
+        List<int> offsets = new ArrayList<int>();
+        return offsets;
+    }
+
     static record TestDefinition (int id, int offset) {}
 
-    static List<TestDefinition> getTestList() {
-      List<TestDefinition> tests = new ArrayList<TestDefinition>();
-      return tests;
+    static List<TestDefinition> getTests() {
+        List<TestDefinition> tests = new ArrayList<TestDefinition>();
+        return tests;
     }
 }
