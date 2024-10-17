@@ -29,6 +29,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @bug 8341975
  * @summary Tests the default charset. It should honor `stdout.encoding`
  *          which should be the same as System.out.charset()
+ * @modules jdk.internal.le
  * @run junit/othervm -Dstdout.encoding=UTF-8 DefaultCharsetTest
  * @run junit/othervm -Dstdout.encoding=ISO-8859-1 DefaultCharsetTest
  * @run junit/othervm -Dstdout.encoding=US-ASCII DefaultCharsetTest
