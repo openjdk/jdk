@@ -277,14 +277,14 @@ public class StreamFlowControlTest {
 
             try (InputStream is = t.getRequestBody();
                  OutputStream os = t.getResponseBody()) {
-                
+
                 byte[] bytes = is.readAllBytes();
                 System.out.println("Server " + t.getLocalAddress() + " received:\n"
-                        + t.getRequestURI() + ": " +  new String(bytes, StandardCharsets.UTF_8));
+                        + t.getRequestURI() + ": " + new String(bytes, StandardCharsets.UTF_8));
                 t.getResponseHeaders().setHeader("X-Connection-Key", t.getConnectionKey());
 
                 if (bytes.length == 0) bytes = "no request body!".getBytes(StandardCharsets.UTF_8);
-                int window = Integer.getInteger("jdk.httpclient.windowsize", 2*16*1024);
+                int window = Integer.getInteger("jdk.httpclient.windowsize", 2 * 16 * 1024);
                 final int maxChunkSize;
                 if (t instanceof FCHttp2TestExchange fct) {
                     maxChunkSize = Math.min(window, fct.conn.getMaxFrameSize());
@@ -297,7 +297,7 @@ public class StreamFlowControlTest {
                 int max = (window / resp.length) + 2;
                 // send in chunks
                 t.sendResponseHeaders(200, 0);
-                for (int i=0; i<=max; i++) {
+                for (int i = 0; i <= max; i++) {
                     if (t instanceof FCHttp2TestExchange fct) {
                         try {
                             // we don't wait for the stream window, but we want
