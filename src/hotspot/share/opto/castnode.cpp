@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -473,7 +473,11 @@ Node* ConstraintCastNode::make_cast_for_type(Node* c, Node* in, const Type* type
 
 Node* ConstraintCastNode::optimize_integer_cast(PhaseGVN* phase, BasicType bt) {
   PhaseIterGVN *igvn = phase->is_IterGVN();
-  const TypeInteger* this_type = this->type()->is_integer(bt);
+  const TypeInteger* this_type = this->type()->isa_integer(bt);
+  if (this_type == nullptr) {
+    return nullptr;
+  }
+
   Node* z = in(1);
   const TypeInteger* rx = nullptr;
   const TypeInteger* ry = nullptr;
