@@ -36,6 +36,7 @@ import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.NestingKind;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.PackageElement;
 
 import com.sun.source.doctree.BlockTagTree;
 import com.sun.source.doctree.DocTree;
@@ -153,6 +154,27 @@ public class SimpleTaglet extends BaseTaglet implements InheritableTaglet {
                 return e.getKind().isDeclaredType()
                         && ((TypeElement) e).getNestingKind() == NestingKind.MEMBER;
             }
+
+            @Override
+            protected List<? extends BlockTagTree> getBlockTags(Element e) {
+                var tags = utils.getBlockTags(e, a -> a.getKind() == tagKind);
+                if (tags.isEmpty()) {
+                    tags = getDefaultBlockTags(e, this::accepts);
+                }
+                if (tagKind == DocTree.Kind.SINCE
+                        && tags.isEmpty()
+                        && e.getKind().isDeclaredType()
+                        && (e.getEnclosingElement() instanceof PackageElement || isNestedType(e))) {
+                        tags = utils.getBlockTags(getPackageElement(e), a -> a.getKind() == tagKind);
+                }
+                return tags;
+            }
+            private Element getPackageElement(Element e) {
+                while (e != null && !(e instanceof PackageElement)) {
+                    e = e.getEnclosingElement();
+                }
+                return e;
+            }
         };
     }
 
@@ -195,7 +217,7 @@ public class SimpleTaglet extends BaseTaglet implements InheritableTaglet {
      * @param tree the tree node
      * @return {@code true} if this taglet accepts this tree node
      */
-    private boolean accepts(BlockTagTree tree) {
+    protected boolean accepts(BlockTagTree tree) {
         return (tree.getKind() == DocTree.Kind.UNKNOWN_BLOCK_TAG && tagKind == DocTree.Kind.UNKNOWN_BLOCK_TAG)
                 ? tree.getTagName().equals(name)
                 : tree.getKind() == tagKind;
@@ -222,7 +244,7 @@ public class SimpleTaglet extends BaseTaglet implements InheritableTaglet {
         return simpleBlockTagOutput(holder, tags, header);
     }
 
-    private List<? extends BlockTagTree> getBlockTags(Element e) {
+    protected List<? extends BlockTagTree> getBlockTags(Element e) {
         var tags = utils.getBlockTags(e, this::accepts);
         if (tags.isEmpty()) {
             tags = getDefaultBlockTags(e, this::accepts);
