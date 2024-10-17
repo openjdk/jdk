@@ -2086,12 +2086,6 @@ Node* VectorBlendNode::Identity(PhaseGVN* phase) {
   return this;
 }
 
-
-#ifndef PRODUCT
-void VectorBoxAllocateNode::dump_spec(outputStream *st) const {
-  CallStaticJavaNode::dump_spec(st);
-}
-
 Node* UMinVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   bool match1 = in(1)->Opcode() == Op_UMinV || in(1)->Opcode() == Op_UMaxV;
   bool match2 = in(2)->Opcode() == Op_UMinV || in(2)->Opcode() == Op_UMaxV;
@@ -2134,5 +2128,10 @@ Node* UMaxVNode::Identity(PhaseGVN* phase) {
     return in(1);
   }
   return this;
+}
+
+#ifndef PRODUCT
+void VectorBoxAllocateNode::dump_spec(outputStream *st) const {
+  CallStaticJavaNode::dump_spec(st);
 }
 #endif // !PRODUCT
