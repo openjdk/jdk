@@ -479,6 +479,7 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_currentCarrierThread:     return inline_native_currentCarrierThread();
   case vmIntrinsics::_currentThread:            return inline_native_currentThread();
   case vmIntrinsics::_setCurrentThread:         return inline_native_setCurrentThread();
+  case vmIntrinsics::_setCurrentLockId:         return inline_native_setCurrentLockId();
 
   case vmIntrinsics::_scopedValueCache:          return inline_native_scopedValueCache();
   case vmIntrinsics::_setScopedValueCache:       return inline_native_setScopedValueCache();
@@ -3703,7 +3704,20 @@ bool LibraryCallKit::inline_native_setCurrentThread() {
   thread_obj_handle = _gvn.transform(thread_obj_handle);
   const TypePtr *adr_type = _gvn.type(thread_obj_handle)->isa_ptr();
   access_store_at(nullptr, thread_obj_handle, adr_type, arr, _gvn.type(arr), T_OBJECT, IN_NATIVE | MO_UNORDERED);
+
+  // Change the lock_id of the JavaThread
+  Node* tid = load_field_from_object(arr, "tid", "J");
+  Node* thread_id_offset = basic_plus_adr(thread, in_bytes(JavaThread::lock_id_offset()));
+  Node* tid_memory = store_to_memory(control(), thread_id_offset, tid, T_LONG, Compile::AliasIdxRaw, MemNode::unordered, true);
+
   JFR_ONLY(extend_setCurrentThread(thread, arr);)
+  return true;
+}
+
+bool LibraryCallKit::inline_native_setCurrentLockId() {
+  Node* thread = _gvn.transform(new ThreadLocalNode());
+  Node* thread_id_offset = basic_plus_adr(thread, in_bytes(JavaThread::lock_id_offset()));
+  Node* tid_memory = store_to_memory(control(), thread_id_offset, ConvL2X(argument(0)), T_LONG, Compile::AliasIdxRaw, MemNode::unordered, true);
   return true;
 }
 

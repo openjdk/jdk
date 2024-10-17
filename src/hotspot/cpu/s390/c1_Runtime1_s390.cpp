@@ -208,6 +208,11 @@ void Runtime1::initialize_pd() {
   // Nothing to do.
 }
 
+uint Runtime1::runtime_blob_current_thread_offset(frame f) {
+  Unimplemented();
+  return 0;
+}
+
 OopMapSet* Runtime1::generate_exception_throw(StubAssembler* sasm, address target, bool has_argument) {
   // Make a frame and preserve the caller's caller-save registers.
   OopMap* oop_map = save_live_registers(sasm);

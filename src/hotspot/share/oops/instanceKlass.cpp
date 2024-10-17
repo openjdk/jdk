@@ -1105,6 +1105,22 @@ void InstanceKlass::initialize_impl(TRAPS) {
       }
       wait = true;
       jt->set_class_to_be_initialized(this);
+
+#if INCLUDE_JFR
+      ContinuationEntry* ce = jt->last_continuation();
+      if (ce != nullptr && ce->is_virtual_thread()) {
+        EventVirtualThreadPinned e;
+        if (e.should_commit()) {
+          ResourceMark rm(jt);
+          char reason[256];
+          jio_snprintf(reason, sizeof reason, "Waiting for initialization of klass %s", external_name());
+          e.set_pinnedReason(reason);
+          e.set_carrierThread(JFR_JVM_THREAD_ID(THREAD));
+          e.commit();
+        }
+      }
+ #endif
+
       ol.wait_uninterruptibly(jt);
       jt->set_class_to_be_initialized(nullptr);
     }

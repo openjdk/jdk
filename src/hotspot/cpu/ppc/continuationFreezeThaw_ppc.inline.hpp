@@ -71,6 +71,10 @@ void FreezeBase::adjust_interpreted_frame_unextended_sp(frame& f) {
   // nothing to do
 }
 
+inline void FreezeBase::prepare_freeze_interpreted_top_frame(const frame& f) {
+  Unimplemented();
+}
+
 inline void FreezeBase::relativize_interpreted_frame_metadata(const frame& f, const frame& hf) {
   intptr_t* vfp = f.fp();
   intptr_t* hfp = hf.fp();
@@ -543,10 +547,24 @@ inline void ThawBase::derelativize_interpreted_frame_metadata(const frame& hf, c
   // Keep top_frame_sp relativized.
 }
 
+inline intptr_t* ThawBase::possibly_adjust_frame(frame& top) {
+  Unimplemented();
+  return nullptr;
+}
+
+inline intptr_t* ThawBase::push_cleanup_continuation() {
+  Unimplemented();
+  return nullptr;
+}
+
 inline void ThawBase::patch_pd(frame& f, const frame& caller) {
   patch_callee_link(caller, caller.fp());
   // Prevent assertion if f gets deoptimized right away before it's fully initialized
   f.mark_not_fully_initialized();
+}
+
+inline void ThawBase::patch_pd(frame& f, intptr_t* caller_sp) {
+  Unimplemented();
 }
 
 //

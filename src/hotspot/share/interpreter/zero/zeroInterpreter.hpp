@@ -71,6 +71,7 @@ class ZeroInterpreter: public AbstractInterpreter {
   static address throw_NullPointerException_entry() { return nullptr; }
   static address throw_ArithmeticException_entry()  { return nullptr; }
   static address throw_StackOverflowError_entry()   { return nullptr; }
+  static address cont_resume_interpreter_adapter()  { return nullptr; }
 
 # include "zeroInterpreter_zero.hpp"
 };

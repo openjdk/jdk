@@ -175,7 +175,9 @@ void TemplateInterpreterGenerator::generate_all() {
     Interpreter::_throw_StackOverflowError_entry             = generate_StackOverflowError_handler();
   }
 
-
+  { CodeletMark cm(_masm, "preemption resume adapter");
+    Interpreter::_cont_resume_interpreter_adapter = generate_cont_resume_interpreter_adapter();
+  }
 
 #define method_entry(kind)                                                                          \
   { CodeletMark cm(_masm, "method entry point (kind = " #kind ")");                                 \

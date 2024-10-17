@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -293,7 +293,7 @@ address StackValue::stack_value_address(const frame* fr, const RegisterMapT* reg
   return value_addr;
 }
 
-BasicLock* StackValue::resolve_monitor_lock(const frame* fr, Location location) {
+BasicLock* StackValue::resolve_monitor_lock(const frame& fr, Location location) {
   assert(location.is_stack(), "for now we only look at the stack");
   int word_offset = location.stack_offset() / wordSize;
   // (stack picture)
@@ -304,7 +304,7 @@ BasicLock* StackValue::resolve_monitor_lock(const frame* fr, Location location) 
   // the word_offset is the distance from the stack pointer to the lowest address
   // The frame's original stack pointer, before any extension by its callee
   // (due to Compiler1 linkage on SPARC), must be used.
-  return (BasicLock*) (fr->unextended_sp() + word_offset);
+  return (BasicLock*) (fr.unextended_sp() + word_offset);
 }
 
 
