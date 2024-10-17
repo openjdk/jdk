@@ -71,6 +71,7 @@ import java.util.jar.Manifest;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.MethodFinder;
 import jdk.internal.misc.PreviewFeatures;
 import jdk.internal.misc.VM;
@@ -584,6 +585,17 @@ public final class LauncherHelper {
             ostream.println(getLocalizedMessage("java.launcher.X.macosx.usage",
                         File.pathSeparator));
         }
+    }
+
+    /**
+     * Prints the short usage text to the desired output stream.
+     */
+    static void printConciseUsageMessage(boolean printToStderr) {
+        initOutput(printToStderr);
+        ostream.println(SharedSecrets.getJavaLangAccess().shortVersionString());
+        ostream.println();
+        ostream.println(getLocalizedMessage("java.launcher.opt.concise.header",
+                File.pathSeparator));
     }
 
     static void initOutput(boolean printToStderr) {

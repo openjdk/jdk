@@ -639,4 +639,9 @@ public interface JavaLangAccess {
      * (using -Djava.security.manager=allow)?
      */
     boolean allowSecurityManager();
+
+    /**
+     * Return a short version string for this runtime.
+     */
+    String shortVersionString();
 }
