@@ -193,11 +193,10 @@ public class BindingSpecializer {
                                            CallingSequence callingSequence, ABIDescriptor abi) {
         String className = callingSequence.forDowncall() ? CLASS_NAME_DOWNCALL : CLASS_NAME_UPCALL;
         byte[] bytes = ClassFile.of().build(ClassDesc.ofInternalName(className), clb -> {
-            clb.withFlags(ACC_PUBLIC + ACC_FINAL + ACC_SUPER);
-            clb.withSuperclass(CD_Object);
-            clb.withVersion(CLASSFILE_VERSION, 0);
-
-            clb.withMethodBody(METHOD_NAME, methodTypeDesc(callerMethodType), ACC_PUBLIC | ACC_STATIC,
+            clb.withFlags(ACC_PUBLIC + ACC_FINAL + ACC_SUPER)
+               .withSuperclass(CD_Object)
+               .withVersion(CLASSFILE_VERSION, 0)
+               .withMethodBody(METHOD_NAME, methodTypeDesc(callerMethodType), ACC_PUBLIC | ACC_STATIC,
                     cb -> new BindingSpecializer(cb, callerMethodType, callingSequence, abi, leafType).specialize());
         });
 
@@ -275,8 +274,8 @@ public class BindingSpecializer {
                 if (shouldAcquire(i)) {
                     int scopeLocal = cb.allocateLocal(REFERENCE);
                     initialScopeSlots[numScopes++] = scopeLocal;
-                    cb.loadConstant(null);
-                    cb.storeLocal(REFERENCE, scopeLocal); // need to initialize all scope locals here in case an exception occurs
+                    cb.aconst_null()
+                      .astore(scopeLocal); // need to initialize all scope locals here in case an exception occurs
                 }
             }
             scopeSlots = Arrays.copyOf(initialScopeSlots, numScopes); // fit to size
@@ -285,15 +284,15 @@ public class BindingSpecializer {
 
         // create a Binding.Context for this call
         if (callingSequence.allocationSize() != 0) {
-            cb.loadConstant(callingSequence.allocationSize());
-            cb.invokestatic(CD_SharedUtils, "newBoundedArena", MTD_NEW_BOUNDED_ARENA);
+            cb.loadConstant(callingSequence.allocationSize())
+              .invokestatic(CD_SharedUtils, "newBoundedArena", MTD_NEW_BOUNDED_ARENA);
         } else if (callingSequence.forUpcall() && needsSession()) {
             cb.invokestatic(CD_SharedUtils, "newEmptyArena", MTD_NEW_EMPTY_ARENA);
         } else {
             cb.getstatic(CD_SharedUtils, "DUMMY_ARENA", CD_Arena);
         }
         contextIdx = cb.allocateLocal(REFERENCE);
-        cb.storeLocal(REFERENCE, contextIdx);
+        cb.astore(contextIdx);
 
         // in case the call needs a return buffer, allocate it here.
         // for upcalls the VM wrapper stub allocates the buffer.
@@ -301,7 +300,7 @@ public class BindingSpecializer {
             emitLoadInternalAllocator();
             emitAllocateCall(callingSequence.returnBufferSize(), 1);
             returnBufferIdx = cb.allocateLocal(REFERENCE);
-            cb.storeLocal(REFERENCE, returnBufferIdx);
+            cb.astore(returnBufferIdx);
         }
 
         Label tryStart = cb.newLabel();
@@ -324,7 +323,7 @@ public class BindingSpecializer {
                 // for downcalls, recipes have an input value, which we set up here
                 if (callingSequence.needsReturnBuffer() && i == 0) {
                     assert returnBufferIdx != -1;
-                    cb.loadLocal(REFERENCE, returnBufferIdx);
+                    cb.aload(returnBufferIdx);
                     pushType(MemorySegment.class);
                 } else {
                     emitGetInput();
@@ -340,7 +339,7 @@ public class BindingSpecializer {
                     // return buffer ptr is wrapped in a MemorySegment above, but not passed to the leaf handle
                     popType(MemorySegment.class);
                     returnBufferIdx = cb.allocateLocal(REFERENCE);
-                    cb.storeLocal(REFERENCE, returnBufferIdx);
+                    cb.astore(returnBufferIdx);
                 } else {
                     // for upcalls the recipe result is an argument to the leaf handle
                     emitSetOutput(typeStack.pop());
@@ -355,7 +354,7 @@ public class BindingSpecializer {
         if (callingSequence.forDowncall()) {
             cb.loadConstant(CLASS_DATA_DESC);
         } else {
-            cb.loadLocal(REFERENCE, 0); // load target arg
+            cb.aload(0); // load target arg
         }
         cb.checkcast(CD_MethodHandle);
         // load all the leaf args
@@ -496,8 +495,8 @@ public class BindingSpecializer {
     }
 
     private void emitAcquireScope() {
-        cb.checkcast(CD_AbstractMemorySegmentImpl);
-        cb.invokevirtual(CD_AbstractMemorySegmentImpl, "sessionImpl", MTD_SESSION_IMPL);
+        cb.checkcast(CD_AbstractMemorySegmentImpl)
+          .invokevirtual(CD_AbstractMemorySegmentImpl, "sessionImpl", MTD_SESSION_IMPL);
         Label skipAcquire = cb.newLabel();
         Label end = cb.newLabel();
 
@@ -505,23 +504,22 @@ public class BindingSpecializer {
         assert curScopeLocalIdx != -1;
         boolean hasOtherScopes = curScopeLocalIdx != 0;
         for (int i = 0; i < curScopeLocalIdx; i++) {
-            cb.dup(); // dup for comparison
-            cb.loadLocal(REFERENCE, scopeSlots[i]);
-            cb.if_acmpeq(skipAcquire);
+            cb.dup() // dup for comparison
+              .aload(scopeSlots[i])
+              .if_acmpeq(skipAcquire);
         }
 
         // 1 scope to acquire on the stack
         cb.dup();
         int nextScopeLocal = scopeSlots[curScopeLocalIdx++];
         // call acquire first here. So that if it fails, we don't call release
-        cb.invokevirtual(CD_MemorySessionImpl, "acquire0", MTD_ACQUIRE0); // call acquire on the other
-        cb.storeLocal(REFERENCE, nextScopeLocal); // store off one to release later
+        cb.invokevirtual(CD_MemorySessionImpl, "acquire0", MTD_ACQUIRE0) // call acquire on the other
+          .astore(nextScopeLocal); // store off one to release later
 
         if (hasOtherScopes) { // avoid ASM generating a bunch of nops for the dead code
-            cb.goto_(end);
-
-            cb.labelBinding(skipAcquire);
-            cb.pop(); // drop scope
+            cb.goto_(end)
+              .labelBinding(skipAcquire)
+              .pop(); // drop scope
         }
 
         cb.labelBinding(end);
@@ -529,10 +527,10 @@ public class BindingSpecializer {
 
     private void emitReleaseScopes() {
         for (int scopeLocal : scopeSlots) {
-            cb.loadLocal(REFERENCE, scopeLocal);
-            cb.ifThen(Opcode.IFNONNULL, ifCb -> {
-                ifCb.loadLocal(REFERENCE, scopeLocal);
-                ifCb.invokevirtual(CD_MemorySessionImpl, "release0", MTD_RELEASE0);
+            cb.aload(scopeLocal)
+              .ifThen(Opcode.IFNONNULL, ifCb -> {
+                ifCb.aload(scopeLocal)
+                    .invokevirtual(CD_MemorySessionImpl, "release0", MTD_RELEASE0);
             });
         }
     }
@@ -551,28 +549,28 @@ public class BindingSpecializer {
 
     private void emitLoadInternalSession() {
         assert contextIdx != -1;
-        cb.loadLocal(REFERENCE, contextIdx);
-        cb.checkcast(CD_Arena);
-        cb.invokeinterface(CD_Arena, "scope", MTD_SCOPE);
-        cb.checkcast(CD_MemorySessionImpl);
+        cb.aload(contextIdx)
+          .checkcast(CD_Arena)
+          .invokeinterface(CD_Arena, "scope", MTD_SCOPE)
+          .checkcast(CD_MemorySessionImpl);
     }
 
     private void emitLoadInternalAllocator() {
         assert contextIdx != -1;
-        cb.loadLocal(REFERENCE, contextIdx);
+        cb.aload(contextIdx);
     }
 
     private void emitCloseContext() {
         assert contextIdx != -1;
-        cb.loadLocal(REFERENCE, contextIdx);
-        cb.checkcast(CD_Arena);
-        cb.invokeinterface(CD_Arena, "close", MTD_CLOSE);
+        cb.aload(contextIdx)
+          .checkcast(CD_Arena)
+          .invokeinterface(CD_Arena, "close", MTD_CLOSE);
     }
 
     private void emitBoxAddress(BoxAddress boxAddress) {
         popType(long.class);
-        cb.loadConstant(boxAddress.size());
-        cb.loadConstant(boxAddress.align());
+        cb.loadConstant(boxAddress.size())
+          .loadConstant(boxAddress.align());
         if (needsSession()) {
             emitLoadInternalSession();
             cb.invokestatic(CD_Utils, "longToAddress", MTD_LONG_TO_ADDRESS_SCOPE);
@@ -585,7 +583,7 @@ public class BindingSpecializer {
     private void emitAllocBuffer(Allocate binding) {
         if (callingSequence.forDowncall()) {
             assert returnAllocatorIdx != -1;
-            cb.loadLocal(REFERENCE, returnAllocatorIdx);
+            cb.aload(returnAllocatorIdx);
         } else {
             emitLoadInternalAllocator();
         }
@@ -607,8 +605,8 @@ public class BindingSpecializer {
             cb.storeLocal(storeTypeKind, valueIdx);
 
             ClassDesc valueLayoutType = emitLoadLayoutConstant(storeType);
-            cb.loadConstant(offset);
-            cb.loadLocal(storeTypeKind, valueIdx);
+            cb.loadConstant(offset)
+              .loadLocal(storeTypeKind, valueIdx);
             MethodTypeDesc descriptor = MethodTypeDesc.of(CD_void, valueLayoutType, CD_long, classDesc(storeType));
             cb.invokeinterface(CD_MemorySegment, "set", descriptor);
         } else {
@@ -619,9 +617,9 @@ public class BindingSpecializer {
                 assert storeType == long.class; // chunking only for int and long
             }
             int longValueIdx = cb.allocateLocal(LONG);
-            cb.storeLocal(LONG, longValueIdx);
+            cb.lstore(longValueIdx);
             int writeAddrIdx = cb.allocateLocal(REFERENCE);
-            cb.storeLocal(REFERENCE, writeAddrIdx);
+            cb.astore(writeAddrIdx);
 
             int remaining = byteWidth;
             int chunkOffset = 0;
@@ -648,25 +646,25 @@ public class BindingSpecializer {
                 //int writeChunk = (int) (((0xFFFF_FFFFL << shiftAmount) & longValue) >>> shiftAmount);
                 int shiftAmount = chunkOffset * Byte.SIZE;
                 mask = mask << shiftAmount;
-                cb.loadLocal(LONG, longValueIdx);
-                cb.loadConstant(mask);
-                cb.land();
+                cb.lload(longValueIdx)
+                  .loadConstant(mask)
+                  .land();
                 if (shiftAmount != 0) {
-                    cb.loadConstant(shiftAmount);
-                    cb.lushr();
+                    cb.loadConstant(shiftAmount)
+                      .lushr();
                 }
                 cb.l2i();
                 TypeKind chunkStoreTypeKind = TypeKind.from(chunkStoreType);
                 int chunkIdx = cb.allocateLocal(chunkStoreTypeKind);
-                cb.storeLocal(chunkStoreTypeKind, chunkIdx);
+                cb.storeLocal(chunkStoreTypeKind, chunkIdx)
                 // chunk done, now write it
 
                 //writeAddress.set(JAVA_SHORT_UNALIGNED, offset, writeChunk);
-                cb.loadLocal(REFERENCE, writeAddrIdx);
+                  .aload(writeAddrIdx);
                 ClassDesc valueLayoutType = emitLoadLayoutConstant(chunkStoreType);
                 long writeOffset = offset + SharedUtils.pickChunkOffset(chunkOffset, byteWidth, chunkSize);
-                cb.loadConstant(writeOffset);
-                cb.loadLocal(chunkStoreTypeKind, chunkIdx);
+                cb.loadConstant(writeOffset)
+                  .loadLocal(chunkStoreTypeKind, chunkIdx);
                 MethodTypeDesc descriptor = MethodTypeDesc.of(CD_void, valueLayoutType, CD_long, classDesc(chunkStoreType));
                 cb.invokeinterface(CD_MemorySegment, "set", descriptor);
 
@@ -690,16 +688,16 @@ public class BindingSpecializer {
             if (!callingSequence.needsReturnBuffer()) {
                 emitSaveReturnValue(storeType);
             } else {
-                int valueIdx = cb.allocateLocal(storeTypeKind);
-                cb.storeLocal(storeTypeKind, valueIdx); // store away the stored value, need it later
-
                 assert returnBufferIdx != -1;
-                cb.loadLocal(REFERENCE, returnBufferIdx);
+                int valueIdx = cb.allocateLocal(storeTypeKind);
+                cb.storeLocal(storeTypeKind, valueIdx) // store away the stored value, need it later
+                  .aload(returnBufferIdx);
                 ClassDesc valueLayoutType = emitLoadLayoutConstant(storeType);
-                cb.loadConstant(retBufOffset);
-                cb.loadLocal(storeTypeKind, valueIdx);
-                MethodTypeDesc descriptor = MethodTypeDesc.of(CD_void, valueLayoutType, CD_long, classDesc(storeType));
-                cb.invokeinterface(CD_MemorySegment, "set", descriptor);
+                cb.loadConstant(retBufOffset)
+                  .loadLocal(storeTypeKind, valueIdx)
+                  .invokeinterface(CD_MemorySegment,
+                        "set",
+                        MethodTypeDesc.of(CD_void, valueLayoutType, CD_long, classDesc(storeType)));
                 retBufOffset += abi.arch.typeSize(vmStore.storage().type());
             }
         }
@@ -714,11 +712,12 @@ public class BindingSpecializer {
                 emitRestoreReturnValue(loadType);
             } else {
                 assert returnBufferIdx != -1;
-                cb.loadLocal(REFERENCE, returnBufferIdx);
+                cb.aload(returnBufferIdx);
                 ClassDesc valueLayoutType = emitLoadLayoutConstant(loadType);
-                cb.loadConstant(retBufOffset);
-                MethodTypeDesc descriptor = MethodTypeDesc.of(classDesc(loadType), valueLayoutType, CD_long);
-                cb.invokeinterface(CD_MemorySegment, "get", descriptor);
+                cb.loadConstant(retBufOffset)
+                  .invokeinterface(CD_MemorySegment,
+                          "get",
+                          MethodTypeDesc.of(classDesc(loadType), valueLayoutType, CD_long));
                 retBufOffset += abi.arch.typeSize(vmLoad.storage().type());
                 pushType(loadType);
             }
@@ -736,15 +735,15 @@ public class BindingSpecializer {
 
     private void emitShiftLeft(ShiftLeft shiftLeft) {
         popType(long.class);
-        cb.loadConstant(shiftLeft.shiftAmount() * Byte.SIZE);
-        cb.lshl();
+        cb.loadConstant(shiftLeft.shiftAmount() * Byte.SIZE)
+          .lshl();
         pushType(long.class);
     }
 
     private void emitShiftRight(ShiftRight shiftRight) {
         popType(long.class);
-        cb.loadConstant(shiftRight.shiftAmount() * Byte.SIZE);
-        cb.lushr();
+        cb.loadConstant(shiftRight.shiftAmount() * Byte.SIZE)
+          .lushr();
         pushType(long.class);
     }
 
@@ -758,11 +757,10 @@ public class BindingSpecializer {
                 // implement least significant byte non-zero test
 
                 // select first byte
-                cb.loadConstant(0xFF);
-                cb.iand();
-
-                // convert to boolean
-                cb.invokestatic(CD_Utils, "byteToBoolean", MTD_BYTE_TO_BOOLEAN);
+                cb.loadConstant(0xFF)
+                  .iand()
+                  // convert to boolean
+                  .invokestatic(CD_Utils, "byteToBoolean", MTD_BYTE_TO_BOOLEAN);
             }
             case INT_TO_BYTE -> cb.i2b();
             case INT_TO_CHAR -> cb.i2c();
@@ -782,8 +780,8 @@ public class BindingSpecializer {
 
     private void emitSegmentBase() {
         popType(MemorySegment.class);
-        cb.checkcast(CD_AbstractMemorySegmentImpl);
-        cb.invokevirtual(CD_AbstractMemorySegmentImpl, "unsafeGetBase", MTD_UNSAFE_GET_BASE);
+        cb.checkcast(CD_AbstractMemorySegmentImpl)
+          .invokevirtual(CD_AbstractMemorySegmentImpl, "unsafeGetBase", MTD_UNSAFE_GET_BASE);
         pushType(Object.class);
     }
 
@@ -791,11 +789,11 @@ public class BindingSpecializer {
         popType(MemorySegment.class);
 
         if (!segmentOffset.allowHeap()) {
-            cb.dup();
-            cb.invokestatic(CD_SharedUtils, "checkNative", MTD_CHECK_NATIVE);
+            cb.dup()
+              .invokestatic(CD_SharedUtils, "checkNative", MTD_CHECK_NATIVE);
         }
-        cb.checkcast(CD_AbstractMemorySegmentImpl);
-        cb.invokevirtual(CD_AbstractMemorySegmentImpl, "unsafeGetOffset", MTD_UNSAFE_GET_OFFSET);
+        cb.checkcast(CD_AbstractMemorySegmentImpl)
+          .invokevirtual(CD_AbstractMemorySegmentImpl, "unsafeGetOffset", MTD_UNSAFE_GET_OFFSET);
 
         pushType(long.class);
     }
@@ -809,17 +807,17 @@ public class BindingSpecializer {
 
         if (SharedUtils.isPowerOfTwo(byteWidth)) {
             ClassDesc valueLayoutType = emitLoadLayoutConstant(loadType);
-            cb.loadConstant(offset);
-            MethodTypeDesc descriptor = MethodTypeDesc.of(classDesc(loadType), valueLayoutType, CD_long);
-            cb.invokeinterface(CD_MemorySegment, "get", descriptor);
+            cb.loadConstant(offset)
+              .invokeinterface(CD_MemorySegment,
+                      "get",
+                      MethodTypeDesc.of(classDesc(loadType), valueLayoutType, CD_long));
         } else {
             // chunked
             int readAddrIdx = cb.allocateLocal(REFERENCE);
-            cb.storeLocal(REFERENCE, readAddrIdx);
-
-            cb.loadConstant(0L); // result
+            cb.astore(readAddrIdx)
+              .loadConstant(0L); // result
             int resultIdx = cb.allocateLocal(LONG);
-            cb.storeLocal(LONG, resultIdx);
+            cb.lstore(resultIdx);
 
             int remaining = byteWidth;
             int chunkOffset = 0;
@@ -848,30 +846,30 @@ public class BindingSpecializer {
                         throw new IllegalStateException("Unexpected chunk size for chunked write: " + chunkSize);
                 }
                 // read from segment
-                cb.loadLocal(REFERENCE, readAddrIdx);
+                cb.aload(readAddrIdx);
                 ClassDesc valueLayoutType = emitLoadLayoutConstant(chunkType);
                 MethodTypeDesc descriptor = MethodTypeDesc.of(classDesc(chunkType), valueLayoutType, CD_long);
                 long readOffset = offset + SharedUtils.pickChunkOffset(chunkOffset, byteWidth, chunkSize);
-                cb.loadConstant(readOffset);
-                cb.invokeinterface(CD_MemorySegment, "get", descriptor);
-                cb.invokestatic(toULongHolder, "toUnsignedLong", toULongDescriptor);
+                cb.loadConstant(readOffset)
+                  .invokeinterface(CD_MemorySegment, "get", descriptor)
+                  .invokestatic(toULongHolder, "toUnsignedLong", toULongDescriptor);
 
                 // shift to right offset
                 int shiftAmount = chunkOffset * Byte.SIZE;
                 if (shiftAmount != 0) {
-                    cb.loadConstant(shiftAmount);
-                    cb.lshl();
+                    cb.loadConstant(shiftAmount)
+                      .lshl();
                 }
                 // add to result
-                cb.loadLocal(LONG, resultIdx);
-                cb.lor();
-                cb.storeLocal(LONG, resultIdx);
+                cb.lload(resultIdx)
+                  .lor()
+                  .lstore(resultIdx);
 
                 remaining -= chunkSize;
                 chunkOffset += chunkSize;
             } while (remaining != 0);
 
-            cb.loadLocal(LONG, resultIdx);
+            cb.lload(resultIdx);
             if (loadType == int.class) {
                 cb.l2i();
             } else {
@@ -898,19 +896,18 @@ public class BindingSpecializer {
         emitAllocateCall(size, alignment);
         cb.dup();
         int storeIdx = cb.allocateLocal(REFERENCE);
-        cb.storeLocal(REFERENCE, storeIdx);
-        cb.loadConstant(0L);
-        cb.loadConstant(size);
-        cb.invokestatic(CD_MemorySegment, "copy", MTD_COPY, true);
-
-        cb.loadLocal(REFERENCE, storeIdx);
+        cb.astore(storeIdx)
+          .loadConstant(0L)
+          .loadConstant(size)
+          .invokestatic(CD_MemorySegment, "copy", MTD_COPY, true)
+          .aload(storeIdx);
         pushType(MemorySegment.class);
     }
 
     private void emitAllocateCall(long size, long alignment) {
-        cb.loadConstant(size);
-        cb.loadConstant(alignment);
-        cb.invokeinterface(CD_SegmentAllocator, "allocate", MTD_ALLOCATE);
+        cb.loadConstant(size)
+          .loadConstant(alignment)
+          .invokeinterface(CD_SegmentAllocator, "allocate", MTD_ALLOCATE);
     }
 
     private ClassDesc emitLoadLayoutConstant(Class<?> type) {

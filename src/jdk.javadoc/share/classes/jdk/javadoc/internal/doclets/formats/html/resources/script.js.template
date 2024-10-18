@@ -300,6 +300,7 @@ document.addEventListener("DOMContentLoaded", function(e) {
     });
     var expanded = false;
     var windowWidth;
+    var bodyHeight;
     function collapse(e) {
         if (expanded) {
             mainnav.removeAttribute("style");
@@ -365,6 +366,7 @@ document.addEventListener("DOMContentLoaded", function(e) {
     var scrollTimeoutNeeded;
     var prevHash;
     function initSectionData() {
+        bodyHeight = document.body.offsetHeight;
         sections = [{ id: "", top: 0 }].concat(Array.from(main.querySelectorAll("section[id], h2[id], h2 a[id], div[id]"))
             .filter((e) => {
                 return sidebar.querySelector("a[href=\"#" + encodeURI(e.getAttribute("id")) + "\"]") !== null
@@ -469,7 +471,7 @@ document.addEventListener("DOMContentLoaded", function(e) {
                 expand();
             }
         }
-        if (sections) {
+        if (sections && document.body.offsetHeight !== bodyHeight) {
             initSectionData();
             prevHash = null;
             handleScroll();

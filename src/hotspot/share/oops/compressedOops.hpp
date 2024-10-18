@@ -34,23 +34,18 @@
 class outputStream;
 class ReservedHeapSpace;
 
-struct NarrowPtrStruct {
-  // Base address for oop-within-java-object materialization.
-  // null if using wide oops or zero based narrow oops.
-  address _base;
-  // Number of shift bits for encoding/decoding narrow ptrs.
-  // 0 if using wide ptrs or zero based unscaled narrow ptrs,
-  // LogMinObjAlignmentInBytes otherwise.
-  int     _shift;
-  // Generate code with implicit null checks for narrow ptrs.
-  bool    _use_implicit_null_checks;
-};
-
 class CompressedOops : public AllStatic {
   friend class VMStructs;
 
-  // For UseCompressedOops.
-  static NarrowPtrStruct _narrow_oop;
+  // Base address for oop-within-java-object materialization.
+  // null if using wide oops or zero based narrow oops.
+  static address _base;
+  // Number of shift bits for encoding/decoding narrow ptrs.
+  // 0 if using wide oops or zero based unscaled narrow oops,
+  // LogMinObjAlignmentInBytes otherwise.
+  static int _shift;
+  // Generate code with implicit null checks for narrow oops.
+  static bool _use_implicit_null_checks;
 
   // The address range of the heap
   static MemRegion _heap_address_range;
@@ -86,13 +81,13 @@ public:
   static void set_shift(int shift);
   static void set_use_implicit_null_checks(bool use);
 
-  static address  base()                     { return _narrow_oop._base; }
-  static address  base_addr()                { return (address)&_narrow_oop._base; }
+  static address  base()                     { return _base; }
+  static address  base_addr()                { return (address)&_base; }
   static address  begin()                    { return (address)_heap_address_range.start(); }
   static address  end()                      { return (address)_heap_address_range.end(); }
   static bool     is_base(void* addr)        { return (base() == (address)addr); }
-  static int      shift()                    { return _narrow_oop._shift; }
-  static bool     use_implicit_null_checks() { return _narrow_oop._use_implicit_null_checks; }
+  static int      shift()                    { return _shift; }
+  static bool     use_implicit_null_checks() { return _use_implicit_null_checks; }
 
   static bool is_in(void* addr);
   static bool is_in(MemRegion mr);
