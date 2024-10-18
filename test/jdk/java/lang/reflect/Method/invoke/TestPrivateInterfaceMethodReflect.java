@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,10 +37,7 @@ import java.lang.reflect.*;
 
 import static java.lang.classfile.ClassFile.ACC_PRIVATE;
 import static java.lang.classfile.ClassFile.ACC_PUBLIC;
-import static java.lang.constant.ConstantDescs.CD_Object;
-import static java.lang.constant.ConstantDescs.CD_int;
-import static java.lang.constant.ConstantDescs.INIT_NAME;
-import static java.lang.constant.ConstantDescs.MTD_void;
+import static java.lang.constant.ConstantDescs.*;
 
 public class TestPrivateInterfaceMethodReflect {
 
@@ -67,7 +64,7 @@ public class TestPrivateInterfaceMethodReflect {
                 case INTERFACE_NAME -> ClassFile.of().build(ClassDesc.ofInternalName(INTERFACE_NAME), clb -> {
                     clb.withFlags(AccessFlag.ABSTRACT, AccessFlag.INTERFACE, AccessFlag.PUBLIC);
                     clb.withSuperclass(CD_Object);
-                    clb.withMethodBody("privInstance", MethodTypeDesc.of(CD_int), ACC_PRIVATE, cob -> {
+                    clb.withMethodBody("privInstance", MTD_int, ACC_PRIVATE, cob -> {
                         cob.loadConstant(EXPECTED);
                         cob.ireturn();
                     });

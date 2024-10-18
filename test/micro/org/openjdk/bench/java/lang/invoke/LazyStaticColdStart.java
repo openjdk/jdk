@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,7 +72,6 @@ public class LazyStaticColdStart {
             static final ClassDesc CD_Blackhole = Blackhole.class.describeConstable().orElseThrow();
             static final MethodTypeDesc MTD_void_long = MethodTypeDesc.of(CD_void, CD_long);
             static final MethodTypeDesc MTD_ThreadLocalRandom = MethodTypeDesc.of(CD_ThreadLocalRandom);
-            static final MethodTypeDesc MTD_long = MethodTypeDesc.of(CD_long);
             static final byte[] classBytes = ClassFile.of().build(describedClass, clb -> {
                 clb.withField("v", CD_long, ACC_STATIC);
                 clb.withMethodBody(CLASS_INIT_NAME, MTD_void, ACC_STATIC, cob -> {
