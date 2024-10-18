@@ -26,17 +26,22 @@
  * @key headful
  * @bug 4983388 8015600
  * @summary shortcuts on menus do not work on JDS
- * @author Oleg Mokhovikov
  * @library ../../../../regtesthelpers
  * @build Util
  * @run main bug4983388
  */
 
-import java.awt.*;
-import javax.swing.*;
-import javax.swing.event.MenuListener;
-import javax.swing.event.MenuEvent;
+import java.awt.Robot;
 import java.awt.event.KeyEvent;
+
+import javax.swing.JFrame;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
+import javax.swing.event.MenuEvent;
+import javax.swing.event.MenuListener;
 
 public class bug4983388 {
     static volatile boolean bMenuSelected = false;
@@ -88,7 +93,11 @@ public class bug4983388 {
         robot.waitForIdle();
         robot.delay(500);
 
-        SwingUtilities.invokeAndWait(() -> frame.dispose());
+        SwingUtilities.invokeAndWait(() -> {
+            if (frame != null) {
+                frame.dispose();
+            }
+        });
 
         if (!bMenuSelected) {
             throw new RuntimeException("shortcuts on menus do not work");
