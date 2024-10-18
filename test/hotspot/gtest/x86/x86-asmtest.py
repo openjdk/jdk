@@ -232,7 +232,7 @@ class Pop2Instruction(TwoRegInstruction):
 
     def cstr(self):
         # reverse to match the order in OpenJDK
-        return f'__ {self._name} (' + ', '.join([reg.cstr() for reg in reversed(self.operands)]) + ');'
+        return f'__ {self._name}(' + ', '.join([reg.cstr() for reg in reversed(self.operands)]) + ');'
 
 class Push2Instruction(TwoRegInstruction):
     def __init__(self, name, aname, width, reg1, reg2):
@@ -240,7 +240,7 @@ class Push2Instruction(TwoRegInstruction):
 
     def cstr(self):
         # reverse to match the order in OpenJDK
-        return f'__ {self._name} (' + ', '.join([reg.cstr() for reg in reversed(self.operands)]) + ');'
+        return f'__ {self._name}(' + ', '.join([reg.cstr() for reg in reversed(self.operands)]) + ');'
 
 class CondRegMemInstruction(RegMemInstruction):
     def __init__(self, name, aname, width, cond, reg, mem_base, mem_idx):
@@ -248,7 +248,7 @@ class CondRegMemInstruction(RegMemInstruction):
         self.cond = cond
 
     def cstr(self):
-        return f'__ {self._name} (' + 'Assembler::Condition::' + self.cond + ', ' + ', '.join([self.reg.cstr(), self.mem.cstr()]) + ');'
+        return f'__ {self._name}(' + 'Assembler::Condition::' + self.cond + ', ' + ', '.join([self.reg.cstr(), self.mem.cstr()]) + ');'
 
     def astr(self):
         return f'{self._aname}' + cond_to_suffix[self.cond] + ' ' + ', '.join([self.reg.astr(), self.mem.astr()])
@@ -259,7 +259,7 @@ class CondRegInstruction(RegInstruction):
         self.cond = cond
 
     def cstr(self):
-        return f'__ {self._name}b (' + 'Assembler::Condition::' + self.cond + ', ' + self.reg.cstr() + ');'
+        return f'__ {self._name}b(' + 'Assembler::Condition::' + self.cond + ', ' + self.reg.cstr() + ');'
 
     def astr(self):
         return f'{self._aname}' + cond_to_suffix[self.cond] + ' ' + self.reg.astr()
@@ -269,7 +269,7 @@ class RegImm32Instruction(RegImmInstruction):
         super().__init__(name, aname, width, reg, imm)
 
     def cstr(self):
-        return f'__ {self._name} (' + ', '.join([self.reg.cstr(), self.imm.cstr()]) + ');'
+        return f'__ {self._name}(' + ', '.join([self.reg.cstr(), self.imm.cstr()]) + ');'
 
 test_regs = list(registers_mapping.keys())
 
@@ -293,7 +293,7 @@ def is_64_reg(reg):
 def print_instruction(instr, lp64_flag, print_lp64_flag):
     cstr = instr.cstr()
     astr = instr.astr()
-    print("    %-50s //    %s    IID%s" % (cstr, astr, len(ifdef_flags)))
+    print("    %-75s //    %s    IID%s" % (cstr, astr, len(ifdef_flags)))
     ifdef_flags.append(lp64_flag or not print_lp64_flag)
     insns_strs.append(cstr)
     outfile.write(f"    {astr}\n")
@@ -407,7 +407,7 @@ def generate(RegOp, ops, print_lp64_flag=True):
             print("#endif // _LP64")
             lp64_flag = False
 
-def print_with_ifdef(ifdef_flags, items, item_formatter):
+def print_with_ifdef(ifdef_flags, items, item_formatter, width):
     under_defined = False
     iid = 0
     for idx, item in enumerate(items):
@@ -419,8 +419,7 @@ def print_with_ifdef(ifdef_flags, items, item_formatter):
             if under_defined:
                 print("#endif // _LP64")
                 under_defined = False
-        print("   ", end="")
-        print(f" {item_formatter(item)},    // IID{iid}")
+        print("    %-*s // IID%s" % (width, item_formatter(item) + ",", iid))
         iid += 1
     if under_defined:
         print("#endif // _LP64")
@@ -695,17 +694,17 @@ if __name__ == "__main__":
     print()
     print("  static const uint8_t insns[] =")
     print("  {")
-    print_with_ifdef(ifdef_flags, instructions, lambda x: x[1])
+    print_with_ifdef(ifdef_flags, instructions, lambda x: f"{x[1]}", 80)
     print("  };")
     print()
     print("  static const unsigned int insns_lens[] =")
     print("  {")
-    print_with_ifdef(ifdef_flags, instructions, lambda x: x[0])
+    print_with_ifdef(ifdef_flags, instructions, lambda x: f"{x[0]}", 5)
     print("  };")
     print()
     print("  static const char* insns_strs[] =")
     print("  {")
-    print_with_ifdef(ifdef_flags, insns_strs, lambda x: f"\"{x}\"")
+    print_with_ifdef(ifdef_flags, insns_strs, lambda x: f"\"{x}\"", 85)
     print("  };")
 
     print("// END  Generated code -- do not edit")
