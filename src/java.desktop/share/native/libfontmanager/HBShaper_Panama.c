@@ -63,7 +63,7 @@ static float euclidianDistance(float a, float b)
 #define TYPO_LIGA 0x00000002
 #define TYPO_RTL  0x80000000
 
-JDKEXPORT int jdk_hb_shape(
+JDKEXPORT void jdk_hb_shape(
      float ptSize,
      float *matrix,
      void* pFace,
@@ -92,7 +92,6 @@ JDKEXPORT int jdk_hb_shape(
      int featureCount = 0;
      char* kern = (flags & TYPO_KERN) ? "kern" : "-kern";
      char* liga = (flags & TYPO_LIGA) ? "liga" : "-liga";
-     int ret;
      unsigned int buflen;
 
      float devScale = 1.0f;
@@ -132,7 +131,7 @@ JDKEXPORT int jdk_hb_shape(
      glyphInfo = hb_buffer_get_glyph_infos(buffer, 0);
      glyphPos = hb_buffer_get_glyph_positions(buffer, &buflen);
 
-     ret = (*store_layout_results_fn)
+     (*store_layout_results_fn)
                (slot, baseIndex, offset, startX, startY, devScale,
                 charCount, glyphCount, glyphInfo, glyphPos);
 
@@ -141,5 +140,5 @@ JDKEXPORT int jdk_hb_shape(
      if (features != NULL) {
          free(features);
      }
-     return ret;
+     return;
 }
