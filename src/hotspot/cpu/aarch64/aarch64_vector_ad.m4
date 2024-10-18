@@ -1,6 +1,6 @@
 //
-// Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
-// Copyright (c) 2020, 2024, Arm Limited. All rights reserved.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2020, 2025, Arm Limited. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -183,9 +183,9 @@ source %{
       case Op_MulReductionVF:
       case Op_MulReductionVI:
       case Op_MulReductionVL:
-        // No vector multiply reduction instructions, but we do
-        // emit scalar instructions for 64/128-bit vectors.
-        if (length_in_bytes != 8 && length_in_bytes != 16) {
+        // No vector multiply reduction instructions, but we do emit ASIMD instructions for
+        // 64/128-bit vectors. For wider vectors it's a combination of SVE and ASIMD instructions.
+        if (length_in_bytes < 8) {
           return false;
         }
         break;
@@ -1870,56 +1870,119 @@ REDUCE_ADD_FP_PREDICATE(D, D)
 
 // ------------------------------ Vector reduction mul -------------------------
 
-instruct reduce_mulI(iRegINoSp dst, iRegIorL2I isrc, vReg vsrc,
-                     vReg tmp1, vReg tmp2) %{
+instruct reduce_mulI_le128b(iRegINoSp dst, iRegIorL2I isrc, vReg vsrc,
+                            vReg tmp1, vReg tmp2) %{
   predicate(Matcher::vector_length_in_bytes(n->in(2)) == 8 ||
             Matcher::vector_length_in_bytes(n->in(2)) == 16);
   match(Set dst (MulReductionVI isrc vsrc));
   effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2);
-  format %{ "reduce_mulI $dst, $isrc, $vsrc\t# vector (64/128 bits). KILL $tmp1, $tmp2" %}
+  format %{ "reduce_mulI_le128b $dst, $isrc, $vsrc\t# vector (64/128 bits). KILL $tmp1, $tmp2" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this, $vsrc);
     uint length_in_bytes = Matcher::vector_length_in_bytes(this, $vsrc);
-    __ neon_reduce_mul_integral($dst$$Register, bt, $isrc$$Register,
-                                $vsrc$$FloatRegister, length_in_bytes,
-                                $tmp1$$FloatRegister, $tmp2$$FloatRegister);
+    __ reduce_mul_integral_le128b($dst$$Register, bt, $isrc$$Register,
+                                  $vsrc$$FloatRegister, length_in_bytes,
+                                  $tmp1$$FloatRegister, $tmp2$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
 
-instruct reduce_mulL(iRegLNoSp dst, iRegL isrc, vReg vsrc) %{
+instruct reduce_mulI_gt128b(iRegINoSp dst, iRegIorL2I isrc, vReg vsrc,
+                            vReg tmp1, vReg tmp2, pRegGov pgtmp1, pRegGov pgtmp2) %{
+  predicate(Matcher::vector_length_in_bytes(n->in(2)) > 16);
+  match(Set dst (MulReductionVI isrc vsrc));
+  effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2, TEMP pgtmp1, TEMP pgtmp2);
+  format %{ "reduce_mulI_gt128b $dst, $isrc, $vsrc\t# vector (> 128 bits). KILL $tmp1, $tmp2, $pgtmp1, $pgtmp2" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this, $vsrc);
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this, $vsrc);
+    __ reduce_mul_integral_gt128b($dst$$Register, bt, $isrc$$Register,
+                                  $vsrc$$FloatRegister, length_in_bytes,
+                                  $tmp1$$FloatRegister, $tmp2$$FloatRegister,
+                                  $pgtmp1$$PRegister, $pgtmp2$$PRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct reduce_mulL_le128b(iRegLNoSp dst, iRegL isrc, vReg vsrc) %{
   predicate(Matcher::vector_length_in_bytes(n->in(2)) == 16);
   match(Set dst (MulReductionVL isrc vsrc));
   effect(TEMP_DEF dst);
-  format %{ "reduce_mulL $dst, $isrc, $vsrc\t# 2L" %}
+  format %{ "reduce_mulL_le128b $dst, $isrc, $vsrc\t# 2L" %}
   ins_encode %{
-    __ neon_reduce_mul_integral($dst$$Register, T_LONG, $isrc$$Register,
-                                $vsrc$$FloatRegister, 16, fnoreg, fnoreg);
+    __ reduce_mul_integral_le128b($dst$$Register, T_LONG, $isrc$$Register,
+                                  $vsrc$$FloatRegister, 16, fnoreg, fnoreg);
   %}
   ins_pipe(pipe_slow);
 %}
 
-instruct reduce_mulF(vRegF dst, vRegF fsrc, vReg vsrc, vReg tmp) %{
+instruct reduce_mulL_gt128b(iRegLNoSp dst, iRegL isrc, vReg vsrc, vReg tmp1,
+                            pRegGov pgtmp1, pRegGov pgtmp2) %{
+  predicate(Matcher::vector_length_in_bytes(n->in(2)) > 16);
+  match(Set dst (MulReductionVL isrc vsrc));
+  effect(TEMP_DEF dst, TEMP tmp1, TEMP pgtmp1, TEMP pgtmp2);
+  format %{ "reduce_mulL_gt128b $dst, $isrc, $vsrc\t# vector (> 128 bits). KILL $tmp1, $pgtmp1, $pgtmp2" %}
+  ins_encode %{
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this, $vsrc);
+    __ reduce_mul_integral_gt128b($dst$$Register, T_LONG, $isrc$$Register,
+                                  $vsrc$$FloatRegister, length_in_bytes,
+                                  $tmp1$$FloatRegister, fnoreg,
+                                  $pgtmp1$$PRegister, $pgtmp2$$PRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct reduce_mulF_le128b(vRegF dst, vRegF fsrc, vReg vsrc, vReg tmp) %{
   predicate(Matcher::vector_length_in_bytes(n->in(2)) <= 16);
   match(Set dst (MulReductionVF fsrc vsrc));
   effect(TEMP_DEF dst, TEMP tmp);
-  format %{ "reduce_mulF $dst, $fsrc, $vsrc\t# 2F/4F. KILL $tmp" %}
+  format %{ "reduce_mulF_le128b $dst, $fsrc, $vsrc\t# 2F/4F. KILL $tmp" %}
   ins_encode %{
     uint length_in_bytes = Matcher::vector_length_in_bytes(this, $vsrc);
-    __ neon_reduce_mul_fp($dst$$FloatRegister, T_FLOAT, $fsrc$$FloatRegister,
-                          $vsrc$$FloatRegister, length_in_bytes, $tmp$$FloatRegister);
+    __ reduce_mul_fp_le128b($dst$$FloatRegister, T_FLOAT, $fsrc$$FloatRegister,
+                            $vsrc$$FloatRegister, length_in_bytes, $tmp$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
 
-instruct reduce_mulD(vRegD dst, vRegD dsrc, vReg vsrc, vReg tmp) %{
+instruct reduce_mulF_gt128b(vRegF dst, vRegF fsrc, vReg vsrc, vReg tmp,
+                            pRegGov pgtmp1, pRegGov pgtmp2) %{
+  predicate(Matcher::vector_length_in_bytes(n->in(2)) > 16);
+  match(Set dst (MulReductionVF fsrc vsrc));
+  effect(TEMP_DEF dst, TEMP tmp, TEMP pgtmp1, TEMP pgtmp2);
+  format %{ "reduce_mulF_gt128b $dst, $fsrc, $vsrc\t# (> 128 bits). KILL $tmp, $pgtmp1, $pgtmp2" %}
+  ins_encode %{
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this, $vsrc);
+    __ reduce_mul_fp_gt128b($dst$$FloatRegister, T_FLOAT, $fsrc$$FloatRegister,
+                            $vsrc$$FloatRegister, length_in_bytes, $tmp$$FloatRegister,
+                            $pgtmp1$$PRegister, $pgtmp2$$PRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct reduce_mulD_le128b(vRegD dst, vRegD dsrc, vReg vsrc, vReg tmp) %{
   predicate(Matcher::vector_length_in_bytes(n->in(2)) == 16);
   match(Set dst (MulReductionVD dsrc vsrc));
   effect(TEMP_DEF dst, TEMP tmp);
-  format %{ "reduce_mulD $dst, $dsrc, $vsrc\t# 2D. KILL $tmp" %}
+  format %{ "reduce_mulD_le128b $dst, $dsrc, $vsrc\t# 2D. KILL $tmp" %}
   ins_encode %{
-    __ neon_reduce_mul_fp($dst$$FloatRegister, T_DOUBLE, $dsrc$$FloatRegister,
-                          $vsrc$$FloatRegister, 16, $tmp$$FloatRegister);
+    __ reduce_mul_fp_le128b($dst$$FloatRegister, T_DOUBLE, $dsrc$$FloatRegister,
+                            $vsrc$$FloatRegister, 16, $tmp$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct reduce_mulD_gt128b(vRegD dst, vRegD dsrc, vReg vsrc, vReg tmp,
+                            pRegGov pgtmp1, pRegGov pgtmp2) %{
+  predicate(Matcher::vector_length_in_bytes(n->in(2)) > 16);
+  match(Set dst (MulReductionVD dsrc vsrc));
+  effect(TEMP_DEF dst, TEMP tmp, TEMP pgtmp1, TEMP pgtmp2);
+  format %{ "reduce_mulD_gt128b $dst, $dsrc, $vsrc\t# (> 16 bits). KILL $tmp, $pgtmp1, $pgtmp2" %}
+  ins_encode %{
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this, $vsrc);
+    __ reduce_mul_fp_gt128b($dst$$FloatRegister, T_DOUBLE, $dsrc$$FloatRegister,
+                            $vsrc$$FloatRegister, length_in_bytes, $tmp$$FloatRegister,
+                            $pgtmp1$$PRegister, $pgtmp2$$PRegister);
   %}
   ins_pipe(pipe_slow);
 %}
