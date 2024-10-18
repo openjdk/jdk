@@ -91,11 +91,10 @@ public class ZipEntry implements ZipConstants, Cloneable {
      */
     private static final long UPPER_DOSTIME_BOUND =
             128L * 365 * 24 * 60 * 60 * 1000;
-    // Maximum possible size of name length + comment length + extra length
-    // for entries in order to not exceed 65,489 bytes minus 46 bytes for the CEN
-    // header length
-    private static final int MAX_NAME_COMMENT_EXTRA_SIZE =
-            0xFFFF - ZipFile.CENHDR;
+    // CEN header size + name length + comment length + extra length
+    // should not exceed 65,535 bytes per the PKWare APP.NOTE
+    // 4.4.10, 4.4.11, & 4.4.12.
+    private static final int MAX_COMBINED_CEN_HEADER_SIZE = 0xFFFF;
     /**
      * Creates a new ZIP entry with the specified name.
      *
@@ -103,12 +102,12 @@ public class ZipEntry implements ZipConstants, Cloneable {
      *         The entry name
      *
      * @throws NullPointerException if the entry name is null
-     * @throws IllegalArgumentException if the entry name is longer than
-     *         65,489 bytes
+     * @throws IllegalArgumentException if the combined length of the entry name
+     * and {@linkplain #CENHDR CEN Header size} exceeds 65,535 bytes.
      */
     public ZipEntry(String name) {
         Objects.requireNonNull(name, "name");
-        if (name.length() > MAX_NAME_COMMENT_EXTRA_SIZE) {
+        if (!isCENHeaderValid(name, null, null)) {
             throw new IllegalArgumentException("entry name too long");
         }
         this.name = name;
@@ -523,8 +522,10 @@ public class ZipEntry implements ZipConstants, Cloneable {
      * @param  extra
      *         The extra field data bytes
      *
-     * @throws IllegalArgumentException if the length of the specified
-     *         extra field data is greater than 65,489 bytes
+     * @throws IllegalArgumentException if the combined length of the specified
+     * extra field data, the {@linkplain #getName() entry name},
+     * the {@linkplain #getComment() entry comment}, and
+     * {@linkplain #CENHDR CEN Header size}, exceeds 65,535 bytes.
      *
      * @see #getExtra()
      */
@@ -545,7 +546,7 @@ public class ZipEntry implements ZipConstants, Cloneable {
      */
     void setExtra0(byte[] extra, boolean doZIP64, boolean isLOC) {
         if (extra != null) {
-            if (extra.length > MAX_NAME_COMMENT_EXTRA_SIZE) {
+            if (!isCENHeaderValid(name, extra, comment)) {
                 throw new IllegalArgumentException("invalid extra field length");
             }
             // extra fields are in "HeaderID(2)DataSize(2)Data... format
@@ -647,13 +648,15 @@ public class ZipEntry implements ZipConstants, Cloneable {
     /**
      * Sets the optional comment string for the entry.
      * @param comment the comment string
-     * @throws IllegalArgumentException if the length of the specified
-     *         comment string is greater than 65,489 bytes
+     * @throws IllegalArgumentException if the combined length
+     * of the specified entry comment, {@linkplain #getName() entry name},
+     * the {@linkplain #getExtra() extra field data}, and
+     * {@linkplain #CENHDR CEN Header size}, exceeds 65,535 bytes.
      * @see #getComment()
      */
     public void setComment(String comment) {
         if (comment != null) {
-            if (comment.length() > MAX_NAME_COMMENT_EXTRA_SIZE) {
+            if (!isCENHeaderValid(name, extra, comment)) {
                 throw new IllegalArgumentException("entry comment too long");
             }
         }
@@ -706,5 +709,21 @@ public class ZipEntry implements ZipConstants, Cloneable {
             // This should never happen, since we are Cloneable
             throw new InternalError(e);
         }
+    }
+
+    /**
+     * Validate that the CEN header size + name length + comment length + extra length
+     *  do not exceed 65,535 bytes per the PKWare APP.NOTE
+     *  4.4.10, 4.4.11, & 4.4.12.
+     * @param name Zip entry name
+     * @param extra Zip extra data
+     * @param comment Zip entry comment
+     * @return true if valid CEN Header size; false otherwise
+     */
+    private static  boolean isCENHeaderValid(String name, byte[] extra, String comment) {
+        int clen = comment == null ? 0 : comment.length();
+        int elen = extra == null ? 0 : extra.length;
+        int headerSize = CENHDR + name.length() + clen + elen;
+        return headerSize <= MAX_COMBINED_CEN_HEADER_SIZE ? true : false;
     }
 }
