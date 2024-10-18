@@ -583,6 +583,9 @@ sun.security.krb5.maxReferrals=5
 #   UsageConstraint:
 #       usage [TLSServer] [TLSClient] [SignedJAR]
 #
+#   TLSCipherConstraint:
+#       kx | authn
+#
 #   IncludeProperty:
 #       include <security property>
 #
@@ -656,15 +659,17 @@ sun.security.krb5.maxReferrals=5
 #       be specified with a whitespace delimiter.
 #       Example:  "SHA1 usage TLSServer TLSClient"
 #
-#   TlsCryptoScopeConstraint:
+#   TLSCipherConstraint:
 #     kx | authn
-#       This constraint restricts algorithm based on the TLS crypto scope:
-#         - "kx" scope prohibits algorithm to be used for Key Exchange.
-#         - "authn" scope prohibits algorithm to be used for Authentication.
+#       This constraint restricts TLS cipher suite based on its algorithm usage:
+#         - "kx" prohibits algorithm to be used for Key Exchange.
+#         - "authn" prohibits algorithm to be used for Authentication.
 #       This constraint can't be chained by '&' with other constraints.
 #       Examples:
-#         - "RSA kx" prohibits RSA algorithm to be used for Key Exchange.
-#         - "DSS authn" prohibits DSS algorithm to be used for Authentication.
+#         - "RSA kx" prohibits any cipher suite that uses RSA algorithm for
+#            Key Exchange.
+#         - "DSS authn" prohibits any cipher suite that uses DSS algorithm
+#            for Authentication.
 #         - "NULL authn" requires some algorithm to be used for Authentication.
 #
 # When an algorithm must satisfy more than one constraint, it must be

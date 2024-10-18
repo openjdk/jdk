@@ -117,7 +117,7 @@ public class AlgorithmDecomposer {
     }
 
     /**
-     * Get KeyExchange and Authentication algorithms used in cipher suite's key exchange part.
+     * Get KeyExchange and Authentication algorithms used in cipher suite.
      *
      * @return KeyExchange and Authentication algorithms in that order.
      */

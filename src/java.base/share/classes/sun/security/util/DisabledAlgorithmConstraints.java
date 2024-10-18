@@ -149,6 +149,10 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
         algorithmConstraints = new Constraints(propertyName, disabledAlgorithms);
     }
 
+    /*
+     * This only checks if the algorithm of cipher suite has been completely
+     * disabled.  If there is keysize or other limit, this method allow the algorithm.
+     */
     @Override
     public final boolean permits(Set<CryptoPrimitive> primitives,
             String algorithm, AlgorithmParameters parameters) {
@@ -165,7 +169,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
             return false;
         }
 
-        if (!algorithmConstraints.checkTlsCryptoScopeConstraints(algorithm)) {
+        if (!algorithmConstraints.checkTLSCipherConstraint(algorithm)) {
             return false;
         }
 
@@ -376,30 +380,31 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                 boolean denyAfterLimit = false;
 
                 for (String rawEntry : policy.split("&")) {
-                    // Do not link TlsCryptoScopeConstraint with other constraints.
-                    if (lastConstraint instanceof TlsCryptoScopeConstraint) {
-                        throw new IllegalArgumentException("TlsCryptoScopeConstraint constraint"
+                    // Do not link TLSCipherConstraint with other constraints.
+                    if (lastConstraint instanceof TLSCipherConstraint) {
+                        throw new IllegalArgumentException("TLSCipherConstraint constraint"
                                 + " should not be linked with other constraints.");
                     }
 
                     final String entry = rawEntry.trim();
                     Matcher matcher;
-                    TlsCryptoScope tlsCryptoScope = Arrays.stream(TlsCryptoScope.values())
+
+                    TLSCipherSegment segment = Arrays.stream(TLSCipherSegment.values())
                             .filter(v -> v.getName().equalsIgnoreCase(entry))
                             .findFirst()
                             .orElse(null);
 
-                    if (tlsCryptoScope != null) {
+                    if (segment != null) {
                         if (debug != null) {
-                            debug.println("Constraints set to TlsCryptoScopeConstraint: "
-                                    + tlsCryptoScope.name());
+                            debug.println("Constraints set to TLSCipherConstraint: "
+                                    + segment.name());
                         }
                         if (lastConstraint != null) {
-                            throw new IllegalArgumentException("TlsCryptoScopeConstraint constraint"
+                            throw new IllegalArgumentException("TLSCipherConstraint"
                                     + " should not be linked with other constraints. "
                                     + "Constraint: " + constraintEntry);
                         }
-                        c = new TlsCryptoScopeConstraint(algorithm, tlsCryptoScope);
+                        c = new TLSCipherConstraint(algorithm, segment);
 
                     } else if (entry.startsWith("keySize")) {
                         if (debug != null) {
@@ -548,19 +553,19 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
             }
         }
 
-        // Special case of TlsCryptoScopeConstraints
-        private boolean checkTlsCryptoScopeConstraints(String algorithm) {
+        // Special case of TLSCipherConstraint
+        private boolean checkTLSCipherConstraint(String algorithm) {
             List<Constraint> constraintList = new ArrayList<>();
 
             // Check if algorithm's name contains the constraint's key,
             // not an exact match like for other constraints.
             constraintsMap.forEach((key, list) -> {
                 for (Constraint constraint : list) {
-                    // Match "NULL" CryptoScope constraint against any algorithm,
+                    // Match "NULL" TLSCipherConstraint constraint against any algorithm,
                     // otherwise match any algorithm that contains the key.
                     if ((key.equalsIgnoreCase("NULL") ||
                             algorithm.toUpperCase(Locale.ENGLISH).contains(key)) &&
-                            constraint instanceof TlsCryptoScopeConstraint) {
+                            constraint instanceof TLSCipherConstraint) {
 
                         constraintList.add(constraint);
                     }
@@ -1014,13 +1019,13 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
         }
     }
 
-    enum TlsCryptoScope {
+    enum TLSCipherSegment {
         KX("kx"),             // Key Exchange
         AUTHN("authn");       // Authentication
 
         private final String name;
 
-        TlsCryptoScope(String name) {
+        TLSCipherSegment(String name) {
             this.name = name;
         }
 
@@ -1029,13 +1034,13 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
         }
     }
 
-    private class TlsCryptoScopeConstraint extends Constraint {
+    private class TLSCipherConstraint extends Constraint {
 
-        private final TlsCryptoScope tlsCryptoScope;
+        private final TLSCipherSegment segment;
 
-        TlsCryptoScopeConstraint(String algo, TlsCryptoScope tlsCryptoScope) {
-            this.algorithm = algo;
-            this.tlsCryptoScope = tlsCryptoScope;
+        TLSCipherConstraint(String algorithm, TLSCipherSegment segment) {
+            this.algorithm = algorithm;
+            this.segment = segment;
         }
 
         @Override
@@ -1048,11 +1053,11 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
             if (parts != null) {
                 String inputAlgorithm = null;
 
-                if (TlsCryptoScope.KX.equals(tlsCryptoScope)) {
+                if (TLSCipherSegment.KX.equals(segment)) {
                     inputAlgorithm = parts[0];
                 }
 
-                if (TlsCryptoScope.AUTHN.equals(tlsCryptoScope)) {
+                if (TLSCipherSegment.AUTHN.equals(segment)) {
                     inputAlgorithm = parts[1];
                 }
 
@@ -1066,7 +1071,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
 
         @Override
         public void permits(ConstraintsParameters cp) throws CertPathValidatorException {
-            // Do nothing here, TlsCryptoScopeConstraint doesn't apply to certificates.
+            // Do nothing here, TLSCipherConstraint doesn't apply to certificates.
         }
     }
 
