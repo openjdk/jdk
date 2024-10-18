@@ -493,6 +493,13 @@ final class DoubleMaxVector extends DoubleVector {
                                      DoubleMaxMask.class, (DoubleMaxMask) m);  // specialize
     }
 
+    @Override
+    @ForceInline
+    public DoubleMaxVector selectFrom(Vector<Double> v1,
+                                   Vector<Double> v2) {
+        return (DoubleMaxVector)
+            super.selectFromTemplate((DoubleMaxVector) v1, (DoubleMaxVector) v2);  // specialize
+    }
 
     @ForceInline
     @Override
