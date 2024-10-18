@@ -40,15 +40,15 @@ import java.util.stream.IntStream;
 
 public class VectorMultiplyOpt {
 
-    public static long [] src1;
-    public static long [] src2;
-    public static long [] res;
+    public static long[] src1;
+    public static long[] src2;
+    public static long[] res;
 
     public static final int SIZE = 4095;
     public static final Random r = new Random(1024);
     public static final VectorSpecies<Long> LSP = LongVector.SPECIES_PREFERRED;
 
-    public static void pattern1(long [] res, long [] src1, long [] src2) {
+    public static void pattern1(long[] res, long[] src1, long[] src2) {
         int i = 0;
         for (; i < LSP.loopBound(res.length); i += LSP.length()) {
             LongVector vsrc1 = LongVector.fromArray(LSP, src1, i);
@@ -62,7 +62,7 @@ public class VectorMultiplyOpt {
         }
     }
 
-    public static void pattern2(long [] res, long [] src1, long [] src2) {
+    public static void pattern2(long[] res, long[] src1, long[] src2) {
         int i = 0;
         for (; i < LSP.loopBound(res.length); i += LSP.length()) {
             LongVector vsrc1 = LongVector.fromArray(LSP, src1, i);
@@ -76,7 +76,7 @@ public class VectorMultiplyOpt {
         }
     }
 
-    public static void pattern3(long [] res, long [] src1, long [] src2) {
+    public static void pattern3(long[] res, long[] src1, long[] src2) {
         int i = 0;
         for (; i < LSP.loopBound(res.length); i += LSP.length()) {
             LongVector vsrc1 = LongVector.fromArray(LSP, src1, i);
@@ -90,7 +90,7 @@ public class VectorMultiplyOpt {
         }
     }
 
-    public static void pattern4(long [] res, long [] src1, long [] src2) {
+    public static void pattern4(long[] res, long[] src1, long[] src2) {
         int i = 0;
         for (; i < LSP.loopBound(res.length); i += LSP.length()) {
             LongVector vsrc1 = LongVector.fromArray(LSP, src1, i);
@@ -108,7 +108,7 @@ public class VectorMultiplyOpt {
         public long apply(long src1, long src2);
     }
 
-    public static void validate(String msg, long [] actual, long [] src1, long [] src2, Validator func) {
+    public static void validate(String msg, long[] actual, long[] src1, long[] src2, Validator func) {
         for (int i = 0; i < actual.length; i++) {
             if (actual[i] != func.apply(src1[i], src2[i])) {
                 throw new AssertionError(msg + "index " + i + ": src1 = " + src1[i] + " src2 = " +
