@@ -25,7 +25,7 @@
 #ifndef SHARE_NMT_NMTNATIVECALLSTACKSTORAGE_HPP
 #define SHARE_NMT_NMTNATIVECALLSTACKSTORAGE_HPP
 
-#include "nmt/arrayWithFreeList.hpp"
+#include "utilities/arrayWithFreeList.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/nativeCallStack.hpp"
 #include <limits>
@@ -66,6 +66,8 @@ private:
   struct TableEntry {
     TableEntryIndex next;
     StackIndex stack;
+    TableEntry(TableEntryIndex next, StackIndex stack)
+    : next(next), stack(stack) {}
   };
 
   StackIndex put(const NativeCallStack& value);
