@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,10 +44,10 @@ public class ByteBuffers {
         random.nextBytes(t);
 
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("DSA", p);
-        kpg.initialize(512);
+        kpg.initialize(2048);
         KeyPair kp = kpg.generateKeyPair();
 
-        Signature sig = Signature.getInstance("DSA", p);
+        Signature sig = Signature.getInstance("SHA224withDSA", p);
         sig.initSign(kp.getPrivate());
         sig.update(t);
         byte[] signature = sig.sign();

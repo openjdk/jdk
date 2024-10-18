@@ -231,16 +231,16 @@ public class DHKeyAgreement2 {
         // and use it for encryption
         System.out.println("Return shared secret as SecretKey object ...");
         bobKeyAgree.doPhase(alicePubKey, true);
-        SecretKey desKey = bobKeyAgree.generateSecret("DES");
+        SecretKey aesKey = bobKeyAgree.generateSecret("AES");
 
-        Cipher desCipher = Cipher.getInstance("DES/ECB/PKCS5Padding");
-        desCipher.init(Cipher.ENCRYPT_MODE, desKey);
+        Cipher aesCipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
+        aesCipher.init(Cipher.ENCRYPT_MODE, aesKey);
 
         byte[] cleartext = "This is just an example".getBytes();
-        byte[] ciphertext = desCipher.doFinal(cleartext);
+        byte[] ciphertext = aesCipher.doFinal(cleartext);
 
-        desCipher.init(Cipher.DECRYPT_MODE, desKey);
-        byte[] cleartext1 = desCipher.doFinal(ciphertext);
+        aesCipher.init(Cipher.DECRYPT_MODE, aesKey);
+        byte[] cleartext1 = aesCipher.doFinal(ciphertext);
 
         int clearLen = cleartext.length;
         int clear1Len = cleartext1.length;
