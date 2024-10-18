@@ -1404,7 +1404,12 @@ class StubGenerator: public StubCodeGenerator {
 
     // We have a count of units and some trailing bytes.  Adjust the
     // count and do a bulk copy of words.
-    __ lsr(r15, count, exact_log2(wordSize/granularity));
+    int shift = exact_log2(wordSize/granularity);
+    if (shift > 0) {
+      __ lsr(r15, count, shift);
+    } else {
+      __ mov(r15, count);
+    }
     if (direction == copy_forwards) {
       if (type != T_OBJECT) {
         __ bl(copy_f);
