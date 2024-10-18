@@ -59,6 +59,7 @@ import static java.net.StandardProtocolFamily.INET;
 import static java.net.StandardProtocolFamily.INET6;
 import static java.net.StandardProtocolFamily.UNIX;
 
+import jdk.internal.event.SocketConnectEvent;
 import jdk.internal.event.SocketReadEvent;
 import jdk.internal.event.SocketWriteEvent;
 import sun.net.ConnectionResetException;
@@ -947,9 +948,7 @@ class SocketChannelImpl
         }
     }
 
-    @Override
-    public boolean connect(SocketAddress remote) throws IOException {
-        SocketAddress sa = checkRemote(remote);
+    private boolean implConnect(SocketAddress sa) throws IOException {
         try {
             readLock.lock();
             try {
@@ -993,6 +992,18 @@ class SocketChannelImpl
             close();
             throw SocketExceptions.of(ioe, sa);
         }
+    }
+
+    @Override
+    public boolean connect(SocketAddress remote) throws IOException {
+        SocketAddress sa = checkRemote(remote);
+        if (!SocketConnectEvent.enabled()) {
+            return implConnect(sa);
+        }
+        long start = SocketConnectEvent.timestamp();
+        boolean connected = implConnect(sa);
+        SocketConnectEvent.offer(start, connected, sa);
+        return connected;
     }
 
     /**
