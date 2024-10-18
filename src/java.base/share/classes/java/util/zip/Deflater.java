@@ -165,11 +165,13 @@ public class Deflater {
 
     /**
      * Creates a new compressor using the specified compression level.
-     * If 'nowrap' is true then the ZLIB header and checksum fields will
-     * not be used in order to support the compression format used in
-     * both GZIP and PKZIP.
+     * If {@code nowrap} is true then the compressed output will be
+     * in the raw 'deflate' format, without any ZLIB header or checksum
+     * fields wrapping the compressed stream. This provides compatibility
+     * with compression formats used by both GZIP and ZIP.
+     *
      * @param level the compression level (0-9)
-     * @param nowrap if true then use GZIP compatible compression
+     * @param nowrap if true then produce a compressed output without ZLIB headers
      */
     @SuppressWarnings("this-escape")
     public Deflater(int level, boolean nowrap) {
