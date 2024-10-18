@@ -597,7 +597,8 @@ public class TestDependencyOffsets {
         comp.invoke("InnerTest", "main", new Object[] {null});
     }
 
-    static record CPUConstraintForType(String description, String[] cpuFeatures, int platformVectorWidth) {}
+    // TODO
+    static record VWConstraint(String description, String[] cpuFeatures, int platformVectorWidth) {}
 
     static record Type (String name, int size, String value, String operator, String irNode) {
         String letter() {
@@ -636,34 +637,34 @@ public class TestDependencyOffsets {
          * Note, that on some platform, the platformVectorWidth for different types may be different:
          * Example: avx has 16 for int, but 32 for float.
          */
-        List<CPUConstraintForType> cpuConstraints() {
-            List<CPUConstraintForType> constraints = new ArrayList<CPUConstraintForType>();
+        List<VWConstraint> vwConstraints() {
+            List<VWConstraint> vwConstraints = new ArrayList<VWConstraint>();
 
             //                                           Description for the platform       CPU features that identify this platform           Platform vector witdth
             switch(name) {
             case "byte", "char", "short":
-                constraints.add(new CPUConstraintForType("sse4.1 to avx",                   new String[]{"sse4.1", "true", "avx2", "false"},   16));
-                constraints.add(new CPUConstraintForType("avx2 to avx512 without avx512bw", new String[]{"avx2", "true", "avx512bw", "false"}, 32));
-                constraints.add(new CPUConstraintForType("avx512bw",                        new String[]{"avx512bw", "true"},                  64));
+                vwConstraints.add(new VWConstraint("sse4.1 to avx",                   new String[]{"sse4.1", "true", "avx2", "false"},   16));
+                vwConstraints.add(new VWConstraint("avx2 to avx512 without avx512bw", new String[]{"avx2", "true", "avx512bw", "false"}, 32));
+                vwConstraints.add(new VWConstraint("avx512bw",                        new String[]{"avx512bw", "true"},                  64));
                 break;
             case "float", "double":
-                constraints.add(new CPUConstraintForType("sse4.1",                          new String[]{"sse4.1", "true", "avx", "false"},    16));
-                constraints.add(new CPUConstraintForType("avx and avx2",                    new String[]{"avx", "true", "avx512", "false"},    32));
-                constraints.add(new CPUConstraintForType("avx512",                          new String[]{"avx512", "true"},                    64));
+                vwConstraints.add(new VWConstraint("sse4.1",                          new String[]{"sse4.1", "true", "avx", "false"},    16));
+                vwConstraints.add(new VWConstraint("avx and avx2",                    new String[]{"avx", "true", "avx512", "false"},    32));
+                vwConstraints.add(new VWConstraint("avx512",                          new String[]{"avx512", "true"},                    64));
                 break;
             case "int", "long":
-                constraints.add(new CPUConstraintForType("sse4.1 to avx",                   new String[]{"sse4.1", "true", "avx2", "false"},   16));
-                constraints.add(new CPUConstraintForType("avx2",                            new String[]{"avx2", "true", "avx512", "false"},   32));
-                constraints.add(new CPUConstraintForType("avx512",                          new String[]{"avx512", "true"},                    64));
+                vwConstraints.add(new VWConstraint("sse4.1 to avx",                   new String[]{"sse4.1", "true", "avx2", "false"},   16));
+                vwConstraints.add(new VWConstraint("avx2",                            new String[]{"avx2", "true", "avx512", "false"},   32));
+                vwConstraints.add(new VWConstraint("avx512",                          new String[]{"avx512", "true"},                    64));
                 break;
             default:
                 throw new RuntimeException("Unexpected type name " + name);
             }
 
-            constraints.add(new CPUConstraintForType(    "asimd",                           new String[]{"asimd", "true", "sve", "false"},     16));
-            constraints.add(new CPUConstraintForType(    "sve",                             new String[]{"sve", "true"},                       256));
+            vwConstraints.add(new VWConstraint(    "asimd",                           new String[]{"asimd", "true", "sve", "false"},     16));
+            vwConstraints.add(new VWConstraint(    "sve",                             new String[]{"sve", "true"},                       256));
 
-            return constraints;
+            return vwConstraints;
         }
     }
 
@@ -769,10 +770,10 @@ public class TestDependencyOffsets {
          */
         String generateIRRules() {
             StringBuilder builder = new StringBuilder();
-            for (CPUConstraintForType constraint : type.cpuConstraints()) {
-                int elements = constraint.platformVectorWidth / type.size;
-                builder.append("    // CPU: " + constraint.description +
-                               " -> platformVectorWidth=" + constraint.platformVectorWidth +
+            for (VWConstraint vwConstraint : type.vwConstraints()) {
+                int elements = vwConstraint.platformVectorWidth / type.size;
+                builder.append("    // CPU: " + vwConstraint.description +
+                               " -> platformVectorWidth=" + vwConstraint.platformVectorWidth +
                                " -> max " + elements + " elements in vector\n");
                 // General condition for vectorization:
                 //   at least 4 bytes:    width >= 4
@@ -782,8 +783,8 @@ public class TestDependencyOffsets {
                 int byte_offset = offset * type.size;
 
                 // -XX:-AlignVector
-                IRRule r1 = new IRRule(type, constraint, type.irNode);
-                if (0 < byte_offset && byte_offset < constraint.platformVectorWidth) {
+                IRRule r1 = new IRRule(type, vwConstraint, type.irNode);
+                if (0 < byte_offset && byte_offset < vwConstraint.platformVectorWidth) {
                     // Vectors have to be shorter to avoid cyclic dependency.
                     int log2 = 31 - Integer.numberOfLeadingZeros(offset);
                     int floor_pow2 = 1 << log2;
@@ -820,14 +821,14 @@ public class TestDependencyOffsets {
 
     static class IRRule {
         Type type;
-        CPUConstraintForType constraint;
+        VWConstraint vwConstraint;
         String irNode;
         String size;
         boolean isPositiveRule;
 
-        IRRule(Type type, CPUConstraintForType constraint, String irNode) {
+        IRRule(Type type, VWConstraint vwConstraint, String irNode) {
             this.type = type;
-            this.constraint = constraint;
+            this.vwConstraint = vwConstraint;
             this.irNode = irNode;
             this.size = null;
             this.isPositiveRule = true;
@@ -848,10 +849,10 @@ public class TestDependencyOffsets {
 
             // cpu features
             builder.append("        applyIfCPUFeature");
-            builder.append(constraint.cpuFeatures.length > 2 ? "And" : "");
+            builder.append(vwConstraint.cpuFeatures.length > 2 ? "And" : "");
             builder.append(" = {");
-            builder.append(Arrays.stream(constraint.cpuFeatures).map(c -> "\"" + c + "\"")
-                                                                .collect(Collectors.joining(", ")));
+            builder.append(Arrays.stream(vwConstraint.cpuFeatures).map(c -> "\"" + c + "\"")
+                                                                  .collect(Collectors.joining(", ")));
             builder.append("})");
         }
 
