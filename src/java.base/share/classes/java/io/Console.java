@@ -580,7 +580,8 @@ public sealed class Console implements Flushable permits ProxyingConsole {
      * the {@code Console}.
      * <p>
      * The returned charset corresponds to the input and output source
-     * (e.g., keyboard and/or display) specified by the host environment or user.
+     * (e.g., keyboard and/or display) specified by the host environment or user,
+     * which defaults to the one based on {@link System##stdout.encoding stdtout.encoding}.
      * It may not necessarily be the same as the default charset returned from
      * {@link java.nio.charset.Charset#defaultCharset() Charset.defaultCharset()}.
      *
