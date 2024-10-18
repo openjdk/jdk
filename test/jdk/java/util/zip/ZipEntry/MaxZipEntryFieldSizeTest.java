@@ -25,7 +25,8 @@
  * @bug 8340553
  * @summary Verify that ZipEntry(String), ZipEntry::setComment, and
  * ZipEntry::setExtra throws a IllegalArgumentException when the
- * length of the field exceeds 65,489 bytes
+ * combined length of the field, including the size of the CEN Header,
+ * exceeds 65,535 bytes
  * @run junit MaxZipEntryFieldSizeTest
  */
 
@@ -36,10 +37,8 @@ import org.junit.jupiter.params.provider.ValueSource;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -86,16 +85,16 @@ public class MaxZipEntryFieldSizeTest {
             MAX_FIELD_LEN_MINUS_ENTRY_NAME,
             MAX_FIELD_LEN_MINUS_ENTRY_NAME - 1})
     void setCommentLengthTest(int length) {
-        final byte[] bytes = new byte[length];
-        Arrays.fill(bytes, (byte) 'a');
-        boolean expectException = length > MAX_NAME_COMMENT_EXTRA_SIZE;
+        boolean expectException = length >= MAX_NAME_COMMENT_EXTRA_SIZE;
         ZipEntry zipEntry = new ZipEntry(ENTRY_NAME);
-        String comment = new String(bytes, StandardCharsets.UTF_8);
+        String comment = "a".repeat(length);
         System.out.printf("Comment Len= %s, exception: %s%n", comment.length(), expectException);
         // The comment length will trigger the IllegalArgumentException
         if (expectException) {
             assertThrows(IllegalArgumentException.class, () ->
                     zipEntry.setComment(comment));
+        } else {
+            zipEntry.setComment(comment);
         }
     }
 
@@ -109,15 +108,15 @@ public class MaxZipEntryFieldSizeTest {
             MAX_NAME_COMMENT_EXTRA_SIZE + 1,
             MAX_FIELD_LEN_MINUS_ENTRY_NAME,
             MAX_FIELD_LEN_MINUS_ENTRY_NAME - 1})
-    void setNameLengthTest(int length) {
+    void nameLengthTest(int length) {
         boolean expectException = length > MAX_NAME_COMMENT_EXTRA_SIZE;
-        final byte[] bytes = new byte[length];
-        Arrays.fill(bytes, (byte) 'a');
-        String name = new String(bytes, StandardCharsets.UTF_8);
+        String name = "a".repeat(length);
         System.out.printf("name Len= %s, exception: %s%n", name.length(), expectException);
         // The name length will trigger the IllegalArgumentException
         if (expectException) {
             assertThrows(IllegalArgumentException.class, () -> new ZipEntry(name));
+        } else {
+            new ZipEntry(name);
         }
     }
 
@@ -132,19 +131,31 @@ public class MaxZipEntryFieldSizeTest {
             MAX_FIELD_LEN_MINUS_ENTRY_NAME,
             MAX_FIELD_LEN_MINUS_ENTRY_NAME - 1})
     void setExtraLengthTest(int length) {
-        final byte[] bytes = new byte[length];
-        boolean expectException = length > MAX_NAME_COMMENT_EXTRA_SIZE;
+        boolean expectException = length >= MAX_NAME_COMMENT_EXTRA_SIZE;
+        byte[] bytes = creatExtraData(length);
+        ZipEntry zipEntry = new ZipEntry(ENTRY_NAME);
+        System.out.printf("extra Len= %s, exception: %s%n", bytes.length, expectException);
+        // The extra data length will trigger the IllegalArgumentException
+        if (expectException) {
+            assertThrows(IllegalArgumentException.class, () -> zipEntry.setExtra(bytes));
+        } else {
+            zipEntry.setExtra(bytes);
+        }
+    }
+
+    /**
+     * Create the extra field data which will be passed to ZipEntry::setExtra
+     * @param length size of the extra data
+     * @return byte array containing the extra data
+     */
+    private static byte[] creatExtraData(int length) {
+        byte[] bytes = new byte[length];
         // Little-endian ByteBuffer for updating the header fields
         ByteBuffer buffer = ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN);
         // We use the 'unknown' tag, specified in APPNOTE.TXT, 4.6.1 Third party mappings'
         buffer.putShort(UNKNOWN_ZIP_TAG);
         // Size of the actual (empty) data
         buffer.putShort((short) (length - 2 * Short.BYTES));
-        ZipEntry zipEntry = new ZipEntry(ENTRY_NAME);
-        System.out.printf("extra Len= %s, exception: %s%n", bytes.length, expectException);
-        // The extra data length will trigger the IllegalArgumentException
-        if (expectException) {
-            assertThrows(IllegalArgumentException.class, () -> zipEntry.setExtra(bytes));
-        }
+        return bytes;
     }
 }

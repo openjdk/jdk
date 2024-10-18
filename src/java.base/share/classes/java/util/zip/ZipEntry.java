@@ -525,7 +525,7 @@ public class ZipEntry implements ZipConstants, Cloneable {
      * @throws IllegalArgumentException if the combined length of the specified
      * extra field data, the {@linkplain #getName() entry name},
      * the {@linkplain #getComment() entry comment}, and the
-     * {@linkplain #CENHDR CEN Header size}, exceeds 65,535 bytes.
+     * {@linkplain #CENHDR CEN Header size} exceeds 65,535 bytes.
      *
      * @see #getExtra()
      */
@@ -651,7 +651,7 @@ public class ZipEntry implements ZipConstants, Cloneable {
      * @throws IllegalArgumentException if the combined length
      * of the specified entry comment, the {@linkplain #getName() entry name},
      * the {@linkplain #getExtra() extra field data}, and the
-     * {@linkplain #CENHDR CEN Header size}, exceeds 65,535 bytes.
+     * {@linkplain #CENHDR CEN Header size} exceeds 65,535 bytes.
      * @see #getComment()
      */
     public void setComment(String comment) {
