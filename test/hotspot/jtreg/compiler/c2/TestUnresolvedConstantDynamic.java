@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,15 +21,22 @@
  * questions.
  */
 
-/**
- * Defines the API for the JavaScript Object.
- *
- * @moduleGraph
- * @since 9
- * @deprecated The jdk.jsobject module will be delivered with JavaFX.
+/*
+ * @test
+ * @bug 8339694
+ * @summary Test compilation of unresolved constant dynamics.
+ * @library /test/lib
+ * @compile TestUnresolvedConstantDynamicHelper.jasm
+ * @run driver TestUnresolvedConstantDynamic
+ * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileCommand=compileonly,TestUnresolvedConstantDynamicHelper::test* TestUnresolvedConstantDynamic
  */
-@Deprecated(since = "24", forRemoval = true)
-@SuppressWarnings("removal")
-module jdk.jsobject {
-    exports netscape.javascript;
+
+import jdk.test.lib.Asserts;
+
+public class TestUnresolvedConstantDynamic {
+
+    public static void main(String[] args) {
+        Asserts.assertEquals(TestUnresolvedConstantDynamicHelper.testBooleanArray(true)[0], true);
+        Asserts.assertEquals(TestUnresolvedConstantDynamicHelper.testStringArray("42")[0], "42");
+    }
 }
