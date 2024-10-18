@@ -213,8 +213,14 @@ final class VirtualThread extends BaseVirtualThread {
         private static Runnable wrap(VirtualThread vthread, Runnable task) {
             return new Runnable() {
                 @Hidden
+                @JvmtiMountTransition
                 public void run() {
-                    vthread.run(task);
+                    vthread.notifyJvmtiStart(); // notify JVMTI
+                    try {
+                        vthread.run(task);
+                    } finally {
+                        vthread.notifyJvmtiEnd(); // notify JVMTI
+                    }
                 }
             };
         }
@@ -389,9 +395,6 @@ final class VirtualThread extends BaseVirtualThread {
     private void run(Runnable task) {
         assert Thread.currentThread() == this && state == RUNNING;
 
-        // notify JVMTI, may post VirtualThreadStart event
-        notifyJvmtiStart();
-
         // emit JFR event if enabled
         if (VirtualThreadStartEvent.isTurnedOn()) {
             var event = new VirtualThreadStartEvent();
@@ -405,20 +408,14 @@ final class VirtualThread extends BaseVirtualThread {
         } catch (Throwable exc) {
             dispatchUncaughtException(exc);
         } finally {
-            try {
-                // pop any remaining scopes from the stack, this may block
-                StackableScope.popAll();
+            // pop any remaining scopes from the stack, this may block
+            StackableScope.popAll();
 
-                // emit JFR event if enabled
-                if (VirtualThreadEndEvent.isTurnedOn()) {
-                    var event = new VirtualThreadEndEvent();
-                    event.javaThreadId = threadId();
-                    event.commit();
-                }
-
-            } finally {
-                // notify JVMTI, may post VirtualThreadEnd event
-                notifyJvmtiEnd();
+            // emit JFR event if enabled
+            if (VirtualThreadEndEvent.isTurnedOn()) {
+                var event = new VirtualThreadEndEvent();
+                event.javaThreadId = threadId();
+                event.commit();
             }
         }
     }
