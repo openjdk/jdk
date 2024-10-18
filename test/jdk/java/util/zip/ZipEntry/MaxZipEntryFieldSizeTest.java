@@ -56,23 +56,11 @@ public class MaxZipEntryFieldSizeTest {
             MAX_COMBINED_CEN_HEADER_SIZE - ZipFile.CENHDR;
     // Tag for the 'unknown' field type, specified in APPNOTE.txt 'Third party mappings'
     static final short UNKNOWN_ZIP_TAG = (short) 0x9902;
-    // ZIP file to be used by the tests
-    static final Path ZIP_FILE = Path.of("ZipEntryFieldSize.zip");
     // Zip Entry name used by tests
     static final String ENTRY_NAME = "EntryName";
     // Max length minus the size of the ENTRY_NAME or ENTRY_COMMENT
     static final int MAX_FIELD_LEN_MINUS_ENTRY_NAME =
             MAX_NAME_COMMENT_EXTRA_SIZE - 9;
-
-    /**
-     * Clean up prior to test run
-     *
-     * @throws IOException if an error occurs
-     */
-    @BeforeEach
-    public void startUp() throws IOException {
-        Files.deleteIfExists(ZIP_FILE);
-    }
 
     /**
      * Validate an IllegalArgumentException is thrown when the comment
