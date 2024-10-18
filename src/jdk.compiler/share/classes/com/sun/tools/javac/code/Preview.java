@@ -27,6 +27,7 @@ package com.sun.tools.javac.code;
 
 import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.code.Source.Feature;
+import com.sun.tools.javac.code.Symbol.ModuleSymbol;
 import com.sun.tools.javac.jvm.Target;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.resources.CompilerProperties.Warnings;
@@ -133,11 +134,23 @@ public class Preview {
             return true;
         }
 
+        return participatesInPreview(syms, s.packge().modle);
+    }
+
+    /**
+     * Returns true if module {@code m} is deemed to participate in the preview, and
+     * therefore no warnings or errors will be produced.
+     *
+     * @param syms the symbol table
+     * @param m the module to check
+     * @return true if {@code m} is participating in the preview of {@code previewSymbol}
+     */
+    public boolean participatesInPreview(Symtab syms, ModuleSymbol m) {
         // If java.base's jdk.internal.javac package is exported to s's module then
         // s participates in the preview API
         return syms.java_base.exports.stream()
                 .filter(ed -> ed.packge.fullname == names.jdk_internal_javac)
-                .anyMatch(ed -> ed.modules.contains(s.packge().modle));
+                .anyMatch(ed -> ed.modules.contains(m));
     }
 
     /**
@@ -211,6 +224,7 @@ public class Preview {
             case FLEXIBLE_CONSTRUCTORS -> true;
             case PRIMITIVE_PATTERNS -> true;
             case MODULE_IMPORTS -> true;
+            case JAVA_BASE_TRANSITIVE -> true;
             //Note: this is a backdoor which allows to optionally treat all features as 'preview' (for testing).
             //When real preview features will be added, this method can be implemented to return 'true'
             //for those selected features, and 'false' for all the others.
