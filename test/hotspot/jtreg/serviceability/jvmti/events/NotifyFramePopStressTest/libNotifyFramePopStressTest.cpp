@@ -63,8 +63,6 @@ FramePop(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread,
   char* csig = nullptr;
   char* name = nullptr;
 
-  pop_count++;
-
   err = jvmti->GetMethodDeclaringClass(method, &cls);
   check_jvmti_status(jni, err, "FramePop: Failed in JVMTI GetMethodDeclaringClass");
 
@@ -80,6 +78,7 @@ FramePop(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread,
       failed = JNI_TRUE;
     }
   }
+  pop_count++;
   deallocate(jvmti, jni, csig);
   deallocate(jvmti, jni, name);
 }
