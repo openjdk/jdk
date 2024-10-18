@@ -115,7 +115,7 @@ public class SupportedDHParamGens {
                 break;
         }
 
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("DH", System.getProperty("test.provider.name", "SunJCE"));
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("DH", "SunJCE");
         kpg.initialize(spec);
         KeyPair kp = kpg.generateKeyPair();
         checkKeyPair(kp, primeSize);
