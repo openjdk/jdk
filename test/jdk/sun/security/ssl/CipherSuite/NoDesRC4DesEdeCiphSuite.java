@@ -136,7 +136,7 @@ public class NoDesRC4DesEdeCiphSuite {
             throws Exception {
         System.err.println("\nTest: Default SSLEngine suite set");
         SSLEngine ssle = makeEngine();
-        if (DEBUG) {Í
+        if (DEBUG) {
             listCiphers("Suite set upon creation", ssle);
         }
         SSLEngineResult clientResult;
@@ -197,7 +197,7 @@ public class NoDesRC4DesEdeCiphSuite {
      * set of cipher suites.  Make sure none of the disabled suites show up
      * in the client hello even though they were explicitly added.
      *
-     * @param disabledSuiteNames an array of cipher suite names that
+     * @param disabledNames an array of cipher suite names that
      *      should be disabled cipher suites.
      * @param disabledIds the {@code List} of disabled cipher suite IDs
      *      to be checked for.

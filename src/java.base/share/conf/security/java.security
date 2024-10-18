@@ -656,6 +656,17 @@ sun.security.krb5.maxReferrals=5
 #       be specified with a whitespace delimiter.
 #       Example:  "SHA1 usage TLSServer TLSClient"
 #
+#   TlsCryptoScopeConstraint:
+#     kx | authn
+#       This constraint restricts algorithm based on the TLS crypto scope:
+#         - "kx" scope prohibits algorithm to be used for Key Exchange.
+#         - "authn" scope prohibits algorithm to be used for Authentication.
+#       This constraint can't be chained by '&' with other constraints.
+#       Examples:
+#         - "RSA kx" prohibits RSA algorithm to be used for Key Exchange.
+#         - "DSS authn" prohibits DSS algorithm to be used for Authentication.
+#         - "NULL authn" requires Authentication some algorithm to be used.
+#
 # When an algorithm must satisfy more than one constraint, it must be
 # delimited by an ampersand '&'.  For example, to restrict certificates in a
 # chain that terminate at a distribution provided trust anchor and contain

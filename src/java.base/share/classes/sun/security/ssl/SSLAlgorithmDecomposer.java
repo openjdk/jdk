@@ -277,7 +277,7 @@ class SSLAlgorithmDecomposer extends AlgorithmDecomposer {
     }
 
     @Override
-    public String[] decomposetKeyExchange(String algorithm) {
+    public String[] decomposetCipherSuiteKeyExchange(String algorithm) {
         if (algorithm.startsWith("SSL_") || algorithm.startsWith("TLS_")) {
             CipherSuite cipherSuite = CipherSuite.nameOf(algorithm);
 
@@ -292,6 +292,6 @@ class SSLAlgorithmDecomposer extends AlgorithmDecomposer {
             }
         }
 
-        return super.decomposetKeyExchange(algorithm);
+        return super.decomposetCipherSuiteKeyExchange(algorithm);
     }
 }

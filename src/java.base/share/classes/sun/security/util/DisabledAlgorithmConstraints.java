@@ -165,7 +165,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
             return false;
         }
 
-        if (!algorithmConstraints.checkCryptoScopeConstraints(algorithm, primitives)) {
+        if (!algorithmConstraints.checkTlsCryptoScopeConstraints(algorithm)) {
             return false;
         }
 
@@ -376,30 +376,30 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                 boolean denyAfterLimit = false;
 
                 for (String rawEntry : policy.split("&")) {
-                    // Do not link CryptoScopeConstraint with other constraints.
-                    if (lastConstraint instanceof CryptoScopeConstraint) {
-                        throw new IllegalArgumentException("CryptoScope constraint"
+                    // Do not link TlsCryptoScopeConstraint with other constraints.
+                    if (lastConstraint instanceof TlsCryptoScopeConstraint) {
+                        throw new IllegalArgumentException("TlsCryptoScopeConstraint constraint"
                                 + " should not be linked with other constraints.");
                     }
 
                     final String entry = rawEntry.trim();
                     Matcher matcher;
-                    CryptoScope cryptoScope = Arrays.stream(CryptoScope.values())
+                    TlsCryptoScope tlsCryptoScope = Arrays.stream(TlsCryptoScope.values())
                             .filter(v -> v.getName().equalsIgnoreCase(entry))
                             .findFirst()
                             .orElse(null);
 
-                    if (cryptoScope != null) {
+                    if (tlsCryptoScope != null) {
                         if (debug != null) {
-                            debug.println("Constraints set to CryptoScopeConstraint: "
-                                    + cryptoScope.name());
+                            debug.println("Constraints set to TlsCryptoScopeConstraint: "
+                                    + tlsCryptoScope.name());
                         }
                         if (lastConstraint != null) {
-                            throw new IllegalArgumentException("CryptoScope constraint"
+                            throw new IllegalArgumentException("TlsCryptoScopeConstraint constraint"
                                     + " should not be linked with other constraints. "
                                     + "Constraint: " + constraintEntry);
                         }
-                        c = new CryptoScopeConstraint(algorithm, cryptoScope);
+                        c = new TlsCryptoScopeConstraint(algorithm, tlsCryptoScope);
 
                     } else if (entry.startsWith("keySize")) {
                         if (debug != null) {
@@ -548,9 +548,8 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
             }
         }
 
-        // Special case of CryptoScopeConstraints
-        private boolean checkCryptoScopeConstraints(String algorithm,
-                Set<CryptoPrimitive> primitives) {
+        // Special case of TlsCryptoScopeConstraints
+        private boolean checkTlsCryptoScopeConstraints(String algorithm) {
             List<Constraint> constraintList = new ArrayList<>();
 
             // Check if algorithm's name contains the constraint's key,
@@ -561,7 +560,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                     // otherwise match any algorithm that contains the key.
                     if ((key.equalsIgnoreCase("NULL") ||
                             algorithm.toUpperCase(Locale.ENGLISH).contains(key)) &&
-                            constraint instanceof CryptoScopeConstraint) {
+                            constraint instanceof TlsCryptoScopeConstraint) {
 
                         constraintList.add(constraint);
                     }
@@ -569,7 +568,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
             });
 
             for (Constraint constraint : constraintList) {
-                if (!constraint.permits(algorithm, primitives)) {
+                if (!constraint.permits(algorithm)) {
                     return false;
                 }
             }
@@ -648,12 +647,12 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
         }
 
         /**
-         * Check if an algorithm constraint permits the given algorithm with primitives.
+         * Check if an algorithm constraint permits the given algorithm.
          *
-         * @param primitives Set of primitives
+         * @param algorithm Algorithm or Cipher Suite
          * @return 'true' if constraint is allowed, 'false' if disallowed.
          */
-        public boolean permits(String algorithm, Set<CryptoPrimitive> primitives) {
+        public boolean permits(String algorithm) {
             return true;
         }
 
@@ -1015,30 +1014,45 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
         }
     }
 
-    private class CryptoScopeConstraint extends Constraint {
+    enum TlsCryptoScope {
+        KX("kx"),             // Key Exchange
+        AUTHN("authn");       // Authentication
 
-        private final CryptoScope cryptoScope;
+        private final String name;
 
-        CryptoScopeConstraint(String algo, CryptoScope cryptoScope) {
+        TlsCryptoScope(String name) {
+            this.name = name;
+        }
+
+        String getName() {
+            return name;
+        }
+    }
+
+    private class TlsCryptoScopeConstraint extends Constraint {
+
+        private final TlsCryptoScope tlsCryptoScope;
+
+        TlsCryptoScopeConstraint(String algo, TlsCryptoScope tlsCryptoScope) {
             this.algorithm = algo;
-            this.cryptoScope = cryptoScope;
+            this.tlsCryptoScope = tlsCryptoScope;
         }
 
         @Override
-        public boolean permits(String algo, Set<CryptoPrimitive> primitives) {
-            // First check if input is a cipher suite, in such case we disallow
+        public boolean permits(String algo) {
+            // Check if input is a cipher suite, in such case we disallow
             // cipher suite if it has a constrained algorithm used either for
             // key exchange or authentication.
-            String[] parts = decomposer.decomposetKeyExchange(algo);
+            String[] parts = decomposer.decomposetCipherSuiteKeyExchange(algo);
 
             if (parts != null) {
                 String inputAlgorithm = null;
 
-                if (CryptoScope.KX.equals(cryptoScope)) {
+                if (TlsCryptoScope.KX.equals(tlsCryptoScope)) {
                     inputAlgorithm = parts[0];
                 }
 
-                if (CryptoScope.AUTHN.equals(cryptoScope)) {
+                if (TlsCryptoScope.AUTHN.equals(tlsCryptoScope)) {
                     inputAlgorithm = parts[1];
                 }
 
@@ -1047,21 +1061,12 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                 }
             }
 
-            // Check Crypto Primitives if we have an exact algorithm match.
-            if (this.algorithm.equalsIgnoreCase(algo)) {
-                for (CryptoPrimitive p : cryptoScope.getCryptoPrimitives()) {
-                    if (primitives.contains(p)) {
-                        return false;
-                    }
-                }
-            }
-
             return true;
         }
 
         @Override
         public void permits(ConstraintsParameters cp) throws CertPathValidatorException {
-            // Do nothing here, CryptoScopeConstraint doesn't apply to certificates.
+            // Do nothing here, TlsCryptoScopeConstraint doesn't apply to certificates.
         }
     }
 
