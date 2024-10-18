@@ -112,7 +112,7 @@ public final class bug4323121 {
                                            + "for a subclass of JButton");
             }
         } finally {
-                SwingUtilities.invokeAndWait(() -> {
+            SwingUtilities.invokeAndWait(() -> {
                 if (frame != null) {
                     frame.dispose();
                 }
