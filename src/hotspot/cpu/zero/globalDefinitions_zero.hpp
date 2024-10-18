@@ -36,8 +36,6 @@
 // The default padding size for data structures to avoid false sharing.
 #define DEFAULT_PADDING_SIZE DEFAULT_CACHE_LINE_SIZE
 
-#define SUPPORT_MONITOR_COUNT
-
 #include <ffi.h>
 
 // Indicates whether the C calling conventions require that

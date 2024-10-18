@@ -2844,6 +2844,28 @@ void Assembler::leal(Register dst, Address src) {
   emit_operand(dst, src, 0);
 }
 
+#ifdef _LP64
+void Assembler::lea(Register dst, Label& L) {
+  assert(dst == r10, "invalid destination register");
+  if (L.is_bound()) {
+    const int inst_size = 7;
+    address entry = target(L);
+    int offs = checked_cast<int>((intptr_t)entry - (intptr_t)pc());
+    emit_int8((unsigned char)0x4C);
+    emit_int8((unsigned char)0x8D);
+    emit_int8((unsigned char)0x15);
+    emit_int32(offs - inst_size);
+  } else {
+    InstructionMark im(this);
+    L.add_patch_at(code(), locator());
+    emit_int8((unsigned char)0x4C);
+    emit_int8((unsigned char)0x8D);
+    emit_int8((unsigned char)0x15);
+    emit_int32(0);
+  }
+}
+#endif
+
 void Assembler::lfence() {
   emit_int24(0x0F, (unsigned char)0xAE, (unsigned char)0xE8);
 }

@@ -1602,6 +1602,7 @@ static void fill_continuation_entry(MacroAssembler* masm, Register reg_cont_obj,
 #ifdef ASSERT
   __ load_const_optimized(tmp2, ContinuationEntry::cookie_value());
   __ stw(tmp2, in_bytes(ContinuationEntry::cookie_offset()), R1_SP);
+  __ std(tmp2, _abi0(cr), R1_SP);
 #endif //ASSERT
 
   __ li(zero, 0);
@@ -1645,6 +1646,10 @@ static void continuation_enter_cleanup(MacroAssembler* masm) {
   __ ld_ptr(tmp1, JavaThread::cont_entry_offset(), R16_thread);
   __ cmpd(CCR0, R1_SP, tmp1);
   __ asm_assert_eq(FILE_AND_LINE ": incorrect R1_SP");
+  __ load_const_optimized(tmp1, ContinuationEntry::cookie_value());
+  __ ld(tmp2, _abi0(cr), R1_SP);
+  __ cmpd(CCR0, tmp1, tmp2);
+  __ asm_assert_eq(FILE_AND_LINE ": cookie not found");
 #endif
 
   __ ld_ptr(tmp1, ContinuationEntry::parent_cont_fastpath_offset(), R1_SP);
@@ -1853,6 +1858,7 @@ static void gen_continuation_enter(MacroAssembler* masm,
   // --- Thawing path
 
   __ bind(L_thaw);
+  ContinuationEntry::_thaw_call_pc_offset = __ pc() - start;
   __ add_const_optimized(R0, R29_TOC, MacroAssembler::offset_to_global_toc(StubRoutines::cont_thaw()));
   __ mtctr(R0);
   __ bctrl();
@@ -1863,6 +1869,7 @@ static void gen_continuation_enter(MacroAssembler* masm,
   // --- Normal exit (resolve/thawing)
 
   __ bind(L_exit);
+  ContinuationEntry::_cleanup_offset = __ pc() - start;
   continuation_enter_cleanup(masm);
 
   // Pop frame and return
@@ -1968,6 +1975,10 @@ static void gen_continuation_yield(MacroAssembler* masm,
   __ load_const_optimized(tmp, StubRoutines::forward_exception_entry(), R0);
   __ mtctr(tmp);
   __ bctr();
+}
+
+void SharedRuntime::continuation_enter_cleanup(MacroAssembler* masm) {
+  ::continuation_enter_cleanup(masm);
 }
 
 // ---------------------------------------------------------------------------
@@ -2190,9 +2201,9 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   intptr_t start_pc = (intptr_t)__ pc();
   intptr_t vep_start_pc;
   intptr_t frame_done_pc;
-  intptr_t oopmap_pc;
 
   Label    handle_pending_exception;
+  Label    last_java_pc;
 
   Register r_callers_sp = R21;
   Register r_temp_1     = R22;
@@ -2201,7 +2212,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   Register r_temp_4     = R25;
   Register r_temp_5     = R26;
   Register r_temp_6     = R27;
-  Register r_return_pc  = R28;
+  Register r_last_java_pc = R28;
 
   Register r_carg1_jnienv        = noreg;
   Register r_carg2_classorobject = noreg;
@@ -2363,15 +2374,9 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   // We MUST NOT touch any outgoing regs from this point on.
   // So if we must call out we must push a new frame.
 
-  // Get current pc for oopmap, and load it patchable relative to global toc.
-  oopmap_pc = (intptr_t) __ pc();
-  __ calculate_address_from_global_toc(r_return_pc, (address)oopmap_pc, true, true, true, true);
-
-  // We use the same pc/oopMap repeatedly when we call out.
-  oop_maps->add_gc_map(oopmap_pc - start_pc, oop_map);
-
-  // r_return_pc now has the pc loaded that we will use when we finally call
-  // to native.
+  // The last java pc will also be used as resume pc if this is the wrapper for wait0.
+  // For this purpose the precise location matters but not for oopmap lookup.
+  __ calculate_address_from_global_toc(r_last_java_pc, last_java_pc, true, true, true, true);
 
   // Make sure that thread is non-volatile; it crosses a bunch of VM calls below.
   assert(R16_thread->is_nonvolatile(), "thread must be in non-volatile register");
@@ -2399,7 +2404,8 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     // Try fastpath for locking.
     if (LockingMode == LM_LIGHTWEIGHT) {
       // fast_lock kills r_temp_1, r_temp_2, r_temp_3.
-      __ compiler_fast_lock_lightweight_object(CCR0, r_oop, r_box, r_temp_1, r_temp_2, r_temp_3);
+      Register r_temp_3_or_noreg = UseObjectMonitorTable ? r_temp_3 : noreg;
+      __ compiler_fast_lock_lightweight_object(CCR0, r_oop, r_box, r_temp_1, r_temp_2, r_temp_3_or_noreg);
     } else {
       // fast_lock kills r_temp_1, r_temp_2, r_temp_3.
       __ compiler_fast_lock_object(CCR0, r_oop, r_box, r_temp_1, r_temp_2, r_temp_3);
@@ -2416,9 +2422,14 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     RegisterSaver::push_frame_and_save_argument_registers(masm, R12_scratch2, frame_size, total_c_args, out_regs);
 
     // Do the call.
-    __ set_last_Java_frame(R11_scratch1, r_return_pc);
-    assert(r_return_pc->is_nonvolatile(), "expecting return pc to be in non-volatile register");
+    __ set_last_Java_frame(R11_scratch1, r_last_java_pc);
+    assert(r_last_java_pc->is_nonvolatile(), "r_last_java_pc needs to be preserved accross complete_monitor_locking_C call");
+    // The following call will not be preempted.
+    // push_cont_fastpath forces freeze slow path in case we try to preempt where we will pin the
+    // vthread to the carrier (see FreezeBase::recurse_freeze_native_frame()).
+    __ push_cont_fastpath();
     __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::complete_monitor_locking_C), r_oop, r_box, R16_thread);
+    __ pop_cont_fastpath();
     __ reset_last_Java_frame();
 
     RegisterSaver::restore_argument_registers_and_pop_frame(masm, frame_size, total_c_args, out_regs);
@@ -2429,8 +2440,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     __ bind(locked);
   }
 
-  // Use that pc we placed in r_return_pc a while back as the current frame anchor.
-  __ set_last_Java_frame(R1_SP, r_return_pc);
+  __ set_last_Java_frame(R1_SP, r_last_java_pc);
 
   // Publish thread state
   // --------------------------------------------------------------------------
@@ -2489,8 +2499,6 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
       ShouldNotReachHere();
       break;
   }
-
-  Label after_transition;
 
   // Publish thread state
   // --------------------------------------------------------------------------
@@ -2566,7 +2574,23 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     __ lwsync(); // Acquire safepoint and suspend state, release thread state.
     // TODO: PPC port assert(4 == JavaThread::sz_thread_state(), "unexpected field size");
     __ stw(R0, thread_(thread_state));
-    __ bind(after_transition);
+
+    // Check preemption for Object.wait()
+    if (LockingMode != LM_LEGACY && method->is_object_wait0()) {
+      Label not_preempted;
+      __ ld(R0, in_bytes(JavaThread::preempt_alternate_return_offset()), R16_thread);
+      __ cmpdi(CCR0, R0, 0);
+      __ beq(CCR0, not_preempted);
+      __ mtlr(R0);
+      __ li(R0, 0);
+      __ std(R0, in_bytes(JavaThread::preempt_alternate_return_offset()), R16_thread);
+      __ blr();
+      __ bind(not_preempted);
+    }
+    __ bind(last_java_pc);
+    // We use the same pc/oopMap repeatedly when we call out above.
+    intptr_t oopmap_pc = (intptr_t) __ pc();
+    oop_maps->add_gc_map(oopmap_pc - start_pc, oop_map);
   }
 
   // Reguard any pages if necessary.
@@ -2648,7 +2672,9 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   // Clear "last Java frame" SP and PC.
   // --------------------------------------------------------------------------
 
-  __ reset_last_Java_frame();
+  // Last java frame won't be set if we're resuming after preemption
+  bool maybe_preempted = LockingMode != LM_LEGACY && method->is_object_wait0();
+  __ reset_last_Java_frame(!maybe_preempted /* check_last_java_sp */);
 
   // Unbox oop result, e.g. JNIHandles::resolve value.
   // --------------------------------------------------------------------------
@@ -2731,6 +2757,12 @@ uint SharedRuntime::out_preserve_stack_slots() {
 #else
   return 0;
 #endif
+}
+
+VMReg SharedRuntime::thread_register() {
+  // On PPC virtual threads don't save the JavaThread* in their context (e.g. C1 stub frames).
+  ShouldNotCallThis();
+  return nullptr;
 }
 
 #if defined(COMPILER1) || defined(COMPILER2)

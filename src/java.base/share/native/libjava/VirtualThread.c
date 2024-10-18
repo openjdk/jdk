@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,9 +38,17 @@ static JNINativeMethod methods[] = {
     { "notifyJvmtiUnmount",        "(Z)V", (void *)&JVM_VirtualThreadUnmount },
     { "notifyJvmtiHideFrames",     "(Z)V", (void *)&JVM_VirtualThreadHideFrames },
     { "notifyJvmtiDisableSuspend", "(Z)V", (void *)&JVM_VirtualThreadDisableSuspend },
+    { "takeVirtualThreadListToUnblock", "()" VIRTUAL_THREAD, (void *)&JVM_TakeVirtualThreadListToUnblock},
 };
 
 JNIEXPORT void JNICALL
 Java_java_lang_VirtualThread_registerNatives(JNIEnv *env, jclass clazz) {
     (*env)->RegisterNatives(env, clazz, methods, (sizeof(methods)/sizeof(methods[0])));
+}
+
+JNIEXPORT void JNICALL
+Java_java_lang_VirtualThread_virtualThreadPinnedEvent(JNIEnv *env, jclass ignored,
+                                                      jint reasonCode, jstring reasonString)
+{
+    JVM_VirtualThreadPinnedEvent(reasonCode, reasonString);
 }

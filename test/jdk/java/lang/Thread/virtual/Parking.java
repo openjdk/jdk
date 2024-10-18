@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,23 +21,60 @@
  * questions.
  */
 
-/**
- * @test
+/*
+ * @test id=default
  * @summary Test virtual threads using park/unpark
+ * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
+ * @build LockingMode
  * @run junit Parking
  */
 
+/*
+ * @test id=Xint
+ * @modules java.base/java.lang:+open jdk.management
+ * @library /test/lib
+ * @build LockingMode
+ * @run junit/othervm -Xint Parking
+ */
+
+/*
+ * @test id=Xcomp
+ * @modules java.base/java.lang:+open jdk.management
+ * @library /test/lib
+ * @build LockingMode
+ * @run junit/othervm -Xcomp Parking
+ */
+
+/*
+ * @test id=Xcomp-noTieredCompilation
+ * @modules java.base/java.lang:+open jdk.management
+ * @library /test/lib
+ * @build LockingMode
+ * @run junit/othervm -Xcomp -XX:-TieredCompilation Parking
+ */
+
 import java.time.Duration;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.LockSupport;
 
 import jdk.test.lib.thread.VThreadRunner;
+import jdk.test.lib.thread.VThreadScheduler;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledIf;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assumptions.*;
 
 class Parking {
-    private static final Object lock = new Object();
+    static final int MAX_VTHREAD_COUNT = 4 * Runtime.getRuntime().availableProcessors();
+    static final Object lock = new Object();
 
     /**
      * Park, unparked by platform thread.
@@ -344,6 +381,91 @@ class Parking {
     }
 
     /**
+     * Test that parking while holding a monitor releases the carrier.
+     */
+    @ParameterizedTest
+    @ValueSource(booleans = { true, false })
+    @DisabledIf("LockingMode#isLegacy")
+    void testParkWhenHoldingMonitor(boolean reenter) throws Exception {
+        assumeTrue(VThreadScheduler.supportsCustomScheduler(), "No support for custom schedulers");
+        try (ExecutorService scheduler = Executors.newFixedThreadPool(1)) {
+            ThreadFactory factory = VThreadScheduler.virtualThreadFactory(scheduler);
+
+            var lock = new Object();
+
+            // thread enters (and maybe reenters) a monitor and parks
+            var started = new CountDownLatch(1);
+            var vthread1 = factory.newThread(() -> {
+                started.countDown();
+                synchronized (lock) {
+                    if (reenter) {
+                        synchronized (lock) {
+                            LockSupport.park();
+                        }
+                    } else {
+                        LockSupport.park();
+                    }
+                }
+            });
+
+            vthread1.start();
+            try {
+                // wait for thread to start and park
+                started.await();
+                await(vthread1, Thread.State.WAITING);
+
+                // carrier should be released, use it for another thread
+                var executed = new AtomicBoolean();
+                var vthread2 = factory.newThread(() -> {
+                    executed.set(true);
+                });
+                vthread2.start();
+                vthread2.join();
+                assertTrue(executed.get());
+            } finally {
+                LockSupport.unpark(vthread1);
+                vthread1.join();
+            }
+        }
+    }
+
+    /**
+     * Test lots of virtual threads parked while holding a monitor. If the number of
+     * virtual threads exceeds the number of carrier threads then this test will hang if
+     * parking doesn't release the carrier.
+     */
+    @Test
+    @DisabledIf("LockingMode#isLegacy")
+    void testManyParkedWhenHoldingMonitor() throws Exception {
+        Thread[] vthreads = new Thread[MAX_VTHREAD_COUNT];
+        var done = new AtomicBoolean();
+        for (int i = 0; i < MAX_VTHREAD_COUNT; i++) {
+            var lock = new Object();
+            var started = new CountDownLatch(1);
+            var vthread = Thread.ofVirtual().start(() -> {
+                started.countDown();
+                synchronized (lock) {
+                    while (!done.get()) {
+                        LockSupport.park();
+                    }
+                }
+            });
+            // wait for thread to start and park
+            started.await();
+            await(vthread, Thread.State.WAITING);
+            vthreads[i] = vthread;
+        }
+
+        // cleanup
+        done.set(true);
+        for (int i = 0; i < MAX_VTHREAD_COUNT; i++) {
+            var vthread = vthreads[i];
+            LockSupport.unpark(vthread);
+            vthread.join();
+        }
+    }
+
+    /**
      * Schedule a thread to be interrupted after a delay.
      */
     private static void scheduleInterrupt(Thread thread, long delay) {
@@ -356,5 +478,17 @@ class Parking {
             }
         };
         new Thread(interruptTask).start();
+    }
+
+    /**
+     * Waits for the given thread to reach a given state.
+     */
+    private void await(Thread thread, Thread.State expectedState) throws InterruptedException {
+        Thread.State state = thread.getState();
+        while (state != expectedState) {
+            assertTrue(state != Thread.State.TERMINATED, "Thread has terminated");
+            Thread.sleep(10);
+            state = thread.getState();
+        }
     }
 }

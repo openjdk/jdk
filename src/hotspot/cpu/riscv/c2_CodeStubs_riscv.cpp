@@ -70,5 +70,3 @@ void C2EntryBarrierStub::emit(C2_MacroAssembler& masm) {
   __ relocate(entry_guard_Relocation::spec());
   __ emit_int32(0);  // nmethod guard value
 }
-
-#undef __

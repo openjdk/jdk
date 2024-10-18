@@ -623,8 +623,6 @@ void LightweightSynchronizer::enter_for(Handle obj, BasicLock* lock, JavaThread*
     ObjectSynchronizer::handle_sync_on_value_based_class(obj, locking_thread);
   }
 
-  locking_thread->inc_held_monitor_count();
-
   CacheSetter cache_setter(locking_thread, lock);
 
   LockStack& lock_stack = locking_thread->lock_stack();
@@ -653,8 +651,6 @@ void LightweightSynchronizer::enter(Handle obj, BasicLock* lock, JavaThread* cur
   if (obj->klass()->is_value_based()) {
     ObjectSynchronizer::handle_sync_on_value_based_class(obj, current);
   }
-
-  current->inc_held_monitor_count();
 
   CacheSetter cache_setter(current, lock);
 
@@ -863,7 +859,7 @@ ObjectMonitor* LightweightSynchronizer::inflate_into_object_header(oop object, O
       bool own = inflating_thread != nullptr && inflating_thread->lock_stack().contains(object);
       if (own) {
         // Owned by inflating_thread.
-        monitor->set_owner_from(nullptr, inflating_thread);
+        monitor->set_owner(inflating_thread);
       } else {
         // Owned by somebody else.
         monitor->set_owner_anonymous();
@@ -1189,7 +1185,6 @@ bool LightweightSynchronizer::quick_enter(oop obj, BasicLock* lock, JavaThread* 
   // Only for 32bit which has limited support for fast locking outside the runtime.
   if (lock_stack.try_recursive_enter(obj)) {
     // Recursive lock successful.
-    current->inc_held_monitor_count();
     return true;
   }
 
@@ -1198,7 +1193,6 @@ bool LightweightSynchronizer::quick_enter(oop obj, BasicLock* lock, JavaThread* 
     if (obj->cas_set_mark(locked_mark, mark) == mark) {
       // Successfully fast-locked, push object to lock-stack and return.
       lock_stack.push(obj);
-      current->inc_held_monitor_count();
       return true;
     }
   }
@@ -1216,7 +1210,6 @@ bool LightweightSynchronizer::quick_enter(oop obj, BasicLock* lock, JavaThread* 
     if (monitor->try_enter(current)) {
       // ObjectMonitor enter successful.
       cache_setter.set_monitor(monitor);
-      current->inc_held_monitor_count();
       return true;
     }
   }
