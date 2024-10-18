@@ -49,11 +49,10 @@ public class ScreenCaptureRobotTest {
     private static volatile Canvas canvas;
     private static BufferedImage realImage;
     private static BufferedImage displayImage;
-    private static int difference;
 
     public static void main(String[] args) throws Exception {
         try {
-            initializeGUI();
+            EventQueue.invokeAndWait(ScreenCaptureRobotTest::initializeGUI);
             doTest();
         } finally {
             EventQueue.invokeAndWait(ScreenCaptureRobotTest::disposeFrame);
@@ -70,7 +69,7 @@ public class ScreenCaptureRobotTest {
         g.setColor(Color.yellow);
         g.fillRect(0, 0, 200, 100);
         g.setColor(Color.red);
-        g.setFont(new Font("SansSerif", Font.BOLD, 30));
+        g.setFont(new Font("SansSerif", Font.BOLD, 20));
         g.drawString("Capture This", 10, 40);
         g.dispose();
         displayImage = realImage;
@@ -99,11 +98,13 @@ public class ScreenCaptureRobotTest {
 
         if (!compareImages(capturedImage, realImage)) {
             String errorMessage = "FAIL : Captured Image is different from "
-                    + "the actual image by " + difference + " pixels";
+                    + "the actual image";
             System.err.println("Test failed");
             throw new RuntimeException(errorMessage);
+        } else {
+            System.out.println("\nCaptured Image is same as actual Image");
+            System.out.println("Test passed");
         }
-        System.out.println("Test passed");
     }
 
     private static boolean compareImages(BufferedImage capturedImg,
@@ -112,31 +113,21 @@ public class ScreenCaptureRobotTest {
         int realPixel;
         int imgWidth;
         int imgHeight;
-        int toleranceLevel = 0;
         boolean result = true;
 
         imgWidth = capturedImg.getWidth(null);
         imgHeight = capturedImg.getHeight(null);
 
-        // Loop through each pixel in both images
         for (int i = 0; i < (imgWidth); i++) {
             for (int j = 0; j < (imgHeight); j++) {
-                // Get the RGB values of each pixel in both images
                 capturedPixel = capturedImg.getRGB(i, j);
                 realPixel = realImg.getRGB(i, j);
-                // Compare the pixel values
                 if (capturedPixel != realPixel) {
-                    toleranceLevel++;
+                    result = false;
+                    return result;
                 }
             }
         }
-
-        difference = toleranceLevel;
-        if (toleranceLevel > 10) {
-            result = false;
-        }
-        System.out.println("\nCaptured Image differs from Real Image by "
-                + toleranceLevel + " Pixels\n");
         return result;
     }
 
