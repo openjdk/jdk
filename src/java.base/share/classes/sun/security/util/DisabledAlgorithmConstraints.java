@@ -42,21 +42,21 @@ import java.security.spec.NamedParameterSpec;
 import java.security.spec.PSSParameterSpec;
 import java.time.DateTimeException;
 import java.time.Instant;
-import java.time.ZonedDateTime;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.Collection;
 import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.regex.Pattern;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Algorithm constraints for disabled algorithms property
@@ -149,13 +149,10 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
         algorithmConstraints = new Constraints(propertyName, disabledAlgorithms);
     }
 
-    /*
-     * This only checks if the algorithm has been completely disabled.  If
-     * there are keysize or other limit, this method allow the algorithm.
-     */
     @Override
     public final boolean permits(Set<CryptoPrimitive> primitives,
             String algorithm, AlgorithmParameters parameters) {
+
         if (primitives == null || primitives.isEmpty()) {
             throw new IllegalArgumentException("The primitives cannot be null" +
                     " or empty.");
@@ -165,6 +162,10 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
         }
 
         if (!cachedCheckAlgorithm(algorithm)) {
+            return false;
+        }
+
+        if (!algorithmConstraints.checkCryptoScopeConstraints(algorithm, primitives)) {
             return false;
         }
 
@@ -322,7 +323,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
      * will be thrown on a failure to better identify why the operation was
      * disallowed.
      */
-    private static class Constraints {
+    private class Constraints {
         private final Map<String, List<Constraint>> constraintsMap = new HashMap<>();
 
         private static class Holder {
@@ -374,11 +375,33 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                 // Allow only one denyAfter entry per constraint entry
                 boolean denyAfterLimit = false;
 
-                for (String entry : policy.split("&")) {
-                    entry = entry.trim();
+                for (String rawEntry : policy.split("&")) {
+                    // Do not link CryptoScopeConstraint with other constraints.
+                    if (lastConstraint instanceof CryptoScopeConstraint) {
+                        throw new IllegalArgumentException("CryptoScope constraint"
+                                + " should not be linked with other constraints.");
+                    }
 
+                    final String entry = rawEntry.trim();
                     Matcher matcher;
-                    if (entry.startsWith("keySize")) {
+                    CryptoScope cryptoScope = Arrays.stream(CryptoScope.values())
+                            .filter(v -> v.getName().equalsIgnoreCase(entry))
+                            .findFirst()
+                            .orElse(null);
+
+                    if (cryptoScope != null) {
+                        if (debug != null) {
+                            debug.println("Constraints set to CryptoScopeConstraint: "
+                                    + cryptoScope.name());
+                        }
+                        if (lastConstraint != null) {
+                            throw new IllegalArgumentException("CryptoScope constraint"
+                                    + " should not be linked with other constraints. "
+                                    + "Constraint: " + constraintEntry);
+                        }
+                        c = new CryptoScopeConstraint(algorithm, cryptoScope);
+
+                    } else if (entry.startsWith("keySize")) {
                         if (debug != null) {
                             debug.println("Constraints set to keySize: " +
                                     entry);
@@ -524,6 +547,35 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                 }
             }
         }
+
+        // Special case of CryptoScopeConstraints
+        private boolean checkCryptoScopeConstraints(String algorithm,
+                Set<CryptoPrimitive> primitives) {
+            List<Constraint> constraintList = new ArrayList<>();
+
+            // Check if algorithm's name contains the constraint's key,
+            // not an exact match like for other constraints.
+            constraintsMap.forEach((key, list) -> {
+                for (Constraint constraint : list) {
+                    // Match "NULL" CryptoScope constraint against any algorithm,
+                    // otherwise match any algorithm that contains the key.
+                    if ((key.equalsIgnoreCase("NULL") ||
+                            algorithm.toUpperCase(Locale.ENGLISH).contains(key)) &&
+                            constraint instanceof CryptoScopeConstraint) {
+
+                        constraintList.add(constraint);
+                    }
+                }
+            });
+
+            for (Constraint constraint : constraintList) {
+                if (!constraint.permits(algorithm, primitives)) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
     }
 
     /**
@@ -592,6 +644,16 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
          *         'false' otherwise.
          */
         public boolean permits(AlgorithmParameters parameters) {
+            return true;
+        }
+
+        /**
+         * Check if an algorithm constraint permits the given algorithm with primitives.
+         *
+         * @param primitives Set of primitives
+         * @return 'true' if constraint is allowed, 'false' if disallowed.
+         */
+        public boolean permits(String algorithm, Set<CryptoPrimitive> primitives) {
             return true;
         }
 
@@ -950,6 +1012,56 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                 // please don't disable such keys.
 
             return true;
+        }
+    }
+
+    private class CryptoScopeConstraint extends Constraint {
+
+        private final CryptoScope cryptoScope;
+
+        CryptoScopeConstraint(String algo, CryptoScope cryptoScope) {
+            this.algorithm = algo;
+            this.cryptoScope = cryptoScope;
+        }
+
+        @Override
+        public boolean permits(String algo, Set<CryptoPrimitive> primitives) {
+            // First check if input is a cipher suite, in such case we disallow
+            // cipher suite if it has a constrained algorithm used either for
+            // key exchange or authentication.
+            String[] parts = decomposer.decomposetKeyExchange(algo);
+
+            if (parts != null) {
+                String inputAlgorithm = null;
+
+                if (CryptoScope.KX.equals(cryptoScope)) {
+                    inputAlgorithm = parts[0];
+                }
+
+                if (CryptoScope.AUTHN.equals(cryptoScope)) {
+                    inputAlgorithm = parts[1];
+                }
+
+                if (this.algorithm.equalsIgnoreCase(inputAlgorithm)) {
+                    return false;
+                }
+            }
+
+            // Check Crypto Primitives if we have an exact algorithm match.
+            if (this.algorithm.equalsIgnoreCase(algo)) {
+                for (CryptoPrimitive p : cryptoScope.getCryptoPrimitives()) {
+                    if (primitives.contains(p)) {
+                        return false;
+                    }
+                }
+            }
+
+            return true;
+        }
+
+        @Override
+        public void permits(ConstraintsParameters cp) throws CertPathValidatorException {
+            // Do nothing here, CryptoScopeConstraint doesn't apply to certificates.
         }
     }
 

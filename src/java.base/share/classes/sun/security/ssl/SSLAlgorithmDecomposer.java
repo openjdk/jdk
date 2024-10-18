@@ -275,4 +275,23 @@ class SSLAlgorithmDecomposer extends AlgorithmDecomposer {
 
         return super.decompose(algorithm);
     }
+
+    @Override
+    public String[] decomposetKeyExchange(String algorithm) {
+        if (algorithm.startsWith("SSL_") || algorithm.startsWith("TLS_")) {
+            CipherSuite cipherSuite = CipherSuite.nameOf(algorithm);
+
+            if (cipherSuite != null) {
+                // keyExchange is null for TLSv1.3 cipher suites,
+                // it means ECDHE for both key exchange and authentication.
+                if (cipherSuite.keyExchange == null) {
+                    return new String[]{"ECDHE", "ECDHE"};
+                } else {
+                    return new String[]{cipherSuite.keyExchange.kx, cipherSuite.keyExchange.authn};
+                }
+            }
+        }
+
+        return super.decomposetKeyExchange(algorithm);
+    }
 }
