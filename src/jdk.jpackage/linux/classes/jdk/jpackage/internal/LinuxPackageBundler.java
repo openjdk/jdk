@@ -33,6 +33,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -208,7 +209,7 @@ abstract class LinuxPackageBundler extends AbstractBundler {
         data.put("APPLICATION_DESCRIPTION", pkg.description());
 
         String defaultDeps = String.join(", ", getListOfNeededPackages(workshop));
-        String customDeps = pkg.additionalDependencies();
+        String customDeps = Optional.ofNullable(pkg.additionalDependencies()).orElse("");
         if (!customDeps.isEmpty() && !defaultDeps.isEmpty()) {
             customDeps = ", " + customDeps;
         }

@@ -51,6 +51,24 @@ interface LinuxPackage extends Package {
         }
     }
 
+    @Override
+    default Path packageFileName() {
+        String packageFileNameTemlate;
+        switch (asStandardPackageType()) {
+            case LinuxDeb -> {
+                packageFileNameTemlate = "%s_%s-%s_%s.deb";
+            }
+            case LinuxRpm -> {
+                packageFileNameTemlate = "%s-%s-%s.%s.rpm";
+            }
+            default -> {
+                throw new UnsupportedOperationException();
+            }
+        }
+
+        return Path.of(String.format(packageFileNameTemlate, packageName(), version(), release(), arch()));
+    }
+
     default boolean isInstallDirInUsrTree() {
         return Set.of(Path.of("usr/local"), Path.of("usr")).contains(relativeInstallDir());
     }
@@ -72,39 +90,17 @@ interface LinuxPackage extends Package {
                 packageName = target.packageName();
             }
 
-            menuGroupName = Optional.ofNullable(menuGroupName).orElseGet(DEFAULTS::menuGroupName);
-            category = Optional.ofNullable(category).orElseGet(DEFAULTS::category);
-            release = Optional.ofNullable(release).orElseGet(DEFAULTS::release);
+            this.menuGroupName = Optional.ofNullable(menuGroupName).orElseGet(DEFAULTS::menuGroupName);
+            this.category = Optional.ofNullable(category).orElseGet(DEFAULTS::category);
+            this.release = Optional.ofNullable(release).orElseGet(DEFAULTS::release);
 
-            this.menuGroupName = menuGroupName;
-            this.category = category;
             this.additionalDependencies = additionalDependencies;
-            this.release = release;
             this.arch = arch;
         }
 
         @Override
         public String packageName() {
             return packageName;
-        }
-
-        @Override
-        public Path packageFileName() {
-            String packageFileNameTemlate;
-            switch (asStandardPackageType()) {
-                case LinuxDeb -> {
-                    packageFileNameTemlate = "%s_%s-%s_%s.deb";
-                }
-                case LinuxRpm -> {
-                    packageFileNameTemlate = "%s-%s-%s.%s.rpm";
-                }
-                default -> {
-                    throw new UnsupportedOperationException();
-                }
-            }
-
-            return Path.of(String.format(packageFileNameTemlate, packageName(), version(),
-                    release(), arch()));
         }
 
         @Override

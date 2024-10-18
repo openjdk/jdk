@@ -64,7 +64,7 @@ final class PackageFromParams {
             }
         });
         if (relativeInstallDir.isAbsolute()) {
-            relativeInstallDir = relativeInstallDir.relativize(Path.of("/"));
+            relativeInstallDir = Path.of("/").relativize(relativeInstallDir);
         }
 
         return new Impl(app, pkgType, packageName, description, version, aboutURL, licenseFile,
