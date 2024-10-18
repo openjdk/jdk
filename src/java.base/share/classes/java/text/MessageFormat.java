@@ -124,7 +124,7 @@ import java.util.Objects;
  * are case-insensitive when passed to {@link #applyPattern(String)}. Combinations
  * not shown in the table are illegal. A <i>SubformatPattern</i> must
  * be a valid pattern string for the {@code Format} subclass used.
- * @implNote For this implementation, the limit of {@code ArgumentIndex} is 10,000.
+ * @implNote In the reference implementation, the limit of {@code ArgumentIndex} is 10,000.
  *
  * <table class="plain">
  * <caption style="display:none">Shows how FormatType and FormatStyle values map to Format instances</caption>
