@@ -403,9 +403,6 @@ InstanceKlass* SystemDictionaryShared::find_or_load_shared_class(
 
     if (SystemDictionary::is_system_class_loader(class_loader()) ||
         SystemDictionary::is_platform_class_loader(class_loader())) {
-      // Fix for 4474172; see evaluation for more details
-      class_loader = Handle(
-        THREAD, java_lang_ClassLoader::non_reflection_class_loader(class_loader()));
       ClassLoaderData *loader_data = register_loader(class_loader);
       Dictionary* dictionary = loader_data->dictionary();
 
