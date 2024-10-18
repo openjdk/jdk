@@ -124,13 +124,16 @@ protected:
 
   bool _caller_must_gc_arguments;
 
+  address _mutable_data;
+  int     _mutable_data_size;
+
 #ifndef PRODUCT
   AsmRemarks _asm_remarks;
   DbgStrings _dbg_strings;
 #endif
 
   CodeBlob(const char* name, CodeBlobKind kind, CodeBuffer* cb, int size, uint16_t header_size,
-           int16_t frame_complete_offset, int frame_size, OopMapSet* oop_maps, bool caller_must_gc_arguments);
+           int16_t frame_complete_offset, int frame_size, OopMapSet* oop_maps, bool caller_must_gc_arguments, bool include_relocations = true);
 
   // Simple CodeBlob used for simple BufferBlob.
   CodeBlob(const char* name, CodeBlobKind kind, int size, uint16_t header_size);
@@ -144,7 +147,7 @@ public:
   }
 
   // Returns the space needed for CodeBlob
-  static unsigned int allocation_size(CodeBuffer* cb, int header_size);
+  static unsigned int allocation_size(CodeBuffer* cb, int header_size, bool include_relocations = true);
   static unsigned int align_code_offset(int offset);
 
   // Deletion
@@ -170,11 +173,17 @@ public:
   UpcallStub* as_upcall_stub() const          { assert(is_upcall_stub(), "must be upcall stub"); return (UpcallStub*) this; }
   RuntimeStub* as_runtime_stub() const        { assert(is_runtime_stub(), "must be runtime blob"); return (RuntimeStub*) this; }
 
+  address mutable_data_begin() const          { return _mutable_data; }
+  address mutable_data_end() const            { return _mutable_data + _mutable_data_size; }
+  int mutable_data_size() const               { return _mutable_data_size; }
+  bool relocInfo_in_mutable_data() const      { return _mutable_data != nullptr; }
+
   // Boundaries
   address    header_begin() const             { return (address)    this; }
   address    header_end() const               { return ((address)   this) + _header_size; }
-  relocInfo* relocation_begin() const         { return (relocInfo*) header_end(); }
-  relocInfo* relocation_end() const           { return (relocInfo*)(header_end()   + _relocation_size); }
+  relocInfo* relocation_begin() const         { return relocInfo_in_mutable_data() ?
+                                                       (relocInfo*)_mutable_data : (relocInfo*) header_end(); }
+  relocInfo* relocation_end() const           { return (relocInfo*)((address)relocation_begin() + _relocation_size); }
   address    content_begin() const            { return (address)    header_begin() + _content_offset; }
   address    content_end() const              { return (address)    header_begin() + _data_offset; }
   address    code_begin() const               { return (address)    header_begin() + _code_offset; }
