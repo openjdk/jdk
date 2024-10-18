@@ -25,6 +25,7 @@
 package java.lang.classfile.attribute;
 
 import java.lang.classfile.constantpool.Utf8Entry;
+
 import jdk.internal.classfile.impl.BoundLocalVariableType;
 import jdk.internal.classfile.impl.UnboundAttribute;
 import jdk.internal.javac.PreviewFeature;

@@ -29,6 +29,7 @@ import java.io.FileDescriptor;
 import java.net.InetAddress;
 import java.security.AccessController;
 import java.security.Permission;
+import java.util.Set;
 
 /**
  * SecurityManager was originally specified to allow an application implement
@@ -57,6 +58,9 @@ public class SecurityManager {
      * currently executing method, the element at index {@code 1} is
      * the class of that method's caller, and so on.
      *
+     * @apiNote The {@code StackWalker} class can be used as a replacement
+     * for this method.
+     *
      * @return  the execution stack.
      * @see StackWalker
      */
@@ -69,7 +73,9 @@ public class SecurityManager {
 
     private static class StackWalkerHolder {
         static final StackWalker STACK_WALKER =
-            StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
+            StackWalker.getInstance(
+                Set.of(StackWalker.Option.RETAIN_CLASS_REFERENCE,
+                       StackWalker.Option.DROP_METHOD_INFO));
     }
 
     /**

@@ -2421,14 +2421,16 @@ public class LogManager {
     }
 
     /**
-     * Throws {@code SecurityException}.
+     * Does nothing.
      *
-     * @throws  SecurityException always
+     * @deprecated This method originally checked that the current context was
+     * trusted to modify the logging configuration. This method was only useful
+     * in conjunction with {@linkplain SecurityManager the Security Manager},
+     * which is no longer supported. There is no replacement for the Security
+     * Manager or this method.
      */
     @Deprecated(since="17", forRemoval=true)
-    public void checkAccess() {
-        throw new SecurityException();
-    }
+    public void checkAccess() { }
 
     // Nested class to represent a node in our tree of named loggers.
     private static class LogNode {
