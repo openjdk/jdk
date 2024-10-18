@@ -31,6 +31,7 @@
  */
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -61,6 +62,30 @@ public class MaxZipEntryFieldSizeTest {
     // Max length minus the size of the ENTRY_NAME or ENTRY_COMMENT
     static final int MAX_FIELD_LEN_MINUS_ENTRY_NAME =
             MAX_NAME_COMMENT_EXTRA_SIZE - 9;
+
+    /**
+     * Validate an IllegalArgumentException is thrown when the
+     * combined length of the entry name, entry comment, entry extra data,
+     * and CEN Header size exceeds 65,535 bytes.
+     */
+    @ParameterizedTest
+    @ValueSource(ints = {30000, 35000})
+    void combinedLengthTest(int length) {
+        String comment = "a".repeat(length);
+        byte[] bytes = creatExtraData(length);
+        int combinedLength = ENTRY_NAME.length() + comment.length() + bytes.length;
+        boolean expectException = combinedLength > MAX_COMBINED_CEN_HEADER_SIZE;
+        System.out.printf("Combined Len= %s, exception: %s%n", combinedLength, expectException);
+        ZipEntry zipEntry = new ZipEntry(ENTRY_NAME);
+        zipEntry.setComment(comment);
+        // The extra data length will trigger the IllegalArgumentException
+        if (expectException) {
+            assertThrows(IllegalArgumentException.class, () ->
+                    zipEntry.setExtra(bytes));
+        } else {
+            zipEntry.setExtra(bytes);
+        }
+    }
 
     /**
      * Validate an IllegalArgumentException is thrown when the comment
