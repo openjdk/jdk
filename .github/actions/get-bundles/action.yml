@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,10 @@ inputs:
     required: true
   debug-suffix:
     description: 'File name suffix denoting debug level, possibly empty'
+    required: false
+  include-static-libs:
+    description: 'Should static-libs be part of installed JDK bundle?'
+    default: false
     required: false
 outputs:
   jdk-path:
@@ -73,6 +77,13 @@ runs:
           echo 'Unpacking jdk bundle...'
           mkdir -p bundles/jdk
           tar -xf bundles/jdk-${{ inputs.platform }}${{ inputs.debug-suffix }}.tar.gz -C bundles/jdk
+        fi
+
+        if [[ '${{ inputs.include-static-libs }}' == 'true' ]]; then
+          if [[ -d bundles/jdk && -e bundles/static-libs-${{ inputs.platform }}${{ inputs.debug-suffix }}.tar.gz ]]; then
+            echo 'Unpacking static-libs bundle...'
+            tar -xf bundles/static-libs-${{ inputs.platform }}${{ inputs.debug-suffix }}.tar.gz -C bundles/jdk
+          fi
         fi
 
         if [[ -e bundles/symbols-${{ inputs.platform }}${{ inputs.debug-suffix }}.tar.gz ]]; then
