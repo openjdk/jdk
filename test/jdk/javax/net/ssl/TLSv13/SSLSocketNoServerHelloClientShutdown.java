@@ -1,0 +1,183 @@
+/*
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+/*
+ * @test
+ * @bug 8331682
+ * @summary Slow networks/Impatient clients can potentially send
+ *          unencrypted TLSv1.3 alerts that won't parse on the server.
+ * @library /javax/net/ssl/templates
+ * @library /test/lib
+ * @run main/othervm SSLSocketNoServerHelloClientShutdown
+ */
+
+import static jdk.test.lib.Asserts.assertEquals;
+import static jdk.test.lib.Asserts.assertTrue;
+import static jdk.test.lib.security.SecurityUtils.inspectTlsBuffer;
+
+import java.io.InputStream;
+import java.lang.Override;
+import java.net.InetSocketAddress;
+import java.net.SocketException;
+import java.nio.channels.SocketChannel;
+
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngineResult;
+import javax.net.ssl.SSLEngineResult.Status;
+import javax.net.ssl.SSLServerSocket;
+import javax.net.ssl.SSLServerSocketFactory;
+import javax.net.ssl.SSLSocket;
+
+/**
+ * To reproduce @bug 8331682 (client sends an unencrypted TLS alert during 1.3 handshake)
+ * with SSLSockets we use an SSLSocket on the server side and a plain TCP socket backed by
+ * SSLEngine on the client side.
+ */
+public class SSLSocketNoServerHelloClientShutdown extends SSLEngineNoServerHelloClientShutdown {
+
+    private volatile Exception clientException;
+    private volatile Exception serverException;
+
+    public static void main(String[] args) throws Exception {
+        new SSLSocketNoServerHelloClientShutdown().runTest();
+    }
+
+    public SSLSocketNoServerHelloClientShutdown() throws Exception {
+        super();
+    }
+
+    private void runTest() throws Exception {
+        // Set up SSL server
+        SSLContext context = createServerSSLContext();
+        SSLServerSocketFactory sslssf = context.getServerSocketFactory();
+
+        try (SSLServerSocket serverSocket = (SSLServerSocket) sslssf.createServerSocket()) {
+
+            serverSocket.setReuseAddress(false);
+            serverSocket.bind(null);
+            int port = serverSocket.getLocalPort();
+            log("Port: " + port);
+            Thread thread = createClientThread(port);
+
+            try {
+                // Server-side SSL socket that will read.
+                SSLSocket socket = (SSLSocket) serverSocket.accept();
+                socket.setSoTimeout(2000);
+                InputStream is = socket.getInputStream();
+                byte[] inbound = new byte[512];
+
+                log("===Server is ready and reading===");
+                if (is.read(inbound) > 0) {
+                    throw new Exception("Server returned data");
+                }
+            } catch (Exception e) {
+                serverException = e;
+                log(e.toString());
+            } finally {
+                thread.join();
+            }
+        } finally {
+            if (serverException != null && !(serverException instanceof SocketException)) {
+                throw serverException;
+            }
+            if (clientException != null) {
+                throw clientException;
+            }
+        }
+    }
+
+    private Thread createClientThread(final int port) {
+
+        Thread t = new Thread("ClientThread") {
+            @Override
+            public void run() {
+                // Client-side plain TCP socket.
+                try (SocketChannel clientSocketChannel = SocketChannel.open(
+                        new InetSocketAddress("localhost", port))) {
+
+                    SSLEngineResult clientResult;
+                    clientSocketChannel.socket().setSoTimeout(500);
+
+                    log("=================");
+
+                    // Produce client_hello
+                    log("---Client Wrap client_hello---");
+                    clientResult = clientEngine.wrap(clientOut, cTOs);
+                    logEngineStatus(clientEngine, clientResult);
+                    runDelegatedTasks(clientEngine);
+
+                    // Shutdown client
+                    log("---Client closeOutbound---");
+                    clientEngine.closeOutbound();
+
+                    // Produce an unencrypted user_canceled
+                    log("---Client Wrap user_canceled---");
+                    clientResult = clientEngine.wrap(clientOut, cTOs);
+                    logEngineStatus(clientEngine, clientResult);
+                    runDelegatedTasks(clientEngine);
+
+                    // Produce an unencrypted close_notify
+                    log("---Client Wrap close_notify---");
+                    clientResult = clientEngine.wrap(clientOut, cTOs);
+                    logEngineStatus(clientEngine, clientResult);
+                    runDelegatedTasks(clientEngine);
+                    assertTrue(clientEngine.isOutboundDone());
+                    assertEquals(clientResult.getStatus(), Status.CLOSED);
+
+                    // Send client_hello, user_canceled alert and close_notify alert to server.
+                    // Server should process 2 unencrypted alerts.
+                    cTOs.flip();
+                    inspectTlsBuffer(cTOs);
+                    int len = clientSocketChannel.write(cTOs);
+                    log("---Client wrote " + len + " bytes---");
+
+                    // Read all the messages from the server.
+                    // Server should reply with server_hello, CCS, EE and its own close_notify
+                    // alert back to the client.
+                    while ((len = clientSocketChannel.read(sTOc)) != -1) {
+                        log("---Client read " + len + " bytes---");
+                    }
+                    sTOc.flip();
+                    inspectTlsBuffer(sTOc);
+
+                    // Consume server messages.
+                    for (int i = 1; sTOc.hasRemaining(); i++) {
+                        log("---Client Unwrap server flight " + i + "---");
+                        clientResult = clientEngine.unwrap(sTOc, clientIn);
+                        logEngineStatus(clientEngine, clientResult);
+                        runDelegatedTasks(clientEngine);
+                    }
+
+                    assertTrue(clientEngine.isOutboundDone());
+                    assertTrue(clientEngine.isInboundDone());
+
+                } catch (Exception e) {
+                    clientException = e;
+                }
+            }
+        };
+
+        t.start();
+        return t;
+    }
+}
