@@ -504,6 +504,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.HashMap;
 import java.util.Random;
 
 public class TestDependencyOffsets {
@@ -784,6 +785,7 @@ public class TestDependencyOffsets {
 
                 // -XX:-AlignVector
                 IRRule r1 = new IRRule(type, vwConstraint, type.irNode);
+                r1.addConstraint("MaxVectorSize", new IntConstraint(minVectorSize, null));
                 if (0 < byte_offset && byte_offset < vwConstraint.platformVectorWidth) {
                     // Vectors have to be shorter to avoid cyclic dependency.
                     int log2 = 31 - Integer.numberOfLeadingZeros(offset);
@@ -819,12 +821,64 @@ public class TestDependencyOffsets {
         return tests;
     }
 
+    static interface Constraint {
+        Constraint intersect(Constraint other);
+        boolean isEmpty();
+        boolean isTrivial();
+        String generate(String flag);
+    }
+
+    static record IntConstraint(Integer lo, Integer hi) implements Constraint {
+        // null Integer bound means infinity / open
+
+        @Override
+        public Constraint intersect(Constraint other) {
+            if (other instanceof IntConstraint i) {
+                Integer lo = null;
+                Integer hi = null;
+                return new IntConstraint(lo, hi);
+            } else {
+                throw new RuntimeException("cannot intersect with other type");
+            }
+        }
+
+        @Override
+        public boolean isEmpty() { return this.lo != null && this.hi != null && this.lo > this.hi; }
+
+        @Override
+        public boolean isTrivial() { return this.lo == null && this.hi == null; }
+
+        @Override
+        public String generate(String flag) {
+            StringBuilder builder = new StringBuilder();
+            if (lo != null) {
+                builder.append("\"");
+                builder.append(flag);
+                builder.append("\", \">=");
+                builder.append(lo);
+                builder.append("\"");
+            }
+            if (lo != null && hi != null) {
+                builder.append(", ");
+            }
+            if (hi != null) {
+                builder.append("\"");
+                builder.append(flag);
+                builder.append("\", \"<=");
+                builder.append(hi);
+                builder.append("\"");
+            }
+            return builder.toString();
+        }
+    }
+
     static class IRRule {
         Type type;
         VWConstraint vwConstraint;
         String irNode;
         String size;
         boolean isPositiveRule;
+        HashMap<String, Constraint> flagConstraints;
 
         IRRule(Type type, VWConstraint vwConstraint, String irNode) {
             this.type = type;
@@ -832,6 +886,7 @@ public class TestDependencyOffsets {
             this.irNode = irNode;
             this.size = null;
             this.isPositiveRule = true;
+            this.flagConstraints = new HashMap<String, Constraint>();
         }
 
         void setSize(String size) {
@@ -842,18 +897,37 @@ public class TestDependencyOffsets {
             this.isPositiveRule = false;
         }
 
+        void addConstraint(String flag, Constraint constraint) {
+            this.flagConstraints.put(flag, constraint);
+        }
+
         void generate(StringBuilder builder) {
-            builder.append(counts());
+            boolean isEmpty = flagConstraints.entrySet().stream().anyMatch(e -> e.getValue().isEmpty());
 
-            // TODO other conditions
+            if (isEmpty) {
+                builder.append("    // No IR rule: conditions impossible.\n");
+            } else {
+                builder.append(counts());
 
-            // cpu features
-            builder.append("        applyIfCPUFeature");
-            builder.append(vwConstraint.cpuFeatures.length > 2 ? "And" : "");
-            builder.append(" = {");
-            builder.append(Arrays.stream(vwConstraint.cpuFeatures).map(c -> "\"" + c + "\"")
-                                                                  .collect(Collectors.joining(", ")));
-            builder.append("})");
+                // constraints
+                if (!flagConstraints.isEmpty()) {
+                    builder.append("        applyIf");
+                    builder.append(flagConstraints.size() > 1 ? "And" : "");
+                    builder.append(" = {");
+                    builder.append(flagConstraints.entrySet().stream()
+                                                  .map(e -> e.getValue().generate(e.getKey()))
+                                                  .collect(Collectors.joining(", ")));
+                    builder.append("},\n");
+                }
+
+                // cpu features
+                builder.append("        applyIfCPUFeature");
+                builder.append(vwConstraint.cpuFeatures.length > 2 ? "And" : "");
+                builder.append(" = {");
+                builder.append(Arrays.stream(vwConstraint.cpuFeatures).map(c -> "\"" + c + "\"")
+                                                                      .collect(Collectors.joining(", ")));
+                builder.append("})\n");
+            }
         }
 
         String counts() {
