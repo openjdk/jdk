@@ -1164,7 +1164,6 @@ public class ZipFile implements ZipConstants, Closeable {
         private static final int META_INF_LEN = 9;
         // "META-INF/versions//".length()
         private static final int META_INF_VERSIONS_LEN = 19;
-        private static final int[] EMPTY_META_VERSIONS = new int[0];
         // CEN size is limited to the maximum array size in the JDK
         private static final int MAX_CEN_SIZE = ArraysSupport.SOFT_MAX_ARRAY_LENGTH;
 
