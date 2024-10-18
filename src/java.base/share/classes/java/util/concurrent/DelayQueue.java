@@ -327,6 +327,8 @@ public class DelayQueue<E extends Delayed> extends AbstractQueue<E>
      * @return the <em>expired head</em> of this queue
      * @throws NoSuchElementException if this queue has no elements with an
      *         expired delay
+     *
+     * @since 21
      */
     public E remove() {
         return super.remove();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@ package jdk.internal.classfile.impl;
 import java.lang.classfile.Label;
 
 public sealed interface LabelContext
-        permits BufferedCodeBuilder, CodeImpl, DirectCodeBuilder {
+        permits TerminalCodeBuilder, CodeImpl {
     Label newLabel();
     Label getLabel(int bci);
     void setLabelTarget(Label label, int bci);

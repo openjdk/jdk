@@ -264,6 +264,10 @@ public class Type implements Comparable<Type> {
         return annos.getUnmodifiableAnnotationElements();
     }
 
+    public <T> T getAnnotationValue(Class<? extends java.lang.annotation.Annotation> clazz, T defaultValue) {
+       return annos.getAnnotationValue(clazz, defaultValue);
+    }
+
     public <T> T getAnnotation(Class<? extends java.lang.annotation.Annotation> clazz) {
         return annos.getAnnotation(clazz);
     }
@@ -358,5 +362,9 @@ public class Type implements Comparable<Type> {
 
     public boolean isInternal() {
         return internal;
+    }
+
+    public boolean hasAnnotation(Class<? extends java.lang.annotation.Annotation> clazz) {
+        return annos.getAnnotationElement(clazz) != null;
     }
 }

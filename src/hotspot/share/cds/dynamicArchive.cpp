@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 #include "cds/classPrelinker.hpp"
 #include "cds/dynamicArchive.hpp"
 #include "cds/regeneratedClasses.hpp"
+#include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionaryShared.hpp"
@@ -118,6 +119,9 @@ public:
       return;
     }
 
+    log_info(cds,dynamic)("CDS dynamic dump: clinit = " JLONG_FORMAT "ms)",
+                          ClassLoader::class_init_time_ms());
+
     init_header();
     gather_source_objs();
     gather_array_klasses();
@@ -137,7 +141,7 @@ public:
       // Note that these tables still point to the *original* objects, so
       // they would need to call DynamicArchive::original_to_target() to
       // get the correct addresses.
-      assert(current_dump_space() == ro_region(), "Must be RO space");
+      assert(current_dump_region() == ro_region(), "Must be RO space");
       SymbolTable::write_to_archive(symbols());
 
       ArchiveBuilder::OtherROAllocMark mark;
@@ -470,7 +474,7 @@ int DynamicArchive::num_array_klasses() {
 }
 
 void DynamicArchive::check_for_dynamic_dump() {
-  if (CDSConfig::is_dumping_dynamic_archive() && !UseSharedSpaces) {
+  if (CDSConfig::is_dumping_dynamic_archive() && !CDSConfig::is_using_archive()) {
     // This could happen if SharedArchiveFile has failed to load:
     // - -Xshare:off was specified
     // - SharedArchiveFile points to an non-existent file.
@@ -522,7 +526,7 @@ void DynamicArchive::dump_at_exit(JavaThread* current, const char* archive_name)
 
 // This is called by "jcmd VM.cds dynamic_dump"
 void DynamicArchive::dump_for_jcmd(const char* archive_name, TRAPS) {
-  assert(UseSharedSpaces && RecordDynamicDumpInfo, "already checked in arguments.cpp");
+  assert(CDSConfig::is_using_archive() && RecordDynamicDumpInfo, "already checked in arguments.cpp");
   assert(ArchiveClassesAtExit == nullptr, "already checked in arguments.cpp");
   assert(CDSConfig::is_dumping_dynamic_archive(), "already checked by check_for_dynamic_dump() during VM startup");
   MetaspaceShared::link_shared_classes(true/*from jcmd*/, CHECK);

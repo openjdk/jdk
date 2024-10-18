@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@
 #include "jfr/recorder/service/jfrOptionSet.hpp"
 #include "jfr/recorder/storage/jfrEpochStorage.inline.hpp"
 #include "jfr/recorder/storage/jfrMemorySpace.inline.hpp"
+#include "jfr/recorder/storage/jfrReferenceCountedStorage.hpp"
 #include "jfr/recorder/storage/jfrStorageUtils.inline.hpp"
 #include "jfr/recorder/stringpool/jfrStringPool.hpp"
 #include "jfr/support/jfrDeprecationManager.hpp"
@@ -589,12 +590,14 @@ void JfrCheckpointManager::clear_type_set() {
     MutexLocker module_lock(Module_lock);
     JfrTypeSet::clear(&writer, &leakp_writer);
   }
-  JfrDeprecationManager::on_type_set(leakp_writer, nullptr, thread);
-  // We placed a blob in the Deprecated subsystem by moving the information
-  // from the leakp writer. For the real writer, the data will not be
-  // committed, because the JFR system is yet to be started.
-  // Therefore, the writer is cancelled before its destructor is run,
-  // to avoid writing unnecessary information into the checkpoint system.
+  JfrAddRefCountedBlob add_blob(leakp_writer);
+  JfrDeprecationManager::on_type_set(nullptr, thread);
+  // We installed a blob in the JfrReferenceCountedStorage subsystem
+  // by moving the information from the leakp writer.
+  // For the real writer, the data will not be committed,
+  // because the JFR system is yet to be started.
+  // Therefore, we cancel the writer before its destructor is run
+  // to avoid writing invalid information into the checkpoint system.
   writer.cancel();
 }
 
@@ -613,11 +616,11 @@ void JfrCheckpointManager::write_type_set() {
       MutexLocker module_lock(thread, Module_lock);
       JfrTypeSet::serialize(&writer, &leakp_writer, false, false);
     }
+    JfrAddRefCountedBlob add_blob(leakp_writer);
     if (LeakProfiler::is_running()) {
-      ObjectSampleCheckpoint::on_type_set(leakp_writer);
+      ObjectSampleCheckpoint::on_type_set(thread);
     }
-    // Place this call after ObjectSampleCheckpoint::on_type_set.
-    JfrDeprecationManager::on_type_set(leakp_writer, _chunkwriter, thread);
+    JfrDeprecationManager::on_type_set(_chunkwriter, thread);
   }
   write();
 }
@@ -626,10 +629,7 @@ void JfrCheckpointManager::on_unloading_classes() {
   assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
   JfrCheckpointWriter writer(Thread::current());
   JfrTypeSet::on_unloading_classes(&writer);
-  if (LeakProfiler::is_running()) {
-    ObjectSampleCheckpoint::on_type_set_unload(writer);
-  }
-  JfrDeprecationManager::on_type_set_unload(writer);
+  JfrAddRefCountedBlob add_blob(writer, false /* move */, false /* reset */);
 }
 
 static size_t flush_type_set(Thread* thread) {

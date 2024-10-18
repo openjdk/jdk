@@ -26,6 +26,7 @@
  * @summary Test the various CPU-specific reservation schemes
  * @requires vm.bits == 64 & !vm.graal.enabled & vm.debug == true
  * @requires vm.flagless
+ * @requires vm.cds
  * @requires (os.family != "windows") & (os.family != "aix")
  * @library /test/lib
  * @modules java.base/jdk.internal.misc

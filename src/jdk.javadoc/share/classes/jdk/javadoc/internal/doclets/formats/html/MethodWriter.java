@@ -35,16 +35,16 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.Text;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
 import jdk.javadoc.internal.doclets.toolkit.BaseOptions;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFinder;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
+import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.ContentBuilder;
+import jdk.javadoc.internal.html.Entity;
+import jdk.javadoc.internal.html.HtmlTree;
+import jdk.javadoc.internal.html.Text;
 
 /**
  * Writes method documentation in HTML format.
@@ -107,7 +107,7 @@ public class MethodWriter extends AbstractExecutableMemberWriter {
             for (Element method : methods) {
                 currentMethod = (ExecutableElement)method;
                 Content methodContent = getMethodHeader(currentMethod);
-                Content div = HtmlTree.DIV(HtmlStyle.horizontalScroll);
+                Content div = HtmlTree.DIV(HtmlStyles.horizontalScroll);
                 buildSignature(div);
                 buildDeprecationInfo(div);
                 buildPreviewInfo(div);
@@ -187,7 +187,7 @@ public class MethodWriter extends AbstractExecutableMemberWriter {
 
     @Override
     public void buildSummary(Content summariesList, Content content) {
-        writer.addSummary(HtmlStyle.methodSummary,
+        writer.addSummary(HtmlStyles.methodSummary,
                 HtmlIds.METHOD_SUMMARY, summariesList, content);
     }
 
@@ -209,7 +209,7 @@ public class MethodWriter extends AbstractExecutableMemberWriter {
             heading.setId(anchors.getLast());
         }
         content.add(heading);
-        return HtmlTree.SECTION(HtmlStyle.detail, content)
+        return HtmlTree.SECTION(HtmlStyles.detail, content)
                 .setId(anchors.getFirst());
     }
 
@@ -251,13 +251,13 @@ public class MethodWriter extends AbstractExecutableMemberWriter {
                                             ? utils.getSimpleName(holder)
                                             : utils.getFullyQualifiedName(holder));
                     var codeLink = HtmlTree.CODE(link);
-                    var descriptionFromTypeLabel = HtmlTree.SPAN(HtmlStyle.descriptionFromTypeLabel,
+                    var descriptionFromTypeLabel = HtmlTree.SPAN(HtmlStyles.descriptionFromTypeLabel,
                             utils.isClass(holder)
                                     ? contents.descriptionFromClassLabel
                                     : contents.descriptionFromInterfaceLabel);
                     descriptionFromTypeLabel.add(Entity.NO_BREAK_SPACE);
                     descriptionFromTypeLabel.add(codeLink);
-                    methodContent.add(HtmlTree.DIV(HtmlStyle.block, descriptionFromTypeLabel));
+                    methodContent.add(HtmlTree.DIV(HtmlStyles.block, descriptionFromTypeLabel));
                 }
                 writer.addInlineComment(method, methodContent);
             }
@@ -270,7 +270,7 @@ public class MethodWriter extends AbstractExecutableMemberWriter {
 
     protected Content getMethodDetails(Content methodDetailsHeader, Content methodDetails) {
         Content c = new ContentBuilder(methodDetailsHeader, methodDetails);
-        return getMember(HtmlTree.SECTION(HtmlStyle.methodDetails, c)
+        return getMember(HtmlTree.SECTION(HtmlStyles.methodDetails, c)
                 .setId(HtmlIds.METHOD_DETAIL));
     }
 
@@ -289,9 +289,9 @@ public class MethodWriter extends AbstractExecutableMemberWriter {
 
     @Override
     protected Table<Element> createSummaryTable() {
-        return new Table<Element>(HtmlStyle.summaryTable)
+        return new Table<Element>(HtmlStyles.summaryTable)
                 .setHeader(getSummaryTableHeader(typeElement))
-                .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colSecond, HtmlStyle.colLast)
+                .setColumnStyles(HtmlStyles.colFirst, HtmlStyles.colSecond, HtmlStyles.colLast)
                 .setId(HtmlIds.METHOD_SUMMARY_TABLE)
                 .setDefaultTab(contents.getContent("doclet.All_Methods"))
                 .addTab(contents.getContent("doclet.Static_Methods"), utils::isStatic)

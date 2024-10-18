@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      8284030 8307377
+ * @bug      8284030 8307377 8331579
  * @summary  LinkFactory should not attempt to link to primitive types
  * @library  /tools/lib ../../lib
  * @modules  jdk.javadoc/jdk.javadoc.internal.tool
@@ -88,6 +88,64 @@ public class TestLinkTagletPrimitive extends JavadocTester {
                     </div>
                     """);
     }
+
+    @Test
+    public void testSimpleDocLint(Path base) throws IOException {
+        Path src = base.resolve("src");
+
+        tb.writeJavaFiles(src, """
+                /**
+                 * Comment.
+                 * Double: {@link double}
+                 * Void: {@link void}
+                 * @see int
+                 */
+                public class C {\s
+                    private C() { }
+                }
+                """);
+
+        javadoc("-Xdoclint:reference",
+                "-d", base.resolve("api").toString(),
+                "-sourcepath", src.toString(),
+                src.resolve("C.java").toString());
+        checkExit(Exit.ERROR);
+
+        checkOutput(Output.OUT, true,
+                "C.java:3: error: reference not found",
+                "C.java:4: error: reference not found",
+                "C.java:5: error: reference not found");
+
+        checkOutput("C.html", true,
+                """
+                    <div class="block">Comment.
+                     Double:\s
+                    <details class="invalid-tag">
+                    <summary>invalid reference</summary>
+                    <pre><code>double</code></pre>
+                    </details>
+
+                     Void:\s
+                    <details class="invalid-tag">
+                    <summary>invalid reference</summary>
+                    <pre><code>void</code></pre>
+                    </details>
+                    </div>
+                    """,
+                """
+                    <dt>See Also:</dt>
+                    <dd>
+                    <ul class="tag-list">
+                    <li>
+                    <details class="invalid-tag">
+                    <summary>invalid reference</summary>
+                    <pre><code>int</code></pre>
+                    </details>
+                    </li>
+                    </ul>
+                    </dd>""");
+    }
+
     @Test
     public void testArray(Path base) throws IOException {
         Path src = base.resolve("src");
@@ -120,6 +178,56 @@ public class TestLinkTagletPrimitive extends JavadocTester {
                     <pre><code>byte[]</code></pre>
                     </details>
                     </div>
+                    """);
+    }
+
+    @Test
+    public void testArrayDocLint(Path base) throws IOException {
+        Path src = base.resolve("src");
+
+        tb.writeJavaFiles(src, """
+                /**
+                 * Comment.
+                 * Double[]: {@link double[]}
+                 * @see int[]
+                 */
+                public class C {\s
+                    private C() { }
+                }
+                """);
+
+        javadoc("-Xdoclint:reference",
+                "-d", base.resolve("api").toString(),
+                "-sourcepath", src.toString(),
+                src.resolve("C.java").toString());
+        checkExit(Exit.ERROR);
+
+        checkOutput(Output.OUT, true,
+                "C.java:3: error: reference not found",
+                "C.java:4: error: reference not found");
+
+        checkOutput("C.html", true,
+                """
+                    <div class="block">Comment.
+                     Double[]:\s
+                    <details class="invalid-tag">
+                    <summary>invalid reference</summary>
+                    <pre><code>double[]</code></pre>
+                    </details>
+                    </div>
+                    """,
+                """
+                    <dt>See Also:</dt>
+                    <dd>
+                    <ul class="tag-list">
+                    <li>
+                    <details class="invalid-tag">
+                    <summary>invalid reference</summary>
+                    <pre><code>int[]</code></pre>
+                    </details>
+                    </li>
+                    </ul>
+                    </dd>
                     """);
     }
 }

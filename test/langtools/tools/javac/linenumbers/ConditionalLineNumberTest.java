@@ -54,7 +54,7 @@ public class ConditionalLineNumberTest {
         ClassModel self = ClassFile.of().parse(ConditionalLineNumberTest.class.getResourceAsStream("ConditionalLineNumberTest.class").readAllBytes());
         for (MethodModel m : self.methods()) {
             if (m.methodName().equalsString("method")) {
-                CodeAttribute code_attribute = m.findAttribute(Attributes.CODE).orElse(null);
+                CodeAttribute code_attribute = m.findAttribute(Attributes.code()).orElse(null);
                 assert code_attribute != null;
                 for (Attribute<?> at : code_attribute.attributes()) {
                     if (at instanceof LineNumberTableAttribute) {

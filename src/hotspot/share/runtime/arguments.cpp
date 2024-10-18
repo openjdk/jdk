@@ -34,6 +34,7 @@
 #include "compiler/compilerDefinitions.hpp"
 #include "gc/shared/gcArguments.hpp"
 #include "gc/shared/gcConfig.hpp"
+#include "gc/shared/genArguments.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "jvm.h"
@@ -101,7 +102,7 @@ size_t Arguments::_default_SharedBaseAddress    = SharedBaseAddress;
 
 bool   Arguments::_enable_preview               = false;
 
-LegacyGCLogging Arguments::_legacyGCLogging     = { 0, 0 };
+LegacyGCLogging Arguments::_legacyGCLogging     = { nullptr, 0 };
 
 // These are not set by the JDK's built-in launchers, but they can be set by
 // programs that embed the JVM using JNI_CreateJavaVM. See comments around
@@ -304,6 +305,8 @@ bool needs_module_property_warning = false;
 #define UPGRADE_PATH_LEN 12
 #define ENABLE_NATIVE_ACCESS "enable.native.access"
 #define ENABLE_NATIVE_ACCESS_LEN 20
+#define ILLEGAL_NATIVE_ACCESS "illegal.native.access"
+#define ILLEGAL_NATIVE_ACCESS_LEN 21
 
 // Return TRUE if option matches 'property', or 'property=', or 'property.'.
 static bool matches_property_suffix(const char* option, const char* property, size_t len) {
@@ -325,11 +328,17 @@ bool Arguments::is_internal_module_property(const char* property) {
         matches_property_suffix(property_suffix, LIMITMODS, LIMITMODS_LEN) ||
         matches_property_suffix(property_suffix, PATH, PATH_LEN) ||
         matches_property_suffix(property_suffix, UPGRADE_PATH, UPGRADE_PATH_LEN) ||
+        matches_property_suffix(property_suffix, ILLEGAL_NATIVE_ACCESS, ILLEGAL_NATIVE_ACCESS_LEN) ||
         matches_property_suffix(property_suffix, ENABLE_NATIVE_ACCESS, ENABLE_NATIVE_ACCESS_LEN)) {
       return true;
     }
   }
   return false;
+}
+
+// Return true if the key matches the --module-path property name ("jdk.module.path").
+bool Arguments::is_module_path_property(const char* key) {
+  return (strcmp(key, MODULE_PROPERTY_PREFIX PATH) == 0);
 }
 
 // Process java launcher properties.
@@ -496,20 +505,16 @@ static SpecialFlag const special_jvm_flags[] = {
   // --- Non-alias flags - sorted by obsolete_in then expired_in:
   { "AllowRedefinitionToAddDeleteMethods", JDK_Version::jdk(13), JDK_Version::undefined(), JDK_Version::undefined() },
   { "FlightRecorder",               JDK_Version::jdk(13), JDK_Version::undefined(), JDK_Version::undefined() },
+  { "ZGenerational",                JDK_Version::jdk(23), JDK_Version::undefined(), JDK_Version::undefined() },
   { "DumpSharedSpaces",             JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
   { "DynamicDumpSharedSpaces",      JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
   { "RequireSharedSpaces",          JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
   { "UseSharedSpaces",              JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
-  { "RegisterFinalizersAtInit",     JDK_Version::jdk(22), JDK_Version::jdk(23), JDK_Version::jdk(24) },
   { "DontYieldALot",                JDK_Version::jdk(23), JDK_Version::jdk(24), JDK_Version::jdk(25) },
-  { "PreserveAllAnnotations",       JDK_Version::jdk(23), JDK_Version::jdk(24), JDK_Version::jdk(25) },
-  { "UseNotificationThread",        JDK_Version::jdk(23), JDK_Version::jdk(24), JDK_Version::jdk(25) },
-  { "UseEmptySlotsInSupers",        JDK_Version::jdk(23), JDK_Version::jdk(24), JDK_Version::jdk(25) },
-#if defined(X86)
-  { "UseRTMLocking",                JDK_Version::jdk(23), JDK_Version::jdk(24), JDK_Version::jdk(25) },
-  { "UseRTMDeopt",                  JDK_Version::jdk(23), JDK_Version::jdk(24), JDK_Version::jdk(25) },
-  { "RTMRetryCount",                JDK_Version::jdk(23), JDK_Version::jdk(24), JDK_Version::jdk(25) },
-#endif // X86
+#ifdef LINUX
+  { "UseLinuxPosixThreadCPUClocks", JDK_Version::jdk(24), JDK_Version::jdk(25), JDK_Version::jdk(26) },
+#endif
+  { "LockingMode",                  JDK_Version::jdk(24), JDK_Version::jdk(26), JDK_Version::jdk(27) },
   // --- Deprecated alias flags (see also aliased_jvm_flags) - sorted by obsolete_in then expired_in:
   { "CreateMinidumpOnCrash",        JDK_Version::jdk(9),  JDK_Version::undefined(), JDK_Version::undefined() },
 
@@ -517,32 +522,20 @@ static SpecialFlag const special_jvm_flags[] = {
 
   { "MetaspaceReclaimPolicy",       JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::undefined() },
 
-  { "G1ConcRefinementGreenZone",    JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::jdk(24) },
-  { "G1ConcRefinementYellowZone",   JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::jdk(24) },
-  { "G1ConcRefinementRedZone",      JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::jdk(24) },
-  { "G1ConcRefinementThresholdStep", JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::jdk(24) },
-  { "G1UseAdaptiveConcRefinement",  JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::jdk(24) },
-  { "G1ConcRefinementServiceIntervalMillis", JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::jdk(24) },
+  { "UseNotificationThread",        JDK_Version::jdk(23), JDK_Version::jdk(24), JDK_Version::jdk(25) },
+  { "PreserveAllAnnotations",       JDK_Version::jdk(23), JDK_Version::jdk(24), JDK_Version::jdk(25) },
+  { "UseEmptySlotsInSupers",        JDK_Version::jdk(23), JDK_Version::jdk(24), JDK_Version::jdk(25) },
+  { "OldSize",                      JDK_Version::jdk(23), JDK_Version::jdk(24), JDK_Version::jdk(25) },
+#if defined(X86)
+  { "UseRTMLocking",                JDK_Version::jdk(23), JDK_Version::jdk(24), JDK_Version::jdk(25) },
+  { "UseRTMDeopt",                  JDK_Version::jdk(23), JDK_Version::jdk(24), JDK_Version::jdk(25) },
+  { "RTMRetryCount",                JDK_Version::jdk(23), JDK_Version::jdk(24), JDK_Version::jdk(25) },
+#endif // X86
 
-  { "G1ConcRSLogCacheSize",         JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::jdk(24) },
-  { "G1ConcRSHotCardLimit",         JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::jdk(24) },
-  { "RefDiscoveryPolicy",           JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::jdk(24) },
 
-  { "AdaptiveSizePolicyCollectionCostMargin",   JDK_Version::undefined(), JDK_Version::jdk(23), JDK_Version::jdk(24) },
-  { "MaxGCMinorPauseMillis",        JDK_Version::jdk(8), JDK_Version::jdk(23), JDK_Version::jdk(24) },
-  { "MaxRAMFraction",               JDK_Version::jdk(10),  JDK_Version::jdk(23), JDK_Version::jdk(24) },
-  { "MinRAMFraction",               JDK_Version::jdk(10),  JDK_Version::jdk(23), JDK_Version::jdk(24) },
-  { "InitialRAMFraction",           JDK_Version::jdk(10),  JDK_Version::jdk(23), JDK_Version::jdk(24) },
-  { "DefaultMaxRAMFraction",        JDK_Version::jdk(8),  JDK_Version::jdk(23), JDK_Version::jdk(24) },
-  { "TLABStats",                    JDK_Version::jdk(12), JDK_Version::jdk(23), JDK_Version::jdk(24) },
-  { "GCLockerEdenExpansionPercent", JDK_Version::undefined(), JDK_Version::jdk(23), JDK_Version::jdk(24) },
-  { "NUMAPageScanRate",             JDK_Version::undefined(), JDK_Version::jdk(23), JDK_Version::jdk(24) },
-  { "ProcessDistributionStride",    JDK_Version::undefined(), JDK_Version::jdk(23), JDK_Version::jdk(24) },
-
-  { "ParallelOldDeadWoodLimiterMean",   JDK_Version::undefined(), JDK_Version::jdk(23), JDK_Version::jdk(24) },
-  { "ParallelOldDeadWoodLimiterStdDev", JDK_Version::undefined(), JDK_Version::jdk(23), JDK_Version::jdk(24) },
-  { "UseNeon",                      JDK_Version::undefined(), JDK_Version::jdk(23), JDK_Version::jdk(24) },
-  { "ScavengeBeforeFullGC",         JDK_Version::undefined(), JDK_Version::jdk(23), JDK_Version::jdk(24) },
+  { "BaseFootPrintEstimate",           JDK_Version::undefined(), JDK_Version::jdk(24), JDK_Version::jdk(25) },
+  { "HeapFirstMaximumCompactionCount", JDK_Version::undefined(), JDK_Version::jdk(24), JDK_Version::jdk(25) },
+  { "UseVtableBasedCHA",               JDK_Version::undefined(), JDK_Version::jdk(24), JDK_Version::jdk(25) },
 #ifdef ASSERT
   { "DummyObsoleteTestFlag",        JDK_Version::undefined(), JDK_Version::jdk(18), JDK_Version::undefined() },
 #endif
@@ -773,7 +766,7 @@ static bool set_bool_flag(JVMFlag* flag, bool value, JVMFlagOrigin origin) {
 
 static bool set_fp_numeric_flag(JVMFlag* flag, const char* value, JVMFlagOrigin origin) {
   // strtod allows leading whitespace, but our flag format does not.
-  if (*value == '\0' || isspace(*value)) {
+  if (*value == '\0' || isspace((unsigned char) *value)) {
     return false;
   }
   char* end;
@@ -1203,13 +1196,13 @@ bool Arguments::process_settings_file(const char* file_name, bool should_exist, 
         if (c == '\n') in_comment = false;
       } else {
         if (c == '#') in_comment = true;
-        else if (!isspace(c)) {
+        else if (!isspace((unsigned char) c)) {
           in_white_space = false;
           token[pos++] = checked_cast<char>(c);
         }
       }
     } else {
-      if (c == '\n' || (!in_quote && isspace(c))) {
+      if (c == '\n' || (!in_quote && isspace((unsigned char) c))) {
         // token ends at newline, or at unquoted whitespace
         // this allows a way to include spaces in string-valued options
         token[pos] = '\0';
@@ -1673,9 +1666,6 @@ jint Arguments::set_aggressive_heap_flags() {
 #endif
 
   // Increase some data structure sizes for efficiency
-  if (FLAG_SET_CMDLINE(BaseFootPrintEstimate, MaxHeapSize) != JVMFlag::SUCCESS) {
-    return JNI_EINVAL;
-  }
   if (FLAG_SET_CMDLINE(ResizeTLAB, false) != JVMFlag::SUCCESS) {
     return JNI_EINVAL;
   }
@@ -1832,25 +1822,16 @@ bool Arguments::check_vm_args_consistency() {
   }
 #endif
 
-#if !defined(X86) && !defined(AARCH64) && !defined(RISCV64) && !defined(ARM) && !defined(PPC64) && !defined(S390)
-  if (LockingMode == LM_LIGHTWEIGHT) {
-    FLAG_SET_CMDLINE(LockingMode, LM_LEGACY);
-    warning("New lightweight locking not supported on this platform");
+  if (UseObjectMonitorTable && LockingMode != LM_LIGHTWEIGHT) {
+    // ObjectMonitorTable requires lightweight locking.
+    FLAG_SET_CMDLINE(UseObjectMonitorTable, false);
+    warning("UseObjectMonitorTable requires LM_LIGHTWEIGHT");
   }
-#endif
 
 #if !defined(X86) && !defined(AARCH64) && !defined(PPC64) && !defined(RISCV64) && !defined(S390)
   if (LockingMode == LM_MONITOR) {
     jio_fprintf(defaultStream::error_stream(),
                 "LockingMode == 0 (LM_MONITOR) is not fully implemented on this architecture\n");
-    return false;
-  }
-#endif
-#if defined(X86) && !defined(ZERO)
-  if (LockingMode == LM_MONITOR && UseRTMForStackLocks) {
-    jio_fprintf(defaultStream::error_stream(),
-                "LockingMode == 0 (LM_MONITOR) and -XX:+UseRTMForStackLocks are mutually exclusive\n");
-
     return false;
   }
 #endif
@@ -1878,11 +1859,11 @@ bool Arguments::is_bad_option(const JavaVMOption* option, jboolean ignore,
 }
 
 static const char* user_assertion_options[] = {
-  "-da", "-ea", "-disableassertions", "-enableassertions", 0
+  "-da", "-ea", "-disableassertions", "-enableassertions", nullptr
 };
 
 static const char* system_assertion_options[] = {
-  "-dsa", "-esa", "-disablesystemassertions", "-enablesystemassertions", 0
+  "-dsa", "-esa", "-disablesystemassertions", "-enablesystemassertions", nullptr
 };
 
 bool Arguments::parse_uint(const char* value,
@@ -2262,6 +2243,10 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
       if (!create_numbered_module_property("jdk.module.enable.native.access", tail, enable_native_access_count++)) {
         return JNI_ENOMEM;
       }
+    } else if (match_option(option, "--illegal-native-access=", &tail)) {
+      if (!create_module_property("jdk.module.illegal.native.access", tail, InternalProperty)) {
+        return JNI_ENOMEM;
+      }
     } else if (match_option(option, "--limit-modules=", &tail)) {
       if (!create_module_property("jdk.module.limitmods", tail, InternalProperty)) {
         return JNI_ENOMEM;
@@ -2279,6 +2264,15 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
       int res = process_patch_mod_option(tail, patch_mod_javabase);
       if (res != JNI_OK) {
         return res;
+      }
+    } else if (match_option(option, "--sun-misc-unsafe-memory-access=", &tail)) {
+      if (strcmp(tail, "allow") == 0 || strcmp(tail, "warn") == 0 || strcmp(tail, "debug") == 0 || strcmp(tail, "deny") == 0) {
+        PropertyList_unique_add(&_system_properties, "sun.misc.unsafe.memory.access", tail,
+                                AddProperty, WriteableProperty, InternalProperty);
+      } else {
+        jio_fprintf(defaultStream::error_stream(),
+                    "Value specified to --sun-misc-unsafe-memory-access not recognized: '%s'\n", tail);
+        return JNI_ERR;
       }
     } else if (match_option(option, "--illegal-access=", &tail)) {
       char version[256];
@@ -3165,7 +3159,7 @@ jint Arguments::parse_options_buffer(const char* name, char* buffer, const size_
   // parse all options
   while (rd < buffer_end) {
     // skip leading white space from the input string
-    while (rd < buffer_end && isspace(*rd)) {
+    while (rd < buffer_end && isspace((unsigned char) *rd)) {
       rd++;
     }
 
@@ -3178,7 +3172,7 @@ jint Arguments::parse_options_buffer(const char* name, char* buffer, const size_
 
     // Tokens are strings of non white space characters separated
     // by one or more white spaces.
-    while (rd < buffer_end && !isspace(*rd)) {
+    while (rd < buffer_end && !isspace((unsigned char) *rd)) {
       if (*rd == '\'' || *rd == '"') {      // handle a quoted string
         int quote = *rd;                    // matching quote to look for
         rd++;                               // don't copy open quote
@@ -3607,7 +3601,7 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
       "DumpLoadedClassList is not supported in this VM\n");
     return JNI_ERR;
   }
-  if ((UseSharedSpaces && xshare_auto_cmd_line) ||
+  if ((CDSConfig::is_using_archive() && xshare_auto_cmd_line) ||
       log_is_enabled(Info, cds)) {
     warning("Shared spaces are not supported in this VM");
     UseSharedSpaces = false;
@@ -3752,6 +3746,13 @@ jint Arguments::apply_ergo() {
     FLAG_SET_DEFAULT(UseVectorStubs, false);
   }
 #endif // COMPILER2_OR_JVMCI
+
+  if (log_is_enabled(Info, perf, class, link)) {
+    if (!UsePerfData) {
+      warning("Disabling -Xlog:perf+class+link since UsePerfData is turned off.");
+      LogConfiguration::configure_stdout(LogLevel::Off, false, LOG_TAGS(perf, class, link));
+    }
+  }
 
   if (FLAG_IS_CMDLINE(DiagnoseSyncOnValueBasedClasses)) {
     if (DiagnoseSyncOnValueBasedClasses == ObjectSynchronizer::LOG_WARNING && !log_is_enabled(Info, valuebasedclasses)) {

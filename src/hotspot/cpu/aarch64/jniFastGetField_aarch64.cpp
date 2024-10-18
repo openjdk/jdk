@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -201,7 +201,7 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
 
   {
     __ enter();
-    __ lea(rscratch1, ExternalAddress(slow_case_addr));
+    __ lea(rscratch1, RuntimeAddress(slow_case_addr));
     __ blr(rscratch1);
     __ leave();
     __ ret(lr);

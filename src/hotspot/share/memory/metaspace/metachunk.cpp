@@ -253,7 +253,7 @@ void Metachunk::verify_neighborhood() const {
   }
 }
 
-volatile MetaWord dummy = 0;
+volatile MetaWord dummy = nullptr;
 
 void Metachunk::verify() const {
   // Note. This should be called under CLD lock protection.

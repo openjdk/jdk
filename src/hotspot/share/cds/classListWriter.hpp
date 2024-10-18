@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,8 @@ class ClassFileStream;
 class ClassListWriter {
 #if INCLUDE_CDS
   class IDTable;
+  class WriteResolveConstantsCLDClosure;
+
   static fileStream* _classlist_file;
   static IDTable* _id_table;
   static int _total_ids;
@@ -42,6 +44,7 @@ class ClassListWriter {
   static int get_id(const InstanceKlass* k);
   static bool has_id(const InstanceKlass* k);
   static void assert_locked() { assert_lock_strong(ClassListFile_lock); }
+  static void write_resolved_constants_for(InstanceKlass* klass);
 public:
   ClassListWriter() : _locker(Thread::current(), ClassListFile_lock, Mutex::_no_safepoint_check_flag) {}
 
@@ -66,6 +69,7 @@ public:
   static void init() NOT_CDS_RETURN;
   static void write(const InstanceKlass* k, const ClassFileStream* cfs) NOT_CDS_RETURN;
   static void write_to_stream(const InstanceKlass* k, outputStream* stream, const ClassFileStream* cfs = nullptr) NOT_CDS_RETURN;
+  static void write_resolved_constants() NOT_CDS_RETURN;
   static void delete_classlist() NOT_CDS_RETURN;
 };
 

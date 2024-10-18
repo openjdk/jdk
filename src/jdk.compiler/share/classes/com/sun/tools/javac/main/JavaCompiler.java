@@ -1142,21 +1142,18 @@ public class JavaCompiler {
         if (processors != null && processors.iterator().hasNext())
             explicitAnnotationProcessingRequested = true;
 
-        // Process annotations if processing is not disabled and there
-        // is at least one Processor available.
         if (options.isSet(PROC, "none")) {
             processAnnotations = false;
         } else if (procEnvImpl == null) {
             procEnvImpl = JavacProcessingEnvironment.instance(context);
             procEnvImpl.setProcessors(processors);
-            processAnnotations = procEnvImpl.atLeastOneProcessor();
+
+            // Process annotations if processing is requested and there
+            // is at least one Processor available.
+            processAnnotations = procEnvImpl.atLeastOneProcessor() &&
+                explicitAnnotationProcessingRequested();
 
             if (processAnnotations) {
-                if (!explicitAnnotationProcessingRequested() &&
-                    !optionsCheckingInitiallyDisabled) {
-                    log.note(Notes.ImplicitAnnotationProcessing);
-                }
-
                 options.put("parameters", "parameters");
                 reader.saveParameterNames = true;
                 keepComments = true;
@@ -1165,9 +1162,9 @@ public class JavaCompiler {
                     taskListener.started(new TaskEvent(TaskEvent.Kind.ANNOTATION_PROCESSING));
                 deferredDiagnosticHandler = new Log.DeferredDiagnosticHandler(log);
                 procEnvImpl.getFiler().setInitialState(initialFiles, initialClassNames);
-            } else { // free resources
-                procEnvImpl.close();
             }
+        } else { // free resources
+            procEnvImpl.close();
         }
     }
 
@@ -1621,14 +1618,6 @@ public class JavaCompiler {
 
             compileStates.put(env, CompileState.TRANSPATTERNS);
 
-            if (scanner.hasLambdas) {
-                if (shouldStop(CompileState.UNLAMBDA))
-                    return;
-
-                env.tree = LambdaToMethod.instance(context).translateTopLevelClass(env, env.tree, localMake);
-                compileStates.put(env, CompileState.UNLAMBDA);
-            }
-
             if (shouldStop(CompileState.LOWER))
                 return;
 
@@ -1649,6 +1638,16 @@ public class JavaCompiler {
 
             if (shouldStop(CompileState.LOWER))
                 return;
+
+            if (scanner.hasLambdas) {
+                if (shouldStop(CompileState.UNLAMBDA))
+                    return;
+
+                for (JCTree def : cdefs) {
+                    LambdaToMethod.instance(context).translateTopLevelClass(env, def, localMake);
+                }
+                compileStates.put(env, CompileState.UNLAMBDA);
+            }
 
             //generate code for each class
             for (List<JCTree> l = cdefs; l.nonEmpty(); l = l.tail) {

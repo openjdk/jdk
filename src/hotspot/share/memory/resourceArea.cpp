@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,17 +29,6 @@
 #include "runtime/atomic.hpp"
 #include "runtime/javaThread.hpp"
 #include "utilities/vmError.hpp"
-
-void ResourceArea::bias_to(MEMFLAGS new_flags) {
-  if (new_flags != _flags) {
-    size_t size = size_in_bytes();
-    MemTracker::record_arena_size_change(-ssize_t(size), _flags);
-    MemTracker::record_arena_free(_flags);
-    MemTracker::record_new_arena(new_flags);
-    MemTracker::record_arena_size_change(ssize_t(size), new_flags);
-    _flags = new_flags;
-  }
-}
 
 #ifdef ASSERT
 

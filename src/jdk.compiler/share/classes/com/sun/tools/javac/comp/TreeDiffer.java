@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018, Google LLC. All rights reserved.
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,6 +67,7 @@ import com.sun.tools.javac.tree.JCTree.JCMethodDecl;
 import com.sun.tools.javac.tree.JCTree.JCMethodInvocation;
 import com.sun.tools.javac.tree.JCTree.JCModifiers;
 import com.sun.tools.javac.tree.JCTree.JCModuleDecl;
+import com.sun.tools.javac.tree.JCTree.JCModuleImport;
 import com.sun.tools.javac.tree.JCTree.JCNewArray;
 import com.sun.tools.javac.tree.JCTree.JCNewClass;
 import com.sun.tools.javac.tree.JCTree.JCOpens;
@@ -408,6 +409,12 @@ public class TreeDiffer extends TreeScanner {
     public void visitImport(JCImport tree) {
         JCImport that = (JCImport) parameter;
         result = tree.staticImport == that.staticImport && scan(tree.qualid, that.qualid);
+    }
+
+    @Override
+    public void visitModuleImport(JCModuleImport tree) {
+        JCModuleImport that = (JCModuleImport) parameter;
+        result = scan(tree.module, that.module);
     }
 
     @Override

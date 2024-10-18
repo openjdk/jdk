@@ -799,7 +799,7 @@ public class ConvenientAccessErrorsTest extends ModuleTestBase {
                 .getOutputLines(Task.OutputKind.DIRECT);
 
         List<String> expected = Arrays.asList(
-                "Test.java:1:31: compiler.err.doesnt.exist: ma",
+                "Test.java:1:38: compiler.err.doesnt.exist: ma",
                 "1 error");
 
         if (!expected.equals(log))
@@ -827,7 +827,7 @@ public class ConvenientAccessErrorsTest extends ModuleTestBase {
                 .getOutputLines(Task.OutputKind.DIRECT);
 
         List<String> expected = Arrays.asList(
-                "Test.java:1:15: compiler.err.doesnt.exist: ma",
+                "Test.java:1:22: compiler.err.doesnt.exist: ma",
                 "1 error");
 
         if (!expected.equals(log))
@@ -861,7 +861,7 @@ public class ConvenientAccessErrorsTest extends ModuleTestBase {
                 .getOutputLines(Task.OutputKind.DIRECT);
 
         List<String> expected = Arrays.asList(
-                "Test.java:1:15: compiler.err.doesnt.exist: ma",
+                "Test.java:1:22: compiler.err.doesnt.exist: ma",
                 "1 error");
 
         if (!expected.equals(log))

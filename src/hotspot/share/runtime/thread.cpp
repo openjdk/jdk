@@ -24,6 +24,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/cdsConfig.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/javaThreadStatus.hpp"
 #include "gc/shared/barrierSet.hpp"
@@ -63,7 +64,7 @@ THREAD_LOCAL Thread* Thread::_thr_current = nullptr;
 
 DEBUG_ONLY(Thread* Thread::_starting_thread = nullptr;)
 
-Thread::Thread() {
+Thread::Thread(MemTag mem_tag) {
 
   DEBUG_ONLY(_run_state = PRE_CALL_RUN;)
 
@@ -77,12 +78,11 @@ Thread::Thread() {
 
   // allocated data structures
   set_osthread(nullptr);
-  set_resource_area(new (mtThread)ResourceArea());
+  set_resource_area(new (mem_tag) ResourceArea(mem_tag));
   DEBUG_ONLY(_current_resource_mark = nullptr;)
-  set_handle_area(new (mtThread) HandleArea(nullptr));
+  set_handle_area(new (mem_tag) HandleArea(mem_tag, nullptr));
   set_metadata_handles(new (mtClass) GrowableArray<Metadata*>(30, mtClass));
   set_last_handle_mark(nullptr);
-  DEBUG_ONLY(_missed_ic_stub_refill_verifier = nullptr);
 
   // Initial value of zero ==> never claimed.
   _threads_do_token = 0;
@@ -103,7 +103,10 @@ Thread::Thread() {
   _vm_error_callbacks = nullptr;
 
   // thread-specific hashCode stream generator state - Marsaglia shift-xor form
-  _hashStateX = os::random();
+  // If we are dumping, keep ihashes constant. Note that during dumping we only
+  // ever run one java thread, and no other thread should generate ihashes either,
+  // so using a constant seed should work fine.
+  _hashStateX = CDSConfig::is_dumping_static_archive() ? 0x12345678 : os::random();
   _hashStateY = 842502087;
   _hashStateZ = 0x8767;    // (int)(3579807591LL & 0xffff) ;
   _hashStateW = 273326509;
@@ -140,6 +143,16 @@ Thread::Thread() {
 
   MACOS_AARCH64_ONLY(DEBUG_ONLY(_wx_init = false));
 }
+
+#ifdef ASSERT
+address Thread::stack_base() const {
+  // Note: can't report Thread::name() here as that can require a ResourceMark which we
+  // can't use because this gets called too early in the thread initialization.
+  assert(_stack_base != nullptr, "Stack base not yet set for thread id:%d (0 if not set)",
+         osthread() != nullptr ? osthread()->thread_id() : 0);
+  return _stack_base;
+}
+#endif
 
 void Thread::initialize_tlab() {
   if (UseTLAB) {
@@ -526,16 +539,6 @@ void Thread::print_owned_locks_on(outputStream* st) const {
   }
 }
 #endif // ASSERT
-
-// We had to move these methods here, because vm threads get into ObjectSynchronizer::enter
-// However, there is a note in JavaThread::is_lock_owned() about the VM threads not being
-// used for compilation in the future. If that change is made, the need for these methods
-// should be revisited, and they should be removed if possible.
-
-bool Thread::is_lock_owned(address adr) const {
-  assert(LockingMode != LM_LIGHTWEIGHT, "should not be called with new lightweight locking");
-  return is_in_full_stack(adr);
-}
 
 bool Thread::set_as_starting_thread() {
   assert(_starting_thread == nullptr, "already initialized: "

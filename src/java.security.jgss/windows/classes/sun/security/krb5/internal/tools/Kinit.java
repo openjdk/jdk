@@ -195,10 +195,6 @@ public class Kinit {
                 System.out.print("Password for " + princName + ":");
                 System.out.flush();
                 psswd = Password.readPassword(System.in);
-                if (DEBUG != null) {
-                    DEBUG.println(">>> Kinit console input " +
-                        new String(psswd));
-                }
             }
             builder = new KrbAsReqBuilder(principal, psswd);
         } else {

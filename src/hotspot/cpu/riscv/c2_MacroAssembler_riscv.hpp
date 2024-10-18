@@ -37,7 +37,7 @@
                        Register tmp1, Register tmp2,
                        VectorRegister vr1, VectorRegister vr2,
                        VectorRegister vrs,
-                       bool is_latin, Label& DONE);
+                       bool is_latin, Label& DONE, Assembler::LMUL lmul);
 
   void compress_bits_v(Register dst, Register src, Register mask, bool is_long);
   void expand_bits_v(Register dst, Register src, Register mask, bool is_long);
@@ -47,8 +47,8 @@
   void fast_lock(Register object, Register box, Register tmp1, Register tmp2, Register tmp3);
   void fast_unlock(Register object, Register box, Register tmp1, Register tmp2);
   // Code used by cmpFastLockLightweight and cmpFastUnlockLightweight mach instructions in .ad file.
-  void fast_lock_lightweight(Register object, Register tmp1, Register tmp2, Register tmp3);
-  void fast_unlock_lightweight(Register object, Register tmp1, Register tmp2, Register tmp3);
+  void fast_lock_lightweight(Register object, Register box, Register tmp1, Register tmp2, Register tmp3);
+  void fast_unlock_lightweight(Register object, Register box, Register tmp1, Register tmp2, Register tmp3);
 
   void string_compare(Register str1, Register str2,
                       Register cnt1, Register cnt2, Register result,
@@ -187,6 +187,9 @@
   void expand_bits_i_v(Register dst, Register src, Register mask);
   void expand_bits_l_v(Register dst, Register src, Register mask);
 
+  void java_round_float_v(VectorRegister dst, VectorRegister src, FloatRegister ftmp, BasicType bt, uint vector_length);
+  void java_round_double_v(VectorRegister dst, VectorRegister src, FloatRegister ftmp, BasicType bt, uint vector_length);
+
   void float16_to_float_v(VectorRegister dst, VectorRegister src, uint vector_length);
   void float_to_float16_v(VectorRegister dst, VectorRegister src, VectorRegister vtmp, Register tmp, uint vector_length);
 
@@ -251,20 +254,9 @@
   void compare_fp_v(VectorRegister dst, VectorRegister src1, VectorRegister src2, int cond,
                     BasicType bt, uint vector_length, VectorMask vm = Assembler::unmasked);
 
-  // In Matcher::scalable_predicate_reg_slots,
-  // we assume each predicate register is one-eighth of the size of
-  // scalable vector register, one mask bit per vector byte.
-  void spill_vmask(VectorRegister v, int offset){
-    vsetvli_helper(T_BYTE, MaxVectorSize >> 3);
-    add(t0, sp, offset);
-    vse8_v(v, t0);
-  }
+  void spill_vmask(VectorRegister v, int offset);
 
-  void unspill_vmask(VectorRegister v, int offset){
-    vsetvli_helper(T_BYTE, MaxVectorSize >> 3);
-    add(t0, sp, offset);
-    vle8_v(v, t0);
-  }
+  void unspill_vmask(VectorRegister v, int offset);
 
   void spill_copy_vmask_stack_to_stack(int src_offset, int dst_offset, uint vector_length_in_bytes) {
     assert(vector_length_in_bytes % 4 == 0, "unexpected vector mask reg size");

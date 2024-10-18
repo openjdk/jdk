@@ -86,7 +86,7 @@ public class TestDirectSuperInterfaceInvoke {
         try {
             final ClassModel cf = ClassFile.of().parse(file.toPath());
             for (MethodModel m : cf.methods()) {
-                CodeAttribute codeAttr = m.findAttribute(Attributes.CODE).orElseThrow();
+                CodeAttribute codeAttr = m.findAttribute(Attributes.code()).orElseThrow();
                 for (CodeElement ce : codeAttr.elementList()) {
                     if (ce instanceof InvokeInstruction instr && instr.opcode() == Opcode.INVOKESPECIAL) {
                         MemberRefEntry ref = instr.method();

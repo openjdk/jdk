@@ -85,7 +85,7 @@ public class T6888367 {
 
     void testInnerClasses(ClassModel cm) throws Exception {
         InnerClassesAttribute ic =
-                cm.findAttribute(Attributes.INNER_CLASSES).orElse(null);
+                cm.findAttribute(Attributes.innerClasses()).orElse(null);
         assert ic != null;
         for (InnerClassInfo info: ic.classes()) {
             ClassEntry outerClass = info.outerClass().orElse(null);
@@ -106,7 +106,7 @@ public class T6888367 {
             return;
 
         System.err.println(name);
-        SignatureAttribute sa = m.findAttribute(Attributes.SIGNATURE).orElse(null);
+        SignatureAttribute sa = m.findAttribute(Attributes.signature()).orElse(null);
         if (sa != null)
             System.err.println("     signature: " + sa.signature());
 
@@ -173,7 +173,7 @@ public class T6888367 {
     }
 
     AnnotValues getAnnotValues(String annotName, AttributedElement m) {
-        RuntimeInvisibleAnnotationsAttribute annots = m.findAttribute(Attributes.RUNTIME_INVISIBLE_ANNOTATIONS).orElse(null);
+        RuntimeInvisibleAnnotationsAttribute annots = m.findAttribute(Attributes.runtimeInvisibleAnnotations()).orElse(null);
         if (annots != null) {
             for (Annotation a: annots.annotations()) {
                 if (a.classSymbol().descriptorString().equals("L" + annotName + ";")) {

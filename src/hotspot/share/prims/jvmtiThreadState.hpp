@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -279,6 +279,7 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
 
   static void unbind_from(JvmtiThreadState* state, JavaThread* thread);
   static void bind_to(JvmtiThreadState* state, JavaThread* thread);
+  static void process_pending_interp_only(JavaThread* current);
 
   // access to the linked list of all JVMTI thread states
   static JvmtiThreadState *first() {

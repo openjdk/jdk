@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,15 +99,25 @@ public class MulticastSendReceiveTests {
         ByteBuffer buf = ByteBuffer.allocateDirect(100);
 
         try {
+            long elapsed = 0;
             for (;;) {
                 System.out.println("Waiting to receive message");
+                long start = System.nanoTime();
                 sel.select(5*1000);
+                long waited = (System.nanoTime() - start) / 1000_000;
+                elapsed += waited;
+                buf.clear();
                 SocketAddress sa = dc.receive(buf);
 
                 // no datagram received
                 if (sa == null) {
                     if (expectedSender != null) {
-                        throw new RuntimeException("Expected message not received");
+                        if (elapsed > 4800) {
+                            throw new RuntimeException("Expected message not received");
+                        } else {
+                            sel.selectedKeys().clear();
+                            continue;
+                        }
                     }
                     System.out.println("No message received (correct)");
                     return;
@@ -123,8 +133,8 @@ public class MulticastSendReceiveTests {
                 int receivedId = -1;
                 try {
                     receivedId = Integer.parseInt(s);
-                    System.out.format("Received message from %s (id=0x%x)\n",
-                            sender, receivedId);
+                    System.out.format("Received message from %s (id=0x%x, length=%s)\n",
+                            sender, receivedId, bytes.length);
                 } catch (NumberFormatException x) {
                     System.out.format("Received message from %s (msg=%s)\n", sender, s);
                 }
@@ -142,7 +152,6 @@ public class MulticastSendReceiveTests {
                 }
 
                 sel.selectedKeys().clear();
-                buf.rewind();
             }
         } finally {
             sel.close();
@@ -160,6 +169,8 @@ public class MulticastSendReceiveTests {
         throws IOException
     {
         System.out.format("\nTest DatagramChannel to %s socket\n", family.name());
+        System.out.format("With interface=%s[%s]%n\twith bound addresses:%n\t%s%n",
+                nif.getDisplayName(), nif.getIndex(), nif.inetAddresses().toList());
         try (DatagramChannel dc = (family == UNSPEC) ?
                 DatagramChannel.open() : DatagramChannel.open(family)) {
             dc.setOption(StandardSocketOptions.SO_REUSEADDR, true)

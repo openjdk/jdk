@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,7 +81,7 @@ JVMFlag::Error G1HeapRegionSizeConstraintFunc(size_t value, bool verbose) {
   if (!UseG1GC) return JVMFlag::SUCCESS;
 
   // Default value of G1HeapRegionSize=0 means will be set ergonomically.
-  if (FLAG_IS_CMDLINE(G1HeapRegionSize) && (value < HeapRegionBounds::min_size())) {
+  if (FLAG_IS_CMDLINE(G1HeapRegionSize) && (value < G1HeapRegionBounds::min_size())) {
     JVMFlag::printError(verbose,
                         "G1HeapRegionSize (" SIZE_FORMAT ") must be "
                         "greater than or equal to ergonomic heap region minimum size\n",
@@ -180,7 +180,7 @@ JVMFlag::Error NewSizeConstraintFuncG1(size_t value, bool verbose) {
 }
 
 size_t MaxSizeForHeapAlignmentG1() {
-  return HeapRegionBounds::max_size();
+  return G1HeapRegionBounds::max_size();
 }
 
 static JVMFlag::Error buffer_size_constraint_helper(JVMFlagsEnum flagid,

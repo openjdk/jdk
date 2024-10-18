@@ -101,8 +101,8 @@ public class InlinedFinallyConfuseDebuggersTest {
         for (MethodModel m : classFile.methods()) {
             if (m.methodName().equalsString(methodToFind)) {
                 methodFound = true;
-                CodeAttribute code = m.findAttribute(Attributes.CODE).orElseThrow();
-                LineNumberTableAttribute lnt = code.findAttribute(Attributes.LINE_NUMBER_TABLE).orElseThrow();
+                CodeAttribute code = m.findAttribute(Attributes.code()).orElseThrow();
+                LineNumberTableAttribute lnt = code.findAttribute(Attributes.lineNumberTable()).orElseThrow();
                 Assert.check(lnt.lineNumbers().size() == expectedLNT.length,
                         "The LineNumberTable found has a length different to the expected one");
                 int i = 0;

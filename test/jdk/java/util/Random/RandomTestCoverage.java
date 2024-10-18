@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,7 +87,7 @@ public class RandomTestCoverage {
         DoubleStream doubleStream4 = rng.doubles(5, 0.5, 1.0);
     }
 
-    static void checkPredicates(RandomGeneratorFactory factory) {
+    static void checkPredicates(RandomGeneratorFactory<RandomGenerator> factory) {
         RandomGenerator rng = factory.create();
         if (rng instanceof ArbitrarilyJumpableGenerator != factory.isArbitrarilyJumpable()) {
             throw new RuntimeException("isArbitrarilyJumpable failing");
@@ -156,7 +156,7 @@ public class RandomTestCoverage {
         coverFactory(RandomGeneratorFactory.of(name));
     }
 
-    static void coverFactory(RandomGeneratorFactory factory) {
+    static void coverFactory(RandomGeneratorFactory<RandomGenerator> factory) {
         String name = factory.name();
         String group = factory.group();
         int stateBits = factory.stateBits();
@@ -171,8 +171,34 @@ public class RandomTestCoverage {
         boolean isSplittable = factory.isSplittable();
 
         coverRandomGenerator(factory.create());
-        coverRandomGenerator(factory.create(12345L));
-        coverRandomGenerator(factory.create(new byte[] {1, 2, 3, 4, 5, 6, 7, 8}));
+        // test create(long)
+        switch (factory.name()) {
+            // SecureRandom doesn't have long constructors so we expect
+            // UnsupportedOperationException
+            case "SecureRandom" -> {
+                try {
+                    factory.create(12345L);
+                    throw new AssertionError("RandomGeneratorFactory.create(long) was expected" +
+                            "to throw UnsupportedOperationException for " + factory.name() + " but didn't");
+                } catch (UnsupportedOperationException ignored) {
+                }
+            }
+            default -> coverRandomGenerator(factory.create(12345L));
+        }
+        // test create(byte[])
+        switch (factory.name()) {
+            // these don't have byte[] constructors so we expect UnsupportedOperationException
+            case "Random",
+                 "SplittableRandom" -> {
+                try {
+                    factory.create(new byte[] {1, 2, 3, 4, 5, 6, 7, 8});
+                    throw new AssertionError("RandomGeneratorFactory.create(byte[]) was expected" +
+                            "to throw UnsupportedOperationException for " + factory.name() + " but didn't");
+                } catch (UnsupportedOperationException ignored) {
+                }
+            }
+            default -> coverRandomGenerator(factory.create(new byte[] {1, 2, 3, 4, 5, 6, 7, 8}));
+        }
     }
 
     static void coverDefaults() {
@@ -188,32 +214,35 @@ public class RandomTestCoverage {
                     coverOf(factory.name());
                  });
         RandomGeneratorFactory.all()
-                .filter(f -> f.isStreamable())
+                .filter(RandomGeneratorFactory::isStreamable)
                 .forEach(factory -> {
                     coverStreamable((StreamableGenerator)factory.create());
                 });
         RandomGeneratorFactory.all()
-                .filter(f -> f.isSplittable())
+                .filter(RandomGeneratorFactory::isSplittable)
                 .forEach(factory -> {
                     coverSplittable((SplittableGenerator)factory.create());
                 });
         RandomGeneratorFactory.all()
-                .filter(f -> f.isJumpable())
+                .filter(RandomGeneratorFactory::isJumpable)
                 .forEach(factory -> {
                     coverJumpable((JumpableGenerator)factory.create());
                 });
         RandomGeneratorFactory.all()
-                .filter(f -> f.isLeapable())
+                .filter(RandomGeneratorFactory::isLeapable)
                 .forEach(factory -> {
                     coverLeapable((LeapableGenerator)factory.create());
                 });
         RandomGeneratorFactory.all()
-                .filter(f -> f.isArbitrarilyJumpable())
+                .filter(RandomGeneratorFactory::isArbitrarilyJumpable)
                 .forEach(factory -> {
                     coverArbitrarilyJumpable((ArbitrarilyJumpableGenerator)factory.create());
                 });
+        RandomGeneratorFactory.all()
+                .forEach(RandomTestCoverage::checkPredicates);
 
         coverRandomGenerator(new SecureRandom());
         coverRandomGenerator(ThreadLocalRandom.current());
+        coverDefaults();
     }
 }

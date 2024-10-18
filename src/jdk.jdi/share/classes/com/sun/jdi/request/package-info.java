@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,8 @@
  * Methods may be added to the interfaces in the JDI packages in future
  * releases. Existing packages may be renamed if the JDI becomes a standard
  * extension.
+ *
+ * @since 1.3
  */
 
 package com.sun.jdi.request;

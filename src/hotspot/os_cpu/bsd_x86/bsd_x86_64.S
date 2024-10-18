@@ -21,14 +21,7 @@
 # questions.
 #
 
-#ifdef __APPLE__
-# Darwin uses _ prefixed global symbols
-#define SYMBOL(s) _ ## s
-#define ELF_TYPE(name, description)
-#else
-#define SYMBOL(s) s
-#define ELF_TYPE(name, description) .type name,description
-#endif
+#include "defs.S.inc"
 
         # NOTE WELL!  The _Copy functions are called directly
         # from server-compiler-generated code via CallLeafNoFP,
@@ -36,31 +29,10 @@
         # point or use it in the same manner as does the server
         # compiler.
 
-        .globl SYMBOL(SpinPause)
-        .globl SYMBOL(_Copy_arrayof_conjoint_bytes)
-        .globl SYMBOL(_Copy_arrayof_conjoint_jshorts)
-        .globl SYMBOL(_Copy_conjoint_jshorts_atomic)
-        .globl SYMBOL(_Copy_arrayof_conjoint_jints)
-        .globl SYMBOL(_Copy_conjoint_jints_atomic)
-        .globl SYMBOL(_Copy_arrayof_conjoint_jlongs)
-        .globl SYMBOL(_Copy_conjoint_jlongs_atomic)
-
-#ifdef __APPLE__
-        .private_extern SYMBOL(SpinPause)
-        .private_extern SYMBOL(_Copy_arrayof_conjoint_bytes)
-        .private_extern SYMBOL(_Copy_arrayof_conjoint_jshorts)
-        .private_extern SYMBOL(_Copy_conjoint_jshorts_atomic)
-        .private_extern SYMBOL(_Copy_arrayof_conjoint_jints)
-        .private_extern SYMBOL(_Copy_conjoint_jints_atomic)
-        .private_extern SYMBOL(_Copy_arrayof_conjoint_jlongs)
-        .private_extern SYMBOL(_Copy_conjoint_jlongs_atomic)
-#endif
-
         .text
 
         .p2align 4,,15
-        ELF_TYPE(SpinPause,@function)
-SYMBOL(SpinPause):
+DECLARE_FUNC(SpinPause):
         rep
         nop
         movq   $1, %rax
@@ -74,8 +46,7 @@ SYMBOL(SpinPause):
         # rdx - count, treated as ssize_t
         #
         .p2align 4,,15
-        ELF_TYPE(_Copy_arrayof_conjoint_bytes,@function)
-SYMBOL(_Copy_arrayof_conjoint_bytes):
+DECLARE_FUNC(_Copy_arrayof_conjoint_bytes):
         movq     %rdx,%r8             # byte count
         shrq     $3,%rdx              # qword count
         cmpq     %rdi,%rsi
@@ -176,10 +147,8 @@ acb_CopyLeft:
         # rdx - count, treated as ssize_t
         #
         .p2align 4,,15
-        ELF_TYPE(_Copy_arrayof_conjoint_jshorts,@function)
-        ELF_TYPE(_Copy_conjoint_jshorts_atomic,@function)
-SYMBOL(_Copy_arrayof_conjoint_jshorts):
-SYMBOL(_Copy_conjoint_jshorts_atomic):
+DECLARE_FUNC(_Copy_arrayof_conjoint_jshorts):
+DECLARE_FUNC(_Copy_conjoint_jshorts_atomic):
         movq     %rdx,%r8             # word count
         shrq     $2,%rdx              # qword count
         cmpq     %rdi,%rsi
@@ -266,10 +235,8 @@ acs_CopyLeft:
         # rdx - count, treated as ssize_t
         #
         .p2align 4,,15
-        ELF_TYPE(_Copy_arrayof_conjoint_jints,@function)
-        ELF_TYPE(_Copy_conjoint_jints_atomic,@function)
-SYMBOL(_Copy_arrayof_conjoint_jints):
-SYMBOL(_Copy_conjoint_jints_atomic):
+DECLARE_FUNC(_Copy_arrayof_conjoint_jints):
+DECLARE_FUNC(_Copy_conjoint_jints_atomic):
         movq     %rdx,%r8             # dword count
         shrq     %rdx                 # qword count
         cmpq     %rdi,%rsi
@@ -345,10 +312,8 @@ aci_CopyLeft:
         # rdx - count, treated as ssize_t
         #
         .p2align 4,,15
-        ELF_TYPE(_Copy_arrayof_conjoint_jlongs,@function)
-        ELF_TYPE(_Copy_conjoint_jlongs_atomic,@function)
-SYMBOL(_Copy_arrayof_conjoint_jlongs):
-SYMBOL(_Copy_conjoint_jlongs_atomic):
+DECLARE_FUNC(_Copy_arrayof_conjoint_jlongs):
+DECLARE_FUNC(_Copy_conjoint_jlongs_atomic):
         cmpq     %rdi,%rsi
         leaq     -8(%rdi,%rdx,8),%rax # from + count*8 - 8
         jbe      acl_CopyRight

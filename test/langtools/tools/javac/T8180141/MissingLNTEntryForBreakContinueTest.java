@@ -92,8 +92,8 @@ public class MissingLNTEntryForBreakContinueTest {
         ClassModel classFile = ClassFile.of().parse(file.toPath());
         for (MethodModel m : classFile.methods()) {
             if (m.methodName().equalsString("foo")) {
-                CodeAttribute code = m.findAttribute(Attributes.CODE).orElseThrow();
-                LineNumberTableAttribute lnt = code.findAttribute(Attributes.LINE_NUMBER_TABLE).orElseThrow();
+                CodeAttribute code = m.findAttribute(Attributes.code()).orElseThrow();
+                LineNumberTableAttribute lnt = code.findAttribute(Attributes.lineNumberTable()).orElseThrow();
                 checkLNT(lnt, MyAttr.lineNumber);
             }
         }

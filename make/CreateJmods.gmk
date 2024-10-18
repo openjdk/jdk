@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -229,8 +229,21 @@ ifeq ($(INTERIM_JMOD), true)
   # Interim JMODs are not shipped anywhere, so there is no reason
   # to compress them at all.
   JMOD_FLAGS += --compress zip-0
+
+  JMOD_TARGET_OS := $(OPENJDK_BUILD_OS)
+  ifeq ($(JMOD_TARGET_OS), macosx)
+    JMOD_TARGET_OS := macos
+  endif
+
+  JMOD_TARGET_CPU := $(OPENJDK_BUILD_CPU)
+  ifeq ($(JMOD_TARGET_CPU), x86_64)
+    JMOD_TARGET_CPU := amd64
+  endif
+
+  JMOD_TARGET_PLATFORM := $(JMOD_TARGET_OS)-$(JMOD_TARGET_CPU)
 else
   JMOD_FLAGS += --compress $(JMOD_COMPRESS)
+  JMOD_TARGET_PLATFORM := $(OPENJDK_MODULE_TARGET_PLATFORM)
 endif
 
 # Create jmods in the support dir and then move them into place to keep the
@@ -242,7 +255,7 @@ $(eval $(call SetupExecute, create_$(JMOD_FILE), \
     SUPPORT_DIR := $(JMODS_SUPPORT_DIR), \
     PRE_COMMAND := $(RM) $(JMODS_DIR)/$(JMOD_FILE) $(JMODS_SUPPORT_DIR)/$(JMOD_FILE), \
     COMMAND := $(JMOD) $(JMOD_SMALL_FLAGS) create --module-version $(VERSION_SHORT) \
-        --target-platform '$(OPENJDK_MODULE_TARGET_PLATFORM)' \
+        --target-platform '$(JMOD_TARGET_PLATFORM)' \
         --module-path $(JMODS_DIR) $(JMOD_FLAGS) \
         --date $(SOURCE_DATE_ISO_8601) \
         $(JMODS_SUPPORT_DIR)/$(JMOD_FILE), \

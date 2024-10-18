@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,9 +37,7 @@ import java.util.Arrays;
  * size, and optionally an initialization vector (IV) (only in feedback mode).
  *
  * <p> This class can be used to initialize a {@code Cipher} object that
- * implements the <i>RC5</i> algorithm as supplied by
- * <a href="http://www.rsa.com">RSA Security LLC</a>,
- * or any parties authorized by RSA Security.
+ * implements the <i>RC5</i> algorithm.
  *
  * @author Jan Luehe
  *

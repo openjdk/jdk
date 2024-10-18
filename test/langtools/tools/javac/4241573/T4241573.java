@@ -109,7 +109,7 @@ public class T4241573 {
         System.err.println("verify: " + f);
         try {
             ClassModel cf = ClassFile.of().parse(f.toPath());
-            SourceFileAttribute sfa = cf.findAttribute(Attributes.SOURCE_FILE).orElseThrow();
+            SourceFileAttribute sfa = cf.findAttribute(Attributes.sourceFile()).orElseThrow();
             String found = sfa.sourceFile().stringValue();
             String expect = f.getName().replaceAll("([$.].*)?\\.class", ".java");
             if (!expect.equals(found)) {

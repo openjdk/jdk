@@ -86,7 +86,7 @@ public class LegacyOutputTest {
         }
         ClassModel classFile = ClassFile.of().parse(Paths.get("Test.class"));
         MethodModel method = getMethod(classFile, "f");
-        MethodParametersAttribute attribute = method.findAttribute(Attributes.METHOD_PARAMETERS).orElse(null);
+        MethodParametersAttribute attribute = method.findAttribute(Attributes.methodParameters()).orElse(null);
         if (attribute == null) {
             return null;
         }

@@ -50,7 +50,7 @@ public final class SunMSCAPI extends Provider {
     private static final String INFO = "Sun's Microsoft Crypto API provider";
 
     static {
-        @SuppressWarnings("removal")
+        @SuppressWarnings({"removal", "restricted"})
         var dummy = AccessController.doPrivileged(new PrivilegedAction<Void>() {
             public Void run() {
                 System.loadLibrary("sunmscapi");

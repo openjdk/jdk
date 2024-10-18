@@ -585,11 +585,7 @@ final class StringUTF16 {
     }
 
     public static int hashCode(byte[] value) {
-        return switch (value.length) {
-            case 0 -> 0;
-            case 2 -> getChar(value, 0);
-            default -> ArraysSupport.vectorizedHashCode(value, 0, value.length >> 1, 0, ArraysSupport.T_CHAR);
-        };
+        return ArraysSupport.hashCodeOfUTF16(value, 0, value.length >> 1, 0);
     }
 
     // Caller must ensure that from- and toIndex are within bounds

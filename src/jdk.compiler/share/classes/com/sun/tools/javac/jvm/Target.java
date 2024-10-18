@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,6 +104,9 @@ public enum Target {
 
     /** JDK 23. */
     JDK1_23("23", 67, 0),
+
+    /** JDK 24. */
+    JDK1_24("24", 68, 0),
     ; // Reduce code churn when appending new constants
 
     private static final Context.Key<Target> targetKey = new Context.Key<>();

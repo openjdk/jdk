@@ -65,6 +65,7 @@
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/flags/jvmFlagLimit.hpp"
 #include "runtime/globals.hpp"
+#include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
@@ -108,9 +109,6 @@
 #endif
 #ifdef COMPILER2
 #include "opto/idealGraphPrinter.hpp"
-#endif
-#if INCLUDE_RTM_OPT
-#include "runtime/rtmLocking.hpp"
 #endif
 #if INCLUDE_JFR
 #include "jfr/jfr.hpp"
@@ -396,6 +394,7 @@ void Threads::initialize_java_lang_classes(JavaThread* main_thread, TRAPS) {
   initialize_class(vmSymbols::java_lang_ClassCastException(), CHECK);
   initialize_class(vmSymbols::java_lang_ArrayStoreException(), CHECK);
   initialize_class(vmSymbols::java_lang_ArithmeticException(), CHECK);
+  initialize_class(vmSymbols::java_lang_ArrayIndexOutOfBoundsException(), CHECK);
   initialize_class(vmSymbols::java_lang_StackOverflowError(), CHECK);
   initialize_class(vmSymbols::java_lang_IllegalMonitorStateException(), CHECK);
   initialize_class(vmSymbols::java_lang_IllegalArgumentException(), CHECK);
@@ -667,6 +666,11 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   log_info(os)("Initialized VM with process ID %d", os::current_process_id());
 
+  if (!FLAG_IS_DEFAULT(CreateCoredumpOnCrash) && CreateCoredumpOnCrash) {
+    char buffer[2*JVM_MAXPATHLEN];
+    os::check_core_dump_prerequisites(buffer, sizeof(buffer), true);
+  }
+
   // Signal Dispatcher needs to be started before VMInit event is posted
   os::initialize_jdk_signal_support(CHECK_JNI_ERR);
 
@@ -802,10 +806,6 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   StatSampler::engage();
   if (CheckJNICalls)                  JniPeriodicChecker::engage();
 
-#if INCLUDE_RTM_OPT
-  RTMLockingCounters::init();
-#endif
-
   call_postVMInitHook(THREAD);
   // The Java side of PostVMInitHook.run must deal with all
   // exceptions and provide means of diagnosis.
@@ -825,7 +825,13 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 #endif
 
   if (CDSConfig::is_dumping_static_archive()) {
-    MetaspaceShared::preload_and_dump();
+    MetaspaceShared::preload_and_dump(CHECK_JNI_ERR);
+  }
+
+  if (log_is_enabled(Info, perf, class, link)) {
+    LogStreamHandle(Info, perf, class, link) log;
+    log.print_cr("At VM initialization completion:");
+    ClassLoader::print_counters(&log);
   }
 
   return JNI_OK;
@@ -985,6 +991,7 @@ jboolean Threads::is_supported_jni_version(jint version) {
   if (version == JNI_VERSION_19) return JNI_TRUE;
   if (version == JNI_VERSION_20) return JNI_TRUE;
   if (version == JNI_VERSION_21) return JNI_TRUE;
+  if (version == JNI_VERSION_24) return JNI_TRUE;
   return JNI_FALSE;
 }
 
@@ -1027,7 +1034,9 @@ void Threads::add(JavaThread* p, bool force_daemon) {
 void Threads::remove(JavaThread* p, bool is_daemon) {
   // Extra scope needed for Thread_lock, so we can check
   // that we do not remove thread without safepoint code notice
-  { MonitorLocker ml(Threads_lock);
+  {
+    ConditionalMutexLocker throttle_ml(ThreadsLockThrottle_lock, UseThreadsLockThrottleLock);
+    MonitorLocker ml(Threads_lock);
 
     if (ThreadIdTable::is_initialized()) {
       // This cleanup must be done before the current thread's GC barrier
@@ -1075,7 +1084,7 @@ void Threads::remove(JavaThread* p, bool is_daemon) {
 
     // Notify threads waiting in EscapeBarriers
     EscapeBarrier::thread_removed(p);
-  } // unlock Threads_lock
+  } // unlock Threads_lock and ThreadsLockThrottle_lock
 
   // Reduce the ObjectMonitor ceiling for the exiting thread.
   ObjectSynchronizer::dec_in_use_list_ceiling();
@@ -1183,7 +1192,8 @@ void Threads::metadata_handles_do(void f(Metadata*)) {
 }
 
 #if INCLUDE_JVMTI
-// Get count of Java threads that are waiting to enter or re-enter the specified monitor.
+// Get Java threads that are waiting to enter or re-enter the specified monitor.
+// Java threads that are executing mounted virtual threads are not included.
 GrowableArray<JavaThread*>* Threads::get_pending_threads(ThreadsList * t_list,
                                                          int count,
                                                          address monitor) {
@@ -1194,14 +1204,16 @@ GrowableArray<JavaThread*>* Threads::get_pending_threads(ThreadsList * t_list,
   for (JavaThread* p : *t_list) {
     if (!p->can_call_java()) continue;
 
+    oop thread_oop = JvmtiEnvBase::get_vthread_or_thread_oop(p);
+    if (thread_oop->is_a(vmClasses::BaseVirtualThread_klass())) {
+      continue;
+    }
     // The first stage of async deflation does not affect any field
     // used by this comparison so the ObjectMonitor* is usable here.
     address pending = (address)p->current_pending_monitor();
     address waiting = (address)p->current_waiting_monitor();
-    oop thread_oop = JvmtiEnvBase::get_vthread_or_thread_oop(p);
-    bool is_virtual = java_lang_VirtualThread::is_instance(thread_oop);
-    jint state = is_virtual ? JvmtiEnvBase::get_vthread_state(thread_oop, p)
-                            : JvmtiEnvBase::get_thread_state(thread_oop, p);
+    // do not include virtual threads to the list
+    jint state = JvmtiEnvBase::get_thread_state(thread_oop, p);
     if (pending == monitor || (waiting == monitor &&
         (state & JVMTI_THREAD_STATE_BLOCKED_ON_MONITOR_ENTER))
     ) { // found a match
@@ -1325,6 +1337,18 @@ void Threads::print_on(outputStream* st, bool print_stacks,
         p->trace_stack();
       } else {
         p->print_stack_on(st);
+        const oop thread_oop = p->threadObj();
+        if (thread_oop != nullptr) {
+          if (p->is_vthread_mounted()) {
+            const oop vt = p->vthread();
+            assert(vt != nullptr, "vthread should not be null when vthread is mounted");
+            // JavaThread._vthread can refer to the carrier thread. Print only if _vthread refers to a virtual thread.
+            if (vt != thread_oop) {
+              st->print_cr("   Mounted virtual thread #" INT64_FORMAT, (int64_t)java_lang_Thread::thread_id(vt));
+              p->print_vthread_stack_on(st);
+            }
+          }
+        }
       }
     }
     st->cr();

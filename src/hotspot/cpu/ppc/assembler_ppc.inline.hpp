@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2020 SAP SE. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -418,6 +418,11 @@ inline void Assembler::setnbc(Register d, int biint)
                                                   { emit_int32(SETNBC_OPCODE | rt(d) | bi(biint)); }
 inline void Assembler::setnbc(Register d, ConditionRegister cr, Condition cc) {
   setnbc(d, bi0(cr, cc));
+}
+inline void Assembler::setbcr(Register d, int biint)
+                                                  { emit_int32(SETBCR_OPCODE | rt(d) | bi(biint)); }
+inline void Assembler::setbcr(Register d, ConditionRegister cr, Condition cc) {
+  setbcr(d, bi0(cr, cc));
 }
 
 // Special purpose registers

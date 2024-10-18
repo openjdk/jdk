@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ void InstanceStackChunkKlass::serialize_offsets(SerializeClosure* f) {
 #endif
 
 InstanceStackChunkKlass::InstanceStackChunkKlass() {
-  assert(CDSConfig::is_dumping_static_archive() || UseSharedSpaces, "only for CDS");
+  assert(CDSConfig::is_dumping_static_archive() || CDSConfig::is_using_archive(), "only for CDS");
 }
 
 InstanceStackChunkKlass::InstanceStackChunkKlass(const ClassFileParser& parser)
@@ -226,7 +226,7 @@ public:
                   p2i(fs.sp()), fs.is_interpreted(), f.frame_size(),
                   fs.is_interpreted() ? 0 : f.compiled_frame_stack_argsize());
   #ifdef ASSERT
-    f.print_value_on(_st, nullptr);
+    f.print_value_on(_st);
   #else
     f.print_on(_st);
   #endif

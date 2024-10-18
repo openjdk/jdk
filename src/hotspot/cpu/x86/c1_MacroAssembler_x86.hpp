@@ -89,7 +89,8 @@
   // base_offset_in_bytes: offset of the first array element, in bytes
   // f                   : element scale factor
   // slow_case           : exit to slow case implementation if fast allocation fails
-  void allocate_array(Register obj, Register len, Register t, Register t2, int base_offset_in_bytes, Address::ScaleFactor f, Register klass, Label& slow_case);
+  // zero_array          : zero the allocated array or not
+  void allocate_array(Register obj, Register len, Register t, Register t2, int base_offset_in_bytes, Address::ScaleFactor f, Register klass, Label& slow_case, bool zero_array);
 
   int  rsp_offset() const { return _rsp_offset; }
   void set_rsp_offset(int n) { _rsp_offset = n; }

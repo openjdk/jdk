@@ -3,8 +3,6 @@
  * @bug 8006733 8006775 8027262
  * @summary Ensure behavior for nested types is correct.
  * @author Werner Dietl
- * @ignore 8057679 clarify error messages trying to annotate scoping
- * @ignore 8057683 improve order of errors with type annotations
  * @compile/fail/ref=CantAnnotateStaticClass3.out -XDrawDiagnostics CantAnnotateStaticClass3.java
  */
 

@@ -88,7 +88,7 @@ public class Helpers {
      * @param className class name
      * @param root      root directory - where .java and .class files will be put
      * @param source    class source
-     * @throws IOException if cannot write file to specified directory
+     * @throws Exception if cannot write file to specified directory
      */
     public static void compileClass(String className, Path root, String source) throws Exception {
         Path sourceFile = root.resolve(className + ".java");

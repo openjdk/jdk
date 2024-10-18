@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,10 +133,10 @@ template <class T> class ValueRecorder : public StackObj {
   enum { null_index = 0, first_index = 1, index_cache_threshold = 20 };
 
   GrowableArray<T>*        _handles;  // ordered list (first is always nullptr)
-  GrowableArray<int>*       _no_finds; // all unfindable indexes; usually empty
+  GrowableArray<int>*      _no_finds; // all unfindable indexes; usually empty
   IndexCache<T>*           _indexes;  // map: handle -> its probable index
-  Arena*                    _arena;
-  bool                      _complete;
+  Arena*                   _arena;
+  bool                     _complete;
 
 #ifdef ASSERT
   static int _find_index_calls, _hit_indexes, _missed_indexes;
@@ -186,7 +186,7 @@ class OopRecorder : public ResourceObj {
   int allocate_oop_index(jobject h) {
     return _oops.allocate_index(h);
   }
-  virtual int find_index(jobject h) {
+  int find_index(jobject h) {
     return _object_lookup != nullptr ? _object_lookup->find_index(h, this) : _oops.find_index(h);
   }
   jobject oop_at(int index) {
@@ -203,7 +203,7 @@ class OopRecorder : public ResourceObj {
   int allocate_metadata_index(Metadata* oop) {
     return _metadata.allocate_index(oop);
   }
-  virtual int find_index(Metadata* h) {
+  int find_index(Metadata* h) {
     return _metadata.find_index(h);
   }
   Metadata* metadata_at(int index) {
@@ -243,5 +243,20 @@ class OopRecorder : public ResourceObj {
 #endif
 };
 
+// Class is used to record and retrive external addresses
+// for Relocation info in compiled code and stubs.
+class ExternalsRecorder : public CHeapObj<mtCode> {
+ private:
+  Arena  _arena;
+  ValueRecorder<address> _externals;
+  static ExternalsRecorder* _recorder;
+  ExternalsRecorder();
+ public:
+  static void initialize();
+  static int find_index(address adr);
+  static address at(int index);
+  static int count();
+  static void print_statistics() PRODUCT_RETURN;
+};
 
 #endif // SHARE_CODE_OOPRECORDER_HPP

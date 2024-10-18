@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,23 +25,21 @@
  * @test
  * @bug 8012723
  * @summary strictfp interface misses strictfp modifer on default method
- * @modules jdk.jdeps/com.sun.tools.classfile
- * @compile -source 16 -target 16 CheckACC_STRICTFlagOnDefaultMethodTest.java
+ * @library /tools/lib /test/lib
+ * @enablePreview
  * @run main CheckACC_STRICTFlagOnDefaultMethodTest
  */
 
+import jdk.test.lib.compiler.CompilerUtils;
+import toolbox.ToolBox;
+
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.MethodModel;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.io.File;
 import java.io.IOException;
-
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.ConstantPoolException;
-import com.sun.tools.classfile.Descriptor;
-import com.sun.tools.classfile.Descriptor.InvalidDescriptor;
-import com.sun.tools.classfile.Method;
-
-import static com.sun.tools.classfile.AccessFlags.ACC_STRICT;
 
 public class CheckACC_STRICTFlagOnDefaultMethodTest {
     private static final String AssertionErrorMessage =
@@ -49,20 +47,29 @@ public class CheckACC_STRICTFlagOnDefaultMethodTest {
         "please check output";
     private static final String offendingMethodErrorMessage =
         "Method %s of class %s doesn't have the ACC_STRICT access flag";
+    private static final String SOURCE = """
+            strictfp interface StrictfpInterface {
+                default void default_interface_method() {}
+                static void static_interface_method() {}
+            }
+            """;
 
     private List<String> errors = new ArrayList<>();
 
     public static void main(String[] args)
-            throws IOException, ConstantPoolException, InvalidDescriptor {
+            throws IOException {
         new CheckACC_STRICTFlagOnDefaultMethodTest().run();
     }
 
     private void run()
-            throws IOException, ConstantPoolException, InvalidDescriptor {
-        String testClasses = System.getProperty("test.classes");
-        check(testClasses,
-                "CheckACC_STRICTFlagOnDefaultMethodTest$StrictfpInterface.class");
-        if (errors.size() > 0) {
+            throws IOException {
+        Path src = Path.of("src");
+        Path out = Path.of("out");
+        ToolBox toolBox = new ToolBox();
+        toolBox.writeJavaFiles(src, SOURCE);
+        CompilerUtils.compile(src, out, "--release", "16");
+        check(out, "StrictfpInterface.class");
+        if (!errors.isEmpty()) {
             for (String error: errors) {
                 System.err.println(error);
             }
@@ -70,42 +77,17 @@ public class CheckACC_STRICTFlagOnDefaultMethodTest {
         }
     }
 
-    void check(String dir, String... fileNames)
-        throws
-            IOException,
-            ConstantPoolException,
-            Descriptor.InvalidDescriptor {
+    void check(Path dir, String... fileNames) throws IOException {
         for (String fileName : fileNames) {
-            ClassFile classFileToCheck = ClassFile.read(new File(dir, fileName));
+            ClassModel classFileToCheck = ClassFile.of().parse(dir.resolve(fileName));
 
-            for (Method method : classFileToCheck.methods) {
-                if ((method.access_flags.flags & ACC_STRICT) == 0) {
+            for (MethodModel method : classFileToCheck.methods()) {
+                if ((method.flags().flagsMask() & ClassFile.ACC_STRICT) == 0) {
                     errors.add(String.format(offendingMethodErrorMessage,
-                            method.getName(classFileToCheck.constant_pool),
-                            classFileToCheck.getName()));
+                            method.methodName().stringValue(),
+                            classFileToCheck.thisClass().asInternalName()));
                 }
             }
         }
     }
-
-// this version of the code can be used when ClassFile API in not in a preview
-//    void check(String dir, String... fileNames) throws IOException {
-//        for (String fileName : fileNames) {
-//            ClassModel classFileToCheck = ClassFile.of().parse(new File(dir, fileName).toPath());
-//
-//            for (MethodModel method : classFileToCheck.methods()) {
-//                if ((method.flags().flagsMask() & ClassFile.ACC_STRICT) == 0) {
-//                    errors.add(String.format(offendingMethodErrorMessage,
-//                            method.methodName().stringValue(),
-//                            classFileToCheck.thisClass().asInternalName()));
-//                }
-//            }
-//        }
-//    }
-
-    strictfp interface StrictfpInterface {
-        default void default_interface_method() {}
-        static void static_interface_method() {}
-    }
-
 }

@@ -125,7 +125,6 @@ public class CodeBlob extends VMObject {
   }
 
   /** OopMap for frame; can return null if none available */
-
   public ImmutableOopMapSet getOopMaps() {
     Address value = oopMapsField.getValue(addr);
     if (value == null) {
@@ -143,6 +142,8 @@ public class CodeBlob extends VMObject {
   public boolean isNMethod()            { return false; }
 
   public boolean isRuntimeStub()        { return false; }
+
+  public boolean isUpcallStub()         { return false; }
 
   public boolean isDeoptimizationStub() { return false; }
 
