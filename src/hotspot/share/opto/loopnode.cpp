@@ -3946,10 +3946,15 @@ bool PhaseIdealLoop::is_deleteable_safept(Node* sfpt) {
 //
 // and transforms it to:
 //
-//    int a = init2
-//    for (int phi = init; phi < limit; phi += stride_con) {
-//      a = init2 + (phi - init) * (stride_con2 / stride_con)
-//    }
+//    int iv2 = init2
+//    int iv = init
+//    loop:
+//      if ( phi >= limit ) goto exit
+//      phi += stride_con
+//      iv2 = init2 + (iv - init) * (stride_con2 / stride_con)
+//      goto loop
+//    exit:
+//    ...
 //
 // Such transformation introduces more optimization opportunities. In this
 // particular example, the loop can be eliminated entirely given that
@@ -3957,7 +3962,7 @@ bool PhaseIdealLoop::is_deleteable_safept(Node* sfpt) {
 // place to only perform this optimization if such a division is exact. This
 // example will be transformed into its semantic equivalence:
 //
-//     int a = (phi * stride_con2 / stride_con) + (init2 - (init * stride_con2 / stride_con))
+//     int iv2 = (phi * stride_con2 / stride_con) + (init2 - (init * stride_con2 / stride_con))
 //
 // which corresponds to the structure of transformed subgraph.
 //
@@ -3965,7 +3970,7 @@ bool PhaseIdealLoop::is_deleteable_safept(Node* sfpt) {
 // induction variable (e.g., a long-typed IV in an int-typed loop), type
 // conversions are required:
 //
-//     long a = ((long) phi * stride_con2 / stride_con) + (init2 - ((long) init * stride_con2 / stride_con))
+//     long iv2 = ((long) phi * stride_con2 / stride_con) + (init2 - ((long) init * stride_con2 / stride_con))
 //
 void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
   assert(loop->_head->is_CountedLoop(), "");
@@ -4033,47 +4038,49 @@ void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
     // also easy to handle.
     jlong ratio_con = stride_con2 / stride_con;
 
-    if ((ratio_con * stride_con) == stride_con2) { // Check for exact
-#ifndef PRODUCT
-      if (TraceLoopOpts) {
-        tty->print("Parallel IV: %d ", phi2->_idx);
-        loop->dump_head();
-      }
-#endif
-      // Convert to using the trip counter.  The parallel induction
-      // variable differs from the trip counter by a loop-invariant
-      // amount, the difference between their respective initial values.
-      // It is scaled by the 'ratio_con'.
-      Node* ratio = _igvn.integercon(ratio_con, stride_con2_bt);
-      set_ctrl(ratio, C->root());
-
-      Node* init_converted = insert_convert_node_if_needed(stride_con2_bt, init);
-      Node* phi_converted = insert_convert_node_if_needed(stride_con2_bt, phi);
-
-      Node* ratio_init = MulNode::make(init_converted, ratio, stride_con2_bt);
-      _igvn.register_new_node_with_optimizer(ratio_init, init_converted);
-      set_early_ctrl(ratio_init, false);
-
-      Node* diff = SubNode::make(init2, ratio_init, stride_con2_bt);
-      _igvn.register_new_node_with_optimizer(diff, init2);
-      set_early_ctrl(diff, false);
-
-      Node* ratio_idx = MulNode::make(phi_converted, ratio, stride_con2_bt);
-      _igvn.register_new_node_with_optimizer(ratio_idx, phi_converted);
-      set_ctrl(ratio_idx, cl);
-
-      Node* add = AddNode::make(ratio_idx, diff, stride_con2_bt);
-      _igvn.register_new_node_with_optimizer(add);
-      set_ctrl(add, cl);
-
-      _igvn.replace_node( phi2, add );
-      // Sometimes an induction variable is unused
-      if (add->outcnt() == 0) {
-        _igvn.remove_dead_node(add);
-      }
-      --i; // deleted this phi; rescan starting with next position
-      continue;
+    if ((ratio_con * stride_con) != stride_con2) { // Check for exact (no remainder)
+        continue;
     }
+
+#ifndef PRODUCT
+    if (TraceLoopOpts) {
+      tty->print("Parallel IV: %d ", phi2->_idx);
+      loop->dump_head();
+    }
+#endif
+
+    // Convert to using the trip counter.  The parallel induction
+    // variable differs from the trip counter by a loop-invariant
+    // amount, the difference between their respective initial values.
+    // It is scaled by the 'ratio_con'.
+    Node* ratio = _igvn.integercon(ratio_con, stride_con2_bt);
+    set_ctrl(ratio, C->root());
+
+    Node* init_converted = insert_convert_node_if_needed(stride_con2_bt, init);
+    Node* phi_converted = insert_convert_node_if_needed(stride_con2_bt, phi);
+
+    Node* ratio_init = MulNode::make(init_converted, ratio, stride_con2_bt);
+    _igvn.register_new_node_with_optimizer(ratio_init, init_converted);
+    set_early_ctrl(ratio_init, false);
+
+    Node* diff = SubNode::make(init2, ratio_init, stride_con2_bt);
+    _igvn.register_new_node_with_optimizer(diff, init2);
+    set_early_ctrl(diff, false);
+
+    Node* ratio_idx = MulNode::make(phi_converted, ratio, stride_con2_bt);
+    _igvn.register_new_node_with_optimizer(ratio_idx, phi_converted);
+    set_ctrl(ratio_idx, cl);
+
+    Node* add = AddNode::make(ratio_idx, diff, stride_con2_bt);
+    _igvn.register_new_node_with_optimizer(add);
+    set_ctrl(add, cl);
+
+    _igvn.replace_node( phi2, add );
+    // Sometimes an induction variable is unused
+    if (add->outcnt() == 0) {
+      _igvn.remove_dead_node(add);
+    }
+    --i; // deleted this phi; rescan starting with next position
   }
 }
 
