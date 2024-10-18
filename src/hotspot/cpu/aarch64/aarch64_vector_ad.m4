@@ -117,6 +117,13 @@ source %{
   }
 
   bool Matcher::match_rule_supported_auto_vectorization(int opcode, int vlen, BasicType bt) {
+    // The non_strict_order implementations of Op_MulReductionVD/F are not suitable for
+    // auto-vectorization as the result would not conform to the JLS, Section Evaluation Order.
+    // The strictly ordered implementations aren't profitable in terms of performance.
+    if (opcode == Op_MulReductionVD || opcode == Op_MulReductionVF) {
+      return false;
+    }
+
     if (UseSVE == 0) {
       // These operations are not profitable to be vectorized on NEON, because no direct
       // NEON instructions support them. But the match rule support for them is profitable for
@@ -129,7 +136,6 @@ source %{
           // They are not suitable for auto-vectorization because the result would not conform
           // to the JLS, Section Evaluation Order.
           opcode == Op_AddReductionVD || opcode == Op_AddReductionVF ||
-          opcode == Op_MulReductionVD || opcode == Op_MulReductionVF ||
           opcode == Op_MulVL) {
         return false;
       }
@@ -2099,6 +2105,7 @@ instruct reduce_mulI_gt128b(iRegINoSp dst, iRegIorL2I isrc, vReg vsrc,
   effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2, TEMP pgtmp);
   format %{ "reduce_mulI_gt128b $dst, $isrc, $vsrc\t# vector (> 128 bits). KILL $tmp1, $tmp2, $pgtmp" %}
   ins_encode %{
+    assert(UseSVE > 0, "must be sve");
     BasicType bt = Matcher::vector_element_basic_type(this, $vsrc);
     uint length_in_bytes = Matcher::vector_length_in_bytes(this, $vsrc);
     __ reduce_mul_integral_gt128b($dst$$Register, bt, $isrc$$Register,
@@ -2128,6 +2135,7 @@ instruct reduce_mulL_gt128b(iRegLNoSp dst, iRegL isrc, vReg vsrc, vReg tmp1,
   effect(TEMP_DEF dst, TEMP tmp1, TEMP pgtmp);
   format %{ "reduce_mulL_gt128b $dst, $isrc, $vsrc\t# vector (> 128 bits). KILL $tmp1, $pgtmp" %}
   ins_encode %{
+    assert(UseSVE > 0, "must be sve");
     uint length_in_bytes = Matcher::vector_length_in_bytes(this, $vsrc);
     __ reduce_mul_integral_gt128b($dst$$Register, T_LONG, $isrc$$Register,
                                   $vsrc$$FloatRegister, length_in_bytes,
@@ -2150,17 +2158,33 @@ instruct reduce_mulF_le128b(vRegF dst, vRegF fsrc, vReg vsrc, vReg tmp) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct reduce_mulF_gt128b(vRegF dst, vRegF fsrc, vReg vsrc, vReg tmp,
-                            pRegGov pgtmp) %{
-  predicate(Matcher::vector_length_in_bytes(n->in(2)) > 16);
+
+instruct reduce_mulF_gt128b(vRegF dst, vRegF fsrc, vReg vsrc, vReg tmp) %{
+  predicate(Matcher::vector_length_in_bytes(n->in(2)) > 16 && n->as_Reduction()->requires_strict_order());
   match(Set dst (MulReductionVF fsrc vsrc));
-  effect(TEMP_DEF dst, TEMP tmp, TEMP pgtmp);
-  format %{ "reduce_mulF_gt128b $dst, $fsrc, $vsrc\t# (> 128 bits). KILL $tmp, $pgtmp" %}
+  effect(TEMP_DEF dst, TEMP tmp);
+  format %{ "reduce_mulF_gt128b $dst, $fsrc, $vsrc\t# (> 128 bits). KILL $tmp" %}
   ins_encode %{
+    assert(UseSVE > 0, "must be sve");
     uint length_in_bytes = Matcher::vector_length_in_bytes(this, $vsrc);
     __ reduce_mul_fp_gt128b($dst$$FloatRegister, T_FLOAT, $fsrc$$FloatRegister,
-                            $vsrc$$FloatRegister, length_in_bytes, $tmp$$FloatRegister,
-                            $pgtmp$$PRegister);
+                            $vsrc$$FloatRegister, length_in_bytes, $tmp$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct reduce_non_strict_order_mulF_gt128b(vRegF dst, vRegF fsrc, vReg vsrc, vReg tmp1, vReg tmp2,
+                                             pRegGov pgtmp) %{
+  predicate(Matcher::vector_length_in_bytes(n->in(2)) > 16 && !n->as_Reduction()->requires_strict_order());
+  match(Set dst (MulReductionVF fsrc vsrc));
+  effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2, TEMP pgtmp);
+  format %{ "reduce_non_strict_order_mulF_gt128b $dst, $fsrc, $vsrc\t# (> 128 bits). KILL $tmp1, $tmp2, $pgtmp" %}
+  ins_encode %{
+    assert(UseSVE > 0, "must be sve");
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this, $vsrc);
+    __ reduce_non_strict_order_mul_fp_gt128b($dst$$FloatRegister, T_FLOAT, $fsrc$$FloatRegister,
+                                             $vsrc$$FloatRegister, length_in_bytes, $tmp1$$FloatRegister,
+                                             $tmp2$$FloatRegister, $pgtmp$$PRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -2177,17 +2201,32 @@ instruct reduce_mulD_le128b(vRegD dst, vRegD dsrc, vReg vsrc, vReg tmp) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct reduce_mulD_gt128b(vRegD dst, vRegD dsrc, vReg vsrc, vReg tmp,
-                            pRegGov pgtmp) %{
-  predicate(Matcher::vector_length_in_bytes(n->in(2)) > 16);
-  match(Set dst (MulReductionVD dsrc vsrc));
-  effect(TEMP_DEF dst, TEMP tmp, TEMP pgtmp);
-  format %{ "reduce_mulD_gt128b $dst, $dsrc, $vsrc\t# (> 16 bits). KILL $tmp, $pgtmp" %}
+instruct reduce_mulD_gt128b(vRegF dst, vRegF fsrc, vReg vsrc, vReg tmp) %{
+  predicate(Matcher::vector_length_in_bytes(n->in(2)) > 16 && n->as_Reduction()->requires_strict_order());
+  match(Set dst (MulReductionVD fsrc vsrc));
+  effect(TEMP_DEF dst, TEMP tmp);
+  format %{ "reduce_mulD_gt128b $dst, $fsrc, $vsrc\t# (> 128 bits). KILL $tmp" %}
   ins_encode %{
+    assert(UseSVE > 0, "must be sve");
     uint length_in_bytes = Matcher::vector_length_in_bytes(this, $vsrc);
-    __ reduce_mul_fp_gt128b($dst$$FloatRegister, T_DOUBLE, $dsrc$$FloatRegister,
-                            $vsrc$$FloatRegister, length_in_bytes, $tmp$$FloatRegister,
-                            $pgtmp$$PRegister);
+    __ reduce_mul_fp_gt128b($dst$$FloatRegister, T_DOUBLE, $fsrc$$FloatRegister,
+                            $vsrc$$FloatRegister, length_in_bytes, $tmp$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct reduce_non_strict_order_mulD_gt128b(vRegD dst, vRegD dsrc, vReg vsrc, vReg tmp1, vReg tmp2,
+                                             pRegGov pgtmp) %{
+  predicate(Matcher::vector_length_in_bytes(n->in(2)) > 16 && !n->as_Reduction()->requires_strict_order());
+  match(Set dst (MulReductionVD dsrc vsrc));
+  effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2, TEMP pgtmp);
+  format %{ "reduce_mulD_gt128b $dst, $dsrc, $vsrc\t# (> 16 bits). KILL $tmp1, $tmp2, $pgtmp" %}
+  ins_encode %{
+    assert(UseSVE > 0, "must be sve");
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this, $vsrc);
+    __ reduce_non_strict_order_mul_fp_gt128b($dst$$FloatRegister, T_DOUBLE, $dsrc$$FloatRegister,
+                                             $vsrc$$FloatRegister, length_in_bytes, $tmp1$$FloatRegister,
+                                             $tmp2$$FloatRegister, $pgtmp$$PRegister);
   %}
   ins_pipe(pipe_slow);
 %}
