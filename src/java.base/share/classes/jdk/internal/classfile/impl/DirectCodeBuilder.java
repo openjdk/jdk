@@ -25,42 +25,18 @@
  */
 package jdk.internal.classfile.impl;
 
-import java.lang.constant.ClassDesc;
-import java.lang.constant.MethodTypeDesc;
-import java.lang.classfile.Attribute;
-import java.lang.classfile.Attributes;
-import java.lang.classfile.ClassFile;
-import java.lang.classfile.CodeBuilder;
-import java.lang.classfile.CodeElement;
-import java.lang.classfile.CodeModel;
-import java.lang.classfile.CustomAttribute;
-import java.lang.classfile.Label;
-import java.lang.classfile.Opcode;
-import java.lang.classfile.TypeKind;
+import java.lang.classfile.*;
 import java.lang.classfile.attribute.CodeAttribute;
 import java.lang.classfile.attribute.LineNumberTableAttribute;
-import java.lang.classfile.constantpool.ClassEntry;
-import java.lang.classfile.constantpool.ConstantPoolBuilder;
-import java.lang.classfile.constantpool.DoubleEntry;
-import java.lang.classfile.constantpool.FieldRefEntry;
-import java.lang.classfile.constantpool.InterfaceMethodRefEntry;
-import java.lang.classfile.constantpool.InvokeDynamicEntry;
-import java.lang.classfile.constantpool.LoadableConstantEntry;
-import java.lang.classfile.constantpool.LongEntry;
-import java.lang.classfile.constantpool.MemberRefEntry;
-import java.lang.classfile.constantpool.MethodRefEntry;
+import java.lang.classfile.constantpool.*;
 import java.lang.classfile.instruction.CharacterRange;
 import java.lang.classfile.instruction.ExceptionCatch;
 import java.lang.classfile.instruction.LocalVariable;
 import java.lang.classfile.instruction.LocalVariableType;
 import java.lang.classfile.instruction.SwitchCase;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.IdentityHashMap;
-import java.util.List;
-import java.util.Map;
+import java.lang.constant.ClassDesc;
+import java.lang.constant.MethodTypeDesc;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
