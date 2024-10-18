@@ -2084,9 +2084,9 @@ public class Thread implements Runnable {
     }
 
     /**
-     * This method is a no-op and returns normally.
+     * Does nothing.
      *
-     * @apiNote This method originally determined if the currently running
+     * @deprecated This method originally determined if the currently running
      * thread had permission to modify this thread. This method was only useful
      * in conjunction with {@linkplain SecurityManager the Security Manager},
      * which is no longer supported. There is no replacement for the Security
