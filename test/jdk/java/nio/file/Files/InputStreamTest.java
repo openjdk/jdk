@@ -25,18 +25,27 @@
  * @bug 8227609 8233451
  * @summary Test of InputStream and OutputStream created by java.nio.file.Files
  * @library .. /test/lib
+ * @build jdk.test.lib.Platform
  * @run junit InputStreamTest
  */
 
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.InputStream;
-import java.io.OutputStream;
-import java.nio.channels.ClosedChannelException;
-import java.nio.file.*;
-import static java.nio.file.Files.*;
-import static java.nio.file.LinkOption.*;
-import java.nio.file.attribute.*;
 import java.io.IOException;
-import java.util.*;
+import java.io.OutputStream;
+import java.lang.foreign.Arena;
+import java.lang.foreign.FunctionDescriptor;
+import java.lang.foreign.Linker;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.SymbolLookup;
+import java.lang.foreign.ValueLayout;
+import java.lang.invoke.MethodHandle;
+import java.nio.channels.ClosedChannelException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Arrays;
+import jdk.test.lib.Platform;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -47,16 +56,84 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class InputStreamTest {
 
+    private static final String PIPE = "pipe";
+    private static final Path PIPE_PATH = Path.of(PIPE);
+    private static final String SENTENCE =
+        "Tout est permis mais rien n’est possible";
+
     private static Path TMPDIR;
 
+    private static class mkfifo {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.of(
+            ValueLayout.JAVA_INT,
+            ValueLayout.ADDRESS,
+            ValueLayout.JAVA_SHORT
+        );
+
+        public static final MemorySegment ADDR;
+        static {
+            Linker linker = Linker.nativeLinker();
+            SymbolLookup stdlib = linker.defaultLookup();
+            ADDR = stdlib.find("mkfifo").orElseThrow();
+        }
+
+        public static final MethodHandle HANDLE =
+            Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    }
+
+    public static int mkfifo(MemorySegment x0, short x1) {
+        var mh$ = mkfifo.HANDLE;
+        try {
+            return (int)mh$.invokeExact(x0, x1);
+        } catch (Throwable ex$) {
+           throw new AssertionError("should not reach here", ex$);
+        }
+    }
+
+    private static Thread createWriteThread() {
+        Thread t = new Thread(
+            new Runnable() {
+                public void run() {
+                    try {
+                        try (FileOutputStream fos = new FileOutputStream(PIPE);)
+                        {
+                            fos.write(SENTENCE.getBytes());
+                        }
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            }
+        );
+        t.start();
+        return t;
+    }
+
     @BeforeAll
-    static void createDir() throws IOException {
+    static void before() throws InterruptedException, IOException {
         TMPDIR = TestUtil.createTemporaryDirectory();
+
+        if (Platform.isWindows())
+            return;
+
+        Files.deleteIfExists(PIPE_PATH);
+        try (var newArena = Arena.ofConfined()) {
+            var addr = newArena.allocateFrom(PIPE);
+            short mode = 0666;
+            assertEquals(0, mkfifo(addr, mode));
+        }
+        if (Files.notExists(PIPE_PATH))
+            throw new RuntimeException("Failed to create " + PIPE);
     }
 
     @AfterAll
-    static void deleteDir() throws IOException {
+    static void after() throws IOException {
         TestUtil.removeAll(TMPDIR);
+
+        if (Platform.isWindows())
+            return;
+
+        Files.deleteIfExists(PIPE_PATH);
     }
 
     /**
@@ -64,7 +141,7 @@ public class InputStreamTest {
      */
     @Test
     void skip() throws IOException {
-        Path file = createFile(TMPDIR.resolve("foo"));
+        Path file = Files.createFile(TMPDIR.resolve("foo"));
         try (OutputStream out = Files.newOutputStream(file)) {
             final int size = 512;
             byte[] blah = new byte[size];
@@ -160,6 +237,43 @@ public class InputStreamTest {
             try (InputStream s = Files.newInputStream(stdin);) {
                 s.skip(0);
             }
+        }
+    }
+
+    /**
+     * Tests Files.newInputStream(Path).readAllBytes().
+     */
+    @Test
+    @DisabledOnOs(OS.WINDOWS)
+    void readAllBytes() throws InterruptedException, IOException {
+        Thread t = createWriteThread();
+        try (InputStream in = Files.newInputStream(Path.of(PIPE))) {
+            String s = new String(in.readAllBytes());
+            System.out.println(s);
+            assertEquals(SENTENCE, s);
+        } finally {
+            t.join();
+        }
+    }
+
+    /**
+     * Tests Files.newInputStream(Path).readNBytes().
+     */
+    @Test
+    @DisabledOnOs(OS.WINDOWS)
+    void readNBytes() throws InterruptedException, IOException {
+        Thread t = createWriteThread();
+        try (InputStream in = Files.newInputStream(Path.of(PIPE))) {
+            final int offset = 11;
+            final int length = 17;
+            assert length <= SENTENCE.length();
+            byte[] b = new byte[offset + length];
+            int n = in.readNBytes(b, offset, length);
+            String s = new String(b, offset, length);
+            System.out.println(s);
+            assertEquals(SENTENCE.substring(0, length), s);
+        } finally {
+            t.join();
         }
     }
 }
