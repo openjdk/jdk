@@ -71,11 +71,11 @@ public class SerializationTest {
                 new MessageFormat("{1} {0} foo", null),
                 // With formats
                 new MessageFormat("{0,number,short} {0} {1,date,long} foo"),
-                // Offset equal to pattern length
+                // Offset equal to pattern length (0)
                 new MessageFormat("{0}"),
-                // Offset equal to pattern length (variation)
+                // Offset equal to pattern length (1)
                 new MessageFormat("X{0}"),
-                // Offset 1 under pattern length (variation)
+                // Offset 1 under pattern length
                 new MessageFormat("X{0}X")
         );
     }
