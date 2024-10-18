@@ -33,6 +33,7 @@ import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.OptionalLong;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import jdk.internal.net.http.common.HttpHeadersBuilder;
 import jdk.internal.net.http.common.Log;
@@ -40,6 +41,8 @@ import jdk.internal.net.http.common.Logger;
 import jdk.internal.net.http.common.SequentialScheduler;
 import jdk.internal.net.http.common.Utils;
 import jdk.internal.net.http.common.ValidatingHeadersConsumer;
+import jdk.internal.net.http.frame.HeaderFrame;
+import jdk.internal.net.http.frame.ResetFrame;
 import jdk.internal.net.http.http3.Http3Error;
 import jdk.internal.net.http.http3.frames.DataFrame;
 import jdk.internal.net.http.http3.frames.FramesDecoder;
@@ -55,6 +58,7 @@ import jdk.internal.net.http.qpack.DecodingCallback;
 import jdk.internal.net.http.qpack.readers.HeaderFrameReader;
 import jdk.internal.net.http.quic.streams.QuicStreamReader;
 
+import static jdk.internal.net.http.Exchange.MAX_NON_FINAL_RESPONSES;
 import static jdk.internal.net.http.RedirectFilter.HTTP_NOT_MODIFIED;
 
 /**
@@ -82,6 +86,9 @@ sealed abstract class Http3Stream<T> extends ExchangeImpl<T> permits Http3Exchan
 
     // A temporary buffer for response body bytes
     final ConcurrentLinkedQueue<List<ByteBuffer>> responseData = new ConcurrentLinkedQueue<>();
+
+    private AtomicInteger nonFinalResponseCount = new AtomicInteger();
+
 
     Http3Stream(Exchange<T> exchange) {
         super(exchange);
@@ -521,6 +528,18 @@ sealed abstract class Http3Stream<T> extends ExchangeImpl<T> permits Http3Exchan
          }
      }
 
+    final String checkInterimResponseCountExceeded() {
+        // this is also checked by Exchange - but tracking it here too provides
+        // a more informative message.
+        int count = nonFinalResponseCount.incrementAndGet();
+        if (MAX_NON_FINAL_RESPONSES > 0 && (count < 0 || count > MAX_NON_FINAL_RESPONSES)) {
+            return String.format(
+                    "Stream %s PROTOCOL_ERROR: too many interim responses received: %s > %s",
+                    streamId(), count, MAX_NON_FINAL_RESPONSES);
+        }
+        return null;
+    }
+
     /**
      * Called to create a new Response object for the newly receive response headers and
      * response status code. This method is called from {@link #handleResponse(HttpHeadersBuilder,
@@ -599,11 +618,22 @@ sealed abstract class Http3Stream<T> extends ExchangeImpl<T> permits Http3Exchan
              cancelImpl(new IOException("Unexpected :status header value"), Http3Error.H3_MESSAGE_ERROR);
              return;
          }
+
          if (responseCode >= 200) {
              responseState = ResponseState.PERMIT_TRAILER;
              finalResponse = true;
+         } else {
+             assert responseCode >= 100 && responseCode <= 200 : "unexpected responseCode: " + responseCode;
+             String protocolErrorMsg = checkInterimResponseCountExceeded();
+             if (protocolErrorMsg != null) {
+                 if (debug.on()) {
+                     debug.log(protocolErrorMsg);
+                 }
+                 cancelImpl(new ProtocolException(protocolErrorMsg), Http3Error.H3_GENERAL_PROTOCOL_ERROR);
+                 rspHeadersConsumer.reset();
+                 return;
+             }
          }
-
 
          // update readingPaused after having decoded the statusCode and
          // switched the responseState.

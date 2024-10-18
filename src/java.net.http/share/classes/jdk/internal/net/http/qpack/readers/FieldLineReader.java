@@ -29,6 +29,7 @@ import jdk.internal.net.http.qpack.DecodingCallback;
 import jdk.internal.net.http.qpack.FieldSectionPrefix;
 
 import java.io.IOException;
+import java.net.ProtocolException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -49,8 +50,10 @@ public sealed abstract class FieldLineReader permits FieldLineIndexedPostBaseRea
                           DecodingCallback action) throws IOException;
 
     final void checkSectionSize(long fieldSize, DecodingCallback callback) {
-        if (maxSectionSize > 0 && sectionSizeTracker.addAndGet(fieldSize) > maxSectionSize) {
-            callback.onError(new IOException("Peer headers size exceeds limit set"),
+        long sectionSize = sectionSizeTracker.addAndGet(fieldSize);
+        if (maxSectionSize > 0 &&  sectionSize > maxSectionSize) {
+            callback.onError(new ProtocolException("Size exceeds MAX_FIELD_SECTION_SIZE: %s > %s"
+                            .formatted(sectionSize, maxSectionSize)),
                              Http3Error.H3_MESSAGE_ERROR);
         }
     }
