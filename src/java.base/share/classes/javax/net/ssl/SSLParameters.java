@@ -300,6 +300,7 @@ public class SSLParameters {
      *     Java Security Standard Algorithm Names</a> document
      *     for information about standard algorithm names.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @see X509ExtendedTrustManager
      *
      * @since 1.7
@@ -674,6 +675,9 @@ public class SSLParameters {
      * @throws IllegalArgumentException if protocols is null, or if
      *                    any element in a non-empty array is null or an
      *                    empty (zero-length) string
+     *
+     * @spec https://www.rfc-editor.org/info/rfc7301
+     *      RFC 7301: Transport Layer Security (TLS) Application-Layer Protocol Negotiation Extension
      * @see #getApplicationProtocols
      * @since 9
      */
