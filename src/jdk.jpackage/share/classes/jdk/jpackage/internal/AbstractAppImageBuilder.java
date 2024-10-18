@@ -27,7 +27,9 @@ package jdk.jpackage.internal;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.List;
 import java.util.Objects;
@@ -79,16 +81,14 @@ public abstract class AbstractAppImageBuilder {
         if (inputPath != null) {
             inputPath = inputPath.toAbsolutePath();
 
-            final var theInputPath = inputPath;
+            List<Path> excludes = new ArrayList<>();
 
-            var excludes = Stream.of(TEMP_ROOT.fetchFrom(params),
-                    OUTPUT_DIR.fetchFrom(params), root).map(path -> {
+            for (var path : List.of(TEMP_ROOT.fetchFrom(params), OUTPUT_DIR.fetchFrom(params), root)) {
                 path = path.toAbsolutePath();
-                if (!path.startsWith(theInputPath) || path.equals(theInputPath)) {
-                    path = null;
+                if (path.startsWith(inputPath) && !Files.isSameFile(path, inputPath)) {
+                    excludes.add(path);
                 }
-                return path;
-            }).filter(Objects::nonNull).toList();
+            }
 
             IOUtils.copyRecursive(inputPath,
                     appLayout.appDirectory().toAbsolutePath(), excludes);
