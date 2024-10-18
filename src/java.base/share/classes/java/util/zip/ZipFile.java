@@ -1081,12 +1081,14 @@ public class ZipFile implements ZipConstants, Closeable {
      * optimization when looking up potentially versioned entries.
      * Returns an empty array if no versioned entries exist.
      */
-    private int[] getMetaInfVersions(String name) {
+    private BitSet getMetaInfVersions(String name) {
         synchronized (this) {
             ensureOpen();
-            return res.zsrc.metaVersions.getOrDefault(name, Source.EMPTY_META_VERSIONS);
+            return res.zsrc.metaVersions.getOrDefault(name, EMPTY_VERSIONS);
         }
     }
+
+    private static final BitSet EMPTY_VERSIONS = new BitSet();
 
     /**
      * Returns the value of the System property which indicates whether the
@@ -1124,7 +1126,7 @@ public class ZipFile implements ZipConstants, Closeable {
                     return ((ZipFile)jar).getManifestName(onlyIfHasSignatureRelatedFiles);
                 }
                 @Override
-                public int[] getMetaInfVersions(JarFile jar, String name) {
+                public BitSet getMetaInfVersions(JarFile jar, String name) {
                     return ((ZipFile)jar).getMetaInfVersions(name);
                 }
                 @Override
@@ -1162,7 +1164,6 @@ public class ZipFile implements ZipConstants, Closeable {
         private static final int META_INF_LEN = 9;
         // "META-INF/versions//".length()
         private static final int META_INF_VERSIONS_LEN = 19;
-        private static final int[] EMPTY_META_VERSIONS = new int[0];
         // CEN size is limited to the maximum array size in the JDK
         private static final int MAX_CEN_SIZE = ArraysSupport.SOFT_MAX_ARRAY_LENGTH;
 
@@ -1179,7 +1180,7 @@ public class ZipFile implements ZipConstants, Closeable {
         private int   manifestPos = -1;      // position of the META-INF/MANIFEST.MF, if exists
         private int   manifestNum = 0;       // number of META-INF/MANIFEST.MF, case insensitive
         private int[] signatureMetaNames;    // positions of signature related entries, if such exist
-        private Map<String, int[]> metaVersions; // Set of versions found in META-INF/versions/, by entry name
+        private Map<String, BitSet> metaVersions; // Set of versions found in META-INF/versions/, by entry name
         private final boolean startsWithLoc; // true, if ZIP file starts with LOCSIG (usually true)
 
         // A Hashmap for all entries.
@@ -1745,7 +1746,7 @@ public class ZipFile implements ZipConstants, Closeable {
             ArrayList<Integer> signatureNames = null;
             // Map entry name to the set of versions seen in
             // META-INF/versions/{version}/{name}
-            Map<String, Set<Integer>> metaVersionsMap = null;
+            Map<String, BitSet> metaVersionsMap = null;
 
             // Iterate through the entries in the central directory
             int idx = 0; // Index into the entries array
@@ -1790,7 +1791,7 @@ public class ZipFile implements ZipConstants, Closeable {
                             // Add version for name
                             if (metaVersionsMap == null)
                                 metaVersionsMap = new HashMap<>();
-                            metaVersionsMap.computeIfAbsent(name, n -> new HashSet<>()).add(version);
+                            metaVersionsMap.computeIfAbsent(name, _ -> new BitSet()).set(version);
                         }
                     }
                 }
@@ -1809,18 +1810,7 @@ public class ZipFile implements ZipConstants, Closeable {
                 }
             }
             if (metaVersionsMap != null) {
-                metaVersions = new HashMap<>();
-                for (var entry : metaVersionsMap.entrySet()) {
-                    // Convert Set<Integer> to int[] for performance
-                    int[] versions = new int[entry.getValue().size()];
-                    int c = 0;
-                    for (Integer i : entry.getValue()) {
-                        versions[c++] = i.intValue();
-                    }
-                    // JarFile::getVersionedEntry expects sorted versions
-                    Arrays.sort(versions);
-                    metaVersions.put(entry.getKey(), versions);
-                }
+                metaVersions = metaVersionsMap;
             } else {
                 metaVersions = Map.of();
             }
