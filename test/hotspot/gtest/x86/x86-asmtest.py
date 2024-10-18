@@ -48,6 +48,8 @@ cond_to_suffix = {
     'greater': 'g',
 }
 
+shift_rot_ops = {'sarl', 'sarq', 'sall', 'salq', 'shll', 'shlq', 'shrl', 'shrq', 'shrdl', 'shrdq', 'shldl', 'shldq', 'rcrq', 'rorl', 'rorq', 'roll', 'rolq', 'rcll', 'rclq'}
+
 registers_mapping = {
     # skip rax, rsi, rdi, rsp, rbp as they have special encodings
     # 'rax': {64: 'rax', 32: 'eax', 16: 'ax', 8: 'al'},
@@ -155,9 +157,7 @@ class Instruction(object):
 
     def astr(self):
         # JDK assembler uses 'cl' for shift instructions with one operand by default
-        cl_str = (', cl' if (self._name == 'shll' or self._name == 'shlq' or self._name == 'shrl' or self._name == 'shrq' or
-                             self._name == 'rorl' or self._name == 'rorq' or self._name == 'roll' or self._name == 'rolq' or
-                             self._name == 'sarl' or self._name == 'sarq' or self._name == 'sall' or self._name == 'salq') and len(self.operands) == 1 else '')
+        cl_str = (', cl' if self._name in shift_rot_ops and len(self.operands) == 1 else '')
         return f'{self._aname} ' + ', '.join([op.astr() for op in self.operands]) + cl_str
 
 class RegInstruction(Instruction):
@@ -272,20 +272,6 @@ class CondRegInstruction(RegInstruction):
     def astr(self):
         return f'{self._aname}' + cond_to_suffix[self.cond] + ' ' + self.reg.astr()
 
-class RegImm32Instruction(RegImmInstruction):
-    def __init__(self, name, aname, width, reg, imm):
-        super().__init__(name, aname, width, reg, imm)
-
-    def cstr(self):
-        return f'__ {self._name}(' + ', '.join([self.reg.cstr(), self.imm.cstr()]) + ');'
-
-class MemImm32Instruction(MemImmInstruction):
-    def __init__(self, name, aname, width, imm, mem_base, mem_idx):
-        super().__init__(name, aname, width, imm, mem_base, mem_idx)
-
-    def cstr(self):
-        return f'__ {self._name}(' + ', '.join([self.mem.cstr(), self.imm.cstr()]) + ');'
-
 class MoveRegMemInstruction(Instruction):
     def __init__(self, name, aname, width, mem_width, reg, mem_base, mem_idx):
         super().__init__(name, aname)
@@ -337,18 +323,17 @@ def handle_lp64_flag(i, lp64_flag, print_lp64_flag):
 
 def get_immediate_list(op_name, width):
     # special cases
-    shift_ops = {'sarl', 'sarq', 'sall', 'salq', 'shll', 'shlq', 'shrl', 'shrq', 'shrdl', 'shrdq', 'shldl', 'shldq', 'rcrq', 'rorl', 'rorq', 'roll', 'rolq', 'rcll', 'rclq'}
-    word_ops = {'addw', 'cmpw'}
-    dword_imm_ops = {'testl'}
+    word_imm_ops = {'addw', 'cmpw'}
+    dword_imm_ops = {'subl_imm32', 'subq_imm32', 'orq_imm32', 'cmpl_imm32', 'testl'}
     qword_imm_ops = {'mov64'}
     neg_imm_ops = {'testq'}
     bt_ops = {'btq'}
 
-    if op_name in shift_ops:
+    if op_name in shift_rot_ops:
         return immediates5
     elif op_name in bt_ops:
         return immediate_map[8]
-    elif op_name in word_ops:
+    elif op_name in word_imm_ops:
         return immediate_values_8_to_16_bit
     elif op_name in dword_imm_ops:
         return immediate_values_16_to_32_bit
@@ -436,22 +421,6 @@ def generate(RegOp, ops, print_lp64_flag=True):
                     continue
                 instr = RegOp(*op, reg1=test_regs[i], reg2=test_regs[(i + 1) % len(test_regs)])
                 print_instruction(instr, lp64_flag, print_lp64_flag)
-
-        elif RegOp in [RegImm32Instruction]:
-            for i in range(len(test_regs)):
-                lp64_flag = handle_lp64_flag(i, lp64_flag, print_lp64_flag)
-                for imm in immediate_values_16_to_32_bit:
-                    instr = RegOp(*op, reg=test_regs[i], imm=imm)
-                    print_instruction(instr, lp64_flag, print_lp64_flag)
-
-        elif RegOp in [MemImm32Instruction]:
-            for imm in immediate_values_16_to_32_bit:
-                for i in range(len(test_regs)):
-                    if test_regs[(i + 1) % len(test_regs)] == 'rsp':
-                        continue
-                    lp64_flag = handle_lp64_flag((i + 1) % len(test_regs), lp64_flag, print_lp64_flag)
-                    instr = RegOp(*op, imm=imm, mem_base=test_regs[i], mem_idx=test_regs[(i + 1) % len(test_regs)])
-                    print_instruction(instr, lp64_flag, print_lp64_flag)
 
         else:
             raise ValueError(f"Unsupported instruction type: {RegOp}")
@@ -541,6 +510,7 @@ instruction_set = {
         ('movl', 'mov', 32),
         ('testb', 'test', 8),
         ('testl', 'test', 32),
+        ('cmpl_imm32', 'cmp', 32),
     ],
     RegMemInstruction: [
         ('addl', 'add', 32),
@@ -586,6 +556,7 @@ instruction_set = {
         ('movl', 'mov', 32),
         ('testb', 'test', 8),
         ('testl', 'test', 32),
+        ('subl_imm32', 'sub', 32),
     ],
     CondRegMemInstruction: [
         ('cmovl', 'cmov', 32, key) for key in cond_to_suffix.keys()
@@ -643,12 +614,6 @@ instruction_set = {
         ('cmpxchgw', 'cmpxchg', 16),
         ('cmpxchgl', 'cmpxchg', 32),
     ],
-    RegImm32Instruction: [
-        ('subl_imm32', 'sub', 32),
-    ],
-    MemImm32Instruction: [
-        ('cmpl_imm32', 'cmp', 32),
-    ]
 }
 
 instruction_set64 = {
@@ -735,6 +700,8 @@ instruction_set64 = {
         ('mov64', 'mov', 64),
         ('btq', 'bt', 64),
         ('testq', 'test', 64),
+        ('orq_imm32', 'or', 64),
+        ('subq_imm32', 'sub', 64)
     ],
     CondRegMemInstruction: [
         ('cmovq', 'cmov', 64, key) for key in cond_to_suffix.keys()
@@ -775,10 +742,6 @@ instruction_set64 = {
         ('imulq', 'imul', 64),
         ('shldq', 'shld', 64),
         ('shrdq', 'shrd', 64)
-    ],
-    RegImm32Instruction: [
-        ('orq_imm32', 'or', 64),
-        ('subq_imm32', 'sub', 64)
     ],
     Pop2Instruction: [
         ('pop2', 'pop2', 64),
