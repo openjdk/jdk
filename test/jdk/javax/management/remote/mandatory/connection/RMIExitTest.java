@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,8 @@
  *
  * @run clean RMIExitTest
  * @run build RMIExitTest
- * @run main RMIExitTest
+ * @run main RMIExitTest rmi
+ * @run main RMIExitTest http
  */
 
 import java.net.MalformedURLException;
@@ -81,16 +82,19 @@ public class RMIExitTest {
     public static long exitStartTime = 0;
 
     public static void main(String[] args) {
+        if (args.length != 1) {
+            throw new RuntimeException("Use test main arg to specify protocol: rmi or http");
+        }
         System.out.println("Start test");
         Runtime.getRuntime().addShutdownHook(new TimeChecker());
-        test();
+        test(args[0]);
         exitStartTime = System.currentTimeMillis();
         System.out.println("End test");
     }
 
-    private static void test() {
+    private static void test(String protocol) {
         try {
-            JMXServiceURL u = new JMXServiceURL("rmi", null, 0);
+            JMXServiceURL u = new JMXServiceURL(protocol, null, 0);
             JMXConnectorServer server;
             JMXServiceURL addr;
             JMXConnector client;

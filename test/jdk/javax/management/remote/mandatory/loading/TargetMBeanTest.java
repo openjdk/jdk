@@ -112,7 +112,7 @@ public class TargetMBeanTest {
         MBeanServer mbs = MBeanServerFactory.newMBeanServer();
         mbs.registerMBean(mbean, mbeanName);
 
-        final String[] protos = {"rmi", "iiop", "jmxmp"};
+        final String[] protos = {"rmi", "http"};
         boolean ok = true;
         for (int i = 0; i < protos.length; i++) {
             try {
@@ -148,14 +148,14 @@ public class TargetMBeanTest {
         }
         cs.start();
         JMXServiceURL addr = cs.getAddress();
-        JMXServiceURL rmiurl = new JMXServiceURL("rmi", null, 0);
+        JMXServiceURL serviceUrl = new JMXServiceURL(proto, null, 0);
         JMXConnector client = JMXConnectorFactory.connect(addr);
         MBeanServerConnection mbsc = client.getMBeanServerConnection();
         ObjectName on = new ObjectName("x:proto=" + proto + ",ok=yes");
         mbsc.createMBean(RMIConnectorServer.class.getName(),
                          on,
                          mbeanName,
-                         new Object[] {rmiurl, null},
+                         new Object[] {serviceUrl, null},
                          new String[] {JMXServiceURL.class.getName(),
                                        Map.class.getName()});
         System.out.println("Successfully deserialized with " + proto);

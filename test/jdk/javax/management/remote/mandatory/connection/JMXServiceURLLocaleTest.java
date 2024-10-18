@@ -29,7 +29,8 @@
  *
  * @run clean JMXServiceURLLocaleTest
  * @run build JMXServiceURLLocaleTest
- * @run main JMXServiceURLLocaleTest
+ * @run main JMXServiceURLLocaleTest rmi
+ * @run main JMXServiceURLLocaleTest http
 */
 
 import java.util.Locale;
@@ -38,6 +39,9 @@ import javax.management.remote.JMXServiceURL;
 public class JMXServiceURLLocaleTest {
     public static void main(String[] args) throws Exception {
 
+        if (args.length == 0) {
+            throw new RuntimeException("Start test with main arg for protocol: rmi or http");
+        }
         boolean error = false;
         Locale loc = Locale.getDefault();
 
@@ -45,7 +49,7 @@ public class JMXServiceURLLocaleTest {
             echo("Setting Turkish locale");
             // Set locale other than Locale.ENGLISH
             Locale.setDefault(Locale.of("tr", "TR"));
-            new JMXServiceURL("service:jmx:RMI://");
+            new JMXServiceURL("service:jmx:" + args[0] + "://");
         } catch (Exception e) {
             e.printStackTrace(System.out);
             error = true;
