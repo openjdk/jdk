@@ -624,6 +624,8 @@ inline void Assembler::z_mghi( Register r1, int64_t i2) { emit_32( MGHI_ZOPC  | 
 //------------------
 // DIVIDE
 //------------------
+inline void Assembler::z_dlr(  Register r1, Register r2) { emit_32( DLR_ZOPC   | regt(r1, 24, 32) | reg(r2, 28, 32)); }
+inline void Assembler::z_dlgr( Register r1, Register r2) { emit_32( DLGR_ZOPC  | regt(r1, 24, 32) | reg(r2, 28, 32)); }
 inline void Assembler::z_dsgr( Register r1, Register r2) { emit_32( DSGR_ZOPC  | regt(r1, 24, 32) | reg(r2, 28, 32)); }
 inline void Assembler::z_dsgfr(Register r1, Register r2) { emit_32( DSGFR_ZOPC | regt(r1, 24, 32) | reg(r2, 28, 32)); }
 
