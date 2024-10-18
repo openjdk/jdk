@@ -24,19 +24,25 @@
 
 /*
  * @test
- * @summary Dump time resolutiom of constant pool entries.
+ * @summary Dump time resolution of constant pool entries.
  * @requires vm.cds
  * @requires vm.cds.supports.aot.class.linking
  * @requires vm.compMode != "Xcomp"
- * @library /test/lib
+ * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds/test-classes/
+ * @build OldProvider OldClass OldConsumer
  * @build ResolvedConstants
- * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar ResolvedConstantsApp ResolvedConstantsFoo ResolvedConstantsBar
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar
+ *                 ResolvedConstantsApp ResolvedConstantsFoo ResolvedConstantsBar
+ *                 MyInterface InterfaceWithClinit NormalClass
+ *                 OldProvider OldClass OldConsumer SubOfOldClass
  * @run driver ResolvedConstants
  */
 
+import java.util.function.Consumer;
 import jdk.test.lib.cds.CDSOptions;
 import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.helpers.ClassFileInstaller;
+import jdk.test.lib.process.OutputAnalyzer;
 
 public class ResolvedConstants {
     static final String classList = "ResolvedConstants.classlist";
@@ -59,18 +65,19 @@ public class ResolvedConstants {
         CDSOptions opts = (new CDSOptions())
             .addPrefix("-XX:ExtraSharedClassListFile=" + classList,
                        "-cp", appJar,
-                       "-Xlog:cds+resolve=trace");
+                       "-Xlog:cds+resolve=trace",
+                       "-Xlog:cds+class=debug");
         if (aotClassLinking) {
             opts.addPrefix("-XX:+AOTClassLinking");
         } else {
             opts.addPrefix("-XX:-AOTClassLinking");
         }
 
-        CDSTestUtils.createArchiveAndCheck(opts)
+        OutputAnalyzer out = CDSTestUtils.createArchiveAndCheck(opts);
           // Class References ---
 
             // Always resolve reference when a class references itself
-            .shouldMatch(ALWAYS("klass.* ResolvedConstantsApp app => ResolvedConstantsApp app"))
+        out.shouldMatch(ALWAYS("klass.* ResolvedConstantsApp app => ResolvedConstantsApp app"))
 
             // Always resolve reference when a class references a super class
             .shouldMatch(ALWAYS("klass.* ResolvedConstantsApp app => java/lang/Object boot"))
@@ -136,6 +143,17 @@ public class ResolvedConstants {
 
           // End ---
             ;
+
+
+        // Indy References ---
+        if (aotClassLinking) {
+            out.shouldContain("Cannot aot-resolve Lambda proxy because OldConsumer is excluded")
+               .shouldContain("Cannot aot-resolve Lambda proxy because OldProvider is excluded")
+               .shouldContain("Cannot aot-resolve Lambda proxy because OldClass is excluded")
+               .shouldContain("Cannot aot-resolve Lambda proxy of interface type InterfaceWithClinit")
+               .shouldMatch("klasses.* app *NormalClass[$][$]Lambda/.* hidden aot-linked inited")
+               .shouldNotMatch("klasses.* app *SubOfOldClass[$][$]Lambda/");
+        }
     }
 
     static String ALWAYS(String s) {
@@ -166,12 +184,80 @@ class ResolvedConstantsApp implements Runnable {
         bar.a ++;
         bar.b ++;
         bar.doit();
+
+        testLambda();
     }
     private static void staticCall() {}
     private void privateInstanceCall() {}
     public void publicInstanceCall() {}
 
     public void run() {}
+
+    static void testLambda() {
+        // The functional type used in the Lambda is an excluded class
+        OldProvider op = () -> {
+            return null;
+        };
+
+        // A captured value is an instance of an excluded Class
+        OldClass c = new OldClass();
+        Runnable r = () -> {
+            System.out.println("Test 1 " + c);
+        };
+        r.run();
+
+        // The functional interface accepts an argument that's an excluded class
+        MyInterface i = (o) -> {
+            System.out.println("Test 2 " + o);
+        };
+        i.dispatch(c);
+
+        // Method reference to old class
+        OldConsumer oldConsumer = new OldConsumer();
+        Consumer<String> wrapper = oldConsumer::consumeString;
+        wrapper.accept("Hello");
+
+        // Lambda of interfaces that have <clinit> are not archived.
+        InterfaceWithClinit i2 = () -> {
+            System.out.println("Test 3");
+        };
+        i2.dispatch();
+
+        // These two classes have almost identical source code, but
+        // only NormalClass should have its lambdas pre-resolved.
+        // SubOfOldClass is "old" -- it should be excluded from the AOT cache,
+        // so none of its lambda proxies should be cached
+        NormalClass.testLambda();   // Lambda proxy should be cached
+        SubOfOldClass.testLambda(); // Lambda proxy shouldn't be cached
+    }
+}
+
+class NormalClass {
+    static void testLambda() {
+        Runnable r = () -> {
+            System.out.println("NormalClass testLambda");
+        };
+        r.run();
+    }
+}
+
+class SubOfOldClass extends OldClass {
+    static void testLambda() {
+        Runnable r = () -> {
+            System.out.println("SubOfOldClass testLambda");
+        };
+        r.run();
+    }
+}
+
+interface MyInterface {
+    void dispatch(OldClass c);
+}
+
+interface InterfaceWithClinit {
+    static final long X = System.currentTimeMillis();
+    void dispatch();
+    default long dummy() { return X; }
 }
 
 class ResolvedConstantsFoo {

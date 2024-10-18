@@ -21,26 +21,33 @@
  * questions.
  *
  */
+super class OldConsumer
+    version 49:0
+{
 
-#ifndef SHARE_CDS_AOTCLASSINITIALIZER_HPP
-#define SHARE_CDS_AOTCLASSINITIALIZER_HPP
 
-#include "memory/allStatic.hpp"
-#include "utilities/exceptions.hpp"
+Method "<init>":"()V"
+    stack 1 locals 1
+{
+        aload_0;
+        invokespecial    Method java/lang/Object."<init>":"()V";
+        return;
+}
 
-class InstanceKlass;
+public Method consumeString:"(Ljava/lang/String;)V"
+    stack 3 locals 2
+{
+        getstatic        Field java/lang/System.out:"Ljava/io/PrintStream;";
+        new              class java/lang/StringBuilder;
+        dup;
+        invokespecial    Method java/lang/StringBuilder."<init>":"()V";
+        ldc              String "Hello: ";
+        invokevirtual    Method java/lang/StringBuilder.append:"(Ljava/lang/String;)Ljava/lang/StringBuilder;";
+        aload_1;
+        invokevirtual    Method java/lang/StringBuilder.append:"(Ljava/lang/String;)Ljava/lang/StringBuilder;";
+        invokevirtual    Method java/lang/StringBuilder.toString:"()Ljava/lang/String;";
+        invokevirtual    Method java/io/PrintStream.println:"(Ljava/lang/String;)V";
+        return;
+}
 
-class AOTClassInitializer : AllStatic {
-  class AllowedSpec;
-  static bool is_allowed(AllowedSpec* specs, InstanceKlass* ik);
-
-public:
-  // Called by heapShared.cpp to see if src_ik->java_mirror() can be archived in
-  // the initialized state.
-  static bool can_archive_initialized_mirror(InstanceKlass* src_ik);
-
-  static bool is_runtime_setup_required(InstanceKlass* ik);
-  static void call_runtime_setup(InstanceKlass* ik, TRAPS);
-};
-
-#endif // SHARE_CDS_AOTCLASSINITIALIZER_HPP
+} // end Class OldConsumer

@@ -251,7 +251,7 @@ public:
 class ArchiveUtils {
 public:
   static void log_to_classlist(BootstrapInfo* bootstrap_specifier, TRAPS) NOT_CDS_RETURN;
-
+  static bool has_aot_initialized_mirror(InstanceKlass* src_ik);
   template <typename T> static Array<T>* archive_array(GrowableArray<T>* tmp_array);
 };
 

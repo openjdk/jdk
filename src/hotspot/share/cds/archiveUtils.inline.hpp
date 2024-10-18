@@ -29,9 +29,8 @@
 
 #include "cds/archiveBuilder.hpp"
 #include "oops/array.hpp"
-#include "utilities/growableArray.hpp"
-
 #include "utilities/bitMap.inline.hpp"
+#include "utilities/growableArray.hpp"
 
 inline bool SharedDataRelocator::do_bit(size_t offset) {
   address* p = _patch_base + offset;

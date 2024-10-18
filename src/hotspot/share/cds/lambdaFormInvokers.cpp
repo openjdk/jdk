@@ -27,8 +27,8 @@
 #include "cds/lambdaFormInvokers.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "cds/regeneratedClasses.hpp"
-#include "classfile/classLoadInfo.hpp"
 #include "classfile/classFileStream.hpp"
+#include "classfile/classLoadInfo.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/klassFactory.hpp"
 #include "classfile/symbolTable.hpp"
@@ -93,6 +93,12 @@ void LambdaFormInvokers::regenerate_holder_classes(TRAPS) {
   PrintLambdaFormMessage plm;
   if (_lambdaform_lines == nullptr || _lambdaform_lines->length() == 0) {
     log_info(cds)("Nothing to regenerate for holder classes");
+    return;
+  }
+
+  if (CDSConfig::is_dumping_static_archive() && CDSConfig::is_dumping_invokedynamic()) {
+    // Work around JDK-8310831, as some methods in lambda form holder classes may not get generated.
+    log_info(cds)("Archived MethodHandles may refer to lambda form holder classes. Cannot regenerate.");
     return;
   }
 

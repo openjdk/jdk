@@ -40,6 +40,11 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
 
+bool AOTLinkedClassBulkLoader::_boot2_completed = false;
+bool AOTLinkedClassBulkLoader::_platform_completed = false;
+bool AOTLinkedClassBulkLoader::_app_completed = false;
+bool AOTLinkedClassBulkLoader::_all_completed = false;
+
 void AOTLinkedClassBulkLoader::serialize(SerializeClosure* soc, bool is_static_archive) {
   AOTLinkedClassTable::get(is_static_archive)->serialize(soc);
 }
@@ -60,8 +65,14 @@ void AOTLinkedClassBulkLoader::load_non_javabase_classes(JavaThread* current) {
   assert(SystemDictionary::java_system_loader() != nullptr,   "must be");
 
   load_classes_in_loader(current, AOTLinkedClassCategory::BOOT2, nullptr); // all boot classes outside of java.base
+  _boot2_completed = true;
+
   load_classes_in_loader(current, AOTLinkedClassCategory::PLATFORM, SystemDictionary::java_platform_loader());
+  _platform_completed = true;
+
   load_classes_in_loader(current, AOTLinkedClassCategory::APP, SystemDictionary::java_system_loader());
+  _app_completed = true;
+  _all_completed = true;
 }
 
 void AOTLinkedClassBulkLoader::load_classes_in_loader(JavaThread* current, AOTLinkedClassCategory class_category, oop class_loader_oop) {
@@ -173,8 +184,7 @@ void AOTLinkedClassBulkLoader::load_classes_impl(AOTLinkedClassCategory class_ca
 
     if (!ik->is_loaded()) {
       if (ik->is_hidden()) {
-        // TODO: AOTClassLinking is not implemented for hidden class until JDK-8293336
-        ShouldNotReachHere();
+        load_hidden_class(loader_data, ik, CHECK);
       } else {
         InstanceKlass* actual;
         if (loader_data == ClassLoaderData::the_null_class_loader_data()) {
@@ -233,6 +243,72 @@ void AOTLinkedClassBulkLoader::initiate_loading(JavaThread* current, const char*
   }
 }
 
+// Currently, we archive only three types of hidden classes:
+//    - LambdaForms
+//    - lambda proxy classes
+//    - StringConcat classes
+// See HeapShared::is_archivable_hidden_klass().
+//
+// LambdaForm classes (with names like java/lang/invoke/LambdaForm$MH+0x800000015) logically
+// belong to the boot loader, but they are usually stored in their own special ClassLoaderData to
+// facilitate class unloading, as a LambdaForm may refer to a class loaded by a custom loader
+// that may be unloaded.
+//
+// We only support AOT-resolution of indys in the boot/platform/app loader, so there's no need
+// to support class unloading. For simplicity, we put all archived LambdaForm classes in the
+// "main" ClassLoaderData of the boot loader.
+//
+// (Even if we were to support other loaders, we would still feel free to ignore any requirement
+// of class unloading, for any class asset in the AOT cache.  Anything that makes it into the AOT
+// cache has a lifetime dispensation from unloading.  After all, the AOT cache never grows, and
+// we can assume that the user is content with its size, and doesn't need its footprint to shrink.)
+//
+// Lambda proxy classes are normally stored in the same ClassLoaderData as their nest hosts, and
+// StringConcat are normally stored in the main ClassLoaderData of the boot class loader. We
+// do the same for the archived copies of such classes.
+void AOTLinkedClassBulkLoader::load_hidden_class(ClassLoaderData* loader_data, InstanceKlass* ik, TRAPS) {
+  assert(HeapShared::is_lambda_form_klass(ik) ||
+         HeapShared::is_lambda_proxy_klass(ik) ||
+         HeapShared::is_string_concat_klass(ik), "sanity");
+  DEBUG_ONLY({
+      assert(ik->java_super()->is_loaded(), "must be");
+      for (int i = 0; i < ik->local_interfaces()->length(); i++) {
+        assert(ik->local_interfaces()->at(i)->is_loaded(), "must be");
+      }
+    });
+
+  Handle pd;
+  PackageEntry* pkg_entry = nullptr;
+
+  // Since a hidden class does not have a name, it cannot be reloaded
+  // normally via the system dictionary. Instead, we have to finish the
+  // loading job here.
+
+  if (HeapShared::is_lambda_proxy_klass(ik)) {
+    InstanceKlass* nest_host = ik->nest_host_not_null();
+    assert(nest_host->is_loaded(), "must be");
+    pd = Handle(THREAD, nest_host->protection_domain());
+    pkg_entry = nest_host->package();
+  }
+
+  ik->restore_unshareable_info(loader_data, pd, pkg_entry, CHECK);
+  SystemDictionary::load_shared_class_misc(ik, loader_data);
+  ik->add_to_hierarchy(THREAD);
+  assert(ik->is_loaded(), "Must be in at least loaded state");
+
+  DEBUG_ONLY({
+      // Make sure we don't make this hidden class available by name, even if we don't
+      // use any special ClassLoaderData.
+      Handle loader(THREAD, loader_data->class_loader());
+      ResourceMark rm(THREAD);
+      assert(SystemDictionary::resolve_or_null(ik->name(), loader, pd, THREAD) == nullptr,
+             "hidden classes cannot be accessible by name: %s", ik->external_name());
+      if (HAS_PENDING_EXCEPTION) {
+        CLEAR_PENDING_EXCEPTION;
+      }
+    });
+}
+
 void AOTLinkedClassBulkLoader::finish_loading_javabase_classes(TRAPS) {
   init_required_classes_for_loader(Handle(), AOTLinkedClassTable::for_static_archive()->boot(), CHECK);
 }
@@ -252,14 +328,60 @@ void AOTLinkedClassBulkLoader::init_required_classes_for_loader(Handle class_loa
         continue;
       }
       if (ik->has_aot_initialized_mirror()) {
-        // No <clinit> of ik or any of its supertypes will be executed.
-        // Their mirrors were already initialized during AOT cache assembly.
-        AOTClassInitializer::assert_no_clinit_will_run_for_aot_init_class(ik);
-
-        ik->initialize_from_cds(CHECK);
+        ik->initialize_with_aot_initialized_mirror(CHECK);
       }
     }
   }
 
   HeapShared::init_classes_for_special_subgraph(class_loader, CHECK);
+}
+
+bool AOTLinkedClassBulkLoader::is_pending_aot_linked_class(Klass* k) {
+  if (!CDSConfig::is_using_aot_linked_classes()) {
+    return false;
+  }
+
+  if (_all_completed) { // no more pending aot-linked classes
+    return false;
+  }
+
+  if (k->is_objArray_klass()) {
+    k = ObjArrayKlass::cast(k)->bottom_klass();
+  }
+  if (!k->is_instance_klass()) {
+    // type array klasses (and their higher domensions),
+    // must have been loaded before a GC can ever happen.
+    return false;
+  }
+
+  // There's a small window during VM start-up where a not-yet loaded aot-linked
+  // class k may be discovered by the GC during VM initialization. This can happen
+  // when the heap contains an aot-cached instance of k, but k is not ready to be
+  // loaded yet. (TODO: JDK-8342429 eliminates this possibility)
+  //
+  // The following checks try to limit this window as much as possible for each of
+  // the four AOTLinkedClassCategory of classes that can be aot-linked.
+
+  InstanceKlass* ik = InstanceKlass::cast(k);
+  if (ik->is_shared_boot_class()) {
+    if (ik->module() != nullptr && ik->in_javabase_module()) {
+      // AOTLinkedClassCategory::BOOT1 -- all aot-linked classes in
+      // java.base must have been loaded before a GC can ever happen.
+      return false;
+    } else {
+      // AOTLinkedClassCategory::BOOT2 classes cannot be loaded until
+      // module system is ready.
+      return !_boot2_completed;
+    }
+  } else if (ik->is_shared_platform_class()) {
+    // AOTLinkedClassCategory::PLATFORM classes cannot be loaded until
+    // the platform class loader is initialized.
+    return !_platform_completed;
+  } else if (ik->is_shared_app_class()) {
+    // AOTLinkedClassCategory::APP cannot be loaded until the app class loader
+    // is initialized.
+    return !_app_completed;
+  } else {
+    return false;
+  }
 }
