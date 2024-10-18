@@ -30,7 +30,6 @@
  * @author Mikhail Lapshin
  * @library /lib/client/
  * @modules java.desktop/com.sun.java.swing.plaf.windows
- * @build ExtendedRobot
  * @run main bug6725409
  */
 
@@ -42,7 +41,7 @@ public class bug6725409 {
     private JInternalFrame iFrame;
     private TestTitlePane testTitlePane;
     private boolean passed;
-    private static ExtendedRobot robot = createRobot();
+    private static Robot robot = createRobot();
 
     public static void main(String[] args) throws Exception {
         try {
@@ -147,9 +146,9 @@ public class bug6725409 {
     private static void sync() {
         robot.waitForIdle();
     }
-    private static ExtendedRobot createRobot() {
+    private static Robot createRobot() {
         try {
-             ExtendedRobot robot = new ExtendedRobot();
+             Robot robot = new Robot();
              return robot;
          }catch(Exception ex) {
              ex.printStackTrace();
