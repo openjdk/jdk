@@ -27,7 +27,7 @@
  *   and various MaxVectorSize values, and +- AlignVector.
  *
  * Note: this test is auto-generated. Please modify / generate with script:
- *       https://bugs.openjdk.org/browse/JDK-8333729
+ *       https://bugs.openjdk.org/browse/JDK-8334431
  *
  * Types: int, long, short, char, byte, float, double
  * Offsets: 0, -1, 1, -2, 2, -3, 3, -4, 4, -7, 7, -8, 8, -14, 14, -16, 16, -18, 18, -20, 20, -31, 31, -32, 32, -63, 63, -64, 64, -65, 65, -128, 128, -129, 129, -192, 192
@@ -758,523 +758,523 @@ public class TestDependencyOffsets {
     static {
         // compute the gold standard in interpreter mode
         init(goldIntP0);
-        testIntP0(goldIntP0);
+        testIntP0(goldIntP0, goldIntP0);
         init(goldIntM1);
-        testIntM1(goldIntM1);
+        testIntM1(goldIntM1, goldIntM1);
         init(goldIntP1);
-        testIntP1(goldIntP1);
+        testIntP1(goldIntP1, goldIntP1);
         init(goldIntM2);
-        testIntM2(goldIntM2);
+        testIntM2(goldIntM2, goldIntM2);
         init(goldIntP2);
-        testIntP2(goldIntP2);
+        testIntP2(goldIntP2, goldIntP2);
         init(goldIntM3);
-        testIntM3(goldIntM3);
+        testIntM3(goldIntM3, goldIntM3);
         init(goldIntP3);
-        testIntP3(goldIntP3);
+        testIntP3(goldIntP3, goldIntP3);
         init(goldIntM4);
-        testIntM4(goldIntM4);
+        testIntM4(goldIntM4, goldIntM4);
         init(goldIntP4);
-        testIntP4(goldIntP4);
+        testIntP4(goldIntP4, goldIntP4);
         init(goldIntM7);
-        testIntM7(goldIntM7);
+        testIntM7(goldIntM7, goldIntM7);
         init(goldIntP7);
-        testIntP7(goldIntP7);
+        testIntP7(goldIntP7, goldIntP7);
         init(goldIntM8);
-        testIntM8(goldIntM8);
+        testIntM8(goldIntM8, goldIntM8);
         init(goldIntP8);
-        testIntP8(goldIntP8);
+        testIntP8(goldIntP8, goldIntP8);
         init(goldIntM14);
-        testIntM14(goldIntM14);
+        testIntM14(goldIntM14, goldIntM14);
         init(goldIntP14);
-        testIntP14(goldIntP14);
+        testIntP14(goldIntP14, goldIntP14);
         init(goldIntM16);
-        testIntM16(goldIntM16);
+        testIntM16(goldIntM16, goldIntM16);
         init(goldIntP16);
-        testIntP16(goldIntP16);
+        testIntP16(goldIntP16, goldIntP16);
         init(goldIntM18);
-        testIntM18(goldIntM18);
+        testIntM18(goldIntM18, goldIntM18);
         init(goldIntP18);
-        testIntP18(goldIntP18);
+        testIntP18(goldIntP18, goldIntP18);
         init(goldIntM20);
-        testIntM20(goldIntM20);
+        testIntM20(goldIntM20, goldIntM20);
         init(goldIntP20);
-        testIntP20(goldIntP20);
+        testIntP20(goldIntP20, goldIntP20);
         init(goldIntM31);
-        testIntM31(goldIntM31);
+        testIntM31(goldIntM31, goldIntM31);
         init(goldIntP31);
-        testIntP31(goldIntP31);
+        testIntP31(goldIntP31, goldIntP31);
         init(goldIntM32);
-        testIntM32(goldIntM32);
+        testIntM32(goldIntM32, goldIntM32);
         init(goldIntP32);
-        testIntP32(goldIntP32);
+        testIntP32(goldIntP32, goldIntP32);
         init(goldIntM63);
-        testIntM63(goldIntM63);
+        testIntM63(goldIntM63, goldIntM63);
         init(goldIntP63);
-        testIntP63(goldIntP63);
+        testIntP63(goldIntP63, goldIntP63);
         init(goldIntM64);
-        testIntM64(goldIntM64);
+        testIntM64(goldIntM64, goldIntM64);
         init(goldIntP64);
-        testIntP64(goldIntP64);
+        testIntP64(goldIntP64, goldIntP64);
         init(goldIntM65);
-        testIntM65(goldIntM65);
+        testIntM65(goldIntM65, goldIntM65);
         init(goldIntP65);
-        testIntP65(goldIntP65);
+        testIntP65(goldIntP65, goldIntP65);
         init(goldIntM128);
-        testIntM128(goldIntM128);
+        testIntM128(goldIntM128, goldIntM128);
         init(goldIntP128);
-        testIntP128(goldIntP128);
+        testIntP128(goldIntP128, goldIntP128);
         init(goldIntM129);
-        testIntM129(goldIntM129);
+        testIntM129(goldIntM129, goldIntM129);
         init(goldIntP129);
-        testIntP129(goldIntP129);
+        testIntP129(goldIntP129, goldIntP129);
         init(goldIntM192);
-        testIntM192(goldIntM192);
+        testIntM192(goldIntM192, goldIntM192);
         init(goldIntP192);
-        testIntP192(goldIntP192);
+        testIntP192(goldIntP192, goldIntP192);
         init(goldLongP0);
-        testLongP0(goldLongP0);
+        testLongP0(goldLongP0, goldLongP0);
         init(goldLongM1);
-        testLongM1(goldLongM1);
+        testLongM1(goldLongM1, goldLongM1);
         init(goldLongP1);
-        testLongP1(goldLongP1);
+        testLongP1(goldLongP1, goldLongP1);
         init(goldLongM2);
-        testLongM2(goldLongM2);
+        testLongM2(goldLongM2, goldLongM2);
         init(goldLongP2);
-        testLongP2(goldLongP2);
+        testLongP2(goldLongP2, goldLongP2);
         init(goldLongM3);
-        testLongM3(goldLongM3);
+        testLongM3(goldLongM3, goldLongM3);
         init(goldLongP3);
-        testLongP3(goldLongP3);
+        testLongP3(goldLongP3, goldLongP3);
         init(goldLongM4);
-        testLongM4(goldLongM4);
+        testLongM4(goldLongM4, goldLongM4);
         init(goldLongP4);
-        testLongP4(goldLongP4);
+        testLongP4(goldLongP4, goldLongP4);
         init(goldLongM7);
-        testLongM7(goldLongM7);
+        testLongM7(goldLongM7, goldLongM7);
         init(goldLongP7);
-        testLongP7(goldLongP7);
+        testLongP7(goldLongP7, goldLongP7);
         init(goldLongM8);
-        testLongM8(goldLongM8);
+        testLongM8(goldLongM8, goldLongM8);
         init(goldLongP8);
-        testLongP8(goldLongP8);
+        testLongP8(goldLongP8, goldLongP8);
         init(goldLongM14);
-        testLongM14(goldLongM14);
+        testLongM14(goldLongM14, goldLongM14);
         init(goldLongP14);
-        testLongP14(goldLongP14);
+        testLongP14(goldLongP14, goldLongP14);
         init(goldLongM16);
-        testLongM16(goldLongM16);
+        testLongM16(goldLongM16, goldLongM16);
         init(goldLongP16);
-        testLongP16(goldLongP16);
+        testLongP16(goldLongP16, goldLongP16);
         init(goldLongM18);
-        testLongM18(goldLongM18);
+        testLongM18(goldLongM18, goldLongM18);
         init(goldLongP18);
-        testLongP18(goldLongP18);
+        testLongP18(goldLongP18, goldLongP18);
         init(goldLongM20);
-        testLongM20(goldLongM20);
+        testLongM20(goldLongM20, goldLongM20);
         init(goldLongP20);
-        testLongP20(goldLongP20);
+        testLongP20(goldLongP20, goldLongP20);
         init(goldLongM31);
-        testLongM31(goldLongM31);
+        testLongM31(goldLongM31, goldLongM31);
         init(goldLongP31);
-        testLongP31(goldLongP31);
+        testLongP31(goldLongP31, goldLongP31);
         init(goldLongM32);
-        testLongM32(goldLongM32);
+        testLongM32(goldLongM32, goldLongM32);
         init(goldLongP32);
-        testLongP32(goldLongP32);
+        testLongP32(goldLongP32, goldLongP32);
         init(goldLongM63);
-        testLongM63(goldLongM63);
+        testLongM63(goldLongM63, goldLongM63);
         init(goldLongP63);
-        testLongP63(goldLongP63);
+        testLongP63(goldLongP63, goldLongP63);
         init(goldLongM64);
-        testLongM64(goldLongM64);
+        testLongM64(goldLongM64, goldLongM64);
         init(goldLongP64);
-        testLongP64(goldLongP64);
+        testLongP64(goldLongP64, goldLongP64);
         init(goldLongM65);
-        testLongM65(goldLongM65);
+        testLongM65(goldLongM65, goldLongM65);
         init(goldLongP65);
-        testLongP65(goldLongP65);
+        testLongP65(goldLongP65, goldLongP65);
         init(goldLongM128);
-        testLongM128(goldLongM128);
+        testLongM128(goldLongM128, goldLongM128);
         init(goldLongP128);
-        testLongP128(goldLongP128);
+        testLongP128(goldLongP128, goldLongP128);
         init(goldLongM129);
-        testLongM129(goldLongM129);
+        testLongM129(goldLongM129, goldLongM129);
         init(goldLongP129);
-        testLongP129(goldLongP129);
+        testLongP129(goldLongP129, goldLongP129);
         init(goldLongM192);
-        testLongM192(goldLongM192);
+        testLongM192(goldLongM192, goldLongM192);
         init(goldLongP192);
-        testLongP192(goldLongP192);
+        testLongP192(goldLongP192, goldLongP192);
         init(goldShortP0);
-        testShortP0(goldShortP0);
+        testShortP0(goldShortP0, goldShortP0);
         init(goldShortM1);
-        testShortM1(goldShortM1);
+        testShortM1(goldShortM1, goldShortM1);
         init(goldShortP1);
-        testShortP1(goldShortP1);
+        testShortP1(goldShortP1, goldShortP1);
         init(goldShortM2);
-        testShortM2(goldShortM2);
+        testShortM2(goldShortM2, goldShortM2);
         init(goldShortP2);
-        testShortP2(goldShortP2);
+        testShortP2(goldShortP2, goldShortP2);
         init(goldShortM3);
-        testShortM3(goldShortM3);
+        testShortM3(goldShortM3, goldShortM3);
         init(goldShortP3);
-        testShortP3(goldShortP3);
+        testShortP3(goldShortP3, goldShortP3);
         init(goldShortM4);
-        testShortM4(goldShortM4);
+        testShortM4(goldShortM4, goldShortM4);
         init(goldShortP4);
-        testShortP4(goldShortP4);
+        testShortP4(goldShortP4, goldShortP4);
         init(goldShortM7);
-        testShortM7(goldShortM7);
+        testShortM7(goldShortM7, goldShortM7);
         init(goldShortP7);
-        testShortP7(goldShortP7);
+        testShortP7(goldShortP7, goldShortP7);
         init(goldShortM8);
-        testShortM8(goldShortM8);
+        testShortM8(goldShortM8, goldShortM8);
         init(goldShortP8);
-        testShortP8(goldShortP8);
+        testShortP8(goldShortP8, goldShortP8);
         init(goldShortM14);
-        testShortM14(goldShortM14);
+        testShortM14(goldShortM14, goldShortM14);
         init(goldShortP14);
-        testShortP14(goldShortP14);
+        testShortP14(goldShortP14, goldShortP14);
         init(goldShortM16);
-        testShortM16(goldShortM16);
+        testShortM16(goldShortM16, goldShortM16);
         init(goldShortP16);
-        testShortP16(goldShortP16);
+        testShortP16(goldShortP16, goldShortP16);
         init(goldShortM18);
-        testShortM18(goldShortM18);
+        testShortM18(goldShortM18, goldShortM18);
         init(goldShortP18);
-        testShortP18(goldShortP18);
+        testShortP18(goldShortP18, goldShortP18);
         init(goldShortM20);
-        testShortM20(goldShortM20);
+        testShortM20(goldShortM20, goldShortM20);
         init(goldShortP20);
-        testShortP20(goldShortP20);
+        testShortP20(goldShortP20, goldShortP20);
         init(goldShortM31);
-        testShortM31(goldShortM31);
+        testShortM31(goldShortM31, goldShortM31);
         init(goldShortP31);
-        testShortP31(goldShortP31);
+        testShortP31(goldShortP31, goldShortP31);
         init(goldShortM32);
-        testShortM32(goldShortM32);
+        testShortM32(goldShortM32, goldShortM32);
         init(goldShortP32);
-        testShortP32(goldShortP32);
+        testShortP32(goldShortP32, goldShortP32);
         init(goldShortM63);
-        testShortM63(goldShortM63);
+        testShortM63(goldShortM63, goldShortM63);
         init(goldShortP63);
-        testShortP63(goldShortP63);
+        testShortP63(goldShortP63, goldShortP63);
         init(goldShortM64);
-        testShortM64(goldShortM64);
+        testShortM64(goldShortM64, goldShortM64);
         init(goldShortP64);
-        testShortP64(goldShortP64);
+        testShortP64(goldShortP64, goldShortP64);
         init(goldShortM65);
-        testShortM65(goldShortM65);
+        testShortM65(goldShortM65, goldShortM65);
         init(goldShortP65);
-        testShortP65(goldShortP65);
+        testShortP65(goldShortP65, goldShortP65);
         init(goldShortM128);
-        testShortM128(goldShortM128);
+        testShortM128(goldShortM128, goldShortM128);
         init(goldShortP128);
-        testShortP128(goldShortP128);
+        testShortP128(goldShortP128, goldShortP128);
         init(goldShortM129);
-        testShortM129(goldShortM129);
+        testShortM129(goldShortM129, goldShortM129);
         init(goldShortP129);
-        testShortP129(goldShortP129);
+        testShortP129(goldShortP129, goldShortP129);
         init(goldShortM192);
-        testShortM192(goldShortM192);
+        testShortM192(goldShortM192, goldShortM192);
         init(goldShortP192);
-        testShortP192(goldShortP192);
+        testShortP192(goldShortP192, goldShortP192);
         init(goldCharP0);
-        testCharP0(goldCharP0);
+        testCharP0(goldCharP0, goldCharP0);
         init(goldCharM1);
-        testCharM1(goldCharM1);
+        testCharM1(goldCharM1, goldCharM1);
         init(goldCharP1);
-        testCharP1(goldCharP1);
+        testCharP1(goldCharP1, goldCharP1);
         init(goldCharM2);
-        testCharM2(goldCharM2);
+        testCharM2(goldCharM2, goldCharM2);
         init(goldCharP2);
-        testCharP2(goldCharP2);
+        testCharP2(goldCharP2, goldCharP2);
         init(goldCharM3);
-        testCharM3(goldCharM3);
+        testCharM3(goldCharM3, goldCharM3);
         init(goldCharP3);
-        testCharP3(goldCharP3);
+        testCharP3(goldCharP3, goldCharP3);
         init(goldCharM4);
-        testCharM4(goldCharM4);
+        testCharM4(goldCharM4, goldCharM4);
         init(goldCharP4);
-        testCharP4(goldCharP4);
+        testCharP4(goldCharP4, goldCharP4);
         init(goldCharM7);
-        testCharM7(goldCharM7);
+        testCharM7(goldCharM7, goldCharM7);
         init(goldCharP7);
-        testCharP7(goldCharP7);
+        testCharP7(goldCharP7, goldCharP7);
         init(goldCharM8);
-        testCharM8(goldCharM8);
+        testCharM8(goldCharM8, goldCharM8);
         init(goldCharP8);
-        testCharP8(goldCharP8);
+        testCharP8(goldCharP8, goldCharP8);
         init(goldCharM14);
-        testCharM14(goldCharM14);
+        testCharM14(goldCharM14, goldCharM14);
         init(goldCharP14);
-        testCharP14(goldCharP14);
+        testCharP14(goldCharP14, goldCharP14);
         init(goldCharM16);
-        testCharM16(goldCharM16);
+        testCharM16(goldCharM16, goldCharM16);
         init(goldCharP16);
-        testCharP16(goldCharP16);
+        testCharP16(goldCharP16, goldCharP16);
         init(goldCharM18);
-        testCharM18(goldCharM18);
+        testCharM18(goldCharM18, goldCharM18);
         init(goldCharP18);
-        testCharP18(goldCharP18);
+        testCharP18(goldCharP18, goldCharP18);
         init(goldCharM20);
-        testCharM20(goldCharM20);
+        testCharM20(goldCharM20, goldCharM20);
         init(goldCharP20);
-        testCharP20(goldCharP20);
+        testCharP20(goldCharP20, goldCharP20);
         init(goldCharM31);
-        testCharM31(goldCharM31);
+        testCharM31(goldCharM31, goldCharM31);
         init(goldCharP31);
-        testCharP31(goldCharP31);
+        testCharP31(goldCharP31, goldCharP31);
         init(goldCharM32);
-        testCharM32(goldCharM32);
+        testCharM32(goldCharM32, goldCharM32);
         init(goldCharP32);
-        testCharP32(goldCharP32);
+        testCharP32(goldCharP32, goldCharP32);
         init(goldCharM63);
-        testCharM63(goldCharM63);
+        testCharM63(goldCharM63, goldCharM63);
         init(goldCharP63);
-        testCharP63(goldCharP63);
+        testCharP63(goldCharP63, goldCharP63);
         init(goldCharM64);
-        testCharM64(goldCharM64);
+        testCharM64(goldCharM64, goldCharM64);
         init(goldCharP64);
-        testCharP64(goldCharP64);
+        testCharP64(goldCharP64, goldCharP64);
         init(goldCharM65);
-        testCharM65(goldCharM65);
+        testCharM65(goldCharM65, goldCharM65);
         init(goldCharP65);
-        testCharP65(goldCharP65);
+        testCharP65(goldCharP65, goldCharP65);
         init(goldCharM128);
-        testCharM128(goldCharM128);
+        testCharM128(goldCharM128, goldCharM128);
         init(goldCharP128);
-        testCharP128(goldCharP128);
+        testCharP128(goldCharP128, goldCharP128);
         init(goldCharM129);
-        testCharM129(goldCharM129);
+        testCharM129(goldCharM129, goldCharM129);
         init(goldCharP129);
-        testCharP129(goldCharP129);
+        testCharP129(goldCharP129, goldCharP129);
         init(goldCharM192);
-        testCharM192(goldCharM192);
+        testCharM192(goldCharM192, goldCharM192);
         init(goldCharP192);
-        testCharP192(goldCharP192);
+        testCharP192(goldCharP192, goldCharP192);
         init(goldByteP0);
-        testByteP0(goldByteP0);
+        testByteP0(goldByteP0, goldByteP0);
         init(goldByteM1);
-        testByteM1(goldByteM1);
+        testByteM1(goldByteM1, goldByteM1);
         init(goldByteP1);
-        testByteP1(goldByteP1);
+        testByteP1(goldByteP1, goldByteP1);
         init(goldByteM2);
-        testByteM2(goldByteM2);
+        testByteM2(goldByteM2, goldByteM2);
         init(goldByteP2);
-        testByteP2(goldByteP2);
+        testByteP2(goldByteP2, goldByteP2);
         init(goldByteM3);
-        testByteM3(goldByteM3);
+        testByteM3(goldByteM3, goldByteM3);
         init(goldByteP3);
-        testByteP3(goldByteP3);
+        testByteP3(goldByteP3, goldByteP3);
         init(goldByteM4);
-        testByteM4(goldByteM4);
+        testByteM4(goldByteM4, goldByteM4);
         init(goldByteP4);
-        testByteP4(goldByteP4);
+        testByteP4(goldByteP4, goldByteP4);
         init(goldByteM7);
-        testByteM7(goldByteM7);
+        testByteM7(goldByteM7, goldByteM7);
         init(goldByteP7);
-        testByteP7(goldByteP7);
+        testByteP7(goldByteP7, goldByteP7);
         init(goldByteM8);
-        testByteM8(goldByteM8);
+        testByteM8(goldByteM8, goldByteM8);
         init(goldByteP8);
-        testByteP8(goldByteP8);
+        testByteP8(goldByteP8, goldByteP8);
         init(goldByteM14);
-        testByteM14(goldByteM14);
+        testByteM14(goldByteM14, goldByteM14);
         init(goldByteP14);
-        testByteP14(goldByteP14);
+        testByteP14(goldByteP14, goldByteP14);
         init(goldByteM16);
-        testByteM16(goldByteM16);
+        testByteM16(goldByteM16, goldByteM16);
         init(goldByteP16);
-        testByteP16(goldByteP16);
+        testByteP16(goldByteP16, goldByteP16);
         init(goldByteM18);
-        testByteM18(goldByteM18);
+        testByteM18(goldByteM18, goldByteM18);
         init(goldByteP18);
-        testByteP18(goldByteP18);
+        testByteP18(goldByteP18, goldByteP18);
         init(goldByteM20);
-        testByteM20(goldByteM20);
+        testByteM20(goldByteM20, goldByteM20);
         init(goldByteP20);
-        testByteP20(goldByteP20);
+        testByteP20(goldByteP20, goldByteP20);
         init(goldByteM31);
-        testByteM31(goldByteM31);
+        testByteM31(goldByteM31, goldByteM31);
         init(goldByteP31);
-        testByteP31(goldByteP31);
+        testByteP31(goldByteP31, goldByteP31);
         init(goldByteM32);
-        testByteM32(goldByteM32);
+        testByteM32(goldByteM32, goldByteM32);
         init(goldByteP32);
-        testByteP32(goldByteP32);
+        testByteP32(goldByteP32, goldByteP32);
         init(goldByteM63);
-        testByteM63(goldByteM63);
+        testByteM63(goldByteM63, goldByteM63);
         init(goldByteP63);
-        testByteP63(goldByteP63);
+        testByteP63(goldByteP63, goldByteP63);
         init(goldByteM64);
-        testByteM64(goldByteM64);
+        testByteM64(goldByteM64, goldByteM64);
         init(goldByteP64);
-        testByteP64(goldByteP64);
+        testByteP64(goldByteP64, goldByteP64);
         init(goldByteM65);
-        testByteM65(goldByteM65);
+        testByteM65(goldByteM65, goldByteM65);
         init(goldByteP65);
-        testByteP65(goldByteP65);
+        testByteP65(goldByteP65, goldByteP65);
         init(goldByteM128);
-        testByteM128(goldByteM128);
+        testByteM128(goldByteM128, goldByteM128);
         init(goldByteP128);
-        testByteP128(goldByteP128);
+        testByteP128(goldByteP128, goldByteP128);
         init(goldByteM129);
-        testByteM129(goldByteM129);
+        testByteM129(goldByteM129, goldByteM129);
         init(goldByteP129);
-        testByteP129(goldByteP129);
+        testByteP129(goldByteP129, goldByteP129);
         init(goldByteM192);
-        testByteM192(goldByteM192);
+        testByteM192(goldByteM192, goldByteM192);
         init(goldByteP192);
-        testByteP192(goldByteP192);
+        testByteP192(goldByteP192, goldByteP192);
         init(goldFloatP0);
-        testFloatP0(goldFloatP0);
+        testFloatP0(goldFloatP0, goldFloatP0);
         init(goldFloatM1);
-        testFloatM1(goldFloatM1);
+        testFloatM1(goldFloatM1, goldFloatM1);
         init(goldFloatP1);
-        testFloatP1(goldFloatP1);
+        testFloatP1(goldFloatP1, goldFloatP1);
         init(goldFloatM2);
-        testFloatM2(goldFloatM2);
+        testFloatM2(goldFloatM2, goldFloatM2);
         init(goldFloatP2);
-        testFloatP2(goldFloatP2);
+        testFloatP2(goldFloatP2, goldFloatP2);
         init(goldFloatM3);
-        testFloatM3(goldFloatM3);
+        testFloatM3(goldFloatM3, goldFloatM3);
         init(goldFloatP3);
-        testFloatP3(goldFloatP3);
+        testFloatP3(goldFloatP3, goldFloatP3);
         init(goldFloatM4);
-        testFloatM4(goldFloatM4);
+        testFloatM4(goldFloatM4, goldFloatM4);
         init(goldFloatP4);
-        testFloatP4(goldFloatP4);
+        testFloatP4(goldFloatP4, goldFloatP4);
         init(goldFloatM7);
-        testFloatM7(goldFloatM7);
+        testFloatM7(goldFloatM7, goldFloatM7);
         init(goldFloatP7);
-        testFloatP7(goldFloatP7);
+        testFloatP7(goldFloatP7, goldFloatP7);
         init(goldFloatM8);
-        testFloatM8(goldFloatM8);
+        testFloatM8(goldFloatM8, goldFloatM8);
         init(goldFloatP8);
-        testFloatP8(goldFloatP8);
+        testFloatP8(goldFloatP8, goldFloatP8);
         init(goldFloatM14);
-        testFloatM14(goldFloatM14);
+        testFloatM14(goldFloatM14, goldFloatM14);
         init(goldFloatP14);
-        testFloatP14(goldFloatP14);
+        testFloatP14(goldFloatP14, goldFloatP14);
         init(goldFloatM16);
-        testFloatM16(goldFloatM16);
+        testFloatM16(goldFloatM16, goldFloatM16);
         init(goldFloatP16);
-        testFloatP16(goldFloatP16);
+        testFloatP16(goldFloatP16, goldFloatP16);
         init(goldFloatM18);
-        testFloatM18(goldFloatM18);
+        testFloatM18(goldFloatM18, goldFloatM18);
         init(goldFloatP18);
-        testFloatP18(goldFloatP18);
+        testFloatP18(goldFloatP18, goldFloatP18);
         init(goldFloatM20);
-        testFloatM20(goldFloatM20);
+        testFloatM20(goldFloatM20, goldFloatM20);
         init(goldFloatP20);
-        testFloatP20(goldFloatP20);
+        testFloatP20(goldFloatP20, goldFloatP20);
         init(goldFloatM31);
-        testFloatM31(goldFloatM31);
+        testFloatM31(goldFloatM31, goldFloatM31);
         init(goldFloatP31);
-        testFloatP31(goldFloatP31);
+        testFloatP31(goldFloatP31, goldFloatP31);
         init(goldFloatM32);
-        testFloatM32(goldFloatM32);
+        testFloatM32(goldFloatM32, goldFloatM32);
         init(goldFloatP32);
-        testFloatP32(goldFloatP32);
+        testFloatP32(goldFloatP32, goldFloatP32);
         init(goldFloatM63);
-        testFloatM63(goldFloatM63);
+        testFloatM63(goldFloatM63, goldFloatM63);
         init(goldFloatP63);
-        testFloatP63(goldFloatP63);
+        testFloatP63(goldFloatP63, goldFloatP63);
         init(goldFloatM64);
-        testFloatM64(goldFloatM64);
+        testFloatM64(goldFloatM64, goldFloatM64);
         init(goldFloatP64);
-        testFloatP64(goldFloatP64);
+        testFloatP64(goldFloatP64, goldFloatP64);
         init(goldFloatM65);
-        testFloatM65(goldFloatM65);
+        testFloatM65(goldFloatM65, goldFloatM65);
         init(goldFloatP65);
-        testFloatP65(goldFloatP65);
+        testFloatP65(goldFloatP65, goldFloatP65);
         init(goldFloatM128);
-        testFloatM128(goldFloatM128);
+        testFloatM128(goldFloatM128, goldFloatM128);
         init(goldFloatP128);
-        testFloatP128(goldFloatP128);
+        testFloatP128(goldFloatP128, goldFloatP128);
         init(goldFloatM129);
-        testFloatM129(goldFloatM129);
+        testFloatM129(goldFloatM129, goldFloatM129);
         init(goldFloatP129);
-        testFloatP129(goldFloatP129);
+        testFloatP129(goldFloatP129, goldFloatP129);
         init(goldFloatM192);
-        testFloatM192(goldFloatM192);
+        testFloatM192(goldFloatM192, goldFloatM192);
         init(goldFloatP192);
-        testFloatP192(goldFloatP192);
+        testFloatP192(goldFloatP192, goldFloatP192);
         init(goldDoubleP0);
-        testDoubleP0(goldDoubleP0);
+        testDoubleP0(goldDoubleP0, goldDoubleP0);
         init(goldDoubleM1);
-        testDoubleM1(goldDoubleM1);
+        testDoubleM1(goldDoubleM1, goldDoubleM1);
         init(goldDoubleP1);
-        testDoubleP1(goldDoubleP1);
+        testDoubleP1(goldDoubleP1, goldDoubleP1);
         init(goldDoubleM2);
-        testDoubleM2(goldDoubleM2);
+        testDoubleM2(goldDoubleM2, goldDoubleM2);
         init(goldDoubleP2);
-        testDoubleP2(goldDoubleP2);
+        testDoubleP2(goldDoubleP2, goldDoubleP2);
         init(goldDoubleM3);
-        testDoubleM3(goldDoubleM3);
+        testDoubleM3(goldDoubleM3, goldDoubleM3);
         init(goldDoubleP3);
-        testDoubleP3(goldDoubleP3);
+        testDoubleP3(goldDoubleP3, goldDoubleP3);
         init(goldDoubleM4);
-        testDoubleM4(goldDoubleM4);
+        testDoubleM4(goldDoubleM4, goldDoubleM4);
         init(goldDoubleP4);
-        testDoubleP4(goldDoubleP4);
+        testDoubleP4(goldDoubleP4, goldDoubleP4);
         init(goldDoubleM7);
-        testDoubleM7(goldDoubleM7);
+        testDoubleM7(goldDoubleM7, goldDoubleM7);
         init(goldDoubleP7);
-        testDoubleP7(goldDoubleP7);
+        testDoubleP7(goldDoubleP7, goldDoubleP7);
         init(goldDoubleM8);
-        testDoubleM8(goldDoubleM8);
+        testDoubleM8(goldDoubleM8, goldDoubleM8);
         init(goldDoubleP8);
-        testDoubleP8(goldDoubleP8);
+        testDoubleP8(goldDoubleP8, goldDoubleP8);
         init(goldDoubleM14);
-        testDoubleM14(goldDoubleM14);
+        testDoubleM14(goldDoubleM14, goldDoubleM14);
         init(goldDoubleP14);
-        testDoubleP14(goldDoubleP14);
+        testDoubleP14(goldDoubleP14, goldDoubleP14);
         init(goldDoubleM16);
-        testDoubleM16(goldDoubleM16);
+        testDoubleM16(goldDoubleM16, goldDoubleM16);
         init(goldDoubleP16);
-        testDoubleP16(goldDoubleP16);
+        testDoubleP16(goldDoubleP16, goldDoubleP16);
         init(goldDoubleM18);
-        testDoubleM18(goldDoubleM18);
+        testDoubleM18(goldDoubleM18, goldDoubleM18);
         init(goldDoubleP18);
-        testDoubleP18(goldDoubleP18);
+        testDoubleP18(goldDoubleP18, goldDoubleP18);
         init(goldDoubleM20);
-        testDoubleM20(goldDoubleM20);
+        testDoubleM20(goldDoubleM20, goldDoubleM20);
         init(goldDoubleP20);
-        testDoubleP20(goldDoubleP20);
+        testDoubleP20(goldDoubleP20, goldDoubleP20);
         init(goldDoubleM31);
-        testDoubleM31(goldDoubleM31);
+        testDoubleM31(goldDoubleM31, goldDoubleM31);
         init(goldDoubleP31);
-        testDoubleP31(goldDoubleP31);
+        testDoubleP31(goldDoubleP31, goldDoubleP31);
         init(goldDoubleM32);
-        testDoubleM32(goldDoubleM32);
+        testDoubleM32(goldDoubleM32, goldDoubleM32);
         init(goldDoubleP32);
-        testDoubleP32(goldDoubleP32);
+        testDoubleP32(goldDoubleP32, goldDoubleP32);
         init(goldDoubleM63);
-        testDoubleM63(goldDoubleM63);
+        testDoubleM63(goldDoubleM63, goldDoubleM63);
         init(goldDoubleP63);
-        testDoubleP63(goldDoubleP63);
+        testDoubleP63(goldDoubleP63, goldDoubleP63);
         init(goldDoubleM64);
-        testDoubleM64(goldDoubleM64);
+        testDoubleM64(goldDoubleM64, goldDoubleM64);
         init(goldDoubleP64);
-        testDoubleP64(goldDoubleP64);
+        testDoubleP64(goldDoubleP64, goldDoubleP64);
         init(goldDoubleM65);
-        testDoubleM65(goldDoubleM65);
+        testDoubleM65(goldDoubleM65, goldDoubleM65);
         init(goldDoubleP65);
-        testDoubleP65(goldDoubleP65);
+        testDoubleP65(goldDoubleP65, goldDoubleP65);
         init(goldDoubleM128);
-        testDoubleM128(goldDoubleM128);
+        testDoubleM128(goldDoubleM128, goldDoubleM128);
         init(goldDoubleP128);
-        testDoubleP128(goldDoubleP128);
+        testDoubleP128(goldDoubleP128, goldDoubleP128);
         init(goldDoubleM129);
-        testDoubleM129(goldDoubleM129);
+        testDoubleM129(goldDoubleM129, goldDoubleM129);
         init(goldDoubleP129);
-        testDoubleP129(goldDoubleP129);
+        testDoubleP129(goldDoubleP129, goldDoubleP129);
         init(goldDoubleM192);
-        testDoubleM192(goldDoubleM192);
+        testDoubleM192(goldDoubleM192, goldDoubleM192);
         init(goldDoubleP192);
-        testDoubleP192(goldDoubleP192);
+        testDoubleP192(goldDoubleP192, goldDoubleP192);
     }
 
     public static void main(String args[]) {
@@ -1447,9 +1447,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0", IRNode.MUL_VI, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testIntP0(int[] data) {
+    public static void testIntP0(int[] data, int[] data_2) {
         for (int j = 0; j < RANGE; j++) {
-            data[j + 0] = (int)(data[j] * (int)-11);
+            data_2[j + 0] = (int)(data[j] * (int)-11);
         }
     }
 
@@ -1458,7 +1458,7 @@ public class TestDependencyOffsets {
     public static void runIntP0() {
         int[] data = new int[RANGE];
         init(data);
-        testIntP0(data);
+        testIntP0(data, data);
         verify("testIntP0", data, goldIntP0);
     }
 
@@ -1503,9 +1503,9 @@ public class TestDependencyOffsets {
     @IR(failOn = {IRNode.LOAD_VECTOR_I, IRNode.MUL_VI, IRNode.STORE_VECTOR},
         applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testIntM1(int[] data) {
+    public static void testIntM1(int[] data, int[] data_2) {
         for (int j = 1; j < RANGE; j++) {
-            data[j + -1] = (int)(data[j] * (int)-11);
+            data_2[j + -1] = (int)(data[j] * (int)-11);
         }
     }
 
@@ -1514,7 +1514,7 @@ public class TestDependencyOffsets {
     public static void runIntM1() {
         int[] data = new int[RANGE];
         init(data);
-        testIntM1(data);
+        testIntM1(data, data);
         verify("testIntM1", data, goldIntM1);
     }
 
@@ -1554,9 +1554,9 @@ public class TestDependencyOffsets {
     @IR(failOn = {IRNode.LOAD_VECTOR_I, IRNode.MUL_VI, IRNode.STORE_VECTOR},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", "<= 4"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testIntP1(int[] data) {
+    public static void testIntP1(int[] data, int[] data_2) {
         for (int j = 0; j < RANGE - 1; j++) {
-            data[j + 1] = (int)(data[j] * (int)-11);
+            data_2[j + 1] = (int)(data[j] * (int)-11);
         }
     }
 
@@ -1565,7 +1565,7 @@ public class TestDependencyOffsets {
     public static void runIntP1() {
         int[] data = new int[RANGE];
         init(data);
-        testIntP1(data);
+        testIntP1(data, data);
         verify("testIntP1", data, goldIntP1);
     }
 
@@ -1610,9 +1610,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0", IRNode.MUL_VI, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testIntM2(int[] data) {
+    public static void testIntM2(int[] data, int[] data_2) {
         for (int j = 2; j < RANGE; j++) {
-            data[j + -2] = (int)(data[j] * (int)-11);
+            data_2[j + -2] = (int)(data[j] * (int)-11);
         }
     }
 
@@ -1621,7 +1621,7 @@ public class TestDependencyOffsets {
     public static void runIntM2() {
         int[] data = new int[RANGE];
         init(data);
-        testIntM2(data);
+        testIntM2(data, data);
         verify("testIntM2", data, goldIntM2);
     }
 
@@ -1671,9 +1671,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0", IRNode.MUL_VI, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", "8"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testIntP2(int[] data) {
+    public static void testIntP2(int[] data, int[] data_2) {
         for (int j = 0; j < RANGE - 2; j++) {
-            data[j + 2] = (int)(data[j] * (int)-11);
+            data_2[j + 2] = (int)(data[j] * (int)-11);
         }
     }
 
@@ -1682,7 +1682,7 @@ public class TestDependencyOffsets {
     public static void runIntP2() {
         int[] data = new int[RANGE];
         init(data);
-        testIntP2(data);
+        testIntP2(data, data);
         verify("testIntP2", data, goldIntP2);
     }
 
@@ -1727,9 +1727,9 @@ public class TestDependencyOffsets {
     @IR(failOn = {IRNode.LOAD_VECTOR_I, IRNode.MUL_VI, IRNode.STORE_VECTOR},
         applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testIntM3(int[] data) {
+    public static void testIntM3(int[] data, int[] data_2) {
         for (int j = 3; j < RANGE; j++) {
-            data[j + -3] = (int)(data[j] * (int)-11);
+            data_2[j + -3] = (int)(data[j] * (int)-11);
         }
     }
 
@@ -1738,7 +1738,7 @@ public class TestDependencyOffsets {
     public static void runIntM3() {
         int[] data = new int[RANGE];
         init(data);
-        testIntM3(data);
+        testIntM3(data, data);
         verify("testIntM3", data, goldIntM3);
     }
 
@@ -1788,9 +1788,9 @@ public class TestDependencyOffsets {
     @IR(failOn = {IRNode.LOAD_VECTOR_I, IRNode.MUL_VI, IRNode.STORE_VECTOR},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", "<= 12"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testIntP3(int[] data) {
+    public static void testIntP3(int[] data, int[] data_2) {
         for (int j = 0; j < RANGE - 3; j++) {
-            data[j + 3] = (int)(data[j] * (int)-11);
+            data_2[j + 3] = (int)(data[j] * (int)-11);
         }
     }
 
@@ -1799,7 +1799,7 @@ public class TestDependencyOffsets {
     public static void runIntP3() {
         int[] data = new int[RANGE];
         init(data);
-        testIntP3(data);
+        testIntP3(data, data);
         verify("testIntP3", data, goldIntP3);
     }
 
@@ -1844,9 +1844,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0", IRNode.MUL_VI, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testIntM4(int[] data) {
+    public static void testIntM4(int[] data, int[] data_2) {
         for (int j = 4; j < RANGE; j++) {
-            data[j + -4] = (int)(data[j] * (int)-11);
+            data_2[j + -4] = (int)(data[j] * (int)-11);
         }
     }
 
@@ -1855,7 +1855,7 @@ public class TestDependencyOffsets {
     public static void runIntM4() {
         int[] data = new int[RANGE];
         init(data);
-        testIntM4(data);
+        testIntM4(data, data);
         verify("testIntM4", data, goldIntM4);
     }
 
@@ -1903,9 +1903,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0", IRNode.MUL_VI, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8", "MaxVectorSize", "<= 16"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testIntP4(int[] data) {
+    public static void testIntP4(int[] data, int[] data_2) {
         for (int j = 0; j < RANGE - 4; j++) {
-            data[j + 4] = (int)(data[j] * (int)-11);
+            data_2[j + 4] = (int)(data[j] * (int)-11);
         }
     }
 
@@ -1914,7 +1914,7 @@ public class TestDependencyOffsets {
     public static void runIntP4() {
         int[] data = new int[RANGE];
         init(data);
-        testIntP4(data);
+        testIntP4(data, data);
         verify("testIntP4", data, goldIntP4);
     }
 
@@ -1959,9 +1959,9 @@ public class TestDependencyOffsets {
     @IR(failOn = {IRNode.LOAD_VECTOR_I, IRNode.MUL_VI, IRNode.STORE_VECTOR},
         applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testIntM7(int[] data) {
+    public static void testIntM7(int[] data, int[] data_2) {
         for (int j = 7; j < RANGE; j++) {
-            data[j + -7] = (int)(data[j] * (int)-11);
+            data_2[j + -7] = (int)(data[j] * (int)-11);
         }
     }
 
@@ -1970,7 +1970,7 @@ public class TestDependencyOffsets {
     public static void runIntM7() {
         int[] data = new int[RANGE];
         init(data);
-        testIntM7(data);
+        testIntM7(data, data);
         verify("testIntM7", data, goldIntM7);
     }
 
@@ -2018,9 +2018,9 @@ public class TestDependencyOffsets {
     @IR(failOn = {IRNode.LOAD_VECTOR_I, IRNode.MUL_VI, IRNode.STORE_VECTOR},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", "<= 28"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testIntP7(int[] data) {
+    public static void testIntP7(int[] data, int[] data_2) {
         for (int j = 0; j < RANGE - 7; j++) {
-            data[j + 7] = (int)(data[j] * (int)-11);
+            data_2[j + 7] = (int)(data[j] * (int)-11);
         }
     }
 
@@ -2029,7 +2029,7 @@ public class TestDependencyOffsets {
     public static void runIntP7() {
         int[] data = new int[RANGE];
         init(data);
-        testIntP7(data);
+        testIntP7(data, data);
         verify("testIntP7", data, goldIntP7);
     }
 
@@ -2074,9 +2074,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0", IRNode.MUL_VI, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testIntM8(int[] data) {
+    public static void testIntM8(int[] data, int[] data_2) {
         for (int j = 8; j < RANGE; j++) {
-            data[j + -8] = (int)(data[j] * (int)-11);
+            data_2[j + -8] = (int)(data[j] * (int)-11);
         }
     }
 
@@ -2085,7 +2085,7 @@ public class TestDependencyOffsets {
     public static void runIntM8() {
         int[] data = new int[RANGE];
         init(data);
-        testIntM8(data);
+        testIntM8(data, data);
         verify("testIntM8", data, goldIntM8);
     }
 
@@ -2132,9 +2132,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0", IRNode.MUL_VI, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8", "MaxVectorSize", "<= 32"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testIntP8(int[] data) {
+    public static void testIntP8(int[] data, int[] data_2) {
         for (int j = 0; j < RANGE - 8; j++) {
-            data[j + 8] = (int)(data[j] * (int)-11);
+            data_2[j + 8] = (int)(data[j] * (int)-11);
         }
     }
 
@@ -2143,7 +2143,7 @@ public class TestDependencyOffsets {
     public static void runIntP8() {
         int[] data = new int[RANGE];
         init(data);
-        testIntP8(data);
+        testIntP8(data, data);
         verify("testIntP8", data, goldIntP8);
     }
 
@@ -2188,9 +2188,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0", IRNode.MUL_VI, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testIntM14(int[] data) {
+    public static void testIntM14(int[] data, int[] data_2) {
         for (int j = 14; j < RANGE; j++) {
-            data[j + -14] = (int)(data[j] * (int)-11);
+            data_2[j + -14] = (int)(data[j] * (int)-11);
         }
     }
 
@@ -2199,7 +2199,7 @@ public class TestDependencyOffsets {
     public static void runIntM14() {
         int[] data = new int[RANGE];
         init(data);
-        testIntM14(data);
+        testIntM14(data, data);
         verify("testIntM14", data, goldIntM14);
     }
 
@@ -2246,9 +2246,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0", IRNode.MUL_VI, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8", "MaxVectorSize", "<= 56"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testIntP14(int[] data) {
+    public static void testIntP14(int[] data, int[] data_2) {
         for (int j = 0; j < RANGE - 14; j++) {
-            data[j + 14] = (int)(data[j] * (int)-11);
+            data_2[j + 14] = (int)(data[j] * (int)-11);
         }
     }
 
@@ -2257,7 +2257,7 @@ public class TestDependencyOffsets {
     public static void runIntP14() {
         int[] data = new int[RANGE];
         init(data);
-        testIntP14(data);
+        testIntP14(data, data);
         verify("testIntP14", data, goldIntP14);
     }
 
@@ -2302,9 +2302,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0", IRNode.MUL_VI, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testIntM16(int[] data) {
+    public static void testIntM16(int[] data, int[] data_2) {
         for (int j = 16; j < RANGE; j++) {
-            data[j + -16] = (int)(data[j] * (int)-11);
+            data_2[j + -16] = (int)(data[j] * (int)-11);
         }
     }
 
@@ -2313,7 +2313,7 @@ public class TestDependencyOffsets {
     public static void runIntM16() {
         int[] data = new int[RANGE];
         init(data);
-        testIntM16(data);
+        testIntM16(data, data);
         verify("testIntM16", data, goldIntM16);
     }
 
@@ -2359,9 +2359,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0", IRNode.MUL_VI, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8", "MaxVectorSize", "<= 64"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testIntP16(int[] data) {
+    public static void testIntP16(int[] data, int[] data_2) {
         for (int j = 0; j < RANGE - 16; j++) {
-            data[j + 16] = (int)(data[j] * (int)-11);
+            data_2[j + 16] = (int)(data[j] * (int)-11);
         }
     }
 
@@ -2370,7 +2370,7 @@ public class TestDependencyOffsets {
     public static void runIntP16() {
         int[] data = new int[RANGE];
         init(data);
-        testIntP16(data);
+        testIntP16(data, data);
         verify("testIntP16", data, goldIntP16);
     }
 
@@ -2415,9 +2415,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0", IRNode.MUL_VI, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testIntM18(int[] data) {
+    public static void testIntM18(int[] data, int[] data_2) {
         for (int j = 18; j < RANGE; j++) {
-            data[j + -18] = (int)(data[j] * (int)-11);
+            data_2[j + -18] = (int)(data[j] * (int)-11);
         }
     }
 
@@ -2426,7 +2426,7 @@ public class TestDependencyOffsets {
     public static void runIntM18() {
         int[] data = new int[RANGE];
         init(data);
-        testIntM18(data);
+        testIntM18(data, data);
         verify("testIntM18", data, goldIntM18);
     }
 
@@ -2472,9 +2472,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0", IRNode.MUL_VI, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8", "MaxVectorSize", "<= 72"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testIntP18(int[] data) {
+    public static void testIntP18(int[] data, int[] data_2) {
         for (int j = 0; j < RANGE - 18; j++) {
-            data[j + 18] = (int)(data[j] * (int)-11);
+            data_2[j + 18] = (int)(data[j] * (int)-11);
         }
     }
 
@@ -2483,7 +2483,7 @@ public class TestDependencyOffsets {
     public static void runIntP18() {
         int[] data = new int[RANGE];
         init(data);
-        testIntP18(data);
+        testIntP18(data, data);
         verify("testIntP18", data, goldIntP18);
     }
 
@@ -2528,9 +2528,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0", IRNode.MUL_VI, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testIntM20(int[] data) {
+    public static void testIntM20(int[] data, int[] data_2) {
         for (int j = 20; j < RANGE; j++) {
-            data[j + -20] = (int)(data[j] * (int)-11);
+            data_2[j + -20] = (int)(data[j] * (int)-11);
         }
     }
 
@@ -2539,7 +2539,7 @@ public class TestDependencyOffsets {
     public static void runIntM20() {
         int[] data = new int[RANGE];
         init(data);
-        testIntM20(data);
+        testIntM20(data, data);
         verify("testIntM20", data, goldIntM20);
     }
 
@@ -2585,9 +2585,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0", IRNode.MUL_VI, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8", "MaxVectorSize", "<= 80"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testIntP20(int[] data) {
+    public static void testIntP20(int[] data, int[] data_2) {
         for (int j = 0; j < RANGE - 20; j++) {
-            data[j + 20] = (int)(data[j] * (int)-11);
+            data_2[j + 20] = (int)(data[j] * (int)-11);
         }
     }
 
@@ -2596,7 +2596,7 @@ public class TestDependencyOffsets {
     public static void runIntP20() {
         int[] data = new int[RANGE];
         init(data);
-        testIntP20(data);
+        testIntP20(data, data);
         verify("testIntP20", data, goldIntP20);
     }
 
@@ -2641,9 +2641,9 @@ public class TestDependencyOffsets {
     @IR(failOn = {IRNode.LOAD_VECTOR_I, IRNode.MUL_VI, IRNode.STORE_VECTOR},
         applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testIntM31(int[] data) {
+    public static void testIntM31(int[] data, int[] data_2) {
         for (int j = 31; j < RANGE; j++) {
-            data[j + -31] = (int)(data[j] * (int)-11);
+            data_2[j + -31] = (int)(data[j] * (int)-11);
         }
     }
 
@@ -2652,7 +2652,7 @@ public class TestDependencyOffsets {
     public static void runIntM31() {
         int[] data = new int[RANGE];
         init(data);
-        testIntM31(data);
+        testIntM31(data, data);
         verify("testIntM31", data, goldIntM31);
     }
 
@@ -2698,9 +2698,9 @@ public class TestDependencyOffsets {
     @IR(failOn = {IRNode.LOAD_VECTOR_I, IRNode.MUL_VI, IRNode.STORE_VECTOR},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", "<= 124"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testIntP31(int[] data) {
+    public static void testIntP31(int[] data, int[] data_2) {
         for (int j = 0; j < RANGE - 31; j++) {
-            data[j + 31] = (int)(data[j] * (int)-11);
+            data_2[j + 31] = (int)(data[j] * (int)-11);
         }
     }
 
@@ -2709,7 +2709,7 @@ public class TestDependencyOffsets {
     public static void runIntP31() {
         int[] data = new int[RANGE];
         init(data);
-        testIntP31(data);
+        testIntP31(data, data);
         verify("testIntP31", data, goldIntP31);
     }
 
@@ -2754,9 +2754,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0", IRNode.MUL_VI, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testIntM32(int[] data) {
+    public static void testIntM32(int[] data, int[] data_2) {
         for (int j = 32; j < RANGE; j++) {
-            data[j + -32] = (int)(data[j] * (int)-11);
+            data_2[j + -32] = (int)(data[j] * (int)-11);
         }
     }
 
@@ -2765,7 +2765,7 @@ public class TestDependencyOffsets {
     public static void runIntM32() {
         int[] data = new int[RANGE];
         init(data);
-        testIntM32(data);
+        testIntM32(data, data);
         verify("testIntM32", data, goldIntM32);
     }
 
@@ -2811,9 +2811,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0", IRNode.MUL_VI, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8", "MaxVectorSize", "<= 128"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testIntP32(int[] data) {
+    public static void testIntP32(int[] data, int[] data_2) {
         for (int j = 0; j < RANGE - 32; j++) {
-            data[j + 32] = (int)(data[j] * (int)-11);
+            data_2[j + 32] = (int)(data[j] * (int)-11);
         }
     }
 
@@ -2822,7 +2822,7 @@ public class TestDependencyOffsets {
     public static void runIntP32() {
         int[] data = new int[RANGE];
         init(data);
-        testIntP32(data);
+        testIntP32(data, data);
         verify("testIntP32", data, goldIntP32);
     }
 
@@ -2867,9 +2867,9 @@ public class TestDependencyOffsets {
     @IR(failOn = {IRNode.LOAD_VECTOR_I, IRNode.MUL_VI, IRNode.STORE_VECTOR},
         applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testIntM63(int[] data) {
+    public static void testIntM63(int[] data, int[] data_2) {
         for (int j = 63; j < RANGE; j++) {
-            data[j + -63] = (int)(data[j] * (int)-11);
+            data_2[j + -63] = (int)(data[j] * (int)-11);
         }
     }
 
@@ -2878,7 +2878,7 @@ public class TestDependencyOffsets {
     public static void runIntM63() {
         int[] data = new int[RANGE];
         init(data);
-        testIntM63(data);
+        testIntM63(data, data);
         verify("testIntM63", data, goldIntM63);
     }
 
@@ -2924,9 +2924,9 @@ public class TestDependencyOffsets {
     @IR(failOn = {IRNode.LOAD_VECTOR_I, IRNode.MUL_VI, IRNode.STORE_VECTOR},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", "<= 252"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testIntP63(int[] data) {
+    public static void testIntP63(int[] data, int[] data_2) {
         for (int j = 0; j < RANGE - 63; j++) {
-            data[j + 63] = (int)(data[j] * (int)-11);
+            data_2[j + 63] = (int)(data[j] * (int)-11);
         }
     }
 
@@ -2935,7 +2935,7 @@ public class TestDependencyOffsets {
     public static void runIntP63() {
         int[] data = new int[RANGE];
         init(data);
-        testIntP63(data);
+        testIntP63(data, data);
         verify("testIntP63", data, goldIntP63);
     }
 
@@ -2980,9 +2980,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0", IRNode.MUL_VI, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testIntM64(int[] data) {
+    public static void testIntM64(int[] data, int[] data_2) {
         for (int j = 64; j < RANGE; j++) {
-            data[j + -64] = (int)(data[j] * (int)-11);
+            data_2[j + -64] = (int)(data[j] * (int)-11);
         }
     }
 
@@ -2991,7 +2991,7 @@ public class TestDependencyOffsets {
     public static void runIntM64() {
         int[] data = new int[RANGE];
         init(data);
-        testIntM64(data);
+        testIntM64(data, data);
         verify("testIntM64", data, goldIntM64);
     }
 
@@ -3036,9 +3036,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0", IRNode.MUL_VI, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testIntP64(int[] data) {
+    public static void testIntP64(int[] data, int[] data_2) {
         for (int j = 0; j < RANGE - 64; j++) {
-            data[j + 64] = (int)(data[j] * (int)-11);
+            data_2[j + 64] = (int)(data[j] * (int)-11);
         }
     }
 
@@ -3047,7 +3047,7 @@ public class TestDependencyOffsets {
     public static void runIntP64() {
         int[] data = new int[RANGE];
         init(data);
-        testIntP64(data);
+        testIntP64(data, data);
         verify("testIntP64", data, goldIntP64);
     }
 
@@ -3092,9 +3092,9 @@ public class TestDependencyOffsets {
     @IR(failOn = {IRNode.LOAD_VECTOR_I, IRNode.MUL_VI, IRNode.STORE_VECTOR},
         applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testIntM65(int[] data) {
+    public static void testIntM65(int[] data, int[] data_2) {
         for (int j = 65; j < RANGE; j++) {
-            data[j + -65] = (int)(data[j] * (int)-11);
+            data_2[j + -65] = (int)(data[j] * (int)-11);
         }
     }
 
@@ -3103,7 +3103,7 @@ public class TestDependencyOffsets {
     public static void runIntM65() {
         int[] data = new int[RANGE];
         init(data);
-        testIntM65(data);
+        testIntM65(data, data);
         verify("testIntM65", data, goldIntM65);
     }
 
@@ -3148,9 +3148,9 @@ public class TestDependencyOffsets {
     @IR(failOn = {IRNode.LOAD_VECTOR_I, IRNode.MUL_VI, IRNode.STORE_VECTOR},
         applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testIntP65(int[] data) {
+    public static void testIntP65(int[] data, int[] data_2) {
         for (int j = 0; j < RANGE - 65; j++) {
-            data[j + 65] = (int)(data[j] * (int)-11);
+            data_2[j + 65] = (int)(data[j] * (int)-11);
         }
     }
 
@@ -3159,7 +3159,7 @@ public class TestDependencyOffsets {
     public static void runIntP65() {
         int[] data = new int[RANGE];
         init(data);
-        testIntP65(data);
+        testIntP65(data, data);
         verify("testIntP65", data, goldIntP65);
     }
 
@@ -3204,9 +3204,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0", IRNode.MUL_VI, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testIntM128(int[] data) {
+    public static void testIntM128(int[] data, int[] data_2) {
         for (int j = 128; j < RANGE; j++) {
-            data[j + -128] = (int)(data[j] * (int)-11);
+            data_2[j + -128] = (int)(data[j] * (int)-11);
         }
     }
 
@@ -3215,7 +3215,7 @@ public class TestDependencyOffsets {
     public static void runIntM128() {
         int[] data = new int[RANGE];
         init(data);
-        testIntM128(data);
+        testIntM128(data, data);
         verify("testIntM128", data, goldIntM128);
     }
 
@@ -3260,9 +3260,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0", IRNode.MUL_VI, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testIntP128(int[] data) {
+    public static void testIntP128(int[] data, int[] data_2) {
         for (int j = 0; j < RANGE - 128; j++) {
-            data[j + 128] = (int)(data[j] * (int)-11);
+            data_2[j + 128] = (int)(data[j] * (int)-11);
         }
     }
 
@@ -3271,7 +3271,7 @@ public class TestDependencyOffsets {
     public static void runIntP128() {
         int[] data = new int[RANGE];
         init(data);
-        testIntP128(data);
+        testIntP128(data, data);
         verify("testIntP128", data, goldIntP128);
     }
 
@@ -3316,9 +3316,9 @@ public class TestDependencyOffsets {
     @IR(failOn = {IRNode.LOAD_VECTOR_I, IRNode.MUL_VI, IRNode.STORE_VECTOR},
         applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testIntM129(int[] data) {
+    public static void testIntM129(int[] data, int[] data_2) {
         for (int j = 129; j < RANGE; j++) {
-            data[j + -129] = (int)(data[j] * (int)-11);
+            data_2[j + -129] = (int)(data[j] * (int)-11);
         }
     }
 
@@ -3327,7 +3327,7 @@ public class TestDependencyOffsets {
     public static void runIntM129() {
         int[] data = new int[RANGE];
         init(data);
-        testIntM129(data);
+        testIntM129(data, data);
         verify("testIntM129", data, goldIntM129);
     }
 
@@ -3372,9 +3372,9 @@ public class TestDependencyOffsets {
     @IR(failOn = {IRNode.LOAD_VECTOR_I, IRNode.MUL_VI, IRNode.STORE_VECTOR},
         applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testIntP129(int[] data) {
+    public static void testIntP129(int[] data, int[] data_2) {
         for (int j = 0; j < RANGE - 129; j++) {
-            data[j + 129] = (int)(data[j] * (int)-11);
+            data_2[j + 129] = (int)(data[j] * (int)-11);
         }
     }
 
@@ -3383,7 +3383,7 @@ public class TestDependencyOffsets {
     public static void runIntP129() {
         int[] data = new int[RANGE];
         init(data);
-        testIntP129(data);
+        testIntP129(data, data);
         verify("testIntP129", data, goldIntP129);
     }
 
@@ -3428,9 +3428,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0", IRNode.MUL_VI, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testIntM192(int[] data) {
+    public static void testIntM192(int[] data, int[] data_2) {
         for (int j = 192; j < RANGE; j++) {
-            data[j + -192] = (int)(data[j] * (int)-11);
+            data_2[j + -192] = (int)(data[j] * (int)-11);
         }
     }
 
@@ -3439,7 +3439,7 @@ public class TestDependencyOffsets {
     public static void runIntM192() {
         int[] data = new int[RANGE];
         init(data);
-        testIntM192(data);
+        testIntM192(data, data);
         verify("testIntM192", data, goldIntM192);
     }
 
@@ -3484,9 +3484,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0", IRNode.MUL_VI, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testIntP192(int[] data) {
+    public static void testIntP192(int[] data, int[] data_2) {
         for (int j = 0; j < RANGE - 192; j++) {
-            data[j + 192] = (int)(data[j] * (int)-11);
+            data_2[j + 192] = (int)(data[j] * (int)-11);
         }
     }
 
@@ -3495,7 +3495,7 @@ public class TestDependencyOffsets {
     public static void runIntP192() {
         int[] data = new int[RANGE];
         init(data);
-        testIntP192(data);
+        testIntP192(data, data);
         verify("testIntP192", data, goldIntP192);
     }
 
@@ -3540,9 +3540,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_L, "> 0", IRNode.ADD_VL, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testLongP0(long[] data) {
+    public static void testLongP0(long[] data, long[] data_2) {
         for (int j = 0; j < RANGE; j++) {
-            data[j + 0] = (long)(data[j] + (long)-11);
+            data_2[j + 0] = (long)(data[j] + (long)-11);
         }
     }
 
@@ -3551,7 +3551,7 @@ public class TestDependencyOffsets {
     public static void runLongP0() {
         long[] data = new long[RANGE];
         init(data);
-        testLongP0(data);
+        testLongP0(data, data);
         verify("testLongP0", data, goldLongP0);
     }
 
@@ -3596,9 +3596,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_L, "> 0", IRNode.ADD_VL, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testLongM1(long[] data) {
+    public static void testLongM1(long[] data, long[] data_2) {
         for (int j = 1; j < RANGE; j++) {
-            data[j + -1] = (long)(data[j] + (long)-11);
+            data_2[j + -1] = (long)(data[j] + (long)-11);
         }
     }
 
@@ -3607,7 +3607,7 @@ public class TestDependencyOffsets {
     public static void runLongM1() {
         long[] data = new long[RANGE];
         init(data);
-        testLongM1(data);
+        testLongM1(data, data);
         verify("testLongM1", data, goldLongM1);
     }
 
@@ -3637,9 +3637,9 @@ public class TestDependencyOffsets {
     //   No positive IR rule: conditions impossible.
     //   Expect alignment.
     //   No positive IR rule: conditions impossible.
-    public static void testLongP1(long[] data) {
+    public static void testLongP1(long[] data, long[] data_2) {
         for (int j = 0; j < RANGE - 1; j++) {
-            data[j + 1] = (long)(data[j] + (long)-11);
+            data_2[j + 1] = (long)(data[j] + (long)-11);
         }
     }
 
@@ -3648,7 +3648,7 @@ public class TestDependencyOffsets {
     public static void runLongP1() {
         long[] data = new long[RANGE];
         init(data);
-        testLongP1(data);
+        testLongP1(data, data);
         verify("testLongP1", data, goldLongP1);
     }
 
@@ -3693,9 +3693,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_L, "> 0", IRNode.ADD_VL, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testLongM2(long[] data) {
+    public static void testLongM2(long[] data, long[] data_2) {
         for (int j = 2; j < RANGE; j++) {
-            data[j + -2] = (long)(data[j] + (long)-11);
+            data_2[j + -2] = (long)(data[j] + (long)-11);
         }
     }
 
@@ -3704,7 +3704,7 @@ public class TestDependencyOffsets {
     public static void runLongM2() {
         long[] data = new long[RANGE];
         init(data);
-        testLongM2(data);
+        testLongM2(data, data);
         verify("testLongM2", data, goldLongM2);
     }
 
@@ -3752,9 +3752,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_L, "> 0", IRNode.ADD_VL, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", "16"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testLongP2(long[] data) {
+    public static void testLongP2(long[] data, long[] data_2) {
         for (int j = 0; j < RANGE - 2; j++) {
-            data[j + 2] = (long)(data[j] + (long)-11);
+            data_2[j + 2] = (long)(data[j] + (long)-11);
         }
     }
 
@@ -3763,7 +3763,7 @@ public class TestDependencyOffsets {
     public static void runLongP2() {
         long[] data = new long[RANGE];
         init(data);
-        testLongP2(data);
+        testLongP2(data, data);
         verify("testLongP2", data, goldLongP2);
     }
 
@@ -3808,9 +3808,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_L, "> 0", IRNode.ADD_VL, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testLongM3(long[] data) {
+    public static void testLongM3(long[] data, long[] data_2) {
         for (int j = 3; j < RANGE; j++) {
-            data[j + -3] = (long)(data[j] + (long)-11);
+            data_2[j + -3] = (long)(data[j] + (long)-11);
         }
     }
 
@@ -3819,7 +3819,7 @@ public class TestDependencyOffsets {
     public static void runLongM3() {
         long[] data = new long[RANGE];
         init(data);
-        testLongM3(data);
+        testLongM3(data, data);
         verify("testLongM3", data, goldLongM3);
     }
 
@@ -3867,9 +3867,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_L, "> 0", IRNode.ADD_VL, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16", "MaxVectorSize", "<= 24"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testLongP3(long[] data) {
+    public static void testLongP3(long[] data, long[] data_2) {
         for (int j = 0; j < RANGE - 3; j++) {
-            data[j + 3] = (long)(data[j] + (long)-11);
+            data_2[j + 3] = (long)(data[j] + (long)-11);
         }
     }
 
@@ -3878,7 +3878,7 @@ public class TestDependencyOffsets {
     public static void runLongP3() {
         long[] data = new long[RANGE];
         init(data);
-        testLongP3(data);
+        testLongP3(data, data);
         verify("testLongP3", data, goldLongP3);
     }
 
@@ -3923,9 +3923,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_L, "> 0", IRNode.ADD_VL, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testLongM4(long[] data) {
+    public static void testLongM4(long[] data, long[] data_2) {
         for (int j = 4; j < RANGE; j++) {
-            data[j + -4] = (long)(data[j] + (long)-11);
+            data_2[j + -4] = (long)(data[j] + (long)-11);
         }
     }
 
@@ -3934,7 +3934,7 @@ public class TestDependencyOffsets {
     public static void runLongM4() {
         long[] data = new long[RANGE];
         init(data);
-        testLongM4(data);
+        testLongM4(data, data);
         verify("testLongM4", data, goldLongM4);
     }
 
@@ -3981,9 +3981,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_L, "> 0", IRNode.ADD_VL, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16", "MaxVectorSize", "<= 32"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testLongP4(long[] data) {
+    public static void testLongP4(long[] data, long[] data_2) {
         for (int j = 0; j < RANGE - 4; j++) {
-            data[j + 4] = (long)(data[j] + (long)-11);
+            data_2[j + 4] = (long)(data[j] + (long)-11);
         }
     }
 
@@ -3992,7 +3992,7 @@ public class TestDependencyOffsets {
     public static void runLongP4() {
         long[] data = new long[RANGE];
         init(data);
-        testLongP4(data);
+        testLongP4(data, data);
         verify("testLongP4", data, goldLongP4);
     }
 
@@ -4037,9 +4037,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_L, "> 0", IRNode.ADD_VL, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testLongM7(long[] data) {
+    public static void testLongM7(long[] data, long[] data_2) {
         for (int j = 7; j < RANGE; j++) {
-            data[j + -7] = (long)(data[j] + (long)-11);
+            data_2[j + -7] = (long)(data[j] + (long)-11);
         }
     }
 
@@ -4048,7 +4048,7 @@ public class TestDependencyOffsets {
     public static void runLongM7() {
         long[] data = new long[RANGE];
         init(data);
-        testLongM7(data);
+        testLongM7(data, data);
         verify("testLongM7", data, goldLongM7);
     }
 
@@ -4095,9 +4095,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_L, "> 0", IRNode.ADD_VL, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16", "MaxVectorSize", "<= 56"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testLongP7(long[] data) {
+    public static void testLongP7(long[] data, long[] data_2) {
         for (int j = 0; j < RANGE - 7; j++) {
-            data[j + 7] = (long)(data[j] + (long)-11);
+            data_2[j + 7] = (long)(data[j] + (long)-11);
         }
     }
 
@@ -4106,7 +4106,7 @@ public class TestDependencyOffsets {
     public static void runLongP7() {
         long[] data = new long[RANGE];
         init(data);
-        testLongP7(data);
+        testLongP7(data, data);
         verify("testLongP7", data, goldLongP7);
     }
 
@@ -4151,9 +4151,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_L, "> 0", IRNode.ADD_VL, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testLongM8(long[] data) {
+    public static void testLongM8(long[] data, long[] data_2) {
         for (int j = 8; j < RANGE; j++) {
-            data[j + -8] = (long)(data[j] + (long)-11);
+            data_2[j + -8] = (long)(data[j] + (long)-11);
         }
     }
 
@@ -4162,7 +4162,7 @@ public class TestDependencyOffsets {
     public static void runLongM8() {
         long[] data = new long[RANGE];
         init(data);
-        testLongM8(data);
+        testLongM8(data, data);
         verify("testLongM8", data, goldLongM8);
     }
 
@@ -4208,9 +4208,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_L, "> 0", IRNode.ADD_VL, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16", "MaxVectorSize", "<= 64"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testLongP8(long[] data) {
+    public static void testLongP8(long[] data, long[] data_2) {
         for (int j = 0; j < RANGE - 8; j++) {
-            data[j + 8] = (long)(data[j] + (long)-11);
+            data_2[j + 8] = (long)(data[j] + (long)-11);
         }
     }
 
@@ -4219,7 +4219,7 @@ public class TestDependencyOffsets {
     public static void runLongP8() {
         long[] data = new long[RANGE];
         init(data);
-        testLongP8(data);
+        testLongP8(data, data);
         verify("testLongP8", data, goldLongP8);
     }
 
@@ -4264,9 +4264,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_L, "> 0", IRNode.ADD_VL, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testLongM14(long[] data) {
+    public static void testLongM14(long[] data, long[] data_2) {
         for (int j = 14; j < RANGE; j++) {
-            data[j + -14] = (long)(data[j] + (long)-11);
+            data_2[j + -14] = (long)(data[j] + (long)-11);
         }
     }
 
@@ -4275,7 +4275,7 @@ public class TestDependencyOffsets {
     public static void runLongM14() {
         long[] data = new long[RANGE];
         init(data);
-        testLongM14(data);
+        testLongM14(data, data);
         verify("testLongM14", data, goldLongM14);
     }
 
@@ -4321,9 +4321,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_L, "> 0", IRNode.ADD_VL, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16", "MaxVectorSize", "<= 112"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testLongP14(long[] data) {
+    public static void testLongP14(long[] data, long[] data_2) {
         for (int j = 0; j < RANGE - 14; j++) {
-            data[j + 14] = (long)(data[j] + (long)-11);
+            data_2[j + 14] = (long)(data[j] + (long)-11);
         }
     }
 
@@ -4332,7 +4332,7 @@ public class TestDependencyOffsets {
     public static void runLongP14() {
         long[] data = new long[RANGE];
         init(data);
-        testLongP14(data);
+        testLongP14(data, data);
         verify("testLongP14", data, goldLongP14);
     }
 
@@ -4377,9 +4377,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_L, "> 0", IRNode.ADD_VL, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testLongM16(long[] data) {
+    public static void testLongM16(long[] data, long[] data_2) {
         for (int j = 16; j < RANGE; j++) {
-            data[j + -16] = (long)(data[j] + (long)-11);
+            data_2[j + -16] = (long)(data[j] + (long)-11);
         }
     }
 
@@ -4388,7 +4388,7 @@ public class TestDependencyOffsets {
     public static void runLongM16() {
         long[] data = new long[RANGE];
         init(data);
-        testLongM16(data);
+        testLongM16(data, data);
         verify("testLongM16", data, goldLongM16);
     }
 
@@ -4434,9 +4434,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_L, "> 0", IRNode.ADD_VL, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16", "MaxVectorSize", "<= 128"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testLongP16(long[] data) {
+    public static void testLongP16(long[] data, long[] data_2) {
         for (int j = 0; j < RANGE - 16; j++) {
-            data[j + 16] = (long)(data[j] + (long)-11);
+            data_2[j + 16] = (long)(data[j] + (long)-11);
         }
     }
 
@@ -4445,7 +4445,7 @@ public class TestDependencyOffsets {
     public static void runLongP16() {
         long[] data = new long[RANGE];
         init(data);
-        testLongP16(data);
+        testLongP16(data, data);
         verify("testLongP16", data, goldLongP16);
     }
 
@@ -4490,9 +4490,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_L, "> 0", IRNode.ADD_VL, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testLongM18(long[] data) {
+    public static void testLongM18(long[] data, long[] data_2) {
         for (int j = 18; j < RANGE; j++) {
-            data[j + -18] = (long)(data[j] + (long)-11);
+            data_2[j + -18] = (long)(data[j] + (long)-11);
         }
     }
 
@@ -4501,7 +4501,7 @@ public class TestDependencyOffsets {
     public static void runLongM18() {
         long[] data = new long[RANGE];
         init(data);
-        testLongM18(data);
+        testLongM18(data, data);
         verify("testLongM18", data, goldLongM18);
     }
 
@@ -4547,9 +4547,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_L, "> 0", IRNode.ADD_VL, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16", "MaxVectorSize", "<= 144"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testLongP18(long[] data) {
+    public static void testLongP18(long[] data, long[] data_2) {
         for (int j = 0; j < RANGE - 18; j++) {
-            data[j + 18] = (long)(data[j] + (long)-11);
+            data_2[j + 18] = (long)(data[j] + (long)-11);
         }
     }
 
@@ -4558,7 +4558,7 @@ public class TestDependencyOffsets {
     public static void runLongP18() {
         long[] data = new long[RANGE];
         init(data);
-        testLongP18(data);
+        testLongP18(data, data);
         verify("testLongP18", data, goldLongP18);
     }
 
@@ -4603,9 +4603,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_L, "> 0", IRNode.ADD_VL, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testLongM20(long[] data) {
+    public static void testLongM20(long[] data, long[] data_2) {
         for (int j = 20; j < RANGE; j++) {
-            data[j + -20] = (long)(data[j] + (long)-11);
+            data_2[j + -20] = (long)(data[j] + (long)-11);
         }
     }
 
@@ -4614,7 +4614,7 @@ public class TestDependencyOffsets {
     public static void runLongM20() {
         long[] data = new long[RANGE];
         init(data);
-        testLongM20(data);
+        testLongM20(data, data);
         verify("testLongM20", data, goldLongM20);
     }
 
@@ -4660,9 +4660,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_L, "> 0", IRNode.ADD_VL, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16", "MaxVectorSize", "<= 160"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testLongP20(long[] data) {
+    public static void testLongP20(long[] data, long[] data_2) {
         for (int j = 0; j < RANGE - 20; j++) {
-            data[j + 20] = (long)(data[j] + (long)-11);
+            data_2[j + 20] = (long)(data[j] + (long)-11);
         }
     }
 
@@ -4671,7 +4671,7 @@ public class TestDependencyOffsets {
     public static void runLongP20() {
         long[] data = new long[RANGE];
         init(data);
-        testLongP20(data);
+        testLongP20(data, data);
         verify("testLongP20", data, goldLongP20);
     }
 
@@ -4716,9 +4716,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_L, "> 0", IRNode.ADD_VL, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testLongM31(long[] data) {
+    public static void testLongM31(long[] data, long[] data_2) {
         for (int j = 31; j < RANGE; j++) {
-            data[j + -31] = (long)(data[j] + (long)-11);
+            data_2[j + -31] = (long)(data[j] + (long)-11);
         }
     }
 
@@ -4727,7 +4727,7 @@ public class TestDependencyOffsets {
     public static void runLongM31() {
         long[] data = new long[RANGE];
         init(data);
-        testLongM31(data);
+        testLongM31(data, data);
         verify("testLongM31", data, goldLongM31);
     }
 
@@ -4773,9 +4773,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_L, "> 0", IRNode.ADD_VL, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16", "MaxVectorSize", "<= 248"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testLongP31(long[] data) {
+    public static void testLongP31(long[] data, long[] data_2) {
         for (int j = 0; j < RANGE - 31; j++) {
-            data[j + 31] = (long)(data[j] + (long)-11);
+            data_2[j + 31] = (long)(data[j] + (long)-11);
         }
     }
 
@@ -4784,7 +4784,7 @@ public class TestDependencyOffsets {
     public static void runLongP31() {
         long[] data = new long[RANGE];
         init(data);
-        testLongP31(data);
+        testLongP31(data, data);
         verify("testLongP31", data, goldLongP31);
     }
 
@@ -4829,9 +4829,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_L, "> 0", IRNode.ADD_VL, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testLongM32(long[] data) {
+    public static void testLongM32(long[] data, long[] data_2) {
         for (int j = 32; j < RANGE; j++) {
-            data[j + -32] = (long)(data[j] + (long)-11);
+            data_2[j + -32] = (long)(data[j] + (long)-11);
         }
     }
 
@@ -4840,7 +4840,7 @@ public class TestDependencyOffsets {
     public static void runLongM32() {
         long[] data = new long[RANGE];
         init(data);
-        testLongM32(data);
+        testLongM32(data, data);
         verify("testLongM32", data, goldLongM32);
     }
 
@@ -4885,9 +4885,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_L, "> 0", IRNode.ADD_VL, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testLongP32(long[] data) {
+    public static void testLongP32(long[] data, long[] data_2) {
         for (int j = 0; j < RANGE - 32; j++) {
-            data[j + 32] = (long)(data[j] + (long)-11);
+            data_2[j + 32] = (long)(data[j] + (long)-11);
         }
     }
 
@@ -4896,7 +4896,7 @@ public class TestDependencyOffsets {
     public static void runLongP32() {
         long[] data = new long[RANGE];
         init(data);
-        testLongP32(data);
+        testLongP32(data, data);
         verify("testLongP32", data, goldLongP32);
     }
 
@@ -4941,9 +4941,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_L, "> 0", IRNode.ADD_VL, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testLongM63(long[] data) {
+    public static void testLongM63(long[] data, long[] data_2) {
         for (int j = 63; j < RANGE; j++) {
-            data[j + -63] = (long)(data[j] + (long)-11);
+            data_2[j + -63] = (long)(data[j] + (long)-11);
         }
     }
 
@@ -4952,7 +4952,7 @@ public class TestDependencyOffsets {
     public static void runLongM63() {
         long[] data = new long[RANGE];
         init(data);
-        testLongM63(data);
+        testLongM63(data, data);
         verify("testLongM63", data, goldLongM63);
     }
 
@@ -4997,9 +4997,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_L, "> 0", IRNode.ADD_VL, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testLongP63(long[] data) {
+    public static void testLongP63(long[] data, long[] data_2) {
         for (int j = 0; j < RANGE - 63; j++) {
-            data[j + 63] = (long)(data[j] + (long)-11);
+            data_2[j + 63] = (long)(data[j] + (long)-11);
         }
     }
 
@@ -5008,7 +5008,7 @@ public class TestDependencyOffsets {
     public static void runLongP63() {
         long[] data = new long[RANGE];
         init(data);
-        testLongP63(data);
+        testLongP63(data, data);
         verify("testLongP63", data, goldLongP63);
     }
 
@@ -5053,9 +5053,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_L, "> 0", IRNode.ADD_VL, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testLongM64(long[] data) {
+    public static void testLongM64(long[] data, long[] data_2) {
         for (int j = 64; j < RANGE; j++) {
-            data[j + -64] = (long)(data[j] + (long)-11);
+            data_2[j + -64] = (long)(data[j] + (long)-11);
         }
     }
 
@@ -5064,7 +5064,7 @@ public class TestDependencyOffsets {
     public static void runLongM64() {
         long[] data = new long[RANGE];
         init(data);
-        testLongM64(data);
+        testLongM64(data, data);
         verify("testLongM64", data, goldLongM64);
     }
 
@@ -5109,9 +5109,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_L, "> 0", IRNode.ADD_VL, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testLongP64(long[] data) {
+    public static void testLongP64(long[] data, long[] data_2) {
         for (int j = 0; j < RANGE - 64; j++) {
-            data[j + 64] = (long)(data[j] + (long)-11);
+            data_2[j + 64] = (long)(data[j] + (long)-11);
         }
     }
 
@@ -5120,7 +5120,7 @@ public class TestDependencyOffsets {
     public static void runLongP64() {
         long[] data = new long[RANGE];
         init(data);
-        testLongP64(data);
+        testLongP64(data, data);
         verify("testLongP64", data, goldLongP64);
     }
 
@@ -5165,9 +5165,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_L, "> 0", IRNode.ADD_VL, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testLongM65(long[] data) {
+    public static void testLongM65(long[] data, long[] data_2) {
         for (int j = 65; j < RANGE; j++) {
-            data[j + -65] = (long)(data[j] + (long)-11);
+            data_2[j + -65] = (long)(data[j] + (long)-11);
         }
     }
 
@@ -5176,7 +5176,7 @@ public class TestDependencyOffsets {
     public static void runLongM65() {
         long[] data = new long[RANGE];
         init(data);
-        testLongM65(data);
+        testLongM65(data, data);
         verify("testLongM65", data, goldLongM65);
     }
 
@@ -5221,9 +5221,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_L, "> 0", IRNode.ADD_VL, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testLongP65(long[] data) {
+    public static void testLongP65(long[] data, long[] data_2) {
         for (int j = 0; j < RANGE - 65; j++) {
-            data[j + 65] = (long)(data[j] + (long)-11);
+            data_2[j + 65] = (long)(data[j] + (long)-11);
         }
     }
 
@@ -5232,7 +5232,7 @@ public class TestDependencyOffsets {
     public static void runLongP65() {
         long[] data = new long[RANGE];
         init(data);
-        testLongP65(data);
+        testLongP65(data, data);
         verify("testLongP65", data, goldLongP65);
     }
 
@@ -5277,9 +5277,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_L, "> 0", IRNode.ADD_VL, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testLongM128(long[] data) {
+    public static void testLongM128(long[] data, long[] data_2) {
         for (int j = 128; j < RANGE; j++) {
-            data[j + -128] = (long)(data[j] + (long)-11);
+            data_2[j + -128] = (long)(data[j] + (long)-11);
         }
     }
 
@@ -5288,7 +5288,7 @@ public class TestDependencyOffsets {
     public static void runLongM128() {
         long[] data = new long[RANGE];
         init(data);
-        testLongM128(data);
+        testLongM128(data, data);
         verify("testLongM128", data, goldLongM128);
     }
 
@@ -5333,9 +5333,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_L, "> 0", IRNode.ADD_VL, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testLongP128(long[] data) {
+    public static void testLongP128(long[] data, long[] data_2) {
         for (int j = 0; j < RANGE - 128; j++) {
-            data[j + 128] = (long)(data[j] + (long)-11);
+            data_2[j + 128] = (long)(data[j] + (long)-11);
         }
     }
 
@@ -5344,7 +5344,7 @@ public class TestDependencyOffsets {
     public static void runLongP128() {
         long[] data = new long[RANGE];
         init(data);
-        testLongP128(data);
+        testLongP128(data, data);
         verify("testLongP128", data, goldLongP128);
     }
 
@@ -5389,9 +5389,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_L, "> 0", IRNode.ADD_VL, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testLongM129(long[] data) {
+    public static void testLongM129(long[] data, long[] data_2) {
         for (int j = 129; j < RANGE; j++) {
-            data[j + -129] = (long)(data[j] + (long)-11);
+            data_2[j + -129] = (long)(data[j] + (long)-11);
         }
     }
 
@@ -5400,7 +5400,7 @@ public class TestDependencyOffsets {
     public static void runLongM129() {
         long[] data = new long[RANGE];
         init(data);
-        testLongM129(data);
+        testLongM129(data, data);
         verify("testLongM129", data, goldLongM129);
     }
 
@@ -5445,9 +5445,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_L, "> 0", IRNode.ADD_VL, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testLongP129(long[] data) {
+    public static void testLongP129(long[] data, long[] data_2) {
         for (int j = 0; j < RANGE - 129; j++) {
-            data[j + 129] = (long)(data[j] + (long)-11);
+            data_2[j + 129] = (long)(data[j] + (long)-11);
         }
     }
 
@@ -5456,7 +5456,7 @@ public class TestDependencyOffsets {
     public static void runLongP129() {
         long[] data = new long[RANGE];
         init(data);
-        testLongP129(data);
+        testLongP129(data, data);
         verify("testLongP129", data, goldLongP129);
     }
 
@@ -5501,9 +5501,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_L, "> 0", IRNode.ADD_VL, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testLongM192(long[] data) {
+    public static void testLongM192(long[] data, long[] data_2) {
         for (int j = 192; j < RANGE; j++) {
-            data[j + -192] = (long)(data[j] + (long)-11);
+            data_2[j + -192] = (long)(data[j] + (long)-11);
         }
     }
 
@@ -5512,7 +5512,7 @@ public class TestDependencyOffsets {
     public static void runLongM192() {
         long[] data = new long[RANGE];
         init(data);
-        testLongM192(data);
+        testLongM192(data, data);
         verify("testLongM192", data, goldLongM192);
     }
 
@@ -5557,9 +5557,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_L, "> 0", IRNode.ADD_VL, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testLongP192(long[] data) {
+    public static void testLongP192(long[] data, long[] data_2) {
         for (int j = 0; j < RANGE - 192; j++) {
-            data[j + 192] = (long)(data[j] + (long)-11);
+            data_2[j + 192] = (long)(data[j] + (long)-11);
         }
     }
 
@@ -5568,7 +5568,7 @@ public class TestDependencyOffsets {
     public static void runLongP192() {
         long[] data = new long[RANGE];
         init(data);
-        testLongP192(data);
+        testLongP192(data, data);
         verify("testLongP192", data, goldLongP192);
     }
 
@@ -5613,9 +5613,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_S, "> 0", IRNode.MUL_VS, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testShortP0(short[] data) {
+    public static void testShortP0(short[] data, short[] data_2) {
         for (int j = 0; j < RANGE; j++) {
-            data[j + 0] = (short)(data[j] * (short)-11);
+            data_2[j + 0] = (short)(data[j] * (short)-11);
         }
     }
 
@@ -5624,7 +5624,7 @@ public class TestDependencyOffsets {
     public static void runShortP0() {
         short[] data = new short[RANGE];
         init(data);
-        testShortP0(data);
+        testShortP0(data, data);
         verify("testShortP0", data, goldShortP0);
     }
 
@@ -5669,9 +5669,9 @@ public class TestDependencyOffsets {
     @IR(failOn = {IRNode.LOAD_VECTOR_S, IRNode.MUL_VS, IRNode.STORE_VECTOR},
         applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testShortM1(short[] data) {
+    public static void testShortM1(short[] data, short[] data_2) {
         for (int j = 1; j < RANGE; j++) {
-            data[j + -1] = (short)(data[j] * (short)-11);
+            data_2[j + -1] = (short)(data[j] * (short)-11);
         }
     }
 
@@ -5680,7 +5680,7 @@ public class TestDependencyOffsets {
     public static void runShortM1() {
         short[] data = new short[RANGE];
         init(data);
-        testShortM1(data);
+        testShortM1(data, data);
         verify("testShortM1", data, goldShortM1);
     }
 
@@ -5720,9 +5720,9 @@ public class TestDependencyOffsets {
     @IR(failOn = {IRNode.LOAD_VECTOR_S, IRNode.MUL_VS, IRNode.STORE_VECTOR},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", "<= 2"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testShortP1(short[] data) {
+    public static void testShortP1(short[] data, short[] data_2) {
         for (int j = 0; j < RANGE - 1; j++) {
-            data[j + 1] = (short)(data[j] * (short)-11);
+            data_2[j + 1] = (short)(data[j] * (short)-11);
         }
     }
 
@@ -5731,7 +5731,7 @@ public class TestDependencyOffsets {
     public static void runShortP1() {
         short[] data = new short[RANGE];
         init(data);
-        testShortP1(data);
+        testShortP1(data, data);
         verify("testShortP1", data, goldShortP1);
     }
 
@@ -5761,9 +5761,9 @@ public class TestDependencyOffsets {
         applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"sve", "true"})
     //   Alignment unclear -> no IR rule for -XX:+AlignVector.
-    public static void testShortM2(short[] data) {
+    public static void testShortM2(short[] data, short[] data_2) {
         for (int j = 2; j < RANGE; j++) {
-            data[j + -2] = (short)(data[j] * (short)-11);
+            data_2[j + -2] = (short)(data[j] * (short)-11);
         }
     }
 
@@ -5772,7 +5772,7 @@ public class TestDependencyOffsets {
     public static void runShortM2() {
         short[] data = new short[RANGE];
         init(data);
-        testShortM2(data);
+        testShortM2(data, data);
         verify("testShortM2", data, goldShortM2);
     }
 
@@ -5807,9 +5807,9 @@ public class TestDependencyOffsets {
         applyIfAnd = {"AlignVector", "false", "MaxVectorSize", "4"},
         applyIfCPUFeature = {"sve", "true"})
     //   Alignment unclear -> no IR rule for -XX:+AlignVector.
-    public static void testShortP2(short[] data) {
+    public static void testShortP2(short[] data, short[] data_2) {
         for (int j = 0; j < RANGE - 2; j++) {
-            data[j + 2] = (short)(data[j] * (short)-11);
+            data_2[j + 2] = (short)(data[j] * (short)-11);
         }
     }
 
@@ -5818,7 +5818,7 @@ public class TestDependencyOffsets {
     public static void runShortP2() {
         short[] data = new short[RANGE];
         init(data);
-        testShortP2(data);
+        testShortP2(data, data);
         verify("testShortP2", data, goldShortP2);
     }
 
@@ -5863,9 +5863,9 @@ public class TestDependencyOffsets {
     @IR(failOn = {IRNode.LOAD_VECTOR_S, IRNode.MUL_VS, IRNode.STORE_VECTOR},
         applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testShortM3(short[] data) {
+    public static void testShortM3(short[] data, short[] data_2) {
         for (int j = 3; j < RANGE; j++) {
-            data[j + -3] = (short)(data[j] * (short)-11);
+            data_2[j + -3] = (short)(data[j] * (short)-11);
         }
     }
 
@@ -5874,7 +5874,7 @@ public class TestDependencyOffsets {
     public static void runShortM3() {
         short[] data = new short[RANGE];
         init(data);
-        testShortM3(data);
+        testShortM3(data, data);
         verify("testShortM3", data, goldShortM3);
     }
 
@@ -5924,9 +5924,9 @@ public class TestDependencyOffsets {
     @IR(failOn = {IRNode.LOAD_VECTOR_S, IRNode.MUL_VS, IRNode.STORE_VECTOR},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", "<= 6"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testShortP3(short[] data) {
+    public static void testShortP3(short[] data, short[] data_2) {
         for (int j = 0; j < RANGE - 3; j++) {
-            data[j + 3] = (short)(data[j] * (short)-11);
+            data_2[j + 3] = (short)(data[j] * (short)-11);
         }
     }
 
@@ -5935,7 +5935,7 @@ public class TestDependencyOffsets {
     public static void runShortP3() {
         short[] data = new short[RANGE];
         init(data);
-        testShortP3(data);
+        testShortP3(data, data);
         verify("testShortP3", data, goldShortP3);
     }
 
@@ -5980,9 +5980,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_S, "> 0", IRNode.MUL_VS, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testShortM4(short[] data) {
+    public static void testShortM4(short[] data, short[] data_2) {
         for (int j = 4; j < RANGE; j++) {
-            data[j + -4] = (short)(data[j] * (short)-11);
+            data_2[j + -4] = (short)(data[j] * (short)-11);
         }
     }
 
@@ -5991,7 +5991,7 @@ public class TestDependencyOffsets {
     public static void runShortM4() {
         short[] data = new short[RANGE];
         init(data);
-        testShortM4(data);
+        testShortM4(data, data);
         verify("testShortM4", data, goldShortM4);
     }
 
@@ -6041,9 +6041,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_S, "> 0", IRNode.MUL_VS, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 8"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testShortP4(short[] data) {
+    public static void testShortP4(short[] data, short[] data_2) {
         for (int j = 0; j < RANGE - 4; j++) {
-            data[j + 4] = (short)(data[j] * (short)-11);
+            data_2[j + 4] = (short)(data[j] * (short)-11);
         }
     }
 
@@ -6052,7 +6052,7 @@ public class TestDependencyOffsets {
     public static void runShortP4() {
         short[] data = new short[RANGE];
         init(data);
-        testShortP4(data);
+        testShortP4(data, data);
         verify("testShortP4", data, goldShortP4);
     }
 
@@ -6097,9 +6097,9 @@ public class TestDependencyOffsets {
     @IR(failOn = {IRNode.LOAD_VECTOR_S, IRNode.MUL_VS, IRNode.STORE_VECTOR},
         applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testShortM7(short[] data) {
+    public static void testShortM7(short[] data, short[] data_2) {
         for (int j = 7; j < RANGE; j++) {
-            data[j + -7] = (short)(data[j] * (short)-11);
+            data_2[j + -7] = (short)(data[j] * (short)-11);
         }
     }
 
@@ -6108,7 +6108,7 @@ public class TestDependencyOffsets {
     public static void runShortM7() {
         short[] data = new short[RANGE];
         init(data);
-        testShortM7(data);
+        testShortM7(data, data);
         verify("testShortM7", data, goldShortM7);
     }
 
@@ -6158,9 +6158,9 @@ public class TestDependencyOffsets {
     @IR(failOn = {IRNode.LOAD_VECTOR_S, IRNode.MUL_VS, IRNode.STORE_VECTOR},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", "<= 14"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testShortP7(short[] data) {
+    public static void testShortP7(short[] data, short[] data_2) {
         for (int j = 0; j < RANGE - 7; j++) {
-            data[j + 7] = (short)(data[j] * (short)-11);
+            data_2[j + 7] = (short)(data[j] * (short)-11);
         }
     }
 
@@ -6169,7 +6169,7 @@ public class TestDependencyOffsets {
     public static void runShortP7() {
         short[] data = new short[RANGE];
         init(data);
-        testShortP7(data);
+        testShortP7(data, data);
         verify("testShortP7", data, goldShortP7);
     }
 
@@ -6214,9 +6214,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_S, "> 0", IRNode.MUL_VS, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testShortM8(short[] data) {
+    public static void testShortM8(short[] data, short[] data_2) {
         for (int j = 8; j < RANGE; j++) {
-            data[j + -8] = (short)(data[j] * (short)-11);
+            data_2[j + -8] = (short)(data[j] * (short)-11);
         }
     }
 
@@ -6225,7 +6225,7 @@ public class TestDependencyOffsets {
     public static void runShortM8() {
         short[] data = new short[RANGE];
         init(data);
-        testShortM8(data);
+        testShortM8(data, data);
         verify("testShortM8", data, goldShortM8);
     }
 
@@ -6273,9 +6273,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_S, "> 0", IRNode.MUL_VS, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 16"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testShortP8(short[] data) {
+    public static void testShortP8(short[] data, short[] data_2) {
         for (int j = 0; j < RANGE - 8; j++) {
-            data[j + 8] = (short)(data[j] * (short)-11);
+            data_2[j + 8] = (short)(data[j] * (short)-11);
         }
     }
 
@@ -6284,7 +6284,7 @@ public class TestDependencyOffsets {
     public static void runShortP8() {
         short[] data = new short[RANGE];
         init(data);
-        testShortP8(data);
+        testShortP8(data, data);
         verify("testShortP8", data, goldShortP8);
     }
 
@@ -6314,9 +6314,9 @@ public class TestDependencyOffsets {
         applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"sve", "true"})
     //   Alignment unclear -> no IR rule for -XX:+AlignVector.
-    public static void testShortM14(short[] data) {
+    public static void testShortM14(short[] data, short[] data_2) {
         for (int j = 14; j < RANGE; j++) {
-            data[j + -14] = (short)(data[j] * (short)-11);
+            data_2[j + -14] = (short)(data[j] * (short)-11);
         }
     }
 
@@ -6325,7 +6325,7 @@ public class TestDependencyOffsets {
     public static void runShortM14() {
         short[] data = new short[RANGE];
         init(data);
-        testShortM14(data);
+        testShortM14(data, data);
         verify("testShortM14", data, goldShortM14);
     }
 
@@ -6358,9 +6358,9 @@ public class TestDependencyOffsets {
         applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 28"},
         applyIfCPUFeature = {"sve", "true"})
     //   Alignment unclear -> no IR rule for -XX:+AlignVector.
-    public static void testShortP14(short[] data) {
+    public static void testShortP14(short[] data, short[] data_2) {
         for (int j = 0; j < RANGE - 14; j++) {
-            data[j + 14] = (short)(data[j] * (short)-11);
+            data_2[j + 14] = (short)(data[j] * (short)-11);
         }
     }
 
@@ -6369,7 +6369,7 @@ public class TestDependencyOffsets {
     public static void runShortP14() {
         short[] data = new short[RANGE];
         init(data);
-        testShortP14(data);
+        testShortP14(data, data);
         verify("testShortP14", data, goldShortP14);
     }
 
@@ -6414,9 +6414,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_S, "> 0", IRNode.MUL_VS, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testShortM16(short[] data) {
+    public static void testShortM16(short[] data, short[] data_2) {
         for (int j = 16; j < RANGE; j++) {
-            data[j + -16] = (short)(data[j] * (short)-11);
+            data_2[j + -16] = (short)(data[j] * (short)-11);
         }
     }
 
@@ -6425,7 +6425,7 @@ public class TestDependencyOffsets {
     public static void runShortM16() {
         short[] data = new short[RANGE];
         init(data);
-        testShortM16(data);
+        testShortM16(data, data);
         verify("testShortM16", data, goldShortM16);
     }
 
@@ -6472,9 +6472,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_S, "> 0", IRNode.MUL_VS, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 32"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testShortP16(short[] data) {
+    public static void testShortP16(short[] data, short[] data_2) {
         for (int j = 0; j < RANGE - 16; j++) {
-            data[j + 16] = (short)(data[j] * (short)-11);
+            data_2[j + 16] = (short)(data[j] * (short)-11);
         }
     }
 
@@ -6483,7 +6483,7 @@ public class TestDependencyOffsets {
     public static void runShortP16() {
         short[] data = new short[RANGE];
         init(data);
-        testShortP16(data);
+        testShortP16(data, data);
         verify("testShortP16", data, goldShortP16);
     }
 
@@ -6513,9 +6513,9 @@ public class TestDependencyOffsets {
         applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"sve", "true"})
     //   Alignment unclear -> no IR rule for -XX:+AlignVector.
-    public static void testShortM18(short[] data) {
+    public static void testShortM18(short[] data, short[] data_2) {
         for (int j = 18; j < RANGE; j++) {
-            data[j + -18] = (short)(data[j] * (short)-11);
+            data_2[j + -18] = (short)(data[j] * (short)-11);
         }
     }
 
@@ -6524,7 +6524,7 @@ public class TestDependencyOffsets {
     public static void runShortM18() {
         short[] data = new short[RANGE];
         init(data);
-        testShortM18(data);
+        testShortM18(data, data);
         verify("testShortM18", data, goldShortM18);
     }
 
@@ -6556,9 +6556,9 @@ public class TestDependencyOffsets {
         applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 36"},
         applyIfCPUFeature = {"sve", "true"})
     //   Alignment unclear -> no IR rule for -XX:+AlignVector.
-    public static void testShortP18(short[] data) {
+    public static void testShortP18(short[] data, short[] data_2) {
         for (int j = 0; j < RANGE - 18; j++) {
-            data[j + 18] = (short)(data[j] * (short)-11);
+            data_2[j + 18] = (short)(data[j] * (short)-11);
         }
     }
 
@@ -6567,7 +6567,7 @@ public class TestDependencyOffsets {
     public static void runShortP18() {
         short[] data = new short[RANGE];
         init(data);
-        testShortP18(data);
+        testShortP18(data, data);
         verify("testShortP18", data, goldShortP18);
     }
 
@@ -6612,9 +6612,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_S, "> 0", IRNode.MUL_VS, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testShortM20(short[] data) {
+    public static void testShortM20(short[] data, short[] data_2) {
         for (int j = 20; j < RANGE; j++) {
-            data[j + -20] = (short)(data[j] * (short)-11);
+            data_2[j + -20] = (short)(data[j] * (short)-11);
         }
     }
 
@@ -6623,7 +6623,7 @@ public class TestDependencyOffsets {
     public static void runShortM20() {
         short[] data = new short[RANGE];
         init(data);
-        testShortM20(data);
+        testShortM20(data, data);
         verify("testShortM20", data, goldShortM20);
     }
 
@@ -6670,9 +6670,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_S, "> 0", IRNode.MUL_VS, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 40"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testShortP20(short[] data) {
+    public static void testShortP20(short[] data, short[] data_2) {
         for (int j = 0; j < RANGE - 20; j++) {
-            data[j + 20] = (short)(data[j] * (short)-11);
+            data_2[j + 20] = (short)(data[j] * (short)-11);
         }
     }
 
@@ -6681,7 +6681,7 @@ public class TestDependencyOffsets {
     public static void runShortP20() {
         short[] data = new short[RANGE];
         init(data);
-        testShortP20(data);
+        testShortP20(data, data);
         verify("testShortP20", data, goldShortP20);
     }
 
@@ -6726,9 +6726,9 @@ public class TestDependencyOffsets {
     @IR(failOn = {IRNode.LOAD_VECTOR_S, IRNode.MUL_VS, IRNode.STORE_VECTOR},
         applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testShortM31(short[] data) {
+    public static void testShortM31(short[] data, short[] data_2) {
         for (int j = 31; j < RANGE; j++) {
-            data[j + -31] = (short)(data[j] * (short)-11);
+            data_2[j + -31] = (short)(data[j] * (short)-11);
         }
     }
 
@@ -6737,7 +6737,7 @@ public class TestDependencyOffsets {
     public static void runShortM31() {
         short[] data = new short[RANGE];
         init(data);
-        testShortM31(data);
+        testShortM31(data, data);
         verify("testShortM31", data, goldShortM31);
     }
 
@@ -6784,9 +6784,9 @@ public class TestDependencyOffsets {
     @IR(failOn = {IRNode.LOAD_VECTOR_S, IRNode.MUL_VS, IRNode.STORE_VECTOR},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", "<= 62"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testShortP31(short[] data) {
+    public static void testShortP31(short[] data, short[] data_2) {
         for (int j = 0; j < RANGE - 31; j++) {
-            data[j + 31] = (short)(data[j] * (short)-11);
+            data_2[j + 31] = (short)(data[j] * (short)-11);
         }
     }
 
@@ -6795,7 +6795,7 @@ public class TestDependencyOffsets {
     public static void runShortP31() {
         short[] data = new short[RANGE];
         init(data);
-        testShortP31(data);
+        testShortP31(data, data);
         verify("testShortP31", data, goldShortP31);
     }
 
@@ -6840,9 +6840,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_S, "> 0", IRNode.MUL_VS, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testShortM32(short[] data) {
+    public static void testShortM32(short[] data, short[] data_2) {
         for (int j = 32; j < RANGE; j++) {
-            data[j + -32] = (short)(data[j] * (short)-11);
+            data_2[j + -32] = (short)(data[j] * (short)-11);
         }
     }
 
@@ -6851,7 +6851,7 @@ public class TestDependencyOffsets {
     public static void runShortM32() {
         short[] data = new short[RANGE];
         init(data);
-        testShortM32(data);
+        testShortM32(data, data);
         verify("testShortM32", data, goldShortM32);
     }
 
@@ -6897,9 +6897,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_S, "> 0", IRNode.MUL_VS, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 64"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testShortP32(short[] data) {
+    public static void testShortP32(short[] data, short[] data_2) {
         for (int j = 0; j < RANGE - 32; j++) {
-            data[j + 32] = (short)(data[j] * (short)-11);
+            data_2[j + 32] = (short)(data[j] * (short)-11);
         }
     }
 
@@ -6908,7 +6908,7 @@ public class TestDependencyOffsets {
     public static void runShortP32() {
         short[] data = new short[RANGE];
         init(data);
-        testShortP32(data);
+        testShortP32(data, data);
         verify("testShortP32", data, goldShortP32);
     }
 
@@ -6953,9 +6953,9 @@ public class TestDependencyOffsets {
     @IR(failOn = {IRNode.LOAD_VECTOR_S, IRNode.MUL_VS, IRNode.STORE_VECTOR},
         applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testShortM63(short[] data) {
+    public static void testShortM63(short[] data, short[] data_2) {
         for (int j = 63; j < RANGE; j++) {
-            data[j + -63] = (short)(data[j] * (short)-11);
+            data_2[j + -63] = (short)(data[j] * (short)-11);
         }
     }
 
@@ -6964,7 +6964,7 @@ public class TestDependencyOffsets {
     public static void runShortM63() {
         short[] data = new short[RANGE];
         init(data);
-        testShortM63(data);
+        testShortM63(data, data);
         verify("testShortM63", data, goldShortM63);
     }
 
@@ -7010,9 +7010,9 @@ public class TestDependencyOffsets {
     @IR(failOn = {IRNode.LOAD_VECTOR_S, IRNode.MUL_VS, IRNode.STORE_VECTOR},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", "<= 126"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testShortP63(short[] data) {
+    public static void testShortP63(short[] data, short[] data_2) {
         for (int j = 0; j < RANGE - 63; j++) {
-            data[j + 63] = (short)(data[j] * (short)-11);
+            data_2[j + 63] = (short)(data[j] * (short)-11);
         }
     }
 
@@ -7021,7 +7021,7 @@ public class TestDependencyOffsets {
     public static void runShortP63() {
         short[] data = new short[RANGE];
         init(data);
-        testShortP63(data);
+        testShortP63(data, data);
         verify("testShortP63", data, goldShortP63);
     }
 
@@ -7066,9 +7066,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_S, "> 0", IRNode.MUL_VS, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testShortM64(short[] data) {
+    public static void testShortM64(short[] data, short[] data_2) {
         for (int j = 64; j < RANGE; j++) {
-            data[j + -64] = (short)(data[j] * (short)-11);
+            data_2[j + -64] = (short)(data[j] * (short)-11);
         }
     }
 
@@ -7077,7 +7077,7 @@ public class TestDependencyOffsets {
     public static void runShortM64() {
         short[] data = new short[RANGE];
         init(data);
-        testShortM64(data);
+        testShortM64(data, data);
         verify("testShortM64", data, goldShortM64);
     }
 
@@ -7123,9 +7123,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_S, "> 0", IRNode.MUL_VS, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 128"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testShortP64(short[] data) {
+    public static void testShortP64(short[] data, short[] data_2) {
         for (int j = 0; j < RANGE - 64; j++) {
-            data[j + 64] = (short)(data[j] * (short)-11);
+            data_2[j + 64] = (short)(data[j] * (short)-11);
         }
     }
 
@@ -7134,7 +7134,7 @@ public class TestDependencyOffsets {
     public static void runShortP64() {
         short[] data = new short[RANGE];
         init(data);
-        testShortP64(data);
+        testShortP64(data, data);
         verify("testShortP64", data, goldShortP64);
     }
 
@@ -7179,9 +7179,9 @@ public class TestDependencyOffsets {
     @IR(failOn = {IRNode.LOAD_VECTOR_S, IRNode.MUL_VS, IRNode.STORE_VECTOR},
         applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testShortM65(short[] data) {
+    public static void testShortM65(short[] data, short[] data_2) {
         for (int j = 65; j < RANGE; j++) {
-            data[j + -65] = (short)(data[j] * (short)-11);
+            data_2[j + -65] = (short)(data[j] * (short)-11);
         }
     }
 
@@ -7190,7 +7190,7 @@ public class TestDependencyOffsets {
     public static void runShortM65() {
         short[] data = new short[RANGE];
         init(data);
-        testShortM65(data);
+        testShortM65(data, data);
         verify("testShortM65", data, goldShortM65);
     }
 
@@ -7236,9 +7236,9 @@ public class TestDependencyOffsets {
     @IR(failOn = {IRNode.LOAD_VECTOR_S, IRNode.MUL_VS, IRNode.STORE_VECTOR},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", "<= 130"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testShortP65(short[] data) {
+    public static void testShortP65(short[] data, short[] data_2) {
         for (int j = 0; j < RANGE - 65; j++) {
-            data[j + 65] = (short)(data[j] * (short)-11);
+            data_2[j + 65] = (short)(data[j] * (short)-11);
         }
     }
 
@@ -7247,7 +7247,7 @@ public class TestDependencyOffsets {
     public static void runShortP65() {
         short[] data = new short[RANGE];
         init(data);
-        testShortP65(data);
+        testShortP65(data, data);
         verify("testShortP65", data, goldShortP65);
     }
 
@@ -7292,9 +7292,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_S, "> 0", IRNode.MUL_VS, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testShortM128(short[] data) {
+    public static void testShortM128(short[] data, short[] data_2) {
         for (int j = 128; j < RANGE; j++) {
-            data[j + -128] = (short)(data[j] * (short)-11);
+            data_2[j + -128] = (short)(data[j] * (short)-11);
         }
     }
 
@@ -7303,7 +7303,7 @@ public class TestDependencyOffsets {
     public static void runShortM128() {
         short[] data = new short[RANGE];
         init(data);
-        testShortM128(data);
+        testShortM128(data, data);
         verify("testShortM128", data, goldShortM128);
     }
 
@@ -7348,9 +7348,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_S, "> 0", IRNode.MUL_VS, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testShortP128(short[] data) {
+    public static void testShortP128(short[] data, short[] data_2) {
         for (int j = 0; j < RANGE - 128; j++) {
-            data[j + 128] = (short)(data[j] * (short)-11);
+            data_2[j + 128] = (short)(data[j] * (short)-11);
         }
     }
 
@@ -7359,7 +7359,7 @@ public class TestDependencyOffsets {
     public static void runShortP128() {
         short[] data = new short[RANGE];
         init(data);
-        testShortP128(data);
+        testShortP128(data, data);
         verify("testShortP128", data, goldShortP128);
     }
 
@@ -7404,9 +7404,9 @@ public class TestDependencyOffsets {
     @IR(failOn = {IRNode.LOAD_VECTOR_S, IRNode.MUL_VS, IRNode.STORE_VECTOR},
         applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testShortM129(short[] data) {
+    public static void testShortM129(short[] data, short[] data_2) {
         for (int j = 129; j < RANGE; j++) {
-            data[j + -129] = (short)(data[j] * (short)-11);
+            data_2[j + -129] = (short)(data[j] * (short)-11);
         }
     }
 
@@ -7415,7 +7415,7 @@ public class TestDependencyOffsets {
     public static void runShortM129() {
         short[] data = new short[RANGE];
         init(data);
-        testShortM129(data);
+        testShortM129(data, data);
         verify("testShortM129", data, goldShortM129);
     }
 
@@ -7460,9 +7460,9 @@ public class TestDependencyOffsets {
     @IR(failOn = {IRNode.LOAD_VECTOR_S, IRNode.MUL_VS, IRNode.STORE_VECTOR},
         applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testShortP129(short[] data) {
+    public static void testShortP129(short[] data, short[] data_2) {
         for (int j = 0; j < RANGE - 129; j++) {
-            data[j + 129] = (short)(data[j] * (short)-11);
+            data_2[j + 129] = (short)(data[j] * (short)-11);
         }
     }
 
@@ -7471,7 +7471,7 @@ public class TestDependencyOffsets {
     public static void runShortP129() {
         short[] data = new short[RANGE];
         init(data);
-        testShortP129(data);
+        testShortP129(data, data);
         verify("testShortP129", data, goldShortP129);
     }
 
@@ -7516,9 +7516,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_S, "> 0", IRNode.MUL_VS, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testShortM192(short[] data) {
+    public static void testShortM192(short[] data, short[] data_2) {
         for (int j = 192; j < RANGE; j++) {
-            data[j + -192] = (short)(data[j] * (short)-11);
+            data_2[j + -192] = (short)(data[j] * (short)-11);
         }
     }
 
@@ -7527,7 +7527,7 @@ public class TestDependencyOffsets {
     public static void runShortM192() {
         short[] data = new short[RANGE];
         init(data);
-        testShortM192(data);
+        testShortM192(data, data);
         verify("testShortM192", data, goldShortM192);
     }
 
@@ -7572,9 +7572,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_S, "> 0", IRNode.MUL_VS, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testShortP192(short[] data) {
+    public static void testShortP192(short[] data, short[] data_2) {
         for (int j = 0; j < RANGE - 192; j++) {
-            data[j + 192] = (short)(data[j] * (short)-11);
+            data_2[j + 192] = (short)(data[j] * (short)-11);
         }
     }
 
@@ -7583,7 +7583,7 @@ public class TestDependencyOffsets {
     public static void runShortP192() {
         short[] data = new short[RANGE];
         init(data);
-        testShortP192(data);
+        testShortP192(data, data);
         verify("testShortP192", data, goldShortP192);
     }
 
@@ -7628,9 +7628,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_C, "> 0", IRNode.MUL_VS, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testCharP0(char[] data) {
+    public static void testCharP0(char[] data, char[] data_2) {
         for (int j = 0; j < RANGE; j++) {
-            data[j + 0] = (char)(data[j] * (char)-11);
+            data_2[j + 0] = (char)(data[j] * (char)-11);
         }
     }
 
@@ -7639,7 +7639,7 @@ public class TestDependencyOffsets {
     public static void runCharP0() {
         char[] data = new char[RANGE];
         init(data);
-        testCharP0(data);
+        testCharP0(data, data);
         verify("testCharP0", data, goldCharP0);
     }
 
@@ -7684,9 +7684,9 @@ public class TestDependencyOffsets {
     @IR(failOn = {IRNode.LOAD_VECTOR_C, IRNode.MUL_VS, IRNode.STORE_VECTOR},
         applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testCharM1(char[] data) {
+    public static void testCharM1(char[] data, char[] data_2) {
         for (int j = 1; j < RANGE; j++) {
-            data[j + -1] = (char)(data[j] * (char)-11);
+            data_2[j + -1] = (char)(data[j] * (char)-11);
         }
     }
 
@@ -7695,7 +7695,7 @@ public class TestDependencyOffsets {
     public static void runCharM1() {
         char[] data = new char[RANGE];
         init(data);
-        testCharM1(data);
+        testCharM1(data, data);
         verify("testCharM1", data, goldCharM1);
     }
 
@@ -7735,9 +7735,9 @@ public class TestDependencyOffsets {
     @IR(failOn = {IRNode.LOAD_VECTOR_C, IRNode.MUL_VS, IRNode.STORE_VECTOR},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", "<= 2"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testCharP1(char[] data) {
+    public static void testCharP1(char[] data, char[] data_2) {
         for (int j = 0; j < RANGE - 1; j++) {
-            data[j + 1] = (char)(data[j] * (char)-11);
+            data_2[j + 1] = (char)(data[j] * (char)-11);
         }
     }
 
@@ -7746,7 +7746,7 @@ public class TestDependencyOffsets {
     public static void runCharP1() {
         char[] data = new char[RANGE];
         init(data);
-        testCharP1(data);
+        testCharP1(data, data);
         verify("testCharP1", data, goldCharP1);
     }
 
@@ -7776,9 +7776,9 @@ public class TestDependencyOffsets {
         applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"sve", "true"})
     //   Alignment unclear -> no IR rule for -XX:+AlignVector.
-    public static void testCharM2(char[] data) {
+    public static void testCharM2(char[] data, char[] data_2) {
         for (int j = 2; j < RANGE; j++) {
-            data[j + -2] = (char)(data[j] * (char)-11);
+            data_2[j + -2] = (char)(data[j] * (char)-11);
         }
     }
 
@@ -7787,7 +7787,7 @@ public class TestDependencyOffsets {
     public static void runCharM2() {
         char[] data = new char[RANGE];
         init(data);
-        testCharM2(data);
+        testCharM2(data, data);
         verify("testCharM2", data, goldCharM2);
     }
 
@@ -7822,9 +7822,9 @@ public class TestDependencyOffsets {
         applyIfAnd = {"AlignVector", "false", "MaxVectorSize", "4"},
         applyIfCPUFeature = {"sve", "true"})
     //   Alignment unclear -> no IR rule for -XX:+AlignVector.
-    public static void testCharP2(char[] data) {
+    public static void testCharP2(char[] data, char[] data_2) {
         for (int j = 0; j < RANGE - 2; j++) {
-            data[j + 2] = (char)(data[j] * (char)-11);
+            data_2[j + 2] = (char)(data[j] * (char)-11);
         }
     }
 
@@ -7833,7 +7833,7 @@ public class TestDependencyOffsets {
     public static void runCharP2() {
         char[] data = new char[RANGE];
         init(data);
-        testCharP2(data);
+        testCharP2(data, data);
         verify("testCharP2", data, goldCharP2);
     }
 
@@ -7878,9 +7878,9 @@ public class TestDependencyOffsets {
     @IR(failOn = {IRNode.LOAD_VECTOR_C, IRNode.MUL_VS, IRNode.STORE_VECTOR},
         applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testCharM3(char[] data) {
+    public static void testCharM3(char[] data, char[] data_2) {
         for (int j = 3; j < RANGE; j++) {
-            data[j + -3] = (char)(data[j] * (char)-11);
+            data_2[j + -3] = (char)(data[j] * (char)-11);
         }
     }
 
@@ -7889,7 +7889,7 @@ public class TestDependencyOffsets {
     public static void runCharM3() {
         char[] data = new char[RANGE];
         init(data);
-        testCharM3(data);
+        testCharM3(data, data);
         verify("testCharM3", data, goldCharM3);
     }
 
@@ -7939,9 +7939,9 @@ public class TestDependencyOffsets {
     @IR(failOn = {IRNode.LOAD_VECTOR_C, IRNode.MUL_VS, IRNode.STORE_VECTOR},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", "<= 6"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testCharP3(char[] data) {
+    public static void testCharP3(char[] data, char[] data_2) {
         for (int j = 0; j < RANGE - 3; j++) {
-            data[j + 3] = (char)(data[j] * (char)-11);
+            data_2[j + 3] = (char)(data[j] * (char)-11);
         }
     }
 
@@ -7950,7 +7950,7 @@ public class TestDependencyOffsets {
     public static void runCharP3() {
         char[] data = new char[RANGE];
         init(data);
-        testCharP3(data);
+        testCharP3(data, data);
         verify("testCharP3", data, goldCharP3);
     }
 
@@ -7995,9 +7995,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_C, "> 0", IRNode.MUL_VS, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testCharM4(char[] data) {
+    public static void testCharM4(char[] data, char[] data_2) {
         for (int j = 4; j < RANGE; j++) {
-            data[j + -4] = (char)(data[j] * (char)-11);
+            data_2[j + -4] = (char)(data[j] * (char)-11);
         }
     }
 
@@ -8006,7 +8006,7 @@ public class TestDependencyOffsets {
     public static void runCharM4() {
         char[] data = new char[RANGE];
         init(data);
-        testCharM4(data);
+        testCharM4(data, data);
         verify("testCharM4", data, goldCharM4);
     }
 
@@ -8056,9 +8056,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_C, "> 0", IRNode.MUL_VS, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 8"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testCharP4(char[] data) {
+    public static void testCharP4(char[] data, char[] data_2) {
         for (int j = 0; j < RANGE - 4; j++) {
-            data[j + 4] = (char)(data[j] * (char)-11);
+            data_2[j + 4] = (char)(data[j] * (char)-11);
         }
     }
 
@@ -8067,7 +8067,7 @@ public class TestDependencyOffsets {
     public static void runCharP4() {
         char[] data = new char[RANGE];
         init(data);
-        testCharP4(data);
+        testCharP4(data, data);
         verify("testCharP4", data, goldCharP4);
     }
 
@@ -8112,9 +8112,9 @@ public class TestDependencyOffsets {
     @IR(failOn = {IRNode.LOAD_VECTOR_C, IRNode.MUL_VS, IRNode.STORE_VECTOR},
         applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testCharM7(char[] data) {
+    public static void testCharM7(char[] data, char[] data_2) {
         for (int j = 7; j < RANGE; j++) {
-            data[j + -7] = (char)(data[j] * (char)-11);
+            data_2[j + -7] = (char)(data[j] * (char)-11);
         }
     }
 
@@ -8123,7 +8123,7 @@ public class TestDependencyOffsets {
     public static void runCharM7() {
         char[] data = new char[RANGE];
         init(data);
-        testCharM7(data);
+        testCharM7(data, data);
         verify("testCharM7", data, goldCharM7);
     }
 
@@ -8173,9 +8173,9 @@ public class TestDependencyOffsets {
     @IR(failOn = {IRNode.LOAD_VECTOR_C, IRNode.MUL_VS, IRNode.STORE_VECTOR},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", "<= 14"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testCharP7(char[] data) {
+    public static void testCharP7(char[] data, char[] data_2) {
         for (int j = 0; j < RANGE - 7; j++) {
-            data[j + 7] = (char)(data[j] * (char)-11);
+            data_2[j + 7] = (char)(data[j] * (char)-11);
         }
     }
 
@@ -8184,7 +8184,7 @@ public class TestDependencyOffsets {
     public static void runCharP7() {
         char[] data = new char[RANGE];
         init(data);
-        testCharP7(data);
+        testCharP7(data, data);
         verify("testCharP7", data, goldCharP7);
     }
 
@@ -8229,9 +8229,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_C, "> 0", IRNode.MUL_VS, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testCharM8(char[] data) {
+    public static void testCharM8(char[] data, char[] data_2) {
         for (int j = 8; j < RANGE; j++) {
-            data[j + -8] = (char)(data[j] * (char)-11);
+            data_2[j + -8] = (char)(data[j] * (char)-11);
         }
     }
 
@@ -8240,7 +8240,7 @@ public class TestDependencyOffsets {
     public static void runCharM8() {
         char[] data = new char[RANGE];
         init(data);
-        testCharM8(data);
+        testCharM8(data, data);
         verify("testCharM8", data, goldCharM8);
     }
 
@@ -8288,9 +8288,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_C, "> 0", IRNode.MUL_VS, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 16"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testCharP8(char[] data) {
+    public static void testCharP8(char[] data, char[] data_2) {
         for (int j = 0; j < RANGE - 8; j++) {
-            data[j + 8] = (char)(data[j] * (char)-11);
+            data_2[j + 8] = (char)(data[j] * (char)-11);
         }
     }
 
@@ -8299,7 +8299,7 @@ public class TestDependencyOffsets {
     public static void runCharP8() {
         char[] data = new char[RANGE];
         init(data);
-        testCharP8(data);
+        testCharP8(data, data);
         verify("testCharP8", data, goldCharP8);
     }
 
@@ -8329,9 +8329,9 @@ public class TestDependencyOffsets {
         applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"sve", "true"})
     //   Alignment unclear -> no IR rule for -XX:+AlignVector.
-    public static void testCharM14(char[] data) {
+    public static void testCharM14(char[] data, char[] data_2) {
         for (int j = 14; j < RANGE; j++) {
-            data[j + -14] = (char)(data[j] * (char)-11);
+            data_2[j + -14] = (char)(data[j] * (char)-11);
         }
     }
 
@@ -8340,7 +8340,7 @@ public class TestDependencyOffsets {
     public static void runCharM14() {
         char[] data = new char[RANGE];
         init(data);
-        testCharM14(data);
+        testCharM14(data, data);
         verify("testCharM14", data, goldCharM14);
     }
 
@@ -8373,9 +8373,9 @@ public class TestDependencyOffsets {
         applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 28"},
         applyIfCPUFeature = {"sve", "true"})
     //   Alignment unclear -> no IR rule for -XX:+AlignVector.
-    public static void testCharP14(char[] data) {
+    public static void testCharP14(char[] data, char[] data_2) {
         for (int j = 0; j < RANGE - 14; j++) {
-            data[j + 14] = (char)(data[j] * (char)-11);
+            data_2[j + 14] = (char)(data[j] * (char)-11);
         }
     }
 
@@ -8384,7 +8384,7 @@ public class TestDependencyOffsets {
     public static void runCharP14() {
         char[] data = new char[RANGE];
         init(data);
-        testCharP14(data);
+        testCharP14(data, data);
         verify("testCharP14", data, goldCharP14);
     }
 
@@ -8429,9 +8429,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_C, "> 0", IRNode.MUL_VS, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testCharM16(char[] data) {
+    public static void testCharM16(char[] data, char[] data_2) {
         for (int j = 16; j < RANGE; j++) {
-            data[j + -16] = (char)(data[j] * (char)-11);
+            data_2[j + -16] = (char)(data[j] * (char)-11);
         }
     }
 
@@ -8440,7 +8440,7 @@ public class TestDependencyOffsets {
     public static void runCharM16() {
         char[] data = new char[RANGE];
         init(data);
-        testCharM16(data);
+        testCharM16(data, data);
         verify("testCharM16", data, goldCharM16);
     }
 
@@ -8487,9 +8487,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_C, "> 0", IRNode.MUL_VS, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 32"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testCharP16(char[] data) {
+    public static void testCharP16(char[] data, char[] data_2) {
         for (int j = 0; j < RANGE - 16; j++) {
-            data[j + 16] = (char)(data[j] * (char)-11);
+            data_2[j + 16] = (char)(data[j] * (char)-11);
         }
     }
 
@@ -8498,7 +8498,7 @@ public class TestDependencyOffsets {
     public static void runCharP16() {
         char[] data = new char[RANGE];
         init(data);
-        testCharP16(data);
+        testCharP16(data, data);
         verify("testCharP16", data, goldCharP16);
     }
 
@@ -8528,9 +8528,9 @@ public class TestDependencyOffsets {
         applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"sve", "true"})
     //   Alignment unclear -> no IR rule for -XX:+AlignVector.
-    public static void testCharM18(char[] data) {
+    public static void testCharM18(char[] data, char[] data_2) {
         for (int j = 18; j < RANGE; j++) {
-            data[j + -18] = (char)(data[j] * (char)-11);
+            data_2[j + -18] = (char)(data[j] * (char)-11);
         }
     }
 
@@ -8539,7 +8539,7 @@ public class TestDependencyOffsets {
     public static void runCharM18() {
         char[] data = new char[RANGE];
         init(data);
-        testCharM18(data);
+        testCharM18(data, data);
         verify("testCharM18", data, goldCharM18);
     }
 
@@ -8571,9 +8571,9 @@ public class TestDependencyOffsets {
         applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 36"},
         applyIfCPUFeature = {"sve", "true"})
     //   Alignment unclear -> no IR rule for -XX:+AlignVector.
-    public static void testCharP18(char[] data) {
+    public static void testCharP18(char[] data, char[] data_2) {
         for (int j = 0; j < RANGE - 18; j++) {
-            data[j + 18] = (char)(data[j] * (char)-11);
+            data_2[j + 18] = (char)(data[j] * (char)-11);
         }
     }
 
@@ -8582,7 +8582,7 @@ public class TestDependencyOffsets {
     public static void runCharP18() {
         char[] data = new char[RANGE];
         init(data);
-        testCharP18(data);
+        testCharP18(data, data);
         verify("testCharP18", data, goldCharP18);
     }
 
@@ -8627,9 +8627,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_C, "> 0", IRNode.MUL_VS, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testCharM20(char[] data) {
+    public static void testCharM20(char[] data, char[] data_2) {
         for (int j = 20; j < RANGE; j++) {
-            data[j + -20] = (char)(data[j] * (char)-11);
+            data_2[j + -20] = (char)(data[j] * (char)-11);
         }
     }
 
@@ -8638,7 +8638,7 @@ public class TestDependencyOffsets {
     public static void runCharM20() {
         char[] data = new char[RANGE];
         init(data);
-        testCharM20(data);
+        testCharM20(data, data);
         verify("testCharM20", data, goldCharM20);
     }
 
@@ -8685,9 +8685,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_C, "> 0", IRNode.MUL_VS, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 40"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testCharP20(char[] data) {
+    public static void testCharP20(char[] data, char[] data_2) {
         for (int j = 0; j < RANGE - 20; j++) {
-            data[j + 20] = (char)(data[j] * (char)-11);
+            data_2[j + 20] = (char)(data[j] * (char)-11);
         }
     }
 
@@ -8696,7 +8696,7 @@ public class TestDependencyOffsets {
     public static void runCharP20() {
         char[] data = new char[RANGE];
         init(data);
-        testCharP20(data);
+        testCharP20(data, data);
         verify("testCharP20", data, goldCharP20);
     }
 
@@ -8741,9 +8741,9 @@ public class TestDependencyOffsets {
     @IR(failOn = {IRNode.LOAD_VECTOR_C, IRNode.MUL_VS, IRNode.STORE_VECTOR},
         applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testCharM31(char[] data) {
+    public static void testCharM31(char[] data, char[] data_2) {
         for (int j = 31; j < RANGE; j++) {
-            data[j + -31] = (char)(data[j] * (char)-11);
+            data_2[j + -31] = (char)(data[j] * (char)-11);
         }
     }
 
@@ -8752,7 +8752,7 @@ public class TestDependencyOffsets {
     public static void runCharM31() {
         char[] data = new char[RANGE];
         init(data);
-        testCharM31(data);
+        testCharM31(data, data);
         verify("testCharM31", data, goldCharM31);
     }
 
@@ -8799,9 +8799,9 @@ public class TestDependencyOffsets {
     @IR(failOn = {IRNode.LOAD_VECTOR_C, IRNode.MUL_VS, IRNode.STORE_VECTOR},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", "<= 62"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testCharP31(char[] data) {
+    public static void testCharP31(char[] data, char[] data_2) {
         for (int j = 0; j < RANGE - 31; j++) {
-            data[j + 31] = (char)(data[j] * (char)-11);
+            data_2[j + 31] = (char)(data[j] * (char)-11);
         }
     }
 
@@ -8810,7 +8810,7 @@ public class TestDependencyOffsets {
     public static void runCharP31() {
         char[] data = new char[RANGE];
         init(data);
-        testCharP31(data);
+        testCharP31(data, data);
         verify("testCharP31", data, goldCharP31);
     }
 
@@ -8855,9 +8855,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_C, "> 0", IRNode.MUL_VS, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testCharM32(char[] data) {
+    public static void testCharM32(char[] data, char[] data_2) {
         for (int j = 32; j < RANGE; j++) {
-            data[j + -32] = (char)(data[j] * (char)-11);
+            data_2[j + -32] = (char)(data[j] * (char)-11);
         }
     }
 
@@ -8866,7 +8866,7 @@ public class TestDependencyOffsets {
     public static void runCharM32() {
         char[] data = new char[RANGE];
         init(data);
-        testCharM32(data);
+        testCharM32(data, data);
         verify("testCharM32", data, goldCharM32);
     }
 
@@ -8912,9 +8912,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_C, "> 0", IRNode.MUL_VS, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 64"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testCharP32(char[] data) {
+    public static void testCharP32(char[] data, char[] data_2) {
         for (int j = 0; j < RANGE - 32; j++) {
-            data[j + 32] = (char)(data[j] * (char)-11);
+            data_2[j + 32] = (char)(data[j] * (char)-11);
         }
     }
 
@@ -8923,7 +8923,7 @@ public class TestDependencyOffsets {
     public static void runCharP32() {
         char[] data = new char[RANGE];
         init(data);
-        testCharP32(data);
+        testCharP32(data, data);
         verify("testCharP32", data, goldCharP32);
     }
 
@@ -8968,9 +8968,9 @@ public class TestDependencyOffsets {
     @IR(failOn = {IRNode.LOAD_VECTOR_C, IRNode.MUL_VS, IRNode.STORE_VECTOR},
         applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testCharM63(char[] data) {
+    public static void testCharM63(char[] data, char[] data_2) {
         for (int j = 63; j < RANGE; j++) {
-            data[j + -63] = (char)(data[j] * (char)-11);
+            data_2[j + -63] = (char)(data[j] * (char)-11);
         }
     }
 
@@ -8979,7 +8979,7 @@ public class TestDependencyOffsets {
     public static void runCharM63() {
         char[] data = new char[RANGE];
         init(data);
-        testCharM63(data);
+        testCharM63(data, data);
         verify("testCharM63", data, goldCharM63);
     }
 
@@ -9025,9 +9025,9 @@ public class TestDependencyOffsets {
     @IR(failOn = {IRNode.LOAD_VECTOR_C, IRNode.MUL_VS, IRNode.STORE_VECTOR},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", "<= 126"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testCharP63(char[] data) {
+    public static void testCharP63(char[] data, char[] data_2) {
         for (int j = 0; j < RANGE - 63; j++) {
-            data[j + 63] = (char)(data[j] * (char)-11);
+            data_2[j + 63] = (char)(data[j] * (char)-11);
         }
     }
 
@@ -9036,7 +9036,7 @@ public class TestDependencyOffsets {
     public static void runCharP63() {
         char[] data = new char[RANGE];
         init(data);
-        testCharP63(data);
+        testCharP63(data, data);
         verify("testCharP63", data, goldCharP63);
     }
 
@@ -9081,9 +9081,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_C, "> 0", IRNode.MUL_VS, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testCharM64(char[] data) {
+    public static void testCharM64(char[] data, char[] data_2) {
         for (int j = 64; j < RANGE; j++) {
-            data[j + -64] = (char)(data[j] * (char)-11);
+            data_2[j + -64] = (char)(data[j] * (char)-11);
         }
     }
 
@@ -9092,7 +9092,7 @@ public class TestDependencyOffsets {
     public static void runCharM64() {
         char[] data = new char[RANGE];
         init(data);
-        testCharM64(data);
+        testCharM64(data, data);
         verify("testCharM64", data, goldCharM64);
     }
 
@@ -9138,9 +9138,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_C, "> 0", IRNode.MUL_VS, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 128"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testCharP64(char[] data) {
+    public static void testCharP64(char[] data, char[] data_2) {
         for (int j = 0; j < RANGE - 64; j++) {
-            data[j + 64] = (char)(data[j] * (char)-11);
+            data_2[j + 64] = (char)(data[j] * (char)-11);
         }
     }
 
@@ -9149,7 +9149,7 @@ public class TestDependencyOffsets {
     public static void runCharP64() {
         char[] data = new char[RANGE];
         init(data);
-        testCharP64(data);
+        testCharP64(data, data);
         verify("testCharP64", data, goldCharP64);
     }
 
@@ -9194,9 +9194,9 @@ public class TestDependencyOffsets {
     @IR(failOn = {IRNode.LOAD_VECTOR_C, IRNode.MUL_VS, IRNode.STORE_VECTOR},
         applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testCharM65(char[] data) {
+    public static void testCharM65(char[] data, char[] data_2) {
         for (int j = 65; j < RANGE; j++) {
-            data[j + -65] = (char)(data[j] * (char)-11);
+            data_2[j + -65] = (char)(data[j] * (char)-11);
         }
     }
 
@@ -9205,7 +9205,7 @@ public class TestDependencyOffsets {
     public static void runCharM65() {
         char[] data = new char[RANGE];
         init(data);
-        testCharM65(data);
+        testCharM65(data, data);
         verify("testCharM65", data, goldCharM65);
     }
 
@@ -9251,9 +9251,9 @@ public class TestDependencyOffsets {
     @IR(failOn = {IRNode.LOAD_VECTOR_C, IRNode.MUL_VS, IRNode.STORE_VECTOR},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", "<= 130"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testCharP65(char[] data) {
+    public static void testCharP65(char[] data, char[] data_2) {
         for (int j = 0; j < RANGE - 65; j++) {
-            data[j + 65] = (char)(data[j] * (char)-11);
+            data_2[j + 65] = (char)(data[j] * (char)-11);
         }
     }
 
@@ -9262,7 +9262,7 @@ public class TestDependencyOffsets {
     public static void runCharP65() {
         char[] data = new char[RANGE];
         init(data);
-        testCharP65(data);
+        testCharP65(data, data);
         verify("testCharP65", data, goldCharP65);
     }
 
@@ -9307,9 +9307,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_C, "> 0", IRNode.MUL_VS, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testCharM128(char[] data) {
+    public static void testCharM128(char[] data, char[] data_2) {
         for (int j = 128; j < RANGE; j++) {
-            data[j + -128] = (char)(data[j] * (char)-11);
+            data_2[j + -128] = (char)(data[j] * (char)-11);
         }
     }
 
@@ -9318,7 +9318,7 @@ public class TestDependencyOffsets {
     public static void runCharM128() {
         char[] data = new char[RANGE];
         init(data);
-        testCharM128(data);
+        testCharM128(data, data);
         verify("testCharM128", data, goldCharM128);
     }
 
@@ -9363,9 +9363,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_C, "> 0", IRNode.MUL_VS, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testCharP128(char[] data) {
+    public static void testCharP128(char[] data, char[] data_2) {
         for (int j = 0; j < RANGE - 128; j++) {
-            data[j + 128] = (char)(data[j] * (char)-11);
+            data_2[j + 128] = (char)(data[j] * (char)-11);
         }
     }
 
@@ -9374,7 +9374,7 @@ public class TestDependencyOffsets {
     public static void runCharP128() {
         char[] data = new char[RANGE];
         init(data);
-        testCharP128(data);
+        testCharP128(data, data);
         verify("testCharP128", data, goldCharP128);
     }
 
@@ -9419,9 +9419,9 @@ public class TestDependencyOffsets {
     @IR(failOn = {IRNode.LOAD_VECTOR_C, IRNode.MUL_VS, IRNode.STORE_VECTOR},
         applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testCharM129(char[] data) {
+    public static void testCharM129(char[] data, char[] data_2) {
         for (int j = 129; j < RANGE; j++) {
-            data[j + -129] = (char)(data[j] * (char)-11);
+            data_2[j + -129] = (char)(data[j] * (char)-11);
         }
     }
 
@@ -9430,7 +9430,7 @@ public class TestDependencyOffsets {
     public static void runCharM129() {
         char[] data = new char[RANGE];
         init(data);
-        testCharM129(data);
+        testCharM129(data, data);
         verify("testCharM129", data, goldCharM129);
     }
 
@@ -9475,9 +9475,9 @@ public class TestDependencyOffsets {
     @IR(failOn = {IRNode.LOAD_VECTOR_C, IRNode.MUL_VS, IRNode.STORE_VECTOR},
         applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testCharP129(char[] data) {
+    public static void testCharP129(char[] data, char[] data_2) {
         for (int j = 0; j < RANGE - 129; j++) {
-            data[j + 129] = (char)(data[j] * (char)-11);
+            data_2[j + 129] = (char)(data[j] * (char)-11);
         }
     }
 
@@ -9486,7 +9486,7 @@ public class TestDependencyOffsets {
     public static void runCharP129() {
         char[] data = new char[RANGE];
         init(data);
-        testCharP129(data);
+        testCharP129(data, data);
         verify("testCharP129", data, goldCharP129);
     }
 
@@ -9531,9 +9531,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_C, "> 0", IRNode.MUL_VS, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testCharM192(char[] data) {
+    public static void testCharM192(char[] data, char[] data_2) {
         for (int j = 192; j < RANGE; j++) {
-            data[j + -192] = (char)(data[j] * (char)-11);
+            data_2[j + -192] = (char)(data[j] * (char)-11);
         }
     }
 
@@ -9542,7 +9542,7 @@ public class TestDependencyOffsets {
     public static void runCharM192() {
         char[] data = new char[RANGE];
         init(data);
-        testCharM192(data);
+        testCharM192(data, data);
         verify("testCharM192", data, goldCharM192);
     }
 
@@ -9587,9 +9587,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_C, "> 0", IRNode.MUL_VS, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testCharP192(char[] data) {
+    public static void testCharP192(char[] data, char[] data_2) {
         for (int j = 0; j < RANGE - 192; j++) {
-            data[j + 192] = (char)(data[j] * (char)-11);
+            data_2[j + 192] = (char)(data[j] * (char)-11);
         }
     }
 
@@ -9598,7 +9598,7 @@ public class TestDependencyOffsets {
     public static void runCharP192() {
         char[] data = new char[RANGE];
         init(data);
-        testCharP192(data);
+        testCharP192(data, data);
         verify("testCharP192", data, goldCharP192);
     }
 
@@ -9643,9 +9643,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0", IRNode.MUL_VB, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testByteP0(byte[] data) {
+    public static void testByteP0(byte[] data, byte[] data_2) {
         for (int j = 0; j < RANGE; j++) {
-            data[j + 0] = (byte)(data[j] * (byte)11);
+            data_2[j + 0] = (byte)(data[j] * (byte)11);
         }
     }
 
@@ -9654,7 +9654,7 @@ public class TestDependencyOffsets {
     public static void runByteP0() {
         byte[] data = new byte[RANGE];
         init(data);
-        testByteP0(data);
+        testByteP0(data, data);
         verify("testByteP0", data, goldByteP0);
     }
 
@@ -9699,9 +9699,9 @@ public class TestDependencyOffsets {
     @IR(failOn = {IRNode.LOAD_VECTOR_B, IRNode.MUL_VB, IRNode.STORE_VECTOR},
         applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testByteM1(byte[] data) {
+    public static void testByteM1(byte[] data, byte[] data_2) {
         for (int j = 1; j < RANGE; j++) {
-            data[j + -1] = (byte)(data[j] * (byte)11);
+            data_2[j + -1] = (byte)(data[j] * (byte)11);
         }
     }
 
@@ -9710,7 +9710,7 @@ public class TestDependencyOffsets {
     public static void runByteM1() {
         byte[] data = new byte[RANGE];
         init(data);
-        testByteM1(data);
+        testByteM1(data, data);
         verify("testByteM1", data, goldByteM1);
     }
 
@@ -9750,9 +9750,9 @@ public class TestDependencyOffsets {
     @IR(failOn = {IRNode.LOAD_VECTOR_B, IRNode.MUL_VB, IRNode.STORE_VECTOR},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", "<= 1"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testByteP1(byte[] data) {
+    public static void testByteP1(byte[] data, byte[] data_2) {
         for (int j = 0; j < RANGE - 1; j++) {
-            data[j + 1] = (byte)(data[j] * (byte)11);
+            data_2[j + 1] = (byte)(data[j] * (byte)11);
         }
     }
 
@@ -9761,7 +9761,7 @@ public class TestDependencyOffsets {
     public static void runByteP1() {
         byte[] data = new byte[RANGE];
         init(data);
-        testByteP1(data);
+        testByteP1(data, data);
         verify("testByteP1", data, goldByteP1);
     }
 
@@ -9806,9 +9806,9 @@ public class TestDependencyOffsets {
     @IR(failOn = {IRNode.LOAD_VECTOR_B, IRNode.MUL_VB, IRNode.STORE_VECTOR},
         applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testByteM2(byte[] data) {
+    public static void testByteM2(byte[] data, byte[] data_2) {
         for (int j = 2; j < RANGE; j++) {
-            data[j + -2] = (byte)(data[j] * (byte)11);
+            data_2[j + -2] = (byte)(data[j] * (byte)11);
         }
     }
 
@@ -9817,7 +9817,7 @@ public class TestDependencyOffsets {
     public static void runByteM2() {
         byte[] data = new byte[RANGE];
         init(data);
-        testByteM2(data);
+        testByteM2(data, data);
         verify("testByteM2", data, goldByteM2);
     }
 
@@ -9857,9 +9857,9 @@ public class TestDependencyOffsets {
     @IR(failOn = {IRNode.LOAD_VECTOR_B, IRNode.MUL_VB, IRNode.STORE_VECTOR},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", "<= 2"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testByteP2(byte[] data) {
+    public static void testByteP2(byte[] data, byte[] data_2) {
         for (int j = 0; j < RANGE - 2; j++) {
-            data[j + 2] = (byte)(data[j] * (byte)11);
+            data_2[j + 2] = (byte)(data[j] * (byte)11);
         }
     }
 
@@ -9868,7 +9868,7 @@ public class TestDependencyOffsets {
     public static void runByteP2() {
         byte[] data = new byte[RANGE];
         init(data);
-        testByteP2(data);
+        testByteP2(data, data);
         verify("testByteP2", data, goldByteP2);
     }
 
@@ -9913,9 +9913,9 @@ public class TestDependencyOffsets {
     @IR(failOn = {IRNode.LOAD_VECTOR_B, IRNode.MUL_VB, IRNode.STORE_VECTOR},
         applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testByteM3(byte[] data) {
+    public static void testByteM3(byte[] data, byte[] data_2) {
         for (int j = 3; j < RANGE; j++) {
-            data[j + -3] = (byte)(data[j] * (byte)11);
+            data_2[j + -3] = (byte)(data[j] * (byte)11);
         }
     }
 
@@ -9924,7 +9924,7 @@ public class TestDependencyOffsets {
     public static void runByteM3() {
         byte[] data = new byte[RANGE];
         init(data);
-        testByteM3(data);
+        testByteM3(data, data);
         verify("testByteM3", data, goldByteM3);
     }
 
@@ -9964,9 +9964,9 @@ public class TestDependencyOffsets {
     @IR(failOn = {IRNode.LOAD_VECTOR_B, IRNode.MUL_VB, IRNode.STORE_VECTOR},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", "<= 3"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testByteP3(byte[] data) {
+    public static void testByteP3(byte[] data, byte[] data_2) {
         for (int j = 0; j < RANGE - 3; j++) {
-            data[j + 3] = (byte)(data[j] * (byte)11);
+            data_2[j + 3] = (byte)(data[j] * (byte)11);
         }
     }
 
@@ -9975,7 +9975,7 @@ public class TestDependencyOffsets {
     public static void runByteP3() {
         byte[] data = new byte[RANGE];
         init(data);
-        testByteP3(data);
+        testByteP3(data, data);
         verify("testByteP3", data, goldByteP3);
     }
 
@@ -10005,9 +10005,9 @@ public class TestDependencyOffsets {
         applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"sve", "true"})
     //   Alignment unclear -> no IR rule for -XX:+AlignVector.
-    public static void testByteM4(byte[] data) {
+    public static void testByteM4(byte[] data, byte[] data_2) {
         for (int j = 4; j < RANGE; j++) {
-            data[j + -4] = (byte)(data[j] * (byte)11);
+            data_2[j + -4] = (byte)(data[j] * (byte)11);
         }
     }
 
@@ -10016,7 +10016,7 @@ public class TestDependencyOffsets {
     public static void runByteM4() {
         byte[] data = new byte[RANGE];
         init(data);
-        testByteM4(data);
+        testByteM4(data, data);
         verify("testByteM4", data, goldByteM4);
     }
 
@@ -10051,9 +10051,9 @@ public class TestDependencyOffsets {
         applyIfAnd = {"AlignVector", "false", "MaxVectorSize", "4"},
         applyIfCPUFeature = {"sve", "true"})
     //   Alignment unclear -> no IR rule for -XX:+AlignVector.
-    public static void testByteP4(byte[] data) {
+    public static void testByteP4(byte[] data, byte[] data_2) {
         for (int j = 0; j < RANGE - 4; j++) {
-            data[j + 4] = (byte)(data[j] * (byte)11);
+            data_2[j + 4] = (byte)(data[j] * (byte)11);
         }
     }
 
@@ -10062,7 +10062,7 @@ public class TestDependencyOffsets {
     public static void runByteP4() {
         byte[] data = new byte[RANGE];
         init(data);
-        testByteP4(data);
+        testByteP4(data, data);
         verify("testByteP4", data, goldByteP4);
     }
 
@@ -10107,9 +10107,9 @@ public class TestDependencyOffsets {
     @IR(failOn = {IRNode.LOAD_VECTOR_B, IRNode.MUL_VB, IRNode.STORE_VECTOR},
         applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testByteM7(byte[] data) {
+    public static void testByteM7(byte[] data, byte[] data_2) {
         for (int j = 7; j < RANGE; j++) {
-            data[j + -7] = (byte)(data[j] * (byte)11);
+            data_2[j + -7] = (byte)(data[j] * (byte)11);
         }
     }
 
@@ -10118,7 +10118,7 @@ public class TestDependencyOffsets {
     public static void runByteM7() {
         byte[] data = new byte[RANGE];
         init(data);
-        testByteM7(data);
+        testByteM7(data, data);
         verify("testByteM7", data, goldByteM7);
     }
 
@@ -10168,9 +10168,9 @@ public class TestDependencyOffsets {
     @IR(failOn = {IRNode.LOAD_VECTOR_B, IRNode.MUL_VB, IRNode.STORE_VECTOR},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", "<= 7"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testByteP7(byte[] data) {
+    public static void testByteP7(byte[] data, byte[] data_2) {
         for (int j = 0; j < RANGE - 7; j++) {
-            data[j + 7] = (byte)(data[j] * (byte)11);
+            data_2[j + 7] = (byte)(data[j] * (byte)11);
         }
     }
 
@@ -10179,7 +10179,7 @@ public class TestDependencyOffsets {
     public static void runByteP7() {
         byte[] data = new byte[RANGE];
         init(data);
-        testByteP7(data);
+        testByteP7(data, data);
         verify("testByteP7", data, goldByteP7);
     }
 
@@ -10224,9 +10224,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0", IRNode.MUL_VB, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testByteM8(byte[] data) {
+    public static void testByteM8(byte[] data, byte[] data_2) {
         for (int j = 8; j < RANGE; j++) {
-            data[j + -8] = (byte)(data[j] * (byte)11);
+            data_2[j + -8] = (byte)(data[j] * (byte)11);
         }
     }
 
@@ -10235,7 +10235,7 @@ public class TestDependencyOffsets {
     public static void runByteM8() {
         byte[] data = new byte[RANGE];
         init(data);
-        testByteM8(data);
+        testByteM8(data, data);
         verify("testByteM8", data, goldByteM8);
     }
 
@@ -10285,9 +10285,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0", IRNode.MUL_VB, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 8"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testByteP8(byte[] data) {
+    public static void testByteP8(byte[] data, byte[] data_2) {
         for (int j = 0; j < RANGE - 8; j++) {
-            data[j + 8] = (byte)(data[j] * (byte)11);
+            data_2[j + 8] = (byte)(data[j] * (byte)11);
         }
     }
 
@@ -10296,7 +10296,7 @@ public class TestDependencyOffsets {
     public static void runByteP8() {
         byte[] data = new byte[RANGE];
         init(data);
-        testByteP8(data);
+        testByteP8(data, data);
         verify("testByteP8", data, goldByteP8);
     }
 
@@ -10341,9 +10341,9 @@ public class TestDependencyOffsets {
     @IR(failOn = {IRNode.LOAD_VECTOR_B, IRNode.MUL_VB, IRNode.STORE_VECTOR},
         applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testByteM14(byte[] data) {
+    public static void testByteM14(byte[] data, byte[] data_2) {
         for (int j = 14; j < RANGE; j++) {
-            data[j + -14] = (byte)(data[j] * (byte)11);
+            data_2[j + -14] = (byte)(data[j] * (byte)11);
         }
     }
 
@@ -10352,7 +10352,7 @@ public class TestDependencyOffsets {
     public static void runByteM14() {
         byte[] data = new byte[RANGE];
         init(data);
-        testByteM14(data);
+        testByteM14(data, data);
         verify("testByteM14", data, goldByteM14);
     }
 
@@ -10402,9 +10402,9 @@ public class TestDependencyOffsets {
     @IR(failOn = {IRNode.LOAD_VECTOR_B, IRNode.MUL_VB, IRNode.STORE_VECTOR},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", "<= 14"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testByteP14(byte[] data) {
+    public static void testByteP14(byte[] data, byte[] data_2) {
         for (int j = 0; j < RANGE - 14; j++) {
-            data[j + 14] = (byte)(data[j] * (byte)11);
+            data_2[j + 14] = (byte)(data[j] * (byte)11);
         }
     }
 
@@ -10413,7 +10413,7 @@ public class TestDependencyOffsets {
     public static void runByteP14() {
         byte[] data = new byte[RANGE];
         init(data);
-        testByteP14(data);
+        testByteP14(data, data);
         verify("testByteP14", data, goldByteP14);
     }
 
@@ -10458,9 +10458,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0", IRNode.MUL_VB, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testByteM16(byte[] data) {
+    public static void testByteM16(byte[] data, byte[] data_2) {
         for (int j = 16; j < RANGE; j++) {
-            data[j + -16] = (byte)(data[j] * (byte)11);
+            data_2[j + -16] = (byte)(data[j] * (byte)11);
         }
     }
 
@@ -10469,7 +10469,7 @@ public class TestDependencyOffsets {
     public static void runByteM16() {
         byte[] data = new byte[RANGE];
         init(data);
-        testByteM16(data);
+        testByteM16(data, data);
         verify("testByteM16", data, goldByteM16);
     }
 
@@ -10517,9 +10517,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0", IRNode.MUL_VB, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 16"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testByteP16(byte[] data) {
+    public static void testByteP16(byte[] data, byte[] data_2) {
         for (int j = 0; j < RANGE - 16; j++) {
-            data[j + 16] = (byte)(data[j] * (byte)11);
+            data_2[j + 16] = (byte)(data[j] * (byte)11);
         }
     }
 
@@ -10528,7 +10528,7 @@ public class TestDependencyOffsets {
     public static void runByteP16() {
         byte[] data = new byte[RANGE];
         init(data);
-        testByteP16(data);
+        testByteP16(data, data);
         verify("testByteP16", data, goldByteP16);
     }
 
@@ -10573,9 +10573,9 @@ public class TestDependencyOffsets {
     @IR(failOn = {IRNode.LOAD_VECTOR_B, IRNode.MUL_VB, IRNode.STORE_VECTOR},
         applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testByteM18(byte[] data) {
+    public static void testByteM18(byte[] data, byte[] data_2) {
         for (int j = 18; j < RANGE; j++) {
-            data[j + -18] = (byte)(data[j] * (byte)11);
+            data_2[j + -18] = (byte)(data[j] * (byte)11);
         }
     }
 
@@ -10584,7 +10584,7 @@ public class TestDependencyOffsets {
     public static void runByteM18() {
         byte[] data = new byte[RANGE];
         init(data);
-        testByteM18(data);
+        testByteM18(data, data);
         verify("testByteM18", data, goldByteM18);
     }
 
@@ -10632,9 +10632,9 @@ public class TestDependencyOffsets {
     @IR(failOn = {IRNode.LOAD_VECTOR_B, IRNode.MUL_VB, IRNode.STORE_VECTOR},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", "<= 18"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testByteP18(byte[] data) {
+    public static void testByteP18(byte[] data, byte[] data_2) {
         for (int j = 0; j < RANGE - 18; j++) {
-            data[j + 18] = (byte)(data[j] * (byte)11);
+            data_2[j + 18] = (byte)(data[j] * (byte)11);
         }
     }
 
@@ -10643,7 +10643,7 @@ public class TestDependencyOffsets {
     public static void runByteP18() {
         byte[] data = new byte[RANGE];
         init(data);
-        testByteP18(data);
+        testByteP18(data, data);
         verify("testByteP18", data, goldByteP18);
     }
 
@@ -10673,9 +10673,9 @@ public class TestDependencyOffsets {
         applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"sve", "true"})
     //   Alignment unclear -> no IR rule for -XX:+AlignVector.
-    public static void testByteM20(byte[] data) {
+    public static void testByteM20(byte[] data, byte[] data_2) {
         for (int j = 20; j < RANGE; j++) {
-            data[j + -20] = (byte)(data[j] * (byte)11);
+            data_2[j + -20] = (byte)(data[j] * (byte)11);
         }
     }
 
@@ -10684,7 +10684,7 @@ public class TestDependencyOffsets {
     public static void runByteM20() {
         byte[] data = new byte[RANGE];
         init(data);
-        testByteM20(data);
+        testByteM20(data, data);
         verify("testByteM20", data, goldByteM20);
     }
 
@@ -10717,9 +10717,9 @@ public class TestDependencyOffsets {
         applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 20"},
         applyIfCPUFeature = {"sve", "true"})
     //   Alignment unclear -> no IR rule for -XX:+AlignVector.
-    public static void testByteP20(byte[] data) {
+    public static void testByteP20(byte[] data, byte[] data_2) {
         for (int j = 0; j < RANGE - 20; j++) {
-            data[j + 20] = (byte)(data[j] * (byte)11);
+            data_2[j + 20] = (byte)(data[j] * (byte)11);
         }
     }
 
@@ -10728,7 +10728,7 @@ public class TestDependencyOffsets {
     public static void runByteP20() {
         byte[] data = new byte[RANGE];
         init(data);
-        testByteP20(data);
+        testByteP20(data, data);
         verify("testByteP20", data, goldByteP20);
     }
 
@@ -10773,9 +10773,9 @@ public class TestDependencyOffsets {
     @IR(failOn = {IRNode.LOAD_VECTOR_B, IRNode.MUL_VB, IRNode.STORE_VECTOR},
         applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testByteM31(byte[] data) {
+    public static void testByteM31(byte[] data, byte[] data_2) {
         for (int j = 31; j < RANGE; j++) {
-            data[j + -31] = (byte)(data[j] * (byte)11);
+            data_2[j + -31] = (byte)(data[j] * (byte)11);
         }
     }
 
@@ -10784,7 +10784,7 @@ public class TestDependencyOffsets {
     public static void runByteM31() {
         byte[] data = new byte[RANGE];
         init(data);
-        testByteM31(data);
+        testByteM31(data, data);
         verify("testByteM31", data, goldByteM31);
     }
 
@@ -10832,9 +10832,9 @@ public class TestDependencyOffsets {
     @IR(failOn = {IRNode.LOAD_VECTOR_B, IRNode.MUL_VB, IRNode.STORE_VECTOR},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", "<= 31"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testByteP31(byte[] data) {
+    public static void testByteP31(byte[] data, byte[] data_2) {
         for (int j = 0; j < RANGE - 31; j++) {
-            data[j + 31] = (byte)(data[j] * (byte)11);
+            data_2[j + 31] = (byte)(data[j] * (byte)11);
         }
     }
 
@@ -10843,7 +10843,7 @@ public class TestDependencyOffsets {
     public static void runByteP31() {
         byte[] data = new byte[RANGE];
         init(data);
-        testByteP31(data);
+        testByteP31(data, data);
         verify("testByteP31", data, goldByteP31);
     }
 
@@ -10888,9 +10888,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0", IRNode.MUL_VB, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testByteM32(byte[] data) {
+    public static void testByteM32(byte[] data, byte[] data_2) {
         for (int j = 32; j < RANGE; j++) {
-            data[j + -32] = (byte)(data[j] * (byte)11);
+            data_2[j + -32] = (byte)(data[j] * (byte)11);
         }
     }
 
@@ -10899,7 +10899,7 @@ public class TestDependencyOffsets {
     public static void runByteM32() {
         byte[] data = new byte[RANGE];
         init(data);
-        testByteM32(data);
+        testByteM32(data, data);
         verify("testByteM32", data, goldByteM32);
     }
 
@@ -10946,9 +10946,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0", IRNode.MUL_VB, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 32"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testByteP32(byte[] data) {
+    public static void testByteP32(byte[] data, byte[] data_2) {
         for (int j = 0; j < RANGE - 32; j++) {
-            data[j + 32] = (byte)(data[j] * (byte)11);
+            data_2[j + 32] = (byte)(data[j] * (byte)11);
         }
     }
 
@@ -10957,7 +10957,7 @@ public class TestDependencyOffsets {
     public static void runByteP32() {
         byte[] data = new byte[RANGE];
         init(data);
-        testByteP32(data);
+        testByteP32(data, data);
         verify("testByteP32", data, goldByteP32);
     }
 
@@ -11002,9 +11002,9 @@ public class TestDependencyOffsets {
     @IR(failOn = {IRNode.LOAD_VECTOR_B, IRNode.MUL_VB, IRNode.STORE_VECTOR},
         applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testByteM63(byte[] data) {
+    public static void testByteM63(byte[] data, byte[] data_2) {
         for (int j = 63; j < RANGE; j++) {
-            data[j + -63] = (byte)(data[j] * (byte)11);
+            data_2[j + -63] = (byte)(data[j] * (byte)11);
         }
     }
 
@@ -11013,7 +11013,7 @@ public class TestDependencyOffsets {
     public static void runByteM63() {
         byte[] data = new byte[RANGE];
         init(data);
-        testByteM63(data);
+        testByteM63(data, data);
         verify("testByteM63", data, goldByteM63);
     }
 
@@ -11060,9 +11060,9 @@ public class TestDependencyOffsets {
     @IR(failOn = {IRNode.LOAD_VECTOR_B, IRNode.MUL_VB, IRNode.STORE_VECTOR},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", "<= 63"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testByteP63(byte[] data) {
+    public static void testByteP63(byte[] data, byte[] data_2) {
         for (int j = 0; j < RANGE - 63; j++) {
-            data[j + 63] = (byte)(data[j] * (byte)11);
+            data_2[j + 63] = (byte)(data[j] * (byte)11);
         }
     }
 
@@ -11071,7 +11071,7 @@ public class TestDependencyOffsets {
     public static void runByteP63() {
         byte[] data = new byte[RANGE];
         init(data);
-        testByteP63(data);
+        testByteP63(data, data);
         verify("testByteP63", data, goldByteP63);
     }
 
@@ -11116,9 +11116,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0", IRNode.MUL_VB, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testByteM64(byte[] data) {
+    public static void testByteM64(byte[] data, byte[] data_2) {
         for (int j = 64; j < RANGE; j++) {
-            data[j + -64] = (byte)(data[j] * (byte)11);
+            data_2[j + -64] = (byte)(data[j] * (byte)11);
         }
     }
 
@@ -11127,7 +11127,7 @@ public class TestDependencyOffsets {
     public static void runByteM64() {
         byte[] data = new byte[RANGE];
         init(data);
-        testByteM64(data);
+        testByteM64(data, data);
         verify("testByteM64", data, goldByteM64);
     }
 
@@ -11173,9 +11173,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0", IRNode.MUL_VB, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 64"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testByteP64(byte[] data) {
+    public static void testByteP64(byte[] data, byte[] data_2) {
         for (int j = 0; j < RANGE - 64; j++) {
-            data[j + 64] = (byte)(data[j] * (byte)11);
+            data_2[j + 64] = (byte)(data[j] * (byte)11);
         }
     }
 
@@ -11184,7 +11184,7 @@ public class TestDependencyOffsets {
     public static void runByteP64() {
         byte[] data = new byte[RANGE];
         init(data);
-        testByteP64(data);
+        testByteP64(data, data);
         verify("testByteP64", data, goldByteP64);
     }
 
@@ -11229,9 +11229,9 @@ public class TestDependencyOffsets {
     @IR(failOn = {IRNode.LOAD_VECTOR_B, IRNode.MUL_VB, IRNode.STORE_VECTOR},
         applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testByteM65(byte[] data) {
+    public static void testByteM65(byte[] data, byte[] data_2) {
         for (int j = 65; j < RANGE; j++) {
-            data[j + -65] = (byte)(data[j] * (byte)11);
+            data_2[j + -65] = (byte)(data[j] * (byte)11);
         }
     }
 
@@ -11240,7 +11240,7 @@ public class TestDependencyOffsets {
     public static void runByteM65() {
         byte[] data = new byte[RANGE];
         init(data);
-        testByteM65(data);
+        testByteM65(data, data);
         verify("testByteM65", data, goldByteM65);
     }
 
@@ -11286,9 +11286,9 @@ public class TestDependencyOffsets {
     @IR(failOn = {IRNode.LOAD_VECTOR_B, IRNode.MUL_VB, IRNode.STORE_VECTOR},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", "<= 65"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testByteP65(byte[] data) {
+    public static void testByteP65(byte[] data, byte[] data_2) {
         for (int j = 0; j < RANGE - 65; j++) {
-            data[j + 65] = (byte)(data[j] * (byte)11);
+            data_2[j + 65] = (byte)(data[j] * (byte)11);
         }
     }
 
@@ -11297,7 +11297,7 @@ public class TestDependencyOffsets {
     public static void runByteP65() {
         byte[] data = new byte[RANGE];
         init(data);
-        testByteP65(data);
+        testByteP65(data, data);
         verify("testByteP65", data, goldByteP65);
     }
 
@@ -11342,9 +11342,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0", IRNode.MUL_VB, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testByteM128(byte[] data) {
+    public static void testByteM128(byte[] data, byte[] data_2) {
         for (int j = 128; j < RANGE; j++) {
-            data[j + -128] = (byte)(data[j] * (byte)11);
+            data_2[j + -128] = (byte)(data[j] * (byte)11);
         }
     }
 
@@ -11353,7 +11353,7 @@ public class TestDependencyOffsets {
     public static void runByteM128() {
         byte[] data = new byte[RANGE];
         init(data);
-        testByteM128(data);
+        testByteM128(data, data);
         verify("testByteM128", data, goldByteM128);
     }
 
@@ -11399,9 +11399,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0", IRNode.MUL_VB, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 128"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testByteP128(byte[] data) {
+    public static void testByteP128(byte[] data, byte[] data_2) {
         for (int j = 0; j < RANGE - 128; j++) {
-            data[j + 128] = (byte)(data[j] * (byte)11);
+            data_2[j + 128] = (byte)(data[j] * (byte)11);
         }
     }
 
@@ -11410,7 +11410,7 @@ public class TestDependencyOffsets {
     public static void runByteP128() {
         byte[] data = new byte[RANGE];
         init(data);
-        testByteP128(data);
+        testByteP128(data, data);
         verify("testByteP128", data, goldByteP128);
     }
 
@@ -11455,9 +11455,9 @@ public class TestDependencyOffsets {
     @IR(failOn = {IRNode.LOAD_VECTOR_B, IRNode.MUL_VB, IRNode.STORE_VECTOR},
         applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testByteM129(byte[] data) {
+    public static void testByteM129(byte[] data, byte[] data_2) {
         for (int j = 129; j < RANGE; j++) {
-            data[j + -129] = (byte)(data[j] * (byte)11);
+            data_2[j + -129] = (byte)(data[j] * (byte)11);
         }
     }
 
@@ -11466,7 +11466,7 @@ public class TestDependencyOffsets {
     public static void runByteM129() {
         byte[] data = new byte[RANGE];
         init(data);
-        testByteM129(data);
+        testByteM129(data, data);
         verify("testByteM129", data, goldByteM129);
     }
 
@@ -11512,9 +11512,9 @@ public class TestDependencyOffsets {
     @IR(failOn = {IRNode.LOAD_VECTOR_B, IRNode.MUL_VB, IRNode.STORE_VECTOR},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", "<= 129"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testByteP129(byte[] data) {
+    public static void testByteP129(byte[] data, byte[] data_2) {
         for (int j = 0; j < RANGE - 129; j++) {
-            data[j + 129] = (byte)(data[j] * (byte)11);
+            data_2[j + 129] = (byte)(data[j] * (byte)11);
         }
     }
 
@@ -11523,7 +11523,7 @@ public class TestDependencyOffsets {
     public static void runByteP129() {
         byte[] data = new byte[RANGE];
         init(data);
-        testByteP129(data);
+        testByteP129(data, data);
         verify("testByteP129", data, goldByteP129);
     }
 
@@ -11568,9 +11568,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0", IRNode.MUL_VB, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testByteM192(byte[] data) {
+    public static void testByteM192(byte[] data, byte[] data_2) {
         for (int j = 192; j < RANGE; j++) {
-            data[j + -192] = (byte)(data[j] * (byte)11);
+            data_2[j + -192] = (byte)(data[j] * (byte)11);
         }
     }
 
@@ -11579,7 +11579,7 @@ public class TestDependencyOffsets {
     public static void runByteM192() {
         byte[] data = new byte[RANGE];
         init(data);
-        testByteM192(data);
+        testByteM192(data, data);
         verify("testByteM192", data, goldByteM192);
     }
 
@@ -11625,9 +11625,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0", IRNode.MUL_VB, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 4", "MaxVectorSize", "<= 192"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testByteP192(byte[] data) {
+    public static void testByteP192(byte[] data, byte[] data_2) {
         for (int j = 0; j < RANGE - 192; j++) {
-            data[j + 192] = (byte)(data[j] * (byte)11);
+            data_2[j + 192] = (byte)(data[j] * (byte)11);
         }
     }
 
@@ -11636,7 +11636,7 @@ public class TestDependencyOffsets {
     public static void runByteP192() {
         byte[] data = new byte[RANGE];
         init(data);
-        testByteP192(data);
+        testByteP192(data, data);
         verify("testByteP192", data, goldByteP192);
     }
 
@@ -11681,9 +11681,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_F, "> 0", IRNode.MUL_VF, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testFloatP0(float[] data) {
+    public static void testFloatP0(float[] data, float[] data_2) {
         for (int j = 0; j < RANGE; j++) {
-            data[j + 0] = (float)(data[j] * (float)1.001f);
+            data_2[j + 0] = (float)(data[j] * (float)1.001f);
         }
     }
 
@@ -11692,7 +11692,7 @@ public class TestDependencyOffsets {
     public static void runFloatP0() {
         float[] data = new float[RANGE];
         init(data);
-        testFloatP0(data);
+        testFloatP0(data, data);
         verify("testFloatP0", data, goldFloatP0);
     }
 
@@ -11737,9 +11737,9 @@ public class TestDependencyOffsets {
     @IR(failOn = {IRNode.LOAD_VECTOR_F, IRNode.MUL_VF, IRNode.STORE_VECTOR},
         applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testFloatM1(float[] data) {
+    public static void testFloatM1(float[] data, float[] data_2) {
         for (int j = 1; j < RANGE; j++) {
-            data[j + -1] = (float)(data[j] * (float)1.001f);
+            data_2[j + -1] = (float)(data[j] * (float)1.001f);
         }
     }
 
@@ -11748,7 +11748,7 @@ public class TestDependencyOffsets {
     public static void runFloatM1() {
         float[] data = new float[RANGE];
         init(data);
-        testFloatM1(data);
+        testFloatM1(data, data);
         verify("testFloatM1", data, goldFloatM1);
     }
 
@@ -11788,9 +11788,9 @@ public class TestDependencyOffsets {
     @IR(failOn = {IRNode.LOAD_VECTOR_F, IRNode.MUL_VF, IRNode.STORE_VECTOR},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", "<= 4"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testFloatP1(float[] data) {
+    public static void testFloatP1(float[] data, float[] data_2) {
         for (int j = 0; j < RANGE - 1; j++) {
-            data[j + 1] = (float)(data[j] * (float)1.001f);
+            data_2[j + 1] = (float)(data[j] * (float)1.001f);
         }
     }
 
@@ -11799,7 +11799,7 @@ public class TestDependencyOffsets {
     public static void runFloatP1() {
         float[] data = new float[RANGE];
         init(data);
-        testFloatP1(data);
+        testFloatP1(data, data);
         verify("testFloatP1", data, goldFloatP1);
     }
 
@@ -11844,9 +11844,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_F, "> 0", IRNode.MUL_VF, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testFloatM2(float[] data) {
+    public static void testFloatM2(float[] data, float[] data_2) {
         for (int j = 2; j < RANGE; j++) {
-            data[j + -2] = (float)(data[j] * (float)1.001f);
+            data_2[j + -2] = (float)(data[j] * (float)1.001f);
         }
     }
 
@@ -11855,7 +11855,7 @@ public class TestDependencyOffsets {
     public static void runFloatM2() {
         float[] data = new float[RANGE];
         init(data);
-        testFloatM2(data);
+        testFloatM2(data, data);
         verify("testFloatM2", data, goldFloatM2);
     }
 
@@ -11905,9 +11905,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_F, "> 0", IRNode.MUL_VF, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", "8"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testFloatP2(float[] data) {
+    public static void testFloatP2(float[] data, float[] data_2) {
         for (int j = 0; j < RANGE - 2; j++) {
-            data[j + 2] = (float)(data[j] * (float)1.001f);
+            data_2[j + 2] = (float)(data[j] * (float)1.001f);
         }
     }
 
@@ -11916,7 +11916,7 @@ public class TestDependencyOffsets {
     public static void runFloatP2() {
         float[] data = new float[RANGE];
         init(data);
-        testFloatP2(data);
+        testFloatP2(data, data);
         verify("testFloatP2", data, goldFloatP2);
     }
 
@@ -11961,9 +11961,9 @@ public class TestDependencyOffsets {
     @IR(failOn = {IRNode.LOAD_VECTOR_F, IRNode.MUL_VF, IRNode.STORE_VECTOR},
         applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testFloatM3(float[] data) {
+    public static void testFloatM3(float[] data, float[] data_2) {
         for (int j = 3; j < RANGE; j++) {
-            data[j + -3] = (float)(data[j] * (float)1.001f);
+            data_2[j + -3] = (float)(data[j] * (float)1.001f);
         }
     }
 
@@ -11972,7 +11972,7 @@ public class TestDependencyOffsets {
     public static void runFloatM3() {
         float[] data = new float[RANGE];
         init(data);
-        testFloatM3(data);
+        testFloatM3(data, data);
         verify("testFloatM3", data, goldFloatM3);
     }
 
@@ -12022,9 +12022,9 @@ public class TestDependencyOffsets {
     @IR(failOn = {IRNode.LOAD_VECTOR_F, IRNode.MUL_VF, IRNode.STORE_VECTOR},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", "<= 12"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testFloatP3(float[] data) {
+    public static void testFloatP3(float[] data, float[] data_2) {
         for (int j = 0; j < RANGE - 3; j++) {
-            data[j + 3] = (float)(data[j] * (float)1.001f);
+            data_2[j + 3] = (float)(data[j] * (float)1.001f);
         }
     }
 
@@ -12033,7 +12033,7 @@ public class TestDependencyOffsets {
     public static void runFloatP3() {
         float[] data = new float[RANGE];
         init(data);
-        testFloatP3(data);
+        testFloatP3(data, data);
         verify("testFloatP3", data, goldFloatP3);
     }
 
@@ -12078,9 +12078,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_F, "> 0", IRNode.MUL_VF, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testFloatM4(float[] data) {
+    public static void testFloatM4(float[] data, float[] data_2) {
         for (int j = 4; j < RANGE; j++) {
-            data[j + -4] = (float)(data[j] * (float)1.001f);
+            data_2[j + -4] = (float)(data[j] * (float)1.001f);
         }
     }
 
@@ -12089,7 +12089,7 @@ public class TestDependencyOffsets {
     public static void runFloatM4() {
         float[] data = new float[RANGE];
         init(data);
-        testFloatM4(data);
+        testFloatM4(data, data);
         verify("testFloatM4", data, goldFloatM4);
     }
 
@@ -12137,9 +12137,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_F, "> 0", IRNode.MUL_VF, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8", "MaxVectorSize", "<= 16"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testFloatP4(float[] data) {
+    public static void testFloatP4(float[] data, float[] data_2) {
         for (int j = 0; j < RANGE - 4; j++) {
-            data[j + 4] = (float)(data[j] * (float)1.001f);
+            data_2[j + 4] = (float)(data[j] * (float)1.001f);
         }
     }
 
@@ -12148,7 +12148,7 @@ public class TestDependencyOffsets {
     public static void runFloatP4() {
         float[] data = new float[RANGE];
         init(data);
-        testFloatP4(data);
+        testFloatP4(data, data);
         verify("testFloatP4", data, goldFloatP4);
     }
 
@@ -12193,9 +12193,9 @@ public class TestDependencyOffsets {
     @IR(failOn = {IRNode.LOAD_VECTOR_F, IRNode.MUL_VF, IRNode.STORE_VECTOR},
         applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testFloatM7(float[] data) {
+    public static void testFloatM7(float[] data, float[] data_2) {
         for (int j = 7; j < RANGE; j++) {
-            data[j + -7] = (float)(data[j] * (float)1.001f);
+            data_2[j + -7] = (float)(data[j] * (float)1.001f);
         }
     }
 
@@ -12204,7 +12204,7 @@ public class TestDependencyOffsets {
     public static void runFloatM7() {
         float[] data = new float[RANGE];
         init(data);
-        testFloatM7(data);
+        testFloatM7(data, data);
         verify("testFloatM7", data, goldFloatM7);
     }
 
@@ -12252,9 +12252,9 @@ public class TestDependencyOffsets {
     @IR(failOn = {IRNode.LOAD_VECTOR_F, IRNode.MUL_VF, IRNode.STORE_VECTOR},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", "<= 28"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testFloatP7(float[] data) {
+    public static void testFloatP7(float[] data, float[] data_2) {
         for (int j = 0; j < RANGE - 7; j++) {
-            data[j + 7] = (float)(data[j] * (float)1.001f);
+            data_2[j + 7] = (float)(data[j] * (float)1.001f);
         }
     }
 
@@ -12263,7 +12263,7 @@ public class TestDependencyOffsets {
     public static void runFloatP7() {
         float[] data = new float[RANGE];
         init(data);
-        testFloatP7(data);
+        testFloatP7(data, data);
         verify("testFloatP7", data, goldFloatP7);
     }
 
@@ -12308,9 +12308,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_F, "> 0", IRNode.MUL_VF, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testFloatM8(float[] data) {
+    public static void testFloatM8(float[] data, float[] data_2) {
         for (int j = 8; j < RANGE; j++) {
-            data[j + -8] = (float)(data[j] * (float)1.001f);
+            data_2[j + -8] = (float)(data[j] * (float)1.001f);
         }
     }
 
@@ -12319,7 +12319,7 @@ public class TestDependencyOffsets {
     public static void runFloatM8() {
         float[] data = new float[RANGE];
         init(data);
-        testFloatM8(data);
+        testFloatM8(data, data);
         verify("testFloatM8", data, goldFloatM8);
     }
 
@@ -12366,9 +12366,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_F, "> 0", IRNode.MUL_VF, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8", "MaxVectorSize", "<= 32"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testFloatP8(float[] data) {
+    public static void testFloatP8(float[] data, float[] data_2) {
         for (int j = 0; j < RANGE - 8; j++) {
-            data[j + 8] = (float)(data[j] * (float)1.001f);
+            data_2[j + 8] = (float)(data[j] * (float)1.001f);
         }
     }
 
@@ -12377,7 +12377,7 @@ public class TestDependencyOffsets {
     public static void runFloatP8() {
         float[] data = new float[RANGE];
         init(data);
-        testFloatP8(data);
+        testFloatP8(data, data);
         verify("testFloatP8", data, goldFloatP8);
     }
 
@@ -12422,9 +12422,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_F, "> 0", IRNode.MUL_VF, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testFloatM14(float[] data) {
+    public static void testFloatM14(float[] data, float[] data_2) {
         for (int j = 14; j < RANGE; j++) {
-            data[j + -14] = (float)(data[j] * (float)1.001f);
+            data_2[j + -14] = (float)(data[j] * (float)1.001f);
         }
     }
 
@@ -12433,7 +12433,7 @@ public class TestDependencyOffsets {
     public static void runFloatM14() {
         float[] data = new float[RANGE];
         init(data);
-        testFloatM14(data);
+        testFloatM14(data, data);
         verify("testFloatM14", data, goldFloatM14);
     }
 
@@ -12480,9 +12480,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_F, "> 0", IRNode.MUL_VF, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8", "MaxVectorSize", "<= 56"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testFloatP14(float[] data) {
+    public static void testFloatP14(float[] data, float[] data_2) {
         for (int j = 0; j < RANGE - 14; j++) {
-            data[j + 14] = (float)(data[j] * (float)1.001f);
+            data_2[j + 14] = (float)(data[j] * (float)1.001f);
         }
     }
 
@@ -12491,7 +12491,7 @@ public class TestDependencyOffsets {
     public static void runFloatP14() {
         float[] data = new float[RANGE];
         init(data);
-        testFloatP14(data);
+        testFloatP14(data, data);
         verify("testFloatP14", data, goldFloatP14);
     }
 
@@ -12536,9 +12536,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_F, "> 0", IRNode.MUL_VF, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testFloatM16(float[] data) {
+    public static void testFloatM16(float[] data, float[] data_2) {
         for (int j = 16; j < RANGE; j++) {
-            data[j + -16] = (float)(data[j] * (float)1.001f);
+            data_2[j + -16] = (float)(data[j] * (float)1.001f);
         }
     }
 
@@ -12547,7 +12547,7 @@ public class TestDependencyOffsets {
     public static void runFloatM16() {
         float[] data = new float[RANGE];
         init(data);
-        testFloatM16(data);
+        testFloatM16(data, data);
         verify("testFloatM16", data, goldFloatM16);
     }
 
@@ -12593,9 +12593,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_F, "> 0", IRNode.MUL_VF, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8", "MaxVectorSize", "<= 64"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testFloatP16(float[] data) {
+    public static void testFloatP16(float[] data, float[] data_2) {
         for (int j = 0; j < RANGE - 16; j++) {
-            data[j + 16] = (float)(data[j] * (float)1.001f);
+            data_2[j + 16] = (float)(data[j] * (float)1.001f);
         }
     }
 
@@ -12604,7 +12604,7 @@ public class TestDependencyOffsets {
     public static void runFloatP16() {
         float[] data = new float[RANGE];
         init(data);
-        testFloatP16(data);
+        testFloatP16(data, data);
         verify("testFloatP16", data, goldFloatP16);
     }
 
@@ -12649,9 +12649,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_F, "> 0", IRNode.MUL_VF, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testFloatM18(float[] data) {
+    public static void testFloatM18(float[] data, float[] data_2) {
         for (int j = 18; j < RANGE; j++) {
-            data[j + -18] = (float)(data[j] * (float)1.001f);
+            data_2[j + -18] = (float)(data[j] * (float)1.001f);
         }
     }
 
@@ -12660,7 +12660,7 @@ public class TestDependencyOffsets {
     public static void runFloatM18() {
         float[] data = new float[RANGE];
         init(data);
-        testFloatM18(data);
+        testFloatM18(data, data);
         verify("testFloatM18", data, goldFloatM18);
     }
 
@@ -12706,9 +12706,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_F, "> 0", IRNode.MUL_VF, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8", "MaxVectorSize", "<= 72"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testFloatP18(float[] data) {
+    public static void testFloatP18(float[] data, float[] data_2) {
         for (int j = 0; j < RANGE - 18; j++) {
-            data[j + 18] = (float)(data[j] * (float)1.001f);
+            data_2[j + 18] = (float)(data[j] * (float)1.001f);
         }
     }
 
@@ -12717,7 +12717,7 @@ public class TestDependencyOffsets {
     public static void runFloatP18() {
         float[] data = new float[RANGE];
         init(data);
-        testFloatP18(data);
+        testFloatP18(data, data);
         verify("testFloatP18", data, goldFloatP18);
     }
 
@@ -12762,9 +12762,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_F, "> 0", IRNode.MUL_VF, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testFloatM20(float[] data) {
+    public static void testFloatM20(float[] data, float[] data_2) {
         for (int j = 20; j < RANGE; j++) {
-            data[j + -20] = (float)(data[j] * (float)1.001f);
+            data_2[j + -20] = (float)(data[j] * (float)1.001f);
         }
     }
 
@@ -12773,7 +12773,7 @@ public class TestDependencyOffsets {
     public static void runFloatM20() {
         float[] data = new float[RANGE];
         init(data);
-        testFloatM20(data);
+        testFloatM20(data, data);
         verify("testFloatM20", data, goldFloatM20);
     }
 
@@ -12819,9 +12819,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_F, "> 0", IRNode.MUL_VF, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8", "MaxVectorSize", "<= 80"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testFloatP20(float[] data) {
+    public static void testFloatP20(float[] data, float[] data_2) {
         for (int j = 0; j < RANGE - 20; j++) {
-            data[j + 20] = (float)(data[j] * (float)1.001f);
+            data_2[j + 20] = (float)(data[j] * (float)1.001f);
         }
     }
 
@@ -12830,7 +12830,7 @@ public class TestDependencyOffsets {
     public static void runFloatP20() {
         float[] data = new float[RANGE];
         init(data);
-        testFloatP20(data);
+        testFloatP20(data, data);
         verify("testFloatP20", data, goldFloatP20);
     }
 
@@ -12875,9 +12875,9 @@ public class TestDependencyOffsets {
     @IR(failOn = {IRNode.LOAD_VECTOR_F, IRNode.MUL_VF, IRNode.STORE_VECTOR},
         applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testFloatM31(float[] data) {
+    public static void testFloatM31(float[] data, float[] data_2) {
         for (int j = 31; j < RANGE; j++) {
-            data[j + -31] = (float)(data[j] * (float)1.001f);
+            data_2[j + -31] = (float)(data[j] * (float)1.001f);
         }
     }
 
@@ -12886,7 +12886,7 @@ public class TestDependencyOffsets {
     public static void runFloatM31() {
         float[] data = new float[RANGE];
         init(data);
-        testFloatM31(data);
+        testFloatM31(data, data);
         verify("testFloatM31", data, goldFloatM31);
     }
 
@@ -12932,9 +12932,9 @@ public class TestDependencyOffsets {
     @IR(failOn = {IRNode.LOAD_VECTOR_F, IRNode.MUL_VF, IRNode.STORE_VECTOR},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", "<= 124"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testFloatP31(float[] data) {
+    public static void testFloatP31(float[] data, float[] data_2) {
         for (int j = 0; j < RANGE - 31; j++) {
-            data[j + 31] = (float)(data[j] * (float)1.001f);
+            data_2[j + 31] = (float)(data[j] * (float)1.001f);
         }
     }
 
@@ -12943,7 +12943,7 @@ public class TestDependencyOffsets {
     public static void runFloatP31() {
         float[] data = new float[RANGE];
         init(data);
-        testFloatP31(data);
+        testFloatP31(data, data);
         verify("testFloatP31", data, goldFloatP31);
     }
 
@@ -12988,9 +12988,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_F, "> 0", IRNode.MUL_VF, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testFloatM32(float[] data) {
+    public static void testFloatM32(float[] data, float[] data_2) {
         for (int j = 32; j < RANGE; j++) {
-            data[j + -32] = (float)(data[j] * (float)1.001f);
+            data_2[j + -32] = (float)(data[j] * (float)1.001f);
         }
     }
 
@@ -12999,7 +12999,7 @@ public class TestDependencyOffsets {
     public static void runFloatM32() {
         float[] data = new float[RANGE];
         init(data);
-        testFloatM32(data);
+        testFloatM32(data, data);
         verify("testFloatM32", data, goldFloatM32);
     }
 
@@ -13045,9 +13045,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_F, "> 0", IRNode.MUL_VF, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8", "MaxVectorSize", "<= 128"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testFloatP32(float[] data) {
+    public static void testFloatP32(float[] data, float[] data_2) {
         for (int j = 0; j < RANGE - 32; j++) {
-            data[j + 32] = (float)(data[j] * (float)1.001f);
+            data_2[j + 32] = (float)(data[j] * (float)1.001f);
         }
     }
 
@@ -13056,7 +13056,7 @@ public class TestDependencyOffsets {
     public static void runFloatP32() {
         float[] data = new float[RANGE];
         init(data);
-        testFloatP32(data);
+        testFloatP32(data, data);
         verify("testFloatP32", data, goldFloatP32);
     }
 
@@ -13101,9 +13101,9 @@ public class TestDependencyOffsets {
     @IR(failOn = {IRNode.LOAD_VECTOR_F, IRNode.MUL_VF, IRNode.STORE_VECTOR},
         applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testFloatM63(float[] data) {
+    public static void testFloatM63(float[] data, float[] data_2) {
         for (int j = 63; j < RANGE; j++) {
-            data[j + -63] = (float)(data[j] * (float)1.001f);
+            data_2[j + -63] = (float)(data[j] * (float)1.001f);
         }
     }
 
@@ -13112,7 +13112,7 @@ public class TestDependencyOffsets {
     public static void runFloatM63() {
         float[] data = new float[RANGE];
         init(data);
-        testFloatM63(data);
+        testFloatM63(data, data);
         verify("testFloatM63", data, goldFloatM63);
     }
 
@@ -13158,9 +13158,9 @@ public class TestDependencyOffsets {
     @IR(failOn = {IRNode.LOAD_VECTOR_F, IRNode.MUL_VF, IRNode.STORE_VECTOR},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", "<= 252"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testFloatP63(float[] data) {
+    public static void testFloatP63(float[] data, float[] data_2) {
         for (int j = 0; j < RANGE - 63; j++) {
-            data[j + 63] = (float)(data[j] * (float)1.001f);
+            data_2[j + 63] = (float)(data[j] * (float)1.001f);
         }
     }
 
@@ -13169,7 +13169,7 @@ public class TestDependencyOffsets {
     public static void runFloatP63() {
         float[] data = new float[RANGE];
         init(data);
-        testFloatP63(data);
+        testFloatP63(data, data);
         verify("testFloatP63", data, goldFloatP63);
     }
 
@@ -13214,9 +13214,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_F, "> 0", IRNode.MUL_VF, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testFloatM64(float[] data) {
+    public static void testFloatM64(float[] data, float[] data_2) {
         for (int j = 64; j < RANGE; j++) {
-            data[j + -64] = (float)(data[j] * (float)1.001f);
+            data_2[j + -64] = (float)(data[j] * (float)1.001f);
         }
     }
 
@@ -13225,7 +13225,7 @@ public class TestDependencyOffsets {
     public static void runFloatM64() {
         float[] data = new float[RANGE];
         init(data);
-        testFloatM64(data);
+        testFloatM64(data, data);
         verify("testFloatM64", data, goldFloatM64);
     }
 
@@ -13270,9 +13270,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_F, "> 0", IRNode.MUL_VF, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testFloatP64(float[] data) {
+    public static void testFloatP64(float[] data, float[] data_2) {
         for (int j = 0; j < RANGE - 64; j++) {
-            data[j + 64] = (float)(data[j] * (float)1.001f);
+            data_2[j + 64] = (float)(data[j] * (float)1.001f);
         }
     }
 
@@ -13281,7 +13281,7 @@ public class TestDependencyOffsets {
     public static void runFloatP64() {
         float[] data = new float[RANGE];
         init(data);
-        testFloatP64(data);
+        testFloatP64(data, data);
         verify("testFloatP64", data, goldFloatP64);
     }
 
@@ -13326,9 +13326,9 @@ public class TestDependencyOffsets {
     @IR(failOn = {IRNode.LOAD_VECTOR_F, IRNode.MUL_VF, IRNode.STORE_VECTOR},
         applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testFloatM65(float[] data) {
+    public static void testFloatM65(float[] data, float[] data_2) {
         for (int j = 65; j < RANGE; j++) {
-            data[j + -65] = (float)(data[j] * (float)1.001f);
+            data_2[j + -65] = (float)(data[j] * (float)1.001f);
         }
     }
 
@@ -13337,7 +13337,7 @@ public class TestDependencyOffsets {
     public static void runFloatM65() {
         float[] data = new float[RANGE];
         init(data);
-        testFloatM65(data);
+        testFloatM65(data, data);
         verify("testFloatM65", data, goldFloatM65);
     }
 
@@ -13382,9 +13382,9 @@ public class TestDependencyOffsets {
     @IR(failOn = {IRNode.LOAD_VECTOR_F, IRNode.MUL_VF, IRNode.STORE_VECTOR},
         applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testFloatP65(float[] data) {
+    public static void testFloatP65(float[] data, float[] data_2) {
         for (int j = 0; j < RANGE - 65; j++) {
-            data[j + 65] = (float)(data[j] * (float)1.001f);
+            data_2[j + 65] = (float)(data[j] * (float)1.001f);
         }
     }
 
@@ -13393,7 +13393,7 @@ public class TestDependencyOffsets {
     public static void runFloatP65() {
         float[] data = new float[RANGE];
         init(data);
-        testFloatP65(data);
+        testFloatP65(data, data);
         verify("testFloatP65", data, goldFloatP65);
     }
 
@@ -13438,9 +13438,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_F, "> 0", IRNode.MUL_VF, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testFloatM128(float[] data) {
+    public static void testFloatM128(float[] data, float[] data_2) {
         for (int j = 128; j < RANGE; j++) {
-            data[j + -128] = (float)(data[j] * (float)1.001f);
+            data_2[j + -128] = (float)(data[j] * (float)1.001f);
         }
     }
 
@@ -13449,7 +13449,7 @@ public class TestDependencyOffsets {
     public static void runFloatM128() {
         float[] data = new float[RANGE];
         init(data);
-        testFloatM128(data);
+        testFloatM128(data, data);
         verify("testFloatM128", data, goldFloatM128);
     }
 
@@ -13494,9 +13494,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_F, "> 0", IRNode.MUL_VF, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testFloatP128(float[] data) {
+    public static void testFloatP128(float[] data, float[] data_2) {
         for (int j = 0; j < RANGE - 128; j++) {
-            data[j + 128] = (float)(data[j] * (float)1.001f);
+            data_2[j + 128] = (float)(data[j] * (float)1.001f);
         }
     }
 
@@ -13505,7 +13505,7 @@ public class TestDependencyOffsets {
     public static void runFloatP128() {
         float[] data = new float[RANGE];
         init(data);
-        testFloatP128(data);
+        testFloatP128(data, data);
         verify("testFloatP128", data, goldFloatP128);
     }
 
@@ -13550,9 +13550,9 @@ public class TestDependencyOffsets {
     @IR(failOn = {IRNode.LOAD_VECTOR_F, IRNode.MUL_VF, IRNode.STORE_VECTOR},
         applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testFloatM129(float[] data) {
+    public static void testFloatM129(float[] data, float[] data_2) {
         for (int j = 129; j < RANGE; j++) {
-            data[j + -129] = (float)(data[j] * (float)1.001f);
+            data_2[j + -129] = (float)(data[j] * (float)1.001f);
         }
     }
 
@@ -13561,7 +13561,7 @@ public class TestDependencyOffsets {
     public static void runFloatM129() {
         float[] data = new float[RANGE];
         init(data);
-        testFloatM129(data);
+        testFloatM129(data, data);
         verify("testFloatM129", data, goldFloatM129);
     }
 
@@ -13606,9 +13606,9 @@ public class TestDependencyOffsets {
     @IR(failOn = {IRNode.LOAD_VECTOR_F, IRNode.MUL_VF, IRNode.STORE_VECTOR},
         applyIf = {"AlignVector", "true"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testFloatP129(float[] data) {
+    public static void testFloatP129(float[] data, float[] data_2) {
         for (int j = 0; j < RANGE - 129; j++) {
-            data[j + 129] = (float)(data[j] * (float)1.001f);
+            data_2[j + 129] = (float)(data[j] * (float)1.001f);
         }
     }
 
@@ -13617,7 +13617,7 @@ public class TestDependencyOffsets {
     public static void runFloatP129() {
         float[] data = new float[RANGE];
         init(data);
-        testFloatP129(data);
+        testFloatP129(data, data);
         verify("testFloatP129", data, goldFloatP129);
     }
 
@@ -13662,9 +13662,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_F, "> 0", IRNode.MUL_VF, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testFloatM192(float[] data) {
+    public static void testFloatM192(float[] data, float[] data_2) {
         for (int j = 192; j < RANGE; j++) {
-            data[j + -192] = (float)(data[j] * (float)1.001f);
+            data_2[j + -192] = (float)(data[j] * (float)1.001f);
         }
     }
 
@@ -13673,7 +13673,7 @@ public class TestDependencyOffsets {
     public static void runFloatM192() {
         float[] data = new float[RANGE];
         init(data);
-        testFloatM192(data);
+        testFloatM192(data, data);
         verify("testFloatM192", data, goldFloatM192);
     }
 
@@ -13718,9 +13718,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_F, "> 0", IRNode.MUL_VF, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 8"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testFloatP192(float[] data) {
+    public static void testFloatP192(float[] data, float[] data_2) {
         for (int j = 0; j < RANGE - 192; j++) {
-            data[j + 192] = (float)(data[j] * (float)1.001f);
+            data_2[j + 192] = (float)(data[j] * (float)1.001f);
         }
     }
 
@@ -13729,7 +13729,7 @@ public class TestDependencyOffsets {
     public static void runFloatP192() {
         float[] data = new float[RANGE];
         init(data);
-        testFloatP192(data);
+        testFloatP192(data, data);
         verify("testFloatP192", data, goldFloatP192);
     }
 
@@ -13774,9 +13774,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_D, "> 0", IRNode.MUL_VD, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testDoubleP0(double[] data) {
+    public static void testDoubleP0(double[] data, double[] data_2) {
         for (int j = 0; j < RANGE; j++) {
-            data[j + 0] = (double)(data[j] * (double)1.001);
+            data_2[j + 0] = (double)(data[j] * (double)1.001);
         }
     }
 
@@ -13785,7 +13785,7 @@ public class TestDependencyOffsets {
     public static void runDoubleP0() {
         double[] data = new double[RANGE];
         init(data);
-        testDoubleP0(data);
+        testDoubleP0(data, data);
         verify("testDoubleP0", data, goldDoubleP0);
     }
 
@@ -13830,9 +13830,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_D, "> 0", IRNode.MUL_VD, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testDoubleM1(double[] data) {
+    public static void testDoubleM1(double[] data, double[] data_2) {
         for (int j = 1; j < RANGE; j++) {
-            data[j + -1] = (double)(data[j] * (double)1.001);
+            data_2[j + -1] = (double)(data[j] * (double)1.001);
         }
     }
 
@@ -13841,7 +13841,7 @@ public class TestDependencyOffsets {
     public static void runDoubleM1() {
         double[] data = new double[RANGE];
         init(data);
-        testDoubleM1(data);
+        testDoubleM1(data, data);
         verify("testDoubleM1", data, goldDoubleM1);
     }
 
@@ -13871,9 +13871,9 @@ public class TestDependencyOffsets {
     //   No positive IR rule: conditions impossible.
     //   Expect alignment.
     //   No positive IR rule: conditions impossible.
-    public static void testDoubleP1(double[] data) {
+    public static void testDoubleP1(double[] data, double[] data_2) {
         for (int j = 0; j < RANGE - 1; j++) {
-            data[j + 1] = (double)(data[j] * (double)1.001);
+            data_2[j + 1] = (double)(data[j] * (double)1.001);
         }
     }
 
@@ -13882,7 +13882,7 @@ public class TestDependencyOffsets {
     public static void runDoubleP1() {
         double[] data = new double[RANGE];
         init(data);
-        testDoubleP1(data);
+        testDoubleP1(data, data);
         verify("testDoubleP1", data, goldDoubleP1);
     }
 
@@ -13927,9 +13927,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_D, "> 0", IRNode.MUL_VD, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testDoubleM2(double[] data) {
+    public static void testDoubleM2(double[] data, double[] data_2) {
         for (int j = 2; j < RANGE; j++) {
-            data[j + -2] = (double)(data[j] * (double)1.001);
+            data_2[j + -2] = (double)(data[j] * (double)1.001);
         }
     }
 
@@ -13938,7 +13938,7 @@ public class TestDependencyOffsets {
     public static void runDoubleM2() {
         double[] data = new double[RANGE];
         init(data);
-        testDoubleM2(data);
+        testDoubleM2(data, data);
         verify("testDoubleM2", data, goldDoubleM2);
     }
 
@@ -13986,9 +13986,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_D, "> 0", IRNode.MUL_VD, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", "16"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testDoubleP2(double[] data) {
+    public static void testDoubleP2(double[] data, double[] data_2) {
         for (int j = 0; j < RANGE - 2; j++) {
-            data[j + 2] = (double)(data[j] * (double)1.001);
+            data_2[j + 2] = (double)(data[j] * (double)1.001);
         }
     }
 
@@ -13997,7 +13997,7 @@ public class TestDependencyOffsets {
     public static void runDoubleP2() {
         double[] data = new double[RANGE];
         init(data);
-        testDoubleP2(data);
+        testDoubleP2(data, data);
         verify("testDoubleP2", data, goldDoubleP2);
     }
 
@@ -14042,9 +14042,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_D, "> 0", IRNode.MUL_VD, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testDoubleM3(double[] data) {
+    public static void testDoubleM3(double[] data, double[] data_2) {
         for (int j = 3; j < RANGE; j++) {
-            data[j + -3] = (double)(data[j] * (double)1.001);
+            data_2[j + -3] = (double)(data[j] * (double)1.001);
         }
     }
 
@@ -14053,7 +14053,7 @@ public class TestDependencyOffsets {
     public static void runDoubleM3() {
         double[] data = new double[RANGE];
         init(data);
-        testDoubleM3(data);
+        testDoubleM3(data, data);
         verify("testDoubleM3", data, goldDoubleM3);
     }
 
@@ -14101,9 +14101,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_D, "> 0", IRNode.MUL_VD, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16", "MaxVectorSize", "<= 24"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testDoubleP3(double[] data) {
+    public static void testDoubleP3(double[] data, double[] data_2) {
         for (int j = 0; j < RANGE - 3; j++) {
-            data[j + 3] = (double)(data[j] * (double)1.001);
+            data_2[j + 3] = (double)(data[j] * (double)1.001);
         }
     }
 
@@ -14112,7 +14112,7 @@ public class TestDependencyOffsets {
     public static void runDoubleP3() {
         double[] data = new double[RANGE];
         init(data);
-        testDoubleP3(data);
+        testDoubleP3(data, data);
         verify("testDoubleP3", data, goldDoubleP3);
     }
 
@@ -14157,9 +14157,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_D, "> 0", IRNode.MUL_VD, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testDoubleM4(double[] data) {
+    public static void testDoubleM4(double[] data, double[] data_2) {
         for (int j = 4; j < RANGE; j++) {
-            data[j + -4] = (double)(data[j] * (double)1.001);
+            data_2[j + -4] = (double)(data[j] * (double)1.001);
         }
     }
 
@@ -14168,7 +14168,7 @@ public class TestDependencyOffsets {
     public static void runDoubleM4() {
         double[] data = new double[RANGE];
         init(data);
-        testDoubleM4(data);
+        testDoubleM4(data, data);
         verify("testDoubleM4", data, goldDoubleM4);
     }
 
@@ -14215,9 +14215,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_D, "> 0", IRNode.MUL_VD, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16", "MaxVectorSize", "<= 32"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testDoubleP4(double[] data) {
+    public static void testDoubleP4(double[] data, double[] data_2) {
         for (int j = 0; j < RANGE - 4; j++) {
-            data[j + 4] = (double)(data[j] * (double)1.001);
+            data_2[j + 4] = (double)(data[j] * (double)1.001);
         }
     }
 
@@ -14226,7 +14226,7 @@ public class TestDependencyOffsets {
     public static void runDoubleP4() {
         double[] data = new double[RANGE];
         init(data);
-        testDoubleP4(data);
+        testDoubleP4(data, data);
         verify("testDoubleP4", data, goldDoubleP4);
     }
 
@@ -14271,9 +14271,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_D, "> 0", IRNode.MUL_VD, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testDoubleM7(double[] data) {
+    public static void testDoubleM7(double[] data, double[] data_2) {
         for (int j = 7; j < RANGE; j++) {
-            data[j + -7] = (double)(data[j] * (double)1.001);
+            data_2[j + -7] = (double)(data[j] * (double)1.001);
         }
     }
 
@@ -14282,7 +14282,7 @@ public class TestDependencyOffsets {
     public static void runDoubleM7() {
         double[] data = new double[RANGE];
         init(data);
-        testDoubleM7(data);
+        testDoubleM7(data, data);
         verify("testDoubleM7", data, goldDoubleM7);
     }
 
@@ -14329,9 +14329,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_D, "> 0", IRNode.MUL_VD, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16", "MaxVectorSize", "<= 56"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testDoubleP7(double[] data) {
+    public static void testDoubleP7(double[] data, double[] data_2) {
         for (int j = 0; j < RANGE - 7; j++) {
-            data[j + 7] = (double)(data[j] * (double)1.001);
+            data_2[j + 7] = (double)(data[j] * (double)1.001);
         }
     }
 
@@ -14340,7 +14340,7 @@ public class TestDependencyOffsets {
     public static void runDoubleP7() {
         double[] data = new double[RANGE];
         init(data);
-        testDoubleP7(data);
+        testDoubleP7(data, data);
         verify("testDoubleP7", data, goldDoubleP7);
     }
 
@@ -14385,9 +14385,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_D, "> 0", IRNode.MUL_VD, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testDoubleM8(double[] data) {
+    public static void testDoubleM8(double[] data, double[] data_2) {
         for (int j = 8; j < RANGE; j++) {
-            data[j + -8] = (double)(data[j] * (double)1.001);
+            data_2[j + -8] = (double)(data[j] * (double)1.001);
         }
     }
 
@@ -14396,7 +14396,7 @@ public class TestDependencyOffsets {
     public static void runDoubleM8() {
         double[] data = new double[RANGE];
         init(data);
-        testDoubleM8(data);
+        testDoubleM8(data, data);
         verify("testDoubleM8", data, goldDoubleM8);
     }
 
@@ -14442,9 +14442,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_D, "> 0", IRNode.MUL_VD, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16", "MaxVectorSize", "<= 64"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testDoubleP8(double[] data) {
+    public static void testDoubleP8(double[] data, double[] data_2) {
         for (int j = 0; j < RANGE - 8; j++) {
-            data[j + 8] = (double)(data[j] * (double)1.001);
+            data_2[j + 8] = (double)(data[j] * (double)1.001);
         }
     }
 
@@ -14453,7 +14453,7 @@ public class TestDependencyOffsets {
     public static void runDoubleP8() {
         double[] data = new double[RANGE];
         init(data);
-        testDoubleP8(data);
+        testDoubleP8(data, data);
         verify("testDoubleP8", data, goldDoubleP8);
     }
 
@@ -14498,9 +14498,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_D, "> 0", IRNode.MUL_VD, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testDoubleM14(double[] data) {
+    public static void testDoubleM14(double[] data, double[] data_2) {
         for (int j = 14; j < RANGE; j++) {
-            data[j + -14] = (double)(data[j] * (double)1.001);
+            data_2[j + -14] = (double)(data[j] * (double)1.001);
         }
     }
 
@@ -14509,7 +14509,7 @@ public class TestDependencyOffsets {
     public static void runDoubleM14() {
         double[] data = new double[RANGE];
         init(data);
-        testDoubleM14(data);
+        testDoubleM14(data, data);
         verify("testDoubleM14", data, goldDoubleM14);
     }
 
@@ -14555,9 +14555,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_D, "> 0", IRNode.MUL_VD, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16", "MaxVectorSize", "<= 112"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testDoubleP14(double[] data) {
+    public static void testDoubleP14(double[] data, double[] data_2) {
         for (int j = 0; j < RANGE - 14; j++) {
-            data[j + 14] = (double)(data[j] * (double)1.001);
+            data_2[j + 14] = (double)(data[j] * (double)1.001);
         }
     }
 
@@ -14566,7 +14566,7 @@ public class TestDependencyOffsets {
     public static void runDoubleP14() {
         double[] data = new double[RANGE];
         init(data);
-        testDoubleP14(data);
+        testDoubleP14(data, data);
         verify("testDoubleP14", data, goldDoubleP14);
     }
 
@@ -14611,9 +14611,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_D, "> 0", IRNode.MUL_VD, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testDoubleM16(double[] data) {
+    public static void testDoubleM16(double[] data, double[] data_2) {
         for (int j = 16; j < RANGE; j++) {
-            data[j + -16] = (double)(data[j] * (double)1.001);
+            data_2[j + -16] = (double)(data[j] * (double)1.001);
         }
     }
 
@@ -14622,7 +14622,7 @@ public class TestDependencyOffsets {
     public static void runDoubleM16() {
         double[] data = new double[RANGE];
         init(data);
-        testDoubleM16(data);
+        testDoubleM16(data, data);
         verify("testDoubleM16", data, goldDoubleM16);
     }
 
@@ -14668,9 +14668,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_D, "> 0", IRNode.MUL_VD, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16", "MaxVectorSize", "<= 128"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testDoubleP16(double[] data) {
+    public static void testDoubleP16(double[] data, double[] data_2) {
         for (int j = 0; j < RANGE - 16; j++) {
-            data[j + 16] = (double)(data[j] * (double)1.001);
+            data_2[j + 16] = (double)(data[j] * (double)1.001);
         }
     }
 
@@ -14679,7 +14679,7 @@ public class TestDependencyOffsets {
     public static void runDoubleP16() {
         double[] data = new double[RANGE];
         init(data);
-        testDoubleP16(data);
+        testDoubleP16(data, data);
         verify("testDoubleP16", data, goldDoubleP16);
     }
 
@@ -14724,9 +14724,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_D, "> 0", IRNode.MUL_VD, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testDoubleM18(double[] data) {
+    public static void testDoubleM18(double[] data, double[] data_2) {
         for (int j = 18; j < RANGE; j++) {
-            data[j + -18] = (double)(data[j] * (double)1.001);
+            data_2[j + -18] = (double)(data[j] * (double)1.001);
         }
     }
 
@@ -14735,7 +14735,7 @@ public class TestDependencyOffsets {
     public static void runDoubleM18() {
         double[] data = new double[RANGE];
         init(data);
-        testDoubleM18(data);
+        testDoubleM18(data, data);
         verify("testDoubleM18", data, goldDoubleM18);
     }
 
@@ -14781,9 +14781,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_D, "> 0", IRNode.MUL_VD, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16", "MaxVectorSize", "<= 144"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testDoubleP18(double[] data) {
+    public static void testDoubleP18(double[] data, double[] data_2) {
         for (int j = 0; j < RANGE - 18; j++) {
-            data[j + 18] = (double)(data[j] * (double)1.001);
+            data_2[j + 18] = (double)(data[j] * (double)1.001);
         }
     }
 
@@ -14792,7 +14792,7 @@ public class TestDependencyOffsets {
     public static void runDoubleP18() {
         double[] data = new double[RANGE];
         init(data);
-        testDoubleP18(data);
+        testDoubleP18(data, data);
         verify("testDoubleP18", data, goldDoubleP18);
     }
 
@@ -14837,9 +14837,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_D, "> 0", IRNode.MUL_VD, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testDoubleM20(double[] data) {
+    public static void testDoubleM20(double[] data, double[] data_2) {
         for (int j = 20; j < RANGE; j++) {
-            data[j + -20] = (double)(data[j] * (double)1.001);
+            data_2[j + -20] = (double)(data[j] * (double)1.001);
         }
     }
 
@@ -14848,7 +14848,7 @@ public class TestDependencyOffsets {
     public static void runDoubleM20() {
         double[] data = new double[RANGE];
         init(data);
-        testDoubleM20(data);
+        testDoubleM20(data, data);
         verify("testDoubleM20", data, goldDoubleM20);
     }
 
@@ -14894,9 +14894,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_D, "> 0", IRNode.MUL_VD, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16", "MaxVectorSize", "<= 160"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testDoubleP20(double[] data) {
+    public static void testDoubleP20(double[] data, double[] data_2) {
         for (int j = 0; j < RANGE - 20; j++) {
-            data[j + 20] = (double)(data[j] * (double)1.001);
+            data_2[j + 20] = (double)(data[j] * (double)1.001);
         }
     }
 
@@ -14905,7 +14905,7 @@ public class TestDependencyOffsets {
     public static void runDoubleP20() {
         double[] data = new double[RANGE];
         init(data);
-        testDoubleP20(data);
+        testDoubleP20(data, data);
         verify("testDoubleP20", data, goldDoubleP20);
     }
 
@@ -14950,9 +14950,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_D, "> 0", IRNode.MUL_VD, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testDoubleM31(double[] data) {
+    public static void testDoubleM31(double[] data, double[] data_2) {
         for (int j = 31; j < RANGE; j++) {
-            data[j + -31] = (double)(data[j] * (double)1.001);
+            data_2[j + -31] = (double)(data[j] * (double)1.001);
         }
     }
 
@@ -14961,7 +14961,7 @@ public class TestDependencyOffsets {
     public static void runDoubleM31() {
         double[] data = new double[RANGE];
         init(data);
-        testDoubleM31(data);
+        testDoubleM31(data, data);
         verify("testDoubleM31", data, goldDoubleM31);
     }
 
@@ -15007,9 +15007,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_D, "> 0", IRNode.MUL_VD, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16", "MaxVectorSize", "<= 248"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testDoubleP31(double[] data) {
+    public static void testDoubleP31(double[] data, double[] data_2) {
         for (int j = 0; j < RANGE - 31; j++) {
-            data[j + 31] = (double)(data[j] * (double)1.001);
+            data_2[j + 31] = (double)(data[j] * (double)1.001);
         }
     }
 
@@ -15018,7 +15018,7 @@ public class TestDependencyOffsets {
     public static void runDoubleP31() {
         double[] data = new double[RANGE];
         init(data);
-        testDoubleP31(data);
+        testDoubleP31(data, data);
         verify("testDoubleP31", data, goldDoubleP31);
     }
 
@@ -15063,9 +15063,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_D, "> 0", IRNode.MUL_VD, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testDoubleM32(double[] data) {
+    public static void testDoubleM32(double[] data, double[] data_2) {
         for (int j = 32; j < RANGE; j++) {
-            data[j + -32] = (double)(data[j] * (double)1.001);
+            data_2[j + -32] = (double)(data[j] * (double)1.001);
         }
     }
 
@@ -15074,7 +15074,7 @@ public class TestDependencyOffsets {
     public static void runDoubleM32() {
         double[] data = new double[RANGE];
         init(data);
-        testDoubleM32(data);
+        testDoubleM32(data, data);
         verify("testDoubleM32", data, goldDoubleM32);
     }
 
@@ -15119,9 +15119,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_D, "> 0", IRNode.MUL_VD, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testDoubleP32(double[] data) {
+    public static void testDoubleP32(double[] data, double[] data_2) {
         for (int j = 0; j < RANGE - 32; j++) {
-            data[j + 32] = (double)(data[j] * (double)1.001);
+            data_2[j + 32] = (double)(data[j] * (double)1.001);
         }
     }
 
@@ -15130,7 +15130,7 @@ public class TestDependencyOffsets {
     public static void runDoubleP32() {
         double[] data = new double[RANGE];
         init(data);
-        testDoubleP32(data);
+        testDoubleP32(data, data);
         verify("testDoubleP32", data, goldDoubleP32);
     }
 
@@ -15175,9 +15175,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_D, "> 0", IRNode.MUL_VD, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testDoubleM63(double[] data) {
+    public static void testDoubleM63(double[] data, double[] data_2) {
         for (int j = 63; j < RANGE; j++) {
-            data[j + -63] = (double)(data[j] * (double)1.001);
+            data_2[j + -63] = (double)(data[j] * (double)1.001);
         }
     }
 
@@ -15186,7 +15186,7 @@ public class TestDependencyOffsets {
     public static void runDoubleM63() {
         double[] data = new double[RANGE];
         init(data);
-        testDoubleM63(data);
+        testDoubleM63(data, data);
         verify("testDoubleM63", data, goldDoubleM63);
     }
 
@@ -15231,9 +15231,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_D, "> 0", IRNode.MUL_VD, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testDoubleP63(double[] data) {
+    public static void testDoubleP63(double[] data, double[] data_2) {
         for (int j = 0; j < RANGE - 63; j++) {
-            data[j + 63] = (double)(data[j] * (double)1.001);
+            data_2[j + 63] = (double)(data[j] * (double)1.001);
         }
     }
 
@@ -15242,7 +15242,7 @@ public class TestDependencyOffsets {
     public static void runDoubleP63() {
         double[] data = new double[RANGE];
         init(data);
-        testDoubleP63(data);
+        testDoubleP63(data, data);
         verify("testDoubleP63", data, goldDoubleP63);
     }
 
@@ -15287,9 +15287,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_D, "> 0", IRNode.MUL_VD, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testDoubleM64(double[] data) {
+    public static void testDoubleM64(double[] data, double[] data_2) {
         for (int j = 64; j < RANGE; j++) {
-            data[j + -64] = (double)(data[j] * (double)1.001);
+            data_2[j + -64] = (double)(data[j] * (double)1.001);
         }
     }
 
@@ -15298,7 +15298,7 @@ public class TestDependencyOffsets {
     public static void runDoubleM64() {
         double[] data = new double[RANGE];
         init(data);
-        testDoubleM64(data);
+        testDoubleM64(data, data);
         verify("testDoubleM64", data, goldDoubleM64);
     }
 
@@ -15343,9 +15343,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_D, "> 0", IRNode.MUL_VD, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testDoubleP64(double[] data) {
+    public static void testDoubleP64(double[] data, double[] data_2) {
         for (int j = 0; j < RANGE - 64; j++) {
-            data[j + 64] = (double)(data[j] * (double)1.001);
+            data_2[j + 64] = (double)(data[j] * (double)1.001);
         }
     }
 
@@ -15354,7 +15354,7 @@ public class TestDependencyOffsets {
     public static void runDoubleP64() {
         double[] data = new double[RANGE];
         init(data);
-        testDoubleP64(data);
+        testDoubleP64(data, data);
         verify("testDoubleP64", data, goldDoubleP64);
     }
 
@@ -15399,9 +15399,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_D, "> 0", IRNode.MUL_VD, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testDoubleM65(double[] data) {
+    public static void testDoubleM65(double[] data, double[] data_2) {
         for (int j = 65; j < RANGE; j++) {
-            data[j + -65] = (double)(data[j] * (double)1.001);
+            data_2[j + -65] = (double)(data[j] * (double)1.001);
         }
     }
 
@@ -15410,7 +15410,7 @@ public class TestDependencyOffsets {
     public static void runDoubleM65() {
         double[] data = new double[RANGE];
         init(data);
-        testDoubleM65(data);
+        testDoubleM65(data, data);
         verify("testDoubleM65", data, goldDoubleM65);
     }
 
@@ -15455,9 +15455,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_D, "> 0", IRNode.MUL_VD, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testDoubleP65(double[] data) {
+    public static void testDoubleP65(double[] data, double[] data_2) {
         for (int j = 0; j < RANGE - 65; j++) {
-            data[j + 65] = (double)(data[j] * (double)1.001);
+            data_2[j + 65] = (double)(data[j] * (double)1.001);
         }
     }
 
@@ -15466,7 +15466,7 @@ public class TestDependencyOffsets {
     public static void runDoubleP65() {
         double[] data = new double[RANGE];
         init(data);
-        testDoubleP65(data);
+        testDoubleP65(data, data);
         verify("testDoubleP65", data, goldDoubleP65);
     }
 
@@ -15511,9 +15511,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_D, "> 0", IRNode.MUL_VD, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testDoubleM128(double[] data) {
+    public static void testDoubleM128(double[] data, double[] data_2) {
         for (int j = 128; j < RANGE; j++) {
-            data[j + -128] = (double)(data[j] * (double)1.001);
+            data_2[j + -128] = (double)(data[j] * (double)1.001);
         }
     }
 
@@ -15522,7 +15522,7 @@ public class TestDependencyOffsets {
     public static void runDoubleM128() {
         double[] data = new double[RANGE];
         init(data);
-        testDoubleM128(data);
+        testDoubleM128(data, data);
         verify("testDoubleM128", data, goldDoubleM128);
     }
 
@@ -15567,9 +15567,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_D, "> 0", IRNode.MUL_VD, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testDoubleP128(double[] data) {
+    public static void testDoubleP128(double[] data, double[] data_2) {
         for (int j = 0; j < RANGE - 128; j++) {
-            data[j + 128] = (double)(data[j] * (double)1.001);
+            data_2[j + 128] = (double)(data[j] * (double)1.001);
         }
     }
 
@@ -15578,7 +15578,7 @@ public class TestDependencyOffsets {
     public static void runDoubleP128() {
         double[] data = new double[RANGE];
         init(data);
-        testDoubleP128(data);
+        testDoubleP128(data, data);
         verify("testDoubleP128", data, goldDoubleP128);
     }
 
@@ -15623,9 +15623,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_D, "> 0", IRNode.MUL_VD, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testDoubleM129(double[] data) {
+    public static void testDoubleM129(double[] data, double[] data_2) {
         for (int j = 129; j < RANGE; j++) {
-            data[j + -129] = (double)(data[j] * (double)1.001);
+            data_2[j + -129] = (double)(data[j] * (double)1.001);
         }
     }
 
@@ -15634,7 +15634,7 @@ public class TestDependencyOffsets {
     public static void runDoubleM129() {
         double[] data = new double[RANGE];
         init(data);
-        testDoubleM129(data);
+        testDoubleM129(data, data);
         verify("testDoubleM129", data, goldDoubleM129);
     }
 
@@ -15679,9 +15679,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_D, "> 0", IRNode.MUL_VD, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testDoubleP129(double[] data) {
+    public static void testDoubleP129(double[] data, double[] data_2) {
         for (int j = 0; j < RANGE - 129; j++) {
-            data[j + 129] = (double)(data[j] * (double)1.001);
+            data_2[j + 129] = (double)(data[j] * (double)1.001);
         }
     }
 
@@ -15690,7 +15690,7 @@ public class TestDependencyOffsets {
     public static void runDoubleP129() {
         double[] data = new double[RANGE];
         init(data);
-        testDoubleP129(data);
+        testDoubleP129(data, data);
         verify("testDoubleP129", data, goldDoubleP129);
     }
 
@@ -15735,9 +15735,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_D, "> 0", IRNode.MUL_VD, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testDoubleM192(double[] data) {
+    public static void testDoubleM192(double[] data, double[] data_2) {
         for (int j = 192; j < RANGE; j++) {
-            data[j + -192] = (double)(data[j] * (double)1.001);
+            data_2[j + -192] = (double)(data[j] * (double)1.001);
         }
     }
 
@@ -15746,7 +15746,7 @@ public class TestDependencyOffsets {
     public static void runDoubleM192() {
         double[] data = new double[RANGE];
         init(data);
-        testDoubleM192(data);
+        testDoubleM192(data, data);
         verify("testDoubleM192", data, goldDoubleM192);
     }
 
@@ -15791,9 +15791,9 @@ public class TestDependencyOffsets {
     @IR(counts = {IRNode.LOAD_VECTOR_D, "> 0", IRNode.MUL_VD, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">= 16"},
         applyIfCPUFeature = {"sve", "true"})
-    public static void testDoubleP192(double[] data) {
+    public static void testDoubleP192(double[] data, double[] data_2) {
         for (int j = 0; j < RANGE - 192; j++) {
-            data[j + 192] = (double)(data[j] * (double)1.001);
+            data_2[j + 192] = (double)(data[j] * (double)1.001);
         }
     }
 
@@ -15802,7 +15802,7 @@ public class TestDependencyOffsets {
     public static void runDoubleP192() {
         double[] data = new double[RANGE];
         init(data);
-        testDoubleP192(data);
+        testDoubleP192(data, data);
         verify("testDoubleP192", data, goldDoubleP192);
     }
 
