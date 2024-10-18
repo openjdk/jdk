@@ -483,6 +483,11 @@ public class HKDFExhaustiveTest {
         }
       }
     }
+
+    // NEGATIVE TestCase: ExtractThenExpand - length greater than 255 > hmacLen
+    Utils.runAndCheckException(
+        () -> hk.deriveKey("OKM", HKDFParameterSpec.ofExtract().thenExpand(null, 8162)),
+        InvalidAlgorithmParameterException.class);
   }
 
   private static void testDeriveKeyDataWithExtExpand(KDF hk)
