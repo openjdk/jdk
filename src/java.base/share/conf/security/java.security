@@ -665,7 +665,7 @@ sun.security.krb5.maxReferrals=5
 #       Examples:
 #         - "RSA kx" prohibits RSA algorithm to be used for Key Exchange.
 #         - "DSS authn" prohibits DSS algorithm to be used for Authentication.
-#         - "NULL authn" requires Authentication some algorithm to be used.
+#         - "NULL authn" requires some algorithm to be used for Authentication.
 #
 # When an algorithm must satisfy more than one constraint, it must be
 # delimited by an ampersand '&'.  For example, to restrict certificates in a
@@ -796,7 +796,7 @@ http.auth.digest.disabledAlgorithms = MD5, SHA-1
 #
 # Example:
 #   jdk.tls.disabledAlgorithms=MD5, SSLv3, DSA, RSA keySize < 2048, \
-#       rsa_pkcs1_sha1, secp224r1
+#       rsa_pkcs1_sha1, secp224r1, RSA kx
 jdk.tls.disabledAlgorithms=SSLv3, TLSv1, TLSv1.1, DTLSv1.0, RC4, DES, \
     MD5withRSA, DH keySize < 1024, EC keySize < 224, 3DES_EDE_CBC, anon, NULL, \
     ECDH
