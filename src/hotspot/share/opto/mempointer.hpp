@@ -33,6 +33,112 @@
 //
 // -----------------------------------------------------------------------------------------
 //
+// Intuition and Examples:
+//   We parse / decompose pointers into a linear form:
+//
+//     pointer = con + sum_i(scale_i * variable_i)
+//
+//   The con and scale_i are compile-time constants (NoOverflowInt), and the variable_i are
+//   compile-time variables (C2 nodes).
+//
+//   For the MemPointer, we do not explicitly track base address. For Java heap pointers, the
+//   base address is just a variable. For native memory (C heap) pointers, the base address is
+//   null, and is hence implicitly a zero constant.
+//
+//
+//   Example1: byte array access:
+//
+//     array[i]
+//
+//     pointer =           array_base + ARRAY_BYTE_BASE_OFFSET + 1       * i
+//             = 1       * array_base + ARRAY_BYTE_BASE_OFFSET + 1       * i
+//               --------------------   ----------------------   --------------------
+//             = scale_0 * variable_0 + con                    + scale_1 * variable_1
+//
+//
+//   Example2: int array access
+//
+//     array[5 + i + 3 * j]
+//
+//     pointer =           array_base + ARRAY_INT_BASE_OFFSET + 4 * 5 + 4       * j          + 4       * 3 * j
+//             = 1       * array_base + ARRAY_INT_BASE_OFFSET + 20    + 4       * j          + 12      * j
+//               --------------------   -----------------------------   --------------------   --------------------
+//             = scale_0 * variable_0 + con                           + scale_1 * variable_1 + scale_2 * variable_2
+//
+//
+//   Example3: Unsafe with int array
+//
+//     UNSAFE.getInt(array, ARRAY_INT_BASE_OFFSET + 4 * i);
+//
+//     pointer =           array_base + ARRAY_INT_BASE_OFFSET + 4       * i
+//             = 1       * array_base + ARRAY_INT_BASE_OFFSET + 4       * i
+//             = scale_0 * variable_0 + con                   + scale_1 * variable_1
+//
+//
+//   Example4: Unsafe with native memory address
+//
+//     long address;
+//     UNSAFE.getInt(null, address + 4 * i);
+//
+//     pointer =           address          + 4       * i
+//             = 1       * address    + 0   + 4       * i
+//             = scale_0 * variable_0 + con + scale_1 * variable_1
+//
+//
+//   Example5: MemorySegment with byte array as backing type
+//
+//     byte[] array = new byte[1000];
+//     MemorySegment ms = MemorySegment.ofArray(array);
+//     assert ms.heapBase().get() == array: "array is base";
+//     assert ms.address() == 0: "zero offset from base";
+//     byte val = ms.get(ValueLayout.JAVA_BYTE, i);
+//
+//     pointer =           ms.heapBase() + ARRAY_BYTE_BASE_OFFSET + ms.address() +           i
+//             = 1       * array_base    + ARRAY_BYTE_BASE_OFFSET + 0            + 1       * i
+//               -----------------------   -------------------------------------   --------------------
+//             = scale_0 * variable_0    + con                                   + scale_1 * variable_1
+//
+//
+//   Example6: MemorySegment with native memory
+//
+//     MemorySegment ms = Arena.ofAuto().allocate(1000, 1);
+//     assert ms.heapBase().isEmpty(): "null base";
+//     assert ms.address() != 0: "non-zero native memory address";
+//     byte val2 = ms.get(ValueLayout.JAVA_BYTE, i);
+//
+//     pointer = ms.heapBase() +           ms.address() +           i
+//             = 0             + 1       * ms.address() + 1       * i
+//               ------------    ----------------------   --------------------
+//             = con             scale_0 * variable_0   + scale_1 * variable_1
+//
+//
+//   Example7: Non-linear access to int array
+//
+//     array[5 + i + j * k]
+//
+//     pointer =           array_base + ARRAY_INT_BASE_OFFSET + 4 * 5 + 4       * j          + 4       * j * k
+//             = 1       * array_base + ARRAY_INT_BASE_OFFSET + 20    + 4       * j          + 4       * j * k
+//               --------------------   -----------------------------   --------------------   --------------------
+//             = scale_0 * variable_0 + con                           + scale_1 * variable_1 + scale_2 * variable_2
+//
+//     Note: we simply stop parsing once a term is not linear. We keep "j * k" as its own variable.
+//
+//
+//   Example8: Unsafe with native memory address, non-linear access
+//
+//     UNSAFE.getInt(null, i * j);
+//
+//     pointer =                 i * j
+//             = 0   + 1       * i * j
+//               ---   --------------------
+//             = con + scale_0 * variable_0
+//
+//     Note: we can always parse a pointer into its trivial linear form:
+//
+//             pointer = 0 + 1 * pointer.
+//
+// -----------------------------------------------------------------------------------------
+//
 // MemPointerDecomposedForm:
 //   When the pointer is parsed, it is decomposed into a constant and a sum of summands:
 //
@@ -46,6 +152,8 @@
 //
 //     pointer = con + sum_i(scale_i * variable_i)
 //
+//   Note: the scale_i are compile-time constants (NoOverflowInt), and the variable_i are
+//         compile-time variables (C2 nodes).
 //   On 64bit systems, this decomposed form is computed with long-add/mul, on 32bit systems
 //   it is computed with int-add/mul.
 //
@@ -347,11 +455,7 @@ public:
 class MemPointerDecomposedForm : public StackObj {
 private:
   // We limit the number of summands to 10. Usually, a pointer contains a base pointer
-  // (e.g. array pointer or null for native memory) and a few variables. For example:
-  //
-  //   array[j]                      ->  array_base + j + con              -> 2 summands
-  //   nativeMemorySegment.get(j)    ->  null + address + offset + j + con -> 3 summands
-  //
+  // (e.g. array pointer or null for native memory) and a few variables.
   static const int SUMMANDS_SIZE = 10;
 
   Node* _pointer; // pointer node associated with this (sub)pointer

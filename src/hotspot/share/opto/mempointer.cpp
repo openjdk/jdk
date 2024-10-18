@@ -127,6 +127,9 @@ void MemPointerDecomposedFormParser::parse_sub_expression(const MemPointerSumman
       case Op_LShiftI:
       {
         // Only multiplication with constants is allowed: factor * variable
+        // IGVN already folds constants to in(2). If we find a variable there
+        // instead, we cannot further decompose this summand, and have to add
+        // it to the terminal summands.
         Node* variable = n->in(1);
         Node* con      = n->in(2);
         if (!con->is_Con()) { break; }
@@ -170,6 +173,10 @@ void MemPointerDecomposedFormParser::parse_sub_expression(const MemPointerSumman
         _worklist.push(MemPointerSummand(a, scale));
         return;
       }
+      default:
+        // All other operations cannot be further decomposed. We just add them to the
+        // terminal summands below.
+        break;
     }
   }
 
