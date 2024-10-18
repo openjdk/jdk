@@ -24,7 +24,6 @@
 /*
  * @test id=default
  * @summary Test virtual threads using park/unpark
- * @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64" | os.arch=="riscv64"
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
  * @build LockingMode
@@ -33,7 +32,6 @@
 
 /*
  * @test id=Xint
- * @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64" | os.arch=="riscv64"
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
  * @build LockingMode
@@ -42,7 +40,6 @@
 
 /*
  * @test id=Xcomp
- * @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64" | os.arch=="riscv64"
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
  * @build LockingMode
@@ -51,7 +48,6 @@
 
 /*
  * @test id=Xcomp-noTieredCompilation
- * @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64" | os.arch=="riscv64"
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
  * @build LockingMode

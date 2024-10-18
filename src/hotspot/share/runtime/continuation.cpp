@@ -57,8 +57,6 @@ JVM_ENTRY(void, CONT_unpin(JNIEnv* env, jclass cls)) {
 }
 JVM_END
 
-#ifdef LOOM_MONITOR_SUPPORT
-
 #if INCLUDE_JVMTI
 class JvmtiUnmountBeginMark : public StackObj {
   Handle _vthread;
@@ -172,7 +170,6 @@ int Continuation::try_preempt(JavaThread* target, oop continuation) {
   JVMTI_ONLY(jubm.set_preempt_result(res);)
   return res;
 }
-#endif // LOOM_MONITOR_SUPPORT
 
 #ifndef PRODUCT
 static jlong java_tid(JavaThread* thread) {

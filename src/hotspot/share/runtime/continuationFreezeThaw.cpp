@@ -1154,8 +1154,8 @@ NOINLINE freeze_result FreezeBase::recurse_freeze_interpreted_frame(frame& f, fr
   // including metadata between f and its args
   const int argsize = ContinuationHelper::InterpretedFrame::stack_argsize(f) + frame::metadata_words_at_top;
 
-  log_develop_trace(continuations)("recurse_freeze_interpreted_frame %s _size: %d fsize: %d argsize: %d",
-    frame_method->name_and_sig_as_C_string(), _freeze_size, fsize, argsize);
+  log_develop_trace(continuations)("recurse_freeze_interpreted_frame %s _size: %d fsize: %d argsize: %d callee_interpreted: %d",
+    frame_method->name_and_sig_as_C_string(), _freeze_size, fsize, argsize, callee_interpreted);
   // we'd rather not yield inside methods annotated with @JvmtiMountTransition
   assert(!ContinuationHelper::Frame::frame_method(f)->jvmti_mount_transition(), "");
 
@@ -1292,18 +1292,20 @@ NOINLINE freeze_result FreezeBase::recurse_freeze_native_frame(frame& f, frame& 
   }
 
   intptr_t* const stack_frame_top = ContinuationHelper::NativeFrame::frame_top(f);
-  const int fsize = f.cb()->frame_size();
+  // There are no stackargs but argsize must include the metadata
+  const int argsize = frame::metadata_words_at_top;
+  const int fsize = f.cb()->frame_size() + argsize;
 
   log_develop_trace(continuations)("recurse_freeze_native_frame %s _size: %d fsize: %d :: " INTPTR_FORMAT " - " INTPTR_FORMAT,
     f.cb()->name(), _freeze_size, fsize, p2i(stack_frame_top), p2i(stack_frame_top+fsize));
 
-  freeze_result result = recurse_freeze_java_frame<ContinuationHelper::NativeFrame>(f, caller, fsize, 0);
+  freeze_result result = recurse_freeze_java_frame<ContinuationHelper::NativeFrame>(f, caller, fsize, argsize);
   if (UNLIKELY(result > freeze_ok_bottom)) {
     return result;
   }
 
   assert(result == freeze_ok, "should have caller frame");
-  DEBUG_ONLY(before_freeze_java_frame(f, caller, fsize, 0 /* argsize */, false /* is_bottom_frame */);)
+  DEBUG_ONLY(before_freeze_java_frame(f, caller, fsize, argsize, false /* is_bottom_frame */);)
 
   frame hf = new_heap_frame<ContinuationHelper::NativeFrame>(f, caller);
   intptr_t* heap_frame_top = ContinuationHelper::NativeFrame::frame_top(hf);
@@ -1716,10 +1718,10 @@ static inline int freeze_internal(JavaThread* current, intptr_t* const sp) {
 
   assert(entry->is_virtual_thread() == (entry->scope(current) == java_lang_VirtualThread::vthread_scope()), "");
 
-  assert(LOOM_MONITOR_SUPPORT_ONLY(LockingMode != LM_LEGACY ||) (monitors_on_stack(current) == ((current->held_monitor_count() - current->jni_monitor_count()) > 0)),
+  assert(LockingMode != LM_LEGACY || (monitors_on_stack(current) == ((current->held_monitor_count() - current->jni_monitor_count()) > 0)),
          "Held monitor count and locks on stack invariant: " INT64_FORMAT " JNI: " INT64_FORMAT, (int64_t)current->held_monitor_count(), (int64_t)current->jni_monitor_count());
-  LOOM_MONITOR_SUPPORT_ONLY(assert(LockingMode == LM_LEGACY || (current->held_monitor_count() == 0 && current->jni_monitor_count() == 0),
-         "Held monitor count should only be used for LM_LEGACY: " INT64_FORMAT " JNI: " INT64_FORMAT, (int64_t)current->held_monitor_count(), (int64_t)current->jni_monitor_count());)
+  assert(LockingMode == LM_LEGACY || (current->held_monitor_count() == 0 && current->jni_monitor_count() == 0),
+         "Held monitor count should only be used for LM_LEGACY: " INT64_FORMAT " JNI: " INT64_FORMAT, (int64_t)current->held_monitor_count(), (int64_t)current->jni_monitor_count());
 
   if (entry->is_pinned() || current->held_monitor_count() > 0) {
     log_develop_debug(continuations)("PINNED due to critical section/hold monitor");

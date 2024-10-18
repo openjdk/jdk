@@ -64,6 +64,9 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import com.sun.management.HotSpotDiagnosticMXBean;
+import java.lang.management.ManagementFactory;
+
 import org.testng.annotations.Test;
 import org.testng.annotations.DataProvider;
 import static org.testng.Assert.*;
@@ -280,7 +283,7 @@ public class Basic {
 
     @Test
     public void testPinnedMonitor() {
-        if (Platform.isX64() || Platform.isAArch64() || Platform.isRISCV64()) return;
+        if (!legacyLockingMode()) return;
 
         // Test pinning due to held monitor
         final AtomicReference<Continuation.Pinned> res = new AtomicReference<>();
@@ -415,5 +418,10 @@ public class Basic {
 
     static {
         System.loadLibrary("BasicJNI");
+    }
+
+    static boolean legacyLockingMode() {
+        return ManagementFactory.getPlatformMXBean(HotSpotDiagnosticMXBean.class)
+                    .getVMOption("LockingMode").getValue().equals("1");
     }
 }

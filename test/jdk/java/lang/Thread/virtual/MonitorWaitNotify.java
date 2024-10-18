@@ -24,7 +24,6 @@
 /*
  * @test id=default
  * @summary Test virtual threads using Object.wait/notifyAll
- * @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64" | os.arch=="riscv64"
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
  * @build LockingMode
@@ -33,7 +32,6 @@
 
 /*
  * @test id=LM_LEGACY
- * @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64" | os.arch=="riscv64"
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
  * @build LockingMode
@@ -42,7 +40,6 @@
 
 /*
  * @test id=LM_LIGHTWEIGHT
- * @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64" | os.arch=="riscv64"
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
  * @build LockingMode
@@ -51,7 +48,6 @@
 
 /*
  * @test id=Xint-LM_LEGACY
- * @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64" | os.arch=="riscv64"
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
  * @build LockingMode
@@ -60,7 +56,6 @@
 
 /*
  * @test id=Xint-LM_LIGHTWEIGHT
- * @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64" | os.arch=="riscv64"
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
  * @build LockingMode
@@ -69,7 +64,6 @@
 
 /*
  * @test id=Xcomp-LM_LEGACY
- * @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64" | os.arch=="riscv64"
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
  * @build LockingMode
@@ -78,7 +72,6 @@
 
 /*
  * @test id=Xcomp-LM_LIGHTWEIGHT
- * @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64" | os.arch=="riscv64"
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
  * @build LockingMode
@@ -87,7 +80,6 @@
 
 /*
  * @test id=Xcomp-TieredStopAtLevel1-LM_LEGACY
- * @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64" | os.arch=="riscv64"
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
  * @build LockingMode
@@ -104,7 +96,6 @@
 
 /*
  * @test id=Xcomp-noTieredCompilation-LM_LEGACY
- * @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64" | os.arch=="riscv64"
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
  * @build LockingMode
@@ -113,7 +104,6 @@
 
 /*
  * @test id=Xcomp-noTieredCompilation-LM_LIGHTWEIGHT
- * @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64" | os.arch=="riscv64"
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
  * @build LockingMode

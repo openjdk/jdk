@@ -1816,6 +1816,7 @@ class Assembler : public AbstractAssembler {
                          relocInfo::relocType rt = relocInfo::none);
 
   // helper function for b, bcxx
+  inline bool is_branch(address a);
   inline bool is_within_range_of_b(address a, address pc);
   inline bool is_within_range_of_bcxx(address a, address pc);
 

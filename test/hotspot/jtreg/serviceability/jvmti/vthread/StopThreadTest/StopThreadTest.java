@@ -278,6 +278,6 @@ public class StopThreadTest {
     static boolean preemptableVirtualThread() {
         boolean legacyLockingMode = ManagementFactory.getPlatformMXBean(HotSpotDiagnosticMXBean.class)
                                         .getVMOption("LockingMode").getValue().equals("1");
-        return is_virtual && !isBoundVThread && !legacyLockingMode && (Platform.isX64() || Platform.isAArch64() || Platform.isRISCV64());
+        return is_virtual && !isBoundVThread && !legacyLockingMode;
     }
 }
