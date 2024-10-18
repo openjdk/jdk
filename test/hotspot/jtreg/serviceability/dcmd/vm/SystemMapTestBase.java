@@ -33,7 +33,6 @@ public class SystemMapTestBase {
     private static final String someSize = "\\d+";
     private static final String someNumber = "(0x\\p{XDigit}+|\\d+)";
     private static final String pagesize = "(4K|8K|16K|64K|2M|16M|64M)";
-    private static final String prot = "[rwsxp-]+";
 
     interface MapPatterns {
         String[] shouldMatchUnconditionally();
@@ -48,6 +47,7 @@ public class SystemMapTestBase {
     protected String[] shouldMatchUnconditionally() {
         return patternProvider.shouldMatchUnconditionally();
     }
+
     protected String[] shouldMatchIfNMTIsEnabled() {
         return patternProvider.shouldMatchIfNMTIsEnabled();
     }
@@ -61,20 +61,23 @@ public class SystemMapTestBase {
             patternProvider = new LinuxPatterns();
         }
     }
+
     private static class LinuxPatterns implements MapPatterns {
 
-        private static final String regexBase = range + space +
-        someSize + space +
-        prot + space +
-        someSize + space +
-        someSize + space +
-        pagesize + space;
+        private static final String prot = "[rwsxp-]+";
 
-private static final String regexBase_committed = regexBase + "com.*";
-private static final String regexBase_shared_and_committed = regexBase + "shrd,com.*";
+        static final String regexBase = range + space +
+                                        someSize + space +
+                                        prot + space +
+                                        someSize + space +
+                                        someSize + space +
+                                        pagesize + space;
 
-// java heap is either committed, non-shared, or - in case of ZGC - committed and shared.
-private static final String regexBase_java_heap = regexBase + "(shrd,)?com.*";
+        static final String regexBase_committed = regexBase + "com.*";
+        static final String regexBase_shared_and_committed = regexBase + "shrd,com.*";
+
+        // java heap is either committed, non-shared, or - in case of ZGC - committed and shared.
+        static final String regexBase_java_heap = regexBase + "(shrd,)?com.*";
 
         static final String shouldMatchUnconditionally_linux[] = {
             // java launcher
@@ -102,6 +105,7 @@ private static final String regexBase_java_heap = regexBase + "(shrd,)?com.*";
         public String[] shouldMatchUnconditionally() {
             return shouldMatchUnconditionally_linux;
         }
+
         public String[] shouldMatchIfNMTIsEnabled() {
             return shouldMatchIfNMTIsEnabled_linux;
         }
@@ -140,11 +144,12 @@ private static final String regexBase_java_heap = regexBase + "(shrd,)?com.*";
         public String[] shouldMatchUnconditionally() {
             return shouldMatchUnconditionally_windows;
         }
+
         public String[] shouldMatchIfNMTIsEnabled() {
             return shouldMatchIfNMTIsEnabled_windows;
         }
     };
-    
+
     private static class MacOSPatterns implements MapPatterns {
 
         // macOS:
@@ -182,6 +187,7 @@ private static final String regexBase_java_heap = regexBase + "(shrd,)?com.*";
         public String[] shouldMatchUnconditionally() {
             return shouldMatchUnconditionally_macOS;
         }
+
         public String[] shouldMatchIfNMTIsEnabled() {
             return shouldMatchIfNMTIsEnabled_macOS;
         }
