@@ -201,10 +201,9 @@ public class PrivateMembersInPermitClause extends toolbox.TestRunner {
         );
 
         var expectedErrors = List.of(
-            "S.java:1:8: compiler.err.private.members.in.permits.clause",
             "S.java:1:25: compiler.err.report.access: S.A, private, S",
             "S.java:2:26: compiler.err.cant.inherit.from.sealed: S",
-            "3 errors"
+            "2 errors"
         );
 
         var actualOutput = new toolbox.JavacTask(tb)
