@@ -2591,7 +2591,6 @@ void VM_HeapDumper::dump_vthread(oop vt, AbstractDumpWriter* segment_writer) {
 
 // dump the heap to given path.
 int HeapDumper::dump(const char* path, outputStream* out, int compression, bool overwrite, uint num_dump_threads) {
-  assert(path != nullptr && strlen(path) > 0, "path missing");
 
   // print message in interactive case
   if (out != nullptr) {

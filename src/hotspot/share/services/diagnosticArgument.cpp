@@ -190,6 +190,11 @@ template <> void DCmdArgument<char*>::parse_value(const char* str,
   } else {
     // Use realloc as we may have a default set.
     if (strcmp(type(), "FILE") == 0) {
+      if (str == nullptr || *str == 0) {
+        stringStream error_msg;
+        error_msg.print("Filename is empty or not specified. %s", str);
+        THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), error_msg.base());
+      }
       _value = REALLOC_C_HEAP_ARRAY(char, _value, JVM_MAXPATHLEN, mtInternal);
       if (!Arguments::copy_expand_pid(str, len, _value, JVM_MAXPATHLEN)) {
         stringStream error_msg;
