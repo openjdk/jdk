@@ -5278,8 +5278,9 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         BigInteger[] qr; // quotient-remainder pair
         // Remove 5^(2^i) from the factors of intVal, until 5^remainingZeros < 5^(2^i).
         // Let z = max{n >= 0 : ((intVal * 2^powsOf2) % 10^n) == 0 && n <= scale - preferredScale},
-        // then the invariant min(scale - preferredScale, powsOf2) >= remainingZeros >= z
-        // is preserved after each iteration.
+        // then the condition min(scale - preferredScale, powsOf2) >= remainingZeros >= z
+        // and the values ((intVal * 2^powsOf2) / 10^z) and (scale - z)
+        // are preserved invariants after each iteration.
         // Note that if intVal % 5^(2^i) != 0, the loop condition will become false.
         for (int i = 0; remainingZeros >= 1L << i; i++) {
             final int exp = 1 << i;
@@ -5300,10 +5301,12 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         // which is equivalent to i == bitLength(remainingZeros) - 1,
         // is preserved at the beginning of each iteration.
         // Note that the loop stops exactly when remainingZeros == 0.
-        // Using the same definition of z for the first loop, the invariant
-        // min(scale - preferredScale, powsOf2) >= remainingZeros >= z
-        // is preserved in this loop as well,
-        // so, when the loop ends, remainingZeros == 0 implies z == 0.
+        // Using the same definition of z for the first loop, the invariants
+        // min(scale - preferredScale, powsOf2) >= remainingZeros >= z,
+        // ((intVal * 2^powsOf2) / 10^z) and (scale - z)
+        // are preserved in this loop as well, so, when the loop ends,
+        // remainingZeros == 0 implies z == 0, hence (intVal * 2^powsOf2) and scale
+        // have the correct values to return.
         for (int i = BigInteger.bitLengthForLong(remainingZeros) - 1; i >= 0; i--) {
             final int exp = 1 << i;
             qr = intVal.divideAndRemainder(fiveToTwoToThe(i));
