@@ -3001,7 +3001,7 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
           continue;             // Unhandled case
         }
       }
-      // Only updated variable tracking control for new nodes if it's indeed a range check that can be eliminated (and
+      // Only update variable tracking control for new nodes if it's indeed a range check that can be eliminated (and
       // limits are updated)
       new_limit_ctrl = next_limit_ctrl;
 
