@@ -48,7 +48,8 @@ public class InterfaceCalls {
 
     // Whether to step iteratively through the list of interfaces, or
     // to select one in an unpredictable way.
-    @Param({"false", "true"}) private boolean randomized;
+    @Param({"false", "true"})
+    private boolean randomized;
 
     interface FirstInterface {
         public int getIntFirst();
