@@ -27,7 +27,7 @@
 #include "code/nmethod.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shenandoah/shenandoahGenerationType.hpp"
-#include "gc/shenandoah/shenandoahUtils.hpp"
+#include "gc/shenandoah/shenandoahTaskqueue.hpp"
 #include "memory/iterator.hpp"
 #include "runtime/javaThread.hpp"
 
@@ -191,10 +191,7 @@ private:
   inline void work(T* p);
 
 public:
-  ShenandoahMarkUpdateRefsClosure(ShenandoahObjToScanQueue* q, ShenandoahReferenceProcessor* rp) :
-          ShenandoahMarkRefsSuperClosure(q, rp) {
-    assert(_heap->is_stw_gc_in_progress(), "Can only be used for STW GC");
-  }
+  ShenandoahMarkUpdateRefsClosure(ShenandoahObjToScanQueue* q, ShenandoahReferenceProcessor* rp);
 
   virtual void do_oop(narrowOop* p) { work(p); }
   virtual void do_oop(oop* p)       { work(p); }

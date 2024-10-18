@@ -35,6 +35,7 @@
 #include "gc/shenandoah/shenandoahNMethod.inline.hpp"
 #include "gc/shenandoah/shenandoahMark.inline.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
+#include "gc/shenandoah/shenandoahTaskqueue.inline.hpp"
 #include "memory/iterator.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "runtime/atomic.hpp"
@@ -212,6 +213,12 @@ void ShenandoahNMethodAndDisarmClosure::do_nmethod(nmethod* nm) {
 //
 // ========= Update References
 //
+
+template <ShenandoahGenerationType GENERATION>
+ShenandoahMarkUpdateRefsClosure<GENERATION>::ShenandoahMarkUpdateRefsClosure(ShenandoahObjToScanQueue* q, ShenandoahReferenceProcessor* rp) :
+  ShenandoahMarkRefsSuperClosure(q, rp) {
+  assert(_heap->is_stw_gc_in_progress(), "Can only be used for STW GC");
+}
 
 template<ShenandoahGenerationType GENERATION>
 template<class T>
