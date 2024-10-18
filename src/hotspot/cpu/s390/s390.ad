@@ -6260,7 +6260,7 @@ instruct udivI_reg_reg(roddRegI r5_rodd_dst, iRegI src2, revenRegI r4_reven_tmp,
   match(Set r5_rodd_dst (UDivI r5_rodd_dst src2));
   effect(TEMP r4_reven_tmp, KILL cr);
   // TODO: size(4);
-  format %{ "UDIV $r5_rodd_dst, $r5_rodd_dst,$src2" %}
+  format %{ "UDIV $r5_rodd_dst,$r5_rodd_dst,$src2" %}
   ins_encode %{
     Register b = $src2$$Register;
     Register r4_reven_tmp = $r4_reven_tmp$$Register;
@@ -6340,7 +6340,7 @@ instruct udivL_reg_reg(roddRegL r5_rodd_dst, iRegL src, revenRegL r4_reven_tmp, 
   effect(TEMP r4_reven_tmp, KILL cr);
   ins_cost(DEFAULT_COST);
   // TODO: size(4);
-  format %{ "UDIVG $r5_rodd_dst, $r5_rodd_dst, $src" %}
+  format %{ "UDIVG $r5_rodd_dst,$r5_rodd_dst,$src" %}
   ins_encode %{
     Register b            = $src$$Register;
     Register r5_rodd_dst  = $r5_rodd_dst$$Register;
@@ -6427,7 +6427,7 @@ instruct umodI_reg_reg(revenRegI r4_reven_dst, iRegI src2, roddRegI r5_rodd_tmp,
   effect(TEMP r5_rodd_tmp, KILL cr);
   ins_cost(DEFAULT_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
-  format %{ "UMOD   $r4_reven_dst,$r4_reven_dst,$src2" %}
+  format %{ "UMOD $r4_reven_dst,$r4_reven_dst,$src2" %}
   ins_encode %{
     Register b            = $src2$$Register;
     Register r4_reven_dst = $r4_reven_dst$$Register;
@@ -6515,7 +6515,7 @@ instruct umodL_reg_reg(revenRegL r4_reven_dst, roddRegL r5_rodd_tmp, iRegL src2,
   effect(TEMP r5_rodd_tmp, KILL cr);
   ins_cost(DEFAULT_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
-  format %{ "UMODG   $r4_reven_dst,$r4_reven_dst,$src2" %}
+  format %{ "UMODG $r4_reven_dst,$r4_reven_dst,$src2" %}
   ins_encode %{
     Register b            = $src2$$Register;
     Register r4_reven_dst = $r4_reven_dst$$Register;
