@@ -36,6 +36,7 @@
  *                   -XX:CompileCommand=inline,*String*::*
  *                   -XX:CompileCommand=dontinline,*StringBuilder*::ensureCapacityInternal
  *                   -XX:CompileCommand=dontinline,*String*::substring
+ *                   -XX:CompileCommand=MemLimit,*.*,0
  *                   -XX:NodeCountInliningCutoff=220000
  *                   -XX:DesiredMethodLimit=100000
  *                   compiler.c2.TestScalarReplacementMaxLiveNodes
