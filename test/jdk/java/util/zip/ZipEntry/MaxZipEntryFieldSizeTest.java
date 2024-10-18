@@ -25,7 +25,7 @@
  * @bug 8340553
  * @summary Verify that ZipEntry(String), ZipEntry::setComment, and
  * ZipEntry::setExtra throws a IllegalArgumentException when the
- * combined length of the field, including the size of the CEN Header,
+ * combined length of the fields, including the size of the CEN Header,
  * exceeds 65,535 bytes
  * @run junit MaxZipEntryFieldSizeTest
  */
