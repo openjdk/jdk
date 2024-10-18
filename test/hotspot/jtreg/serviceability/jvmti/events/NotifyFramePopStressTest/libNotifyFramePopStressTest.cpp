@@ -30,10 +30,10 @@
 extern "C" {
 #endif
 
-static jvmtiEnv *jvmti = nullptr;
+static jvmtiEnv *jvmti;
 static jvmtiCapabilities caps;
 static jvmtiEventCallbacks callbacks;
-static volatile jint pop_count = 0;
+static volatile jint pop_count;
 static char* volatile last_notify_method;
 static volatile jboolean failed = JNI_FALSE;
 static jboolean seenMain = JNI_FALSE;
@@ -70,7 +70,7 @@ FramePop(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread,
   check_jvmti_status(jni, err, "FramePop: Failed in JVMTI GetClassSignature");
 
   name = get_method_name(jvmti, jni, method);
-  LOG("FramePop(%d) event from method: %s %s\n", pop_count, csig, name);
+  LOG("FramePop(%d) event from method: %s %s\n", pop_count + 1, csig, name);
 
   if (strcmp(name, "main") != 0) { // ignore FRAME_POP for main that comes in as the test exits
     if (strcmp(name, (char*)last_notify_method) != 0) {
