@@ -2780,6 +2780,13 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     }
 
     /**
+     * Package private method to return bit length for a long.
+     */
+    static int bitLengthForLong(long n) {
+        return 64 - Long.numberOfLeadingZeros(n);
+    }
+
+    /**
      * Left shift int array a up to len by n bits. Returns the array that
      * results from the shift since space may have to be reallocated.
      */
