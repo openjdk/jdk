@@ -302,7 +302,7 @@ public class ForkJoinPool extends AbstractExecutorService {
      *
      *  * Slot k must be read with an acquiring read, which it must
      *    anyway to dereference and run the task if the (acquiring)
-     *    CAS succeeds
+     *    CAS succeeds.
      *
      *  * q.base may change between reading and using its value to
      *    index the slot. To avoid trying to use the wrong t, the
@@ -851,7 +851,7 @@ public class ForkJoinPool extends AbstractExecutorService {
      * non-workers (which comply with Future.get() specs). Internal
      * usages of ForkJoinTasks ignore interrupt status when executing
      * or awaiting completion.  Otherwise, reporting task results or
-     * exceptions is preferred to throwing InterruptedExeptions,
+     * exceptions is preferred to throwing InterruptedExceptions,
      * which are in turn preferred to timeouts. Similarly, completion
      * status is preferred to reporting cancellation.  Cancellation is
      * reported as an unchecked exception by join(), and by worker
@@ -1267,25 +1267,25 @@ public class ForkJoinPool extends AbstractExecutorService {
          */
         final void push(ForkJoinTask<?> task, ForkJoinPool pool,
                         boolean internal) {
-            int s = top++, b = base, m, cap, room; ForkJoinTask<?>[] a;
-            if ((a = array) == null || (cap = a.length) <= 0 ||
-                (room = (m = cap - 1) - (s - b)) < 0) {
-                top = s;                          // back out
+            int s = top, b = base, m, cap, room; ForkJoinTask<?>[] a;
+            if ((a = array) != null && (cap = a.length) > 0) { // else disabled
+                if ((room = (m = cap - 1) - (s - b)) >= 0) {
+                    top = s + 1;
+                    long pos = slotOffset(m & s);
+                    if (!internal)
+                        U.putReference(a, pos, task);       // inside lock
+                    else
+                        U.getAndSetReference(a, pos, task); // fully fenced
+                    if (room == 0)                          // resize
+                        growArray(a, cap, s);
+                }
                 if (!internal)
                     unlockPhase();
-                throw new RejectedExecutionException("Queue capacity exceeded");
+                if (room < 0)
+                    throw new RejectedExecutionException("Queue capacity exceeded");
+                else if ((room == 0 || a[m & (s - 1)] == null) && pool != null)
+                    pool.signalWork(); // may have appeared empty
             }
-            long k = slotOffset(m & s), pk = slotOffset(m & (s - 1));
-            if (!internal)
-                U.putReference(a, k, task);       // inside lock
-            else
-                U.getAndSetReference(a, k, task); // fully fenced
-            if (room == 0)                        // resize
-                growArray(a, cap, s);
-            if (!internal)
-                unlockPhase();
-            if ((room == 0 || U.getReference(a, pk) == null) && pool != null)
-                pool.signalWork();                // may have appeared empty
         }
 
         /**
@@ -1965,8 +1965,8 @@ public class ForkJoinPool extends AbstractExecutorService {
     final void runWorker(WorkQueue w) {
         if (w != null) {
             int phase = w.phase, r = w.stackPred;     // seed from registerWorker
-            int cfg = w.config, nsteals = 0, src = -1;
-            for (;;) {
+            int cfg = w.config, nsteals = 0;
+            for (boolean taken = false;;) {
                 WorkQueue[] qs;
                 r ^= r << 13; r ^= r >>> 17; r ^= r << 5; // xorshift
                 if ((runState & STOP) != 0L || (qs = queues) == null)
@@ -1977,29 +1977,34 @@ public class ForkJoinPool extends AbstractExecutorService {
                     int j, cap; WorkQueue q; ForkJoinTask<?>[] a;
                     if ((q = qs[j = i & (n - 1)]) != null &&
                         (a = q.array) != null && (cap = a.length) > 0) {
-                        for (int pb = -1, b; ; pb = b) {  // track progress
-                            ForkJoinTask<?> t; int nb; long k, nk;
-                            t = (ForkJoinTask<?>)U.getReferenceAcquire(
-                                a, k = slotOffset((cap - 1) & (b = q.base)));
-                            Object u = U.getReference(    // next slot
-                                a, nk = slotOffset((cap - 1) & (nb = b + 1)));
+                        for (int m = cap - 1, pb = -1, b; ; pb = b) {
+                            long k = slotOffset((b = q.base) & m);
+                            ForkJoinTask<?> t = (ForkJoinTask<?>)
+                                U.getReferenceAcquire(a, k);
                             if (q.base != b)              // inconsistent
                                 ;
                             else if (t == null) {
-                                if (u == null && q.top - b <= 0)
-                                    break;                // empty
+                                if (rescan)
+                                    break;                // will revisit
+                                if (a[b & m] == null &&
+                                    a[(b + 1) & m] == null &&
+                                    a[(b + 2) & m] == null)
+                                    break;                // probably empty
                                 if (pb == b) {
-                                    rescan = true;        // stalled; revisit
+                                    rescan = true;        // stalled; reorder scan
                                     break scan;
                                 }
                             }
                             else if (U.compareAndSetReference(a, k, t, null)) {
-                                q.base = nb;
+                                q.base = b + 1;
                                 w.nsteals = ++nsteals;
                                 w.source = j;             // volatile
-                                rescan = true;
-                                if (src != (src = j) &&
-                                    U.getReferenceVolatile(a, nk) != null)
+                                boolean propagated = taken;
+                                rescan = taken = true;
+                                if ((!propagated ||
+                                     ((j & 1) == 0) && t instanceof
+                                     ForkJoinTask.InterruptibleTask) &&
+                                    a[(b + 1) & m] != null)
                                     signalWork();         // propagate
                                 w.topLevelExec(t, cfg);
                             }
@@ -2007,7 +2012,7 @@ public class ForkJoinPool extends AbstractExecutorService {
                     }
                 }
                 if (!rescan) {
-                    src = -1;
+                    taken = false;
                     if (((phase = deactivate(w, phase)) & IDLE) != 0)
                         break;
                 }
@@ -2036,16 +2041,15 @@ public class ForkJoinPool extends AbstractExecutorService {
             ((e & SHUTDOWN) != 0L && (qc & RC_MASK) == 0L && quiescent() > 0) ||
             (qs = queues) == null || (n = qs.length) <= 0)
             return IDLE;                      // terminating
-        for (int steps = Math.max(n << 1, SPIN_WAITS), found = 0, i = 0; ; ++i) {
-            WorkQueue q;                      // interleave spins and rechecks
+        for (int k = Math.max(n << 1, SPIN_WAITS), checks = 2;;) {
+            WorkQueue q; int j;               // interleave spins and rechecks
             if (w.phase == activePhase)
                 return activePhase;
-            if (i >= steps)
+            if (--k < 0)
                 return awaitWork(w, p);       // block, drop, or exit
             Thread.onSpinWait();
-            if (found != 2 && (i & n) != 0 && (i & 1) == 0 &&
-                (q = qs[i & (n - 1)]) != null &&
-                q.top - q.base > 0 && ++found == 2)
+            if (checks != 0 && ((j = k & (n - 1)) & 1) == 0 &&
+                (q = qs[j]) != null && q.top - q.base > 0 && --checks == 0)
                 reactivate(false);            // help signal
         }
     }
@@ -2276,7 +2280,7 @@ public class ForkJoinPool extends AbstractExecutorService {
                                 }
                                 if (U.compareAndSetReference(a, k, t, null)) {
                                     q.base = b + 1;
-                                    w.source = j;
+                                    w.source = j;    // volatile write
                                     t.doExec();
                                     w.source = wsrc;
                                     rescan = true;   // restart at index r
@@ -2430,7 +2434,7 @@ public class ForkJoinPool extends AbstractExecutorService {
                             }
                             if (U.compareAndSetReference(a, k, t, null)) {
                                 q.base = nb;
-                                w.source = j;
+                                w.source = j; // volatile write
                                 t.doExec();
                                 w.source = wsrc;
                                 rescan = locals = true;
