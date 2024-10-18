@@ -4866,17 +4866,6 @@ void java_lang_System::compute_offsets() {
   SYSTEM_FIELDS_DO(FIELD_COMPUTE_OFFSET);
 }
 
-// This field tells us that a security manager can never be installed so we
-// can completely skip populating the ProtectionDomainCacheTable.
-bool java_lang_System::allow_security_manager() {
-  return false;
-}
-
-// This field tells us that a security manager is installed.
-bool java_lang_System::has_security_manager() {
-  return false;
-}
-
 #if INCLUDE_CDS
 void java_lang_System::serialize_offsets(SerializeClosure* f) {
    SYSTEM_FIELDS_DO(FIELD_SERIALIZE_OFFSET);

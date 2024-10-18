@@ -113,9 +113,6 @@ runtime/ErrorHandling/CreateCoredumpOnCrash.java 8267433 macosx-x64
 runtime/StackGuardPages/TestStackGuardPagesNative.java 8303612 linux-all
 runtime/ErrorHandling/MachCodeFramesInErrorFile.java 8313315 linux-ppc64le
 runtime/cds/appcds/customLoader/HelloCustom_JFR.java 8241075 linux-all,windows-x64
-runtime/Dictionary/CleanProtectionDomain.java 8341916 generic-all
-runtime/Dictionary/ProtectionDomainCacheTest.java 8341916 generic-all
-runtime/logging/ProtectionDomainVerificationTest.java 8341916 generic-all
 
 # Fails with +UseCompactObjectHeaders on aarch64
 runtime/cds/appcds/SharedBaseAddress.java 8340212 linux-aarch64,macosx-aarch64

@@ -183,8 +183,7 @@ Klass* ClassPrelinker::find_loaded_class(Thread* current, oop class_loader, Symb
   HandleMark hm(current);
   Handle h_loader(current, class_loader);
   Klass* k = SystemDictionary::find_instance_or_array_klass(current, name,
-                                                            h_loader,
-                                                            Handle());
+                                                            h_loader);
   if (k != nullptr) {
     return k;
   }

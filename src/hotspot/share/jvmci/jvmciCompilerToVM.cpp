@@ -613,10 +613,8 @@ C2V_VMENTRY_NULL(jobject, lookupType, (JNIEnv* env, jobject, jstring jname, ARGU
   JVMCIKlassHandle resolved_klass(THREAD);
   Klass* accessing_klass = UNPACK_PAIR(Klass, accessing_klass);
   Handle class_loader;
-  Handle protection_domain;
   if (accessing_klass != nullptr) {
     class_loader = Handle(THREAD, accessing_klass->class_loader());
-    protection_domain = Handle(THREAD, accessing_klass->protection_domain());
   } else {
     switch (accessing_klass_loader) {
       case 0: break; // class_loader is already null, the boot loader
@@ -629,23 +627,21 @@ C2V_VMENTRY_NULL(jobject, lookupType, (JNIEnv* env, jobject, jstring jname, ARGU
   }
 
   if (resolve) {
-    resolved_klass = SystemDictionary::resolve_or_fail(class_name, class_loader, protection_domain, true, CHECK_NULL);
+    resolved_klass = SystemDictionary::resolve_or_fail(class_name, class_loader, true, CHECK_NULL);
   } else {
     if (Signature::has_envelope(class_name)) {
       // This is a name from a signature.  Strip off the trimmings.
       // Call recursive to keep scope of strippedsym.
       TempNewSymbol strippedsym = Signature::strip_envelope(class_name);
       resolved_klass = SystemDictionary::find_instance_klass(THREAD, strippedsym,
-                                                             class_loader,
-                                                             protection_domain);
+                                                             class_loader);
     } else if (Signature::is_array(class_name)) {
       SignatureStream ss(class_name, false);
       int ndim = ss.skip_array_prefix();
       if (ss.type() == T_OBJECT) {
         Symbol* strippedsym = ss.as_symbol();
         resolved_klass = SystemDictionary::find_instance_klass(THREAD, strippedsym,
-                                                               class_loader,
-                                                               protection_domain);
+                                                               class_loader);
         if (!resolved_klass.is_null()) {
           resolved_klass = resolved_klass->array_klass(ndim, CHECK_NULL);
         }
@@ -654,8 +650,7 @@ C2V_VMENTRY_NULL(jobject, lookupType, (JNIEnv* env, jobject, jstring jname, ARGU
       }
     } else {
       resolved_klass = SystemDictionary::find_instance_klass(THREAD, class_name,
-                                                             class_loader,
-                                                             protection_domain);
+                                                             class_loader);
     }
   }
   JVMCIObject result = JVMCIENV->get_jvmci_type(resolved_klass, JVMCI_CHECK_NULL);
