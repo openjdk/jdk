@@ -24,20 +24,20 @@
  */
 package jdk.internal.classfile.impl;
 
+import java.lang.classfile.Attributes;
+import java.lang.classfile.BootstrapMethodEntry;
+import java.lang.classfile.ClassReader;
+import java.lang.classfile.attribute.BootstrapMethodsAttribute;
+import java.lang.classfile.constantpool.*;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.util.Arrays;
 import java.util.List;
 
-import java.lang.classfile.Attributes;
-import java.lang.classfile.ClassReader;
-import java.lang.classfile.BootstrapMethodEntry;
-import java.lang.classfile.attribute.BootstrapMethodsAttribute;
-import java.lang.classfile.constantpool.*;
-
 import jdk.internal.constant.ConstantUtils;
 
 import static java.lang.classfile.constantpool.PoolEntry.*;
+import static java.util.Objects.requireNonNull;
 
 public final class SplitConstantPool implements ConstantPoolBuilder {
 
@@ -122,6 +122,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
 
     @Override
     public boolean canWriteDirect(ConstantPool other) {
+        requireNonNull(other);
         return this == other || parent == other;
     }
 

@@ -493,6 +493,13 @@ final class Float512Vector extends FloatVector {
                                      Float512Mask.class, (Float512Mask) m);  // specialize
     }
 
+    @Override
+    @ForceInline
+    public Float512Vector selectFrom(Vector<Float> v1,
+                                   Vector<Float> v2) {
+        return (Float512Vector)
+            super.selectFromTemplate((Float512Vector) v1, (Float512Vector) v2);  // specialize
+    }
 
     @ForceInline
     @Override

@@ -24,44 +24,38 @@
  */
 package jdk.internal.classfile.impl;
 
+import java.lang.classfile.*;
+import java.lang.classfile.AnnotationValue.*;
+import java.lang.classfile.attribute.*;
+import java.lang.classfile.attribute.StackMapFrameInfo.ObjectVerificationTypeInfo;
+import java.lang.classfile.attribute.StackMapFrameInfo.SimpleVerificationTypeInfo;
+import java.lang.classfile.attribute.StackMapFrameInfo.UninitializedVerificationTypeInfo;
+import java.lang.classfile.attribute.StackMapFrameInfo.VerificationTypeInfo;
+import java.lang.classfile.components.ClassPrinter.LeafNode;
+import java.lang.classfile.components.ClassPrinter.ListNode;
+import java.lang.classfile.components.ClassPrinter.MapNode;
+import java.lang.classfile.components.ClassPrinter.Node;
+import java.lang.classfile.components.ClassPrinter.Verbosity;
+import java.lang.classfile.constantpool.*;
+import java.lang.classfile.instruction.*;
 import java.lang.constant.ConstantDesc;
 import java.lang.constant.DirectMethodHandleDesc;
 import java.lang.reflect.AccessFlag;
-import java.util.AbstractList;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.BiConsumer;
-import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
-import java.lang.classfile.Annotation;
 
-import java.lang.classfile.AnnotationElement;
-import java.lang.classfile.AnnotationValue;
-import java.lang.classfile.AnnotationValue.*;
-import java.lang.classfile.Attribute;
-import java.lang.classfile.ClassModel;
-import java.lang.classfile.components.ClassPrinter.*;
-import java.lang.classfile.CodeModel;
-import java.lang.classfile.Instruction;
-import java.lang.classfile.MethodModel;
-import java.lang.classfile.TypeAnnotation;
-import java.lang.classfile.attribute.*;
-import java.lang.classfile.attribute.StackMapFrameInfo.*;
-import java.lang.classfile.constantpool.*;
-import java.lang.classfile.instruction.*;
-
-import java.lang.classfile.CompoundElement;
-import java.lang.classfile.FieldModel;
+import static java.lang.classfile.constantpool.PoolEntry.TAG_CLASS;
+import static java.lang.classfile.constantpool.PoolEntry.TAG_DOUBLE;
+import static java.lang.classfile.constantpool.PoolEntry.TAG_FLOAT;
+import static java.lang.classfile.constantpool.PoolEntry.TAG_LONG;
+import static java.lang.classfile.constantpool.PoolEntry.TAG_STRING;
 import static java.lang.classfile.constantpool.PoolEntry.*;
-import static jdk.internal.classfile.impl.ClassPrinterImpl.Style.*;
+import static java.util.Objects.requireNonNull;
+import static jdk.internal.classfile.impl.ClassPrinterImpl.Style.BLOCK;
+import static jdk.internal.classfile.impl.ClassPrinterImpl.Style.FLOW;
 
 public final class ClassPrinterImpl {
 
@@ -564,6 +558,7 @@ public final class ClassPrinterImpl {
     private record ExceptionHandler(int start, int end, int handler, String catchType) {}
 
     public static MapNode modelToTree(CompoundElement<?> model, Verbosity verbosity) {
+        requireNonNull(verbosity); // we are using == checks in implementations
         return switch(model) {
             case ClassModel cm -> classToTree(cm, verbosity);
             case FieldModel fm -> fieldToTree(fm, verbosity);
