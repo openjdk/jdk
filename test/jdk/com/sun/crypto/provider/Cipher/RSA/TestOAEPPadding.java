@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,9 +52,11 @@ public class TestOAEPPadding {
     static boolean failed = false;
 
     public static void main(String args[]) throws Exception {
-        cp = Security.getProvider("SunJCE");
+        cp = Security.getProvider(
+                        System.getProperty("test.provider.name", "SunJCE"));
         System.out.println("Testing provider " + cp.getName() + "...");
-        Provider kfp = Security.getProvider("SunRsaSign");
+        Provider kfp = Security.getProvider(
+                        System.getProperty("test.providername", "SunRsaSign"));
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA", kfp);
         kpg.initialize(2048);
         KeyPair kp = kpg.generateKeyPair();

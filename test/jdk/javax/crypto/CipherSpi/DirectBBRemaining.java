@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,8 @@ public class DirectBBRemaining {
         random.nextBytes(keyBytes);
         SecretKey key = new SecretKeySpec(keyBytes, "DES");
 
-        Cipher cipher = Cipher.getInstance("DES/CBC/PKCS5Padding", "SunJCE");
+        Cipher cipher = Cipher.getInstance("DES/CBC/PKCS5Padding",
+                System.getProperty("test.provider.name", "SunJCE"));
         cipher.init(Cipher.ENCRYPT_MODE, key);
 
         /*

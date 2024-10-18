@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,8 @@ public class GetKeySpecException2 {
         // TEST#1: getKeySpec(Cipher) with Cipher in an illegal state,
         // i.e. WRAP_MODE, UNWRAP_MODE.
         System.out.println("Testing getKeySpec(Cipher) with WRAP_MODE...");
-        Cipher c = Cipher.getInstance(cipherAlg, "SunJCE");
+        Cipher c = Cipher.getInstance(cipherAlg,
+                System.getProperty("test.provider.name", "SunJCE"));
         MyPBEKey key = new MyPBEKey(passwd);
         c.init(Cipher.WRAP_MODE, key);
         try {
