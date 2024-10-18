@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,10 +98,6 @@ public final class ValueDescriptor {
      * @param name the name, not {@code null}
      *
      * @throws IllegalArgumentException if the name is not a valid Java identifier
-     *
-     * @throws SecurityException if a security manager is present and the caller
-     *         doesn't have {@code FlightRecorderPermission("registerEvent")}
-     *
      */
     public ValueDescriptor(Class<?> type, String name) {
         this(type, name, Collections.<AnnotationElement> emptyList());
@@ -137,9 +133,6 @@ public final class ValueDescriptor {
      *        {@code null}
      *
      * @throws IllegalArgumentException if the name is not a valid Java identifier
-     *
-     * @throws SecurityException if a security manager is present and the caller
-     *         doesn't have {@code FlightRecorderPermission("registerEvent")}
      */
     public ValueDescriptor(Class<?> type, String name, List<AnnotationElement> annotations) {
         this(type, name, List.copyOf(annotations), false);

@@ -139,8 +139,6 @@ public class TestProvider extends RMIClassLoaderSpi {
         String[] interfaces = new String[] { "Bar", "Baz" };
         Class dummyClass = (new Object() { }).getClass();
 
-        TestLibrary.suggestSecurityManager(null);
-
         String testcase;
         Object ret;
 

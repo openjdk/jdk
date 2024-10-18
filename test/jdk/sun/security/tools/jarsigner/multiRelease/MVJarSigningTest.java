@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,16 +109,13 @@ public class MVJarSigningTest {
         signWithJarSignerAPI(JAR_NAME);
         verify(SIGNED_JAR);
 
-        // test Permission granted
+        // test version.Main output
         File keypass = new File("keypass");
         try (FileOutputStream fos = new FileOutputStream(keypass)) {
             fos.write(KEYPASS.getBytes());
         }
         String[] cmd = {
                 "-classpath", SIGNED_JAR,
-                "-Djava.security.manager",
-                "-Djava.security.policy=" +
-                TEST_SRC + File.separator + POLICY_FILE,
                 "version.Main"};
         ProcessTools.executeTestJava(cmd)
             .shouldHaveExitValue(0)

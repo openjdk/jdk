@@ -49,10 +49,6 @@ public interface Refreshable {
      * Update or extend the validity period for this
      * {@code Object}.
      *
-     * @exception SecurityException if the caller does not have permission
-     *          to update or extend the validity period for this
-     *          {@code Object}.
-     *
      * @exception RefreshFailedException if the refresh attempt failed.
      */
     void refresh() throws RefreshFailedException;

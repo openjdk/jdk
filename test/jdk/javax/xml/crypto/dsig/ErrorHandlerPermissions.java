@@ -47,8 +47,7 @@ import org.w3c.dom.NodeList;
  * @test
  * @bug 8079140
  * @summary Check if IgnoreAllErrorHandler doesn't require additional permission
- * @run main/othervm/java.security.policy=ErrorHandlerPermissions.policy
- *                                                      ErrorHandlerPermissions
+ * @run main/othervm ErrorHandlerPermissions
  */
 public class ErrorHandlerPermissions {
 

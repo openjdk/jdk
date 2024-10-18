@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
   @summary   Tests that an owner is activated on closing its owned dialog with the warning icon.
   @library   ../../regtesthelpers
   @build     Util
-  @run       main/othervm/policy=java.policy -Djava.security.manager CloseDialogActivateOwnerTest
+  @run       main CloseDialogActivateOwnerTest
 */
 
 import java.awt.*;

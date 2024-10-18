@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,30 +20,19 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-/**
- * @test
- * @bug 8004476
- * @summary test XSLT extension functions
- * @run main/othervm -Djava.security.manager=allow XSLTExFuncTest
- */
 
 import java.io.StringWriter;
-import java.security.AllPermission;
-import java.security.CodeSource;
-import java.security.Permission;
-import java.security.PermissionCollection;
-import java.security.Permissions;
-import java.security.Policy;
-import java.security.ProtectionDomain;
+import javax.xml.XMLConstants;
 import javax.xml.transform.*;
 import javax.xml.transform.sax.SAXSource;
 import javax.xml.transform.stream.StreamResult;
 import org.xml.sax.InputSource;
 
 /**
- * test XSLT extension functions
- *
- * @author huizhe.wang@oracle.com
+ * @test
+ * @bug 8004476
+ * @summary test XSLT extension functions
+ * @run main/othervm XSLTExFuncTest
  */
 public class XSLTExFuncTest extends TestBase {
 
@@ -56,7 +45,7 @@ public class XSLTExFuncTest extends TestBase {
     public XSLTExFuncTest(String name) {
         super(name);
     }
-    boolean hasSM;
+
     String xslFile, xslFileId;
     String xmlFile, xmlFileId;
 
@@ -104,33 +93,29 @@ public class XSLTExFuncTest extends TestBase {
     }
 
     /**
-     * Security is enabled, extension function not allowed
+     * Security is enabled, extension function not allowed.
+     * Note: removing Security Manager, use FEATURE_SECURE_PROCESSING instead.
      */
     public void testExtFuncNotAllowed() {
-        Policy p = new SimplePolicy(new AllPermission());
-        Policy.setPolicy(p);
-        System.setSecurityManager(new SecurityManager());
+
         TransformerFactory factory = TransformerFactory.newInstance();
 
         try {
+            factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
             transform(factory);
         } catch (TransformerConfigurationException e) {
             fail(e.getMessage());
         } catch (TransformerException ex) {
             //expected since extension function is disallowed
             System.out.println("testExtFuncNotAllowed: OK");
-        } finally {
-            System.setSecurityManager(null);
         }
     }
 
     /**
-     * Security is enabled, use new feature: enableExtensionFunctions
+     * Security is enabled, use new feature: enableExtensionFunctions.
+     * Note: removing Security Manager, use FEATURE_SECURE_PROCESSING instead.
      */
     public void testEnableExtFunc() {
-        Policy p = new SimplePolicy(new AllPermission());
-        Policy.setPolicy(p);
-        System.setSecurityManager(new SecurityManager());
         TransformerFactory factory = TransformerFactory.newInstance();
 
         /**
@@ -147,8 +132,6 @@ public class XSLTExFuncTest extends TestBase {
             fail(e.getMessage());
         } catch (TransformerException e) {
             fail(e.getMessage());
-        } finally {
-            System.setSecurityManager(null);
         }
     }
 
@@ -165,9 +148,6 @@ public class XSLTExFuncTest extends TestBase {
      * template to create a transformer
      */
     public void testTemplatesEnableExtFunc() {
-        Policy p = new SimplePolicy(new AllPermission());
-        Policy.setPolicy(p);
-        System.setSecurityManager(new SecurityManager());
         TransformerFactory factory = TransformerFactory.newInstance();
 
         /**
@@ -190,14 +170,13 @@ public class XSLTExFuncTest extends TestBase {
             fail(e.getMessage());
         } catch (TransformerException e) {
             fail(e.getMessage());
-        } finally {
-            System.setSecurityManager(null);
         }
     }
 
     boolean enableExtensionFunction(TransformerFactory factory) {
         boolean isSupported = true;
         try {
+            factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
             factory.setFeature(ENABLE_EXTENSION_FUNCTIONS, true);
         } catch (TransformerConfigurationException ex) {
             isSupported = false;
@@ -212,37 +191,5 @@ public class XSLTExFuncTest extends TestBase {
         StringWriter stringResult = new StringWriter();
         Result result = new StreamResult(stringResult);
         transformer.transform(new SAXSource(new InputSource(xmlFile)), result);
-    }
-
-    class SimplePolicy extends Policy {
-
-        private final Permissions perms;
-
-        public SimplePolicy(Permission... permissions) {
-            perms = new Permissions();
-            for (Permission permission : permissions) {
-                perms.add(permission);
-            }
-        }
-
-        @Override
-        public PermissionCollection getPermissions(CodeSource cs) {
-            return perms;
-        }
-
-        @Override
-        public PermissionCollection getPermissions(ProtectionDomain pd) {
-            return perms;
-        }
-
-        @Override
-        public boolean implies(ProtectionDomain pd, Permission p) {
-            return perms.implies(p);
-        }
-
-        //for older jdk
-        @Override
-        public void refresh() {
-        }
     }
 }

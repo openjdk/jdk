@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,21 +32,18 @@ import static catalog.ResolutionChecker.checkUriResolution;
 import javax.xml.catalog.CatalogResolver;
 
 import org.testng.annotations.DataProvider;
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
  * @test
  * @bug 8077931
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow catalog.NormalizationTest
  * @run testng/othervm catalog.NormalizationTest
  * @summary Before matching identifiers and URI references, it has to normalize
  *          the passed identifiers and URI references. And then the catalog
  *          resolver uses the normalized stuff to search the counterparts in
  *          catalog files.
  */
-@Listeners({jaxp.library.FilePolicy.class})
 public class NormalizationTest {
 
     private static final String CATALOG_NORMALIZATION = "normalization.xml";

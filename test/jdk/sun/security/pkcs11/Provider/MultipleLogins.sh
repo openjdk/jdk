@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -133,9 +133,6 @@ TEST_ARGS="${TESTVMOPTS} -classpath ${TESTCLASSPATH} \
 
 # run test without security manager
 ${TESTJAVA}${FS}bin${FS}java ${TEST_ARGS} MultipleLogins || exit 10
-
-# run test with security manager
-${TESTJAVA}${FS}bin${FS}java ${TEST_ARGS} -Djava.security.manager=allow MultipleLogins useSimplePolicy || exit 11
 
 echo Done
 exit 0

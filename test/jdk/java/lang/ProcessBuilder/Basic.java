@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,8 +36,8 @@
  * @requires !vm.musl
  * @requires vm.flagless
  * @library /test/lib
- * @run main/othervm/native/timeout=300 -Djava.security.manager=allow Basic
- * @run main/othervm/native/timeout=300 -Djava.security.manager=allow -Djdk.lang.Process.launchMechanism=fork Basic
+ * @run main/othervm/native/timeout=300 Basic
+ * @run main/othervm/native/timeout=300 -Djdk.lang.Process.launchMechanism=fork Basic
  * @author Martin Buchholz
  */
 
@@ -48,7 +48,7 @@
  *          java.base/jdk.internal.misc
  * @requires (os.family == "linux" & !vm.musl)
  * @library /test/lib
- * @run main/othervm/timeout=300 -Djava.security.manager=allow -Djdk.lang.Process.launchMechanism=posix_spawn Basic
+ * @run main/othervm/timeout=300 -Djdk.lang.Process.launchMechanism=posix_spawn Basic
  */
 
 import java.lang.ProcessBuilder.Redirect;
@@ -65,7 +65,6 @@ import java.nio.file.StandardCopyOption;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.security.*;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import static java.lang.System.getenv;
@@ -1218,77 +1217,6 @@ public class Basic {
             equal(r.out(), "standard output");
             equal(r.err(), "standard error");
         }
-
-        //----------------------------------------------------------------
-        // Test security implications of I/O redirection
-        //----------------------------------------------------------------
-
-        // Read access to current directory is always granted;
-        // So create a tmpfile for input instead.
-        final File tmpFile = File.createTempFile("Basic", "tmp");
-        setFileContents(tmpFile, "standard input");
-
-        final Policy policy = new Policy();
-        Policy.setPolicy(policy);
-        System.setSecurityManager(new SecurityManager());
-        try {
-            final Permission xPermission
-                = new FilePermission("<<ALL FILES>>", "execute");
-            final Permission rxPermission
-                = new FilePermission("<<ALL FILES>>", "read,execute");
-            final Permission wxPermission
-                = new FilePermission("<<ALL FILES>>", "write,execute");
-            final Permission rwxPermission
-                = new FilePermission("<<ALL FILES>>", "read,write,execute");
-
-            THROWS(SecurityException.class,
-                   () -> { policy.setPermissions(xPermission);
-                           redirectIO(pb, from(tmpFile), PIPE, PIPE);
-                           pb.start();},
-                   () -> { policy.setPermissions(rxPermission);
-                           redirectIO(pb, PIPE, to(ofile), PIPE);
-                           pb.start();},
-                   () -> { policy.setPermissions(rxPermission);
-                           redirectIO(pb, PIPE, PIPE, to(efile));
-                           pb.start();});
-
-            {
-                policy.setPermissions(rxPermission);
-                redirectIO(pb, from(tmpFile), PIPE, PIPE);
-                ProcessResults r = run(pb);
-                equal(r.out(), "standard output");
-                equal(r.err(), "standard error");
-            }
-
-            {
-                policy.setPermissions(wxPermission);
-                redirectIO(pb, PIPE, to(ofile), to(efile));
-                Process p = pb.start();
-                new PrintStream(p.getOutputStream()).print("standard input");
-                p.getOutputStream().close();
-                ProcessResults r = run(p);
-                policy.setPermissions(rwxPermission);
-                equal(fileContents(ofile), "standard output");
-                equal(fileContents(efile), "standard error");
-            }
-
-            {
-                policy.setPermissions(rwxPermission);
-                redirectIO(pb, from(tmpFile), to(ofile), to(efile));
-                ProcessResults r = run(pb);
-                policy.setPermissions(rwxPermission);
-                equal(fileContents(ofile), "standard output");
-                equal(fileContents(efile), "standard error");
-            }
-
-        } finally {
-            policy.setPermissions(new RuntimePermission("setSecurityManager"));
-            System.setSecurityManager(null);
-            tmpFile.delete();
-            ifile.delete();
-            ofile.delete();
-            efile.delete();
-        }
     }
 
     static void checkProcessPid() {
@@ -2348,89 +2276,6 @@ public class Basic {
         new File("emptyCommand").delete();
 
         //----------------------------------------------------------------
-        // Check for correct security permission behavior
-        //----------------------------------------------------------------
-        final Policy policy = new Policy();
-        Policy.setPolicy(policy);
-        System.setSecurityManager(new SecurityManager());
-
-        try {
-            // No permissions required to CREATE a ProcessBuilder
-            policy.setPermissions(/* Nothing */);
-            new ProcessBuilder("env").directory(null).directory();
-            new ProcessBuilder("env").directory(new File("dir")).directory();
-            new ProcessBuilder("env").command("??").command();
-        } catch (Throwable t) { unexpected(t); }
-
-        THROWS(SecurityException.class,
-               () -> { policy.setPermissions(/* Nothing */);
-                       System.getenv("foo");},
-               () -> { policy.setPermissions(/* Nothing */);
-                       System.getenv();},
-               () -> { policy.setPermissions(/* Nothing */);
-                       new ProcessBuilder("echo").start();},
-               () -> { policy.setPermissions(/* Nothing */);
-                       Runtime.getRuntime().exec("echo");},
-               () -> { policy.setPermissions(
-                               new RuntimePermission("getenv.bar"));
-                       System.getenv("foo");});
-
-        try {
-            policy.setPermissions(new RuntimePermission("getenv.foo"));
-            System.getenv("foo");
-
-            policy.setPermissions(new RuntimePermission("getenv.*"));
-            System.getenv("foo");
-            System.getenv();
-            new ProcessBuilder().environment();
-        } catch (Throwable t) { unexpected(t); }
-
-
-        final Permission execPermission
-            = new FilePermission("<<ALL FILES>>", "execute");
-
-        THROWS(SecurityException.class,
-               () -> { // environment permission by itself insufficient
-                       policy.setPermissions(new RuntimePermission("getenv.*"));
-                       ProcessBuilder pb = new ProcessBuilder("env");
-                       pb.environment().put("foo","bar");
-                       pb.start();},
-               () -> { // exec permission by itself insufficient
-                       policy.setPermissions(execPermission);
-                       ProcessBuilder pb = new ProcessBuilder("env");
-                       pb.environment().put("foo","bar");
-                       pb.start();});
-
-        try {
-            // Both permissions? OK.
-            policy.setPermissions(new RuntimePermission("getenv.*"),
-                                  execPermission);
-            ProcessBuilder pb = new ProcessBuilder("env");
-            pb.environment().put("foo","bar");
-            Process p = pb.start();
-            closeStreams(p);
-        } catch (IOException e) { // OK
-        } catch (Throwable t) { unexpected(t); }
-
-        try {
-            // Don't need environment permission unless READING environment
-            policy.setPermissions(execPermission);
-            Runtime.getRuntime().exec("env", new String[]{});
-        } catch (IOException e) { // OK
-        } catch (Throwable t) { unexpected(t); }
-
-        try {
-            // Don't need environment permission unless READING environment
-            policy.setPermissions(execPermission);
-            new ProcessBuilder("env").start();
-        } catch (IOException e) { // OK
-        } catch (Throwable t) { unexpected(t); }
-
-        // Restore "normal" state without a security manager
-        policy.setPermissions(new RuntimePermission("setSecurityManager"));
-        System.setSecurityManager(null);
-
-        //----------------------------------------------------------------
         // Check that Process.isAlive() &
         // Process.waitFor(0, TimeUnit.MILLISECONDS) work as expected.
         //----------------------------------------------------------------
@@ -2702,38 +2547,6 @@ public class Basic {
             p.getInputStream().close();
             p.getErrorStream().close();
         } catch (Throwable t) { unexpected(t); }
-    }
-
-    //----------------------------------------------------------------
-    // A Policy class designed to make permissions fiddling very easy.
-    //----------------------------------------------------------------
-    @SuppressWarnings("removal")
-    private static class Policy extends java.security.Policy {
-        static final java.security.Policy DEFAULT_POLICY = java.security.Policy.getPolicy();
-
-        private Permissions perms;
-
-        public void setPermissions(Permission...permissions) {
-            perms = new Permissions();
-            for (Permission permission : permissions)
-                perms.add(permission);
-        }
-
-        public Policy() { setPermissions(/* Nothing */); }
-
-        public PermissionCollection getPermissions(CodeSource cs) {
-            return perms;
-        }
-
-        public PermissionCollection getPermissions(ProtectionDomain pd) {
-            return perms;
-        }
-
-        public boolean implies(ProtectionDomain pd, Permission p) {
-            return perms.implies(p) || DEFAULT_POLICY.implies(pd, p);
-        }
-
-        public void refresh() {}
     }
 
     private static class StreamAccumulator extends Thread {

@@ -27,8 +27,7 @@
  * @enablePreview
  * @summary Implement Subject.current and Subject.callAs using scoped values.
  *      Need enablePreview to use StructuredTaskScope.
- * @run main/othervm -Djava.security.manager=allow CallAsWithScopedValue false
- * @run main/othervm -Djava.security.manager=disallow CallAsWithScopedValue true
+ * @run main/othervm CallAsWithScopedValue true
  */
 import com.sun.security.auth.UserPrincipal;
 

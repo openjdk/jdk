@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@
  *          java.rmi/sun.rmi.transport
  *          java.rmi/sun.rmi.transport.tcp
  * @build TestLibrary Test TestImpl RegistryVM RegistryRunner
- * @run main/othervm/policy=security.policy/timeout=360 DGCDeadLock
+ * @run main/othervm/timeout=360 DGCDeadLock
  */
 
 /* This test attempts to cause a deadlock between the rmi leaseChecker
@@ -71,7 +71,6 @@ public class DGCDeadLock implements Runnable {
         RegistryVM testImplVM = null;
 
         System.err.println("\nregression test for 4118056\n");
-        TestLibrary.suggestSecurityManager("java.rmi.RMISecurityManager");
 
         try {
             String options = " --add-opens java.rmi/sun.rmi.transport=ALL-UNNAMED" +

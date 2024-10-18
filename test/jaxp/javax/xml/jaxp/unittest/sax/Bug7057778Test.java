@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,7 @@
 
 package sax;
 
-import static jaxp.library.JAXPTestUtilities.USER_DIR;
 import static jaxp.library.JAXPTestUtilities.getSystemProperty;
-import static jaxp.library.JAXPTestUtilities.tryRunWithTmpPermission;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -37,14 +34,10 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
-import java.util.PropertyPermission;
-
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
-
 import org.testng.Assert;
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.xml.sax.Attributes;
 import org.xml.sax.ErrorHandler;
@@ -52,16 +45,15 @@ import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.ext.DefaultHandler2;
+import static jaxp.library.JAXPTestUtilities.USER_DIR;
 
 /*
  * @test
  * @bug 7057778
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow sax.Bug7057778Test
  * @run testng/othervm sax.Bug7057778Test
  * @summary Test the file can be deleted after SAXParser.parse(File, DefaultHandler).
  */
-@Listeners({jaxp.library.FilePolicy.class})
 public class Bug7057778Test {
 
     static final String xml = "Bug7057778.xml";
@@ -77,8 +69,7 @@ public class Bug7057778Test {
             SAXParser parser = spf.newSAXParser();
             XMLReader xmlReader = parser.getXMLReader();
             xmlReader.setProperty("http://xml.org/sax/properties/lexical-handler", new MyHandler1());
-            tryRunWithTmpPermission(() -> parser.parse(dst, new MyHandler1()),
-                    new PropertyPermission("user.dir", "read"));
+            parser.parse(dst, new MyHandler1());
         } catch (SAXException ex) {
             ex.printStackTrace();
         } catch (IOException ex) {

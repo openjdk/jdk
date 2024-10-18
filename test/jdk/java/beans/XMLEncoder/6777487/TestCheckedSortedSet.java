@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,7 @@
  * @test
  * @bug 6777487
  * @summary Tests private field access for CheckedSortedSet
- * @run main/othervm -Djava.security.manager=allow TestCheckedSortedSet
- * @author Sergey Malenkov
+ * @run main TestCheckedSortedSet
  */
 
 import java.util.Collections;

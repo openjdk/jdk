@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,16 +133,9 @@ public class DriverManager {
     /**
      * Sets the logging/tracing {@code PrintWriter} object
      * that is used by the {@code DriverManager} and all drivers.
-     *<P>
-     * If a security manager exists, its {@code checkPermission}
-     * method is first called with a {@code SQLPermission("setLog")}
-     * permission to check that the caller is allowed to call {@code setLogWriter}.
      *
      * @param out the new logging/tracing {@code PrintStream} object;
      *      {@code null} to disable logging and tracing
-     * @throws SecurityException if a security manager exists and its
-     * {@code checkPermission} method denies permission to set the log writer.
-     * @see SecurityManager#checkPermission
      * @see #getLogWriter
      * @since 1.2
      */
@@ -357,10 +350,6 @@ public class DriverManager {
      * If a {@code null} value is specified for the driver to be removed, then no
      * action is taken.
      * <p>
-     * If a security manager exists, its {@code checkPermission}
-     * method is first called with a {@code SQLPermission("deregisterDriver")}
-     * permission to check that the caller is allowed to deregister a JDBC Driver.
-     * <p>
      * If the specified driver is not found in the list of registered drivers,
      * then no action is taken.  If the driver was found, it will be removed
      * from the list of registered drivers.
@@ -371,10 +360,6 @@ public class DriverManager {
      *
      * @param driver the JDBC Driver to remove
      * @throws SQLException if a database access error occurs
-     * @throws SecurityException if a security manager exists and its
-     * {@code checkPermission} method denies permission to deregister a driver.
-     *
-     * @see SecurityManager#checkPermission
      */
     @CallerSensitive
     public static void deregisterDriver(Driver driver) throws SQLException {
@@ -485,16 +470,9 @@ public class DriverManager {
      * Sets the logging/tracing PrintStream that is used
      * by the {@code DriverManager}
      * and all drivers.
-     *<P>
-     * If a security manager exists, its {@code checkPermission}
-     * method is first called with a {@code SQLPermission("setLog")}
-     * permission to check that the caller is allowed to call {@code setLogStream}.
      *
      * @param out the new logging/tracing PrintStream; to disable, set to {@code null}
      * @deprecated Use {@code setLogWriter}
-     * @throws SecurityException if a security manager exists and its
-     * {@code checkPermission} method denies permission to set the log stream.
-     * @see SecurityManager#checkPermission
      * @see #getLogStream
      */
     @Deprecated(since="1.2")

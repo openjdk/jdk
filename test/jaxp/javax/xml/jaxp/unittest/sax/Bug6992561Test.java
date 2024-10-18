@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@ import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
 import org.testng.Assert;
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.InputSource;
@@ -44,11 +43,9 @@ import org.xml.sax.helpers.DefaultHandler;
  * @test
  * @bug 6992561
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow sax.Bug6992561Test
  * @run testng/othervm sax.Bug6992561Test
  * @summary Test encoding of SystemId in Locator.
  */
-@Listeners({jaxp.library.BasePolicy.class})
 public class Bug6992561Test {
 
     @Test

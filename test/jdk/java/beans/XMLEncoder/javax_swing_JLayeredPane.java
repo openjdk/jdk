@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 5023552 6972468
  * @summary Tests JLayeredPane encoding
- * @run main/othervm -Djava.security.manager=allow javax_swing_JLayeredPane
+ * @run main/othervm javax_swing_JLayeredPane
  * @author Sergey Malenkov
  */
 
@@ -36,7 +36,7 @@ import javax.swing.JPanel;
 
 public final class javax_swing_JLayeredPane extends AbstractTest<JLayeredPane> {
     public static void main(String[] args) {
-        new javax_swing_JLayeredPane().test(true);
+        new javax_swing_JLayeredPane().test();
     }
 
     private static void init(JLayeredPane pane, int layer, int x, int y, int w, int h, Color color) {

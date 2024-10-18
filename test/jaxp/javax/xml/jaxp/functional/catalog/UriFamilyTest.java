@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,21 +31,18 @@ import javax.xml.catalog.CatalogResolver;
 import javax.xml.catalog.CatalogException;
 
 import org.testng.annotations.DataProvider;
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
  * @test
  * @bug 8077931
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow catalog.UriFamilyTest
  * @run testng/othervm catalog.UriFamilyTest
  * @summary Get matched URIs from uri, rewriteURI, uriSuffix and delegateURI
  *          entries. It tests the resolution priorities among the uri family
  *          entries. The test rule is based on OASIS Standard V1.1 section
  *          7.2.2. "Resolution of External Identifiers".
  */
-@Listeners({jaxp.library.FilePolicy.class})
 public class UriFamilyTest {
 
     @Test(dataProvider = "uri-matchedUri")

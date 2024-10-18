@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,33 +23,25 @@
 
 package parsers;
 
-import static jaxp.library.JAXPTestUtilities.USER_DIR;
-import static jaxp.library.JAXPTestUtilities.tryRunWithTmpPermission;
-
 import java.io.File;
 import java.io.FileWriter;
 import java.io.PrintWriter;
 import java.nio.file.Paths;
-import java.util.PropertyPermission;
-
 import javax.xml.parsers.SAXParserFactory;
-
 import org.testng.Assert;
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
+import static jaxp.library.JAXPTestUtilities.USER_DIR;
 
 /*
  * @test
  * @bug 6341770
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow parsers.Bug6341770
  * @run testng/othervm parsers.Bug6341770
  * @summary Test external entity linked to non-ASCII base URL.
  */
-@Listeners({jaxp.library.FilePolicy.class})
 public class Bug6341770 {
 
     // naming a file "aux" would fail on windows.
@@ -77,13 +69,12 @@ public class Bug6341770 {
             w.flush();
             w.close();
             System.out.println("Parsing: " + main);
-            tryRunWithTmpPermission(
-                    () -> SAXParserFactory.newInstance().newSAXParser().parse(main, new DefaultHandler() {
-                        public void startElement(String uri, String localname, String qname, Attributes attr)
-                                throws SAXException {
-                            System.out.println("encountered <" + qname + ">");
-                        }
-                    }), new PropertyPermission("user.dir", "read"));
+            SAXParserFactory.newInstance().newSAXParser().parse(main, new DefaultHandler() {
+                public void startElement(String uri, String localname, String qname, Attributes attr)
+                        throws SAXException {
+                    System.out.println("encountered <" + qname + ">");
+                }
+            });
         } catch (Exception e) {
             e.printStackTrace();
             Assert.fail("Exception: " + e.getMessage());
