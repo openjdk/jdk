@@ -789,7 +789,9 @@ public class TestDependencyOffsets {
                 r1.addConstraint("AlignVector", new BoolConstraint(false, true));
                 r1.addConstraint("MaxVectorSize", new IntConstraint(minVectorWidth, null));
                 if (0 < byte_offset && byte_offset < vwConstraint.platformVectorWidth) {
-                    // Vectors have to be shorter to avoid cyclic dependency.
+                    // Store forward: will be loaded in later iteration. If the offset is too small
+                    // then maximal vector size would introduce cyclic dependencies. Hence, we use
+                    // shorter vectors.
                     int log2 = 31 - Integer.numberOfLeadingZeros(offset);
                     int floor_pow2 = 1 << log2;
                     int maxVectorWidth = floor_pow2 * type.size;
@@ -797,15 +799,30 @@ public class TestDependencyOffsets {
                                    " elements and a size of at most " + maxVectorWidth +
                                    " bytes to avoid cyclic dependency.\n");
                     if (maxVectorWidth < minVectorWidth) {
-                        builder.append("    //   Not at least 2 elements or 4 bytes -> no vectorization.\n");
+                        builder.append("    //   Not at least 2 elements or 4 bytes -> expect no vectorization.\n");
                         r1.setNegative();
                     } else {
                         r1.setSize("min(" + floor_pow2 + ",max_" + type.name + ")");
                     }
                 } else {
-                    // Expect maximal vector size
+                    // Normal case: Expect maximal vector size
                 }
                 r1.generate(builder);
+
+                // -XX:+AlignVector
+                IRRule r2 = new IRRule(type, vwConstraint, type.irNode);
+                r2.addConstraint("AlignVector", new BoolConstraint(true, false));
+                r2.addConstraint("MaxVectorSize", new IntConstraint(minVectorWidth, null));
+
+                // All vectors must be aligned by some alignment width aw:
+                //   aw = min(actual_vector_width, ObjectAlignmentInBytes)
+                // The runtime aw must thus lay between these two values:
+                int aw_min = Math.min(minVectorWidth, 8);
+                int aw_max = Math.min(vwConstraint.platformVectorWidth, 8);
+
+                // TODO: maybe comute max vw from offset? do we even need aw?
+
+                r2.generate(builder);
             }
             return builder.toString();
         }
@@ -923,7 +940,7 @@ public class TestDependencyOffsets {
 
         void setSize(String size) {
             this.size = size;
-	}
+        }
 
         void setNegative() {
             this.isPositiveRule = false;
