@@ -86,11 +86,7 @@ public class bug4983388 {
                                + "Using default LaF for this platform.");
         }
 
-        SwingUtilities.invokeAndWait(new Runnable() {
-            public void run() {
-                createAndShowGUI();
-            }
-        });
+        SwingUtilities.invokeAndWait(bug4983388::createAndShowGUI);
 
         Robot robot = new Robot();
         robot.setAutoDelay(50);
