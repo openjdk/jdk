@@ -328,7 +328,7 @@ AC_DEFUN_ONCE([LIB_TESTS_SETUP_TIDY],
       AC_MSG_RESULT([yes])
       AC_MSG_CHECKING([for tidy version])
       tidy_version=`$ECHO $tidy_output | $SED -e 's/.*version //g'`
-      AC_MSG_RESULT([$TIDY_VERSION])
+      AC_MSG_RESULT([$tidy_version])
     fi
   fi
   AC_SUBST(TIDY)
