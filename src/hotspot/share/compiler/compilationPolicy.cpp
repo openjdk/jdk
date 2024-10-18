@@ -235,9 +235,9 @@ public:
     switch(cur_level) {
     case CompLevel_none:
     case CompLevel_limited_profile:
-      return b >= Tier3BackEdgeThreshold * scale;
+      return b >= (double)Tier3BackEdgeThreshold * scale;
     case CompLevel_full_profile:
-      return b >= Tier4BackEdgeThreshold * scale;
+      return b >= (double)Tier4BackEdgeThreshold * scale;
     default:
       return true;
     }
@@ -273,11 +273,11 @@ public:
     switch(cur_level) {
     case CompLevel_none:
     case CompLevel_limited_profile:
-      return (i >= Tier3InvocationThreshold * scale) ||
-             (i >= Tier3MinInvocationThreshold * scale && i + b >= Tier3CompileThreshold * scale);
+      return (i >= (double)Tier3InvocationThreshold * scale) ||
+             (i >= (double)Tier3MinInvocationThreshold * scale && i + b >= (double)Tier3CompileThreshold * scale);
     case CompLevel_full_profile:
-      return (i >= Tier4InvocationThreshold * scale) ||
-             (i >= Tier4MinInvocationThreshold * scale && i + b >= Tier4CompileThreshold * scale);
+      return (i >= (double)Tier4InvocationThreshold * scale) ||
+             (i >= (double)Tier4MinInvocationThreshold * scale && i + b >= (double)Tier4CompileThreshold * scale);
     default:
      return true;
     }
