@@ -236,7 +236,9 @@ void CDSConfig::init_shared_archive_paths() {
 }
 
 void CDSConfig::check_internal_module_property(const char* key, const char* value) {
-  if (Arguments::is_internal_module_property(key) && !Arguments::is_module_path_property(key)) {
+  if (Arguments::is_internal_module_property(key) &&
+      !Arguments::is_module_path_property(key) &&
+      !Arguments::is_add_modules_property(key)) {
     stop_using_optimized_module_handling();
     log_info(cds)("optimized module handling: disabled due to incompatible property: %s=%s", key, value);
   }
