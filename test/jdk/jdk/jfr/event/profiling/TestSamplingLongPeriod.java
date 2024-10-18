@@ -39,7 +39,7 @@ import jdk.test.lib.jfr.RecurseThread;
  */
 public class TestSamplingLongPeriod {
 
-    final static String SAMPLE_EVENT = EventNames.ExecutionSample;
+    static String sampleEvent = EventNames.ExecutionSample;
 
     // The period is set to 1100 ms to provoke the 1000 ms
     // threshold in the JVM for os::naked_short_sleep().
@@ -47,8 +47,8 @@ public class TestSamplingLongPeriod {
         RecurseThread t = new RecurseThread(50);
         t.setDaemon(true);
         try (RecordingStream rs = new RecordingStream()) {
-            rs.enable(SAMPLE_EVENT).withPeriod(Duration.ofMillis(1100));
-            rs.onEvent(SAMPLE_EVENT, e -> {
+            rs.enable(sampleEvent).withPeriod(Duration.ofMillis(1100));
+            rs.onEvent(sampleEvent, e -> {
                 t.quit();
                 rs.close();
             });

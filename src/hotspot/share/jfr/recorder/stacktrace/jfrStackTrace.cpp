@@ -138,18 +138,6 @@ void JfrStackFrame::write(JfrCheckpointWriter& cpw) const {
   write_frame(cpw, _methodid, _line, _bci, _type);
 }
 
-class JfrVframeStream : public vframeStreamCommon {
- private:
-  bool _vthread;
-  const ContinuationEntry* _cont_entry;
-  bool _async_mode;
-  bool step_to_sender();
-  void next_frame();
- public:
-  JfrVframeStream(JavaThread* jt, const frame& fr, bool stop_at_java_call_stub, bool async_mode);
-  void next_vframe();
-};
-
 static RegisterMap::WalkContinuation walk_continuation(JavaThread* jt) {
   // NOTE: WalkContinuation::skip, because of interactions with ZGC relocation
   //       and load barriers. This code is run while generating stack traces for

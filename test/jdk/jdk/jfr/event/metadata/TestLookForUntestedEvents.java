@@ -89,7 +89,7 @@ public class TestLookForUntestedEvents {
 
     // Experimental events
     private static final Set<String> experimentalEvents = Set.of(
-        "Flush", "SyncOnValueBasedClass");
+        "Flush", "SyncOnValueBasedClass", "CPUTimeSample", "CPUTimeSampleLoss");
 
     public static void main(String[] args) throws Exception {
         for (EventType type : FlightRecorder.getFlightRecorder().getEventTypes()) {

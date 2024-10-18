@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Objects;
 
 import jdk.jfr.SettingDescriptor;
+import jdk.jfr.events.ActiveSettingEvent;
 import jdk.jfr.internal.periodic.PeriodicEvents;
 import jdk.jfr.internal.util.ImplicitFields;
 import jdk.jfr.internal.util.Utils;
@@ -43,6 +44,7 @@ public final class PlatformEventType extends Type {
     private final boolean isJVM;
     private final boolean isJDK;
     private final boolean isMethodSampling;
+    private final boolean isCPUTimeMethodSampling;
     private final List<SettingDescriptor> settings = new ArrayList<>(5);
     private final boolean dynamicSettings;
     private final int stackTraceOffset;
@@ -54,6 +56,8 @@ public final class PlatformEventType extends Type {
     private boolean stackTraceEnabled = true;
     private long thresholdTicks = 0;
     private long period = 0;
+    private double cpuThrottle = 0.0;
+    private boolean cpuAutoadapt = false;
     private boolean hasHook;
 
     private boolean beginChunk;
@@ -73,6 +77,7 @@ public final class PlatformEventType extends Type {
         this.dynamicSettings = dynamicSettings;
         this.isJVM = Type.isDefinedByJVM(id);
         this.isMethodSampling = isJVM && (name.equals(Type.EVENT_NAME_PREFIX + "ExecutionSample") || name.equals(Type.EVENT_NAME_PREFIX + "NativeMethodSample"));
+        this.isCPUTimeMethodSampling = isJVM && name.equals(Type.EVENT_NAME_PREFIX + "CPUTimeSample");
         this.isJDK = isJDK;
         this.stackTraceOffset = stackTraceOffset(name, isJDK);
     }
@@ -163,6 +168,14 @@ public final class PlatformEventType extends Type {
         }
     }
 
+    public void setCPUThrottle(double rate, boolean autoadapt) {
+        if (isCPUTimeMethodSampling) {
+            this.cpuThrottle = rate;
+            this.cpuAutoadapt = autoadapt;
+            JVM.setCPUThrottle(rate, autoadapt);
+        }
+    }
+
     public void setHasPeriod(boolean hasPeriod) {
         this.hasPeriod = hasPeriod;
     }
@@ -223,6 +236,9 @@ public final class PlatformEventType extends Type {
             if (isMethodSampling) {
                 long p = enabled ? period : 0;
                 JVM.setMethodSamplingPeriod(getId(), p);
+            } else if (isCPUTimeMethodSampling) {
+                double r = enabled ? cpuThrottle : 0;
+                JVM.setCPUThrottle(r, cpuAutoadapt);
             } else {
                 JVM.setEnabled(getId(), enabled);
             }
@@ -358,6 +374,10 @@ public final class PlatformEventType extends Type {
 
     public boolean isMethodSampling() {
         return isMethodSampling;
+    }
+
+    public boolean isCPUTimeMethodSampling() {
+        return isCPUTimeMethodSampling;
     }
 
     public void setStackFilterId(long id) {

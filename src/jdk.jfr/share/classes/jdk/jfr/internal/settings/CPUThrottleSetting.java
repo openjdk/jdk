@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, Datadog, Inc. All rights reserved.
+ * Copyright (c) 2024, SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,66 +38,50 @@ import jdk.jfr.Label;
 import jdk.jfr.MetadataDefinition;
 import jdk.jfr.Name;
 import jdk.jfr.internal.PlatformEventType;
-import jdk.jfr.internal.Throttle;
 import jdk.jfr.internal.Type;
-import jdk.jfr.internal.util.ParsedRate;
+import jdk.jfr.internal.util.ParsedCPUThrottle;
 import jdk.jfr.internal.util.TimespanUnit;
 import jdk.jfr.internal.util.Utils;
 
 @MetadataDefinition
-@Label("Throttle")
-@Description("Throttles the emission rate for an event")
-@Name(Type.SETTINGS_PREFIX + "Throttle")
-public final class ThrottleSetting extends JDKSettingControl {
-    public static final String DEFAULT_VALUE = Throttle.DEFAULT;
+@Label("CPUThrottleSetting")
+@Description("Upper bounds the emission rate for CPU time samples")
+@Name(Type.SETTINGS_PREFIX + "Rate")
+public final class CPUThrottleSetting extends JDKSettingControl {
+    public static final String DEFAULT_VALUE = "0/s";
     private final PlatformEventType eventType;
     private String value = DEFAULT_VALUE;
 
-    public ThrottleSetting(PlatformEventType eventType) {
+    public CPUThrottleSetting(PlatformEventType eventType) {
        this.eventType = Objects.requireNonNull(eventType);
     }
 
     @Override
     public String combine(Set<String> values) {
-        ParsedRate max = null;
-        String text = null;
+        ParsedCPUThrottle max = null;
+        boolean autoadapt = false;
         for (String value : values) {
-            ParsedRate rate = ParsedRate.of(value);
+            ParsedCPUThrottle rate = ParsedCPUThrottle.of(value);
             if (rate != null) {
                 if (max == null || rate.isHigher(max)) {
-                    text = value;
                     max = rate;
                 }
+                autoadapt |= rate instanceof ParsedCPUThrottle.ParsedRate;
             }
         }
-        // "off" is default
-        return Objects.requireNonNullElse(text, DEFAULT_VALUE);
+        if (autoadapt) {
+            max = max.toParsedRate();
+        }
+        // "off" is not supported
+        return Objects.requireNonNullElse(max.toString(), DEFAULT_VALUE);
     }
 
     @Override
     public void setValue(String value) {
-        if ("off".equals(value)) {
-            eventType.setThrottle(-2, 1000);
-            this.value = value;
-            return;
-        }
-
-        ParsedRate rate = ParsedRate.of(value);
+        ParsedCPUThrottle rate = ParsedCPUThrottle.of(value);
+        System.out.println();
         if (rate != null) {
-            long millis = 1000;
-            long samples = rate.amount();
-            TimespanUnit unit = rate.unit();
-            // if unit is more than 1 s, set millis
-            if (unit.nanos > SECONDS.nanos) {
-                millis = unit.nanos / MILLISECONDS.nanos;
-            }
-            // if unit is less than 1 s, scale samples
-            if (unit.nanos < SECONDS.nanos) {
-                long perSecond = SECONDS.nanos / unit.nanos;
-                samples *= Utils.multiplyOverflow(samples, perSecond, Long.MAX_VALUE);
-            }
-            eventType.setThrottle(samples, millis);
-            this.value = value;
+            eventType.setCPUThrottle(rate.rate(), rate instanceof ParsedCPUThrottle.ParsedRate);
         }
     }
 
