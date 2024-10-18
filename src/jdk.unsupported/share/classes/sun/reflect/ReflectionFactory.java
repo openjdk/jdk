@@ -180,19 +180,6 @@ public class ReflectionFactory {
     }
 
     /**
-     * {@return the declared <code>serialPersistentFields</code> from a serializable class,
-     * or <code>null</code> if none is declared or the class is not a valid
-     * serializable class}
-     *
-     * @param cl a Serializable class
-     *
-     * @since 24
-     */
-    public final ObjectStreamField[] serialPersistentFields(Class<?> cl) {
-        return delegate.serialPersistentFields(cl);
-    }
-
-    /**
      * Returns a direct MethodHandle for the {@code writeObject} method on
      * a Serializable class.
      * The first argument of {@link MethodHandle#invoke} is the serializable
@@ -278,5 +265,18 @@ public class ReflectionFactory {
         } catch (InstantiationException|IllegalAccessException|InvocationTargetException ex) {
             throw new InternalError("unable to create OptionalDataException", ex);
         }
+    }
+
+    /**
+     * {@return the declared <code>serialPersistentFields</code> from a serializable class,
+     * or <code>null</code> if none is declared or the class is not a valid
+     * serializable class}
+     *
+     * @param cl a Serializable class
+     *
+     * @since 24
+     */
+    public final ObjectStreamField[] serialPersistentFields(Class<?> cl) {
+        return delegate.serialPersistentFields(cl);
     }
 }

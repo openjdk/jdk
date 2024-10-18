@@ -453,28 +453,6 @@ public class ReflectionFactory {
         return javaObjectStreamReflectionAccess.defaultWriteObject(cl);
     }
 
-    public final ObjectStreamField[] serialPersistentFields(Class<?> cl) {
-        if (! Serializable.class.isAssignableFrom(cl) || cl.isInterface() || cl.isEnum()) {
-            return null;
-        }
-
-        try {
-            Field field = cl.getDeclaredField("serialPersistentFields");
-            int mods = field.getModifiers();
-            if (! (Modifier.isStatic(mods) && Modifier.isPrivate(mods) && Modifier.isFinal(mods))) {
-                return null;
-            }
-            if (field.getType() != ObjectStreamField[].class) {
-                return null;
-            }
-            field.setAccessible(true);
-            ObjectStreamField[] array = (ObjectStreamField[]) field.get(null);
-            return array != null && array.length > 0 ? array.clone() : array;
-        } catch (ReflectiveOperationException e) {
-            return null;
-        }
-    }
-
     /**
      * These are specific leaf classes which appear to be Serializable, but which
      * have special semantics according to the serialization specification. We
@@ -601,6 +579,28 @@ public class ReflectionFactory {
             return boolCtor;
         } catch (NoSuchMethodException ex) {
             throw new InternalError("Constructor not found", ex);
+        }
+    }
+
+    public final ObjectStreamField[] serialPersistentFields(Class<?> cl) {
+        if (! Serializable.class.isAssignableFrom(cl) || cl.isInterface() || cl.isEnum()) {
+            return null;
+        }
+
+        try {
+            Field field = cl.getDeclaredField("serialPersistentFields");
+            int mods = field.getModifiers();
+            if (! (Modifier.isStatic(mods) && Modifier.isPrivate(mods) && Modifier.isFinal(mods))) {
+                return null;
+            }
+            if (field.getType() != ObjectStreamField[].class) {
+                return null;
+            }
+            field.setAccessible(true);
+            ObjectStreamField[] array = (ObjectStreamField[]) field.get(null);
+            return array != null && array.length > 0 ? array.clone() : array;
+        } catch (ReflectiveOperationException e) {
+            return null;
         }
     }
 
