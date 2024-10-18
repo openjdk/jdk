@@ -138,7 +138,7 @@ final class Finalizer extends FinalReference<Object> { /* Package-private; must 
 
     /* Called by Runtime.runFinalization() */
     static void runFinalization() {
-        if (VM.initLevel() == 0 || ! ENABLED) {
+        if (!VM.initLevelReached(VM.JAVA_LANG_SYSTEM_INITED) || ! ENABLED) {
             return;
         }
 

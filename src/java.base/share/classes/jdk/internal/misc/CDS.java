@@ -48,6 +48,9 @@ public class CDS {
     private static final int IS_USING_ARCHIVE                = 1 << 3;
     private static final int configStatus = getCDSConfigStatus();
 
+    // TO DO: maybe hook something like this logic into AOT assembly shutdown:
+    //private static void shutdownAOTAssembly() { configStatus = IS_USING_ARCHIVE; }
+
     /**
      * Should we log the use of lambda form invokers?
      */
