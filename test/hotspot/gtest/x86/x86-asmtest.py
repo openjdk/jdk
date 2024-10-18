@@ -157,7 +157,7 @@ class Instruction(object):
         # JDK assembler uses 'cl' for shift instructions with one operand by default
         cl_str = (', cl' if (self._name == 'shll' or self._name == 'shlq' or self._name == 'shrl' or self._name == 'shrq' or
                              self._name == 'rorl' or self._name == 'rorq' or self._name == 'roll' or self._name == 'rolq' or
-                             self._name == 'sarl' or self._name == 'sarq') and len(self.operands) == 1 else '')
+                             self._name == 'sarl' or self._name == 'sarq' or self._name == 'sall' or self._name == 'salq') and len(self.operands) == 1 else '')
         return f'{self._aname} ' + ', '.join([op.astr() for op in self.operands]) + cl_str
 
 class RegInstruction(Instruction):
@@ -242,6 +242,14 @@ class Push2Instruction(TwoRegInstruction):
         # reverse to match the order in OpenJDK
         return f'__ {self._name}(' + ', '.join([reg.cstr() for reg in reversed(self.operands)]) + ');'
 
+class CmpxchgInstruction(MemRegInstruction):
+    def __init__(self, name, aname, width, reg, mem_base, mem_idx):
+        super().__init__(name, aname, width, reg, mem_base, mem_idx)
+
+    def cstr(self):
+        # reverse to match the order in OpenJDK
+        return f'__ {self._name}(' + ', '.join([reg.cstr() for reg in reversed(self.operands)]) + ');'
+
 class CondRegMemInstruction(RegMemInstruction):
     def __init__(self, name, aname, width, cond, reg, mem_base, mem_idx):
         super().__init__(name, aname, width, reg, mem_base, mem_idx)
@@ -271,6 +279,27 @@ class RegImm32Instruction(RegImmInstruction):
     def cstr(self):
         return f'__ {self._name}(' + ', '.join([self.reg.cstr(), self.imm.cstr()]) + ');'
 
+class MemImm32Instruction(MemImmInstruction):
+    def __init__(self, name, aname, width, imm, mem_base, mem_idx):
+        super().__init__(name, aname, width, imm, mem_base, mem_idx)
+
+    def cstr(self):
+        return f'__ {self._name}(' + ', '.join([self.mem.cstr(), self.imm.cstr()]) + ');'
+
+class MoveRegMemInstruction(Instruction):
+    def __init__(self, name, aname, width, mem_width, reg, mem_base, mem_idx):
+        super().__init__(name, aname)
+        self.reg = Register().generate(reg, width)
+        self.mem = Address().generate(mem_base, mem_idx, mem_width)
+        self.generate_operands(self.reg, self.mem)
+
+class MoveRegRegInstruction(Instruction):
+    def __init__(self, name, aname, width, reg_width, reg1, reg2):
+        super().__init__(name, aname)
+        self.reg1 = Register().generate(reg1, width)
+        self.reg2 = Register().generate(reg2, reg_width)
+        self.generate_operands(self.reg1, self.reg2)
+
 test_regs = list(registers_mapping.keys())
 
 immediates32 = [2 ** i for i in range(0, 32, 4)]
@@ -279,6 +308,8 @@ immediates8 = [2 ** i for i in range(0, 8, 2)]
 immediates5 = [2 ** i for i in range(0, 5, 1)]
 immediate_values_8_to_16_bit = [2 ** i for i in range(8, 16, 2)]
 immediate_values_16_to_32_bit = [2 ** i for i in range(16, 32, 2)]
+immediate_values_32_to_64_bit = [2 ** i for i in range(32, 64, 2)]
+negative_immediates32 = [-2 ** i for i in range(0, 32, 4)]
 
 immediate_map = {
     8: immediates8,
@@ -306,12 +337,25 @@ def handle_lp64_flag(i, lp64_flag, print_lp64_flag):
 
 def get_immediate_list(op_name, width):
     # special cases
-    shift_ops = {'sarl', 'sarq', 'shll', 'shlq', 'shrl', 'shrq', 'shrdl', 'shrdq', 'shldl', 'shldq', 'rcrq', 'rorl', 'rorq', 'roll', 'rolq', 'rcll', 'rclq'}
-    addw_ops = {'addw'}
+    shift_ops = {'sarl', 'sarq', 'sall', 'salq', 'shll', 'shlq', 'shrl', 'shrq', 'shrdl', 'shrdq', 'shldl', 'shldq', 'rcrq', 'rorl', 'rorq', 'roll', 'rolq', 'rcll', 'rclq'}
+    word_ops = {'addw', 'cmpw'}
+    dword_imm_ops = {'testl'}
+    qword_imm_ops = {'mov64'}
+    neg_imm_ops = {'testq'}
+    bt_ops = {'btq'}
+
     if op_name in shift_ops:
         return immediates5
-    elif op_name in addw_ops:
+    elif op_name in bt_ops:
+        return immediate_map[8]
+    elif op_name in word_ops:
         return immediate_values_8_to_16_bit
+    elif op_name in dword_imm_ops:
+        return immediate_values_16_to_32_bit
+    elif op_name in qword_imm_ops:
+        return immediate_values_32_to_64_bit
+    elif op_name in neg_imm_ops:
+        return negative_immediates32
     else:
         return immediate_map[width]
 
@@ -327,13 +371,13 @@ def generate(RegOp, ops, print_lp64_flag=True):
                 instr = RegOp(*op, reg=test_regs[i])
                 print_instruction(instr, lp64_flag, print_lp64_flag)
 
-        elif RegOp in [TwoRegInstruction]:
+        elif RegOp in [TwoRegInstruction, MoveRegRegInstruction]:
             for i in range(len(test_regs)):
                 lp64_flag = handle_lp64_flag((i + 1) % len(test_regs), lp64_flag, print_lp64_flag)
                 instr = RegOp(*op, reg1=test_regs[i], reg2=test_regs[(i + 1) % len(test_regs)])
                 print_instruction(instr, lp64_flag, print_lp64_flag)
 
-        elif RegOp in [MemRegInstruction, RegMemInstruction, CondRegMemInstruction]:
+        elif RegOp in [MemRegInstruction, RegMemInstruction, MoveRegMemInstruction, CmpxchgInstruction, CondRegMemInstruction]:
             for i in range(len(test_regs)):
                 if test_regs[(i + 2) % len(test_regs)] == 'rsp':
                     continue
@@ -400,6 +444,15 @@ def generate(RegOp, ops, print_lp64_flag=True):
                     instr = RegOp(*op, reg=test_regs[i], imm=imm)
                     print_instruction(instr, lp64_flag, print_lp64_flag)
 
+        elif RegOp in [MemImm32Instruction]:
+            for imm in immediate_values_16_to_32_bit:
+                for i in range(len(test_regs)):
+                    if test_regs[(i + 1) % len(test_regs)] == 'rsp':
+                        continue
+                    lp64_flag = handle_lp64_flag((i + 1) % len(test_regs), lp64_flag, print_lp64_flag)
+                    instr = RegOp(*op, imm=imm, mem_base=test_regs[i], mem_idx=test_regs[(i + 1) % len(test_regs)])
+                    print_instruction(instr, lp64_flag, print_lp64_flag)
+
         else:
             raise ValueError(f"Unsupported instruction type: {RegOp}")
 
@@ -429,6 +482,7 @@ instruction_set = {
         ('shldl', 'shld', 32),
         ('shrdl', 'shrd', 32),
         ('adcl', 'adc', 32),
+        ('cmpl', 'cmp', 32),
         ('imull', 'imul', 32),
         ('popcntl', 'popcnt', 32),
         ('sbbl', 'sbb', 32),
@@ -439,6 +493,11 @@ instruction_set = {
         ('andl', 'and', 32),
         ('orl', 'or', 32),
         ('xorl', 'xor', 32),
+        ('movl', 'mov', 32),
+        ('bsfl', 'bsf', 32),
+        ('bsrl', 'bsr', 32),
+        ('xchgl', 'xchg', 32),
+        ('testl', 'test', 32),
     ],
     MemRegInstruction: [
         ('addb', 'add', 8),
@@ -447,11 +506,19 @@ instruction_set = {
         ('adcl', 'adc', 32),
         ('andb', 'and', 8),
         ('andl', 'and', 32),
+        ('cmpb', 'cmp', 8),
+        ('cmpw', 'cmp', 16),
+        ('cmpl', 'cmp', 32),
         ('orb', 'or', 8),
         ('orl', 'or', 32),
         ('xorb', 'xor', 8),
         ('xorl', 'xor', 32),
         ('subl', 'sub', 32),
+        ('movb', 'mov', 8),
+        ('movl', 'mov', 32),
+        ('xaddb', 'xadd', 8),
+        ('xaddw', 'xadd', 16),
+        ('xaddl', 'xadd', 32),
     ],
     MemImmInstruction: [
         ('adcl', 'adc', 32),
@@ -459,17 +526,27 @@ instruction_set = {
         ('addb', 'add', 8),
         ('addw', 'add', 16),
         ('addl', 'add', 32),
+        ('cmpb', 'cmp', 8),
+        ('cmpw', 'cmp', 16),
+        ('cmpl', 'cmp', 32),
         ('sarl', 'sar', 32),
+        ('sall', 'sal', 32),
         ('sbbl', 'sbb', 32),
         ('shrl', 'shr', 32),
         ('subl', 'sub', 32),
         ('xorl', 'xor', 32),
         ('orb', 'or', 8),
         ('orl', 'or', 32),
+        ('movb', 'mov', 8),
+        ('movl', 'mov', 32),
+        ('testb', 'test', 8),
+        ('testl', 'test', 32),
     ],
     RegMemInstruction: [
         ('addl', 'add', 32),
         ('andl', 'and', 32),
+        ('cmpb', 'cmp', 8),
+        ('cmpl', 'cmp', 32),
         ('lzcntl', 'lzcnt', 32),
         ('orl', 'or', 32),
         ('adcl', 'adc', 32),
@@ -481,21 +558,34 @@ instruction_set = {
         ('xorb', 'xor', 8),
         ('xorw', 'xor', 16),
         ('xorl', 'xor', 32),
+        ('movb', 'mov', 8),
+        ('movl', 'mov', 32),
+        ('leal', 'lea', 32),
+        ('xchgb', 'xchg', 8),
+        ('xchgw', 'xchg', 16),
+        ('xchgl', 'xchg', 32),
+        ('testl', 'test', 32),
     ],
     RegImmInstruction: [
         ('addb', 'add', 8),
         ('addl', 'add', 32),
         ('andl', 'and', 32),
         ('adcl', 'adc', 32),
+        ('cmpb', 'cmp', 8),
+        ('cmpl', 'cmp', 32),
         ('rcll', 'rcl', 32),
         ('roll', 'rol', 32),
         ('rorl', 'ror', 32),
         ('sarl', 'sar', 32),
+        ('sall', 'sal', 32),
         ('sbbl', 'sbb', 32),
         ('shll', 'shl', 32),
         ('shrl', 'shr', 32),
         ('subl', 'sub', 32),
         ('xorl', 'xor', 32),
+        ('movl', 'mov', 32),
+        ('testb', 'test', 8),
+        ('testl', 'test', 32),
     ],
     CondRegMemInstruction: [
         ('cmovl', 'cmov', 32, key) for key in cond_to_suffix.keys()
@@ -513,6 +603,7 @@ instruction_set = {
         ('roll', 'rol', 32),
         ('rorl', 'ror', 32),
         ('sarl', 'sar', 32),
+        ('sall', 'sal', 32),
         ('shll', 'shl', 32),
         ('shrl', 'shr', 32),
         ('incrementl', 'inc', 32),
@@ -522,6 +613,7 @@ instruction_set = {
         ('mull', 'mul', 32),
         ('negl', 'neg', 32),
         ('sarl', 'sar', 32),
+        ('sall', 'sal', 32),
         ('shrl', 'shr', 32),
         ('incrementl', 'inc', 32),
         ('decrementl', 'dec', 32),
@@ -534,14 +626,35 @@ instruction_set = {
         ('shldl', 'shld', 32),
         ('shrdl', 'shrd', 32),
     ],
+    MoveRegMemInstruction: [
+        ('movzbl', 'movzx', 32, 8),
+        ('movzwl', 'movzx', 32, 16),
+        ('movsbl', 'movsx', 32, 8),
+        ('movswl', 'movsx', 32, 16),
+    ],
+    MoveRegRegInstruction: [
+        ('movzbl', 'movzx', 32, 8),
+        ('movzwl', 'movzx', 32, 16),
+        ('movsbl', 'movsx', 32, 8),
+        ('movswl', 'movsx', 32, 16),
+    ],
+    CmpxchgInstruction: [
+        ('cmpxchgb', 'cmpxchg', 8),
+        ('cmpxchgw', 'cmpxchg', 16),
+        ('cmpxchgl', 'cmpxchg', 32),
+    ],
     RegImm32Instruction: [
         ('subl_imm32', 'sub', 32),
     ],
+    MemImm32Instruction: [
+        ('cmpl_imm32', 'cmp', 32),
+    ]
 }
 
 instruction_set64 = {
     TwoRegInstruction: [
         ('adcq', 'adc', 64),
+        ('cmpq', 'cmp', 64),
         ('imulq', 'imul', 64),
         ('popcntq', 'popcnt', 64),
         ('sbbq', 'sbb', 64),
@@ -551,28 +664,42 @@ instruction_set64 = {
         ('addq', 'add', 64),
         ('andq', 'and', 64),
         ('orq', 'or', 64),
-        ('xorq', 'xor', 64)
+        ('xorq', 'xor', 64),
+        ('movq', 'mov', 64),
+        ('bsfq', 'bsf', 64),
+        ('bsrq', 'bsr', 64),
+        ('btq', 'bt', 64),
+        ('xchgq', 'xchg', 64),
+        ('testq', 'test', 64),
     ],
     MemRegInstruction: [
         ('addq', 'add', 64),
         ('andq', 'and', 64),
+        ('cmpq', 'cmp', 64),
         ('orq', 'or', 64),
         ('xorq', 'xor', 64),
-        ('subq', 'sub', 64)
+        ('subq', 'sub', 64),
+        ('movq', 'mov', 64),
+        ('xaddq', 'xadd', 64),
     ],
     MemImmInstruction: [
         ('andq', 'and', 64),
         ('addq', 'add', 64),
+        ('cmpq', 'cmp', 64),
         ('sarq', 'sar', 64),
+        ('salq', 'sal', 64),
         ('sbbq', 'sbb', 64),
         ('shrq', 'shr', 64),
         ('subq', 'sub', 64),
         ('xorq', 'xor', 64),
-        ('orq', 'or', 64)
+        ('orq', 'or', 64),
+        ('movq', 'mov', 64),
+        ('testq', 'test', 64),
     ],
     RegMemInstruction: [
         ('addq', 'add', 64),
         ('andq', 'and', 64),
+        ('cmpq', 'cmp', 64),
         ('lzcntq', 'lzcnt', 64),
         ('orq', 'or', 64),
         ('adcq', 'adc', 64),
@@ -581,27 +708,39 @@ instruction_set64 = {
         ('sbbq', 'sbb', 64),
         ('subq', 'sub', 64),
         ('tzcntq', 'tzcnt', 64),
-        ('xorq', 'xor', 64)
+        ('xorq', 'xor', 64),
+        ('movq', 'mov', 64),
+        ('leaq', 'lea', 64),
+        ('cvttsd2siq', 'cvttsd2si', 64),
+        ('xchgq', 'xchg', 64),
+        ('testq', 'test', 64),
     ],
     RegImmInstruction: [
         ('addq', 'add', 64),
         ('andq', 'and', 64),
         ('adcq', 'adc', 64),
+        ('cmpq', 'cmp', 64),
         ('rclq', 'rcl', 64),
         ('rcrq', 'rcr', 64),
         ('rolq', 'rol', 64),
         ('rorq', 'ror', 64),
         ('sarq', 'sar', 64),
+        ('salq', 'sal', 64),
         ('sbbq', 'sbb', 64),
         ('shlq', 'shl', 64),
         ('shrq', 'shr', 64),
         ('subq', 'sub', 64),
         ('xorq', 'xor', 64),
+        ('movq', 'mov', 64),
+        ('mov64', 'mov', 64),
+        ('btq', 'bt', 64),
+        ('testq', 'test', 64),
     ],
     CondRegMemInstruction: [
         ('cmovq', 'cmov', 64, key) for key in cond_to_suffix.keys()
     ],
     RegInstruction: [
+        ('call', 'call', 64),
         ('divq', 'div', 64),
         ('idivq', 'idiv', 64),
         ('imulq', 'imul', 64),
@@ -611,6 +750,7 @@ instruction_set64 = {
         ('rolq', 'rol', 64),
         ('rorq', 'ror', 64),
         ('sarq', 'sar', 64),
+        ('salq', 'sal', 64),
         ('shlq', 'shl', 64),
         ('shrq', 'shr', 64),
         ('incrementq', 'inc', 64),
@@ -619,9 +759,11 @@ instruction_set64 = {
         ('popp', 'popp', 64)
     ],
     MemInstruction: [
+        ('call', 'call', 64),
         ('mulq', 'mul', 64),
         ('negq', 'neg', 64),
         ('sarq', 'sar', 64),
+        ('salq', 'sal', 64),
         ('shrq', 'shr', 64),
         ('incrementq', 'inc', 64),
         ('decrementq', 'dec', 64)
@@ -645,6 +787,21 @@ instruction_set64 = {
     Push2Instruction: [
         ('push2', 'push2', 64),
         ('push2p', 'push2p', 64)
+    ],
+    MoveRegMemInstruction: [
+        ('movzbq', 'movzx', 64, 8),
+        ('movzwq', 'movzx', 64, 16),
+        ('movsbq', 'movsx', 64, 8),
+        ('movswq', 'movsx', 64, 16),
+    ],
+    MoveRegRegInstruction: [
+        ('movzbq', 'movzx', 64, 8),
+        ('movzwq', 'movzx', 64, 16),
+        ('movsbq', 'movsx', 64, 8),
+        ('movswq', 'movsx', 64, 16),
+    ],
+    CmpxchgInstruction: [
+        ('cmpxchgq', 'cmpxchg', 64),
     ],
 }
 
