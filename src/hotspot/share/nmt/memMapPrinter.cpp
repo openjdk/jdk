@@ -209,7 +209,7 @@ static void print_thread_details_for_supposed_stack_address(const void* from, co
   ResourceMark rm;
 
 #define HANDLE_THREAD(T)                                                        \
-  if (T != nullptr && vma_touches_thread_stack(from, to, T)) {                  \
+  if (T != nullptr && T->stack_size() != 0 && vma_touches_thread_stack(from, to, T)) { \
     print_thread_details((uintx)(T->osthread()->thread_id()), T->name(), st);   \
     return;                                                                     \
   }
