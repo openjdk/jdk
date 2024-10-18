@@ -21,6 +21,7 @@
 
 import os
 import platform
+import random
 import re
 import subprocess
 
@@ -122,14 +123,24 @@ class Address(Operand):
         self.base = Register().generate(base, 64)
         self.index = Register().generate(index, 64)
         self._width = width
+        self._scale_factor = random.choice([-1, 0, 1, 2, 3])
+        self._disp = random.randint(-2**31, 2**31 - 1)
         return self
 
     def cstr(self):
-        return f"Address({self.base.cstr()}, {self.index.cstr()})"
+        disp_str = "{0:+#x}".format(self._disp)
+        if self._scale_factor == -1:
+            return f"Address({self.base.cstr()}, {disp_str})"
+        else:
+            return f"Address({self.base.cstr()}, {self.index.cstr()}, (Address::ScaleFactor){self._scale_factor}, {disp_str})"
 
     def astr(self):
         ptr_str = self.width_to_ptr.get(self._width, "qword ptr")
-        return f"{ptr_str} [{self.base.cstr()} + {self.index.cstr()}]"
+        disp_str = "{0:+#x}".format(self._disp)
+        if self._scale_factor == -1:
+            return f"{ptr_str} [{self.base.cstr() + disp_str}]"
+        else:
+            return f"{ptr_str} [{self.base.cstr()}+{self.index.cstr()}*{2 ** self._scale_factor}{disp_str}]"
 
 class Instruction(object):
     def __init__(self, name, aname):
