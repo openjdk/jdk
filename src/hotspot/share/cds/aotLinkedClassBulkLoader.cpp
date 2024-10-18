@@ -40,6 +40,11 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
 
+bool AOTLinkedClassBulkLoader::_boot2_completed = false;
+bool AOTLinkedClassBulkLoader::_platform_completed = false;
+bool AOTLinkedClassBulkLoader::_app_completed = false;
+bool AOTLinkedClassBulkLoader::_all_completed = false;
+
 void AOTLinkedClassBulkLoader::serialize(SerializeClosure* soc, bool is_static_archive) {
   AOTLinkedClassTable::get(is_static_archive)->serialize(soc);
 }
@@ -60,8 +65,14 @@ void AOTLinkedClassBulkLoader::load_non_javabase_classes(JavaThread* current) {
   assert(SystemDictionary::java_system_loader() != nullptr,   "must be");
 
   load_classes_in_loader(current, AOTLinkedClassCategory::BOOT2, nullptr); // all boot classes outside of java.base
+  _boot2_completed = true;
+
   load_classes_in_loader(current, AOTLinkedClassCategory::PLATFORM, SystemDictionary::java_platform_loader());
+  _platform_completed = true;
+
   load_classes_in_loader(current, AOTLinkedClassCategory::APP, SystemDictionary::java_system_loader());
+  _app_completed = true;
+  _all_completed = true;
 }
 
 void AOTLinkedClassBulkLoader::load_classes_in_loader(JavaThread* current, AOTLinkedClassCategory class_category, oop class_loader_oop) {
@@ -323,4 +334,54 @@ void AOTLinkedClassBulkLoader::init_required_classes_for_loader(Handle class_loa
   }
 
   HeapShared::init_classes_for_special_subgraph(class_loader, CHECK);
+}
+
+bool AOTLinkedClassBulkLoader::is_pending_aot_linked_class(Klass* k) {
+  if (!CDSConfig::is_using_aot_linked_classes()) {
+    return false;
+  }
+
+  if (_all_completed) { // no more pending aot-linked classes
+    return false;
+  }
+
+  if (k->is_objArray_klass()) {
+    k = ObjArrayKlass::cast(k)->bottom_klass();
+  }
+  if (!k->is_instance_klass()) {
+    // type array klasses (and their higher domensions),
+    // must have been loaded before a GC can ever happen.
+    return false;
+  }
+
+  // There's a small window during VM start-up where a not-yet loaded aot-linked
+  // class k may be discovered by the GC during VM initialization. This can happen
+  // when the heap contains an aot-cached instance of k, but k is not ready to be
+  // loaded yet. (TODO: JDK-8342429 eliminates this possibility)
+  //
+  // The following checks try to limit this window as much as possible for each of
+  // the four AOTLinkedClassCategory of classes that can be aot-linked.
+
+  InstanceKlass* ik = InstanceKlass::cast(k);
+  if (ik->is_shared_boot_class()) {
+    if (ik->module() != nullptr && ik->in_javabase_module()) {
+      // AOTLinkedClassCategory::BOOT1 -- all aot-linked classes in
+      // java.base must have been loaded before a GC can ever happen.
+      return false;
+    } else {
+      // AOTLinkedClassCategory::BOOT2 classes cannot be loaded until
+      // module system is ready.
+      return !_boot2_completed;
+    }
+  } else if (ik->is_shared_platform_class()) {
+    // AOTLinkedClassCategory::PLATFORM classes cannot be loaded until
+    // the platform class loader is initialized.
+    return !_platform_completed;
+  } else if (ik->is_shared_app_class()) {
+    // AOTLinkedClassCategory::APP cannot be loaded until the app class loader
+    // is initialized.
+    return !_app_completed;
+  } else {
+    return false;
+  }
 }

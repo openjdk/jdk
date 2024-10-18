@@ -43,6 +43,10 @@ enum class AOTLinkedClassCategory : int;
 // in the JVM bootstrap stage, before any application code is executed.
 //
 class AOTLinkedClassBulkLoader :  AllStatic {
+  static bool _boot2_completed;
+  static bool _platform_completed;
+  static bool _app_completed;
+  static bool _all_completed;
   static void load_classes_in_loader(JavaThread* current, AOTLinkedClassCategory class_category, oop class_loader_oop);
   static void load_classes_in_loader_impl(AOTLinkedClassCategory class_category, oop class_loader_oop, TRAPS);
   static void load_table(AOTLinkedClassTable* table, AOTLinkedClassCategory class_category, Handle loader, TRAPS);
@@ -51,13 +55,14 @@ class AOTLinkedClassBulkLoader :  AllStatic {
                                 const char* category_name, Handle loader, TRAPS);
   static void load_hidden_class(ClassLoaderData* loader_data, InstanceKlass* ik, TRAPS);
   static void init_required_classes_for_loader(Handle class_loader, Array<InstanceKlass*>* classes, TRAPS);
-
 public:
   static void serialize(SerializeClosure* soc, bool is_static_archive) NOT_CDS_RETURN;
 
   static void load_javabase_classes(JavaThread* current) NOT_CDS_RETURN;
   static void load_non_javabase_classes(JavaThread* current) NOT_CDS_RETURN;
   static void finish_loading_javabase_classes(TRAPS) NOT_CDS_RETURN;
+
+  static bool is_pending_aot_linked_class(Klass* k);
 };
 
 #endif // SHARE_CDS_AOTLINKEDCLASSBULKLOADER_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/aotLinkedClassBulkLoader.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "code/nmethod.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
@@ -69,3 +70,16 @@ void MarkingNMethodClosure::do_nmethod(nmethod* nm) {
     }
   }
 }
+
+#ifdef ASSERT
+// A not-yet loaded aot-linked class k may be discovered by the GC during VM
+// initialization only. This can happen when the heap contains an aot-cached
+// instance of k, but k is not ready to be loaded yet. (TODO: JDK-8342429
+// eliminates this possibility)
+//
+// AOTLinkedClassBulkLoader checks the the exact (narrow set of) conditions
+// when this could happen.
+void ClaimMetadataVisitingOopIterateClosure::assert_is_pending_aot_linked_class(Klass* k) {
+  assert(AOTLinkedClassBulkLoader::is_pending_aot_linked_class(k), "sanity");
+}
+#endif
