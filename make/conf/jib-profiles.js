@@ -1004,8 +1004,10 @@ var getJibProfilesProfiles = function (input, common, data) {
     };
 
     testOnlyProfilesPrebuiltDocs["run-test-prebuilt-docs"].dependencies.push("docs.doc_api_spec", "tidy");
-    testOnlyProfilesPrebuiltDocs["run-test-prebuilt-docs"].environment["DOCS_JDK_IMAGE_DIR"] = input.get("docs.doc_api_spec", "install_path");
-    testOnlyProfilesPrebuiltDocs["run-test-prebuilt-docs"].environment["TIDY"] = input.get("tidy", "home_path") + "/bin/tidy";
+    testOnlyProfilesPrebuiltDocs["run-test-prebuilt-docs"].environment["DOCS_JDK_IMAGE_DIR"]
+        = input.get("docs.doc_api_spec", "install_path");
+    testOnlyProfilesPrebuiltDocs["run-test-prebuilt-docs"].environment["TIDY"]
+        = input.get("tidy", "home_path") + "/bin/tidy";
     testOnlyProfilesPrebuiltDocs["run-test-prebuilt-docs"].labels = "test-docs";
 
     // If actually running the run-test-prebuilt profile, verify that the input
