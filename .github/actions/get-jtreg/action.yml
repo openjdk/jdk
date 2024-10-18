@@ -40,6 +40,7 @@ runs:
         var: JTREG_VERSION
 
     - name: 'Check cache for JTReg'
+      if: 'false' # enforce building from sources
       id: get-cached-jtreg
       uses: actions/cache@v4
       with:
@@ -50,7 +51,7 @@ runs:
       uses: actions/checkout@v4
       with:
         repository: openjdk/jtreg
-        ref: jtreg-${{ steps.version.outputs.value }}
+        ref: master
         path: jtreg/src
       if: steps.get-cached-jtreg.outputs.cache-hit != 'true'
 
