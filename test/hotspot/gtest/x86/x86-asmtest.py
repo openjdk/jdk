@@ -614,7 +614,9 @@ instruction_set64 = {
         ('shlq', 'shl', 64),
         ('shrq', 'shr', 64),
         ('incrementq', 'inc', 64),
-        ('decrementq', 'dec', 64)
+        ('decrementq', 'dec', 64),
+        ('pushp', 'pushp', 64),
+        ('popp', 'popp', 64)
     ],
     MemInstruction: [
         ('mulq', 'mul', 64),
