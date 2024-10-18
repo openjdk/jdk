@@ -3119,3 +3119,56 @@ void C2_MacroAssembler::extract_fp_v(FloatRegister dst, VectorRegister src, Basi
     vfmv_f_s(dst, tmp);
   }
 }
+
+void C2_MacroAssembler::round_double_mode_v(VectorRegister dst, BasicType dst_bt, uint vector_length,
+                                            VectorRegister src, int round_mode,
+                                            VectorRegister tmp1, VectorRegister tmp2) {
+
+  assert_different_registers(dst, src);
+  assert_different_registers(tmp1, tmp2);
+  vsetvli_helper(dst_bt, vector_length);
+
+  // The vector implementation is similar to the scalar version,
+  // check C2_MacroAssembler::round_double_mode for more details
+  // Set rounding mode for conversions
+  // Here we use similar modes to double->long and long->double conversions
+  // Different mode for long->double conversion matter only if long value was not representable as double,
+  // we got long value as a result of double->long conversion so, it is definitely representable
+  switch (round_mode) {
+    case RoundDoubleModeNode::rmode_ceil:
+      csrwi(CSR_FRM, C2_MacroAssembler::rup);
+      break;
+    case RoundDoubleModeNode::rmode_floor:
+      csrwi(CSR_FRM, C2_MacroAssembler::rdn);
+      break;
+    case RoundDoubleModeNode::rmode_rint:
+      csrwi(CSR_FRM, C2_MacroAssembler::rne);
+      break;
+    default:
+      ShouldNotReachHere();
+  }
+
+  // Conversion from double to long
+  vfcvt_x_f_v(dst, src);
+
+  // Generate constant (100...0000)
+  addi(t0, zr, 1);
+  slli(t0, t0, 63);
+  vmv_v_x(tmp1, t0);
+
+  // Prepare converted long
+  // as a result when conversion overflow we got:
+  // 011...1111 or 100...0000
+  // Convert it to: 100...0000
+  vadd_vi(tmp2, dst, 1);
+  vand_vi(tmp2, tmp2, -2);
+  vmsne_vv(v0, tmp1, tmp2);
+
+  // Conversion from long to double
+  vfcvt_f_x_v(dst, dst, Assembler::v0_t);
+  // Add sign of input value to result for +/- 0 cases
+  vfsgnj_vv(dst, dst, src, Assembler::v0_t);
+
+  // If got conversion overflow return src
+  vmerge_vvm(dst, src, dst);
+}
