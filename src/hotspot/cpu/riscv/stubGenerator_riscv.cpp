@@ -3782,8 +3782,8 @@ class StubGenerator: public StubCodeGenerator {
     Label thaw_success;
     // t1 contains the size of the frames to thaw, 0 if overflow or no more frames
     __ bnez(t1, thaw_success);
-    __ la(t0, RuntimeAddress(SharedRuntime::throw_StackOverflowError_entry()));
-    __ jr(t0);
+    __ la(t1, RuntimeAddress(SharedRuntime::throw_StackOverflowError_entry()));
+    __ jr(t1);
     __ bind(thaw_success);
 
     // make room for the thawed frames
