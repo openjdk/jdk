@@ -1075,16 +1075,18 @@ public class ZipFile implements ZipConstants, Closeable {
     }
 
     /**
-     * Returns the versions for which there exists a non-directory
-     * entry that begin with "META-INF/versions/" (case ignored).
+     * Returns a BitSet where the set bits represents versions found for
+     * the given entry name. For performance reasons, the name is looked
+     * up only by hashcode, meaning the result is an over-approximation.
      * This method is used in JarFile, via SharedSecrets, as an
      * optimization when looking up potentially versioned entries.
-     * Returns an empty array if no versioned entries exist.
+     * Returns an empty BitSet if no versioned entries exist for this
+     * name.
      */
     private BitSet getMetaInfVersions(String name) {
         synchronized (this) {
             ensureOpen();
-            return res.zsrc.metaVersions.getOrDefault(name, EMPTY_VERSIONS);
+            return res.zsrc.metaVersions.getOrDefault(ZipCoder.hash(name), EMPTY_VERSIONS);
         }
     }
 
@@ -1180,7 +1182,7 @@ public class ZipFile implements ZipConstants, Closeable {
         private int   manifestPos = -1;      // position of the META-INF/MANIFEST.MF, if exists
         private int   manifestNum = 0;       // number of META-INF/MANIFEST.MF, case insensitive
         private int[] signatureMetaNames;    // positions of signature related entries, if such exist
-        private Map<String, BitSet> metaVersions; // Set of versions found in META-INF/versions/, by entry name
+        private Map<Integer, BitSet> metaVersions; // Versions found in META-INF/versions/, by entry name hash
         private final boolean startsWithLoc; // true, if ZIP file starts with LOCSIG (usually true)
 
         // A Hashmap for all entries.
@@ -1744,9 +1746,6 @@ public class ZipFile implements ZipConstants, Closeable {
 
             // list for all meta entries
             ArrayList<Integer> signatureNames = null;
-            // Map entry name to the set of versions seen in
-            // META-INF/versions/{version}/{name}
-            Map<String, BitSet> metaVersionsMap = null;
 
             // Iterate through the entries in the central directory
             int idx = 0; // Index into the entries array
@@ -1785,13 +1784,19 @@ public class ZipFile implements ZipConstants, Closeable {
                         // performance in multi-release jar files
                         int version = getMetaVersion(entryPos + META_INF_LEN, nlen - META_INF_LEN);
                         if (version > 0) {
-                            int versionPrefix = META_INF_VERSIONS_LEN + DecimalDigits.stringSize(version);
-                            // Extract name from "META-INF/versions/{version)/{name}
-                            String name = zipCoderForPos(pos).toString(cen, entryPos + versionPrefix, nlen - versionPrefix);
-                            // Add version for name
-                            if (metaVersionsMap == null)
-                                metaVersionsMap = new HashMap<>();
-                            metaVersionsMap.computeIfAbsent(name, _ -> new BitSet()).set(version);
+                            try {
+                                // Compute hash code of name from "META-INF/versions/{version)/{name}
+                                int prefixLen = META_INF_VERSIONS_LEN + DecimalDigits.stringSize(version);
+                                int hashCode = zipCoderForPos(pos).checkedHash(cen,
+                                        entryPos + prefixLen,
+                                        nlen - prefixLen);
+                                // Register version for this hash code
+                                if (metaVersions == null)
+                                    metaVersions = new HashMap<>();
+                                metaVersions.computeIfAbsent(hashCode, _ -> new BitSet()).set(version);
+                            } catch (Exception e) {
+                                throw new IllegalArgumentException(e);
+                            }
                         }
                     }
                 }
@@ -1809,9 +1814,7 @@ public class ZipFile implements ZipConstants, Closeable {
                     signatureMetaNames[j] = signatureNames.get(j);
                 }
             }
-            if (metaVersionsMap != null) {
-                metaVersions = metaVersionsMap;
-            } else {
+            if (metaVersions == null) {
                 metaVersions = Map.of();
             }
             if (pos != cen.length) {
