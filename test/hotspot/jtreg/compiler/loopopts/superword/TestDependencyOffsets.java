@@ -789,6 +789,12 @@ public class TestDependencyOffsets {
                     int floor_pow2 = 1 << log2;
                     builder.append("    //   Vectors must have at most " + floor_pow2 +
                                    " elements to avoid cyclic dependency.\n");
+                    if (floor_pow2 < 2) {
+                        builder.append("    //   Hence, this should never vectorize.\n");
+                        r1.setNegative();
+                    } else {
+                        r1.setSize("min(" + floor_pow2 + ",max_" + type.name + ")");
+                    }
                 } else {
                     // Expect maximal vector size
                 }
@@ -817,17 +823,23 @@ public class TestDependencyOffsets {
         CPUConstraintForType constraint;
         String irNode;
         String size;
+        boolean isPositiveRule;
 
         IRRule(Type type, CPUConstraintForType constraint, String irNode) {
             this.type = type;
             this.constraint = constraint;
             this.irNode = irNode;
             this.size = null;
+            this.isPositiveRule = true;
         }
 
         void setSize(String size) {
             this.size = size;
 	}
+
+        void setNegative() {
+            this.isPositiveRule = false;
+        }
 
         void generate(StringBuilder builder) {
             builder.append(counts());
@@ -844,7 +856,15 @@ public class TestDependencyOffsets {
         }
 
         String counts() {
-            if (size == null) {
+            if (!isPositiveRule) {
+               return String.format("""
+                       @IR(failOn = {IRNode.LOAD_VECTOR_%s,
+                                     IRNode.%s,
+                                     IRNode.STORE_VECTOR},
+                   """,
+                   type.letter(),
+                   irNode);
+            } else if (size == null) {
                return String.format("""
                        @IR(counts = {IRNode.LOAD_VECTOR_%s, ">0",
                                      IRNode.%s, ">0",
