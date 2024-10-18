@@ -84,9 +84,11 @@ public abstract class AbstractAppImageBuilder {
             List<Path> excludes = new ArrayList<>();
 
             for (var path : List.of(TEMP_ROOT.fetchFrom(params), OUTPUT_DIR.fetchFrom(params), root)) {
-                path = path.toAbsolutePath();
-                if (path.startsWith(inputPath) && !Files.isSameFile(path, inputPath)) {
-                    excludes.add(path);
+                if (Files.isDirectory(path)) {
+                    path = path.toAbsolutePath();
+                    if (path.startsWith(inputPath) && !Files.isSameFile(path, inputPath)) {
+                        excludes.add(path);
+                    }
                 }
             }
 
