@@ -341,6 +341,11 @@ public:
 
   static bool vector_needs_partial_operations(Node* node, const TypeVect* vt);
 
+  // Cost-Model for Auto-Vectorization
+  static float cost_for_scalar(int opcode);
+  static float cost_for_vector(int opcode, int vlen, BasicType bt);
+  static float cost_for_vector_reduction(int opcode, int vlen, BasicType bt, bool requires_strict_order);
+
   static const RegMask* predicate_reg_mask(void);
 
   // Vector width in bytes
