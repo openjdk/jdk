@@ -49,7 +49,6 @@
 #include "utilities/align.hpp"
 #include "utilities/powerOfTwo.hpp"
 #if INCLUDE_ZGC
-#include "gc/x/xBarrierSetAssembler.hpp"
 #include "gc/z/zBarrierSetAssembler.hpp"
 #endif
 
@@ -1976,7 +1975,7 @@ class StubGenerator: public StubCodeGenerator {
       generate_conjoint_int_copy_core(aligned);
     } else {
 #if INCLUDE_ZGC
-      if (UseZGC && ZGenerational) {
+      if (UseZGC) {
         ZBarrierSetAssembler *zbs = (ZBarrierSetAssembler*)bs;
         zbs->generate_conjoint_oop_copy(_masm, dest_uninitialized);
       } else
@@ -2019,7 +2018,7 @@ class StubGenerator: public StubCodeGenerator {
       generate_disjoint_int_copy_core(aligned);
     } else {
 #if INCLUDE_ZGC
-      if (UseZGC && ZGenerational) {
+      if (UseZGC) {
         ZBarrierSetAssembler *zbs = (ZBarrierSetAssembler*)bs;
         zbs->generate_disjoint_oop_copy(_masm, dest_uninitialized);
       } else
@@ -2137,7 +2136,7 @@ class StubGenerator: public StubCodeGenerator {
     } else {
       __ bind(store_null);
 #if INCLUDE_ZGC
-      if (UseZGC && ZGenerational) {
+      if (UseZGC) {
         __ store_heap_oop(R10_oop, R8_offset, R4_to, R11_scratch1, R12_tmp, noreg,
                           MacroAssembler::PRESERVATION_FRAME_LR_GP_REGS,
                           dest_uninitialized ? IS_DEST_UNINITIALIZED : 0);
@@ -2153,7 +2152,7 @@ class StubGenerator: public StubCodeGenerator {
     // ======== loop entry is here ========
     __ bind(load_element);
 #if INCLUDE_ZGC
-    if (UseZGC && ZGenerational) {
+    if (UseZGC) {
       __ load_heap_oop(R10_oop, R8_offset, R3_from,
                        R11_scratch1, R12_tmp,
                        MacroAssembler::PRESERVATION_FRAME_LR_GP_REGS,

@@ -25,11 +25,11 @@ package gc.z;
 
 /**
  * @test TestMemoryMXBean
- * @requires vm.gc.ZGenerational
+ * @requires vm.gc.Z
  * @summary Test ZGC heap memory MXBean
  * @modules java.management
- * @run main/othervm -XX:+UseZGC -XX:+ZGenerational -Xms128M -Xmx256M -Xlog:gc* gc.z.TestMemoryMXBean 128 256
- * @run main/othervm -XX:+UseZGC -XX:+ZGenerational -Xms256M -Xmx256M -Xlog:gc* gc.z.TestMemoryMXBean 256 256
+ * @run main/othervm -XX:+UseZGC -Xms128M -Xmx256M -Xlog:gc* gc.z.TestMemoryMXBean 128 256
+ * @run main/othervm -XX:+UseZGC -Xms256M -Xmx256M -Xlog:gc* gc.z.TestMemoryMXBean 256 256
  */
 
 import java.lang.management.ManagementFactory;
