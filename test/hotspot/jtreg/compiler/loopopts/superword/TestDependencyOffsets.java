@@ -684,17 +684,17 @@ public class TestDependencyOffsets {
         int[] always = new int[] {
             0,
             -1, 1,
-        //    -2, 2,     // 2^1
-        //    -3, 3,
-        //    -4, 4,     // 2^2
-        //    -7, 7,
-        //    -8, 8,     // 2^3
-        //    -14, 14,
-        //    -16, 16,   // 2^4
-        //    -18, 18,
-        //    -20, 20,
-        //    -31, 31,
-        //    -32, 32,   // 2^5
+            -2, 2,     // 2^1
+            -3, 3,
+            -4, 4,     // 2^2
+            -7, 7,
+            -8, 8,     // 2^3
+            -14, 14,
+            -16, 16,   // 2^4
+            -18, 18,
+            -20, 20,
+            -31, 31,
+            -32, 32,   // 2^5
         //    -63, 63,
         //    -64, 64,   // 2^6
         //    -65, 65,
@@ -704,13 +704,14 @@ public class TestDependencyOffsets {
         };
         Set<Integer> set = Arrays.stream(always).boxed().collect(Collectors.toSet());
 
-        //// Sample some random values on an exponental scale
-        //for (int i = 0; i < 10; i++) {
-        //    int base = 4 << i;
-        //    int offset = base + RANDOM.nextInt(base);
-        //    set.add(offset);
-        //    set.add(-offset);
-        //}
+        // TODO
+        // // Sample some random values on an exponental scale
+        // for (int i = 0; i < 10; i++) {
+        //     int base = 4 << i;
+        //     int offset = base + RANDOM.nextInt(base);
+        //     set.add(offset);
+        //     set.add(-offset);
+        // }
 
         List<Integer> offsets = new ArrayList<Integer>(set);
         return offsets;
@@ -779,22 +780,24 @@ public class TestDependencyOffsets {
                 // General condition for vectorization:
                 //   at least 4 bytes:    width >= 4
                 //   at least 2 elements: width >= 2 * type.size
-                int minVectorSize = Math.max(4, 2 * type.size);
+                int minVectorWidth = Math.max(4, 2 * type.size);
 
                 int byte_offset = offset * type.size;
 
                 // -XX:-AlignVector
                 IRRule r1 = new IRRule(type, vwConstraint, type.irNode);
                 r1.addConstraint("AlignVector", new BoolConstraint(false, true));
-                r1.addConstraint("MaxVectorSize", new IntConstraint(minVectorSize, null));
+                r1.addConstraint("MaxVectorSize", new IntConstraint(minVectorWidth, null));
                 if (0 < byte_offset && byte_offset < vwConstraint.platformVectorWidth) {
                     // Vectors have to be shorter to avoid cyclic dependency.
                     int log2 = 31 - Integer.numberOfLeadingZeros(offset);
                     int floor_pow2 = 1 << log2;
+                    int maxVectorWidth = floor_pow2 * type.size;
                     builder.append("    //   Vectors must have at most " + floor_pow2 +
-                                   " elements to avoid cyclic dependency.\n");
-                    if (floor_pow2 < 2) {
-                        builder.append("    //   Hence, this should never vectorize.\n");
+                                   " elements and a size of at most " + maxVectorWidth +
+                                   " bytes to avoid cyclic dependency.\n");
+                    if (maxVectorWidth < minVectorWidth) {
+                        builder.append("    //   Not at least 2 elements or 4 bytes -> no vectorization.\n");
                         r1.setNegative();
                     } else {
                         r1.setSize("min(" + floor_pow2 + ",max_" + type.name + ")");
