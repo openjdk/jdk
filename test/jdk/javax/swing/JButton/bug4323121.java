@@ -102,7 +102,7 @@ public final class bug4323121 {
                                          location.y + button.getHeight() / 2);
             });
 
-            robot.mouseMove(buttonCenter.x , buttonCenter.y);
+            robot.mouseMove(buttonCenter.x, buttonCenter.y);
 
             if (!mouseEntered.await(1, SECONDS)) {
                 throw new RuntimeException("Mouse entered event wasn't received");
