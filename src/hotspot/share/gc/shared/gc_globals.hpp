@@ -536,6 +536,10 @@
           "Soft limit for maximum heap size (in bytes)")                    \
           constraint(SoftMaxHeapSizeConstraintFunc,AfterMemoryInit)         \
                                                                             \
+  product(size_t, CurrentMaxHeapSize, 0, MANAGEABLE,                        \
+          "This flag is set by Adaptable Heap Sizing as the maximum size "  \
+          "of the heap can , based on container usage and limits.")         \
+                                                                            \
   product(size_t, NewSize, ScaleForWordSize(1*M),                           \
           "Initial new generation size (in bytes)")                         \
           constraint(NewSizeConstraintFunc,AfterErgo)                       \
