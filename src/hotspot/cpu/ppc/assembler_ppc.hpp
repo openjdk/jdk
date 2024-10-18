@@ -1699,11 +1699,13 @@ class Assembler : public AbstractAssembler {
   // 4 bytes
   inline void lwzx( Register d, Register s1, Register s2);
   inline void lwz(  Register d, int si16,    Register s1);
+  inline void lwz(  Register d, Address &a);
   inline void lwzu( Register d, int si16,    Register s1);
 
   // 4 bytes
   inline void lwax( Register d, Register s1, Register s2);
   inline void lwa(  Register d, int si16,    Register s1);
+  inline void lwa(  Register d, Address &a);
 
   // 4 bytes reversed
   inline void lwbrx( Register d, Register s1, Register s2);
@@ -1711,6 +1713,7 @@ class Assembler : public AbstractAssembler {
   // 2 bytes
   inline void lhzx( Register d, Register s1, Register s2);
   inline void lhz(  Register d, int si16,    Register s1);
+  inline void lhz(  Register d, Address &a);
   inline void lhzu( Register d, int si16,    Register s1);
 
   // 2 bytes reversed
@@ -1719,16 +1722,19 @@ class Assembler : public AbstractAssembler {
   // 2 bytes
   inline void lhax( Register d, Register s1, Register s2);
   inline void lha(  Register d, int si16,    Register s1);
+  inline void lha(  Register d, Address &a);
   inline void lhau( Register d, int si16,    Register s1);
 
   // 1 byte
   inline void lbzx( Register d, Register s1, Register s2);
   inline void lbz(  Register d, int si16,    Register s1);
+  inline void lbz(  Register d, Address &a);
   inline void lbzu( Register d, int si16,    Register s1);
 
   // 8 bytes
   inline void ldx(  Register d, Register s1, Register s2);
   inline void ld(   Register d, int si16,    Register s1);
+  inline void ld(   Register d, Address &a);
   inline void ld(   Register d, ByteSize si16, Register s1);
   inline void ldu(  Register d, int si16,    Register s1);
 
@@ -1741,20 +1747,24 @@ class Assembler : public AbstractAssembler {
 
   //  PPC 1, section 3.3.3 Fixed-Point Store Instructions
   inline void stwx( Register d, Register s1, Register s2);
+  inline void stw(  Register d, Address &a);
   inline void stw(  Register d, int si16,    Register s1);
   inline void stwu( Register d, int si16,    Register s1);
   inline void stwbrx( Register d, Register s1, Register s2);
 
   inline void sthx( Register d, Register s1, Register s2);
+  inline void sth(  Register d, Address &a);
   inline void sth(  Register d, int si16,    Register s1);
   inline void sthu( Register d, int si16,    Register s1);
   inline void sthbrx( Register d, Register s1, Register s2);
 
   inline void stbx( Register d, Register s1, Register s2);
+  inline void stb(  Register d, Address &a);
   inline void stb(  Register d, int si16,    Register s1);
   inline void stbu( Register d, int si16,    Register s1);
 
   inline void stdx( Register d, Register s1, Register s2);
+  inline void std(  Register d, Address &a);
   inline void std(  Register d, int si16,    Register s1);
   inline void stdu( Register d, int si16,    Register s1);
   inline void stdux(Register s, Register a,  Register b);
