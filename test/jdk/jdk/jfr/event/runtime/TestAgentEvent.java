@@ -65,7 +65,7 @@ import jdk.test.lib.jfr.TestClassLoader;
  *      jdk.jfr.event.runtime.TestAgentEvent
  *      testJavaDynamic
  *
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:-UseFastUnorderedTimeStamps -agentlib:jdwp=transport=dt_socket,server=y,address=any,onjcmd=y
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:-UseFastUnorderedTimeStamps -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=0
  *      jdk.jfr.event.runtime.TestAgentEvent
  *      testNativeStatic
  */
@@ -122,7 +122,7 @@ public final class TestAgentEvent {
             RecordedEvent e = events.get(1);
             System.out.println(e);
             Events.assertField(e, "name").equal("jdwp");
-            Events.assertField(e, "options").equal("transport=dt_socket,server=y,address=any,onjcmd=y");
+            Events.assertField(e, "options").equal("transport=dt_socket,server=y,suspend=n,address=0");
             Events.assertField(e, "dynamic").equal(false);
             Instant initializationTime = e.getInstant("initializationTime");
             if (initializationTime.isAfter(interval.getStartTime())) {
