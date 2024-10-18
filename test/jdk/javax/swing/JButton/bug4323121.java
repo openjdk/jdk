@@ -44,7 +44,7 @@ import javax.swing.SwingUtilities;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 
-public final class bug4323121 extends MouseAdapter {
+public final class bug4323121 {
 
     static JFrame frame;
     static JButton button;
@@ -65,7 +65,15 @@ public final class bug4323121 extends MouseAdapter {
         try {
             SwingUtilities.invokeAndWait(() -> {
                 button = new TestButton("gotcha");
-                button.addMouseListener(new bug4323121());
+                button.addMouseListener(new MouseAdapter() {
+                    @Override
+                    public void mouseEntered(MouseEvent e) {
+                        if (button.getModel().isArmed()) {
+                            modelArmed = true;
+                        }
+                        mouseEntered.countDown();
+                    }
+                });
 
                 frame = new JFrame("bug4323121");
                 frame.getContentPane().add(button);
@@ -118,11 +126,4 @@ public final class bug4323121 extends MouseAdapter {
         }
     }
 
-    @Override
-    public void mouseEntered(MouseEvent e) {
-        if (button.getModel().isArmed()) {
-            modelArmed = true;
-        }
-        mouseEntered.countDown();
-    }
 }
