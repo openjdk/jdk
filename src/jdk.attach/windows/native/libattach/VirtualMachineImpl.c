@@ -46,9 +46,11 @@ static IsWow64ProcessFunc _IsWow64Process;
 typedef BOOL  (WINAPI *EnumProcessModulesFunc)  (HANDLE, HMODULE *, DWORD, LPDWORD );
 typedef DWORD (WINAPI *GetModuleFileNameExFunc) ( HANDLE, HMODULE, LPTSTR, DWORD );
 
-/* exported function in target VM */
+/* exported functions in target VM */
 typedef jint (WINAPI* EnqueueOperationFunc)
     (const char* cmd, const char* arg1, const char* arg2, const char* arg3, const char* pipename);
+typedef jint (WINAPI* EnqueueOperationFunc_v2)
+    (const char* pipename);
 
 /* OpenProcess with SE_DEBUG_NAME privilege */
 static HANDLE
@@ -70,11 +72,13 @@ static jboolean jstring_to_cstring(JNIEnv* env, jstring jstr, char* cstr, size_t
 #define MAX_PIPE_NAME_LENGTH    256
 
 typedef struct {
+   jint version;
    GetModuleHandleFunc _GetModuleHandle;
    GetProcAddressFunc _GetProcAddress;
    char jvmLib[MAX_LIBNAME_LENGTH];         /* "jvm.dll" */
    char func1[MAX_FUNC_LENGTH];
    char func2[MAX_FUNC_LENGTH];
+   char func_v2[MAX_FUNC_LENGTH];
    char cmd[MAX_CMD_LENGTH + 1];            /* "load", "dump", ...      */
    char arg[MAX_ARGS][MAX_ARG_LENGTH + 1];  /* arguments to command     */
    char pipename[MAX_PIPE_NAME_LENGTH + 1];
@@ -102,27 +106,36 @@ DEF_STATIC_JNI_OnLoad
 DWORD WINAPI jvm_attach_thread_func(DataBlock *pData)
 {
     HINSTANCE h;
-    EnqueueOperationFunc addr;
 
     h = pData->_GetModuleHandle(pData->jvmLib);
     if (h == NULL) {
         return ERR_OPEN_JVM_FAIL;
     }
 
-    addr = (EnqueueOperationFunc)(pData->_GetProcAddress(h, pData->func1));
-    if (addr == NULL) {
-        addr = (EnqueueOperationFunc)(pData->_GetProcAddress(h, pData->func2));
-    }
-    if (addr == NULL) {
+    if (pData->version == 1) {
+        EnqueueOperationFunc addr = (EnqueueOperationFunc)(pData->_GetProcAddress(h, pData->func1));
+        if (addr == NULL) {
+            addr = (EnqueueOperationFunc)(pData->_GetProcAddress(h, pData->func2));
+        }
+        if (addr == NULL) {
+            return ERR_GET_ENQUEUE_FUNC_FAIL;
+        }
+        /* "null" command - does nothing in the target VM */
+        if (pData->cmd[0] == '\0') {
+            return 0;
+        } else {
+            return (*addr)(pData->cmd, pData->arg[0], pData->arg[1], pData->arg[2], pData->pipename);
+        }
+    } else if (pData->version == 2) {
+        EnqueueOperationFunc_v2 addr = (EnqueueOperationFunc_v2)(pData->_GetProcAddress(h, pData->func_v2));
+        if (addr == NULL) {
+            return ERR_GET_ENQUEUE_FUNC_FAIL;
+        }
+        return (*addr)(pData->pipename);
+    } else {
         return ERR_GET_ENQUEUE_FUNC_FAIL;
     }
 
-    /* "null" command - does nothing in the target VM */
-    if (pData->cmd[0] == '\0') {
-        return 0;
-    } else {
-        return (*addr)(pData->cmd, pData->arg[0], pData->arg[1], pData->arg[2], pData->pipename);
-    }
 }
 
 /* This function marks the end of jvm_attach_thread_func. */
@@ -261,7 +274,7 @@ JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_closeProcess
  * Signature: (Ljava/lang/String;)J
  */
 JNIEXPORT jlong JNICALL Java_sun_tools_attach_VirtualMachineImpl_createPipe
-  (JNIEnv *env, jclass cls, jstring pipename)
+  (JNIEnv *env, jclass cls, jint ver, jstring pipename)
 {
     HANDLE hPipe;
     char name[MAX_PIPE_NAME_LENGTH];
@@ -289,7 +302,8 @@ JNIEXPORT jlong JNICALL Java_sun_tools_attach_VirtualMachineImpl_createPipe
 
     hPipe = CreateNamedPipe(
           name,                         // pipe name
-          PIPE_ACCESS_INBOUND,          // read access
+          ver == 1 ? PIPE_ACCESS_INBOUND  // read access
+                   : PIPE_ACCESS_DUPLEX,  // read-write access
           PIPE_TYPE_BYTE |              // byte mode
             PIPE_READMODE_BYTE |
             PIPE_WAIT,                  // blocking mode
@@ -379,12 +393,44 @@ JNIEXPORT jint JNICALL Java_sun_tools_attach_VirtualMachineImpl_readPipe
 
 /*
  * Class:     sun_tools_attach_VirtualMachineImpl
+ * Method:    writePipe
+ * Signature: (J[BII)V
+ */
+JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_writePipe
+  (JNIEnv *env, jclass cls, jlong hPipe, jbyteArray buffer, jint offset, jint length)
+{
+    jsize remaining = length;
+    do {
+        jbyte buf[128];
+        jsize len = sizeof(buf);
+        DWORD written;
+
+        if (len > remaining) {
+            len = remaining;
+        }
+        (*env)->GetByteArrayRegion(env, buffer, offset, len, buf);
+
+        BOOL fSuccess = WriteFile((HANDLE)hPipe, buf, len, &written, NULL);
+
+        if (!fSuccess) {
+            JNU_ThrowIOExceptionWithLastError(env, "WriteFile");
+            return;
+        }
+
+        offset += written;
+        remaining -= written;
+
+    } while (remaining > 0);
+}
+
+/*
+ * Class:     sun_tools_attach_VirtualMachineImpl
  * Method:    enqueue
  * Signature: (JZLjava/lang/String;[Ljava/lang/Object;)V
  */
 JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_enqueue
-  (JNIEnv *env, jclass cls, jlong handle, jbyteArray stub, jstring cmd,
-   jstring pipename, jobjectArray args)
+  (JNIEnv *env, jclass cls, jlong handle, jbyteArray stub, jint ver,
+   jstring cmd, jstring pipename, jobjectArray args)
 {
     DataBlock data;
     DataBlock* pData;
@@ -399,12 +445,15 @@ JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_enqueue
      * Setup data to copy to target process
      */
     memset(&data, 0, sizeof(data));
+    data.version = ver;
+
     data._GetModuleHandle = _GetModuleHandle;
     data._GetProcAddress = _GetProcAddress;
 
     strcpy(data.jvmLib, "jvm");
     strcpy(data.func1, "JVM_EnqueueOperation");
     strcpy(data.func2, "_JVM_EnqueueOperation@20");
+    strcpy(data.func_v2, "JVM_EnqueueOperation_v2");
 
     /*
      * Command and arguments
