@@ -1489,6 +1489,16 @@ public class IRNode {
         vectorNode(RSHIFT_VI, "RShiftVI", TYPE_INT);
     }
 
+    public static final String SAFEPOINT_SCALAR_MERGE = PREFIX + "SAFEPOINT_SCALAR_MERGE" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(SAFEPOINT_SCALAR_MERGE, "SafePointScalarMerge");
+    }
+
+    public static final String SAFEPOINT_SCALAR_OBJECT = PREFIX + "SAFEPOINT_SCALAR_OBJECT" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(SAFEPOINT_SCALAR_OBJECT, "SafePointScalarObject");
+    }
+
     public static final String RSHIFT_VL = VECTOR_PREFIX + "RSHIFT_VL" + POSTFIX;
     static {
         vectorNode(RSHIFT_VL, "RShiftVL", TYPE_LONG);
