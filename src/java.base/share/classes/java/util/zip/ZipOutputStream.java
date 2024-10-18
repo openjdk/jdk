@@ -32,6 +32,7 @@ import java.util.Objects;
 import java.util.Vector;
 import java.util.HashSet;
 import static java.util.zip.ZipConstants64.*;
+import static java.util.zip.ZipEntry.isCENHeaderValid;
 import static java.util.zip.ZipUtils.*;
 import sun.nio.cs.UTF_8;
 import sun.security.action.GetBooleanAction;
@@ -262,6 +263,12 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
         }
         if (zc.isUTF8())
             e.flag |= USE_UTF8;
+        // CEN header size + name length + comment length + extra length
+        // should not exceed 65,535 bytes per the PKWare APP.NOTE
+        // 4.4.10, 4.4.11, & 4.4.12.
+        if (!isCENHeaderValid(e.name, e.extra, e.comment) ) {
+            throw new ZipException("invalid CEN header (bad header size)");
+        }
         current = new XEntry(e, written);
         xentries.add(current);
         writeLOC(current);
@@ -602,6 +609,22 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
         if (hasZip64) {
             elen += (elenZIP64 + 4);// + headid(2) + datasize(2)
         }
+
+        int clen = 0;
+        byte[] commentBytes = null;
+        if (e.comment != null) {
+            commentBytes = zc.getBytes(e.comment);
+            clen = commentBytes.length;
+        }
+
+        // CEN header size + name length + comment length + extra length
+        // should not exceed 65,535 bytes per the PKWare APP.NOTE
+        // 4.4.10, 4.4.11, & 4.4.12.
+        long headerSize = (long)CENHDR + nlen + clen + elen;
+        if (headerSize > 0xFFFF ) {
+            throw new ZipException("invalid CEN header (bad header size)");
+        }
+
         // cen info-zip extended timestamp only outputs mtime
         // but set the flag for a/ctime, if present in loc
         int flagEXTT = 0;
@@ -633,12 +656,6 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
             }
         }
         writeShort(elen);
-        byte[] commentBytes = null;
-        int clen = 0;
-        if (e.comment != null) {
-            commentBytes = zc.getBytes(e.comment);
-            clen = Math.min(commentBytes.length, 0xffff);
-        }
         writeShort(clen);              // file comment length
         writeShort(0);              // starting disk number
         writeShort(0);              // internal file attributes (unused)
@@ -686,13 +703,6 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
             }
         }
 
-        // CEN header size + name length + comment length + extra length
-        // should not exceed 65,535 bytes per the PKWare APP.NOTE
-        // 4.4.10, 4.4.11, & 4.4.12.
-        long headerSize = (long)CENHDR + nlen + clen + elen;
-        if (headerSize > 0xFFFF ) {
-            throw new ZipException("invalid CEN header (bad header size)");
-        }
         writeExtra(e.extra);
         if (commentBytes != null) {
             writeBytes(commentBytes, 0, clen);
