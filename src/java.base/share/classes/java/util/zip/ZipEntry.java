@@ -103,7 +103,7 @@ public class ZipEntry implements ZipConstants, Cloneable {
      *
      * @throws NullPointerException if the entry name is null
      * @throws IllegalArgumentException if the combined length of the entry name
-     * and {@linkplain #CENHDR CEN Header size} exceeds 65,535 bytes.
+     * and the {@linkplain #CENHDR CEN Header size} exceeds 65,535 bytes.
      */
     public ZipEntry(String name) {
         Objects.requireNonNull(name, "name");
@@ -524,7 +524,7 @@ public class ZipEntry implements ZipConstants, Cloneable {
      *
      * @throws IllegalArgumentException if the combined length of the specified
      * extra field data, the {@linkplain #getName() entry name},
-     * the {@linkplain #getComment() entry comment}, and
+     * the {@linkplain #getComment() entry comment}, and the
      * {@linkplain #CENHDR CEN Header size}, exceeds 65,535 bytes.
      *
      * @see #getExtra()
@@ -649,8 +649,8 @@ public class ZipEntry implements ZipConstants, Cloneable {
      * Sets the optional comment string for the entry.
      * @param comment the comment string
      * @throws IllegalArgumentException if the combined length
-     * of the specified entry comment, {@linkplain #getName() entry name},
-     * the {@linkplain #getExtra() extra field data}, and
+     * of the specified entry comment, the {@linkplain #getName() entry name},
+     * the {@linkplain #getExtra() extra field data}, and the
      * {@linkplain #CENHDR CEN Header size}, exceeds 65,535 bytes.
      * @see #getComment()
      */
@@ -720,10 +720,10 @@ public class ZipEntry implements ZipConstants, Cloneable {
      * @param comment Zip entry comment
      * @return true if valid CEN Header size; false otherwise
      */
-    private static  boolean isCENHeaderValid(String name, byte[] extra, String comment) {
+     static boolean isCENHeaderValid(String name, byte[] extra, String comment) {
         int clen = comment == null ? 0 : comment.length();
         int elen = extra == null ? 0 : extra.length;
-        int headerSize = CENHDR + name.length() + clen + elen;
-        return headerSize <= MAX_COMBINED_CEN_HEADER_SIZE ? true : false;
+        long headerSize = (long)CENHDR + name.length() + clen + elen;
+        return headerSize <= MAX_COMBINED_CEN_HEADER_SIZE;
     }
 }

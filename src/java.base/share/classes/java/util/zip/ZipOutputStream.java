@@ -32,6 +32,7 @@ import java.util.Objects;
 import java.util.Vector;
 import java.util.HashSet;
 import static java.util.zip.ZipConstants64.*;
+import static java.util.zip.ZipEntry.isCENHeaderValid;
 import static java.util.zip.ZipUtils.*;
 import sun.nio.cs.UTF_8;
 import sun.security.action.GetBooleanAction;
@@ -265,10 +266,7 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
         // CEN header size + name length + comment length + extra length
         // should not exceed 65,535 bytes per the PKWare APP.NOTE
         // 4.4.10, 4.4.11, & 4.4.12.
-        int clen = e.comment == null ? 0 : e.comment.length();
-        int elen = e.extra == null ? 0 : e.extra.length;
-        int headerSize = CENHDR + e.name.length() + clen + elen;
-        if (headerSize > 0xFFFF ) {
+        if (!isCENHeaderValid(e.name, e.extra, e.comment) ) {
             throw new ZipException("invalid CEN header (bad header size)");
         }
         current = new XEntry(e, written);
@@ -622,7 +620,7 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
         // CEN header size + name length + comment length + extra length
         // should not exceed 65,535 bytes per the PKWare APP.NOTE
         // 4.4.10, 4.4.11, & 4.4.12.
-        int headerSize = CENHDR + nlen + clen + elen;
+        long headerSize = (long)CENHDR + nlen + clen + elen;
         if (headerSize > 0xFFFF ) {
             throw new ZipException("invalid CEN header (bad header size)");
         }
