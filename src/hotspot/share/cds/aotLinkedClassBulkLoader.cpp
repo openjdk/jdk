@@ -247,6 +247,11 @@ void AOTLinkedClassBulkLoader::initiate_loading(JavaThread* current, const char*
 // to support class unloading. For simplicity, we put all archived LambdaForm classes in the
 // "main" ClassLoaderData of the boot loader.
 //
+// (Even if we were to support other loaders, we would still feel free to ignore any requirement
+// of class unloading, for any class asset in the AOT cache.  Anything that makes it into the AOT
+// cache has a lifetime dispensation from unloading.  After all, the AOT cache never grows, and
+// we can assume that the user is content with its size, and doesn't need its footprint to shrink.)
+//
 // Lambda proxy classes are normally stored in the same ClassLoaderData as their nest hosts, and
 // StringConcat are normally stored in the main ClassLoaderData of the boot class loader. We
 // do the same for the archived copies of such classes.
@@ -263,6 +268,10 @@ void AOTLinkedClassBulkLoader::load_hidden_class(ClassLoaderData* loader_data, I
 
   Handle pd;
   PackageEntry* pkg_entry = nullptr;
+
+  // Since a hidden class does not have a name, it cannot be reloaded
+  // normally via the system dictionary. Instead, we have to finish the
+  // loading job here.
 
   if (HeapShared::is_lambda_proxy_klass(ik)) {
     InstanceKlass* nest_host = ik->nest_host_not_null();
@@ -308,11 +317,7 @@ void AOTLinkedClassBulkLoader::init_required_classes_for_loader(Handle class_loa
         continue;
       }
       if (ik->has_aot_initialized_mirror()) {
-        // No <clinit> of ik or any of its supertypes will be executed.
-        // Their mirrors were already initialized during AOT cache assembly.
-        AOTClassInitializer::assert_no_clinit_will_run_for_aot_init_class(ik);
-
-        ik->initialize_from_cds(CHECK);
+        ik->initialize_with_aot_initialized_mirror(CHECK);
       }
     }
   }

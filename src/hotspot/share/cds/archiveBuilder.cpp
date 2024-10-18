@@ -900,7 +900,7 @@ void ArchiveBuilder::make_klasses_shareable() {
 
       if (ik->is_interface()) {
         kind = " interface";
-      } else if (src_ik->java_super() == vmClasses::Enum_klass()) {
+      } else if (src_ik->is_enum_subclass()) {
         kind = " enum";
         ADD_COUNT(num_enum_klasses);
       }

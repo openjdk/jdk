@@ -194,9 +194,10 @@ private:
     // This class was not loaded from a classfile in the module image
     // or classpath.
     _is_generated_shared_class             = 1 << 5,
-    // The archived mirror is already initialized dur AOT-cache assembly. No need to call <clinit>
+    // archived mirror already initialized by AOT-cache assembly: no further need to call <clinit>
     _has_aot_initialized_mirror            = 1 << 6,
-    // If this class has an aot-inititalized mirror, does this class require runtimeSetup() to be called?
+    // If this class has been aot-inititalized, do we need to call its runtimeSetup()
+    // method during the production run?
     _is_runtime_setup_required             = 1 << 7,
   };
 #endif

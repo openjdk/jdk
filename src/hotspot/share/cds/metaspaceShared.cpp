@@ -870,6 +870,9 @@ void MetaspaceShared::preload_and_dump_impl(StaticArchiveBuilder& builder, TRAPS
       Symbol* method_sig = vmSymbols::void_method_signature();
       JavaCalls::call_static(&result, vmClasses::Class_klass(),
                              method_name, method_sig, CHECK);
+
+      // Perhaps there is a way to avoid hard-coding these names here.
+      // See discussion in JDK-8342481.
     }
 
     // Do this at the very end, when no Java code will be executed. Otherwise

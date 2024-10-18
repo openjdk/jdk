@@ -432,6 +432,12 @@ void HeapShared::remove_scratch_objects(Klass* k) {
   }
 }
 
+//TODO: we eventually want a more direct test for these kinds of things.
+//For example the JVM could record some bit of context from the creation
+//of the klass, such as who called the hidden class factory.  Using
+//string compares on names is fragile and will break as soon as somebody
+//changes the names in the JDK code.  See discussion in JDK-8342481 for
+//related ideas about marking AOT-related classes.
 bool HeapShared::is_lambda_form_klass(InstanceKlass* ik) {
   return ik->is_hidden() &&
     (ik->name()->starts_with("java/lang/invoke/LambdaForm$MH+") ||
@@ -844,22 +850,63 @@ public:
   bool made_progress() { return _made_progress; }
 };
 
+// If <buffered_ik> has been initialized during the assembly phase, mark its
+// has_aot_initialized_mirror bit. And then do the same for all supertypes of
+// <buffered_ik>.
+//
+// Note: a super interface <intf> of <buffered_ik> may not have been initialized, if
+// <intf> has not declared any default methods.
+//
+// Note: this function doesn not call InstanceKlass::initialize() -- we are inside
+// a safepoint.
+//
+// Returns true if one or more classes have been newly marked.
 static bool mark_for_aot_initialization(InstanceKlass* buffered_ik) {
-  if (buffered_ik->name()->equals("java/lang/String")) {
+  assert(SafepointSynchronize::is_at_safepoint(), "sanity");
+  assert(ArchiveBuilder::current()->is_in_buffer_space(buffered_ik), "sanity");
+
+  if (buffered_ik->has_aot_initialized_mirror()) { // already marked
     return false;
   }
 
-  assert(ArchiveBuilder::current()->is_in_buffer_space(buffered_ik), "sanity");
-
   bool made_progress = false;
-  if (buffered_ik->is_initialized() && !buffered_ik->has_aot_initialized_mirror()) {
+  if (buffered_ik->is_initialized()) {
     if (log_is_enabled(Info, cds, init)) {
       ResourceMark rm;
       log_info(cds, init)("Mark class for aot-init: %s", buffered_ik->external_name());
     }
 
+    InstanceKlass* src_ik = ArchiveBuilder::current()->get_source_addr(buffered_ik);
+
+    // If we get here with a "wild" user class, which may have
+    // uncontrolled <clinit> code, exit with an error.  Obviously
+    // filtering logic upstream needs to detect APP classes and not mark
+    // them for aot-init in the first place, but this will be the final
+    // firewall.
+
+#ifndef PRODUCT
+    // ArchiveHeapTestClass is used for a very small number of internal regression
+    // tests (non-product builds only). It may initialize some unexpected classes.
+    if (ArchiveHeapTestClass == nullptr)
+#endif
+    {
+      if (!src_ik->in_javabase_module()) {
+        // Class/interface types in the boot loader may have been initialized as side effects
+        // of JVM bootstrap code, so they are fine. But we need to check all other classes.
+        if (buffered_ik->is_interface()) {
+          // This probably means a bug in AOTConstantPoolResolver.::is_indy_resolution_deterministic()
+          guarantee(!buffered_ik->interface_needs_clinit_execution_as_super(),
+                    "should not have initialized an interface whose <clinit> might have unpredictable side effects");
+        } else {
+          // "normal" classes
+          guarantee(HeapShared::is_archivable_hidden_klass(buffered_ik),
+                    "should not have initialized any non-interface, non-hidden classes outside of java.base");
+        }
+      }
+    }
+
     buffered_ik->set_has_aot_initialized_mirror();
-    if (AOTClassInitializer::is_runtime_setup_required(ArchiveBuilder::current()->get_source_addr(buffered_ik))) {
+    if (AOTClassInitializer::is_runtime_setup_required(src_ik)) {
       buffered_ik->set_is_runtime_setup_required();
     }
     made_progress = true;
@@ -869,9 +916,14 @@ static bool mark_for_aot_initialization(InstanceKlass* buffered_ik) {
       mark_for_aot_initialization(super);
     }
 
-    Array<InstanceKlass*>* interfaces = buffered_ik->local_interfaces();
+    Array<InstanceKlass*>* interfaces = buffered_ik->transitive_interfaces();
     for (int i = 0; i < interfaces->length(); i++) {
-      mark_for_aot_initialization(interfaces->at(i));
+      InstanceKlass* intf = interfaces->at(i);
+      mark_for_aot_initialization(intf);
+      if (!intf->is_initialized()) {
+        assert(!intf->interface_needs_clinit_execution_as_super(/*also_check_supers*/false), "sanity");
+        assert(!intf->has_aot_initialized_mirror(), "must not be marked");
+      }
     }
   }
 
@@ -1127,25 +1179,6 @@ bool KlassSubGraphInfo::is_non_early_klass(Klass* k) {
   }
 }
 
-static bool is_trivial_clinit(InstanceKlass* ik) {
-  if (ik->class_initializer() != nullptr) {
-    return false;
-  }
-
-  InstanceKlass* super = ik->java_super();
-  if (super != nullptr && !is_trivial_clinit(super)) {
-    return false;
-  }
-
-  Array<InstanceKlass*>* interfaces = ik->local_interfaces();
-  for (int i = 0; i < interfaces->length(); i++) {
-    if (!is_trivial_clinit(interfaces->at(i))) {
-      return false;
-    }
-  }
-  return true;
-}
-
 // Initialize an archived subgraph_info_record from the given KlassSubGraphInfo.
 void ArchivedKlassSubGraphInfoRecord::init(KlassSubGraphInfo* info) {
   _k = info->klass();
@@ -1193,16 +1226,12 @@ void ArchivedKlassSubGraphInfoRecord::init(KlassSubGraphInfo* info) {
       if (log_is_enabled(Info, cds, heap)) {
         ResourceMark rm;
         const char* owner_name =  is_special ? "<special>" : _k->external_name();
-        const char* trivial_clinit = "";
         if (subgraph_k->is_instance_klass()) {
           InstanceKlass* src_ik = InstanceKlass::cast(ArchiveBuilder::current()->get_source_addr(subgraph_k));
-          if (is_trivial_clinit(InstanceKlass::cast(src_ik))) {
-            trivial_clinit = " (trivial clinit)";
-          }
         }
         log_info(cds, heap)(
-          "Archived object klass %s (%2d) => %s%s",
-          owner_name, i, subgraph_k->external_name(), trivial_clinit);
+          "Archived object klass %s (%2d) => %s",
+          owner_name, i, subgraph_k->external_name());
       }
       _subgraph_object_klasses->at_put(i, subgraph_k);
       ArchivePtrMarker::mark_pointer(_subgraph_object_klasses->adr_at(i));

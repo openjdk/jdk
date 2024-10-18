@@ -187,7 +187,7 @@ public:
 
       if (field_type->is_instance_klass()) {
         InstanceKlass* field_ik = InstanceKlass::cast(field_type);
-        if (field_ik->java_super() == vmClasses::Enum_klass()) {
+        if (field_ik->is_enum_subclass()) {
           if (field_ik->has_archived_enum_objs() || ArchiveUtils::has_aot_initialized_mirror(field_ik)) {
             // This field is an Enum. If any instance of this Enum has been archived, we will archive
             // all static fields of this Enum as well.

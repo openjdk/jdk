@@ -120,9 +120,9 @@ public:
 // in two phases during the production run.
 enum class AOTLinkedClassCategory : int {
   BOOT1,       // Only java.base classes are loaded in the 1st phase
-  BOOT2,       // All boots classes that not in java.base are loaded in the 2nd phase
-  PLATFORM,
-  APP,
+  BOOT2,       // All boot classes that not in java.base are loaded in the 2nd phase
+  PLATFORM,    // Classes for platform loader, loaded in the 2nd phase
+  APP,         // Classes for the app loader, loaded in the 2nd phase
   UNREGISTERED // classes loaded outside of the boot/platform/app loaders; currently not supported by AOTClassLinker
 };
 
