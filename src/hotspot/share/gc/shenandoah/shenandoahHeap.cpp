@@ -573,8 +573,12 @@ void ShenandoahHeap::print_on(outputStream* st) const {
 
   st->print("Status: ");
   if (has_forwarded_objects())                 st->print("has forwarded objects, ");
-  if (is_concurrent_old_mark_in_progress())    st->print("old marking, ");
-  if (is_concurrent_young_mark_in_progress())  st->print("young marking, ");
+  if (!mode()->is_generational()) {
+    if (is_concurrent_mark_in_progress())      st->print("marking,");
+  } else {
+    if (is_concurrent_old_mark_in_progress())    st->print("old marking, ");
+    if (is_concurrent_young_mark_in_progress())  st->print("young marking, ");
+  }
   if (is_evacuation_in_progress())             st->print("evacuating, ");
   if (is_update_refs_in_progress())            st->print("updating refs, ");
   if (is_degenerated_gc_in_progress())         st->print("degenerated gc, ");
