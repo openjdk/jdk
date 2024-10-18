@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,13 @@
 package sun.reflect.generics.reflectiveObjects;
 
 
+import java.lang.classfile.Signature;
+import java.lang.reflect.MalformedParameterizedTypeException;
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.WildcardType;
-import sun.reflect.generics.factory.GenericsFactory;
-import sun.reflect.generics.tree.FieldTypeSignature;
+import sun.reflect.generics.info.GenericInfo;
+
 import java.util.Arrays;
 import java.util.StringJoiner;
 
@@ -53,9 +56,9 @@ public class WildcardTypeImpl extends LazyReflectiveObjectGenerator
     private volatile Object[] lowerBounds;
 
     // constructor is private to enforce access through static factory
-    private WildcardTypeImpl(FieldTypeSignature[] ubs,
-                             FieldTypeSignature[] lbs,
-                             GenericsFactory f) {
+    private WildcardTypeImpl(Signature[] ubs,
+                             Signature[] lbs,
+                             GenericInfo<?> f) {
         super(f);
         upperBounds = ubs;
         lowerBounds = lbs;
@@ -71,9 +74,9 @@ public class WildcardTypeImpl extends LazyReflectiveObjectGenerator
      * objects that represent the bounds of this wildcard type
      * @return a wild card type with the requested bounds and factory
      */
-    public static WildcardTypeImpl make(FieldTypeSignature[] ubs,
-                                        FieldTypeSignature[] lbs,
-                                        GenericsFactory f) {
+    public static WildcardTypeImpl make(Signature[] ubs,
+                                        Signature[] lbs,
+                                        GenericInfo<?> f) {
         return new WildcardTypeImpl(ubs, lbs, f);
     }
 
@@ -85,22 +88,22 @@ public class WildcardTypeImpl extends LazyReflectiveObjectGenerator
      * <p>For each upper bound B :
      * <ul>
      *  <li>if B is a parameterized type or a type variable, it is created,
-     *  (see {@link #ParameterizedType} for the details of the creation
+     *  (see {@link ParameterizedType} for the details of the creation
      *  process for parameterized types).
      *  <li>Otherwise, B is resolved.
      * </ul>
      *
      * @return an array of Types representing the upper bound(s) of this
      *     type variable
-     * @throws {@code TypeNotPresentException} if any of the
+     * @throws TypeNotPresentException if any of the
      *     bounds refers to a non-existent type declaration
-     * @throws {@code MalformedParameterizedTypeException} if any of the
+     * @throws MalformedParameterizedTypeException if any of the
      *     bounds refer to a parameterized type that cannot be instantiated
      *     for any reason
      */
     public Type[] getUpperBounds() {
         Object[] value = upperBounds;
-        if (value instanceof FieldTypeSignature[] sigs) {
+        if (value instanceof Signature[] sigs) {
             value = reifyBounds(sigs);
             upperBounds = value;
         }
@@ -116,22 +119,22 @@ public class WildcardTypeImpl extends LazyReflectiveObjectGenerator
      * <p>For each lower bound B :
      * <ul>
      *   <li>if B is a parameterized type or a type variable, it is created,
-     *   (see {@link #ParameterizedType} for the details of the creation
+     *   (see {@link ParameterizedType} for the details of the creation
      *   process for parameterized types).
      *   <li>Otherwise, B is resolved.
      * </ul>
      *
      * @return an array of Types representing the lower bound(s) of this
      *     type variable
-     * @throws {@code TypeNotPresentException} if any of the
+     * @throws TypeNotPresentException if any of the
      *     bounds refers to a non-existent type declaration
-     * @throws {@code MalformedParameterizedTypeException} if any of the
+     * @throws MalformedParameterizedTypeException if any of the
      *     bounds refer to a parameterized type that cannot be instantiated
      *     for any reason
      */
     public Type[] getLowerBounds() {
         Object[] value = lowerBounds;
-        if (value instanceof FieldTypeSignature[] sigs) {
+        if (value instanceof Signature[] sigs) {
             value = reifyBounds(sigs);
             lowerBounds = value;
         }
@@ -153,8 +156,6 @@ public class WildcardTypeImpl extends LazyReflectiveObjectGenerator
             } else
                 return "?";
         }
-
-        assert bounds.length > 0;
 
         StringJoiner sj = new StringJoiner(" & ");
         for(Type bound: bounds) {
