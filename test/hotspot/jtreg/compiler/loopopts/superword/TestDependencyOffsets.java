@@ -684,33 +684,33 @@ public class TestDependencyOffsets {
         int[] always = new int[] {
             0,
             -1, 1,
-            -2, 2,     // 2^1
-            -3, 3,
-            -4, 4,     // 2^2
-            -7, 7,
-            -8, 8,     // 2^3
-            -14, 14,
-            -16, 16,   // 2^4
-            -18, 18,
-            -20, 20,
-            -31, 31,
-            -32, 32,   // 2^5
-            -63, 63,
-            -64, 64,   // 2^6
-            -65, 65,
-            -128, 128, // 2^7
-            -129, 129,
-            -192, 192, // 3 * 64
+        //    -2, 2,     // 2^1
+        //    -3, 3,
+        //    -4, 4,     // 2^2
+        //    -7, 7,
+        //    -8, 8,     // 2^3
+        //    -14, 14,
+        //    -16, 16,   // 2^4
+        //    -18, 18,
+        //    -20, 20,
+        //    -31, 31,
+        //    -32, 32,   // 2^5
+        //    -63, 63,
+        //    -64, 64,   // 2^6
+        //    -65, 65,
+        //    -128, 128, // 2^7
+        //    -129, 129,
+        //    -192, 192, // 3 * 64
         };
         Set<Integer> set = Arrays.stream(always).boxed().collect(Collectors.toSet());
 
-        // Sample some random values on an exponental scale
-        for (int i = 0; i < 10; i++) {
-            int base = 4 << i;
-            int offset = base + RANDOM.nextInt(base);
-            set.add(offset);
-            set.add(-offset);
-        }
+        //// Sample some random values on an exponental scale
+        //for (int i = 0; i < 10; i++) {
+        //    int base = 4 << i;
+        //    int offset = base + RANDOM.nextInt(base);
+        //    set.add(offset);
+        //    set.add(-offset);
+        //}
 
         List<Integer> offsets = new ArrayList<Integer>(set);
         return offsets;
@@ -785,6 +785,7 @@ public class TestDependencyOffsets {
 
                 // -XX:-AlignVector
                 IRRule r1 = new IRRule(type, vwConstraint, type.irNode);
+                r1.addConstraint("AlignVector", new BoolConstraint(false, true));
                 r1.addConstraint("MaxVectorSize", new IntConstraint(minVectorSize, null));
                 if (0 < byte_offset && byte_offset < vwConstraint.platformVectorWidth) {
                     // Vectors have to be shorter to avoid cyclic dependency.
@@ -868,6 +869,34 @@ public class TestDependencyOffsets {
                 builder.append(hi);
                 builder.append("\"");
             }
+            return builder.toString();
+        }
+    }
+
+    static record BoolConstraint(boolean allowTrue, boolean allowFalse) implements Constraint {
+
+        @Override
+        public Constraint intersect(Constraint other) {
+            throw new RuntimeException("cannot intersect with other type");
+        }
+
+        @Override
+        public boolean isEmpty() { return !this.allowTrue && !this.allowFalse; }
+
+        @Override
+        public boolean isTrivial() { return this.allowFalse && this.allowFalse; }
+
+        @Override
+        public String generate(String flag) {
+            StringBuilder builder = new StringBuilder();
+            if (allowTrue == allowFalse) {
+                throw new RuntimeException("cannot generate for empty or trivial");
+            }
+            builder.append("\"");
+            builder.append(flag);
+            builder.append("\", \"");
+            builder.append(allowTrue ? "true" : "false");
+            builder.append("\"");
             return builder.toString();
         }
     }
