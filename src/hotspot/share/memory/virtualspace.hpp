@@ -136,6 +136,7 @@ class ReservedHeapSpace : public ReservedSpace {
 
   // Compressed oop support is not relevant in 32bit builds.
 #ifdef _LP64
+
   void try_reserve_heap(size_t size, size_t alignment, size_t page_size,
                         char *requested_address);
   void try_reserve_range(char *highest_start, char *lowest_start,
