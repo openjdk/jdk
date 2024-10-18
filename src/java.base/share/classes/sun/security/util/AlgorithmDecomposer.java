@@ -117,6 +117,15 @@ public class AlgorithmDecomposer {
     }
 
     /**
+     * Get KeyExchange and Authentication algorithms used in cipher suite.
+     *
+     * @return KeyExchange and Authentication algorithms in that order.
+     */
+    public String[] decomposetCipherSuiteKeyExchange(String algorithm) {
+        return null;
+    }
+
+    /**
      * Get aliases of the specified algorithm.
      *
      * May support more algorithms in the future.
