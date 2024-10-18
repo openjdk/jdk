@@ -29,7 +29,7 @@
 #include "nmt/mallocSiteTable.hpp"
 #include "nmt/mallocTracker.hpp"
 #include "nmt/nmtCommon.hpp"
-#include "nmt/virtualMemoryTracker.hpp"
+#include "nmt/vmtCommon.hpp"
 #include "runtime/mutex.hpp"
 #include "utilities/linkedlist.hpp"
 
@@ -53,7 +53,7 @@ class MemBaseline {
     by_address,      // by memory address
     by_size,         // by memory size
     by_site,         // by call site where the memory is allocated from
-    by_site_and_type // by call site and memory tag
+    by_site_and_tag // by call site and memory tag
   };
 
  private:
@@ -146,12 +146,12 @@ class MemBaseline {
 
   MallocMemory* malloc_memory(MemTag mem_tag) {
     assert(baseline_type() != Not_baselined, "Not yet baselined");
-    return _malloc_memory_snapshot.by_type(mem_tag);
+    return _malloc_memory_snapshot.by_tag(mem_tag);
   }
 
   VirtualMemory* virtual_memory(MemTag mem_tag) {
     assert(baseline_type() != Not_baselined, "Not yet baselined");
-    return _virtual_memory_snapshot.by_type(mem_tag);
+    return _virtual_memory_snapshot.by_tag(mem_tag);
   }
 
 
@@ -204,7 +204,7 @@ class MemBaseline {
   // Sort allocation sites in call site address order
   void malloc_sites_to_allocation_site_order();
   // Sort allocation sites in call site address and memory tag order
-  void malloc_sites_to_allocation_site_and_type_order();
+  void malloc_sites_to_allocation_site_and_tag_order();
 
   // Sort allocation sites in reserved size order
   void virtual_memory_sites_to_size_order();

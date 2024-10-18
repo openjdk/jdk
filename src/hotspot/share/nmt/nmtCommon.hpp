@@ -88,7 +88,7 @@ class NMTUtil : AllStatic {
 
   // Map memory tag to index
   static inline int tag_to_index(MemTag mem_tag) {
-    assert(tag_is_valid(mem_tag), "Invalid type (%u)", (unsigned)mem_tag);
+    assert(tag_is_valid(mem_tag), "Invalid tag (%u)", (unsigned)mem_tag);
     return static_cast<int>(mem_tag);
   }
 
