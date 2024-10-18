@@ -166,7 +166,7 @@ void ADLParser::instr_parse(void) {
     parse_err(SYNERR, "missing '(' in instruct definition\n");
   }
   // Parse the operand list
-  else get_oplist(instr->_parameters, instr->_localNames);
+  else get_oplist(instr->_parameters, instr->_localNames, &instr->_parameters_grouped);
   skipws();                        // Skip leading whitespace
   // Check for block delimiter
   if ( (_curchar != '%')
@@ -478,6 +478,9 @@ void ADLParser::oper_parse(void) {
     else if (!strcmp(ident, "expand"))    {
       parse_err(SYNERR, "Operands do not specify an expand\n");
     }
+    else if (!strcmp(ident, "group"))    {
+      oper_group_parse(oper);
+    }
     else if (!strcmp(ident, "rewrite"))   {
       parse_err(SYNERR, "Operands do not specify a rewrite\n");
     }
@@ -500,6 +503,28 @@ void ADLParser::oper_parse(void) {
   }
   // Add operand to tail of operand list
   _AD.addForm(oper);
+}
+
+void ADLParser::oper_group_parse(OperandForm* current) {
+  skipws();
+  next_char();                            // Skip past open paren or comma
+
+  char common;
+  do {
+    skipws();
+    char* ident = get_ident();
+    const Form* oper = _globalNames[ident];
+    if (oper == nullptr) {
+      parse_err(SYNERR, "missing definition of operand: %s\n", ident);
+    }
+    assert(oper->is_operand() != nullptr, "sanity");
+    current->append_ungrouped_operand(oper->is_operand());
+    common = _curchar;
+    skipws();
+    next_char();
+  } while (common == ',');
+
+  skipws();
 }
 
 //------------------------------opclass_parse----------------------------------
@@ -2895,6 +2920,12 @@ void ADLParser::ins_encode_parse_block(InstructForm& inst) {
     assert(opForm != nullptr, "sanity");
     encoding->add_parameter(opForm->_ident, param);
   }
+  inst._parameters_grouped.reset();
+  while ((param = inst._parameters_grouped.iter()) != nullptr) {
+    OpClassForm* opForm = inst._localNames[param]->is_opclass();
+    assert(opForm != nullptr, "sanity");
+    encoding->add_parameter_grouped(opForm->_ident, param);
+  }
 
   // Parse the following %{ }% block
   ins_encode_parse_block_impl(inst, encoding, ec_name);
@@ -2902,10 +2933,15 @@ void ADLParser::ins_encode_parse_block(InstructForm& inst) {
   // Build an encoding rule which invokes the encoding rule we just
   // created, passing all arguments that we received.
   InsEncode*   encrule = new InsEncode(); // Encode class for instruction
-  NameAndList* params  = encrule->add_encode(ec_name);
+  NameAndList* params = encrule->add_encode(ec_name);
+  NameAndList* params_grouped = encrule->add_encode_grouped(ec_name);
   inst._parameters.reset();
   while ((param = inst._parameters.iter()) != nullptr) {
     params->add_entry(param);
+  }
+  inst._parameters_grouped.reset();
+  while ((param = inst._parameters_grouped.iter()) != nullptr) {
+    params_grouped->add_entry(param);
   }
 
   // Check for duplicate ins_encode sections after parsing the block
@@ -4406,6 +4442,13 @@ MatchNode *ADLParser::matchNode_parse(FormDict &operands, int &depth, int &numle
     else                        name = nullptr;
   }
 
+  {
+    OperandForm *oper = opcForm ? opcForm->is_operand() : nullptr;
+    if (oper != nullptr && oper->get_ungrouped_operands_num() > 0) {
+      parse_err(SYNERR, "grouping operand (%s) is not supported in match rule\n", token);
+    }
+  }
+
   // Parse the operands
   skipws();
   if (cur_char() != ')') {
@@ -4893,7 +4936,7 @@ char *ADLParser::get_relation_dup(void) {
 // Looks for identifier pairs where first must be the name of an operand, and
 // second must be a name unique in the scope of this instruction.  Stores the
 // names with a pointer to the OpClassForm of their type in a local name table.
-void ADLParser::get_oplist(NameList &parameters, FormDict &operands) {
+void ADLParser::get_oplist(NameList &parameters, FormDict &operands, NameList* parameters_grouped) {
   OpClassForm *opclass = nullptr;
   char        *ident   = nullptr;
 
@@ -4908,22 +4951,22 @@ void ADLParser::get_oplist(NameList &parameters, FormDict &operands) {
       parse_err(SYNERR, "optype identifier expected at %c\n", _curchar);
       return;
     }
-    else {
-      const Form  *form = _globalNames[ident];
-      if( form == nullptr ) {
-        parse_err(SYNERR, "undefined operand type %s\n", ident);
-        return;
-      }
 
-      // Check for valid operand type
-      OpClassForm *opc  = form->is_opclass();
-      OperandForm *oper = form->is_operand();
-      if((oper == nullptr) && (opc == nullptr)) {
-        parse_err(SYNERR, "identifier %s not operand type\n", ident);
-        return;
-      }
-      opclass = opc;
+    const Form  *form = _globalNames[ident];
+    if( form == nullptr ) {
+      parse_err(SYNERR, "undefined operand type %s\n", ident);
+      return;
     }
+
+    // Check for valid operand type
+    OpClassForm *opc  = form->is_opclass();
+    OperandForm *oper = form->is_operand();
+    if((oper == nullptr) && (opc == nullptr)) {
+      parse_err(SYNERR, "identifier %s not operand type\n", ident);
+      return;
+    }
+    opclass = opc;
+
     // Debugging Stuff
     if (_AD._adl_debug > 1) fprintf(stderr, "\tOperand Type: %s\t", ident);
 
@@ -4936,8 +4979,32 @@ void ADLParser::get_oplist(NameList &parameters, FormDict &operands) {
          parse_err(SYNERR, "Reuse of global name %s as operand.\n",ident);
          return;
     }
-    operands.Insert(ident, opclass);
-    parameters.addName(ident);
+
+    if (oper != nullptr && oper->get_ungrouped_operands_num() > 0) {
+      for (int i = 0; i < (int)oper->get_ungrouped_operands_num(); i++) {
+        const char* ungrouped = OperandForm::get_ungrouped_oper_name(ident, i);
+        if( _globalNames[ungrouped] != nullptr ) {
+          parse_err(SYNERR, "Reuse of global name %s as operand.\n", ungrouped);
+          return;
+        }
+        if( operands[ungrouped] != nullptr ) {
+          parse_err(SYNERR, "Reuse of local name %s as operand.\n", ungrouped);
+          return;
+        }
+        operands.Insert(ungrouped, oper->get_ungrouped_operand(i));
+        parameters.addName(ungrouped);
+      }
+      if (operands[ident] != nullptr) {
+        parse_err(SYNERR, "Reuse of local name %s as operand.\n", ident);
+      }
+      operands.Insert(ident, opclass);
+      if (parameters_grouped != nullptr) {
+        parameters_grouped->addName(ident);
+      }
+    } else {
+      operands.Insert(ident, opclass);
+      parameters.addName(ident);
+    }
 
     // Debugging Stuff
     if (_AD._adl_debug > 1) fprintf(stderr, "\tOperand Name: %s\n", ident);
@@ -5011,6 +5078,15 @@ void ADLParser::get_effectlist(FormDict &effects, FormDict &operands, bool& has_
       }
       // Add the pair to the effects table
       effects.Insert(ident, eForm);
+      // Add the pairs of ungrouped operands to the effects table
+      for (int i = 0; i < (int)opForm->get_ungrouped_operands_num(); i++) {
+        if (!eForm->isa(Component::TEMP)) {
+          parse_err(SYNERR, "grouping operand %s must be in TEMP effect\n", ident);
+        }
+        const char* ungrouped = OperandForm::get_ungrouped_oper_name(ident, i);
+        effects.Insert(ungrouped, eForm);
+      }
+
       // Debugging Stuff
       if (_AD._adl_debug > 1) fprintf(stderr, "\tOperand Name: %s\n", ident);
     }
