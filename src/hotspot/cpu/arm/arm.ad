@@ -1003,10 +1003,6 @@ const RegMask* Matcher::predicate_reg_mask(void) {
   return nullptr;
 }
 
-const TypeVectMask* Matcher::predicate_reg_type(const Type* elemTy, int length) {
-  return nullptr;
-}
-
 // Vector calling convention not yet implemented.
 bool Matcher::supports_vector_calling_convention(void) {
   return false;
@@ -4220,18 +4216,6 @@ instruct storeB(memoryB mem, store_RegI src) %{
 
   size(4);
   format %{ "STRB    $src,$mem\t! byte" %}
-  ins_encode %{
-    __ strb($src$$Register, $mem$$Address);
-  %}
-  ins_pipe(istore_mem_reg);
-%}
-
-instruct storeCM(memoryB mem, store_RegI src) %{
-  match(Set mem (StoreCM mem src));
-  ins_cost(MEMORY_REF_COST);
-
-  size(4);
-  format %{ "STRB    $src,$mem\t! CMS card-mark byte" %}
   ins_encode %{
     __ strb($src$$Register, $mem$$Address);
   %}

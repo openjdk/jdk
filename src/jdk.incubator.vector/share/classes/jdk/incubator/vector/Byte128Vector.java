@@ -506,6 +506,13 @@ final class Byte128Vector extends ByteVector {
                                      Byte128Mask.class, (Byte128Mask) m);  // specialize
     }
 
+    @Override
+    @ForceInline
+    public Byte128Vector selectFrom(Vector<Byte> v1,
+                                   Vector<Byte> v2) {
+        return (Byte128Vector)
+            super.selectFromTemplate((Byte128Vector) v1, (Byte128Vector) v2);  // specialize
+    }
 
     @ForceInline
     @Override

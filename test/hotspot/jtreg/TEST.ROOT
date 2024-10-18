@@ -84,7 +84,7 @@ requires.properties= \
     vm.compiler2.enabled \
     vm.musl \
     vm.flagless \
-    docker.support \
+    container.support \
     systemd.support \
     jdk.containerized
 

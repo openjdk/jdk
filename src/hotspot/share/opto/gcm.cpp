@@ -216,19 +216,13 @@ void PhaseCFG::schedule_pinned_nodes(VectorSet &visited) {
       for (uint i = node->len()-1; i >= node->req(); i--) {
         Node* m = node->in(i);
         if (m == nullptr) continue;
-
-        // Only process precedence edges that are CFG nodes. Safepoints and control projections can be in the middle of a block
-        if (is_CFG(m)) {
-          node->rm_prec(i);
-          if (n == nullptr) {
-            n = m;
-          } else {
-            assert(is_dominator(n, m) || is_dominator(m, n), "one must dominate the other");
-            n = is_dominator(n, m) ? m : n;
-          }
+        assert(is_CFG(m), "must be a CFG node");
+        node->rm_prec(i);
+        if (n == nullptr) {
+          n = m;
         } else {
-          assert(node->is_Mach(), "sanity");
-          assert(node->as_Mach()->ideal_Opcode() == Op_StoreCM, "must be StoreCM node");
+          assert(is_dominator(n, m) || is_dominator(m, n), "one must dominate the other");
+          n = is_dominator(n, m) ? m : n;
         }
       }
       if (n != nullptr) {
@@ -769,7 +763,17 @@ Block* PhaseCFG::insert_anti_dependences(Block* LCA, Node* load, bool verify) {
     worklist_def_use_mem_states.pop();
 
     uint op = use_mem_state->Opcode();
-    assert(!use_mem_state->needs_anti_dependence_check(), "no loads");
+
+#ifdef ASSERT
+    // CacheWB nodes are peculiar in a sense that they both are anti-dependent and produce memory.
+    // Allow them to be treated as a store.
+    bool is_cache_wb = false;
+    if (use_mem_state->is_Mach()) {
+      int ideal_op = use_mem_state->as_Mach()->ideal_Opcode();
+      is_cache_wb = (ideal_op == Op_CacheWB);
+    }
+    assert(!use_mem_state->needs_anti_dependence_check() || is_cache_wb, "no loads");
+#endif
 
     // MergeMems do not directly have anti-deps.
     // Treat them as internal nodes in a forward tree of memory states,
