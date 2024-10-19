@@ -83,7 +83,21 @@ interface LinuxPackage extends Package {
 
         Impl(Package target, String menuGroupName, String category,
                 String additionalDependencies, String release, String arch) throws ConfigException {
-            super(fixPackageName(target));
+            super(Package.override(target, new Package.Unsupported() {
+                @Override
+                public String packageName() {
+                    var packageName = super.packageName();
+                    if (type() instanceof StandardPackageType type) {
+                        switch (type) {
+                            case LinuxDeb, LinuxRpm -> {
+                                // make sure to lower case and spaces/underscores become dashes
+                                packageName = packageName.toLowerCase().replaceAll("[ _]", "-");
+                            }
+                        }
+                    }
+                    return packageName;
+                }
+            }));
 
             if (type() instanceof StandardPackageType type) {
                 validatePackageName(packageName(), type);
@@ -120,22 +134,6 @@ interface LinuxPackage extends Package {
         @Override
         public String arch() {
             return arch;
-        }
-        
-        private static Package fixPackageName(Package pkg) {
-            var packageName = pkg.packageName();
-            if (pkg.type() instanceof StandardPackageType type) {
-                switch (type) {
-                    case LinuxDeb, LinuxRpm -> {
-                        // make sure to lower case and spaces/underscores become dashes
-                        packageName = packageName.toLowerCase().replaceAll("[ _]", "-");
-                    }
-                }
-            }
-            return new Package.Impl(pkg.app(), pkg.type(), packageName,
-                    pkg.description(), pkg.version(), pkg.aboutURL(),
-                    pkg.licenseFile(), pkg.predefinedAppImage(),
-                    pkg.configuredRelativeInstallDir());
         }
 
         private final String menuGroupName;
@@ -183,7 +181,7 @@ interface LinuxPackage extends Package {
     static final Defaults DEFAULTS = new Defaults("1", I18N.getString("param.menu-group.default"),
             "misc");
 
-    static void validatePackageName(String packageName,
+    private static void validatePackageName(String packageName,
             StandardPackageType pkgType) throws ConfigException {
         switch (pkgType) {
             case LinuxDeb -> {

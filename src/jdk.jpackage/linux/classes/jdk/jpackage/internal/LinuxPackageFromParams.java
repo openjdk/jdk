@@ -38,6 +38,16 @@ final class LinuxPackageFromParams {
         var additionalDependencies = LINUX_PACKAGE_DEPENDENCIES.fetchFrom(params);
         var release = RELEASE.fetchFrom(params);
 
+        var packageName = LINUX_PACKAGE_NAME.fetchFrom(params);
+        if (packageName != null) {
+            pkg = Package.override(pkg, new Package.Unsupported() {
+                @Override
+                public String packageName() {
+                    return packageName;
+                }
+            });
+        }
+
         return new Impl(pkg, menuGroupName, category, additionalDependencies, release);
     }
 
@@ -52,4 +62,7 @@ final class LinuxPackageFromParams {
 
     private static final BundlerParamInfo<String> RELEASE = createStringBundlerParam(
             Arguments.CLIOptions.RELEASE.getId());
+
+    private static final BundlerParamInfo<String> LINUX_PACKAGE_NAME = createStringBundlerParam(
+            Arguments.CLIOptions.LINUX_BUNDLE_NAME.getId());
 }

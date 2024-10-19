@@ -28,6 +28,7 @@ import java.nio.file.Path;
 import java.text.MessageFormat;
 import java.util.Optional;
 import java.util.stream.Stream;
+import static jdk.jpackage.internal.Getter.getValueOrDefault;
 
 interface Package {
 
@@ -155,14 +156,64 @@ interface Package {
         }
     }
 
-    static record Impl(Application app, PackageType type, String packageName, String description,
-            String version, String aboutURL, Path licenseFile, Path predefinedAppImage,
-            Path configuredRelativeInstallDir) implements Package {
-        public Impl {
+    static record Impl(Application app, PackageType type, String packageName,
+            String description, String version, String aboutURL, Path licenseFile,
+            Path predefinedAppImage, Path configuredRelativeInstallDir) implements Package {
+
+        public Impl         {
             description = Optional.ofNullable(description).orElseGet(app::description);
             version = Optional.ofNullable(version).orElseGet(app::version);
             packageName = Optional.ofNullable(packageName).orElseGet(app::name);
         }
+    }
+
+    static class Unsupported implements Package {
+
+        @Override
+        public Application app() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public PackageType type() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public String packageName() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public String description() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public String version() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public String aboutURL() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Path licenseFile() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Path predefinedAppImage() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Path configuredRelativeInstallDir() {
+            throw new UnsupportedOperationException();
+        }
+        
     }
 
     static class Proxy<T extends Package> extends ProxyBase<T> implements Package {
@@ -215,6 +266,19 @@ interface Package {
         public Path configuredRelativeInstallDir() {
             return target.configuredRelativeInstallDir();
         }
+    }
+
+    static Package override(Package base, Package overrides) {
+        return new Impl(
+                getValueOrDefault(overrides, base, Package::app),
+                getValueOrDefault(overrides, base, Package::type),
+                getValueOrDefault(overrides, base, Package::packageName),
+                getValueOrDefault(overrides, base, Package::description),
+                getValueOrDefault(overrides, base, Package::version),
+                getValueOrDefault(overrides, base, Package::aboutURL),
+                getValueOrDefault(overrides, base, Package::licenseFile),
+                getValueOrDefault(overrides, base, Package::predefinedAppImage),
+                getValueOrDefault(overrides, base, Package::configuredRelativeInstallDir));
     }
 
     static Path mapInstallDir(Path installDir, PackageType pkgType) throws ConfigException {
