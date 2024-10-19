@@ -86,8 +86,8 @@ interface LinuxPackage extends Package {
             super(Package.override(target, new Package.Unsupported() {
                 @Override
                 public String packageName() {
-                    var packageName = super.packageName();
-                    if (type() instanceof StandardPackageType type) {
+                    var packageName = target.packageName();
+                    if (target.type() instanceof StandardPackageType type) {
                         switch (type) {
                             case LinuxDeb, LinuxRpm -> {
                                 // make sure to lower case and spaces/underscores become dashes
