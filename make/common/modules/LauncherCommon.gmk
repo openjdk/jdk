@@ -74,7 +74,7 @@ define SetupBuildLauncherBody
   endif
 
   ifneq ($$($1_MAIN_CLASS), )
-    $1_JAVA_ARGS += -ms8m
+    $1_JAVA_ARGS += -Xms8m
     $1_LAUNCHER_CLASS := -m $$($1_MAIN_MODULE)/$$($1_MAIN_CLASS)
   endif
 
@@ -135,7 +135,8 @@ define SetupBuildLauncherBody
           $$($1_CFLAGS), \
       CFLAGS_windows := $$($1_CFLAGS_windows), \
       EXTRA_HEADER_DIRS := java.base:libjvm, \
-      DISABLED_WARNINGS_gcc := unused-function, \
+      DISABLED_WARNINGS_gcc := unused-function unused-variable, \
+      DISABLED_WARNINGS_clang := unused-function, \
       LDFLAGS := $$($1_LDFLAGS), \
       LDFLAGS_linux := $$(call SET_EXECUTABLE_ORIGIN,/../lib), \
       LDFLAGS_macosx := $$(call SET_EXECUTABLE_ORIGIN,/../lib), \

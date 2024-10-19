@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,47 +57,9 @@ import static com.sun.jmx.mbeanserver.Util.cast;
  *
  * @since 1.5
  */
-@SuppressWarnings("serial")  // serialVersionUID not constant
 public class RelationNotification extends Notification {
 
-    // Serialization compatibility stuff:
-    // Two serial forms are supported in this class. The selected form depends
-    // on system property "jmx.serial.form":
-    //  - "1.0" for JMX 1.0
-    //  - any other value for JMX 1.1 and higher
-    //
-    // Serial version for old serial form
-    private static final long oldSerialVersionUID = -2126464566505527147L;
-    //
-    // Serial version for new serial form
-    private static final long newSerialVersionUID = -6871117877523310399L;
-    //
-    // Serializable fields in old serial form
-    private static final ObjectStreamField[] oldSerialPersistentFields =
-    {
-        new ObjectStreamField("myNewRoleValue", ArrayList.class),
-        new ObjectStreamField("myOldRoleValue", ArrayList.class),
-        new ObjectStreamField("myRelId", String.class),
-        new ObjectStreamField("myRelObjName", ObjectName.class),
-        new ObjectStreamField("myRelTypeName", String.class),
-        new ObjectStreamField("myRoleName", String.class),
-        new ObjectStreamField("myUnregMBeanList", ArrayList.class)
-    };
-    //
-    // Serializable fields in new serial form
-    private static final ObjectStreamField[] newSerialPersistentFields =
-    {
-        new ObjectStreamField("newRoleValue", List.class),
-        new ObjectStreamField("oldRoleValue", List.class),
-        new ObjectStreamField("relationId", String.class),
-        new ObjectStreamField("relationObjName", ObjectName.class),
-        new ObjectStreamField("relationTypeName", String.class),
-        new ObjectStreamField("roleName", String.class),
-        new ObjectStreamField("unregisterMBeanList", List.class)
-    };
-    //
-    // Actual serial version and serial form
-    private static final long serialVersionUID;
+    private static final long serialVersionUID = -6871117877523310399L;
     /**
      * @serialField relationId String Relation identifier of
      * created/removed/updated relation
@@ -115,27 +77,16 @@ public class RelationNotification extends Notification {
      * @serialField newRoleValue List New role value ({@link
      * ArrayList} of {@link ObjectName}s) (only for role update)
      */
-    private static final ObjectStreamField[] serialPersistentFields;
-    private static boolean compat = false;
-    static {
-        try {
-            GetPropertyAction act = new GetPropertyAction("jmx.serial.form");
-            @SuppressWarnings("removal")
-            String form = AccessController.doPrivileged(act);
-            compat = (form != null && form.equals("1.0"));
-        } catch (Exception e) {
-            // OK : Too bad, no compat with 1.0
-        }
-        if (compat) {
-            serialPersistentFields = oldSerialPersistentFields;
-            serialVersionUID = oldSerialVersionUID;
-        } else {
-            serialPersistentFields = newSerialPersistentFields;
-            serialVersionUID = newSerialVersionUID;
-        }
-    }
-    //
-    // END Serialization compatibility stuff
+    private static final ObjectStreamField[] serialPersistentFields =
+    {
+        new ObjectStreamField("newRoleValue", List.class),
+        new ObjectStreamField("oldRoleValue", List.class),
+        new ObjectStreamField("relationId", String.class),
+        new ObjectStreamField("relationObjName", ObjectName.class),
+        new ObjectStreamField("relationTypeName", String.class),
+        new ObjectStreamField("roleName", String.class),
+        new ObjectStreamField("unregisterMBeanList", List.class)
+    };
 
     //
     // Notification types
@@ -541,26 +492,14 @@ public class RelationNotification extends Notification {
 
         ObjectInputStream.GetField fields = in.readFields();
 
-        if (compat) {
-            tmpRelationId = (String)fields.get("myRelId", null);
-            tmpRelationTypeName = (String)fields.get("myRelTypeName", null);
-            tmpRoleName = (String)fields.get("myRoleName", null);
+        tmpRelationId = (String)fields.get("relationId", null);
+        tmpRelationTypeName = (String)fields.get("relationTypeName", null);
+        tmpRoleName = (String)fields.get("roleName", null);
 
-            tmpRelationObjName = (ObjectName)fields.get("myRelObjName", null);
-            tmpNewRoleValue = cast(fields.get("myNewRoleValue", null));
-            tmpOldRoleValue = cast(fields.get("myOldRoleValue", null));
-            tmpUnregMBeanList = cast(fields.get("myUnregMBeanList", null));
-        }
-        else {
-            tmpRelationId = (String)fields.get("relationId", null);
-            tmpRelationTypeName = (String)fields.get("relationTypeName", null);
-            tmpRoleName = (String)fields.get("roleName", null);
-
-            tmpRelationObjName = (ObjectName)fields.get("relationObjName", null);
-            tmpNewRoleValue = cast(fields.get("newRoleValue", null));
-            tmpOldRoleValue = cast(fields.get("oldRoleValue", null));
-            tmpUnregMBeanList = cast(fields.get("unregisterMBeanList", null));
-        }
+        tmpRelationObjName = (ObjectName)fields.get("relationObjName", null);
+        tmpNewRoleValue = cast(fields.get("newRoleValue", null));
+        tmpOldRoleValue = cast(fields.get("oldRoleValue", null));
+        tmpUnregMBeanList = cast(fields.get("unregisterMBeanList", null));
 
         // Validate fields we just read, throw InvalidObjectException
         // if something goes wrong
@@ -591,25 +530,6 @@ public class RelationNotification extends Notification {
      */
     private void writeObject(ObjectOutputStream out)
             throws IOException {
-      if (compat)
-      {
-        // Serializes this instance in the old serial form
-        //
-        ObjectOutputStream.PutField fields = out.putFields();
-        fields.put("myNewRoleValue", newRoleValue);
-        fields.put("myOldRoleValue", oldRoleValue);
-        fields.put("myRelId", relationId);
-        fields.put("myRelObjName", relationObjName);
-        fields.put("myRelTypeName", relationTypeName);
-        fields.put("myRoleName",roleName);
-        fields.put("myUnregMBeanList", unregisterMBeanList);
-        out.writeFields();
-      }
-      else
-      {
-        // Serializes this instance in the new serial form
-        //
-        out.defaultWriteObject();
-      }
+      out.defaultWriteObject();
     }
 }

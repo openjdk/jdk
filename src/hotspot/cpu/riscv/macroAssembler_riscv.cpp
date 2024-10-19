@@ -146,18 +146,6 @@ bool MacroAssembler::is_li32_at(address instr) {
          check_li32_data_dependency(instr);
 }
 
-bool MacroAssembler::is_li64_at(address instr) {
-  return is_lui_at(instr) && // lui
-         is_addi_at(instr + instruction_size) && // addi
-         is_slli_shift_at(instr + instruction_size * 2, 12) &&  // Slli Rd, Rs, 12
-         is_addi_at(instr + instruction_size * 3) && // addi
-         is_slli_shift_at(instr + instruction_size * 4, 12) &&  // Slli Rd, Rs, 12
-         is_addi_at(instr + instruction_size * 5) && // addi
-         is_slli_shift_at(instr + instruction_size * 6, 8) &&   // Slli Rd, Rs, 8
-         is_addi_at(instr + instruction_size * 7) && // addi
-         check_li64_data_dependency(instr);
-}
-
 bool MacroAssembler::is_lwu_to_zr(address instr) {
   assert_cond(instr != nullptr);
   return (extract_opcode(instr) == 0b0000011 &&
@@ -505,6 +493,7 @@ void MacroAssembler::clinit_barrier(Register klass, Register tmp, Label* L_fast_
 
   // Fast path check: class is fully initialized
   lbu(tmp, Address(klass, InstanceKlass::init_state_offset()));
+  membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
   sub(tmp, tmp, InstanceKlass::fully_initialized);
   beqz(tmp, *L_fast_path);
 
@@ -909,35 +898,7 @@ void MacroAssembler::li32(Register Rd, int32_t imm) {
   upper = (int32_t)upper;
   // lui Rd, imm[31:12] + imm[11]
   lui(Rd, upper);
-  // use addiw to distinguish li32 to li64
   addiw(Rd, Rd, lower);
-}
-
-void MacroAssembler::li64(Register Rd, int64_t imm) {
-  // Load upper 32 bits. upper = imm[63:32], but if imm[31] == 1 or
-  // (imm[31:20] == 0x7ff && imm[19] == 1), upper = imm[63:32] + 1.
-  int64_t lower = imm & 0xffffffff;
-  lower -= ((lower << 44) >> 44);
-  int64_t tmp_imm = ((uint64_t)(imm & 0xffffffff00000000)) + (uint64_t)lower;
-  int32_t upper = (tmp_imm - (int32_t)lower) >> 32;
-
-  // Load upper 32 bits
-  int64_t up = upper, lo = upper;
-  lo = (lo << 52) >> 52;
-  up -= lo;
-  up = (int32_t)up;
-  lui(Rd, up);
-  addi(Rd, Rd, lo);
-
-  // Load the rest 32 bits.
-  slli(Rd, Rd, 12);
-  addi(Rd, Rd, (int32_t)lower >> 20);
-  slli(Rd, Rd, 12);
-  lower = ((int32_t)imm << 12) >> 20;
-  addi(Rd, Rd, lower);
-  slli(Rd, Rd, 8);
-  lower = imm & 0xff;
-  addi(Rd, Rd, lower);
 }
 
 void MacroAssembler::li(Register Rd, int64_t imm) {
@@ -1494,6 +1455,105 @@ void MacroAssembler::update_word_crc32(Register crc, Register v, Register tmp1, 
   xorr(crc, crc, tmp2);
 }
 
+
+#ifdef COMPILER2
+// This improvement (vectorization) is based on java.base/share/native/libzip/zlib/zcrc32.c.
+// To make it, following steps are taken:
+//  1. in zcrc32.c, modify N to 16 and related code,
+//  2. re-generate the tables needed, we use tables of (N == 16, W == 4)
+//  3. finally vectorize the code (original implementation in zcrc32.c is just scalar code).
+// New tables for vector version is after table3.
+void MacroAssembler::vector_update_crc32(Register crc, Register buf, Register len,
+                                         Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register tmp5,
+                                         Register table0, Register table3) {
+    assert_different_registers(t1, crc, buf, len, tmp1, tmp2, tmp3, tmp4, tmp5, table0, table3);
+    const int N = 16, W = 4;
+    const int64_t single_table_size = 256;
+    const Register blks = tmp2;
+    const Register tmpTable = tmp3, tableN16 = tmp4;
+    const VectorRegister vcrc = v4, vword = v8, vtmp = v12;
+    Label VectorLoop;
+    Label LastBlock;
+
+    add(tableN16, table3, 1*single_table_size*sizeof(juint), tmp1);
+    mv(tmp5, 0xff);
+
+    if (MaxVectorSize == 16) {
+      vsetivli(zr, N, Assembler::e32, Assembler::m4, Assembler::ma, Assembler::ta);
+    } else if (MaxVectorSize == 32) {
+      vsetivli(zr, N, Assembler::e32, Assembler::m2, Assembler::ma, Assembler::ta);
+    } else {
+      assert(MaxVectorSize > 32, "sanity");
+      vsetivli(zr, N, Assembler::e32, Assembler::m1, Assembler::ma, Assembler::ta);
+    }
+
+    vmv_v_x(vcrc, zr);
+    vmv_s_x(vcrc, crc);
+
+    // multiple of 64
+    srli(blks, len, 6);
+    slli(t1, blks, 6);
+    sub(len, len, t1);
+    sub(blks, blks, 1);
+    blez(blks, LastBlock);
+
+    bind(VectorLoop);
+    {
+      mv(tmpTable, tableN16);
+
+      vle32_v(vword, buf);
+      vxor_vv(vword, vword, vcrc);
+
+      addi(buf, buf, N*4);
+
+      vand_vx(vtmp, vword, tmp5);
+      vsll_vi(vtmp, vtmp, 2);
+      vluxei32_v(vcrc, tmpTable, vtmp);
+
+      mv(tmp1, 1);
+      for (int k = 1; k < W; k++) {
+        addi(tmpTable, tmpTable, single_table_size*4);
+
+        slli(t1, tmp1, 3);
+        vsrl_vx(vtmp, vword, t1);
+
+        vand_vx(vtmp, vtmp, tmp5);
+        vsll_vi(vtmp, vtmp, 2);
+        vluxei32_v(vtmp, tmpTable, vtmp);
+
+        vxor_vv(vcrc, vcrc, vtmp);
+
+        addi(tmp1, tmp1, 1);
+      }
+
+      sub(blks, blks, 1);
+      bgtz(blks, VectorLoop);
+    }
+
+    bind(LastBlock);
+    {
+      vle32_v(vtmp, buf);
+      vxor_vv(vcrc, vcrc, vtmp);
+      mv(crc, zr);
+      for (int i = 0; i < N; i++) {
+        vmv_x_s(tmp2, vcrc);
+        // in vmv_x_s, the value is sign-extended to SEW bits, but we need zero-extended here.
+        zext_w(tmp2, tmp2);
+        vslidedown_vi(vcrc, vcrc, 1);
+        xorr(crc, crc, tmp2);
+        for (int j = 0; j < W; j++) {
+          andr(t1, crc, tmp5);
+          shadd(t1, t1, table0, tmp1, 2);
+          lwu(t1, Address(t1, 0));
+          srli(tmp2, crc, 8);
+          xorr(crc, tmp2, t1);
+        }
+      }
+      addi(buf, buf, N*4);
+    }
+}
+#endif // COMPILER2
+
 /**
  * @param crc   register containing existing CRC (32-bit)
  * @param buf   register pointing to input byte buffer (byte*)
@@ -1505,33 +1565,41 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
         Register table0, Register table1, Register table2, Register table3,
         Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register tmp5, Register tmp6) {
   assert_different_registers(crc, buf, len, table0, table1, table2, table3, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6);
-  Label L_by16_loop, L_unroll_loop, L_unroll_loop_entry, L_by4, L_by4_loop, L_by1, L_by1_loop, L_exit;
+  Label L_vector_entry,
+        L_unroll_loop,
+        L_by4_loop_entry, L_by4_loop,
+        L_by1_loop, L_exit;
 
+  const int64_t single_table_size = 256;
   const int64_t unroll = 16;
   const int64_t unroll_words = unroll*wordSize;
   mv(tmp5, right_32_bits);
-  subw(len, len, unroll_words);
   andn(crc, tmp5, crc);
 
   const ExternalAddress table_addr = StubRoutines::crc_table_addr();
   la(table0, table_addr);
-  add(table1, table0, 1*256*sizeof(juint), tmp1);
-  add(table2, table0, 2*256*sizeof(juint), tmp1);
-  add(table3, table2, 1*256*sizeof(juint), tmp1);
+  add(table1, table0, 1*single_table_size*sizeof(juint), tmp1);
+  add(table2, table0, 2*single_table_size*sizeof(juint), tmp1);
+  add(table3, table2, 1*single_table_size*sizeof(juint), tmp1);
 
-  bge(len, zr, L_unroll_loop_entry);
-  addiw(len, len, unroll_words-4);
-  bge(len, zr, L_by4_loop);
-  addiw(len, len, 4);
-  bgt(len, zr, L_by1_loop);
-  j(L_exit);
+#ifdef COMPILER2
+  if (UseRVV) {
+    const int64_t tmp_limit = MaxVectorSize >= 32 ? unroll_words*3 : unroll_words*5;
+    mv(tmp1, tmp_limit);
+    bge(len, tmp1, L_vector_entry);
+  }
+#endif // COMPILER2
+
+  mv(tmp1, unroll_words);
+  blt(len, tmp1, L_by4_loop_entry);
+
+  const Register loop_buf_end = tmp3;
 
   align(CodeEntryAlignment);
-  bind(L_unroll_loop_entry);
-    const Register buf_end = tmp3;
-    add(buf_end, buf, len); // buf_end will be used as endpoint for loop below
+  // Entry for L_unroll_loop
+    add(loop_buf_end, buf, len);    // loop_buf_end will be used as endpoint for loop below
     andi(len, len, unroll_words-1); // len = (len % unroll_words)
-    sub(len, len, unroll_words); // Length after all iterations
+    sub(loop_buf_end, loop_buf_end, len);
   bind(L_unroll_loop);
     for (int i = 0; i < unroll; i++) {
       ld(tmp1, Address(buf, i*wordSize));
@@ -1540,44 +1608,52 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
     }
 
     addi(buf, buf, unroll_words);
-    ble(buf, buf_end, L_unroll_loop);
-    addiw(len, len, unroll_words-4);
-    bge(len, zr, L_by4_loop);
-    addiw(len, len, 4);
-    bgt(len, zr, L_by1_loop);
-    j(L_exit);
+    blt(buf, loop_buf_end, L_unroll_loop);
 
+  bind(L_by4_loop_entry);
+    mv(tmp1, 4);
+    blt(len, tmp1, L_by1_loop);
+    add(loop_buf_end, buf, len); // loop_buf_end will be used as endpoint for loop below
+    andi(len, len, 3);
+    sub(loop_buf_end, loop_buf_end, len);
   bind(L_by4_loop);
     lwu(tmp1, Address(buf));
     update_word_crc32(crc, tmp1, tmp2, tmp4, tmp6, table0, table1, table2, table3, false);
-    subw(len, len, 4);
     addi(buf, buf, 4);
-    bge(len, zr, L_by4_loop);
-    addiw(len, len, 4);
-    ble(len, zr, L_exit);
+    blt(buf, loop_buf_end, L_by4_loop);
 
   bind(L_by1_loop);
+    beqz(len, L_exit);
+
     subw(len, len, 1);
     lwu(tmp1, Address(buf));
     andi(tmp2, tmp1, right_8_bits);
     update_byte_crc32(crc, tmp2, table0);
-    ble(len, zr, L_exit);
+    beqz(len, L_exit);
 
     subw(len, len, 1);
     srli(tmp2, tmp1, 8);
     andi(tmp2, tmp2, right_8_bits);
     update_byte_crc32(crc, tmp2, table0);
-    ble(len, zr, L_exit);
+    beqz(len, L_exit);
 
     subw(len, len, 1);
     srli(tmp2, tmp1, 16);
     andi(tmp2, tmp2, right_8_bits);
     update_byte_crc32(crc, tmp2, table0);
-    ble(len, zr, L_exit);
 
-    srli(tmp2, tmp1, 24);
-    andi(tmp2, tmp2, right_8_bits);
-    update_byte_crc32(crc, tmp2, table0);
+#ifdef COMPILER2
+  // put vector code here, otherwise "offset is too large" error occurs.
+  if (UseRVV) {
+    // only need to jump exit when UseRVV == true, it's a jump from end of block `L_by1_loop`.
+    j(L_exit);
+
+    bind(L_vector_entry);
+    vector_update_crc32(crc, buf, len, tmp1, tmp2, tmp3, tmp4, tmp6, table0, table3);
+
+    bgtz(len, L_by4_loop_entry);
+  }
+#endif // COMPILER2
 
   bind(L_exit);
     andn(crc, tmp5, crc);
@@ -1741,27 +1817,6 @@ static int patch_addr_in_movptr2(address instruction_address, address target) {
   return MacroAssembler::movptr2_instruction_size;
 }
 
-static int patch_imm_in_li64(address branch, address target) {
-  const int LI64_INSTRUCTIONS_NUM = 8;                                          // lui + addi + slli + addi + slli + addi + slli + addi
-  int64_t lower = (intptr_t)target & 0xffffffff;
-  lower = lower - ((lower << 44) >> 44);
-  int64_t tmp_imm = ((uint64_t)((intptr_t)target & 0xffffffff00000000)) + (uint64_t)lower;
-  int32_t upper =  (tmp_imm - (int32_t)lower) >> 32;
-  int64_t tmp_upper = upper, tmp_lower = upper;
-  tmp_lower = (tmp_lower << 52) >> 52;
-  tmp_upper -= tmp_lower;
-  tmp_upper >>= 12;
-  // Load upper 32 bits. Upper = target[63:32], but if target[31] = 1 or (target[31:20] == 0x7ff && target[19] == 1),
-  // upper = target[63:32] + 1.
-  Assembler::patch(branch + 0,  31, 12, tmp_upper & 0xfffff);                       // Lui.
-  Assembler::patch(branch + 4,  31, 20, tmp_lower & 0xfff);                         // Addi.
-  // Load the rest 32 bits.
-  Assembler::patch(branch + 12, 31, 20, ((int32_t)lower >> 20) & 0xfff);            // Addi.
-  Assembler::patch(branch + 20, 31, 20, (((intptr_t)target << 44) >> 52) & 0xfff);  // Addi.
-  Assembler::patch(branch + 28, 31, 20, (intptr_t)target & 0xff);                   // Addi.
-  return LI64_INSTRUCTIONS_NUM * MacroAssembler::instruction_size;
-}
-
 static int patch_imm_in_li16u(address branch, uint16_t target) {
   Assembler::patch(branch, 31, 12, target); // patch lui only
   return MacroAssembler::instruction_size;
@@ -1832,16 +1887,6 @@ static address get_target_of_movptr2(address insn_addr) {
   return ret;
 }
 
-static address get_target_of_li64(address insn_addr) {
-  assert_cond(insn_addr != nullptr);
-  intptr_t target_address = (((int64_t)Assembler::sextract(Assembler::ld_instr(insn_addr), 31, 12)) & 0xfffff) << 44; // Lui.
-  target_address += ((int64_t)Assembler::sextract(Assembler::ld_instr(insn_addr + 4), 31, 20)) << 32;                 // Addi.
-  target_address += ((int64_t)Assembler::sextract(Assembler::ld_instr(insn_addr + 12), 31, 20)) << 20;                // Addi.
-  target_address += ((int64_t)Assembler::sextract(Assembler::ld_instr(insn_addr + 20), 31, 20)) << 8;                 // Addi.
-  target_address += ((int64_t)Assembler::sextract(Assembler::ld_instr(insn_addr + 28), 31, 20));                      // Addi.
-  return (address)target_address;
-}
-
 address MacroAssembler::get_target_of_li32(address insn_addr) {
   assert_cond(insn_addr != nullptr);
   intptr_t target_address = (((int64_t)Assembler::sextract(Assembler::ld_instr(insn_addr), 31, 12)) & 0xfffff) << 12; // Lui.
@@ -1864,8 +1909,6 @@ int MacroAssembler::pd_patch_instruction_size(address instruction_address, addre
     return patch_addr_in_movptr1(instruction_address, target);
   } else if (MacroAssembler::is_movptr2_at(instruction_address)) {              // movptr2
     return patch_addr_in_movptr2(instruction_address, target);
-  } else if (MacroAssembler::is_li64_at(instruction_address)) {                 // li64
-    return patch_imm_in_li64(instruction_address, target);
   } else if (MacroAssembler::is_li32_at(instruction_address)) {                 // li32
     int64_t imm = (intptr_t)target;
     return patch_imm_in_li32(instruction_address, (int32_t)imm);
@@ -1896,8 +1939,6 @@ address MacroAssembler::target_addr_for_insn(address insn_addr) {
     return get_target_of_movptr1(insn_addr);
   } else if (MacroAssembler::is_movptr2_at(insn_addr)) {          // movptr2
     return get_target_of_movptr2(insn_addr);
-  } else if (MacroAssembler::is_li64_at(insn_addr)) {             // li64
-    return get_target_of_li64(insn_addr);
   } else if (MacroAssembler::is_li32_at(insn_addr)) {             // li32
     return get_target_of_li32(insn_addr);
   } else {
@@ -1928,9 +1969,9 @@ int MacroAssembler::patch_oop(address insn_addr, address o) {
 void MacroAssembler::reinit_heapbase() {
   if (UseCompressedOops) {
     if (Universe::is_fully_initialized()) {
-      mv(xheapbase, CompressedOops::ptrs_base());
+      mv(xheapbase, CompressedOops::base());
     } else {
-      ExternalAddress target(CompressedOops::ptrs_base_addr());
+      ExternalAddress target(CompressedOops::base_addr());
       relocate(target.rspec(), [&] {
         int32_t offset;
         la(xheapbase, target.target(), offset);
@@ -2043,23 +2084,11 @@ void MacroAssembler::addw(Register Rd, Register Rn, int32_t increment, Register 
 }
 
 void MacroAssembler::sub(Register Rd, Register Rn, int64_t decrement, Register temp) {
-  if (is_simm12(-decrement)) {
-    addi(Rd, Rn, -decrement);
-  } else {
-    assert_different_registers(Rn, temp);
-    li(temp, decrement);
-    sub(Rd, Rn, temp);
-  }
+  add(Rd, Rn, -decrement, temp);
 }
 
 void MacroAssembler::subw(Register Rd, Register Rn, int32_t decrement, Register temp) {
-  if (is_simm12(-decrement)) {
-    addiw(Rd, Rn, -decrement);
-  } else {
-    assert_different_registers(Rn, temp);
-    li(temp, decrement);
-    subw(Rd, Rn, temp);
-  }
+  addw(Rd, Rn, -decrement, temp);
 }
 
 void MacroAssembler::andrw(Register Rd, Register Rs1, Register Rs2) {
@@ -2919,7 +2948,7 @@ int MacroAssembler::corrected_idivq(Register result, Register rs1, Register rs2,
   return idivq_offset;
 }
 
-// Look up the method for a megamorpic invkkeinterface call.
+// Look up the method for a megamorphic invokeinterface call.
 // The target method is determined by <intf_klass, itable_index>.
 // The receiver klass is in recv_klass.
 // On success, the result will be in method_result, and execution falls through.
@@ -2934,9 +2963,9 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
   assert_different_registers(recv_klass, intf_klass, scan_tmp);
   assert_different_registers(method_result, intf_klass, scan_tmp);
   assert(recv_klass != method_result || !return_method,
-         "recv_klass can be destroyed when mehtid isn't needed");
+         "recv_klass can be destroyed when method isn't needed");
   assert(itable_index.is_constant() || itable_index.as_register() == method_result,
-         "caller must be same register for non-constant itable index as for method");
+         "caller must use same register for non-constant itable index as for method");
 
   // Compute start of first itableOffsetEntry (which is at the end of the vtable).
   int vtable_base = in_bytes(Klass::vtable_start_offset());
@@ -3126,6 +3155,13 @@ void MacroAssembler::membar(uint32_t order_constraint) {
 
     membar_mask_to_pred_succ(order_constraint, predecessor, successor);
     fence(predecessor, successor);
+  }
+}
+
+void MacroAssembler::cmodx_fence() {
+  BLOCK_COMMENT("cmodx fence");
+  if (VM_Version::supports_fencei_barrier()) {
+    Assembler::fencei();
   }
 }
 
@@ -3605,14 +3641,18 @@ void MacroAssembler::atomic_cas(
 
 void MacroAssembler::far_jump(const Address &entry, Register tmp) {
   assert(CodeCache::find_blob(entry.target()) != nullptr,
-         "destination of far call not found in code cache");
+         "destination of far jump not found in code cache");
   assert(entry.rspec().type() == relocInfo::external_word_type
         || entry.rspec().type() == relocInfo::runtime_call_type
         || entry.rspec().type() == relocInfo::none, "wrong entry relocInfo type");
   // Fixed length: see MacroAssembler::far_branch_size()
+  // We can use auipc + jr here because we know that the total size of
+  // the code cache cannot exceed 2Gb.
   relocate(entry.rspec(), [&] {
-    int32_t offset;
-    la(tmp, entry.target(), offset);
+    int64_t distance = entry.target() - pc();
+    int32_t offset = ((int32_t)distance << 20) >> 20;
+    assert(is_valid_32bit_offset(distance), "Far jump using wrong instructions.");
+    auipc(tmp, (int32_t)distance + 0x800);
     jr(tmp, offset);
   });
 }
@@ -3627,8 +3667,11 @@ void MacroAssembler::far_call(const Address &entry, Register tmp) {
   // We can use auipc + jalr here because we know that the total size of
   // the code cache cannot exceed 2Gb.
   relocate(entry.rspec(), [&] {
-    assert(is_valid_32bit_offset(entry.target() - pc()), "Far call using wrong instructions.");
-    call(entry.target(), tmp);
+    int64_t distance = entry.target() - pc();
+    int32_t offset = ((int32_t)distance << 20) >> 20;
+    assert(is_valid_32bit_offset(distance), "Far call using wrong instructions.");
+    auipc(tmp, (int32_t)distance + 0x800);
+    jalr(tmp, offset);
   });
 }
 
@@ -5594,15 +5637,21 @@ static int reg2offset_out(VMReg r) {
   return (r->reg2stack() + SharedRuntime::out_preserve_stack_slots()) * VMRegImpl::stack_slot_size;
 }
 
-// On 64 bit we will store integer like items to the stack as
-// 64 bits items (riscv64 abi) even though java would only store
-// 32bits for a parameter. On 32bit it will simply be 32 bits
-// So this routine will do 32->32 on 32bit and 32->64 on 64bit
+// The C ABI specifies:
+// "integer scalars narrower than XLEN bits are widened according to the sign
+// of their type up to 32 bits, then sign-extended to XLEN bits."
+// Applies for both passed in register and stack.
+//
+// Java uses 32-bit stack slots; jint, jshort, jchar, jbyte uses one slot.
+// Native uses 64-bit stack slots for all integer scalar types.
+//
+// lw loads the Java stack slot, sign-extends and
+// sd store this widened integer into a 64 bit native stack slot.
 void MacroAssembler::move32_64(VMRegPair src, VMRegPair dst, Register tmp) {
   if (src.first()->is_stack()) {
     if (dst.first()->is_stack()) {
       // stack to stack
-      ld(tmp, Address(fp, reg2offset_in(src.first())));
+      lw(tmp, Address(fp, reg2offset_in(src.first())));
       sd(tmp, Address(sp, reg2offset_out(dst.first())));
     } else {
       // stack to reg

@@ -26,6 +26,7 @@ package java.lang.classfile.attribute;
 
 import java.lang.classfile.constantpool.ModuleEntry;
 import java.lang.constant.ModuleDesc;
+
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.classfile.impl.UnboundAttribute;
 import jdk.internal.javac.PreviewFeature;

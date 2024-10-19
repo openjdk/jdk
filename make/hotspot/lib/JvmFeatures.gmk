@@ -47,9 +47,10 @@ endif
 ifeq ($(call check-jvm-feature, zero), true)
   JVM_EXCLUDES += opto libadt
   JVM_EXCLUDE_PATTERNS += c1_ c1/ c2_ runtime_ /c2/
-  JVM_EXCLUDE_FILES += templateInterpreter.cpp templateInterpreterGenerator.cpp \
-                       bcEscapeAnalyzer.cpp ciTypeFlow.cpp
-  JVM_CFLAGS_FEATURES += -DZERO -DZERO_LIBARCH='"$(OPENJDK_TARGET_CPU_LEGACY_LIB)"' $(LIBFFI_CFLAGS)
+  JVM_EXCLUDE_FILES += templateInterpreter.cpp \
+      templateInterpreterGenerator.cpp bcEscapeAnalyzer.cpp ciTypeFlow.cpp
+  JVM_CFLAGS_FEATURES += -DZERO \
+      -DZERO_LIBARCH='"$(OPENJDK_TARGET_CPU_LEGACY_LIB)"' $(LIBFFI_CFLAGS)
   JVM_LIBS_FEATURES += $(LIBFFI_LIBS)
   ifeq ($(ENABLE_LIBFFI_BUNDLING), true)
     JVM_LDFLAGS_FEATURES += $(call SET_EXECUTABLE_ORIGIN,/..)
@@ -69,7 +70,8 @@ endif
 ifeq ($(call check-jvm-feature, minimal), true)
   JVM_CFLAGS_FEATURES += -DMINIMAL_JVM -DVMTYPE=\"Minimal\"
   ifeq ($(call isTargetOs, linux), true)
-    # Override the default -g with a more liberal strip policy for the minimal JVM
+    # Override the default -g with a more liberal strip policy for the
+    # minimal JVM
     JVM_STRIPFLAGS := --strip-unneeded
   endif
 endif
@@ -80,11 +82,14 @@ endif
 
 ifneq ($(call check-jvm-feature, jvmti), true)
   JVM_CFLAGS_FEATURES += -DINCLUDE_JVMTI=0
-  JVM_EXCLUDE_FILES += jvmtiGetLoadedClasses.cpp jvmtiThreadState.cpp jvmtiExtensions.cpp \
-      jvmtiImpl.cpp jvmtiManageCapabilities.cpp jvmtiRawMonitor.cpp jvmtiUtil.cpp jvmtiTrace.cpp \
-      jvmtiCodeBlobEvents.cpp jvmtiEnv.cpp jvmtiRedefineClasses.cpp jvmtiEnvBase.cpp jvmtiEnvThreadState.cpp \
-      jvmtiTagMap.cpp jvmtiEventController.cpp evmCompat.cpp jvmtiEnter.xsl jvmtiExport.cpp \
-      jvmtiClassFileReconstituter.cpp jvmtiTagMapTable.cpp jvmtiAgent.cpp jvmtiAgentList.cpp jfrJvmtiAgent.cpp
+  JVM_EXCLUDE_FILES += jvmtiGetLoadedClasses.cpp jvmtiThreadState.cpp \
+      jvmtiExtensions.cpp jvmtiImpl.cpp jvmtiManageCapabilities.cpp \
+      jvmtiRawMonitor.cpp jvmtiUtil.cpp jvmtiTrace.cpp jvmtiCodeBlobEvents.cpp \
+      jvmtiEnv.cpp jvmtiRedefineClasses.cpp jvmtiEnvBase.cpp \
+      jvmtiEnvThreadState.cpp jvmtiTagMap.cpp jvmtiEventController.cpp \
+      evmCompat.cpp jvmtiEnter.xsl jvmtiExport.cpp \
+      jvmtiClassFileReconstituter.cpp jvmtiTagMapTable.cpp jvmtiAgent.cpp \
+      jvmtiAgentList.cpp jfrJvmtiAgent.cpp
 endif
 
 ifneq ($(call check-jvm-feature, jvmci), true)
@@ -166,8 +171,10 @@ ifeq ($(call check-jvm-feature, link-time-opt), true)
   # later on if desired
   JVM_OPTIMIZATION := HIGHEST_JVM
   ifeq ($(call isCompiler, gcc), true)
-    JVM_CFLAGS_FEATURES += -flto=auto -fuse-linker-plugin -fno-strict-aliasing -fno-fat-lto-objects
-    JVM_LDFLAGS_FEATURES += $(CXX_O_FLAG_HIGHEST_JVM) -flto=auto -fuse-linker-plugin -fno-strict-aliasing
+    JVM_CFLAGS_FEATURES += -flto=auto -fuse-linker-plugin -fno-strict-aliasing \
+        -fno-fat-lto-objects
+    JVM_LDFLAGS_FEATURES += $(CXX_O_FLAG_HIGHEST_JVM) -flto=auto \
+        -fuse-linker-plugin -fno-strict-aliasing
   else ifeq ($(call isCompiler, microsoft), true)
     JVM_CFLAGS_FEATURES += -GL
     JVM_LDFLAGS_FEATURES += -LTCG:INCREMENTAL

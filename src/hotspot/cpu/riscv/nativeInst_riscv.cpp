@@ -215,10 +215,10 @@ void NativeShortCall::print() {
 // Used in the runtime linkage of calls; see class CompiledIC.
 //
 // Add parameter assert_lock to switch off assertion
-// during code generation, where no patching lock is needed.
+// during code generation, where no lock is needed.
 bool NativeShortCall::set_destination_mt_safe(address dest, bool assert_lock) {
   assert(!assert_lock ||
-         (Patching_lock->is_locked() || SafepointSynchronize::is_at_safepoint()) ||
+         (CodeCache_lock->is_locked() || SafepointSynchronize::is_at_safepoint()) ||
          CompiledICLocker::is_safe(instruction_address()),
          "concurrent code patching");
 
@@ -386,7 +386,7 @@ void NativeFarCall::print() {
 bool NativeFarCall::set_destination_mt_safe(address dest, bool assert_lock) {
   assert(NativeFarCall::is_at(addr_at(0)), "unexpected code at call site");
   assert(!assert_lock ||
-         (Patching_lock->is_locked() || SafepointSynchronize::is_at_safepoint()) ||
+         (CodeCache_lock->is_locked() || SafepointSynchronize::is_at_safepoint()) ||
          CompiledICLocker::is_safe(addr_at(0)),
          "concurrent code patching");
 
