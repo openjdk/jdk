@@ -3072,20 +3072,20 @@ public final class String
     public boolean contains(CharSequence s) {
         return indexOf(s.toString()) >= 0;
     }
-        
-   /**
-    * Returns true if and only if this string contains the specified
-    * sequence of char values, ignoring case considerations.
-    *
-    * @param s the sequence to search for
-    * @return true if this string contains the specified sequence of char values, ignoring case;
-    *         false otherwise
-    */
+
+    /**
+     * Returns true if and only if this string contains the specified
+     * sequence of char values, ignoring case considerations.
+     *
+     * @param s the sequence to search for
+     * @return true if this string contains the specified sequence of char values, ignoring case;
+     * false otherwise
+     */
     public boolean containsIgnoreCase(CharSequence s) {
-       String lowerThis = this.toLowerCase();
-       String lowerS = s.toString().toLowerCase();
-       return lowerThis.contains(lowerS);
-   }    
+        String lowerThis = this.toLowerCase();
+        String lowerS = s.toString().toLowerCase();
+        return lowerThis.contains(lowerS);
+    }
 
     /**
      * Replaces the first substring of this string that matches the given <a
