@@ -2830,6 +2830,7 @@ private:
   void vpmulld(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void evpmullq(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void vpmuludq(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void vpmuldq(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void vpmullw(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
   void vpmulld(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
   void evpmullq(XMMRegister dst, XMMRegister nds, Address src, int vector_len);

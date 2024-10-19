@@ -8505,6 +8505,13 @@ void Assembler::vpmuludq(XMMRegister dst, XMMRegister nds, XMMRegister src, int 
   emit_int16((unsigned char)0xF4, (0xC0 | encode));
 }
 
+void Assembler::vpmuldq(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len) {
+  assert(UseAVX > 0, "requires some form of AVX");
+  InstructionAttr attributes(vector_len, /* vex_w */ VM_Version::supports_evex(), /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
+  int encode = vex_prefix_and_encode(dst->encoding(), nds->encoding(), src->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_38, &attributes);
+  emit_int16((unsigned char)0x28, (0xC0 | encode));
+}
+
 void Assembler::vpmullw(XMMRegister dst, XMMRegister nds, Address src, int vector_len) {
   assert(UseAVX > 0, "requires some form of AVX");
   InstructionMark im(this);

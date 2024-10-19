@@ -26,121 +26,182 @@ package compiler.vectorapi;
 import jdk.incubator.vector.*;
 import java.util.Random;
 import java.util.stream.IntStream;
+import compiler.lib.ir_framework.*;
+import java.lang.reflect.Array;
 
 /**
  * @test
  * @bug 8341137
  * @key randomness
- * @requires vm.cpu.features ~= ".*avx.*"
- * @summary Optimize long vector multiplication using x86 VPMULUDQ instruction.
+ * @summary Optimize long vector multiplication using x86 VPMUL[U]DQ instruction.
  * @modules jdk.incubator.vector
- *
+ * @library /test/lib /
  * @run driver compiler.vectorapi.VectorMultiplyOpt
  */
 
 public class VectorMultiplyOpt {
 
-    public static long[] src1;
-    public static long[] src2;
+    public static int[] isrc1;
+    public static int[] isrc2;
+    public static long[] lsrc1;
+    public static long[] lsrc2;
     public static long[] res;
 
-    public static final int SIZE = 4095;
+    public static final int SIZE = 1024;
     public static final Random r = new Random(1024);
     public static final VectorSpecies<Long> LSP = LongVector.SPECIES_PREFERRED;
+    public static final VectorSpecies<Integer> ISP = IntVector.SPECIES_PREFERRED;
 
-    public static void pattern1(long[] res, long[] src1, long[] src2) {
-        int i = 0;
-        for (; i < LSP.loopBound(res.length); i += LSP.length()) {
-            LongVector vsrc1 = LongVector.fromArray(LSP, src1, i);
-            LongVector vsrc2 = LongVector.fromArray(LSP, src2, i);
-            vsrc1.lanewise(VectorOperators.AND, 0xFFFFFFFFL)
-                .lanewise(VectorOperators.MUL, vsrc2.lanewise(VectorOperators.AND, 0xFFFFFFFFL))
-                .intoArray(res, i);
-        }
-        for (; i < res.length; i++) {
-            res[i] = (src1[i] & 0xFFFFFFFFL) * (src2[i] & 0xFFFFFFFFL);
-        }
+    public VectorMultiplyOpt() {
+        lsrc1 = new long[SIZE];
+        lsrc2 = new long[SIZE];
+        res  = new long[SIZE];
+        isrc1 = new int[SIZE + 16];
+        isrc2 = new int[SIZE + 16];
+        IntStream.range(0, SIZE).forEach(i -> { lsrc1[i] = Long.MAX_VALUE * r.nextLong(); });
+        IntStream.range(0, SIZE).forEach(i -> { lsrc2[i] = Long.MAX_VALUE * r.nextLong(); });
+        IntStream.range(0, SIZE).forEach(i -> { isrc1[i] = Integer.MAX_VALUE * r.nextInt(); });
+        IntStream.range(0, SIZE).forEach(i -> { isrc2[i] = Integer.MAX_VALUE * r.nextInt(); });
     }
 
-    public static void pattern2(long[] res, long[] src1, long[] src2) {
-        int i = 0;
-        for (; i < LSP.loopBound(res.length); i += LSP.length()) {
-            LongVector vsrc1 = LongVector.fromArray(LSP, src1, i);
-            LongVector vsrc2 = LongVector.fromArray(LSP, src2, i);
-            vsrc1.lanewise(VectorOperators.AND, 0xFFFFFFFFL)
-                .lanewise(VectorOperators.MUL, vsrc2.lanewise(VectorOperators.LSHR, 32))
-                .intoArray(res, i);
-        }
-        for (; i < res.length; i++) {
-            res[i] = (src1[i] & 0xFFFFFFFFL) * (src2[i] >>> 32);
-        }
-    }
 
-    public static void pattern3(long[] res, long[] src1, long[] src2) {
-        int i = 0;
-        for (; i < LSP.loopBound(res.length); i += LSP.length()) {
-            LongVector vsrc1 = LongVector.fromArray(LSP, src1, i);
-            LongVector vsrc2 = LongVector.fromArray(LSP, src2, i);
-            vsrc1.lanewise(VectorOperators.LSHR, 32)
-                .lanewise(VectorOperators.MUL, vsrc2.lanewise(VectorOperators.LSHR, 32))
-                .intoArray(res, i);
-        }
-        for (; i < res.length; i++) {
-            res[i] = (src1[i] >>> 32) * (src2[i] >>> 32);
-        }
-    }
-
-    public static void pattern4(long[] res, long[] src1, long[] src2) {
-        int i = 0;
-        for (; i < LSP.loopBound(res.length); i += LSP.length()) {
-            LongVector vsrc1 = LongVector.fromArray(LSP, src1, i);
-            LongVector vsrc2 = LongVector.fromArray(LSP, src2, i);
-            vsrc1.lanewise(VectorOperators.LSHR, 32)
-                .lanewise(VectorOperators.MUL, vsrc2.lanewise(VectorOperators.AND, 0xFFFFFFFFL))
-                .intoArray(res, i);
-        }
-        for (; i < res.length; i++) {
-            res[i] = (src1[i] >>> 32) * (src2[i] & 0xFFFFFFFFL);
-        }
+    public static void main(String[] args) {
+        TestFramework testFramework = new TestFramework();
+        testFramework.setDefaultWarmup(5000)
+                     .addFlags("--add-modules=jdk.incubator.vector")
+                     .start();
+        System.out.println("PASSED");
     }
 
     interface Validator {
         public long apply(long src1, long src2);
     }
 
-    public static void validate(String msg, long[] actual, long[] src1, long[] src2, Validator func) {
+    public static void validate(String msg, long[] actual, Object src1, Object src2, Validator func) {
         for (int i = 0; i < actual.length; i++) {
-            if (actual[i] != func.apply(src1[i], src2[i])) {
-                throw new AssertionError(msg + "index " + i + ": src1 = " + src1[i] + " src2 = " +
-                                         src2[i] + " actual = " + actual[i] + " expected = " +
-                                         func.apply(src1[i], src2[i]));
+            long expected;
+            if (long[].class == src1.getClass()) {
+                expected = func.apply(Array.getLong(src1, i), Array.getLong(src2, i));
+            } else {
+                assert int[].class == src1.getClass();
+                expected = func.apply(Array.getInt(src1, i), Array.getInt(src2, i));
+            }
+            if (actual[i] != expected) {
+                throw new AssertionError(msg + "index " + i + ": src1 = " + Array.get(src1, i) + " src2 = " +
+                                         Array.get(src2, i) + " actual = " + actual[i] + " expected = " + expected);
             }
         }
     }
 
-    public static void setup() {
-        src1 = new long[SIZE];
-        src2 = new long[SIZE];
-        res  = new long[SIZE];
-        IntStream.range(0, SIZE).forEach(i -> { src1[i] = Long.MAX_VALUE * r.nextLong(); });
-        IntStream.range(0, SIZE).forEach(i -> { src2[i] = Long.MAX_VALUE * r.nextLong(); });
+    @Test
+    @IR(counts = {IRNode.MUL_VL, " >0 ", IRNode.AND_VL, " 0 "}, applyIfCPUFeature = {"avx", "true"})
+    @Warmup(value = 10000)
+    public static void test_pattern1() {
+        int i = 0;
+        for (; i < LSP.loopBound(res.length); i += LSP.length()) {
+            LongVector vsrc1 = LongVector.fromArray(LSP, lsrc1, i);
+            LongVector vsrc2 = LongVector.fromArray(LSP, lsrc2, i);
+            vsrc1.lanewise(VectorOperators.AND, 0xFFFFFFFFL)
+                 .lanewise(VectorOperators.MUL, vsrc2.lanewise(VectorOperators.AND, 0xFFFFFFFFL))
+                 .intoArray(res, i);
+        }
+        for (; i < res.length; i++) {
+            res[i] = (lsrc1[i] & 0xFFFFFFFFL) * (lsrc2[i] & 0xFFFFFFFFL);
+        }
     }
 
-    public static void main(String[] args) {
-        setup();
-        for (int ic = 0; ic < 1000; ic++) {
-            pattern1(res, src1, src2);
-            validate("pattern1 ", res, src1, src2, (src1, src2) -> (src1 & 0xFFFFFFFFL) * (src2 & 0xFFFFFFFFL));
+    @Check(test = "test_pattern1")
+    public void test_pattern1_validate() {
+        validate("pattern1 ", res, lsrc1, lsrc2, (l1, l2) -> (l1 & 0xFFFFFFFFL) * (l2 & 0xFFFFFFFFL));
+    }
 
-            pattern2(res, src1, src2);
-            validate("pattern2 ", res, src1, src2, (src1, src2) -> (src1 & 0xFFFFFFFFL) * (src2 >>> 32));
-
-            pattern3(res, src1, src2);
-            validate("pattern3 ", res, src1, src2, (src1, src2) -> (src1 >>> 32) * (src2 >>> 32));
-
-            pattern4(res, src1, src2);
-            validate("pattern4 ", res, src1, src2, (src1, src2) -> (src1 >>> 32) * (src2 & 0xFFFFFFFFL));
+    @Test
+    @IR(counts = {IRNode.MUL_VL, " >0 ", IRNode.AND_VL, " 0 ", IRNode.URSHIFT_VL, " >0 "}, applyIfCPUFeature = {"avx", "true"})
+    @Warmup(value = 10000)
+    public static void test_pattern2() {
+        int i = 0;
+        for (; i < LSP.loopBound(res.length); i += LSP.length()) {
+            LongVector vsrc1 = LongVector.fromArray(LSP, lsrc1, i);
+            LongVector vsrc2 = LongVector.fromArray(LSP, lsrc2, i);
+            vsrc1.lanewise(VectorOperators.AND, 0xFFFFFFFFL)
+                .lanewise(VectorOperators.MUL, vsrc2.lanewise(VectorOperators.LSHR, 32))
+                .intoArray(res, i);
         }
-        System.out.println("PASSED");
+        for (; i < res.length; i++) {
+            res[i] = (lsrc1[i] & 0xFFFFFFFFL) * (lsrc2[i] >>> 32);
+        }
+    }
+
+    @Check(test = "test_pattern2")
+    public void test_pattern2_validate() {
+        validate("pattern2 ", res, lsrc1, lsrc2, (l1, l2) -> (l1 & 0xFFFFFFFFL) * (l2 >>> 32));
+    }
+
+    @Test
+    @IR(counts = {IRNode.MUL_VL, " >0 ", IRNode.URSHIFT_VL, " >0 "}, applyIfCPUFeature = {"avx", "true"})
+    @Warmup(value = 10000)
+    public static void test_pattern3() {
+        int i = 0;
+        for (; i < LSP.loopBound(res.length); i += LSP.length()) {
+            LongVector vsrc1 = LongVector.fromArray(LSP, lsrc1, i);
+            LongVector vsrc2 = LongVector.fromArray(LSP, lsrc2, i);
+            vsrc1.lanewise(VectorOperators.LSHR, 32)
+                .lanewise(VectorOperators.MUL, vsrc2.lanewise(VectorOperators.LSHR, 32))
+                .intoArray(res, i);
+        }
+        for (; i < res.length; i++) {
+            res[i] = (lsrc1[i] >>> 32) * (lsrc2[i] >>> 32);
+        }
+    }
+
+    @Check(test = "test_pattern3")
+    public void test_pattern3_validate() {
+        validate("pattern3 ", res, lsrc1, lsrc2, (l1, l2) -> (l1 >>> 32) * (l2 >>> 32));
+    }
+
+    @Test
+    @IR(counts = {IRNode.MUL_VL, " >0 ", IRNode.URSHIFT_VL, " >0 "}, applyIfCPUFeature = {"avx", "true"})
+    @Warmup(value = 10000)
+    public static void test_pattern4() {
+        int i = 0;
+        for (; i < LSP.loopBound(res.length); i += LSP.length()) {
+            LongVector vsrc1 = LongVector.fromArray(LSP, lsrc1, i);
+            LongVector vsrc2 = LongVector.fromArray(LSP, lsrc2, i);
+            vsrc1.lanewise(VectorOperators.LSHR, 32)
+                .lanewise(VectorOperators.MUL, vsrc2.lanewise(VectorOperators.AND, 0xFFFFFFFFL))
+                .intoArray(res, i);
+        }
+        for (; i < res.length; i++) {
+            res[i] = (lsrc1[i] >>> 32) * (lsrc2[i] & 0xFFFFFFFFL);
+        }
+    }
+
+    @Check(test = "test_pattern4")
+    public void test_pattern4_validate() {
+        validate("pattern4 ", res, lsrc1, lsrc2, (l1, l2) -> (l1 >>> 32) * (l2 & 0xFFFFFFFFL));
+    }
+
+    @Test
+    @IR(counts = {IRNode.MUL_VL, " >0 ", IRNode.VECTOR_CAST_I2L, " >0 "}, applyIfCPUFeature = {"avx", "true"})
+    @Warmup(value = 10000)
+    public static void test_pattern5() {
+        int i = 0;
+        for (; i < LSP.loopBound(res.length); i += LSP.length()) {
+            LongVector vsrc1 = IntVector.fromArray(ISP, isrc1, i)
+                                        .convert(VectorOperators.I2L, 0)
+                                        .reinterpretAsLongs();
+            LongVector vsrc2 = IntVector.fromArray(ISP, isrc2, i)
+                                        .convert(VectorOperators.I2L, 0)
+                                        .reinterpretAsLongs();
+            vsrc1.lanewise(VectorOperators.MUL, vsrc2).intoArray(res, i);
+        }
+        for (; i < res.length; i++) {
+            res[i] = Math.multiplyFull(isrc1[i], isrc2[i]);
+        }
+    }
+
+    @Check(test = "test_pattern5")
+    public void test_pattern5_validate() {
+        validate("pattern5 ", res, isrc1, isrc2, (i1, i2) -> Math.multiplyFull((int)i1, (int)i2));
     }
 }

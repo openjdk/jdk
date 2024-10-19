@@ -6208,13 +6208,25 @@ instruct vmulL_reg(vec dst, vec src1, vec src2, vec xtmp1, vec xtmp2) %{
 %}
 
 instruct vmuludq_reg(vec dst, vec src1, vec src2) %{
-  predicate(UseAVX > 0 && n->as_MulVL()->is_mult_lower_double_word());
+  predicate(UseAVX > 0 && n->as_MulVL()->is_mult_lower_double_word() && !n->as_MulVL()->is_signed_mult());
   match(Set dst (MulVL src1 src2));
   ins_cost(100);
-  format %{ "vpmuludq $dst,$src1,$src2\t! muldq packedL" %}
+  format %{ "vpmuludq $dst,$src1,$src2\t! muludq packedL" %}
   ins_encode %{
     int vlen_enc = vector_length_encoding(this);
     __ vpmuludq($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vmuldq_reg(vec dst, vec src1, vec src2) %{
+  predicate(UseAVX > 0 && n->as_MulVL()->is_mult_lower_double_word() && n->as_MulVL()->is_signed_mult());
+  match(Set dst (MulVL src1 src2));
+  ins_cost(100);
+  format %{ "vpmuldq $dst,$src1,$src2\t! muldq packedL" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    __ vpmuldq($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}
