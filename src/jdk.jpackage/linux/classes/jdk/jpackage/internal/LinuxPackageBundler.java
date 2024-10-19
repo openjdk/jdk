@@ -126,39 +126,41 @@ abstract class LinuxPackageBundler extends AbstractBundler {
         };
 
         try {
-            Path appImage = pkg.predefinedAppImage();
+            Path srcAppImageDir = pkg.predefinedAppImage();
 
             // we either have an application image or need to build one
-            if (appImage != null) {
-                initAppImageLayout.apply(appImage).copy(pkg.appLayout().resolveAt(pkgWorkshop
-                        .appImageDir()));
-            } else {
-                Files.createDirectories(workshop.appImageDir().getParent());
-                appImageBundler.execute(params, workshop.appImageDir().getParent());
-                Files.delete(AppImageFile.getPathInAppImage(workshop.appImageDir()));
-                if (pkg.isInstallDirInUsrTree()) {
-                    initAppImageLayout.apply(workshop.appImageDir()).copy(pkg.appLayout().resolveAt(
-                            pkgWorkshop.appImageDir()));
-                }
+            if (srcAppImageDir == null) {
+                srcAppImageDir = workshop.appImageDir();
+                Files.createDirectories(srcAppImageDir.getParent());
+                appImageBundler.execute(params, srcAppImageDir.getParent());
             }
+
+            Path dstAppImageDir;
+            if (pkg.isInstallDirInUsrTree()) {
+                dstAppImageDir = pkgWorkshop.appImageDir();
+            } else {
+                dstAppImageDir = pkgWorkshop.appImageDir().resolve(pkg.relativeInstallDir());
+            }
+
+            initAppImageLayout.apply(srcAppImageDir).copy(pkg.appLayout().resolveAt(dstAppImageDir));
 
             for (var ca : customActions) {
                 ca.init(pkgWorkshop, pkg);
             }
 
-            Map<String, String> data = createDefaultReplacementData(workshop, pkg);
+            Map<String, String> data = createDefaultReplacementData(pkgWorkshop, pkg);
 
             for (var ca : customActions) {
                 ShellCustomAction.mergeReplacementData(data, ca.instance.
                         create());
             }
 
-            data.putAll(createReplacementData(workshop, pkg));
+            data.putAll(createReplacementData(pkgWorkshop, pkg));
 
             Path packageBundle = buildPackageBundle(Collections.unmodifiableMap(
-                    data), workshop, pkg, outputParentDir);
+                    data), pkgWorkshop, pkg, outputParentDir);
 
-            verifyOutputBundle(workshop, pkg, packageBundle).stream()
+            verifyOutputBundle(pkgWorkshop, pkg, packageBundle).stream()
                     .filter(Objects::nonNull)
                     .forEachOrdered(ex -> {
                 Log.verbose(ex.getLocalizedMessage());

@@ -32,7 +32,6 @@ import static jdk.jpackage.internal.Functional.ThrowingSupplier.toSupplier;
 import jdk.jpackage.internal.Package.Impl;
 import jdk.jpackage.internal.Package.PackageType;
 import jdk.jpackage.internal.Package.StandardPackageType;
-import static jdk.jpackage.internal.Package.defaultInstallDir;
 import static jdk.jpackage.internal.Package.mapInstallDir;
 import static jdk.jpackage.internal.StandardBundlerParam.ABOUT_URL;
 import static jdk.jpackage.internal.StandardBundlerParam.DESCRIPTION;
@@ -54,18 +53,15 @@ final class PackageFromParams {
         var licenseFile = Optional.ofNullable(LICENSE_FILE.fetchFrom(params)).map(Path::of).orElse(null);
         var predefinedAppImage = getPredefinedAppImage(params);
 
-        var relativeInstallDir = Optional.ofNullable(INSTALL_DIR.fetchFrom(params)).map(v -> {
-            return toSupplier(() -> mapInstallDir(Path.of(v), pkgType)).get();
-        }).orElseGet(() -> {
-            if (pkgType instanceof StandardPackageType stdPkgType) {
-                return defaultInstallDir(app, stdPkgType);
-            } else {
-                return app.appImageDirName();
-            }
-        });
-        if (relativeInstallDir.isAbsolute()) {
-            relativeInstallDir = Path.of("/").relativize(relativeInstallDir);
-        }
+        Path relativeInstallDir = Optional.ofNullable(INSTALL_DIR.fetchFrom(params)).map(v -> {
+            return toSupplier(() -> {
+                var path = mapInstallDir(Path.of(v), pkgType);
+                if (path.isAbsolute()) {
+                    path = Path.of("/").relativize(path);
+                }
+                return path;
+            }).get();
+        }).orElse(null);
 
         return new Impl(app, pkgType, packageName, description, version, aboutURL, licenseFile,
                 predefinedAppImage, relativeInstallDir);

@@ -83,11 +83,10 @@ interface LinuxPackage extends Package {
 
         Impl(Package target, String menuGroupName, String category,
                 String additionalDependencies, String release, String arch) throws ConfigException {
-            super(target);
-            if (target.type() instanceof StandardPackageType type) {
-                packageName = mapPackageName(target.packageName(), type);
-            } else {
-                packageName = target.packageName();
+            super(fixPackageName(target));
+
+            if (type() instanceof StandardPackageType type) {
+                validatePackageName(packageName(), type);
             }
 
             this.menuGroupName = Optional.ofNullable(menuGroupName).orElseGet(DEFAULTS::menuGroupName);
@@ -96,11 +95,6 @@ interface LinuxPackage extends Package {
 
             this.additionalDependencies = additionalDependencies;
             this.arch = arch;
-        }
-
-        @Override
-        public String packageName() {
-            return packageName;
         }
 
         @Override
@@ -127,8 +121,22 @@ interface LinuxPackage extends Package {
         public String arch() {
             return arch;
         }
-
-        private final String packageName;
+        
+        private static Package fixPackageName(Package pkg) {
+            var packageName = pkg.packageName();
+            if (pkg.type() instanceof StandardPackageType type) {
+                switch (type) {
+                    case LinuxDeb, LinuxRpm -> {
+                        // make sure to lower case and spaces/underscores become dashes
+                        packageName = packageName.toLowerCase().replaceAll("[ _]", "-");
+                    }
+                }
+            }
+            return new Package.Impl(pkg.app(), pkg.type(), packageName,
+                    pkg.description(), pkg.version(), pkg.aboutURL(),
+                    pkg.licenseFile(), pkg.predefinedAppImage(),
+                    pkg.configuredRelativeInstallDir());
+        }
 
         private final String menuGroupName;
         private final String category;
@@ -175,10 +183,8 @@ interface LinuxPackage extends Package {
     static final Defaults DEFAULTS = new Defaults("1", I18N.getString("param.menu-group.default"),
             "misc");
 
-    private static String mapPackageName(String packageName, StandardPackageType pkgType) throws ConfigException {
-        // make sure to lower case and spaces/underscores become dashes
-        packageName = packageName.toLowerCase().replaceAll("[ _]", "-");
-
+    static void validatePackageName(String packageName,
+            StandardPackageType pkgType) throws ConfigException {
         switch (pkgType) {
             case LinuxDeb -> {
                 //
@@ -214,11 +220,6 @@ interface LinuxPackage extends Package {
                                     .getString("error.rpm-invalid-value-for-package-name.advice"));
                 }
             }
-            default -> {
-                throw new IllegalArgumentException();
-            }
         }
-
-        return packageName;
     }
 }

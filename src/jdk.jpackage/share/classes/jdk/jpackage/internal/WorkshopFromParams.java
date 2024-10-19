@@ -26,7 +26,6 @@ package jdk.jpackage.internal;
 
 import java.nio.file.Path;
 import java.util.Map;
-import jdk.internal.util.OperatingSystem;
 import static jdk.jpackage.internal.BundlerParamInfo.createStringBundlerParam;
 import jdk.jpackage.internal.Workshop.Impl;
 import jdk.jpackage.internal.Workshop.Proxy;
@@ -45,13 +44,7 @@ final class WorkshopFromParams {
         } else if (StandardBundlerParam.hasPredefinedAppImage(params)) {
             appImageDir = StandardBundlerParam.getPredefinedAppImage(params);
         } else {
-            Path dir;
-            if (PACKAGE_TYPE.fetchFrom(params).equals("app-image") || OperatingSystem.isWindows()) {
-                dir = ApplicationFromParams.APPLICATION.fetchFrom(params).appImageDirName();
-            } else {
-                dir = PackageFromParams.PACKAGE.fetchFrom(params).relativeInstallDir();
-            }
-
+            Path dir = ApplicationFromParams.APPLICATION.fetchFrom(params).appImageDirName();
             appImageDir = defaultWorkshop.buildRoot().resolve("image").resolve(dir);
         }
 

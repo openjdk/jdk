@@ -103,11 +103,11 @@ public class LinuxRpmBundler extends LinuxPackageBundler {
     }
 
     private static Path installPrefix(LinuxPackage pkg) {
-        if (pkg.isInstallDirInUsrTree()) {
-            return Path.of("/").resolve(pkg.relativeInstallDir());
-        } else {
-            return pkg.relativeInstallDir().getParent();
+        Path path = pkg.relativeInstallDir();
+        if (!pkg.isInstallDirInUsrTree()) {
+            path = path.getParent();
         }
+        return Path.of("/").resolve(path);
     }
 
     @Override

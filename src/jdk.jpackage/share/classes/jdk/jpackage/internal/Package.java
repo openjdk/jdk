@@ -125,15 +125,43 @@ interface Package {
      * Returns relative path to the package installation directory. On Windows it should be relative
      * to %ProgramFiles% and relative to the system root ('/') on other platforms.
      */
-    Path relativeInstallDir();
+    default Path relativeInstallDir() {
+        return Optional.ofNullable(configuredRelativeInstallDir()).orElseGet(
+                this::defaultRelativeInstallDir);
+    }
+
+    Path configuredRelativeInstallDir();
+
+    default Path defaultRelativeInstallDir() {
+        switch (type()) {
+            case StandardPackageType.WinExe, StandardPackageType.WinMsi -> {
+                return app().appImageDirName();
+            }
+            case StandardPackageType.LinuxDeb, StandardPackageType.LinuxRpm -> {
+                return Path.of("opt").resolve(packageName());
+            }
+            case StandardPackageType.MacDmg, StandardPackageType.MacPkg -> {
+                String root;
+                if (isRuntimeInstaller()) {
+                    root = "Library/Java/JavaVirtualMachines";
+                } else {
+                    root = "Applications";
+                }
+                return Path.of(root).resolve(packageName());
+            }
+            default -> {
+                return null;
+            }
+        }
+    }
 
     static record Impl(Application app, PackageType type, String packageName, String description,
             String version, String aboutURL, Path licenseFile, Path predefinedAppImage,
-            Path relativeInstallDir) implements Package {
+            Path configuredRelativeInstallDir) implements Package {
         public Impl {
-            packageName = Optional.ofNullable(packageName).orElseGet(app::name);
             description = Optional.ofNullable(description).orElseGet(app::description);
             version = Optional.ofNullable(version).orElseGet(app::version);
+            packageName = Optional.ofNullable(packageName).orElseGet(app::name);
         }
     }
 
@@ -184,31 +212,8 @@ interface Package {
         }
 
         @Override
-        public Path relativeInstallDir() {
-            return target.relativeInstallDir();
-        }
-    }
-
-    static Path defaultInstallDir(Application app, StandardPackageType type) {
-        switch (type) {
-            case WinExe, WinMsi -> {
-                return app.appImageDirName();
-            }
-            case LinuxDeb, LinuxRpm -> {
-                return Path.of("/opt").resolve(app.appImageDirName());
-            }
-            case MacDmg, MacPkg -> {
-                String root;
-                if (app.isRuntime()) {
-                    root = "/Library/Java/JavaVirtualMachines";
-                } else {
-                    root = "/Applications";
-                }
-                return Path.of(root).resolve(app.appImageDirName());
-            }
-            default -> {
-                throw new IllegalArgumentException();
-            }
+        public Path configuredRelativeInstallDir() {
+            return target.configuredRelativeInstallDir();
         }
     }
 
