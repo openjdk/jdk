@@ -26,7 +26,6 @@
  * @bug 8237470 8299015
  * @summary Confirm HttpResponse.BodySubscribers#ofFile(Path)
  *          works with default and non-default file systems
- *          when SecurityManager is enabled
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters
  *        jdk.httpclient.test.lib.http2.Http2TestServer
