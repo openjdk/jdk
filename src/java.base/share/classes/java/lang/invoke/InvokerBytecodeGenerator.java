@@ -91,6 +91,8 @@ class InvokerBytecodeGenerator {
     private static final ReferenceClassDescImpl CD_MH = ReferenceClassDescImpl.ofValidated("L" + CLASS_PREFIX + "MH;");
     private static final ReferenceClassDescImpl CD_BMH = ReferenceClassDescImpl.ofValidated("L" + CLASS_PREFIX + "BMH;");
     private static final ReferenceClassDescImpl CD_DMH = ReferenceClassDescImpl.ofValidated("L" + CLASS_PREFIX + "DMH;");
+    private static final ReferenceClassDescImpl CD_LFI = ReferenceClassDescImpl.ofValidated("L" + CLASS_PREFIX + "LFI;");
+    private static final ReferenceClassDescImpl CD_NFI = ReferenceClassDescImpl.ofValidated("L" + CLASS_PREFIX + "NFI;");
 
     /** Name of its super class*/
     static final ClassDesc INVOKER_SUPER_DESC = CD_Object;
@@ -139,6 +141,8 @@ class InvokerBytecodeGenerator {
             case "MH"  -> CD_MH;
             case "DMH" -> CD_DMH;
             case "BMH" -> CD_BMH;
+            case "LFI" -> CD_LFI;
+            case "NFI" -> CD_NFI;
             default -> {
                 validateInternalClassName(name);
                 yield ReferenceClassDescImpl.ofValidated(concat("L" + CLASS_PREFIX, name, ";"));
