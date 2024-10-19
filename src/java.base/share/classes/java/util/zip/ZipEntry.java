@@ -712,9 +712,11 @@ public class ZipEntry implements ZipConstants, Cloneable {
     }
 
     /**
-     * Validate that the CEN header size + name length + comment length + extra length
-     *  do not exceed 65,535 bytes per the PKWare APP.NOTE
-     *  4.4.10, 4.4.11, & 4.4.12.
+     * Initial validation that the CEN header size + name length + comment length
+     * + extra length do not exceed 65,535 bytes per the PKWare APP.NOTE
+     * 4.4.10, 4.4.11, & 4.4.12.   Prior to writing out the CEN Header,
+     * ZipOutputStream::writeCEN will do an additional validation  of the combined
+     * length of the fields after encoding the name and comment to a byte array.
      * @param name Zip entry name
      * @param extra Zip extra data
      * @param comment Zip entry comment
