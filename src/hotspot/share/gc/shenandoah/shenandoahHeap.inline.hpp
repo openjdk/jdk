@@ -373,10 +373,10 @@ inline bool ShenandoahHeap::is_in_active_generation(oop obj) const {
     return true;
   case ShenandoahAffiliation::YOUNG_GENERATION:
     // Young regions are in young_generation and global_generation, not in old_generation
-    return gen != (ShenandoahGeneration*)old_generation();
+    return !gen->is_old();
   case ShenandoahAffiliation::OLD_GENERATION:
-    // Old regions are in old_generation and global_generation, not in young_generation
-    return gen != (ShenandoahGeneration*)young_generation();
+    // Old regions are in old_generation and no others
+    return gen->is_old();
   default:
     assert(false, "Bad affiliation (%d) for region " SIZE_FORMAT, _affiliations[index], index);
     return false;
@@ -391,7 +391,7 @@ inline bool ShenandoahHeap::is_in_old(const void* p) const {
   return is_in_reserved(p) && (_affiliations[heap_region_index_containing(p)] == ShenandoahAffiliation::OLD_GENERATION);
 }
 
-inline bool ShenandoahHeap::is_old(oop obj) const {
+inline bool ShenandoahHeap::is_in_old_during_young_collection(oop obj) const {
   return active_generation()->is_young() && is_in_old(obj);
 }
 
