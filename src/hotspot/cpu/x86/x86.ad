@@ -1935,6 +1935,20 @@ bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
         return false;
       }
       break;
+    case Op_SelectFromTwoVector:
+       if (size_in_bits < 128 || (size_in_bits < 512 && !VM_Version::supports_avx512vl())) {
+         return false;
+       }
+       if (bt == T_SHORT && !VM_Version::supports_avx512bw()) {
+         return false;
+       }
+       if (bt == T_BYTE && !VM_Version::supports_avx512_vbmi()) {
+         return false;
+       }
+       if ((bt == T_INT || bt == T_FLOAT || bt == T_DOUBLE) && !VM_Version::supports_evex()) {
+         return false;
+       }
+       break;
     case Op_MaskAll:
       if (!VM_Version::supports_evex()) {
         return false;
@@ -10465,6 +10479,19 @@ instruct DoubleClassCheck_reg_reg_vfpclass(rRegI dst, regD src, kReg ktmp, rFlag
   ins_encode %{
     __ vfpclasssd($ktmp$$KRegister, $src$$XMMRegister, 0x18);
     __ kmovbl($dst$$Register, $ktmp$$KRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+
+instruct vector_selectfrom_twovectors_reg_evex(vec index, vec src1, vec src2)
+%{
+  match(Set index (SelectFromTwoVector (Binary index src1) src2));
+  format %{ "select_from_two_vector $index, $src1, $src2 \t!" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ select_from_two_vectors_evex(bt, $index$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vlen_enc);
   %}
   ins_pipe(pipe_slow);
 %}

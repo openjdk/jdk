@@ -698,9 +698,6 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
     return false;
   }
 
-  // Set the correct thread state.
-  osthread->set_thread_type(thr_type);
-
   // Initial state is ALLOCATED but not INITIALIZED
   osthread->set_state(ALLOCATED);
 
@@ -1293,7 +1290,7 @@ void os::jvm_path(char *buf, jint buflen) {
   Dl_info dlinfo;
   int ret = dladdr(CAST_FROM_FN_PTR(void *, os::jvm_path), &dlinfo);
   assert(ret != 0, "cannot locate libjvm");
-  char* rp = os::Posix::realpath((char *)dlinfo.dli_fname, buf, buflen);
+  char* rp = os::realpath((char *)dlinfo.dli_fname, buf, buflen);
   assert(rp != nullptr, "error in realpath(): maybe the 'path' argument is too long?");
 
   if (Arguments::sun_java_launcher_is_altjvm()) {
@@ -1324,7 +1321,7 @@ void os::jvm_path(char *buf, jint buflen) {
         }
         assert(strstr(p, "/libjvm") == p, "invalid library name");
 
-        rp = os::Posix::realpath(java_home_var, buf, buflen);
+        rp = os::realpath(java_home_var, buf, buflen);
         if (rp == nullptr) {
           return;
         }
@@ -1345,7 +1342,7 @@ void os::jvm_path(char *buf, jint buflen) {
           snprintf(buf + len, buflen-len, "/hotspot/libjvm.so");
         } else {
           // Go back to path of .so
-          rp = os::Posix::realpath((char *)dlinfo.dli_fname, buf, buflen);
+          rp = os::realpath((char *)dlinfo.dli_fname, buf, buflen);
           if (rp == nullptr) {
             return;
           }
