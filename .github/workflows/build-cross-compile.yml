@@ -152,6 +152,9 @@ jobs:
           rm -rf sysroot/usr/{sbin,bin,share}
           rm -rf sysroot/usr/lib/{apt,gcc,udev,systemd}
           rm -rf sysroot/usr/libexec/gcc
+          # /{bin,sbin,lib}/ are not symbolic links to /usr/{bin,sbin,lib}/ when debootstrap with --no-merged-usr
+          rm -rf sysroot/{sbin,bin}
+          rm -rf sysroot/lib/{udev,systemd}
         if: steps.create-sysroot.outcome == 'success' && steps.get-cached-sysroot.outputs.cache-hit != 'true'
 
       - name: 'Remove broken sysroot'
