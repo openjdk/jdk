@@ -216,7 +216,11 @@ int LIR_Assembler::emit_unwind_handler() {
     LIR_Opr lock = FrameMap::as_opr(Z_R1_scratch);
     monitor_address(0, lock);
     stub = new MonitorExitStub(lock, true, 0);
-    __ unlock_object(Rtmp1, Rtmp2, lock->as_register(), *stub->entry());
+    if (LockingMode == LM_MONITOR) {
+      __ branch_optimized(Assembler::bcondAlways, *stub->entry());
+    } else {
+      __ unlock_object(Rtmp1, Rtmp2, lock->as_register(), *stub->entry());
+    }
     __ bind(*stub->continuation());
   }
 
@@ -2350,6 +2354,7 @@ void LIR_Assembler::shift_op(LIR_Code code, LIR_Opr left, jint count, LIR_Opr de
 void LIR_Assembler::emit_alloc_obj(LIR_OpAllocObj* op) {
   if (op->init_check()) {
     // Make sure klass is initialized & doesn't have finalizer.
+    // init_state needs acquire, but S390 is TSO, and so we are already good.
     const int state_offset = in_bytes(InstanceKlass::init_state_offset());
     Register iklass = op->klass()->as_register();
     add_debug_info_for_null_check_here(op->stub()->info());
