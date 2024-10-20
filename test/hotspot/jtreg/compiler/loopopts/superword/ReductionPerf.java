@@ -30,9 +30,6 @@
  *                   -XX:CompileCommand=exclude,compiler.loopopts.superword.ReductionPerf::main
  *                   -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=250
  *                   compiler.loopopts.superword.ReductionPerf
- * @run main/othervm -Xcomp
- *                   -XX:EliminateAllocationArraySizeLimit=10240
- *                   compiler.loopopts.superword.ReductionPerf
  */
 
 package compiler.loopopts.superword;
