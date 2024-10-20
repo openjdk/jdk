@@ -41,7 +41,7 @@
 
 #include <mach/vm_inherit.h>
 #include <mach/vm_prot.h>
-
+#include <mach/mach_vm.h>
 
 /* maximum number of mapping records returned */
 static const int MAX_REGIONS_RETURNED = 1000000;
@@ -84,10 +84,8 @@ public:
     }
 
     char prot[4];
-    char max_prot[4];
     rwbits(rinfo.pri_protection, prot);
-    rwbits(rinfo.pri_max_protection, max_prot);
-    _protect_buffer.print("%s/%s", prot, max_prot);
+    _protect_buffer.print("%s", prot);
 
     get_share_mode(_share_buffer, rinfo);
     _tag_text = tagToStr(rinfo.pri_user_tag);
@@ -95,16 +93,16 @@ public:
 
   static void get_share_mode(outputStream& out, const proc_regioninfo& rinfo) {
     static const char* share_strings[] = {
-      "cow", "prv", "---", "shr", "tsh", "p/a", "s/a", "lpg"
+      "cow", "pvt", "---", "shr", "tsh", "p/a", "s/a", "lpg"
     };
     const bool valid_share_mode = rinfo.pri_share_mode >= SM_COW && rinfo.pri_share_mode <= SM_LARGE_PAGE;
-    assert(valid_share_mode, "invalid pri_share_mode (%d)", rinfo.pri_share_mode);
     if (valid_share_mode) {
       int share_mode = rinfo.pri_share_mode;
       //share_mode = share_mode == SM_LARGE_PAGE || share_mode == SM_PRIVATE_ALIASED ? SM_PRIVATE;
       out.print_raw(share_strings[share_mode - 1]);
     } else {
-      out.print_raw("???");
+      out.print_cr("invalid pri_share_mode (%d)", rinfo.pri_share_mode);
+      assert(valid_share_mode, "invalid pri_share_mode (%d)", rinfo.pri_share_mode);
     }
     if (rinfo.pri_flags & PROC_REGION_SHARED) {
         out.print_raw("-shared");
@@ -113,23 +111,9 @@ public:
         out.print_raw("-submap");
     }
     if ((rinfo.pri_flags & (PROC_REGION_SHARED | PROC_REGION_SUBMAP)) != rinfo.pri_flags) {
-      out.print("***** flags = 0x%x", rinfo.pri_flags);
+      out.print_cr("unhandled pri_flags = 0x%x", rinfo.pri_flags);
+      assert(false, "unhandled pri_flags = 0x%x", rinfo.pri_flags);
     }
-  }
-
-  static const char* get_inherit_mode(int mode) {
-      switch (mode) {
-        case VM_INHERIT_COPY:
-          return "copy";
-        case VM_INHERIT_SHARE:
-          return "share";
-        case VM_INHERIT_NONE:
-          return "none";
-        case VM_INHERIT_DONATE_COPY:
-          return "copy-and-delete";
-        default:
-          return "(unknown)";
-      }
   }
 
   static const char* tagToStr(uint32_t user_tag) {
@@ -237,38 +221,45 @@ public:
 
 class ProcSmapsSummary {
   unsigned _num_mappings;
-  size_t _vsize;        // combined virtual size
-  size_t _rss;          // combined resident set size
+  size_t _private;
   size_t _committed;    // combined committed size
   size_t _shared;       // combined shared size
   size_t _swapped_out;  // combined amount of swapped-out memory
-  size_t _hugetlb;      // combined amount of memory backed by explicit huge pages
-  size_t _thp;          // combined amount of memory backed by THPs
 public:
-  ProcSmapsSummary() : _num_mappings(0), _vsize(0), _rss(0), _committed(0), _shared(0),
-                     _swapped_out(0), _hugetlb(0), _thp(0) {}
+  ProcSmapsSummary() : _num_mappings(0),// _vsize(0), _rss(0), 
+  _private(0),  _committed(0), _shared(0), _swapped_out(0) {}
+
   void add_mapping(const proc_regioninfo& region_info, const MappingInfo& mapping_info) {
     _num_mappings++;
-    _vsize += mapping_info._size;
-    _rss += region_info.pri_pages_resident;
-   // _committed += region_info.pri_pages_resident + region_info.pri_pages_swapped_out;
-    _shared += region_info.pri_shared_pages_resident;
+
+    bool is_private = region_info.pri_share_mode == SM_PRIVATE || region_info.pri_share_mode == SM_PRIVATE_ALIASED;
+    bool is_shared = region_info.pri_share_mode == SM_SHARED || region_info.pri_share_mode == SM_SHARED_ALIASED || region_info.pri_share_mode == SM_TRUESHARED || region_info.pri_share_mode == SM_COW;
+    _private += is_private ? region_info.pri_size : 0;
+    _shared += is_shared ? region_info.pri_size : 0;
     _swapped_out += region_info.pri_pages_swapped_out;
-  //  _hugetlb += region_info.pri_;
-   //
-   // _thp += info.anonhugepages;
   }
 
   void print_on(const MappingPrintSession& session) const {
     outputStream* st = session.out();
+
+    task_vm_info vm_info;
+    mach_msg_type_number_t num_out = TASK_VM_INFO_COUNT;
+    kern_return_t err_vm = task_info(mach_task_self(), TASK_VM_INFO, (task_info_t)(&vm_info), &num_out);
+    if (err_vm != KERN_SUCCESS) {
+      st->print_cr("error getting vm_info %d", err_vm);
+    }
+
     st->print_cr("Number of mappings: %u", _num_mappings);
-    st->print_cr("             vsize: %zu (" PROPERFMT ")", _vsize, PROPERFMTARGS(_vsize));
-    st->print_cr("               rss: %zu (" PROPERFMT ")", _rss, PROPERFMTARGS(_rss));
-    st->print_cr("         committed: %zu (" PROPERFMT ")", _committed, PROPERFMTARGS(_committed));
+
+    if (err_vm == KERN_SUCCESS) {
+      st->print_cr("             vsize: %llu (%llu%s)", vm_info.virtual_size, PROPERFMTARGS(vm_info.virtual_size));
+      st->print_cr("               rss: %llu (%llu%s)", vm_info.resident_size, PROPERFMTARGS(vm_info.resident_size));
+      st->print_cr("          peak rss: %llu (%llu%s)", vm_info.resident_size_peak, PROPERFMTARGS(vm_info.resident_size_peak));
+      st->print_cr("         page size: %d (%ld%s)", vm_info.page_size, PROPERFMTARGS((size_t)vm_info.page_size));
+    }
+    st->print_cr("           private: %zu (" PROPERFMT ")", _private, PROPERFMTARGS(_private));
     st->print_cr("            shared: %zu (" PROPERFMT ")", _shared, PROPERFMTARGS(_shared));
-    st->print_cr("       swapped out: %zu (" PROPERFMT ")", _swapped_out, PROPERFMTARGS(_swapped_out));
-    st->print_cr("         using thp: %zu (" PROPERFMT ")", _thp, PROPERFMTARGS(_thp));
-    st->print_cr("           hugetlb: %zu (" PROPERFMT ")", _hugetlb, PROPERFMTARGS(_hugetlb));
+    st->print_cr("       swapped out: %zu (" PROPERFMT ")", _swapped_out * vm_info.page_size, PROPERFMTARGS(_swapped_out * vm_info.page_size));
   }
 };
 
@@ -287,11 +278,15 @@ public:
   }
     st->print(PTR_FORMAT "-" PTR_FORMAT, (size_t)mapping_info._address, (size_t)(mapping_info._address + mapping_info._size));
     INDENT_BY(38);
+    st->print("%12zu", mapping_info._size);
+    INDENT_BY(51);
     st->print("%s", mapping_info._protect_buffer.base());
-    INDENT_BY(45);
+    INDENT_BY(56);
     st->print("%s", mapping_info._share_buffer.base());
     st->print("%s", mapping_info._type_buffer.base());
-    INDENT_BY(55);
+    INDENT_BY(61);
+    st->print("%#11llx", region_info.pri_offset);
+    INDENT_BY(73);
     if (_session.print_nmt_info_for_region((const void*)mapping_info._address, (const void*)(mapping_info._address + mapping_info._size))) {
       st->print(" ");
     } else {
@@ -308,20 +303,19 @@ public:
   void print_legend() const {
     outputStream* st = _session.out();
     st->print_cr("from, to, vsize: address range and size");
-    st->print_cr("prot:            protection");
-    st->print_cr("rss:             resident set size");
-    st->print_cr("hugetlb:         size of private hugetlb pages");
-    st->print_cr("pgsz:            page size");
-    st->print_cr("notes:           mapping information  (detail mode only)");
-    st->print_cr("                      shrd: mapping is shared");
-    st->print_cr("                       com: mapping committed (swap space reserved)");
-    st->print_cr("                      swap: mapping partly or completely swapped out");
-    st->print_cr("                       thp: mapping uses THP");
-    st->print_cr("                     thpad: mapping is THP-madvised");
-    st->print_cr("                     nothp: mapping is forbidden to use THP");
-    st->print_cr("                      huge: mapping uses hugetlb pages");
-    st->print_cr("vminfo:          VM information (requires NMT)");
-    st->print_cr("file:            file mapped, if mapping is not anonymous");
+    st->print_cr("prot:    protection:");
+    st->print_cr("           rwx: read / write / execute");
+    st->print_cr("share:   share mode:");
+    st->print_cr("           cow: copy on write");
+    st->print_cr("           pvt: private");
+    st->print_cr("           shr: shared");
+    st->print_cr("           tsh: true shared");
+    st->print_cr("           p/a: private aliased");
+    st->print_cr("           s/a: shared aliased");
+    st->print_cr("           lpg: large page");
+    st->print_cr("offset:  offset from start of allocation block");
+    st->print_cr("vminfo:  VM information (requires NMT)");
+    st->print_cr("file:    file mapped, if mapping is not anonymous");
     {
       streamIndentor si(st, 16);
       _session.print_nmt_flag_legend();
@@ -333,9 +327,9 @@ public:
     outputStream* st = _session.out();
     //            0         1         2         3         4         5         6         7         8         9         0         1         2         3         4         5         6         7
     //            012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
-    //            0x0000000100ce8000-0x0000000100cf0000 rw-/rwx shr      INTERN /private/var/folders/lj/2hwcbc415h97gjtdm2rdgj7m0000gn/T/hsperfdata_simont/87218
-    st->print_cr("from               to                 prot             vminfo/file");
-    st->print_cr("======================================================================================================");
+    //            0x00000001714a0000-0x000000017169c000      2080768 rw-/rwx  p/a       0xc000 STACK-28419-C2-CompilerThread0 
+    st->print_cr("from               to                        vsize prot share     offset vminfo/file");
+    st->print_cr("==================================================================================================");
   }
 };
 
@@ -352,7 +346,7 @@ void MemMapPrinter::pd_print_all_mappings(const MappingPrintSession& session) {
 
   proc_regionwithpathinfo region_info;
   MappingInfo mapping_info;
-  const char* address = 0;
+  uint64_t address = 0;
   int region_count = 0;
   while (true) {
     if (++region_count > MAX_REGIONS_RETURNED) {
@@ -365,13 +359,13 @@ void MemMapPrinter::pd_print_all_mappings(const MappingPrintSession& session) {
     } else if (retval < (int)sizeof(region_info)) {
       fatal("proc_pidinfo() returned %d", retval);
     }
-    mapping_info.process(region_info);
     if (region_info.prp_prinfo.pri_share_mode != SM_EMPTY) {
+      mapping_info.process(region_info);
       printer.print_single_mapping(region_info.prp_prinfo, mapping_info);
+      summary.add_mapping(region_info.prp_prinfo, mapping_info);
     }
-    summary.add_mapping(region_info.prp_prinfo, mapping_info);
-    assert(mapping_info._size > 0, "size of region is 0");
-    address = mapping_info._address + mapping_info._size;
+    assert(region_info.prp_prinfo.pri_size > 0, "size of region is 0");
+    address = region_info.prp_prinfo.pri_address + region_info.prp_prinfo.pri_size;
   }
   st->cr();
   summary.print_on(session);
