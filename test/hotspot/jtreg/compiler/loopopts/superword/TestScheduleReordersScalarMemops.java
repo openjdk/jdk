@@ -28,7 +28,6 @@
  * @bug 8304720
  * @summary Test some examples where non-vectorized memops also need to
  *          be reordered during SuperWord::schedule.
- * @requires vm.compiler2.enabled
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.TestScheduleReordersScalarMemops
@@ -55,8 +54,8 @@ public class TestScheduleReordersScalarMemops {
                                    "-XX:CompileCommand=compileonly,compiler.loopopts.superword.TestScheduleReordersScalarMemops::test*",
                                    "-XX:CompileCommand=compileonly,compiler.loopopts.superword.TestScheduleReordersScalarMemops::verify",
                                    "-XX:CompileCommand=compileonly,compiler.loopopts.superword.TestScheduleReordersScalarMemops::init",
-                                   "-XX:LoopUnrollLimit=1000",
-                                   "-XX:-TieredCompilation", "-Xbatch");
+                                   "-XX:-TieredCompilation", "-Xbatch",
+                                   "-XX:+IgnoreUnrecognizedVMOptions", "-XX:LoopUnrollLimit=1000");
     }
 
     TestScheduleReordersScalarMemops() {
@@ -125,10 +124,10 @@ public class TestScheduleReordersScalarMemops {
         for (int i = 0; i < RANGE; i+=2) {
             // Do the same as test0, but without int-float conversion.
             // This should reproduce on machines where conversion is not implemented.
-            unsafe.putInt(dataFa, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4 * i + 0, dataIa[i+0] + 1);  // A +1
-            dataIb[i+0] = 11 * unsafe.getInt(dataFb, unsafe.ARRAY_INT_BASE_OFFSET + 4 * i + 0);  // X
-            dataIb[i+1] = 11 * unsafe.getInt(dataFb, unsafe.ARRAY_INT_BASE_OFFSET + 4 * i + 4);  // Y
-            unsafe.putInt(dataFa, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4 * i + 4, dataIa[i+1] * 11); // B *11
+            unsafe.putInt(dataFa, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4L * i + 0, dataIa[i+0] + 1);  // A +1
+            dataIb[i+0] = 11 * unsafe.getInt(dataFb, unsafe.ARRAY_INT_BASE_OFFSET + 4L * i + 0);  // X
+            dataIb[i+1] = 11 * unsafe.getInt(dataFb, unsafe.ARRAY_INT_BASE_OFFSET + 4L * i + 4);  // Y
+            unsafe.putInt(dataFa, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4L * i + 4, dataIa[i+1] * 11); // B *11
         }
     }
 

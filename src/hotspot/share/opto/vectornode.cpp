@@ -507,7 +507,11 @@ bool VectorNode::is_shift_opcode(int opc) {
   }
 }
 
-bool VectorNode::can_transform_shift_op(Node* n, BasicType bt) {
+// Vector unsigned right shift for signed subword types behaves differently
+// from Java Spec. But when the shift amount is a constant not greater than
+// the number of sign extended bits, the unsigned right shift can be
+// vectorized to a signed right shift.
+bool VectorNode::can_use_RShiftI_instead_of_URShiftI(Node* n, BasicType bt) {
   if (n->Opcode() != Op_URShiftI) {
     return false;
   }
@@ -777,6 +781,7 @@ VectorNode* VectorNode::make(int vopc, Node* n1, Node* n2, Node* n3, const TypeV
   switch (vopc) {
   case Op_FmaVD: return new FmaVDNode(n1, n2, n3, vt);
   case Op_FmaVF: return new FmaVFNode(n1, n2, n3, vt);
+  case Op_SelectFromTwoVector: return new SelectFromTwoVectorNode(n1, n2, n3, vt);
   case Op_SignumVD: return new SignumVDNode(n1, n2, n3, vt);
   case Op_SignumVF: return new SignumVFNode(n1, n2, n3, vt);
   default:
@@ -795,15 +800,13 @@ VectorNode* VectorNode::make(int opc, Node* n1, Node* n2, Node* n3, uint vlen, B
 }
 
 // Scalar promotion
-VectorNode* VectorNode::scalar2vector(Node* s, uint vlen, const Type* opd_t, bool is_mask) {
-  BasicType bt = opd_t->array_element_basic_type();
+VectorNode* VectorNode::scalar2vector(Node* s, uint vlen, BasicType bt, bool is_mask) {
   if (is_mask && Matcher::match_rule_supported_vector(Op_MaskAll, vlen, bt)) {
-    const TypeVect* vt = TypeVect::make(opd_t, vlen, true);
+    const TypeVect* vt = TypeVect::make(bt, vlen, true);
     return new MaskAllNode(s, vt);
   }
 
-  const TypeVect* vt = opd_t->singleton() ? TypeVect::make(opd_t, vlen)
-                                          : TypeVect::make(bt, vlen);
+  const TypeVect* vt = TypeVect::make(bt, vlen);
   return new ReplicateNode(s, vt);
 }
 
@@ -919,6 +922,50 @@ bool VectorNode::is_vector_bitwise_not_pattern(Node* n) {
   }
   return false;
 }
+
+bool VectorNode::is_scalar_unary_op_with_equal_input_and_output_types(int opc) {
+  switch (opc) {
+    case Op_SqrtF:
+    case Op_SqrtD:
+    case Op_AbsF:
+    case Op_AbsD:
+    case Op_AbsI:
+    case Op_AbsL:
+    case Op_NegF:
+    case Op_NegD:
+    case Op_RoundF:
+    case Op_RoundD:
+    case Op_ReverseBytesI:
+    case Op_ReverseBytesL:
+    case Op_ReverseBytesUS:
+    case Op_ReverseBytesS:
+    case Op_ReverseI:
+    case Op_ReverseL:
+    case Op_PopCountI:
+    case Op_CountLeadingZerosI:
+    case Op_CountTrailingZerosI:
+      return true;
+    default:
+      return false;
+  }
+}
+
+// Java API for Long.bitCount/numberOfLeadingZeros/numberOfTrailingZeros
+// returns int type, but Vector API for them returns long type. To unify
+// the implementation in backend, AutoVectorization splits the vector
+// implementation for Java API into an execution node with long type plus
+// another node converting long to int.
+bool VectorNode::is_scalar_op_that_returns_int_but_vector_op_returns_long(int opc) {
+  switch (opc) {
+    case Op_PopCountL:
+    case Op_CountLeadingZerosL:
+    case Op_CountTrailingZerosL:
+      return true;
+    default:
+      return false;
+  }
+}
+
 
 Node* VectorNode::try_to_gen_masked_vector(PhaseGVN* gvn, Node* node, const TypeVect* vt) {
   int vopc = node->Opcode();
@@ -1578,8 +1625,6 @@ Node* VectorNode::degenerate_vector_rotate(Node* src, Node* cnt, bool is_rotate_
     Node* const_one_node = nullptr;
 
     assert(cnt->bottom_type()->isa_vect(), "Unexpected shift");
-    const Type* elem_ty = Type::get_const_basic_type(bt);
-
     if (bt == T_LONG) {
       shift_mask_node = phase->longcon(shift_mask);
       const_one_node = phase->longcon(1L);
@@ -1591,8 +1636,8 @@ Node* VectorNode::degenerate_vector_rotate(Node* src, Node* cnt, bool is_rotate_
       subVopc = VectorNode::opcode(Op_SubI, bt);
       addVopc = VectorNode::opcode(Op_AddI, bt);
     }
-    Node* vector_mask = phase->transform(VectorNode::scalar2vector(shift_mask_node, vlen, elem_ty));
-    Node* vector_one = phase->transform(VectorNode::scalar2vector(const_one_node, vlen, elem_ty));
+    Node* vector_mask = phase->transform(VectorNode::scalar2vector(shift_mask_node, vlen, bt));
+    Node* vector_one = phase->transform(VectorNode::scalar2vector(const_one_node, vlen, bt));
 
     shiftRCnt = cnt;
     shiftRCnt = phase->transform(VectorNode::make(Op_AndV, shiftRCnt, vector_mask, vt));
@@ -1834,12 +1879,12 @@ Node* NegVNode::degenerate_integral_negate(PhaseGVN* phase, bool is_predicated) 
         const_one = phase->intcon(1);
         add_opc = Op_AddI;
       }
-      const_minus_one = phase->transform(VectorNode::scalar2vector(const_minus_one, vlen, Type::get_const_basic_type(bt)));
+      const_minus_one = phase->transform(VectorNode::scalar2vector(const_minus_one, vlen, bt));
       Node* xorv = VectorNode::make(Op_XorV, in(1), const_minus_one, vt);
       xorv->add_req(in(2));
       xorv->add_flag(Node::Flag_is_predicated_vector);
       phase->transform(xorv);
-      const_one = phase->transform(VectorNode::scalar2vector(const_one, vlen, Type::get_const_basic_type(bt)));
+      const_one = phase->transform(VectorNode::scalar2vector(const_one, vlen, bt));
       Node* addv = VectorNode::make(VectorNode::opcode(add_opc, bt), xorv, const_one, vt);
       addv->add_req(in(2));
       addv->add_flag(Node::Flag_is_predicated_vector);
@@ -1856,7 +1901,7 @@ Node* NegVNode::degenerate_integral_negate(PhaseGVN* phase, bool is_predicated) 
     const_zero = phase->intcon(0);
     sub_opc = Op_SubI;
   }
-  const_zero = phase->transform(VectorNode::scalar2vector(const_zero, vlen, Type::get_const_basic_type(bt)));
+  const_zero = phase->transform(VectorNode::scalar2vector(const_zero, vlen, bt));
   return VectorNode::make(VectorNode::opcode(sub_opc, bt), const_zero, in(1), vt);
 }
 
@@ -2021,8 +2066,7 @@ Node* XorVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   if (!is_predicated_vector() && (in(1) == in(2))) {
     BasicType bt = vect_type()->element_basic_type();
     Node* zero = phase->transform(phase->zerocon(bt));
-    return VectorNode::scalar2vector(zero, length(), Type::get_const_basic_type(bt),
-                                     bottom_type()->isa_vectmask() != nullptr);
+    return VectorNode::scalar2vector(zero, length(), bt, bottom_type()->isa_vectmask() != nullptr);
   }
   return nullptr;
 }
@@ -2034,6 +2078,7 @@ Node* VectorBlendNode::Identity(PhaseGVN* phase) {
   }
   return this;
 }
+
 
 #ifndef PRODUCT
 void VectorBoxAllocateNode::dump_spec(outputStream *st) const {

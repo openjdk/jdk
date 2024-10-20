@@ -109,7 +109,7 @@ public class Object {
     /**
      * Indicates whether some other object is "equal to" this one.
      * <p>
-     * The {@code equals} method implements an equivalence relation
+     * The {@code equals} method implements an <dfn>{@index "equivalence relation"}</dfn>
      * on non-null object references:
      * <ul>
      * <li>It is <i>reflexive</i>: for any non-null reference value
@@ -237,6 +237,10 @@ public class Object {
 
     /**
      * {@return a string representation of the object}
+     *
+     * Satisfying this method's contract implies a non-{@code null}
+     * result must be returned.
+     *
      * @apiNote
      * In general, the
      * {@code toString} method returns a string that

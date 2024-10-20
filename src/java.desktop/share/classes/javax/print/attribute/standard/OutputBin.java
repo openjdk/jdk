@@ -49,6 +49,8 @@ import sun.print.CustomOutputBin;
  * IPP attribute name. The enumeration's integer value is the IPP enum value.
  * The {@code toString()} method returns the IPP string representation of the
  * attribute value.
+ *
+ * @since 23
  */
 public sealed class OutputBin extends EnumSyntax implements PrintRequestAttribute, PrintJobAttribute permits CustomOutputBin {
 

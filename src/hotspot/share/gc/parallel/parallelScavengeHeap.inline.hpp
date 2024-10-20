@@ -34,10 +34,6 @@ inline bool ParallelScavengeHeap::should_alloc_in_eden(const size_t size) const 
   return size < eden_size / 2;
 }
 
-inline bool ParallelScavengeHeap::invoke_scavenge() {
-  return PSScavenge::invoke();
-}
-
 inline bool ParallelScavengeHeap::is_in_young(const void* p) const {
   // Assumes the old gen address range is lower than that of the young gen.
   bool result = p >= young_gen()->reserved().start();

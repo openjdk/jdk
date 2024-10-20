@@ -359,6 +359,7 @@ public class TestCompatibleUseDefTypeSize {
                   IRNode.ADD_VI,        "> 0",
                   IRNode.STORE_VECTOR,  "> 0"},
         applyIfPlatform = {"64-bit", "true"},
+        applyIf = {"AlignVector", "false"}, // a[i] and a[i+1] cannot both be aligned.
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     // Used to not vectorize because of "alignment boundaries".
     // Assume 64 byte vector width:
@@ -376,6 +377,7 @@ public class TestCompatibleUseDefTypeSize {
                   IRNode.ADD_VI,        "> 0",
                   IRNode.STORE_VECTOR,  "> 0"},
         applyIfPlatform = {"64-bit", "true"},
+        applyIf = {"AlignVector", "false"}, // a[i] and a[i+1] cannot both be aligned.
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     // same as test3, but hand-unrolled
     static Object[] test4(int[] a, int[] b) {

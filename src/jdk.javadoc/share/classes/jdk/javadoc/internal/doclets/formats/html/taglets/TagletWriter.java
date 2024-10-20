@@ -43,20 +43,13 @@ import javax.lang.model.element.VariableElement;
 import javax.lang.model.util.SimpleElementVisitor14;
 
 import com.sun.source.doctree.DocTree;
-
 import com.sun.source.doctree.InlineTagTree;
+
 import jdk.javadoc.internal.doclets.formats.html.HtmlConfiguration;
 import jdk.javadoc.internal.doclets.formats.html.HtmlDocletWriter;
 import jdk.javadoc.internal.doclets.formats.html.HtmlIds;
 import jdk.javadoc.internal.doclets.formats.html.HtmlOptions;
-import jdk.javadoc.internal.doclets.formats.html.IndexWriter;
-import jdk.javadoc.internal.doclets.formats.html.SummaryListWriter;
-import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.Text;
-import jdk.javadoc.internal.doclets.formats.html.Content;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
 import jdk.javadoc.internal.doclets.formats.html.taglets.Taglet.UnsupportedTagletOperationException;
 import jdk.javadoc.internal.doclets.toolkit.DocletElement;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
@@ -64,6 +57,11 @@ import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocLink;
 import jdk.javadoc.internal.doclets.toolkit.util.IndexItem;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
+import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.ContentBuilder;
+import jdk.javadoc.internal.html.HtmlId;
+import jdk.javadoc.internal.html.HtmlTree;
+import jdk.javadoc.internal.html.Text;
 
 /**
  * Context and utility methods for taglet classes.
@@ -377,7 +375,7 @@ public class TagletWriter {
             result = tagContent;
         } else {
             HtmlId id = HtmlIds.forText(tagText, htmlWriter.indexAnchorTable);
-            result = HtmlTree.SPAN(id, HtmlStyle.searchTagResult, tagContent);
+            result = HtmlTree.SPAN(id, HtmlStyles.searchTagResult, tagContent);
             if (options.createIndex() && !tagText.isEmpty()) {
                 String holder = getHolderName(element);
                 IndexItem item = IndexItem.of(element, tree, tagText, holder, desc,
@@ -457,7 +455,7 @@ public class TagletWriter {
     Content tagList(List<Content> items) {
         // Use a different style if any list item is longer than 30 chars or contains commas.
         boolean hasLongLabels = items.stream().anyMatch(this::isLongOrHasComma);
-        var list = HtmlTree.UL(hasLongLabels ? HtmlStyle.tagListLong : HtmlStyle.tagList);
+        var list = HtmlTree.UL(hasLongLabels ? HtmlStyles.tagListLong : HtmlStyles.tagList);
         items.stream()
                 .filter(Predicate.not(Content::isEmpty))
                 .forEach(item -> list.add(HtmlTree.LI(item)));

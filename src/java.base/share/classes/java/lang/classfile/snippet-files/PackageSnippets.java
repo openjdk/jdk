@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,43 +24,25 @@
  */
 package java.lang.classfile.snippets;
 
-import java.lang.classfile.ClassBuilder;
+import java.lang.classfile.*;
+import java.lang.classfile.components.ClassRemapper;
+import java.lang.classfile.components.CodeLocalsShifter;
+import java.lang.classfile.components.CodeRelabeler;
+import java.lang.classfile.instruction.*;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.invoke.MethodHandles;
+import java.lang.reflect.AccessFlag;
 import java.util.ArrayDeque;
 import java.util.HashSet;
-import java.util.Set;
-
-import java.lang.reflect.AccessFlag;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import java.lang.classfile.ClassElement;
-import java.lang.classfile.ClassHierarchyResolver;
-import java.lang.classfile.ClassModel;
-import java.lang.classfile.ClassTransform;
-import java.lang.classfile.ClassFile;
-import java.lang.classfile.ClassFileVersion;
-import java.lang.classfile.CodeBuilder;
-import java.lang.classfile.CodeElement;
-import java.lang.classfile.CodeModel;
-import java.lang.classfile.CodeTransform;
-import java.lang.classfile.FieldModel;
-import java.lang.classfile.MethodElement;
-import java.lang.classfile.MethodModel;
-import java.lang.classfile.Opcode;
-import java.lang.classfile.PseudoInstruction;
-import java.lang.classfile.TypeKind;
-import java.lang.classfile.instruction.*;
-
 import static java.util.stream.Collectors.toSet;
-import java.lang.classfile.components.ClassRemapper;
-import java.lang.classfile.components.CodeLocalsShifter;
-import java.lang.classfile.components.CodeRelabeler;
 
 class PackageSnippets {
     void enumerateFieldsMethods1(byte[] bytes) {
@@ -195,7 +177,7 @@ class PackageSnippets {
                 builder.with(element);
         };
         var cc = ClassFile.of();
-        byte[] newBytes = cc.transform(cc.parse(bytes), ct);
+        byte[] newBytes = cc.transformClass(cc.parse(bytes), ct);
         // @end
     }
 
@@ -346,7 +328,7 @@ class PackageSnippets {
 
     void codeRelabeling(ClassModel classModel) {
         // @start region="codeRelabeling"
-        byte[] newBytes = ClassFile.of().transform(classModel,
+        byte[] newBytes = ClassFile.of().transformClass(classModel,
                 ClassTransform.transformingMethodBodies(
                         CodeTransform.ofStateful(CodeRelabeler::of)));
         // @end
@@ -360,7 +342,7 @@ class PackageSnippets {
         var targetFieldNames = target.fields().stream().map(f -> f.fieldName().stringValue()).collect(Collectors.toSet());
         var targetMethods = target.methods().stream().map(m -> m.methodName().stringValue() + m.methodType().stringValue()).collect(Collectors.toSet());
         var instrumentorClassRemapper = ClassRemapper.of(Map.of(instrumentor.thisClass().asSymbol(), target.thisClass().asSymbol()));
-        return ClassFile.of().transform(target,
+        return ClassFile.of().transformClass(target,
                 ClassTransform.transformingMethods(
                         instrumentedMethodsFilter,
                         (mb, me) -> {
@@ -381,7 +363,7 @@ class PackageSnippets {
                                                 var storeStack = new ArrayDeque<StoreInstruction>();
                                                 int slot = 0;
                                                 if (!mm.flags().has(AccessFlag.STATIC))
-                                                    storeStack.push(StoreInstruction.of(TypeKind.ReferenceType, slot++));
+                                                    storeStack.push(StoreInstruction.of(TypeKind.REFERENCE, slot++));
                                                 for (var pt : mm.methodTypeSymbol().parameterList()) {
                                                     var tk = TypeKind.from(pt);
                                                     storeStack.push(StoreInstruction.of(tk, slot));

@@ -296,13 +296,13 @@ LIR_OpTypeCheck::LIR_OpTypeCheck(LIR_Code code, LIR_Opr result, LIR_Opr object, 
   , _tmp1(tmp1)
   , _tmp2(tmp2)
   , _tmp3(tmp3)
-  , _fast_check(fast_check)
   , _info_for_patch(info_for_patch)
   , _info_for_exception(info_for_exception)
   , _stub(stub)
   , _profiled_method(nullptr)
   , _profiled_bci(-1)
   , _should_profile(false)
+  , _fast_check(fast_check)
 {
   if (code == lir_checkcast) {
     assert(info_for_exception != nullptr, "checkcast throws exceptions");
@@ -323,13 +323,13 @@ LIR_OpTypeCheck::LIR_OpTypeCheck(LIR_Code code, LIR_Opr object, LIR_Opr array, L
   , _tmp1(tmp1)
   , _tmp2(tmp2)
   , _tmp3(tmp3)
-  , _fast_check(false)
   , _info_for_patch(nullptr)
   , _info_for_exception(info_for_exception)
   , _stub(nullptr)
   , _profiled_method(nullptr)
   , _profiled_bci(-1)
   , _should_profile(false)
+  , _fast_check(false)
 {
   if (code == lir_store_check) {
     _stub = new ArrayStoreExceptionStub(object, info_for_exception);

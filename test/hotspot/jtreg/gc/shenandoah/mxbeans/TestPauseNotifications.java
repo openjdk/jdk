@@ -83,21 +83,6 @@
  *      TestPauseNotifications
  */
 
-/*
- * @test id=iu
- * @summary Check that MX notifications are reported for all cycles
- * @library /test/lib /
- * @requires vm.gc.Shenandoah
- *
- * @run main/othervm -Xmx128m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu -XX:ShenandoahGCHeuristics=aggressive
- *      TestPauseNotifications
- *
- * @run main/othervm -Xmx128m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu
- *      TestPauseNotifications
- */
-
 import java.util.*;
 import java.util.concurrent.atomic.*;
 import javax.management.*;

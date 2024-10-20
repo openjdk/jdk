@@ -782,8 +782,7 @@ public class Deflater implements AutoCloseable {
     }
 
     /**
-     * Returns the ADLER-32 value of the uncompressed data.
-     * @return the ADLER-32 value of the uncompressed data
+     * {@return the ADLER-32 value of the uncompressed data}
      */
     public int getAdler() {
         synchronized (zsRef) {

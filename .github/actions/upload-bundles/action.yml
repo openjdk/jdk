@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@ runs:
         jdk_bundle_tar_gz="$(ls build/*/bundles/jdk-*_bin${{ inputs.debug-suffix }}.tar.gz 2> /dev/null || true)"
         symbols_bundle="$(ls build/*/bundles/jdk-*_bin${{ inputs.debug-suffix }}-symbols.tar.gz 2> /dev/null || true)"
         tests_bundle="$(ls build/*/bundles/jdk-*_bin-tests${{ inputs.debug-suffix }}.tar.gz 2> /dev/null || true)"
+        static_libs_bundle="$(ls build/*/bundles/jdk-*_bin-static-libs${{ inputs.debug-suffix }}.tar.gz 2> /dev/null || true)"
 
         mkdir bundles
 
@@ -60,8 +61,11 @@ runs:
         if [[ "$tests_bundle" != "" ]]; then
           mv "$tests_bundle" "bundles/tests-${{ inputs.platform }}${{ inputs.debug-suffix }}.tar.gz"
         fi
+        if [[ "$static_libs_bundle" != "" ]]; then
+          mv "$static_libs_bundle" "bundles/static-libs-${{ inputs.platform }}${{ inputs.debug-suffix }}.tar.gz"
+        fi
 
-        if [[ "$jdk_bundle_zip$jdk_bundle_tar_gz$symbols_bundle$tests_bundle" != "" ]]; then
+        if [[ "$jdk_bundle_zip$jdk_bundle_tar_gz$symbols_bundle$tests_bundle$static_libs_bundle" != "" ]]; then
           echo 'bundles-found=true' >> $GITHUB_OUTPUT
         else
           echo 'bundles-found=false' >> $GITHUB_OUTPUT

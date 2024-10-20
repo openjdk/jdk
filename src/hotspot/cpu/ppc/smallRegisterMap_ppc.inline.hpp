@@ -30,9 +30,16 @@
 
 // Java frames don't have callee saved registers, so we can use a smaller RegisterMap
 class SmallRegisterMap {
+  constexpr SmallRegisterMap() = default;
+  ~SmallRegisterMap() = default;
+  NONCOPYABLE(SmallRegisterMap);
+
 public:
-  static constexpr SmallRegisterMap* instance = nullptr;
-public:
+  static const SmallRegisterMap* instance() {
+    static constexpr SmallRegisterMap the_instance{};
+    return &the_instance;
+  }
+
   // as_RegisterMap is used when we didn't want to templatize and abstract over RegisterMap type to support SmallRegisterMap
   // Consider enhancing SmallRegisterMap to support those cases
   const RegisterMap* as_RegisterMap() const { return nullptr; }
@@ -42,19 +49,6 @@ public:
     map->clear();
     map->set_include_argument_oops(this->include_argument_oops());
     return map;
-  }
-
-  SmallRegisterMap() {}
-
-  SmallRegisterMap(const RegisterMap* map) {
-#ifdef ASSERT
-  for(int i = 0; i < RegisterMap::reg_count; i++) {
-    VMReg r = VMRegImpl::as_VMReg(i);
-    if (map->location(r, (intptr_t*)nullptr) != nullptr) {
-      assert(false, "Reg: %s", r->name()); // Should not reach here
-    }
-  }
-#endif
   }
 
   inline address location(VMReg reg, intptr_t* sp) const {

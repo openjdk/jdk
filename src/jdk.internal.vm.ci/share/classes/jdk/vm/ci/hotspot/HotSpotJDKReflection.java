@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,9 +107,6 @@ final class HotSpotJDKReflection extends HotSpotJVMCIReflection {
     boolean equals(HotSpotObjectConstantImpl a, HotSpotObjectConstantImpl b) {
         return resolveObject(a) == resolveObject(b) && a.isCompressed() == b.isCompressed();
     }
-
-    // This field is being kept around for compatibility with libgraal
-    @SuppressWarnings("unused") private long oopSizeOffset;
 
     @Override
     ResolvedJavaMethod.Parameter[] getParameters(HotSpotResolvedJavaMethodImpl javaMethod) {

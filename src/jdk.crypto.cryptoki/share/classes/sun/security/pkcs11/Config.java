@@ -164,6 +164,11 @@ final class Config {
     // Secmod.Module.getProvider() method.
     private String functionList = null;
 
+    // CTS mode variant used by the token, as described in Addendum to NIST
+    // Special Publication 800-38A, "Recommendation for Block Cipher Modes
+    // of Operation: Three Variants of Ciphertext Stealing for CBC Mode".
+    private Token.CTSVariant ctsVariant = null;
+
     // whether to use NSS secmod mode. Implicitly set if nssLibraryDirectory,
     // nssSecmodDirectory, or nssModule is specified.
     private boolean nssUseSecmod;
@@ -321,6 +326,10 @@ final class Config {
         return functionList;
     }
 
+    Token.CTSVariant getCTSVariant() {
+        return ctsVariant;
+    }
+
     boolean getNssUseSecmod() {
         return nssUseSecmod;
     }
@@ -472,6 +481,8 @@ final class Config {
                 allowSingleThreadedModules = parseBooleanEntry(st.sval);
             case "functionList"->
                 functionList = parseStringEntry(st.sval);
+            case "cipherTextStealingVariant"->
+                ctsVariant = parseEnumEntry(Token.CTSVariant.class, st.sval);
             case "nssUseSecmod"->
                 nssUseSecmod = parseBooleanEntry(st.sval);
             case "nssLibraryDirectory"-> {
@@ -625,6 +636,17 @@ final class Config {
             System.out.println(keyword + ": " + value);
         }
         return value;
+    }
+
+    private <E extends Enum<E>> E parseEnumEntry(Class<E> enumClass,
+            String keyword) throws IOException {
+        String value = parseStringEntry(keyword);
+        try {
+            return Enum.valueOf(enumClass, value);
+        } catch (IllegalArgumentException ignored) {
+            throw excToken(keyword + " must be one of " +
+                    Arrays.toString(enumClass.getEnumConstants()) + ", read:");
+        }
     }
 
     private boolean parseBoolean() throws IOException {

@@ -335,7 +335,7 @@ void ZBarrierSetAssembler::store_barrier_medium(MacroAssembler* masm,
     // Try to self-heal null values for atomic accesses
     bool need_restore = false;
     if (!ind_or_offs.is_constant() || ind_or_offs.as_constant() != 0) {
-      __ add(ref_base, ind_or_offs, ref_base);
+      __ add(ref_base, ref_base, ind_or_offs);
       need_restore = true;
     }
     __ ld(R0, in_bytes(ZThreadLocalData::store_good_mask_offset()), R16_thread);
@@ -343,7 +343,7 @@ void ZBarrierSetAssembler::store_barrier_medium(MacroAssembler* masm,
                 MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(),
                 noreg, need_restore ? nullptr : &slow_path);
     if (need_restore) {
-      __ subf(ref_base, ind_or_offs, ref_base);
+      __ sub(ref_base, ref_base, ind_or_offs);
       __ bne(CCR0, slow_path);
     }
   } else {
@@ -943,6 +943,8 @@ void ZBarrierSetAssembler::generate_c2_store_barrier_stub(MacroAssembler* masm, 
       __ call_VM_leaf(ZBarrierSetRuntime::store_barrier_on_native_oop_field_without_healing_addr(), R3_ARG1);
     } else if (stub->is_atomic()) {
       __ call_VM_leaf(ZBarrierSetRuntime::store_barrier_on_oop_field_with_healing_addr(), R3_ARG1);
+    } else if (stub->is_nokeepalive()) {
+      __ call_VM_leaf(ZBarrierSetRuntime::no_keepalive_store_barrier_on_oop_field_without_healing_addr(), R3_ARG1);
     } else {
       __ call_VM_leaf(ZBarrierSetRuntime::store_barrier_on_oop_field_without_healing_addr(), R3_ARG1);
     }

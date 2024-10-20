@@ -39,7 +39,7 @@
 jint CodeInstaller::pd_next_offset(NativeInstruction* inst, jint pc_offset, JVMCI_TRAPS) {
   address pc = (address) inst;
   if (inst->is_call()) {
-    return pc_offset + NativeCall::instruction_size;
+    return pc_offset + NativeCall::byte_size();
   } else if (inst->is_jump()) {
     return pc_offset + NativeJump::instruction_size;
   } else if (inst->is_movptr1()) {
@@ -105,8 +105,9 @@ void CodeInstaller::pd_relocate_JavaMethod(CodeBuffer &cbuf, methodHandle& metho
   Unimplemented();
 }
 
-void CodeInstaller::pd_relocate_poll(address pc, jint mark, JVMCI_TRAPS) {
+bool CodeInstaller::pd_relocate(address pc, jint mark) {
   Unimplemented();
+  return false;
 }
 
 // convert JVMCI register indices (as used in oop maps) to HotSpot registers

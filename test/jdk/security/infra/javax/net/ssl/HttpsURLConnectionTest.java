@@ -28,7 +28,7 @@
  *          KEYCHAINSTORE-ROOT trust store
  * @library /test/lib
  * @requires os.family == "mac"
- * @run main/othervm HttpsURLConnectionTest https://github.com KeychainStore-Root
+ * @run main/othervm/manual HttpsURLConnectionTest https://github.com KeychainStore-Root
  */
 import java.io.*;
 import java.net.*;

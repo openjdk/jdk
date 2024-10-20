@@ -359,8 +359,7 @@ class G1RefineBufferedCards : public StackObj {
   void sort_cards(size_t start_index) {
     QuickSort::sort(&_node_buffer[start_index],
                     _node_buffer_capacity - start_index,
-                    compare_cards,
-                    false);
+                    compare_cards);
   }
 
   // Returns the index to the first clean card in the buffer.

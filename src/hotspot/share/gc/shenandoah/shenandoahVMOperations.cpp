@@ -44,7 +44,7 @@ void VM_ShenandoahOperation::doit_epilogue() {
   assert(!ShenandoahHeap::heap()->has_gc_state_changed(), "GC State was not synchronized to java threads.");
   // GC thread root traversal likely used OopMapCache a lot, which
   // might have created lots of old entries. Trigger the cleanup now.
-  OopMapCache::trigger_cleanup();
+  OopMapCache::try_trigger_cleanup();
 }
 
 bool VM_ShenandoahReferenceOperation::doit_prologue() {

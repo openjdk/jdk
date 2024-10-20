@@ -75,7 +75,7 @@ class VectorNode : public TypeNode {
 
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
 
-  static VectorNode* scalar2vector(Node* s, uint vlen, const Type* opd_t, bool is_mask = false);
+  static VectorNode* scalar2vector(Node* s, uint vlen, BasicType bt, bool is_mask = false);
   static VectorNode* shift_count(int opc, Node* cnt, uint vlen, BasicType bt);
   static VectorNode* make(int opc, Node* n1, Node* n2, uint vlen, BasicType bt, bool is_var_shift = false);
   static VectorNode* make(int vopc, Node* n1, Node* n2, const TypeVect* vt, bool is_mask = false, bool is_var_shift = false);
@@ -84,7 +84,7 @@ class VectorNode : public TypeNode {
   static VectorNode* make_mask_node(int vopc, Node* n1, Node* n2, uint vlen, BasicType bt);
 
   static bool is_shift_opcode(int opc);
-  static bool can_transform_shift_op(Node* n, BasicType bt);
+  static bool can_use_RShiftI_instead_of_URShiftI(Node* n, BasicType bt);
   static bool is_convert_opcode(int opc);
   static bool is_minmax_opcode(int opc);
 
@@ -129,6 +129,9 @@ class VectorNode : public TypeNode {
   static bool is_vector_shift_count(Node* n) {
     return is_vector_shift_count(n->Opcode());
   }
+
+  static bool is_scalar_unary_op_with_equal_input_and_output_types(int opc);
+  static bool is_scalar_op_that_returns_int_but_vector_op_returns_long(int opc);
 
   static void trace_new_vector(Node* n, const char* context) {
 #ifdef ASSERT
@@ -1608,6 +1611,21 @@ class VectorRearrangeNode : public VectorNode {
   Node* vec1() const { return in(1); }
   Node* vec_shuffle() const { return in(2); }
 };
+
+
+// Select elements from two source vectors based on the wrapped indexes held in
+// the first vector.
+class SelectFromTwoVectorNode : public VectorNode {
+public:
+  SelectFromTwoVectorNode(Node* indexes, Node* src1, Node* src2, const TypeVect* vt)
+  : VectorNode(indexes, src1, src2, vt) {
+      assert(is_integral_type(indexes->bottom_type()->is_vect()->element_basic_type()),
+             "indexes must be an integral vector");
+  }
+
+  virtual int Opcode() const;
+};
+
 
 class VectorLoadShuffleNode : public VectorNode {
  public:

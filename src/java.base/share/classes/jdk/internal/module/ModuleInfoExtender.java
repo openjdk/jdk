@@ -153,7 +153,7 @@ public final class ModuleInfoExtender {
         var cc = ClassFile.of();
         var cm = cc.parse(in.readAllBytes());
         Version v = ModuleInfoExtender.this.version;
-        return cc.transform(cm, ClassTransform.endHandler(clb -> {
+        return cc.transformClass(cm, ClassTransform.endHandler(clb -> {
             // ModuleMainClass attribute
             if (mainClass != null) {
                 clb.with(ModuleMainClassAttribute.of(ClassDesc.of(mainClass)));

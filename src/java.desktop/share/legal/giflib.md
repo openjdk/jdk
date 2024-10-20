@@ -23,8 +23,13 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
+---------------------------------
+The below applies to the following file(s):
+giflib/openbsd-reallocarray.c
 
-tree/README
+Copyright (C) 2008 Otto Moerbeek <otto@drijf.net>
+SPDX-License-Identifier: MIT
+
 
 == Authors ==
 
@@ -37,14 +42,5 @@ former maintainer
 
 Eric Raymond <esr[AT]snark.thyrsus.com>
 current as well as long time former maintainer of giflib code
-
-There have been many other contributors; see the attributions in the
-version-control history to learn more.
-
-
-tree/openbsd-reallocarray.c
-
-Copyright (C) 2008 Otto Moerbeek <otto@drijf.net>
-SPDX-License-Identifier: MIT
 
 ```
