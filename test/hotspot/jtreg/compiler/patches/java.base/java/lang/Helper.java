@@ -23,6 +23,8 @@
 
 package java.lang;
 
+import jdk.internal.util.DecimalDigits;
+
 /**
  * A helper class to get access to package-private members
  */
@@ -117,11 +119,11 @@ public class Helper {
     }
 
     public static int getChars(int i, int begin, int end, byte[] value) {
-        return StringUTF16.getChars(i, begin, end, value);
+        return DecimalDigits.getCharsUTF16(i, end, value);
     }
 
     public static int getChars(long l, int begin, int end, byte[] value) {
-        return StringUTF16.getChars(l, begin, end, value);
+        return DecimalDigits.getCharsUTF16(l, begin, end, value);
     }
 
     public static boolean contentEquals(byte[] v1, byte[] v2, int len) {
