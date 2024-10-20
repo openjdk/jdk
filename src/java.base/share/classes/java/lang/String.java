@@ -3082,9 +3082,7 @@ public final class String
      * false otherwise
      */
     public boolean containsIgnoreCase(CharSequence s) {
-        String lowerThis = this.toLowerCase();
-        String lowerS = s.toString().toLowerCase();
-        return lowerThis.contains(lowerS);
+        return s == null ? false : this.toString().toLowerCase(Locale.ENGLISH).indexOf(s.toString().toLowerCase(Locale.ENGLISH)) >= 0;
     }
 
     /**
