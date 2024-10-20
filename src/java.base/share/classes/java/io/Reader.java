@@ -153,13 +153,6 @@ public abstract class Reader implements Readable, Closeable {
      * <p> If the sequence changes while the reader is open, e.g. the length
      * changes, the behavior is undefined.
      *
-     * <p> The returned reader is initially open. The reader is closed by
-     * calling the {@code close()} method. Subsequent calls to {@code close()}
-     * have no effect. After the reader has been closed, the {@code read()},
-     * {@code read(char[])}, {@code read(char[], int, int)},
-     * {@code read(CharBuffer)}, {@code ready()}, {@code skip(long)}, and
-     * {@code transferTo()} methods all throw {@code IOException}.
-     *
      * <p> The returned reader supports the {@link #mark mark()} and
      * {@link #reset reset()} operations.
      *
