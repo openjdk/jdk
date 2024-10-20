@@ -25,7 +25,7 @@
 
 package jdk.internal.util;
 
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.Stable;
 
 import static jdk.internal.misc.Unsafe.ARRAY_BYTE_BASE_OFFSET;
