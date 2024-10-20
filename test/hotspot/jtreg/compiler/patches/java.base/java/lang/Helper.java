@@ -123,7 +123,7 @@ public class Helper {
     }
 
     public static int getChars(long l, int begin, int end, byte[] value) {
-        return DecimalDigits.getCharsUTF16(l, begin, end, value);
+        return DecimalDigits.getCharsUTF16(l, end, value);
     }
 
     public static boolean contentEquals(byte[] v1, byte[] v2, int len) {
