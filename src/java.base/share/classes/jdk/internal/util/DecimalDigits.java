@@ -25,9 +25,10 @@
 
 package jdk.internal.util;
 
-import jdk.internal.access.JavaLangAccess;
-import jdk.internal.access.SharedSecrets;
+import sun.misc.Unsafe;
 import jdk.internal.vm.annotation.Stable;
+
+import static jdk.internal.misc.Unsafe.ARRAY_BYTE_BASE_OFFSET;
 
 /**
  * Digits class for decimal digits.
@@ -35,7 +36,7 @@ import jdk.internal.vm.annotation.Stable;
  * @since 21
  */
 public final class DecimalDigits {
-    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
+    private static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
     /**
      * Each element of the array represents the packaging of two ascii characters based on little endian:<p>
@@ -285,11 +286,11 @@ public final class DecimalDigits {
             charPos -= 2;
             putPairUTF16(buf, charPos, -i);
         } else {
-            JLA.putCharUTF16(buf, --charPos, '0' - i);
+            putChar(buf, --charPos, '0' - i);
         }
 
         if (negative) {
-            JLA.putCharUTF16(buf, --charPos, '-');
+            putChar(buf, --charPos, '-');
         }
         return charPos;
     }
@@ -337,11 +338,11 @@ public final class DecimalDigits {
             charPos -= 2;
             putPairUTF16(buf, charPos, -i2);
         } else {
-            JLA.putCharUTF16(buf, --charPos, '0' - i2);
+            putChar(buf, --charPos, '0' - i2);
         }
 
         if (negative) {
-            JLA.putCharUTF16(buf, --charPos, '-');
+            putChar(buf, --charPos, '-');
         }
         return charPos;
     }
@@ -432,8 +433,12 @@ public final class DecimalDigits {
      */
     public static void putPairUTF16(byte[] buf, int charPos, int v) {
         int packed = digitPair(v);
-        JLA.putCharUTF16(buf, charPos, packed & 0xFF);
-        JLA.putCharUTF16(buf, charPos + 1, packed >> 8);
+        putChar(buf, charPos, packed & 0xFF);
+        putChar(buf, charPos + 1, packed >> 8);
+    }
+
+    static void putChar(byte[] buf, int charPos, int c) {
+        UNSAFE.putChar(buf, ARRAY_BYTE_BASE_OFFSET + (charPos << 1), (char) c);
     }
     // End of trusted methods.
 }
