@@ -79,7 +79,7 @@ void C1_MacroAssembler::lock_object(Register Rmark, Register Roop, Register Rbox
   assert(LockingMode != LM_MONITOR, "LM_MONITOR is already handled, by emit_lock()");
 
   if (LockingMode == LM_LIGHTWEIGHT) {
-    lightweight_lock(Roop, Rmark, tmp, slow_case);
+    lightweight_lock(Rbox, Roop, Rmark, tmp, slow_case);
   } else if (LockingMode == LM_LEGACY) {
     NearLabel done;
 
@@ -120,6 +120,8 @@ void C1_MacroAssembler::lock_object(Register Rmark, Register Roop, Register Rbox
     branch_optimized(Assembler::bcondNotZero, slow_case);
     // done
     bind(done);
+  } else {
+    assert(false, "Unhandled LockingMode:%d", LockingMode);
   }
 }
 
@@ -151,6 +153,8 @@ void C1_MacroAssembler::unlock_object(Register Rmark, Register Roop, Register Rb
     // If the object header was not pointing to the displaced header,
     // we do unlocking via runtime call.
     branch_optimized(Assembler::bcondNotEqual, slow_case);
+  } else {
+    assert(false, "Unhandled LockingMode:%d", LockingMode);
   }
   // done
   bind(done);
@@ -254,7 +258,7 @@ void C1_MacroAssembler::initialize_object(
   // Dtrace support is unimplemented.
   //  if (CURRENT_ENV->dtrace_alloc_probes()) {
   //    assert(obj == rax, "must be");
-  //    call(RuntimeAddress(Runtime1::entry_for (Runtime1::dtrace_object_alloc_id)));
+  //    call(RuntimeAddress(Runtime1::entry_for (C1StubId::dtrace_object_alloc_id)));
   //  }
 
   verify_oop(obj, FILE_AND_LINE);
@@ -315,7 +319,7 @@ void C1_MacroAssembler::allocate_array(
   // Dtrace support is unimplemented.
   // if (CURRENT_ENV->dtrace_alloc_probes()) {
   //   assert(obj == rax, "must be");
-  //   call(RuntimeAddress(Runtime1::entry_for (Runtime1::dtrace_object_alloc_id)));
+  //   call(RuntimeAddress(Runtime1::entry_for (C1StubId::dtrace_object_alloc_id)));
   // }
 
   verify_oop(obj, FILE_AND_LINE);

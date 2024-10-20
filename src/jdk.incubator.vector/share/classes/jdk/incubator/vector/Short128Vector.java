@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -503,9 +503,16 @@ final class Short128Vector extends ShortVector {
                                    VectorMask<Short> m) {
         return (Short128Vector)
             super.selectFromTemplate((Short128Vector) v,
-                                     (Short128Mask) m);  // specialize
+                                     Short128Mask.class, (Short128Mask) m);  // specialize
     }
 
+    @Override
+    @ForceInline
+    public Short128Vector selectFrom(Vector<Short> v1,
+                                   Vector<Short> v2) {
+        return (Short128Vector)
+            super.selectFromTemplate((Short128Vector) v1, (Short128Vector) v2);  // specialize
+    }
 
     @ForceInline
     @Override
@@ -842,6 +849,13 @@ final class Short128Vector extends ShortVector {
                 throw new IllegalArgumentException("VectorShuffle length and species length differ");
             int[] shuffleArray = toArray();
             return s.shuffleFromArray(shuffleArray, 0).check(s);
+        }
+
+        @Override
+        @ForceInline
+        public Short128Shuffle wrapIndexes() {
+            return VectorSupport.wrapShuffleIndexes(ETYPE, Short128Shuffle.class, this, VLENGTH,
+                                                    (s) -> ((Short128Shuffle)(((AbstractShuffle<Short>)(s)).wrapIndexesTemplate())));
         }
 
         @ForceInline

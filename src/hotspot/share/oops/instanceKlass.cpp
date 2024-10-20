@@ -437,6 +437,11 @@ const char* InstanceKlass::nest_host_error() {
   }
 }
 
+void* InstanceKlass::operator new(size_t size, ClassLoaderData* loader_data, size_t word_size,
+                                  bool use_class_space, TRAPS) throw() {
+  return Metaspace::allocate(loader_data, word_size, ClassType, use_class_space, THREAD);
+}
+
 InstanceKlass* InstanceKlass::allocate_instance_klass(const ClassFileParser& parser, TRAPS) {
   const int size = InstanceKlass::size(parser.vtable_size(),
                                        parser.itable_size(),
@@ -449,23 +454,24 @@ InstanceKlass* InstanceKlass::allocate_instance_klass(const ClassFileParser& par
   assert(loader_data != nullptr, "invariant");
 
   InstanceKlass* ik;
+  const bool use_class_space = !parser.is_interface() && !parser.is_abstract();
 
   // Allocation
   if (parser.is_instance_ref_klass()) {
     // java.lang.ref.Reference
-    ik = new (loader_data, size, THREAD) InstanceRefKlass(parser);
+    ik = new (loader_data, size, use_class_space, THREAD) InstanceRefKlass(parser);
   } else if (class_name == vmSymbols::java_lang_Class()) {
     // mirror - java.lang.Class
-    ik = new (loader_data, size, THREAD) InstanceMirrorKlass(parser);
+    ik = new (loader_data, size, use_class_space, THREAD) InstanceMirrorKlass(parser);
   } else if (is_stack_chunk_class(class_name, loader_data)) {
     // stack chunk
-    ik = new (loader_data, size, THREAD) InstanceStackChunkKlass(parser);
+    ik = new (loader_data, size, use_class_space, THREAD) InstanceStackChunkKlass(parser);
   } else if (is_class_loader(class_name, parser)) {
     // class loader - java.lang.ClassLoader
-    ik = new (loader_data, size, THREAD) InstanceClassLoaderKlass(parser);
+    ik = new (loader_data, size, use_class_space, THREAD) InstanceClassLoaderKlass(parser);
   } else {
     // normal
-    ik = new (loader_data, size, THREAD) InstanceKlass(parser);
+    ik = new (loader_data, size, use_class_space, THREAD) InstanceKlass(parser);
   }
 
   // Check for pending exception before adding to the loader data and incrementing
@@ -2446,11 +2452,11 @@ void InstanceKlass::metaspace_pointers_do(MetaspaceClosure* it) {
 #endif
 #if INCLUDE_CDS
   // For "old" classes with methods containing the jsr bytecode, the _methods array will
-  // be rewritten during runtime (see Rewriter::rewrite_jsrs()). So setting the _methods to
-  // be writable. The length check on the _methods is necessary because classes which
-  // don't have any methods share the Universe::_the_empty_method_array which is in the RO region.
-  if (_methods != nullptr && _methods->length() > 0 &&
-      !can_be_verified_at_dumptime() && methods_contain_jsr_bytecode()) {
+  // be rewritten during runtime (see Rewriter::rewrite_jsrs()) but they cannot be safely
+  // checked here with ByteCodeStream. All methods that can't be verified are made writable.
+  // The length check on the _methods is necessary because classes which don't have any
+  // methods share the Universe::_the_empty_method_array which is in the RO region.
+  if (_methods != nullptr && _methods->length() > 0 && !can_be_verified_at_dumptime()) {
     // To handle jsr bytecode, new Method* maybe stored into _methods
     it->push(&_methods, MetaspaceClosure::_writable);
   } else {
@@ -2691,21 +2697,6 @@ bool InstanceKlass::can_be_verified_at_dumptime() const {
   }
   return true;
 }
-
-bool InstanceKlass::methods_contain_jsr_bytecode() const {
-  Thread* thread = Thread::current();
-  for (int i = 0; i < _methods->length(); i++) {
-    methodHandle m(thread, _methods->at(i));
-    BytecodeStream bcs(m);
-    while (!bcs.is_last_bytecode()) {
-      Bytecodes::Code opcode = bcs.next();
-      if (opcode == Bytecodes::_jsr || opcode == Bytecodes::_jsr_w) {
-        return true;
-      }
-    }
-  }
-  return false;
-}
 #endif // INCLUDE_CDS
 
 #if INCLUDE_JVMTI
@@ -2715,6 +2706,13 @@ static void clear_all_breakpoints(Method* m) {
 #endif
 
 void InstanceKlass::unload_class(InstanceKlass* ik) {
+
+  if (ik->is_scratch_class()) {
+    assert(ik->dependencies().is_empty(), "dependencies should be empty for scratch classes");
+    return;
+  }
+  assert(ik->is_loaded(), "class should be loaded " PTR_FORMAT, p2i(ik));
+
   // Release dependencies.
   ik->dependencies().remove_all_dependents();
 
@@ -4090,7 +4088,7 @@ void InstanceKlass::set_init_state(ClassState state) {
   assert(good_state || state == allocated, "illegal state transition");
 #endif
   assert(_init_thread == nullptr, "should be cleared before state change");
-  _init_state = state;
+  Atomic::release_store(&_init_state, state);
 }
 
 #if INCLUDE_JVMTI
