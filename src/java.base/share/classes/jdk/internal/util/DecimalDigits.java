@@ -174,11 +174,11 @@ public final class DecimalDigits {
             charPos -= 2;
             putPairLatin1(buf, charPos, -i);
         } else {
-            buf[--charPos] = (byte)('0' - i);
+            putCharLatin1(buf, --charPos, '0' - i);
         }
 
         if (negative) {
-            buf[--charPos] = (byte)'-';
+            putCharLatin1(buf, --charPos, '-');
         }
         return charPos;
     }
@@ -234,11 +234,11 @@ public final class DecimalDigits {
             charPos -= 2;
             putPairLatin1(buf, charPos, -i2);
         } else {
-            buf[--charPos] = (byte)('0' - i2);
+            putCharLatin1(buf, --charPos, '0' - i2);
         }
 
         if (negative) {
-            buf[--charPos] = (byte)'-';
+            putCharLatin1(buf, --charPos, '-');
         }
         return charPos;
     }
@@ -277,11 +277,11 @@ public final class DecimalDigits {
             charPos -= 2;
             putPairUTF16(buf, charPos, -i);
         } else {
-            putChar(buf, --charPos, '0' - i);
+            putCharUTF16(buf, --charPos, '0' - i);
         }
 
         if (negative) {
-            putChar(buf, --charPos, '-');
+            putCharUTF16(buf, --charPos, '-');
         }
         return charPos;
     }
@@ -329,11 +329,11 @@ public final class DecimalDigits {
             charPos -= 2;
             putPairUTF16(buf, charPos, -i2);
         } else {
-            putChar(buf, --charPos, '0' - i2);
+            putCharUTF16(buf, --charPos, '0' - i2);
         }
 
         if (negative) {
-            putChar(buf, --charPos, '-');
+            putCharUTF16(buf, --charPos, '-');
         }
         return charPos;
     }
@@ -411,8 +411,8 @@ public final class DecimalDigits {
      */
     public static void putPairLatin1(byte[] buf, int charPos, int v) {
         int packed = DIGITS[v];
-        buf[charPos    ] = (byte) (packed);
-        buf[charPos + 1] = (byte) (packed >> 8);
+        putCharLatin1(buf, charPos, packed & 0xFF);
+        putCharLatin1(buf, charPos + 1, packed >> 8);
     }
 
     /**
@@ -424,11 +424,15 @@ public final class DecimalDigits {
      */
     public static void putPairUTF16(byte[] buf, int charPos, int v) {
         int packed = DIGITS[v];
-        putChar(buf, charPos, packed & 0xFF);
-        putChar(buf, charPos + 1, packed >> 8);
+        putCharUTF16(buf, charPos, packed & 0xFF);
+        putCharUTF16(buf, charPos + 1, packed >> 8);
     }
 
-    static void putChar(byte[] buf, int charPos, int c) {
+    private static void putCharLatin1(byte[] buf, int charPos, int c) {
+        UNSAFE.putByte(buf, ARRAY_BYTE_BASE_OFFSET + charPos, (byte) c);
+    }
+
+    private static void putCharUTF16(byte[] buf, int charPos, int c) {
         UNSAFE.putChar(buf, ARRAY_BYTE_BASE_OFFSET + (charPos << 1), (char) c);
     }
     // End of trusted methods.
