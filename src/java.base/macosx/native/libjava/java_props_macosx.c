@@ -250,7 +250,7 @@ void setOSNameAndVersion(java_props_t *sprops) {
             nsVerStr = [version objectForKey : @"ProductVersion"];
         }
     }
-    // Fallback if running on pre-10.9 Mac OS
+    // Fallback to reading the SystemVersion.plist
     if (nsVerStr == NULL) {
         NSDictionary *version = [NSDictionary dictionaryWithContentsOfFile :
                                  @"/System/Library/CoreServices/SystemVersion.plist"];
