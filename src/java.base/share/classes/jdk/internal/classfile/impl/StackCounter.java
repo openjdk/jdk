@@ -58,7 +58,7 @@ public final class StackCounter {
                 (dcb.methodInfo.methodFlags() & ACC_STATIC) != 0,
                 dcb.bytecodesBufWriter.bytecodeView(),
                 dcb.constantPool,
-                dcb.handlers);
+                dcb.getHandlers());
     }
 
     private int stack, maxStack, maxLocals, rets;

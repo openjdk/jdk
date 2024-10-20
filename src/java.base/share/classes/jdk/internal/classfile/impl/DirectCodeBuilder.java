@@ -54,7 +54,7 @@ public final class DirectCodeBuilder
     private static final AbstractPseudoInstruction.ExceptionCatchImpl[] EMPTY_HANDLER_ARRAY = {};
     private static final DeferredLabel[] EMPTY_DEFERRED_LABEL_ARRAY = {};
 
-    final List<AbstractPseudoInstruction.ExceptionCatchImpl> handlers = new ArrayList<>();
+    private List<AbstractPseudoInstruction.ExceptionCatchImpl> handlers = null;
     private CharacterRange[] characterRanges = EMPTY_CHARACTER_RANGE;
     private LocalVariable[] localVariables = EMPTY_LOCAL_VARIABLE_ARRAY;
     private LocalVariableType[] localVariableTypes = EMPTY_LOCAL_VARIABLE_TYPE_ARRAY;
@@ -177,7 +177,7 @@ public final class DirectCodeBuilder
 
     private void writeExceptionHandlers(BufWriterImpl buf) {
         int pos = buf.size();
-        int handlersSize = handlers.size();
+        int handlersSize = handlers == null ? 0 : handlers.size();
         buf.writeU2(handlersSize);
         if (handlersSize > 0) {
             writeExceptionHandlers(buf, pos);
@@ -185,6 +185,10 @@ public final class DirectCodeBuilder
     }
 
     private void writeExceptionHandlers(BufWriterImpl buf, int pos) {
+        var handlers = this.handlers;
+        if (handlers == null) {
+            return;
+        }
         int handlersSize = handlers.size();
         for (AbstractPseudoInstruction.ExceptionCatchImpl h : handlers) {
             int startPc = labelToBci(h.tryStart());
@@ -796,8 +800,18 @@ public final class DirectCodeBuilder
         deferredLabels[deferredLabelsCount++] = label;
     }
 
+    public List<AbstractPseudoInstruction.ExceptionCatchImpl> getHandlers() {
+        if (handlers == null) {
+            return Collections.emptyList();
+        }
+        return handlers;
+    }
+
     public void addHandler(ExceptionCatch element) {
-        AbstractPseudoInstruction.ExceptionCatchImpl el = (AbstractPseudoInstruction.ExceptionCatchImpl) element;
+        if (handlers == null) {
+            handlers = new ArrayList<>();
+        }
+        var el = (AbstractPseudoInstruction.ExceptionCatchImpl) element;
         ClassEntry type = el.catchTypeEntry();
         if (type != null && !constantPool.canWriteDirect(type.constantPool()))
             el = new AbstractPseudoInstruction.ExceptionCatchImpl(element.handler(), element.tryStart(), element.tryEnd(), AbstractPoolEntry.maybeClone(constantPool, type));
