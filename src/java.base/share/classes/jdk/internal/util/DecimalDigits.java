@@ -397,22 +397,43 @@ public final class DecimalDigits {
         return charPos;
     }
 
+    /**
+     * Insert the 2-chars integer into the buf as 2 decimal digit ASCII chars,
+     * only least significant 16 bits of {@code v} are used.
+     * @param buf byte buffer to copy into
+     * @param charPos insert point
+     * @param v to convert
+     */
+    public static void putPair(char[] buf, int charPos, int v) {
+        int packed = digitPair(v);
+        buf[charPos    ] = (char) (packed & 0xFF);
+        buf[charPos + 1] = (char) (packed >> 8);
+    }
+
+    /**
+     * Insert the 2-bytes integer into the buf as 2 decimal digit ASCII bytes,
+     * only least significant 16 bits of {@code v} are used.
+     * @param buf byte buffer to copy into
+     * @param charPos insert point
+     * @param v to convert
+     */
     public static void putPairLatin1(byte[] buf, int charPos, int v) {
         int packed = digitPair(v);
         buf[charPos    ] = (byte) (packed);
         buf[charPos + 1] = (byte) (packed >> 8);
     }
 
+    /**
+     * Insert the 2-chars integer into the buf as 2 decimal digit UTF16 bytes,
+     * only least significant 16 bits of {@code v} are used.
+     * @param buf byte buffer to copy into
+     * @param charPos insert point
+     * @param v to convert
+     */
     public static void putPairUTF16(byte[] buf, int charPos, int v) {
         int packed = digitPair(v);
         JLA.putCharUTF16(buf, charPos, packed & 0xFF);
         JLA.putCharUTF16(buf, charPos + 1, packed >> 8);
-    }
-
-    public static void putPair(char[] buf, int charPos, int v) {
-        int packed = digitPair(v);
-        buf[charPos    ] = (char) (packed & 0xFF);
-        buf[charPos + 1] = (char) (packed >> 8);
     }
     // End of trusted methods.
 }
