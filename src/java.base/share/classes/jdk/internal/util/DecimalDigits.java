@@ -81,15 +81,6 @@ public final class DecimalDigits {
     }
 
     /**
-     * For values from 0 to 99 return a short encoding a pair of ASCII-encoded digit characters in little-endian
-     * @param i value to convert
-     * @return a short encoding a pair of ASCII-encoded digit characters
-     */
-    public static short digitPair(int i) {
-        return DIGITS[i];
-    }
-
-    /**
      * Returns the string representation size for a given int value.
      *
      * @param x int value
@@ -406,7 +397,7 @@ public final class DecimalDigits {
      * @param v to convert
      */
     public static void putPair(char[] buf, int charPos, int v) {
-        int packed = digitPair(v);
+        int packed = DIGITS[v];
         buf[charPos    ] = (char) (packed & 0xFF);
         buf[charPos + 1] = (char) (packed >> 8);
     }
@@ -419,7 +410,7 @@ public final class DecimalDigits {
      * @param v to convert
      */
     public static void putPairLatin1(byte[] buf, int charPos, int v) {
-        int packed = digitPair(v);
+        int packed = DIGITS[v];
         buf[charPos    ] = (byte) (packed);
         buf[charPos + 1] = (byte) (packed >> 8);
     }
@@ -432,7 +423,7 @@ public final class DecimalDigits {
      * @param v to convert
      */
     public static void putPairUTF16(byte[] buf, int charPos, int v) {
-        int packed = digitPair(v);
+        int packed = DIGITS[v];
         putChar(buf, charPos, packed & 0xFF);
         putChar(buf, charPos + 1, packed >> 8);
     }
