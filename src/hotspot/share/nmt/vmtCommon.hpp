@@ -77,8 +77,8 @@ class VirtualMemory {
 class VirtualMemoryAllocationSite : public AllocationSite {
   VirtualMemory _c;
  public:
-  VirtualMemoryAllocationSite(const NativeCallStack& stack, MemTag flag) :
-    AllocationSite(stack, flag) { }
+  VirtualMemoryAllocationSite(const NativeCallStack& stack, MemTag mem_tag) :
+    AllocationSite(stack, mem_tag) { }
 
   inline void reserve_memory(size_t sz)  { _c.reserve_memory(sz);  }
   inline void commit_memory (size_t sz)  { _c.commit_memory(sz);   }
@@ -98,13 +98,13 @@ class VirtualMemorySnapshot : public ResourceObj {
   VirtualMemory  _virtual_memory[mt_number_of_tags];
 
  public:
-  inline VirtualMemory* by_tag(MemTag flag) {
-    int index = NMTUtil::tag_to_index(flag);
+  inline VirtualMemory* by_tag(MemTag mem_tag) {
+    int index = NMTUtil::tag_to_index(mem_tag);
     return &_virtual_memory[index];
   }
 
-  inline const VirtualMemory* by_tag(MemTag flag) const {
-    int index = NMTUtil::tag_to_index(flag);
+  inline const VirtualMemory* by_tag(MemTag mem_tag) const {
+    int index = NMTUtil::tag_to_index(mem_tag);
     return &_virtual_memory[index];
   }
 
@@ -142,20 +142,20 @@ class VirtualMemorySnapshot : public ResourceObj {
 class VirtualMemorySummary : AllStatic {
  public:
 
-  static inline void record_reserved_memory(size_t size, MemTag flag) {
-    as_snapshot()->by_tag(flag)->reserve_memory(size);
+  static inline void record_reserved_memory(size_t size, MemTag mem_tag) {
+    as_snapshot()->by_tag(mem_tag)->reserve_memory(size);
   }
 
-  static inline void record_committed_memory(size_t size, MemTag flag) {
-    as_snapshot()->by_tag(flag)->commit_memory(size);
+  static inline void record_committed_memory(size_t size, MemTag mem_tag) {
+    as_snapshot()->by_tag(mem_tag)->commit_memory(size);
   }
 
-  static inline void record_uncommitted_memory(size_t size, MemTag flag) {
-    as_snapshot()->by_tag(flag)->uncommit_memory(size);
+  static inline void record_uncommitted_memory(size_t size, MemTag mem_tag) {
+    as_snapshot()->by_tag(mem_tag)->uncommit_memory(size);
   }
 
-  static inline void record_released_memory(size_t size, MemTag flag) {
-    as_snapshot()->by_tag(flag)->release_memory(size);
+  static inline void record_released_memory(size_t size, MemTag mem_tag) {
+    as_snapshot()->by_tag(mem_tag)->release_memory(size);
   }
 
   // Move virtual memory from one memory tag to another.
@@ -300,9 +300,6 @@ typedef LinkedListIterator<CommittedMemoryRegion> CommittedRegionIterator;
 int compare_committed_region(const CommittedMemoryRegion&, const CommittedMemoryRegion&);
 class ReservedMemoryRegion : public VirtualMemoryRegion {
  private:
-  SortedLinkedList<CommittedMemoryRegion, compare_committed_region>
-    _committed_regions;
-
   NativeCallStack  _stack;
   MemTag         _mem_tag;
 
@@ -328,21 +325,13 @@ class ReservedMemoryRegion : public VirtualMemoryRegion {
   inline void  set_call_stack(const NativeCallStack& stack) { _stack = stack; }
   inline const NativeCallStack* call_stack() const          { return &_stack;  }
 
-  void  set_tag(MemTag mem_tag);
   inline MemTag mem_tag() const            { return _mem_tag;  }
 
   // uncommitted thread stack bottom, above guard pages if there is any.
   address thread_stack_uncommitted_bottom() const;
 
-  bool    add_committed_region(address addr, size_t size, const NativeCallStack& stack);
-  bool    remove_uncommitted_region(address addr, size_t size);
-
   size_t committed_size() const;
 
-
-  // move committed regions that higher than specified address to
-  // the new region
-  void    move_committed_regions(address addr, ReservedMemoryRegion& rgn);
 
   ReservedMemoryRegion& operator= (const ReservedMemoryRegion& other) {
     set_base(other.base());
@@ -350,24 +339,11 @@ class ReservedMemoryRegion : public VirtualMemoryRegion {
 
     _stack = *other.call_stack();
     _mem_tag = other.mem_tag();
-    _committed_regions.clear();
 
     return *this;
   }
 
   const char* tag_name() const { return NMTUtil::tag_to_name(_mem_tag); }
-
- private:
-  // The committed region contains the uncommitted region, subtract the uncommitted
-  // region from this committed region
-  bool remove_uncommitted_region(LinkedListNode<CommittedMemoryRegion>* node,
-    address addr, size_t sz);
-
-  bool add_committed_region(const CommittedMemoryRegion& rgn) {
-    assert(rgn.base() != nullptr, "Invalid base address");
-    assert(size() > 0, "Invalid size");
-    return _committed_regions.add(rgn) != nullptr;
-  }
 };
 
 int compare_reserved_region_base(const ReservedMemoryRegion& r1, const ReservedMemoryRegion& r2);

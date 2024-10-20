@@ -32,9 +32,10 @@
 class RegionsTree : public VMATree {
  private:
   NativeCallStackStorage _ncs_storage;
+  bool _with_storage;
 
  public:
-  RegionsTree(bool with_storage) : VMATree() , _ncs_storage(with_storage) { }
+  RegionsTree(bool with_storage) : VMATree() , _ncs_storage(with_storage), _with_storage(with_storage) { }
 
   ReservedMemoryRegion find_reserved_region(address addr);
 
@@ -157,11 +158,11 @@ class RegionsTree : public VMATree {
   }
 
   inline const NativeCallStack stack(NodeHelper& node) {
-    NativeCallStackStorage::StackIndex si = node.out_stack_index();
-    if (!NativeCallStackStorage::is_invalid(si)) {
-      return _ncs_storage.get(si);
+    if (!_with_storage) {
+      return NativeCallStack::empty_stack();
     }
-    return NativeCallStack::empty_stack();
+    NativeCallStackStorage::StackIndex si = node.out_stack_index();
+    return _ncs_storage.get(si);
   }
 };
 

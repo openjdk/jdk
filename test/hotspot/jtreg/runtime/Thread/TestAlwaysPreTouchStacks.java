@@ -171,8 +171,8 @@ public class TestAlwaysPreTouchStacks {
           long actual_delta = pretouch_committed - no_pretouch_committed;
           if (pretouch_committed <= (no_pretouch_committed + expected_delta)) {
             throw new RuntimeException("Expected a higher amount of committed with pretouch stacks" +
-                                       "PreTouch amount: " + pretouch_committed +
-                                       "NoPreTouch amount: " + (no_pretouch_committed + expected_delta));
+                                       " PreTouch amount: " + pretouch_committed +
+                                       " NoPreTouch amount: " + (no_pretouch_committed + expected_delta));
           }
           if (actual_delta < expected_delta) {
             throw new RuntimeException("Expected a higher delta between stack committed of with and without pretouch." +

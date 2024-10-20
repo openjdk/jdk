@@ -74,9 +74,10 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
     // If we specify use_tag_inplace then the new region takes over the current tag instead of the tag in metadata.
     // This is important because the VirtualMemoryTracker API doesn't require supplying the tag for some operations.
     if (use_tag_inplace) {
-      assert(leqA_n->val().out.type() != StateType::Released, "Should not use inplace the tag of a released region");
+      //assert(state != StateType::Committed && leqA_n->val().out.type() != StateType::Released, "Should not use inplace the tag of a released region");
       MemTag tag = leqA_n->val().out.mem_tag();
       stA.out.set_tag(tag);
+      LEQ_A.state.out.set_tag(tag);
       stB.in.set_tag(tag);
     }
 
@@ -206,12 +207,13 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
   }
 
   // Finally, we can register the new region [A, B)'s summary data.
-  SingleDiff& rescom = diff.tag[NMTUtil::tag_to_index(metadata.mem_tag)];
+  MemTag tag_to_change = use_tag_inplace ? stA.out.mem_tag() : metadata.mem_tag;
+  SingleDiff& rescom = diff.tag[NMTUtil::tag_to_index(tag_to_change)];
   if (state == StateType::Reserved) {
     rescom.reserve += B - A;
   } else if (state == StateType::Committed) {
-    rescom.commit += B - A;
     rescom.reserve += B - A;
+    rescom.commit += B - A;
   }
   return diff;
 }

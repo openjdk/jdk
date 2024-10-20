@@ -415,10 +415,6 @@ void MemDetailReporter::report_virtual_memory_region(const ReservedMemoryRegion*
   // complexity, we avoid printing peaks altogether. Note that peaks should still be printed when reporting
   // usage *by callsite*.
 
-  if (reserved_rgn->mem_tag() == mtTest) {
-    log_debug(nmt)("report vmem, rgn base: " INTPTR_FORMAT " size: " SIZE_FORMAT "cur-scale: " SIZE_FORMAT,
-      p2i(reserved_rgn->base()), reserved_rgn->size(),amount_in_current_scale(reserved_rgn->size()));
-  }
   // Don't report if size is too small.
   if (amount_in_current_scale(reserved_rgn->size()) == 0) return;
 

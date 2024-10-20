@@ -61,17 +61,14 @@ bool VirtualMemoryTracker::Instance::initialize(NMT_TrackingLevel level) {
 
 
 bool VirtualMemoryTracker::Instance::add_reserved_region(address base_addr, size_t size,
-  const NativeCallStack& stack, MemTag flag) {
+  const NativeCallStack& stack, MemTag mem_tag) {
     assert(_tracker != nullptr, "Sanity check");
-    return _tracker->add_reserved_region(base_addr, size, stack, flag);
+    return _tracker->add_reserved_region(base_addr, size, stack, mem_tag);
 }
 
 bool VirtualMemoryTracker::add_reserved_region(address base_addr, size_t size,
-  const NativeCallStack& stack, MemTag flag) {
-  if (flag == mtTest) {
-    log_debug(nmt)("add reserve rgn, base: " INTPTR_FORMAT " end: " INTPTR_FORMAT, p2i(base_addr), p2i(base_addr + size));
-  }
-  VMATree::SummaryDiff diff = tree()->reserve_mapping((size_t)base_addr, size, tree()->make_region_data(stack, flag));
+  const NativeCallStack& stack, MemTag mem_tag) {
+  VMATree::SummaryDiff diff = tree()->reserve_mapping((size_t)base_addr, size, tree()->make_region_data(stack, mem_tag));
   apply_summary_diff(diff);
   return true;
 
@@ -86,7 +83,6 @@ void VirtualMemoryTracker::set_reserved_region_tag(address addr, size_t size, Me
     VMATree::RegionData rd(NativeCallStackStorage::StackIndex(), mem_tag);
     VMATree::SummaryDiff diff = tree()->set_tag((VMATree::position) addr, size, mem_tag);
     apply_summary_diff(diff);
-
 }
 
 void VirtualMemoryTracker::Instance::apply_summary_diff(VMATree::SummaryDiff diff) {
@@ -97,41 +93,43 @@ void VirtualMemoryTracker::Instance::apply_summary_diff(VMATree::SummaryDiff dif
 void VirtualMemoryTracker::apply_summary_diff(VMATree::SummaryDiff diff) {
   VMATree::SingleDiff::delta reserve_delta, commit_delta;
   size_t reserved, committed;
-  MemTag flag = mtNone;
+  MemTag tag = mtNone;
   auto print_err = [&](const char* str) {
-    log_debug(nmt)("summary mismatch, at %s, for %s,"
+    log_warning(cds)("summary mismatch, at %s, for %s,"
                     " diff-reserved: " SSIZE_FORMAT
                     " diff-committed: " SSIZE_FORMAT
                     " vms-reserved: "  SIZE_FORMAT
                     " vms-committed: " SIZE_FORMAT,
-                    str, NMTUtil::tag_to_name(flag), (ssize_t)reserve_delta, (ssize_t)commit_delta, reserved, committed);
+                    str, NMTUtil::tag_to_name(tag), (ssize_t)reserve_delta, (ssize_t)commit_delta, reserved, committed);
   };
+
   for (int i = 0; i < mt_number_of_tags; i++) {
     reserve_delta = diff.tag[i].reserve;
     commit_delta = diff.tag[i].commit;
-    flag = NMTUtil::index_to_tag(i);
-    reserved = VirtualMemorySummary::as_snapshot()->by_tag(flag)->reserved();
-    committed = VirtualMemorySummary::as_snapshot()->by_tag(flag)->committed();
+    tag = NMTUtil::index_to_tag(i);
+    reserved = VirtualMemorySummary::as_snapshot()->by_tag(tag)->reserved();
+    committed = VirtualMemorySummary::as_snapshot()->by_tag(tag)->committed();
     if (reserve_delta != 0) {
       if (reserve_delta > 0)
-        VirtualMemorySummary::record_reserved_memory(reserve_delta, flag);
+        VirtualMemorySummary::record_reserved_memory(reserve_delta, tag);
       else {
         if ((size_t)-reserve_delta <= reserved)
-          VirtualMemorySummary::record_released_memory(-reserve_delta, flag);
+          VirtualMemorySummary::record_released_memory(-reserve_delta, tag);
         else
           print_err("release");
       }
     }
     if (commit_delta != 0) {
       if (commit_delta > 0) {
-        if ((size_t)commit_delta <= reserved)
-          VirtualMemorySummary::record_committed_memory(commit_delta, flag);
+        if ((size_t)commit_delta <= ((size_t)reserve_delta + reserved)) {
+          VirtualMemorySummary::record_committed_memory(commit_delta, tag);
+        }
         else
           print_err("commit");
       }
       else {
-        if ((size_t)-commit_delta <= reserved && (size_t)-commit_delta <= committed)
-          VirtualMemorySummary::record_uncommitted_memory(-commit_delta, flag);
+        if ((size_t)-commit_delta <= committed)
+          VirtualMemorySummary::record_uncommitted_memory(-commit_delta, tag);
         else
           print_err("uncommit");
       }
@@ -176,14 +174,14 @@ bool VirtualMemoryTracker::remove_released_region(address addr, size_t size) {
 
 }
 
-bool VirtualMemoryTracker::Instance::split_reserved_region(address addr, size_t size, size_t split, MemTag flag, MemTag split_flag) {
+bool VirtualMemoryTracker::Instance::split_reserved_region(address addr, size_t size, size_t split, MemTag mem_tag, MemTag split_mem_tag) {
   assert(_tracker != nullptr, "Sanity check");
-  return _tracker->split_reserved_region(addr, size, split, flag, split_flag);
+  return _tracker->split_reserved_region(addr, size, split, mem_tag, split_mem_tag);
 }
 
-bool VirtualMemoryTracker::split_reserved_region(address addr, size_t size, size_t split, MemTag flag, MemTag split_flag) {
-  add_reserved_region(addr, split, NativeCallStack::empty_stack(), flag);
-  add_reserved_region(addr + split, size - split, NativeCallStack::empty_stack(), split_flag);
+bool VirtualMemoryTracker::split_reserved_region(address addr, size_t size, size_t split, MemTag mem_tag, MemTag split_mem_tag) {
+  add_reserved_region(addr, split, NativeCallStack::empty_stack(), mem_tag);
+  add_reserved_region(addr + split, size - split, NativeCallStack::empty_stack(), split_mem_tag);
   return true;
 }
 
@@ -214,7 +212,8 @@ bool VirtualMemoryTracker::Instance::walk_virtual_memory(VirtualMemoryWalker* wa
 bool VirtualMemoryTracker::walk_virtual_memory(VirtualMemoryWalker* walker) {
   ThreadCritical tc;
   tree()->visit_reserved_regions([&](ReservedMemoryRegion& rgn) {
-    log_info(nmt)("region in walker vmem, base: " INTPTR_FORMAT " size: " SIZE_FORMAT " , %s", p2i(rgn.base()), rgn.size(), rgn.tag_name());
+    log_info(nmt)("region in walker vmem, base: " INTPTR_FORMAT " size: " SIZE_FORMAT " , %s, committed: " SIZE_FORMAT,
+     p2i(rgn.base()), rgn.size(), rgn.tag_name(), rgn.committed_size());
     if (!walker->do_allocation_site(&rgn))
       return false;
     return true;

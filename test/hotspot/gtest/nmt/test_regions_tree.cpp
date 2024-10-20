@@ -31,13 +31,28 @@
 #include "runtime/os.hpp"
 #include "unittest.hpp"
 
-class RegionsTreeTest : public testing::Test {
+class NMTRegionsTreeTest : public testing::Test {
  public:
   RegionsTree rt;
-  RegionsTreeTest() : rt(true) { }
+  NMTRegionsTreeTest() : rt(true) { }
 };
 
-TEST_VM_F(RegionsTreeTest, FindReservedRegion) {
+TEST_VM_F(NMTRegionsTreeTest, CommitUncommitRegion) {
+  NativeCallStack ncs;
+  VMATree::RegionData rd = rt.make_region_data(ncs, mtTest);
+  rt.reserve_mapping(0, 100, rd);
+  VMATree::SummaryDiff diff = rt.commit_region(0, 50, ncs);
+  EXPECT_EQ(0, diff.tag[NMTUtil::tag_to_index(mtTest)].reserve);
+  EXPECT_EQ(50, diff.tag[NMTUtil::tag_to_index(mtTest)].commit);
+  diff = rt.commit_region((address)60, 10, ncs);
+  EXPECT_EQ(0, diff.tag[NMTUtil::tag_to_index(mtTest)].reserve);
+  EXPECT_EQ(10, diff.tag[NMTUtil::tag_to_index(mtTest)].commit);
+  diff = rt.uncommit_region(0, 50);
+  EXPECT_EQ(0, diff.tag[NMTUtil::tag_to_index(mtTest)].reserve);
+  EXPECT_EQ(-50, diff.tag[NMTUtil::tag_to_index(mtTest)].commit);
+}
+
+TEST_VM_F(NMTRegionsTreeTest, FindReservedRegion) {
   NativeCallStack ncs;
   VMATree::RegionData rd = rt.make_region_data(ncs, mtTest);
   rt.reserve_mapping(1000, 50, rd);
@@ -55,7 +70,7 @@ TEST_VM_F(RegionsTreeTest, FindReservedRegion) {
   EXPECT_EQ(rmr.base(), (address)1000);
 }
 
-TEST_VM_F(RegionsTreeTest, VisitReservedRegions) {
+TEST_VM_F(NMTRegionsTreeTest, VisitReservedRegions) {
   NativeCallStack ncs;
   VMATree::RegionData rd = rt.make_region_data(ncs, mtTest);
   rt.reserve_mapping(1000, 50, rd);
@@ -70,7 +85,7 @@ TEST_VM_F(RegionsTreeTest, VisitReservedRegions) {
   });
 }
 
-TEST_VM_F(RegionsTreeTest, VisitCommittedRegions) {
+TEST_VM_F(NMTRegionsTreeTest, VisitCommittedRegions) {
   NativeCallStack ncs;
   VMATree::RegionData rd = rt.make_region_data(ncs, mtTest);
   rt.reserve_mapping(1000, 50, rd);

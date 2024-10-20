@@ -39,17 +39,17 @@ class VirtualMemoryTracker {
  public:
   VirtualMemoryTracker(bool is_detailed_mode) : _tree(is_detailed_mode) { }
 
-  bool add_reserved_region       (address base_addr, size_t size, const NativeCallStack& stack, MemTag flag = mtNone);
+  bool add_reserved_region       (address base_addr, size_t size, const NativeCallStack& stack, MemTag mem_tag = mtNone);
   bool add_committed_region      (address base_addr, size_t size, const NativeCallStack& stack);
   bool remove_uncommitted_region (address base_addr, size_t size);
   bool remove_released_region    (address base_addr, size_t size);
   bool remove_released_region    (ReservedMemoryRegion* rgn);
-  void set_reserved_region_tag   (address addr, size_t size, MemTag flag);
+  void set_reserved_region_tag   (address addr, size_t size, MemTag mem_tag);
 
   // Given an existing memory mapping registered with NMT, split the mapping in
   //  two. The newly created two mappings will be registered under the call
-  //  stack and the memory flags of the original section.
-  bool split_reserved_region(address addr, size_t size, size_t split, MemTag flag, MemTag split_flag);
+  //  stack and the memory tags of the original section.
+  bool split_reserved_region(address addr, size_t size, size_t split, MemTag mem_tag, MemTag split_mem_tag);
 
   // Walk virtual memory data structure for creating baseline, etc.
   bool walk_virtual_memory(VirtualMemoryWalker* walker);
@@ -73,17 +73,17 @@ class VirtualMemoryTracker {
     using RegionData = VMATree::RegionData;
     static bool initialize(NMT_TrackingLevel level);
 
-    static bool add_reserved_region       (address base_addr, size_t size, const NativeCallStack& stack, MemTag flag = mtNone);
+    static bool add_reserved_region       (address base_addr, size_t size, const NativeCallStack& stack, MemTag mem_tag = mtNone);
     static bool add_committed_region      (address base_addr, size_t size, const NativeCallStack& stack);
     static bool remove_uncommitted_region (address base_addr, size_t size);
     static bool remove_released_region    (address base_addr, size_t size);
     static bool remove_released_region    (ReservedMemoryRegion* rgn);
-    static void set_reserved_region_tag   (address addr, size_t size, MemTag flag);
+    static void set_reserved_region_tag   (address addr, size_t size, MemTag mem_tag);
 
     // Given an existing memory mapping registered with NMT, split the mapping in
     //  two. The newly created two mappings will be registered under the call
-    //  stack and the memory flags of the original section.
-    static bool split_reserved_region(address addr, size_t size, size_t split, MemTag flag, MemTag split_flag);
+    //  stack and the memory tags of the original section.
+    static bool split_reserved_region(address addr, size_t size, size_t split, MemTag mem_tag, MemTag split_mem_tag);
 
     // Walk virtual memory data structure for creating baseline, etc.
     static bool walk_virtual_memory(VirtualMemoryWalker* walker);
