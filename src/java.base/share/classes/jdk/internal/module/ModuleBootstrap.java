@@ -464,7 +464,7 @@ public final class ModuleBootstrap {
 
         if (CDS.isDumpingStaticArchive()
                 && !haveUpgradeModulePath
-                && (addModules.isEmpty() || addModulesFromRuntimeImage(addModules))
+                && (addModules.isEmpty() || allJrt(cf, addModules))
                 && allJrtOrModularJar(cf)) {
             assert !isPatched;
 
@@ -494,34 +494,6 @@ public final class ModuleBootstrap {
     }
 
     /**
-     * Check if all addModules are from the runtime image.
-     */
-    private static boolean addModulesFromRuntimeImage(Set<String> addModules) {
-        for (String mod : addModules) {
-            if (!isModuleInRuntimeImage(SystemModuleFinders.ofSystem(), mod)) {
-                return false;
-            }
-        }
-        return true;
-    }
-    /**
-     * Check if a module is in the runtime image.
-     */
-    private static boolean isModuleInRuntimeImage(ModuleFinder finder, String moduleName) {
-        String scheme = finder.find(moduleName)
-                              .stream()
-                              .map(ModuleReference::location)
-                              .flatMap(Optional::stream)
-                              .findAny()
-                              .map(URI::getScheme)
-                              .orElse(null);
-        if ("jrt".equalsIgnoreCase(scheme))
-            return true;
-        else
-            return false;
-    }
-
-    /**
      * Load/register the modules to the built-in class loaders.
      */
     private static void loadModules(Configuration cf,
@@ -539,6 +511,18 @@ public final class ModuleBootstrap {
                 ((BuiltinClassLoader) loader).loadModule(mref);
             }
         }
+    }
+
+    /**
+     * Returns true if all modules named in the given set are in the Configuration and
+     * the run-time image.
+     */
+    private static boolean allJrt(Configuration cf, Set<String> moduleNames) {
+        return !moduleNames.stream()
+                .filter(mn -> !mn.equals(ALL_SYSTEM))
+                .map(mn -> cf.findModule(mn).orElseThrow())
+                .map(m -> m.reference().location().orElseThrow())
+                .anyMatch(uri -> !uri.getScheme().equalsIgnoreCase("jrt"));
     }
 
     /**
