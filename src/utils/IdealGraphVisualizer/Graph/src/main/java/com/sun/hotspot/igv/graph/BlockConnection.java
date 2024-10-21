@@ -86,11 +86,6 @@ public class BlockConnection implements Connection {
     }
 
     @Override
-    public boolean isVIP() {
-        return true;
-    }
-
-    @Override
     public List<Point> getControlPoints() {
         return controlPoints;
     }

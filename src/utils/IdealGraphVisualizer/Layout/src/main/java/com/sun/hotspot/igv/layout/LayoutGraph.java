@@ -24,6 +24,7 @@
 package com.sun.hotspot.igv.layout;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  *
@@ -77,42 +78,10 @@ public class LayoutGraph {
         return vertices;
     }
 
-    private void markNotRoot(Set<Vertex> notRootSet, Vertex v, Vertex startingVertex) {
-
-        if (notRootSet.contains(v)) {
-            return;
-        }
-        if (v != startingVertex) {
-            notRootSet.add(v);
-        }
-        for (Port port : outputPorts.getOrDefault(v, Collections.emptySet())) {
-            for (Link link : portLinks.get(port)) {
-                Port toLink = link.getTo();
-                Vertex toVertex = toLink.getVertex();
-                if (toVertex != startingVertex) {
-                    markNotRoot(notRootSet, toVertex, startingVertex);
-                }
-            }
-        }
-    }
-
     public Set<Vertex> findRootVertices() {
-        Set<Vertex> notRootSet = new HashSet<>();
-        for (Vertex vertex : vertices) {
-            if (!notRootSet.contains(vertex)) {
-                if (inputPorts.getOrDefault(vertex, Collections.emptySet()).isEmpty()) {
-                    markNotRoot(notRootSet, vertex, vertex);
-                }
-            }
-        }
-
-        Set<Vertex> result = new HashSet<>();
-        for (Vertex vertex : vertices) {
-            if (!notRootSet.contains(vertex)) {
-                result.add(vertex);
-            }
-        }
-        return result;
+        return vertices.stream()
+                .filter(v -> inputPorts.getOrDefault(v, Collections.emptySet()).isEmpty())
+                .collect(Collectors.toSet());
     }
 
     public Set<Link> getInputLinks(Vertex vertex) {

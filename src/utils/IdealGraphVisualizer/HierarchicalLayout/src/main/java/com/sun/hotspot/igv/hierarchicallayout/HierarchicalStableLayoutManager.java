@@ -69,7 +69,7 @@ public class HierarchicalStableLayoutManager extends LayoutManager {
     public HierarchicalStableLayoutManager() {
         oldVertices = new HashSet<>();
         oldLinks = new HashSet<>();
-        manager = new HierarchicalLayoutManager(true);
+        manager = new HierarchicalLayoutManager();
         vertexToLayoutNode = new LinkedHashMap<>();
         nodes = new ArrayList<>();
     }
