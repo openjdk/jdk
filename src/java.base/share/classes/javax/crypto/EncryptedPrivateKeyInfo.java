@@ -392,7 +392,7 @@ public final class EncryptedPrivateKeyInfo implements DEREncodable {
     /**
      * Creates and encrypts an `EncryptedPrivateKeyInfo` from a given PrivateKey
      * and password.
-     * <p>
+     *
      * @implNote The encryption uses the algorithm set by `jdk.epkcs8.defaultAlgorithm`
      * Security Property by the default provider and default the
      * AlgorithmParameterSpec of that provider.
