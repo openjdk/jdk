@@ -85,8 +85,9 @@ public abstract class Slot implements Port, Source.Provider, Properties.Provider
     }
 
     public int getWidth() {
-        if (shortName == null || shortName.length() <= 1) {
-            return Figure.SLOT_WIDTH;
+        assert shortName != null;
+        if (shortName.isEmpty()) {
+            return 0;
         } else {
             BufferedImage image = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
             Graphics g = image.getGraphics();
@@ -96,8 +97,8 @@ public abstract class Slot implements Port, Source.Provider, Properties.Provider
         }
     }
 
-    public int getWantedIndex() {
-        return wantedIndex;
+    public int getHeight() {
+        return Figure.SLOT_HEIGHT;
     }
 
     @Override

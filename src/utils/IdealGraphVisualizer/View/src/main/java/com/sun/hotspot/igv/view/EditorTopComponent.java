@@ -220,6 +220,11 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
         toolBar.add(redoAction);
 
         toolBar.addSeparator();
+
+        JToggleButton cutEdgesButton = new JToggleButton(CutEdgesAction.get(CutEdgesAction.class));
+        cutEdgesButton.setHideActionText(true);
+        toolBar.add(cutEdgesButton);
+
         JToggleButton globalSelectionButton = new JToggleButton(GlobalSelectionAction.get(GlobalSelectionAction.class));
         globalSelectionButton.setHideActionText(true);
         toolBar.add(globalSelectionButton);
@@ -448,6 +453,7 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
         }
         etc.addSelectedNodes(selectedNodes, false);
         model.setGlobalSelection(GlobalSelectionAction.get(GlobalSelectionAction.class).isSelected(), false);
+        model.setCutEdges(CutEdgesAction.get(CutEdgesAction.class).isSelected(), false);
         etc.resetUndoRedo();
 
         int currentZoomLevel = scene.getZoomPercentage();
