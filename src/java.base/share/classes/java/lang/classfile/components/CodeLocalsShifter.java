@@ -24,11 +24,12 @@
  */
 package java.lang.classfile.components;
 
-import java.lang.constant.MethodTypeDesc;
-import java.lang.reflect.AccessFlag;
 import java.lang.classfile.AccessFlags;
 import java.lang.classfile.CodeTransform;
 import java.lang.classfile.TypeKind;
+import java.lang.constant.MethodTypeDesc;
+import java.lang.reflect.AccessFlag;
+
 import jdk.internal.classfile.impl.CodeLocalsShifterImpl;
 import jdk.internal.javac.PreviewFeature;
 
