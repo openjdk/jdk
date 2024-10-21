@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2015 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -32,7 +32,6 @@
 
 OSThread::OSThread()
   : _thread_id(0),
-    _thread_type(),
     _kernel_thread_id(0),
     _caller_sigmask(),
     sr(),
@@ -40,7 +39,6 @@ OSThread::OSThread()
     _ucontext(nullptr),
     _expanding_stack(0),
     _alt_sig_stack(nullptr),
-    _last_cpu_times(),
     _startThread_lock(new Monitor(Mutex::event, "startThread_lock")) {
   sigemptyset(&_caller_sigmask);
 }

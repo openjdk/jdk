@@ -36,7 +36,6 @@
 
 // Mutexes used in the VM (see comment in mutexLocker.hpp):
 
-Mutex*   Patching_lock                = nullptr;
 Mutex*   NMethodState_lock            = nullptr;
 Monitor* SystemDictionary_lock        = nullptr;
 Mutex*   InvokeMethodTypeTable_lock   = nullptr;
@@ -66,6 +65,7 @@ Monitor* CodeCache_lock               = nullptr;
 Mutex*   TouchedMethodLog_lock        = nullptr;
 Mutex*   RetData_lock                 = nullptr;
 Monitor* VMOperation_lock             = nullptr;
+Monitor* ThreadsLockThrottle_lock     = nullptr;
 Monitor* Threads_lock                 = nullptr;
 Mutex*   NonJavaThreadsList_lock      = nullptr;
 Mutex*   NonJavaThreadsListSync_lock  = nullptr;
@@ -232,7 +232,6 @@ void mutex_init() {
   MUTEX_DEFN(Metaspace_lock                  , PaddedMutex  , nosafepoint-3);
   MUTEX_DEFN(MetaspaceCritical_lock          , PaddedMonitor, nosafepoint-1);
 
-  MUTEX_DEFN(Patching_lock                   , PaddedMutex  , nosafepoint);      // used for safepointing and code patching.
   MUTEX_DEFN(MonitorDeflation_lock           , PaddedMonitor, nosafepoint);      // used for monitor deflation thread operations
   MUTEX_DEFN(Service_lock                    , PaddedMonitor, service);          // used for service thread operations
   MUTEX_DEFN(Notification_lock               , PaddedMonitor, service);          // used for notification thread operations
@@ -316,6 +315,8 @@ void mutex_init() {
   // JVMCIRuntime::_lock must be acquired before JVMCI_lock to avoid deadlock
   MUTEX_DEFN(JVMCIRuntime_lock               , PaddedMonitor, safepoint, true);
 #endif
+
+  MUTEX_DEFN(ThreadsLockThrottle_lock        , PaddedMonitor, safepoint);
 
   // These locks have relative rankings, and inherit safepoint checking attributes from that rank.
   MUTEX_DEFL(VtableStubs_lock               , PaddedMutex  , CompiledIC_lock);  // Also holds DumpTimeTable_lock

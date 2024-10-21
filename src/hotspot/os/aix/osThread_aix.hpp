@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2013 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -36,7 +36,6 @@ class OSThread : public OSThreadBase {
   typedef pthread_t thread_id_t;
 
   thread_id_t _thread_id;
-  int _thread_type;
 
   // On AIX, we use the pthread id as OSThread::thread_id and keep the kernel thread id
   // separately for diagnostic purposes.
@@ -51,13 +50,6 @@ class OSThread : public OSThreadBase {
  public:
   OSThread();
   ~OSThread();
-
-  int thread_type() const {
-    return _thread_type;
-  }
-  void set_thread_type(int type) {
-    _thread_type = type;
-  }
 
   // Methods to save/restore caller's signal mask
   sigset_t  caller_sigmask() const       { return _caller_sigmask; }
@@ -130,13 +122,6 @@ class OSThread : public OSThreadBase {
   Monitor* startThread_lock() const {
     return _startThread_lock;
   }
-
-  // The last measured values of cpu timing to prevent the "stale
-  // value return" bug in thread_cpu_time.
-  volatile struct {
-    jlong sys;
-    jlong user;
-  } _last_cpu_times;
 
   // Printing
   uintx thread_id_for_printing() const override {

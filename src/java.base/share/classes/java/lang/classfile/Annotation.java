@@ -29,12 +29,11 @@ import java.lang.classfile.attribute.RuntimeInvisibleParameterAnnotationsAttribu
 import java.lang.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
 import java.lang.classfile.attribute.RuntimeVisibleParameterAnnotationsAttribute;
 import java.lang.classfile.constantpool.Utf8Entry;
-import jdk.internal.classfile.impl.AnnotationImpl;
-import jdk.internal.classfile.impl.TemporaryConstantPool;
-
 import java.lang.constant.ClassDesc;
 import java.util.List;
 
+import jdk.internal.classfile.impl.AnnotationImpl;
+import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.classfile.impl.Util;
 import jdk.internal.javac.PreviewFeature;
 
