@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,10 @@ public class HmacSaltLengths {
 
     private static final String[] ALGOS = {
         "HmacPBESHA1",
+        "HmacPBESHA224",
+        "HmacPBESHA256",
+        "HmacPBESHA384",
+        "HmacPBESHA512",
         "PBEWithHmacSHA1",
         "PBEWithHmacSHA224",
         "PBEWithHmacSHA256",

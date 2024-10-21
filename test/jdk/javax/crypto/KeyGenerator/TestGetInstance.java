@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,11 +47,11 @@ public class TestGetInstance {
 
         KeyGenerator kg;
 
-        kg = KeyGenerator.getInstance("des");
+        kg = KeyGenerator.getInstance("aes");
         System.out.println("Default: " + kg.getProvider().getName());
-        kg = KeyGenerator.getInstance("des", "SunJCE");
+        kg = KeyGenerator.getInstance("aes", "SunJCE");
         same(p, kg.getProvider());
-        kg = KeyGenerator.getInstance("des", p);
+        kg = KeyGenerator.getInstance("aes", p);
         same(p, kg.getProvider());
 
         try {

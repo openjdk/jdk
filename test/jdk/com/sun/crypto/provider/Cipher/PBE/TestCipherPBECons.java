@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ import javax.crypto.NoSuchPaddingException;
 public class TestCipherPBECons {
 
     private static final String[] PBEAlgorithms = {"pbeWithMD5ANDdes",
-        "PBEWithMD5AndTripleDES"};
+        "PBEWithMD5AndTripleDES", "PBEWithSHA1AndDESede"};
     private static final String[] cipherModes = {"ECb", "cbC", "cFB", "Cfb32",
         "OfB", "oFb64", "pCbC"};
     private static final String[] cipherPaddings = {"Pkcs5Padding", "NoPaDDing"};

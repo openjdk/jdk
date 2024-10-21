@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,9 +48,9 @@ public class ByteBuffers {
 
         byte[] keyBytes = new byte[16];
         random.nextBytes(keyBytes);
-        SecretKey key = new SecretKeySpec(keyBytes, "HmacMD5");
+        SecretKey key = new SecretKeySpec(keyBytes, "HmacSha256");
 
-        Mac mac = Mac.getInstance("HmacMD5");
+        Mac mac = Mac.getInstance("HmacSha256");
         mac.init(key);
         byte[] macValue = mac.doFinal(t);
 

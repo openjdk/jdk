@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,19 +63,19 @@ public class SignerOrder {
     static final byte[] data2 = "abcde".getBytes();
 
     public static void main(String[] argv) throws Exception {
-
+        String digestAlg = "Sha256";
         SignerInfo[] signerInfos = new SignerInfo[9];
-        SimpleSigner signer1 = new SimpleSigner(null, null, null, null);
+        SimpleSigner signer1 = new SimpleSigner(digestAlg, null, null, null);
         signerInfos[8] = signer1.genSignerInfo(data1);
         signerInfos[7] = signer1.genSignerInfo(new byte[]{});
         signerInfos[6] = signer1.genSignerInfo(data2);
 
-        SimpleSigner signer2 = new SimpleSigner(null, null, null, null);
+        SimpleSigner signer2 = new SimpleSigner(digestAlg, null, null, null);
         signerInfos[5] = signer2.genSignerInfo(data1);
         signerInfos[4] = signer2.genSignerInfo(new byte[]{});
         signerInfos[3] = signer2.genSignerInfo(data2);
 
-        SimpleSigner signer3 = new SimpleSigner(null, null, null, null);
+        SimpleSigner signer3 = new SimpleSigner(digestAlg, null, null, null);
         signerInfos[2] = signer3.genSignerInfo(data1);
         signerInfos[1] = signer3.genSignerInfo(new byte[]{});
         signerInfos[0] = signer3.genSignerInfo(data2);
@@ -170,14 +170,14 @@ class SimpleSigner {
         if (keyPair == null) {
             KeyPairGenerator keyGen =
                     KeyPairGenerator.getInstance(encryptionAlg);
-            keyGen.initialize(1024);
+            keyGen.initialize(2048);
             keyPair = keyGen.generateKeyPair();
         }
         publicKey = (X509Key) keyPair.getPublic();
         privateKey = keyPair.getPrivate();
 
         if ("DSA".equals(encryptionAlg)) {
-            this.sig = Signature.getInstance(encryptionAlg);
+            this.sig = Signature.getInstance(digestAlg + "with" + encryptionAlg);
         } else { // RSA
             this.sig = Signature.getInstance(digestAlg + "/" + encryptionAlg);
         }
