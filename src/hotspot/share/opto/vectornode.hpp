@@ -1967,4 +1967,22 @@ public:
   virtual int Opcode() const;
 };
 
+class UMinVNode : public VectorNode {
+ public:
+  UMinVNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2 ,vt) {
+    assert(is_integral_type(vt->element_basic_type()), "");
+  }
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+  virtual Node* Identity(PhaseGVN* phase);
+  virtual int Opcode() const;
+};
+
+	@@ -614,6 +626,8 @@ class UMaxVNode : public VectorNode {
+  UMaxVNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {
+    assert(is_integral_type(vt->element_basic_type()), "");
+  }
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+  virtual Node* Identity(PhaseGVN* phase);
+  virtual int Opcode() const;
+};
 #endif // SHARE_OPTO_VECTORNODE_HPP
