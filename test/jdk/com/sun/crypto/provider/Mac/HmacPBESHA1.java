@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,8 @@ public class HmacPBESHA1 {
     };
     private static final int[] MAC_LENGTHS = { 20, 20, 28, 32, 48, 64, 28, 32 };
     private static final String KEY_ALGO = "PBE";
-    private static final String PROVIDER = "SunJCE";
+    private static final String PROVIDER =
+            System.getProperty("test.provider.name", "SunJCE");
 
     private static SecretKey key = null;
 

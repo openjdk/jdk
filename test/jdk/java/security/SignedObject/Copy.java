@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ public class Copy {
                 signature);
         System.out.println("Signature algorithm: " + so.getAlgorithm());
 
-        signature = Signature.getInstance(DSA, "SUN");
+        signature = Signature.getInstance(DSA, System.getProperty("test.provider.name", "SUN"));
         if (!so.verify(kp.getPublic(), signature)) {
             throw new RuntimeException("Verification failed");
         }

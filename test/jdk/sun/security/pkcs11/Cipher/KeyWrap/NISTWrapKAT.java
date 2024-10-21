@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -259,9 +259,12 @@ public class NISTWrapKAT extends PKCS11Test {
             System.out.println("=> skip, exceeds max allowed size " + allowed);
             return;
         }
-        Cipher c1 = Cipher.getInstance(algo, "SunJCE");
-        Cipher c2 = Cipher.getInstance(algo, "SunJCE");
-        Cipher c3 = Cipher.getInstance(algo, "SunJCE");
+        Cipher c1 = Cipher.getInstance(algo,
+                System.getProperty("test.provider.name", "SunJCE"));
+        Cipher c2 = Cipher.getInstance(algo,
+                System.getProperty("test.provider.name", "SunJCE"));
+        Cipher c3 = Cipher.getInstance(algo,
+                System.getProperty("test.provider.name", "SunJCE"));
 
         byte[] keyVal = toBytes(key, keyLen << 1);
         byte[] dataVal = toBytes(data, dataLen << 1);
@@ -319,9 +322,12 @@ public class NISTWrapKAT extends PKCS11Test {
             System.out.println("=> skip, exceeds max allowed size " + allowed);
             return;
         }
-        Cipher c1 = Cipher.getInstance(algo, "SunJCE");
-        Cipher c2 = Cipher.getInstance(algo, "SunJCE");
-        Cipher c3 = Cipher.getInstance(algo, "SunJCE");
+        Cipher c1 = Cipher.getInstance(algo,
+                System.getProperty("test.provider.name", "SunJCE"));
+        Cipher c2 = Cipher.getInstance(algo,
+                System.getProperty("test.provider.name", "SunJCE"));
+        Cipher c3 = Cipher.getInstance(algo,
+                System.getProperty("test.provider.name", "SunJCE"));
 
         byte[] keyVal = toBytes(key, keyLen << 1);
         byte[] dataVal = toBytes(data, dataLen << 1);

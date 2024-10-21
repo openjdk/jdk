@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,8 @@ public class GenerateRSAPrivateCrtKey {
                                      new BigInteger(1, coeff));
 
         // Create an RSA private key from the CRT specification
-        KeyFactory kf = KeyFactory.getInstance("RSA", "SunRsaSign");
+        KeyFactory kf = KeyFactory.getInstance("RSA",
+                System.getProperty("test.provider.name", "SunRsaSign"));
         RSAPrivateCrtKey rsaPriKey =
             (RSAPrivateCrtKey) kf.generatePrivate(rsaCrtSpec);
 

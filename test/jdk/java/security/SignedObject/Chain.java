@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,10 @@ public class Chain {
         Sun("SUN"),
         SunEC("SunEC"),
         SunJSSE("SunJSSE"),
-        SunMSCAPI("SunMSCAPI");
+        SunMSCAPI("SunMSCAPI"),
+        TestProvider_or_SunRsaSign(System.getProperty("test.provider.name", "SunRsaSign")),
+        TestProvider_or_Sun(System.getProperty("test.provider.name", "SUN")),
+        TestProvider_or_SunEC(System.getProperty("test.provider.name", "SunEC"));
 
         final String name;
 
@@ -166,9 +169,9 @@ public class Chain {
         new Test(SigAlg.SHA3_256withRSA, KeyAlg.RSA, Provider.Default),
         new Test(SigAlg.SHA3_384withRSA, KeyAlg.RSA, Provider.Default),
         new Test(SigAlg.SHA3_512withRSA, KeyAlg.RSA, Provider.Default),
-        new Test(SigAlg.SHA1withDSA, KeyAlg.DSA, Provider.Sun, 1024),
-        new Test(SigAlg.SHA224withDSA, KeyAlg.DSA, Provider.Sun, 2048),
-        new Test(SigAlg.SHA256withDSA, KeyAlg.DSA, Provider.Sun, 2048),
+        new Test(SigAlg.SHA1withDSA, KeyAlg.DSA, Provider.TestProvider_or_Sun, 1024),
+        new Test(SigAlg.SHA224withDSA, KeyAlg.DSA, Provider.TestProvider_or_Sun, 2048),
+        new Test(SigAlg.SHA256withDSA, KeyAlg.DSA, Provider.TestProvider_or_Sun, 2048),
     };
 
     private static final String str = "to-be-signed";
@@ -190,7 +193,7 @@ public class Chain {
         Iterator<String> mdAlgs = SigTestUtil.getDigestAlgorithms
             (SignatureType.RSASSA_PSS, keysize).iterator();
         while (mdAlgs.hasNext()) {
-            result &= runTest(new Test(pss, KeyAlg.RSA, Provider.SunRsaSign,
+            result &= runTest(new Test(pss, KeyAlg.RSA, Provider.TestProvider_or_SunRsaSign,
                 keysize, SigTestUtil.generateDefaultParameter
                     (SignatureType.RSASSA_PSS, mdAlgs.next())));
         }

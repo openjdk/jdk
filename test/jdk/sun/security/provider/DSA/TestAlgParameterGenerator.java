@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,8 @@ public class TestAlgParameterGenerator {
 
     public static void main(String[] args) throws Exception {
         AlgorithmParameterGenerator apg
-                = AlgorithmParameterGenerator.getInstance("DSA", "SUN");
+                = AlgorithmParameterGenerator.getInstance("DSA",
+                    System.getProperty("test.provider.name", "SUN"));
         long start, stop;
 
         // make sure no-init still works

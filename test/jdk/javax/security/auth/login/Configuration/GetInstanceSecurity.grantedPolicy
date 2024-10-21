@@ -1,4 +1,5 @@
 grant {
+    permission java.util.PropertyPermission "test.provider.name", "read";
     permission java.util.PropertyPermission "test.src", "read";
     permission java.io.FilePermission "${test.src}${/}*", "read";
 

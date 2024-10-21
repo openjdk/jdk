@@ -33,7 +33,7 @@ import java.security.Security;
 
 public class TestAESWithProviderChange extends Dynamic {
     public static void main(String argv[]) throws Exception {
-        Security.removeProvider(SUNJCE);
+        Security.removeProvider(PROVIDER);
         Security.addProvider(new com.sun.crypto.provider.SunJCE());
         new TestAESWithProviderChange().run(argv);
     }

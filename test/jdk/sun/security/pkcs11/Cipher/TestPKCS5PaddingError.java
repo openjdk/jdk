@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,7 +78,7 @@ public class TestPKCS5PaddingError extends PKCS11Test {
                             KeyGenerator.getInstance(currTest.keyAlgo, p);
                     SecretKey key = kg.generateKey();
                     Cipher c1 = Cipher.getInstance(currTest.transformation,
-                                                   "SunJCE");
+                               System.getProperty("test.provider.name", "SunJCE"));
                     c1.init(Cipher.ENCRYPT_MODE, key);
                     byte[] cipherText = c1.doFinal(plainText);
                     AlgorithmParameters params = c1.getParameters();
