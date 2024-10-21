@@ -217,11 +217,10 @@ public class TestIllegalLink extends NativeTestHelper {
                     "GroupLayout is too large"
             });
         }
-        if (ValueLayout.JAVA_LONG.byteAlignment() == 8) {
+        if (C_LONG_LONG.byteAlignment() == 8) {
             cases.add(new Object[]{
                     FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
-                            ValueLayout.JAVA_LONG,
-                            ValueLayout.JAVA_INT)), // missing trailing padding
+                            C_LONG_LONG, ValueLayout.JAVA_INT)), // missing trailing padding
                     NO_OPTIONS,
                     "has unexpected size"
             });
