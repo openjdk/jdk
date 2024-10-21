@@ -607,6 +607,12 @@ void VM_PopulateDumpSharedSpace::doit() {
   _map_info->populate_header(MetaspaceShared::core_region_alignment());
   _map_info->set_serialized_data(serialized_data);
   _map_info->set_cloned_vtables(CppVtables::vtables_serialized_base());
+
+  // Note: main module name needs to be directly stored in the file header,
+  // and not restored from MetaspaceShared::serialize():
+  // With aot-linked classes, the main module name is used within
+  // MetaspaceShared::map_archive() to decide whether to use the archive. This
+  // is before we can call MetaspaceShared::serialize().
   _map_info->set_main_module_name(_archived_main_module_name);
 }
 
