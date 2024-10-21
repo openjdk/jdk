@@ -1806,10 +1806,10 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   if (LockingMode != LM_LEGACY && method->is_object_wait0()) {
     // Check preemption for Object.wait()
-    __ ld(t0, Address(xthread, JavaThread::preempt_alternate_return_offset()));
-    __ beqz(t0, native_return);
+    __ ld(t1, Address(xthread, JavaThread::preempt_alternate_return_offset()));
+    __ beqz(t1, native_return);
     __ sd(zr, Address(xthread, JavaThread::preempt_alternate_return_offset()));
-    __ jr(t0);
+    __ jr(t1);
     __ bind(native_return);
 
     intptr_t the_pc = (intptr_t) __ pc();

@@ -1603,10 +1603,10 @@ void InterpreterMacroAssembler::call_VM_preemptable(Register oop_result,
   pop_cont_fastpath();
 
   // Check if preempted.
-  ld(t0, Address(xthread, JavaThread::preempt_alternate_return_offset()));
-  beqz(t0, not_preempted);
+  ld(t1, Address(xthread, JavaThread::preempt_alternate_return_offset()));
+  beqz(t1, not_preempted);
   sd(zr, Address(xthread, JavaThread::preempt_alternate_return_offset()));
-  jr(t0);
+  jr(t1);
 
   // In case of preemption, this is where we will resume once we finally acquire the monitor.
   bind(resume_pc);
@@ -1616,8 +1616,8 @@ void InterpreterMacroAssembler::call_VM_preemptable(Register oop_result,
 }
 
 void InterpreterMacroAssembler::restore_after_resume(bool is_native) {
-  la(t0, ExternalAddress(Interpreter::cont_resume_interpreter_adapter()));
-  jalr(t0);
+  la(t1, ExternalAddress(Interpreter::cont_resume_interpreter_adapter()));
+  jalr(t1);
   if (is_native) {
     // On resume we need to set up stack as expected
     push(dtos);

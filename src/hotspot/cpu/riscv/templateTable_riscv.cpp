@@ -3896,7 +3896,6 @@ void TemplateTable::monitorenter() {
 
    // store object
    __ sd(x10, Address(c_rarg1, BasicObjectLock::obj_offset()));
-
    __ lock_object(c_rarg1);
 
    // check to make sure this monitor doesn't cause stack overflow after locking
