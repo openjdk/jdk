@@ -158,7 +158,7 @@ public class StreamFlowControlTest {
                    boolean sameClient)
     {
         System.out.printf("%ntesting testAsync(%s, %s)%n", uri, sameClient);
-        ConcurrentHashMap<String, CompletableFuture<String>>  responseSent = new ConcurrentHashMap<>();
+        ConcurrentHashMap<String, CompletableFuture<String>> responseSent = new ConcurrentHashMap<>();
         FCHttp2TestExchange.setResponseSentCB((s) -> responseSent.get(s).complete(s));
 
         HttpClient client = null;
@@ -319,7 +319,7 @@ public class StreamFlowControlTest {
 
     // A custom Http2TestExchangeImpl that overrides sendResponseHeaders to
     // allow headers to be sent with a number of CONTINUATION frames.
-    static class  FCHttp2TestExchange extends Http2TestExchangeImpl {
+    static class FCHttp2TestExchange extends Http2TestExchangeImpl {
         static volatile Consumer<String> responseSentCB;
         static void setResponseSentCB(Consumer<String> responseSentCB) {
             FCHttp2TestExchange.responseSentCB = responseSentCB;

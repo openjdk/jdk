@@ -112,8 +112,8 @@ public class ConnectionFlowControlTest {
     @Test(dataProvider = "variants")
     void test(String uri) throws Exception {
         System.out.printf("%ntesting %s%n", uri);
-        ConcurrentHashMap<String, CompletableFuture<String>>  responseSent = new ConcurrentHashMap<>();
-        ConcurrentHashMap<String, HttpResponse<InputStream>>  responses = new ConcurrentHashMap<>();
+        ConcurrentHashMap<String, CompletableFuture<String>> responseSent = new ConcurrentHashMap<>();
+        ConcurrentHashMap<String, HttpResponse<InputStream>> responses = new ConcurrentHashMap<>();
         FCHttp2TestExchange.setResponseSentCB((s) -> responseSent.get(s).complete(s));
         int connectionWindowSize = Math.max(Integer.getInteger(
                 "jdk.httpclient.connectionWindowSize", 65535), 65535);
@@ -296,7 +296,7 @@ public class ConnectionFlowControlTest {
 
                 byte[] bytes = is.readAllBytes();
                 System.out.println("Server " + t.getLocalAddress() + " received:\n"
-                        + t.getRequestURI() + ": " +  new String(bytes, StandardCharsets.UTF_8));
+                        + t.getRequestURI() + ": " + new String(bytes, StandardCharsets.UTF_8));
                 t.getResponseHeaders().setHeader("X-Connection-Key", t.getConnectionKey());
 
                 if (bytes.length == 0) bytes = "no request body!".getBytes(StandardCharsets.UTF_8);
@@ -342,7 +342,7 @@ public class ConnectionFlowControlTest {
 
     // A custom Http2TestExchangeImpl that overrides sendResponseHeaders to
     // allow headers to be sent with a number of CONTINUATION frames.
-    static class  FCHttp2TestExchange extends Http2TestExchangeImpl {
+    static class FCHttp2TestExchange extends Http2TestExchangeImpl {
         static volatile Consumer<String> responseSentCB;
         static void setResponseSentCB(Consumer<String> responseSentCB) {
             FCHttp2TestExchange.responseSentCB = responseSentCB;

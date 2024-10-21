@@ -1461,7 +1461,7 @@ class Stream<T> extends ExchangeImpl<T> {
         }
         Log.logError("cancelling exchange on stream {0} due to protocol error: {1}\n", streamid, cause);
         // send a RESET frame and close the stream
-        cancelImpl(cause,code);
+        cancelImpl(cause, code);
     }
 
     void connectionClosing(Throwable cause) {
