@@ -22,95 +22,6 @@
  */
 
 /*
- * TODO fix up
- * Summary:
- *   Test SuperWord vectorization with different access offsets
- *   and various MaxVectorSize values, and +- AlignVector.
- *
- * Note: this test is auto-generated. Please modify / generate with script:
- *       https://bugs.openjdk.org/browse/JDK-8333729
- *
- * Types: int, long, short, char, byte, float, double
- * Offsets: 0, -1, 1, -2, 2, -3, 3, -4, 4, -7, 7, -8, 8, -14, 14, -16, 16, -18, 18, -20, 20, -31, 31, -32, 32, -63, 63, -64, 64, -65, 65, -128, 128, -129, 129, -192, 192
- *
- * Checking if we should vectorize is a bit complicated. It depends on
- * Matcher::vector_width_in_bytes, of the respective platforms (eg. x86.ad)
- * This vector_width can be further constrained by MaxVectorSize.
- *
- * With '-XX:-AlignVector', we vectorize if:
- *  - Vectors have at least 4 bytes:    vector_width >= 4
- *  - Vectors hold at least 2 elements: vector_width >= 2 * sizeofop(velt_type)
- *    -> min_vector_width = max(4, 2 * sizeofop(velt_type))
- *    -> simplifies to: vector_width >= min_vector_width
- *  - No cyclic dependency:
- *    - Access: data[i + offset] = data[i] * fac;
- *    - byte_offset = offset * sizeofop(type)
- *    - Cyclic dependency if: 0 < byte_offset < vector_width
- *
- * Note: sizeofop(type) = sizeof(type), except sizeofop(char) = 2
- *
- * Different types can lead to different vector_width. This depends on
- * the CPU-features.
- *
- * Definition:
- *     MaxVectorSize: limit through flag
- *     vector_width: limit given by specific CPU feature for a specific velt_type
- *     actual_vector_width: what is actually vectorized with
- *     min_vector_width: what is minimally required for vectorization
- *
- *     min_vector_width = max(4, 2 * sizeofop(velt_type))
- *     MaxVectorSize >= vector_width >= actual_vector_width >= min_vector_width
- *
- * In general, we cannot easily specify negative IR rules, that require no
- * vectorization to happen. We may improve the SuperWord algorithm later,
- * or some additional optimization collapses some Loads, and suddenly cyclic
- * dependency disappears, and we can vectorize.
- *
- * With '-XX:+AlignVector' we do the following:
- *
- * Must vectorize cleanly if:
- *   1) guaranteed no misalignment AND
- *   2) guaratneed no cyclic dependency
- *
- * Must not vectorize at all if:
- *   1) guaranteed misalignment AND
- *   2) guaranteed no cyclic dependency
- *
- * We could imagine a case with cyclic dependency, where C2 detects
- * that only the first load is needed, and so no vectorization is
- * required for it, and hence the store vector can be aligned.
- *
- * The alignment criteria is
- *     byte_offset % aw == 0
- * where align width (aw) is
- *     aw = min(actual_vector_width, ObjectAlignmentInBytes)
- * For simplicity, we assume that ObjectAlignmentInBytes == 8,
- * which currently can only be changed manually and then no IR
- * rule is run.
- * This allows us to do the computation statically.
- * Further, we define:
- *     aw_min = min(min_vector_width, ObjectAlignmentInBytes)
- *     aw_max = min(vector_width, ObjectAlignmentInBytes)
- *     aw_min <= aw <= aw_max
- *
- * Again, we have no cyclic dependency, except when:
- *     byte_offset > 0 and p.vector_width > byte_offset
- * Here we must ensure that:
- *     byte_offset >= MaxVectorSize
- *
- * Guaranteed no misalignment:
- *     byte_offset % aw_max == 0
- *       implies
- *         byte_offset % aw == 0
- *
- * Guaranteed misalignment:
- *     byte_offset % aw_min != 0
- *       implies
- *         byte_offset % aw != 0
- *
- */
-
-/*
  * @test id=vanilla-A
  * @bug 8298935 8308606 8310308 8312570 8310190
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
@@ -781,10 +692,13 @@ public class TestDependencyOffsets {
                 //   at least 4 bytes:    width >= 4
                 //   at least 2 elements: width >= 2 * type.size
                 int minVectorWidth = Math.max(4, 2 * type.size);
+                builder.append("    //   minVectorWidth = " + minVectorWidth + " = max(4, 2 * type.size)\n");
+
+                int byteOffset = offset * type.size;
+                builder.append("    //   byteOffset = " + byteOffset + " = offset * type.size\n");
 
                 int maxVectorWidth = 1 << 30; // no constraint
-                int byte_offset = offset * type.size;
-                if (0 < byte_offset && byte_offset < vwConstraint.platformVectorWidth) {
+                if (0 < byteOffset && byteOffset < vwConstraint.platformVectorWidth) {
                     // Store forward: will be loaded in later iteration. If the offset is too small
                     // then maximal vector size would introduce cyclic dependencies. Hence, we use
                     // shorter vectors.
@@ -792,8 +706,8 @@ public class TestDependencyOffsets {
                     int floor_pow2 = 1 << log2;
                     maxVectorWidth = floor_pow2 * type.size;
                     builder.append("    //   Vectors must have at most " + floor_pow2 +
-                                   " elements and a size of at most " + maxVectorWidth +
-                                   " bytes to avoid cyclic dependency.\n");
+                                   " elements: maxVectorWidth = " + maxVectorWidth +
+                                   " to avoid cyclic dependency.\n");
                 }
 
                 // -XX:-AlignVector
@@ -802,7 +716,7 @@ public class TestDependencyOffsets {
                 r1.addConstraint("MaxVectorSize", new IntConstraint(minVectorWidth, null));
 
                 if (maxVectorWidth < minVectorWidth) {
-                    builder.append("    //   Not at least 2 elements or 4 bytes -> expect no vectorization.\n");
+                    builder.append("    //   maxVectorWidth < minVectorWidth -> expect no vectorization.\n");
                     r1.setNegative();
                 } else {
                     r1.setSize("min(" + (maxVectorWidth / type.size) + ",max_" + type.name + ")");
@@ -817,26 +731,27 @@ public class TestDependencyOffsets {
                 // All vectors must be aligned by some alignment width aw:
                 //   aw = min(actual_vector_width, ObjectAlignmentInBytes)
                 // The runtime aw must thus lay between these two values:
+                //   aw_min <= aw <= aw_max
                 int aw_min = Math.min(minVectorWidth, 8);
                 int aw_max = Math.min(vwConstraint.platformVectorWidth, 8);
 
-                int aw_bytes = pow2Factor(byte_offset);
-                int aw_elements = aw_bytes / type.size;
+                // We must align both the load and the store, thus we must also be able to align
+                // for the difference of the two, i.e. byteOffset must be a multiple of aw:
+                //   byteOffset % aw == 0
+                // We don't know the aw, only aw_min and aw_max. But:
+                //   byteOffset % aw_max == 0      ->      byteOffset % aw == 0
+                //   byteOffset % aw_min != 0      ->      byteOffset % aw != 0
+                builder.append("    //   aw_min = " + aw_min + " = min(minVectorWidth, 8)\n");
+                builder.append("    //   aw_max = " + aw_max + " = min(platformVectorWidth, 8)\n");
 
-                builder.append("    //   aw_max = " + aw_max +
-                               " = min(platformVectorWidth, 8)\n");
-                builder.append("    //   byte_offset=" + byte_offset +
-                               " -> aw_bytes=" + aw_bytes +
-                               ", aw_elements=" + aw_elements + "\n");
-
-                if (aw_bytes >= aw_max) {
-                    builder.append("    //   Always trivially aligned: aw_bytes(" + aw_bytes +
-                                   ") >= aw_max(" + aw_max + ")\n");
-                } else if (aw_bytes < minVectorWidth) {
-                    builder.append("    //   Not at least 2 elements or 4 bytes -> expect no vectorization.\n");
+                if (byteOffset % aw_max == 0) {
+                    builder.append("    //   byteOffset % aw_max == 0   -> always trivially aligned\n");
+                } else if (byteOffset % aw_min != 0) {
+                    builder.append("    //   byteOffset % aw_min != 0   -> can never align -> expect no vectorization.\n");
                     r2.setNegative();
                 } else {
-                    maxVectorWidth = Math.min(maxVectorWidth, aw_bytes);
+                    builder.append("    //   Alignment unknown -> disable IR rule.\n");
+                    r2.disable();
                 }
 
                 if (maxVectorWidth < minVectorWidth) {
@@ -959,6 +874,7 @@ public class TestDependencyOffsets {
         VWConstraint vwConstraint;
         String irNode;
         String size;
+        boolean isEnabled;
         boolean isPositiveRule;
         HashMap<String, Constraint> flagConstraints;
 
@@ -968,6 +884,7 @@ public class TestDependencyOffsets {
             this.irNode = irNode;
             this.size = null;
             this.isPositiveRule = true;
+            this.isEnabled = true;
             this.flagConstraints = new HashMap<String, Constraint>();
         }
 
@@ -979,6 +896,10 @@ public class TestDependencyOffsets {
             this.isPositiveRule = false;
         }
 
+        void disable() {
+            this.isEnabled = false;
+        }
+
         void addConstraint(String flag, Constraint constraint) {
             this.flagConstraints.put(flag, constraint);
         }
@@ -986,7 +907,9 @@ public class TestDependencyOffsets {
         void generate(StringBuilder builder) {
             boolean isEmpty = flagConstraints.entrySet().stream().anyMatch(e -> e.getValue().isEmpty());
 
-            if (isEmpty) {
+            if (!isEnabled) {
+                builder.append("    // No IR rule: disabled.\n");
+	    } else if (isEmpty) {
                 builder.append("    // No IR rule: conditions impossible.\n");
             } else {
                 builder.append(counts());
