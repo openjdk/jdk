@@ -2160,6 +2160,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             // for special cases that could run faster.
 
             int preferredScale = this.scale/2;
+            BigDecimal zeroWithFinalPreferredScale = valueOf(0L, preferredScale);
 
             BigDecimal result;
             if (mc.roundingMode == RoundingMode.UNNECESSARY || mc.precision == 0) { // Exact result requested
@@ -2170,9 +2171,13 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                 // Check for even powers of 10. Numerically sqrt(10^2N) = 10^N
                 if (stripped.isPowerOfTen() && (strippedScale & 1) == 0) {
                     result = valueOf(1L, strippedScale >> 1);
-                    // Adjust to preferred scale as appropriate.
-                    if (result.scale < preferredScale)
-                        result = result.setScale(preferredScale);
+                    if (result.scale < preferredScale) {
+                        // Adjust to requested precision and preferred
+                        // scale as appropriate.
+                        int maxSCale = mc.precision == 0 ?
+                            preferredScale : (int) Math.min(preferredScale, result.scale + (mc.precision - 1L));
+                        result = result.setScale(maxScale);
+                    }
 
                     return result;
                 }
@@ -2261,12 +2266,11 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             // Test numerical properties at full precision before any
             // scale adjustments.
             assert squareRootResultAssertions(result, mc);
-            // Adjust to preferred scale as appropriate.
-            if (result.scale > preferredScale) {
+            // Adjust to requested precision and preferred
+            // scale as appropriate.
+            if (result.scale > preferredScale) // else can't increase the result's precision to fit the preferred scale
                 result = stripZerosToMatchScale(result.intVal, result.intCompact, result.scale, preferredScale);
-            } else if (result.scale < preferredScale) {
-                result = result.setScale(preferredScale);
-            }
+
             return result;
         } else {
             BigDecimal result = null;
