@@ -162,7 +162,7 @@ class JavaThread: public Thread {
 
   // ID used as owner for inflated monitors. Same as the j.l.Thread.tid of the
   // current _vthread object, except during creation of the primordial and JNI
-  // attached thread cases where this field can have a temporal value.
+  // attached thread cases where this field can have a temporary value.
   int64_t _lock_id;
 
  public:
