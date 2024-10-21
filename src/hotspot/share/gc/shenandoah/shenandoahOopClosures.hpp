@@ -63,33 +63,23 @@ public:
   }
 };
 
-class ShenandoahMarkUpdateRefsSuperClosure : public ShenandoahMarkRefsSuperClosure {
-protected:
+template <ShenandoahGenerationType GENERATION>
+class ShenandoahMarkUpdateRefsClosure : public ShenandoahMarkRefsSuperClosure {
+private:
   ShenandoahHeap* const _heap;
 
-  template <class T, ShenandoahGenerationType GENERATION>
+  template <class T>
   inline void work(T* p);
 
 public:
-  ShenandoahMarkUpdateRefsSuperClosure(ShenandoahObjToScanQueue* q, ShenandoahReferenceProcessor* rp, ShenandoahObjToScanQueue* old_q) :
+  ShenandoahMarkUpdateRefsClosure(ShenandoahObjToScanQueue* q, ShenandoahReferenceProcessor* rp, ShenandoahObjToScanQueue* old_q) :
     ShenandoahMarkRefsSuperClosure(q, rp, old_q),
     _heap(ShenandoahHeap::heap()) {
     assert(_heap->is_stw_gc_in_progress(), "Can only be used for STW GC");
-  };
-};
+  }
 
-template <ShenandoahGenerationType GENERATION>
-class ShenandoahMarkUpdateRefsClosure : public ShenandoahMarkUpdateRefsSuperClosure {
-private:
-  template <class T>
-  inline void do_oop_work(T* p)     { work<T, GENERATION>(p); }
-
-public:
-  ShenandoahMarkUpdateRefsClosure(ShenandoahObjToScanQueue* q, ShenandoahReferenceProcessor* rp, ShenandoahObjToScanQueue* old_q) :
-    ShenandoahMarkUpdateRefsSuperClosure(q, rp, old_q) {}
-
-  virtual void do_oop(narrowOop* p) { do_oop_work(p); }
-  virtual void do_oop(oop* p)       { do_oop_work(p); }
+  virtual void do_oop(narrowOop* p) { work(p); }
+  virtual void do_oop(oop* p)       { work(p); }
 };
 
 template <ShenandoahGenerationType GENERATION>
