@@ -157,38 +157,27 @@ private:
 public:
   VMATree() : _tree() {}
 
-  struct SingleDiff {
-    using delta = int64_t;
-    delta reserve;
-    delta commit;
-  };
-  struct SummaryDiff {
-    SingleDiff tag[mt_number_of_tags];
-    SummaryDiff() {
-      for (int i = 0; i < mt_number_of_tags; i++) {
-        tag[i] = SingleDiff{0, 0};
-      }
-    }
-  };
-
  private:
-  SummaryDiff register_mapping(position A, position B, StateType state, const RegionData& metadata, bool use_tag_inplace = false);
+  void register_mapping(position A, position B, StateType state, const RegionData& metadata,
+                        VirtualMemorySnapshot& diff, bool use_tag_inplace = false);
 
  public:
-  SummaryDiff reserve_mapping(position from, position sz, const RegionData& metadata) {
-    return register_mapping(from, from + sz, StateType::Reserved, metadata, false);
+  void reserve_mapping(position from, position sz,
+                       const RegionData& metadata, VirtualMemorySnapshot& diff) {
+    register_mapping(from, from + sz, StateType::Reserved, metadata, diff, false);
   }
 
-  SummaryDiff commit_mapping(position from, position sz, const RegionData& metadata, bool use_tag_inplace = false) {
-    return register_mapping(from, from + sz, StateType::Committed, metadata, use_tag_inplace);
+  void commit_mapping(position from, position sz, const RegionData& metadata,
+                      VirtualMemorySnapshot& diff, bool use_tag_inplace = false) {
+    register_mapping(from, from + sz, StateType::Committed, metadata, diff, use_tag_inplace);
   }
 
-  SummaryDiff uncommit_mapping(position from, position sz, const RegionData& metadata) {
-    return register_mapping(from, from + sz, StateType::Reserved, metadata, true);
+  void uncommit_mapping(position from, position sz, const RegionData& metadata, VirtualMemorySnapshot& diff) {
+    register_mapping(from, from + sz, StateType::Reserved, metadata, diff, true);
   }
 
-  SummaryDiff release_mapping(position from, position sz) {
-    return register_mapping(from, from + sz, StateType::Released, VMATree::empty_regiondata);
+  void release_mapping(position from, position sz, VirtualMemorySnapshot& diff) {
+    register_mapping(from, from + sz, StateType::Released, VMATree::empty_regiondata, diff);
   }
 
 public:
