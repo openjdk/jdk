@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,10 +50,12 @@ import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.PBEParameterSpec;
+import jdk.test.lib.security.SecurityUtils;
 
 /*
  * @test
  * @bug 8048599 8248268 8288050
+ * @library /test/lib
  * @summary  Tests for key wrap and unwrap operations
  */
 
@@ -269,7 +271,7 @@ public class TestCipherKeyWrapperTest {
             System.out.println("Generate key pair (algorithm: " + algo
                     + ", provider: " + p.getName() + ")");
             KeyPairGenerator kpg = KeyPairGenerator.getInstance(algo);
-            kpg.initialize(512);
+            kpg.initialize(SecurityUtils.getTestKeySize(algo));
             KeyPair kp = kpg.genKeyPair();
             // key generated
             String algoWrap = "DES";
