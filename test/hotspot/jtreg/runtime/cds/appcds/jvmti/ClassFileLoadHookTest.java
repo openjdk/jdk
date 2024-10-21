@@ -97,7 +97,7 @@ public class ClassFileLoadHookTest {
                 "" + ClassFileLoadHook.TestCaseId.SHARING_ON_CFLH_ON);
         TestCommon.checkExec(out);
 
-        // JEP 483: if dumped with -XX:+AOTClassLinking, cannot use archive when CFLH
+        // JEP 483: if dumped with -XX:+AOTClassLinking, cannot use archive when CFLH is enabled
         TestCommon.testDump(appJar, sharedClasses, useWb, "-XX:+AOTClassLinking");
         out = TestCommon.exec(appJar,
                 "-XX:+UnlockDiagnosticVMOptions",
