@@ -687,10 +687,15 @@ class PredicateIterator : public StackObj {
     Node* current = _start_node;
     PredicateBlockIterator loop_limit_check_predicate_iterator(current, Deoptimization::Reason_loop_limit_check);
     current = loop_limit_check_predicate_iterator.for_each(predicate_visitor);
-    PredicateBlockIterator profiled_loop_predicate_iterator(current, Deoptimization::Reason_profile_predicate);
-    current = profiled_loop_predicate_iterator.for_each(predicate_visitor);
-    PredicateBlockIterator loop_predicate_iterator(current, Deoptimization::Reason_predicate);
-    return loop_predicate_iterator.for_each(predicate_visitor);
+    if (UseLoopPredicate) {
+      if (UseProfiledLoopPredicate) {
+        PredicateBlockIterator profiled_loop_predicate_iterator(current, Deoptimization::Reason_profile_predicate);
+        current = profiled_loop_predicate_iterator.for_each(predicate_visitor);
+      }
+      PredicateBlockIterator loop_predicate_iterator(current, Deoptimization::Reason_predicate);
+      current = loop_predicate_iterator.for_each(predicate_visitor);
+    }
+    return current;
   }
 };
 
