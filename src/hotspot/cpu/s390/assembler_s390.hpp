@@ -795,8 +795,8 @@ class Assembler : public AbstractAssembler {
 #define DSGF_ZOPC   (unsigned long)(227L << 40 | 29L)
 #define DSG_ZOPC    (unsigned long)(227L << 40 | 13L)
 // RR, unsigned
-#define DLR_ZOPC    (unsigned  int)(185 << 24 | 151 << 16)
-#define DLGR_ZOPC   (unsigned  int)(185 << 24 | 135 << 16)
+#define DLR_ZOPC    (unsigned  int)(0xb997 << 16)
+#define DLGR_ZOPC   (unsigned  int)(0xb987 << 16)
 // RM, unsigned
 #define DL_ZOPC     (unsigned long)(227L << 40 | 151L)
 #define DLG_ZOPC    (unsigned long)(227L << 40 | 135L)
@@ -2257,6 +2257,8 @@ class Assembler : public AbstractAssembler {
   inline void z_mghi( Register r1, int64_t i2);   // mult r1 = r1 * i2_imm16;   int64
 
   // Division instructions
+  inline void z_dlr(  Register r1, Register r2);      // div  r1 = r1 / r2               ; int64/int32 needs reg pair!
+  inline void z_dlgr( Register r1, Register r2);      // div  r1 = r1 / r2               ; int128/int64 needs reg pair!
   inline void z_dsgr( Register r1, Register r2);      // div  r1 = r1 / r2               ; int64/int32 needs reg pair!
   inline void z_dsgfr(Register r1, Register r2);      // div  r1 = r1 / r2               ; int64/int32 needs reg pair!
 
