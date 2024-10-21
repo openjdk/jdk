@@ -1928,6 +1928,20 @@ public final class Integer extends Number
         return (i >> 31) | (-i >>> 31);
     }
 
+     /**
+      * Determines if the specified {@code int} value is positive. 
+      * Returns {@code true} if the value is greater than zero, 
+      * and {@code false} otherwise.
+      *
+      * @param i the value to check
+      * @return {@code true} if the specified {@code int} value is positive; 
+      *         {@code false} if it is zero or negative.
+      * @since 24
+      */
+    public static boolean isPositive(int i) {
+        return i > 0; 
+    }
+        
     /**
      * Returns the value obtained by reversing the order of the bytes in the
      * two's complement representation of the specified {@code int} value.
