@@ -330,6 +330,94 @@ public final class ConstantDescs {
      */
     public static final MethodTypeDesc MTD_void = MethodTypeDesc.of(CD_void);
 
+    /**
+     * Nominal descriptor representing the method descriptor {@code ()int},
+     * taking no argument and returning {@code int}.
+     *
+     * @since 24
+     */
+    public static final MethodTypeDesc MTD_int = MethodTypeDesc.of(CD_int);
+
+    /**
+     * Nominal descriptor representing the method descriptor {@code ()long},
+     * taking no argument and returning {@code long}.
+     *
+     * @since 24
+     */
+    public static final MethodTypeDesc MTD_long = MethodTypeDesc.of(CD_long);
+
+    /**
+     * Nominal descriptor representing the method descriptor {@code ()float},
+     * taking no argument and returning {@code float}.
+     *
+     * @since 24
+     */
+    public static final MethodTypeDesc MTD_float = MethodTypeDesc.of(CD_float);
+
+    /**
+     * Nominal descriptor representing the method descriptor {@code ()double},
+     * taking no argument and returning {@code double}.
+     *
+     * @since 24
+     */
+    public static final MethodTypeDesc MTD_double = MethodTypeDesc.of(CD_double);
+
+    /**
+     * Nominal descriptor representing the method descriptor {@code ()short},
+     * taking no argument and returning {@code short}.
+     *
+     * @since 24
+     */
+    public static final MethodTypeDesc MTD_short = MethodTypeDesc.of(CD_short);
+
+    /**
+     * Nominal descriptor representing the method descriptor {@code ()byte},
+     * taking no argument and returning {@code byte}.
+     *
+     * @since 24
+     */
+    public static final MethodTypeDesc MTD_byte = MethodTypeDesc.of(CD_byte);
+
+    /**
+     * Nominal descriptor representing the method descriptor {@code ()char},
+     * taking no argument and returning {@code char}.
+     *
+     * @since 24
+     */
+    public static final MethodTypeDesc MTD_char = MethodTypeDesc.of(CD_char);
+
+    /**
+     * Nominal descriptor representing the method descriptor {@code ()boolean},
+     * taking no argument and returning {@code boolean}.
+     *
+     * @since 24
+     */
+    public static final MethodTypeDesc MTD_boolean = MethodTypeDesc.of(CD_boolean);
+
+    /**
+     * Nominal descriptor representing the method descriptor {@code ()Object},
+     * taking no argument and returning {@code Object}.
+     *
+     * @since 24
+     */
+    public static final MethodTypeDesc MTD_Object = MethodTypeDesc.of(CD_Object);
+
+    /**
+     * Nominal descriptor representing the method descriptor {@code ()String},
+     * taking no argument and returning {@code String}.
+     *
+     * @since 24
+     */
+    public static final MethodTypeDesc MTD_String = MethodTypeDesc.of(CD_String);
+
+    /**
+     * Nominal descriptor representing the method descriptor {@code ()Class},
+     * taking no argument and returning {@code Class}.
+     *
+     * @since 24
+     */
+    public static final MethodTypeDesc MTD_Class = MethodTypeDesc.of(CD_Class);
+
     static final DirectMethodHandleDesc MHD_METHODHANDLE_ASTYPE
             = MethodHandleDesc.ofMethod(Kind.VIRTUAL, CD_MethodHandle, "asType",
                                         MethodTypeDesc.of(CD_MethodHandle, CD_MethodType));

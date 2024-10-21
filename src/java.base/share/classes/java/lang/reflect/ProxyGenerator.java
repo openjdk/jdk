@@ -78,18 +78,15 @@ final class ProxyGenerator {
             CD_UndeclaredThrowableException = ReferenceClassDescImpl.ofValidated("Ljava/lang/reflect/UndeclaredThrowableException;");
 
     private static final MethodTypeDesc
-            MTD_boolean = MethodTypeDescImpl.ofValidated(CD_boolean),
             MTD_void_InvocationHandler = MethodTypeDescImpl.ofValidated(CD_void, CD_InvocationHandler),
             MTD_void_String = MethodTypeDescImpl.ofValidated(CD_void, CD_String),
             MTD_void_Throwable = MethodTypeDescImpl.ofValidated(CD_void, CD_Throwable),
-            MTD_Class = MethodTypeDescImpl.ofValidated(CD_Class),
             MTD_Class_String_boolean_ClassLoader = MethodTypeDescImpl.ofValidated(CD_Class, CD_String, CD_boolean, CD_ClassLoader),
             MTD_ClassLoader = MethodTypeDescImpl.ofValidated(CD_ClassLoader),
             MTD_Method_String_Class_array = MethodTypeDescImpl.ofValidated(CD_Method, CD_String, CD_Class_array),
             MTD_MethodHandles$Lookup = MethodTypeDescImpl.ofValidated(CD_MethodHandles_Lookup),
             MTD_MethodHandles$Lookup_MethodHandles$Lookup = MethodTypeDescImpl.ofValidated(CD_MethodHandles_Lookup, CD_MethodHandles_Lookup),
-            MTD_Object_Object_Method_ObjectArray = MethodTypeDescImpl.ofValidated(CD_Object, CD_Object, CD_Method, CD_Object_array),
-            MTD_String = MethodTypeDescImpl.ofValidated(CD_String);
+            MTD_Object_Object_Method_ObjectArray = MethodTypeDescImpl.ofValidated(CD_Object, CD_Object, CD_Method, CD_Object_array);
 
     private static final String NAME_LOOKUP_ACCESSOR = "proxyClassLookup";
 
