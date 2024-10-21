@@ -711,8 +711,7 @@ public class TestDependencyOffsets {
 
                 // Rule 1: No strict alignment: -XX:-AlignVector
                 IRRule r1 = new IRRule(type, vwConstraint, type.irNode);
-                r1.addConstraint("AlignVector", new BoolConstraint(false, true));
-                r1.addConstraint("MaxVectorSize", new IntConstraint(minVectorWidth, null));
+                r1.addApplyIf("\"AlignVector\", \"false\"");
 
                 if (maxVectorWidth < minVectorWidth) {
                     builder.append("    //   maxVectorWidth < minVectorWidth -> expect no vectorization.\n");
@@ -720,12 +719,12 @@ public class TestDependencyOffsets {
                 } else {
                     r1.setSize("min(" + (maxVectorWidth / type.size) + ",max_" + type.name + ")");
                 }
+                r1.addApplyIf("\"MaxVectorSize\", \">=" + minVectorWidth + "\"");
                 r1.generate(builder);
 
                 // Rule 2: strict alignment: -XX:+AlignVector
                 IRRule r2 = new IRRule(type, vwConstraint, type.irNode);
-                r2.addConstraint("AlignVector", new BoolConstraint(true, false));
-                r2.addConstraint("MaxVectorSize", new IntConstraint(minVectorWidth, null));
+                r2.addApplyIf("\"AlignVector\", \"true\"");
 
                 // All vectors must be aligned by some alignment width aw:
                 //   aw = min(actual_vector_width, ObjectAlignmentInBytes)
@@ -760,6 +759,7 @@ public class TestDependencyOffsets {
                     r2.setSize("min(" + (maxVectorWidth / type.size) + ",max_" + type.name + ")");
                 }
 
+                r2.addApplyIf("\"MaxVectorSize\", \">=" + minVectorWidth + "\"");
                 r2.generate(builder);
             }
             return builder.toString();
@@ -780,85 +780,6 @@ public class TestDependencyOffsets {
         return tests;
     }
 
-    static interface Constraint {
-        Constraint intersect(Constraint other);
-        boolean isEmpty();
-        boolean isTrivial();
-        String generate(String flag);
-    }
-
-    static record IntConstraint(Integer lo, Integer hi) implements Constraint {
-        // null Integer bound means infinity / open
-
-        @Override
-        public Constraint intersect(Constraint other) {
-            if (other instanceof IntConstraint i) {
-                Integer lo = null;
-                Integer hi = null;
-                return new IntConstraint(lo, hi);
-            } else {
-                throw new RuntimeException("cannot intersect with other type");
-            }
-        }
-
-        @Override
-        public boolean isEmpty() { return this.lo != null && this.hi != null && this.lo > this.hi; }
-
-        @Override
-        public boolean isTrivial() { return this.lo == null && this.hi == null; }
-
-        @Override
-        public String generate(String flag) {
-            StringBuilder builder = new StringBuilder();
-            if (lo != null) {
-                builder.append("\"");
-                builder.append(flag);
-                builder.append("\", \">=");
-                builder.append(lo);
-                builder.append("\"");
-            }
-            if (lo != null && hi != null) {
-                builder.append(", ");
-            }
-            if (hi != null) {
-                builder.append("\"");
-                builder.append(flag);
-                builder.append("\", \"<=");
-                builder.append(hi);
-                builder.append("\"");
-            }
-            return builder.toString();
-        }
-    }
-
-    static record BoolConstraint(boolean allowTrue, boolean allowFalse) implements Constraint {
-
-        @Override
-        public Constraint intersect(Constraint other) {
-            throw new RuntimeException("cannot intersect with other type");
-        }
-
-        @Override
-        public boolean isEmpty() { return !this.allowTrue && !this.allowFalse; }
-
-        @Override
-        public boolean isTrivial() { return this.allowFalse && this.allowFalse; }
-
-        @Override
-        public String generate(String flag) {
-            StringBuilder builder = new StringBuilder();
-            if (allowTrue == allowFalse) {
-                throw new RuntimeException("cannot generate for empty or trivial");
-            }
-            builder.append("\"");
-            builder.append(flag);
-            builder.append("\", \"");
-            builder.append(allowTrue ? "true" : "false");
-            builder.append("\"");
-            return builder.toString();
-        }
-    }
-
     static class IRRule {
         Type type;
         VWConstraint vwConstraint;
@@ -866,7 +787,7 @@ public class TestDependencyOffsets {
         String size;
         boolean isEnabled;
         boolean isPositiveRule;
-        HashMap<String, Constraint> flagConstraints;
+        ArrayList<String> applyIf;
 
         IRRule(Type type, VWConstraint vwConstraint, String irNode) {
             this.type = type;
@@ -875,7 +796,7 @@ public class TestDependencyOffsets {
             this.size = null;
             this.isPositiveRule = true;
             this.isEnabled = true;
-            this.flagConstraints = new HashMap<String, Constraint>();
+            this.applyIf = new ArrayList<String>();
         }
 
         void setSize(String size) {
@@ -890,28 +811,22 @@ public class TestDependencyOffsets {
             this.isEnabled = false;
         }
 
-        void addConstraint(String flag, Constraint constraint) {
-            this.flagConstraints.put(flag, constraint);
+        void addApplyIf(String constraint) {
+            this.applyIf.add(constraint);
         }
 
         void generate(StringBuilder builder) {
-            boolean isEmpty = flagConstraints.entrySet().stream().anyMatch(e -> e.getValue().isEmpty());
-
             if (!isEnabled) {
                 builder.append("    // No IR rule: disabled.\n");
-	    } else if (isEmpty) {
-                builder.append("    // No IR rule: conditions impossible.\n");
             } else {
                 builder.append(counts());
 
                 // constraints
-                if (!flagConstraints.isEmpty()) {
+                if (!applyIf.isEmpty()) {
                     builder.append("        applyIf");
-                    builder.append(flagConstraints.size() > 1 ? "And" : "");
+                    builder.append(applyIf.size() > 1 ? "And" : "");
                     builder.append(" = {");
-                    builder.append(flagConstraints.entrySet().stream()
-                                                  .map(e -> e.getValue().generate(e.getKey()))
-                                                  .collect(Collectors.joining(", ")));
+                    builder.append(applyIf.stream().collect(Collectors.joining(", ")));
                     builder.append("},\n");
                 }
 
