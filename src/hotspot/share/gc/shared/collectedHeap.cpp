@@ -296,7 +296,6 @@ void CollectedHeap::collect_as_vm_thread(GCCause::Cause cause) {
   assert(Heap_lock->is_locked(), "Precondition#2");
   GCCauseSetter gcs(this, cause);
   switch (cause) {
-    case GCCause::_codecache_GC_threshold:
     case GCCause::_codecache_GC_aggressive:
     case GCCause::_heap_inspection:
     case GCCause::_heap_dump:
