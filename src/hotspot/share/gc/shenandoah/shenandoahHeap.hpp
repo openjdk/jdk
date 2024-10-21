@@ -418,8 +418,9 @@ private:
 
   ShenandoahPhaseTimings*    _phase_timings;
 
+  ShenandoahControlThread*   control_thread()          { return _control_thread;    }
+
 public:
-  ShenandoahControlThread*   control_thread()    const { return _control_thread;    }
   ShenandoahCollectorPolicy* shenandoah_policy() const { return _shenandoah_policy; }
   ShenandoahMode*            mode()              const { return _gc_mode;           }
   ShenandoahHeuristics*      heuristics()        const { return _heuristics;        }

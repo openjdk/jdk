@@ -39,15 +39,18 @@ class ShenandoahUncommitThread : public ConcurrentGCThread {
   void uncommit(double shrink_before, size_t shrink_until);
 public:
   explicit ShenandoahUncommitThread(ShenandoahHeap* heap);
+
+  // Periodically check for regions to uncommit.
   void run_service() override;
 
-protected:
-  void stop_service() override;
-
-public:
-
+  // Wake up this thread and try to uncommit for changed soft max size
   void notify_soft_max_changed();
+
+  // Wake up this thread and try to uncommit for min heap size
   void notify_explicit_gc_requested();
+
+protected:
+  void stop_service() override {};
 };
 
 

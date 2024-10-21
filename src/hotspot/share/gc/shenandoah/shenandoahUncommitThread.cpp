@@ -37,27 +37,8 @@ ShenandoahUncommitThread::ShenandoahUncommitThread(ShenandoahHeap* heap)
   create_and_start();
 }
 
-bool ShenandoahUncommitThread::has_work(double shrink_before, size_t shrink_until) const {
-  // Determine if there is work to do. This avoids taking heap lock if there is
-  // no work available, avoids spamming logs with superfluous logging messages,
-  // and minimises the amount of work while locks are taken.
-
-  if (_heap->committed() <= shrink_until) {
-    return false;
-  }
-
-  for (size_t i = 0; i < _heap->num_regions(); i++) {
-    ShenandoahHeapRegion *r = _heap->get_region(i);
-    if (r->is_empty_committed() && (r->empty_time() < shrink_before)) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
 void ShenandoahUncommitThread::run_service() {
-  assert(ShenandoahUncommit, "Thread should only run when uncommit is enabled.");
+  assert(ShenandoahUncommit, "Thread should only run when uncommit is enabled");
 
   // Shrink period avoids constantly polling regions for shrinking.
   // Having a period 10x lower than the delay would mean we hit the
@@ -85,6 +66,25 @@ void ShenandoahUncommitThread::run_service() {
     MonitorLocker locker(&_lock);
     locker.wait((int64_t )shrink_period);
   }
+}
+
+bool ShenandoahUncommitThread::has_work(double shrink_before, size_t shrink_until) const {
+  // Determine if there is work to do. This avoids taking heap lock if there is
+  // no work available, avoids spamming logs with superfluous logging messages,
+  // and minimises the amount of work while locks are taken.
+
+  if (_heap->committed() <= shrink_until) {
+    return false;
+  }
+
+  for (size_t i = 0; i < _heap->num_regions(); i++) {
+    ShenandoahHeapRegion *r = _heap->get_region(i);
+    if (r->is_empty_committed() && (r->empty_time() < shrink_before)) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 void ShenandoahUncommitThread::notify_soft_max_changed() {
@@ -133,8 +133,4 @@ void ShenandoahUncommitThread::uncommit(double shrink_before, size_t shrink_unti
     log_info(gc)("Uncommitted " SIZE_FORMAT " regions", count);
     _heap->notify_heap_changed();
   }
-}
-
-void ShenandoahUncommitThread::stop_service() {
-
 }
