@@ -39,35 +39,6 @@
 #include "gc/shenandoah/shenandoahSTWMark.hpp"
 #include "gc/shenandoah/shenandoahVerifier.hpp"
 
-template<ShenandoahGenerationType GENERATION>
-class ShenandoahInitMarkRootsClosure : public OopClosure {
-private:
-  ShenandoahObjToScanQueue* const _queue;
-  ShenandoahMarkingContext* const _mark_context;
-
-  template <class T>
-  inline void do_oop_work(T* p);
-
-public:
-  ShenandoahInitMarkRootsClosure(ShenandoahObjToScanQueue* q);
-
-  void do_oop(narrowOop* p) { do_oop_work(p); }
-  void do_oop(oop* p)       { do_oop_work(p); }
-};
-
-template <ShenandoahGenerationType GENERATION>
-ShenandoahInitMarkRootsClosure<GENERATION>::ShenandoahInitMarkRootsClosure(ShenandoahObjToScanQueue* q) :
-  _queue(q),
-  _mark_context(ShenandoahHeap::heap()->marking_context()) {
-}
-
-template <ShenandoahGenerationType GENERATION>
-template <class T>
-void ShenandoahInitMarkRootsClosure<GENERATION>::do_oop_work(T* p) {
-  // Only called from STW mark, should not be used to bootstrap old generation marking.
-  ShenandoahMark::mark_through_ref<T, GENERATION>(p, _queue, nullptr, _mark_context, false);
-}
-
 class ShenandoahSTWMarkTask : public WorkerTask {
 private:
   ShenandoahSTWMark* const _mark;
@@ -147,19 +118,21 @@ void ShenandoahSTWMark::mark() {
 }
 
 void ShenandoahSTWMark::mark_roots(uint worker_id) {
+  ShenandoahReferenceProcessor* rp = _generation->ref_processor();
+  ShenandoahObjToScanQueue* mark_queue = task_queues()->queue(worker_id);
   switch (_generation->type()) {
     case NON_GEN: {
-      ShenandoahInitMarkRootsClosure<NON_GEN> init_mark(task_queues()->queue(worker_id));
+      ShenandoahMarkRefsClosure<NON_GEN> init_mark(mark_queue, rp, nullptr);
       _root_scanner.roots_do(&init_mark, worker_id);
       break;
     }
     case GLOBAL: {
-      ShenandoahInitMarkRootsClosure<GLOBAL> init_mark(task_queues()->queue(worker_id));
+      ShenandoahMarkRefsClosure<GLOBAL> init_mark(mark_queue, rp, nullptr);
       _root_scanner.roots_do(&init_mark, worker_id);
       break;
     }
     case YOUNG: {
-      ShenandoahInitMarkRootsClosure<YOUNG> init_mark(task_queues()->queue(worker_id));
+      ShenandoahMarkRefsClosure<YOUNG> init_mark(mark_queue, rp, nullptr);
       _root_scanner.roots_do(&init_mark, worker_id);
       break;
     }

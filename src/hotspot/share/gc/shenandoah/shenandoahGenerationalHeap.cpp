@@ -787,7 +787,7 @@ public:
       do_work<ShenandoahConcUpdateRefsClosure>(worker_id);
     } else {
       ShenandoahParallelWorkerSession worker_session(worker_id);
-      do_work<ShenandoahSTWUpdateRefsClosure>(worker_id);
+      do_work<ShenandoahNonConcUpdateRefsClosure>(worker_id);
     }
   }
 

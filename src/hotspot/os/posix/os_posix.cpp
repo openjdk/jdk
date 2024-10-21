@@ -1029,10 +1029,10 @@ char* os::Posix::describe_pthread_attr(char* buf, size_t buflen, const pthread_a
   return buf;
 }
 
-char* os::Posix::realpath(const char* filename, char* outbuf, size_t outbuflen) {
+char* os::realpath(const char* filename, char* outbuf, size_t outbuflen) {
 
   if (filename == nullptr || outbuf == nullptr || outbuflen < 1) {
-    assert(false, "os::Posix::realpath: invalid arguments.");
+    assert(false, "os::realpath: invalid arguments.");
     errno = EINVAL;
     return nullptr;
   }
@@ -1067,7 +1067,6 @@ char* os::Posix::realpath(const char* filename, char* outbuf, size_t outbuflen) 
     }
   }
   return result;
-
 }
 
 int os::stat(const char *path, struct stat *sbuf) {
