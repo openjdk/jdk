@@ -731,11 +731,11 @@ bool InstanceKlass::is_sealed() const {
 
 // JLS 8.9: An enum class is either implicitly final and derives
 // from java.lang.Enum, or else is implicitly sealed to its
-// anonymous subclasses.  This query detects both kinds, unless
-// direct_only is true.  It does not validate the finality or
+// anonymous subclasses. This query detects both kinds.
+// It does not validate the finality or
 // sealing conditions: it merely checks for a super of Enum.
 // This is sufficient for recognizing well-formed enums.
-bool InstanceKlass::is_enum_subclass(bool direct_only) const {
+bool InstanceKlass::is_enum_subclass() const {
   InstanceKlass* s = java_super();
   return (s == vmClasses::Enum_klass() ||
           (s != nullptr && s->java_super() == vmClasses::Enum_klass()));

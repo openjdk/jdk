@@ -431,7 +431,7 @@ class InstanceKlass: public Klass {
   bool is_record() const;
 
   // test for enum class (or possibly an anonymous subclass within a sealed enum)
-  bool is_enum_subclass(bool direct_only = false) const;
+  bool is_enum_subclass() const;
 
   // permitted subclasses
   Array<u2>* permitted_subclasses() const     { return _permitted_subclasses; }
