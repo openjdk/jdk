@@ -34,7 +34,7 @@ import java.lang.invoke.MethodHandles;
  *          The tests use volatile memory accesses to prevent C2 from simply
  *          optimizing them away.
  * @library /test/lib /
- * @requires vm.gc.ZGenerational
+ * @requires vm.gc.Z
  * @run driver compiler.gcbarriers.TestZGCUnrolling
  */
 
@@ -55,8 +55,7 @@ public class TestZGCUnrolling {
     }
 
     public static void main(String[] args) {
-        TestFramework.runWithFlags("-XX:+UseZGC", "-XX:+ZGenerational",
-                                   "-XX:LoopUnrollLimit=24");
+        TestFramework.runWithFlags("-XX:+UseZGC", "-XX:LoopUnrollLimit=24");
     }
 
     @Test
