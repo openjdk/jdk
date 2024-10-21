@@ -2286,7 +2286,7 @@ class StubGenerator: public StubCodeGenerator {
   }
 
   void generate_aes_encrypt(const VectorRegister &res, VectorRegister *working_vregs, int reg_number) {
-    assert(reg_number <= 15, "reg_number should be less than or equal to working_vregs size")
+    assert(reg_number <= 15, "reg_number should be less than or equal to working_vregs size");
 
     __ vxor_vv(res, res, working_vregs[0]);
     for (int i = 1; i < reg_number; i++) {
