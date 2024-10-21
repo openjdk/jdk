@@ -121,7 +121,7 @@ public class AlgorithmDecomposer {
      *
      * @return KeyExchange and Authentication algorithms in that order.
      */
-    public String[] decomposetCipherSuiteKeyExchange(String algorithm) {
+    public String[] decomposeCipherSuiteKeyExchange(String algorithm) {
         return null;
     }
 

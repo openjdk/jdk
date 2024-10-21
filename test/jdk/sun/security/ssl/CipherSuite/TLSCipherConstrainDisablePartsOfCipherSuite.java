@@ -2,7 +2,7 @@
  * @test
  * @bug 8341964
  * @summary Add mechanism to disable different parts of TLS cipher suite
- * @run testng/othervm DisablePartsOfCipherSuiteTest
+ * @run testng TLSCipherConstrainDisablePartsOfCipherSuite
  */
 
 import static org.testng.AssertJUnit.assertTrue;
@@ -13,7 +13,7 @@ import org.testng.annotations.Test;
 import java.security.Security;
 import java.util.List;
 
-public class DisablePartsOfCipherSuiteTest extends NoDesRC4DesEdeCiphSuite {
+public class TLSCipherConstrainDisablePartsOfCipherSuite extends NoDesRC4DesEdeCiphSuite {
 
     private static final String SECURITY_PROPERTY = "jdk.tls.disabledAlgorithms";
     private static final String TEST_ALGORITHMS = "ECDH kx, Rsa kx, ECDSA authn, DH_anoN KX, NuLL Authn";

@@ -382,8 +382,9 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                 for (String rawEntry : policy.split("&")) {
                     // Do not link TLSCipherConstraint with other constraints.
                     if (lastConstraint instanceof TLSCipherConstraint) {
-                        throw new IllegalArgumentException("TLSCipherConstraint constraint"
-                                + " should not be linked with other constraints.");
+                        throw new IllegalArgumentException("TLSCipherConstraint "
+                                + "should not be linked with other constraints. "
+                                + "Constraint: " + constraintEntry);
                     }
 
                     final String entry = rawEntry.trim();
@@ -400,8 +401,8 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                                     + segment.name());
                         }
                         if (lastConstraint != null) {
-                            throw new IllegalArgumentException("TLSCipherConstraint"
-                                    + " should not be linked with other constraints. "
+                            throw new IllegalArgumentException("TLSCipherConstraint "
+                                    + "should not be linked with other constraints. "
                                     + "Constraint: " + constraintEntry);
                         }
                         c = new TLSCipherConstraint(algorithm, segment);
@@ -1048,7 +1049,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
             // Check if input is a cipher suite, in such case we disallow
             // cipher suite if it has a constrained algorithm used either for
             // key exchange or authentication.
-            String[] parts = decomposer.decomposetCipherSuiteKeyExchange(algo);
+            String[] parts = decomposer.decomposeCipherSuiteKeyExchange(algo);
 
             if (parts != null) {
                 String inputAlgorithm = null;
