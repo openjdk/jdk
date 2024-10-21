@@ -746,8 +746,8 @@ __ li(temp1, 0xc2);
     __ vxor(vTmp7, vTmp7, vTmp3);
     __ vxor(vZero, vTmp1, vTmp7);
     __ bdnz(loop);
-    
-   // __ stxv(vH, state, temp4); 
+    __ li(temp4, 0);
+    __ stvx(vZero, temp4, state); 
     __ blr();  // Return from function
     
 
