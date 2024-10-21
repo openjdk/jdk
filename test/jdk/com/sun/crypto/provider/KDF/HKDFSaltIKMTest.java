@@ -33,22 +33,12 @@ import jdk.test.lib.Asserts;
 import jdk.test.lib.security.SeededSecureRandom;
 
 import javax.crypto.KDF;
-import javax.crypto.SecretKey;
 import javax.crypto.spec.HKDFParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.ByteArrayOutputStream;
 import java.util.Arrays;
-import java.util.List;
 
 public class HKDFSaltIKMTest {
-    byte[] concat(List<SecretKey> items) {
-        return items.stream().map(SecretKey::getEncoded)
-                    .reduce(new byte[0], (a, b) -> {
-                        byte[] c = Arrays.copyOf(a, a.length + b.length);
-                        System.arraycopy(b, 0, c, a.length, b.length);
-                        return c;
-                    });
-    }
     static String[] NAMES = {"HKDF-SHA256", "HKDF-SHA384", "HKDF-SHA512"};
     public static void main(String[] args) throws Exception {
         var r = SeededSecureRandom.one();
