@@ -96,12 +96,6 @@ public final class MBeanServerResource implements RestResource, JmxRestAdapter {
         mBeanServerDelegateMBean = JMX.newMBeanProxy(mbeanServer,
                 MBeanServerDelegate.DELEGATE_NAME, MBeanServerDelegateMBean.class);
 
-//        if (context == null) {
-//            throw new NullPointerException("missing context");
-//        }
-//        this.contextStr = context;
-
-// KJW If we can't add a new context to httpserver at this point, we have to trust the given context works: XXXX
         if (context == null || context.isEmpty()) {
             contextStr = "server-" + resourceNumber.getAndIncrement();
         } else {
