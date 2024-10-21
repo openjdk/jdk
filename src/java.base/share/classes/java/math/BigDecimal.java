@@ -2234,7 +2234,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                         BigInteger[] quotRem10 = sqrt.divideAndRemainder(BigInteger.TEN);
                         sqrt = quotRem10[0];
                         resultScale--;
-    
+
                         int digit = quotRem10[1].intValue();
                         if (digit > 5) {
                             increment = true;
