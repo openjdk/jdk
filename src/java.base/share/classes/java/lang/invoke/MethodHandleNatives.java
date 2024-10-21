@@ -242,7 +242,6 @@ class MethodHandleNatives {
         return true;
     }
     static {
-        VM.setJavaLangInvokeInited();
         assert(verifyConstants());
     }
 

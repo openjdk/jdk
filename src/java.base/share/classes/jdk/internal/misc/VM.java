@@ -35,21 +35,31 @@ import java.util.List;
 import java.util.Map;
 
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 import sun.nio.ch.FileChannelImpl;
 
 public class VM {
 
-    // the init level when the VM is fully initialized
-    private static final int JAVA_LANG_SYSTEM_INITED     = 1;
-    private static final int MODULE_SYSTEM_INITED        = 2;
-    private static final int SYSTEM_LOADER_INITIALIZING  = 3;
-    private static final int SYSTEM_BOOTED               = 4;
-    private static final int SYSTEM_SHUTDOWN             = 5;
+    // These init level codes are shared only with java.lang.System.
+    // They could possibly be an enum, but we are being conservative
+    // about bootstrapping here; let's not assume enums are usable in
+    // the earliest stages of VM initialization.
+    public static final byte
+        VM_STARTED                  = 0,
+        JAVA_LANG_SYSTEM_INITED     = 1,  // set on exit from System::initPhase1
+        JAVA_LANG_INVOKE_INITED     = 2,  // set ???
+        MODULE_SYSTEM_INITED        = 3,  // set on exit from System::initPhase2
+        SYSTEM_LOADER_INITIALIZING  = 4,  // set during System::initPhase3
+        SYSTEM_BOOTED               = 5,  // set on exit from System::initPhase3
+        SYSTEM_SHUTDOWN             = 6,
+        INIT_LEVEL_LIMIT            = 7;
 
     // 0, 1, 2, ...
     private static volatile int initLevel;
+    private static final @Stable boolean[] initLevelReached = new boolean[INIT_LEVEL_LIMIT];
     private static final Object lock = new Object();
+    private static @Stable boolean isAOTCacheInited;  // independent sub-state
 
     /**
      * Sets the init level.
@@ -58,11 +68,12 @@ public class VM {
      * @see java.lang.System#initPhase2
      * @see java.lang.System#initPhase3
      */
-    public static void initLevel(int value) {
+    public static void initLevel(byte value) {
         synchronized (lock) {
-            if (value <= initLevel || value > SYSTEM_SHUTDOWN)
+            if (value <= initLevel || value >= INIT_LEVEL_LIMIT)
                 throw new InternalError("Bad level: " + value);
             initLevel = value;
+            initLevelReached[value] = true;
             lock.notifyAll();
         }
     }
@@ -74,42 +85,92 @@ public class VM {
         return initLevel;
     }
 
+
     /**
-     * Waits for the init level to get the given value.
+     * Returns {@code true} if we have reached the given level.
+     * Unlike the {@link #initLevel()} method, a {@code true} result
+     * of this method can be constant folded by the JIT.  The effect
+     * of that optimization is that methods compiled when init level N
+     * is reached will short-circuit all tests for lower levels, and
+     * therefore contain no code pertaining to lower levels.
      */
-    public static void awaitInitLevel(int value) throws InterruptedException {
-        synchronized (lock) {
-            while (initLevel < value) {
-                lock.wait();
-            }
+    @ForceInline  // encourage the JIT to peek inside this method
+    public static boolean initLevelReached(byte level) {
+        // Once this returns true for a given level, it always returns true.
+        // The JIT knows this fact and can optimize accordingly.
+        return initLevelReached[level];
+    }
+
+    // TO DO: maybe hook something like this logic into AOT assembly shutdown:
+    //private static void shutdownAOTAssembly() { setAOTCacheInited(); }
+    static void setAOTCacheInited() {
+        if (isAOTCacheInited) {
+            throw new InternalError("AOT cache already inited");
         }
+        isAOTCacheInited = CDS.isDumpingStaticArchive() ? false : true;
+        // Note: this is not just another state such as
+        // AOT_ASSEMBLY_DONE < VM_STARTED.
+        //
+        // That is because the AOT assembly phase runs up from
+        // VM_STARTED through SYSTEM_BOOTED in order to synthesize an
+        // AOT cache full of loaded classes and other goodies.
+        // Thus, the true set of states is roughly the cross
+        // product (initLevel, inassembly = !isAOTCacheInited).
+    }
+
+    /**
+     * Returns {@code true} if the AOT cache has been initialized.
+     * This is almost always {@code true}, but may be false during a
+     * special run of the VM called the "AOT assembly phase", which
+     * populates an AOT cache.  If there never was an AOT cache for
+     * this run of the VM, the boolean is also {@code true}, as if
+     * there was a very tiny AOT cache that was instantaneously
+     * initialized.
+     */
+    @ForceInline
+    private static boolean isAOTCacheInited() {
+        // Once this value is set to true, it stays true;
+        // The JIT knows this fact and can optimize accordingly.
+        return isAOTCacheInited;
+    }
+    /**
+     * Returns {@code true} if the VM is currently running an
+     * "assembly phase" which is populating an AOT cache.  Code which
+     * relies on this query may perform special actions specific to
+     * the assembly phase.  When that code is recompiled afterwards,
+     * this method will return a constant {@code false} value, and the
+     * special actions will not be compiled, nor will the method
+     * perform any runtime check for the (now complete) assembly
+     * phase.
+     */
+    @ForceInline
+    public static boolean isAssemblyPhase() {
+        return !isAOTCacheInited();
+    }
+
+    /**
+     * Returns {@code true} if the method handle subsystem has been initialized.
+     * @see java.lang.System#initPhase1
+     */
+    @ForceInline
+    public static boolean isJavaLangInvokeInited() {
+        return initLevelReached(JAVA_LANG_INVOKE_INITED);
     }
 
     /**
      * Returns {@code true} if the module system has been initialized.
      * @see java.lang.System#initPhase2
      */
+    @ForceInline
     public static boolean isModuleSystemInited() {
-        return initLevel >= MODULE_SYSTEM_INITED;
-    }
-
-    private static @Stable boolean javaLangInvokeInited;
-    public static void setJavaLangInvokeInited() {
-        if (javaLangInvokeInited) {
-            throw new InternalError("java.lang.invoke already inited");
-        }
-        javaLangInvokeInited = true;
-    }
-
-    public static boolean isJavaLangInvokeInited() {
-        return javaLangInvokeInited;
+        return initLevelReached(MODULE_SYSTEM_INITED);
     }
 
     /**
      * Returns {@code true} if the VM is fully initialized.
      */
     public static boolean isBooted() {
-        return initLevel >= SYSTEM_BOOTED;
+        return initLevelReached(SYSTEM_BOOTED);
     }
 
     /**
@@ -235,7 +296,7 @@ public class VM {
     //
     // This method can only be invoked during system initialization.
     public static void saveProperties(Map<String, String> props) {
-        if (initLevel() != 0)
+        if (initLevelReached(JAVA_LANG_SYSTEM_INITED))
             throw new IllegalStateException("Wrong init level");
 
         // only main thread is running at this time, so savedProps and
@@ -270,7 +331,7 @@ public class VM {
     // set for the class libraries.
     //
     public static void initializeOSEnvironment() {
-        if (initLevel() == 0) {
+        if (!initLevelReached(JAVA_LANG_SYSTEM_INITED)) {
             OSEnvironment.initialize();
         }
     }

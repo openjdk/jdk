@@ -37,6 +37,7 @@ import java.io.PrintStream;
 import java.lang.annotation.Annotation;
 import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.StringConcatFactory;
 import java.lang.module.ModuleDescriptor;
@@ -2114,7 +2115,7 @@ public final class System {
                                          boolean printStackTrace,
                                          String msg,
                                          Throwable e) {
-        if (VM.initLevel() < 1) {
+        if (!VM.initLevelReached(VM.JAVA_LANG_SYSTEM_INITED)) {
             throw new InternalError("system classes not initialized");
         }
         PrintStream log = (printToStderr) ? err : out;
@@ -2226,7 +2227,17 @@ public final class System {
         SharedSecrets.getJavaLangRefAccess().startThreads();
 
         // system properties, java.lang and other core classes are now initialized
-        VM.initLevel(1);
+        VM.initLevel(VM.JAVA_LANG_SYSTEM_INITED);
+
+        initJavaLangInvokeClasses();
+    }
+
+    // do phase1 initializations specific to JSR 292 APIs
+    private static void initJavaLangInvokeClasses() {
+        // Merely touching MethodHandles is enough to warm up the
+        // java.lang.invoke subsystem.
+        MethodHandles.identity(int.class);
+        VM.initLevel(VM.JAVA_LANG_INVOKE_INITED);
     }
 
     /**
@@ -2330,7 +2341,7 @@ public final class System {
         }
 
         // module system initialized
-        VM.initLevel(2);
+        VM.initLevel(VM.MODULE_SYSTEM_INITED);
 
         return 0; // JNI_OK
     }
@@ -2419,7 +2430,7 @@ public final class System {
         }
 
         // initializing the system class loader
-        VM.initLevel(3);
+        VM.initLevel(VM.SYSTEM_LOADER_INITIALIZING);
 
         // system class loader initialized
         ClassLoader scl = ClassLoader.initSystemClassLoader();
@@ -2428,7 +2439,7 @@ public final class System {
         Thread.currentThread().setContextClassLoader(scl);
 
         // system is fully initialized
-        VM.initLevel(4);
+        VM.initLevel(VM.SYSTEM_BOOTED);
     }
 
     private static void setJavaLangAccess() {
