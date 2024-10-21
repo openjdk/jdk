@@ -22,6 +22,8 @@
  * questions.
  */
 
+package jdk.test.lib.os.linux;
+
 import jdk.test.lib.process.OutputAnalyzer;
 
 import java.io.*;
@@ -33,7 +35,7 @@ import java.util.regex.Pattern;
 // - a) the Operating System (the truth)
 // - b) the JVM log (-Xlog:pagesize)
 // This is used e.g. in TestHugePageDetection to determine if the JVM detects the correct settings from the OS.
-class HugePageConfiguration {
+public class HugePageConfiguration {
 
     public static class ExplicitHugePageConfig implements Comparable<ExplicitHugePageConfig> {
         public long pageSize = -1;
@@ -63,11 +65,11 @@ class HugePageConfiguration {
     Set<ExplicitHugePageConfig> _explicitHugePageConfigurations;
     long _explicitDefaultHugePageSize = -1;
 
-    enum THPMode {always, never, madvise}
+    public enum THPMode {always, never, madvise}
     THPMode _thpMode;
     long _thpPageSize;
 
-    enum ShmemTHPMode {always, within_size, advise, never, deny, force, unknown}
+    public enum ShmemTHPMode {always, within_size, advise, never, deny, force, unknown}
     ShmemTHPMode _shmemThpMode;
 
     public Set<ExplicitHugePageConfig> getExplicitHugePageConfigurations() {
@@ -131,6 +133,15 @@ class HugePageConfiguration {
                 ", _thpPageSize=" + _thpPageSize +
                 ", _shmemThpMode=" + _shmemThpMode +
                 '}';
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(_explicitDefaultHugePageSize,
+                            _thpPageSize,
+                            _explicitHugePageConfigurations,
+                            _thpMode,
+                            _shmemThpMode);
     }
 
     @Override
