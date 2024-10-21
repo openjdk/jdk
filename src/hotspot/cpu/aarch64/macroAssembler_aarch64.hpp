@@ -1439,6 +1439,24 @@ public:
   address arrays_equals(Register a1, Register a2, Register result, Register cnt1,
                         Register tmp1, Register tmp2, Register tmp3, int elem_size);
 
+// Ensure that the inline code and the stub use the same registers.
+#define ARRAYS_HASHCODE_REGISTERS \
+  do {                      \
+    assert(result == r0  && \
+           ary    == r1  && \
+           cnt    == r2  && \
+           vdata0 == v3  && \
+           vdata1 == v2  && \
+           vdata2 == v1  && \
+           vdata3 == v0  && \
+           vmul0  == v4  && \
+           vmul1  == v5  && \
+           vmul2  == v6  && \
+           vmul3  == v7  && \
+           vpow   == v12 && \
+           vpowm  == v13, "registers must match aarch64.ad"); \
+  } while (0)
+
   void string_equals(Register a1, Register a2, Register result, Register cnt1);
 
   void fill_words(Register base, Register cnt, Register value);
