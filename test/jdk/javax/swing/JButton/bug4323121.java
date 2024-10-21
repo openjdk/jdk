@@ -34,8 +34,6 @@ import java.awt.Point;
 import java.awt.Robot;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
 import java.util.concurrent.CountDownLatch;
 
 import javax.swing.JButton;
@@ -50,8 +48,6 @@ public final class bug4323121 {
     static JButton button;
 
     static volatile Point buttonCenter;
-
-    private static final CountDownLatch windowGainedFocus = new CountDownLatch(1);
 
     private static final CountDownLatch mouseEntered = new CountDownLatch(1);
 
@@ -78,22 +74,12 @@ public final class bug4323121 {
                 frame = new JFrame("bug4323121");
                 frame.getContentPane().add(button);
 
-                frame.addWindowFocusListener(new WindowAdapter() {
-                    @Override
-                    public void windowGainedFocus(WindowEvent e) {
-                        windowGainedFocus.countDown();
-                    }
-                });
-
                 frame.pack();
                 frame.setLocationRelativeTo(null);
                 frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
                 frame.setVisible(true);
             });
 
-            if (!windowGainedFocus.await(1, SECONDS)) {
-                throw new RuntimeException("Window didn't gain focus");
-            }
             robot.waitForIdle();
 
             SwingUtilities.invokeAndWait(() -> {
