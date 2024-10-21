@@ -833,7 +833,6 @@ javax/swing/JPopupMenu/6694823/bug6694823.java 8342012 windows-all,linux-all
 java/awt/Robot/InfiniteLoopException.java 8342638 windows-all
 
 # :tier2_part2
-jdk/dynalink/BeanLinkerTest.java 8338411 generic-all
 jdk/dynalink/TrustedDynamicLinkerFactoryTest.java 8338411 generic-all
 tools/launcher/MainClassCantBeLoadedTest.java 8338411 generic-all
 tools/launcher/modules/basic/LauncherErrors.java 8338411 generic-all
