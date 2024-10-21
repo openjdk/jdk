@@ -67,7 +67,7 @@ public @interface PreviewFeature {
         // while building the interim javac, the ClassReader will produce a warning when loading a class
         // keeping the constant of a feature that has been integrated or dropped, serves the purpose of muting such warnings.
 
-        ////
+        //---
         @JEP(number=477, title="Implicitly Declared Classes and Instance Main Methods", status="Third Preview")
         IMPLICIT_CLASSES,
         @JEP(number=481, title="Scoped Values", status="Third Preview")
