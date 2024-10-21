@@ -135,10 +135,7 @@ public class Compare {
         if (x == null ? y == null : x.equals(y)) pass();
         else fail(x + " not equal to " + y);}
     public static void main(String[] args) throws Throwable {
-        new Compare().instanceMain(args);
-        // GHA TEST HOOK: FAIL A TEST AND SEE WHAT HAPPENS. REMOVE BEFORE INTEGRATION.
-        throw new IllegalStateException();
-        }
+        new Compare().instanceMain(args);}
     public void instanceMain(String[] args) throws Throwable {
         try {test(args);} catch (Throwable t) {unexpected(t);}
         System.out.printf("%nPassed = %d, failed = %d%n%n", passed, failed);
