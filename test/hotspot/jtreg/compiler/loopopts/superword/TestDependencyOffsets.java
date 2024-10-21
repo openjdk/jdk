@@ -401,8 +401,6 @@
  * @run driver compiler.loopopts.superword.TestDependencyOffsets vec-v004-U
  */
 
-// TODO do we really want to require compiler2?
-
 package compiler.loopopts.superword;
 
 import compiler.lib.ir_framework.*;
@@ -509,7 +507,11 @@ public class TestDependencyOffsets {
         comp.invoke("InnerTest", "main", new Object[] {null});
     }
 
-    // TODO
+    /*
+     * On every platform (identified by CPU features), and every type, the maximal length of a vector is limited.
+     * Note, that on some platform, the platformVectorWidth for different types may be different:
+     * Example: avx has 16 for int, but 32 for float.
+     */
     static record VWConstraint(String description, String[] cpuFeatures, int platformVectorWidth) {}
 
     static record Type (String name, int size, String value, String operator, String irNode) {
@@ -544,11 +546,6 @@ public class TestDependencyOffsets {
                    name, name, name, name);
         }
 
-        /*
-         * On every platform (identified by CPU features), and every type, we know that MaxVectorSize <= platformVectorWidth.
-         * Note, that on some platform, the platformVectorWidth for different types may be different:
-         * Example: avx has 16 for int, but 32 for float.
-         */
         List<VWConstraint> vwConstraints() {
             List<VWConstraint> vwConstraints = new ArrayList<VWConstraint>();
 
@@ -679,7 +676,9 @@ public class TestDependencyOffsets {
         }
 
         /*
-         * TODO description
+         * We generate a number of IR rules for every TestDefinition. If an what kind of vectorization we
+         * expect depends on AlignVector and MaxVectorSize, as well as the byteOffset between the load and
+         * store.
          */
         String generateIRRules() {
             StringBuilder builder = new StringBuilder();
@@ -697,11 +696,11 @@ public class TestDependencyOffsets {
                 int byteOffset = offset * type.size;
                 builder.append("    //   byteOffset = " + byteOffset + " = offset * type.size\n");
 
-                int maxVectorWidth = vwConstraint.platformVectorWidth; // no constraint
+                // In a store-forward case, later iterations load from stores of previous iterations.
+                // If the offset is too small, that leads to cyclic dependencies in the vectors. Hence,
+                // we use shorter vectors to avoid cycles and still vectorize.
+                int maxVectorWidth = vwConstraint.platformVectorWidth; // no constraint by default
                 if (0 < byteOffset && byteOffset < vwConstraint.platformVectorWidth) {
-                    // Store forward: will be loaded in later iteration. If the offset is too small
-                    // then maximal vector size would introduce cyclic dependencies. Hence, we use
-                    // shorter vectors.
                     int log2 = 31 - Integer.numberOfLeadingZeros(offset);
                     int floor_pow2 = 1 << log2;
                     maxVectorWidth = floor_pow2 * type.size;
@@ -710,7 +709,7 @@ public class TestDependencyOffsets {
                                    " to avoid cyclic dependency.\n");
                 }
 
-                // -XX:-AlignVector
+                // Rule 1: No strict alignment: -XX:-AlignVector
                 IRRule r1 = new IRRule(type, vwConstraint, type.irNode);
                 r1.addConstraint("AlignVector", new BoolConstraint(false, true));
                 r1.addConstraint("MaxVectorSize", new IntConstraint(minVectorWidth, null));
@@ -723,7 +722,7 @@ public class TestDependencyOffsets {
                 }
                 r1.generate(builder);
 
-                // -XX:+AlignVector
+                // Rule 2: strict alignment: -XX:+AlignVector
                 IRRule r2 = new IRRule(type, vwConstraint, type.irNode);
                 r2.addConstraint("AlignVector", new BoolConstraint(true, false));
                 r2.addConstraint("MaxVectorSize", new IntConstraint(minVectorWidth, null));
