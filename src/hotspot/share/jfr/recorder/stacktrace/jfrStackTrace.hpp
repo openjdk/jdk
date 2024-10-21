@@ -27,12 +27,25 @@
 
 #include "jfr/utilities/jfrAllocation.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
+#include "runtime/vframe.hpp"
 
 class frame;
 class InstanceKlass;
 class JavaThread;
 class JfrCheckpointWriter;
 class JfrChunkWriter;
+
+class JfrVframeStream : public vframeStreamCommon {
+ private:
+  bool _vthread;
+  const ContinuationEntry* _cont_entry;
+  bool _async_mode;
+  bool step_to_sender();
+  void next_frame();
+ public:
+  JfrVframeStream(JavaThread* jt, const frame& fr, bool stop_at_java_call_stub, bool async_mode);
+  void next_vframe();
+};
 
 class JfrStackFrame {
   friend class ObjectSampleCheckpoint;
@@ -68,6 +81,9 @@ class JfrStackTrace : public JfrCHeapObj {
   friend class ObjectSampler;
   friend class OSThreadSampler;
   friend class StackTraceResolver;
+  friend class JfrCPUTimeTrace;
+  friend class JfrAsyncStackTrace;
+  friend class JfrCPUTimeThreadSampler;
  private:
   const JfrStackTrace* _next;
   JfrStackFrame* _frames;
@@ -107,6 +123,7 @@ class JfrStackTrace : public JfrCHeapObj {
  public:
   traceid hash() const { return _hash; }
   traceid id() const { return _id; }
+  u4 nr_of_frames() const { return _nr_of_frames; }
 };
 
 #endif // SHARE_JFR_RECORDER_STACKTRACE_JFRSTACKTRACE_HPP

@@ -72,6 +72,7 @@ class JfrTraceIdLoadBarrier : AllStatic {
   friend class JfrIntrinsicSupport;
   friend class JfrStackTrace;
   friend class JfrThreadSampler;
+  friend class JfrCPUTimeThreadSampler;
  private:
   static bool initialize();
   static void clear();

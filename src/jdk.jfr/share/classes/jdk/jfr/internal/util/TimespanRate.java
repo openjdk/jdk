@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2024, SAP SE. All rights reserved.
  * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -24,39 +25,37 @@
  */
 package jdk.jfr.internal.util;
 
-public record Rate(long amount, TimespanUnit unit) {
+import jdk.jfr.internal.settings.CPUThrottleSetting;
 
-    public static Rate of(String text) {
-        String[] splitted = text.split("/");
-        if (splitted.length != 2) {
-            return null;
+/**
+ * A rate or fixed period, see {@link jdk.jfr.internal.Rate}
+ */
+public record TimespanRate(double rate, boolean autoadapt) {
+
+    public static TimespanRate of(String text) {
+        if (text.equals("off")) {
+            text = CPUThrottleSetting.DEFAULT_VALUE;
         }
-        String value = splitted[0].strip();
-        String unit = splitted[1].strip();
-        TimespanUnit tu = TimespanUnit.fromText(unit);
-        if (unit == null) {
-            return null;
-        }
-        try {
-            long v = Long.parseLong(value);
-            if (v >= 0) {
-                return new Rate(v, tu);
+        boolean isPeriod = !text.contains("/");
+        if (isPeriod) {
+            var period = ValueParser.parseTimespanWithInfinity(text);
+            if (period == 0) {
+                return new TimespanRate(0, false);
             }
-        } catch (NumberFormatException nfe) {
-            // Ignore
+            return new TimespanRate(Runtime.getRuntime().availableProcessors() / (period / 1_000_000_000.0), false);
         }
-        return null;
+        return new TimespanRate(Rate.of(text).perSecond(), true);
     }
 
-    public boolean isHigher(Rate that) {
-        return this.inNanos() > that.inNanos();
+    public boolean isHigher(TimespanRate that) {
+        return rate() > that.rate();
     }
 
-    private double inNanos() {
-        return (double) amount / unit.nanos;
-    }
-
-    public double perSecond() {
-        return inNanos() * 1_000_000_000.0;
+    @Override
+    public String toString() {
+        if (autoadapt) {
+            return String.format("%d/ns", rate * 1_000_000_000L);
+        }
+        return String.format("%dns", rate / Runtime.getRuntime().availableProcessors() * 1_000_000_000L);
     }
 }
