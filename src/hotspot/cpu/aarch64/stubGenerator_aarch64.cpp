@@ -1374,7 +1374,9 @@ class StubGenerator: public StubCodeGenerator {
       // r15 is the byte adjustment needed to align s.
       __ cbz(r15, aligned);
       int shift = exact_log2(granularity);
-      if (shift > 0)  __ lsr(r15, r15, shift);
+      if (shift > 0) {
+        __ lsr(r15, r15, shift);
+      }
       __ sub(count, count, r15);
 
 #if 0
