@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -165,6 +165,11 @@ public class SettingsFrame extends Http2Frame {
     public static final int DEFAULT_INITIAL_WINDOW_SIZE = 64 * K -1;
     // The initial value is 2^14 (16,384) octets.
     public static final int DEFAULT_MAX_FRAME_SIZE = 16 * K;
+
+    // Initial connection window size. This cannot be updated using the
+    // SETTINGS frame.
+    public static final int INITIAL_CONNECTION_WINDOW_SIZE = DEFAULT_INITIAL_WINDOW_SIZE;
+
 
     public static SettingsFrame defaultRFCSettings() {
         SettingsFrame f = new SettingsFrame();
