@@ -24,8 +24,8 @@
 /*
  * @test
  * @bug 4323121
- * @summary Tests whether any button that extends JButton always
-            returns true for isArmed()
+ * @summary Tests whether a button model always returns true for isArmed()
+ *          when mouse hovers over the button
  * @key headful
  * @run main bug4323121
  */
@@ -95,7 +95,7 @@ public final class bug4323121 {
             }
             if (modelArmed) {
                 throw new RuntimeException("getModel().isArmed() returns true "
-                                           + "for a subclass of JButton");
+                                           + "when mouse hovers over the button");
             }
         } finally {
             SwingUtilities.invokeAndWait(() -> {
