@@ -2913,7 +2913,6 @@ StoreNode* MergePrimitiveStores::run() {
 bool MergePrimitiveStores::is_compatible_store(const StoreNode* other_store) const {
   int opc = _store->Opcode();
   assert(opc == Op_StoreB || opc == Op_StoreC || opc == Op_StoreI, "precondition");
-  // assert(_store->adr_type()->isa_aryptr() != nullptr, "must be array store");
 
   if (other_store == nullptr ||
       _store->Opcode() != other_store->Opcode()) {
