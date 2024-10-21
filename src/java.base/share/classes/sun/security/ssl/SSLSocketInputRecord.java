@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,21 +26,20 @@
 
 package sun.security.ssl;
 
-import sun.security.ssl.SSLCipher.SSLReadCipher;
-
 import java.io.EOFException;
+import java.io.InterruptedIOException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InterruptedIOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
-
 import javax.crypto.BadPaddingException;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLProtocolException;
+
+import sun.security.ssl.SSLCipher.SSLReadCipher;
 
 /**
  * {@code InputRecord} implementation for {@code SSLSocket}.
@@ -54,9 +53,6 @@ final class SSLSocketInputRecord extends InputRecord implements SSLRecord {
     private int headerOff = 0;
     // Cache for incomplete record body.
     private ByteBuffer recordBody = ByteBuffer.allocate(1024);
-
-    // Store the last record we attempted to decode.
-    private ByteBuffer lastDecodeRecord = null;
 
     private boolean formatVerified = false;     // SSLv2 ruled out?
 
@@ -207,22 +203,6 @@ final class SSLSocketInputRecord extends InputRecord implements SSLRecord {
         this.os = outputStream;
     }
 
-    @Override
-    ByteBuffer getLastDecodeRecord() {
-        return lastDecodeRecord;
-    }
-
-    private void saveLastDecodeRecord() {
-        if (lastDecodeRecord == null ||
-                lastDecodeRecord.capacity() < headerSize + recordBody.remaining()) {
-            lastDecodeRecord = ByteBuffer.allocate(headerSize + recordBody.remaining());
-        }
-        lastDecodeRecord.clear();
-        lastDecodeRecord.put(header);
-        lastDecodeRecord.put(recordBody.slice());
-        lastDecodeRecord.flip();
-    }
-
     private Plaintext[] decodeInputRecord() throws IOException, BadPaddingException {
         byte contentType = header[0];                   // pos: 0
         byte majorVersion = header[1];                  // pos: 1
@@ -262,8 +242,6 @@ final class SSLSocketInputRecord extends InputRecord implements SSLRecord {
         }
         readFully(contentLen);
         recordBody.flip();
-        // Record is ready to be decoded, save it.
-        saveLastDecodeRecord();
 
         if (SSLLogger.isOn && SSLLogger.isOn("record")) {
             SSLLogger.fine(

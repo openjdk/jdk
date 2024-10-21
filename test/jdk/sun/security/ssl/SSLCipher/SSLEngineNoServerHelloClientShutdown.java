@@ -35,15 +35,16 @@
  */
 
 import static jdk.test.lib.Asserts.assertEquals;
-import static jdk.test.lib.Asserts.assertTrue;
+import static jdk.test.lib.Asserts.fail;
 import static jdk.test.lib.security.SecurityUtils.inspectTlsBuffer;
 
 import java.nio.ByteBuffer;
 
+import javax.crypto.BadPaddingException;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
 import javax.net.ssl.SSLEngineResult.HandshakeStatus;
-import javax.net.ssl.SSLEngineResult.Status;
+import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLSession;
 
 /**
@@ -59,6 +60,12 @@ import javax.net.ssl.SSLSession;
  * produced.
  */
 public class SSLEngineNoServerHelloClientShutdown extends SSLContextTemplate {
+
+    protected static final String EXCEPTION_MSG =
+        "Unexpected plaintext alert received. This can happen"
+            + " during TLSv1.3 handshake if client doesn't receive"
+            + " server_hello due to network timeout and tries to"
+            + " close a connection by sending an alert message.";
 
     protected SSLEngine clientEngine;     // client Engine
     protected ByteBuffer clientOut;       // write side of clientEngine
@@ -137,8 +144,7 @@ public class SSLEngineNoServerHelloClientShutdown extends SSLContextTemplate {
 
         log("=================");
 
-        // client wrap
-        // produce client_hello
+        // Client: produce client_hello
         log("---Client Wrap client_hello---");
         clientResult = clientEngine.wrap(clientOut, cTOs);
         logEngineStatus(clientEngine, clientResult);
@@ -146,8 +152,7 @@ public class SSLEngineNoServerHelloClientShutdown extends SSLContextTemplate {
 
         cTOs.flip();
 
-        // server unwrap
-        // Consume client_hello
+        // Server: consume client_hello
         log("---Server Unwrap client_hello---");
         serverResult = serverEngine.unwrap(cTOs, serverIn);
         logEngineStatus(serverEngine, serverResult);
@@ -155,35 +160,32 @@ public class SSLEngineNoServerHelloClientShutdown extends SSLContextTemplate {
 
         cTOs.compact();
 
-        // server wrap
-        // produce server_hello
+        // Server: produce server_hello
         log("---Server Wrap server_hello---");
         serverResult = serverEngine.wrap(serverOut, sTOc);
         logEngineStatus(serverEngine, serverResult);
         runDelegatedTasks(serverEngine);
         // SH packet went missing.  Timeout on Client.
 
-        // server wrap
-        // produce other outbound messages
+        // Server: produce other outbound messages
         log("---Server Wrap---");
         serverResult = serverEngine.wrap(serverOut, sTOc);
         logEngineStatus(serverEngine, serverResult);
         runDelegatedTasks(serverEngine);
         // CCS packet went missing.  Timeout on Client.
 
-        // server wrap
-        // produce other outbound messages
+        // Server: produce other outbound messages
         log("---Server Wrap---");
         serverResult = serverEngine.wrap(serverOut, sTOc);
         logEngineStatus(serverEngine, serverResult);
         runDelegatedTasks(serverEngine);
         // EE/etc. packet went missing.  Timeout on Client.
 
-        // *Yawn*  No response.  Shutdown client
+        // Shutdown client
         log("---Client closeOutbound---");
         clientEngine.closeOutbound();
 
-        // Sends an unencrypted user_canceled
+        // Client:  produce an unencrypted user_canceled
         log("---Client Wrap user_canceled---");
         clientResult = clientEngine.wrap(clientOut, cTOs);
         logEngineStatus(clientEngine, clientResult);
@@ -192,75 +194,17 @@ public class SSLEngineNoServerHelloClientShutdown extends SSLContextTemplate {
         cTOs.flip();
         inspectTlsBuffer(cTOs);
 
-        // Server unwrap should process an unencrypted 2 byte packet user_canceled alert.
+        // Server unwrap should throw a proper exception when receiving an
+        // unencrypted 2 byte packet user_canceled alert.
         log("---Server Unwrap user_canceled alert---");
-        serverResult = serverEngine.unwrap(cTOs, serverIn);
-        logEngineStatus(serverEngine, serverResult);
-        runDelegatedTasks(serverEngine);
-
-        cTOs.compact();
-
-        // Sends an unencrypted close_notify
-        log("---Client Wrap close_notify---");
-        clientResult = clientEngine.wrap(clientOut, cTOs);
-        logEngineStatus(clientEngine, clientResult);
-        assertTrue(clientEngine.isOutboundDone());
-        assertEquals(clientResult.getStatus(), Status.CLOSED);
-        runDelegatedTasks(clientEngine);
-
-        cTOs.flip();
-        inspectTlsBuffer(cTOs);
-
-        // Server unwrap should process an unencrypted 2 byte close_notify alert.
-        log("---Server Unwrap close_notify alert---");
-        serverResult = serverEngine.unwrap(cTOs, serverIn);
-        logEngineStatus(serverEngine, serverResult);
-        assertTrue(serverEngine.isInboundDone());
-        assertEquals(serverResult.getStatus(), Status.CLOSED);
-        runDelegatedTasks(serverEngine);
-
-        sTOc.flip();
-        inspectTlsBuffer(sTOc);
-
-        // Client receives delayed server_hello
-        log("---Client Unwrap server_hello---");
-        clientResult = clientEngine.unwrap(sTOc, clientIn);
-        logEngineStatus(clientEngine, clientResult);
-        runDelegatedTasks(clientEngine);
-
-        // Client receives delayed CCS
-        log("---Client Unwrap CCS---");
-        clientResult = clientEngine.unwrap(sTOc, clientIn);
-        logEngineStatus(clientEngine, clientResult);
-        runDelegatedTasks(clientEngine);
-
-        // Client receives delayed EE
-        log("---Client Unwrap EE---");
-        clientResult = clientEngine.unwrap(sTOc, clientIn);
-        logEngineStatus(clientEngine, clientResult);
-        runDelegatedTasks(clientEngine);
-
-        sTOc.compact();
-
-        // Only a stand-alone close_notify alert is needed in server -> client direction
-        // to terminate the handshake after the server already received user_canceled:close_notify
-        // sequence from the client.
-        log("---Server Wrap close_notify---");
-        serverResult = serverEngine.wrap(serverOut, sTOc);
-        logEngineStatus(serverEngine, serverResult);
-        assertTrue(serverEngine.isOutboundDone());
-        assertTrue(serverEngine.isInboundDone());
-        runDelegatedTasks(serverEngine);
-
-        sTOc.flip();
-        inspectTlsBuffer(sTOc);
-
-        log("---Client Unwrap user_canceled alert---");
-        clientResult = clientEngine.unwrap(sTOc, clientIn);
-        logEngineStatus(clientEngine, clientResult);
-        assertTrue(clientEngine.isOutboundDone());
-        assertTrue(clientEngine.isInboundDone());
-        runDelegatedTasks(clientEngine);
+        try {
+            serverEngine.unwrap(cTOs, serverIn);
+        } catch (SSLHandshakeException e) {
+            assertEquals(e.getCause().getClass(), BadPaddingException.class);
+            assertEquals(e.getCause().getMessage(), EXCEPTION_MSG);
+            return;
+        }
+        fail();
     }
 
     protected static void logEngineStatus(SSLEngine engine) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,6 @@
 
 package sun.security.ssl;
 
-import sun.security.ssl.SSLCipher.SSLReadCipher;
-
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
@@ -34,8 +32,8 @@ import java.io.OutputStream;
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.locks.ReentrantLock;
-
 import javax.crypto.BadPaddingException;
+import sun.security.ssl.SSLCipher.SSLReadCipher;
 
 /**
  * {@code InputRecord} takes care of the management of SSL/TLS/DTLS input
@@ -154,14 +152,6 @@ abstract class InputRecord implements Record, Closeable {
 
     // apply to SSLSocket only
     void setReceiverStream(InputStream inputStream) {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * @return the last record we attempted to decode
-     */
-    // apply to SSLSocket only
-    ByteBuffer getLastDecodeRecord() {
         throw new UnsupportedOperationException();
     }
 

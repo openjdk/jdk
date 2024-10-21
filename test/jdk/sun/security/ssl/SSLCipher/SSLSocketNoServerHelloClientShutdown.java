@@ -26,24 +26,24 @@
  * @bug 8331682
  * @summary Slow networks/Impatient clients can potentially send
  *          unencrypted TLSv1.3 alerts that won't parse on the server.
- * @library /javax/net/ssl/templates
  * @library /test/lib
  * @run main/othervm SSLSocketNoServerHelloClientShutdown
  */
 
 import static jdk.test.lib.Asserts.assertEquals;
 import static jdk.test.lib.Asserts.assertTrue;
+import static jdk.test.lib.Asserts.fail;
 import static jdk.test.lib.security.SecurityUtils.inspectTlsBuffer;
 
 import java.io.InputStream;
-import java.lang.Override;
 import java.net.InetSocketAddress;
-import java.net.SocketException;
 import java.nio.channels.SocketChannel;
 
+import javax.crypto.BadPaddingException;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngineResult;
 import javax.net.ssl.SSLEngineResult.Status;
+import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLSocket;
@@ -97,8 +97,12 @@ public class SSLSocketNoServerHelloClientShutdown extends SSLEngineNoServerHello
                 thread.join();
             }
         } finally {
-            if (serverException != null && !(serverException instanceof SocketException)) {
-                throw serverException;
+            if (serverException != null) {
+                assertEquals(serverException.getClass(), SSLHandshakeException.class);
+                assertEquals(serverException.getCause().getClass(), BadPaddingException.class);
+                assertEquals(serverException.getCause().getMessage(), EXCEPTION_MSG);
+            } else {
+                fail("Server should have thrown SSLHandshakeException");
             }
             if (clientException != null) {
                 throw clientException;
@@ -144,33 +148,17 @@ public class SSLSocketNoServerHelloClientShutdown extends SSLEngineNoServerHello
                     assertTrue(clientEngine.isOutboundDone());
                     assertEquals(clientResult.getStatus(), Status.CLOSED);
 
-                    // Send client_hello, user_canceled alert and close_notify alert to server.
-                    // Server should process 2 unencrypted alerts.
+                    // Send client_hello, user_canceled alert and close_notify alert
+                    // to server. Server should throw a proper exception when
+                    // receiving an unencrypted 2 byte packet user_canceled alert.
                     cTOs.flip();
                     inspectTlsBuffer(cTOs);
+                    log("---Client sends unencrypted alerts---");
                     int len = clientSocketChannel.write(cTOs);
-                    log("---Client wrote " + len + " bytes---");
 
-                    // Read all the messages from the server.
-                    // Server should reply with server_hello, CCS, EE and its own close_notify
-                    // alert back to the client.
-                    while ((len = clientSocketChannel.read(sTOc)) != -1) {
-                        log("---Client read " + len + " bytes---");
-                    }
-                    sTOc.flip();
-                    inspectTlsBuffer(sTOc);
-
-                    // Consume server messages.
-                    for (int i = 1; sTOc.hasRemaining(); i++) {
-                        log("---Client Unwrap server flight " + i + "---");
-                        clientResult = clientEngine.unwrap(sTOc, clientIn);
-                        logEngineStatus(clientEngine, clientResult);
-                        runDelegatedTasks(clientEngine);
-                    }
-
-                    assertTrue(clientEngine.isOutboundDone());
-                    assertTrue(clientEngine.isInboundDone());
-
+                    // Give server a chance to read before we shutdown via
+                    // the try-with-resources block.
+                    Thread.sleep(2000);
                 } catch (Exception e) {
                     clientException = e;
                 }
