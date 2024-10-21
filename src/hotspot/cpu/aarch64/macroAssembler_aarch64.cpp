@@ -1816,7 +1816,7 @@ void MacroAssembler::lookup_secondary_supers_table_var(Register r_sub_klass,
 
   // This next instruction is equivalent to:
   // mov(tmp_reg, (u1)(Klass::SECONDARY_SUPERS_TABLE_SIZE - 1));
-  // sub(temp2, r_array_index, tmp_reg);
+  // sub(temp2, tmp_reg, slot);
   eor(temp2, slot, (u1)(Klass::SECONDARY_SUPERS_TABLE_SIZE - 1));
   lslv(temp2, r_bitmap, temp2);
   tbz(temp2, Klass::SECONDARY_SUPERS_TABLE_SIZE - 1, L_fallthrough);
