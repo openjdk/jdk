@@ -827,6 +827,7 @@ void InstanceKlass::assert_no_clinit_will_run_for_aot_initialized_class() const 
 }
 #endif
 
+#if INCLUDE_CDS
 void InstanceKlass::initialize_with_aot_initialized_mirror(TRAPS) {
   assert(has_aot_initialized_mirror(), "must be");
   assert(CDSConfig::is_loading_heap(), "must be");
@@ -858,6 +859,7 @@ void InstanceKlass::initialize_with_aot_initialized_mirror(TRAPS) {
   set_initialization_state_and_notify(fully_initialized, CHECK);
   AOTClassInitializer::call_runtime_setup(this, CHECK);
 }
+#endif
 
 bool InstanceKlass::verify_code(TRAPS) {
   // 1) Verify the bytecodes
