@@ -127,8 +127,8 @@ import java.util.function.Supplier;
  * {@snippet lang=java :
  *     StableValue<Integer> stableValue = StableValue.of();
  *     // ...
- *     // Throws IllegalStateException if the underlying data is already initialized
- *     int val = stableValue.setOrThrow(42); // 42
+ *     // Throws IllegalStateException if the underlying data was already initialized
+ *     stableValue.setOrThrow(42);
  * }
  * <p>
  * Finally, the underlying data can be initialized via
@@ -145,23 +145,23 @@ import java.util.function.Supplier;
  *     <li>{@linkplain StableValue#orElseThrow() {@code orElseThrow()}}</li>
  * </ul>
  * <p>
- * By invoking the method {@linkplain StableValue#orElse(Object) orElse(other)}. The
- * method will return the underlying data if initialized, otherwise it will return
- * the provided {@code other} value:
+ * The method {@linkplain StableValue#orElse(Object) orElse(other)} will return
+ * the underlying data if initialized, otherwise it will return the provided
+ * {@code other} value:
  *
  * {@snippet lang=java :
  *     StableValue<Integer> stableValue = StableValue.of();
  *     // ...
  *     int val = stableValue.orElse(13); // The underlying data if set, otherwise 13
  * }
- * Another way is by means of the {@linkplain StableValue#orElseThrow() orElseThrow()}
- * method which will retrieve the underlying data if initialized or throw
+ * The other method {@linkplain StableValue#orElseThrow() orElseThrow()} will retrieve
+ * the underlying data if initialized or throw
  * {@linkplain NoSuchElementException} if the underlying data was not initialized:
  *
  * {@snippet lang=java :
  *     StableValue<Integer> stableValue = StableValue.of();
  *     // ...
- *     int val = stableValue.orElseThrow(); // The underlying data, else throws
+ *     int val = stableValue.orElseThrow(); // The underlying data if set, else throws
  * }
  *
  * <h3>Determining the presence of underlying data</h3>
@@ -188,7 +188,7 @@ import java.util.function.Supplier;
  *     class Component {
  *
  *         private final Supplier<Logger> logger =
- *             StableValue.ofSupplier( () -> Logger.getLogger("org.app.Component") );
+ *                 StableValue.ofSupplier( () -> Logger.getLogger("org.app.Component") );
  *
  *         void process() {
  *            logger.get().info("Process started");
@@ -197,10 +197,12 @@ import java.util.function.Supplier;
  *     }
  *}
  * This also allows the stable supplier to be accessed directly, without going through
- * an accessor method like {@code getLogger()} in the first example of this class.
+ * an accessor method like {@code getLogger()} in the
+ * {@linkplain StableValue##stable-holder initial example} of this class.
  * <p>
  * A <em>stable int function</em> stores values in an array of stable values where
- * the underlying values are computed the first time a particular input value is provided.
+ * the elements` underlying data are computed the first time a particular input value
+ * is provided.
  * When the stable int function is first created --
  * via the {@linkplain StableValue#ofIntFunction(int, IntFunction)
  * StableValue.ofIntFunction()} factory -- the input range (i.e. {@code [0, size)}) is
@@ -211,7 +213,7 @@ import java.util.function.Supplier;
  *     class SqrtUtil {
  *
  *         private static final IntFunction<Double> SQRT =
- *             StableValue.ofIntFunction(10, Math::sqrt);
+ *                 StableValue.ofIntFunction(10, Math::sqrt);
  *
  *         double sqrt9() {
  *             return SQRT.apply(9); // Constant folds to 3.0
@@ -221,7 +223,8 @@ import java.util.function.Supplier;
  *}
  * <p>
  * A <em>stable function</em> stores values in an array of stable values where
- * the underlying values are computed the first time a particular input value is provided.
+ * the elements`s underlying data are computed the first time a particular input value
+ * is provided.
  * When the stable function is first created --
  * via the {@linkplain StableValue#ofFunction(Set, Function) StableValue.ofFunction()}
  * factory -- the input set is specified together with an original {@linkplain Function}
@@ -231,7 +234,7 @@ import java.util.function.Supplier;
  *     class SqrtUtil {
  *
  *         private static final Function<Integer, Double> SQRT =
- *             StableValue.ofFunction(Set.of(1, 2, 4, 8, 16, 32), Math::sqrt);
+ *                 StableValue.ofFunction(Set.of(1, 2, 4, 8, 16, 32), Math::sqrt);
  *
  *         double sqrt16() {
  *             return SQRT.apply(16); // Constant folds to 4.0
@@ -266,15 +269,18 @@ import java.util.function.Supplier;
  *    }
  * }
  * <p>
+ * Note: In the example above, there is a constructor in {@code OrderController} that
+ *       takes an {@code int} parameter.
+ * <p>
  * A <em>stable map</em> is similar to a stable function, but provides a full
  * implementation of an immutable {@linkplain Map}. This is useful when interacting with
  * collection-based methods. Here is how a stable map can be used as a cache for
- * square root values:
+ * square roots for certain input values given at creation:
  * {@snippet lang = java:
  *     class SqrtUtil {
  *
  *         private static final Map<Integer, Double> SQRT =
- *             StableValue.ofMap(Set.of(1, 2, 4, 8, 16, 32), Math::sqrt);
+ *                 StableValue.ofMap(Set.of(1, 2, 4, 8, 16, 32), Math::sqrt);
  *
  *         double sqrt16() {
  *             return SQRT.apply(16); // Constant folds to 4.0
@@ -284,9 +290,9 @@ import java.util.function.Supplier;
  *}
  *
  * <h2 id="memory-consistency">Memory Consistency Properties</h2>
- * Actions on the presumptive underlying data in a thread prior to calling a method that
- * <i>sets</i> the underlying data are seen by any other thread that <i>observes</i> a
- * set underlying data.
+ * Actions on presumptive underlying data in a thread prior to calling a method that
+ * <i>sets</i> the underlying data are seen by any other thread that <i>observes</i> the
+ * underlying data.
  * <p>
  * More generally, the action of attempting to interact (i.e. via load or store operations)
  * with a StableValue's underlying data (e.g. via {@link StableValue#trySet} or
@@ -297,7 +303,7 @@ import java.util.function.Supplier;
  * stable functions and stable collections; any action of attempting to interact via a
  * valid input value {@code I} <em>happens-before</em> any subsequent action of attempting
  * to interact via a valid input value {@code J} if, and only if, {@code I} and {@code J}
- * {@linkplain Object#equals(Object) equals() }
+ * {@linkplain Object#equals(Object) equals()}.
  * <p>
  * Except for a StableValue's underlying data itself, all method parameters must be
  * <em>non-null</em> or a {@link NullPointerException} will be thrown.
@@ -305,8 +311,8 @@ import java.util.function.Supplier;
  * @implSpec Implementing classes of {@linkplain StableValue} are free to synchronize on
  *           {@code this} and consequently, care should be taken whenever
  *           (directly or indirectly) synchronizing on a StableValue. Failure to do this
- *           may lead to deadlock. Stable functional constructs and collections on
- *           the other hand are guaranteed not to not synchronize on {@code this}.
+ *           may lead to deadlock. Stable functions and collections on the other hand are
+ *           guaranteed <em>not to synchronize</em> on {@code this}.
  *
  * @implNote Instance fields explicitly declared as StableValue or one-dimensional arrays
  *           thereof are eligible for certain JVM optimizations where normal instance
@@ -370,9 +376,11 @@ public sealed interface StableValue<T>
      * <pre> {@code
      * Value witness = stable.computeIfUnset(Value::new);
      * }</pre>
+     * <p>
+     * When this method returns successfully, the underlying data is always set.
      *
      * @implSpec The implementation logic is equivalent to the following steps for this
-     * {@code stable}:
+     *           {@code stable}:
      *
      * <pre> {@code
      * if (stable.isSet()) {
@@ -398,7 +406,7 @@ public sealed interface StableValue<T>
 
     /**
      * Sets the underlying data to the provided {@code underlyingData}, or,
-     * if already set, throws {@link IllegalStateException}}
+     * if already set, throws {@link IllegalStateException}.
      * <p>
      * When this method returns (or throws an Exception), the underlying data is
      * always set.
@@ -406,12 +414,7 @@ public sealed interface StableValue<T>
      * @param underlyingData to set
      * @throws IllegalStateException if the underlying data is already set
      */
-    default void setOrThrow(T underlyingData) {
-        if (!trySet(underlyingData)) {
-            throw new IllegalStateException("Cannot set the underlying data to " + underlyingData +
-                    " because the underlying data is already set: " + this);
-        }
-    }
+    void setOrThrow(T underlyingData);
 
     // Factories
 
@@ -430,7 +433,7 @@ public sealed interface StableValue<T>
      * {@return a new stable, thread-safe, caching, lazily computed
      * {@linkplain Supplier supplier} that records the value of the provided
      * {@code original} supplier upon being first accessed via
-     * {@linkplain Supplier#get() Supplier::get}}
+     * the returned supplier's {@linkplain Supplier#get() Supplier::get get()} method}
      * <p>
      * The provided {@code original} supplier is guaranteed to be successfully invoked
      * at most once even in a multi-threaded environment. Competing threads invoking the
@@ -445,7 +448,7 @@ public sealed interface StableValue<T>
      * If the provided {@code original} supplier throws an exception, it is relayed
      * to the initial caller and no value is recorded.
      *
-     * @param original supplier used to compute a memoized value
+     * @param original supplier used to compute a cached value
      * @param <T>      the type of results supplied by the returned supplier
      */
     static <T> Supplier<T> ofSupplier(Supplier<? extends T> original) {
@@ -457,7 +460,7 @@ public sealed interface StableValue<T>
      * {@return a new stable, thread-safe, caching, lazily computed
      * {@link IntFunction } that, for each allowed input, records the values of the
      * provided {@code original} IntFunction upon being first accessed via
-     * {@linkplain IntFunction#apply(int) IntFunction::apply}}
+     * the returned IntFunction's {@linkplain IntFunction#apply(int) apply()} method}
      * <p>
      * The provided {@code original} IntFunction is guaranteed to be successfully invoked
      * at most once per allowed input, even in a multi-threaded environment. Competing
@@ -474,7 +477,7 @@ public sealed interface StableValue<T>
      * to the initial caller and no value is recorded.
      *
      * @param size     the size of the allowed inputs in {@code [0, size)}
-     * @param original IntFunction used to compute a memoized value
+     * @param original IntFunction used to compute cached values
      * @param <R>      the type of results delivered by the returned IntFunction
      */
     static <R> IntFunction<R> ofIntFunction(int size,
@@ -490,7 +493,7 @@ public sealed interface StableValue<T>
      * {@return a new stable, thread-safe, caching, lazily computed {@link Function}
      * that, for each allowed input in the given set of {@code inputs}, records the
      * values of the provided {@code original} Function upon being first accessed via
-     * {@linkplain Function#apply(Object) Function::apply}}
+     * the returned Function's {@linkplain Function#apply(Object) apply()} method}
      * <p>
      * The provided {@code original} Function is guaranteed to be successfully invoked
      * at most once per allowed input, even in a multi-threaded environment. Competing
@@ -507,7 +510,7 @@ public sealed interface StableValue<T>
      * to the initial caller and no value is recorded.
      *
      * @param inputs   the set of allowed input values
-     * @param original Function used to compute a memoized value
+     * @param original Function used to compute cached values
      * @param <T>      the type of the input to the returned Function
      * @param <R>      the type of results delivered by the returned Function
      */
@@ -536,13 +539,16 @@ public sealed interface StableValue<T>
      * If the provided {@code mapper} IntFunction throws an exception, it is relayed
      * to the initial caller and no element is recorded.
      * <p>
-     * The returned List is not {@link Serializable}.
+     * The returned List is not {@link Serializable} as this would require the provided
+     * {@code mapper} to be {@link Serializable} as well which would create security
+     * concerns.
      *
      * @param size   the size of the returned list
-     * @param mapper to invoke whenever an element is first accessed (may return null)
-     * @param <T>    the type of elements in the returned list
+     * @param mapper to invoke whenever an element is first accessed
+     *               (may return {@code null})
+     * @param <E>    the type of elements in the returned list
      */
-    static <T> List<T> ofList(int size, IntFunction<? extends T> mapper) {
+    static <E> List<E> ofList(int size, IntFunction<? extends E> mapper) {
         if (size < 0) {
             throw new IllegalArgumentException();
         }
@@ -551,7 +557,7 @@ public sealed interface StableValue<T>
     }
 
     /**
-     * {@return a shallowly immutable, lazy, stable Map of the provided {@code keys}
+     * {@return a shallowly immutable, lazy, stable Map with the provided {@code keys}
      * where the associated values of the maps are lazily computed via the provided
      * {@code mapper} whenever a value is first accessed (directly or indirectly), for
      * example via {@linkplain Map#get(Object) Map::get}}
@@ -568,11 +574,13 @@ public sealed interface StableValue<T>
      * If the provided {@code mapper} Function throws an exception, it is relayed
      * to the initial caller and no value is recorded.
      * <p>
-     * The returned Map is not {@link Serializable}.
+     * The returned Map is not {@link Serializable} as this would require the provided
+     * {@code mapper} to be {@link Serializable} as well which would create security
+     * concerns.
      *
      * @param keys   the keys in the returned map
      * @param mapper to invoke whenever an associated value is first accessed
-     *                (may return null)
+     *               (may return {@code null})
      * @param <K>    the type of keys maintained by the returned map
      * @param <V>    the type of mapped values in the returned map
      */

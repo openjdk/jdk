@@ -82,6 +82,15 @@ public final class StableValueImpl<T> implements StableValue<T> {
 
     @ForceInline
     @Override
+    public void setOrThrow(T underlyingData) {
+        if (!trySet(underlyingData)) {
+            throw new IllegalStateException("Cannot set the underlying data to " + underlyingData +
+                    " because the underlying data is already set: " + this);
+        }
+    }
+
+    @ForceInline
+    @Override
     public T orElseThrow() {
         final Object t = underlyingData;
         if (t == null) {
