@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,8 @@ import java.util.stream.Stream;
  * Common library for various security test helper functions.
  */
 public final class SecurityUtils {
+
+    private final static int DEFAULT_SALTSIZE = 16;
 
     private static String getCacerts() {
         String sep = File.separator;
@@ -107,6 +109,27 @@ public final class SecurityUtils {
         removeFromDSigPolicy("disallowAlg", List.<String>of(algs));
     }
 
+    /**
+     * Returns a strong salt size for tests
+     */
+    public static int getTestSaltSize() {
+        return DEFAULT_SALTSIZE;
+    }
+
+    /**
+     * Returns a strong key size for tests, depending on the specified algorithm
+     */
+    public static int getTestKeySize(String algo) {
+        int testKeySize;
+        switch (algo) {
+            case "RSA" -> testKeySize = KeySize.RSA.keySize;
+            case "DSA" -> testKeySize = KeySize.DSA.keySize;
+            case "DH", "DiffieHellman" -> testKeySize = KeySize.DH.keySize;
+            default -> throw new RuntimeException("Test key size not defined for " + algo);
+        }
+        return testKeySize;
+    }
+
     private static void removeFromDSigPolicy(String rule, List<String> algs) {
         String value = Security.getProperty("jdk.xml.dsig.secureValidationPolicy");
         value = Arrays.stream(value.split(","))
@@ -126,4 +149,20 @@ public final class SecurityUtils {
     }
 
     private SecurityUtils() {}
+
+    private enum KeySize{
+        RSA(2048),
+        DSA(2048),
+        DH(2048);
+
+        private final int keySize;
+        KeySize(int keySize) {
+            this.keySize = keySize;
+        }
+
+        @Override
+        public String toString() {
+            return String.valueOf(keySize);
+        }
+    }
 }

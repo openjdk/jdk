@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 4911081 8130181
+ * @library /test/lib
  * @summary verify that Provider.Service.supportsParameter() works
  * @author Andreas Sterbenz
  */
@@ -33,12 +34,14 @@ import java.security.Provider.Service;
 
 import javax.crypto.*;
 import javax.crypto.spec.SecretKeySpec;
+import jdk.test.lib.security.SecurityUtils;
 
 public class SupportsParameter {
 
     public static void main(String[] args) throws Exception {
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("DSA");
-        kpg.initialize(2048);
+        String kpgAlgorithm = "DSA";
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance(kpgAlgorithm);
+        kpg.initialize(SecurityUtils.getTestKeySize(kpgAlgorithm));
         KeyPair kp = kpg.generateKeyPair();
         PublicKey dsaPublicKey = kp.getPublic();
         PrivateKey dsaPrivateKey = kp.getPrivate();

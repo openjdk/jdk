@@ -59,6 +59,7 @@ import java.security.spec.XECPublicKeySpec;
 import java.util.Arrays;
 import java.util.HexFormat;
 import javax.crypto.KeyAgreement;
+import jdk.test.lib.security.SecurityUtils;
 
 public class NegativeTest {
 
@@ -93,7 +94,7 @@ public class NegativeTest {
                 Security.getProvider(provider));
         switch (kpgInit) {
             case "DiffieHellman":
-                kpg.initialize(2048);
+                kpg.initialize(SecurityUtils.getTestKeySize(kpgInit));
                 break;
             case "EC":
                 kpg.initialize(256);

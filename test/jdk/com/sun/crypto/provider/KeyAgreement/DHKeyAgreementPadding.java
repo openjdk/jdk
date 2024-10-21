@@ -34,6 +34,7 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.util.Arrays;
 import java.util.HexFormat;
+import jdk.test.lib.security.SecurityUtils;
 
 public class DHKeyAgreementPadding {
 
@@ -47,8 +48,9 @@ public class DHKeyAgreementPadding {
 
         // The probability of an error is 0.2% or 1/500. Try more times.
         for (int i = 0; i < 5000; i++) {
+            String kpgAlgorithm = "DiffieHellman";
             KeyPairGenerator keyPairGen = KeyPairGenerator.getInstance("DiffieHellman");
-            keyPairGen.initialize(2048);
+            keyPairGen.initialize(SecurityUtils.getTestKeySize(kpgAlgorithm));
             KeyPair aliceKeyPair = keyPairGen.generateKeyPair();
             KeyPair bobKeyPair = keyPairGen.generateKeyPair();
 

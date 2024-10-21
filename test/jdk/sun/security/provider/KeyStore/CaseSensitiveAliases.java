@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug     5091374 5100603
+ * @library /test/lib
  * @summary make sure the JKS case sensitivity works correctly
  * @author  Andreas Sterbenz
  */
@@ -34,6 +35,7 @@ import java.util.*;
 import java.security.*;
 import java.security.cert.*;
 import java.security.cert.Certificate;
+import jdk.test.lib.security.SecurityUtils;
 
 public class CaseSensitiveAliases {
 
@@ -90,8 +92,9 @@ public class CaseSensitiveAliases {
         X509Certificate[] a1 = {c1};
         X509Certificate[] a2 = {c2};
 
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
-        kpg.initialize(2048);
+        String kpgAlgorithm = "RSA";
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance(kpgAlgorithm);
+        kpg.initialize(SecurityUtils.getTestKeySize(kpgAlgorithm));
         PrivateKey p1 = kpg.generateKeyPair().getPrivate();
         PrivateKey p2 = kpg.generateKeyPair().getPrivate();
 

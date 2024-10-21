@@ -36,6 +36,7 @@
 
 import jdk.security.jarsigner.JarSigner;
 import jdk.test.lib.util.JarUtils;
+import jdk.test.lib.security.SecurityUtils;
 import sun.security.provider.certpath.X509CertPath;
 
 import java.io.File;
@@ -175,14 +176,16 @@ public class Spec {
                 .equals("SHA-384"));
 
         // Calculating large DSA and RSA keys are too slow.
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
-        kpg.initialize(2048);
+        String kpgRSA = "RSA";
+        String kpgDSA = "DSA";
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance(kpgRSA);
+        kpg.initialize(SecurityUtils.getTestKeySize(kpgRSA));
         assertTrue(JarSigner.Builder
                 .getDefaultSignatureAlgorithm(kpg.generateKeyPair().getPrivate())
                     .equals("SHA384withRSA"));
 
-        kpg = KeyPairGenerator.getInstance("DSA");
-        kpg.initialize(2048);
+        kpg = KeyPairGenerator.getInstance(kpgDSA);
+        kpg.initialize(SecurityUtils.getTestKeySize(kpgDSA));
         assertTrue(JarSigner.Builder
                 .getDefaultSignatureAlgorithm(kpg.generateKeyPair().getPrivate())
                 .equals("SHA256withDSA"));

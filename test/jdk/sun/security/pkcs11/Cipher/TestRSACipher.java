@@ -44,6 +44,7 @@ import java.util.Random;
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
+import jdk.test.lib.security.SecurityUtils;
 
 public class TestRSACipher extends PKCS11Test {
 
@@ -58,8 +59,9 @@ public class TestRSACipher extends PKCS11Test {
             System.out.println("Not supported by provider, skipping");
             return;
         }
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA", p);
-        kpg.initialize(2048);
+        String kpgAlgorithm = "RSA";
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance(kpgAlgorithm, p);
+        kpg.initialize(SecurityUtils.getTestKeySize(kpgAlgorithm));
         KeyPair kp = kpg.generateKeyPair();
         PublicKey publicKey = kp.getPublic();
         PrivateKey privateKey = kp.getPrivate();

@@ -40,6 +40,7 @@ import java.security.*;
 import java.security.interfaces.*;
 import java.security.spec.*;
 
+import jdk.test.lib.security.SecurityUtils;
 import jdk.test.lib.SigTestUtil;
 import static jdk.test.lib.SigTestUtil.SignatureType;
 
@@ -113,11 +114,13 @@ public class TestKeyPairGenerator {
         long start = System.currentTimeMillis();
         provider = Security.getProvider("SunRsaSign");
         data = new byte[2048];
-        int[] keyLengths = {2048, 2048, 3072};
+        String kpgAlgorithm = "RSA";
+        int keySize = SecurityUtils.getTestKeySize(kpgAlgorithm);
+        int[] keyLengths = {keySize, keySize, 3072};
         BigInteger[] pubExps = {null, BigInteger.valueOf(3), null};
         KeyPair[] keyPairs = new KeyPair[3];
         new Random().nextBytes(data);
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA", provider);
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance(kpgAlgorithm, provider);
         for (int i = 0; i < keyLengths.length; i++) {
             int len = keyLengths[i];
             BigInteger exp = pubExps[i];

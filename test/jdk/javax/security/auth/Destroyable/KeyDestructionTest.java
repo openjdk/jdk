@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 6263419
+ * @library /test/lib
  * @summary No way to clean the memory for a java.security.Key
  */
 
@@ -32,10 +33,12 @@ import java.util.*;
 import javax.crypto.*;
 import javax.security.auth.Destroyable;
 import javax.security.auth.DestroyFailedException;
+import jdk.test.lib.security.SecurityUtils;
 
 public class KeyDestructionTest {
     public static void main(String[] args) throws Exception {
-        KeyPair keypair = generateKeyPair("RSA", 2048);
+        String kpgAlgorithm = "RSA";
+        KeyPair keypair = generateKeyPair(kpgAlgorithm, SecurityUtils.getTestKeySize(kpgAlgorithm));
 
         // Check keys that support and have implemented key destruction
         testKeyDestruction(new MyDestroyableSecretKey());
