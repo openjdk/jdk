@@ -29,6 +29,7 @@ import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
+import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
@@ -44,6 +45,11 @@ import java.util.concurrent.TimeUnit;
 @Measurement(iterations = 4, time = 2, timeUnit = TimeUnit.SECONDS)
 @Fork(value = 3)
 public class InterfaceCalls {
+
+    // Whether to step iteratively through the list of interfaces, or
+    // to select one in an unpredictable way.
+    @Param({"false", "true"})
+    private boolean randomized;
 
     interface FirstInterface {
         public int getIntFirst();
@@ -241,44 +247,54 @@ public class InterfaceCalls {
      */
     @Benchmark
     public int test1stInt2Types() {
-        FirstInterface ai = as[l];
-        l = 1 - l;
+        FirstInterface ai = as[step(2)];
         return ai.getIntFirst();
     }
 
     @Benchmark
     public int test1stInt3Types() {
-        FirstInterface ai = as[l];
-        l = ++ l % 3;
+        FirstInterface ai = as[step(3)];
         return ai.getIntFirst();
     }
 
     @Benchmark
     public int test1stInt5Types() {
-        FirstInterface ai = as[l];
-        l = ++ l % asLength;
+        FirstInterface ai = as[step(asLength)];
         return ai.getIntFirst();
     }
 
     @Benchmark
     public int test2ndInt2Types() {
-        SecondInterface ai = (SecondInterface) as[l];
-        l = 1 - l;
+        SecondInterface ai = (SecondInterface) as[step(2)];
         return ai.getIntSecond();
     }
 
     @Benchmark
     public int test2ndInt3Types() {
-        SecondInterface ai = (SecondInterface) as[l];
-        l = ++ l % 3;
+        SecondInterface ai = (SecondInterface) as[step(3)];
         return ai.getIntSecond();
     }
 
     @Benchmark
     public int test2ndInt5Types() {
-        SecondInterface ai = (SecondInterface) as[l];
-        l = ++ l % asLength;
+        SecondInterface ai = (SecondInterface) as[step(asLength)];
         return ai.getIntSecond();
     }
 
+    int step(int range) {
+        if (randomized) {
+            l = scramble(l);
+        } else {
+            l++;
+        }
+        return (l & Integer.MAX_VALUE) % range;
+    }
+
+    static final int scramble(int n) {
+        int x = n;
+        x ^= x << 13;
+        x ^= x >>> 17;
+        x ^= x << 5;
+        return x == 0 ? 1 : x;
+    }
 }
