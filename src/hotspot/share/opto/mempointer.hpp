@@ -36,14 +36,14 @@
 // Intuition and Examples:
 //   We parse / decompose pointers into a linear form:
 //
-//     pointer = con + sum_i(scale_i * variable_i)
+//     pointer = sum_i(scale_i * variable_i) + con
 //
 //   The con and scale_i are compile-time constants (NoOverflowInt), and the variable_i are
 //   compile-time variables (C2 nodes).
 //
 //   For the MemPointer, we do not explicitly track base address. For Java heap pointers, the
-//   base address is just a variable. For native memory (C heap) pointers, the base address is
-//   null, and is hence implicitly a zero constant.
+//   base address is just a variable in a summand with scale == 1. For native memory (C heap)
+//   pointers, the base address is null, and is hence implicitly a zero constant.
 //
 //
 //   Example1: byte array access:
@@ -140,9 +140,9 @@
 // -----------------------------------------------------------------------------------------
 //
 // MemPointerDecomposedForm:
-//   When the pointer is parsed, it is decomposed into a constant and a sum of summands:
+//   When the pointer is parsed, it is decomposed into sum of summands plus a constant:
 //
-//     pointer = con + sum(summands)
+//     pointer = sum(summands) + con
 //
 //   Where each summand_i in summands has the form:
 //
@@ -150,7 +150,7 @@
 //
 //   Hence, the full decomposed form is:
 //
-//     pointer = con + sum_i(scale_i * variable_i)
+//     pointer = sum_i(scale_i * variable_i) + con
 //
 //   Note: the scale_i are compile-time constants (NoOverflowInt), and the variable_i are
 //         compile-time variables (C2 nodes).
@@ -161,8 +161,8 @@
 //   The decomposed form allows us to determine the aliasing between two pointers easily. For
 //   example, if two pointers are identical, except for their constant:
 //
-//     pointer1 = con1 + sum(summands)
-//     pointer2 = con2 + sum(summands)
+//     pointer1 = sum(summands) + con1
+//     pointer2 = sum(summands) + con2
 //
 //   then we can easily compute the distance between the pointers (distance = con2 - con1),
 //   and determine if they are adjacent.
@@ -170,8 +170,8 @@
 // MemPointerDecomposedFormParser:
 //   Any pointer can be parsed into this (default / trivial) decomposed form:
 //
-//     pointer = 0   + 1     * pointer
-//               con   scale
+//     pointer = 1       * pointer    + 0
+//               scale_0 * variable_0 + con
 //
 //   However, this is not particularly useful to compute aliasing. We would like to decompose
 //   the pointer as far as possible, i.e. extract as many summands and add up the constants to
@@ -184,8 +184,8 @@
 //     At first, computing aliasing is difficult because the distance is hidden inside the
 //     ConvI2L. we can convert this (with array_int_base_offset = 16) into these decomposed forms:
 //
-//     pointer1 = 16L + 1L * array_base + 4L * i
-//     pointer2 = 20L + 1L * array_base + 4L * i
+//     pointer1 = 1L * array_base + 4L * i + 16L
+//     pointer2 = 1L * array_base + 4L * i + 20L
 //
 //     This allows us to easily see that these two pointers are adjacent (distance = 4).
 //
@@ -450,7 +450,7 @@ public:
 
 // Decomposed form of the pointer sub-expression of "pointer".
 //
-//   pointer = con + sum(summands)
+//   pointer = sum(summands) + con
 //
 class MemPointerDecomposedForm : public StackObj {
 private:
