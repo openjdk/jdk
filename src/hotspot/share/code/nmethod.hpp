@@ -533,13 +533,20 @@ public:
   address unwind_handler_begin  () const { return _unwind_handler_offset != -1 ? (insts_end() - _unwind_handler_offset) : nullptr; }
 
   // mutable data
-  oop*    oops_begin            () const { return (oop*)        data_begin(); }
-  oop*    oops_end              () const { return (oop*)       (data_begin() + _metadata_offset)      ; }
-  Metadata** metadata_begin     () const { return (Metadata**) (data_begin() + _metadata_offset)      ; }
+
+#if false //## GC fails (why?) when oops are in a spearate data blob
+  oop*    oops_begin            () const { return (oop*)       (mdata_begin() + _relocation_size); }
+  oop*    oops_end              () const { return (oop*)       (mdata_begin() + _metadata_offset)      ; }
+#else
+  oop*    oops_begin            () const { return (oop*)       (data_begin()); }
+  oop*    oops_end              () const { return (oop*)       (data_end())  ; }
+#endif
+
+  Metadata** metadata_begin     () const { return (Metadata**) (mdata_begin() + _metadata_offset)      ; }
 #if INCLUDE_JVMCI
-  Metadata** metadata_end       () const { return (Metadata**) (data_begin() + _jvmci_data_offset)    ; }
-  address jvmci_data_begin      () const { return               data_begin() + _jvmci_data_offset     ; }
-  address jvmci_data_end        () const { return               data_end(); }
+  Metadata** metadata_end       () const { return (Metadata**) (mdata_begin() + _jvmci_data_offset)    ; }
+  address jvmci_data_begin      () const { return               mdata_begin() + _jvmci_data_offset     ; }
+  address jvmci_data_end        () const { return               mutable_data_end(); }
 #else
   Metadata** metadata_end       () const { return (Metadata**)  data_end(); }
 #endif

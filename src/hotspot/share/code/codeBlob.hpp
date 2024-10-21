@@ -189,13 +189,19 @@ public:
   address    code_begin() const               { return (address)    header_begin() + _code_offset; }
   // code_end == content_end is true for all types of blobs for now, it is also checked in the constructor
   address    code_end() const                 { return (address)    header_begin() + _data_offset; }
-  address    data_begin() const               { return (address)    header_begin() + _data_offset; }
-  address    data_end() const                 { return (address)    header_begin() + _size; }
+  address    data_begin() const               { return (address) header_begin() + _data_offset; }
+  address    data_end() const                 { return (address) header_begin() + _size; }
+  address    blob_end() const                 { return data_end(); }
+
+  // [relocations, oops, metatada, jvmci_data] stays in _mutable_data or in nmethod with _data_offset
+  address    mdata_begin() const              { return (_mutable_data != nullptr) ? _mutable_data :
+                                                                                   (address) header_begin() + _data_offset; }
+  address    mdata_end() const                { return (_mutable_data != nullptr) ? _mutable_data + _mutable_data_size:
+                                                                                   (address) header_begin() + _size; }
 
   // Offsets
   int content_offset() const                  { return _content_offset; }
   int code_offset() const                     { return _code_offset; }
-  int data_offset() const                     { return _data_offset; }
 
   // This field holds the beginning of the const section in the old code buffer.
   // It is needed to fix relocations of pc-relative loads when resizing the
@@ -217,7 +223,7 @@ public:
   }
 
   // Containment
-  bool blob_contains(address addr) const         { return header_begin()       <= addr && addr < data_end();       }
+  bool blob_contains(address addr) const         { return header_begin()       <= addr && addr < blob_end();       }
   bool code_contains(address addr) const         { return code_begin()         <= addr && addr < code_end();       }
   bool contains(address addr) const              { return content_begin()      <= addr && addr < content_end();    }
   bool is_frame_complete_at(address addr) const  { return _frame_complete_offset != CodeOffsets::frame_never_safe &&
