@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@ import javax.security.auth.login.LoginException;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.security.*;
-import java.util.PropertyPermission;
 
 import jdk.test.lib.util.ForceGC;
 import jtreg.SkippedException;
