@@ -27,7 +27,6 @@ package java.lang.invoke;
 
 import jdk.internal.misc.VM;
 import jdk.internal.ref.CleanerFactory;
-import jdk.internal.vm.annotation.Stable;
 import sun.invoke.util.Wrapper;
 import sun.security.action.GetPropertyAction;
 
@@ -705,7 +704,7 @@ class MethodHandleNatives {
      * only stores LambdaFormEditors and MethodTypeForms for classes in the boot/platform/app loaders.
      * Such classes will never be unloaded, so it's OK to use hard references.
      */
-    static @Stable boolean USE_SOFT_CACHE;
+    static final boolean USE_SOFT_CACHE;
 
     static {
         Properties props = GetPropertyAction.privilegedGetProperties();
