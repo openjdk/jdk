@@ -157,7 +157,7 @@ public final class StackMapGenerator {
                 dcb.bytecodesBufWriter.bytecodeView(),
                 dcb.constantPool,
                 dcb.context,
-                dcb.handlers);
+                dcb.getHandlers());
     }
 
     private static final String OBJECT_INITIALIZER_NAME = "<init>";
