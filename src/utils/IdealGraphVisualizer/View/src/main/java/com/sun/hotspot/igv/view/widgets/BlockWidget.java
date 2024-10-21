@@ -42,12 +42,13 @@ import org.openide.util.Utilities;
 public class BlockWidget extends Widget implements DoubleClickHandler {
 
     public static final Color BACKGROUND_COLOR = new Color(235, 235, 255);
-    private static final Font TITLE_FONT = new Font("Arial", Font.BOLD, 14);
     public static final Color TITLE_COLOR = new Color(42, 42, 171);
+    private final Font titleFont;
     private final InputBlock blockNode;
 
-    public BlockWidget(Scene scene, InputBlock blockNode) {
+    public BlockWidget(Scene scene, InputBlock blockNode, Font titleFont) {
         super(scene);
+        this.titleFont = titleFont;
         this.blockNode = blockNode;
         this.setBackground(BACKGROUND_COLOR);
         this.setOpaque(true);
@@ -63,17 +64,18 @@ public class BlockWidget extends Widget implements DoubleClickHandler {
         Rectangle r = new Rectangle(this.getPreferredBounds());
         r.width--;
         r.height--;
+        assert this.getBounds() != null;
         if (this.getBounds().width > 0 && this.getBounds().height > 0) {
             g.setStroke(new BasicStroke(2));
             g.drawRect(r.x, r.y, r.width, r.height);
         }
 
         g.setColor(TITLE_COLOR);
-        g.setFont(TITLE_FONT);
+        g.setFont(titleFont);
 
         String s = "B" + blockNode.getName();
         Rectangle2D r1 = g.getFontMetrics().getStringBounds(s, g);
-        g.drawString(s, r.x + 5, r.y + (int) r1.getHeight());
+        g.drawString(s, r.x + 6, r.y + (int) r1.getHeight());
         g.setStroke(old);
     }
 

@@ -30,7 +30,7 @@ import com.sun.hotspot.igv.layout.Vertex;
 import java.awt.Point;
 import java.util.*;
 
-public class LinearLayoutManager implements LayoutManager {
+public class LinearLayoutManager extends LayoutManager {
 
     // Ranking determining the vertical node ordering.
     private final Map<? extends Vertex, Integer> vertexRank;
@@ -40,12 +40,12 @@ public class LinearLayoutManager implements LayoutManager {
     }
 
     @Override
-    public void doLayout(LayoutGraph graph) {
-        doLayout(graph, new HashSet<>());
+    public void setCutEdges(boolean enable) {
+        maxLayerLength = enable ? 10 : -1;
     }
 
     @Override
-    public void doLayout(LayoutGraph graph, Set<? extends Link> importantLinks) {
+    public void doLayout(LayoutGraph graph) {
 
         assert (graph.getLinks().isEmpty());
 
@@ -61,7 +61,7 @@ public class LinearLayoutManager implements LayoutManager {
         int curY = 0;
         for (Vertex v : vertices) {
             v.setPosition(new Point(0, curY));
-            curY += v.getSize().getHeight();
+            curY += v.getSize().height;
         }
     }
 }

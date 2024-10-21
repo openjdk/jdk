@@ -23,42 +23,41 @@
  */
 package com.sun.hotspot.igv.hierarchicallayout;
 
+
 import com.sun.hotspot.igv.layout.LayoutManager;
 import com.sun.hotspot.igv.layout.*;
 import java.awt.*;
 import java.util.*;
 
-public class HierarchicalCFGLayoutManager implements LayoutManager {
+public class HierarchicalCFGLayoutManager extends LayoutManager {
 
-    private static final int BLOCK_BORDER = 5;
     private final FontMetrics fontMetrics;
     // Lays out nodes within a single cluster (basic block).
     private LayoutManager subManager;
     // Lays out clusters in the CFG.
-    private LayoutManager manager;
+    private final LayoutManager manager;
     private Set<Cluster> clusters;
 
     public HierarchicalCFGLayoutManager() {
         // Anticipate block label sizes to dimension blocks appropriately.
         Canvas canvas = new Canvas();
-        Font font = new Font("Arial", Font.BOLD, 14);
-        fontMetrics = canvas.getFontMetrics(font);
+        fontMetrics = canvas.getFontMetrics(TITLE_FONT);
+        this.manager =  new HierarchicalLayoutManager();
     }
 
     public void setSubManager(LayoutManager manager) {
         this.subManager = manager;
     }
 
-    public void setManager(LayoutManager manager) {
-        this.manager = manager;
-    }
-
     public void setClusters(Set<Cluster> clusters) {
         this.clusters = clusters;
     }
 
-    public void doLayout(LayoutGraph graph, Set<? extends Link> importantLinks) {
-        doLayout(graph);
+    @Override
+    public void setCutEdges(boolean enable) {
+        manager.setCutEdges(enable);
+        subManager.setCutEdges(enable);
+        maxLayerLength = enable ? 10 : -1;
     }
 
     public void doLayout(LayoutGraph graph) {
@@ -71,12 +70,12 @@ public class HierarchicalCFGLayoutManager implements LayoutManager {
         // Compute layout for each cluster.
         for (Cluster c : clusters) {
             ClusterNode n = clusterNode.get(c);
-            subManager.doLayout(new LayoutGraph(n.getSubEdges(), n.getSubNodes()), new HashSet<>());
+            subManager.doLayout(new LayoutGraph(n.getSubEdges(), n.getSubNodes()));
             n.updateSize();
         }
 
         // Compute inter-cluster layout.
-        manager.doLayout(new LayoutGraph(clusterEdges, new HashSet<>(clusterNode.values())), new HashSet<>());
+        manager.doLayout(new LayoutGraph(clusterEdges, new HashSet<>(clusterNode.values())));
 
         // Write back results.
         writeBackClusterBounds(clusterNode);
@@ -87,10 +86,9 @@ public class HierarchicalCFGLayoutManager implements LayoutManager {
         Map<Cluster, ClusterNode> clusterNode = new HashMap<>();
         for (Cluster c : clusters) {
             String blockLabel = "B" + c;
-            Dimension emptySize = new Dimension(fontMetrics.stringWidth(blockLabel) + BLOCK_BORDER * 2,
-                                                fontMetrics.getHeight() + BLOCK_BORDER);
-            ClusterNode cn = new ClusterNode(c, c.toString(), BLOCK_BORDER, c.getNodeOffset(),
-                                             fontMetrics.getHeight(), emptySize);
+            Dimension emptySize = new Dimension(fontMetrics.stringWidth(blockLabel) + ClusterNode.PADDING,
+                                                fontMetrics.getHeight() + ClusterNode.PADDING);
+            ClusterNode cn = new ClusterNode(c, c.toString(), fontMetrics.getHeight(), emptySize);
             clusterNode.put(c, cn);
         }
 

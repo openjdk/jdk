@@ -44,15 +44,17 @@ import java.util.List;
  * @author Thomas Wuerthinger
  */
 public abstract class Slot implements Port, Source.Provider, Properties.Provider {
+    public static final int SLOT_WIDTH = 10;
+    public static final int SLOT_HEIGHT = 10;
 
-    private int wantedIndex;
-    private Source source;
+    private final int wantedIndex;
+    private final Source source;
     protected List<FigureConnection> connections;
     private InputNode associatedNode;
     private Color color;
     private String text;
     private String shortName;
-    private Figure figure;
+    private final Figure figure;
 
     protected Slot(Figure figure, int wantedIndex) {
         this.figure = figure;
@@ -85,19 +87,20 @@ public abstract class Slot implements Port, Source.Provider, Properties.Provider
     }
 
     public int getWidth() {
-        if (shortName == null || shortName.length() <= 1) {
-            return Figure.SLOT_WIDTH;
+        assert shortName != null;
+        if (shortName.isEmpty()) {
+            return 0;
         } else {
             BufferedImage image = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
             Graphics g = image.getGraphics();
             g.setFont(Diagram.SLOT_FONT.deriveFont(Font.BOLD));
             FontMetrics metrics = g.getFontMetrics();
-            return Math.max(Figure.SLOT_WIDTH, metrics.stringWidth(shortName) + 6);
+            return Math.max(SLOT_WIDTH, metrics.stringWidth(shortName) + 6);
         }
     }
 
-    public int getWantedIndex() {
-        return wantedIndex;
+    public int getHeight() {
+        return SLOT_HEIGHT;
     }
 
     @Override
@@ -111,7 +114,6 @@ public abstract class Slot implements Port, Source.Provider, Properties.Provider
 
     public void setShortName(String s) {
         assert s != null;
-//        assert s.length() <= 2;
         this.shortName = s;
 
     }
@@ -138,7 +140,7 @@ public abstract class Slot implements Port, Source.Provider, Properties.Provider
     }
 
     public boolean shouldShowName() {
-        return getShortName() != null && getShortName().length() > 0;
+        return getShortName() != null && !getShortName().isEmpty();
     }
 
     public boolean hasSourceNodes() {
@@ -153,7 +155,6 @@ public abstract class Slot implements Port, Source.Provider, Properties.Provider
     }
 
     public Figure getFigure() {
-        assert figure != null;
         return figure;
     }
 

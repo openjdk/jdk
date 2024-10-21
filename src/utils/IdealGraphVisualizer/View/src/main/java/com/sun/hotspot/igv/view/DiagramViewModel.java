@@ -36,6 +36,7 @@ import com.sun.hotspot.igv.graph.Figure;
 import com.sun.hotspot.igv.graph.MatcherSelector;
 import com.sun.hotspot.igv.settings.Settings;
 import com.sun.hotspot.igv.util.RangeSliderModel;
+import com.sun.hotspot.igv.view.actions.CutEdgesAction;
 import com.sun.hotspot.igv.view.actions.GlobalSelectionAction;
 import java.awt.Color;
 import java.util.*;
@@ -70,6 +71,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
     private boolean showEmptyBlocks;
     private boolean hideDuplicates;
     private static boolean globalSelection = false;
+    private static boolean cutEdges = false;
 
     private final ChangedListener<FilterChain> filterChainChangedListener = changedFilterChain -> {
         assert filterChain == changedFilterChain;
@@ -78,6 +80,18 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
 
     public Group getGroup() {
         return group;
+    }
+
+    public boolean getCutEdges() {
+        return cutEdges;
+    }
+
+    public void setCutEdges(boolean enable, boolean fire) {
+        boolean prevEnable = cutEdges;
+        cutEdges = enable;
+        if (fire && prevEnable != enable) {
+            diagramChangedEvent.fire();
+        }
     }
 
     public boolean getGlobalSelection() {
@@ -191,6 +205,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
     public DiagramViewModel(DiagramViewModel model) {
         super(model);
         globalSelection = false;
+        cutEdges = false;
         group = model.getGroup();
         initGroup();
         graphs = new ArrayList<>(model.graphs);
@@ -205,6 +220,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         filtersOrder = provider.getAllFiltersOrdered();
 
         globalSelection = GlobalSelectionAction.get(GlobalSelectionAction.class).isSelected();
+        cutEdges = CutEdgesAction.get(CutEdgesAction.class).isSelected();
         showCFG = model.getShowCFG();
         showSea = model.getShowSea();
         showBlocks = model.getShowBlocks();
@@ -228,6 +244,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         filtersOrder = provider.getAllFiltersOrdered();
 
         globalSelection = GlobalSelectionAction.get(GlobalSelectionAction.class).isSelected();
+        cutEdges = CutEdgesAction.get(CutEdgesAction.class).isSelected();
         showStableSea = Settings.get().getInt(Settings.DEFAULT_VIEW, Settings.DEFAULT_VIEW_DEFAULT) == Settings.DefaultView.STABLE_SEA_OF_NODES;
         showSea = Settings.get().getInt(Settings.DEFAULT_VIEW, Settings.DEFAULT_VIEW_DEFAULT) == Settings.DefaultView.SEA_OF_NODES;
         showBlocks = Settings.get().getInt(Settings.DEFAULT_VIEW, Settings.DEFAULT_VIEW_DEFAULT) == Settings.DefaultView.CLUSTERED_SEA_OF_NODES;

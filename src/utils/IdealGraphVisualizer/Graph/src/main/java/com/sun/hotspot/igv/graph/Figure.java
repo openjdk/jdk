@@ -33,14 +33,10 @@ import java.util.*;
 
 public class Figure extends Properties.Entity implements Vertex {
 
-    public static final int INSET = 8;
-    public static final int SLOT_WIDTH = 10;
-    public static final int OVERLAPPING = 6;
-    public static final int SLOT_START = 4;
-    public static final int SLOT_OFFSET = 8;
-    public static final int TOP_CFG_HEIGHT = 7;
-    public static final int BOTTOM_CFG_HEIGHT = 6;
+    public static final int PADDING = 4;
+    public static final int SLOT_OFFSET = 16;
     public static final int WARNING_WIDTH = 16;
+    public static final int BORDER = 1;
     public static final double BOLD_LINE_FACTOR = 1.06;
     protected List<InputSlot> inputSlots;
     protected List<OutputSlot> outputSlots;
@@ -52,38 +48,30 @@ public class Figure extends Properties.Entity implements Vertex {
     private Color color;
     private String warning;
     private final int id;
-    private final String idString;
     private String[] lines;
-    private int heightCash = -1;
-    private int widthCash = -1;
+    private int height = -1;
+    private int width = -1;
     private Block block;
     private final FontMetrics metrics;
 
     public int getHeight() {
-        if (heightCash == -1) {
+        if (height == -1) {
             updateHeight();
         }
-        return heightCash;
+        return height;
+    }
+
+    public int getSlotsHeight() {
+        int slotHeight = 0;
+        if (hasNamedInputSlot() || hasNamedOutputSlot()) {
+            slotHeight += diagram.isCFG() ? 2 * Slot.SLOT_HEIGHT : Slot.SLOT_HEIGHT;
+        }
+        return slotHeight;
     }
 
     private void updateHeight() {
-        String nodeText = diagram.getNodeText();
-        int lines = nodeText.split("\n").length;
-        if (hasInputList() && lines > 1) {
-            lines++;
-        }
-        if (getProperties().get("extra_label") != null) {
-            lines++;
-        }
-        heightCash = lines * metrics.getHeight() + INSET;
-        if (diagram.isCFG()) {
-            if (hasNamedInputSlot()) {
-                heightCash += TOP_CFG_HEIGHT;
-            }
-            if (hasNamedOutputSlot()) {
-                heightCash += BOTTOM_CFG_HEIGHT;
-            }
-        }
+        height = getLines().length * metrics.getHeight() + 2 * PADDING;
+        height += getSlotsHeight();
     }
 
     public static <T> List<T> getAllBefore(List<T> inputList, T tIn) {
@@ -106,30 +94,31 @@ public class Figure extends Properties.Entity implements Vertex {
     }
 
     public int getWidth() {
-        if (widthCash == -1) {
+        if (width == -1) {
             updateWidth();
         }
-        return widthCash;
+        return width;
     }
 
     public void setWidth(int width) {
-        widthCash = width;
+        this.width = width;
     }
 
     private void updateWidth() {
-            int max = 0;
-            for (String s : getLines()) {
-                int cur = metrics.stringWidth(s);
-                if (cur > max) {
-                    max = cur;
-                }
+        width = 0;
+        for (String s : getLines()) {
+            int cur = metrics.stringWidth(s);
+            if (cur > width) {
+                width = cur;
             }
-            widthCash = (int)(max * BOLD_LINE_FACTOR) + INSET;
-            if (getWarning() != null) {
-                widthCash += WARNING_WIDTH;
-            }
-            widthCash = Math.max(widthCash, Figure.getSlotsWidth(inputSlots));
-            widthCash = Math.max(widthCash, Figure.getSlotsWidth(outputSlots));
+        }
+        width += 2 * PADDING;
+        if (getWarning() != null) {
+            width += WARNING_WIDTH + PADDING;
+        }
+        width = Math.max(width, Figure.getSlotsWidth(inputSlots));
+        width = Math.max(width, Figure.getSlotsWidth(outputSlots));
+        width = (int)(width * BOLD_LINE_FACTOR);
     }
 
     protected Figure(Diagram diagram, int id, InputNode node) {
@@ -140,7 +129,6 @@ public class Figure extends Properties.Entity implements Vertex {
         this.predecessors = new ArrayList<>(6);
         this.successors = new ArrayList<>(6);
         this.id = id;
-        this.idString = Integer.toString(id);
         this.position = new Point(0, 0);
         this.color = Color.WHITE;
         Canvas canvas = new Canvas();
@@ -151,8 +139,12 @@ public class Figure extends Properties.Entity implements Vertex {
         return id;
     }
 
-    public void setColor(Color color) {
-        this.color = color;
+    public void setColor(Color newColor) {
+        if (newColor == Color.WHITE) {
+            this.color = new Color(color.getRed(), color.getGreen(), color.getBlue(), 127);
+        } else {
+            this.color = newColor;
+        }
     }
 
     public Color getColor() {
@@ -341,7 +333,6 @@ public class Figure extends Properties.Entity implements Vertex {
                     }
                     inputLabel = nodeTinyLabel;
                 }
-                assert(inputLabel != null);
                 int gapSize = is.gapSize();
                 if (gapSize == 1) {
                     inputs.add("_");
@@ -378,9 +369,27 @@ public class Figure extends Properties.Entity implements Vertex {
     }
 
     @Override
+    public int getPriority() {
+        String category = getInputNode().getProperties().get("category");
+        if (category.equals("control")) {
+            return 5;
+        } else if (category.equals("mixed")) {
+            return 4;
+        } else if (category.equals("other")) {
+            return 3;
+        } else if (category.equals("data")) {
+            return 2;
+        } else if (category.equals("memory")) {
+            return 1;
+        } else {
+            return 0;
+        }
+    }
+
+    @Override
     public Dimension getSize() {
-        int width = Math.max(getWidth(), Figure.SLOT_WIDTH * (Math.max(inputSlots.size(), outputSlots.size()) + 1));
-        int height = getHeight() + (diagram.isCFG() ? 0 : 2 * Figure.SLOT_WIDTH - 2 * Figure.OVERLAPPING);
+        int width = getWidth();
+        int height = getHeight();
         return new Dimension(width, height);
     }
 
@@ -399,15 +408,16 @@ public class Figure extends Properties.Entity implements Vertex {
 
     @Override
     public String toString() {
-        return idString;
-    }
-
-    public static int getVerticalOffset() {
-        return Figure.SLOT_WIDTH - Figure.OVERLAPPING;
+        return Integer.toString(id);
     }
 
     public Cluster getCluster() {
         return block;
+    }
+
+    @Override
+    public int getID() {
+        return id;
     }
 
     @Override
