@@ -36,7 +36,7 @@
 #include "nmt/memTagBitmap.hpp"
 #include "nmt/memMapPrinter.hpp"
 #include "nmt/memTracker.hpp"
-#include "nmt/virtualMemoryTracker.hpp"
+#include "nmt/vmtCommon.hpp"
 #include "runtime/nonJavaThread.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/thread.hpp"
@@ -158,7 +158,7 @@ public:
 
   // Iterate all NMT virtual memory regions and fill this cache.
   bool fill_from_nmt() {
-    return VirtualMemoryTracker::walk_virtual_memory(this);
+    return MemTracker::walk_virtual_memory(this);
   }
 };
 

@@ -30,7 +30,7 @@
 #include "nmt/memBaseline.hpp"
 #include "nmt/nativeCallStackPrinter.hpp"
 #include "nmt/nmtCommon.hpp"
-#include "nmt/virtualMemoryTracker.hpp"
+#include "nmt/vmtCommon.hpp"
 #include "utilities/nativeCallStack.hpp"
 
 /*
@@ -139,7 +139,7 @@ class MemSummaryReporter : public MemReporterBase {
   virtual void report();
  private:
   // Report summary for each memory tag
-  void report_summary_of_type(MemTag mem_tag, MallocMemory* malloc_memory,
+  void report_summary_of_tag(MemTag mem_tag, MallocMemory* malloc_memory,
     VirtualMemory* virtual_memory);
 
   void report_metadata(Metaspace::MetadataType type) const;
@@ -204,7 +204,7 @@ class MemSummaryDiffReporter : public MemReporterBase {
 
  private:
   // report the comparison of each mem_tag
-  void diff_summary_of_type(MemTag mem_tag,
+  void diff_summary_of_tag(MemTag mem_tag,
     const MallocMemory* early_malloc, const VirtualMemory* early_vm,
     const MetaspaceCombinedStats& early_ms,
     const MallocMemory* current_malloc, const VirtualMemory* current_vm,
