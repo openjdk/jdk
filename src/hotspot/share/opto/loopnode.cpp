@@ -3949,7 +3949,7 @@ bool PhaseIdealLoop::is_deleteable_safept(Node* sfpt) {
 //    int iv2 = init2
 //    int iv = init
 //    loop:
-//      if ( iv >= limit ) goto exit
+//      if (iv >= limit) goto exit
 //      iv += stride_con
 //      iv2 = init2 + (iv - init) * (stride_con2 / stride_con)
 //      goto loop
