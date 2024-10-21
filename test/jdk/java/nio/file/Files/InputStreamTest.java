@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,10 @@
  */
 
 /* @test
- * @bug 8227609
+ * @bug 8227609 8233451
  * @summary Test of InputStream and OutputStream created by java.nio.file.Files
- * @library ..
+ * @library .. /test/lib
+ * @run junit InputStreamTest
  */
 
 import java.io.InputStream;
@@ -37,22 +38,33 @@ import java.nio.file.attribute.*;
 import java.io.IOException;
 import java.util.*;
 
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
+import static org.junit.jupiter.api.Assertions.*;
+
 public class InputStreamTest {
 
-    public static void main(String[] args) throws IOException {
-        Path dir = TestUtil.createTemporaryDirectory();
-        try {
-            testSkip(dir);
-        } finally {
-            TestUtil.removeAll(dir);
-        }
+    private static Path TMPDIR;
+
+    @BeforeAll
+    static void createDir() throws IOException {
+        TMPDIR = TestUtil.createTemporaryDirectory();
+    }
+
+    @AfterAll
+    static void deleteDir() throws IOException {
+        TestUtil.removeAll(TMPDIR);
     }
 
     /**
      * Tests Files.newInputStream(Path).skip().
      */
-    static void testSkip(Path tmpdir) throws IOException {
-        Path file = createFile(tmpdir.resolve("foo"));
+    @Test
+    void skip() throws IOException {
+        Path file = createFile(TMPDIR.resolve("foo"));
         try (OutputStream out = Files.newOutputStream(file)) {
             final int size = 512;
             byte[] blah = new byte[size];
@@ -123,8 +135,31 @@ public class InputStreamTest {
         }
     }
 
-    static void assertTrue(boolean okay) {
-        if (!okay)
-            throw new RuntimeException("Assertion Failed");
+    /**
+     * Tests that Files.newInputStream(Path).available() does not throw
+     */
+    @Test
+    @DisabledOnOs(OS.WINDOWS)
+    void availableStdin() throws IOException {
+        Path stdin = Path.of("/dev", "stdin");
+        if (Files.exists(stdin)) {
+            try (InputStream s = Files.newInputStream(stdin);) {
+                s.available();
+            }
+        }
+    }
+
+    /**
+     * Tests that Files.newInputStream(Path).skip(0) does not throw
+     */
+    @Test
+    @DisabledOnOs(OS.WINDOWS)
+    void skipStdin() throws IOException {
+        Path stdin = Path.of("/dev", "stdin");
+        if (Files.exists(stdin)) {
+            try (InputStream s = Files.newInputStream(stdin);) {
+                s.skip(0);
+            }
+        }
     }
 }
