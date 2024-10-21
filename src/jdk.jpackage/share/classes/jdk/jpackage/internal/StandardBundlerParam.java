@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -97,6 +96,14 @@ class StandardBundlerParam<T> extends BundlerParamInfo<T> {
                     Arguments.CLIOptions.INPUT.getId(),
                     Path.class,
                     p -> null,
+                    (s, p) -> Path.of(s)
+            );
+
+    static final StandardBundlerParam<Path> OUTPUT_DIR =
+            new StandardBundlerParam<>(
+                    Arguments.CLIOptions.OUTPUT.getId(),
+                    Path.class,
+                    p -> Path.of("").toAbsolutePath(),
                     (s, p) -> Path.of(s)
             );
 
@@ -596,7 +603,7 @@ class StandardBundlerParam<T> extends BundlerParamInfo<T> {
         }
 
         // copy whole runtime, need to skip jmods and src.zip
-        final List<String> excludes = Arrays.asList("jmods", "src.zip");
+        final List<Path> excludes = Arrays.asList(Path.of("jmods"), Path.of("src.zip"));
         IOUtils.copyRecursive(topImage, appLayout.runtimeHomeDirectory(),
                         excludes, LinkOption.NOFOLLOW_LINKS);
 
