@@ -69,6 +69,7 @@ public class AccessibleJTableTest extends AccessibleComponentTest {
                 + "If you can hear table cells ctrl+tab further and press PASS, otherwise press FAIL.\n";
 
         JTable table = new JTable(data, columnNames);
+        table.setPreferredScrollableViewportSize(table.getPreferredSize());
         JPanel panel = new JPanel();
         panel.setLayout(new FlowLayout());
         JScrollPane scrollPane = new JScrollPane(table);
@@ -84,12 +85,13 @@ public class AccessibleJTableTest extends AccessibleComponentTest {
                 + "Turn screen reader on, and Tab to the table.\n"
                 + "Using arrow keys navigate to the last cell in the first row in the table."
                 + "Screen reader should announce it as \"Column 3 row 1\"\n\n"
-                + "Using mouse drag the header of the last culumn so the last column becomes the first one."
+                + "Using mouse drag the header of the last column so the last column becomes the first one."
                 + "Wait for the screen reader to finish announcing new position in table.\n\n"
                 + "If new position in table corresponds to the new table layout ctrl+tab further "
                 + "and press PASS, otherwise press FAIL.\n";
 
         JTable table = new JTable(data, columnNames);
+        table.setPreferredScrollableViewportSize(table.getPreferredSize());
         JPanel panel = new JPanel();
         panel.setLayout(new FlowLayout());
         JScrollPane scrollPane = new JScrollPane(table);
@@ -130,8 +132,8 @@ public class AccessibleJTableTest extends AccessibleComponentTest {
                 + "If you hear changes in the table - ctrl+tab further and press PASS, otherwise press FAIL.\n";
 
         JTable table = new JTable(new TestTableModel(3, 3));
-
-                JPanel panel = new JPanel();
+        table.setPreferredScrollableViewportSize(table.getPreferredSize());
+        JPanel panel = new JPanel();
         panel.setLayout(new FlowLayout());
         JScrollPane scrollPane = new JScrollPane(table);
         panel.add(scrollPane);
