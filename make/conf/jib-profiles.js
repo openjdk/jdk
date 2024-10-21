@@ -957,7 +957,7 @@ var getJibProfilesProfiles = function (input, common, data) {
 
     // Profiles used to run tests using Jib for internal dependencies.
     var testedProfile = input.testedProfile;
-    if (testedProfile == null) {
+    if (testedProfile == null || testedProfile == "docs") {
         testedProfile = input.build_os + "-" + input.build_cpu;
     }
     var testedProfileJdk = testedProfile + ".jdk";
@@ -999,25 +999,38 @@ var getJibProfilesProfiles = function (input, common, data) {
         testOnlyProfilesPrebuilt["run-test-prebuilt"]["dependencies"].push(testedProfile + ".jdk_symbols");
     }
 
+    var testOnlyProfilesPrebuiltDocs = {
+        "run-test-prebuilt-docs": clone(testOnlyProfilesPrebuilt["run-test-prebuilt"])
+    };
+
+    testOnlyProfilesPrebuiltDocs["run-test-prebuilt-docs"].dependencies.push("docs.doc_api_spec", "tidy");
+    testOnlyProfilesPrebuiltDocs["run-test-prebuilt-docs"].environment["DOCS_JDK_IMAGE_DIR"]
+        = input.get("docs.doc_api_spec", "install_path");
+    testOnlyProfilesPrebuiltDocs["run-test-prebuilt-docs"].environment["TIDY"]
+        = input.get("tidy", "home_path") + "/bin/tidy";
+    testOnlyProfilesPrebuiltDocs["run-test-prebuilt-docs"].labels = "test-docs";
+
     // If actually running the run-test-prebuilt profile, verify that the input
     // variable is valid and if so, add the appropriate target_* values from
     // the tested profile. Use testImageProfile value as backup.
-    if (input.profile == "run-test-prebuilt") {
+    if (input.profile == "run-test-prebuilt" || input.profile == "run-test-prebuilt-docs") {
         if (profiles[testedProfile] == null && profiles[testImageProfile] == null) {
             error("testedProfile is not defined: " + testedProfile + " " + testImageProfile);
         }
     }
-    if (profiles[testedProfile] != null) {
-        testOnlyProfilesPrebuilt["run-test-prebuilt"]["target_os"]
-            = profiles[testedProfile]["target_os"];
-        testOnlyProfilesPrebuilt["run-test-prebuilt"]["target_cpu"]
-            = profiles[testedProfile]["target_cpu"];
-    } else if (profiles[testImageProfile] != null) {
-        testOnlyProfilesPrebuilt["run-test-prebuilt"]["target_os"]
-            = profiles[testImageProfile]["target_os"];
-        testOnlyProfilesPrebuilt["run-test-prebuilt"]["target_cpu"]
-            = profiles[testImageProfile]["target_cpu"];
+    function updateProfileTargets(profiles, testedProfile, testImageProfile, targetProfile, runTestProfile) {
+        var profileToCheck = profiles[testedProfile] || profiles[testImageProfile];
+
+        if (profileToCheck != null) {
+            targetProfile[runTestProfile]["target_os"] = profileToCheck["target_os"];
+            targetProfile[runTestProfile]["target_cpu"] = profileToCheck["target_cpu"];
+        }
     }
+
+    updateProfileTargets(profiles, testedProfile, testImageProfile, testOnlyProfilesPrebuilt, "run-test-prebuilt");
+    updateProfileTargets(profiles, testedProfile, testImageProfile, testOnlyProfilesPrebuiltDocs, "run-test-prebuilt-docs");
+
+    profiles = concatObjects(profiles, testOnlyProfilesPrebuiltDocs);
     profiles = concatObjects(profiles, testOnlyProfilesPrebuilt);
 
     // On macosx add the devkit bin dir to the path in all the run-test profiles.
@@ -1066,6 +1079,8 @@ var getJibProfilesProfiles = function (input, common, data) {
             work_dir: input.get("src.full", "install_path"),
         }
         profiles["run-test-prebuilt"] = concatObjects(profiles["run-test-prebuilt"],
+            runTestPrebuiltSrcFullExtra);
+        profiles["run-test-prebuilt-docs"] = concatObjects(profiles["run-test-prebuilt-docs"],
             runTestPrebuiltSrcFullExtra);
     }
 
