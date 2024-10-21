@@ -35,6 +35,7 @@ class G1Predictions;
 // Container for TruncatedSeqs that need separate predictors by GC phase.
 class G1PhaseDependentSeq {
   TruncatedSeq _young_only_seq;
+  double _initial_value;
   TruncatedSeq _mixed_seq;
 
   NONCOPYABLE(G1PhaseDependentSeq);
