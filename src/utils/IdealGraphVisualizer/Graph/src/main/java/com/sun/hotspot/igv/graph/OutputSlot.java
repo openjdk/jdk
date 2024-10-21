@@ -54,7 +54,7 @@ public class OutputSlot extends Slot {
         }
         double gapRatio = (double)gap / (double)(getFigure().getOutputSlots().size() + 1);
         int gapAmount = (int)((getPosition() + 1)*gapRatio);
-        return new Point(gapAmount + Figure.getSlotsWidth(Figure.getAllBefore(getFigure().getOutputSlots(), this)) + getWidth()/2, Figure.SLOT_START);
+        return new Point(gapAmount + Figure.getSlotsWidth(Figure.getAllBefore(getFigure().getOutputSlots(), this)) + getWidth()/2, 0);
     }
 
     @Override

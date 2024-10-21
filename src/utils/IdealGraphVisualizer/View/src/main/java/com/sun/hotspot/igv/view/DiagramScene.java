@@ -27,7 +27,9 @@ import com.sun.hotspot.igv.data.Properties;
 import com.sun.hotspot.igv.data.*;
 import com.sun.hotspot.igv.graph.*;
 import com.sun.hotspot.igv.hierarchicallayout.*;
+import com.sun.hotspot.igv.layout.Cluster;
 import com.sun.hotspot.igv.layout.LayoutGraph;
+import com.sun.hotspot.igv.layout.LayoutManager;
 import com.sun.hotspot.igv.selectioncoordinator.SelectionCoordinator;
 import com.sun.hotspot.igv.util.ColorIcon;
 import com.sun.hotspot.igv.util.DoubleClickAction;
@@ -44,6 +46,7 @@ import java.util.*;
 import javax.swing.*;
 import static javax.swing.ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS;
 import static javax.swing.ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS;
+import javax.swing.border.Border;
 import javax.swing.event.UndoableEditEvent;
 import javax.swing.undo.AbstractUndoableEdit;
 import javax.swing.undo.CannotRedoException;
@@ -81,10 +84,14 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
     private final LayerWidget mainLayer;
     private final LayerWidget blockLayer;
     private final LayerWidget connectionLayer;
+    private final Widget shadowWidget;
+    private final Widget pointerWidget;
     private final DiagramViewModel model;
     private ModelState modelState;
     private boolean rebuilding;
     private final HierarchicalStableLayoutManager hierarchicalStableLayoutManager;
+    private final HierarchicalLayoutManager seaLayoutManager;
+
 
     /**
      * The alpha level of partially visible figures.
@@ -95,13 +102,12 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
      * The offset of the graph to the border of the window showing it.
      */
     public static final int BORDER_SIZE = 100;
-    public static final int UNDOREDO_LIMIT = 100;
+    public static final int UNDO_REDO_LIMIT = 100;
     public static final int SCROLL_UNIT_INCREMENT = 80;
     public static final int SCROLL_BLOCK_INCREMENT = 400;
     public static final float ZOOM_MAX_FACTOR = 4.0f;
     public static final float ZOOM_MIN_FACTOR = 0.25f;
     public static final float ZOOM_INCREMENT = 1.5f;
-    public static final int SLOT_OFFSET = 8;
     public static final int ANIMATION_LIMIT = 40;
 
     @SuppressWarnings("unchecked")
@@ -317,11 +323,17 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         blockLayer = new LayerWidget(this);
         addChild(blockLayer);
 
+        shadowWidget = new Widget(DiagramScene.this);
+        addChild(shadowWidget);
+
         connectionLayer = new LayerWidget(this);
         addChild(connectionLayer);
 
         mainLayer = new LayerWidget(this);
         addChild(mainLayer);
+
+        pointerWidget = new Widget(DiagramScene.this);
+        addChild(pointerWidget);
 
         setBorder(BorderFactory.createLineBorder(Color.white, BORDER_SIZE));
         setLayout(LayoutFactory.createAbsoluteLayout());
@@ -467,9 +479,6 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         };
         addObjectSceneListener(selectionChangedListener, ObjectSceneEventType.OBJECT_SELECTION_CHANGED, ObjectSceneEventType.OBJECT_HIGHLIGHTING_CHANGED, ObjectSceneEventType.OBJECT_HOVER_CHANGED);
 
-        this.model = model;
-        modelState = new ModelState(model);
-
         model.getDiagramChangedEvent().addListener(m -> update());
         model.getGraphChangedEvent().addListener(m -> graphChanged());
         model.getHiddenNodesChangedEvent().addListener(m -> hiddenNodesChanged());
@@ -487,6 +496,10 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         });
 
         hierarchicalStableLayoutManager = new HierarchicalStableLayoutManager();
+        seaLayoutManager = new HierarchicalLayoutManager();
+
+        this.model = model;
+        modelState = new ModelState(model);
     }
 
     @Override
@@ -583,11 +596,145 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
             figureWidget.getActions().addAction(ActionFactory.createPopupMenuAction(figureWidget));
             figureWidget.getActions().addAction(selectAction);
             figureWidget.getActions().addAction(hoverAction);
+            figureWidget.getActions().addAction(ActionFactory.createMoveAction(null, new MoveProvider() {
+
+                private void setFigureShadow(Figure f) {
+                    FigureWidget fw = getWidget(f);
+                    Color c = f.getColor();
+                    Border border = new FigureWidget.RoundedBorder(new Color(0,0,0, 50), 1);
+                    shadowWidget.setBorder(border);
+                    shadowWidget.setBackground(new Color(c.getRed(), c.getGreen(), c.getBlue(), 50));
+                    shadowWidget.setPreferredLocation(fw.getPreferredLocation());
+                    shadowWidget.setPreferredBounds(fw.getPreferredBounds());
+                    shadowWidget.setVisible(true);
+                    shadowWidget.setOpaque(true);
+                    shadowWidget.revalidate();
+                    shadowWidget.repaint();
+                }
+
+                private void setMovePointer(Figure f) {
+                    Border border = new FigureWidget.RoundedBorder(Color.RED, 1);
+                    pointerWidget.setBorder(border);
+                    pointerWidget.setBackground(Color.RED);
+                    pointerWidget.setPreferredBounds(new Rectangle(0, 0, 3, shadowWidget.getPreferredBounds().height));
+                    pointerWidget.setVisible(false);
+                    pointerWidget.setOpaque(true);
+                }
+
+                private int startLayerY;
+
+                @Override
+                public void movementStarted(Widget widget) {
+                    if (!getModel().getShowSea()) return;
+                    widget.bringToFront();
+                    startLayerY = widget.getLocation().y;
+                    Set<Figure> selectedFigures = model.getSelectedFigures();
+                    if (selectedFigures.size() == 1) {
+                        Figure selectedFigure = selectedFigures.iterator().next();
+                        setFigureShadow(selectedFigure);
+                        setMovePointer(selectedFigure);
+                    }
+                }
+
+                @Override
+                public void movementFinished(Widget widget) {
+                    if (!getModel().getShowSea()) return;
+                    rebuilding = true;
+                    Set<FigureWidget> oldVisibleFigureWidgets = getVisibleFigureWidgets();
+                    Set<BlockWidget> oldVisibleBlockWidgets = getVisibleBlockWidgets();
+
+                    Set<Figure> selectedFigures = model.getSelectedFigures();
+                    for (Figure figure : selectedFigures) {
+                        FigureWidget fw = getWidget(figure);
+                        Point newLocation = new Point(fw.getLocation().x, fw.getLocation().y);
+                        seaLayoutManager.moveVertex(figure, newLocation);
+                    }
+
+                    rebuildConnectionLayer();
+                    updateFigureWidgetLocations(oldVisibleFigureWidgets);
+                    updateBlockWidgetBounds(oldVisibleBlockWidgets);
+                    shadowWidget.setVisible(false);
+                    pointerWidget.setVisible(false);
+                    validateAll();
+                    addUndo();
+                    rebuilding = false;
+                }
+
+                private static final int MAGNET_SIZE = 5;
+
+                private int magnetToStartLayerY(Widget widget, Point location) {
+                    int shiftY = location.y - widget.getLocation().y;
+                    if (Math.abs(location.y - startLayerY) <= MAGNET_SIZE) {
+                        if (Math.abs(widget.getLocation().y - startLayerY) > MAGNET_SIZE) {
+                            shiftY = startLayerY - widget.getLocation().y;
+                        } else {
+                            shiftY = 0;
+                        }
+                    }
+                    return shiftY;
+                }
+
+                @Override
+                public Point getOriginalLocation(Widget widget) {
+                    return ActionFactory.createDefaultMoveProvider().getOriginalLocation(widget);
+                }
+
+                @Override
+                public void setNewLocation(Widget widget, Point location) {
+                    if (!getModel().getShowSea()) return;
+                    //if (getModel().getShowCFG()) return;
+
+                    int shiftX = location.x - widget.getLocation().x;
+                    int shiftY = magnetToStartLayerY(widget, location);
+
+                    List<Figure> selectedFigures = new ArrayList<>( model.getSelectedFigures());
+                    selectedFigures.sort(Comparator.comparingInt(f -> f.getPosition().x));
+                    for (Figure figure : selectedFigures) {
+                        FigureWidget fw = getWidget(figure);
+                        if (figureToInLineWidget.containsKey(fw.getFigure())) {
+                            for (LineWidget lw : figureToInLineWidget.get(fw.getFigure())) {
+                                Point toPt = lw.getTo();
+                                lw.setTo(new Point(toPt.x + shiftX, toPt.y + shiftY));
+                                Point fromPt = lw.getFrom();
+                                lw.setFrom(new Point(fromPt.x + shiftX, fromPt.y));
+                                lw.revalidate();
+                                LineWidget pred = lw.getPredecessor();
+                                pred.setTo(new Point(pred.getTo().x + shiftX, pred.getTo().y));
+                                pred.revalidate();
+
+                            }
+                        }
+                        if (figureToOutLineWidget.containsKey(fw.getFigure())) {
+                            for (LineWidget lw : figureToOutLineWidget.get(fw.getFigure())) {
+                                Point toPt = lw.getTo();
+                                lw.setTo(new Point(toPt.x + shiftX, toPt.y));
+                                Point fromPt = lw.getFrom();
+                                lw.setFrom(new Point(fromPt.x + shiftX, fromPt.y + shiftY));
+                                lw.revalidate();
+                                for (LineWidget succ : lw.getSuccessors()) {
+                                    succ.setFrom(new Point(succ.getFrom().x + shiftX, succ.getFrom().y));
+                                    succ.revalidate();
+                                }
+                            }
+                        }
+                        Point newLocation = new Point(fw.getLocation().x + shiftX, fw.getLocation().y + shiftY);
+                        ActionFactory.createDefaultMoveProvider().setNewLocation(fw, newLocation);
+                    }
+
+                    if (selectedFigures.size() == 1) {
+                        FigureWidget fw = getWidget(selectedFigures.iterator().next());
+                        pointerWidget.setVisible(true);
+                        Point newLocation = new Point(fw.getLocation().x + shiftX -3, fw.getLocation().y + shiftY);
+                        ActionFactory.createDefaultMoveProvider().setNewLocation(pointerWidget, newLocation);
+                    }
+
+                }
+            }));
             addObject(figure, figureWidget);
             mainLayer.addChild(figureWidget);
 
             for (InputSlot inputSlot : figure.getInputSlots()) {
-                SlotWidget slotWidget = new InputSlotWidget(inputSlot, this, figureWidget, figureWidget);
+                SlotWidget slotWidget = new InputSlotWidget(inputSlot, this, figureWidget);
                 slotWidget.getActions().addAction(new DoubleClickAction(slotWidget));
                 slotWidget.getActions().addAction(hoverAction);
                 slotWidget.getActions().addAction(selectAction);
@@ -595,7 +742,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
             }
 
             for (OutputSlot outputSlot : figure.getOutputSlots()) {
-                SlotWidget slotWidget = new OutputSlotWidget(outputSlot, this, figureWidget, figureWidget);
+                SlotWidget slotWidget = new OutputSlotWidget(outputSlot, this, figureWidget);
                 slotWidget.getActions().addAction(new DoubleClickAction(slotWidget));
                 slotWidget.getActions().addAction(hoverAction);
                 slotWidget.getActions().addAction(selectAction);
@@ -608,7 +755,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         blockLayer.removeChildren();
         if (getModel().getShowBlocks() || getModel().getShowCFG()) {
             for (InputBlock inputBlock : getModel().getDiagram().getInputBlocks()) {
-                BlockWidget blockWidget = new BlockWidget(this, inputBlock);
+                BlockWidget blockWidget = new BlockWidget(this, inputBlock, LayoutManager.TITLE_FONT);
                 blockWidget.getActions().addAction(new DoubleClickAction(blockWidget));
                 blockWidget.setVisible(false);
                 addObject(inputBlock, blockWidget);
@@ -652,7 +799,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
                         Rectangle bounds = rootWidget.getBounds();
                         if (bounds != null) {
                             Point location = rootWidget.getLocation();
-                            centerRectangle(new Rectangle(location.x, location.y, bounds.width, bounds.height), false);
+                            centerRectangle(new Rectangle(location.x, location.y, bounds.width, bounds.height));
                         }
                     }
                 }
@@ -669,56 +816,51 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         return rebuilding;
     }
 
-    private boolean isVisible(Connection c) {
-        // Generally, a connection is visible if its source and destination
-        // widgets are visible. An exception is Figure connections in the CFG
-        // view, which are never shown.
-        if (getModel().getShowCFG() && c instanceof FigureConnection) {
-            return false;
-        }
-        Widget w1, w2;
-        if (c instanceof BlockConnection) {
-            w1 = getWidget(((Block)c.getFromCluster()).getInputBlock());
-            w2 = getWidget(((Block)c.getToCluster()).getInputBlock());
-        } else {
-            assert (c instanceof FigureConnection);
-            w1 = getWidget(c.getFrom().getVertex());
-            w2 = getWidget(c.getTo().getVertex());
-        }
+    public boolean isVisibleBlockConnection(BlockConnection blockConnection) {
+        Widget w1 = getWidget(blockConnection.getFromCluster().getInputBlock());
+        Widget w2 = getWidget(blockConnection.getToCluster().getInputBlock());
         return w1.isVisible() && w2.isVisible();
     }
 
-    private void doStableSeaLayout(HashSet<Figure> visibleFigures, HashSet<Connection> visibleConnections) {
-        hierarchicalStableLayoutManager.updateLayout(visibleFigures, visibleConnections);
+    private boolean isVisibleFigureConnection(FigureConnection figureConnection) {
+        // Generally, a connection is visible if its source and destination
+        // widgets are visible. An exception is Figure connections in the CFG
+        // view, which are never shown.
+        if (getModel().getShowCFG()) {
+            return false;
+        }
+        Widget w1 = getWidget(figureConnection.getFrom().getVertex());
+        Widget w2 = getWidget(figureConnection.getTo().getVertex());
+        return w1.isVisible() && w2.isVisible();
     }
 
-    private void doSeaLayout(HashSet<Figure> figures, HashSet<Connection> edges) {
-        HierarchicalLayoutManager manager = new HierarchicalLayoutManager(HierarchicalLayoutManager.Combine.SAME_OUTPUTS);
-        manager.setMaxLayerLength(10);
-        manager.doLayout(new LayoutGraph(edges, figures));
-        hierarchicalStableLayoutManager.setShouldRedrawLayout(true);
+    private void doStableSeaLayout(Set<Figure> visibleFigures, Set<Connection> visibleConnections) {
+        boolean enable = model.getCutEdges();
+        boolean previous = hierarchicalStableLayoutManager.cutEdges();
+        hierarchicalStableLayoutManager.setCutEdges(enable);
+        if (enable != previous) {
+            hierarchicalStableLayoutManager.doLayout(new LayoutGraph(visibleConnections, visibleFigures));
+        } else {
+            hierarchicalStableLayoutManager.updateLayout(visibleFigures, visibleConnections);
+        }
     }
 
-    private void doClusteredLayout(HashSet<Connection> edges) {
-        HierarchicalClusterLayoutManager m = new HierarchicalClusterLayoutManager(HierarchicalLayoutManager.Combine.SAME_OUTPUTS);
-        HierarchicalLayoutManager manager = new HierarchicalLayoutManager(HierarchicalLayoutManager.Combine.SAME_OUTPUTS);
-        manager.setMaxLayerLength(9);
-        manager.setMinLayerDifference(3);
-        m.setManager(manager);
-        m.setSubManager(new HierarchicalLayoutManager(HierarchicalLayoutManager.Combine.SAME_OUTPUTS));
-        m.doLayout(new LayoutGraph(edges));
+    private void doSeaLayout(Set<Figure> figures, Set<Connection> edges) {
+        seaLayoutManager.setCutEdges(model.getCutEdges());
+        seaLayoutManager.doLayout(new LayoutGraph(edges, figures));
     }
 
-    private void doCFGLayout(HashSet<Figure> figures, HashSet<Connection> edges) {
+    private void doClusteredLayout(Set<Connection> edges) {
+        HierarchicalClusterLayoutManager clusterLayoutManager = new HierarchicalClusterLayoutManager();
+        clusterLayoutManager.setCutEdges(model.getCutEdges());
+        clusterLayoutManager.doLayout(new LayoutGraph(edges, new HashSet<>()));
+    }
+
+    private void doCFGLayout(Set<Figure> figures, Set<Connection> edges) {
+        HierarchicalCFGLayoutManager cfgLayoutManager = new HierarchicalCFGLayoutManager();
+
         Diagram diagram = getModel().getDiagram();
-        HierarchicalCFGLayoutManager m = new HierarchicalCFGLayoutManager();
-        HierarchicalLayoutManager manager = new HierarchicalLayoutManager(HierarchicalLayoutManager.Combine.SAME_OUTPUTS);
-        manager.setMaxLayerLength(9);
-        manager.setMinLayerDifference(1);
-        manager.setLayoutSelfEdges(true);
-        manager.setXOffset(25);
-        manager.setLayerOffset(25);
-        m.setManager(manager);
+
         Map<InputNode, Figure> nodeFig = new HashMap<>();
         for (Figure f : figures) {
             InputNode n = f.getInputNode();
@@ -740,22 +882,18 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
                 }
             }
         }
+
         // Add visible connections for CFG edges.
         for (BlockConnection c : diagram.getBlockConnections()) {
-            if (isVisible(c)) {
+            if (isVisibleBlockConnection(c)) {
                 edges.add(c);
             }
         }
-        m.setSubManager(new LinearLayoutManager(figureRank));
-        Set<Block> visibleBlocks = new HashSet<>();
-        for (Block b : diagram.getBlocks()) {
-            BlockWidget w = getWidget(b.getInputBlock());
-            if (w.isVisible()) {
-                visibleBlocks.add(b);
-            }
-        }
-        m.setClusters(new HashSet<>(visibleBlocks));
-        m.doLayout(new LayoutGraph(edges, figures));
+
+        cfgLayoutManager.setSubManager(new LinearLayoutManager(figureRank));
+        cfgLayoutManager.setClusters(getVisibleBlocks());
+        cfgLayoutManager.setCutEdges(model.getCutEdges());
+        cfgLayoutManager.doLayout(new LayoutGraph(edges, figures));
     }
 
 
@@ -772,42 +910,52 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
 
     private final Point specialNullPoint = new Point(Integer.MAX_VALUE, Integer.MAX_VALUE);
 
-    private void processOutputSlot(OutputSlot outputSlot, List<Connection> connections, int controlPointIndex, Point lastPoint, LineWidget predecessor) {
-        Map<Point, List<Connection>> pointMap = new HashMap<>(connections.size());
 
-        for (Connection connection : connections) {
-            if (!isVisible(connection)) {
-                continue;
-            }
 
-            List<Point> controlPoints = connection.getControlPoints();
-            if (controlPointIndex >= controlPoints.size()) {
-                continue;
-            }
+    private void processOutputSlot(OutputSlot outputSlot, List<FigureConnection> connections, int controlPointIndex, Point lastPoint, LineWidget predecessor) {
+        Map<Point, List<FigureConnection>> pointMap = new HashMap<>(connections.size());
 
-            Point currentPoint = controlPoints.get(controlPointIndex);
-            if (currentPoint == null) { // Long connection, has been cut vertically.
-                currentPoint = specialNullPoint;
-            } else if (connection.hasSlots()) {
-                if (controlPointIndex == 0 && !outputSlot.shouldShowName()) {
-                    currentPoint = new Point(currentPoint.x, currentPoint.y - SLOT_OFFSET);
-                } else if (controlPointIndex == controlPoints.size() - 1 &&
-                           !((Slot)connection.getTo()).shouldShowName()) {
-                    currentPoint = new Point(currentPoint.x, currentPoint.y + SLOT_OFFSET);
+        if (predecessor != null) {
+            if (controlPointIndex == 2) {
+                Figure figure = outputSlot.getFigure();
+                if (figureToOutLineWidget.containsKey(figure)) {
+                    figureToOutLineWidget.get(figure).add(predecessor);
+                } else {
+                    figureToOutLineWidget.put(figure, new HashSet<>(Collections.singleton(predecessor)));
                 }
             }
+        }
 
-            if (pointMap.containsKey(currentPoint)) {
-                pointMap.get(currentPoint).add(connection);
-            } else {
-                List<Connection> newList = new ArrayList<>(2);
-                newList.add(connection);
-                pointMap.put(currentPoint, newList);
+        for (FigureConnection connection : connections) {
+            if (isVisibleFigureConnection(connection)) {
+                List<Point> controlPoints = connection.getControlPoints();
+                if (controlPointIndex < controlPoints.size()) {
+                    Point currentPoint = controlPoints.get(controlPointIndex);
+                    if (currentPoint == null) { // Long connection, has been cut vertically.
+                        currentPoint = specialNullPoint;
+                    } else {
+                        currentPoint = new Point(currentPoint.x, currentPoint.y);
+                    }
+                    if (pointMap.containsKey(currentPoint)) {
+                        pointMap.get(currentPoint).add(connection);
+                    } else {
+                        pointMap.put(currentPoint, new ArrayList<>(Collections.singletonList(connection)));
+                    }
+                } else if (controlPointIndex == controlPoints.size()) {
+                    if (predecessor != null) {
+                        Figure figure = ((Slot) connection.getTo()).getFigure();
+                        if (figureToInLineWidget.containsKey(figure)) {
+                            figureToInLineWidget.get(figure).add(predecessor);
+                        } else {
+                            figureToInLineWidget.put(figure, new HashSet<>(Collections.singleton(predecessor)));
+                        }
+                    }
+                }
             }
         }
 
         for (Point currentPoint : pointMap.keySet()) {
-            List<Connection> connectionList = pointMap.get(currentPoint);
+            List<FigureConnection> connectionList = pointMap.get(currentPoint);
 
             boolean isBold = false;
             boolean isDashed = true;
@@ -833,9 +981,112 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
                 connectionLayer.addChild(newPredecessor);
                 addObject(new ConnectionSet(connectionList), newPredecessor);
                 newPredecessor.getActions().addAction(hoverAction);
+                newPredecessor.getActions().addAction(ActionFactory.createMoveAction(null, new MoveProvider() {
+
+
+                    Point startLocation;
+                    Point origFrom;
+                    @Override
+                    public void movementStarted(Widget widget) {
+                        LineWidget lineWidget = (LineWidget) widget;
+                        startLocation = lineWidget.getClientAreaLocation();
+                        origFrom = lineWidget.getFrom();
+                    }
+
+                    @Override
+                    public void movementFinished(Widget widget) {
+                        if (!getModel().getShowSea()) return;
+
+                        LineWidget lineWidget = (LineWidget) widget;
+                        if (lineWidget.getPredecessor() == null) return;
+                        if (lineWidget.getSuccessors().isEmpty()) return;
+                        if (lineWidget.getFrom().x != lineWidget.getTo().x) return;
+
+                        int shiftX = lineWidget.getClientAreaLocation().x - startLocation.x;
+                        if (shiftX == 0) return;
+
+                        Point newFrom = new Point(origFrom.x + shiftX, origFrom.y);
+                        boolean wasMoved = seaLayoutManager.moveLink(lineWidget.getFromFigure(), origFrom, newFrom);
+                        rebuilding = true;
+                        Set<FigureWidget> oldVisibleFigureWidgets = getVisibleFigureWidgets();
+                        Set<BlockWidget> oldVisibleBlockWidgets = getVisibleBlockWidgets();
+                        seaLayoutManager.writeBack();
+                        rebuildConnectionLayer();
+                        updateFigureWidgetLocations(oldVisibleFigureWidgets);
+                        updateBlockWidgetBounds(oldVisibleBlockWidgets);
+                        validateAll();
+                        if (wasMoved) {
+                            addUndo();
+                        }
+                        rebuilding = false;
+                    }
+
+                    @Override
+                    public Point getOriginalLocation(Widget widget) {
+                        LineWidget lineWidget = (LineWidget) widget;
+                        return lineWidget.getClientAreaLocation();
+                    }
+
+                    @Override
+                    public void setNewLocation(Widget widget, Point location) {
+                        if (!getModel().getShowSea()) return;
+
+                        LineWidget lineWidget = (LineWidget) widget;
+                        if (lineWidget.getPredecessor() == null) return;
+                        if (lineWidget.getSuccessors().isEmpty()) return;
+                        if (lineWidget.getFrom().x != lineWidget.getTo().x) return;
+
+                        int shiftX = location.x - lineWidget.getClientAreaLocation().x;
+                        if (shiftX == 0) return;
+
+                        Point oldFrom = lineWidget.getFrom();
+                        Point newFrom = new Point(oldFrom.x + shiftX, oldFrom.y);
+
+                        Point oldTo = lineWidget.getTo();
+                        Point newTo = new Point(oldTo.x + shiftX, oldTo.y);
+
+                        lineWidget.setTo(newTo);
+                        lineWidget.setFrom(newFrom);
+                        lineWidget.revalidate();
+
+                        LineWidget predecessor = lineWidget.getPredecessor();
+                        Point toPt = predecessor.getTo();
+                        predecessor.setTo(new Point(toPt.x + shiftX, toPt.y));
+                        predecessor.revalidate();
+
+                        for (LineWidget successor : lineWidget.getSuccessors()) {
+                            Point fromPt = successor.getFrom();
+                            successor.setFrom(new Point(fromPt.x + shiftX, fromPt.y));
+                            successor.revalidate();
+                        }
+                    }
+                }));
             }
 
             processOutputSlot(outputSlot, connectionList, controlPointIndex + 1, currentPoint, newPredecessor);
+        }
+    }
+
+    private void processBlockConnection(BlockConnection blockConnection) {
+        boolean isDashed = blockConnection.getStyle() == Connection.ConnectionStyle.DASHED;
+        boolean isBold = blockConnection.getStyle() == Connection.ConnectionStyle.BOLD;
+        boolean isVisible = blockConnection.getStyle() != Connection.ConnectionStyle.INVISIBLE;
+        Point lastPoint = null;
+        LineWidget predecessor = null;
+        for (Point currentPoint : blockConnection.getControlPoints()) {
+            if (currentPoint == null) { // Long connection, has been cut vertically.
+                currentPoint = specialNullPoint;
+            } else if (lastPoint != specialNullPoint && lastPoint != null) {
+                List<BlockConnection> connectionList = Collections.singletonList(blockConnection);
+                Point src = new Point(lastPoint);
+                Point dest = new Point(currentPoint);
+                predecessor = new LineWidget(this, null, connectionList, src, dest, predecessor, isBold, isDashed);
+                predecessor.setVisible(isVisible);
+                connectionLayer.addChild(predecessor);
+                addObject(new ConnectionSet(connectionList), predecessor);
+                predecessor.getActions().addAction(hoverAction);
+            }
+            lastPoint = currentPoint;
         }
     }
 
@@ -853,14 +1104,10 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
 
     private class ConnectionSet {
 
-        private Set<Connection> connections;
+        private Collection<? extends Connection> connections;
 
-        public ConnectionSet(Collection<Connection> connections) {
-            connections = new HashSet<>(connections);
-        }
-
-        public Set<Connection> getConnectionSet() {
-            return Collections.unmodifiableSet(connections);
+        public ConnectionSet(Collection<? extends Connection> connections) {
+            this.connections = connections;
         }
     }
 
@@ -872,7 +1119,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
     private void gotoBlock(final Block block) {
         BlockWidget bw = getWidget(block.getInputBlock());
         if (bw != null) {
-            centerRectangle(bw.getBounds(), true);
+            centerRectangle(bw.getBounds());
         }
     }
 
@@ -919,28 +1166,26 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
             }
         }
         if (overallRect != null) {
-            centerRectangle(overallRect, true);
+            centerRectangle(overallRect);
         }
     }
 
-    private void centerRectangle(Rectangle r, boolean zoomToFit) {
+    private void centerRectangle(Rectangle r) {
         Rectangle rect = convertSceneToView(r);
         Rectangle viewRect = scrollPane.getViewport().getViewRect();
-        if (zoomToFit) {
-            double factor = Math.min(viewRect.getWidth() / rect.getWidth(),  viewRect.getHeight() / rect.getHeight());
-            double zoomFactor = getZoomFactor();
-            double newZoomFactor = zoomFactor * factor;
-            if (factor < 1.0 || zoomFactor < 1.0) {
-                newZoomFactor = Math.min(1.0, newZoomFactor);
-                centredZoom(newZoomFactor, null);
-                factor = newZoomFactor / zoomFactor;
-                rect.x *= factor;
-                rect.y *= factor;
-                rect.width *= factor;
-                rect.height *= factor;
-            }
-        }
 
+        double factor = Math.min(viewRect.getWidth() / rect.getWidth(),  viewRect.getHeight() / rect.getHeight());
+        double zoomFactor = getZoomFactor();
+        double newZoomFactor = zoomFactor * factor;
+        if (factor < 1.0 || zoomFactor < 1.0) {
+            newZoomFactor = Math.min(1.0, newZoomFactor);
+            centredZoom(newZoomFactor, null);
+            factor = newZoomFactor / zoomFactor;
+            rect.x *= factor;
+            rect.y *= factor;
+            rect.width *= factor;
+            rect.height *= factor;
+        }
         viewRect.x = rect.x + rect.width / 2 - viewRect.width / 2;
         viewRect.y = rect.y + rect.height / 2 - viewRect.height / 2;
         // Ensure to be within area
@@ -958,7 +1203,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
     @Override
     public void resetUndoRedoManager() {
         undoRedoManager = new UndoRedo.Manager();
-        undoRedoManager.setLimit(UNDOREDO_LIMIT);
+        undoRedoManager.setLimit(UNDO_REDO_LIMIT);
     }
 
     private UndoRedo.Manager getUndoRedoManager() {
@@ -986,18 +1231,20 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
     }
 
     private void rebuildConnectionLayer() {
+        figureToOutLineWidget.clear();
+        figureToInLineWidget.clear();
         connectionLayer.removeChildren();
         for (Figure figure : getModel().getDiagram().getFigures()) {
             for (OutputSlot outputSlot : figure.getOutputSlots()) {
-                List<Connection> connectionList = new ArrayList<>(outputSlot.getConnections());
+                List<FigureConnection> connectionList = new ArrayList<>(outputSlot.getConnections());
                 processOutputSlot(outputSlot, connectionList, 0, null, null);
             }
         }
 
         if (getModel().getShowCFG()) {
             for (BlockConnection blockConnection : getModel().getDiagram().getBlockConnections()) {
-                if (isVisible(blockConnection)) {
-                    processOutputSlot(null, Collections.singletonList(blockConnection), 0, null, null);
+                if (isVisibleBlockConnection(blockConnection)) {
+                    processBlockConnection(blockConnection);
                 }
             }
         }
@@ -1100,7 +1347,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         }
     }
 
-    private HashSet<Figure> getVisibleFigures() {
+    private Set<Figure> getVisibleFigures() {
         HashSet<Figure> visibleFigures = new HashSet<>();
         for (Figure figure : getModel().getDiagram().getFigures()) {
             FigureWidget figureWidget = getWidget(figure);
@@ -1111,10 +1358,21 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         return visibleFigures;
     }
 
+    private Set<Cluster> getVisibleBlocks() {
+        Set<Cluster> visibleBlocks = new HashSet<>();
+        for (Block b : getModel().getDiagram().getBlocks()) {
+            BlockWidget w = getWidget(b.getInputBlock());
+            if (w.isVisible()) {
+                visibleBlocks.add(b);
+            }
+        }
+        return visibleBlocks;
+    }
+
     private HashSet<Connection> getVisibleConnections() {
         HashSet<Connection> visibleConnections = new HashSet<>();
-        for (Connection connection : getModel().getDiagram().getConnections()) {
-            if (isVisible(connection)) {
+        for (FigureConnection connection : getModel().getDiagram().getConnections()) {
+            if (isVisibleFigureConnection(connection)) {
                 visibleConnections.add(connection);
             }
         }
@@ -1183,6 +1441,9 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         }
     }
 
+    Map<Figure, Set<LineWidget>> figureToOutLineWidget = new HashMap<>();
+    Map<Figure, Set<LineWidget>> figureToInLineWidget = new HashMap<>();
+
     private void relayout() {
         rebuilding = true;
         Set<FigureWidget> oldVisibleFigureWidgets = getVisibleFigureWidgets();
@@ -1192,8 +1453,8 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         updateNodeHull();
         updateVisibleBlockWidgets();
 
-        HashSet<Figure> visibleFigures = getVisibleFigures();
-        HashSet<Connection> visibleConnections = getVisibleConnections();
+        Set<Figure> visibleFigures = getVisibleFigures();
+        Set<Connection> visibleConnections = getVisibleConnections();
         if (getModel().getShowStableSea()) {
             doStableSeaLayout(visibleFigures, visibleConnections);
         } else if (getModel().getShowSea()) {
@@ -1277,6 +1538,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         public final int firstPos;
         public final int secondPos;
 
+
         public ModelState(DiagramViewModel model) {
             hiddenNodes = new HashSet<>(model.getHiddenNodes());
             firstPos = model.getFirstPosition();
@@ -1285,11 +1547,11 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
     }
 
     private void addUndo() {
-        ModelState newModelState = new ModelState(model);
         if (undoRedoEnabled) {
+            ModelState newModelState = new ModelState(model);
             DiagramUndoRedo undoRedo = new DiagramUndoRedo(this, getScrollPosition(), modelState, newModelState);
             getUndoRedoManager().undoableEditHappened(new UndoableEditEvent(this, undoRedo));
+            modelState = newModelState;
         }
-        modelState = newModelState;
     }
 }

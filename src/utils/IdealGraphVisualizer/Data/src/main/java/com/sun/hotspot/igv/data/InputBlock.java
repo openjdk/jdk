@@ -33,6 +33,7 @@ public class InputBlock {
 
     private List<InputNode> nodes;
     private final String name;
+    private final int id;
     private final InputGraph graph;
     private final Set<InputBlock> successors;
     private boolean artificial;
@@ -73,9 +74,10 @@ public class InputBlock {
         return true;
     }
 
-    InputBlock(InputGraph graph, String name) {
+    InputBlock(InputGraph graph, String name, int id) {
         this.graph = graph;
         this.name = name;
+        this.id = id;
         nodes = new ArrayList<>();
         successors = new LinkedHashSet<>(2);
         artificial = false;
@@ -122,5 +124,9 @@ public class InputBlock {
 
     public boolean isArtificial() {
         return artificial;
+    }
+
+    public int getID() {
+        return id;
     }
 }
