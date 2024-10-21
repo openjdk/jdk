@@ -45,19 +45,34 @@ import java.util.function.Supplier;
  * by the JVM, enabling the same performance optimizations that are possible by marking
  * a field final. Yet, stable values offer greater flexibility as to the timing of
  * initialization compared to final fields.
- *<p>
- * There are several variants of stable value objects:
+ * <p>
+ * There are three categories of stable values and six variants of stable value objects :
  * <ul>
- *     <li>Stable value: {@linkplain StableValue {@code StableValue<T>}}</li>
- *     <li>Stable supplier: {@linkplain Supplier {@code Supplier<T>}}</li>
- *     <li>Stable int function: {@linkplain IntFunction {@code IntFunction<R>}}</li>
- *     <li>Stable list: {@linkplain List {@code List<E>}}</li>
- *     <li>Stable function: {@linkplain Function {@code Function<T, R>}}</li>
- *     <li>Stable map: {@linkplain Map {@code Map<K, V>}}</li>
+ *     <li>{@linkplain StableValue##stable-holder Stable Holder}
+ *     <ul>
+ *         <li>Stable value: {@linkplain StableValue {@code StableValue<T>}}</li>
+ *     </ul>
+ *     </li>
+ *     <li>{@linkplain StableValue##stable-functions Stable Functions}
+ *     <ul>
+ *         <li>Stable supplier: {@linkplain Supplier {@code Supplier<T>}}</li>
+ *         <li>Stable int function: {@linkplain IntFunction {@code IntFunction<R>}}</li>
+ *         <li>Stable function: {@linkplain Function {@code Function<T, R>}}</li>
+ *     </ul>
+ *     </li>
+ *     <li>{@linkplain StableValue##stable-collections Stable Collections}
+ *     <ul>
+ *         <li>Stable list: {@linkplain List {@code List<E>}}</li>
+ *         <li>Stable map: {@linkplain Map {@code Map<K, V>}}</li>
+ *     </ul>
+ *     </li>
  * </ul>
- *<p>
- * A <em>stable value</em> ({@linkplain StableValue}) can be used to defer initialization
- * of data while retaining the same performance as if a field was declared {@code final}:
+ *
+ * <h2 id="stable-holder">Stable Holder</h2>
+ * A <em>stable value</em> is of type {@linkplain StableValue {@code StableValue<T>}} and
+ * is a holder of underlying data of type {@code T}. It can be used to defer
+ * initialization of its underlying data while retaining the same performance as if
+ * a field of type {@code T} was declared {@code final}:
  * {@snippet lang = java:
  *    class Component {
  *
@@ -74,13 +89,101 @@ import java.util.function.Supplier;
  *
  *    }
  *}
- *<p>
- * A {@linkplain StableValue} is mainly intended to be a member of a holding class and is
- * usually neither exposed directly via accessors nor passed as a method parameter.
- *<p>
- * A <em>stable supplier</em> allows a more convenient construct where a field declaration
- * can also specify how the underlying data of a stable value is to be initialized, but
- * without actually initializing its underlying data upfront:
+ * <p>
+ * A {@linkplain StableValue} is mainly intended to be a member of a holding class (as
+ * shown in the example above) and is usually neither exposed directly via accessors nor
+ * passed as a method parameter.
+ *
+ * <h3>Initializing the underlying data</h3>
+ * A {@linkplain StableValue}'s underlying data can be initialized to a {@code value} of
+ * type {@code T} via three instance methods:
+ * <ul>
+ *     <li>{@linkplain StableValue#trySet(Object) {@code trySet(T value)}}</li>
+ *     <li>{@linkplain StableValue#setOrThrow(Object) {@code setOrThrow(T value)}}</li>
+ *     <li>{@linkplain StableValue#computeIfUnset(Supplier) {@code computeIfUnset(Supplier<? extends T>} supplier)}</li>
+ * </ul>
+ * <p>
+ * Here is an example of how the underlying data can be initialized imperatively
+ * using a pre-computed value (here {@code 42}) using the method
+ * {@linkplain StableValue#trySet(Object) trySet()}. The method will return {@code true}
+ * if the underlying data was indeed initialized, or it will return {@code false} if
+ * the underlying data was already initialized:
+ *
+ * {@snippet lang=java :
+ *     StableValue<Integer> stableValue = StableValue.of();
+ *     // ...
+ *     if (stableValue.trySet(42)) {
+ *        System.out.println("The underlying data was initialized to 42.");
+ *     } else {
+ *        System.out.println("The value was already initialized.");
+ *     }
+ * }
+ * <p>
+ * A similar way to initialize the underlying data imperatively using a pre-computed
+ * value, is to invoke the method {@linkplain StableValue#setOrThrow(Object)
+ * setOrThrow()}. The method will initialize the underlying data if uninitialized,
+ * otherwise it will throw {@linkplain IllegalStateException}:
+ *
+ * {@snippet lang=java :
+ *     StableValue<Integer> stableValue = StableValue.of();
+ *     // ...
+ *     // Throws IllegalStateException if the underlying data is already initialized
+ *     int val = stableValue.setOrThrow(42); // 42
+ * }
+ * <p>
+ * Finally, the underlying data can be initialized via
+ * {@linkplain StableValue#computeIfUnset(Supplier) {@code computeIfUnset(Supplier<? extends T>} supplier)}
+ * as shown in the {@linkplain StableValue##stable-holder initial example} in this class.
+ * It should be noted that a {@linkplain  StableValue} guarantees the provided
+ * {@code supplier} is invoked at most once if it did not throw an exception even in
+ * a multithreaded environment.
+ *
+ * <h3>Retrieving the underlying data</h3>
+ * The underlying data of a stable value can be retrieved using two instance methods:
+ * <ul>
+ *     <li>{@linkplain StableValue#orElse(Object) {@code orElse(T other)}}</li>
+ *     <li>{@linkplain StableValue#orElseThrow() {@code orElseThrow()}}</li>
+ * </ul>
+ * <p>
+ * By invoking the method {@linkplain StableValue#orElse(Object) orElse(other)}. The
+ * method will return the underlying data if initialized, otherwise it will return
+ * the provided {@code other} value:
+ *
+ * {@snippet lang=java :
+ *     StableValue<Integer> stableValue = StableValue.of();
+ *     // ...
+ *     int val = stableValue.orElse(13); // The underlying data if set, otherwise 13
+ * }
+ * Another way is by means of the {@linkplain StableValue#orElseThrow() orElseThrow()}
+ * method which will retrieve the underlying data if initialized or throw
+ * {@linkplain NoSuchElementException} if the underlying data was not initialized:
+ *
+ * {@snippet lang=java :
+ *     StableValue<Integer> stableValue = StableValue.of();
+ *     // ...
+ *     int val = stableValue.orElseThrow(); // The underlying data, else throws
+ * }
+ *
+ * <h3>Determining the presence of underlying data</h3>
+ * The presence of underlying data can be examined using the method
+ * {@linkplain StableValue#isSet() isSet()}. The method will return {@code true} if the
+ * underlying data is initialized, otherwise it will return {@code false}.
+ *
+ * <h2 id="stable-functions">Stable Functions</h2>
+ * There are three stable functions:
+ * <ul>
+ *     <li>Stable supplier</li>
+ *     <li>Stable int function</li>
+ *     <li>Stable function</li>
+ * </ul>
+ * <p>
+ * All the stable functions guarantee the provided {@code original} function is invoked
+ * successfully at most once per valid input even in a multithreaded environment.
+ * <p>
+ * A <em>stable supplier</em> allows a more convenient construct compared to a
+ * {@linkplain StableValue} in the sense that a field declaration can also specify how
+ * the underlying data of a stable value is to be initialized, but without actually
+ * initializing its underlying data upfront:
  * {@snippet lang = java:
  *     class Component {
  *
@@ -94,15 +197,16 @@ import java.util.function.Supplier;
  *     }
  *}
  * This also allows the stable supplier to be accessed directly, without going through
- * an accessor method like {@code getLogger()}.
- *<p>
+ * an accessor method like {@code getLogger()} in the first example of this class.
+ * <p>
  * A <em>stable int function</em> stores values in an array of stable values where
- * the underlying values are computed the first time a particular input value is seen.
+ * the underlying values are computed the first time a particular input value is provided.
  * When the stable int function is first created --
- * via the {@linkplain StableValue#ofIntFunction(int, IntFunction)} factory -- the input
- * range (i.e. {@code [0, size)}) is specified together with an original
- * {@linkplain IntFunction} which is invoked at most once per input value. In effect,
- * the stable int function will act like a cache for the original {@code IntFunction}:
+ * via the {@linkplain StableValue#ofIntFunction(int, IntFunction)
+ * StableValue.ofIntFunction()} factory -- the input range (i.e. {@code [0, size)}) is
+ * specified together with an original {@linkplain IntFunction} which is invoked
+ * at most once per input value. In effect, the stable int function will act like a cache
+ * for the original {@code IntFunction}:
  * {@snippet lang = java:
  *     class SqrtUtil {
  *
@@ -115,30 +219,14 @@ import java.util.function.Supplier;
  *
  *     }
  *}
- *<p>
- * a <em>stable list</em> is similar to a stable int function, but provides a full
- * implementation of an immutable {@linkplain List}. This is useful when interacting with
- * collection based methods. Here is an example how a stable list can be used to hold
- * a pool of order controllers:
- * {@snippet lang = java:
- *    class Application {
- *        static final List<OrderController> ORDER_CONTROLLERS =
- *                StableValue.ofList(POOL_SIZE, OrderController::new);
- *
- *        public static OrderController orderController() {
- *            long index = Thread.currentThread().threadId() % POOL_SIZE;
- *            return ORDER_CONTROLLERS.get((int) index);
- *        }
- *    }
- * }
- *<p>
+ * <p>
  * A <em>stable function</em> stores values in an array of stable values where
- * the underlying values are computed the first time a particular input value is seen.
+ * the underlying values are computed the first time a particular input value is provided.
  * When the stable function is first created --
- * via the {@linkplain StableValue#ofFunction(Set, Function)} factory -- the input set
- * is specified together with an original {@linkplain Function} which is invoked
- * at most once per input value. In effect, the stable function will act like a
- * cache for the original {@code Function}:
+ * via the {@linkplain StableValue#ofFunction(Set, Function) StableValue.ofFunction()}
+ * factory -- the input set is specified together with an original {@linkplain Function}
+ * which is invoked at most once per input value. In effect, the stable function will act
+ * like a cache for the original {@code Function}:
  * {@snippet lang = java:
  *     class SqrtUtil {
  *
@@ -151,10 +239,37 @@ import java.util.function.Supplier;
  *
  *     }
  *}
- *<p>
- * a <em>stable map</em> is similar to a stable function, but provides a full
+ *
+ * <h2 id="stable-collections">Stable Collections</h2>
+ * There are two stable collections:
+ * <ul>
+ *     <li>Stable list</li>
+ *     <li>Stable map</li>
+ * </ul>
+ * <p>
+ * All the stable collections guarantee the provided {@code original} function is
+ * invoked successfully at most once per valid input even in a multithreaded environment.
+ * <p>
+ * A <em>stable list</em> is similar to a stable int function, but provides a full
+ * implementation of an immutable {@linkplain List}. This is useful when interacting with
+ * collection-based methods. Here is an example how a stable list can be used to hold
+ * a pool of order controllers:
+ * {@snippet lang = java:
+ *    class Application {
+ *        static final List<OrderController> ORDER_CONTROLLERS =
+ *                StableValue.ofList(POOL_SIZE, OrderController::new);
+ *
+ *        public static OrderController orderController() {
+ *            long index = Thread.currentThread().threadId() % POOL_SIZE;
+ *            return ORDER_CONTROLLERS.get((int) index);
+ *        }
+ *    }
+ * }
+ * <p>
+ * A <em>stable map</em> is similar to a stable function, but provides a full
  * implementation of an immutable {@linkplain Map}. This is useful when interacting with
- * collections. Here is how a stable map can be used as a cache for square root values:
+ * collection-based methods. Here is how a stable map can be used as a cache for
+ * square root values:
  * {@snippet lang = java:
  *     class SqrtUtil {
  *
@@ -169,7 +284,7 @@ import java.util.function.Supplier;
  *}
  *
  * <h2 id="memory-consistency">Memory Consistency Properties</h2>
- * Actions on a presumptive underlying data in a thread prior to calling a method that
+ * Actions on the presumptive underlying data in a thread prior to calling a method that
  * <i>sets</i> the underlying data are seen by any other thread that <i>observes</i> a
  * set underlying data.
  * <p>
@@ -177,14 +292,21 @@ import java.util.function.Supplier;
  * with a StableValue's underlying data (e.g. via {@link StableValue#trySet} or
  * {@link StableValue#orElseThrow()}) forms a
  * <a href="{@docRoot}/java.base/java/util/concurrent/package-summary.html#MemoryVisibility"><i>happens-before</i></a>
- * relation between any other attempt to interact with the StableValue's underlying data.
+ * relation between any other action of attempting to interact with the
+ * StableValue's underlying data. The same happens-before guarantees extend to
+ * stable functions and stable collections; any action of attempting to interact via a
+ * valid input value {@code I} <em>happens-before</em> any subsequent action of attempting
+ * to interact via a valid input value {@code J} if, and only if, {@code I} and {@code J}
+ * {@linkplain Object#equals(Object) equals() }
  * <p>
  * Except for a StableValue's underlying data itself, all method parameters must be
  * <em>non-null</em> or a {@link NullPointerException} will be thrown.
  *
- * @implSpec Implementing classes are free to synchronize on {@code this} and consequently,
- *           care should be taken whenever (directly or indirectly) synchronizing on
- *           a StableValue. Failure to do this may lead to deadlock.
+ * @implSpec Implementing classes of {@linkplain StableValue} are free to synchronize on
+ *           {@code this} and consequently, care should be taken whenever
+ *           (directly or indirectly) synchronizing on a StableValue. Failure to do this
+ *           may lead to deadlock. Stable functional constructs and collections on
+ *           the other hand are guaranteed not to not synchronize on {@code this}.
  *
  * @implNote Instance fields explicitly declared as StableValue or one-dimensional arrays
  *           thereof are eligible for certain JVM optimizations where normal instance
@@ -278,7 +400,8 @@ public sealed interface StableValue<T>
      * Sets the underlying data to the provided {@code underlyingData}, or,
      * if already set, throws {@link IllegalStateException}}
      * <p>
-     * When this method returns (or throws an Exception), the underlying data is always set.
+     * When this method returns (or throws an Exception), the underlying data is
+     * always set.
      *
      * @param underlyingData to set
      * @throws IllegalStateException if the underlying data is already set
@@ -316,11 +439,11 @@ public sealed interface StableValue<T>
      * computing thread.
      * <p>
      * If the {@code original} Supplier invokes the returned Supplier recursively,
-     * a StackOverflowError will be thrown when the returned
+     * a {@linkplain StackOverflowError} will be thrown when the returned
      * Supplier's {@linkplain Supplier#get() Supplier::get} method is invoked.
      * <p>
      * If the provided {@code original} supplier throws an exception, it is relayed
-     * to the initial caller.
+     * to the initial caller and no value is recorded.
      *
      * @param original supplier used to compute a memoized value
      * @param <T>      the type of results supplied by the returned supplier
@@ -343,12 +466,12 @@ public sealed interface StableValue<T>
      * an exception is thrown by the computing thread.
      * <p>
      * If the {@code original} IntFunction invokes the returned IntFunction recursively
-     * for a particular input value, a StackOverflowError will be thrown when the returned
-     * IntFunction's {@linkplain IntFunction#apply(int) IntFunction::apply} method is
-     * invoked.
+     * for a particular input value, a {@linkplain StackOverflowError} will be thrown when
+     * the returned IntFunction's {@linkplain IntFunction#apply(int) IntFunction::apply}
+     * method is invoked.
      * <p>
      * If the provided {@code original} IntFunction throws an exception, it is relayed
-     * to the initial caller.
+     * to the initial caller and no value is recorded.
      *
      * @param size     the size of the allowed inputs in {@code [0, size)}
      * @param original IntFunction used to compute a memoized value
@@ -367,8 +490,7 @@ public sealed interface StableValue<T>
      * {@return a new stable, thread-safe, caching, lazily computed {@link Function}
      * that, for each allowed input in the given set of {@code inputs}, records the
      * values of the provided {@code original} Function upon being first accessed via
-     * {@linkplain Function#apply(Object) Function::apply}, or optionally via background
-     * threads created from the provided {@code factory} (if non-null)}
+     * {@linkplain Function#apply(Object) Function::apply}}
      * <p>
      * The provided {@code original} Function is guaranteed to be successfully invoked
      * at most once per allowed input, even in a multi-threaded environment. Competing
@@ -377,16 +499,12 @@ public sealed interface StableValue<T>
      * an exception is thrown by the computing thread.
      * <p>
      * If the {@code original} Function invokes the returned Function recursively
-     * for a particular input value, a StackOverflowError will be thrown when the returned
-     * Function's {@linkplain Function#apply(Object) Function::apply} method is invoked.
+     * for a particular input value, a {@linkplain StackOverflowError} will be thrown when
+     * the returned Function's {@linkplain Function#apply(Object) Function::apply} method
+     * is invoked.
      * <p>
      * If the provided {@code original} Function throws an exception, it is relayed
-     * to the initial caller. If the memoized Function is computed by a background
-     * thread, exceptions from the provided {@code original} Function will be relayed to
-     * the background thread's {@linkplain Thread#getUncaughtExceptionHandler() uncaught
-     * exception handler}.
-     * <p>
-     * The order in which background threads are started is unspecified.
+     * to the initial caller and no value is recorded.
      *
      * @param inputs   the set of allowed input values
      * @param original Function used to compute a memoized value
@@ -412,11 +530,11 @@ public sealed interface StableValue<T>
      * is computed or an exception is thrown by the computing thread.
      * <p>
      * If the {@code mapper} IntFunction invokes the returned IntFunction recursively
-     * for a particular index, a StackOverflowError will be thrown when the returned
-     * List's {@linkplain List#get(int) List::get} method is invoked.
+     * for a particular index, a {@linkplain StackOverflowError} will be thrown when the
+     * returned List's {@linkplain List#get(int) List::get} method is invoked.
      * <p>
      * If the provided {@code mapper} IntFunction throws an exception, it is relayed
-     * to the initial caller and no element is computed.
+     * to the initial caller and no element is recorded.
      * <p>
      * The returned List is not {@link Serializable}.
      *
@@ -434,7 +552,7 @@ public sealed interface StableValue<T>
 
     /**
      * {@return a shallowly immutable, lazy, stable Map of the provided {@code keys}
-     * where the associated values of the maps are lazily computed vio the provided
+     * where the associated values of the maps are lazily computed via the provided
      * {@code mapper} whenever a value is first accessed (directly or indirectly), for
      * example via {@linkplain Map#get(Object) Map::get}}
      * <p>
@@ -444,11 +562,11 @@ public sealed interface StableValue<T>
      * an associated value is computed or an exception is thrown by the computing thread.
      * <p>
      * If the {@code mapper} Function invokes the returned Map recursively
-     * for a particular key, a StackOverflowError will be thrown when the returned
-     * Map's {@linkplain Map#get(Object) Map::get}} method is invoked.
+     * for a particular key, a {@linkplain StackOverflowError} will be thrown when the
+     * returned Map's {@linkplain Map#get(Object) Map::get}} method is invoked.
      * <p>
      * If the provided {@code mapper} Function throws an exception, it is relayed
-     * to the initial caller and no value is computed.
+     * to the initial caller and no value is recorded.
      * <p>
      * The returned Map is not {@link Serializable}.
      *
