@@ -82,22 +82,24 @@ public class DHKeyAgreement2 {
 
     private void run(String mode) throws Exception {
 
-        DHParameterSpec ffhde2048ParamSpec;
+        DHParameterSpec dhParameterSpec;
+        String algorithm = "DH";
+        int primeSize = SecurityUtils.getTestKeySize(algorithm);
 
         if (mode.equals("GENERATE_DH_PARAMS")) {
             // Some central authority creates new DH parameters
             System.err.println("Creating Diffie-Hellman parameters ...");
             AlgorithmParameterGenerator paramGen
                 = AlgorithmParameterGenerator.getInstance("DH", SUNJCE);
-            paramGen.init(2048);
+            paramGen.init(primeSize);
             AlgorithmParameters params = paramGen.generateParameters();
-            ffhde2048ParamSpec = (DHParameterSpec)params.getParameterSpec
+            dhParameterSpec = (DHParameterSpec)params.getParameterSpec
                 (DHParameterSpec.class);
         } else {
             // use some pre-generated, test default DH parameters
-            DiffieHellmanGroup dhGroup = SecurityUtils.getTestDHGroup();
+            DiffieHellmanGroup dhGroup = SecurityUtils.getTestDHGroup(primeSize);
             System.err.println("Using " + dhGroup.name() + " Diffie-Hellman parameters");
-            ffhde2048ParamSpec = new DHParameterSpec(dhGroup.getModulus(),
+            dhParameterSpec = new DHParameterSpec(dhGroup.getModulus(),
                     dhGroup.getBase());
         }
 
@@ -107,7 +109,7 @@ public class DHKeyAgreement2 {
          */
         System.err.println("ALICE: Generate DH keypair ...");
         KeyPairGenerator aliceKpairGen = KeyPairGenerator.getInstance("DH", SUNJCE);
-        aliceKpairGen.initialize(ffhde2048ParamSpec);
+        aliceKpairGen.initialize(dhParameterSpec);
         KeyPair aliceKpair = aliceKpairGen.generateKeyPair();
         System.out.println("Alice DH public key:\n" +
                            aliceKpair.getPublic().toString());
