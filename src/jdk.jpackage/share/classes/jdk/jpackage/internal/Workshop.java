@@ -33,9 +33,10 @@ interface Workshop {
     Path resourceDir();
 
     /**
-     * Returns path to application image directory. When building app image this is the path to a
-     * directory where it is assembled. When building a package this is the path to the source app
-     * image.
+     * Returns path to application image directory.
+     *
+     * The return value is supposed to be used as a parameter for
+     * ApplicationLayout#resolveAt function.
      */
     default Path appImageDir() {
         return buildRoot().resolve("image");

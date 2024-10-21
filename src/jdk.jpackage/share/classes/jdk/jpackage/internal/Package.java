@@ -87,10 +87,16 @@ interface Package {
 
     Path predefinedAppImage();
 
+    /**
+     * Returns source app image layout.
+     */
     default ApplicationLayout appLayout() {
         return app().appLayout();
     }
 
+    /**
+     * Returns app image layout inside of the package.
+     */
     default ApplicationLayout packageLayout() {
         var layout = appLayout();
         var pathGroup = layout.pathGroup();
@@ -103,6 +109,9 @@ interface Package {
         return layout;
     }
 
+    /**
+     * Returns app image layout of the installed package.
+     */
     default ApplicationLayout installedPackageLayout() {
         Path root = relativeInstallDir();
         if (type() instanceof StandardPackageType type) {
@@ -247,7 +256,7 @@ interface Package {
         public Path configuredInstallBaseDir() {
             throw new UnsupportedOperationException();
         }
-        
+
     }
 
     static class Proxy<T extends Package> extends ProxyBase<T> implements Package {
