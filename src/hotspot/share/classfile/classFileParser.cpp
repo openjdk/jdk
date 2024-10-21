@@ -4076,26 +4076,6 @@ void ClassFileParser::check_super_class_access(const InstanceKlass* this_klass, 
       return;
     }
 
-    // If the loader is not the boot loader then throw an exception if its
-    // superclass is in package jdk.internal.reflect and its loader is not a
-    // special reflection class loader
-    if (!this_klass->class_loader_data()->is_the_null_class_loader_data()) {
-      PackageEntry* super_package = super->package();
-      if (super_package != nullptr &&
-          super_package->name()->fast_compare(vmSymbols::jdk_internal_reflect()) == 0 &&
-          !java_lang_ClassLoader::is_reflection_class_loader(this_klass->class_loader())) {
-        ResourceMark rm(THREAD);
-        Exceptions::fthrow(
-          THREAD_AND_LOCATION,
-          vmSymbols::java_lang_IllegalAccessError(),
-          "class %s loaded by %s cannot access jdk/internal/reflect superclass %s",
-          this_klass->external_name(),
-          this_klass->class_loader_data()->loader_name_and_id(),
-          super->external_name());
-        return;
-      }
-    }
-
     Reflection::VerifyClassAccessResults vca_result =
       Reflection::verify_class_access(this_klass, InstanceKlass::cast(super), false);
     if (vca_result != Reflection::ACCESS_OK) {
@@ -5106,7 +5086,7 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik,
 
   // Set PackageEntry for this_klass
   oop cl = ik->class_loader();
-  Handle clh = Handle(THREAD, java_lang_ClassLoader::non_reflection_class_loader(cl));
+  Handle clh = Handle(THREAD, cl);
   ClassLoaderData* cld = ClassLoaderData::class_loader_data_or_null(clh());
   ik->set_package(cld, nullptr, CHECK);
 
