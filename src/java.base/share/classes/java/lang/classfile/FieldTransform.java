@@ -30,6 +30,8 @@ import java.util.function.Supplier;
 
 import jdk.internal.classfile.impl.TransformImpl;
 
+import static java.util.Objects.requireNonNull;
+
 /**
  * A transformation on streams of {@link FieldElement}.
  *
@@ -60,7 +62,7 @@ public non-sealed interface FieldTransform
      * @return the stateful field transform
      */
     static FieldTransform ofStateful(Supplier<FieldTransform> supplier) {
-        return new TransformImpl.SupplierFieldTransform(supplier);
+        return new TransformImpl.SupplierFieldTransform(requireNonNull(supplier));
     }
 
     /**
@@ -71,6 +73,7 @@ public non-sealed interface FieldTransform
      * @return the field transform
      */
     static FieldTransform endHandler(Consumer<FieldBuilder> finisher) {
+        requireNonNull(finisher);
         return new FieldTransform() {
             @Override
             public void accept(FieldBuilder builder, FieldElement element) {
@@ -92,6 +95,7 @@ public non-sealed interface FieldTransform
      * @return the field transform
      */
     static FieldTransform dropping(Predicate<FieldElement> filter) {
+        requireNonNull(filter);
         return (b, e) -> {
             if (!filter.test(e))
                 b.with(e);
@@ -107,6 +111,6 @@ public non-sealed interface FieldTransform
      */
     @Override
     default FieldTransform andThen(FieldTransform t) {
-        return new TransformImpl.ChainedFieldTransform(this, t);
+        return new TransformImpl.ChainedFieldTransform(this, requireNonNull(t));
     }
 }

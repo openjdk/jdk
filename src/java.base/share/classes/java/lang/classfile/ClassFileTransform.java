@@ -24,9 +24,8 @@
  */
 package java.lang.classfile;
 
-import java.util.function.Supplier;
-
 import java.lang.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
+import java.util.function.Supplier;
 
 /**
  * A transformation on streams of elements. Transforms are used during

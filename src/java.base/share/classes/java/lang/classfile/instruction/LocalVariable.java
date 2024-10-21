@@ -90,6 +90,7 @@ public sealed interface LocalVariable extends PseudoInstruction
      * @param descriptorEntry the local variable descriptor
      * @param startScope the start range of the local variable scope
      * @param endScope the end range of the local variable scope
+     * @throws IllegalArgumentException if {@code slot} is out of range
      */
     static LocalVariable of(int slot, Utf8Entry nameEntry, Utf8Entry descriptorEntry, Label startScope, Label endScope) {
         return new AbstractPseudoInstruction.UnboundLocalVariable(slot, nameEntry, descriptorEntry,
@@ -104,6 +105,7 @@ public sealed interface LocalVariable extends PseudoInstruction
      * @param descriptor the local variable descriptor
      * @param startScope the start range of the local variable scope
      * @param endScope the end range of the local variable scope
+     * @throws IllegalArgumentException if {@code slot} is out of range
      */
     static LocalVariable of(int slot, String name, ClassDesc descriptor, Label startScope, Label endScope) {
         return of(slot,

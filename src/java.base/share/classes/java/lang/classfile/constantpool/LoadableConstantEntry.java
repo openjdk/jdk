@@ -24,8 +24,8 @@
  */
 package java.lang.classfile.constantpool;
 
-import java.lang.constant.ConstantDesc;
 import java.lang.classfile.TypeKind;
+import java.lang.constant.ConstantDesc;
 
 /**
  * Marker interface for constant pool entries suitable for loading via the

@@ -24,9 +24,10 @@
  */
 package java.lang.classfile.constantpool;
 
+import java.lang.constant.ClassDesc;
+
 import jdk.internal.classfile.impl.AbstractPoolEntry;
 import jdk.internal.classfile.impl.Util;
-import java.lang.constant.ClassDesc;
 
 /**
  * Models a {@code CONSTANT_Fieldref_info} constant in the constant pool of a
@@ -42,6 +43,6 @@ public sealed interface FieldRefEntry extends MemberRefEntry
      * {@return a symbolic descriptor for the field's type}
      */
     default ClassDesc typeSymbol() {
-        return Util.fieldTypeSymbol(nameAndType());
+        return Util.fieldTypeSymbol(type());
     }
 }

@@ -24,12 +24,14 @@
  */
 package java.lang.classfile;
 
+import java.lang.classfile.attribute.CodeAttribute;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
-import java.lang.classfile.attribute.CodeAttribute;
 import jdk.internal.classfile.impl.TransformImpl;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * A transformation on streams of {@link ClassElement}.
@@ -61,7 +63,7 @@ public non-sealed interface ClassTransform
      * @return the stateful class transform
      */
     static ClassTransform ofStateful(Supplier<ClassTransform> supplier) {
-        return new TransformImpl.SupplierClassTransform(supplier);
+        return new TransformImpl.SupplierClassTransform(requireNonNull(supplier));
     }
 
     /**
@@ -72,6 +74,7 @@ public non-sealed interface ClassTransform
      * @return the class transform
      */
     static ClassTransform endHandler(Consumer<ClassBuilder> finisher) {
+        requireNonNull(finisher);
         return new ClassTransform() {
             @Override
             public void accept(ClassBuilder builder, ClassElement element) {
@@ -93,6 +96,7 @@ public non-sealed interface ClassTransform
      * @return the class transform
      */
     static ClassTransform dropping(Predicate<ClassElement> filter) {
+        requireNonNull(filter);
         return (b, e) -> {
             if (!filter.test(e))
                 b.with(e);
@@ -109,7 +113,7 @@ public non-sealed interface ClassTransform
      */
     static ClassTransform transformingMethods(Predicate<MethodModel> filter,
                                               MethodTransform xform) {
-        return new TransformImpl.ClassMethodTransform(xform, filter);
+        return new TransformImpl.ClassMethodTransform(requireNonNull(xform), requireNonNull(filter));
     }
 
     /**
@@ -120,7 +124,7 @@ public non-sealed interface ClassTransform
      * @return the class transform
      */
     static ClassTransform transformingMethods(MethodTransform xform) {
-        return transformingMethods(mm -> true, xform);
+        return transformingMethods(_ -> true, xform);
     }
 
     /**
@@ -155,7 +159,7 @@ public non-sealed interface ClassTransform
      * @return the class transform
      */
     static ClassTransform transformingFields(FieldTransform xform) {
-        return new TransformImpl.ClassFieldTransform(xform, f -> true);
+        return new TransformImpl.ClassFieldTransform(requireNonNull(xform), _ -> true);
     }
 
     /**
@@ -167,6 +171,6 @@ public non-sealed interface ClassTransform
      */
     @Override
     default ClassTransform andThen(ClassTransform t) {
-        return new TransformImpl.ChainedClassTransform(this, t);
+        return new TransformImpl.ChainedClassTransform(this, requireNonNull(t));
     }
 }

@@ -25,13 +25,12 @@
 package java.lang.classfile.constantpool;
 
 import java.lang.classfile.TypeKind;
-import jdk.internal.classfile.impl.Util;
-
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDesc;
 import java.lang.constant.DynamicConstantDesc;
 
 import jdk.internal.classfile.impl.AbstractPoolEntry;
+import jdk.internal.classfile.impl.Util;
 
 /**
  * Models a {@code CONSTANT_Dynamic_info} constant in the constant pool of a
@@ -48,7 +47,7 @@ public sealed interface ConstantDynamicEntry
      * {@return a symbolic descriptor for the dynamic constant's type}
      */
     default ClassDesc typeSymbol() {
-        return Util.fieldTypeSymbol(nameAndType());
+        return Util.fieldTypeSymbol(type());
     }
 
     @Override

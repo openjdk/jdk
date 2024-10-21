@@ -25,6 +25,8 @@
 
 package java.lang.classfile;
 
+import java.lang.classfile.constantpool.*;
+import java.lang.classfile.instruction.*;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDesc;
 import java.lang.constant.ConstantDescs;
@@ -36,58 +38,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 
-import java.lang.classfile.constantpool.ClassEntry;
-import java.lang.classfile.constantpool.FieldRefEntry;
-import java.lang.classfile.constantpool.InterfaceMethodRefEntry;
-import java.lang.classfile.constantpool.InvokeDynamicEntry;
-import java.lang.classfile.constantpool.LoadableConstantEntry;
-import java.lang.classfile.constantpool.MemberRefEntry;
-import java.lang.classfile.constantpool.MethodRefEntry;
-import java.lang.classfile.constantpool.MethodHandleEntry;
-import java.lang.classfile.constantpool.NameAndTypeEntry;
-import java.lang.classfile.constantpool.Utf8Entry;
-import jdk.internal.classfile.impl.BlockCodeBuilderImpl;
-import jdk.internal.classfile.impl.BytecodeHelpers;
-import jdk.internal.classfile.impl.CatchBuilderImpl;
-import jdk.internal.classfile.impl.ChainedCodeBuilder;
-import jdk.internal.classfile.impl.LabelImpl;
-import jdk.internal.classfile.impl.NonterminalCodeBuilder;
-import jdk.internal.classfile.impl.TerminalCodeBuilder;
-import java.lang.classfile.instruction.ArrayLoadInstruction;
-import java.lang.classfile.instruction.ArrayStoreInstruction;
-import java.lang.classfile.instruction.BranchInstruction;
-import java.lang.classfile.instruction.CharacterRange;
-import java.lang.classfile.instruction.ConstantInstruction;
-import java.lang.classfile.instruction.ConvertInstruction;
-import java.lang.classfile.instruction.ExceptionCatch;
-import java.lang.classfile.instruction.FieldInstruction;
-import java.lang.classfile.instruction.IncrementInstruction;
-import java.lang.classfile.instruction.InvokeDynamicInstruction;
-import java.lang.classfile.instruction.InvokeInstruction;
-import java.lang.classfile.instruction.LineNumber;
-import java.lang.classfile.instruction.LoadInstruction;
-import java.lang.classfile.instruction.LocalVariable;
-import java.lang.classfile.instruction.LocalVariableType;
-import java.lang.classfile.instruction.LookupSwitchInstruction;
-import java.lang.classfile.instruction.MonitorInstruction;
-import java.lang.classfile.instruction.NewMultiArrayInstruction;
-import java.lang.classfile.instruction.NewObjectInstruction;
-import java.lang.classfile.instruction.NewPrimitiveArrayInstruction;
-import java.lang.classfile.instruction.NewReferenceArrayInstruction;
-import java.lang.classfile.instruction.NopInstruction;
-import java.lang.classfile.instruction.OperatorInstruction;
-import java.lang.classfile.instruction.ReturnInstruction;
-import java.lang.classfile.instruction.StackInstruction;
-import java.lang.classfile.instruction.StoreInstruction;
-import java.lang.classfile.instruction.SwitchCase;
-import java.lang.classfile.instruction.TableSwitchInstruction;
-import java.lang.classfile.instruction.ThrowInstruction;
-import java.lang.classfile.instruction.TypeCheckInstruction;
+import jdk.internal.classfile.impl.*;
 
 import static java.util.Objects.requireNonNull;
 import static jdk.internal.classfile.impl.BytecodeHelpers.handleDescToHandleInfo;
-
-import jdk.internal.classfile.impl.TransformImpl;
 
 /**
  * A builder for code attributes (method bodies).  Builders are not created
@@ -425,6 +379,8 @@ public sealed interface CodeBuilder
      * @param tk the load type
      * @param slot the local variable slot
      * @return this builder
+     * @throws IllegalArgumentException if {@code tk} is {@link TypeKind#VOID void}
+     *         or {@code slot} is out of range
      */
     default CodeBuilder loadLocal(TypeKind tk, int slot) {
         return with(LoadInstruction.of(tk, slot));
@@ -435,6 +391,8 @@ public sealed interface CodeBuilder
      * @param tk the store type
      * @param slot the local variable slot
      * @return this builder
+     * @throws IllegalArgumentException if {@code tk} is {@link TypeKind#VOID void}
+     *         or {@code slot} is out of range
      */
     default CodeBuilder storeLocal(TypeKind tk, int slot) {
         return with(StoreInstruction.of(tk, slot));
@@ -777,6 +735,7 @@ public sealed interface CodeBuilder
      * @param startScope the start scope of the variable
      * @param endScope the end scope of the variable
      * @return this builder
+     * @throws IllegalArgumentException if {@code slot} is out of range
      */
     default CodeBuilder localVariable(int slot, Utf8Entry nameEntry, Utf8Entry descriptorEntry, Label startScope, Label endScope) {
         return with(LocalVariable.of(slot, nameEntry, descriptorEntry, startScope, endScope));
@@ -790,6 +749,7 @@ public sealed interface CodeBuilder
      * @param startScope the start scope of the variable
      * @param endScope the end scope of the variable
      * @return this builder
+     * @throws IllegalArgumentException if {@code slot} is out of range
      */
     default CodeBuilder localVariable(int slot, String name, ClassDesc descriptor, Label startScope, Label endScope) {
         return localVariable(slot,
@@ -806,6 +766,7 @@ public sealed interface CodeBuilder
      * @param startScope the start scope of the variable
      * @param endScope the end scope of the variable
      * @return this builder
+     * @throws IllegalArgumentException if {@code slot} is out of range
      */
     default CodeBuilder localVariableType(int slot, Utf8Entry nameEntry, Utf8Entry signatureEntry, Label startScope, Label endScope) {
         return with(LocalVariableType.of(slot, nameEntry, signatureEntry, startScope, endScope));
@@ -819,6 +780,7 @@ public sealed interface CodeBuilder
      * @param startScope the start scope of the variable
      * @param endScope the end scope of the variable
      * @return this builder
+     * @throws IllegalArgumentException if {@code slot} is out of range
      */
     default CodeBuilder localVariableType(int slot, String name, Signature signature, Label startScope, Label endScope) {
         return localVariableType(slot,
@@ -861,6 +823,7 @@ public sealed interface CodeBuilder
      *
      * @param slot the local variable slot
      * @return this builder
+     * @throws IllegalArgumentException if {@code slot} is out of range
      */
     default CodeBuilder aload(int slot) {
         return loadLocal(TypeKind.REFERENCE, slot);
@@ -909,6 +872,7 @@ public sealed interface CodeBuilder
      *
      * @param slot the local variable slot
      * @return this builder
+     * @throws IllegalArgumentException if {@code slot} is out of range
      */
     default CodeBuilder astore(int slot) {
         return storeLocal(TypeKind.REFERENCE, slot);
@@ -942,6 +906,7 @@ public sealed interface CodeBuilder
      * Generate an instruction pushing an int in the range of byte onto the operand stack.
      * @param b the int in the range of byte
      * @return this builder
+     * @throws IllegalArgumentException if {@code b} is out of range of byte
      */
     default CodeBuilder bipush(int b) {
         return with(ConstantInstruction.ofArgument(Opcode.BIPUSH, b));
@@ -1078,6 +1043,7 @@ public sealed interface CodeBuilder
      *
      * @param slot the local variable slot
      * @return this builder
+     * @throws IllegalArgumentException if {@code slot} is out of range
      */
     default CodeBuilder dload(int slot) {
         return loadLocal(TypeKind.DOUBLE, slot);
@@ -1123,6 +1089,7 @@ public sealed interface CodeBuilder
      *
      * @param slot the local variable slot
      * @return this builder
+     * @throws IllegalArgumentException if {@code slot} is out of range
      */
     default CodeBuilder dstore(int slot) {
         return storeLocal(TypeKind.DOUBLE, slot);
@@ -1290,6 +1257,7 @@ public sealed interface CodeBuilder
      *
      * @param slot the local variable slot
      * @return this builder
+     * @throws IllegalArgumentException if {@code slot} is out of range
      */
     default CodeBuilder fload(int slot) {
         return loadLocal(TypeKind.FLOAT, slot);
@@ -1335,6 +1303,7 @@ public sealed interface CodeBuilder
      *
      * @param slot the local variable slot
      * @return this builder
+     * @throws IllegalArgumentException if {@code slot} is out of range
      */
     default CodeBuilder fstore(int slot) {
         return storeLocal(TypeKind.FLOAT, slot);
@@ -1710,6 +1679,7 @@ public sealed interface CodeBuilder
      * @param slot the local variable slot
      * @param val the increment value
      * @return this builder
+     * @throws IllegalArgumentException if {@code slot} or {@code val} is out of range
      */
     default CodeBuilder iinc(int slot, int val) {
         return with(IncrementInstruction.of(slot, val));
@@ -1723,6 +1693,7 @@ public sealed interface CodeBuilder
      *
      * @param slot the local variable slot
      * @return this builder
+     * @throws IllegalArgumentException if {@code slot} is out of range
      */
     default CodeBuilder iload(int slot) {
         return loadLocal(TypeKind.INT, slot);
@@ -1979,6 +1950,7 @@ public sealed interface CodeBuilder
      *
      * @param slot the local variable slot
      * @return this builder
+     * @throws IllegalArgumentException if {@code slot} is out of range
      */
     default CodeBuilder istore(int slot) {
         return storeLocal(TypeKind.INT, slot);
@@ -2141,6 +2113,7 @@ public sealed interface CodeBuilder
      *
      * @param slot the local variable slot
      * @return this builder
+     * @throws IllegalArgumentException if {@code slot} is out of range
      */
     default CodeBuilder lload(int slot) {
         return loadLocal(TypeKind.LONG, slot);
@@ -2210,6 +2183,7 @@ public sealed interface CodeBuilder
      *
      * @param slot the local variable slot
      * @return this builder
+     * @throws IllegalArgumentException if {@code slot} is out of range
      */
     default CodeBuilder lstore(int slot) {
         return storeLocal(TypeKind.LONG, slot);
@@ -2260,6 +2234,7 @@ public sealed interface CodeBuilder
      * @param array the array type
      * @param dims the number of dimensions
      * @return this builder
+     * @throws IllegalArgumentException if {@code dims} is out of range
      */
     default CodeBuilder multianewarray(ClassEntry array, int dims) {
         return with(NewMultiArrayInstruction.of(array, dims));
@@ -2271,6 +2246,7 @@ public sealed interface CodeBuilder
      * @param dims the number of dimensions
      * @return this builder
      * @throws IllegalArgumentException if {@code array} represents a primitive type
+     * or if {@code dims} is out of range
      */
     default CodeBuilder multianewarray(ClassDesc array, int dims) {
         return multianewarray(constantPool().classEntry(array), dims);
@@ -2309,6 +2285,8 @@ public sealed interface CodeBuilder
      * Generate an instruction to create a new array of a primitive type
      * @param typeKind the primitive array type
      * @return this builder
+     * @throws IllegalArgumentException when the {@code typeKind} is not a legal
+     *         primitive array component type
      */
     default CodeBuilder newarray(TypeKind typeKind) {
         return with(NewPrimitiveArrayInstruction.of(typeKind));
@@ -2405,6 +2383,7 @@ public sealed interface CodeBuilder
      * Generate an instruction pushing an int in the range of short onto the operand stack.
      * @param s the int in the range of short
      * @return this builder
+     * @throws IllegalArgumentException if {@code s} is out of range of short
      */
     default CodeBuilder sipush(int s) {
         return with(ConstantInstruction.ofArgument(Opcode.SIPUSH, s));

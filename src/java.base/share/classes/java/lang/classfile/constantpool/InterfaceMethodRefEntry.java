@@ -24,9 +24,10 @@
  */
 package java.lang.classfile.constantpool;
 
+import java.lang.constant.MethodTypeDesc;
+
 import jdk.internal.classfile.impl.AbstractPoolEntry;
 import jdk.internal.classfile.impl.Util;
-import java.lang.constant.MethodTypeDesc;
 
 /**
  * Models a {@code CONSTANT_InterfaceMethodRef_info} constant in the constant pool of a
@@ -43,6 +44,6 @@ public sealed interface InterfaceMethodRefEntry
      * {@return a symbolic descriptor for the interface method's type}
      */
     default MethodTypeDesc typeSymbol() {
-        return Util.methodTypeSymbol(nameAndType());
+        return Util.methodTypeSymbol(type());
     }
 }
