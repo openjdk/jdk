@@ -45,10 +45,10 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
 
   IntervalChange stA{
       IntervalState{StateType::Released, empty_regiondata},
-      IntervalState{              state,   metadata}
+      IntervalState{              state, metadata}
   };
   IntervalChange stB{
-      IntervalState{              state,   metadata},
+      IntervalState{              state, metadata},
       IntervalState{StateType::Released, empty_regiondata}
   };
 
@@ -127,42 +127,17 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
   // We first search all nodes that are (A, B]. All of these nodes
   // need to be deleted and summary accounted for. The last node before B determines B's outgoing state.
   // If there is no node between A and B, its A's incoming state.
-  GrowableArrayCHeap<AddressState, mtNMT> to_be_deleted_inbetween_a_b;
   bool B_needs_insert = true;
 
-  // Find all nodes between (A, B] and record their addresses and values. Also update B's
-  // outgoing state.
-  _tree.visit_range_in_order(A + 1, B + 1, [&](TreapNode* head) {
-    int cmp_B = PositionComparator::cmp(head->key(), B);
-    stB.out = head->val().out;
-    if (cmp_B < 0) {
-      // Record all nodes preceding B.
-      to_be_deleted_inbetween_a_b.push({head->key(), head->val()});
-    } else if (cmp_B == 0) {
-      // Re-purpose B node, unless it would result in a noop node, in
-      // which case record old node at B for deletion and summary accounting.
-      if (stB.is_noop()) {
-        to_be_deleted_inbetween_a_b.push(AddressState{B, head->val()});
-      } else {
-        head->val() = stB;
-      }
-      B_needs_insert = false;
-    }
-  });
+  // Find range (A, B)
+  // l: [0, A], r: (A, +Inf]
+  VMATreap::node_pair a = _tree.split(_tree.root(), A, VMATreap::SplitMode::LEQ);
+  // l: (A, B), r: [B, +Inf]
+  VMATreap::node_pair b = _tree.split(a.right, B, VMATreap::SplitMode::LT);
+  TreapNode* a_b_range = b.left;
 
-  // Insert B node if needed
-  if (B_needs_insert && // Was not already inserted
-      !stB.is_noop())   // The operation is differing
-    {
-    _tree.upsert(B, stB);
-  }
-
-  // We now need to:
-  // a) Delete all nodes between (A, B]. Including B in the case of a noop.
-  // b) Perform summary accounting
   SummaryDiff diff;
-
-  if (to_be_deleted_inbetween_a_b.length() == 0 && LEQ_A_found) {
+  if (a_b_range == nullptr && LEQ_A_found) {
     // We must have smashed a hole in an existing region (or replaced it entirely).
     // LEQ_A < A < B <= C
     SingleDiff& rescom = diff.tag[NMTUtil::tag_to_index(LEQ_A.out().mem_tag())];
@@ -176,19 +151,49 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
 
   // Track the previous node.
   AddressState prev{A, stA};
-  for (int i = 0; i < to_be_deleted_inbetween_a_b.length(); i++) {
-    const AddressState delete_me = to_be_deleted_inbetween_a_b.at(i);
-    _tree.remove(delete_me.address);
 
+  _worklist.clear();
+  VMATreap::visit_in_order(a_b_range, _worklist, [&](TreapNode* head) {
+    AddressState current{head->key(), head->val()};
     // Perform summary accounting
-    SingleDiff& rescom = diff.tag[NMTUtil::tag_to_index(delete_me.in().mem_tag())];
-    if (delete_me.in().type() == StateType::Reserved) {
-      rescom.reserve -= delete_me.address - prev.address;
-    } else if (delete_me.in().type() == StateType::Committed) {
-      rescom.commit -= delete_me.address - prev.address;
-      rescom.reserve -= delete_me.address - prev.address;
+    SingleDiff& rescom = diff.tag[NMTUtil::tag_to_index(current.in().mem_tag())];
+    if (current.in().type() == StateType::Reserved) {
+      rescom.reserve -= current.address - prev.address;
+    } else if (current.in().type() == StateType::Committed) {
+      rescom.commit -= current.address - prev.address;
+      rescom.reserve -= current.address - prev.address;
     }
-    prev = delete_me;
+    prev = current;
+    return true;
+  });
+
+  if (a_b_range != nullptr) {
+    stB.out = prev.state.out;
+  }
+
+  TreapNode* b_found = VMATreap::find(b.right, B);
+  if (b_found != nullptr) {
+    stB.out = b_found->val().out;
+    if (!stB.is_noop()) {
+      b_found->val() = stB;
+    }
+    B_needs_insert = false;
+  }
+  // Exclude (A, B), removing it
+  _tree.root() = VMATreap::merge(a.left, b.right);
+  // Delete the nodes of (A, B)
+  _worklist.clear();
+  _tree.remove_tree(b.left, _worklist);
+
+  // Insert B node if needed
+  if (B_needs_insert && // Was not already inserted
+      !stB.is_noop()) // The operation is differing
+  {
+    _tree.upsert(B, stB);
+  }
+  // B turned out to be superfluous and was found, so delete it.
+  if (!B_needs_insert && stB.is_noop()) {
+    _tree.remove(B);
   }
 
   if (prev.address != A && prev.out().type() != StateType::Released) {
