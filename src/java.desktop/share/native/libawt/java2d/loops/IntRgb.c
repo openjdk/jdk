@@ -34,6 +34,8 @@
 #include "ByteGray.h"
 #include "Index12Gray.h"
 
+#include "ub.h"
+
 /*
  * This file declares, registers, and defines the various graphics
  * primitive loops to manipulate surfaces of type "IntRgb".
@@ -166,6 +168,7 @@ DEFINE_ALPHA_MASKBLIT(IntArgbPre, IntRgb, 4ByteArgb)
 
 DEFINE_ALPHA_MASKBLIT(IntRgb, IntRgb, 4ByteArgb)
 
+ATTRIBUTE_NO_UBSAN
 DEFINE_SOLID_DRAWGLYPHLISTAA(IntRgb, 3ByteRgb)
 
 DEFINE_SOLID_DRAWGLYPHLISTLCD(IntRgb, 3ByteRgb)

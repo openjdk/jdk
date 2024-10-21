@@ -201,6 +201,7 @@ java/awt/event/KeyEvent/ExtendedKeyCode/ExtendedKeyCodeTest.java 8169476 windows
 java/awt/event/KeyEvent/KeyChar/KeyCharTest.java 8169474,8224055 macosx-all,windows-all
 java/awt/event/KeyEvent/KeyTyped/CtrlASCII.java 8298910 linux-all
 
+java/awt/dnd/DnDRemoveFocusOwnerCrashTest.java 8242805 macosx-all
 java/awt/dnd/DnDCursorCrashTest.java 8242805 macosx-all
 java/awt/dnd/DnDClipboardDeadlockTest.java 8079553 linux-all
 java/awt/dnd/URIListToFileListBetweenJVMsTest/URIListToFileListBetweenJVMsTest.java 8194947 generic-all
@@ -477,6 +478,9 @@ java/awt/KeyboardFocusmanager/ConsumeNextMnemonicKeyTypedTest/ConsumeNextMnemoni
 
 java/awt/Window/GetScreenLocation/GetScreenLocationTest.java 8225787 linux-x64
 java/awt/Dialog/MakeWindowAlwaysOnTop/MakeWindowAlwaysOnTop.java 8266243 macosx-aarch64
+java/awt/Dialog/PrintToFileTest/PrintToFileRevoked.java 8029249 macosx-all
+java/awt/Dialog/PrintToFileTest/PrintToFileGranted.java 8029249 macosx-all
+java/awt/Dialog/ChoiceModalDialogTest.java 8161475 macosx-all
 java/awt/Dialog/FileDialogUserFilterTest.java 8001142 generic-all
 
 java/awt/dnd/BadSerializationTest/BadSerializationTest.java 8277817 linux-x64,windows-x64
