@@ -121,7 +121,7 @@ public:
       for (int i = 0; i < up_to; i++) {
         treap.upsert(i, i);
       }
-      treap.remove_all();
+      treap.delete_all();
       EXPECT_EQ(0, treap._allocator.allocations);
       EXPECT_EQ(nullptr, treap._root);
     }
@@ -200,7 +200,7 @@ TEST_VM_F(NMTTreapTest, TestVisitors) {
       EXPECT_TRUE(false) << "Empty visiting range should not visit any node";
     });
 
-    treap.remove_all();
+    treap.delete_all();
     for (int i = 0; i < 11; i++) {
       treap.upsert(i, 0);
     }
