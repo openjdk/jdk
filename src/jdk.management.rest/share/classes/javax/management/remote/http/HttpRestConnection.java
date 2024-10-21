@@ -89,6 +89,8 @@ public class HttpRestConnection implements MBeanServerConnection, Closeable {
     protected HashMap<ObjectName,String> objectInfoRefMap;
     protected HashMap<ObjectName,JSONObject> objectInfoMap;
 
+    private volatile boolean terminated;
+
     private static final String CHARSET = "UTF-8";
     private static AtomicInteger id = new AtomicInteger(0); 
 
@@ -104,8 +106,10 @@ public class HttpRestConnection implements MBeanServerConnection, Closeable {
         objectInfoRefMap = new HashMap<ObjectName,String>();
         objectInfoMap = new HashMap<ObjectName, JSONObject>();
         connectionId = Integer.toString(id.incrementAndGet());
+        terminated = false;
 
         System.err.println("XXXX HttpRestConnection created on baseURL " + baseURL);
+        new Exception("XXXXXX").printStackTrace(System.out);
     }
 
 private static void stacks() {
@@ -151,10 +155,21 @@ private static void printStack(Thread t, StackTraceElement[] stack) {
 
     public void close() throws IOException {
         // Consider a terminated flag like RMIConnectionImpl.
+        terminated = true;
+        if (notifPoller != null) {
+            notifPoller.stop();
+        }
+        new Exception("XXXXXX").printStackTrace(System.out);
     }
 
      public String getConnectionId() throws IOException {
-         return baseURL + " " + connectionId;
+        // Need to throw if connection closed, see FailedConnectionTest.java.
+        if (terminated) {
+            throw new IOException("connection closed");
+        }
+        // RMIConnectionIdTest expects protocol://host
+        int p = baseURL.indexOf(":", 6);
+        return baseURL.substring(0, p) + " " + baseURL.substring(p + 1) + "  " + connectionId;
      }
 
     protected void readMBeans() throws IOException {
@@ -825,12 +840,15 @@ private static void printStack(Thread t, StackTraceElement[] stack) {
         // addNotification... methods are void, but the HTTP request can check response and throw if appropriate.
         // Throwing where not implemented causes a problem some apps, e.g. JMC.
 
+        readMBeans(); // better refresh required
+
         JSONObject o = objectInfoForName(name);
         if (o == null) {
             throw new InstanceNotFoundException("Not known: " + name);
         }
 
-        // Server will perform its own addNotificationListener, with a proxy listener to store results.
+        // Remote server will perform its own addNotificationListener, with a listener to store results awaiting
+        // our poll request.
         JSONObject body = new JSONObject();
         body.put("addNotificationListener", "123");
         body.put("name", name.toString());
@@ -895,17 +913,20 @@ private static void printStack(Thread t, StackTraceElement[] stack) {
 
         protected List<String> refs;
         protected List<NotificationListener> listeners;
+        protected List<Object> handbacks;
         protected volatile boolean active;
 
         public NotifPoller() {
             refs = new ArrayList<>();
             listeners = new ArrayList<>();
-            active = true; // add a stop method?
+            handbacks = new ArrayList<>();
+            active = true;
         }
 
         public void add(String r, NotificationListener listener, Object handback) {
             refs.add(r);
             listeners.add(listener);
+            handbacks.add(handback);
         }
 
         public void run() {
@@ -930,12 +951,11 @@ private static void printStack(Thread t, StackTraceElement[] stack) {
                             System.err.println("XXXX Notification poll gets: " + j.toJsonString());
                             // Recognise any Notifications and invoke them here in the client...
                             NotificationListener listener = listeners.get(i); 
-                            Object handback = null;
                             for (JSONElement json : j) {
                                 if (json != null && json instanceof JSONObject) {
                                     Notification n = decodeNotification((JSONObject) json);
                                     System.err.println("HttpRestConnection NotifPoller got: " + n);
-                                    listener.handleNotification(n, handback);
+                                    listener.handleNotification(n, handbacks.get(i));
                                 }
                             }
                             } catch (ParseException pe) {
@@ -953,8 +973,13 @@ private static void printStack(Thread t, StackTraceElement[] stack) {
                 }
             }
         }
+
+        public void stop() {
+            active = false;
+        }
     }
-    protected static Notification decodeNotification(JSONObject json) {
+
+    protected Notification decodeNotification(JSONObject json) throws IOException {
         // This is manual deserialisation as Notif is not a Composite object or a type the
         // json type mapper handles...
         String type = JSONObject.getObjectFieldString(json, "type");
@@ -962,6 +987,8 @@ private static void printStack(Thread t, StackTraceElement[] stack) {
         long sequenceNumber = JSONObject.getObjectFieldLong(json, "sequenceNumber");
         long timeStamp = JSONObject.getObjectFieldLong(json, "timeStamp");
         String message = JSONObject.getObjectFieldString(json, "message");
+        Object userData = null;
+
         ObjectName objectName = null;
         try {
             objectName = new ObjectName(source);
@@ -973,6 +1000,13 @@ private static void printStack(Thread t, StackTraceElement[] stack) {
         switch (type) { 
             case "JMX.mbean.registered": {
                 n = new javax.management.MBeanServerNotification(type, source, sequenceNumber, objectName);
+                break;
+            }
+            case "JMX.remote.connection.opened":
+            case "JMX.remote.connection.closed":
+            case "JMX.remote.connection.failed":
+            case "JMX.remote.connection.notifs.lost": {
+                n = new javax.management.remote.JMXConnectionNotification(type, source, getConnectionId(), sequenceNumber, message, userData);
                 break;
             }
             default: {

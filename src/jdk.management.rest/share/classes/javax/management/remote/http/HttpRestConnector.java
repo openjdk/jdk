@@ -41,7 +41,7 @@ import java.net.MalformedURLException;
  */
 public class HttpRestConnector implements JMXConnector, JMXAddressable, Closeable {
 
-    protected boolean connected;
+    protected volatile boolean connected;
     protected JMXServiceURL url;
     protected String baseURL;
     protected Map<String,?> env;
@@ -101,9 +101,11 @@ public class HttpRestConnector implements JMXConnector, JMXAddressable, Closeabl
     }
 
     public void close() throws IOException {
-        // test/jdk/javax/management/remote/mandatory/connection/CloseFailedClientTest
+        // test/jdk/javax/management/remote/mandatory/connection/CloseFailedClientTest.java
         // closes a Connector that failed to connect, and expects no IOException.
         connected = false;
+        connection.close(); // Close HttpRestConnection
+        new Exception().printStackTrace(System.out);
     }
 
     public void addConnectionNotificationListener(NotificationListener listener,
@@ -137,6 +139,7 @@ public class HttpRestConnector implements JMXConnector, JMXAddressable, Closeabl
         if (!connected) {
             throw new IOException("Not connected");
         }
+        new Exception().printStackTrace(System.out);
         return connection.getConnectionId();
     }
 }

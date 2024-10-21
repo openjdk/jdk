@@ -234,8 +234,9 @@ public class HttpConnectorServer extends JMXConnectorServer {
 
         usemap = EnvHelp.filterAttributes(usemap);
 
+        throw new RuntimeException("not implemented XXXX");
 //         return new HttpRestConnector(url, map);
-        return null;
+//        return null;
     }
 
     /**
@@ -338,22 +339,20 @@ public class HttpConnectorServer extends JMXConnectorServer {
                 serverName = "platform";
                 System.err.println("XXXX HTTPConnServer start server = platform: " + getMBeanServer());
             }
-            rest = PlatformRestAdapter.newRestAdapter(getMBeanServer(), serverName /* context */,  null /*env */);
+            JmxRestAdapter rest = PlatformRestAdapter.newRestAdapter(getMBeanServer(), serverName /* context */,  null /*env */);
+            System.err.println("XXXX HTTPConnectorServer start rest = " + rest);
+            synchronized(openedServers) {
+                openedServers.add(rest);
+            }
             String a = rest.getUrl();
-            System.err.println("XXXX HTTPConnServer start a = " + a);
             address = new JMXServiceURL("service:jmx:" + a);
-
-        synchronized(openedServers) {
-            openedServers.add(this);
-        }
-
 
         } catch (Exception e) {
             if (e instanceof RuntimeException) throw (RuntimeException) e;
             else if (e instanceof IOException)
                 throw (IOException) e;
             else
-                throw newIOException("Got unexpected exception while " +
+                throw new IOException("Got unexpected exception while " +
                                      "starting the connector server: "
                                      + e, e);
 
@@ -429,15 +428,16 @@ public class HttpConnectorServer extends JMXConnectorServer {
         }
 
         synchronized(openedServers) {
-            openedServers.remove(this);
+            // openedServers.remove(this) ;
+            for (JmxRestAdapter a : openedServers) {
+                System.err.println("XXXX JMXConnectorServer stop : " + a);
+                a.stop();
+            }
+            openedServers.clear();
         }
 
         IOException exception = null;
 
-        // rest can be null if stop() called without start()
-        if (rest != null) {
-                //rest.close();
-        }
         if (exception != null) throw exception;
 
         if (tracing) logger.trace("stop", "stopped");
@@ -459,11 +459,8 @@ public class HttpConnectorServer extends JMXConnectorServer {
     }
 
     @Override
-    public synchronized
-        void setMBeanServerForwarder(MBeanServerForwarder mbsf) {
+    public synchronized void setMBeanServerForwarder(MBeanServerForwarder mbsf) {
         super.setMBeanServerForwarder(mbsf);
-//        if (rmiServerImpl != null)
-//            rmiServerImpl.setMBeanServer(getMBeanServer());
     }
 
     /* We repeat the definitions of connection{Opened,Closed,Failed}
@@ -488,16 +485,6 @@ public class HttpConnectorServer extends JMXConnectorServer {
         super.connectionFailed(connectionId, message, userData);
     }
 
-    /**
-     * Construct a new IOException with a nested exception.
-     * The nested exception is set only if JDK {@literal >= 1.4}
-     */
-    private static IOException newIOException(String message,
-                                              Throwable cause) {
-        return new IOException(message, cause);
-    }
-
-
     // Private variables
     // -----------------
 
@@ -507,15 +494,12 @@ public class HttpConnectorServer extends JMXConnectorServer {
     private JMXServiceURL address;
     private final Map<String, ?> attributes;
 
-//    private PlatformRestAdapter rest;
-     private JmxRestAdapter rest;
-
     // state
     private static final int CREATED = 0;
     private static final int STARTED = 1;
     private static final int STOPPED = 2;
 
     private int state = CREATED;
-    private static final Set<HttpConnectorServer> openedServers =
-            new HashSet<HttpConnectorServer>();
+
+    private static final Set<JmxRestAdapter> openedServers = new HashSet<>();
 }
