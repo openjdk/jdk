@@ -62,11 +62,12 @@ public class StringNameTable extends Name.Table {
 
     @Override
     public Name fromString(String string) {
-        if (intern) {
-            return this.nameMap.computeIfAbsent(string, s -> new NameImpl(this, s.intern()));
-        } else {
-            return this.nameMap.computeIfAbsent(string, s -> new NameImpl(this, s));
+        Name name = this.nameMap.get(string);
+        if (name == null) {
+            name = new NameImpl(this, intern ? string.intern() : string);
+            this.nameMap.put(string, name);
         }
+        return name;
     }
 
     @Override
