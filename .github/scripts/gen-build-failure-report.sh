@@ -25,7 +25,7 @@
 #
 
 # Import common utils
-. report-utils.sh
+. .github/scripts/report-utils.sh
 
 GITHUB_STEP_SUMMARY="$1"
 BUILD_DIR="$(ls -d build/*)"
