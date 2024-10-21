@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, JetBrains s.r.o.. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,17 +26,10 @@
  * @test
  * @bug 8267388
  * @summary Test implementation of NSAccessibilityTable protocol peer
- * @author Artem.Semenov@jetbrains.com
  * @run main/manual AccessibleJTableTest
  * @requires (os.family == "windows" | os.family == "mac")
  */
 
-import javax.swing.JButton;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JTable;
-import javax.swing.SwingUtilities;
-import javax.swing.table.AbstractTableModel;
 
 import java.awt.FlowLayout;
 import java.awt.GridLayout;
@@ -44,6 +37,12 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import javax.swing.JButton;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.SwingUtilities;
+import javax.swing.table.AbstractTableModel;
 
 public class AccessibleJTableTest extends AccessibleComponentTest {
     private static final String[] columnNames = {"One", "Two", "Three"};
