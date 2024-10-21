@@ -61,4 +61,11 @@ public sealed interface ClassEntry
      * {@return the class name, as a symbolic descriptor}
      */
     ClassDesc asSymbol();
+
+    /**
+     * {@return whether this class entry describes the same class as the provided symbol}
+     *
+     * @param symbol the symbol to compare to
+     */
+    boolean equalsSymbol(ClassDesc symbol);
 }
