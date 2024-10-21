@@ -310,7 +310,7 @@ inline intptr_t* ThawBase::possibly_adjust_frame(frame& top) {
     sp[-1] = sp[1];
 
     log_develop_trace(continuations, preempt)("adjusted sp for c2 runtime stub, initial sp: " INTPTR_FORMAT " final sp: " INTPTR_FORMAT
-                                              " fp: " INTPTR_FORMAT, p2i(sp + frame::metadata_words), p2i(sp), sp[-2]);
+                                              " fp: " INTPTR_FORMAT, p2i(sp + 2), p2i(sp), sp[-2]);
   }
   return sp;
 }
