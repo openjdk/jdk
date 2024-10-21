@@ -39,22 +39,10 @@ import java.util.Arrays;
 import javax.crypto.KeyAgreement;
 import javax.crypto.spec.DHPrivateKeySpec;
 import javax.crypto.spec.DHPublicKeySpec;
+import jdk.test.lib.security.DiffieHellmanGroup;
+import jdk.test.lib.security.SecurityUtils;
 
 public class TestInterop extends PKCS11Test {
-
-    private final static BigInteger p = new BigInteger
-    ("3231700607131100730015351347782516336248805713348907517458843413926" +
-            "9806834136210002792056362640164685458556357935330816928829023080" +
-            "5734726252735547424612457410262025279165729728627063003252634282" +
-            "1314576693141422365422094111134862999165747826803423055308634905" +
-            "0635557712219187890332729569696129743856241741236237225197346402" +
-            "6918557977679768230146253979330580152268587307611975324364674758" +
-            "5546071504389684494036613049769781285429595865959756705128385213" +
-            "2784468522925504568272879113720098931873959143374175837826000278" +
-            "0349731985520606075332341226032546840881200311059074842810039949" +
-            "66956119696956248629032338072839127039");
-
-    private final static BigInteger g = new BigInteger("2");
 
     private final static BigInteger ya = new BigInteger
    ("22272412859242949963897309866268099957623364986192222381531147912319" +
@@ -100,13 +88,18 @@ public class TestInterop extends PKCS11Test {
             KeyFactory kf = KeyFactory.getInstance("DH");
             KeyAgreement ka = KeyAgreement.getInstance("DH", prov);
             KeyAgreement kbSunJCE = KeyAgreement.getInstance("DH", "SunJCE");
-            DHPrivateKeySpec privSpecA = new DHPrivateKeySpec(xa, p, g);
-            DHPublicKeySpec pubSpecA = new DHPublicKeySpec(ya, p, g);
+            DiffieHellmanGroup dhGroup = SecurityUtils.getTestDHGroup();
+            DHPrivateKeySpec privSpecA = new DHPrivateKeySpec(xa, dhGroup.getModulus(),
+                    dhGroup.getBase());
+            DHPublicKeySpec pubSpecA = new DHPublicKeySpec(ya, dhGroup.getModulus(),
+                    dhGroup.getBase());
             PrivateKey privA = kf.generatePrivate(privSpecA);
             PublicKey pubA = kf.generatePublic(pubSpecA);
 
-            DHPrivateKeySpec privSpecB = new DHPrivateKeySpec(xb, p, g);
-            DHPublicKeySpec pubSpecB = new DHPublicKeySpec(yb, p, g);
+            DHPrivateKeySpec privSpecB = new DHPrivateKeySpec(xb, dhGroup.getModulus(),
+                    dhGroup.getBase());
+            DHPublicKeySpec pubSpecB = new DHPublicKeySpec(yb, dhGroup.getModulus(),
+                    dhGroup.getBase());
             PrivateKey privB = kf.generatePrivate(privSpecB);
             PublicKey pubB = kf.generatePublic(pubSpecB);
 

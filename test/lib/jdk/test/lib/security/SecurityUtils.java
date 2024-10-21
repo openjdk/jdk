@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import jdk.test.lib.security.DiffieHellmanGroup;
 
 /**
  * Common library for various security test helper functions.
@@ -105,6 +106,25 @@ public final class SecurityUtils {
      */
     public static void removeAlgsFromDSigPolicy(String... algs) {
         removeFromDSigPolicy("disallowAlg", List.<String>of(algs));
+    }
+
+    /**
+     * Returns a strong DH predefined group for tests
+     */
+    public static DiffieHellmanGroup getTestDHGroup() {
+        return getTestDHGroup(2048);
+    }
+
+    /**
+     * Returns a strong DH predefined group for tests, depending on the specified prime size
+     */
+    public static DiffieHellmanGroup getTestDHGroup(int primeSize) {
+        DiffieHellmanGroup diffieHellmanGroup;
+        switch (primeSize) {
+            case 2048 -> diffieHellmanGroup = DiffieHellmanGroup.ffdhe2048;
+            default -> throw new RuntimeException("Test DH group not defined for " + primeSize);
+        }
+        return diffieHellmanGroup;
     }
 
     private static void removeFromDSigPolicy(String rule, List<String> algs) {
