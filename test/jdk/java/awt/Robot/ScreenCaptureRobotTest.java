@@ -33,6 +33,9 @@ import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Robot;
 import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+import javax.imageio.ImageIO;
 
 /*
  * @test
@@ -40,15 +43,16 @@ import java.awt.image.BufferedImage;
  * @bug 8342098
  * @summary Verify that the image captured from the screen using a Robot
  * and the source image are same.
- * @run main ScreenCaptureRobotTest
+ * @run main/othervm -Dsun.java2d.uiScale=1 ScreenCaptureRobotTest
  */
 public class ScreenCaptureRobotTest {
 
-    private static int delay = 500;
     private static Frame frame;
     private static volatile Canvas canvas;
     private static BufferedImage realImage;
-    private static BufferedImage displayImage;
+    private static final int IMAGE_WIDTH = 200;
+    private static final int IMAGE_HEIGHT = 100;
+    private static volatile Point point;
 
     public static void main(String[] args) throws Exception {
         try {
@@ -63,47 +67,47 @@ public class ScreenCaptureRobotTest {
         frame = new Frame("ScreenCaptureRobotTest Frame");
         realImage = GraphicsEnvironment.getLocalGraphicsEnvironment()
                 .getDefaultScreenDevice().getDefaultConfiguration()
-                .createCompatibleImage(200, 100);
+                .createCompatibleImage(IMAGE_WIDTH, IMAGE_HEIGHT);
 
         Graphics g = realImage.createGraphics();
-        g.setColor(Color.yellow);
-        g.fillRect(0, 0, 200, 100);
+        g.setColor(Color.YELLOW);
+        g.fillRect(0, 0, IMAGE_WIDTH, IMAGE_HEIGHT);
         g.setColor(Color.red);
-        g.setFont(new Font("SansSerif", Font.BOLD, 20));
+        g.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 20));
         g.drawString("Capture This", 10, 40);
         g.dispose();
-        displayImage = realImage;
 
         canvas = new ImageCanvas();
         canvas.setBackground(Color.YELLOW);
         frame.setLayout(new BorderLayout());
         frame.add(canvas);
         frame.setSize(300, 200);
-        frame.setLocation(100, 100);
+        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
-        canvas.requestFocus();
     }
 
     private static void doTest() throws Exception {
         Robot robot;
         robot = new Robot();
-        robot.delay(delay);
+        robot.delay(500);
         robot.waitForIdle();
 
-        Point pnt = canvas.getLocationOnScreen();
-        Rectangle rect = new Rectangle(pnt.x + 10, pnt.y + 10, 200, 100);
+        EventQueue.invokeAndWait(() -> {
+            point = canvas.getLocationOnScreen();
+        });
 
-        // Capturing Image using Robot
+        Rectangle rect = new Rectangle(point.x + 10, point.y + 10, IMAGE_WIDTH,
+                IMAGE_HEIGHT);
+
         BufferedImage capturedImage = robot.createScreenCapture(rect);
 
         if (!compareImages(capturedImage, realImage)) {
             String errorMessage = "FAIL : Captured Image is different from "
                     + "the actual image";
             System.err.println("Test failed");
+            saveImage(capturedImage, "CapturedImage.png");
+            saveImage(realImage, "RealImage.png");
             throw new RuntimeException(errorMessage);
-        } else {
-            System.out.println("\nCaptured Image is same as actual Image");
-            System.out.println("Test passed");
         }
     }
 
@@ -113,28 +117,50 @@ public class ScreenCaptureRobotTest {
         int realPixel;
         int imgWidth;
         int imgHeight;
-        boolean result = true;
 
         imgWidth = capturedImg.getWidth(null);
         imgHeight = capturedImg.getHeight(null);
+
+        if (imgWidth != realImg.getWidth()
+                || imgHeight != realImg.getHeight()) {
+            System.out.println(
+                    "Captured image and real image widths are different");
+            return false;
+        }
 
         for (int i = 0; i < (imgWidth); i++) {
             for (int j = 0; j < (imgHeight); j++) {
                 capturedPixel = capturedImg.getRGB(i, j);
                 realPixel = realImg.getRGB(i, j);
                 if (capturedPixel != realPixel) {
-                    result = false;
-                    return result;
+                    System.out.println("Captured pixel ("
+                            + Integer.toHexString(capturedPixel) + ") at (" + i
+                            + ", " + j + ") is not equal to real pixel ("
+                            + Integer.toHexString(realPixel) + ")");
+                    return false;
                 }
             }
         }
-        return result;
+        return true;
     }
 
     private static class ImageCanvas extends Canvas {
         @Override
         public void paint(Graphics g) {
-            g.drawImage(displayImage, 10, 10, this);
+            g.drawImage(realImage, 10, 10, this);
+        }
+    }
+
+    private static void saveImage(BufferedImage image, String fileName) {
+        // Save BufferedImage to PNG file
+        try {
+            File file = new File(fileName);
+            System.out.println("Saving image : " + image + " to "
+                    + file.getAbsolutePath());
+            ImageIO.write(image, "PNG", file);
+        } catch (IOException ioe) {
+            throw new RuntimeException(
+                    "Image save failed : " + ioe.getMessage());
         }
     }
 
