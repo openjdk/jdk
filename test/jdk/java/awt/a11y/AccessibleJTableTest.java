@@ -30,7 +30,6 @@
  * @requires (os.family == "windows" | os.family == "mac")
  */
 
-
 import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
