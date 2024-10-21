@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,11 +21,10 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 8315916
  * @summary Test early bailout during the creation of graph nodes for the scalarization of array fields, rather than during code generation.
- *
  * @run main/othervm -Xcomp
  *                   -XX:EliminateAllocationArraySizeLimit=60240
  *                   compiler.loopopts.superword.TestScalarize_Bailout
@@ -36,7 +35,7 @@ package compiler.loopopts.superword;
 public class TestScalarize_Bailout {
 
 static Object var1;
-public static void main(String[] args) throws Exception {    
+public static void main(String[] args) throws Exception {
     var1 = new long[48 * 1024];
     long[] a1 = new long[48 * 1024];
     try {
