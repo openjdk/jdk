@@ -53,7 +53,7 @@ import java.util.concurrent.TimeUnit;
 @State(Scope.Thread)
 @Warmup(iterations = 5, time = 3, timeUnit = TimeUnit.SECONDS)
 @Measurement(iterations = 5, time = 5, timeUnit = TimeUnit.SECONDS)
-@Fork(2)
+@Fork(value = 2, jvmArgs = "-Xmx1g")
 public class JavacNameTable {
 
     private List<JavaSourceFromString> compilationUnits;
@@ -112,6 +112,11 @@ public class JavacNameTable {
     @Benchmark
     public Boolean testStringTable() throws Exception {
         return testCompile("-XDuseStringTable=true");
+    }
+
+    @Benchmark
+    public Boolean testInternStringTable() throws Exception {
+        return testCompile("-XDinternStringTable=true");
     }
 
     public Boolean testCompile(String flag) throws Exception {
