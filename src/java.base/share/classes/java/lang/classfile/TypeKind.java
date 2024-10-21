@@ -167,7 +167,7 @@ public enum TypeKind {
      * {@return the code used by the {@link Opcode#NEWARRAY newarray} instruction to create an array
      * of this component type, or {@code -1} if this type is not supported by {@code newarray}}
      * @since 23
-     * @jvms 6.5.newarray <i>newarray</i>
+     * @jvms 6.5.newarray <em>newarray</em>
      */
     public int newarrayCode() {
         return newarrayCode;
@@ -199,7 +199,7 @@ public enum TypeKind {
      * @param newarrayCode the operand of the {@code newarray} instruction
      * @throws IllegalArgumentException if the code is invalid
      * @since 23
-     * @jvms 6.5.newarray <i>newarray</i>
+     * @jvms 6.5.newarray <em>newarray</em>
      */
     public static TypeKind fromNewarrayCode(int newarrayCode) {
         return switch (newarrayCode) {

@@ -67,7 +67,7 @@ public sealed interface InvokeInstruction extends Instruction
      * {@return the {@code count} value of an {@link Opcode#INVOKEINTERFACE invokeinterface} instruction,
      * or {@code 0} for {@code invokespecial}, {@code invokestatic} and {@code invokevirtual} instructions}
      *
-     * @jvms 6.5.invokeinterface invokeinterface
+     * @jvms 6.5.invokeinterface <em>invokeinterface</em>
      */
     int count();
 
