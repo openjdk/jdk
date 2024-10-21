@@ -1,0 +1,10 @@
+/* AUTOMATICALLY GENERATED ON Thu Jan 03 15:48:39 PST 2002*/
+/* DO NOT EDIT */
+
+grant {
+ permission java.lang.RuntimePermission "queuePrintJob";
+ permission java.util.PropertyPermission "*", "read";
+ permission java.io.FilePermission "<<ALL FILES>>", "read";
+ permission java.io.FilePermission "<<ALL FILES>>", "write";
+ permission java.lang.RuntimePermission "accessClassInPackage.sun.util.locale.provider";
+};
