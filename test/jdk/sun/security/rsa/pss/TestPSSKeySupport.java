@@ -131,7 +131,8 @@ public class TestPSSKeySupport {
 
     public static void main(String[] args) throws Exception {
         KeyPairGenerator kpg =
-            KeyPairGenerator.getInstance(ALGO, "SunRsaSign");
+            KeyPairGenerator.getInstance(ALGO,
+                    System.getProperty("test.provider.name", "SunRsaSign"));
 
         // Algorithm-Independent Initialization
         kpg.initialize(2048);

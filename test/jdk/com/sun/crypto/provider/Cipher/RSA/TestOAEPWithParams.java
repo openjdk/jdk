@@ -57,7 +57,8 @@ public class TestOAEPWithParams {
         cp = Security.getProvider(
                     System.getProperty("test.provider.name", "SunJCE"));
         System.out.println("Testing provider " + cp.getName() + "...");
-        Provider kfp = Security.getProvider("SunRsaSign");
+        Provider kfp = Security.getProvider(
+                System.getProperty("test.provider.name", "SunRsaSign"));
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA", kfp);
         kpg.initialize(768);
         KeyPair kp = kpg.generateKeyPair();
