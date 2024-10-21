@@ -2269,6 +2269,49 @@ void PhasePeephole::print_statistics() {
 }
 #endif
 
+Node* PhaseLowering::transform(Node* n) {
+  // New node, make space for the node in the types table
+  _igvn->ensure_type_or_null(n);
+
+  // Try to find an existing version of the same node
+  Node* existing = _igvn->hash_find_insert(n);
+  if (existing != nullptr) {
+    // GVN hit, return the existing node
+    n->destruct(_igvn);
+    return existing;
+  }
+
+  // Record the type of the node in the types table
+  const Type* type = n->Value(_igvn);
+  _igvn->set_type(n, type);
+  n->raise_bottom_type(type);
+
+  return n;
+}
+
+
+void PhaseLowering::lower() {
+  // Worklist should be empty before lowering
+  _igvn->_worklist.ensure_empty();
+
+  C->identify_useful_nodes(_igvn->_worklist);
+
+  while(_igvn->_worklist.size() != 0) {
+    Node* n = _igvn->_worklist.pop();
+    Node* new_node = lower_node(n);
+
+    // If a lowered node is returned, replace all usages of the old node with the new one.
+    if (new_node != nullptr) {
+      new_node = transform(new_node);
+
+      // Replace node, adding all users to the worklist.
+      _igvn->replace_node(n, new_node);
+    }
+  }
+
+  // Worklist should be empty after lowering
+  _igvn->_worklist.ensure_empty();
+}
 
 //=============================================================================
 //------------------------------set_req_X--------------------------------------
