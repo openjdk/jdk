@@ -550,6 +550,19 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         return r;
     }
 
+    static $abstractvectortype$ selectFromTwoVectorHelper(Vector<$Boxtype$> indexes, Vector<$Boxtype$> src1, Vector<$Boxtype$> src2) {
+        int vlen = indexes.length();
+        $type$[] res = new $type$[vlen];
+        $type$[] vecPayload1 = (($abstractvectortype$)indexes).vec();
+        $type$[] vecPayload2 = (($abstractvectortype$)src1).vec();
+        $type$[] vecPayload3 = (($abstractvectortype$)src2).vec();
+        for (int i = 0; i < vlen; i++) {
+            int wrapped_index = VectorIntrinsics.wrapToRange((int)vecPayload1[i], 2 * vlen);
+            res[i] = wrapped_index >= vlen ? vecPayload3[wrapped_index - vlen] : vecPayload2[wrapped_index];
+        }
+        return (($abstractvectortype$)src1).vectorFactory(res);
+    }
+
     // Static factories (other than memory operations)
 
     // Note: A surprising behavior in javadoc
@@ -2950,6 +2963,22 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
                                                         length(), this, v, m,
                                                         (v1, v2, _m) ->
                                                          v2.rearrange(v1.toShuffle(), _m));
+    }
+
+
+    /**
+     * {@inheritDoc} <!--workaround-->
+     */
+    @Override
+    public abstract
+    $abstractvectortype$ selectFrom(Vector<$Boxtype$> v1, Vector<$Boxtype$> v2);
+
+
+    /*package-private*/
+    @ForceInline
+    final $abstractvectortype$ selectFromTemplate($abstractvectortype$ v1, $abstractvectortype$ v2) {
+        return VectorSupport.selectFromTwoVectorOp(getClass(), $type$.class, length(), this, v1, v2,
+                                                   (vec1, vec2, vec3) -> selectFromTwoVectorHelper(vec1, vec2, vec3));
     }
 
     /// Ternary operations
