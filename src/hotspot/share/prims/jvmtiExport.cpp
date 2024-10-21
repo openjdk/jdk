@@ -1678,7 +1678,7 @@ void JvmtiExport::post_vthread_unmount(jobject vthread) {
   HandleMark hm(thread);
   EVT_TRIG_TRACE(EXT_EVENT_VIRTUAL_THREAD_UNMOUNT, ("[%p] Trg Virtual Thread Unmount event triggered", vthread));
 
-  // On preemption JVMTI state rebinding has already happened so get it always direclty from the oop.
+  // On preemption JVMTI state rebinding has already happened so get it always directly from the oop.
   JvmtiThreadState *state = java_lang_Thread::jvmti_thread_state(JNIHandles::resolve(vthread));
   if (state == NULL) {
     return;
