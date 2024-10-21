@@ -364,7 +364,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
             if (readBlk && readIgn && readCgt) break;
         }
 
-        final boolean  okToSendQuit = !quitBlk && !quitIgn && quitCgt;
+        final boolean  okToSendQuit = (!quitIgn && quitCgt); // ignore blocked as it may be temporary ...
 
 	if (okToSendQuit) {
             sendQuitTo(pid);
