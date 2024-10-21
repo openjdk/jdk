@@ -23,29 +23,15 @@
  */
 package com.sun.hotspot.igv.layout;
 
-import java.awt.Font;
+import java.util.Set;
 
 /**
  *
  * @author Thomas Wuerthinger
  */
-public abstract class LayoutManager {
+public interface LayoutManager {
 
-    // Options
-    protected int maxLayerLength = -1;
+    void doLayout(LayoutGraph graph);
 
-    public abstract void setCutEdges(boolean enable);
-
-    public boolean cutEdges() {
-        return maxLayerLength >= 0;
-    }
-
-    public static final Font TITLE_FONT = new Font("Arial", Font.BOLD, 14);
-    public static final int SWEEP_ITERATIONS = 1;
-    public static final int CROSSING_ITERATIONS = 2;
-    public static final int NODE_OFFSET = 8;
-    public static final int LAYER_OFFSET = 8;
-    public static final double SCALE_LAYER_PADDING = 1.5;
-
-    public abstract void doLayout(LayoutGraph graph);
+    void doLayout(LayoutGraph graph, Set<? extends Link> importantLinks);
 }

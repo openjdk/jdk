@@ -40,16 +40,16 @@ public class ClusterInputSlotNode implements Vertex {
     private final Port outputSlot;
     private final ClusterNode blockNode;
 
-    private final String name;
+    private final String id;
 
     @Override
     public String toString() {
-        return name;
+        return id;
     }
 
-    public ClusterInputSlotNode(ClusterNode n, String name) {
+    public ClusterInputSlotNode(ClusterNode n, String id) {
         this.blockNode = n;
-        this.name = name;
+        this.id = id;
 
         n.addSubNode(this);
 
@@ -76,7 +76,7 @@ public class ClusterInputSlotNode implements Vertex {
 
             public Point getRelativePosition() {
                 Point p = new Point(thisNode.getPosition());
-                p.x += blockNode.PADDING;
+                p.x += blockNode.getBorder();
                 p.y = 0;
                 return p;
             }
@@ -100,11 +100,6 @@ public class ClusterInputSlotNode implements Vertex {
         return outputSlot;
     }
 
-    @Override
-    public int getPriority() {
-        return 0;
-    }
-
     public Dimension getSize() {
         return new Dimension(0, 0);
     }
@@ -119,11 +114,6 @@ public class ClusterInputSlotNode implements Vertex {
 
     public Cluster getCluster() {
         return null;
-    }
-
-    @Override
-    public int getID() {
-        return blockNode.getID();
     }
 
     public boolean isRoot() {

@@ -37,5 +37,5 @@ public interface Cluster extends Comparable<Cluster> {
 
     Set<? extends Cluster> getSuccessors();
 
-    int getID();
+    Dimension getNodeOffset();
 }
