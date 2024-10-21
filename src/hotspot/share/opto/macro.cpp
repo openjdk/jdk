@@ -816,6 +816,10 @@ SafePointScalarObjectNode* PhaseMacroExpand::create_scalarized_object_descriptio
     const TypeOopPtr *field_addr_type = res_type->add_offset(offset)->isa_oopptr();
 
     Node *field_val = value_from_mem(sfpt->memory(), sfpt->control(), basic_elem_type, field_type, field_addr_type, alloc);
+    // If scalarize operation is adding too many nodes, bail out
+    if (C->check_node_count(300, "out of nodes while scalarizing object")) {
+      return nullptr;
+    }
 
     // We weren't able to find a value for this field,
     // give up on eliminating this allocation.
