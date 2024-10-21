@@ -2276,9 +2276,9 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_arrayof_jint_fill = generate_fill(T_INT, true, "arrayof_jint_fill");
   }
 
-  void generate_aes_loadkeys(const Register &key, VectorRegister *working_vregs, int reg_number) {
+  void generate_aes_loadkeys(const Register &key, VectorRegister *working_vregs, int rounds) {
     const int step = 16;
-    for (int i = 0; i < reg_number; i++) {
+    for (int i = 0; i < rounds; i++) {
       __ vle32_v(working_vregs[i], key);
       __ vrev8_v(working_vregs[i], working_vregs[i]);
       __ addi(key, key, step);
