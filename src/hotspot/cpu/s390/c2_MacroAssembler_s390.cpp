@@ -162,6 +162,7 @@ unsigned int C2_MacroAssembler::string_compress(Register result, Register src, R
 #endif
   clear_reg(Z_R0);                         // make sure register is properly initialized.
 
+#if 0
   if (VM_Version::has_VectorFacility()) {
     const int  min_vcnt     = 32;          // Minimum #characters required to use vector instructions.
                                            // Otherwise just do nothing in vector mode.
@@ -216,6 +217,7 @@ unsigned int C2_MacroAssembler::string_compress(Register result, Register src, R
 
     bind(VectorDone);
   }
+#endif
 
   {
     const int  min_cnt     =  8;           // Minimum #characters required to use unrolled loop.
@@ -454,6 +456,7 @@ unsigned int C2_MacroAssembler::string_inflate(Register src, Register dst, Regis
 #endif
   clear_reg(Z_R0);                         // make sure register is properly initialized.
 
+#if 0
   if (VM_Version::has_VectorFacility()) {
     const int  min_vcnt     = 32;          // Minimum #characters required to use vector instructions.
                                            // Otherwise just do nothing in vector mode.
@@ -482,6 +485,7 @@ unsigned int C2_MacroAssembler::string_inflate(Register src, Register dst, Regis
 
     bind(VectorDone);
   }
+#endif
 
   const int  min_cnt     =  8;             // Minimum #characters required to use unrolled scalar loop.
                                            // Otherwise just do nothing in unrolled scalar mode.
@@ -616,6 +620,7 @@ unsigned int C2_MacroAssembler::string_inflate_const(Register src, Register dst,
   bool       restore_inputs = false;
   bool       workreg_clear  = false;
 
+#if 0
   if ((len >= 32) && VM_Version::has_VectorFacility()) {
     const int  min_vcnt     = 32;          // Minimum #characters required to use vector instructions.
                                            // Otherwise just do nothing in vector mode.
@@ -671,6 +676,7 @@ unsigned int C2_MacroAssembler::string_inflate_const(Register src, Register dst,
     src_off += min_vcnt;
     dst_off += min_vcnt*2;
   }
+#endif
 
   if ((len-nprocessed) > 8) {
     const int  min_cnt     =  8;           // Minimum #characters required to use unrolled scalar loop.

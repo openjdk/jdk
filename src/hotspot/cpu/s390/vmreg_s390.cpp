@@ -43,6 +43,16 @@ void VMRegImpl::set_regName() {
     regName[i++] = freg->name();
     freg = freg->successor();
   }
+
+  VectorRegister vreg = ::as_VectorRegister(0);
+  for (; i < ConcreteRegisterImpl::max_vr;) {
+    regName[i++] = vreg->name();
+    regName[i++] = vreg->name();
+    regName[i++] = vreg->name();
+    regName[i++] = vreg->name();
+    vreg = vreg->successor();
+  }
+
   for (; i < ConcreteRegisterImpl::number_of_registers; i ++) {
     regName[i] = "NON-GPR-XMM";
   }
