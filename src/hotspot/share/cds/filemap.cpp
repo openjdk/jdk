@@ -1738,19 +1738,39 @@ void FileMapInfo::close() {
     _file_open = false;
     _fd = -1;
   }
+
+  // Workers are no longer needed.
+  _archive_workers.shutdown();
 }
 
+class ArchiveRegionPretouchTask : public ArchiveWorkerTask {
+private:
+  char* const _from;
+  size_t const _bytes;
+
+public:
+  ArchiveRegionPretouchTask(char* from, size_t bytes) :
+    ArchiveWorkerTask("Archive Regions Pretouch"), _from(from), _bytes(bytes) {}
+
+  void work(int chunk, int max_chunks) override {
+    char* start = _from + MIN2(_bytes, _bytes * chunk / max_chunks);
+    char* end   = _from + MIN2(_bytes, _bytes * (chunk + 1) / max_chunks);
+    os::pretouch_memory(start, end);
+  }
+};
+
 /*
- * Same as os::map_memory() but also pretouches if AlwaysPreTouch is enabled.
+ * Same as os::map_memory() but also pretouches memory unconditionally,
+ * as we are very likely to start writing into that memory during archive load.
  */
-static char* map_memory(int fd, const char* file_name, size_t file_offset,
-                        char *addr, size_t bytes, bool read_only,
-                        bool allow_exec, MemTag mem_tag = mtNone) {
+char* FileMapInfo::map_memory(int fd, const char* file_name, size_t file_offset,
+                              char *addr, size_t bytes, bool read_only, bool allow_exec) {
   char* mem = os::map_memory(fd, file_name, file_offset, addr, bytes,
-                             AlwaysPreTouch ? false : read_only,
-                             allow_exec, mem_tag);
-  if (mem != nullptr && AlwaysPreTouch) {
-    os::pretouch_memory(mem, mem + bytes);
+                             (ArchivePreTouch || AlwaysPreTouch) ? false : read_only,
+                             allow_exec, mtClassShared);
+  if (mem != nullptr && (ArchivePreTouch || AlwaysPreTouch)) {
+    ArchiveRegionPretouchTask pretouch(mem, bytes);
+    _archive_workers.run_task(&pretouch);
   }
   return mem;
 }
@@ -1895,7 +1915,7 @@ MapArchiveResult FileMapInfo::map_region(int i, intx addr_delta, char* mapped_ba
     // space (Posix). See also comment in MetaspaceShared::map_archives().
     char* base = map_memory(_fd, _full_path, r->file_offset(),
                             requested_addr, size, r->read_only(),
-                            r->allow_exec(), mtClassShared);
+                            r->allow_exec());
     if (base != requested_addr) {
       log_info(cds)("Unable to map %s shared space at " INTPTR_FORMAT,
                     shared_region_name[i], p2i(requested_addr));
@@ -1923,7 +1943,7 @@ char* FileMapInfo::map_bitmap_region() {
   bool read_only = true, allow_exec = false;
   char* requested_addr = nullptr; // allow OS to pick any location
   char* bitmap_base = map_memory(_fd, _full_path, r->file_offset(),
-                                 requested_addr, r->used_aligned(), read_only, allow_exec, mtClassShared);
+                                 requested_addr, r->used_aligned(), read_only, allow_exec);
   if (bitmap_base == nullptr) {
     log_info(cds)("failed to map relocation bitmap");
     return nullptr;
@@ -1945,6 +1965,31 @@ char* FileMapInfo::map_bitmap_region() {
                 shared_region_name[MetaspaceShared::bm]);
   return bitmap_base;
 }
+
+class SharedDataRelocationTask : public ArchiveWorkerTask {
+private:
+  BitMapView* const _rw_bm;
+  BitMapView* const _ro_bm;
+  SharedDataRelocator* const _rw_reloc;
+  SharedDataRelocator* const _ro_reloc;
+
+public:
+  SharedDataRelocationTask(BitMapView* rw_bm, BitMapView* ro_bm, SharedDataRelocator* rw_reloc, SharedDataRelocator* ro_reloc) :
+                           ArchiveWorkerTask("Shared Data Relocation"),
+                           _rw_bm(rw_bm), _ro_bm(ro_bm), _rw_reloc(rw_reloc), _ro_reloc(ro_reloc) {}
+
+  void work(int chunk, int max_chunks) override {
+    work_on(chunk, max_chunks, _rw_bm, _rw_reloc);
+    work_on(chunk, max_chunks, _ro_bm, _ro_reloc);
+  }
+
+  void work_on(int chunk, int max_chunks, BitMapView* bm, SharedDataRelocator* reloc) {
+    BitMap::idx_t size  = bm->size();
+    BitMap::idx_t start = MIN2(size, size * chunk / max_chunks);
+    BitMap::idx_t end   = MIN2(size, size * (chunk + 1) / max_chunks);
+    bm->iterate(reloc, start, end);
+  }
+};
 
 // This is called when we cannot map the archive at the requested[ base address (usually 0x800000000).
 // We relocate all pointers in the 2 core regions (ro, rw).
@@ -1984,8 +2029,14 @@ bool FileMapInfo::relocate_pointers_in_core_regions(intx addr_delta) {
                                 valid_new_base, valid_new_end, addr_delta);
     SharedDataRelocator ro_patcher((address*)ro_patch_base + header()->ro_ptrmap_start_pos(), (address*)ro_patch_end, valid_old_base, valid_old_end,
                                 valid_new_base, valid_new_end, addr_delta);
-    rw_ptrmap.iterate(&rw_patcher);
-    ro_ptrmap.iterate(&ro_patcher);
+
+    if (ArchiveParallelRelocation) {
+      SharedDataRelocationTask task(&rw_ptrmap, &ro_ptrmap, &rw_patcher, &ro_patcher);
+      _archive_workers.run_task(&task);
+    } else {
+      rw_ptrmap.iterate(&rw_patcher);
+      ro_ptrmap.iterate(&ro_patcher);
+    }
 
     // The MetaspaceShared::bm region will be unmapped in MetaspaceShared::initialize_shared_spaces().
 

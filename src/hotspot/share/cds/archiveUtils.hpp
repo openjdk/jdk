@@ -31,6 +31,8 @@
 #include "utilities/bitMap.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
+#include "runtime/nonJavaThread.hpp"
+#include "runtime/semaphore.hpp"
 
 class BootstrapInfo;
 class ReservedSpace;
@@ -288,6 +290,82 @@ public:
   // This class is trivially copyable and assignable.
   HeapRootSegments(const HeapRootSegments&) = default;
   HeapRootSegments& operator=(const HeapRootSegments&) = default;
+};
+
+class ArchiveWorkers;
+
+// A task to be worked on by worker threads
+class ArchiveWorkerTask : public CHeapObj<mtInternal> {
+  friend class ArchiveWorkers;
+private:
+  const char* _name;
+  int _max_chunks;
+  volatile int _chunk;
+
+  void run();
+
+  void maybe_override_max_chunks(int max_chunks);
+
+public:
+  ArchiveWorkerTask(const char* name, int max_chunks = -1) :
+      _name(name), _max_chunks(max_chunks), _chunk(0) {}
+  const char* name() const { return _name; }
+  virtual void work(int chunk, int max_chunks) = 0;
+};
+
+class ArchiveWorkerThread : public NamedThread {
+  friend class ArchiveWorkers;
+private:
+  ArchiveWorkers* const _pool;
+
+public:
+  ArchiveWorkerThread(ArchiveWorkers* pool);
+  const char* type_name() const override { return "Archive Worker Thread"; }
+  void run() override;
+};
+
+class ArchiveWorkerShutdownTask : public ArchiveWorkerTask {
+public:
+  ArchiveWorkerShutdownTask() : ArchiveWorkerTask("Archive Worker Shutdown", 1) {}
+  void work(int chunk, int max_chunks) override {
+    // Do nothing.
+  }
+};
+
+// Special worker pool for archive workers. The goal for this pool is to
+// startup fast, distribute spiky workloads efficiently, and being able to
+// shutdown after use. This makes the implementation quite different from
+// the normal GC worker pool.
+class ArchiveWorkers {
+  friend class ArchiveWorkerThread;
+private:
+  // The reciprocal ratio for number of workers per CPU. We are targeting
+  // to take 1/4 CPUs to provide decent parallelism without letting workers
+  // stumble over each other.
+  static constexpr int CPUS_PER_WORKER = 4;
+
+  // Target number of chunks per worker. This should be large enough to even
+  // out work imbalance, and small enough to keep bookkeeping overheads low.
+  static constexpr int CHUNKS_PER_WORKER = 4;
+
+  ArchiveWorkerShutdownTask _shutdown_task;
+  Semaphore _start_semaphore;
+  Semaphore _end_semaphore;
+
+  int _num_workers;
+  int _started_workers;
+  int _running_workers;
+  bool _in_shutdown;
+  ArchiveWorkerTask* _task;
+
+  bool run_as_worker();
+  void start_worker_if_needed();
+
+public:
+  ArchiveWorkers();
+  ~ArchiveWorkers();
+  void shutdown();
+  void run_task(ArchiveWorkerTask* task);
 };
 
 #endif // SHARE_CDS_ARCHIVEUTILS_HPP
