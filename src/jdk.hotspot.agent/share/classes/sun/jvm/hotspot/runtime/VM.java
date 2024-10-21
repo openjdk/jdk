@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -148,6 +148,7 @@ public class VM {
   private Boolean sharingEnabled;
   private Boolean compressedOopsEnabled;
   private Boolean compressedKlassPointersEnabled;
+  private Boolean compactObjectHeadersEnabled;
 
   // command line flags supplied to VM - see struct JVMFlag in jvmFlag.hpp
   public static final class Flag {
@@ -958,6 +959,15 @@ public class VM {
              (flag.getBool()? Boolean.TRUE: Boolean.FALSE);
     }
     return compressedKlassPointersEnabled.booleanValue();
+  }
+
+  public boolean isCompactObjectHeadersEnabled() {
+    if (compactObjectHeadersEnabled == null) {
+        Flag flag = getCommandLineFlag("UseCompactObjectHeaders");
+        compactObjectHeadersEnabled = (flag == null) ? Boolean.FALSE:
+             (flag.getBool()? Boolean.TRUE: Boolean.FALSE);
+    }
+    return compactObjectHeadersEnabled.booleanValue();
   }
 
   public int getObjectAlignmentInBytes() {

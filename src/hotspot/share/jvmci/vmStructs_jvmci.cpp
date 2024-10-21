@@ -56,6 +56,9 @@
 #endif
 
 #define VM_STRUCTS(nonstatic_field, static_field, unchecked_nonstatic_field, volatile_nonstatic_field) \
+  static_field(CompilerToVM::Data,             oopDesc_klass_offset_in_bytes,          int)                                          \
+  static_field(CompilerToVM::Data,             arrayOopDesc_length_offset_in_bytes,    int)                                          \
+                                                                                                                                     \
   static_field(CompilerToVM::Data,             Klass_vtable_start_offset,              int)                                          \
   static_field(CompilerToVM::Data,             Klass_vtable_length_offset,             int)                                          \
                                                                                                                                      \
@@ -480,7 +483,6 @@
   declare_constant(CompLevel_full_optimization)                           \
   declare_constant(HeapWordSize)                                          \
   declare_constant(InvocationEntryBci)                                    \
-  declare_constant(LogKlassAlignmentInBytes)                              \
   declare_constant(JVMCINMethodData::SPECULATION_LENGTH_BITS)             \
                                                                           \
   declare_constant(JVM_ACC_WRITTEN_FLAGS)                                 \
@@ -796,6 +798,7 @@
   declare_constant(InvocationCounter::count_increment)                    \
   declare_constant(InvocationCounter::count_shift)                        \
                                                                           \
+  declare_constant(markWord::klass_shift)                                 \
   declare_constant(markWord::hash_shift)                                  \
   declare_constant(markWord::monitor_value)                               \
                                                                           \

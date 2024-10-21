@@ -28,6 +28,7 @@
 #include "memory/universe.hpp"
 
 #include "gc/shared/classUnloadingContext.hpp"
+#include "gc/shared/fullGCForwarding.hpp"
 #include "gc/shared/gcArguments.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
@@ -421,6 +422,8 @@ jint ShenandoahHeap::initialize() {
   _control_thread = new ShenandoahControlThread();
 
   ShenandoahInitLogger::print();
+
+  FullGCForwarding::initialize(_heap_region);
 
   return JNI_OK;
 }
@@ -1130,7 +1133,7 @@ oop ShenandoahHeap::evacuate_object(oop p, Thread* thread) {
 
   assert(ShenandoahThreadLocalData::is_evac_allowed(thread), "must be enclosed in oom-evac scope");
 
-  size_t size = p->size();
+  size_t size = ShenandoahForwarding::size(p);
 
   assert(!heap_region_containing(p)->is_humongous(), "never evacuate humongous objects");
 

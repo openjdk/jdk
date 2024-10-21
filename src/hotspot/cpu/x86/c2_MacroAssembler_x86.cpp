@@ -6475,3 +6475,13 @@ void C2_MacroAssembler::vector_rearrange_int_float(BasicType bt, XMMRegister dst
     vpermps(dst, shuffle, src, vlen_enc);
   }
 }
+
+#ifdef _LP64
+void C2_MacroAssembler::load_nklass_compact_c2(Register dst, Address src) {
+  // The incoming address is pointing into obj-start + klass_offset_in_bytes. We need to extract
+  // obj-start, so that we can load from the object's mark-word instead. Usually the address
+  // comes as obj-start in obj and klass_offset_in_bytes in disp.
+  movq(dst, src.plus_disp(-oopDesc::klass_offset_in_bytes()));
+  shrq(dst, markWord::klass_shift);
+}
+#endif

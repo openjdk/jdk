@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,7 +113,7 @@ public class SharedBaseAddress {
             CDSOptions opts = (new CDSOptions())
                         .setArchiveName(filename)
                         .addPrefix("-XX:SharedBaseAddress=" + testEntry)
-                        .addPrefix("-Xlog:cds=debug")
+                        .addPrefix("-Xlog:cds=debug:cds.log")
                         .addPrefix("-Xlog:cds+reloc=debug")
                         .addPrefix("-Xlog:nmt=debug")
                         .addPrefix("-Xlog:os=debug")
@@ -124,6 +124,9 @@ public class SharedBaseAddress {
                 opts.addPrefix("-Xmx128m")
                     .addPrefix("-XX:CompressedClassSpaceSize=32m")
                     .addPrefix("-XX:-UseCompressedOops");
+            }
+            if (testEntry.equals("0")) {
+                opts.addPrefix("-Xlog:cds=debug");  // log to stdout also
             }
             if (Platform.isDebugBuild()) {
                 // Make VM start faster in debug build with large heap.
