@@ -32,6 +32,9 @@
 
 import java.util.Objects;
 
+// Predicate added after int counted loop is created depends on
+// narrowed limit which depends on predicate added before the int
+// counted loop was created: predicates need to be properly ordered.
 public class TestShortRunningLongCountedLoopPredicatesClone {
     public static void main(String[] args) {
         A a = new A(100);

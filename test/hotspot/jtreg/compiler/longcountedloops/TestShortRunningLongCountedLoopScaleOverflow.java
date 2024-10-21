@@ -32,6 +32,8 @@
 
 import java.util.Objects;
 
+// When scale is large, even if loop is short running having a single
+// counted loop is not possible.
 public class TestShortRunningLongCountedLoopScaleOverflow {
     public static void main(String[] args) {
         for (int i = 0; i < 20_000; i++) {
