@@ -83,7 +83,7 @@ public:
 
 private:
   static unsigned int hash_wrapped_string(StringWrapper wrapped_str, int len);
-  static const jchar *to_unicode(StringWrapper wrapped_str, int len, TRAPS);
+  static const jchar *to_unicode(StringWrapper wrapped_str, int &len, TRAPS);
   static Handle to_handle(StringWrapper wrapped_str, int len, TRAPS);
   static void print_string(StringWrapper wrapped_str, int len, TRAPS);
 

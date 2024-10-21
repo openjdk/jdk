@@ -44,9 +44,8 @@ void test_intern(const char* utf8_str, int utf8_length) {
 
     oop interned_string_from_utf8 = StringTable::intern(utf8_str, THREAD);
 
-    int num_chars = UTF8::unicode_length(utf8_str, utf8_length);
-    EXPECT_TRUE(java_lang_String::equals(interned_string_from_utf8, utf8_str, num_chars));
-    EXPECT_EQ(java_lang_String::hash_code(utf8_str, num_chars),java_lang_String::hash_code(interned_string_from_utf8));
+    EXPECT_TRUE(java_lang_String::equals(interned_string_from_utf8, utf8_str, utf8_length));
+    EXPECT_EQ(java_lang_String::hash_code(utf8_str, utf8_length),java_lang_String::hash_code(interned_string_from_utf8));
 
     Symbol* symbol_from_utf8 = SymbolTable::new_symbol(utf8_str, utf8_length);
     oop interned_string_from_symbol = StringTable::intern(symbol_from_utf8, THREAD);

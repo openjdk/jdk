@@ -181,8 +181,9 @@ class java_lang_String : AllStatic {
     return h;
   }
 
-  static unsigned int hash_code(const char *utf8_str, int num_unicode_points) {
+  static unsigned int hash_code(const char *utf8_str, int utf8_len) {
     unsigned int h = 0;
+    int num_unicode_points = UTF8::unicode_length(utf8_str, utf8_len);
 
     jchar a;
     while (num_unicode_points-- > 0) {
@@ -195,8 +196,9 @@ class java_lang_String : AllStatic {
   static unsigned int hash_code(oop java_string);
   static unsigned int hash_code_noupdate(oop java_string);
 
-  static bool equals(oop java_string, const jchar* chars, int num_unicode_points);
-  static bool equals(oop java_string, const char* chars, int num_unicode_points);
+  // Compare strings (of different types/encodings), length is the string (array) length
+  static bool equals(oop java_string, const jchar* chars, int len);
+  static bool equals(oop java_string, const char* utf8_str, int utf8_len);
   static bool equals(oop str1, oop str2);
   static inline bool value_equals(typeArrayOop str_value1, typeArrayOop str_value2);
 

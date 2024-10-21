@@ -220,7 +220,7 @@ public:
   StringTableLookupUnicode(Thread* thread, uintx hash, const jchar* key, int len)
       : StringTableLookup(thread, hash), _str(key), _len(len) {}
 
-  bool equals(WeakHandle* value) {
+  bool equals(const WeakHandle* value) {
     oop val_oop = value->peek();
     if (val_oop == nullptr) {
       return false;
@@ -238,18 +238,18 @@ public:
 class StringTableLookupUTF8 : public StringTableLookup {
 private:
   const char* _str;
-  int _len;
+  int _utf8_len;
 
 public:
-  StringTableLookupUTF8(Thread* thread, uintx hash, const char* key, int len)
-      : StringTableLookup(thread, hash), _str(key), _len(len) {}
+  StringTableLookupUTF8(Thread* thread, uintx hash, const char* key, int utf8_len)
+      : StringTableLookup(thread, hash), _str(key), _utf8_len(utf8_len) {}
 
-  bool equals(WeakHandle* value) {
+  bool equals(const WeakHandle* value) {
     oop val_oop = value->peek();
     if (val_oop == nullptr) {
       return false;
     }
-    bool equals = java_lang_String::equals(val_oop, _str, _len);
+    bool equals = java_lang_String::equals(val_oop, _str, _utf8_len);
     if (!equals) {
       return false;
     }
@@ -408,20 +408,26 @@ oop StringTable::do_lookup(StringWrapper name, int len, uintx hash) {
   return stg.get_res_oop();
 }
 
-const jchar *StringTable::to_unicode(StringWrapper wrapped_str, int len, TRAPS) {
+// Converts and allocates to a unicode string and stores the unicode length in len
+const jchar *StringTable::to_unicode(StringWrapper wrapped_str, int &len, TRAPS) {
   switch (wrapped_str.type) {
   case StringType::UnicodeStr:
     return wrapped_str.unicode_str;
   case StringType::OopStr:
     return java_lang_String::as_unicode_string(wrapped_str.oop_str(), len, CHECK_NULL);
   case StringType::SymbolStr: {
-    jchar *chars = NEW_RESOURCE_ARRAY(jchar, len);
-    UTF8::convert_to_unicode(wrapped_str.symbol_str->get_utf8(), chars, len);
+    const char* utf8_str = wrapped_str.symbol_str->get_utf8();
+    int unicode_length = UTF8::unicode_length(utf8_str, wrapped_str.symbol_str->utf8_length());
+    jchar *chars = NEW_RESOURCE_ARRAY(jchar, unicode_length);
+    UTF8::convert_to_unicode(utf8_str, chars, unicode_length);
+    len = unicode_length;
     return chars;
   }
   case StringType::UTF8Str: {
-    jchar *chars = NEW_RESOURCE_ARRAY(jchar, len);
-    UTF8::convert_to_unicode(wrapped_str.utf8_str, chars, len);
+    int unicode_length = UTF8::unicode_length(wrapped_str.utf8_str);
+    jchar *chars = NEW_RESOURCE_ARRAY(jchar, unicode_length);
+    UTF8::convert_to_unicode(wrapped_str.utf8_str, chars, unicode_length);
+    len = unicode_length;
     return chars;
   }
   }
@@ -447,7 +453,8 @@ Handle StringTable::to_handle(StringWrapper wrapped_str, int len, TRAPS) {
 // Interning
 oop StringTable::intern(Symbol* symbol, TRAPS) {
   if (symbol == nullptr) return nullptr;
-  int length = UTF8::unicode_length(symbol->get_utf8(), symbol->utf8_length());
+  // int length = UTF8::unicode_length(symbol->get_utf8(), symbol->utf8_length());
+  int length = symbol->utf8_length();
   StringWrapper name(symbol);
   oop result = intern(name, length, CHECK_NULL);
   return result;
@@ -464,7 +471,8 @@ oop StringTable::intern(oop string, TRAPS) {
 
 oop StringTable::intern(const char* utf8_string, TRAPS) {
   if (utf8_string == nullptr) return nullptr;
-  int length = UTF8::unicode_length(utf8_string);
+  // int length = UTF8::unicode_length(utf8_string);
+  int length = strlen(utf8_string);
   StringWrapper name(utf8_string);
   oop result = intern(name, length, CHECK_NULL);
   return result;
@@ -481,8 +489,9 @@ oop StringTable::intern(StringWrapper name, int len, TRAPS) {
   if (_alt_hash) {
     ResourceMark rm(THREAD);
     // Convert to unicode for alt hashing
-    const jchar *chars = to_unicode(name, len, CHECK_NULL);
-    hash = hash_string(chars, len, true);
+    int length = len;
+    const jchar *chars = to_unicode(name, length, CHECK_NULL);
+    hash = hash_string(chars, length, true);
   }
 
   found_string = do_lookup(name, len, hash);
@@ -498,7 +507,6 @@ oop StringTable::do_intern(StringWrapper name, int len, uintx hash, TRAPS) {
 
   assert(StringTable::wrapped_string_equals(string_h(), name, len),
          "string must be properly initialized");
-  assert(len == java_lang_String::length(string_h()), "Must be same length");
 
   // Notify deduplication support that the string is being interned.  A string
   // must never be deduplicated after it has been interned.  Doing so interferes
