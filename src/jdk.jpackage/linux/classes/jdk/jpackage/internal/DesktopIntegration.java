@@ -72,7 +72,7 @@ final class DesktopIntegration extends ShellCustomAction {
         // Need desktop and icon files if one of conditions is met:
         //  - there are file associations configured
         //  - user explicitly requested to create a shortcut
-        boolean withDesktopFile = !associations.isEmpty() || launcher.shortcut();
+        boolean withDesktopFile = !associations.isEmpty() || launcher.shortcut().orElse(false);
 
         var curIconResource = pkg.app().createLauncherIconResource(launcher, DEFAULT_ICON,
                 workshop::createResource);
@@ -126,8 +126,12 @@ final class DesktopIntegration extends ShellCustomAction {
         if (launcher != pkg.app().mainLauncher()) {
             nestedIntegrations = List.of();
         } else {
-            nestedIntegrations = pkg.app().additionalLaunchers().stream().map(toFunction(l -> {
-                return new DesktopIntegration(workshop, pkg, (LinuxLauncher)l);
+            nestedIntegrations = pkg.app().additionalLaunchers().stream().map(v -> {
+                return (LinuxLauncher)v;
+            }).filter(l -> {
+                return l.shortcut().orElse(true);
+            }).map(toFunction(l -> {
+                return new DesktopIntegration(workshop, pkg, l);
             })).toList();
         }
     }

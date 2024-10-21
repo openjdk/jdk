@@ -24,22 +24,24 @@
  */
 package jdk.jpackage.internal;
 
+import java.util.Optional;
+
 interface LinuxLauncher extends Launcher {
 
-    boolean shortcut();
+    Optional<Boolean> shortcut();
 
     static class Impl extends Launcher.Proxy<Launcher> implements LinuxLauncher {
 
-        Impl(Launcher launcher, boolean shortcut) {
+        Impl(Launcher launcher, Optional<Boolean> shortcut) {
             super(launcher);
             this.shortcut = shortcut;
         }
 
         @Override
-        public boolean shortcut() {
+        public Optional<Boolean> shortcut() {
             return shortcut;
         }
 
-        private final boolean shortcut;
+        private final Optional<Boolean> shortcut;
     }
 }

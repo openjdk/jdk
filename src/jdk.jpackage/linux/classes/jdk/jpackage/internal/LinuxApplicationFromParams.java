@@ -25,6 +25,7 @@
 package jdk.jpackage.internal;
 
 import java.util.Map;
+import java.util.stream.Stream;
 import static jdk.jpackage.internal.ApplicationFromParams.createBundlerParam;
 import jdk.jpackage.internal.LinuxApplication.Impl;
 import static jdk.jpackage.internal.StandardBundlerParam.SHORTCUT_HINT;
@@ -35,14 +36,11 @@ final class LinuxApplicationFromParams {
         var app = ApplicationFromParams.create(params, launcherParams -> {
             var launcher = LauncherFromParams.create(launcherParams);
 
-            boolean shortcut;
-            if (launcherParams.containsKey(SHORTCUT_HINT.getID())) {
-                // This is an explicit shortcut configuration for an addition launcher
-                shortcut = SHORTCUT_HINT.fetchFrom(launcherParams);
-            } else {
-                shortcut = LINUX_SHORTCUT_HINT.fetchFrom(launcherParams);
-            }
-
+            var shortcut = Stream.of(SHORTCUT_HINT, LINUX_SHORTCUT_HINT).filter(param -> {
+                return launcherParams.containsKey(param.getID());
+            }).map(param -> {
+                return param.fetchFrom(launcherParams);
+            }).findFirst();
             return new LinuxLauncher.Impl(launcher, shortcut);
         });
         return new Impl(app);
