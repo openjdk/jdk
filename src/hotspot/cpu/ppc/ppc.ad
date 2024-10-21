@@ -12268,7 +12268,7 @@ instruct string_equalsL(rarg1RegP str1, rarg2RegP str2, rarg3RegI cnt, iRegIdst 
 %}
 
 instruct array_equalsB(rarg1RegP ary1, rarg2RegP ary2, iRegIdst result,
-                       iRegIdst tmp1, iRegIdst tmp2, regCTR ctr, flagsRegCR0 cr0, flagsRegCR0 cr1) %{
+                       iRegIdst tmp1, iRegIdst tmp2, regCTR ctr, flagsRegCR0 cr0, flagsRegCR1 cr1) %{
   predicate(((AryEqNode*)n)->encoding() == StrIntrinsicNode::LL);
   match(Set result (AryEq ary1 ary2));
   effect(TEMP_DEF result, USE_KILL ary1, USE_KILL ary2, TEMP tmp1, TEMP tmp2, KILL ctr, KILL cr0, KILL cr1);
@@ -12283,7 +12283,7 @@ instruct array_equalsB(rarg1RegP ary1, rarg2RegP ary2, iRegIdst result,
 %}
 
 instruct array_equalsC(rarg1RegP ary1, rarg2RegP ary2, iRegIdst result,
-                       iRegIdst tmp1, iRegIdst tmp2, regCTR ctr, flagsRegCR0 cr0, flagsRegCR0 cr1) %{
+                       iRegIdst tmp1, iRegIdst tmp2, regCTR ctr, flagsRegCR0 cr0, flagsRegCR1 cr1) %{
   predicate(((AryEqNode*)n)->encoding() == StrIntrinsicNode::UU);
   match(Set result (AryEq ary1 ary2));
   effect(TEMP_DEF result, USE_KILL ary1, USE_KILL ary2, TEMP tmp1, TEMP tmp2, KILL ctr, KILL cr0, KILL cr1);
