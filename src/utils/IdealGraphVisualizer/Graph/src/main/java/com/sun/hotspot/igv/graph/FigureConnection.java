@@ -137,11 +137,6 @@ public class FigureConnection implements Connection {
     }
 
     @Override
-    public boolean isVIP() {
-        return style == ConnectionStyle.BOLD;
-    }
-
-    @Override
     public List<Point> getControlPoints() {
         return controlPoints;
     }
