@@ -453,7 +453,6 @@ Handle StringTable::to_handle(StringWrapper wrapped_str, int len, TRAPS) {
 // Interning
 oop StringTable::intern(Symbol* symbol, TRAPS) {
   if (symbol == nullptr) return nullptr;
-  // int length = UTF8::unicode_length(symbol->get_utf8(), symbol->utf8_length());
   int length = symbol->utf8_length();
   StringWrapper name(symbol);
   oop result = intern(name, length, CHECK_NULL);
@@ -471,8 +470,7 @@ oop StringTable::intern(oop string, TRAPS) {
 
 oop StringTable::intern(const char* utf8_string, TRAPS) {
   if (utf8_string == nullptr) return nullptr;
-  // int length = UTF8::unicode_length(utf8_string);
-  int length = strlen(utf8_string);
+  int length = static_cast<int>(strlen(utf8_string));
   StringWrapper name(utf8_string);
   oop result = intern(name, length, CHECK_NULL);
   return result;

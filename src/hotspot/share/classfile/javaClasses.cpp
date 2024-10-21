@@ -389,8 +389,7 @@ Handle java_lang_String::create_from_symbol(const Symbol* symbol, TRAPS) {
   }
 
 #ifdef ASSERT
-  // This check is too strict when the symbol does not contain valid UTF8.
-  if (UTF8::is_legal_utf8((const unsigned char*)utf8_str, utf8_len, false)) {
+  {
     ResourceMark rm;
     const char* expected = symbol->as_utf8();
     char* actual = as_utf8_string(h_obj());
