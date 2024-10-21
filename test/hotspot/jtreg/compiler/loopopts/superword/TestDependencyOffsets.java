@@ -603,23 +603,22 @@ public class TestDependencyOffsets {
             -20, 20,
             -31, 31,
             -32, 32,   // 2^5
-        //    -63, 63,
-        //    -64, 64,   // 2^6
-        //    -65, 65,
-        //    -128, 128, // 2^7
-        //    -129, 129,
-        //    -192, 192, // 3 * 64
+            -63, 63,
+            -64, 64,   // 2^6
+            -65, 65,
+            -128, 128, // 2^7
+            -129, 129,
+            -192, 192, // 3 * 64
         };
         Set<Integer> set = Arrays.stream(always).boxed().collect(Collectors.toSet());
 
-        // TODO
-        // // Sample some random values on an exponental scale
-        // for (int i = 0; i < 10; i++) {
-        //     int base = 4 << i;
-        //     int offset = base + RANDOM.nextInt(base);
-        //     set.add(offset);
-        //     set.add(-offset);
-        // }
+        // Sample some random values on an exponental scale
+        for (int i = 0; i < 10; i++) {
+            int base = 4 << i;
+            int offset = base + RANDOM.nextInt(base);
+            set.add(offset);
+            set.add(-offset);
+        }
 
         List<Integer> offsets = new ArrayList<Integer>(set);
         return offsets;
@@ -712,6 +711,7 @@ public class TestDependencyOffsets {
                 // Rule 1: No strict alignment: -XX:-AlignVector
                 IRRule r1 = new IRRule(type, vwConstraint, type.irNode);
                 r1.addApplyIf("\"AlignVector\", \"false\"");
+                r1.addApplyIf("\"MaxVectorSize\", \">=" + minVectorWidth + "\"");
 
                 if (maxVectorWidth < minVectorWidth) {
                     builder.append("    //   maxVectorWidth < minVectorWidth -> expect no vectorization.\n");
@@ -719,12 +719,12 @@ public class TestDependencyOffsets {
                 } else {
                     r1.setSize("min(" + (maxVectorWidth / type.size) + ",max_" + type.name + ")");
                 }
-                r1.addApplyIf("\"MaxVectorSize\", \">=" + minVectorWidth + "\"");
                 r1.generate(builder);
 
                 // Rule 2: strict alignment: -XX:+AlignVector
                 IRRule r2 = new IRRule(type, vwConstraint, type.irNode);
                 r2.addApplyIf("\"AlignVector\", \"true\"");
+                r2.addApplyIf("\"MaxVectorSize\", \">=" + minVectorWidth + "\"");
 
                 // All vectors must be aligned by some alignment width aw:
                 //   aw = min(actual_vector_width, ObjectAlignmentInBytes)
@@ -759,7 +759,6 @@ public class TestDependencyOffsets {
                     r2.setSize("min(" + (maxVectorWidth / type.size) + ",max_" + type.name + ")");
                 }
 
-                r2.addApplyIf("\"MaxVectorSize\", \">=" + minVectorWidth + "\"");
                 r2.generate(builder);
             }
             return builder.toString();
