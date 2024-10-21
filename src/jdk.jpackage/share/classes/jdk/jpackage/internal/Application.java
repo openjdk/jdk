@@ -120,20 +120,20 @@ interface Application {
             List<Launcher> additionalLaunchers) implements Application {
         public Impl        {
             name = Optional.ofNullable(name).orElseGet(mainLauncher::name);
-            description = Optional.ofNullable(description).orElseGet(DEFAULTS::description);
-            version = Optional.ofNullable(version).orElseGet(DEFAULTS::version);
-            vendor = Optional.ofNullable(vendor).orElseGet(DEFAULTS::vendor);
-            copyright = Optional.ofNullable(copyright).orElseGet(DEFAULTS::copyright);
+            description = Optional.ofNullable(description).orElseGet(Defaults.INSTANCE::description);
+            version = Optional.ofNullable(version).orElseGet(Defaults.INSTANCE::version);
+            vendor = Optional.ofNullable(vendor).orElseGet(Defaults.INSTANCE::vendor);
+            copyright = Optional.ofNullable(copyright).orElseGet(Defaults.INSTANCE::copyright);
         }
     }
 
     static record Defaults(String description, String version, String vendor, String copyright) {
-
+        private static final Defaults INSTANCE = new Defaults(
+                I18N.getString("param.description.default"),
+                "1.0",
+                I18N.getString("param.vendor.default"),
+                MessageFormat.format(I18N.getString("param.copyright.default"), new Date()));
     }
-
-    static final Defaults DEFAULTS = new Defaults(I18N.getString("param.description.default"), "1.0",
-            I18N.getString("param.vendor.default"), MessageFormat.format(I18N.getString(
-            "param.copyright.default"), new Date()));
 
     static class Proxy<T extends Application> extends ProxyBase<T> implements Application {
 
