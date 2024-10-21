@@ -2079,6 +2079,81 @@ Node* VectorBlendNode::Identity(PhaseGVN* phase) {
   return this;
 }
 
+Node* MulVLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  if (Matcher::supports_doubleword_mult_with_quadword_staturation() &&
+      !is_mult_lower_double_word()) {
+
+    auto is_clear_upper_doubleword_uright_shift_pattern = [](const Node* n) {
+      return n->Opcode() == Op_URShiftVL &&
+             n->in(2)->Opcode() == Op_RShiftCntV && n->in(2)->in(1)->is_Con() &&
+             n->in(2)->in(1)->bottom_type()->isa_int() &&
+             n->in(2)->in(1)->bottom_type()->is_int()->get_con() == 32;
+    };
+
+    auto is_lower_doubleword_mask_pattern = [](const Node* n) {
+      if (n->Opcode() == Op_AndV) {
+        Node* replicate_operand = n->in(1)->Opcode() == Op_Replicate ? n->in(1)
+                                  : n->in(2)->Opcode() == Op_Replicate ? n->in(2) : nullptr;
+        if (replicate_operand) {
+          return replicate_operand->in(1)->is_Con() &&
+                 replicate_operand->in(1)->bottom_type()->isa_long() &&
+                 replicate_operand->in(1)->bottom_type()->is_long()->get_con() == 4294967295L;
+        } else {
+          return false; // Replication match failed
+        }
+      } else {
+        return false; // AndV match failed
+      }
+    };
+
+    auto is_cast_integer_to_long_pattern = [](const Node* n) {
+      return n->Opcode() == Op_VectorCastI2X && Matcher::vector_element_basic_type(n) == T_LONG;
+    };
+
+    // Detect following IR pattern for doubleword unsigned multiplication with quadword
+    // saturation and directly stitch the pattern inputs to MulVL IR.
+    //      MulVL (AndV  SRC1,  0xFFFFFFFF)   (AndV  SRC2,  0xFFFFFFFF)
+    if (is_lower_doubleword_mask_pattern(in(1)) && is_lower_doubleword_mask_pattern(in(2))) {
+      Node* effective_input1 = in(1)->in(1)->Opcode() == Op_Replicate ? in(1)->in(2) : in(1)->in(1);
+      Node* effective_input2 = in(2)->in(1)->Opcode() == Op_Replicate ? in(2)->in(2) : in(2)->in(1);
+      return new MulVLNode(effective_input1, effective_input2, bottom_type()->is_vect(), false, true);
+    }
+
+    // Detect following IR pattern for doubleword unsigned multiplication with quadword
+    // saturation. We still need the pattern input masking logic to ensure doubleword
+    // multiplier and multplicand values.
+    //      MulVL (URShiftV SRC1 , 32) (URShiftV SRC2, 32)
+    if (is_clear_upper_doubleword_uright_shift_pattern(in(1)) && is_clear_upper_doubleword_uright_shift_pattern(in(2))) {
+      return new MulVLNode(in(1), in(2), bottom_type()->is_vect(), false, true);
+    }
+
+    // Detect following IR pattern for doubleword unsigned multiplication with quadword
+    // saturation. We need to preserve the input masking logic for first input and directly
+    // propagate the second pattern input to MulVL IR.
+    //      MulVL (URShiftV SRC1 , 32)  (AndV  SRC2,  0xFFFFFFFF)
+    if (is_clear_upper_doubleword_uright_shift_pattern(in(1)) && is_lower_doubleword_mask_pattern(in(2))) {
+      Node* effective_input2 = in(2)->in(1)->Opcode() == Op_Replicate ? in(2)->in(2) : in(2)->in(1);
+      return new MulVLNode(in(1), effective_input2, bottom_type()->is_vect(), false, true);
+    }
+
+    // Detect following IR pattern for doubleword unsigned multiplication with quadword
+    // saturation. We need to preserve the input masking logic for second input and directly
+    // propagate the first pattern input to MulVL IR.
+    //      MulVL (AndV  SRC1,  0xFFFFFFFF) (URShiftV SRC2 , 32)
+    if (is_lower_doubleword_mask_pattern(in(1)) && is_clear_upper_doubleword_uright_shift_pattern(in(2))) {
+      Node* effective_input1 = in(1)->in(1)->Opcode() == Op_Replicate ? in(1)->in(2) : in(1)->in(1);
+      return new MulVLNode(effective_input1, in(2), bottom_type()->is_vect(), false, true);
+    }
+
+    // Detect following IR pattern for doubleword signed multiplication with quadword
+    // saturation.
+    //      MulVL (VectorCastI2X src1) (VectorCastI2X src2)
+    if (is_cast_integer_to_long_pattern(in(1)) || is_cast_integer_to_long_pattern(in(2))) {
+      return new MulVLNode(in(1), in(2), bottom_type()->is_vect(), true, true);
+    }
+  }
+  return nullptr;
+}
 
 #ifndef PRODUCT
 void VectorBoxAllocateNode::dump_spec(outputStream *st) const {
