@@ -42,7 +42,6 @@ public class MultipleLogins {
     private static final String KS_TYPE = "PKCS11";
     private static final int NUM_PROVIDERS = 20;
     private static final SunPKCS11[] providers = new SunPKCS11[NUM_PROVIDERS];
-    static final Policy DEFAULT_POLICY = Policy.getPolicy();
 
     public static void main(String[] args) throws Exception {
         String nssConfig = null;
@@ -61,11 +60,6 @@ public class MultipleLogins {
         for (int i =0; i < NUM_PROVIDERS; i++) {
             // loop to set up test without security manger
             providers[i] = (SunPKCS11)PKCS11Test.newPKCS11Provider();
-        }
-
-        if (args.length > 0) {
-            Policy.setPolicy(new SimplePolicy());
-            System.setSecurityManager(new SecurityManager());
         }
 
         for (int i =0; i < NUM_PROVIDERS; i++) {
@@ -124,23 +118,6 @@ public class MultipleLogins {
             } else {
                 throw new RuntimeException("Token was present", e);
             }
-        }
-    }
-
-    static final class SimplePolicy extends Policy {
-
-        final Permissions perms = new Permissions();
-        SimplePolicy() {
-            perms.add(new PropertyPermission("*", "read, write"));
-            perms.add(new SecurityPermission("authProvider.*"));
-            perms.add(new SecurityPermission("insertProvider.*"));
-            perms.add(new SecurityPermission("removeProvider.*"));
-        }
-
-        @Override
-        public boolean implies(ProtectionDomain domain, Permission permission) {
-            return perms.implies(permission) ||
-                    DEFAULT_POLICY.implies(domain, permission);
         }
     }
 
