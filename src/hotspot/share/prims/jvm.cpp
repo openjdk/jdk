@@ -508,6 +508,13 @@ JVM_LEAF(jboolean, JVM_IsContainerized(void))
   return JNI_FALSE;
 JVM_END
 
+JVM_ENTRY_NO_ENV(jint, JVM_HostActiveProcessorCount(void))
+#ifdef LINUX
+  return os::Linux::active_processor_count();
+#endif
+  return os::active_processor_count();
+JVM_END
+
 // java.lang.Throwable //////////////////////////////////////////////////////
 
 JVM_ENTRY(void, JVM_FillInStackTrace(JNIEnv *env, jobject receiver))
