@@ -22,14 +22,20 @@
  *
  */
 
+#include "precompiled.hpp"
 #include "gc/shenandoah/shenandoahControlThread.hpp"
-#include "gc/shenandoah/shenandoahHeap.hpp"
+#include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shenandoah/shenandoahUncommitThread.hpp"
 #include "logging/log.hpp"
+#include "runtime/mutexLocker.hpp"
+#include "utilities/events.hpp"
 
 ShenandoahUncommitThread::ShenandoahUncommitThread(ShenandoahHeap* heap)
-  : _heap(heap), _uncommit_requested(false) {}
+  : _heap(heap), _lock(Mutex::safepoint - 2, "ShenandoahUncommit_lock, true") {
+  set_name("Shenandoah Uncommit Thread");
+  create_and_start();
+}
 
 bool ShenandoahUncommitThread::has_work(double shrink_before, size_t shrink_until) const {
   // Determine if there is work to do. This avoids taking heap lock if there is
@@ -50,24 +56,6 @@ bool ShenandoahUncommitThread::has_work(double shrink_before, size_t shrink_unti
   return false;
 }
 
-bool ShenandoahUncommitThread::check_soft_max_changed() const {
-  size_t new_soft_max = Atomic::load(&SoftMaxHeapSize);
-  size_t old_soft_max = _heap->soft_max_capacity();
-  if (new_soft_max != old_soft_max) {
-    new_soft_max = MAX2(_heap->min_capacity(), new_soft_max);
-    new_soft_max = MIN2(_heap->max_capacity(), new_soft_max);
-    if (new_soft_max != old_soft_max) {
-      log_info(gc)("Soft Max Heap Size: " SIZE_FORMAT "%s -> " SIZE_FORMAT "%s",
-                   byte_size_in_proper_unit(old_soft_max), proper_unit_for_byte_size(old_soft_max),
-                   byte_size_in_proper_unit(new_soft_max), proper_unit_for_byte_size(new_soft_max)
-      );
-      _heap->set_soft_max_capacity(new_soft_max);
-      return true;
-    }
-  }
-  return false;
-}
-
 void ShenandoahUncommitThread::run_service() {
   assert(ShenandoahUncommit, "Thread should only run when uncommit is enabled.");
 
@@ -79,27 +67,51 @@ void ShenandoahUncommitThread::run_service() {
   double last_shrink_time = os::elapsedTime();
   while (!should_terminate()) {
     double current = os::elapsedTime();
-    bool soft_max_changed = check_soft_max_changed();
+    bool soft_max_changed = _soft_max_changed.try_unset();
+    bool explicit_gc_requested = _explicit_gc_requested.try_unset();
 
-    if (soft_max_changed || current - last_shrink_time > shrink_period) {
-      double shrink_before = soft_max_changed ? current : current - ((double) ShenandoahUncommitDelay / 1000.0);
+    if (soft_max_changed || explicit_gc_requested || current - last_shrink_time > shrink_period) {
+      double shrink_before = (soft_max_changed || explicit_gc_requested) ? current : current - ((double) ShenandoahUncommitDelay / 1000.0);
       size_t shrink_until = soft_max_changed ? _heap->soft_max_capacity() : _heap->min_capacity();
 
+      // Explicit GC tries to uncommit everything down to min capacity.
+      // Soft max change tries to uncommit everything down to target capacity.
+      // Periodic uncommit tries to uncommit suitable regions down to min capacity.
       if (has_work(shrink_before, shrink_until)) {
         uncommit(shrink_before, shrink_until);
+        last_shrink_time = current;
       }
     }
+    MonitorLocker locker(&_lock);
+    locker.wait((int64_t )shrink_period);
+  }
+}
+
+void ShenandoahUncommitThread::notify_soft_max_changed() {
+  if (_soft_max_changed.try_set()) {
+    MonitorLocker locker(&_lock);
+    locker.notify_all();
+  }
+}
+
+void ShenandoahUncommitThread::notify_explicit_gc_requested() {
+  if (_explicit_gc_requested.try_set()) {
+    MonitorLocker locker(&_lock);
+    locker.notify_all();
   }
 }
 
 void ShenandoahUncommitThread::uncommit(double shrink_before, size_t shrink_until) {
   assert (ShenandoahUncommit, "should be enabled");
 
+  EventMark em("Concurrent uncommit");
+  log_info(gc)("Uncommit regions empty before: %.3f, until committed is less than: " PROPERFMT,
+          shrink_before, PROPERFMTARGS(shrink_until + ShenandoahHeapRegion::region_size_bytes()));
+
   // Application allocates from the beginning of the heap, and GC allocates at
   // the end of it. It is more efficient to uncommit from the end, so that applications
   // could enjoy the near committed regions. GC allocations are much less frequent,
   // and therefore can accept the committing costs.
-
   size_t count = 0;
   for (size_t i = _heap->num_regions(); i > 0; i--) { // care about size_t underflow
     ShenandoahHeapRegion* r = _heap->get_region(i - 1);
@@ -118,6 +130,11 @@ void ShenandoahUncommitThread::uncommit(double shrink_before, size_t shrink_unti
   }
 
   if (count > 0) {
-    _heap->control_thread()->notify_heap_changed();
+    log_info(gc)("Uncommitted " SIZE_FORMAT " regions", count);
+    _heap->notify_heap_changed();
   }
+}
+
+void ShenandoahUncommitThread::stop_service() {
+
 }

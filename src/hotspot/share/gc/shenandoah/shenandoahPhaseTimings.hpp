@@ -174,7 +174,6 @@ class outputStream;
   f(full_gc_copy_objects_rebuild,                   "    Rebuild Region Sets")         \
   f(full_gc_heapdump_post,                          "  Post Heap Dump")                \
                                                                                        \
-  f(conc_uncommit,                                  "Concurrent Uncommit")             \
   f(pacing,                                         "Pacing")                          \
                                                                                        \
   f(heap_iteration_roots,                           "Heap Iteration")                  \

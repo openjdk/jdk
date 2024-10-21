@@ -89,6 +89,7 @@
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/stackWatermarkSet.hpp"
 #include "runtime/vmThread.hpp"
+#include "gc/shenandoah/shenandoahUncommitThread.hpp"
 #include "utilities/events.hpp"
 #include "utilities/powerOfTwo.hpp"
 
@@ -420,6 +421,10 @@ jint ShenandoahHeap::initialize() {
 
   _control_thread = new ShenandoahControlThread();
 
+  if (ShenandoahUncommit) {
+    _uncommit_thread = new ShenandoahUncommitThread(this);
+  }
+
   ShenandoahInitLogger::print();
 
   return JNI_OK;
@@ -487,6 +492,7 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   _gc_state_changed(false),
   _gc_no_progress_count(0),
   _control_thread(nullptr),
+  _uncommit_thread(nullptr),
   _shenandoah_policy(policy),
   _gc_mode(nullptr),
   _heuristics(nullptr),
@@ -744,60 +750,15 @@ bool ShenandoahHeap::is_in(const void* p) const {
   }
 }
 
-void ShenandoahHeap::maybe_uncommit(double shrink_before, size_t shrink_until) {
-  assert (ShenandoahUncommit, "should be enabled");
-
-  // Determine if there is work to do. This avoids taking heap lock if there is
-  // no work available, avoids spamming logs with superfluous logging messages,
-  // and minimises the amount of work while locks are taken.
-
-  if (committed() <= shrink_until) return;
-
-  bool has_work = false;
-  for (size_t i = 0; i < num_regions(); i++) {
-    ShenandoahHeapRegion* r = get_region(i);
-    if (r->is_empty_committed() && (r->empty_time() < shrink_before)) {
-      has_work = true;
-      break;
-    }
-  }
-
-  if (has_work) {
-    static const char* msg = "Concurrent uncommit";
-    ShenandoahConcurrentPhase gcPhase(msg, ShenandoahPhaseTimings::conc_uncommit, true /* log_heap_usage */);
-    EventMark em("%s", msg);
-
-    op_uncommit(shrink_before, shrink_until);
+void ShenandoahHeap::notify_soft_max_changed() {
+  if (_uncommit_thread != nullptr) {
+    _uncommit_thread->notify_soft_max_changed();
   }
 }
 
-void ShenandoahHeap::op_uncommit(double shrink_before, size_t shrink_until) {
-  assert (ShenandoahUncommit, "should be enabled");
-
-  // Application allocates from the beginning of the heap, and GC allocates at
-  // the end of it. It is more efficient to uncommit from the end, so that applications
-  // could enjoy the near committed regions. GC allocations are much less frequent,
-  // and therefore can accept the committing costs.
-
-  size_t count = 0;
-  for (size_t i = num_regions(); i > 0; i--) { // care about size_t underflow
-    ShenandoahHeapRegion* r = get_region(i - 1);
-    if (r->is_empty_committed() && (r->empty_time() < shrink_before)) {
-      ShenandoahHeapLocker locker(lock());
-      if (r->is_empty_committed()) {
-        if (committed() < shrink_until + ShenandoahHeapRegion::region_size_bytes()) {
-          break;
-        }
-
-        r->make_uncommitted();
-        count++;
-      }
-    }
-    SpinPause(); // allow allocators to take the lock
-  }
-
-  if (count > 0) {
-    notify_heap_changed();
+void ShenandoahHeap::notify_explicit_gc_requested() {
+  if (_uncommit_thread != nullptr) {
+    _uncommit_thread->notify_explicit_gc_requested();
   }
 }
 
@@ -1377,6 +1338,9 @@ void ShenandoahHeap::gc_threads_do(ThreadClosure* tcl) const {
     tcl->do_thread(_control_thread);
   }
 
+  if (_uncommit_thread != nullptr) {
+    tcl->do_thread(_uncommit_thread);
+  }
   workers()->threads_do(tcl);
   if (_safepoint_workers != nullptr) {
     _safepoint_workers->threads_do(tcl);
@@ -1959,6 +1923,11 @@ void ShenandoahHeap::stop() {
 
   // Step 3. Wait until GC worker exits normally.
   control_thread()->stop();
+
+  // Stop 4. Shutdown uncommit thread.
+  if (_uncommit_thread != nullptr) {
+    _uncommit_thread->stop();
+  }
 }
 
 void ShenandoahHeap::stw_unload_classes(bool full_gc) {

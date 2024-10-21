@@ -62,6 +62,7 @@ class ShenandoahFullGC;
 class ShenandoahMonitoringSupport;
 class ShenandoahPacer;
 class ShenandoahReferenceProcessor;
+class ShenandoahUncommitThread;
 class ShenandoahVerifier;
 class ShenandoahWorkerThreads;
 class VMStructs;
@@ -209,10 +210,8 @@ public:
 
 // ---------- Periodic Tasks
 //
-private:
-  void notify_heap_changed();
-
 public:
+  void notify_heap_changed();
   void set_forced_counters_update(bool value);
   void handle_force_counters_update();
 
@@ -373,11 +372,6 @@ public:
   void cancel_gc(GCCause::Cause cause);
 
 public:
-  // These will uncommit empty regions if heap::committed > shrink_until
-  // and there exists at least one region which was made empty before shrink_before.
-  void maybe_uncommit(double shrink_before, size_t shrink_until);
-  void op_uncommit(double shrink_before, size_t shrink_until);
-
   // Returns true if the soft maximum heap has been changed using management APIs.
   bool check_soft_max_changed();
 
@@ -407,10 +401,14 @@ public:
   void notify_gc_no_progress();
   size_t get_gc_no_progress_count() const;
 
+  void notify_soft_max_changed();
+  void notify_explicit_gc_requested();
+
 //
 // Mark support
 private:
   ShenandoahControlThread*   _control_thread;
+  ShenandoahUncommitThread*  _uncommit_thread;
   ShenandoahCollectorPolicy* _shenandoah_policy;
   ShenandoahMode*            _gc_mode;
   ShenandoahHeuristics*      _heuristics;

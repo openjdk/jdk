@@ -31,15 +31,23 @@ class ShenandoahHeap;
 
 class ShenandoahUncommitThread : public ConcurrentGCThread {
   ShenandoahHeap* _heap;
-  bool _uncommit_requested;
+  ShenandoahSharedFlag _soft_max_changed;
+  ShenandoahSharedFlag _explicit_gc_requested;
+  Monitor _lock;
 
   bool has_work(double shrink_before, size_t shrink_until) const;
-  bool check_soft_max_changed() const;
-
   void uncommit(double shrink_before, size_t shrink_until);
 public:
   explicit ShenandoahUncommitThread(ShenandoahHeap* heap);
   void run_service() override;
+
+protected:
+  void stop_service() override;
+
+public:
+
+  void notify_soft_max_changed();
+  void notify_explicit_gc_requested();
 };
 
 
