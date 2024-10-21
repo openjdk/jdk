@@ -697,7 +697,7 @@ public class TestDependencyOffsets {
                 int byteOffset = offset * type.size;
                 builder.append("    //   byteOffset = " + byteOffset + " = offset * type.size\n");
 
-                int maxVectorWidth = 1 << 30; // no constraint
+                int maxVectorWidth = vwConstraint.platformVectorWidth; // no constraint
                 if (0 < byteOffset && byteOffset < vwConstraint.platformVectorWidth) {
                     // Store forward: will be loaded in later iteration. If the offset is too small
                     // then maximal vector size would introduce cyclic dependencies. Hence, we use
@@ -764,15 +764,6 @@ public class TestDependencyOffsets {
                 r2.generate(builder);
             }
             return builder.toString();
-        }
-    }
-
-    static int pow2Factor(int value) {
-        int f = 1;
-        while(true) {
-          int f2 = f * 2;
-          if (f2 < 0 || value % f2 != 0) { return f; }
-          f = f2;
         }
     }
 
