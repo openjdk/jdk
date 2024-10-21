@@ -180,7 +180,7 @@ void VersionInfo::fillBuffer(std::ostream& buf) const {
     write(buf, createFIXEDFILEINFO()); // Value
     add32bitPadding(buf); // Padding2
 
-    const DWORD neutralLangId = (0x04b0 | MAKELANGID(LANG_NEUTRAL, SUBLANG_NEUTRAL) << 16);
+ // const DWORD neutralLangId = (0x04b0 | MAKELANGID(LANG_NEUTRAL, SUBLANG_NEUTRAL) << 16);
     const DWORD engLangId = (0x04b0 | MAKELANGID(LANG_ENGLISH, SUBLANG_ENGLISH_US) << 16);
 
     do {

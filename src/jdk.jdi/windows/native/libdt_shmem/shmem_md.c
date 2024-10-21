@@ -44,7 +44,7 @@ sysSharedMemCreate(const char *name, int length,
                    sys_shmem_t *mem, void **buffer)
 {
     void *mappedMemory;
-    HANDLE memHandle;
+ // HANDLE memHandle;
 
     SHMEM_ASSERT(buffer);
     SHMEM_ASSERT(name);
