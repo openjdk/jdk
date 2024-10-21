@@ -910,7 +910,7 @@ public class Flow {
                     Set<PatternDescription> toAdd = new HashSet<>();
 
                     for (Type sup : types.directSupertypes(bpOne.type)) {
-                        ClassSymbol clazz = (ClassSymbol) sup.tsym;
+                        ClassSymbol clazz = (ClassSymbol) types.erasure(sup).tsym;
 
                         clazz.complete();
 
