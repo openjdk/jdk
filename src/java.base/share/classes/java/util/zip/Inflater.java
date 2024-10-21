@@ -96,15 +96,13 @@ public class Inflater {
     }
 
     /**
-     * Creates a new decompressor. If the parameter 'nowrap' is true then
-     * the ZLIB header and checksum fields will not be used. This provides
-     * compatibility with the compression format used by both GZIP and PKZIP.
-     * <p>
-     * Note: When using the 'nowrap' option it is also necessary to provide
-     * an extra "dummy" byte as input. This is required by the ZLIB native
-     * library in order to support certain optimizations.
+     * Creates a new decompressor.
+     * If {@code nowrap} is true then the compressed input is expected to be
+     * in the raw 'deflate' format, without any ZLIB header or checksum
+     * fields wrapping the compressed stream. This provides compatibility
+     * with compression formats used by both GZIP and ZIP.
      *
-     * @param nowrap if true then support GZIP compatible compression
+     * @param nowrap if true then expect compressed input without ZLIB headers
      */
     @SuppressWarnings("this-escape")
     public Inflater(boolean nowrap) {

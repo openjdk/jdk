@@ -443,7 +443,6 @@ public class ZipFile implements ZipConstants, Closeable {
 
     private class ZipFileInflaterInputStream extends InflaterInputStream {
         private volatile boolean closeRequested;
-        private boolean eof = false;
         private final Cleanable cleanable;
 
         ZipFileInflaterInputStream(ZipFileInputStream zfin,
@@ -468,22 +467,6 @@ public class ZipFile implements ZipConstants, Closeable {
                 res.istreams.remove(this);
             }
             cleanable.clean();
-        }
-
-        // Override fill() method to provide an extra "dummy" byte
-        // at the end of the input stream. This is required when
-        // using the "nowrap" Inflater option.
-        protected void fill() throws IOException {
-            if (eof) {
-                throw new EOFException("Unexpected end of ZLIB input stream");
-            }
-            len = in.read(buf, 0, buf.length);
-            if (len == -1) {
-                buf[0] = 0;
-                len = 1;
-                eof = true;
-            }
-            inf.setInput(buf, 0, len);
         }
 
         public int available() throws IOException {
