@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -399,6 +399,13 @@ public final class LinuxHelper {
     private static void verifyDesktopFile(JPackageCommand cmd, Path desktopFile)
             throws IOException {
         TKit.trace(String.format("Check [%s] file BEGIN", desktopFile));
+
+        var launcherName = Stream.of(List.of(cmd.name()), cmd.addLauncherNames()).flatMap(List::stream).filter(name -> {
+            return getDesktopFile(cmd, name).equals(desktopFile);
+        }).findAny();
+        TKit.assertTrue(launcherName.isPresent(),
+                "Check the desktop file corresponds to one of app launchers");
+
         List<String> lines = Files.readAllLines(desktopFile);
         TKit.assertEquals("[Desktop Entry]", lines.get(0), "Check file header");
 
@@ -428,7 +435,7 @@ public final class LinuxHelper {
                     "Check value of [%s] key", key));
         }
 
-        // Verify value of `Exec` property in .desktop files are escaped if required
+        // Verify the value of `Exec` key in is escaped if required
         String launcherPath = data.get("Exec");
         if (Pattern.compile("\\s").matcher(launcherPath).find()) {
             TKit.assertTrue(launcherPath.startsWith("\"")
@@ -436,6 +443,12 @@ public final class LinuxHelper {
                     "Check path to the launcher is enclosed in double quotes");
             launcherPath = launcherPath.substring(1, launcherPath.length() - 1);
         }
+
+        TKit.assertEquals(launcherPath.toString(), cmd.pathToPackageFile(
+                cmd.appLauncherPath(launcherName.get())).toString(),
+                String.format(
+                        "Check the value of [Exec] key references [%s] app launcher",
+                        launcherName.get()));
 
         Stream.of(launcherPath, data.get("Icon"))
                 .map(Path::of)
