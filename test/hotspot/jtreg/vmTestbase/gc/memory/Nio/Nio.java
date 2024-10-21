@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,8 @@ import java.io.IOException;
  */
 public class Nio {
 
-    static final int MAX_SIZE = (int)VM.maxDirectMemory();
+    static final int MAX_VM_SIZE = (int)VM.maxDirectMemory();
+    static int max_size = 0;
 
     public static void main(String[] args) {
         System.exit(new Nio().run() + 95 /*STATUS_BASE*/);
@@ -72,13 +73,22 @@ public class Nio {
 
         // Step1: allocate the all available direct memory
         //        no OOME, no heap memory should be used
-        System.out.println("Allocating all the direct memory: " + MAX_SIZE);
+        System.out.println("Allocating all the direct memory: " + MAX_VM_SIZE);
         ByteBuffer bb;
-        try {
-            bb = ByteBuffer.allocateDirect((int)MAX_SIZE);
-            System.out.println("... success");
-        } catch (OutOfMemoryError oom) {
-            throw new Fault("Unexpected OOME during the first allocation " + oom);
+        max_size = MAX_VM_SIZE;
+        while (true) {
+            try {
+                System.out.println(max_size);
+                bb = ByteBuffer.allocateDirect((int)max_size);
+                System.out.println("... success");
+            } catch (OutOfMemoryError oom) {
+                max_size -= 1024;
+                continue;
+            }
+            System.out.println("max_size: " + max_size);
+            System.out.println("MAX_VM_SIZE - max_size: " +
+                (MAX_VM_SIZE - max_size));
+            break;
         }
         long usedHeap_1 = getUsedHeap();
         long usedNonHeap_1 = getUsedNonHeap();
@@ -100,10 +110,10 @@ public class Nio {
         // Step4: read and write into allocated memory
         double d0 = -3.1415;
         float  f0 = 41234.6f;
-        bb.putDouble(MAX_SIZE/2, d0);
-        bb.putFloat(MAX_SIZE - 17, f0);
-        double d1 = bb.getDouble(MAX_SIZE/2);
-        float f1 = bb.getFloat(MAX_SIZE - 17);
+        bb.putDouble(max_size/2, d0);
+        bb.putFloat(max_size - 17, f0);
+        double d1 = bb.getDouble(max_size/2);
+        float f1 = bb.getFloat(max_size - 17);
         System.out.println("put: " + d0 + ", " + f0);
         System.out.println("got: " + d1 + ", " + f1);
         if (d0 != d1 || f0 != f1) {
@@ -162,7 +172,7 @@ public class Nio {
      */
     void checkHeapIsNotAffected(long h_before, long h_after, long nh_before, long nh_after) {
 
-        if (h_after - h_before > MAX_SIZE * 0.75) {
+        if (h_after - h_before > max_size * 0.75) {
             System.err.println("Used heap before: " + h_before);
             System.err.println("Used heap after : " + h_after);
             dumpHeap();
@@ -170,7 +180,7 @@ public class Nio {
                     + " Heap dumped to heapDump.hprof file.";
             throw new Fault(failed);
         }
-        if (nh_after - nh_before > MAX_SIZE * 0.75) {
+        if (nh_after - nh_before > max_size * 0.75) {
             System.err.println("Used heap before: " + nh_before);
             System.err.println("Used heap after : " + nh_after);
             dumpHeap();
