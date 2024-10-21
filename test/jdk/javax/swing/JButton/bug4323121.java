@@ -64,7 +64,7 @@ public final class bug4323121 {
 
         try {
             SwingUtilities.invokeAndWait(() -> {
-                button = new TestButton("gotcha");
+                button = new JButton("gotcha");
                 button.addMouseListener(new MouseAdapter() {
                     @Override
                     public void mouseEntered(MouseEvent e) {
@@ -117,12 +117,6 @@ public final class bug4323121 {
                     frame.dispose();
                 }
             });
-        }
-    }
-
-    private static final class TestButton extends JButton {
-        public TestButton(String label) {
-            super(label);
         }
     }
 
