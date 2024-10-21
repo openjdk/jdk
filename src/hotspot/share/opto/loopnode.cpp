@@ -1168,25 +1168,25 @@ bool PhaseIdealLoop::short_running_loop(IdealLoopTree* loop, jint stride_con, co
     const PredicateBlock* predicate_block = predicates.loop_predicate_block();
     ParsePredicateSuccessProj* parse_predicate_proj = short_running_loop_predicate_block-> parse_predicate_success_proj();
     Node* ctrl = entry_control;
-    ctrl = clone_parse_predicate_to_unswitched_loop(parse_predicate_proj, ctrl,
+    ctrl = clone_parse_predicate(parse_predicate_proj, ctrl,
                                                     Deoptimization::Reason_short_running_loop, true);
     Node* short_running_loop_ctrl = ctrl;
     if (predicate_block->has_parse_predicate()) {
       parse_predicate_proj = predicate_block->parse_predicate_success_proj();
-      ctrl = clone_parse_predicate_to_unswitched_loop(parse_predicate_proj, ctrl, Deoptimization::Reason_predicate,
+      ctrl = clone_parse_predicate(parse_predicate_proj, ctrl, Deoptimization::Reason_predicate,
                                                       true);
       Unique_Node_List list;
       get_assertion_predicates(parse_predicate_proj, list);
-      clone_assertion_predicates_to_fast_unswitched_loop(loop, Deoptimization::Reason_predicate, list, ctrl->as_IfTrue());
+      clone_assertion_predicates(loop, Deoptimization::Reason_predicate, list, ctrl->as_IfTrue());
     }
     const PredicateBlock* profiled_predicate_block = predicates.profiled_loop_predicate_block();
     if (profiled_predicate_block->has_parse_predicate()) {
       parse_predicate_proj = profiled_predicate_block->parse_predicate_success_proj();
-      ctrl = clone_parse_predicate_to_unswitched_loop(parse_predicate_proj, ctrl,
+      ctrl = clone_parse_predicate(parse_predicate_proj, ctrl,
                                                       Deoptimization::Reason_profile_predicate, true);
       Unique_Node_List list;
       get_assertion_predicates(parse_predicate_proj, list);
-      clone_assertion_predicates_to_fast_unswitched_loop(loop, Deoptimization::Reason_profile_predicate, list, ctrl->as_IfTrue());
+      clone_assertion_predicates(loop, Deoptimization::Reason_profile_predicate, list, ctrl->as_IfTrue());
     }
     assert(ctrl != entry_control, "some parse predicates must have been inserted");
     _igvn.replace_input_of(head->skip_strip_mined(), LoopNode::EntryControl, ctrl);

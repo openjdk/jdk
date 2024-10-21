@@ -1682,18 +1682,19 @@ private:
                                                             IfProjNode*& ifslow_pred);
   void clone_parse_predicate_to_unswitched_loops(const PredicateBlock* predicate_block, Deoptimization::DeoptReason reason,
                                                  IfProjNode*& iffast_pred, IfProjNode*& ifslow_pred);
-  IfProjNode* clone_parse_predicate_to_unswitched_loop(ParsePredicateSuccessProj* parse_predicate_proj, Node* new_entry,
-                                                       Deoptimization::DeoptReason reason, bool slow_loop);
+
+  IfProjNode* clone_parse_predicate(ParsePredicateSuccessProj* parse_predicate_proj, Node* new_entry,
+                                    Deoptimization::DeoptReason reason, bool slow_loop);
   void clone_assertion_predicates_to_unswitched_loop(IdealLoopTree* loop, const Node_List& old_new,
                                                      Deoptimization::DeoptReason reason, IfProjNode* old_predicate_proj,
                                                      ParsePredicateSuccessProj* fast_loop_parse_predicate_proj,
                                                      ParsePredicateSuccessProj* slow_loop_parse_predicate_proj);
 
-  void clone_assertion_predicates_to_fast_unswitched_loop(IdealLoopTree* loop,
-                                                          Deoptimization::DeoptReason reason,
-                                                          const Unique_Node_List &list,
-                                                          ParsePredicateSuccessProj*
-                                                          fast_loop_parse_predicate_proj);
+  void clone_assertion_predicates(IdealLoopTree* loop,
+                                  Deoptimization::DeoptReason reason,
+                                  const Unique_Node_List &list,
+                                  ParsePredicateSuccessProj*
+                                  fast_loop_parse_predicate_proj);
 
   void clone_assertion_predicates_to_slow_unswitched_loop(IdealLoopTree* loop, const Node_List &old_new,
                                                           Deoptimization::DeoptReason reason,

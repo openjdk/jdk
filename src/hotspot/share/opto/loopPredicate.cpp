@@ -273,9 +273,9 @@ void PhaseIdealLoop::fix_cloned_data_node_controls(const ProjNode* old_uncommon_
   orig_to_clone.iterate_all(orig_clone_action);
 }
 
-IfProjNode* PhaseIdealLoop::clone_parse_predicate_to_unswitched_loop(ParsePredicateSuccessProj* parse_predicate_proj,
-                                                                     Node* new_entry, Deoptimization::DeoptReason reason,
-                                                                     const bool slow_loop) {
+IfProjNode* PhaseIdealLoop::clone_parse_predicate(ParsePredicateSuccessProj* parse_predicate_proj,
+                                                  Node* new_entry, Deoptimization::DeoptReason reason,
+                                                  const bool slow_loop) {
 
   IfProjNode* new_predicate_proj = create_new_if_for_predicate(parse_predicate_proj, new_entry, reason, Op_ParsePredicate,
                                                                slow_loop);
@@ -301,14 +301,14 @@ void PhaseIdealLoop::clone_assertion_predicates_to_unswitched_loop(IdealLoopTree
   get_assertion_predicates(old_predicate_proj, list);
 
   clone_assertion_predicates_to_slow_unswitched_loop(loop, old_new, reason, list, slow_loop_parse_predicate_proj);
-  clone_assertion_predicates_to_fast_unswitched_loop(loop, reason, list, fast_loop_parse_predicate_proj);
+  clone_assertion_predicates(loop, reason, list, fast_loop_parse_predicate_proj);
 }
 
-void PhaseIdealLoop::clone_assertion_predicates_to_fast_unswitched_loop(IdealLoopTree* loop,
-                                                                        Deoptimization::DeoptReason reason,
-                                                                        const Unique_Node_List& list,
-                                                                        ParsePredicateSuccessProj*
-                                                                        fast_loop_parse_predicate_proj) {
+void PhaseIdealLoop::clone_assertion_predicates(IdealLoopTree* loop,
+                                                Deoptimization::DeoptReason reason,
+                                                const Unique_Node_List &list,
+                                                ParsePredicateSuccessProj*
+                                                fast_loop_parse_predicate_proj) {
   assert(fast_loop_parse_predicate_proj->in(0)->is_ParsePredicate(), "sanity check");
   // Only need to clone range check predicates as those can be changed and duplicated by inserting pre/main/post loops
   // and doing loop unrolling. Push the original predicates on a list to later process them in reverse order to keep the
@@ -473,10 +473,10 @@ void PhaseIdealLoop::clone_parse_predicate_to_unswitched_loops(const PredicateBl
                                                                IfProjNode*& iffast_pred, IfProjNode*& ifslow_pred) {
   assert(predicate_block->has_parse_predicate(), "must have parse predicate");
   ParsePredicateSuccessProj* parse_predicate_proj = predicate_block->parse_predicate_success_proj();
-  iffast_pred = clone_parse_predicate_to_unswitched_loop(parse_predicate_proj, iffast_pred, reason, false);
+  iffast_pred = clone_parse_predicate(parse_predicate_proj, iffast_pred, reason, false);
   check_cloned_parse_predicate_for_unswitching(iffast_pred, true);
 
-  ifslow_pred = clone_parse_predicate_to_unswitched_loop(parse_predicate_proj, ifslow_pred, reason, true);
+  ifslow_pred = clone_parse_predicate(parse_predicate_proj, ifslow_pred, reason, true);
   check_cloned_parse_predicate_for_unswitching(ifslow_pred, false);
 }
 
