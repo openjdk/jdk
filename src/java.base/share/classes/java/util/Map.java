@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,8 +122,8 @@ import java.io.Serializable;
  *
  * <ul>
  * <li>They are <a href="Collection.html#unmodifiable"><i>unmodifiable</i></a>. Keys and values
- * cannot be added, removed, or updated. Calling any mutator method on the Map
- * will always cause {@code UnsupportedOperationException} to be thrown.
+ * cannot be added, removed, or updated. Calling any mutator method on the Map or any derived view
+ * collection will always cause {@code UnsupportedOperationException} to be thrown.
  * However, if the contained keys or values are themselves mutable, this may cause the
  * Map to behave inconsistently or its contents to appear to change.
  * <li>They disallow {@code null} keys and values. Attempts to create them with
