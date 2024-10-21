@@ -25,8 +25,6 @@
 
 package java.security;
 
-import jdk.internal.event.SecurityProviderServiceEvent;
-
 import javax.security.auth.login.Configuration;
 import java.io.*;
 import java.security.cert.CertStoreParameters;
@@ -34,10 +32,17 @@ import java.util.*;
 import static java.util.Locale.ENGLISH;
 import java.lang.ref.*;
 import java.lang.reflect.*;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.concurrent.ConcurrentHashMap;
+
+import jdk.internal.access.JavaSecurityProviderAccess;
+import jdk.internal.access.SharedSecrets;
+import jdk.internal.event.SecurityProviderServiceEvent;
+import sun.security.jca.ProvidersFilter;
+import sun.security.util.AlgorithmDecomposer;
 
 /**
  * This class represents a "provider" for the
@@ -118,6 +123,26 @@ public abstract class Provider extends Properties {
     private static final sun.security.util.Debug debug =
         sun.security.util.Debug.getInstance("provider", "Provider");
 
+    static {
+        SharedSecrets.setJavaSecurityProviderAccess(
+                new JavaSecurityProviderAccess() {
+                    @Override
+                    public Set<Service> getServicesNotAllowed(Provider p) {
+                        return p.getServicesNotAllowed();
+                    }
+
+                    @Override
+                    public List<String> getAliases(Service svc) {
+                        return svc.getAliases();
+                    }
+
+                    @Override
+                    public boolean isAllowed(Service svc) {
+                        return svc.isAllowed();
+                    }
+                });
+    }
+
     /**
      * The provider name.
      *
@@ -195,8 +220,7 @@ public abstract class Provider extends Properties {
         this.version = version;
         this.versionStr = Double.toString(version);
         this.info = info;
-        this.serviceMap = new ConcurrentHashMap<>();
-        this.legacyMap = new ConcurrentHashMap<>();
+        this.servicesMap = new ServicesMap();
         this.prngAlgos = new LinkedHashSet<>(6);
         putId();
         initialized = true;
@@ -236,8 +260,7 @@ public abstract class Provider extends Properties {
         this.versionStr = versionStr;
         this.version = parseVersionStr(versionStr);
         this.info = info;
-        this.serviceMap = new ConcurrentHashMap<>();
-        this.legacyMap = new ConcurrentHashMap<>();
+        this.servicesMap = new ServicesMap();
         this.prngAlgos = new LinkedHashSet<>(6);
         putId();
         initialized = true;
@@ -768,7 +791,7 @@ public abstract class Provider extends Properties {
 
     // let javadoc show doc from superclass
     @Override
-    public Object get(Object key) {
+    public synchronized Object get(Object key) {
         checkInitialized();
         return super.get(key);
     }
@@ -793,14 +816,14 @@ public abstract class Provider extends Properties {
 
     // let javadoc show doc from superclass
     @Override
-    public Enumeration<Object> keys() {
+    public synchronized Enumeration<Object> keys() {
         checkInitialized();
         return super.keys();
     }
 
     // let javadoc show doc from superclass
     @Override
-    public Enumeration<Object> elements() {
+    public synchronized Enumeration<Object> elements() {
         checkInitialized();
         return super.elements();
     }
@@ -826,30 +849,932 @@ public abstract class Provider extends Properties {
         }
     }
 
-    // legacyMap changed since last call to getServices()
-    private transient volatile boolean legacyChanged;
-    // serviceMap changed since last call to getServices()
-    private transient volatile boolean servicesChanged;
-
-    // Map<ServiceKey,Service>
-    // used for services added via putService(), initialized on demand
-    private transient Map<ServiceKey,Service> serviceMap;
-
     // For backward compatibility, the registration ordering of
     // SecureRandom (RNG) algorithms needs to be preserved for
     // "new SecureRandom()" calls when this provider is used
     // NOTE: may need extra mechanism for providers to indicate their
     // preferred ordering of SecureRandom algorithms since registration
     // ordering info is lost once serialized
-    private transient Set<String> prngAlgos;
+    private transient Set<ServiceKey> prngAlgos;
 
-    // Map<ServiceKey,Service>
-    // used for services added via legacy methods, init on demand
-    private transient Map<ServiceKey,Service> legacyMap;
+    // Map of services registered by this provider. This map may be republished
+    // (assigned to a new one instead of modified in place) when a series of
+    // changes with the Legacy API must be seen by readers as an atomic
+    // operation. See Providers::putAll.
+    private transient volatile ServicesMap servicesMap;
 
-    // Set<Service>
-    // Unmodifiable set of all services. Initialized on demand.
-    private transient volatile Set<Service> serviceSet;
+    /*
+     * This class defines a structure to store and obtain services registered by
+     * this provider, according to the Current (preferred) and Legacy APIs.
+     * Synchronization is required for write accesses, while reads are
+     * lock-free. When a service is added to this structure, it goes through
+     * the Providers filter and, if allowed, is available for use.
+     */
+    private final class ServicesMap {
+        /*
+         * Enum to inform the result of an operation on the services map.
+         */
+        enum SvcOpResult {
+            SUCCESS,
+            ERROR
+        }
+
+        /*
+         * Interface to add and remove services to the map according to the
+         * Current API. These functions update the Properties map to reflect
+         * service changes, including algorithms, aliases and attributes.
+         *
+         * Services added with the Legacy API may be overwritten with this API.
+         *
+         * This interface guarantees atomicity from a service reader point
+         * of view. In other words, a reader that gets a service will see all
+         * its attributes and aliases as they were at time of registration.
+         * Also, a Providers filter decision is made for services added to
+         * this map and will not change.
+         */
+        interface Current {
+            SvcOpResult putService(Service svc);
+            SvcOpResult removeService(Service svc);
+        }
+
+        /*
+         * Interface to add, modify and remove services on the map according to
+         * the Legacy API. These functions update the Properties map to reflect
+         * service changes, including algorithms, aliases and attributes.
+         *
+         * Services added with the Current API cannot be overwritten with
+         * this API.
+         *
+         * Notice that this interface does not guarantee atomicity in a
+         * sequence of operations from a service reader point of view. As
+         * an example, a service reader may get a service missing an attribute
+         * if looked up between a writer's putClassName() and putAttribute()
+         * calls. Conversely, the Providers filter decision for a service may
+         * vary as aliases are added or removed. For atomic changes with the
+         * Legacy API see Provider::putAll.
+         */
+        interface Legacy {
+            SvcOpResult putClassName(ServiceKey key, String className,
+                    String propKey);
+            SvcOpResult putAlias(ServiceKey key, ServiceKey aliasKey,
+                    String propKey);
+            SvcOpResult putAttribute(ServiceKey key, String attrName,
+                    String attrValue, String propKey);
+            SvcOpResult remove(ServiceKey key, String className);
+            SvcOpResult removeAlias(ServiceKey key, ServiceKey aliasKey);
+            SvcOpResult removeAttribute(ServiceKey key, String attrName,
+                    String attrValue);
+        }
+
+        /*
+         * This class is the internal implementation of the services map.
+         * Services can be added or removed either through the Current or the
+         * Legacy API.
+         */
+        private final class ServicesMapImpl implements Current, Legacy {
+            /*
+             * Record to aggregate information about the lookup of a service on
+             * the internal map. See ServicesMapImpl::find for a description of
+             * possible values.
+             */
+            private record MappingInfo(Service svc, ServiceKey algKey,
+                    Boolean isLegacy) {}
+
+            // The internal services map, containing services registered with
+            // the Current and the Legacy APIs. Concurrent read and write access
+            // to this map is expected. Both algorithm and alias service keys
+            // are added to this map.
+            private final Map<ServiceKey, Service> services;
+
+            // Auxiliary set to determine if a service on the services map
+            // was added with the Legacy API. The absence of a service key
+            // on this set is an indication that the service was either not
+            // added or added with the Current API. Only algorithm service keys
+            // are added to this set.
+            private final Set<ServiceKey> legacySvcKeys;
+
+            // Auxiliary map to keep track of the Properties map entries that
+            // originated entries on the internal map. This information is used
+            // to avoid inconsistencies. Both algorithm and alias service keys
+            // are added to this map.
+            private final Map<ServiceKey, String> serviceProps;
+
+            // Auxiliary map to keep track of the Properties map entries that
+            // originated service attributes on the internal map. This
+            // information is used to avoid inconsistencies. Only algorithm
+            // service keys are added to this map.
+            private final Map<ServiceKey, Map<UString, String>>
+                    serviceAttrProps;
+
+            ServicesMapImpl() {
+                services = new ConcurrentHashMap<>();
+                legacySvcKeys = new HashSet<>();
+                serviceProps = new HashMap<>();
+                serviceAttrProps = new HashMap<>();
+            }
+
+            /*
+             * Constructor to create a thin working copy such that readers of
+             * the original map do not notice new changes. Used for atomic
+             * changes with the Legacy API. See Providers::putAll.
+             */
+            ServicesMapImpl(ServicesMapImpl original) {
+                services = new ConcurrentHashMap<>(original.services);
+                legacySvcKeys = original.legacySvcKeys;
+                serviceProps = original.serviceProps;
+                serviceAttrProps = original.serviceAttrProps;
+            }
+
+            /*
+             * Finds information about a service on the internal map. The key
+             * for the lookup can be either algorithm or alias based. If the
+             * service is found, svc refers to it, algKey to the algorithm
+             * service key and isLegacy informs if the service was stored with
+             * the Current or the Legacy API. Otherwise, svc is null, algKey
+             * refers to the key used for the lookup and isLegacy is null.
+             */
+            private MappingInfo find(ServiceKey key) {
+                Service svc = services.get(key);
+                ServiceKey algKey = svc != null ? svc.algKey : key;
+                Boolean isLegacy = svc != null ?
+                        legacySvcKeys.contains(algKey) : null;
+                return new MappingInfo(svc, algKey, isLegacy);
+            }
+
+            /*
+             * Returns a set of services with services stored on the internal
+             * map that are either allowed or not allowed according to the
+             * Providers filter. This method can be invoked concurrently with
+             * write accesses on the map and is lock-free.
+             */
+            Set<Service> getServices(boolean allowed) {
+                Set<Service> set = new LinkedHashSet<>();
+                for (Map.Entry<ServiceKey, Service> e : services.entrySet()) {
+                    Service svc = e.getValue();
+                    //
+                    // Skip alias based entries and filter out invalid services.
+                    //
+                    // Note: Multiple versions of the same service (reflecting
+                    // different points in time) can be generated by concurrent
+                    // writes with the Legacy API and, as a result of the
+                    // copy-on-write strategy, seen under different service
+                    // keys here. Each version has a unique object identity
+                    // and, thus, would be distinguishable for a Set<Service>
+                    // set. To avoid duplicates, we skip alias keys and use
+                    // the version of the service pointed by the algorithm key.
+                    if (e.getKey().equals(svc.algKey) &&
+                            svc.isAllowed() == allowed && isValid(svc)) {
+                        set.add(svc);
+                    }
+                }
+                return set;
+            }
+
+            Service getAllowed(ServiceKey key) {
+                Service svc = services.get(key);
+                return svc != null && isValid(svc) &&
+                        svc.isAllowed() ? svc : null;
+            }
+
+            void clear() {
+                services.clear();
+                legacySvcKeys.clear();
+                serviceProps.clear();
+                serviceAttrProps.clear();
+            }
+
+            /*
+             * Signals that there were changes on the services map and either
+             * the cached set of allowed or not allowed services need to be
+             * recomputed before use.
+             */
+            private void notifyChanges(boolean allowedChange) {
+                if (allowedChange) {
+                    allowedSet.set(null);
+                } else {
+                    notAllowedSet.set(null);
+                }
+            }
+
+            /*
+             * A service is invalid if it was added with the Legacy API through
+             * an alias and does not have class information yet. We keep these
+             * services on the internal map but filter them out for readers, so
+             * they don't cause a NullPointerException when trying to create a
+             * new instance.
+             */
+            private boolean isValid(Service svc) {
+                return svc.className != null;
+            }
+
+            /*
+             * Current API methods to add and remove services.
+             */
+
+            @Override
+            public SvcOpResult putService(Service svc) {
+                // At this point, the caller's check for putProviderProperty
+                // permission succeeded, so it is safe to generate keys for the
+                // service that will be on the map.
+                svc.generateServiceKeys();
+
+                // Define a set of algorithm and alias keys that, if already
+                // on the services map, will be kept at all times until
+                // overwritten. This prevents concurrent readers from seeing
+                // 'holes' on the map while doing updates.
+                Set<ServiceKey> keysToBeKept =
+                        new HashSet<>(svc.aliasKeys.size() + 1);
+                keysToBeKept.add(svc.algKey);
+                keysToBeKept.addAll(svc.aliasKeys.keySet());
+
+                // The new service algorithm key may be in use already.
+                resolveKeyConflict(svc.algKey, keysToBeKept);
+
+                // Services added to the services map must go through the
+                // Providers filter first so readers do not have any performance
+                // penalty.
+                //
+                // Note: if isAllowed is set to a non-null value, aliases have
+                // not changed since the last computation, so the computed value
+                // remains valid. This is because services added with the
+                // Current API are immutable, and services added with the Legacy
+                // API are copied before modified.
+                if (svc.isAllowed == null) {
+                    svc.computeSvcAllowed();
+                }
+
+                // The service will be registered to its provider's ServicesMap.
+                svc.registered = true;
+
+                // Register the new service under its algorithm service key.
+                // At this point, readers  will have access to it.
+                services.put(svc.algKey, svc);
+
+                // Add an entry to the Properties map to reflect the new service
+                // under its algorithm key, and keep track of this information
+                // for further changes in the future (i.e. removal of the
+                // service).
+                String propKey = svc.getType() + "." + svc.getAlgorithm();
+                serviceProps.put(svc.algKey, propKey);
+                Provider.super.put(propKey, svc.getClassName());
+
+                // Register the new service under its aliases.
+                for (Map.Entry<ServiceKey, String> e :
+                        svc.aliasKeys.entrySet()) {
+                    ServiceKey aliasKey = e.getKey();
+
+                    // The new service alias may be in use already.
+                    resolveKeyConflict(aliasKey, keysToBeKept);
+
+                    // Register the new service under its alias service key. At
+                    // this point, readers will have access through this alias.
+                    services.put(aliasKey, svc);
+
+                    // Add an entry to the Properties map to reflect the new
+                    // service under its alias service key, and keep track
+                    // of this information for further changes in the future
+                    // (i.e. removal of the service).
+                    propKey = ALIAS_PREFIX + svc.getType() + "." + e.getValue();
+                    serviceProps.put(aliasKey, propKey);
+                    Provider.super.put(propKey, svc.getAlgorithm());
+                }
+
+                if (!svc.attributes.isEmpty()) {
+                    // Register the new service attributes on the Properties map
+                    // and keep track of them for further changes in the future
+                    // (i.e. removal of the service).
+                    Map<UString, String> newAttrProps =
+                            new HashMap<>(svc.attributes.size());
+                    for (Map.Entry<UString, String> attr :
+                            svc.attributes.entrySet()) {
+                        propKey = svc.getType() + "." + svc.getAlgorithm() +
+                                " " + attr.getKey().string;
+                        newAttrProps.put(attr.getKey(), propKey);
+                        Provider.super.put(propKey, attr.getValue());
+                    }
+                    serviceAttrProps.put(svc.algKey, newAttrProps);
+                }
+
+                Provider.this.checkAndUpdateSecureRandom(svc.algKey, true);
+
+                return SvcOpResult.SUCCESS;
+            }
+
+            /*
+             * Handle cases in which a service key (algorithm or alias based)
+             * is in use already. This might require modifications to a service,
+             * the Properties map or auxiliary structures. This method must be
+             * called from the Current API only.
+             */
+            private void resolveKeyConflict(ServiceKey key,
+                    Set<ServiceKey> keysToBeKept) {
+                assert keysToBeKept.contains(key) : "Inconsistent " +
+                        "keysToBeKept set.";
+                MappingInfo miByKey = find(key);
+                if (miByKey.svc != null) {
+                    // The service key (algorithm or alias) is in use already.
+                    SvcOpResult opResult = SvcOpResult.SUCCESS;
+                    if (miByKey.algKey.equals(key)) {
+                        // It is used as an algorithm. Remove the service.
+                        opResult = removeCommon(miByKey, false, keysToBeKept);
+                    } else {
+                        // It is used as an alias.
+                        if (miByKey.isLegacy) {
+                            // The service was added with the Legacy API.
+                            // Remove the alias only.
+                            opResult = removeAlias(miByKey.algKey, key,
+                                    keysToBeKept);
+                        } else {
+                            // The service was added with the Current API.
+                            // Overwrite the alias entry on the services map
+                            // without modifying the service that is currently
+                            // using it.
+
+                            // Remove any Properties map key entry because, if
+                            // no longer used as an alias, the entry would not
+                            // be overwritten. Note: The serviceProps key entry
+                            // will be overwritten later.
+                            String oldPropKey = serviceProps.remove(key);
+                            assert oldPropKey != null :
+                                    "Invalid alias property.";
+                            Provider.super.remove(oldPropKey);
+                        }
+                    }
+                    assert opResult == SvcOpResult.SUCCESS : "Unexpected" +
+                            " error removing an existing service or alias.";
+                }
+            }
+
+            @Override
+            public SvcOpResult removeService(Service svc) {
+                if (svc.algKey != null) {
+                    MappingInfo mi = find(svc.algKey);
+                    if (mi.svc != null) {
+                        SvcOpResult opResult = removeCommon(mi, false,
+                                Collections.emptySet());
+                        assert opResult == SvcOpResult.SUCCESS : "Unexpected" +
+                                " error removing an existing service.";
+                        return opResult;
+                    }
+                }
+                return SvcOpResult.SUCCESS;
+            }
+
+            /*
+             * Common (Current and Legacy) API methods to add and remove
+             * services.
+             */
+
+            /*
+             * This method is invoked both when removing and overwriting a
+             * service. The keysToBeKept set is used when overwriting to
+             * prevent readers from seeing a 'hole' on the services map
+             * between removing and adding entries.
+             */
+            private SvcOpResult removeCommon(MappingInfo mi,
+                    boolean legacyApiCall, Set<ServiceKey> keysToBeKept) {
+                assert mi.svc != null : "Invalid service for removal.";
+                if (!mi.isLegacy && legacyApiCall) {
+                    // Services added with the Current API cannot be
+                    // removed with the Legacy API.
+                    return SvcOpResult.ERROR;
+                }
+
+                if (mi.isLegacy) {
+                    legacySvcKeys.remove(mi.algKey);
+                }
+
+                if (!keysToBeKept.contains(mi.algKey)) {
+                    services.remove(mi.algKey);
+                }
+
+                // Update the Properties map to reflect the algorithm removal.
+                // Note: oldPropKey may be null for services added through
+                // aliases or attributes (Legacy API) that still don't have a
+                // class name (invalid).
+                String oldPropKey = serviceProps.remove(mi.algKey);
+                if (oldPropKey != null) {
+                    Provider.super.remove(oldPropKey);
+                }
+
+                // Remove registered service aliases.
+                for (ServiceKey aliasKey : mi.svc.aliasKeys.keySet()) {
+                    if (!mi.isLegacy) {
+                        // Services added with the Current API can have aliases
+                        // overwritten by other services added with the same
+                        // API. Do nothing in these cases: the alias on the
+                        // services map does not belong to the removed service
+                        // anymore.
+                        MappingInfo miByAlias = find(aliasKey);
+                        if (miByAlias.svc != mi.svc) {
+                            continue;
+                        }
+                    }
+                    if (!keysToBeKept.contains(aliasKey)) {
+                        services.remove(aliasKey);
+                    }
+
+                    // Update the Properties map to reflect the alias removal.
+                    // Note: oldPropKey cannot be null because aliases always
+                    // have a corresponding Properties map entry.
+                    oldPropKey = serviceProps.remove(aliasKey);
+                    assert oldPropKey != null : "Unexpected null " +
+                            "Property value for an alias.";
+                    Provider.super.remove(oldPropKey);
+                }
+
+                // Remove registered service attributes.
+                Map<UString, String> oldAttrProps =
+                        serviceAttrProps.remove(mi.algKey);
+                if (oldAttrProps != null) {
+                    for (String oldAttrPropKey : oldAttrProps.values()) {
+                        // Update the Properties map to reflect the attribute
+                        // removal. Note: oldAttrPropKey cannot be null because
+                        // attributes always have a corresponding Properties map
+                        // entry.
+                        assert oldAttrPropKey != null : "Unexpected null " +
+                                "Property value for an attribute.";
+                        Provider.super.remove(oldAttrPropKey);
+                    }
+                }
+
+                notifyChanges(mi.svc.isAllowed());
+
+                Provider.this.checkAndUpdateSecureRandom(mi.svc.algKey, false);
+
+                return SvcOpResult.SUCCESS;
+            }
+
+            /*
+             * Legacy API methods to add, modify and remove services.
+             */
+
+            @Override
+            public SvcOpResult putClassName(ServiceKey key, String className,
+                    String propKey) {
+                assert key != null && className != null && propKey != null :
+                        "Service information missing.";
+                return updateSvc(key, (MappingInfo oldMi, Service newSvc) -> {
+                    String canonicalPropKey = propKey;
+                    if (oldMi.svc != null) {
+                        // The service exists. Get its Properties map entry.
+                        // Note: Services added through an alias or an attribute
+                        // may don't have one.
+                        String oldPropKey = serviceProps.get(oldMi.algKey);
+                        if (oldMi.algKey.equals(key)) {
+                            // The service was found by an algorithm.
+                            if (oldPropKey != null) {
+                                // Remove any previous Properties map entry
+                                // before adding a new one, so we handle
+                                // differences in casing.
+                                Provider.super.remove(oldPropKey);
+                            }
+                        } else {
+                            // The service was found by an alias. Use an
+                            // algorithm entry on the Properties map. Create a
+                            // new one if it does not exist.
+                            canonicalPropKey = oldPropKey != null ?
+                                    oldPropKey : newSvc.getType() + "." +
+                                    newSvc.getAlgorithm();
+                        }
+                    } else {
+                        // The service is new. Services added to the services
+                        // map must go through the Providers filter first so
+                        // readers don't have any performance penalties. Note:
+                        // if the service exists already, this is not necessary
+                        // because a change in the class name does not affect
+                        // the previous filter decision.
+                        newSvc.computeSvcAllowed();
+                    }
+
+                    newSvc.className = className;
+
+                    // Keep track of the Properties map entry for further
+                    // changes in the future (i.e. removal of the service).
+                    serviceProps.put(oldMi.algKey, canonicalPropKey);
+                    Provider.super.put(canonicalPropKey, className);
+
+                    Provider.this.checkAndUpdateSecureRandom(
+                            newSvc.algKey, true);
+
+                    return SvcOpResult.SUCCESS;
+                });
+            }
+
+            @Override
+            public SvcOpResult putAlias(ServiceKey key, ServiceKey aliasKey,
+                    String propKey) {
+                assert key != null && aliasKey != null && propKey != null :
+                        "Alias information missing.";
+                assert key.type.equals(aliasKey.type) :
+                        "Inconsistent service key types.";
+                return updateSvc(key, (MappingInfo oldMi, Service newSvc) -> {
+                    MappingInfo miByAlias = find(aliasKey);
+                    if (miByAlias.svc != null) {
+                        // The alias is associated to a service on the map.
+                        if (miByAlias.algKey.equals(aliasKey)) {
+                            // The alias is an algorithm. Never overwrite
+                            // algorithms with aliases from the Legacy API.
+                            return SvcOpResult.ERROR;
+                        } else if (!miByAlias.isLegacy) {
+                            // Do not remove the alias of services added with
+                            // the Current API.
+                            return SvcOpResult.ERROR;
+                        } else if (miByAlias.svc == oldMi.svc) {
+                            // The service has the alias that we are adding.
+                            // This is possible if, for example, the alias
+                            // casing is changing.
+                            //
+                            // Update the Properties map to remove the alias
+                            // with the old casing. Note: oldPropKey cannot be
+                            // null because aliases always have a corresponding
+                            // Properties map entry.
+                            String oldPropKey = serviceProps.remove(aliasKey);
+                            assert oldPropKey != null : "Unexpected null " +
+                                    "Property value for an alias.";
+                            Provider.super.remove(oldPropKey);
+                        } else {
+                            // The alias belongs to a different service.
+                            // Remove it first.
+                            SvcOpResult opResult = removeAlias(miByAlias.algKey,
+                                    aliasKey, Set.of(aliasKey));
+                            assert opResult == SvcOpResult.SUCCESS :
+                                    "Unexpected error removing an alias.";
+                        }
+                    } else {
+                        // The alias was not found on the map.
+                        if (aliasKey.equals(key)) {
+                            // The alias would be equal to the algorithm for
+                            // the new service.
+                            return SvcOpResult.ERROR;
+                        }
+                    }
+
+                    newSvc.addAliasKey(aliasKey);
+
+                    // The new alias can modify the Providers filter decision.
+                    newSvc.computeSvcAllowed();
+                    if (newSvc.cipherTransformsAllowed != null) {
+                        newSvc.cipherTransformsAllowed.clear();
+                    }
+
+                    // Keep track of the Properties map entry for further
+                    // changes in the future (i.e. removal of the service).
+                    serviceProps.put(aliasKey, propKey);
+                    // If the service to which we will add an alias was found by
+                    // an alias, use its algorithm for the Properties map entry.
+                    String canonicalAlgorithm = oldMi.algKey.equals(key) ?
+                            key.originalAlgorithm : newSvc.getAlgorithm();
+                    Provider.super.put(propKey, canonicalAlgorithm);
+
+                    return SvcOpResult.SUCCESS;
+                });
+            }
+
+            @Override
+            public SvcOpResult putAttribute(ServiceKey key, String attrName,
+                    String attrValue, String propKey) {
+                assert key != null && attrName != null && attrValue != null &&
+                        propKey != null : "Attribute information missing.";
+                return updateSvc(key, (MappingInfo oldMi, Service newSvc) -> {
+                    String canonicalPropKey = propKey;
+                    UString attrNameKey = new UString(attrName);
+                    Map<UString, String> attrProps =
+                            serviceAttrProps.computeIfAbsent(
+                                    oldMi.algKey, k -> new HashMap<>());
+                    assert oldMi.svc != null || attrProps.isEmpty() :
+                            "Inconsistent service attributes data.";
+                    // Try to get the attribute's Properties map entry. Note:
+                    // oldPropKey can be null if the service was not found or
+                    // does not have the attribute.
+                    String oldPropKey = attrProps.get(attrNameKey);
+                    if (oldMi.algKey.equals(key)) {
+                        // The service was found by an algorithm.
+                        if (oldPropKey != null) {
+                            // Remove any previous Properties map entry before
+                            // adding a new one, so we handle differences in
+                            // casing.
+                            Provider.super.remove(oldPropKey);
+                        }
+                    } else {
+                        // The service was found by an alias. Use an algorithm
+                        // based entry on the Properties map. Create a new one
+                        // if it does not exist.
+                        canonicalPropKey = oldPropKey != null ? oldPropKey :
+                                newSvc.getType() + "." + newSvc.getAlgorithm() +
+                                " " + attrName;
+                    }
+
+                    newSvc.addAttribute(attrName, attrValue);
+
+                    // Keep track of the Properties map entry for further
+                    // changes in the future (i.e. removal of the service).
+                    attrProps.put(attrNameKey, canonicalPropKey);
+                    Provider.super.put(canonicalPropKey, attrValue);
+
+                    return SvcOpResult.SUCCESS;
+                });
+            }
+
+            @Override
+            public SvcOpResult remove(ServiceKey key, String className) {
+                assert key != null && className != null :
+                        "Service information missing.";
+                MappingInfo mi = find(key);
+                if (mi.svc != null) {
+                    assert className.equals(mi.svc.getClassName()) :
+                            "Unexpected class name.";
+                    return removeCommon(mi, true, Collections.emptySet());
+                }
+                assert false : "Should not reach.";
+                return SvcOpResult.ERROR;
+            }
+
+            @Override
+            public SvcOpResult removeAlias(ServiceKey key,
+                    ServiceKey aliasKey) {
+                return removeAlias(key, aliasKey, Collections.emptySet());
+            }
+
+            /*
+             * This method is invoked both when removing and overwriting a
+             * service alias. The keysToBeKept set is used when overwriting to
+             * prevent readers from seeing a 'hole' on the services map between
+             * removing and adding entries.
+             */
+            private SvcOpResult removeAlias(ServiceKey key, ServiceKey aliasKey,
+                    Set<ServiceKey> keysToBeKept) {
+                assert key != null && aliasKey != null && keysToBeKept != null :
+                        "Alias information missing.";
+                return updateSvc(key, (MappingInfo oldMi, Service newSvc) -> {
+                    MappingInfo miByAlias = find(aliasKey);
+                    if (oldMi.svc != null && miByAlias.svc == oldMi.svc &&
+                            !miByAlias.algKey.equals(aliasKey)) {
+                        // The alias is a real alias and is associated to the
+                        // service on the map.
+                        if (!keysToBeKept.contains(aliasKey)) {
+                            services.remove(aliasKey);
+                        }
+
+                        newSvc.removeAliasKey(aliasKey);
+
+                        // The removed alias can modify the Providers filter
+                        // decision.
+                        newSvc.computeSvcAllowed();
+                        if (newSvc.cipherTransformsAllowed != null) {
+                            newSvc.cipherTransformsAllowed.clear();
+                        }
+
+                        // Update the Properties map to reflect the alias
+                        // removal. Note: oldPropKey cannot be null because
+                        // aliases always have a corresponding Properties map
+                        // entry.
+                        String oldPropKey = serviceProps.remove(aliasKey);
+                        assert oldPropKey != null : "Invalid alias property.";
+                        Provider.super.remove(oldPropKey);
+
+                        return SvcOpResult.SUCCESS;
+                    }
+                    assert false : "Should not reach.";
+                    return SvcOpResult.ERROR;
+                });
+            }
+
+            @Override
+            public SvcOpResult removeAttribute(ServiceKey key,
+                    String attrName, String attrValue) {
+                assert key != null && attrName != null && attrValue != null :
+                        "Attribute information missing.";
+                return updateSvc(key, (MappingInfo oldMi, Service newSvc) -> {
+                    Map<UString, String> oldAttrProps =
+                            serviceAttrProps.get(oldMi.algKey);
+                    if (oldAttrProps != null) {
+                        // The service was found and has attributes.
+                        assert oldMi.svc != null : "Inconsistent service " +
+                                "attributes data.";
+
+                        newSvc.removeAttribute(attrName, attrValue);
+                        assert newSvc.getAttribute(attrName) == null :
+                                "Attribute was not removed from the service.";
+
+                        // Update the Properties map to reflect the attribute
+                        // removal. Note: oldPropKey cannot be null because
+                        // attributes always have a corresponding Properties
+                        // map entry.
+                        String oldPropKey = oldAttrProps.remove(
+                                new UString(attrName));
+                        assert oldPropKey != null :
+                                "Invalid attribute property.";
+                        Provider.super.remove(oldPropKey);
+
+                        if (oldAttrProps.isEmpty()) {
+                            // If the removed attribute was the last one,
+                            // remove the map.
+                            serviceAttrProps.remove(oldMi.algKey);
+                        }
+
+                        return SvcOpResult.SUCCESS;
+                    }
+                    assert false : "Should not reach.";
+                    return SvcOpResult.ERROR;
+                });
+            }
+
+            @FunctionalInterface
+            private interface ServiceUpdateCallback {
+                SvcOpResult apply(MappingInfo oldMi, Service newSvc);
+            }
+
+            /*
+             * This method tries to find a service on the map (based on an
+             * algorithm or alias) and pass a copy of it to an update callback
+             * (copy-on-write). If the service found was added with the Current
+             * API, no update should be done. If a service was not found, a new
+             * instance may be created.
+             *
+             * The updated version of the service is put on the services map.
+             * Algorithm and alias based entries pointing to the old version
+             * of the service are overwritten.
+             */
+            private SvcOpResult updateSvc(ServiceKey key,
+                    ServiceUpdateCallback updateCb) {
+                Service newSvc;
+                MappingInfo oldMi = find(key);
+                if (oldMi.svc != null) {
+                    // Service exits.
+                    if (!oldMi.isLegacy) {
+                        // Don't update services added with the Current API.
+                        return SvcOpResult.ERROR;
+                    }
+                    // Create a copy of the service for a copy-on-write update.
+                    newSvc = new Service(oldMi.svc);
+                } else {
+                    // Service does not exist.
+                    newSvc = new Service(Provider.this, key);
+                }
+                SvcOpResult opResult = updateCb.apply(oldMi, newSvc);
+                if (opResult == SvcOpResult.ERROR) {
+                    // Something went wrong and the update should not be done.
+                    return opResult;
+                }
+
+                // The service (or its updated version) will be registered to
+                // its provider's ServicesMap.
+                newSvc.registered = true;
+
+                // Register the updated version of the service under its
+                // algorithm and aliases on the map. This may overwrite entries
+                // or add new ones. The previous callback should have handled
+                // the removal of an alias.
+                for (ServiceKey aliasKey : newSvc.aliasKeys.keySet()) {
+                    services.put(aliasKey, newSvc);
+                }
+
+                assert oldMi.algKey.type.equals(newSvc.getType()) &&
+                        oldMi.algKey.originalAlgorithm.equals(
+                                newSvc.getAlgorithm()) : "Invalid key.";
+                services.put(oldMi.algKey, newSvc);
+
+                legacySvcKeys.add(oldMi.algKey);
+
+                if (oldMi.svc != null &&
+                        oldMi.svc.isAllowed() != newSvc.isAllowed()) {
+                    // The updated service transitioned between allowed and not
+                    // allowed Providers filter states. Notify according to the
+                    // previous state.
+                    notifyChanges(oldMi.svc.isAllowed());
+                }
+                // Notify a change according to the current Providers filter
+                // state.
+                notifyChanges(newSvc.isAllowed());
+
+                return opResult;
+            }
+        }
+
+        // Placeholder for a thread to mark that allowedSet or notAllowedSet
+        // values are being computed after a services update. Only one thread
+        // at a time can effectively assign this value.
+        private static final Set<Service> SERVICE_SET_IN_PROGRESS = Set.of();
+
+        // Unmodifiable set of all services allowed by the Providers filter (see
+        // sun.security.jca.ProvidersFilter). Possible values for this field
+        // are: 1) null (indicates that the set has to be recomputed after a
+        // service update), 2) SERVICE_SET_IN_PROGRESS (indicates that a thread
+        // is recomputing its value), and 3) an actual set of services.
+        private final AtomicReference<Set<Service>> allowedSet;
+
+        // Unmodifiable set of all services not allowed by the Providers filter
+        // (see sun.security.jca.ProvidersFilter). For informational purposes
+        // only (see the -XshowSettings:security:providers JVM argument): do not
+        // use services in this set. See allowedSet for possible values.
+        private final AtomicReference<Set<Service>> notAllowedSet;
+
+        // Implementation of ServicesMap that handles the Current and Legacy
+        // APIs.
+        private final ServicesMapImpl impl;
+
+        ServicesMap() {
+            impl = new ServicesMapImpl();
+            allowedSet = new AtomicReference<>();
+            notAllowedSet = new AtomicReference<>();
+        }
+
+        /*
+         * Constructor to create a thin working copy such that readers of the
+         * original map do not notice any new changes. Used for atomic
+         * changes with the Legacy API. See Providers::putAll.
+         */
+        ServicesMap(ServicesMap original) {
+            impl = new ServicesMapImpl(original.impl);
+            allowedSet = new AtomicReference<>(original.allowedSet.get());
+            notAllowedSet = new AtomicReference<>(original.notAllowedSet.get());
+        }
+
+        /*
+         * Returns a Current API view of the services map.
+         */
+        Current asCurrent() {
+            return impl;
+        }
+
+        /*
+         * Returns a Legacy API view of the services map.
+         */
+        Legacy asLegacy() {
+            return impl;
+        }
+
+        /*
+         * Returns a set containing allowed or not allowed services. Recomputes
+         * allowedSet and notAllowedSet if needed, after a service update. This
+         * method is thread-safe and lock-free.
+         */
+        private Set<Service> getServicesSet(boolean allowedServices) {
+            AtomicReference<Set<Service>> svcSet = allowedServices ?
+                    allowedSet : notAllowedSet;
+            Set<Service> serviceSetLocal = svcSet.compareAndExchange(
+                    null, SERVICE_SET_IN_PROGRESS);
+            if (serviceSetLocal == null ||
+                    serviceSetLocal == SERVICE_SET_IN_PROGRESS) {
+                // A cached set is not available. Instead of locking, compute
+                // the set to be returned and, eventually, make it available
+                // for others to use.
+                Set<Service> newSet = Collections.unmodifiableSet(
+                        impl.getServices(allowedServices));
+                if (serviceSetLocal == null) {
+                    // We won the race to make the computed set available for
+                    // others to use. However, only make it available if it
+                    // is still current (in other words, there were no further
+                    // changes). If it is not current, the next reader will
+                    // do the job.
+                    svcSet.compareAndExchange(SERVICE_SET_IN_PROGRESS, newSet);
+                }
+                serviceSetLocal = newSet;
+            }
+            return serviceSetLocal;
+        }
+
+        /*
+         * Returns an unmodifiable set of services allowed by the Providers
+         * filter. Both services added with the Current and Legacy APIs are
+         * included. If no services are found, the returned set is empty.
+         * Thread-safe and lock-free.
+         */
+        Set<Service> getServicesAllowed() {
+            return getServicesSet(true);
+        }
+
+        /*
+         * Returns an unmodifiable set of services not allowed by the Providers
+         * filter. Both services added with the Current and Legacy APIs are
+         * included. If no services are found, the returned set is empty.
+         * Thread-safe and lock-free. For informational purposes only: do not
+         * use services returned in this set.
+         */
+        Set<Service> getServicesNotAllowed() {
+            return getServicesSet(false);
+        }
+
+        /*
+         * Returns a service allowed by the Providers filter or null if not
+         * found. Both services added with the Current and Legacy APIs are
+         * considered in the search. Thread-safe and lock-free.
+         */
+        Service getService(ServiceKey key) {
+            return impl.getAllowed(key);
+        }
+
+        /*
+         * Clears the internal ServicesMap state. The caller must synchronize
+         * changes with the Properties map.
+         */
+        void clear() {
+            impl.clear();
+            allowedSet.set(null);
+            notAllowedSet.set(null);
+        }
+    }
 
     // register the id attributes for this provider
     // this is to ensure that equals() and hashCode() do not incorrectly
@@ -860,6 +1785,19 @@ public abstract class Provider extends Properties {
         super.put("Provider.id version", String.valueOf(versionStr));
         super.put("Provider.id info", String.valueOf(info));
         super.put("Provider.id className", this.getClass().getName());
+    }
+
+    /*
+     * Creates a copy of the Properties map that is useful to iterate when
+     * applying changes to the original one. Notice that we are calling
+     * super.entrySet() purposefully to avoid landing into a subclass override.
+     */
+    private Properties copyProperties() {
+        Properties copy = new Properties(super.size());
+        for (Map.Entry<Object, Object> entry : super.entrySet()) {
+            copy.put(entry.getKey(), entry.getValue());
+        }
+        return copy;
     }
 
    /**
@@ -877,11 +1815,7 @@ public abstract class Provider extends Properties {
     @java.io.Serial
     private void readObject(ObjectInputStream in)
                 throws IOException, ClassNotFoundException {
-        Map<Object,Object> copy = new HashMap<>();
-        for (Map.Entry<Object,Object> entry : super.entrySet()) {
-            copy.put(entry.getKey(), entry.getValue());
-        }
-
+        Properties copy = copyProperties();
         defaults = null;
         in.defaultReadObject();
         if (this.versionStr == null) {
@@ -891,23 +1825,52 @@ public abstract class Provider extends Properties {
             // otherwise, set version based on versionStr
             this.version = parseVersionStr(this.versionStr);
         }
-        this.serviceMap = new ConcurrentHashMap<>();
-        this.legacyMap = new ConcurrentHashMap<>();
+        this.servicesMap = new ServicesMap();
         this.prngAlgos = new LinkedHashSet<>(6);
         implClear();
         initialized = true;
         putAll(copy);
     }
 
-    // returns false if no update necessary, i.e. key isn't String or
-    // is String, but it's provider-related (name/version/info/className)
-    private static boolean checkLegacy(Object key) {
-        if (key instanceof String && ((String)key).startsWith("Provider.")) {
-            // ignore provider related updates
-            return false;
-        } else {
-            return true;
+    /*
+     * Enum to determine if changes to the Properties map must be applied by the
+     * caller (UPDATE) or skipped (SKIP).
+     *
+     * If a change does not concern a ServicesMap, UPDATE is returned. An
+     * example of this is when adding, modifying or removing an entry that is
+     * not a service, alias or attribute.
+     *
+     * If the change concerns a ServicesMap, SKIP is returned. The change may
+     * have been applied internally or ignored due to an error. In the former
+     * case, Properties map entries are synchronized. In the latter, Properties
+     * map entries are not modified.
+     */
+    private enum PropertiesMapAction {
+        UPDATE,
+        SKIP
+    }
+
+    private PropertiesMapAction doLegacyOp(ServicesMap servicesMap, Object key,
+            Object value, Object oldValue, OPType opType) {
+        if (key instanceof String ks) {
+            if (ks.startsWith("Provider.")) {
+                // Ignore provider related updates.
+                return PropertiesMapAction.SKIP;
+            }
+            if (value instanceof String vs) {
+                return parseLegacy(servicesMap, ks, vs, opType);
+            } else if (value != null && oldValue instanceof String oldValueS &&
+                    opType == OPType.ADD) {
+                // An entry in the Properties map potentially concerning the
+                // ServicesMap is about to be replaced by one that does not.
+                // From the ServicesMap point of view, this could be equivalent
+                // to a removal. In any case, let the caller proceed with the
+                // Properties map update.
+                parseLegacy(servicesMap, ks, oldValueS, OPType.REMOVE);
+            }
         }
+        // The change does not concern a ServicesMap.
+        return PropertiesMapAction.UPDATE;
     }
 
     /**
@@ -916,173 +1879,143 @@ public abstract class Provider extends Properties {
      * performed.
      */
     private void implPutAll(Map<?,?> t) {
+        // For service readers to see this change as atomic, add the elements in
+        // a local thin copy of the ServicesMap and then publish it.
+        ServicesMap servicesMapCopy = new ServicesMap(servicesMap);
         for (Map.Entry<?,?> e : t.entrySet()) {
-            implPut(e.getKey(), e.getValue());
+            implPut(servicesMapCopy, e.getKey(), e.getValue());
         }
+        servicesMap = servicesMapCopy;
+    }
+
+    private void implClear() {
+        servicesMap.clear();
+        prngAlgos.clear();
+        super.clear();
+        putId();
     }
 
     private Object implRemove(Object key) {
-        if (!checkLegacy(key)) return null;
-
-        Object o = super.remove(key);
-        if (o instanceof String so && key instanceof String sk) {
-            parseLegacy(sk, so, OPType.REMOVE);
-        }
-        return o;
+        Object oldValue = super.get(key);
+        return doLegacyOp(servicesMap, key, oldValue, null, OPType.REMOVE) ==
+                PropertiesMapAction.UPDATE ? super.remove(key) : oldValue;
     }
 
     private boolean implRemove(Object key, Object value) {
-        if (!checkLegacy(key)) return false;
-
-        boolean result = super.remove(key, value);
-        if (result && key instanceof String sk && value instanceof String sv) {
-            parseLegacy(sk, sv, OPType.REMOVE);
+        if (Objects.equals(super.get(key), value) && value != null) {
+            implRemove(key);
+            return !super.contains(key);
         }
-        return result;
+        return false;
     }
 
     private boolean implReplace(Object key, Object oldValue, Object newValue) {
-        if (!checkLegacy(key)) return false;
-
-        boolean result = super.replace(key, oldValue, newValue);
-        if (result && key instanceof String sk) {
-            if (newValue instanceof String sv) {
-                parseLegacy(sk, sv, OPType.ADD);
-            } else if (oldValue instanceof String sv) {
-                parseLegacy(sk, sv, OPType.REMOVE);
-            }
+        Objects.requireNonNull(oldValue);
+        Objects.requireNonNull(newValue);
+        if (super.containsKey(key) &&
+                Objects.equals(super.get(key), oldValue)) {
+            implPut(key, newValue);
+            return super.get(key) == newValue;
         }
-        return result;
+        return false;
     }
 
     private Object implReplace(Object key, Object value) {
-        if (!checkLegacy(key)) return null;
-
-        Object o = super.replace(key, value);
-        if (key instanceof String sk) {
-            if (o instanceof String so) {
-                if (value instanceof String sv) {
-                    parseLegacy(sk, sv, OPType.ADD);
-                } else {
-                    parseLegacy(sk, so, OPType.REMOVE);
-                }
-            }
+        Objects.requireNonNull(value);
+        if (super.containsKey(key)) {
+            return implPut(key, value);
         }
-        return o;
+        return null;
     }
 
     @SuppressWarnings("unchecked") // Function must actually operate over strings
     private void implReplaceAll(BiFunction<? super Object, ? super Object,
             ? extends Object> function) {
-
-        super.replaceAll(function);
-        // clear out all existing mappings and start fresh
-        legacyMap.clear();
-        legacyChanged = true;
-        for (Map.Entry<Object, Object> entry : super.entrySet()) {
-            Object key = entry.getKey();
-            Object value = entry.getValue();
-            if ((key instanceof String sk) && (value instanceof String sv)) {
-                if (!checkLegacy(sk)) {
-                    continue;
-                }
-                parseLegacy(sk, sv, OPType.ADD);
-            }
-        }
+        Properties propertiesCopy = copyProperties();
+        propertiesCopy.replaceAll(function);
+        putAll(propertiesCopy);
     }
 
     @SuppressWarnings("unchecked") // Function must actually operate over strings
     private Object implMerge(Object key, Object value,
             BiFunction<? super Object, ? super Object, ? extends Object>
             remappingFunction) {
-        if (!checkLegacy(key)) return null;
-
-        Object o = super.merge(key, value, remappingFunction);
-        if (key instanceof String sk) {
-            if (o == null) {
-                parseLegacy(sk, null, OPType.REMOVE);
-            } else if (o instanceof String so) {
-                parseLegacy(sk, so, OPType.ADD);
-            }
+        Objects.requireNonNull(value);
+        Object oldValue = super.get(key);
+        Object newValue = (oldValue == null) ? value :
+                remappingFunction.apply(oldValue, value);
+        if (newValue == null) {
+            implRemove(key);
+        } else {
+            implPut(key, newValue);
         }
-        return o;
+        return super.get(key);
     }
 
     @SuppressWarnings("unchecked") // Function must actually operate over strings
     private Object implCompute(Object key, BiFunction<? super Object,
             ? super Object, ? extends Object> remappingFunction) {
-
-        if (!checkLegacy(key)) return null;
-
-        Object o = super.compute(key, remappingFunction);
-        if (key instanceof String sk) {
-            if (o == null) {
-                parseLegacy(sk, null, OPType.REMOVE);
-            } else if (o instanceof String so) {
-                parseLegacy(sk, so, OPType.ADD);
-            }
+        Object oldValue = super.get(key);
+        Object newValue = remappingFunction.apply(key, oldValue);
+        if (newValue != null) {
+            implPut(key, newValue);
+        } else if (oldValue != null) {
+            // The Properties map cannot contain null values, so checking
+            // super.containsKey(key) would be superfluous.
+            implRemove(key);
         }
-        return o;
+        return super.get(key);
     }
 
     @SuppressWarnings("unchecked") // Function must actually operate over strings
     private Object implComputeIfAbsent(Object key, Function<? super Object,
             ? extends Object> mappingFunction) {
-        if (!checkLegacy(key)) return null;
-
-        Object o = super.computeIfAbsent(key, mappingFunction);
-        if (o instanceof String so && key instanceof String sk) {
-            parseLegacy(sk, so, OPType.ADD);
+        Object oldValue = super.get(key);
+        if (oldValue == null) {
+            Object newValue = mappingFunction.apply(key);
+            if (newValue != null) {
+                implPut(key, newValue);
+                return super.get(key);
+            }
         }
-        return o;
+        return oldValue;
     }
 
     @SuppressWarnings("unchecked") // Function must actually operate over strings
     private Object implComputeIfPresent(Object key, BiFunction<? super Object,
             ? super Object, ? extends Object> remappingFunction) {
-        if (!checkLegacy(key)) return null;
-
-        Object o = super.computeIfPresent(key, remappingFunction);
-        if (o instanceof String so && key instanceof String sk) {
-            parseLegacy(sk, so, OPType.ADD);
+        Object oldValue = super.get(key);
+        if (oldValue != null) {
+            Object newValue = remappingFunction.apply(key, oldValue);
+            if (newValue != null) {
+                implPut(key, newValue);
+            } else {
+                implRemove(key);
+            }
+            return super.get(key);
         }
-        return o;
-    }
-
-    private Object implPut(Object key, Object value) {
-        if (!checkLegacy(key)) return null;
-
-        Object o = super.put(key, value);
-        if (key instanceof String sk && value instanceof String sv) {
-            parseLegacy(sk, sv, OPType.ADD);
-        }
-        return o;
+        return null;
     }
 
     private Object implPutIfAbsent(Object key, Object value) {
-        if (!checkLegacy(key)) return null;
-
-        Object o = super.putIfAbsent(key, value);
-        if (o == null && key instanceof String sk &&
-                value instanceof String sv) {
-            parseLegacy(sk, sv, OPType.ADD);
-        }
-        return o;
+        Objects.requireNonNull(value);
+        Object oldValue = super.get(key);
+        return oldValue == null ? implPut(key, value) : oldValue;
     }
 
-    private void implClear() {
-        legacyMap.clear();
-        serviceMap.clear();
-        legacyChanged = false;
-        servicesChanged = false;
-        serviceSet = null;
-        prngAlgos.clear();
-        super.clear();
-        putId();
+    private Object implPut(Object key, Object value) {
+        return implPut(servicesMap, key, value);
+    }
+
+    private Object implPut(ServicesMap servicesMap, Object key, Object value) {
+        Objects.requireNonNull(value);
+        Object oldValue = super.get(key);
+        return doLegacyOp(servicesMap, key, value, oldValue, OPType.ADD) ==
+                PropertiesMapAction.UPDATE ? super.put(key, value) : oldValue;
     }
 
     // used as key in the serviceMap and legacyMap HashMaps
-    private static class ServiceKey {
+    private static final class ServiceKey {
         private final String type;
         private final String algorithm;
         private final String originalAlgorithm;
@@ -1136,134 +2069,79 @@ public abstract class Provider extends Properties {
         ADD, REMOVE
     }
 
-    private void parseLegacy(String name, String value, OPType opType) {
+    /*
+     * Parse a String entry change on the Properties map and, if concerns to the
+     * ServicesMap, apply its corresponding operation through the Legacy API.
+     * Returns whether the change on the Properties map should proceed or not.
+     */
+    private PropertiesMapAction parseLegacy(ServicesMap servicesMap,
+            String propKey, String propValue, OPType opType) {
         // alias
-        if (name.toLowerCase(ENGLISH).startsWith(ALIAS_PREFIX_LOWER)) {
+        if (propKey.toLowerCase(ENGLISH).startsWith(ALIAS_PREFIX_LOWER)) {
             // e.g. put("Alg.Alias.MessageDigest.SHA", "SHA-1");
             // aliasKey ~ MessageDigest.SHA
-            String aliasKeyStr = name.substring(ALIAS_LENGTH);
+            String aliasKeyStr = propKey.substring(ALIAS_LENGTH);
             String[] typeAndAlg = getTypeAndAlgorithm(aliasKeyStr);
             if (typeAndAlg == null) {
-                return;
+                return PropertiesMapAction.UPDATE;
             }
-            legacyChanged = true;
-            Objects.requireNonNull(value, "alias value should map to an alg");
+            Objects.requireNonNull(propValue,
+                    "alias value should map to an alg");
             String type = getEngineName(typeAndAlg[0]);
             String aliasAlg = typeAndAlg[1].intern();
-            ServiceKey stdKey = new ServiceKey(type, value, true);
-            Service stdService = legacyMap.get(stdKey);
+            ServiceKey svcKey = new ServiceKey(type, propValue, true);
             ServiceKey aliasKey = new ServiceKey(type, aliasAlg, true);
             switch (opType) {
-                case ADD:
-                    // clean up old alias if present
-                    Service prevAliasService = legacyMap.get(aliasKey);
-                    if (prevAliasService != null) {
-                        prevAliasService.removeAlias(aliasAlg);
-                    }
-                    if (stdService == null) {
-                        // add standard mapping in order to add alias
-                        stdService = new Service(this, type, value);
-                        legacyMap.put(stdKey, stdService);
-                    }
-                    stdService.addAlias(aliasAlg);
-                    legacyMap.put(aliasKey, stdService);
-                    break;
-                case REMOVE:
-                    if (stdService != null) {
-                        stdService.removeAlias(aliasAlg);
-                    }
-                    legacyMap.remove(aliasKey);
-                    break;
-                default:
-                    throw new AssertionError();
+                case ADD -> servicesMap.asLegacy()
+                        .putAlias(svcKey, aliasKey, propKey);
+                case REMOVE -> servicesMap.asLegacy()
+                        .removeAlias(svcKey, aliasKey);
             }
         } else {
-            String[] typeAndAlg = getTypeAndAlgorithm(name);
+            String[] typeAndAlg = getTypeAndAlgorithm(propKey);
             if (typeAndAlg == null) {
-                return;
+                return PropertiesMapAction.UPDATE;
             }
-            legacyChanged = true;
             int i = typeAndAlg[1].indexOf(' ');
             // regular registration
             if (i == -1) {
                 // e.g. put("MessageDigest.SHA-1", "sun.security.provider.SHA");
                 String type = getEngineName(typeAndAlg[0]);
-                String stdAlg = typeAndAlg[1].intern();
-                ServiceKey stdKey = new ServiceKey(type, stdAlg, true);
-                Service stdService = legacyMap.get(stdKey);
+                String algo = typeAndAlg[1].intern();
+                ServiceKey svcKey = new ServiceKey(type, algo, true);
                 switch (opType) {
-                    case ADD:
-                        Objects.requireNonNull(value,
-                                "className can't be null");
-                        if (stdService == null) {
-                            stdService = new Service(this, type, stdAlg);
-                            legacyMap.put(stdKey, stdService);
-                        }
-                        stdService.className = value;
-                        break;
-                    case REMOVE:
-                        // only remove if value also matches when non-null
-                        if (stdService != null) {
-                            if (value == null) {
-                                legacyMap.remove(stdKey);
-                            } else if (stdService.className.equals(value)) {
-                                legacyMap.remove(stdKey, stdService);
-                            }
-                            // remove all corresponding alias mappings
-                            for (String alias : stdService.getAliases()) {
-                                legacyMap.remove(new ServiceKey(type, alias,
-                                        true), stdService);
-                            }
-                        }
-                        break;
-                    default:
-                        throw new AssertionError();
+                    case ADD -> servicesMap.asLegacy()
+                            .putClassName(svcKey, propValue, propKey);
+                    case REMOVE -> servicesMap.asLegacy()
+                            .remove(svcKey, propValue);
                 }
-                checkAndUpdateSecureRandom(type, stdAlg,
-                        (opType != OPType.REMOVE));
             } else { // attribute
                 // e.g. put("MessageDigest.SHA-1 ImplementedIn", "Software");
                 String type = getEngineName(typeAndAlg[0]);
                 String attrString = typeAndAlg[1];
-                String stdAlg = attrString.substring(0, i).intern();
+                String algo = attrString.substring(0, i).intern();
                 String attrName = attrString.substring(i + 1);
                 // kill additional spaces
                 while (attrName.startsWith(" ")) {
                     attrName = attrName.substring(1);
                 }
                 attrName = attrName.intern();
-                ServiceKey stdKey = new ServiceKey(type, stdAlg, true);
-                Service stdService = legacyMap.get(stdKey);
+                ServiceKey svcKey = new ServiceKey(type, algo, true);
                 switch (opType) {
-                    case ADD:
-                        Objects.requireNonNull(value,
-                                "attribute value should not be null");
-
-                        if (stdService == null) {
-                            stdService = new Service(this, type, stdAlg);
-                            legacyMap.put(stdKey, stdService);
-                        }
-                        stdService.addAttribute(attrName, value);
-                        break;
-                    case REMOVE:
-                        if (stdService != null) {
-                            stdService.removeAttribute(attrName, value);
-                        }
-                        break;
-                default:
-                    throw new AssertionError();
+                    case ADD -> servicesMap.asLegacy()
+                            .putAttribute(svcKey, attrName, propValue, propKey);
+                    case REMOVE -> servicesMap.asLegacy()
+                            .removeAttribute(svcKey, attrName, propValue);
                 }
             }
         }
+        return PropertiesMapAction.SKIP;
     }
 
     /**
      * Get the service describing this Provider's implementation of the
      * specified type of this algorithm or alias. If no such
-     * implementation exists, this method returns {@code null}. If there are two
-     * matching services, one added to this provider using
-     * {@link #putService putService()} and one added via {@link #put put()},
-     * the service added via {@link #putService putService()} is returned.
+     * implementation exists, this method returns {@code null}.
      *
      * @param type the type of {@link Service service} requested
      * (for example, {@code MessageDigest})
@@ -1286,13 +2164,7 @@ public abstract class Provider extends Properties {
             previousKey = key;
         }
 
-        Service s = serviceMap.get(key);
-        if (s == null) {
-            s = legacyMap.get(key);
-            if (s != null && !s.isValid()) {
-                legacyMap.remove(key, s);
-            }
-        }
+        Service s = servicesMap.getService(key);
 
         if (s != null && SecurityProviderServiceEvent.isTurnedOn()) {
             var e  = new SecurityProviderServiceEvent();
@@ -1325,34 +2197,28 @@ public abstract class Provider extends Properties {
      */
     public Set<Service> getServices() {
         checkInitialized();
-        if (serviceSet == null || legacyChanged || servicesChanged) {
-            Set<Service> set = new LinkedHashSet<>();
-            if (!serviceMap.isEmpty()) {
-                set.addAll(serviceMap.values());
-            }
-            if (!legacyMap.isEmpty()) {
-                legacyMap.entrySet().forEach(entry -> {
-                    if (!entry.getValue().isValid()) {
-                        legacyMap.remove(entry.getKey(), entry.getValue());
-                    } else {
-                        set.add(entry.getValue());
-                    }
-                });
-            }
-            serviceSet = Collections.unmodifiableSet(set);
-            servicesChanged = false;
-            legacyChanged = false;
-        }
-        return serviceSet;
+        return servicesMap.getServicesAllowed();
+    }
+
+    /*
+     * This method returns an unmodifiable set of services that are supported
+     * by this provider but not allowed by the Providers filter (see
+     * sun.security.jca.ProvidersFilter). These services must not be used for
+     * anything other than informational purposes (see
+     * sun.launcher.SecuritySettings and the -XshowSettings:security:providers
+     * JVM argument).
+     */
+    private Set<Service> getServicesNotAllowed() {
+        checkInitialized();
+        return servicesMap.getServicesNotAllowed();
     }
 
     /**
      * Add a service. If a service of the same type with the same algorithm
-     * name exists, and it was added using {@link #putService putService()},
-     * it is replaced by the new service.
-     * This method also places information about this service
-     * in the provider's Hashtable values in the format described in the
-     * {@extLink security_guide_jca
+     * name exists, and it was added using {@link #putService putService()} or
+     * {@link #put put()}, it is replaced by the new service. This method also
+     * places information about this service in the provider's Hashtable
+     * values in the format described in the {@extLink security_guide_jca
      * Java Cryptography Architecture (JCA) Reference Guide}.
      *
      * <p>Also, if there is a security manager, its
@@ -1375,7 +2241,7 @@ public abstract class Provider extends Properties {
      *
      * @since 1.5
      */
-    protected void putService(Service s) {
+    protected synchronized void putService(Service s) {
         check("putProviderProperty." + name);
         if (debug != null) {
             debug.println(name + ".putService(): " + s);
@@ -1387,32 +2253,18 @@ public abstract class Provider extends Properties {
             throw new IllegalArgumentException
                     ("service.getProvider() must match this Provider object");
         }
-        String type = s.getType();
-        String algorithm = s.getAlgorithm();
-        ServiceKey key = new ServiceKey(type, algorithm, true);
-        implRemoveService(serviceMap.get(key));
-        serviceMap.put(key, s);
-        for (String alias : s.getAliases()) {
-            serviceMap.put(new ServiceKey(type, alias, true), s);
-        }
-        servicesChanged = true;
-        synchronized (this) {
-            putPropertyStrings(s);
-            checkAndUpdateSecureRandom(type, algorithm, true);
-        }
+        servicesMap.asCurrent().putService(s);
     }
 
-    private void checkAndUpdateSecureRandom(String type, String algo,
-            boolean doAdd) {
-        if (type.equalsIgnoreCase("SecureRandom")) {
+    private void checkAndUpdateSecureRandom(ServiceKey algKey, boolean doAdd) {
+        if (algKey.type.equalsIgnoreCase("SecureRandom")) {
             if (doAdd) {
-                prngAlgos.add(algo);
+                prngAlgos.add(algKey);
             } else {
-                prngAlgos.remove(algo);
+                prngAlgos.remove(algKey);
             }
             if (debug != null) {
-                debug.println((doAdd? "Add":"Remove") +
-                        " SecureRandom algo " + algo);
+                debug.println((doAdd ? "Add" : "Remove") + " " + algKey);
             }
         }
     }
@@ -1421,57 +2273,21 @@ public abstract class Provider extends Properties {
     // service for this provider
     Service getDefaultSecureRandomService() {
         checkInitialized();
-
-        if (!prngAlgos.isEmpty()) {
-            String algo = prngAlgos.iterator().next();
+        for (ServiceKey algKey : prngAlgos) {
             // IMPORTANT: use the Service obj returned by getService(...) call
             // as providers may override putService(...)/getService(...) and
             // return their own Service objects
-            return getService("SecureRandom", algo);
+            Service svc = getService("SecureRandom", algKey.originalAlgorithm);
+            if (svc != null && svc.isAllowed()) {
+                return svc;
+            }
         }
-
         return null;
     }
 
     /**
-     * Put the string properties for this Service in this Provider's
-     * Hashtable.
-     */
-    private void putPropertyStrings(Service s) {
-        String type = s.getType();
-        String algorithm = s.getAlgorithm();
-        // use super() to avoid permission check and other processing
-        super.put(type + "." + algorithm, s.getClassName());
-        for (String alias : s.getAliases()) {
-            super.put(ALIAS_PREFIX + type + "." + alias, algorithm);
-        }
-        for (Map.Entry<UString,String> entry : s.attributes.entrySet()) {
-            String key = type + "." + algorithm + " " + entry.getKey();
-            super.put(key, entry.getValue());
-        }
-    }
-
-    /**
-     * Remove the string properties for this Service from this Provider's
-     * Hashtable.
-     */
-    private void removePropertyStrings(Service s) {
-        String type = s.getType();
-        String algorithm = s.getAlgorithm();
-        // use super() to avoid permission check and other processing
-        super.remove(type + "." + algorithm);
-        for (String alias : s.getAliases()) {
-            super.remove(ALIAS_PREFIX + type + "." + alias);
-        }
-        for (Map.Entry<UString,String> entry : s.attributes.entrySet()) {
-            String key = type + "." + algorithm + " " + entry.getKey();
-            super.remove(key);
-        }
-    }
-
-    /**
-     * Remove a service previously added using
-     * {@link #putService putService()}. The specified service is removed from
+     * Remove a service previously added using {@link #putService putService()}
+     * or {@link #put put()}. The specified service is removed from
      * this {@code Provider}. It will no longer be returned by
      * {@link #getService getService()} and its information will be removed
      * from this provider's Hashtable.
@@ -1497,7 +2313,7 @@ public abstract class Provider extends Properties {
      *
      * @since 1.5
      */
-    protected void removeService(Service s) {
+    protected synchronized void removeService(Service s) {
         check("removeProviderProperty." + name);
         if (debug != null) {
             debug.println(name + ".removeService(): " + s);
@@ -1505,28 +2321,7 @@ public abstract class Provider extends Properties {
         if (s == null) {
             throw new NullPointerException();
         }
-        implRemoveService(s);
-    }
-
-    private void implRemoveService(Service s) {
-        if ((s == null) || serviceMap.isEmpty()) {
-            return;
-        }
-        String type = s.getType();
-        String algorithm = s.getAlgorithm();
-        ServiceKey key = new ServiceKey(type, algorithm, false);
-        Service oldService = serviceMap.get(key);
-        if (s != oldService) {
-            return;
-        }
-        servicesChanged = true;
-        serviceMap.remove(key);
-        for (String alias : s.getAliases()) {
-            serviceMap.remove(new ServiceKey(type, alias, false));
-        }
-
-        removePropertyStrings(s);
-        checkAndUpdateSecureRandom(type, algorithm, false);
+        servicesMap.asCurrent().removeService(s);
     }
 
     // Wrapped String that behaves in a case-insensitive way for equals/hashCode
@@ -1674,8 +2469,30 @@ public abstract class Provider extends Properties {
         private String className;
         private final Provider provider;
         private List<String> aliases;
-        private Map<UString,String> attributes;
+        private Map<UString, String> attributes;
         private final EngineDescription engineDescription;
+
+        // For services added to a ServicesMap, their algorithm service key.
+        // This value derives from the algorithm field. For services (still)
+        // not added to a ServicesMap, value is null.
+        private ServiceKey algKey;
+
+        // For services added to a ServicesMap, this is a map from alias service
+        // keys to alias string values. Empty map if no aliases. While map
+        // entries derive from the aliases field, keys are not repeated
+        // (case-insensitive comparison) and not equal to the algorithm. For
+        // services (still) not added to a ServicesMap, value is an empty map.
+        private Map<ServiceKey, String> aliasKeys;
+
+        // Cache with the Providers filter decision for this service. Value is
+        // null when not decided.
+        private Boolean isAllowed;
+
+        // Cache with transformation - filter decision entries. Transformations
+        // in this cache are based on this service algorithm or aliases, but
+        // are not necessarily supported (further evaluation is needed). For
+        // Cipher service types only (lazily initialized), null otherwise.
+        private Map<String, Boolean> cipherTransformsAllowed;
 
         // Reference to the cached implementation Class object.
         // Will be a Class if this service is loaded from the built-in
@@ -1705,52 +2522,104 @@ public abstract class Provider extends Properties {
 
         private static final Class<?>[] CLASS0 = new Class<?>[0];
 
-        // this constructor and these methods are used for parsing
-        // the legacy string properties.
-
-        private Service(Provider provider, String type, String algorithm) {
+        /*
+         * Constructor used from the ServicesMap Legacy API.
+         */
+        private Service(Provider provider, ServiceKey algKey) {
+            assert algKey.algorithm.intern() == algKey.algorithm :
+                    "Algorithm should be interned.";
             this.provider = provider;
-            this.type = type;
-            this.algorithm = algorithm;
+            this.algKey = algKey;
+            algorithm = algKey.originalAlgorithm;
+            type = algKey.type;
             engineDescription = knownEngines.get(type);
             aliases = Collections.emptyList();
+            aliasKeys = Collections.emptyMap();
             attributes = Collections.emptyMap();
         }
 
-        private boolean isValid() {
-            return (type != null) && (algorithm != null) && (className != null);
+        /*
+         * Copy constructor used from the ServicesMap Legacy API for the
+         * copy-on-write strategy. This constructor is invoked after every
+         * update to a service on the ServicesMap.
+         */
+        private Service(Service svc) {
+            provider = svc.provider;
+            type = svc.type;
+            algorithm = svc.algorithm;
+            algKey = svc.algKey;
+            className = svc.className;
+            engineDescription = svc.engineDescription;
+            if ((Object)svc.aliases == Collections.emptyList()) {
+                aliases = Collections.emptyList();
+                aliasKeys = Collections.emptyMap();
+            } else {
+                aliases = new ArrayList<>(svc.aliases);
+                aliasKeys = new HashMap<>(svc.aliasKeys);
+            }
+            if ((Object)svc.attributes == Collections.emptyMap()) {
+                attributes = Collections.emptyMap();
+            } else {
+                attributes = new HashMap<>(svc.attributes);
+            }
+            isAllowed = svc.isAllowed;
+            registered = false;
+            if (svc.cipherTransformsAllowed != null) {
+                cipherTransformsAllowed = new ConcurrentHashMap<>(
+                        svc.cipherTransformsAllowed);
+            }
+
+            // Do not copy cached fields because the updated service may have a
+            // different class name or attributes and these values have to be
+            // regenerated.
+            classCache = null;
+            constructorCache = null;
+            hasKeyAttributes = null;
+            supportedFormats = null;
+            supportedClasses = null;
         }
 
-        private void addAlias(String alias) {
-            if (aliases.isEmpty()) {
+        /*
+         * Methods used from the ServicesMap Legacy API to update a service.
+         */
+
+        private void addAliasKey(ServiceKey aliasKey) {
+            assert !aliasKey.equals(algKey) : "Alias key cannot be equal to " +
+                    "the algorithm.";
+            assert aliasKey.type.equals(type) : "Invalid alias key type.";
+            assert aliasKey.algorithm.intern() == aliasKey.algorithm :
+                    "Alias should be interned.";
+            if ((Object)aliases == Collections.emptyList()) {
                 aliases = new ArrayList<>(2);
+                aliasKeys = new HashMap<>(2);
+            } else if (aliasKeys.containsKey(aliasKey)) {
+                // When overwriting aliases, remove first to handle differences
+                // in alias string casing.
+                removeAliasKey(aliasKey);
             }
-            aliases.add(alias);
+            aliases.add(aliasKey.originalAlgorithm);
+            aliasKeys.put(aliasKey, aliasKey.originalAlgorithm);
         }
 
-        private void removeAlias(String alias) {
-            if (aliases.isEmpty()) {
-                return;
-            }
-            aliases.remove(alias);
+        private void removeAliasKey(ServiceKey aliasKey) {
+            assert aliasKeys.containsKey(aliasKey) &&
+                    aliases.contains(aliasKeys.get(aliasKey)) :
+                    "Removing nonexistent alias.";
+            aliases.remove(aliasKeys.remove(aliasKey));
         }
 
-        void addAttribute(String type, String value) {
-            if (attributes.isEmpty()) {
+        private void addAttribute(String attrName, String attrValue) {
+            if ((Object)attributes == Collections.emptyMap()) {
                 attributes = new HashMap<>(8);
             }
-            attributes.put(new UString(type), value);
+            attributes.put(new UString(attrName), attrValue);
         }
 
-        void removeAttribute(String type, String value) {
-            if (attributes.isEmpty()) {
-                return;
-            }
-            if (value == null) {
-                attributes.remove(new UString(type));
-            } else {
-                attributes.remove(new UString(type), value);
-            }
+        private void removeAttribute(String attrName, String attrValue) {
+            UString attrKey = new UString(attrName);
+            assert attributes.get(attrKey) == attrValue :
+                    "Attribute value expected to exist with the same identity.";
+            attributes.remove(attrKey, attrValue);
         }
 
         /**
@@ -1770,7 +2639,7 @@ public abstract class Provider extends Properties {
          */
         public Service(Provider provider, String type, String algorithm,
                 String className, List<String> aliases,
-                Map<String,String> attributes) {
+                Map<String, String> attributes) {
             if ((provider == null) || (type == null) ||
                     (algorithm == null) || (className == null)) {
                 throw new NullPointerException();
@@ -1779,20 +2648,170 @@ public abstract class Provider extends Properties {
             this.type = getEngineName(type);
             engineDescription = knownEngines.get(type);
             this.algorithm = algorithm;
+            algKey = null;
             this.className = className;
             if (aliases == null) {
                 this.aliases = Collections.emptyList();
             } else {
                 this.aliases = new ArrayList<>(aliases);
             }
+            aliasKeys = Collections.emptyMap();
             if (attributes == null) {
                 this.attributes = Collections.emptyMap();
             } else {
                 this.attributes = new HashMap<>();
-                for (Map.Entry<String,String> entry : attributes.entrySet()) {
-                    this.attributes.put(new UString(entry.getKey()), entry.getValue());
+                for (Map.Entry<String, String> entry : attributes.entrySet()) {
+                    this.attributes.put(new UString(entry.getKey()),
+                            entry.getValue());
                 }
             }
+        }
+
+        /*
+         * When a Service is added to a ServicesMap with the Current API,
+         * service and alias keys must be generated. Currently used by
+         * ServicesMapImpl::putService. Legacy API methods do not need to call:
+         * they generated the algorithm key at construction time and alias
+         * keys with Service::addAliasKey. This method assumes that a
+         * putProviderProperty permission was checked before, as unprivileged
+         * callers should not intern Strings.
+         */
+        private void generateServiceKeys() {
+            if (algKey == null) {
+                assert (Object)aliasKeys == Collections.emptyMap() :
+                        "aliasKeys expected to be the empty map.";
+                algKey = new ServiceKey(type, algorithm, true);
+                aliasKeys = new HashMap<>(aliases.size());
+                for (String alias : aliases) {
+                    ServiceKey aliasKey = new ServiceKey(type, alias, true);
+                    if (!aliasKey.equals(algKey)) {
+                        aliasKeys.put(aliasKey, alias);
+                    }
+                }
+                aliasKeys = Collections.unmodifiableMap(aliasKeys);
+            }
+        }
+
+        /*
+         * Returns whether the service is allowed or not according to the
+         * Providers filter. This decision is usually made when a service
+         * instance is added to a ServicesMap, and then cached. However, some
+         * Providers may override Provider::getService or Provider::getServices
+         * and return Service instances that did not go through the filter
+         * before. In any case, if the service did not go through the filter,
+         * evaluate it now and save the result.
+         */
+        private boolean isAllowed() {
+            ProvidersFilter.CipherContext cipherContext =
+                    ProvidersFilter.CipherTransformation.getContext();
+            if (cipherContext != null) {
+                // The Cipher class is trying to create a CipherSpi instance
+                // from a service. E.g. Cipher.getInstance("transformation").
+                // The service algorithm and aliases do not match the
+                // transformation exactly. However, there could still be support
+                // for it. Evaluate the transformation according to the filter
+                // and see if the service remains on track for further
+                // assessment (e.g. Cipher.Transform::supports).
+                if ((cipherTransformsAllowed != null ||
+                        type.equals("Cipher")) &&
+                        isTransformationForSvc(cipherContext.svcSearchKey())) {
+                    return isTransformationAllowed(
+                            cipherContext.transformation());
+                } else {
+                    // Unlikely. May happen if a provider overrides
+                    // Provider::getService or Provider.Service::newInstance
+                    // and, during a Cipher service lookup, triggers a
+                    // Provider.Service::isAllowed call for a service not
+                    // related to the Cipher transformation.
+                    if (debug != null) {
+                        debug.println("Filter evaluation of a service not " +
+                                "related to a Cipher transformation (" +
+                                cipherContext.transformation() + "). Service " +
+                                "search key: " + cipherContext.svcSearchKey() +
+                                ". Service: " + this);
+                    }
+                }
+            }
+            if (isAllowed == null) {
+                computeSvcAllowed();
+            }
+            return isAllowed;
+        }
+
+        /*
+         * Returns whether a key matches any of the algorithm or aliases
+         * (case insensitive).
+         */
+        private boolean isTransformationForSvc(String svcSearchKey) {
+            if (svcSearchKey.equalsIgnoreCase(algorithm)) {
+                return true;
+            }
+            for (String alias : getAliases()) {
+                if (svcSearchKey.equalsIgnoreCase(alias)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        /*
+         * Returns whether a transformation potentially supported by this
+         * service is allowed by the Providers filter. Service algorithm and
+         * aliases are used to build transformation aliases.
+         */
+        private boolean isTransformationAllowed(String transformation) {
+            Boolean isTransformAllowed;
+            if (cipherTransformsAllowed == null) {
+                cipherTransformsAllowed = new ConcurrentHashMap<>();
+                isTransformAllowed = null;
+            } else {
+                isTransformAllowed =
+                        cipherTransformsAllowed.get(transformation);
+            }
+            if (isTransformAllowed == null) {
+                String[] transformParts = AlgorithmDecomposer
+                        .getTransformationTokens(transformation);
+                // transformParts has three non-empty components because
+                // transformation 1) was analyzed by
+                // Cipher::tokenizeTransformation before and 2) if it
+                // had have a single component, it would have been
+                // equal to the service algorithm or alias and not set by
+                // ProvidersFilter.CipherTransformation to reach this point.
+                assert transformParts.length == 3 :
+                        "Unexpected transformation.";
+                List<String> allAlgos =
+                        new ArrayList<>(getAliases().size() + 1);
+                allAlgos.add(algorithm);
+                allAlgos.addAll(getAliases());
+                List<String> tAliases = new ArrayList<>(allAlgos.size() - 1);
+                for (String algo : allAlgos) {
+                    // If a service algorithm or alias has multiple components,
+                    // use the first one for the transformation alias. The
+                    // second and third one (if any) are assumed to be the mode
+                    // and padding respectively, and taken from the
+                    // transformation.
+                    algo = AlgorithmDecomposer.getTransformationTokens(algo)[0];
+                    String transformAlgo = algo + "/" + transformParts[1] +
+                            "/" + transformParts[2];
+                    if (!transformAlgo.equalsIgnoreCase(transformation)) {
+                        tAliases.add(transformAlgo);
+                    }
+                }
+                isTransformAllowed = ProvidersFilter.computeSvcAllowed(
+                        provider.getName(), type, transformation, tAliases);
+                cipherTransformsAllowed.put(transformation, isTransformAllowed);
+            }
+            return isTransformAllowed;
+        }
+
+        /*
+         * Pass the service through the Providers filter and save the result.
+         * Called from ServicesMap before adding a Service to the map, and
+         * from Service::isAllowed to handle uncommon cases.
+         */
+        private void computeSvcAllowed() {
+            isAllowed = ProvidersFilter.computeSvcAllowed(
+                    provider.getName(), type, algorithm, getAliases());
         }
 
         /**
@@ -1832,9 +2851,12 @@ public abstract class Provider extends Properties {
             return className;
         }
 
-        // internal only
+        /*
+         * Method accessed from sun.security.jca.ProvidersFilter and
+         * sun.launcher.SecuritySettings.
+         */
         private List<String> getAliases() {
-            return aliases;
+            return Collections.unmodifiableList(aliases);
         }
 
         /**
@@ -1884,10 +2906,12 @@ public abstract class Provider extends Properties {
         public Object newInstance(Object constructorParameter)
                 throws NoSuchAlgorithmException {
             if (!registered) {
-                if (provider.getService(type, algorithm) != this) {
-                    throw new NoSuchAlgorithmException
-                        ("Service not registered with Provider "
-                        + provider.getName() + ": " + this);
+                // Services never added to a ServicesMap need to be checked.
+                if (provider.getService(type, algorithm) != this ||
+                        !isAllowed()) {
+                    throw new NoSuchAlgorithmException("Service not " +
+                            (!isAllowed() ? "allowed" : "registered with " +
+                            "Provider " + provider.getName()) + ": " + this);
                 }
                 registered = true;
             }

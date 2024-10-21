@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Red Hat, Inc.
+ *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,34 +24,14 @@
  * questions.
  */
 
-package sun.security.action;
-
-import java.util.Map;
+package jdk.internal.access;
 
 import java.security.Provider;
-import java.security.PrivilegedAction;
+import java.util.List;
+import java.util.Set;
 
-/**
- * A convenience PrivilegedAction class for setting the properties of
- * a provider. See the SunRsaSign provider for a usage example.
- *
- * @see sun.security.rsa.SunRsaSign
- * @author  Andreas Sterbenz
- * @since   1.5
- */
-public class PutAllAction implements PrivilegedAction<Void> {
-
-    private final Provider provider;
-    private final Map<?, ?> map;
-
-    public PutAllAction(Provider provider, Map<?, ?> map) {
-        this.provider = provider;
-        this.map = map;
-    }
-
-    public Void run() {
-        provider.putAll(map);
-        return null;
-    }
-
+public interface JavaSecurityProviderAccess {
+    Set<Provider.Service> getServicesNotAllowed(Provider p);
+    List<String> getAliases(Provider.Service svc);
+    boolean isAllowed(Provider.Service svc);
 }
