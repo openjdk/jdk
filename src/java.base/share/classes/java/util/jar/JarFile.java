@@ -40,6 +40,7 @@ import java.io.InputStream;
 import java.lang.ref.SoftReference;
 import java.security.CodeSigner;
 import java.security.cert.Certificate;
+import java.util.BitSet;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Objects;
@@ -597,26 +598,16 @@ public class JarFile extends ZipFile {
     }
 
     private JarEntry getVersionedEntry(String name, JarEntry defaultEntry) {
-        if (!name.startsWith(META_INF)) {
-            int[] versions = JUZFA.getMetaInfVersions(this);
-            if (BASE_VERSION_FEATURE < versionFeature && versions.length > 0) {
-                // search for versioned entry
-                for (int i = versions.length - 1; i >= 0; i--) {
-                    int version = versions[i];
-                    // skip versions above versionFeature
-                    if (version > versionFeature) {
-                        continue;
-                    }
-                    // skip versions below base version
-                    if (version < BASE_VERSION_FEATURE) {
-                        break;
-                    }
-                    JarFileEntry vje = (JarFileEntry)super.getEntry(
-                            META_INF_VERSIONS + version + "/" + name);
-                    if (vje != null) {
-                        return vje.withBasename(name);
-                    }
+        if (BASE_VERSION_FEATURE < versionFeature && !name.startsWith(META_INF)) {
+            BitSet versions = JUZFA.getMetaInfVersions(this, name);
+            int version = versions.previousSetBit(versionFeature);
+            while (version >= BASE_VERSION_FEATURE) {
+                JarFileEntry vje = (JarFileEntry)super.getEntry(
+                        META_INF_VERSIONS + version + "/" + name);
+                if (vje != null) {
+                    return vje.withBasename(name);
                 }
+                version = versions.previousSetBit(version - 1);
             }
         }
         return defaultEntry;
