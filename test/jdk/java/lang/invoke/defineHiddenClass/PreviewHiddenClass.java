@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @enablePreview false
  * @bug 8245432
  * @modules jdk.compiler
  * @library /test/lib
