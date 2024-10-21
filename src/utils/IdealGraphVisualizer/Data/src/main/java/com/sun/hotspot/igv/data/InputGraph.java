@@ -35,7 +35,6 @@ public class InputGraph extends Properties.Entity implements FolderElement {
     private final List<InputEdge> edges;
     private Folder parent;
     private Group parentGroup;
-    private String path;
     private final Map<String, InputBlock> blocks;
     private final List<InputBlockEdge> blockEdges;
     private final Map<Integer, InputBlock> nodeToBlock;
@@ -328,18 +327,13 @@ public class InputGraph extends Properties.Entity implements FolderElement {
     }
 
     public InputBlock addArtificialBlock() {
-        return addBlock("(no block)", true);
+        InputBlock b = addBlock("(no block)");
+        b.setArtificial();
+        return b;
     }
 
     public InputBlock addBlock(String name) {
-        return addBlock(name, false);
-    }
-
-    public InputBlock addBlock(String name, boolean artificial) {
-        final InputBlock b = new InputBlock(this, name, artificial ? -1 : blocks.size());
-        if (artificial) {
-            b.setArtificial();
-        }
+        final InputBlock b = new InputBlock(this, name);
         blocks.put(b.getName(), b);
         return b;
     }

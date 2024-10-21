@@ -41,7 +41,7 @@ public class ClusterOutputSlotNode implements Vertex {
     private final ClusterNode blockNode;
     private Cluster cluster;
     private ClusterOutgoingConnection conn;
-    private final String name;
+    private final String id;
 
     public void setOutgoingConnection(ClusterOutgoingConnection c) {
         this.conn = c;
@@ -53,12 +53,12 @@ public class ClusterOutputSlotNode implements Vertex {
 
     @Override
     public String toString() {
-        return name;
+        return id;
     }
 
-    public ClusterOutputSlotNode(ClusterNode n, String name) {
+    public ClusterOutputSlotNode(ClusterNode n, String id) {
         this.blockNode = n;
-        this.name = name;
+        this.id = id;
 
         n.addSubNode(this);
 
@@ -85,7 +85,7 @@ public class ClusterOutputSlotNode implements Vertex {
 
             public Point getRelativePosition() {
                 Point p = new Point(thisNode.getPosition());
-                p.x += ClusterNode.PADDING;
+                p.x += blockNode.getBorder();
                 p.y = 0;
                 return p;
             }
@@ -99,11 +99,6 @@ public class ClusterOutputSlotNode implements Vertex {
                 return "OutPort of " + thisNode;
             }
         };
-    }
-
-    @Override
-    public int getPriority() {
-        return 0;
     }
 
     public Dimension getSize() {
@@ -132,11 +127,6 @@ public class ClusterOutputSlotNode implements Vertex {
 
     public Cluster getCluster() {
         return cluster;
-    }
-
-    @Override
-    public int getID() {
-        return cluster.getID();
     }
 
     public boolean isRoot() {

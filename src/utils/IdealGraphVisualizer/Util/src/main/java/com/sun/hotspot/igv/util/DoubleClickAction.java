@@ -23,10 +23,8 @@
  */
 package com.sun.hotspot.igv.util;
 
-import java.awt.event.MouseEvent;
 import org.netbeans.api.visual.action.WidgetAction;
 import org.netbeans.api.visual.widget.Widget;
-import org.openide.util.Utilities;
 
 /**
  *
@@ -38,10 +36,6 @@ public class DoubleClickAction extends WidgetAction.Adapter {
 
     public DoubleClickAction(DoubleClickHandler handler) {
         this.handler = handler;
-    }
-
-    public static int getModifierMask () {
-        return Utilities.isMac() ? MouseEvent.META_DOWN_MASK : MouseEvent.CTRL_DOWN_MASK;
     }
 
     @Override
