@@ -62,9 +62,14 @@ unsigned int CodeBlob::align_code_offset(int offset) {
 }
 
 // This must be consistent with the CodeBlob constructor's layout actions.
-unsigned int CodeBlob::allocation_size(CodeBuffer* cb, int header_size) {
+unsigned int CodeBlob::allocation_size(CodeBuffer* cb, int header_size, bool include_relocations) {
   unsigned int size = header_size;
-  size += align_up(cb->total_relocation_size(), oopSize);
+  if (include_relocations) {
+    // In a standard CodeBlob, the relocation_info is located before the code section.
+    // However, in an nmethod, the relocation_info is stored in the mutable data, so
+    // it does not contribute to the nmethod's total size, as it is moved to the C heap.
+    size += align_up(cb->total_relocation_size(), oopSize);
+  }
   // align the size to CodeEntryAlignment
   size = align_code_offset(size);
   size += align_up(cb->total_content_size(), oopSize);
@@ -74,12 +79,12 @@ unsigned int CodeBlob::allocation_size(CodeBuffer* cb, int header_size) {
 }
 
 CodeBlob::CodeBlob(const char* name, CodeBlobKind kind, CodeBuffer* cb, int size, uint16_t header_size,
-                   int16_t frame_complete_offset, int frame_size, OopMapSet* oop_maps, bool caller_must_gc_arguments) :
+                   int16_t frame_complete_offset, int frame_size, OopMapSet* oop_maps, bool caller_must_gc_arguments, bool include_relocations) :
   _oop_maps(nullptr), // will be set by set_oop_maps() call
   _name(name),
   _size(size),
   _relocation_size(align_up(cb->total_relocation_size(), oopSize)),
-  _content_offset(CodeBlob::align_code_offset(header_size + _relocation_size)),
+  _content_offset(CodeBlob::align_code_offset(header_size + (include_relocations ? _relocation_size : 0))),
   _code_offset(_content_offset + cb->total_offset_of(cb->insts())),
   _data_offset(_content_offset + align_up(cb->total_content_size(), oopSize)),
   _frame_size(frame_size),
@@ -87,7 +92,9 @@ CodeBlob::CodeBlob(const char* name, CodeBlobKind kind, CodeBuffer* cb, int size
   _header_size(header_size),
   _frame_complete_offset(frame_complete_offset),
   _kind(kind),
-  _caller_must_gc_arguments(caller_must_gc_arguments)
+  _caller_must_gc_arguments(caller_must_gc_arguments),
+  _mutable_data(nullptr),
+  _mutable_data_size(0)
 {
   assert(is_aligned(_size,            oopSize), "unaligned size");
   assert(is_aligned(header_size,      oopSize), "unaligned size");

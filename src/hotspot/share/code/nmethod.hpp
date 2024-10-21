@@ -135,8 +135,6 @@ public:
 //
 // An nmethod contains:
 //  - header                 (the nmethod structure)
-//  [Relocation]
-//  - relocation information
 //  - constant part          (doubles, longs and floats used in nmethod)
 //  - oop table
 //  [Code]
@@ -312,9 +310,11 @@ class nmethod : public CodeBlob {
           CompilerType type,
           int nmethod_size,
           int immutable_data_size,
+          int mutable_data_size,
           int compile_id,
           int entry_bci,
           address immutable_data,
+          address mutable_data,
           CodeOffsets* offsets,
           int orig_pc_offset,
           DebugInformationRecorder *recorder,
