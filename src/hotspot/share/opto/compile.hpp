@@ -370,7 +370,8 @@ class Compile : public Phase {
   GrowableArray<CallGenerator*> _intrinsics;    // List of intrinsics.
   GrowableArray<Node*>  _macro_nodes;           // List of nodes which need to be expanded before matching.
   GrowableArray<ParsePredicateNode*> _parse_predicates; // List of Parse Predicates.
-  GrowableArray<Node*>  _template_assertion_predicate_opaqs; // List of Opaque4 nodes for Template Assertion Predicates.
+  // List of OpaqueTemplateAssertionPredicateNode nodes for Template Assertion Predicates.
+  GrowableArray<Node*>  _template_assertion_predicate_opaqs;
   GrowableArray<Node*>  _expensive_nodes;       // List of nodes that are expensive to compute and that we'd better not let the GVN freely common
   GrowableArray<Node*>  _for_post_loop_igvn;    // List of nodes for IGVN after loop opts are over
   GrowableArray<UnstableIfTrap*> _unstable_if_traps;        // List of ifnodes after IGVN
@@ -770,7 +771,7 @@ private:
 
   void add_template_assertion_predicate_opaq(Node* n) {
     assert(!_template_assertion_predicate_opaqs.contains(n),
-           "duplicate entry in template assertion predicate opaque4 list");
+           "Duplicate entry in Template Assertion Predicate OpaqueTemplateAssertionPredicate list");
     _template_assertion_predicate_opaqs.append(n);
   }
 

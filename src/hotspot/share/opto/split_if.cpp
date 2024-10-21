@@ -322,7 +322,8 @@ bool PhaseIdealLoop::clone_cmp_down(Node* n, const Node* blk1, const Node* blk2)
           assert( bol->is_Bool(), "" );
           if (bol->outcnt() == 1) {
             Node* use = bol->unique_out();
-            if (use->is_Opaque4() || use->is_OpaqueInitializedAssertionPredicate()) {
+            if (use->is_OpaqueNotNull() || use->is_OpaqueTemplateAssertionPredicate() ||
+                use->is_OpaqueInitializedAssertionPredicate()) {
               if (use->outcnt() == 1) {
                 Node* iff = use->unique_out();
                 assert(iff->is_If(), "unexpected node type");
@@ -351,8 +352,9 @@ bool PhaseIdealLoop::clone_cmp_down(Node* n, const Node* blk1, const Node* blk2)
 #endif
             for (DUIterator j = bol->outs(); bol->has_out(j); j++) {
               Node* u = bol->out(j);
-              // Uses are either IfNodes, CMoves, Opaque4, or OpaqueInitializedAssertionPredicates
-              if (u->is_Opaque4() || u->is_OpaqueInitializedAssertionPredicate()) {
+              // Uses are either IfNodes, CMoves, OpaqueNotNull, or Opaque*AssertionPredicate
+              if (u->is_OpaqueNotNull() || u->is_OpaqueTemplateAssertionPredicate() ||
+                  u->is_OpaqueInitializedAssertionPredicate()) {
                 assert(u->in(1) == bol, "bad input");
                 for (DUIterator_Last kmin, k = u->last_outs(kmin); k >= kmin; --k) {
                   Node* iff = u->last_out(k);
@@ -421,11 +423,12 @@ void PhaseIdealLoop::clone_template_assertion_expression_down(Node* node) {
 
   TemplateAssertionExpressionNode template_assertion_expression_node(node);
   auto clone_expression = [&](IfNode* template_assertion_predicate) {
-    Opaque4Node* opaque4_node = template_assertion_predicate->in(1)->as_Opaque4();
-    TemplateAssertionExpression template_assertion_expression(opaque4_node);
+    OpaqueTemplateAssertionPredicateNode* opaque_node =
+        template_assertion_predicate->in(1)->as_OpaqueTemplateAssertionPredicate();
+    TemplateAssertionExpression template_assertion_expression(opaque_node);
     Node* new_ctrl = template_assertion_predicate->in(0);
-    Opaque4Node* cloned_opaque4_node = template_assertion_expression.clone(new_ctrl, this);
-    igvn().replace_input_of(template_assertion_predicate, 1, cloned_opaque4_node);
+    OpaqueTemplateAssertionPredicateNode* cloned_opaque_node = template_assertion_expression.clone(new_ctrl, this);
+    igvn().replace_input_of(template_assertion_predicate, 1, cloned_opaque_node);
   };
   template_assertion_expression_node.for_each_template_assertion_predicate(clone_expression);
 }

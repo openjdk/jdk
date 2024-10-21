@@ -82,8 +82,8 @@ class TemplateAssertionPredicate;
  *                        actually dead. Assertion Predicates come to the rescue to fold such seemingly dead sub loops
  *                        away to avoid a broken graph. Assertion Predicates are left in the graph as a sanity checks in
  *                        debug builds (they must never fail at runtime) while they are being removed in product builds.
- *                        We use special Opaque4 nodes to block some optimizations and replace the Assertion Predicates
- *                        later in product builds.
+ *                        We use special OpaqueTemplateAssertionPredicateNode nodes to block some optimizations and replace
+ *                        the Assertion Predicates later in product builds.
  *
  *                        There are two kinds of Assertion Predicates:
  *                        - Template Assertion Predicate:    A template for an Assertion Predicate that uses OpaqueLoop*
@@ -431,22 +431,23 @@ class TransformStrategyForOpaqueLoopNodes : public StackObj {
   virtual Node* transform_opaque_stride(OpaqueLoopStrideNode* opaque_stride) const = 0;
 };
 
-// A Template Assertion Predicate represents the Opaque4Node for the initial value or the last value of a
-// Template Assertion Predicate and all the nodes up to and including the OpaqueLoop* nodes.
+// A Template Assertion Predicate represents the OpaqueTemplateAssertionPredicateNode for the initial value or the last
+// value of a Template Assertion Predicate and all the nodes up to and including the OpaqueLoop* nodes.
 class TemplateAssertionExpression : public StackObj {
-  Opaque4Node* _opaque4_node;
+  OpaqueTemplateAssertionPredicateNode* _opaque_node;
 
  public:
-  explicit TemplateAssertionExpression(Opaque4Node* opaque4_node) : _opaque4_node(opaque4_node) {}
+  explicit TemplateAssertionExpression(OpaqueTemplateAssertionPredicateNode* opaque_node) : _opaque_node(opaque_node) {}
 
  private:
-  Opaque4Node* clone(const TransformStrategyForOpaqueLoopNodes& transform_strategy, Node* new_ctrl, PhaseIdealLoop* phase);
+  OpaqueTemplateAssertionPredicateNode* clone(const TransformStrategyForOpaqueLoopNodes& transform_strategy,
+                                              Node* new_ctrl, PhaseIdealLoop* phase);
 
  public:
-  Opaque4Node* clone(Node* new_ctrl, PhaseIdealLoop* phase);
-  Opaque4Node* clone_and_replace_init(Node* new_init, Node* new_ctrl, PhaseIdealLoop* phase);
-  Opaque4Node* clone_and_replace_init_and_stride(Node* new_control, Node* new_init, Node* new_stride,
-                                                 PhaseIdealLoop* phase);
+  OpaqueTemplateAssertionPredicateNode* clone(Node* new_ctrl, PhaseIdealLoop* phase);
+  OpaqueTemplateAssertionPredicateNode* clone_and_replace_init(Node* new_init, Node* new_ctrl, PhaseIdealLoop* phase);
+  OpaqueTemplateAssertionPredicateNode* clone_and_replace_init_and_stride(Node* new_control, Node* new_init,
+                                                                          Node* new_stride, PhaseIdealLoop* phase);
 };
 
 // Class to represent a node being part of a Template Assertion Expression. Note that this is not an IR node.
@@ -554,15 +555,18 @@ class TemplateAssertionPredicateCreator : public StackObj {
   PhaseIdealLoop* const _phase;
 
   OpaqueLoopInitNode* create_opaque_init(Node* new_control);
-  Opaque4Node* create_for_init_value(Node* new_control, OpaqueLoopInitNode* opaque_init, bool& does_overflow) const;
-  Opaque4Node* create_for_last_value(Node* new_control, OpaqueLoopInitNode* opaque_init, bool& does_overflow) const;
+  OpaqueTemplateAssertionPredicateNode* create_for_init_value(Node* new_control, OpaqueLoopInitNode* opaque_init,
+                                                              bool& does_overflow) const;
+  OpaqueTemplateAssertionPredicateNode* create_for_last_value(Node* new_control, OpaqueLoopInitNode* opaque_init,
+                                                              bool& does_overflow) const;
   Node* create_last_value(Node* new_control, OpaqueLoopInitNode* opaque_init) const;
-  IfTrueNode* create_if_node_with_uncommon_trap(Opaque4Node* template_assertion_predicate_expression,
+  IfTrueNode* create_if_node_with_uncommon_trap(OpaqueTemplateAssertionPredicateNode* template_assertion_predicate_expression,
                                                 ParsePredicateSuccessProj* parse_predicate_success_proj,
                                                 Deoptimization::DeoptReason deopt_reason, int if_opcode,
                                                 bool does_overflow
                                                 NOT_PRODUCT(COMMA AssertionPredicateType assertion_predicate_type));
-  IfTrueNode* create_if_node_with_halt(Node* new_control, Opaque4Node* template_assertion_predicate_expression,
+  IfTrueNode* create_if_node_with_halt(Node* new_control,
+                                       OpaqueTemplateAssertionPredicateNode* template_assertion_predicate_expression,
                                        bool does_overflow
                                        NOT_PRODUCT(COMMA AssertionPredicateType assertion_predicate_type));
 
