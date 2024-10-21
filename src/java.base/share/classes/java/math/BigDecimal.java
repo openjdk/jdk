@@ -2170,13 +2170,12 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                 // Check for even powers of 10. Numerically sqrt(10^2N) = 10^N
                 if (stripped.isPowerOfTen() && (strippedScale & 1) == 0) {
                     result = valueOf(1L, strippedScale >> 1);
-                    if (result.scale < preferredScale) {
-                        // Adjust to requested precision and preferred
-                        // scale as appropriate.
-                        int maxSCale = mc.precision == 0 ?
-                            preferredScale : (int) Math.min(preferredScale, result.scale + (mc.precision - 1L));
+                    // Adjust to requested precision and preferred
+                    // scale as appropriate.
+                    final int maxSCale = mc.precision == 0 ?
+                        preferredScale : (int) Math.min(preferredScale, result.scale + (mc.precision - 1L));
+                    if (result.scale < maxSCale)
                         result = result.setScale(maxScale);
-                    }
 
                     return result;
                 }
@@ -2226,13 +2225,13 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
 
                 BigInteger sqrt;
                 long resultScale = normScale >> 1;
+                boolean increment = false;
                 if (mc.roundingMode == RoundingMode.DOWN || mc.roundingMode == RoundingMode.FLOOR) { // No need to round
                     sqrt = workingInt.sqrt();
                 } else { // Round sqrt with the specified settings
                     BigInteger[] sqrtRem = workingInt.sqrtAndRemainder();
                     sqrt = sqrtRem[0];
 
-                    boolean increment = false;
                     if (halfWay) { // half-way rounding
                         // remove the one-tenth digit
                         BigInteger[] quotRem10 = sqrt.divideAndRemainder(BigInteger.TEN);
@@ -2255,11 +2254,11 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                         if (sqrtRem[1].signum != 0 || working.compareTo(new BigDecimal(workingInt)) != 0)
                             increment = true;
                     }
-                    if (increment)
-                        sqrt = sqrt.add(1L);
                 }
 
                 result = new BigDecimal(sqrt, checkScale(sqrt, resultScale));
+                if (increment)
+                    result = result.add(result.ulp());
             }
 
             // Test numerical properties at full precision before any
