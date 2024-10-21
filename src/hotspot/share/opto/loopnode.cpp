@@ -3940,7 +3940,7 @@ bool PhaseIdealLoop::is_deleteable_safept(Node* sfpt) {
 // This optimization looks for patterns similar to:
 //
 //    int a = init2;
-//    for (int phi = init; phi < limit; phi += stride_con) {
+//    for (int iv = init; iv < limit; iv += stride_con) {
 //      a += stride_con2;
 //    }
 //
@@ -3949,8 +3949,8 @@ bool PhaseIdealLoop::is_deleteable_safept(Node* sfpt) {
 //    int iv2 = init2
 //    int iv = init
 //    loop:
-//      if ( phi >= limit ) goto exit
-//      phi += stride_con
+//      if ( iv >= limit ) goto exit
+//      iv += stride_con
 //      iv2 = init2 + (iv - init) * (stride_con2 / stride_con)
 //      goto loop
 //    exit:
@@ -3962,7 +3962,7 @@ bool PhaseIdealLoop::is_deleteable_safept(Node* sfpt) {
 // place to only perform this optimization if such a division is exact. This
 // example will be transformed into its semantic equivalence:
 //
-//     int iv2 = (phi * stride_con2 / stride_con) + (init2 - (init * stride_con2 / stride_con))
+//     int iv2 = (iv * stride_con2 / stride_con) + (init2 - (init * stride_con2 / stride_con))
 //
 // which corresponds to the structure of transformed subgraph.
 //
@@ -3970,7 +3970,7 @@ bool PhaseIdealLoop::is_deleteable_safept(Node* sfpt) {
 // induction variable (e.g., a long-typed IV in an int-typed loop), type
 // conversions are required:
 //
-//     long iv2 = ((long) phi * stride_con2 / stride_con) + (init2 - ((long) init * stride_con2 / stride_con))
+//     long iv2 = ((long) iv * stride_con2 / stride_con) + (init2 - ((long) init * stride_con2 / stride_con))
 //
 void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
   assert(loop->_head->is_CountedLoop(), "");
