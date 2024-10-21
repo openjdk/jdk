@@ -78,8 +78,8 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
                 pkg.app().name(),
                 pkg.version()).toString();
 
-        installDir = (systemWide ? PROGRAM_FILES : LOCAL_PROGRAM_FILES).resolve(pkg.
-                relativeInstallDir());
+        installDir = (systemWide ? PROGRAM_FILES : LOCAL_PROGRAM_FILES).resolve(
+                pkg.relativeInstallDir());
 
         do {
             ApplicationLayout layout = pkg.appLayout();
@@ -111,9 +111,10 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
 
         if (!launchersAsServices.isEmpty()) {
             // Service installer tool will be installed in launchers directory
-            serviceInstaller = new InstallableFile(pkg.serviceInstaller().toAbsolutePath()
-                    .normalize(), installedAppImage.launchersDirectory().resolve(pkg
-                            .serviceInstaller().getFileName()));
+            serviceInstaller = new InstallableFile(
+                    pkg.serviceInstaller().toAbsolutePath().normalize(),
+                    installedAppImage.launchersDirectory().resolve(
+                            pkg.serviceInstaller().getFileName()));
         }
 
         programMenuFolderName = pkg.startMenuGroupName();
@@ -350,8 +351,7 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
             List<String> componentIds) throws XMLStreamException, IOException {
         xml.writeStartElement("ComponentGroup");
         xml.writeAttribute("Id", id);
-        componentIds = componentIds.stream().filter(Objects::nonNull).collect(
-                Collectors.toList());
+        componentIds = componentIds.stream().filter(Objects::nonNull).toList();
         for (var componentId : componentIds) {
             xml.writeStartElement("ComponentRef");
             xml.writeAttribute("Id", componentId);
@@ -455,12 +455,11 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
         Set<Path> defineShortcutFolders = new HashSet<>();
         for (var launcher : launchers) {
             for (var folder : shortcutFolders) {
-                Path launcherPath = installedAppImage.launchersDirectory().resolve(launcher
-                        .executableName());
+                Path launcherPath = installedAppImage.launchersDirectory().resolve(
+                        launcher.executableName());
 
                 if (folder.isRequestedFor(launcher)) {
-                    String componentId = addShortcutComponent(xml, launcherPath,
-                            folder);
+                    String componentId = addShortcutComponent(xml, launcherPath, folder);
 
                     if (componentId != null) {
                         Path folderPath = folder.getPath(this);
@@ -520,8 +519,7 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
                 xml.writeAttribute("Description", fa.description);
 
                 if (fa.iconPath != null) {
-                    xml.writeAttribute("Icon", Id.File.of(getInstalledFaIcoPath(
-                            fa)));
+                    xml.writeAttribute("Icon", Id.File.of(getInstalledFaIcoPath(fa)));
                     xml.writeAttribute("IconIndex", "0");
                 }
 
@@ -599,7 +597,8 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
         return List.of();
     }
 
-    private void startDirectoryElement(XMLStreamWriter xml, String wix3ElementName, Path path) throws XMLStreamException {
+    private void startDirectoryElement(XMLStreamWriter xml,
+            String wix3ElementName, Path path) throws XMLStreamException {
         final String elementName;
         switch (getWixType()) {
             case Wix3 -> {
