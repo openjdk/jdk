@@ -100,7 +100,7 @@ public class bug4983388 {
                 throw new RuntimeException("shortcuts on menus do not work");
             }
         } finally {
-            SwingUtilities.invokeAndWait(() -> frame.dispose());
+            SwingUtilities.invokeAndWait(frame::dispose);
         }
     }
 }
