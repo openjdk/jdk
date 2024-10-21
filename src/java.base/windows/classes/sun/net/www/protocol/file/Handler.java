@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,40 +64,34 @@ public class Handler extends URLStreamHandler {
     public URLConnection openConnection(URL url, Proxy p)
            throws IOException {
 
-        String path;
         String file = url.getFile();
+        String path = ParseUtil.decode(file).replace('/', '\\').replace('|', ':');
         String host = url.getHost();
 
-        path = ParseUtil.decode(file);
-        path = path.replace('/', '\\');
-        path = path.replace('|', ':');
-
-        if ((host == null) || host.isEmpty() ||
+        if (host == null || host.isEmpty() ||
                 host.equalsIgnoreCase("localhost") ||
                 host.equals("~")) {
-           return createFileURLConnection(url, new File(path));
+            return createFileURLConnection(url, new File(path));
         }
 
-        /*
-         * attempt to treat this as a UNC path. See 4180841
-         */
+        URLConnection uc;
+
+        // attempt to treat this as a UNC path. See 4180841
         path = "\\\\" + host + path;
         File f = new File(path);
         if (f.exists()) {
             return new UNCFileURLConnection(url, f, path);
         }
 
-        /*
-         * Now attempt an ftp connection.
-         */
-        URLConnection uc;
+        // If you reach here, it implies that you have a hostname
+        // so attempt an ftp connection.
+
         URL newurl;
 
         try {
             @SuppressWarnings("deprecation")
             var _unused = newurl = new URL("ftp", host, file +
-                            (url.getRef() == null ? "":
-                            "#" + url.getRef()));
+                    (url.getRef() == null ? "": "#" + url.getRef()));
             if (p != null) {
                 uc = newurl.openConnection(p);
             } else {
@@ -108,7 +102,7 @@ public class Handler extends URLStreamHandler {
         }
         if (uc == null) {
             throw new IOException("Unable to connect to: " +
-                                        url.toExternalForm());
+                    url.toExternalForm());
         }
         return uc;
     }
