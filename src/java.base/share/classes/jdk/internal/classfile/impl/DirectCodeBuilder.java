@@ -802,7 +802,7 @@ public final class DirectCodeBuilder
 
     public List<AbstractPseudoInstruction.ExceptionCatchImpl> getHandlers() {
         if (handlers == null) {
-            return Collections.emptyList();
+            return List.of();
         }
         return handlers;
     }
