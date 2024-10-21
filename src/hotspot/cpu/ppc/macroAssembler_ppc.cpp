@@ -2658,10 +2658,8 @@ void MacroAssembler::compiler_fast_lock_object(ConditionRegister flag, Register 
 
   // Handle existing monitor.
   bind(object_has_monitor);
-  // The object's monitor m is unlocked iff m->owner is null,
-  // otherwise m->owner may contain a thread or a stack address.
 
-  // Try to CAS m->owner from null to current thread.
+  // Try to CAS owner (no owner => current thread's _lock_id).
   addi(temp, displaced_header, in_bytes(ObjectMonitor::owner_offset()) - markWord::monitor_value);
   Register thread_id = displaced_header;
   ld(thread_id, in_bytes(JavaThread::lock_id_offset()), R16_thread);
@@ -2941,7 +2939,7 @@ void MacroAssembler::compiler_fast_lock_lightweight_object(ConditionRegister fla
       addi(owner_addr, monitor, in_bytes(ObjectMonitor::owner_offset()));
     }
 
-    // CAS owner (null => current thread id).
+    // Try to CAS owner (no owner => current thread's _lock_id).
     assert_different_registers(thread_id, monitor, owner_addr, box, R0);
     ld(thread_id, in_bytes(JavaThread::lock_id_offset()), R16_thread);
     cmpxchgd(/*flag=*/CCR0,

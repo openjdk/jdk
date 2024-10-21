@@ -3561,12 +3561,10 @@ void MacroAssembler::compiler_fast_lock_object(Register oop, Register box, Regis
 
   Register zero = temp;
   Register monitor_tagged = displacedHeader; // Tagged with markWord::monitor_value.
-  // The object's monitor m is unlocked iff m->owner is null,
-  // otherwise m->owner may contain a thread or a stack address.
 
-  // Try to CAS m->owner from null to current thread's id.
-  // If m->owner is null, then csg succeeds and sets m->owner=THREAD_ID and CR=EQ.
-  // Otherwise, register zero is filled with the current owner.
+  // Try to CAS owner (no owner => current thread's _lock_id).
+  // If csg succeeds then CR=EQ, otherwise, register zero is filled
+  // with the current owner.
   z_lghi(zero, 0);
   z_l(Z_R1_scratch, Address(Z_thread, JavaThread::lock_id_offset()));
   z_csg(zero, Z_R1_scratch, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner), monitor_tagged);
@@ -6309,9 +6307,9 @@ void MacroAssembler::compiler_fast_lock_lightweight_object(Register obj, Registe
     const Address recursions_address(tmp1_monitor, ObjectMonitor::recursions_offset() - monitor_tag);
 
 
-    // Try to CAS m->owner from null to current thread's id.
-    // If m->owner is null, then csg succeeds and sets m->owner=THREAD_ID and CR=EQ.
-    // Otherwise, register zero is filled with the current owner.
+    // Try to CAS owner (no owner => current thread's _lock_id).
+    // If csg succeeds then CR=EQ, otherwise, register zero is filled
+    // with the current owner.
     z_lghi(zero, 0);
     z_l(Z_R1_scratch, Address(Z_thread, JavaThread::lock_id_offset()));
     z_csg(zero, Z_R1_scratch, owner_address);

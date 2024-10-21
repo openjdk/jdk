@@ -116,11 +116,7 @@ void C2_MacroAssembler::fast_lock(Register objectReg, Register boxReg,
   // Handle existing monitor.
   bind(object_has_monitor);
 
-  // The object's monitor m is unlocked iff m->owner == nullptr,
-  // otherwise m->owner may contain a thread id, a stack address for LM_LEGACY,
-  // the ANONYMOUS_OWNER constant for LM_LIGHTWEIGHT.
-  //
-  // Try to CAS m->owner from null to current thread id.
+  // Try to CAS owner (no owner => current thread's _lock_id).
   add(tmp, disp_hdr, (in_bytes(ObjectMonitor::owner_offset()) - markWord::monitor_value));
   Register tid = tmp4Reg;
   ld(tid, Address(xthread, JavaThread::lock_id_offset()));
@@ -404,7 +400,7 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box,
     // Compute owner address.
     la(tmp2_owner_addr, owner_address);
 
-    // CAS owner (null => current thread id).
+    // Try to CAS owner (no owner => current thread's _lock_id).
     Register tid = tmp4;
     ld(tid, Address(xthread, JavaThread::lock_id_offset()));
     cmpxchg(/*addr*/ tmp2_owner_addr, /*expected*/ zr, /*new*/ tid, Assembler::int64,

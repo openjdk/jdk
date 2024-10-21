@@ -625,7 +625,7 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box, Regist
       movptr(Address(box, BasicLock::object_monitor_cache_offset_in_bytes()), monitor);
     }
 
-    // CAS owner (null => current thread).
+    // Try to CAS owner (no owner => current thread's _lock_id).
     xorptr(rax_reg, rax_reg);
     movptr(box, Address(thread, JavaThread::lock_id_offset()));
     lock(); cmpxchgptr(box, owner_address);
