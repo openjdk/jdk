@@ -129,6 +129,8 @@ void IdealLoopTree::compute_trip_count(PhaseIdealLoop* phase, BasicType loop_bt)
     julong uinit_con = init_con;
     jlong limit_con = (stride_con > 0) ? limit_type->hi_as_long() : limit_type->lo_as_long();
     julong ulimit_con = limit_con;
+    // The loop body is always executed at least once even if init >= limit (for stride_con > 0) or
+    // init <= limit (for stride_con < 0).
     julong udiff = 1;
     if (stride_con > 0 && limit_con > init_con) {
       udiff = ulimit_con - uinit_con;
@@ -149,7 +151,7 @@ void IdealLoopTree::compute_trip_count(PhaseIdealLoop* phase, BasicType loop_bt)
       // The loop body is always executed at least once even if init >= limit (for stride_con > 0) or
       // init <= limit (for stride_con < 0).
       trip_count = MAX2(trip_count, (jlong)1);
-      assert(checked_cast<juint>(trip_count) == checked_cast<juint>(utrip_count), "");
+      assert(checked_cast<juint>(trip_count) == checked_cast<juint>(utrip_count), "incorrect trip count computation");
     }
 #endif
 

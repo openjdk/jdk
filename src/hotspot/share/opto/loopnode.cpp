@@ -824,7 +824,7 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
     return false;
   }
 
-  assert(iters_limit > 0, "");
+  assert(iters_limit > 0, "can't be negative");
 
   PhiNode* phi = head->phi()->as_Phi();
 
@@ -1116,6 +1116,8 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
   return true;
 }
 
+// If bounds are known is the loop doesn't need an outer loop or profile data indicates it runs for less than
+// ShortLoopIter, don't create the outer loop
 bool PhaseIdealLoop::short_running_loop(IdealLoopTree* loop, jint stride_con, const Node_List &range_checks, uint iters_limit) {
   if (ShortLoopIter == 0) {
     return false;
@@ -1127,6 +1129,7 @@ bool PhaseIdealLoop::short_running_loop(IdealLoopTree* loop, jint stride_con, co
   Node* entry_control = head->skip_strip_mined()->in(LoopNode::EntryControl);
 
   loop->compute_trip_count(this, bt);
+  // Loop must run for no more than iter_limits as it guarantees no overflow of scale * iv in long range checks.
   bool known_short_running_loop = head->trip_count() <= iters_limit / ABS(stride_con);
   bool profile_short_running_loop = false;
   if (!known_short_running_loop) {
@@ -1152,9 +1155,14 @@ bool PhaseIdealLoop::short_running_loop(IdealLoopTree* loop, jint stride_con, co
   PhiNode* phi = head->phi()->as_Phi();
   const Type* new_phi_t = TypeInt::INT;
   if (profile_short_running_loop) {
+    // Add a short_limit predicate. It's the last predicate when coming from the loop because a cast that's control
+    // dependent on the short_limit predicate is added to narrow the limit and future predicates may be dependent on the
+    // new limit (so have to be between the loop and short_limit predicate). The current limit could, itself, be
+    // dependent on an existing predicate. Clone parse predicates below existing predicates to get proper ordering of
+    // predicates when coming from the loop: future predicates, short_limit predicate, existing predicates.
     const Predicates predicates(entry_control);
     const PredicateBlock* short_running_loop_predicate_block = predicates.short_running_loop_predicate_block();
-    if (!short_running_loop_predicate_block->has_parse_predicate()) {
+    if (!short_running_loop_predicate_block->has_parse_predicate()) { // already trapped
       return false;
     }
     const PredicateBlock* predicate_block = predicates.loop_predicate_block();
@@ -1180,7 +1188,7 @@ bool PhaseIdealLoop::short_running_loop(IdealLoopTree* loop, jint stride_con, co
       get_assertion_predicates(parse_predicate_proj, list);
       clone_assertion_predicates_to_fast_unswitched_loop(loop, Deoptimization::Reason_profile_predicate, list, ctrl->as_IfTrue());
     }
-    assert(ctrl != entry_control, "");
+    assert(ctrl != entry_control, "some parse predicates must have been inserted");
     _igvn.replace_input_of(head->skip_strip_mined(), LoopNode::EntryControl, ctrl);
     set_idom(head->skip_strip_mined(), ctrl, dom_depth(head->skip_strip_mined()));
 
@@ -1216,16 +1224,16 @@ bool PhaseIdealLoop::short_running_loop(IdealLoopTree* loop, jint stride_con, co
 #endif
     entry_control = head->skip_strip_mined()->in(LoopNode::EntryControl);
   } else if (bt == T_LONG) {
+    // We're turning a long counted loop into a regular loop that will be converted into an int count loop. That loop
+    // won't need loop limit checks (iters_limit guarantees that). Add a cast to make sure that, whatever transformation
+    // happens by the time the counted loop is created, c2 knows enough about the loop's limit that it doesn't try to
+    // add loop limit checks.
     const Predicates predicates(entry_control);
     const TypeLong* new_limit_t = new_limit->Value(&_igvn)->is_long();
     new_limit = ConstraintCastNode::make_cast_for_basic_type(predicates.entry(), new_limit,
                                                              TypeLong::make(0, new_limit_t->_hi, new_limit_t->_widen),
                                                              ConstraintCastNode::UnconditionalDependency, bt);
     register_new_node(new_limit, predicates.entry());
-  //   const TypeInteger* phi_t = _igvn.type(phi)->is_integer(bt);
-  //   long phi_diff = phi_t->hi_as_long() - phi_t->lo_as_long();
-  //   assert(phi_diff > 0, "");
-  //   new_phi_t = TypeInt::make(0, checked_cast<int>(phi_diff), Type::WidenMax);
   }
   IfNode* exit_test = head->loopexit();
 
@@ -1264,8 +1272,10 @@ bool PhaseIdealLoop::short_running_loop(IdealLoopTree* loop, jint stride_con, co
 
   LoopNode* inner_head = head;
   if (bt == T_LONG) {
+    // Turn the loop back to a counted loop
     inner_head = create_inner_head(loop, head, exit_test);
   } else {
+    // Use existing counted loop
     head->as_CountedLoop()->set_normal_loop();
   }
 

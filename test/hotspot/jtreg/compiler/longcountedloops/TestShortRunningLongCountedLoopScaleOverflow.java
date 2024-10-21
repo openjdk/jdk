@@ -23,7 +23,8 @@
 
 /**
  * @test
- * @summary
+ * @bug 8342330
+ * @summary C2: MemorySegment API slow with short running loops
  * @requires vm.compiler2.enabled
  * @run main/othervm -XX:-TieredCompilation -XX:-UseOnStackReplacement -XX:-BackgroundCompilation -XX:LoopMaxUnroll=0
  *                   -XX:-UseLoopPredicate -XX:-RangeCheckElimination TestShortRunningLongCountedLoopScaleOverflow

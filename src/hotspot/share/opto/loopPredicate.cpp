@@ -302,39 +302,6 @@ void PhaseIdealLoop::clone_assertion_predicates_to_unswitched_loop(IdealLoopTree
 
   clone_assertion_predicates_to_slow_unswitched_loop(loop, old_new, reason, list, slow_loop_parse_predicate_proj);
   clone_assertion_predicates_to_fast_unswitched_loop(loop, reason, list, fast_loop_parse_predicate_proj);
-  // Node_List to_process;
-  // // Process in reverse order such that 'create_new_if_for_predicate' can be used in
-  // // 'clone_assertion_predicate_for_unswitched_loops' and the original order is maintained.
-  // for (int i = list.size() - 1; i >= 0; i--) {
-  //   Node* predicate = list.at(i);
-  //   assert(predicate->in(0)->is_If(), "must be If node");
-  //   IfNode* iff = predicate->in(0)->as_If();
-  //   assert(predicate->is_Proj() && predicate->as_Proj()->is_IfProj(), "predicate must be a projection of an if node");
-  //   IfProjNode* predicate_proj = predicate->as_IfProj();
-  //
-  //   IfProjNode* fast_proj = clone_assertion_predicate_for_unswitched_loops(iff, predicate_proj, reason, fast_loop_parse_predicate_proj);
-  //   assert(assertion_predicate_has_loop_opaque_node(fast_proj->in(0)->as_If()), "must find Assertion Predicate for fast loop");
-  //   IfProjNode* slow_proj = clone_assertion_predicate_for_unswitched_loops(iff, predicate_proj, reason, slow_loop_parse_predicate_proj);
-  //   assert(assertion_predicate_has_loop_opaque_node(slow_proj->in(0)->as_If()), "must find Assertion Predicate for slow loop");
-  //
-  //   // Update control dependent data nodes.
-  //   for (DUIterator j = predicate->outs(); predicate->has_out(j); j++) {
-  //     Node* fast_node = predicate->out(j);
-  //     if (loop->is_member(get_loop(ctrl_or_self(fast_node)))) {
-  //       assert(fast_node->in(0) == predicate, "only control edge");
-  //       Node* slow_node = old_new[fast_node->_idx];
-  //       assert(slow_node->in(0) == predicate, "only control edge");
-  //       _igvn.replace_input_of(fast_node, 0, fast_proj);
-  //       to_process.push(slow_node);
-  //       --j;
-  //     }
-  //   }
-  //   // Have to delay updates to the slow loop so uses of predicate are not modified while we iterate on them.
-  //   while (to_process.size() > 0) {
-  //     Node* slow_node = to_process.pop();
-  //     _igvn.replace_input_of(slow_node, 0, slow_proj);
-  //   }
-  // }
 }
 
 void PhaseIdealLoop::clone_assertion_predicates_to_fast_unswitched_loop(IdealLoopTree* loop,

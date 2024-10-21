@@ -29,7 +29,8 @@ import jdk.test.whitebox.WhiteBox;
 import java.util.Objects;
 /*
  * @test
- * @summary
+ * @bug 8342330
+ * @summary C2: MemorySegment API slow with short running loops
  * @library /test/lib /
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
