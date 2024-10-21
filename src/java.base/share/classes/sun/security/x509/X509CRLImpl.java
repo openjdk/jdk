@@ -292,8 +292,8 @@ public class X509CRLImpl extends X509CRL implements DerEncoder {
                         return issuerDN.asX500Principal();
                     }
                 }
-                throw new CRLException("Parsing error: "
-                        + "issuer is not an X.500 DN");
+                throw new CRLException("Parsing error: CertificateIssuer "
+                         + "field does not contain an X.500 DN");
             } else {
                 return prevCertIssuer;
             }
