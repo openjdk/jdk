@@ -239,7 +239,7 @@ public class HypotTests {
         failures += testHypotZeros();
 
         if (failures > 0) {
-            System.err.println("Testing the hypot incurred "
+            System.err.println("Testing the hypot incurred for ARM64"
                                + failures + " failures.");
             throw new RuntimeException();
         }
