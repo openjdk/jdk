@@ -320,7 +320,7 @@ class JfrEvents {
             var started1 = new AtomicBoolean();
             var started2 = new AtomicBoolean();
 
-            Thread vthread1 =  Thread.ofVirtual().unstarted(() -> {
+            Thread vthread1 = Thread.ofVirtual().unstarted(() -> {
                 started1.set(true);
                 TestClass.m();
             });
