@@ -81,8 +81,9 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
         if (!socket_file.exists()) {
             // Keep canonical version of File, to delete, in case target process ends and /proc link has gone:
             File f = createAttachFile(pid, ns_pid).getCanonicalFile();
+
             try {
-                checkCatchesAndSendQuitTo(pid);
+                checkCatchesAndSendQuitTo(pid, false);
 
                 // give the target VM time to start the attach mechanism
                 final int delay_step = 100;
@@ -99,7 +100,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
                     time_spend += delay;
                     if (time_spend > timeout/2 && !socket_file.exists()) {
                         // Send QUIT again to give target VM the last chance to react
-                        sendQuitTo(pid);
+                        checkCatchesAndSendQuitTo(pid, false);
                     }
                 } while (time_spend <= timeout && !socket_file.exists());
                 if (!socket_file.exists()) {
@@ -323,7 +324,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
 
     private static final long SIGQUIT = 1L << 2;
 
-    private static void checkCatchesAndSendQuitTo(int pid) throws AttachNotSupportedException, IOException {
+    private static boolean checkCatchesAndSendQuitTo(int pid, boolean throwIfNotReady) throws AttachNotSupportedException, IOException {
         var quitIgn = false;
         var quitBlk = false;
         var quitCgt = false;
@@ -337,7 +338,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
         var readCgt = false;
 
 
-        if (!Files.exists(procPid)) throw new IOException("non existent pid: " + pid);
+        if (!Files.exists(procPid)) throw new IOException("non existent JVM pid: " + pid);
 
         for (var line : Files.readAllLines(procPid.resolve("status"))) {
 
@@ -363,10 +364,11 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
             if (readBlk && readIgn && readCgt) break;
         }
 
+        final boolean  okToSendQuit = !quitBlk && !quitIgn && quitCgt;
 
-        if (!quitBlk && !quitIgn && quitCgt) {
+	if (okToSendQuit) {
             sendQuitTo(pid);
-        } else {
+        } else if (throwIfNotReady) {
             final var cmdline = Files.lines(procPid.resolve("cmdline")).findFirst();
 
             var cmd = "null"; // default
@@ -378,6 +380,8 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
 		
 	    throw new AttachNotSupportedException("pid: " + pid + " cmd: '" + cmd + "' state is not ready to participate in attach handshake!");
         }
+
+	return okToSendQuit;
     }
 
     //-- native methods
