@@ -458,8 +458,6 @@ public interface JavaLangAccess {
      */
     long stringConcatMix(long lengthCoder, char value);
 
-    Object stringConcat1(String[] constants);
-
     /**
      * Get the string initial coder, When COMPACT_STRINGS is on, it returns 0, and when it is off, it returns 1.
      */

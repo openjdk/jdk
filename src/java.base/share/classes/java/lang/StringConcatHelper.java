@@ -60,80 +60,6 @@ final class StringConcatHelper {
         }
     }
 
-    static final class Concat1 extends StringConcatBase {
-        Concat1(String[] constants) {
-            super(constants);
-        }
-
-        @ForceInline
-        String concat0(String value) {
-            int length = stringSize(this.length, value);
-            byte coder = (byte) (this.coder | value.coder());
-            byte[] buf = newArray(length << coder);
-            String prefix = constants[0];
-            prefix.getBytes(buf, 0, coder);
-            value.getBytes(buf, prefix.length(), coder);
-            constants[1].getBytes(buf, prefix.length() + value.length(), coder);
-            return new String(buf, coder);
-        }
-
-        @ForceInline
-        String concat(boolean value) {
-            int length = stringSize(this.length, value);
-            String suffix = constants[1];
-            length -= suffix.length();
-            byte[] buf = newArrayWithSuffix(suffix, length, coder);
-            prepend(length, coder, buf, value, constants[0]);
-            return new String(buf, coder);
-        }
-
-        @ForceInline
-        String concat(char value) {
-            int length = stringSize(this.length, value);
-            byte coder = (byte) (this.coder | stringCoder(value));
-            String suffix = constants[1];
-            length -= suffix.length();
-            byte[] buf = newArrayWithSuffix(suffix, length, coder);
-            prepend(length, coder, buf, value, constants[0]);
-            return new String(buf, coder);
-        }
-
-        @ForceInline
-        String concat(int value) {
-            int length = stringSize(this.length, value);
-            String suffix = constants[1];
-            length -= suffix.length();
-            byte[] buf = newArrayWithSuffix(suffix, length, coder);
-            prepend(length, coder, buf, value, constants[0]);
-            return new String(buf, coder);
-        }
-
-        @ForceInline
-        String concat(long value) {
-            int length = stringSize(this.length, value);
-            String suffix = constants[1];
-            length -= suffix.length();
-            byte[] buf = newArrayWithSuffix(suffix, length, coder);
-            prepend(length, coder, buf, value, constants[0]);
-            return new String(buf, coder);
-        }
-
-        @ForceInline
-        String concat(Object value) {
-            return concat0(stringOf(value));
-        }
-
-        @ForceInline
-        String concat(float value) {
-            return concat0(Float.toString(value));
-        }
-
-        @ForceInline
-        String concat(double value) {
-            return concat0(Double.toString(value));
-        }
-    }
-
     private StringConcatHelper() {
         // no instantiation
     }
@@ -405,7 +331,7 @@ final class StringConcatHelper {
      * @return String       resulting string
      */
     @ForceInline
-    static String simpleConcat(Object first, Object second) {
+    static String concat(Object first, Object second) {
         String s1 = stringOf(first);
         String s2 = stringOf(second);
         if (s1.isEmpty()) {
@@ -795,8 +721,96 @@ final class StringConcatHelper {
 
     @ForceInline
     static String concat(String prefix, Object value, String suffix) {
-        if (prefix == null) prefix = "null";
-        if (suffix == null) suffix = "null";
         return concat0(prefix, stringOf(value), suffix);
+    }
+
+    @ForceInline
+    static String concat(String prefix, float value, String suffix) {
+        return concat0(prefix, stringOf(value), suffix);
+    }
+
+    @ForceInline
+    static String concat(String prefix, double value, String suffix) {
+        return concat0(prefix, stringOf(value), suffix);
+    }
+
+    /**
+     * Perform a simple concatenation between 3 argument. Added for startup
+     * performance, but also demonstrates the code that would be emitted by
+     * {@code java.lang.invoke.StringConcatFactory$MethodHandleInlineCopyStrategy}
+     * for 3 arguments.
+     *
+     * @param prefix         prefix argument
+     * @param value        value argument
+     * @param suffix        suffix argument
+     * @return String       resulting string
+     */
+    @ForceInline
+    static String concat(String prefix, int value, String suffix) {
+        byte coder = (byte) (prefix.coder() | suffix.coder());
+        int length = prefix.length() + DecimalDigits.stringSize(value);
+        byte[] buf = newArrayWithSuffix(suffix, length, coder);
+        prepend(length, coder, buf, value, prefix);
+        return new String(buf, coder);
+    }
+
+    /**
+     * Perform a simple concatenation between 3 argument. Added for startup
+     * performance, but also demonstrates the code that would be emitted by
+     * {@code java.lang.invoke.StringConcatFactory$MethodHandleInlineCopyStrategy}
+     * for 3 arguments.
+     *
+     * @param prefix         prefix argument
+     * @param value        value argument
+     * @param suffix        suffix argument
+     * @return String       resulting string
+     */
+    @ForceInline
+    static String concat(String prefix, long value, String suffix) {
+        byte coder = (byte) (prefix.coder() | suffix.coder());
+        int length = prefix.length() + DecimalDigits.stringSize(value);
+        byte[] buf = newArrayWithSuffix(suffix, length, coder);
+        prepend(length, coder, buf, value, prefix);
+        return new String(buf, coder);
+    }
+
+    /**
+     * Perform a simple concatenation between 3 argument. Added for startup
+     * performance, but also demonstrates the code that would be emitted by
+     * {@code java.lang.invoke.StringConcatFactory$MethodHandleInlineCopyStrategy}
+     * for 3 arguments.
+     *
+     * @param prefix         prefix argument
+     * @param value        value argument
+     * @param suffix        suffix argument
+     * @return String       resulting string
+     */
+    @ForceInline
+    static String concat(String prefix, char value, String suffix) {
+        byte coder = (byte) (prefix.coder() | suffix.coder() | stringCoder(value));
+        int length = prefix.length() + 1;
+        byte[] buf = newArrayWithSuffix(suffix, length, coder);
+        prepend(length, coder, buf, value, prefix);
+        return new String(buf, coder);
+    }
+
+    /**
+     * Perform a simple concatenation between 3 argument. Added for startup
+     * performance, but also demonstrates the code that would be emitted by
+     * {@code java.lang.invoke.StringConcatFactory$MethodHandleInlineCopyStrategy}
+     * for 3 arguments.
+     *
+     * @param prefix         prefix argument
+     * @param value        value argument
+     * @param suffix        suffix argument
+     * @return String       resulting string
+     */
+    @ForceInline
+    static String concat(String prefix, boolean value, String suffix) {
+        byte coder = (byte) (prefix.coder() | suffix.coder());
+        int length = stringSize(prefix.length(), value);
+        byte[] buf = newArrayWithSuffix(suffix, length, coder);
+        prepend(length, coder, buf, value, prefix);
+        return new String(buf, coder);
     }
 }
