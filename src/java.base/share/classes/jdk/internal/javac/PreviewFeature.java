@@ -64,11 +64,6 @@ public @interface PreviewFeature {
      * Values should be annotated with the feature's {@code JEP}.
      */
     public enum Feature {
-        // not used, but required for interim javac to not warn.
-        VIRTUAL_THREADS,
-        FOREIGN,
-        @JEP(number=459, title="String Templates", status="Second Preview")
-        STRING_TEMPLATES,
         @JEP(number=477, title="Implicitly Declared Classes and Instance Main Methods", status="Third Preview")
         IMPLICIT_CLASSES,
         @JEP(number=481, title="Scoped Values", status="Third Preview")
