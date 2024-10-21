@@ -218,7 +218,7 @@ public class WinMsiBundler  extends AbstractBundler {
             appImageBundler.execute(params, workshop.appImageDir().getParent());
         }
 
-        var appImageLayout = pkg.appLayout().resolveAt(workshop.appImageDir());
+        var pkgLayout = pkg.packageLayout().resolveAt(workshop.appImageDir());
 
         // Configure installer icon
         if (pkg.isRuntimeInstaller()) {
@@ -226,12 +226,12 @@ public class WinMsiBundler  extends AbstractBundler {
             // Assume java.exe exists in Java Runtime being packed.
             // Ignore custom icon if any as we don't want to copy anything in
             // Java Runtime image.
-            installerIcon = appImageLayout.runtimeDirectory().resolve(Path.of("bin", "java.exe"));
+            installerIcon = pkgLayout.runtimeDirectory().resolve(Path.of("bin", "java.exe"));
         } else {
-            installerIcon = appImageLayout.launchersDirectory().resolve(pkg.app().mainLauncher()
+            installerIcon = pkgLayout.launchersDirectory().resolve(pkg.app().mainLauncher()
                     .executableName());
 
-            new PackageFile(pkg.packageName()).save(appImageLayout);
+            new PackageFile(pkg.packageName()).save(pkgLayout);
         }
         installerIcon = installerIcon.toAbsolutePath();
 
@@ -317,8 +317,8 @@ public class WinMsiBundler  extends AbstractBundler {
             data.put("JpAboutURL", value);
         });
 
-        data.put("JpAppSizeKb", Long.toString(pkg.appLayout().resolveAt(workshop.appImageDir())
-                .sizeInBytes() >> 10));
+        data.put("JpAppSizeKb", Long.toString(pkg.packageLayout().resolveAt(
+                workshop.appImageDir()).sizeInBytes() >> 10));
 
         data.put("JpConfigDir", workshop.configDir().toAbsolutePath().toString());
 

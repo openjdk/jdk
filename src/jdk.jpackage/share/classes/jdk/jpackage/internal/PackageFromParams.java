@@ -53,18 +53,14 @@ final class PackageFromParams {
         var licenseFile = Optional.ofNullable(LICENSE_FILE.fetchFrom(params)).map(Path::of).orElse(null);
         var predefinedAppImage = getPredefinedAppImage(params);
 
-        Path relativeInstallDir = Optional.ofNullable(INSTALL_DIR.fetchFrom(params)).map(v -> {
+        Path installBaseDir = Optional.ofNullable(INSTALL_DIR.fetchFrom(params)).map(v -> {
             return toSupplier(() -> {
-                var path = mapInstallDir(Path.of(v), pkgType);
-                if (path.isAbsolute()) {
-                    path = Path.of("/").relativize(path);
-                }
-                return path;
+                return mapInstallDir(Path.of(v), pkgType);
             }).get();
         }).orElse(null);
 
-        return new Impl(app, pkgType, packageName, description, version, aboutURL, licenseFile,
-                predefinedAppImage, relativeInstallDir);
+        return new Impl(app, pkgType, packageName, description, version,
+                aboutURL, licenseFile, predefinedAppImage, installBaseDir);
     }
 
     static <T extends Package> BundlerParamInfo<T> createBundlerParam(

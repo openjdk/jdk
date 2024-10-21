@@ -91,7 +91,19 @@ interface Package {
         return app().appLayout();
     }
 
-    default ApplicationLayout installedAppLayout() {
+    default ApplicationLayout packageLayout() {
+        var layout = appLayout();
+        var pathGroup = layout.pathGroup();
+        var baseDir = relativeInstallDir();
+
+        for (var key : pathGroup.keys()) {
+            pathGroup.setPath(key, baseDir.resolve(pathGroup.getPath(key)));
+        }
+
+        return layout;
+    }
+
+    default ApplicationLayout installedPackageLayout() {
         Path root = relativeInstallDir();
         if (type() instanceof StandardPackageType type) {
             switch (type) {
@@ -123,42 +135,64 @@ interface Package {
     }
 
     /**
-     * Returns relative path to the package installation directory. On Windows it should be relative
-     * to %ProgramFiles% and relative to the system root ('/') on other platforms.
+     * Returns relative path to the package installation directory.
+     *
+     * On Windows it should be relative to %ProgramFiles% and relative
+     * to the system root ('/') on other platforms.
      */
     default Path relativeInstallDir() {
-        return Optional.ofNullable(configuredRelativeInstallDir()).orElseGet(
-                this::defaultRelativeInstallDir);
-    }
-
-    Path configuredRelativeInstallDir();
-
-    default Path defaultRelativeInstallDir() {
-        switch (type()) {
-            case StandardPackageType.WinExe, StandardPackageType.WinMsi -> {
-                return app().appImageDirName();
-            }
-            case StandardPackageType.LinuxDeb, StandardPackageType.LinuxRpm -> {
-                return Path.of("opt").resolve(packageName());
-            }
-            case StandardPackageType.MacDmg, StandardPackageType.MacPkg -> {
-                String root;
-                if (isRuntimeInstaller()) {
-                    root = "Library/Java/JavaVirtualMachines";
-                } else {
-                    root = "Applications";
+        var path = Optional.ofNullable(configuredInstallBaseDir()).map(v -> {
+            switch (asStandardPackageType()) {
+                case LinuxDeb, LinuxRpm -> {
+                    switch (v.toString()) {
+                        case "/usr", "/usr/local" -> {
+                            return v;
+                        }
+                    }
                 }
-                return Path.of(root).resolve(packageName());
+            }
+            return v.resolve(packageName());
+        }).orElseGet(this::defaultInstallDir);
+
+        switch (asStandardPackageType()) {
+            case WinExe, WinMsi -> {
+                return path;
             }
             default -> {
-                return null;
+                return Path.of("/").relativize(path);
             }
         }
     }
 
+    Path configuredInstallBaseDir();
+
+    default Path defaultInstallDir() {
+        Path base;
+        switch (asStandardPackageType()) {
+            case WinExe, WinMsi -> {
+                base = Path.of("");
+            }
+            case LinuxDeb, LinuxRpm -> {
+                base = Path.of("/opt");
+            }
+            case MacDmg, MacPkg -> {
+                if (isRuntimeInstaller()) {
+                    base = Path.of("/Library/Java/JavaVirtualMachines");
+                } else {
+                    base = Path.of("/Applications");
+                }
+            }
+            default -> {
+                throw new UnsupportedOperationException();
+            }
+        }
+
+        return base.resolve(packageName());
+    }
+
     static record Impl(Application app, PackageType type, String packageName,
             String description, String version, String aboutURL, Path licenseFile,
-            Path predefinedAppImage, Path configuredRelativeInstallDir) implements Package {
+            Path predefinedAppImage, Path configuredInstallBaseDir) implements Package {
 
         public Impl         {
             description = Optional.ofNullable(description).orElseGet(app::description);
@@ -210,7 +244,7 @@ interface Package {
         }
 
         @Override
-        public Path configuredRelativeInstallDir() {
+        public Path configuredInstallBaseDir() {
             throw new UnsupportedOperationException();
         }
         
@@ -263,8 +297,8 @@ interface Package {
         }
 
         @Override
-        public Path configuredRelativeInstallDir() {
-            return target.configuredRelativeInstallDir();
+        public Path configuredInstallBaseDir() {
+            return target.configuredInstallBaseDir();
         }
     }
 
@@ -278,7 +312,7 @@ interface Package {
                 getValueOrDefault(overrides, base, Package::aboutURL),
                 getValueOrDefault(overrides, base, Package::licenseFile),
                 getValueOrDefault(overrides, base, Package::predefinedAppImage),
-                getValueOrDefault(overrides, base, Package::configuredRelativeInstallDir));
+                getValueOrDefault(overrides, base, Package::configuredInstallBaseDir));
     }
 
     static Path mapInstallDir(Path installDir, PackageType pkgType) throws ConfigException {
@@ -294,16 +328,17 @@ interface Package {
             throw ex;
         }
 
-        if (pkgType instanceof StandardPackageType stdPkgType) {
-            switch (stdPkgType) {
-                case WinExe, WinMsi -> {
-                    if (installDir.isAbsolute()) {
-                        throw ex;
-                    }
+        switch (pkgType) {
+            case StandardPackageType.WinExe, StandardPackageType.WinMsi -> {
+                if (installDir.isAbsolute()) {
+                    throw ex;
                 }
             }
-        } else if (!installDir.isAbsolute()) {
-            throw ex;
+            default -> {
+                if (!installDir.isAbsolute()) {
+                    throw ex;
+                }
+            }
         }
 
         if (!installDir.normalize().toString().equals(installDir.toString())) {

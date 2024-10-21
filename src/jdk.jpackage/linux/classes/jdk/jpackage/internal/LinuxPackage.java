@@ -43,11 +43,11 @@ interface LinuxPackage extends Package {
     String arch();
 
     @Override
-    default ApplicationLayout appLayout() {
+    default ApplicationLayout packageLayout() {
         if (isInstallDirInUsrTree()) {
             return ApplicationLayout.linuxUsrTreePackageImage(relativeInstallDir(), packageName());
         } else {
-            return Package.super.appLayout();
+            return Package.super.packageLayout();
         }
     }
 
@@ -70,7 +70,7 @@ interface LinuxPackage extends Package {
     }
 
     default boolean isInstallDirInUsrTree() {
-        return Set.of(Path.of("usr/local"), Path.of("usr")).contains(relativeInstallDir());
+        return !relativeInstallDir().getFileName().equals(Path.of(packageName()));
     }
 
     static class Impl extends Package.Proxy<Package> implements LinuxPackage {
@@ -103,9 +103,9 @@ interface LinuxPackage extends Package {
                 validatePackageName(packageName(), type);
             }
 
-            this.menuGroupName = Optional.ofNullable(menuGroupName).orElseGet(DEFAULTS::menuGroupName);
-            this.category = Optional.ofNullable(category).orElseGet(DEFAULTS::category);
-            this.release = Optional.ofNullable(release).orElseGet(DEFAULTS::release);
+            this.menuGroupName = Optional.ofNullable(menuGroupName).orElseGet(Defaults.INSTANCE::menuGroupName);
+            this.category = Optional.ofNullable(category).orElseGet(Defaults.INSTANCE::category);
+            this.release = Optional.ofNullable(release).orElseGet(Defaults.INSTANCE::release);
 
             this.additionalDependencies = additionalDependencies;
             this.arch = arch;
@@ -176,10 +176,9 @@ interface LinuxPackage extends Package {
     }
 
     static record Defaults(String release, String menuGroupName, String category) {
+        private static final Defaults INSTANCE = new Defaults("1",
+                I18N.getString("param.menu-group.default"), "misc");
     }
-
-    static final Defaults DEFAULTS = new Defaults("1", I18N.getString("param.menu-group.default"),
-            "misc");
 
     private static void validatePackageName(String packageName,
             StandardPackageType pkgType) throws ConfigException {

@@ -119,7 +119,7 @@ abstract class LinuxPackageBundler extends AbstractBundler {
         params.put(WorkshopFromParams.WORKSHOP.getID(), pkgWorkshop);
 
         Function<Path, ApplicationLayout> initAppImageLayout = imageRoot -> {
-            ApplicationLayout layout = pkg.app().appLayout();
+            ApplicationLayout layout = pkg.appLayout();
             layout.pathGroup().setPath(new Object(),
                     AppImageFile.getPathInAppImage(Path.of("")));
             return layout.resolveAt(imageRoot);
@@ -129,20 +129,20 @@ abstract class LinuxPackageBundler extends AbstractBundler {
             Path srcAppImageDir = pkg.predefinedAppImage();
 
             // we either have an application image or need to build one
-            if (srcAppImageDir == null) {
+            boolean moveLayout = (srcAppImageDir == null);
+            if (moveLayout) {
                 srcAppImageDir = workshop.appImageDir();
                 Files.createDirectories(srcAppImageDir.getParent());
                 appImageBundler.execute(params, srcAppImageDir.getParent());
             }
 
-            Path dstAppImageDir;
-            if (pkg.isInstallDirInUsrTree()) {
-                dstAppImageDir = pkgWorkshop.appImageDir();
+            var srcLayout = initAppImageLayout.apply(srcAppImageDir);
+            var dstLayout = pkg.packageLayout().resolveAt(pkgWorkshop.appImageDir());
+            if (moveLayout) {
+                srcLayout.move(dstLayout);
             } else {
-                dstAppImageDir = pkgWorkshop.appImageDir().resolve(pkg.relativeInstallDir());
+                srcLayout.copy(dstLayout);
             }
-
-            initAppImageLayout.apply(srcAppImageDir).copy(pkg.appLayout().resolveAt(dstAppImageDir));
 
             for (var ca : customActions) {
                 ca.init(pkgWorkshop, pkg);
@@ -151,8 +151,7 @@ abstract class LinuxPackageBundler extends AbstractBundler {
             Map<String, String> data = createDefaultReplacementData(pkgWorkshop, pkg);
 
             for (var ca : customActions) {
-                ShellCustomAction.mergeReplacementData(data, ca.instance.
-                        create());
+                ShellCustomAction.mergeReplacementData(data, ca.instance.create());
             }
 
             data.putAll(createReplacementData(pkgWorkshop, pkg));

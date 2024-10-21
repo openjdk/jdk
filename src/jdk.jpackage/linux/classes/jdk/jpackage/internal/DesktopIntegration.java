@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -230,7 +230,7 @@ final class DesktopIntegration extends ShellCustomAction {
                 f -> f.installPath().toString()).orElse(null));
         data.put("DEPLOY_BUNDLE_CATEGORY", pkg.category());
         data.put("APPLICATION_LAUNCHER", Enquoter.forPropertyValues().applyTo(pkg
-                .installedAppLayout().launchersDirectory().resolve(launcher.executableName())
+                .installedPackageLayout().launchersDirectory().resolve(launcher.executableName())
                 .toString()));
 
         return data;
@@ -333,9 +333,9 @@ final class DesktopIntegration extends ShellCustomAction {
     private class DesktopFile {
 
         DesktopFile(String fileName) {
-            var installPath = pkg.installedAppLayout()
+            var installPath = pkg.installedPackageLayout()
                     .destktopIntegrationDirectory().resolve(fileName);
-            var srcPath = pkg.appLayout().resolveAt(workshop.appImageDir())
+            var srcPath = pkg.packageLayout().resolveAt(workshop.appImageDir())
                     .destktopIntegrationDirectory().resolve(fileName);
 
             impl = new InstallableFile(srcPath, installPath);

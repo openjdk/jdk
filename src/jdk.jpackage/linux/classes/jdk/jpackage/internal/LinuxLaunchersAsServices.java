@@ -71,16 +71,19 @@ public final class LinuxLaunchersAsServices extends UnixLaunchersAsServices {
     private static class LauncherImpl extends UnixLauncherAsService {
 
         LauncherImpl(Workshop workshop, Package pkg, Launcher launcher) {
-            super(launcher, workshop.createResource("unit-template.service").setCategory(I18N
-                    .getString("resource.systemd-unit-file")));
+            super(launcher,
+                    workshop.createResource("unit-template.service").setCategory(
+                            I18N.getString("resource.systemd-unit-file")));
 
-            unitFilename = getServiceUnitFileName(pkg.packageName(), launcher.executableName()
-                    .toString());
+            unitFilename = getServiceUnitFileName(pkg.packageName(),
+                    launcher.executableName().toString());
 
             getResource().setPublicName(unitFilename).addSubstitutionDataEntry(
-                    "APPLICATION_LAUNCHER", Enquoter.forPropertyValues().applyTo(pkg.appLayout()
-                            .resolveAt(workshop.appImageDir()).launchersDirectory().resolve(
-                            getName()).toString()));
+                    "APPLICATION_LAUNCHER",
+                    Enquoter.forPropertyValues().applyTo(
+                            pkg.installedPackageLayout().resolveAt(
+                                    workshop.appImageDir()).launchersDirectory().resolve(
+                                    getName()).toString()));
         }
 
         @Override
