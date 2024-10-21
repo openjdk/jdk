@@ -9989,11 +9989,11 @@ instruct CallStaticJavaDirect(method meth)
 // Call Java Dynamic Instruction
 // Note: If this code changes, the corresponding ret_addr_offset() and
 //       compute_padding() functions will have to be adjusted.
-instruct CallDynamicJavaDirect(method meth, rFlagsReg cr)
+instruct CallDynamicJavaDirect(method meth)
 %{
   match(CallDynamicJava);
 
-  effect(USE meth, KILL cr);
+  effect(USE meth);
 
   ins_cost(BRANCH_COST + ALU_COST * 5);
 
@@ -10008,11 +10008,11 @@ instruct CallDynamicJavaDirect(method meth, rFlagsReg cr)
 
 // Call Runtime Instruction
 
-instruct CallRuntimeDirect(method meth, rFlagsReg cr)
+instruct CallRuntimeDirect(method meth)
 %{
   match(CallRuntime);
 
-  effect(USE meth, KILL cr);
+  effect(USE meth);
 
   ins_cost(BRANCH_COST);
 
@@ -10025,11 +10025,11 @@ instruct CallRuntimeDirect(method meth, rFlagsReg cr)
 
 // Call Runtime Instruction
 
-instruct CallLeafDirect(method meth, rFlagsReg cr)
+instruct CallLeafDirect(method meth)
 %{
   match(CallLeaf);
 
-  effect(USE meth, KILL cr);
+  effect(USE meth);
 
   ins_cost(BRANCH_COST);
 
@@ -10042,11 +10042,11 @@ instruct CallLeafDirect(method meth, rFlagsReg cr)
 
 // Call Runtime Instruction without safepoint and with vector arguments
 
-instruct CallLeafDirectVector(method meth, rFlagsReg cr)
+instruct CallLeafDirectVector(method meth)
 %{
   match(CallLeafVector);
 
-  effect(USE meth, KILL cr);
+  effect(USE meth);
 
   ins_cost(BRANCH_COST);
 
@@ -10059,11 +10059,11 @@ instruct CallLeafDirectVector(method meth, rFlagsReg cr)
 
 // Call Runtime Instruction
 
-instruct CallLeafNoFPDirect(method meth, rFlagsReg cr)
+instruct CallLeafNoFPDirect(method meth)
 %{
   match(CallLeafNoFP);
 
-  effect(USE meth, KILL cr);
+  effect(USE meth);
 
   ins_cost(BRANCH_COST);
 

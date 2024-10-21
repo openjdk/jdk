@@ -25,11 +25,11 @@
 
 package java.lang.classfile.attribute;
 
+import java.lang.classfile.Label;
+import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.constant.ClassDesc;
 import java.util.List;
 
-import java.lang.classfile.Label;
-import java.lang.classfile.constantpool.ClassEntry;
 import jdk.internal.classfile.impl.StackMapDecoder;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.javac.PreviewFeature;
