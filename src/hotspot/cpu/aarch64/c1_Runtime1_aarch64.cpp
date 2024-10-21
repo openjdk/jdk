@@ -160,28 +160,21 @@ int StubAssembler::call_RT(Register oop_result1, Register metadata_result, addre
 }
 
 enum return_state_t {
-  does_not_return, requires_return
+  does_not_return, requires_return, requires_pop_epilogue_return
 };
-
 
 // Implementation of StubFrame
 
 class StubFrame: public StackObj {
  private:
   StubAssembler* _sasm;
-  bool _return_state;
-  bool _use_pop_on_epilogue;
-
-  StubFrame(StubAssembler* sasm, const char* name, bool must_gc_arguments,
-            return_state_t return_state, bool use_pop_on_epilogue);
+  return_state_t _return_state;
 
  public:
-  StubFrame(StubAssembler* sasm, const char* name, bool must_gc_arguments, bool use_pop_on_epilogue);
-  StubFrame(StubAssembler* sasm, const char* name, bool must_gc_arguments, return_state_t return_state);
-  StubFrame(StubAssembler* sasm, const char* name, bool must_gc_arguments);
-  ~StubFrame();
-
+  StubFrame(StubAssembler* sasm, const char* name, bool must_gc_arguments, return_state_t return_state=requires_return);
   void load_argument(int offset_in_words, Register reg);
+
+  ~StubFrame();
 };;
 
 void StubAssembler::prologue(const char* name, bool must_gc_arguments) {
@@ -204,22 +197,11 @@ void StubAssembler::epilogue(bool use_pop) {
 
 #define __ _sasm->
 
-StubFrame::StubFrame(StubAssembler* sasm, const char* name, bool must_gc_arguments,
-                     return_state_t return_state, bool use_pop_on_epilogue)
-  : _sasm(sasm), _return_state(return_state), _use_pop_on_epilogue(use_pop_on_epilogue) {
+StubFrame::StubFrame(StubAssembler* sasm, const char* name, bool must_gc_arguments, return_state_t return_state) {
+  _sasm = sasm;
+  _return_state = return_state;
   __ prologue(name, must_gc_arguments);
 }
-
-StubFrame::StubFrame(StubAssembler* sasm, const char* name, bool must_gc_arguments,
-                     bool use_pop_on_epilogue) :
-  StubFrame(sasm, name, must_gc_arguments, requires_return, use_pop_on_epilogue) {}
-
-StubFrame::StubFrame(StubAssembler* sasm, const char* name, bool must_gc_arguments,
-                     return_state_t return_state) :
-  StubFrame(sasm, name, must_gc_arguments, return_state, /*use_pop_on_epilogue*/false) {}
-
-StubFrame::StubFrame(StubAssembler* sasm, const char* name, bool must_gc_arguments) :
-  StubFrame(sasm, name, must_gc_arguments, requires_return, /*use_pop_on_epilogue*/false) {}
 
 // load parameters that were stored with LIR_Assembler::store_parameter
 // Note: offsets for store_parameter and load_argument must match
@@ -228,7 +210,11 @@ void StubFrame::load_argument(int offset_in_words, Register reg) {
 }
 
 StubFrame::~StubFrame() {
-  __ epilogue(_use_pop_on_epilogue);
+  if (_return_state == does_not_return) {
+    __ should_not_reach_here();
+  } else {
+    __ epilogue(_return_state == requires_pop_epilogue_return);
+  }
 }
 
 #undef __
@@ -892,7 +878,7 @@ OopMapSet* Runtime1::generate_code_for(C1StubId id, StubAssembler* sasm) {
       // fall through
     case C1StubId::monitorenter_id:
       {
-        StubFrame f(sasm, "monitorenter", dont_gc_arguments, /*use_pop_on_epilogue*/true);
+        StubFrame f(sasm, "monitorenter", dont_gc_arguments, requires_pop_epilogue_return);
         OopMap* map = save_live_registers(sasm, save_fpu_registers);
 
         // Called with store_parameter and not C abi
