@@ -100,6 +100,10 @@ class MacroAssembler: public Assembler {
   static KlassDecodeMode _klass_decode_mode;
 
  public:
+  // Sets the decode mode and returns false if cannot be set.
+  static bool check_and_set_klass_decode_mode(address base, int shift, const size_t range);
+
+ public:
   MacroAssembler(CodeBuffer* code) : Assembler(code) {}
 
  // These routines should emit JVMTI PopFrame and ForceEarlyReturn handling code.

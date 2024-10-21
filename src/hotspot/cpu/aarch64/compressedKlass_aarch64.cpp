@@ -24,7 +24,7 @@
  */
 
 #include "precompiled.hpp"
-#include "asm/assembler.hpp"
+#include "asm/macroAssembler.hpp"
 #include "logging/log.hpp"
 #include "oops/compressedKlass.hpp"
 #include "memory/metaspace.hpp"
@@ -79,6 +79,7 @@ static char* reserve_at_eor_compatible_address(size_t size, bool aslr) {
   }
   return result;
 }
+
 char* CompressedKlassPointers::reserve_address_space_for_compressed_classes(size_t size, bool aslr, bool optimize_for_zero_base) {
 
   char* result = nullptr;
@@ -116,4 +117,13 @@ char* CompressedKlassPointers::reserve_address_space_for_compressed_classes(size
   }
 
   return result;
+}
+
+bool CompressedKlassPointers::check_and_set_klass_decode_mode(address base, int shift, const size_t range) {
+  return MacroAssembler::check_and_set_klass_decode_mode(base, shift, range);
+}
+
+bool CompressedKlassPointers::check_and_set_klass_decode_mode() {
+  const size_t range = CompressedKlassPointers::klass_range_end() - CompressedKlassPointers::base();
+  return check_and_set_klass_decode_mode(_base, _shift, range);
 }
