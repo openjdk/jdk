@@ -26,7 +26,9 @@ package sun.nio.ch;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -40,7 +42,7 @@ import sun.security.action.GetPropertyAction;
  * Polls file descriptors. Virtual threads invoke the poll method to park
  * until a given file descriptor is ready for I/O.
  */
-abstract class Poller {
+public abstract class Poller {
     private static final Pollers POLLERS;
     static {
         try {
@@ -140,6 +142,20 @@ abstract class Poller {
         } else {
             assert false;
         }
+    }
+
+    /**
+     * Parks the current thread until a Selector's file descriptor is ready.
+     * @param fdVal the Selector's file descriptor
+     * @param nanos the waiting time or 0 to wait indefinitely
+     */
+    static void pollSelector(int fdVal, long nanos) throws IOException {
+        assert nanos >= 0L;
+        Poller poller = POLLERS.masterPoller();
+        if (poller == null) {
+            poller = POLLERS.readPoller(fdVal);
+        }
+        poller.poll(fdVal, nanos, () -> true);
     }
 
     /**
@@ -259,6 +275,18 @@ abstract class Poller {
     }
 
     /**
+     * Returns the number I/O operations currently registered with this poller.
+     */
+    public int registered() {
+        return map.size();
+    }
+
+    @Override
+    public String toString() {
+        return Objects.toIdentityString(this) + " [registered = " + registered() + "]";
+    }
+
+    /**
      * The Pollers used for read and write events.
      */
     private static class Pollers {
@@ -345,6 +373,13 @@ abstract class Poller {
         }
 
         /**
+         * Returns the master poller, or null if there is no master poller.
+         */
+        Poller masterPoller() {
+            return masterPoller;
+        }
+
+        /**
          * Returns the read poller for the given file descriptor.
          */
         Poller readPoller(int fdVal) {
@@ -359,6 +394,21 @@ abstract class Poller {
             int index = provider.fdValToIndex(fdVal, writePollers.length);
             return writePollers[index];
         }
+
+        /**
+         * Return the list of read pollers.
+         */
+        List<Poller> readPollers() {
+            return List.of(readPollers);
+        }
+
+        /**
+         * Return the list of write pollers.
+         */
+        List<Poller> writePollers() {
+            return List.of(writePollers);
+        }
+
 
         /**
          * Reads the given property name to get the poller count. If the property is

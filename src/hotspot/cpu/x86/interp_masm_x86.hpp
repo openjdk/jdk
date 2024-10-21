@@ -63,6 +63,11 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   void load_earlyret_value(TosState state);
 
+  void call_VM_preemptable(Register oop_result,
+                           address entry_point,
+                           Register arg_1);
+  void restore_after_resume(bool is_native);
+
   // Interpreter-specific registers
   void save_bcp() {
     movptr(Address(rbp, frame::interpreter_frame_bcp_offset * wordSize), _bcp_register);

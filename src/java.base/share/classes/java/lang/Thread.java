@@ -416,6 +416,12 @@ public class Thread implements Runnable {
     @IntrinsicCandidate
     native void setCurrentThread(Thread thread);
 
+    /**
+     * Sets the current thread's lock ID.
+     */
+    @IntrinsicCandidate
+    static native void setCurrentLockId(long tid);
+
     // ScopedValue support:
 
     @IntrinsicCandidate
@@ -722,10 +728,11 @@ public class Thread implements Runnable {
         }
 
         if (attached && VM.initLevel() < 1) {
-            this.tid = 1;  // primordial thread
+            this.tid = 3;  // primordial thread
         } else {
             this.tid = ThreadIdentifiers.next();
         }
+
         this.name = (name != null) ? name : genThreadName();
 
         if (acc != null) {

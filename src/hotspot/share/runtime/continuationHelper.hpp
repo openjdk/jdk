@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +58,7 @@ public:
   class InterpretedFrame;
   class NonInterpretedUnknownFrame;
   class CompiledFrame;
+  class NativeFrame;
   class StubFrame;
 };
 
@@ -65,6 +66,7 @@ class ContinuationHelper::Frame : public AllStatic {
 public:
   static const bool interpreted = false;
   static const bool stub = false;
+  static const bool native = false;
 
   static inline intptr_t** callee_link_address(const frame& f);
   static Method* frame_method(const frame& f);
@@ -133,11 +135,25 @@ public:
 #endif
 };
 
+class ContinuationHelper::NativeFrame : public ContinuationHelper::NonInterpretedFrame {
+public:
+  static const bool native = true;
+
+  static bool is_instance(const frame& f);
+
+#ifdef ASSERT
+  static bool is_owning_locks(JavaThread* current, const frame& f);
+#endif
+
+  static int stack_argsize(const frame& f) { return 0; }
+};
+
 class ContinuationHelper::StubFrame : public ContinuationHelper::NonInterpretedFrame {
 public:
   static const bool stub = true;
 
   static bool is_instance(const frame& f);
+  static int stack_argsize(const frame& f) { return 0; }
 };
 
 #endif // SHARE_VM_RUNTIME_CONTINUATIONHELPER_HPP

@@ -51,6 +51,7 @@ import java.util.Objects;
 import java.util.function.Predicate;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.locks.LockSupport;
+import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.JavaUtilConcurrentFJPAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.Unsafe;
@@ -2632,7 +2633,7 @@ public class ForkJoinPool extends AbstractExecutorService {
 
     private void poolSubmit(boolean signalIfEmpty, ForkJoinTask<?> task) {
         Thread t; ForkJoinWorkerThread wt; WorkQueue q; boolean internal;
-        if (((t = Thread.currentThread()) instanceof ForkJoinWorkerThread) &&
+        if (((t = JLA.currentCarrierThread()) instanceof ForkJoinWorkerThread) &&
             (wt = (ForkJoinWorkerThread)t).pool == this) {
             internal = true;
             q = wt.workQueue;
@@ -2643,6 +2644,7 @@ public class ForkJoinPool extends AbstractExecutorService {
         }
         q.push(task, signalIfEmpty ? this : null, internal);
     }
+    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
 
     /**
      * Returns queue for an external submission, bypassing call to
