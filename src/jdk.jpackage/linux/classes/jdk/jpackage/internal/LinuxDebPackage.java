@@ -25,6 +25,7 @@
 package jdk.jpackage.internal;
 
 import java.nio.file.Path;
+import java.util.Optional;
 
 interface LinuxDebPackage extends LinuxPackage {
 
@@ -53,7 +54,8 @@ interface LinuxDebPackage extends LinuxPackage {
 
         public Impl(LinuxPackage target, String maintainerEmail) {
             super(target);
-            this.maintainerEmail = maintainerEmail;
+            this.maintainerEmail = Optional.ofNullable(maintainerEmail).orElseGet(
+                    LinuxDebPackage.Defaults.INSTANCE::maintainerEmail);
         }
 
         @Override
@@ -65,7 +67,6 @@ interface LinuxDebPackage extends LinuxPackage {
     }
 
     static record Defaults(String maintainerEmail) {
+        static final Defaults INSTANCE = new Defaults("Unknown");
     }
-
-    static final Defaults DEFAULTS = new Defaults("Unknown");
 }

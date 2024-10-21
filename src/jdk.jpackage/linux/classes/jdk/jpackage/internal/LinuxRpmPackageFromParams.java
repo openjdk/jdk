@@ -25,6 +25,7 @@
 package jdk.jpackage.internal;
 
 import java.util.Map;
+import static jdk.jpackage.internal.BundlerParamInfo.createStringBundlerParam;
 import jdk.jpackage.internal.LinuxRpmPackage.Impl;
 import static jdk.jpackage.internal.Package.StandardPackageType.LinuxRpm;
 import static jdk.jpackage.internal.PackageFromParams.createBundlerParam;
@@ -42,10 +43,6 @@ final class LinuxRpmPackageFromParams {
     static final BundlerParamInfo<LinuxRpmPackage> PACKAGE = createBundlerParam(
             LinuxRpmPackageFromParams::create);
 
-    private static final BundlerParamInfo<String> LICENSE_TYPE = new BundlerParamInfo<>(
-            Arguments.CLIOptions.LINUX_RPM_LICENSE_TYPE.getId(),
-            String.class,
-            params -> I18N.getString("param.license-type.default"),
-            (s, p) -> s);
-
+    private static final BundlerParamInfo<String> LICENSE_TYPE = createStringBundlerParam(
+            Arguments.CLIOptions.LINUX_RPM_LICENSE_TYPE.getId());
 }
