@@ -144,7 +144,7 @@ public abstract class Reader implements Readable, Closeable {
      * Returns a {@code Reader} that reads characters from a
      * {@code CharSequence}.
      *
-     * The reader is initially opened and reading starts at the
+     * <p> The reader is initially open and reading starts at the
      * first character in the sequence.
      *
      * <p> The resulting reader is not safe for use by multiple
