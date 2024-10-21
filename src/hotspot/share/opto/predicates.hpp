@@ -82,7 +82,7 @@ class TemplateAssertionPredicate;
  *                        actually dead. Assertion Predicates come to the rescue to fold such seemingly dead sub loops
  *                        away to avoid a broken graph. Assertion Predicates are left in the graph as a sanity checks in
  *                        debug builds (they must never fail at runtime) while they are being removed in product builds.
- *                        We use special OpaqueTemplateAssertionPredicateNode nodes to block some optimizations and replace 
+ *                        We use special OpaqueTemplateAssertionPredicateNode nodes to block some optimizations and replace
  *                        the Assertion Predicates later in product builds.
  *
  *                        There are two kinds of Assertion Predicates:
@@ -431,7 +431,7 @@ class TransformStrategyForOpaqueLoopNodes : public StackObj {
   virtual Node* transform_opaque_stride(OpaqueLoopStrideNode* opaque_stride) const = 0;
 };
 
-// A Template Assertion Predicate represents the OpaqueTemplateAssertionPredicateNode for the initial value or the last 
+// A Template Assertion Predicate represents the OpaqueTemplateAssertionPredicateNode for the initial value or the last
 // value of a Template Assertion Predicate and all the nodes up to and including the OpaqueLoop* nodes.
 class TemplateAssertionExpression : public StackObj {
   OpaqueTemplateAssertionPredicateNode* _opaque_node;
@@ -555,9 +555,9 @@ class TemplateAssertionPredicateCreator : public StackObj {
   PhaseIdealLoop* const _phase;
 
   OpaqueLoopInitNode* create_opaque_init(Node* new_control);
-  OpaqueTemplateAssertionPredicateNode* create_for_init_value(Node* new_control, OpaqueLoopInitNode* opaque_init, 
+  OpaqueTemplateAssertionPredicateNode* create_for_init_value(Node* new_control, OpaqueLoopInitNode* opaque_init,
                                                               bool& does_overflow) const;
-  OpaqueTemplateAssertionPredicateNode* create_for_last_value(Node* new_control, OpaqueLoopInitNode* opaque_init, 
+  OpaqueTemplateAssertionPredicateNode* create_for_last_value(Node* new_control, OpaqueLoopInitNode* opaque_init,
                                                               bool& does_overflow) const;
   Node* create_last_value(Node* new_control, OpaqueLoopInitNode* opaque_init) const;
   IfTrueNode* create_if_node_with_uncommon_trap(OpaqueTemplateAssertionPredicateNode* template_assertion_predicate_expression,
