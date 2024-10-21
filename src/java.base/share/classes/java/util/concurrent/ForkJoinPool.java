@@ -1612,6 +1612,12 @@ public class ForkJoinPool extends AbstractExecutorService {
      */
     static volatile RuntimePermission modifyThreadPermission;
 
+    /**
+     * Cached for faster type tests.
+     */
+    static final Class<?> interruptibleTaskClass;
+
+
     // fields declared in order of their likely layout on most VMs
     volatile CountDownLatch termination; // lazily constructed
     final Predicate<? super ForkJoinPool> saturate;
@@ -1966,7 +1972,7 @@ public class ForkJoinPool extends AbstractExecutorService {
         if (w != null) {
             int phase = w.phase, r = w.stackPred;     // seed from registerWorker
             int cfg = w.config, nsteals = 0;
-            for (boolean taken = false;;) {
+            for (boolean propagated = false;;) {
                 WorkQueue[] qs;
                 r ^= r << 13; r ^= r >>> 17; r ^= r << 5; // xorshift
                 if ((runState & STOP) != 0L || (qs = queues) == null)
@@ -1985,7 +1991,7 @@ public class ForkJoinPool extends AbstractExecutorService {
                                 ;
                             else if (t == null) {
                                 if (rescan)
-                                    break;                // will revisit
+                                    break scan;           // end of run
                                 if (a[b & m] == null &&
                                     a[(b + 1) & m] == null &&
                                     a[(b + 2) & m] == null)
@@ -1999,22 +2005,24 @@ public class ForkJoinPool extends AbstractExecutorService {
                                 q.base = b + 1;
                                 w.nsteals = ++nsteals;
                                 w.source = j;             // volatile
-                                boolean propagated = taken;
-                                rescan = taken = true;
+                                rescan = true;
                                 if ((!propagated ||
-                                     ((j & 1) == 0) && t instanceof
-                                     ForkJoinTask.InterruptibleTask) &&
-                                    a[(b + 1) & m] != null)
-                                    signalWork();         // propagate
+                                     ((j & 1) == 0 &&
+                                      t.getClass().getSuperclass() ==
+                                      interruptibleTaskClass)) &&
+                                    a[q.base & m] != null) {
+                                    propagated = true;
+                                    signalWork();
+                                }
                                 w.topLevelExec(t, cfg);
                             }
                         }
                     }
                 }
                 if (!rescan) {
-                    taken = false;
                     if (((phase = deactivate(w, phase)) & IDLE) != 0)
                         break;
+                    propagated = false;
                 }
             }
         }
@@ -2042,14 +2050,14 @@ public class ForkJoinPool extends AbstractExecutorService {
             (qs = queues) == null || (n = qs.length) <= 0)
             return IDLE;                      // terminating
         for (int k = Math.max(n << 1, SPIN_WAITS), checks = 2;;) {
-            WorkQueue q; int j;               // interleave spins and rechecks
+            WorkQueue q;                      // interleave spins and rechecks
             if (w.phase == activePhase)
                 return activePhase;
             if (--k < 0)
                 return awaitWork(w, p);       // block, drop, or exit
             Thread.onSpinWait();
-            if (checks != 0 && ((j = k & (n - 1)) & 1) == 0 &&
-                (q = qs[j]) != null && q.top - q.base > 0 && --checks == 0)
+            if (checks != 0 && (k & 1) == 0 && (q = qs[k & (n - 1)]) != null &&
+                q.top - q.base > 0 && --checks == 0)
                 reactivate(false);            // help signal
         }
     }
@@ -4008,6 +4016,7 @@ public class ForkJoinPool extends AbstractExecutorService {
         if ((scale & (scale - 1)) != 0)
             throw new Error("array index scale not a power of two");
 
+        interruptibleTaskClass = ForkJoinTask.InterruptibleTask.class;
         defaultForkJoinWorkerThreadFactory =
             new DefaultForkJoinWorkerThreadFactory();
         @SuppressWarnings("removal")
