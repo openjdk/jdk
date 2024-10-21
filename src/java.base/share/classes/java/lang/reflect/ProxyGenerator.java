@@ -30,6 +30,7 @@ import java.lang.classfile.*;
 import java.lang.classfile.attribute.ExceptionsAttribute;
 import java.lang.classfile.constantpool.*;
 import java.lang.constant.ClassDesc;
+import java.lang.constant.DynamicConstantDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -42,6 +43,7 @@ import java.util.Objects;
 import jdk.internal.constant.ConstantUtils;
 import jdk.internal.constant.MethodTypeDescImpl;
 import jdk.internal.constant.ReferenceClassDescImpl;
+import jdk.internal.reflect.ReflectionFactory;
 import sun.security.action.GetBooleanAction;
 
 import static java.lang.classfile.ClassFile.*;
@@ -89,9 +91,15 @@ final class ProxyGenerator {
             MTD_MethodHandles$Lookup = MethodTypeDescImpl.ofValidated(CD_MethodHandles_Lookup),
             MTD_MethodHandles$Lookup_MethodHandles$Lookup = MethodTypeDescImpl.ofValidated(CD_MethodHandles_Lookup, CD_MethodHandles_Lookup),
             MTD_Object_Object_Method_ObjectArray = MethodTypeDescImpl.ofValidated(CD_Object, CD_Object, CD_Method, CD_Object_array),
-            MTD_String = MethodTypeDescImpl.ofValidated(CD_String);
+            MTD_String = MethodTypeDescImpl.ofValidated(CD_String),
+            MTD_Object_int = MethodTypeDescImpl.ofValidated(CD_Object, CD_int);
 
     private static final String NAME_LOOKUP_ACCESSOR = "proxyClassLookup";
+
+    private static final boolean LEGACY = ReflectionFactory.usesLegacyProxy();
+
+    private static final DynamicConstantDesc<?> METHOD_LIST_CLASS_DATA = LEGACY ? null :
+            DynamicConstantDesc.ofNamed(BSM_CLASS_DATA, DEFAULT_NAME, CD_List);
 
     private static final Class<?>[] EMPTY_CLASS_ARRAY = new Class<?>[0];
 
@@ -138,7 +146,6 @@ final class ProxyGenerator {
     private final FieldRefEntry handlerField;
     private final InterfaceMethodRefEntry invocationHandlerInvoke;
     private final MethodRefEntry uteInit, classGetMethod, classForName, throwableGetMessage;
-
 
     /**
      * ClassEntry for this proxy class
@@ -197,6 +204,8 @@ final class ProxyGenerator {
         this.throwableGetMessage = cp.methodRefEntry(throwable, cp.nameAndTypeEntry("getMessage", MTD_String));
     }
 
+    record GeneratedClass(byte[] bytecode, List<Method> classData) {}
+
     /**
      * Generate a proxy class given a name and a list of proxy interfaces.
      *
@@ -205,13 +214,13 @@ final class ProxyGenerator {
      * @param accessFlags access flags of the proxy class
      */
     @SuppressWarnings("removal")
-    static byte[] generateProxyClass(ClassLoader loader,
+    static GeneratedClass generateProxyClass(ClassLoader loader,
                                      final String name,
                                      List<Class<?>> interfaces,
                                      int accessFlags) {
         Objects.requireNonNull(interfaces);
         ProxyGenerator gen = new ProxyGenerator(name, interfaces, accessFlags);
-        final byte[] classFile = gen.generateClassFile();
+        var classFile = gen.generateClassFile();
 
         if (SAVE_GENERATED_FILES) {
             java.security.AccessController.doPrivileged(
@@ -227,7 +236,7 @@ final class ProxyGenerator {
                                 } else {
                                     path = Path.of(name + ".class");
                                 }
-                                Files.write(path, classFile);
+                                Files.write(path, classFile.bytecode);
                                 return null;
                             } catch (IOException e) {
                                 throw new InternalError(
@@ -445,7 +454,7 @@ final class ProxyGenerator {
      * Generate a class file for the proxy class.  This method drives the
      * class file generation process.
      */
-    private byte[] generateClassFile() {
+    private GeneratedClass generateClassFile() {
         /*
          * Add proxy methods for the hashCode, equals,
          * and toString methods of java.lang.Object.  This is done before
@@ -476,25 +485,29 @@ final class ProxyGenerator {
             checkReturnTypes(sigmethods);
         }
 
-        return CF_CONTEXT.build(thisClassCE, cp, clb -> {
+        List<Method> methods = new ArrayList<>();
+        var bytes = CF_CONTEXT.build(thisClassCE, cp, clb -> {
             clb.withSuperclass(proxyCE);
             clb.withFlags(accessFlags);
             clb.withInterfaces(toClassEntries(cp, interfaces));
             generateConstructor(clb);
 
+            methods.clear();
             for (List<ProxyMethod> sigmethods : proxyMethods.values()) {
                 for (ProxyMethod pm : sigmethods) {
                     // add static field for the Method object
                     clb.withField(pm.methodFieldName, CD_Method, ACC_PRIVATE | ACC_STATIC | ACC_FINAL);
 
                     // Generate code for proxy method
-                    pm.generateMethod(clb);
+                    pm.generateMethod(clb, methods);
                 }
             }
 
-            generateStaticInitializer(clb);
+            if (LEGACY)
+                generateStaticInitializer(clb);
             generateLookupAccessor(clb);
         });
+        return new GeneratedClass(bytes, List.copyOf(methods));
     }
 
     /**
@@ -571,6 +584,7 @@ final class ProxyGenerator {
      * Method objects directly..
      */
     private void generateStaticInitializer(ClassBuilder clb) {
+        assert LEGACY;
         clb.withMethodBody(CLASS_INIT_NAME, MTD_void, ACC_STATIC, cob -> {
             // Put ClassLoader at local variable index 0, used by
             // Class.forName(String, boolean, ClassLoader) calls
@@ -671,8 +685,8 @@ final class ProxyGenerator {
             this.exceptionTypes = exceptionTypes;
             this.fromClass = fromClass;
             this.methodFieldName = methodFieldName;
-            this.methodField = cp.fieldRefEntry(thisClassCE,
-                cp.nameAndTypeEntry(methodFieldName, CD_Method));
+            this.methodField = LEGACY ? cp.fieldRefEntry(thisClassCE,
+                cp.nameAndTypeEntry(methodFieldName, CD_Method)) : null ;
         }
 
         private Class<?>[] parameterTypes() {
@@ -692,18 +706,28 @@ final class ProxyGenerator {
         /**
          * Generate this method, including the code and exception table entry.
          */
-        private void generateMethod(ClassBuilder clb) {
+        private void generateMethod(ClassBuilder clb, List<Method> collector) {
             var desc = methodTypeDesc(returnType, parameterTypes());
             int accessFlags = (method.isVarArgs()) ? ACC_VARARGS | ACC_PUBLIC | ACC_FINAL
                                                    : ACC_PUBLIC | ACC_FINAL;
+            // Set up outside of code building to avoid wide jump side effects
+            int index = collector.size();
+            collector.addLast(method);
             clb.withMethod(method.getName(), desc, accessFlags, mb ->
                   mb.with(ExceptionsAttribute.of(toClassEntries(cp, List.of(exceptionTypes))))
                     .withCode(cob -> {
                         var catchList = computeUniqueCatchList(exceptionTypes);
                         cob.aload(cob.receiverSlot())
                            .getfield(handlerField)
-                           .aload(cob.receiverSlot())
-                           .getstatic(methodField);
+                           .aload(cob.receiverSlot());
+                        if (LEGACY) {
+                            cob.getstatic(methodField);
+                        } else {
+                            cob.ldc(METHOD_LIST_CLASS_DATA)
+                               .loadConstant(index)
+                               .invokeinterface(CD_List, "get", MTD_Object_int)
+                               .checkcast(CD_Method);
+                        }
                         Class<?>[] parameterTypes = parameterTypes();
                         if (parameterTypes.length > 0) {
                             // Create an array and fill with the parameters converting primitives to wrappers
@@ -790,6 +814,7 @@ final class ProxyGenerator {
          * cannot pass {@code null} ClassLoader to forName.
          */
         private void codeFieldInitialization(CodeBuilder cob) {
+            assert LEGACY;
             var cp = cob.constantPool();
             codeClassForName(cob, fromClass);
 

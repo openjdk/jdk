@@ -272,7 +272,7 @@ Java_java_lang_ClassLoader_defineClass0(JNIEnv *env,
         utfName = NULL;
     }
 
-    result = JVM_LookupDefineClass(env, lookup, utfName, body, length, pd, initialize, flags, classData);
+    result = JVM_LookupDefineClass(env, loader, lookup, utfName, body, length, pd, initialize, flags, classData);
 
     if (utfName && utfName != buf)
         free(utfName);

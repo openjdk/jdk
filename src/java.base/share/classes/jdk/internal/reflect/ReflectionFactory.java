@@ -511,6 +511,10 @@ public class ReflectionFactory {
         return config().useOldSerializableConstructor;
     }
 
+    public static boolean usesLegacyProxy() {
+        return !config().useHiddenProxy;
+    }
+
     private static boolean disableSerialConstructorChecks() {
         return config().disableSerialConstructorChecks;
     }
@@ -528,6 +532,7 @@ public class ReflectionFactory {
 
     private static final Config DEFAULT_CONFIG = new Config(false, // useNativeAccessorOnly
                                                             false,  // useOldSerializeableConstructor
+                                                            false,  // useHiddenProxy
                                                             false); // disableSerialConstructorChecks
 
     /**
@@ -543,6 +548,7 @@ public class ReflectionFactory {
      */
     private record Config(boolean useNativeAccessorOnly,
                           boolean useOldSerializableConstructor,
+                          boolean useHiddenProxy,
                           boolean disableSerialConstructorChecks) {
     }
 
@@ -568,10 +574,15 @@ public class ReflectionFactory {
             "true".equals(props.getProperty("jdk.reflect.useNativeAccessorOnly"));
         boolean useOldSerializableConstructor =
             "true".equals(props.getProperty("jdk.reflect.useOldSerializableConstructor"));
+        boolean useHiddenProxy =
+            "true".equals(props.getProperty("jdk.reflect.useHiddenProxy"));
         boolean disableSerialConstructorChecks =
             "true".equals(props.getProperty("jdk.disableSerialConstructorChecks"));
 
-        return new Config(useNativeAccessorOnly, useOldSerializableConstructor, disableSerialConstructorChecks);
+        if (useHiddenProxy && useOldSerializableConstructor)
+            throw new InternalError("Hidden Proxy requires MethodHandle serial constructor");
+
+        return new Config(useNativeAccessorOnly, useOldSerializableConstructor, useHiddenProxy, disableSerialConstructorChecks);
     }
 
     /**

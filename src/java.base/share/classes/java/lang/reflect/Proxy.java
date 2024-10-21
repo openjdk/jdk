@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,7 @@ import jdk.internal.misc.VM;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
 import jdk.internal.loader.ClassLoaderValue;
+import jdk.internal.reflect.ReflectionFactory;
 import jdk.internal.vm.annotation.Stable;
 import sun.reflect.misc.ReflectUtil;
 import sun.security.action.GetPropertyAction;
@@ -539,13 +540,24 @@ public class Proxy implements java.io.Serializable {
             /*
              * Generate the specified proxy class.
              */
-            byte[] proxyClassFile = ProxyGenerator.generateProxyClass(loader, proxyName, interfaces,
-                                                                      context.accessFlags() | Modifier.FINAL);
+            int access = context.accessFlags() | Modifier.FINAL;
+
+            Class<?> pc;
+
+            var cd = ProxyGenerator.generateProxyClass(loader, proxyName, interfaces, access);
             try {
-                Class<?> pc = JLA.defineClass(loader, proxyName, proxyClassFile,
-                                              null, "__dynamic_proxy__");
-                reverseProxyCache.sub(pc).putIfAbsent(loader, Boolean.TRUE);
-                return pc;
+                if (ReflectionFactory.usesLegacyProxy()) {
+                    pc = JLA.defineClass(loader, proxyName, cd.bytecode(), null, "__dynamic_proxy__");
+                } else {
+                    pc = JLA.defineClass(loader,
+                            Proxy.class, // NestHost, unused
+                            proxyName, // binary name
+                            cd.bytecode(), // bytes
+                            null, // protection domain
+                            false, // initialize
+                            0x00000002, // flags, HIDDEN
+                            cd.classData()); // classData
+                }
             } catch (ClassFormatError e) {
                 /*
                  * A ClassFormatError here means that (barring bugs in the
@@ -556,6 +568,9 @@ public class Proxy implements java.io.Serializable {
                  */
                 throw new IllegalArgumentException(e.toString());
             }
+
+            reverseProxyCache.sub(pc).putIfAbsent(loader, Boolean.TRUE);
+            return pc;
         }
 
         /**
