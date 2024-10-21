@@ -36,6 +36,4 @@ public interface Cluster extends Comparable<Cluster> {
     void setBounds(Rectangle r);
 
     Set<? extends Cluster> getSuccessors();
-
-    Dimension getNodeOffset();
 }
