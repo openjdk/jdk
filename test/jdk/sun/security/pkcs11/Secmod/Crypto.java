@@ -47,12 +47,6 @@ public class Crypto extends SecmodTest {
         String configName = BASE + SEP + "nsscrypto.cfg";
         Provider p = getSunPKCS11(configName);
 
-        if (args.length > 1 && "sm".equals(args[0])) {
-            System.setProperty("java.security.policy",
-                    BASE + File.separator + args[1]);
-            System.setSecurityManager(new SecurityManager());
-        }
-
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA", p);
         KeyPair kp = kpg.generateKeyPair();
 

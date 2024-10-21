@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -220,6 +220,9 @@ public class JMXConnectorFactory {
      *
      * @exception IOException if the connector client or the
      * connection cannot be made because of a communication problem.
+     *
+     * @exception SecurityException if the connection cannot be made
+     * for security reasons.
      */
     public static JMXConnector connect(JMXServiceURL serviceURL)
             throws IOException {
@@ -254,6 +257,9 @@ public class JMXConnectorFactory {
      *
      * @exception IOException if the connector client or the
      * connection cannot be made because of a communication problem.
+     *
+     * @exception SecurityException if the connection cannot be made
+     * for security reasons.
      */
     public static JMXConnector connect(JMXServiceURL serviceURL,
                                        Map<String,?> environment)

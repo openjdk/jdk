@@ -42,11 +42,6 @@ import java.util.Collections;
 public class LoadKeystore extends SecmodTest {
 
     public static void main(String[] args) throws Exception {
-        if (args.length > 1 && "sm".equals(args[0])) {
-            System.setProperty("java.security.policy",
-                    BASE + File.separator + args[1]);
-        }
-
         if (!initSecmod()) {
             return;
         }
@@ -57,10 +52,6 @@ public class LoadKeystore extends SecmodTest {
         System.out.println("Add provider " + p);
         System.out.println();
         Security.addProvider(p);
-
-        if (args.length > 1 && "sm".equals(args[0])) {
-            System.setSecurityManager(new SecurityManager());
-        }
 
         try {
             System.out.println("Load keystore with wrong type");

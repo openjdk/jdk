@@ -46,11 +46,6 @@ import java.util.TreeSet;
 public class GetPrivateKey extends SecmodTest {
 
     public static void main(String[] args) throws Exception {
-        if (args.length > 1 && "sm".equals(args[0])) {
-            System.setProperty("java.security.policy",
-                    BASE + File.separator + args[1]);
-        }
-
         if (initSecmod() == false) {
             return;
         }
@@ -60,10 +55,6 @@ public class GetPrivateKey extends SecmodTest {
 
         System.out.println(p);
         Security.addProvider(p);
-
-        if (args.length > 1 && "sm".equals(args[0])) {
-            System.setSecurityManager(new SecurityManager());
-        }
 
         KeyStore ks = KeyStore.getInstance(PKCS11, p);
         ks.load(null, password);

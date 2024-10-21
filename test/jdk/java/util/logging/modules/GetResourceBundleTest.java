@@ -84,7 +84,7 @@ public class GetResourceBundleTest {
     }
 
     @Test
-    public void runWithoutSecurityManager() throws Exception {
+    public void run() throws Exception {
         int exitValue = executeTestJava(
                 "-cp", PKG_DEST_DIR.toString(),
                 "--module-path", MOD_DEST_DIR.toString(),

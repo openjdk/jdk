@@ -73,8 +73,3 @@ tools/javap/output/RepeatingTypeAnnotations.java                                
 # jdeps
 
 ###########################################################################
-#
-# JEP 486: remaining SM related tests that are failing
-
-# :tier1
-tools/javac/processing/6348193/T6348193.java 8338411 generic-all
