@@ -2160,7 +2160,6 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             // for special cases that could run faster.
 
             int preferredScale = this.scale/2;
-            BigDecimal zeroWithFinalPreferredScale = valueOf(0L, preferredScale);
 
             BigDecimal result;
             if (mc.roundingMode == RoundingMode.UNNECESSARY || mc.precision == 0) { // Exact result requested
