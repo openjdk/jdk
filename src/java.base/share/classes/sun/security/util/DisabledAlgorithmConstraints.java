@@ -42,21 +42,21 @@ import java.security.spec.NamedParameterSpec;
 import java.security.spec.PSSParameterSpec;
 import java.time.DateTimeException;
 import java.time.Instant;
-import java.time.ZonedDateTime;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.Collection;
 import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.regex.Pattern;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Algorithm constraints for disabled algorithms property
@@ -150,12 +150,13 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
     }
 
     /*
-     * This only checks if the algorithm has been completely disabled.  If
-     * there are keysize or other limit, this method allow the algorithm.
+     * This only checks if the algorithm of cipher suite has been completely
+     * disabled.  If there is keysize or other limit, this method allow the algorithm.
      */
     @Override
     public final boolean permits(Set<CryptoPrimitive> primitives,
             String algorithm, AlgorithmParameters parameters) {
+
         if (primitives == null || primitives.isEmpty()) {
             throw new IllegalArgumentException("The primitives cannot be null" +
                     " or empty.");
@@ -165,6 +166,10 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
         }
 
         if (!cachedCheckAlgorithm(algorithm)) {
+            return false;
+        }
+
+        if (!algorithmConstraints.checkTLSCipherConstraint(algorithm)) {
             return false;
         }
 
@@ -322,7 +327,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
      * will be thrown on a failure to better identify why the operation was
      * disallowed.
      */
-    private static class Constraints {
+    private class Constraints {
         private final Map<String, List<Constraint>> constraintsMap = new HashMap<>();
 
         private static class Holder {
@@ -374,11 +379,35 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                 // Allow only one denyAfter entry per constraint entry
                 boolean denyAfterLimit = false;
 
-                for (String entry : policy.split("&")) {
-                    entry = entry.trim();
+                for (String rawEntry : policy.split("&")) {
+                    // Do not link TLSCipherConstraint with other constraints.
+                    if (lastConstraint instanceof TLSCipherConstraint) {
+                        throw new IllegalArgumentException("TLSCipherConstraint "
+                                + "should not be linked with other constraints. "
+                                + "Constraint: " + constraintEntry);
+                    }
 
+                    final String entry = rawEntry.trim();
                     Matcher matcher;
-                    if (entry.startsWith("keySize")) {
+
+                    TLSCipherSegment segment = Arrays.stream(TLSCipherSegment.values())
+                            .filter(v -> v.getName().equalsIgnoreCase(entry))
+                            .findFirst()
+                            .orElse(null);
+
+                    if (segment != null) {
+                        if (debug != null) {
+                            debug.println("Constraints set to TLSCipherConstraint: "
+                                    + segment.name());
+                        }
+                        if (lastConstraint != null) {
+                            throw new IllegalArgumentException("TLSCipherConstraint "
+                                    + "should not be linked with other constraints. "
+                                    + "Constraint: " + constraintEntry);
+                        }
+                        c = new TLSCipherConstraint(algorithm, segment);
+
+                    } else if (entry.startsWith("keySize")) {
                         if (debug != null) {
                             debug.println("Constraints set to keySize: " +
                                     entry);
@@ -524,6 +553,34 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                 }
             }
         }
+
+        // Special case of TLSCipherConstraint
+        private boolean checkTLSCipherConstraint(String algorithm) {
+            List<Constraint> constraintList = new ArrayList<>();
+
+            // Check if algorithm's name contains the constraint's key,
+            // not an exact match like for other constraints.
+            constraintsMap.forEach((key, list) -> {
+                for (Constraint constraint : list) {
+                    // Match "NULL" TLSCipherConstraint constraint against any algorithm,
+                    // otherwise match any algorithm that contains the key.
+                    if ((key.equalsIgnoreCase("NULL") ||
+                            algorithm.toUpperCase(Locale.ENGLISH).contains(key)) &&
+                            constraint instanceof TLSCipherConstraint) {
+
+                        constraintList.add(constraint);
+                    }
+                }
+            });
+
+            for (Constraint constraint : constraintList) {
+                if (!constraint.permits(algorithm)) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
     }
 
     /**
@@ -592,6 +649,16 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
          *         'false' otherwise.
          */
         public boolean permits(AlgorithmParameters parameters) {
+            return true;
+        }
+
+        /**
+         * Check if an algorithm constraint permits the given algorithm.
+         *
+         * @param algorithm Algorithm or Cipher Suite
+         * @return 'true' if constraint is allowed, 'false' if disallowed.
+         */
+        public boolean permits(String algorithm) {
             return true;
         }
 
@@ -950,6 +1017,62 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                 // please don't disable such keys.
 
             return true;
+        }
+    }
+
+    enum TLSCipherSegment {
+        KX("kx"),             // Key Exchange
+        AUTHN("authn");       // Authentication
+
+        private final String name;
+
+        TLSCipherSegment(String name) {
+            this.name = name;
+        }
+
+        String getName() {
+            return name;
+        }
+    }
+
+    private class TLSCipherConstraint extends Constraint {
+
+        private final TLSCipherSegment segment;
+
+        TLSCipherConstraint(String algorithm, TLSCipherSegment segment) {
+            this.algorithm = algorithm;
+            this.segment = segment;
+        }
+
+        @Override
+        public boolean permits(String algo) {
+            // Check if input is a cipher suite, in such case we disallow
+            // cipher suite if it has a constrained algorithm used either for
+            // key exchange or authentication.
+            String[] parts = decomposer.decomposeCipherSuiteKeyExchange(algo);
+
+            if (parts != null) {
+                String inputAlgorithm = null;
+
+                if (TLSCipherSegment.KX.equals(segment)) {
+                    inputAlgorithm = parts[0];
+                }
+
+                if (TLSCipherSegment.AUTHN.equals(segment)) {
+                    inputAlgorithm = parts[1];
+                }
+
+                if (this.algorithm.equalsIgnoreCase(inputAlgorithm)) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        @Override
+        public void permits(ConstraintsParameters cp) throws CertPathValidatorException {
+            // Do nothing here, TLSCipherConstraint doesn't apply to certificates.
         }
     }
 

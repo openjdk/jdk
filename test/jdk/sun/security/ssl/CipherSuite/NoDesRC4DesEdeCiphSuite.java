@@ -132,7 +132,7 @@ public class NoDesRC4DesEdeCiphSuite {
      *
      * @return true if the test passed (No disabled suites), false otherwise
      */
-    private static boolean testDefaultCase(List<Integer> disabledSuiteIds)
+    protected static boolean testDefaultCase(List<Integer> disabledSuiteIds)
             throws Exception {
         System.err.println("\nTest: Default SSLEngine suite set");
         SSLEngine ssle = makeEngine();
@@ -167,7 +167,7 @@ public class NoDesRC4DesEdeCiphSuite {
      * @return true if the engine throws SSLHandshakeException during client
      *      hello creation, false otherwise.
      */
-    private static boolean testEngOnlyDisabled(String[] disabledSuiteNames)
+    protected static boolean testEngOnlyDisabled(String[] disabledSuiteNames)
             throws Exception {
         System.err.println(
                 "\nTest: SSLEngine configured with only disabled suites");
@@ -197,14 +197,14 @@ public class NoDesRC4DesEdeCiphSuite {
      * set of cipher suites.  Make sure none of the disabled suites show up
      * in the client hello even though they were explicitly added.
      *
-     * @param disabledSuiteNames an array of cipher suite names that
+     * @param disabledNames an array of cipher suite names that
      *      should be disabled cipher suites.
      * @param disabledIds the {@code List} of disabled cipher suite IDs
      *      to be checked for.
      *
      * @return true if the test passed (No disabled suites), false otherwise
      */
-    private static boolean testEngAddDisabled(String[] disabledNames,
+    protected static boolean testEngAddDisabled(String[] disabledNames,
             List<Integer> disabledIds) throws Exception {
         System.err.println("\nTest: SSLEngine with disabled suites added");
         SSLEngine ssle = makeEngine();

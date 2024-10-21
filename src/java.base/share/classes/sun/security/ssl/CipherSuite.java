@@ -1082,44 +1082,48 @@ enum CipherSuite {
      * An SSL/TLS key exchange algorithm.
      */
     enum KeyExchange {
-        K_NULL          ("NULL",           false, true,   NAMED_GROUP_NONE),
-        K_RSA           ("RSA",            true,  false,  NAMED_GROUP_NONE),
-        K_RSA_EXPORT    ("RSA_EXPORT",     true,  false,  NAMED_GROUP_NONE),
-        K_DH_RSA        ("DH_RSA",         false, false,  NAMED_GROUP_NONE),
-        K_DH_DSS        ("DH_DSS",         false, false,  NAMED_GROUP_NONE),
-        K_DHE_DSS       ("DHE_DSS",        true,  false,  NAMED_GROUP_FFDHE),
-        K_DHE_DSS_EXPORT("DHE_DSS_EXPORT", true,  false,  NAMED_GROUP_NONE),
-        K_DHE_RSA       ("DHE_RSA",        true,  false,  NAMED_GROUP_FFDHE),
-        K_DHE_RSA_EXPORT("DHE_RSA_EXPORT", true,  false,  NAMED_GROUP_NONE),
-        K_DH_ANON       ("DH_anon",        true,  true,   NAMED_GROUP_FFDHE),
-        K_DH_ANON_EXPORT("DH_anon_EXPORT", true,  true,   NAMED_GROUP_NONE),
+        K_NULL("NULL", "NULL", "NULL", false, true, NAMED_GROUP_NONE),
+        K_RSA("RSA", "RSA", "RSA", true, false, NAMED_GROUP_NONE),
+        K_RSA_EXPORT("RSA_EXPORT", "RSA_EXPORT", "RSA_EXPORT", true, false, NAMED_GROUP_NONE),
+        K_DH_RSA("DH_RSA", "DH", "RSA", false, false, NAMED_GROUP_NONE),
+        K_DH_DSS("DH_DSS", "DH", "DSS", false, false, NAMED_GROUP_NONE),
+        K_DHE_DSS("DHE_DSS", "DHE", "DSS", true, false, NAMED_GROUP_FFDHE),
+        K_DHE_DSS_EXPORT("DHE_DSS_EXPORT", "DHE", "DSS_EXPORT", true, false, NAMED_GROUP_NONE),
+        K_DHE_RSA("DHE_RSA", "DHE", "RSA", true, false, NAMED_GROUP_FFDHE),
+        K_DHE_RSA_EXPORT("DHE_RSA_EXPORT", "DHE", "RSA_EXPORT", true, false, NAMED_GROUP_NONE),
+        K_DH_ANON("DH_anon", "DH_anon", "NULL", true, true, NAMED_GROUP_FFDHE),
+        K_DH_ANON_EXPORT("DH_anon_EXPORT", "DH_anon_EXPORT", "NULL", true, true, NAMED_GROUP_NONE),
 
         // These KeyExchanges can use either ECDHE/XDH, so we'll use a
         // varargs here.
-        K_ECDH_ECDSA    ("ECDH_ECDSA",     JsseJce.ALLOW_ECC,  false,
+        K_ECDH_ECDSA("ECDH_ECDSA", "ECDH", "ECDSA", JsseJce.ALLOW_ECC, false,
                 NAMED_GROUP_ECDHE, NAMED_GROUP_XDH),
-        K_ECDH_RSA      ("ECDH_RSA",       JsseJce.ALLOW_ECC,  false,
+        K_ECDH_RSA("ECDH_RSA", "ECDH", "RSA", JsseJce.ALLOW_ECC, false,
             NAMED_GROUP_ECDHE, NAMED_GROUP_XDH),
-        K_ECDHE_ECDSA   ("ECDHE_ECDSA",    JsseJce.ALLOW_ECC,  false,
+        K_ECDHE_ECDSA("ECDHE_ECDSA", "ECDHE", "ECDSA", JsseJce.ALLOW_ECC, false,
             NAMED_GROUP_ECDHE, NAMED_GROUP_XDH),
-        K_ECDHE_RSA     ("ECDHE_RSA",      JsseJce.ALLOW_ECC,  false,
+        K_ECDHE_RSA("ECDHE_RSA", "ECDHE", "RSA", JsseJce.ALLOW_ECC, false,
             NAMED_GROUP_ECDHE, NAMED_GROUP_XDH),
-        K_ECDH_ANON     ("ECDH_anon",      JsseJce.ALLOW_ECC,  true,
+        K_ECDH_ANON("ECDH_anon", "ECDH_anon", "NULL", JsseJce.ALLOW_ECC, true,
             NAMED_GROUP_ECDHE, NAMED_GROUP_XDH),
 
         // renegotiation protection request signaling cipher suite
-        K_SCSV          ("SCSV",           true,  true,   NAMED_GROUP_NONE);
+        K_SCSV("SCSV", "NULL", "NULL", true, true, NAMED_GROUP_NONE);
 
         // name of the key exchange algorithm, e.g. DHE_DSS
         final String name;
+        final String kx; // Key Exchange algorithm
+        final String authn; // Authentication algorithm
         final boolean allowed;
         final NamedGroupSpec[] groupTypes;
         private final boolean alwaysAvailable;
         private final boolean isAnonymous;
 
-        KeyExchange(String name, boolean allowed,
+        KeyExchange(String name, String kx, String authn, boolean allowed,
                 boolean isAnonymous, NamedGroupSpec... groupTypes) {
             this.name = name;
+            this.kx = kx;
+            this.authn = authn;
             this.groupTypes = groupTypes;
             this.allowed = allowed;
 
