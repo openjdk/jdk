@@ -403,6 +403,7 @@ void MetaspaceShared::serialize(SerializeClosure* soc) {
   soc->do_tag(--tag);
 
   CDS_JAVA_HEAP_ONLY(Modules::serialize(soc);)
+  CDS_JAVA_HEAP_ONLY(Modules::serialize_addmods_names(soc);)
   CDS_JAVA_HEAP_ONLY(ClassLoaderDataShared::serialize(soc);)
 
   LambdaFormInvokers::serialize(soc);
@@ -502,6 +503,8 @@ char* VM_PopulateDumpSharedSpace::dump_read_only_tables() {
   LambdaFormInvokers::dump_static_archive_invokers();
   // Write module name into archive
   CDS_JAVA_HEAP_ONLY(Modules::dump_main_module_name();)
+  // Write module names from --add-modules into archive
+  CDS_JAVA_HEAP_ONLY(Modules::dump_addmods_names();)
   // Write the other data to the output array.
   DumpRegion* ro_region = ArchiveBuilder::current()->ro_region();
   char* start = ro_region->top();
