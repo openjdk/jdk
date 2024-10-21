@@ -152,11 +152,7 @@ public abstract class Policy {
      * may be different than the order of providers returned by
      * {@link Security#getProviders() Security.getProviders()}.
      *
-     * @param type the specified Policy type.  See the Policy section in the
-     *    <a href=
-     *    "{@docRoot}/../specs/security/standard-names.html#policy-types">
-     *    Java Security Standard Algorithm Names Specification</a>
-     *    for a list of standard Policy types.
+     * @param type the specified Policy type
      *
      * @param params parameters for the {@code Policy}, which may be
      * {@code null}.
@@ -204,11 +200,7 @@ public abstract class Policy {
      * <p> Note that the list of registered providers may be retrieved via
      * the {@link Security#getProviders() Security.getProviders()} method.
      *
-     * @param type the specified Policy type.  See the Policy section in the
-     *    <a href=
-     *    "{@docRoot}/../specs/security/standard-names.html#policy-types">
-     *    Java Security Standard Algorithm Names Specification</a>
-     *    for a list of standard Policy types.
+     * @param type the specified Policy type
      *
      * @param params parameters for the {@code Policy}, which may be
      * {@code null}.
@@ -268,11 +260,7 @@ public abstract class Policy {
      * is returned.  Note that the specified provider does not
      * have to be registered in the provider list.
      *
-     * @param type the specified Policy type.  See the Policy section in the
-     *    <a href=
-     *    "{@docRoot}/../specs/security/standard-names.html#policy-types">
-     *    Java Security Standard Algorithm Names Specification</a>
-     *    for a list of standard Policy types.
+     * @param type the specified Policy type
      *
      * @param params parameters for the {@code Policy}, which may be
      * {@code null}.
