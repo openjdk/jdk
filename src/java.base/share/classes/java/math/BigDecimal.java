@@ -2172,9 +2172,9 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                     result = valueOf(1L, strippedScale >> 1);
                     // Adjust to requested precision and preferred
                     // scale as appropriate.
-                    final int maxSCale = mc.precision == 0 ?
+                    final int maxScale = mc.precision == 0 ?
                         preferredScale : (int) Math.min(preferredScale, result.scale + (mc.precision - 1L));
-                    if (result.scale < maxSCale)
+                    if (result.scale < maxScale)
                         result = result.setScale(maxScale);
 
                     return result;
@@ -2258,7 +2258,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
 
                 result = new BigDecimal(sqrt, checkScale(sqrt, resultScale));
                 if (increment)
-                    result = result.add(result.ulp());
+                    result = result.add(result.ulp(), mc); // mc ensures no increase of precision
             }
 
             // Test numerical properties at full precision before any
