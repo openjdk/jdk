@@ -39,18 +39,17 @@ import jdk.test.lib.security.SecurityUtils;
 public class DHKeyAgreementPadding {
 
     public static void main(String[] args) throws Exception {
-
-        byte[] aliceSecret = new byte[256];
-        byte[] bobSecret = new byte[256];
-
-        KeyAgreement alice = KeyAgreement.getInstance("DiffieHellman");
-        KeyAgreement bob = KeyAgreement.getInstance("DiffieHellman");
+        String kpgAlgorithm = "DiffieHellman";
+        KeyAgreement alice = KeyAgreement.getInstance(kpgAlgorithm);
+        KeyAgreement bob = KeyAgreement.getInstance(kpgAlgorithm);
+        int keySizeBits = SecurityUtils.getTestKeySize(kpgAlgorithm);
+        byte[] aliceSecret = new byte[keySizeBits / 8];
+        byte[] bobSecret = new byte[keySizeBits / 8];
 
         // The probability of an error is 0.2% or 1/500. Try more times.
         for (int i = 0; i < 5000; i++) {
-            String kpgAlgorithm = "DiffieHellman";
-            KeyPairGenerator keyPairGen = KeyPairGenerator.getInstance("DiffieHellman");
-            keyPairGen.initialize(SecurityUtils.getTestKeySize(kpgAlgorithm));
+            KeyPairGenerator keyPairGen = KeyPairGenerator.getInstance(kpgAlgorithm);
+            keyPairGen.initialize(keySizeBits);
             KeyPair aliceKeyPair = keyPairGen.generateKeyPair();
             KeyPair bobKeyPair = keyPairGen.generateKeyPair();
 

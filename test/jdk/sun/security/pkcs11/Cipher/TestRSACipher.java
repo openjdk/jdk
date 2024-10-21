@@ -60,8 +60,9 @@ public class TestRSACipher extends PKCS11Test {
             return;
         }
         String kpgAlgorithm = "RSA";
+        int keySize = SecurityUtils.getTestKeySize(kpgAlgorithm);
         KeyPairGenerator kpg = KeyPairGenerator.getInstance(kpgAlgorithm, p);
-        kpg.initialize(SecurityUtils.getTestKeySize(kpgAlgorithm));
+        kpg.initialize(keySize);
         KeyPair kp = kpg.generateKeyPair();
         PublicKey publicKey = kp.getPublic();
         PrivateKey privateKey = kp.getPrivate();
@@ -114,7 +115,8 @@ public class TestRSACipher extends PKCS11Test {
             c1.update(b);
             e = c1.doFinal();
 
-            c1.update(new byte[512]);
+            // Longer buffer size to verify IllegalBlockSizeException is thrown
+            c1.update(new byte[keySize / 4]);
             try {
                 e = c1.doFinal();
                 throw new Exception("completed call");

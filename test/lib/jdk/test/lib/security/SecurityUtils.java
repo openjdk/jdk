@@ -117,7 +117,7 @@ public final class SecurityUtils {
     }
 
     /**
-     * Returns a strong key size for tests, depending on the specified algorithm
+     * Returns a strong key size in bits for tests, depending on the specified algorithm
      */
     public static int getTestKeySize(String algo) {
         int testKeySize;

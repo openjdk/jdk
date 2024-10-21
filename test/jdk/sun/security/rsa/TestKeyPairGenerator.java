@@ -116,7 +116,7 @@ public class TestKeyPairGenerator {
         data = new byte[2048];
         String kpgAlgorithm = "RSA";
         int keySize = SecurityUtils.getTestKeySize(kpgAlgorithm);
-        int[] keyLengths = {keySize, keySize, 3072};
+        int[] keyLengths = {keySize, keySize, keySize + 1024};
         BigInteger[] pubExps = {null, BigInteger.valueOf(3), null};
         KeyPair[] keyPairs = new KeyPair[3];
         new Random().nextBytes(data);
