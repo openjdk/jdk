@@ -24,6 +24,7 @@
  */
 package jdk.internal.constant;
 
+import jdk.internal.vm.annotation.Stable;
 import sun.invoke.util.Wrapper;
 
 import java.lang.constant.ClassDesc;
@@ -48,6 +49,7 @@ public final class ConstantUtils {
     public static final ClassDesc[] EMPTY_CLASSDESC = new ClassDesc[0];
     public static final int MAX_ARRAY_TYPE_DESC_DIMENSIONS = 255;
     public static final ClassDesc CD_module_info = binaryNameToDesc("module-info");
+    public static @Stable ClassDesc CD_Object_array; // set from ConstantDescs, avoid circular initialization
 
     private static final Set<String> pointyNames = Set.of(ConstantDescs.INIT_NAME, ConstantDescs.CLASS_INIT_NAME);
 

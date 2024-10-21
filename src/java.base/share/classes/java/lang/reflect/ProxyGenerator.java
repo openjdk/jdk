@@ -74,7 +74,7 @@ final class ProxyGenerator {
             CD_Method = ClassOrInterfaceDescImpl.ofValidated("Ljava/lang/reflect/Method;"),
             CD_NoSuchMethodError = ClassOrInterfaceDescImpl.ofValidated("Ljava/lang/NoSuchMethodError;"),
             CD_NoSuchMethodException = ClassOrInterfaceDescImpl.ofValidated("Ljava/lang/NoSuchMethodException;"),
-            CD_Object_array = CD_Object.arrayType(),
+            CD_Object_array = ConstantUtils.CD_Object_array,
             CD_Proxy = ClassOrInterfaceDescImpl.ofValidated("Ljava/lang/reflect/Proxy;"),
             CD_UndeclaredThrowableException = ClassOrInterfaceDescImpl.ofValidated("Ljava/lang/reflect/UndeclaredThrowableException;");
 

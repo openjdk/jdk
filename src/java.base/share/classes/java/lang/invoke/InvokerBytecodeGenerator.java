@@ -76,7 +76,7 @@ class InvokerBytecodeGenerator {
     private static final ClassDesc CD_LambdaForm = ClassOrInterfaceDescImpl.ofValidated("Ljava/lang/invoke/LambdaForm;");
     private static final ClassDesc CD_LambdaForm_Name = ClassOrInterfaceDescImpl.ofValidated("Ljava/lang/invoke/LambdaForm$Name;");
     private static final ClassDesc CD_LoopClauses = ClassOrInterfaceDescImpl.ofValidated("Ljava/lang/invoke/MethodHandleImpl$LoopClauses;");
-    private static final ClassDesc CD_Object_array  = CD_Object.arrayType();
+    private static final ClassDesc CD_Object_array = ConstantUtils.CD_Object_array;
     private static final ClassDesc CD_MethodHandle_array = CD_MethodHandle.arrayType();
     private static final ClassDesc CD_MethodHandle_array2 = CD_MethodHandle_array.arrayType();
 

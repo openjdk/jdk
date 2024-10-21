@@ -28,7 +28,6 @@ package jdk.internal.classfile.impl;
 
 import java.lang.classfile.Attribute;
 import java.lang.classfile.Attributes;
-import java.lang.classfile.BufWriter;
 import java.lang.classfile.Label;
 import java.lang.classfile.attribute.StackMapTableAttribute;
 import java.lang.classfile.constantpool.ClassEntry;

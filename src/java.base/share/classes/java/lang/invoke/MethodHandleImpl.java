@@ -28,6 +28,7 @@ package java.lang.invoke;
 import jdk.internal.access.JavaLangInvokeAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.constant.ClassOrInterfaceDescImpl;
+import jdk.internal.constant.ConstantUtils;
 import jdk.internal.constant.MethodTypeDescImpl;
 import jdk.internal.foreign.abi.NativeEntryPoint;
 import jdk.internal.reflect.CallerSensitive;
@@ -1036,7 +1037,7 @@ abstract class MethodHandleImpl {
     // That way we can lazily load the code and set up the constants.
     private static class BindCaller {
 
-        private static final ClassDesc CD_Object_array = CD_Object.arrayType();
+        private static final ClassDesc CD_Object_array = ConstantUtils.CD_Object_array;
         private static final MethodType INVOKER_MT = MethodType.methodType(Object.class, MethodHandle.class, Object[].class);
         private static final MethodType REFLECT_INVOKER_MT = MethodType.methodType(Object.class, MethodHandle.class, Object.class, Object[].class);
 

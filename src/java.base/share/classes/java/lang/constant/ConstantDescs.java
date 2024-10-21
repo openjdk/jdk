@@ -25,6 +25,7 @@
 package java.lang.constant;
 
 import jdk.internal.constant.ClassOrInterfaceDescImpl;
+import jdk.internal.constant.ConstantUtils;
 import jdk.internal.constant.MethodTypeDescImpl;
 import jdk.internal.constant.PrimitiveClassDescImpl;
 
@@ -178,6 +179,11 @@ public final class ConstantDescs {
     /** {@link ClassDesc} representing {@link ConstantBootstraps} */
     public static final ClassDesc CD_ConstantBootstraps = ClassOrInterfaceDescImpl.ofValidated("Ljava/lang/invoke/ConstantBootstraps;");
 
+    static {
+        // avoid circular initialization
+        ConstantUtils.CD_Object_array = CD_Object.arrayType();
+    }
+
     private static final ClassDesc[] INDY_BOOTSTRAP_ARGS = {
             CD_MethodHandles_Lookup,
             CD_String,
@@ -229,7 +235,7 @@ public final class ConstantDescs {
     /** {@link MethodHandleDesc} representing {@link ConstantBootstraps#invoke(Lookup, String, Class, MethodHandle, Object...) ConstantBootstraps.invoke} */
     public static final DirectMethodHandleDesc BSM_INVOKE
             = ofConstantBootstrap(CD_ConstantBootstraps, "invoke",
-            CD_Object, CD_MethodHandle, CD_Object.arrayType());
+            CD_Object, CD_MethodHandle, ConstantUtils.CD_Object_array);
 
     /**
      * {@link MethodHandleDesc} representing {@link ConstantBootstraps#explicitCast(Lookup, String, Class, Object) ConstantBootstraps.explicitCast}
