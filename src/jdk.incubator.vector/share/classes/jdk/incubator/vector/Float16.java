@@ -62,6 +62,8 @@ import static java.lang.Float.floatToFloat16;
  * zeros of methods in this class is wholly analogous to the handling
  * of equivalent cases by methods in {@code Float}, {@code Double},
  * {@code Math}, etc.
+ *
+ * @since 24
  */
 
 // Currently Float16 is a value based class but in future will be aligned with
@@ -965,7 +967,7 @@ public final class Float16
         // Rounding path of sqrt(Float16 -> double) -> Float16 is fine
         // for preserving the correct final value. The conversion
         // Float16 -> double preserves the exact numerical value. The
-        // of the double -> Float16 conversion also benefits from the
+        // conversion of double -> Float16 also benefits from the
         // 2p+2 property of IEEE 754 arithmetic.
         return valueOf(Math.sqrt(radicand.doubleValue()));
     }
