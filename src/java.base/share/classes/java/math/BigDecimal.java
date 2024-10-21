@@ -2219,36 +2219,41 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
 
                 BigDecimal working = new BigDecimal(this.intVal, this.intCompact, (int) workingScale, this.precision);
                 BigInteger workingInt = working.toBigInteger();
-                BigInteger[] sqrtRem = workingInt.sqrtAndRemainder();
-                BigInteger sqrt = sqrtRem[0];
+
+                BigInteger sqrt;
                 long resultScale = normScale >> 1;
+                if (mc.roundingMode == RoundingMode.DOWN || mc.roundingMode == RoundingMode.FLOOR) { // No need to round
+                    sqrt = workingInt.sqrt();
+                } else { // Round sqrt with the specified settings
+                    BigInteger[] sqrtRem = workingInt.sqrtAndRemainder();
+                    sqrt = sqrtRem[0];
 
-                // Round sqrt with the specified settings
-                boolean increment = false;
-                if (halfWay) { // half-way rounding
-                    // remove the one-tenth digit
-                    BigInteger[] quotRem10 = sqrt.divideAndRemainder(BigInteger.TEN);
-                    sqrt = quotRem10[0];
-                    resultScale--;
-
-                    int digit = quotRem10[1].intValue();
-                    if (digit > 5) {
-                        increment = true;
-                    } else if (digit == 5) {
-                        if (mc.roundingMode == RoundingMode.HALF_UP
-                                || mc.roundingMode == RoundingMode.HALF_EVEN && sqrt.testBit(0)
-                                // Check if remainder is non-zero
-                                || sqrtRem[1].signum != 0 || working.compareTo(new BigDecimal(workingInt)) != 0) {
+                    boolean increment = false;
+                    if (halfWay) { // half-way rounding
+                        // remove the one-tenth digit
+                        BigInteger[] quotRem10 = sqrt.divideAndRemainder(BigInteger.TEN);
+                        sqrt = quotRem10[0];
+                        resultScale--;
+    
+                        int digit = quotRem10[1].intValue();
+                        if (digit > 5) {
                             increment = true;
+                        } else if (digit == 5) {
+                            if (mc.roundingMode == RoundingMode.HALF_UP
+                                    || mc.roundingMode == RoundingMode.HALF_EVEN && sqrt.testBit(0)
+                                    // Check if remainder is non-zero
+                                    || sqrtRem[1].signum != 0 || working.compareTo(new BigDecimal(workingInt)) != 0) {
+                                increment = true;
+                            }
                         }
+                    } else { // mc.roundingMode == RoundingMode.UP || mc.roundingMode == RoundingMode.CEILING
+                        // Check if remainder is non-zero
+                        if (sqrtRem[1].signum != 0 || working.compareTo(new BigDecimal(workingInt)) != 0)
+                            increment = true;
                     }
-                } else if (mc.roundingMode == RoundingMode.UP || mc.roundingMode == RoundingMode.CEILING) { // round up
-                    // Check if remainder is non-zero
-                    if (sqrtRem[1].signum != 0 || working.compareTo(new BigDecimal(workingInt)) != 0)
-                        increment = true;
-                } // else round down, but sqrt is already rounded down
-                if (increment)
-                    sqrt = sqrt.add(1L);
+                    if (increment)
+                        sqrt = sqrt.add(1L);
+                }
 
                 result = new BigDecimal(sqrt, checkScale(sqrt, resultScale));
             }
