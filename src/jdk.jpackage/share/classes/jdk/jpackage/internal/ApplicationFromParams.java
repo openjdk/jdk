@@ -107,8 +107,10 @@ final class ApplicationFromParams {
             Map<String, ? super Object> launcherParams) {
         if (!launcherParams.containsKey(DESCRIPTION.getID())) {
             launcherParams = new HashMap<>(launcherParams);
-            launcherParams.put(DESCRIPTION.getID(), String.format("%s (%s)", DESCRIPTION.fetchFrom(
-                    mainParams), APP_NAME.fetchFrom(launcherParams)));
+// FIXME: this is a good improvement but it fails existing tests            
+//            launcherParams.put(DESCRIPTION.getID(), String.format("%s (%s)", DESCRIPTION.fetchFrom(
+//                    mainParams), APP_NAME.fetchFrom(launcherParams)));
+            launcherParams.put(DESCRIPTION.getID(), DESCRIPTION.fetchFrom(mainParams));
         }
         return AddLauncherArguments.merge(mainParams, launcherParams, ICON.getID(), ADD_LAUNCHERS
                 .getID(), FILE_ASSOCIATIONS.getID());
