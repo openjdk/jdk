@@ -30,6 +30,7 @@ import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.CopyOption;
 import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.Files;
 import java.nio.file.FileStore;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystemException;
@@ -38,6 +39,7 @@ import java.nio.file.LinkPermission;
 import java.nio.file.Path;
 import java.nio.file.PathMatcher;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.attribute.GroupPrincipal;
 import java.nio.file.attribute.UserPrincipal;
 import java.nio.file.attribute.UserPrincipalLookupService;
@@ -1011,6 +1013,19 @@ abstract class UnixFileSystem
         try {
             sourceAttrs = UnixFileAttributes.get(source, flags.followLinks);
         } catch (UnixException x) {
+            if (x.errno() == UnixConstants.ENOENT) {
+                if (Files.isSymbolicLink(source)) {
+                    Path symbolicLink = null;
+                    try {
+                        symbolicLink = Files.readSymbolicLink(source);
+                    } catch (IOException e) {
+                        //use rethrowAsIOException
+                    }
+                    if (symbolicLink != null) {
+                        throw new NoSuchFileException(source.toString(), null, "due to " + symbolicLink);
+                    }
+                }
+            }
             x.rethrowAsIOException(source);
         }
 
