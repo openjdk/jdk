@@ -146,6 +146,7 @@ private:
   inline static oop decode_from_archive_impl(narrowOop v) NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
 
   class PatchLoadedRegionPointers;
+  class PatchUncompressedLoadedRegionPointers;
 
 public:
 

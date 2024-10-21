@@ -221,12 +221,27 @@ void ArchiveHeapLoader::init_loaded_heap_relocation(LoadedArchiveHeapRegion* loa
 }
 
 bool ArchiveHeapLoader::can_load() {
-  if (!UseCompressedOops) {
-    // Pointer relocation for uncompressed oops is unimplemented.
-    return false;
-  }
   return Universe::heap()->can_load_archived_objects();
 }
+
+class ArchiveHeapLoader::PatchUncompressedLoadedRegionPointers: public BitMapClosure {
+  oop* _start;
+  intx _runtime_offset;
+
+ public:
+  PatchUncompressedLoadedRegionPointers(oop* start, LoadedArchiveHeapRegion* loaded_region)
+    : _start(start),
+      _runtime_offset(loaded_region->_runtime_offset) {}
+
+  bool do_bit(size_t offset) {
+    oop* p = _start + offset;
+    intptr_t dumptime_oop = (intptr_t)((void*)*p);
+    assert(dumptime_oop != 0, "null oops should have been filtered out at dump time");
+    intptr_t runtime_oop = dumptime_oop + _runtime_offset;
+    RawAccess<IS_NOT_NULL>::oop_store(p, cast_to_oop(runtime_oop));
+    return true;
+  }
+};
 
 class ArchiveHeapLoader::PatchLoadedRegionPointers: public BitMapClosure {
   narrowOop* _start;
@@ -312,13 +327,18 @@ bool ArchiveHeapLoader::load_heap_region_impl(FileMapInfo* mapinfo, LoadedArchiv
   uintptr_t oopmap = bitmap_base + r->oopmap_offset();
   BitMapView bm((BitMap::bm_word_t*)oopmap, r->oopmap_size_in_bits());
 
-  PatchLoadedRegionPointers patcher((narrowOop*)load_address + FileMapInfo::current_info()->heap_oopmap_start_pos(), loaded_region);
-  bm.iterate(&patcher);
+  if (UseCompressedOops) {
+    PatchLoadedRegionPointers patcher((narrowOop*)load_address + FileMapInfo::current_info()->heap_oopmap_start_pos(), loaded_region);
+    bm.iterate(&patcher);
+  } else {
+    PatchUncompressedLoadedRegionPointers patcher((oop*)load_address + FileMapInfo::current_info()->heap_oopmap_start_pos(), loaded_region);
+    bm.iterate(&patcher);
+  }
   return true;
 }
 
 bool ArchiveHeapLoader::load_heap_region(FileMapInfo* mapinfo) {
-  assert(UseCompressedOops, "loaded heap for !UseCompressedOops is unimplemented");
+  assert(can_load(), "loaded heap for must be supported");
   init_narrow_oop_decoding(mapinfo->narrow_oop_base(), mapinfo->narrow_oop_shift());
 
   LoadedArchiveHeapRegion loaded_region;
@@ -358,8 +378,12 @@ class VerifyLoadedHeapEmbeddedPointers: public BasicOopIterateClosure {
     }
   }
   virtual void do_oop(oop* p) {
-    // Uncompressed oops are not supported by loaded heaps.
-    Unimplemented();
+    oop v = *p;
+    if(v != nullptr) {
+      uintptr_t u = cast_from_oop<uintptr_t>(v);
+      ArchiveHeapLoader::assert_in_loaded_heap(u);
+      guarantee(_table->contains(u), "must point to beginning of object in loaded archived region");
+    }
   }
 };
 
