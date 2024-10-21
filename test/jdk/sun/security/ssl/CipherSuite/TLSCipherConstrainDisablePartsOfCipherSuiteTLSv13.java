@@ -2,7 +2,7 @@
  * @test
  * @bug 8341964
  * @summary Add mechanism to disable different parts of TLS cipher suite
- * @run testng/othervm TLSCipherConstrainDisablePartsOfCipherSuite
+ * @run testng/othervm TLSCipherConstrainDisablePartsOfCipherSuiteTLSv13
  */
 
 import static org.testng.AssertJUnit.assertTrue;
@@ -13,24 +13,24 @@ import org.testng.annotations.Test;
 import java.security.Security;
 import java.util.List;
 
-public class TLSCipherConstrainDisablePartsOfCipherSuite extends NoDesRC4DesEdeCiphSuite {
+public class TLSCipherConstrainDisablePartsOfCipherSuiteTLSv13 extends NoDesRC4DesEdeCiphSuite {
 
     private static final String SECURITY_PROPERTY = "jdk.tls.disabledAlgorithms";
-    private static final String TEST_ALGORITHMS = "ECDH kx, Rsa kx, ECDSA authn, DH_anoN KX, NuLL Authn";
+    private static final String TEST_ALGORITHMS = "ECDHE kx";
     private static final String[] CIPHER_SUITES = new String[] {
-            "TLS_RSA_WITH_AES_256_GCM_SHA384",
-            "TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384",
-            "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
-            "TLS_DH_anon_WITH_AES_128_CBC_SHA",
-            "TLS_ECDH_anon_WITH_AES_128_CBC_SHA"
+        "TLS_AES_256_GCM_SHA384",
+        "TLS_AES_128_GCM_SHA256",
+        "TLS_CHACHA20_POLY1305_SHA256"
     };
     static final List<Integer> CIPHER_SUITES_IDS = List.of(
-            0x009D,
-            0xC02E,
-            0xC02C,
-            0x0034,
-            0xC018
+        0x1302,
+        0x1301,
+        0x1303
     );
+
+    protected String getProtocol() {
+        return "TLSv1.3";
+    }
 
     @BeforeTest
     void setUp() throws Exception {

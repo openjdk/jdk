@@ -45,8 +45,6 @@ import java.util.Arrays;
 
 public class NoDesRC4DesEdeCiphSuite {
 
-    private static final boolean DEBUG = false;
-
     private static final byte RECTYPE_HS = 0x16;
     private static final byte HSMSG_CLIHELLO = 0x01;
 
@@ -100,21 +98,22 @@ public class NoDesRC4DesEdeCiphSuite {
         boolean allGood = true;
         String disAlg = Security.getProperty("jdk.tls.disabledAlgorithms");
         System.err.println("Disabled Algs: " + disAlg);
+        NoDesRC4DesEdeCiphSuite test = new NoDesRC4DesEdeCiphSuite();
 
         // Disabled DES tests
-        allGood &= testDefaultCase(DES_CS_LIST);
-        allGood &= testEngAddDisabled(DES_CS_LIST_NAMES, DES_CS_LIST);
-        allGood &= testEngOnlyDisabled(DES_CS_LIST_NAMES);
+        allGood &= test.testDefaultCase(DES_CS_LIST);
+        allGood &= test.testEngAddDisabled(DES_CS_LIST_NAMES, DES_CS_LIST);
+        allGood &= test.testEngOnlyDisabled(DES_CS_LIST_NAMES);
 
         // Disabled RC4 tests
-        allGood &= testDefaultCase(RC4_CS_LIST);
-        allGood &= testEngAddDisabled(RC4_CS_LIST_NAMES, RC4_CS_LIST);
-        allGood &= testEngOnlyDisabled(RC4_CS_LIST_NAMES);
+        allGood &= test.testDefaultCase(RC4_CS_LIST);
+        allGood &= test.testEngAddDisabled(RC4_CS_LIST_NAMES, RC4_CS_LIST);
+        allGood &= test.testEngOnlyDisabled(RC4_CS_LIST_NAMES);
 
         // Disabled 3DES tests
-        allGood &= testDefaultCase(DESEDE_CS_LIST);
-        allGood &= testEngAddDisabled(DESEDE_CS_LIST_NAMES, DESEDE_CS_LIST);
-        allGood &= testEngOnlyDisabled(DESEDE_CS_LIST_NAMES);
+        allGood &= test.testDefaultCase(DESEDE_CS_LIST);
+        allGood &= test.testEngAddDisabled(DESEDE_CS_LIST_NAMES, DESEDE_CS_LIST);
+        allGood &= test.testEngOnlyDisabled(DESEDE_CS_LIST_NAMES);
 
         if (allGood) {
             System.err.println("All tests passed");
@@ -132,17 +131,17 @@ public class NoDesRC4DesEdeCiphSuite {
      *
      * @return true if the test passed (No disabled suites), false otherwise
      */
-    protected static boolean testDefaultCase(List<Integer> disabledSuiteIds)
+    protected boolean testDefaultCase(List<Integer> disabledSuiteIds)
             throws Exception {
         System.err.println("\nTest: Default SSLEngine suite set");
         SSLEngine ssle = makeEngine();
-        if (DEBUG) {
+        if (getDebug()) {
             listCiphers("Suite set upon creation", ssle);
         }
         SSLEngineResult clientResult;
         ByteBuffer cTOs = makeClientBuf(ssle);
         clientResult = ssle.wrap(CLIOUTBUF, cTOs);
-        if (DEBUG) {
+        if (getDebug()) {
             dumpResult("ClientHello: ", clientResult);
         }
         cTOs.flip();
@@ -167,20 +166,20 @@ public class NoDesRC4DesEdeCiphSuite {
      * @return true if the engine throws SSLHandshakeException during client
      *      hello creation, false otherwise.
      */
-    protected static boolean testEngOnlyDisabled(String[] disabledSuiteNames)
+    protected boolean testEngOnlyDisabled(String[] disabledSuiteNames)
             throws Exception {
         System.err.println(
                 "\nTest: SSLEngine configured with only disabled suites");
         try {
             SSLEngine ssle = makeEngine();
             ssle.setEnabledCipherSuites(disabledSuiteNames);
-            if (DEBUG) {
+            if (getDebug()) {
                 listCiphers("Suite set upon creation", ssle);
             }
             SSLEngineResult clientResult;
             ByteBuffer cTOs = makeClientBuf(ssle);
             clientResult = ssle.wrap(CLIOUTBUF, cTOs);
-            if (DEBUG) {
+            if (getDebug()) {
                 dumpResult("ClientHello: ", clientResult);
             }
             cTOs.flip();
@@ -204,7 +203,7 @@ public class NoDesRC4DesEdeCiphSuite {
      *
      * @return true if the test passed (No disabled suites), false otherwise
      */
-    protected static boolean testEngAddDisabled(String[] disabledNames,
+    protected boolean testEngAddDisabled(String[] disabledNames,
             List<Integer> disabledIds) throws Exception {
         System.err.println("\nTest: SSLEngine with disabled suites added");
         SSLEngine ssle = makeEngine();
@@ -217,13 +216,13 @@ public class NoDesRC4DesEdeCiphSuite {
                 initialSuites.length, disabledNames.length);
         ssle.setEnabledCipherSuites(plusDisSuites);
 
-        if (DEBUG) {
+        if (getDebug()) {
             listCiphers("Suite set upon creation", ssle);
         }
         SSLEngineResult clientResult;
         ByteBuffer cTOs = makeClientBuf(ssle);
         clientResult = ssle.wrap(CLIOUTBUF, cTOs);
-        if (DEBUG) {
+        if (getDebug()) {
             dumpResult("ClientHello: ", clientResult);
         }
         cTOs.flip();
@@ -237,8 +236,12 @@ public class NoDesRC4DesEdeCiphSuite {
         }
     }
 
-    private static SSLEngine makeEngine() throws GeneralSecurityException {
-        SSLContext ctx = SSLContext.getInstance("TLSv1.2");
+    protected String getProtocol() {
+        return "TLSv1.2";
+    }
+
+    private SSLEngine makeEngine() throws GeneralSecurityException {
+        SSLContext ctx = SSLContext.getInstance(getProtocol());
         ctx.init(null, null, null);
         return ctx.createSSLEngine();
     }
@@ -276,7 +279,7 @@ public class NoDesRC4DesEdeCiphSuite {
      * @throws IOException if the data in the {@code clientHello}
      *      buffer is not a TLS handshake message or is not a client hello.
      */
-    private static boolean areSuitesPresentCH(ByteBuffer clientHello,
+    private boolean areSuitesPresentCH(ByteBuffer clientHello,
             List<Integer> suiteIdList) throws IOException {
         byte val;
 
@@ -355,9 +358,13 @@ public class NoDesRC4DesEdeCiphSuite {
         }
     }
 
-    private static void log(String str) {
-        if (DEBUG) {
+    private void log(String str) {
+        if (getDebug()) {
             System.err.println(str);
         }
+    }
+
+    protected boolean getDebug() {
+        return false;
     }
 }

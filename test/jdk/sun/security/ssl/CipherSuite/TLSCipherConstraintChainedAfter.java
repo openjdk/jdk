@@ -2,7 +2,7 @@
  * @test
  * @bug 8341964
  * @summary Add mechanism to disable different parts of TLS cipher suite
- * @run testng TLSCipherConstraintChainedAfter
+ * @run testng/othervm TLSCipherConstraintChainedAfter
  */
 import static org.testng.AssertJUnit.assertEquals;
 import static org.testng.AssertJUnit.fail;

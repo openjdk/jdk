@@ -560,14 +560,10 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
 
             // Check if algorithm's name contains the constraint's key,
             // not an exact match like for other constraints.
-            constraintsMap.forEach((key, list) -> {
+            constraintsMap.forEach((_, list) -> {
                 for (Constraint constraint : list) {
-                    // Match "NULL" TLSCipherConstraint constraint against any algorithm,
-                    // otherwise match any algorithm that contains the key.
-                    if ((key.equalsIgnoreCase("NULL") ||
-                            algorithm.toUpperCase(Locale.ENGLISH).contains(key)) &&
-                            constraint instanceof TLSCipherConstraint) {
-
+                    // Match TLSCipherConstraint constraint against any algorithm.
+                    if (constraint instanceof TLSCipherConstraint) {
                         constraintList.add(constraint);
                     }
                 }
