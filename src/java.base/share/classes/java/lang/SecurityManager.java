@@ -62,7 +62,6 @@ public class SecurityManager {
      * for this method.
      *
      * @return  the execution stack.
-     * @see StackWalker
      */
     protected Class<?>[] getClassContext() {
         return StackWalkerHolder.STACK_WALKER
