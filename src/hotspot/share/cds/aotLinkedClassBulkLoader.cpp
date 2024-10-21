@@ -349,7 +349,7 @@ bool AOTLinkedClassBulkLoader::is_pending_aot_linked_class(Klass* k) {
     k = ObjArrayKlass::cast(k)->bottom_klass();
   }
   if (!k->is_instance_klass()) {
-    // type array klasses (and their higher domensions),
+    // type array klasses (and their higher dimensions),
     // must have been loaded before a GC can ever happen.
     return false;
   }

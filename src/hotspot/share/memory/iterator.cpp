@@ -72,14 +72,7 @@ void MarkingNMethodClosure::do_nmethod(nmethod* nm) {
 }
 
 #ifdef ASSERT
-// A not-yet loaded aot-linked class k may be discovered by the GC during VM
-// initialization only. This can happen when the heap contains an aot-cached
-// instance of k, but k is not ready to be loaded yet. (TODO: JDK-8342429
-// eliminates this possibility)
-//
-// AOTLinkedClassBulkLoader checks the the exact (narrow set of) conditions
-// when this could happen.
-void ClaimMetadataVisitingOopIterateClosure::assert_is_pending_aot_linked_class(Klass* k) {
-  assert(AOTLinkedClassBulkLoader::is_pending_aot_linked_class(k), "sanity");
+bool ClaimMetadataVisitingOopIterateClosure::is_pending_aot_linked_class(Klass* k) {
+  return AOTLinkedClassBulkLoader::is_pending_aot_linked_class(k);
 }
 #endif

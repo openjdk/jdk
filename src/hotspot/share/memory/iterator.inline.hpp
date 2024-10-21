@@ -54,7 +54,7 @@ inline void ClaimMetadataVisitingOopIterateClosure::do_klass(Klass* k) {
   if (cld != nullptr) {
     ClaimMetadataVisitingOopIterateClosure::do_cld(cld);
   } else {
-    assert_is_pending_aot_linked_class(k);
+    assert(is_pending_aot_linked_class(k), "sanity");
   }
 }
 

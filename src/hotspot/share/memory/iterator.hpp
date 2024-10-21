@@ -28,7 +28,6 @@
 #include "memory/allocation.hpp"
 #include "memory/memRegion.hpp"
 #include "oops/oopsHierarchy.hpp"
-#include "utilities/macros.hpp"
 
 class CodeBlob;
 class nmethod;
@@ -174,7 +173,9 @@ public:
 
 class ClaimMetadataVisitingOopIterateClosure : public OopIterateClosure {
  private:
-  static void assert_is_pending_aot_linked_class(Klass* k) NOT_DEBUG_RETURN;
+#ifdef ASSERT
+  static bool is_pending_aot_linked_class(Klass* k);
+#endif
  protected:
   const int _claim;
 
