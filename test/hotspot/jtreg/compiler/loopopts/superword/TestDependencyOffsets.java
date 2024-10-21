@@ -782,30 +782,30 @@ public class TestDependencyOffsets {
                 //   at least 2 elements: width >= 2 * type.size
                 int minVectorWidth = Math.max(4, 2 * type.size);
 
+                int maxVectorWidth = 1 << 30; // no constraint
                 int byte_offset = offset * type.size;
-
-                // -XX:-AlignVector
-                IRRule r1 = new IRRule(type, vwConstraint, type.irNode);
-                r1.addConstraint("AlignVector", new BoolConstraint(false, true));
-                r1.addConstraint("MaxVectorSize", new IntConstraint(minVectorWidth, null));
                 if (0 < byte_offset && byte_offset < vwConstraint.platformVectorWidth) {
                     // Store forward: will be loaded in later iteration. If the offset is too small
                     // then maximal vector size would introduce cyclic dependencies. Hence, we use
                     // shorter vectors.
                     int log2 = 31 - Integer.numberOfLeadingZeros(offset);
                     int floor_pow2 = 1 << log2;
-                    int maxVectorWidth = floor_pow2 * type.size;
+                    maxVectorWidth = floor_pow2 * type.size;
                     builder.append("    //   Vectors must have at most " + floor_pow2 +
                                    " elements and a size of at most " + maxVectorWidth +
                                    " bytes to avoid cyclic dependency.\n");
-                    if (maxVectorWidth < minVectorWidth) {
-                        builder.append("    //   Not at least 2 elements or 4 bytes -> expect no vectorization.\n");
-                        r1.setNegative();
-                    } else {
-                        r1.setSize("min(" + floor_pow2 + ",max_" + type.name + ")");
-                    }
+                }
+
+                // -XX:-AlignVector
+                IRRule r1 = new IRRule(type, vwConstraint, type.irNode);
+                r1.addConstraint("AlignVector", new BoolConstraint(false, true));
+                r1.addConstraint("MaxVectorSize", new IntConstraint(minVectorWidth, null));
+
+                if (maxVectorWidth < minVectorWidth) {
+                    builder.append("    //   Not at least 2 elements or 4 bytes -> expect no vectorization.\n");
+                    r1.setNegative();
                 } else {
-                    // Normal case: Expect maximal vector size
+                    r1.setSize("min(" + (maxVectorWidth / type.size) + ",max_" + type.name + ")");
                 }
                 r1.generate(builder);
 
@@ -820,11 +820,44 @@ public class TestDependencyOffsets {
                 int aw_min = Math.min(minVectorWidth, 8);
                 int aw_max = Math.min(vwConstraint.platformVectorWidth, 8);
 
-                // TODO: maybe comute max vw from offset? do we even need aw?
+                int aw_bytes = pow2Factor(byte_offset);
+                int aw_elements = aw_bytes / type.size;
+
+                builder.append("    //   aw_max = " + aw_max +
+                               " = min(platformVectorWidth, 8)\n");
+                builder.append("    //   byte_offset=" + byte_offset +
+                               " -> aw_bytes=" + aw_bytes +
+                               ", aw_elements=" + aw_elements + "\n");
+
+                if (aw_bytes >= aw_max) {
+                    builder.append("    //   Always trivially aligned: aw_bytes(" + aw_bytes +
+                                   ") >= aw_max(" + aw_max + ")\n");
+                } else if (aw_bytes < minVectorWidth) {
+                    builder.append("    //   Not at least 2 elements or 4 bytes -> expect no vectorization.\n");
+                    r2.setNegative();
+                } else {
+                    maxVectorWidth = Math.min(maxVectorWidth, aw_bytes);
+                }
+
+                if (maxVectorWidth < minVectorWidth) {
+                    builder.append("    //   Not at least 2 elements or 4 bytes -> expect no vectorization.\n");
+                    r2.setNegative();
+                } else {
+                    r2.setSize("min(" + (maxVectorWidth / type.size) + ",max_" + type.name + ")");
+                }
 
                 r2.generate(builder);
             }
             return builder.toString();
+        }
+    }
+
+    static int pow2Factor(int value) {
+        int f = 1;
+        while(true) {
+          int f2 = f * 2;
+          if (f2 < 0 || value % f2 != 0) { return f; }
+          f = f2;
         }
     }
 
