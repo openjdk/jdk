@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
  * @summary Expect ConnectException for all non-security related connect errors
  * @bug 8204864
  * @run testng/othervm -Djdk.net.hosts.file=HostFileDoesNotExist ConnectExceptionTest
- * @run testng/othervm/java.security.policy=noPermissions.policy ConnectExceptionTest
  */
 
 import java.io.IOException;
@@ -88,9 +87,6 @@ public class ConnectExceptionTest {
         } catch (ConnectException ioe) {
             out.println("Caught expected: " + ioe);
             //ioe.printStackTrace(out);
-        } catch (SecurityException expectedIfSMIsSet) {
-            out.println("Caught expected: " + expectedIfSMIsSet);
-            assertTrue(System.getSecurityManager() != null);
         }
     }
 
@@ -109,9 +105,6 @@ public class ConnectExceptionTest {
         } catch (ConnectException ioe) {
             out.println("Caught expected: " + ioe);
             //ioe.printStackTrace(out);
-        } catch (SecurityException expectedIfSMIsSet) {
-            out.println("Caught expected: " + expectedIfSMIsSet);
-            assertTrue(System.getSecurityManager() != null);
         }
     }
 
@@ -129,9 +122,6 @@ public class ConnectExceptionTest {
             Throwable t = ee.getCause();
             if (t instanceof ConnectException) {
                 out.println("Caught expected: " + t);
-            } else if (t instanceof SecurityException) {
-                out.println("Caught expected: " + t);
-                assertTrue(System.getSecurityManager() != null);
             } else {
                 t.printStackTrace(out);
                 fail("Unexpected exception: " + t);
@@ -155,9 +145,6 @@ public class ConnectExceptionTest {
             Throwable t = ee.getCause();
             if (t instanceof ConnectException) {
                 out.println("Caught expected: " + t);
-            } else if (t instanceof SecurityException) {
-                out.println("Caught expected: " + t);
-                assertTrue(System.getSecurityManager() != null);
             } else {
                 t.printStackTrace(out);
                 fail("Unexpected exception: " + t);

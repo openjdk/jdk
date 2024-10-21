@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -151,14 +151,6 @@ public abstract class RMIClassLoaderSpi {
      * Returns a class loader that loads classes from the given codebase
      * URL path.
      *
-     * <p>If there is a security manager, its <code>checkPermission</code>
-     * method will be invoked with a
-     * <code>RuntimePermission("getClassLoader")</code> permission;
-     * this could result in a <code>SecurityException</code>.
-     * The implementation of this method may also perform further security
-     * checks to verify that the calling context has permission to connect
-     * to all of the URLs in the codebase URL path.
-     *
      * @param   codebase the list of URLs (space-separated) from which
      * the returned class loader will load classes from, or <code>null</code>
      *
@@ -169,11 +161,6 @@ public abstract class RMIClassLoaderSpi {
      * non-<code>null</code> and contains an invalid URL, or
      * if <code>codebase</code> is <code>null</code> and a provider-specific
      * URL used to identify the class loader is invalid
-     *
-     * @throws  SecurityException if there is a security manager and the
-     * invocation of its <code>checkPermission</code> method fails, or
-     * if the caller does not have permission to connect to all of the
-     * URLs in the codebase URL path
      */
     public abstract ClassLoader getClassLoader(String codebase)
         throws MalformedURLException; // SecurityException

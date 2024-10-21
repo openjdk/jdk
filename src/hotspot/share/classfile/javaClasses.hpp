@@ -358,7 +358,6 @@ class java_lang_Thread : AllStatic {
   static int _holder_offset;
   static int _name_offset;
   static int _contextClassLoader_offset;
-  static int _inheritedAccessControlContext_offset;
   static int _eetop_offset;
   static int _jvmti_thread_state_offset;
   static int _jvmti_VTMS_transition_disable_count_offset;
@@ -405,8 +404,6 @@ class java_lang_Thread : AllStatic {
   static void set_daemon(oop java_thread);
   // Context ClassLoader
   static oop context_class_loader(oop java_thread);
-  // Control context
-  static oop inherited_access_control_context(oop java_thread);
   // Stack size hint
   static jlong stackSize(oop java_thread);
   // Thread ID

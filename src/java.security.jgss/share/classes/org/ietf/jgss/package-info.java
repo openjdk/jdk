@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,7 +72,7 @@
  *
  * This model has the advantage that credential management
  * is simple and predictable from the applications point of view.  An
- * application, given the right permissions, can purge the credentials in
+ * application can purge the credentials in
  * the Subject or renew them using standard Java API's.  If it purged
  * the credentials, it would be sure that the JGSS mechanism would fail,
  * or if it renewed a time based credential it would be sure that a JGSS

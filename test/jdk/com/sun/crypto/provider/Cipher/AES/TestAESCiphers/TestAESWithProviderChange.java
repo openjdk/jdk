@@ -28,7 +28,6 @@ import java.security.Security;
  * @summary Test AES ciphers with different modes and padding schemes after
  *  remove then add provider.
  * @modules java.base/com.sun.crypto.provider
- * @run main/othervm/policy=testAES.policy TestAESWithProviderChange
  */
 
 public class TestAESWithProviderChange extends Dynamic {

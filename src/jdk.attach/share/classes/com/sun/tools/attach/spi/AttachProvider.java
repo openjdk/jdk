@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,11 +82,6 @@ public abstract class AttachProvider {
 
     /**
      * Initializes a new instance of this class.
-     *
-     * @throws  SecurityException
-     *          If a security manager has been installed and it denies
-     *          {@link com.sun.tools.attach.AttachPermission AttachPermission}
-     *          ("{@code createAttachProvider}")
      */
     protected AttachProvider() {
         @SuppressWarnings("removal")
@@ -132,12 +127,6 @@ public abstract class AttachProvider {
      *
      * @return  VirtualMachine representing the target virtual machine.
      *
-     * @throws  SecurityException
-     *          If a security manager has been installed and it denies
-     *          {@link com.sun.tools.attach.AttachPermission AttachPermission}
-     *          ("{@code attachVirtualMachine}"), or other permission
-     *          required by the implementation.
-     *
      * @throws  AttachNotSupportedException
      *          If the identifier cannot be parsed, or it corresponds to
      *          to a Java virtual machine that does not exist, or it
@@ -167,12 +156,6 @@ public abstract class AttachProvider {
      *         The virtual machine descriptor
      *
      * @return  VirtualMachine representing the target virtual machine.
-     *
-     * @throws  SecurityException
-     *          If a security manager has been installed and it denies
-     *          {@link com.sun.tools.attach.AttachPermission AttachPermission}
-     *          ("{@code attachVirtualMachine}"), or other permission
-     *          required by the implementation.
      *
      * @throws  AttachNotSupportedException
      *          If the descriptor's

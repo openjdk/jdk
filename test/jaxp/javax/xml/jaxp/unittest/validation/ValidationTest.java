@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,6 @@ import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
 import org.testng.annotations.DataProvider;
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
@@ -54,7 +53,6 @@ import org.xml.sax.helpers.XMLFilterImpl;
  * @run testng/othervm validation.ValidationTest
  * @summary Runs validations with schemas and sources
  */
-@Listeners({jaxp.library.FilePolicy.class})
 public class ValidationTest {
     static final String FILE_PATH = "files/";
     /*

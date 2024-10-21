@@ -30,7 +30,7 @@
  *
  * @run clean GetAllDescriptorsTest
  * @run build GetAllDescriptorsTest
- * @run main/othervm/java.security.policy=policy  GetAllDescriptorsTest
+ * @run main/othervm GetAllDescriptorsTest
  */
 
 import java.lang.reflect.*;

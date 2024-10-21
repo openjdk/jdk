@@ -185,10 +185,6 @@ public class Socket implements java.io.Closeable {
      * Creates an unconnected socket, specifying the type of proxy, if any,
      * that should be used regardless of any other settings.
      * <P>
-     * If there is a security manager, its {@code checkConnect} method
-     * is called with the proxy host address and port number
-     * as its arguments. This could result in a SecurityException.
-     * <P>
      * Examples:
      * <UL> <LI>{@code Socket s = new Socket(Proxy.NO_PROXY);} will create
      * a plain socket ignoring any other proxy configuration.</LI>
@@ -201,9 +197,6 @@ public class Socket implements java.io.Closeable {
      *              of proxying should be used.
      * @throws IllegalArgumentException if the proxy is of an invalid type
      *          or {@code null}.
-     * @throws SecurityException if a security manager is present and
-     *                           permission to connect to the proxy is
-     *                           denied.
      * @see java.net.ProxySelector
      * @see java.net.Proxy
      *
@@ -263,9 +256,6 @@ public class Socket implements java.io.Closeable {
      * @throws    SocketException if there is an error in the underlying protocol,
      * such as a TCP error.
      *
-     * @throws SecurityException if {@code impl} is non-null and a security manager is set
-     * and its {@code checkPermission} method doesn't allow {@code NetPermission("setSocketImpl")}.
-     *
      * @since   1.1
      */
     protected Socket(SocketImpl impl) throws SocketException {
@@ -298,11 +288,6 @@ public class Socket implements java.io.Closeable {
      * {@linkplain SocketImplFactory#createSocketImpl() createSocketImpl}
      * method is called to create the actual socket implementation. Otherwise
      * a system-default socket implementation is created.
-     * <p>
-     * If there is a security manager, its
-     * {@code checkConnect} method is called
-     * with the host address and {@code port}
-     * as its arguments. This could result in a SecurityException.
      *
      * @param      host   the host name, or {@code null} for the loopback address.
      * @param      port   the port number.
@@ -311,12 +296,9 @@ public class Socket implements java.io.Closeable {
      * the host could not be determined.
      *
      * @throws     IOException  if an I/O error occurs when creating the socket.
-     * @throws     SecurityException  if a security manager exists and its
-     *             {@code checkConnect} method doesn't allow the operation.
      * @throws     IllegalArgumentException if the port parameter is outside
      *             the specified range of valid port values, which is between
      *             0 and 65535, inclusive.
-     * @see        SecurityManager#checkConnect
      */
     @SuppressWarnings("this-escape")
     public Socket(String host, int port)
@@ -336,22 +318,14 @@ public class Socket implements java.io.Closeable {
      * {@linkplain SocketImplFactory#createSocketImpl() createSocketImpl}
      * method is called to create the actual socket implementation. Otherwise
      * a system-default socket implementation is created.
-     * <p>
-     * If there is a security manager, its
-     * {@code checkConnect} method is called
-     * with the host address and {@code port}
-     * as its arguments. This could result in a SecurityException.
      *
      * @param      address   the IP address.
      * @param      port      the port number.
      * @throws     IOException  if an I/O error occurs when creating the socket.
-     * @throws     SecurityException  if a security manager exists and its
-     *             {@code checkConnect} method doesn't allow the operation.
      * @throws     IllegalArgumentException if the port parameter is outside
      *             the specified range of valid port values, which is between
      *             0 and 65535, inclusive.
      * @throws     NullPointerException if {@code address} is null.
-     * @see        SecurityManager#checkConnect
      */
     @SuppressWarnings("this-escape")
     public Socket(InetAddress address, int port) throws IOException {
@@ -372,11 +346,6 @@ public class Socket implements java.io.Closeable {
      * <p>
      * A local port number of {@code zero} will let the system pick up a
      * free port in the {@code bind} operation.</p>
-     * <p>
-     * If there is a security manager, its
-     * {@code checkConnect} method is called
-     * with the host address and {@code port}
-     * as its arguments. This could result in a SecurityException.
      *
      * @param host the name of the remote host, or {@code null} for the loopback address.
      * @param port the remote port
@@ -385,14 +354,9 @@ public class Socket implements java.io.Closeable {
      * @param localPort the local port the socket is bound to, or
      *        {@code zero} for a system selected free port.
      * @throws     IOException  if an I/O error occurs when creating the socket.
-     * @throws     SecurityException  if a security manager exists and its
-     *             {@code checkConnect} method doesn't allow the connection
-     *             to the destination, or if its {@code checkListen} method
-     *             doesn't allow the bind to the local port.
      * @throws     IllegalArgumentException if the port parameter or localPort
      *             parameter is outside the specified range of valid port values,
      *             which is between 0 and 65535, inclusive.
-     * @see        SecurityManager#checkConnect
      * @since   1.1
      */
     @SuppressWarnings("this-escape")
@@ -414,11 +378,6 @@ public class Socket implements java.io.Closeable {
      * <p>
      * A local port number of {@code zero} will let the system pick up a
      * free port in the {@code bind} operation.</p>
-     * <p>
-     * If there is a security manager, its
-     * {@code checkConnect} method is called
-     * with the host address and {@code port}
-     * as its arguments. This could result in a SecurityException.
      *
      * @param address the remote address
      * @param port the remote port
@@ -427,15 +386,10 @@ public class Socket implements java.io.Closeable {
      * @param localPort the local port the socket is bound to or
      *        {@code zero} for a system selected free port.
      * @throws     IOException  if an I/O error occurs when creating the socket.
-     * @throws     SecurityException  if a security manager exists and its
-     *             {@code checkConnect} method doesn't allow the connection
-     *             to the destination, or if its {@code checkListen} method
-     *             doesn't allow the bind to the local port.
      * @throws     IllegalArgumentException if the port parameter or localPort
      *             parameter is outside the specified range of valid port values,
      *             which is between 0 and 65535, inclusive.
      * @throws     NullPointerException if {@code address} is null.
-     * @see        SecurityManager#checkConnect
      * @since   1.1
      */
     @SuppressWarnings("this-escape")
@@ -465,11 +419,6 @@ public class Socket implements java.io.Closeable {
      * method is called to create the actual socket implementation. Otherwise
      * a system-default socket implementation is created.
      * <p>
-     * If there is a security manager, its
-     * {@code checkConnect} method is called
-     * with the host address and {@code port}
-     * as its arguments. This could result in a SecurityException.
-     * <p>
      * If a UDP socket is used, TCP/IP related socket options will not apply.
      *
      * @param      host     the host name, or {@code null} for the loopback address.
@@ -477,12 +426,9 @@ public class Socket implements java.io.Closeable {
      * @param      stream   a {@code boolean} indicating whether this is
      *                      a stream socket or a datagram socket.
      * @throws     IOException  if an I/O error occurs when creating the socket.
-     * @throws     SecurityException  if a security manager exists and its
-     *             {@code checkConnect} method doesn't allow the operation.
      * @throws     IllegalArgumentException if the port parameter is outside
      *             the specified range of valid port values, which is between
      *             0 and 65535, inclusive.
-     * @see        SecurityManager#checkConnect
      * @deprecated Use {@link DatagramSocket} instead for UDP transport.
      */
     @Deprecated(forRemoval = true, since = "1.1")
@@ -506,11 +452,6 @@ public class Socket implements java.io.Closeable {
      * {@linkplain SocketImplFactory#createSocketImpl() createSocketImpl}
      * method is called to create the actual socket implementation. Otherwise
      * a system-default socket implementation is created.
-     *
-     * <p>If there is a security manager, its
-     * {@code checkConnect} method is called
-     * with {@code host.getHostAddress()} and {@code port}
-     * as its arguments. This could result in a SecurityException.
      * <p>
      * If UDP socket is used, TCP/IP related socket options will not apply.
      *
@@ -519,13 +460,10 @@ public class Socket implements java.io.Closeable {
      * @param      stream    if {@code true}, create a stream socket;
      *                       otherwise, create a datagram socket.
      * @throws     IOException  if an I/O error occurs when creating the socket.
-     * @throws     SecurityException  if a security manager exists and its
-     *             {@code checkConnect} method doesn't allow the operation.
      * @throws     IllegalArgumentException if the port parameter is outside
      *             the specified range of valid port values, which is between
      *             0 and 65535, inclusive.
      * @throws     NullPointerException if {@code host} is null.
-     * @see        SecurityManager#checkConnect
      * @deprecated Use {@link DatagramSocket} instead for UDP transport.
      */
     @Deprecated(forRemoval = true, since = "1.1")
@@ -783,9 +721,6 @@ public class Socket implements java.io.Closeable {
      *          is already bound or the socket is closed.
      * @throws  IllegalArgumentException if bindpoint is a
      *          SocketAddress subclass not supported by this socket
-     * @throws  SecurityException  if a security manager exists and its
-     *          {@code checkListen} method doesn't allow the bind
-     *          to the local port.
      *
      * @since   1.4
      * @see #isBound
@@ -848,18 +783,10 @@ public class Socket implements java.io.Closeable {
 
     /**
      * Gets the local address to which the socket is bound.
-     * <p>
-     * If there is a security manager set, its {@code checkConnect} method is
-     * called with the local address and {@code -1} as its arguments to see
-     * if the operation is allowed. If the operation is not allowed,
-     * the {@link InetAddress#getLoopbackAddress loopback} address is returned.
      *
-     * @return the local address to which the socket is bound,
-     *         the loopback address if denied by the security manager, or
+     * @return the local address to which the socket is bound, or
      *         the wildcard address if the socket is closed or not bound yet.
      * @since   1.1
-     *
-     * @see SecurityManager#checkConnect
      */
     public InetAddress getLocalAddress() {
         // This is for backward compatibility
@@ -957,23 +884,13 @@ public class Socket implements java.io.Closeable {
      * {@code InetSocketAddress}'s address is the
      * {@link InetAddress#isAnyLocalAddress wildcard} address
      * and its port is the local port that it was bound to.
-     * <p>
-     * If there is a security manager set, its {@code checkConnect} method is
-     * called with the local address and {@code -1} as its arguments to see
-     * if the operation is allowed. If the operation is not allowed,
-     * a {@code SocketAddress} representing the
-     * {@link InetAddress#getLoopbackAddress loopback} address and the local
-     * port to which this socket is bound is returned.
      *
      * @return a {@code SocketAddress} representing the local endpoint of
-     *         this socket, or a {@code SocketAddress} representing the
-     *         loopback address if denied by the security manager, or
-     *         {@code null} if the socket is not bound yet.
+     *         this socket, or {@code null} if the socket is not bound yet.
      *
      * @see #getLocalAddress()
      * @see #getLocalPort()
      * @see #bind(SocketAddress)
-     * @see SecurityManager#checkConnect
      * @since 1.4
      */
     public SocketAddress getLocalSocketAddress() {
@@ -1915,19 +1832,12 @@ public class Socket implements java.io.Closeable {
      * <p>
      * Passing {@code null} to the method is a no-op unless the factory
      * was already set.
-     * <p>If there is a security manager, this method first calls
-     * the security manager's {@code checkSetFactory} method
-     * to ensure the operation is allowed.
-     * This could result in a SecurityException.
      *
      * @param      fac   the desired factory.
      * @throws     IOException  if an I/O error occurs when setting the
      *               socket factory.
      * @throws     SocketException  if the factory is already defined.
-     * @throws     SecurityException  if a security manager exists and its
-     *             {@code checkSetFactory} method doesn't allow the operation.
      * @see        java.net.SocketImplFactory#createSocketImpl()
-     * @see        SecurityManager#checkSetFactory
      * @deprecated Use a {@link javax.net.SocketFactory} and subclass {@code Socket}
      *    directly.
      *    <br> This method provided a way in early JDK releases to replace the
@@ -2018,12 +1928,6 @@ public class Socket implements java.io.Closeable {
      *
      * @throws NullPointerException if name is {@code null}
      *
-     * @throws SecurityException if a security manager is set and if the socket
-     *         option requires a security permission and if the caller does
-     *         not have the required permission.
-     *         {@link java.net.StandardSocketOptions StandardSocketOptions}
-     *         do not require any security permission.
-     *
      * @since 9
      */
     public <T> Socket setOption(SocketOption<T> name, T value) throws IOException {
@@ -2048,12 +1952,6 @@ public class Socket implements java.io.Closeable {
      * @throws IOException if an I/O error occurs, or if the socket is closed.
      *
      * @throws NullPointerException if name is {@code null}
-     *
-     * @throws SecurityException if a security manager is set and if the socket
-     *         option requires a security permission and if the caller does
-     *         not have the required permission.
-     *         {@link java.net.StandardSocketOptions StandardSocketOptions}
-     *         do not require any security permission.
      *
      * @since 9
      */

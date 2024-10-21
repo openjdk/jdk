@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,9 +50,6 @@ public abstract class AccessibilityProvider {
 
     /**
      * Initializes a new accessibility provider.
-     *
-     * @throws SecurityException If a security manager has been installed and it
-     *         denies {@link RuntimePermission} {@code "accessibilityProvider"}
      */
     protected AccessibilityProvider() {
         // Use a permission check when calling a private constructor to check

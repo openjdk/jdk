@@ -36,7 +36,7 @@
  *          java.rmi/sun.rmi.transport
  *          java.rmi/sun.rmi.transport.tcp
  * @build TestLibrary Receiver MarshalForeignStub_Stub
- * @run main/othervm/policy=security.policy MarshalForeignStub
+ * @run main/othervm MarshalForeignStub
  */
 
 import java.io.Serializable;
@@ -61,8 +61,6 @@ public class MarshalForeignStub
     public static void main(String[] args) {
 
         System.err.println("\nRegression test for bug 4117427\n");
-
-        TestLibrary.suggestSecurityManager(null);
 
         System.err.println("Creating remote object.");
         MarshalForeignStub obj = null;

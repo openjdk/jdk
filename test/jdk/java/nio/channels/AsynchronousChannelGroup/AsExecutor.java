@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,7 @@
  * @test
  * @bug 4607272
  * @summary tests tasks can be submitted to a channel group's thread pool.
- * @library /test/lib bootlib
- * @build PrivilegedThreadFactory Attack
- *        jdk.test.lib.util.JarUtils
- * @run driver SetupJar
- * @run main/othervm -Xbootclasspath/a:privileged.jar -Djava.security.manager=allow AsExecutor
+ * @run main AsExecutor
  */
 
 import java.nio.channels.AsynchronousChannelGroup;
@@ -42,7 +38,7 @@ public class AsExecutor {
 
     public static void main(String[] args) throws Exception {
         // create channel groups
-        ThreadFactory factory = new PrivilegedThreadFactory();
+        ThreadFactory factory = Executors.defaultThreadFactory();
         AsynchronousChannelGroup group1 = AsynchronousChannelGroup
             .withFixedThreadPool(5, factory);
         AsynchronousChannelGroup group2 = AsynchronousChannelGroup
@@ -55,18 +51,6 @@ public class AsExecutor {
             testSimpleTask(group1);
             testSimpleTask(group2);
             testSimpleTask(group3);
-
-            // install security manager and test again
-            System.setSecurityManager( new SecurityManager() );
-            testSimpleTask(group1);
-            testSimpleTask(group2);
-            testSimpleTask(group3);
-
-            // attempt to execute tasks that run with only frames from boot
-            // class loader on the stack.
-            testAttackingTask(group1);
-            testAttackingTask(group2);
-            testAttackingTask(group3);
         } finally {
             group1.shutdown();
             group2.shutdown();
@@ -84,14 +68,4 @@ public class AsExecutor {
         });
         latch.await();
     }
-
-    static void testAttackingTask(AsynchronousChannelGroup group) throws Exception {
-        Executor executor = (Executor)group;
-        Attack task = new Attack();
-        executor.execute(task);
-        task.waitUntilDone();
-        if (!task.failedDueToSecurityException())
-            throw new RuntimeException("SecurityException expected");
-    }
-
 }

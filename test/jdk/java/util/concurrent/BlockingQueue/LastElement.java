@@ -96,7 +96,7 @@ public class LastElement {
                 unexpected(e);
             }
             catch (IllegalAccessException e) {
-                // ignore - security manager must be installed
+                // ignore
             }
         }
         return true;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,9 +53,6 @@ public class MethodInvokeTest {
         boolean sm = args.length > 0 && args[0].equals("sm");
         System.err.format("Test %s security manager.%n",
                           sm ? "with" : "without");
-        if (sm) {
-            setupSecurityManager();
-        }
 
         MethodInvokeTest test = new MethodInvokeTest();
         // test static call to java.util.CSM::caller
@@ -66,18 +63,6 @@ public class MethodInvokeTest {
         test.invokeMethodHandle();
         // test method ref
         test.lambda();
-    }
-
-    static void setupSecurityManager() {
-        PermissionCollection perms = new Permissions();
-        perms.add(new RuntimePermission("getStackWalkerWithClassReference"));
-        Policy.setPolicy(new Policy() {
-            @Override
-            public boolean implies(ProtectionDomain domain, Permission p) {
-                return perms.implies(p) || DEFAULT_POLICY.implies(domain, p);
-            }
-        });
-        System.setSecurityManager(new SecurityManager());
     }
 
     void staticMethodCall() {

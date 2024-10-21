@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -362,9 +362,6 @@ public abstract class Preferences {
      * @return the user preference node associated with the package of which
      *         {@code c} is a member.
      * @throws NullPointerException if {@code c} is {@code null}.
-     * @throws SecurityException if a security manager is present and
-     *         it denies {@code RuntimePermission("preferences")}.
-     * @see    RuntimePermission
      */
     public static Preferences userNodeForPackage(Class<?> c) {
         return userRoot().node(nodeName(c));
@@ -406,9 +403,6 @@ public abstract class Preferences {
      * @return the system preference node associated with the package of which
      *         {@code c} is a member.
      * @throws NullPointerException if {@code c} is {@code null}.
-     * @throws SecurityException if a security manager is present and
-     *         it denies {@code RuntimePermission("preferences")}.
-     * @see    RuntimePermission
      */
     public static Preferences systemNodeForPackage(Class<?> c) {
         return systemRoot().node(nodeName(c));
@@ -444,9 +438,6 @@ public abstract class Preferences {
      * Returns the root preference node for the calling user.
      *
      * @return the root preference node for the calling user.
-     * @throws SecurityException If a security manager is present and
-     *         it denies {@code RuntimePermission("preferences")}.
-     * @see    RuntimePermission
      */
     public static Preferences userRoot() {
         @SuppressWarnings("removal")
@@ -461,9 +452,6 @@ public abstract class Preferences {
      * Returns the root preference node for the system.
      *
      * @return the root preference node for the system.
-     * @throws SecurityException If a security manager is present and
-     *         it denies {@code RuntimePermission("preferences")}.
-     * @see    RuntimePermission
      */
     public static Preferences systemRoot() {
         @SuppressWarnings("removal")
@@ -1280,9 +1268,6 @@ public abstract class Preferences {
      *         results in an {@code IOException}.
      * @throws InvalidPreferencesFormatException Data on input stream does not
      *         constitute a valid XML document with the mandated document type.
-     * @throws SecurityException If a security manager is present and
-     *         it denies {@code RuntimePermission("preferences")}.
-     * @see    RuntimePermission
      */
     public static void importPreferences(InputStream is)
         throws IOException, InvalidPreferencesFormatException

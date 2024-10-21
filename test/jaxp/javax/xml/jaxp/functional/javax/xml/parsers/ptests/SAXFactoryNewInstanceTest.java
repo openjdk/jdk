@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,18 +33,15 @@ import javax.xml.parsers.SAXParserFactory;
 import jaxp.library.JAXPDataProvider;
 
 import org.testng.annotations.DataProvider;
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.xml.sax.SAXException;
 
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow javax.xml.parsers.ptests.SAXFactoryNewInstanceTest
  * @run testng/othervm javax.xml.parsers.ptests.SAXFactoryNewInstanceTest
  * @summary Tests for SAXParserFactory.newInstance(factoryClassName , classLoader)
  */
-@Listeners({jaxp.library.BasePolicy.class})
 public class SAXFactoryNewInstanceTest {
 
     private static final String SAXPARSER_FACTORY_CLASSNAME = "com.sun.org.apache.xerces.internal.jaxp.SAXParserFactoryImpl";

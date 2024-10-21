@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -264,11 +264,9 @@ public class FileHandler extends StreamHandler {
      * entirely from {@code LogManager} properties (or their default values).
      *
      * @throws  IOException if there are IO problems opening the files.
-     * @throws  SecurityException  if a security manager exists and if
-     *             the caller does not have {@code LoggingPermission("control"))}.
      * @throws  NullPointerException if pattern property is an empty String.
      */
-    public FileHandler() throws IOException, SecurityException {
+    public FileHandler() throws IOException {
         checkPermission();
         configure();
         // pattern will have been set by configure. check that it's not
@@ -292,11 +290,9 @@ public class FileHandler extends StreamHandler {
      *
      * @param pattern  the name of the output file
      * @throws  IOException if there are IO problems opening the files.
-     * @throws  SecurityException  if a security manager exists and if
-     *             the caller does not have {@code LoggingPermission("control")}.
      * @throws  IllegalArgumentException if pattern is an empty string
      */
-    public FileHandler(String pattern) throws IOException, SecurityException {
+    public FileHandler(String pattern) throws IOException {
         if (pattern.length() < 1 ) {
             throw new IllegalArgumentException();
         }
@@ -324,12 +320,9 @@ public class FileHandler extends StreamHandler {
      * @param pattern  the name of the output file
      * @param append  specifies append mode
      * @throws  IOException if there are IO problems opening the files.
-     * @throws  SecurityException  if a security manager exists and if
-     *             the caller does not have {@code LoggingPermission("control")}.
      * @throws  IllegalArgumentException if pattern is an empty string
      */
-    public FileHandler(String pattern, boolean append) throws IOException,
-            SecurityException {
+    public FileHandler(String pattern, boolean append) throws IOException {
         if (pattern.length() < 1 ) {
             throw new IllegalArgumentException();
         }
@@ -360,13 +353,10 @@ public class FileHandler extends StreamHandler {
      * @param limit  the maximum number of bytes to write to any one file
      * @param count  the number of files to use
      * @throws  IOException if there are IO problems opening the files.
-     * @throws  SecurityException  if a security manager exists and if
-     *             the caller does not have {@code LoggingPermission("control")}.
      * @throws  IllegalArgumentException if {@code limit < 0}, or {@code count < 1}.
      * @throws  IllegalArgumentException if pattern is an empty string
      */
-    public FileHandler(String pattern, int limit, int count)
-                                        throws IOException, SecurityException {
+    public FileHandler(String pattern, int limit, int count) throws IOException {
         if (limit < 0 || count < 1 || pattern.length() < 1) {
             throw new IllegalArgumentException();
         }
@@ -398,14 +388,12 @@ public class FileHandler extends StreamHandler {
      * @param count  the number of files to use
      * @param append  specifies append mode
      * @throws  IOException if there are IO problems opening the files.
-     * @throws  SecurityException  if a security manager exists and if
-     *             the caller does not have {@code LoggingPermission("control")}.
      * @throws  IllegalArgumentException if {@code limit < 0}, or {@code count < 1}.
      * @throws  IllegalArgumentException if pattern is an empty string
      *
      */
     public FileHandler(String pattern, int limit, int count, boolean append)
-                                        throws IOException, SecurityException {
+                                        throws IOException {
         this(pattern, (long)limit, count, append);
     }
 
@@ -429,8 +417,6 @@ public class FileHandler extends StreamHandler {
      * @param count  the number of files to use
      * @param append  specifies append mode
      * @throws  IOException if there are IO problems opening the files.
-     * @throws  SecurityException  if a security manager exists and if
-     *             the caller does not have {@code LoggingPermission("control")}.
      * @throws  IllegalArgumentException if {@code limit < 0}, or {@code count < 1}.
      * @throws  IllegalArgumentException if pattern is an empty string
      *
@@ -814,12 +800,9 @@ public class FileHandler extends StreamHandler {
 
     /**
      * Close all the files.
-     *
-     * @throws  SecurityException  if a security manager exists and if
-     *             the caller does not have {@code LoggingPermission("control")}.
      */
     @Override
-    public void close() throws SecurityException {
+    public void close() {
         if (tryUseLock()) {
             try {
                 close0();
