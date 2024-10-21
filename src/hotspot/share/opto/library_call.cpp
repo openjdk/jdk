@@ -7398,7 +7398,7 @@ bool LibraryCallKit::inline_counterMode_AESCrypt(vmIntrinsics::ID id) {
 
 //------------------------------get_key_start_from_aescrypt_object-----------------------
 Node * LibraryCallKit::get_key_start_from_aescrypt_object(Node *aescrypt_object) {
-#if defined(PPC64) || defined(S390) || defined(RISCV)
+#if defined(PPC64) || defined(S390) || defined(RISCV64)
   // MixColumns for decryption can be reduced by preprocessing MixColumns with round keys.
   // Intel's extension is based on this optimization and AESCrypt generates round keys by preprocessing MixColumns.
   // However, ppc64 vncipher processes MixColumns and requires the same round keys with encryption.
