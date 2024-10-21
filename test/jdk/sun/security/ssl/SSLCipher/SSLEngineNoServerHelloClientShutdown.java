@@ -29,8 +29,7 @@
  * @bug 8331682
  * @summary Slow networks/Impatient clients can potentially send
  *          unencrypted TLSv1.3 alerts that won't parse on the server.
- * @library /javax/net/ssl/templates
- * @library /test/lib
+ * @library /javax/net/ssl/templates /test/lib
  * @run main/othervm SSLEngineNoServerHelloClientShutdown
  */
 
