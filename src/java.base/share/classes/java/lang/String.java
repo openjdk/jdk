@@ -133,6 +133,7 @@ import sun.nio.cs.UTF_8;
  * @author  Arthur van Hoff
  * @author  Martin Buchholz
  * @author  Ulf Zibis
+ * @author  Mote Amol
  * @see     java.lang.Object#toString()
  * @see     java.lang.StringBuffer
  * @see     java.lang.StringBuilder
@@ -3070,6 +3071,18 @@ public final class String
      */
     public boolean contains(CharSequence s) {
         return indexOf(s.toString()) >= 0;
+    }
+
+    /**
+     * Returns true if and only if this string contains the specified
+     * sequence of char values, ignoring case considerations.
+     *
+     * @param s the sequence to search for
+     * @return true if this string contains the specified sequence of char values, ignoring case;
+     * false otherwise
+     */
+    public boolean containsIgnoreCase(CharSequence s) {
+        return s == null ? false : this.toString().toLowerCase(Locale.ENGLISH).indexOf(s.toString().toLowerCase(Locale.ENGLISH)) >= 0;
     }
 
     /**
