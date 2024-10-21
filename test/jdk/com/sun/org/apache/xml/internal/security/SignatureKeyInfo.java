@@ -160,9 +160,8 @@ public class SignatureKeyInfo {
     }
 
     private static KeyPair getKeyPair(String algorithm) throws NoSuchAlgorithmException {
-        String kpgAlgorithm = "RSA";
         KeyPairGenerator keyGen = KeyPairGenerator.getInstance(algorithm);
-        keyGen.initialize(SecurityUtils.getTestKeySize(kpgAlgorithm));
+        keyGen.initialize(SecurityUtils.getTestKeySize(algorithm));
 
         return keyGen.genKeyPair();
     }
