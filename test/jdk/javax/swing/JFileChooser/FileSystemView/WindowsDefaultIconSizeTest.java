@@ -44,18 +44,16 @@ public class WindowsDefaultIconSizeTest {
     }
 
     public void test() {
-        String sep = System.getProperty("file.separator");
-        String dir = System.getProperty("test.src", ".");
         String filename = "test.not";
 
-        File testFile = new File(dir + sep + filename);
+        File testFile = new File(filename);
         try {
             if (!testFile.exists()) {
                 testFile.createNewFile();
                 testFile.deleteOnExit();
             }
             FileSystemView fsv = FileSystemView.getFileSystemView();
-            Icon icon = fsv.getSystemIcon(new File(dir + sep + filename));
+            Icon icon = fsv.getSystemIcon(new File(filename));
             if (icon instanceof ImageIcon) {
                 Image image = ((ImageIcon) icon).getImage();
                 if (image instanceof MultiResolutionImage) {
