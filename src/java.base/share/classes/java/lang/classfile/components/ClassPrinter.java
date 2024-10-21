@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,6 @@ import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import jdk.internal.classfile.impl.ClassPrinterImpl;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * A printer of classfiles and its elements.
@@ -60,9 +59,8 @@ import jdk.internal.javac.PreviewFeature;
  * Another use case for {@link ClassPrinter} is to simplify writing of automated tests:
  * {@snippet lang="java" class="PackageSnippets" region="printNodesInTest"}
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public final class ClassPrinter {
 
     private ClassPrinter() {
@@ -71,9 +69,8 @@ public final class ClassPrinter {
     /**
      * Level of detail to print or export.
      *
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     public enum Verbosity {
 
         /**
@@ -106,9 +103,8 @@ public final class ClassPrinter {
     /**
      * Named, traversable, and printable node parent.
      *
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     public sealed interface Node {
 
         /**
@@ -151,9 +147,8 @@ public final class ClassPrinter {
     /**
      * A leaf node holding single printable value.
      *
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     public sealed interface LeafNode extends Node
             permits ClassPrinterImpl.LeafNodeImpl {
 
@@ -167,9 +162,8 @@ public final class ClassPrinter {
     /**
      * A tree node holding {@link List} of nested nodes.
      *
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     public sealed interface ListNode extends Node, List<Node>
             permits ClassPrinterImpl.ListNodeImpl {
     }
@@ -179,9 +173,8 @@ public final class ClassPrinter {
      * <p>
      * Each {@link Map.Entry#getKey()} == {@link Map.Entry#getValue()}.{@link #name()}.
      *
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     public sealed interface MapNode extends Node, Map<ConstantDesc, Node>
             permits ClassPrinterImpl.MapNodeImpl {
     }

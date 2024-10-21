@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import java.lang.classfile.Label;
 import java.lang.classfile.PseudoInstruction;
 
 import jdk.internal.classfile.impl.LabelImpl;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * A pseudo-instruction which indicates that the specified label corresponds to
@@ -39,9 +38,8 @@ import jdk.internal.javac.PreviewFeature;
  *
  * @see PseudoInstruction
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface LabelTarget extends PseudoInstruction
         permits LabelImpl {
 

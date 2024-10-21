@@ -32,7 +32,6 @@ import java.lang.constant.ConstantDesc;
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.classfile.impl.UnboundAttribute;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models the {@code ConstantValue} attribute (JVMS {@jvms 4.7.2}), which can appear on
@@ -44,9 +43,8 @@ import jdk.internal.javac.PreviewFeature;
  * Subsequent occurrence of the attribute takes precedence during the attributed
  * element build or transformation.
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface ConstantValueAttribute
         extends Attribute<ConstantValueAttribute>, FieldElement
         permits BoundAttribute.BoundConstantValueAttribute,

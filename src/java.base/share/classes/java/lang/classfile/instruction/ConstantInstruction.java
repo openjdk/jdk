@@ -35,7 +35,6 @@ import java.lang.constant.ConstantDesc;
 import jdk.internal.classfile.impl.AbstractInstruction;
 import jdk.internal.classfile.impl.BytecodeHelpers;
 import jdk.internal.classfile.impl.Util;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models a constant-load instruction in the {@code code} array of a {@code
@@ -45,9 +44,8 @@ import jdk.internal.javac.PreviewFeature;
  * a {@code kind} of {@link Opcode.Kind#CONSTANT}.  Delivered as a {@link
  * CodeElement} when traversing the elements of a {@link CodeModel}.
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface ConstantInstruction extends Instruction {
 
     /**
@@ -64,9 +62,8 @@ public sealed interface ConstantInstruction extends Instruction {
      * Models an "intrinsic constant" instruction (e.g., {@code
      * iconst_0}).
      *
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface IntrinsicConstantInstruction extends ConstantInstruction
             permits AbstractInstruction.UnboundIntrinsicConstantInstruction {
 
@@ -83,9 +80,8 @@ public sealed interface ConstantInstruction extends Instruction {
      * Models an "argument constant" instruction (e.g., {@code
      * bipush}).
      *
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface ArgumentConstantInstruction extends ConstantInstruction
             permits AbstractInstruction.BoundArgumentConstantInstruction,
                     AbstractInstruction.UnboundArgumentConstantInstruction {
@@ -106,9 +102,8 @@ public sealed interface ConstantInstruction extends Instruction {
      * Models a "load constant" instruction (e.g., {@code
      * ldc}).
      *
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface LoadConstantInstruction extends ConstantInstruction
             permits AbstractInstruction.BoundLoadConstantInstruction,
                     AbstractInstruction.UnboundLoadConstantInstruction {

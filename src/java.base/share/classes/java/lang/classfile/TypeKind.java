@@ -30,7 +30,6 @@ import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
 import java.lang.invoke.TypeDescriptor;
 
-import jdk.internal.javac.PreviewFeature;
 import jdk.internal.vm.annotation.Stable;
 
 /**
@@ -54,9 +53,8 @@ import jdk.internal.vm.annotation.Stable;
  *
  * @jvms 2.2 Data Types
  * @jvms 2.11.1 Types and the Java Virtual Machine
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public enum TypeKind {
     // Elements are grouped so frequently used switch ranges such as
     // primitives (boolean - double) and computational (int - void) are together.
@@ -166,7 +164,6 @@ public enum TypeKind {
     /**
      * {@return the code used by the {@link Opcode#NEWARRAY newarray} instruction to create an array
      * of this component type, or {@code -1} if this type is not supported by {@code newarray}}
-     * @since 23
      * @jvms 6.5.newarray <i>newarray</i>
      */
     public int newarrayCode() {
@@ -198,7 +195,6 @@ public enum TypeKind {
      * newarray}}
      * @param newarrayCode the operand of the {@code newarray} instruction
      * @throws IllegalArgumentException if the code is invalid
-     * @since 23
      * @jvms 6.5.newarray <i>newarray</i>
      */
     public static TypeKind fromNewarrayCode(int newarrayCode) {

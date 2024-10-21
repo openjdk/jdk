@@ -37,7 +37,6 @@ import jdk.internal.classfile.impl.ClassHierarchyImpl;
 import jdk.internal.classfile.impl.ClassHierarchyImpl.ClassLoadingClassHierarchyResolver;
 import jdk.internal.classfile.impl.ClassHierarchyImpl.StaticClassHierarchyResolver;
 import jdk.internal.classfile.impl.Util;
-import jdk.internal.javac.PreviewFeature;
 
 import static java.lang.constant.ConstantDescs.CD_Object;
 import static java.util.Objects.requireNonNull;
@@ -46,9 +45,8 @@ import static java.util.Objects.requireNonNull;
  * Provides class hierarchy information for generating correct stack maps
  * during code building.
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 @FunctionalInterface
 public interface ClassHierarchyResolver {
 
@@ -71,9 +69,8 @@ public interface ClassHierarchyResolver {
     /**
      * Information about a resolved class.
      *
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface ClassHierarchyInfo permits ClassHierarchyImpl.ClassHierarchyInfoImpl {
 
         /**
