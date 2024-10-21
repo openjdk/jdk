@@ -168,11 +168,6 @@ public class Usages {
                                     Matcher m = p.matcher(content);
                                     while (m.find()) {
                                         String arg = m.group(1);
-                                        // Special case in PolicyFile.java:
-                                        if (arg.startsWith("POLICY + \"")) {
-                                            arg = "java.security.policy"
-                                                    + arg.substring(10);
-                                        }
                                         if (!keys.contains(arg)) {
                                             throw new RuntimeException(
                                                     "Not found: " + arg);
