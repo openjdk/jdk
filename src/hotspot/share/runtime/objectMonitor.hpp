@@ -173,17 +173,9 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
 
   static const int64_t NO_OWNER = 0;
   static const int64_t ANONYMOUS_OWNER = 1;
-  // Used by async deflation as a marker in the _owner field.
-  // Note that the choice of the two markers is peculiar:
-  // - They need to represent values that cannot be pointers. In particular,
-  //   we achieve this by using the lowest two bits.
-  // - ANONYMOUS_OWNER should be a small value, it is used in generated code
-  //   and small values encode much better.
-  // - We test for anonymous owner by testing for the lowest bit, therefore
-  //   DEFLATER_MARKER must *not* have that bit set.
   static const int64_t DEFLATER_MARKER = 2;
 
-  int64_t volatile _owner;  // Either tid of owner, ANONYMOUS_OWNER_MARKER or DEFLATER_MARKER.
+  int64_t volatile _owner;  // Either tid of owner, NO_OWNER, ANONYMOUS_OWNER or DEFLATER_MARKER.
   volatile uint64_t _previous_owner_tid;  // thread id of the previous owner of the monitor
   // Separate _owner and _next_om on different cache lines since
   // both can have busy multi-threaded access. _previous_owner_tid is only
