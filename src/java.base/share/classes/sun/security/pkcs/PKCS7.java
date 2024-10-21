@@ -38,7 +38,6 @@ import java.security.*;
 import java.util.function.Function;
 
 import sun.security.jca.JCAUtil;
-import sun.security.provider.SHA3.SHAKE128;
 import sun.security.provider.SHA3.SHAKE256;
 import sun.security.timestamp.*;
 import sun.security.util.*;
@@ -755,11 +754,6 @@ public class PKCS7 {
             if (digAlgName.equals("SHAKE256") || digAlgName.equals("SHAKE256-LEN")) {
                 // No MessageDigest impl for SHAKE256 yet
                 var shaker = new SHAKE256(64);
-                shaker.update(content, 0, content.length);
-                md = shaker.digest();
-            } else if (digAlgName.equals("SHAKE128")) {
-                // No MessageDigest impl for SHAKE128 yet
-                var shaker = new SHAKE128(32);
                 shaker.update(content, 0, content.length);
                 md = shaker.digest();
             } else {

@@ -190,16 +190,14 @@ public class SignatureUtil {
         SharedSecrets.getJavaSecuritySignatureAccess().initSign(s, key, params, sr);
     }
 
-    public static class DigestAlgHolder {
+    public static class EdDSADigestAlgHolder {
         public static final AlgorithmId sha512;
-        public static final AlgorithmId shake128;
         public static final AlgorithmId shake256;
         public static final AlgorithmId shake256$512;
 
         static {
             try {
                 sha512 = new AlgorithmId(ObjectIdentifier.of(KnownOIDs.SHA_512));
-                shake128 = new AlgorithmId(ObjectIdentifier.of(KnownOIDs.SHAKE128));
                 shake256 = new AlgorithmId(ObjectIdentifier.of(KnownOIDs.SHAKE256));
                 shake256$512 = new AlgorithmId(
                         ObjectIdentifier.of(KnownOIDs.SHAKE256_LEN),
@@ -235,34 +233,17 @@ public class SignatureUtil {
             // https://www.rfc-editor.org/rfc/rfc8419.html#section-3
             switch (kAlg.toUpperCase(Locale.ENGLISH)) {
                 case "ED25519":
-                    digAlgID = DigestAlgHolder.sha512;
+                    digAlgID = EdDSADigestAlgHolder.sha512;
                     break;
                 case "ED448":
                     if (directsign) {
-                        digAlgID = DigestAlgHolder.shake256;
+                        digAlgID = EdDSADigestAlgHolder.shake256;
                     } else {
-                        digAlgID = DigestAlgHolder.shake256$512;
+                        digAlgID = EdDSADigestAlgHolder.shake256$512;
                     }
                     break;
                 default:
                     throw new AssertionError("Unknown curve name: " + kAlg);
-            }
-        } else if (kAlg.equalsIgnoreCase("ML-DSA-44")) {
-            // https://www.ietf.org/archive/id/draft-salter-lamps-cms-ml-dsa-00.html
-            digAlgID = DigestAlgHolder.shake128;
-        } else if (kAlg.equalsIgnoreCase("ML-DSA-65") || kAlg.equalsIgnoreCase("ML-DSA-87")) {
-            digAlgID = DigestAlgHolder.shake256;
-        } else if (kAlg.equalsIgnoreCase("ML-DSA")) {
-            if (privateKey.getParams() instanceof NamedParameterSpec nps) {
-                digAlgID = switch (nps.getName().toUpperCase(Locale.ROOT)) {
-                    case "ML-DSA-44" -> DigestAlgHolder.shake128;
-                    case "ML-DSA-65", "ML-DSA-87" -> DigestAlgHolder.shake256;
-                    default -> throw new IllegalArgumentException(
-                            "Unknown ML-DSA parameter name: " + nps.getName());
-                };
-            } else {
-                throw new IllegalArgumentException(
-                        "Unsupported ML-DSA key");
             }
         } else if (sigalg.equalsIgnoreCase("RSASSA-PSS")) {
             try {
