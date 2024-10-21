@@ -603,7 +603,11 @@ public:
   inline bool is_in_active_generation(oop obj) const;
   inline bool is_in_young(const void* p) const;
   inline bool is_in_old(const void* p) const;
-  inline bool is_old(oop pobj) const;
+
+  // Returns true iff the young generation is being collected and the given pointer
+  // is in the old generation. This is used to prevent the young collection from treating
+  // such an object as unreachable.
+  inline bool is_in_old_during_young_collection(oop obj) const;
 
   inline ShenandoahAffiliation region_affiliation(const ShenandoahHeapRegion* r);
   inline void set_affiliation(ShenandoahHeapRegion* r, ShenandoahAffiliation new_affiliation);
