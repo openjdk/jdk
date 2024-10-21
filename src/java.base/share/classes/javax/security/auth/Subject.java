@@ -101,8 +101,8 @@ import sun.security.util.ResourcesMgr;
  *     <li>{@link #doAsPrivileged(Subject, PrivilegedExceptionAction, AccessControlContext)}
  * </ul>
  * Methods {@link #current()} and {@link #callAs(Subject, Callable)}
- * are replacements for these methods, where {@code current}
- * is mostly equivalent to {@code getSubject(AccessController.getContext())}
+ * are replacements for these methods, where {@code current} is mostly
+ * equivalent to the original {@code getSubject(AccessController.getContext())}
  * and {@code callAs} is similar to {@code doAs} except that the
  * input type and exceptions thrown are slightly different.
  *
