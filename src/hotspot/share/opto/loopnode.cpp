@@ -2826,6 +2826,10 @@ SafePointNode* CountedLoopNode::outer_safepoint() const {
 
 Node* CountedLoopNode::skip_assertion_predicates_with_halt() {
   Node* ctrl = in(LoopNode::EntryControl);
+  if (ctrl == nullptr) {
+    // Dying loop.
+    return nullptr;
+  }
   if (is_main_loop()) {
     ctrl = skip_strip_mined()->in(LoopNode::EntryControl);
   }
