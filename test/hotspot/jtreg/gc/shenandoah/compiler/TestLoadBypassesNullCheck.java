@@ -28,10 +28,12 @@
  * @requires vm.flavor == "server"
  * @requires vm.gc.Shenandoah
  *
- * @run main/othervm -XX:-TieredCompilation -XX:-UseOnStackReplacement -XX:-BackgroundCompilation -XX:+StressGCM
- *                   -XX:+StressLCM -XX:+UseShenandoahGC -XX:LoopMaxUnroll=0 -XX:StressSeed=270847015 TestLoadBypassesNullCheck
- * @run main/othervm -XX:-TieredCompilation -XX:-UseOnStackReplacement -XX:-BackgroundCompilation -XX:+StressGCM
- *                   -XX:+StressLCM -XX:+UseShenandoahGC -XX:LoopMaxUnroll=0 TestLoadBypassesNullCheck
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:-TieredCompilation -XX:-UseOnStackReplacement -XX:-BackgroundCompilation
+ *                   -XX:+StressGCM -XX:+StressLCM -XX:+UseShenandoahGC -XX:LoopMaxUnroll=0 -XX:StressSeed=270847015
+ *                   TestLoadBypassesNullCheck
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:-TieredCompilation -XX:-UseOnStackReplacement -XX:-BackgroundCompilation
+ *                   -XX:+StressGCM -XX:+StressLCM -XX:+UseShenandoahGC -XX:LoopMaxUnroll=0
+ *                   TestLoadBypassesNullCheck
  *
  */
 
