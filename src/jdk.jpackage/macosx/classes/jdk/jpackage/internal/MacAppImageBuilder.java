@@ -57,7 +57,6 @@ import static jdk.jpackage.internal.MacAppBundler.BUNDLE_ID_SIGNING_PREFIX;
 import static jdk.jpackage.internal.MacAppBundler.DEVELOPER_ID_APP_SIGNING_KEY;
 import static jdk.jpackage.internal.MacAppBundler.APP_IMAGE_SIGN_IDENTITY;
 import static jdk.jpackage.internal.MacBaseInstallerBundler.SIGNING_KEYCHAIN;
-import static jdk.jpackage.internal.MacBaseInstallerBundler.SIGNING_KEY_USER;
 import static jdk.jpackage.internal.MacBaseInstallerBundler.INSTALLER_SIGN_IDENTITY;
 import static jdk.jpackage.internal.OverridableResource.createResource;
 import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
@@ -76,8 +75,6 @@ import static jdk.jpackage.internal.StandardBundlerParam.ADD_LAUNCHERS;
 import static jdk.jpackage.internal.StandardBundlerParam.SIGN_BUNDLE;
 import static jdk.jpackage.internal.StandardBundlerParam.APP_STORE;
 import static jdk.jpackage.internal.StandardBundlerParam.APP_CONTENT;
-import static jdk.jpackage.internal.StandardBundlerParam.getPredefinedAppImage;
-import static jdk.jpackage.internal.StandardBundlerParam.hasPredefinedAppImage;
 
 public class MacAppImageBuilder extends AbstractAppImageBuilder {
 
@@ -103,28 +100,28 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
     private static List<String> keyChains;
 
     public static final BundlerParamInfo<Boolean>
-            MAC_CONFIGURE_LAUNCHER_IN_PLIST = new StandardBundlerParam<>(
+            MAC_CONFIGURE_LAUNCHER_IN_PLIST = new BundlerParamInfo<>(
                     "mac.configure-launcher-in-plist",
                     Boolean.class,
                     params -> Boolean.FALSE,
                     (s, p) -> Boolean.valueOf(s));
 
     public static final BundlerParamInfo<String> MAC_CF_BUNDLE_NAME =
-            new StandardBundlerParam<>(
+            new BundlerParamInfo<>(
                     Arguments.CLIOptions.MAC_BUNDLE_NAME.getId(),
                     String.class,
                     params -> null,
                     (s, p) -> s);
 
     public static final BundlerParamInfo<String> APP_CATEGORY =
-            new StandardBundlerParam<>(
+            new BundlerParamInfo<>(
                     Arguments.CLIOptions.MAC_CATEGORY.getId(),
                     String.class,
                     params -> "utilities",
                     (s, p) -> s);
 
     public static final BundlerParamInfo<String> MAC_CF_BUNDLE_IDENTIFIER =
-            new StandardBundlerParam<>(
+            new BundlerParamInfo<>(
                     Arguments.CLIOptions.MAC_BUNDLE_IDENTIFIER.getId(),
                     String.class,
                     params -> {
@@ -142,7 +139,7 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
                     (s, p) -> s);
 
     public static final BundlerParamInfo<Path> ICON_ICNS =
-            new StandardBundlerParam<>(
+            new BundlerParamInfo<>(
             "icon.icns",
             Path.class,
             params -> {
@@ -158,7 +155,7 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
             (s, p) -> Path.of(s));
 
     public static final BundlerParamInfo<Path> ENTITLEMENTS =
-            new StandardBundlerParam<>(
+            new BundlerParamInfo<>(
             Arguments.CLIOptions.MAC_ENTITLEMENTS.getId(),
             Path.class,
             params -> {
@@ -179,56 +176,56 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
             (s, p) -> Path.of(s)
         );
 
-    private static final StandardBundlerParam<String> FA_MAC_CFBUNDLETYPEROLE =
-             new StandardBundlerParam<>(
+    private static final BundlerParamInfo<String> FA_MAC_CFBUNDLETYPEROLE =
+             new BundlerParamInfo<>(
                      Arguments.MAC_CFBUNDLETYPEROLE,
                      String.class,
                      params -> "Editor",
                      (s, p) -> s
      );
 
-     private static final StandardBundlerParam<String> FA_MAC_LSHANDLERRANK =
-             new StandardBundlerParam<>(
+     private static final BundlerParamInfo<String> FA_MAC_LSHANDLERRANK =
+             new BundlerParamInfo<>(
                      Arguments.MAC_LSHANDLERRANK,
                      String.class,
                      params -> "Owner",
                      (s, p) -> s
      );
 
-     private static final StandardBundlerParam<String> FA_MAC_NSSTORETYPEKEY =
-             new StandardBundlerParam<>(
+     private static final BundlerParamInfo<String> FA_MAC_NSSTORETYPEKEY =
+             new BundlerParamInfo<>(
                      Arguments.MAC_NSSTORETYPEKEY,
                      String.class,
                      params -> null,
                      (s, p) -> s
      );
 
-     private static final StandardBundlerParam<String> FA_MAC_NSDOCUMENTCLASS =
-             new StandardBundlerParam<>(
+     private static final BundlerParamInfo<String> FA_MAC_NSDOCUMENTCLASS =
+             new BundlerParamInfo<>(
                      Arguments.MAC_NSDOCUMENTCLASS,
                      String.class,
                      params -> null,
                      (s, p) -> s
      );
 
-     private static final StandardBundlerParam<String> FA_MAC_LSTYPEISPACKAGE =
-             new StandardBundlerParam<>(
+     private static final BundlerParamInfo<String> FA_MAC_LSTYPEISPACKAGE =
+             new BundlerParamInfo<>(
                      Arguments.MAC_LSTYPEISPACKAGE,
                      String.class,
                      params -> null,
                      (s, p) -> s
      );
 
-     private static final StandardBundlerParam<String> FA_MAC_LSDOCINPLACE =
-             new StandardBundlerParam<>(
+     private static final BundlerParamInfo<String> FA_MAC_LSDOCINPLACE =
+             new BundlerParamInfo<>(
                      Arguments.MAC_LSDOCINPLACE,
                      String.class,
                      params -> null,
                      (s, p) -> s
      );
 
-     private static final StandardBundlerParam<String> FA_MAC_UIDOCBROWSER =
-             new StandardBundlerParam<>(
+     private static final BundlerParamInfo<String> FA_MAC_UIDOCBROWSER =
+             new BundlerParamInfo<>(
                      Arguments.MAC_UIDOCBROWSER,
                      String.class,
                      params -> null,
@@ -236,8 +233,8 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
      );
 
      @SuppressWarnings("unchecked")
-     private static final StandardBundlerParam<List<String>> FA_MAC_NSEXPORTABLETYPES =
-             new StandardBundlerParam<>(
+     private static final BundlerParamInfo<List<String>> FA_MAC_NSEXPORTABLETYPES =
+             new BundlerParamInfo<>(
                      Arguments.MAC_NSEXPORTABLETYPES,
                      (Class<List<String>>) (Object) List.class,
                      params -> null,
@@ -245,8 +242,8 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
              );
 
      @SuppressWarnings("unchecked")
-     private static final StandardBundlerParam<List<String>> FA_MAC_UTTYPECONFORMSTO =
-             new StandardBundlerParam<>(
+     private static final BundlerParamInfo<List<String>> FA_MAC_UTTYPECONFORMSTO =
+             new BundlerParamInfo<>(
                      Arguments.MAC_UTTYPECONFORMSTO,
                      (Class<List<String>>) (Object) List.class,
                      params -> Arrays.asList("public.data"),

@@ -40,7 +40,7 @@ import java.util.Map;
 abstract class AbstractBundler implements Bundler {
 
     static final BundlerParamInfo<Path> IMAGES_ROOT =
-            new StandardBundlerParam<>(
+            new BundlerParamInfo<>(
             "imagesRoot",
             Path.class,
             params ->
