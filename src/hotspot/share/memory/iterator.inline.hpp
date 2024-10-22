@@ -27,6 +27,7 @@
 
 #include "memory/iterator.hpp"
 
+#include "cds/aotLinkedClassBulkLoader.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "code/nmethod.hpp"
 #include "oops/access.inline.hpp"
@@ -54,7 +55,7 @@ inline void ClaimMetadataVisitingOopIterateClosure::do_klass(Klass* k) {
   if (cld != nullptr) {
     ClaimMetadataVisitingOopIterateClosure::do_cld(cld);
   } else {
-    assert(is_pending_aot_linked_class(k), "sanity");
+    assert(AOTLinkedClassBulkLoader::is_pending_aot_linked_class(k), "sanity");
   }
 }
 

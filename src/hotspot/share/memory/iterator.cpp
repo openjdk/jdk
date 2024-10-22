@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "cds/aotLinkedClassBulkLoader.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "code/nmethod.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
@@ -70,9 +69,3 @@ void MarkingNMethodClosure::do_nmethod(nmethod* nm) {
     }
   }
 }
-
-#ifdef ASSERT
-bool ClaimMetadataVisitingOopIterateClosure::is_pending_aot_linked_class(Klass* k) {
-  return AOTLinkedClassBulkLoader::is_pending_aot_linked_class(k);
-}
-#endif

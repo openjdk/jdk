@@ -172,10 +172,6 @@ public:
 };
 
 class ClaimMetadataVisitingOopIterateClosure : public OopIterateClosure {
- private:
-#ifdef ASSERT
-  static bool is_pending_aot_linked_class(Klass* k);
-#endif
  protected:
   const int _claim;
 
