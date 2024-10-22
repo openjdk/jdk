@@ -56,13 +56,13 @@ hb_font_t* jdk_font_create_hbp(
                hb_font_funcs_t* font_funcs);
 
 
-typedef int (*store_layoutdata_func_t)
+typedef void (*store_layoutdata_func_t)
    (int slot, int baseIndex, int offset,
     float startX, float startY, float devScale,
     int charCount, int glyphCount,
     hb_glyph_info_t *glyphInfo, hb_glyph_position_t *glyphPos);
 
-JDKEXPORT int jdk_hb_shape(
+JDKEXPORT void jdk_hb_shape(
 
      float ptSize,
      float *matrix,

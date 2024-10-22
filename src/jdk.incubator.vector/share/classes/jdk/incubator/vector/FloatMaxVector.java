@@ -493,6 +493,13 @@ final class FloatMaxVector extends FloatVector {
                                      FloatMaxMask.class, (FloatMaxMask) m);  // specialize
     }
 
+    @Override
+    @ForceInline
+    public FloatMaxVector selectFrom(Vector<Float> v1,
+                                   Vector<Float> v2) {
+        return (FloatMaxVector)
+            super.selectFromTemplate((FloatMaxVector) v1, (FloatMaxVector) v2);  // specialize
+    }
 
     @ForceInline
     @Override
