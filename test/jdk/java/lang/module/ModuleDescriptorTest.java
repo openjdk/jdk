@@ -28,7 +28,6 @@
  * @modules java.base/jdk.internal.access
  *          java.base/jdk.internal.module
  * @library /test/lib
- * @build jdk.test.lib.util.ModuleInfoWriter
  * @run testng ModuleDescriptorTest
  * @summary Basic test for java.lang.module.ModuleDescriptor and its builder
  */

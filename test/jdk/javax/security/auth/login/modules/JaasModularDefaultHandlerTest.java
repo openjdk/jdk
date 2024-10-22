@@ -45,7 +45,7 @@ import jdk.test.lib.util.ModuleInfoWriter;
  * @enablePreview
  * @modules java.base/jdk.internal.module
  * @library /test/lib
- * @build jdk.test.lib.util.JarUtils jdk.test.lib.util.ModuleInfoWriter
+ * @build jdk.test.lib.util.JarUtils
  * @build TestCallbackHandler TestLoginModule JaasClientWithDefaultHandler
  * @run main JaasModularDefaultHandlerTest
  */

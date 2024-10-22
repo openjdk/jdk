@@ -51,7 +51,6 @@ import jdk.test.lib.util.ModuleInfoWriter;
  * @modules java.base/jdk.internal.module
  * @library /test/lib
  * @build jdk.test.lib.util.JarUtils
- *        jdk.test.lib.util.ModuleInfoWriter
  *        TestProvider TestClient
  * @run main SecurityProviderModularTest CL true
  * @run main SecurityProviderModularTest CL false
