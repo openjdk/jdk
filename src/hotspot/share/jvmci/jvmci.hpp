@@ -117,8 +117,8 @@ class JVMCI : public AllStatic {
   // The path of the file underlying _fatal_log_fd if it is a normal file.
   static const char* _fatal_log_filename;
 
-  // Native thread id of thread that will initialize _fatal_log_fd.
-  static volatile intx _fatal_log_init_thread;
+  // Thread id of the first thread reporting a libjvmci error.
+  static volatile intx _first_error_tid;
 
   // JVMCI event log (shows up in hs_err crash logs).
   static StringEventLog* _events;
