@@ -6476,6 +6476,33 @@ void C2_MacroAssembler::vector_rearrange_int_float(BasicType bt, XMMRegister dst
   }
 }
 
+void C2_MacroAssembler::select_from_two_vectors_evex(BasicType elem_bt, XMMRegister dst, XMMRegister src1,
+                                                     XMMRegister src2, int vlen_enc) {
+  switch(elem_bt) {
+    case T_BYTE:
+      evpermi2b(dst, src1, src2, vlen_enc);
+      break;
+    case T_SHORT:
+      evpermi2w(dst, src1, src2, vlen_enc);
+      break;
+    case T_INT:
+      evpermi2d(dst, src1, src2, vlen_enc);
+      break;
+    case T_LONG:
+      evpermi2q(dst, src1, src2, vlen_enc);
+      break;
+    case T_FLOAT:
+      evpermi2ps(dst, src1, src2, vlen_enc);
+      break;
+    case T_DOUBLE:
+      evpermi2pd(dst, src1, src2, vlen_enc);
+      break;
+    default:
+      fatal("Unsupported type %s", type2name(elem_bt));
+      break;
+  }
+}
+
 #ifdef _LP64
 void C2_MacroAssembler::load_narrow_klass_compact_c2(Register dst, Address src) {
   // The incoming address is pointing into obj-start + klass_offset_in_bytes. We need to extract

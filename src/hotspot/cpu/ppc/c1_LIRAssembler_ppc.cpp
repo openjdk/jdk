@@ -213,7 +213,11 @@ int LIR_Assembler::emit_unwind_handler() {
   if (method()->is_synchronized()) {
     monitor_address(0, FrameMap::R4_opr);
     stub = new MonitorExitStub(FrameMap::R4_opr, true, 0);
-    __ unlock_object(R5, R6, R4, *stub->entry());
+    if (LockingMode == LM_MONITOR) {
+      __ b(*stub->entry());
+    } else {
+      __ unlock_object(R5, R6, R4, *stub->entry());
+    }
     __ bind(*stub->continuation());
   }
 
