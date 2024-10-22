@@ -679,7 +679,7 @@ public class TestDependencyOffsets {
                 loadFrom = "b";
                 break;
             default:
-	        throw new RuntimeException("impossible"); 
+                throw new RuntimeException("impossible");
             }
 
             return String.format("""
