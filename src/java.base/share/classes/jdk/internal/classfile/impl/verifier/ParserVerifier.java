@@ -24,37 +24,26 @@
  */
 package jdk.internal.classfile.impl.verifier;
 
-import java.lang.classfile.Annotation;
-import java.lang.classfile.AnnotationValue;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
+import java.lang.classfile.constantpool.*;
 import java.lang.constant.ClassDesc;
-import static java.lang.constant.ConstantDescs.CLASS_INIT_NAME;
-import static java.lang.constant.ConstantDescs.INIT_NAME;
+import java.lang.constant.ConstantDescs;
+import java.lang.reflect.AccessFlag;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
-import java.lang.classfile.Attribute;
-import java.lang.classfile.AttributedElement;
-import java.lang.classfile.Attributes;
-import java.lang.classfile.ClassModel;
-import java.lang.classfile.ClassFileElement;
-import java.lang.classfile.CodeModel;
-import java.lang.classfile.CompoundElement;
-import java.lang.classfile.CustomAttribute;
-import java.lang.classfile.FieldModel;
-import java.lang.classfile.MethodModel;
-import java.lang.classfile.TypeAnnotation;
-import java.lang.classfile.TypeKind;
-import java.lang.classfile.attribute.*;
-import java.lang.classfile.constantpool.*;
-import java.lang.constant.ConstantDescs;
-import java.lang.reflect.AccessFlag;
-import java.util.Collection;
 import java.util.function.Function;
 import java.util.function.ToIntFunction;
+import java.util.stream.Collectors;
+
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.Util;
+
+import static java.lang.constant.ConstantDescs.CLASS_INIT_NAME;
+import static java.lang.constant.ConstantDescs.INIT_NAME;
 
 /**
  * ParserVerifier performs selected checks of the class file format according to

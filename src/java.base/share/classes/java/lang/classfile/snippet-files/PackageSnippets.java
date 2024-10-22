@@ -24,43 +24,25 @@
  */
 package java.lang.classfile.snippets;
 
-import java.lang.classfile.ClassBuilder;
+import java.lang.classfile.*;
+import java.lang.classfile.components.ClassRemapper;
+import java.lang.classfile.components.CodeLocalsShifter;
+import java.lang.classfile.components.CodeRelabeler;
+import java.lang.classfile.instruction.*;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.invoke.MethodHandles;
+import java.lang.reflect.AccessFlag;
 import java.util.ArrayDeque;
 import java.util.HashSet;
-import java.util.Set;
-
-import java.lang.reflect.AccessFlag;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import java.lang.classfile.ClassElement;
-import java.lang.classfile.ClassHierarchyResolver;
-import java.lang.classfile.ClassModel;
-import java.lang.classfile.ClassTransform;
-import java.lang.classfile.ClassFile;
-import java.lang.classfile.ClassFileVersion;
-import java.lang.classfile.CodeBuilder;
-import java.lang.classfile.CodeElement;
-import java.lang.classfile.CodeModel;
-import java.lang.classfile.CodeTransform;
-import java.lang.classfile.FieldModel;
-import java.lang.classfile.MethodElement;
-import java.lang.classfile.MethodModel;
-import java.lang.classfile.Opcode;
-import java.lang.classfile.PseudoInstruction;
-import java.lang.classfile.TypeKind;
-import java.lang.classfile.instruction.*;
-
 import static java.util.stream.Collectors.toSet;
-import java.lang.classfile.components.ClassRemapper;
-import java.lang.classfile.components.CodeLocalsShifter;
-import java.lang.classfile.components.CodeRelabeler;
 
 class PackageSnippets {
     void enumerateFieldsMethods1(byte[] bytes) {
