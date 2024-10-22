@@ -593,15 +593,6 @@ public abstract class TimeZone implements Serializable, Cloneable {
             // delegate to default TZ which is effectively immutable
             return defaultZone.toZoneId();
         }
-        // derive it ourselves
-        if (ZoneInfoFile.useOldMapping() && id.length() == 3) {
-            if ("EST".equals(id))
-                return ZoneId.of("America/New_York");
-            if ("MST".equals(id))
-                return ZoneId.of("America/Denver");
-            if ("HST".equals(id))
-                return ZoneId.of("America/Honolulu");
-        }
         return ZoneId.of(id, ZoneId.SHORT_IDS);
     }
 
