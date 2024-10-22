@@ -685,10 +685,42 @@ public final class Float16
         return (double)floatValue();
     }
 
-    // Skipping for now:
-    // public int hashCode()
-    // public static int hashCode(Float16 value)
-    // public boolean equals(Object obj)
+    /**
+     * {@return a hash code for this {@code Float16} object}
+     *
+     * The general contract of {@code Object#hashCode()}is satisfied;
+     * all NaN values have the same hash value.
+     */
+    @Override
+    public int hashCode() {
+        return hashCode(this);
+    }
+
+    /**
+     * Returns a hash code for a {@code Float16} value; compatible with
+     * {@code Float16.hashCode()}.
+     *
+     * @param value the value to hash
+     * @return a hash code value for a {@code Float16} value.
+     */
+    public static int hashCode(Float16 value) {
+        Float16 f16 = isNaN(value) ? Float16.NaN : value;
+        return (int)float16ToRawShortBits(f16);
+    }
+
+    /**
+     * Compares this object against the specified object.  The result
+     * is {@code true} if and only if the argument is not
+     * {@code null} and is a {@code Float16} object that
+     * represents a {@code Float16} that has the same value as the
+     * {@code double} represented by this object.
+     *
+     * @jls 15.21.1 Numerical Equality Operators == and !=
+     */
+    public boolean equals(Object obj) {
+        return (obj instanceof Float16 f16) &&
+            (float16ToShortBits(f16) == float16ToShortBits(this));
+    }
 
     /**
      * Returns a representation of the specified floating-point value
@@ -701,6 +733,24 @@ public final class Float16
      * @see Double#doubleToRawLongBits(double)
      */
     public static short float16ToRawShortBits(Float16 f16) {
+        return f16.value;
+    }
+
+    /**
+     * Returns a representation of the specified floating-point value
+     * according to the IEEE 754 floating-point binary16 bit layout.
+     * All NaN values return the same bit pattern as {@link Float16#NaN}.
+     *
+     * @param   f16   a {@code Float16} floating-point number.
+     * @return the bits that represent the floating-point number.
+     *
+     * @see Float#floatToRawIntBits(float)
+     * @see Double#doubleToRawLongBits(double)
+     */
+    public static short float16ToShortBits(Float16 f16) {
+        if (isNaN(f16)) {
+            return Float16.NaN.value;
+        }
         return f16.value;
     }
 
