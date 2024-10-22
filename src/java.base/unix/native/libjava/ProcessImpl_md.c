@@ -201,6 +201,7 @@ setSIGCHLDHandler(JNIEnv *env)
      *
      * References:
      * https://pubs.opengroup.org/onlinepubs/7908799/xsh/exec.html
+     * https://web.archive.org/web/20090106162458/http://www.pasc.org/interps/unofficial/db/p1003.1/pasc-1003.1-132.html
      */
     struct sigaction sa;
     sa.sa_handler = SIG_DFL;
