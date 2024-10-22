@@ -50,23 +50,31 @@ public class bug6694823 {
     private static Robot robot;
 
     public static void main(String[] args) throws Exception {
-        robot = new Robot();
-        toolkit = Toolkit.getDefaultToolkit();
-        SwingUtilities.invokeAndWait(() -> createGui());
+        try {
+            robot = new Robot();
+            toolkit = Toolkit.getDefaultToolkit();
+            SwingUtilities.invokeAndWait(() -> createGui());
+            robot.waitForIdle();
+            robot.delay(1000);
 
-        robot.waitForIdle();
-
-        // Get screen insets
-        screenInsets = toolkit.getScreenInsets(frame.getGraphicsConfiguration());
-        if (screenInsets.bottom == 0) {
-            // This test is only for configurations with taskbar on the bottom
-            return;
+            // Get screen insets
+            screenInsets = toolkit.getScreenInsets(frame.getGraphicsConfiguration());
+            if (screenInsets.bottom == 0) {
+                // This test is only for configurations with taskbar on the bottom
+                return;
+            }
+            // The popup shouldn't overlap the task bar. It should be shifted up.
+            checkPopup();
+        } finally {
+            SwingUtilities.invokeAndWait(() -> {
+                if (popup != null) {
+                    popup.setVisible(false);
+                }
+                if (frame != null) {
+                    frame.dispose();
+                }
+            });
         }
-
-        // Show popup as if from an applet
-        // The popup shouldn't overlap the task bar. It should be shifted up.
-        checkPopup();
-
     }
 
     private static void createGui() {
@@ -93,9 +101,9 @@ public class bug6694823 {
                     screenSize.height - frame.getHeight() - screenInsets.bottom);
             frame.setVisible(true);
         });
-
         // Ensure frame is visible
         robot.waitForIdle();
+        robot.delay(300);
 
         final Point point = new Point();
         SwingUtilities.invokeAndWait(() -> {
@@ -104,17 +112,15 @@ public class bug6694823 {
             point.y = frame.getHeight() - popup.getPreferredSize().height + screenInsets.bottom;
             popup.show(frame, point.x, point.y);
         });
-
         // Ensure popup is visible
         robot.waitForIdle();
+        robot.delay(300);
 
         SwingUtilities.invokeAndWait(() -> {
             Point frameLoc = frame.getLocationOnScreen();
             if (popup.getLocationOnScreen().equals(new Point(frameLoc.x, frameLoc.y + point.y))) {
                 throw new RuntimeException("Popup is not shifted");
             }
-            popup.setVisible(false);
-            frame.dispose();
         });
     }
 }

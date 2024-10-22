@@ -48,17 +48,11 @@ public class TestJEditor {
     }
 
     private static void testJEditorPane() {
+        JEditorPane.registerEditorKitForContentType("text/html", UserEditorKit.class.getName());
+        EditorKit editorKit = JEditorPane.createEditorKitForContentType("text/html");
 
-        try {
-
-            JEditorPane.registerEditorKitForContentType("text/html", UserEditorKit.class.getName());
-            EditorKit editorKit = JEditorPane.createEditorKitForContentType("text/html");
-
-            if (!(editorKit instanceof UserEditorKit)) {
-                throw new RuntimeException("Editor kit is not UserEditorKit!");
-            }
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        if (!(editorKit instanceof UserEditorKit)) {
+            throw new RuntimeException("Editor kit is not UserEditorKit!");
         }
     }
 
