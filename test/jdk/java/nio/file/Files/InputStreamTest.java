@@ -26,7 +26,7 @@
  * @summary Test of InputStream and OutputStream created by java.nio.file.Files
  * @library .. /test/lib
  * @build jdk.test.lib.Platform
- * @run junit InputStreamTest
+ * @run junit/othervm --enable-native-access=ALL-UNNAMED InputStreamTest
  */
 
 import java.io.FileInputStream;
@@ -94,11 +94,8 @@ public class InputStreamTest {
         Thread t = new Thread(
             new Runnable() {
                 public void run() {
-                    try {
-                        try (FileOutputStream fos = new FileOutputStream(PIPE);)
-                        {
-                            fos.write(SENTENCE.getBytes());
-                        }
+                    try (FileOutputStream fos = new FileOutputStream(PIPE);) {
+                        fos.write(SENTENCE.getBytes());
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
