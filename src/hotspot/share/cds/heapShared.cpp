@@ -463,15 +463,7 @@ void HeapShared::copy_aot_initialized_mirror(Klass* orig_k, oop orig_mirror, oop
   InstanceKlass* ik = InstanceKlass::cast(orig_k);
   InstanceKlass* buffered_ik = ArchiveBuilder::current()->get_buffered_addr(ik);
 
-  if (HeapShared::is_archivable_hidden_klass(ik)) {
-    // We can't rerun the <clinit> method of hidden classes as we don't save
-    // the classData, so we must archive its mirror in initialized state.
-    assert(ik->is_initialized(), "must be");
-  }
-
-  if (!ik->is_initialized()) {
-    return;
-  }
+  assert(ik->is_initialized(), "must be");
 
   int nfields = 0;
   for (JavaFieldStream fs(ik); !fs.done(); fs.next()) {

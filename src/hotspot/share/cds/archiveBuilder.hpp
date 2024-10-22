@@ -411,6 +411,11 @@ public:
     mark_and_relocate_to_buffered_addr((address*)ptr_location);
   }
 
+  bool has_been_buffered(address src_addr) const;
+  template <typename T> bool has_been_buffered(T src_addr) const {
+    return has_been_buffered((address)src_addr);
+  }
+
   address get_buffered_addr(address src_addr) const;
   template <typename T> T get_buffered_addr(T src_addr) const {
     return (T)get_buffered_addr((address)src_addr);

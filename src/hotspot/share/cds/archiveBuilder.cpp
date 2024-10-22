@@ -745,6 +745,10 @@ void ArchiveBuilder::mark_and_relocate_to_buffered_addr(address* ptr_location) {
   ArchivePtrMarker::mark_pointer(ptr_location);
 }
 
+bool ArchiveBuilder::has_been_buffered(address src_addr) const {
+  return _src_obj_table.get(src_addr) != nullptr;
+}
+
 address ArchiveBuilder::get_buffered_addr(address src_addr) const {
   SourceObjInfo* p = _src_obj_table.get(src_addr);
   assert(p != nullptr, "src_addr " INTPTR_FORMAT " is used but has not been archived",
