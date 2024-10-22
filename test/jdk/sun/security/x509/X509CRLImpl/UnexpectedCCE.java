@@ -41,8 +41,9 @@ public class UnexpectedCCE {
     public static void main(String[] av ) throws CertificateException,
            NoSuchProviderException {
 
-        // "class sun.security.x509.OIDName cannot be cast
-        // to class sun.security.x509.X500Name"
+        // Fuzzed data input stream looks like an x509.OIDName
+        // in the CertificateIssuerExtension. A CRLException is thrown
+        // because an X500Name is expected.
         byte[] encoded_1 = Base64.getDecoder().decode("""
             MIIBljCCAVMCAQEwCwYHKoZIzjgEAwUAMC0xEzARBgoJkiaJk/IsZAEZEwNjb20xFjA\
             UBgoJkiaJjvIsZAEZEwZ0ZXN0Q0EXDTAzMDcxNTE2MjAwNVoXDTAzMDcyMDE2MjAwNV\
@@ -54,8 +55,9 @@ public class UnexpectedCCE {
             oZIzjgEAwUAAzAAMC0CFBaZDryEEOr8Cw7sOAAAAKaDgtHcAhUAkUenJpwYZgS6IPjy\
             AjZG+RfHdO4=""");
 
-        // "class sun.security.x509.X400Address cannot be cast
-        // to class sun.security.x509.X500Name"
+        // Fuzzed data input stream looks like an x509.X400Address
+        // in the CertificateIssuerExtension. A CRLException is thrown
+        // because an X500Name is expected.
         byte[] encoded_2 = Base64.getDecoder().decode("""
             MIIBljCCAVMCAQEwCwYHKoZIzjgEAwUAMC0xEzARBgoJkiaJk/IsZAEZEwNjb20xFjA\
             UBgoJkiaJk/IsZAEZEwZ0ZXN0J0EXDTAzMDcxNTE2MjAwNVoXDTAzMDcyMDE2MjAwNV\
