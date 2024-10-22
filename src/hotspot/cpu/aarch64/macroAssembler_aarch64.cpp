@@ -5011,8 +5011,10 @@ void  MacroAssembler::decode_heap_oop(Register d, Register s) {
   verify_heapbase("MacroAssembler::decode_heap_oop: heap base corrupted?");
 #endif
   if (CompressedOops::base() == nullptr) {
-    if (CompressedOops::shift() != 0 || d != s) {
+    if (CompressedOops::shift() != 0) {
       lsl(d, s, CompressedOops::shift());
+    } else if (d != s) {
+      mov(d, s);
     }
   } else {
     Label done;

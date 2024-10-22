@@ -25,45 +25,22 @@
  */
 package jdk.internal.classfile.impl;
 
-import java.lang.constant.ClassDesc;
-import java.lang.constant.MethodTypeDesc;
-import java.lang.classfile.Attribute;
-import java.lang.classfile.Attributes;
-import java.lang.classfile.ClassFile;
-import java.lang.classfile.CodeBuilder;
-import java.lang.classfile.CodeElement;
-import java.lang.classfile.CodeModel;
-import java.lang.classfile.CustomAttribute;
-import java.lang.classfile.Label;
-import java.lang.classfile.Opcode;
-import java.lang.classfile.TypeKind;
+import java.lang.classfile.*;
 import java.lang.classfile.attribute.CodeAttribute;
 import java.lang.classfile.attribute.LineNumberTableAttribute;
-import java.lang.classfile.constantpool.ClassEntry;
-import java.lang.classfile.constantpool.ConstantPoolBuilder;
-import java.lang.classfile.constantpool.DoubleEntry;
-import java.lang.classfile.constantpool.FieldRefEntry;
-import java.lang.classfile.constantpool.InterfaceMethodRefEntry;
-import java.lang.classfile.constantpool.InvokeDynamicEntry;
-import java.lang.classfile.constantpool.LoadableConstantEntry;
-import java.lang.classfile.constantpool.LongEntry;
-import java.lang.classfile.constantpool.MemberRefEntry;
-import java.lang.classfile.constantpool.MethodRefEntry;
+import java.lang.classfile.constantpool.*;
 import java.lang.classfile.instruction.CharacterRange;
 import java.lang.classfile.instruction.ExceptionCatch;
 import java.lang.classfile.instruction.LocalVariable;
 import java.lang.classfile.instruction.LocalVariableType;
 import java.lang.classfile.instruction.SwitchCase;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.IdentityHashMap;
-import java.util.List;
-import java.util.Map;
+import java.lang.constant.ClassDesc;
+import java.lang.constant.MethodTypeDesc;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import static java.util.Objects.requireNonNull;
 import static jdk.internal.classfile.impl.BytecodeHelpers.*;
 import static jdk.internal.classfile.impl.RawBytecodeHelper.*;
 
@@ -147,7 +124,7 @@ public final class DirectCodeBuilder
         if (element instanceof AbstractElement ae) {
             ae.writeTo(this);
         } else {
-            writeAttribute((CustomAttribute<?>) element);
+            writeAttribute((CustomAttribute<?>) requireNonNull(element));
         }
         return this;
     }
@@ -257,8 +234,7 @@ public final class DirectCodeBuilder
                                 }
                             } else {
                                 b.writeU2U2(start, end - 1);
-                                b.writeInt(cr.characterRangeStart());
-                                b.writeInt(cr.characterRangeEnd());
+                                b.writeIntInt(cr.characterRangeStart(), cr.characterRangeEnd());
                                 b.writeU2(cr.flags());
                             }
                         }
@@ -374,24 +350,19 @@ public final class DirectCodeBuilder
                             dcb.methodInfo.methodTypeSymbol().displayDescriptor()));
                 }
 
+                boolean codeMatch = dcb.original != null && codeAndExceptionsMatch(codeLength);
                 var context = dcb.context;
-                if (dcb.original != null && codeAndExceptionsMatch(codeLength)) {
-                    if (context.stackMapsWhenRequired()) {
+                if (context.stackMapsWhenRequired()) {
+                    if (codeMatch) {
                         dcb.attributes.withAttribute(dcb.original.findAttribute(Attributes.stackMapTable()).orElse(null));
                         writeCounters(true, buf);
-                    } else if (context.generateStackMaps()) {
-                        generateStackMaps(buf);
-                    } else if (context.dropStackMaps()) {
-                        writeCounters(true, buf);
-                    }
-                } else {
-                    if (context.stackMapsWhenRequired()) {
+                    } else {
                         tryGenerateStackMaps(false, buf);
-                    } else if (context.generateStackMaps()) {
-                        generateStackMaps(buf);
-                    } else if (context.dropStackMaps()) {
-                        writeCounters(false, buf);
                     }
+                } else if (context.generateStackMaps()) {
+                    generateStackMaps(buf);
+                } else if (context.dropStackMaps()) {
+                    writeCounters(codeMatch, buf);
                 }
 
                 buf.writeInt(codeLength);
@@ -640,8 +611,7 @@ public final class DirectCodeBuilder
         if (pad != 4)
             bytecodesBufWriter.skip(pad); // padding content can be anything
         writeLongLabelOffset(instructionPc, defaultTarget);
-        bytecodesBufWriter.writeInt(low);
-        bytecodesBufWriter.writeInt(high);
+        bytecodesBufWriter.writeIntInt(low, high);
         var caseMap = new HashMap<Integer, Label>(cases.size());
         for (var c : cases) {
             caseMap.put(c.caseValue(), c.target());
@@ -668,8 +638,7 @@ public final class DirectCodeBuilder
     }
 
     public void writeInvokeDynamic(InvokeDynamicEntry ref) {
-        bytecodesBufWriter.writeIndex(INVOKEDYNAMIC, ref);
-        bytecodesBufWriter.writeU2(0);
+        bytecodesBufWriter.writeU1U2U2(INVOKEDYNAMIC, bytecodesBufWriter.cpIndex(ref), 0);
     }
 
     public void writeNewObject(ClassEntry type) {

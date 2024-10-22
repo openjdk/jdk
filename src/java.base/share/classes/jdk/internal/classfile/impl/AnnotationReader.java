@@ -25,21 +25,18 @@
 
 package jdk.internal.classfile.impl;
 
-import java.lang.classfile.Annotation;
-import java.lang.classfile.AnnotationElement;
-import java.lang.classfile.AnnotationValue;
-import java.lang.classfile.BufWriter;
-import java.lang.classfile.ClassReader;
-import java.lang.classfile.constantpool.*;
-import java.lang.classfile.TypeAnnotation;
+import java.lang.classfile.*;
+import java.lang.classfile.constantpool.DoubleEntry;
+import java.lang.classfile.constantpool.FloatEntry;
+import java.lang.classfile.constantpool.IntegerEntry;
+import java.lang.classfile.constantpool.LongEntry;
+import java.lang.classfile.constantpool.Utf8Entry;
+import java.util.List;
+
+import jdk.internal.access.SharedSecrets;
 
 import static java.lang.classfile.AnnotationValue.*;
 import static java.lang.classfile.TypeAnnotation.TargetInfo.*;
-
-import java.util.List;
-import java.lang.classfile.Label;
-import java.lang.classfile.constantpool.Utf8Entry;
-import jdk.internal.access.SharedSecrets;
 
 public final class AnnotationReader {
     private AnnotationReader() { }
@@ -282,9 +279,8 @@ public final class AnnotationReader {
     }
 
     public static void writeAnnotation(BufWriterImpl buf, Annotation annotation) {
-        buf.writeIndex(annotation.className());
         var elements = annotation.elements();
-        buf.writeU2(elements.size());
+        buf.writeU2U2(buf.cpIndex(annotation.className()), elements.size());
         for (var e : elements) {
             buf.writeIndex(e.name());
             AnnotationReader.writeAnnotationValue(buf, e.value());
@@ -332,8 +328,8 @@ public final class AnnotationReader {
             case TypeAnnotation.CatchTarget ct -> buf.writeU2(ct.exceptionTableIndex());
             case TypeAnnotation.OffsetTarget ot -> buf.writeU2(labelToBci(lr, ot.target(), ta));
             case TypeAnnotation.TypeArgumentTarget tat -> {
-                buf.writeU2(labelToBci(lr, tat.target(), ta));
-                buf.writeU1(tat.typeArgumentIndex());
+                buf.writeU2U1(labelToBci(lr, tat.target(), ta),
+                        tat.typeArgumentIndex());
             }
         }
 

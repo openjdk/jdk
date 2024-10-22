@@ -1945,10 +1945,11 @@ bool PhaseIdealLoop::ctrl_of_use_out_of_loop(const Node* n, Node* n_ctrl, IdealL
   // Sinking a node from a pre loop to its main loop pins the node between the pre and main loops. If that node is input
   // to a check that's eliminated by range check elimination, it becomes input to an expression that feeds into the exit
   // test of the pre loop above the point in the graph where it's pinned.
-  if (n_loop->_head->is_CountedLoop() && n_loop->_head->as_CountedLoop()->is_pre_loop() &&
-      u_loop->_head->is_CountedLoop() && u_loop->_head->as_CountedLoop()->is_main_loop() &&
-      n_loop->_next == get_loop(u_loop->_head->as_CountedLoop()->skip_strip_mined())) {
-    return false;
+  if (n_loop->_head->is_CountedLoop() && n_loop->_head->as_CountedLoop()->is_pre_loop()) {
+    CountedLoopNode* pre_loop = n_loop->_head->as_CountedLoop();
+    if (is_dominator(pre_loop->loopexit(), ctrl)) {
+      return false;
+    }
   }
   return true;
 }
@@ -4548,7 +4549,6 @@ void PhaseIdealLoop::move_unordered_reduction_out_of_loop(IdealLoopTree* loop) {
     const TypeVect* vec_t = last_ur->vect_type();
     uint vector_length    = vec_t->length();
     BasicType bt          = vec_t->element_basic_type();
-    const Type* bt_t      = Type::get_const_basic_type(bt);
 
     // Convert opcode from vector-reduction -> scalar -> normal-vector-op
     const int sopc        = VectorNode::scalar_opcode(last_ur->Opcode(), bt);
@@ -4628,7 +4628,7 @@ void PhaseIdealLoop::move_unordered_reduction_out_of_loop(IdealLoopTree* loop) {
 
     Node* identity_scalar = ReductionNode::make_identity_con_scalar(_igvn, sopc, bt);
     set_ctrl(identity_scalar, C->root());
-    VectorNode* identity_vector = VectorNode::scalar2vector(identity_scalar, vector_length, bt_t);
+    VectorNode* identity_vector = VectorNode::scalar2vector(identity_scalar, vector_length, bt);
     register_new_node(identity_vector, C->root());
     assert(vec_t == identity_vector->vect_type(), "matching vector type");
     VectorNode::trace_new_vector(identity_vector, "Unordered Reduction");
