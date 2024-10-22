@@ -24,8 +24,7 @@ running on Windows), and want to clone the main-line JDK repository.
     `make images`
 
  4. Verify your newly built JDK: \
-    `./build/*/images/jdk/bin/java -version` \
-    Note the built JDK is at `/images/jdk` instead of `/jdk`.
+    `./build/*/images/jdk/bin/java -version`
 
  5. [Run basic tests](#running-tests): \
     `make test-tier1`
