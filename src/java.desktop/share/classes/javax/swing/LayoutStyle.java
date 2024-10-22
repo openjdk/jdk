@@ -165,13 +165,13 @@ public abstract class LayoutStyle {
      * @param component1 the <code>JComponent</code>
      *               <code>component2</code> is being placed relative to
      * @param component2 the <code>JComponent</code> being placed
+     * @param type how the two components are being placed
      * @param position the position <code>component2</code> is being placed
      *        relative to <code>component1</code>; one of
      *        <code>SwingConstants.NORTH</code>,
      *        <code>SwingConstants.SOUTH</code>,
      *        <code>SwingConstants.EAST</code> or
      *        <code>SwingConstants.WEST</code>
-     * @param type how the two components are being placed
      * @param parent the parent of <code>component2</code>; this may differ
      *        from the actual parent and it may be <code>null</code>
      * @return the amount of space to place between the two components

@@ -73,10 +73,10 @@ public class ProgressMonitorInputStream extends FilterInputStream
     /**
      * Constructs an object to monitor the progress of an input stream.
      *
-     * @param message Descriptive text to be placed in the dialog box
-     *                if one is popped up.
      * @param parentComponent The component triggering the operation
      *                        being monitored.
+     * @param message Descriptive text to be placed in the dialog box
+     *                if one is popped up.
      * @param in The input stream to be monitored.
      */
     public ProgressMonitorInputStream(Component parentComponent,

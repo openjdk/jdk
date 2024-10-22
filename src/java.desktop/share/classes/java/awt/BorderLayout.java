@@ -554,12 +554,12 @@ public class BorderLayout implements LayoutManager2,
      * The {@code Container}'s component orientation is used to determine the location of components
      * added with {@code LINE_START} and {@code LINE_END}.
      *
-     * @param   constraints     the desired absolute position, one of {@code CENTER},
-     *                          {@code NORTH}, {@code SOUTH},
-     *                          {@code EAST}, {@code WEST}
      * @param   target     the {@code Container} used to obtain
      *                     the constraint location based on the target
      *                     {@code Container}'s component orientation.
+     * @param   constraints     the desired absolute position, one of {@code CENTER},
+     *                          {@code NORTH}, {@code SOUTH},
+     *                          {@code EAST}, {@code WEST}
      * @return  the component at the given location, or {@code null} if
      *          the location is empty
      * @throws   IllegalArgumentException  if the constraint object is
