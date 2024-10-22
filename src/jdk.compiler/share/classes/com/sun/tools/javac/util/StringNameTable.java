@@ -62,10 +62,10 @@ public class StringNameTable extends Name.Table {
 
     @Override
     public Name fromString(String string) {
-        Name name = this.nameMap.get(string);
+        Name name = nameMap.get(string);
         if (name == null) {
             name = new NameImpl(this, intern ? string.intern() : string);
-            this.nameMap.put(string, name);
+            nameMap.put(string, name);
         }
         return name;
     }
