@@ -493,6 +493,13 @@ final class Double64Vector extends DoubleVector {
                                      Double64Mask.class, (Double64Mask) m);  // specialize
     }
 
+    @Override
+    @ForceInline
+    public Double64Vector selectFrom(Vector<Double> v1,
+                                   Vector<Double> v2) {
+        return (Double64Vector)
+            super.selectFromTemplate((Double64Vector) v1, (Double64Vector) v2);  // specialize
+    }
 
     @ForceInline
     @Override

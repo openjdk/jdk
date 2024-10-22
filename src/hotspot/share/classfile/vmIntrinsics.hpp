@@ -469,6 +469,8 @@ class methodHandle;
   do_intrinsic(_Reference_get,              java_lang_ref_Reference, get_name,       void_object_signature,    F_R)     \
   do_intrinsic(_Reference_refersTo0,        java_lang_ref_Reference, refersTo0_name, object_boolean_signature, F_RN)    \
   do_intrinsic(_PhantomReference_refersTo0, java_lang_ref_PhantomReference, refersTo0_name, object_boolean_signature, F_RN) \
+  do_intrinsic(_Reference_clear0,           java_lang_ref_Reference, clear0_name,    void_method_signature, F_RN)       \
+  do_intrinsic(_PhantomReference_clear0,    java_lang_ref_PhantomReference, clear0_name, void_method_signature, F_RN)   \
                                                                                                                         \
   /* support for com.sun.crypto.provider.AESCrypt and some of its callers */                                            \
   do_class(com_sun_crypto_provider_aescrypt,      "com/sun/crypto/provider/AESCrypt")                                   \
@@ -978,6 +980,17 @@ class methodHandle;
                                         "Ljdk/internal/vm/vector/VectorSupport$TernaryOperation;)"                                             \
                                         "Ljdk/internal/vm/vector/VectorSupport$Vector;")                                                       \
    do_name(vector_ternary_op_name,     "ternaryOp")                                                                                            \
+                                                                                                                                               \
+  do_intrinsic(_VectorSelectFromTwoVectorOp, jdk_internal_vm_vector_VectorSupport, vector_select_from_op_name, vector_select_from_op_sig, F_S) \
+   do_signature(vector_select_from_op_sig, "(Ljava/lang/Class;"                                                                                \
+                                            "Ljava/lang/Class;"                                                                                \
+                                            "I"                                                                                                \
+                                            "Ljdk/internal/vm/vector/VectorSupport$Vector;"                                                    \
+                                            "Ljdk/internal/vm/vector/VectorSupport$Vector;"                                                    \
+                                            "Ljdk/internal/vm/vector/VectorSupport$Vector;"                                                    \
+                                            "Ljdk/internal/vm/vector/VectorSupport$SelectFromTwoVector;)"                                      \
+                                            "Ljdk/internal/vm/vector/VectorSupport$Vector;")                                                   \
+   do_name(vector_select_from_op_name,     "selectFromTwoVectorOp")                                                                            \
                                                                                                                                                \
   do_intrinsic(_VectorFromBitsCoerced, jdk_internal_vm_vector_VectorSupport, vector_frombits_coerced_name, vector_frombits_coerced_sig, F_S)   \
    do_signature(vector_frombits_coerced_sig, "(Ljava/lang/Class;"                                                                              \
