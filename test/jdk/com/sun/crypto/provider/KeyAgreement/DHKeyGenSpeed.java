@@ -49,7 +49,7 @@ public class DHKeyGenSpeed {
         long start, end;
 
         DiffieHellmanGroup dhGroup = SecurityUtils.getTestDHGroup();
-        BigInteger p = new BigInteger(1, dhGroup.getPrimeBytes());
+        BigInteger p = dhGroup.getPrime();
         BigInteger g = new BigInteger(1, dhGroup.getBase().toByteArray());
         int l = 576;
 
@@ -65,7 +65,7 @@ public class DHKeyGenSpeed {
         end = System.currentTimeMillis();
 
         System.out.println("PrimeBits\tExponentBits");
-        System.out.println(dhGroup.getPrimeBytes().length*8 + "\t\t" + l);
+        System.out.println(dhGroup.getPrime().bitLength() + "\t\t" + l);
         System.out.println("keyGen(millisecond): " + (end - start));
         System.out.println("Test Passed!");
     }

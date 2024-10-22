@@ -122,6 +122,8 @@ public final class SecurityUtils {
         DiffieHellmanGroup diffieHellmanGroup;
         switch (primeSize) {
             case 2048 -> diffieHellmanGroup = DiffieHellmanGroup.ffdhe2048;
+            case 3072 -> diffieHellmanGroup = DiffieHellmanGroup.ffdhe3072;
+            case 4096 -> diffieHellmanGroup = DiffieHellmanGroup.ffdhe4096;
             default -> throw new RuntimeException("Test DH group not defined for " + primeSize);
         }
         return diffieHellmanGroup;

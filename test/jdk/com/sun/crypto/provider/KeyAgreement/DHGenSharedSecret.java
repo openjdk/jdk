@@ -48,7 +48,7 @@ public class DHGenSharedSecret {
         long start, end;
 
         DiffieHellmanGroup dhGroup = SecurityUtils.getTestDHGroup();
-        BigInteger p = new BigInteger(1, dhGroup.getPrimeBytes());
+        BigInteger p = dhGroup.getPrime();
         BigInteger g = new BigInteger(1, dhGroup.getBase().toByteArray());
         int l = 512;
 

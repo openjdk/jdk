@@ -89,16 +89,16 @@ public class TestInterop extends PKCS11Test {
             KeyAgreement ka = KeyAgreement.getInstance("DH", prov);
             KeyAgreement kbSunJCE = KeyAgreement.getInstance("DH", "SunJCE");
             DiffieHellmanGroup dhGroup = SecurityUtils.getTestDHGroup();
-            DHPrivateKeySpec privSpecA = new DHPrivateKeySpec(xa, dhGroup.getModulus(),
+            DHPrivateKeySpec privSpecA = new DHPrivateKeySpec(xa, dhGroup.getPrime(),
                     dhGroup.getBase());
-            DHPublicKeySpec pubSpecA = new DHPublicKeySpec(ya, dhGroup.getModulus(),
+            DHPublicKeySpec pubSpecA = new DHPublicKeySpec(ya, dhGroup.getPrime(),
                     dhGroup.getBase());
             PrivateKey privA = kf.generatePrivate(privSpecA);
             PublicKey pubA = kf.generatePublic(pubSpecA);
 
-            DHPrivateKeySpec privSpecB = new DHPrivateKeySpec(xb, dhGroup.getModulus(),
+            DHPrivateKeySpec privSpecB = new DHPrivateKeySpec(xb, dhGroup.getPrime(),
                     dhGroup.getBase());
-            DHPublicKeySpec pubSpecB = new DHPublicKeySpec(yb, dhGroup.getModulus(),
+            DHPublicKeySpec pubSpecB = new DHPublicKeySpec(yb, dhGroup.getPrime(),
                     dhGroup.getBase());
             PrivateKey privB = kf.generatePrivate(privSpecB);
             PublicKey pubB = kf.generatePublic(pubSpecB);

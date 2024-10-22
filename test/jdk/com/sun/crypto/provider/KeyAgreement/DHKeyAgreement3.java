@@ -66,7 +66,7 @@ public class DHKeyAgreement3 {
         DiffieHellmanGroup dhGroup = SecurityUtils.getTestDHGroup();
         DHParameterSpec dhParamSpec;
         System.err.println("Using " + dhGroup.name() + " Diffie-Hellman parameters");
-        dhParamSpec = new DHParameterSpec(dhGroup.getModulus(), dhGroup.getBase());
+        dhParamSpec = new DHParameterSpec(dhGroup.getPrime(), dhGroup.getBase());
 
         // Alice creates her own DH key pair
         System.err.println("ALICE: Generate DH keypair ...");

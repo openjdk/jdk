@@ -96,7 +96,7 @@ public class Serial {
         // generate DH key pair
         DiffieHellmanGroup dhGroup = SecurityUtils.getTestDHGroup();
         kpg = KeyPairGenerator.getInstance("DiffieHellman", JCE);
-        kpg.initialize(new DHParameterSpec(dhGroup.getModulus(), dhGroup.getBase()));
+        kpg.initialize(new DHParameterSpec(dhGroup.getPrime(), dhGroup.getBase()));
         KeyPair dhKp = kpg.genKeyPair();
 
         // serialize DH key pair

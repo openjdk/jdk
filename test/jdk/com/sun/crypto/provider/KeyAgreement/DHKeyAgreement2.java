@@ -99,7 +99,7 @@ public class DHKeyAgreement2 {
             // use some pre-generated, test default DH parameters
             DiffieHellmanGroup dhGroup = SecurityUtils.getTestDHGroup(primeSize);
             System.err.println("Using " + dhGroup.name() + " Diffie-Hellman parameters");
-            dhParameterSpec = new DHParameterSpec(dhGroup.getModulus(),
+            dhParameterSpec = new DHParameterSpec(dhGroup.getPrime(),
                     dhGroup.getBase());
         }
 
