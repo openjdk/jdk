@@ -23,9 +23,9 @@
 
 /**
  * @test
- * @requires os.arch=="amd64" | os.arch=="x86_64"
+ * @requires os.simpleArch == "x64"
  * @bug 8342156
- * @summary Check that C2 restriction on number of method arguments is not too
+ * @summary Check that C2's restriction on number of method arguments is not too
  *          restrictive on x64.
  *
  * @run main/othervm -Xcomp
