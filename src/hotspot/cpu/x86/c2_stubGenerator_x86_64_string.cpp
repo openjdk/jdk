@@ -744,39 +744,39 @@ static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptr
     __ ja(L_wideNoExpand);
 
     //
-    // Reads of existing needle are 16-byte chunks
-    // Writes to copied needle are 32-byte chunks
+    // Reads of existing needle are 8-byte chunks
+    // Writes to copied needle are 16-byte chunks
     // Don't read past the end of the existing needle
     //
-    // Start first read at [((ndlLen % 16) - 16) & 0xf]
-    // outndx += 32
-    // inndx += 16
+    // Start first read at [((ndlLen % 8) - 8) & 0x7]
+    // outndx += 16
+    // inndx += 8
     // cmp nndx, ndlLen
     // jae done
     //
-    // Final index of start of needle at ((16 - (ndlLen %16)) & 0xf) << 1
+    // Final index of start of needle at ((8 - (ndlLen % 8)) & 0x7) << 1
     //
-    // Starting read for needle at -(16 - (nLen % 16))
-    // Offset of needle in stack should be (16 - (nLen % 16)) * 2
+    // Starting read for needle at -(8 - (nLen % 8))
+    // Offset of needle in stack should be (8 - (nLen % 8)) * 2
 
     __ movq(index, needle_len);
-    __ andq(index, 0xf);  // nLen % 16
-    __ movq(offset, 0x10);
-    __ subq(offset, index);  // 16 - (nLen % 16)
+    __ andq(index, 0x7);  // nLen % 8
+    __ movq(offset, 0x8);
+    __ subq(offset, index);  // 8 - (nLen % 8)
     __ movq(index, offset);
     __ shlq(offset, 1);  // * 2
-    __ negq(index);      // -(16 - (nLen % 16))
+    __ negq(index);      // -(8 - (nLen % 8))
     __ xorq(wr_index, wr_index);
 
     __ bind(L_top);
     // load needle and expand
-    __ vpmovzxbw(xmm0, Address(needle, index, Address::times_1), Assembler::AVX_256bit);
+    __ vpmovzxbw(xmm0, Address(needle, index, Address::times_1), Assembler::AVX_128bit);
     // store expanded needle to stack
-    __ vmovdqu(Address(rsp, wr_index, Address::times_1, EXPANDED_NEEDLE_STACK_OFFSET), xmm0);
-    __ addq(index, 0x10);
+    __ movdqu(Address(rsp, wr_index, Address::times_1, EXPANDED_NEEDLE_STACK_OFFSET), xmm0);
+    __ addq(index, 0x8);
     __ cmpq(index, needle_len);
     __ jae(L_finished);
-    __ addq(wr_index, 32);
+    __ addq(wr_index, 16);
     __ jmpb(L_top);
 
     // adjust pointer and length of needle
