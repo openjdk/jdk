@@ -2159,7 +2159,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             // The code below favors relative simplicity over checking
             // for special cases that could run faster.
 
-            int preferredScale = this.scale/2;
+            final int preferredScale = this.scale/2;
 
             BigDecimal result;
             if (mc.roundingMode == RoundingMode.UNNECESSARY || mc.precision == 0) { // Exact result requested
@@ -2172,11 +2172,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                     result = valueOf(1L, strippedScale >> 1);
                     // Adjust to requested precision and preferred
                     // scale as appropriate.
-                    final int maxScale = mc.precision == 0 ?
-                        preferredScale : (int) Math.min(preferredScale, result.scale + (mc.precision - 1L));
-                    if (result.scale < maxScale)
-                        result = result.setScale(maxScale);
-
+                    result = result.adjustToPreferredScale(preferredScale, mc.precision);
                     return result;
                 }
 
@@ -2202,6 +2198,13 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                 // the square root isn't exact
                 if (sqrtRem[1].signum != 0 || mc.precision != 0 && result.precision() > mc.precision)
                     throw new ArithmeticException("Computed square root not exact.");
+
+                // Test numerical properties at full precision before any
+                // scale adjustments.
+                assert squareRootResultAssertions(result, mc);
+                // Adjust to requested precision and preferred
+                // scale as appropriate.
+                result = result.adjustToPreferredScale(preferredScale, mc.precision);
             } else {
                 // To allow BigInteger.sqrt() to be used to get the square
                 // root, it is necessary to normalize the input so that
@@ -2259,16 +2262,14 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                 }
 
                 result = new BigDecimal(sqrt, checkScale(sqrt, resultScale)).round(mc); // Ensure no increase of precision
+                // Test numerical properties at full precision before any
+                // scale adjustments.
+                assert squareRootResultAssertions(result, mc);
+                // Adjust to requested precision and preferred
+                // scale as appropriate.
+                if (result.scale > preferredScale) // else can't increase the result's precision to fit the preferred scale
+                    result = stripZerosToMatchScale(result.intVal, result.intCompact, result.scale, preferredScale);
             }
-
-            // Test numerical properties at full precision before any
-            // scale adjustments.
-            assert squareRootResultAssertions(result, mc);
-            // Adjust to requested precision and preferred
-            // scale as appropriate.
-            if (result.scale > preferredScale) // else can't increase the result's precision to fit the preferred scale
-                result = stripZerosToMatchScale(result.intVal, result.intCompact, result.scale, preferredScale);
-
             return result;
         } else {
             BigDecimal result = null;
@@ -2285,6 +2286,27 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                 throw new AssertionError("Bad value from signum");
             }
         }
+    }
+
+    /**
+     * Assumes {@code precision() <= maxPrecision}.
+     * {@code maxPrecision == 0} means that the result can have arbitrary precision.
+     * @param preferredScale the scale to reach
+     * @param maxPrecision the largest precision the result can have
+     * @return a BigDecimal numerically equivalent to this, whose precision
+     *         does not exceed {@code maxPrecision} and whose scale is the closest
+     *         to {@code preferredScale}
+     */
+    private BigDecimal adjustToPreferredScale(int preferredScale, int maxPrecision) {
+        BigDecimal result = this;
+        if (result.scale > preferredScale) {
+            result = stripZerosToMatchScale(result.intVal, result.intCompact, result.scale, preferredScale);
+        } else if (result.scale < preferredScale) {
+            int maxScale = maxPrecision == 0 ?
+                preferredScale : (int) Math.min(preferredScale, result.scale + (maxPrecision - result.precision()));
+            result = result.setScale(maxScale);
+        }
+        return result;
     }
 
     private BigDecimal square() {
