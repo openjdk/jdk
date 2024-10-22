@@ -31,6 +31,7 @@ import jdk.internal.net.http.frame.SettingsFrame;
 import jdk.internal.net.http.frame.WindowUpdateFrame;
 import jdk.internal.net.http.common.Utils;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
@@ -50,11 +51,11 @@ abstract class WindowUpdateSender {
     // The amount of flow controlled data received and processed, in bytes,
     // since the start of the window.
     // The window is exhausted when received + unprocessed >= windowSize
-    final AtomicInteger received = new AtomicInteger();
+    final AtomicLong received = new AtomicLong();
     // The amount of flow controlled data received and unprocessed, in bytes,
     // since the start of the window.
     // The window is exhausted when received + unprocessed >= windowSize
-    final AtomicInteger unprocessed = new AtomicInteger();
+    final AtomicLong unprocessed = new AtomicLong();
     final ReentrantLock sendLock = new ReentrantLock();
 
     WindowUpdateSender(Http2Connection connection) {
@@ -123,8 +124,11 @@ abstract class WindowUpdateSender {
     // received and processed bytes and checks whether the
     // flow control window is exceeded. If so, take
     // corrective actions and return true.
-    private boolean checkWindowSizeExceeded(int len) {
-        int rcv = Math.addExact(received.get(), len);
+    private boolean checkWindowSizeExceeded(long len) {
+        // because windowSize is bound by Integer.MAX_VALUE
+        // we will never reach the point where received.get() + len
+        // could overflow
+        long rcv = received.get() + len;
         return rcv > windowSize && windowSizeExceeded(rcv);
     }
 
@@ -139,7 +143,7 @@ abstract class WindowUpdateSender {
      * @param delta the amount of processed bytes to release
      */
     void processed(int delta) {
-        int rest = unprocessed.addAndGet(-delta);
+        long rest = unprocessed.addAndGet(-delta);
         assert rest >= 0;
         update(delta);
     }
@@ -161,8 +165,8 @@ abstract class WindowUpdateSender {
      *
      * @return the amount of remaining unprocessed bytes
      */
-    int released(int delta) {
-        int rest = unprocessed.addAndGet(-delta);
+    long released(int delta) {
+        long rest = unprocessed.addAndGet(-delta);
         assert rest >= 0;
         return rest;
     }
@@ -181,7 +185,7 @@ abstract class WindowUpdateSender {
      * @param delta the amount of bytes released from the window.
      */
     void update(int delta) {
-        int rcv = received.addAndGet(delta);
+        long rcv = received.addAndGet(delta);
         if (debug.on()) debug.log("update: %d, received: %d, limit: %d", delta, rcv, limit);
         if (rcv > windowSize && windowSizeExceeded(rcv)) {
             return;
@@ -189,7 +193,7 @@ abstract class WindowUpdateSender {
         if (rcv > limit) {
             sendLock.lock();
             try {
-                int tosend = received.get();
+                int tosend = (int)Math.min(received.get(), Integer.MAX_VALUE);
                 if (tosend > limit) {
                     received.getAndAdd(-tosend);
                     sendWindowUpdate(tosend);
@@ -230,6 +234,6 @@ abstract class WindowUpdateSender {
      * @return {@code true} if the error was reported to the peer
      *         and no further window update should be sent.
      */
-    protected abstract boolean windowSizeExceeded(int received);
+    protected abstract boolean windowSizeExceeded(long received);
 
 }

@@ -1767,7 +1767,7 @@ class Stream<T> extends ExchangeImpl<T> {
         }
 
         @Override
-        protected boolean windowSizeExceeded(int received) {
+        protected boolean windowSizeExceeded(long received) {
             onProtocolError(new ProtocolException("stream %s flow control window exceeded"
                             .formatted(streamid)), ResetFrame.FLOW_CONTROL_ERROR);
             return true;

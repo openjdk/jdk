@@ -1103,10 +1103,12 @@ class Http2Connection  {
         dropDataFrame(df);
     }
 
-    // This method is called when a DataFrame is dropped before/without
-    // having been added to any Stream::inputQ. In that case, the number
-    // of unprocessed bytes hasn't been incremented by the stream, and
-    // does not need to be decremented.
+    // This method can be called directly when a DataFrame is dropped
+    // before/without having been added to any Stream::inputQ.
+    // In that case, the number of unprocessed bytes hasn't been incremented
+    // by the stream, and does not need to be decremented.
+    // Otherwise, if the frame is dropped after having been added to the
+    // inputQ, releaseUnconsumed above should be called.
     final void dropDataFrame(DataFrame df) {
         if (isMarked(closedState, SHUTDOWN_REQUESTED)) return;
         if (debug.on()) {
@@ -1954,7 +1956,7 @@ class Http2Connection  {
         }
 
         @Override
-        protected boolean windowSizeExceeded(int received) {
+        protected boolean windowSizeExceeded(long received) {
             if (connection.isOpen()) {
                 try {
                     connection.protocolError(ErrorFrame.FLOW_CONTROL_ERROR,
