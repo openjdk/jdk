@@ -86,7 +86,8 @@ class AppImageBuilder {
 
         for (var launcher : app.launchers()) {
             // Copy executable to launchers folder
-            Path executableFile = resolvedAppLayout.launchersDirectory().resolve(launcher.executableName());
+            Path executableFile = resolvedAppLayout.launchersDirectory().resolve(
+                    launcher.executableNameWithSuffix());
             try (var in = launcher.executableResource()) {
                 Files.createDirectories(executableFile.getParent());
                 Files.copy(in, executableFile);

@@ -40,7 +40,7 @@ import java.util.stream.Stream;
 final class CfgFile {
     CfgFile(Application app, Launcher launcher) {
         startupInfo = launcher.startupInfo();
-        executableName = launcher.executableName();
+        outputFileName = launcher.executableName() + ".cfg";
         version = app.version();
     }
 
@@ -101,7 +101,7 @@ final class CfgFile {
             }
         }
 
-        Path cfgFile = appLayout.appDirectory().resolve(IOUtils.replaceSuffix(executableName, ".cfg"));
+        Path cfgFile = appLayout.appDirectory().resolve(outputFileName);
         Files.createDirectories(cfgFile.getParent());
 
         boolean[] addLineBreakAtSection = new boolean[1];
@@ -129,7 +129,7 @@ final class CfgFile {
 
     private final LauncherStartupInfo startupInfo;
     private final String version;
-    private final Path executableName;
+    private final String outputFileName;
 
     private static final Object SECTION_TAG = new Object();
 }

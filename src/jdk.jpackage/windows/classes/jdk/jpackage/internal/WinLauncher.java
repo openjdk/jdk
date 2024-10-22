@@ -25,15 +25,14 @@
 package jdk.jpackage.internal;
 
 import java.io.InputStream;
-import java.nio.file.Path;
 import java.util.Set;
 import jdk.jpackage.internal.resources.ResourceLocator;
 
 interface WinLauncher extends Launcher {
 
     @Override
-    default Path executableName() {
-        return Path.of(name() + ".exe");
+    default String executableSuffix() {
+        return ".exe";
     }
 
     boolean isConsole();

@@ -61,9 +61,10 @@ final class LinuxAppImageBuilder2 extends AppImageBuilder {
             var iconResource = app.createLauncherIconResource(launcher,
                     DEFAULT_ICON, workshop::createResource);
             if (iconResource != null) {
+                String iconFileName = launcher.executableName() + IOUtils.getSuffix(
+                        Path.of(DEFAULT_ICON));
                 Path iconTarget = resolvedAppLayout.destktopIntegrationDirectory().resolve(
-                        IOUtils.replaceSuffix(launcher.executableName(),
-                                IOUtils.getSuffix(Path.of(DEFAULT_ICON))));
+                        iconFileName);
                 iconResource.saveToFile(iconTarget);
             }
         }

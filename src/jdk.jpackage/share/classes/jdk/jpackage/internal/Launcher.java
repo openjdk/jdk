@@ -28,14 +28,23 @@ import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import jdk.jpackage.internal.resources.ResourceLocator;
 
 interface Launcher {
 
     String name();
 
-    default Path executableName() {
-        return Path.of(name());
+    default String executableName() {
+        return name();
+    }
+
+    default String executableSuffix() {
+        return null;
+    }
+
+    default String executableNameWithSuffix() {
+        return executableName() + Optional.ofNullable(executableSuffix()).orElse("");
     }
 
     LauncherStartupInfo startupInfo();

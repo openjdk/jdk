@@ -233,9 +233,9 @@ final class DesktopIntegration extends ShellCustomAction {
         data.put("APPLICATION_ICON", Optional.ofNullable(iconFile).map(
                 f -> f.installPath().toString()).orElse(null));
         data.put("DEPLOY_BUNDLE_CATEGORY", pkg.category());
-        data.put("APPLICATION_LAUNCHER", Enquoter.forPropertyValues().applyTo(pkg
-                .installedPackageLayout().launchersDirectory().resolve(launcher.executableName())
-                .toString()));
+        data.put("APPLICATION_LAUNCHER", Enquoter.forPropertyValues().applyTo(
+                pkg.installedPackageLayout().launchersDirectory().resolve(
+                        launcher.executableNameWithSuffix()).toString()));
 
         return data;
     }

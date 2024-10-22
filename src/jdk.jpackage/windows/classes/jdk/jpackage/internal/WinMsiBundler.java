@@ -228,8 +228,8 @@ public class WinMsiBundler  extends AbstractBundler {
             // Java Runtime image.
             installerIcon = pkgLayout.runtimeDirectory().resolve(Path.of("bin", "java.exe"));
         } else {
-            installerIcon = pkgLayout.launchersDirectory().resolve(pkg.app().mainLauncher()
-                    .executableName());
+            installerIcon = pkgLayout.launchersDirectory().resolve(
+                    pkg.app().mainLauncher().executableNameWithSuffix());
 
             new PackageFile(pkg.packageName()).save(pkgLayout);
         }

@@ -75,8 +75,7 @@ public final class LinuxLaunchersAsServices extends UnixLaunchersAsServices {
                     workshop.createResource("unit-template.service").setCategory(
                             I18N.getString("resource.systemd-unit-file")));
 
-            unitFilename = getServiceUnitFileName(pkg.packageName(),
-                    launcher.executableName().toString());
+            unitFilename = getServiceUnitFileName(pkg.packageName(), launcher.executableName());
 
             getResource().setPublicName(unitFilename).addSubstitutionDataEntry(
                     "APPLICATION_LAUNCHER",

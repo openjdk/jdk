@@ -102,7 +102,8 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
         launchersAsServices = launchers.stream()
                 .filter(Launcher::isService)
                 .map(launcher -> {
-                    var launcherPath = installedAppImage.launchersDirectory().resolve(launcher.executableName());
+                    var launcherPath = installedAppImage.launchersDirectory().resolve(
+                            launcher.executableNameWithSuffix());
                     var id = Id.File.of(launcherPath);
                     return new WixLauncherAsService(launcher, workshop::createResource)
                             .setLauncherInstallPath(toWixPath(launcherPath))
@@ -456,7 +457,7 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
         for (var launcher : launchers) {
             for (var folder : shortcutFolders) {
                 Path launcherPath = installedAppImage.launchersDirectory().resolve(
-                        launcher.executableName());
+                        launcher.executableNameWithSuffix());
 
                 if (folder.isRequestedFor(launcher)) {
                     String componentId = addShortcutComponent(xml, launcherPath, folder);
