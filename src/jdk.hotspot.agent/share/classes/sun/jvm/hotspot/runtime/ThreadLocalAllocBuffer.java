@@ -75,11 +75,11 @@ public class ThreadLocalAllocBuffer extends VMObject {
   }
 
   private long endReserve() {
-    long minFillerArraySize = Array.baseOffsetInBytes(BasicType.T_INT);
+    long labAlignmentReserve = VM.getVM().getLabAlignmentReserve();
     long reserveForAllocationPrefetch = VM.getVM().getReserveForAllocationPrefetch();
     long heapWordSize = VM.getVM().getHeapWordSize();
 
-    return Math.max(minFillerArraySize, reserveForAllocationPrefetch * heapWordSize);
+    return Math.max(labAlignmentReserve, reserveForAllocationPrefetch) * heapWordSize;
   }
 
   /** Support for iteration over heap -- not sure how this will

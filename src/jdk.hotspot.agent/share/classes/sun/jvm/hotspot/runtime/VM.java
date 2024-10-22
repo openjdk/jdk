@@ -127,6 +127,7 @@ public class VM {
   private ReversePtrs  revPtrs;
   private VMRegImpl    vmregImpl;
   private int          reserveForAllocationPrefetch;
+  private int          labAlignmentReserve;
 
   // System.getProperties from debuggee VM
   private Properties   sysProps;
@@ -437,6 +438,11 @@ public class VM {
        CIntegerType intType = (CIntegerType) db.lookupType("int");
        CIntegerField reserveForAllocationPrefetchField = threadLocalAllocBuffer.getCIntegerField("_reserve_for_allocation_prefetch");
        reserveForAllocationPrefetch = (int)reserveForAllocationPrefetchField.getCInteger(intType);
+
+       Type collectedHeap = db.lookupType("CollectedHeap");
+       CIntegerType sizeType = (CIntegerType) db.lookupType("size_t");
+       CIntegerField labAlignmentReserveField = collectedHeap.getCIntegerField("_lab_alignment_reserve");
+       labAlignmentReserve = (int)labAlignmentReserveField.getCInteger(sizeType);
     } catch (Exception exp) {
        throw new RuntimeException("can't determine target's VM version : " + exp.getMessage());
     }
@@ -927,6 +933,10 @@ public class VM {
 
   public int getReserveForAllocationPrefetch() {
     return reserveForAllocationPrefetch;
+  }
+
+  public int getLabAlignmentReserve() {
+    return labAlignmentReserve;
   }
 
   public boolean isSharingEnabled() {
