@@ -27,6 +27,8 @@ package jdk.internal.constant;
 import java.lang.constant.ClassDesc;
 import java.lang.invoke.MethodHandles;
 
+import jdk.internal.vm.annotation.Stable;
+
 import static jdk.internal.constant.ConstantUtils.*;
 
 /**
@@ -41,6 +43,7 @@ import static jdk.internal.constant.ConstantUtils.*;
  */
 public final class ClassOrInterfaceDescImpl implements ClassDesc {
     private final String descriptor;
+    private @Stable String internalName;
 
     /**
      * Creates a {@linkplain ClassOrInterfaceDescImpl} from a pre-validated descriptor string
@@ -55,6 +58,14 @@ public final class ClassOrInterfaceDescImpl implements ClassDesc {
 
     ClassOrInterfaceDescImpl(String descriptor) {
         this.descriptor = descriptor;
+    }
+
+    public String internalName() {
+        var internalName = this.internalName;
+        if (internalName == null) {
+            this.internalName = internalName = dropFirstAndLastChar(descriptor);
+        }
+        return internalName;
     }
 
     @Override
@@ -116,7 +127,7 @@ public final class ClassOrInterfaceDescImpl implements ClassDesc {
     @Override
     public Class<?> resolveConstantDesc(MethodHandles.Lookup lookup)
             throws ReflectiveOperationException {
-        return lookup.findClass(internalToBinary(dropFirstAndLastChar(descriptor)));
+        return lookup.findClass(internalToBinary(internalName()));
     }
 
     /**
