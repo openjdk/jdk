@@ -751,12 +751,21 @@ void MetaspaceShared::preload_classes(TRAPS) {
     }
   }
 
-  // Exercise the manifest processing code to ensure classes used by CDS at runtime
-  // are always archived
+  // Some classes are used at CDS runtime but are not loaded, and therefore archived, at
+  // dumptime. We can perform dummmy calls to these classes at dumptime to ensure they
+  // are archived.
+  exercise_runtime_cds_code(CHECK);
+
+  log_info(cds)("Loading classes to share: done.");
+}
+
+void MetaspaceShared::exercise_runtime_cds_code(TRAPS) {
+  // Exercise the manifest processing code
   const char* dummy = "Manifest-Version: 1.0\n";
   CDSProtectionDomain::create_jar_manifest(dummy, strlen(dummy), CHECK);
 
-  log_info(cds)("Loading classes to share: done.");
+  // Exercise FileSystem and URL code
+  CDSProtectionDomain::to_file_URL("dummy.jar", Handle(), CHECK);
 }
 
 void MetaspaceShared::preload_and_dump_impl(StaticArchiveBuilder& builder, TRAPS) {
@@ -798,16 +807,6 @@ void MetaspaceShared::preload_and_dump_impl(StaticArchiveBuilder& builder, TRAPS
     CDSConfig::stop_using_optimized_module_handling();
   }
 #endif
-
-  // Dummy call to load classes used at CDS runtime
-  JavaValue result(T_OBJECT);
-  Handle path_string = java_lang_String::create_from_str("dummy.jar", CHECK);
-  JavaCalls::call_static(&result,
-                         vmClasses::jdk_internal_loader_ClassLoaders_klass(),
-                         vmSymbols::toFileURL_name(),
-                         vmSymbols::toFileURL_signature(),
-                         path_string,
-                         CHECK);
 
   VM_PopulateDumpSharedSpace op(builder);
   VMThread::execute(&op);

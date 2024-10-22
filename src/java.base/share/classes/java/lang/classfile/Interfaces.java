@@ -24,11 +24,11 @@
  */
 package java.lang.classfile;
 
+import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.constant.ClassDesc;
 import java.util.Arrays;
 import java.util.List;
 
-import java.lang.classfile.constantpool.ClassEntry;
 import jdk.internal.classfile.impl.InterfacesImpl;
 import jdk.internal.classfile.impl.Util;
 import jdk.internal.javac.PreviewFeature;

@@ -1348,7 +1348,7 @@ JvmtiEnvBase::set_frame_pop(JvmtiThreadState* state, javaVFrame* jvf, jint depth
   if (jvf == nullptr) {
     return JVMTI_ERROR_NO_MORE_FRAMES;
   }
-  if (jvf->method()->is_native() ||
+  if (jvf->method()->is_native() || (depth == 0 && state->top_frame_is_exiting()) ||
      (state->is_virtual() && (jvf->is_vthread_entry() || jvf->method()->jvmti_mount_transition()))) {
     return JVMTI_ERROR_OPAQUE_FRAME;
   }

@@ -84,6 +84,7 @@ JvmtiThreadState::JvmtiThreadState(JavaThread* thread, oop thread_oop)
   _earlyret_value.j = 0L;
   _earlyret_oop = nullptr;
   _jvmti_event_queue = nullptr;
+  _top_frame_is_exiting = false;
   _is_virtual = false;
 
   _thread_oop_h = OopHandle(JvmtiExport::jvmti_oop_storage(), thread_oop);
