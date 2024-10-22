@@ -65,8 +65,7 @@ public class UserRegionTest {
 
     @Test
     public void testNumberFormat() {
-        var country = Locale.getDefault().getCountry();
-        if (country.equals("DE")) {
+        if (System.getProperty("user.region").startsWith("DE")) {
             assertEquals("0,50000", String.format("%.5f", 0.5f));
         } else {
             assertEquals("0.50000", String.format("%.5f", 0.5f));
