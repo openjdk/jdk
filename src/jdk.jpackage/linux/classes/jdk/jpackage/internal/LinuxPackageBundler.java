@@ -26,7 +26,6 @@ package jdk.jpackage.internal;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.nio.file.Files;
 import java.text.MessageFormat;
 import java.util.Collections;
 import java.util.HashMap;
@@ -34,7 +33,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
@@ -42,7 +40,6 @@ abstract class LinuxPackageBundler extends AbstractBundler {
 
     LinuxPackageBundler(BundlerParamInfo<? extends LinuxPackage> pkgParam) {
         this.pkgParam = pkgParam;
-        appImageBundler = new LinuxAppBundler().setDependentTask(true);
         customActions = List.of(new CustomActionInstance(
                 DesktopIntegration::create), new CustomActionInstance(
                 LinuxLaunchersAsServices::create));
@@ -55,10 +52,6 @@ abstract class LinuxPackageBundler extends AbstractBundler {
         // Order is important!
         LinuxPackage pkg = pkgParam.fetchFrom(params);
         var workshop = WorkshopFromParams.WORKSHOP.fetchFrom(params);
-
-        // run basic validation to ensure requirements are met
-        // we are not interested in return code, only possible exception
-        appImageBundler.validate(params);
 
         FileAssociation.verify(FileAssociation.fetchFrom(params));
 
@@ -118,30 +111,29 @@ abstract class LinuxPackageBundler extends AbstractBundler {
 
         params.put(WorkshopFromParams.WORKSHOP.getID(), pkgWorkshop);
 
-        Function<Path, ApplicationLayout> initAppImageLayout = imageRoot -> {
-            ApplicationLayout layout = pkg.appLayout();
-            layout.pathGroup().setPath(new Object(),
-                    AppImageFile.getPathInAppImage(Path.of("")));
-            return layout.resolveAt(imageRoot);
-        };
-
         try {
-            Path srcAppImageDir = pkg.predefinedAppImage();
-
-            // we either have an application image or need to build one
-            boolean moveLayout = (srcAppImageDir == null);
-            if (moveLayout) {
-                srcAppImageDir = workshop.appImageDir();
-                Files.createDirectories(srcAppImageDir.getParent());
-                appImageBundler.execute(params, srcAppImageDir.getParent());
-            }
-
-            var srcLayout = initAppImageLayout.apply(srcAppImageDir);
-            var dstLayout = pkg.packageLayout().resolveAt(pkgWorkshop.appImageDir());
-            if (moveLayout) {
-                srcLayout.move(dstLayout);
+            // We either have an application image or need to build one.
+            if (pkg.app().runtimeBuilder() != null) {
+                // Runtime builder is present, build app image.
+                new LinuxAppImageBuilder2(pkg).execute(pkgWorkshop);
             } else {
-                srcLayout.copy(dstLayout);
+                Path srcAppImageDir = pkg.predefinedAppImage();
+                if (srcAppImageDir == null) {
+                    // No predefined app image and no runtime builder. 
+                    // This should be runtime packaging.
+                    if (pkg.app().isRuntime()) {
+                        srcAppImageDir = workshop.appImageDir();
+                    } else {
+                        // Can't create app image without runtime builder.
+                        throw new UnsupportedOperationException();
+                    }
+                }
+
+                // Copy app layout omitting application image info file.
+                ApplicationLayout srcLayout = pkg.appLayout().resolveAt(srcAppImageDir);
+                srcLayout.pathGroup().setPath(new Object(),
+                        AppImageFile.getPathInAppImage(srcAppImageDir));
+                srcLayout.copy(pkg.packageLayout().resolveAt(pkgWorkshop.appImageDir()));
             }
 
             for (var ca : customActions) {
@@ -239,7 +231,6 @@ abstract class LinuxPackageBundler extends AbstractBundler {
             PackagerException, IOException;
 
     private final BundlerParamInfo<? extends LinuxPackage> pkgParam;
-    private final Bundler appImageBundler;
     private boolean withFindNeededPackages;
     private final List<CustomActionInstance> customActions;
 

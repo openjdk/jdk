@@ -95,7 +95,7 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
 
         installedAppImage = pkg.appLayout().resolveAt(INSTALLDIR);
 
-        launchers = toCollection(pkg.app().allLaunchers());
+        launchers = toCollection(pkg.app().launchers());
 
         shortcutFolders = ShortcutsFolder.getForPackage(pkg);
 
@@ -187,7 +187,7 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
     }
 
     private void initFileAssociations(WinMsiPackage pkg) {
-        var allFileAssociations = pkg.app().allLaunchers().stream().map(Launcher::fileAssociations)
+        var allFileAssociations = pkg.app().launchers().stream().map(Launcher::fileAssociations)
                 .flatMap(List::stream).toList();
         associations = allFileAssociations.stream()
                 .peek(this::normalizeFileAssociation)
@@ -929,7 +929,7 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
         }
 
         static Set<ShortcutsFolder> getForPackage(WinMsiPackage pkg) {
-            return pkg.app().allLaunchers().stream().map(launcher -> {
+            return pkg.app().launchers().stream().map(launcher -> {
                 return Stream.of(ShortcutsFolder.values()).filter(shortcutsFolder -> {
                     return shortcutsFolder.isRequestedFor((WinLauncher)launcher);
                 });

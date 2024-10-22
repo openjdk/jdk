@@ -28,9 +28,9 @@ import java.nio.file.Path;
 import java.text.MessageFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
-import java.util.stream.Stream;
 import jdk.internal.util.OperatingSystem;
 import static jdk.jpackage.internal.Functional.ThrowingSupplier.toSupplier;
 
@@ -46,6 +46,17 @@ interface Application {
 
     String copyright();
 
+    List<Path> srcDirs();
+
+    default Path mainSrcDir() {
+        return srcDirs().getFirst();
+    }
+
+    default List<Path> additionalSrcDirs() {
+        var srcDirs = srcDirs();
+        return srcDirs.subList(1, srcDirs.size());
+    }
+
     RuntimeBuilder runtimeBuilder();
 
     default Path appImageDirName() {
@@ -59,16 +70,33 @@ interface Application {
         }
     }
 
-    Launcher mainLauncher();
+    List<Launcher> launchers();
+
+    default Launcher mainLauncher() {
+        return Optional.ofNullable(launchers()).map(launchers -> {
+            Launcher launcher;
+            if (launchers.isEmpty()) {
+                launcher = null;
+            } else {
+                launcher = launchers.getFirst();
+            }
+            return launcher;
+        }).orElse(null);
+    }
+
+    default List<Launcher> additionalLaunchers() {
+        return Optional.ofNullable(launchers()).map(launchers -> {
+            return launchers.subList(1, launchers.size());
+        }).orElseGet(List::of);
+    }
 
     default boolean isRuntime() {
         return mainLauncher() == null;
     }
 
-    List<Launcher> additionalLaunchers();
-
     default boolean isService() {
-        return allLaunchers().stream().filter(Launcher::isService).findAny().isPresent();
+        return Optional.ofNullable(launchers()).orElseGet(List::of).stream().filter(
+                Launcher::isService).findAny().isPresent();
     }
 
     default ApplicationLayout appLayout() {
@@ -79,10 +107,8 @@ interface Application {
         }
     }
 
-    default List<Launcher> allLaunchers() {
-        return Optional.ofNullable(mainLauncher()).map(main -> {
-            return Stream.concat(Stream.of(main), additionalLaunchers().stream()).toList();
-        }).orElse(List.of());
+    default Map<String, String> extraAppImageData() {
+        return Map.of();
     }
 
     default OverridableResource createLauncherIconResource(Launcher launcher, String defaultIconName,
@@ -115,11 +141,13 @@ interface Application {
         return resource;
     }
 
-    static record Impl(String name, String description, String version, String vendor,
-            String copyright, RuntimeBuilder runtimeBuilder, Launcher mainLauncher,
-            List<Launcher> additionalLaunchers) implements Application {
-        public Impl        {
-            name = Optional.ofNullable(name).orElseGet(mainLauncher::name);
+    static record Impl(String name, String description, String version,
+            String vendor, String copyright, List<Path> srcDirs,
+            RuntimeBuilder runtimeBuilder, List<Launcher> launchers) implements Application {
+        public Impl {
+            name = Optional.ofNullable(name).orElseGet(() -> {
+                return mainLauncher().name();
+            });
             description = Optional.ofNullable(description).orElseGet(Defaults.INSTANCE::description);
             version = Optional.ofNullable(version).orElseGet(Defaults.INSTANCE::version);
             vendor = Optional.ofNullable(vendor).orElseGet(Defaults.INSTANCE::vendor);
@@ -167,18 +195,61 @@ interface Application {
         }
 
         @Override
+        public List<Path> srcDirs() {
+            return target.srcDirs();
+        }
+
+        @Override
         public RuntimeBuilder runtimeBuilder() {
             return target.runtimeBuilder();
         }
 
         @Override
-        public Launcher mainLauncher() {
-            return target.mainLauncher();
+        public List<Launcher> launchers() {
+            return target.launchers();
+        }
+    }
+
+    static class Unsupported implements Application {
+
+        @Override
+        public String name() {
+            throw new UnsupportedOperationException();
         }
 
         @Override
-        public List<Launcher> additionalLaunchers() {
-            return target.additionalLaunchers();
+        public String description() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public String version() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public String vendor() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public String copyright() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public List<Path> srcDirs() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public RuntimeBuilder runtimeBuilder() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public List<Launcher> launchers() {
+            throw new UnsupportedOperationException();
         }
     }
 

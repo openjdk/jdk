@@ -24,7 +24,7 @@
  */
 package jdk.jpackage.internal;
 
-import java.util.Collections;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,14 +33,14 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.Functional.ThrowingFunction;
 import static jdk.jpackage.internal.StandardBundlerParam.ADD_LAUNCHERS;
+import static jdk.jpackage.internal.StandardBundlerParam.APP_CONTENT;
 import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
 import static jdk.jpackage.internal.StandardBundlerParam.COPYRIGHT;
 import static jdk.jpackage.internal.StandardBundlerParam.DESCRIPTION;
 import static jdk.jpackage.internal.StandardBundlerParam.FILE_ASSOCIATIONS;
 import static jdk.jpackage.internal.StandardBundlerParam.ICON;
 import static jdk.jpackage.internal.StandardBundlerParam.LAUNCHER_AS_SERVICE;
-import static jdk.jpackage.internal.StandardBundlerParam.MENU_HINT;
-import static jdk.jpackage.internal.StandardBundlerParam.SHORTCUT_HINT;
+import static jdk.jpackage.internal.StandardBundlerParam.SOURCE_DIR;
 import static jdk.jpackage.internal.StandardBundlerParam.VENDOR;
 import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
 import static jdk.jpackage.internal.StandardBundlerParam.getPredefinedAppImage;
@@ -49,12 +49,14 @@ import static jdk.jpackage.internal.StandardBundlerParam.isRuntimeInstaller;
 final class ApplicationFromParams {
 
     static Application create(Map<String, ? super Object> params,
-            Function<Map<String, ? super Object>, Launcher> launcherSupplier) throws ConfigException {
+            Function<Map<String, ? super Object>, Launcher> launcherSupplier) throws ConfigException, IOException {
         var name = APP_NAME.fetchFrom(params);
         var description = DESCRIPTION.fetchFrom(params);
         var version = VERSION.fetchFrom(params);
         var vendor = VENDOR.fetchFrom(params);
         var copyright = COPYRIGHT.fetchFrom(params);
+        var srcDir = SOURCE_DIR.fetchFrom(params);
+        var additionalContent = APP_CONTENT.fetchFrom(params);
 
         var predefinedAppImage = getPredefinedAppImage(params);
         if (name == null && predefinedAppImage == null) {
@@ -74,20 +76,21 @@ final class ApplicationFromParams {
         } else if (predefinedAppImage != null) {
             runtimeBuilder = null;
 
-            AppImageFile appImage = AppImageFile.load(predefinedAppImage);
+            var appImage = AppImageFile2.load(predefinedAppImage);
 
             version = appImage.getAppVersion();
 
             mainLauncher = launcherSupplier.apply(mergeParams(params, Map.of(APP_NAME.getID(),
                     appImage.getLauncherName(), DESCRIPTION.getID(), description)));
             additionalLaunchers = appImage.getAddLaunchers().stream().map(li -> {
-                return launcherSupplier.apply(mergeParams(params, Map.of(APP_NAME.getID(), li
-                        .getName(), SHORTCUT_HINT.getID(), li.isShortcut(), MENU_HINT.getID(), li
-                        .isMenu(), LAUNCHER_AS_SERVICE.getID(), li.isService())));
+                Map<String, ? super Object> launcherParams = new HashMap<>();
+                launcherParams.put(APP_NAME.getID(), li.name());
+                launcherParams.put(LAUNCHER_AS_SERVICE.getID(), Boolean.toString(li.service()));
+                launcherParams.putAll(li.extra());
+                return launcherSupplier.apply(mergeParams(params, launcherParams));
             }).toList();
         } else {
-            var launchers = Optional.ofNullable(ADD_LAUNCHERS.fetchFrom(params)).orElseGet(
-                    Collections::emptyList);
+            var launchers = Optional.ofNullable(ADD_LAUNCHERS.fetchFrom(params)).orElseGet(List::of);
             mainLauncher = launcherSupplier.apply(params);
             additionalLaunchers = launchers.stream().map(launcherParams -> {
                 return launcherSupplier.apply(mergeParams(params, launcherParams));
@@ -99,15 +102,21 @@ final class ApplicationFromParams {
             runtimeBuilder = RuntimeBuilderFromParams.create(params, startupInfos);
         }
 
-        return new Application.Impl(name, description, version, vendor, copyright, runtimeBuilder,
-                mainLauncher, additionalLaunchers);
+        List<Launcher> launchers = Optional.ofNullable(mainLauncher).map(v -> {
+            return Stream.concat(Stream.of(v), additionalLaunchers.stream()).toList();
+        }).orElse(null);
+
+        return new Application.Impl(name, description, version, vendor,
+                copyright, Stream.concat(Stream.of(srcDir),
+                        additionalContent.stream()).toList(), runtimeBuilder,
+                launchers);
     }
 
     private static Map<String, ? super Object> mergeParams(Map<String, ? super Object> mainParams,
             Map<String, ? super Object> launcherParams) {
         if (!launcherParams.containsKey(DESCRIPTION.getID())) {
             launcherParams = new HashMap<>(launcherParams);
-// FIXME: this is a good improvement but it fails existing tests            
+// FIXME: this is a good improvement but it fails existing tests
 //            launcherParams.put(DESCRIPTION.getID(), String.format("%s (%s)", DESCRIPTION.fetchFrom(
 //                    mainParams), APP_NAME.fetchFrom(launcherParams)));
             launcherParams.put(DESCRIPTION.getID(), DESCRIPTION.fetchFrom(mainParams));

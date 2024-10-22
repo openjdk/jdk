@@ -46,8 +46,7 @@ class UnixLaunchersAsServices extends ShellCustomAction {
         this.requiredPackages = requiredPackages;
 
         // Read launchers information
-        launchers = app.allLaunchers().stream().filter(Launcher::isService).map(factory::apply)
-                .toList();
+        launchers = app.launchers().stream().filter(Launcher::isService).map(factory::apply).toList();
     }
 
     @Override

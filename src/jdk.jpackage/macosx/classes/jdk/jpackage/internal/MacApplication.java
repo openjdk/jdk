@@ -24,51 +24,17 @@
  */
 package jdk.jpackage.internal;
 
-import java.io.InputStream;
-import java.nio.file.Path;
-import java.util.Set;
-import jdk.jpackage.internal.resources.ResourceLocator;
+import java.util.Map;
 
-interface WinLauncher extends Launcher {
+interface MacApplication extends Application {
 
-    @Override
-    default Path executableName() {
-        return Path.of(name() + ".exe");
-    }
+    boolean signed();
 
-    boolean isConsole();
+    boolean appStore();
 
     @Override
-    default InputStream executableResource() {
-        return ResourceLocator.class.getResourceAsStream(
-                isConsole() ? "jpackageapplauncher.exe" : "jpackageapplauncherw.exe");
-    }
-
-    enum WinShortcut {
-        WinShortcutDesktop,
-        WinShortcutStartMenu
-    }
-
-    Set<WinShortcut> shortcuts();
-
-    static class Impl extends Launcher.Proxy<Launcher> implements WinLauncher {
-        Impl(Launcher launcher, boolean isConsole, Set<WinShortcut> shortcuts) {
-            super(launcher);
-            this.isConsole = isConsole;
-            this.shortcuts = shortcuts;
-        }
-
-        @Override
-        public boolean isConsole() {
-            return isConsole;
-        }
-
-        @Override
-        public Set<WinShortcut> shortcuts() {
-            return shortcuts;
-        }
-
-        private final boolean isConsole;
-        private final Set<WinShortcut> shortcuts;
+    default Map<String, String> extraAppImageData() {
+        return Map.of("signed", Boolean.toString(signed()), "app-store",
+                Boolean.toString(appStore()));
     }
 }

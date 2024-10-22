@@ -24,8 +24,11 @@
  */
 package jdk.jpackage.internal;
 
+import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
+import jdk.jpackage.internal.resources.ResourceLocator;
 
 interface Launcher {
 
@@ -43,14 +46,25 @@ interface Launcher {
 
     String description();
 
+    default InputStream executableResource() {
+        return ResourceLocator.class.getResourceAsStream("jpackageapplauncher");
+    }
+
+    default Map<String, String> extraAppImageData() {
+        return Map.of();
+    }
+
     /**
-     * Null for the default or resource directory icon, empty path for no icon, other value for
-     * custom icon.
+     * Returns path to icon to assign for the launcher.
+     *
+     * Null for the default or resource directory icon, empty path for no icon,
+     * other value for custom icon.
      */
     Path icon();
 
     static record Impl(String name, LauncherStartupInfo startupInfo,
-            List<FileAssociation> fileAssociations, boolean isService, String description, Path icon) implements Launcher {
+            List<FileAssociation> fileAssociations, boolean isService,
+            String description, Path icon) implements Launcher {
 
     }
 
@@ -88,6 +102,39 @@ interface Launcher {
         @Override
         public Path icon() {
             return target.icon();
+        }
+    }
+
+    static class Unsupported implements Launcher {
+
+        @Override
+        public String name() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public LauncherStartupInfo startupInfo() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public List<FileAssociation> fileAssociations() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean isService() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public String description() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Path icon() {
+            throw new UnsupportedOperationException();
         }
     }
 }

@@ -24,11 +24,18 @@
  */
 package jdk.jpackage.internal;
 
+import java.util.Map;
 import java.util.Optional;
 
 interface LinuxLauncher extends Launcher {
 
     Optional<Boolean> shortcut();
+
+    default Map<String, String> extraAppImageData() {
+        return shortcut().map(v -> {
+            return Map.of("shortcut", Boolean.toString(v));
+        }).orElseGet(Map::of);
+    }
 
     static class Impl extends Launcher.Proxy<Launcher> implements LinuxLauncher {
 

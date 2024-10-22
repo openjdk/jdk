@@ -40,6 +40,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
+import jdk.jpackage.internal.Functional.ThrowingFunction;
 import static jdk.jpackage.internal.RuntimeBuilder.getDefaultModulePath;
 
 /**
@@ -102,8 +103,9 @@ final class StandardBundlerParam {
                         if (isRuntimeInstaller(params)) {
                             return null;
                         } else if (hasPredefinedAppImage(params)) {
-                            return AppImageFile.extractMainClass(
-                                    getPredefinedAppImage(params));
+                            return ThrowingFunction.toFunction(
+                                    AppImageFile2::load).apply(
+                                            getPredefinedAppImage(params)).getMainClass();
                         }
                         return LAUNCHER_DATA.fetchFrom(params).qualifiedClassName();
                     },
@@ -144,7 +146,8 @@ final class StandardBundlerParam {
                         Path appImage = PREDEFINED_APP_IMAGE.fetchFrom(params);
                         String appName = NAME.fetchFrom(params);
                         if (appImage != null) {
-                            String name = AppImageFile.extractAppName(appImage);
+                            String name = ThrowingFunction.toFunction(
+                                    AppImageFile2::load).apply(appImage).getLauncherName();
                             appName  = (name != null) ? name : appName;
                         } else if (appName == null) {
                             String s = MAIN_CLASS.fetchFrom(params);
