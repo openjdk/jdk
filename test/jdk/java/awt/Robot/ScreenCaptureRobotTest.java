@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000,2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,7 +72,7 @@ public class ScreenCaptureRobotTest {
         Graphics g = realImage.createGraphics();
         g.setColor(Color.YELLOW);
         g.fillRect(0, 0, IMAGE_WIDTH, IMAGE_HEIGHT);
-        g.setColor(Color.red);
+        g.setColor(Color.RED);
         g.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 20));
         g.drawString("Capture This", 10, 40);
         g.dispose();
@@ -89,8 +89,8 @@ public class ScreenCaptureRobotTest {
     private static void doTest() throws Exception {
         Robot robot;
         robot = new Robot();
-        robot.delay(500);
         robot.waitForIdle();
+        robot.delay(500);
 
         EventQueue.invokeAndWait(() -> {
             point = canvas.getLocationOnScreen();
@@ -123,13 +123,13 @@ public class ScreenCaptureRobotTest {
 
         if (imgWidth != realImg.getWidth()
                 || imgHeight != realImg.getHeight()) {
-            System.out.println(
-                    "Captured image and real image widths are different");
+            System.out
+                    .println("Captured and real images are different in size");
             return false;
         }
 
-        for (int i = 0; i < (imgWidth); i++) {
-            for (int j = 0; j < (imgHeight); j++) {
+        for (int i = 0; i < imgWidth; i++) {
+            for (int j = 0; j < imgHeight; j++) {
                 capturedPixel = capturedImg.getRGB(i, j);
                 realPixel = realImg.getRGB(i, j);
                 if (capturedPixel != realPixel) {
@@ -155,7 +155,7 @@ public class ScreenCaptureRobotTest {
         // Save BufferedImage to PNG file
         try {
             File file = new File(fileName);
-            System.out.println("Saving image : " + image + " to "
+            System.out.println("Saving image : " + image + " to \n"
                     + file.getAbsolutePath());
             ImageIO.write(image, "PNG", file);
         } catch (IOException ioe) {
