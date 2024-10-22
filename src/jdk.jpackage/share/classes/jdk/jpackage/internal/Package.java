@@ -328,6 +328,10 @@ interface Package {
         var ex = new ConfigException(MessageFormat.format(I18N.getString("error.invalid-install-dir"),
                 installDir), null);
 
+        if (installDir.getNameCount() == 0) {
+            throw ex;
+        }
+
         if (installDir.getFileName().equals(Path.of(""))) {
             // Trailing '/' or '\\'. Strip them away.
             installDir = installDir.getParent();
