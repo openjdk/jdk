@@ -29,12 +29,13 @@
  * @requires vm.cds.supports.aot.class.linking
  * @requires vm.compMode != "Xcomp"
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds/test-classes/
- * @build OldProvider OldClass OldConsumer
+ * @build OldProvider OldClass OldConsumer StringConcatTestOld
  * @build ResolvedConstants
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar
  *                 ResolvedConstantsApp ResolvedConstantsFoo ResolvedConstantsBar
  *                 MyInterface InterfaceWithClinit NormalClass
  *                 OldProvider OldClass OldConsumer SubOfOldClass
+ *                 StringConcatTest StringConcatTestOld
  * @run driver ResolvedConstants
  */
 
@@ -152,7 +153,9 @@ public class ResolvedConstants {
                .shouldContain("Cannot aot-resolve Lambda proxy because OldClass is excluded")
                .shouldContain("Cannot aot-resolve Lambda proxy of interface type InterfaceWithClinit")
                .shouldMatch("klasses.* app *NormalClass[$][$]Lambda/.* hidden aot-linked inited")
-               .shouldNotMatch("klasses.* app *SubOfOldClass[$][$]Lambda/");
+               .shouldNotMatch("klasses.* app *SubOfOldClass[$][$]Lambda/")
+               .shouldMatch("archived indy *CP entry.*StringConcatTest .* => java/lang/invoke/StringConcatFactory.makeConcatWithConstants")
+               .shouldNotMatch("archived indy *CP entry.*StringConcatTestOld .* => java/lang/invoke/StringConcatFactory.makeConcatWithConstants");
         }
     }
 
@@ -186,6 +189,8 @@ class ResolvedConstantsApp implements Runnable {
         bar.doit();
 
         testLambda();
+        StringConcatTest.test();
+        StringConcatTestOld.main(null);
     }
     private static void staticCall() {}
     private void privateInstanceCall() {}
@@ -231,6 +236,22 @@ class ResolvedConstantsApp implements Runnable {
         SubOfOldClass.testLambda(); // Lambda proxy shouldn't be cached
     }
 }
+
+class StringConcatTest {
+    static void test() {
+        System.out.println("StringConcatTest <concat> " + new StringConcatTest()); // concat should be aot-resolved
+    }
+}
+
+/* see StringConcatTestOld.jasm
+
+class StringConcatTestOld {
+    public static void main(String args[]) {
+        // concat should be aot-resolved => the MethodType refers to an old class
+        System.out.println("StringConcatTestOld <concat> " + new OldConsumer());
+    }
+}
+*/
 
 class NormalClass {
     static void testLambda() {

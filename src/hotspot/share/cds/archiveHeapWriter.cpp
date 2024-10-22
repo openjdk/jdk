@@ -718,7 +718,9 @@ void ArchiveHeapWriter::compute_ptrmap(ArchiveHeapInfo* heap_info) {
 
     Metadata** buffered_field_addr = requested_addr_to_buffered_addr(requested_field_addr);
     Metadata* native_ptr = *buffered_field_addr;
-    assert(native_ptr != nullptr, "sanity");
+    guarantee(native_ptr != nullptr, "sanity");
+    guarantee(ArchiveBuilder::current()->has_been_buffered((address)native_ptr),
+              "Metadata %p should have been archived", native_ptr);
 
     address buffered_native_ptr = ArchiveBuilder::current()->get_buffered_addr((address)native_ptr);
     address requested_native_ptr = ArchiveBuilder::current()->to_requested(buffered_native_ptr);
