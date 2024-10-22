@@ -8204,6 +8204,7 @@ class StubGenerator: public StubCodeGenerator {
     if (UseSVE > 0) {
       for (int op = 0; op < VectorSupport::NUM_VECTOR_OP_MATH; op++) {
         int vop = VectorSupport::VECTOR_OP_MATH_START + op;
+        // Skip "tanh" because there is performance regression
         if (vop == VectorSupport::VECTOR_OP_TANH) {
           continue;
         }
@@ -8222,6 +8223,7 @@ class StubGenerator: public StubCodeGenerator {
     // Math vector stubs implemented with NEON for 64/128 bits vector size.
     for (int op = 0; op < VectorSupport::NUM_VECTOR_OP_MATH; op++) {
       int vop = VectorSupport::VECTOR_OP_MATH_START + op;
+      // Skip "tanh" because there is performance regression
       if (vop == VectorSupport::VECTOR_OP_TANH) {
         continue;
       }
