@@ -416,10 +416,21 @@ import java.util.Set;
 import java.util.HashMap;
 import java.util.Random;
 
+/*
+ * We want to test SuperWord / AutoVectorization with different constant offsets (positive and negative):
+ *   for (int i = ...) { a[i + offset] = b[i] * 11; }
+ *
+ * We do this for various primitive types (int, long, short, char, byte, float, double).
+ * We run all test under various settings of MaxVectorSize and +-AlignVector.
+ * Finally, we verify the results and check that vectors of the expected length were created (IR rules).
+ */
 public class TestDependencyOffsets {
     private static final Random RANDOM = Utils.getRandomInstance();
-    private static final int SIZE = 10_000 + RANDOM.nextInt(1000);
+    private static final int SIZE = 5_000 + RANDOM.nextInt(1000);
 
+    /*
+     * Template for the inner test class.
+     */
     private static String generate(CompileFramework comp, String[] flags) {
         for (TestDefinition test : getTests()) {
         }
@@ -502,9 +513,16 @@ public class TestDependencyOffsets {
         };
 
         CompileFramework comp = new CompileFramework();
+        long time0 = System.currentTimeMillis();
         comp.addJavaSourceCode("InnerTest", generate(comp, flags));
+        long time1 = System.currentTimeMillis();
         comp.compile();
+        long time2 = System.currentTimeMillis();
         comp.invoke("InnerTest", "main", new Object[] {null});
+        long time3 = System.currentTimeMillis();
+        System.out.println("Generate: " + (time1 - time0));
+        System.out.println("Compile:  " + (time2 - time1));
+        System.out.println("Run:      " + (time3 - time2));
     }
 
     /*
@@ -519,6 +537,9 @@ public class TestDependencyOffsets {
             return name.substring(0, 1).toUpperCase();
         }
 
+        /*
+         * Template for init method generation.
+         */
         String generateInit() {
             return String.format("""
                        static void init(%s[] a, %s[] b) {
@@ -531,6 +552,9 @@ public class TestDependencyOffsets {
                    name, name, name, name);
         }
 
+        /*
+         * Template for verify method generation.
+         */
         String generateVerify() {
             return String.format("""
                        static void verify(String context, %s[] aTest, %s[] bTest, %s[] aGold, %s[] bGold) {
@@ -549,7 +573,7 @@ public class TestDependencyOffsets {
         List<VWConstraint> vwConstraints() {
             List<VWConstraint> vwConstraints = new ArrayList<VWConstraint>();
 
-            //                                           Description for the platform       CPU features that identify this platform           Platform vector witdth
+            //                                     Description for the platform       CPU features that identify this platform           Platform vector witdth
             switch(name) {
             case "byte", "char", "short":
                 vwConstraints.add(new VWConstraint("sse4.1 to avx",                   new String[]{"sse4.1", "true", "avx2", "false"},   16));
@@ -625,6 +649,11 @@ public class TestDependencyOffsets {
     }
 
     static record TestDefinition (int id, Type type, int offset) {
+
+        /*
+         * Template for test generation, together with its static variables, static initialization,
+         * @IR rules and @Run method (initialization, execution and verification).
+         */
         String generate() {
             int start = offset >= 0 ? 0 : -offset;
             String end = offset >=0 ? "SIZE - " + offset : "SIZE";
@@ -701,9 +730,9 @@ public class TestDependencyOffsets {
                 int maxVectorWidth = vwConstraint.platformVectorWidth; // no constraint by default
                 if (0 < byteOffset && byteOffset < vwConstraint.platformVectorWidth) {
                     int log2 = 31 - Integer.numberOfLeadingZeros(offset);
-                    int floor_pow2 = 1 << log2;
-                    maxVectorWidth = floor_pow2 * type.size;
-                    builder.append("    //   Vectors must have at most " + floor_pow2 +
+                    int floorPow2 = 1 << log2;
+                    maxVectorWidth = floorPow2 * type.size;
+                    builder.append("    //   Vectors must have at most " + floorPow2 +
                                    " elements: maxVectorWidth = " + maxVectorWidth +
                                    " to avoid cyclic dependency.\n");
                 }
@@ -727,25 +756,25 @@ public class TestDependencyOffsets {
                 r2.addApplyIf("\"MaxVectorSize\", \">=" + minVectorWidth + "\"");
 
                 // All vectors must be aligned by some alignment width aw:
-                //   aw = min(actual_vector_width, ObjectAlignmentInBytes)
+                //   aw = min(actualVectorWidth, ObjectAlignmentInBytes)
                 // The runtime aw must thus lay between these two values:
-                //   aw_min <= aw <= aw_max
-                int aw_min = Math.min(minVectorWidth, 8);
-                int aw_max = Math.min(vwConstraint.platformVectorWidth, 8);
+                //   awMin <= aw <= awMax
+                int awMin = Math.min(minVectorWidth, 8);
+                int awMax = Math.min(vwConstraint.platformVectorWidth, 8);
 
                 // We must align both the load and the store, thus we must also be able to align
                 // for the difference of the two, i.e. byteOffset must be a multiple of aw:
                 //   byteOffset % aw == 0
-                // We don't know the aw, only aw_min and aw_max. But:
-                //   byteOffset % aw_max == 0      ->      byteOffset % aw == 0
-                //   byteOffset % aw_min != 0      ->      byteOffset % aw != 0
-                builder.append("    //   aw_min = " + aw_min + " = min(minVectorWidth, 8)\n");
-                builder.append("    //   aw_max = " + aw_max + " = min(platformVectorWidth, 8)\n");
+                // We don't know the aw, only awMin and awMax. But:
+                //   byteOffset % awMax == 0      ->      byteOffset % aw == 0
+                //   byteOffset % awMin != 0      ->      byteOffset % aw != 0
+                builder.append("    //   awMin = " + awMin + " = min(minVectorWidth, 8)\n");
+                builder.append("    //   awMax = " + awMax + " = min(platformVectorWidth, 8)\n");
 
-                if (byteOffset % aw_max == 0) {
-                    builder.append("    //   byteOffset % aw_max == 0   -> always trivially aligned\n");
-                } else if (byteOffset % aw_min != 0) {
-                    builder.append("    //   byteOffset % aw_min != 0   -> can never align -> expect no vectorization.\n");
+                if (byteOffset % awMax == 0) {
+                    builder.append("    //   byteOffset % awMax == 0   -> always trivially aligned\n");
+                } else if (byteOffset % awMin != 0) {
+                    builder.append("    //   byteOffset % awMin != 0   -> can never align -> expect no vectorization.\n");
                     r2.setNegative();
                 } else {
                     builder.append("    //   Alignment unknown -> disable IR rule.\n");
