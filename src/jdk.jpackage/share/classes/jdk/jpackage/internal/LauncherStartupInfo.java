@@ -26,11 +26,9 @@ package jdk.jpackage.internal;
 
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Map;
-import static jdk.jpackage.internal.StandardBundlerParam.ARGUMENTS;
-import static jdk.jpackage.internal.StandardBundlerParam.JAVA_OPTIONS;
 
 interface LauncherStartupInfo {
+
     String qualifiedClassName();
 
     default String packageName() {
@@ -47,74 +45,59 @@ interface LauncherStartupInfo {
 
     List<Path> classPath();
 
-    static LauncherStartupInfo createFromParams(Map<String, ? super Object> params) {
-        var inputDir = StandardBundlerParam.SOURCE_DIR.fetchFrom(params);
-        var launcherData = StandardBundlerParam.LAUNCHER_DATA.fetchFrom(params);
-        var javaOptions = JAVA_OPTIONS.fetchFrom(params);
-        var arguments = ARGUMENTS.fetchFrom(params);
-        var classpath = launcherData.classPath().stream().map(p -> {
-            return inputDir.resolve(p).toAbsolutePath();
-        }).toList();
+    record Impl(String qualifiedClassName, List<String> javaOptions,
+            List<String> defaultParameters, List<Path> classPath) implements
+            LauncherStartupInfo {
+    }
 
-        if (launcherData.isModular()) {
-            return new LauncherModularStartupInfo() {
-                @Override
-                public String moduleName() {
-                    return launcherData.moduleName();
-                }
+    static class Proxy<T extends LauncherStartupInfo> extends ProxyBase<T>
+            implements LauncherStartupInfo {
 
-                @Override
-                public List<Path> modulePath() {
-                    return launcherData.modulePath().stream().map(Path::toAbsolutePath).toList();
-                }
+        Proxy(T target) {
+            super(target);
+        }
 
-                @Override
-                public String qualifiedClassName() {
-                    return launcherData.qualifiedClassName();
-                }
+        @Override
+        public String qualifiedClassName() {
+            return target.qualifiedClassName();
+        }
 
-                @Override
-                public List<String> javaOptions() {
-                    return javaOptions;
-                }
+        @Override
+        public List<String> javaOptions() {
+            return target.javaOptions();
+        }
 
-                @Override
-                public List<String> defaultParameters() {
-                    return arguments;
-                }
+        @Override
+        public List<String> defaultParameters() {
+            return target.defaultParameters();
+        }
 
-                @Override
-                public List<Path> classPath() {
-                    return classpath;
-                }
-            };
-        } else {
-            return new LauncherJarStartupInfo() {
-                @Override
-                public Path jarPath() {
-                    return inputDir.resolve(launcherData.mainJarName());
-                }
+        @Override
+        public List<Path> classPath() {
+            return target.classPath();
+        }
+    }
 
-                @Override
-                public String qualifiedClassName() {
-                    return launcherData.qualifiedClassName();
-                }
+    static class Unsupported implements LauncherStartupInfo {
 
-                @Override
-                public List<String> javaOptions() {
-                    return javaOptions;
-                }
+        @Override
+        public String qualifiedClassName() {
+            throw new UnsupportedOperationException();
+        }
 
-                @Override
-                public List<String> defaultParameters() {
-                    return arguments;
-                }
+        @Override
+        public List<String> javaOptions() {
+            throw new UnsupportedOperationException();
+        }
 
-                @Override
-                public List<Path> classPath() {
-                    return classpath;
-                }
-            };
+        @Override
+        public List<String> defaultParameters() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public List<Path> classPath() {
+            throw new UnsupportedOperationException();
         }
     }
 }

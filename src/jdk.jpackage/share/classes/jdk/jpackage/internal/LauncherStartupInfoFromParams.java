@@ -25,27 +25,31 @@
 package jdk.jpackage.internal;
 
 import java.util.Map;
-import jdk.jpackage.internal.Launcher.Impl;
-import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
-import static jdk.jpackage.internal.StandardBundlerParam.DESCRIPTION;
-import static jdk.jpackage.internal.StandardBundlerParam.LAUNCHER_AS_SERVICE;
-import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE;
+import static jdk.jpackage.internal.StandardBundlerParam.ARGUMENTS;
+import static jdk.jpackage.internal.StandardBundlerParam.JAVA_OPTIONS;
 
-final class LauncherFromParams {
+final class LauncherStartupInfoFromParams {
 
-    static Launcher create(Map<String, ? super Object> params) {
-        var name = APP_NAME.fetchFrom(params);
+    static LauncherStartupInfo create(Map<String, ? super Object> params) {
+        var inputDir = StandardBundlerParam.SOURCE_DIR.fetchFrom(params);
+        var launcherData = StandardBundlerParam.LAUNCHER_DATA.fetchFrom(params);
+        var javaOptions = JAVA_OPTIONS.fetchFrom(params);
+        var arguments = ARGUMENTS.fetchFrom(params);
+        var classpath = launcherData.classPath().stream().map(p -> {
+            return inputDir.resolve(p).toAbsolutePath();
+        }).toList();
 
-        LauncherStartupInfo startupInfo = null;
-        if (PREDEFINED_APP_IMAGE.fetchFrom(params) == null) {
-            startupInfo = LauncherStartupInfoFromParams.create(params);
+        var startupInfo = new LauncherStartupInfo.Impl(
+                launcherData.qualifiedClassName(), javaOptions, arguments,
+                classpath);
+
+        if (launcherData.isModular()) {
+            return new LauncherModularStartupInfo.Impl(startupInfo,
+                    launcherData.moduleName(), launcherData.modulePath());
+        } else {
+            return new LauncherJarStartupInfo.Impl(startupInfo,
+                    inputDir.resolve(launcherData.mainJarName()),
+                    launcherData.isClassNameFromMainJar());
         }
-
-        var isService = LAUNCHER_AS_SERVICE.fetchFrom(params);
-        var description = DESCRIPTION.fetchFrom(params);
-        var icon = StandardBundlerParam.ICON.fetchFrom(params);
-        var fa = FileAssociation.fetchFrom(params);
-
-        return new Impl(name, startupInfo, fa, isService, description, icon);
     }
 }

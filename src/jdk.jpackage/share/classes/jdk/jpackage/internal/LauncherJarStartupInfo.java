@@ -28,4 +28,29 @@ import java.nio.file.Path;
 
 interface LauncherJarStartupInfo extends LauncherStartupInfo {
     Path jarPath();
+
+    boolean isClassNameFromMainJar();
+
+    final static class Impl extends LauncherStartupInfo.Proxy<LauncherStartupInfo>
+            implements LauncherJarStartupInfo {
+
+        Impl(LauncherStartupInfo target, Path jarPath, boolean isClassNameFromMainJar) {
+            super(target);
+            this.jarPath = jarPath;
+            this.isClassNameFromMainJar = isClassNameFromMainJar;
+        }
+
+        @Override
+        public Path jarPath() {
+            return jarPath;
+        }
+
+        @Override
+        public boolean isClassNameFromMainJar() {
+            return isClassNameFromMainJar;
+        }
+
+        private final Path jarPath;
+        private final boolean isClassNameFromMainJar;
+    }
 }

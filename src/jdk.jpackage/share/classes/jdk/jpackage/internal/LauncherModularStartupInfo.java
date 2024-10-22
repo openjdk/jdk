@@ -28,7 +28,32 @@ import java.nio.file.Path;
 import java.util.List;
 
 interface LauncherModularStartupInfo extends LauncherStartupInfo {
+
     String moduleName();
 
     List<Path> modulePath();
+
+    final static class Impl extends LauncherStartupInfo.Proxy<LauncherStartupInfo>
+            implements LauncherModularStartupInfo {
+
+        Impl(LauncherStartupInfo target, String moduleName,
+                List<Path> modulePath) {
+            super(target);
+            this.moduleName = moduleName;
+            this.modulePath = modulePath;
+        }
+
+        @Override
+        public String moduleName() {
+            return moduleName;
+        }
+
+        @Override
+        public List<Path> modulePath() {
+            return modulePath;
+        }
+
+        private final String moduleName;
+        private final List<Path> modulePath;
+    }
 }
