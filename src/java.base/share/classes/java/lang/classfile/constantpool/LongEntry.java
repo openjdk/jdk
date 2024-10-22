@@ -25,6 +25,7 @@
 package java.lang.classfile.constantpool;
 
 import java.lang.classfile.TypeKind;
+
 import jdk.internal.classfile.impl.AbstractPoolEntry;
 import jdk.internal.javac.PreviewFeature;
 
