@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,14 +71,18 @@ import jtreg.SkippedException;
 
 public class SharedBaseAddress {
     static final boolean skipUncompressedOopsTests;
+    static boolean checkSkipUncompressedOopsTests(String prop) {
+        String opts = System.getProperty(prop);
+        return opts.contains("+AOTClassLinking") &&
+               opts.matches(".*[+]Use[A-Za-z]+GC.*") && !opts.contains("+UseG1GC");
+    }
     static {
         // AOTClassLinking requires the ability to load archived heap objects. However,
         // due to JDK-8341371, only G1GC supports loading archived heap objects
         // with uncompressed oops.
-        String opts = System.getProperty("test.vm.opts");
         skipUncompressedOopsTests =
-            opts.contains("+AOTClassLinking") &&
-            opts.matches(".*[+]Use[A-Za-z]+GC.*") && !opts.contains("+UseG1GC");
+            checkSkipUncompressedOopsTests("test.vm.opts") ||
+            checkSkipUncompressedOopsTests("test.java.opts");
     }
 
     // shared base address test table for {32, 64}bit VM
