@@ -682,7 +682,9 @@ public class TestDependencyOffsets {
 
             // In a store-forward case, later iterations load from stores of previous iterations.
             // If the offset is too small, that leads to cyclic dependencies in the vectors. Hence,
-            // we use shorter vectors to avoid cycles and still vectorize.
+            // we use shorter vectors to avoid cycles and still vectorize. Vector lengths have to
+            // be powers-of-2, and smaller or equal to the byteOffset. So we round down to the next
+            // power of two.
             int infinity = 256; // No vector size is ever larger than this.
             int maxVectorWidth = infinity; // no constraint by default
             if (0 < byteOffset && byteOffset < maxVectorWidth) {
