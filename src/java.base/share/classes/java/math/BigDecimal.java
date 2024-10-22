@@ -2261,7 +2261,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                         sqrt = sqrt.add(1L);
                 }
 
-                result = new BigDecimal(sqrt, checkScale(sqrt, resultScale)).round(mc); // Ensure no increase of precision
+                result = new BigDecimal(sqrt, checkScale(sqrt, resultScale), mc); // mc ensures no increase of precision
                 // Test numerical properties at full precision before any
                 // scale adjustments.
                 assert squareRootResultAssertions(result, mc);
