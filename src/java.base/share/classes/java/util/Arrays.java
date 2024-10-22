@@ -3491,8 +3491,8 @@ public final class Arrays {
      * is greater than that of the original array.
      * The resulting array is of the class {@code newType}.
      *
-     * @param <U> the class of the objects in the original array
      * @param <T> the class of the objects in the returned array
+     * @param <U> the class of the objects in the original array
      * @param original the array to be copied
      * @param newLength the length of the copy to be returned
      * @param newType the class of the copy to be returned
@@ -3782,8 +3782,8 @@ public final class Arrays {
      * of the returned array will be {@code to - from}.
      * The resulting array is of the class {@code newType}.
      *
-     * @param <U> the class of the objects in the original array
      * @param <T> the class of the objects in the returned array
+     * @param <U> the class of the objects in the original array
      * @param original the array from which a range is to be copied
      * @param from the initial index of the range to be copied, inclusive
      * @param to the final index of the range to be copied, exclusive.

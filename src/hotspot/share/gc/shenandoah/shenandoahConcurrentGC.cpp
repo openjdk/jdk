@@ -931,7 +931,10 @@ void ShenandoahConcurrentGC::op_updaterefs() {
 
 class ShenandoahUpdateThreadClosure : public HandshakeClosure {
 private:
-  ShenandoahUpdateRefsClosure _cl;
+  // This closure runs when thread is stopped for handshake, which means
+  // we can use non-concurrent closure here, as long as it only updates
+  // locations modified by the thread itself, i.e. stack locations.
+  ShenandoahNonConcUpdateRefsClosure _cl;
 public:
   ShenandoahUpdateThreadClosure();
   void do_thread(Thread* thread);
