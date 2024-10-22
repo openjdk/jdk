@@ -3360,6 +3360,16 @@ public class Types {
         }
 
         @Override
+        public Type visitUndetVar(UndetVar t, Void unused) {
+            for (List<Type> from = this.from, to = this.to; from.nonEmpty(); from = from.tail, to = to.tail) {
+                if (t.equalsIgnoreMetadata(from.head)) {
+                    return to.head;
+                }
+            }
+            return t;
+        }
+
+        @Override
         public Type visitClassType(ClassType t, Void ignored) {
             if (!t.isCompound()) {
                 return super.visitClassType(t, ignored);
