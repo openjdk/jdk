@@ -28,7 +28,19 @@
  *          other locale related system properties at startup
  * @modules jdk.localedata
  * @run junit/othervm
+ *      -Duser.region=DE
+ *      -Duser.language=en
+ *      -Duser.script=Latn
+ *      -Duser.country=US
+ *      -Duser.variant=FOO UserRegionTest
+ * @run junit/othervm
  *      -Duser.region=DE_POSIX
+ *      -Duser.language=en
+ *      -Duser.script=Latn
+ *      -Duser.country=US
+ *      -Duser.variant=FOO UserRegionTest
+ * @run junit/othervm
+ *      -Duser.region=_POSIX
  *      -Duser.language=en
  *      -Duser.script=Latn
  *      -Duser.country=US
@@ -44,7 +56,8 @@ public class UserRegionTest {
     @Test
     public void testDefaultLocale() {
         var region = System.getProperty("user.region").split("_");
-        var expected = Locale.of(System.getProperty("user.language"), region[0], region[1]);
+        var expected = Locale.of(System.getProperty("user.language"),
+                region[0], region.length > 1 ? region[1] : "");
         assertEquals(expected, Locale.getDefault());
         assertEquals(expected, Locale.getDefault(Locale.Category.FORMAT));
         assertEquals(expected, Locale.getDefault(Locale.Category.DISPLAY));
@@ -52,6 +65,11 @@ public class UserRegionTest {
 
     @Test
     public void testNumberFormat() {
-        assertEquals("0,50000", String.format("%.5f", 0.5f));
+        var country = Locale.getDefault().getCountry();
+        if (country.equals("DE")) {
+            assertEquals("0,50000", String.format("%.5f", 0.5f));
+        } else {
+            assertEquals("0.50000", String.format("%.5f", 0.5f));
+        }
     }
 }
