@@ -67,6 +67,14 @@ public class AOTClassLinkingVMOptions {
             .assertAbnormalExit("CDS archive has aot-linked classes." +
                                 " It cannot be used when archived full module graph is not used.");
 
+        testCase("Cannot use security manager");
+        TestCommon.run("-cp", appJar, "-Xlog:cds", "-Djava.security.manager=allow")
+            .assertAbnormalExit("CDS archive has aot-linked classes." +
+                                " It cannot be used with -Djava.security.manager=allow.");
+        TestCommon.run("-cp", appJar, "-Xlog:cds", "-Djava.security.manager=default")
+            .assertAbnormalExit("CDS archive has aot-linked classes." +
+                                " It cannot be used with -Djava.security.manager=default.");
+
         // NOTE: tests for ClassFileLoadHook + AOTClassLinking is in
         // ../jvmti/ClassFileLoadHookTest.java
     }

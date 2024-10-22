@@ -2434,6 +2434,12 @@ bool FileMapInfo::validate_aot_class_linking() {
       log_error(cds)("CDS archive has aot-linked classes. It cannot be used when archived full module graph is not used.");
       return false;
     }
+
+    const char* prop = Arguments::get_property("java.security.manager");
+    if (prop != nullptr && strcmp(prop, "disallow") != 0) {
+      log_error(cds)("CDS archive has aot-linked classes. It cannot be used with -Djava.security.manager=%s.", prop);
+      return false;
+    }
   }
 
   return true;
