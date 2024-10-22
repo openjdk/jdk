@@ -37,10 +37,10 @@ private:
 
 public:
   // Default: NaN.
-  NoOverflowInt() : _is_NaN(true), _value(0) {}
+  constexpr NoOverflowInt() : _is_NaN(true), _value(0) {}
 
   // Create from jlong (or jint) -> NaN if overflows jint.
-  explicit NoOverflowInt(jlong value) : _is_NaN(true), _value(0) {
+  constexpr explicit NoOverflowInt(jlong value) : _is_NaN(true), _value(0) {
     jint trunc = (jint)value;
     if ((jlong)trunc == value) {
       _is_NaN = false;
@@ -48,36 +48,36 @@ public:
     }
   }
 
-  static NoOverflowInt make_NaN() { return NoOverflowInt(); }
+  static constexpr NoOverflowInt make_NaN() { return NoOverflowInt(); }
 
   bool is_NaN() const { return _is_NaN; }
   jint value() const { assert(!is_NaN(), "NaN not allowed"); return _value; }
   bool is_zero() const { return !is_NaN() && value() == 0; }
 
   friend NoOverflowInt operator+(const NoOverflowInt a, const NoOverflowInt b) {
-    if (a.is_NaN()) { return make_NaN(); }
-    if (b.is_NaN()) { return make_NaN(); }
-    return NoOverflowInt(java_add((jlong)a.value(), (jlong)b.value()));
+    if (a.is_NaN()) { return a; }
+    if (b.is_NaN()) { return b; }
+    return NoOverflowInt((jlong)a.value() + (jlong)b.value());
   }
 
   friend NoOverflowInt operator-(const NoOverflowInt a, const NoOverflowInt b) {
-    if (a.is_NaN()) { return make_NaN(); }
-    if (b.is_NaN()) { return make_NaN(); }
-    return NoOverflowInt(java_subtract((jlong)a.value(), (jlong)b.value()));
+    if (a.is_NaN()) { return a; }
+    if (b.is_NaN()) { return b; }
+    return NoOverflowInt((jlong)a.value() - (jlong)b.value());
   }
 
   friend NoOverflowInt operator*(const NoOverflowInt a, const NoOverflowInt b) {
-    if (a.is_NaN()) { return make_NaN(); }
-    if (b.is_NaN()) { return make_NaN(); }
-    return NoOverflowInt(java_multiply((jlong)a.value(), (jlong)b.value()));
+    if (a.is_NaN()) { return a; }
+    if (b.is_NaN()) { return b; }
+    return NoOverflowInt((jlong)a.value() * (jlong)b.value());
   }
 
   friend NoOverflowInt operator<<(const NoOverflowInt a, const NoOverflowInt b) {
-    if (a.is_NaN()) { return make_NaN(); }
-    if (b.is_NaN()) { return make_NaN(); }
+    if (a.is_NaN()) { return a; }
+    if (b.is_NaN()) { return b; }
     jint shift = b.value();
     if (shift < 0 || shift > 31) { return make_NaN(); }
-    return NoOverflowInt(java_shift_left((jlong)a.value(), shift));
+    return NoOverflowInt((jlong)a.value() << shift);
   }
 
   friend bool operator==(const NoOverflowInt a, const NoOverflowInt b) {
