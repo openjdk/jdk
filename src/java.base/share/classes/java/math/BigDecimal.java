@@ -2303,7 +2303,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             result = stripZerosToMatchScale(result.intVal, result.intCompact, result.scale, preferredScale);
         } else if (result.scale < preferredScale) {
             int maxScale = maxPrecision == 0 ?
-                preferredScale : (int) Math.min(preferredScale, result.scale + (maxPrecision - result.precision()));
+                preferredScale : (int) Math.min(preferredScale, result.scale + (long) (maxPrecision - result.precision()));
             result = result.setScale(maxScale);
         }
         return result;
