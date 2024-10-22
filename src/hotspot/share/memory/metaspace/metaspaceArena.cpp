@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -117,9 +117,6 @@ MetaspaceArena::MetaspaceArena(ChunkManager* chunk_manager, const ArenaGrowthPol
   _fbl(nullptr),
   _total_used_words_counter(total_used_words_counter),
   _name(name)
-#ifdef ASSERT
-  , _first_fence(nullptr)
-#endif
 {
   UL(debug, ": born.");
 
@@ -128,14 +125,7 @@ MetaspaceArena::MetaspaceArena(ChunkManager* chunk_manager, const ArenaGrowthPol
 }
 
 MetaspaceArena::~MetaspaceArena() {
-#ifdef ASSERT
-  SOMETIMES(verify();)
-  if (Settings::use_allocation_guard()) {
-    verify_allocation_guards();
-  }
-#endif
   MemRangeCounter return_counter;
-
   Metachunk* c = _chunks.first();
   Metachunk* c2 = nullptr;
 
@@ -238,23 +228,6 @@ MetaWord* MetaspaceArena::allocate(size_t requested_word_size) {
 
   // Primary allocation
   p = allocate_inner(aligned_word_size);
-
-#ifdef ASSERT
-  // Fence allocation
-  if (p != nullptr && Settings::use_allocation_guard()) {
-    STATIC_ASSERT(is_aligned(sizeof(Fence), BytesPerWord));
-    MetaWord* guard = allocate_inner(sizeof(Fence) / BytesPerWord);
-    if (guard != nullptr) {
-      // Ignore allocation errors for the fence to keep coding simple. If this
-      // happens (e.g. because right at this time we hit the Metaspace GC threshold)
-      // we miss adding this one fence. Not a big deal. Note that his would
-      // be pretty rare. Chances are much higher the primary allocation above
-      // would have already failed).
-      Fence* f = new(guard) Fence(_first_fence);
-      _first_fence = f;
-    }
-  }
-#endif // ASSERT
 
   return p;
 }
@@ -424,18 +397,6 @@ void MetaspaceArena::verify() const {
   _chunks.verify();
   if (_fbl != nullptr) {
     _fbl->verify();
-  }
-}
-
-void MetaspaceArena::Fence::verify() const {
-  assert(_eye1 == EyeCatcher && _eye2 == EyeCatcher,
-         "Metaspace corruption: fence block at " PTR_FORMAT " broken.", p2i(this));
-}
-
-void MetaspaceArena::verify_allocation_guards() const {
-  assert(Settings::use_allocation_guard(), "Don't call with guards disabled.");
-  for (const Fence* f = _first_fence; f != nullptr; f = f->next()) {
-    f->verify();
   }
 }
 

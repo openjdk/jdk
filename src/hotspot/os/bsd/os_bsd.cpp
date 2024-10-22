@@ -473,9 +473,9 @@ void os::init_system_properties_values() {
     if (pslash != nullptr) {
       *pslash = '\0';            // Get rid of /{client|server|hotspot}.
     }
-#ifdef STATIC_BUILD
-    strcat(buf, "/lib");
-#endif
+    if (is_vm_statically_linked()) {
+      strcat(buf, "/lib");
+    }
 
     Arguments::set_dll_dir(buf);
 
@@ -632,9 +632,6 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
   if (osthread == nullptr) {
     return false;
   }
-
-  // set the correct thread state
-  osthread->set_thread_type(thr_type);
 
   // Initial state is ALLOCATED but not INITIALIZED
   osthread->set_state(ALLOCATED);
@@ -1093,19 +1090,20 @@ void *os::Bsd::dlopen_helper(const char *filename, int mode, char *ebuf, int ebu
 
 #ifdef __APPLE__
 void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
-#ifdef STATIC_BUILD
-  return os::get_default_process_handle();
-#else
+  if (is_vm_statically_linked()) {
+    return os::get_default_process_handle();
+  }
+
   log_info(os)("attempting shared library load of %s", filename);
 
   return os::Bsd::dlopen_helper(filename, RTLD_LAZY, ebuf, ebuflen);
-#endif // STATIC_BUILD
 }
 #else
 void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
-#ifdef STATIC_BUILD
-  return os::get_default_process_handle();
-#else
+  if (is_vm_statically_linked()) {
+    return os::get_default_process_handle();
+  }
+
   log_info(os)("attempting shared library load of %s", filename);
 
   void* result;
@@ -1269,7 +1267,6 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   }
 
   return nullptr;
-#endif // STATIC_BUILD
 }
 #endif // !__APPLE__
 
@@ -1509,7 +1506,7 @@ void os::jvm_path(char *buf, jint buflen) {
   assert(ret, "cannot locate libjvm");
   char *rp = nullptr;
   if (ret && dli_fname[0] != '\0') {
-    rp = os::Posix::realpath(dli_fname, buf, buflen);
+    rp = os::realpath(dli_fname, buf, buflen);
   }
   if (rp == nullptr) {
     return;
@@ -1541,7 +1538,7 @@ void os::jvm_path(char *buf, jint buflen) {
         p = strrchr(buf, '/');
         assert(strstr(p, "/libjvm") == p, "invalid library name");
 
-        rp = os::Posix::realpath(java_home_var, buf, buflen);
+        rp = os::realpath(java_home_var, buf, buflen);
         if (rp == nullptr) {
           return;
         }
@@ -1575,7 +1572,7 @@ void os::jvm_path(char *buf, jint buflen) {
           snprintf(buf + len, buflen-len, "/libjvm%s", JNI_LIB_SUFFIX);
         } else {
           // Fall back to path of current library
-          rp = os::Posix::realpath(dli_fname, buf, buflen);
+          rp = os::realpath(dli_fname, buf, buflen);
           if (rp == nullptr) {
             return;
           }
@@ -1684,7 +1681,7 @@ void os::pd_commit_memory_or_exit(char* addr, size_t size,
 void os::pd_realign_memory(char *addr, size_t bytes, size_t alignment_hint) {
 }
 
-void os::pd_free_memory(char *addr, size_t bytes, size_t alignment_hint) {
+void os::pd_disclaim_memory(char *addr, size_t bytes) {
   ::madvise(addr, bytes, MADV_DONTNEED);
 }
 
@@ -2398,16 +2395,6 @@ int os::open(const char *path, int oflag, int mode) {
   }
 
   return fd;
-}
-
-// return current position of file pointer
-jlong os::current_file_offset(int fd) {
-  return (jlong)::lseek(fd, (off_t)0, SEEK_CUR);
-}
-
-// move file pointer to the specified offset
-jlong os::seek_to_file_offset(int fd, jlong offset) {
-  return (jlong)::lseek(fd, (off_t)offset, SEEK_SET);
 }
 
 // current_thread_cpu_time(bool) and thread_cpu_time(Thread*, bool)

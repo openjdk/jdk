@@ -141,7 +141,7 @@ public final class DCmdQuery extends AbstractDCmd {
 
                 Options:
 
-                  maxage     (Optional) Length of time for the query to span. (INTEGER followed by
+                  maxage     (Optional) Length of time for the query to span. (INT followed by
                              's' for seconds 'm' for minutes or 'h' for hours, no default value)
 
                   maxsize    (Optional) Maximum size for the query to span in bytes if one of
@@ -154,7 +154,7 @@ public final class DCmdQuery extends AbstractDCmd {
                   verbose    (Optional) Display additional information about the query execution.
                              (BOOLEAN, false)
 
-                  width      (Optional) Maximum number of horizontal characters. (BOOLEAN, false)""";
+                  width      (Optional) Maximum number of horizontal characters. (INT, default value is 100)""";
     }
 
     @Override
@@ -170,7 +170,7 @@ public final class DCmdQuery extends AbstractDCmd {
                     null, false),
             new Argument("verbose", "Display additional information about the query execution", "BOOLEAN", false,
                     true, "false", false),
-            new Argument("width", "Maximum number of horizontal characters", "JULONG", false, true, "100",
+            new Argument("width", "Maximum number of horizontal characters", "INT", false, true, "100",
                     false), };
     }
 }

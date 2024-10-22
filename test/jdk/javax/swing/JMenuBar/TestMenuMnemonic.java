@@ -23,10 +23,10 @@
 
 /*
  * @test
- * @bug 8326458
+ * @bug 8326458 8155030
  * @key headful
  * @requires (os.family == "windows")
- * @modules java.desktop/com.sun.java.swing.plaf.windows
+ * @modules java.desktop/sun.swing
  * @summary Verifies if menu mnemonics toggle on F10 press in Windows LAF
  * @run main TestMenuMnemonic
  */
@@ -43,7 +43,7 @@ import javax.swing.MenuSelectionManager;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 
-import com.sun.java.swing.plaf.windows.WindowsLookAndFeel;
+import sun.swing.MnemonicHandler;
 
 public class TestMenuMnemonic {
 
@@ -93,7 +93,7 @@ public class TestMenuMnemonic {
         MenuSelectionManager msm =
                 MenuSelectionManager.defaultManager();
         MenuElement[] selectedPath = msm.getSelectedPath();
-        if (WindowsLookAndFeel.isMnemonicHidden()) {
+        if (MnemonicHandler.isMnemonicHidden()) {
             mnemonicHideCount.getAndIncrement();
             // Check if selection is cleared when mnemonics are hidden
             if (selectedPath.length != 0) {

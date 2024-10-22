@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,20 +30,16 @@ import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
 
 import helpers.TestConstants;
-import java.lang.classfile.AccessFlags;
 import java.lang.reflect.AccessFlag;
 import java.lang.classfile.ClassFile;
-import java.lang.classfile.TypeKind;
 import java.lang.classfile.Label;
 import java.lang.classfile.attribute.SourceFileAttribute;
 import org.junit.jupiter.api.Test;
 
 import static helpers.TestConstants.MTD_VOID;
+import static java.lang.classfile.ClassFile.ACC_PUBLIC;
+import static java.lang.classfile.ClassFile.ACC_STATIC;
 import static java.lang.constant.ConstantDescs.*;
-import static java.lang.classfile.Opcode.*;
-import static java.lang.classfile.TypeKind.IntType;
-import static java.lang.classfile.TypeKind.ReferenceType;
-import static java.lang.classfile.TypeKind.VoidType;
 
 class WriteTest {
 
@@ -61,7 +57,7 @@ class WriteTest {
                       )
               )
               .withMethod("main", MethodTypeDesc.of(CD_void, CD_String.arrayType()),
-                          AccessFlags.ofMethod(AccessFlag.PUBLIC, AccessFlag.STATIC).flagsMask(),
+                          ACC_PUBLIC | ACC_STATIC,
                           mb -> mb.withCode(c0 -> {
                                   Label loopTop = c0.newLabel();
                                   Label loopEnd = c0.newLabel();
@@ -102,7 +98,7 @@ class WriteTest {
                       )
               )
               .withMethod("main", MethodTypeDesc.of(CD_void, CD_String.arrayType()),
-                          AccessFlags.ofMethod(AccessFlag.PUBLIC, AccessFlag.STATIC).flagsMask(),
+                          ACC_PUBLIC | ACC_STATIC,
                           mb -> mb.withCode(c0 -> {
                                   Label loopTop = c0.newLabel();
                                   Label loopEnd = c0.newLabel();

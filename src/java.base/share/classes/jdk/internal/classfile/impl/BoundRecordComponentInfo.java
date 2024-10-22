@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,12 +24,11 @@
  */
 package jdk.internal.classfile.impl;
 
-import java.util.List;
-
 import java.lang.classfile.Attribute;
 import java.lang.classfile.ClassReader;
 import java.lang.classfile.attribute.RecordComponentInfo;
 import java.lang.classfile.constantpool.Utf8Entry;
+import java.util.List;
 
 public final class BoundRecordComponentInfo
         implements RecordComponentInfo {
@@ -46,12 +45,12 @@ public final class BoundRecordComponentInfo
 
     @Override
     public Utf8Entry name() {
-        return reader.readUtf8Entry(startPos);
+        return reader.readEntry(startPos, Utf8Entry.class);
     }
 
     @Override
     public Utf8Entry descriptor() {
-        return reader.readUtf8Entry(startPos + 2);
+        return reader.readEntry(startPos + 2, Utf8Entry.class);
     }
 
     @Override

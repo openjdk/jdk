@@ -63,6 +63,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * Keeps a pointer to the native data structure in a scalar field to allow native
  * processing behind native methods.
  */
+@SuppressWarnings("restricted")
 public class InstrumentationImpl implements Instrumentation {
     private static final String TRACE_USAGE_PROP_NAME = "jdk.instrument.traceUsage";
     private static final boolean TRACE_USAGE;

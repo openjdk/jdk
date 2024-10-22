@@ -54,6 +54,7 @@ uint32_t Symbol::pack_hash_and_refcount(short hash, int refcount) {
 }
 
 Symbol::Symbol(const u1* name, int length, int refcount) {
+  assert(length <= max_length(), "SymbolTable should have caught this!");
   _hash_and_refcount =  pack_hash_and_refcount((short)os::random(), refcount);
   _length = (u2)length;
   // _body[0..1] are allocated in the header just by coincidence in the current
@@ -165,7 +166,7 @@ void Symbol::print_symbol_on(outputStream* st) const {
 
 char* Symbol::as_quoted_ascii() const {
   const char *ptr = (const char *)&_body[0];
-  int quoted_length = UTF8::quoted_ascii_length(ptr, utf8_length());
+  size_t quoted_length = UTF8::quoted_ascii_length(ptr, utf8_length());
   char* result = NEW_RESOURCE_ARRAY(char, quoted_length + 1);
   UTF8::as_quoted_ascii(ptr, utf8_length(), result, quoted_length + 1);
   return result;

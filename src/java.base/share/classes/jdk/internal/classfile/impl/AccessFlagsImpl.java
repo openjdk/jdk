@@ -24,9 +24,9 @@
  */
 package jdk.internal.classfile.impl;
 
-import java.util.Set;
 import java.lang.classfile.AccessFlags;
 import java.lang.reflect.AccessFlag;
+import java.util.Set;
 
 public final class AccessFlagsImpl extends AbstractElement
         implements AccessFlags {

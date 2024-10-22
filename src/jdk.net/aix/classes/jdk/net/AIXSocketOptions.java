@@ -32,7 +32,7 @@ import java.security.PrivilegedAction;
 import jdk.net.ExtendedSocketOptions.PlatformSocketOptions;
 import sun.nio.fs.UnixUserPrincipals;
 
-@SuppressWarnings("removal")
+@SuppressWarnings({"removal", "restricted"})
 class AIXSocketOptions extends PlatformSocketOptions {
 
     public AIXSocketOptions() {

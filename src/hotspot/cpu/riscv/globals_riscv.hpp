@@ -120,6 +120,10 @@ define_pd_global(intx, InlineSmallCode,          1000);
   product(bool, UseZvkn, false, EXPERIMENTAL,                                    \
           "Use Zvkn group extension, Zvkned, Zvknhb, Zvkb, Zvkt")                \
   product(bool, UseRVVForBigIntegerShiftIntrinsics, true,                        \
-          "Use RVV instructions for left/right shift of BigInteger")
+          "Use RVV instructions for left/right shift of BigInteger")             \
+  product(bool, UseTrampolines, false, EXPERIMENTAL,                             \
+          "Far calls uses jal to trampoline.")                                   \
+  product(bool, UseCtxFencei, false, EXPERIMENTAL,                               \
+          "Use PR_RISCV_CTX_SW_FENCEI_ON to avoid explicit icache flush")
 
 #endif // CPU_RISCV_GLOBALS_RISCV_HPP

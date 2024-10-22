@@ -27,6 +27,7 @@ package jdk.internal.constant;
 import java.lang.constant.ClassDesc;
 import java.lang.invoke.MethodHandles;
 
+import jdk.internal.vm.annotation.Stable;
 import static jdk.internal.constant.ConstantUtils.*;
 
 /**
@@ -36,6 +37,7 @@ import static jdk.internal.constant.ConstantUtils.*;
  */
 public final class ReferenceClassDescImpl implements ClassDesc {
     private final String descriptor;
+    private @Stable String internalName;
 
     private ReferenceClassDescImpl(String descriptor) {
         this.descriptor = descriptor;
@@ -52,7 +54,7 @@ public final class ReferenceClassDescImpl implements ClassDesc {
      */
     public static ReferenceClassDescImpl of(String descriptor) {
         int dLen = descriptor.length();
-        int len = ConstantUtils.skipOverFieldSignature(descriptor, 0, dLen, false);
+        int len = ConstantUtils.skipOverFieldSignature(descriptor, 0, dLen);
         if (len <= 1 || len != dLen)
             throw new IllegalArgumentException(String.format("not a valid reference type descriptor: %s", descriptor));
         return new ReferenceClassDescImpl(descriptor);
@@ -66,7 +68,7 @@ public final class ReferenceClassDescImpl implements ClassDesc {
      * @jvms 4.3.2 Field Descriptors
      */
     public static ReferenceClassDescImpl ofValidated(String descriptor) {
-        assert ConstantUtils.skipOverFieldSignature(descriptor, 0, descriptor.length(), false)
+        assert ConstantUtils.skipOverFieldSignature(descriptor, 0, descriptor.length())
                 == descriptor.length() : descriptor;
         return new ReferenceClassDescImpl(descriptor);
     }
@@ -74,6 +76,16 @@ public final class ReferenceClassDescImpl implements ClassDesc {
     @Override
     public String descriptorString() {
         return descriptor;
+    }
+
+    public String internalName() {
+        var internalName = this.internalName;
+        if (internalName == null) {
+            var desc = this.descriptor;
+            this.internalName = internalName = desc.charAt(0) == 'L' ? dropFirstAndLastChar(desc) : desc;
+        }
+
+        return internalName;
     }
 
     @Override
@@ -90,7 +102,7 @@ public final class ReferenceClassDescImpl implements ClassDesc {
                 clazz = clazz.arrayType();
             return clazz;
         }
-        return lookup.findClass(internalToBinary(dropFirstAndLastChar(descriptor)));
+        return lookup.findClass(internalToBinary(internalName()));
     }
 
     /**

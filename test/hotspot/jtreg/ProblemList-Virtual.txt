@@ -86,6 +86,11 @@ vmTestbase/nsk/jdi/ExceptionEvent/catchLocation/location002/TestDescription.java
 
 vmTestbase/nsk/jdi/VMOutOfMemoryException/VMOutOfMemoryException001/VMOutOfMemoryException001.java 8285417 generic-all
 
+###
+# Fails on Windows because of additional memory allocation.
+
+gc/g1/TestMixedGCLiveThreshold.java#25percent 8334759 windows-x64
+
 ##########
 ## Tests incompatible with  with virtual test thread factory.
 ## There is no goal to run all test with virtual test thread factory.

@@ -50,6 +50,7 @@ class CompilerToVM {
     static address SharedRuntime_deopt_blob_unpack_with_exception_in_tls;
     static address SharedRuntime_deopt_blob_uncommon_trap;
     static address SharedRuntime_polling_page_return_handler;
+    static address SharedRuntime_throw_delayed_StackOverflowError_entry;
 
     static address nmethod_entry_barrier;
     static int thread_disarmed_guard_value_offset;
@@ -108,9 +109,14 @@ class CompilerToVM {
     static int sizeof_ZStoreBarrierEntry;
 #endif
 
+#ifdef X86
+    static int L1_line_size;
+#endif
+
     static address dsin;
     static address dcos;
     static address dtan;
+    static address dtanh;
     static address dexp;
     static address dlog;
     static address dlog10;
@@ -122,12 +128,14 @@ class CompilerToVM {
     // Minimum alignment of an offset into CodeBuffer::SECT_CONSTS
     static int data_section_item_alignment;
 
+#if INCLUDE_JVMTI
     /*
      * Pointer to JvmtiExport::_should_notify_object_alloc.
      * Exposed as an int* instead of an address so the
      * underlying type is part of the JVMCIVMStructs definition.
      */
     static int* _should_notify_object_alloc;
+#endif
 
    public:
      static void initialize(JVMCI_TRAPS);

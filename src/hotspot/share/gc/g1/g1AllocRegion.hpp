@@ -63,11 +63,6 @@ private:
   // distinct regions this object can used during an active interval.
   uint _count;
 
-  // When we set up a new active region we save its used bytes in this
-  // field so that, when we retire it, we can calculate how much space
-  // we allocated in it.
-  size_t _used_bytes_before;
-
   // Useful for debugging and tracing.
   const char* _name;
 
@@ -94,24 +89,14 @@ protected:
   // The memory node index this allocation region belongs to.
   uint _node_index;
 
+  void set(G1HeapRegion* alloc_region);
+
   // Reset the alloc region to point the dummy region.
   void reset_alloc_region();
-
-  // Perform a non-MT-safe allocation out of the given region.
-  inline HeapWord* allocate(G1HeapRegion* alloc_region,
-                            size_t word_size);
 
   // Perform a MT-safe allocation out of the given region.
   inline HeapWord* par_allocate(G1HeapRegion* alloc_region,
                                 size_t word_size);
-  // Perform a MT-safe allocation out of the given region, with the given
-  // minimum and desired size. Returns the actual size allocated (between
-  // minimum and desired size) in actual_word_size if the allocation has been
-  // successful.
-  inline HeapWord* par_allocate(G1HeapRegion* alloc_region,
-                                size_t min_word_size,
-                                size_t desired_word_size,
-                                size_t* actual_word_size);
 
   // Ensure that the region passed as a parameter has been filled up
   // so that no one else can allocate out of it any more.
@@ -131,10 +116,9 @@ protected:
   static G1CollectedHeap* _g1h;
 
   virtual G1HeapRegion* allocate_new_region(size_t word_size) = 0;
-  virtual void retire_region(G1HeapRegion* alloc_region,
-                             size_t allocated_bytes) = 0;
+  virtual void retire_region(G1HeapRegion* alloc_region) = 0;
 
-  G1AllocRegion(const char* name, bool bot_updates, uint node_index);
+  G1AllocRegion(const char* name, uint node_index);
 
 public:
   static void setup(G1CollectedHeap* g1h, G1HeapRegion* dummy_region);
@@ -173,12 +157,6 @@ public:
   // Should be called before we start using this object.
   virtual void init();
 
-  // This can be used to set the active region to a specific
-  // region. (Use Example: we try to retain the last old GC alloc
-  // region that we've used during a GC and we can use set() to
-  // re-instate it at the beginning of the next GC.)
-  void set(G1HeapRegion* alloc_region);
-
   // Should be called when we want to release the active region which
   // is returned after it's been retired.
   virtual G1HeapRegion* release();
@@ -205,13 +183,12 @@ private:
   // in it and the free size in the currently retained region, if any.
   bool should_retain(G1HeapRegion* region);
 protected:
-  virtual G1HeapRegion* allocate_new_region(size_t word_size);
-  virtual void retire_region(G1HeapRegion* alloc_region, size_t allocated_bytes);
-  virtual size_t retire(bool fill_up);
-
+  G1HeapRegion* allocate_new_region(size_t word_size) override;
+  void retire_region(G1HeapRegion* alloc_region) override;
+  size_t retire(bool fill_up) override;
 public:
   MutatorAllocRegion(uint node_index)
-    : G1AllocRegion("Mutator Alloc Region", false /* bot_updates */, node_index),
+    : G1AllocRegion("Mutator Alloc Region", node_index),
       _wasted_bytes(0),
       _retained_alloc_region(nullptr) { }
 
@@ -231,39 +208,48 @@ public:
 
   // This specialization of release() makes sure that the retained alloc
   // region is retired and set to null.
-  virtual G1HeapRegion* release();
+  G1HeapRegion* release() override;
 
-  virtual void init();
+  void init() override;
 };
 
 // Common base class for allocation regions used during GC.
 class G1GCAllocRegion : public G1AllocRegion {
+  // When we set up a new active region we save its used bytes in this
+  // field so that, when we retire it, we can calculate how much space
+  // we allocated in it.
+  size_t _used_bytes_before;
 protected:
   G1EvacStats* _stats;
   G1HeapRegionAttr::region_type_t _purpose;
 
-  virtual G1HeapRegion* allocate_new_region(size_t word_size);
-  virtual void retire_region(G1HeapRegion* alloc_region, size_t allocated_bytes);
+  G1HeapRegion* allocate_new_region(size_t word_size) override;
+  void retire_region(G1HeapRegion* alloc_region) override;
 
-  virtual size_t retire(bool fill_up);
+  size_t retire(bool fill_up) override;
 
-  G1GCAllocRegion(const char* name, bool bot_updates, G1EvacStats* stats,
+  G1GCAllocRegion(const char* name, G1EvacStats* stats,
                   G1HeapRegionAttr::region_type_t purpose, uint node_index = G1NUMA::AnyNodeIndex)
-  : G1AllocRegion(name, bot_updates, node_index), _stats(stats), _purpose(purpose) {
+    : G1AllocRegion(name, node_index), _used_bytes_before(0), _stats(stats), _purpose(purpose) {
     assert(stats != nullptr, "Must pass non-null PLAB statistics");
   }
+public:
+  // This can be used to reuse a specific region. (Use Example: we try to retain the
+  // last old GC alloc region that we've used during a GC and we can use reuse() to
+  // re-instate it at the beginning of the next GC.)
+  void reuse(G1HeapRegion* alloc_region);
 };
 
 class SurvivorGCAllocRegion : public G1GCAllocRegion {
 public:
   SurvivorGCAllocRegion(G1EvacStats* stats, uint node_index)
-  : G1GCAllocRegion("Survivor GC Alloc Region", false /* bot_updates */, stats, G1HeapRegionAttr::Young, node_index) { }
+  : G1GCAllocRegion("Survivor GC Alloc Region", stats, G1HeapRegionAttr::Young, node_index) { }
 };
 
 class OldGCAllocRegion : public G1GCAllocRegion {
 public:
   OldGCAllocRegion(G1EvacStats* stats)
-  : G1GCAllocRegion("Old GC Alloc Region", true /* bot_updates */, stats, G1HeapRegionAttr::Old) { }
+  : G1GCAllocRegion("Old GC Alloc Region", stats, G1HeapRegionAttr::Old) { }
 };
 
 #endif // SHARE_GC_G1_G1ALLOCREGION_HPP

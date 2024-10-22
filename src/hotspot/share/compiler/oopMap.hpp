@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -411,7 +411,7 @@ private:
 
     Mapping() : _kind(OOPMAP_UNKNOWN), _offset(-1), _size(-1), _map(nullptr) {}
 
-    void set(kind_t kind, int offset, int size, const OopMap* map = 0, const OopMap* other = 0) {
+    void set(kind_t kind, int offset, int size, const OopMap* map, const OopMap* other = nullptr) {
       _kind = kind;
       _offset = offset;
       _size = size;
