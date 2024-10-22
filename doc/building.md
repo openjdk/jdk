@@ -879,7 +879,7 @@ Apart from the default target, here are some common make targets:
 
 * `hotspot` - Build all of hotspot (but only hotspot)
 * `hotspot-<variant>` - Build just the specified jvm variant
-* `images` or `product-images` - Build the regular JDK image
+* `images` or `product-images` - Build the JDK image
 * `docs` or `docs-image` - Build the documentation image
 * `test-image` - Build the test image
 * `all` or `all-images` - Build all images (product, docs and test)
@@ -1807,10 +1807,10 @@ case, you can reboot Windows in safe mode and run the command on those directori
 again.
 
 The only directories required to have short paths are `Microsoft Visual Studio`
-and `Windows Kits`; the rest of the "contains space" warnings from `configure`
-can be ignored. You can choose any short name; once it is set, `configure`'s
-tools like `cygpath` can convert the directory with spaces to your chosen short
-name and pass it to the build system.
+and `Windows Kits`; the rest of the "contains space" warnings from `configure`,
+such as `IntelliJ IDEA`, can be ignored. You can choose any short name; once it
+is set, `configure`'s tools like `cygpath` can convert the directory with spaces
+to your chosen short name and pass it to the build system.
 
 ### Getting Help
 
