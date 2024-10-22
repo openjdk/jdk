@@ -135,16 +135,12 @@ address StubGenerator::generate_sha3_implCompress(bool multiBlock, const char *n
   __ lea(round_consts, ExternalAddress(round_constsAddr()));
 
   // set up the masks
-  __ mov64(rax, 0x1F);
+  __ movl(rax, 0x1F);
   __ kmovwl(k5, rax);
-  __ shrl(rax, 1);
-  __ kmovwl(k4, rax);
-  __ shrl(rax, 1);
-  __ kmovwl(k3, rax);
-  __ shrl(rax, 1);
-  __ kmovwl(k2, rax);
-  __ shrl(rax, 1);
-  __ kmovwl(k1, rax);
+  __ kshiftrwl(k4, k5, 1);
+  __ kshiftrwl(k3, k5, 2);
+  __ kshiftrwl(k2, k5, 3);
+  __ kshiftrwl(k1, k5, 4);
 
   // load the state
   __ evmovdquq(xmm0, k5, Address(state, 0), false, Assembler::AVX_512bit);
@@ -285,7 +281,7 @@ address StubGenerator::generate_sha3_implCompress(bool multiBlock, const char *n
     __ jcc(Assembler::lessEqual, sha3_loop);
     __ movq(rax, ofs); // return ofs
   } else {
-    __ mov64(rax, 0);
+    __ xorq(rax, rax); // return 0
   }
 
   // store the state
