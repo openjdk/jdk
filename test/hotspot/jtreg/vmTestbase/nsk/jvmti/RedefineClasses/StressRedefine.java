@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-//package nsk.jvmti.RedefineClasses.StressRedefine;
 package nsk.jvmti.RedefineClasses;
 
 
@@ -41,7 +40,7 @@ import nsk.share.test.ExecutionController;
 import nsk.share.test.Stresser;
 import nsk.share.test.Tests;
 
-import vm.share.InMemoryJavaCompiler;
+import jdk.test.lib.compiler.InMemoryJavaCompiler;
 
 /**
  * There is a data structure named "dictionary" in class BlockFreelist. It stores
