@@ -643,6 +643,7 @@ public:
   static void set_avx_cpuFeatures() { _features = (CPU_SSE | CPU_SSE2 | CPU_AVX | CPU_VZEROUPPER ); }
   static void set_evex_cpuFeatures() { _features = (CPU_AVX512F | CPU_SSE | CPU_SSE2 | CPU_VZEROUPPER ); }
   static void set_apx_cpuFeatures() { _features |= CPU_APX_F; }
+  static void set_bmi1_cpuFeatures() { _features |= CPU_BMI1; }
 
   // Initialization
   static void initialize();
