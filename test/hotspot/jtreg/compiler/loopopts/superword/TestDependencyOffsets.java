@@ -420,7 +420,8 @@ import java.util.Random;
  * We want to test SuperWord / AutoVectorization with different constant offsets (positive and negative):
  *   for (int i = ...) { a[i + offset] = b[i] * 11; }
  *
- * We do this for various primitive types (int, long, short, char, byte, float, double).
+ * To test aliasing, we have 3 modes: single-array, aliasing and non-aliasing.
+ * We test for various primitive types (int, long, short, char, byte, float, double).
  * We run all test under various settings of MaxVectorSize and +-AlignVector.
  * Finally, we verify the results and check that vectors of the expected length were created (IR rules).
  */
@@ -657,8 +658,32 @@ public class TestDependencyOffsets {
         String generate() {
             int start = offset >= 0 ? 0 : -offset;
             String end = offset >=0 ? "SIZE - " + offset : "SIZE";
+
+            String aliasingComment;
+            String secondArgument;
+            String loadFrom;
+            switch(RANDOM.nextInt(3)) {
+            case 0: // a[i + offset] = a[i]
+                aliasingComment = "single-array";
+                secondArgument = "a";
+                loadFrom = "a";
+                break;
+            case 1: // a[i + offset] = b[i], but a and b alias, i.e. at runtime a == b.
+                aliasingComment = "aliasing";
+                secondArgument = "a";
+                loadFrom = "b";
+                break;
+            case 2: // a[i + offset] = b[i], and a and b do not alias, i.e. at runtime a != b.
+                aliasingComment = "non-aliasing";
+                secondArgument = "b";
+                loadFrom = "b";
+                break;
+            default:
+	        throw new RuntimeException("impossible"); 
+            }
+
             return String.format("""
-                       // test%d: type=%s, offset=%d
+                       // test%d: type=%s, offset=%d, mode=%s
                        static %s[] aGold%d = new %s[SIZE];
                        static %s[] bGold%d = new %s[SIZE];
                        static %s[] aTest%d = new %s[SIZE];
@@ -666,7 +691,7 @@ public class TestDependencyOffsets {
 
                        static {
                            init(aGold%d, bGold%d);
-                           test%d(aGold%d, bGold%d);
+                           test%d(aGold%d, %sGold%d);
                        }
 
                        @Test
@@ -680,27 +705,26 @@ public class TestDependencyOffsets {
                        @Run(test = "test%s")
                        public static void run%s() {
                            init(aTest%d, bTest%d);
-                           test%d(aTest%d, aTest%d);
+                           test%d(aTest%d, %sTest%d);
                            verify("test%d", aTest%d, bTest%d, aGold%d, bGold%d);
                        }
                    """,
                    // title
-                   id, type.name, offset,
+                   id, type.name, offset, aliasingComment,
                    // static
                    type.name, id, type.name,
                    type.name, id, type.name,
                    type.name, id, type.name,
                    type.name, id, type.name,
-                   id, id, id, id, id,
+                   id, id, id, id, secondArgument, id,
                    // IR rules
                    generateIRRules(),
                    // test
                    id, type.name, type.name,
                    start, end,
-                   offset, type.name, "a", type.operator, type.value,
+                   offset, type.name, loadFrom, type.operator, type.value,
                    // run
-                   id, id, id, id, id, id, id, id, id, id, id, id);
-            // TODO a vs b
+                   id, id, id, id, id, id, secondArgument, id, id, id, id, id, id);
         }
 
         /*
