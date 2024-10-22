@@ -33,6 +33,13 @@ import jdk.internal.javac.PreviewFeature;
  * Describes the opcodes of the JVM instruction set, as described in JVMS {@jvms 6.5}.
  * This includes a few pseudo-opcodes modified by {@link #isWide() wide}.
  *
+ * @apiNote
+ * The enum constants are named after the opcodes' mnemonics in uppercase.
+ * Wide pseudo-opcodes are named with the original opcodes' mnemonic plus
+ * a {@code _W} suffix. However, {@link #LDC_W ldc_w}, {@link #LDC2_W ldc2_w},
+ * {@link #GOTO_W goto_w}, and {@link #JSR_W jsr_w} are legitimate opcodes
+ * instead of wide pseudo-opcodes.
+ *
  * @see Instruction
  *
  * @since 22
@@ -202,7 +209,8 @@ public enum Opcode {
     LDC_W(RawBytecodeHelper.LDC_W, 3, Kind.CONSTANT),
 
     /**
-     * Push {@link TypeKind#LONG long} or {@link TypeKind#DOUBLE double} from run-time constant pool (wide index).
+     * Push {@link TypeKind#LONG long} or {@link TypeKind#DOUBLE double}
+     * from run-time constant pool (wide index).
      *
      * @jvms 6.5.ldc2_w <em>ldc2_w</em>
      * @see ConstantInstruction.LoadConstantInstruction
@@ -719,14 +727,16 @@ public enum Opcode {
     DUP2(RawBytecodeHelper.DUP2, 1, Kind.STACK),
 
     /**
-     * Duplicate the top one or two operand stack values and insert two or three values down.
+     * Duplicate the top one or two operand stack values and insert two or three
+     * values down.
      *
      * @jvms 6.5.dup2_x1 <em>dup2_x1</em>
      */
     DUP2_X1(RawBytecodeHelper.DUP2_X1, 1, Kind.STACK),
 
     /**
-     * Duplicate the top one or two operand stack values and insert two, three, or four values down.
+     * Duplicate the top one or two operand stack values and insert two, three,
+     * or four values down.
      *
      * @jvms 6.5.dup2_x2 <em>dup2_x2</em>
      */
@@ -1126,7 +1136,7 @@ public enum Opcode {
      * computational} {@code int} into a {@code short} and loading it back.
      *
      * @jls 5.1.3 Narrowing Primitive Conversion
-     * @jvms 6.5.land <em>land</em>
+     * @jvms 6.5.i2s <em>i2s</em>
      */
     I2S(RawBytecodeHelper.I2S, 1, Kind.CONVERT),
 
