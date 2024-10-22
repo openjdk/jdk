@@ -1589,7 +1589,7 @@ void MetaspaceShared::initialize_shared_spaces() {
   LogStreamHandle(Info, cds) lsh;
   if (lsh.is_enabled()) {
     lsh.print("Using AOT-linked classes: %s (static archive: %s aot-linked classes",
-              CDSConfig::is_using_aot_linked_classes() ? "true" : "false",
+              BOOL_TO_STR(CDSConfig::is_using_aot_linked_classes()),
               static_mapinfo->header()->has_aot_linked_classes() ? "has" : "no");
     if (dynamic_mapinfo != nullptr) {
       lsh.print(", dynamic archive: %s aot-linked classes",

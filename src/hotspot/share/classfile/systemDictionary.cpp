@@ -2094,11 +2094,13 @@ void SystemDictionary::restore_archived_method_handle_intrinsics_impl(TRAPS) {
       }
     }
 
-    MutexLocker ml(InvokeMethodIntrinsicTable_lock);
+    // There's no need to grab the InvokeMethodIntrinsicTable_lock, as we are still very early in
+    // VM start-up -- in init_globals2() -- so we are still running a single Java thread. It's not
+    // possible to have a contention.
     const int iid_as_int = vmIntrinsics::as_int(m->intrinsic_id());
     InvokeMethodKey key(m->signature(), iid_as_int);
     bool created = _invoke_method_intrinsic_table->put(key, m());
-    assert(created, "must be");
+    assert(created, "unexpected contention");
   }
 }
 #endif // INCLUDE_CDS
