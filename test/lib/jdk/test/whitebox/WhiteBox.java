@@ -72,6 +72,17 @@ public class WhiteBox {
   // Arguments
   public native void printHeapSizes();
 
+  /**
+   * Disables clinit loading (does not affect core library classes)
+   */
+  public native void disableClinitLoading();
+
+  /**
+   * Restores clinit loading feature (the default Hotspot behaviour)
+   */
+  public native void enableClinitLoading();
+
+
   // Memory
   private native long getObjectAddress0(Object o);
   public           long getObjectAddress(Object o) {

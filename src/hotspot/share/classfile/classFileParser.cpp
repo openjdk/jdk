@@ -62,7 +62,9 @@
 #include "oops/symbol.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
+#include "prims/whitebox.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
@@ -2677,6 +2679,32 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
   return m;
 }
 
+bool ClassFileParser::wb_clinit_removal_check(const Method * const method,
+                                              const int index,
+                                              const int length,
+                                              int & offset,
+                                              TRAPS) {
+  auto is_corelib_method = [&]() {
+      return _class_name->starts_with("java/", 5) ||
+             _class_name->starts_with("jdk/", 4) ||
+             _class_name->starts_with("sun/", 4);
+  };
+
+  if (_clinit_loading_disabled && method->name() == vmSymbols::class_initializer_name() && !is_corelib_method()) {
+    // As it is not possible to change Array size, we have to create a new one
+    Array<Method*>* new_methods = MetadataFactory::new_array<Method*>(_loader_data,
+                  length-1,
+                  nullptr,
+                  CHECK_false);
+    memcpy(new_methods->data(), _methods->data(), index * sizeof(Method*));
+    MetadataFactory::free_array<Method*>(_loader_data, _methods);
+    _methods = new_methods;
+
+    offset -= 1;
+    return true;
+  }
+  return false;
+}
 
 // Side-effects: populates the _methods field in the parser
 void ClassFileParser::parse_methods(const ClassFileStream* const cfs,
@@ -2702,12 +2730,20 @@ void ClassFileParser::parse_methods(const ClassFileStream* const cfs,
                                                    nullptr,
                                                    CHECK);
 
+    int skipping_offset = 0;
     for (int index = 0; index < length; index++) {
       Method* method = parse_method(cfs,
                                     is_interface,
                                     _cp,
                                     has_localvariable_table,
                                     CHECK);
+
+      NOT_PRODUCT(
+       bool skip_clinit = wb_clinit_removal_check(method, index, length, /*out*/ skipping_offset, CHECK);
+       if (skip_clinit) {
+            continue;
+       }
+      )
 
       if (method->is_final()) {
         *has_final_method = true;
@@ -2718,15 +2754,15 @@ void ClassFileParser::parse_methods(const ClassFileStream* const cfs,
         && !method->is_abstract() && !method->is_static()) {
         *declares_nonstatic_concrete_methods = true;
       }
-      _methods->at_put(index, method);
+      _methods->at_put(index + skipping_offset, method);
     }
 
-    if (_need_verify && length > 1) {
+    if (_need_verify && length + skipping_offset > 1) {
       // Check duplicated methods
       ResourceMark rm(THREAD);
       // Set containing name-signature pairs
       NameSigHashtable* names_and_sigs = new NameSigHashtable();
-      for (int i = 0; i < length; i++) {
+      for (int i = 0; i < length + skipping_offset; i++) {
         const Method* const m = _methods->at(i);
         NameSigHash name_and_sig(m->name(), m->signature());
         // If no duplicates, add name/signature in hashtable names_and_sigs.
@@ -5301,6 +5337,8 @@ ClassFileParser::ClassFileParser(ClassFileStream* stream,
   _has_localvariable_table(false),
   _has_final_method(false),
   _has_contended_fields(false),
+  _clinit_loading_disabled(
+              WhiteBoxAPI ? Atomic::load(&WhiteBox::clinit_loading_disabled) : false),
   _has_finalizer(false),
   _has_empty_finalizer(false),
   _max_bootstrap_specifier_index(-1) {

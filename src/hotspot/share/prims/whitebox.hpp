@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,7 @@ class WhiteBox : public AllStatic {
   static bool _used;
  public:
   static volatile bool compilation_locked;
+  static volatile bool clinit_loading_disabled;
   static bool used()     { return _used; }
   static void set_used() { _used = true; }
   static int offset_for_field(const char* field_name, oop object,

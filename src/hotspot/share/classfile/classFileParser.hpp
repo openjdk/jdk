@@ -193,6 +193,8 @@ class ClassFileParser {
   bool _has_final_method;
   bool _has_contended_fields;
 
+  bool _clinit_loading_disabled;        // WhiteBox testing feature
+
   // precomputed flags
   bool _has_finalizer;
   bool _has_empty_finalizer;
@@ -277,6 +279,12 @@ class ClassFileParser {
                      bool* const has_final_method,
                      bool* const declares_nonstatic_concrete_methods,
                      TRAPS);
+
+  bool wb_clinit_removal_check(const Method * const method,
+                               const int index,
+                               const int length,
+                               int & offset,
+                               TRAPS);
 
   const unsafe_u2* parse_exception_table(const ClassFileStream* const stream,
                                          u4 code_length,

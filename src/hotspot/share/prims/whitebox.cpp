@@ -150,6 +150,7 @@
 
 bool WhiteBox::_used = false;
 volatile bool WhiteBox::compilation_locked = false;
+volatile bool WhiteBox::clinit_loading_disabled = false;
 
 class VM_WhiteBoxOperation : public VM_Operation {
  public:
@@ -286,6 +287,16 @@ WB_ENTRY(void, WB_PrintHeapSizes(JNIEnv* env, jobject o)) {
                 MaxHeapSize,
                 SpaceAlignment,
                 HeapAlignment);
+}
+WB_END
+
+WB_ENTRY(void, WB_DisableClinitLoading(JNIEnv* env, jobject o)) {
+    NOT_PRODUCT(Atomic::store(&WhiteBox::clinit_loading_disabled, true));
+}
+WB_END
+
+WB_ENTRY(void, WB_EnableClinitLoading(JNIEnv* env, jobject o)) {
+    NOT_PRODUCT(Atomic::store(&WhiteBox::clinit_loading_disabled, false);)
 }
 WB_END
 
@@ -2711,6 +2722,8 @@ static JNINativeMethod methods[] = {
   {CC"getCompressedOopsMaxHeapSize", CC"()J",
       (void*)&WB_GetCompressedOopsMaxHeapSize},
   {CC"printHeapSizes",     CC"()V",                   (void*)&WB_PrintHeapSizes    },
+  {CC"disableClinitLoading",             CC"()V",     (void*)&WB_DisableClinitLoading},
+  {CC"enableClinitLoading",              CC"()V",     (void*)&WB_EnableClinitLoading},
   {CC"readFromNoaccessArea",CC"()V",                  (void*)&WB_ReadFromNoaccessArea},
   {CC"stressVirtualSpaceResize",CC"(JJJ)I",           (void*)&WB_StressVirtualSpaceResize},
 #if INCLUDE_CDS
