@@ -25,13 +25,12 @@
 package java.lang.classfile.constantpool;
 
 import java.lang.classfile.TypeKind;
-import jdk.internal.classfile.impl.Util;
-
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDesc;
 import java.lang.constant.DynamicConstantDesc;
 
 import jdk.internal.classfile.impl.AbstractPoolEntry;
+import jdk.internal.classfile.impl.Util;
 import jdk.internal.javac.PreviewFeature;
 
 /**

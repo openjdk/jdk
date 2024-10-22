@@ -506,6 +506,13 @@ final class Int128Vector extends IntVector {
                                      Int128Mask.class, (Int128Mask) m);  // specialize
     }
 
+    @Override
+    @ForceInline
+    public Int128Vector selectFrom(Vector<Integer> v1,
+                                   Vector<Integer> v2) {
+        return (Int128Vector)
+            super.selectFromTemplate((Int128Vector) v1, (Int128Vector) v2);  // specialize
+    }
 
     @ForceInline
     @Override
