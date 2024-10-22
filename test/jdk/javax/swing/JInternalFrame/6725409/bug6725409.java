@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,62 +21,59 @@
  * questions.
  */
 
-/* @test
+/*
+ * @test
  * @key headful
  * @bug 6725409
  * @requires (os.family == "windows")
  * @summary Checks that JInternalFrame's system menu
  *          can be localized during run-time
- * @author Mikhail Lapshin
  * @library /lib/client/
  * @modules java.desktop/com.sun.java.swing.plaf.windows
  * @run main bug6725409
  */
 
-import javax.swing.*;
-import java.awt.*;
+import java.awt.Robot;
+import javax.swing.JDesktopPane;
+import javax.swing.JFrame;
+import javax.swing.JInternalFrame;
+import javax.swing.JMenuItem;
+import javax.swing.JPopupMenu;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
 
 public class bug6725409 {
     private JFrame frame;
     private JInternalFrame iFrame;
-    private TestTitlePane testTitlePane;
+    private static TestTitlePane testTitlePane;
     private boolean passed;
-    private static Robot robot = createRobot();
+    private static final Robot robot = createRobot();
 
     public static void main(String[] args) throws Exception {
         try {
             UIManager.setLookAndFeel(
                     new com.sun.java.swing.plaf.windows.WindowsClassicLookAndFeel());
-        } catch(UnsupportedLookAndFeelException e) {
+        } catch (UnsupportedLookAndFeelException e) {
             System.out.println("The test is for Windows LaF only");
             return;
         }
 
         final bug6725409 bug6725409 = new bug6725409();
         try {
-            SwingUtilities.invokeAndWait(new Runnable() {
-                public void run() {
-                    bug6725409.setupUIStep1();
-                }
-            });
+            SwingUtilities.invokeAndWait(() -> bug6725409.setupUIStep1());
             sync();
-            SwingUtilities.invokeAndWait(new Runnable() {
-                public void run() {
-                    bug6725409.setupUIStep2();
-                }
-            });
+            SwingUtilities.invokeAndWait(() -> bug6725409.setupUIStep2());
             sync();
-            SwingUtilities.invokeAndWait(new Runnable() {
-                public void run() {
-                    bug6725409.test();
-                }
-            });
+            SwingUtilities.invokeAndWait(() -> bug6725409.test());
             sync();
             bug6725409.checkResult();
         } finally {
-            if (bug6725409.frame != null) {
-                bug6725409.frame.dispose();
-            }
+            SwingUtilities.invokeAndWait(() -> {
+                if (bug6725409.frame != null) {
+                    bug6725409.frame.dispose();
+                }
+            });
         }
     }
 
@@ -85,7 +82,8 @@ public class bug6725409 {
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         JDesktopPane desktop = new JDesktopPane();
-        iFrame = new JInternalFrame("Internal Frame", true, true, true, true);
+        iFrame = new JInternalFrame("Internal Frame",
+                true, true, true, true);
         iFrame.setSize(200, 100);
         desktop.add(iFrame);
         frame.add(desktop);
@@ -146,14 +144,14 @@ public class bug6725409 {
     private static void sync() {
         robot.waitForIdle();
     }
+
     private static Robot createRobot() {
         try {
-             Robot robot = new Robot();
-             return robot;
-         }catch(Exception ex) {
-             ex.printStackTrace();
-             throw new Error("Unexpected Failure");
-         }
+            Robot robot = new Robot();
+            return robot;
+        } catch (Exception ex) {
+            // pass exception
+        }
     }
 
     // Extend WindowsInternalFrameTitlePane to get access to systemPopupMenu
