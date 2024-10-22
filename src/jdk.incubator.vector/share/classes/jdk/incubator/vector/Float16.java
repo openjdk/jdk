@@ -66,16 +66,17 @@ import static java.lang.Float.floatToFloat16;
  * @since 24
  */
 
-// Currently Float16 is a value based class but in future will be aligned with
-// Enhanced Primitive Boxes described by JEP-402 (https://openjdk.org/jeps/402)
+// Currently Float16 is a value-based class and in future it is
+// expected to be aligned with Value Classes and Object as describedin
+// JEP-401 (https://openjdk.org/jeps/401).
 // @jdk.internal.MigratedValueClass
-//@jdk.internal.ValueBased
+// @jdk.internal.ValueBased
 @SuppressWarnings("serial")
 public final class Float16
     extends Number
     implements Comparable<Float16> {
     private final short value;
-    private static final long serialVersionUID = 16; // Not needed for a value class?
+    private static final long serialVersionUID = 16; // May not be needed when a value class?
 
     // Functionality for future consideration:
     // IEEEremainder / remainder operator remainder
@@ -86,7 +87,7 @@ public final class Float16
     *
     * @param  bits a short value.
     */
-    private Float16 (short bits ) {
+    private Float16(short bits ) {
         this.value = bits;
     }
 
@@ -876,6 +877,7 @@ public final class Float16
      * @return the sum of the operands
      *
      * @jls 15.4 Floating-point Expressions
+     * @jls 15.18.2 Additive Operators (+ and -) for Numeric Types
      */
     public static Float16 add(Float16 addend, Float16 augend) {
         return valueOf(addend.floatValue() + augend.floatValue());
@@ -898,6 +900,7 @@ public final class Float16
      * @return the difference of the operands
      *
      * @jls 15.4 Floating-point Expressions
+     * @jls 15.18.2 Additive Operators (+ and -) for Numeric Types
      */
     public static Float16 subtract(Float16 minuend, Float16 subtrahend) {
         return valueOf(minuend.floatValue() - subtrahend.floatValue());
@@ -920,6 +923,7 @@ public final class Float16
      * @return the product of the operands
      *
      * @jls 15.4 Floating-point Expressions
+     * @jls 15.17.1 Multiplication Operator *
      */
     public static Float16 multiply(Float16 multiplier, Float16 multiplicand) {
         return valueOf(multiplier.floatValue() * multiplicand.floatValue());
@@ -942,6 +946,7 @@ public final class Float16
      * @return the quotient of the operands
      *
      * @jls 15.4 Floating-point Expressions
+     * @jls 15.17.2 Division Operator /
      */
     public static Float16 divide(Float16 dividend, Float16 divisor) {
         return valueOf(dividend.floatValue() / divisor.floatValue());
