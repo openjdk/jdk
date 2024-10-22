@@ -97,7 +97,10 @@ public class UserAuthWithAuthenticator {
     // and the user set header used. If false, Authenticator must
     // be called and the user set header not used.
 
-    static void h2Test(final boolean useHeader) throws Exception {
+    // If rightPassword is true we expect the authentication to succeed and 200 OK
+    // If false, then an error should be returned.
+
+    static void h2Test(final boolean useHeader, boolean rightPassword) throws Exception {
         SSLContext ctx;
         HttpTestServer h2s = null;
         HttpClient client = null;
@@ -124,7 +127,7 @@ public class UserAuthWithAuthenticator {
 
             int port = h2s.getAddress().getPort();
             ServerAuth sa = new ServerAuth();
-            var plainCreds = "user:pwd";
+            var plainCreds = rightPassword? "user:pwd" : "user:wrongPwd";
             var encoded = java.util.Base64.getEncoder().encodeToString(plainCreds.getBytes(US_ASCII));
 
             URI uri = URIBuilder.newBuilder()
@@ -148,17 +151,21 @@ public class UserAuthWithAuthenticator {
                     .build();
 
             HttpResponse<String> resp = client.send(req, HttpResponse.BodyHandlers.ofString());
-            if (useHeader) {
-                assertTrue(resp.statusCode() == 200, "Expected 200 response");
-                assertTrue(h.authValue().equals(encoded), "Expected user set header to be set");
-                assertTrue(!sa.wasCalled(), "Expected authenticator not to be called");
-                System.out.println("h2Test: using user set header OK");
-            } else {
+            if (!useHeader) {
                 assertTrue(resp.statusCode() == 200, "Expected 200 response");
                 assertTrue(!h.authValue().equals(encoded), "Expected user set header to not be set");
                 assertTrue(h.authValue().equals(sa.authValue()), "Expected auth value from Authenticator");
                 assertTrue(sa.wasCalled(), "Expected authenticator to be called");
                 System.out.println("h2Test: using authenticator OK");
+            } else if (rightPassword) {
+                assertTrue(resp.statusCode() == 200, "Expected 200 response");
+                assertTrue(h.authValue().equals(encoded), "Expected user set header to be set");
+                assertTrue(!sa.wasCalled(), "Expected authenticator not to be called");
+                System.out.println("h2Test: using user set header OK");
+            } else {
+                assertTrue(resp.statusCode() == 401, "Expected 401 response");
+                assertTrue(!sa.wasCalled(), "Expected authenticator not to be called");
+                System.out.println("h2Test: using user set header with wrong password OK");
             }
         } finally {
             if (h2s != null)
@@ -218,8 +225,9 @@ public class UserAuthWithAuthenticator {
         testServerWithProxy();
         testServerWithProxyError();
         testServerOnlyAuthenticator();
-        h2Test(true);
-        h2Test(false);
+        h2Test(true, true);
+        h2Test(false, true);
+        h2Test(true, false);
     }
 
     static void testServerWithProxy() throws IOException, InterruptedException {
@@ -457,6 +465,7 @@ public class UserAuthWithAuthenticator {
 
         private static String USER = "serverUser";
         private static String PASS = "serverPwd";
+
         @Override
         protected PasswordAuthentication getPasswordAuthentication() {
             called = true;
@@ -471,6 +480,7 @@ public class UserAuthWithAuthenticator {
             var plainCreds = USER + ":" + PASS;
             return java.util.Base64.getEncoder().encodeToString(plainCreds.getBytes(US_ASCII));
         }
+
         boolean wasCalled() {
             return called;
         }
