@@ -377,11 +377,16 @@ void MetaspaceShared::make_method_handle_intrinsics_shareable() {
 void MetaspaceShared::write_method_handle_intrinsics() {
   int len = _pending_method_handle_intrinsics->length();
   _archived_method_handle_intrinsics = ArchiveBuilder::new_ro_array<Method*>(len);
+  int word_size = _archived_method_handle_intrinsics->size();
   for (int i = 0; i < len; i++) {
-    ArchiveBuilder::current()->write_pointer_in_buffer(_archived_method_handle_intrinsics->adr_at(i),
-                                                       _pending_method_handle_intrinsics->at(i));
+    Method* m = _pending_method_handle_intrinsics->at(i);
+    ArchiveBuilder::current()->write_pointer_in_buffer(_archived_method_handle_intrinsics->adr_at(i), m);
+    word_size += m->size() + m->constMethod()->size() + m->constants()->size();
+    if (m->constants()->cache() != nullptr) {
+      word_size += m->constants()->cache()->size();
+    }
   }
-  log_info(cds)("Archived %d method handle intrinsics", len);
+  log_info(cds)("Archived %d method handle intrinsics (%d bytes)", len, word_size * BytesPerWord);
 }
 
 // Read/write a data stream for restoring/preserving metadata pointers and
