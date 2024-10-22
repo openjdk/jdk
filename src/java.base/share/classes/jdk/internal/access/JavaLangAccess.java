@@ -29,6 +29,7 @@ import java.io.InputStream;
 import java.io.PrintStream;
 import java.lang.annotation.Annotation;
 import java.lang.foreign.MemorySegment;
+import java.lang.foreign.SymbolLookup;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.lang.module.ModuleDescriptor;
@@ -42,11 +43,12 @@ import java.security.ProtectionDomain;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.stream.Stream;
 
+import jdk.internal.loader.NativeLibraries;
 import jdk.internal.misc.CarrierThreadLocal;
 import jdk.internal.module.ServicesCatalog;
 import jdk.internal.reflect.ConstantPool;
@@ -282,10 +284,14 @@ public interface JavaLangAccess {
     void addEnableNativeAccessToAllUnnamed();
 
     /**
-     * Ensure that the given module has native access. If not, warn or
-     * throw exception depending on the configuration.
+     * Ensure that the given module has native access. If not, warn or throw exception depending on the configuration.
+     * @param m the module in which native access occurred
+     * @param owner the owner of the restricted method being called (or the JNI method being bound)
+     * @param methodName the name of the restricted method being called (or the JNI method being bound)
+     * @param currentClass the class calling the restricted method (for JNI, this is the same as {@code owner})
+     * @param jni {@code true}, if this event is related to a JNI method being bound
      */
-    void ensureNativeAccess(Module m, Class<?> owner, String methodName, Class<?> currentClass);
+    void ensureNativeAccess(Module m, Class<?> owner, String methodName, Class<?> currentClass, boolean jni);
 
     /**
      * Returns the ServicesCatalog for the given Layer.
@@ -314,6 +320,11 @@ public interface JavaLangAccess {
      * Count the number of leading positive bytes in the range.
      */
     int countPositives(byte[] ba, int off, int len);
+
+    /**
+     * Count the number of leading non-zero ascii chars in the String.
+     */
+    int countNonZeroAscii(String s);
 
     /**
      * Constructs a new {@code String} by decoding the specified subarray of
@@ -433,12 +444,6 @@ public interface JavaLangAccess {
     MethodHandle stringConcatHelper(String name, MethodType methodType);
 
     /**
-     * Prepends constant and the stringly representation of value into buffer,
-     * given the coder and final index. Index is measured in chars, not in bytes!
-     */
-    long stringConcatHelperPrepend(long indexCoder, byte[] buf, String value);
-
-    /**
      * Get the string concat initial coder
      */
     long stringConcatInitialCoder();
@@ -453,10 +458,27 @@ public interface JavaLangAccess {
      */
     long stringConcatMix(long lengthCoder, char value);
 
+    Object stringConcat1(String[] constants);
+
+    /**
+     * Get the string initial coder, When COMPACT_STRINGS is on, it returns 0, and when it is off, it returns 1.
+     */
+    byte stringInitCoder();
+
+    /**
+     * Get the Coder of String, which is used by StringConcatFactory to calculate the initCoder of constants
+     */
+    byte stringCoder(String str);
+
     /**
      * Join strings
      */
     String join(String prefix, String suffix, String delimiter, String[] elements, int size);
+
+    /**
+     * Concatenation of prefix and suffix characters to a String for early bootstrap
+     */
+    String concat(String prefix, Object value, String suffix);
 
     /*
      * Get the class data associated with the given class.
@@ -465,13 +487,15 @@ public interface JavaLangAccess {
      */
     Object classData(Class<?> c);
 
-    int stringSize(long i);
-
     int getCharsLatin1(long i, int index, byte[] buf);
 
     int getCharsUTF16(long i, int index, byte[] buf);
 
-    long findNative(ClassLoader loader, String entry);
+    /**
+     * Returns the {@link NativeLibraries} object associated with the provided class loader.
+     * This is used by {@link SymbolLookup#loaderLookup()}.
+     */
+    NativeLibraries nativeLibrariesFor(ClassLoader loader);
 
     /**
      * Direct access to Shutdown.exit to avoid security manager checks
@@ -509,11 +533,6 @@ public interface JavaLangAccess {
      * current thread is a virtual thread then this method returns the carrier.
      */
     Thread currentCarrierThread();
-
-    /**
-     * Executes the given value returning task on the current carrier thread.
-     */
-    <V> V executeOnCarrierThread(Callable<V> task) throws Exception;
 
     /**
      * Returns the value of the current carrier thread's copy of a thread-local.
@@ -587,6 +606,11 @@ public interface JavaLangAccess {
      * @throws RejectedExecutionException if the scheduler cannot accept a task
      */
     void unparkVirtualThread(Thread thread);
+
+    /**
+     * Returns the virtual thread default scheduler.
+     */
+    Executor virtualThreadDefaultScheduler();
 
     /**
      * Creates a new StackWalker

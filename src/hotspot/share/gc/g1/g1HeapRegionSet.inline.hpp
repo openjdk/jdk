@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
 
 #include "gc/g1/g1NUMA.hpp"
 
-inline void HeapRegionSetBase::add(G1HeapRegion* hr) {
+inline void G1HeapRegionSetBase::add(G1HeapRegion* hr) {
   check_mt_safety();
   assert_heap_region_set(hr->containing_set() == nullptr, "should not already have a containing set");
   assert_heap_region_set(hr->next() == nullptr, "should not already be linked");
@@ -40,7 +40,7 @@ inline void HeapRegionSetBase::add(G1HeapRegion* hr) {
   verify_region(hr);
 }
 
-inline void HeapRegionSetBase::remove(G1HeapRegion* hr) {
+inline void G1HeapRegionSetBase::remove(G1HeapRegion* hr) {
   check_mt_safety();
   verify_region(hr);
   assert_heap_region_set(hr->next() == nullptr, "should already be unlinked");
@@ -51,7 +51,7 @@ inline void HeapRegionSetBase::remove(G1HeapRegion* hr) {
   _length--;
 }
 
-inline void FreeRegionList::add_to_tail(G1HeapRegion* region_to_add) {
+inline void G1FreeRegionList::add_to_tail(G1HeapRegion* region_to_add) {
   assert_free_region_list((length() == 0 && _head == nullptr && _tail == nullptr && _last == nullptr) ||
                           (length() >  0 && _head != nullptr && _tail != nullptr && _tail->hrm_index() < region_to_add->hrm_index()),
                           "invariant");
@@ -71,7 +71,7 @@ inline void FreeRegionList::add_to_tail(G1HeapRegion* region_to_add) {
   increase_length(region_to_add->node_index());
 }
 
-inline void FreeRegionList::add_ordered(G1HeapRegion* hr) {
+inline void G1FreeRegionList::add_ordered(G1HeapRegion* hr) {
   assert_free_region_list((length() == 0 && _head == nullptr && _tail == nullptr && _last == nullptr) ||
                           (length() >  0 && _head != nullptr && _tail != nullptr),
                           "invariant");
@@ -120,7 +120,7 @@ inline void FreeRegionList::add_ordered(G1HeapRegion* hr) {
   increase_length(hr->node_index());
 }
 
-inline G1HeapRegion* FreeRegionList::remove_from_head_impl() {
+inline G1HeapRegion* G1FreeRegionList::remove_from_head_impl() {
   G1HeapRegion* result = _head;
   _head = result->next();
   if (_head == nullptr) {
@@ -132,7 +132,7 @@ inline G1HeapRegion* FreeRegionList::remove_from_head_impl() {
   return result;
 }
 
-inline G1HeapRegion* FreeRegionList::remove_from_tail_impl() {
+inline G1HeapRegion* G1FreeRegionList::remove_from_tail_impl() {
   G1HeapRegion* result = _tail;
 
   _tail = result->prev();
@@ -145,7 +145,7 @@ inline G1HeapRegion* FreeRegionList::remove_from_tail_impl() {
   return result;
 }
 
-inline G1HeapRegion* FreeRegionList::remove_region(bool from_head) {
+inline G1HeapRegion* G1FreeRegionList::remove_region(bool from_head) {
   check_mt_safety();
   verify_optional();
 
@@ -174,7 +174,7 @@ inline G1HeapRegion* FreeRegionList::remove_region(bool from_head) {
   return hr;
 }
 
-inline G1HeapRegion* FreeRegionList::remove_region_with_node_index(bool from_head,
+inline G1HeapRegion* G1FreeRegionList::remove_region_with_node_index(bool from_head,
                                                                  uint requested_node_index) {
   assert(UseNUMA, "Invariant");
 
@@ -232,13 +232,13 @@ inline G1HeapRegion* FreeRegionList::remove_region_with_node_index(bool from_hea
   return cur;
 }
 
-inline void FreeRegionList::NodeInfo::increase_length(uint node_index) {
+inline void G1FreeRegionList::NodeInfo::increase_length(uint node_index) {
   if (node_index < _num_nodes) {
     _length_of_node[node_index] += 1;
   }
 }
 
-inline void FreeRegionList::NodeInfo::decrease_length(uint node_index) {
+inline void G1FreeRegionList::NodeInfo::decrease_length(uint node_index) {
   if (node_index < _num_nodes) {
     assert(_length_of_node[node_index] > 0,
            "Current length %u should be greater than zero for node %u",
@@ -247,23 +247,23 @@ inline void FreeRegionList::NodeInfo::decrease_length(uint node_index) {
   }
 }
 
-inline uint FreeRegionList::NodeInfo::length(uint node_index) const {
+inline uint G1FreeRegionList::NodeInfo::length(uint node_index) const {
   return _length_of_node[node_index];
 }
 
-inline void FreeRegionList::increase_length(uint node_index) {
+inline void G1FreeRegionList::increase_length(uint node_index) {
   if (_node_info != nullptr) {
     return _node_info->increase_length(node_index);
   }
 }
 
-inline void FreeRegionList::decrease_length(uint node_index) {
+inline void G1FreeRegionList::decrease_length(uint node_index) {
   if (_node_info != nullptr) {
     return _node_info->decrease_length(node_index);
   }
 }
 
-inline uint FreeRegionList::length(uint node_index) const {
+inline uint G1FreeRegionList::length(uint node_index) const {
   if (_node_info != nullptr) {
     return _node_info->length(node_index);
   } else {

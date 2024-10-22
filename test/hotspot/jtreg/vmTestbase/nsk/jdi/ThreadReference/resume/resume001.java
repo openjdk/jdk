@@ -117,6 +117,7 @@ public class resume001 {
     static int waitTime;
 
     static VirtualMachine      vm            = null;
+    static Debugee             debuggee      = null;
     static EventRequestManager eventRManager = null;
     static EventQueue          eventQueue    = null;
     static EventSet            eventSet      = null;
@@ -136,8 +137,6 @@ public class resume001 {
     //------------------------------------------------------ methods
 
     private int runThis (String argv[], PrintStream out) {
-
-        Debugee debuggee;
 
         argsHandler     = new ArgumentHandler(argv);
         logHandler      = new Log(out, argsHandler);
@@ -336,13 +335,23 @@ public class resume001 {
                     break label1;
                 log2("       thread2 is at breakpoint");
 
-
                 log2("......checking up that thread2.resume() resumes thread2 suspended with VirtualMachine.suspend()");
 
                 log2("       enabling breakpRequest3");
                 breakpRequest3.enable();
+
+                // don't do vm.suspend() until mainThread is waiting
+                line = pipe.readln();
+                if (line.equals("waiting")) {
+                    log2("     : returned string is 'waiting'");
+                } else {
+                    log3("ERROR: returned string is not 'waiting': " + line);
+                    expresult = returnCode4;
+                    break label1;
+                }
                 log2("       suspending the thread2 with vm.suspend()");
                 vm.suspend();
+
                 log2("       first resuming the thread2 with eventSet.resume()");
                 eventSet.resume();
                 log2("       checking up thread's state");
@@ -361,13 +370,17 @@ public class resume001 {
                         break label1;
                 log2("       thread2 is at breakpoint");
 
-
-                log2("      resuming the thread2");
+                log2("       resuming the thread2");
                 thread2.resume();
 
+                log2("       undo the vm.suspend() with vm.resume()");
+                vm.resume();
             }
-            vm.resume();
-            vm.resume();  // for case error when both VirtualMachine and the thread2 were suspended
+            // These are only needed if we break out of the loop due to an error
+            if (expresult != returnCode0) {
+                vm.resume();
+                vm.resume();  // for case error when both VirtualMachine and the thread2 were suspended
+            }
 
             //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             log2("     the end of testing");
@@ -487,7 +500,8 @@ public class resume001 {
                 try {
                     eventSet = eventQueue.remove(waitTime*60000);
                     if (eventSet == null) {
-                        log3("ERROR:  timeout for waiting for a BreakpintEvent");
+                        log3("ERROR:  timeout for waiting for a BreakpointEvent");
+                        debuggee.printThreadsInfo(vm);
                         returnCode = returnCode3;
                         break labelBP;
                     }

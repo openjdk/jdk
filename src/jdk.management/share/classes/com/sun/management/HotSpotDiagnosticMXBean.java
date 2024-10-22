@@ -47,6 +47,8 @@ import java.lang.management.PlatformManagedObject;
  * {@code null} unless it's stated otherwise.
  *
  * @see java.lang.management.ManagementFactory#getPlatformMXBeans(Class)
+ *
+ * @since 1.6
  */
 public interface HotSpotDiagnosticMXBean extends PlatformManagedObject {
     /**

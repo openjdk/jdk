@@ -75,8 +75,6 @@ class ParallelScavengeHeap : public CollectedHeap {
   static PSAdaptiveSizePolicy*       _size_policy;
   static PSGCAdaptivePolicyCounters* _gc_policy_counters;
 
-  unsigned int _death_march_count;
-
   GCMemoryManager* _young_manager;
   GCMemoryManager* _old_manager;
 
@@ -96,17 +94,27 @@ class ParallelScavengeHeap : public CollectedHeap {
 
   void update_parallel_worker_threads_cpu_time();
 
- protected:
+  void collect_at_safepoint(bool full);
+
+  bool must_clear_all_soft_refs();
+
   HeapWord* allocate_new_tlab(size_t min_size, size_t requested_size, size_t* actual_size) override;
 
   inline bool should_alloc_in_eden(size_t size) const;
-  inline void death_march_check(HeapWord* const result, size_t size);
+
   HeapWord* mem_allocate_old_gen(size_t size);
 
- public:
+  HeapWord* mem_allocate_work(size_t size,
+                              bool is_tlab,
+                              bool* gc_overhead_limit_was_exceeded);
+
+  HeapWord* expand_heap_and_allocate(size_t size, bool is_tlab);
+
+  void do_full_collection(bool clear_all_soft_refs) override;
+
+public:
   ParallelScavengeHeap() :
     CollectedHeap(),
-    _death_march_count(0),
     _young_manager(nullptr),
     _old_manager(nullptr),
     _eden_pool(nullptr),
@@ -184,25 +192,12 @@ class ParallelScavengeHeap : public CollectedHeap {
   // "gc_time_limit_was_exceeded" has an undefined meaning.
   HeapWord* mem_allocate(size_t size, bool* gc_overhead_limit_was_exceeded) override;
 
-  // Allocation attempt(s) during a safepoint. It should never be called
-  // to allocate a new TLAB as this allocation might be satisfied out
-  // of the old generation.
-  HeapWord* failed_mem_allocate(size_t size);
+  HeapWord* satisfy_failed_allocation(size_t size, bool is_tlab);
 
   // Support for System.gc()
   void collect(GCCause::Cause cause) override;
 
-  // These also should be called by the vm thread at a safepoint (e.g., from a
-  // VM operation).
-  //
-  // The first collects the young generation only, unless the scavenge fails; it
-  // will then attempt a full gc.  The second collects the entire heap; if
-  // maximum_compaction is true, it will compact everything and clear all soft
-  // references.
-  inline bool invoke_scavenge();
-
-  // Perform a full collection
-  void do_full_collection(bool clear_all_soft_refs) override;
+  void try_collect_at_safepoint(bool full);
 
   void ensure_parsability(bool retire_tlabs) override;
   void resize_all_tlabs() override;

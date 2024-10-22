@@ -177,8 +177,8 @@ $(MODULE_DEPS_MAKEFILE): $(MODULE_INFOS) \
 	$(call MakeTargetDir)
 	$(RM) $@
 	$(foreach m, $(MODULE_INFOS), \
-	    ( $(PRINTF) "DEPS_$(call GetModuleNameFromModuleInfo, $m) :=" && \
-	      $(AWK) -v MODULE=$(call GetModuleNameFromModuleInfo, $m) '\
+	    ( $(PRINTF) "DEPS_$(call GetModuleNameFromModuleInfo, $m) := " && \
+	      $(AWK) -v MODULE=$(call GetModuleNameFromModuleInfo, $m) ' \
 	          BEGIN      { if (MODULE != "java.base") printf(" java.base"); } \
 	          /^ *requires/ { sub(/;/, ""); \
 	                          sub(/requires /, " "); \
@@ -191,8 +191,8 @@ $(MODULE_DEPS_MAKEFILE): $(MODULE_INFOS) \
 	                          gsub(/\r/, ""); \
 	                          printf(" %s", $$0) } \
 	          END           { printf("\n") }' $m && \
-	      $(PRINTF) "TRANSITIVE_MODULES_$(call GetModuleNameFromModuleInfo, $m) :=" && \
-	      $(AWK) -v MODULE=$(call GetModuleNameFromModuleInfo, $m) '\
+	      $(PRINTF) "TRANSITIVE_MODULES_$(call GetModuleNameFromModuleInfo, $m) := " && \
+	      $(AWK) -v MODULE=$(call GetModuleNameFromModuleInfo, $m) ' \
 	          BEGIN      { if (MODULE != "java.base") printf(" java.base"); } \
 	          /^ *requires  *transitive/ { \
 	                          sub(/;/, ""); \
@@ -221,7 +221,7 @@ FindTransitiveDepsForModule = \
         $(foreach m, $(call FindDepsForModule, $1), \
             $(call FindDepsForModule, $m) \
             $(foreach n, $(call FindDepsForModule, $m), \
-                 $(call FindDepsForModule, $n))))
+                $(call FindDepsForModule, $n))))
 
 # Find dependencies ("requires") transitively in 3 levels for a set of modules.
 # Param 1: List of modules to find dependencies for.
@@ -240,7 +240,7 @@ FindTransitiveIndirectDepsForModule = \
         $(foreach m, $(call FindIndirectExportsForModule, $1), \
             $(call FindIndirectExportsForModule, $m) \
             $(foreach n, $(call FindIndirectExportsForModule, $m), \
-                 $(call FindIndirectExportsForModule, $n))))
+                $(call FindIndirectExportsForModule, $n))))
 
 # Finds indirect exported modules transitively in 3 levels for a set of modules.
 # Param 1: List of modules to find indirect exported modules for.

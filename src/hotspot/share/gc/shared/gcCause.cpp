@@ -78,9 +78,6 @@ const char* GCCause::to_string(GCCause::Cause cause) {
     case _metadata_GC_clear_soft_refs:
       return "Metadata GC Clear Soft References";
 
-    case _adaptive_size_policy:
-      return "Ergonomics";
-
     case _g1_inc_collection_pause:
       return "G1 Evacuation Pause";
 

@@ -77,6 +77,7 @@
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/javaCalls.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -300,6 +301,7 @@ void MetaspaceShared::post_initialize(TRAPS) {
         }
         ClassLoaderExt::init_paths_start_index(info->app_class_paths_start_index());
         ClassLoaderExt::init_app_module_paths_start_index(info->app_module_paths_start_index());
+        ClassLoaderExt::init_num_module_paths(info->header()->num_module_paths());
       }
     }
   }
@@ -510,6 +512,8 @@ char* VM_PopulateDumpSharedSpace::dump_read_only_tables() {
 }
 
 void VM_PopulateDumpSharedSpace::doit() {
+  guarantee(!CDSConfig::is_using_archive(), "We should not be using an archive when we dump");
+
   DEBUG_ONLY(SystemDictionaryShared::NoClassLoadingMark nclm);
 
   FileMapInfo::check_nonempty_dir_in_shared_path_table();
@@ -747,12 +751,21 @@ void MetaspaceShared::preload_classes(TRAPS) {
     }
   }
 
-  // Exercise the manifest processing code to ensure classes used by CDS at runtime
-  // are always archived
+  // Some classes are used at CDS runtime but are not loaded, and therefore archived, at
+  // dumptime. We can perform dummmy calls to these classes at dumptime to ensure they
+  // are archived.
+  exercise_runtime_cds_code(CHECK);
+
+  log_info(cds)("Loading classes to share: done.");
+}
+
+void MetaspaceShared::exercise_runtime_cds_code(TRAPS) {
+  // Exercise the manifest processing code
   const char* dummy = "Manifest-Version: 1.0\n";
   CDSProtectionDomain::create_jar_manifest(dummy, strlen(dummy), CHECK);
 
-  log_info(cds)("Loading classes to share: done.");
+  // Exercise FileSystem and URL code
+  CDSProtectionDomain::to_file_URL("dummy.jar", Handle(), CHECK);
 }
 
 void MetaspaceShared::preload_and_dump_impl(StaticArchiveBuilder& builder, TRAPS) {
@@ -789,6 +802,9 @@ void MetaspaceShared::preload_and_dump_impl(StaticArchiveBuilder& builder, TRAPS
     // Do this at the very end, when no Java code will be executed. Otherwise
     // some new strings may be added to the intern table.
     StringTable::allocate_shared_strings_array(CHECK);
+  } else {
+    log_info(cds)("Not dumping heap, reset CDSConfig::_is_using_optimized_module_handling");
+    CDSConfig::stop_using_optimized_module_handling();
   }
 #endif
 
@@ -1297,7 +1313,7 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
       assert(base_address == nullptr ||
              (address)archive_space_rs.base() == base_address, "Sanity");
       // Register archive space with NMT.
-      MemTracker::record_virtual_memory_type(archive_space_rs.base(), mtClassShared);
+      MemTracker::record_virtual_memory_tag(archive_space_rs.base(), mtClassShared);
       return archive_space_rs.base();
     }
     return nullptr;
@@ -1359,8 +1375,8 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
       return nullptr;
     }
     // NMT: fix up the space tags
-    MemTracker::record_virtual_memory_type(archive_space_rs.base(), mtClassShared);
-    MemTracker::record_virtual_memory_type(class_space_rs.base(), mtClass);
+    MemTracker::record_virtual_memory_tag(archive_space_rs.base(), mtClassShared);
+    MemTracker::record_virtual_memory_tag(class_space_rs.base(), mtClass);
   } else {
     if (use_archive_base_addr && base_address != nullptr) {
       total_space_rs = ReservedSpace(total_range_size, base_address_alignment,

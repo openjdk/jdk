@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,21 @@
 
 /*
  * @test
- * @bug 6825240
+ * @bug 6825240 6829785
  * @summary Password.readPassword() echos the input when System.Console is null
  * @run main/manual Password
+ */
+
+/*
+ * This scenario cannot be automated because util/Password.java verifies the given input stream is
+ * equal to the initialSystemIn. This prevents the test from providing a custom input stream.
+ *
+ *  Steps to run the test:
+ *  1) Compile the class using the JDK version being tested: '<JdkBin>/javac Password.java'
+ *  2) Run the test using the JDK version being tested: '<JdkBin>/java -cp . Password'
+ *  3) Type in the first password, it should not be visible in the console
+ *  4) Type in the second password, it should be visible in the console
+ *  5) The final output line displays the entered passwords, both should be visible
  */
 
 import com.sun.security.auth.callback.TextCallbackHandler;

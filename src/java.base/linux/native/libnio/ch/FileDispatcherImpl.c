@@ -114,7 +114,7 @@ Java_sun_nio_ch_FileDispatcherImpl_transferTo0(JNIEnv *env, jobject this,
             return n;
     }
 
-    n = sendfile64(dstFD, srcFD, &offset, (size_t)count);
+    n = sendfile(dstFD, srcFD, &offset, (size_t)count);
     if (n < 0) {
         if (errno == EAGAIN)
             return IOS_UNAVAILABLE;

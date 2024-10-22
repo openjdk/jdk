@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,8 +36,8 @@ class G1ParScanThreadStateSet;
 class G1Policy;
 class G1SurvivorRegions;
 class G1HeapRegion;
-class HeapRegionClaimer;
-class HeapRegionClosure;
+class G1HeapRegionClaimer;
+class G1HeapRegionClosure;
 
 // The collection set.
 //
@@ -196,11 +196,27 @@ class G1CollectionSet {
   // and retained collection set candidates.
   void finalize_old_part(double time_remaining_ms);
 
+  // Calculate and fill in the initial, optional and pinned old gen candidate regions from
+  // the given candidate list and the remaining time.
+  // Returns the remaining time.
+  double select_candidates_from_marking(double time_remaining_ms,
+                                        G1CollectionCandidateRegionList* initial_old_regions,
+                                        G1CollectionCandidateRegionList* pinned_old_regions);
+
+  void select_candidates_from_retained(double time_remaining_ms,
+                                       G1CollectionCandidateRegionList* initial_old_regions,
+                                       G1CollectionCandidateRegionList* pinned_old_regions);
+
+  // Calculate the number of optional regions from the given collection set candidates,
+  // the remaining time and the maximum number of these regions.
+  void select_candidates_from_optional_regions(double time_remaining_ms,
+                                               G1CollectionCandidateRegionList* selected);
+
   // Iterate the part of the collection set given by the offset and length applying the given
-  // HeapRegionClosure. The worker_id will determine where in the part to start the iteration
+  // G1HeapRegionClosure. The worker_id will determine where in the part to start the iteration
   // to allow for more efficient parallel iteration.
-  void iterate_part_from(HeapRegionClosure* cl,
-                         HeapRegionClaimer* hr_claimer,
+  void iterate_part_from(G1HeapRegionClosure* cl,
+                         G1HeapRegionClaimer* hr_claimer,
                          size_t offset,
                          size_t length,
                          uint worker_id) const;
@@ -243,9 +259,9 @@ public:
   // Stop adding regions to the current collection set increment.
   void stop_incremental_building() { _inc_build_state = Inactive; }
 
-  // Iterate over the current collection set increment applying the given HeapRegionClosure
+  // Iterate over the current collection set increment applying the given G1HeapRegionClosure
   // from a starting position determined by the given worker id.
-  void iterate_incremental_part_from(HeapRegionClosure* cl, HeapRegionClaimer* hr_claimer, uint worker_id) const;
+  void iterate_incremental_part_from(G1HeapRegionClosure* cl, G1HeapRegionClaimer* hr_claimer, uint worker_id) const;
 
   // Returns the length of the current increment in number of regions.
   size_t increment_length() const { return _collection_set_cur_length - _inc_part_start; }
@@ -253,13 +269,13 @@ public:
   size_t cur_length() const { return _collection_set_cur_length; }
 
   // Iterate over the entire collection set (all increments calculated so far), applying
-  // the given HeapRegionClosure on all of them.
-  void iterate(HeapRegionClosure* cl) const;
-  void par_iterate(HeapRegionClosure* cl,
-                   HeapRegionClaimer* hr_claimer,
+  // the given G1HeapRegionClosure on all of them.
+  void iterate(G1HeapRegionClosure* cl) const;
+  void par_iterate(G1HeapRegionClosure* cl,
+                   G1HeapRegionClaimer* hr_claimer,
                    uint worker_id) const;
 
-  void iterate_optional(HeapRegionClosure* cl) const;
+  void iterate_optional(G1HeapRegionClosure* cl) const;
 
   // Finalize the initial collection set consisting of all young regions potentially a
   // few old gen regions.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,14 +57,18 @@ public class SegmentFactories {
     // associated with MemorySegment::ofAddress.
 
     @ForceInline
-    public static MemorySegment makeNativeSegmentUnchecked(long min, long byteSize, MemorySessionImpl sessionImpl, Runnable action) {
+    public static MemorySegment makeNativeSegmentUnchecked(long min,
+                                                           long byteSize,
+                                                           MemorySessionImpl sessionImpl,
+                                                           boolean readOnly,
+                                                           Runnable action) {
         ensureInitialized();
         if (action == null) {
             sessionImpl.checkValidState();
         } else {
             sessionImpl.addCloseAction(action);
         }
-        return new NativeMemorySegmentImpl(min, byteSize, false, sessionImpl);
+        return new NativeMemorySegmentImpl(min, byteSize, readOnly, sessionImpl);
     }
 
     @ForceInline

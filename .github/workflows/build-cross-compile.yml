@@ -131,6 +131,7 @@ jobs:
         id: create-sysroot
         run: >
           sudo debootstrap
+          --no-merged-usr
           --arch=${{ matrix.debian-arch }}
           --verbose
           --include=fakeroot,symlinks,build-essential,libx11-dev,libxext-dev,libxrender-dev,libxrandr-dev,libxtst-dev,libxt-dev,libcups2-dev,libfontconfig1-dev,libasound2-dev,libfreetype-dev,libpng-dev
@@ -151,6 +152,9 @@ jobs:
           rm -rf sysroot/usr/{sbin,bin,share}
           rm -rf sysroot/usr/lib/{apt,gcc,udev,systemd}
           rm -rf sysroot/usr/libexec/gcc
+          # /{bin,sbin,lib}/ are not symbolic links to /usr/{bin,sbin,lib}/ when debootstrap with --no-merged-usr
+          rm -rf sysroot/{sbin,bin}
+          rm -rf sysroot/lib/{udev,systemd}
         if: steps.create-sysroot.outcome == 'success' && steps.get-cached-sysroot.outputs.cache-hit != 'true'
 
       - name: 'Remove broken sysroot'

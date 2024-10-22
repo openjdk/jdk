@@ -29,7 +29,9 @@ package jdk.jfr.event.gc.stacktrace;
  *
  * @requires vm.gc == "null" | vm.gc == "G1"
  * @library /test/lib /test/jdk
- * @run main/othervm -XX:+UseG1GC -Xlog:gc* jdk.jfr.event.gc.stacktrace.TestG1YoungAllocationPendingStackTrace
+ * @run main/othervm -XX:+UseG1GC -Xlog:gc*
+ *                   -XX:FlightRecorderOptions:stackdepth=256
+ *                   jdk.jfr.event.gc.stacktrace.TestG1YoungAllocationPendingStackTrace
  */
 public class TestG1YoungAllocationPendingStackTrace {
 

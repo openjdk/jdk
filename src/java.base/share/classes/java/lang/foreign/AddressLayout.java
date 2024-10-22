@@ -108,7 +108,7 @@ public sealed interface AddressLayout extends ValueLayout permits ValueLayouts.O
      * @param layout the target layout
      * @return an address layout with same characteristics as this layout, but with the
      *          provided target layout
-     * @throws IllegalCallerException If the caller is in a module that does not have
+     * @throws IllegalCallerException if the caller is in a module that does not have
      *         native access enabled
      * @see #targetLayout()
      */

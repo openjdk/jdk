@@ -48,19 +48,19 @@ import jdk.internal.module.Checks;
 import jdk.jfr.Event;
 import jdk.jfr.EventType;
 import jdk.jfr.RecordingState;
-import jdk.jfr.internal.HiddenWait;
 import jdk.jfr.internal.LogLevel;
 import jdk.jfr.internal.LogTag;
 import jdk.jfr.internal.Logger;
 import jdk.jfr.internal.MirrorEvent;
 import jdk.jfr.internal.SecuritySupport;
 import jdk.jfr.internal.Type;
+import jdk.jfr.internal.management.HiddenWait;
 import jdk.jfr.internal.settings.PeriodSetting;
 import jdk.jfr.internal.settings.StackTraceSetting;
 import jdk.jfr.internal.settings.ThresholdSetting;
 
 public final class Utils {
-    private static final Object flushObject = new Object();
+    private static final HiddenWait flushObject = new HiddenWait();
     private static final String LEGACY_EVENT_NAME_PREFIX = "com.oracle.jdk.";
 
     /**
@@ -351,17 +351,6 @@ public final class Utils {
         return Type.isValidJavaFieldType(type.getName());
     }
 
-    public static void takeNap(long millis) {
-        HiddenWait hiddenWait = new HiddenWait();
-        try {
-            synchronized(hiddenWait) {
-                hiddenWait.wait(millis);
-            }
-        } catch (InterruptedException e) {
-            // ok
-        }
-    }
-
     public static void notifyFlush() {
         synchronized (flushObject) {
             flushObject.notifyAll();
@@ -369,13 +358,7 @@ public final class Utils {
     }
 
     public static void waitFlush(long timeOut) {
-        synchronized (flushObject) {
-            try {
-                flushObject.wait(timeOut);
-            } catch (InterruptedException e) {
-                // OK
-            }
-        }
+        flushObject.takeNap(timeOut);
     }
 
     public static Instant epochNanosToInstant(long epochNanos) {
@@ -446,5 +429,13 @@ public final class Utils {
         // type.getClassLoader() == ClassLoader.getPlatformClassLoader();
         // but only if it is safe and there is a mechanism to register event
         // classes in other modules besides jdk.jfr and java.base.
+    }
+
+    public static long multiplyOverflow(long a, long b, long defaultValue) {
+        try {
+            return Math.multiplyExact(a, b);
+        } catch (ArithmeticException ae) {
+            return defaultValue;
+        }
     }
 }

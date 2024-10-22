@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,29 +24,29 @@
  */
 package java.lang.classfile.attribute;
 
-import java.lang.constant.ClassDesc;
-import java.util.Collection;
 import java.lang.classfile.Attribute;
 import java.lang.classfile.ClassElement;
 import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.constantpool.ModuleEntry;
 import java.lang.classfile.constantpool.Utf8Entry;
-import jdk.internal.classfile.impl.BoundAttribute;
-import jdk.internal.classfile.impl.UnboundAttribute;
-
+import java.lang.constant.ClassDesc;
+import java.lang.constant.ModuleDesc;
+import java.lang.constant.PackageDesc;
+import java.lang.reflect.AccessFlag;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
-import java.lang.reflect.AccessFlag;
-import java.lang.constant.ModuleDesc;
-import java.lang.constant.PackageDesc;
+
+import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.ModuleAttributeBuilderImpl;
+import jdk.internal.classfile.impl.UnboundAttribute;
 import jdk.internal.classfile.impl.Util;
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * Models the {@code Module} attribute {@jvms 4.7.25}, which can
+ * Models the {@code Module} attribute (JVMS {@jvms 4.7.25}), which can
  * appear on classes that represent module descriptors.
  * Delivered as a {@link java.lang.classfile.ClassElement} when
  * traversing the elements of a {@link java.lang.classfile.ClassModel}.
@@ -153,7 +153,7 @@ public sealed interface ModuleAttribute
                               Consumer<ModuleAttributeBuilder> attrHandler) {
         var mb = new ModuleAttributeBuilderImpl(moduleName);
         attrHandler.accept(mb);
-        return  mb.build();
+        return mb.build();
     }
 
     /**
@@ -166,7 +166,7 @@ public sealed interface ModuleAttribute
                               Consumer<ModuleAttributeBuilder> attrHandler) {
         var mb = new ModuleAttributeBuilderImpl(moduleName);
         attrHandler.accept(mb);
-        return  mb.build();
+        return mb.build();
     }
 
     /**
@@ -319,11 +319,5 @@ public sealed interface ModuleAttribute
          * @return this builder
          */
         ModuleAttributeBuilder provides(ModuleProvideInfo provides);
-
-        /**
-         * Builds module attribute.
-         * @return the module attribute
-         */
-        ModuleAttribute build();
     }
 }

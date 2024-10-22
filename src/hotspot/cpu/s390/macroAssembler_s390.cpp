@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
+ * Copyright 2024 IBM Corporation. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2126,8 +2127,9 @@ unsigned int MacroAssembler::push_frame_abi160(unsigned int bytes) {
 
 // Pop current C frame.
 void MacroAssembler::pop_frame() {
-  BLOCK_COMMENT("pop_frame:");
+  BLOCK_COMMENT("pop_frame {");
   Assembler::z_lg(Z_SP, _z_abi(callers_sp), Z_SP);
+  BLOCK_COMMENT("} pop_frame");
 }
 
 // Pop current C frame and restore return PC register (Z_R14).
@@ -2750,7 +2752,7 @@ void MacroAssembler::reserved_stack_check(Register return_pc) {
   pop_frame();
   restore_return_pc();
 
-  load_const_optimized(Z_R1, StubRoutines::throw_delayed_StackOverflowError_entry());
+  load_const_optimized(Z_R1, SharedRuntime::throw_delayed_StackOverflowError_entry());
   // Don't use call() or z_basr(), they will invalidate Z_R14 which contains the return pc.
   z_br(Z_R1);
 
@@ -3152,6 +3154,301 @@ void MacroAssembler::check_klass_subtype(Register sub_klass,
   BLOCK_COMMENT("} check_klass_subtype");
 }
 
+// scans r_count pointer sized words at [r_addr] for occurrence of r_value,
+// generic (r_count must be >0)
+// iff found: CC eq, r_result == 0
+void MacroAssembler::repne_scan(Register r_addr, Register r_value, Register r_count, Register r_result) {
+  NearLabel L_loop, L_exit;
+
+  BLOCK_COMMENT("repne_scan {");
+#ifdef ASSERT
+  z_chi(r_count, 0);
+  asm_assert(bcondHigh, "count must be positive", 11);
+#endif
+
+  clear_reg(r_result, true /* whole_reg */, false /* set_cc */);  // sets r_result=0, let's hope that search will be successful
+
+  bind(L_loop);
+  z_cg(r_value, Address(r_addr));
+  z_bre(L_exit); // branch on success
+  z_la(r_addr, wordSize, r_addr);
+  z_brct(r_count, L_loop);
+
+  // z_brct above doesn't change CC.
+  // If we reach here, then the value in r_value is not present. Set r_result to 1.
+  z_lghi(r_result, 1);
+
+  bind(L_exit);
+  BLOCK_COMMENT("} repne_scan");
+}
+
+// Ensure that the inline code and the stub are using the same registers.
+#define LOOKUP_SECONDARY_SUPERS_TABLE_REGISTERS                 \
+do {                                                            \
+  assert(r_super_klass  == Z_ARG1                            && \
+         r_array_base   == Z_ARG5                            && \
+         r_array_length == Z_ARG4                            && \
+        (r_array_index  == Z_ARG3 || r_array_index == noreg) && \
+        (r_sub_klass    == Z_ARG2 || r_sub_klass   == noreg) && \
+        (r_bitmap       == Z_R10  || r_bitmap      == noreg) && \
+        (r_result       == Z_R11  || r_result      == noreg), "registers must match s390.ad"); \
+} while(0)
+
+// Note: this method also kills Z_R1_scratch register on machines older than z15
+void MacroAssembler::lookup_secondary_supers_table(Register r_sub_klass,
+                                                   Register r_super_klass,
+                                                   Register r_temp1,
+                                                   Register r_temp2,
+                                                   Register r_temp3,
+                                                   Register r_temp4,
+                                                   Register r_result,
+                                                   u1 super_klass_slot) {
+  NearLabel L_done, L_failure;
+
+  BLOCK_COMMENT("lookup_secondary_supers_table {");
+
+  const Register
+    r_array_base   = r_temp1,
+    r_array_length = r_temp2,
+    r_array_index  = r_temp3,
+    r_bitmap       = r_temp4;
+
+  LOOKUP_SECONDARY_SUPERS_TABLE_REGISTERS;
+
+  z_lg(r_bitmap, Address(r_sub_klass, Klass::bitmap_offset()));
+
+  // First check the bitmap to see if super_klass might be present. If
+  // the bit is zero, we are certain that super_klass is not one of
+  // the secondary supers.
+  u1 bit = super_klass_slot;
+  int shift_count = Klass::SECONDARY_SUPERS_TABLE_MASK - bit;
+
+  z_sllg(r_array_index, r_bitmap, shift_count); // take the bit to 63rd location
+
+  // Initialize r_result with 0 (indicating success). If searching fails, r_result will be loaded
+  // with 1 (failure) at the end of this method.
+  clear_reg(r_result, true /* whole_reg */, false /* set_cc */); // r_result = 0
+
+  // We test the MSB of r_array_index, i.e., its sign bit
+  testbit(r_array_index, 63);
+  z_bfalse(L_failure); // if not set, then jump!!!
+
+  // We will consult the secondary-super array.
+  z_lg(r_array_base, Address(r_sub_klass, Klass::secondary_supers_offset()));
+
+  // The value i in r_array_index is >= 1, so even though r_array_base
+  // points to the length, we don't need to adjust it to point to the
+  // data.
+  assert(Array<Klass*>::base_offset_in_bytes() == wordSize, "Adjust this code");
+
+  // Get the first array index that can contain super_klass.
+  if (bit != 0) {
+    pop_count_long(r_array_index, r_array_index, Z_R1_scratch); // kills Z_R1_scratch on machines older than z15
+
+    // NB! r_array_index is off by 1. It is compensated by keeping r_array_base off by 1 word.
+    z_sllg(r_array_index, r_array_index, LogBytesPerWord); // scale
+  } else {
+    // Actually use index 0, but r_array_base and r_array_index are off by 1 word
+    // such that the sum is precise.
+    z_lghi(r_array_index, BytesPerWord); // for slow path (scaled)
+  }
+
+  z_cg(r_super_klass, Address(r_array_base, r_array_index));
+  branch_optimized(bcondEqual, L_done); // found a match; success
+
+  // Is there another entry to check? Consult the bitmap.
+  testbit(r_bitmap, (bit + 1) & Klass::SECONDARY_SUPERS_TABLE_MASK);
+  z_bfalse(L_failure);
+
+  // Linear probe. Rotate the bitmap so that the next bit to test is
+  // in Bit 2 for the look-ahead check in the slow path.
+  if (bit != 0) {
+    z_rllg(r_bitmap, r_bitmap, 64-bit); // rotate right
+  }
+
+  // Calls into the stub generated by lookup_secondary_supers_table_slow_path.
+  // Arguments: r_super_klass, r_array_base, r_array_index, r_bitmap.
+  // Kills: r_array_length.
+  // Returns: r_result
+
+  call_stub(StubRoutines::lookup_secondary_supers_table_slow_path_stub());
+
+  z_bru(L_done); // pass whatever result we got from a slow path
+
+  bind(L_failure);
+  // TODO: use load immediate on condition and z_bru above will not be required
+  z_lghi(r_result, 1);
+
+  bind(L_done);
+  BLOCK_COMMENT("} lookup_secondary_supers_table");
+
+  if (VerifySecondarySupers) {
+    verify_secondary_supers_table(r_sub_klass, r_super_klass, r_result,
+                                  r_temp1, r_temp2, r_temp3);
+  }
+}
+
+// Called by code generated by check_klass_subtype_slow_path
+// above. This is called when there is a collision in the hashed
+// lookup in the secondary supers array.
+void MacroAssembler::lookup_secondary_supers_table_slow_path(Register r_super_klass,
+                                                             Register r_array_base,
+                                                             Register r_array_index,
+                                                             Register r_bitmap,
+                                                             Register r_result,
+                                                             Register r_temp1) {
+  assert_different_registers(r_super_klass, r_array_base, r_array_index, r_bitmap, r_result, r_temp1);
+
+  const Register
+    r_array_length = r_temp1,
+    r_sub_klass    = noreg;
+
+  LOOKUP_SECONDARY_SUPERS_TABLE_REGISTERS;
+
+  BLOCK_COMMENT("lookup_secondary_supers_table_slow_path {");
+  NearLabel L_done, L_failure;
+
+  // Load the array length.
+  z_llgf(r_array_length, Address(r_array_base, Array<Klass*>::length_offset_in_bytes()));
+
+  // And adjust the array base to point to the data.
+  // NB!
+  // Effectively increments the current slot index by 1.
+  assert(Array<Klass*>::base_offset_in_bytes() == wordSize, "");
+  add2reg(r_array_base, Array<Klass*>::base_offset_in_bytes());
+
+  // Linear probe
+  NearLabel L_huge;
+
+  // The bitmap is full to bursting.
+  z_chi(r_array_length, Klass::SECONDARY_SUPERS_BITMAP_FULL - 2);
+  z_brh(L_huge);
+
+  // NB! Our caller has checked bits 0 and 1 in the bitmap. The
+  // current slot (at secondary_supers[r_array_index]) has not yet
+  // been inspected, and r_array_index may be out of bounds if we
+  // wrapped around the end of the array.
+
+  { // This is conventional linear probing, but instead of terminating
+    // when a null entry is found in the table, we maintain a bitmap
+    // in which a 0 indicates missing entries.
+    // The check above guarantees there are 0s in the bitmap, so the loop
+    // eventually terminates.
+
+#ifdef ASSERT
+    // r_result is set to 0 by lookup_secondary_supers_table.
+    // clear_reg(r_result, true /* whole_reg */, false /* set_cc */);
+    z_cghi(r_result, 0);
+    asm_assert(bcondEqual, "r_result required to be 0, used by z_locgr", 44);
+
+    // We should only reach here after having found a bit in the bitmap.
+    z_ltgr(r_array_length, r_array_length);
+    asm_assert(bcondHigh, "array_length > 0, should hold", 22);
+#endif // ASSERT
+
+    // Compute limit in r_array_length
+    add2reg(r_array_length, -1);
+    z_sllg(r_array_length, r_array_length, LogBytesPerWord);
+
+    NearLabel L_loop;
+    bind(L_loop);
+
+    // Check for wraparound.
+    z_cgr(r_array_index, r_array_length);
+    z_locgr(r_array_index, r_result, bcondHigh); // r_result is containing 0
+
+    z_cg(r_super_klass, Address(r_array_base, r_array_index));
+    z_bre(L_done); // success
+
+    // look-ahead check: if Bit 2 is 0, we're done
+    testbit(r_bitmap, 2);
+    z_bfalse(L_failure);
+
+    z_rllg(r_bitmap, r_bitmap, 64-1); // rotate right
+    add2reg(r_array_index, BytesPerWord);
+
+    z_bru(L_loop);
+  }
+
+  { // Degenerate case: more than 64 secondary supers.
+    // FIXME: We could do something smarter here, maybe a vectorized
+    // comparison or a binary search, but is that worth any added
+    // complexity?
+
+    bind(L_huge);
+    repne_scan(r_array_base, r_super_klass, r_array_length, r_result);
+
+    z_bru(L_done); // forward the result we got from repne_scan
+  }
+
+  bind(L_failure);
+  z_lghi(r_result, 1);
+
+  bind(L_done);
+  BLOCK_COMMENT("} lookup_secondary_supers_table_slow_path");
+}
+
+// Make sure that the hashed lookup and a linear scan agree.
+void MacroAssembler::verify_secondary_supers_table(Register r_sub_klass,
+                                                   Register r_super_klass,
+                                                   Register r_result /* expected */,
+                                                   Register r_temp1,
+                                                   Register r_temp2,
+                                                   Register r_temp3) {
+  assert_different_registers(r_sub_klass, r_super_klass, r_result, r_temp1, r_temp2, r_temp3);
+
+  const Register
+    r_array_base   = r_temp1,
+    r_array_length = r_temp2,
+    r_array_index  = r_temp3,
+    r_bitmap       = noreg; // unused
+
+  const Register r_one = Z_R0_scratch;
+  z_lghi(r_one, 1); // for locgr down there, to a load result for failure
+
+  LOOKUP_SECONDARY_SUPERS_TABLE_REGISTERS;
+
+  BLOCK_COMMENT("verify_secondary_supers_table {");
+
+  Label L_passed, L_failure;
+
+  // We will consult the secondary-super array.
+  z_lg(r_array_base, Address(r_sub_klass, in_bytes(Klass::secondary_supers_offset())));
+
+  // Load the array length.
+  z_llgf(r_array_length, Address(r_array_base, Array<Klass*>::length_offset_in_bytes()));
+
+  // And adjust the array base to point to the data.
+  z_aghi(r_array_base, Array<Klass*>::base_offset_in_bytes());
+
+  const Register r_linear_result = r_array_index; // reuse
+  z_chi(r_array_length, 0);
+  z_locgr(r_linear_result, r_one, bcondNotHigh); // load failure if array_length <= 0
+  z_brc(bcondNotHigh, L_failure);
+  repne_scan(r_array_base, r_super_klass, r_array_length, r_linear_result);
+  bind(L_failure);
+
+  z_cr(r_result, r_linear_result);
+  z_bre(L_passed);
+
+  assert_different_registers(Z_ARG1, r_sub_klass, r_linear_result, r_result);
+  lgr_if_needed(Z_ARG1, r_super_klass);
+  assert_different_registers(Z_ARG2, r_linear_result, r_result);
+  lgr_if_needed(Z_ARG2, r_sub_klass);
+  assert_different_registers(Z_ARG3, r_result);
+  z_lgr(Z_ARG3, r_linear_result);
+  z_lgr(Z_ARG4, r_result);
+  const char* msg = "mismatch";
+  load_const_optimized(Z_ARG5, (address)msg);
+
+  call_VM_leaf(CAST_FROM_FN_PTR(address, Klass::on_secondary_supers_verification_failure));
+  should_not_reach_here();
+
+  bind(L_passed);
+
+  BLOCK_COMMENT("} verify_secondary_supers_table");
+}
+
 void MacroAssembler::clinit_barrier(Register klass, Register thread, Label* L_fast_path, Label* L_slow_path) {
   assert(L_fast_path != nullptr || L_slow_path != nullptr, "at least one is required");
 
@@ -3162,7 +3459,8 @@ void MacroAssembler::clinit_barrier(Register klass, Register thread, Label* L_fa
     L_slow_path = &L_fallthrough;
   }
 
-  // Fast path check: class is fully initialized
+  // Fast path check: class is fully initialized.
+  // init_state needs acquire, but S390 is TSO, and so we are already good.
   z_cli(Address(klass, InstanceKlass::init_state_offset()), InstanceKlass::fully_initialized);
   z_bre(*L_fast_path);
 
@@ -3211,9 +3509,7 @@ void MacroAssembler::compiler_fast_lock_object(Register oop, Register box, Regis
 
   if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(temp, oop);
-    z_l(temp, Address(temp, Klass::access_flags_offset()));
-    assert((JVM_ACC_IS_VALUE_BASED_CLASS & 0xFFFF) == 0, "or change following instruction");
-    z_nilh(temp, JVM_ACC_IS_VALUE_BASED_CLASS >> 16);
+    z_tm(Address(temp, Klass::misc_flags_offset()), KlassFlags::_misc_is_value_based_class);
     z_brne(done);
   }
 
@@ -3361,12 +3657,38 @@ void MacroAssembler::compiler_fast_unlock_object(Register oop, Register box, Reg
 
   bind(not_recursive);
 
-  load_and_test_long(temp, Address(currentHeader, OM_OFFSET_NO_MONITOR_VALUE_TAG(EntryList)));
-  z_brne(done);
-  load_and_test_long(temp, Address(currentHeader, OM_OFFSET_NO_MONITOR_VALUE_TAG(cxq)));
-  z_brne(done);
+  NearLabel check_succ, set_eq_unlocked;
+
+  // Set owner to null.
+  // Release to satisfy the JMM
   z_release();
-  z_stg(temp/*=0*/, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner), currentHeader);
+  z_lghi(temp, 0);
+  z_stg(temp, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner), currentHeader);
+  // We need a full fence after clearing owner to avoid stranding.
+  z_fence();
+
+  // Check if the entry lists are empty.
+  load_and_test_long(temp, Address(currentHeader, OM_OFFSET_NO_MONITOR_VALUE_TAG(EntryList)));
+  z_brne(check_succ);
+  load_and_test_long(temp, Address(currentHeader, OM_OFFSET_NO_MONITOR_VALUE_TAG(cxq)));
+  z_bre(done); // If so we are done.
+
+  bind(check_succ);
+
+  // Check if there is a successor.
+  load_and_test_long(temp, Address(currentHeader, OM_OFFSET_NO_MONITOR_VALUE_TAG(succ)));
+  z_brne(set_eq_unlocked); // If so we are done.
+
+  // Save the monitor pointer in the current thread, so we can try to
+  // reacquire the lock in SharedRuntime::monitor_exit_helper().
+  z_xilf(currentHeader, markWord::monitor_value);
+  z_stg(currentHeader, Address(Z_thread, JavaThread::unlocked_inflated_monitor_offset()));
+
+  z_ltgr(oop, oop); // Set flag = NE
+  z_bru(done);
+
+  bind(set_eq_unlocked);
+  z_cr(temp, temp); // Set flag = EQ
 
   bind(done);
 
@@ -3378,6 +3700,11 @@ void MacroAssembler::compiler_fast_unlock_object(Register oop, Register box, Reg
 void MacroAssembler::resolve_jobject(Register value, Register tmp1, Register tmp2) {
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
   bs->resolve_jobject(this, value, tmp1, tmp2);
+}
+
+void MacroAssembler::resolve_global_jobject(Register value, Register tmp1, Register tmp2) {
+  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  bs->resolve_global_jobject(this, value, tmp1, tmp2);
 }
 
 // Last_Java_sp must comply to the rules in frame_s390.hpp.
@@ -5708,10 +6035,10 @@ SkipIfEqual::~SkipIfEqual() {
 //  - obj: the object to be locked, contents preserved.
 //  - temp1, temp2: temporary registers, contents destroyed.
 //  Note: make sure Z_R1 is not manipulated here when C2 compiler is in play
-void MacroAssembler::lightweight_lock(Register obj, Register temp1, Register temp2, Label& slow) {
+void MacroAssembler::lightweight_lock(Register basic_lock, Register obj, Register temp1, Register temp2, Label& slow) {
 
   assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
-  assert_different_registers(obj, temp1, temp2);
+  assert_different_registers(basic_lock, obj, temp1, temp2);
 
   Label push;
   const Register top           = temp1;
@@ -5723,6 +6050,11 @@ void MacroAssembler::lightweight_lock(Register obj, Register temp1, Register tem
   // instruction emitted as it is part of C1's null check semantics.
   z_lg(mark, Address(obj, mark_offset));
 
+  if (UseObjectMonitorTable) {
+    // Clear cache in case fast locking succeeds.
+    const Address om_cache_addr = Address(basic_lock, BasicObjectLock::lock_offset() + in_ByteSize((BasicLock::object_monitor_cache_offset_in_bytes())));
+    z_mvghi(om_cache_addr, 0);
+  }
 
   // First we need to check if the lock-stack has room for pushing the object reference.
   z_lgf(top, Address(Z_thread, ls_top_offset));
@@ -5846,8 +6178,8 @@ void MacroAssembler::lightweight_unlock(Register obj, Register temp1, Register t
   bind(unlocked);
 }
 
-void MacroAssembler::compiler_fast_lock_lightweight_object(Register obj, Register tmp1, Register tmp2) {
-  assert_different_registers(obj, tmp1, tmp2);
+void MacroAssembler::compiler_fast_lock_lightweight_object(Register obj, Register box, Register tmp1, Register tmp2) {
+  assert_different_registers(obj, box, tmp1, tmp2);
 
   // Handle inflated monitor.
   NearLabel inflated;
@@ -5856,11 +6188,14 @@ void MacroAssembler::compiler_fast_lock_lightweight_object(Register obj, Registe
   // Finish fast lock unsuccessfully. MUST branch to with flag == EQ
   NearLabel slow_path;
 
+  if (UseObjectMonitorTable) {
+    // Clear cache in case fast locking succeeds.
+    z_mvghi(Address(box, BasicLock::object_monitor_cache_offset_in_bytes()), 0);
+  }
+
   if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(tmp1, obj);
-    z_l(tmp1, Address(tmp1, Klass::access_flags_offset()));
-    assert((JVM_ACC_IS_VALUE_BASED_CLASS & 0xFFFF) == 0, "or change following instruction");
-    z_nilh(tmp1, JVM_ACC_IS_VALUE_BASED_CLASS >> 16);
+    z_tm(Address(tmp1, Klass::misc_flags_offset()), KlassFlags::_misc_is_value_based_class);
     z_brne(slow_path);
   }
 
@@ -5922,26 +6257,77 @@ void MacroAssembler::compiler_fast_lock_lightweight_object(Register obj, Registe
   { // Handle inflated monitor.
     bind(inflated);
 
+    const Register tmp1_monitor = tmp1;
+    if (!UseObjectMonitorTable) {
+      assert(tmp1_monitor == mark, "should be the same here");
+    } else {
+      NearLabel monitor_found;
+
+      // load cache address
+      z_la(tmp1, Address(Z_thread, JavaThread::om_cache_oops_offset()));
+
+      const int num_unrolled = 2;
+      for (int i = 0; i < num_unrolled; i++) {
+        z_cg(obj, Address(tmp1));
+        z_bre(monitor_found);
+        add2reg(tmp1, in_bytes(OMCache::oop_to_oop_difference()));
+      }
+
+      NearLabel loop;
+      // Search for obj in cache
+
+      bind(loop);
+
+      // check for match.
+      z_cg(obj, Address(tmp1));
+      z_bre(monitor_found);
+
+      // search until null encountered, guaranteed _null_sentinel at end.
+      add2reg(tmp1, in_bytes(OMCache::oop_to_oop_difference()));
+      z_cghsi(0, tmp1, 0);
+      z_brne(loop); // if not EQ to 0, go for another loop
+
+      // we reached to the end, cache miss
+      z_ltgr(obj, obj); // set CC to NE
+      z_bru(slow_path);
+
+      // cache hit
+      bind(monitor_found);
+      z_lg(tmp1_monitor, Address(tmp1, OMCache::oop_to_monitor_difference()));
+    }
+    NearLabel monitor_locked;
+    // lock the monitor
+
     // mark contains the tagged ObjectMonitor*.
     const Register tagged_monitor = mark;
     const Register zero           = tmp2;
+
+    const ByteSize monitor_tag = in_ByteSize(UseObjectMonitorTable ? 0 : checked_cast<int>(markWord::monitor_value));
+    const Address owner_address(tmp1_monitor, ObjectMonitor::owner_offset() - monitor_tag);
+    const Address recursions_address(tmp1_monitor, ObjectMonitor::recursions_offset() - monitor_tag);
+
 
     // Try to CAS m->owner from null to current thread.
     // If m->owner is null, then csg succeeds and sets m->owner=THREAD and CR=EQ.
     // Otherwise, register zero is filled with the current owner.
     z_lghi(zero, 0);
-    z_csg(zero, Z_thread, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner), tagged_monitor);
-    z_bre(locked);
+    z_csg(zero, Z_thread, owner_address);
+    z_bre(monitor_locked);
 
     // Check if recursive.
     z_cgr(Z_thread, zero); // zero contains the owner from z_csg instruction
     z_brne(slow_path);
 
     // Recursive
-    z_agsi(Address(tagged_monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(recursions)), 1ll);
-    z_cgr(zero, zero);
-    // z_bru(locked);
-    // Uncomment above line in the future, for now jump address is right next to us.
+    z_agsi(recursions_address, 1ll);
+
+    bind(monitor_locked);
+    if (UseObjectMonitorTable) {
+      // Cache the monitor for unlock
+      z_stg(tmp1_monitor, Address(box, BasicLock::object_monitor_cache_offset_in_bytes()));
+    }
+    // set the CC now
+    z_cgr(obj, obj);
   }
   BLOCK_COMMENT("} handle_inflated_monitor_lightweight_locking");
 
@@ -5966,11 +6352,11 @@ void MacroAssembler::compiler_fast_lock_lightweight_object(Register obj, Registe
   // C2 uses the value of flag (NE vs EQ) to determine the continuation.
 }
 
-void MacroAssembler::compiler_fast_unlock_lightweight_object(Register obj, Register tmp1, Register tmp2) {
-  assert_different_registers(obj, tmp1, tmp2);
+void MacroAssembler::compiler_fast_unlock_lightweight_object(Register obj, Register box, Register tmp1, Register tmp2) {
+  assert_different_registers(obj, box, tmp1, tmp2);
 
   // Handle inflated monitor.
-  NearLabel inflated, inflated_load_monitor;
+  NearLabel inflated, inflated_load_mark;
   // Finish fast unlock successfully. MUST reach to with flag == EQ.
   NearLabel unlocked;
   // Finish fast unlock unsuccessfully. MUST branch to with flag == NE.
@@ -5983,13 +6369,14 @@ void MacroAssembler::compiler_fast_unlock_lightweight_object(Register obj, Regis
 
   BLOCK_COMMENT("compiler_fast_lightweight_unlock {");
   { // Lightweight Unlock
+    NearLabel push_and_slow_path;
 
     // Check if obj is top of lock-stack.
     z_lgf(top, Address(Z_thread, ls_top_offset));
 
     z_aghi(top, -oopSize);
     z_cg(obj, Address(Z_thread, top));
-    branch_optimized(bcondNotEqual, inflated_load_monitor);
+    branch_optimized(bcondNotEqual, inflated_load_mark);
 
     // Pop lock-stack.
 #ifdef ASSERT
@@ -6010,9 +6397,16 @@ void MacroAssembler::compiler_fast_unlock_lightweight_object(Register obj, Regis
     // Not recursive
 
     // Check for monitor (0b10).
+    // Because we got here by popping (meaning we pushed in locked)
+    // there will be no monitor in the box. So we need to push back the obj
+    // so that the runtime can fix any potential anonymous owner.
     z_lg(mark, Address(obj, mark_offset));
     z_tmll(mark, markWord::monitor_value);
-    z_brnaz(inflated);
+    if (!UseObjectMonitorTable) {
+      z_brnaz(inflated);
+    } else {
+      z_brnaz(push_and_slow_path);
+    }
 
 #ifdef ASSERT
     // Check header not unlocked (0b01).
@@ -6031,6 +6425,7 @@ void MacroAssembler::compiler_fast_unlock_lightweight_object(Register obj, Regis
       branch_optimized(Assembler::bcondEqual, unlocked);
     }
 
+    bind(push_and_slow_path);
     // Restore lock-stack and handle the unlock in runtime.
     z_lgf(top, Address(Z_thread, ls_top_offset));
     DEBUG_ONLY(z_stg(obj, Address(Z_thread, top));)
@@ -6043,7 +6438,7 @@ void MacroAssembler::compiler_fast_unlock_lightweight_object(Register obj, Regis
 
   { // Handle inflated monitor.
 
-    bind(inflated_load_monitor);
+    bind(inflated_load_mark);
 
     z_lg(mark, Address(obj, mark_offset));
 
@@ -6068,42 +6463,77 @@ void MacroAssembler::compiler_fast_unlock_lightweight_object(Register obj, Regis
     bind(check_done);
 #endif // ASSERT
 
+    const Register tmp1_monitor = tmp1;
+
+    if (!UseObjectMonitorTable) {
+      assert(tmp1_monitor == mark, "should be the same here");
+    } else {
+      // Uses ObjectMonitorTable.  Look for the monitor in our BasicLock on the stack.
+      z_lg(tmp1_monitor, Address(box, BasicLock::object_monitor_cache_offset_in_bytes()));
+      // null check with ZF == 0, no valid pointer below alignof(ObjectMonitor*)
+      z_cghi(tmp1_monitor, alignof(ObjectMonitor*));
+
+      z_brl(slow_path);
+    }
+
     // mark contains the tagged ObjectMonitor*.
     const Register monitor = mark;
+
+    const ByteSize monitor_tag = in_ByteSize(UseObjectMonitorTable ? 0 : checked_cast<int>(markWord::monitor_value));
+    const Address recursions_address{monitor, ObjectMonitor::recursions_offset() - monitor_tag};
+    const Address cxq_address{monitor, ObjectMonitor::cxq_offset() - monitor_tag};
+    const Address succ_address{monitor, ObjectMonitor::succ_offset() - monitor_tag};
+    const Address EntryList_address{monitor, ObjectMonitor::EntryList_offset() - monitor_tag};
+    const Address owner_address{monitor, ObjectMonitor::owner_offset() - monitor_tag};
 
     NearLabel not_recursive;
     const Register recursions = tmp2;
 
     // Check if recursive.
-    load_and_test_long(recursions, Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(recursions)));
+    load_and_test_long(recursions, recursions_address);
     z_bre(not_recursive); // if 0 then jump, it's not recursive locking
 
     // Recursive unlock
-    z_agsi(Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(recursions)), -1ll);
+    z_agsi(recursions_address, -1ll);
     z_cgr(monitor, monitor); // set the CC to EQUAL
     z_bru(unlocked);
 
     bind(not_recursive);
 
-    NearLabel not_ok;
-    // Check if the entry lists are empty.
-    load_and_test_long(tmp2, Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(EntryList)));
-    z_brne(not_ok);
-    load_and_test_long(tmp2, Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(cxq)));
-    z_brne(not_ok);
+    NearLabel check_succ, set_eq_unlocked;
 
+    // Set owner to null.
+    // Release to satisfy the JMM
     z_release();
-    z_stg(tmp2 /*=0*/, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner), monitor);
+    z_lghi(tmp2, 0);
+    z_stg(tmp2 /*=0*/, owner_address);
+    // We need a full fence after clearing owner to avoid stranding.
+    z_fence();
 
-    z_bru(unlocked); // CC = EQ here
+    // Check if the entry lists are empty.
+    load_and_test_long(tmp2, EntryList_address);
+    z_brne(check_succ);
+    load_and_test_long(tmp2, cxq_address);
+    z_bre(unlocked); // If so we are done.
 
-    bind(not_ok);
+    bind(check_succ);
 
-    // The owner may be anonymous, and we removed the last obj entry in
-    // the lock-stack. This loses the information about the owner.
-    // Write the thread to the owner field so the runtime knows the owner.
-    z_stg(Z_thread, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner), monitor);
-    z_bru(slow_path); // CC = NE here
+    // Check if there is a successor.
+    load_and_test_long(tmp2, succ_address);
+    z_brne(set_eq_unlocked); // If so we are done.
+
+    // Save the monitor pointer in the current thread, so we can try to
+    // reacquire the lock in SharedRuntime::monitor_exit_helper().
+    if (!UseObjectMonitorTable) {
+      z_xilf(monitor, markWord::monitor_value);
+    }
+    z_stg(monitor, Address(Z_thread, JavaThread::unlocked_inflated_monitor_offset()));
+
+    z_ltgr(obj, obj); // Set flag = NE
+    z_bru(slow_path);
+
+    bind(set_eq_unlocked);
+    z_cr(tmp2, tmp2); // Set flag = EQ
   }
 
   bind(unlocked);

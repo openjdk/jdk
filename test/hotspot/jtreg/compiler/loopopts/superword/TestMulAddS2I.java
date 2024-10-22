@@ -53,6 +53,7 @@ public class TestMulAddS2I {
     static final int[] GOLDEN_J;
     static final int[] GOLDEN_K;
     static final int[] GOLDEN_L;
+    static final int[] GOLDEN_M;
 
     static {
         for (int i = 0; i < RANGE; i++) {
@@ -71,6 +72,7 @@ public class TestMulAddS2I {
         GOLDEN_J = testj(new int[ITER]);
         GOLDEN_K = testk(new int[ITER]);
         GOLDEN_L = testl(new int[ITER]);
+        GOLDEN_M = testm(new int[ITER]);
     }
 
 
@@ -80,7 +82,7 @@ public class TestMulAddS2I {
     }
 
     @Run(test = {"testa", "testb", "testc", "testd", "teste", "testf", "testg", "testh",
-                 "testi", "testj", "testk", "testl"})
+                 "testi", "testj", "testk", "testl", "testm"})
     @Warmup(0)
     public static void run() {
         compare(testa(), GOLDEN_A, "testa");
@@ -95,6 +97,7 @@ public class TestMulAddS2I {
         compare(testj(new int[ITER]), GOLDEN_J, "testj");
         compare(testk(new int[ITER]), GOLDEN_K, "testk");
         compare(testl(new int[ITER]), GOLDEN_L, "testl");
+        compare(testm(new int[ITER]), GOLDEN_M, "testm");
     }
 
     public static void compare(int[] out, int[] golden, String name) {
@@ -299,4 +302,17 @@ public class TestMulAddS2I {
         return out;
     }
 
+    @Test
+    @IR(counts = {IRNode.MUL_ADD_S2I, "> 0"},
+        applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
+    @IR(counts = {IRNode.MUL_ADD_VS2VI, "= 0"})
+    public static int[] testm(int[] out) {
+        for (int i = 0; i < ITER-4; i+=4) {
+            // Unrolled, with some swaps that prevent vectorization.
+            out[i+0] += ((sArr1[2*i+0] * sArr2[2*i+1]) + (sArr1[2*i+1] * sArr2[2*i+0])); // bad
+            out[i+1] += ((sArr1[2*i+2] * sArr2[2*i+2]) + (sArr1[2*i+3] * sArr2[2*i+3])); // ok
+            // 2-element gap
+        }
+        return out;
+    }
 }

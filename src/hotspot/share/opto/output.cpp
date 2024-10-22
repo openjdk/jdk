@@ -716,7 +716,7 @@ ObjectValue*
 PhaseOutput::sv_for_node_id(GrowableArray<ScopeValue*> *objs, int id) {
   for (int i = 0; i < objs->length(); i++) {
     assert(objs->at(i)->is_object(), "corrupt object cache");
-    ObjectValue* sv = (ObjectValue*) objs->at(i);
+    ObjectValue* sv = objs->at(i)->as_ObjectValue();
     if (sv->id() == id) {
       return sv;
     }
@@ -755,7 +755,7 @@ void PhaseOutput::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
   if (local->is_SafePointScalarObject()) {
     SafePointScalarObjectNode* spobj = local->as_SafePointScalarObject();
 
-    ObjectValue* sv = (ObjectValue*) sv_for_node_id(objs, spobj->_idx);
+    ObjectValue* sv = sv_for_node_id(objs, spobj->_idx);
     if (sv == nullptr) {
       ciKlass* cik = t->is_oopptr()->exact_klass();
       assert(cik->is_instance_klass() ||
@@ -974,6 +974,27 @@ bool PhaseOutput::contains_as_owner(GrowableArray<MonitorValue*> *monarray, Obje
   return false;
 }
 
+// Determine if there is a scalar replaced object description represented by 'ov'.
+bool PhaseOutput::contains_as_scalarized_obj(JVMState* jvms, MachSafePointNode* sfn,
+                                             GrowableArray<ScopeValue*>* objs,
+                                             ObjectValue* ov) const {
+  for (int i = 0; i < jvms->scl_size(); i++) {
+    Node* n = sfn->scalarized_obj(jvms, i);
+    // Other kinds of nodes that we may encounter here, for instance constants
+    // representing values of fields of objects scalarized, aren't relevant for
+    // us, since they don't map to ObjectValue.
+    if (!n->is_SafePointScalarObject()) {
+      continue;
+    }
+
+    ObjectValue* other = sv_for_node_id(objs, n->_idx);
+    if (ov == other) {
+      return true;
+    }
+  }
+  return false;
+}
+
 //--------------------------Process_OopMap_Node--------------------------------
 void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
   // Handle special safepoint nodes for synchronization
@@ -1137,7 +1158,10 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
 
         for (int j = 0; j< merge->possible_objects()->length(); j++) {
           ObjectValue* ov = merge->possible_objects()->at(j)->as_ObjectValue();
-          bool is_root = locarray->contains(ov) || exparray->contains(ov) || contains_as_owner(monarray, ov);
+          bool is_root = locarray->contains(ov) ||
+                         exparray->contains(ov) ||
+                         contains_as_owner(monarray, ov) ||
+                         contains_as_scalarized_obj(jvms, sfn, objs, ov);
           ov->set_root(is_root);
         }
       }
@@ -1641,30 +1665,7 @@ void PhaseOutput::fill_buffer(C2_MacroAssembler* masm, uint* blk_starts) {
               }
             }
           }
-        }
-#ifdef ASSERT
-          // Check that oop-store precedes the card-mark
-        else if (mach->ideal_Opcode() == Op_StoreCM) {
-          uint storeCM_idx = j;
-          int count = 0;
-          for (uint prec = mach->req(); prec < mach->len(); prec++) {
-            Node *oop_store = mach->in(prec);  // Precedence edge
-            if (oop_store == nullptr) continue;
-            count++;
-            uint i4;
-            for (i4 = 0; i4 < last_inst; ++i4) {
-              if (block->get_node(i4) == oop_store) {
-                break;
-              }
-            }
-            // Note: This test can provide a false failure if other precedence
-            // edges have been added to the storeCMNode.
-            assert(i4 == last_inst || i4 < storeCM_idx, "CM card-mark executes before oop-store");
-          }
-          assert(count > 0, "storeCM expects at least one precedence edge");
-        }
-#endif
-        else if (!n->is_Proj()) {
+        } else if (!n->is_Proj()) {
           // Remember the beginning of the previous instruction, in case
           // it's followed by a flag-kill and a null-check.  Happens on
           // Intel all the time, with add-to-memory kind of opcodes.
@@ -1691,7 +1692,7 @@ void PhaseOutput::fill_buffer(C2_MacroAssembler* masm, uint* blk_starts) {
         node_offsets[n->_idx] = masm->offset();
       }
 #endif
-      assert(!C->failing(), "Should not reach here if failing.");
+      assert(!C->failing_internal() || C->failure_is_artificial(), "Should not reach here if failing.");
 
       // "Normal" instruction case
       DEBUG_ONLY(uint instr_offset = masm->offset());
@@ -1998,6 +1999,8 @@ void PhaseOutput::FillExceptionTables(uint cnt, uint *call_returns, uint *inct_s
 
     // Handle implicit null exception table updates
     if (n->is_MachNullCheck()) {
+      assert(n->in(1)->as_Mach()->barrier_data() == 0,
+             "Implicit null checks on memory accesses with barriers are not yet supported");
       uint block_num = block->non_connector_successor(0)->_pre_order;
       _inc_table.append(inct_starts[inct_cnt++], blk_labels[block_num].loc_pos());
       continue;
@@ -2900,7 +2903,7 @@ void Scheduling::verify_good_schedule( Block *b, const char *msg ) {
     // Now make all USEs live
     for( uint i=1; i<n->req(); i++ ) {
       Node *def = n->in(i);
-      assert(def != 0, "input edge required");
+      assert(def != nullptr, "input edge required");
       OptoReg::Name reg_lo = _regalloc->get_reg_first(def);
       OptoReg::Name reg_hi = _regalloc->get_reg_second(def);
       if( OptoReg::is_valid(reg_lo) ) {
@@ -2923,7 +2926,7 @@ void Scheduling::verify_good_schedule( Block *b, const char *msg ) {
 // Conditionally add precedence edges.  Avoid putting edges on Projs.
 static void add_prec_edge_from_to( Node *from, Node *to ) {
   if( from->is_Proj() ) {       // Put precedence edge on Proj's input
-    assert( from->req() == 1 && (from->len() == 1 || from->in(1)==0), "no precedence edges on projections" );
+    assert( from->req() == 1 && (from->len() == 1 || from->in(1) == nullptr), "no precedence edges on projections" );
     from = from->in(0);
   }
   if( from != to &&             // No cycles (for things like LD L0,[L0+4] )
@@ -3367,7 +3370,7 @@ uint PhaseOutput::scratch_emit_size(const Node* n) {
   n->emit(&masm, C->regalloc());
 
   // Emitting into the scratch buffer should not fail
-  assert (!C->failing(), "Must not have pending failure. Reason is: %s", C->failure_reason());
+  assert(!C->failing_internal() || C->failure_is_artificial(), "Must not have pending failure. Reason is: %s", C->failure_reason());
 
   if (is_branch) // Restore label.
     n->as_MachBranch()->label_set(saveL, save_bnum);
@@ -3434,6 +3437,7 @@ void PhaseOutput::install_code(ciMethod*         target,
                                      has_unsafe_access,
                                      SharedRuntime::is_wide_vector(C->max_vector_size()),
                                      C->has_monitors(),
+                                     C->has_scoped_access(),
                                      0);
 
     if (C->log() != nullptr) { // Print code cache state into compiler log
