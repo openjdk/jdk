@@ -64,7 +64,10 @@ public class StringNameTable extends Name.Table {
     public Name fromString(String string) {
         Name name = nameMap.get(string);
         if (name == null) {
-            name = new NameImpl(this, intern ? string.intern() : string);
+            if (intern) {
+                string = string.intern();
+            }
+            name = new NameImpl(this, string);
             nameMap.put(string, name);
         }
         return name;
