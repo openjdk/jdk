@@ -2846,22 +2846,20 @@ void Assembler::leal(Register dst, Address src) {
 
 #ifdef _LP64
 void Assembler::lea(Register dst, Label& L) {
-  assert(dst == r10, "invalid destination register");
-  if (L.is_bound()) {
-    const int inst_size = 7;
-    address entry = target(L);
-    int offs = checked_cast<int>((intptr_t)entry - (intptr_t)pc());
-    emit_int8((unsigned char)0x4C);
-    emit_int8((unsigned char)0x8D);
-    emit_int8((unsigned char)0x15);
-    emit_int32(offs - inst_size);
-  } else {
-    InstructionMark im(this);
-    L.add_patch_at(code(), locator());
-    emit_int8((unsigned char)0x4C);
-    emit_int8((unsigned char)0x8D);
-    emit_int8((unsigned char)0x15);
+  emit_prefix_and_int8(get_prefixq(Address(), dst), (unsigned char)0x8D);
+  if (!L.is_bound()) {
+    // Patch @0x8D opcode
+    L.add_patch_at(code(), CodeBuffer::locator(offset() - 1, sect()));
+    // Register and [rip+disp] operand
+    emit_modrm(0b00, raw_encode(dst), 0b101);
     emit_int32(0);
+  } else {
+    // Register and [rip+disp] operand
+    emit_modrm(0b00, raw_encode(dst), 0b101);
+    // Adjust displacement by sizeof lea instruction
+    int32_t disp = checked_cast<int32_t>(target(L) - (pc() + sizeof(int32_t)));
+    assert(is_simm32(disp), "must be 32bit offset [rip+offset]");
+    emit_int32(disp);
   }
 }
 #endif

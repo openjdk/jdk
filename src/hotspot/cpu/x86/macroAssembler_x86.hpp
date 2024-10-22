@@ -112,7 +112,7 @@ class MacroAssembler: public Assembler {
         (op & 0xF0) == 0x70 /* short jcc */ ||
         (op == 0x0F && (branch[1] & 0xF0) == 0x80) /* jcc */ ||
         (op == 0xC7 && branch[1] == 0xF8) /* xbegin */ ||
-        (op == 0x4C && branch[1] == 0x8D && branch[2] == 0x15) /* lea */,
+        (op == 0x8D) /* lea */,
         "Invalid opcode at patch point");
 
     if (op == 0xEB || (op & 0xF0) == 0x70) {
@@ -123,7 +123,7 @@ class MacroAssembler: public Assembler {
                 file == nullptr ? "<null>" : file, line);
       *disp = (char)imm8;
     } else {
-      int* disp = (int*) &branch[(op == 0x4C) ? 3 : (op == 0x0F || op == 0xC7) ? 2 : 1];
+      int* disp = (int*) &branch[(op == 0x0F || op == 0xC7 || op == 0x8D) ? 2 : 1];
       int imm32 = checked_cast<int>(target - (address) &disp[1]);
       *disp = imm32;
     }
