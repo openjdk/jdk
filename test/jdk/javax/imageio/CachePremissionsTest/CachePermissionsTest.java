@@ -25,8 +25,8 @@
  * @test
  * @bug     6684104
  * @summary Test verifies that ImageIO uses cache if requested.
- * @run     main/othervm CachePermissions true
- * @run     main/othervm CachePermissions false
+ * @run     main/othervm CachePermissionsTest true
+ * @run     main/othervm CachePermissionsTest false
  */
 
 import java.io.IOException;
