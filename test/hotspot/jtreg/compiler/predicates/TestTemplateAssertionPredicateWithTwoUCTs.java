@@ -25,7 +25,7 @@
 /*
  * @test
  * @bug 8342287
- * @summary Test that a fail path projection of a Template Assertion Predicate is not treated as success path projection
+ * @summary Test that a fail path projection of a Template Assertion Predicate is not treated as success path projection.
  * @run main/othervm -XX:-TieredCompilation -Xbatch
  *                   -XX:CompileCommand=compileonly,compiler.predicates.TestTemplateAssertionPredicateWithTwoUCTs::test
  *                   compiler.predicates.TestTemplateAssertionPredicateWithTwoUCTs
@@ -43,7 +43,7 @@ public class TestTemplateAssertionPredicateWithTwoUCTs {
     }
 
     static void test() {
-        int lArr[][] = new int[100][1];
+        int[][] lArr = new int[100][1];
         for (int i14 = 5; i14 < 273; ++i14) {
             int i16 = 1;
             while (++i16 < 94) {
@@ -58,4 +58,3 @@ public class TestTemplateAssertionPredicateWithTwoUCTs {
         }
     }
 }
-
