@@ -191,7 +191,7 @@ public class LinuxRpmBundler extends LinuxPackageBundler {
                 TOOL_RPMBUILD,
                 "-bb", specFile(workshop, pkg).toAbsolutePath().toString(),
                 "--define", String.format("%%_sourcedir %s",
-                        workshop.appImageDir()),
+                        workshop.appImageDir().toAbsolutePath()),
                 // save result to output dir
                 "--define", String.format("%%_rpmdir %s", rpmFile.getParent()),
                 // do not use other system directories to build as current user
