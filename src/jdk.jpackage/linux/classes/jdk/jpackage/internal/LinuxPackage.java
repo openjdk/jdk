@@ -27,7 +27,6 @@ package jdk.jpackage.internal;
 import java.nio.file.Path;
 import java.text.MessageFormat;
 import java.util.Optional;
-import java.util.Set;
 import java.util.regex.Pattern;
 
 interface LinuxPackage extends Package {
