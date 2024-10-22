@@ -552,8 +552,11 @@ public:
     ShenandoahHeap* heap = ShenandoahHeap::heap();
     ShenandoahMarkingContext* const ctx = heap->marking_context();
     while (region != nullptr) {
-      if (heap->is_bitmap_slice_committed(region)) {
-        ctx->clear_bitmap(region);
+      {
+        ShenandoahHeapLocker locker(heap->lock());
+        if (heap->is_bitmap_slice_committed(region)) {
+          ctx->clear_bitmap(region);
+        }
       }
       region = _regions.next();
     }

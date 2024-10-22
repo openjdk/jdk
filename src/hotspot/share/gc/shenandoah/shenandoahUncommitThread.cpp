@@ -63,7 +63,7 @@ void ShenandoahUncommitThread::run_service() {
         last_shrink_time = current;
       }
     }
-    MonitorLocker locker(&_lock);
+    MonitorLocker locker(&_lock, Mutex::_no_safepoint_check_flag);
     locker.wait((int64_t )shrink_period);
   }
 }
@@ -89,14 +89,14 @@ bool ShenandoahUncommitThread::has_work(double shrink_before, size_t shrink_unti
 
 void ShenandoahUncommitThread::notify_soft_max_changed() {
   if (_soft_max_changed.try_set()) {
-    MonitorLocker locker(&_lock);
+    MonitorLocker locker(&_lock, Mutex::_no_safepoint_check_flag);
     locker.notify_all();
   }
 }
 
 void ShenandoahUncommitThread::notify_explicit_gc_requested() {
   if (_explicit_gc_requested.try_set()) {
-    MonitorLocker locker(&_lock);
+    MonitorLocker locker(&_lock, Mutex::_no_safepoint_check_flag);
     locker.notify_all();
   }
 }
@@ -105,8 +105,7 @@ void ShenandoahUncommitThread::uncommit(double shrink_before, size_t shrink_unti
   assert (ShenandoahUncommit, "should be enabled");
 
   EventMark em("Concurrent uncommit");
-  log_info(gc)("Uncommit regions empty before: %.3f, until committed is less than: " PROPERFMT,
-          shrink_before, PROPERFMTARGS(shrink_until + ShenandoahHeapRegion::region_size_bytes()));
+  double start = os::elapsedTime();
 
   // Application allocates from the beginning of the heap, and GC allocates at
   // the end of it. It is more efficient to uncommit from the end, so that applications
@@ -116,6 +115,7 @@ void ShenandoahUncommitThread::uncommit(double shrink_before, size_t shrink_unti
   for (size_t i = _heap->num_regions(); i > 0; i--) { // care about size_t underflow
     ShenandoahHeapRegion* r = _heap->get_region(i - 1);
     if (r->is_empty_committed() && (r->empty_time() < shrink_before)) {
+      SuspendibleThreadSetJoiner sts_joiner;
       ShenandoahHeapLocker locker(_heap->lock());
       if (r->is_empty_committed()) {
         if (_heap->committed() < shrink_until + ShenandoahHeapRegion::region_size_bytes()) {
@@ -130,7 +130,8 @@ void ShenandoahUncommitThread::uncommit(double shrink_before, size_t shrink_unti
   }
 
   if (count > 0) {
-    log_info(gc)("Uncommitted " SIZE_FORMAT " regions", count);
     _heap->notify_heap_changed();
+    double elapsed = os::elapsedTime() - start;
+    log_info(gc)("Uncommitted " SIZE_FORMAT " regions, in %.3fs", count, elapsed);
   }
 }
