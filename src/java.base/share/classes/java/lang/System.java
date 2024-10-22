@@ -147,7 +147,7 @@ public final class System {
      * corresponds to display output or another output destination
      * specified by the host environment or user. The encoding used
      * in the conversion from characters to bytes is equivalent to
-     * <a href="#stdout.encoding">stdout.encoding</a>.
+     * {@link ##stdout.encoding stdout.encoding}.
      * <p>
      * For simple stand-alone Java applications, a typical way to write
      * a line of output data is:
@@ -167,7 +167,7 @@ public final class System {
      * @see     java.io.PrintStream#println(long)
      * @see     java.io.PrintStream#println(java.lang.Object)
      * @see     java.io.PrintStream#println(java.lang.String)
-     * @see     <a href="#stdout.encoding">stdout.encoding</a>
+     * @see     ##stdout.encoding stdout.encoding
      */
     public static final PrintStream out = null;
 
@@ -183,11 +183,9 @@ public final class System {
      * variable {@code out}, has been redirected to a file or other
      * destination that is typically not continuously monitored.
      * The encoding used in the conversion from characters to bytes is
-     * equivalent to {@link Console#charset()} if the {@code Console}
-     * exists, <a href="#stderr.encoding">stderr.encoding</a> otherwise.
+     * equivalent to {@link ##stderr.encoding stderr.encoding}.
      *
-     * @see     Console#charset()
-     * @see     <a href="#stderr.encoding">stderr.encoding</a>
+     * @see     ##stderr.encoding stderr.encoding
      */
     public static final PrintStream err = null;
 
