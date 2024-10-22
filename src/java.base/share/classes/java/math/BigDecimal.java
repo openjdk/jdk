@@ -2290,12 +2290,12 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
 
     /**
      * Assumes {@code (precision() <= maxPrecision || maxPrecision == 0) && this != 0}.
-     * {@code maxPrecision == 0} means that the result can have arbitrary precision.
      * @param preferredScale the scale to reach
-     * @param maxPrecision the largest precision the result can have
-     * @return a BigDecimal numerically equivalent to this, whose precision
+     * @param maxPrecision the largest precision the result can have.
+     *        {@code maxPrecision == 0} means that the result can have arbitrary precision.
+     * @return a BigDecimal numerically equivalent to {@code this}, whose precision
      *         does not exceed {@code maxPrecision} and whose scale is the closest
-     *         to {@code preferredScale}
+     *         to {@code preferredScale}.
      */
     private BigDecimal adjustToPreferredScale(int preferredScale, int maxPrecision) {
         BigDecimal result = this;
