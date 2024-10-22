@@ -769,19 +769,14 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
         }
     }
 
-    private static boolean isXcodeDevToolsInstalled() throws IOException {
-        ProcessBuilder pb = new ProcessBuilder("/usr/bin/xcrun", "--help");
-        Process p = pb.start();
+    private static boolean isXcodeDevToolsInstalled() {
         try {
-            int code = p.waitFor();
-            if (code == 0) {
-                return true;
-            }
-        } catch (InterruptedException e) {
-            Log.error(e.getMessage());
+            Executor.of("/usr/bin/xcrun", "--help").executeExpectSuccess();
+        } catch (IOException e) {
+            return false;
         }
 
-        return false;
+        return true;
     }
 
     static void signAppBundle(

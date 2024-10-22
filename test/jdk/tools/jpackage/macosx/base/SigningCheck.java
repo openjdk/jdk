@@ -91,16 +91,10 @@ public class SigningCheck {
     }
 
     public static void isXcodeDevToolsInstalled() {
-        ProcessBuilder pb = new ProcessBuilder("/usr/bin/xcrun", "--help");
-        try {
-            Process p = pb.start();
-            int code = p.waitFor();
-            if (code != 0) {
-                TKit.throwSkippedException("Missing Xcode with command line " +
-                        "developer tools");
-            }
-        } catch (IOException | InterruptedException ex) {
-            throw new RuntimeException(ex);
+        int code = Executor.of("/usr/bin/xcrun", "--help")
+                .executeWithoutExitCodeCheck().getExitCode();
+        if (code != 0) {
+            TKit.throwSkippedException("Missing Xcode with command line developer tools");
         }
     }
 
