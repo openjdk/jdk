@@ -28,8 +28,12 @@ package jdk.internal.vm.annotation;
 import java.lang.annotation.*;
 
 /**
- * A method is annotated as "jvmti mount transition" if it starts
- * or ends virtual thread mount state transition (VTMS transition).
+ * A method may be annotated as "jvmti mount transition" to hint
+ * it is desirable to omit it from JVMTI stack traces.
+ * Normally, a method is annotated as "jvmti mount transition" if it starts
+ * or ends virtual thread mount state transition (VTMS transition), so that
+ * the thread identity is not clear or different at method entry and exit.
+ * Specifically, it is used for all the VirtualThread notifyJvmti* methods.
  * The Continuation yield and yield0 frames normally are in VTMS transition
  * but can be found out of transition in an unmounted virtual thread.
  * This inconsistency is the reason why they also need this annotation.
