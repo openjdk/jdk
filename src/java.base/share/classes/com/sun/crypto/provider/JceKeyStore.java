@@ -702,15 +702,13 @@ public final class JceKeyStore extends KeyStoreSpi {
                 return;
 
             if (debug != null) {
-                if (stream instanceof FileInputStream) {
-                    keystorePath = SharedSecrets
-                                    .getJavaIOFileInputStreamAccess()
-                                    .getPath((FileInputStream) stream);
-                    if (keystorePath != null) {
-                        debug.println("JceKeyStore: Loading \"" + keystorePath.substring(
-                            keystorePath.lastIndexOf(File.separator) + 1)
-                            + "\" keystore");
-                    }
+                keystorePath = SharedSecrets
+                                .getJavaIOInputStreamAccess()
+                                .getPath(stream);
+                if (keystorePath != null) {
+                    debug.println("JceKeyStore: Loading \"" + keystorePath.substring(
+                        keystorePath.lastIndexOf(File.separator) + 1)
+                        + "\" keystore");
                 }
             }
 

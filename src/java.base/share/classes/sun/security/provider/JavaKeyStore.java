@@ -672,15 +672,13 @@ public abstract sealed class JavaKeyStore extends KeyStoreSpi {
             }
 
             if (debug != null) {
-                if (stream instanceof FileInputStream) {
-                    keystorePath = SharedSecrets
-                                    .getJavaIOFileInputStreamAccess()
-                                    .getPath((FileInputStream) stream);
-                    if (keystorePath != null) {
-                        debug.println("JavaKeyStore: Loading \"" + keystorePath.substring(
-                            keystorePath.lastIndexOf(File.separator) + 1)
-                            + "\" keystore");
-                    }
+                keystorePath = SharedSecrets
+                                .getJavaIOInputStreamAccess()
+                                .getPath(stream);
+                if (keystorePath != null) {
+                    debug.println("JavaKeyStore: Loading \"" + keystorePath.substring(
+                        keystorePath.lastIndexOf(File.separator) + 1)
+                        + "\" keystore");
                 }
             }
             // Body format: see store method

@@ -25,6 +25,9 @@
 
 package java.io;
 
+import jdk.internal.access.JavaIOInputStreamAccess;
+import jdk.internal.access.SharedSecrets;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -54,6 +57,29 @@ public abstract class InputStream implements Closeable {
     private static final int MAX_SKIP_BUFFER_SIZE = 2048;
 
     private static final int DEFAULT_BUFFER_SIZE = 16384;
+
+    // Set up JavaIOInputStreamAccess in SharedSecrets
+    static {
+        SharedSecrets.setJavaIOInputStreamAccess(
+            new JavaIOInputStreamAccess() {
+                public String getPath(InputStream is) {
+                    if (is instanceof FileInputStream) {
+                        return SharedSecrets
+                                .getJavaIOFileInputStreamAccess()
+                                .getPath((FileInputStream) is);
+                    } else if (is instanceof FilterInputStream fis) {
+                        if ((fis.in != null) &&
+                                (fis.in instanceof FileInputStream)) {
+                            return SharedSecrets
+                                    .getJavaIOFileInputStreamAccess()
+                                    .getPath((FileInputStream) (fis.in));
+                        }
+                    }
+                    return null;
+                }
+            }
+        );
+    }
 
     /**
      * Constructor for subclasses to call.

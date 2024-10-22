@@ -808,7 +808,7 @@ public class KeyStore {
         }
     }
 
-    // Set up JavaIOFileInputStreamAccess in SharedSecrets
+    // Set up JavaIOInputStreamAccess in SharedSecrets
     static {
         SharedSecrets.setJavaSecurityKeyStoreAccess(
                 new JavaSecurityKeyStoreAccess() {
@@ -1512,11 +1512,9 @@ public class KeyStore {
     public final void load(InputStream stream, char[] password)
         throws IOException, NoSuchAlgorithmException, CertificateException
     {
-        if (stream instanceof FileInputStream) {
-            keystorePath = SharedSecrets
-                    .getJavaIOFileInputStreamAccess()
-                    .getPath((FileInputStream) stream);
-        }
+        keystorePath = SharedSecrets
+                .getJavaIOInputStreamAccess()
+                .getPath(stream);
         keyStoreSpi.engineLoad(stream, password);
         initialized = true;
     }
