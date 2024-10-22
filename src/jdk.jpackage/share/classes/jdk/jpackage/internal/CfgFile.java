@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,71 +25,56 @@
 package jdk.jpackage.internal;
 
 import java.io.IOException;
-import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Stream;
-import static jdk.jpackage.internal.StandardBundlerParam.LAUNCHER_DATA;
-import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
-import static jdk.jpackage.internal.StandardBundlerParam.JAVA_OPTIONS;
-import static jdk.jpackage.internal.StandardBundlerParam.ARGUMENTS;
-import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
+
 
 /**
  * App launcher's config file.
  */
 final class CfgFile {
-    CfgFile() {
-        appLayout = ApplicationLayout.platformAppImage();
+    CfgFile(Application app, Launcher launcher) {
+        startupInfo = launcher.startupInfo();
+        executableName = launcher.executableName();
+        version = app.version();
     }
 
-    CfgFile initFromParams(Map<String, ? super Object> params) {
-        launcherData = LAUNCHER_DATA.fetchFrom(params);
-        launcherName = APP_NAME.fetchFrom(params);
-        javaOptions = JAVA_OPTIONS.fetchFrom(params);
-        arguments = ARGUMENTS.fetchFrom(params);
-        version = VERSION.fetchFrom(params);
-        return this;
-    }
-
-    void create(Path appImage) throws IOException {
+    void create(ApplicationLayout unresolvedAppLayout, ApplicationLayout appLayout) throws IOException {
         List<Map.Entry<String, Object>> content = new ArrayList<>();
 
-        ApplicationLayout appCfgLayout = createAppCfgLayout();
+        ApplicationLayout appCfgLayout = createAppCfgLayout(unresolvedAppLayout);
 
         content.add(Map.entry("[Application]", SECTION_TAG));
 
-        if (launcherData.isModular()) {
-            content.add(Map.entry("app.mainmodule", launcherData.moduleName()
-                    + "/" + launcherData.qualifiedClassName()));
+        if (startupInfo instanceof LauncherModularStartupInfo modularStartupInfo) {
+            content.add(Map.entry("app.mainmodule", modularStartupInfo.moduleName()
+                    + "/" + startupInfo.qualifiedClassName()));
+        } else if (startupInfo instanceof LauncherJarStartupInfo jarStartupInfo) {
+            Path mainJarPath = appCfgLayout.appDirectory().resolve(
+                    jarStartupInfo.jarPath().getFileName());
+
+            if (jarStartupInfo.isClassNameFromMainJar()) {
+                content.add(Map.entry("app.mainjar", mainJarPath));
+            } else {
+                content.add(Map.entry("app.classpath", mainJarPath));
+            }
+
+            if (!jarStartupInfo.isClassNameFromMainJar()) {
+                content.add(Map.entry("app.mainclass", startupInfo.qualifiedClassName()));
+            }
         } else {
-            if (launcherData.mainJarName() != null) {
-                Path mainJarPath = appCfgLayout.appDirectory().resolve(
-                        launcherData.mainJarName());
-
-                if (launcherData.isClassNameFromMainJar()) {
-                    content.add(Map.entry("app.mainjar", mainJarPath));
-                } else {
-                    content.add(Map.entry("app.classpath", mainJarPath));
-                }
-            }
-
-            if (!launcherData.isClassNameFromMainJar()) {
-                content.add(Map.entry("app.mainclass",
-                        launcherData.qualifiedClassName()));
-            }
+            throw new UnsupportedOperationException();
         }
 
-        for (var value : launcherData.classPath()) {
+        for (var value : Optional.ofNullable(startupInfo.classPath()).orElseGet(List::of)) {
             content.add(Map.entry("app.classpath",
                     appCfgLayout.appDirectory().resolve(value).toString()));
         }
-
-        ApplicationLayout appImagelayout = appLayout.resolveAt(appImage);
-        Path modsDir = appImagelayout.appModsDirectory();
 
         content.add(Map.entry("[JavaOptions]", SECTION_TAG));
 
@@ -98,17 +83,17 @@ final class CfgFile {
                 "java-options", "-Djpackage.app-version=" + version));
 
         // add user supplied java options if there are any
-        for (var value : javaOptions) {
+        for (var value : Optional.ofNullable(startupInfo.javaOptions()).orElseGet(List::of)) {
             content.add(Map.entry("java-options", value));
         }
 
         // add module path if there is one
-        if (Files.isDirectory(modsDir)) {
+        if (Files.isDirectory(appLayout.appModsDirectory())) {
             content.add(Map.entry("java-options", "--module-path"));
-            content.add(Map.entry("java-options",
-                    appCfgLayout.appModsDirectory()));
+            content.add(Map.entry("java-options", appCfgLayout.appModsDirectory()));
         }
 
+        var arguments = Optional.ofNullable(startupInfo.defaultParameters()).orElseGet(List::of);
         if (!arguments.isEmpty()) {
             content.add(Map.entry("[ArgOptions]", SECTION_TAG));
             for (var value : arguments) {
@@ -116,8 +101,8 @@ final class CfgFile {
             }
         }
 
-        Path cfgFile = appImagelayout.appDirectory().resolve(launcherName + ".cfg");
-        Files.createDirectories(IOUtils.getParent(cfgFile));
+        Path cfgFile = appLayout.appDirectory().resolve(IOUtils.replaceSuffix(executableName, ".cfg"));
+        Files.createDirectories(cfgFile.getParent());
 
         boolean[] addLineBreakAtSection = new boolean[1];
         Stream<String> lines = content.stream().map(entry -> {
@@ -133,7 +118,7 @@ final class CfgFile {
         Files.write(cfgFile, (Iterable<String>) lines::iterator);
     }
 
-    private ApplicationLayout createAppCfgLayout() {
+    private ApplicationLayout createAppCfgLayout(ApplicationLayout appLayout) {
         ApplicationLayout appCfgLayout = appLayout.resolveAt(Path.of("$ROOTDIR"));
         appCfgLayout.pathGroup().setPath(ApplicationLayout.PathRole.APP,
                 Path.of("$APPDIR"));
@@ -142,12 +127,9 @@ final class CfgFile {
         return appCfgLayout;
     }
 
-    private String launcherName;
-    private String version;
-    private LauncherData launcherData;
-    List<String> arguments;
-    List<String> javaOptions;
-    private final ApplicationLayout appLayout;
+    private final LauncherStartupInfo startupInfo;
+    private final String version;
+    private final Path executableName;
 
     private static final Object SECTION_TAG = new Object();
 }

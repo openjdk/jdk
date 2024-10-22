@@ -31,10 +31,11 @@ import java.nio.file.Path;
 import java.util.Map;
 import java.util.List;
 import static jdk.jpackage.internal.OverridableResource.createResource;
-import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
 import static jdk.jpackage.internal.StandardBundlerParam.ICON;
 import static jdk.jpackage.internal.StandardBundlerParam.SOURCE_DIR;
 import static jdk.jpackage.internal.StandardBundlerParam.APP_CONTENT;
+import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
+import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
 import jdk.jpackage.internal.resources.ResourceLocator;
 
 /*
@@ -62,7 +63,22 @@ public abstract class AbstractAppImageBuilder {
 
     protected void writeCfgFile(Map<String, ? super Object> params) throws
             IOException {
-        new CfgFile().initFromParams(params).create(root);
+        new CfgFile(new Application.Unsupported() {
+            @Override
+            public String version() {
+                return VERSION.fetchFrom(params);
+            }
+        }, new Launcher.Unsupported() {
+            @Override
+            public LauncherStartupInfo startupInfo() {
+                return LauncherStartupInfoFromParams.create(params);
+            }
+
+            @Override
+            public String name() {
+                return APP_NAME.fetchFrom(params);
+            }
+        }).create(ApplicationLayout.platformAppImage(), appLayout);
     }
 
     ApplicationLayout getAppLayout() {
@@ -79,10 +95,10 @@ public abstract class AbstractAppImageBuilder {
 
         AppImageFile.save(root, params);
 
-        List<String> items = APP_CONTENT.fetchFrom(params);
-        for (String item : items) {
-            IOUtils.copyRecursive(Path.of(item),
-                appLayout.contentDirectory().resolve(Path.of(item).getFileName()));
+        List<Path> items = APP_CONTENT.fetchFrom(params);
+        for (Path item : items) {
+            IOUtils.copyRecursive(item,
+                appLayout.contentDirectory().resolve(item.getFileName()));
         }
     }
 
