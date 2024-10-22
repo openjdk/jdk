@@ -58,7 +58,7 @@ interface RuntimeBuilder {
             Path dest = appLayout.appModsDirectory();
 
             for (Path mp : modulePath) {
-                if (!defaultModulePath.contains(mp)) {
+                if (!defaultModulePath.contains(mp.toAbsolutePath())) {
                     IOUtils.copyRecursive(mp, dest);
                 }
             }
