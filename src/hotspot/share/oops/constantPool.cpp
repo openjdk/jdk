@@ -364,7 +364,7 @@ objArrayOop ConstantPool::prepare_resolved_references_for_archiving() {
   return rr;
 }
 
-void ConstantPool::find_archivable_hidden_classes() {
+void ConstantPool::find_required_hidden_classes() {
   if (_cache == nullptr) {
     return;
   }
@@ -385,7 +385,7 @@ void ConstantPool::find_archivable_hidden_classes() {
   if (rr != nullptr) {
     iterate_archivable_resolved_references([&](int rr_index) {
       oop obj = rr->obj_at(rr_index);
-      HeapShared::find_archivable_hidden_classes_in_object(obj);
+      HeapShared::find_required_hidden_classes_in_object(obj);
     });
   }
 }

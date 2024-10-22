@@ -194,11 +194,12 @@ DumpTimeClassInfo* SystemDictionaryShared::get_info_locked(InstanceKlass* k) {
   return info;
 }
 
-void SystemDictionaryShared::mark_required_class(InstanceKlass* k) {
+void SystemDictionaryShared::mark_required_hidden_class(InstanceKlass* k) {
+  assert(k->is_hidden(), "sanity");
   DumpTimeClassInfo* info = _dumptime_table->get(k);
   ResourceMark rm;
   if (info != nullptr) {
-    info->set_is_required();
+    info->set_is_required_hidden_class();
   }
 }
 
@@ -647,7 +648,7 @@ public:
 
 void SystemDictionaryShared::scan_constant_pool(InstanceKlass* k) {
   if (CDSConfig::is_dumping_invokedynamic()) {
-    k->constants()->find_archivable_hidden_classes();
+    k->constants()->find_required_hidden_classes();
   }
 }
 
@@ -663,7 +664,7 @@ bool SystemDictionaryShared::should_hidden_class_be_archived(InstanceKlass* k) {
     }
 
     DumpTimeClassInfo* info = _dumptime_table->get(k);
-    if (info != nullptr && info->is_required()) {
+    if (info != nullptr && info->is_required_hidden_class()) {
       return true;
     }
   }
@@ -672,7 +673,7 @@ bool SystemDictionaryShared::should_hidden_class_be_archived(InstanceKlass* k) {
 }
 
 // Returns true if the class should be excluded. This can be called before
-// SystemDictionaryShared::check_excluded_classes().
+// SystemDictionaryShared::find_all_archivable_classes().
 bool SystemDictionaryShared::check_for_exclusion(Klass* k) {
   assert(CDSConfig::is_dumping_archive(), "sanity");
 
@@ -708,9 +709,9 @@ bool SystemDictionaryShared::check_for_exclusion(Klass* k) {
 }
 
 void SystemDictionaryShared::find_all_archivable_classes() {
-  HeapShared::start_finding_archivable_hidden_classes();
+  HeapShared::start_finding_required_hidden_classes();
   find_all_archivable_classes_impl();
-  HeapShared::end_finding_archivable_hidden_classes();
+  HeapShared::end_finding_required_hidden_classes();
 }
 
 // Iterate over all the classes in _dumptime_table, marking the ones that must be
@@ -720,7 +721,7 @@ void SystemDictionaryShared::find_all_archivable_classes() {
 //     SystemDictionaryShared::check_for_exclusion().
 // (b) For hidden classes, we only archive those that are required (i.e., they are
 //     referenced by Java objects (such as CallSites) that are reachable from
-//     ConstantPools.
+//     ConstantPools). This needs help from HeapShared.
 void SystemDictionaryShared::find_all_archivable_classes_impl() {
   assert(!class_loading_may_happen(), "class loading must be disabled");
   assert_lock_strong(DumpTimeTable_lock);
@@ -757,7 +758,7 @@ void SystemDictionaryShared::find_all_archivable_classes_impl() {
       if (k->is_hidden() && should_hidden_class_be_archived(k)) {
         SystemDictionaryShared::check_for_exclusion(k, &info);
         if (info.is_excluded()) {
-          guarantee(!info.is_required(), "A required hidden class cannot be marked as excluded");
+          guarantee(!info.is_required_hidden_class(), "A required hidden class cannot be marked as excluded");
         } else if (!info.has_scanned_constant_pool()) {
           scan_constant_pool(k);
           info.set_has_scanned_constant_pool();
@@ -1303,7 +1304,7 @@ public:
     // In static dump, info._proxy_klasses->at(0) is already relocated to point to the archived class
     // (not the original class).
     //
-    // The following check has been moved to SystemDictionaryShared::check_excluded_classes(), which
+    // The following check has been moved to SystemDictionaryShared::find_all_archivable_classes(), which
     // happens before the classes are copied.
     //
     // if (SystemDictionaryShared::is_excluded_class(info._proxy_klasses->at(0))) {

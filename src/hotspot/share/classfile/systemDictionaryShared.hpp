@@ -205,7 +205,7 @@ private:
 
 public:
   static bool should_hidden_class_be_archived(InstanceKlass* k);
-  static void mark_required_class(InstanceKlass* k);
+  static void mark_required_hidden_class(InstanceKlass* k);
   static bool is_hidden_lambda_proxy(InstanceKlass* ik);
   static bool is_early_klass(InstanceKlass* k);   // Was k loaded while JvmtiExport::is_early_phase()==true
   static bool has_archived_enum_objs(InstanceKlass* ik);

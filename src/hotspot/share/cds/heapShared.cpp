@@ -647,7 +647,7 @@ void HeapShared::set_has_native_pointers(oop src_obj) {
   info->set_has_native_pointers();
 }
 
-void HeapShared::start_finding_archivable_hidden_classes() {
+void HeapShared::start_finding_required_hidden_classes() {
   if (!CDSConfig::is_dumping_invokedynamic()) {
     return;
   }
@@ -655,13 +655,18 @@ void HeapShared::start_finding_archivable_hidden_classes() {
 
   init_seen_objects_table();
 
-  find_archivable_hidden_classes_helper(archive_subgraph_entry_fields);
+  // We first scan the objects that are known to be archived (from the archive_subgraph
+  // tables)
+  find_required_hidden_classes_helper(archive_subgraph_entry_fields);
   if (CDSConfig::is_dumping_full_module_graph()) {
-    find_archivable_hidden_classes_helper(fmg_archive_subgraph_entry_fields);
+    find_required_hidden_classes_helper(fmg_archive_subgraph_entry_fields);
   }
+
+  // Later, SystemDictionaryShared::find_all_archivable_classes_impl() will start
+  // scanning the constant pools of all classes that it decides to archive.
 }
 
-void HeapShared::end_finding_archivable_hidden_classes() {
+void HeapShared::end_finding_required_hidden_classes() {
   if (!CDSConfig::is_dumping_invokedynamic()) {
     return;
   }
@@ -670,7 +675,7 @@ void HeapShared::end_finding_archivable_hidden_classes() {
   delete_seen_objects_table();
 }
 
-void HeapShared::find_archivable_hidden_classes_helper(ArchivableStaticFieldInfo fields[]) {
+void HeapShared::find_required_hidden_classes_helper(ArchivableStaticFieldInfo fields[]) {
   if (!CDSConfig::is_dumping_heap()) {
     return;
   }
@@ -687,13 +692,13 @@ void HeapShared::find_archivable_hidden_classes_helper(ArchivableStaticFieldInfo
       oop m = k->java_mirror();
       oop o = m->obj_field(f->offset);
       if (o != nullptr) {
-        find_archivable_hidden_classes_in_object(o);
+        find_required_hidden_classes_in_object(o);
       }
     }
   }
 }
 
-class HeapShared::FindHiddenClassesOopClosure: public BasicOopIterateClosure {
+class HeapShared::FindRequiredHiddenClassesOopClosure: public BasicOopIterateClosure {
   GrowableArray<oop> _stack;
   template <class T> void do_oop_work(T *p) {
     // Recurse on a GrowableArray to avoid overflowing the C stack.
@@ -705,10 +710,10 @@ class HeapShared::FindHiddenClassesOopClosure: public BasicOopIterateClosure {
 
  public:
 
-  void do_oop(narrowOop *p) { FindHiddenClassesOopClosure::do_oop_work(p); }
-  void do_oop(      oop *p) { FindHiddenClassesOopClosure::do_oop_work(p); }
+  void do_oop(narrowOop *p) { FindRequiredHiddenClassesOopClosure::do_oop_work(p); }
+  void do_oop(      oop *p) { FindRequiredHiddenClassesOopClosure::do_oop_work(p); }
 
-  FindHiddenClassesOopClosure(oop o) {
+  FindRequiredHiddenClassesOopClosure(oop o) {
     _stack.append(o);
   }
   oop pop() {
@@ -720,23 +725,32 @@ class HeapShared::FindHiddenClassesOopClosure: public BasicOopIterateClosure {
   }
 };
 
-void HeapShared::find_archivable_hidden_classes_in_object(oop root) {
+void HeapShared::find_required_hidden_classes_in_object(oop root) {
   ResourceMark rm;
-  FindHiddenClassesOopClosure c(root);
+  FindRequiredHiddenClassesOopClosure c(root);
   oop o;
   while ((o = c.pop()) != nullptr) {
     if (!has_been_seen_during_subgraph_recording(o)) {
       set_has_been_seen_during_subgraph_recording(o);
 
+      // These are all the cases we care about for now:
+      // - an object points to a mirror of an hidden class
+      // - an object points to a method declared in a hidden class
       if (java_lang_Class::is_instance(o)) {
         Klass* k = java_lang_Class::as_Klass(o);
         if (k != nullptr && k->is_instance_klass()) {
-          SystemDictionaryShared::mark_required_class(InstanceKlass::cast(k));
+          InstanceKlass* ik = InstanceKlass::cast(k);
+          if (ik->is_hidden()) {
+            SystemDictionaryShared::mark_required_hidden_class(ik);
+          }
         }
       } else if (java_lang_invoke_ResolvedMethodName::is_instance(o)) {
         Method* m = java_lang_invoke_ResolvedMethodName::vmtarget(o);
         if (m != nullptr && m->method_holder() != nullptr) {
-          SystemDictionaryShared::mark_required_class(m->method_holder());
+          InstanceKlass* ik = m->method_holder();
+          if (ik->is_hidden()) {
+            SystemDictionaryShared::mark_required_hidden_class(ik);
+          }
         }
       }
 

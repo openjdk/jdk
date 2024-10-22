@@ -166,9 +166,10 @@ public:
   static oop scratch_java_mirror(oop java_mirror) NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
   static bool is_archived_boot_layer_available(JavaThread* current) NOT_CDS_JAVA_HEAP_RETURN_(false);
 
-  static void start_finding_archivable_hidden_classes() NOT_CDS_JAVA_HEAP_RETURN;
-  static void find_archivable_hidden_classes_in_object(oop o) NOT_CDS_JAVA_HEAP_RETURN;
-  static void end_finding_archivable_hidden_classes() NOT_CDS_JAVA_HEAP_RETURN;
+  // Look for all hidden classes that are referenced by archived objects.
+  static void start_finding_required_hidden_classes() NOT_CDS_JAVA_HEAP_RETURN;
+  static void find_required_hidden_classes_in_object(oop o) NOT_CDS_JAVA_HEAP_RETURN;
+  static void end_finding_required_hidden_classes() NOT_CDS_JAVA_HEAP_RETURN;
 
 private:
 #if INCLUDE_CDS_JAVA_HEAP
@@ -254,8 +255,8 @@ private:
   static DumpTimeKlassSubGraphInfoTable* _dump_time_subgraph_info_table;
   static RunTimeKlassSubGraphInfoTable _run_time_subgraph_info_table;
 
-  class FindHiddenClassesOopClosure;
-  static void find_archivable_hidden_classes_helper(ArchivableStaticFieldInfo fields[]);
+  class FindRequiredHiddenClassesOopClosure;
+  static void find_required_hidden_classes_helper(ArchivableStaticFieldInfo fields[]);
 
   static CachedOopInfo make_cached_oop_info(oop obj);
   static ArchivedKlassSubGraphInfoRecord* archive_subgraph_info(KlassSubGraphInfo* info);

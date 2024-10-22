@@ -42,7 +42,7 @@ class DumpTimeClassInfo: public CHeapObj<mtClass> {
   bool                         _excluded;
   bool                         _is_early_klass;
   bool                         _has_checked_exclusion;
-  bool                         _is_required;
+  bool                         _is_required_hidden_class;
   bool                         _has_scanned_constant_pool;
   class DTLoaderConstraint {
     Symbol* _name;
@@ -138,7 +138,7 @@ public:
     _failed_verification = false;
     _is_archived_lambda_proxy = false;
     _has_checked_exclusion = false;
-    _is_required = false;
+    _is_required_hidden_class = false;
     _has_scanned_constant_pool = false;
     _id = -1;
     _clsfile_size = -1;
@@ -217,8 +217,8 @@ public:
   InstanceKlass* nest_host() const                  { return _nest_host; }
   void set_nest_host(InstanceKlass* nest_host)      { _nest_host = nest_host; }
 
-  bool is_required() const                          { return _is_required; }
-  void set_is_required()                            { _is_required = true; }
+  bool is_required_hidden_class() const             { return _is_required_hidden_class; }
+  void set_is_required_hidden_class()               { _is_required_hidden_class = true; }
   bool has_scanned_constant_pool() const            { return _has_scanned_constant_pool; }
   void set_has_scanned_constant_pool()              { _has_scanned_constant_pool = true; }
 
