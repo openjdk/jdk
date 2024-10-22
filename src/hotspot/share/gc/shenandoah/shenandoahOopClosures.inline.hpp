@@ -39,15 +39,15 @@ template<ShenandoahGenerationType GENERATION>
 template<class T>
 inline void ShenandoahMarkUpdateRefsClosure<GENERATION>::work(T* p) {
   // Update the location
-  _heap->update_with_forwarded(p);
+  _heap->non_conc_update_with_forwarded(p);
 
   // ...then do the usual thing
   ShenandoahMarkRefsSuperClosure::work<T, GENERATION>(p);
 }
 
 template<class T>
-inline void ShenandoahSTWUpdateRefsClosure::work(T* p) {
-  _heap->update_with_forwarded(p);
+inline void ShenandoahNonConcUpdateRefsClosure::work(T* p) {
+  _heap->non_conc_update_with_forwarded(p);
 }
 
 template<class T>
