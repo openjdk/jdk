@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 4844847
+ * @library /test/lib
  * @summary Test the Signature.update(ByteBuffer) method
  * @author Andreas Sterbenz
  * @key randomness
@@ -33,6 +34,7 @@ import java.util.*;
 import java.nio.*;
 
 import java.security.*;
+import jdk.test.lib.security.SecurityUtils;
 
 public class ByteBuffers {
 
@@ -43,8 +45,9 @@ public class ByteBuffers {
         byte[] t = new byte[n];
         random.nextBytes(t);
 
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("DSA", p);
-        kpg.initialize(2048);
+        String kpgAlgorithm = "DSA";
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance(kpgAlgorithm, p);
+        kpg.initialize(SecurityUtils.getTestKeySize(kpgAlgorithm));
         KeyPair kp = kpg.generateKeyPair();
 
         Signature sig = Signature.getInstance("SHA224withDSA", p);

@@ -55,6 +55,7 @@ import sun.security.x509.X509CertImpl;
 import sun.security.x509.X509CertInfo;
 import sun.security.x509.X509Key;
 import jdk.test.lib.hexdump.HexPrinter;
+import jdk.test.lib.security.SecurityUtils;
 
 public class SignerOrder {
 
@@ -170,7 +171,7 @@ class SimpleSigner {
         if (keyPair == null) {
             KeyPairGenerator keyGen =
                     KeyPairGenerator.getInstance(encryptionAlg);
-            keyGen.initialize(2048);
+            keyGen.initialize(SecurityUtils.getTestKeySize(encryptionAlg));
             keyPair = keyGen.generateKeyPair();
         }
         publicKey = (X509Key) keyPair.getPublic();

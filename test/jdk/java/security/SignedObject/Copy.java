@@ -26,16 +26,18 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.Signature;
 import java.security.SignedObject;
+import jdk.test.lib.security.SecurityUtils;
 
 /*
  * @test
  * @bug 8050374
+ * @library /test/lib
  * @summary Checks if a signed object is a copy of an original object
  */
 public class Copy {
 
     private static final String DSA = "DSA";
-    private static final int KEY_SIZE = 2048;
+    private static final int KEY_SIZE = SecurityUtils.getTestKeySize(DSA);
     private static final int MAGIC = 123;
 
     public static void main(String args[]) throws Exception {
