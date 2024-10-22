@@ -271,7 +271,11 @@ public class JlinkTask {
                                 .showUsage(true);
             }
             if (options.help) {
-                optionsHelper.showHelp(PROGNAME);
+                // In order to be able to show the run-time image based link
+                // capability in --help, we need to look for the delta files
+                // in jdk.jlink
+                boolean runtimeCapability = hasRuntimeImageLinkCap();
+                optionsHelper.showHelp(PROGNAME, runtimeCapability);
                 return EXIT_OK;
             }
             if (optionsHelper.shouldListPlugins()) {
@@ -606,8 +610,9 @@ public class JlinkTask {
 
     private static Path toPathLocation(ResolvedModule m) {
         Optional<URI> ouri = m.reference().location();
-        if (ouri.isEmpty())
+        if (ouri.isEmpty()) {
             throw new InternalError(m + " does not have a location");
+        }
         URI uri = ouri.get();
         return Paths.get(uri);
     }
@@ -671,8 +676,9 @@ public class JlinkTask {
                           .map(ModuleDescriptor::name)
                           .collect(Collectors.joining(", "));
 
-            if (!"".equals(im))
+            if (!"".equals(im)) {
                 log.println("WARNING: Using incubator modules: " + im);
+            }
         }
 
         Map<String, Path> mods = cf.modules().stream()
@@ -731,12 +737,12 @@ public class JlinkTask {
                                                        boolean verbose) throws IOException {
         // Catch the case where we don't have a linkable JDK runtime. If so,
         // we don't have the per module resource diffs in the modules image
-        String resourceName = String.format(DIFF_PATTERN, "java.base");
-        InputStream inStream = JlinkTask.class.getModule().getResourceAsStream(resourceName);
-        if (inStream == null) {
-            // Only linkable JDK runtimes have those resources. Abort otherwise.
-            String msg = taskHelper.getMessage("err.runtime.link.not.linkable.runtime");
-            throw new IllegalArgumentException(msg);
+        try (InputStream inStream = getDiffInputStream()) {
+            if (inStream == null) {
+                // Only linkable JDK runtimes have those resources. Abort otherwise.
+                String msg = taskHelper.getMessage("err.runtime.link.not.linkable.runtime");
+                throw new IllegalArgumentException(msg);
+            }
         }
         // Disallow jlink runs for linkable JDK runtimes with jdk.jlink included
         if (cf.findModule(JLINK_MOD_NAME).isPresent()) {
@@ -748,6 +754,28 @@ public class JlinkTask {
         // runtime
         if (log != null && verbose) {
             log.println(taskHelper.getMessage("runtime.link.info"));
+        }
+    }
+
+    private static boolean hasRuntimeImageLinkCap() {
+        try (InputStream in = getDiffInputStream()) {
+            return in != null;
+        } catch (IOException e) {
+            // fall-through
+        }
+        return false;
+    }
+
+    private static InputStream getDiffInputStream() {
+        try {
+            String resourceName = String.format(DIFF_PATTERN, "java.base");
+            return JlinkTask.class.getModule().getResourceAsStream(resourceName);
+        } catch (IOException e) {
+            if (DEBUG) {
+                System.err.println("Failed to get diff pattern resource");
+                e.printStackTrace();
+            }
+            return null;
         }
     }
 
@@ -969,8 +997,9 @@ public class JlinkTask {
                                        String header,
                                        Set<ModuleReference> modules,
                                        Map<String, Set<String>> serviceToUses) {
-        if (modules.isEmpty())
+        if (modules.isEmpty()) {
             return;
+        }
 
         // Build a map of a service type to the provider modules
         Map<String, Set<ModuleDescriptor>> providers = new HashMap<>();
