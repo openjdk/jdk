@@ -47,7 +47,7 @@ abstract public class CDSAppTester {
 
     public CDSAppTester(String name) {
         if (CDSTestUtils.DYNAMIC_DUMP) {
-            throw new jtreg.SkippedException("Tests based on CDSAppTester should be excluded when -Dtest.dynamic.cds.archive is specified");
+            throw new SkippedException("Tests based on CDSAppTester should be excluded when -Dtest.dynamic.cds.archive is specified");
         }
 
         // Old workflow
