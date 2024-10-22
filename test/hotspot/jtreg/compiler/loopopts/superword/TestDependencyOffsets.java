@@ -104,28 +104,6 @@
  */
 
 /*
- * @test id=sse4-v002-A
- * @bug 8298935 8308606 8310308 8312570 8310190
- * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
- * @requires vm.compiler2.enabled
- * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
- * @requires vm.cpu.features ~= ".*sse4.*"
- * @library /test/lib /
- * @run driver compiler.loopopts.superword.TestDependencyOffsets sse4-v002-A
- */
-
-/*
- * @test id=sse4-v002-U
- * @bug 8298935 8308606 8310308 8312570 8310190
- * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
- * @requires vm.compiler2.enabled
- * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
- * @requires vm.cpu.features ~= ".*sse4.*"
- * @library /test/lib /
- * @run driver compiler.loopopts.superword.TestDependencyOffsets sse4-v002-U
- */
-
-/*
  * @test id=avx1-v032-A
  * @bug 8298935 8308606 8310308 8312570 8310190
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
@@ -433,9 +411,6 @@ public class TestDependencyOffsets {
      * Template for the inner test class.
      */
     private static String generate(CompileFramework comp, String[] flags) {
-        for (TestDefinition test : getTests()) {
-        }
-
         return String.format("""
                import compiler.lib.ir_framework.*;
 
@@ -482,8 +457,6 @@ public class TestDependencyOffsets {
             case "sse4-v008-U" -> new String[] {"-XX:UseSSE=4", "-XX:MaxVectorSize=8", "-XX:-AlignVector"};
             case "sse4-v004-A" -> new String[] {"-XX:UseSSE=4", "-XX:MaxVectorSize=4", "-XX:+AlignVector"};
             case "sse4-v004-U" -> new String[] {"-XX:UseSSE=4", "-XX:MaxVectorSize=4", "-XX:-AlignVector"};
-            case "sse4-v002-A" -> new String[] {"-XX:UseSSE=4", "-XX:MaxVectorSize=4", "-XX:+AlignVector"};
-            case "sse4-v002-U" -> new String[] {"-XX:UseSSE=4", "-XX:MaxVectorSize=4", "-XX:-AlignVector"};
             case "avx1-v032-A" -> new String[] {"-XX:UseAVX=1", "-XX:MaxVectorSize=32", "-XX:+AlignVector"};
             case "avx1-v032-U" -> new String[] {"-XX:UseAVX=1", "-XX:MaxVectorSize=32", "-XX:-AlignVector"};
             case "avx1-v016-A" -> new String[] {"-XX:UseAVX=1", "-XX:MaxVectorSize=16", "-XX:+AlignVector"};
