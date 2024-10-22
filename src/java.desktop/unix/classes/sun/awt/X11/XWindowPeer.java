@@ -767,28 +767,12 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
             // a window is resized but the client can not tell if the window was
             // moved or not. The client should consider the position as unknown
             // and use TranslateCoordinates to find the actual position.
-            //
-            // TODO this should be the default for every case.
-            switch (runningWM) {
-                case XWM.CDE_WM:
-                case XWM.KDE2_WM:
-                case XWM.MOTIF_WM:
-                case XWM.METACITY_WM:
-                case XWM.MUTTER_WM:
-                case XWM.SAWFISH_WM:
-                case XWM.UNITY_COMPIZ_WM:
-                {
-                    Point xlocation = queryXLocation();
-                    if (log.isLoggable(PlatformLogger.Level.FINE)) {
-                        log.fine("New X location: {0}", xlocation);
-                    }
-                    if (xlocation != null) {
-                        newLocation = xlocation;
-                    }
-                    break;
-                }
-                default:
-                    break;
+            Point xlocation = queryXLocation();
+            if (log.isLoggable(PlatformLogger.Level.FINE)) {
+                log.fine("New X location: {0}", xlocation);
+            }
+            if (xlocation != null) {
+                newLocation = xlocation;
             }
         }
         return newLocation;
