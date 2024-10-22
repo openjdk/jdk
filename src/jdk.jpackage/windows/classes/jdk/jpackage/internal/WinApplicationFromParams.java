@@ -24,6 +24,7 @@
  */
 package jdk.jpackage.internal;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -36,7 +37,7 @@ import static jdk.jpackage.internal.WindowsAppImageBuilder.CONSOLE_HINT;
 
 final class WinApplicationFromParams {
 
-    private static WinApplication create(Map<String, ? super Object> params) throws ConfigException {
+    private static WinApplication create(Map<String, ? super Object> params) throws ConfigException, IOException {
         var app = ApplicationFromParams.create(params, launcherParams -> {
             var launcher = LauncherFromParams.create(launcherParams);
             boolean isConsole = CONSOLE_HINT.fetchFrom(launcherParams);

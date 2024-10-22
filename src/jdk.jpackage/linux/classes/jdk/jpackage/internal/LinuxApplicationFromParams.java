@@ -24,6 +24,7 @@
  */
 package jdk.jpackage.internal;
 
+import java.io.IOException;
 import java.util.Map;
 import java.util.stream.Stream;
 import static jdk.jpackage.internal.ApplicationFromParams.createBundlerParam;
@@ -32,7 +33,7 @@ import static jdk.jpackage.internal.StandardBundlerParam.SHORTCUT_HINT;
 
 final class LinuxApplicationFromParams {
 
-    private static LinuxApplication create(Map<String, ? super Object> params) throws ConfigException {
+    private static LinuxApplication create(Map<String, ? super Object> params) throws ConfigException, IOException {
         var app = ApplicationFromParams.create(params, launcherParams -> {
             var launcher = LauncherFromParams.create(launcherParams);
 
