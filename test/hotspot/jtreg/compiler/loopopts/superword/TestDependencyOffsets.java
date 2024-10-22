@@ -26,6 +26,7 @@
  * @bug 8298935 8308606 8310308 8312570 8310190
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @library /test/lib /
+ * @compile ../../lib/ir_framework/TestFramework.java
  * @run driver compiler.loopopts.superword.TestDependencyOffsets vanilla-A
  */
 
@@ -34,6 +35,7 @@
  * @bug 8298935 8308606 8310308 8312570 8310190
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @library /test/lib /
+ * @compile ../../lib/ir_framework/TestFramework.java
  * @run driver compiler.loopopts.superword.TestDependencyOffsets vanilla-U
  */
 
@@ -45,6 +47,7 @@
  * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
  * @requires vm.cpu.features ~= ".*sse4.*"
  * @library /test/lib /
+ * @compile ../../lib/ir_framework/TestFramework.java
  * @run driver compiler.loopopts.superword.TestDependencyOffsets sse4-v016-A
  */
 
@@ -56,6 +59,7 @@
  * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
  * @requires vm.cpu.features ~= ".*sse4.*"
  * @library /test/lib /
+ * @compile ../../lib/ir_framework/TestFramework.java
  * @run driver compiler.loopopts.superword.TestDependencyOffsets sse4-v016-U
  */
 
@@ -67,6 +71,7 @@
  * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
  * @requires vm.cpu.features ~= ".*sse4.*"
  * @library /test/lib /
+ * @compile ../../lib/ir_framework/TestFramework.java
  * @run driver compiler.loopopts.superword.TestDependencyOffsets sse4-v008-A
  */
 
@@ -78,6 +83,7 @@
  * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
  * @requires vm.cpu.features ~= ".*sse4.*"
  * @library /test/lib /
+ * @compile ../../lib/ir_framework/TestFramework.java
  * @run driver compiler.loopopts.superword.TestDependencyOffsets sse4-v008-U
  */
 
@@ -89,6 +95,7 @@
  * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
  * @requires vm.cpu.features ~= ".*sse4.*"
  * @library /test/lib /
+ * @compile ../../lib/ir_framework/TestFramework.java
  * @run driver compiler.loopopts.superword.TestDependencyOffsets sse4-v004-A
  */
 
@@ -100,6 +107,7 @@
  * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
  * @requires vm.cpu.features ~= ".*sse4.*"
  * @library /test/lib /
+ * @compile ../../lib/ir_framework/TestFramework.java
  * @run driver compiler.loopopts.superword.TestDependencyOffsets sse4-v004-U
  */
 
@@ -111,6 +119,7 @@
  * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
  * @requires vm.cpu.features ~= ".*avx.*"
  * @library /test/lib /
+ * @compile ../../lib/ir_framework/TestFramework.java
  * @run driver compiler.loopopts.superword.TestDependencyOffsets avx1-v032-A
  */
 
@@ -122,6 +131,7 @@
  * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
  * @requires vm.cpu.features ~= ".*avx.*"
  * @library /test/lib /
+ * @compile ../../lib/ir_framework/TestFramework.java
  * @run driver compiler.loopopts.superword.TestDependencyOffsets avx1-v032-U
  */
 
@@ -133,6 +143,7 @@
  * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
  * @requires vm.cpu.features ~= ".*avx.*"
  * @library /test/lib /
+ * @compile ../../lib/ir_framework/TestFramework.java
  * @run driver compiler.loopopts.superword.TestDependencyOffsets avx1-v016-A
  */
 
@@ -144,6 +155,7 @@
  * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
  * @requires vm.cpu.features ~= ".*avx.*"
  * @library /test/lib /
+ * @compile ../../lib/ir_framework/TestFramework.java
  * @run driver compiler.loopopts.superword.TestDependencyOffsets avx1-v016-U
  */
 
@@ -155,6 +167,7 @@
  * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
  * @requires vm.cpu.features ~= ".*avx2.*"
  * @library /test/lib /
+ * @compile ../../lib/ir_framework/TestFramework.java
  * @run driver compiler.loopopts.superword.TestDependencyOffsets avx2-v032-A
  */
 
@@ -166,6 +179,7 @@
  * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
  * @requires vm.cpu.features ~= ".*avx2.*"
  * @library /test/lib /
+ * @compile ../../lib/ir_framework/TestFramework.java
  * @run driver compiler.loopopts.superword.TestDependencyOffsets avx2-v032-U
  */
 
@@ -177,6 +191,7 @@
  * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
  * @requires vm.cpu.features ~= ".*avx2.*"
  * @library /test/lib /
+ * @compile ../../lib/ir_framework/TestFramework.java
  * @run driver compiler.loopopts.superword.TestDependencyOffsets avx2-v016-A
  */
 
@@ -188,6 +203,7 @@
  * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
  * @requires vm.cpu.features ~= ".*avx2.*"
  * @library /test/lib /
+ * @compile ../../lib/ir_framework/TestFramework.java
  * @run driver compiler.loopopts.superword.TestDependencyOffsets avx2-v016-U
  */
 
@@ -199,6 +215,7 @@
  * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
  * @requires vm.cpu.features ~= ".*avx512.*"
  * @library /test/lib /
+ * @compile ../../lib/ir_framework/TestFramework.java
  * @run driver compiler.loopopts.superword.TestDependencyOffsets avx512-v064-A
  */
 
@@ -210,6 +227,7 @@
  * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
  * @requires vm.cpu.features ~= ".*avx512.*"
  * @library /test/lib /
+ * @compile ../../lib/ir_framework/TestFramework.java
  * @run driver compiler.loopopts.superword.TestDependencyOffsets avx512-v064-U
  */
 
@@ -221,6 +239,7 @@
  * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
  * @requires vm.cpu.features ~= ".*avx512.*"
  * @library /test/lib /
+ * @compile ../../lib/ir_framework/TestFramework.java
  * @run driver compiler.loopopts.superword.TestDependencyOffsets avx512-v032-A
  */
 
@@ -232,6 +251,7 @@
  * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
  * @requires vm.cpu.features ~= ".*avx512.*"
  * @library /test/lib /
+ * @compile ../../lib/ir_framework/TestFramework.java
  * @run driver compiler.loopopts.superword.TestDependencyOffsets avx512-v032-U
  */
 
@@ -243,6 +263,7 @@
  * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
  * @requires vm.cpu.features ~= ".*avx512bw.*"
  * @library /test/lib /
+ * @compile ../../lib/ir_framework/TestFramework.java
  * @run driver compiler.loopopts.superword.TestDependencyOffsets avx512bw-v064-A
  */
 
@@ -254,6 +275,7 @@
  * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
  * @requires vm.cpu.features ~= ".*avx512bw.*"
  * @library /test/lib /
+ * @compile ../../lib/ir_framework/TestFramework.java
  * @run driver compiler.loopopts.superword.TestDependencyOffsets avx512bw-v064-U
  */
 
@@ -265,6 +287,7 @@
  * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
  * @requires vm.cpu.features ~= ".*avx512bw.*"
  * @library /test/lib /
+ * @compile ../../lib/ir_framework/TestFramework.java
  * @run driver compiler.loopopts.superword.TestDependencyOffsets avx512bw-v032-A
  */
 
@@ -276,6 +299,7 @@
  * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
  * @requires vm.cpu.features ~= ".*avx512bw.*"
  * @library /test/lib /
+ * @compile ../../lib/ir_framework/TestFramework.java
  * @run driver compiler.loopopts.superword.TestDependencyOffsets avx512bw-v032-U
  */
 
@@ -286,6 +310,7 @@
  * @requires vm.compiler2.enabled
  * @requires (os.arch!="x86" & os.arch!="i386" & os.arch!="amd64" & os.arch!="x86_64")
  * @library /test/lib /
+ * @compile ../../lib/ir_framework/TestFramework.java
  * @run driver compiler.loopopts.superword.TestDependencyOffsets vec-v064-A
  */
 
@@ -296,6 +321,7 @@
  * @requires vm.compiler2.enabled
  * @requires (os.arch!="x86" & os.arch!="i386" & os.arch!="amd64" & os.arch!="x86_64")
  * @library /test/lib /
+ * @compile ../../lib/ir_framework/TestFramework.java
  * @run driver compiler.loopopts.superword.TestDependencyOffsets vec-v064-U
  */
 
@@ -306,6 +332,7 @@
  * @requires vm.compiler2.enabled
  * @requires (os.arch!="x86" & os.arch!="i386" & os.arch!="amd64" & os.arch!="x86_64")
  * @library /test/lib /
+ * @compile ../../lib/ir_framework/TestFramework.java
  * @run driver compiler.loopopts.superword.TestDependencyOffsets vec-v032-A
  */
 
@@ -316,6 +343,7 @@
  * @requires vm.compiler2.enabled
  * @requires (os.arch!="x86" & os.arch!="i386" & os.arch!="amd64" & os.arch!="x86_64")
  * @library /test/lib /
+ * @compile ../../lib/ir_framework/TestFramework.java
  * @run driver compiler.loopopts.superword.TestDependencyOffsets vec-v032-U
  */
 
@@ -326,6 +354,7 @@
  * @requires vm.compiler2.enabled
  * @requires (os.arch!="x86" & os.arch!="i386" & os.arch!="amd64" & os.arch!="x86_64")
  * @library /test/lib /
+ * @compile ../../lib/ir_framework/TestFramework.java
  * @run driver compiler.loopopts.superword.TestDependencyOffsets vec-v016-A
  */
 
@@ -336,6 +365,7 @@
  * @requires vm.compiler2.enabled
  * @requires (os.arch!="x86" & os.arch!="i386" & os.arch!="amd64" & os.arch!="x86_64")
  * @library /test/lib /
+ * @compile ../../lib/ir_framework/TestFramework.java
  * @run driver compiler.loopopts.superword.TestDependencyOffsets vec-v016-U
  */
 
@@ -346,6 +376,7 @@
  * @requires vm.compiler2.enabled
  * @requires (os.arch!="x86" & os.arch!="i386" & os.arch!="amd64" & os.arch!="x86_64")
  * @library /test/lib /
+ * @compile ../../lib/ir_framework/TestFramework.java
  * @run driver compiler.loopopts.superword.TestDependencyOffsets vec-v008-A
  */
 
@@ -356,6 +387,7 @@
  * @requires vm.compiler2.enabled
  * @requires (os.arch!="x86" & os.arch!="i386" & os.arch!="amd64" & os.arch!="x86_64")
  * @library /test/lib /
+ * @compile ../../lib/ir_framework/TestFramework.java
  * @run driver compiler.loopopts.superword.TestDependencyOffsets vec-v008-U
  */
 
@@ -366,6 +398,7 @@
  * @requires vm.compiler2.enabled
  * @requires (os.arch!="x86" & os.arch!="i386" & os.arch!="amd64" & os.arch!="x86_64")
  * @library /test/lib /
+ * @compile ../../lib/ir_framework/TestFramework.java
  * @run driver compiler.loopopts.superword.TestDependencyOffsets vec-v004-A
  */
 
@@ -376,6 +409,7 @@
  * @requires vm.compiler2.enabled
  * @requires (os.arch!="x86" & os.arch!="i386" & os.arch!="amd64" & os.arch!="x86_64")
  * @library /test/lib /
+ * @compile ../../lib/ir_framework/TestFramework.java
  * @run driver compiler.loopopts.superword.TestDependencyOffsets vec-v004-U
  */
 
