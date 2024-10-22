@@ -200,7 +200,7 @@ public final class Float16
      * argument.
      *
      * @implSpec
-     * The current implementation acts as this {@code Float16} were
+     * The current implementation acts as if this {@code Float16} were
      * {@linkplain #floatValue() converted} to {@code float} and then
      * the string for that {@code float} returned. This behavior is
      * expected to change to accommodate the precision of {@code
@@ -446,29 +446,29 @@ public final class Float16
         };
 
         public static Float16 float16Value(BigDecimal bd) {
-//             int scale = bd.scale();
-//             BigInteger unscaledValue = bd.unscaledValue();
+             int scale = bd.scale();
+             BigInteger unscaledValue = bd.unscaledValue();
 
-//              if (unscaledValue.abs().compareTo(BigInteger.valueOf(Long.MAX_VALUE)) <= 0) {
-//                 long intCompact = bd.longValue();
-//                 Float16 v = Float16.valueOf(intCompact);
-//                 if (scale == 0) {
-//                     return v;
-//                 }
-//                 /*
-//                  * The discussion for the double case also applies here. That is,
-//                  * the following test is precise for all long values, but here
-//                  * Long.MAX_VALUE is not an issue.
-//                  */
-//                 if (v.longValue() == intCompact) {
-//                     if (0 < scale && scale < FLOAT16_10_POW.length) {
-//                         return Float16.divide(v, FLOAT16_10_POW[scale]);
-//                     }
-//                     if (0 > scale && scale > -FLOAT16_10_POW.length) {
-//                         return Float16.multiply(v, FLOAT16_10_POW[-scale]);
-//                     }
-//                 }
-//             }
+              if (unscaledValue.abs().compareTo(BigInteger.valueOf(Long.MAX_VALUE)) <= 0) {
+                 long intCompact = unscaledValue.longValue();
+                 Float16 v = Float16.valueOf(intCompact);
+                 if (scale == 0) {
+                     return v;
+                 }
+                 /*
+                  * The discussion for the double case also applies here. That is,
+                  * the following test is precise for all long values, but here
+                  * Long.MAX_VALUE is not an issue.
+                  */
+                 if (v.longValue() == intCompact) {
+                     if (0 < scale && scale < FLOAT16_10_POW.length) {
+                         return Float16.divide(v, FLOAT16_10_POW[scale]);
+                     }
+                     if (0 > scale && scale > -FLOAT16_10_POW.length) {
+                         return Float16.multiply(v, FLOAT16_10_POW[-scale]);
+                     }
+                 }
+             }
             return fullFloat16Value(bd);
         }
 
