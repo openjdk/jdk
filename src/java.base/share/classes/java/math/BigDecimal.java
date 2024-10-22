@@ -2225,13 +2225,13 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
 
                 BigInteger sqrt;
                 long resultScale = normScale >> 1;
-                boolean increment = false;
                 if (mc.roundingMode == RoundingMode.DOWN || mc.roundingMode == RoundingMode.FLOOR) { // No need to round
                     sqrt = workingInt.sqrt();
                 } else { // Round sqrt with the specified settings
                     BigInteger[] sqrtRem = workingInt.sqrtAndRemainder();
                     sqrt = sqrtRem[0];
 
+                    boolean increment = false;
                     if (halfWay) { // half-way rounding
                         // remove the one-tenth digit
                         BigInteger[] quotRem10 = sqrt.divideAndRemainder(BigInteger.TEN);
@@ -2254,11 +2254,11 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                         if (sqrtRem[1].signum != 0 || working.compareTo(new BigDecimal(workingInt)) != 0)
                             increment = true;
                     }
+                    if (increment)
+                        sqrt = sqrt.add(1L);
                 }
 
-                result = new BigDecimal(sqrt, checkScale(sqrt, resultScale));
-                if (increment)
-                    result = result.add(result.ulp(), mc); // mc ensures no increase of precision
+                result = new BigDecimal(sqrt, checkScale(sqrt, resultScale)).round(mc); // Ensure no increase of precision
             }
 
             // Test numerical properties at full precision before any
