@@ -70,11 +70,10 @@ public interface ParameterizedType extends Type {
      * that declared this type}
      *
      * @apiNote
-     * Returns a {@link Class} object for all {@code ParameterizedType}
-     * objects from core reflection, which models types in this running VM.
-     * The return type is {@code Type} because {@code ParameterizedType}
-     * objects from other implementations may represent types not in
-     * this running VM.
+     * All {@code ParameterizedType} objects from core reflection return a
+     * {@link Class}. The static {@code Type} return type allows other
+     * implementations to represent classes and interfaces not in the current
+     * runtime.
      *
      * @since 1.5
      */
