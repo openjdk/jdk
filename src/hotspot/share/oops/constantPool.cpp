@@ -337,7 +337,7 @@ objArrayOop ConstantPool::prepare_resolved_references_for_archiving() {
     ConstantPool* src_cp = ArchiveBuilder::current()->get_source_addr(this);
     src_cp->iterate_archivable_resolved_references([&](int rr_index) {
       keep_resolved_refs.at_put(rr_index, true);
-      });
+    });
 
     objArrayOop scratch_rr = HeapShared::scratch_resolved_references(src_cp);
     Array<u2>* ref_map = reference_map();

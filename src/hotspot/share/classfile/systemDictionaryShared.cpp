@@ -659,10 +659,6 @@ bool SystemDictionaryShared::should_hidden_class_be_archived(InstanceKlass* k) {
   }
 
   if (CDSConfig::is_dumping_invokedynamic()) {
-    if (HeapShared::is_archivable_hidden_klass(k)) {
-      return true;
-    }
-
     DumpTimeClassInfo* info = _dumptime_table->get(k);
     if (info != nullptr && info->is_required_hidden_class()) {
       return true;
@@ -773,9 +769,15 @@ void SystemDictionaryShared::find_all_archivable_classes_impl() {
 
   // Now, all hidden classes that have not yet been scanned must be marked as excluded
   auto exclude_remaining_hidden = [&] (InstanceKlass* k, DumpTimeClassInfo& info) {
-    if (k->is_hidden() && !info.has_checked_exclusion()) {
+    if (k->is_hidden()) {
       SystemDictionaryShared::check_for_exclusion(k, &info);
-      guarantee(info.is_excluded(), "Must be");
+      if (CDSConfig::is_dumping_invokedynamic()) {
+        if (should_hidden_class_be_archived(k)) {
+          guarantee(!info.is_excluded(), "Must be");
+        } else {
+          guarantee(info.is_excluded(), "Must be");
+        }
+      }
     }
   };
   _dumptime_table->iterate_all_live_classes(exclude_remaining_hidden);

@@ -671,21 +671,13 @@ void HeapShared::find_required_hidden_classes_helper(ArchivableStaticFieldInfo f
   if (!CDSConfig::is_dumping_heap()) {
     return;
   }
-  for (int i = 0; fields[i].valid(); ) {
-    ArchivableStaticFieldInfo* info = &fields[i];
-    const char* klass_name = info->klass_name;
-    for (; fields[i].valid(); i++) {
-      ArchivableStaticFieldInfo* f = &fields[i];
-      if (f->klass_name != klass_name) {
-        break;
-      }
-
-      InstanceKlass* k = f->klass;
-      oop m = k->java_mirror();
-      oop o = m->obj_field(f->offset);
-      if (o != nullptr) {
-        find_required_hidden_classes_in_object(o);
-      }
+  for (int i = 0; fields[i].valid(); i++) {
+    ArchivableStaticFieldInfo* f = &fields[i];
+    InstanceKlass* k = f->klass;
+    oop m = k->java_mirror();
+    oop o = m->obj_field(f->offset);
+    if (o != nullptr) {
+      find_required_hidden_classes_in_object(o);
     }
   }
 }
@@ -717,6 +709,16 @@ class HeapShared::FindRequiredHiddenClassesOopClosure: public BasicOopIterateClo
   }
 };
 
+static void mark_required_if_hidden_class(Klass* k) {
+  if (k != nullptr && k->is_instance_klass()) {
+    InstanceKlass* ik = InstanceKlass::cast(k);
+    if (ik->is_hidden()) {
+      SystemDictionaryShared::mark_required_hidden_class(ik);
+    }
+  }
+}
+
+
 void HeapShared::find_required_hidden_classes_in_object(oop root) {
   ResourceMark rm;
   FindRequiredHiddenClassesOopClosure c(root);
@@ -725,24 +727,18 @@ void HeapShared::find_required_hidden_classes_in_object(oop root) {
     if (!has_been_seen_during_subgraph_recording(o)) {
       set_has_been_seen_during_subgraph_recording(o);
 
-      // These are all the cases we care about for now:
-      // - an object points to a mirror of an hidden class
-      // - an object points to a method declared in a hidden class
+      // Mark the klass of this object
+      mark_required_if_hidden_class(o->klass());
+
+      // For special objects, mark the klass that they contain information about.
+      // - a Class that refers to an hidden class
+      // - a ResolvedMethodName that refers to a method declared in a hidden class
       if (java_lang_Class::is_instance(o)) {
-        Klass* k = java_lang_Class::as_Klass(o);
-        if (k != nullptr && k->is_instance_klass()) {
-          InstanceKlass* ik = InstanceKlass::cast(k);
-          if (ik->is_hidden()) {
-            SystemDictionaryShared::mark_required_hidden_class(ik);
-          }
-        }
+        mark_required_if_hidden_class(java_lang_Class::as_Klass(o));
       } else if (java_lang_invoke_ResolvedMethodName::is_instance(o)) {
         Method* m = java_lang_invoke_ResolvedMethodName::vmtarget(o);
-        if (m != nullptr && m->method_holder() != nullptr) {
-          InstanceKlass* ik = m->method_holder();
-          if (ik->is_hidden()) {
-            SystemDictionaryShared::mark_required_hidden_class(ik);
-          }
+        if (m != nullptr) {
+          mark_required_if_hidden_class(m->method_holder());
         }
       }
 

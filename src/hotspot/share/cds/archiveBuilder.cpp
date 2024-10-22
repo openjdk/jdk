@@ -746,7 +746,13 @@ void ArchiveBuilder::mark_and_relocate_to_buffered_addr(address* ptr_location) {
 }
 
 bool ArchiveBuilder::has_been_buffered(address src_addr) const {
-  return _src_obj_table.get(src_addr) != nullptr;
+  if (RegeneratedClasses::has_been_regenerated(src_addr) ||
+      _src_obj_table.get(src_addr) == nullptr ||
+      get_buffered_addr(src_addr) == nullptr) {
+    return false;
+  } else {
+    return true;
+  }
 }
 
 address ArchiveBuilder::get_buffered_addr(address src_addr) const {
