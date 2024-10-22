@@ -247,6 +247,30 @@ public abstract class PKCS11Test {
         return PKCS11_BASE;
     }
 
+    private static void copyNssFiles(Path nssSource, String destination)
+            throws IOException {
+        try (Stream<Path> paths = Files.walk(nssSource)) {
+            paths.forEach(source -> {
+                Path destinationPath = Paths.get(destination, source.toString()
+                        .substring(nssSource.toString().length()));
+                try {
+                    if (Files.isRegularFile(source)) {
+                        // copy regular files to destination directory
+                        Files.copy(source, destinationPath,
+                                StandardCopyOption.REPLACE_EXISTING);
+                        destinationPath.toFile().setWritable(true);
+
+                    } else if (!Files.exists(destinationPath)) {
+                        // create directory if it does not exist
+                        Files.createDirectory(destinationPath);
+                    }
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+        }
+    }
+
     public static String getNSSLibDir() throws Exception {
         return getNSSLibDir(nss_library);
     }
@@ -497,13 +521,17 @@ public abstract class PKCS11Test {
         }
 
         String base = getBase();
+        String nss = "nss";
+        Path nssDirSource = Path.of(base).resolve(nss);
+        String nssDirDestination = Path.of(".").resolve(nss).toString();
+        copyNssFiles(nssDirSource, nssDirDestination);
 
         String libfile = libdir + System.mapLibraryName(nss_library);
 
         String customDBdir = System.getProperty("CUSTOM_DB_DIR");
         String dbdir = (customDBdir != null) ?
                 customDBdir :
-                base + SEP + "nss" + SEP + "db";
+                nssDirDestination + SEP + "db";
         // NSS always wants forward slashes for the config path
         dbdir = dbdir.replace('\\', '/');
 
@@ -513,7 +541,7 @@ public abstract class PKCS11Test {
         System.setProperty("pkcs11test.nss.db", dbdir);
         return (customConfig != null) ?
                 customConfig :
-                base + SEP + "nss" + SEP + customConfigName;
+                nssDirDestination + SEP + customConfigName;
     }
 
     // Generate a vector of supported elliptic curves of a given provider
