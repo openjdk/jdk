@@ -1946,7 +1946,6 @@ bool PhaseIdealLoop::ctrl_of_use_out_of_loop(const Node* n, Node* n_ctrl, IdealL
   // to a check that's eliminated by range check elimination, it becomes input to an expression that feeds into the exit
   // test of the pre loop above the point in the graph where it's pinned.
   if (n_loop->_head->is_CountedLoop() && n_loop->_head->as_CountedLoop()->is_pre_loop()) {
-    bool res = false;
     CountedLoopNode* pre_loop = n_loop->_head->as_CountedLoop();
     if (is_dominator(pre_loop->loopexit(), ctrl)) {
       return false;
