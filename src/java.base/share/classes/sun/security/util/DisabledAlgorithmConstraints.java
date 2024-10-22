@@ -558,11 +558,9 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
         private boolean checkTLSCipherConstraint(String algorithm) {
             List<Constraint> constraintList = new ArrayList<>();
 
-            // Check if algorithm's name contains the constraint's key,
-            // not an exact match like for other constraints.
+            // Match TLSCipherConstraint constraint against any algorithm.
             constraintsMap.forEach((_, list) -> {
                 for (Constraint constraint : list) {
-                    // Match TLSCipherConstraint constraint against any algorithm.
                     if (constraint instanceof TLSCipherConstraint) {
                         constraintList.add(constraint);
                     }
@@ -1067,7 +1065,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
         }
 
         @Override
-        public void permits(ConstraintsParameters cp) throws CertPathValidatorException {
+        public void permits(ConstraintsParameters cp) {
             // Do nothing here, TLSCipherConstraint doesn't apply to certificates.
         }
     }
