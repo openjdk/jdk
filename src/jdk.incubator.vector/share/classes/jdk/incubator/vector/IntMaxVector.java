@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -503,9 +503,16 @@ final class IntMaxVector extends IntVector {
                                    VectorMask<Integer> m) {
         return (IntMaxVector)
             super.selectFromTemplate((IntMaxVector) v,
-                                     (IntMaxMask) m);  // specialize
+                                     IntMaxMask.class, (IntMaxMask) m);  // specialize
     }
 
+    @Override
+    @ForceInline
+    public IntMaxVector selectFrom(Vector<Integer> v1,
+                                   Vector<Integer> v2) {
+        return (IntMaxVector)
+            super.selectFromTemplate((IntMaxVector) v1, (IntMaxVector) v2);  // specialize
+    }
 
     @ForceInline
     @Override
@@ -839,6 +846,13 @@ final class IntMaxVector extends IntVector {
                 throw new IllegalArgumentException("VectorShuffle length and species length differ");
             int[] shuffleArray = toArray();
             return s.shuffleFromArray(shuffleArray, 0).check(s);
+        }
+
+        @Override
+        @ForceInline
+        public IntMaxShuffle wrapIndexes() {
+            return VectorSupport.wrapShuffleIndexes(ETYPE, IntMaxShuffle.class, this, VLENGTH,
+                                                    (s) -> ((IntMaxShuffle)(((AbstractShuffle<Integer>)(s)).wrapIndexesTemplate())));
         }
 
         @ForceInline

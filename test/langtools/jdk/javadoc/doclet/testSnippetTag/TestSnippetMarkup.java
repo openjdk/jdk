@@ -366,7 +366,7 @@ First line // @highlight :
                         <span class="element-name">case%s</span>()</div>
                         <div class="block">
                         %s
-                        </div>""".formatted(index, getSnippetHtmlRepresentation("A.html", t.expectedOutput(), Optional.empty(), Optional.of("snippet-case" + index + "()2")));
+                        </div>""".formatted(index, getSnippetHtmlRepresentation("A.html", t.expectedOutput(), Optional.of("java"), Optional.of("snippet-case" + index + "()2")));
             checkOutput("A.html", true, html);
         });
     }

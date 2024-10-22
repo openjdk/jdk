@@ -43,6 +43,7 @@ import java.util.function.Consumer;
 import java.util.stream.Stream;
 import jdk.internal.foreign.AbstractMemorySegmentImpl;
 import jdk.internal.foreign.MemorySessionImpl;
+import jdk.internal.foreign.SegmentBulkOperations;
 import jdk.internal.foreign.SegmentFactories;
 import jdk.internal.javac.Restricted;
 import jdk.internal.reflect.CallerSensitive;
@@ -475,7 +476,7 @@ import jdk.internal.vm.annotation.ForceInline;
  * MemorySegment ptr = null;
  * try (Arena arena = Arena.ofConfined()) {
  *       MemorySegment z = segment.get(ValueLayout.ADDRESS, ...);    // size = 0, scope = always alive
- *       ptr = z.reinterpret(16, arena, null);                       // size = 4, scope = arena.scope()
+ *       ptr = z.reinterpret(16, arena, null);                       // size = 16, scope = arena.scope()
  *       int x = ptr.getAtIndex(ValueLayout.JAVA_INT, 3);            // ok
  * }
  * int x = ptr.getAtIndex(ValueLayout.JAVA_INT, 3);                  // throws IllegalStateException
@@ -517,7 +518,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *
      * @apiNote When using this method to pass a segment address to some external
      *          operation (e.g. a JNI function), clients must ensure that the segment is
-     *          kept <a href="../../../java/lang/ref/package.html#reachability">reachable</a>
+     *          kept {@linkplain java.lang.ref##reachability reachable}
      *          for the entire duration of the operation. A failure to do so might result
      *          in the premature deallocation of the region of memory backing the memory
      *          segment, in case the segment has been allocated with an
@@ -785,7 +786,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *          backing region of memory is no longer available. Furthermore, if the
      *          provided scope is the scope of an {@linkplain Arena#ofAuto() automatic arena},
      *          the cleanup action must not prevent the scope from becoming
-     *          <a href="../../../java/lang/ref/package.html#reachability">unreachable</a>.
+     *          {@linkplain java.lang.ref##reachability unreachable}.
      *          A failure to do so will permanently prevent the regions of memory
      *          allocated by the automatic arena from being deallocated.
      *
@@ -836,7 +837,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *          backing region of memory is no longer available. Furthermore, if the
      *          provided scope is the scope of an {@linkplain Arena#ofAuto() automatic arena},
      *          the cleanup action must not prevent the scope from becoming
-     *          <a href="../../../java/lang/ref/package.html#reachability">unreachable</a>.
+     *          {@linkplain java.lang.ref##reachability unreachable}.
      *          A failure to do so will permanently prevent the regions of memory
      *          allocated by the automatic arena from being deallocated.
      *
@@ -1284,6 +1285,14 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * sequences with this charset's default replacement string. The {@link
      * java.nio.charset.CharsetDecoder} class should be used when more control
      * over the decoding process is required.
+     * <p>
+     * Getting a string from a segment with a known byte offset and
+     * known byte length can be done like so:
+     * {@snippet lang=java :
+     *     byte[] bytes = new byte[length];
+     *     MemorySegment.copy(segment, JAVA_BYTE, offset, bytes, 0, length);
+     *     return new String(bytes, charset);
+     * }
      *
      * @param offset  offset in bytes (relative to this segment address) at which this
      *                access operation will occur
@@ -1570,8 +1579,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
     @ForceInline
     static void copy(MemorySegment srcSegment, long srcOffset,
                      MemorySegment dstSegment, long dstOffset, long bytes) {
-        copy(srcSegment, ValueLayout.JAVA_BYTE, srcOffset,
-                dstSegment, ValueLayout.JAVA_BYTE, dstOffset,
+
+        SegmentBulkOperations.copy((AbstractMemorySegmentImpl) srcSegment, srcOffset,
+                (AbstractMemorySegmentImpl) dstSegment, dstOffset,
                 bytes);
     }
 
@@ -2634,8 +2644,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      */
     static long mismatch(MemorySegment srcSegment, long srcFromOffset, long srcToOffset,
                          MemorySegment dstSegment, long dstFromOffset, long dstToOffset) {
-        return AbstractMemorySegmentImpl.mismatch(srcSegment, srcFromOffset, srcToOffset,
-                dstSegment, dstFromOffset, dstToOffset);
+        return SegmentBulkOperations.mismatch(
+                (AbstractMemorySegmentImpl)Objects.requireNonNull(srcSegment), srcFromOffset, srcToOffset,
+                (AbstractMemorySegmentImpl)Objects.requireNonNull(dstSegment), dstFromOffset, dstToOffset);
     }
 
     /**
@@ -2662,7 +2673,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * invalidated, either {@link Arena#close() explicitly}, or automatically, by the
      * garbage collector. A segment scope that is invalidated automatically is an
      * <em>automatic scope</em>. An automatic scope is always {@link #isAlive() alive}
-     * as long as it is <a href="../../../java/lang/ref/package.html#reachability">reachable</a>.
+     * as long as it is {@linkplain java.lang.ref##reachability reachable}.
      * Segments associated with an automatic scope are:
      * <ul>
      *     <li>Segments obtained from an {@linkplain Arena#ofAuto() automatic arena};</li>

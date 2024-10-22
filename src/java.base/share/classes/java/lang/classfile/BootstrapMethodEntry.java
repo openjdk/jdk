@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,11 @@
 
 package java.lang.classfile;
 
-import java.util.List;
-
 import java.lang.classfile.constantpool.ConstantPool;
 import java.lang.classfile.constantpool.LoadableConstantEntry;
 import java.lang.classfile.constantpool.MethodHandleEntry;
+import java.util.List;
+
 import jdk.internal.classfile.impl.BootstrapMethodEntryImpl;
 import jdk.internal.javac.PreviewFeature;
 
@@ -43,7 +43,6 @@ import jdk.internal.javac.PreviewFeature;
  */
 @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface BootstrapMethodEntry
-        extends WritableElement<BootstrapMethodEntry>
         permits BootstrapMethodEntryImpl {
 
     /**

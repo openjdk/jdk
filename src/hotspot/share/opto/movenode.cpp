@@ -91,15 +91,18 @@ Node *CMoveNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       phase->type(in(IfTrue))    == Type::TOP) {
     return nullptr;
   }
+
+  // Check for Min/Max patterns. This is called before constants are pushed to the right input, as that transform can
+  // make BoolTests non-canonical.
+  Node* minmax = Ideal_minmax(phase, this);
+  if (minmax != nullptr) {
+    return minmax;
+  }
+
   // Canonicalize the node by moving constants to the right input.
   if (in(Condition)->is_Bool() && phase->type(in(IfFalse))->singleton() && !phase->type(in(IfTrue))->singleton()) {
     BoolNode* b = in(Condition)->as_Bool()->negate(phase);
     return make(in(Control), phase->transform(b), in(IfTrue), in(IfFalse), _type);
-  }
-
-  Node* minmax = Ideal_minmax(phase, this);
-  if (minmax != nullptr) {
-    return minmax;
   }
 
   return nullptr;

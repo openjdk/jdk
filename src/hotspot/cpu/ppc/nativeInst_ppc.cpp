@@ -92,10 +92,10 @@ address NativeCall::destination() const {
 // Used in the runtime linkage of calls; see class CompiledIC.
 //
 // Add parameter assert_lock to switch off assertion
-// during code generation, where no patching lock is needed.
+// during code generation, where no lock is needed.
 void NativeCall::set_destination_mt_safe(address dest, bool assert_lock) {
   assert(!assert_lock ||
-         (Patching_lock->is_locked() || SafepointSynchronize::is_at_safepoint()) ||
+         (CodeCache_lock->is_locked() || SafepointSynchronize::is_at_safepoint()) ||
          CompiledICLocker::is_safe(addr_at(0)),
          "concurrent code patching");
 

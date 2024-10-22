@@ -493,9 +493,6 @@ static StatusWindow *createStatusWindow(Window parent) {
     XWindowAttributes xwa;
     XWindowAttributes xxwa;
     /* Variable for XCreateFontSet()*/
-    char **mclr;
-    int  mccr = 0;
-    char *dsr;
     unsigned long bg, fg, light, dim;
     int x, y, off_x, off_y, xx, yy;
     unsigned int w, h, bw, depth;

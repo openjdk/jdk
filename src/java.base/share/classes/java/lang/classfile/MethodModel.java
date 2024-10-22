@@ -25,12 +25,13 @@
 
 package java.lang.classfile;
 
+import java.lang.classfile.constantpool.Utf8Entry;
 import java.lang.constant.MethodTypeDesc;
 import java.util.Optional;
 
-import java.lang.classfile.constantpool.Utf8Entry;
 import jdk.internal.classfile.impl.BufferedMethodBuilder;
 import jdk.internal.classfile.impl.MethodImpl;
+import jdk.internal.classfile.impl.Util;
 import jdk.internal.javac.PreviewFeature;
 
 /**
@@ -42,7 +43,7 @@ import jdk.internal.javac.PreviewFeature;
  */
 @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface MethodModel
-        extends WritableElement<MethodModel>, CompoundElement<MethodElement>, AttributedElement, ClassElement
+        extends CompoundElement<MethodElement>, AttributedElement, ClassElement
         permits BufferedMethodBuilder.Model, MethodImpl {
 
     /** {@return the access flags} */
@@ -59,7 +60,7 @@ public sealed interface MethodModel
 
     /** {@return the method descriptor of this method, as a symbolic descriptor} */
     default MethodTypeDesc methodTypeSymbol() {
-        return MethodTypeDesc.ofDescriptor(methodType().stringValue());
+        return Util.methodTypeSymbol(methodType());
     }
 
     /** {@return the body of this method, if there is one} */

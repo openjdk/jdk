@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 package jdk.jfr.internal.settings;
 
+import static jdk.jfr.internal.util.ValueParser.MISSING;
+
 import java.util.Objects;
 import java.util.Set;
 
@@ -36,14 +38,16 @@ import jdk.jfr.Timespan;
 import jdk.jfr.internal.PlatformEventType;
 import jdk.jfr.internal.Type;
 import jdk.jfr.internal.util.ValueParser;
+
 @MetadataDefinition
 @Label("Threshold")
 @Name(Type.SETTINGS_PREFIX + "Threshold")
 @Description("Record event with duration above or equal to threshold")
 @Timespan
 public final class ThresholdSetting extends JDKSettingControl {
+    public static final String DEFAULT_VALUE = "0 ns";
     private static final long typeId = Type.getTypeId(ThresholdSetting.class);
-    private String value = "0 ns";
+    private String value = DEFAULT_VALUE;
     private final PlatformEventType eventType;
 
     public ThresholdSetting(PlatformEventType eventType) {
@@ -55,26 +59,24 @@ public final class ThresholdSetting extends JDKSettingControl {
         Long min = null;
         String text = null;
         for (String value : values) {
-            long l = ValueParser.parseTimespanWithInfinity(value);
-            // always accept first value
-            if (min == null) {
-                min = l;
-                text = value;
-            } else {
-                if (l < min) {
+            long nanos = ValueParser.parseTimespanWithInfinity(value, MISSING);
+            if (nanos != MISSING) {
+                if (min == null || nanos < min) {
                     text = value;
-                    min = l;
+                    min = nanos;
                 }
             }
         }
-        return text == null ? "0 ns" : text;
+        return Objects.requireNonNullElse(text, DEFAULT_VALUE);
     }
 
     @Override
     public void setValue(String value) {
-        long l = ValueParser.parseTimespanWithInfinity(value);
-        this.value = value;
-        eventType.setThreshold(l);
+        long nanos = ValueParser.parseTimespanWithInfinity(value, MISSING);
+        if (nanos != MISSING) {
+            eventType.setThreshold(nanos);
+            this.value = value;
+        }
     }
 
     @Override

@@ -79,6 +79,7 @@ import com.sun.tools.javac.code.Symbol.RecordComponent;
 import com.sun.tools.javac.code.Type;
 import static com.sun.tools.javac.code.TypeTag.BOT;
 import static com.sun.tools.javac.code.TypeTag.VOID;
+
 import com.sun.tools.javac.jvm.PoolConstant.LoadableConstant;
 import com.sun.tools.javac.jvm.Target;
 import com.sun.tools.javac.tree.JCTree;
@@ -786,7 +787,7 @@ public class TransPatterns extends TreeTranslator {
         StringBuilder sb = new StringBuilder();
 
         PrimitiveGenerator() {
-            super(types);
+            types.super();
         }
 
         @Override

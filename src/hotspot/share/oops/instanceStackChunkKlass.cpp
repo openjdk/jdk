@@ -226,7 +226,7 @@ public:
                   p2i(fs.sp()), fs.is_interpreted(), f.frame_size(),
                   fs.is_interpreted() ? 0 : f.compiled_frame_stack_argsize());
   #ifdef ASSERT
-    f.print_value_on(_st, nullptr);
+    f.print_value_on(_st);
   #else
     f.print_on(_st);
   #endif

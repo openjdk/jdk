@@ -755,7 +755,7 @@ Node *CallNode::match( const ProjNode *proj, const Matcher *match ) {
 
     if (Opcode() == Op_CallLeafVector) {
       // If the return is in vector, compute appropriate regmask taking into account the whole range
-      if(ideal_reg >= Op_VecS && ideal_reg <= Op_VecZ) {
+      if(ideal_reg >= Op_VecA && ideal_reg <= Op_VecZ) {
         if(OptoReg::is_valid(regs.second())) {
           for (OptoReg::Name r = regs.first(); r <= regs.second(); r = OptoReg::add(r, 1)) {
             rm.Insert(r);
@@ -1601,10 +1601,8 @@ AllocateNode::AllocateNode(Compile* C, const TypeFunc *atype,
 
 void AllocateNode::compute_MemBar_redundancy(ciMethod* initializer)
 {
-  assert(initializer != nullptr &&
-         initializer->is_initializer() &&
-         !initializer->is_static(),
-             "unexpected initializer method");
+  assert(initializer != nullptr && initializer->is_object_initializer(),
+         "unexpected initializer method");
   BCEscapeAnalyzer* analyzer = initializer->get_bcea();
   if (analyzer == nullptr) {
     return;

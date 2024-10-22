@@ -94,38 +94,6 @@
  *     TestJcmdHeapDump
  */
 
-/*
- * @test id=iu-aggressive
- * @library /test/lib
- * @modules jdk.attach/com.sun.tools.attach
- * @requires vm.gc.Shenandoah
- *
- * @run main/othervm/timeout=480 -Xmx16m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu -XX:ShenandoahGCHeuristics=aggressive
- *      -XX:+ShenandoahOOMDuringEvacALot
- *      TestJcmdHeapDump
- *
- * @run main/othervm/timeout=480 -Xmx16m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu -XX:ShenandoahGCHeuristics=aggressive
- *      -XX:+ShenandoahAllocFailureALot
- *      TestJcmdHeapDump
- *
- * @run main/othervm/timeout=480 -Xmx16m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu -XX:ShenandoahGCHeuristics=aggressive
- *      TestJcmdHeapDump
- */
-
-/*
- * @test id=iu
- * @requires vm.gc.Shenandoah
- * @library /test/lib
- * @modules jdk.attach/com.sun.tools.attach
- *
- * @run main/othervm/timeout=480 -Xmx16m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu
- *      TestJcmdHeapDump
- */
-
 import jdk.test.lib.JDKToolLauncher;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;

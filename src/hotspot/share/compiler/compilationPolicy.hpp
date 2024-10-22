@@ -179,8 +179,10 @@ class CompilationPolicy : AllStatic {
 
   // Set carry flags in the counters (in Method* and MDO).
   inline static void handle_counter_overflow(const methodHandle& method);
+#ifdef ASSERT
   // Verify that a level is consistent with the compilation mode
   static bool verify_level(CompLevel level);
+#endif
   // Clamp the request level according to various constraints.
   inline static CompLevel limit_level(CompLevel level);
   // Common transition function. Given a predicate determines if a method should transition to another level.

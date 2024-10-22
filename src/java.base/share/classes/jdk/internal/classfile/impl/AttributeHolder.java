@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,15 +24,14 @@
  */
 package jdk.internal.classfile.impl;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import java.lang.classfile.Attribute;
 import java.lang.classfile.AttributeMapper;
-import java.lang.classfile.BufWriter;
+import java.util.Arrays;
 
 public class AttributeHolder {
-    private final List<Attribute<?>> attributes = new ArrayList<>();
+    private static final Attribute<?>[] EMPTY_ATTRIBUTE_ARRAY = {};
+    private int attributesCount = 0;
+    private Attribute<?>[] attributes = EMPTY_ATTRIBUTE_ARRAY;
 
     public <A extends Attribute<A>> void withAttribute(Attribute<?> a) {
         if (a == null)
@@ -40,30 +39,54 @@ public class AttributeHolder {
 
         @SuppressWarnings("unchecked")
         AttributeMapper<A> am = (AttributeMapper<A>) a.attributeMapper();
-        if (!am.allowMultiple() && isPresent(am)) {
-            remove(am);
+        int attributesCount = this.attributesCount;
+        var attributes = this.attributes;
+        if (!am.allowMultiple()) {
+            // remove if
+            for (int i = attributesCount - 1; i >= 0; i--) {
+                if (attributes[i].attributeMapper() == am) {
+                    attributesCount--;
+                    System.arraycopy(attributes, i + 1, attributes, i, attributesCount - i);
+                }
+            }
         }
-        attributes.add(a);
+
+        // add attribute
+        if (attributesCount >= attributes.length) {
+            int newCapacity = attributesCount + 4;
+            this.attributes = attributes = Arrays.copyOf(attributes, newCapacity);
+        }
+        attributes[attributesCount] = a;
+        this.attributesCount = attributesCount + 1;
     }
 
     public int size() {
-        return attributes.size();
+        return attributesCount;
     }
 
-    public void writeTo(BufWriter buf) {
-        buf.writeU2(attributes.size());
-        for (Attribute<?> a : attributes)
-            a.writeTo(buf);
+    public void writeTo(BufWriterImpl buf) {
+        int attributesCount = this.attributesCount;
+        buf.writeU2(attributesCount);
+        for (int i = 0; i < attributesCount; i++) {
+            Util.writeAttribute(buf, attributes[i]);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    <A extends Attribute<A>> A get(AttributeMapper<A> am) {
+        for (int i = 0; i < attributesCount; i++) {
+            Attribute<?> a = attributes[i];
+            if (a.attributeMapper() == am)
+                return (A) a;
+        }
+        return null;
     }
 
     boolean isPresent(AttributeMapper<?> am) {
-        for (Attribute<?> a : attributes)
-            if (a.attributeMapper() == am)
+        for (int i = 0; i < attributesCount; i++) {
+            if (attributes[i].attributeMapper() == am)
                 return true;
+        }
         return false;
-    }
-
-    private void remove(AttributeMapper<?> am) {
-        attributes.removeIf(a -> a.attributeMapper() == am);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,14 +26,14 @@
 package java.lang.classfile.attribute;
 
 import java.lang.classfile.Attribute;
+import java.util.List;
+
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.UnboundAttribute;
-
-import java.util.List;
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * Models the {@code LocalVariableTypeTable} attribute {@jvms 4.7.14}, which can appear
+ * Models the {@code LocalVariableTypeTable} attribute (JVMS {@jvms 4.7.14}), which can appear
  * on a {@code Code} attribute, and records debug information about local
  * variables.
  * Delivered as a {@link java.lang.classfile.instruction.LocalVariable} when traversing the

@@ -844,6 +844,10 @@ public class CSS implements Serializable {
     }
 
     static Object mergeTextDecoration(String value) {
+        if (value.startsWith("none")) {
+            return null;
+        }
+
         boolean underline = value.contains("underline");
         boolean strikeThrough = value.contains("line-through");
         if (!underline && !strikeThrough) {

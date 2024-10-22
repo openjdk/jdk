@@ -111,8 +111,9 @@
           range(1, max_intx)                                                \
                                                                             \
   product(uint, G1ConfidencePercent, 50,                                    \
-          "Confidence level for MMU/pause predictions")                     \
-          range(0, 100)                                                     \
+          "Confidence level for MMU/pause predictions. A higher value "     \
+          "means that G1 will use less safety margin for its predictions.") \
+          range(1, 100)                                                     \
                                                                             \
   product(uintx, G1SummarizeRSetStatsPeriod, 0, DIAGNOSTIC,                 \
           "The period (in number of GCs) at which we will generate "        \

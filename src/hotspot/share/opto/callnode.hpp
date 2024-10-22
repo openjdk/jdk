@@ -152,6 +152,17 @@ class RethrowNode : public Node {
 };
 
 
+//------------------------------ForwardExceptionNode---------------------------
+// Pop stack frame and jump to StubRoutines::forward_exception_entry()
+class ForwardExceptionNode : public ReturnNode {
+public:
+  ForwardExceptionNode(Node* cntrl, Node* i_o, Node* memory, Node* frameptr, Node* retadr)
+    : ReturnNode(TypeFunc::Parms, cntrl, i_o, memory, frameptr, retadr) {
+  }
+
+  virtual int Opcode() const;
+};
+
 //------------------------------TailCallNode-----------------------------------
 // Pop stack frame and jump indirect
 class TailCallNode : public ReturnNode {
@@ -754,18 +765,18 @@ protected:
   virtual bool cmp( const Node &n ) const;
   virtual uint size_of() const; // Size is bigger
 
+  ciMethod* _method;               // Method being direct called
   bool    _optimized_virtual;
   bool    _method_handle_invoke;
   bool    _override_symbolic_info; // Override symbolic call site info from bytecode
-  ciMethod* _method;               // Method being direct called
   bool    _arg_escape;             // ArgEscape in parameter list
 public:
   CallJavaNode(const TypeFunc* tf , address addr, ciMethod* method)
     : CallNode(tf, addr, TypePtr::BOTTOM),
+      _method(method),
       _optimized_virtual(false),
       _method_handle_invoke(false),
       _override_symbolic_info(false),
-      _method(method),
       _arg_escape(false)
   {
     init_class_id(Class_CallJava);

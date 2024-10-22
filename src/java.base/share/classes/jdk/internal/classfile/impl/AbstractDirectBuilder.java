@@ -24,10 +24,8 @@
  */
 package jdk.internal.classfile.impl;
 
-import java.lang.classfile.constantpool.ConstantPool;
-import java.util.Optional;
-
 import java.lang.classfile.Attribute;
+import java.lang.classfile.constantpool.ConstantPool;
 
 public class AbstractDirectBuilder<M> {
     protected final SplitConstantPool constantPool;
@@ -48,16 +46,12 @@ public class AbstractDirectBuilder<M> {
         return constantPool().canWriteDirect(source);
     }
 
-    public Optional<M> original() {
-        return Optional.ofNullable(original);
-    }
-
     public void setOriginal(M original) {
         this.original = original;
     }
 
     public void writeAttribute(Attribute<?> a) {
-        if (Util.isAttributeAllowed(a, context.attributesProcessingOption())) {
+        if (Util.isAttributeAllowed(a, context)) {
             attributes.withAttribute(a);
         }
     }

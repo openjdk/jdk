@@ -25,12 +25,13 @@
 
 package java.lang.classfile;
 
+import java.lang.classfile.constantpool.Utf8Entry;
 import java.lang.constant.ClassDesc;
 import java.util.Optional;
 
-import java.lang.classfile.constantpool.Utf8Entry;
 import jdk.internal.classfile.impl.BufferedFieldBuilder;
 import jdk.internal.classfile.impl.FieldImpl;
+import jdk.internal.classfile.impl.Util;
 import jdk.internal.javac.PreviewFeature;
 
 /**
@@ -42,7 +43,7 @@ import jdk.internal.javac.PreviewFeature;
  */
 @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface FieldModel
-        extends WritableElement<FieldModel>, CompoundElement<FieldElement>, AttributedElement, ClassElement
+        extends CompoundElement<FieldElement>, AttributedElement, ClassElement
         permits BufferedFieldBuilder.Model, FieldImpl {
 
     /** {@return the access flags} */
@@ -59,6 +60,6 @@ public sealed interface FieldModel
 
     /** {@return the field descriptor of this field, as a symbolic descriptor} */
     default ClassDesc fieldTypeSymbol() {
-        return ClassDesc.ofDescriptor(fieldType().stringValue());
+        return Util.fieldTypeSymbol(fieldType());
     }
 }

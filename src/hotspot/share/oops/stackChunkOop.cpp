@@ -125,7 +125,7 @@ static int num_java_frames(const StackChunkFrameStream<ChunkFrames::Mixed>& f) {
 int stackChunkOopDesc::num_java_frames() const {
   int n = 0;
   for (StackChunkFrameStream<ChunkFrames::Mixed> f(const_cast<stackChunkOopDesc*>(this)); !f.is_done();
-       f.next(SmallRegisterMap::instance)) {
+       f.next(SmallRegisterMap::instance())) {
     if (!f.is_stub()) {
       n += ::num_java_frames(f);
     }

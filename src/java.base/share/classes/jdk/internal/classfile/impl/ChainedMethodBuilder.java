@@ -24,16 +24,15 @@
  */
 package jdk.internal.classfile.impl;
 
-import java.util.Optional;
-import java.util.function.Consumer;
-
 import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.CodeModel;
 import java.lang.classfile.CodeTransform;
 import java.lang.classfile.MethodBuilder;
 import java.lang.classfile.MethodElement;
-import java.lang.classfile.MethodModel;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
+import java.util.function.Consumer;
+
+import static java.util.Objects.requireNonNull;
 
 public final class ChainedMethodBuilder implements MethodBuilder {
     final TerminalMethodBuilder terminal;
@@ -50,7 +49,7 @@ public final class ChainedMethodBuilder implements MethodBuilder {
 
     @Override
     public MethodBuilder with(MethodElement element) {
-        consumer.accept(element);
+        consumer.accept(requireNonNull(element));
         return this;
     }
 
@@ -73,11 +72,6 @@ public final class ChainedMethodBuilder implements MethodBuilder {
     @Override
     public ConstantPoolBuilder constantPool() {
         return terminal.constantPool();
-    }
-
-    @Override
-    public Optional<MethodModel> original() {
-        return terminal.original();
     }
 
 }

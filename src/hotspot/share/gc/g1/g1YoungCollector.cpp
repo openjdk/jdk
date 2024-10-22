@@ -295,10 +295,9 @@ class G1PrepareEvacuationTask : public WorkerTask {
     G1MonotonicArenaMemoryStats _card_set_stats;
 
     void sample_card_set_size(G1HeapRegion* hr) {
-      // Sample card set sizes for young gen and humongous before GC: this makes
-      // the policy to give back memory to the OS keep the most recent amount of
-      // memory for these regions.
-      if (hr->is_young() || hr->is_starts_humongous()) {
+      // Sample card set sizes for humongous before GC: this makes the policy to give
+      // back memory to the OS keep the most recent amount of memory for these regions.
+      if (hr->is_starts_humongous()) {
         _card_set_stats.add(hr->rem_set()->card_set_memory_stats());
       }
     }
@@ -507,6 +506,9 @@ void G1YoungCollector::pre_evacuate_collection_set(G1EvacInfo* evacuation_info) 
   {
     Ticks start = Ticks::now();
     rem_set()->prepare_for_scan_heap_roots();
+
+    _g1h->prepare_group_cardsets_for_scan();
+
     phase_times()->record_prepare_heap_roots_time_ms((Ticks::now() - start).seconds() * 1000.0);
   }
 
@@ -514,7 +516,10 @@ void G1YoungCollector::pre_evacuate_collection_set(G1EvacInfo* evacuation_info) 
     G1PrepareEvacuationTask g1_prep_task(_g1h);
     Tickspan task_time = run_task_timed(&g1_prep_task);
 
-    _g1h->set_young_gen_card_set_stats(g1_prep_task.all_card_set_stats());
+    G1MonotonicArenaMemoryStats sampled_card_set_stats = g1_prep_task.all_card_set_stats();
+    sampled_card_set_stats.add(_g1h->young_regions_card_set_mm()->memory_stats());
+    _g1h->set_young_gen_card_set_stats(sampled_card_set_stats);
+
     _g1h->set_humongous_stats(g1_prep_task.humongous_total(), g1_prep_task.humongous_candidates());
 
     phase_times()->record_register_regions(task_time.seconds() * 1000.0);

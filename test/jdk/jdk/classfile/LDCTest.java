@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,9 @@
  * @run junit LDCTest
  */
 import java.lang.constant.ClassDesc;
+
+import static java.lang.classfile.ClassFile.ACC_PUBLIC;
+import static java.lang.classfile.ClassFile.ACC_STATIC;
 import static java.lang.constant.ConstantDescs.*;
 import java.lang.constant.MethodTypeDesc;
 
@@ -38,7 +41,6 @@ import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 import static helpers.TestConstants.MTD_VOID;
 import static java.lang.classfile.Opcode.*;
-import static java.lang.classfile.TypeKind.VoidType;
 import java.lang.classfile.instruction.ConstantInstruction;
 
 class LDCTest {
@@ -56,15 +58,15 @@ class LDCTest {
               )
 
               .withMethod("main", MethodTypeDesc.of(CD_void, CD_String.arrayType()),
-                          AccessFlags.ofMethod(AccessFlag.PUBLIC, AccessFlag.STATIC).flagsMask(),
+                          ACC_PUBLIC | ACC_STATIC,
                           mb -> mb.withCode(c0 -> {
                                   ConstantPoolBuilder cpb = cb.constantPool();
                                   for (int i = 0; i <= 256/2 + 2; i++) { // two entries per String
                                       StringEntry s = cpb.stringEntry("string" + i);
                                   }
-                                  c0.loadConstant(LDC, "string0")
-                                    .loadConstant(LDC, "string131")
-                                    .loadConstant(LDC, "string50")
+                                  c0.ldc("string0")
+                                    .ldc("string131")
+                                    .ldc("string50")
                                     .loadConstant(-0.0f)
                                     .loadConstant(-0.0d)
                                     //non-LDC test cases
