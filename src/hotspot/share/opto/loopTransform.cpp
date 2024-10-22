@@ -2894,7 +2894,7 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
       limit_ctrl = ensure_node_and_inputs_are_above_pre_end(pre_end, limit);
 
       // offset and limit could have control below new_limit_ctrl if they are not loop invariant in the pre loop.
-      new_limit_ctrl = dominated_node(new_limit_ctrl, offset_ctrl, limit_ctrl);
+      Node* next_limit_ctrl = dominated_node(new_limit_ctrl, offset_ctrl, limit_ctrl);
 
 #ifdef ASSERT
       if (TraceRangeLimitCheck) {
@@ -2915,16 +2915,16 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
       jlong lscale_con = scale_con;
       Node* int_offset = offset;
       offset = new ConvI2LNode(offset);
-      register_new_node(offset, new_limit_ctrl);
+      register_new_node(offset, next_limit_ctrl);
       Node* int_limit = limit;
       limit = new ConvI2LNode(limit);
-      register_new_node(limit, new_limit_ctrl);
+      register_new_node(limit, next_limit_ctrl);
 
       // Adjust pre and main loop limits to guard the correct iteration set
       if (cmp->Opcode() == Op_CmpU) { // Unsigned compare is really 2 tests
         if (b_test._test == BoolTest::lt) { // Range checks always use lt
           // The underflow and overflow limits: 0 <= scale*I+offset < limit
-          add_constraint(stride_con, lscale_con, offset, zero, limit, new_limit_ctrl, &pre_limit, &main_limit);
+          add_constraint(stride_con, lscale_con, offset, zero, limit, next_limit_ctrl, &pre_limit, &main_limit);
           Node* init = cl->init_trip();
           Node* opaque_init = new OpaqueLoopInitNode(C, init);
           register_new_node(opaque_init, loop_entry);
@@ -2977,22 +2977,22 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
           // Convert (I*scale+offset) >= Limit to (I*(-scale)+(-offset)) <= -Limit
           lscale_con = -lscale_con;
           offset = new SubLNode(zero, offset);
-          register_new_node(offset, new_limit_ctrl);
+          register_new_node(offset, next_limit_ctrl);
           limit  = new SubLNode(zero, limit);
-          register_new_node(limit, new_limit_ctrl);
+          register_new_node(limit, next_limit_ctrl);
           // Fall into LE case
         case BoolTest::le:
           if (b_test._test != BoolTest::gt) {
             // Convert X <= Y to X < Y+1
             limit = new AddLNode(limit, one);
-            register_new_node(limit, new_limit_ctrl);
+            register_new_node(limit, next_limit_ctrl);
           }
           // Fall into LT case
         case BoolTest::lt:
           // The underflow and overflow limits: MIN_INT <= scale*I+offset < limit
           // Note: (MIN_INT+1 == -MAX_INT) is used instead of MIN_INT here
           // to avoid problem with scale == -1: MIN_INT/(-1) == MIN_INT.
-          add_constraint(stride_con, lscale_con, offset, mini, limit, new_limit_ctrl, &pre_limit, &main_limit);
+          add_constraint(stride_con, lscale_con, offset, mini, limit, next_limit_ctrl, &pre_limit, &main_limit);
           break;
         default:
           if (PrintOpto) {
@@ -3001,6 +3001,9 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
           continue;             // Unhandled case
         }
       }
+      // Only update variable tracking control for new nodes if it's indeed a range check that can be eliminated (and
+      // limits are updated)
+      new_limit_ctrl = next_limit_ctrl;
 
       // Kill the eliminated test
       C->set_major_progress();

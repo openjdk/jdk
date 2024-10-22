@@ -133,9 +133,20 @@ void LIR_Assembler::osr_entry() {
   // copied into place by code emitted in the IR.
 
   Register OSR_buf = osrBufferPointer()->as_register();
-  { assert(frame::interpreter_frame_monitor_size() == BasicObjectLock::size(), "adjust code below");
-    int monitor_offset = BytesPerWord * method()->max_locals() +
-      (2 * BytesPerWord) * (number_of_locks - 1);
+  {
+    assert(frame::interpreter_frame_monitor_size() == BasicObjectLock::size(), "adjust code below");
+
+    const int locals_space = BytesPerWord * method()->max_locals();
+    int monitor_offset = locals_space + (2 * BytesPerWord) * (number_of_locks - 1);
+    bool use_OSR_bias = false;
+
+    if (!Assembler::is_simm16(monitor_offset + BytesPerWord) && number_of_locks > 0) {
+      // Offsets too large for ld instructions. Use bias.
+      __ add_const_optimized(OSR_buf, OSR_buf, locals_space);
+      monitor_offset -= locals_space;
+      use_OSR_bias = true;
+    }
+
     // SharedRuntime::OSR_migration_begin() packs BasicObjectLocks in
     // the OSR buffer using 2 word entries: first the lock and then
     // the oop.
@@ -160,6 +171,11 @@ void LIR_Assembler::osr_entry() {
       __ std(R0, ml.disp(), ml.base());
       __ ld(R0, slot_offset + 1*BytesPerWord, OSR_buf);
       __ std(R0, mo.disp(), mo.base());
+    }
+
+    if (use_OSR_bias) {
+      // Restore.
+      __ sub_const_optimized(OSR_buf, OSR_buf, locals_space);
     }
   }
 }
