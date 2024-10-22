@@ -2289,7 +2289,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
     }
 
     /**
-     * Assumes {@code precision() <= maxPrecision}.
+     * Assumes {@code (precision() <= maxPrecision || maxPrecision == 0) && this != 0}.
      * {@code maxPrecision == 0} means that the result can have arbitrary precision.
      * @param preferredScale the scale to reach
      * @param maxPrecision the largest precision the result can have
