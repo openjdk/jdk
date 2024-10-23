@@ -62,6 +62,10 @@ final class PathGroup {
         }
     }
 
+    void ghostPath(Path path) {
+        setPath(new Object(), path);
+    }
+
     /**
      * All configured IDs.
      */

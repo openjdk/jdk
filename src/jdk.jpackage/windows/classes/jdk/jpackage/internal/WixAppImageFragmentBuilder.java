@@ -83,9 +83,8 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
 
         do {
             ApplicationLayout layout = pkg.appLayout();
-            // Don't want AppImageFile.FILENAME in installed application.
-            new InstallableFile(AppImageFile.getPathInAppImage(Path.of("")),
-                    null).excludeFromApplicationLayout(layout);
+            // Don't want app image info file in installed application.
+            layout.pathGroup().ghostPath(AppImageFile.getPathInAppImage(Path.of("")));
 
             // Want absolute paths to source files in generated WiX sources.
             // This is to handle scenario if sources would be processed from

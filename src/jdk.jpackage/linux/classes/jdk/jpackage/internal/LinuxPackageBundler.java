@@ -119,7 +119,7 @@ abstract class LinuxPackageBundler extends AbstractBundler {
             } else {
                 Path srcAppImageDir = pkg.predefinedAppImage();
                 if (srcAppImageDir == null) {
-                    // No predefined app image and no runtime builder. 
+                    // No predefined app image and no runtime builder.
                     // This should be runtime packaging.
                     if (pkg.app().isRuntime()) {
                         srcAppImageDir = workshop.appImageDir();
@@ -130,9 +130,9 @@ abstract class LinuxPackageBundler extends AbstractBundler {
                 }
 
                 // Copy app layout omitting application image info file.
-                ApplicationLayout srcLayout = pkg.appLayout().resolveAt(srcAppImageDir);
-                srcLayout.pathGroup().setPath(new Object(),
-                        AppImageFile.getPathInAppImage(srcAppImageDir));
+                var srcLayout = pkg.appLayout().resolveAt(srcAppImageDir);
+                srcLayout.pathGroup().ghostPath(AppImageFile.getPathInAppImage(
+                        srcAppImageDir));
                 srcLayout.copy(pkg.packageLayout().resolveAt(pkgWorkshop.appImageDir()));
             }
 
