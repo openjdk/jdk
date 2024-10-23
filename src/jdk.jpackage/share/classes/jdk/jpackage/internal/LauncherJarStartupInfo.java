@@ -24,24 +24,22 @@
  */
 package jdk.jpackage.internal;
 
-import java.nio.file.Path;
-
 interface LauncherJarStartupInfo extends LauncherStartupInfo {
-    Path jarPath();
+    InstallableFile jarPath();
 
     boolean isClassNameFromMainJar();
 
     final static class Impl extends LauncherStartupInfo.Proxy<LauncherStartupInfo>
             implements LauncherJarStartupInfo {
 
-        Impl(LauncherStartupInfo target, Path jarPath, boolean isClassNameFromMainJar) {
+        Impl(LauncherStartupInfo target, InstallableFile jarPath, boolean isClassNameFromMainJar) {
             super(target);
             this.jarPath = jarPath;
             this.isClassNameFromMainJar = isClassNameFromMainJar;
         }
 
         @Override
-        public Path jarPath() {
+        public InstallableFile jarPath() {
             return jarPath;
         }
 
@@ -50,7 +48,7 @@ interface LauncherJarStartupInfo extends LauncherStartupInfo {
             return isClassNameFromMainJar;
         }
 
-        private final Path jarPath;
+        private final InstallableFile jarPath;
         private final boolean isClassNameFromMainJar;
     }
 }

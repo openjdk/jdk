@@ -43,11 +43,12 @@ interface LauncherStartupInfo {
 
     List<String> defaultParameters();
 
-    List<Path> classPath();
+    List<InstallableFile> classPath();
 
     record Impl(String qualifiedClassName, List<String> javaOptions,
-            List<String> defaultParameters, List<Path> classPath) implements
-            LauncherStartupInfo {
+            List<String> defaultParameters, List<InstallableFile> classPath)
+            implements LauncherStartupInfo {
+
     }
 
     static class Proxy<T extends LauncherStartupInfo> extends ProxyBase<T>
@@ -73,7 +74,7 @@ interface LauncherStartupInfo {
         }
 
         @Override
-        public List<Path> classPath() {
+        public List<InstallableFile> classPath() {
             return target.classPath();
         }
     }
@@ -96,7 +97,7 @@ interface LauncherStartupInfo {
         }
 
         @Override
-        public List<Path> classPath() {
+        public List<InstallableFile> classPath() {
             throw new UnsupportedOperationException();
         }
     }

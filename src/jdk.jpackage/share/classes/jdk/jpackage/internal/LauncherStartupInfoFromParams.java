@@ -36,7 +36,7 @@ final class LauncherStartupInfoFromParams {
         var javaOptions = JAVA_OPTIONS.fetchFrom(params);
         var arguments = ARGUMENTS.fetchFrom(params);
         var classpath = launcherData.classPath().stream().map(p -> {
-            return inputDir.resolve(p).toAbsolutePath();
+            return new InstallableFile(inputDir.resolve(p), p);
         }).toList();
 
         var startupInfo = new LauncherStartupInfo.Impl(
@@ -48,7 +48,9 @@ final class LauncherStartupInfoFromParams {
                     launcherData.moduleName(), launcherData.modulePath());
         } else {
             return new LauncherJarStartupInfo.Impl(startupInfo,
-                    inputDir.resolve(launcherData.mainJarName()),
+                    new InstallableFile(inputDir.resolve(
+                            launcherData.mainJarName()),
+                            launcherData.mainJarName()),
                     launcherData.isClassNameFromMainJar());
         }
     }

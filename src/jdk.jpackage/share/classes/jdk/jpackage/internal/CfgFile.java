@@ -56,7 +56,7 @@ final class CfgFile {
                     + "/" + startupInfo.qualifiedClassName()));
         } else if (startupInfo instanceof LauncherJarStartupInfo jarStartupInfo) {
             Path mainJarPath = appCfgLayout.appDirectory().resolve(
-                    jarStartupInfo.jarPath().getFileName());
+                    jarStartupInfo.jarPath().installPath());
 
             if (jarStartupInfo.isClassNameFromMainJar()) {
                 content.add(Map.entry("app.mainjar", mainJarPath));
@@ -73,7 +73,7 @@ final class CfgFile {
 
         for (var value : Optional.ofNullable(startupInfo.classPath()).orElseGet(List::of)) {
             content.add(Map.entry("app.classpath",
-                    appCfgLayout.appDirectory().resolve(value).toString()));
+                    appCfgLayout.appDirectory().resolve(value.installPath()).toString()));
         }
 
         content.add(Map.entry("[JavaOptions]", SECTION_TAG));
