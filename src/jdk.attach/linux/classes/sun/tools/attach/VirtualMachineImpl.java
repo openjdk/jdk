@@ -250,23 +250,23 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
         // 3. Caller and target processes share PID namespace but NOT root filesystem (container to container).
         // 4. Caller and target processes share neither PID namespace nor root filesystem (host to container).
 
-	final var procPidRoot = PROC.resolve(Long.toString(pid)).resolve(ROOT_TMP);
+        final var procPidRoot = PROC.resolve(Long.toString(pid)).resolve(ROOT_TMP);
 
-	/*
-	 * if target is elevated, we cant use /proc/<pid>/... so we have to fallback to /tmp, but that may not be shared 
-	 * with the target/attachee process, we can try, except in the case where the ns_pid also exists in this pid ns
-	 * which is ambiguous, if we share /tmp with the intended target, the attach will succeed, if we do not, 
-	 * then we will potentially attempt to attach to some arbitrary process with the same pid (in this pid ns)
-	 * as that of the intended target (in its * pid ns).
-	 *
-	 * so in that case we should prehaps throw - or risk sending SIGQUIT to some arbitrary process... which could kill it
-	 *
-	 * however we can also check the target pid's signal masks to see if it catches SIGQUIT and only do so if in
-	 * fact it does ... this reduces the risk of killing an innocent process in the current ns as opposed to 
-	 * attaching to the actual target JVM ... c.f: checkCatchesAndSendQuitTo() below.
-	 *
-	 * note that if pid == ns_pid we are in a shared pid ns with the target and may (potentially) share /tmp
-	 */
+        /*
+         * if target is elevated, we cant use /proc/<pid>/... so we have to fallback to /tmp, but that may not be shared 
+         * with the target/attachee process, we can try, except in the case where the ns_pid also exists in this pid ns
+         * which is ambiguous, if we share /tmp with the intended target, the attach will succeed, if we do not, 
+         * then we will potentially attempt to attach to some arbitrary process with the same pid (in this pid ns)
+         * as that of the intended target (in its * pid ns).
+         *
+         * so in that case we should prehaps throw - or risk sending SIGQUIT to some arbitrary process... which could kill it
+         *
+         * however we can also check the target pid's signal masks to see if it catches SIGQUIT and only do so if in
+         * fact it does ... this reduces the risk of killing an innocent process in the current ns as opposed to 
+         * attaching to the actual target JVM ... c.f: checkCatchesAndSendQuitTo() below.
+         *
+         * note that if pid == ns_pid we are in a shared pid ns with the target and may (potentially) share /tmp
+         */
 
         return (Files.isWritable(procPidRoot) ? procPidRoot : TMPDIR).toString();
     }
@@ -348,7 +348,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
 
             if (!m.matches()) continue;
 
-	    var       signals = m.group(MASK);
+            var       signals = m.group(MASK);
             final var slen    = signals.length();
 
             signals = signals.substring(slen / 2 , slen); // only really interested in the non r/t signals ...
@@ -366,7 +366,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
 
         final boolean  okToSendQuit = (!quitIgn && quitCgt); // ignore blocked as it may be temporary ...
 
-	if (okToSendQuit) {
+        if (okToSendQuit) {
             sendQuitTo(pid);
         } else if (throwIfNotReady) {
             final var cmdline = Files.lines(procPid.resolve("cmdline")).findFirst();
@@ -377,11 +377,11 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
                 cmd = cmdline.get();
                 cmd = cmd.substring(0, cmd.length() - 1); // remove trailing \0
             }
-		
-	    throw new AttachNotSupportedException("pid: " + pid + " cmd: '" + cmd + "' state is not ready to participate in attach handshake!");
+                
+            throw new AttachNotSupportedException("pid: " + pid + " cmd: '" + cmd + "' state is not ready to participate in attach handshake!");
         }
 
-	return okToSendQuit;
+        return okToSendQuit;
     }
 
     //-- native methods
