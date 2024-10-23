@@ -115,8 +115,9 @@ bool RegularPredicateWithUCT::is_predicate(const Node* node, Deoptimization::Deo
 }
 
 // A Regular Predicate must have an If or a RangeCheck node, while the If should not be a zero trip guard check.
+// Note that this method can be called during IGVN, so we also need to check that the If is not top.
 bool RegularPredicate::may_be_predicate_if(const Node* node) {
-  if (node->is_IfProj()) {
+  if (node->is_IfProj() && node->in(0)->is_If()) {
     const IfNode* if_node = node->in(0)->as_If();
     const int opcode_if = if_node->Opcode();
     if ((opcode_if == Op_If && !if_node->is_zero_trip_guard())
