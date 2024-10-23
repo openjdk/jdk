@@ -74,10 +74,12 @@ interface LinuxPackage extends Package {
 
     static class Impl extends Package.Proxy<Package> implements LinuxPackage {
 
-        Impl(Package target, String menuGroupName, String category, String additionalDependencies,
-                String release) throws ConfigException {
-            this(target, menuGroupName, category, additionalDependencies, release, LinuxPackageArch
-                    .getValue(target.asStandardPackageType()));
+        Impl(Package target, String menuGroupName, String category,
+                String additionalDependencies, String release) throws
+                ConfigException {
+            this(target, menuGroupName, category, additionalDependencies,
+                    release, LinuxPackageArch.getValue(
+                            target.asStandardPackageType()));
         }
 
         Impl(Package target, String menuGroupName, String category,
