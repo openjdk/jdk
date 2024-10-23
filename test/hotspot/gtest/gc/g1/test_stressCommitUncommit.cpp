@@ -81,7 +81,7 @@ TEST_VM(G1RegionToSpaceMapper, smallStressAdjacent) {
   size_t size = G1BlockOffsetTable::compute_size(num_regions * region_size / HeapWordSize);
   size_t page_size = os::vm_page_size();
 
-  ReservedSpace rs(size, os::vm_page_size());
+  ReservedSpace rs(size, os::vm_page_size(), mtTest);
 
   G1RegionToSpaceMapper* small_mapper  =
     G1RegionToSpaceMapper::create_mapper(rs,
@@ -105,7 +105,7 @@ TEST_VM(G1RegionToSpaceMapper, largeStressAdjacent) {
   size_t size = G1BlockOffsetTable::compute_size(num_regions * region_size / HeapWordSize);
   size_t page_size = os::vm_page_size();
 
-  ReservedSpace rs(size, page_size);
+  ReservedSpace rs(size, page_size, mtTest);
 
   G1RegionToSpaceMapper* large_mapper  =
     G1RegionToSpaceMapper::create_mapper(rs,

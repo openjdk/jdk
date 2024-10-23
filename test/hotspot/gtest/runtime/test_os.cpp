@@ -565,7 +565,7 @@ static address reserve_multiple(int num_stripes, size_t stripe_len) {
 static address reserve_one_commit_multiple(int num_stripes, size_t stripe_len) {
   assert(is_aligned(stripe_len, os::vm_allocation_granularity()), "Sanity");
   size_t total_range_len = num_stripes * stripe_len;
-  address p = (address)os::reserve_memory(total_range_len);
+  address p = (address)os::reserve_memory(total_range_len, false, mtTest);
   EXPECT_NE(p, (address)nullptr);
   for (int stripe = 0; stripe < num_stripes; stripe++) {
     address q = p + (stripe * stripe_len);
@@ -632,7 +632,7 @@ TEST_VM(os, release_multi_mappings) {
   PRINT_MAPPINGS("B");
 
   // ...re-reserve the middle stripes. This should work unless release silently failed.
-  address p2 = (address)os::attempt_reserve_memory_at((char*)p_middle_stripes, middle_stripe_len);
+  address p2 = (address)os::attempt_reserve_memory_at((char*)p_middle_stripes, middle_stripe_len, false, mtTest);
 
   ASSERT_EQ(p2, p_middle_stripes);
 
@@ -690,7 +690,7 @@ TEST_VM(os, release_one_mapping_multi_commits) {
 
   // // make things even more difficult by trying to reserve at the border of the region
   address border = p + num_stripes * stripe_len;
-  address p2 = (address)os::attempt_reserve_memory_at((char*)border, stripe_len);
+  address p2 = (address)os::attempt_reserve_memory_at((char*)border, stripe_len, false, mtTest);
   PRINT_MAPPINGS("B");
 
   ASSERT_TRUE(p2 == nullptr || p2 == border);
@@ -1062,7 +1062,7 @@ TEST_VM(os, open_O_CLOEXEC) {
 TEST_VM(os, reserve_at_wish_address_shall_not_replace_mappings_smallpages) {
   char* p1 = os::reserve_memory(M, false, mtTest);
   ASSERT_NE(p1, nullptr);
-  char* p2 = os::attempt_reserve_memory_at(p1, M);
+  char* p2 = os::attempt_reserve_memory_at(p1, M, false, mtTest);
   ASSERT_EQ(p2, nullptr); // should have failed
   os::release_memory(p1, M);
 }
