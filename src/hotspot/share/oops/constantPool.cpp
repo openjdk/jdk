@@ -294,7 +294,15 @@ void ConstantPool::iterate_archivable_resolved_references(Function function) {
         ResolvedIndyEntry *rie = indy_entries->adr_at(i);
         if (rie->is_resolved() && AOTConstantPoolResolver::is_resolution_deterministic(this, rie->constant_pool_index())) {
           int rr_index = rie->resolved_references_index();
+          assert(resolved_reference_at(rr_index) != nullptr, "must exist");
           function(rr_index);
+
+          // Save the BSM as well (sometimes the JIT looks up the BSM it for replay)
+          int indy_cp_index = rie->constant_pool_index();
+          int bsm_mh_cp_index = bootstrap_method_ref_index_at(indy_cp_index);
+          int bsm_rr_index = cp_to_object_index(bsm_mh_cp_index);
+          assert(resolved_reference_at(bsm_rr_index) != nullptr, "must exist");
+          function(bsm_rr_index);
         }
       }
     }
@@ -306,6 +314,7 @@ void ConstantPool::iterate_archivable_resolved_references(Function function) {
         if (rme->is_resolved(Bytecodes::_invokehandle) && rme->has_appendix() &&
             cache()->can_archive_resolved_method(this, rme)) {
           int rr_index = rme->resolved_references_index();
+          assert(resolved_reference_at(rr_index) != nullptr, "must exist");
           function(rr_index);
         }
       }
@@ -353,8 +362,11 @@ objArrayOop ConstantPool::prepare_resolved_references_for_archiving() {
             if (!ArchiveHeapWriter::is_string_too_large_to_archive(obj)) {
               scratch_rr->obj_at_put(i, obj);
             }
+            continue;
           }
-        } else if (keep_resolved_refs.at(i)) {
+        }
+
+        if (keep_resolved_refs.at(i)) {
           scratch_rr->obj_at_put(i, obj);
         }
       }
