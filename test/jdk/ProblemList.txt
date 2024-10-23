@@ -585,7 +585,7 @@ java/net/Socket/asyncClose/Race.java                            8317801 aix-ppc6
 
 # jdk_nio
 
-java/nio/Buffer/LimitDirectMemory.java                          8340728 generic-all
+java/nio/Buffer/LimitDirectMemory.java                          8342849 generic-all
 
 java/nio/channels/AsynchronousSocketChannel/StressLoopback.java 8211851 aix-ppc64
 
