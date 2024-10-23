@@ -46,11 +46,11 @@ import static jdk.jpackage.internal.Functional.ThrowingFunction.toFunction;
 record BundlerParamInfo<T>(String id, Class<T> valueType,
         Function<Map<String, ? super Object>, T> defaultValueFunction,
         BiFunction<String, Map<String, ? super Object>, T> stringConverter) {
-    
+
     static BundlerParamInfo<String> createStringBundlerParam(String id) {
         return new BundlerParamInfo<>(id, String.class, null, null);
     }
-    
+
     @SuppressWarnings({"unchecked", "rawtypes"})
     static <T2> BundlerParamInfo<T2> createBundlerParam(String id,
             Functional.ThrowingFunction<Map<String, ? super Object>, T2> valueFunc) {

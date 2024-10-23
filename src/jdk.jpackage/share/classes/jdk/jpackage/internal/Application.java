@@ -107,7 +107,7 @@ interface Application {
         }
     }
 
-    default Map<String, String> extraAppImageData() {
+    default Map<String, String> extraAppImageFileData() {
         return Map.of();
     }
 

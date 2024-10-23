@@ -59,7 +59,7 @@ interface Launcher {
         return ResourceLocator.class.getResourceAsStream("jpackageapplauncher");
     }
 
-    default Map<String, String> extraAppImageData() {
+    default Map<String, String> extraAppImageFileData() {
         return Map.of();
     }
 

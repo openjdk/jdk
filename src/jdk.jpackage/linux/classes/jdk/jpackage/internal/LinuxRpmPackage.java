@@ -45,7 +45,7 @@ interface LinuxRpmPackage extends LinuxPackage {
 
         private final String licenseType;
     }
-    
+
     static record Defaults(String licenseType) {
 
         private final static Defaults INSTANCE = new Defaults(I18N.getString(

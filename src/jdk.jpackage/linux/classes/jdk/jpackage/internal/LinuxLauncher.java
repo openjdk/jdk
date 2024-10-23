@@ -32,7 +32,7 @@ interface LinuxLauncher extends Launcher {
     Optional<Boolean> shortcut();
 
     @Override
-    default Map<String, String> extraAppImageData() {
+    default Map<String, String> extraAppImageFileData() {
         return shortcut().map(v -> {
             return Map.of("shortcut", Boolean.toString(v));
         }).orElseGet(Map::of);

@@ -28,10 +28,10 @@ import java.nio.file.Path;
 
 /**
  * Source file that should be copied somewhere in application image tree.
- * 
+ *
  * Has two paths:
  *  - path where it should be picked from;
  *  - path where it should be copied in application image;
  */
-record InstallableFile(Path srcPath, Path installPath) {    
+record InstallableFile(Path srcPath, Path installPath) {
 }

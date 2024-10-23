@@ -177,7 +177,7 @@ class AppImageBundler extends AbstractBundler {
 
         AbstractAppImageBuilder appBuilder = appImageSupplier.apply(rootDirectory);
         if (!hasAppImage) {
-            app.runtimeBuilder().createRuntime(appBuilder.getAppLayout());            
+            app.runtimeBuilder().createRuntime(appBuilder.getAppLayout());
         }
 
         appBuilder.prepareApplicationFiles(params);

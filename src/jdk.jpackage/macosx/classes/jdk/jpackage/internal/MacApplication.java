@@ -33,7 +33,7 @@ interface MacApplication extends Application {
     boolean appStore();
 
     @Override
-    default Map<String, String> extraAppImageData() {
+    default Map<String, String> extraAppImageFileData() {
         return Map.of("signed", Boolean.toString(signed()), "app-store",
                 Boolean.toString(appStore()));
     }

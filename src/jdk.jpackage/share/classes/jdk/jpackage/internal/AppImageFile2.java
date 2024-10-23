@@ -56,12 +56,12 @@ public final class AppImageFile2 {
         appVersion = app.version();
         launcherName = app.mainLauncher().name();
         mainClass = app.mainLauncher().startupInfo().qualifiedClassName();
-        extra = app.extraAppImageData();
+        extra = app.extraAppImageFileData();
         creatorVersion = getVersion();
         creatorPlatform = getPlatform();
         addLauncherInfos = app.additionalLaunchers().stream().map(launcher -> {
             return new LauncherInfo(launcher.name(), launcher.isService(),
-                    launcher.extraAppImageData());
+                    launcher.extraAppImageFileData());
         }).toList();
 
         for (var str : List.of(appVersion, launcherName, mainClass)) {
@@ -213,7 +213,7 @@ public final class AppImageFile2 {
                     }
 
                     @Override
-                    public Map<String, String> extraAppImageData() {
+                    public Map<String, String> extraAppImageFileData() {
                         return launcherProps.getExtra();
                     }
                 };
@@ -232,7 +232,7 @@ public final class AppImageFile2 {
                 }
 
                 @Override
-                public Map<String, String> extraAppImageData() {
+                public Map<String, String> extraAppImageFileData() {
                     return props.getExtra();
                 }
             });
@@ -262,7 +262,7 @@ public final class AppImageFile2 {
             return IntStream.range(0, v.getLength()).mapToObj(v::item);
         }).orElseGet(Stream::of);
     }
-    
+
     static Stream<Node> toStream(NamedNodeMap nodes) {
         return Optional.ofNullable(nodes).map(v -> {
             return IntStream.range(0, v.getLength()).mapToObj(v::item);
@@ -293,7 +293,7 @@ public final class AppImageFile2 {
         static AppImageProperties launcher(Node node) {
             var data = toStream(node.getAttributes()).map(attrNode -> {
                 return Map.entry(attrNode.getNodeName(), attrNode.getNodeValue());
-            }).collect(toMap(Map.Entry::getKey, Map.Entry::getValue));            
+            }).collect(toMap(Map.Entry::getKey, Map.Entry::getValue));
             return new AppImageProperties(data, Set.of("name", "service"));
         }
 
