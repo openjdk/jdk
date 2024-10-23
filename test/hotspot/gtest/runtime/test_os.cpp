@@ -493,7 +493,7 @@ TEST_VM(os, realpath) {
 static inline bool can_reserve_executable_memory(void) {
   bool executable = true;
   size_t len = 128;
-  char* p = os::reserve_memory(len, executable);
+  char* p = os::reserve_memory(len, executable, mtTest);
   bool exec_supported = (p != nullptr);
   if (exec_supported) {
     os::release_memory(p, len);
@@ -531,7 +531,7 @@ static address reserve_multiple(int num_stripes, size_t stripe_len) {
   for (int tries = 0; tries < 256 && p == nullptr; tries ++) {
     size_t total_range_len = num_stripes * stripe_len;
     // Reserve a large contiguous area to get the address space...
-    p = (address)os::reserve_memory(total_range_len);
+    p = (address)os::reserve_memory(total_range_len, false, mtTest);
     EXPECT_NE(p, (address)nullptr);
     // .. release it...
     EXPECT_TRUE(os::release_memory((char*)p, total_range_len));
@@ -545,7 +545,7 @@ static address reserve_multiple(int num_stripes, size_t stripe_len) {
 #else
       const bool executable = stripe % 2 == 0;
 #endif
-      q = (address)os::attempt_reserve_memory_at((char*)q, stripe_len, executable);
+      q = (address)os::attempt_reserve_memory_at((char*)q, stripe_len, executable, mtTest);
       if (q == nullptr) {
         // Someone grabbed that area concurrently. Cleanup, then retry.
         tty->print_cr("reserve_multiple: retry (%d)...", stripe);
