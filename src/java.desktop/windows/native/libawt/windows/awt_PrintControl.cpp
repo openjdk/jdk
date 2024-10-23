@@ -32,8 +32,8 @@
 #include <winspool.h>
 
 #define ROUNDTOINT(x) ((int)((x)+0.5))
-static const int DEFAULT_RES = 72;
-static const double TENTHS_MM_TO_POINTS = 3.527777778;
+// static const int DEFAULT_RES = 72;
+// static const double TENTHS_MM_TO_POINTS = 3.527777778;
 static const double LOMETRIC_TO_POINTS = (72.0 / 254.0);
 
 
