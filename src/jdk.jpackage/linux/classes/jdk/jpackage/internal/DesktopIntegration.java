@@ -102,11 +102,11 @@ final class DesktopIntegration extends ShellCustomAction {
         final String mimeInfoFileName = String.format("%s-%s-MimeInfo.xml",
                     pkg.packageName(), escapedAppFileName);
 
-        mimeInfoFile = new DesktopFile(mimeInfoFileName);
+        mimeInfoFile = createDesktopFile(mimeInfoFileName);
 
         if (withDesktopFile) {
-            desktopFile = new DesktopFile(desktopFileName);
-            iconFile = new DesktopFile(escapedAppFileName
+            desktopFile = createDesktopFile(desktopFileName);
+            iconFile = createDesktopFile(escapedAppFileName
                     + IOUtils.getSuffix(Path.of(DEFAULT_ICON)));
 
             if (curIconResource == null) {
@@ -170,7 +170,7 @@ final class DesktopIntegration extends ShellCustomAction {
         final ShellCommands shellCommands;
         if (desktopFile != null) {
             // Create application desktop description file.
-            createDesktopFile(data);
+            saveDesktopFile(data);
 
             // Shell commands will be created only if desktop file
             // should be installed.
@@ -328,32 +328,18 @@ final class DesktopIntegration extends ShellCustomAction {
     }
 
     /**
-     * Desktop integration file. xml, icon, etc.
-     * Resides somewhere in application installation tree.
-     * Has two paths:
-     *  - path where it should be placed at package build time;
-     *  - path where it should be installed by package manager;
+     * Creates desktop integration file. xml, icon, etc.
+     *
+     * Returned instance:
+     *  - srcPath(): path where it should be placed at package build time;
+     *  - installPath(): path where it should be installed by package manager;
      */
-    private class DesktopFile {
-
-        DesktopFile(String fileName) {
-            var installPath = pkg.installedPackageLayout()
-                    .destktopIntegrationDirectory().resolve(fileName);
-            var srcPath = pkg.packageLayout().resolveAt(workshop.appImageDir())
-                    .destktopIntegrationDirectory().resolve(fileName);
-
-            impl = new InstallableFile(srcPath, installPath);
-        }
-
-        Path installPath() {
-            return impl.installPath();
-        }
-
-        Path srcPath() {
-            return impl.srcPath();
-        }
-
-        private final InstallableFile impl;
+    private InstallableFile createDesktopFile(String fileName) {
+        var srcPath = pkg.packageLayout().resolveAt(workshop.appImageDir()).destktopIntegrationDirectory().resolve(
+                fileName);
+        var installPath = pkg.installedPackageLayout().destktopIntegrationDirectory().resolve(
+                fileName);
+        return new InstallableFile(srcPath, installPath);
     }
 
     private void appendFileAssociation(XMLStreamWriter xml,
@@ -411,7 +397,7 @@ final class DesktopIntegration extends ShellCustomAction {
                 processedMimeTypes.add(mimeType);
 
                 // Create icon name for mime type from mime type.
-                DesktopFile faIconFile = new DesktopFile(mimeType.replace(
+                var faIconFile = createDesktopFile(mimeType.replace(
                         File.separatorChar, '-') + IOUtils.getSuffix(
                                 assoc.data.iconPath));
 
@@ -424,7 +410,7 @@ final class DesktopIntegration extends ShellCustomAction {
         }
     }
 
-    private void createDesktopFile(Map<String, String> data) throws IOException {
+    private void saveDesktopFile(Map<String, String> data) throws IOException {
         List<String> mimeTypes = getMimeTypeNamesFromFileAssociations();
         data.put("DESKTOP_MIMES", "MimeType=" + String.join(";", mimeTypes));
 
@@ -500,9 +486,9 @@ final class DesktopIntegration extends ShellCustomAction {
     private final OverridableResource iconResource;
     private final OverridableResource desktopFileResource;
 
-    private final DesktopFile mimeInfoFile;
-    private final DesktopFile desktopFile;
-    private final DesktopFile iconFile;
+    private final InstallableFile mimeInfoFile;
+    private final InstallableFile desktopFile;
+    private final InstallableFile iconFile;
 
     private final List<DesktopIntegration> nestedIntegrations;
 
