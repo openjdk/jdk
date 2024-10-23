@@ -29,11 +29,6 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Method;
 import java.util.CSM;
-import java.security.Permission;
-import java.security.PermissionCollection;
-import java.security.Permissions;
-import java.security.Policy;
-import java.security.ProtectionDomain;
 import java.util.function.Supplier;
 
 /**
@@ -45,7 +40,6 @@ import java.util.function.Supplier;
  * package, and protection domain as the lookup class.
  */
 public class MethodInvokeTest {
-    static final Policy DEFAULT_POLICY = Policy.getPolicy();
     private static final String CALLER_METHOD = "caller";
     private static final String CALLER_NO_ALT_METHOD = "callerNoAlternateImpl";
 
