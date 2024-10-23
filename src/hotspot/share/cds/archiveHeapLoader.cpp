@@ -142,15 +142,22 @@ class PatchCompressedEmbeddedPointersQuick: public BitMapClosure {
 
 class PatchUncompressedEmbeddedPointers: public BitMapClosure {
   oop* _start;
+  intptr_t _delta;
 
  public:
-  PatchUncompressedEmbeddedPointers(oop* start) : _start(start) {}
+  PatchUncompressedEmbeddedPointers(oop* start, intx runtime_offset) :
+    _start(start),
+    _delta(runtime_offset) {}
+
+  PatchUncompressedEmbeddedPointers(oop* start) :
+    _start(start),
+    _delta(ArchiveHeapLoader::mapped_heap_delta()) {}
 
   bool do_bit(size_t offset) {
     oop* p = _start + offset;
     intptr_t dumptime_oop = (intptr_t)((void*)*p);
     assert(dumptime_oop != 0, "null oops should have been filtered out at dump time");
-    intptr_t runtime_oop = dumptime_oop + ArchiveHeapLoader::mapped_heap_delta();
+    intptr_t runtime_oop = dumptime_oop + _delta;
     RawAccess<IS_NOT_NULL>::oop_store(p, cast_to_oop(runtime_oop));
     return true;
   }
@@ -223,25 +230,6 @@ void ArchiveHeapLoader::init_loaded_heap_relocation(LoadedArchiveHeapRegion* loa
 bool ArchiveHeapLoader::can_load() {
   return Universe::heap()->can_load_archived_objects();
 }
-
-class ArchiveHeapLoader::PatchUncompressedLoadedRegionPointers: public BitMapClosure {
-  oop* _start;
-  intx _runtime_offset;
-
- public:
-  PatchUncompressedLoadedRegionPointers(oop* start, LoadedArchiveHeapRegion* loaded_region)
-    : _start(start),
-      _runtime_offset(loaded_region->_runtime_offset) {}
-
-  bool do_bit(size_t offset) {
-    oop* p = _start + offset;
-    intptr_t dumptime_oop = (intptr_t)((void*)*p);
-    assert(dumptime_oop != 0, "null oops should have been filtered out at dump time");
-    intptr_t runtime_oop = dumptime_oop + _runtime_offset;
-    RawAccess<IS_NOT_NULL>::oop_store(p, cast_to_oop(runtime_oop));
-    return true;
-  }
-};
 
 class ArchiveHeapLoader::PatchLoadedRegionPointers: public BitMapClosure {
   narrowOop* _start;
@@ -331,7 +319,7 @@ bool ArchiveHeapLoader::load_heap_region_impl(FileMapInfo* mapinfo, LoadedArchiv
     PatchLoadedRegionPointers patcher((narrowOop*)load_address + FileMapInfo::current_info()->heap_oopmap_start_pos(), loaded_region);
     bm.iterate(&patcher);
   } else {
-    PatchUncompressedLoadedRegionPointers patcher((oop*)load_address + FileMapInfo::current_info()->heap_oopmap_start_pos(), loaded_region);
+    PatchUncompressedEmbeddedPointers patcher((oop*)load_address + FileMapInfo::current_info()->heap_oopmap_start_pos(), loaded_region->_runtime_offset);
     bm.iterate(&patcher);
   }
   return true;
