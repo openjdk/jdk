@@ -93,7 +93,7 @@ void RangeCheckStub::emit_code(LIR_Assembler* ce) {
     stub_id = C1StubId::throw_range_check_failed_id;
   }
   // t0 and t1 are used as args in generate_exception_throw，
-  // so use ra as the tmp register for rt_call.
+  // so use x1/ra as the tmp register for rt_call.
   __ rt_call(Runtime1::entry_for(stub_id), ra);
   ce->add_call_info_here(_info);
   ce->verify_oop_map(_info);
@@ -275,7 +275,7 @@ void SimpleExceptionStub::emit_code(LIR_Assembler* ce) {
   if (_obj->is_cpu_register()) {
     __ mv(t0, _obj->as_register());
   }
-  __ far_call(RuntimeAddress(Runtime1::entry_for(_stub)), t1);
+  __ far_call(RuntimeAddress(Runtime1::entry_for(_stub)));
   ce->add_call_info_here(_info);
   debug_only(__ should_not_reach_here());
 }

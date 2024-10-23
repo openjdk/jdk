@@ -468,8 +468,8 @@ static void gen_c2i_adapter(MacroAssembler *masm,
 
   __ mv(esp, sp); // Interp expects args on caller's expression stack
 
-  __ ld(t0, Address(xmethod, in_bytes(Method::interpreter_entry_offset())));
-  __ jr(t0);
+  __ ld(t1, Address(xmethod, in_bytes(Method::interpreter_entry_offset())));
+  __ jr(t1);
 }
 
 void SharedRuntime::gen_i2c_adapter(MacroAssembler *masm,
@@ -610,8 +610,7 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
   Label skip_fixup;
 
   const Register receiver = j_rarg0;
-  const Register data = t1;
-  const Register tmp = t2;  // A call-clobbered register not used for arg passing
+  const Register data = t0;
 
   // -------------------------------------------------------------------------
   // Generate a C2I adapter.  On entry we know xmethod holds the Method* during calls
@@ -1140,8 +1139,8 @@ static void gen_continuation_yield(MacroAssembler* masm,
   Label ok;
   __ beqz(t0, ok);
   __ leave();
-  __ la(t0, RuntimeAddress(StubRoutines::forward_exception_entry()));
-  __ jr(t0);
+  __ la(t1, RuntimeAddress(StubRoutines::forward_exception_entry()));
+  __ jr(t1);
   __ bind(ok);
 
   __ leave();
@@ -1452,8 +1451,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   // restoring them except fp. fp is the only callee save register
   // as far as the interpreter and the compiler(s) are concerned.
 
-
-  const Register ic_reg = t1;
   const Register receiver = j_rarg0;
 
   __ verify_oop(receiver);
@@ -1737,6 +1734,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   __ membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
   __ sw(t0, Address(t1));
 
+  // Clobbers t1
   __ rt_call(native_func);
 
   __ bind(native_return);
@@ -2631,8 +2629,8 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(SharedStubId id, address desti
   reg_saver.restore_live_registers(masm);
 
   // We are back to the original state on entry and ready to go.
-
-  __ jr(t0);
+  __ mv(t1, t0);
+  __ jr(t1);
 
   // Pending exception after the safepoint
 
