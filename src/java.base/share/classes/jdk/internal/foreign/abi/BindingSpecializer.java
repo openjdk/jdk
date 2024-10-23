@@ -484,14 +484,14 @@ public class BindingSpecializer {
     }
 
     private void emitAcquireScope() {
-        cb.checkcast(CD_AbstractMemorySegmentImpl);
-          .invokevirtual(CD_AbstractMemorySegmentImpl, "sessionImpl", MTD_SESSION_IMPL);
+        cb.checkcast(CD_AbstractMemorySegmentImpl)
+          .invokevirtual(CD_AbstractMemorySegmentImpl, "sessionImpl", MTD_SESSION_IMPL)
           .invokevirtual(CD_MemorySessionImpl, "acquire0", MTD_ACQUIRE0);
     }
 
     private void emitReleaseScope() {
-        cb.checkcast(CD_AbstractMemorySegmentImpl);
-          .invokevirtual(CD_AbstractMemorySegmentImpl, "sessionImpl", MTD_SESSION_IMPL);
+        cb.checkcast(CD_AbstractMemorySegmentImpl)
+          .invokevirtual(CD_AbstractMemorySegmentImpl, "sessionImpl", MTD_SESSION_IMPL)
           .invokevirtual(CD_MemorySessionImpl, "release0", MTD_RELEASE0);
     }
 

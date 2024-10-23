@@ -5,36 +5,8 @@ import org.openjdk.jmh.annotations.*;
 import java.lang.foreign.*;
 import java.lang.invoke.*;
 import java.util.concurrent.TimeUnit;
-
 /*
-Windows 11, Ryzen 7950X3D, JDK 24-beta+20 (similar results on JDK 23)
-Benchmark                                              Mode  Cnt      Score      Error   Units
-FFMEscapeAnalysisTest.noop_params0                     avgt    3      3,133 ?    1,954   ns/op
-FFMEscapeAnalysisTest.noop_params0:gc.alloc.rate       avgt    3      0,007 ?    0,001  MB/sec
-FFMEscapeAnalysisTest.noop_params0:gc.alloc.rate.norm  avgt    3     ? 10??               B/op
-FFMEscapeAnalysisTest.noop_params0:gc.count            avgt    3        ? 0             counts
-FFMEscapeAnalysisTest.noop_params1                     avgt    3      3,051 ?    0,051   ns/op
-FFMEscapeAnalysisTest.noop_params1:gc.alloc.rate       avgt    3      0,007 ?    0,001  MB/sec
-FFMEscapeAnalysisTest.noop_params1:gc.alloc.rate.norm  avgt    3     ? 10??               B/op
-FFMEscapeAnalysisTest.noop_params1:gc.count            avgt    3        ? 0             counts
-FFMEscapeAnalysisTest.noop_params2                     avgt    3      3,048 ?    0,218   ns/op
-FFMEscapeAnalysisTest.noop_params2:gc.alloc.rate       avgt    3      0,007 ?    0,001  MB/sec
-FFMEscapeAnalysisTest.noop_params2:gc.alloc.rate.norm  avgt    3     ? 10??               B/op
-FFMEscapeAnalysisTest.noop_params2:gc.count            avgt    3        ? 0             counts
-FFMEscapeAnalysisTest.noop_params3                     avgt    3      3,110 ?    1,973   ns/op
-FFMEscapeAnalysisTest.noop_params3:gc.alloc.rate       avgt    3      2,368 ?   74,631  MB/sec
-FFMEscapeAnalysisTest.noop_params3:gc.alloc.rate.norm  avgt    3      0,008 ?    0,253    B/op
-FFMEscapeAnalysisTest.noop_params3:gc.count            avgt    3        ? 0             counts
-FFMEscapeAnalysisTest.noop_params4                     avgt    3     10,313 ?    3,615   ns/op
-FFMEscapeAnalysisTest.noop_params4:gc.alloc.rate       avgt    3  14796,598 ? 5131,809  MB/sec
-FFMEscapeAnalysisTest.noop_params4:gc.alloc.rate.norm  avgt    3    160,000 ?    0,001    B/op
-FFMEscapeAnalysisTest.noop_params4:gc.count            avgt    3     20,000             counts
-FFMEscapeAnalysisTest.noop_params4:gc.time             avgt    3     15,000                 ms
-FFMEscapeAnalysisTest.noop_params5                     avgt    3     12,156 ?    4,828   ns/op
-FFMEscapeAnalysisTest.noop_params5:gc.alloc.rate       avgt    3  15692,588 ? 6152,349  MB/sec
-FFMEscapeAnalysisTest.noop_params5:gc.alloc.rate.norm  avgt    3    200,000 ?    0,001    B/op
-FFMEscapeAnalysisTest.noop_params5:gc.count            avgt    3     19,000             counts
-FFMEscapeAnalysisTest.noop_params5:gc.time             avgt    3     16,000                 ms
+ * Source: https://gist.github.com/Spasi/71d5cfa687a1dbe95b3fce608d31ae6b
  */
 @BenchmarkMode(Mode.AverageTime)
 @Warmup(iterations = 5, time = 500, timeUnit = TimeUnit.MILLISECONDS)
