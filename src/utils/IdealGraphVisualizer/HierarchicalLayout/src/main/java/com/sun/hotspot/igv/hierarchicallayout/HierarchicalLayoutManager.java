@@ -506,11 +506,8 @@ public class HierarchicalLayoutManager extends LayoutManager {
         // STEP 2: Reverse edges, handle backedges
         new ReverseEdges().run(true);
 
-        // STEP 3: Assign layers
-        new AssignLayers().run(true);
-
-        // STEP 4: Create dummy nodes
-        new CreateDummyNodes().run();
+        // STEP 3: Assign layers and create dummy nodes
+        new LayerManager().run(true);
 
         // STEP 5: Crossing Reduction
         new CrossingReduction().run();
@@ -1094,9 +1091,10 @@ public class HierarchicalLayoutManager extends LayoutManager {
 
     }
 
-    private class AssignLayers {
 
-        private void run(boolean prioritizeControl) {
+    private class LayerManager {
+
+        private void assignLayers(boolean prioritizeControl) {
             ArrayList<LayoutNode> workingList = new ArrayList<>();
 
             // add all root nodes to layer 0
@@ -1197,12 +1195,8 @@ public class HierarchicalLayoutManager extends LayoutManager {
 
             graph.initLayers(layerCount);
         }
-    }
 
-    private class CreateDummyNodes {
-
-        private void run() {
-
+        private void createDummyNodes() {
             List<LayoutNode> layoutNodes = new ArrayList<>(graph.getLayoutNodes());
             layoutNodes.sort(LAYOUT_NODE_DEGREE_COMPARATOR);
 
@@ -1234,7 +1228,12 @@ public class HierarchicalLayoutManager extends LayoutManager {
                     }
                 }
             }
+        }
 
+
+        public void run(boolean prioritizeControl) {
+            assignLayers(prioritizeControl);
+            createDummyNodes();
             graph.updatePositions();
         }
     }
