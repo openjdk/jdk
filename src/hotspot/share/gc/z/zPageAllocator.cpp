@@ -30,6 +30,7 @@
 #include "gc/z/zGeneration.inline.hpp"
 #include "gc/z/zGenerationId.hpp"
 #include "gc/z/zGlobals.hpp"
+#include "gc/z/zLargePages.inline.hpp"
 #include "gc/z/zLock.inline.hpp"
 #include "gc/z/zPage.inline.hpp"
 #include "gc/z/zPageAge.hpp"
@@ -46,6 +47,7 @@
 #include "runtime/globals.hpp"
 #include "runtime/init.hpp"
 #include "runtime/java.hpp"
+#include "runtime/os.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -232,29 +234,38 @@ bool ZPageAllocator::is_initialized() const {
 
 class ZPreTouchTask : public ZTask {
 private:
-  const ZPhysicalMemoryManager* const _physical;
-  volatile zoffset                    _start;
-  const zoffset_end                   _end;
+  volatile uintptr_t _current;
+  const uintptr_t    _end;
+
+  static void pretouch(zaddress zaddr, size_t size) {
+    const uintptr_t addr = untype(zaddr);
+    const size_t page_size = ZLargePages::is_explicit() ? ZGranuleSize : os::vm_page_size();
+    os::pretouch_memory((void*)addr, (void*)(addr + size), page_size);
+  }
 
 public:
-  ZPreTouchTask(const ZPhysicalMemoryManager* physical, zoffset start, zoffset_end end)
+  ZPreTouchTask(zoffset start, zoffset_end end)
     : ZTask("ZPreTouchTask"),
-      _physical(physical),
-      _start(start),
-      _end(end) {}
+      _current(untype(start)),
+      _end(untype(end)) {}
 
   virtual void work() {
+    const size_t size = ZGranuleSize;
+
     for (;;) {
-      // Get granule offset
-      const size_t size = ZGranuleSize;
-      const zoffset offset = to_zoffset(Atomic::fetch_then_add((uintptr_t*)&_start, size));
-      if (offset >= _end) {
+      // Claim an offset for this thread
+      const uintptr_t claimed = Atomic::fetch_then_add(&_current, size);
+      if (claimed >= _end) {
         // Done
         break;
       }
 
-      // Pre-touch granule
-      _physical->pretouch(offset, size);
+      // At this point we know that we have a valid zoffset / zaddress.
+      const zoffset offset = to_zoffset(claimed);
+      const zaddress addr = ZOffset::address(offset);
+
+      // Pre-touch the granule
+      pretouch(addr, size);
     }
   }
 };
@@ -271,7 +282,7 @@ bool ZPageAllocator::prime_cache(ZWorkers* workers, size_t size) {
 
   if (AlwaysPreTouch) {
     // Pre-touch page
-    ZPreTouchTask task(&_physical, page->start(), page->end());
+    ZPreTouchTask task(page->start(), page->end());
     workers->run_all(&task);
   }
 
