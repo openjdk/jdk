@@ -166,7 +166,7 @@ public:
   template <typename RegisterMapT>
   void fix_thawed_frame(const frame& f, const RegisterMapT* map);
 
-  void copy_lockstack(oop* start);
+  void transfer_lockstack(oop* start);
 
   template <typename OopT, class StackChunkLockStackClosureType>
   inline void iterate_lockstack(StackChunkLockStackClosureType* closure);

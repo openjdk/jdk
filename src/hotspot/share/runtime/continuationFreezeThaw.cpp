@@ -444,7 +444,7 @@ private:
   NOINLINE freeze_result recurse_freeze_native_frame(frame& f, frame& caller);
   NOINLINE void finish_freeze(const frame& f, const frame& top);
 
-  void freeze_lockstack();
+  void freeze_lockstack(stackChunkOop chunk);
 
   inline bool stack_overflow();
 
@@ -539,12 +539,11 @@ void FreezeBase::init_rest() { // we want to postpone some initialization after 
   NOT_PRODUCT(_frames = 0;)
 }
 
-void FreezeBase::freeze_lockstack() {
-  stackChunkOop chunk = _cont.tail();
+void FreezeBase::freeze_lockstack(stackChunkOop chunk) {
   assert(chunk->sp_address() - chunk->start_address() >= _monitors_in_lockstack, "no room for lockstack");
 
   _thread->lock_stack().move_to_address((oop*)chunk->start_address());
-  chunk->set_lockstack_size((uint8_t)_monitors_in_lockstack);
+  chunk->set_lockstack_size(checked_cast<uint8_t>(_monitors_in_lockstack));
   chunk->set_has_lockstack(true);
 }
 
@@ -776,7 +775,7 @@ void FreezeBase::freeze_fast_copy(stackChunkOop chunk, int chunk_start_sp CONT_J
   }
 
   if (_monitors_in_lockstack > 0) {
-    freeze_lockstack();
+    freeze_lockstack(chunk);
   }
 
   _cont.write();
@@ -1067,7 +1066,7 @@ freeze_result FreezeBase::finalize_freeze(const frame& callee, frame& caller, in
   }
 
   if (_monitors_in_lockstack > 0) {
-    freeze_lockstack();
+    freeze_lockstack(chunk);
   }
 
   // The topmost existing frame in the chunk; or an empty frame if the chunk is empty
@@ -1917,6 +1916,8 @@ protected:
   int remove_top_compiled_frame_from_chunk(stackChunkOop chunk, int &argsize);
   void copy_from_chunk(intptr_t* from, intptr_t* to, int size);
 
+  void thaw_lockstack(stackChunkOop chunk);
+
   // fast path
   inline void prefetch_chunk_pd(void* start, int size_words);
   void patch_return(intptr_t* sp, bool is_last);
@@ -2083,6 +2084,18 @@ int ThawBase::remove_top_compiled_frame_from_chunk(stackChunkOop chunk, int &arg
   return frame_size + argsize + frame::metadata_words_at_top;
 }
 
+void ThawBase::thaw_lockstack(stackChunkOop chunk) {
+  int lockStackSize = chunk->lockstack_size();
+  assert(lockStackSize > 0 && lockStackSize <= LockStack::CAPACITY, "");
+
+  oop tmp_lockstack[LockStack::CAPACITY];
+  chunk->transfer_lockstack(tmp_lockstack);
+  _thread->lock_stack().move_from_address(tmp_lockstack, lockStackSize);
+
+  chunk->set_lockstack_size(0);
+  chunk->set_has_lockstack(false);
+}
+
 void ThawBase::copy_from_chunk(intptr_t* from, intptr_t* to, int size) {
   assert(to >= _top_stack_address, "overwrote past thawing space"
     " to: " INTPTR_FORMAT " top_address: " INTPTR_FORMAT, p2i(to), p2i(_top_stack_address));
@@ -2237,15 +2250,7 @@ NOINLINE intptr_t* Thaw<ConfigT>::thaw_slow(stackChunkOop chunk, Continuation::t
   // On first thaw after freeze restore oops to the lockstack if any.
   assert(chunk->lockstack_size() == 0 || kind == Continuation::thaw_top, "");
   if (kind == Continuation::thaw_top && chunk->lockstack_size() > 0) {
-    int lockStackSize = chunk->lockstack_size();
-    assert(lockStackSize > 0, "should be");
-
-    oop tmp_lockstack[8];
-    chunk->copy_lockstack(tmp_lockstack);
-    _thread->lock_stack().move_from_address(tmp_lockstack, lockStackSize);
-
-    chunk->set_lockstack_size(0);
-    chunk->set_has_lockstack(false);
+    thaw_lockstack(chunk);
     retry_fast_path = true;
   }
 

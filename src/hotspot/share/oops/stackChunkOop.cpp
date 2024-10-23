@@ -441,32 +441,33 @@ void stackChunkOopDesc::fix_thawed_frame(const frame& f, const RegisterMapT* map
 template void stackChunkOopDesc::fix_thawed_frame(const frame& f, const RegisterMap* map);
 template void stackChunkOopDesc::fix_thawed_frame(const frame& f, const SmallRegisterMap* map);
 
-void stackChunkOopDesc::copy_lockstack(oop* dst) {
-  int cnt = lockstack_size();
+void stackChunkOopDesc::transfer_lockstack(oop* dst) {
+  const bool requires_gc_barriers = is_gc_mode() || requires_barriers();
+  const bool requires_uncompress = has_bitmap() && UseCompressedOops;
+  const auto load_and_clear_obj = [&](intptr_t* at) -> oop {
+    if (requires_gc_barriers) {
+      if (requires_uncompress) {
+        oop value = HeapAccess<>::oop_load(reinterpret_cast<narrowOop*>(at));
+        HeapAccess<>::oop_store(reinterpret_cast<narrowOop*>(at), nullptr);
+        return value;
+      } else {
+        oop value = HeapAccess<>::oop_load(reinterpret_cast<oop*>(at));
+        HeapAccess<>::oop_store(reinterpret_cast<oop*>(at), nullptr);
+        return value;
+      }
+    } else {
+      oop value = *reinterpret_cast<oop*>(at);
+      HeapAccess<>::oop_store(reinterpret_cast<oop*>(at), nullptr);
+      return value;
+    }
+  };
 
-  if (!(is_gc_mode() || requires_barriers())) {
-    oop* lockstack_start = (oop*)start_address();
-    for (int i = 0; i < cnt; i++) {
-      dst[i] = lockstack_start[i];
-      assert(oopDesc::is_oop(dst[i]), "not an oop");
-    }
-    return;
-  }
-
-  if (has_bitmap() && UseCompressedOops) {
-    intptr_t* lockstack_start = start_address();
-    for (int i = 0; i < cnt; i++) {
-      oop mon_owner = HeapAccess<>::oop_load((narrowOop*)&lockstack_start[i]);
-      assert(oopDesc::is_oop(mon_owner), "not an oop");
-      dst[i] = mon_owner;
-    }
-  } else {
-    intptr_t* lockstack_start = start_address();
-    for (int i = 0; i < cnt; i++) {
-      oop mon_owner = HeapAccess<>::oop_load((oop*)&lockstack_start[i]);
-      assert(oopDesc::is_oop(mon_owner), "not an oop");
-      dst[i] = mon_owner;
-    }
+  const int cnt = lockstack_size();
+  intptr_t* lockstack_start = start_address();
+  for (int i = 0; i < cnt; i++) {
+    oop mon_owner = load_and_clear_obj(&lockstack_start[i]);
+    assert(oopDesc::is_oop(mon_owner), "not an oop");
+    dst[i] = mon_owner;
   }
 }
 
