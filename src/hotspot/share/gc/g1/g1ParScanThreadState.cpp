@@ -86,7 +86,7 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
     _partial_array_state_allocator(pas_allocator),
     _partial_array_stepper(num_workers, ParGCArrayScanChunk),
     _string_dedup_requests(),
-    _max_num_optional_regions(collection_set->optional_region_length()),
+    _max_num_optional_regions(collection_set->num_optional_regions()),
     _numa(g1h->numa()),
     _obj_alloc_stat(nullptr),
     ALLOCATION_FAILURE_INJECTOR_ONLY(_allocation_failure_inject_counter(0) COMMA)

@@ -30,6 +30,7 @@
 #include "gc/g1/g1CardTable.inline.hpp"
 #include "gc/g1/g1CardTableEntryClosure.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/g1/g1CollectionSet.inline.hpp"
 #include "gc/g1/g1ConcurrentRefine.hpp"
 #include "gc/g1/g1DirtyCardQueue.hpp"
 #include "gc/g1/g1FromCardCache.hpp"
@@ -1391,6 +1392,8 @@ public:
         if (_initial_evacuation) {
           G1HeapRegionRemSet::iterate_for_merge(g1h->young_regions_cardset(), merge);
         }
+
+        g1h->collection_set()->merge_cardsets_for_collection_groups(g1h, merge, worker_id, _num_workers);
 
         g1h->collection_set_iterate_increment_from(&combined, nullptr, worker_id);
         G1MergeCardSetStats stats = merge.stats();

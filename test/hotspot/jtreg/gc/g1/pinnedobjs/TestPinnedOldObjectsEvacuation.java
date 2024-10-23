@@ -116,34 +116,12 @@ class TestResultTracker {
     // The code below tracks that single pinned region through the various stages as defined by the policy.
     //
     public void verify() throws Exception {
-        final String skipDropEvents = "GC\\((\\d+)\\).*(Marking|Retained) candidate (\\d+) can not be reclaimed currently\\. (Skipping|Dropping)";
+        final String skipDropEvents = "GC\\((\\d+)\\).*(Retained) candidate (\\d+) can not be reclaimed currently\\. (Skipping|Dropping)";
         final String reclaimEvents = "GC\\((\\d+)\\) Finish adding (retained|marking) candidates to collection set\\. Initial: (\\d+).*pinned: (\\d+)";
 
         Matcher skipDropMatcher = Pattern.compile(skipDropEvents, Pattern.MULTILINE).matcher(stdout);
         Matcher reclaimMatcher = Pattern.compile(reclaimEvents, Pattern.MULTILINE).matcher(stdout);
 
-        for (int i = 0; i < expectedMarkingSkipEvents; i++) {
-            expectMoreMatches(skipDropMatcher, "expectedMarkingSkipEvents");
-            curGC = expectIncreasingGC(skipDropMatcher);
-
-            Asserts.assertEQ("Marking", skipDropMatcher.group(2), "Expected \"Marking\" tag for GC " + curGC + " but got \"" + skipDropMatcher.group(2) + "\"");
-            updateOrCompareCurRegion("MarkingSkip", Integer.parseInt(skipDropMatcher.group(3)));
-            Asserts.assertEQ("Skipping", skipDropMatcher.group(4), "Expected \"Skipping\" tag for GC " + curGC + " but got \"" + skipDropMatcher.group(4) + "\"");
-
-            while (true) {
-                if (!reclaimMatcher.find()) {
-                    Asserts.fail("Could not find \"Finish adding * candidates\" line for GC " + curGC);
-                }
-                if (reclaimMatcher.group(2).equals("retained")) {
-                    continue;
-                }
-                if (Integer.parseInt(reclaimMatcher.group(1)) == curGC) {
-                    int actual = Integer.parseInt(reclaimMatcher.group(4));
-                    Asserts.assertEQ(actual, 1, "Expected number of pinned to be 1 after marking skip but is " + actual);
-                    break;
-                }
-            }
-        }
 
         for (int i = 0; i < expectedRetainedSkipEvents; i++) {
             expectMoreMatches(skipDropMatcher, "expectedRetainedSkipEvents");

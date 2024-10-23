@@ -139,6 +139,9 @@ void G1HeapRegion::clear_cardtable() {
 }
 
 double G1HeapRegion::calc_gc_efficiency() {
+  if (is_young() || is_free()) {
+    return -1.0;
+  }
   // GC efficiency is the ratio of how much space would be
   // reclaimed over how long we predict it would take to reclaim it.
   G1Policy* policy = G1CollectedHeap::heap()->policy();
@@ -601,7 +604,9 @@ class G1VerifyLiveAndRemSetClosure : public BasicOopIterateClosure {
     }
 
     bool failed() const {
-      if (_from != _to && !_from->is_young() && _to->rem_set()->is_complete()) {
+      if (_from != _to && !_from->is_young() &&
+          _to->rem_set()->is_complete() &&
+          _from->rem_set()->card_set() != _to->rem_set()->card_set()) {
         const CardValue dirty = G1CardTable::dirty_card_val();
         return !(_to->rem_set()->contains_reference(this->_p) ||
                  (this->_containing_obj->is_objArray() ?

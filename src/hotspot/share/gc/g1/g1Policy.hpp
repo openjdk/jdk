@@ -46,10 +46,8 @@
 
 class G1HeapRegion;
 class G1CollectionSet;
-class G1CollectionCandidateList;
 class G1CollectionSetCandidates;
 class G1CollectionSetChooser;
-class G1CollectionCandidateRegionList;
 class G1IHOPControl;
 class G1Analytics;
 class G1SurvivorRegions;
@@ -103,7 +101,7 @@ class G1Policy: public CHeapObj<mtGC> {
 
   uint _free_regions_at_end_of_collection;
 
-  size_t _card_rs_length;
+  size_t _young_rs_length;
 
   size_t _pending_cards_at_gc_start;
 
@@ -132,15 +130,14 @@ public:
     hr->install_surv_rate_group(_survivor_surv_rate_group);
   }
 
-  void record_card_rs_length(size_t card_rs_length) {
-    _card_rs_length = card_rs_length;
+  void record_young_rs_length(size_t young_rs_length) {
+    _young_rs_length = young_rs_length;
   }
 
   double predict_base_time_ms(size_t pending_cards) const;
 
   double predict_base_time_ms(size_t pending_cards, size_t card_rs_length) const;
 
-private:
   // Base time contains handling remembered sets and constant other time of the
   // whole young gen, refinement buffers, and copying survivors.
   // Basically everything but copying eden regions.
@@ -158,8 +155,10 @@ private:
 
 public:
 
+  double predict_merge_scan_time(size_t card_rs_length) const;
   // Predict other time for count young regions.
   double predict_young_region_other_time_ms(uint count) const;
+  double predict_non_young_other_time_ms(uint count) const;
   // Predict copying live data time for count eden regions. Return the predict bytes if
   // bytes_to_copy is non-null.
   double predict_eden_copy_time_ms(uint count, size_t* bytes_to_copy = nullptr) const;
