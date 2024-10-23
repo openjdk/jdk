@@ -28,7 +28,6 @@
  * @author gafter
  *
  * @compile InitializeOuter.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 InitializeOuter.java
  * @run main InitializeOuter
  */
 

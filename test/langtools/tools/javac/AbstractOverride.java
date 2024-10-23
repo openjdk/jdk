@@ -28,7 +28,6 @@
  * @author gafter
  *
  * @compile AbstractOverride.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 AbstractOverride.java
  */
 
 class AbstractOverride {

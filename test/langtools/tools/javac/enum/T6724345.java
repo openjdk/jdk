@@ -29,7 +29,6 @@
  * @author Maurizio Cimadamore
  *
  * @compile T6509042.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T6509042.java
  */
 
 class T6724345 {

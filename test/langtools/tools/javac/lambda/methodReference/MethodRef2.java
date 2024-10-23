@@ -27,7 +27,6 @@
  * @summary Add lambda tests
  *   Test instance method reference
  * @compile MethodRef2.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 MethodRef2.java
  * @run main MethodRef2
  */
 

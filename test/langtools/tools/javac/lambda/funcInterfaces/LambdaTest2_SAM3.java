@@ -29,7 +29,6 @@
              see Helper.java for SAM types
  * @modules java.sql
  * @compile LambdaTest2_SAM3.java Helper.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 LambdaTest2_SAM3.java Helper.java
  * @run main LambdaTest2_SAM3
  */
 

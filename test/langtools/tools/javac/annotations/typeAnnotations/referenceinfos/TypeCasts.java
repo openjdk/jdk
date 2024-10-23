@@ -30,7 +30,6 @@ import static java.lang.classfile.TypeAnnotation.TargetType.*;
  * @enablePreview
  * @modules java.base/jdk.internal.classfile.impl
  * @compile -g Driver.java ReferenceInfoUtil.java TypeCasts.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -g Driver.java ReferenceInfoUtil.java TypeCasts.java
  * @run main Driver TypeCasts
  */
 public class TypeCasts {

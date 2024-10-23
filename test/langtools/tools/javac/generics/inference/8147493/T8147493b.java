@@ -26,7 +26,6 @@
  * @bug 8147493
  * @summary regression when type-checking unchecked method calls
  * @compile T8147493b.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T8147493b.java
  */
 
 abstract class T8147493b {

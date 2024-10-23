@@ -26,7 +26,6 @@
   * @bug 8147546
   * @summary regression when type-checking generic calls inside nested declarations occurring in method context
   * @compile T8147546b.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T8147546b.java
   */
 abstract class T8147546b {
 

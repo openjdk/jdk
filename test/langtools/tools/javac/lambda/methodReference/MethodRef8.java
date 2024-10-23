@@ -26,7 +26,6 @@
  * @bug 8063052
  * @summary Inference chokes on wildcard derived from method reference
  * @compile MethodRef8.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 MethodRef8.java
  */
 
 public class MethodRef8 {

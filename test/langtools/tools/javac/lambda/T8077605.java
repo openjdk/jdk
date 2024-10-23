@@ -27,7 +27,6 @@
  * @summary Lambda with parameters in field initializer should not break compilation
  *          (MemberEnter.needsLazyConstValue should detect the initializer cannot be a constant)
  * @compile T8077605.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T8077605.java
  */
 
 public class T8077605 {

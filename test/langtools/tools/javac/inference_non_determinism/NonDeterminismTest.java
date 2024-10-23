@@ -27,8 +27,6 @@
  * @summary Infer::IncorporationBinaryOp::equals can produce side-effects
  * @compile NonDeterminismTest.java
  * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 NonDeterminismTest.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 NonDeterminismTest.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 NonDeterminismTest.java
  */
 
 import java.util.*;

@@ -29,7 +29,6 @@
  *
  * @clean QualifiedOuterThis QualifiedOuterThis$Y QualifiedOuterThis$Y$Z
  * @compile QualifiedOuterThis.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 QualifiedOuterThis.java
  * @run main QualifiedOuterThis
  */
 

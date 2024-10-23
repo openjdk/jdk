@@ -27,7 +27,6 @@
  * @summary compiler fails to allow access to enclosing instance in super()
  *
  * @compile WhichImplicitThis6.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 WhichImplicitThis6.java
  */
 
 class WhichImplicitThis6 {

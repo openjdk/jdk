@@ -6,7 +6,6 @@
  *
  * @compile/fail/ref=AnonStaticMember_2.out --release 15 -XDrawDiagnostics AnonStaticMember_2.java
  * @compile AnonStaticMember_2.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 AnonStaticMember_2.java
  */
 
 class AnonStaticMember_2 {

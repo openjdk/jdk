@@ -28,7 +28,6 @@
  * @author gafter, Maurizio Cimadamore
  *
  * @compile  InheritanceConflict2.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  InheritanceConflict2.java
  */
 
 package inheritance.conflict2;

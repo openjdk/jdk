@@ -30,7 +30,6 @@
  * @library /tools/javac/lib
  * @build AnnotatedTypeToString JavacTestingAbstractProcessor ExpectedToString
  * @compile -processor AnnotatedTypeToString -proc:only Test.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor AnnotatedTypeToString -proc:only Test.java
  */
 
 import p.ExpectedToString;

@@ -27,7 +27,6 @@
  * @summary Testing record patterns with null components
  * @enablePreview
  * @compile NullsInDeconstructionPatterns2.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 NullsInDeconstructionPatterns2.java
  * @run main NullsInDeconstructionPatterns2
  */
 

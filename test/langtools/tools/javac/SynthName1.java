@@ -28,7 +28,6 @@
  * @author gafter
  *
  * @compile SynthName1.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 SynthName1.java
  * @run main SynthName1
  */
 

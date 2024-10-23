@@ -24,7 +24,6 @@
 /**
  * @test
  * @compile -doe SimpleAndGuardPattern.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -doe SimpleAndGuardPattern.java
  * @run main SimpleAndGuardPattern
  */
 

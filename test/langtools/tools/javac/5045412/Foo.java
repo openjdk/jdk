@@ -25,9 +25,7 @@
  * @test
  * @bug 5045412 6627366
  * @compile -Xlint:serial -XDfailcomplete=java.io.Serializable Foo.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -Xlint:serial -XDfailcomplete=java.io.Serializable Foo.java
  * @compile -Xlint:serial -XDfailcomplete=java.io.Serializable Foo.java Bar.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -Xlint:serial -XDfailcomplete=java.io.Serializable Foo.java Bar.java
  */
 
 class Foo { }

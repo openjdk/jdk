@@ -26,7 +26,6 @@
  * @bug 8048543
  * @summary JLS8 18.5.3: inference variable seems to be instantiated unexpectedly
  * @compile InferenceVariableInstantiatedUnexpectedlyTest.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 InferenceVariableInstantiatedUnexpectedlyTest.java
  */
 
 public class InferenceVariableInstantiatedUnexpectedlyTest {

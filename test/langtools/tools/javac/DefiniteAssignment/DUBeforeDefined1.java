@@ -28,7 +28,6 @@
  * @author Neal Gafter (gafter)
  *
  * @compile DUBeforeDefined1.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 DUBeforeDefined1.java
  * @run main DUBeforeDefined1
  */
 

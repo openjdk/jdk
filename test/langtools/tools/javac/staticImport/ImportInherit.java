@@ -28,7 +28,6 @@
  * @author gafter
  *
  * @compile  ImportInherit.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  ImportInherit.java
  */
 
 package importInherit;

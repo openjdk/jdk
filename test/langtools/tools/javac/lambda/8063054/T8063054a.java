@@ -26,7 +26,6 @@
  * @bug 8063054
  * @summary Bug summary
  * @compile -Werror -Xlint:rawtypes T8063054a.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -Werror -Xlint:rawtypes T8063054a.java
  */
 class T8063054a {
     interface Consumer<T> { void accept(T arg); }

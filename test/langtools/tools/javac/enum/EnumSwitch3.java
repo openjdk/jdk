@@ -28,7 +28,6 @@
  * @author gafter
  *
  * @compile EnumSwitch3.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 EnumSwitch3.java
  */
 
 package enumswitch3;

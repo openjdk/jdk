@@ -25,7 +25,6 @@
  * @bug 8268592
  * @summary JDK-8262891 causes an NPE in Lint.augment
  * @compile T8268592.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T8268592.java
  */
 
 import java.util.Collection;

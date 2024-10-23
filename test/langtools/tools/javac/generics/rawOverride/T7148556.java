@@ -26,7 +26,6 @@
  * @bug 7148556
  * @summary Implementing a generic interface causes a public clone() to become inaccessible
  * @compile T7148556.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T7148556.java
  */
 
 class T7148556 {

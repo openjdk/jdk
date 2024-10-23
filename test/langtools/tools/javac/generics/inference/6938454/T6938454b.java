@@ -30,7 +30,6 @@ import java.util.List;
  * @summary Unable to determine generic type in program that compiles under Java 6
  * @author mcimadamore
  * @compile T6938454b.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T6938454b.java
  *
  */
 

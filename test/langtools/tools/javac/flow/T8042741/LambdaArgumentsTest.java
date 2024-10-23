@@ -25,7 +25,6 @@
  * @bug 8054210
  * @summary NullPointerException when compiling specific code
  * @compile LambdaArgumentsTest.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 LambdaArgumentsTest.java
  */
 
 public class LambdaArgumentsTest  {

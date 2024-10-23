@@ -28,7 +28,6 @@
  * @author maddox
  *
  * @compile                  ConditionalArgTypes_2.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2                  ConditionalArgTypes_2.java
  */
 
 // This case was working before -- controlling expression is not a constant.

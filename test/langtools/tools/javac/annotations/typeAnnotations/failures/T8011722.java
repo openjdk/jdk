@@ -26,7 +26,6 @@
  * @bug 8011722
  * @summary AssertionError from type annotations on qualified type
  * @compile T8011722.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T8011722.java
  */
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Target;

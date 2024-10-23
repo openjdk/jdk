@@ -26,7 +26,6 @@
  * @bug 8011376
  * @summary Spurious checked exception errors in nested method call
  * @compile TargetType72.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TargetType72.java
  */
 import java.io.IOException;
 import java.util.concurrent.Callable;

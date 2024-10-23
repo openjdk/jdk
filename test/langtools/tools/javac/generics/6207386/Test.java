@@ -27,7 +27,6 @@
  * @summary Undecidable type system leads to crash
  * @author  Peter von der Ah\u00e9
  * @compile Test.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Test.java
  */
 
 public class Test<T> {

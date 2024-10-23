@@ -28,7 +28,6 @@
  * @summary  NPE in com.sun.tools.javac.code.Symbol - isSubClass
  * @author Maurizio Cimadamore
  * @compile T6956758pos.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T6956758pos.java
  *
  */
 

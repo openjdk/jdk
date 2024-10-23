@@ -27,7 +27,6 @@
  * @summary Add lambda tests
  *  Interface inheritance, sub-interface resolves the type of the super interface.
  * @compile InferenceTest3.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 InferenceTest3.java
  * @run main InferenceTest3
  */
 

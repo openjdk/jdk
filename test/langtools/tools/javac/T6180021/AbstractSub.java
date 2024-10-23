@@ -27,9 +27,7 @@
  * @summary CompletionFailure during TypeTrans
  * @author  Peter von der Ah\u00e9
  * @compile Super.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Super.java
  * @clean   Missing
  * @compile AbstractSub.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 AbstractSub.java
  */
 abstract class AbstractSub extends AbstractSuper {}

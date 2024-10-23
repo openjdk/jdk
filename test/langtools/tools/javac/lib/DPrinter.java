@@ -29,7 +29,6 @@
  *          jdk.compiler/com.sun.tools.javac.tree
  *          jdk.compiler/com.sun.tools.javac.util
  * @compile DPrinter.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 DPrinter.java
  */
 
 import java.io.File;

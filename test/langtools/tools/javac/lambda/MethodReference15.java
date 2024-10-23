@@ -28,7 +28,6 @@
  *  check that assignments involving method references do not trigger transitional 292 warnings
  * @author  Maurizio Cimadamore
  * @compile -Werror MethodReference15.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -Werror MethodReference15.java
  */
 
 public class MethodReference15 {

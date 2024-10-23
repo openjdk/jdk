@@ -26,7 +26,6 @@
  * @bug 8231827
  * @summary Basic pattern test
  * @compile PatternTypeTest2.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 PatternTypeTest2.java
  * @run main PatternTypeTest2
  */
 public class PatternTypeTest2 {

@@ -29,7 +29,6 @@
  * @modules java.compiler
  * @build   JavacTestingAbstractProcessor TestTypeKindVisitors
  * @compile -processor TestTypeKindVisitors -proc:only TestTypeKindVisitors.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor TestTypeKindVisitors -proc:only TestTypeKindVisitors.java
  */
 
 import java.lang.annotation.Annotation;

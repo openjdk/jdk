@@ -26,7 +26,6 @@
  * @bug 7038363
  * @summary cast from object to primitive should be for source >= 1.7
  * @compile CastObjectToPrimitiveTest.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 CastObjectToPrimitiveTest.java
  */
 
 class CastObjectToPrimitiveTest {

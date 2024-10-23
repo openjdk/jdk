@@ -26,7 +26,6 @@
  * @bug 8062747
  * @summary Avoiding an error for lambdas with thrown types inference inside an anonymous class.
  * @compile T8062747.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T8062747.java
  */
 public class T8062747 {
 

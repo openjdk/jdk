@@ -28,7 +28,6 @@
  * @author gafter
  *
  * @compile NullStaticQualifier.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 NullStaticQualifier.java
  * @run main NullStaticQualifier
  */
 

@@ -3,7 +3,6 @@
  * @bug 8170410
  * @summary inference: javac doesn't implement 18.2.5 correctly
  * @compile T8170410.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T8170410.java
  */
 
 class T8170410 {

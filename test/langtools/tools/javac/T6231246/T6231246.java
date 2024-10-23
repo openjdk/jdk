@@ -27,7 +27,6 @@
  * @summary Javac crash with -g:none
  * @author  Peter von der Ah\u00e9
  * @compile -g:none T6231246.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -g:none T6231246.java
  */
 
 public class T6231246 {

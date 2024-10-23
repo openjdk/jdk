@@ -29,9 +29,7 @@
  * @modules jdk.compiler
  * @build   JavacTestingAbstractProcessor
  * @compile TestBindingVariable.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TestBindingVariable.java
  * @compile -processor TestBindingVariable -proc:only TestBindingVariableData.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor TestBindingVariable -proc:only TestBindingVariableData.java
  */
 
 import javax.annotation.processing.*;

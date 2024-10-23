@@ -33,7 +33,6 @@
  * @build toolbox.ToolBox toolbox.JavacTask
  * @build combo.ComboTestHelper
  * @compile ClassBlockExits.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 ClassBlockExits.java
  * @run main ClassBlockExits
  */
 

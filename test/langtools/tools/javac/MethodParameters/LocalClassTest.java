@@ -29,7 +29,6 @@
  * @modules java.base/jdk.internal.classfile.impl
  * @build MethodParametersTester ClassFileVisitor ReflectionVisitor
  * @compile -parameters LocalClassTest.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -parameters LocalClassTest.java
  * @run main MethodParametersTester LocalClassTest LocalClassTest.out
  */
 

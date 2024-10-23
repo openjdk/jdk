@@ -27,7 +27,6 @@
  * @summary Add lambda tests
  *   Test lambda expressions for different method signatures (parameter and return type)
  * @compile LambdaTest2.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 LambdaTest2.java
  * @run main LambdaTest2
  */
 

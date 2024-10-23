@@ -25,7 +25,6 @@
  * @test
  * @bug 8298184
  * @compile GenericRecordDeconstructionPattern.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 GenericRecordDeconstructionPattern.java
  * @run main GenericRecordDeconstructionPattern
  */
 import java.util.List;

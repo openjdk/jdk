@@ -25,7 +25,6 @@
  * @bug 8301025
  * @enablePreview
  * @compile T8301025.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T8301025.java
  * @summary ClassCastException in switch with generic record
  * @modules jdk.compiler
  */

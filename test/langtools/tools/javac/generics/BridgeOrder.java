@@ -28,7 +28,6 @@
  * @author gafter
  *
  * @compile  BridgeOrder.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  BridgeOrder.java
  * @run main BridgeOrder
  */
 

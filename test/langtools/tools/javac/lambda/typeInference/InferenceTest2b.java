@@ -29,7 +29,6 @@ import java.util.*;
  * @summary Add lambda tests
  *   Parameter types inferred from target type in generics with wildcard
  * @compile InferenceTest2b.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 InferenceTest2b.java
  * @run main InferenceTest2b
  */
 

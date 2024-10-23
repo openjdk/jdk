@@ -26,7 +26,6 @@
  * @bug 8078093
  * @summary Exponential performance regression Java 8 compiler compared to Java 7 compiler
  * @compile T8078093.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T8078093.java
  */
 
 import java.util.LinkedHashMap;

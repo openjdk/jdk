@@ -26,14 +26,10 @@
  * @bug 8244146
  * @summary Test test and class file retention of strictfp.
  * @compile --release 16 TestStrictfpRetention.java StrictfpInSource.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 --release 16 TestStrictfpRetention.java StrictfpInSource.java
  * @compile         -processor   TestStrictfpRetention --release 16                       StrictfpHost.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2         -processor   TestStrictfpRetention --release 16                       StrictfpHost.java
  * @compile/process -processor   TestStrictfpRetention --release 16  -proc:only           StrictfpHost
  * @compile         -processor   TestStrictfpRetention               -proc:only           StrictfpHost.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2         -processor   TestStrictfpRetention               -proc:only           StrictfpHost.java
  * @compile         -processor   TestStrictfpRetention -source 16                         StrictfpHost.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2         -processor   TestStrictfpRetention -source 16                         StrictfpHost.java
  * @compile/process -processor   TestStrictfpRetention              -AstrictfpNotExpected StrictfpHost
  */
 

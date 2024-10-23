@@ -28,7 +28,6 @@
  *  check that recursive lambda (through field ref) is accepted in all contexts
  *  but field initialization
  * @compile LambdaExpr13.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 LambdaExpr13.java
  */
 
 class LambdaExpr13 {

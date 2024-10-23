@@ -26,7 +26,6 @@
  * @bug 8034147
  * @summary javac crashes with a NullPointerException during bounds checking
  * @compile T8034147.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T8034147.java
  */
 
 class T8034147 {

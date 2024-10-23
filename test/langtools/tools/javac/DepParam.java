@@ -28,7 +28,6 @@
  * @author gafter
  *
  * @compile DepParam.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 DepParam.java
  */
 
 class DepParam {

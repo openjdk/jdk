@@ -30,7 +30,6 @@
  *          jdk.compiler
  * @build JavacTestingAbstractProcessor TestProcTypeAlreadyExistsWarning
  * @compile A.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 A.java
  * @compile/ref=warn.out -XDrawDiagnostics -Xlint:processing -processor TestProcTypeAlreadyExistsWarning B.java
  */
 

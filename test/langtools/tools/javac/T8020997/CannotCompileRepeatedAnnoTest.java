@@ -26,7 +26,6 @@
  * @bug 8020997
  * @summary Cannot compile class with repeating annotation
  * @compile CannotCompileRepeatedAnnoTest.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 CannotCompileRepeatedAnnoTest.java
  */
 
 import java.lang.annotation.*;

@@ -27,7 +27,6 @@
  * @summary Inference: weird propagation of thrown inference variables
  *
  * @compile T8157149b.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T8157149b.java
  */
 
 class T8157149b {

@@ -27,7 +27,6 @@
  * @summary Mixing up the method type argument with the class type for method
  *          reference ClassType<Q>::<T>new
  * @compile SkipLazyConstantCreationForMethodRefTest.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 SkipLazyConstantCreationForMethodRefTest.java
  */
 
 public class SkipLazyConstantCreationForMethodRefTest<T> {

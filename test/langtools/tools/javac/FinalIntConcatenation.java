@@ -30,7 +30,6 @@
  * @author turnidge
  *
  * @compile FinalIntConcatenation.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 FinalIntConcatenation.java
  * @run main FinalIntConcatenation
  */
 

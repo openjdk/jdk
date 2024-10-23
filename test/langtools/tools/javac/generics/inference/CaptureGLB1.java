@@ -26,7 +26,6 @@
  * @bug 8144066
  * @summary GLB of two lower-bounded capture variables, bounded by related array types
  * @compile CaptureGLB1.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 CaptureGLB1.java
  */
 
 public class CaptureGLB1 {

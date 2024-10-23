@@ -28,7 +28,6 @@
  * @author gafter
  *
  * @compile  ReverseOrder.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  ReverseOrder.java
  */
 
 package test.reverseOrder;

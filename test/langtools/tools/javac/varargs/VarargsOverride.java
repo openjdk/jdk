@@ -5,7 +5,6 @@
  * @author gafter
  *
  * @compile  VarargsOverride.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  VarargsOverride.java
  * @compile/ref=VarargsOverride.out -XDrawDiagnostics -Xlint VarargsOverride.java
  */
 

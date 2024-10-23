@@ -27,9 +27,7 @@
  * @summary Compiler Tree API TreePath class generates NullPointerException from Iterator
  * @modules jdk.compiler
  * @compile T6855236.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T6855236.java
  * @compile -processor T6855236 -proc:only T6855236.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor T6855236 -proc:only T6855236.java
  */
 
 import java.util.*;

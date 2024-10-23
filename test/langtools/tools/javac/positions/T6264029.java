@@ -4,7 +4,6 @@
  * @summary Compiler issues wrong unchecked warning for anonymous inner class
  * @author  Seetharama Avadhanam
  * @compile -Xlint:unchecked -XDdev T6264029.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -Xlint:unchecked -XDdev T6264029.java
  * @compile/ref=T6264029.out -Xlint:unchecked -XDdev -XDrawDiagnostics T6264029.java
  */
 

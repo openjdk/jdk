@@ -28,7 +28,6 @@
  * @author gafter
  *
  * @compile -Xlint:dep-ann -Werror Dep.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -Xlint:dep-ann -Werror Dep.java
  */
 
 /** @deprecated */

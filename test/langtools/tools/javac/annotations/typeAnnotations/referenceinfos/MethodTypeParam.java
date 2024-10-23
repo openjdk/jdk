@@ -31,7 +31,6 @@ import static java.lang.System.lineSeparator;
  * @enablePreview
  * @modules java.base/jdk.internal.classfile.impl
  * @compile -g Driver.java ReferenceInfoUtil.java MethodTypeParam.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -g Driver.java ReferenceInfoUtil.java MethodTypeParam.java
  * @run main Driver MethodTypeParam
  */
 public class MethodTypeParam {

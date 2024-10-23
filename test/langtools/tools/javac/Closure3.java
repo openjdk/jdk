@@ -28,7 +28,6 @@
  * @author gafter
  *
  * @compile Closure3.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Closure3.java
  * @run main Closure3
  */
 

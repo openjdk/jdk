@@ -27,7 +27,6 @@
  * @summary Check that assertions compile properly when nested in an interface
  * @author gafter
  * @compile InterfaceAssert.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 InterfaceAssert.java
  * @run main InterfaceAssert
  */
 

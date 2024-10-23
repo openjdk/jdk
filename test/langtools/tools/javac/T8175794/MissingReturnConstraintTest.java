@@ -26,7 +26,6 @@
  * @bug 8175794
  * @summary Type inference regression after JDK-8078093
  * @compile MissingReturnConstraintTest.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 MissingReturnConstraintTest.java
  */
 
 import java.util.concurrent.ExecutorService;

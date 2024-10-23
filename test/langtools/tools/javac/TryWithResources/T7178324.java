@@ -26,7 +26,6 @@
  * @bug 7178324
  * @summary Crash when compiling for(i : x) try(AutoCloseable x = ...) {}
  * @compile T7178324.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T7178324.java
  */
 
 import java.io.File;

@@ -1,2 +1,2 @@
-LambdaInAnnotationsCausesNPETest2.java:11:15: compiler.err.expression.not.allowable.as.annotation.value
+LambdaInAnnotationsCausesNPETest2.java:10:15: compiler.err.expression.not.allowable.as.annotation.value
 1 error

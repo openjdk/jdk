@@ -28,9 +28,7 @@
  * @author  Yuri Gaevsky
  * @author  Peter von der Ah\u00e9
  * @compile com/test/Test.java com/test/Test$Test.java com/test/Test$Test$Test.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 com/test/Test.java com/test/Test$Test.java com/test/Test$Test$Test.java
  * @compile T6397652.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T6397652.java
  */
 
 import com.test.Test$Test$Test;

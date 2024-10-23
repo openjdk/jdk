@@ -28,7 +28,6 @@
  * @author gafter
  *
  * @compile  PermuteBound.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  PermuteBound.java
  */
 
 package PermuteBound;

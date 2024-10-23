@@ -28,7 +28,6 @@
  * @author Maurizio Cimadamore
  *
  * @compile Casting5.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Casting5.java
  */
 
 class Casting5 {

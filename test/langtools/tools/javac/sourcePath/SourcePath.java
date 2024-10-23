@@ -28,7 +28,6 @@
  * @author gafter
  *
  * @compile SourcePath.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 SourcePath.java
  * @run main SourcePath
  */
 

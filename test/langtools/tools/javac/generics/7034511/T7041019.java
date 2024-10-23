@@ -27,7 +27,6 @@
  * @summary Bogus type-variable substitution with array types with dependencies on accessibility check
  *
  * @compile T7041019.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T7041019.java
  */
 import java.util.List;
 

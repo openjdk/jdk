@@ -26,7 +26,6 @@
  * @bug 8206986
  * @summary Check definite (un)assignment for in switch expressions.
  * @compile ExpressionSwitchDA.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 ExpressionSwitchDA.java
  * @run main ExpressionSwitchDA
  */
 

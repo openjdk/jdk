@@ -27,7 +27,6 @@
  * @summary before the patch for JDK-8078024 this code wasn't accepted by the compiler. After the
  *          mentioned patch the second method is selected as applicable and the code is accepted.
  * @compile T8078024.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T8078024.java
  */
 
 import java.util.Arrays;

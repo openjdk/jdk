@@ -28,7 +28,6 @@
  * @author gafter
  *
  * @compile  ExtendedRaw3.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  ExtendedRaw3.java
  */
 
 interface MyComparable<T extends MyComparable<T>> {

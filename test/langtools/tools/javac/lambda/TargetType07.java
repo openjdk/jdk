@@ -29,7 +29,6 @@
  * @author  Peter Levart
  * @author  Maurizio Cimadamore
  * @compile TargetType07.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TargetType07.java
  */
 
 class TargetType07 {

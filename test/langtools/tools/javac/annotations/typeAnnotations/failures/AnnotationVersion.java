@@ -4,7 +4,6 @@
  * @summary test that only Java 8 allows type annotations
  * @author Mahmood Ali
  * @compile AnnotationVersion.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 AnnotationVersion.java
  */
 import java.lang.annotation.*;
 

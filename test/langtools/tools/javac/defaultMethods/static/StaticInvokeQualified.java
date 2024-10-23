@@ -2,7 +2,6 @@
  * @bug 8037385
  * @summary Must not allow static interface method invocation in legacy code
  * @compile -Xlint:-options StaticInvokeQualified.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -Xlint:-options StaticInvokeQualified.java
  */
 
 class StaticInvokeQualified {

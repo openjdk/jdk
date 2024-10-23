@@ -25,7 +25,6 @@
  * @test
  * @summary Unchecked method call on a method declared inside anonymous inner causes javac to crash
  * @compile -Xlint:unchecked T6881645.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -Xlint:unchecked T6881645.java
  */
 
 class T6881645 {

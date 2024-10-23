@@ -28,7 +28,6 @@
  * @author gafter
  *
  * @compile  GenericMerge.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  GenericMerge.java
  */
 
 class Box<T> {}

@@ -30,7 +30,6 @@
  * @modules jdk.compiler
  * @build   JavacTestingAbstractProcessor TestResourceElement
  * @compile -processor TestResourceElement -proc:only TestResourceElement.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor TestResourceElement -proc:only TestResourceElement.java
  */
 
 import javax.annotation.processing.*;

@@ -28,7 +28,6 @@
  * @author Peter von der Ahe
  *
  * @compile Capture5.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Capture5.java
  */
 
 package capture5;

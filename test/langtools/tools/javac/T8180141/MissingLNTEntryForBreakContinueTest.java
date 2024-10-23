@@ -34,7 +34,6 @@
  *          jdk.compiler/com.sun.tools.javac.tree
  *          jdk.compiler/com.sun.tools.javac.util
  * @compile -g MissingLNTEntryForBreakContinueTest.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -g MissingLNTEntryForBreakContinueTest.java
  * @run main MissingLNTEntryForBreakContinueTest
  */
 

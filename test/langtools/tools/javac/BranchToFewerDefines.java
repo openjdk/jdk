@@ -28,7 +28,6 @@
  * @author srikanth
  *
  * @compile  BranchToFewerDefines.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  BranchToFewerDefines.java
  * @run main BranchToFewerDefines
  */
 

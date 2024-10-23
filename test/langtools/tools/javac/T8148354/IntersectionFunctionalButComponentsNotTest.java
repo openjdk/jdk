@@ -26,7 +26,6 @@
  * bug 8148354
  * @summary Errors targeting functional interface intersection types
  * @compile IntersectionFunctionalButComponentsNotTest.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 IntersectionFunctionalButComponentsNotTest.java
  */
 class IntersectionFunctionalButComponentsNotTest {
     // nor A or B are functional interfaces but the intersection is

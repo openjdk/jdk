@@ -26,7 +26,6 @@
  * @bug     5049523
  * @summary Inference should compute glb of type arguments
  * @compile T5049523.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T5049523.java
  */
 
 abstract public class T5049523 {

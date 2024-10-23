@@ -26,7 +26,6 @@
  * @bug 8081521
  * @summary Ensure that anonymous class construction using <> can be nested within another
  * @compile NestedDiamondAllocationTest.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 NestedDiamondAllocationTest.java
  * @run main NestedDiamondAllocationTest
  *
  */

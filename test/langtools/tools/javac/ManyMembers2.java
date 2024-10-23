@@ -28,7 +28,6 @@
  * @author gafter
  *
  * @compile ManyMembers2.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 ManyMembers2.java
  */
 
 public class ManyMembers2 {

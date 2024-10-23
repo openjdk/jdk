@@ -28,7 +28,5 @@
  *  check that classfiles with member ref CP entries are read correctly
  * @author  Jan Lahoda
  * @compile Main.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Main.java
  * @compile Use.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Use.java
  */

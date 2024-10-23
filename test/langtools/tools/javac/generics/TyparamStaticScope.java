@@ -28,7 +28,6 @@
  * @author gafter
  *
  * @compile  TyparamStaticScope.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  TyparamStaticScope.java
  */
 
 package typaram.static_.scope;

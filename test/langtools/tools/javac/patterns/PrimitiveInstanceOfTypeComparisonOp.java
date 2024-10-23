@@ -27,7 +27,6 @@
  * @summary Compiler Implementation for Primitive types in patterns, instanceof, and switch (Preview)
  * @enablePreview
  * @compile PrimitiveInstanceOfTypeComparisonOp.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 PrimitiveInstanceOfTypeComparisonOp.java
  * @run main/othervm PrimitiveInstanceOfTypeComparisonOp
  */
 public class PrimitiveInstanceOfTypeComparisonOp {

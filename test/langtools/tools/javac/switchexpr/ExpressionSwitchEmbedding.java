@@ -26,7 +26,6 @@
  * @bug 8214031 8214114 8236546
  * @summary Verify switch expressions embedded in various statements work properly.
  * @compile ExpressionSwitchEmbedding.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 ExpressionSwitchEmbedding.java
  * @run main ExpressionSwitchEmbedding
  */
 

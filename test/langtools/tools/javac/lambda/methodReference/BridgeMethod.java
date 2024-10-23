@@ -27,7 +27,6 @@
  * @summary Add lambda tests
  *   Test bridge methods in certain SAM conversion
  * @compile BridgeMethod.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 BridgeMethod.java
  * @run main BridgeMethod
  */
 

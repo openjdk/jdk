@@ -33,7 +33,6 @@
  *      jdk.compiler/com.sun.tools.javac.util
  * @build toolbox.ToolBox toolbox.JavacTask
  * @compile NewCaseStructureTest.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 NewCaseStructureTest.java
  * @run main NewCaseStructureTest
  */
 

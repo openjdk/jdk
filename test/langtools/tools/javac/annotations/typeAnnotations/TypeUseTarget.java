@@ -27,7 +27,6 @@
  * @summary check that type annotations may appear on all type declarations
  * @author Mahmood Ali
  * @compile TypeUseTarget.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TypeUseTarget.java
  */
 
 import java.lang.annotation.Target;

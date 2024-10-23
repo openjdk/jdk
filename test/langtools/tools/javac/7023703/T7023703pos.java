@@ -25,7 +25,6 @@
  * @bug 7023703
  * @summary Valid code doesn't compile
  * @compile T7023703pos.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T7023703pos.java
  */
 
 class T7023703pos {

@@ -26,7 +26,6 @@
  * @bug 8145051
  * @summary Wrong parameter name in synthetic lambda method leads to verifier error
  * @compile pkg/T8145051.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 pkg/T8145051.java
  * @run main/othervm -Xverify:all T8145051
  */
 

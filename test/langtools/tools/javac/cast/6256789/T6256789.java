@@ -26,7 +26,6 @@
  * @bug     6256789
  * @summary Legal cast rejected
  * @compile -Xlint:unchecked -Werror T6256789.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -Xlint:unchecked -Werror T6256789.java
  */
 
 import java.lang.ref.*;

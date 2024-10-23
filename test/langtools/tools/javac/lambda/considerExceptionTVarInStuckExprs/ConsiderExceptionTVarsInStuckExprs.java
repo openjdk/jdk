@@ -26,7 +26,6 @@
  * @bug 8254571
  * @summary Erroneous generic type inference in a lambda expression with a checked exception
  * @compile ConsiderExceptionTVarsInStuckExprs.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 ConsiderExceptionTVarsInStuckExprs.java
  */
 
 class ConsiderExceptionTVarsInStuckExprs {

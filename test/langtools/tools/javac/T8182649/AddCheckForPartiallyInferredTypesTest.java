@@ -26,7 +26,6 @@
  * @bug 8182649
  * @summary Unable to integrate due to compilation error
  * @compile AddCheckForPartiallyInferredTypesTest.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 AddCheckForPartiallyInferredTypesTest.java
  */
 
 class AddCheckForPartiallyInferredTypesTest {

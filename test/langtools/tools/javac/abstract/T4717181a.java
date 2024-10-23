@@ -28,7 +28,6 @@
  * @author gafter
  *
  * @compile T4717181a.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T4717181a.java
  */
 
 class T4717181a {

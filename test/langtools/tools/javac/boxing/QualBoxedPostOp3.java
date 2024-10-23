@@ -26,7 +26,6 @@
  * @bug 8147527
  * @summary Verifies the runtime behavior of "super", "this" and "this$n" optimization for boxed unary post-operations.
  * @compile QualBoxedPostOp3.java QualBoxedPostOp3Parent.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 QualBoxedPostOp3.java QualBoxedPostOp3Parent.java
  * @run main QualBoxedPostOp3
  */
 public class QualBoxedPostOp3 extends p.QualBoxedPostOp3Parent {

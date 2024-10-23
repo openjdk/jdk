@@ -26,7 +26,6 @@
  * @bug 8042656
  * @summary Subtyping for intersection types containing type variables
  * @compile IntersectionSubVar.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 IntersectionSubVar.java
  */
 
 class IntersectionSubVar {

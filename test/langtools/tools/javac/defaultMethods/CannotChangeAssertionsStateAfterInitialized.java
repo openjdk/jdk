@@ -26,7 +26,6 @@
  * @bug 8025141
  * @summary Ensure the assertion status cannot be changed once the class is initialized
  * @compile CannotChangeAssertionsStateAfterInitialized.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 CannotChangeAssertionsStateAfterInitialized.java
  * @run main/othervm -da CannotChangeAssertionsStateAfterInitialized
  */
 

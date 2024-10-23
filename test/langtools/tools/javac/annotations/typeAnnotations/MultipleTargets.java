@@ -28,7 +28,6 @@
  *          method annotation too.
  * @author Mahmood Ali
  * @compile MultipleTargets.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 MultipleTargets.java
  */
 
 import java.lang.annotation.Target;

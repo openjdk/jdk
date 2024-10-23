@@ -28,7 +28,6 @@
  * @modules java.compiler
  *          jdk.compiler
  * @compile -encoding utf-8 T6306137.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -encoding utf-8 T6306137.java
  * @run main T6306137
  * @author  Peter von der Ah\u00e9
  */

@@ -32,7 +32,6 @@
  *          jdk.compiler
  * @build   JavacTestingAbstractProcessor ElementRepAnnoTester
  * @compile -processor ElementRepAnnoTester -proc:only RepeatableInheritedTest.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor ElementRepAnnoTester -proc:only RepeatableInheritedTest.java
  */
 
 @BarInherited(1)

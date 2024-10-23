@@ -26,7 +26,6 @@
  * @bug 8178150
  * @summary Regression in logic for handling inference stuck constraints
  * @compile T8178150.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T8178150.java
  */
 
 import java.util.*;

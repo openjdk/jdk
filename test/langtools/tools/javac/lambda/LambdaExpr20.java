@@ -27,7 +27,6 @@
  * @summary Add lambda tests
  *  check that default super call from lambda expression is compiled successfully
  * @compile LambdaExpr20.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 LambdaExpr20.java
  */
 
 class LambdaExpr20 {

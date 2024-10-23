@@ -27,7 +27,6 @@
  * @summary Add lambda tests
  *  check type-substitution in SAM type wildcards inference
  * @compile TargetType29.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TargetType29.java
  */
 
 import java.util.*;

@@ -31,7 +31,6 @@
  * @clean MissingGenericInterface1
  * @build JavacTestingAbstractProcessor Generator
  * @compile -XprintRounds -processor Generator TestMissingGenericInterface1.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -XprintRounds -processor Generator TestMissingGenericInterface1.java
  * @run main TestMissingGenericInterface1
  */
 

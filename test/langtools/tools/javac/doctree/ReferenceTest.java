@@ -29,7 +29,6 @@
  * @modules jdk.compiler
  * @build ReferenceTest
  * @compile -processor ReferenceTest -proc:only ReferenceTest.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor ReferenceTest -proc:only ReferenceTest.java
  */
 
 import com.sun.source.doctree.DocCommentTree;

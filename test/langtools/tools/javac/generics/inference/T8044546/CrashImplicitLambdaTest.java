@@ -26,7 +26,6 @@
  * @bug 8044546
  * @summary Crash on faulty reduce/lambda
  * @compile CrashImplicitLambdaTest.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 CrashImplicitLambdaTest.java
  */
 
 abstract class CrashImplicitLambdaTest {

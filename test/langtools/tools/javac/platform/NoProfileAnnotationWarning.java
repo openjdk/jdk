@@ -27,7 +27,6 @@
  * @summary Verify the synthetic Profile+Annotation is ignored when using --release
  * @modules java.compiler
  * @compile -Xlint:all -Werror --release 10 NoProfileAnnotationWarning.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -Xlint:all -Werror --release 10 NoProfileAnnotationWarning.java
  */
 
 import javax.annotation.processing.ProcessingEnvironment;

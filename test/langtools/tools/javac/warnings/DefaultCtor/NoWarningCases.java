@@ -25,9 +25,7 @@
  * @test
  * @bug 8071961
  * @compile -Xlint:missing-explicit-ctor,-options -Werror --release 8 NoWarningCases.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -Xlint:missing-explicit-ctor,-options -Werror --release 8 NoWarningCases.java
  * @compile -Xlint:missing-explicit-ctor          -Werror             NoWarningCases.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -Xlint:missing-explicit-ctor          -Werror             NoWarningCases.java
  */
 
 public class NoWarningCases {

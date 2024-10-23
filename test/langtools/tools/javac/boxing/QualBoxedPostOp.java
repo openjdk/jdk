@@ -26,7 +26,6 @@
  * @bug 8147527
  * @summary Qualified "this" and "super" boxed unary post operations.
  * @compile QualBoxedPostOp.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 QualBoxedPostOp.java
  * @run main QualBoxedPostOp
  */
 public class QualBoxedPostOp extends Parent {

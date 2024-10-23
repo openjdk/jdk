@@ -31,9 +31,7 @@
  *          jdk.compiler
  * @build   JavacTestingAbstractProcessor TestPackageElement
  * @compile -processor TestPackageElement -proc:only             TestPackageElement.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor TestPackageElement -proc:only             TestPackageElement.java
  * @compile -processor TestPackageElement -proc:only --release 8 TestPackageElement.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor TestPackageElement -proc:only --release 8 TestPackageElement.java
  */
 
 import java.util.Objects;

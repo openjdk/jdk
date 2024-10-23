@@ -5,7 +5,6 @@
  * @author gafter
  *
  * @compile  UncheckedCovariance.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  UncheckedCovariance.java
  * @compile/fail/ref=UncheckedCovariance.out -XDrawDiagnostics  -Xlint:unchecked -Werror  UncheckedCovariance.java
  */
 

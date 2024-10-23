@@ -28,7 +28,6 @@
  * @author gafter
  *
  * @compile SwitchFence.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 SwitchFence.java
  * @run main SwitchFence
  */
 

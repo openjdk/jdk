@@ -26,7 +26,6 @@
  * @bug     6273455
  * @summary Stack overflow in Types.java:347
  * @compile T6273455.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T6273455.java
  */
 
 import java.util.*;

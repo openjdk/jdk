@@ -26,7 +26,6 @@
  * @bug 8231827
  * @summary Basic tests for bindings from instanceof
  * @compile BindingsTest1.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 BindingsTest1.java
  * @run main BindingsTest1
  */
 

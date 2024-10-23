@@ -29,7 +29,6 @@
  * @modules java.compiler
  *          jdk.compiler
  * @compile MyProcessor.java T6458823.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 MyProcessor.java T6458823.java
  * @run main T6458823
  */
 

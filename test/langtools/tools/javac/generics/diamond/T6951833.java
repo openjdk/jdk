@@ -28,7 +28,6 @@
  * @summary  latest diamond implementation generates spurious raw type warnings
  * @author mcimadamore
  * @compile -Xlint:rawtypes -Werror T6951833.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -Xlint:rawtypes -Werror T6951833.java
  *
  */
 

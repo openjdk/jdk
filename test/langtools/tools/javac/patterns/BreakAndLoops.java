@@ -34,7 +34,6 @@
  * @build toolbox.ToolBox toolbox.JavacTask
  * @build combo.ComboTestHelper
  * @compile BreakAndLoops.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 BreakAndLoops.java
  * @run main BreakAndLoops
  */
 

@@ -27,7 +27,6 @@
  * @summary Compiler Implementation for Primitive types in patterns, instanceof, and switch (Preview)
  * @enablePreview
  * @compile PrimitiveInstanceOfPatternOpWithRecordPatterns.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 PrimitiveInstanceOfPatternOpWithRecordPatterns.java
  * @run main/othervm PrimitiveInstanceOfPatternOpWithRecordPatterns
  */
 public class PrimitiveInstanceOfPatternOpWithRecordPatterns {

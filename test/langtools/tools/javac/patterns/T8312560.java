@@ -29,7 +29,6 @@ import java.lang.annotation.ElementType;
  * @bug 8312560
  * @summary Annotation on Decomposed Record Component in Enhanced For Loop Fails Compilation
  * @compile T8312560.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T8312560.java
  */
 public class T8312560 {
     void m(Object o) {

@@ -26,7 +26,6 @@
  * @bug     5034571
  * @summary Wildcard capture must use the bounds of the formal
  * @compile T5034571.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T5034571.java
  */
 
 public class T5034571 {

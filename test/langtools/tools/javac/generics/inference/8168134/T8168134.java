@@ -26,7 +26,6 @@
  * @bug 8168134
  * @summary Inference: javac incorrectly propagating inner constraint with primitive target
  * @compile T8168134.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T8168134.java
  */
 
 abstract class T8168134 {

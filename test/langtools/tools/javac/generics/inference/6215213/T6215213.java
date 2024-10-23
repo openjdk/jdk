@@ -27,7 +27,6 @@
  * @summary Compiler JDK1.5 crashes with uses of generics
  * @author  Peter von der Ah\u00e9
  * @compile T6215213.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T6215213.java
  */
 
 public class T6215213 {

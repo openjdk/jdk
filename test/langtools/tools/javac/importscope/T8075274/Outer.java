@@ -26,17 +26,11 @@
  * @bug 8075274
  * @summary Ensuring order of imports or inputs does not affect compilability of the sources
  * @compile C.java D.java Outer.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 C.java D.java Outer.java
  * @compile C.java Outer.java D.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 C.java Outer.java D.java
  * @compile D.java C.java Outer.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 D.java C.java Outer.java
  * @compile D.java Outer.java C.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 D.java Outer.java C.java
  * @compile Outer.java D.java C.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Outer.java D.java C.java
  * @compile Outer.java C.java D.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Outer.java C.java D.java
  */
 package P;
 

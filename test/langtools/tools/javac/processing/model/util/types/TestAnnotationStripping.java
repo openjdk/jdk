@@ -30,7 +30,6 @@
  * jdk.compiler
  * @build JavacTestingAbstractProcessor TestAnnotationStripping
  * @compile -processor TestAnnotationStripping -proc:only TestAnnotationStripping.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor TestAnnotationStripping -proc:only TestAnnotationStripping.java
  */
 
 import java.lang.annotation.*;

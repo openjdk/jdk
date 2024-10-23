@@ -3,7 +3,6 @@
  * @bug     8016099
  * @summary Some SuppressWarnings annotations ignored ( unchecked, rawtypes )
  * @compile UncheckedWarningRegressionTest.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 UncheckedWarningRegressionTest.java
  * @compile/fail/ref=UncheckedWarningRegressionTest.out -XDrawDiagnostics -Werror -Xlint:unchecked UncheckedWarningRegressionTest.java
  */
 

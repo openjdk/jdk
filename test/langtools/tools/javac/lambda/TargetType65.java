@@ -26,7 +26,6 @@
  * @bug 8008723
  * @summary Graph Inference: bad graph calculation leads to assertion error
  * @compile TargetType65.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TargetType65.java
  */
 class TargetType65 {
     interface Predicate<X> {

@@ -27,7 +27,6 @@
  * @summary test scopes of attribution
  * @author Mahmood Ali
  * @compile Scopes.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Scopes.java
  */
 
 import java.lang.annotation.ElementType;

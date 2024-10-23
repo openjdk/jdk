@@ -28,7 +28,6 @@
  * @author gafter
  *
  * @compile NonStaticFieldExpr4c.java NonStaticFieldExpr4d.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 NonStaticFieldExpr4c.java NonStaticFieldExpr4d.java
  */
 
 package p1;

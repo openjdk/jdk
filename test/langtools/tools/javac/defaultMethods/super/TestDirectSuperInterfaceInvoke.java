@@ -28,7 +28,6 @@
  * @enablePreview
  * @modules java.base/jdk.internal.classfile.impl
  * @compile TestDirectSuperInterfaceInvoke.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TestDirectSuperInterfaceInvoke.java
  * @run main TestDirectSuperInterfaceInvoke
  */
 

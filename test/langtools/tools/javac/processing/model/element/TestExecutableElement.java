@@ -31,7 +31,6 @@
  *          jdk.compiler
  * @build   JavacTestingAbstractProcessor TestExecutableElement
  * @compile -processor TestExecutableElement -proc:only -AexpectedMethodCount=7 TestExecutableElement.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor TestExecutableElement -proc:only -AexpectedMethodCount=7 TestExecutableElement.java
  * @compile/process -processor TestExecutableElement -proc:only -AexpectedMethodCount=3 ProviderOfDefault
  */
 

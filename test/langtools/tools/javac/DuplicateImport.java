@@ -28,7 +28,6 @@
  * @author turnidge
  *
  * @compile DuplicateImport.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 DuplicateImport.java
  */
 
 package nonexistent.pack;

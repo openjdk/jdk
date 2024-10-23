@@ -26,7 +26,6 @@
  * @bug 8014494
  * @summary javac crashes when varargs element of a method reference is inferred from the context
  * @compile TargetType73.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TargetType73.java
  */
 import java.util.List;
 

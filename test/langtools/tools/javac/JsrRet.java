@@ -28,7 +28,6 @@
  * @author gafter
  *
  * @compile JsrRet.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 JsrRet.java
  */
 
 package jsr.ret;

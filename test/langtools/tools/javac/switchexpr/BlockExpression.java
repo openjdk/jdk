@@ -26,7 +26,6 @@
  * @bug 8206986
  * @summary Verify rule cases with expression statements and throw statements work.
  * @compile BlockExpression.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 BlockExpression.java
  * @run main BlockExpression
  */
 

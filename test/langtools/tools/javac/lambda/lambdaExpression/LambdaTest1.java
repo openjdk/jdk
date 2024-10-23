@@ -27,7 +27,6 @@
  * @summary Add lambda tests
  *   Test lambda expressions for existing SAM interfaces like Runnable and Comparator<T>
  * @compile LambdaTest1.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 LambdaTest1.java
  * @run main LambdaTest1
  */
 

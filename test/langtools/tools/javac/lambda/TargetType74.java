@@ -26,7 +26,6 @@
  * @bug 8015432
  * @summary javac crashes with stack overflow when method called recursively from nested generic call
  * @compile TargetType74.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TargetType74.java
  */
 class TargetType74 {
 

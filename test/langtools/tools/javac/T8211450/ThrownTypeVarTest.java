@@ -26,7 +26,6 @@
  * @bug 8211450
  * @summary UndetVar::dup is not copying the kind field to the duplicated instance
  * @compile ThrownTypeVarTest.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 ThrownTypeVarTest.java
  */
 
 import java.io.*;

@@ -26,7 +26,6 @@
  * @bug 8071291
  * @summary Compiler crashes trying to cast UnionType to IntersectionClassType
  * @compile T8071291.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T8071291.java
  */
 
 class T8071291 {

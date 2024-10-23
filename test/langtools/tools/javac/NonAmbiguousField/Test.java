@@ -29,6 +29,5 @@
  * @author turnidge
  *
  * @compile one/Parent.java two/Child.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 one/Parent.java two/Child.java
  * @compile/fail/ref=Test.out -XDrawDiagnostics  one/Parent2.java two/Child2.java
  */

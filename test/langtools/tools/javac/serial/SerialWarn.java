@@ -5,7 +5,6 @@
  * @author gafter
  *
  * @compile                    -Werror SerialWarn.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2                    -Werror SerialWarn.java
  * @compile/fail/ref=SerialWarn.out -XDrawDiagnostics -Xlint:serial -Werror SerialWarn.java
  */
 

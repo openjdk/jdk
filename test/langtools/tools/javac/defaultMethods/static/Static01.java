@@ -27,7 +27,6 @@
  * @summary Add support for static interface methods
  *          smoke test for static interface methods
  * @compile -XDallowStaticInterfaceMethods Static01.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -XDallowStaticInterfaceMethods Static01.java
  */
 public class Static01 {
 

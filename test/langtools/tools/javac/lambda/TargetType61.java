@@ -27,7 +27,6 @@
  * @summary Add graph inference support
  *          check that new wildcards inference strategy doesn't run into 7190296
  * @compile TargetType61.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TargetType61.java
  */
 class TargetType61 {
 

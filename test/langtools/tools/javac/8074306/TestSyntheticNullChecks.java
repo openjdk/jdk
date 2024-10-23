@@ -26,7 +26,6 @@
  * @bug 8074306 8073432 8074501
  * @summary NULLCHK is emitted as Object.getClass
  * @compile TestSyntheticNullChecks.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TestSyntheticNullChecks.java
  * @run main TestSyntheticNullChecks 9
  */
 public class TestSyntheticNullChecks {

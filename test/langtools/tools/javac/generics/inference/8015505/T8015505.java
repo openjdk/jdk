@@ -3,7 +3,6 @@
  * @bug 8015505
  * @summary Spurious inference error when return type of generic method requires unchecked conversion to target
  * @compile T8015505.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T8015505.java
  */
 
 import java.util.List;

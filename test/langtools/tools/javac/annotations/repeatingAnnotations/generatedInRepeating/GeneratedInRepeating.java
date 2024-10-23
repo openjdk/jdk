@@ -26,9 +26,7 @@
  * @bug 8200166
  * @summary Check that repeating annotations whose attributes are not-yet-generated classes work.
  * @compile Processor.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Processor.java
  * @compile -processor Processor GeneratedInRepeating.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor Processor GeneratedInRepeating.java
  */
 
 import java.lang.annotation.Repeatable;

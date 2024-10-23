@@ -27,7 +27,6 @@
  * @summary The scope of a class type parameter is too wide
  * @author  Peter von der Ah\u00e9
  * @compile Method.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Method.java
  */
 
 public class Method<T extends Number> {

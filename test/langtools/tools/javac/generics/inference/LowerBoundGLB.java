@@ -27,7 +27,6 @@
  * @author dlsmith
  * @summary GLB for two capture variables with lower bounds
  * @compile LowerBoundGLB.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 LowerBoundGLB.java
  */
 
 public class LowerBoundGLB {

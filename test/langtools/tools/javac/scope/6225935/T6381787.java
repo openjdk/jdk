@@ -27,7 +27,6 @@
  * @summary Failing Japanese Calendar regression tests
  * @author  Peter von der Ah\u00e9
  * @compile T6381787.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T6381787.java
  */
 
 import static java.util.Calendar.*;

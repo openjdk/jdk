@@ -28,7 +28,6 @@
  * @author gafter
  *
  * @compile  ExtendedRaw1.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  ExtendedRaw1.java
  */
 
 class Comparator<T> {}

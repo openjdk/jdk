@@ -28,7 +28,6 @@
  * @author gafter
  *
  * @compile VerifyDA.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 VerifyDA.java
  * @run main VerifyDA
  */
 

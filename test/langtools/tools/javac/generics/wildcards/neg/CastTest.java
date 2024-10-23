@@ -28,7 +28,6 @@
  * @author gafter
  *
  * @compile CastTest.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 CastTest.java
  */
 
 import java.util.*;

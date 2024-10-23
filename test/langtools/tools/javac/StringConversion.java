@@ -28,7 +28,6 @@
  * @author maddox
  *
  * @compile StringConversion.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 StringConversion.java
  * @run main StringConversion
  */
 

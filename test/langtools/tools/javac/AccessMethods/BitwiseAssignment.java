@@ -28,7 +28,6 @@
  * @author Neal Gafter (gafter)
  *
  * @compile BitwiseAssignment.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 BitwiseAssignment.java
  * @run main BitwiseAssignment
  */
 

@@ -28,7 +28,6 @@
  * @modules jdk.compiler
  * @build NonPublicAnnotations
  * @compile -processor NonPublicAnnotations --release 8 NonPublicAnnotations.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor NonPublicAnnotations --release 8 NonPublicAnnotations.java
  */
 
 import java.util.Set;

@@ -26,7 +26,6 @@
  * @bug 4019300 4019304 4089107
  * @summary The compiler did not allow division by a known constant zero.
  * @compile DivByZero.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 DivByZero.java
  * @author turnidge
  */
 public class DivByZero {

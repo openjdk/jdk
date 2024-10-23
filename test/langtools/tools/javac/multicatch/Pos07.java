@@ -26,7 +26,6 @@
  * @bug 6993963
  * @summary Project Coin: Use precise exception analysis for effectively final catch parameters
  * @compile Pos07.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Pos07.java
  */
 
 class Pos07 {

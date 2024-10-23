@@ -27,7 +27,6 @@
  * @summary Verify the synthetic catch clauses are generated correctly for constructors
  * @enablePreview
  * @compile UninitializedThisException.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 UninitializedThisException.java
  * @run main UninitializedThisException
  */
 

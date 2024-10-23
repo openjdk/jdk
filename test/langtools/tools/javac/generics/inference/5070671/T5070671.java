@@ -26,7 +26,6 @@
  * @bug     5070671
  * @summary Arrays.binarySearch can't infer int[]
  * @compile T5070671.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T5070671.java
  */
 
 import java.util.*;

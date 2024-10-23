@@ -27,13 +27,11 @@
  * @summary compiler can produce a .class file in some source output modes
  *
  * @compile package-info.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 package-info.java
  * @run main/othervm T6257443 -yes foo/package-info.class
  *
  * @clean foo.*
  *
  * @compile -printsource package-info.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -printsource package-info.java
  * @run main/othervm T6257443 -no foo/package-info.class
  */
 

@@ -29,7 +29,6 @@ import java.lang.annotation.*;
  * @summary new type annotation location: wildcard bound
  * @author Mahmood Ali
  * @compile Wildcards.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Wildcards.java
  */
 class BoundTest {
   void wcExtends(MyList<? extends @A String> l) { }

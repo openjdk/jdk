@@ -26,7 +26,6 @@
  * @bug 8144066
  * @summary GLB of two lower-bounded capture variables, bounded by related wildcard-parameterized types
  * @compile CaptureGLB2.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 CaptureGLB2.java
  */
 
 public class CaptureGLB2 {

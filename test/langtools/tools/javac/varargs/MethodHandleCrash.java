@@ -28,7 +28,6 @@
  * @author govereau
  *
  * @compile  MethodHandleCrash.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  MethodHandleCrash.java
  */
 public interface MethodHandleCrash {
     static<T> void functional(T... input) {

@@ -1,2 +1,2 @@
-ReleaseOption.java:10:49: compiler.err.doesnt.exist: java.util.random
+ReleaseOption.java:9:49: compiler.err.doesnt.exist: java.util.random
 1 error

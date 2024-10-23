@@ -30,9 +30,7 @@
  *          jdk.compiler
  * @build   JavacTestingAbstractProcessor TestAllFoos
  * @compile -processor TestAllFoos -proc:only --release 8 --source-path modules/m1/pkg  modules/m1/pkg/C.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor TestAllFoos -proc:only --release 8 --source-path modules/m1/pkg  modules/m1/pkg/C.java
  * @compile -processor TestAllFoos -proc:only --release 8 --source-path modules/m2/pkg  modules/m2/pkg/C.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor TestAllFoos -proc:only --release 8 --source-path modules/m2/pkg  modules/m2/pkg/C.java
  */
 // @compile -processor TestAllFoos -proc:only             --module-source-path  modules -m m1,m2
 

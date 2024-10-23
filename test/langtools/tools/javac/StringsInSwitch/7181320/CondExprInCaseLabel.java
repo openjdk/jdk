@@ -26,7 +26,6 @@
  * @bug     7181320
  * @summary javac NullPointerException for switch labels with cast to String expressions
  * @compile CondExprInCaseLabel.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 CondExprInCaseLabel.java
  */
 
 public class CondExprInCaseLabel {

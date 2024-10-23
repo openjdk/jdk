@@ -26,7 +26,6 @@
  * @bug 8069254
  * @summary Ensure the generic array creation warning is not incorrectly produced for diamonds
  * @compile -Xlint:unchecked -Werror Warn6.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -Xlint:unchecked -Werror Warn6.java
  */
 
 public class Warn6<T> {

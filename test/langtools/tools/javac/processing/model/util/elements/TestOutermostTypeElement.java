@@ -28,7 +28,6 @@
  * @library /tools/javac/lib
  * @build   JavacTestingAbstractProcessor TestOutermostTypeElement
  * @compile -processor TestOutermostTypeElement -proc:only TestOutermostTypeElement.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor TestOutermostTypeElement -proc:only TestOutermostTypeElement.java
  */
 
 import java.io.Writer;

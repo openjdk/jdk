@@ -26,7 +26,6 @@
  * @bug 8295019
  * @summary Cannot call a method with a parameter of a local class declared in a lambda
  * @compile TypeDeclarationInsideExpressionTest.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TypeDeclarationInsideExpressionTest.java
  */
 
 class TypeDeclarationInsideExpressionTest {

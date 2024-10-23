@@ -30,7 +30,6 @@ import static java.lang.classfile.TypeAnnotation.TargetType.*;
  * @enablePreview
  * @modules java.base/jdk.internal.classfile.impl
  * @compile -g Driver.java ReferenceInfoUtil.java ClassTypeParam.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -g Driver.java ReferenceInfoUtil.java ClassTypeParam.java
  * @run main Driver ClassTypeParam
  */
 public class ClassTypeParam {

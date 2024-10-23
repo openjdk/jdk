@@ -27,7 +27,6 @@
  * @summary Cyclic inheritance error reported when multiple classes in source file.
  *
  * @compile FalseCycle.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 FalseCycle.java
  */
 
 class FalseCycle extends FalseCycleBase {}

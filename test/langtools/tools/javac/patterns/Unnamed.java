@@ -26,7 +26,6 @@
  * @bug 8304246
  * @summary Compiler Implementation for Unnamed patterns and variables
  * @compile Unnamed.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Unnamed.java
  * @run main Unnamed
  */
 

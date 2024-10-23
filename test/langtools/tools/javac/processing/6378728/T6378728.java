@@ -28,7 +28,6 @@
  * @modules java.compiler
  *          jdk.compiler
  * @compile T6378728.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T6378728.java
  * @run main T6378728
  */
 

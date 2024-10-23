@@ -26,7 +26,6 @@
  * @bug 8293578
  * @summary Ensure constant types are removed correctly for <string>.getClass().
  * @compile ConstantTypes.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 ConstantTypes.java
  * @run main ConstantTypes
  */
 

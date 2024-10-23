@@ -28,7 +28,6 @@
  * @author turnidge
  *
  * @compile InvalidIntfCast.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 InvalidIntfCast.java
  */
 
 interface I {

@@ -28,7 +28,6 @@
  * @author gafter
  *
  * @compile SuperNew2.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 SuperNew2.java
  * @run main SuperNew2
  */
 

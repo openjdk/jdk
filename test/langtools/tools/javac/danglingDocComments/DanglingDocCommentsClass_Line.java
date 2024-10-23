@@ -1,7 +1,6 @@
 /*
  * @test /nodynamiccopyright/
  * @compile -Xlint:dangling-doc-comments DanglingDocCommentsClass_Line.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -Xlint:dangling-doc-comments DanglingDocCommentsClass_Line.java
  * @compile/ref=empty.out -XDrawDiagnostics DanglingDocCommentsClass_Line.java
  * @compile/ref=DanglingDocCommentsClass_Line.enabled.out -XDrawDiagnostics -Xlint:dangling-doc-comments DanglingDocCommentsClass_Line.java
  * @compile/ref=empty.out -XDrawDiagnostics --disable-line-doc-comments -Xlint:dangling-doc-comments DanglingDocCommentsClass_Line.java

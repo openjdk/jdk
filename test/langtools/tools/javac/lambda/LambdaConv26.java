@@ -26,7 +26,6 @@
  * @bug 8006749
  * @summary compiler does not allow Object protected methods to be used in lambda
  * @compile LambdaConv26.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 LambdaConv26.java
  */
 public class LambdaConv26 {
     interface I {

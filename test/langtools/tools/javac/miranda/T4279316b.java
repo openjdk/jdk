@@ -28,7 +28,6 @@
  * @author gafter
  *
  * @compile T4279316b.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T4279316b.java
  */
 
 interface I {

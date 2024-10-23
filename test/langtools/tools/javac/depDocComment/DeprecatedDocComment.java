@@ -6,7 +6,6 @@
  * @author Jing Qian
  *
  * @compile DeprecatedDocComment2.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 DeprecatedDocComment2.java
  * @compile/fail/ref=DeprecatedDocComment.out -XDrawDiagnostics -Werror -deprecation DeprecatedDocComment.java
  */
 

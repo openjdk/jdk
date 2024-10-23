@@ -28,7 +28,6 @@
  * @author gafter
  *
  * @compile Test.java AbstractTest.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Test.java AbstractTest.java
  * @compile/fail/ref=Test.out -XDrawDiagnostics  ConcreteTest.java
  */
 

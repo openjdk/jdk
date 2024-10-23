@@ -28,7 +28,6 @@
  * @author seligman
  *
  * @compile  InstanceOf1.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  InstanceOf1.java
  */
 
 public class InstanceOf1 {

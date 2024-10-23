@@ -25,7 +25,6 @@
  * @test
  * @summary symbol not found error, implicit lambdas and diamond constructor invocations
  * @compile CantFindSymbolImplicitLambdaAndDiamondTest.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 CantFindSymbolImplicitLambdaAndDiamondTest.java
  */
 
 import java.util.function.Consumer;

@@ -28,7 +28,6 @@
  * @author Neal Gafter (gafter)
  *
  * @compile T4720751.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T4720751.java
  */
 
 class T4720751 {

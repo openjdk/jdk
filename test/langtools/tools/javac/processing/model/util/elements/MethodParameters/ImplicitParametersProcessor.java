@@ -30,7 +30,6 @@
  *          jdk.compiler
  * @build   JavacTestingAbstractProcessor ImplicitParametersProcessor
  * @compile -processor ImplicitParametersProcessor -proc:only ImplicitParametersProcessor.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor ImplicitParametersProcessor -proc:only ImplicitParametersProcessor.java
  */
 
 import javax.annotation.processing.RoundEnvironment;

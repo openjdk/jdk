@@ -26,7 +26,6 @@
  * @bug 8148128
  * @summary Regression: array constructor references marked as inexact
  * @compile T8148128.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T8148128.java
  */
 import java.util.*;
 import java.util.stream.*;

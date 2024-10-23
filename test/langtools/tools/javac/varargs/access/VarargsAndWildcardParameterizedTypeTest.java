@@ -26,9 +26,7 @@
  * @bug 8049075
  * @summary javac, wildcards and generic vararg method invocation not accepted
  * @compile VarargsAndWildcardParameterizedTypeTest.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 VarargsAndWildcardParameterizedTypeTest.java
  * @compile --release 8 VarargsAndWildcardParameterizedTypeTest.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 --release 8 VarargsAndWildcardParameterizedTypeTest.java
  */
 
 class VarargsAndWildcardParameterizedTypeTest {

@@ -28,7 +28,6 @@
  * @author maddox, gafter
  *
  * @compile ImportOfOwnClass.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 ImportOfOwnClass.java
  */
 
 package p;

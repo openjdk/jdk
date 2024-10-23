@@ -29,9 +29,7 @@
  *          jdk.compiler
  * @build   JavacTestingAbstractProcessor
  * @compile WErrorLast.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 WErrorLast.java
  * @compile -proc:only -processor WErrorLast WErrorLast.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -proc:only -processor WErrorLast WErrorLast.java
  * @compile/fail/ref=WErrorLast.out -XDrawDiagnostics -Werror -proc:only -processor WErrorLast WErrorLast.java
  */
 

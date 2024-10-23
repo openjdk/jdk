@@ -30,9 +30,7 @@
  *          jdk.compiler
  * @build JavacTestingAbstractProcessor
  * @compile Anno.java AnnoProcessor.java ErrorRunningJavadocOnInnerClasses.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Anno.java AnnoProcessor.java ErrorRunningJavadocOnInnerClasses.java
  * @compile -processor AnnoProcessor ErrorRunningJavadocOnInnerClasses.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor AnnoProcessor ErrorRunningJavadocOnInnerClasses.java
  */
 
 @Anno

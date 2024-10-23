@@ -28,7 +28,6 @@
  * @library ../lib
  * @modules jdk.compiler/com.sun.tools.javac.util
  * @compile T6557752.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T6557752.java
  * @run main T6557752
  */
 

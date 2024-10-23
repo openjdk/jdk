@@ -27,7 +27,6 @@
  * @summary com.sun.tools.javac.code.Types.lub() throws NPE
  * @author  Peter von der Ah\u00e9
  * @compile T6332204.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T6332204.java
  */
 
 import java.util.*;

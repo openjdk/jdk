@@ -31,7 +31,6 @@
  * @author turnidge
  *
  * @compile ShiftExpressionTest.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 ShiftExpressionTest.java
  * @run main ShiftExpressionTest
  */
 

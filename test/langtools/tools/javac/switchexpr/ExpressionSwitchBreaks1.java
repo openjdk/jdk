@@ -26,7 +26,6 @@
  * @bug 8206986
  * @summary Verify behavior of various kinds of breaks.
  * @compile ExpressionSwitchBreaks1.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 ExpressionSwitchBreaks1.java
  * @run main ExpressionSwitchBreaks1
  */
 

@@ -26,7 +26,6 @@
  * @bug 8067767
  * @summary type inference performance regression
  * @compile T8067767.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T8067767.java
  */
 class T8067767 {
 

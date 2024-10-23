@@ -26,7 +26,6 @@
  * @bug 7073477
  * @summary NPE in com.sun.tools.javac.code.Symbol$VarSymbol.getConstValue
  * @compile T7073477.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T7073477.java
  */
 
 @SuppressWarnings(T7073477A.S)

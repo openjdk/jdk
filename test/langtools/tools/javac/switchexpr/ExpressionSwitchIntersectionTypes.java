@@ -26,7 +26,6 @@
  * @bug 8206986
  * @summary Verify behavior when an intersection type is inferred for switch expression.
  * @compile ExpressionSwitchIntersectionTypes.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 ExpressionSwitchIntersectionTypes.java
  * @run main ExpressionSwitchIntersectionTypes
  */
 

@@ -38,12 +38,10 @@ import java.util.List;
  *
  * @clean *
  * @compile -XDstringConcat=indy              Holder.java PublicClass.java PublicInterface.java Public_PublicClass.java Public_PublicInterface.java Public_PrivateInterface1.java Public_PrivateInterface2.java Test.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -XDstringConcat=indy              Holder.java PublicClass.java PublicInterface.java Public_PublicClass.java Public_PublicInterface.java Public_PrivateInterface1.java Public_PrivateInterface2.java Test.java
  * @run main Test
  *
  * @clean *
  * @compile -XDstringConcat=indyWithConstants Holder.java PublicClass.java PublicInterface.java Public_PublicClass.java Public_PublicInterface.java Public_PrivateInterface1.java Public_PrivateInterface2.java Test.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -XDstringConcat=indyWithConstants Holder.java PublicClass.java PublicInterface.java Public_PublicClass.java Public_PublicInterface.java Public_PrivateInterface1.java Public_PrivateInterface2.java Test.java
  * @run main Test
  */
 

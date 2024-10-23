@@ -25,9 +25,7 @@
  * @test
  * @bug 8008708
  * @compile Foo.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Foo.java
  * @compile Test.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Test.java
  */
 class Test {
     void test(FooLib fl) {

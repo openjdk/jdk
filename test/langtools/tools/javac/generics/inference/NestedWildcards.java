@@ -26,7 +26,6 @@
  * @bug 8039214
  * @summary Nested generic methods that work on wildcard-parameterized types
  * @compile NestedWildcards.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 NestedWildcards.java
  */
 
 public class NestedWildcards {

@@ -26,7 +26,6 @@
  * @bug 8039214
  * @summary Capture variables used for subtyping should not leak out of inference
  * @compile SubtypeCaptureLeak.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 SubtypeCaptureLeak.java
  */
 
 public class SubtypeCaptureLeak {

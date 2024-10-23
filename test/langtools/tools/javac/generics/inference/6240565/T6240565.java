@@ -26,7 +26,6 @@
  * @bug     6240565
  * @summary Unboxing, arrays, and type variables doesn't work
  * @compile T6240565.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T6240565.java
  * @run main/othervm T6240565
  */
 

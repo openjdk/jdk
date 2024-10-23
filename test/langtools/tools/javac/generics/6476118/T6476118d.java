@@ -26,7 +26,6 @@
  * @bug 6476118
  * @summary compiler bug causes runtime ClassCastException for generics overloading
  * @compile T6476118d.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T6476118d.java
  */
 
 class T6476118d {

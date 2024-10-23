@@ -28,7 +28,6 @@
  * @author seligman
  *
  * @compile  GetClass2.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  GetClass2.java
  * @run main GetClass2
  */
 

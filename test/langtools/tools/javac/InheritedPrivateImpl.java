@@ -28,7 +28,6 @@
  * @author gafter
  *
  * @compile InheritedPrivateImpl.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 InheritedPrivateImpl.java
  */
 
 class InheritedPrivateImpl {

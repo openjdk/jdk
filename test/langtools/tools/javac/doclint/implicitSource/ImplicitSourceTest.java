@@ -26,7 +26,6 @@
  * @bug 8024538
  * @summary -Xdoclint + -Xprefer:source + incremental compilation == FAIL
  * @compile -Xdoclint -Xprefer:source ImplicitSourceTest.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -Xdoclint -Xprefer:source ImplicitSourceTest.java
  */
 
 /** ImplicitSourceTest. */

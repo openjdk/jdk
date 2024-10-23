@@ -26,7 +26,6 @@
  * @bug 6977800
  * @summary Regression: invalid resolution of supertype for local class
  * @compile T6977800.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T6977800.java
  */
 
 class T6977800 {

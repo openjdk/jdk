@@ -29,7 +29,6 @@
  * @author maddox
  *
  * @compile SuperclassConstructorException.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 SuperclassConstructorException.java
  */
 
 class Superclass {

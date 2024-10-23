@@ -29,7 +29,6 @@
  * @author Peter von der Ah\u00e9
  *
  * @compile -Xlint:unchecked -Werror AttributeSet.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -Xlint:unchecked -Werror AttributeSet.java
  */
 
 interface Attribute<T> { }

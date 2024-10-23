@@ -8,17 +8,11 @@
  *          jdk.compiler
  * @build   JavacTestingAbstractProcessor
  * @compile ProcFoo.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 ProcFoo.java
  * @compile ProcBar.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 ProcBar.java
  * @compile T6365040.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T6365040.java
  * @compile      -processor ProcFoo,ProcBar,T6365040  -proc:only T6365040.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2      -processor ProcFoo,ProcBar,T6365040  -proc:only T6365040.java
  * @compile      -processor T6365040                  -proc:only T6365040.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2      -processor T6365040                  -proc:only T6365040.java
  * @compile      -processor T6365040,NotThere,        -proc:only T6365040.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2      -processor T6365040,NotThere,        -proc:only T6365040.java
  * @compile/fail/ref=T6365040.out -XDrawDiagnostics -processor NotThere -proc:only T6365040.java
  * @compile/fail/ref=T6365040.out -XDrawDiagnostics -processor NotThere,T6365040 -proc:only T6365040.java
  */

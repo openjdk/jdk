@@ -31,9 +31,7 @@
  *          jdk.compiler
  * @build  JavacTestingAbstractProcessor TestGetResource
  * @compile -processor TestGetResource -proc:only -Aphase=write TestGetResource.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor TestGetResource -proc:only -Aphase=write TestGetResource.java
  * @compile -processor TestGetResource -proc:only -Aphase=read  TestGetResource.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor TestGetResource -proc:only -Aphase=read  TestGetResource.java
  */
 
 import java.util.Set;

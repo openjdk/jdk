@@ -26,7 +26,6 @@
  * @bug 8029002
  * @summary javac should take multiple upper bounds into account in incorporation
  * @compile MultipleUpperBoundsIncorporationTest.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 MultipleUpperBoundsIncorporationTest.java
  */
 
 import java.util.ArrayList;

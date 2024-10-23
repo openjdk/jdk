@@ -29,7 +29,6 @@ import java.lang.annotation.*;
  * @summary new type annotation location: local variables array/generics
  * @author Mahmood Ali
  * @compile LocalVariables.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 LocalVariables.java
  */
 
 class DefaultScope {

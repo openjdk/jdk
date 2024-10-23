@@ -27,7 +27,6 @@
  * @summary Verify that cycles between type parameter bounds and imports/class nesting
  *          are not a problem.
  * @compile TypeParamCycle.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TypeParamCycle.java
  */
 package pkg;
 

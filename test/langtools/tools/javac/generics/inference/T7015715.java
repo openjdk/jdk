@@ -28,7 +28,6 @@
  * @summary lub gets stuck on type with complex supertype
  * @author Neal Gafter
  * @compile T7015715.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T7015715.java
  *
  */
 

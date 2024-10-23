@@ -27,7 +27,6 @@
  * @summary Add support for static interface methods
  *          Smoke test for static imports of static interface methods
  * @compile -XDallowStaticInterfaceMethods StaticImport1.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -XDallowStaticInterfaceMethods StaticImport1.java
  */
 
 import static pkg.A.*;

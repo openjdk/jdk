@@ -26,7 +26,6 @@
  * @bug 8010006
  * @summary NPE in javac with interface super in lambda
  * @compile LambdaWithInterfaceSuper.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 LambdaWithInterfaceSuper.java
  */
 
 class LambdaWithInterfaceSuper {

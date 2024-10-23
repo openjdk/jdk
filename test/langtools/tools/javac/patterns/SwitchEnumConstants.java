@@ -26,7 +26,6 @@
  * @bug 8318144
  * @summary Verify switches work in presence of enum constants that have bodies
  * @compile SwitchEnumConstants.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 SwitchEnumConstants.java
  * @run main SwitchEnumConstants
  */
 

@@ -26,7 +26,6 @@
  * @bug 7032633
  * @summary javac -Xlint:all warns about flush() within try on an auto-closeable resource
  * @compile -Xlint:try -Werror T7032633.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -Xlint:try -Werror T7032633.java
  */
 
 import java.io.IOException;

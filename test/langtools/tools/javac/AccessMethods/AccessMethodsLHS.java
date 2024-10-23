@@ -28,7 +28,6 @@
  * @author William Maddox (maddox)
  *
  * @compile AccessMethodsLHS.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 AccessMethodsLHS.java
  * @run main AccessMethodsLHS
  */
 

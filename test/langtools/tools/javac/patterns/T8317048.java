@@ -26,7 +26,6 @@
  * @summary VerifyError with unnamed pattern variable and more than one components
  * @enablePreview
  * @compile T8317048.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T8317048.java
  * @run main T8317048
  */
 

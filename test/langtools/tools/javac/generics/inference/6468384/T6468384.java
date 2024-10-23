@@ -26,7 +26,6 @@
  * @bug     6468384 6278587
  * @summary Problem with underconstrained type variables
  * @compile T6468384.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T6468384.java
  */
 
 import java.util.*;

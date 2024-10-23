@@ -30,7 +30,6 @@
             generic method; the type can be inferred from the value of the other
             type arguments
  * @compile InferenceTest4.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 InferenceTest4.java
  * @run main InferenceTest4
  */
 

@@ -28,7 +28,6 @@
  * @author gafter
  *
  * @compile T1.java T2.java T3.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T1.java T2.java T3.java
  */
 
 package p1;

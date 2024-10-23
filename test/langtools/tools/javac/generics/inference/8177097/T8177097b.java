@@ -26,7 +26,6 @@
  * @bug 8177097
  * @summary Generic method reference returning wildcard parameterized type does not compile
  * @compile T8177097b.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T8177097b.java
  */
 
 import java.util.Map;

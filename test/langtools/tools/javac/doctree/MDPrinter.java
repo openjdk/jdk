@@ -27,7 +27,6 @@
  * @modules jdk.internal.md/jdk.internal.org.commonmark.node
  *          jdk.internal.md/jdk.internal.org.commonmark.parser
  * @compile MDPrinter.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 MDPrinter.java
  */
 
 import java.io.IOException;

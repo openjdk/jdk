@@ -28,7 +28,6 @@
  * @author gafter
  *
  * @compile TrailingComma.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TrailingComma.java
  */
 
 class TrailingComma {

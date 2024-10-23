@@ -29,7 +29,6 @@
  *          jdk.compiler
  * @build T6458749
  * @compile -processor T6458749 -proc:only T6458749.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor T6458749 -proc:only T6458749.java
  */
 
 import java.util.Set;

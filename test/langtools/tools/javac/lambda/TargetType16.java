@@ -4,7 +4,6 @@
  * @summary Add lambda tests
  *  Check void-compatibility in strict vs. loose conversion contexts
  * @compile TargetType16.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TargetType16.java
  */
 
 class TargetType16 {

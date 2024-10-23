@@ -28,7 +28,6 @@
  * @author gafter
  *
  * @compile T4528315.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T4528315.java
  */
 
 class E1 extends Exception {}

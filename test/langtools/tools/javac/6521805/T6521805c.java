@@ -28,7 +28,6 @@
  * @author mcimadamore
  *
  * @compile T6521805c.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T6521805c.java
  */
 
 class T6521805c {

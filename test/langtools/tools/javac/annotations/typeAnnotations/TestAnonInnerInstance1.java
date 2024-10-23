@@ -28,7 +28,6 @@
  *          TypeAnnotationPosition visiting a tree node prior to
  *          memberEnter.
  * @compile TestAnonInnerInstance1.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TestAnonInnerInstance1.java
  */
 
 import java.lang.annotation.*;

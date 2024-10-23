@@ -27,7 +27,6 @@
  * @summary test for overriding with default method
  * @author  Maurizio Cimadamore
  * @compile Pos04.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Pos04.java
  */
 
 class Pos04 {

@@ -27,7 +27,6 @@
  * @summary Bad interaction between generics, instanceof, inner classes, and subclasses
  * @author  RGibson
  * @compile -Werror T654170.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -Werror T654170.java
  */
 
 // http://forum.java.sun.com/thread.jspa?forumID=316&threadID=654170

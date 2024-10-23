@@ -30,9 +30,7 @@
  * @build   JavacTestingAbstractProcessor
  * @enablePreview
  * @compile TestUnnamedVariableElement.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TestUnnamedVariableElement.java
  * @compile --enable-preview -source ${jdk.version} -processor TestUnnamedVariableElement -proc:only TestUnnamedVariableElementData.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 --enable-preview -source ${jdk.version} -processor TestUnnamedVariableElement -proc:only TestUnnamedVariableElementData.java
  */
 
 import javax.annotation.processing.*;

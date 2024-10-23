@@ -30,9 +30,7 @@
  *          jdk.compiler
  * @build   Processor
  * @compile -processor Processor T8132446.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor Processor T8132446.java
  * @compile -processor Processor T8132446.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor Processor T8132446.java
  */
 
 

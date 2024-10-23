@@ -26,7 +26,6 @@
  * @bug 8222169
  * @summary post inc operator inside compute function of HashMap results in Exception
  * @compile ConditionalAndPostfixOperator.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 ConditionalAndPostfixOperator.java
  * @run main ConditionalAndPostfixOperator
  */
 

@@ -27,7 +27,6 @@
  * @author gafter
  *
  * @compile InterfaceOverrideObject.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 InterfaceOverrideObject.java
  */
 
 interface GSSNameSpi {

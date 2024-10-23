@@ -4,7 +4,6 @@
  * @summary Verify "case null" is not allowed for --release 16, 20
  * @compile/fail/ref=SwitchNullDisabled.out -XDrawDiagnostics --release 20 SwitchNullDisabled.java
  * @compile SwitchNullDisabled.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 SwitchNullDisabled.java
  */
 
 public class SwitchNullDisabled {

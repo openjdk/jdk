@@ -26,7 +26,6 @@
  * @bug     5003431
  * @summary java.lang.Object cannot be dereferenced
  * @compile T5003431.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T5003431.java
  */
 
 public class T5003431 {

@@ -31,7 +31,6 @@
  * @author maddox (cribbed from gbracha)
  *
  * @compile ThrowNull.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 ThrowNull.java
  */
 
 class ThrowNull {

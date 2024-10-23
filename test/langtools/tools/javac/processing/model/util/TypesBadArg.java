@@ -31,7 +31,6 @@
  *          jdk.compiler
  * @build   JavacTestingAbstractProcessor TypesBadArg
  * @compile -processor TypesBadArg -proc:only TypesBadArg.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor TypesBadArg -proc:only TypesBadArg.java
  */
 
 import java.util.Set;

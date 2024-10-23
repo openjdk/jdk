@@ -28,7 +28,6 @@
  *  complex case of lambda return type that depends on generic method
  *          inference variable
  * @compile -XDrawDiagnostics TargetType20.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -XDrawDiagnostics TargetType20.java
  */
 import java.util.*;
 

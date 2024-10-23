@@ -26,7 +26,6 @@
  * @bug 8213908
  * @summary AssertionError in DeferredAttr at setOverloadKind
  * @compile MethodRefStuck2.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 MethodRefStuck2.java
  */
 
 import java.util.Optional;

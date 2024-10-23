@@ -2,7 +2,6 @@
  * @test
  * @compile/fail/ref=SimpleDeconstructionPatternOld.out --release 20 -XDrawDiagnostics SimpleDeconstructionPattern.java
  * @compile SimpleDeconstructionPattern.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 SimpleDeconstructionPattern.java
  * @run main SimpleDeconstructionPattern
  */
 

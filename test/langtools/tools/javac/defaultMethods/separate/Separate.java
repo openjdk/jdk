@@ -27,9 +27,7 @@
  * @summary smoke test for separate compilation of default methods
  * @author  Maurizio Cimadamore
  * @compile  pkg1/A.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  pkg1/A.java
  * @compile  Separate.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  Separate.java
  */
 
 import pkg1.A;

@@ -32,11 +32,8 @@
  *          jdk.compiler
  * @build   JavacTestingAbstractProcessor
  * @compile T6341534.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T6341534.java
  * @compile -proc:only -processor T6341534 dir/package-info.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -proc:only -processor T6341534 dir/package-info.java
  * @compile -processor T6341534 dir/package-info.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor T6341534 dir/package-info.java
  */
 
 import javax.annotation.processing.*;

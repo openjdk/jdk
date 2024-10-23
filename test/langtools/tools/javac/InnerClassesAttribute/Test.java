@@ -29,7 +29,6 @@
  * @author turnidge
  * @build Outside Outside$1$Inside
  * @compile Test.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Test.java
  */
 public
 class Test {

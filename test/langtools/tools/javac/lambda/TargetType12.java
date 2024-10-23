@@ -28,7 +28,6 @@
  *  Flow should not analyze lambda body that contains errors due to partially specified parameter types
  * @author  Maurizio Cimadamore
  * @compile TargetType12.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TargetType12.java
  */
 
 import java.util.*;

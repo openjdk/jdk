@@ -26,7 +26,6 @@
  * @bug 8278078
  * @summary error: cannot reference super before supertype constructor has been called
  * @compile ValidThisAndSuperInConstructorArgTest.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 ValidThisAndSuperInConstructorArgTest.java
  * @run main ValidThisAndSuperInConstructorArgTest
  */
 public class ValidThisAndSuperInConstructorArgTest  {

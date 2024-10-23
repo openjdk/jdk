@@ -31,7 +31,6 @@
  *          jdk.compiler
  * @build   JavacTestingAbstractProcessor TestIsFunctionalInterface
  * @compile -processor TestIsFunctionalInterface TestIsFunctionalInterface.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor TestIsFunctionalInterface TestIsFunctionalInterface.java
  */
 
 import java.util.Set;

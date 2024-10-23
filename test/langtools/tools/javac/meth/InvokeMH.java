@@ -28,7 +28,6 @@
  * @author jrose
  *
  * @compile InvokeMH.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 InvokeMH.java
  */
 
 /*

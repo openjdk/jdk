@@ -26,7 +26,6 @@
  * @bug 8063054
  * @summary Bug summary
  * @compile -Werror -Xlint:rawtypes T8063054b.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -Werror -Xlint:rawtypes T8063054b.java
  */
 class T8063054b {
     void test(Box<? extends Box<Number>> b) {

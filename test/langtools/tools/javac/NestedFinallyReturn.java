@@ -27,7 +27,6 @@
  * @summary Return from within nested try-finally should not crash compiler.
  *
  * @compile NestedFinallyReturn.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 NestedFinallyReturn.java
  */
 
 public class NestedFinallyReturn {

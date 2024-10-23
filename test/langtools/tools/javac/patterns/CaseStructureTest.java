@@ -34,7 +34,6 @@
  * @build toolbox.ToolBox toolbox.JavacTask
  * @build combo.ComboTestHelper
  * @compile CaseStructureTest.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 CaseStructureTest.java
  * @run main CaseStructureTest
  */
 

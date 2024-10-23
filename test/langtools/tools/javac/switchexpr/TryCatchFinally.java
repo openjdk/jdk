@@ -26,7 +26,6 @@
  * @bug 8220018
  * @summary Verify that try-catch-finally inside a switch expression works properly.
  * @compile TryCatchFinally.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TryCatchFinally.java
  * @run main TryCatchFinally
  */
 public class TryCatchFinally {//TODO: yield <double>

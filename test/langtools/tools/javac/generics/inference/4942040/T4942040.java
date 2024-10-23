@@ -26,7 +26,6 @@
  * @bug     4942040
  * @summary improper handling of lub type for arrays, classes
  * @compile T4942040.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T4942040.java
  */
 
 public class T4942040 {

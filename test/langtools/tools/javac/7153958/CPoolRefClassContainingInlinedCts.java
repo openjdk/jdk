@@ -28,7 +28,6 @@
  * @enablePreview
  * @modules java.base/jdk.internal.classfile.impl
  * @compile pkg/ClassToBeStaticallyImportedA.java pkg/ClassToBeStaticallyImportedB.java CPoolRefClassContainingInlinedCts.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 pkg/ClassToBeStaticallyImportedA.java pkg/ClassToBeStaticallyImportedB.java CPoolRefClassContainingInlinedCts.java
  * @run main CPoolRefClassContainingInlinedCts
  */
 

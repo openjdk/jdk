@@ -26,7 +26,6 @@
  * @bug     7148242
  * @summary Regression: valid code rejected during generic type well-formedness check
  * @compile T7148242.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T7148242.java
  */
 class T7148242 {
    static abstract class A<K, V, I extends Pair<K, V>, I2 extends Pair<V, K>> {

@@ -26,7 +26,6 @@
  * @bug     6302954
  * @summary Inference fails for type variable return constraint
  * @compile X.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 X.java
  */
 
 public class X {

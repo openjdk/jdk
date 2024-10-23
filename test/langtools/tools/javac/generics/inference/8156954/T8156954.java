@@ -26,7 +26,6 @@
  * @bug 8156954
  * @summary javac incorrectly complains of incompatible types
  * @compile T8156954.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T8156954.java
  */
 import java.util.function.Function;
 

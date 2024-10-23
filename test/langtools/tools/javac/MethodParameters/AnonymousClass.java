@@ -29,7 +29,6 @@
  * @modules java.base/jdk.internal.classfile.impl
  * @build MethodParametersTester ClassFileVisitor ReflectionVisitor
  * @compile -parameters AnonymousClass.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -parameters AnonymousClass.java
  * @run main MethodParametersTester AnonymousClass AnonymousClass.out
  */
 

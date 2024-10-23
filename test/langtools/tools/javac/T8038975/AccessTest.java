@@ -26,7 +26,6 @@
  * @bug 8038975
  * @summary Access control in enhanced for
  * @compile AccessTest.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 AccessTest.java
  */
 
 import a.*;

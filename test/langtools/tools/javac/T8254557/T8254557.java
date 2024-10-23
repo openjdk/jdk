@@ -26,7 +26,6 @@
  * @bug 8254557
  * @summary Method Attr.preFlow shouldn't visit class definitions that have not yet been entered and attributed.
  * @compile T8254557.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T8254557.java
  */
 
 import java.util.Iterator;

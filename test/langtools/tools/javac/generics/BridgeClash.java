@@ -28,7 +28,6 @@
  * @author gafter
  *
  * @compile  BridgeClash.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  BridgeClash.java
  */
 
 interface I<T> {

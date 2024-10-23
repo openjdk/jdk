@@ -28,7 +28,6 @@
  * @author gafter
  *
  * @compile  Varargs.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  Varargs.java
  */
 
 package varargs.versus.generics;

@@ -28,7 +28,6 @@
  *  check that syntax for selecting generic receiver works
  * @author  Maurizio Cimadamore
  * @compile MethodReference07.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 MethodReference07.java
  */
 
 class MethodReference07 {

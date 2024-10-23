@@ -31,42 +31,24 @@
  *          jdk.compiler
  * @build   JavacTestingAbstractProcessor
  * @compile annot/AnnotatedElementInfo.java annot/MarkerAnnot.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 annot/AnnotatedElementInfo.java annot/MarkerAnnot.java
  * @compile TestElementsAnnotatedWith.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TestElementsAnnotatedWith.java
  * @compile InheritedAnnotation.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 InheritedAnnotation.java
  * @compile TpAnno.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TpAnno.java
  * @compile Anno.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Anno.java
  * @compile -processor TestElementsAnnotatedWith -proc:only SurfaceAnnotations.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor TestElementsAnnotatedWith -proc:only SurfaceAnnotations.java
  * @compile -processor TestElementsAnnotatedWith -proc:only BuriedAnnotations.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor TestElementsAnnotatedWith -proc:only BuriedAnnotations.java
  * @compile -processor TestElementsAnnotatedWith -proc:only Part1.java Part2.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor TestElementsAnnotatedWith -proc:only Part1.java Part2.java
  * @compile -processor TestElementsAnnotatedWith -proc:only C2.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor TestElementsAnnotatedWith -proc:only C2.java
  * @compile -processor TestElementsAnnotatedWith -proc:only Foo.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor TestElementsAnnotatedWith -proc:only Foo.java
  * @compile -processor TestElementsAnnotatedWith -proc:only TypeParameterAnnotations.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor TestElementsAnnotatedWith -proc:only TypeParameterAnnotations.java
  * @compile -processor TestElementsAnnotatedWith -proc:only ParameterAnnotations.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor TestElementsAnnotatedWith -proc:only ParameterAnnotations.java
  * @compile -processor TestElementsAnnotatedWith -proc:only pkg/package-info.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor TestElementsAnnotatedWith -proc:only pkg/package-info.java
  * @compile -processor TestElementsAnnotatedWith -proc:only mod/quux/package-info.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor TestElementsAnnotatedWith -proc:only mod/quux/package-info.java
  * @compile -processor TestElementsAnnotatedWith -proc:only mod/quux/Quux.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor TestElementsAnnotatedWith -proc:only mod/quux/Quux.java
  * @compile  mod/quux/Quux.java mod/quux/package-info.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  mod/quux/Quux.java mod/quux/package-info.java
  * @compile -processor TestElementsAnnotatedWith -proc:only -AsingleModuleMode=true mod/module-info.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor TestElementsAnnotatedWith -proc:only -AsingleModuleMode=true mod/module-info.java
  * @compile/fail/ref=ErroneousAnnotations.out -processor TestElementsAnnotatedWith -proc:only -XDrawDiagnostics ErroneousAnnotations.java
  * @compile Foo.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Foo.java
  * @compile/process -processor TestElementsAnnotatedWith -proc:only Foo
  */
 

@@ -28,7 +28,6 @@
  *  check that binary expression in lambda expression is parsed correctly
  * @author  Maurizio Cimadamore
  * @compile LambdaExpr05.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 LambdaExpr05.java
  */
 
 class LambdaExpr05 {

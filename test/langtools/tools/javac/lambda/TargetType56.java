@@ -27,7 +27,6 @@
  * @summary Add graph inference support
  *          smoke test for graph inference
  * @compile TargetType56.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TargetType56.java
  */
 class TargetType56 {
     <Z> Z m(Z z) { return null; }

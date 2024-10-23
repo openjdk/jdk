@@ -26,7 +26,6 @@
  * @bug 6949443
  * @summary VisitTree assertion triggered using -Xjcov on small sample program
  * @compile -Xjcov T6949443.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -Xjcov T6949443.java
  */
 
 public class T6949443 {

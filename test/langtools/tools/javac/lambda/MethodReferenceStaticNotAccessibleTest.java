@@ -26,7 +26,6 @@
  * @bug 8136809
  * @summary Javac fails compiling Collectors.reducing with method reference combiner
  * @compile MethodReferenceStaticNotAccessibleTest.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 MethodReferenceStaticNotAccessibleTest.java
  */
 
 import java.util.function.BinaryOperator;

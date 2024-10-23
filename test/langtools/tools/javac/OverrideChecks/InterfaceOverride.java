@@ -27,7 +27,6 @@
  * @summary java.lang.Override specification should be revised
  * @author  Peter von der Ah\u00e9
  * @compile InterfaceOverride.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 InterfaceOverride.java
  */
 
 interface C1 {

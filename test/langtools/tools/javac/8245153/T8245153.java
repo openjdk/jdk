@@ -27,7 +27,6 @@
  * @bug 8245153
  * @summary Unicode encoded double-quoted empty string does not compile
  * @compile T8245153.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T8245153.java
  */
 
 public class T8245153 {

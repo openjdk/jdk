@@ -27,7 +27,6 @@
  * @summary Incorrect name clash error
  *
  * @compile NameClashTest.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 NameClashTest.java
  */
 
 public class NameClashTest {

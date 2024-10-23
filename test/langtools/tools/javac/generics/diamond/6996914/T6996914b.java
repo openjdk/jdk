@@ -26,7 +26,6 @@
  * @bug 6996914 7020044 8062373
  * @summary  Diamond inference: problem when accessing protected constructor
  * @compile T6996914b.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T6996914b.java
  */
 
 class Super<X,Y> {

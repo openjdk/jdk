@@ -26,7 +26,6 @@
  * @bug 8016175
  * @summary Add bottom-up type-checking support for unambiguous method references
  * @compile TargetType76.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TargetType76.java
  */
 class TargetType76 {
 

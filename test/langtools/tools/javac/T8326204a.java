@@ -26,7 +26,6 @@
  * @bug 8326204
  * @summary yield statements doesn't allow cast expressions with more than 1 type arguments
  * @compile T8326204a.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T8326204a.java
  */
 import java.util.*;
 

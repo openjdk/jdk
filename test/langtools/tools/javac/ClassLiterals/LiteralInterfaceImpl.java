@@ -27,13 +27,9 @@
  * @author William Maddox (maddox)
  *
  * @compile LiteralInterface_1.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 LiteralInterface_1.java
  * @compile LiteralInterface_2.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 LiteralInterface_2.java
  * @compile LiteralInterface_3.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 LiteralInterface_3.java
  * @compile LiteralInterfaceImpl.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 LiteralInterfaceImpl.java
  * @run main LiteralInterfaceImpl
  */
 

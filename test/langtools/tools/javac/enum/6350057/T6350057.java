@@ -31,7 +31,6 @@
  *          jdk.compiler
  * @build   JavacTestingAbstractProcessor T6350057
  * @compile -processor T6350057 -proc:only TestEnum.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor T6350057 -proc:only TestEnum.java
  */
 
 import java.util.Set;

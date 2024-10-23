@@ -54,7 +54,7 @@ public class ReleaseOptionThroughAPI {
 
             compiler.getTask(outWriter, fm, null, options, null, input).call();
             String expected =
-                    "ReleaseOption.java:10:49: compiler.err.doesnt.exist: java.util.random" + lineSep +
+                    "ReleaseOption.java:9:49: compiler.err.doesnt.exist: java.util.random" + lineSep +
                     "1 error" + lineSep;
             if (!expected.equals(out.toString())) {
                 throw new AssertionError("Unexpected output: " + out.toString());

@@ -28,7 +28,6 @@
  * @author gafter
  *
  * @compile StaticBlock.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 StaticBlock.java
  */
 
 public class StaticBlock {

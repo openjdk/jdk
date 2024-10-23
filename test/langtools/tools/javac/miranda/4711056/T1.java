@@ -28,11 +28,8 @@
  * @author gafter
  *
  * @compile T1.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T1.java
  * @compile T2.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T2.java
  * @compile T3.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T3.java
  * @compile/fail/ref=T1.out -XDrawDiagnostics T4.java
  */
 

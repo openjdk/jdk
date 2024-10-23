@@ -27,7 +27,6 @@
  * @summary "import static" accessibility rules for symbols different for no reason
  * @author  Martin Buchholz
  * @compile StaticImportAccess.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 StaticImportAccess.java
  */
 
 import static java.util.zip.ZipFile.ENDSIG;

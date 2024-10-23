@@ -28,11 +28,8 @@
  * @author gafter
  *
  * @compile  Hashtable.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  Hashtable.java
  * @compile  CharScanner.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  CharScanner.java
  * @compile  RetroLexer.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  RetroLexer.java
  */
 
 package parser;

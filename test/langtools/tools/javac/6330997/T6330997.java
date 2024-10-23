@@ -33,9 +33,7 @@
  *          jdk.compiler/com.sun.tools.javac.util
  * @clean T1 T2
  * @compile T1.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T1.java
  * @compile T2.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T2.java
  * @run main/othervm T6330997
  */
 

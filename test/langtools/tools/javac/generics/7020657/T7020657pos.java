@@ -28,7 +28,6 @@
  * @summary  Javac rejects a fairly common idiom with raw override and interfaces
  * @author Robert Field
  * @compile T7020657pos.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T7020657pos.java
  *
  */
 

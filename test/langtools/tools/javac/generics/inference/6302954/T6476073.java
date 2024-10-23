@@ -26,7 +26,6 @@
  * @bug     6476073
  * @summary Capture using super wildcard of type variables doesn't work
  * @compile T6476073.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T6476073.java
  */
 
 import java.util.Collection;

@@ -26,7 +26,6 @@
  * @bug     8129214
  * @summary Access error when unboxing a primitive whose target is a type-variable in a different package
  * @compile T8129214.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T8129214.java
  */
 import pkg.Foo;
 

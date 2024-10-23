@@ -29,7 +29,6 @@ import java.lang.annotation.*;
  * @summary new type annotation location: method type args
  * @author Mahmood Ali
  * @compile MethodTypeArgs.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 MethodTypeArgs.java
  */
 
 class MethodTypeArgs {

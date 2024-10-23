@@ -28,7 +28,6 @@
  * @author gafter
  *
  * @compile  ExtendedRaw4.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  ExtendedRaw4.java
  */
 
 class ExtendedRaw4 extends java.util.TreeSet {}

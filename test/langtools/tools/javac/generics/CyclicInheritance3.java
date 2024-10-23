@@ -27,7 +27,6 @@
  * @summary generics: incorrect cyclic inheritance error with type parameters
  *
  * @compile  CyclicInheritance3.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  CyclicInheritance3.java
  */
 
 class Cycle {

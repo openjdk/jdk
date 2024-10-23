@@ -29,7 +29,6 @@ import java.lang.annotation.*;
  * @summary new type annotation location: multicatch
  * @author Werner Dietl
  * @compile MultiCatch.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 MultiCatch.java
  */
 
 class DefaultScope {

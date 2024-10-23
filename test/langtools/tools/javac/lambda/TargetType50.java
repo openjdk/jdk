@@ -27,7 +27,6 @@
  * @summary Add lambda tests
  *  bad stuck check for method reference leads to javac crash
  * @compile TargetType50.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TargetType50.java
  */
 import java.util.*;
 

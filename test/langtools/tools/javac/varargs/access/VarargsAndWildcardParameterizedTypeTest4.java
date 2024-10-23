@@ -26,9 +26,7 @@
  * @bug 8075520
  * @summary Varargs access check mishandles capture variables
  * @compile             VarargsAndWildcardParameterizedTypeTest4.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2             VarargsAndWildcardParameterizedTypeTest4.java
  * @compile --release 8 VarargsAndWildcardParameterizedTypeTest4.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 --release 8 VarargsAndWildcardParameterizedTypeTest4.java
  */
 
 class VarargsAndWildcardParameterizedTypeTest2 {

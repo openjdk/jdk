@@ -26,7 +26,6 @@
  * @bug 8191802
  * @summary Upward projection result is A<? extends Number> instead of A<? super Integer>
  * @compile TestBadArray.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TestBadArray.java
  */
 
 import java.util.List;

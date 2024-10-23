@@ -26,7 +26,6 @@
  * @bug 8176265
  * @summary Method overload resolution on a covariant base type doesn't work in 9
  * @compile T8176265.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T8176265.java
  */
 
 class T8176265<T> {

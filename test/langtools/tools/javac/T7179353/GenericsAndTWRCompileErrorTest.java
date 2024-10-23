@@ -26,7 +26,6 @@
  * @bug 7179353
  * @summary try-with-resources fails to compile with generic exception parameters
  * @compile GenericsAndTWRCompileErrorTest.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 GenericsAndTWRCompileErrorTest.java
  */
 
 public class GenericsAndTWRCompileErrorTest {

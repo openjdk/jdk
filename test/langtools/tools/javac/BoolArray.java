@@ -28,7 +28,6 @@
  * @author gafter
  *
  * @compile BoolArray.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 BoolArray.java
  */
 
 class BoolArray {

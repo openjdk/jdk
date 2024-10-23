@@ -28,7 +28,6 @@
  * @author gafter
  *
  * @compile  Rare8.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  Rare8.java
  */
 
 package rare8;

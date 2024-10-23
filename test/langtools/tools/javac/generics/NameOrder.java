@@ -28,7 +28,6 @@
  * @author gafter
  *
  * @compile NameOrder.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 NameOrder.java
  */
 
 package NameOrder;

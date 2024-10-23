@@ -26,7 +26,6 @@
  * @bug     6932571
  * @summary Compiling Generics causing Inconvertible types
  * @compile T6932571a.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T6932571a.java
  */
 
 class T6932571a {

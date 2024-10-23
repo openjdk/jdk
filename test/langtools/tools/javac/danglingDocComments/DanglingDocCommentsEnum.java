@@ -1,7 +1,6 @@
 /*
  * @test /nodynamiccopyright/
  * @compile -Xlint:dangling-doc-comments DanglingDocCommentsEnum.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -Xlint:dangling-doc-comments DanglingDocCommentsEnum.java
  * @compile/ref=empty.out -XDrawDiagnostics DanglingDocCommentsEnum.java
  * @compile/ref=DanglingDocCommentsEnum.enabled.out -XDrawDiagnostics -Xlint:dangling-doc-comments DanglingDocCommentsEnum.java
  */

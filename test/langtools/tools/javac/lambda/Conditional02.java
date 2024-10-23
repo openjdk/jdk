@@ -27,7 +27,6 @@
  * @summary Add lambda tests
  *  inference and conditionals
  * @compile Conditional02.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Conditional02.java
  */
 
 class Conditional02 {

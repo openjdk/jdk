@@ -26,7 +26,6 @@
  * @bug 8164073
  * @summary Verify that -Xlint:-dep-ann suppresses warnings.
  * @compile -Xlint:-dep-ann -Werror SuppressDepAnnWithSwitchTest.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -Xlint:-dep-ann -Werror SuppressDepAnnWithSwitchTest.java
  */
 
 public class SuppressDepAnnWithSwitchTest {

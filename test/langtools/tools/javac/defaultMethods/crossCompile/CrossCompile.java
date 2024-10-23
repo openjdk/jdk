@@ -26,9 +26,7 @@
  * @bug 7192246
  * @summary check that clinit in interface doesn't cause spurious default method diagnostics
  * @compile Clinit.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Clinit.java
  * @compile CrossCompile.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 CrossCompile.java
  */
 class CrossCompile {
    void test() {

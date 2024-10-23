@@ -29,7 +29,6 @@
  * @author turnidge
  *
  * @compile IllDefinedOrderOfInit.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 IllDefinedOrderOfInit.java
  * @run main IllDefinedOrderOfInit
  */
 

@@ -26,7 +26,6 @@
  * @bug 8191802 8191893
  * @summary Upward projection result is A<? extends Number> instead of A<? super Integer>
  * @compile T8191893.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T8191893.java
  */
 
 class T8191893 {

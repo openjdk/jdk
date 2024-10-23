@@ -27,7 +27,6 @@
  * @summary javac reports uninitialized variable with nested try...finally blocks
   *
  * @compile T7181578.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T7181578.java
  */
 class T7181578 {
     String test(boolean cond) {

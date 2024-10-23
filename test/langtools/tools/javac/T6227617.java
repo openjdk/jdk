@@ -3,7 +3,6 @@
  * @bug 6227617
  * @summary Lint option for redundant casts
  * @compile -Werror T6227617.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -Werror T6227617.java
  * @compile/ref=T6227617.out -XDrawDiagnostics -Xlint:cast T6227617.java
  */
 import java.util.HashMap;

@@ -28,7 +28,6 @@
  *  instance creation expression should allow lambda expressions as constrcutor arguments
  * @author  Maurizio Cimadamore
  * @compile LambdaConv12.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 LambdaConv12.java
  */
 
 class LambdaConv12 {

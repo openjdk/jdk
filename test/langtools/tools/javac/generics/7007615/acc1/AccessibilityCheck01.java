@@ -4,7 +4,6 @@
  * @summary java_util/generics/phase2/NameClashTest02 fails since jdk7/pit/b123.
  * @author  dlsmith
  * @compile AccessibilityCheck01.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 AccessibilityCheck01.java
  */
 
 public class AccessibilityCheck01 extends p2.E {

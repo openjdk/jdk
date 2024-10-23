@@ -28,7 +28,6 @@
  * @author gafter
  *
  * @compile Z2.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Z2.java
  */
 
 enum Color { red, green, blue }

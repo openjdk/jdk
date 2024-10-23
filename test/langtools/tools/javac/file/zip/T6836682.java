@@ -28,7 +28,6 @@
  * @modules jdk.compiler
  *          jdk.jartool/sun.tools.jar
  * @compile  -XDignore.symbol.file T6836682.java Utils.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  -XDignore.symbol.file T6836682.java Utils.java
  * @run main T6836682
  */
 /*

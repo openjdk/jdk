@@ -27,7 +27,6 @@
  * @author Joseph D. Darcy
  * @summary Test that TWR and multi-catch play well together
  * @compile TwrMultiCatch.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TwrMultiCatch.java
  * @run main TwrMultiCatch
  */
 

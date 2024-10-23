@@ -5,7 +5,6 @@
  * @compile/fail/ref=RestrictedMethods.out -Xlint:restricted -Werror -XDrawDiagnostics RestrictedMethods.java
  * @compile/fail/ref=RestrictedMethods.out --release ${jdk.version} -Xlint:restricted -Werror -XDrawDiagnostics RestrictedMethods.java
  * @compile -Werror RestrictedMethods.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -Werror RestrictedMethods.java
  */
 
 import java.lang.foreign.MemorySegment;

@@ -25,7 +25,6 @@
  * @test
  * @summary Smoke test for repeating annotations
  * @compile SingleRepeatingAndContainer.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 SingleRepeatingAndContainer.java
  * @bug 7151010
  */
 

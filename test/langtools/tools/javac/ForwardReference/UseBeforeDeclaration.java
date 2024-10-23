@@ -28,7 +28,6 @@
  * @author gafter
  *
  * @compile UseBeforeDeclaration.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 UseBeforeDeclaration.java
  */
 
 class UseBeforeDeclaration {

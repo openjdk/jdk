@@ -26,7 +26,6 @@
  * @bug 8225559
  * @summary assertion error at TransTypes.visitApply
  * @compile ProtectedConstructorTest.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 ProtectedConstructorTest.java
  */
 
 import pkg.Bar;

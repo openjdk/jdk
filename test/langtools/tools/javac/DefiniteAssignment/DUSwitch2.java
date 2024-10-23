@@ -28,7 +28,6 @@
  * @author Neal Gafter (gafter)
  *
  * @compile DUSwitch2.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 DUSwitch2.java
  */
 
 public class DUSwitch2 {

@@ -26,7 +26,6 @@
  * @bug 8058511
  * @summary StackOverflowError at com.sun.tools.javac.code.Types.lub
  * @compile T8058511a.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T8058511a.java
  */
 class T8058511a {
     <Z> void choose(Z z1, Z z2) { }

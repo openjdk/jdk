@@ -8,12 +8,9 @@
  *          jdk.compiler
  * @build   JavacTestingAbstractProcessor
  * @compile MessagerBasics.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 MessagerBasics.java
  * @compile -processor MessagerBasics -proc:only MessagerBasics.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor MessagerBasics -proc:only MessagerBasics.java
  * @compile/fail/ref=MessagerBasics.out -XDrawDiagnostics -processor MessagerBasics -proc:only -AfinalError MessagerBasics.java
  * @compile -processor MessagerBasics MessagerBasics.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor MessagerBasics MessagerBasics.java
  * @compile/fail/ref=MessagerBasics.out -XDrawDiagnostics -processor MessagerBasics -AfinalError MessagerBasics.java
  */
 

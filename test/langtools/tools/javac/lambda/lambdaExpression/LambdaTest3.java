@@ -27,7 +27,6 @@
  * @summary Add lambda tests
  *   Test capture of "effectively final" local variable in lambda expressions
  * @compile LambdaTest3.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 LambdaTest3.java
  * @run main LambdaTest3
  */
 

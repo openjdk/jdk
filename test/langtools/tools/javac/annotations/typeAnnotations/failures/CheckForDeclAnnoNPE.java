@@ -27,7 +27,6 @@
  * @summary Ensure there is no NPE in checking for decl. annotations in this example
  * @author Werner Dietl
  * @compile -doe CheckForDeclAnnoNPE.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -doe CheckForDeclAnnoNPE.java
  */
 
 import java.lang.annotation.ElementType;

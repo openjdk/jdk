@@ -28,7 +28,6 @@
  * @author gafter
  *
  * @compile  -Werror -Xlint:unchecked ParamCast.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  -Werror -Xlint:unchecked ParamCast.java
  */
 
 class A<T> {}

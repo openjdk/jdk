@@ -28,7 +28,6 @@
  *  issues with lambda conversion involving generic class hierarchies
  * @author  Maurizio Cimadamore
  * @compile LambdaConv11.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 LambdaConv11.java
  */
 
 import java.util.Comparator;

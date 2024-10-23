@@ -27,7 +27,6 @@
  * @summary Add lambda tests
  *  check that reference to local final variable w/o initializer is accepted
  * @compile LambdaExpr08.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 LambdaExpr08.java
  */
 
 class LambdaExpr08 {

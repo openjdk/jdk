@@ -32,7 +32,6 @@ import java.util.ArrayList;
  * @enablePreview
  * @modules java.base/jdk.internal.classfile.impl
  * @compile -XDdeduplicateLambdas=false InstanceInitializer.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -XDdeduplicateLambdas=false InstanceInitializer.java
  * @run main InstanceInitializer
  */
 

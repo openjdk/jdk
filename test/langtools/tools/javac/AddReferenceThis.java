@@ -29,7 +29,6 @@
  * @author turnidge
  *
  * @compile AddReferenceThis.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 AddReferenceThis.java
  */
 
 public

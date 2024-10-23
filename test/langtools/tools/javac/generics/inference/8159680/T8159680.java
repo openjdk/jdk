@@ -26,7 +26,6 @@
  * @bug 8159680
  * @summary Inference failure with unchecked subtyping and arrays
  * @compile T8159680.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T8159680.java
  */
 
 class T8159680 {

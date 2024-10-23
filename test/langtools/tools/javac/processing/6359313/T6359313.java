@@ -31,9 +31,7 @@
  *          jdk.compiler
  * @build   JavacTestingAbstractProcessor
  * @compile T6359313.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T6359313.java
  * @compile -processor T6359313 package-info.java Foo.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor T6359313 package-info.java Foo.java
  */
 
 import java.util.Set;

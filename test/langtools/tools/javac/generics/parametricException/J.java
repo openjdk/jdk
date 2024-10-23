@@ -28,9 +28,7 @@
  * @author gafter
  *
  * @compile  J.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  J.java
  * @compile  K.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  K.java
  */
 
 class J<T extends Exception> {

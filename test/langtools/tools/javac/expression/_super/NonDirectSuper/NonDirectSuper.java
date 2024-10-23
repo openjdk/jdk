@@ -29,7 +29,6 @@
  * @enablePreview
  * @modules java.base/jdk.internal.classfile.impl
  * @compile Base.java NonDirectSuper.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Base.java NonDirectSuper.java
  * @run main test.NonDirectSuper
  */
 

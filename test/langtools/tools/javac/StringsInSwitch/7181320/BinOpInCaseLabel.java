@@ -26,7 +26,6 @@
  * @bug     7181320
  * @summary javac NullPointerException for switch labels with cast to String expressions
  * @compile BinOpInCaseLabel.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 BinOpInCaseLabel.java
  */
 
 public class BinOpInCaseLabel {

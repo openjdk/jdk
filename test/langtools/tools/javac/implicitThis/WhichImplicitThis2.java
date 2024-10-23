@@ -27,7 +27,6 @@
  * @summary Invalid error when implicitly referencing enclosing type
  *
  * @compile WhichImplicitThis2.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 WhichImplicitThis2.java
  * @run main WhichImplicitThis2
  */
 

@@ -4,7 +4,6 @@
  * @summary Enhance Lambda serialization
  *     Checks that the warning for accessing non public members of a class is fired correctly.
  * @compile -Xlint:serial -Werror WarnSerializableLambdaTestc.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -Xlint:serial -Werror WarnSerializableLambdaTestc.java
  */
 
 import javax.tools.SimpleJavaFileObject;

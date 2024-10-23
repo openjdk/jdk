@@ -28,7 +28,6 @@
  * @author  Bruce Eckel
  * see      http://www.artima.com/forums/flat.jsp?forum=106&thread=136204
  * @compile GenericsAndPackages.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 GenericsAndPackages.java
  */
 
 package code;

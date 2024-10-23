@@ -30,7 +30,6 @@
  *          jdk.compiler
  * @build   JavacTestingAbstractProcessor Hides
  * @compile -processor Hides -proc:only C.java I.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor Hides -proc:only C.java I.java
  */
 
 import java.util.Set;

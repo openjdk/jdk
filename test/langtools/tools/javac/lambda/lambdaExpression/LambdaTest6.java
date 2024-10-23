@@ -28,7 +28,6 @@
  *   Test bridge methods for certain SAM conversions
  *   Test the set of generated methods
  * @compile LambdaTest6.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 LambdaTest6.java
  * @run main LambdaTest6
  */
 

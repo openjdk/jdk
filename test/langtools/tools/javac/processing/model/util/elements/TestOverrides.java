@@ -28,7 +28,6 @@
  * @library /tools/javac/lib
  * @build   JavacTestingAbstractProcessor TestOverrides
  * @compile -processor TestOverrides -proc:only TestOverrides.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor TestOverrides -proc:only TestOverrides.java
  */
 
 import java.util.*;

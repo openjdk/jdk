@@ -26,7 +26,6 @@
  * @bug     6302214
  * @summary erroneus "inconvertible types" error
  * @compile -Xlint:unchecked -Werror T6302214.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -Xlint:unchecked -Werror T6302214.java
  */
 
 public class T6302214 {

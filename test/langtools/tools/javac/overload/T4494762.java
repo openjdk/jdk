@@ -27,7 +27,6 @@
  * @summary Request for Clarification of JLS 15.12.2.2
  * @author  Peter von der Ah\u00e9
  * @compile T4494762.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T4494762.java
  */
 
 public class T4494762 {

@@ -27,7 +27,6 @@
  * @bug     6586091
  * @summary javac crashes with StackOverflowError
  * @compile T6586091.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T6586091.java
  */
 
 class T6586091 {

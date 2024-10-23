@@ -26,7 +26,6 @@
  * @bug 8051958
  * @summary Cannot assign a value to final variable in lambda
  * @compile T8051958.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T8051958.java
  */
 
 class T8051958 {

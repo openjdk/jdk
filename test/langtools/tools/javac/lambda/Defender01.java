@@ -28,7 +28,6 @@
  *  routine that checks for SAM types should skip defender methods in extended interfaces
  * @author  Maurizio Cimadamore
  * @compile Defender01.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Defender01.java
  */
 
 class Defender01 {

@@ -27,7 +27,6 @@
  * @summary cannot access member of raw type when erasure change overriding into overloading
  * @author mcimadamore
  * @compile T6846972.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T6846972.java
  */
 
 import java.util.EnumMap;

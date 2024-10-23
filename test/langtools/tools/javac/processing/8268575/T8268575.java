@@ -27,7 +27,6 @@
  * @summary Annotations not visible on model elements before they are generated
  * @build   Processor
  * @compile -processor Processor T8268575.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor Processor T8268575.java
  */
 
 class T8268575 {

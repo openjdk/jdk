@@ -33,7 +33,6 @@
  * @build toolbox.ToolBox toolbox.JavacTask
  * @build JavacTestingAbstractProcessor
  * @compile CheckingAccessorsOnLoadedRecordClasses.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 CheckingAccessorsOnLoadedRecordClasses.java
  * @run main/othervm CheckingAccessorsOnLoadedRecordClasses
  */
 

@@ -3,7 +3,6 @@
  * @bug 8169091
  * @summary Method reference T::methodName for generic type T does not compile any more
  * @compile T8169091.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T8169091.java
  */
 
 import java.io.Serializable;

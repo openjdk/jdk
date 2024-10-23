@@ -4,7 +4,6 @@
  * @summary test for local interfaces
  * @compile/fail/ref=LocalInterface.out -XDrawDiagnostics --release 15 LocalInterface.java
  * @compile LocalInterface.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 LocalInterface.java
  */
 class LocalInterface {
     void m() {

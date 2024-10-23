@@ -30,7 +30,6 @@
  *
  * @clean foo.Accessee foo.Accessee$Inside
  * @compile -classpath . foo/Accessor.java foo/Accessee.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -classpath . foo/Accessor.java foo/Accessee.java
  */
 
 public class Dummy {}

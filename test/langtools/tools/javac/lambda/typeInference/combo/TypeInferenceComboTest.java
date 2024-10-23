@@ -34,7 +34,6 @@
  *          jdk.compiler/com.sun.tools.javac.util
  * @build combo.ComboTestHelper
  * @compile  TypeInferenceComboTest.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  TypeInferenceComboTest.java
  * @run main TypeInferenceComboTest
  */
 

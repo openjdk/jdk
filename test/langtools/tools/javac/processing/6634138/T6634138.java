@@ -31,9 +31,7 @@
  *          jdk.compiler
  * @build   JavacTestingAbstractProcessor
  * @compile T6634138.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T6634138.java
  * @compile -processor T6634138 Dummy.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor T6634138 Dummy.java
  * @run main ExerciseDependency
  */
 

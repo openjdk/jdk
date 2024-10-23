@@ -29,7 +29,6 @@ import java.lang.annotation.*;
  * @summary new type annotation location: parameter type array/generics
  * @author Mahmood Ali
  * @compile Parameters.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Parameters.java
  */
 
 class Parameters {

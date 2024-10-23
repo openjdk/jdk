@@ -26,7 +26,6 @@
  * @bug 8077306
  * @summary Recursive implementation of List.map leads to stack overflow
  * @compile T8077306.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T8077306.java
  */
 
 import java.util.Arrays;

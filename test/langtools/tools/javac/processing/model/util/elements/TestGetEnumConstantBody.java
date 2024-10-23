@@ -28,7 +28,6 @@
  * @library /tools/javac/lib
  * @build   JavacTestingAbstractProcessor TestGetEnumConstantBody
  * @compile -processor TestGetEnumConstantBody -XDshould.stop-at=FLOW TestGetEnumConstantBody.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor TestGetEnumConstantBody -XDshould.stop-at=FLOW TestGetEnumConstantBody.java
  */
 
 import java.io.IOException;

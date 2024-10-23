@@ -4,7 +4,6 @@
  * @summary javac throws StackOverflowError for recursive inheritance
  *
  * @compile ClassCycle1a.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 ClassCycle1a.java
  * @compile/fail/ref=ClassCycle1a.out -XDrawDiagnostics  ClassCycle1b.java
  */
 

@@ -28,7 +28,6 @@
  * @summary Compiler internall error (NPE) on anonymous class defined by qualified instance creation expression with diamond
  * @author sadayapalam
  * @compile Pos08.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Pos08.java
  *
  */
 

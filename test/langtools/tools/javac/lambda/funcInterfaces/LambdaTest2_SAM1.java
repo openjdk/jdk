@@ -28,7 +28,6 @@
  *   This test is for identifying SAM types 2 and 3, see Helper.java for SAM types
  * @modules java.sql
  * @compile LambdaTest2_SAM1.java Helper.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 LambdaTest2_SAM1.java Helper.java
  * @run main LambdaTest2_SAM1
  */
 

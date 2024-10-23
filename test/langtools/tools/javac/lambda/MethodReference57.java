@@ -26,7 +26,6 @@
  * @bug 8004102
  * @summary Add support for generic functional descriptors
  * @compile MethodReference57.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 MethodReference57.java
  */
 class MethodReference57 {
 

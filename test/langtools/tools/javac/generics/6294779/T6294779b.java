@@ -27,7 +27,6 @@
  * @summary Problem with interface inheritance and covariant return types
  * @author  Maurizio Cimadamore
  * @compile T6294779b.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T6294779b.java
  */
 
 import java.util.*;

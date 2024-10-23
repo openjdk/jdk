@@ -31,9 +31,7 @@
  *          jdk.compiler
  * @build   JavacTestingAbstractProcessor
  * @compile TestPackageInfo.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TestPackageInfo.java
  * @compile -processor TestPackageInfo -proc:only foo/bar/package-info.java TestPackageInfo.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor TestPackageInfo -proc:only foo/bar/package-info.java TestPackageInfo.java
  */
 
 import java.util.Set;

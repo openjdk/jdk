@@ -26,7 +26,6 @@
  * @bug 8043926
  * @summary javac, code valid in 7 is not compiling for 8
  * @compile T8043926.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T8043926.java
  */
 class T8043926 {
     interface Iface<T1> {}

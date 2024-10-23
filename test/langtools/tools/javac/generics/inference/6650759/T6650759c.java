@@ -26,7 +26,6 @@
  * @bug     6650759
  * @summary Inference of formal type parameter (unused in formal parameters) is not performed
  * @compile T6650759c.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T6650759c.java
  */
 
 import java.util.Collection;

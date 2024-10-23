@@ -26,7 +26,6 @@
  * @bug 8178427
  * @summary NPE in Infer$CheckUpperBounds
  * @compile T8178427.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T8178427.java
  */
 
 import java.util.Map;

@@ -26,7 +26,6 @@
  * @bug 8030741
  * @summary Inference: implement eager resolution of return types, consistent with JDK-8028800
  * @compile EagerReturnTypeResolutionTesta.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 EagerReturnTypeResolutionTesta.java
  */
 
 public class EagerReturnTypeResolutionTesta {

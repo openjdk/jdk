@@ -27,7 +27,6 @@
  * @summary Add lambda tests
  *  check that redundant cast warnings are not generated for SAM conversions
  * @compile -Xlint:cast -Werror LambdaConv19.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -Xlint:cast -Werror LambdaConv19.java
  */
 
 class LambdaConv19 {

@@ -26,7 +26,6 @@
  * @bug 8014643
  * @summary Parser regression in JDK 8 when compiling super.x
  * @compile T8014643.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T8014643.java
  */
 class T8014643 {
 

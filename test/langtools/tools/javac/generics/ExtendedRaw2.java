@@ -28,7 +28,6 @@
  * @author gafter
  *
  * @compile  ExtendedRaw2.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  ExtendedRaw2.java
  */
 
 // from library

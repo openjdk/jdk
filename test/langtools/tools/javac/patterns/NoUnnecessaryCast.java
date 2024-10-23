@@ -29,7 +29,6 @@
  * @enablePreview
  * @modules java.base/jdk.internal.classfile.impl
  * @compile NoUnnecessaryCast.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 NoUnnecessaryCast.java
  * @run main NoUnnecessaryCast
  */
 

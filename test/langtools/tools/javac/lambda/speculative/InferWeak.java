@@ -26,7 +26,6 @@
   * @bug 8078093
   * @summary Exponential performance regression Java 8 compiler compared to Java 7 compiler
   * @compile InferWeak.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 InferWeak.java
   */
 class InferWeak {
     private void test() {

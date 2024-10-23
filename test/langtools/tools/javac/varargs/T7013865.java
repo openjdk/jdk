@@ -26,7 +26,6 @@
  * @bug     7013865
  * @summary varargs: javac crashes during overload resolution with generic varargs
  * @compile T7013865.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T7013865.java
  */
 
 class T7013865 {

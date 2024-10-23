@@ -27,7 +27,6 @@
  * @author Todd Turnbridge
  *
  * @compile p1/B.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 p1/B.java
  */
 
 // The following javadoc comment, and its associated code, was removed

@@ -28,7 +28,6 @@
  * @author Joseph D. Darcy
  *
  * @compile EnumPrivateConstructor.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 EnumPrivateConstructor.java
  */
 
 enum EnumPrivateConstructor {

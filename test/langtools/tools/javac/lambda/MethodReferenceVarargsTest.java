@@ -26,7 +26,6 @@
  * @bug 8171993
  * @summary AssertionError when compiling method reference with generic code and varargs.
  * @compile MethodReferenceVarargsTest.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 MethodReferenceVarargsTest.java
  */
 
 public class MethodReferenceVarargsTest<T> {

@@ -26,7 +26,6 @@
  * @bug     6270087 6932571
  * @summary Javac rejects legal cast
  * @compile T6270087.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T6270087.java
  */
 
 class T6270087 {

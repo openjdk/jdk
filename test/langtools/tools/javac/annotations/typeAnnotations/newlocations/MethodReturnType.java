@@ -29,7 +29,6 @@ import java.lang.annotation.*;
  * @summary new type annotation location: method return type array/generics
  * @author Mahmood Ali
  * @compile MethodReturnType.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 MethodReturnType.java
  */
 
 class DefaultScope {

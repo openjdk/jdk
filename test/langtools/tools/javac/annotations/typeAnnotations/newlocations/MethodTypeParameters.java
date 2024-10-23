@@ -29,7 +29,6 @@ import java.lang.annotation.*;
  * @summary new type annotation location: method type parameter bounds
  * @author Mahmood Ali
  * @compile MethodTypeParameters.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 MethodTypeParameters.java
  */
 
 class UnscopedUnmodified {

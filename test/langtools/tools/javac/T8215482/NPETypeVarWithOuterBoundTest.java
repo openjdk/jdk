@@ -26,7 +26,6 @@
  * @bug 8215482
  * @summary check for cycles in type variables can provoke NPE
  * @compile NPETypeVarWithOuterBoundTest.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 NPETypeVarWithOuterBoundTest.java
  */
 
 class NPETypeVarWithOuterBoundTest <A extends NPETypeVarWithOuterBoundTest.Inner, B> {

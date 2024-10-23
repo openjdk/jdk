@@ -6,7 +6,6 @@
  * @author Peter von der Ah\u00e9
  *
  * @compile Warn2.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Warn2.java
  * @compile/fail/ref=Warn2.out -XDrawDiagnostics -Xlint:unchecked -Werror Warn2.java
  */
 

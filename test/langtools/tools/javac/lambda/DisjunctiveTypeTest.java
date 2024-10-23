@@ -28,7 +28,6 @@
  *  check that subtyping between disjunctive and non disjunctive type works
  * @author  Maurizio Cimadamore
  * @compile DisjunctiveTypeTest.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 DisjunctiveTypeTest.java
  */
 
 class DisjunctiveTypeTest {

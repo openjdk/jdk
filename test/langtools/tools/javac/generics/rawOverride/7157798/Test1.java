@@ -27,7 +27,6 @@
  * @summary  Test inheritance of same-name methods from mulitple interfaces
              when the methods have compatible return types
  * @compile  Test1.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  Test1.java
  */
 
 import java.util.*;

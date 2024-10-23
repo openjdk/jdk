@@ -27,7 +27,6 @@
  * @summary lub computes strange compound types
  * @author  Steve Sides
  * @compile T5080917.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T5080917.java
  */
 
 public class T5080917 {

@@ -26,7 +26,6 @@
  * @bug 8195598
  * @summary Reference to overloaded method is ambiguous with 3 methods but works with 2
  * @compile T8195598.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T8195598.java
  */
 
 import java.util.concurrent.*;

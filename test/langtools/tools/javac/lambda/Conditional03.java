@@ -27,7 +27,6 @@
  * @summary Add lambda tests
  *  conditionals and boxing
  * @compile Conditional03.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Conditional03.java
  */
 
 class Conditional03 {

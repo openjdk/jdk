@@ -5,7 +5,6 @@
  * @summary Project Coin: Use precise exception analysis for effectively final catch parameters
  * @author mcimadamore
  * @compile Pos06.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Pos06.java
  *
  */
 

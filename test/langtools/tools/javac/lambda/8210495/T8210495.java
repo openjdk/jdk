@@ -26,7 +26,6 @@
  * @bug 8210495
  * @summary compiler crashes because of illegal signature in otherwise legal code
  * @compile T8210495.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T8210495.java
  */
 
 import java.awt.*;

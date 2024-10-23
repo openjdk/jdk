@@ -25,7 +25,6 @@
  * @bug 8312229
  * @summary Ensure javac does not crash when a variable is used from an anonymous class
  * @compile T8312229.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T8312229.java
  */
 public class T8312229 {
     void test(Object o) {

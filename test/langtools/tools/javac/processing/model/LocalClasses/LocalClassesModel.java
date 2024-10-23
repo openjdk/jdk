@@ -29,7 +29,6 @@
  * @library /tools/javac/lib
  * @build LocalTest$1Local LocalTest$2Local LocalTest$3Local LocalTest$4Local LocalTest$5Local LocalTest JavacTestingAbstractProcessor
  * @compile LocalClassesModel.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 LocalClassesModel.java
  * @compile/process/ref=LocalClassesModel.out -processor LocalClassesModel LocalTest$1Local LocalTest$2Local LocalTest$3Local LocalTest$4Local LocalTest$5Local LocalTest
  */
 

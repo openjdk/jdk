@@ -26,7 +26,6 @@
  * @bug 8231827
  * @summary Pattern variables can be effectivelly final so should be allowed to be referenced in an inner class
  * @compile PatternVariablesAreNonFinal2.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 PatternVariablesAreNonFinal2.java
  * @run main PatternVariablesAreNonFinal2
  */
 public class PatternVariablesAreNonFinal2 {

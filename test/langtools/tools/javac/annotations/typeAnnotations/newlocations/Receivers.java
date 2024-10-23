@@ -29,7 +29,6 @@ import java.lang.annotation.*;
  * @summary new type annotation location: receivers
  * @author Mahmood Ali, Werner Dietl
  * @compile Receivers.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Receivers.java
  */
 class DefaultUnmodified {
   void plain(@A DefaultUnmodified this) { }

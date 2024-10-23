@@ -28,7 +28,6 @@
  * @enablePreview
  * @modules java.base/jdk.internal.classfile.impl
  * @compile -g Driver.java ReferenceInfoUtil.java ConstructorInvocationTypeArgument.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -g Driver.java ReferenceInfoUtil.java ConstructorInvocationTypeArgument.java
  * @run main Driver ConstructorInvocationTypeArgument
  */
 

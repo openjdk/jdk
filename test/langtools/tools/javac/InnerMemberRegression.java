@@ -30,7 +30,6 @@
  * @author turnidge
  *
  * @compile InnerMemberRegression.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 InnerMemberRegression.java
  */
 
 class InnerMemberRegression {

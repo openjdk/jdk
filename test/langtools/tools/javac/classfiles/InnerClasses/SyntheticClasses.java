@@ -28,7 +28,6 @@
  *  @enablePreview
  *  @modules java.base/jdk.internal.classfile.impl
  *  @compile SyntheticClasses.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 SyntheticClasses.java
  *  @run main SyntheticClasses
  */
 

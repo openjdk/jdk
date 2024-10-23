@@ -26,7 +26,6 @@
  * @bug 8020804
  * @summary javac crashes when speculative attribution infers intersection type with array component
  * @compile T8020804.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T8020804.java
  */
 
 import java.util.*;

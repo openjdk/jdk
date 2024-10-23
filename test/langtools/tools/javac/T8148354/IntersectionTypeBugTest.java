@@ -26,7 +26,6 @@
  * bug 8148354
  * @summary Errors targeting functional interface intersection types
  * @compile IntersectionTypeBugTest.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 IntersectionTypeBugTest.java
  */
 
 import java.io.Serializable;

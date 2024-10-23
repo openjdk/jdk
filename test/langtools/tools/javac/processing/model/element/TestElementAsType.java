@@ -28,7 +28,6 @@
  * @library /tools/javac/lib
  * @build   JavacTestingAbstractProcessor TestElementAsType
  * @compile -processor TestElementAsType -proc:only TestElementAsType.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor TestElementAsType -proc:only TestElementAsType.java
  */
 
 import java.util.*;

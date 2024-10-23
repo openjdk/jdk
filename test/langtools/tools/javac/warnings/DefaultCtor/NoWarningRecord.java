@@ -25,7 +25,6 @@
  * @test
  * @bug 8071961
  * @compile -Xlint:missing-explicit-ctor -Werror NoWarningRecord.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -Xlint:missing-explicit-ctor -Werror NoWarningRecord.java
  */
 
 public record NoWarningRecord(/* no components */) {

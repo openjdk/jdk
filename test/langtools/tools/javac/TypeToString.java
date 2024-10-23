@@ -29,7 +29,6 @@
  *          jdk.compiler
  * @build JavacTestingAbstractProcessor TypeToString
  * @compile -cp . -processor TypeToString -proc:only TypeToString.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -cp . -processor TypeToString -proc:only TypeToString.java
  * @compile/process -cp . -processor TypeToString -proc:only Test
  */
 import java.lang.Runtime.Version;

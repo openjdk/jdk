@@ -31,21 +31,13 @@
  *          jdk.compiler
  * @build   JavacTestingAbstractProcessor
  * @compile TestSourceVersion.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TestSourceVersion.java
  * @compile -processor TestSourceVersion -proc:only -source 1.8 -AExpectedVersion=RELEASE_8 HelloWorld.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor TestSourceVersion -proc:only -source 1.8 -AExpectedVersion=RELEASE_8 HelloWorld.java
  * @compile -processor TestSourceVersion -proc:only -source   8 -AExpectedVersion=RELEASE_8 HelloWorld.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor TestSourceVersion -proc:only -source   8 -AExpectedVersion=RELEASE_8 HelloWorld.java
  * @compile -processor TestSourceVersion -proc:only -source 1.9 -AExpectedVersion=RELEASE_9 HelloWorld.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor TestSourceVersion -proc:only -source 1.9 -AExpectedVersion=RELEASE_9 HelloWorld.java
  * @compile -processor TestSourceVersion -proc:only -source   9 -AExpectedVersion=RELEASE_9 HelloWorld.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor TestSourceVersion -proc:only -source   9 -AExpectedVersion=RELEASE_9 HelloWorld.java
  * @compile -processor TestSourceVersion -proc:only -source  10 -AExpectedVersion=RELEASE_10 HelloWorld.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor TestSourceVersion -proc:only -source  10 -AExpectedVersion=RELEASE_10 HelloWorld.java
  * @compile -processor TestSourceVersion -proc:only -source  11 -AExpectedVersion=RELEASE_11 HelloWorld.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor TestSourceVersion -proc:only -source  11 -AExpectedVersion=RELEASE_11 HelloWorld.java
  * @compile -processor TestSourceVersion -proc:only -source  12 -AExpectedVersion=RELEASE_12 HelloWorld.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor TestSourceVersion -proc:only -source  12 -AExpectedVersion=RELEASE_12 HelloWorld.java
  */
 
 import java.util.Set;

@@ -29,7 +29,6 @@
  * @author William Maddox
  *
  * @compile AnonymousConstructorExceptions.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 AnonymousConstructorExceptions.java
  */
 
 class AnonymousConstructorExceptions {

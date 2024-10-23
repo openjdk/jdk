@@ -28,7 +28,6 @@
  * @author gafter
  *
  * @compile  -Werror BoundsCollision.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  -Werror BoundsCollision.java
  */
 
 class StreinBug {

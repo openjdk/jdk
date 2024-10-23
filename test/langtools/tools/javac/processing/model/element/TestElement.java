@@ -31,7 +31,6 @@
  *          jdk.compiler
  * @build   JavacTestingAbstractProcessor TestElement
  * @compile -processor TestElement -proc:only TestElement.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor TestElement -proc:only TestElement.java
  */
 
 import java.util.Set;

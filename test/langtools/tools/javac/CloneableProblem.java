@@ -29,7 +29,6 @@
  * @author turnidge
  *
  * @compile CloneableProblem.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 CloneableProblem.java
  */
 
 interface A extends Cloneable

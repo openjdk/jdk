@@ -29,7 +29,6 @@
  * @modules jdk.compiler
  * @build JavacTestingAbstractProcessor ModelChecker
  * @compile -processor ModelChecker Model01.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor ModelChecker Model01.java
  */
 
 import com.sun.source.tree.CatchTree;

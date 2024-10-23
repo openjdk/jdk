@@ -30,7 +30,6 @@
  *
  * @clean InterfaceAndInnerClsCtor
  * @compile InterfaceAndInnerClsCtor.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 InterfaceAndInnerClsCtor.java
  */
 
 public interface InterfaceAndInnerClsCtor

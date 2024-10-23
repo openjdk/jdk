@@ -26,7 +26,6 @@
  * @summary Erroneous exhaustivity check with boolean switch
  * @enablePreview
  * @compile -XDshould-stop.at=FLOW T8336781.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -XDshould-stop.at=FLOW T8336781.java
  */
 public class T8336781 {
     public static void test() {

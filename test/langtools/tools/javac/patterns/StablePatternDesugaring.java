@@ -33,7 +33,6 @@
  *      jdk.compiler/com.sun.tools.javac.util
  * @build toolbox.ToolBox toolbox.JavacTask
  * @compile StablePatternDesugaring.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 StablePatternDesugaring.java
  * @run main StablePatternDesugaring
  */
 

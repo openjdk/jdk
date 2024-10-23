@@ -28,9 +28,7 @@
  *
  * @clean ClassReaderDefault SeparateCompile
  * @compile ClassReaderDefault.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 ClassReaderDefault.java
  * @compile SeparateCompile.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 SeparateCompile.java
  */
 import java.lang.annotation.Repeatable;
 

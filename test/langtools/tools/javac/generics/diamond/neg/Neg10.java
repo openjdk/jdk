@@ -5,7 +5,6 @@
  * @summary  Check that 'complex' diamond can infer type that is too specific
  * @author mcimadamore
  * @compile Neg10.java -XDrawDiagnostics
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Neg10.java -XDrawDiagnostics
  */
 
 class Neg10 {

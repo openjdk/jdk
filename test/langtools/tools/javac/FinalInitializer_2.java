@@ -28,7 +28,6 @@
  * @author tball
  *
  * @compile FinalInitializer_2.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 FinalInitializer_2.java
  */
 
 public class FinalInitializer_2 {

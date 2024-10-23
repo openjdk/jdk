@@ -28,7 +28,6 @@
  * @author gafter
  *
  * @compile AnnoteElideBraces.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 AnnoteElideBraces.java
  */
 
 @interface D {

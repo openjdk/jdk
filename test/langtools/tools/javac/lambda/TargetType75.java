@@ -26,7 +26,6 @@
  * @bug 8016060 8016059
  * @summary Lambda isn't compiled with return statement
  * @compile TargetType75.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TargetType75.java
  */
 class TargetType75 {
     interface P<X> {

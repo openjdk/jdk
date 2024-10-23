@@ -26,7 +26,6 @@
  * @bug     6520152
  * @summary ACC_FINAL flag for anonymous classes shouldn't be set
  * @compile T.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T.java
  * @run main/othervm T6520152
  */
 

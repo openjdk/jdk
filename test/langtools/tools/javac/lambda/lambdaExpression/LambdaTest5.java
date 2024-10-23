@@ -27,7 +27,6 @@
  * @summary Add lambda tests
  *   Test lambda expressions inside lambda expressions
  * @compile LambdaTest5.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 LambdaTest5.java
  * @run main LambdaTest5
  */
 

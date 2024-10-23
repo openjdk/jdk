@@ -3,7 +3,6 @@
  * @bug 8206986 8222169 8224031 8240964 8267119 8268670 8321582
  * @summary Check expression switch works.
  * @compile ExpressionSwitch.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 ExpressionSwitch.java
  * @run main ExpressionSwitch
  */
 

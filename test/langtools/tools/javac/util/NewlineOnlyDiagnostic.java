@@ -35,7 +35,6 @@ import java.util.Set;
  *          jdk.compiler
  * @build   JavacTestingAbstractProcessor NewlineOnlyDiagnostic
  * @compile -processor NewlineOnlyDiagnostic NewlineOnlyDiagnostic.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor NewlineOnlyDiagnostic NewlineOnlyDiagnostic.java
  */
 
 public class NewlineOnlyDiagnostic extends JavacTestingAbstractProcessor {

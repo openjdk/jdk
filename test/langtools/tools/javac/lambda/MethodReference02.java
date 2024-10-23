@@ -28,7 +28,6 @@
  *  check that seemingly ambiguous method references are resolved properly
  * @author  Maurizio Cimadamore
  * @compile MethodReference02.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 MethodReference02.java
  */
 
 class MethodReference02 {

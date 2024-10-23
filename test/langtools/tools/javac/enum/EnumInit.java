@@ -28,7 +28,6 @@
  * @author gafter
  *
  * @compile EnumInit.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 EnumInit.java
  */
 
 package enum_init_;

@@ -26,7 +26,6 @@
  * @bug 8261088
  * @summary Repeatable annotations without Target cannot have containers that target module declarations
  * @compile T8261088.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T8261088.java
  */
 
 import java.lang.annotation.ElementType;

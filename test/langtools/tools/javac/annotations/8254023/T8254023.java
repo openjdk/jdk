@@ -26,5 +26,4 @@
  * @bug 8254023
  * @summary A module declaration is not allowed to be a target of an annotation that lacks an (at)Target meta-annotation
  * @compile module-info.java test/A.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 module-info.java test/A.java
  */

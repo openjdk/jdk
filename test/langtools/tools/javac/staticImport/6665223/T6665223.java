@@ -28,5 +28,4 @@
  * @author Maurizio Cimadamore
  *
  * @compile pkg/A.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 pkg/A.java
  */

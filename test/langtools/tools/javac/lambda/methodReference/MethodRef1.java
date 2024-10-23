@@ -27,7 +27,6 @@
  * @summary Add lambda tests
  *   Test static method reference
  * @compile MethodRef1.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 MethodRef1.java
  * @run main MethodRef1
  */
 

@@ -26,7 +26,6 @@
  * @bug 8078093 8055894
  * @summary Exponential performance regression Java 8 compiler compared to Java 7 compiler
  * @compile T8055984.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T8055984.java
  */
 
 class T8055984 {

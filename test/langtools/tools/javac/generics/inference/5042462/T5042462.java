@@ -26,7 +26,6 @@
  * @bug     5042462
  * @summary Problem with least upper bound (lub) and type variables
  * @compile T5042462.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T5042462.java
  */
 
 public class T5042462 {

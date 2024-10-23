@@ -28,7 +28,6 @@
  * @author gafter
  *
  * @compile  InterfaceCast1.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  InterfaceCast1.java
  */
 
 public class InterfaceCast1 {

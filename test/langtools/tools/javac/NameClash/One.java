@@ -29,7 +29,6 @@
  * @author turnidge
  *
  * @compile One.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 One.java
  */
 
 import a.*;

@@ -6,7 +6,6 @@
  *
  * @compile/fail/ref=InterfaceInInner.out -XDrawDiagnostics --release 15 InterfaceInInner.java
  * @compile InterfaceInInner.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 InterfaceInInner.java
  */
 class InterfaceInInner {
     InterfaceInInner() {

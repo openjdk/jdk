@@ -27,7 +27,6 @@
  * @summary Add lambda tests
  *   Test constructor reference
  * @compile MethodRef4.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 MethodRef4.java
  * @run main MethodRef4
  */
 

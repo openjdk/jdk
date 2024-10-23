@@ -3,9 +3,7 @@
  * @bug 8231827
  * @summary Match which involves a cast conversion
  * @compile/fail/ref=CastConversionMatch.out -XDrawDiagnostics CastConversionMatch.java
- * @compile --enable-preview --source ${jdk.version} CastConversionMatch.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 --enable-preview --source ${jdk.version} CastConversionMatch.java
- */
+ * @compile --enable-preview --source ${jdk.version} CastConversionMatch.java */
 
 public class CastConversionMatch {
     public static void meth() {

@@ -28,7 +28,6 @@
  * @author  Peter von der Ah\u00e9
  * @modules jdk.compiler/com.sun.tools.javac.util
  * @compile Main.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Main.java
  * @run main Main
  */
 

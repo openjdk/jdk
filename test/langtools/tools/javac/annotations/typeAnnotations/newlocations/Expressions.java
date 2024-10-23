@@ -29,7 +29,6 @@ import java.lang.annotation.*;
  * @summary new type annotation location: expressions
  * @author Mahmood Ali
  * @compile Expressions.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Expressions.java
  */
 class Expressions {
   void instanceOf() {

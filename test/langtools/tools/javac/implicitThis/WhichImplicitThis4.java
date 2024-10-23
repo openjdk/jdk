@@ -27,7 +27,6 @@
  * @summary wrong enclosing instance for local class creation
  *
  * @compile WhichImplicitThis4.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 WhichImplicitThis4.java
  * @run main WhichImplicitThis4
  */
 

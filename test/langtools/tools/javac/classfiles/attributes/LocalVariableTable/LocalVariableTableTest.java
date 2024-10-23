@@ -34,7 +34,6 @@
  * @build toolbox.ToolBox InMemoryFileManager TestBase
  * @build LocalVariableTestBase
  * @compile -g LocalVariableTableTest.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -g LocalVariableTableTest.java
  * @run main LocalVariableTableTest
  */
 

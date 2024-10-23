@@ -3,7 +3,6 @@
  * @bug 6827009 8078561
  * @summary Positive tests for strings in switch with few alternatives.
  * @compile          OneCaseSwitches.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2          OneCaseSwitches.java
  * @run main OneCaseSwitches
  * @author  Joseph D. Darcy
  */

@@ -6,7 +6,6 @@
  *
  * @compile/fail/ref=NestedEnum.out -XDrawDiagnostics --release 15 NestedEnum.java
  * @compile NestedEnum.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 NestedEnum.java
  */
 
 class NestedEnum {

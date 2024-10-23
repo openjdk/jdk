@@ -28,7 +28,6 @@
  * created after their class has been checked.
  *
  * @compile LateAddition.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 LateAddition.java
  */
 
 /*

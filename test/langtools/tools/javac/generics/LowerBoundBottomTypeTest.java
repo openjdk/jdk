@@ -26,7 +26,6 @@
  * @bug 8062358
  * @summary ClassCastException in TransTypes.visitApply
  * @compile LowerBoundBottomTypeTest.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 LowerBoundBottomTypeTest.java
 */
 
 public class LowerBoundBottomTypeTest {

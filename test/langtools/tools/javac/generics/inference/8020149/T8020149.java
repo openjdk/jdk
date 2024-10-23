@@ -26,7 +26,6 @@
  * @bug 8020149
  * @summary Graph inference: wrong logic for picking best variable to solve
  * @compile T8020149.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T8020149.java
  */
 class T8020149 {
     static class TestData<X,Y> { }

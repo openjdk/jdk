@@ -31,7 +31,6 @@
  *          jdk.compiler
  * @build   JavacTestingAbstractProcessor BinaryName
  * @compile -processor BinaryName -proc:only BinaryName.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor BinaryName -proc:only BinaryName.java
  */
 
 import java.util.Set;

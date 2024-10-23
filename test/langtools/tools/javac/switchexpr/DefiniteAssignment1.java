@@ -26,7 +26,6 @@
  * @bug 8214031 8221413
  * @summary Verify that definite assignment when true works (legal code)
  * @compile DefiniteAssignment1.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 DefiniteAssignment1.java
  * @run main DefiniteAssignment1
  */
 public class DefiniteAssignment1 {

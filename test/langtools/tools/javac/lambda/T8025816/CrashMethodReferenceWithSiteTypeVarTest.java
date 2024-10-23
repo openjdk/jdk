@@ -26,7 +26,6 @@
  * @bug 8025816
  * @summary Compiler crash when default method call with method reference
  * @compile CrashMethodReferenceWithSiteTypeVarTest.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 CrashMethodReferenceWithSiteTypeVarTest.java
  */
 
 import java.util.Collection;

@@ -26,7 +26,6 @@
  * @bug 8130304
  * @summary Inference: NodeNotFoundException thrown with deep generic method call chain
  * @compile T8130304.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T8130304.java
  */
 class T8130304 {
 

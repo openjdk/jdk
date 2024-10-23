@@ -29,7 +29,6 @@
  * equivalent members that may be inherited.
  *
  * @compile ClassLiteralHelperContext.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 ClassLiteralHelperContext.java
  * @run main ClassLiteralHelperContext
  */
 

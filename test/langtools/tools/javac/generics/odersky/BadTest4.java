@@ -5,7 +5,6 @@
  * @author odersky
  *
  * @compile BadTest4.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 BadTest4.java
  */
 
 class BadTest4 {

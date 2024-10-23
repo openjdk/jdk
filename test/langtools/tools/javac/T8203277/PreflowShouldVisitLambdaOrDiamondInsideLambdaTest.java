@@ -26,7 +26,6 @@
  * @bug 8203277
  * @summary preflow visitor used during lambda attribution shouldn't visit class definitions inside the lambda body
  * @compile PreflowShouldVisitLambdaOrDiamondInsideLambdaTest.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 PreflowShouldVisitLambdaOrDiamondInsideLambdaTest.java
  */
 
 import java.util.List;

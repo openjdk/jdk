@@ -26,7 +26,6 @@
  * @bug     6213818
  * @summary Compilercrash with NullPointerException at SubstFcn.subst(Types.java:2057)
  * @compile T6213818.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T6213818.java
  */
 
 public class T6213818 {

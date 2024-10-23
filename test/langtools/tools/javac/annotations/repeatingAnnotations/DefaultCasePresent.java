@@ -27,7 +27,6 @@
  * @author  sogoel
  * @summary Default case for methods other than value() in ContainerAnno
  * @compile DefaultCasePresent.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 DefaultCasePresent.java
  */
 
 import java.lang.annotation.Repeatable;

@@ -3,7 +3,6 @@
  * @bug 8019521
  * @summary Check that enhanced rethrow/effectivelly final works correctly inside lambdas
  * @compile EffectivelyFinalThrows.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 EffectivelyFinalThrows.java
  */
 
 class EffectivelyFinalThrows {

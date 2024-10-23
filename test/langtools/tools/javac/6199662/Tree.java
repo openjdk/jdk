@@ -27,34 +27,22 @@
  * @summary javac: compilation success depends on compilation order
  *
  * @compile Tree.java TreeScanner.java TreeInfo.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Tree.java TreeScanner.java TreeInfo.java
  * @compile TreeInfo.java TreeScanner.java Tree.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TreeInfo.java TreeScanner.java Tree.java
  *
  * @compile -XDcompilePolicy=bytodo Tree.java TreeScanner.java TreeInfo.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -XDcompilePolicy=bytodo Tree.java TreeScanner.java TreeInfo.java
  * @compile -XDcompilePolicy=bytodo TreeInfo.java TreeScanner.java Tree.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -XDcompilePolicy=bytodo TreeInfo.java TreeScanner.java Tree.java
  *
  * @compile -XDcompilePolicy=byfile Tree.java TreeScanner.java TreeInfo.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -XDcompilePolicy=byfile Tree.java TreeScanner.java TreeInfo.java
  * @compile -XDcompilePolicy=byfile TreeInfo.java TreeScanner.java Tree.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -XDcompilePolicy=byfile TreeInfo.java TreeScanner.java Tree.java
  *
  * @compile -XDcompilePolicy=simple Tree.java TreeScanner.java TreeInfo.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -XDcompilePolicy=simple Tree.java TreeScanner.java TreeInfo.java
  * @compile -XDcompilePolicy=simple TreeInfo.java TreeScanner.java Tree.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -XDcompilePolicy=simple TreeInfo.java TreeScanner.java Tree.java
  *
  * @compile -XDshould-stop.ifError=FLOW -XDshould-stop.ifNoError=FLOW  Tree.java TreeScanner.java TreeInfo.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -XDshould-stop.ifError=FLOW -XDshould-stop.ifNoError=FLOW  Tree.java TreeScanner.java TreeInfo.java
  * @compile -XDshould-stop.ifError=FLOW -XDshould-stop.ifNoError=FLOW  TreeInfo.java TreeScanner.java Tree.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -XDshould-stop.ifError=FLOW -XDshould-stop.ifNoError=FLOW  TreeInfo.java TreeScanner.java Tree.java
  *
  * @compile -XDshould-stop.ifError=ATTR -XDshould-stop.ifNoError=ATTR  Tree.java TreeScanner.java TreeInfo.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -XDshould-stop.ifError=ATTR -XDshould-stop.ifNoError=ATTR  Tree.java TreeScanner.java TreeInfo.java
  * @compile -XDshould-stop.ifError=ATTR -XDshould-stop.ifNoError=ATTR  TreeInfo.java TreeScanner.java Tree.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -XDshould-stop.ifError=ATTR -XDshould-stop.ifNoError=ATTR  TreeInfo.java TreeScanner.java Tree.java
  */
 
 package p;

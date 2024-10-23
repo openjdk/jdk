@@ -26,7 +26,6 @@
  * @bug 8203486
  * @summary skip type inference for non functional interface components of intersection types
  * @compile SkipInferenceForNonFunctionalInterfTest.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 SkipInferenceForNonFunctionalInterfTest.java
  */
 
 class SkipInferenceForNonFunctionalInterfTest {

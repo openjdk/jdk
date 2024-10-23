@@ -39,12 +39,10 @@ import java.util.List;
  *
  * @clean *
  * @compile -XDstringConcat=indy              WellKnownTypeSignatures.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -XDstringConcat=indy              WellKnownTypeSignatures.java
  * @run main WellKnownTypeSignatures
  *
  * @clean *
  * @compile -XDstringConcat=indyWithConstants WellKnownTypeSignatures.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -XDstringConcat=indyWithConstants WellKnownTypeSignatures.java
  * @run main WellKnownTypeSignatures
  */
 

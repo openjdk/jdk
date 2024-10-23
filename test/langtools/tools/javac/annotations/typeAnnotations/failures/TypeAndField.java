@@ -27,7 +27,6 @@
  * @summary Ensure that TYPE_USE and FIELD work together.
  * @author Werner Dietl
  * @compile TypeAndField.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TypeAndField.java
  */
 import java.lang.annotation.*;
 

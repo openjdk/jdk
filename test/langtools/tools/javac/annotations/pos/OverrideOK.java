@@ -28,7 +28,6 @@
  * @author gafter
  *
  * @compile OverrideOK.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 OverrideOK.java
  */
 
 package overrideOK;

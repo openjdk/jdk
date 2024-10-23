@@ -26,7 +26,6 @@
  * @bug 8043725
  * @summary javac fails with StackOverflowException
  * @compile T8043725.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T8043725.java
  */
 class T8043725 {
     <T extends Comparable<T>> T m(T v) {

@@ -30,15 +30,10 @@
  * @library /tools/lib
  * @build toolbox.ToolBox toolbox.JavacTask toolbox.TestRunner
  * @compile Test1.jcod
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Test1.jcod
  * @compile Test2.jcod
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Test2.jcod
  * @compile Test3.jcod
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Test3.jcod
  * @compile Test4.jcod
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Test4.jcod
  * @compile Test5.jcod
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Test5.jcod
  * @run main AssertionsReadingClassfilesTest
  */
 

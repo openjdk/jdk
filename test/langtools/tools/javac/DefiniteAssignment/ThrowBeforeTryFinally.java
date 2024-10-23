@@ -28,7 +28,6 @@
  * @author gafter
  *
  * @compile ThrowBeforeTryFinally.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 ThrowBeforeTryFinally.java
  */
 
 public class ThrowBeforeTryFinally {

@@ -46,7 +46,6 @@ import javax.lang.model.element.TypeElement;
  * @modules java.compiler
  *          jdk.compiler
  * @compile -parameters ParameterProcessor.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -parameters ParameterProcessor.java
  * @compile/process -proc:only -processor ParameterProcessor ParameterProcessor
  */
 @SupportedAnnotationTypes("ParameterProcessor.ParameterNames")

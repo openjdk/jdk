@@ -27,7 +27,6 @@
  * @summary erroneus "inconvertible types" error
  * @author  Peter von der Ah\u00e9
  * @compile -Xlint:unchecked -Werror T6302214a.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -Xlint:unchecked -Werror T6302214a.java
  */
 
 public class T6302214a {

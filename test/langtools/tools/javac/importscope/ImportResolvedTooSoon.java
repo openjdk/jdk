@@ -26,7 +26,6 @@
  * @bug 7101822
  * @summary Verify that imports are declarations are processed in the correct order.
  * @compile ImportResolvedTooSoon.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 ImportResolvedTooSoon.java
  */
 package pkg;
 

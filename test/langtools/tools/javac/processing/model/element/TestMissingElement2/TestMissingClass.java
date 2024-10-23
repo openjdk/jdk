@@ -30,7 +30,6 @@
  *          jdk.compiler
  * @build JavacTestingAbstractProcessor Generator
  * @compile -XprintRounds -processor Generator TestMissingClass.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -XprintRounds -processor Generator TestMissingClass.java
  * @run main TestMissingClass
  */
 

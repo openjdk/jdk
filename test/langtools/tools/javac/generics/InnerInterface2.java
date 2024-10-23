@@ -28,7 +28,6 @@
  * @author gafter
  *
  * @compile  InnerInterface2.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  InnerInterface2.java
  */
 
 package InnerInterface2;

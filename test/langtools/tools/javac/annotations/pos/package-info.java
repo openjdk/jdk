@@ -28,7 +28,6 @@
  * @author gafter
  *
  * @compile package-info.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 package-info.java
  */
 
 @Deprecated

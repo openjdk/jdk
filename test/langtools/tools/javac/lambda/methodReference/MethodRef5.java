@@ -27,7 +27,6 @@
  * @summary Add lambda tests
  *   Test method reference with SAM interface Comparator<T>
  * @compile MethodRef5.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 MethodRef5.java
  * @run main MethodRef5
  */
 

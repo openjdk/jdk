@@ -27,7 +27,6 @@
  * @summary Add lambda tests
  *  check that target type is propagated through parenthesized expressions
  * @compile TargetType30.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TargetType30.java
  */
 
 class TargetType30 {

@@ -26,7 +26,6 @@
  * @bug 8332463
  * @summary Byte conditional pattern case element dominates short constant case element
  * @compile --enable-preview --source ${jdk.version} T8332463a.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 --enable-preview --source ${jdk.version} T8332463a.java
  */
 public class T8332463a {
     public int test2() {

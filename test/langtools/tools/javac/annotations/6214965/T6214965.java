@@ -26,10 +26,7 @@
  * @bug     6214965 6365854 8068639
  * @summary Compiler crash on redefing nested annotation types
  * @compile CompilerAnnotationTest.java CompilerAnnotationTest2.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 CompilerAnnotationTest.java CompilerAnnotationTest2.java
  * @compile CompilerAnnotationTest2bad.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 CompilerAnnotationTest2bad.java
  * @compile/ref=T6214965.out -XDrawDiagnostics -Xlint:classfile CompilerAnnotationTest2bad.java
  * @compile -Werror CompilerAnnotationTest2bad.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -Werror CompilerAnnotationTest2bad.java
  */

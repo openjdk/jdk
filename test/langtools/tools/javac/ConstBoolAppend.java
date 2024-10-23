@@ -30,7 +30,6 @@
  * @author turnidge
  *
  * @compile ConstBoolAppend.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 ConstBoolAppend.java
  * @run main ConstBoolAppend
  */
 

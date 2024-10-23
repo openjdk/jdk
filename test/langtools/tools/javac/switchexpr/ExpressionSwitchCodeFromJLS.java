@@ -26,7 +26,6 @@
  * @bug 8206986
  * @summary Check switch expressions
  * @compile ExpressionSwitchCodeFromJLS.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 ExpressionSwitchCodeFromJLS.java
  * @run main ExpressionSwitchCodeFromJLS
  */
 

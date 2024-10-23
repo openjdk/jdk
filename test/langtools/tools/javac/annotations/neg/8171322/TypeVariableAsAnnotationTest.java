@@ -3,7 +3,6 @@
  * @bug 8171322
  * @summary AssertionError in TypeSymbol.getAnnotationTypeMetadata
  * @compile SimpleProcessor.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 SimpleProcessor.java
  * @compile/fail/ref=TypeVariableAsAnnotationTest.out -processor SimpleProcessor -XDrawDiagnostics TypeVariableAsAnnotationTest.java
  */
 

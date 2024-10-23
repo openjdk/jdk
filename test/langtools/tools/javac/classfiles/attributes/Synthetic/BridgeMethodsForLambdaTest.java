@@ -34,7 +34,6 @@
  * @build toolbox.ToolBox InMemoryFileManager TestResult TestBase
  * @build SyntheticTestDriver ExpectedClass ExpectedClasses
  * @compile -XDdeduplicateLambdas=false BridgeMethodsForLambdaTest.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -XDdeduplicateLambdas=false BridgeMethodsForLambdaTest.java
  * @run main SyntheticTestDriver BridgeMethodsForLambdaTest
  */
 

@@ -28,7 +28,6 @@
  * @author gafter
  *
  * @compile -Werror  Warn3.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -Werror  Warn3.java
  */
 
 package varargs.warning.warn3;

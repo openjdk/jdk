@@ -30,7 +30,6 @@ import java.util.Optional;
  * @bug 8271623
  *
  * @compile --release 17 DontOptimizeOuterThis.java InnerClasses.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 --release 17 DontOptimizeOuterThis.java InnerClasses.java
  * @run main DontOptimizeOuterThis
  */
 public class DontOptimizeOuterThis extends InnerClasses {

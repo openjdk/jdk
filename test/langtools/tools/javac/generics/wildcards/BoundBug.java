@@ -28,7 +28,6 @@
  * @author gafter
  *
  * @compile  BoundBug.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  BoundBug.java
  */
 
 class BoundBug {

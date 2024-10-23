@@ -26,7 +26,6 @@
  * @bug 8143217
  * @summary javac throws NPE when printing diagnostics for Lambda expressions
  * @compile XDdumpLambdaToMethodStats.java --debug=dumpLambdaToMethodStats
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 XDdumpLambdaToMethodStats.java --debug=dumpLambdaToMethodStats
  *
  */
 

@@ -27,7 +27,6 @@
  * @summary methods clash algorithm should not depend on return type
  * @author  mcimadamore
  * @compile T6182950c.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T6182950c.java
  */
 
 class T6182950c {

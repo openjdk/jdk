@@ -26,7 +26,6 @@
  * @bug 8006692
  * @summary jdk/test/java/util/Collections/BigBinarySearch.java fails to compile
  * @compile T8006692.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T8006692.java
  */
 
 import java.util.*;

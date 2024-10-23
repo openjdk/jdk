@@ -28,7 +28,6 @@
  * @summary  Diamond and subtyping
  * @author mcimadamore
  * @compile Pos06.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Pos06.java
  *
  */
 

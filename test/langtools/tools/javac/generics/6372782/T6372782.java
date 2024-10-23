@@ -27,7 +27,6 @@
  * @summary possibly invalid "abstract method not implemented" emitted by compiler
  * @author  Alex Lam S.L.
  * @compile PlainPlanarVector.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 PlainPlanarVector.java
  *          PlanarVectorVariable.java
  *          PlainForm.java
  *          State.java

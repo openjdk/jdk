@@ -27,7 +27,6 @@
  * @summary Verify valid classfile is produced when synchronized block is used
  *          inside a switch expression.
  * @compile ExpressionSwitchSynchronized.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 ExpressionSwitchSynchronized.java
  * @run main ExpressionSwitchSynchronized
  */
 public class ExpressionSwitchSynchronized {

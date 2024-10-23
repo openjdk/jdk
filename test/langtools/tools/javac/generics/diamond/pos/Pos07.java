@@ -28,7 +28,6 @@
  * @summary  Diamond and intersection types
  * @author mcimadamore
  * @compile Pos07.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Pos07.java
  *
  */
 

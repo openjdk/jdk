@@ -27,7 +27,6 @@
  * @summary Add lambda tests
  *  lambda compiler regression with uninferred type-variables in generic constructor call
  * @compile Conformance01.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Conformance01.java
  */
 
 class Conformance01 {

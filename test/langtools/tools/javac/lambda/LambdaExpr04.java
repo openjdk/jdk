@@ -29,7 +29,6 @@
  * @author Jan Lahoda
  * @author  Maurizio Cimadamore
  * @compile LambdaExpr04.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 LambdaExpr04.java
  */
 
 class LambdaExpr04 {

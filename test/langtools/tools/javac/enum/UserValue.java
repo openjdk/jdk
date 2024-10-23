@@ -28,7 +28,6 @@
  * @author gafter
  *
  * @compile UserValue.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 UserValue.java
  */
 
 public enum UserValue {

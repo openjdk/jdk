@@ -29,7 +29,6 @@
  * @modules java.base/jdk.internal.classfile.impl
  * @build MethodParametersTester ClassFileVisitor ReflectionVisitor
  * @compile -parameters AnnotationTest.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -parameters AnnotationTest.java
  * @run main MethodParametersTester AnnotationTest AnnotationTest.out
  */
 

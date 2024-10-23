@@ -27,7 +27,6 @@
  * @summary check that type annotations may appear on all type parameter
  * @author Mahmood Ali
  * @compile TypeParameterTarget.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TypeParameterTarget.java
  */
 
 import java.lang.annotation.Target;

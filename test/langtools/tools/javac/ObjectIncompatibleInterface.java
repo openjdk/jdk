@@ -28,7 +28,6 @@
  * @author gafter
  *
  * @compile ObjectIncompatibleInterface.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 ObjectIncompatibleInterface.java
  */
 
 /** While it's impossible to implement this interface, nevertheless

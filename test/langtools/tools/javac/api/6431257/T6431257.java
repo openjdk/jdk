@@ -31,7 +31,6 @@
  *          jdk.compiler
  * @build ToolTester
  * @compile T6431257.java package-info.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T6431257.java package-info.java
  * @run main T6431257 foo.bar.baz foo/bar/baz
  */
 

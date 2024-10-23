@@ -28,7 +28,6 @@
  * @enablePreview
  * @modules java.base/jdk.internal.classfile.impl
  * @compile -g SubTest.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -g SubTest.java
  * @run main T7005371
  */
 

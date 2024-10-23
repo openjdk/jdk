@@ -29,7 +29,6 @@ import java.lang.annotation.*;
  * @summary new type annotation location: field type array/generics
  * @author Mahmood Ali
  * @compile Fields.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Fields.java
  */
 
 class DefaultScope {

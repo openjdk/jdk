@@ -28,7 +28,6 @@
  * @author gafter
  *
  * @compile CrossPackageImplA.java CrossPackageImplB.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 CrossPackageImplA.java CrossPackageImplB.java
  */
 
 package a;

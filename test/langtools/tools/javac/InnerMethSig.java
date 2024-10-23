@@ -29,7 +29,6 @@
  *
  * @modules java.desktop
  * @compile InnerMethSig.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 InnerMethSig.java
  */
 
 import javax.swing.text.html.*;

@@ -30,7 +30,6 @@ import java.util.Calendar;
  * @summary Add lambda tests
  *  This test is for when lambda return type is inferred from target type
  * @compile InferenceTest789.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 InferenceTest789.java
  * @run main InferenceTest789
  */
 

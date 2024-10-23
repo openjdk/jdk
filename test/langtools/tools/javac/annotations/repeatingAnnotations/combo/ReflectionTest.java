@@ -29,7 +29,6 @@
  * @modules jdk.compiler
  * @build    Helper
  * @compile  expectedFiles/ExpectedBase.java expectedFiles/ExpectedContainer.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  expectedFiles/ExpectedBase.java expectedFiles/ExpectedContainer.java
  * @run main ReflectionTest
  */
 import java.io.File;

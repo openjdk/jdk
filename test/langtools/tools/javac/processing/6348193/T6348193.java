@@ -28,7 +28,6 @@
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file
  * @compile -proc:none T6348193.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -proc:none T6348193.java
  * @run main/othervm -Djava.security.manager=allow T6348193
  */
 

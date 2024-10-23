@@ -26,7 +26,6 @@
  * @bug 8229862
  * @summary Verifying lambdas anonymous classes whose supertype captures works.
  * @compile LambdaConv30.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 LambdaConv30.java
  * @run main LambdaConv30
  */
 public class LambdaConv30 {

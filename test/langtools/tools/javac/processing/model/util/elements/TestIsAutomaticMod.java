@@ -28,7 +28,6 @@
  * @library /tools/javac/lib
  * @build   JavacTestingAbstractProcessor TestIsAutomaticMod
  * @compile -processor TestIsAutomaticMod -proc:only TestIsAutomaticMod.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor TestIsAutomaticMod -proc:only TestIsAutomaticMod.java
  */
 
 import java.io.Writer;

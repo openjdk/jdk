@@ -28,7 +28,6 @@
  * @author gafter
  *
  * @compile  MissingCast.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  MissingCast.java
  * @run main MissingCast
  */
 

@@ -28,7 +28,6 @@
  * @author gafter
  *
  * @compile  ArrayClone.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  ArrayClone.java
  * @run main ArrayClone
  */
 

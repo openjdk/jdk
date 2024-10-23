@@ -26,7 +26,6 @@
  * @bug 8222251
  * @summary preflow visitor is not visiting lambda expressions
  * @compile PreflowNotVisitingLambdaExpTest.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 PreflowNotVisitingLambdaExpTest.java
  */
 
 public class PreflowNotVisitingLambdaExpTest {

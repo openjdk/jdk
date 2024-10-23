@@ -26,7 +26,6 @@
  * @bug 8029042
  * @summary Receiver parameter not supported on local class constructor
  * @compile LocalInnerReceiverTest.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 LocalInnerReceiverTest.java
  */
 
 class LocalInnerReceiverTest {

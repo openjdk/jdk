@@ -26,7 +26,6 @@
  * @bug 8044737
  * @summary Lambda: NPE while obtaining method reference through lambda expression
  * @compile MethodRefNewInnerInLambdaNPE2.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 MethodRefNewInnerInLambdaNPE2.java
  */
 
 public class MethodRefNewInnerInLambdaNPE2 {

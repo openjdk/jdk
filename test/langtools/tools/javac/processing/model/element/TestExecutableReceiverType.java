@@ -28,7 +28,6 @@
  * @library /tools/javac/lib
  * @build   JavacTestingAbstractProcessor TestExecutableReceiverType
  * @compile -processor TestExecutableReceiverType -proc:only TestExecutableReceiverType.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor TestExecutableReceiverType -proc:only TestExecutableReceiverType.java
  * @compile/process -processor TestExecutableReceiverType -proc:only MethodHost
  */
 

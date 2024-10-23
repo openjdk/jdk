@@ -26,7 +26,6 @@
  * @bug 8134007
  * @summary Improve string folding
  * @compile T8134007.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T8134007.java
  */
 class T8134007 {
     String v = "";

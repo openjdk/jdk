@@ -3,7 +3,6 @@
  * @bug 7126754
  * @summary Generics compilation failure casting List<? extends Set...> to List<Set...>
  * @compile T7126754.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T7126754.java
  */
 
 import java.util.List;

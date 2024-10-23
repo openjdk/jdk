@@ -27,7 +27,6 @@
  * @author  sogoel
  * @summary Repeatable annotations in random order
  * @compile MultipleAnnoMixedOrder.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 MultipleAnnoMixedOrder.java
  */
 
 import java.lang.annotation.Repeatable;

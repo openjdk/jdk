@@ -28,7 +28,6 @@
  * @author gafter
  *
  * @compile  -Werror Capture.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  -Werror Capture.java
  */
 
 class X<T> {}

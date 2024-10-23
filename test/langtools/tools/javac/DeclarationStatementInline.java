@@ -29,7 +29,6 @@
  * @author turnidge
  *
  * @compile DeclarationStatementInline.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 DeclarationStatementInline.java
  */
 
 public

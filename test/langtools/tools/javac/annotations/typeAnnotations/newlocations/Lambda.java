@@ -27,7 +27,6 @@
  * @summary new type annotation location: lambda expressions
  * javac crash for annotated parameter type of lambda in a field
  * @compile Lambda.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Lambda.java
  * @author Werner Dietl
  */
 

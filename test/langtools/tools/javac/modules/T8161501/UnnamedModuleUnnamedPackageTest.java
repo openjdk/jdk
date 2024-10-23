@@ -26,9 +26,7 @@
  * @bug 8161501
  * @summary JSR269 jigsaw update: javax.lang.model.element.ModuleElement.getEnclosedElements() on unnamed module with unnamed package
  * @compile UnnamedModuleUnnamedPackageTest.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 UnnamedModuleUnnamedPackageTest.java
  * @compile -processor UnnamedModuleUnnamedPackageTest UnnamedModuleUnnamedPackageTest.java EmptyClass.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor UnnamedModuleUnnamedPackageTest UnnamedModuleUnnamedPackageTest.java EmptyClass.java
  */
 
 import javax.annotation.processing.AbstractProcessor;

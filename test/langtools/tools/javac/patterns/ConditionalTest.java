@@ -34,7 +34,6 @@
  * @build toolbox.ToolBox toolbox.JavacTask
  * @build combo.ComboTestHelper
  * @compile ConditionalTest.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 ConditionalTest.java
  * @run main ConditionalTest
  */
 

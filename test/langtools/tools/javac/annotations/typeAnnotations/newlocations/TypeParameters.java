@@ -29,7 +29,6 @@ import java.lang.annotation.*;
  * @summary new type annotation location: class and method type parameters
  * @author Mahmood Ali
  * @compile TypeParameters.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TypeParameters.java
  */
 
 class Unannotated<K> { }

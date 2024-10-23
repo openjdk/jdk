@@ -29,9 +29,7 @@
  * @modules jdk.compiler
  * @build   JavacTestingAbstractProcessor
  * @compile TestUnnamedVariableElement8.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TestUnnamedVariableElement8.java
  * @compile -source 8 -processor TestUnnamedVariableElement8 -proc:only TestUnnamedVariableElementData.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -source 8 -processor TestUnnamedVariableElement8 -proc:only TestUnnamedVariableElementData.java
  */
 
 import com.sun.source.tree.VariableTree;

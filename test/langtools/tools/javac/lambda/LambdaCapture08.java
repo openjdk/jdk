@@ -26,7 +26,6 @@
  * @bug 8321207
  * @summary javac is not accepting correct code
  * @compile LambdaCapture08.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 LambdaCapture08.java
  */
 
 import java.util.function.*;

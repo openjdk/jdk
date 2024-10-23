@@ -30,7 +30,6 @@
  *          java.desktop
  *          jdk.compiler
  * @compile TestEvalExpression.java evalexpr/ByteArrayClassLoader.java  evalexpr/CompileFromString.java  evalexpr/MemoryFileManager.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TestEvalExpression.java evalexpr/ByteArrayClassLoader.java  evalexpr/CompileFromString.java  evalexpr/MemoryFileManager.java
  * @run main TestEvalExpression
  */
 

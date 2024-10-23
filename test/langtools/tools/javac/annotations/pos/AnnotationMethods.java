@@ -27,7 +27,6 @@
  * @summary no compile-time error for clone, etc. in annotation type
  * @author  Peter von der Ah\u00e9
  * @compile AnnotationMethods.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 AnnotationMethods.java
  */
 
 public @interface AnnotationMethods {

@@ -28,7 +28,6 @@
  * @author gafter
  *
  * @compile Enum1.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Enum1.java
  */
 
 package annotation.enums;

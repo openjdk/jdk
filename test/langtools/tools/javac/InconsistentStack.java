@@ -28,7 +28,6 @@
  * @author gafter
  *
  * @compile InconsistentStack.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 InconsistentStack.java
  * @run main InconsistentStack
  */
 

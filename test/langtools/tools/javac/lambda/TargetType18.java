@@ -27,7 +27,6 @@
  * @summary Add lambda tests
  *  check that javac doesn't crash if implicit lambda parameter is involved in cast
  * @compile TargetType18.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TargetType18.java
  */
 
 class TargetType18 {

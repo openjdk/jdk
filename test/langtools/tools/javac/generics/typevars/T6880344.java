@@ -27,7 +27,6 @@
  * @summary Recursive type parameters do not compile
  * @author  mcimadamore
  * @compile T6880344.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T6880344.java
  */
 
 class T6880344 {

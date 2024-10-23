@@ -26,7 +26,6 @@
  * @bug 8015101
  * @summary Mishandling of wildcards in intersection member method check
  * @compile T8015101.java
- * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T8015101.java
  */
 class T8015101 {
 
