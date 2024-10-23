@@ -31,6 +31,7 @@ import java.lang.classfile.Label;
 import java.lang.classfile.PseudoInstruction;
 import java.lang.classfile.attribute.CharacterRangeInfo;
 import java.lang.classfile.attribute.CharacterRangeTableAttribute;
+
 import jdk.internal.classfile.impl.AbstractPseudoInstruction;
 import jdk.internal.classfile.impl.BoundCharacterRange;
 import jdk.internal.javac.PreviewFeature;

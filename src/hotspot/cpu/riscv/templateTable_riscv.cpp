@@ -26,6 +26,7 @@
 
 #include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "compiler/disassembler.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/tlab_globals.hpp"
@@ -49,7 +50,7 @@
 #include "runtime/synchronizer.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-#define __ _masm->
+#define __ Disassembler::hook<InterpreterMacroAssembler>(__FILE__, __LINE__, _masm)->
 
 // Address computation: local variables
 
@@ -178,7 +179,6 @@ void TemplateTable::patch_bytecode(Bytecodes::Code bc, Register bc_reg,
         __ la(temp_reg, Address(temp_reg, in_bytes(ResolvedFieldEntry::put_code_offset())));
       }
       // Load-acquire the bytecode to match store-release in ResolvedFieldEntry::fill_in()
-      __ membar(MacroAssembler::AnyAny);
       __ lbu(temp_reg, Address(temp_reg, 0));
       __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
       __ mv(bc_reg, bc);
@@ -320,7 +320,6 @@ void TemplateTable::ldc(LdcType type) {
   // get type
   __ addi(x13, x11, tags_offset);
   __ add(x13, x10, x13);
-  __ membar(MacroAssembler::AnyAny);
   __ lbu(x13, Address(x13, 0));
   __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
 
@@ -706,7 +705,7 @@ void TemplateTable::wide_aload() {
 }
 
 void TemplateTable::index_check(Register array, Register index) {
-  // destroys x11, t0
+  // destroys x11, t0, t1
   // sign extend index for use by indexed load
   // check index
   const Register length = t0;
@@ -719,8 +718,8 @@ void TemplateTable::index_check(Register array, Register index) {
   __ sign_extend(index, index, 32);
   __ bltu(index, length, ok);
   __ mv(x13, array);
-  __ mv(t0, Interpreter::_throw_ArrayIndexOutOfBoundsException_entry);
-  __ jr(t0);
+  __ mv(t1, Interpreter::_throw_ArrayIndexOutOfBoundsException_entry);
+  __ jr(t1);
   __ bind(ok);
 }
 
@@ -1314,8 +1313,8 @@ void TemplateTable::idiv() {
   // explicitly check for div0
   Label no_div0;
   __ bnez(x10, no_div0);
-  __ mv(t0, Interpreter::_throw_ArithmeticException_entry);
-  __ jr(t0);
+  __ mv(t1, Interpreter::_throw_ArithmeticException_entry);
+  __ jr(t1);
   __ bind(no_div0);
   __ pop_i(x11);
   // x10 <== x11 idiv x10
@@ -1327,8 +1326,8 @@ void TemplateTable::irem() {
   // explicitly check for div0
   Label no_div0;
   __ bnez(x10, no_div0);
-  __ mv(t0, Interpreter::_throw_ArithmeticException_entry);
-  __ jr(t0);
+  __ mv(t1, Interpreter::_throw_ArithmeticException_entry);
+  __ jr(t1);
   __ bind(no_div0);
   __ pop_i(x11);
   // x10 <== x11 irem x10
@@ -1346,8 +1345,8 @@ void TemplateTable::ldiv() {
   // explicitly check for div0
   Label no_div0;
   __ bnez(x10, no_div0);
-  __ mv(t0, Interpreter::_throw_ArithmeticException_entry);
-  __ jr(t0);
+  __ mv(t1, Interpreter::_throw_ArithmeticException_entry);
+  __ jr(t1);
   __ bind(no_div0);
   __ pop_l(x11);
   // x10 <== x11 ldiv x10
@@ -1359,8 +1358,8 @@ void TemplateTable::lrem() {
   // explicitly check for div0
   Label no_div0;
   __ bnez(x10, no_div0);
-  __ mv(t0, Interpreter::_throw_ArithmeticException_entry);
-  __ jr(t0);
+  __ mv(t1, Interpreter::_throw_ArithmeticException_entry);
+  __ jr(t1);
   __ bind(no_div0);
   __ pop_l(x11);
   // x10 <== x11 lrem x10
@@ -1769,8 +1768,8 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
     __ andi(sp, esp, -16);
 
     // and begin the OSR nmethod
-    __ ld(t0, Address(x9, nmethod::osr_entry_point_offset()));
-    __ jr(t0);
+    __ ld(t1, Address(x9, nmethod::osr_entry_point_offset()));
+    __ jr(t1);
   }
 }
 
@@ -2172,7 +2171,7 @@ void TemplateTable::_return(TosState state) {
 void TemplateTable::resolve_cache_and_index_for_method(int byte_no,
                                                        Register Rcache,
                                                        Register index) {
-  const Register temp = x9;
+  const Register temp = x9; // s1
   assert_different_registers(Rcache, index, temp);
   assert(byte_no == f1_byte || byte_no == f2_byte, "byte_no out of range");
 
@@ -2189,7 +2188,6 @@ void TemplateTable::resolve_cache_and_index_for_method(int byte_no,
       break;
   }
   // Load-acquire the bytecode to match store-release in InterpreterRuntime
-  __ membar(MacroAssembler::AnyAny);
   __ lbu(temp, Address(temp, 0));
   __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
 
@@ -2241,7 +2239,6 @@ void TemplateTable::resolve_cache_and_index_for_field(int byte_no,
     __ la(temp, Address(Rcache, in_bytes(ResolvedFieldEntry::put_code_offset())));
   }
   // Load-acquire the bytecode to match store-release in ResolvedFieldEntry::fill_in()
-  __ membar(MacroAssembler::AnyAny);
   __ lbu(temp, Address(temp, 0));
   __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
   __ mv(t0, (int) code);  // have we resolved this bytecode?
@@ -2403,7 +2400,6 @@ void TemplateTable::load_invokedynamic_entry(Register method) {
   Label resolved;
 
   __ load_resolved_indy_entry(cache, index);
-  __ membar(MacroAssembler::AnyAny);
   __ ld(method, Address(cache, in_bytes(ResolvedIndyEntry::method_offset())));
   __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
 
@@ -2418,7 +2414,6 @@ void TemplateTable::load_invokedynamic_entry(Register method) {
   __ call_VM(noreg, entry, method);
   // Update registers with resolved info
   __ load_resolved_indy_entry(cache, index);
-  __ membar(MacroAssembler::AnyAny);
   __ ld(method, Address(cache, in_bytes(ResolvedIndyEntry::method_offset())));
   __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
 
@@ -3533,7 +3528,6 @@ void TemplateTable::_new() {
   const int tags_offset = Array<u1>::base_offset_in_bytes();
   __ add(t0, x10, x13);
   __ la(t0, Address(t0, tags_offset));
-  __ membar(MacroAssembler::AnyAny);
   __ lbu(t0, t0);
   __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
   __ sub(t1, t0, (u1)JVM_CONSTANT_Class);
@@ -3651,7 +3645,6 @@ void TemplateTable::checkcast() {
   // See if bytecode has already been quicked
   __ add(t0, x13, Array<u1>::base_offset_in_bytes());
   __ add(x11, t0, x9);
-  __ membar(MacroAssembler::AnyAny);
   __ lbu(x11, x11);
   __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
   __ sub(t0, x11, (u1)JVM_CONSTANT_Class);
@@ -3707,7 +3700,6 @@ void TemplateTable::instanceof() {
   // See if bytecode has already been quicked
   __ add(t0, x13, Array<u1>::base_offset_in_bytes());
   __ add(x11, t0, x9);
-  __ membar(MacroAssembler::AnyAny);
   __ lbu(x11, x11);
   __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
   __ sub(t0, x11, (u1)JVM_CONSTANT_Class);
@@ -3970,8 +3962,8 @@ void TemplateTable::wide() {
   __ load_unsigned_byte(x9, at_bcp(1));
   __ mv(t0, (address)Interpreter::_wentry_point);
   __ shadd(t0, x9, t0, t1, 3);
-  __ ld(t0, Address(t0));
-  __ jr(t0);
+  __ ld(t1, Address(t0));
+  __ jr(t1);
 }
 
 // Multi arrays

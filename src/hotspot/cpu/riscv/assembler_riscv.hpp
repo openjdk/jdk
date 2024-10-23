@@ -46,8 +46,10 @@
 class Argument {
  public:
   enum {
-    n_int_register_parameters_c   = 8, // x10, x11, ... x17 (c_rarg0, c_rarg1, ...)
-    n_float_register_parameters_c = 8, // f10, f11, ... f17 (c_farg0, c_farg1, ... )
+    // check more info at https://github.com/riscv-non-isa/riscv-elf-psabi-doc/blob/master/riscv-cc.adoc
+    n_int_register_parameters_c   = 8,   // x10, x11, ... x17 (c_rarg0, c_rarg1, ...)
+    n_float_register_parameters_c = 8,   // f10, f11, ... f17 (c_farg0, c_farg1, ... )
+    n_vector_register_parameters_c = 16,  // v8, v9, ... v23
 
     n_int_register_parameters_j   = 8, // x11, ... x17, x10 (j_rarg0, j_rarg1, ...)
     n_float_register_parameters_j = 8  // f10, f11, ... f17 (j_farg0, j_farg1, ...)
@@ -143,6 +145,10 @@ constexpr Register x19_sender_sp = x19; // Sender's SP while in interpreter
 constexpr Register t0 = x5;
 constexpr Register t1 = x6;
 constexpr Register t2 = x7;
+constexpr Register t3 = x28;
+constexpr Register t4 = x29;
+constexpr Register t5 = x30;
+constexpr Register t6 = x31;
 
 const Register g_INTArgReg[Argument::n_int_register_parameters_c] = {
   c_rarg0, c_rarg1, c_rarg2, c_rarg3, c_rarg4, c_rarg5, c_rarg6, c_rarg7
@@ -2886,8 +2892,9 @@ public:
 // Unconditional branch instructions
 // --------------------------
  protected:
-  // All calls and jumps must go via MASM.
+  // All calls and jumps must go via MASM. Only use x1 (aka ra) as link register for now.
   void jalr(Register Rd, Register Rs, const int32_t offset) {
+    assert(Rd != x5 && Rs != x5, "Register x5 must not be used for calls/jumps.");
     /* jalr -> c.jr/c.jalr */
     if (do_compress() && (offset == 0 && Rs != x0)) {
       if (Rd == x1) {
@@ -2902,6 +2909,7 @@ public:
   }
 
   void jal(Register Rd, const int32_t offset) {
+    assert(Rd != x5, "Register x5 must not be used for calls/jumps.");
     /* jal -> c.j, note c.jal is RV32C only */
     if (do_compress() &&
         Rd == x0 &&
@@ -2909,7 +2917,6 @@ public:
       c_j(offset);
       return;
     }
-
     _jal(Rd, offset);
   }
 
