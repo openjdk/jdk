@@ -25,6 +25,9 @@ package jdk.test.lib.security;
 
 import java.math.BigInteger;
 
+/**
+ * An enumeration of DH groups for tests.
+ */
 public enum DiffieHellmanGroup {
 
     /**
@@ -103,5 +106,4 @@ public enum DiffieHellmanGroup {
         this.prime = prime;
         this.base = BigInteger.valueOf(base);
     }
-
 }
