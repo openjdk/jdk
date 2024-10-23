@@ -25,7 +25,6 @@
 package java.util.stream;
 
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.javac.PreviewFeature;
 import jdk.internal.vm.annotation.ForceInline;
 
 import java.util.ArrayDeque;
@@ -50,7 +49,6 @@ import java.util.stream.Gatherer.Downstream;
  *
  * @since 24
 */
-@PreviewFeature(feature = PreviewFeature.Feature.STREAM_GATHERERS)
 public final class Gatherers {
     private Gatherers() { } // This class is not intended to be instantiated
 

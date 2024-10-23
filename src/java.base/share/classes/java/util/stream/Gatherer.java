@@ -24,7 +24,6 @@
  */
 package java.util.stream;
 
-import jdk.internal.javac.PreviewFeature;
 import jdk.internal.vm.annotation.ForceInline;
 
 import java.util.*;
@@ -197,7 +196,6 @@ import java.util.function.Supplier;
  * @param <R> the type of output elements from the gatherer operation
  * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.STREAM_GATHERERS)
 public interface Gatherer<T, A, R> {
     /**
      * A function that produces an instance of the intermediate state used for
@@ -484,7 +482,6 @@ public interface Gatherer<T, A, R> {
      * @since 24
      */
     @FunctionalInterface
-    @PreviewFeature(feature = PreviewFeature.Feature.STREAM_GATHERERS)
     interface Downstream<T> {
 
         /**
@@ -527,7 +524,6 @@ public interface Gatherer<T, A, R> {
      * @since 24
      */
     @FunctionalInterface
-    @PreviewFeature(feature = PreviewFeature.Feature.STREAM_GATHERERS)
     interface Integrator<A, T, R> {
         /**
          * Performs an action given: the current state, the next element, and
@@ -587,7 +583,6 @@ public interface Gatherer<T, A, R> {
          * @since 24
          */
         @FunctionalInterface
-        @PreviewFeature(feature = PreviewFeature.Feature.STREAM_GATHERERS)
         interface Greedy<A, T, R> extends Integrator<A, T, R> { }
     }
 }
