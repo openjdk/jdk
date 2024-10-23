@@ -567,7 +567,7 @@ bool LateInlineVirtualCallGenerator::do_late_inline_check(Compile* C, JVMState* 
     return true;
   } else {
     // Virtual call which provably doesn't dispatch should be either inlined or replaced with a direct call.
-    assert(false, "no progress");
+    assert(C->failing_internal(), "no progress");
     return false;
   }
 }
@@ -1013,6 +1013,9 @@ CallGenerator* CallGenerator::for_method_handle_call(JVMState* jvms, ciMethod* c
       return cg;
     }
   }
+
+  if (C->failing()) return nullptr;
+
   int bci = jvms->bci();
   ciCallProfile profile = caller->call_profile_at_bci(bci);
   int call_site_count = caller->scale_count(profile.count());
@@ -1144,6 +1147,7 @@ CallGenerator* CallGenerator::for_method_handle_inline(JVMState* jvms, ciMethod*
                                             target, receiver_type, is_virtual,
                                             call_does_dispatch, vtable_index, // out-parameters
                                             false /* check_access */);
+          if (C->failing()) return nullptr;
           // We lack profiling at this call but type speculation may
           // provide us with a type
           speculative_receiver_type = (receiver_type != nullptr) ? receiver_type->speculative_type() : nullptr;

@@ -2063,6 +2063,8 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
       if (exact_target != nullptr) {
         target = exact_target;
         code = Bytecodes::_invokespecial;
+      } else {
+        CHECK_BAILOUT();
       }
     }
     if (receiver_klass != nullptr &&
@@ -2132,6 +2134,8 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
       dependency_recorder()->assert_unique_concrete_method(actual_recv, cha_monomorphic_target, callee_holder, target);
     }
     code = Bytecodes::_invokespecial;
+  } else {
+    CHECK_BAILOUT();
   }
 
   // check if we could do inlining

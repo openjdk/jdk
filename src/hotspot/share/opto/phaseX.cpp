@@ -1045,6 +1045,7 @@ void PhaseIterGVN::optimize() {
       // Do the transformation
       Node* nn = transform_old(n);
       NOT_PRODUCT(trace_PhaseIterGVN(n, nn, oldtype);)
+      if (C->failing()) return;
     } else if (!n->is_top()) {
       remove_dead_node(n);
     }
