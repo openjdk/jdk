@@ -1397,22 +1397,7 @@ public class HierarchicalLayoutManager extends LayoutManager {
         }
 
         private void run() {
-            // The nodes order within layers determines the edge crossings in the layout,
-            // thus a good ordering is one with few edge crossings
-
-            // Done in previous pass:  compute an initial ordering (x needs to be set for sweep to work)
-            // 1) An initial ordering within each rank is computed
-            // DFS or BFS starting with nodes of minimum rank. Nodes are assigned positions in their layers in
-            // left-to-right order as the search progresses. This strategy ensures that the initial ordering of a
-            // tree has no crossing.
-
-            // 2) Then a sequence of iterations is performed to try to improve the orderings.
-            // Each iteration traverses from the first rank to the last one (down), or vice versa (up).
-            for (int i = 0; i < CROSSING_ITERATIONS; i++) { // CROSSING_ITERATIONS = 12 (resulting in 24 sweeps)
-                // At each iteration, if number of crossings improves (at least a few percent), new ordering is saved
-
-                // When equality occurs when comparing median values or number of edge crossings, flip every other pass
-
+            for (int i = 0; i < CROSSING_ITERATIONS; i++) {
                 downSweep();
                 upSweep();
             }
@@ -1475,53 +1460,6 @@ public class HierarchicalLayoutManager extends LayoutManager {
             }
         }
 
-        private void neighborSwapping() {
-            boolean improved = true;
-            while (improved) {
-                improved = false;
-                for (int i = 1; i < layers.size(); i++) {
-                    LayoutLayer prevLayer = layers.get(i - 1);
-                    LayoutLayer layer = layers.get(i);
-                    for (int j = 0; j < layer.size() - 1; j++) {
-                        int origCrossings = crossings(prevLayer, layer);
-                        layer.swap(j, j + 1);
-                        if (crossings(prevLayer, layer) < origCrossings) {
-                            improved = true;
-                        } else { // swap back
-                            layer.swap(j, j + 1);
-                        }
-                    }
-                }
-            }
-        }
-
-        // counts the number of edge crossings between two layers
-        private int crossings(LayoutLayer topLayer, LayoutLayer bottomLayer) {
-            int crossings = 0;
-            for (LayoutNode topNode : topLayer) {
-                for (LayoutEdge topEdge : topNode.getSuccs()) {
-                    for (LayoutNode bottomNode : bottomLayer) {
-                        for (LayoutEdge bottomEdge : bottomNode.getPreds()) {
-                            if (topEdge == bottomEdge) continue;
-                            if (edgesIntersect(topEdge, bottomEdge)) {
-                                crossings += 1;
-                            }
-                        }
-                    }
-                }
-            }
-            return crossings;
-
-        }
-
-        public boolean edgesIntersect(LayoutEdge e1, LayoutEdge e2) {
-            int s1 = e1.getStartX();
-            int s2 = e2.getStartX();
-            int d1 = e1.getEndX();
-            int d2 = e2.getEndX();
-            return (s1 >= s2 || d1 >= d2) && (s2 >= s1 || d2 >= d1);
-        }
-
         private void downSweep() {
             for (LayoutLayer layer : layers) {
                 doAveragePositions(layer);
@@ -1530,7 +1468,6 @@ public class HierarchicalLayoutManager extends LayoutManager {
                 doMedianPositions(layers.get(i), true);
                 placeLeavesAndRoots(layers.get(i), true);
             }
-            neighborSwapping();
         }
 
         private void upSweep() {
@@ -1541,7 +1478,6 @@ public class HierarchicalLayoutManager extends LayoutManager {
                 doMedianPositions(layers.get(i), false);
                 placeLeavesAndRoots(layers.get(i), false);
             }
-            neighborSwapping();
         }
     }
 
