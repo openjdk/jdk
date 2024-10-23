@@ -965,8 +965,9 @@ void getNumberPart(const jchar * langtag, const jint numberStyle, WCHAR * number
 void getFixPart(const jchar * langtag, const jint numberStyle, BOOL positive, BOOL prefix, WCHAR * ret) {
     DWORD pattern = 0;
     int style = numberStyle;
-    int got = 0;
+ // int got = 0;
 
+/*
     if (positive) {
         if (style == sun_util_locale_provider_HostLocaleProviderAdapterImpl_NF_CURRENCY) {
             got = getLocaleInfoWrapper(langtag,
@@ -992,6 +993,7 @@ void getFixPart(const jchar * langtag, const jint numberStyle, BOOL positive, BO
                 (LPWSTR)&pattern, sizeof(pattern));
         }
     }
+*/
 
     if (numberStyle == sun_util_locale_provider_HostLocaleProviderAdapterImpl_NF_INTEGER) {
         style = sun_util_locale_provider_HostLocaleProviderAdapterImpl_NF_NUMBER;
