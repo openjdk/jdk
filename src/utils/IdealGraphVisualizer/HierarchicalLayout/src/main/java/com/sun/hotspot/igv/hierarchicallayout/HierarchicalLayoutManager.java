@@ -23,6 +23,7 @@
  */
 package com.sun.hotspot.igv.hierarchicallayout;
 
+import static com.sun.hotspot.igv.hierarchicallayout.LayoutEdge.LAYOUT_EDGE_LAYER_COMPARATOR;
 import static com.sun.hotspot.igv.hierarchicallayout.LayoutGraph.LINK_COMPARATOR;
 import static com.sun.hotspot.igv.hierarchicallayout.LayoutNode.*;
 import com.sun.hotspot.igv.layout.Link;
@@ -34,13 +35,7 @@ import java.util.*;
 
 public class HierarchicalLayoutManager extends LayoutManager {
 
-
-
-    public static final Comparator<LayoutEdge> LAYOUT_EDGE_LAYER_COMPARATOR = Comparator.comparingInt(e -> e.getTo().getLayer());
-
-
     private LayoutGraph graph;
-
 
     public HierarchicalLayoutManager() {
         maxLayerLength = -1;
@@ -80,10 +75,6 @@ public class HierarchicalLayoutManager extends LayoutManager {
 
         graph.addNode(node);
     }
-
-
-
-
 
     private void applyRemoveLinkAction(Link link) {
         Vertex from = link.getFrom().getVertex();
@@ -174,7 +165,7 @@ public class HierarchicalLayoutManager extends LayoutManager {
         return false;
     }
 
-    public void removeEdges(LayoutNode movedNode) {
+    private void removeEdges(LayoutNode movedNode) {
         for (Link inputLink : graph.getInputLinks(movedNode.getVertex())) {
             if (inputLink.getFrom().getVertex() == inputLink.getTo().getVertex()) continue;
             applyRemoveLinkAction(inputLink);
@@ -198,7 +189,7 @@ public class HierarchicalLayoutManager extends LayoutManager {
         movedNode.setWidth(movedNode.getVertex().getSize().width);
     }
 
-    public void addEdges(LayoutNode movedNode) {
+    private void addEdges(LayoutNode movedNode) {
         // BuildDatastructure
         List<Link> nodeLinks = new ArrayList<>(graph.getInputLinks(movedNode.getVertex()));
         nodeLinks.addAll(graph.getOutputLinks(movedNode.getVertex()));
@@ -329,8 +320,7 @@ public class HierarchicalLayoutManager extends LayoutManager {
         return optimalLayer;
     }
 
-    public void removeEmptyLayers(int emptyLayerNr) {
-
+    private void removeEmptyLayers(int emptyLayerNr) {
         if (0 < emptyLayerNr && emptyLayerNr < graph.getLayerCount() - 1) {
             LayoutLayer emptyLayer = graph.getLayer(emptyLayerNr);
             for (LayoutNode dummyNode : emptyLayer) {
@@ -362,7 +352,7 @@ public class HierarchicalLayoutManager extends LayoutManager {
         }
     }
 
-    public void moveNode(LayoutNode node, int newX, int newLayerNr) {
+    private void moveNode(LayoutNode node, int newX, int newLayerNr) {
         LayoutLayer layer = graph.getLayer(newLayerNr);
         int newPos = layer.findPosInLayer(newX);
 
