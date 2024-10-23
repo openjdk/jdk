@@ -3482,6 +3482,17 @@ void MacroAssembler::vpbroadcastd(XMMRegister dst, AddressLiteral src, int vecto
   }
 }
 
+void MacroAssembler::vbroadcasti128(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch) {
+  assert(rscratch != noreg || always_reachable(src), "missing");
+
+  if (reachable(src)) {
+    Assembler::vbroadcasti128(dst, as_Address(src), vector_len);
+  } else {
+    lea(rscratch, src);
+    Assembler::vbroadcasti128(dst, Address(rscratch, 0), vector_len);
+  }
+}
+
 void MacroAssembler::vpbroadcastq(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch) {
   assert(rscratch != noreg || always_reachable(src), "missing");
 
@@ -5084,7 +5095,8 @@ void MacroAssembler::clinit_barrier(Register klass, Register thread, Label* L_fa
     L_slow_path = &L_fallthrough;
   }
 
-  // Fast path check: class is fully initialized
+  // Fast path check: class is fully initialized.
+  // init_state needs acquire, but x86 is TSO, and so we are already good.
   cmpb(Address(klass, InstanceKlass::init_state_offset()), InstanceKlass::fully_initialized);
   jcc(Assembler::equal, *L_fast_path);
 
