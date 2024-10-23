@@ -42,7 +42,6 @@ public class CallerSensitiveTest {
     private static final String CSM_CALLER_METHOD = "caller";
 
     public static void main(String... args) throws Throwable {
-        System.err.println("Test without security manager.");
 
         CallerSensitiveTest cstest = new CallerSensitiveTest();
         // test static call to java.util.CSM::caller and CSM::getCallerClass
