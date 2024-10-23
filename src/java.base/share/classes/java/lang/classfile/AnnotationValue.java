@@ -24,23 +24,18 @@
  */
 package java.lang.classfile;
 
-import java.lang.classfile.constantpool.AnnotationConstantValueEntry;
-import java.lang.classfile.constantpool.DoubleEntry;
-import java.lang.classfile.constantpool.DynamicConstantPoolEntry;
-import java.lang.classfile.constantpool.FloatEntry;
-import java.lang.classfile.constantpool.IntegerEntry;
-import java.lang.classfile.constantpool.LongEntry;
-import java.lang.classfile.constantpool.Utf8Entry;
-import jdk.internal.classfile.impl.AnnotationImpl;
-import jdk.internal.classfile.impl.TemporaryConstantPool;
-
+import java.lang.classfile.constantpool.*;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.Constable;
 import java.util.ArrayList;
 import java.util.List;
 
+import jdk.internal.classfile.impl.AnnotationImpl;
+import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.classfile.impl.Util;
 import jdk.internal.javac.PreviewFeature;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * Models an {@code element_value} structure, or a value of an element-value
@@ -488,6 +483,8 @@ public sealed interface AnnotationValue {
      */
     static OfEnum ofEnum(Utf8Entry className,
                          Utf8Entry constantName) {
+        requireNonNull(className);
+        requireNonNull(constantName);
         return new AnnotationImpl.OfEnumImpl(className, constantName);
     }
 
@@ -506,6 +503,7 @@ public sealed interface AnnotationValue {
      * @param className the descriptor string of the class
      */
     static OfClass ofClass(Utf8Entry className) {
+        requireNonNull(className);
         return new AnnotationImpl.OfClassImpl(className);
     }
 
@@ -522,6 +520,7 @@ public sealed interface AnnotationValue {
      * @param value the string
      */
     static OfString ofString(Utf8Entry value) {
+        requireNonNull(value);
         return new AnnotationImpl.OfStringImpl(value);
     }
 
@@ -538,6 +537,7 @@ public sealed interface AnnotationValue {
      * @param value the double value
      */
     static OfDouble ofDouble(DoubleEntry value) {
+        requireNonNull(value);
         return new AnnotationImpl.OfDoubleImpl(value);
     }
 
@@ -554,6 +554,7 @@ public sealed interface AnnotationValue {
      * @param value the float value
      */
     static OfFloat ofFloat(FloatEntry value) {
+        requireNonNull(value);
         return new AnnotationImpl.OfFloatImpl(value);
     }
 
@@ -570,6 +571,7 @@ public sealed interface AnnotationValue {
      * @param value the long value
      */
     static OfLong ofLong(LongEntry value) {
+        requireNonNull(value);
         return new AnnotationImpl.OfLongImpl(value);
     }
 
@@ -586,6 +588,7 @@ public sealed interface AnnotationValue {
      * @param value the int value
      */
     static OfInt ofInt(IntegerEntry value) {
+        requireNonNull(value);
         return new AnnotationImpl.OfIntImpl(value);
     }
 
@@ -602,6 +605,7 @@ public sealed interface AnnotationValue {
      * @param value the short value
      */
     static OfShort ofShort(IntegerEntry value) {
+        requireNonNull(value);
         return new AnnotationImpl.OfShortImpl(value);
     }
 
@@ -618,6 +622,7 @@ public sealed interface AnnotationValue {
      * @param value the char value
      */
     static OfChar ofChar(IntegerEntry value) {
+        requireNonNull(value);
         return new AnnotationImpl.OfCharImpl(value);
     }
 
@@ -634,6 +639,7 @@ public sealed interface AnnotationValue {
      * @param value the byte value
      */
     static OfByte ofByte(IntegerEntry value) {
+        requireNonNull(value);
         return new AnnotationImpl.OfByteImpl(value);
     }
 
@@ -650,6 +656,7 @@ public sealed interface AnnotationValue {
      * @param value the boolean value
      */
     static OfBoolean ofBoolean(IntegerEntry value) {
+        requireNonNull(value);
         return new AnnotationImpl.OfBooleanImpl(value);
     }
 
@@ -667,6 +674,7 @@ public sealed interface AnnotationValue {
      * @param value the annotation
      */
     static OfAnnotation ofAnnotation(Annotation value) {
+        requireNonNull(value);
         return new AnnotationImpl.OfAnnotationImpl(value);
     }
 
@@ -784,6 +792,6 @@ public sealed interface AnnotationValue {
         } else if (value instanceof Enum<?> e) {
             return ofEnum(ClassDesc.ofDescriptor(e.getDeclaringClass().descriptorString()), e.name());
         }
-        throw new IllegalArgumentException("Illegal annotation constant value type " + (value == null ? null : value.getClass()));
+        throw new IllegalArgumentException("Illegal annotation constant value type " + requireNonNull(value).getClass());
     }
 }

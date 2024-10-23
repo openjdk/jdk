@@ -24,8 +24,9 @@
  */
 package java.lang.classfile.constantpool;
 
-import jdk.internal.classfile.impl.AbstractPoolEntry;
 import java.lang.constant.ModuleDesc;
+
+import jdk.internal.classfile.impl.AbstractPoolEntry;
 import jdk.internal.javac.PreviewFeature;
 
 /**

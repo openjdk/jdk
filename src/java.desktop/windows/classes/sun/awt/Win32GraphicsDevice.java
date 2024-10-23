@@ -41,6 +41,7 @@ import java.awt.image.ColorModel;
 import java.awt.peer.WindowPeer;
 import java.util.ArrayList;
 
+import sun.awt.image.SurfaceManager;
 import sun.awt.windows.WWindowPeer;
 import sun.java2d.SunGraphicsEnvironment;
 import sun.java2d.opengl.WGLGraphicsConfig;
@@ -89,6 +90,8 @@ public class Win32GraphicsDevice extends GraphicsDevice implements
 
     private float scaleX;
     private float scaleY;
+
+    final SurfaceManager.ProxyCache surfaceDataProxyCache = new SurfaceManager.ProxyCache();
 
     static {
 
