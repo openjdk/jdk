@@ -41,6 +41,7 @@ jint handleAvailable(FD fd, jlong *pbytes);
 jint handleSetLength(FD fd, jlong length);
 jlong handleGetLength(FD fd);
 FD handleOpen(const char *path, int oflag, int mode);
+jboolean handleCanSeek(JNIEnv* env, FD fd);
 
 /*
  * Functions to get fd from the java.io.FileDescriptor field
@@ -66,6 +67,7 @@ FD getFD(JNIEnv *env, jobject cur, jfieldID fid);
 #define IO_Available handleAvailable
 #define IO_SetLength handleSetLength
 #define IO_GetLength handleGetLength
+#define IO_CanSeek handleCanSeek
 
 /*
  * On Solaris, the handle field is unused

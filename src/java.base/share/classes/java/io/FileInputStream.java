@@ -331,6 +331,9 @@ public class FileInputStream extends InputStream
 
     @Override
     public byte[] readAllBytes() throws IOException {
+        if (!canSeek())
+            return super.readAllBytes();
+
         long length = length();
         long position = position();
         long size = length - position;
@@ -382,6 +385,9 @@ public class FileInputStream extends InputStream
         if (len == 0)
             return new byte[0];
 
+        if (!canSeek())
+            return super.readNBytes(len);
+
         long length = length();
         long position = position();
         long size = length - position;
@@ -418,7 +424,7 @@ public class FileInputStream extends InputStream
     @Override
     public long transferTo(OutputStream out) throws IOException {
         long transferred = 0L;
-        if (out instanceof FileOutputStream fos) {
+        if (out instanceof FileOutputStream fos && canSeek()) {
             FileChannel fc = getChannel();
             long pos = fc.position();
             transferred = fc.transferTo(pos, Long.MAX_VALUE, fos.getChannel());
@@ -471,7 +477,10 @@ public class FileInputStream extends InputStream
      */
     @Override
     public long skip(long n) throws IOException {
-        return skip0(n);
+        if (canSeek())
+            return skip0(n);
+
+        return super.skip(n);
     }
 
     private native long skip0(long n) throws IOException;
@@ -602,6 +611,15 @@ public class FileInputStream extends InputStream
         }
         return fc;
     }
+
+    /**
+     * Whether seeking is supported. Seeking is used in the implementations of
+     * position0() and skip0().
+     */
+    private boolean canSeek() {
+        return canSeek0(fd);
+    }
+    private native boolean canSeek0(FileDescriptor fd);
 
     private static native void initIDs();
 
