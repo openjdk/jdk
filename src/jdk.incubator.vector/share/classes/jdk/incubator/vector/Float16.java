@@ -53,6 +53,21 @@ import static java.lang.Float.floatToFloat16;
  * use instances for synchronization, or unpredictable behavior may
  * occur. For example, in a future release, synchronization may fail.
  *
+ * <h2><a id=equivalenceRelation>Floating-point Equality, Equivalence,
+ * and Comparison</a></h2>
+ *
+ * The class {@code java.lang.Double} has a {@linkplain
+ * Double##equivalenceRelation discussion of equality,
+ * equivalence, and comparison of floating-point values} that is
+ * equally applicable to {@code Float16} values.
+ *
+ * <h2><a id=decimalToBinaryConversion>Decimal &harr; Binary Conversion Issues</a></h2>
+ *
+ * The {@linkplain Double##decimalToBinaryConversion discussion of binary to
+ * decimal conversion issues} in {@code java.lang.Double} is also
+ * applicable to {@code Float16} values.
+ *
+ *
  * @apiNote
  * The methods in this class generally have analogous methods in
  * either {@link Float}/{@link Double} or {@link Math}/{@link
@@ -64,6 +79,9 @@ import static java.lang.Float.floatToFloat16;
  * {@code Math}, etc.
  *
  * @since 24
+ *
+ * @see <a href="https://standards.ieee.org/ieee/754/6210/">
+ *      <cite>IEEE Standard for Floating-Point Arithmetic</cite></a>
  */
 
 // Currently Float16 is a value-based class and in future it is
@@ -87,7 +105,7 @@ public final class Float16
     *
     * @param  bits a short value.
     */
-    private Float16(short bits ) {
+    private Float16(short bits) {
         this.value = bits;
     }
 
