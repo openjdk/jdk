@@ -35,6 +35,7 @@ import java.io.IOError;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.Reader;
@@ -125,6 +126,8 @@ import jdk.internal.org.jline.reader.UserInterruptException;
 import static java.util.Arrays.asList;
 import static java.util.Arrays.stream;
 import static java.util.Collections.singletonList;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import static java.util.stream.Collectors.joining;
 import static jdk.jshell.Snippet.SubKind.TEMP_VAR_EXPRESSION_SUBKIND;
 import static jdk.jshell.Snippet.SubKind.VAR_VALUE_SUBKIND;
@@ -1192,7 +1195,7 @@ public class JShellTool implements MessageHandler {
 
     //where
     private void startUpRun(String start) {
-        try (IOContext suin = new ScannerIOContext(new StringReader(start))) {
+        try (IOContext suin = new ScannerIOContext(new StringReader(start), userout)) {
             while (run(suin)) {
                 if (!live) {
                     resetState();
@@ -3125,7 +3128,7 @@ public class JShellTool implements MessageHandler {
                         throw new FileNotFoundException(filename);
                     }
                 }
-                try (var scannerIOContext = new ScannerIOContext(scanner)) {
+                try (var scannerIOContext = new ScannerIOContext(scanner, userout)) {
                     run(scannerIOContext);
                 }
                 return true;
@@ -3288,8 +3291,10 @@ public class JShellTool implements MessageHandler {
             resetState();
         }
         if (history != null) {
-            run(new ReloadIOContext(history.iterable(),
-                    echo ? cmdout : null));
+            try (ReloadIOContext ctx = new ReloadIOContext(history.iterable(),
+                    echo ? cmdout : null, userout)) {
+                run(ctx);
+            }
         }
         return true;
     }
@@ -4135,6 +4140,12 @@ public class JShellTool implements MessageHandler {
 
 abstract class NonInteractiveIOContext extends IOContext {
 
+    private final Writer userOutput;
+
+    public NonInteractiveIOContext(PrintStream userOutput) {
+        this.userOutput = new OutputStreamWriter(userOutput);
+    }
+
     @Override
     public boolean interactiveOutput() {
         return false;
@@ -4169,17 +4180,33 @@ abstract class NonInteractiveIOContext extends IOContext {
     @Override
     public void replaceLastHistoryEntry(String source) {
     }
+
+    @Override
+    public Writer userOutput() {
+        return userOutput;
+    }
+
+    @Override
+    public void close() {
+        try {
+            userOutput.flush();
+        } catch (IOException _) {
+            //ignore
+        }
+    }
+
 }
 
 class ScannerIOContext extends NonInteractiveIOContext {
     private final Scanner scannerIn;
 
-    ScannerIOContext(Scanner scannerIn) {
+    ScannerIOContext(Scanner scannerIn, PrintStream userOutput) {
+        super(userOutput);
         this.scannerIn = scannerIn;
     }
 
-    ScannerIOContext(Reader rdr) throws FileNotFoundException {
-        this(new Scanner(rdr));
+    ScannerIOContext(Reader rdr, PrintStream userOutput) throws FileNotFoundException {
+        this(new Scanner(rdr), userOutput);
     }
 
     @Override
@@ -4193,6 +4220,7 @@ class ScannerIOContext extends NonInteractiveIOContext {
 
     @Override
     public void close() {
+        super.close();
         scannerIn.close();
     }
 
@@ -4206,7 +4234,8 @@ class ReloadIOContext extends NonInteractiveIOContext {
     private final Iterator<String> it;
     private final PrintStream echoStream;
 
-    ReloadIOContext(Iterable<String> history, PrintStream echoStream) {
+    ReloadIOContext(Iterable<String> history, PrintStream echoStream, PrintStream userOutput) {
+        super(userOutput);
         this.it = history.iterator();
         this.echoStream = echoStream;
     }
