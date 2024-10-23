@@ -117,8 +117,7 @@ public class ParameterArraySizeLimit {
                 }
                 """;
 
-        FileWriter writer = new FileWriter(String.valueOf(out));
-        BufferedWriter bufferedWriter = new BufferedWriter(writer);
+        BufferedWriter bufferedWriter = Files.newBufferedWriter(out);
         bufferedWriter.write(customAnno);
         bufferedWriter.write(annotation);
 
