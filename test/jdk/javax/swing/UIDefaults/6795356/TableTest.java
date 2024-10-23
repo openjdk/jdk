@@ -28,9 +28,9 @@
  * @run main TableTest
  */
 
+import java.awt.KeyboardFocusManager;
 import javax.swing.JTable;
 import javax.swing.table.TableCellEditor;
-import java.awt.KeyboardFocusManager;
 
 public class TableTest {
 

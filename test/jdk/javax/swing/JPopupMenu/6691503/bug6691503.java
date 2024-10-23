@@ -31,12 +31,12 @@
  * @run main bug6691503
  */
 
+import java.awt.Robot;
+import java.awt.Window;
 import javax.swing.JFrame;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.SwingUtilities;
-import java.awt.Robot;
-import java.awt.Window;
 
 public class bug6691503 {
     private static JFrame frame;
