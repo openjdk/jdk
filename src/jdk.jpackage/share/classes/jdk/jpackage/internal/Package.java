@@ -131,8 +131,8 @@ interface Package {
         if (type() instanceof StandardPackageType type) {
             switch (type) {
                 case WinMsi, WinExe -> {
-                    return Path
-                            .of(String.format("%s-%s%s", packageName(), version(), type.suffix()));
+                    return Path.of(String.format("%s-%s%s", packageName(),
+                            version(), type.suffix()));
                 }
             }
         }
@@ -203,7 +203,7 @@ interface Package {
             String description, String version, String aboutURL, Path licenseFile,
             Path predefinedAppImage, Path configuredInstallBaseDir) implements Package {
 
-        public Impl         {
+        public Impl {
             description = Optional.ofNullable(description).orElseGet(app::description);
             version = Optional.ofNullable(version).orElseGet(app::version);
             packageName = Optional.ofNullable(packageName).orElseGet(app::name);
