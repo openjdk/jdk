@@ -30,7 +30,6 @@
 
 
 import java.io.BufferedWriter;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
@@ -120,7 +119,7 @@ public class ParameterArraySizeLimit {
         bufferedWriter.write(customAnno);
         bufferedWriter.write(annotation);
 
-        for (int i = 0; i < value; i++) {
+        for (int i = 0; i < value - 1; i++) {
             bufferedWriter.write("-1,");
         }
 
