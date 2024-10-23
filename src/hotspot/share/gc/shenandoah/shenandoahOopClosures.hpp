@@ -94,7 +94,6 @@ public:
   virtual void do_oop(oop* p)       { do_oop_work(p); }
 };
 
-
 class ShenandoahUpdateRefsSuperClosure : public ShenandoahOopClosureBase {
 protected:
   ShenandoahHeap* _heap;
@@ -103,15 +102,13 @@ public:
   ShenandoahUpdateRefsSuperClosure() :  _heap(ShenandoahHeap::heap()) {}
 };
 
-class ShenandoahSTWUpdateRefsClosure : public ShenandoahUpdateRefsSuperClosure {
+class ShenandoahNonConcUpdateRefsClosure : public ShenandoahUpdateRefsSuperClosure {
 private:
   template<class T>
   inline void work(T* p);
 
 public:
-  ShenandoahSTWUpdateRefsClosure() : ShenandoahUpdateRefsSuperClosure() {
-    assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Must only be used at safepoints");
-  }
+  ShenandoahNonConcUpdateRefsClosure() : ShenandoahUpdateRefsSuperClosure() {}
 
   virtual void do_oop(narrowOop* p) { work(p); }
   virtual void do_oop(oop* p)       { work(p); }

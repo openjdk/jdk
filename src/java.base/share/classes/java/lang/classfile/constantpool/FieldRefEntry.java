@@ -24,10 +24,11 @@
  */
 package java.lang.classfile.constantpool;
 
+import java.lang.constant.ClassDesc;
+
 import jdk.internal.classfile.impl.AbstractPoolEntry;
 import jdk.internal.classfile.impl.Util;
 import jdk.internal.javac.PreviewFeature;
-import java.lang.constant.ClassDesc;
 
 /**
  * Models a {@code CONSTANT_Fieldref_info} constant in the constant pool of a
