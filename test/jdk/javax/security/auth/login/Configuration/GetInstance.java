@@ -85,13 +85,13 @@ public class GetInstance {
     private int testStringProvider(int testnum) throws Exception {
         // get an instance of JavaLoginConfig from SUN
         Configuration c = Configuration.getInstance(JAVA_CONFIG, null,
-                System.getProperty("test.provider.name","SUN"));
+                System.getProperty("test.provider.name", "SUN"));
         doTest(c, testnum++);
 
         // get an instance of JavaLoginConfig from SunRsaSign
         try {
             c = Configuration.getInstance(JAVA_CONFIG, null,
-                    System.getProperty("test.provider.name","SunRsaSign"));
+                    System.getProperty("test.provider.name", "SunRsaSign"));
             throw new SecurityException("test " + testnum++ + " failed");
         } catch (NoSuchAlgorithmException nsae) {
             // good
@@ -115,7 +115,7 @@ public class GetInstance {
         Configuration c = Configuration.getInstance(JAVA_CONFIG,
                                 null,
                                 Security.getProvider(
-                                        System.getProperty("test.provider.name","SUN")));
+                                        System.getProperty("test.provider.name", "SUN")));
         doTest(c, testnum++);
 
         // get an instance of JavaLoginConfig from SunRsaSign
