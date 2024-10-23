@@ -224,7 +224,7 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
         String installerName = getArgumentValue("--name",
                 () -> getArgumentValue("--main-class", () -> null));
         if (installerName == null) {
-            String appImage = getArgumentValue("--app-image");
+            String appImage = getArgumentValue("--app-image", () -> null);
             if (appImage != null) {
                 installerName = AppImageFile.extractAppName(Path.of(appImage));
             }
@@ -301,12 +301,9 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
 
     public void createJPackageXMLFile(String mainLauncher, String mainClass)
             throws IOException {
-        Path jpackageXMLFile = AppImageFile.getPathInAppImage(
-                Optional.ofNullable(getArgumentValue("--app-image")).map(
-                        Path::of).orElseThrow(() -> {
-                            return new RuntimeException(
-                                    "Error: --app-image expected");
-                        }));
+        Path jpackageXMLFile = AppImageFile.getPathInAppImage(getArgumentValue("--app-image", () -> {
+            throw new RuntimeException("Error: --app-image expected");
+        }, Path::of));
 
         IOUtils.createXml(jpackageXMLFile, xml -> {
                 xml.writeStartElement("jpackage-state");
@@ -831,7 +828,7 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
                         "Contents/MacOS/libjli.dylib"));
             }
 
-            var mainJar = getArgumentValue("--main-jar");
+            var mainJar = getArgumentValue("--main-jar", () -> null);
             if (mainJar != null) {
                 TKit.assertFileExists(appLayout().appDirectory().resolve(mainJar));
             }
@@ -843,7 +840,7 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
     private void assertAppImageFile() {
         Path appImageDir = Path.of("");
         if (isImagePackageType() && hasArgument("--app-image")) {
-            appImageDir = Path.of(getArgumentValue("--app-image", () -> null));
+            appImageDir = Path.of(getArgumentValue("--app-image"));
         }
 
         final Path lookupPath = AppImageFile.getPathInAppImage(appImageDir);
@@ -883,8 +880,7 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
             assertFileInAppImage(lookupPath, null);
         } else {
             if (TKit.isOSX() && hasArgument("--app-image")) {
-                String appImage = getArgumentValue("--app-image",
-                        () -> null);
+                String appImage = getArgumentValue("--app-image");
                 if (AppImageFile.load(Path.of(appImage)).isSigned()) {
                     assertFileInAppImage(lookupPath, null);
                 } else {
