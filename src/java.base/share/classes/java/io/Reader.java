@@ -145,15 +145,15 @@ public abstract class Reader implements Readable, Closeable {
      * {@code CharSequence}. The reader is initially open and reading starts at
      * the first character in the sequence.
      *
+     * <p> The returned reader supports the {@link #mark mark()} and
+     * {@link #reset reset()} operations.
+     *
      * <p> The resulting reader is not safe for use by multiple
      * concurrent threads. If the reader is to be used by more than one
      * thread it should be controlled by appropriate synchronization.
      *
      * <p> If the sequence changes while the reader is open, e.g. the length
      * changes, the behavior is undefined.
-     *
-     * <p> The returned reader supports the {@link #mark mark()} and
-     * {@link #reset reset()} operations.
      *
      * @param cs {@code CharSequence} providing the character stream.
      * @return a {@code Reader} which reads characters from {@code cs}
