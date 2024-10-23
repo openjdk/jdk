@@ -276,10 +276,10 @@ public sealed interface ClassDesc
 
     /**
      * {@return a human-readable name for this {@code ClassDesc}}
-     * It is the simple name (e.g., {@code int}) for primitive types, the
-     * unqualified class name for class or interface types, or the
-     * human-readable name of the component type suffixed with the
-     * appropriate number of {@code []} pairs for array types.
+     * For primitive types, this method returns the simple name (such as {@code int}).
+     * For class or interface types, this method returns the unqualified class name.
+     * For array types, this method returns the human-readable name of the component
+     * type suffixed with the appropriate number of {@code []} pairs.
      */
     String displayName();
 

@@ -102,7 +102,7 @@ public final class ArrayClassDescImpl implements ClassDesc {
 
     @Override
     public String displayName() {
-        return componentType().displayName() + "[]".repeat(rank);
+        return elementType.displayName() + "[]".repeat(rank);
     }
 
     @Override
