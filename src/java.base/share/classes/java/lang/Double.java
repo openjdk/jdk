@@ -459,8 +459,7 @@ public final class Double extends Number
      *
      * @since 1.1
      */
-    @SuppressWarnings("unchecked")
-    public static final Class<Double>   TYPE = (Class<Double>) Class.getPrimitiveClass("double");
+    public static final Class<Double> TYPE = Class.getPrimitiveClass("double");
 
     /**
      * Returns a string representation of the {@code double}
