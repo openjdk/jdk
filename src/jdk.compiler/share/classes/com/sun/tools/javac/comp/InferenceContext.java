@@ -214,6 +214,13 @@ public class InferenceContext {
         return buf.toList();
     }
 
+    /**
+     * Replace all undet vars in a given type with corresponding free variables
+     */
+    public final Type asTVar(Type t) {
+        return types.subst(t, undetvars, inferencevars);
+    }
+
     List<Type> instTypes() {
         ListBuffer<Type> buf = new ListBuffer<>();
         for (Type t : undetvars) {

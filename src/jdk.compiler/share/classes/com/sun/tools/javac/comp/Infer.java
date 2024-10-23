@@ -1195,10 +1195,10 @@ public class Infer {
         }
 
     boolean doIncorporationOp(IncorporationBinaryOpKind opKind, Type op1, Type op2, Warner warn, InferenceContext ic) {
-            IncorporationBinaryOp newOp = new IncorporationBinaryOp(opKind, op1, op2, ic);
+            IncorporationBinaryOpKey newOp = new IncorporationBinaryOpKey(opKind, new TypeOperands(ic.asTVar(op1), ic.asTVar(op2), types));
             Boolean res = incorporationCache.get(newOp);
             if (res == null) {
-                incorporationCache.put(newOp, res = newOp.apply(warn));
+                incorporationCache.put(newOp, res = opKind.apply(op1, op2, warn, types));
             }
             return res;
         }
@@ -1232,57 +1232,19 @@ public class Infer {
      * are not executed unnecessarily (which would potentially lead to adding
      * same bounds over and over).
      */
-    class IncorporationBinaryOp {
+    record IncorporationBinaryOpKey(IncorporationBinaryOpKind opKind, TypeOperands typeOperands) {}
 
-        IncorporationBinaryOpKind opKind;
-        Type op1;
-        Type op2;
-        InferenceContext ic;
-
-        IncorporationBinaryOp(IncorporationBinaryOpKind opKind, Type op1, Type op2, InferenceContext ic) {
-            this.opKind = opKind;
-            this.op1 = op1;
-            this.op2 = op2;
-            this.ic = ic;
-        }
-
+    record TypeOperands(Type op1, Type op2, Types types) {
         @Override
         public boolean equals(Object o) {
-            return (o instanceof IncorporationBinaryOp incorporationBinaryOp)
-                    && opKind == incorporationBinaryOp.opKind
-                    && types.isSameType(undetVarToTVar(op1), undetVarToTVar(incorporationBinaryOp.op1))
-                    && types.isSameType(undetVarToTVar(op2), undetVarToTVar(incorporationBinaryOp.op2));
-        }
-
-        @Override
-        public int hashCode() {
-            int result = opKind.hashCode();
-            result *= 127;
-            result += types.hashCode(undetVarToTVar(op1));
-            result *= 127;
-            result += types.hashCode(undetVarToTVar(op2));
-            return result;
-        }
-
-        /**
-         * This method will map all occurrences of undetermined variables in a given type to its corresponding inference
-         * variable. This is done to avoid that while doing a "is same type" comparison with another type, an
-         * undetermined variable can be modified, by adding a bound to it, making it different to what it was before
-         * the comparison.
-         * @param t type for which undetermined variables will be mapped to the corresponding inference variable
-         * @return a type with no undetermined variables
-         */
-        Type undetVarToTVar(Type t) {
-            return types.subst(t, ic.undetvars, ic.inferencevars);
-        }
-
-        boolean apply(Warner warn) {
-            return opKind.apply(op1, op2, warn, types);
+            return (o instanceof TypeOperands typeOperands)
+                    && types.isSameType(op1, typeOperands.op1)
+                    && types.isSameType(op2, typeOperands.op2);
         }
     }
 
     /** an incorporation cache keeps track of all executed incorporation-related operations */
-    Map<IncorporationBinaryOp, Boolean> incorporationCache = new LinkedHashMap<>();
+    Map<IncorporationBinaryOpKey, Boolean> incorporationCache = new LinkedHashMap<>();
 
     protected static class BoundFilter implements Predicate<Type> {
 
