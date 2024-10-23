@@ -77,7 +77,8 @@ public:
     ShenandoahHeap* heap = ShenandoahHeap::heap();
     ShenandoahMarkingContext* const ctx = heap->marking_context();
     while (region != nullptr) {
-      bool needs_reset = _generation->contains(region) || !region->is_affiliated();
+      auto const affiliation = region->affiliation();
+      bool needs_reset = affiliation == FREE || _generation->contains(affiliation);
       if (needs_reset && heap->is_bitmap_slice_committed(region)) {
         ctx->clear_bitmap(region);
       }

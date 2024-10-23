@@ -27,6 +27,7 @@
 
 #include "memory/allocation.hpp"
 #include "gc/shenandoah/heuristics/shenandoahSpaceInfo.hpp"
+#include "gc/shenandoah/shenandoahAffiliation.hpp"
 #include "gc/shenandoah/shenandoahGenerationType.hpp"
 #include "gc/shenandoah/shenandoahLock.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.hpp"
@@ -174,6 +175,8 @@ private:
 
   // Cancel marking (used by Full collect and when cancelling cycle).
   virtual void cancel_marking();
+
+  virtual bool contains(ShenandoahAffiliation affiliation) const = 0;
 
   // Return true if this region is affiliated with this generation.
   virtual bool contains(ShenandoahHeapRegion* region) const = 0;

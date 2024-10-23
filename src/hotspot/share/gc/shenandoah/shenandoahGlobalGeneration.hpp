@@ -47,6 +47,7 @@ public:
 
   void set_concurrent_mark_in_progress(bool in_progress) override;
 
+  bool contains(ShenandoahAffiliation affiliation) const override;
   bool contains(ShenandoahHeapRegion* region) const override;
 
   bool contains(oop obj) const override {

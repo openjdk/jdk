@@ -315,6 +315,9 @@ size_t ShenandoahOldGeneration::usage_trigger_threshold() const {
   return result;
 }
 
+bool ShenandoahOldGeneration::contains(ShenandoahAffiliation affiliation) const {
+  return affiliation == OLD_GENERATION;
+}
 bool ShenandoahOldGeneration::contains(ShenandoahHeapRegion* region) const {
   return region->is_old();
 }
