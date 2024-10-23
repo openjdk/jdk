@@ -28,6 +28,7 @@
  * @author maddox
  *
  * @compile OuterParameter_1.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 OuterParameter_1.java
  * @run main OuterParameter_1
  */
 

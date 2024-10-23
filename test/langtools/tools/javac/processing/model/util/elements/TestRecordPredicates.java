@@ -28,6 +28,7 @@
  * @library /tools/javac/lib
  * @build   JavacTestingAbstractProcessor TestRecordPredicates
  * @compile -processor TestRecordPredicates -proc:only TestRecordPredicates.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor TestRecordPredicates -proc:only TestRecordPredicates.java
  */
 
 import java.lang.annotation.*;

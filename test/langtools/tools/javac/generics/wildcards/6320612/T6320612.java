@@ -26,6 +26,7 @@
  * @bug     6320612
  * @summary Unwarranted unchecked warning for inner class of "wildcard" type
  * @compile -Werror -Xlint:unchecked T6320612.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -Werror -Xlint:unchecked T6320612.java
  */
 
 public class T6320612<T> {

@@ -26,6 +26,7 @@
  * @bug 8023389
  * @summary Javac fails to infer type for lambda used with intersection type and wildcards
  * @compile T8023389.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T8023389.java
  */
 public class T8023389 {
 

@@ -31,6 +31,7 @@
  *          jdk.compiler
  * @build   JavacTestingAbstractProcessor TypeParamBounds
  * @compile -processor TypeParamBounds -proc:only TypeParamBounds.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor TypeParamBounds -proc:only TypeParamBounds.java
  */
 
 import java.util.HashMap;

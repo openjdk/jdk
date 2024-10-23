@@ -29,6 +29,7 @@
  * @modules java.compiler
  *          jdk.compiler
  * @compile TestSourceVersionWarnings.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TestSourceVersionWarnings.java
  * @compile/ref=gold_0.out             -XDrawDiagnostics -processor TestSourceVersionWarnings -proc:only                            -source  8 -Xlint:-options HelloWorld.java
  * @compile/ref=gold_sv_warn_5_6.out   -XDrawDiagnostics -processor TestSourceVersionWarnings -proc:only -ASourceVersion=RELEASE_5  -source  8 -Xlint:-options HelloWorld.java
  * @compile/ref=gold_unsp_warn.out     -XDrawDiagnostics -processor TestSourceVersionWarnings -proc:only -ASourceVersion=RELEASE_8  -source  8 -Xlint:-options -Aunsupported HelloWorld.java

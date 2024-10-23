@@ -28,6 +28,7 @@
  * @summary  basic test for diamond (generic/non-generic constructors)
  * @author mcimadamore
  * @compile Pos01.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Pos01.java
  * @run main Pos01
  *
  */

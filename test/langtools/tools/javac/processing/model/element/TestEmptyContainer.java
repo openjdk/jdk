@@ -30,6 +30,7 @@
  * @modules jdk.compiler/com.sun.tools.javac.util
  * @build   JavacTestingAbstractProcessor TestEmptyContainer
  * @compile -XDaccessInternalAPI -processor TestEmptyContainer -proc:only TestEmptyContainer.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -XDaccessInternalAPI -processor TestEmptyContainer -proc:only TestEmptyContainer.java
  */
 
 import com.sun.tools.javac.util.Assert;

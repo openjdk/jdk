@@ -27,6 +27,7 @@
  * @summary Add lambda tests
  *  lambda compiler crashes if lambda has try-with-resources
  * @compile LambdaConv17.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 LambdaConv17.java
  */
 
 class LambdaConv17 {

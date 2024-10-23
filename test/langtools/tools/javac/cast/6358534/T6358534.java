@@ -26,6 +26,7 @@
  * @bug     6358534
  * @summary Cast involving raw superclass not recognized as unchecked
  * @compile T6358534.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T6358534.java
  */
 
 interface MyInterface<V> { }

@@ -27,6 +27,7 @@
  * @summary check that common overrider solves default method conflicts
  * @author  Maurizio Cimadamore
  * @compile Pos08.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Pos08.java
  */
 
 class Pos08 {

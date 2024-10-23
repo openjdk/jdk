@@ -26,6 +26,7 @@
  * @bug 8002099
  * @summary Add support for intersection types in cast expression
  * @compile Intersection01.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Intersection01.java
  */
 class Intersection01 {
 

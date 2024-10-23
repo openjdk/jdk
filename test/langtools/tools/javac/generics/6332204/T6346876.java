@@ -26,6 +26,7 @@
  * @bug     6332204
  * @summary com.sun.tools.javac.code.Types.lub() throws NPE
  * @compile T6346876.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T6346876.java
  */
 
 public final class T6346876 {

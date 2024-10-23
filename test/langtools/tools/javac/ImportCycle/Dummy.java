@@ -28,7 +28,9 @@
  * @author turnidge
  *
  * @compile foo/Middle.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 foo/Middle.java
  * @compile foo/Middle2.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 foo/Middle2.java
  */
 
 public class Dummy {}

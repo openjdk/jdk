@@ -35,6 +35,7 @@
  * @build toolbox.ToolBox toolbox.JavacTask
  * @build combo.ComboTestHelper
  * @compile ScopeResizeTest.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 ScopeResizeTest.java
  * @run main ScopeResizeTest
  */
 

@@ -26,6 +26,7 @@
  * @bug 7043371
  * @summary javac7 fails with NPE during compilation
  * @compile T7043371.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T7043371.java
  */
 
 @interface Anno {

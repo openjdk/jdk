@@ -28,6 +28,7 @@
  * @author Naoto Sato
  *
  * @compile SupplementaryJavaID1.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 SupplementaryJavaID1.java
  * @run main SupplementaryJavaID1
  */
 

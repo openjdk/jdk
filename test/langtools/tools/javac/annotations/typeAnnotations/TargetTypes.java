@@ -34,6 +34,7 @@ import java.io.*;
  * @author Mahmood Ali
  * @author Yuri Gaevsky
  * @compile TargetTypes.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TargetTypes.java
  */
 
 @Target({TYPE_USE, TYPE_PARAMETER, TYPE}) @Retention(RetentionPolicy.RUNTIME) @interface A {}

@@ -28,6 +28,7 @@
  * @author Srikanth Sankaran
  *
  * @compile -g:none ConditionalWithFinalStrings.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -g:none ConditionalWithFinalStrings.java
  * @run main ConditionalWithFinalStrings
  */
 

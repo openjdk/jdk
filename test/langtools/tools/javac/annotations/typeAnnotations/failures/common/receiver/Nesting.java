@@ -27,6 +27,7 @@
  * @summary Ensure that nested classes/methods work
  * @author Werner Dietl
  * @compile Nesting.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Nesting.java
  */
 
 import java.lang.annotation.ElementType;

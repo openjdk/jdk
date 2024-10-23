@@ -28,7 +28,9 @@
  * @author  Peter von der Ah\u00e9
  * @modules jdk.compiler
  * @compile TestGetTree.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TestGetTree.java
  * @compile -processor TestGetTree -proc:only TestGetTree.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor TestGetTree -proc:only TestGetTree.java
  */
 
 import java.util.Set;

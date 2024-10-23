@@ -4,6 +4,7 @@
  * @modules java.compiler
  *          jdk.compiler
  * @compile Anno2.java AnnoProcessor.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Anno2.java AnnoProcessor.java
  * @compile/fail/ref=LambdaInAnnotationsCausesNPETest3.out -XDrawDiagnostics -processor AnnoProcessor -proc:only LambdaInAnnotationsCausesNPETest3.java
  */
 

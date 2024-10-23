@@ -28,6 +28,7 @@
  * @author gafter
  *
  * @compile  UnboundArray.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  UnboundArray.java
  */
 
 class C<E> {

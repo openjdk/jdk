@@ -27,6 +27,7 @@
  * @summary type arguments to non-generic methods
  * @author  Peter von der Ah\u00e9
  * @compile Pos.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Pos.java
  */
 
 public class Pos {

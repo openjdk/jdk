@@ -27,5 +27,6 @@
  * @summary allow unicode escape at start of program
  * @author Peter von der Ah\u00e9
  * @compile FirstChar2.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 FirstChar2.java
  * @run main FirstChar2
  */

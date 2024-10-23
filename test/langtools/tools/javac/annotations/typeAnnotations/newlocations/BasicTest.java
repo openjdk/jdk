@@ -27,6 +27,7 @@
  * @summary random tests for new locations
  * @author Matt Papi
  * @compile BasicTest.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 BasicTest.java
  */
 
 import java.lang.annotation.*;

@@ -7,6 +7,7 @@
  * @build JavacTestingAbstractProcessor
  * @compile/fail/ref=NegTest.out -XDrawDiagnostics TestImportStar.java
  * @compile Anno.java AnnoProcessor.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Anno.java AnnoProcessor.java
  * @compile/fail/ref=TestImportStar.out -XDrawDiagnostics -processor AnnoProcessor -proc:only TestImportStar.java
  */
 

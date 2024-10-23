@@ -26,6 +26,7 @@
  * @bug 8057800
  * @summary Method reference with generic type creates NPE when compiling
  * @compile NPEMethodReferenceAndGenericsTest.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 NPEMethodReferenceAndGenericsTest.java
  */
 
 public class NPEMethodReferenceAndGenericsTest {

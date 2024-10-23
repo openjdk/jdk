@@ -39,6 +39,7 @@
  *          jdk.jdeps/com.sun.tools.javap
  * @build toolbox.JarTask toolbox.JavacTask toolbox.JavapTask toolbox.ToolBox
  * @compile CharImmediateValue.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 CharImmediateValue.java
  * @run main CharImmediateValue
  */
 

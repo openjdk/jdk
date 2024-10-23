@@ -27,6 +27,7 @@
  * @summary Creation of array of inner class of an enclosing wildcard type doesn't work
  * @author  Scott Violet
  * @compile Foo.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Foo.java
  */
 
 public class Foo<T> {

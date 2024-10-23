@@ -34,6 +34,7 @@
  * @build toolbox.ToolBox toolbox.JavacTask
  * @build combo.ComboTestHelper
  * @compile T8235564.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T8235564.java
  * @run main T8235564
  */
 

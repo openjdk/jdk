@@ -26,6 +26,7 @@
  * @bug 8016081
  * @summary field initialized with lambda in annotation types doesn't compile
  * @compile T8016081.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T8016081.java
  */
 
 class T8016081 {

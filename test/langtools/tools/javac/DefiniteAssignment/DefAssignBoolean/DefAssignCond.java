@@ -28,6 +28,7 @@
  * @author gafter
  *
  * @compile DefAssignCond.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 DefAssignCond.java
  * @run main DefAssignCond
  */
 

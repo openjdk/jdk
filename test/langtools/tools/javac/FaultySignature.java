@@ -29,6 +29,7 @@
  * @author turnidge
  *
  * @compile FaultySignature.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 FaultySignature.java
  * @run main FaultySignature
  */
 

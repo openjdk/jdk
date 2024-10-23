@@ -26,6 +26,7 @@
  * @bug 8012238
  * @summary Nested method capture and inference
  * @compile NestedCapture01.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 NestedCapture01.java
  */
 class NestedCapture01 {
 

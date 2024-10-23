@@ -26,6 +26,7 @@
  * @summary test acceptance of varargs annotations
  * @author Mahmood Ali
  * @compile Varargs.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Varargs.java
  */
 
 import java.lang.annotation.*;

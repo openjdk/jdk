@@ -28,6 +28,7 @@
  * @author turnidge
  *
  * @compile IllegallyOptimizedException.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 IllegallyOptimizedException.java
  * @run main IllegallyOptimizedException
  */
 

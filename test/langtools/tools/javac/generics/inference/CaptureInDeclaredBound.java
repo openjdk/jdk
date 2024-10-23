@@ -26,6 +26,7 @@
  * @bug 7190296 8033718
  * @summary F-bounded capture variable is within its declared bound
  * @compile CaptureInDeclaredBound.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 CaptureInDeclaredBound.java
  */
 
 public class CaptureInDeclaredBound {

@@ -26,6 +26,7 @@
  * @bug 8015701
  * @summary Test method parameter attribute generation with captured locals.
  * @compile -parameters CaptureTest.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -parameters CaptureTest.java
  * @run main CaptureTest
  */
 import java.lang.Class;

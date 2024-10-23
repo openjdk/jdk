@@ -28,6 +28,7 @@
  * @author gafter
  *
  * @compile  ArrayTypearg.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  ArrayTypearg.java
  */
 
 import java.util.List;

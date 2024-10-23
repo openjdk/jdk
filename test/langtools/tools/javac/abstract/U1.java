@@ -28,6 +28,7 @@
  * @author gafter
  *
  * @compile U1.java U2.java U3.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 U1.java U2.java U3.java
  */
 
 package p1;

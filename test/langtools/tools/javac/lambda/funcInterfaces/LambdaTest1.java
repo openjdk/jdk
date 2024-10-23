@@ -27,6 +27,7 @@
  * @summary Add lambda tests
  *   This test is for lambda expressions
  * @compile LambdaTest1.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 LambdaTest1.java
  * @run main LambdaTest1
  */
 

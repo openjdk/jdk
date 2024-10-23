@@ -28,6 +28,7 @@
  * @author gafter
  *
  * @compile  ParenVerify.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  ParenVerify.java
  * @run main ParenVerify
  */
 

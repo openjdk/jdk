@@ -29,6 +29,7 @@ import java.lang.annotation.*;
  * @summary new type annotation location: constructor type args
  * @author Mahmood Ali
  * @compile ConstructorTypeArgs.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 ConstructorTypeArgs.java
  */
 
 class ConstructorTypeArgs {

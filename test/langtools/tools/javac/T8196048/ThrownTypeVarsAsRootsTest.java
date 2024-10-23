@@ -25,6 +25,7 @@
  * @test 8196048
  * @summary thrown type variables should be roots in the minimum inference graph
  * @compile ThrownTypeVarsAsRootsTest.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 ThrownTypeVarsAsRootsTest.java
  */
 
 import java.io.UnsupportedEncodingException;

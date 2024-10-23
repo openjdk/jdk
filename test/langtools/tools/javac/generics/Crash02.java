@@ -28,6 +28,7 @@
  * @author gafter
  *
  * @compile  Crash02.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  Crash02.java
  */
 
 import java.util.ArrayList;

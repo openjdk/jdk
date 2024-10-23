@@ -1,7 +1,7 @@
-DanglingDocCommentsClass_Line.java:11:1: compiler.warn.dangling.doc.comment
-DanglingDocCommentsClass_Line.java:15:1: compiler.warn.dangling.doc.comment
-DanglingDocCommentsClass_Line.java:17:5: compiler.warn.dangling.doc.comment
-DanglingDocCommentsClass_Line.java:19:9: compiler.warn.dangling.doc.comment
-DanglingDocCommentsClass_Line.java:21:5: compiler.warn.dangling.doc.comment
-DanglingDocCommentsClass_Line.java:26:5: compiler.warn.dangling.doc.comment
+DanglingDocCommentsClass_Line.java:12:1: compiler.warn.dangling.doc.comment
+DanglingDocCommentsClass_Line.java:16:1: compiler.warn.dangling.doc.comment
+DanglingDocCommentsClass_Line.java:18:5: compiler.warn.dangling.doc.comment
+DanglingDocCommentsClass_Line.java:20:9: compiler.warn.dangling.doc.comment
+DanglingDocCommentsClass_Line.java:22:5: compiler.warn.dangling.doc.comment
+DanglingDocCommentsClass_Line.java:27:5: compiler.warn.dangling.doc.comment
 6 warnings

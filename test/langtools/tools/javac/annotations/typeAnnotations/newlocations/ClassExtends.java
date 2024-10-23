@@ -29,6 +29,7 @@ import java.lang.annotation.*;
  * @summary new type annotation location: class extends/implements
  * @author Mahmood Ali
  * @compile ClassExtends.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 ClassExtends.java
  */
 abstract class MyClass extends @A ParameterizedClass<@B String>
   implements @B CharSequence, @A ParameterizedInterface<@B String> { }

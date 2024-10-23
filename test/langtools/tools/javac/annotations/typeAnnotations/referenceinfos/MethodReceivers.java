@@ -30,6 +30,7 @@ import static java.lang.classfile.TypeAnnotation.TargetType.*;
  * @enablePreview
  * @modules java.base/jdk.internal.classfile.impl
  * @compile -g Driver.java ReferenceInfoUtil.java MethodReceivers.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -g Driver.java ReferenceInfoUtil.java MethodReceivers.java
  * @run main Driver MethodReceivers
  */
 public class MethodReceivers {

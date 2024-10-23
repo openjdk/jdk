@@ -25,6 +25,7 @@
    @bug 4086919
    @summary Correct handling of unicode escapes for line termination
    @compile UnicodeAtEOL.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 UnicodeAtEOL.java
 */
 public class UnicodeAtEOL {
    public static void main(String[] args) {

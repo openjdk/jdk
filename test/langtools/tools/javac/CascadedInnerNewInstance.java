@@ -28,6 +28,7 @@
  * the outer instance in a 'new' expression for an inner class.
  *
  * @compile CascadedInnerNewInstance.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 CascadedInnerNewInstance.java
  */
 
 class CascadedInnerNewInstance {

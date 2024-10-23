@@ -27,6 +27,7 @@ import java.lang.annotation.*;
  * @test
  * @bug 8006547 8261088
  * @compile NoTargetOnContainer.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 NoTargetOnContainer.java
  */
 
 @interface FooContainer {

@@ -26,7 +26,9 @@
  * @bug 8033437
  * @summary inconsistent generic types behaviour when compiling together vs. separate
  * @compile RefQueue.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 RefQueue.java
  * @compile RefQueueBug.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 RefQueueBug.java
  */
 
 public class RefQueueBug<T> {

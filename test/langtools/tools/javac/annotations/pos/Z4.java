@@ -28,6 +28,7 @@
  * @author gafter
  *
  * @compile Z4.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Z4.java
  */
 
 @interface An {

@@ -26,6 +26,7 @@
  * @bug 8202597
  * @summary javac is not inducing a notional interface if Object appears in an intersection type
  * @compile NotionalInterfaceNotBeingInducedTest.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 NotionalInterfaceNotBeingInducedTest.java
  */
 
 class NotionalInterfaceNotBeingInducedTest {

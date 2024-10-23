@@ -27,6 +27,7 @@
  * @summary Add lambda tests
  *  spurious resolution diagnostics when diamond constructor contains poly expression
  * @compile TargetType34.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TargetType34.java
  */
 
 class TargetType34<X> {

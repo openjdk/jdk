@@ -26,4 +26,5 @@
  * @bug 8145489
  * @summary NPE while compiling annotations with qualified names in package-info.java
  * @compile foo/package-info.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 foo/package-info.java
  */

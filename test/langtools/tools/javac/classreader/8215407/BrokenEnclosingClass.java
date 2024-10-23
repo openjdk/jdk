@@ -29,7 +29,9 @@
  * @modules java.compiler
  * @build JavacTestingAbstractProcessor
  * @compile BrokenEnclosingClass.java UnrelatedClass.jcod Enclosing$1.jcod
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 BrokenEnclosingClass.java UnrelatedClass.jcod Enclosing$1.jcod
  * @compile -processor BrokenEnclosingClass BrokenEnclosingClass.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor BrokenEnclosingClass BrokenEnclosingClass.java
  */
 
 import java.util.Set;

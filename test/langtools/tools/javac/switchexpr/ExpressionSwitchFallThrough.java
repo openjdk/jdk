@@ -26,6 +26,7 @@
  * @bug 8206986
  * @summary Check fall through in switch expressions.
  * @compile ExpressionSwitchFallThrough.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 ExpressionSwitchFallThrough.java
  * @run main ExpressionSwitchFallThrough
  */
 

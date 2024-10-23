@@ -27,6 +27,7 @@
  * @summary generics: incorrect cyclic inheritance error
  *
  * @compile  CyclicInheritance5.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  CyclicInheritance5.java
  */
 
 class G<N extends G.Node<N>> {

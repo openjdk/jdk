@@ -27,6 +27,7 @@
  * @summary code involving inner classes causes verify error
  *
  * @compile WhichImplicitThis11.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 WhichImplicitThis11.java
  * @run main WhichImplicitThis11
  */
 

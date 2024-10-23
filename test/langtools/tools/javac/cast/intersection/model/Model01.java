@@ -30,6 +30,7 @@
  *          jdk.compiler/com.sun.tools.javac.tree
  * @build JavacTestingAbstractProcessor ModelChecker
  * @compile -XDaccessInternalAPI -processor ModelChecker Model01.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -XDaccessInternalAPI -processor ModelChecker Model01.java
  */
 
 import javax.lang.model.element.ElementKind;

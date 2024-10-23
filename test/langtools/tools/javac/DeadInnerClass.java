@@ -29,6 +29,7 @@
  * @author turnidge
  *
  * @compile DeadInnerClass.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 DeadInnerClass.java
  */
 
 class DeadInnerClass {

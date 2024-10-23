@@ -3,6 +3,7 @@
  * @bug 7154127 8007464
  * @summary Inference cleanup: remove bound check analysis from visitors in Types.java
  * @compile T7154127.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T7154127.java
  */
 class T7154127 {
 

@@ -26,6 +26,7 @@
  * @bug 7192246
  * @summary qualified 'this' inside default method causes StackOverflowException
  * @compile Pos13.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Pos13.java
  */
 
 public class Pos13 {

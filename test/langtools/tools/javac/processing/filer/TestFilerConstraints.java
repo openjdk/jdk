@@ -31,6 +31,7 @@
  *          jdk.compiler
  * @build TestFilerConstraints
  * @compile -encoding iso-8859-1 -processor TestFilerConstraints -proc:only TestFilerConstraints.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -encoding iso-8859-1 -processor TestFilerConstraints -proc:only TestFilerConstraints.java
  */
 
 import java.util.Set;

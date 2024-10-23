@@ -26,6 +26,7 @@
  * @bug 8152832
  * @summary Type inference regression in javac
  * @compile T8152832.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T8152832.java
  */
 
 import java.util.function.*;

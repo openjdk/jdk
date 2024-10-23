@@ -27,6 +27,7 @@
  * @summary Valid generics code does not compile
  * @author  Peter von der Ah\u00e9
  * @compile Orig.java T6359106.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Orig.java T6359106.java
  */
 
 import java.util.Collection;

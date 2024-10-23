@@ -27,6 +27,7 @@
  * @summary incorrect cyclic inheritance error versus name hiding
  *
  * @compile CyclicInheritance4.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 CyclicInheritance4.java
  * @run main CyclicInheritance4
  */
 

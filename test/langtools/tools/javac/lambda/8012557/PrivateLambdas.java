@@ -28,9 +28,13 @@
  *          methods are private
  * @author  Robert Field
  * @compile SAM.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 SAM.java
  * @compile A.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 A.java
  * @compile B.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 B.java
  * @compile C.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 C.java
  * @run main PrivateLambdas
  *
  * Unless the lambda methods are private, this will fail with:

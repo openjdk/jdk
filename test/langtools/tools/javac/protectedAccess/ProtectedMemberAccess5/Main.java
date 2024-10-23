@@ -28,6 +28,7 @@
  * @author gafter
  *
  * @compile z1/Z1.java z2/Z2.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 z1/Z1.java z2/Z2.java
  * @run main z1.Z1
  */
 

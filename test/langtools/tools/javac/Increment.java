@@ -27,6 +27,7 @@
  * @summary The compiler refused to parse/accept increments of
  *          parenthesized expressions.
  * @compile Increment.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Increment.java
  * @author turnidge
  */
 public class Increment {

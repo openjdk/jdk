@@ -33,6 +33,7 @@
  *          java.base/jdk.internal.classfile.impl
  * @build toolbox.ToolBox InMemoryFileManager TestBase LocalVariableTestBase
  * @compile -g LocalVariableTypeTableTest.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -g LocalVariableTypeTableTest.java
  * @run main LocalVariableTypeTableTest
  */
 

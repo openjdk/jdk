@@ -28,6 +28,7 @@
  * @author gafter
  *
  * @compile  Anon.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  Anon.java
  */
 
 class Anon {

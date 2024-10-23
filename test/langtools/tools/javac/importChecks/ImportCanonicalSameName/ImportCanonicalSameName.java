@@ -5,6 +5,7 @@
  * @author cushon
  *
  * @compile p1/A.java p2/A.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 p1/A.java p2/A.java
  * @compile/fail/ref=ImportCanonicalSameName.out -XDrawDiagnostics ImportCanonicalSameName.java
  */
 

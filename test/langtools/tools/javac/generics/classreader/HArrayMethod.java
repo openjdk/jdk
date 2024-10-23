@@ -28,7 +28,9 @@
  * @author gafter
  *
  * @compile  HArrayMethod.java HMember.java HMethod.java HMethodImpl.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  HArrayMethod.java HMember.java HMethod.java HMethodImpl.java
  * @compile  HArrayMethod.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  HArrayMethod.java
  */
 
 class HArrayMethod extends HMethodImpl {

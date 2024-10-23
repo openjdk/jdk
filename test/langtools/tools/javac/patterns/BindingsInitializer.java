@@ -35,6 +35,7 @@
  * @build toolbox.ToolBox toolbox.JavacTask
  * @build combo.ComboTestHelper
  * @compile BindingsInitializer.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 BindingsInitializer.java
  * @run main BindingsInitializer
  */
 

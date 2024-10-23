@@ -26,6 +26,7 @@
  * @summary unicode escapes delimiting and inside of comments
  *
  * @compile UnicodeCommentDelimiter.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 UnicodeCommentDelimiter.java
  */
 
 class UnicodeCommentDelimiter {

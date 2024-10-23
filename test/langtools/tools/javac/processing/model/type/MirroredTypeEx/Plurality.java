@@ -30,7 +30,9 @@
  *          jdk.compiler
  * @build JavacTestingAbstractProcessor
  * @compile Plurality.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Plurality.java
  * @compile -processor Plurality -proc:only Plurality.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor Plurality -proc:only Plurality.java
  * @author  Joseph D. Darcy
  */
 import java.lang.annotation.*;

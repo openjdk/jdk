@@ -26,6 +26,7 @@
  * @bug 8059453
  * @summary -Xjcov causes crash with union types
  * @compile -Xjcov XjcovUnionTypeTest.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -Xjcov XjcovUnionTypeTest.java
  */
 
 public class XjcovUnionTypeTest {

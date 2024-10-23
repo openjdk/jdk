@@ -26,6 +26,7 @@
  * @bug 8016013
  * @summary Compiler incorrectly treats annotated and unannotated type variable bounds as different types
  * @compile -doe ErasureTest.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -doe ErasureTest.java
  */
 
 import java.lang.annotation.ElementType;

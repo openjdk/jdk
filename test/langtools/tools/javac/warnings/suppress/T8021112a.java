@@ -30,6 +30,7 @@ package test;
  *          inside the suppressed class itself, and verify that "unnecessary cast"
  *          lint can be properly suppressed.
  * @compile -Xlint:cast -Werror T8021112a.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -Xlint:cast -Werror T8021112a.java
  */
 
 import static test.T8021112a.D;

@@ -34,6 +34,7 @@
  * @build toolbox.ToolBox toolbox.JavacTask
  * @build combo.ComboTestHelper
  * @compile LocalVariableReuse.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 LocalVariableReuse.java
  * @run main LocalVariableReuse
  */
 

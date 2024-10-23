@@ -5,6 +5,7 @@
  * @author William Maddox (maddox)
  *
  * @compile DefAssignAfterThis_2.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 DefAssignAfterThis_2.java
  */
 
 /*

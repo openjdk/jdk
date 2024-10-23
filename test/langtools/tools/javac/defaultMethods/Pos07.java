@@ -27,6 +27,7 @@
  * @summary check that compilation order does not matter
  * @author  Maurizio Cimadamore
  * @compile Pos07.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Pos07.java
  */
 
 class Pos07 {

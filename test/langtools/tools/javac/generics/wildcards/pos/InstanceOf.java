@@ -28,6 +28,7 @@
  * @author gafter
  *
  * @compile  -Werror InstanceOf.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  -Werror InstanceOf.java
  */
 
 class InstanceOf<T> {

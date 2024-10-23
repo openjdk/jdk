@@ -31,6 +31,7 @@
  *          jdk.compiler
  * @build   JavacTestingAbstractProcessor TestGetPackageOf
  * @compile -processor TestGetPackageOf -proc:only TestGetPackageOf.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor TestGetPackageOf -proc:only TestGetPackageOf.java
  */
 
 import java.util.*;

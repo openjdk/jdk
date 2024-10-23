@@ -26,6 +26,7 @@
  * @bug     7040883 7034511
  * @summary Compilation error: "length in Array is defined in an inaccessible class or interface"
  * @compile T7040883.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T7040883.java
  */
 
 public class T7040883 {

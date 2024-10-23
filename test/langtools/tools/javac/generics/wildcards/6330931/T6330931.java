@@ -27,6 +27,7 @@
  * @summary Super wildcard has incorrect upper bound
  * @author  Peter von der Ah\u00e9
  * @compile T6330931.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T6330931.java
  */
 
 import java.util.List;

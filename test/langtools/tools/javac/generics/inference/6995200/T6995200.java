@@ -28,6 +28,7 @@
  * @summary JDK 7 compiler crashes when type-variable is inferred from expected primitive type
  * @author mcimadamore
  * @compile T6995200.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T6995200.java
  *
  */
 

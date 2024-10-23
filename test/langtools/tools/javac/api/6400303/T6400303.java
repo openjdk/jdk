@@ -32,7 +32,9 @@
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.javac.util
  * @compile Test1.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Test1.java
  * @compile Test2.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Test2.java
  * @run main/othervm -esa T6400303
  */
 

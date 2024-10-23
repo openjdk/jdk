@@ -28,6 +28,7 @@
  * @author gafter
  *
  * @compile EmptyArray.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 EmptyArray.java
  */
 
 class EmptyArray {

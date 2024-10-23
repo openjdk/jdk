@@ -26,6 +26,7 @@
  * @bug 8231827
  * @summary All example code from "Pattern Matching for Java" document, released April 2017, adjusted to current state (no switches, etc)
  * @compile ExamplesFromProposal.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 ExamplesFromProposal.java
  * @run main ExamplesFromProposal
  */
 

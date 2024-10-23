@@ -25,6 +25,7 @@
  * @bug 8042741
  * @summary Java 8 compiler throws NullPointerException depending location in source file
  * @compile A.java PositionTest.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 A.java PositionTest.java
  */
 
 public class PositionTest extends A {

@@ -30,6 +30,7 @@
  *          jdk.compiler/com.sun.tools.javac.tree
  *          jdk.compiler/com.sun.tools.javac.util
  * @compile DefaultParamNames.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 DefaultParamNames.java
  * @run main DefaultParamNames
  */
 

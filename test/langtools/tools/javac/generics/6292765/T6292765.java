@@ -27,6 +27,7 @@
  * @summary NPE at Check.checkCompatibleConcretes
  * @author  Peter von der Ah\u00e9
  * @compile T6292765.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T6292765.java
  */
 
 public class T6292765 {

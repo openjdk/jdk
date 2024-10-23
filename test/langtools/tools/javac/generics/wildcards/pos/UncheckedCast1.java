@@ -28,6 +28,7 @@
  * @author gafter
  *
  * @compile  UncheckedCast1.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  UncheckedCast1.java
  */
 
 class Z {

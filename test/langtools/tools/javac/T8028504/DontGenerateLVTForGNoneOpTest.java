@@ -27,6 +27,7 @@
  * @summary javac generates LocalVariableTable even with -g:none
  * @enablePreview
  * @compile -g:none DontGenerateLVTForGNoneOpTest.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -g:none DontGenerateLVTForGNoneOpTest.java
  * @run main DontGenerateLVTForGNoneOpTest
  */
 

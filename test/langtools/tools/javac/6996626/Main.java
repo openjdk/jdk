@@ -25,7 +25,9 @@
  * @bug 6996626
  * @summary Scope fix issues for ImportScope
  * @compile pack1/Symbol.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 pack1/Symbol.java
  * @compile Main.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Main.java
  */
 
 import pack1.*;

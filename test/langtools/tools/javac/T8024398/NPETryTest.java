@@ -26,6 +26,7 @@
  * @bug 8024398
  * @summary javac, compiler crashes with try with empty body
  * @compile NPETryTest.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 NPETryTest.java
  */
 
 public class NPETryTest {

@@ -32,7 +32,9 @@
  *          java.base/jdk.internal.classfile.impl
  * @build JavacTestingAbstractProcessor
  * @compile Annotations.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Annotations.java
  * @compile -J--enable-preview -processor Annotations -proc:only Annotations.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -J--enable-preview -processor Annotations -proc:only Annotations.java
  * @run main Annotations
  */
 

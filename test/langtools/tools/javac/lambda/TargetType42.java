@@ -27,6 +27,7 @@
  * @summary Add lambda tests
  *  effects of speculative attribution are undone on a per-argument basis rather than on a per-resolution basis
  * @compile TargetType42.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TargetType42.java
  */
 class TargetType42 {
 

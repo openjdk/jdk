@@ -28,6 +28,7 @@
  * @author srikanth
  *
  * @compile  MissingCast2.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  MissingCast2.java
  * @run main MissingCast2
  */
 

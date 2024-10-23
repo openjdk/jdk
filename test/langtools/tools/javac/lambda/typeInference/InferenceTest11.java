@@ -27,6 +27,7 @@
  * @summary Add lambda tests
  *   This test is for self referential and recursive lambda expression that have type inference
  * @compile InferenceTest11.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 InferenceTest11.java
  * @run main InferenceTest11
  */
 

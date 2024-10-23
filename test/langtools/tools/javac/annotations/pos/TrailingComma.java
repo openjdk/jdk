@@ -27,6 +27,7 @@
  * @summary javac incorrectly disallows trailing comma in annotation arrays
  * @author darcy
  * @compile TrailingComma.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TrailingComma.java
  */
 
 import java.lang.annotation.*;

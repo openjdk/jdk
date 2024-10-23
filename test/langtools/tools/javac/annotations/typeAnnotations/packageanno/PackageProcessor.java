@@ -52,7 +52,9 @@ import static com.sun.tools.javac.comp.CompileStates.CompileState;
  *          jdk.compiler/com.sun.tools.javac.processing
  *          jdk.compiler/com.sun.tools.javac.util
  * @compile PackageProcessor.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 PackageProcessor.java
  * @compile -XDaccessInternalAPI -cp . -processor PackageProcessor mypackage/Anno.java mypackage/MyClass.java mypackage/package-info.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -XDaccessInternalAPI -cp . -processor PackageProcessor mypackage/Anno.java mypackage/MyClass.java mypackage/package-info.java
  */
 
 @SupportedAnnotationTypes("*")

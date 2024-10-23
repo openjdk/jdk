@@ -27,6 +27,7 @@
  * @author Maurizio Cimadamore
  * @summary Resource of a type-variable type crashes Flow
  * @compile ResourceTypeVar.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 ResourceTypeVar.java
  */
 
 class ResourceTypeVar<X extends AutoCloseable> {

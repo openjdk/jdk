@@ -26,6 +26,7 @@
  * @summary enums: ensure unnamed class is visible to java.lang.Enum<unnamed_class>
  * @enablePreview
  * @compile NestedEnum.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 NestedEnum.java
  */
 
 enum Foo {A, B}

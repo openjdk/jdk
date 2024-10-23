@@ -27,6 +27,7 @@
  * @summary "import static" accessibility rules for symbols different for no reason
  * @author  Peter von der Ah\u00e9
  * @compile a/Private.java a/Named.java a/Star.java T6225935.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 a/Private.java a/Named.java a/Star.java T6225935.java
  * @run main/othervm T6225935
  */
 

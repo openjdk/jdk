@@ -27,6 +27,7 @@
  * @summary Add graph inference support
  *          more smoke tests for graph inference
  * @compile TargetType58.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TargetType58.java
  */
 import java.util.*;
 import java.util.function.*;

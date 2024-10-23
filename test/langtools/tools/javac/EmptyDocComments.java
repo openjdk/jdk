@@ -26,6 +26,7 @@
  * @bug 4160204 4234488
  * @summary Create empty javadoc comments and verify that javac does not crash.
  * @compile EmptyDocComments.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 EmptyDocComments.java
  */
 
 // WARNING: This file intentionally contains whitespace characters at the end of

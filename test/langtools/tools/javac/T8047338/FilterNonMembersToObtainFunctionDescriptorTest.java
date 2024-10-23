@@ -26,6 +26,7 @@
  * @bug 8047338
  * @summary javac is not correctly filtering non-members methods to obtain the function descriptor
  * @compile FilterNonMembersToObtainFunctionDescriptorTest.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 FilterNonMembersToObtainFunctionDescriptorTest.java
  */
 
 public class FilterNonMembersToObtainFunctionDescriptorTest {

@@ -6,6 +6,7 @@
  *
  * @compile/fail/ref=FinallyWarn.out -XDrawDiagnostics -Xlint:finally -Werror FinallyWarn.java
  * @compile -Werror FinallyWarn.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -Werror FinallyWarn.java
  */
 
 class FinallyWarn {

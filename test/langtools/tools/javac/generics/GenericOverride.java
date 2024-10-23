@@ -28,6 +28,7 @@
  * @author gafter
  *
  * @compile  GenericOverride.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  GenericOverride.java
  */
 
 package generic.override;

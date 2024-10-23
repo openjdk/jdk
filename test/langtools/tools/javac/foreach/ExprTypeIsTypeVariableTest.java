@@ -26,6 +26,7 @@
  * @bug 8273234
  * @summary extended 'for' with expression of type tvar causes the compiler to crash
  * @compile ExprTypeIsTypeVariableTest.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 ExprTypeIsTypeVariableTest.java
  */
 
 import java.util.*;

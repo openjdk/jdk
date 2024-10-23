@@ -26,6 +26,7 @@
  * @bug 8008627
  * @summary Compiler mishandles three-way return-type-substitutability
  * @compile T8008627.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T8008627.java
  */
 
 class T8008627 {

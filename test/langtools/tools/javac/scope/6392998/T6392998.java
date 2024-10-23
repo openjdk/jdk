@@ -27,6 +27,7 @@
  * @summary Mustang compiler throws AssertionError (beta2-b71 and higher)
  * @author  Peter von der Ah\u00e9
  * @compile T6392998.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T6392998.java
  */
 
 package pck;

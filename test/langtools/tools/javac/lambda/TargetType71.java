@@ -26,6 +26,7 @@
  * @bug 8011377
  * @summary Javac crashes when multiple lambdas are defined in an array
  * @compile TargetType71.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TargetType71.java
  */
 class TargetType71 {
     void test() {

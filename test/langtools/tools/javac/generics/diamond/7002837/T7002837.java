@@ -27,6 +27,7 @@
  * @summary  Diamond: javac generates diamond inference errors when in 'finder' mode
  * @author mcimadamore
  * @compile -Werror -XDrawDiagnostics -XDfind=diamond T7002837.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -Werror -XDrawDiagnostics -XDfind=diamond T7002837.java
  *
  */
 

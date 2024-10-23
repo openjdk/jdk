@@ -26,6 +26,7 @@
  * @bug 8164399
  * @summary inference of thrown variable does not work correctly
  * @compile T8164399.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T8164399.java
  */
 
 abstract class T8164399 {

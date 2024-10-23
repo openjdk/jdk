@@ -28,6 +28,7 @@
  * @author gafter
  *
  * @compile Members.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Members.java
  */
 
 package members;

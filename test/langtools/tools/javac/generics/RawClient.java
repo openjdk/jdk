@@ -28,6 +28,7 @@
  * @author gafter
  *
  * @compile  RawClient.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  RawClient.java
  */
 
 package rawClient;

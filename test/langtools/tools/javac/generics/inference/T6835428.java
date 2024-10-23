@@ -27,6 +27,7 @@
  * @author mcimadamore
  * @summary regression: return-type inference rejects valid code
  * @compile T6835428.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T6835428.java
  */
 
 class T6835428<T> {

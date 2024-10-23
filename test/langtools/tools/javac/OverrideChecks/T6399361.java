@@ -27,6 +27,7 @@
  * @summary java.lang.Override specification should be revised
  * @author  Gilad Bracha
  * @compile T6399361.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T6399361.java
  */
 
 public interface T6399361 {

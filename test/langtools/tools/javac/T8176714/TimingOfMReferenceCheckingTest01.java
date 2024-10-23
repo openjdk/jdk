@@ -26,6 +26,7 @@
  * @bug 8176714
  * @summary javac is wrongly assuming that field JCMemberReference.overloadKind has been assigned to
  * @compile TimingOfMReferenceCheckingTest01.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TimingOfMReferenceCheckingTest01.java
  */
 
 import java.util.function.*;

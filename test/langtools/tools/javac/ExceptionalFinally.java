@@ -28,6 +28,7 @@
  * @author gafter
  *
  * @compile ExceptionalFinally.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 ExceptionalFinally.java
  */
 
 class ExceptionalFinally {

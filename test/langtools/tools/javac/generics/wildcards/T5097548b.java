@@ -27,6 +27,7 @@
  * @summary Stack overflow in capture conversion
  * @author Peter von der Ah\u00e9
  * @compile  T5097548b.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  T5097548b.java
  */
 
 interface Edge<N extends Node<? extends Edge<N>>> {

@@ -27,6 +27,7 @@
  * @summary removal of "rvalue conversion" causes problems
  * @author Peter von der Ah\u00e9
  * @compile T6391995.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T6391995.java
  */
 
 public class T6391995 {

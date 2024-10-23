@@ -27,6 +27,7 @@
  * @summary Compiler Implementation for Primitive types in patterns, instanceof, and switch (Preview)
  * @enablePreview
  * @compile PrimitiveInstanceOfPatternOpWithTopLevelPatterns.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 PrimitiveInstanceOfPatternOpWithTopLevelPatterns.java
  * @run main/othervm PrimitiveInstanceOfPatternOpWithTopLevelPatterns
  */
 public class PrimitiveInstanceOfPatternOpWithTopLevelPatterns {

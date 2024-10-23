@@ -26,6 +26,7 @@
  * @bug 8175235
  * @summary type inference regression after JDK-8046685
  * @compile InferenceRegressionTest01.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 InferenceRegressionTest01.java
  */
 
 import java.util.function.Predicate;

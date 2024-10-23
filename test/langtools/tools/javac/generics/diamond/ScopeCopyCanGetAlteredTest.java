@@ -26,6 +26,7 @@
  * @bug 8260892
  * @summary Compilation fails: lambda parameter not visible in body when generics involved
  * @compile ScopeCopyCanGetAlteredTest.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 ScopeCopyCanGetAlteredTest.java
  */
 
 import java.util.function.Function;

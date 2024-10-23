@@ -25,6 +25,7 @@
  * @test
  * @bug 5045412 6627366
  * @compile -Xlint:serial -XDfailcomplete=java.io.Serializable Bar.java Foo.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -Xlint:serial -XDfailcomplete=java.io.Serializable Bar.java Foo.java
  */
 
 class Bar implements java.io.Serializable { }

@@ -31,6 +31,7 @@
  *          jdk.compiler/com.sun.tools.javac.file
  * @build ToolTester
  * @compile T6440528.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T6440528.java
  * @run main T6440528
  */
 

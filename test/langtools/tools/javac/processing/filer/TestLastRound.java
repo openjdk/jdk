@@ -29,6 +29,7 @@
  *          jdk.compiler
  * @build   JavacTestingAbstractProcessor
  * @compile TestLastRound.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TestLastRound.java
  * @compile/fail/ref=TestLastRound.out -XDrawDiagnostics -Werror -proc:only -processor TestLastRound TestLastRound.java
  */
 

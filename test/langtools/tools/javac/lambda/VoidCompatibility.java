@@ -4,6 +4,7 @@
  * @summary Add lambda tests
  *  check that void compatibility affects overloading as expected
  * @compile VoidCompatibility.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 VoidCompatibility.java
  */
 class VoidCompatibility {
 

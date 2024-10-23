@@ -26,6 +26,7 @@
  * @bug 8242478 8246774
  * @summary test local records
  * @compile LocalRecord.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 LocalRecord.java
  */
 class LocalRecord {
     void m() {

@@ -29,6 +29,7 @@ import java.lang.annotation.*;
  * @summary new type annotation location: type casts
  * @author Mahmood Ali
  * @compile TypeCasts.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TypeCasts.java
  */
 class TypeCasts {
   void methodA() {

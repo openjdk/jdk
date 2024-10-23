@@ -4,6 +4,7 @@
  * @summary Inference broken for subtypes of subtypes of F-bounded types
  * @author  Peter von der Ah\u00e9
  * @compile T6278587Neg.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T6278587Neg.java
  */
 
 public abstract class T6278587Neg {

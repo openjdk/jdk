@@ -26,6 +26,7 @@
  * @bug 8214114
  * @summary Verify try-catch inside a switch expression works properly.
  * @compile TryCatch.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TryCatch.java
  * @run main TryCatch
  */
 public class TryCatch {

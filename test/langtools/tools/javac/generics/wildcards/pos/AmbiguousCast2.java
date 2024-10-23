@@ -28,6 +28,7 @@
  * @author gafter
  *
  * @compile  AmbiguousCast2.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  AmbiguousCast2.java
  */
 
 import java.lang.ref.*;

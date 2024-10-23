@@ -28,6 +28,7 @@
  * @author William Maddox (maddox)
  *
  * @compile ChainedAssignment.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 ChainedAssignment.java
  * @run main ChainedAssignment
  */
 

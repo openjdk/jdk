@@ -29,6 +29,7 @@ import java.lang.annotation.*;
  * @summary new type annotation location: class type parameter bounds
  * @author Mahmood Ali
  * @compile ClassParameters.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 ClassParameters.java
  */
 class Unannotated<K> { }
 

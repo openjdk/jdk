@@ -28,6 +28,7 @@
  * @author William Maddox (maddox)
  *
  * @compile ConstructorAccess.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 ConstructorAccess.java
  * @run main ConstructorAccess
  */
 

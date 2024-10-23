@@ -26,6 +26,7 @@
  * @bug 6943289
  * @summary Project Coin: Improved Exception Handling for Java (aka 'multicatch')
  * @compile Pos03.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Pos03.java
  */
 
 class Pos03 {

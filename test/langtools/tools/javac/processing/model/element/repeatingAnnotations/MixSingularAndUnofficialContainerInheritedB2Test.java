@@ -31,8 +31,8 @@
  * @modules java.compiler
  *          jdk.compiler
  * @build   JavacTestingAbstractProcessor ElementRepAnnoTester
- * @compile -processor ElementRepAnnoTester -proc:only
- * MixSingularAndUnofficialContainerInheritedB2Test.java
+ * @compile -processor ElementRepAnnoTester -proc:only MixSingularAndUnofficialContainerInheritedB2Test.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor ElementRepAnnoTester -proc:only MixSingularAndUnofficialContainerInheritedB2Test.java
  */
 
 @UnofficialInheritedContainer({@FooInherited(1), @FooInherited(2)})

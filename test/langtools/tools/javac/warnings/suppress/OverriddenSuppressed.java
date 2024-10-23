@@ -26,6 +26,7 @@
  * @bug 8033421
  * @summary Check that \\@SuppressWarnings works properly when overriding deprecated method.
  * @compile -Werror -Xlint:deprecation OverriddenSuppressed.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -Werror -Xlint:deprecation OverriddenSuppressed.java
  */
 
 public class OverriddenSuppressed implements Interface {

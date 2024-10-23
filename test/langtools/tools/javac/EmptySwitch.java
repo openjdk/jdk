@@ -28,6 +28,7 @@
  * @author gafter
  *
  * @compile EmptySwitch.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 EmptySwitch.java
  * @run main EmptySwitch
  */
 

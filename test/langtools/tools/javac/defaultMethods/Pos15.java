@@ -26,6 +26,7 @@
  * @bug 7192246
  * @summary check that overload resolution selects most specific signature
  * @compile Pos15.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Pos15.java
  */
 
 class Pos15 {

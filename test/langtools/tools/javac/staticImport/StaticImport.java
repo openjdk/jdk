@@ -28,6 +28,7 @@
  * @author gafter
  *
  * @compile  StaticImport.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  StaticImport.java
  * @run main StaticImport
  */
 

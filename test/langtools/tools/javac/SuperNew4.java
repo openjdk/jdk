@@ -28,6 +28,7 @@
  * @author gafter
  *
  * @compile SuperNew4.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 SuperNew4.java
  */
 
 public class SuperNew4 {

@@ -4,6 +4,7 @@
  * @summary Verify cases with multiple labels work properly.
  * @compile/fail/ref=MultipleLabelsExpression-old.out --release 9 -XDrawDiagnostics MultipleLabelsExpression.java
  * @compile MultipleLabelsExpression.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 MultipleLabelsExpression.java
  * @run main MultipleLabelsExpression
  */
 

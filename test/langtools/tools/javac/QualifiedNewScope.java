@@ -28,6 +28,7 @@
  * @author gafter
  *
  * @compile QualifiedNewScope.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 QualifiedNewScope.java
  */
 
 package qualifiedNewScope;

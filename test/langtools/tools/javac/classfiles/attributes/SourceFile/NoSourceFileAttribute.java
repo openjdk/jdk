@@ -32,6 +32,7 @@
  *          java.base/jdk.internal.classfile.impl
  * @build toolbox.ToolBox InMemoryFileManager TestBase SourceFileTestBase
  * @compile -g:none NoSourceFileAttribute.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -g:none NoSourceFileAttribute.java
  * @run main NoSourceFileAttribute
  */
 

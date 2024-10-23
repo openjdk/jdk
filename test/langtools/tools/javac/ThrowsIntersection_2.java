@@ -28,6 +28,7 @@
  * @author maddox
  *
  * @compile ThrowsIntersection_2.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 ThrowsIntersection_2.java
  */
 
 package ThrowsIntersection_2;

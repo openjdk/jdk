@@ -26,6 +26,7 @@
  * @bug 8232933
  * @summary Javac inferred type does not conform to equality constraint
  * @compile DontMinimizeInfContextTest.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 DontMinimizeInfContextTest.java
  */
 
 import java.util.LinkedList;

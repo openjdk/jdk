@@ -5,6 +5,7 @@
  * @author  jan.lahoda@...
  * @author  Peter von der Ah\u00e9
  * @compile A.java B.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 A.java B.java
  * @clean   a.A
  * @compile/fail/ref=T6437894.out -XDrawDiagnostics T6437894.java
  */

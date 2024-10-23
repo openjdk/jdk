@@ -26,6 +26,7 @@
  * @bug     6651719
  * @summary Compiler crashes possibly during forward reference of TypeParameter
  * @compile T6651719a.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T6651719a.java
  */
 
 public class T6651719a<T extends S, S> {

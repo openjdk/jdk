@@ -26,6 +26,7 @@
  * @bug     6365166
  * @summary javac (generic) unable to resolve methods
  * @compile NewTest.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 NewTest.java
  */
 
 import java.util.*;

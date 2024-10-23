@@ -32,6 +32,7 @@
  * @build ClassWithSuperType ClassDependingOnGenerated JavacTestingAbstractProcessor
  * @clean SuperClass
  * @compile -processor ClassDependingOnGenerated ClassDependingOnGeneratedSource.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor ClassDependingOnGenerated ClassDependingOnGeneratedSource.java
  */
 
 import java.io.*;

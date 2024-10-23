@@ -25,6 +25,7 @@
  * @bug 8291657
  * @summary Javac assertion when compiling a method call with switch expression as argument
  * @compile T8291657.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T8291657.java
  */
 public class T8291657 {
     static class A { }

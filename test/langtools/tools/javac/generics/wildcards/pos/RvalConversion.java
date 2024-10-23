@@ -28,6 +28,7 @@
  * @author gafter
  *
  * @compile  RvalConversion.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  RvalConversion.java
  */
 
 import java.util.*;

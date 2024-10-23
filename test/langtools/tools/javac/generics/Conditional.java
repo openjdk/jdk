@@ -28,6 +28,7 @@
  * @author gafter
  *
  * @compile  Conditional.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  Conditional.java
  */
 
 package conditional;

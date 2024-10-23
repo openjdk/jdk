@@ -28,6 +28,7 @@
  * @author gafter
  *
  * @compile  PrimitiveClass.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  PrimitiveClass.java
  */
 
 package primitive._class;

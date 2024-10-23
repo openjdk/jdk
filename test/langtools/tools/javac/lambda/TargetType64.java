@@ -26,6 +26,7 @@
  * @bug 8008293
  * @summary Declared bounds not considered when functional interface containing unbound wildcards is instantiated
  * @compile TargetType64.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TargetType64.java
  */
 class TargetType64 {
     interface SAM<X extends Number> {

@@ -28,6 +28,7 @@
  * @author mcimadamore
  *
  * @compile T7003744b.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T7003744b.java
  */
 
 class T7003744b {

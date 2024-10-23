@@ -28,6 +28,7 @@
  * @author gafter
  *
  * @compile  A.java C.java D.java E.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  A.java C.java D.java E.java
  * @run main D
  */
 

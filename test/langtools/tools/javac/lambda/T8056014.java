@@ -26,6 +26,7 @@
  * @bug 8056014
  * @summary Verify that full type inference is used when calling a method on a type variable.
  * @compile T8056014.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T8056014.java
  * @run main T8056014
  */
 

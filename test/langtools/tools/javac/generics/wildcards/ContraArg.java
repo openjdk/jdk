@@ -28,6 +28,7 @@
  * @author gafter
  *
  * @compile  ContraArg.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  ContraArg.java
  */
 
 class ContraArg {

@@ -33,6 +33,7 @@
  * @build toolbox.ToolBox InMemoryFileManager TestResult TestBase
  * @build SyntheticTestDriver ExpectedClass ExpectedClasses
  * @compile -Xpkginfo:always package_info_test/package-info.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -Xpkginfo:always package_info_test/package-info.java
  * @run main SyntheticTestDriver package_info_test.package-info 1
  */
 

@@ -5,8 +5,10 @@
  * @author gafter
  *
  * @compile                           Warn2.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2                           Warn2.java
  * @compile/fail/ref=Warn2.out -XDrawDiagnostics   -Werror             Warn2.java
  * @compile       -Werror -Xlint:none Warn2.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2       -Werror -Xlint:none Warn2.java
  */
 
 package varargs.warn2;

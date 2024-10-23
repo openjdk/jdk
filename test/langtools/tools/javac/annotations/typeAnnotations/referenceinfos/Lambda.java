@@ -30,6 +30,7 @@
  * @modules java.base/jdk.internal.classfile.impl
  * @ignore 8057687 emit correct byte code an attributes for type annotations
  * @compile -g Driver.java ReferenceInfoUtil.java Lambda.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -g Driver.java ReferenceInfoUtil.java Lambda.java
  * @run main Driver Lambda
  * @author Werner Dietl
  */

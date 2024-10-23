@@ -27,6 +27,7 @@
  * @summary raw types and inference
  * @author  mcimadamore
  * @compile T6400189d.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T6400189d.java
  */
 
 import java.util.Iterator;

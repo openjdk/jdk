@@ -27,6 +27,7 @@
  * @summary declared bound in inner class referring a type variable of the outer class
  * @author Maurizio Cimadamore
  * @compile T6660289.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T6660289.java
  */
 
 public class T6660289<E> {

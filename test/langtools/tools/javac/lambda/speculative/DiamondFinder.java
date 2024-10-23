@@ -27,6 +27,7 @@
  * @summary Add lambda tests
  *  spurious crashes when running in 'diamond finder' mode
  * @compile -XDfind=diamond DiamondFinder.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -XDfind=diamond DiamondFinder.java
  */
 import java.util.*;
 

@@ -26,6 +26,7 @@
  * @bug 6993963
  * @summary Multicatch: crash while compiling simple code with a multicatch parameter
  * @compile Pos08.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Pos08.java
  */
 
 class Pos08 {

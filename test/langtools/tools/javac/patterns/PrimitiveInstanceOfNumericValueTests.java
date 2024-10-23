@@ -27,6 +27,7 @@
  * @summary Compiler Implementation for Primitive types in patterns, instanceof, and switch (Preview)
  * @enablePreview
  * @compile PrimitiveInstanceOfNumericValueTests.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 PrimitiveInstanceOfNumericValueTests.java
  * @run main/othervm PrimitiveInstanceOfNumericValueTests
  */
 public class PrimitiveInstanceOfNumericValueTests {

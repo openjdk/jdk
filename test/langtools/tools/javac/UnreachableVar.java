@@ -28,6 +28,7 @@
  * @author gafter
  *
  * @compile UnreachableVar.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 UnreachableVar.java
  * @run main UnreachableVar
  */
 

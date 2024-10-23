@@ -26,6 +26,7 @@
  * @bug 8308245
  * @summary Test trivial handling of -proc:full option
  * @compile -proc:full TestProcOption.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -proc:full TestProcOption.java
  * @run main TestProcOption
  */
 

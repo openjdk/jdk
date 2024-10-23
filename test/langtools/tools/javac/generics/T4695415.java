@@ -28,6 +28,7 @@
  * @author gafter
  *
  * @compile  T4695415.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  T4695415.java
  */
 
 class X<T extends Number> {

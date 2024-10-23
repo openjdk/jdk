@@ -26,12 +26,17 @@
  * @bug     6365854 8068639
  * @summary javac crashes when compiling against an annotated class
  * @compile TestAnnotation.java TestCore.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TestAnnotation.java TestCore.java
  * @clean test.annotation.TestAnnotation
  * @compile T6365854.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T6365854.java
  * @compile evolve/TestAnnotation.java T6365854.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 evolve/TestAnnotation.java T6365854.java
  * @compile T6365854.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T6365854.java
  *
  * @compile TestAnnotation.java TestCore.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TestAnnotation.java TestCore.java
  * @clean test.annotation.TestAnnotation
  * @compile/ref=test1.out -XDrawDiagnostics -Xlint:classfile T6365854.java
  * @run main T6365854

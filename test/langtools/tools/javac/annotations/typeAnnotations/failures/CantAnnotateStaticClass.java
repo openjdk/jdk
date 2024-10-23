@@ -4,6 +4,7 @@
  * @summary Ensure behavior for nested types is correct.
  * @author Werner Dietl
  * @compile CantAnnotateStaticClass.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 CantAnnotateStaticClass.java
  */
 
 import java.util.List;

@@ -28,6 +28,7 @@
  * @author Peter von der Ah\u00e9
  *
  * @compile T5075242.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T5075242.java
  */
 
 interface Iface {

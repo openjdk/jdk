@@ -28,14 +28,17 @@
  *
  * @clean *
  * @compile -XDstringConcat=indy              StringAppendEvaluatesInOrder.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -XDstringConcat=indy              StringAppendEvaluatesInOrder.java
  * @run main StringAppendEvaluatesInOrder
  *
  * @clean *
  * @compile -XDstringConcat=indyWithConstants StringAppendEvaluatesInOrder.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -XDstringConcat=indyWithConstants StringAppendEvaluatesInOrder.java
  * @run main StringAppendEvaluatesInOrder
  *
  * @clean *
  * @compile -XDstringConcat=inline            StringAppendEvaluatesInOrder.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -XDstringConcat=inline            StringAppendEvaluatesInOrder.java
  * @run main StringAppendEvaluatesInOrder
  */
 

@@ -28,6 +28,7 @@
  * @author maddox (cribbed from bug report)
  *
  * @compile SuperMethodResolve.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 SuperMethodResolve.java
  */
 
 /*

@@ -26,6 +26,7 @@
  * @bug 8029179
  * @summary javac produces a compile error for valid boolean expressions
  * @compile CompileErrorForValidBooleanExpTest.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 CompileErrorForValidBooleanExpTest.java
  */
 
 public class CompileErrorForValidBooleanExpTest {

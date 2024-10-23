@@ -28,6 +28,7 @@
  * @author gafter
  *
  * @compile  Crash01.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  Crash01.java
  */
 
 public class Crash01<A extends TestClass1 & IA> {

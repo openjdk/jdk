@@ -29,6 +29,7 @@
  * @library ../..
  * @modules jdk.compiler/com.sun.tools.javac.util
  * @compile ../../util/list/FromArray.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 ../../util/list/FromArray.java
  * @run main util.list.FromArray
  */
 

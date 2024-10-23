@@ -28,6 +28,7 @@
  *  check that local break/continue is allowed in lambda expressions
  * @author  Maurizio Cimadamore
  * @compile LocalBreakAndContinue.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 LocalBreakAndContinue.java
  */
 
 class LocalBreakAndContinue {

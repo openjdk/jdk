@@ -31,6 +31,7 @@
  *          jdk.jdeps/com.sun.tools.javap
  * @build toolbox.ToolBox toolbox.JavapTask
  * @compile T8328747.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T8328747.java
  * @run main T8328747
  */
 

@@ -27,6 +27,7 @@
  * @summary check that type-variables in generic extension decl can be accessed from default impl
  * @author  Maurizio Cimadamore
  * @compile Pos10.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Pos10.java
  */
 
 class Pos10 {

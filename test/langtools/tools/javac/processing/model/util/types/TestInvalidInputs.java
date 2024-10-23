@@ -29,6 +29,7 @@
  * @modules java.compiler
  * @build JavacTestingAbstractProcessor TestInvalidInputs
  * @compile -processor TestInvalidInputs -proc:only TestInvalidInputs.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor TestInvalidInputs -proc:only TestInvalidInputs.java
  */
 
 import java.util.*;

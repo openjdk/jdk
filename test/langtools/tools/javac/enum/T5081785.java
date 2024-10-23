@@ -5,6 +5,7 @@
  * @author Peter von der Ah\u00e9
  * @compile/fail/ref=T5081785.out -XDrawDiagnostics --release 15 T5081785.java
  * @compile T5081785.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T5081785.java
  */
 
 class A1 {

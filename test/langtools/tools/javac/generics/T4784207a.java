@@ -28,7 +28,9 @@
  * @author gafter
  *
  * @compile  T4784207a.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  T4784207a.java
  * @compile  T4784207b.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  T4784207b.java
  */
 
 interface T4784207a_i extends Comparable<T4784207a_i>{

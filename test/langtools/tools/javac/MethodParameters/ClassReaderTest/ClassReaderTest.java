@@ -29,6 +29,7 @@
  * @modules java.compiler
  *          jdk.compiler
  * @compile -parameters ClassReaderTest.java MethodParameterProcessor.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -parameters ClassReaderTest.java MethodParameterProcessor.java
  * @compile/process/ref=ClassReaderTest.out -proc:only -processor MethodParameterProcessor ClassReaderTest ClassReaderTest$I ClassReaderTest$E
  */
 

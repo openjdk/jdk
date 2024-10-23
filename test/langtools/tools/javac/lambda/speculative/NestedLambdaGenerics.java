@@ -26,6 +26,7 @@
   * @bug 8078093
   * @summary Exponential performance regression Java 8 compiler compared to Java 7 compiler
   * @compile NestedLambdaGenerics.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 NestedLambdaGenerics.java
   */
 import java.util.concurrent.Callable;
 

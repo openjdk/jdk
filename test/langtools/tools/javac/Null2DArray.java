@@ -28,6 +28,7 @@
  * @author gafter
  *
  * @compile Null2DArray.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Null2DArray.java
  * @run main Null2DArray
  */
 

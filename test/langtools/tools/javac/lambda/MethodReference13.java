@@ -28,6 +28,7 @@
  *  check that equals() on Proxied objects is handled accordingly
  * @author  Maurizio Cimadamore
  * @compile -XDuseProxy MethodReference13.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -XDuseProxy MethodReference13.java
  * @run main MethodReference13
  */
 

@@ -27,6 +27,7 @@
  * @summary Inner class of generic class cannot extend Throwable
  * @author  Peter von der Ah\u00e9
  * @compile T5086027pos.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T5086027pos.java
  */
 
 public class T5086027pos<T> {

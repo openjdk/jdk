@@ -30,7 +30,9 @@ import java.util.Arrays;
  * @bug 8154270
  * @summary javac wrongly rejects some class literals as annotation element values
  * @compile EraseClassInfoAnnotationValueTest.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 EraseClassInfoAnnotationValueTest.java
  * @compile -implicit:none Other.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -implicit:none Other.java
  * @run main EraseClassInfoAnnotationValueTest
  */
 public class EraseClassInfoAnnotationValueTest {

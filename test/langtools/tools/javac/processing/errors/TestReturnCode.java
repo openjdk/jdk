@@ -30,8 +30,10 @@
  * @modules jdk.compiler/com.sun.tools.javac.main
  * @build JavacTestingAbstractProcessor CompileFail
  * @compile TestReturnCode.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TestReturnCode.java
  *
  * @compile                     -processor TestReturnCode -proc:only                                                                   Foo.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2                     -processor TestReturnCode -proc:only                                                                   Foo.java
  * @run main CompileFail ERROR  -processor TestReturnCode -proc:only                                                    -AErrorOnFirst Foo.java
  * @run main CompileFail ERROR  -processor TestReturnCode -proc:only                                      -AErrorOnLast                Foo.java
  * @run main CompileFail ERROR  -processor TestReturnCode -proc:only                                      -AErrorOnLast -AErrorOnFirst Foo.java

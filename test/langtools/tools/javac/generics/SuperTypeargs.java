@@ -28,6 +28,7 @@
  * @author gafter
  *
  * @compile  SuperTypeargs.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  SuperTypeargs.java
  */
 
 package superTypeargs;

@@ -30,6 +30,7 @@
  * @author turnidge
  *
  * @compile ConstCharAppend.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 ConstCharAppend.java
  * @run main ConstCharAppend
  */
 

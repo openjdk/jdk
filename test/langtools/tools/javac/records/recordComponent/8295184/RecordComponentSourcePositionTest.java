@@ -29,7 +29,9 @@
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  * @compile TestWarning.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TestWarning.java
  * @compile ReproducingAP.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 ReproducingAP.java
  * @run main RecordComponentSourcePositionTest
  */
 

@@ -4,6 +4,7 @@
  * @summary Multiple patterns without unnamed variables
  * @compile/fail/ref=T8314423.out -XDrawDiagnostics --release 21 T8314423.java
  * @compile T8314423.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T8314423.java
  */
 
 public class T8314423 {

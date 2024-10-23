@@ -29,6 +29,7 @@
  * @author Jan Lahoda
  * @author  Maurizio Cimadamore
  * @compile LambdaConv06.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 LambdaConv06.java
  */
 
 class LambdaConv06 {

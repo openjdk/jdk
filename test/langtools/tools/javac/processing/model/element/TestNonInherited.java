@@ -30,6 +30,7 @@
  * @modules jdk.compiler/com.sun.tools.javac.util
  * @build   JavacTestingAbstractProcessor TestNonInherited
  * @compile -XDaccessInternalAPI -processor TestNonInherited -proc:only TestNonInherited.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -XDaccessInternalAPI -processor TestNonInherited -proc:only TestNonInherited.java
  */
 
 import com.sun.tools.javac.util.Assert;

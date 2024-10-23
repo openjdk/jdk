@@ -28,6 +28,7 @@
  * @library /tools/javac/lib
  * @build   JavacTestingAbstractProcessor TestDirectSupertypeObject
  * @compile -processor TestDirectSupertypeObject -proc:only TestDirectSupertypeObject.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor TestDirectSupertypeObject -proc:only TestDirectSupertypeObject.java
  */
 
 import java.util.*;

@@ -27,6 +27,7 @@
  * @summary raw types and inference
  * @author  mcimadamore
  * @compile T6400189c.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T6400189c.java
  */
 
 class T6400189c<T> {

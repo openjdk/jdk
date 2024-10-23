@@ -30,6 +30,7 @@
  * @modules jdk.compiler/com.sun.tools.javac.main
  * @build JavacTestingAbstractProcessor CompileFail
  * @compile TestOptionSyntaxErrors.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TestOptionSyntaxErrors.java
  * @run main CompileFail CMDERR -A TestOptionSyntaxErrors.java
  * @run main CompileFail CMDERR -A8adOption TestOptionSyntaxErrors.java
  * @run main CompileFail CMDERR -A8adOption=1worseOption TestOptionSyntaxErrors.java

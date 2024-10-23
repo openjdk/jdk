@@ -26,6 +26,7 @@
  * @bug 8202178
  * @summary Make sure that var kind != None
  * @compile -Werror -Xlint:all VarInstanceMemberTest.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -Werror -Xlint:all VarInstanceMemberTest.java
  * @run main VarInstanceMemberTest
  */
 

@@ -27,6 +27,7 @@
  * @summary functional interface causes ClassCastException when extending raw superinterface
  * @modules jdk.compiler/com.sun.tools.javac.util
  * @compile CCEForFunctionalInterExtedingRawSuperInterTest.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 CCEForFunctionalInterExtedingRawSuperInterTest.java
  */
 
 public class CCEForFunctionalInterExtedingRawSuperInterTest {

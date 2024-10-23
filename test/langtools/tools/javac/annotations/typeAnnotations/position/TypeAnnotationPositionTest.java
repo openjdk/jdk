@@ -27,7 +27,9 @@
  * @summary Updating the type annotation position offset causes ArrayIndexOutOfBoundsException in ClassWriter
  * @modules jdk.compiler/com.sun.tools.javac.tree
  * @compile TypeAnnotationPositionProcessor.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TypeAnnotationPositionProcessor.java
  * @compile -processor TypeAnnotationPositionProcessor TypeAnnotationPositionTest.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor TypeAnnotationPositionProcessor TypeAnnotationPositionTest.java
  */
 
 import java.lang.annotation.ElementType;

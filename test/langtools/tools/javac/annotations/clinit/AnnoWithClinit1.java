@@ -26,6 +26,7 @@
  * @bug 8013485
  * @summary Annotations that gets a clinit can't be verified for correct elements in a second compilation unit
  * @compile AnnoWithClinit1.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 AnnoWithClinit1.java
  */
 
 public @interface AnnoWithClinit1 {

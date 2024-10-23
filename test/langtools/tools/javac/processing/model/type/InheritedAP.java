@@ -29,6 +29,7 @@
  *          jdk.compiler
  * @build JavacTestingAbstractProcessor InheritedAP
  * @compile -cp . -processor InheritedAP -proc:only InheritedAP.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -cp . -processor InheritedAP -proc:only InheritedAP.java
  * @summary NPE in annotation processing
  */
 import java.util.*;

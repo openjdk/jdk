@@ -28,6 +28,7 @@
  *   the type variable is also annotated, need to be processed correctly.
  * @author Werner Dietl
  * @compile TypeVariable.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TypeVariable.java
  */
 
 import java.lang.annotation.*;

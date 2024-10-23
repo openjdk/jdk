@@ -28,6 +28,7 @@
  * @author gafter
  *
  * @compile RightTarget.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 RightTarget.java
  */
 
 import java.lang.annotation.ElementType;

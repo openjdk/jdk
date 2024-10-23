@@ -3,6 +3,7 @@
  * @summary Verify that variables can be used as operands to try-with-resources
  * @compile/fail/ref=TwrForVariable1.out --release 8 -XDrawDiagnostics -Xlint:-options TwrForVariable1.java
  * @compile TwrForVariable1.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TwrForVariable1.java
  * @run main TwrForVariable1
  */
 public class TwrForVariable1 implements AutoCloseable {

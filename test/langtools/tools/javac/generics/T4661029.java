@@ -27,6 +27,7 @@
  * @author gafter
  *
  * @compile  T4661029.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  T4661029.java
  */
 
 public class T4661029 {

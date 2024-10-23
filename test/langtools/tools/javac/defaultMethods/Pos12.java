@@ -26,6 +26,7 @@
  * @bug 7192246
  * @summary check that 'this' can be used from within an extension method
  * @compile Pos12.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Pos12.java
  */
 
 interface Pos12 {

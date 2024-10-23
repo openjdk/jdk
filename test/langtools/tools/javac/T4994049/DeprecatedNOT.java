@@ -27,6 +27,7 @@
  * @summary deprecatedNOT! is
  * @author  Scott Seligman
  * @compile -Werror -Xlint:deprecation DeprecatedNOT.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -Werror -Xlint:deprecation DeprecatedNOT.java
  */
 
 class A {

@@ -3,6 +3,7 @@
  * @bug     6495506
  * @summary Cast inserted by generics can cause IllegalAccessError
  * @compile A.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 A.java
  * @compile/fail/ref=T6495506.out -XDrawDiagnostics  T6495506.java
  */
 

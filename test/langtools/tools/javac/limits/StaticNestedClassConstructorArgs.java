@@ -28,6 +28,7 @@
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file
  * @compile NumArgsTest.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 NumArgsTest.java
  * @run main StaticNestedClassConstructorArgs
  */
 

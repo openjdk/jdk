@@ -26,6 +26,7 @@
  * @bug 8300543
  * @summary Check switches work correctly with qualified enum constants
  * @compile EnumSwitchQualified.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 EnumSwitchQualified.java
  * @run main EnumSwitchQualified
 */
 

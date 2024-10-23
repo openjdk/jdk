@@ -26,6 +26,7 @@
  * @bug 8282080
  * @summary Check that serializable lambdas referring to j.l.Object methods work.
  * @compile SerializableObjectMethods.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 SerializableObjectMethods.java
  * @run main SerializableObjectMethods
  */
 import java.io.ByteArrayInputStream;

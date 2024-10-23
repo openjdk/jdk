@@ -28,4 +28,5 @@
  * @author gafter
  *
  * @compile p1/A.java p1/C.java p2/B.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 p1/A.java p1/C.java p2/B.java
  */

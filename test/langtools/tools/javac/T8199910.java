@@ -26,6 +26,7 @@
  * @bug 8199910
  * @summary Compile variables of intersection type inferred by `var` with -g option
  * @compile -g T8199910.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -g T8199910.java
  */
 import java.util.List;
 

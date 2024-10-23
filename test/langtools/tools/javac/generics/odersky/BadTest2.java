@@ -28,6 +28,7 @@
  * @author odersky
  *
  * @compile  BadTest2.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  BadTest2.java
  */
 
 // this used to be a negative regression test, but when we

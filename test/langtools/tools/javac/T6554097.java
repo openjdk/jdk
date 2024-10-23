@@ -3,6 +3,7 @@
  * @bug     6554097
  * @summary "final" confuses at-SuppressWarnings
  * @compile T6554097.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T6554097.java
  * @compile/fail/ref=T6554097.out -XDrawDiagnostics -Werror -Xlint:rawtypes T6554097.java
  */
 

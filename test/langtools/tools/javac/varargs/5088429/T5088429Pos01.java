@@ -28,6 +28,7 @@
  * @summary varargs overloading problem
  * @author mcimadamore
  * @compile T5088429Pos01.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T5088429Pos01.java
  *
  */
 

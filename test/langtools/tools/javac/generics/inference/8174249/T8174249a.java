@@ -26,6 +26,7 @@
  * @bug 8174249
  * @summary Regression in generic method unchecked calls
  * @compile T8174249a.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T8174249a.java
  */
 
 import java.util.ArrayList;

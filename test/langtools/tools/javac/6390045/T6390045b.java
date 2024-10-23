@@ -28,6 +28,7 @@
  *
  * @author mcimadamore
  * @compile -XDfailcomplete=java.lang.Void T6390045b.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -XDfailcomplete=java.lang.Void T6390045b.java
  */
 
 class T6390045b {

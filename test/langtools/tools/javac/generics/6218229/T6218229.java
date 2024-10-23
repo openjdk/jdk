@@ -26,6 +26,7 @@
  * @bug     6218229
  * @summary NPE in Check.checkCompatibleConcretes
  * @compile T6218229.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T6218229.java
  */
 
 public class T6218229 {

@@ -26,6 +26,7 @@
  * @bug     6569789
  * @summary Compiler test lang/TYPE/type153/type15304/type15304.html fails since jdk7 b05
  * @compile T6569789.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T6569789.java
  */
 
 class C {}

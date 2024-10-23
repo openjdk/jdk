@@ -27,6 +27,7 @@
  * @summary anonymous class in explicit constructor invocation can refer implicitly to encl
  *
  * @compile WhichImplicitThis9.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 WhichImplicitThis9.java
  * @run main WhichImplicitThis9
  */
 

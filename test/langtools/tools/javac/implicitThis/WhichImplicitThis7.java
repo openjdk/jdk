@@ -27,6 +27,7 @@
  * @summary private members in a superclass should not hide members from the enclosing scope
  *
  * @compile WhichImplicitThis7.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 WhichImplicitThis7.java
  */
 
 /*

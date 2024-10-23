@@ -26,6 +26,7 @@
  * @bug 8027262
  * @summary Stress test for type annotatons
  * @compile AllLocations.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 AllLocations.java
  */
 
 import java.util.function.Function;

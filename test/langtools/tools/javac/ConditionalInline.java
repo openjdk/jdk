@@ -27,6 +27,7 @@
  * @summary The compiler got a null pointer exception on code like the
  *          following.
  * @compile ConditionalInline.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 ConditionalInline.java
  * @author turnidge
  */
 public class ConditionalInline {

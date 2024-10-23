@@ -27,6 +27,7 @@
  * @summary Wrong type of inherited method using specialized type parameter
  * @author  Peter von der Ah\u00e9
  * @compile T6227936.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T6227936.java
  */
 
 public class T6227936 {

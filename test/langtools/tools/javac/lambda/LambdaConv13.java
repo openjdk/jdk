@@ -28,6 +28,7 @@
  *  interface methods in diamond shaped inheritance trees shouldn't be counted twice
  * @author  Maurizio Cimadamore
  * @compile LambdaConv13.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 LambdaConv13.java
  */
 
 class LambdaConv13 {

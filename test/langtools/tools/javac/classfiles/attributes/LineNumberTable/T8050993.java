@@ -5,6 +5,7 @@
  * @enablePreview
  * @modules java.base/jdk.internal.classfile.impl
  * @compile -g T8050993.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -g T8050993.java
  * @run main T8050993
  */
 

@@ -26,6 +26,7 @@
  * @bug     5065215
  * @summary javac reports unnecessary unchecked warning
  * @compile -Xlint:unchecked -Werror T5065215.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -Xlint:unchecked -Werror T5065215.java
  */
 
 public class T5065215 {

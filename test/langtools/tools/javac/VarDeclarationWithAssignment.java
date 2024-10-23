@@ -29,6 +29,7 @@
  * @author turnidge
  *
  * @compile VarDeclarationWithAssignment.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 VarDeclarationWithAssignment.java
  * @run main/othervm -verify VarDeclarationWithAssignment
  */
 

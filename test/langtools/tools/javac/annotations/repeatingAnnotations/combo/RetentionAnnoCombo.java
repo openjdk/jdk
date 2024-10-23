@@ -29,6 +29,7 @@
  * @modules jdk.compiler
  * @build    Helper
  * @compile  RetentionAnnoCombo.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  RetentionAnnoCombo.java
  * @run main RetentionAnnoCombo
  */
 

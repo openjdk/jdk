@@ -31,7 +31,9 @@
  *          jdk.compiler
  * @build JavacTestingAbstractProcessor
  * @compile -g OverEager.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -g OverEager.java
  * @compile -processor OverEager -proc:only OverEager.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor OverEager -proc:only OverEager.java
  */
 
 import java.util.Set;

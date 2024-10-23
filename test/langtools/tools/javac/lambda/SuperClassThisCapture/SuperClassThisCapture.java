@@ -26,6 +26,7 @@
  * @bug 8336786
  * @summary VerifyError with lambda capture and enclosing instance references
  * @compile a/A.java SuperClassThisCapture.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 a/A.java SuperClassThisCapture.java
  * @run main SuperClassThisCapture
  */
 

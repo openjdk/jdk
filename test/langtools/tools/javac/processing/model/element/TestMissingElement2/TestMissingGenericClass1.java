@@ -31,6 +31,7 @@
  * @clean MissingGenericClass1
  * @build JavacTestingAbstractProcessor Generator
  * @compile -XprintRounds -processor Generator TestMissingGenericClass1.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -XprintRounds -processor Generator TestMissingGenericClass1.java
  * @run main TestMissingGenericClass1
  */
 

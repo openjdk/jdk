@@ -27,6 +27,7 @@
  * @summary Add lambda tests
  *   Test unbound method reference
  * @compile MethodRef3.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 MethodRef3.java
  * @run main MethodRef3
  */
 

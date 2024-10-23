@@ -28,6 +28,7 @@
  * @author gafter
  *
  * @compile NType.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 NType.java
  */
 
 package ntype;

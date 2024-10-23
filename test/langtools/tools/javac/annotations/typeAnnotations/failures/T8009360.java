@@ -26,6 +26,7 @@
  * @bug 8009360
  * @summary AssertionError from type annotation on member of anonymous class
  * @compile T8009360.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T8009360.java
  */
 import java.lang.annotation.*;
 import static java.lang.annotation.RetentionPolicy.*;

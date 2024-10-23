@@ -8,7 +8,9 @@
  *          jdk.compiler
  * @build JavacTestingAbstractProcessor
  * @compile TestReturnCode.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TestReturnCode.java
  * @compile TestFatalityOfParseErrors.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TestFatalityOfParseErrors.java
  * @compile/fail/ref=TestFatalityOfParseErrors.out -XDrawDiagnostics -XprintRounds -processor TestFatalityOfParseErrors -proc:only TestFatalityOfParseErrors.java
  */
 

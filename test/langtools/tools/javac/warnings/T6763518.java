@@ -26,6 +26,7 @@
  * @bug 6763518
  * @summary Impossible to suppress raw-type warnings
  * @compile -Werror -Xlint:rawtypes T6763518.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -Werror -Xlint:rawtypes T6763518.java
  */
 
 import java.util.List;

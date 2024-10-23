@@ -29,6 +29,7 @@
  * @modules jdk.compiler/com.sun.tools.javac.util
  * @build   JavacTestingAbstractProcessor EnsureOrder
  * @compile -XDaccessInternalAPI -processor EnsureOrder -proc:only EnsureOrder.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -XDaccessInternalAPI -processor EnsureOrder -proc:only EnsureOrder.java
  */
 
 import java.util.Set;

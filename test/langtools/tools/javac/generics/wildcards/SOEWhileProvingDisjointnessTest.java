@@ -26,6 +26,7 @@
  * @bug 8324809
  * @summary compiler can crash with SOE while proving if two recursive types are disjoint
  * @compile SOEWhileProvingDisjointnessTest.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 SOEWhileProvingDisjointnessTest.java
  */
 
 class SOEWhileProvingDisjointnessTest {

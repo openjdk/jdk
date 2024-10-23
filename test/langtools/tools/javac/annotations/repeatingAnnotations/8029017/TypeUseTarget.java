@@ -26,6 +26,7 @@
  * @bug 8029017
  * @summary sanity testing of ElementType validation for repeating annotations
  * @compile TypeUseTarget.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TypeUseTarget.java
  */
 
 import java.lang.annotation.*;

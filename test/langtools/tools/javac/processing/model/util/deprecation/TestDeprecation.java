@@ -31,9 +31,13 @@
  *          jdk.compiler
  * @build JavacTestingAbstractProcessor
  * @compile TestDeprecation.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TestDeprecation.java
  * @compile -processor TestDeprecation -proc:only Dep1.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor TestDeprecation -proc:only Dep1.java
  * @compile Dep1.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Dep1.java
  * @compile -processor TestDeprecation -proc:only Dep1 TestDeprecation.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor TestDeprecation -proc:only Dep1 TestDeprecation.java
  */
 
 import java.util.Set;

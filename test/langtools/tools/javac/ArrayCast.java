@@ -29,6 +29,7 @@
  * @author turnidge
  *
  * @compile ArrayCast.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 ArrayCast.java
  */
 
 public class ArrayCast {

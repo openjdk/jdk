@@ -28,6 +28,7 @@
  * @summary  basic test for diamond (simple/qualified type-expressions)
  * @author mcimadamore
  * @compile Pos02.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Pos02.java
  * @run main Pos02
  */
 

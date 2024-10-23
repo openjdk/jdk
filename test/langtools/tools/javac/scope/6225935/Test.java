@@ -27,6 +27,7 @@
  * @summary Failing Japanese Calendar regression tests
  * @author  Peter von der Ah\u00e9
  * @compile Test.java Bar.java Baz.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Test.java Bar.java Baz.java
  */
 
 import static test.Bar.*;

@@ -26,6 +26,7 @@
  * @bug 8007535
  * @summary Compiler crashes on FunctionalInterface used on interface with two inherited methods with same signatures
  * @compile FunctionalInterfaceAnno02.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 FunctionalInterfaceAnno02.java
  */
 class FunctionalInterfaceAnno02 {
     interface Foo<T, N extends Number> {

@@ -6,6 +6,7 @@
  * @author  Maurizio Cimadamore
  *
  * @compile MethodReference08.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 MethodReference08.java
  * @compile/fail/ref=MethodReference08.out -Werror -Xlint:rawtypes -XDrawDiagnostics MethodReference08.java
  */
 

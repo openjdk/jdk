@@ -26,6 +26,7 @@
  * @bug 8028503
  * @summary javac, for method references a primitive type can be added as a bound
  * @compile PrimitiveTypeInBoundForMethodRefTest.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 PrimitiveTypeInBoundForMethodRefTest.java
  */
 
 class PrimitiveTypeInBoundForMethodRefTest {

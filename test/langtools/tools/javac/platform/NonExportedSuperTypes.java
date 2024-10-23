@@ -28,7 +28,9 @@
  * @modules jdk.compiler
  *          jdk.jfr
  * @compile --release 17 NonExportedSuperTypes.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 --release 17 NonExportedSuperTypes.java
  * @compile --release ${jdk.version} NonExportedSuperTypes.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 --release ${jdk.version} NonExportedSuperTypes.java
  */
 
 import jdk.jfr.Event;

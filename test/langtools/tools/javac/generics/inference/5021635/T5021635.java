@@ -26,6 +26,7 @@
  * @bug     5021635
  * @summary Incorrect default inferred type parameter when type params interdependent
  * @compile T5021635.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T5021635.java
  */
 
 public class T5021635 {

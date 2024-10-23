@@ -26,6 +26,7 @@
  * @summary type-annotation on array level in nested class results in NPE
  * @bug 8008751
  * @compile T8008751.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T8008751.java
  */
 import java.lang.annotation.*;
 import static java.lang.annotation.RetentionPolicy.*;

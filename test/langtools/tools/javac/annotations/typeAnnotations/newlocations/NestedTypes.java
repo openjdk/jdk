@@ -30,6 +30,7 @@ import java.util.Map;
  * @summary new type annotation location: nested types
  * @author Werner Dietl
  * @compile NestedTypes.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 NestedTypes.java
  */
 class Outer {
     class Inner {

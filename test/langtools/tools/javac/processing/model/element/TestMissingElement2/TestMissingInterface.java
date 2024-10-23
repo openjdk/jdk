@@ -30,6 +30,7 @@
  *          jdk.compiler
  * @build JavacTestingAbstractProcessor Generator
  * @compile -XprintRounds -processor Generator TestMissingInterface.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -XprintRounds -processor Generator TestMissingInterface.java
  * @run main TestMissingInterface
  */
 

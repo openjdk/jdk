@@ -7,6 +7,7 @@
  *          jdk.compiler
  * @build   JavacTestingAbstractProcessor T6362067
  * @compile -processor T6362067 -proc:only T6362067.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor T6362067 -proc:only T6362067.java
  * @compile/ref=T6362067.out -XDrawDiagnostics -processor T6362067 -proc:only T6362067.java
  */
 import java.util.Set;

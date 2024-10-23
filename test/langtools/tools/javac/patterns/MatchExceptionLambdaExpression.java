@@ -26,6 +26,7 @@
  * @bug 8335817
  * @summary Verify synthetic catches for deconstruction patterns work properly in expression lambdas
  * @compile MatchExceptionLambdaExpression.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 MatchExceptionLambdaExpression.java
  * @run main MatchExceptionLambdaExpression
  */
 public class MatchExceptionLambdaExpression {

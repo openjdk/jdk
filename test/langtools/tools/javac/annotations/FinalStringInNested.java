@@ -27,6 +27,7 @@
  * @summary Verify that constant strings in nested classes in anonymous classes
  *          can be used in annotations.
  * @compile FinalStringInNested.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 FinalStringInNested.java
  */
 
 public class FinalStringInNested {

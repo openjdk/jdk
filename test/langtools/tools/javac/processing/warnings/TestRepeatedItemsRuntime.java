@@ -26,6 +26,7 @@
  * @bug 8224177
  * @summary Test warnings from the annotation processing runtime about malformed supported information from processors.
  * @compile TestRepeatedItemsRuntime.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TestRepeatedItemsRuntime.java
  * @compile/ref=gold_sv_none.out  -XDrawDiagnostics -processor TestRepeatedItemsRuntime -proc:only TestRepeatedItemsRuntime.java
  * @compile/ref=auric_current.out -XDrawDiagnostics -processor TestRepeatedItemsRuntime -proc:only -Xlint:processing TestRepeatedItemsRuntime.java
  */

@@ -25,6 +25,7 @@
  * @bug 8320145
  * @summary Compiler should accept final variable in Record Pattern
  * @compile T8320145.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T8320145.java
  */
 public class T8320145 {
     record ARecord(String aComponent) {}

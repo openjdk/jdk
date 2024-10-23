@@ -28,6 +28,7 @@
  * @library /tools/lib /tools/javac/lib
  * @build   toolbox.ToolBox JavacTestingAbstractProcessor TestGetDocComment_Line
  * @compile -processor TestGetDocComment_Line -proc:only TestGetDocComment_Line.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor TestGetDocComment_Line -proc:only TestGetDocComment_Line.java
  */
 
 import java.util.Set;

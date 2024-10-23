@@ -25,6 +25,7 @@
  * @bug 8326404
  * @summary Assertion error when trying to compile switch with fallthrough with pattern
  * @compile T8326404.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T8326404.java
  * @run main T8326404
  */
 public class T8326404 {

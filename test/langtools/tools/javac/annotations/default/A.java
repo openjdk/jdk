@@ -5,6 +5,7 @@
  * @author gafter
  *
  * @compile A.java B.java C.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 A.java B.java C.java
  * @compile/fail/ref=Derr.out -XDrawDiagnostics  Derr.java
  * @compile/fail/ref=Eerr.out -XDrawDiagnostics  Eerr.java
  */

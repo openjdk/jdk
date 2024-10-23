@@ -27,6 +27,7 @@
  *
  * @summary Order of declarations affects whether abstract method considered overridden
  * @compile T6987475pos.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T6987475pos.java
  */
 
 class T6987475pos {

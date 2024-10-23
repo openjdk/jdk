@@ -28,6 +28,7 @@
  * @author gafter
  *
  * @compile -Werror -Xlint:unchecked  Casting4.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -Werror -Xlint:unchecked  Casting4.java
  */
 
 package Casting4;

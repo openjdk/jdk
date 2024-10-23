@@ -28,6 +28,7 @@
  * @author mcimadamore
  *
  * @compile -Werror -Xlint:cast XlintWarn.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -Werror -Xlint:cast XlintWarn.java
  */
 
 import java.lang.invoke.*;

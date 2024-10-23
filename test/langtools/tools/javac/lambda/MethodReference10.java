@@ -28,6 +28,7 @@
  *  check that non static selectors in method refs are handled correctly
  * @author  Maurizio Cimadamore
  * @compile MethodReference10.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 MethodReference10.java
  */
 
 import java.util.*;

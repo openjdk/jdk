@@ -28,12 +28,15 @@
  * @enablePreview
  *
  * @compile -XDstringConcat=indy              WellKnownTypes.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -XDstringConcat=indy              WellKnownTypes.java
  * @run main WellKnownTypes
  *
  * @compile -XDstringConcat=indyWithConstants WellKnownTypes.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -XDstringConcat=indyWithConstants WellKnownTypes.java
  * @run main WellKnownTypes
  *
  * @compile -XDstringConcat=inline            WellKnownTypes.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -XDstringConcat=inline            WellKnownTypes.java
  * @run main WellKnownTypes
  */
 

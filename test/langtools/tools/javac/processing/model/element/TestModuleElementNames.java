@@ -30,6 +30,7 @@
  *          jdk.compiler
  * @build   JavacTestingAbstractProcessor TestModuleElementNames
  * @compile -processor TestModuleElementNames -proc:only TestModuleElementNames.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor TestModuleElementNames -proc:only TestModuleElementNames.java
  */
 
 import java.util.Set;

@@ -29,6 +29,7 @@ import java.lang.annotation.*;
  * @summary new type annotation location: throw clauses
  * @author Mahmood Ali
  * @compile Throws.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Throws.java
  */
 class DefaultUnmodified {
   void oneException() throws @A Exception {}

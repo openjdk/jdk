@@ -28,6 +28,7 @@
  * @author gafter
  *
  * @compile  MissingBridge.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  MissingBridge.java
  * @run main MissingBridge
  */
 

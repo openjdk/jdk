@@ -27,6 +27,7 @@
  * @summary Add lambda tests
  *  check that target type of a cast is propagated through parenthesized expressions
  * @compile TargetType31.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TargetType31.java
  */
 
 class TargetType31 {

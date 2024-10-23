@@ -30,6 +30,7 @@
  *          jdk.compiler
  * @build JavacTestingAbstractProcessor TestTypeParameter
  * @compile -processor TestTypeParameter -proc:only TestTypeParameter.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor TestTypeParameter -proc:only TestTypeParameter.java
  */
 
 import java.util.*;

@@ -28,6 +28,7 @@
  * @author maddox
  *
  * @compile Foo.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Foo.java
  */
 
 import bar.Baz;

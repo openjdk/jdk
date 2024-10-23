@@ -26,6 +26,7 @@
  * @bug 8016081 8016178
  * @summary structural most specific and stuckness
  * @compile T8016177f.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T8016177f.java
  */
 import java.util.*;
 

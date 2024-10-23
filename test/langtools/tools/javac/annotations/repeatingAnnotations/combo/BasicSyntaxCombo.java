@@ -29,6 +29,7 @@
  * @modules jdk.compiler
  * @build    Helper
  * @compile  BasicSyntaxCombo.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  BasicSyntaxCombo.java
  * @run main BasicSyntaxCombo
  */
 

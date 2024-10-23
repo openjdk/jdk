@@ -24,6 +24,7 @@
 /**
  * @test
  * @compile EmptyRecordClass.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 EmptyRecordClass.java
  */
 
 public class EmptyRecordClass {

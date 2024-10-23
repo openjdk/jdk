@@ -28,6 +28,7 @@
  *  bad target-type inference lead to compiler crash
  * @author  Maurizio Cimadamore
  * @compile TargetType15.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TargetType15.java
  */
 
 class TargetType15 {

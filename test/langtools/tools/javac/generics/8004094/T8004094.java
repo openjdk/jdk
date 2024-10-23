@@ -27,6 +27,7 @@
  * @summary Javac compiler error - synthetic method accessor generated with duplicate name
  *
  * @compile B.java T8004094.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 B.java T8004094.java
  */
 
 public class T8004094 extends B<Object> { }

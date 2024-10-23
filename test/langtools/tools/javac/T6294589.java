@@ -26,6 +26,7 @@
  * @bug 6294589
  * @summary verify that annotations inside foreach statements do not cause AssertionError
  * @compile T6294589.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T6294589.java
  */
 import java.util.ArrayList;
 

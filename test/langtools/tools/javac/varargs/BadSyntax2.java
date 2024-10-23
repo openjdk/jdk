@@ -28,6 +28,7 @@
  * @author gafter
  *
  * @compile  BadSyntax2.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  BadSyntax2.java
  */
 
 class Tclass<T> {

@@ -28,6 +28,7 @@
  * @author gafter
  *
  * @compile SuperMeth.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 SuperMeth.java
  * @run main SuperMeth
  */
 

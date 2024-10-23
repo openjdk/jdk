@@ -26,6 +26,7 @@
  * @bug 8011028
  * @summary lang/INFR/infr001/infr00101md/infr00101md.java fails to compile after switch to JDK8-b82
  * @compile TargetType70.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TargetType70.java
  */
 class TargetType70  {
 

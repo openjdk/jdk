@@ -26,6 +26,7 @@
  * @bug     6268476
  * @summary Arrays and super wildcards broken
  * @compile T6268476.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T6268476.java
  */
 
 import java.util.List;

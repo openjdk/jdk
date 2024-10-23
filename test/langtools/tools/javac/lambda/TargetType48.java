@@ -27,6 +27,7 @@
  * @summary Add lambda tests
  *  spurious functional interface conversion errors with default methods in target type
  * @compile TargetType48.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TargetType48.java
  */
 
 class TargetType48 {

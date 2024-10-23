@@ -26,6 +26,7 @@
  * @bug 8155028
  * @summary javac crashes in silly do-while loop
  * @compile UnreachableLoopCond.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 UnreachableLoopCond.java
  */
 
 class UnreachableLoopCond {

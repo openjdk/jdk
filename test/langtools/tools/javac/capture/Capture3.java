@@ -28,6 +28,7 @@
  * @author gafter
  *
  * @compile Capture3.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Capture3.java
  */
 
 package capture3;

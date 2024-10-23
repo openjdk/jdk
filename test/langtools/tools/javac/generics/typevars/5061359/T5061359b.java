@@ -26,6 +26,7 @@
  * @bug     5061359
  * @summary No error for ambiguous member of intersection
  * @compile T5061359b.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T5061359b.java
  */
 
 class Test<T extends Base & Intf> {

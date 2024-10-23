@@ -26,7 +26,9 @@
  * @bug 8262891 8270151
  * @summary Verify pattern switches work properly when the set of sealed types changes.
  * @compile SealedTypeChanges.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 SealedTypeChanges.java
  * @compile SealedTypeChanges2.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 SealedTypeChanges2.java
  * @run main SealedTypeChanges
  */
 

@@ -28,6 +28,7 @@
  *          jdk.compiler/com.sun.tools.javac.util
  * @build DA TA Test TestProcessor
  * @compile -XDaccessInternalAPI -proc:only -processor TestProcessor AnnoTreeTests.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -XDaccessInternalAPI -proc:only -processor TestProcessor AnnoTreeTests.java
  */
 
 @Test(4)

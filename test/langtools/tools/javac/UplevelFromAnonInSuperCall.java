@@ -29,6 +29,7 @@
  * @author maddox (cribbed from bracha/lillibridge) gafter
  *
  * @compile UplevelFromAnonInSuperCall.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 UplevelFromAnonInSuperCall.java
  */
 
 class UplevelFromAnonInSuperCall {

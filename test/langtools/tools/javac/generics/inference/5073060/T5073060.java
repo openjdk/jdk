@@ -26,6 +26,7 @@
  * @bug     5073060
  * @summary Package private members not found for intersection types
  * @compile T5073060.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T5073060.java
  */
 
 public class T5073060 {

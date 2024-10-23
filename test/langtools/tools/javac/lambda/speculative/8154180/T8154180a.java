@@ -29,6 +29,7 @@ import java.nio.ByteBuffer;
  * @bug 8154180
  * @summary Regression: stuck expressions do not behave correctly
  * @compile T8154180a.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T8154180a.java
  */
 class T8154180a {
     T8154180a(Consumer<ByteBuffer> cb) { }

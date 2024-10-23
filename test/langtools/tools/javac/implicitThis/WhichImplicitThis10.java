@@ -27,6 +27,7 @@
  * @summary finding implicit "this" for constructor invocation should ignore hiding, non-inheritance
  *
  * @compile WhichImplicitThis10.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 WhichImplicitThis10.java
  */
 
 public class WhichImplicitThis10 {

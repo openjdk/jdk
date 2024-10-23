@@ -28,6 +28,7 @@
  * @author gafter
  *
  * @compile -Xlint:unchecked -Werror  SilentUnchecked.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -Xlint:unchecked -Werror  SilentUnchecked.java
  */
 
 package silent.unchecked;

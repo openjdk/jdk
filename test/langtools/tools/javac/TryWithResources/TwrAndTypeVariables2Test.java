@@ -26,6 +26,7 @@
  * @bug 8163027
  * @summary AssertionError while compiling program that uses try with resources
  * @compile TwrAndTypeVariables2Test.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TwrAndTypeVariables2Test.java
  */
 
 abstract class TwrAndTypeVariables2Test_01 implements AutoCloseable {

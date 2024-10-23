@@ -33,6 +33,7 @@ import java.lang.classfile.*;
  * @enablePreview
  * @modules java.base/jdk.internal.classfile.impl
  * @compile -XDdeduplicateLambdas=false StaticInitializer.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -XDdeduplicateLambdas=false StaticInitializer.java
  * @run main StaticInitializer
  */
 

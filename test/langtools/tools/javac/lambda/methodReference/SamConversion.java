@@ -28,6 +28,7 @@
  *   Test SAM conversion of method references in contexts of assignment, method/constructor argument,
  *           return statement, array initializer, lambda expression body, conditional expression and cast.
  * @compile SamConversion.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 SamConversion.java
  * @run main SamConversion
  */
 

@@ -29,6 +29,7 @@
  * @modules java.base/jdk.internal.classfile.impl
  * @build MethodParametersTester ClassFileVisitor ReflectionVisitor
  * @compile -parameters InstanceMethods.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -parameters InstanceMethods.java
  * @run main MethodParametersTester InstanceMethods InstanceMethods.out
  */
 

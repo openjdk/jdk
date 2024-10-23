@@ -26,6 +26,7 @@
  * @bug 6776289
  * @summary Regression: javac7 doesnt resolve method calls properly
  * @compile T6776289.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T6776289.java
  */
 
 class A {

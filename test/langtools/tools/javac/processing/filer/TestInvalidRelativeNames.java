@@ -30,6 +30,7 @@
  *          jdk.compiler
  * @build   JavacTestingAbstractProcessor
  * @compile TestInvalidRelativeNames.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TestInvalidRelativeNames.java
  * @compile/process -processor TestInvalidRelativeNames java.lang.Object
  */
 

@@ -27,6 +27,7 @@
  * @summary Add lambda tests
  *  check that lambda in array initializers is correctly accepted
  * @compile LambdaExpr09.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 LambdaExpr09.java
  */
 
 class LambdaExpr09 {

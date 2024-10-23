@@ -28,6 +28,7 @@
  * @author gafter
  *
  * @compile  ParametricException.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  ParametricException.java
  */
 
 import java.io.*;

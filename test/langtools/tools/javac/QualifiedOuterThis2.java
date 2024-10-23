@@ -28,6 +28,7 @@
  * @author gafter
  *
  * @compile QualifiedOuterThis2.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 QualifiedOuterThis2.java
  */
 
 public class QualifiedOuterThis2 {

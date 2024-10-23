@@ -29,6 +29,7 @@
  * been compiled.
  *
  * @compile ClassLiteralEvalInit.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 ClassLiteralEvalInit.java
  */
 
 public class ClassLiteralEvalInit {

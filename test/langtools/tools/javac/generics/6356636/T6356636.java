@@ -26,7 +26,9 @@
  * @bug     6356636
  * @summary Compiler fails to read signatures of inner classes with non-generic outer instance leading to crash
  * @compile a/AbstractFoo.java a/Bar.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 a/AbstractFoo.java a/Bar.java
  * @compile T6356636.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T6356636.java
  */
 
 import a.*;

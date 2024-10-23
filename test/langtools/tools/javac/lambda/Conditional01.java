@@ -27,6 +27,7 @@
  * @summary Add lambda tests
  *  conditional and varargs
  * @compile Conditional01.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Conditional01.java
  */
 
 import java.util.*;

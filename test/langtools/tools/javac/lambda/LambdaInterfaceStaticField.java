@@ -26,6 +26,7 @@
  * @bug 8006140
  * @summary Javac NPE compiling Lambda expression on initialization expression of static field in interface
  * @compile LambdaInterfaceStaticField.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 LambdaInterfaceStaticField.java
  */
 
 interface LambdaInterfaceStaticField {

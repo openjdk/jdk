@@ -30,7 +30,9 @@
  *          jdk.compiler
  * @build   JavacTestingAbstractProcessor TestGetModuleOf
  * @compile -processor TestGetModuleOf -proc:only TestGetModuleOf.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor TestGetModuleOf -proc:only TestGetModuleOf.java
  * @compile -processor TestGetModuleOf -proc:only -source 8 -Xlint:-options TestGetModuleOf.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor TestGetModuleOf -proc:only -source 8 -Xlint:-options TestGetModuleOf.java
  */
 
 // Also run test under -source 8 to test old behavior pre-modules.

@@ -31,6 +31,7 @@
  *          jdk.compiler/com.sun.tools.javac.main
  *          java.base/jdk.internal.classfile.impl
  * @compile GenerateTypeProcessor.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 GenerateTypeProcessor.java
  * @run main RecordComponentTypeTest
  */
 

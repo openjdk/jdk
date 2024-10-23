@@ -26,6 +26,7 @@
  * @bug 8058511
  * @summary StackOverflowError at com.sun.tools.javac.code.Types.lub
  * @compile T8058511b.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T8058511b.java
  */
 class T8058511b {
     void test(Class<Double> cd, Class<? extends double[]> cdarr) {

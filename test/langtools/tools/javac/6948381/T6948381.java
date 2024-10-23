@@ -26,4 +26,5 @@
  * @bug 6948381
  * @summary javac Null Pointer Exception in Types.makeCompoundType
  * @compile npe/A.java npe/B.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 npe/A.java npe/B.java
  */

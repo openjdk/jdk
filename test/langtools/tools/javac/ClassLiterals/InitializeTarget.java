@@ -28,6 +28,7 @@
  * @author gafter
  *
  * @compile InitializeTarget.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 InitializeTarget.java
  * @run main InitializeTarget
  */
 

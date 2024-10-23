@@ -27,6 +27,7 @@
  * @summary Enhanced for loop: local variable scope inconsistent with JLS
  *
  * @compile T7139681pos.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T7139681pos.java
  */
 class T7139681pos {
     int[] a;

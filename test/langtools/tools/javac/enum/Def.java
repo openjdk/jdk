@@ -28,6 +28,7 @@
  * @author gafter
  *
  * @compile Def.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Def.java
  */
 
 package _enum.def;

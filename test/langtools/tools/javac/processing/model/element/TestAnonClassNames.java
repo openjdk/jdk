@@ -30,6 +30,7 @@
  * @modules jdk.compiler
  * @build   JavacTestingAbstractProcessor TestAnonSourceNames
  * @compile -processor TestAnonSourceNames TestAnonClassNames.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor TestAnonSourceNames TestAnonClassNames.java
  * @run main TestAnonClassNames
  */
 
@@ -40,6 +41,7 @@
  * class files as the basis of constructing the elements.
  *
  * Source files will be tested by the @compile line which runs
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 line which runs
  * TestAnonSourceNames as an annotation processor over this file.
  *
  * Class files are tested by the @run command on this type.  This

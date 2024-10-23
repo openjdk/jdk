@@ -30,6 +30,7 @@
  * @modules jdk.compiler
  * @build   JavacTestingAbstractProcessor TestResourceVariable
  * @compile -processor TestResourceVariable -proc:only TestResourceVariable.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor TestResourceVariable -proc:only TestResourceVariable.java
  */
 
 import java.io.*;

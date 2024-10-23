@@ -28,7 +28,9 @@
  * @author mcimadamore
  *
  * @compile A.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 A.java
  * @compile T6835430.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T6835430.java
  */
 
 class T6835430 {

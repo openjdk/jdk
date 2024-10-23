@@ -24,12 +24,16 @@
 /**
  * @test
  * @compile StringConcatWithAssignments.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 StringConcatWithAssignments.java
  * @run main StringConcatWithAssignments
  * @compile -XDstringConcat=inline StringConcatWithAssignments.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -XDstringConcat=inline StringConcatWithAssignments.java
  * @run main StringConcatWithAssignments
  * @compile -XDstringConcat=indy StringConcatWithAssignments.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -XDstringConcat=indy StringConcatWithAssignments.java
  * @run main StringConcatWithAssignments
  * @compile -XDstringConcat=indyWithConstants StringConcatWithAssignments.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -XDstringConcat=indyWithConstants StringConcatWithAssignments.java
  * @run main StringConcatWithAssignments
  */
 

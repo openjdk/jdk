@@ -28,7 +28,9 @@
  * @author gafter
  *
  * @compile ClassA.java ClassB.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 ClassA.java ClassB.java
  * @compile ClassB.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 ClassB.java
  */
 
 @interface ClassA {

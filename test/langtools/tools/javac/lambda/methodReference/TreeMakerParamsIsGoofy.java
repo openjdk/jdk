@@ -28,6 +28,7 @@
  *          in a method whose number of parameters matches the number of
  *          constructor parameters compilation fails
  * @compile TreeMakerParamsIsGoofy.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TreeMakerParamsIsGoofy.java
  * @run main TreeMakerParamsIsGoofy
  */
 

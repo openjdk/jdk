@@ -26,6 +26,7 @@
  * @bug 8010303 8062373
  * @summary Graph inference: missing incorporation step causes spurious inference error
  * @compile TargetType69.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TargetType69.java
  */
 import java.util.*;
 

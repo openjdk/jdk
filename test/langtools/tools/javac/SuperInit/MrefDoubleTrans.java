@@ -26,6 +26,7 @@
  * @bug 8336320
  * @summary NullPointerException: Cannot invoke Type.getTag because type is null after JDK-8334037
  * @compile MrefDoubleTrans.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 MrefDoubleTrans.java
  */
 class MrefDoubleTrans {
     public void f() {

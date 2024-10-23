@@ -26,6 +26,7 @@
  * @bug 8012722
  * @summary Single comma in array initializer should parse
  * @compile SingleCommaAnnotationValue.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 SingleCommaAnnotationValue.java
  */
 
 public class SingleCommaAnnotationValue {

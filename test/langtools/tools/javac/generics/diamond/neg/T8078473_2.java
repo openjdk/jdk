@@ -25,6 +25,7 @@
  * @bug 8078473 8078660
  * @summary  javac diamond finder crashes when used to build java.base module
  * @compile -Werror T8078473_2.java -XDrawDiagnostics -XDfind=diamond
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -Werror T8078473_2.java -XDrawDiagnostics -XDfind=diamond
  */
 
 package p.q.r;

@@ -31,6 +31,7 @@
  *          jdk.compiler
  * @build   JavacTestingAbstractProcessor TestGetConstantExpression
  * @compile -processor TestGetConstantExpression Foo.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor TestGetConstantExpression Foo.java
  */
 
 import java.util.Set;

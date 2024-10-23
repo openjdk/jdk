@@ -26,6 +26,7 @@
  * @bug 7096014
  * @summary Javac tokens should retain state
  * @compile -Xlint:-dangling-doc-comments -Werror DeprecatedDocComment3.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -Xlint:-dangling-doc-comments -Werror DeprecatedDocComment3.java
  */
 
 class DeprecatedDocComment3 {

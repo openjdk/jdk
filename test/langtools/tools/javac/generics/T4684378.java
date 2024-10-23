@@ -28,6 +28,7 @@
  * @author gafter
  *
  * @compile  T4684378.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  T4684378.java
  * @run main T4684378
  */
 

@@ -26,6 +26,7 @@
  * @bug 8223967
  * @summary Unit tests for Text Block language changes
  * @compile -encoding utf8 TextBlockLang.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -encoding utf8 TextBlockLang.java
  * @run main TextBlockLang
  */
 

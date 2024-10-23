@@ -25,6 +25,7 @@
  * @test
  * @summary check strict method conversion allows loose method reference conversion
  * @compile MethodReference26.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 MethodReference26.java
  */
 
 class MethodReference26 {

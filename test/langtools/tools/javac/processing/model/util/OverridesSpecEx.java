@@ -31,7 +31,9 @@
  *          jdk.compiler
  * @build JavacTestingAbstractProcessor
  * @compile -g OverridesSpecEx.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -g OverridesSpecEx.java
  * @compile -processor OverridesSpecEx -proc:only OverridesSpecEx.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor OverridesSpecEx -proc:only OverridesSpecEx.java
  */
 
 import java.util.Set;

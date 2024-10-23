@@ -27,6 +27,7 @@
  * @summary Bound error on wildcard code
  * @author Maurizio Cimadamore
  * @compile T6732484.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T6732484.java
  */
 
 class T6732484 {

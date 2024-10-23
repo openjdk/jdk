@@ -29,6 +29,7 @@
  *   need to be processed correctly.
  * @author Werner Dietl
  * @compile TypeVariableCycleTest.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TypeVariableCycleTest.java
  */
 
 import java.lang.annotation.*;

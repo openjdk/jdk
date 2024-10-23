@@ -30,6 +30,7 @@
  *          jdk.compiler
  * @build   JavacTestingAbstractProcessor
  * @compile TestValidRelativeNames.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TestValidRelativeNames.java
  * @compile/process -processor TestValidRelativeNames -Amode=create java.lang.Object
  * @compile/process -processor TestValidRelativeNames -Amode=get    java.lang.Object
  */

@@ -26,6 +26,7 @@
  * @summary Series of colon-style fallthrough switch cases with guards compiled incorrectly
  * @enablePreview
  * @compile T8314226.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T8314226.java
  * @run main T8314226
  */
 

@@ -30,7 +30,9 @@
  * @modules java.compiler jdk.compiler
  * @build Processor
  * @compile package-info.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 package-info.java
  * @compile -processor Processor ClassAnnotations.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor Processor ClassAnnotations.java
  */
 package p;
 

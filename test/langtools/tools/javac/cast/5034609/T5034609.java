@@ -26,6 +26,7 @@
  * @bug     5034609
  * @summary Capture conversion implementation breaks a cast test
  * @compile -Xlint:unchecked -Werror T5034609.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -Xlint:unchecked -Werror T5034609.java
  */
 
 interface DA<T> { }

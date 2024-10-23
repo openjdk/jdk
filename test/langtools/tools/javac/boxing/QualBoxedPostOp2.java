@@ -26,6 +26,7 @@
  * @bug 8147527
  * @summary Qualified "super" boxed unary post-operation using a type variable.
  * @compile QualBoxedPostOp2.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 QualBoxedPostOp2.java
  * @run main QualBoxedPostOp2
  */
 public class QualBoxedPostOp2<T> extends Parent2<Integer> {

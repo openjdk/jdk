@@ -28,6 +28,7 @@
  * @author gafter
  *
  * @compile StaticBlockScope.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 StaticBlockScope.java
  */
 
 class StaticBlockScope {

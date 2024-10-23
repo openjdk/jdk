@@ -28,6 +28,7 @@
  * @modules jdk.compiler
  * @build TreePosRoundsTest
  * @compile -proc:only -processor TreePosRoundsTest TreePosRoundsTest.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -proc:only -processor TreePosRoundsTest TreePosRoundsTest.java
  * @run main TreePosRoundsTest
  */
 

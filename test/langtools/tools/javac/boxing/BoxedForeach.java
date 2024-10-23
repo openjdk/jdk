@@ -28,6 +28,7 @@
  * @author gafter
  *
  * @compile BoxedForeach.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 BoxedForeach.java
  * @run main BoxedForeach
  */
 

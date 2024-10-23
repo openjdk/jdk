@@ -26,6 +26,7 @@
  * @bug 7192246
  * @summary 'class wins' should not short-circuit overload resolution
  * @compile Pos16.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Pos16.java
  */
 
 class Pos16 {

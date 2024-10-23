@@ -26,6 +26,7 @@
  * @bug     5060485
  * @summary The scope of a class type parameter is too wide
  * @compile T5060485.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T5060485.java
  */
 
 public class T5060485<Y> {

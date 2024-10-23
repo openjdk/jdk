@@ -27,6 +27,7 @@
  * @summary Verify that there is no spurious unreported exception error.
  * @modules java.sql
  * @compile CheckNoTimeoutException.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 CheckNoTimeoutException.java
  */
 
 import java.util.Collection;

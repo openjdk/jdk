@@ -30,6 +30,7 @@
  * @author turnidge
  *
  * @compile TryInInstanceInit.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TryInInstanceInit.java
  */
 
 class TryInInstanceInit {

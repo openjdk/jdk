@@ -26,6 +26,7 @@
  * @bug     5066774
  * @summary Bad interaction between generics, instanceof, inner classes, and subclasses
  * @compile T5066774.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T5066774.java
  */
 
 public class T5066774<T> {

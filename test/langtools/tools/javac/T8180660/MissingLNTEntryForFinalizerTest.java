@@ -34,6 +34,7 @@
  *          jdk.compiler/com.sun.tools.javac.tree
  *          jdk.compiler/com.sun.tools.javac.util
  * @compile -g MissingLNTEntryForFinalizerTest.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -g MissingLNTEntryForFinalizerTest.java
  * @run main MissingLNTEntryForFinalizerTest
  */
 

@@ -26,6 +26,7 @@
  * @bug 8078389
  * @summary Make sure there is no interference between completionDeps and doclint
  * @compile --debug=completionDeps -Xdoclint DepsAndDocLint.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 --debug=completionDeps -Xdoclint DepsAndDocLint.java
  */
 
 public class DepsAndDocLint {

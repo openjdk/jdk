@@ -27,6 +27,7 @@
  * @summary Add lambda tests
  *   Test SAM conversion of lambda expressions in context of assignment, method call, return statement and cast.
  * @compile SamConversion.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 SamConversion.java
  * @run main SamConversion
  */
 

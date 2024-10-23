@@ -29,6 +29,7 @@
  * @modules jdk.compiler
  * @build    Helper
  * @compile  InheritedAnnoCombo.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  InheritedAnnoCombo.java
  * @run main InheritedAnnoCombo
  */
 

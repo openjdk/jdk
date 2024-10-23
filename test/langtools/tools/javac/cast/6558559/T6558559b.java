@@ -28,6 +28,7 @@
  * @author Maurizio Cimadamore
  *
  * @compile T6558559b.java -Xlint:unchecked -Werror
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T6558559b.java -Xlint:unchecked -Werror
  */
 
 import java.util.*;

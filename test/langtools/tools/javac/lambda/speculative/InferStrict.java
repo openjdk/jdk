@@ -26,6 +26,7 @@
   * @bug 8078093
   * @summary Exponential performance regression Java 8 compiler compared to Java 7 compiler
   * @compile InferStrict.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 InferStrict.java
   */
 import java.util.HashSet;
 import java.util.Set;

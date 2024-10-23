@@ -4,6 +4,7 @@
  * @author Joseph D. Darcy
  * @summary Strange TWRs
  * @compile WeirdTwr.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 WeirdTwr.java
  * @run main WeirdTwr
  */
 

@@ -36,6 +36,7 @@ import javax.lang.model.SourceVersion;
  *          jdk.compiler
  * @build   JavacTestingAbstractProcessor
  * @compile ClassProcessor.java package-info.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 ClassProcessor.java package-info.java
  * @compile/process -cp . -processor ClassProcessor -Akind=java  java.lang.Object
  * @compile/process -cp . -processor ClassProcessor -Akind=class java.lang.Object
  */

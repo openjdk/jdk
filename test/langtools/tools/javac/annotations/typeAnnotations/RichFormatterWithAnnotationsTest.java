@@ -26,6 +26,7 @@
  * @bug 8144580
  * @summary java.lang.AssertionError: Missing type variable in where clause: T
  * @compile -Xlint:unchecked RichFormatterWithAnnotationsTest.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -Xlint:unchecked RichFormatterWithAnnotationsTest.java
  */
 
 import java.lang.annotation.*;

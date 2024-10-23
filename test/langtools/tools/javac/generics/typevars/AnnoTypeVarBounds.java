@@ -26,6 +26,7 @@
  * @bug     8193367
  * @summary Annotated type variable bounds crash javac
  * @compile AnnoTypeVarBounds.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 AnnoTypeVarBounds.java
  */
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Target;

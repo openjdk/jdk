@@ -29,6 +29,7 @@
  * @author turnidge
  *
  * @compile AnonymousType.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 AnonymousType.java
  */
 
 class Dummy {

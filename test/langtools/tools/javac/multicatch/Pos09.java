@@ -28,6 +28,7 @@
  * @summary Project Coin: Improved Exception Handling for Java (aka 'multicatch')
  * @author mcimadamore
  * @compile Pos09.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Pos09.java
  *
  */
 

@@ -27,6 +27,7 @@
  * @summary Verify variable capture works inside switch expressions which are
  *          inside variable declarations
  * @compile LambdaCapture.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 LambdaCapture.java
  */
 
 import java.util.Objects;

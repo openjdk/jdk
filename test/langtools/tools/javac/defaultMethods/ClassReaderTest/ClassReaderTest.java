@@ -27,7 +27,9 @@
  * @summary check that default methods don't cause ClassReader to complete classes recursively
  * @author  Maurizio Cimadamore
  * @compile pkg/Foo.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 pkg/Foo.java
  * @compile ClassReaderTest.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 ClassReaderTest.java
  */
 
 abstract class ClassReaderTest implements pkg.Foo {}

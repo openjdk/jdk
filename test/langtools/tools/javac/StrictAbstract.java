@@ -28,6 +28,7 @@
  * @author gafter
  *
  * @compile StrictAbstract.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 StrictAbstract.java
  * @run main StrictAbstract
  */
 

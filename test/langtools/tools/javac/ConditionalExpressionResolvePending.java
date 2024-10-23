@@ -35,6 +35,7 @@
  * @build toolbox.ToolBox toolbox.JavacTask
  * @build combo.ComboTestHelper
  * @compile ConditionalExpressionResolvePending.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 ConditionalExpressionResolvePending.java
  * @run main/othervm ConditionalExpressionResolvePending
  */
 

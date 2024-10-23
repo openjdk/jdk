@@ -27,6 +27,7 @@
  * @summary Add lambda tests
  *  check that cast conversion context is propagated to conditional subexpressions
  * @compile TargetType37.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TargetType37.java
  */
 class TargetType37 {
 

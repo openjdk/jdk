@@ -26,6 +26,7 @@
  * @bug 8305672
  * @summary DA/DU tracking gets confused by lambda/try combination
  * @compile TryWithLambdaFinal.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TryWithLambdaFinal.java
  */
 class TryWithLambdaFinal {
 

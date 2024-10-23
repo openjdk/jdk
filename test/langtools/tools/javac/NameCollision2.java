@@ -28,6 +28,7 @@
  * @author gafter
  *
  * @compile NameCollision2.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 NameCollision2.java
  * @run main NameCollision2
  */
 

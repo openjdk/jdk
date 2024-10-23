@@ -29,7 +29,9 @@
  *      jdk.compiler/com.sun.tools.javac.code
  *      jdk.compiler/com.sun.tools.javac.util
  * @compile NPEGetDirectivesTest.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 NPEGetDirectivesTest.java
  * @compile -processor NPEGetDirectivesTest NPEGetDirectivesTest.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor NPEGetDirectivesTest NPEGetDirectivesTest.java
  */
 
 import javax.annotation.processing.AbstractProcessor;

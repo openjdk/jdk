@@ -31,7 +31,9 @@
  *          jdk.compiler
  * @build   JavacTestingAbstractProcessor
  * @compile T6512707.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T6512707.java
  * @compile -processor T6512707 TestAnnotation.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor T6512707 TestAnnotation.java
  */
 
 import java.util.Set;

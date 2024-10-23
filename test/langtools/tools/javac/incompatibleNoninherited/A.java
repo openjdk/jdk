@@ -28,6 +28,7 @@
  * @author gafter
  *
  * @compile A.java B.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 A.java B.java
  */
 
 package a;

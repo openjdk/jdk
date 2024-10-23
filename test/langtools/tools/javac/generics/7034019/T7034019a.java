@@ -27,6 +27,7 @@
  * @summary ClassCastException in javac with conjunction types
  *
  * @compile T7034019a.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T7034019a.java
  */
 
 class T7034019a {

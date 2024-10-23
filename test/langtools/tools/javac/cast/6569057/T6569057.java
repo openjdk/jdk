@@ -26,6 +26,7 @@
  * @bug     6569057 6932571
  * @summary Generics regression on cast
  * @compile T6569057.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T6569057.java
  */
 
 class T6569057 {

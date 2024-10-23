@@ -31,6 +31,7 @@
  *          jdk.compiler
  * @build JavacTestingAbstractProcessor NoPrivateTypesExported
  * @compile -processor NoPrivateTypesExported NoPrivateTypesExported.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor NoPrivateTypesExported NoPrivateTypesExported.java
  */
 import java.lang.annotation.Documented;
 import java.util.Arrays;

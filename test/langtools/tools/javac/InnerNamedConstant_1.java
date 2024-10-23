@@ -29,6 +29,7 @@
  * @author William Maddox (maddox)
  *
  * @compile InnerNamedConstant_1.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 InnerNamedConstant_1.java
  * @run main InnerNamedConstant_1
  */
 

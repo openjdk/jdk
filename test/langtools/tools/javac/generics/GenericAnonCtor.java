@@ -28,6 +28,7 @@
  * @author gafter
  *
  * @compile  GenericAnonCtor.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  GenericAnonCtor.java
  * @run main GenericAnonCtor
  */
 

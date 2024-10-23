@@ -27,6 +27,7 @@
  * @summary Ensure release and enable-preview work well together.
  * @modules jdk.compiler
  * @compile --release ${jdk.version} --enable-preview ReleaseAndEnablePreview.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 --release ${jdk.version} --enable-preview ReleaseAndEnablePreview.java
  */
 
 public class ReleaseAndEnablePreview {

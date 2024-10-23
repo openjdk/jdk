@@ -28,6 +28,7 @@
  *               reading a classfile of a specific length.
  * @modules jdk.compiler/com.sun.tools.javac.jvm
  * @compile -XDignore.symbol.file T6567415.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -XDignore.symbol.file T6567415.java
  * @run main T6567415
  * @author ksrini
  */

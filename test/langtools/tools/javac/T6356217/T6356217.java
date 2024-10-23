@@ -27,6 +27,7 @@
  * @summary ArrayIndexOutOfBoundsException shouldn't be thrown at Code$State.forceStackTop
  * @author  Wei Tao
  * @compile T6356217.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T6356217.java
  */
 
 class T {

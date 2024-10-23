@@ -26,6 +26,7 @@
  * @bug 8206986
  * @summary Check switch expressions embedded in switch expressions.
  * @compile ExpressionSwitchInExpressionSwitch.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 ExpressionSwitchInExpressionSwitch.java
  * @run main ExpressionSwitchInExpressionSwitch
  */
 

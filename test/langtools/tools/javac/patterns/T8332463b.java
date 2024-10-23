@@ -27,7 +27,9 @@
  * @summary Byte conditional pattern case element dominates short constant case element
  * @enablePreview
  * @compile T8332463b.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T8332463b.java
  *  @compile --enable-preview --source ${jdk.version} T8332463b.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 --enable-preview --source ${jdk.version} T8332463b.java
  */
 public class T8332463b {
     public int test1() {

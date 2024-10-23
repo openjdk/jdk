@@ -27,6 +27,7 @@
  * @summary incorrect cyclic inheritance error versus name hiding
  *
  * @compile CyclicInheritance2.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 CyclicInheritance2.java
  */
 
 package p1;

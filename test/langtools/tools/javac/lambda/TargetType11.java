@@ -5,6 +5,7 @@
  *  check that wildcards in the target method of a lambda conversion is handled correctly
  * @author  Maurizio Cimadamore
  * @compile TargetType11.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TargetType11.java
  */
 
 class TargetType11 {

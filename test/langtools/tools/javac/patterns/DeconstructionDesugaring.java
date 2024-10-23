@@ -26,6 +26,7 @@
  * @bug 8291769 8301858 8304694 8304883
  * @summary Verify more complex switches work properly
  * @compile DeconstructionDesugaring.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 DeconstructionDesugaring.java
  * @run main DeconstructionDesugaring
  */
 

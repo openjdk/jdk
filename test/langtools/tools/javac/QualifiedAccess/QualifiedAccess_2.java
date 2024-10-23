@@ -6,7 +6,9 @@
  * names.
  *
  * @compile pack1/P1.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 pack1/P1.java
  * @compile pack1/P2.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 pack1/P2.java
  * @compile/fail/ref=QualifiedAccess_2.out -XDrawDiagnostics QualifiedAccess_2.java
  */
 

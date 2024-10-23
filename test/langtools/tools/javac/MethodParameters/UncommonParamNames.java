@@ -29,6 +29,7 @@
  * @modules java.base/jdk.internal.classfile.impl
  * @build MethodParametersTester ClassFileVisitor ReflectionVisitor
  * @compile -parameters UncommonParamNames.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -parameters UncommonParamNames.java
  * @run main MethodParametersTester UncommonParamNames UncommonParamNames.out
  */
 

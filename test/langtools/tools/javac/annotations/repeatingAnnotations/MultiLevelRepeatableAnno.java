@@ -27,6 +27,7 @@
  * @author  sogoel
  * @summary ContainerType can have its own container
  * @compile MultiLevelRepeatableAnno.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 MultiLevelRepeatableAnno.java
  */
 
 import java.lang.annotation.Repeatable;

@@ -27,6 +27,7 @@
  * @summary Spurious unchecked cast warning
  * @author  Peter von der Ah\u00e9
  * @compile -Werror -Xlint:unchecked T5043020.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -Werror -Xlint:unchecked T5043020.java
  */
 
 public class T5043020 {

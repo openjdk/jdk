@@ -28,6 +28,7 @@
  * @author gafter
  *
  * @compile  MultipleInheritance.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  MultipleInheritance.java
  */
 
 package MultipleInheritance;

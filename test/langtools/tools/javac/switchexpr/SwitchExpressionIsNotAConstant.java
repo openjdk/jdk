@@ -27,6 +27,7 @@
  * @summary Verify the switch expression's type does not have a constant attached,
  *          and so the switch expression is not elided.
  * @compile SwitchExpressionIsNotAConstant.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 SwitchExpressionIsNotAConstant.java
  * @run main SwitchExpressionIsNotAConstant
  */
 public class SwitchExpressionIsNotAConstant {

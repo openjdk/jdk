@@ -28,6 +28,7 @@
  * @author gafter
  *
  * @compile GenericIterator.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 GenericIterator.java
  */
 
 import java.util.*;

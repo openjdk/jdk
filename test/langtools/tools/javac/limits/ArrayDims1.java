@@ -28,6 +28,7 @@
  * @author gafter
  *
  * @compile ArrayDims1.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 ArrayDims1.java
  */
 
 class ArrayDims1 {

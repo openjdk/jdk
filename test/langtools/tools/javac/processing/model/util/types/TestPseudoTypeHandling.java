@@ -30,6 +30,7 @@
  * @modules jdk.compiler
  * @build   JavacTestingAbstractProcessor TestPseudoTypeHandling
  * @compile -processor TestPseudoTypeHandling -proc:only TestPseudoTypeHandling.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor TestPseudoTypeHandling -proc:only TestPseudoTypeHandling.java
  */
 
 import java.util.*;

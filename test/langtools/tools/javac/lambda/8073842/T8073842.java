@@ -26,6 +26,7 @@
  * @bug 8073842
  * @summary Invalid method reference when referencing a method on a wildcard type
  * @compile T8073842.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T8073842.java
  */
 
 import java.util.stream.Stream;

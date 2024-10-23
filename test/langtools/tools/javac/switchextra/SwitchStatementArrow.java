@@ -4,6 +4,7 @@
  * @summary Verify rule cases work properly.
  * @compile/fail/ref=SwitchStatementArrow-old.out --release 9 -XDrawDiagnostics SwitchStatementArrow.java
  * @compile SwitchStatementArrow.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 SwitchStatementArrow.java
  * @run main SwitchStatementArrow
  */
 

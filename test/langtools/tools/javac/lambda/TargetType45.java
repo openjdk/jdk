@@ -4,6 +4,7 @@
  * @summary Add lambda tests
  *  compiler crashes during flow analysis as it fails to report diagnostics during attribution
  * @compile TargetType45.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TargetType45.java
  */
 class TargetType45 {
 

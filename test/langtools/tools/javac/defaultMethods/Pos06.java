@@ -27,6 +27,7 @@
  * @summary check that well-formed MI hierarchies behaves well w.r.t. method resolution (i.e. no ambiguities)
  * @author  Maurizio Cimadamore
  * @compile Pos06.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Pos06.java
  */
 
 class Pos06 {

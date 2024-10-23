@@ -29,7 +29,9 @@
  *          jdk.compiler
  * @build   JavacTestingAbstractProcessor
  * @compile WErrorGen.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 WErrorGen.java
  * @compile -proc:only -processor WErrorGen WErrorGen.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -proc:only -processor WErrorGen WErrorGen.java
  * @compile/fail/ref=WErrorGen.out -XDrawDiagnostics -Werror -Xlint:rawtypes -processor WErrorGen WErrorGen.java
  */
 

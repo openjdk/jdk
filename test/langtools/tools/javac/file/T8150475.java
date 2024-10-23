@@ -24,6 +24,7 @@
 /*
  * @test
  * @compile -sourcepath / T8150475.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -sourcepath / T8150475.java
  */
 
 class T8150475 { }

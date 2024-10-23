@@ -28,6 +28,7 @@
  * @author gafter
  *
  * @compile RawCrash.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 RawCrash.java
  */
 
 class A<E> {

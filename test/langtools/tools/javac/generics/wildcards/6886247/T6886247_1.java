@@ -27,6 +27,7 @@
  * @author Maurizio Cimadamore
  * @summary regression: javac crashes with an assertion error in Attr.java
  * @compile T6886247_1.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T6886247_1.java
  */
 class Outer<E> {
 

@@ -32,6 +32,7 @@
  *          jdk.compiler
  * @build   JavacTestingAbstractProcessor ElementRepAnnoTester
  * @compile -processor ElementRepAnnoTester -proc:only OfficialContainerInheritedTest.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor ElementRepAnnoTester -proc:only OfficialContainerInheritedTest.java
  */
 
 @BarInheritedContainer({@BarInherited(1), @BarInherited(2)})

@@ -26,6 +26,7 @@
  * @bug 8024497
  * @summary crash returning this-referencing lambda from default method
  * @compile CrashUsingReturningThisRefLambdaFromDefaultMetTest.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 CrashUsingReturningThisRefLambdaFromDefaultMetTest.java
  */
 
 interface SuperInterface {}

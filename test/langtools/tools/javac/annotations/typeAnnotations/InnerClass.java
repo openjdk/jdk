@@ -27,6 +27,7 @@
  * @summary compiler crashes when visiting inner classes
  * @author Mahmood Ali
  * @compile InnerClass.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 InnerClass.java
  */
 
 import java.lang.annotation.*;

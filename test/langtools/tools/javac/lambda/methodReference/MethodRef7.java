@@ -28,6 +28,7 @@
  *   Test that parameter types are inferred from SAM descriptor when method parameters are elided,
              with different types of method references
  * @compile MethodRef7.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 MethodRef7.java
  * @run main MethodRef7
  */
 

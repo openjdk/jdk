@@ -29,6 +29,7 @@
  * @author  Brian Goetz
  * @author  Maurizio Cimadamore
  * @compile NakedThis.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 NakedThis.java
  */
 
 class NakedThis {

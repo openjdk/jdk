@@ -31,6 +31,7 @@
  *          jdk.compiler
  * @build   JavacTestingAbstractProcessor TestNames
  * @compile -processor TestNames -proc:only TestNames.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor TestNames -proc:only TestNames.java
  */
 
 import java.util.Set;

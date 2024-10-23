@@ -31,9 +31,13 @@
  *          jdk.compiler
  * @build JavacTestingAbstractProcessor
  * @compile TestIterables.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TestIterables.java
  * @compile -processor TestIterables -proc:only Foo1.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor TestIterables -proc:only Foo1.java
  * @compile Foo1.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Foo1.java
  * @compile -processor TestIterables Foo1 TestIterables.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor TestIterables Foo1 TestIterables.java
  */
 
 import java.util.Set;

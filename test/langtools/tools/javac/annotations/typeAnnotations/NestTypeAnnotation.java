@@ -26,6 +26,7 @@
  * @bug 8274942
  * @summary javac should attribute the internal annotations of the annotation element value
  * @compile NestTypeAnnotation.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 NestTypeAnnotation.java
  */
 
 import java.lang.annotation.*;

@@ -31,7 +31,9 @@
  *          jdk.compiler
  * @build   JavacTestingAbstractProcessor
  * @compile T6413690.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T6413690.java
  * @compile -XDfatalEnterError -verbose -processor T6413690 src/Super.java TestMe.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -XDfatalEnterError -verbose -processor T6413690 src/Super.java TestMe.java
  */
 
 import java.io.IOException;

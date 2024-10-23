@@ -28,6 +28,7 @@
  * @author gafter
  *
  * @compile  Casting.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  Casting.java
  */
 
 package Casting;

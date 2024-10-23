@@ -5,6 +5,7 @@
  *  check complex case of target typing
  * @author  Maurizio Cimadamore
  * @compile TargetType06.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TargetType06.java
  */
 
 import java.util.List;

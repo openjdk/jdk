@@ -28,6 +28,7 @@
  * @library /tools/javac/lib
  * @build   JavacTestingAbstractProcessor AnnotationToStringTest
  * @compile -processor AnnotationToStringTest -proc:only AnnotationToStringTest.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor AnnotationToStringTest -proc:only AnnotationToStringTest.java
  */
 
 // See also the sibling core reflection test

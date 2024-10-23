@@ -26,6 +26,7 @@
  * @bug 7120266
  * @summary javac fails to compile hotspot code
  * @compile T7120266.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T7120266.java
  */
 
 class T7120266 {

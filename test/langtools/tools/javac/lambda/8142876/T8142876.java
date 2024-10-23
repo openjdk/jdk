@@ -26,6 +26,7 @@
  * @bug 8142876
  * @summary Javac does not correctly implement wildcards removal from functional interfaces
  * @compile T8142876.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T8142876.java
  */
 class T8142876 {
     interface I<R extends Runnable, T> {

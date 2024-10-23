@@ -26,6 +26,7 @@
  * @bug     7005095
  * @summary Cast: compile reject sensible cast from final class to interface
  * @compile T7005095pos.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T7005095pos.java
  */
 
 class T7005095pos<T extends CharSequence> {

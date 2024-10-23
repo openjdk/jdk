@@ -4,6 +4,7 @@
  * @summary deprecatedNOT! is
  * @author  Peter von der Ah\u00e9
  * @compile -Xlint:deprecation DeprecatedYES.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -Xlint:deprecation DeprecatedYES.java
  * @compile/fail/ref=DeprecatedYES.out -XDrawDiagnostics -Werror -Xlint:deprecation DeprecatedYES.java
  */
 

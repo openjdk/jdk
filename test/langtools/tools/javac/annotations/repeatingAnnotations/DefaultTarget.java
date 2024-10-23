@@ -27,6 +27,7 @@ import java.lang.annotation.*;
  * @test
  * @bug 8006547
  * @compile DefaultTarget.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 DefaultTarget.java
  */
 
 @Target({

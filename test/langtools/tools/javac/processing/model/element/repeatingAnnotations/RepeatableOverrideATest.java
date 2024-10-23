@@ -32,6 +32,7 @@
  *          jdk.compiler
  * @build   JavacTestingAbstractProcessor ElementRepAnnoTester
  * @compile -processor ElementRepAnnoTester -proc:only RepeatableOverrideATest.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor ElementRepAnnoTester -proc:only RepeatableOverrideATest.java
  */
 
 @BarInherited(1)

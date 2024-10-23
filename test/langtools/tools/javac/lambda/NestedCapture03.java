@@ -26,6 +26,7 @@
  * @bug 8012238
  * @summary Nested method capture and inference
  * @compile NestedCapture03.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 NestedCapture03.java
  */
 class NestedCapture03 {
     <T extends String> T factory(Class<T> c) { return null; }

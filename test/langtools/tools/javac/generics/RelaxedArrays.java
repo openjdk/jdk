@@ -28,6 +28,7 @@
  * @author gafter
  *
  * @compile  RelaxedArrays.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  RelaxedArrays.java
  * @run main RelaxedArrays
  */
 

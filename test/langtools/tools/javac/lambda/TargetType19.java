@@ -28,6 +28,7 @@
  *  complex case of generic method call with lambda argument where target
  *          is a wildcard SAM
  * @compile TargetType19.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TargetType19.java
  */
 import java.util.List;
 

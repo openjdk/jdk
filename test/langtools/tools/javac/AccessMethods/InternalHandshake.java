@@ -29,6 +29,7 @@
  * @author gafter
  *
  * @compile InternalHandshake.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 InternalHandshake.java
  * @run main InternalHandshake
  */
 

@@ -32,6 +32,7 @@
  *          jdk.compiler/com.sun.tools.javac.util
  * @build combo.ComboTestHelper
  * @compile -Xlint:all DiamondAndInnerClassTest.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -Xlint:all DiamondAndInnerClassTest.java
  * @run main DiamondAndInnerClassTest
  */
 

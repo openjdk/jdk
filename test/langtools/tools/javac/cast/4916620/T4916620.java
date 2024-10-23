@@ -5,6 +5,7 @@
  * @author  Christian Plesner Hansen
  * @compile/ref=T4916620.out -XDrawDiagnostics -Xlint:unchecked T4916620.java
  * @compile -Xlint:unchecked T4916620.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -Xlint:unchecked T4916620.java
  */
 
 public class T4916620 {

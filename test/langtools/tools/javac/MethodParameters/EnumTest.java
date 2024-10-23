@@ -29,6 +29,7 @@
  * @modules java.base/jdk.internal.classfile.impl
  * @build MethodParametersTester ClassFileVisitor ReflectionVisitor
  * @compile -parameters EnumTest.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -parameters EnumTest.java
  * @run main MethodParametersTester EnumTest EnumTest.out
  */
 

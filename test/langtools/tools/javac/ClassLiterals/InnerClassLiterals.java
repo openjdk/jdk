@@ -28,6 +28,7 @@
  * @author William Maddox (maddox)
  *
  * @compile InnerClassLiterals.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 InnerClassLiterals.java
  * @run main InnerClassLiterals
  */
 

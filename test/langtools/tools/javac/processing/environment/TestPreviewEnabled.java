@@ -29,8 +29,11 @@
  * @modules java.compiler
  * @build   JavacTestingAbstractProcessor
  * @compile TestPreviewEnabled.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TestPreviewEnabled.java
  * @compile -processor TestPreviewEnabled -proc:only -source ${jdk.version} -AExpectedPreview=false                  TestSourceVersion.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor TestPreviewEnabled -proc:only -source ${jdk.version} -AExpectedPreview=false                  TestSourceVersion.java
  * @compile -processor TestPreviewEnabled -proc:only -source ${jdk.version} -AExpectedPreview=true  --enable-preview TestSourceVersion.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor TestPreviewEnabled -proc:only -source ${jdk.version} -AExpectedPreview=true  --enable-preview TestSourceVersion.java
  */
 
 import java.util.Locale;

@@ -29,6 +29,7 @@
  * @modules jdk.compiler/com.sun.tools.javac.util
  * @build GenerateSuperInterfaceProcessor
  * @compile -XDaccessInternalAPI -processor GenerateSuperInterfaceProcessor GenerateFunctionalInterface.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -XDaccessInternalAPI -processor GenerateSuperInterfaceProcessor GenerateFunctionalInterface.java
  */
 
 import java.lang.FunctionalInterface;

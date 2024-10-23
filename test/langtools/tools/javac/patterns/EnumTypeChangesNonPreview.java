@@ -26,7 +26,9 @@
  * @bug 8297118
  * @summary Verify pattern switches work properly when the set of enum constant changes.
  * @compile --release 20 EnumTypeChangesNonPreview.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 --release 20 EnumTypeChangesNonPreview.java
  * @compile EnumTypeChanges2.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 EnumTypeChanges2.java
  * @run main EnumTypeChangesNonPreview
  */
 

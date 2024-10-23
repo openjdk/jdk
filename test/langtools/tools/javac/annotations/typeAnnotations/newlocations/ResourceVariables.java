@@ -31,6 +31,7 @@ import java.io.*;
  * @summary new type annotation location: resource variables
  * @author Werner Dietl
  * @compile ResourceVariables.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 ResourceVariables.java
  */
 
 class ResourceVariables {

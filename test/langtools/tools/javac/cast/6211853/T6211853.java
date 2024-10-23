@@ -26,6 +26,7 @@
  * @bug     6211853
  * @summary "unchecked" warning for checked cast
  * @compile -Xlint:unchecked -Werror T6211853.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -Xlint:unchecked -Werror T6211853.java
  */
 
 public class T6211853 {

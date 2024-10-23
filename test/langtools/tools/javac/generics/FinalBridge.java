@@ -28,6 +28,7 @@
  * @author gafter
  *
  * @compile  FinalBridge.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  FinalBridge.java
  * @run main FinalBridge
  */
 

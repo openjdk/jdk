@@ -4,6 +4,7 @@
  * @summary Add lambda tests
  *  Missing cast to SAM type that causes type inference to not work.
  * @compile -XDrawDiagnostics InferenceTest6.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -XDrawDiagnostics InferenceTest6.java
  */
 
 import java.util.*;

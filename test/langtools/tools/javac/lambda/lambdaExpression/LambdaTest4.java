@@ -27,6 +27,7 @@
  * @summary Add lambda tests
  *   Test accessing "this" in lambda expressions
  * @compile LambdaTest4.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 LambdaTest4.java
  * @run main LambdaTest4
  */
 

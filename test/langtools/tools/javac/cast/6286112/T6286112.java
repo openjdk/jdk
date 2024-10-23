@@ -26,6 +26,7 @@
  * @bug     6286112
  * @summary Wildcard cast problem
  * @compile -Xlint:unchecked -Werror T6286112.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -Xlint:unchecked -Werror T6286112.java
  */
 
 public class T6286112 {

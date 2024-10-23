@@ -30,6 +30,7 @@
  *          jdk.compiler/com.sun.tools.javac.tree
  *          jdk.compiler/com.sun.tools.javac.util
  * @compile ../DocCommentTester.java DocCommentTreeApiTester.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 ../DocCommentTester.java DocCommentTreeApiTester.java
  * @run main DocCommentTreeApiTester
  */
 

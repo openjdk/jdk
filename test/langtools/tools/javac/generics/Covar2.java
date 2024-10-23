@@ -28,6 +28,7 @@
  * @author gafter
  *
  * @compile  Covar2.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  Covar2.java
  * @run main Covar2
  */
 

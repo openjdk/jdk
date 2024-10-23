@@ -4,6 +4,7 @@
  * @summary java.lang.StackOverflowError for cyclic inheritance
  *
  * @compile ClassCycle3a.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 ClassCycle3a.java
  * @compile/fail/ref=ClassCycle3a.out -XDrawDiagnostics  ClassCycle3b.java
  */
 

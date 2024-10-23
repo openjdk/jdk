@@ -28,6 +28,7 @@
  * @author jrose
  *
  * @compile TestCast6979683_GOOD.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TestCast6979683_GOOD.java
  * @run main TestCast6979683_GOOD
  */
 

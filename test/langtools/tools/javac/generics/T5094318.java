@@ -27,6 +27,7 @@
  * @summary REGRESSION: Array cloning is not backwards compatible
  *
  * @compile  T5094318.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  T5094318.java
  * @run main/fail T5094318
  */
 

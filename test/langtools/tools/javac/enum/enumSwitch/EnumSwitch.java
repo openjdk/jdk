@@ -28,7 +28,9 @@
  * @author gafter
  *
  * @compile EnumSwitch.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 EnumSwitch.java
  * @compile Color2.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Color2.java
  * @run main EnumSwitch
  */
 

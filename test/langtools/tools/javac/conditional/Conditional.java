@@ -5,6 +5,7 @@
  * @author Tim Hanson, BEA
  *
  * @compile Conditional.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Conditional.java
  */
 
 import java.util.*;

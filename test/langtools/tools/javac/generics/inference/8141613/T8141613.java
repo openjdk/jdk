@@ -26,6 +26,7 @@
  * @bug 8141613
  * @summary Compiler fails to infer generic type
  * @compile T8141613.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T8141613.java
  */
 class T8141613 {
 

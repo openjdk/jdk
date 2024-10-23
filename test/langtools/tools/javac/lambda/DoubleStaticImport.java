@@ -26,6 +26,7 @@
  * @bug 8009820
  * @summary AssertionError when compiling java code with two identical static imports
  * @compile DoubleStaticImport.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 DoubleStaticImport.java
  */
 
 import static java.lang.Thread.holdsLock;

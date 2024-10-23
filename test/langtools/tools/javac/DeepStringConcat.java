@@ -28,6 +28,7 @@
  * @author gafter
  *
  * @compile DeepStringConcat.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 DeepStringConcat.java
  */
 
 public class DeepStringConcat {

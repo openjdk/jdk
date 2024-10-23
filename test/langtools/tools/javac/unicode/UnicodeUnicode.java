@@ -28,6 +28,7 @@
  * @author gafter
  *
  * @compile UnicodeUnicode.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 UnicodeUnicode.java
  */
 
 /** \u005cu */

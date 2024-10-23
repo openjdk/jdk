@@ -27,6 +27,7 @@
  * @summary check that indirectly inherited default methods are discovered during resolution
  * @author  Maurizio Cimadamore
  * @compile Pos05.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Pos05.java
  */
 
 class Pos05  {

@@ -26,6 +26,7 @@
  * @bug     6762569
  * @summary Javac crashes with AssertionError in Types.containedBy
  * @compile T6762569a.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T6762569a.java
  */
 import java.util.*;
 

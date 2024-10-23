@@ -26,6 +26,7 @@
  * @bug 8144832
  * @summary cast conversion fails when converting a type-variable to primitive type
  * @compile -Werror -Xlint:all CastToTypeVarTest.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -Werror -Xlint:all CastToTypeVarTest.java
  */
 
 public class CastToTypeVarTest<X, Y extends X> {

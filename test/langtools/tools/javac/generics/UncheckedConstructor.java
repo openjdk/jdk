@@ -5,6 +5,7 @@
  * @author gafter
  *
  * @compile       -Werror                  UncheckedConstructor.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2       -Werror                  UncheckedConstructor.java
  * @compile/fail/ref=UncheckedConstructor.out -XDrawDiagnostics  -Werror -Xlint:unchecked UncheckedConstructor.java
  */
 

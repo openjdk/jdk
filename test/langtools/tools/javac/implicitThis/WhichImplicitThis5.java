@@ -27,6 +27,7 @@
  * @summary Hiding of fields not fully supported
  *
  * @compile WhichImplicitThis5.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 WhichImplicitThis5.java
  * @run main WhichImplicitThis5
  */
 

@@ -29,7 +29,9 @@
  *          jdk.compiler
  * @build   JavacTestingAbstractProcessor
  * @compile WError1.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 WError1.java
  * @compile -proc:only -processor WError1 WError1.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -proc:only -processor WError1 WError1.java
  * @compile/fail/ref=WError1.out -XDrawDiagnostics -Werror -proc:only -processor WError1 WError1.java
  */
 

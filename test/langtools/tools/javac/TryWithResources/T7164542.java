@@ -26,6 +26,7 @@
  * @bug 7164542
  * @summary try-with-resources: problem with intersection types
  * @compile T7164542.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T7164542.java
  */
 
 public class T7164542 {

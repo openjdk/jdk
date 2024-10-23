@@ -29,6 +29,7 @@ import java.lang.annotation.*;
  * @summary new type annotation location: anonymous class creation
  * @author Werner Dietl
  * @compile AnonymousClass.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 AnonymousClass.java
  */
 class AnonymousClass {
     Object o1 = new @TA Object() { };

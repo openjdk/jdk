@@ -27,6 +27,7 @@
  * @author William Maddox (maddox)
  *
  * @compile PackageClassClash.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 PackageClassClash.java
  */
 
 package PackageClassClash;

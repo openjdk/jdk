@@ -28,6 +28,7 @@
  * @author gafter
  *
  * @compile  Basic.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  Basic.java
  */
 
 // Test all of the basic forms for explicit type arguments

@@ -27,6 +27,7 @@
  * @summary Test -Xprint on enum type with no constants
  * @author  Joseph D. Darcy
  * @compile -Xprint VacuousEnum.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -Xprint VacuousEnum.java
  */
 public enum VacuousEnum {
     // But alas, no enum constants!

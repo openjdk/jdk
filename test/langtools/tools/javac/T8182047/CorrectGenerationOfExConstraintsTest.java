@@ -26,6 +26,7 @@
  * @bug 8182047
  * @summary javac compile error on type-parameter-exceptions in lambda expressions
  * @compile CorrectGenerationOfExConstraintsTest.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 CorrectGenerationOfExConstraintsTest.java
  */
 
 public class CorrectGenerationOfExConstraintsTest {

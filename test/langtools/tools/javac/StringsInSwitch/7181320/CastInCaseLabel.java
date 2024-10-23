@@ -26,6 +26,7 @@
  * @bug     7181320
  * @summary javac NullPointerException for switch labels with cast to String expressions
  * @compile CastInCaseLabel.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 CastInCaseLabel.java
  */
 
 public class CastInCaseLabel {

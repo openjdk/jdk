@@ -27,6 +27,7 @@
  * @summary Verify javac does not produce incorrect LocalVariableTable
  * @enablePreview
  * @compile -g UnnamedLocalVariableTable.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -g UnnamedLocalVariableTable.java
  * @run main UnnamedLocalVariableTable
  */
 public class UnnamedLocalVariableTable {

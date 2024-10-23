@@ -26,6 +26,7 @@
  * @bug 8044546
  * @summary Crash on faulty reduce/lambda
  * @compile NestedInvocationsTest.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 NestedInvocationsTest.java
  */
 
 class NestedInvocationsTest<T> {

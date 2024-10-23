@@ -27,6 +27,7 @@
  * @summary Unconstrained type variables fails to include bounds
  * @author mcimadamore
  * @compile T6369605b.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T6369605b.java
  */
 import java.util.List;
 

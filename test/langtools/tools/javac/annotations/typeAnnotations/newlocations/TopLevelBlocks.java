@@ -30,6 +30,7 @@ import java.util.Map;
  * @summary type annotation location: top level blocks
  * @author Werner Dietl
  * @compile TopLevelBlocks.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TopLevelBlocks.java
  */
 
 class TopLevelBlocks {

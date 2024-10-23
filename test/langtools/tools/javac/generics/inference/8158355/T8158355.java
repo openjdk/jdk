@@ -26,6 +26,7 @@
  * @bug 8158355
  * @summary Inference graph dot support broken
  * @compile --debug=dumpInferenceGraphsTo=. T8158355.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 --debug=dumpInferenceGraphsTo=. T8158355.java
  */
 import java.util.List;
 

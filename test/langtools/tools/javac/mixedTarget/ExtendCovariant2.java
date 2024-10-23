@@ -28,6 +28,7 @@
  * @author gafter
  *
  * @compile                  ExtendCovariant2.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2                  ExtendCovariant2.java
  */
 
 /**

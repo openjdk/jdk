@@ -28,6 +28,7 @@
  * @author Maurizio Cimadamore
  *
  * @compile T6365166.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T6365166.java
  */
 
 import java.util.*;

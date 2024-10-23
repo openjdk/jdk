@@ -29,6 +29,7 @@ import java.lang.annotation.Target;
  * @bug 8013180
  * @summary Qualified type annotation name used to crash javac
  * @compile QualifiedName.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 QualifiedName.java
  */
 
 public class QualifiedName {

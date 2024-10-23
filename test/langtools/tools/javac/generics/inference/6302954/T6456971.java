@@ -27,6 +27,7 @@
  * @summary Varargs and inference problem
  * @author  Peter von der Ah\u00e9
  * @compile T6456971.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T6456971.java
  */
 
 import java.util.List;

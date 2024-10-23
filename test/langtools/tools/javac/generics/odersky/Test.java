@@ -28,6 +28,7 @@
  * @author odersky
  *
  * @compile  Test.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  Test.java
  */
 
 class Test {

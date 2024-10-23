@@ -27,6 +27,7 @@
  *
  * @summary Extraneous access checks implemented by javac
  * @compile CtorAccessBypassTest.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 CtorAccessBypassTest.java
  * @run main CtorAccessBypassTest
  *
  */

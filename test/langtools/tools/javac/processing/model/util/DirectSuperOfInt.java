@@ -30,6 +30,7 @@
  *          jdk.compiler
  * @build   JavacTestingAbstractProcessor DirectSuperOfInt
  * @compile -processor DirectSuperOfInt -proc:only DirectSuperOfInt.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor DirectSuperOfInt -proc:only DirectSuperOfInt.java
  */
 
 import java.util.Set;

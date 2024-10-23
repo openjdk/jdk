@@ -26,6 +26,7 @@
  * @bug     6359949
  * @summary (at)Override of static shouldn't be accepted (compiler shouldissue an error/warning)
  * @compile T6359949.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T6359949.java
  */
 
 class Example {

@@ -28,6 +28,7 @@
  * @author gafter
  *
  * @compile ProtectedAccess_3.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 ProtectedAccess_3.java
  * @run main ProtectedAccess_3
  */
 

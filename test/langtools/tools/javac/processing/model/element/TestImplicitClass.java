@@ -29,9 +29,11 @@
  * @modules java.compiler
  *          jdk.compiler
  * @build   JavacTestingAbstractProcessor TestImplicitClass
- * @compile         -processor TestImplicitClass            --enable-preview --release ${jdk.version}                            Anonymous.java
+ * @compile -processor TestImplicitClass --enable-preview --release ${jdk.version} Anonymous.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor TestImplicitClass --enable-preview --release ${jdk.version} Anonymous.java
  * @clean Nameless.java
  * @compile/process -processor TestImplicitClass -proc:only --enable-preview --release ${jdk.version} -Xprefer:newer -AclassOnly Anonymous Nameless
+ * @compile/process -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor TestImplicitClass -proc:only --enable-preview --release ${jdk.version} -Xprefer:newer -AclassOnly Anonymous Nameless
  */
 
 // The first @compile line processes Anonymous.java and a

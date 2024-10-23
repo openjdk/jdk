@@ -26,6 +26,7 @@
  * @summary Regression: compiling program with lambda crashed compiler
  * @bug 8020715
  * @compile T8020715.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T8020715.java
  */
 class T8020715 {
     // This crashed.

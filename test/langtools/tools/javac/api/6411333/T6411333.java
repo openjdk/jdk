@@ -31,6 +31,7 @@
  *          jdk.compiler
  * @build ToolTester
  * @compile T6411333.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T6411333.java
  * @run main T6411333
  */
 

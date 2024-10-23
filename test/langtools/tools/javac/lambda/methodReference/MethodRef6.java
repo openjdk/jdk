@@ -27,6 +27,7 @@
  * @summary Add lambda tests
  *   Test that the most specific reference is selected when method parameters are elided
  * @compile MethodRef6.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 MethodRef6.java
  * @run main MethodRef6
  */
 

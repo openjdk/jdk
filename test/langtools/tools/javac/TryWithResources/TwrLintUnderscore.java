@@ -3,6 +3,7 @@
  * @bug 8304246
  * @summary Compiler Implementation for Unnamed patterns and variables
  * @compile -Xlint:try -XDrawDiagnostics TwrLintUnderscore.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -Xlint:try -XDrawDiagnostics TwrLintUnderscore.java
  */
 class TwrLintUnderscore implements AutoCloseable {
     private static void test1() {

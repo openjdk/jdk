@@ -27,6 +27,7 @@
  * @summary Correct resolution of toString() (and other similar calls) on interfaces
  * @enablePreview
  * @compile NoObjectToString.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 NoObjectToString.java
  * @run main NoObjectToString
  */
 

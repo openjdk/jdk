@@ -26,6 +26,7 @@
  * @bug 8025290
  * @summary javac implicit versus explicit lambda compilation error
  * @compile ExplicitVSImplicitLambdaTest.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 ExplicitVSImplicitLambdaTest.java
  */
 
 import java.util.function.*;

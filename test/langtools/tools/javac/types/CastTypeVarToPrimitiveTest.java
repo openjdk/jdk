@@ -26,6 +26,7 @@
  * @bug 8144832
  * @summary cast conversion fails when converting a type-variable to primitive type
  * @compile CastTypeVarToPrimitiveTest.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 CastTypeVarToPrimitiveTest.java
  */
 
 public class CastTypeVarToPrimitiveTest<T> {

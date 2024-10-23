@@ -26,6 +26,7 @@
  * @bug 7101822
  * @summary Verify that imports are declarations are processed in the correct order.
  * @compile T7101822A.java T7101822Z.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T7101822A.java T7101822Z.java
  */
 package a;
 

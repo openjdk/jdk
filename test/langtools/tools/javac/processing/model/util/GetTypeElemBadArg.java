@@ -31,6 +31,7 @@
  *          jdk.compiler
  * @build   JavacTestingAbstractProcessor GetTypeElemBadArg
  * @compile -processor GetTypeElemBadArg -proc:only GetTypeElemBadArg.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor GetTypeElemBadArg -proc:only GetTypeElemBadArg.java
  */
 
 import java.util.Set;

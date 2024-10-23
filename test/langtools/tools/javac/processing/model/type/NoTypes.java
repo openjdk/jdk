@@ -31,7 +31,9 @@
  *          jdk.compiler
  * @build JavacTestingAbstractProcessor
  * @compile -g NoTypes.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -g NoTypes.java
  * @compile -processor NoTypes -proc:only NoTypes.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor NoTypes -proc:only NoTypes.java
  */
 
 import java.util.Set;

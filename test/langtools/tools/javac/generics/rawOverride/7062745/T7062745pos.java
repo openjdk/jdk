@@ -27,6 +27,7 @@
  * @summary  Regression: difference in overload resolution when two methods are maximally specific
  *
  * @compile T7062745pos.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T7062745pos.java
  */
 
 import java.util.*;

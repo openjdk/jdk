@@ -26,6 +26,7 @@
  * @bug 8214031
  * @summary Verify various corner cases with nested switch expressions.
  * @compile ExpressionSwitchBugsInGen.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 ExpressionSwitchBugsInGen.java
  * @run main ExpressionSwitchBugsInGen
  */
 

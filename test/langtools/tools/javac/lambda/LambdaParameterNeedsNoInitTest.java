@@ -26,6 +26,7 @@
  * @bug 8077667
  * @summary Eliminate bogus error about lambda parameter not being initialized.
  * @compile LambdaParameterNeedsNoInitTest.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 LambdaParameterNeedsNoInitTest.java
  */
 import java.util.function.Predicate;
 

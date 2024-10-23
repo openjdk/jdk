@@ -26,6 +26,7 @@
  * @bug 8234729 8242214
  * @summary Javac should eagerly change code generation for method references to avert IllegalAccessError in future.
  * @compile ProtectedInaccessibleMethodRefTest2.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 ProtectedInaccessibleMethodRefTest2.java
  * @run main ProtectedInaccessibleMethodRefTest2
  */
 

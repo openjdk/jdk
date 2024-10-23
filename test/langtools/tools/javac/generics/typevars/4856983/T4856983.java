@@ -28,6 +28,7 @@
  * @author Peter von der Ah\u00e9
  *
  * @compile  T4856983.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  T4856983.java
  */
 
 import java.lang.Comparable;

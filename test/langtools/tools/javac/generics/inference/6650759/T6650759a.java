@@ -27,6 +27,7 @@
  * @author  mcimadamore
  * @summary Inference of formal type parameter (unused in formal parameters) is not performed
  * @compile T6650759a.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T6650759a.java
  */
 
 class T6650759a {

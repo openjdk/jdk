@@ -28,6 +28,7 @@
  * @author gafter
  *
  * @compile SuperField.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 SuperField.java
  * @run main SuperField
  */
 

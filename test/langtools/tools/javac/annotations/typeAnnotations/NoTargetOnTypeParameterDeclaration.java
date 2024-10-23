@@ -27,7 +27,9 @@
  * @summary no-@Target annotations should be applicable to type parameter declarations
  * @compile/fail/ref=NoTargetOnTypeParameterDeclaration.out --release 13 -XDrawDiagnostics NoTargetOnTypeParameterDeclaration.java
  * @compile --release 14 NoTargetOnTypeParameterDeclaration.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 --release 14 NoTargetOnTypeParameterDeclaration.java
  * @compile NoTargetOnTypeParameterDeclaration.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 NoTargetOnTypeParameterDeclaration.java
  */
 
 import java.lang.annotation.RetentionPolicy;

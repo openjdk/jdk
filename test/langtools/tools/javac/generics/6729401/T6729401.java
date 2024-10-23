@@ -28,6 +28,7 @@
  * @summary  Compiler error when using F-bounded generics with free type variables
  * @author Maurizio Cimadamore
  * @compile T6729401.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T6729401.java
  *
  */
 

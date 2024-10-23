@@ -29,6 +29,7 @@
  * @modules jdk.compiler
  * @build ReleaseModulesAndTypeElement
  * @compile -processor ReleaseModulesAndTypeElement --release 11 ReleaseModulesAndTypeElement.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor ReleaseModulesAndTypeElement --release 11 ReleaseModulesAndTypeElement.java
  */
 
 import java.util.Set;

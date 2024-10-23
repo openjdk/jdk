@@ -26,6 +26,7 @@
  * @bug     6547131
  * @summary java.lang.ClassFormatError when using old collection API
  * @compile p/Outer.jasm p/Outer$I.jasm T.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 p/Outer.jasm p/Outer$I.jasm T.java
  * @run main T
  */
 

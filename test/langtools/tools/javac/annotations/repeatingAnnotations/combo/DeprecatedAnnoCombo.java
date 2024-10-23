@@ -29,6 +29,7 @@
  * @modules jdk.compiler
  * @build    Helper
  * @compile  DeprecatedAnnoCombo.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  DeprecatedAnnoCombo.java
  * @run main DeprecatedAnnoCombo
  */
 

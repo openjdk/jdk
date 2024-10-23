@@ -26,6 +26,7 @@
  * @bug 8169345
  * @summary javac crash when local from enclosing context is captured multiple times
  * @compile T8169345c.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T8169345c.java
  */
 
 class T8169345c {

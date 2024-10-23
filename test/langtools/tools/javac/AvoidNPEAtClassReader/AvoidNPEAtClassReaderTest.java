@@ -26,6 +26,7 @@
  * @bug 8207160
  * @summary ClassReader::adjustMethodParams can potentially return null if the args list is empty
  * @compile pkg/Outer.jasm pkg/Outer$Inner.jasm AvoidNPEAtClassReaderTest.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 pkg/Outer.jasm pkg/Outer$Inner.jasm AvoidNPEAtClassReaderTest.java
  */
 
 import pkg.*;

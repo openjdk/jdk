@@ -27,6 +27,7 @@
  * @summary test for explicit resolution of ambiguous default methods
  * @author  Maurizio Cimadamore
  * @compile Pos02.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 Pos02.java
  */
 
 class Pos02 {

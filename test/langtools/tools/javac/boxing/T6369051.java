@@ -27,6 +27,7 @@
  * @summary javac cannot handle += operator correctly in Genericized code
  * @author  Hiroshi.Yamaguchi@...
  * @compile T6369051.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T6369051.java
  */
 
 

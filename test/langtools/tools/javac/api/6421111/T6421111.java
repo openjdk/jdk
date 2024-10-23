@@ -31,6 +31,7 @@
  *          jdk.compiler
  * @build ToolTester
  * @compile -Xlint:all T6421111.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -Xlint:all T6421111.java
  * @run main T6421111
  */
 

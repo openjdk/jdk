@@ -26,10 +26,14 @@
  * @bug 8206986 8243548
  * @summary Verify that an switch expression over enum can be exhaustive without default.
  * @compile --release 20 ExhaustiveEnumSwitch.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 --release 20 ExhaustiveEnumSwitch.java
  * @compile ExhaustiveEnumSwitchExtra.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 ExhaustiveEnumSwitchExtra.java
  * @run main ExhaustiveEnumSwitch IncompatibleClassChangeError
  * @compile ExhaustiveEnumSwitch.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 ExhaustiveEnumSwitch.java
  * @compile ExhaustiveEnumSwitchExtra.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 ExhaustiveEnumSwitchExtra.java
  * @run main ExhaustiveEnumSwitch MatchException
  */
 

@@ -26,6 +26,7 @@
  * @bug 8268312
  * @summary Compilation error with nested generic functional interface
  * @compile DiagnosticRewriterTest3.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 DiagnosticRewriterTest3.java
  */
 
 import java.util.Optional;

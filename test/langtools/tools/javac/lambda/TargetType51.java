@@ -28,6 +28,7 @@
  *          smoke test for combinator-like stuck analysis
  * @author  Maurizio Cimadamore
  * @compile TargetType51.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TargetType51.java
  */
 
 import java.util.Comparator;

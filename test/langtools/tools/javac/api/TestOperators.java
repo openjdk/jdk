@@ -30,6 +30,7 @@
  * @modules jdk.compiler
  * @build JavacTestingAbstractProcessor TestOperators
  * @compile -processor TestOperators -proc:only TestOperators.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -processor TestOperators -proc:only TestOperators.java
  */
 
 import java.util.Set;

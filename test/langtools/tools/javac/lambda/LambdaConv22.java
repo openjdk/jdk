@@ -27,6 +27,7 @@
  * @summary Add lambda tests
  *  inner class translator fails with spurious method clash errors
  * @compile LambdaConv22.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 LambdaConv22.java
  */
 
 class LambdaConv22<U> {

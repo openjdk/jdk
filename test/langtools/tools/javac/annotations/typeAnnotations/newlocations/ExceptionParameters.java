@@ -31,6 +31,7 @@ import java.io.*;
  * @summary new type annotation location: exception parameters
  * @author Werner Dietl
  * @compile ExceptionParameters.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 ExceptionParameters.java
  */
 
 class ExceptionParameters {

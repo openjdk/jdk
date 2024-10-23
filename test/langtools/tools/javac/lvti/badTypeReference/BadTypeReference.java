@@ -3,7 +3,9 @@
  * @bug 8177466
  * @summary Add compiler support for local variable type-inference
  * @compile --release 8 pkg/var.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 --release 8 pkg/var.java
  * @compile pkg/nested/var/A.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 pkg/nested/var/A.java
  * @compile/fail/ref=BadTypeReference.out -XDrawDiagnostics BadTypeReference.java
  */
 

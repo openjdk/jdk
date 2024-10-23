@@ -26,6 +26,7 @@
  * @bug     6507317 6932571
  * @summary Problem when casting from parametrized type to concrete class
  * @compile T6507317.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T6507317.java
  */
 
 import java.util.Comparator;

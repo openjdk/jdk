@@ -29,6 +29,7 @@
  * @modules java.base/jdk.internal.classfile.impl
  * @build MethodParametersTester ClassFileVisitor ReflectionVisitor
  * @compile -parameters LambdaTest.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -parameters LambdaTest.java
  * @run main MethodParametersTester LambdaTest LambdaTest.out
  */
 

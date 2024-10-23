@@ -28,6 +28,7 @@
  * @author gafter
  *
  * @compile DuplicateClass2.java DuplicateClass2.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 DuplicateClass2.java DuplicateClass2.java
  */
 
 public class DuplicateClass2 {

@@ -26,5 +26,6 @@
  * @bug     5044646
  * @summary package-private indirect noninherited generic overriders
  * @compile p1/A1.java p2/A2.java p1/B.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 p1/A1.java p2/A2.java p1/B.java
  * @compile/fail/ref=T5044646.out -XDrawDiagnostics p1/C.java
  */

@@ -29,6 +29,7 @@
  * @modules java.compiler
  *          jdk.compiler
  * @compile AnnoProcessor.java Bug.java Test3.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 AnnoProcessor.java Bug.java Test3.java
  * @run main Bug Test2.java
  * @run main Bug Test2.foo
  * @run main Bug Test3.java

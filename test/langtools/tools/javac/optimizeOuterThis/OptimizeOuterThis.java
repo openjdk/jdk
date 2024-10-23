@@ -31,10 +31,12 @@ import java.util.Optional;
  *
  * @clean *
  * @compile OptimizeOuterThis.java InnerClasses.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 OptimizeOuterThis.java InnerClasses.java
  * @run main OptimizeOuterThis
  *
  * @clean *
  * @compile -XDoptimizeOuterThis=true --release 17 OptimizeOuterThis.java InnerClasses.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -XDoptimizeOuterThis=true --release 17 OptimizeOuterThis.java InnerClasses.java
  * @run main OptimizeOuterThis
  */
 public class OptimizeOuterThis extends InnerClasses {

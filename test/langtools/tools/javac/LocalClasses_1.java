@@ -29,6 +29,7 @@
  *
  * @clean LocalClasses_1a LocalClasses_1b
  * @compile LocalClasses_1.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 LocalClasses_1.java
  */
 
 class LocalClasses_1a {

@@ -28,6 +28,7 @@
  * @modules jdk.compiler
  * @build T6423583
  * @compile -proc:only -processor T6423583 T6423583.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 -proc:only -processor T6423583 T6423583.java
  */
 
 import java.util.*;

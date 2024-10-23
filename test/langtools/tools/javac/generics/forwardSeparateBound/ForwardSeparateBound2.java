@@ -28,7 +28,9 @@
  * @author gafter
  *
  * @compile  ForwardSeparateBound1.java ForwardSeparateBound2.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  ForwardSeparateBound1.java ForwardSeparateBound2.java
  * @compile  ForwardSeparateBound2.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2  ForwardSeparateBound2.java
  */
 
 class Z {}

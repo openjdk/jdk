@@ -27,6 +27,7 @@
  * @summary Add lambda tests
  *  check that lambda expression can appear in
  * @compile TargetType25.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 TargetType25.java
  */
 
 class TargetType25 {

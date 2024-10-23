@@ -28,6 +28,7 @@
  * @summary invalid "unchecked generic array" warning
  * @author mcimadamore
  * @compile T6730476a.java -Xlint:unchecked -Werror
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T6730476a.java -Xlint:unchecked -Werror
  *
  */
 

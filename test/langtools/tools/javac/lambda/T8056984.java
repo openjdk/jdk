@@ -27,6 +27,7 @@
  * @summary Ensure that method resolution runs over a captured type variables when checking if
  *          deferred attribution is needed
  * @compile T8056984.java
+ * @compile -J-XX:+UnlockExperimentalVMOptions -J-XX:hashCode=2 T8056984.java
  */
 class T8056984<T1 extends B&C, T2 extends T1> {
     public T8056984(T1 t1, T2 t2) {
