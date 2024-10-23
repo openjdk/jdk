@@ -83,7 +83,12 @@ public class AOTClassLinkingVMOptions {
         // NOTE: tests for ClassFileLoadHook + AOTClassLinking is in
         // ../jvmti/ClassFileLoadHookTest.java
 
-        modulePathTests();
+        boolean dynamicMode = Boolean.getBoolean("test.dynamic.cds.archive");
+        if (!dynamicMode) {
+            // These tests need to dump the full module graph, which is not possible with
+            // dynamic dump.
+            modulePathTests();
+        }
     }
 
     static void modulePathTests() throws Exception {
