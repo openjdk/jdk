@@ -89,7 +89,7 @@ public class JavacScope implements com.sun.source.tree.Scope {
             return new JavacScope(env) {
                 @Override
                 public ScopeType getScopeType() {
-                    return ScopeType.START_IMPORT;
+                    return ScopeType.STAR_IMPORT;
                 }
                 @DefinedBy(Api.COMPILER_TREE)
                 public JavacScope getEnclosingScope() {
@@ -154,9 +154,9 @@ public class JavacScope implements com.sun.source.tree.Scope {
         return "JavacScope[env=" + env + ", scope type=" + getScopeType() + "]";
     }
 
-    enum ScopeType {
+    private enum ScopeType {
         ORDINARY,
-        START_IMPORT,
+        STAR_IMPORT,
         MODULE_IMPORT;
     }
 }

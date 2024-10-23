@@ -347,7 +347,7 @@ public final class ModuleInfo {
      * build the corresponding ModuleDescriptor.
      */
     private Builder readModuleAttribute(DataInput in, ConstantPool cpool, int major,
-                                        boolean previewClassfile)
+                                        boolean isPreview)
         throws IOException
     {
         // module_name
@@ -417,8 +417,8 @@ public final class ModuleInfo {
                 // - the major version is 53 (JDK 9), or:
                 if (major >= 54
                     && ((mods.contains(Requires.Modifier.TRANSITIVE) &&
-                         !previewClassfile &&
-                         !mn.startsWith("java."))
+                         !isPreview &&
+                         !"java.se".equals(mn))
                         || mods.contains(Requires.Modifier.STATIC))) {
                     String flagName;
                     if (mods.contains(Requires.Modifier.STATIC)) {
