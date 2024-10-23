@@ -25,8 +25,11 @@
 package com.sun.hotspot.igv.hierarchicallayout;
 
 import com.sun.hotspot.igv.layout.Link;
+import java.util.Comparator;
 
 public class LayoutEdge {
+
+    public static final Comparator<LayoutEdge> LAYOUT_EDGE_LAYER_COMPARATOR = Comparator.comparingInt(e -> e.getTo().getLayer());
 
     private LayoutNode from;
     private LayoutNode to;
