@@ -134,8 +134,6 @@ public class BindingSpecializer {
     private final MethodType leafType;
 
     private int[] leafArgSlots;
-    private int[] scopeSlots;
-    private int curScopeLocalIdx = -1;
     private int returnAllocatorIdx = -1;
     private int contextIdx = -1;
     private int returnBufferIdx = -1;
@@ -265,21 +263,6 @@ public class BindingSpecializer {
         // allocator passed to us for allocating the return MS (downcalls only)
         if (callingSequence.forDowncall()) {
             returnAllocatorIdx = 0; // first param
-
-            // for downcalls we also acquire/release scoped parameters before/after the call
-            // create a bunch of locals here to keep track of their scopes (to release later)
-            int[] initialScopeSlots = new int[callerMethodType.parameterCount()];
-            int numScopes = 0;
-            for (int i = 0; i < callerMethodType.parameterCount(); i++) {
-                if (shouldAcquire(i)) {
-                    int scopeLocal = cb.allocateLocal(REFERENCE);
-                    initialScopeSlots[numScopes++] = scopeLocal;
-                    cb.aconst_null()
-                      .astore(scopeLocal); // need to initialize all scope locals here in case an exception occurs
-                }
-            }
-            scopeSlots = Arrays.copyOf(initialScopeSlots, numScopes); // fit to size
-            curScopeLocalIdx = 0; // used from emitGetInput
         }
 
         // create a Binding.Context for this call
@@ -452,7 +435,13 @@ public class BindingSpecializer {
     private void emitCleanup() {
         emitCloseContext();
         if (callingSequence.forDowncall()) {
-            emitReleaseScopes();
+            for (int paramIndex = 0 ; paramIndex < callerMethodType.parameterCount() ; paramIndex++) {
+                Class<?> highLevelType = callerMethodType.parameterType(paramIndex);
+                if (shouldAcquire(paramIndex)) {
+                    cb.loadLocal(TypeKind.from(highLevelType), cb.parameterSlot(paramIndex));
+                    emitReleaseScope();
+                }
+            }
         }
     }
 
@@ -495,44 +484,15 @@ public class BindingSpecializer {
     }
 
     private void emitAcquireScope() {
-        cb.checkcast(CD_AbstractMemorySegmentImpl)
+        cb.checkcast(CD_AbstractMemorySegmentImpl);
           .invokevirtual(CD_AbstractMemorySegmentImpl, "sessionImpl", MTD_SESSION_IMPL);
-        Label skipAcquire = cb.newLabel();
-        Label end = cb.newLabel();
-
-        // start with 1 scope to maybe acquire on the stack
-        assert curScopeLocalIdx != -1;
-        boolean hasOtherScopes = curScopeLocalIdx != 0;
-        for (int i = 0; i < curScopeLocalIdx; i++) {
-            cb.dup() // dup for comparison
-              .aload(scopeSlots[i])
-              .if_acmpeq(skipAcquire);
-        }
-
-        // 1 scope to acquire on the stack
-        cb.dup();
-        int nextScopeLocal = scopeSlots[curScopeLocalIdx++];
-        // call acquire first here. So that if it fails, we don't call release
-        cb.invokevirtual(CD_MemorySessionImpl, "acquire0", MTD_ACQUIRE0) // call acquire on the other
-          .astore(nextScopeLocal); // store off one to release later
-
-        if (hasOtherScopes) { // avoid ASM generating a bunch of nops for the dead code
-            cb.goto_(end)
-              .labelBinding(skipAcquire)
-              .pop(); // drop scope
-        }
-
-        cb.labelBinding(end);
+          .invokevirtual(CD_MemorySessionImpl, "acquire0", MTD_ACQUIRE0);
     }
 
-    private void emitReleaseScopes() {
-        for (int scopeLocal : scopeSlots) {
-            cb.aload(scopeLocal)
-              .ifThen(Opcode.IFNONNULL, ifCb -> {
-                ifCb.aload(scopeLocal)
-                    .invokevirtual(CD_MemorySessionImpl, "release0", MTD_RELEASE0);
-            });
-        }
+    private void emitReleaseScope() {
+        cb.checkcast(CD_AbstractMemorySegmentImpl);
+          .invokevirtual(CD_AbstractMemorySegmentImpl, "sessionImpl", MTD_SESSION_IMPL);
+          .invokevirtual(CD_MemorySessionImpl, "release0", MTD_RELEASE0);
     }
 
     private void emitSaveReturnValue(Class<?> storeType) {
