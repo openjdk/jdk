@@ -244,7 +244,7 @@ inline InstanceKlass* JavaThread::class_to_be_initialized() const {
 inline void JavaThread::om_set_monitor_cache(ObjectMonitor* monitor) {
   assert(UseObjectMonitorTable, "must be");
   assert(monitor != nullptr, "use om_clear_monitor_cache to clear");
-  assert(this == current() || monitor->is_owner(this), "only add owned monitors for other threads");
+  assert(this == current() || monitor->has_owner(this), "only add owned monitors for other threads");
   assert(this == current() || is_obj_deopt_suspend(), "thread must not run concurrently");
 
   _om_cache.set_monitor(monitor);

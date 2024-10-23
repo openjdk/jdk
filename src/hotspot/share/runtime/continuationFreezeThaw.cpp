@@ -2215,7 +2215,7 @@ NOINLINE intptr_t* Thaw<ConfigT>::thaw_slow(stackChunkOop chunk, Continuation::t
       preempt_kind = waiter->is_wait() ? Continuation::freeze_on_wait : Continuation::freeze_on_monitorenter;
 
       bool mon_acquired = mon->resume_operation(_thread, waiter, _cont);
-      assert(!mon_acquired || mon->is_owner(_thread), "invariant");
+      assert(!mon_acquired || mon->has_owner(_thread), "invariant");
       if (!mon_acquired) {
         // Failed to aquire monitor. Return to enterSpecial to unmount again.
         return push_cleanup_continuation();

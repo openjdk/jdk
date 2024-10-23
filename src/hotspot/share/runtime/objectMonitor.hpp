@@ -40,11 +40,6 @@ class ParkEvent;
 class BasicLock;
 class ContinuationWrapper;
 
-// ObjectWaiter serves as a "proxy" or surrogate thread.
-// TODO-FIXME: Eliminate ObjectWaiter and use the thread-specific
-// ParkEvent instead.  Beware, however, that the JVMTI code
-// knows about ObjectWaiters, so we'll have to reconcile that code.
-// See next_waiter(), first_waiter(), etc.
 
 class ObjectWaiter : public CHeapObj<mtThread> {
  public:
@@ -268,7 +263,7 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   void                set_hash(intptr_t hash);
 
   bool is_busy() const {
-    // TODO-FIXME: assert _owner == null implies _recursions = 0
+    // TODO-FIXME: assert _owner == NO_OWNER implies _recursions = 0
     intptr_t ret_code = intptr_t(_waiters) | intptr_t(_cxq) | intptr_t(_EntryList);
     int cnts = contentions(); // read once
     if (cnts > 0) {
@@ -285,42 +280,49 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
 
   // Returns true if this OM has an owner, false otherwise.
   bool      has_owner() const;
-  int64_t   owner() const;  // Returns null if DEFLATER_MARKER is observed.
+  int64_t   owner() const;  // Returns NO_OWNER if DEFLATER_MARKER is observed.
   int64_t   owner_raw() const;
 
-  static int64_t owner_for(JavaThread* thread);
-  static int64_t owner_for_oop(oop vthread);
+  // These methods return the value we set in _owner when acquiring
+  // the monitor with the given thread/vthread (tid).
+  static int64_t owner_from(JavaThread* thread);
+  static int64_t owner_from(oop vthread);
 
   // Returns true if owner field == DEFLATER_MARKER and false otherwise.
   bool      owner_is_DEFLATER_MARKER() const;
   // Returns true if 'this' is being async deflated and false otherwise.
   bool      is_being_async_deflated();
-  // Clear _owner field; current value must match old_value.
-  void      release_clear_owner(JavaThread* old_value);
+  // Clear _owner field; current value must match thread's tid.
+  void      release_clear_owner(JavaThread* thread);
   // Simply set _owner field to new_value; current value must match old_value.
   void      set_owner_from_raw(int64_t old_value, int64_t new_value);
+  // Same as above but uses tid of current as new value.
   void      set_owner_from(int64_t old_value, JavaThread* current);
-  // Simply set _owner field to current; current value must match basic_lock_p.
+  // Set _owner field to tid of current thread; current value must be ANONYMOUS_OWNER.
   void      set_owner_from_BasicLock(JavaThread* current);
   // Try to set _owner field to new_value if the current value matches
   // old_value, using Atomic::cmpxchg(). Otherwise, does not change the
   // _owner field. Returns the prior value of the _owner field.
   int64_t   try_set_owner_from_raw(int64_t old_value, int64_t new_value);
+  // Same as above but uses tid of current as new_value.
   int64_t   try_set_owner_from(int64_t old_value, JavaThread* current);
 
-  bool      is_succesor(JavaThread* thread);
-  void      set_succesor(JavaThread* thread);
-  void      set_succesor(oop vthread);
-  void      clear_succesor();
-  bool      has_succesor();
+  bool      has_successor();
+  bool      has_successor(JavaThread* thread);
+  void      set_successor(JavaThread* thread);
+  void      set_successor(oop vthread);
+  void      clear_successor();
 
-  bool is_owner(JavaThread* thread) const { return owner() == owner_for(thread); }
+  // Returns true if _owner field == tid of thread, false otherwise.
+  bool has_owner(JavaThread* thread) const { return owner() == owner_from(thread); }
+  // Set _owner field to tid of thread; current value must be NO_OWNER.
   void set_owner(JavaThread* thread) { set_owner_from(NO_OWNER, thread); }
+  // Try to set _owner field from NO_OWNER to tid of thread.
   bool try_set_owner(JavaThread* thread) {
     return try_set_owner_from(NO_OWNER, thread) == NO_OWNER;
   }
 
-  bool is_owner_anonymous() const { return owner_raw() == ANONYMOUS_OWNER; }
+  bool has_owner_anonymous() const { return owner_raw() == ANONYMOUS_OWNER; }
   void set_owner_anonymous() {
     set_owner_from_raw(NO_OWNER, ANONYMOUS_OWNER);
   }
@@ -328,7 +330,10 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
     set_owner_from(ANONYMOUS_OWNER, owner);
   }
 
-  bool is_stack_locker(JavaThread* current);
+  // Returns true if BasicLock* stored in _stack_locker
+  // points to current's stack, false othwerwise.
+  bool has_stack_locker(JavaThread* current);
+  // Get and set _stack_locker.
   BasicLock* stack_locker() const;
   void set_stack_locker(BasicLock* locker);
 

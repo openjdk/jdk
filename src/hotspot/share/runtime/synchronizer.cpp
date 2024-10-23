@@ -361,7 +361,7 @@ bool ObjectSynchronizer::quick_notify(oopDesc* obj, JavaThread* current, bool al
       return false;
     }
     assert(mon->object() == oop(obj), "invariant");
-    if (!mon->is_owner(current)) return false;  // slow-path for IMS exception
+    if (!mon->has_owner(current)) return false;  // slow-path for IMS exception
 
     if (mon->first_waiter() != nullptr) {
       // We have one or more waiters. Since this is an inflated monitor
@@ -430,7 +430,7 @@ bool ObjectSynchronizer::quick_enter_legacy(oop obj, BasicLock* lock, JavaThread
     // Case: light contention possibly amenable to TLE
     // Case: TLE inimical operations such as nested/recursive synchronization
 
-    if (m->is_owner(current)) {
+    if (m->has_owner(current)) {
       m->_recursions++;
       current->inc_held_monitor_count();
       return true;
@@ -657,7 +657,7 @@ void ObjectSynchronizer::exit_legacy(oop object, BasicLock* lock, JavaThread* cu
   // The ObjectMonitor* can't be async deflated until ownership is
   // dropped inside exit() and the ObjectMonitor* must be !is_busy().
   ObjectMonitor* monitor = inflate(current, object, inflate_cause_vm_internal);
-  assert(!monitor->is_owner_anonymous(), "must not be");
+  assert(!monitor->has_owner_anonymous(), "must not be");
   monitor->exit(current);
 }
 
@@ -1243,13 +1243,13 @@ void ObjectSynchronizer::owned_monitors_iterate_filtered(MonitorClosure* closure
 // Iterate ObjectMonitors where the owner == thread; this does NOT include
 // ObjectMonitors where owner is set to a stack-lock address in thread.
 void ObjectSynchronizer::owned_monitors_iterate(MonitorClosure* closure, JavaThread* thread) {
-  int64_t key = ObjectMonitor::owner_for(thread);
+  int64_t key = ObjectMonitor::owner_from(thread);
   auto thread_filter = [&](ObjectMonitor* monitor) { return monitor->owner() == key; };
   return owned_monitors_iterate_filtered(closure, thread_filter);
 }
 
 void ObjectSynchronizer::owned_monitors_iterate(MonitorClosure* closure, oop vthread) {
-  int64_t key = ObjectMonitor::owner_for_oop(vthread);
+  int64_t key = ObjectMonitor::owner_from(vthread);
   auto thread_filter = [&](ObjectMonitor* monitor) { return monitor->owner() == key; };
   return owned_monitors_iterate_filtered(closure, thread_filter);
 }
@@ -1464,7 +1464,7 @@ ObjectMonitor* ObjectSynchronizer::inflate_impl(JavaThread* inflating_thread, oo
       ObjectMonitor* inf = mark.monitor();
       markWord dmw = inf->header();
       assert(dmw.is_neutral(), "invariant: header=" INTPTR_FORMAT, dmw.value());
-      if (inf->is_owner_anonymous() && inflating_thread != nullptr) {
+      if (inf->has_owner_anonymous() && inflating_thread != nullptr) {
         assert(LockingMode == LM_LEGACY, "invariant");
         if (inflating_thread->is_lock_owned((address)inf->stack_locker())) {
           inf->set_owner_from_BasicLock(inflating_thread);

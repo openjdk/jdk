@@ -1265,7 +1265,7 @@ JavaThread* Threads::owning_thread_from_object(ThreadsList * t_list, oop obj) {
 }
 
 JavaThread* Threads::owning_thread_from_monitor(ThreadsList* t_list, ObjectMonitor* monitor) {
-  if (monitor->is_owner_anonymous()) {
+  if (monitor->has_owner_anonymous()) {
     if (LockingMode == LM_LIGHTWEIGHT) {
       return owning_thread_from_object(t_list, monitor->object());
     } else {
@@ -1275,7 +1275,7 @@ JavaThread* Threads::owning_thread_from_monitor(ThreadsList* t_list, ObjectMonit
   } else {
     JavaThread* the_owner = nullptr;
     for (JavaThread* q : *t_list) {
-      if (monitor->is_owner(q)) {
+      if (monitor->has_owner(q)) {
         the_owner = q;
         break;
       }

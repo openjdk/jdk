@@ -350,7 +350,7 @@ class ObjectMonitorsDump : public MonitorClosure, public ObjectMonitorsView {
   void do_monitor(ObjectMonitor* monitor) override {
     assert(monitor->has_owner(), "Expects only owned monitors");
 
-    if (monitor->is_owner_anonymous()) {
+    if (monitor->has_owner_anonymous()) {
       // There's no need to collect anonymous owned monitors
       // because the caller of this code is only interested
       // in JNI owned monitors.
@@ -368,7 +368,7 @@ class ObjectMonitorsDump : public MonitorClosure, public ObjectMonitorsView {
 
   // Implements the ObjectMonitorsView interface
   void visit(MonitorClosure* closure, JavaThread* thread) override {
-    int64_t key = ObjectMonitor::owner_for(thread);
+    int64_t key = ObjectMonitor::owner_from(thread);
     ObjectMonitorLinkedList* list = get_list(key);
     LinkedListIterator<ObjectMonitor*> iter(list != nullptr ? list->head() : nullptr);
     while (!iter.is_empty()) {
