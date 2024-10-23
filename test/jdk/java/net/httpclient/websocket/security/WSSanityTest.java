@@ -25,7 +25,7 @@
  * @test
  * @summary Basic sanity checks for WebSocket URI from the Builder
  * @compile ../DummyWebSocketServer.java ../../ProxyServer.java
- * @run testng/othervm WSURLPermissionTest
+ * @run testng/othervm WSSanityTest
  */
 
 import java.io.IOException;
@@ -35,8 +35,6 @@ import java.net.Proxy;
 import java.net.ProxySelector;
 import java.net.SocketAddress;
 import java.net.URI;
-import java.net.URLPermission;
-import java.security.PrivilegedExceptionAction;
 import java.util.List;
 import java.net.http.HttpClient;
 import java.net.http.WebSocket;
@@ -73,172 +71,53 @@ public class WSSanityTest {
     static class NoOpListener implements WebSocket.Listener {}
     static final WebSocket.Listener noOpListener = new NoOpListener();
 
+    interface ExceptionAction<T> {
+        T run() throws Exception;
+    }
+
     @DataProvider(name = "passingScenarios")
     public Object[][] passingScenarios() {
         HttpClient noProxyClient = HttpClient.newHttpClient();
         return new Object[][]{
-            { (PrivilegedExceptionAction<?>)() -> {
+            { (ExceptionAction<?>)() -> {
                  noProxyClient.newWebSocketBuilder()
                               .buildAsync(wsURI, noOpListener).get().abort();
-                 return null; },                                       // no actions
-              new URLPermission[] { new URLPermission(wsURI.toString()) },
+                 return null; },
               "0"  /* for log file identification */ },
 
-            { (PrivilegedExceptionAction<?>)() -> {
+            { (ExceptionAction<?>)() -> {
+                URI uriWithPath = wsURI.resolve("/path/x");
                  noProxyClient.newWebSocketBuilder()
-                              .buildAsync(wsURI, noOpListener).get().abort();
-                 return null; },                                       // scheme wildcard
-              new URLPermission[] { new URLPermission("ws://*") },
-              "0.1" },
-
-            { (PrivilegedExceptionAction<?>)() -> {
-                 noProxyClient.newWebSocketBuilder()
-                              .buildAsync(wsURI, noOpListener).get().abort();
-                 return null; },                                       // port wildcard
-              new URLPermission[] { new URLPermission("ws://"+wsURI.getHost()+":*") },
-              "0.2" },
-
-            { (PrivilegedExceptionAction<?>)() -> {
-                 noProxyClient.newWebSocketBuilder()
-                              .buildAsync(wsURI, noOpListener).get().abort();
-                 return null; },                                        // empty actions
-              new URLPermission[] { new URLPermission(wsURI.toString(), "") },
+                              .buildAsync(uriWithPath, noOpListener).get().abort();
+                 return null; },
               "1" },
 
-            { (PrivilegedExceptionAction<?>)() -> {
+            { (ExceptionAction<?>)() -> {
                  noProxyClient.newWebSocketBuilder()
+                              .header("A-Header", "A-Value")  // header
                               .buildAsync(wsURI, noOpListener).get().abort();
-                 return null; },                                         // colon
-              new URLPermission[] { new URLPermission(wsURI.toString(), ":") },
+                 return null; },
               "2" },
 
-            { (PrivilegedExceptionAction<?>)() -> {
+            { (ExceptionAction<?>)() -> {
                  noProxyClient.newWebSocketBuilder()
+                              .header("A-Header", "A-Value")  // headers
+                              .header("B-Header", "B-Value")  // headers
                               .buildAsync(wsURI, noOpListener).get().abort();
-                 return null; },                                        // wildcard
-              new URLPermission[] { new URLPermission(wsURI.toString(), "*:*") },
+                 return null; },
               "3" },
 
-            // WS permission checking is agnostic of method, any/none will do
-            { (PrivilegedExceptionAction<?>)() -> {
-                 noProxyClient.newWebSocketBuilder()
-                              .buildAsync(wsURI, noOpListener).get().abort();
-                 return null; },                                        // specific method
-              new URLPermission[] { new URLPermission(wsURI.toString(), "GET") },
-              "3.1" },
-
-            { (PrivilegedExceptionAction<?>)() -> {
-                 noProxyClient.newWebSocketBuilder()
-                              .buildAsync(wsURI, noOpListener).get().abort();
-                 return null; },                                        // specific method
-              new URLPermission[] { new URLPermission(wsURI.toString(), "POST") },
-              "3.2" },
-
-            { (PrivilegedExceptionAction<?>)() -> {
-                URI uriWithPath = wsURI.resolve("/path/x");
-                 noProxyClient.newWebSocketBuilder()
-                              .buildAsync(uriWithPath, noOpListener).get().abort();
-                 return null; },                                       // path
-              new URLPermission[] { new URLPermission(wsURI.resolve("/path/x").toString()) },
-              "4" },
-
-            { (PrivilegedExceptionAction<?>)() -> {
-                URI uriWithPath = wsURI.resolve("/path/x");
-                 noProxyClient.newWebSocketBuilder()
-                              .buildAsync(uriWithPath, noOpListener).get().abort();
-                 return null; },                                       // same dir wildcard
-              new URLPermission[] { new URLPermission(wsURI.resolve("/path/*").toString()) },
-              "5" },
-
-            { (PrivilegedExceptionAction<?>)() -> {
-                URI uriWithPath = wsURI.resolve("/path/x");
-                 noProxyClient.newWebSocketBuilder()
-                              .buildAsync(uriWithPath, noOpListener).get().abort();
-                 return null; },                                       // recursive
-              new URLPermission[] { new URLPermission(wsURI.resolve("/path/-").toString()) },
-              "6" },
-
-            { (PrivilegedExceptionAction<?>)() -> {
-                URI uriWithPath = wsURI.resolve("/path/x");
-                 noProxyClient.newWebSocketBuilder()
-                              .buildAsync(uriWithPath, noOpListener).get().abort();
-                 return null; },                                       // recursive top
-              new URLPermission[] { new URLPermission(wsURI.resolve("/-").toString()) },
-              "7" },
-
-            { (PrivilegedExceptionAction<?>)() -> {
-                 noProxyClient.newWebSocketBuilder()
-                              .header("A-Header", "A-Value")  // header
-                              .buildAsync(wsURI, noOpListener).get().abort();
-                 return null; },
-              new URLPermission[] { new URLPermission(wsURI.toString(), ":A-Header") },
-              "8" },
-
-            { (PrivilegedExceptionAction<?>)() -> {
-                 noProxyClient.newWebSocketBuilder()
-                              .header("A-Header", "A-Value")  // header
-                              .buildAsync(wsURI, noOpListener).get().abort();
-                 return null; },                                        // wildcard
-              new URLPermission[] { new URLPermission(wsURI.toString(), ":*") },
-              "9" },
-
-            { (PrivilegedExceptionAction<?>)() -> {
-                 noProxyClient.newWebSocketBuilder()
-                              .header("A-Header", "A-Value")  // headers
-                              .header("B-Header", "B-Value")  // headers
-                              .buildAsync(wsURI, noOpListener).get().abort();
-                 return null; },
-              new URLPermission[] { new URLPermission(wsURI.toString(), ":A-Header,B-Header") },
-              "10" },
-
-            { (PrivilegedExceptionAction<?>)() -> {
-                 noProxyClient.newWebSocketBuilder()
-                              .header("A-Header", "A-Value")  // headers
-                              .header("B-Header", "B-Value")  // headers
-                              .buildAsync(wsURI, noOpListener).get().abort();
-                 return null; },                                        // wildcard
-              new URLPermission[] { new URLPermission(wsURI.toString(), ":*") },
-              "11" },
-
-            { (PrivilegedExceptionAction<?>)() -> {
-                 noProxyClient.newWebSocketBuilder()
-                              .header("A-Header", "A-Value")  // headers
-                              .header("B-Header", "B-Value")  // headers
-                              .buildAsync(wsURI, noOpListener).get().abort();
-                 return null; },                                        // wildcards
-              new URLPermission[] { new URLPermission(wsURI.toString(), "*:*") },
-              "12" },
-
-            { (PrivilegedExceptionAction<?>)() -> {
-                 noProxyClient.newWebSocketBuilder()
-                              .header("A-Header", "A-Value")  // multi-value
-                              .header("A-Header", "B-Value")  // headers
-                              .buildAsync(wsURI, noOpListener).get().abort();
-                 return null; },                                        // wildcard
-              new URLPermission[] { new URLPermission(wsURI.toString(), ":*") },
-              "13" },
-
-            { (PrivilegedExceptionAction<?>)() -> {
-                 noProxyClient.newWebSocketBuilder()
-                              .header("A-Header", "A-Value")  // multi-value
-                              .header("A-Header", "B-Value")  // headers
-                              .buildAsync(wsURI, noOpListener).get().abort();
-                 return null; },                                        // single grant
-              new URLPermission[] { new URLPermission(wsURI.toString(), ":A-Header") },
-              "14" },
-
             // client with a DIRECT proxy
-            { (PrivilegedExceptionAction<?>)() -> {
+            { (ExceptionAction<?>)() -> {
                  ProxySelector ps = ProxySelector.of(null);
                  HttpClient client = HttpClient.newBuilder().proxy(ps).build();
                  client.newWebSocketBuilder()
                        .buildAsync(wsURI, noOpListener).get().abort();
                  return null; },
-              new URLPermission[] { new URLPermission(wsURI.toString()) },
-              "15" },
+              "4" },
 
             // client with a SOCKS proxy! ( expect implementation to ignore SOCKS )
-            { (PrivilegedExceptionAction<?>)() -> {
+            { (ExceptionAction<?>)() -> {
                  ProxySelector ps = new ProxySelector() {
                      @Override public List<Proxy> select(URI uri) {
                          return List.of(new Proxy(Proxy.Type.SOCKS, proxyAddress)); }
@@ -249,50 +128,19 @@ public class WSSanityTest {
                  client.newWebSocketBuilder()
                        .buildAsync(wsURI, noOpListener).get().abort();
                  return null; },
-              new URLPermission[] { new URLPermission(wsURI.toString()) },
-              "16" },
+              "5" },
 
-            // client with a HTTP/HTTPS proxy
-            { (PrivilegedExceptionAction<?>)() -> {
+            // client with an HTTP/HTTPS proxy
+            { (ExceptionAction<?>)() -> {
                  assert proxyAddress != null;
                  ProxySelector ps = ProxySelector.of(proxyAddress);
                  HttpClient client = HttpClient.newBuilder().proxy(ps).build();
                  client.newWebSocketBuilder()
                        .buildAsync(wsURI, noOpListener).get().abort();
                  return null; },
-              new URLPermission[] {
-                    new URLPermission(wsURI.toString()),            // CONNECT action string
-                    new URLPermission("socket://"+proxyAddress.getHostName()
-                                      +":"+proxyAddress.getPort(), "CONNECT")},
-              "17" },
+              "6" },
 
-            { (PrivilegedExceptionAction<?>)() -> {
-                 assert proxyAddress != null;
-                 ProxySelector ps = ProxySelector.of(proxyAddress);
-                 HttpClient client = HttpClient.newBuilder().proxy(ps).build();
-                 client.newWebSocketBuilder()
-                       .buildAsync(wsURI, noOpListener).get().abort();
-                 return null; },
-              new URLPermission[] {
-                    new URLPermission(wsURI.toString()),            // no action string
-                    new URLPermission("socket://"+proxyAddress.getHostName()
-                                      +":"+proxyAddress.getPort())},
-              "18" },
-
-            { (PrivilegedExceptionAction<?>)() -> {
-                 assert proxyAddress != null;
-                 ProxySelector ps = ProxySelector.of(proxyAddress);
-                 HttpClient client = HttpClient.newBuilder().proxy(ps).build();
-                 client.newWebSocketBuilder()
-                       .buildAsync(wsURI, noOpListener).get().abort();
-                 return null; },
-              new URLPermission[] {
-                    new URLPermission(wsURI.toString()),            // wildcard headers
-                    new URLPermission("socket://"+proxyAddress.getHostName()
-                                      +":"+proxyAddress.getPort(), "CONNECT:*")},
-              "19" },
-
-            { (PrivilegedExceptionAction<?>)() -> {
+            { (ExceptionAction<?>)() -> {
                  assert proxyAddress != null;
                  CountingProxySelector ps = CountingProxySelector.of(proxyAddress);
                  HttpClient client = HttpClient.newBuilder().proxy(ps).build();
@@ -300,43 +148,13 @@ public class WSSanityTest {
                        .buildAsync(wsURI, noOpListener).get().abort();
                  assertEquals(ps.count(), 1);  // ps.select only invoked once
                  return null; },
-              new URLPermission[] {
-                    new URLPermission(wsURI.toString()),            // empty headers
-                    new URLPermission("socket://"+proxyAddress.getHostName()
-                                      +":"+proxyAddress.getPort(), "CONNECT:")},
-              "20" },
-
-            { (PrivilegedExceptionAction<?>)() -> {
-                 assert proxyAddress != null;
-                 ProxySelector ps = ProxySelector.of(proxyAddress);
-                 HttpClient client = HttpClient.newBuilder().proxy(ps).build();
-                 client.newWebSocketBuilder()
-                       .buildAsync(wsURI, noOpListener).get().abort();
-                 return null; },
-              new URLPermission[] {
-                    new URLPermission(wsURI.toString()),
-                    new URLPermission("socket://*")},               // wildcard socket URL
-              "21" },
-
-            { (PrivilegedExceptionAction<?>)() -> {
-                 assert proxyAddress != null;
-                 ProxySelector ps = ProxySelector.of(proxyAddress);
-                 HttpClient client = HttpClient.newBuilder().proxy(ps).build();
-                 client.newWebSocketBuilder()
-                       .buildAsync(wsURI, noOpListener).get().abort();
-                 return null; },
-              new URLPermission[] {
-                    new URLPermission("ws://*"),                    // wildcard ws URL
-                    new URLPermission("socket://*")},               // wildcard socket URL
-              "22" },
+              "7" },
 
         };
     }
 
     @Test(dataProvider = "passingScenarios")
-    public void testWithNoSecurityManager(PrivilegedExceptionAction<?> action,
-                                          URLPermission[] unused,
-                                          String dataProviderId)
+    public void testScenarios(ExceptionAction<?> action, String dataProviderId)
         throws Exception
     {
         action.run();
