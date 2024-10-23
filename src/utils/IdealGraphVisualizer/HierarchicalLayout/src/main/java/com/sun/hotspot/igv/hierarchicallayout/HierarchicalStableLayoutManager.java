@@ -25,8 +25,6 @@ package com.sun.hotspot.igv.hierarchicallayout;
 
 import static com.sun.hotspot.igv.hierarchicallayout.LayoutNode.NODE_POS_COMPARATOR;
 import static com.sun.hotspot.igv.hierarchicallayout.LayoutNode.NODE_PROCESSING_UP_COMPARATOR;
-import com.sun.hotspot.igv.layout.LayoutGraph;
-import com.sun.hotspot.igv.layout.LayoutManager;
 import com.sun.hotspot.igv.layout.Link;
 import com.sun.hotspot.igv.layout.Vertex;
 import com.sun.hotspot.igv.util.Statistics;
@@ -83,7 +81,8 @@ public class HierarchicalStableLayoutManager extends LayoutManager {
     @Override
     public void doLayout(LayoutGraph graph) {
         manager.doLayout(graph);
-        nodes = manager.getNodes();
+        nodes = new ArrayList<>(graph.getDummyNodes());
+        nodes.addAll(graph.getLayoutNodes());
     }
 
     private int calculateOptimalBoth(LayoutNode n) {

@@ -47,6 +47,14 @@ public class LayoutLayer extends ArrayList<LayoutNode> {
         return super.add(n);
     }
 
+    public void updateLayerPositions() {
+        int pos = 0;
+        for (LayoutNode layoutNode : this) {
+            layoutNode.setPos(pos);
+            pos++;
+        }
+    }
+
     public int findPosInLayer(int x) {
         // find the position in the new layer at location
         int newPos = 0;
