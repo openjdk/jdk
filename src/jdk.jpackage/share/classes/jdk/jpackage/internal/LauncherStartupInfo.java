@@ -43,10 +43,17 @@ interface LauncherStartupInfo {
 
     List<String> defaultParameters();
 
-    List<InstallableFile> classPath();
+    /**
+     * Returns list of paths to add to the classath. 
+     * 
+     * Every path in the list is relative to app's main source directory.
+     * 
+     * @see jdk.jpackage.internal.Application#mainSrcDir() 
+     */
+    List<Path> classPath();
 
     record Impl(String qualifiedClassName, List<String> javaOptions,
-            List<String> defaultParameters, List<InstallableFile> classPath)
+            List<String> defaultParameters, List<Path> classPath)
             implements LauncherStartupInfo {
 
     }
@@ -74,7 +81,7 @@ interface LauncherStartupInfo {
         }
 
         @Override
-        public List<InstallableFile> classPath() {
+        public List<Path> classPath() {
             return target.classPath();
         }
     }
@@ -97,7 +104,7 @@ interface LauncherStartupInfo {
         }
 
         @Override
-        public List<InstallableFile> classPath() {
+        public List<Path> classPath() {
             throw new UnsupportedOperationException();
         }
     }

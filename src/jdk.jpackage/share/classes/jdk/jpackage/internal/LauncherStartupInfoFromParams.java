@@ -35,22 +35,17 @@ final class LauncherStartupInfoFromParams {
         var launcherData = StandardBundlerParam.LAUNCHER_DATA.fetchFrom(params);
         var javaOptions = JAVA_OPTIONS.fetchFrom(params);
         var arguments = ARGUMENTS.fetchFrom(params);
-        var classpath = launcherData.classPath().stream().map(p -> {
-            return new InstallableFile(inputDir.resolve(p), p);
-        }).toList();
 
         var startupInfo = new LauncherStartupInfo.Impl(
                 launcherData.qualifiedClassName(), javaOptions, arguments,
-                classpath);
+                launcherData.classPath());
 
         if (launcherData.isModular()) {
             return new LauncherModularStartupInfo.Impl(startupInfo,
                     launcherData.moduleName(), launcherData.modulePath());
         } else {
             return new LauncherJarStartupInfo.Impl(startupInfo,
-                    new InstallableFile(inputDir.resolve(
-                            launcherData.mainJarName()),
-                            launcherData.mainJarName()),
+                    launcherData.mainJarName(),
                     launcherData.isClassNameFromMainJar());
         }
     }

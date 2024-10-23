@@ -24,22 +24,29 @@
  */
 package jdk.jpackage.internal;
 
+import java.nio.file.Path;
+
 interface LauncherJarStartupInfo extends LauncherStartupInfo {
-    InstallableFile jarPath();
+    /**
+     * Returns path to the main jar relative to app's main source directory.
+     * 
+     * @see jdk.jpackage.internal.Application#mainSrcDir() 
+     */
+    Path jarPath();
 
     boolean isClassNameFromMainJar();
 
     final static class Impl extends LauncherStartupInfo.Proxy<LauncherStartupInfo>
             implements LauncherJarStartupInfo {
 
-        Impl(LauncherStartupInfo target, InstallableFile jarPath, boolean isClassNameFromMainJar) {
+        Impl(LauncherStartupInfo target, Path jarPath, boolean isClassNameFromMainJar) {
             super(target);
             this.jarPath = jarPath;
             this.isClassNameFromMainJar = isClassNameFromMainJar;
         }
 
         @Override
-        public InstallableFile jarPath() {
+        public Path jarPath() {
             return jarPath;
         }
 
@@ -48,7 +55,7 @@ interface LauncherJarStartupInfo extends LauncherStartupInfo {
             return isClassNameFromMainJar;
         }
 
-        private final InstallableFile jarPath;
+        private final Path jarPath;
         private final boolean isClassNameFromMainJar;
     }
 }
