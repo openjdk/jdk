@@ -477,8 +477,8 @@ public final class Byte extends Number implements Comparable<Byte>, Constable {
      *                  {@code false} otherwise.
      */
     public boolean equals(Object obj) {
-        if (obj instanceof Byte) {
-            return value == ((Byte)obj).byteValue();
+        if (obj instanceof Byte b) {
+            return value == b.byteValue();
         }
         return false;
     }
