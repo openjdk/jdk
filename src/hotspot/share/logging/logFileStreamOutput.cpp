@@ -179,7 +179,7 @@ int LogFileStreamOutput::write_internal(const LogDecorations& decorations, const
   ALLOW_C_FUNCTION(::memcpy, ::memcpy(dupstr, msg, msg_len);)
   char* tmp = dupstr;
 
-  while (tmp - dupstr < msg_len) {
+  while (tmp - dupstr < msg_len - 2) {
     if (*tmp == '\n') {
       *tmp = '\0';
     }
