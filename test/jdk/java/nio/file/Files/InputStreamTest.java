@@ -254,11 +254,11 @@ public class InputStreamTest {
     }
 
     /**
-     * Tests Files.newInputStream(Path).readNBytes().
+     * Tests Files.newInputStream(Path).readNBytes(byte[],int,int).
      */
     @Test
     @DisabledOnOs(OS.WINDOWS)
-    void readNBytes() throws InterruptedException, IOException {
+    void readNBytesNoOverride() throws InterruptedException, IOException {
         Thread t = createWriteThread();
         try (InputStream in = Files.newInputStream(Path.of(PIPE))) {
             final int offset = 11;
@@ -267,6 +267,25 @@ public class InputStreamTest {
             byte[] b = new byte[offset + length];
             int n = in.readNBytes(b, offset, length);
             String s = new String(b, offset, length);
+            System.out.println(s);
+            assertEquals(SENTENCE.substring(0, length), s);
+        } finally {
+            t.join();
+        }
+    }
+
+    /**
+     * Tests Files.newInputStream(Path).readNBytes(int).
+     */
+    @Test
+    @DisabledOnOs(OS.WINDOWS)
+    void readNBytesOverride() throws InterruptedException, IOException {
+        Thread t = createWriteThread();
+        try (InputStream in = Files.newInputStream(Path.of(PIPE))) {
+            final int length = 17;
+            assert length <= SENTENCE.length();
+            byte[] b = in.readNBytes(length);
+            String s = new String(b);
             System.out.println(s);
             assertEquals(SENTENCE.substring(0, length), s);
         } finally {
