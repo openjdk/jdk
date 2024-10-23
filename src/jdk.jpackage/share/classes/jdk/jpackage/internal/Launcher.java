@@ -29,6 +29,10 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import jdk.internal.util.OperatingSystem;
+import static jdk.internal.util.OperatingSystem.LINUX;
+import static jdk.internal.util.OperatingSystem.WINDOWS;
+import static jdk.jpackage.internal.Functional.ThrowingConsumer.toConsumer;
 import jdk.jpackage.internal.resources.ResourceLocator;
 
 interface Launcher {
@@ -70,11 +74,37 @@ interface Launcher {
      * other value for custom icon.
      */
     Path icon();
+    
+    default String defaultIconResourceName() {
+        return null;
+    }
 
     static record Impl(String name, LauncherStartupInfo startupInfo,
             List<FileAssociation> fileAssociations, boolean isService,
             String description, Path icon) implements Launcher {
-
+        public Impl {
+            Optional.ofNullable(icon).ifPresent(toConsumer(Launcher::validateIcon));
+        }
+    }
+    
+    static void validateIcon(Path icon) throws ConfigException {
+        switch (OperatingSystem.current()) {
+            case WINDOWS -> {
+                if (!icon.getFileName().toString().toLowerCase().endsWith(".ico")) {
+                    throw ConfigException.build().msg("message.icon-not-ico", icon).create();
+                }
+            }
+            case LINUX -> {
+                if (!icon.getFileName().toString().endsWith(".png")) {
+                    throw ConfigException.build().msg("message.icon-not-png", icon).create();
+                }
+            }
+            case MACOS -> {
+                if (!icon.getFileName().toString().endsWith(".icns")) {
+                    throw ConfigException.build().msg("message.icon-not-icns", icon).create();
+                }
+            }
+        }
     }
 
     static class Proxy<T extends Launcher> extends ProxyBase<T> implements Launcher {

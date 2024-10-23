@@ -43,6 +43,10 @@ interface WinLauncher extends Launcher {
                 isConsole() ? "jpackageapplauncher.exe" : "jpackageapplauncherw.exe");
     }
 
+    default String defaultIconResourceName() {
+        return "JavaApp.ico";
+    }
+
     enum WinShortcut {
         WinShortcutDesktop,
         WinShortcutStartMenu

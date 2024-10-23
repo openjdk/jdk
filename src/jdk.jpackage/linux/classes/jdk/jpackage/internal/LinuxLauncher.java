@@ -37,6 +37,10 @@ interface LinuxLauncher extends Launcher {
             return Map.of("shortcut", Boolean.toString(v));
         }).orElseGet(Map::of);
     }
+    
+    default String defaultIconResourceName() {
+        return "JavaApp.png";
+    }
 
     static class Impl extends Launcher.Proxy<Launcher> implements LinuxLauncher {
 
