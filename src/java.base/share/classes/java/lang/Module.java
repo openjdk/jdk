@@ -62,7 +62,9 @@ import jdk.internal.loader.BootLoader;
 import jdk.internal.loader.ClassLoaders;
 import jdk.internal.misc.CDS;
 import jdk.internal.misc.Unsafe;
+import jdk.internal.misc.VM;
 import jdk.internal.module.ModuleBootstrap;
+import jdk.internal.module.ModuleBootstrap.IllegalNativeAccess;
 import jdk.internal.module.ModuleLoaderMap;
 import jdk.internal.module.ServicesCatalog;
 import jdk.internal.module.Resources;
@@ -300,26 +302,43 @@ public final class Module implements AnnotatedElement {
     }
 
     // This is invoked from Reflection.ensureNativeAccess
-    void ensureNativeAccess(Class<?> owner, String methodName, Class<?> currentClass) {
+    void ensureNativeAccess(Class<?> owner, String methodName, Class<?> currentClass, boolean jni) {
         // The target module whose enableNativeAccess flag is ensured
         Module target = moduleForNativeAccess();
-        if (!EnableNativeAccess.isNativeAccessEnabled(target)) {
-            if (ModuleBootstrap.hasEnableNativeAccessFlag()) {
-                throw new IllegalCallerException("Illegal native access from: " + this);
+        ModuleBootstrap.IllegalNativeAccess illegalNativeAccess = ModuleBootstrap.illegalNativeAccess();
+        if (illegalNativeAccess != ModuleBootstrap.IllegalNativeAccess.ALLOW &&
+                !EnableNativeAccess.isNativeAccessEnabled(target)) {
+            String mod = isNamed() ? "module " + getName() : "an unnamed module";
+            if (currentClass != null) {
+                // try to extract location of the current class (e.g. jar or folder)
+                URL url = System.codeSource(currentClass);
+                if (url != null) {
+                    mod += " (" + url + ")";
+                }
             }
-            if (EnableNativeAccess.trySetEnableNativeAccess(target)) {
+            if (illegalNativeAccess == ModuleBootstrap.IllegalNativeAccess.DENY) {
+                throw new IllegalCallerException("Illegal native access from " + mod);
+            } else if (EnableNativeAccess.trySetEnableNativeAccess(target)) {
                 // warn and set flag, so that only one warning is reported per module
                 String cls = owner.getName();
                 String mtd = cls + "::" + methodName;
-                String mod = isNamed() ? "module " + getName() : "an unnamed module";
                 String modflag = isNamed() ? getName() : "ALL-UNNAMED";
                 String caller = currentClass != null ? currentClass.getName() : "code";
-                System.err.printf("""
-                        WARNING: A restricted method in %s has been called
-                        WARNING: %s has been called by %s in %s
-                        WARNING: Use --enable-native-access=%s to avoid a warning for callers in this module
-                        WARNING: Restricted methods will be blocked in a future release unless native access is enabled
-                        %n""", cls, mtd, caller, mod, modflag);
+                if (jni) {
+                    VM.initialErr().printf("""
+                            WARNING: A native method in %s has been bound
+                            WARNING: %s is declared in %s
+                            WARNING: Use --enable-native-access=%s to avoid a warning for native methods declared in this module
+                            WARNING: Restricted methods will be blocked in a future release unless native access is enabled
+                            %n""", cls, mtd, mod, modflag);
+                } else {
+                    VM.initialErr().printf("""
+                            WARNING: A restricted method in %s has been called
+                            WARNING: %s has been called by %s in %s
+                            WARNING: Use --enable-native-access=%s to avoid a warning for callers in this module
+                            WARNING: Restricted methods will be blocked in a future release unless native access is enabled
+                            %n""", cls, mtd, caller, mod, modflag);
+                }
             }
         }
     }

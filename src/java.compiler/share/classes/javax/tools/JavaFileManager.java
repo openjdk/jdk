@@ -52,7 +52,7 @@ import static javax.tools.JavaFileObject.Kind;
  *
  * <p>Some methods in this interface use class names.  Such class
  * names must be given in the Java Virtual Machine internal form of
- * fully qualified class and interface names.  For convenience '.'
+ * fully qualified class and interface names.  For convenience, '.'
  * and '/' are interchangeable.  The internal form is defined in
  * chapter four of
  * <cite>The Java Virtual Machine Specification</cite>.
@@ -239,7 +239,7 @@ public interface JavaFileManager extends Closeable, Flushable, OptionChecker {
     String inferBinaryName(Location location, JavaFileObject file);
 
     /**
-     * Compares two file objects and return true if they represent the
+     * Compares two file objects and returns true if they represent the
      * same underlying object.
      *
      * @param a a file object
@@ -255,7 +255,7 @@ public interface JavaFileManager extends Closeable, Flushable, OptionChecker {
 
     /**
      * Handles one option.  If {@code current} is an option to this
-     * file manager it will consume any arguments to that option from
+     * file manager, it will consume any arguments to that option from
      * {@code remaining} and return true, otherwise return false.
      *
      * @param current current option

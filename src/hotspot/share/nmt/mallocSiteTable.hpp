@@ -38,8 +38,8 @@
 class MallocSite : public AllocationSite {
   MemoryCounter _c;
  public:
-  MallocSite(const NativeCallStack& stack, MEMFLAGS flags) :
-    AllocationSite(stack, flags) {}
+  MallocSite(const NativeCallStack& stack, MemTag mem_tag) :
+    AllocationSite(stack, mem_tag) {}
 
   void allocate(size_t size)      { _c.allocate(size);   }
   void deallocate(size_t size)    { _c.deallocate(size); }
@@ -63,9 +63,9 @@ class MallocSiteHashtableEntry : public CHeapObj<mtNMT> {
 
  public:
 
-  MallocSiteHashtableEntry(NativeCallStack stack, MEMFLAGS flags):
-    _malloc_site(stack, flags), _hash(stack.calculate_hash()), _next(nullptr) {
-    assert(flags != mtNone, "Expect a real memory type");
+  MallocSiteHashtableEntry(NativeCallStack stack, MemTag mem_tag):
+    _malloc_site(stack, mem_tag), _hash(stack.calculate_hash()), _next(nullptr) {
+    assert(mem_tag != mtNone, "Expect a real memory tag");
   }
 
   inline const MallocSiteHashtableEntry* next() const {
@@ -147,8 +147,8 @@ class MallocSiteTable : AllStatic {
   //  1. out of memory
   //  2. overflow hash bucket
   static inline bool allocation_at(const NativeCallStack& stack, size_t size,
-      uint32_t* marker, MEMFLAGS flags) {
-    MallocSite* site = lookup_or_add(stack, marker, flags);
+      uint32_t* marker, MemTag mem_tag) {
+    MallocSite* site = lookup_or_add(stack, marker, mem_tag);
     if (site != nullptr) site->allocate(size);
     return site != nullptr;
   }
@@ -170,9 +170,9 @@ class MallocSiteTable : AllStatic {
   static void print_tuning_statistics(outputStream* st);
 
  private:
-  static MallocSiteHashtableEntry* new_entry(const NativeCallStack& key, MEMFLAGS flags);
+  static MallocSiteHashtableEntry* new_entry(const NativeCallStack& key, MemTag mem_tag);
 
-  static MallocSite* lookup_or_add(const NativeCallStack& key, uint32_t* marker, MEMFLAGS flags);
+  static MallocSite* lookup_or_add(const NativeCallStack& key, uint32_t* marker, MemTag mem_tag);
   static MallocSite* malloc_site(uint32_t marker);
   static bool walk(MallocSiteWalker* walker);
 

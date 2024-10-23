@@ -139,22 +139,25 @@ public:
 
 // assertions
 #ifndef ASSERT
+#define vmassert_with_file_and_line(p, file, line, ...)
 #define vmassert(p, ...)
 #else
 // Note: message says "assert" rather than "vmassert" for backward
 // compatibility with tools that parse/match the message text.
 // Note: The signature is vmassert(p, format, ...), but the solaris
 // compiler can't handle an empty ellipsis in a macro without a warning.
-#define vmassert(p, ...)                                                       \
-do {                                                                           \
-  if (! VMASSERT_CHECK_PASSED(p)) {                                            \
-    TOUCH_ASSERT_POISON;                                                       \
-    report_vm_error(__FILE__, __LINE__, "assert(" #p ") failed", __VA_ARGS__); \
-  }                                                                            \
+#define vmassert_with_file_and_line(p, file, line, ...)                \
+do {                                                                   \
+  if (! VMASSERT_CHECK_PASSED(p)) {                                    \
+    TOUCH_ASSERT_POISON;                                               \
+    report_vm_error(file, line, "assert(" #p ") failed", __VA_ARGS__); \
+  }                                                                    \
 } while (0)
+#define vmassert(p, ...) vmassert_with_file_and_line(p, __FILE__, __LINE__, __VA_ARGS__)
 #endif
 
 // For backward compatibility.
+#define assert_with_file_and_line(p, file, line, ...) vmassert_with_file_and_line(p, file, line, __VA_ARGS__)
 #define assert(p, ...) vmassert(p, __VA_ARGS__)
 
 #define precond(p)   assert(p, "precond")

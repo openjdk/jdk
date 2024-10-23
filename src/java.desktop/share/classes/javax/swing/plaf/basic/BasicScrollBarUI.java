@@ -49,6 +49,7 @@ import javax.swing.BoundedRangeModel;
 import javax.swing.InputMap;
 import javax.swing.JButton;
 import javax.swing.JComponent;
+import javax.swing.JFrame;
 import javax.swing.JList;
 import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
@@ -1674,6 +1675,25 @@ public class BasicScrollBarUI
 
         /** {@inheritDoc} */
         public void actionPerformed(ActionEvent e) {
+            // If frame is disabled and timer is started in mousePressed
+            // and mouseReleased is not called, then timer will not be stopped
+            // Stop the timer if frame is disabled
+            Component parent = scrollbar.getParent();
+            do {
+                if (parent instanceof JFrame par) {
+                    if (!par.isEnabled()) {
+                        ((Timer)e.getSource()).stop();
+                        buttonListener.handledEvent = false;
+                        scrollbar.setValueIsAdjusting(false);
+                        return;
+                    }
+                    break;
+                } else {
+                    if (parent != null) {
+                        parent = parent.getParent();
+                    }
+                }
+            } while (parent != null);
             if(useBlockIncrement)       {
                 scrollByBlock(direction);
                 // Stop scrolling if the thumb catches up with the mouse

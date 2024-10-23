@@ -528,7 +528,7 @@ jint unix_getChildren(JNIEnv *env, jlong jpid, jlongArray jarray,
      * position integer as a filename.
      */
     if ((dir = opendir("/proc")) == NULL) {
-        JNU_ThrowByNameWithLastError(env,
+        JNU_ThrowByNameWithMessageAndLastError(env,
             "java/lang/RuntimeException", "Unable to open /proc");
         return -1;
     }
@@ -661,11 +661,8 @@ pid_t unix_getParentPidAndTimings(JNIEnv *env, pid_t pid,
 
 void unix_getCmdlineAndUserInfo(JNIEnv *env, jobject jinfo, pid_t pid) {
     psinfo_t psinfo;
-    char fn[32];
-    char exePath[PATH_MAX];
     char prargs[PRARGSZ + 1];
     jstring cmdexe = NULL;
-    int ret;
 
     /*
      * Now try to open /proc/%d/psinfo

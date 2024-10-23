@@ -37,7 +37,7 @@
  * @library /vmTestbase
  *          /test/lib
  * @build nsk.jdb.stop_at.stop_at002.stop_at002a
- * @run main/othervm
+ * @run driver
  *      nsk.jdb.stop_at.stop_at002.stop_at002
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
@@ -67,14 +67,10 @@ import java.util.*;
 public class stop_at002 extends JdbTest {
 
     public static void main (String argv[]) {
-        System.exit(run(argv, System.out) + JCK_STATUS_BASE);
-    }
-
-    public static int run(String argv[], PrintStream out) {
         debuggeeClass =  DEBUGGEE_CLASS;
         firstBreak = FIRST_BREAK;
         lastBreak = LAST_BREAK;
-        return new stop_at002().runTest(argv, out);
+        new stop_at002().runTest(argv);
     }
 
     static final String PACKAGE_NAME = "nsk.jdb.stop_at.stop_at002";

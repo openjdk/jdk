@@ -766,10 +766,10 @@ static Handle new_type(Symbol* signature, Klass* k, TRAPS) {
 }
 
 oop Reflection::new_method(const methodHandle& method, bool for_constant_pool_access, TRAPS) {
-  // Allow sun.reflect.ConstantPool to refer to <clinit> methods as java.lang.reflect.Methods.
-  assert(!method()->is_initializer() ||
-         (for_constant_pool_access && method()->is_static()),
-         "should call new_constructor instead");
+  // Allow jdk.internal.reflect.ConstantPool to refer to <clinit> methods as java.lang.reflect.Methods.
+  assert(!method()->is_object_initializer() &&
+         (for_constant_pool_access || !method()->is_static_initializer()),
+         "Should not be the initializer");
   InstanceKlass* holder = method->method_holder();
   int slot = method->method_idnum();
 
@@ -817,7 +817,7 @@ oop Reflection::new_method(const methodHandle& method, bool for_constant_pool_ac
 
 
 oop Reflection::new_constructor(const methodHandle& method, TRAPS) {
-  assert(method()->is_initializer(), "should call new_method instead");
+  assert(method()->is_object_initializer(), "Should be the initializer");
 
   InstanceKlass* holder = method->method_holder();
   int slot = method->method_idnum();
@@ -1004,9 +1004,9 @@ static oop invoke(InstanceKlass* klass,
           // JVMTI internal flag reset is needed in order to report InvocationTargetException
           JvmtiExport::clear_detected_exception(THREAD);
           JavaCallArguments args(Handle(THREAD, resolution_exception));
-          THROW_ARG_0(vmSymbols::java_lang_reflect_InvocationTargetException(),
-                      vmSymbols::throwable_void_signature(),
-                      &args);
+          THROW_ARG_NULL(vmSymbols::java_lang_reflect_InvocationTargetException(),
+                         vmSymbols::throwable_void_signature(),
+                         &args);
         }
       }  else {
         // if the method can be overridden, we resolve using the vtable index.
@@ -1028,9 +1028,9 @@ static oop invoke(InstanceKlass* klass,
             Handle h_origexception = Exceptions::new_exception(THREAD,
               vmSymbols::java_lang_AbstractMethodError(), ss.as_string());
             JavaCallArguments args(h_origexception);
-            THROW_ARG_0(vmSymbols::java_lang_reflect_InvocationTargetException(),
-              vmSymbols::throwable_void_signature(),
-              &args);
+            THROW_ARG_NULL(vmSymbols::java_lang_reflect_InvocationTargetException(),
+                           vmSymbols::throwable_void_signature(),
+                           &args);
           }
         }
       }
@@ -1117,9 +1117,9 @@ static oop invoke(InstanceKlass* klass,
     JvmtiExport::clear_detected_exception(THREAD);
 
     JavaCallArguments args(Handle(THREAD, target_exception));
-    THROW_ARG_0(vmSymbols::java_lang_reflect_InvocationTargetException(),
-                vmSymbols::throwable_void_signature(),
-                &args);
+    THROW_ARG_NULL(vmSymbols::java_lang_reflect_InvocationTargetException(),
+                   vmSymbols::throwable_void_signature(),
+                   &args);
   } else {
     if (rtype == T_BOOLEAN || rtype == T_BYTE || rtype == T_CHAR || rtype == T_SHORT) {
       narrow((jvalue*)result.get_value_addr(), rtype, CHECK_NULL);
