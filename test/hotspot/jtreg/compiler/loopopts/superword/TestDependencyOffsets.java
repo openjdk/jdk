@@ -582,6 +582,31 @@ public class TestDependencyOffsets {
         new Type("double", 8, "1.001",  "*", "MUL_VD"),
     };
 
+    /*
+     * Every CPU can define its own Matcher::min_vector_size. This happens to be different for
+     * our targetted platforms: x86 / sse4.1 and aarch64 / asimd.
+     */
+    static record CPUMinVectorWidth (String applyIfCPUFeature, int minVectorWidth) {}
+
+    static final String SSE4_ASIMD = "        applyIfCPUFeatureOr = {\"sse4.1\", \"true\", \"asimd\", \"true\"})\n";
+    static final String SSE4       = "        applyIfCPUFeature = {\"sse4.1\", \"true\"})\n";
+    static final String ASIMD      = "        applyIfCPUFeature = {\"asimd\", \"true\"})\n";
+
+    static CPUMinVectorWidth[] getCPUMinVectorWidth(String typeName) {
+        return switch (typeName) {
+            case "byte"   -> new CPUMinVectorWidth[]{new CPUMinVectorWidth(SSE4_ASIMD, 4 )};
+            case "char"   -> new CPUMinVectorWidth[]{new CPUMinVectorWidth(SSE4,       4 ),
+                                                     new CPUMinVectorWidth(ASIMD,      8 )};
+            case "short"  -> new CPUMinVectorWidth[]{new CPUMinVectorWidth(SSE4,       4 ),
+                                                     new CPUMinVectorWidth(ASIMD,      8 )};
+            case "int"    -> new CPUMinVectorWidth[]{new CPUMinVectorWidth(SSE4_ASIMD, 8 )};
+            case "long"   -> new CPUMinVectorWidth[]{new CPUMinVectorWidth(SSE4_ASIMD, 16)};
+            case "float"  -> new CPUMinVectorWidth[]{new CPUMinVectorWidth(SSE4_ASIMD, 8 )};
+            case "double" -> new CPUMinVectorWidth[]{new CPUMinVectorWidth(SSE4_ASIMD, 16)};
+            default -> { throw new RuntimeException("type not supported: " + typeName); }
+        };
+    }
+
     static List<Integer> getOffsets() {
         // Some carefully hand-picked values
         int[] always = new int[] {
@@ -704,83 +729,82 @@ public class TestDependencyOffsets {
         String generateIRRules() {
             StringBuilder builder = new StringBuilder();
 
-            // General condition for vectorization:
-            //   at least 4 bytes:    width >= 4
-            //   at least 2 elements: width >= 2 * type.size
-            int minVectorWidth = Math.max(4, 2 * type.size);
-            builder.append("    // minVectorWidth = " + minVectorWidth + " = max(4, 2 * type.size)\n");
+            for (CPUMinVectorWidth cm : getCPUMinVectorWidth(type.name)) {
+                String applyIfCPUFeature = cm.applyIfCPUFeature;
+                int minVectorWidth = cm.minVectorWidth;
+                builder.append("    // minVectorWidth = " + minVectorWidth + "\n");
 
-            int byteOffset = offset * type.size;
-            builder.append("    // byteOffset = " + byteOffset + " = offset * type.size\n");
+                int byteOffset = offset * type.size;
+                builder.append("    // byteOffset = " + byteOffset + " = offset * type.size\n");
 
-            // In a store-forward case, later iterations load from stores of previous iterations.
-            // If the offset is too small, that leads to cyclic dependencies in the vectors. Hence,
-            // we use shorter vectors to avoid cycles and still vectorize. Vector lengths have to
-            // be powers-of-2, and smaller or equal to the byteOffset. So we round down to the next
-            // power of two.
-            int infinity = 256; // No vector size is ever larger than this.
-            int maxVectorWidth = infinity; // no constraint by default
-            if (0 < byteOffset && byteOffset < maxVectorWidth) {
-                int log2 = 31 - Integer.numberOfLeadingZeros(offset);
-                int floorPow2 = 1 << log2;
-                maxVectorWidth = Math.min(maxVectorWidth, floorPow2 * type.size);
-                builder.append("    // Vectors must have at most " + floorPow2 +
-                               " elements: maxVectorWidth = " + maxVectorWidth +
-                               " to avoid cyclic dependency.\n");
+                // In a store-forward case, later iterations load from stores of previous iterations.
+                // If the offset is too small, that leads to cyclic dependencies in the vectors. Hence,
+                // we use shorter vectors to avoid cycles and still vectorize. Vector lengths have to
+                // be powers-of-2, and smaller or equal to the byteOffset. So we round down to the next
+                // power of two.
+                int infinity = 256; // No vector size is ever larger than this.
+                int maxVectorWidth = infinity; // no constraint by default
+                if (0 < byteOffset && byteOffset < maxVectorWidth) {
+                    int log2 = 31 - Integer.numberOfLeadingZeros(offset);
+                    int floorPow2 = 1 << log2;
+                    maxVectorWidth = Math.min(maxVectorWidth, floorPow2 * type.size);
+                    builder.append("    // Vectors must have at most " + floorPow2 +
+                                   " elements: maxVectorWidth = " + maxVectorWidth +
+                                   " to avoid cyclic dependency.\n");
+                }
+
+                // Rule 1: No strict alignment: -XX:-AlignVector
+                IRRule r1 = new IRRule(type, type.irNode, applyIfCPUFeature);
+                r1.addApplyIf("\"AlignVector\", \"false\"");
+                r1.addApplyIf("\"MaxVectorSize\", \">=" + minVectorWidth + "\"");
+
+                if (maxVectorWidth < minVectorWidth) {
+                    builder.append("    // maxVectorWidth < minVectorWidth -> expect no vectorization.\n");
+                    r1.setNegative();
+                } else if (maxVectorWidth < infinity) {
+                    r1.setSize("min(" + (maxVectorWidth / type.size) + ",max_" + type.name + ")");
+                }
+                r1.generate(builder);
+
+                // Rule 2: strict alignment: -XX:+AlignVector
+                IRRule r2 = new IRRule(type, type.irNode, applyIfCPUFeature);
+                r2.addApplyIf("\"AlignVector\", \"true\"");
+                r2.addApplyIf("\"MaxVectorSize\", \">=" + minVectorWidth + "\"");
+
+                // All vectors must be aligned by some alignment width aw:
+                //   aw = min(actualVectorWidth, ObjectAlignmentInBytes)
+                // The runtime aw must thus lay between these two values:
+                //   awMin <= aw <= awMax
+                int awMin = Math.min(minVectorWidth, 8);
+                int awMax = 8;
+
+                // We must align both the load and the store, thus we must also be able to align
+                // for the difference of the two, i.e. byteOffset must be a multiple of aw:
+                //   byteOffset % aw == 0
+                // We don't know the aw, only awMin and awMax. But:
+                //   byteOffset % awMax == 0      ->      byteOffset % aw == 0
+                //   byteOffset % awMin != 0      ->      byteOffset % aw != 0
+                builder.append("    // awMin = " + awMin + " = min(minVectorWidth, 8)\n");
+                builder.append("    // awMax = " + awMax + "\n");
+
+                if (byteOffset % awMax == 0) {
+                    builder.append("    // byteOffset % awMax == 0   -> always trivially aligned\n");
+                } else if (byteOffset % awMin != 0) {
+                    builder.append("    // byteOffset % awMin != 0   -> can never align -> expect no vectorization.\n");
+                    r2.setNegative();
+                } else {
+                    builder.append("    // Alignment unknown -> disable IR rule.\n");
+                    r2.disable();
+                }
+
+                if (maxVectorWidth < minVectorWidth) {
+                    builder.append("    // Not at least 2 elements or 4 bytes -> expect no vectorization.\n");
+                    r2.setNegative();
+                } else if (maxVectorWidth < infinity) {
+                    r2.setSize("min(" + (maxVectorWidth / type.size) + ",max_" + type.name + ")");
+                }
+                r2.generate(builder);
             }
-
-            // Rule 1: No strict alignment: -XX:-AlignVector
-            IRRule r1 = new IRRule(type, type.irNode);
-            r1.addApplyIf("\"AlignVector\", \"false\"");
-            r1.addApplyIf("\"MaxVectorSize\", \">=" + minVectorWidth + "\"");
-
-            if (maxVectorWidth < minVectorWidth) {
-                builder.append("    // maxVectorWidth < minVectorWidth -> expect no vectorization.\n");
-                r1.setNegative();
-            } else if (maxVectorWidth < infinity) {
-                r1.setSize("min(" + (maxVectorWidth / type.size) + ",max_" + type.name + ")");
-            }
-            r1.generate(builder);
-
-            // Rule 2: strict alignment: -XX:+AlignVector
-            IRRule r2 = new IRRule(type, type.irNode);
-            r2.addApplyIf("\"AlignVector\", \"true\"");
-            r2.addApplyIf("\"MaxVectorSize\", \">=" + minVectorWidth + "\"");
-
-            // All vectors must be aligned by some alignment width aw:
-            //   aw = min(actualVectorWidth, ObjectAlignmentInBytes)
-            // The runtime aw must thus lay between these two values:
-            //   awMin <= aw <= awMax
-            int awMin = Math.min(minVectorWidth, 8);
-            int awMax = 8;
-
-            // We must align both the load and the store, thus we must also be able to align
-            // for the difference of the two, i.e. byteOffset must be a multiple of aw:
-            //   byteOffset % aw == 0
-            // We don't know the aw, only awMin and awMax. But:
-            //   byteOffset % awMax == 0      ->      byteOffset % aw == 0
-            //   byteOffset % awMin != 0      ->      byteOffset % aw != 0
-            builder.append("    // awMin = " + awMin + " = min(minVectorWidth, 8)\n");
-            builder.append("    // awMax = " + awMax + "\n");
-
-            if (byteOffset % awMax == 0) {
-                builder.append("    // byteOffset % awMax == 0   -> always trivially aligned\n");
-            } else if (byteOffset % awMin != 0) {
-                builder.append("    // byteOffset % awMin != 0   -> can never align -> expect no vectorization.\n");
-                r2.setNegative();
-            } else {
-                builder.append("    // Alignment unknown -> disable IR rule.\n");
-                r2.disable();
-            }
-
-            if (maxVectorWidth < minVectorWidth) {
-                builder.append("    // Not at least 2 elements or 4 bytes -> expect no vectorization.\n");
-                r2.setNegative();
-            } else if (maxVectorWidth < infinity) {
-                r2.setSize("min(" + (maxVectorWidth / type.size) + ",max_" + type.name + ")");
-            }
-            r2.generate(builder);
-
             return builder.toString();
         }
     }
@@ -802,14 +826,16 @@ public class TestDependencyOffsets {
     static class IRRule {
         Type type;
         String irNode;
+        String applyIfCPUFeature;
         String size;
         boolean isEnabled;
         boolean isPositiveRule;
         ArrayList<String> applyIf;
 
-        IRRule(Type type, String irNode) {
+        IRRule(Type type, String irNode, String applyIfCPUFeature) {
             this.type = type;
             this.irNode = irNode;
+            this.applyIfCPUFeature = applyIfCPUFeature;
             this.size = null;
             this.isPositiveRule = true;
             this.isEnabled = true;
@@ -848,7 +874,7 @@ public class TestDependencyOffsets {
                 }
 
                 // CPU features
-                builder.append("        applyIfCPUFeatureOr = {\"sse4.1\", \"true\", \"asimd\", \"true\"})\n");
+                builder.append(applyIfCPUFeature);
             }
         }
 
