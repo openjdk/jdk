@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,5 +46,35 @@ public class ConfigException extends Exception {
 
     public String getAdvice() {
         return advice;
+    }
+
+    public static Builder build() {
+        return new Builder();
+    }
+
+    static final class Builder {
+
+        ConfigException create() {
+            return new ConfigException(msg, advice, cause);
+        }
+
+        public Builder msg(String msgId, Object ... args) {
+            msg = I18N.format(msgId, args);
+            return this;
+        }
+
+        public Builder advice(String adviceId, Object ... args) {
+            advice = I18N.format(adviceId, args);
+            return this;
+        }
+
+        public Builder cause(Exception v) {
+            cause = v;
+            return this;
+        }
+
+        private String msg;
+        private String advice;
+        private Exception cause;
     }
 }
