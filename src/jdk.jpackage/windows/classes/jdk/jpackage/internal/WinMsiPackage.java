@@ -32,6 +32,10 @@ import java.util.UUID;
 
 interface WinMsiPackage extends Package {
 
+    default DottedVersion msiVersion() {
+        return MsiVersion.of(version());
+    }
+
     boolean withInstallDirChooser();
 
     boolean withShortcutPrompt();

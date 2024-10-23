@@ -24,15 +24,39 @@
  */
 package jdk.jpackage.internal;
 
-interface WinApplication extends Application {
+import java.nio.file.Path;
 
-    default DottedVersion winVersion() {
-        return DottedVersion.lazy(version());
+interface WinExePackage extends Package {
+
+    WinMsiPackage msiPackage();
+
+    Path icon();
+
+    @Override
+    default PackageType type() {
+        return StandardPackageType.WinExe;
     }
 
-    static class Impl extends Application.Proxy<Application> implements WinApplication {
-        Impl(Application app) {
-            super(app);
+    static class Impl extends Package.Proxy<WinMsiPackage> implements WinExePackage {
+
+        Impl(WinMsiPackage msiPackage, Path icon) throws ConfigException {
+            super(msiPackage);
+            this.icon = icon;
+            if (icon != null) {
+                Launcher.validateIcon(icon);
+            }
         }
+
+        @Override
+        public WinMsiPackage msiPackage() {
+            return target;
+        }
+
+        @Override
+        public Path icon() {
+            return icon;
+        }
+
+        private final Path icon;
     }
 }
