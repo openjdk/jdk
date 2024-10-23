@@ -95,7 +95,6 @@ public class ParameterArraySizeLimit {
     private static void createJavaFile(int value, Path out) throws IOException {
         String customAnno = """
                 import java.lang.annotation.*;
-                                      
                 @Retention(RetentionPolicy.RUNTIME)
                 @interface CustomAnno {
                     String value() default "default value";
@@ -103,8 +102,8 @@ public class ParameterArraySizeLimit {
                     int count() default 0;
                 }
                 """;
-        String annotation = MessageFormat.format(""" 
-                         public class ClassAnnotationWithLength_{0,number,#} '{'
+        String annotation = MessageFormat.format("""
+                            public class ClassAnnotationWithLength_{0,number,#} '{'
                             @CustomAnno(value = "custom", count = 42, arr='{'
                 """, value);
 
