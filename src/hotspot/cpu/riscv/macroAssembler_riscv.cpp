@@ -228,7 +228,7 @@ void MacroAssembler::pop_cont_fastpath(Register java_thread) {
 }
 
 void MacroAssembler::inc_held_monitor_count(Register tmp) {
-  Address dst = Address(xthread, JavaThread::held_monitor_count_offset());
+  Address dst(xthread, JavaThread::held_monitor_count_offset());
   ld(tmp, dst);
   addi(tmp, tmp, 1);
   sd(tmp, dst);
@@ -243,7 +243,7 @@ void MacroAssembler::inc_held_monitor_count(Register tmp) {
 }
 
 void MacroAssembler::dec_held_monitor_count(Register tmp) {
-  Address dst = Address(xthread, JavaThread::held_monitor_count_offset());
+  Address dst(xthread, JavaThread::held_monitor_count_offset());
   ld(tmp, dst);
   addi(tmp, tmp, -1);
   sd(tmp, dst);
