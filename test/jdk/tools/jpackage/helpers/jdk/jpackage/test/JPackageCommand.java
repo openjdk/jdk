@@ -830,6 +830,11 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
                 TKit.assertFileExists(appRuntimeDirectory().resolve(
                         "Contents/MacOS/libjli.dylib"));
             }
+
+            var mainJar = getArgumentValue("--main-jar");
+            if (mainJar != null) {
+                TKit.assertFileExists(appLayout().appDirectory().resolve(mainJar));
+            }
         }
 
         return this;
