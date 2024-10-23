@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @summary Basic security checks for WebSocket URI from the Builder
+ * @summary Basic sanity checks for WebSocket URI from the Builder
  * @compile ../DummyWebSocketServer.java ../../ProxyServer.java
  * @run testng/othervm WSURLPermissionTest
  */
@@ -46,7 +46,7 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import static org.testng.Assert.*;
 
-public class WSURLPermissionTest {
+public class WSSanityTest {
 
     URI wsURI;
     DummyWebSocketServer webSocketServer;
