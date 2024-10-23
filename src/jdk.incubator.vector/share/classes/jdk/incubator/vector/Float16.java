@@ -67,7 +67,7 @@ import static java.lang.Float.floatToFloat16;
  */
 
 // Currently Float16 is a value-based class and in future it is
-// expected to be aligned with Value Classes and Object as describedin
+// expected to be aligned with Value Classes and Object as described in
 // JEP-401 (https://openjdk.org/jeps/401).
 // @jdk.internal.MigratedValueClass
 // @jdk.internal.ValueBased
@@ -447,29 +447,29 @@ public final class Float16
         };
 
         public static Float16 float16Value(BigDecimal bd) {
-             int scale = bd.scale();
-             BigInteger unscaledValue = bd.unscaledValue();
+            int scale = bd.scale();
+            BigInteger unscaledValue = bd.unscaledValue();
 
-              if (unscaledValue.abs().compareTo(BigInteger.valueOf(Long.MAX_VALUE)) <= 0) {
-                 long intCompact = unscaledValue.longValue();
-                 Float16 v = Float16.valueOf(intCompact);
-                 if (scale == 0) {
-                     return v;
-                 }
-                 /*
-                  * The discussion for the double case also applies here. That is,
-                  * the following test is precise for all long values, but here
-                  * Long.MAX_VALUE is not an issue.
-                  */
-                 if (v.longValue() == intCompact) {
-                     if (0 < scale && scale < FLOAT16_10_POW.length) {
-                         return Float16.divide(v, FLOAT16_10_POW[scale]);
-                     }
-                     if (0 > scale && scale > -FLOAT16_10_POW.length) {
-                         return Float16.multiply(v, FLOAT16_10_POW[-scale]);
-                     }
-                 }
-             }
+            if (unscaledValue.abs().compareTo(BigInteger.valueOf(Long.MAX_VALUE)) <= 0) {
+                long intCompact = unscaledValue.longValue();
+                Float16 v = Float16.valueOf(intCompact);
+                if (scale == 0) {
+                    return v;
+                }
+                /*
+                 * The discussion for the double case also applies here. That is,
+                 * the following test is precise for all long values, but here
+                 * Long.MAX_VALUE is not an issue.
+                 */
+                if (v.longValue() == intCompact) {
+                    if (0 < scale && scale < FLOAT16_10_POW.length) {
+                        return Float16.divide(v, FLOAT16_10_POW[scale]);
+                    }
+                    if (0 > scale && scale > -FLOAT16_10_POW.length) {
+                        return Float16.multiply(v, FLOAT16_10_POW[-scale]);
+                    }
+                }
+            }
             return fullFloat16Value(bd);
         }
 
@@ -688,8 +688,11 @@ public final class Float16
     /**
      * {@return a hash code for this {@code Float16} object}
      *
-     * The general contract of {@code Object#hashCode()}is satisfied;
-     * all NaN values have the same hash value.
+     * The general contract of {@code Object#hashCode()} is satisfied.
+     * All NaN values have the same hash code. Additionally, all
+     * distinct numerical values have unique hash codes; in
+     * particular, negative zero and positive zero have different hash
+     * codes from each other.
      */
     @Override
     public int hashCode() {

@@ -30,6 +30,7 @@
 
 import jdk.incubator.vector.Float16;
 import static jdk.incubator.vector.Float16.*;
+import java.util.HashSet;
 
 public class BasicFloat16ArithTests {
     private static float InfinityF = Float.POSITIVE_INFINITY;
@@ -38,6 +39,8 @@ public class BasicFloat16ArithTests {
     private static final float MAX_VAL_FP16 = 0x1.ffcp15f;
 
     public static void main(String... args) {
+        checkBitWise();
+        checkHash();
         checkConstants();
         checkNegate();
         checkAbs();
@@ -66,6 +69,74 @@ public class BasicFloat16ArithTests {
      * The float <-> Float16 conversions are well-tested from prior
      * work and are assumed to be correct by this regression test.
      */
+
+    /**
+     * Verify handling of NaN representations
+     */
+    private static void checkBitWise() {
+        short nanImage = float16ToRawShortBits(Float16.NaN);
+
+        int exponent = 0x7c00;
+        int sign =     0x8000;
+
+        // All-zeros significand with a max exponent are infinite
+        // values, not NaN values.
+        for(int i = 0x1; i <= 0x03ff; i++) {
+            short  posNaNasShort = (short)(       exponent | i);
+            short  negNaNasShort = (short)(sign | exponent | i);
+
+            Float16 posf16 = shortBitsToFloat16(posNaNasShort);
+            Float16 negf16 = shortBitsToFloat16(negNaNasShort);
+
+            // Mask-off high-order 16 bits to avoid sign extension woes
+            checkInt(nanImage & 0xffff, float16ToShortBits(posf16) & 0xffff, "positive NaN");
+            checkInt(nanImage & 0xffff, float16ToShortBits(negf16) & 0xffff, "negative NaN");
+
+            checkInt(posNaNasShort & 0xffff, float16ToRawShortBits(posf16) & 0xffff , "positive NaN");
+            checkInt(negNaNasShort & 0xffff, float16ToRawShortBits(negf16) & 0xffff, "negative NaN");
+        }
+    }
+
+    /**
+     * Verify correct number of hashValue's from Float16's.
+     */
+    private static void checkHash() {
+        // Slightly over-allocate the HashSet.
+        HashSet<Integer> set = HashSet.newHashSet(Short.MAX_VALUE - Short.MIN_VALUE + 1);
+
+        // Each non-NaN value should have a distinct hashCode. All NaN
+        // values should share a single hashCode. Check the latter
+        // property by verifying the overall count of entries in the
+        // set.
+        for(int i = Short.MIN_VALUE; i <= Short.MAX_VALUE; i++) {
+            Float16 f16 = Float16.shortBitsToFloat16((short)i);
+            boolean addedToSet = set.add(f16.hashCode());
+
+            if (!Float16.isNaN(f16)) {
+                if (!addedToSet) {
+                    throwRE("Existing hash value for " + f16);
+                }
+            }
+        }
+
+        // There are 2^16 = 65,536 total short values. Each of these
+        // bit patterns is a valid representation of a Float16
+        // value. However, NaNs have multiple possible encodings.
+        // With an exponent = 0x7c00, each nonzero significand 0x1 to
+        // 0x3ff is a NaN, for both positive and negative sign bits.
+        //
+        // Therefore, the total number of distinct hash codes for
+        // Float16 values should be:
+        // 65_536 - 2*(1_023) + 1 = 63_491
+
+        int setSize = set.size();
+        if (setSize != 63_491) {
+            throwRE("Unexpected number of distinct hash values " + setSize);
+        }
+
+
+        System.out.println();
+    }
 
     private static void checkConstants() {
         checkInt(BYTES,          2, "Float16.BYTES");
