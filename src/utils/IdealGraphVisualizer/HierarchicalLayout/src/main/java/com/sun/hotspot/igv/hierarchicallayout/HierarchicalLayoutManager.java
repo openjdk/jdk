@@ -1058,41 +1058,16 @@ public class HierarchicalLayoutManager extends LayoutManager {
         }
     }
 
-    private void straightenUp(LayoutNode node) {
-        if (node.getPreds().size() == 1) {
-            LayoutEdge predEdge = node.getPreds().get(0);
-            if (predEdge.getTo().getSuccs().size() != 1) return;
-            LayoutNode predDummy = predEdge.getFrom();
-            if (!predDummy.isDummy()) return;
-            if (node.isDummy()) {
-                tryAlignDummy(node.getX(), predDummy);
-            } else {
-                tryAlignDummy(predEdge.getEndX(), predDummy);
-            }
-        }
-    }
-
     private void straightenLayer(LayoutLayer layer) {
         for (LayoutNode node : layer) {
-            //if (!dummy.isDummy()) continue;
             straightenDown(node);
-            //straightenUp(node);
         }
         for (int i = layer.size() - 1; i >= 0; i--) {
-            LayoutNode node = layer.get(i);
-            //if (!dummy.isDummy()) continue;
-            straightenDown(node);
-            //straightenUp(node);
+            straightenDown(layer.get(i));
         }
     }
 
     private void straightenEdges() {
-        for (LayoutLayer layer : layers) {
-            for (int pos = 1; pos < layer.size(); ++pos) {
-                LayoutNode leftNode = layer.get(pos - 1);
-                LayoutNode rightNode = layer.get(pos);
-            }
-        }
         for (LayoutLayer layer : layers) {
             straightenLayer(layer);
         }
