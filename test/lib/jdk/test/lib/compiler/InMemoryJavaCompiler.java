@@ -83,36 +83,6 @@ import javax.tools.ToolProvider;
  * </pre>
  */
 public class InMemoryJavaCompiler {
-    private static class MemoryJavaFileObject extends SimpleJavaFileObject {
-        private final String className;
-        private final CharSequence sourceCode;
-        private final ByteArrayOutputStream byteCode;
-
-        public MemoryJavaFileObject(String className, CharSequence sourceCode) {
-            super(URI.create("string:///" + className.replace('.','/') + Kind.SOURCE.extension), Kind.SOURCE);
-            this.className = className;
-            this.sourceCode = sourceCode;
-            this.byteCode = new ByteArrayOutputStream();
-        }
-
-        @Override
-        public CharSequence getCharContent(boolean ignoreEncodingErrors) {
-            return sourceCode;
-        }
-
-        @Override
-        public OutputStream openOutputStream() throws IOException {
-            return byteCode;
-        }
-
-        public byte[] getByteCode() {
-            return byteCode.toByteArray();
-        }
-
-        public String getClassName() {
-            return className;
-        }
-    }
 
     private static class FileManagerWrapper extends ForwardingJavaFileManager<JavaFileManager> {
         private static final Location PATCH_LOCATION = new Location() {
@@ -126,12 +96,13 @@ public class InMemoryJavaCompiler {
                 return false;
             }
         };
-        private final MemoryJavaFileObject file;
+        private final SourceFile srcFile;
+        private ClassFile clsFile;
         private final String moduleOverride;
 
-        public FileManagerWrapper(MemoryJavaFileObject file, String moduleOverride) {
+        public FileManagerWrapper(SourceFile file, String moduleOverride) {
             super(getCompiler().getStandardFileManager(null, null, null));
-            this.file = file;
+            this.srcFile = file;
             this.moduleOverride = moduleOverride;
         }
 
@@ -139,16 +110,17 @@ public class InMemoryJavaCompiler {
         public JavaFileObject getJavaFileForOutput(Location location, String className,
                                                    Kind kind, FileObject sibling)
             throws IOException {
-            if (!file.getClassName().equals(className)) {
-                throw new IOException("Expected class with name " + file.getClassName() +
+            if (!srcFile.getClassName().equals(className)) {
+                throw new IOException("Expected class with name " + srcFile.getClassName() +
                                       ", but got " + className);
             }
-            return file;
+            clsFile = new ClassFile(className);
+            return clsFile;
         }
 
         @Override
         public Location getLocationForModule(Location location, JavaFileObject fo) throws IOException {
-            if (fo == file && moduleOverride != null) {
+            if (fo == srcFile && moduleOverride != null) {
                 return PATCH_LOCATION;
             }
             return super.getLocationForModule(location, fo);
@@ -165,6 +137,10 @@ public class InMemoryJavaCompiler {
         @Override
         public boolean hasLocation(Location location) {
             return super.hasLocation(location) || location == StandardLocation.PATCH_MODULE_PATH;
+        }
+
+        public byte[] getByteCode() {
+            return clsFile.toByteArray();
         }
 
     }
@@ -213,15 +189,21 @@ public class InMemoryJavaCompiler {
     static class SourceFile extends SimpleJavaFileObject {
 
         private CharSequence sourceCode;
+        private String className;
 
         public SourceFile(String name, CharSequence sourceCode) {
             super(URI.create("memo:///" + name.replace('.', '/') + Kind.SOURCE.extension), Kind.SOURCE);
             this.sourceCode = sourceCode;
+            this.className = name;
         }
 
         @Override
         public CharSequence getCharContent(boolean ignore) {
             return this.sourceCode;
+        }
+
+        public String getClassName() {
+            return this.className;
         }
     }
 
@@ -260,7 +242,7 @@ public class InMemoryJavaCompiler {
      * @return The resulting byte code from the compilation
      */
     public static byte[] compile(String className, CharSequence sourceCode, String... options) {
-        MemoryJavaFileObject file = new MemoryJavaFileObject(className, sourceCode);
+        SourceFile file = new SourceFile(className, sourceCode);
         List<String> opts = new ArrayList<>();
         String moduleOverride = null;
         for (String opt : options) {
@@ -270,13 +252,13 @@ public class InMemoryJavaCompiler {
                 opts.add(opt);
             }
         }
-        try (JavaFileManager fileManager = new FileManagerWrapper(file, moduleOverride)) {
+        try (FileManagerWrapper fileManager = new FileManagerWrapper(file, moduleOverride)) {
             CompilationTask task = getCompiler().getTask(null, fileManager, null, opts, null, Arrays.asList(file));
             if (!task.call()) {
                 throw new RuntimeException("Could not compile " + className + " with source code " + sourceCode);
             }
 
-            return file.getByteCode();
+            return fileManager.getByteCode();
         } catch (IOException ioe) {
             throw new RuntimeException(ioe);
         }

@@ -202,9 +202,7 @@ public class StressRedefine extends GCTestBase {
     }
 
     private static byte[] generateAndCompile() {
-        Map<String, CharSequence> sources = new HashMap<String, CharSequence>();
-        sources.put(GenerateSourceHelper.CLASS_NAME, GenerateSourceHelper.generateSource());
-        return InMemoryJavaCompiler.compile(sources).values().iterator().next();
+        return InMemoryJavaCompiler.compile(GenerateSourceHelper.CLASS_NAME, GenerateSourceHelper.generateSource());
     }
 
     // Auxiliary classloader. Used only once at the beginning.

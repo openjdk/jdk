@@ -210,9 +210,7 @@ public class StaticReferences extends GCTestBase {
     }
 
     private byte[] generateAndCompile(int[] fieldQuantities) {
-        Map<String, CharSequence> sources = new HashMap<String, CharSequence>();
-        sources.put("A", generateSource(fieldQuantities));
-        return InMemoryJavaCompiler.compile(sources).values().iterator().next();
+        return InMemoryJavaCompiler.compile("A", generateSource(fieldQuantities));
     }
 
     private StringBuffer generateSource(int[] fieldQuantities) {

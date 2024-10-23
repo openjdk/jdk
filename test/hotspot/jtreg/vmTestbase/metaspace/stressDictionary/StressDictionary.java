@@ -178,10 +178,8 @@ public class StressDictionary extends GCTestBase {
     }
 
     private byte[] generateAndCompile() {
-        Map<String, CharSequence> sources = new HashMap<String, CharSequence>();
         String className = "MyClass" + classesCounter.incrementAndGet();
-        sources.put(className, generateSource(className));
-        return InMemoryJavaCompiler.compile(sources).values().iterator().next();
+        return InMemoryJavaCompiler.compile(className, generateSource(className));
     }
 
     private CharSequence generateSource(String className) {

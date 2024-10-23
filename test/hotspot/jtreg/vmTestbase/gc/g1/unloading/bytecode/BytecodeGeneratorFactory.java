@@ -44,12 +44,10 @@ public class BytecodeGeneratorFactory implements BytecodeFactory {
 
     @Override
     public Bytecode createBytecode(String className) {
-        Map<String, CharSequence> sources = new HashMap<String, CharSequence>();
-        sources.put(className, sourceGenerator.generateSource(className,
+        byte[] bytecode = InMemoryJavaCompiler.compile(className, sourceGenerator.generateSource(className,
                 "public static void main() { System.out.println(\"From main method in in-mem-compiled code " + random.nextGaussian() +
                         " + str_bytesToReplace0 str_bytesToReplace1\"); }\n " +
                         "public static int methodForCompilation(Object object) { int i = object.hashCode(); i = i * 2000 / 1994 + 153; return i; }\n"));
-        byte[] bytecode = InMemoryJavaCompiler.compile(sources).values().iterator().next();
         return new Bytecode(className, bytecode);
     }
 
