@@ -247,16 +247,16 @@ public abstract class PKCS11Test {
         return PKCS11_BASE;
     }
 
-    private static void copyNssFiles(Path nssSource, String destination)
+    private static void copyFiles(Path source, String destination)
             throws IOException {
-        try (Stream<Path> paths = Files.walk(nssSource)) {
-            paths.forEach(source -> {
-                Path destinationPath = Paths.get(destination, source.toString()
-                        .substring(nssSource.toString().length()));
+        try (Stream<Path> sourceEntries = Files.walk(source)) {
+            sourceEntries.forEach(sourceEntry -> {
+                Path destinationPath = Paths.get(destination, sourceEntry.toString()
+                        .substring(source.toString().length()));
                 try {
-                    if (Files.isRegularFile(source)) {
+                    if (Files.isRegularFile(sourceEntry)) {
                         // copy regular files to destination directory
-                        Files.copy(source, destinationPath,
+                        Files.copy(sourceEntry, destinationPath,
                                 StandardCopyOption.REPLACE_EXISTING);
                         destinationPath.toFile().setWritable(true);
 
@@ -524,7 +524,7 @@ public abstract class PKCS11Test {
         String nss = "nss";
         Path nssDirSource = Path.of(base).resolve(nss);
         String nssDirDestination = Path.of(".").resolve(nss).toString();
-        copyNssFiles(nssDirSource, nssDirDestination);
+        copyFiles(nssDirSource, nssDirDestination);
 
         String libfile = libdir + System.mapLibraryName(nss_library);
 
