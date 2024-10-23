@@ -175,7 +175,7 @@ final class VirtualThread extends BaseVirtualThread {
 
     // timed-wait support
     private long waitTimeout;
-    private byte timedWaitNonce;
+    private byte timedWaitSeqNo;
     private volatile Future<?> waitTimeoutTask;
 
     // carrier thread when mounted, accessed by VM
@@ -636,7 +636,7 @@ final class VirtualThread extends BaseVirtualThread {
             } else {
                 // synchronize with timeout task (previous timed-wait may be running)
                 synchronized (timedWaitLock()) {
-                    nonce = ++timedWaitNonce;
+                    nonce = ++timedWaitSeqNo;
                     setState(newState = TIMED_WAIT);
                 }
             }
@@ -950,7 +950,7 @@ final class VirtualThread extends BaseVirtualThread {
         for (;;) {
             boolean unblocked = false;
             synchronized (timedWaitLock()) {
-                if (nounce != timedWaitNonce) {
+                if (nounce != timedWaitSeqNo) {
                     // this timeout task is for a past timed-wait
                     return;
                 }
