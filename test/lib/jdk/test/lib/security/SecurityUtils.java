@@ -36,6 +36,25 @@ import java.util.stream.Stream;
  */
 public final class SecurityUtils {
 
+    /*
+     * Key Sizes for various algorithms.
+     */
+    private enum KeySize{
+        RSA(2048),
+        DSA(2048),
+        DH(2048);
+
+        private final int keySize;
+        KeySize(int keySize) {
+            this.keySize = keySize;
+        }
+
+        @Override
+        public String toString() {
+            return String.valueOf(keySize);
+        }
+    }
+
     private final static int DEFAULT_SALTSIZE = 16;
 
     private static String getCacerts() {
@@ -110,24 +129,28 @@ public final class SecurityUtils {
     }
 
     /**
-     * Returns a strong salt size for tests
+     * Returns a salt size for tests
      */
     public static int getTestSaltSize() {
         return DEFAULT_SALTSIZE;
     }
 
     /**
-     * Returns a strong key size in bits for tests, depending on the specified algorithm
+     * Returns a key size in bits for tests, depending on the specified algorithm
      */
     public static int getTestKeySize(String algo) {
-        int testKeySize;
         switch (algo) {
-            case "RSA" -> testKeySize = KeySize.RSA.keySize;
-            case "DSA" -> testKeySize = KeySize.DSA.keySize;
-            case "DH", "DiffieHellman" -> testKeySize = KeySize.DH.keySize;
+            case "RSA" -> {
+                return KeySize.RSA.keySize;
+            }
+            case "DSA" -> {
+                return KeySize.DSA.keySize;
+            }
+            case "DH", "DiffieHellman" -> {
+                return KeySize.DH.keySize;
+            }
             default -> throw new RuntimeException("Test key size not defined for " + algo);
         }
-        return testKeySize;
     }
 
     private static void removeFromDSigPolicy(String rule, List<String> algs) {
@@ -149,20 +172,4 @@ public final class SecurityUtils {
     }
 
     private SecurityUtils() {}
-
-    private enum KeySize{
-        RSA(2048),
-        DSA(2048),
-        DH(2048);
-
-        private final int keySize;
-        KeySize(int keySize) {
-            this.keySize = keySize;
-        }
-
-        @Override
-        public String toString() {
-            return String.valueOf(keySize);
-        }
-    }
 }
