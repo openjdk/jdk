@@ -48,7 +48,7 @@ import javax.net.ssl.SSLContext;
 public class TLSCipherConstraintChainedAfter {
 
     private static final String SECURITY_PROPERTY = "jdk.tls.disabledAlgorithms";
-    private static final String TEST_ALGORITHMS = "Rsa kx & keySize < 1024";
+    private static final String TEST_ALGORITHMS = "Rsa Kx & keySize < 1024";
 
     @BeforeTest
     void setUp() throws Exception {

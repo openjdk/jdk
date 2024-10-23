@@ -583,9 +583,6 @@ sun.security.krb5.maxReferrals=5
 #   UsageConstraint:
 #       usage [TLSServer] [TLSClient] [SignedJAR]
 #
-#   TLSCipherConstraint:
-#       kx | authn
-#
 #   IncludeProperty:
 #       include <security property>
 #
@@ -658,19 +655,6 @@ sun.security.krb5.maxReferrals=5
 #       The usage type follows the keyword and more than one usage type can
 #       be specified with a whitespace delimiter.
 #       Example:  "SHA1 usage TLSServer TLSClient"
-#
-#   TLSCipherConstraint:
-#     kx | authn
-#       This constraint restricts TLS cipher suite based on its algorithm usage:
-#         - "kx" prohibits algorithm to be used for Key Exchange.
-#         - "authn" prohibits algorithm to be used for Authentication.
-#       This constraint can't be chained by '&' with other constraints.
-#       Examples:
-#         - "RSA kx" prohibits any cipher suite that uses RSA algorithm for
-#            Key Exchange.
-#         - "DSS authn" prohibits any cipher suite that uses DSS algorithm
-#            for Authentication.
-#         - "NULL authn" requires some algorithm to be used for Authentication.
 #
 # When an algorithm must satisfy more than one constraint, it must be
 # delimited by an ampersand '&'.  For example, to restrict certificates in a
@@ -791,7 +775,24 @@ http.auth.digest.disabledAlgorithms = MD5, SHA-1
 # This is in addition to the jdk.certpath.disabledAlgorithms property above.
 #
 # See the specification of "jdk.certpath.disabledAlgorithms" for the
-# syntax of the disabled algorithm string.
+# syntax of the disabled algorithm string. Besides, one additional
+# TLS-specific constraint can be used here:
+#
+#   TLSCipherConstraint:
+#       kx | authn
+#
+#   TLSCipherConstraint:
+#     kx | authn
+#       This constraint restricts TLS cipher suite based on its algorithm usage:
+#         - "kx" prohibits algorithm to be used for Key Exchange.
+#         - "authn" prohibits algorithm to be used for Authentication.
+#       This constraint can't be chained by '&' with other constraints.
+#       Examples:
+#         - "RSA kx" prohibits any cipher suite that uses RSA algorithm for
+#            Key Exchange.
+#         - "DSS authn" prohibits any cipher suite that uses DSS algorithm
+#            for Authentication.
+#         - "NULL authn" requires some algorithm to be used for Authentication.
 #
 # Note: The algorithm restrictions do not apply to trust anchors or
 # self-signed certificates.

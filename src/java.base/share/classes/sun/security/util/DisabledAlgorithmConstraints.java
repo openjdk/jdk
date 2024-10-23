@@ -379,35 +379,23 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                 // Allow only one denyAfter entry per constraint entry
                 boolean denyAfterLimit = false;
 
-                for (String rawEntry : policy.split("&")) {
-                    // Do not link TLSCipherConstraint with other constraints.
-                    if (lastConstraint instanceof TLSCipherConstraint) {
-                        throw new IllegalArgumentException("TLSCipherConstraint "
+                final IllegalArgumentException tlsCipherSegmentLinkException =
+                        new IllegalArgumentException("TLSCipherConstraint "
                                 + "should not be linked with other constraints. "
                                 + "Constraint: " + constraintEntry);
+
+                for (String rawEntry : policy.split("&")) {
+
+                    // Do not link TLSCipherConstraint with other constraints.
+                    if (lastConstraint instanceof TLSCipherConstraint) {
+                        throw tlsCipherSegmentLinkException;
                     }
 
                     final String entry = rawEntry.trim();
                     Matcher matcher;
+                    TLSCipherSegment segment;
 
-                    TLSCipherSegment segment = Arrays.stream(TLSCipherSegment.values())
-                            .filter(v -> v.getName().equalsIgnoreCase(entry))
-                            .findFirst()
-                            .orElse(null);
-
-                    if (segment != null) {
-                        if (debug != null) {
-                            debug.println("Constraints set to TLSCipherConstraint: "
-                                    + segment.name());
-                        }
-                        if (lastConstraint != null) {
-                            throw new IllegalArgumentException("TLSCipherConstraint "
-                                    + "should not be linked with other constraints. "
-                                    + "Constraint: " + constraintEntry);
-                        }
-                        c = new TLSCipherConstraint(algorithm, segment);
-
-                    } else if (entry.startsWith("keySize")) {
+                    if (entry.startsWith("keySize")) {
                         if (debug != null) {
                             debug.println("Constraints set to keySize: " +
                                     entry);
@@ -457,6 +445,18 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                         if (debug != null) {
                             debug.println("Constraints usage length is " + s.length);
                         }
+                    } else if ((segment = TLSCipherSegment.nameOf(entry)) != null &&
+                            // Apply TLSCipherConstraint to TLS properties only.
+                            propertyName.toLowerCase().contains(".tls.")) {
+                        if (lastConstraint != null) {
+                            throw tlsCipherSegmentLinkException;
+                        }
+                        if (debug != null) {
+                            debug.println("Constraints set to TLSCipherConstraint: "
+                                    + segment.name());
+                        }
+                        c = new TLSCipherConstraint(algorithm, segment);
+
                     } else {
                         throw new IllegalArgumentException("Error in security" +
                                 " property. Constraint unknown: " + entry);
@@ -1019,13 +1019,21 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
         AUTHN("authn");       // Authentication
 
         private final String name;
+        private static final Map<String, TLSCipherSegment> tlsCipherSegmentNames;
+
+        static {
+            Map<String, TLSCipherSegment> names = new HashMap<>();
+            Arrays.stream(TLSCipherSegment.values())
+                    .forEach(segment -> names.put(segment.name.toLowerCase(), segment));
+            tlsCipherSegmentNames = Map.copyOf(names);
+        }
 
         TLSCipherSegment(String name) {
             this.name = name;
         }
 
-        String getName() {
-            return name;
+        static TLSCipherSegment nameOf(String name) {
+            return tlsCipherSegmentNames.get(name.toLowerCase());
         }
     }
 
