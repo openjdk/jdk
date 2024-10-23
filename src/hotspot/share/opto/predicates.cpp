@@ -138,6 +138,21 @@ bool RuntimePredicate::is_predicate(Node* node, Deoptimization::DeoptReason deop
   return RegularPredicateWithUCT::is_predicate(node, deopt_reason);
 }
 
+// Rewire any control inputs from the old Assertion Predicates above the peeled iteration down to the initialized
+// Assertion Predicates above the peeled loop.
+void TemplateAssertionPredicate::rewire_loop_data_dependencies(IfTrueNode* target_predicate,
+                                                               const NodeInLoopBody& _data_in_loop_body,
+                                                               PhaseIdealLoop* phase) const {
+  for (DUIterator i = _success_proj->outs(); _success_proj->has_out(i); i++) {
+    Node* output = _success_proj->out(i);
+    if (!output->is_CFG() && _data_in_loop_body.check(output)) {
+      phase->igvn().replace_input_of(output, 0, target_predicate);
+      --i; // correct for just deleted output
+    }
+  }
+}
+
+
 // Template Assertion Predicates always have the dedicated OpaqueTemplateAssertionPredicate to identify them.
 bool TemplateAssertionPredicate::is_predicate(Node* node) {
   if (!may_be_assertion_predicate_if(node)) {
@@ -712,3 +727,24 @@ void Predicates::dump_for_loop(LoopNode* loop_node) {
   dump_at(loop_node->skip_strip_mined()->in(LoopNode::EntryControl));
 }
 #endif // NOT PRODUCT
+
+// Keep track of the current Predicate Block by setting '_current_parse_predicate'.
+void AssertionPredicatesForLoop::visit(const ParsePredicate& parse_predicate) {
+  Deoptimization::DeoptReason deopt_reason = parse_predicate.head()->deopt_reason();
+  if (deopt_reason == Deoptimization::Reason_predicate ||
+      deopt_reason == Deoptimization::Reason_profile_predicate) {
+    _current_parse_predicate = parse_predicate.tail();
+  }
+}
+
+void AssertionPredicatesForLoop::visit(const TemplateAssertionPredicate& template_assertion_predicate) {
+  if (_current_parse_predicate == nullptr) {
+    // Only process if we are in the correct Predicate Block.
+    return;
+  }
+  IfNode* template_head = template_assertion_predicate.head();
+  IfTrueNode* initialized_predicate = _phase->create_initialized_assertion_predicate(template_head, _init, _stride,
+                                                                                     _new_control);
+  template_assertion_predicate.rewire_loop_data_dependencies(initialized_predicate, _node_in_loop_body, _phase);
+  _new_control = initialized_predicate;
+}
