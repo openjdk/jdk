@@ -29,6 +29,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
 import sun.security.provider.SHA3.SHAKE128;
 import sun.security.provider.SHA3.SHAKE256;
 
+import java.security.MessageDigest;
 import java.util.Arrays;
 
 public class ML_DSA {
@@ -665,7 +666,7 @@ public class ML_DSA {
         int[][] aHatZ = matrixVectorPointwiseMultiply(aHat, sig.response());
         int[][] t1Hat = vectorConstMul(1 << mlDsa_d, pk.t1());
         mlDsaVectorNtt(t1Hat);
-        int[][] wApprox = vectorSub(aHatZ,nttConstMultiply(cHat, t1Hat));
+        int[][] wApprox = vectorSub(aHatZ, nttConstMultiply(cHat, t1Hat));
         mlDsaVectorInverseNtt(wApprox);
         int[][] w1Prime = useHint(sig.hint(), wApprox);
 
@@ -675,7 +676,7 @@ public class ML_DSA {
         byte[] cTildePrime = hash.squeeze(lambda/4);
 
         //Check verify conditions
-        boolean hashEq = Arrays.equals(sig.commitmentHash(), cTildePrime);
+        boolean hashEq = MessageDigest.isEqual(sig.commitmentHash(), cTildePrime);
         return !zNorm && hashEq;
     }
 
@@ -722,6 +723,8 @@ public class ML_DSA {
         }
     }
 
+    //This is simpleBitUnpack from FIPS 204. Since it is only called on the
+    //vector t1 we can optimize for that case
     public int[][] t1Unpack(byte[] v) {
         int[][] t1 = new int[mlDsa_k][mlDsa_n];
         for (int i = 0; i < mlDsa_k; i++) {
@@ -819,9 +822,7 @@ public class ML_DSA {
     }
 
     public ML_DSA_PublicKey pkDecode(byte[] pk) {
-        byte[] rho = new byte[mlDsaASeedLength];
-        System.arraycopy(pk, 0, rho, 0, mlDsaASeedLength);
-
+        byte[] rho = Arrays.copyOfRange(pk, 0, mlDsaASeedLength);
         byte[] v = Arrays.copyOfRange(pk, mlDsaASeedLength, pk.length);
         int[][] t1 = t1Unpack(v);
         return new ML_DSA_PublicKey(rho, t1);
@@ -919,6 +920,8 @@ public class ML_DSA {
 
         Shake256Slicer(SHAKE256 xof, int bitsPerCall) {
             this.xof = xof;
+            //BitsPerCall can only be 4 (when called from sampleS1S2),
+            //or 8 (when called from sampleInBall)
             this.bitsPerCall = bitsPerCall;
             bitMask = (1 << bitsPerCall) - 1;
             current = 0;
@@ -1142,7 +1145,7 @@ public class ML_DSA {
     }
 
     private boolean[][] makeHint(int[][] z, int[][] r) {
-        int[][] v1 = vectorAdd(r,z);
+        int[][] v1 = vectorAdd(r, z);
         boolean[][] res = new boolean[mlDsa_k][mlDsa_n];
         for (int i = 0; i < mlDsa_k; i++) {
             for (int j = 0; j < mlDsa_n; j++) {
