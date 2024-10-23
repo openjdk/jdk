@@ -82,10 +82,10 @@ public:
   static bool wrapped_string_equals(oop java_string, StringWrapper wrapped_str, int len);
 
 private:
+  static const char* get_symbol_utf8(StringWrapper symbol_str);
   static unsigned int hash_wrapped_string(StringWrapper wrapped_str, int len);
   static const jchar *to_unicode(StringWrapper wrapped_str, int &len, TRAPS);
   static Handle to_handle(StringWrapper wrapped_str, int len, TRAPS);
-  static void print_string(StringWrapper wrapped_str, int len, TRAPS);
 
   // GC support
 

@@ -27,12 +27,12 @@
 
 // Tests that string functions (hash code/equals) stay consistant when comparing equal strings and converting between strings types
 
-// Simple ASCII string " Java(R)!! "
+// Simple ASCII string "Java(R)!!"
 // Same length in both UTF8 and Unicode
 static const char static_ascii_utf8_str[] = {0x4A, 0x61, 0x76, 0x61, 0x28, 0x52, 0x29, 0x21, 0x21};
 static const jchar static_ascii_unicode_str[] = {0x004A, 0x0061, 0x0076, 0x0061, 0x0028, 0x0052, 0x0029, 0x0021, 0x0021};
 
-// Complex string " Jāvá®!☺☻ ", UTF8 has character lengths 13122133 = 16
+// Complex string "Jāvá®!☺☻", UTF8 has character lengths 13122133 = 16
 static const unsigned char static_utf8_str[] = {0x4A, 0x61, 0xCC, 0x84, 0x76, 0xC3, 0xA1, 0xC2, 0xAE, 0x21, 0xE2, 0x98, 0xBA, 0xE2, 0x98, 0xBB};
 static const jchar static_unicode_str[] = { 0x004A, 0x0061, 0x0304, 0x0076, 0x00E1, 0x00AE, 0x0021, 0x263A, 0x263B};
 

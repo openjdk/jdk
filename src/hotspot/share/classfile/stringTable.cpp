@@ -130,6 +130,10 @@ static unsigned int hash_string(const jchar* s, int len, bool useAlt) {
     java_lang_String::hash_code(s, len);
 }
 
+const char* StringTable::get_symbol_utf8(StringWrapper symbol) {
+  return reinterpret_cast<const char*>(symbol.symbol_str->bytes());
+}
+
 unsigned int StringTable::hash_wrapped_string(StringWrapper wrapped_str, int len) {
   switch (wrapped_str.type) {
   case StringType::OopStr:
@@ -137,11 +141,12 @@ unsigned int StringTable::hash_wrapped_string(StringWrapper wrapped_str, int len
   case StringType::UnicodeStr:
     return java_lang_String::hash_code(wrapped_str.unicode_str, len);
   case StringType::SymbolStr:
-    return java_lang_String::hash_code(wrapped_str.symbol_str->get_utf8(), len);
+    return java_lang_String::hash_code(get_symbol_utf8(wrapped_str), len);
   case StringType::UTF8Str:
     return java_lang_String::hash_code(wrapped_str.utf8_str, len);
+  default:
+    ShouldNotReachHere();
   }
-  ShouldNotReachHere();
   return 0;
 }
 
@@ -152,11 +157,12 @@ bool StringTable::wrapped_string_equals(oop java_string, StringWrapper wrapped_s
   case StringType::UnicodeStr:
     return java_lang_String::equals(java_string, wrapped_str.unicode_str, len);
   case StringType::SymbolStr:
-    return java_lang_String::equals(java_string, wrapped_str.symbol_str->get_utf8(), len);
+    return java_lang_String::equals(java_string, get_symbol_utf8(wrapped_str), len);
   case StringType::UTF8Str:
     return java_lang_String::equals(java_string, wrapped_str.utf8_str, len);
+  default:
+    ShouldNotReachHere();
   }
-  ShouldNotReachHere();
   return false;
 }
 
@@ -391,7 +397,7 @@ oop StringTable::do_lookup(StringWrapper name, int len, uintx hash) {
     break;
   }
   case StringType::SymbolStr: {
-    StringTableLookupUTF8 lookup(thread, hash, name.symbol_str->get_utf8(), len);
+    StringTableLookupUTF8 lookup(thread, hash, get_symbol_utf8(name), len);
     _local_table->get(thread, lookup, stg, &rehash_warning);
     break;
   }
@@ -416,7 +422,7 @@ const jchar *StringTable::to_unicode(StringWrapper wrapped_str, int &len, TRAPS)
   case StringType::OopStr:
     return java_lang_String::as_unicode_string(wrapped_str.oop_str(), len, CHECK_NULL);
   case StringType::SymbolStr: {
-    const char* utf8_str = wrapped_str.symbol_str->get_utf8();
+    const char* utf8_str = get_symbol_utf8(wrapped_str);
     int unicode_length = UTF8::unicode_length(utf8_str, wrapped_str.symbol_str->utf8_length());
     jchar *chars = NEW_RESOURCE_ARRAY(jchar, unicode_length);
     UTF8::convert_to_unicode(utf8_str, chars, unicode_length);
@@ -430,8 +436,9 @@ const jchar *StringTable::to_unicode(StringWrapper wrapped_str, int &len, TRAPS)
     len = unicode_length;
     return chars;
   }
+  default:
+    ShouldNotReachHere();
   }
-  ShouldNotReachHere();
   return nullptr;
 }
 
@@ -445,8 +452,9 @@ Handle StringTable::to_handle(StringWrapper wrapped_str, int len, TRAPS) {
     return java_lang_String::create_from_symbol(wrapped_str.symbol_str, THREAD);
   case StringType::UTF8Str:
     return java_lang_String::create_from_str(wrapped_str.utf8_str, THREAD);
+  default:
+    ShouldNotReachHere();
   }
-  ShouldNotReachHere();
   return Handle();
 }
 
@@ -488,7 +496,7 @@ oop StringTable::intern(StringWrapper name, int len, TRAPS) {
     ResourceMark rm(THREAD);
     // Convert to unicode for alt hashing
     int length = len;
-    const jchar *chars = to_unicode(name, length, CHECK_NULL);
+    const jchar* chars = to_unicode(name, length, CHECK_NULL);
     hash = hash_string(chars, length, true);
   }
 

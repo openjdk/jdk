@@ -258,9 +258,6 @@ class Symbol : public MetaspaceObj {
   // Returns a null terminated utf8 string in a resource array
   char* as_utf8() const { return as_C_string(); }
 
-  // Returns the non-null-terminated utf8 string stored in the symbol
-  const char* get_utf8() const { return reinterpret_cast<const char*>(bytes()); }
-
   jchar* as_unicode(int& length) const;
 
   // Treating this symbol as a class name, returns the Java name for the class.

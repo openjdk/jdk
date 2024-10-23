@@ -183,12 +183,12 @@ class java_lang_String : AllStatic {
 
   static unsigned int hash_code(const char *utf8_str, int utf8_len) {
     unsigned int h = 0;
-    int num_unicode_points = UTF8::unicode_length(utf8_str, utf8_len);
+    int unicode_length = UTF8::unicode_length(utf8_str, utf8_len);
 
-    jchar a;
-    while (num_unicode_points-- > 0) {
-      utf8_str = UTF8::next(utf8_str, &a);
-      h = 31 * h + ((unsigned int)a);
+    jchar c;
+    while (unicode_length-- > 0) {
+      utf8_str = UTF8::next(utf8_str, &c);
+      h = 31 * h + ((unsigned int)c);
     }
     return h;
   }

@@ -366,7 +366,7 @@ oop java_lang_String::create_oop_from_str(const char* utf8_str, TRAPS) {
 }
 
 Handle java_lang_String::create_from_symbol(const Symbol* symbol, TRAPS) {
-  const char* utf8_str = symbol->get_utf8();
+  const char* utf8_str = (char*)symbol->bytes();
   int utf8_len = symbol->utf8_length();
 
   bool has_multibyte, is_latin1;
