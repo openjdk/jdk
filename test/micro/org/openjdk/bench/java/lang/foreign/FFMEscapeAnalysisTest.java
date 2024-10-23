@@ -20,6 +20,20 @@ public class FFMEscapeAnalysisTest {
         System.loadLibrary("eaTest");
     }
 
+    Arena confinedArena = Arena.ofConfined();
+    MemorySegment cs1 = confinedArena.allocateFrom(ValueLayout.JAVA_INT, 0);
+    MemorySegment cs2 = confinedArena.allocateFrom(ValueLayout.JAVA_INT, 0);
+    MemorySegment cs3 = confinedArena.allocateFrom(ValueLayout.JAVA_INT, 0);
+    MemorySegment cs4 = confinedArena.allocateFrom(ValueLayout.JAVA_INT, 0);
+    MemorySegment cs5 = confinedArena.allocateFrom(ValueLayout.JAVA_INT, 0);
+
+    Arena sharedArena = Arena.ofShared();
+    MemorySegment ss1 = confinedArena.allocateFrom(ValueLayout.JAVA_INT, 0);
+    MemorySegment ss2 = confinedArena.allocateFrom(ValueLayout.JAVA_INT, 0);
+    MemorySegment ss3 = confinedArena.allocateFrom(ValueLayout.JAVA_INT, 0);
+    MemorySegment ss4 = confinedArena.allocateFrom(ValueLayout.JAVA_INT, 0);
+    MemorySegment ss5 = confinedArena.allocateFrom(ValueLayout.JAVA_INT, 0);
+
     // A shared library that exports the functions below
     private static final SymbolLookup LOOKUP = SymbolLookup.loaderLookup();
 
@@ -143,6 +157,32 @@ public class FFMEscapeAnalysisTest {
                     MemorySegment.ofAddress(0L),
                     MemorySegment.ofAddress(0L),
                     MemorySegment.ofAddress(0L)
+            );
+            /*var p = MemorySegment.ofAddress(0L);
+            MH_NOOP_PARAMS5.invokeExact(p, p, p, p, p);*/
+        } catch (Throwable t) {
+            throw new AssertionError(t);
+        }
+    }
+
+    @Benchmark
+    public void noop_params5_confined() {
+        try {
+            MH_NOOP_PARAMS5.invokeExact(
+                    cs1, cs2, cs3, cs4, cs5
+            );
+            /*var p = MemorySegment.ofAddress(0L);
+            MH_NOOP_PARAMS5.invokeExact(p, p, p, p, p);*/
+        } catch (Throwable t) {
+            throw new AssertionError(t);
+        }
+    }
+
+    @Benchmark
+    public void noop_params5_shared() {
+        try {
+            MH_NOOP_PARAMS5.invokeExact(
+                    ss1, ss2, ss3, ss4, ss5
             );
             /*var p = MemorySegment.ofAddress(0L);
             MH_NOOP_PARAMS5.invokeExact(p, p, p, p, p);*/
