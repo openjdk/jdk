@@ -41,7 +41,7 @@
 
 /*
  * @test
- * @bug 8293650
+ * @bug 8293650 8341371
  * @requires vm.cds
  * @requires vm.bits == 64
  * @requires vm.gc.Shenandoah

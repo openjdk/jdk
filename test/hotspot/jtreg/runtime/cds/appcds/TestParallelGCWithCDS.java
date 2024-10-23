@@ -43,10 +43,11 @@
 
  /*
  * @test Loading CDS archived heap objects into ParallelGC
- * @bug 8274788
+ * @bug 8274788 8341371
  * @requires vm.cds
  * @requires vm.gc.Parallel
  * @requires vm.gc.G1
+ * requires vm.bits == "64"
  *
  * @comment don't run this test if any -XX::+Use???GC options are specified, since they will
  *          interfere with the test.
