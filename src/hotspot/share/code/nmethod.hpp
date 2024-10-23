@@ -533,15 +533,8 @@ public:
   address unwind_handler_begin  () const { return _unwind_handler_offset != -1 ? (insts_end() - _unwind_handler_offset) : nullptr; }
 
   // mutable data
-
-#if false //## GC fails (why?) when oops are in a spearate data blob
-  oop*    oops_begin            () const { return (oop*)       (mdata_begin() + _relocation_size); }
-  oop*    oops_end              () const { return (oop*)       (mdata_begin() + _metadata_offset)      ; }
-#else
-  oop*    oops_begin            () const { return (oop*)       (data_begin()); }
-  oop*    oops_end              () const { return (oop*)       (data_end())  ; }
-#endif
-
+  oop*    oops_begin            () const { return (oop*)       ((_mutable_data != nullptr) ? (mdata_begin() + _relocation_size) : data_begin()); }
+  oop*    oops_end              () const { return (oop*)       ((_mutable_data != nullptr) ? (mdata_begin() + _metadata_offset) : data_end()); }
   Metadata** metadata_begin     () const { return (Metadata**) (mdata_begin() + _metadata_offset)      ; }
 #if INCLUDE_JVMCI
   Metadata** metadata_end       () const { return (Metadata**) (mdata_begin() + _jvmci_data_offset)    ; }

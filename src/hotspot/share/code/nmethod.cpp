@@ -1177,7 +1177,10 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
 
   int mutable_data_size = align_up(code_buffer->total_relocation_size(), oopSize) +
                         + align_up(code_buffer->total_oop_size(), oopSize) +
-                        + align_up(code_buffer->total_metadata_size(), oopSize); // +jvmci
+                        + align_up(code_buffer->total_metadata_size(), oopSize);
+#if INCLUDE_JVMCI
+  mutable_data_size += align_up(compiler->is_jvmci() ? jvmci_data->size() : 0, oopSize);
+#endif
   address mutable_data = nullptr;
   if (mutable_data_size > 0) {
     mutable_data = (address)os::malloc(mutable_data_size, mtCode);
@@ -1506,23 +1509,21 @@ nmethod::nmethod(
     } else {
       _unwind_handler_offset = -1;
     }
-    CHECKED_CAST(_metadata_offset, uint16_t, (align_up(code_buffer->total_oop_size(), oopSize)));
-    int reloc_size = align_up(code_buffer->total_relocation_size(), oopSize);
-    if (mutable_data_size > 0) {
-      // mutable data blob contains: relocations, oops, metatada, jvmci_data
-      _metadata_offset += reloc_size;
-    }
-    int metadata_end_offset = _metadata_offset + align_up(code_buffer->total_metadata_size(), wordSize);
 
+    int reloc_size = align_up(code_buffer->total_relocation_size(), oopSize);
+    int oop_size = align_up(code_buffer->total_oop_size(), oopSize);
+    int metadata_size = align_up(code_buffer->total_metadata_size(), wordSize);
+    CHECKED_CAST(_metadata_offset, uint16_t, reloc_size + oop_size);
+    int jvmci_data_size = 0;
 #if INCLUDE_JVMCI
-    CHECKED_CAST(_jvmci_data_offset, uint16_t, metadata_end_offset);
-    int jvmci_data_size   = compiler->is_jvmci() ? jvmci_data->size() : 0;
-    int data_end_offset = _jvmci_data_offset  + align_up(jvmci_data_size, oopSize);
-#else
-    DEBUG_ONLY( int data_end_offset = metadata_end_offset; )
+    CHECKED_CAST(_jvmci_data_offset, uint16_t, _metadata_offset + metadata_size);
+    jvmci_data_size = align_up(compiler->is_jvmci() ? jvmci_data->size() : 0, oopSize);
 #endif
-    assert((data_offset() + data_end_offset) <= nmethod_size, "wrong nmethod's size: %d > %d",
-           (data_offset() + data_end_offset), nmethod_size);
+    assert(mutable_data_size == reloc_size + oop_size + metadata_size + jvmci_data_size,
+           "wrong mutable data size: %d != %d + %d + %d + %d",
+           mutable_data_size, reloc_size, oop_size, metadata_size, jvmci_data_size);
+    assert(nmethod_size == code_end() - header_begin(), "wrong nmethod size: %d != %d",
+           nmethod_size, (int)(code_end() - header_begin()));
 
     _immutable_data_size  = immutable_data_size;
     if (immutable_data_size > 0) {

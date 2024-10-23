@@ -69,15 +69,14 @@ unsigned int CodeBlob::allocation_size(CodeBuffer* cb, int header_size, bool inc
     // However, in an nmethod, the relocation_info is stored in the mutable data, so
     // it does not contribute to the nmethod's total size, as it is moved to the C heap.
     size += align_up(cb->total_relocation_size(), oopSize);
-    //size += align_up(cb->total_oop_size(), oopSize);
-    size += align_up(cb->total_metadata_size(), oopSize);
   }
   // align the size to CodeEntryAlignment
   size = align_code_offset(size);
   size += align_up(cb->total_content_size(), oopSize);
-
-  //## GC fails (why?) when oops are in a spearate data blob
-  size += align_up(cb->total_oop_size(), oopSize);
+  if (include_relocations) {
+    size += align_up(cb->total_oop_size(), oopSize);
+    size += align_up(cb->total_metadata_size(), oopSize);
+  }
   return size;
 }
 

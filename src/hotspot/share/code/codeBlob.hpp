@@ -202,6 +202,7 @@ public:
   // Offsets
   int content_offset() const                  { return _content_offset; }
   int code_offset() const                     { return _code_offset; }
+  int data_offset() const                     { return _data_offset; }
 
   // This field holds the beginning of the const section in the old code buffer.
   // It is needed to fix relocations of pc-relative loads when resizing the
