@@ -1983,7 +1983,7 @@ public class ForkJoinPool extends AbstractExecutorService {
                     int j, cap; WorkQueue q; ForkJoinTask<?>[] a;
                     if ((q = qs[j = i & (n - 1)]) != null &&
                         (a = q.array) != null && (cap = a.length) > 0) {
-                        for (int m = cap - 1, pb = -1, b; ; pb = b) {
+                        for (int m = cap - 1, pb = -1, b; ;) {
                             long k = slotOffset((b = q.base) & m);
                             ForkJoinTask<?> t = (ForkJoinTask<?>)
                                 U.getReferenceAcquire(a, k);
@@ -1992,17 +1992,18 @@ public class ForkJoinPool extends AbstractExecutorService {
                             else if (t == null) {
                                 if (rescan)
                                     break scan;           // end of run
-                                if (a[b & m] == null &&
-                                    a[(b + 1) & m] == null &&
-                                    a[(b + 2) & m] == null)
-                                    break;                // probably empty
-                                if (pb == b) {
-                                    rescan = true;        // stalled; reorder scan
-                                    break scan;
+                                if (a[b & m] == null) {
+                                    if (a[(b + 1) & m] == null &&
+                                        a[(b + 2) & m] == null)
+                                        break;            // probably empty
+                                    if (pb == (pb = b)) {
+                                        rescan = true;    // stalled; reorder scan
+                                        break scan;
+                                    }
                                 }
                             }
                             else if (U.compareAndSetReference(a, k, t, null)) {
-                                q.base = b + 1;
+                                ForkJoinTask<?> next = a[(q.base = b + 1) & m];
                                 w.nsteals = ++nsteals;
                                 w.source = j;             // volatile
                                 rescan = true;
@@ -2010,7 +2011,7 @@ public class ForkJoinPool extends AbstractExecutorService {
                                      ((j & 1) == 0 &&
                                       t.getClass().getSuperclass() ==
                                       interruptibleTaskClass)) &&
-                                    a[q.base & m] != null) {
+                                    next != null) {
                                     propagated = true;
                                     signalWork();
                                 }
@@ -2050,14 +2051,15 @@ public class ForkJoinPool extends AbstractExecutorService {
             (qs = queues) == null || (n = qs.length) <= 0)
             return IDLE;                      // terminating
         for (int k = Math.max(n << 1, SPIN_WAITS), checks = 2;;) {
-            WorkQueue q;                      // interleave spins and rechecks
+            WorkQueue q; int cap; ForkJoinTask<?>[] a;
             if (w.phase == activePhase)
                 return activePhase;
             if (--k < 0)
                 return awaitWork(w, p);       // block, drop, or exit
-            Thread.onSpinWait();
+            Thread.onSpinWait();              // interleave spins and rechecks
             if (checks != 0 && (k & 1) == 0 && (q = qs[k & (n - 1)]) != null &&
-                q.top - q.base > 0 && --checks == 0)
+                (a = q.array) != null && (cap = a.length) > 0 &&
+                a[q.base & (cap - 1)] != null && --checks == 0)
                 reactivate(false);            // help signal
         }
     }
