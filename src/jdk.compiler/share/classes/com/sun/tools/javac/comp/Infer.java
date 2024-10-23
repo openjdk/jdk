@@ -1241,6 +1241,13 @@ public class Infer {
                     && types.isSameType(op1, typeOperands.op1)
                     && types.isSameType(op2, typeOperands.op2);
         }
+        @Override
+        public int hashCode() {
+            int result = types.hashCode(op1);
+            result *= 127;
+            result += types.hashCode(op2);
+            return result;
+        }
     }
 
     /** an incorporation cache keeps track of all executed incorporation-related operations */
