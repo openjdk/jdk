@@ -170,6 +170,9 @@ class oopDesc;
 #ifndef JULONG_FORMAT_X
 #define JULONG_FORMAT_X          UINT64_FORMAT_X
 #endif
+#ifndef JULONG_FORMAT_W
+#define JULONG_FORMAT_W(width)   UINT64_FORMAT_W(width)
+#endif
 
 // Format pointers which change size between 32- and 64-bit.
 #ifdef  _LP64

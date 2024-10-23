@@ -2067,7 +2067,7 @@ void PhaseIdealLoop::do_unroll(IdealLoopTree *loop, Node_List &old_new, bool adj
     loop->dump_head();
   } else if (TraceLoopOpts) {
     if (loop_head->trip_count() < (uint)LoopUnrollLimit) {
-      tty->print("Unroll %d(%2ld) ", loop_head->unrolled_count()*2, loop_head->trip_count());
+      tty->print("Unroll %d(" JULONG_FORMAT_W(2) ") ", loop_head->unrolled_count()*2, loop_head->trip_count());
     } else {
       tty->print("Unroll %d     ", loop_head->unrolled_count()*2);
     }
@@ -2320,7 +2320,7 @@ void PhaseIdealLoop::do_maximally_unroll(IdealLoopTree *loop, Node_List &old_new
   assert(cl->trip_count() > 0, "");
 #ifndef PRODUCT
   if (TraceLoopOpts) {
-    tty->print("MaxUnroll  %ld ", cl->trip_count());
+    tty->print("MaxUnroll  " JULONG_FORMAT " ", cl->trip_count());
     loop->dump_head();
   }
 #endif
