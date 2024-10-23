@@ -21,7 +21,7 @@
  * questions.
  *
  */
-package com.sun.hotspot.igv.layout;
+package com.sun.hotspot.igv.hierarchicallayout;
 
 import java.awt.Font;
 
