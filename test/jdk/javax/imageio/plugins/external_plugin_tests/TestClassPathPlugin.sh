@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
 # @test
 # @bug 8081729 8140314
 # @summary Test external plugin as classpath jar and as a modular jar.
-#          Test both cases with and without a security manager.
 
 set -e
 
@@ -77,12 +76,6 @@ if [ $? -ne 0 ]; then
     exception=1
       echo "Classpath test failed: exception thrown!"
 fi
-echo "Test classpath jar with security manager .."
-$JAVA -Djava.security.manager -cp .${CPSEP}${TESTDIR}${CPSEP}${PLUGINDIR}/simp.jar simptest.TestSIMPPlugin
-if [ $? -ne 0 ]; then
-    exception=1
-    echo "Classpath + SecurityManager test failed: exception thrown!"
-fi
 
 # expect to find SimpReader on module path
 echo "Test modular jar .. "
@@ -91,13 +84,6 @@ $JAVA --module-path $PLUGINDIR -cp $TESTDIR simptest.TestSIMPPlugin
 if [ $? -ne 0 ]; then
     exception=1
     echo "modular jar test failed: exception thrown!"
-fi
-
-echo "Test modular jar with security manager .."
-$JAVA -Djava.security.manager --module-path $PLUGINDIR -cp $TESTDIR simptest.TestSIMPPlugin
-if [ $? -ne 0 ]; then
-    exception=1
-    echo "modular jar with security manager test failed: exception thrown!"
 fi
 
 if [ $exception -ne 0 ]; then

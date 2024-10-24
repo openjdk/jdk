@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,10 +79,6 @@ public abstract class ResponseCache {
     /**
      * Gets the system-wide response cache.
      *
-     * @throws  SecurityException
-     *          If a security manager has been installed and it denies
-     * {@link NetPermission}{@code ("getResponseCache")}
-     *
      * @see #setDefault(ResponseCache)
      * @return the system-wide {@code ResponseCache}
      * @since 1.5
@@ -103,10 +99,6 @@ public abstract class ResponseCache {
      *
      * @param responseCache The response cache, or
      *          {@code null} to unset the cache.
-     *
-     * @throws  SecurityException
-     *          If a security manager has been installed and it denies
-     * {@link NetPermission}{@code ("setResponseCache")}
      *
      * @see #getDefault()
      * @since 1.5

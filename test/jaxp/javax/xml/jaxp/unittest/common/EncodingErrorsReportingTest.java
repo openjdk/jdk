@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
  * @bug 8038043
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
  * @run testng/othervm common.EncodingErrorsReportingTest
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow common.EncodingErrorsReportingTest
  * @summary Verifies that parsers reports location of wrong UTF-8 symbols in
  *          XML files parsed and included via xi:include element
  */
@@ -49,11 +48,9 @@ import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.DefaultHandler;
 
 import org.testng.annotations.DataProvider;
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.testng.Assert;
 
-@Listeners({jaxp.library.BasePolicy.class})
 public class EncodingErrorsReportingTest implements EntityResolver {
 
     /*

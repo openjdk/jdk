@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -135,24 +135,6 @@ import java.util.ServiceLoader.Provider;
  * {@code getAppConfigurationEntry} with the name, "<i>other</i>"
  * (the default entry name).  If there is no entry for "<i>other</i>",
  * then a {@code LoginException} is thrown.
- *
- * <li> When LoginContext uses the installed Configuration, the caller
- * requires the createLoginContext.<em>name</em> and possibly
- * createLoginContext.other AuthPermissions. Furthermore, the
- * LoginContext will invoke configured modules from within an
- * {@code AccessController.doPrivileged} call so that modules that
- * perform security-sensitive tasks (such as connecting to remote hosts,
- * and updating the Subject) will require the respective permissions, but
- * the callers of the LoginContext will not require those permissions.
- *
- * <li> When LoginContext uses a caller-specified Configuration, the caller
- * does not require any createLoginContext AuthPermission.  The LoginContext
- * saves the {@code AccessControlContext} for the caller,
- * and invokes the configured modules from within an
- * {@code AccessController.doPrivileged} call constrained by that context.
- * This means the caller context (stored when the LoginContext was created)
- * must have sufficient permissions to perform any security-sensitive tasks
- * that the modules may perform.
  * </ul>
  *
  * <li> {@code CallbackHandler}
@@ -173,22 +155,11 @@ import java.util.ServiceLoader.Provider;
  * with users.  The caller thus assumes that the configured
  * modules have alternative means for authenticating the user.
  *
- *
- * <li> When the LoginContext uses the installed Configuration (instead of
- * a caller-specified Configuration, see above),
- * then this LoginContext must wrap any
- * caller-specified or default CallbackHandler implementation
- * in a new CallbackHandler implementation
- * whose {@code handle} method implementation invokes the
- * specified CallbackHandler's {@code handle} method in a
- * {@code java.security.AccessController.doPrivileged} call
- * constrained by the caller's current {@code AccessControlContext}.
  * </ul>
  * </ol>
  *
  * @since 1.4
  * @see java.security.Security
- * @see javax.security.auth.AuthPermission
  * @see javax.security.auth.Subject
  * @see javax.security.auth.callback.CallbackHandler
  * @see javax.security.auth.login.Configuration
@@ -345,13 +316,6 @@ public class LoginContext {
      *          {@code auth.login.defaultCallbackHandler}
      *          security property was set, but the implementation
      *          class could not be loaded.
-     *
-     * @exception SecurityException if a SecurityManager is set and
-     *          the caller does not have
-     *          AuthPermission("createLoginContext.<i>name</i>"),
-     *          or if a configuration entry for {@code name} does not exist and
-     *          the caller does not additionally have
-     *          AuthPermission("createLoginContext.other")
      */
     public LoginContext(String name) throws LoginException {
         init(name);
@@ -375,13 +339,6 @@ public class LoginContext {
      *          <i>auth.login.defaultCallbackHandler</i>
      *          security property was set, but the implementation
      *          class could not be loaded.
-     *
-     * @exception SecurityException if a SecurityManager is set and
-     *          the caller does not have
-     *          AuthPermission("createLoginContext.<i>name</i>"),
-     *          or if a configuration entry for <i>name</i> does not exist and
-     *          the caller does not additionally have
-     *          AuthPermission("createLoginContext.other")
      */
     public LoginContext(String name, Subject subject)
     throws LoginException {
@@ -409,13 +366,6 @@ public class LoginContext {
      *          and there is no {@code Configuration} entry
      *          for "{@code other}", or if the caller-specified
      *          {@code callbackHandler} is {@code null}.
-     *
-     * @exception SecurityException if a SecurityManager is set and
-     *          the caller does not have
-     *          AuthPermission("createLoginContext.<i>name</i>"),
-     *          or if a configuration entry for <i>name</i> does not exist and
-     *          the caller does not additionally have
-     *          AuthPermission("createLoginContext.other")
      */
     @SuppressWarnings("removal")
     public LoginContext(String name, CallbackHandler callbackHandler)
@@ -449,13 +399,6 @@ public class LoginContext {
      *          {@code subject} is {@code null},
      *          or if the caller-specified
      *          {@code callbackHandler} is {@code null}.
-     *
-     * @exception SecurityException if a SecurityManager is set and
-     *          the caller does not have
-     *          AuthPermission("createLoginContext.<i>name</i>"),
-     *          or if a configuration entry for <i>name</i> does not exist and
-     *          the caller does not additionally have
-     *          AuthPermission("createLoginContext.other")
      */
     @SuppressWarnings("removal")
     public LoginContext(String name, Subject subject,
@@ -491,14 +434,6 @@ public class LoginContext {
      *          does not appear in the {@code Configuration}
      *          and there is no {@code Configuration} entry
      *          for "<i>other</i>".
-     *
-     * @exception SecurityException if a SecurityManager is set,
-     *          <i>config</i> is {@code null},
-     *          and either the caller does not have
-     *          AuthPermission("createLoginContext.<i>name</i>"),
-     *          or if a configuration entry for <i>name</i> does not exist and
-     *          the caller does not additionally have
-     *          AuthPermission("createLoginContext.other")
      *
      * @since 1.5
      */

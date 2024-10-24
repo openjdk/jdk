@@ -439,10 +439,8 @@ class SerializeClosure;
   template(getProperty_name,                          "getProperty")                              \
   template(context_name,                              "context")                                  \
   template(contextClassLoader_name,                   "contextClassLoader")                       \
-  template(inheritedAccessControlContext_name,        "inheritedAccessControlContext")            \
   template(getClassContext_name,                      "getClassContext")                          \
   template(wait_name,                                 "wait0")                                    \
-  template(checkPackageAccess_name,                   "checkPackageAccess")                       \
   template(forName_name,                              "forName")                                  \
   template(forName0_name,                             "forName0")                                 \
   template(isJavaIdentifierStart_name,                "isJavaIdentifierStart")                    \

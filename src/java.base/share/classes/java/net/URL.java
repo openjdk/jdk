@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -459,12 +459,6 @@ public final class URL implements java.io.Serializable {
      *     {@link java.net.URL#URL(java.lang.String, java.lang.String, int,
      *                      java.lang.String)}
      *
-     * <p>If the handler is not null and there is a security manager,
-     * the security manager's {@code checkPermission}
-     * method is called with a
-     * {@code NetPermission("specifyStreamHandler")} permission.
-     * This may result in a SecurityException.
-     *
      * No validation of the inputs is performed by this constructor.
      *
      * @param      protocol   the name of the protocol to use.
@@ -476,18 +470,12 @@ public final class URL implements java.io.Serializable {
      *                    is a negative number other than -1,
      *                    or if the underlying stream handler implementation
      *                    rejects, or is known to reject, the {@code URL}
-     * @throws     SecurityException
-     *        if a security manager exists and its
-     *        {@code checkPermission} method doesn't allow
-     *        specifying a stream handler explicitly.
      * @see        java.lang.System#getProperty(java.lang.String)
      * @see        java.net.URL#setURLStreamHandlerFactory(
      *                  java.net.URLStreamHandlerFactory)
      * @see        java.net.URLStreamHandler
      * @see        java.net.URLStreamHandlerFactory#createURLStreamHandler(
      *                  java.lang.String)
-     * @see        SecurityManager#checkPermission
-     * @see        java.net.NetPermission
      * @deprecated
      * Use {@link #of(URI, URLStreamHandler)} to construct an instance of URL
      * associated with a custom protocol handler.
@@ -673,10 +661,6 @@ public final class URL implements java.io.Serializable {
      *               underlying stream handler's {@linkplain
      *               URLStreamHandler#parseURL(URL, String, int, int)
      *               parseURL method} throws {@code IllegalArgumentException}
-     * @throws     SecurityException
-     *        if a security manager exists and its
-     *        {@code checkPermission} method doesn't allow
-     *        specifying a stream handler.
      * @see        java.net.URL#URL(java.lang.String, java.lang.String,
      *                  int, java.lang.String)
      * @see        java.net.URLStreamHandler
@@ -846,11 +830,6 @@ public final class URL implements java.io.Serializable {
      *          underlying stream handler's {@linkplain
      *          URLStreamHandler#parseURL(URL, String, int, int)
      *          parseURL method} throws {@code IllegalArgumentException}
-     *
-     * @throws SecurityException
-     *        if a security manager exists and its
-     *        {@code checkPermission} method doesn't allow
-     *        specifying a stream handler
      *
      * @see java.net.URI#toURL()
      *
@@ -1272,9 +1251,6 @@ public final class URL implements java.io.Serializable {
      *             Proxy.NO_PROXY should be specified.
      * @return     a {@code URLConnection} to the URL.
      * @throws     IOException  if an I/O exception occurs.
-     * @throws     SecurityException if a security manager is present
-     *             and the caller doesn't have permission to connect
-     *             to the proxy.
      * @throws     IllegalArgumentException will be thrown if proxy is null,
      *             or proxy has the wrong type
      * @throws     UnsupportedOperationException if the subclass that
@@ -1371,20 +1347,11 @@ public final class URL implements java.io.Serializable {
      *<p> The {@code URLStreamHandlerFactory} instance is used to
      *construct a stream protocol handler from a protocol name.
      *
-     * <p> If there is a security manager, this method first calls
-     * the security manager's {@code checkSetFactory} method
-     * to ensure the operation is allowed.
-     * This could result in a SecurityException.
-     *
      * @param      fac   the desired factory.
      * @throws     Error  if the application has already set a factory.
-     * @throws     SecurityException  if a security manager exists and its
-     *             {@code checkSetFactory} method doesn't allow
-     *             the operation.
      * @see        java.net.URL#URL(java.lang.String, java.lang.String,
      *             int, java.lang.String)
      * @see        java.net.URLStreamHandlerFactory
-     * @see        SecurityManager#checkSetFactory
      */
     public static void setURLStreamHandlerFactory(URLStreamHandlerFactory fac) {
         synchronized (streamHandlerLock) {

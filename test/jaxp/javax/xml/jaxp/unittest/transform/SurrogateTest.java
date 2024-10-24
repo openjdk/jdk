@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
-
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 import javax.xml.transform.Result;
@@ -38,16 +37,13 @@ import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
-
+import static jaxp.library.JAXPTestUtilities.compareLinesWithGold;
+import static jaxp.library.JAXPTestUtilities.compareWithGold;
+import org.testng.Assert;
+import org.testng.annotations.Test;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
-
-import static jaxp.library.JAXPTestUtilities.compareWithGold;
-import static jaxp.library.JAXPTestUtilities.compareLinesWithGold;
-import org.testng.Assert;
-import org.testng.annotations.Listeners;
-import org.testng.annotations.Test;
 
 /*
  * @test
@@ -56,7 +52,6 @@ import org.testng.annotations.Test;
  * @run testng transform.SurrogateTest
  * @summary XML Transformer outputs Unicode supplementary character incorrectly to HTML
  */
-@Listeners({jaxp.library.FilePolicy.class})
 public class SurrogateTest {
 
     final static String TEST_SRC = System.getProperty("test.src", ".");

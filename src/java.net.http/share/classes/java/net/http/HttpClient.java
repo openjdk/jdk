@@ -119,16 +119,6 @@ import jdk.internal.net.http.HttpClientBuilderImpl;
  *        .thenApply(HttpResponse::body)
  *        .thenAccept(System.out::println);  }
  *
- * <p> <a id="securitychecks"><b>Security checks</b></a>
- *
- * <p> If a security manager is present then security checks are performed by
- * the HTTP Client's sending methods. An appropriate {@link URLPermission} is
- * required to access the destination server, and proxy server if one has
- * been configured. The form of the {@code URLPermission} required to access a
- * proxy has a {@code method} parameter of {@code "CONNECT"} (for all kinds of
- * proxying) and a {@code URL} string of the form {@code "socket://host:port"}
- * where host and port specify the proxy's address.
- *
  * @apiNote
  * Resources allocated by the {@code HttpClient} may be
  * reclaimed early by {@linkplain #close() closing} the client.
@@ -174,19 +164,6 @@ import jdk.internal.net.http.HttpClientBuilderImpl;
  * may prevent the associated requests from running to completion, and
  * prevent the resources allocated by the associated client from
  * being reclaimed by the garbage collector.
- *
- *
- * <p>
- * If an explicit {@linkplain HttpClient.Builder#executor(Executor)
- * executor} has not been set for an {@code HttpClient}, and a security manager
- * has been installed, then the default executor will execute asynchronous and
- * dependent tasks in a context that is granted no permissions. Custom
- * {@linkplain HttpRequest.BodyPublisher request body publishers}, {@linkplain
- * HttpResponse.BodyHandler response body handlers}, {@linkplain
- * BodySubscriber response body subscribers}, and {@linkplain
- * WebSocket.Listener WebSocket Listeners}, if executing operations that require
- * privileges, should do so within an appropriate {@linkplain
- * AccessController#doPrivileged(PrivilegedAction) privileged context}.
  *
  * @since 11
  */
@@ -325,9 +302,7 @@ public abstract class HttpClient implements AutoCloseable {
          * HttpClient}.
          *
          * @implNote The default executor uses a thread pool, with a custom
-         * thread factory. If a security manager has been installed, the thread
-         * factory creates threads that run with an access control context that
-         * has no permissions.
+         * thread factory.
          *
          * @param executor the Executor
          * @return this builder
@@ -462,20 +437,12 @@ public abstract class HttpClient implements AutoCloseable {
          * Returns a new {@link HttpClient} built from the current state of this
          * builder.
          *
-         * @implSpec If the {@link #localAddress(InetAddress) local address} is a non-null
-         * address and a security manager is installed, then
-         * this method calls {@link SecurityManager#checkListen checkListen} to check that
-         * the caller has necessary permission to bind to that local address.
-         *
          * @return a new {@code HttpClient}
          *
          * @throws UncheckedIOException may be thrown if underlying IO resources required
          * by the implementation cannot be allocated. For instance,
          * if the implementation requires a {@link Selector}, and opening
          * one fails due to {@linkplain Selector#open() lack of necessary resources}.
-         * @throws SecurityException If a security manager has been installed and the
-         *         security manager's {@link SecurityManager#checkListen checkListen}
-         *         method disallows binding to the given address.
          */
         public HttpClient build();
     }
@@ -671,11 +638,6 @@ public abstract class HttpClient implements AutoCloseable {
      * @throws IllegalArgumentException if the {@code request} argument is not
      *         a request that could have been validly built as specified by {@link
      *         HttpRequest.Builder HttpRequest.Builder}.
-     * @throws SecurityException If a security manager has been installed
-     *          and it denies {@link java.net.URLPermission access} to the
-     *          URL in the given request, or proxy if one is configured.
-     *          See <a href="#securitychecks">security checks</a> for further
-     *          information.
      */
     public abstract <T> HttpResponse<T>
     send(HttpRequest request, HttpResponse.BodyHandler<T> responseBodyHandler)
@@ -715,11 +677,6 @@ public abstract class HttpClient implements AutoCloseable {
      * <ul>
      * <li>{@link IOException} - if an I/O error occurs when sending or receiving,
      *      or the client has {@linkplain ##closing shut down}.</li>
-     * <li>{@link SecurityException} - If a security manager has been installed
-     *          and it denies {@link java.net.URLPermission access} to the
-     *          URL in the given request, or proxy if one is configured.
-     *          See <a href="#securitychecks">security checks</a> for further
-     *          information.</li>
      * </ul>
      *
      * <p id="cancel"> The default {@code HttpClient} implementation returns

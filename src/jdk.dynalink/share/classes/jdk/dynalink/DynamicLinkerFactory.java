@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -417,9 +417,6 @@ public final class DynamicLinkerFactory {
      * specific service configuration issues, as well as some Dynalink-specific
      * errors when an exporter that the factory tried to automatically load:
      * <ul>
-     * <li>did not have the runtime permission named
-     * {@link GuardingDynamicLinkerExporter#AUTOLOAD_PERMISSION_NAME} in a
-     * system with a security manager, or</li>
      * <li>returned null from {@link GuardingDynamicLinkerExporter#get()}, or</li>
      * <li>the list returned from {@link GuardingDynamicLinkerExporter#get()}
      * had a null element.</li>

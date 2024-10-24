@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
  * @bug 4532506 4999599
  * @summary Serializing KeyPair on one VM (Sun),
  *      and Deserializing on another (IBM) fails
- * @run main/othervm/java.security.policy=Serial.policy Serial
  */
 
 import java.io.*;

@@ -942,8 +942,6 @@ final class VirtualThread extends BaseVirtualThread {
     @SuppressWarnings("removal")
     public void interrupt() {
         if (Thread.currentThread() != this) {
-            checkAccess();
-
             // if current thread is a virtual thread then prevent it from being
             // suspended or unmounted when entering or holding interruptLock
             Interruptible blocker;

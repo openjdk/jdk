@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,11 +117,6 @@ public abstract class SctpServerChannel
      * <P> The {@code SCTPChannel} returned by this method, if any, will be in
      *  blocking mode regardless of the blocking mode of this channel.
      *
-     * <P> If a security manager has been installed then for each new
-     * association this method verifies that the address and port number of the
-     * assocaitions's remote peer are permitted by the security manager's {@link
-     * java.lang.SecurityManager#checkAccept(String,int) checkAccept} method.
-     *
      * @return  The SCTP channel for the new association, or {@code null}
      *          if this channel is in non-blocking mode and no association is
      *          available to be accepted
@@ -141,10 +136,6 @@ public abstract class SctpServerChannel
      *
      * @throws  java.nio.channels.NotYetBoundException
      *          If this channel's socket has not yet been bound
-     *
-     * @throws  SecurityException
-     *          If a security manager has been installed and it does not permit
-     *          access to the remote peer of the new association
      *
      * @throws  IOException
      *          If some other I/O error occurs
@@ -175,11 +166,6 @@ public abstract class SctpServerChannel
      *
      * @throws  java.nio.channels.UnsupportedAddressTypeException
      *          If the type of the given address is not supported
-     *
-     * @throws  SecurityException
-     *          If a security manager has been installed and its {@link
-     *          java.lang.SecurityManager#checkListen(int) checkListen} method
-     *          denies the operation
      *
      * @throws  IOException
      *          If some other I/O error occurs
@@ -230,11 +216,6 @@ public abstract class SctpServerChannel
      *
      * @throws  java.nio.channels.UnsupportedAddressTypeException
      *          If the type of the given address is not supported
-     *
-     * @throws  SecurityException
-     *          If a security manager has been installed and its {@link
-     *          java.lang.SecurityManager#checkListen(int) checkListen} method
-     *          denies the operation
      *
      * @throws  IOException
      *          If some other I/O error occurs

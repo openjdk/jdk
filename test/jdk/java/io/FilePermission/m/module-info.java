@@ -1,3 +1,0 @@
-module m {
-    exports p;
-}

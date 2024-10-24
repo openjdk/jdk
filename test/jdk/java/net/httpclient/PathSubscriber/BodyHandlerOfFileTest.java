@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
  * @bug 8237470
  * @summary Confirm HttpResponse.BodyHandlers#ofFile(Path)
  *          works with default and non-default file systems
- *          when SecurityManager is enabled
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters
  *        jdk.httpclient.test.lib.http2.Http2TestServer
@@ -38,7 +37,6 @@
  *        jdk.test.lib.net.SimpleSSLContext
  *        jdk.test.lib.Platform jdk.test.lib.util.FileUtils
  * @run testng/othervm BodyHandlerOfFileTest
- * @run testng/othervm/java.security.policy=ofFile.policy BodyHandlerOfFileTest
  */
 
 import com.sun.net.httpserver.HttpServer;

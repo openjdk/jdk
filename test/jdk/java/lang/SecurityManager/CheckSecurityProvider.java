@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 6997010 7191662
  * @summary Consolidate java.security files into one file with modifications
- * @run main/othervm -Djava.security.manager=allow CheckSecurityProvider
+ * @run main/othervm CheckSecurityProvider
  */
 
 import java.security.Provider;
@@ -39,14 +39,11 @@ import java.util.stream.Stream;
 /*
  * The main benefit of this test is to catch merge errors or other types
  * of issues where one or more of the security providers are accidentally
- * removed. With the security manager enabled, this test can also catch
- * scenarios where the default permission policy needs to be updated.
+ * removed.
  */
 public class CheckSecurityProvider {
     public static void main(String[] args) throws Exception {
         ModuleLayer layer = ModuleLayer.boot();
-
-        System.setSecurityManager(new SecurityManager());
 
         String os = System.getProperty("os.name");
         /*

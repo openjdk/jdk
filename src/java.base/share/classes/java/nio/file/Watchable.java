@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,10 +81,6 @@ public interface Watchable {
      *          if the watch service is closed
      * @throws  IOException
      *          if an I/O error occurs
-     * @throws  SecurityException
-     *          if a security manager is installed and it denies an unspecified
-     *          permission required to monitor this object. Implementations of
-     *          this interface should specify the permission checks.
      */
     WatchKey register(WatchService watcher,
                       WatchEvent.Kind<?>[] events,
@@ -118,10 +114,6 @@ public interface Watchable {
      *          if the watch service is closed
      * @throws  IOException
      *          if an I/O error occurs
-     * @throws  SecurityException
-     *          if a security manager is installed and it denies an unspecified
-     *          permission required to monitor this object. Implementations of
-     *          this interface should specify the permission checks.
      */
     WatchKey register(WatchService watcher, WatchEvent.Kind<?>... events)
         throws IOException;

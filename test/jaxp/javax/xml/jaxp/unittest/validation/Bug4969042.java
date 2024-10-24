@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@ import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.ValidatorHandler;
 
 import org.testng.Assert;
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -45,12 +44,10 @@ import org.xml.sax.helpers.DefaultHandler;
  * @test
  * @bug 4969042
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow validation.Bug4969042
  * @run testng/othervm validation.Bug4969042
  * @summary Test ValidationHandler shall invoke ignorableWhitespace() of the
  * user-defined ContentHandler once the validator detects any ignorable whitespaces.
  */
-@Listeners({jaxp.library.BasePolicy.class})
 public class Bug4969042 {
 
     public static final String XSD = "<?xml version='1.0'?>\n" + "<schema xmlns='http://www.w3.org/2001/XMLSchema'\n" + "        xmlns:test='jaxp13_test'\n"

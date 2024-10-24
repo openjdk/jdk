@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@ import java.lang.invoke.CallSite;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -57,7 +56,7 @@ import org.testng.annotations.Test;
 
 /**
  * @test
- * @run testng/othervm/java.security.policy=untrusted.security.policy BeanLinkerTest
+ * @run testng/othervm BeanLinkerTest
  */
 public class BeanLinkerTest {
 
@@ -495,55 +494,6 @@ public class BeanLinkerTest {
             throw new RuntimeException(th);
         }
         Assert.assertEquals(str, System.getProperty("os.name"));
-    }
-
-    // try calling System.getenv and expect security exception
-    @Test(dataProvider = "flags")
-    public void systemGetenvTest(final boolean publicLookup) {
-        final CallSite cs1 = createGetMethodCallSite(publicLookup, "getenv");
-        final CallSite cs2 = createCallSite(publicLookup, CALL, MethodType.methodType(Object.class, Object.class, Object.class));
-
-        try {
-            final Object method = cs1.getTarget().invoke(StaticClass.forClass(System.class));
-            cs2.getTarget().invoke(method, StaticClass.forClass(System.class));
-            throw new RuntimeException("should not reach here in any case!");
-        } catch (final Throwable th) {
-            Assert.assertTrue(th instanceof SecurityException);
-        }
-    }
-
-    // try getting a specific sensitive System property and expect security exception
-    @Test(dataProvider = "flags")
-    public void systemGetPropertyTest(final boolean publicLookup) {
-        final CallSite cs1 = createGetMethodCallSite(publicLookup, "getProperty");
-        final CallSite cs2 = createCallSite(publicLookup, CALL, MethodType.methodType(String.class, Object.class, Object.class, String.class));
-
-        try {
-            final Object method = cs1.getTarget().invoke(StaticClass.forClass(System.class));
-            cs2.getTarget().invoke(method, StaticClass.forClass(System.class), "java.home");
-            throw new RuntimeException("should not reach here in any case!");
-        } catch (final Throwable th) {
-            Assert.assertTrue(th instanceof SecurityException);
-        }
-    }
-
-    // check a @CallerSensitive API and expect appropriate access check exception
-    @Test(dataProvider = "flags")
-    public void systemLoadLibraryTest(final boolean publicLookup) {
-        final CallSite cs1 = createGetMethodCallSite(publicLookup, "loadLibrary");
-        final CallSite cs2 = createCallSite(publicLookup, CALL, MethodType.methodType(void.class, Object.class, Object.class, String.class));
-
-        try {
-            final Object method = cs1.getTarget().invoke(StaticClass.forClass(System.class));
-            cs2.getTarget().invoke(method, StaticClass.forClass(System.class), "foo");
-            throw new RuntimeException("should not reach here in any case!");
-        } catch (final Throwable th) {
-            if (publicLookup) {
-                Assert.assertTrue(th instanceof IllegalAccessError);
-            } else {
-                Assert.assertTrue(th instanceof AccessControlException, "Expected AccessControlException, got " + th.getClass().getName());
-            }
-        }
     }
 
     @Test(dataProvider = "flags")

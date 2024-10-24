@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
  * @test
  * @summary Test behavior related to finalize
  * @run main/othervm  SSLSessionFinalizeTest
- * @run main/othervm/policy=security.policy  SSLSessionFinalizeTest
  */
 
 import java.io.InputStream;

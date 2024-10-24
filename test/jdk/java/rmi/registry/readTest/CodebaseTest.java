@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,7 @@ public class CodebaseTest {
             rmiregistryDir.mkdirs();
             rmiregistry = RegistryVM.createRegistryVMWithRunner(
                     "RMIRegistryRunner",
-                    " -Djava.rmi.server.useCodebaseOnly=false -Djava.security.manager=allow"
+                    " -Djava.rmi.server.useCodebaseOnly=false"
                     + " -Duser.dir=" + rmiregistryDir.getAbsolutePath());
             rmiregistry.start();
             int port = rmiregistry.getPort();

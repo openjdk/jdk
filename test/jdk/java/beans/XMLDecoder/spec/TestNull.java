@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @summary Tests <null> element
- * @run main/othervm -Djava.security.manager=allow TestNull
+ * @run main/othervm TestNull
  * @author Sergey Malenkov
  */
 
@@ -37,7 +37,7 @@ public final class TestNull extends AbstractTest {
             + "</java>";
 
     public static void main(String[] args) {
-        new TestNull().test(true);
+        new TestNull().test();
     }
 
     @Override

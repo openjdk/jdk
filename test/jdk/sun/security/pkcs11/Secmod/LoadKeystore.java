@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@
  * @library /test/lib ../
  * @modules jdk.crypto.cryptoki
  * @run main/othervm LoadKeystore
- * @run main/othervm -Djava.security.manager=allow LoadKeystore sm policy
  */
 
 import java.io.File;
@@ -43,11 +42,6 @@ import java.util.Collections;
 public class LoadKeystore extends SecmodTest {
 
     public static void main(String[] args) throws Exception {
-        if (args.length > 1 && "sm".equals(args[0])) {
-            System.setProperty("java.security.policy",
-                    BASE + File.separator + args[1]);
-        }
-
         if (!initSecmod()) {
             return;
         }
@@ -58,10 +52,6 @@ public class LoadKeystore extends SecmodTest {
         System.out.println("Add provider " + p);
         System.out.println();
         Security.addProvider(p);
-
-        if (args.length > 1 && "sm".equals(args[0])) {
-            System.setSecurityManager(new SecurityManager());
-        }
 
         try {
             System.out.println("Load keystore with wrong type");
