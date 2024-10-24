@@ -3328,7 +3328,7 @@ public class Types {
         return t.map(new Subst(from, to));
     }
 
-    /* this class won't substitute all types for example UndetVars are never substituted, this is like this
+    /* this class won't substitute all types for example UndetVars are never substituted, this is
      * by design as UndetVars are used locally during inference and shouldn't scape from inference rutines,
      * some specialized applications could need a tailored solution
      */
