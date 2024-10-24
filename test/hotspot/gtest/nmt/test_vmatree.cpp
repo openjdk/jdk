@@ -187,7 +187,7 @@ TEST_VM_F(NMTVMATreeTest, UseFlagInplace) {
   tree.reserve_mapping(0, 100, rd1);
   tree.commit_mapping(20, 50, rd2, true);
   tree.uncommit_mapping(30, 10, rd2);
-  tree.visit_in_order([&](Node* node) {
+  tree.visit_in_order([&](TreeNode* node) {
     if (node->key() != 100) {
       EXPECT_EQ(mtTest, node->val().out.mem_tag()) << "failed at: " << node->key();
       if (node->key() != 20 && node->key() != 40) {
