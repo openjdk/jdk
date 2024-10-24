@@ -341,7 +341,6 @@ public class Continuation {
      * @throws IllegalStateException if not currently in the given {@code scope},
      */
     @Hidden
-    @JvmtiMountTransition
     public static boolean yield(ContinuationScope scope) {
         Continuation cont = JLA.getContinuation(currentCarrierThread());
         Continuation c;
@@ -354,7 +353,6 @@ public class Continuation {
     }
 
     @Hidden
-    @JvmtiMountTransition
     private boolean yield0(ContinuationScope scope, Continuation child) {
         preempted = false;
 
