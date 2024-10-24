@@ -41,7 +41,8 @@ public:
   NCS::StackIndex si[si_len];
   NativeCallStack stacks[si_len];
 
-  NMTVMATreeTest() : ncs(true) {
+  NMTVMATreeTest()
+    : ncs(true) {
     stacks[0] = make_stack(0xA);
     stacks[1] = make_stack(0xB);
     si[0] = ncs.push(stacks[0]);
@@ -75,8 +76,8 @@ public:
     return x->val().out.type();
   }
 
-  int count_nodes(Tree& tree) {
-    int count = 0;
+  unsigned int count_nodes(Tree& tree) {
+    unsigned int count = 0;
     treap(tree).visit_in_order([&](Node* x) {
       ++count;
     });
@@ -86,49 +87,52 @@ public:
   // Tests
   // Adjacent reservations are merged if the properties match.
   void adjacent_2_nodes(const VMATree::RegionData& rd) {
+    VirtualMemorySnapshot diff;
     Tree tree;
     for (int i = 0; i < 10; i++) {
-      tree.reserve_mapping(i * 100, 100, rd);
+      tree.reserve_mapping(i * 100, 100, rd, diff);
     }
-    EXPECT_EQ(2, count_nodes(tree));
+    EXPECT_EQ(2u, count_nodes(tree));
 
     // Reserving the exact same space again should result in still having only 2 nodes
     for (int i = 0; i < 10; i++) {
-      tree.reserve_mapping(i * 100, 100, rd);
+      tree.reserve_mapping(i * 100, 100, rd, diff);
     }
-    EXPECT_EQ(2, count_nodes(tree));
+    EXPECT_EQ(2u, count_nodes(tree));
 
     // Do it backwards instead.
     Tree tree2;
     for (int i = 9; i >= 0; i--) {
-      tree2.reserve_mapping(i * 100, 100, rd);
+      tree2.reserve_mapping(i * 100, 100, rd, diff);
     }
-    EXPECT_EQ(2, count_nodes(tree2));
+    EXPECT_EQ(2u, count_nodes(tree2));
   }
 
   // After removing all ranges we should be left with an entirely empty tree
   void remove_all_leaves_empty_tree(const VMATree::RegionData& rd) {
+    VirtualMemorySnapshot diff;
     Tree tree;
-    tree.reserve_mapping(0, 100 * 10, rd);
+    tree.reserve_mapping(0, 100 * 10, rd, diff);
     for (int i = 0; i < 10; i++) {
-      tree.release_mapping(i * 100, 100);
+      tree.release_mapping(i * 100, 100, diff);
     }
     EXPECT_EQ(nullptr, treap_root(tree));
 
     // Other way around
-    tree.reserve_mapping(0, 100 * 10, rd);
+    tree.reserve_mapping(0, 100 * 10, rd, diff);
     for (int i = 9; i >= 0; i--) {
-      tree.release_mapping(i * 100, 100);
+      tree.release_mapping(i * 100, 100, diff);
     }
     EXPECT_EQ(nullptr, treap_root(tree));
   }
 
   // Committing in a whole reserved range results in 2 nodes
   void commit_whole(const VMATree::RegionData& rd) {
+    VirtualMemorySnapshot diff;
     Tree tree;
-    tree.reserve_mapping(0, 100 * 10, rd);
+    tree.reserve_mapping(0, 100 * 10, rd, diff);
     for (int i = 0; i < 10; i++) {
-      tree.commit_mapping(i * 100, 100, rd);
+      tree.commit_mapping(i * 100, 100, rd, diff);
     }
     treap(tree).visit_in_order([&](Node* x) {
       VMATree::StateType in = in_type_of(x);
@@ -136,14 +140,15 @@ public:
       EXPECT_TRUE((in == VMATree::StateType::Released && out == VMATree::StateType::Committed) ||
                   (in == VMATree::StateType::Committed && out == VMATree::StateType::Released));
     });
-    EXPECT_EQ(2, count_nodes(tree));
+    EXPECT_EQ(2u, count_nodes(tree));
   }
 
   // Committing in middle of reservation ends with a sequence of 4 nodes
   void commit_middle(const VMATree::RegionData& rd) {
+    VirtualMemorySnapshot diff;
     Tree tree;
-    tree.reserve_mapping(0, 100, rd);
-    tree.commit_mapping(50, 25, rd);
+    tree.reserve_mapping(0, 100, rd, diff);
+    tree.commit_mapping(50, 25, rd, diff);
 
     size_t found[16];
     size_t wanted[4] = {0, 50, 75, 100};
@@ -170,23 +175,24 @@ public:
   };
 };
 
-
 TEST_VM_F(NMTVMATreeTest, OverlappingReservationsResultInTwoNodes) {
+  VirtualMemorySnapshot diff;
   VMATree::RegionData rd{si[0], mtTest};
   Tree tree;
   for (int i = 99; i >= 0; i--) {
-    tree.reserve_mapping(i * 100, 101, rd);
+    tree.reserve_mapping(i * 100, 101, rd, diff);
   }
-  EXPECT_EQ(2, count_nodes(tree));
+  EXPECT_EQ(2u, count_nodes(tree));
 }
 
 TEST_VM_F(NMTVMATreeTest, UseFlagInplace) {
+  VirtualMemorySnapshot diff;
   Tree tree;
   VMATree::RegionData rd1(si[0], mtTest);
   VMATree::RegionData rd2(si[1], mtNone);
-  tree.reserve_mapping(0, 100, rd1);
-  tree.commit_mapping(20, 50, rd2, true);
-  tree.uncommit_mapping(30, 10, rd2);
+  tree.reserve_mapping(0, 100, rd1, diff);
+  tree.commit_mapping(20, 50, rd2, diff, true);
+  tree.uncommit_mapping(30, 10, rd2, diff);
   tree.visit_in_order([&](Node* node) {
     if (node->key() != 100) {
       EXPECT_EQ(mtTest, node->val().out.mem_tag()) << "failed at: " << node->key();
@@ -199,12 +205,13 @@ TEST_VM_F(NMTVMATreeTest, UseFlagInplace) {
 
 // Low-level tests inspecting the state of the tree.
 TEST_VM_F(NMTVMATreeTest, LowLevel) {
+  VirtualMemorySnapshot diff;
   adjacent_2_nodes(VMATree::empty_regiondata);
   remove_all_leaves_empty_tree(VMATree::empty_regiondata);
   commit_middle(VMATree::empty_regiondata);
   commit_whole(VMATree::empty_regiondata);
 
-  VMATree::RegionData rd{si[0], mtTest };
+  VMATree::RegionData rd{si[0], mtTest};
   adjacent_2_nodes(rd);
   remove_all_leaves_empty_tree(rd);
   commit_middle(rd);
@@ -212,21 +219,21 @@ TEST_VM_F(NMTVMATreeTest, LowLevel) {
 
   { // Identical operation but different metadata should not merge
     Tree tree;
-    VMATree::RegionData rd{si[0], mtTest };
-    VMATree::RegionData rd2{si[1], mtNMT };
-    tree.reserve_mapping(0, 100, rd);
-    tree.reserve_mapping(100, 100, rd2);
+    VMATree::RegionData rd{si[0], mtTest};
+    VMATree::RegionData rd2{si[1], mtNMT};
+    tree.reserve_mapping(0, 100, rd, diff);
+    tree.reserve_mapping(100, 100, rd2, diff);
 
-    EXPECT_EQ(3, count_nodes(tree));
+    EXPECT_EQ(3u, count_nodes(tree));
     int found_nodes = 0;
   }
 
   { // Reserving after commit should overwrite commit
     Tree tree;
-    VMATree::RegionData rd{si[0], mtTest };
-    VMATree::RegionData rd2{si[1], mtNMT };
-    tree.commit_mapping(50, 50, rd2);
-    tree.reserve_mapping(0, 100, rd);
+    VMATree::RegionData rd{si[0], mtTest};
+    VMATree::RegionData rd2{si[1], mtNMT};
+    tree.commit_mapping(50, 50, rd2, diff);
+    tree.reserve_mapping(0, 100, rd, diff);
     treap(tree).visit_in_order([&](Node* x) {
       EXPECT_TRUE(x->key() == 0 || x->key() == 100);
       if (x->key() == 0) {
@@ -234,25 +241,25 @@ TEST_VM_F(NMTVMATreeTest, LowLevel) {
       }
     });
 
-    EXPECT_EQ(2, count_nodes(tree));
+    EXPECT_EQ(2u, count_nodes(tree));
   }
 
   { // Split a reserved region into two different reserved regions
     Tree tree;
-    VMATree::RegionData rd{si[0], mtTest };
-    VMATree::RegionData rd2{si[1], mtNMT };
-    VMATree::RegionData rd3{si[0], mtNone };
-    tree.reserve_mapping(0, 100, rd);
-    tree.reserve_mapping(0, 50, rd2);
-    tree.reserve_mapping(50, 50, rd3);
+    VMATree::RegionData rd{si[0], mtTest};
+    VMATree::RegionData rd2{si[1], mtNMT};
+    VMATree::RegionData rd3{si[0], mtNone};
+    tree.reserve_mapping(0, 100, rd, diff);
+    tree.reserve_mapping(0, 50, rd2, diff);
+    tree.reserve_mapping(50, 50, rd3, diff);
 
-    EXPECT_EQ(3, count_nodes(tree));
+    EXPECT_EQ(3u, count_nodes(tree));
   }
   { // One big reserve + release leaves an empty tree
     Tree::RegionData rd{si[0], mtNMT};
     Tree tree;
-    tree.reserve_mapping(0, 500000, rd);
-    tree.release_mapping(0, 500000);
+    tree.reserve_mapping(0, 500000, rd, diff);
+    tree.release_mapping(0, 500000, diff);
 
     EXPECT_EQ(nullptr, treap_root(tree));
   }
@@ -262,8 +269,8 @@ TEST_VM_F(NMTVMATreeTest, LowLevel) {
     Tree::RegionData rd{si[0], mtNMT};
     VMATree::RegionData rd2{si[1], mtTest};
     Tree tree;
-    tree.reserve_mapping(0, 100, rd);
-    tree.commit_mapping(0, 100, rd2);
+    tree.reserve_mapping(0, 100, rd, diff);
+    tree.commit_mapping(0, 100, rd2, diff);
     treap(tree).visit_range_in_order(0, 99999, [&](Node* x) {
       if (x->key() == 0) {
         EXPECT_EQ(mtTest, x->val().out.regiondata().mem_tag);
@@ -277,9 +284,9 @@ TEST_VM_F(NMTVMATreeTest, LowLevel) {
   { // Attempting to reserve or commit an empty region should not change the tree.
     Tree tree;
     Tree::RegionData rd{si[0], mtNMT};
-    tree.reserve_mapping(0, 0, rd);
+    tree.reserve_mapping(0, 0, rd, diff);
     EXPECT_EQ(nullptr, treap_root(tree));
-    tree.commit_mapping(0, 0, rd);
+    tree.commit_mapping(0, 0, rd, diff);
     EXPECT_EQ(nullptr, treap_root(tree));
   }
 }
@@ -290,85 +297,100 @@ TEST_VM_F(NMTVMATreeTest, SummaryAccounting) {
     Tree::RegionData rd(NCS::StackIndex(), mtTest);
     Tree::RegionData rd2(NCS::StackIndex(), mtNMT);
     Tree tree;
-    VMATree::SummaryDiff all_diff = tree.reserve_mapping(0, 100, rd);
-    VMATree::SingleDiff diff = all_diff.tag[NMTUtil::tag_to_index(mtTest)];
-    EXPECT_EQ(100, diff.reserve);
-    all_diff = tree.reserve_mapping(50, 25, rd2);
-    diff = all_diff.tag[NMTUtil::tag_to_index(mtTest)];
-    VMATree::SingleDiff diff2 = all_diff.tag[NMTUtil::tag_to_index(mtNMT)];
-    EXPECT_EQ(-25, diff.reserve);
-    EXPECT_EQ(25, diff2.reserve);
+    VirtualMemorySnapshot all_diff;
+    tree.reserve_mapping(0, 100, rd, all_diff);
+    VirtualMemory* diff = all_diff.by_type(mtTest);
+    EXPECT_EQ(100u, diff->reserved());
+    tree.reserve_mapping(50, 25, rd2, all_diff);
+    VirtualMemory* diff2 = all_diff.by_type(mtNMT);
+    EXPECT_EQ(75u,diff->reserved());
+    EXPECT_EQ(25u, diff2->reserved());
   }
   { // Fully release reserved mapping
     Tree::RegionData rd(NCS::StackIndex(), mtTest);
     Tree tree;
-    VMATree::SummaryDiff all_diff = tree.reserve_mapping(0, 100, rd);
-    VMATree::SingleDiff diff = all_diff.tag[NMTUtil::tag_to_index(mtTest)];
-    EXPECT_EQ(100, diff.reserve);
-    all_diff = tree.release_mapping(0, 100);
-    diff = all_diff.tag[NMTUtil::tag_to_index(mtTest)];
-    EXPECT_EQ(-100, diff.reserve);
+    VirtualMemorySnapshot all_diff;
+    tree.reserve_mapping(0, 100, rd, all_diff);
+    VirtualMemory* diff = all_diff.by_type(mtTest);
+    EXPECT_EQ(100u, diff->reserved());
+    all_diff = VirtualMemorySnapshot();
+    tree.release_mapping(0, 100, all_diff);
+    EXPECT_EQ(0u, diff->reserved());
   }
   { // Convert some of a released mapping to a committed one
     Tree::RegionData rd(NCS::StackIndex(), mtTest);
     Tree tree;
-    VMATree::SummaryDiff all_diff = tree.reserve_mapping(0, 100, rd);
-    VMATree::SingleDiff diff = all_diff.tag[NMTUtil::tag_to_index(mtTest)];
-    EXPECT_EQ(diff.reserve, 100);
-    all_diff = tree.commit_mapping(0, 100, rd);
-    diff = all_diff.tag[NMTUtil::tag_to_index(mtTest)];
-    EXPECT_EQ(0, diff.reserve);
-    EXPECT_EQ(100, diff.commit);
+    VirtualMemorySnapshot all_diff;
+    tree.reserve_mapping(0, 100, rd, all_diff);
+    VirtualMemory* diff = all_diff.by_type(mtTest);
+    EXPECT_EQ(100u, diff->reserved());
+    all_diff = VirtualMemorySnapshot();
+    tree.commit_mapping(0, 100, rd, all_diff);
+    diff = all_diff.by_type(mtTest);
+    EXPECT_EQ(0u, diff->reserved());
+    EXPECT_EQ(100u, diff->committed());
   }
   { // Adjacent reserved mappings with same type
     Tree::RegionData rd(NCS::StackIndex(), mtTest);
     Tree tree;
-    VMATree::SummaryDiff all_diff = tree.reserve_mapping(0, 100, rd);
-    VMATree::SingleDiff diff = all_diff.tag[NMTUtil::tag_to_index(mtTest)];
-    EXPECT_EQ(diff.reserve, 100);
-    all_diff = tree.reserve_mapping(100, 100, rd);
-    diff = all_diff.tag[NMTUtil::tag_to_index(mtTest)];
-    EXPECT_EQ(100, diff.reserve);
+    VirtualMemorySnapshot all_diff;
+    tree.reserve_mapping(0, 100, rd, all_diff);
+    VirtualMemory* diff = all_diff.by_type(mtTest);
+    EXPECT_EQ(100u, diff->reserved());
+    all_diff = VirtualMemorySnapshot();
+    tree.reserve_mapping(100, 100, rd, all_diff);
+    diff = all_diff.by_type(mtTest);
+    EXPECT_EQ(100u, diff->reserved());
   }
   { // Adjacent reserved mappings with different flags
-  Tree::RegionData rd(NCS::StackIndex(), mtTest);
+    Tree::RegionData rd(NCS::StackIndex(), mtTest);
     Tree::RegionData rd2(NCS::StackIndex(), mtNMT);
     Tree tree;
-    VMATree::SummaryDiff all_diff = tree.reserve_mapping(0, 100, rd);
-    VMATree::SingleDiff diff = all_diff.tag[NMTUtil::tag_to_index(mtTest)];
-    EXPECT_EQ(diff.reserve, 100);
-    all_diff = tree.reserve_mapping(100, 100, rd2);
-    diff = all_diff.tag[NMTUtil::tag_to_index(mtTest)];
-    EXPECT_EQ(0, diff.reserve);
-    diff = all_diff.tag[NMTUtil::tag_to_index(mtNMT)];
-    EXPECT_EQ(100, diff.reserve);
+    VirtualMemorySnapshot all_diff;
+    tree.reserve_mapping(0, 100, rd, all_diff);
+    VirtualMemory* diff = all_diff.by_type(mtTest);
+    EXPECT_EQ(100u, diff->reserved());
+    tree.reserve_mapping(100, 100, rd2, all_diff);
+    diff = all_diff.by_type(mtTest);
+    EXPECT_EQ(0u, diff->reserved());
+    diff = all_diff.by_type(mtNMT);
+    EXPECT_EQ(100u, diff->reserved());
   }
 
   { // A commit with two previous commits inside of it should only register
     // the new memory in the commit diff.
     Tree tree;
     Tree::RegionData rd(NCS::StackIndex(), mtTest);
-    tree.commit_mapping(128, 128, rd);
-    tree.commit_mapping(512, 128, rd);
-    VMATree::SummaryDiff diff = tree.commit_mapping(0, 1024, rd);
-    EXPECT_EQ(768, diff.tag[NMTUtil::tag_to_index(mtTest)].commit);
-    EXPECT_EQ(768, diff.tag[NMTUtil::tag_to_index(mtTest)].reserve);
+    VirtualMemorySnapshot all_diff;
+    tree.commit_mapping(128, 128, rd, all_diff);
+    tree.commit_mapping(512, 128, rd, all_diff);
+    all_diff = VirtualMemorySnapshot();
+    tree.commit_mapping(0, 1024, rd, all_diff);
+    EXPECT_EQ(768u, all_diff.by_type(mtTest)->committed());
+    EXPECT_EQ(768u, all_diff.by_type(mtTest)->reserved());
   }
 }
 
 // Exceedingly simple tracker for page-granular allocations
 // Use it for testing consistency with VMATree.
-  struct SimpleVMATracker : public CHeapObj<mtTest> {
+struct SimpleVMATracker : public CHeapObj<mtTest> {
   const size_t page_size = 4096;
   enum Kind { Reserved, Committed, Free };
   struct Info {
     Kind kind;
     MemTag mem_tag;
     NativeCallStack stack;
-    Info() : kind(Free), mem_tag(mtNone), stack() {}
+    Info()
+      : kind(Free),
+        mem_tag(mtNone),
+        stack() {
+    }
 
     Info(Kind kind, NativeCallStack stack, MemTag mem_tag)
-    : kind(kind), mem_tag(mem_tag), stack(stack) {}
+      : kind(kind),
+        mem_tag(mem_tag),
+        stack(stack) {
+    }
 
     bool eq(Info other) {
       return kind == other.kind && stack.equals(other.stack);
@@ -378,17 +400,16 @@ TEST_VM_F(NMTVMATreeTest, SummaryAccounting) {
   static constexpr const size_t num_pages = 1024 * 4;
   Info pages[num_pages];
 
-  SimpleVMATracker()
-  : pages() {
+  SimpleVMATracker() : pages() {
     for (size_t i = 0; i < num_pages; i++) {
       pages[i] = Info();
     }
   }
 
-  VMATree::SummaryDiff do_it(Kind kind, size_t start, size_t size, NativeCallStack stack, MemTag mem_tag) {
+  void do_it(Kind kind, size_t start, size_t size, NativeCallStack stack,
+                             MemTag mem_tag, VirtualMemorySnapshot& diff) {
     assert(is_aligned(size, page_size) && is_aligned(start, page_size), "page alignment");
 
-    VMATree::SummaryDiff diff;
     const size_t page_count = size / page_size;
     const size_t start_idx = start / page_size;
     const size_t end_idx = start_idx + page_count;
@@ -400,34 +421,33 @@ TEST_VM_F(NMTVMATreeTest, SummaryAccounting) {
 
       // Register diff
       if (old_info.kind == Reserved) {
-        diff.tag[(int)old_info.mem_tag].reserve -= page_size;
+        diff.by_type(old_info.mem_tag)->release_memory(page_size);
       } else if (old_info.kind == Committed) {
-        diff.tag[(int)old_info.mem_tag].reserve -= page_size;
-        diff.tag[(int)old_info.mem_tag].commit -= page_size;
+        diff.by_type(old_info.mem_tag)->release_memory(page_size);
+        diff.by_type(old_info.mem_tag)->uncommit_memory(page_size);
       }
 
       if (kind == Reserved) {
-        diff.tag[(int)new_info.mem_tag].reserve += page_size;
+        diff.by_type(old_info.mem_tag)->reserve_memory(page_size);
       } else if (kind == Committed) {
-        diff.tag[(int)new_info.mem_tag].reserve += page_size;
-        diff.tag[(int)new_info.mem_tag].commit += page_size;
+        diff.by_type(old_info.mem_tag)->reserve_memory(page_size);
+        diff.by_type(old_info.mem_tag)->commit_memory(page_size);
       }
       // Overwrite old one with new
       pages[i] = new_info;
     }
-    return diff;
   }
 
-  VMATree::SummaryDiff reserve(size_t start, size_t size, NativeCallStack stack, MemTag mem_tag) {
-    return do_it(Reserved, start, size, stack, mem_tag);
+  void reserve(size_t start, size_t size, NativeCallStack stack, MemTag mem_tag, VirtualMemorySnapshot& diff) {
+    do_it(Reserved, start, size, stack, mem_tag, diff);
   }
 
-  VMATree::SummaryDiff commit(size_t start, size_t size, NativeCallStack stack, MemTag mem_tag) {
-    return do_it(Committed, start, size, stack, mem_tag);
+  void commit(size_t start, size_t size, NativeCallStack stack, MemTag mem_tag, VirtualMemorySnapshot& diff) {
+    do_it(Committed, start, size, stack, mem_tag, diff);
   }
 
-  VMATree::SummaryDiff release(size_t start, size_t size) {
-    return do_it(Free, start, size, NativeCallStack(), mtNone);
+  void release(size_t start, size_t size, VirtualMemorySnapshot& diff) {
+    do_it(Free, start, size, NativeCallStack(), mtNone, diff);
   }
 };
 
@@ -444,13 +464,13 @@ TEST_VM_F(NMTVMATreeTest, TestConsistencyWithSimpleTracker) {
   constexpr const int candidates_len_stacks = 2;
 
   NativeCallStack candidate_stacks[candidates_len_stacks] = {
-    make_stack(0xA),
-    make_stack(0xB),
+      make_stack(0xA),
+      make_stack(0xB),
   };
 
   const MemTag candidate_tags[candidates_len_tags] = {
-    mtNMT,
-    mtTest,
+      mtNMT,
+      mtTest,
   };
 
   const int operation_count = 100000; // One hundred thousand
@@ -466,7 +486,8 @@ TEST_VM_F(NMTVMATreeTest, TestConsistencyWithSimpleTracker) {
     const size_t num_pages = page_end - page_start;
 
     if (num_pages == 0) {
-      i--; continue;
+      i--;
+      continue;
     }
 
     const size_t start = page_start * page_size;
@@ -479,34 +500,31 @@ TEST_VM_F(NMTVMATreeTest, TestConsistencyWithSimpleTracker) {
     VMATree::RegionData data(si, mem_tag);
 
     const SimpleVMATracker::Kind kind = (SimpleVMATracker::Kind)(os::random() % 3);
-
-    VMATree::SummaryDiff tree_diff;
-    VMATree::SummaryDiff simple_diff;
+    VirtualMemorySnapshot tree_diff;
+    VirtualMemorySnapshot simple_diff;
     if (kind == SimpleVMATracker::Reserved) {
-      simple_diff = tr->reserve(start, size, stack, mem_tag);
-      tree_diff = tree.reserve_mapping(start, size, data);
+      tr->reserve(start, size, stack, mem_tag, simple_diff);
+      tree.reserve_mapping(start, size, data, tree_diff);
     } else if (kind == SimpleVMATracker::Committed) {
-      simple_diff = tr->commit(start, size, stack, mem_tag);
-      tree_diff = tree.commit_mapping(start, size, data);
+      tr->commit(start, size, stack, mem_tag, simple_diff);
+      tree.commit_mapping(start, size, data, tree_diff);
     } else {
-      simple_diff = tr->release(start, size);
-      tree_diff = tree.release_mapping(start, size);
+      tr->release(start, size, simple_diff);
+      tree.release_mapping(start, size, tree_diff);
     }
 
     for (int j = 0; j < mt_number_of_tags; j++) {
-      VMATree::SingleDiff td = tree_diff.tag[j];
-      VMATree::SingleDiff sd = simple_diff.tag[j];
-      ASSERT_EQ(td.reserve, sd.reserve);
-      ASSERT_EQ(td.commit, sd.commit);
+      VirtualMemory* td = tree_diff.by_type((MemTag)j);
+      VirtualMemory* sd = simple_diff.by_type((MemTag)j);
+      ASSERT_EQ(td->reserved(), sd->reserved());
+      ASSERT_EQ(td->committed(), sd->committed());
     }
-
 
     // Do an in-depth check every 25 000 iterations.
     if (i % 25000 == 0) {
       size_t j = 0;
       while (j < SimpleVMATracker::num_pages) {
-        while (j < SimpleVMATracker::num_pages &&
-               tr->pages[j].kind == SimpleVMATracker::Free) {
+        while (j < SimpleVMATracker::num_pages && tr->pages[j].kind == SimpleVMATracker::Free) {
           j++;
         }
 
@@ -517,12 +535,11 @@ TEST_VM_F(NMTVMATreeTest, TestConsistencyWithSimpleTracker) {
         size_t start = j;
         SimpleVMATracker::Info starti = tr->pages[start];
 
-        while (j < SimpleVMATracker::num_pages &&
-               tr->pages[j].eq(starti)) {
+        while (j < SimpleVMATracker::num_pages && tr->pages[j].eq(starti)) {
           j++;
         }
 
-        size_t end = j-1;
+        size_t end = j - 1;
         ASSERT_LE(end, SimpleVMATracker::num_pages);
         SimpleVMATracker::Info endi = tr->pages[end];
 
