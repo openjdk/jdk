@@ -2013,9 +2013,8 @@ public class ForkJoinPool extends AbstractExecutorService {
                                 w.source = j;             // volatile
                                 rescan = true;
                                 if ((!propagated ||
-                                     ((j & 1) == 0 &&
-                                      t.getClass().getSuperclass() ==
-                                      interruptibleTaskClass)) &&
+                                     t.getClass().getSuperclass() ==
+                                     interruptibleTaskClass) &&
                                     next != null) {
                                     propagated = true;
                                     signalWork();
@@ -2055,18 +2054,18 @@ public class ForkJoinPool extends AbstractExecutorService {
             ((e & SHUTDOWN) != 0L && ac == 0 && quiescent() > 0) ||
             (qs = queues) == null || (n = qs.length) <= 0)
             return IDLE;                      // terminating
-        int checks = (ac == 0) ? 1 : (ac == 1) ? 2 : 3;
+        int checks = (ac <= 1) ? ac + 1 : 3;  // reactivation threshold
         for (int k = Math.max(n + (n << 1), SPIN_WAITS);;) {
             WorkQueue q; int cap; ForkJoinTask<?>[] a;
             if (w.phase == activePhase)
                 return activePhase;
             if (--k < 0)
                 return awaitWork(w, p);       // block, drop, or exit
-            if ((q = qs[k & (n - 1)]) == null)
-                Thread.onSpinWait();          // interleave spins and rechecks
-            else if ((a = q.array) != null && (cap = a.length) > 0 &&
-                     a[q.base & (cap - 1)] != null && --checks <= 0 &&
-                     ctl == qc && compareAndSetCtl(qc, pc))
+            Thread.onSpinWait();              // interleave spins and rechecks
+            if ((k & 1) == 0 && (q = qs[k & (n - 1)]) != null &&
+                (a = q.array) != null && (cap = a.length) > 0 &&
+                a[q.base & (cap - 1)] != null && --checks <= 0 &&
+                ctl == qc && compareAndSetCtl(qc, pc))
                 return w.phase = activePhase; // reactivate
         }
     }
