@@ -96,6 +96,9 @@ import java.time.temporal.ValueRange;
 import java.time.zone.ZoneRules;
 import java.util.Objects;
 
+import jdk.internal.access.JavaTimeAccess;
+import jdk.internal.access.SharedSecrets;
+
 /**
  * A date-time without a time-zone in the ISO-8601 calendar system,
  * such as {@code 2007-12-03T10:15:30}.
@@ -2019,4 +2022,11 @@ public final class LocalDateTime
         return LocalDateTime.of(date, time);
     }
 
+    static {
+        SharedSecrets.setJavaTimeAccess(new JavaTimeAccess() {
+            public void formatTo(StringBuilder buf, LocalDateTime timeToFormat) {
+                timeToFormat.formatTo(buf);
+            }
+        });
+    }
 }
