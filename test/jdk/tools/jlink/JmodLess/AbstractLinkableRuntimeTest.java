@@ -23,6 +23,7 @@
 
 import java.io.IOException;
 import java.nio.file.FileVisitResult;
+import java.nio.file.FileVisitor;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
@@ -34,6 +35,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Scanner;
+import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -105,8 +107,12 @@ public abstract class AbstractLinkableRuntimeTest {
     }
 
     protected Path createJavaImageRuntimeLink(BaseJlinkSpec baseSpec) throws Exception {
+        return createJavaImageRuntimeLink(baseSpec, Collections.emptySet() /* exclude all jmods */);
+    }
+
+    protected Path createJavaImageRuntimeLink(BaseJlinkSpec baseSpec, Set<String> excludedJmods) throws Exception {
         // create a base image only containing the jdk.jlink module and its transitive closure
-        Path runtimeJlinkImage = createRuntimeLinkImage(baseSpec);
+        Path runtimeJlinkImage = createRuntimeLinkImage(baseSpec, excludedJmods);
 
         // On Windows jvm.dll is in 'bin' after the jlink
         Path libjvm = Path.of((isWindows() ? "bin" : "lib"), "server", System.mapLibraryName("jvm"));
@@ -196,53 +202,65 @@ public abstract class AbstractLinkableRuntimeTest {
 
     /**
      * Prepares the test for execution. This assumes the current jimage is
-     * runtime-linkable. However, since the 'jmods' dir is present (default jmods
-     * module path), it needs to get removed to provoke a runtime link.
+     * runtime-linkable. However, since the 'jmods' dir might be present
+     * (default jmods module path), it needs to get removed to provoke a runtime
+     * link.
      *
      * @param baseSpec
      * @return A path to a JDK image which is prepared for runtime linking.
      * @throws Exception
      */
     protected Path createRuntimeLinkImage(BaseJlinkSpec baseSpec) throws Exception {
+        return createRuntimeLinkImage(baseSpec, Collections.emptySet() /* exclude all jmods */);
+    }
+
+    /**
+     * Prepares the test for execution. This assumes the current jimage is
+     * runtime-linkable. However, since the 'jmods' dir might be present
+     * (default jmods module path), it needs to get removed to provoke a runtime
+     * link.
+     *
+     * @param baseSpec The modules to jlink
+     * @param excludedJmods The set of jmod files to exclude in the base JDK. Empty set if
+     *                      all JMODs should be removed.
+     * @return A path to a JDK image which is prepared for runtime linking.
+     * @throws Exception
+     */
+    protected Path createRuntimeLinkImage(BaseJlinkSpec baseSpec,
+                                          Set<String> excludedJmodFiles) throws Exception {
         Path runtimeJlinkImage = baseSpec.getHelper().createNewImageDir(baseSpec.getName() + "-jlink");
-        copyJDKTreeWithoutJmods(runtimeJlinkImage);
-        // Verify the base image is actually without packaged modules
-        if (Files.exists(runtimeJlinkImage.resolve("jmods"))) {
-            throw new AssertionError("Must not contain 'jmods' directory");
+        copyJDKTreeWithoutSpecificJmods(runtimeJlinkImage, excludedJmodFiles);
+        // Verify the base image is actually without desired packaged modules
+        if (excludedJmodFiles.isEmpty()) {
+            if (Files.exists(runtimeJlinkImage.resolve("jmods"))) {
+                throw new AssertionError("Must not contain 'jmods' directory");
+            }
+        } else {
+            Path basePath = runtimeJlinkImage.resolve("jmods");
+            for (String jmodFile: excludedJmodFiles) {
+                Path unexpectedFile = basePath.resolve(Path.of(jmodFile));
+                if (Files.exists(unexpectedFile)) {
+                    throw new AssertionError("Must not contain jmod: " + unexpectedFile);
+                }
+            }
         }
         return runtimeJlinkImage;
     }
 
-    private void copyJDKTreeWithoutJmods(Path runtimeJlinkImage) throws Exception {
+    private void copyJDKTreeWithoutSpecificJmods(Path runtimeJlinkImage,
+                                                 Set<String> excludedJmods) throws Exception {
         Files.createDirectory(runtimeJlinkImage);
         String javaHome = System.getProperty("java.home");
         Path root = Path.of(javaHome);
-        Files.walkFileTree(root, new SimpleFileVisitor<Path>() {
-            @Override
-            public FileVisitResult preVisitDirectory(Path dir,
-                    BasicFileAttributes attrs) throws IOException {
-                Objects.requireNonNull(dir);
-                Path relative = root.relativize(dir);
-                if (relative.getFileName().equals(Path.of("jmods"))) {
-                    return FileVisitResult.SKIP_SUBTREE;
-                }
-                // Create dir in destination location
-                Path targetDir = runtimeJlinkImage.resolve(relative);
-                if (!Files.exists(targetDir)) {
-                    Files.createDirectory(targetDir);
-                }
-                return FileVisitResult.CONTINUE;
-            }
-
-            @Override
-            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
-                    throws IOException {
-                Path relative = root.relativize(file);
-                Files.copy(file, runtimeJlinkImage.resolve(relative), StandardCopyOption.REPLACE_EXISTING);
-                return FileVisitResult.CONTINUE;
-            }
-        });
-
+        FileVisitor<Path> fileVisitor = null;
+        if (excludedJmods.isEmpty()) {
+            fileVisitor = new ExcludeAllJmodsFileVisitor(root, runtimeJlinkImage);
+        } else {
+            fileVisitor = new FileExcludingFileVisitor(excludedJmods,
+                                                       root,
+                                                       runtimeJlinkImage);
+        }
+        Files.walkFileTree(root, fileVisitor);
     }
 
     private List<String> parseListMods(String output) throws Exception {
@@ -272,6 +290,82 @@ public abstract class AbstractLinkableRuntimeTest {
 
     protected static boolean isWindows() {
         return System.getProperty("os.name").startsWith("Windows");
+    }
+
+    static class ExcludeAllJmodsFileVisitor extends SimpleFileVisitor<Path> {
+        private final Path root;
+        private final Path destination;
+
+        private ExcludeAllJmodsFileVisitor(Path root,
+                                           Path destination) {
+            this.destination = destination;
+            this.root = root;
+        }
+
+        @Override
+        public FileVisitResult preVisitDirectory(Path dir,
+                BasicFileAttributes attrs) throws IOException {
+            Objects.requireNonNull(dir);
+            Path relative = root.relativize(dir);
+            if (relative.getFileName().equals(Path.of("jmods"))) {
+                return FileVisitResult.SKIP_SUBTREE;
+            }
+            // Create dir in destination location
+            Path targetDir = destination.resolve(relative);
+            if (!Files.exists(targetDir)) {
+                Files.createDirectory(targetDir);
+            }
+            return FileVisitResult.CONTINUE;
+        }
+
+        @Override
+        public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
+                throws IOException {
+            Path relative = root.relativize(file);
+            Files.copy(file, destination.resolve(relative), StandardCopyOption.REPLACE_EXISTING);
+            return FileVisitResult.CONTINUE;
+        }
+    }
+
+    static class FileExcludingFileVisitor extends SimpleFileVisitor<Path> {
+
+        private final Set<String> filesToExclude;
+        private final Path root;
+        private final Path destination;
+
+        private FileExcludingFileVisitor(Set<String> filesToExclude,
+                                         Path root,
+                                         Path destination) {
+            this.filesToExclude = filesToExclude;
+            this.destination = destination;
+            this.root = root;
+        }
+
+        @Override
+        public FileVisitResult preVisitDirectory(Path dir,
+                BasicFileAttributes attrs) throws IOException {
+            Objects.requireNonNull(dir);
+            Path relative = root.relativize(dir);
+            // Create dir in destination location
+            Path targetDir = destination.resolve(relative);
+            if (!Files.exists(targetDir)) {
+                Files.createDirectory(targetDir);
+            }
+            return FileVisitResult.CONTINUE;
+        }
+
+        @Override
+        public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
+                throws IOException {
+            Path relative = root.relativize(file);
+            // Skip files as determined by the exclude set
+            String fileName = file.getFileName().toString();
+            if (!filesToExclude.contains(fileName)) {
+                Files.copy(file, destination.resolve(relative), StandardCopyOption.REPLACE_EXISTING);
+            }
+            return FileVisitResult.CONTINUE;
+        }
+
     }
 
     static class BaseJlinkSpec {
