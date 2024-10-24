@@ -82,9 +82,11 @@ bool C2Compiler::init_c2_runtime() {
 
   for( OptoReg::Name i=OptoReg::Name(0); i<OptoReg::Name(REG_COUNT); i = OptoReg::add(i,1) ) {
     VMReg r = OptoReg::as_VMReg(i);
+    tty->print_cr ("============: %s, %d, %d", r->name(), i, REG_COUNT);
     if (r->is_valid()) {
       OptoReg::vm2opto[r->value()] = i;
     }
+    tty->print_cr (">>>>>");
   }
 
   DEBUG_ONLY( Node::init_NodeProperty(); )
