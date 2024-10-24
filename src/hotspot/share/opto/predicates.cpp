@@ -138,16 +138,16 @@ bool RuntimePredicate::is_predicate(Node* node, Deoptimization::DeoptReason deop
   return RegularPredicateWithUCT::is_predicate(node, deopt_reason);
 }
 
-// Rewire any control inputs from the old Assertion Predicates above the peeled iteration down to the initialized
-// Assertion Predicates above the peeled loop.
+// Rewire any non-CFG nodes dependent on this Template Assertion Predicate (i.e. with a control input to this
+// Template Assertion Predicate) to the 'target_predicate' based on the `data_in_loop_body` check.
 void TemplateAssertionPredicate::rewire_loop_data_dependencies(IfTrueNode* target_predicate,
-                                                               const NodeInLoopBody& _data_in_loop_body,
+                                                               const NodeInLoopBody& data_in_loop_body,
                                                                PhaseIdealLoop* phase) const {
   for (DUIterator i = _success_proj->outs(); _success_proj->has_out(i); i++) {
     Node* output = _success_proj->out(i);
-    if (!output->is_CFG() && _data_in_loop_body.check(output)) {
+    if (!output->is_CFG() && data_in_loop_body.check(output)) {
       phase->igvn().replace_input_of(output, 0, target_predicate);
-      --i; // correct for just deleted output
+      --i; // account for the just deleted output
     }
   }
 }

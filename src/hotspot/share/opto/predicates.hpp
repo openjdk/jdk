@@ -399,9 +399,8 @@ class TemplateAssertionPredicate : public Predicate {
     return _success_proj;
   }
 
-  void rewire_loop_data_dependencies(IfTrueNode* target_predicate, const NodeInLoopBody& _data_in_loop_body,
+  void rewire_loop_data_dependencies(IfTrueNode* target_predicate, const NodeInLoopBody& data_in_loop_body,
                                      PhaseIdealLoop* phase) const;
-
   static bool is_predicate(Node* node);
 };
 
