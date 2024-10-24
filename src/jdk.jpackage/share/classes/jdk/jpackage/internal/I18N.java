@@ -24,6 +24,7 @@
  */
 package jdk.jpackage.internal;
 
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ListResourceBundle;
@@ -34,10 +35,19 @@ import java.util.ResourceBundle;
 import static java.util.stream.Collectors.toMap;
 import java.util.stream.Stream;
 
-class I18N {
+final class I18N {
 
     static String getString(String key) {
         return BUNDLE.getString(key);
+    }
+    
+    static String format(String key, Object ... args) {
+        var str = getString(key);
+        if (args.length != 0) {
+            return MessageFormat.format(str, args);
+        } else {
+            return str;
+        }
     }
 
     private static class MultiResourceBundle extends ListResourceBundle {

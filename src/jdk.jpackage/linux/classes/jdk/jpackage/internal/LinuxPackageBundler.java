@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,31 +25,21 @@
 package jdk.jpackage.internal;
 
 import java.io.IOException;
-import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
-import java.nio.file.Files;
 import java.text.MessageFormat;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
-import java.util.function.Function;
+import java.util.Optional;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 import java.util.stream.Stream;
-import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_RUNTIME_IMAGE;
-import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
-import static jdk.jpackage.internal.StandardBundlerParam.VENDOR;
-import static jdk.jpackage.internal.StandardBundlerParam.DESCRIPTION;
-import static jdk.jpackage.internal.StandardBundlerParam.INSTALL_DIR;
 
 abstract class LinuxPackageBundler extends AbstractBundler {
 
-    LinuxPackageBundler(BundlerParamInfo<String> packageName) {
-        this.packageName = packageName;
-        appImageBundler = new LinuxAppBundler().setDependentTask(true);
+    LinuxPackageBundler(BundlerParamInfo<? extends LinuxPackage> pkgParam) {
+        this.pkgParam = pkgParam;
         customActions = List.of(new CustomActionInstance(
                 DesktopIntegration::create), new CustomActionInstance(
                 LinuxLaunchersAsServices::create));
@@ -59,20 +49,13 @@ abstract class LinuxPackageBundler extends AbstractBundler {
     public final boolean validate(Map<String, ? super Object> params)
             throws ConfigException {
 
-        // run basic validation to ensure requirements are met
-        // we are not interested in return code, only possible exception
-        appImageBundler.validate(params);
-
-        validateInstallDir(LINUX_INSTALL_DIR.fetchFrom(params));
+        // Order is important!
+        LinuxPackage pkg = pkgParam.fetchFrom(params);
+        var workshop = WorkshopFromParams.WORKSHOP.fetchFrom(params);
 
         FileAssociation.verify(FileAssociation.fetchFrom(params));
 
-        // If package name has some restrictions, the string converter will
-        // throw an exception if invalid
-        packageName.getStringConverter().apply(packageName.fetchFrom(params),
-            params);
-
-        for (var validator: getToolValidators(params)) {
+        for (var validator: getToolValidators()) {
             ConfigException ex = validator.validate();
             if (ex != null) {
                 throw ex;
@@ -100,7 +83,7 @@ abstract class LinuxPackageBundler extends AbstractBundler {
         }
 
         // Packaging specific validation
-        doValidate(params);
+        doValidate(workshop, pkg);
 
         return true;
     }
@@ -115,56 +98,55 @@ abstract class LinuxPackageBundler extends AbstractBundler {
             Path outputParentDir) throws PackagerException {
         IOUtils.writableOutputDir(outputParentDir);
 
-        PlatformPackage thePackage = createMetaPackage(params);
+        // Order is important!
+        LinuxPackage pkg = pkgParam.fetchFrom(params);
+        var workshop = WorkshopFromParams.WORKSHOP.fetchFrom(params);
 
-        Function<Path, ApplicationLayout> initAppImageLayout = imageRoot -> {
-            ApplicationLayout layout = appImageLayout(params);
-            layout.pathGroup().setPath(new Object(),
-                    AppImageFile.getPathInAppImage(Path.of("")));
-            return layout.resolveAt(imageRoot);
-        };
+        Workshop pkgWorkshop = Workshop.withAppImageDir(workshop,
+                workshop.buildRoot().resolve("image"));
 
         try {
-            Path appImage = StandardBundlerParam.getPredefinedAppImage(params);
-
-            // we either have an application image or need to build one
-            if (appImage != null) {
-                initAppImageLayout.apply(appImage).copy(
-                        thePackage.sourceApplicationLayout());
+            // We either have an application image or need to build one.
+            if (pkg.app().runtimeBuilder() != null) {
+                // Runtime builder is present, build app image.
+                LinuxAppImageBuilder.build().create(pkg).execute(pkgWorkshop);
             } else {
-                final Path srcAppImageRoot = thePackage.sourceRoot().resolve("src");
-                appImage = appImageBundler.execute(params, srcAppImageRoot);
-                ApplicationLayout srcAppLayout = initAppImageLayout.apply(
-                        appImage);
-                if (appImage.equals(PREDEFINED_RUNTIME_IMAGE.fetchFrom(params))) {
-                    // Application image points to run-time image.
-                    // Copy it.
-                    srcAppLayout.copy(thePackage.sourceApplicationLayout());
-                } else {
-                    // Application image is a newly created directory tree.
-                    // Move it.
-                    srcAppLayout.move(thePackage.sourceApplicationLayout());
-                    IOUtils.deleteRecursive(srcAppImageRoot);
+                Path srcAppImageDir = pkg.predefinedAppImage();
+                if (srcAppImageDir == null) {
+                    // No predefined app image and no runtime builder.
+                    // This should be runtime packaging.
+                    if (pkg.isRuntimeInstaller()) {
+                        srcAppImageDir = workshop.appImageDir();
+                    } else {
+                        // Can't create app image without runtime builder.
+                        throw new UnsupportedOperationException();
+                    }
                 }
+
+                // Copy app layout omitting application image info file.
+                var srcLayout = pkg.appLayout().resolveAt(srcAppImageDir);
+                Optional.ofNullable(AppImageFile2.getPathInAppImage(srcLayout)).ifPresent(
+                        appImageFile -> srcLayout.pathGroup().ghostPath(
+                                appImageFile));
+                srcLayout.copy(pkg.packageLayout().resolveAt(pkgWorkshop.appImageDir()));
             }
 
             for (var ca : customActions) {
-                ca.init(thePackage, params);
+                ca.init(pkgWorkshop, pkg);
             }
 
-            Map<String, String> data = createDefaultReplacementData(params);
+            Map<String, String> data = createDefaultReplacementData(pkgWorkshop, pkg);
 
             for (var ca : customActions) {
-                ShellCustomAction.mergeReplacementData(data, ca.instance.
-                        create());
+                ShellCustomAction.mergeReplacementData(data, ca.instance.create());
             }
 
-            data.putAll(createReplacementData(params));
+            data.putAll(createReplacementData(pkgWorkshop, pkg));
 
             Path packageBundle = buildPackageBundle(Collections.unmodifiableMap(
-                    data), params, outputParentDir);
+                    data), pkgWorkshop, pkg, outputParentDir);
 
-            verifyOutputBundle(params, packageBundle).stream()
+            verifyOutputBundle(pkgWorkshop, pkg, packageBundle).stream()
                     .filter(Objects::nonNull)
                     .forEachOrdered(ex -> {
                 Log.verbose(ex.getLocalizedMessage());
@@ -178,10 +160,7 @@ abstract class LinuxPackageBundler extends AbstractBundler {
         }
     }
 
-    private List<String> getListOfNeededPackages(
-            Map<String, ? super Object> params) throws IOException {
-
-        PlatformPackage thePackage = createMetaPackage(params);
+    private List<String> getListOfNeededPackages(Workshop workshop) throws IOException {
 
         final List<String> caPackages = customActions.stream()
                 .map(ca -> ca.instance)
@@ -189,16 +168,14 @@ abstract class LinuxPackageBundler extends AbstractBundler {
                 .flatMap(List::stream).toList();
 
         final List<String> neededLibPackages;
-        if (withFindNeededPackages && Files.exists(thePackage.sourceRoot())) {
+        if (withFindNeededPackages) {
             LibProvidersLookup lookup = new LibProvidersLookup();
-            initLibProvidersLookup(params, lookup);
+            initLibProvidersLookup(lookup);
 
-            neededLibPackages = lookup.execute(thePackage.sourceRoot());
+            neededLibPackages = lookup.execute(workshop.appImageDir());
         } else {
             neededLibPackages = Collections.emptyList();
-            if (!Files.exists(thePackage.sourceRoot())) {
-                Log.info(I18N.getString("warning.foreign-app-image"));
-            }
+            Log.info(I18N.getString("warning.foreign-app-image"));
         }
 
         // Merge all package lists together.
@@ -211,17 +188,16 @@ abstract class LinuxPackageBundler extends AbstractBundler {
         return result;
     }
 
-    private Map<String, String> createDefaultReplacementData(
-            Map<String, ? super Object> params) throws IOException {
+    private Map<String, String> createDefaultReplacementData(Workshop workshop, LinuxPackage pkg) throws IOException {
         Map<String, String> data = new HashMap<>();
 
-        data.put("APPLICATION_PACKAGE", createMetaPackage(params).name());
-        data.put("APPLICATION_VENDOR", VENDOR.fetchFrom(params));
-        data.put("APPLICATION_VERSION", VERSION.fetchFrom(params));
-        data.put("APPLICATION_DESCRIPTION", DESCRIPTION.fetchFrom(params));
+        data.put("APPLICATION_PACKAGE", pkg.packageName());
+        data.put("APPLICATION_VENDOR", pkg.app().vendor());
+        data.put("APPLICATION_VERSION", pkg.version());
+        data.put("APPLICATION_DESCRIPTION", pkg.description());
 
-        String defaultDeps = String.join(", ", getListOfNeededPackages(params));
-        String customDeps = LINUX_PACKAGE_DEPENDENCIES.fetchFrom(params).strip();
+        String defaultDeps = String.join(", ", getListOfNeededPackages(workshop));
+        String customDeps = Optional.ofNullable(pkg.additionalDependencies()).orElse("");
         if (!customDeps.isEmpty() && !defaultDeps.isEmpty()) {
             customDeps = ", " + customDeps;
         }
@@ -232,117 +208,24 @@ abstract class LinuxPackageBundler extends AbstractBundler {
     }
 
     protected abstract List<ConfigException> verifyOutputBundle(
-            Map<String, ? super Object> params, Path packageBundle);
+            Workshop workshop, LinuxPackage pkg, Path packageBundle);
 
-    protected abstract void initLibProvidersLookup(
-            Map<String, ? super Object> params,
-            LibProvidersLookup libProvidersLookup);
+    protected abstract void initLibProvidersLookup(LibProvidersLookup libProvidersLookup);
 
-    protected abstract List<ToolValidator> getToolValidators(
-            Map<String, ? super Object> params);
+    protected abstract List<ToolValidator> getToolValidators();
 
-    protected abstract void doValidate(Map<String, ? super Object> params)
+    protected abstract void doValidate(Workshop workshop, LinuxPackage pkg)
             throws ConfigException;
 
     protected abstract Map<String, String> createReplacementData(
-            Map<String, ? super Object> params) throws IOException;
+            Workshop workshop, LinuxPackage pkg) throws IOException;
 
     protected abstract Path buildPackageBundle(
             Map<String, String> replacementData,
-            Map<String, ? super Object> params, Path outputParentDir) throws
+            Workshop workshop, LinuxPackage pkg, Path outputParentDir) throws
             PackagerException, IOException;
 
-    protected final PlatformPackage createMetaPackage(
-            Map<String, ? super Object> params) {
-
-        Supplier<ApplicationLayout> packageLayout = () -> {
-            String installDir = LINUX_INSTALL_DIR.fetchFrom(params);
-            if (isInstallDirInUsrTree(installDir)) {
-                return ApplicationLayout.linuxUsrTreePackageImage(
-                        Path.of("/").relativize(Path.of(installDir)),
-                        packageName.fetchFrom(params));
-            }
-            return appImageLayout(params);
-        };
-
-        return new PlatformPackage() {
-            @Override
-            public String name() {
-                return packageName.fetchFrom(params);
-            }
-
-            @Override
-            public Path sourceRoot() {
-                return IMAGES_ROOT.fetchFrom(params).toAbsolutePath();
-            }
-
-            @Override
-            public ApplicationLayout sourceApplicationLayout() {
-                return packageLayout.get().resolveAt(
-                        applicationInstallDir(sourceRoot()));
-            }
-
-            @Override
-            public ApplicationLayout installedApplicationLayout() {
-                return packageLayout.get().resolveAt(
-                        applicationInstallDir(Path.of("/")));
-            }
-
-            private Path applicationInstallDir(Path root) {
-                String installRoot = LINUX_INSTALL_DIR.fetchFrom(params);
-                if (isInstallDirInUsrTree(installRoot)) {
-                    return root;
-                }
-
-                Path installDir = Path.of(installRoot, name());
-                if (installDir.isAbsolute()) {
-                    installDir = Path.of("." + installDir.toString()).normalize();
-                }
-                return root.resolve(installDir);
-            }
-        };
-    }
-
-    private ApplicationLayout appImageLayout(
-            Map<String, ? super Object> params) {
-        if (StandardBundlerParam.isRuntimeInstaller(params)) {
-            return ApplicationLayout.javaRuntime();
-        }
-        return ApplicationLayout.linuxAppImage();
-    }
-
-    private static void validateInstallDir(String installDir) throws
-            ConfigException {
-
-        if (installDir.isEmpty()) {
-            throw new ConfigException(MessageFormat.format(I18N.getString(
-                    "error.invalid-install-dir"), "/"), null);
-        }
-
-        boolean valid = false;
-        try {
-            final Path installDirPath = Path.of(installDir);
-            valid = installDirPath.isAbsolute();
-            if (valid && !installDirPath.normalize().toString().equals(
-                    installDirPath.toString())) {
-                // Don't allow '/opt/foo/..' or /opt/.
-                valid = false;
-            }
-        } catch (InvalidPathException ex) {
-        }
-
-        if (!valid) {
-            throw new ConfigException(MessageFormat.format(I18N.getString(
-                    "error.invalid-install-dir"), installDir), null);
-        }
-    }
-
-    protected static boolean isInstallDirInUsrTree(String installDir) {
-        return Set.of("/usr/local", "/usr").contains(installDir);
-    }
-
-    private final BundlerParamInfo<String> packageName;
-    private final Bundler appImageBundler;
+    private final BundlerParamInfo<? extends LinuxPackage> pkgParam;
     private boolean withFindNeededPackages;
     private final List<CustomActionInstance> customActions;
 
@@ -352,38 +235,12 @@ abstract class LinuxPackageBundler extends AbstractBundler {
             this.factory = factory;
         }
 
-        void init(PlatformPackage thePackage, Map<String, ? super Object> params)
-                throws IOException {
-            instance = factory.create(thePackage, params);
+        void init(Workshop workshop, Package pkg) throws IOException {
+            instance = factory.create(workshop, pkg);
             Objects.requireNonNull(instance);
         }
 
         private final ShellCustomActionFactory factory;
         ShellCustomAction instance;
     }
-
-    private static final BundlerParamInfo<String> LINUX_PACKAGE_DEPENDENCIES =
-            new StandardBundlerParam<>(
-            Arguments.CLIOptions.LINUX_PACKAGE_DEPENDENCIES.getId(),
-            String.class,
-            params -> "",
-            (s, p) -> s
-    );
-
-    static final BundlerParamInfo<String> LINUX_INSTALL_DIR =
-            new StandardBundlerParam<>(
-            "linux-install-dir",
-            String.class,
-            params -> {
-                 String dir = INSTALL_DIR.fetchFrom(params);
-                 if (dir != null) {
-                     if (dir.endsWith("/")) {
-                         dir = dir.substring(0, dir.length()-1);
-                     }
-                     return dir;
-                 }
-                 return "/opt";
-             },
-            (s, p) -> s
-    );
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,8 +45,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import jdk.jpackage.internal.IOUtils;
-import jdk.jpackage.internal.AppImageFile;
 import jdk.jpackage.internal.ApplicationLayout;
 import jdk.jpackage.internal.PackageFile;
 import static jdk.jpackage.test.AdditionalLauncher.forEachAdditionalLauncher;
@@ -212,7 +210,7 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
     public String name() {
         String appImage = getArgumentValue("--app-image", () -> null);
         if (appImage != null) {
-            String name =  AppImageFile.extractAppName(Path.of(appImage));
+            String name =  AppImageFile.load(Path.of(appImage)).mainLauncherName();
             // can be null if using foreign app-image
             return ((name != null) ? name : getArgumentValue("--name"));
         }
@@ -224,9 +222,9 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
         String installerName = getArgumentValue("--name",
                 () -> getArgumentValue("--main-class", () -> null));
         if (installerName == null) {
-            String appImage = getArgumentValue("--app-image");
+            String appImage = getArgumentValue("--app-image", () -> null);
             if (appImage != null) {
-                installerName = AppImageFile.extractAppName(Path.of(appImage));
+                installerName = AppImageFile.load(Path.of(appImage)).mainLauncherName();
             }
         }
         return installerName;
@@ -297,42 +295,6 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
         });
 
         return this;
-    }
-
-    public void createJPackageXMLFile(String mainLauncher, String mainClass)
-            throws IOException {
-        Path jpackageXMLFile = AppImageFile.getPathInAppImage(
-                Optional.ofNullable(getArgumentValue("--app-image")).map(
-                        Path::of).orElseThrow(() -> {
-                            return new RuntimeException(
-                                    "Error: --app-image expected");
-                        }));
-
-        IOUtils.createXml(jpackageXMLFile, xml -> {
-                xml.writeStartElement("jpackage-state");
-                xml.writeAttribute("version", AppImageFile.getVersion());
-                xml.writeAttribute("platform", AppImageFile.getPlatform());
-
-                xml.writeStartElement("app-version");
-                xml.writeCharacters("1.0");
-                xml.writeEndElement();
-
-                xml.writeStartElement("main-launcher");
-                xml.writeCharacters(mainLauncher);
-                xml.writeEndElement();
-
-                xml.writeStartElement("main-class");
-                xml.writeCharacters(mainClass);
-                xml.writeEndElement();
-
-                xml.writeStartElement("signed");
-                xml.writeCharacters("false");
-                xml.writeEndElement();
-
-                xml.writeStartElement("app-store");
-                xml.writeCharacters("false");
-                xml.writeEndElement();
-            });
     }
 
     JPackageCommand addPrerequisiteAction(ThrowingConsumer<JPackageCommand> action) {
@@ -830,6 +792,11 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
                 TKit.assertFileExists(appRuntimeDirectory().resolve(
                         "Contents/MacOS/libjli.dylib"));
             }
+
+            var mainJar = getArgumentValue("--main-jar", () -> null);
+            if (mainJar != null) {
+                TKit.assertFileExists(appLayout().appDirectory().resolve(mainJar));
+            }
         }
 
         return this;
@@ -838,7 +805,7 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
     private void assertAppImageFile() {
         Path appImageDir = Path.of("");
         if (isImagePackageType() && hasArgument("--app-image")) {
-            appImageDir = Path.of(getArgumentValue("--app-image", () -> null));
+            appImageDir = Path.of(getArgumentValue("--app-image"));
         }
 
         final Path lookupPath = AppImageFile.getPathInAppImage(appImageDir);
@@ -859,12 +826,12 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
                 AppImageFile aif = AppImageFile.load(rootDir);
 
                 boolean expectedValue = hasArgument("--mac-sign");
-                boolean actualValue = aif.isSigned();
+                boolean actualValue = aif.macSigned();
                 TKit.assertEquals(Boolean.toString(expectedValue), Boolean.toString(actualValue),
                     "Check for unexptected value in app image file for <signed>");
 
                 expectedValue = hasArgument("--mac-app-store");
-                actualValue = aif.isAppStore();
+                actualValue = aif.macAppStore();
                 TKit.assertEquals(Boolean.toString(expectedValue), Boolean.toString(actualValue),
                     "Check for unexptected value in app image file for <app-store>");
             }
@@ -878,9 +845,8 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
             assertFileInAppImage(lookupPath, null);
         } else {
             if (TKit.isOSX() && hasArgument("--app-image")) {
-                String appImage = getArgumentValue("--app-image",
-                        () -> null);
-                if (AppImageFile.load(Path.of(appImage)).isSigned()) {
+                String appImage = getArgumentValue("--app-image");
+                if (AppImageFile.load(Path.of(appImage)).macSigned()) {
                     assertFileInAppImage(lookupPath, null);
                 } else {
                     assertFileInAppImage(lookupPath, lookupPath);

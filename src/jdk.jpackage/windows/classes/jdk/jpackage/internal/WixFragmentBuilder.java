@@ -39,9 +39,7 @@ import java.util.regex.Pattern;
 import javax.xml.stream.XMLStreamWriter;
 import jdk.jpackage.internal.IOUtils.XmlConsumer;
 import jdk.jpackage.internal.OverridableResource.Source;
-import static jdk.jpackage.internal.StandardBundlerParam.CONFIG_ROOT;
 import jdk.internal.util.Architecture;
-import static jdk.jpackage.internal.OverridableResource.createResource;
 import jdk.jpackage.internal.WixSourceConverter.ResourceGroup;
 import jdk.jpackage.internal.WixToolset.WixToolsetType;
 
@@ -61,12 +59,11 @@ abstract class WixFragmentBuilder {
         outputFileName = v;
     }
 
-    void initFromParams(Map<String, ? super Object> params) {
+    void initFromParams(Workshop workshop, WinMsiPackage pkg) {
         wixVariables = null;
         additionalResources = null;
-        configRoot = CONFIG_ROOT.fetchFrom(params);
-        fragmentResource = createResource(outputFileName, params).setSourceOrder(
-                Source.ResourceDir);
+        configRoot = workshop.configDir();
+        fragmentResource = workshop.createResource(outputFileName).setSourceOrder(Source.ResourceDir);
     }
 
     List<String> getLoggableWixFeatures() {

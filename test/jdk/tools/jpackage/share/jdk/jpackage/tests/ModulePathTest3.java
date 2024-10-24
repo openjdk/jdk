@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,11 +32,10 @@ import java.util.List;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
-import jdk.jpackage.internal.AppImageFile;
+import jdk.jpackage.test.AppImageFile;
 import jdk.jpackage.test.HelloApp;
 import jdk.jpackage.test.JavaAppDesc;
 import jdk.jpackage.test.Annotations.Test;
-import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.Annotations.Parameters;
 import jdk.jpackage.test.Executor;
 import jdk.jpackage.test.JPackageCommand;
@@ -107,11 +106,7 @@ public final class ModulePathTest3 {
         cmd.executeAndAssertHelloAppImageCreated();
 
         if (appDesc.moduleVersion() != null) {
-            Document xml = AppImageFile.readXml(cmd.outputBundle());
-            String actualVersion = XPathFactory.newInstance().newXPath().evaluate(
-                    "/jpackage-state/app-version/text()", xml,
-                    XPathConstants.STRING).toString();
-
+            String actualVersion = AppImageFile.load(cmd.outputBundle()).version();
             TKit.assertEquals(appDesc.moduleVersion(), actualVersion,
                     "Check application version");
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.util.List;
 
 import jdk.jpackage.test.Annotations.Parameters;
 import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.AppImageFile;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.TKit;
 
@@ -112,8 +113,7 @@ public final class PredefinedAppImageErrorTest {
             = dummyAppFolder.resolve("DummyAppFile").toAbsolutePath();
         Files.createFile(dummyAppFile);
 
-        cmd.addArguments("--app-image", dummyAppFolder.toString());
-        cmd.createJPackageXMLFile("PredefinedAppImageErrorTest", "Hello");
+        cmd.addArguments("--app-image", dummyAppFolder.toString());        
+        new AppImageFile("PredefinedAppImageErrorTest", "Hello").save(dummyAppFolder);
     }
-
 }

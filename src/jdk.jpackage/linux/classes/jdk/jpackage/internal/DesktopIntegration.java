@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,17 +43,7 @@ import java.util.stream.Stream;
 import javax.imageio.ImageIO;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
-import jdk.jpackage.internal.Arguments.CLIOptions;
-import static jdk.jpackage.internal.LinuxAppImageBuilder.DEFAULT_ICON;
-import static jdk.jpackage.internal.LinuxAppImageBuilder.ICON_PNG;
-import static jdk.jpackage.internal.OverridableResource.createResource;
-import static jdk.jpackage.internal.StandardBundlerParam.ADD_LAUNCHERS;
-import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
-import static jdk.jpackage.internal.StandardBundlerParam.DESCRIPTION;
-import static jdk.jpackage.internal.StandardBundlerParam.FILE_ASSOCIATIONS;
-import static jdk.jpackage.internal.StandardBundlerParam.ICON;
-import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE;
-import static jdk.jpackage.internal.StandardBundlerParam.SHORTCUT_HINT;
+import static jdk.jpackage.internal.Functional.ThrowingFunction.toFunction;
 
 /**
  * Helper to create files for desktop integration.
@@ -68,26 +58,23 @@ final class DesktopIntegration extends ShellCustomAction {
     private static final List<String> REPLACEMENT_STRING_IDS = List.of(
             COMMANDS_INSTALL, COMMANDS_UNINSTALL, SCRIPTS, COMMON_SCRIPTS);
 
-    private DesktopIntegration(PlatformPackage thePackage,
-            Map<String, ? super Object> params,
-            Map<String, ? super Object> mainParams) throws IOException {
+    private DesktopIntegration(Workshop workshop, LinuxPackage pkg, LinuxLauncher launcher) throws IOException {
 
-        associations = FileAssociation.fetchFrom(params).stream()
+        associations = launcher.fileAssociations().stream()
                 .filter(fa -> !fa.mimeTypes.isEmpty())
-                .map(LinuxFileAssociation::new)
-                .collect(Collectors.toUnmodifiableList());
+                .map(LinuxFileAssociation::new).toList();
 
-        launchers = ADD_LAUNCHERS.fetchFrom(params);
-
-        this.thePackage = thePackage;
+        this.workshop = workshop;
+        this.pkg = pkg;
+        this.launcher = launcher;
 
         // Need desktop and icon files if one of conditions is met:
         //  - there are file associations configured
         //  - user explicitly requested to create a shortcut
-        boolean withDesktopFile = !associations.isEmpty() || LINUX_SHORTCUT_HINT.fetchFrom(params);
+        boolean withDesktopFile = !associations.isEmpty() || launcher.shortcut().orElse(false);
 
-        var curIconResource = LinuxAppImageBuilder.createIconResource(DEFAULT_ICON,
-                ICON_PNG, params, mainParams);
+        var curIconResource = pkg.app().createLauncherIconResource(launcher,
+                workshop::createResource);
         if (curIconResource == null) {
             // This is additional launcher with explicit `no icon` configuration.
             withDesktopFile = false;
@@ -100,31 +87,30 @@ final class DesktopIntegration extends ShellCustomAction {
             }
         }
 
-        desktopFileResource = createResource("template.desktop", params)
+        desktopFileResource = workshop.createResource("template.desktop")
                 .setCategory(I18N.getString("resource.menu-shortcut-descriptor"))
-                .setPublicName(APP_NAME.fetchFrom(params) + ".desktop");
+                .setPublicName(launcher.name() + ".desktop");
 
-        final String escapedAppFileName = APP_NAME.fetchFrom(params).replaceAll("\\s+", "_");
+        final String escapedAppFileName = launcher.name().replaceAll("\\s+", "_");
 
         // XDG recommends to use vendor prefix in desktop file names as xdg
         // commands copy files to system directories.
         // Package name should be a good prefix.
         final String desktopFileName = String.format("%s-%s.desktop",
-                    thePackage.name(), escapedAppFileName);
+                    pkg.packageName(), escapedAppFileName);
         final String mimeInfoFileName = String.format("%s-%s-MimeInfo.xml",
-                    thePackage.name(), escapedAppFileName);
+                    pkg.packageName(), escapedAppFileName);
 
-        mimeInfoFile = new DesktopFile(mimeInfoFileName);
+        mimeInfoFile = createDesktopFile(mimeInfoFileName);
 
         if (withDesktopFile) {
-            desktopFile = new DesktopFile(desktopFileName);
-            iconFile = new DesktopFile(escapedAppFileName
-                    + IOUtils.getSuffix(Path.of(DEFAULT_ICON)));
+            desktopFile = createDesktopFile(desktopFileName);
+            iconFile = createDesktopFile(escapedAppFileName + ".png");
 
             if (curIconResource == null) {
                 // Create default icon.
-                curIconResource = LinuxAppImageBuilder.createIconResource(
-                        DEFAULT_ICON, ICON_PNG, mainParams, null);
+                curIconResource = pkg.app().createLauncherIconResource(
+                        pkg.app().mainLauncher(), workshop::createResource);
             }
         } else {
             desktopFile = null;
@@ -133,51 +119,27 @@ final class DesktopIntegration extends ShellCustomAction {
 
         iconResource = curIconResource;
 
-        desktopFileData = Collections.unmodifiableMap(
-                createDataForDesktopFile(params));
+        desktopFileData = createDataForDesktopFile();
 
-        nestedIntegrations = new ArrayList<>();
-        // Read launchers information from predefine app image
-        if (launchers.isEmpty() &&
-                PREDEFINED_APP_IMAGE.fetchFrom(params) != null) {
-            List<AppImageFile.LauncherInfo> launcherInfos =
-                    AppImageFile.getLaunchers(
-                    PREDEFINED_APP_IMAGE.fetchFrom(params), params);
-            if (!launcherInfos.isEmpty()) {
-                launcherInfos.remove(0); // Remove main launcher
-            }
-            for (var launcherInfo : launcherInfos) {
-                Map<String, ? super Object> launcherParams = new HashMap<>();
-                Arguments.putUnlessNull(launcherParams, CLIOptions.NAME.getId(),
-                        launcherInfo.getName());
-                launcherParams = AddLauncherArguments.merge(params,
-                        launcherParams, ICON.getID(), ICON_PNG.getID(),
-                        ADD_LAUNCHERS.getID(), FILE_ASSOCIATIONS.getID(),
-                        PREDEFINED_APP_IMAGE.getID());
-                if (launcherInfo.isShortcut()) {
-                    nestedIntegrations.add(new DesktopIntegration(thePackage,
-                            launcherParams, params));
-                }
-            }
+        if (launcher != pkg.app().mainLauncher()) {
+            nestedIntegrations = List.of();
         } else {
-            for (var launcherParams : launchers) {
-                launcherParams = AddLauncherArguments.merge(params,
-                        launcherParams, ICON.getID(), ICON_PNG.getID(),
-                        ADD_LAUNCHERS.getID(), FILE_ASSOCIATIONS.getID());
-                if (SHORTCUT_HINT.fetchFrom(launcherParams)) {
-                    nestedIntegrations.add(new DesktopIntegration(thePackage,
-                            launcherParams, params));
-                }
-            }
+            nestedIntegrations = pkg.app().additionalLaunchers().stream().map(v -> {
+                return (LinuxLauncher)v;
+            }).filter(l -> {
+                return l.shortcut().orElse(true);
+            }).map(toFunction(l -> {
+                return new DesktopIntegration(workshop, pkg, l);
+            })).toList();
         }
     }
 
-    static ShellCustomAction create(PlatformPackage thePackage,
-            Map<String, ? super Object> params) throws IOException {
-        if (StandardBundlerParam.isRuntimeInstaller(params)) {
+    static ShellCustomAction create(Workshop workshop, Package pkg) throws IOException {
+        if (pkg.isRuntimeInstaller()) {
             return ShellCustomAction.nop(REPLACEMENT_STRING_IDS);
         }
-        return new DesktopIntegration(thePackage, params, null);
+        return new DesktopIntegration(workshop, (LinuxPackage) pkg, (LinuxLauncher) pkg.app()
+                .mainLauncher());
     }
 
     @Override
@@ -206,7 +168,7 @@ final class DesktopIntegration extends ShellCustomAction {
         final ShellCommands shellCommands;
         if (desktopFile != null) {
             // Create application desktop description file.
-            createDesktopFile(data);
+            saveDesktopFile(data);
 
             // Shell commands will be created only if desktop file
             // should be installed.
@@ -262,17 +224,16 @@ final class DesktopIntegration extends ShellCustomAction {
         return Collections.emptyList();
     }
 
-    private Map<String, String> createDataForDesktopFile(
-            Map<String, ? super Object> params) {
+    private Map<String, String> createDataForDesktopFile() {
         Map<String, String> data = new HashMap<>();
-        data.put("APPLICATION_NAME", APP_NAME.fetchFrom(params));
-        data.put("APPLICATION_DESCRIPTION", DESCRIPTION.fetchFrom(params));
+        data.put("APPLICATION_NAME", launcher.name());
+        data.put("APPLICATION_DESCRIPTION", launcher.description());
         data.put("APPLICATION_ICON", Optional.ofNullable(iconFile).map(
                 f -> f.installPath().toString()).orElse(null));
-        data.put("DEPLOY_BUNDLE_CATEGORY", MENU_GROUP.fetchFrom(params));
+        data.put("DEPLOY_BUNDLE_CATEGORY", pkg.category());
         data.put("APPLICATION_LAUNCHER", Enquoter.forPropertyValues().applyTo(
-                thePackage.installedApplicationLayout().launchersDirectory().resolve(
-                        LinuxAppImageBuilder.getLauncherName(params)).toString()));
+                pkg.installedPackageLayout().launchersDirectory().resolve(
+                        launcher.executableNameWithSuffix()).toString()));
 
         return data;
     }
@@ -365,34 +326,18 @@ final class DesktopIntegration extends ShellCustomAction {
     }
 
     /**
-     * Desktop integration file. xml, icon, etc.
-     * Resides somewhere in application installation tree.
-     * Has two paths:
-     *  - path where it should be placed at package build time;
-     *  - path where it should be installed by package manager;
+     * Creates desktop integration file. xml, icon, etc.
+     *
+     * Returned instance:
+     *  - srcPath(): path where it should be placed at package build time;
+     *  - installPath(): path where it should be installed by package manager;
      */
-    private class DesktopFile {
-
-        DesktopFile(String fileName) {
-            var installPath = thePackage
-                    .installedApplicationLayout()
-                    .destktopIntegrationDirectory().resolve(fileName);
-            var srcPath = thePackage
-                    .sourceApplicationLayout()
-                    .destktopIntegrationDirectory().resolve(fileName);
-
-            impl = new InstallableFile(srcPath, installPath);
-        }
-
-        Path installPath() {
-            return impl.installPath();
-        }
-
-        Path srcPath() {
-            return impl.srcPath();
-        }
-
-        private final InstallableFile impl;
+    private InstallableFile createDesktopFile(String fileName) {
+        var srcPath = pkg.packageLayout().resolveAt(workshop.appImageDir()).destktopIntegrationDirectory().resolve(
+                fileName);
+        var installPath = pkg.installedPackageLayout().destktopIntegrationDirectory().resolve(
+                fileName);
+        return new InstallableFile(srcPath, installPath);
     }
 
     private void appendFileAssociation(XMLStreamWriter xml,
@@ -450,7 +395,7 @@ final class DesktopIntegration extends ShellCustomAction {
                 processedMimeTypes.add(mimeType);
 
                 // Create icon name for mime type from mime type.
-                DesktopFile faIconFile = new DesktopFile(mimeType.replace(
+                var faIconFile = createDesktopFile(mimeType.replace(
                         File.separatorChar, '-') + IOUtils.getSuffix(
                                 assoc.data.iconPath));
 
@@ -463,7 +408,7 @@ final class DesktopIntegration extends ShellCustomAction {
         }
     }
 
-    private void createDesktopFile(Map<String, String> data) throws IOException {
+    private void saveDesktopFile(Map<String, String> data) throws IOException {
         List<String> mimeTypes = getMimeTypeNamesFromFileAssociations();
         data.put("DESKTOP_MIMES", "MimeType=" + String.join(";", mimeTypes));
 
@@ -530,37 +475,20 @@ final class DesktopIntegration extends ShellCustomAction {
         final int iconSize;
     }
 
-    private final PlatformPackage thePackage;
+    private final Workshop workshop;
+    private final LinuxPackage pkg;
+    private final Launcher launcher;
 
     private final List<LinuxFileAssociation> associations;
-
-    private final List<Map<String, ? super Object>> launchers;
 
     private final OverridableResource iconResource;
     private final OverridableResource desktopFileResource;
 
-    private final DesktopFile mimeInfoFile;
-    private final DesktopFile desktopFile;
-    private final DesktopFile iconFile;
+    private final InstallableFile mimeInfoFile;
+    private final InstallableFile desktopFile;
+    private final InstallableFile iconFile;
 
     private final List<DesktopIntegration> nestedIntegrations;
 
     private final Map<String, String> desktopFileData;
-
-    private static final BundlerParamInfo<String> MENU_GROUP =
-        new StandardBundlerParam<>(
-                Arguments.CLIOptions.LINUX_MENU_GROUP.getId(),
-                String.class,
-                params -> I18N.getString("param.menu-group.default"),
-                (s, p) -> s
-        );
-
-    private static final StandardBundlerParam<Boolean> LINUX_SHORTCUT_HINT =
-        new StandardBundlerParam<>(
-                Arguments.CLIOptions.LINUX_SHORTCUT_HINT.getId(),
-                Boolean.class,
-                params -> false,
-                (s, p) -> (s == null || "null".equalsIgnoreCase(s))
-                        ? false : Boolean.valueOf(s)
-        );
 }

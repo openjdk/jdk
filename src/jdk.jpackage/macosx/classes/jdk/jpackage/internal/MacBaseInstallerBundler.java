@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,19 +25,13 @@
 
 package jdk.jpackage.internal;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
 import static jdk.jpackage.internal.StandardBundlerParam.INSTALLER_NAME;
 import static jdk.jpackage.internal.StandardBundlerParam.INSTALL_DIR;
@@ -48,7 +42,7 @@ import static jdk.jpackage.internal.StandardBundlerParam.SIGN_BUNDLE;
 public abstract class MacBaseInstallerBundler extends AbstractBundler {
 
     private final BundlerParamInfo<Path> APP_IMAGE_TEMP_ROOT =
-            new StandardBundlerParam<>(
+            new BundlerParamInfo<>(
             "mac.app.imageRoot",
             Path.class,
             params -> {
@@ -66,28 +60,28 @@ public abstract class MacBaseInstallerBundler extends AbstractBundler {
             (s, p) -> Path.of(s));
 
     public static final BundlerParamInfo<String> SIGNING_KEY_USER =
-            new StandardBundlerParam<>(
+            new BundlerParamInfo<>(
             Arguments.CLIOptions.MAC_SIGNING_KEY_NAME.getId(),
             String.class,
             params -> "",
             null);
 
     public static final BundlerParamInfo<String> SIGNING_KEYCHAIN =
-            new StandardBundlerParam<>(
+            new BundlerParamInfo<>(
             Arguments.CLIOptions.MAC_SIGNING_KEYCHAIN.getId(),
             String.class,
             params -> "",
             null);
 
     public static final BundlerParamInfo<String> INSTALLER_SIGN_IDENTITY =
-            new StandardBundlerParam<>(
+            new BundlerParamInfo<>(
             Arguments.CLIOptions.MAC_INSTALLER_SIGN_IDENTITY.getId(),
             String.class,
             params -> "",
             null);
 
     public static final BundlerParamInfo<String> MAC_INSTALLER_NAME =
-            new StandardBundlerParam<> (
+            new BundlerParamInfo<> (
             "mac.installerName",
             String.class,
             params -> {

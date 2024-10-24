@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,38 +22,30 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
 package jdk.jpackage.internal;
 
-import java.text.MessageFormat;
-import java.util.ResourceBundle;
-
 public class PackagerException extends Exception {
+
     private static final long serialVersionUID = 1L;
-    private static final ResourceBundle bundle = ResourceBundle.getBundle(
-            "jdk.jpackage.internal.resources.MainResources");
 
     public PackagerException(Throwable cause) {
         super(cause);
     }
 
     public PackagerException(String key, Throwable cause) {
-        super(bundle.getString(key), cause);
+        super(I18N.getString(key), cause);
     }
 
     public PackagerException(String key) {
-        super(bundle.getString(key));
+        super(I18N.getString(key));
     }
 
-    public PackagerException(String key, String ... arguments) {
-        super(MessageFormat.format(
-                bundle.getString(key), (Object[]) arguments));
+    public PackagerException(String key, Object... arguments) {
+        super(I18N.format(key, arguments));
     }
 
-    public PackagerException(
-            Throwable cause, String key, String ... arguments) {
-        super(MessageFormat.format(bundle.getString(key),
-                (Object[]) arguments), cause);
+    public PackagerException(Throwable cause, String key, Object... arguments) {
+        super(I18N.format(key, arguments), cause);
     }
 
 }
