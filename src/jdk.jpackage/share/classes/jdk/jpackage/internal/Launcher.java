@@ -83,7 +83,9 @@ interface Launcher {
             List<FileAssociation> fileAssociations, boolean isService,
             String description, Path icon) implements Launcher {
         public Impl {
-            Optional.ofNullable(icon).ifPresent(toConsumer(Launcher::validateIcon));
+            if (icon != null && !icon.toString().isEmpty()) {
+                toConsumer(Launcher::validateIcon).accept(icon);
+            }
         }
     }
     
