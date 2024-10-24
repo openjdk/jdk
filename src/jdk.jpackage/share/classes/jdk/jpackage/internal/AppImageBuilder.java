@@ -33,18 +33,39 @@ import java.util.List;
 import java.util.Optional;
 
 
-class AppImageBuilder {
+final class AppImageBuilder {
 
-    AppImageBuilder(Application app) {
-        this.app = app;
-        this.appLayout = app.appLayout();
-        this.withAppImageFile = true;
+    static final class Builder {
+
+        Builder launcherCallback(LauncherCallback v) {
+            launcherCallback = v;
+            return this;
+        }
+
+        AppImageBuilder create(Application app) {
+            return new AppImageBuilder(app, app.appLayout(), launcherCallback);
+        }
+
+        AppImageBuilder create(Package pkg) {
+            return new AppImageBuilder(pkg, launcherCallback);
+        }
+
+        private LauncherCallback launcherCallback;
     }
 
-    AppImageBuilder(Package pkg) {
-        this.app = pkg.app();
-        this.appLayout = pkg.packageLayout();
-        this.withAppImageFile = false;
+    static Builder build() {
+        return new Builder();
+    }
+
+    private AppImageBuilder(Application app, ApplicationLayout appLayout, LauncherCallback launcherCallback) {
+        this.app = app;
+        this.appLayout = appLayout;
+        this.withAppImageFile = true;
+        this.launcherCallback = launcherCallback;
+    }
+
+    private AppImageBuilder(Package pkg, LauncherCallback launcherCallback) {
+        this(pkg.app(), pkg.packageLayout(), launcherCallback);
     }
 
     private static void copyRecursive(Path srcDir, Path dstDir, Workshop workshop) throws IOException {
@@ -72,9 +93,11 @@ class AppImageBuilder {
             return;
         }
 
-        copyRecursive(app.mainSrcDir(), resolvedAppLayout.appDirectory(), workshop);
+        if (app.srcDir() != null) {
+            copyRecursive(app.srcDir(), resolvedAppLayout.appDirectory(), workshop);
+        }
 
-        for (var srcDir : Optional.ofNullable(app.additionalSrcDirs()).orElseGet(List::of)) {
+        for (var srcDir : Optional.ofNullable(app.contentDirs()).orElseGet(List::of)) {
             copyRecursive(srcDir,
                     resolvedAppLayout.contentDirectory().resolve(srcDir.getFileName()),
                     workshop);
@@ -85,6 +108,9 @@ class AppImageBuilder {
         }
 
         for (var launcher : app.launchers()) {
+            // Create corresponding .cfg file
+            new CfgFile(app, launcher).create(appLayout, resolvedAppLayout);
+
             // Copy executable to launchers folder
             Path executableFile = resolvedAppLayout.launchersDirectory().resolve(
                     launcher.executableNameWithSuffix());
@@ -93,16 +119,35 @@ class AppImageBuilder {
                 Files.copy(in, executableFile);
             }
 
-            var asFile = executableFile.toFile();
+            if (launcherCallback != null) {
+                launcherCallback.onLauncher(app, new LauncherContext(launcher,
+                        workshop, resolvedAppLayout, executableFile));
+            }
 
-            asFile.setExecutable(true, false);
-
-            // Create corresponding .cfg file
-            new CfgFile(app, launcher).create(appLayout, resolvedAppLayout);
+            executableFile.toFile().setExecutable(true);
         }
     }
 
+    static interface LauncherCallback {
+        default public void onLauncher(Application app, LauncherContext ctx) throws IOException, PackagerException {
+            var iconResource = app.createLauncherIconResource(ctx.launcher,
+                    ctx.workshop::createResource);
+            if (iconResource != null) {
+                onLauncher(app, ctx, iconResource);
+            }
+        }
+
+        default public void onLauncher(Application app, LauncherContext ctx,
+                OverridableResource launcherIcon) throws IOException, PackagerException {
+        }
+    }
+
+    static record LauncherContext(Launcher launcher, Workshop workshop,
+            ApplicationLayout resolvedAppLayout, Path launcherExecutable) {
+    }
+
     private final boolean withAppImageFile;
-    protected final Application app;
-    protected final ApplicationLayout appLayout;
+    private final Application app;
+    private final ApplicationLayout appLayout;
+    private final LauncherCallback launcherCallback;
 }

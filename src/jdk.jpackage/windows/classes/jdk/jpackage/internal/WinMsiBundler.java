@@ -119,7 +119,6 @@ import org.xml.sax.SAXException;
 public class WinMsiBundler  extends AbstractBundler {
 
     public WinMsiBundler() {
-        appImageBundler = new WinAppBundler().setDependentTask(true);
         wixFragments = Stream.of(
                 Map.entry("bundle.wxf", new WixAppImageFragmentBuilder()),
                 Map.entry("ui.wxf", new WixUiFragmentBuilder())
@@ -171,7 +170,9 @@ public class WinMsiBundler  extends AbstractBundler {
     public boolean validate(Map<String, ? super Object> params)
             throws ConfigException {
         try {
-            appImageBundler.validate(params);
+            // Order is important!
+            WinApplicationFromParams.APPLICATION.fetchFrom(params);
+            WorkshopFromParams.WORKSHOP.fetchFrom(params);
 
             if (wixToolset == null) {
                 wixToolset = WixTool.createToolset();
@@ -201,24 +202,31 @@ public class WinMsiBundler  extends AbstractBundler {
         }
     }
 
-    private void prepareProto(Map<String, ? super Object> params)
-                throws PackagerException, IOException {
+    private void prepareProto(WinMsiPackage pkg, Workshop workshop) throws
+            PackagerException, IOException {
 
-        // Order is important!
-        var pkg = WinMsiPackageFromParams.PACKAGE.fetchFrom(params);
-        var workshop = WorkshopFromParams.WORKSHOP.fetchFrom(params);
+        ApplicationLayout appLayout;
 
-        Path appImage = pkg.predefinedAppImage();
-
-        // we either have an application image or need to build one
-        if (appImage != null) {
-            IOUtils.copyRecursive(appImage, workshop.appImageDir());
+        // We either have an application image or need to build one.
+        if (pkg.app().runtimeBuilder() != null) {
+            // Runtime builder is present, build app image.
+            WinAppImageBuilder.build().create(pkg.app()).execute(workshop);
+            appLayout = pkg.appLayout().resolveAt(workshop.appImageDir());
         } else {
-            Files.createDirectories(workshop.appImageDir().getParent());
-            appImageBundler.execute(params, workshop.appImageDir().getParent());
-        }
+            Path srcAppImageDir = pkg.predefinedAppImage();
+            if (srcAppImageDir == null) {
+                // No predefined app image and no runtime builder.
+                // This should be runtime packaging.
+                if (pkg.isRuntimeInstaller()) {
+                    srcAppImageDir = workshop.appImageDir();
+                } else {
+                    // Can't create app image without runtime builder.
+                    throw new UnsupportedOperationException();
+                }
+            }
 
-        var pkgLayout = pkg.packageLayout().resolveAt(workshop.appImageDir());
+            appLayout = pkg.appLayout().resolveAt(srcAppImageDir);
+        }
 
         // Configure installer icon
         if (pkg.isRuntimeInstaller()) {
@@ -226,12 +234,10 @@ public class WinMsiBundler  extends AbstractBundler {
             // Assume java.exe exists in Java Runtime being packed.
             // Ignore custom icon if any as we don't want to copy anything in
             // Java Runtime image.
-            installerIcon = pkgLayout.runtimeDirectory().resolve(Path.of("bin", "java.exe"));
+            installerIcon = appLayout.runtimeDirectory().resolve(Path.of("bin", "java.exe"));
         } else {
-            installerIcon = pkgLayout.launchersDirectory().resolve(
+            installerIcon = appLayout.launchersDirectory().resolve(
                     pkg.app().mainLauncher().executableNameWithSuffix());
-
-            new PackageFile(pkg.packageName()).save(pkgLayout);
         }
         installerIcon = installerIcon.toAbsolutePath();
 
@@ -251,15 +257,15 @@ public class WinMsiBundler  extends AbstractBundler {
     public Path execute(Map<String, ? super Object> params,
             Path outputParentDir) throws PackagerException {
 
+        IOUtils.writableOutputDir(outputParentDir);
+
         // Order is important!
         var pkg = WinMsiPackageFromParams.PACKAGE.fetchFrom(params);
         var workshop = WorkshopFromParams.WORKSHOP.fetchFrom(params);
 
-        IOUtils.writableOutputDir(outputParentDir);
-
         Path imageDir = workshop.appImageDir();
         try {
-            prepareProto(params);
+            prepareProto(pkg, workshop);
             for (var wixFragment : wixFragments) {
                 wixFragment.initFromParams(workshop, pkg);
                 wixFragment.addFilesToConfigRoot();
@@ -500,8 +506,6 @@ public class WinMsiBundler  extends AbstractBundler {
     }
 
     private static void ensureByMutationFileIsRTF(Path f) {
-        if (f == null || !Files.isRegularFile(f)) return;
-
         try {
             boolean existingLicenseIsRTF = false;
 
@@ -571,6 +575,5 @@ public class WinMsiBundler  extends AbstractBundler {
 
     private Path installerIcon;
     private WixToolset wixToolset;
-    private AppImageBundler appImageBundler;
     private final List<WixFragmentBuilder> wixFragments;
 }

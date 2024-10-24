@@ -30,8 +30,6 @@ import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.List;
-import static jdk.jpackage.internal.OverridableResource.createResource;
-import static jdk.jpackage.internal.StandardBundlerParam.ICON;
 import static jdk.jpackage.internal.StandardBundlerParam.SOURCE_DIR;
 import static jdk.jpackage.internal.StandardBundlerParam.APP_CONTENT;
 import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
@@ -81,10 +79,6 @@ public abstract class AbstractAppImageBuilder {
         }).create(ApplicationLayout.platformAppImage(), appLayout);
     }
 
-    ApplicationLayout getAppLayout() {
-        return appLayout;
-    }
-
     protected void copyApplication(Map<String, ? super Object> params)
             throws IOException {
         Path inputPath = SOURCE_DIR.fetchFrom(params);
@@ -100,58 +94,5 @@ public abstract class AbstractAppImageBuilder {
             IOUtils.copyRecursive(item,
                 appLayout.contentDirectory().resolve(item.getFileName()));
         }
-    }
-
-    public static OverridableResource createIconResource(String defaultIconName,
-            BundlerParamInfo<Path> iconParam, Map<String, ? super Object> params,
-            Map<String, ? super Object> mainParams) throws IOException {
-
-        if (mainParams != null) {
-            params = AddLauncherArguments.merge(mainParams, params, ICON.getID(),
-                    iconParam.getID());
-        }
-
-        final String resourcePublicName = APP_NAME.fetchFrom(params)
-                + IOUtils.getSuffix(Path.of(defaultIconName));
-
-        IconType iconType = getLauncherIconType(params);
-        if (iconType == IconType.NoIcon) {
-            return null;
-        }
-
-        OverridableResource resource = createResource(defaultIconName, params)
-                .setCategory("icon")
-                .setExternal(iconParam.fetchFrom(params))
-                .setPublicName(resourcePublicName);
-
-        if (iconType == IconType.DefaultOrResourceDirIcon && mainParams != null) {
-            // No icon explicitly configured for this launcher.
-            // Dry-run resource creation to figure out its source.
-            final Path nullPath = null;
-            if (resource.saveToFile(nullPath)
-                    != OverridableResource.Source.ResourceDir) {
-                // No icon in resource dir for this launcher, inherit icon
-                // configured for the main launcher.
-                resource = createIconResource(defaultIconName, iconParam,
-                        mainParams, null).setLogPublicName(resourcePublicName);
-            }
-        }
-
-        return resource;
-    }
-
-    private enum IconType { DefaultOrResourceDirIcon, CustomIcon, NoIcon };
-
-    private static IconType getLauncherIconType(Map<String, ? super Object> params) {
-        Path launcherIcon = ICON.fetchFrom(params);
-        if (launcherIcon == null) {
-            return IconType.DefaultOrResourceDirIcon;
-        }
-
-        if (launcherIcon.toFile().getName().isEmpty()) {
-            return IconType.NoIcon;
-        }
-
-        return IconType.CustomIcon;
     }
 }

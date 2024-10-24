@@ -44,7 +44,6 @@ import javax.imageio.ImageIO;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 import static jdk.jpackage.internal.Functional.ThrowingFunction.toFunction;
-import static jdk.jpackage.internal.LinuxAppImageBuilder.DEFAULT_ICON;
 
 /**
  * Helper to create files for desktop integration.
@@ -74,7 +73,7 @@ final class DesktopIntegration extends ShellCustomAction {
         //  - user explicitly requested to create a shortcut
         boolean withDesktopFile = !associations.isEmpty() || launcher.shortcut().orElse(false);
 
-        var curIconResource = pkg.app().createLauncherIconResource(launcher, DEFAULT_ICON,
+        var curIconResource = pkg.app().createLauncherIconResource(launcher,
                 workshop::createResource);
         if (curIconResource == null) {
             // This is additional launcher with explicit `no icon` configuration.
@@ -106,13 +105,12 @@ final class DesktopIntegration extends ShellCustomAction {
 
         if (withDesktopFile) {
             desktopFile = createDesktopFile(desktopFileName);
-            iconFile = createDesktopFile(escapedAppFileName
-                    + IOUtils.getSuffix(Path.of(DEFAULT_ICON)));
+            iconFile = createDesktopFile(escapedAppFileName + ".png");
 
             if (curIconResource == null) {
                 // Create default icon.
-                curIconResource = pkg.app().createLauncherIconResource(pkg.app().mainLauncher(),
-                        DEFAULT_ICON, workshop::createResource);
+                curIconResource = pkg.app().createLauncherIconResource(
+                        pkg.app().mainLauncher(), workshop::createResource);
             }
         } else {
             desktopFile = null;

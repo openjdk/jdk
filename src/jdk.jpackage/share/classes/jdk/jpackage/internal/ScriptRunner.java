@@ -96,25 +96,6 @@ class ScriptRunner {
         Executor.of(pb).executeExpectSuccess();
     }
 
-    public void run(Map<String, ? super Object> params) throws IOException {
-        run(new Workshop() {
-            @Override
-            public Path buildRoot() {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public Path resourceDir() {
-                return StandardBundlerParam.RESOURCE_DIR.fetchFrom(params);
-            }
-
-            @Override
-            public Path configDir() {
-                return StandardBundlerParam.CONFIG_ROOT.fetchFrom(params);
-            }
-        }, StandardBundlerParam.APP_NAME.fetchFrom(params));
-    }
-
     private static String shell() {
         if (OperatingSystem.isWindows()) {
             return "cscript";

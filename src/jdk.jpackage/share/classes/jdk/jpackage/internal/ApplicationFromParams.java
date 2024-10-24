@@ -56,7 +56,7 @@ final class ApplicationFromParams {
         var vendor = VENDOR.fetchFrom(params);
         var copyright = COPYRIGHT.fetchFrom(params);
         var srcDir = SOURCE_DIR.fetchFrom(params);
-        var additionalContent = APP_CONTENT.fetchFrom(params);
+        var contentDirs = APP_CONTENT.fetchFrom(params);
 
         var predefinedAppImage = getPredefinedAppImage(params);
         if (name == null && predefinedAppImage == null) {
@@ -107,9 +107,7 @@ final class ApplicationFromParams {
         }).orElse(null);
 
         return new Application.Impl(name, description, version, vendor,
-                copyright, Stream.concat(Stream.of(srcDir),
-                        additionalContent.stream()).toList(), runtimeBuilder,
-                launchers);
+                copyright, srcDir, contentDirs, runtimeBuilder, launchers);
     }
 
     private static Map<String, ? super Object> mergeParams(Map<String, ? super Object> mainParams,

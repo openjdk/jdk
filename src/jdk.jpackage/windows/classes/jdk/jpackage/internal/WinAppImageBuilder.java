@@ -25,39 +25,36 @@
 package jdk.jpackage.internal;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import jdk.jpackage.internal.resources.ResourceLocator;
 
-final class LinuxAppImageBuilder {
+final class WinAppImageBuilder {
 
     static AppImageBuilder.Builder build() {
         return new AppImageBuilder.Builder().launcherCallback(new LauncherCallbackImpl());
     }
 
-    private final static class LauncherCallbackImpl implements AppImageBuilder.LauncherCallback {
+    private final static class LauncherCallbackImpl implements
+            AppImageBuilder.LauncherCallback {
 
         @Override
         public void onLauncher(Application app,
                 AppImageBuilder.LauncherContext ctx) throws IOException, PackagerException {
-            if (ctx.launcher() == app.mainLauncher()) {
-                var launcherLib = ctx.resolvedAppLayout().pathGroup().getPath(
-                        ApplicationLayout.PathRole.LINUX_APPLAUNCHER_LIB);
-                try (var in = ResourceLocator.class.getResourceAsStream("libjpackageapplauncheraux.so")) {
-                    Files.createDirectories(launcherLib.getParent());
-                    Files.copy(in, launcherLib);
+            Path iconTarget = null;
+            var iconResource = app.createLauncherIconResource(ctx.launcher(),
+                    name -> ctx.workshop().createResource(name));
+            if (iconResource != null) {
+                var iconDir = ctx.workshop().buildRoot().resolve("icons");
+                iconTarget = iconDir.resolve(ctx.launcher().executableName() + ".ico");
+                if (null == iconResource.saveToFile(iconTarget)) {
+                    iconTarget = null;
                 }
             }
-            AppImageBuilder.LauncherCallback.super.onLauncher(app, ctx);
-        }
 
-        @Override
-        public void onLauncher(Application app,
-                AppImageBuilder.LauncherContext ctx,
-                OverridableResource launcherIcon) throws IOException, PackagerException {
-            String iconFileName = ctx.launcher().executableName() + ".png";
-            Path iconTarget = ctx.resolvedAppLayout().destktopIntegrationDirectory().resolve(iconFileName);
-            launcherIcon.saveToFile(iconTarget);
+            // Update branding of launcher executable
+            new ExecutableRebrander((WinApplication) app,
+                    (WinLauncher) ctx.launcher(),
+                    name -> ctx.workshop().createResource(name)).execute(
+                    ctx.workshop(), ctx.launcherExecutable(), iconTarget);
         }
     }
 }

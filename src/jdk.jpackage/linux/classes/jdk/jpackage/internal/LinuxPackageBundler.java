@@ -102,26 +102,20 @@ abstract class LinuxPackageBundler extends AbstractBundler {
         LinuxPackage pkg = pkgParam.fetchFrom(params);
         var workshop = WorkshopFromParams.WORKSHOP.fetchFrom(params);
 
-        Workshop pkgWorkshop = new Workshop.Proxy(workshop) {
-            @Override
-            public Path appImageDir() {
-                return buildRoot().resolve("pkg-image");
-            }
-        };
-
-        params.put(WorkshopFromParams.WORKSHOP.getID(), pkgWorkshop);
+        Workshop pkgWorkshop = Workshop.withAppImageDir(workshop,
+                workshop.buildRoot().resolve("image"));
 
         try {
             // We either have an application image or need to build one.
             if (pkg.app().runtimeBuilder() != null) {
                 // Runtime builder is present, build app image.
-                new LinuxAppImageBuilder2(pkg).execute(pkgWorkshop);
+                LinuxAppImageBuilder.build().create(pkg).execute(pkgWorkshop);
             } else {
                 Path srcAppImageDir = pkg.predefinedAppImage();
                 if (srcAppImageDir == null) {
                     // No predefined app image and no runtime builder.
                     // This should be runtime packaging.
-                    if (pkg.app().isRuntime()) {
+                    if (pkg.isRuntimeInstaller()) {
                         srcAppImageDir = workshop.appImageDir();
                     } else {
                         // Can't create app image without runtime builder.
@@ -131,8 +125,8 @@ abstract class LinuxPackageBundler extends AbstractBundler {
 
                 // Copy app layout omitting application image info file.
                 var srcLayout = pkg.appLayout().resolveAt(srcAppImageDir);
-                srcLayout.pathGroup().ghostPath(AppImageFile.getPathInAppImage(
-                        srcAppImageDir));
+                srcLayout.pathGroup().ghostPath(AppImageFile2.getPathInAppImage(
+                        srcLayout));
                 srcLayout.copy(pkg.packageLayout().resolveAt(pkgWorkshop.appImageDir()));
             }
 

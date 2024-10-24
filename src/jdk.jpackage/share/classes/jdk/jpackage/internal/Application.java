@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.stream.Stream;
 import jdk.internal.util.OperatingSystem;
 import static jdk.jpackage.internal.Functional.ThrowingSupplier.toSupplier;
 
@@ -46,16 +47,9 @@ interface Application {
 
     String copyright();
 
-    List<Path> srcDirs();
+    Path srcDir();
 
-    default Path mainSrcDir() {
-        return srcDirs().getFirst();
-    }
-
-    default List<Path> additionalSrcDirs() {
-        var srcDirs = srcDirs();
-        return srcDirs.subList(1, srcDirs.size());
-    }
+    List<Path> contentDirs();
 
     RuntimeBuilder runtimeBuilder();
 
@@ -111,9 +105,10 @@ interface Application {
         return Map.of();
     }
 
-    default OverridableResource createLauncherIconResource(Launcher launcher, String defaultIconName,
+    default OverridableResource createLauncherIconResource(Launcher launcher,
             Function<String, OverridableResource> resourceSupplier) {
-        final String resourcePublicName = launcher.name() + IOUtils.getSuffix(Path.of(
+        final String defaultIconName = launcher.defaultIconResourceName();
+        final String resourcePublicName = launcher.executableName() + IOUtils.getSuffix(Path.of(
                 defaultIconName));
 
         var iconType = Internal.getLauncherIconType(launcher.icon());
@@ -133,8 +128,8 @@ interface Application {
             if (toSupplier(() -> resource.saveToFile(nullPath)).get() != OverridableResource.Source.ResourceDir) {
                 // No icon in resource dir for this launcher, inherit icon
                 // configured for the main launcher.
-                return createLauncherIconResource(mainLauncher(), defaultIconName, resourceSupplier)
-                        .setLogPublicName(resourcePublicName);
+                return createLauncherIconResource(mainLauncher(),
+                        resourceSupplier).setLogPublicName(resourcePublicName);
             }
         }
 
@@ -142,7 +137,7 @@ interface Application {
     }
 
     static record Impl(String name, String description, String version,
-            String vendor, String copyright, List<Path> srcDirs,
+            String vendor, String copyright, Path srcDir, List<Path> contentDirs,
             RuntimeBuilder runtimeBuilder, List<Launcher> launchers) implements Application {
         public Impl {
             name = Optional.ofNullable(name).orElseGet(() -> {
@@ -195,8 +190,13 @@ interface Application {
         }
 
         @Override
-        public List<Path> srcDirs() {
-            return target.srcDirs();
+        public Path srcDir() {
+            return target.srcDir();
+        }
+
+        @Override
+        public List<Path> contentDirs() {
+            return target.contentDirs();
         }
 
         @Override
@@ -238,7 +238,12 @@ interface Application {
         }
 
         @Override
-        public List<Path> srcDirs() {
+        public Path srcDir() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public List<Path> contentDirs() {
             throw new UnsupportedOperationException();
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,12 @@ package jdk.jpackage.internal;
 
 public class LinuxAppBundler extends AppImageBundler {
     public LinuxAppBundler() {
-        setAppImageSupplier(LinuxAppImageBuilder::new);
+        setAppImageSupplier((params, output) -> {
+            // Order is important!
+            var app = LinuxApplicationFromParams.APPLICATION.fetchFrom(params);
+            var workshop = WorkshopFromParams.WORKSHOP.fetchFrom(params);
+            LinuxAppImageBuilder.build().create(app).execute(
+                    Workshop.withAppImageDir(workshop, output));
+        });
     }
 }

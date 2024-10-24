@@ -38,20 +38,12 @@ import static jdk.jpackage.internal.StandardBundlerParam.SIGN_BUNDLE;
 
 public class MacAppBundler extends AppImageBundler {
      public MacAppBundler() {
-        setAppImageSupplier(imageOutDir -> {
-            return new MacAppImageBuilder(imageOutDir, isDependentTask());
+        setAppImageSupplier((params, imageOutDir) -> {
+            var builder = new MacAppImageBuilder(imageOutDir, isDependentTask());
+            builder.prepareApplicationFiles(params);
         });
         setParamsValidator(MacAppBundler::doValidate);
     }
-
-    private static final String TEMPLATE_BUNDLE_ICON = "JavaApp.icns";
-
-    public static final BundlerParamInfo<String> DEFAULT_ICNS_ICON =
-            new BundlerParamInfo<>(
-            ".mac.default.icns",
-            String.class,
-            params -> TEMPLATE_BUNDLE_ICON,
-            (s, p) -> s);
 
     public static final BundlerParamInfo<String> DEVELOPER_ID_APP_SIGNING_KEY =
             new BundlerParamInfo<>(
