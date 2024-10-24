@@ -1542,11 +1542,6 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, UseCodeCacheFlushing, true,                                 \
           "Remove cold/old nmethods from the code cache")                   \
                                                                             \
-  product(double, SweeperThreshold, 15.0,                                   \
-          "Threshold when a code cache unloading GC is invoked."            \
-          "Value is percentage of ReservedCodeCacheSize.")                  \
-          range(0.0, 100.0)                                                 \
-                                                                            \
   product(uintx, StartAggressiveSweepingAt, 10,                             \
           "Start aggressive sweeping if X[%] of the code cache is free."    \
           "Segmented code cache: X[%] of the non-profiled heap."            \

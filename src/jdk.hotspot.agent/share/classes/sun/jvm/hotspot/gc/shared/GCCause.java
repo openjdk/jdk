@@ -43,7 +43,6 @@ public enum GCCause {
   _no_cause_specified ("Unknown GCCause"),
   _allocation_failure ("Allocation Failure"),
 
-  _codecache_GC_threshold ("CodeCache GC Threshold"),
   _codecache_GC_aggressive ("CodeCache GC Aggressive"),
   _metadata_GC_threshold ("Metadata GC Threshold"),
   _metadata_GC_clear_soft_refs ("Metadata GC Clear Soft References"),
