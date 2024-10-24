@@ -655,7 +655,7 @@ TEST_VM_ASSERT_MSG(os, release_bad_ranges, ".*bad release") {
 #else
 TEST_VM(os, release_bad_ranges) {
 #endif
-  char* p = os::reserve_memory(4 * M);
+  char* p = os::reserve_memory(4 * M, false, mtTest);
   ASSERT_NE(p, (char*)nullptr);
   // Release part of range
   ASSERT_FALSE(os::release_memory(p, M));
@@ -731,7 +731,7 @@ TEST_VM(os, show_mappings_small_range) {
 TEST_VM(os, show_mappings_full_range) {
   // Reserve a small range and fill it with a marker string, should show up
   // on implementations displaying range snippets
-  char* p = os::reserve_memory(1 * M, false, mtInternal);
+  char* p = os::reserve_memory(1 * M, false, mtTest);
   if (p != nullptr) {
     if (os::commit_memory(p, 1 * M, false)) {
       strcpy(p, "ABCDEFGHIJKLMNOPQRSTUVWXYZ");
@@ -755,7 +755,7 @@ TEST_VM(os, find_mapping_simple) {
 
   // A simple allocation
   {
-    address p = (address)os::reserve_memory(total_range_len);
+    address p = (address)os::reserve_memory(total_range_len, false, mtTest);
     ASSERT_NE(p, (address)nullptr);
     PRINT_MAPPINGS("A");
     for (size_t offset = 0; offset < total_range_len; offset += 4711) {
