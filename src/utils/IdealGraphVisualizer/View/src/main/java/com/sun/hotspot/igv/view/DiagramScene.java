@@ -983,12 +983,15 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
 
 
                     Point startLocation;
-                    Point origFrom;
+                    Point originalPosition;
                     @Override
                     public void movementStarted(Widget widget) {
-                        LineWidget lineWidget = (LineWidget) widget;
-                        startLocation = lineWidget.getClientAreaLocation();
-                        origFrom = lineWidget.getFrom();
+                        LineWidget lw = (LineWidget) widget;
+                        startLocation = lw.getClientAreaLocation();
+                        originalPosition = new Point(
+                                (lw.getFrom().x + lw.getTo().x) / 2,
+                                (lw.getFrom().y + lw.getTo().y) / 2
+                        );
                     }
 
                     @Override
@@ -1004,7 +1007,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
                         if (shiftX == 0) return;
 
                         rebuilding = true;
-                        boolean wasMoved = seaLayoutManager.moveLink(lineWidget.getFromFigure(), origFrom, shiftX);
+                        boolean wasMoved = seaLayoutManager.moveLink(originalPosition, shiftX);
                         rebuildConnectionLayer();
                         for (FigureWidget fw : getVisibleFigureWidgets()) {
                             fw.updatePosition();
