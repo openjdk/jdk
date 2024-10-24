@@ -477,9 +477,9 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
   // StoreLoad achieves this.
   membar(StoreLoad);
 
-  // Check if the entry lists are empty.
-  movptr(boxReg, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(cxq)));
-  orptr(boxReg, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(EntryList)));
+  // Check if the entry lists are empty (EntryList first - by convention).
+  movptr(boxReg, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(EntryList)));
+  orptr(boxReg, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(cxq)));
   jccb(Assembler::zero, LSuccess);    // If so we are done.
 
   // Check if there is a successor.
@@ -806,9 +806,9 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register reg_rax, 
     // StoreLoad achieves this.
     membar(StoreLoad);
 
-    // Check if the entry lists are empty.
-    movptr(reg_rax, cxq_address);
-    orptr(reg_rax, EntryList_address);
+    // Check if the entry lists are empty (EntryList first - by convention).
+    movptr(reg_rax, EntryList_address);
+    orptr(reg_rax, cxq_address);
     jccb(Assembler::zero, unlocked);    // If so we are done.
 
     // Check if there is a successor.
