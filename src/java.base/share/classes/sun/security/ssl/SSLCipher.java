@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1859,10 +1859,23 @@ enum SSLCipher {
                 }
 
                 if (bb.remaining() <= tagSize) {
-                    throw new BadPaddingException(
-                        "Insufficient buffer remaining for AEAD cipher " +
-                        "fragment (" + bb.remaining() + "). Needs to be " +
-                        "more than tag size (" + tagSize + ")");
+                    // Check for unexpected plaintext alert.
+                    if (ContentType.ALERT.equals(ContentType.valueOf(contentType))) {
+                        // In TLSv1.3 alert level can be ignored, we only get the alert.
+                        final String msg = "Unexpected plaintext alert received: "
+                                + Alert.nameOf(bb.get(bb.position() + 1));
+
+                        if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
+                            SSLLogger.info(msg);
+                        }
+
+                        throw new GeneralSecurityException(msg);
+                    } else {
+                        throw new BadPaddingException(
+                                "Insufficient buffer remaining for AEAD cipher " +
+                                        "fragment (" + bb.remaining() + "). Needs to be " +
+                                        "more than tag size (" + tagSize + ")");
+                    }
                 }
 
                 byte[] sn = sequence;
