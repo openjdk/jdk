@@ -68,7 +68,7 @@ public class PropertyEditorManager {
      * if either the target or editor class is unloaded.
      *
      * @param targetType   the class object of the type to be edited
-     * @param editorClass  the class object of the editor classs
+     * @param editorClass  the class object of the editor class
      */
     public static void registerEditor(Class<?> targetType, Class<?> editorClass) {
         @SuppressWarnings("removal")
