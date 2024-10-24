@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,50 +56,55 @@ public class Handler extends URLStreamHandler {
         super.parseURL(u, spec.replace(File.separatorChar, '/'), start, limit);
     }
 
-    public URLConnection openConnection(URL u)
+    public URLConnection openConnection(URL url)
         throws IOException {
-        return openConnection(u, null);
+        return openConnection(url, null);
     }
 
-    public URLConnection openConnection(URL u, Proxy p)
+    public URLConnection openConnection(URL url, Proxy p)
            throws IOException {
-        String host = u.getHost();
-        if (host == null || host.isEmpty() || host.equals("~") ||
-            host.equalsIgnoreCase("localhost")) {
-            File file = new File(ParseUtil.decode(u.getPath()));
-            return createFileURLConnection(u, file);
+
+        String file = url.getFile();
+        String path = ParseUtil.decode(url.getPath());
+        String host = url.getHost();
+
+        if (host == null || host.isEmpty() ||
+                host.equalsIgnoreCase("localhost") ||
+                host.equals("~")) {
+            return createFileURLConnection(url, new File(path));
         }
 
-        /* If you reach here, it implies that you have a hostname
-           so attempt an ftp connection.
-         */
         URLConnection uc;
-        URL ru;
+
+        // If you reach here, it implies that you have a hostname
+        // so attempt an ftp connection.
+
+        URL newurl;
 
         try {
             @SuppressWarnings("deprecation")
-            var _unused = ru = new URL("ftp", host, u.getFile() +
-                             (u.getRef() == null ? "": "#" + u.getRef()));
+            var _unused = newurl = new URL("ftp", host, file +
+                    (url.getRef() == null ? "": "#" + url.getRef()));
             if (p != null) {
-                uc = ru.openConnection(p);
+                uc = newurl.openConnection(p);
             } else {
-                uc = ru.openConnection();
+                uc = newurl.openConnection();
             }
         } catch (IOException e) {
             uc = null;
         }
         if (uc == null) {
             throw new IOException("Unable to connect to: " +
-                                                       u.toExternalForm());
+                    url.toExternalForm());
         }
         return uc;
     }
 
-    // Template method to be overridden by Java Plug-in. [stanleyh]
-    //
-    protected URLConnection createFileURLConnection(URL u, File file)
-    {
-        return new FileURLConnection(u, file);
+    /**
+     * Template method to be overridden by Java Plug-in. [stanleyh]
+     */
+    protected URLConnection createFileURLConnection(URL url, File file) {
+        return new FileURLConnection(url, file);
     }
 
     /**
