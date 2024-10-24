@@ -440,7 +440,7 @@ public class VM {
        reserveForAllocationPrefetch = (int)reserveForAllocationPrefetchField.getCInteger(intType);
 
        Type collectedHeap = db.lookupType("CollectedHeap");
-       CIntegerType sizeType = (CIntegerType) db.lookupType("size_t");
+       CIntegerType sizeType = (CIntegerType) sizetType;
        CIntegerField labAlignmentReserveField = collectedHeap.getCIntegerField("_lab_alignment_reserve");
        labAlignmentReserve = (int)labAlignmentReserveField.getCInteger(sizeType);
     } catch (Exception exp) {
