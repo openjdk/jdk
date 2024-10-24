@@ -33,7 +33,6 @@ import static jdk.jpackage.internal.StandardBundlerParam.MENU_HINT;
 import static jdk.jpackage.internal.StandardBundlerParam.SHORTCUT_HINT;
 import static jdk.jpackage.internal.WinLauncher.WinShortcut.WinShortcutDesktop;
 import static jdk.jpackage.internal.WinLauncher.WinShortcut.WinShortcutStartMenu;
-import static jdk.jpackage.internal.WindowsAppImageBuilder.CONSOLE_HINT;
 
 final class WinApplicationFromParams {
 
@@ -78,4 +77,13 @@ final class WinApplicationFromParams {
             // valueOf(null) is false,
             // and we actually do want null in some cases
             (s, p) -> (s == null || "null".equalsIgnoreCase(s)) ? false : Boolean.valueOf(s));
+    
+    public static final BundlerParamInfo<Boolean> CONSOLE_HINT = new BundlerParamInfo<>(
+            Arguments.CLIOptions.WIN_CONSOLE_HINT.getId(),
+            Boolean.class,
+            params -> false,
+            // valueOf(null) is false,
+            // and we actually do want null in some cases
+            (s, p) -> (s == null
+            || "null".equalsIgnoreCase(s)) ? true : Boolean.valueOf(s));
 }
