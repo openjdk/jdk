@@ -454,8 +454,8 @@ public class MethodHandles {
      * {@link java.lang.invoke.MethodHandleInfo#reflectAs MethodHandleInfo.reflectAs}
      * to resolve the symbolic reference to a member.
      * @param <T> the desired type of the result, either {@link Member} or a subtype
-     * @param target a direct method handle to crack into symbolic reference components
      * @param expected a class object representing the desired result type {@code T}
+     * @param target a direct method handle to crack into symbolic reference components
      * @return a reference to the method, constructor, or field object
      * @throws    NullPointerException if either argument is {@code null}
      * @throws    IllegalArgumentException if the target is not a direct method handle

@@ -24,72 +24,53 @@
 /**
  * @test
  * @bug     6684104
- * @summary Test verifies that ImageIO checks all permissions required for
- *           the file cache usage:
- *          no policy file: No security restrictions.
- *             Expected result: ImageIO creates file-cached stream.
- * @run     main CachePermissionsTest true
+ * @summary Test verifies that ImageIO uses cache if requested.
+ * @run     main/othervm CachePermissionsTest true
+ * @run     main/othervm CachePermissionsTest false
  */
-
 
 import java.io.IOException;
 import java.io.ByteArrayOutputStream;
 import javax.imageio.stream.ImageOutputStream;
 import javax.imageio.ImageIO;
 
-
 public class CachePermissionsTest {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         boolean isFileCacheExpected =
             Boolean.valueOf(args[0]).booleanValue();
         System.out.println("Is file cache expected: " + isFileCacheExpected);
 
-        ImageIO.setUseCache(true);
+        ImageIO.setUseCache(isFileCacheExpected);
 
         System.out.println("java.io.tmpdir is " + System.getProperty("java.io.tmpdir"));
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
-        try {
-            ImageOutputStream ios = ImageIO.createImageOutputStream(baos);
+        ImageOutputStream ios = ImageIO.createImageOutputStream(baos);
 
-            boolean isFileCache = ios.isCachedFile();
-            System.out.println("Is file cache used: " + isFileCache);
+        boolean isFileCache = ios.isCachedFile();
+        System.out.println("Is file cache used: " + isFileCache);
 
-            if (isFileCache !=isFileCacheExpected) {
-                System.out.println("WARNING: file chace usage is not as expected!");
-            }
-
-            System.out.println("Verify data writing...");
-            for (int i = 0; i < 8192; i++) {
-                ios.writeInt(i);
-            }
-
-            System.out.println("Verify data reading...");
-            ios.seek(0L);
-
-            for (int i = 0; i < 8192; i++) {
-                int j = ios.readInt();
-                if (i != j) {
-                    throw new RuntimeException("Wrong data in the stream " + j + " instead of " + i);
-                }
-            }
-
-            System.out.println("Verify stream closing...");
-            ios.close();
-        } catch (IOException e) {
-            /*
-             * Something went wrong?
-             */
-            throw new RuntimeException("Test FAILED.", e);
-        } catch (Exception e) {
-            /*
-             * We do not expect security execptions here:
-             * we there are any security restrition, ImageIO
-             * should swith to memory-cached streams, instead
-             * of using file cache.
-             */
-            throw new RuntimeException("Test FAILED.", e);
+        if (isFileCache != isFileCacheExpected) {
+            System.out.println("WARNING: file cache usage is not as expected!");
         }
+
+        System.out.println("Verify data writing...");
+            for (int i = 0; i < 8192; i++) {
+            ios.writeInt(i);
+        }
+
+        System.out.println("Verify data reading...");
+        ios.seek(0L);
+
+        for (int i = 0; i < 8192; i++) {
+            int j = ios.readInt();
+            if (i != j) {
+                throw new RuntimeException("Wrong data in the stream " + j + " instead of " + i);
+            }
+        }
+
+        System.out.println("Verify stream closing...");
+        ios.close();
     }
 }

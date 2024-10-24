@@ -1368,12 +1368,9 @@ public class Window extends Container implements Accessible {
     /**
      * Gets the warning string that is displayed with this window.
      * <p>
-     * If the window is secure, then {@code getWarningString}
-     * returns {@code null}. If the window is insecure, this
-     * method checks for the system property
-     * {@code awt.appletWarning}
-     * and returns the string value of that property.
-     * @return    the warning string for this window.
+     * Warning strings are no longer applicable,
+     * so this method always returns {@code null}.
+     * @return    null
      */
     public final String getWarningString() {
         return warningString;

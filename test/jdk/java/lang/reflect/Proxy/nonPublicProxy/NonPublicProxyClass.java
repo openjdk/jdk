@@ -80,7 +80,6 @@ public class NonPublicProxyClass {
         newInstanceFromConstructor(proxyClass);
     }
 
-    private static final String NEW_PROXY_IN_PKG = "newProxyInPackage.";
     private void newProxyInstance() {
         // expect newProxyInstance to succeed if it's in the same runtime package
         int i = proxyClass.getName().lastIndexOf('.');

@@ -62,11 +62,6 @@ public class AddPrivateKey extends SecmodTest {
     private static final byte[] DATA = generateData(DATA_LENGTH);
 
     public static void main(String[] args) throws Exception {
-        if (args.length > 1 && "sm".equals(args[0])) {
-            System.setProperty("java.security.policy",
-                    BASE + File.separator + args[1]);
-        }
-
         if (initSecmod() == false) {
             return;
         }
@@ -79,10 +74,6 @@ public class AddPrivateKey extends SecmodTest {
         System.out.println(p);
         System.out.println();
         Security.addProvider(p);
-
-        if (args.length > 1 && "sm".equals(args[0])) {
-            System.setSecurityManager(new SecurityManager());
-        }
 
         KeyStore ks = KeyStore.getInstance(PKCS11, p);
         ks.load(null, password);

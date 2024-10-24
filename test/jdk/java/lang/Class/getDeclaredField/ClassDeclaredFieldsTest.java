@@ -27,9 +27,9 @@ import java.lang.reflect.Field;
  * @test
  * @bug 8065552
  * @summary test that all fields returned by getDeclaredFields() can be
- *          set accessible if the right permission is granted; this test
- *          also verifies that Class.classLoader final private field is
- *          hidden from reflection access.
+ *          set accessible if package java.lang is open to unnamed module;
+ *          this test also verifies that Class.classLoader final private field
+ *          is hidden from reflection access.
  * @modules java.base/java.lang:open
  * @run main/othervm ClassDeclaredFieldsTest
  *

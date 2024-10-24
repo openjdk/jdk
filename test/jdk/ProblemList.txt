@@ -585,7 +585,7 @@ java/net/Socket/asyncClose/Race.java                            8317801 aix-ppc6
 
 # jdk_nio
 
-java/nio/Buffer/LimitDirectMemory.java                          8340728 generic-all
+java/nio/Buffer/LimitDirectMemory.java                          8342849 generic-all
 
 java/nio/channels/AsynchronousSocketChannel/StressLoopback.java 8211851 aix-ppc64
 
@@ -723,6 +723,9 @@ javax/swing/JMenuItem/ActionListenerCalledTwice/ActionListenerCalledTwiceTest.ja
 
 # core_tools
 
+tools/jar/ExtractFilesTest.java 8342930 generic-all
+tools/jar/MultipleManifestTest.java 8342930 generic-all
+
 
 ############################################################################
 
@@ -830,10 +833,9 @@ java/awt/dnd/WinMoveFileToShellTest.java 8341665 windows-all
 
 # :jdk_desktop
 javax/swing/JPopupMenu/6694823/bug6694823.java 8342012 windows-all,linux-all
+java/awt/Robot/InfiniteLoopException.java 8342638 windows-all
 
 # :tier2_part2
-jdk/dynalink/BeanLinkerTest.java 8338411 generic-all
-jdk/dynalink/TrustedDynamicLinkerFactoryTest.java 8338411 generic-all
 tools/launcher/MainClassCantBeLoadedTest.java 8338411 generic-all
 tools/launcher/modules/basic/LauncherErrors.java 8338411 generic-all
 

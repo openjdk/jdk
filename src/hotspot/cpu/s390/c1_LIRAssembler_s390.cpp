@@ -216,7 +216,11 @@ int LIR_Assembler::emit_unwind_handler() {
     LIR_Opr lock = FrameMap::as_opr(Z_R1_scratch);
     monitor_address(0, lock);
     stub = new MonitorExitStub(lock, true, 0);
-    __ unlock_object(Rtmp1, Rtmp2, lock->as_register(), *stub->entry());
+    if (LockingMode == LM_MONITOR) {
+      __ branch_optimized(Assembler::bcondAlways, *stub->entry());
+    } else {
+      __ unlock_object(Rtmp1, Rtmp2, lock->as_register(), *stub->entry());
+    }
     __ bind(*stub->continuation());
   }
 

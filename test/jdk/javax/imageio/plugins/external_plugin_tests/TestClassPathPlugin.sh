@@ -24,7 +24,6 @@
 # @test
 # @bug 8081729 8140314
 # @summary Test external plugin as classpath jar and as a modular jar.
-#          Test without security manager.
 
 set -e
 

@@ -92,10 +92,6 @@ public class ToolProviderTest {
     }
 
     public static class TestProvider implements ToolProvider {
-        public TestProvider() {
-            checkPrivileges();
-        }
-
         public String name() {
             return "test";
         }
@@ -103,22 +99,6 @@ public class ToolProviderTest {
         public int run(PrintWriter out, PrintWriter err, String... args) {
             out.println("Test: " + Arrays.toString(args));
             return 0;
-        }
-
-        private void checkPrivileges() {
-            boolean haveSecurityManager = (System.getSecurityManager() != null);
-            try {
-                // validate appropriate privileges by checking access to a
-                // system property
-                System.getProperty("java.home");
-                if (haveSecurityManager) {
-                    throw new Error("exception not thrown");
-                }
-            } catch (SecurityException e) {
-                if (!haveSecurityManager) {
-                    throw new Error("unexpected exception: " + e);
-                }
-            }
         }
     }
 }

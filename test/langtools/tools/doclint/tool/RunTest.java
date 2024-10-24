@@ -38,7 +38,6 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.URI;
 import java.util.Arrays;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import javax.tools.JavaFileObject;
@@ -76,9 +75,10 @@ public class RunTest {
     }
 
     void testMain(int expectExitValue, String option) {
-        List<String> args = new ArrayList<>();
-        args.add(DocLint.class.getName());
-        args.add(option);
+        List<String> args = List.of(
+                "--add-exports=jdk.javadoc/jdk.javadoc.internal.doclint=ALL-UNNAMED",
+                DocLint.class.getName(),
+                option);
         try {
             OutputAnalyzer oa = ProcessTools.executeTestJava(args);
             oa.reportDiagnosticSummary();
@@ -86,7 +86,7 @@ public class RunTest {
                 error("unexpected exit value: " + oa.getExitValue());
             }
         } catch (Exception e) {
-            error("unexpected Exception caught");
+            error("unexpected Exception caught: " + e);
         }
     }
 
