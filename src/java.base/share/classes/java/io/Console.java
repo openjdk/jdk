@@ -228,6 +228,25 @@ public sealed class Console implements Flushable permits ProxyingConsole {
     }
 
     /**
+     * Writes a prompt as if by calling {@code print}, then reads a single line
+     * of text from this console.
+     *
+     * @throws IOError
+     *         If an I/O error occurs.
+     *
+     * @return  A string containing the line read from the console, not
+     *          including any line-termination characters, or {@code null}
+     *          if an end of stream has been reached without having read
+     *          any characters.
+     *
+     * @since 24
+     */
+    @PreviewFeature(feature = PreviewFeature.Feature.IMPLICIT_CLASSES)
+    public String readln() {
+        throw newUnsupportedOperationException();
+    }
+
+    /**
      * Writes a formatted string to this console's output stream using
      * the specified format string and arguments with the
      * {@link Locale##default_locale default format locale}.

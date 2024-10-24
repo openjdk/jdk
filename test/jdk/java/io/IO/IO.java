@@ -133,22 +133,26 @@ public class IO {
             var testSrc = System.getProperty("test.src", ".");
             var command = new ArrayList<String>();
             command.add(expect.toString());
-            command.add(Path.of(testSrc, "input.exp").toAbsolutePath().toString());
+            String expectInputName = PROMPT_NONE.equals(prompt) ? "input-no-prompt"
+                                                                : "input";
+            command.add(Path.of(testSrc, expectInputName + ".exp").toAbsolutePath().toString());
             command.add(System.getProperty("test.jdk") + "/bin/java");
             command.add("--enable-preview");
             if (console != null)
                 command.add("-Djdk.console=" + console);
             command.add(Path.of(testSrc, "Input.java").toAbsolutePath().toString());
-            command.add(prompt == null ? "0" : "1");
+            command.add(prompt == null ? "0" : PROMPT_NONE.equals(prompt) ? "2" : "1");
             command.add(String.valueOf(prompt));
             OutputAnalyzer output = ProcessTools.executeProcess(command.toArray(new String[]{}));
             output.reportDiagnosticSummary();
             assertEquals(0, output.getExitValue());
         }
 
+        private static final String PROMPT_NONE = "prompt-none";
+
         public static Stream<Arguments> args() {
             // cross product: consoles x prompts
-            return Stream.of(null, "gibberish").flatMap(console -> Stream.of(null, "?", "%s")
+            return Stream.of(null, "gibberish").flatMap(console -> Stream.of(null, "?", "%s", PROMPT_NONE)
                     .map(prompt -> new String[]{console, prompt}).map(Arguments::of));
         }
     }
