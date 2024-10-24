@@ -342,6 +342,8 @@ private:
   const char*    _base_archive_name;
   FileMapHeader* _header;
 
+  ArchiveWorkers _archive_workers;
+
   static SharedPathTable       _shared_path_table;
   static bool                  _validating_shared_path_table;
 
@@ -467,6 +469,9 @@ public:
   void  close();
   bool  is_open() { return _file_open; }
   ReservedSpace reserve_shared_memory();
+
+  char* map_memory(int fd, const char* file_name, size_t file_offset,
+                   char *addr, size_t bytes, bool read_only, bool allow_exec);
 
   // JVM/TI RedefineClasses() support:
   // Remap the shared readonly space to shared readwrite, private.

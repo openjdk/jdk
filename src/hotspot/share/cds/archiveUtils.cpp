@@ -390,3 +390,119 @@ size_t HeapRootSegments::segment_offset(size_t seg_idx) {
   return _base_offset + seg_idx * _max_size_in_bytes;
 }
 
+ArchiveWorkers::ArchiveWorkers() :
+        _start_semaphore(0),
+        _end_semaphore(0),
+        _num_workers(MAX2(1, os::active_processor_count() / CPUS_PER_WORKER - 1)),
+        _started_workers(0),
+        _running_workers(0),
+        _in_shutdown(false),
+        _task(nullptr) {
+  // Kick off pool startup by creating a single worker.
+  start_worker_if_needed();
+}
+
+ArchiveWorkers::~ArchiveWorkers() {
+  // If nothing called shutdown yet, we need to gracefully shutdown now.
+  shutdown();
+}
+
+void ArchiveWorkers::shutdown() {
+  if (Atomic::cmpxchg(&_in_shutdown, false, true) == false) {
+    // Execute a shutdown task and block until all workers respond.
+    run_task(&_shutdown_task);
+  }
+}
+
+void ArchiveWorkers::start_worker_if_needed() {
+  while (true) {
+    int cur = Atomic::load(&_started_workers);
+    if (cur >= _num_workers) {
+      return;
+    }
+    if (Atomic::cmpxchg(&_started_workers, cur, cur + 1) == cur) {
+      break;
+    }
+  }
+
+  new ArchiveWorkerThread(this);
+}
+
+void ArchiveWorkers::run_task(ArchiveWorkerTask* task) {
+  assert(task == &_shutdown_task || !_in_shutdown, "Should not be shutdown");
+  assert(_task == nullptr, "Should not have running tasks");
+
+  // Configure the execution.
+  task->maybe_override_max_chunks(_num_workers * CHUNKS_PER_WORKER);
+  Atomic::store(&_running_workers, _num_workers);
+
+  // Publish the task and signal workers to pick it up.
+  Atomic::release_store(&_task, task);
+  _start_semaphore.signal(_num_workers);
+
+  // Execute the task ourselves, while workers are catching up.
+  // This allows us to hide parts of task handoff latency.
+  task->run();
+
+  // Done executing task locally, wait for any remaining workers to complete,
+  // and then do the final housekeeping.
+  _end_semaphore.wait();
+  Atomic::store(&_task, (ArchiveWorkerTask*)nullptr);
+  OrderAccess::fence();
+}
+
+void ArchiveWorkerTask::run() {
+  while (true) {
+    int chunk = Atomic::load(&_chunk);
+    if (chunk >= _max_chunks) {
+      return;
+    }
+    if (Atomic::cmpxchg(&_chunk, chunk, chunk + 1, memory_order_relaxed) == chunk) {
+      assert(0 <= chunk && chunk < _max_chunks, "Sanity");
+      work(chunk, _max_chunks);
+    }
+  }
+}
+
+void ArchiveWorkerTask::maybe_override_max_chunks(int max_chunks) {
+  if (_max_chunks == -1) {
+    _max_chunks = max_chunks;
+  }
+}
+
+bool ArchiveWorkers::run_as_worker() {
+  _start_semaphore.wait();
+
+  ArchiveWorkerTask* task = Atomic::load_acquire(&_task);
+  task->run();
+
+  // Signal the pool the tasks are complete, if this is the last worker.
+  if (Atomic::sub(&_running_workers, 1) == 0) {
+    _end_semaphore.signal();
+  }
+
+  // Continue if task was not a termination task.
+  return (task != &_shutdown_task);
+}
+
+ArchiveWorkerThread::ArchiveWorkerThread(ArchiveWorkers* pool) : NamedThread(), _pool(pool) {
+  set_name("ArchiveWorkerThread");
+  os::create_thread(this, os::os_thread);
+  os::start_thread(this);
+}
+
+void ArchiveWorkerThread::run() {
+  // Avalanche thread startup: each starting worker starts two others.
+  _pool->start_worker_if_needed();
+  _pool->start_worker_if_needed();
+
+  // Set ourselves up.
+  os::set_priority(this, NearMaxPriority);
+
+  while (_pool->run_as_worker()) {
+    // Work until terminated.
+  }
+
+  // All work done in threads should be visible to caller.
+  OrderAccess::fence();
+}
