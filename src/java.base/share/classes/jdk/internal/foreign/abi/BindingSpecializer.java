@@ -24,6 +24,7 @@
  */
 package jdk.internal.foreign.abi;
 
+import java.lang.classfile.Annotation;
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.Label;
@@ -46,10 +47,12 @@ import jdk.internal.foreign.abi.Binding.ShiftLeft;
 import jdk.internal.foreign.abi.Binding.ShiftRight;
 import jdk.internal.foreign.abi.Binding.VMLoad;
 import jdk.internal.foreign.abi.Binding.VMStore;
+import jdk.internal.vm.annotation.ForceInline;
 import sun.security.action.GetBooleanAction;
 import sun.security.action.GetPropertyAction;
 
 import java.io.IOException;
+import java.lang.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDesc;
 import java.lang.constant.DynamicConstantDesc;
@@ -77,8 +80,22 @@ public class BindingSpecializer {
         = GetPropertyAction.privilegedGetProperty("jdk.internal.foreign.abi.Specializer.DUMP_CLASSES_DIR");
     private static final boolean PERFORM_VERIFICATION
         = GetBooleanAction.privilegedGetProperty("jdk.internal.foreign.abi.Specializer.PERFORM_VERIFICATION");
-    private static final boolean SKIP_ACQUIRE_DEDUP
-        = GetBooleanAction.privilegedGetProperty("jdk.internal.foreign.abi.Specializer.SKIP_ACQUIRE_DEDUP");
+    private static final AcquireDedupStrategy ACQUIRE_DEDUP_STRATEGY
+        = AcquireDedupStrategy.of(GetPropertyAction.privilegedGetProperty("jdk.internal.foreign.abi.Specializer.ACQUIRE_DEDUP_STRATEGY"));
+
+    enum AcquireDedupStrategy {
+        DEFAULT,
+        SKIP,
+        SINGLE;
+
+        static AcquireDedupStrategy of(String property) {
+            return switch (property) {
+                case "skip" -> SKIP;
+                case "single" -> SINGLE;
+                case null, default -> DEFAULT;
+            };
+        }
+    }
 
     // Bunch of helper constants
     private static final int CLASSFILE_VERSION = ClassFileFormatVersion.latest().major();
@@ -101,6 +118,7 @@ public class BindingSpecializer {
     private static final ClassDesc CD_ValueLayout_OfFloat = referenceClassDesc(ValueLayout.OfFloat.class);
     private static final ClassDesc CD_ValueLayout_OfDouble = referenceClassDesc(ValueLayout.OfDouble.class);
     private static final ClassDesc CD_AddressLayout = referenceClassDesc(AddressLayout.class);
+    private static final ClassDesc CD_ForceInline = referenceClassDesc(ForceInline.class);
 
     private static final MethodTypeDesc MTD_NEW_BOUNDED_ARENA = MethodTypeDesc.of(CD_Arena, CD_long);
     private static final MethodTypeDesc MTD_NEW_EMPTY_ARENA = MethodTypeDesc.of(CD_Arena);
@@ -198,8 +216,9 @@ public class BindingSpecializer {
             clb.withFlags(ACC_PUBLIC + ACC_FINAL + ACC_SUPER)
                .withSuperclass(CD_Object)
                .withVersion(CLASSFILE_VERSION, 0)
-               .withMethodBody(METHOD_NAME, methodTypeDesc(callerMethodType), ACC_PUBLIC | ACC_STATIC,
-                    cb -> new BindingSpecializer(cb, callerMethodType, callingSequence, abi, leafType).specialize());
+               .withMethod(METHOD_NAME, methodTypeDesc(callerMethodType), ACC_PUBLIC | ACC_STATIC,
+                    mb -> mb.with(RuntimeVisibleAnnotationsAttribute.of(Annotation.of(CD_ForceInline)))
+                            .withCode(cb -> new BindingSpecializer(cb, callerMethodType, callingSequence, abi, leafType).specialize()));
         });
 
         if (DUMP_CLASSES_DIR != null) {
@@ -268,19 +287,26 @@ public class BindingSpecializer {
         if (callingSequence.forDowncall()) {
             returnAllocatorIdx = 0; // first param
 
-            // for downcalls we also acquire/release scoped parameters before/after the call
-            // create a bunch of locals here to keep track of their scopes (to release later)
-            int[] initialScopeSlots = new int[callerMethodType.parameterCount()];
-            int numScopes = 0;
-            for (int i = 0; i < callerMethodType.parameterCount(); i++) {
-                if (shouldAcquire(i)) {
-                    int scopeLocal = cb.allocateLocal(REFERENCE);
-                    initialScopeSlots[numScopes++] = scopeLocal;
-                    cb.aconst_null()
-                      .astore(scopeLocal); // need to initialize all scope locals here in case an exception occurs
+            if (ACQUIRE_DEDUP_STRATEGY.equals(AcquireDedupStrategy.DEFAULT)) {
+                // for downcalls we also acquire/release scoped parameters before/after the call
+                // create a bunch of locals here to keep track of their scopes (to release later)
+                int[] initialScopeSlots = new int[callerMethodType.parameterCount()];
+                int numScopes = 0;
+                for (int i = 0; i < callerMethodType.parameterCount(); i++) {
+                    if (shouldAcquire(i)) {
+                        int scopeLocal = cb.allocateLocal(REFERENCE);
+                        initialScopeSlots[numScopes++] = scopeLocal;
+                        cb.aconst_null()
+                                .astore(scopeLocal); // need to initialize all scope locals here in case an exception occurs
+                    }
                 }
+                scopeSlots = Arrays.copyOf(initialScopeSlots, numScopes); // fit to size
+            } else if (ACQUIRE_DEDUP_STRATEGY.equals(AcquireDedupStrategy.SINGLE)) {
+                scopeSlots = new int[1];
+                int scopeLocal = cb.allocateLocal(REFERENCE);
+                scopeSlots[0] = scopeLocal;
+                cb.aconst_null().astore(scopeLocal);
             }
-            scopeSlots = Arrays.copyOf(initialScopeSlots, numScopes); // fit to size
             curScopeLocalIdx = 0; // used from emitGetInput
         }
 
@@ -497,11 +523,11 @@ public class BindingSpecializer {
     }
 
     private void emitAcquireScope() {
-        if (SKIP_ACQUIRE_DEDUP) {
+        if (ACQUIRE_DEDUP_STRATEGY == AcquireDedupStrategy.SKIP) {
             cb.checkcast(CD_AbstractMemorySegmentImpl)
                     .invokevirtual(CD_AbstractMemorySegmentImpl, "sessionImpl", MTD_SESSION_IMPL)
                     .invokevirtual(CD_MemorySessionImpl, "acquire0", MTD_ACQUIRE0);
-        } else {
+        } else if (ACQUIRE_DEDUP_STRATEGY == AcquireDedupStrategy.DEFAULT) {
             cb.checkcast(CD_AbstractMemorySegmentImpl)
                     .invokevirtual(CD_AbstractMemorySegmentImpl, "sessionImpl", MTD_SESSION_IMPL);
             Label skipAcquire = cb.newLabel();
@@ -530,11 +556,69 @@ public class BindingSpecializer {
             }
 
             cb.labelBinding(end);
+        } else if (ACQUIRE_DEDUP_STRATEGY == AcquireDedupStrategy.SINGLE) {
+            cb.checkcast(CD_AbstractMemorySegmentImpl)
+                    .invokevirtual(CD_AbstractMemorySegmentImpl, "sessionImpl", MTD_SESSION_IMPL);
+            Label skipAcquire = cb.newLabel();
+            Label end = cb.newLabel();
+
+            // start with 1 scope to maybe acquire on the stack
+            assert curScopeLocalIdx != -1;
+            boolean first = curScopeLocalIdx == 0;
+
+            if (curScopeLocalIdx == 1) { // only cache by-ref params after the first
+                cb.dup()
+                  .astore(scopeSlots[0]);
+            } else if (!first) {
+                cb.dup()
+                  .aload(scopeSlots[0])
+                  .if_acmpeq(skipAcquire);
+            }
+
+            // call acquire first here. So that if it fails, we don't call release
+            cb.invokevirtual(CD_MemorySessionImpl, "acquire0", MTD_ACQUIRE0); // call acquire on the other
+            curScopeLocalIdx++;
+
+            if (!first) { // avoid ASM generating a bunch of nops for the dead code
+                cb.goto_(end)
+                        .labelBinding(skipAcquire)
+                        .pop(); // drop scope
+            }
+
+            cb.labelBinding(end);
         }
     }
 
+    private void emitReleaseScope() {
+        cb.checkcast(CD_AbstractMemorySegmentImpl)
+                .invokevirtual(CD_AbstractMemorySegmentImpl, "sessionImpl", MTD_SESSION_IMPL);
+        Label skipAcquire = cb.newLabel();
+        Label end = cb.newLabel();
+
+        // start with 1 scope to maybe acquire on the stack
+        assert curScopeLocalIdx != -1;
+        boolean first = curScopeLocalIdx == 0;
+
+        if (!first) {
+            cb.dup()
+                    .aload(scopeSlots[0])
+                    .if_acmpeq(skipAcquire);
+        }
+
+        cb.invokevirtual(CD_MemorySessionImpl, "release0", MTD_RELEASE0); // call acquire on the other
+        curScopeLocalIdx++;
+
+        if (!first) { // avoid ASM generating a bunch of nops for the dead code
+            cb.goto_(end)
+                    .labelBinding(skipAcquire)
+                    .pop(); // drop scope
+        }
+
+        cb.labelBinding(end);
+    }
+
     private void emitReleaseScopes() {
-        if (SKIP_ACQUIRE_DEDUP) {
+        if (ACQUIRE_DEDUP_STRATEGY.equals(AcquireDedupStrategy.SKIP)) {
             for (int paramIndex = 0 ; paramIndex < callerMethodType.parameterCount() ; paramIndex++) {
                 Class<?> highLevelType = callerMethodType.parameterType(paramIndex);
                 cb.loadLocal(TypeKind.from(highLevelType), cb.parameterSlot(paramIndex));
@@ -544,13 +628,22 @@ public class BindingSpecializer {
                             .invokevirtual(CD_MemorySessionImpl, "release0", MTD_RELEASE0);
                 }
             }
-        } else {
+        } else if (ACQUIRE_DEDUP_STRATEGY.equals(AcquireDedupStrategy.DEFAULT)) {
             for (int scopeLocal : scopeSlots) {
                 cb.aload(scopeLocal)
                         .ifThen(Opcode.IFNONNULL, ifCb -> {
                             ifCb.aload(scopeLocal)
                                     .invokevirtual(CD_MemorySessionImpl, "release0", MTD_RELEASE0);
                         });
+            }
+        } else if (ACQUIRE_DEDUP_STRATEGY.equals(AcquireDedupStrategy.SINGLE)) {
+            curScopeLocalIdx = 0;
+            for (int paramIndex = 0 ; paramIndex < callerMethodType.parameterCount() ; paramIndex++) {
+                if (shouldAcquire(paramIndex)) {
+                    Class<?> highLevelType = callerMethodType.parameterType(paramIndex);
+                    cb.loadLocal(TypeKind.from(highLevelType), cb.parameterSlot(paramIndex));
+                    emitReleaseScope();
+                }
             }
         }
     }

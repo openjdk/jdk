@@ -87,6 +87,22 @@ public class FFMEscapeAnalysisTest {
             ))
             .bindTo(LOOKUP.find("noop_params5").orElseThrow());
 
+    // void noop_params5(int param0, int param1, void *param2, void *param3, void *param4) {}
+    private static final MethodHandle MH_NOOP_PARAMS10 = Linker.nativeLinker()
+            .downcallHandle(FunctionDescriptor.ofVoid(
+                    ValueLayout.ADDRESS,
+                    ValueLayout.ADDRESS,
+                    ValueLayout.ADDRESS,
+                    ValueLayout.ADDRESS,
+                    ValueLayout.ADDRESS,
+                    ValueLayout.ADDRESS,
+                    ValueLayout.ADDRESS,
+                    ValueLayout.ADDRESS,
+                    ValueLayout.ADDRESS,
+                    ValueLayout.ADDRESS
+            ))
+            .bindTo(LOOKUP.find("noop_params10").orElseThrow());
+
     @Benchmark
     public void noop_params0() {
         try {
@@ -182,6 +198,56 @@ public class FFMEscapeAnalysisTest {
     public void noop_params5_shared() {
         try {
             MH_NOOP_PARAMS5.invokeExact(
+                    ss1, ss2, ss3, ss4, ss5
+            );
+            /*var p = MemorySegment.ofAddress(0L);
+            MH_NOOP_PARAMS5.invokeExact(p, p, p, p, p);*/
+        } catch (Throwable t) {
+            throw new AssertionError(t);
+        }
+    }
+
+    @Benchmark
+    public void noop_params10() {
+        try {
+            MH_NOOP_PARAMS10.invokeExact(
+                    MemorySegment.ofAddress(0L),
+                    MemorySegment.ofAddress(0L),
+                    MemorySegment.ofAddress(0L),
+                    MemorySegment.ofAddress(0L),
+                    MemorySegment.ofAddress(0L),
+                    MemorySegment.ofAddress(0L),
+                    MemorySegment.ofAddress(0L),
+                    MemorySegment.ofAddress(0L),
+                    MemorySegment.ofAddress(0L),
+                    MemorySegment.ofAddress(0L)
+            );
+            /*var p = MemorySegment.ofAddress(0L);
+            MH_NOOP_PARAMS5.invokeExact(p, p, p, p, p);*/
+        } catch (Throwable t) {
+            throw new AssertionError(t);
+        }
+    }
+
+    @Benchmark
+    public void noop_params10_confined() {
+        try {
+            MH_NOOP_PARAMS10.invokeExact(
+                    cs1, cs2, cs3, cs4, cs5,
+                    cs1, cs2, cs3, cs4, cs5
+            );
+            /*var p = MemorySegment.ofAddress(0L);
+            MH_NOOP_PARAMS5.invokeExact(p, p, p, p, p);*/
+        } catch (Throwable t) {
+            throw new AssertionError(t);
+        }
+    }
+
+    @Benchmark
+    public void noop_params10_shared() {
+        try {
+            MH_NOOP_PARAMS10.invokeExact(
+                    ss1, ss2, ss3, ss4, ss5,
                     ss1, ss2, ss3, ss4, ss5
             );
             /*var p = MemorySegment.ofAddress(0L);

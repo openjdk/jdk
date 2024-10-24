@@ -27,7 +27,9 @@ package jdk.internal.foreign.abi;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.JavaLangInvokeAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.foreign.AbstractMemorySegmentImpl;
 import jdk.internal.foreign.CABI;
+import jdk.internal.foreign.MemorySessionImpl;
 import jdk.internal.foreign.abi.AbstractLinker.UpcallStubFactory;
 import jdk.internal.foreign.abi.aarch64.linux.LinuxAArch64Linker;
 import jdk.internal.foreign.abi.aarch64.macos.MacOsAArch64Linker;
@@ -315,9 +317,44 @@ public final class SharedUtils {
         }
     }
 
+    @ForceInline
     public static void checkNative(MemorySegment segment) {
         if (!segment.isNative()) {
             throw new IllegalArgumentException("Heap segment not allowed: " + segment);
+        }
+    }
+
+    @ForceInline
+    public static long unsafeGetOffsetCheckNative(MemorySegment segment) {
+        checkNative(segment);
+        return unsafeGetOffset(segment);
+    }
+
+    @ForceInline
+    public static long unsafeGetOffset(MemorySegment segment) {
+        return ((AbstractMemorySegmentImpl)segment).unsafeGetOffset();
+    }
+
+    @ForceInline
+    public static Object unsafeGetBase(MemorySegment segment) {
+        return ((AbstractMemorySegmentImpl)segment).unsafeGetBase();
+    }
+
+    @ForceInline
+    public static MemorySessionImpl acquireIfNeeded(MemorySegment segment, MemorySessionImpl prev) {
+        MemorySessionImpl sessionImpl = ((AbstractMemorySegmentImpl)segment).sessionImpl();
+        if (sessionImpl != prev) {
+            sessionImpl.acquire0();
+            return sessionImpl;
+        }
+        return prev;
+    }
+
+    @ForceInline
+    public static void releaseIfNeeded(MemorySegment segment, MemorySessionImpl prev) {
+        MemorySessionImpl sessionImpl = ((AbstractMemorySegmentImpl)segment).sessionImpl();
+        if (sessionImpl != prev) {
+            sessionImpl.release0();
         }
     }
 
