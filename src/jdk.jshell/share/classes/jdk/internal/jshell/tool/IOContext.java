@@ -67,6 +67,10 @@ abstract class IOContext implements AutoCloseable {
         throw new UserInterruptException("");
     }
 
+    public String readUserLine() throws IOException {
+        throw new UserInterruptException("");
+    }
+
     public Writer userOutput() {
         throw new UnsupportedOperationException();
     }

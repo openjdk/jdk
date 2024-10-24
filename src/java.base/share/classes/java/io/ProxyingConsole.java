@@ -119,6 +119,18 @@ final class ProxyingConsole extends Console {
 
     /**
      * {@inheritDoc}
+     *
+     * @throws IOError {@inheritDoc}
+     */
+    @Override
+    public String readln() {
+        synchronized (readLock) {
+            return delegate.readln();
+        }
+    }
+
+    /**
+     * {@inheritDoc}
      */
     @Override
     public Console format(String format, Object ... args) {
