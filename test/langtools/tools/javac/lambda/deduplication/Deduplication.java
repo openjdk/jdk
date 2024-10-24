@@ -172,6 +172,21 @@ public class Deduplication {
 
         group((Function<Object, Integer>) x -> x instanceof R(Integer i1, int i2) ? i2 : -1,
               (Function<Object, Integer>) x -> x instanceof R(Integer i1, int i2) ? i2 : -1 );
+
+        group((Function<Object, Integer>) x -> x instanceof int i2 ? i2 : -1,
+              (Function<Object, Integer>) x -> x instanceof int i2 ? i2 : -1);
+
+        group((Function<Object, Integer>) x -> switch (x) { case String s -> s.length(); default -> -1; },
+              (Function<Object, Integer>) x -> switch (x) { case String s -> s.length(); default -> -1; });
+
+        group((Function<Object, Integer>) x -> {
+                    int y1 = -1;
+                    return y1;
+                },
+              (Function<Object, Integer>) x -> {
+                    int y2 = -1;
+                    return y2;
+               });
     }
 
     void f() {}
