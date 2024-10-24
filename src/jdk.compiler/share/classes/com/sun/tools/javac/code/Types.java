@@ -3328,6 +3328,10 @@ public class Types {
         return t.map(new Subst(from, to));
     }
 
+    /* this class won't substitute all types for example UndetVars are never substituted, this is like this
+     * by design as UndetVars are used locally during inference and shouldn't scape from inference rutines,
+     * some specialized applications could need a tailored solution
+     */
     private class Subst extends StructuralTypeMapping<Void> {
         List<Type> from;
         List<Type> to;
@@ -3354,16 +3358,6 @@ public class Types {
                  from = from.tail, to = to.tail) {
                 if (t.equalsIgnoreMetadata(from.head)) {
                     return to.head.withTypeVar(t);
-                }
-            }
-            return t;
-        }
-
-        @Override
-        public Type visitUndetVar(UndetVar t, Void unused) {
-            for (List<Type> from = this.from, to = this.to; from.nonEmpty(); from = from.tail, to = to.tail) {
-                if (t.equalsIgnoreMetadata(from.head)) {
-                    return to.head;
                 }
             }
             return t;
