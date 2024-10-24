@@ -407,6 +407,7 @@ void Compile::remove_useless_node(Node* dead) {
     remove_useless_late_inlines(         &_string_late_inlines, dead);
     remove_useless_late_inlines(         &_boxing_late_inlines, dead);
     remove_useless_late_inlines(&_vector_reboxing_late_inlines, dead);
+    remove_useless_late_inlines(         &_vector_late_inlines, dead);
 
     if (dead->is_CallStaticJava()) {
       remove_unstable_if_trap(dead->as_CallStaticJava(), false);
@@ -465,6 +466,7 @@ void Compile::disconnect_useless_nodes(Unique_Node_List& useful, Unique_Node_Lis
   remove_useless_late_inlines(         &_string_late_inlines, useful);
   remove_useless_late_inlines(         &_boxing_late_inlines, useful);
   remove_useless_late_inlines(&_vector_reboxing_late_inlines, useful);
+  remove_useless_late_inlines(         &_vector_late_inlines, useful);
   debug_only(verify_graph_edges(true/*check for no_dead_code*/);)
 }
 
@@ -668,6 +670,7 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
                   _string_late_inlines(comp_arena(), 2, 0, nullptr),
                   _boxing_late_inlines(comp_arena(), 2, 0, nullptr),
                   _vector_reboxing_late_inlines(comp_arena(), 2, 0, nullptr),
+                  _vector_late_inlines(comp_arena(), 2, 0, nullptr),
                   _late_inlines_pos(0),
                   _number_of_mh_late_inlines(0),
                   _oom(false),
@@ -2148,6 +2151,11 @@ void Compile::inline_incrementally(PhaseIterGVN& igvn) {
     inline_incrementally_cleanup(igvn);
   }
 
+  if (EnableVectorSupport && _vector_late_inlines.length() > 0) {
+    inline_vector_calls(igvn);
+    if (failing())  return;
+  }
+
   set_inlining_incrementally(false);
 }
 
@@ -2294,7 +2302,7 @@ void Compile::Optimize() {
   if (EnableVectorSupport && has_vbox_nodes()) {
     TracePhase tp("", &timers[_t_vector]);
     PhaseVector pv(igvn);
-    pv.optimize_vector_boxes();
+    pv.optimize_vector_boxes(igvn);
     if (failing())  return;
     print_method(PHASE_ITER_GVN_AFTER_VECTOR, 2);
   }
@@ -2544,6 +2552,24 @@ bool Compile::has_vbox_nodes() {
     }
   }
   return false;
+}
+
+void Compile::inline_vector_calls(PhaseIterGVN &igvn) {
+  if (C->_vector_late_inlines.length() > 0) {
+    _late_inlines_pos = C->_late_inlines.length();
+    while (_vector_late_inlines.length() > 0) {
+      CallGenerator* cg = _vector_late_inlines.pop();
+      bool does_dispatch = cg->is_virtual_late_inline() || cg->is_mh_late_inline();
+      if (inlining_incrementally() || does_dispatch) { // a call can be either inlined or strength-reduced to a direct call
+        cg->do_late_inline();
+        if (failing()) {
+          return;
+        }
+        print_method(PHASE_INLINE_VECTOR, 3, cg->call_node());
+      }
+    }
+    _vector_late_inlines.trunc_to(0);
+  }
 }
 
 //---------------------------- Bitwise operation packing optimization ---------------------------
