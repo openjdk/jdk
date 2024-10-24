@@ -432,7 +432,10 @@ void VirtualMemoryTracker::set_reserved_region_type(address addr, MemTag mem_tag
   if (reserved_rgn != nullptr) {
     assert(reserved_rgn->contain_address(addr), "Containment");
     if (reserved_rgn->mem_tag() != mem_tag) {
-      assert(reserved_rgn->mem_tag() == mtNone, "Overwrite memory tag (should be mtNone, is: \"%s\")",
+      assert(reserved_rgn->mem_tag() == mtNone,
+             "Unexpected overwrite memory tag (should be \"%s\" or \"%s\", current tag is \"%s\")",
+             NMTUtil::tag_to_name(mtNone),
+             NMTUtil::tag_to_name(mem_tag),
              NMTUtil::tag_to_name(reserved_rgn->mem_tag()));
       reserved_rgn->set_mem_tag(mem_tag);
     }
