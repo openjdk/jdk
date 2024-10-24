@@ -29,6 +29,7 @@ import java.nio.channels.FileChannel;
 import java.util.Arrays;
 import jdk.internal.util.ArraysSupport;
 import jdk.internal.event.FileReadEvent;
+import jdk.internal.vm.annotation.Stable;
 import sun.nio.ch.FileChannelImpl;
 
 /**
@@ -80,6 +81,10 @@ public class FileInputStream extends InputStream
     private final Object closeLock = new Object();
 
     private volatile boolean closed;
+
+    // This field indicates whether the position0() or skip0() may be
+    // invoked without encountering an illegal seek exception.
+    private @Stable Boolean canSeek;
 
     /**
      * Creates a {@code FileInputStream} to read from an existing file
@@ -617,7 +622,11 @@ public class FileInputStream extends InputStream
      * position0() and skip0().
      */
     private boolean canSeek() {
-        return canSeek0(fd);
+        Boolean canSeek = this.canSeek;
+        if (canSeek == null) {
+            this.canSeek = canSeek = canSeek0(fd);
+        }
+        return canSeek;
     }
     private native boolean canSeek0(FileDescriptor fd);
 
