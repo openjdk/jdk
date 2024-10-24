@@ -1,0 +1,148 @@
+/*
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+ /*
+ * Original source:
+ * public class EmptyLoop {
+ *   public void emptyLoop() {
+ *     for (int i = 0; i < 10; i++) {
+ *     }
+ *   }
+ * }
+ */
+
+class EmptyLoop {
+  0xCAFEBABE;
+  0;                             // minor version
+  68;                            // version
+  [] {                           // Constant Pool
+    ;                            // first element is empty
+    Method #2 #3;                // #1
+    class #4;                    // #2
+    NameAndType #5 #6;           // #3
+    Utf8 "java/lang/Object";     // #4
+    Utf8 "<init>";               // #5
+    Utf8 "()V";                  // #6
+    class #8;                    // #7
+    Utf8 "EmptyLoop";            // #8
+    Utf8 "Code";                 // #9
+    Utf8 "LineNumberTable";      // #10
+    Utf8 "LocalVariableTable";   // #11
+    Utf8 "this";                 // #12
+    Utf8 "LEmptyLoop;";          // #13
+    Utf8 "emptyLoop";            // #14
+    Utf8 "i";                    // #15
+    Utf8 "I";                    // #16
+    Utf8 "StackMapTable";        // #17
+    Utf8 "SourceFile";           // #18
+    Utf8 "EmptyLoop.java";       // #19
+  }
+
+  0x0021;                        // access
+  #7;                            // this_cpx
+  #2;                            // super_cpx
+
+  [] {                           // Interfaces
+  }                              // end of Interfaces
+
+  [] {                           // Fields
+  }                              // end of Fields
+
+  [] {                           // Methods
+    {                            // method
+      0x0001;                    // access
+      #5;                        // name_index
+      #6;                        // descriptor_index
+      [] {                       // Attributes
+        Attr(#9) {               // Code
+          1;                     // max_stack
+          1;                     // max_locals
+          Bytes[]{
+            0x2AB70001B1;
+          }
+          [] {                   // Traps
+          }                      // end of Traps
+          [] {                   // Attributes
+            Attr(#10) {          // LineNumberTable
+              [] {               // line_number_table
+                0  1;
+              }
+            }                    // end of LineNumberTable
+            ;
+            Attr(#11) {          // LocalVariableTable
+              [] {               // LocalVariableTable
+                0 5 12 13 0;
+              }
+            }                    // end of LocalVariableTable
+          }                      // end of Attributes
+        }                        // end of Code
+      }                          // end of Attributes
+    }
+    ;
+    {                            // method
+      0x0001;                    // access
+      #14;                       // name_index
+      #6;                        // descriptor_index
+      [] {                       // Attributes
+        Attr(#9) {               // Code
+          2;                     // max_stack
+          2;                     // max_locals
+          Bytes[]{
+            0x033C1B100AA20009;
+            0x840101A7FFF7B1;
+          }
+          [] {                   // Traps
+          }                      // end of Traps
+          [] {                   // Attributes
+            Attr(#10) {          // LineNumberTable
+              [] {               // line_number_table
+                0  3;
+                14  5;
+              }
+            }                    // end of LineNumberTable
+            ;
+            Attr(#11) {          // LocalVariableTable
+              [] {               // LocalVariableTable
+                2 12 15 16 1;
+                0 15 12 13 0;
+              }
+            }                    // end of LocalVariableTable
+            ;
+            Attr(#17) {          // StackMapTable
+              [] {               //
+                252b, 2, []z{I}; // append_frame 1
+                250b, 11;        // chop_frame 1
+              }
+            }                    // end of StackMapTable
+          }                      // end of Attributes
+        }                        // end of Code
+      }                          // end of Attributes
+    }
+  }                              // end of Methods
+
+  [] {                           // Attributes
+    Attr(#18) {                  // SourceFile
+      #19;
+    }                            // end of SourceFile
+  }                              // end of Attributes
+}
