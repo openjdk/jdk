@@ -54,7 +54,6 @@ public class FileImageOutputStreamSpi extends ImageOutputStreamSpi {
             try {
                 return new FileImageOutputStream((File)output);
             } catch (Exception e) {
-                e.printStackTrace();
                 return null;
             }
         } else {
