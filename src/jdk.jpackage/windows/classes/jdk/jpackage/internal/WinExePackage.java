@@ -32,11 +32,6 @@ interface WinExePackage extends Package {
 
     Path icon();
 
-    @Override
-    default PackageType type() {
-        return StandardPackageType.WinExe;
-    }
-
     static class Impl extends Package.Proxy<WinMsiPackage> implements WinExePackage {
 
         Impl(WinMsiPackage msiPackage, Path icon) throws ConfigException {
@@ -45,6 +40,11 @@ interface WinExePackage extends Package {
             if (icon != null) {
                 Launcher.validateIcon(icon);
             }
+        }
+
+        @Override
+        public PackageType type() {
+            return StandardPackageType.WinExe;
         }
 
         @Override
