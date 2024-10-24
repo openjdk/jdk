@@ -993,7 +993,7 @@ public class TransPatterns extends TreeTranslator {
                        !currentNullable &&
                        !previousCompletesNormally &&
                        !currentCompletesNormally &&
-                       new TreeDiffer(List.of(commonBinding), List.of(currentBinding))
+                       new TreeDiffer(types, List.of(commonBinding), List.of(currentBinding))
                                .scan(commonNestedExpression, currentNestedExpression)) {
                 accummulator.add(c.head);
             } else {
