@@ -38,6 +38,7 @@ interface LinuxLauncher extends Launcher {
         }).orElseGet(Map::of);
     }
     
+    @Override
     default String defaultIconResourceName() {
         return "JavaApp.png";
     }
