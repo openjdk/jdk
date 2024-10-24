@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Objects;
-import java.util.Optional;
 
 public final class PackageFile {
 
@@ -38,10 +37,16 @@ public final class PackageFile {
      * @param appImageDir - path to application image
      */
     public static Path getPathInAppImage(Path appImageDir) {
-        return ApplicationLayout.platformAppImage()
-                .resolveAt(appImageDir)
-                .appDirectory()
-                .resolve(FILENAME);
+        return getPathInAppImage(ApplicationLayout.platformAppImage().resolveAt(
+                appImageDir));
+    }
+
+    /**
+     * Returns path to package file.
+     * @param appLayout - application layout
+     */
+    public static Path getPathInAppImage(ApplicationLayout appLayout) {
+        return appLayout.appDirectory().resolve(FILENAME);
     }
 
     PackageFile(String packageName) {
@@ -50,13 +55,10 @@ public final class PackageFile {
     }
 
     void save(ApplicationLayout appLayout) throws IOException {
-        Path dst = Optional.ofNullable(appLayout.appDirectory()).map(appDir -> {
-            return appDir.resolve(FILENAME);
-        }).orElse(null);
-
-        if (dst != null) {
-            Files.createDirectories(dst.getParent());
-            Files.writeString(dst, packageName);
+        Path dstDir = appLayout.appDirectory();
+        if (dstDir != null) {
+            Files.createDirectories(dstDir);
+            Files.writeString(dstDir.resolve(FILENAME), packageName);
         }
     }
 
