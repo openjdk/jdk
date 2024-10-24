@@ -655,7 +655,7 @@ ReservedHeapSpace::ReservedHeapSpace(size_t size, size_t alignment, size_t page_
     ShouldNotReachHere();
 #endif // _LP64
   } else {
-    initialize(size, alignment, page_size, nullptr, false, mtJavaHeap);
+    initialize(size, alignment, page_size, nullptr, false, mtGC);
   }
 
   assert(markWord::encode_pointer_as_mark(_base).decode_pointer() == _base,
@@ -664,7 +664,7 @@ ReservedHeapSpace::ReservedHeapSpace(size_t size, size_t alignment, size_t page_
          "area must be distinguishable from marks for mark-sweep");
 
   if (base() != nullptr) {
-    MemTracker::record_virtual_memory_tag((address)base(), mtJavaHeap);
+    MemTracker::record_virtual_memory_tag((address)base(), mtGC);
   }
 
   if (_fd_for_heap != -1) {

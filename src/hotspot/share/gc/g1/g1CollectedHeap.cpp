@@ -1304,7 +1304,7 @@ jint G1CollectedHeap::initialize() {
                                          page_size,
                                          G1HeapRegion::GrainBytes,
                                          1,
-                                         mtJavaHeap);
+                                         mtGC);
   if(heap_storage == nullptr) {
     vm_shutdown_during_initialization("Could not initialize G1 heap");
     return JNI_ERR;

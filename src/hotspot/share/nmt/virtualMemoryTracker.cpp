@@ -362,7 +362,7 @@ bool VirtualMemoryTracker::add_reserved_region(address base_addr, size_t size,
       // It can happen when the regions are thread stacks, as JNI
       // thread does not detach from VM before exits, and leads to
       // leak JavaThread object
-      if (reserved_rgn->mem_tag() == mtThreadStack) {
+      if ((reserved_rgn->mem_tag() == mtThreadStack) && (reserved_rgn->mem_tag() == mem_tag)) {
         guarantee(!CheckJNICalls, "Attached JNI thread exited without being detached");
         // Overwrite with new region
 
@@ -380,7 +380,7 @@ bool VirtualMemoryTracker::add_reserved_region(address base_addr, size_t size,
       // CDS mapping region.
       // CDS reserves the whole region for mapping CDS archive, then maps each section into the region.
       // NMT reports CDS as a whole.
-      if (reserved_rgn->mem_tag() == mtClassShared) {
+      if ((reserved_rgn->mem_tag() == mtClassShared) && (reserved_rgn->mem_tag() == mem_tag)) {
         log_debug(nmt)("CDS reserved region \'%s\' as a whole (" INTPTR_FORMAT ", " SIZE_FORMAT ")",
                       reserved_rgn->mem_tag_name(), p2i(reserved_rgn->base()), reserved_rgn->size());
         assert(reserved_rgn->contain_region(base_addr, size), "Reserved CDS region should contain this mapping region");
@@ -389,18 +389,28 @@ bool VirtualMemoryTracker::add_reserved_region(address base_addr, size_t size,
 
       // Mapped CDS string region.
       // The string region(s) is part of the java heap.
-      if (reserved_rgn->mem_tag() == mtJavaHeap) {
+      if ((reserved_rgn->mem_tag() == mtJavaHeap) && (reserved_rgn->mem_tag() == mem_tag)) {
         log_debug(nmt)("CDS reserved region \'%s\' as a whole (" INTPTR_FORMAT ", " SIZE_FORMAT ")",
                       reserved_rgn->mem_tag_name(), p2i(reserved_rgn->base()), reserved_rgn->size());
         assert(reserved_rgn->contain_region(base_addr, size), "Reserved heap region should contain this mapping region");
         return true;
       }
 
+      // Mapped GC region
+      if ((reserved_rgn->mem_tag() == mtGC) && (reserved_rgn->mem_tag() == mem_tag)) {
+        log_debug(nmt)("GC reserved region \'%s\' as a whole (" INTPTR_FORMAT ", " SIZE_FORMAT ")",
+                      reserved_rgn->mem_tag_name(), p2i(reserved_rgn->base()), reserved_rgn->size());
+        assert(reserved_rgn->contain_region(base_addr, size), "Reserved heap region should contain this mapping region");
+        return true;
+      }
+
       // Print some more details. Don't use UL here to avoid circularities.
-      tty->print_cr("Error: existing region: [" INTPTR_FORMAT "-" INTPTR_FORMAT "), memory tag %u.\n"
-                    "       new region: [" INTPTR_FORMAT "-" INTPTR_FORMAT "), memory tag %u.",
-                    p2i(reserved_rgn->base()), p2i(reserved_rgn->end()), (unsigned)reserved_rgn->mem_tag(),
-                    p2i(base_addr), p2i(base_addr + size), (unsigned)mem_tag);
+      tty->print_cr("Error: existing region: [" INTPTR_FORMAT "-" INTPTR_FORMAT "), memory tag %s.\n"
+                    "       new region: [" INTPTR_FORMAT "-" INTPTR_FORMAT "), memory tag %s.",
+                    p2i(reserved_rgn->base()), p2i(reserved_rgn->end()),
+                    NMTUtil::tag_to_name(reserved_rgn->mem_tag()),
+                    p2i(base_addr), p2i(base_addr + size),
+                    NMTUtil::tag_to_name(mem_tag));
       if (MemTracker::tracking_level() == NMT_detail) {
         tty->print_cr("Existing region allocated from:");
         reserved_rgn->call_stack()->print_on(tty);
