@@ -3329,7 +3329,7 @@ public class Types {
     }
 
     /* this class won't substitute all types for example UndetVars are never substituted, this is
-     * by design as UndetVars are used locally during inference and shouldn't scape from inference rutines,
+     * by design as UndetVars are used locally during inference and shouldn't escape from inference routines,
      * some specialized applications could need a tailored solution
      */
     private class Subst extends StructuralTypeMapping<Void> {
