@@ -58,10 +58,9 @@ public class DHKeyFactory {
 
     private void run() throws Exception {
 
-        jdk.test.lib.security.DiffieHellmanGroup dhGroup = jdk.test.lib.security.SecurityUtils.getTestDHGroup();
-        DHParameterSpec dhParamSpec;
-        System.err.println("Using " + dhGroup.name() + " Diffie-Hellman parameters");
-        dhParamSpec = new DHParameterSpec(dhGroup.getPrime(), dhGroup.getBase());
+        DiffieHellmanGroup dhGroup = SecurityUtils.getTestDHGroup();
+        DHParameterSpec dhParamSpec = new DHParameterSpec(dhGroup.getPrime(), dhGroup.getBase());
+        System.out.println("Using " + dhGroup.name() + " Diffie-Hellman parameters");
 
         KeyPairGenerator kpgen = KeyPairGenerator.getInstance("DH", "SunJCE");
         kpgen.initialize(dhParamSpec);

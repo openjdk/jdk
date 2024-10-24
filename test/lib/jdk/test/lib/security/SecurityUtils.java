@@ -119,18 +119,12 @@ public final class SecurityUtils {
      * Returns a DH predefined group for tests, depending on the specified prime size
      */
     public static DiffieHellmanGroup getTestDHGroup(int primeSize) {
-        switch (primeSize) {
-            case 2048 -> {
-                return DiffieHellmanGroup.ffdhe2048;
-            }
-            case 3072 -> {
-                return DiffieHellmanGroup.ffdhe3072;
-            }
-            case 4096 -> {
-                return DiffieHellmanGroup.ffdhe4096;
-            }
+        return switch(primeSize) {
+            case 2048 -> DiffieHellmanGroup.ffdhe2048;
+            case 3072 -> DiffieHellmanGroup.ffdhe3072;
+            case 4096 -> DiffieHellmanGroup.ffdhe4096;
             default -> throw new RuntimeException("Test DH group not defined for " + primeSize);
-        }
+        };
     }
 
     private static void removeFromDSigPolicy(String rule, List<String> algs) {
