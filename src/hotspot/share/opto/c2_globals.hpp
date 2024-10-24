@@ -355,6 +355,12 @@
   product(bool, SuperWordReductions, true,                                  \
           "Enable reductions support in superword.")                        \
                                                                             \
+  product(uintx, SuperWordStoreToLoadForwardingFailureDetection, 2, DIAGNOSTIC, \
+          "if >0, auto-vectorization detects possible store-to-load"        \
+          "forwarding failures. The number specifies over how many"         \
+          "vectorized iterations this detection spans.")                    \
+          range(0, 64)                                                      \
+                                                                            \
   product(bool, UseCMoveUnconditionally, false,                             \
           "Use CMove (scalar and vector) ignoring profitability test.")     \
                                                                             \
