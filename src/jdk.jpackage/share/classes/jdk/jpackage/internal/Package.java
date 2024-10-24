@@ -161,7 +161,7 @@ interface Package {
                 }
             }
             return v.resolve(packageName());
-        }).orElseGet(this::defaultInstallDir);
+        }).orElseGet(() -> defaultInstallDir(this));
 
         switch (asStandardPackageType()) {
             case WinExe, WinMsi -> {
@@ -174,30 +174,6 @@ interface Package {
     }
 
     Path configuredInstallBaseDir();
-
-    default Path defaultInstallDir() {
-        Path base;
-        switch (asStandardPackageType()) {
-            case WinExe, WinMsi -> {
-                base = Path.of("");
-            }
-            case LinuxDeb, LinuxRpm -> {
-                base = Path.of("/opt");
-            }
-            case MacDmg, MacPkg -> {
-                if (isRuntimeInstaller()) {
-                    base = Path.of("/Library/Java/JavaVirtualMachines");
-                } else {
-                    base = Path.of("/Applications");
-                }
-            }
-            default -> {
-                throw new UnsupportedOperationException();
-            }
-        }
-
-        return base.resolve(packageName());
-    }
 
     static record Impl(Application app, PackageType type, String packageName,
             String description, String version, String aboutURL, Path licenseFile,
@@ -360,5 +336,29 @@ interface Package {
         }
 
         return installDir;
+    }
+
+    private static Path defaultInstallDir(Package pkg) {
+        Path base;
+        switch (pkg.asStandardPackageType()) {
+            case WinExe, WinMsi -> {
+                base = Path.of("");
+            }
+            case LinuxDeb, LinuxRpm -> {
+                base = Path.of("/opt");
+            }
+            case MacDmg, MacPkg -> {
+                if (pkg.isRuntimeInstaller()) {
+                    base = Path.of("/Library/Java/JavaVirtualMachines");
+                } else {
+                    base = Path.of("/Applications");
+                }
+            }
+            default -> {
+                throw new UnsupportedOperationException();
+            }
+        }
+
+        return base.resolve(pkg.packageName());
     }
 }
