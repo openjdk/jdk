@@ -95,8 +95,7 @@ public final class Long extends Number
      *
      * @since   1.1
      */
-    @SuppressWarnings("unchecked")
-    public static final Class<Long>     TYPE = (Class<Long>) Class.getPrimitiveClass("long");
+    public static final Class<Long> TYPE = Class.getPrimitiveClass("long");
 
     /**
      * Returns a string representation of the first argument in the

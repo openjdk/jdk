@@ -3278,10 +3278,10 @@ public final class Class<T> implements java.io.Serializable,
     private native ProtectionDomain getProtectionDomain0();
 
     /*
-     * Return the Virtual Machine's Class object for the named
-     * primitive type.
+     * Returns the Class object for the named primitive type. Type parameter T
+     * avoids redundant casts for trusted code.
      */
-    static native Class<?> getPrimitiveClass(String name);
+    static native <T> Class<T> getPrimitiveClass(String name);
 
     /*
      * Check if client is allowed to access members.  If access is denied,

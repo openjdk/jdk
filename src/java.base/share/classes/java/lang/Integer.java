@@ -95,8 +95,7 @@ public final class Integer extends Number
      *
      * @since   1.1
      */
-    @SuppressWarnings("unchecked")
-    public static final Class<Integer>  TYPE = (Class<Integer>) Class.getPrimitiveClass("int");
+    public static final Class<Integer> TYPE = Class.getPrimitiveClass("int");
 
     /**
      * All possible chars for representing a number as a String

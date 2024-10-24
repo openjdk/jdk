@@ -175,8 +175,7 @@ public final class Float extends Number
      *
      * @since 1.1
      */
-    @SuppressWarnings("unchecked")
-    public static final Class<Float> TYPE = (Class<Float>) Class.getPrimitiveClass("float");
+    public static final Class<Float> TYPE = Class.getPrimitiveClass("float");
 
     /**
      * Returns a string representation of the {@code float}
