@@ -84,7 +84,8 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
         do {
             ApplicationLayout layout = pkg.appLayout();
             // Don't want app image info file in installed application.
-            layout.pathGroup().ghostPath(AppImageFile2.getPathInAppImage(layout));
+            Optional.ofNullable(AppImageFile2.getPathInAppImage(layout)).ifPresent(
+                    appImageFile -> layout.pathGroup().ghostPath(appImageFile));
 
             // Want absolute paths to source files in generated WiX sources.
             // This is to handle scenario if sources would be processed from
@@ -94,7 +95,7 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
 
         installedAppImage = pkg.appLayout().resolveAt(INSTALLDIR);
 
-        launchers = toCollection(pkg.app().launchers());
+        launchers = toCollection(Optional.ofNullable(pkg.app().launchers()).orElseGet(List::of));
 
         shortcutFolders = ShortcutsFolder.getForPackage(pkg);
 
@@ -119,16 +120,23 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
 
         programMenuFolderName = pkg.startMenuGroupName();
 
-        packageFile = new PackageFile(pkg.packageName());
+        if (!pkg.isRuntimeInstaller()) {
+            packageFile = new PackageFile(pkg.packageName());
+        } else {
+            packageFile = null;
+        }
 
-        initFileAssociations(pkg);
+        initFileAssociations();
     }
 
     @Override
     void addFilesToConfigRoot() throws IOException {
         removeFolderItems = new HashMap<>();
         defaultedMimes = new HashSet<>();
-        packageFile.save(ApplicationLayout.windowsAppImage().resolveAt(getConfigRoot()));
+        if (packageFile != null) {
+            packageFile.save(ApplicationLayout.windowsAppImage().resolveAt(
+                    getConfigRoot()));
+        }
         super.addFilesToConfigRoot();
     }
 
@@ -189,9 +197,9 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
         return installedAppImage.destktopIntegrationDirectory().resolve(fname);
     }
 
-    private void initFileAssociations(WinMsiPackage pkg) {
-        var allFileAssociations = pkg.app().launchers().stream().map(Launcher::fileAssociations)
-                .flatMap(List::stream).toList();
+    private void initFileAssociations() {
+        var allFileAssociations = launchers.stream().map(Launcher::fileAssociations).flatMap(
+                List::stream).toList();
         associations = allFileAssociations.stream()
                 .peek(this::normalizeFileAssociation)
                 // Filter out file associations without extensions.
@@ -715,9 +723,11 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
                     serviceInstaller.installPath()));
         }
 
-        files.add(Map.entry(PackageFile.getPathInAppImage(
-                getConfigRoot().toAbsolutePath().normalize()),
-                PackageFile.getPathInAppImage(installedAppImage)));
+        if (packageFile != null) {
+            files.add(Map.entry(PackageFile.getPathInAppImage(
+                    getConfigRoot().toAbsolutePath().normalize()),
+                    PackageFile.getPathInAppImage(installedAppImage)));
+        }
 
         List<String> componentIds = new ArrayList<>();
         for (var file : files) {
@@ -928,7 +938,9 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
         }
 
         static Set<ShortcutsFolder> getForPackage(WinMsiPackage pkg) {
-            return pkg.app().launchers().stream().map(launcher -> {
+            var launchers = Optional.ofNullable(pkg.app().launchers()).map(
+                    List::stream).orElseGet(Stream::of);
+            return  launchers.map(launcher -> {
                 return Stream.of(ShortcutsFolder.values()).filter(shortcutsFolder -> {
                     return shortcutsFolder.isRequestedFor((WinLauncher)launcher);
                 });
