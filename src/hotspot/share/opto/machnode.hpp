@@ -142,6 +142,25 @@ public:
     return ::as_PRegister(reg(ra_, node, idx));
   }
 #endif
+#if defined(RISCV64)
+  VectorRegister as_VectorRegister(PhaseRegAlloc *ra_, const Node *node, int idx) const {
+    return ::as_VectorRegister(reg(ra_, node, idx));
+  }
+  VectorRegisterGroup as_VectorRegisterGroup(PhaseRegAlloc *ra_, const Node *node, int num, ...) const {
+    GrowableArray<int> encodings;
+
+    va_list indexes;
+    va_start(indexes, num);
+    for(int i = 1; i <= num; i++) {
+      int idx = va_arg(indexes, int);
+      int encoding = reg(ra_, node, idx);
+      encodings.append(encoding);
+    }
+    va_end(indexes);
+
+    return ::as_VectorRegisterGroup(encodings);
+  }
+#endif
 
   virtual intptr_t  constant() const;
   virtual relocInfo::relocType constant_reloc() const;
