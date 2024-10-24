@@ -448,13 +448,6 @@ public class HierarchicalLayoutManager extends LayoutManager {
         return false;
     }
 
-    public void writeBack() {
-        optimizeBackedgeCrossing();
-        straightenEdges();
-        new AssignYCoordinates().run();
-        new WriteResult().run();
-    }
-
     public void moveVertices(Set<? extends Vertex> movedVertices) {
         for (Vertex vertex : movedVertices) {
             moveVertex(vertex);
@@ -479,6 +472,14 @@ public class HierarchicalLayoutManager extends LayoutManager {
         }
         writeBack();
     }
+
+    public void writeBack() {
+        optimizeBackedgeCrossing();
+        straightenEdges();
+        new AssignYCoordinates().run();
+        new WriteResult().run();
+    }
+
 
     @Override
     public void setCutEdges(boolean enable) {
