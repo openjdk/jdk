@@ -60,7 +60,7 @@ import static jdk.jpackage.internal.StandardBundlerParam.MENU_HINT;
 import static jdk.jpackage.internal.StandardBundlerParam.SIGN_BUNDLE;
 import static jdk.jpackage.internal.StandardBundlerParam.APP_STORE;
 
-public final class AppImageFile {
+final class AppImageFile {
 
     // These values will be loaded from AppImage xml file.
     private final String appVersion;
@@ -167,11 +167,11 @@ public final class AppImageFile {
         return mainClass;
     }
 
-    public boolean isSigned() {
+    boolean isSigned() {
         return signed;
     }
 
-    public boolean isAppStore() {
+    boolean isAppStore() {
         return appStore;
     }
 
@@ -179,7 +179,7 @@ public final class AppImageFile {
      * Returns path to application image info file.
      * @param appImageDir - path to application image
      */
-    public static Path getPathInAppImage(Path appImageDir) {
+    static Path getPathInAppImage(Path appImageDir) {
         return ApplicationLayout.platformAppImage()
                 .resolveAt(appImageDir)
                 .appDirectory()
@@ -304,7 +304,7 @@ public final class AppImageFile {
      * @return valid info about application image or null
      * @throws IOException
      */
-    public static AppImageFile load(Path appImageDir) {
+    static AppImageFile load(Path appImageDir) {
         try {
             Document doc = readXml(appImageDir);
 
@@ -361,7 +361,7 @@ public final class AppImageFile {
      * is not marked as signed. If AppImageFile already signed it will return
      * instance to itself.
      */
-    public AppImageFile copyAsSigned() {
+    AppImageFile copyAsSigned() {
         if (isSigned()) {
             return this;
         }
@@ -374,7 +374,7 @@ public final class AppImageFile {
                 getVersion(), getPlatform(), "true", String.valueOf(isAppStore()));
     }
 
-    public static Document readXml(Path appImageDir) throws IOException {
+    static Document readXml(Path appImageDir) throws IOException {
         try {
             Path path = getPathInAppImage(appImageDir);
 
@@ -414,14 +414,6 @@ public final class AppImageFile {
         return launchers;
     }
 
-    public static String extractAppName(Path appImageDir) {
-        return AppImageFile.load(appImageDir).getLauncherName();
-    }
-
-    public static String extractMainClass(Path appImageDir) {
-        return AppImageFile.load(appImageDir).getMainClass();
-    }
-
     private static String xpathQueryNullable(XPath xPath, String xpathExpr,
             Document xml) throws XPathExpressionException {
         NodeList nodes = (NodeList) xPath.evaluate(xpathExpr, xml,
@@ -432,11 +424,11 @@ public final class AppImageFile {
         return null;
     }
 
-    public static String getVersion() {
+    static String getVersion() {
         return System.getProperty("java.version");
     }
 
-    public static String getPlatform() {
+    static String getPlatform() {
         return PLATFORM_LABELS.get(OperatingSystem.current());
     }
 
