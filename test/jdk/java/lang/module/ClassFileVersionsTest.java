@@ -26,7 +26,6 @@
  * @enablePreview
  * @modules java.base/jdk.internal.module
  * @library /test/lib
- * @build jdk.test.lib.util.ModuleInfoWriter
  * @run testng ClassFileVersionsTest
  * @summary Test parsing of module-info.class with different class file versions
  */

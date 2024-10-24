@@ -30,7 +30,6 @@
  * @modules java.base/jdk.internal.module
  * @library /test/lib
  * @build jdk.test.lib.util.JarUtils
- *        jdk.test.lib.util.ModuleInfoWriter
  * @build TestClassLoader TestClient
  * @run main ClassLoaderTest -noPolicy
  * @run main ClassLoaderTest -validPolicy

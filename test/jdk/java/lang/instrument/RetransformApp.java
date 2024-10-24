@@ -36,6 +36,7 @@ import jdk.test.lib.helpers.ClassFileInstaller;
  *
  * @modules java.instrument
  * @library /test/lib
+ * @build jdk.test.lib.process.ProcessTools
  * @build RetransformAgent asmlib.Instrumentor
  * @enablePreview
  * @comment The test uses asmlib/Instrumentor.java which relies on ClassFile API PreviewFeature.

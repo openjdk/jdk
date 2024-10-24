@@ -27,7 +27,6 @@
  * @modules java.base/jdk.internal.access
  *          java.base/jdk.internal.module
  * @library /test/lib
- * @build jdk.test.lib.util.ModuleInfoWriter
  * @run testng ModuleNamesTest
  * @summary Basic test of reading a module-info.class with module names that
  *          are legal in class files but not legal in the Java Language

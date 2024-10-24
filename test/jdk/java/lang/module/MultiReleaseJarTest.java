@@ -28,7 +28,6 @@
  * @library /test/lib
  * @build MultiReleaseJarTest
  *        jdk.test.lib.util.JarUtils
- *        jdk.test.lib.util.ModuleInfoWriter
  * @run testng MultiReleaseJarTest
  * @run testng/othervm -Djdk.util.jar.enableMultiRelease=false MultiReleaseJarTest
  * @summary Basic test of modular JARs as multi-release JARs

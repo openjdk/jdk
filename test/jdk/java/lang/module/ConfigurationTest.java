@@ -28,7 +28,6 @@
  *          java.base/jdk.internal.module
  * @library /test/lib
  * @build ConfigurationTest
- *        jdk.test.lib.util.ModuleInfoWriter
  *        jdk.test.lib.util.ModuleUtils
  * @run testng ConfigurationTest
  * @summary Basic tests for java.lang.module.Configuration
