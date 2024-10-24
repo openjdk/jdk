@@ -54,7 +54,7 @@ jobs:
   ### Determine platforms to include
   ###
 
-  select:
+  prepare:
     name: 'Prepare the run'
     runs-on: ubuntu-22.04
     env:
