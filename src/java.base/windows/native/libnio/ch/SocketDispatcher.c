@@ -286,3 +286,41 @@ Java_sun_nio_ch_SocketDispatcher_close0(JNIEnv *env, jclass clazz, jint fd)
         JNU_ThrowIOExceptionWithLastError(env, "Socket close failed");
     }
 }
+
+JNIEXPORT jlong JNICALL
+Java_sun_nio_ch_SocketDispatcher_skip0(JNIEnv *env, jclass cl, jobject fdo, jlong n)
+{
+    if (n < 1)
+        return 0;
+
+    const jint fd = fdval(env, fdo);
+
+    char buf[4096];
+    jlong tn = 0;
+
+    for (;;) {
+        const int c = (int) min(n - tn, sizeof(buf));
+
+        if (c == 0)
+            return convertLongReturnVal(env, tn, JNI_TRUE);
+
+        const int read = recv((SOCKET) fd, buf, c, 0);
+        if (read == SOCKET_ERROR) {
+            const int err = WSAGetLastError();
+            if (err == WSAEWOULDBLOCK) {
+                return tn == 0 ? IOS_UNAVAILABLE : tn;
+            }
+            if (err == WSAECONNRESET) {
+                JNU_ThrowByName(env, "sun/net/ConnectionResetException", "Connection reset");
+            } else {
+                JNU_ThrowIOExceptionWithLastError(env, "Read failed");
+            }
+            return IOS_THROWN;
+        }
+
+        tn += read;
+
+        if (read == 0)
+            return convertLongReturnVal(env, tn, JNI_TRUE);
+    }
+}
