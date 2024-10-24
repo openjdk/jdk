@@ -499,8 +499,8 @@ public class DragSource implements Serializable {
      *
      * @param <T> the type of {@code DragGestureRecognizer} to create
      * @param recognizerAbstractClass the requested abstract type
-     * @param actions                 the permitted source drag actions
      * @param c                       the {@code Component} target
+     * @param actions                 the permitted source drag actions
      * @param dgl        the {@code DragGestureListener} to notify
      *
      * @return the new {@code DragGestureRecognizer} or {@code null}
