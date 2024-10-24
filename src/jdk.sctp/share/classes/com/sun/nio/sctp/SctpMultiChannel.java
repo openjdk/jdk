@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -481,13 +481,13 @@ public abstract class SctpMultiChannel
      * @param   name
      *          The socket option
      *
-     * @param  association
-     *         The association whose option should be set, or {@code null}
-     *         if this option should be set at the channel's socket level.
-     *
      * @param   value
      *          The value of the socket option. A value of {@code null} may be
      *          a valid value for some socket options.
+     *
+     * @param  association
+     *         The association whose option should be set, or {@code null}
+     *         if this option should be set at the channel's socket level.
      *
      * @return  This channel
      *

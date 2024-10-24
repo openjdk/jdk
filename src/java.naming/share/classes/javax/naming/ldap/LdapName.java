@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -436,9 +436,9 @@ public class LdapName implements Name {
      * index (if any) of the first new component are shifted up
      * (away from index 0) to accommodate the new components.
      *
-     * @param suffix    The non-null components to add.
      * @param posn      The index at which to add the new component.
      *                  Must be in the range [0,size()].
+     * @param suffix    The non-null components to add.
      *
      * @return  The updated name (not a new instance).
      *
@@ -471,9 +471,9 @@ public class LdapName implements Name {
      * index (if any) of the first new RDN are shifted up (away from index 0) to
      * accommodate the new RDNs.
      *
-     * @param suffixRdns        The non-null suffix {@code Rdn}s to add.
      * @param posn              The index at which to add the suffix RDNs.
      *                          Must be in the range [0,size()].
+     * @param suffixRdns        The non-null suffix {@code Rdn}s to add.
      *
      * @return  The updated name (not a new instance).
      * @throws  IndexOutOfBoundsException
@@ -524,9 +524,9 @@ public class LdapName implements Name {
      * component are shifted up by one (away from index 0) to accommodate
      * the new component.
      *
-     * @param  comp     The non-null component to add.
      * @param  posn     The index at which to add the new component.
      *                  Must be in the range [0,size()].
+     * @param  comp     The non-null component to add.
      * @return          The updated LdapName, not a new instance.
      *                  Cannot be null.
      * @exception       IndexOutOfBoundsException
@@ -548,9 +548,9 @@ public class LdapName implements Name {
      * RDN are shifted up by one (away from index 0) to accommodate
      * the new RDN.
      *
-     * @param  comp     The non-null RDN to add.
      * @param  posn     The index at which to add the new RDN.
      *                  Must be in the range [0,size()].
+     * @param  comp     The non-null RDN to add.
      * @return          The updated LdapName, not a new instance.
      *                  Cannot be null.
      * @exception       IndexOutOfBoundsException

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -622,11 +622,11 @@ public interface MBeanServer extends MBeanServerConnection {
      * newly created object is not registered in the MBean server.</p>
      *
      * @param className The class name of the object to be instantiated.
+     * @param loaderName The object name of the class loader to be used.
      * @param params An array containing the parameters of the
      * constructor to be invoked.
      * @param signature An array containing the signature of the
      * constructor to be invoked.
-     * @param loaderName The object name of the class loader to be used.
      *
      * @return The newly instantiated object.
      *
@@ -711,10 +711,10 @@ public interface MBeanServer extends MBeanServerConnection {
      *
      * @param className The name of the class whose class loader should be
      * used for the de-serialization.
-     * @param data The byte array to be de-sererialized.
      * @param loaderName The name of the class loader to be used for
      * loading the specified class.  If null, the MBean Server's class
      * loader will be used.
+     * @param data The byte array to be de-sererialized.
      *
      * @implSpec This method throws {@link UnsupportedOperationException} by default.
      *

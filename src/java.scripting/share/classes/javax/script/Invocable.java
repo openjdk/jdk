@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,12 +38,12 @@ public interface Invocable  {
      * Calls a method on a script object compiled during a previous script execution,
      * which is retained in the state of the <code>ScriptEngine</code>.
      *
-     * @param name The name of the procedure to be called.
-     *
      * @param thiz If the procedure is a member  of a class
      * defined in the script and thiz is an instance of that class
      * returned by a previous execution or invocation, the named method is
      * called through that instance.
+     *
+     * @param name The name of the procedure to be called.
      *
      * @param args Arguments to pass to the procedure.  The rules for converting
      * the arguments to scripting variables are implementation-specific.

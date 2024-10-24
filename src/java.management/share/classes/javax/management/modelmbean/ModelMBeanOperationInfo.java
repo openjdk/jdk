@@ -136,9 +136,9 @@ public class ModelMBeanOperationInfo extends MBeanOperationInfo
          * on the {@code Method} object that contain the {@link
          * DescriptorKey} meta-annotation.
          *
+         * @param description A human readable description of the operation.
          * @param operationMethod The java.lang.reflect.Method object
          * describing the MBean operation.
-         * @param description A human readable description of the operation.
          */
 
         public ModelMBeanOperationInfo(String description,
@@ -160,10 +160,10 @@ public class ModelMBeanOperationInfo extends MBeanOperationInfo
          * contributed by any annotations on the {@code Method} object
          * that contain the {@link DescriptorKey} meta-annotation.
          *
-         * @param operationMethod The java.lang.reflect.Method object
-         * describing the MBean operation.
          * @param description A human readable description of the
          * operation.
+         * @param operationMethod The java.lang.reflect.Method object
+         * describing the MBean operation.
          * @param descriptor An instance of Descriptor containing the
          * appropriate metadata for this instance of the
          * ModelMBeanOperationInfo.  If it is null a default
