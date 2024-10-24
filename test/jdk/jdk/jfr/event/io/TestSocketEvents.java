@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,6 +68,7 @@ public class TestSocketEvents {
     private void test() throws Throwable {
         try (Recording recording = new Recording()) {
             try (ServerSocket ss = new ServerSocket()) {
+                recording.enable(IOEvent.EVENT_SOCKET_CONNECT).withThreshold(Duration.ofMillis(0));
                 recording.enable(IOEvent.EVENT_SOCKET_READ).withThreshold(Duration.ofMillis(0));
                 recording.enable(IOEvent.EVENT_SOCKET_WRITE).withThreshold(Duration.ofMillis(0));
                 recording.start();
@@ -104,6 +105,7 @@ public class TestSocketEvents {
 
                 try (Socket s = new Socket()) {
                     s.connect(ss.getLocalSocketAddress());
+                    addExpectedEvent(IOEvent.createSocketConnectEvent(s));
                     try (OutputStream os = s.getOutputStream()) {
                         os.write(writeInt);
                         addExpectedEvent(IOEvent.createSocketWriteEvent(1, s));
