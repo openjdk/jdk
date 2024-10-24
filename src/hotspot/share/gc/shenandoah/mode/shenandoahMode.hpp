@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +26,12 @@
 #ifndef SHARE_GC_SHENANDOAH_MODE_SHENANDOAHMODE_HPP
 #define SHARE_GC_SHENANDOAH_MODE_SHENANDOAHMODE_HPP
 
+#include "gc/shared/gc_globals.hpp"
 #include "memory/allocation.hpp"
+#include "runtime/java.hpp"
+#include "utilities/formatBuffer.hpp"
 
+class ShenandoahSpaceInfo;
 class ShenandoahHeuristics;
 
 #define SHENANDOAH_CHECK_FLAG_SET(name)                                     \
@@ -48,10 +53,11 @@ class ShenandoahHeuristics;
 class ShenandoahMode : public CHeapObj<mtGC> {
 public:
   virtual void initialize_flags() const = 0;
-  virtual ShenandoahHeuristics* initialize_heuristics() const = 0;
+  virtual ShenandoahHeuristics* initialize_heuristics(ShenandoahSpaceInfo* space_info) const;
   virtual const char* name() = 0;
   virtual bool is_diagnostic() = 0;
   virtual bool is_experimental() = 0;
+  virtual bool is_generational() { return false; }
 };
 
 #endif // SHARE_GC_SHENANDOAH_MODE_SHENANDOAHMODE_HPP

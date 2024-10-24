@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2015, 2022, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +38,7 @@
 class ShenandoahMarkRefsSuperClosure : public MetadataVisitingOopIterateClosure {
 private:
   ShenandoahObjToScanQueue* _queue;
+  ShenandoahObjToScanQueue* _old_queue;
   ShenandoahMarkingContext* const _mark_context;
   bool _weak;
 
@@ -45,7 +47,7 @@ protected:
   void work(T *p);
 
 public:
-  ShenandoahMarkRefsSuperClosure(ShenandoahObjToScanQueue* q, ShenandoahReferenceProcessor* rp);
+  ShenandoahMarkRefsSuperClosure(ShenandoahObjToScanQueue* q, ShenandoahReferenceProcessor* rp, ShenandoahObjToScanQueue* old_q);
 
   bool is_weak() const {
     return _weak;
@@ -70,8 +72,8 @@ private:
   inline void work(T* p);
 
 public:
-  ShenandoahMarkUpdateRefsClosure(ShenandoahObjToScanQueue* q, ShenandoahReferenceProcessor* rp) :
-    ShenandoahMarkRefsSuperClosure(q, rp),
+  ShenandoahMarkUpdateRefsClosure(ShenandoahObjToScanQueue* q, ShenandoahReferenceProcessor* rp, ShenandoahObjToScanQueue* old_q) :
+    ShenandoahMarkRefsSuperClosure(q, rp, old_q),
     _heap(ShenandoahHeap::heap()) {
     assert(_heap->is_stw_gc_in_progress(), "Can only be used for STW GC");
   }
@@ -87,8 +89,8 @@ private:
   inline void do_oop_work(T* p)     { work<T, GENERATION>(p); }
 
 public:
-  ShenandoahMarkRefsClosure(ShenandoahObjToScanQueue* q, ShenandoahReferenceProcessor* rp) :
-    ShenandoahMarkRefsSuperClosure(q, rp) {};
+  ShenandoahMarkRefsClosure(ShenandoahObjToScanQueue* q, ShenandoahReferenceProcessor* rp, ShenandoahObjToScanQueue* old_q) :
+    ShenandoahMarkRefsSuperClosure(q, rp, old_q) {};
 
   virtual void do_oop(narrowOop* p) { do_oop_work(p); }
   virtual void do_oop(oop* p)       { do_oop_work(p); }

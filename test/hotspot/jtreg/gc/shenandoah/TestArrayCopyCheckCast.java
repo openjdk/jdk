@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +24,17 @@
  */
 
 /*
- * @test
+ * @test id=default
  * @requires vm.gc.Shenandoah
  *
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:TieredStopAtLevel=0 -Xmx16m TestArrayCopyCheckCast
+ */
+
+/*
+ * @test id=generational
+ * @requires vm.gc.Shenandoah
+ *
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:TieredStopAtLevel=0 -Xmx16m TestArrayCopyCheckCast -XX:ShenandoahGCMode=generational
  */
 public class TestArrayCopyCheckCast {
 
