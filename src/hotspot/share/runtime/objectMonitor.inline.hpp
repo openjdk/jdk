@@ -125,10 +125,6 @@ inline void ObjectMonitor::set_stack_locker(BasicLock* locker) {
   Atomic::store(&_stack_locker, locker);
 }
 
-inline bool ObjectMonitor::has_stack_locker(JavaThread* current) {
-  return has_owner_anonymous() && current->is_lock_owned((address)stack_locker());
-}
-
 // Returns true if owner field == DEFLATER_MARKER and false otherwise.
 // This accessor is called when we really need to know if the owner
 // field == DEFLATER_MARKER and any non-null value won't do the trick.
@@ -189,22 +185,6 @@ inline void ObjectMonitor::set_owner_from_raw(int64_t old_value, int64_t new_val
 
 inline void ObjectMonitor::set_owner_from(int64_t old_value, JavaThread* current) {
   set_owner_from_raw(old_value, owner_from(current));
-}
-
-// Simply set _owner to the tid of current. Current owner must be anonymous.
-inline void ObjectMonitor::set_owner_from_BasicLock(JavaThread* current) {
-  BasicLock* basic_lock_p = stack_locker();
-
-  set_stack_locker(nullptr); // first
-  assert(has_owner_anonymous(), "");
-
-  // Non-null owner field to non-null owner field is safe without
-  // cmpxchg() as long as all readers can tolerate either flavor.
-  Atomic::store(&_owner, owner_from(current));
-  log_trace(monitorinflation, owner)("set_owner_from_BasicLock(): mid="
-                                     INTPTR_FORMAT ", basic_lock_p="
-                                     INTPTR_FORMAT ", new_value=" INT64_FORMAT,
-                                     p2i(this), p2i(basic_lock_p), owner_from(current));
 }
 
 // Try to set _owner field to new_value if the current value matches

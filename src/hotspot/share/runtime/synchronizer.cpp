@@ -1467,7 +1467,8 @@ ObjectMonitor* ObjectSynchronizer::inflate_impl(JavaThread* inflating_thread, oo
       if (inf->has_owner_anonymous() && inflating_thread != nullptr) {
         assert(LockingMode == LM_LEGACY, "invariant");
         if (inflating_thread->is_lock_owned((address)inf->stack_locker())) {
-          inf->set_owner_from_BasicLock(inflating_thread);
+          inf->set_stack_locker(nullptr);
+          inf->set_owner_from_anonymous(inflating_thread);
         }
       }
       return inf;

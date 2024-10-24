@@ -1536,23 +1536,12 @@ void ObjectMonitor::ExitEpilog(JavaThread* current, ObjectWaiter* Wakee) {
   OM_PERFDATA_OP(Parks, inc());
 }
 
-// complete_exit exits a lock returning recursion count
-// complete_exit requires an inflated monitor
-// The _owner field is not always the Thread addr even with an
-// inflated monitor, e.g. the monitor can be inflated by a non-owning
-// thread due to contention.
+// Exits the monitor returning recursion count. _owner should
+// be set to current's tid, i.e. no ANONYMOUS_OWNER allowed.
 intx ObjectMonitor::complete_exit(JavaThread* current) {
   assert(InitDone, "Unexpectedly not initialized");
-
-  if (!has_owner(current)) {
-    if (LockingMode == LM_LEGACY && has_stack_locker(current)) {
-      assert(_recursions == 0, "internal state error");
-      set_owner_from_BasicLock(current);  // Convert from BasicLock* to Thread*.
-      _recursions = 0;
-    }
-  }
-
   guarantee(has_owner(current), "complete_exit not owner");
+
   intx save = _recursions; // record the old recursion count
   _recursions = 0;         // set the recursion level to be 0
   exit(current);           // exit the monitor

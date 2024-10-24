@@ -298,8 +298,6 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   void      set_owner_from_raw(int64_t old_value, int64_t new_value);
   // Same as above but uses tid of current as new value.
   void      set_owner_from(int64_t old_value, JavaThread* current);
-  // Set _owner field to tid of current thread; current value must be ANONYMOUS_OWNER.
-  void      set_owner_from_BasicLock(JavaThread* current);
   // Try to set _owner field to new_value if the current value matches
   // old_value, using Atomic::cmpxchg(). Otherwise, does not change the
   // _owner field. Returns the prior value of the _owner field.
@@ -330,9 +328,6 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
     set_owner_from(ANONYMOUS_OWNER, owner);
   }
 
-  // Returns true if BasicLock* stored in _stack_locker
-  // points to current's stack, false otherwise.
-  bool has_stack_locker(JavaThread* current);
   // Get and set _stack_locker.
   BasicLock* stack_locker() const;
   void set_stack_locker(BasicLock* locker);
