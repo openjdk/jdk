@@ -72,7 +72,7 @@ interface WinMsiPackage extends Package {
                         "error.version-string-wrong-format.advice"), ex);
             }
 
-            if (pkg.app().isService() && serviceInstaller == null || !Files.exists(serviceInstaller)) {
+            if (pkg.app().isService() && (serviceInstaller == null || !Files.exists(serviceInstaller))) {
                 throw new ConfigException(I18N.getString("error.missing-service-installer"), I18N
                         .getString("error.missing-service-installer.advice"));
             }
