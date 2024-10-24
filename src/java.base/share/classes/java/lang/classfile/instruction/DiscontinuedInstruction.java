@@ -24,6 +24,8 @@
  */
 package java.lang.classfile.instruction;
 
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.CodeElement;
 import java.lang.classfile.CodeModel;
 import java.lang.classfile.Instruction;
@@ -40,17 +42,25 @@ import jdk.internal.javac.PreviewFeature;
  * attribute. Delivered as a {@link CodeElement} when traversing the elements of
  * a {@link CodeModel}.
  *
+ * @jvms 4.9.1 Static Constraints
+ *
+ * @sealedGraph
  * @since 22
  */
 @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface DiscontinuedInstruction extends Instruction {
 
     /**
-     * Models JSR and JSR_W instructions discontinued from the {@code code}
-     * array of a {@code Code} attribute since class file version 51.0.
-     * Corresponding opcodes will have a {@code kind} of
+     * Models {@link Opcode#JSR jsr} and {@link Opcode#JSR_W jsr_w} instructions
+     * discontinued from the {@code code} array of a {@code Code} attribute since
+     * class file major version {@value ClassFile#JAVA_7_VERSION} (JVMS {@jvms 4.9.1}).
+     * Corresponding opcodes have a {@linkplain Opcode#kind() kind} of
      * {@link Opcode.Kind#DISCONTINUED_JSR}.  Delivered as a {@link CodeElement}
      * when traversing the elements of a {@link CodeModel}.
+     * <p>
+     * A {@code jsr} instruction may be rewritten in a {@link CodeBuilder} if the {@link #target()
+     * target} cannot be encoded and the {@link ClassFile.ShortJumpsOption#FIX_SHORT_JUMPS
+     * FIX_SHORT_JUMPS} option is set.
      *
      * @since 22
      */
@@ -66,6 +76,10 @@ public sealed interface DiscontinuedInstruction extends Instruction {
 
         /**
          * {@return a JSR instruction}
+         *
+         * @apiNote
+         * The explicit {@code op} argument allows creating {@code jsr_w}
+         * instructions to avoid {@code target} overflow.
          *
          * @param op the opcode for the specific type of JSR instruction,
          *           which must be of kind {@link Opcode.Kind#DISCONTINUED_JSR}
@@ -89,9 +103,10 @@ public sealed interface DiscontinuedInstruction extends Instruction {
     }
 
     /**
-     * Models RET and RET_W instructions discontinued from the {@code code}
-     * array of a {@code Code} attribute since class file version 51.0.
-     * Corresponding opcodes will have a {@code kind} of
+     * Models {@link Opcode#RET ret} and {@link Opcode#RET_W wide ret} instructions
+     * discontinued from the {@code code} array of a {@code Code} attribute since
+     * class file major version {@value ClassFile#JAVA_7_VERSION} (JVMS {@jvms 4.9.1}).
+     * Corresponding opcodes have a {@linkplain Opcode#kind() kind} of
      * {@link Opcode.Kind#DISCONTINUED_RET}.  Delivered as a {@link CodeElement}
      * when traversing the elements of a {@link CodeModel}.
      *
@@ -108,7 +123,12 @@ public sealed interface DiscontinuedInstruction extends Instruction {
         int slot();
 
         /**
-         * {@return a RET or RET_W instruction}
+         * {@return a RET instruction}
+         *
+         * @apiNote
+         * The explicit {@code op} argument allows creating {@code wide ret}
+         * instructions with {@code slot} in the range of regular {@code ret}
+         * instructions.
          *
          * @param op the opcode for the specific type of RET instruction,
          *           which must be of kind {@link Opcode.Kind#DISCONTINUED_RET}

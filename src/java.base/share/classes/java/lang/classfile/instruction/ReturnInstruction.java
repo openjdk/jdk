@@ -37,7 +37,7 @@ import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models a return-from-method instruction in the {@code code} array of a
- * {@code Code} attribute.  Corresponding opcodes will have a {@code kind} of
+ * {@code Code} attribute.  Corresponding opcodes have a {@linkplain Opcode#kind() kind} of
  * {@link Opcode.Kind#RETURN}.  Delivered as a {@link CodeElement} when
  * traversing the elements of a {@link CodeModel}.
  *
@@ -48,7 +48,8 @@ public sealed interface ReturnInstruction extends Instruction
         permits AbstractInstruction.UnboundReturnInstruction {
 
     /**
-     * {@return the type of the return instruction}
+     * {@return the {@linkplain TypeKind##computational-type computational type}, including
+     * {@link TypeKind#VOID void}, of the return instruction}
      */
     TypeKind typeKind();
 

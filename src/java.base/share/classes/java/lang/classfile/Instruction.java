@@ -25,14 +25,17 @@
 
 package java.lang.classfile;
 
+import java.lang.classfile.attribute.CodeAttribute;
 import java.lang.classfile.instruction.*;
 
 import jdk.internal.classfile.impl.AbstractInstruction;
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * Models an executable instruction in a method body.
+ * Models an executable instruction in the {@code code} array of the {@link CodeAttribute Code}
+ * attribute of a method.
  *
+ * @sealedGraph
  * @since 22
  */
 @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
@@ -54,6 +57,8 @@ public sealed interface Instruction extends CodeElement
 
     /**
      * {@return the size in bytes of this instruction}
+     * This value is equal to {@link Opcode#sizeIfFixed()
+     * opcode().sizeIfFixed()} if it is not {@code -1}.
      */
     int sizeInBytes();
 }

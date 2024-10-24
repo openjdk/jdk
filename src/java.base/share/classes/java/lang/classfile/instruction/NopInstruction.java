@@ -27,12 +27,13 @@ package java.lang.classfile.instruction;
 import java.lang.classfile.CodeElement;
 import java.lang.classfile.CodeModel;
 import java.lang.classfile.Instruction;
+import java.lang.classfile.Opcode;
 
 import jdk.internal.classfile.impl.AbstractInstruction;
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * Models a {@code nop} invocation instruction in the {@code code}
+ * Models a {@link Opcode#NOP nop} instruction in the {@code code}
  * array of a {@code Code} attribute.  Delivered as a {@link CodeElement}
  * when traversing the elements of a {@link CodeModel}.
  *

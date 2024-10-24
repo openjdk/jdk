@@ -39,12 +39,14 @@ import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models a constant-load instruction in the {@code code} array of a {@code
- * Code} attribute, including "intrinsic constant" instructions (e.g., {@code
- * iconst_0}), "argument constant" instructions (e.g., {@code bipush}), and "load
- * constant" instructions (e.g., {@code LDC}).  Corresponding opcodes will have
- * a {@code kind} of {@link Opcode.Kind#CONSTANT}.  Delivered as a {@link
- * CodeElement} when traversing the elements of a {@link CodeModel}.
+ * Code} attribute, including {@linkplain IntrinsicConstantInstruction
+ * "intrinsic"}, {@linkplain ArgumentConstantInstruction "argument"}, and
+ * {@linkplain LoadConstantInstruction "load"} constant instructions.
+ * Corresponding opcodes have a {@linkplain Opcode#kind() kind} of {@link
+ * Opcode.Kind#CONSTANT}.  Delivered as a {@link CodeElement} when traversing
+ * the elements of a {@link CodeModel}.
  *
+ * @sealedGraph
  * @since 22
  */
 @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
@@ -56,13 +58,15 @@ public sealed interface ConstantInstruction extends Instruction {
     ConstantDesc constantValue();
 
     /**
-     * {@return the type of the constant}
+     * {@return the {@linkplain TypeKind##computational-type computational type} of the constant}
      */
     TypeKind typeKind();
 
     /**
-     * Models an "intrinsic constant" instruction (e.g., {@code
-     * iconst_0}).
+     * Models an "intrinsic constant" instruction, which encodes
+     * the constant value in its opcode. Examples include {@link
+     * Opcode#ACONST_NULL aconst_null} and {@link
+     * Opcode#ICONST_0 iconst_0}.
      *
      * @since 22
      */
@@ -70,9 +74,6 @@ public sealed interface ConstantInstruction extends Instruction {
     sealed interface IntrinsicConstantInstruction extends ConstantInstruction
             permits AbstractInstruction.UnboundIntrinsicConstantInstruction {
 
-        /**
-         * {@return the type of the constant}
-         */
         @Override
         default TypeKind typeKind() {
             return BytecodeHelpers.intrinsicConstantType(opcode());
@@ -80,8 +81,9 @@ public sealed interface ConstantInstruction extends Instruction {
     }
 
     /**
-     * Models an "argument constant" instruction (e.g., {@code
-     * bipush}).
+     * Models an "argument constant" instruction, which encodes the
+     * constant value in the instruction directly. Includes {@link
+     * Opcode#BIPUSH bipush} and {@link Opcode#SIPUSH sipush} instructions.
      *
      * @since 22
      */
@@ -93,9 +95,6 @@ public sealed interface ConstantInstruction extends Instruction {
         @Override
         Integer constantValue();
 
-        /**
-         * {@return the type of the constant}
-         */
         @Override
         default TypeKind typeKind() {
             return TypeKind.INT;
@@ -103,8 +102,10 @@ public sealed interface ConstantInstruction extends Instruction {
     }
 
     /**
-     * Models a "load constant" instruction (e.g., {@code
-     * ldc}).
+     * Models a "load constant" instruction, which encodes the
+     * constant value in the constant pool. Includes {@link
+     * Opcode#LDC ldc} and {@link Opcode#LDC_W ldc_w}, and
+     * {@link Opcode#LDC2_W ldc2_w} instructions.
      *
      * @since 22
      */
@@ -118,9 +119,6 @@ public sealed interface ConstantInstruction extends Instruction {
          */
         LoadableConstantEntry constantEntry();
 
-        /**
-         * {@return the type of the constant}
-         */
         @Override
         default TypeKind typeKind() {
             return constantEntry().typeKind();

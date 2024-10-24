@@ -37,9 +37,9 @@ import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models a local variable load instruction in the {@code code} array of a
- * {@code Code} attribute.  Corresponding opcodes will have a {@code kind} of
- * {@link Opcode.Kind#LOAD}.  Delivered as a {@link CodeElement} when
- * traversing the elements of a {@link CodeModel}.
+ * {@code Code} attribute.  Corresponding opcodes have a {@linkplain
+ * Opcode#kind() kind} of {@link Opcode.Kind#LOAD}.  Delivered as a {@link
+ * CodeElement} when traversing the elements of a {@link CodeModel}.
  *
  * @since 22
  */
@@ -54,7 +54,8 @@ public sealed interface LoadInstruction extends Instruction
     int slot();
 
     /**
-     * {@return the type of the value to be loaded}
+     * {@return the {@linkplain TypeKind##computational-type computational type}
+     * of the value to be loaded}
      */
     TypeKind typeKind();
 
@@ -73,6 +74,11 @@ public sealed interface LoadInstruction extends Instruction
 
     /**
      * {@return a local variable load instruction}
+     *
+     * @apiNote
+     * The explicit {@code op} argument allows creating {@code wide} or
+     * regular load instructions when the {@code slot} can be encoded
+     * with more optimized load instructions.
      *
      * @param op the opcode for the specific type of load instruction,
      *           which must be of kind {@link Opcode.Kind#LOAD}

@@ -35,7 +35,7 @@ import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models a stack manipulation instruction in the {@code code} array of a
- * {@code Code} attribute.  Corresponding opcodes will have a {@code kind} of
+ * {@code Code} attribute.  Corresponding opcodes have a {@linkplain Opcode#kind() kind} of
  * {@link Opcode.Kind#STACK}.  Delivered as a {@link CodeElement} when
  * traversing the elements of a {@link CodeModel}.
  *

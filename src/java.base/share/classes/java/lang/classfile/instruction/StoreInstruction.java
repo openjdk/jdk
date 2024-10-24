@@ -37,7 +37,7 @@ import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models a local variable store instruction in the {@code code} array of a
- * {@code Code} attribute.  Corresponding opcodes will have a {@code kind} of
+ * {@code Code} attribute.  Corresponding opcodes have a {@linkplain Opcode#kind() kind} of
  * {@link Opcode.Kind#STORE}.  Delivered as a {@link CodeElement} when
  * traversing the elements of a {@link CodeModel}.
  *
@@ -53,7 +53,10 @@ public sealed interface StoreInstruction extends Instruction
     int slot();
 
     /**
-     * {@return the type of the value to be stored}
+     * {@return the {@linkplain TypeKind##computational-type computational type}
+     * of the value to be stored} The {@link TypeKind#REFERENCE reference}
+     * type store instructions also operate on the {@code returnAddress} type,
+     * which does not apply to {@code reference} type load instructions.
      */
     TypeKind typeKind();
 
@@ -72,6 +75,11 @@ public sealed interface StoreInstruction extends Instruction
 
     /**
      * {@return a local variable store instruction}
+     *
+     * @apiNote
+     * The explicit {@code op} argument allows creating {@code wide} or
+     * regular store instructions when the {@code slot} can be encoded
+     * with more optimized store instructions.
      *
      * @param op the opcode for the specific type of store instruction,
      *           which must be of kind {@link Opcode.Kind#STORE}

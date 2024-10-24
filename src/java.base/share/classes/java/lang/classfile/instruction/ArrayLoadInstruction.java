@@ -36,8 +36,8 @@ import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models an array load instruction in the {@code code} array of a {@code Code}
- * attribute.  Corresponding opcodes will have a {@code kind} of {@link
- * Opcode.Kind#ARRAY_LOAD}.  Delivered as a {@link CodeElement} when
+ * attribute.  Corresponding opcodes have a {@linkplain Opcode#kind() kind}
+ * of {@link Opcode.Kind#ARRAY_LOAD}.  Delivered as a {@link CodeElement} when
  * traversing the elements of a {@link CodeModel}.
  *
  * @since 22
@@ -58,7 +58,7 @@ public sealed interface ArrayLoadInstruction extends Instruction
      * @param op the opcode for the specific type of array load instruction,
      *           which must be of kind {@link Opcode.Kind#ARRAY_LOAD}
      * @throws IllegalArgumentException if the opcode kind is not
-     *         {@link Opcode.Kind#ARRAY_LOAD}.
+     *         {@link Opcode.Kind#ARRAY_LOAD}
      */
     static ArrayLoadInstruction of(Opcode op) {
         Util.checkKind(op, Opcode.Kind.ARRAY_LOAD);
