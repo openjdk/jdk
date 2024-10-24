@@ -182,7 +182,7 @@ public final class DirectClassBuilder
         ClassEntry superclass = superclassEntry;
         if (superclass != null)
             superclass = AbstractPoolEntry.maybeClone(constantPool, superclass);
-        else if ((flags & ClassFile.ACC_MODULE) == 0 && !"java/lang/Object".equals(thisClassEntry.asInternalName()))
+        else if ((flags & ClassFile.ACC_MODULE) == 0 && !thisClassEntry.equalsSymbol(ConstantDescs.CD_Object))
             superclass = constantPool.classEntry(ConstantDescs.CD_Object);
         int interfaceEntriesSize = interfaceEntries.size();
         ClassEntry[] ies = interfaceEntriesSize == 0 ? EMPTY_CLASS_ENTRY_ARRAY : buildInterfaceEnties(interfaceEntriesSize);

@@ -34,6 +34,7 @@ import java.util.Optional;
 import java.util.function.Consumer;
 
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.constant.ConstantUtils;
 
 public final class ClassImpl
         extends AbstractElement
@@ -169,7 +170,7 @@ public final class ClassImpl
         // move to where?
         return flags.has(AccessFlag.MODULE)
                && majorVersion() >= ClassFile.JAVA_9_VERSION
-               && thisClass().asInternalName().equals("module-info")
+               && thisClass().equalsSymbol(ConstantUtils.CD_module_info)
                && (superclass().isEmpty())
                && interfaces().isEmpty()
                && fields().isEmpty()

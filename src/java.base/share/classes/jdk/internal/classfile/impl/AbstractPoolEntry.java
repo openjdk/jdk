@@ -382,6 +382,38 @@ public abstract sealed class AbstractPoolEntry {
                 return stringValue().equals(u.stringValue());
         }
 
+        /**
+         * Returns if this utf8 entry's content equals a substring
+         * of {@code s} obtained as {@code s.substring(start, end - start)}.
+         * This check avoids a substring allocation.
+         */
+        public boolean equalsRegion(String s, int start, int end) {
+            // start and end values trusted
+            if (state == State.RAW)
+                inflate();
+            int len = charLen;
+            if (len != end - start)
+                return false;
+
+            var sv = stringValue;
+            if (sv != null) {
+                return sv.regionMatches(0, s, start, len);
+            }
+
+            var chars = this.chars;
+            if (chars != null) {
+                for (int i = 0; i < len; i++)
+                    if (chars[i] != s.charAt(start + i))
+                        return false;
+            } else {
+                var bytes = this.rawBytes;
+                for (int i = 0; i < len; i++)
+                    if (bytes[offset + i] != s.charAt(start + i))
+                        return false;
+            }
+            return true;
+        }
+
         @Override
         public boolean equalsString(String s) {
             if (state == State.RAW)
@@ -437,6 +469,18 @@ public abstract sealed class AbstractPoolEntry {
             var ret = MethodTypeDesc.ofDescriptor(stringValue());
             typeSym = ret;
             return ret;
+        }
+
+        /**
+         * Compares this utf8's content with given
+         * descriptor. Caches this descriptor if matches.
+         */
+        boolean equalsArrayClassDescriptor(ClassDesc sym) {
+            if (equalsString(sym.descriptorString())) {
+                typeSym = sym;
+                return true;
+            }
+            return false;
         }
     }
 
@@ -544,6 +588,42 @@ public abstract sealed class AbstractPoolEntry {
                 sym = ClassDesc.ofInternalName(asInternalName()); // class or interface
             }
             return this.sym = sym;
+        }
+
+        @Override
+        public boolean equalsSymbol(ClassDesc symbol) {
+            if (symbol.isPrimitive()) // implicit null check
+                return false;
+
+            var mySym = this.sym;
+            if (mySym != null)
+                return mySym.equals(symbol);
+
+            // Note: for a ClassEntry read from bytes, it will not get a symbol until
+            // it matches a ClassDesc. So the huge block below will be called multiple times.
+            boolean equals;
+            if (isArrayDescriptor(ref1)) {
+                if (!symbol.isArray())
+                    return false;
+
+                // fetch upstream symbol first
+                if (ref1.typeSym instanceof ClassDesc upstreamSym) {
+                    // skip the regular cache process; upstream symbol always reusable
+                    this.sym = upstreamSym;
+                    return upstreamSym.equals(symbol);
+                }
+
+                equals = ref1.equalsArrayClassDescriptor(symbol); // ref1 caches compatible symbol
+            } else {
+                if (!symbol.isClassOrInterface())
+                    return false;
+                var desc = symbol.descriptorString();
+                equals = ref1.equalsRegion(desc, 1, desc.length() - 1);
+            }
+
+            if (equals)
+                this.sym = symbol;
+            return equals;
         }
 
         @Override
