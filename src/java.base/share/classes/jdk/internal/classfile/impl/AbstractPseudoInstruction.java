@@ -24,17 +24,17 @@
  */
 package jdk.internal.classfile.impl;
 
-import java.util.Optional;
-
-import java.lang.classfile.BufWriter;
+import java.lang.classfile.Label;
+import java.lang.classfile.PseudoInstruction;
 import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.constantpool.Utf8Entry;
 import java.lang.classfile.instruction.CharacterRange;
 import java.lang.classfile.instruction.ExceptionCatch;
 import java.lang.classfile.instruction.LocalVariable;
 import java.lang.classfile.instruction.LocalVariableType;
-import java.lang.classfile.Label;
-import java.lang.classfile.PseudoInstruction;
+import java.util.Optional;
+
+import static java.util.Objects.requireNonNull;
 
 public abstract sealed class AbstractPseudoInstruction
         extends AbstractElement
@@ -55,17 +55,14 @@ public abstract sealed class AbstractPseudoInstruction
         public ExceptionCatchImpl(Label handler, Label tryStart, Label tryEnd,
                                   ClassEntry catchTypeEntry) {
             this.catchTypeEntry = catchTypeEntry;
-            this.handler = handler;
-            this.tryStart = tryStart;
-            this.tryEnd = tryEnd;
+            this.handler = requireNonNull(handler);
+            this.tryStart = requireNonNull(tryStart);
+            this.tryEnd = requireNonNull(tryEnd);
         }
 
         public ExceptionCatchImpl(Label handler, Label tryStart, Label tryEnd,
                                   Optional<ClassEntry> catchTypeEntry) {
-            this.catchTypeEntry = catchTypeEntry.orElse(null);
-            this.handler = handler;
-            this.tryStart = tryStart;
-            this.tryEnd = tryEnd;
+            this(handler, tryStart, tryEnd, catchTypeEntry.orElse(null));
         }
 
         @Override
@@ -115,8 +112,8 @@ public abstract sealed class AbstractPseudoInstruction
 
         public UnboundCharacterRange(Label startScope, Label endScope, int characterRangeStart,
                                      int characterRangeEnd, int flags) {
-            this.startScope = startScope;
-            this.endScope = endScope;
+            this.startScope = requireNonNull(startScope);
+            this.endScope = requireNonNull(endScope);
             this.characterRangeStart = characterRangeStart;
             this.characterRangeEnd = characterRangeEnd;
             this.flags = flags;
@@ -165,10 +162,10 @@ public abstract sealed class AbstractPseudoInstruction
         public AbstractLocalPseudo(int slot, Utf8Entry name, Utf8Entry descriptor, Label startScope, Label endScope) {
             BytecodeHelpers.validateSlot(slot);
             this.slot = slot;
-            this.name = name;
-            this.descriptor = descriptor;
-            this.startScope = startScope;
-            this.endScope = endScope;
+            this.name = requireNonNull(name);
+            this.descriptor = requireNonNull(descriptor);
+            this.startScope = requireNonNull(startScope);
+            this.endScope = requireNonNull(endScope);
         }
 
         public int slot() {
