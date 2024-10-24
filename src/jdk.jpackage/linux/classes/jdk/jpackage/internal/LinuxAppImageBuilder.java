@@ -41,8 +41,8 @@ final class LinuxAppImageBuilder {
         public void onLauncher(Application app,
                 AppImageBuilder.LauncherContext ctx) throws IOException, PackagerException {
             if (ctx.launcher() == app.mainLauncher()) {
-                var launcherLib = ctx.resolvedAppLayout().pathGroup().getPath(
-                        ApplicationLayout.PathRole.LINUX_APPLAUNCHER_LIB);
+                var launcherLib = ctx.workshop().appImageDir().resolve(Path.of(
+                        "lib/libapplauncher.so"));
                 try (var in = ResourceLocator.class.getResourceAsStream("libjpackageapplauncheraux.so")) {
                     Files.createDirectories(launcherLib.getParent());
                     Files.copy(in, launcherLib);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,11 +64,6 @@ public final class ApplicationLayout implements PathGroup.Facade<ApplicationLayo
          * Directory with application Java modules.
          */
         MODULES,
-
-        /**
-         * Linux app launcher shared library.
-         */
-        LINUX_APPLAUNCHER_LIB,
 
         /**
          * Location of additional application content
@@ -151,7 +146,6 @@ public final class ApplicationLayout implements PathGroup.Facade<ApplicationLayo
                 PathRole.RUNTIME_HOME, Path.of("lib/runtime"),
                 PathRole.DESKTOP, Path.of("lib"),
                 PathRole.MODULES, Path.of("lib/app/mods"),
-                PathRole.LINUX_APPLAUNCHER_LIB, Path.of("lib/libapplauncher.so"),
                 PathRole.CONTENT, Path.of("lib")
         ));
     }
@@ -210,8 +204,6 @@ public final class ApplicationLayout implements PathGroup.Facade<ApplicationLayo
                 PathRole.RUNTIME_HOME, lib.resolve("runtime"),
                 PathRole.DESKTOP, lib,
                 PathRole.MODULES, lib.resolve("app/mods"),
-                PathRole.LINUX_APPLAUNCHER_LIB, lib.resolve(
-                        "lib/libapplauncher.so"),
                 PathRole.CONTENT, lib
         ));
     }
