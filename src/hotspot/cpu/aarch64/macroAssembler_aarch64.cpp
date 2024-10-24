@@ -5100,6 +5100,19 @@ MacroAssembler::KlassDecodeMode MacroAssembler::klass_decode_mode() {
   return (_klass_decode_mode = KlassDecodeMovk);
 }
 
+// Check if one of the above decoding modes will work for given base, shift and range.
+bool MacroAssembler::check_klass_decode_mode(address base, int shift, const size_t range) {
+  assert(UseCompressedClassPointers, "not using compressed class pointers");
+  const uint64_t base_address = (uint64_t)base;
+  const uint64_t range_mask = (1ULL << log2i(range)) - 1;
+  const uint64_t shifted_base = base_address >> shift;
+
+  return (base == nullptr ||
+         (operand_valid_for_logical_immediate(/*is32*/false, base_address) &&
+            ((base_address & range_mask) == 0))  ||
+         (shifted_base & 0xffff0000ffffffff) == 0);
+}
+
 void MacroAssembler::encode_klass_not_null(Register dst, Register src) {
   switch (klass_decode_mode()) {
   case KlassDecodeZero:

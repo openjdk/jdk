@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/formatBuffer.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
 
@@ -69,6 +70,12 @@ void CompressedKlassPointers::initialize_for_given_encoding(address addr, size_t
   _shift = requested_shift;
 
   DEBUG_ONLY(assert_is_valid_encoding(addr, len, _base, _shift);)
+
+  // This has already been checked for SharedBaseAddress and if this fails, it's a bug in the allocation code.
+  if (!check_klass_decode_mode()) {
+    fatal("base=" PTR_FORMAT " given with shift %d, cannot be used to encode class pointers",
+          p2i(_base), _shift);
+  }
 }
 
 char* CompressedKlassPointers::reserve_address_space_X(uintptr_t from, uintptr_t to, size_t size, size_t alignment, bool aslr) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,6 +67,33 @@ public class CompressedClassPointersEncodingScheme {
         output.shouldContain("Narrow klass base: " + expectedEncodingBaseString + ", Narrow klass shift: " + expectedEncodingShift);
     }
 
+    private static void testFailure(String forceAddressString) throws IOException {
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+                "-Xshare:off", // to make CompressedClassSpaceBaseAddress work
+                "-XX:+UnlockDiagnosticVMOptions",
+                "-XX:CompressedClassSpaceBaseAddress=" + forceAddressString,
+                "-Xmx128m",
+                "-Xlog:metaspace*",
+                "-version");
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+
+        output.reportDiagnosticSummary();
+
+        // We ignore cases where we were not able to map at the force address
+        if (!output.contains("Successfully forced class space address to " + forceAddressString)) {
+            throw new SkippedException("Skipping because we cannot force ccs to " + forceAddressString);
+        }
+
+        if (Platform.isAArch64()) {
+            output.shouldHaveExitValue(1);
+            output.shouldContain("Error occurred during initialization of VM");
+            output.shouldContain("CompressedClassSpaceBaseAddress=" + forceAddressString +
+                                 " given with shift 0, cannot be used to encode class pointers");
+        } else {
+            output.shouldHaveExitValue(0);
+        }
+    }
+
     final static long K = 1024;
     final static long M = K * 1024;
     final static long G = M * 1024;
@@ -76,6 +103,6 @@ public class CompressedClassPointersEncodingScheme {
         test(4 * G - 128 * M, 128 * M, 0, 0);
 
         // add more...
-
+        testFailure("0x0000040001000000");
     }
 }
