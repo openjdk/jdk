@@ -173,6 +173,19 @@ public sealed class Console implements Flushable permits ProxyingConsole {
     }
 
     /**
+     * Terminates the current line in this console's output stream using
+     * {@link System#lineSeparator()} and then flushes the console.
+     *
+     * @return  This console
+     *
+     * @since 24
+     */
+    @PreviewFeature(feature = PreviewFeature.Feature.IMPLICIT_CLASSES)
+    public Console println() {
+        return println("");
+    }
+
+    /**
      * Writes a string representation of the specified object to this console's
      * output stream and then flushes the console.
      *

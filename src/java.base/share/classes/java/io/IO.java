@@ -64,6 +64,21 @@ public final class IO {
     }
 
     /**
+     * Terminates the current line on the system console and then flushes
+     * that console.
+     *
+     * <p> The effect is as if {@link Console#println() println()}
+     * had been called on {@code System.console()}.
+     *
+     * @throws IOError if {@code System.console()} returns {@code null},
+     *                 or if an I/O error occurs
+     * @since 24
+     */
+    public static void println() {
+        con().println();
+    }
+
+    /**
      * Writes a string representation of the specified object to the system
      * console and then flushes that console.
      *
