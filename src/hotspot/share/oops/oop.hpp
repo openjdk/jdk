@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,6 +62,8 @@ class oopDesc {
   // make use of the C++ copy/assign incorrect.
   NONCOPYABLE(oopDesc);
 
+  inline oop cas_set_forwardee(markWord new_mark, markWord old_mark, atomic_memory_order order);
+
  public:
   // Must be trivial; see verifying static assert after the class.
   oopDesc() = default;
@@ -77,6 +79,9 @@ class oopDesc {
   inline void release_set_mark(markWord m);
   inline markWord cas_set_mark(markWord new_mark, markWord old_mark);
   inline markWord cas_set_mark(markWord new_mark, markWord old_mark, atomic_memory_order order);
+
+  // Returns the prototype mark that should be used for this object.
+  inline markWord prototype_mark() const;
 
   // Used only to re-initialize the mark word (e.g., of promoted
   // objects during a GC) -- requires a valid klass pointer
@@ -95,8 +100,14 @@ class oopDesc {
   // For klass field compression
   static inline void set_klass_gap(HeapWord* mem, int z);
 
-  // size of object header, aligned to platform wordSize
-  static constexpr int header_size() { return sizeof(oopDesc)/HeapWordSize; }
+  // Size of object header, aligned to platform wordSize
+  static int header_size() {
+    if (UseCompactObjectHeaders) {
+      return sizeof(markWord) / HeapWordSize;
+    } else {
+      return sizeof(oopDesc)  / HeapWordSize;
+    }
+  }
 
   // Returns whether this is an instance of k or an instance of a subclass of k
   inline bool is_a(Klass* k) const;
@@ -258,16 +269,22 @@ class oopDesc {
 
   // Forward pointer operations for scavenge
   inline bool is_forwarded() const;
+  inline bool is_self_forwarded() const;
 
   inline void forward_to(oop p);
+  inline void forward_to_self();
 
   // Like "forward_to", but inserts the forwarding pointer atomically.
   // Exactly one thread succeeds in inserting the forwarding pointer, and
   // this call returns null for that thread; any other thread has the
   // value of the forwarding pointer returned and does not modify "this".
   inline oop forward_to_atomic(oop p, markWord compare, atomic_memory_order order = memory_order_conservative);
+  inline oop forward_to_self_atomic(markWord compare, atomic_memory_order order = memory_order_conservative);
 
   inline oop forwardee() const;
+  inline oop forwardee(markWord header) const;
+
+  inline void unset_self_forwarded();
 
   // Age of object during scavenge
   inline uint age() const;
@@ -311,10 +328,37 @@ class oopDesc {
 
   // for code generation
   static int mark_offset_in_bytes()      { return (int)offset_of(oopDesc, _mark); }
-  static int klass_offset_in_bytes()     { return (int)offset_of(oopDesc, _metadata._klass); }
+  static int klass_offset_in_bytes()     {
+#ifdef _LP64
+    if (UseCompactObjectHeaders) {
+      // NOTE: The only places where this is used with compact headers are the C2
+      // compiler and JVMCI, and even there we don't use it to access the (narrow)Klass*
+      // directly. It is used only as a placeholder to identify the special memory slice
+      // containing Klass* info. This value could be any value that is not a valid
+      // field offset. Use an offset halfway into the markWord, as the markWord is never
+      // partially loaded from C2 and JVMCI.
+      return mark_offset_in_bytes() + 4;
+    } else
+#endif
+    {
+      return (int)offset_of(oopDesc, _metadata._klass);
+    }
+  }
   static int klass_gap_offset_in_bytes() {
     assert(has_klass_gap(), "only applicable to compressed klass pointers");
     return klass_offset_in_bytes() + sizeof(narrowKlass);
+  }
+
+  static int base_offset_in_bytes() {
+    if (UseCompactObjectHeaders) {
+      // With compact headers, the Klass* field is not used for the Klass*
+      // and is used for the object fields instead.
+      return sizeof(markWord);
+    } else if (UseCompressedClassPointers) {
+      return sizeof(markWord) + sizeof(narrowKlass);
+    } else {
+      return sizeof(markWord) + sizeof(Klass*);
+    }
   }
 
   // for error reporting

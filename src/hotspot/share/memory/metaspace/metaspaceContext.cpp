@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -73,6 +73,18 @@ void MetaspaceContext::initialize_nonclass_space_context() {
 void MetaspaceContext::print_on(outputStream* st) const {
   _vslist->print_on(st);
   _cm->print_on(st);
+}
+
+size_t MetaspaceContext::used_words() const {
+  return _used_words_counter.get();
+}
+
+size_t MetaspaceContext::committed_words() const {
+  return _vslist->committed_words();
+}
+
+size_t MetaspaceContext::reserved_words() const {
+  return _vslist->reserved_words();
 }
 
 #ifdef ASSERT

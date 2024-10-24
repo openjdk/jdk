@@ -675,6 +675,37 @@ AC_DEFUN([JDKOPT_ENABLE_DISABLE_CDS_ARCHIVE],
 
 ################################################################################
 #
+# Enable or disable the default CDS archive generation for Compact Object Headers
+#
+AC_DEFUN([JDKOPT_ENABLE_DISABLE_CDS_ARCHIVE_COH],
+[
+  UTIL_ARG_ENABLE(NAME: cds-archive-coh, DEFAULT: auto, RESULT: BUILD_CDS_ARCHIVE_COH,
+      DESC: [enable generation of default CDS archives for compact object headers (requires --enable-cds-archive)],
+      DEFAULT_DESC: [auto],
+      CHECKING_MSG: [if default CDS archives for compact object headers should be generated],
+      CHECK_AVAILABLE: [
+        AC_MSG_CHECKING([if CDS archive with compact object headers is available])
+        if test "x$BUILD_CDS_ARCHIVE" = "xfalse"; then
+          AC_MSG_RESULT([no (CDS default archive generation is disabled)])
+          AVAILABLE=false
+        elif test "x$OPENJDK_TARGET_CPU" != "xx86_64" &&
+             test "x$OPENJDK_TARGET_CPU" != "xaarch64" &&
+             test "x$OPENJDK_TARGET_CPU" != "xppc64" &&
+             test "x$OPENJDK_TARGET_CPU" != "xppc64le" &&
+             test "x$OPENJDK_TARGET_CPU" != "xriscv64" &&
+             test "x$OPENJDK_TARGET_CPU" != "xs390x"; then
+          AC_MSG_RESULT([no (compact object headers not supported for this platform)])
+          AVAILABLE=false
+        else
+          AC_MSG_RESULT([yes])
+          AVAILABLE=true
+        fi
+      ])
+  AC_SUBST(BUILD_CDS_ARCHIVE_COH)
+])
+
+################################################################################
+#
 # Enable the alternative CDS core region alignment
 #
 AC_DEFUN([JDKOPT_ENABLE_DISABLE_COMPATIBLE_CDS_ALIGNMENT],

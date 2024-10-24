@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,12 +93,12 @@ public class ClhsdbLongConstant {
         // ...
         // longConstant VM_Version::CPU_SHA 17179869184
         // longConstant markWord::age_shift 3
-        // longConstant markWord::hash_mask_in_place 549755813632
+        // longConstant markWord::hash_mask_in_place 4398046509056
         // ...
 
         checkLongValue("markWord::hash_mask_in_place",
                        longConstantOutput,
-                       Platform.is64bit() ? 549755813632L: 4294967168L);
+                       Platform.is64bit() ? 4398046509056L: 4294967168L);
 
         String arch = System.getProperty("os.arch");
         if (arch.equals("amd64") || arch.equals("i386") || arch.equals("x86")) {

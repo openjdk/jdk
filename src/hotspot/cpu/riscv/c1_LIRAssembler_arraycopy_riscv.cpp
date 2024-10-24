@@ -194,7 +194,10 @@ void LIR_Assembler::arraycopy_type_check(Register src, Register src_pos, Registe
   // We don't know the array types are compatible
   if (basic_type != T_OBJECT) {
     // Simple test for basic type arrays
-    if (UseCompressedClassPointers) {
+    if (UseCompactObjectHeaders) {
+      __ load_narrow_klass_compact(tmp, src);
+      __ load_narrow_klass_compact(t0, dst);
+    } else if (UseCompressedClassPointers) {
       __ lwu(tmp, Address(src, oopDesc::klass_offset_in_bytes()));
       __ lwu(t0, Address(dst, oopDesc::klass_offset_in_bytes()));
     } else {
@@ -244,7 +247,6 @@ void LIR_Assembler::arraycopy_type_check(Register src, Register src_pos, Registe
 void LIR_Assembler::arraycopy_assert(Register src, Register dst, Register tmp, ciArrayKlass *default_type, int flags) {
   assert(default_type != nullptr, "null default_type!");
   BasicType basic_type = default_type->element_type()->basic_type();
-
   if (basic_type == T_ARRAY) { basic_type = T_OBJECT; }
   if (basic_type != T_OBJECT || !(flags & LIR_OpArrayCopy::type_check)) {
     // Sanity check the known type with the incoming class.  For the
@@ -261,25 +263,10 @@ void LIR_Assembler::arraycopy_assert(Register src, Register dst, Register tmp, c
     }
 
     if (basic_type != T_OBJECT) {
-      if (UseCompressedClassPointers) {
-        __ lwu(t0, Address(dst, oopDesc::klass_offset_in_bytes()));
-      } else {
-        __ ld(t0, Address(dst, oopDesc::klass_offset_in_bytes()));
-      }
-      __ bne(tmp, t0, halt);
-      if (UseCompressedClassPointers) {
-        __ lwu(t0, Address(src, oopDesc::klass_offset_in_bytes()));
-      } else {
-        __ ld(t0, Address(src, oopDesc::klass_offset_in_bytes()));
-      }
-      __ beq(tmp, t0, known_ok);
+      __ cmp_klass_compressed(dst, tmp, t0, halt, false);
+      __ cmp_klass_compressed(src, tmp, t0, known_ok, true);
     } else {
-      if (UseCompressedClassPointers) {
-        __ lwu(t0, Address(dst, oopDesc::klass_offset_in_bytes()));
-      } else {
-        __ ld(t0, Address(dst, oopDesc::klass_offset_in_bytes()));
-      }
-      __ beq(tmp, t0, known_ok);
+      __ cmp_klass_compressed(dst, tmp, t0, known_ok, true);
       __ beq(src, dst, known_ok);
     }
     __ bind(halt);

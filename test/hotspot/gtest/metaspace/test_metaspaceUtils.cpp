@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -28,7 +28,7 @@
 #include "memory/metaspaceUtils.hpp"
 #include "unittest.hpp"
 
-TEST_VM(MetaspaceUtils, reserved) {
+TEST_VM(metaspace, MetaspaceUtils_reserved) {
   size_t reserved = MetaspaceUtils::reserved_bytes();
   EXPECT_GT(reserved, 0UL);
 
@@ -37,7 +37,7 @@ TEST_VM(MetaspaceUtils, reserved) {
   EXPECT_LE(reserved_metadata, reserved);
 }
 
-TEST_VM(MetaspaceUtils, reserved_compressed_class_pointers) {
+TEST_VM(metaspace, MetaspaceUtils_reserved_compressed_class_pointers) {
   if (!UseCompressedClassPointers) {
     return;
   }
@@ -49,7 +49,7 @@ TEST_VM(MetaspaceUtils, reserved_compressed_class_pointers) {
   EXPECT_LE(reserved_class, reserved);
 }
 
-TEST_VM(MetaspaceUtils, committed) {
+TEST_VM(metaspace, MetaspaceUtils_committed) {
   size_t committed = MetaspaceUtils::committed_bytes();
   EXPECT_GT(committed, 0UL);
 
@@ -61,7 +61,7 @@ TEST_VM(MetaspaceUtils, committed) {
   EXPECT_LE(committed_metadata, committed);
 }
 
-TEST_VM(MetaspaceUtils, committed_compressed_class_pointers) {
+TEST_VM(metaspace, MetaspaceUtils_committed_compressed_class_pointers) {
   if (!UseCompressedClassPointers) {
     return;
   }
@@ -73,7 +73,7 @@ TEST_VM(MetaspaceUtils, committed_compressed_class_pointers) {
   EXPECT_LE(committed_class, committed);
 }
 
-TEST_VM(MetaspaceUtils, non_compressed_class_pointers) {
+TEST_VM(metaspace, MetaspaceUtils_non_compressed_class_pointers) {
   if (UseCompressedClassPointers) {
     return;
   }
@@ -99,7 +99,7 @@ static void check_metaspace_stats_are_not_null(const MetaspaceStats& stats) {
   EXPECT_GT(stats.used(), 0UL);
 }
 
-TEST_VM(MetaspaceUtils, get_statistics) {
+TEST_VM(MetaspaceUtils, MetaspaceUtils_get_statistics) {
   MetaspaceCombinedStats combined_stats = MetaspaceUtils::get_combined_statistics();
   check_metaspace_stats_are_not_null(combined_stats);
   check_metaspace_stats_are_consistent(combined_stats);

@@ -757,6 +757,9 @@ class MacroAssembler: public Assembler {
 
   // Load/Store klass oop from klass field. Compress.
   void load_klass(Register dst, Register src);
+  void load_narrow_klass_compact(Register dst, Register src);
+  void cmp_klass(ConditionRegister dst, Register obj, Register klass, Register tmp, Register tmp2);
+  void cmp_klasses_from_objects(ConditionRegister dst, Register obj1, Register obj2, Register tmp1, Register tmp2);
   void load_klass_check_null(Register dst, Register src, Label* is_null = nullptr);
   void store_klass(Register dst_oop, Register klass, Register tmp = R0);
   void store_klass_gap(Register dst_oop, Register val = noreg); // Will store 0 if val not specified.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -73,20 +73,16 @@ class FreeBlocks : public CHeapObj<mtMetaspace> {
   // kept in the blocktree.
   STATIC_ASSERT(BinList32::MaxWordSize >= BlockTree::MinWordSize);
 
-  // Cutoff point: blocks larger than this size are kept in the
-  // tree, blocks smaller than or equal to this size in the bin list.
-  const size_t MaxSmallBlocksWordSize = BinList32::MaxWordSize;
-
 public:
 
   // Smallest blocks we can keep in this structure.
   const static size_t MinWordSize = BinList32::MinWordSize;
 
   // Add a block to the deallocation management.
-  void add_block(MetaWord* p, size_t word_size);
+  void add_block(MetaBlock bl);
 
-  // Retrieve a block of at least requested_word_size.
-  MetaWord* remove_block(size_t requested_word_size);
+  // Retrieve a block of at least requested_word_size. May be larger.
+  MetaBlock remove_block(size_t requested_word_size);
 
 #ifdef ASSERT
   void verify() const {

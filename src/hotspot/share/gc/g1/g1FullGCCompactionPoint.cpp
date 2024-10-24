@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #include "gc/g1/g1FullCollector.inline.hpp"
 #include "gc/g1/g1FullGCCompactionPoint.hpp"
 #include "gc/g1/g1HeapRegion.hpp"
+#include "gc/shared/fullGCForwarding.inline.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "utilities/debug.hpp"
@@ -106,10 +107,10 @@ void G1FullGCCompactionPoint::forward(oop object, size_t size) {
     if (!object->is_forwarded()) {
       preserved_stack()->push_if_necessary(object, object->mark());
     }
-    object->forward_to(cast_to_oop(_compaction_top));
-    assert(object->is_forwarded(), "must be forwarded");
+    FullGCForwarding::forward_to(object, cast_to_oop(_compaction_top));
+    assert(FullGCForwarding::is_forwarded(object), "must be forwarded");
   } else {
-    assert(!object->is_forwarded(), "must not be forwarded");
+    assert(!FullGCForwarding::is_forwarded(object), "must not be forwarded");
   }
 
   // Update compaction values.
@@ -172,8 +173,8 @@ void G1FullGCCompactionPoint::forward_humongous(G1HeapRegion* hr) {
   preserved_stack()->push_if_necessary(obj, obj->mark());
 
   G1HeapRegion* dest_hr = _compaction_regions->at(range_begin);
-  obj->forward_to(cast_to_oop(dest_hr->bottom()));
-  assert(obj->is_forwarded(), "Object must be forwarded!");
+  FullGCForwarding::forward_to(obj, cast_to_oop(dest_hr->bottom()));
+  assert(FullGCForwarding::is_forwarded(obj), "Object must be forwarded!");
 
   // Add the humongous object regions to the compaction point.
   add_humongous(hr);

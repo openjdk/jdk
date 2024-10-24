@@ -4817,6 +4817,7 @@ instruct loadKlass(iRegPNoSp dst, memory mem)
 // Load Narrow Klass Pointer
 instruct loadNKlass(iRegNNoSp dst, memory mem)
 %{
+  predicate(!UseCompactObjectHeaders);
   match(Set dst (LoadNKlass mem));
 
   ins_cost(LOAD_COST);
@@ -4824,6 +4825,21 @@ instruct loadNKlass(iRegNNoSp dst, memory mem)
 
   ins_encode %{
     __ lwu(as_Register($dst$$reg), Address(as_Register($mem$$base), $mem$$disp));
+  %}
+
+  ins_pipe(iload_reg_mem);
+%}
+
+instruct loadNKlassCompactHeaders(iRegNNoSp dst, memory mem)
+%{
+  predicate(UseCompactObjectHeaders);
+  match(Set dst (LoadNKlass mem));
+
+  ins_cost(LOAD_COST);
+  format %{ "lwu  $dst, $mem\t# loadNKlass, compressed class ptr, #@loadNKlass" %}
+
+  ins_encode %{
+    __ load_narrow_klass_compact_c2(as_Register($dst$$reg), Address(as_Register($mem$$base), $mem$$disp));
   %}
 
   ins_pipe(iload_reg_mem);
