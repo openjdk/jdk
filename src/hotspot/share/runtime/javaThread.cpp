@@ -1541,8 +1541,15 @@ void JavaThread::print_on(outputStream *st, bool print_extended_info) const {
   st->print_cr("[" INTPTR_FORMAT "]", (intptr_t)last_Java_sp() & ~right_n_bits(12));
   if (thread_oop != nullptr) {
     if (is_vthread_mounted()) {
-      // _lock_id is the thread ID of the mounted virtual thread
-      st->print_cr("   Carrying virtual thread #" INT64_FORMAT, lock_id());
+      st->print("   Carrying virtual thread #");
+      // _lock_id is the thread ID of the mounted virtual thread. If it equals
+      // the tid of the carrier we caught thread at the start of a temporary
+      // transition in VirtualThread.switchToCarrierThread. Ignore that case.
+      if (lock_id() != java_lang_Thread::thread_id(thread_oop)) {
+        st->print_cr(INT64_FORMAT, lock_id());
+      } else {
+        st->print_cr("%s", "(Unavailable)");
+      }
     } else {
       st->print_cr("   java.lang.Thread.State: %s", java_lang_Thread::thread_status_name(thread_oop));
     }
