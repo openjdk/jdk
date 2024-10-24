@@ -475,10 +475,8 @@ public class HierarchicalLayoutManager extends LayoutManager {
                 moveNode(movedNode, newLoc.x, movedNode.getLayer());
             }
         } else { // only remove edges if we moved the node to a new layer
-            LayoutLayer oldLayer = graph.getLayer(newLayerNr);
             removeEdges(movedNode);
             newLayerNr = insertNewLayerIfNeeded(movedNode, newLayerNr);
-            LayoutLayer newLayer = graph.getLayer(newLayerNr);
             moveNode(movedNode, newLoc.x, newLayerNr);
             addEdges(movedNode);
         }
