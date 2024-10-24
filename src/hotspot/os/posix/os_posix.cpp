@@ -862,6 +862,12 @@ void os::dll_unload(void *lib) {
   LINUX_ONLY(os::free(l_pathdup));
 }
 
+void* os::lookup_function(const char* name) {
+  // This returns the global symbol in the main executable and its dependencies,
+  // as well as shared objects dynamically loaded with RTLD_GLOBAL flag.
+  return dlsym(RTLD_DEFAULT, name);
+}
+
 jlong os::lseek(int fd, jlong offset, int whence) {
   return (jlong) ::lseek(fd, offset, whence);
 }
