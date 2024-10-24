@@ -549,11 +549,10 @@ void os::print_context(outputStream *st, const void *context) {
   st->cr();
   st->cr();
   for (int i = 0; i < 16; ++i) {
-    const __uint32_t *xmm = &(uc->__fpregs_mem._xmm[i].element[0]);
-    st->print_cr("XMM[%d]=" INTPTR_FORMAT " " INTPTR_FORMAT,
-                 i, (uint64_t)xmm[3] << 32 | (uint64_t)xmm[2], (uint64_t)xmm[1] << 32 | (uint64_t)xmm[0]);
+    const int64_t* xmm_val_addr = (int64_t*)&(uc->uc_mcontext.fpregs->_xmm[i]);
+    st->print_cr("XMM[%d]=" INTPTR_FORMAT " " INTPTR_FORMAT, i, xmm_val_addr[1], xmm_val_addr[0]);
   }
-  st->print("  MXCSR=" UINT32_FORMAT_X_0, uc->__fpregs_mem.mxcsr);
+  st->print("  MXCSR=" UINT32_FORMAT_X_0, uc->uc_mcontext.fpregs->mxcsr);
 #endif
 #else
   st->print(  "EAX=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_EAX]);
