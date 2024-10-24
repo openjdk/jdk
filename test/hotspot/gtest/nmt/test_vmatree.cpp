@@ -171,7 +171,6 @@ public:
 };
 
 
-
 TEST_VM_F(NMTVMATreeTest, OverlappingReservationsResultInTwoNodes) {
   VMATree::RegionData rd{si[0], mtTest};
   Tree tree;
@@ -179,6 +178,23 @@ TEST_VM_F(NMTVMATreeTest, OverlappingReservationsResultInTwoNodes) {
     tree.reserve_mapping(i * 100, 101, rd);
   }
   EXPECT_EQ(2, count_nodes(tree));
+}
+
+TEST_VM_F(NMTVMATreeTest, UseFlagInplace) {
+  Tree tree;
+  VMATree::RegionData rd1(si[0], mtTest);
+  VMATree::RegionData rd2(si[1], mtNone);
+  tree.reserve_mapping(0, 100, rd1);
+  tree.commit_mapping(20, 50, rd2, true);
+  tree.uncommit_mapping(30, 10, rd2);
+  tree.visit_in_order([&](Node* node) {
+    if (node->key() != 100) {
+      EXPECT_EQ(mtTest, node->val().out.mem_tag()) << "failed at: " << node->key();
+      if (node->key() != 20 && node->key() != 40) {
+        EXPECT_EQ(VMATree::StateType::Reserved, node->val().out.type());
+      }
+    }
+  });
 }
 
 // Low-level tests inspecting the state of the tree.

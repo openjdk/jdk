@@ -87,7 +87,7 @@ void CallInfo::set_interface(Klass* resolved_klass,
   // we should pick the vtable index from the resolved method.
   // In that case, the caller must call set_virtual instead of set_interface.
   assert(resolved_method->method_holder()->is_interface(), "");
-  assert(itable_index == resolved_method()->itable_index(), "");
+  assert(itable_index == resolved_method->itable_index(), "");
   set_common(resolved_klass, resolved_method, selected_method, CallInfo::itable_call, itable_index, CHECK);
 }
 
@@ -1200,13 +1200,7 @@ Method* LinkResolver::linktime_resolve_special_method(const LinkInfo& link_info,
   Klass* current_klass = link_info.current_klass();
   if (current_klass != nullptr && resolved_klass->is_interface()) {
     InstanceKlass* klass_to_check = InstanceKlass::cast(current_klass);
-    // Disable verification for the dynamically-generated reflection bytecodes
-    // for serialization constructor accessor.
-    bool is_reflect = klass_to_check->is_subclass_of(
-                        vmClasses::reflect_SerializationConstructorAccessorImpl_klass());
-
-    if (!is_reflect &&
-        !klass_to_check->is_same_or_direct_interface(resolved_klass)) {
+    if (!klass_to_check->is_same_or_direct_interface(resolved_klass)) {
       ResourceMark rm(THREAD);
       stringStream ss;
       ss.print("Interface method reference: '");
@@ -1541,7 +1535,7 @@ void LinkResolver::runtime_resolve_interface_method(CallInfo& result,
   }
 
   // resolve the method in the receiver class, unless it is private
-  if (!is_abstract_interpretation && !resolved_method()->is_private()) {
+  if (!is_abstract_interpretation && !resolved_method->is_private()) {
     // do lookup based on receiver klass
     // This search must match the linktime preparation search for itable initialization
     // to correctly enforce loader constraints for interface method inheritance.
@@ -1590,17 +1584,17 @@ void LinkResolver::runtime_resolve_interface_method(CallInfo& result,
     assert(is_abstract_interpretation || vtable_index == selected_method->vtable_index(), "sanity check");
     result.set_virtual(resolved_klass, resolved_method, selected_method, vtable_index, CHECK);
   } else if (resolved_method->has_itable_index()) {
-    int itable_index = resolved_method()->itable_index();
+    int itable_index = resolved_method->itable_index();
     log_develop_trace(itables)("  -- itable index: %d", itable_index);
     result.set_interface(resolved_klass, resolved_method, selected_method, itable_index, CHECK);
   } else {
     int index = resolved_method->vtable_index();
     log_develop_trace(itables)("  -- non itable/vtable index: %d", index);
     assert(index == Method::nonvirtual_vtable_index, "Oops hit another case!");
-    assert(resolved_method()->is_private() ||
-           (resolved_method()->is_final() && resolved_method->method_holder() == vmClasses::Object_klass()),
+    assert(resolved_method->is_private() ||
+           (resolved_method->is_final() && resolved_method->method_holder() == vmClasses::Object_klass()),
            "Should only have non-virtual invokeinterface for private or final-Object methods!");
-    assert(resolved_method()->can_be_statically_bound(), "Should only have non-virtual invokeinterface for statically bound methods!");
+    assert(resolved_method->can_be_statically_bound(), "Should only have non-virtual invokeinterface for statically bound methods!");
     // This sets up the nonvirtual form of "virtual" call (as needed for final and private methods)
     result.set_virtual(resolved_klass, resolved_method, resolved_method, index, CHECK);
   }

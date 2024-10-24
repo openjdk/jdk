@@ -177,10 +177,13 @@ void ShenandoahControlThread::run_service() {
       // it is a normal completion, or the abort.
       heap->free_set()->log_status_under_lock();
 
-      // Notify Universe about new heap usage. This has implications for
-      // global soft refs policy, and we better report it every time heap
-      // usage goes down.
-      heap->update_capacity_and_used_at_gc();
+      {
+        // Notify Universe about new heap usage. This has implications for
+        // global soft refs policy, and we better report it every time heap
+        // usage goes down.
+        ShenandoahHeapLocker locker(heap->lock());
+        heap->update_capacity_and_used_at_gc();
+      }
 
       // Signal that we have completed a visit to all live objects.
       heap->record_whole_heap_examined_timestamp();
@@ -371,6 +374,16 @@ void ShenandoahControlThread::request_gc(GCCause::Cause cause) {
 }
 
 void ShenandoahControlThread::handle_requested_gc(GCCause::Cause cause) {
+  // For normal requested GCs (System.gc) we want to block the caller. However,
+  // for whitebox requested GC, we want to initiate the GC and return immediately.
+  // The whitebox caller thread will arrange for itself to wait until the GC notifies
+  // it that has reached the requested breakpoint (phase in the GC).
+  if (cause == GCCause::_wb_breakpoint) {
+    _requested_gc_cause = cause;
+    _gc_requested.set();
+    return;
+  }
+
   // Make sure we have at least one complete GC cycle before unblocking
   // from the explicit GC request.
   //
@@ -390,9 +403,7 @@ void ShenandoahControlThread::handle_requested_gc(GCCause::Cause cause) {
     _requested_gc_cause = cause;
     _gc_requested.set();
 
-    if (cause != GCCause::_wb_breakpoint) {
-      ml.wait();
-    }
+    ml.wait();
     current_gc_id = get_gc_id();
   }
 }

@@ -1239,6 +1239,7 @@ private:
   void cmpb(Address dst, int imm8);
   void cmpb(Address dst, Register reg);
   void cmpb(Register reg, Address dst);
+  void cmpb(Register reg, int imm8);
 
   void cmpl(Address dst, int32_t imm32);
   void cmpl(Register dst, int32_t imm32);
@@ -1900,7 +1901,6 @@ private:
 #endif
   void btq(Register dst, Register src);
 
-  void orw(Register dst, Register src);
   void eorw(Register dst, Register src1, Register src2, bool no_flags);
 
   void orl(Address dst, int32_t imm32);
@@ -1961,9 +1961,14 @@ private:
   void vpermilps(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void vpermilpd(XMMRegister dst, XMMRegister src, int imm8, int vector_len);
   void vpermpd(XMMRegister dst, XMMRegister src, int imm8, int vector_len);
-  void evpermi2q(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
-  void evpermt2b(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void evpmultishiftqb(XMMRegister dst, XMMRegister ctl, XMMRegister src, int vector_len);
+  void evpermi2b(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void evpermi2w(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void evpermi2d(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void evpermi2q(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void evpermi2ps(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void evpermi2pd(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void evpermt2b(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
 
   void pause();
 
@@ -2339,6 +2344,9 @@ private:
   void sha256rnds2(XMMRegister dst, XMMRegister src);
   void sha256msg1(XMMRegister dst, XMMRegister src);
   void sha256msg2(XMMRegister dst, XMMRegister src);
+  void sha512rnds2(XMMRegister dst, XMMRegister nds, XMMRegister src);
+  void sha512msg1(XMMRegister dst, XMMRegister src);
+  void sha512msg2(XMMRegister dst, XMMRegister src);
 
   void shldl(Register dst, Register src);
   void eshldl(Register dst, Register src1, Register src2, bool no_flags);
@@ -2631,6 +2639,7 @@ private:
 
   // Bitwise Logical AND of Packed Floating-Point Values
   void andpd(XMMRegister dst, XMMRegister src);
+  void andnpd(XMMRegister dst, XMMRegister src);
   void andps(XMMRegister dst, XMMRegister src);
   void vandpd(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void vandps(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
@@ -2985,6 +2994,7 @@ private:
   void vinserti32x4(XMMRegister dst, XMMRegister nds, XMMRegister src, uint8_t imm8);
   void vinserti32x4(XMMRegister dst, XMMRegister nds, Address src, uint8_t imm8);
   void vinserti64x4(XMMRegister dst, XMMRegister nds, XMMRegister src, uint8_t imm8);
+  void evinserti64x2(XMMRegister dst, XMMRegister nds, XMMRegister src, uint8_t imm8, int vector_len);
 
   // vinsertf forms
   void vinsertf128(XMMRegister dst, XMMRegister nds, XMMRegister src, uint8_t imm8);
@@ -3027,6 +3037,7 @@ private:
   void evbroadcasti32x4(XMMRegister dst, Address src, int vector_len);
   void evbroadcasti64x2(XMMRegister dst, XMMRegister src, int vector_len);
   void evbroadcasti64x2(XMMRegister dst, Address src, int vector_len);
+  void vbroadcasti128(XMMRegister dst, Address src, int vector_len);
 
   // scalar single/double/128bit precision replicate
   void vbroadcastss(XMMRegister dst, XMMRegister src, int vector_len);
@@ -3034,6 +3045,7 @@ private:
   void vbroadcastsd(XMMRegister dst, XMMRegister src, int vector_len);
   void vbroadcastsd(XMMRegister dst, Address src, int vector_len);
   void vbroadcastf128(XMMRegister dst, Address src, int vector_len);
+  void evbroadcastf64x2(XMMRegister dst, Address src, int vector_len);
 
   // gpr sourced byte/word/dword/qword replicate
   void evpbroadcastb(XMMRegister dst, Register src, int vector_len);

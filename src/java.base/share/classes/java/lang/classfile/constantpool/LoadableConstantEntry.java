@@ -24,8 +24,9 @@
  */
 package java.lang.classfile.constantpool;
 
-import java.lang.constant.ConstantDesc;
 import java.lang.classfile.TypeKind;
+import java.lang.constant.ConstantDesc;
+
 import jdk.internal.javac.PreviewFeature;
 
 /**
