@@ -101,25 +101,27 @@ public class CompressedClassPointersEncodingScheme {
         // add more...
 
         // Compact Object Header Mode:
-        // On all platforms we expect the VM to chose the smallest possible shift value needed to cover
+        // On aarch64 and x64 we expect the VM to chose the smallest possible shift value needed to cover
         // the encoding range. We expect the encoding Base to start at the class space start - but to enforce that,
         // we choose a high address.
-        long forceAddress = 32 * G;
+        if (Platform.isAArch64() || Platform.isX64()) {
+            long forceAddress = 32 * G;
 
-        long ccsSize = 128 * M;
-        int expectedShift = 6;
-        test(forceAddress, true, ccsSize, forceAddress, expectedShift);
+            long ccsSize = 128 * M;
+            int expectedShift = 6;
+            test(forceAddress, true, ccsSize, forceAddress, expectedShift);
 
-        ccsSize = 512 * M;
-        expectedShift = 8;
-        test(forceAddress, true, ccsSize, forceAddress, expectedShift);
+            ccsSize = 512 * M;
+            expectedShift = 8;
+            test(forceAddress, true, ccsSize, forceAddress, expectedShift);
 
-        ccsSize = G;
-        expectedShift = 9;
-        test(forceAddress, true, ccsSize, forceAddress, expectedShift);
+            ccsSize = G;
+            expectedShift = 9;
+            test(forceAddress, true, ccsSize, forceAddress, expectedShift);
 
-        ccsSize = 3 * G;
-        expectedShift = 10;
-        test(forceAddress, true, ccsSize, forceAddress, expectedShift);
+            ccsSize = 3 * G;
+            expectedShift = 10;
+            test(forceAddress, true, ccsSize, forceAddress, expectedShift);
+        }
     }
 }
