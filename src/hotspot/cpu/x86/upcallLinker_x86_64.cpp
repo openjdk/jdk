@@ -77,7 +77,9 @@ static int compute_reg_save_area_size(const ABIDescriptor& abi) {
   return size;
 }
 
+#ifndef _WIN64
 constexpr int MXCSR_MASK = 0xFFC0;  // Mask out any pending exceptions
+#endif
 
 static void preserve_callee_saved_registers(MacroAssembler* _masm, const ABIDescriptor& abi, int reg_save_area_offset) {
   // 1. iterate all registers in the architecture

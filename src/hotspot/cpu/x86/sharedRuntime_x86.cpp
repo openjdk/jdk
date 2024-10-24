@@ -94,18 +94,49 @@ void SharedRuntime::inline_check_hashcode_from_object_header(MacroAssembler* mas
 }
 #endif //COMPILER1
 
+#ifdef _WIN64
+const juint  float_sign_mask  = 0x7FFFFFFF;
+const juint  float_infinity   = 0x7F800000;
+const julong double_sign_mask = CONST64(0x7FFFFFFFFFFFFFFF);
+const julong double_infinity  = CONST64(0x7FF0000000000000);
+#endif
+
 JRT_LEAF(jfloat, SharedRuntime::frem(jfloat x, jfloat y))
+#ifdef _WIN64
+  // 64-bit Windows on amd64 returns the wrong values for
+  // infinity operands.
+  juint xbits = PrimitiveConversions::cast<juint>(x);
+  juint ybits = PrimitiveConversions::cast<juint>(y);
+  // x Mod Infinity == x unless x is infinity
+  if (((xbits & float_sign_mask) != float_infinity) &&
+       ((ybits & float_sign_mask) == float_infinity) ) {
+    return x;
+  }
+  return ((jfloat)fmod_winx64((double)x, (double)y));
+#else
   assert(StubRoutines::fmod() != nullptr, "");
   jdouble (*addr)(jdouble, jdouble) = (double (*)(double, double))StubRoutines::fmod();
   jdouble dx = (jdouble) x;
   jdouble dy = (jdouble) y;
 
   return (jfloat) (*addr)(dx, dy);
+#endif
 JRT_END
 
 JRT_LEAF(jdouble, SharedRuntime::drem(jdouble x, jdouble y))
+#ifdef _WIN64
+  julong xbits = PrimitiveConversions::cast<julong>(x);
+  julong ybits = PrimitiveConversions::cast<julong>(y);
+  // x Mod Infinity == x unless x is infinity
+  if (((xbits & double_sign_mask) != double_infinity) &&
+       ((ybits & double_sign_mask) == double_infinity) ) {
+    return x;
+  }
+  return ((jdouble)fmod_winx64((double)x, (double)y));
+#else
   assert(StubRoutines::fmod() != nullptr, "");
   jdouble (*addr)(jdouble, jdouble) = (double (*)(double, double))StubRoutines::fmod();
 
   return (*addr)(x, y);
+#endif
 JRT_END
