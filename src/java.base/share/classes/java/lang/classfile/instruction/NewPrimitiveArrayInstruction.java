@@ -30,16 +30,14 @@ import java.lang.classfile.Instruction;
 import java.lang.classfile.TypeKind;
 
 import jdk.internal.classfile.impl.AbstractInstruction;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models a {@code newarray} invocation instruction in the {@code code}
  * array of a {@code Code} attribute.  Delivered as a {@link CodeElement}
  * when traversing the elements of a {@link CodeModel}.
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface NewPrimitiveArrayInstruction extends Instruction
         permits AbstractInstruction.BoundNewPrimitiveArrayInstruction,
                 AbstractInstruction.UnboundNewPrimitiveArrayInstruction {

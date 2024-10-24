@@ -32,7 +32,6 @@ import java.util.function.Consumer;
 import jdk.internal.classfile.impl.AccessFlagsImpl;
 import jdk.internal.classfile.impl.ChainedMethodBuilder;
 import jdk.internal.classfile.impl.TerminalMethodBuilder;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * A builder for methods.  Builders are not created directly; they are passed
@@ -43,9 +42,8 @@ import jdk.internal.javac.PreviewFeature;
  *
  * @see MethodTransform
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface MethodBuilder
         extends ClassFileBuilder<MethodElement, MethodBuilder>
         permits ChainedMethodBuilder, TerminalMethodBuilder {

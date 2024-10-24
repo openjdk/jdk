@@ -27,16 +27,14 @@ package java.lang.classfile.constantpool;
 import java.lang.classfile.TypeKind;
 
 import jdk.internal.classfile.impl.AbstractPoolEntry;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models a {@code CONSTANT_Integer_info} constant in the constant pool of a
  * classfile.
  * @jvms 4.4.4 The CONSTANT_Integer_info and CONSTANT_Float_info Structures
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface IntegerEntry
         extends AnnotationConstantValueEntry, ConstantValueEntry
         permits AbstractPoolEntry.IntegerEntryImpl {

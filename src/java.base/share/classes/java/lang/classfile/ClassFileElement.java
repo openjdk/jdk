@@ -24,8 +24,6 @@
  */
 package java.lang.classfile;
 
-import jdk.internal.javac.PreviewFeature;
-
 /**
  * Immutable model for a portion of (or the entirety of) a classfile.  Elements
  * that model parts of the classfile that have attributes will implement {@link
@@ -35,9 +33,8 @@ import jdk.internal.javac.PreviewFeature;
  * will implement {@link ClassElement}, {@link MethodElement}, etc.
  *
  * @sealedGraph
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface ClassFileElement
         permits AttributedElement, CompoundElement, Attribute,
                 ClassElement, CodeElement, FieldElement, MethodElement {
