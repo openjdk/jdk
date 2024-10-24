@@ -415,45 +415,20 @@ public class HierarchicalLayoutManager extends LayoutManager {
         newLayerAbove.updateLayerPositions();
     }
 
-    private LayoutNode findDummyNode(LayoutNode layoutNode, Point startPoint, boolean searchPred) {
-        for (LayoutEdge edge : searchPred ? layoutNode.getPreds() : layoutNode.getSuccs()) {
-            LayoutNode node = searchPred ? edge.getFrom() : edge.getTo();
-            if (node.isDummy()) {
-                int y = searchPred ? graph.getLayer(node.getLayer()).getBottom() + LAYER_OFFSET : graph.getLayer(node.getLayer()).getTop() - LAYER_OFFSET;
-                if (startPoint.x == node.getCenterX() && startPoint.y == y) {
-                    return node;
-                }
-                LayoutNode resultNode = findDummyNode(node, startPoint, searchPred);
-                if (resultNode != null) return resultNode;
-            }
-        }
-        return null;
-    }
-
-    public boolean moveLink(Point linkPos, int shiftX) {
-        int newLayerNr = graph.findLayer(linkPos.y);
-        LayoutNode dummyNode = null;
-        for (LayoutNode node : graph.getLayer(newLayerNr)) {
+    public void moveLink(Point linkPos, int shiftX) {
+        int layerNr = graph.findLayer(linkPos.y);
+        for (LayoutNode node : graph.getLayer(layerNr)) {
             if (node.isDummy() && linkPos.x == node.getCenterX()) {
-                dummyNode = node;
+                Point newFrom = new Point(linkPos.x + shiftX, linkPos.y);
+                Point newLocation = new Point(newFrom.x, newFrom.y + node.getHeight() / 2);
+                boolean hasSamePos = tryMoveNodeInSamePosition(node, newLocation.x, layerNr);
+                if (!hasSamePos) {
+                    moveNode(node, newLocation.x, node.getLayer());
+                }
                 break;
             }
         }
-
-        if (dummyNode != null) {
-            Point newFrom = new Point(linkPos.x + shiftX, linkPos.y);
-            Point newLocation = new Point(newFrom.x, newFrom.y + dummyNode.getHeight() / 2);
-            if (dummyNode.getLayer() == newLayerNr) { // we move the node in the same layer
-                boolean hasSamePos = tryMoveNodeInSamePosition(dummyNode, newLocation.x, newLayerNr);
-                if (!hasSamePos) {
-                    moveNode(dummyNode, newLocation.x, dummyNode.getLayer());
-                }
-            }
-            writeBack();
-            return true;
-        }
         writeBack();
-        return false;
     }
 
     public void moveVertices(Set<? extends Vertex> movedVertices) {
