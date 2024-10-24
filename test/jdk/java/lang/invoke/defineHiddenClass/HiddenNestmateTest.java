@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,10 +42,7 @@ import java.util.Arrays;
 
 import org.testng.annotations.Test;
 
-import static java.lang.constant.ConstantDescs.CD_Object;
-import static java.lang.constant.ConstantDescs.CD_int;
-import static java.lang.constant.ConstantDescs.INIT_NAME;
-import static java.lang.constant.ConstantDescs.MTD_void;
+import static java.lang.constant.ConstantDescs.*;
 import static java.lang.invoke.MethodHandles.Lookup.ClassOption.*;
 import static java.lang.invoke.MethodHandles.Lookup.*;
 
@@ -182,7 +179,7 @@ public class HiddenNestmateTest {
             });
             clb.withMethodBody("test", MethodTypeDesc.of(CD_int, CD_HiddenNestmateTest), PUBLIC, cob -> {
                 cob.aload(1);
-                cob.invokevirtual(CD_HiddenNestmateTest, "privMethod", MethodTypeDesc.of(CD_int));
+                cob.invokevirtual(CD_HiddenNestmateTest, "privMethod", MTD_int);
                 cob.ireturn();
             });
         });

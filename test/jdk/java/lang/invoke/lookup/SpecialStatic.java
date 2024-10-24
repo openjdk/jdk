@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,7 +81,6 @@ public class SpecialStatic {
 
     private static ClassLoader cl = new CustomClassLoader();
     private static Class t1, t3;
-    private static final MethodTypeDesc MTD_int = MethodTypeDesc.of(CD_int);
     private static final MethodTypeDesc MTD_Lookup = MethodTypeDesc.of(CD_MethodHandles_Lookup);
     private static final String METHOD_NAME = "m";
     private static final ClassDesc CD_T1 = ClassDesc.of("T1");
