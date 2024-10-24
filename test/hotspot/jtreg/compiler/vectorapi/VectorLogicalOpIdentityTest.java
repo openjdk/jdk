@@ -41,7 +41,7 @@ import jdk.test.lib.Utils;
 
 /**
  * @test
- * @bug 8288294
+ * @bug 8288294 8302459
  * @key randomness
  * @library /test/lib /
  * @summary Add identity transformations for vector logic operations
