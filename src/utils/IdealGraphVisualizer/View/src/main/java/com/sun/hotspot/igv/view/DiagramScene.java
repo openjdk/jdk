@@ -646,7 +646,8 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
                     for (Figure figure : selectedFigures) {
                         FigureWidget fw = getWidget(figure);
                         Point newLocation = new Point(fw.getLocation().x, fw.getLocation().y);
-                        seaLayoutManager.moveVertex(figure, newLocation);
+                        figure.setPosition(newLocation);
+                        seaLayoutManager.moveVertex(figure);
                     }
 
                     rebuildConnectionLayer();

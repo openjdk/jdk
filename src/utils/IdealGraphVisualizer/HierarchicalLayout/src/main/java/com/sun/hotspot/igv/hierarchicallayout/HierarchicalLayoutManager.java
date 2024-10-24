@@ -455,7 +455,8 @@ public class HierarchicalLayoutManager extends LayoutManager {
         new WriteResult().run();
     }
 
-    public void moveVertex(Vertex movedVertex, Point newLoc) {
+    public void moveVertex(Vertex movedVertex) {
+        Point newLoc = movedVertex.getPosition();
         LayoutNode movedNode = graph.getLayoutNode(movedVertex);
 
         int newLayerNr = graph.findLayer(newLoc.y + movedNode.getHeight() / 2);
