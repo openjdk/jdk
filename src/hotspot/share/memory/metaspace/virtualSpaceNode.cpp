@@ -255,7 +255,7 @@ VirtualSpaceNode* VirtualSpaceNode::create_node(size_t word_size,
   DEBUG_ONLY(assert_is_aligned(word_size, chunklevel::MAX_CHUNK_WORD_SIZE);)
   ReservedSpace rs(word_size * BytesPerWord,
                    Settings::virtual_space_node_reserve_alignment_words() * BytesPerWord,
-                   os::vm_page_size());
+                   os::vm_page_size(), nullptr, mtMetaspace);
   if (!rs.is_reserved()) {
     vm_exit_out_of_memory(word_size * BytesPerWord, OOM_MMAP_ERROR, "Failed to reserve memory for metaspace");
   }

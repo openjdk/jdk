@@ -103,8 +103,8 @@ JfrVirtualMemorySegment::~JfrVirtualMemorySegment() {
 bool JfrVirtualMemorySegment::initialize(size_t reservation_size_request_bytes) {
   assert(is_aligned(reservation_size_request_bytes, os::vm_allocation_granularity()), "invariant");
   _rs = ReservedSpace(reservation_size_request_bytes,
-                      os::vm_allocation_granularity(),
-                      os::vm_page_size());
+                      os::vm_allocation_granularity(), os::vm_page_size(),
+                      nullptr, mtTracing);
   if (!_rs.is_reserved()) {
     return false;
   }

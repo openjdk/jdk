@@ -93,7 +93,7 @@ public:
   static void test_add_committed_region_adjacent() {
 
     size_t size  = 0x01000000;
-    ReservedSpace rs(size);
+    ReservedSpace rs(size, mtTest);
     address addr = (address)rs.base();
 
     address frame1 = (address)0x1234;
@@ -167,7 +167,7 @@ public:
   static void test_add_committed_region_adjacent_overlapping() {
 
     size_t size  = 0x01000000;
-    ReservedSpace rs(size);
+    ReservedSpace rs(size, mtTest);
     address addr = (address)rs.base();
 
     address frame1 = (address)0x1234;
@@ -254,7 +254,7 @@ public:
   static void test_add_committed_region_overlapping() {
 
     size_t size  = 0x01000000;
-    ReservedSpace rs(size);
+    ReservedSpace rs(size, mtTest);
     address addr = (address)rs.base();
 
     address frame1 = (address)0x1234;
@@ -425,7 +425,7 @@ public:
   static void test_remove_uncommitted_region() {
 
     size_t size  = 0x01000000;
-    ReservedSpace rs(size);
+    ReservedSpace rs(size, mtTest);
     address addr = (address)rs.base();
 
     address frame1 = (address)0x1234;
