@@ -806,6 +806,10 @@
   product(bool, UseStoreStoreForCtor, true, DIAGNOSTIC,                     \
           "Use StoreStore barrier instead of Release barrier at the end "   \
           "of constructors")                                                \
+                                                                            \
+  product(uintx, ShortLoopIter, 1000,                                       \
+          "Number of iterations for a short running loop")                  \
+          range(0, max_juint)                                               \
 
 // end of C2_FLAGS
 

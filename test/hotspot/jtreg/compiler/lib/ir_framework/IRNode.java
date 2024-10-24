@@ -1349,6 +1349,11 @@ public class IRNode {
         trapNodes(RANGE_CHECK_TRAP, "range_check");
     }
 
+    public static final String SHORT_RUNNING_LOOP_TRAP = PREFIX + "SHORT_RUNNING_LOOP_TRAP" + POSTFIX;
+    static {
+        trapNodes(SHORT_RUNNING_LOOP_TRAP, "short_running_loop");
+    }
+
     public static final String REPLICATE_B = VECTOR_PREFIX + "REPLICATE_B" + POSTFIX;
     static {
         vectorNode(REPLICATE_B, "Replicate", TYPE_BYTE);
