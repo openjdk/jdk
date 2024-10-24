@@ -1133,29 +1133,13 @@ void ObjectMonitor::UnlinkAfterAcquire(JavaThread* current, ObjectWaiter* curren
 // or drain _cxq, we need to reacquire the lock before we can wake up
 // (unpark) a waiting thread.
 //
-// Also note that due to reading the EntryList before cxq we have a benign race.
-// Example:
-//   1. Thread 1 enters the monitor.
-//   2. Thread 2 tries to enter the monitor, fails, and adds itself to
-//      cxq, tries again, and eventually parks.
-//   3. Thread 1 starts exiting the monitor and runs all the
-//      instructions up to and including reading the EntryList, which
-//      yields an empty EntryList.
-//   4. Thread 3 can now enter the monitor, since it is no longer owned.
-//   5. Thread 3 exits the monitor, and moves cxq to EntryList while
-//      still holding the lock.
-//   6. Thread 1 reads cxq, and finds it empty.
-//   7. Thread 1 now draws the conclusion that there is no thread
-//      waiting for the monitor, even though thread 2 has waited for the
-//      monitor since before thread 3 released it.
-//
-// However the successor protocol deals with this just fine. Since thread 3
-// managed to enter the monitor, the responsibility of ensuring liveness of
-// the monitor becomes the responsibility of thread 3 which will make
-// thread 2 the successor and unpark thread 2 before exiting the monitor.
-// The race could be removed by reading cxq before EntryList, but it
-// would come with an added cost of needing a loadload fence between the
-// reads.
+// Note that we read the EntryList and then the cxq after dropping the
+// lock, so the values need not form a stable snapshot. In particular,
+// after reading the (empty) EntryList, another thread could acquire
+// and release the lock, moving any entries in the cxq to the
+// EntryList, causing the current thread to see an empty cxq and
+// conclude there are no waiters. But this is okay as the thread that
+// moved the cxq is responsible for waking the successor.
 //
 // The CAS() in enter provides for safety and exclusion, while the
 // MEMBAR in exit provides for progress and avoids stranding.
