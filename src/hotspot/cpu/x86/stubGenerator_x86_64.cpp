@@ -3831,10 +3831,10 @@ address StubGenerator::generate_lookup_secondary_supers_table_stub(u1 super_klas
       r_sub_klass   = rsi,
       result        = rdi;
 
-  __ lookup_secondary_supers_table(r_sub_klass, r_super_klass,
-                                   rdx, rcx, rbx, r11, // temps
-                                   result,
-                                   super_klass_index);
+  __ lookup_secondary_supers_table_const(r_sub_klass, r_super_klass,
+                                         rdx, rcx, rbx, r11, // temps
+                                         result,
+                                         super_klass_index);
   __ ret(0);
 
   return start;

@@ -2187,7 +2187,7 @@ void MacroAssembler::lookup_secondary_supers_table(Register r_sub_klass,
 
   LOOKUP_SECONDARY_SUPERS_TABLE_REGISTERS;
 
-  ld(r_bitmap, in_bytes(Klass::bitmap_offset()), r_sub_klass);
+  ld(r_bitmap, in_bytes(Klass::secondary_supers_bitmap_offset()), r_sub_klass);
 
   // First check the bitmap to see if super_klass might be present. If
   // the bit is zero, we are certain that super_klass is not one of
