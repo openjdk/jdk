@@ -26,7 +26,9 @@
  * @summary Ensure that the wakeup state is cleared by selectNow()
  */
 
-import java.nio.channels.*;
+import java.nio.channels.Pipe;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
 
 public class WakeupNow {
 
@@ -47,14 +49,15 @@ public class WakeupNow {
         // ensure wakeup is consumed by selectNow
         Thread.sleep(2000);
         sel.selectNow();
-        long startTime = System.currentTimeMillis();
+        long startTime = System.nanoTime();
         int n = sel.select(2000);
-        long endTime = System.currentTimeMillis();
+        long endTime = System.nanoTime();
         p.source().close();
         p.sink().close();
         sel.close();
-        if (endTime - startTime < 1000)
-            throw new RuntimeException("test failed");
+        long delta = endTime - startTime;
+        if (delta < 1_000_000_000)
+            throw new RuntimeException("test failed with delta " + delta);
     }
 
     // Test if selectNow clears wakeup with only the wakeup fd
@@ -62,18 +65,17 @@ public class WakeupNow {
     // This fails before the fix on Solaris
     private static void test2() throws Exception {
         Selector sel = Selector.open();
-        Pipe p = Pipe.open();
-        p.source().configureBlocking(false);
         sel.wakeup();
         // ensure wakeup is consumed by selectNow
         Thread.sleep(2000);
         sel.selectNow();
-        long startTime = System.currentTimeMillis();
+        long startTime = System.nanoTime();
         int n = sel.select(2000);
-        long endTime = System.currentTimeMillis();
+        long endTime = System.nanoTime();
         sel.close();
-        if (endTime - startTime < 1000)
-            throw new RuntimeException("test failed");
+        long delta = endTime - startTime;
+        if (delta < 1_000_000_000)
+            throw new RuntimeException("test failed with delta " + delta);
     }
 
 }
