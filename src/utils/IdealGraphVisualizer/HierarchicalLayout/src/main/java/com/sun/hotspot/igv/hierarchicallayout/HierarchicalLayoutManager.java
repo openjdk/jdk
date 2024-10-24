@@ -430,18 +430,23 @@ public class HierarchicalLayoutManager extends LayoutManager {
         return null;
     }
 
-    public boolean moveLink(Vertex linkFromVertex, Point oldFrom, int shiftX) {
-        LayoutNode fromNode = graph.getLayoutNode(linkFromVertex);
-        boolean isReversed = fromNode.getY() > oldFrom.y;
-        LayoutNode movedNode = findDummyNode(fromNode, oldFrom, isReversed);
-        if (movedNode != null) {
-            Point newFrom = new Point(oldFrom.x + shiftX, oldFrom.y);
-            Point newLocation = new Point(newFrom.x, newFrom.y + movedNode.getHeight() / 2);
-            int newLayerNr = graph.findLayer(newLocation.y);
-            if (movedNode.getLayer() == newLayerNr) { // we move the node in the same layer
-                boolean hasSamePos = tryMoveNodeInSamePosition(movedNode, newLocation.x, newLayerNr);
+    public boolean moveLink(Point linkPos, int shiftX) {
+        int newLayerNr = graph.findLayer(linkPos.y);
+        LayoutNode dummyNode = null;
+        for (LayoutNode node : graph.getLayer(newLayerNr)) {
+            if (node.isDummy() && linkPos.x == node.getCenterX()) {
+                dummyNode = node;
+                break;
+            }
+        }
+
+        if (dummyNode != null) {
+            Point newFrom = new Point(linkPos.x + shiftX, linkPos.y);
+            Point newLocation = new Point(newFrom.x, newFrom.y + dummyNode.getHeight() / 2);
+            if (dummyNode.getLayer() == newLayerNr) { // we move the node in the same layer
+                boolean hasSamePos = tryMoveNodeInSamePosition(dummyNode, newLocation.x, newLayerNr);
                 if (!hasSamePos) {
-                    moveNode(movedNode, newLocation.x, movedNode.getLayer());
+                    moveNode(dummyNode, newLocation.x, dummyNode.getLayer());
                 }
             }
             writeBack();
