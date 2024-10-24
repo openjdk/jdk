@@ -454,12 +454,7 @@ void MacroAssembler::call_VM_base(Register oop_result,
     ld(t0, Address(java_thread, in_bytes(Thread::pending_exception_offset())));
     Label ok;
     beqz(t0, ok);
-    RuntimeAddress target(StubRoutines::forward_exception_entry());
-    relocate(target.rspec(), [&] {
-      int32_t offset;
-      la(t1, target.target(), offset);
-      jr(t1, offset);
-    });
+    j(RuntimeAddress(StubRoutines::forward_exception_entry()));
     bind(ok);
   }
 
@@ -977,17 +972,19 @@ void MacroAssembler::j(const address dest, Register temp) {
   }
 }
 
-void MacroAssembler::j(const Address &adr, Register temp) {
-  switch (adr.getMode()) {
+void MacroAssembler::j(const Address &dest, Register temp) {
+  switch (dest.getMode()) {
     case Address::literal: {
-      relocate(adr.rspec(), [&] {
-        j(adr.target(), temp);
+      relocate(dest.rspec(), [&] {
+        int32_t offset;
+        la(temp, dest.target(), offset);
+        jr(temp, offset);
       });
       break;
     }
     case Address::base_plus_offset: {
-      int32_t offset = ((int32_t)adr.offset() << 20) >> 20;
-      la(temp, Address(adr.base(), adr.offset() - offset));
+      int32_t offset = ((int32_t)dest.offset() << 20) >> 20;
+      la(temp, Address(dest.base(), dest.offset() - offset));
       jr(temp, offset);
       break;
     }
@@ -4194,8 +4191,7 @@ void MacroAssembler::reserved_stack_check() {
   // We have already removed our own frame.
   // throw_delayed_StackOverflowError will think that it's been
   // called by our caller.
-  la(t1, RuntimeAddress(SharedRuntime::throw_delayed_StackOverflowError_entry()));
-  jr(t1);
+  j(RuntimeAddress(SharedRuntime::throw_delayed_StackOverflowError_entry()));
   should_not_reach_here();
 
   bind(no_reserved_zone_enabling);

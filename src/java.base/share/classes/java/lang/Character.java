@@ -9066,8 +9066,8 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      *          {@code false} otherwise.
      */
     public boolean equals(Object obj) {
-        if (obj instanceof Character) {
-            return value == ((Character)obj).charValue();
+        if (obj instanceof Character c) {
+            return value == c.charValue();
         }
         return false;
     }
