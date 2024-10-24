@@ -54,6 +54,15 @@ interface Workshop {
 
     }
 
+    static Workshop withAppImageDir(Workshop workshop, Path appImageDir) {
+        return new Proxy(workshop) {
+            @Override
+            public Path appImageDir() {
+                return appImageDir;
+            }
+        };
+    }
+
     static class Proxy implements Workshop {
 
         Proxy(Workshop target) {
