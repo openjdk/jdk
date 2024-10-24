@@ -44,6 +44,9 @@
   flags(SW_VERBOSE,           "Trace SuperWord verbose (all SW tags enabled)") \
   flags(ALIGN_VECTOR,         "Trace AlignVector") \
   flags(VTRANSFORM,           "Trace VTransform Graph") \
+  flags(OPTIMIZATION,         "Trace VTransform::optimize") \
+  flags(COST,                 "Trace cost of VLoop (scalar) and VTransform (vector)") \
+  flags(COST_VERBOSE,         "Trace like COST, but more verbose") \
   flags(ALL,                  "Trace everything (very verbose)")
 
 #define table_entry(name, description) name,
@@ -125,6 +128,8 @@ class TraceAutoVectorizationTagValidator {
         _tags.at_put(SW_REJECTIONS, set_bit);
         _tags.at_put(SW_PACKSET, set_bit);
         _tags.at_put(SW_INFO, set_bit);
+      } else if (COST_VERBOSE == tag) {
+        _tags.at_put(COST, set_bit);
       } else {
         assert(tag < TRACE_AUTO_VECTORIZATION_TAG_NUM, "out of bounds");
         _tags.at_put(tag, set_bit);

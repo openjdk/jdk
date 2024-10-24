@@ -1475,9 +1475,6 @@ public:
   };
   AutoVectorizeStatus auto_vectorize(IdealLoopTree* lpt, VSharedData &vshared);
 
-  // Move an unordered Reduction out of loop if possible
-  void move_unordered_reduction_out_of_loop(IdealLoopTree* loop);
-
   // Create a scheduled list of nodes control dependent on ctrl set.
   void scheduled_nodelist( IdealLoopTree *loop, VectorSet& ctrl, Node_List &sched );
   // Has a use in the vector set
