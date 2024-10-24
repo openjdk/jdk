@@ -234,8 +234,10 @@ class MaskFillerForNative: public NativeSignatureIterator {
  private:
   uintptr_t * _mask;                             // the bit mask to be filled
   int         _size;                             // the mask size in bits
+  int         _num_oops;
 
   void set_one(int i) {
+    _num_oops++;
     i *= InterpreterOopMap::bits_per_entry;
     assert(0 <= i && i < _size, "offset out of bounds");
     _mask[i / BitsPerWord] |= (((uintptr_t) 1 << InterpreterOopMap::oop_bit_number) << (i % BitsPerWord));
@@ -253,6 +255,7 @@ class MaskFillerForNative: public NativeSignatureIterator {
   MaskFillerForNative(const methodHandle& method, uintptr_t* mask, int size) : NativeSignatureIterator(method) {
     _mask   = mask;
     _size   = size;
+    _num_oops = 0;
     // initialize with 0
     int i = (size + BitsPerWord - 1) / BitsPerWord;
     while (i-- > 0) _mask[i] = 0;
@@ -261,6 +264,8 @@ class MaskFillerForNative: public NativeSignatureIterator {
   void generate() {
     iterate();
   }
+
+  int num_oops() { return _num_oops; }
 };
 
 bool OopMapCacheEntry::verify_mask(CellTypeState* vars, CellTypeState* stack, int max_locals, int stack_top) {
@@ -319,6 +324,7 @@ void OopMapCacheEntry::fill_for_native(const methodHandle& mh) {
   // fill mask for parameters
   MaskFillerForNative mf(mh, bit_mask(), mask_size());
   mf.generate();
+  _num_oops = mf.num_oops();
 }
 
 

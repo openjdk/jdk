@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,7 @@ static JNINativeMethod methods[] = {
     {"currentCarrierThread", "()" THD, (void *)&JVM_CurrentCarrierThread},
     {"currentThread",    "()" THD,     (void *)&JVM_CurrentThread},
     {"setCurrentThread", "(" THD ")V", (void *)&JVM_SetCurrentThread},
+    {"setCurrentLockId", "(J)V",       (void *)&JVM_SetCurrentLockId},
     {"interrupt0",       "()V",        (void *)&JVM_Interrupt},
     {"holdsLock",        "(" OBJ ")Z", (void *)&JVM_HoldsLock},
     {"getThreads",       "()[" THD,    (void *)&JVM_GetAllThreads},

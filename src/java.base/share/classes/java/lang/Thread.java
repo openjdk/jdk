@@ -416,6 +416,12 @@ public class Thread implements Runnable {
     @IntrinsicCandidate
     native void setCurrentThread(Thread thread);
 
+    /**
+     * Sets the current thread's lock ID.
+     */
+    @IntrinsicCandidate
+    static native void setCurrentLockId(long tid);
+
     // ScopedValue support:
 
     @IntrinsicCandidate
@@ -637,11 +643,16 @@ public class Thread implements Runnable {
     static final int NO_INHERIT_THREAD_LOCALS = 1 << 2;
 
     /**
+     * Thread identifier assigned to the primordial thread.
+     */
+    static final long PRIMORDIAL_TID = 3;
+
+    /**
      * Helper class to generate thread identifiers. The identifiers start at
-     * 2 as this class cannot be used during early startup to generate the
-     * identifier for the primordial thread. The counter is off-heap and
-     * shared with the VM to allow it assign thread identifiers to non-Java
-     * threads.
+     * {@link Thread#PRIMORDIAL_TID}&nbsp;+1 as this class cannot be used during
+     * early startup to generate the identifier for the primordial thread. The
+     * counter is off-heap and shared with the VM to allow it to assign thread
+     * identifiers to non-Java threads.
      * See Thread initialization.
      */
     private static class ThreadIdentifiers {
@@ -722,10 +733,11 @@ public class Thread implements Runnable {
         }
 
         if (attached && VM.initLevel() < 1) {
-            this.tid = 1;  // primordial thread
+            this.tid = PRIMORDIAL_TID;  // primordial thread
         } else {
             this.tid = ThreadIdentifiers.next();
         }
+
         this.name = (name != null) ? name : genThreadName();
 
         if (acc != null) {

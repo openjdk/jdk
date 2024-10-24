@@ -1971,7 +1971,7 @@ void SharedRuntime::monitor_exit_helper(oopDesc* obj, BasicLock* lock, JavaThrea
   // hasn't been deallocated.
   ObjectMonitor* m = current->unlocked_inflated_monitor();
   if (m != nullptr) {
-    assert(m->owner_raw() != current, "must be");
+    assert(!m->has_owner(current), "must be");
     current->clear_unlocked_inflated_monitor();
 
     // We need to reacquire the lock before we can call ObjectSynchronizer::exit().

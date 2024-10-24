@@ -497,7 +497,6 @@ jint frame::interpreter_frame_expression_stack_size() const {
   return (jint)stack_size;
 }
 
-
 // (frame::interpreter_frame_sender_sp accessor is in frame_<arch>.cpp)
 
 const char* frame::print_name() const {
@@ -577,10 +576,21 @@ void frame::interpreter_frame_print_on(outputStream* st) const {
        current < interpreter_frame_monitor_begin();
        current = next_monitor_in_interpreter_frame(current)) {
     st->print(" - obj    [%s", current->obj() == nullptr ? "null" : "");
-    if (current->obj() != nullptr) current->obj()->print_value_on(st);
+    oop obj = current->obj();
+    if (obj != nullptr) {
+      if (!is_heap_frame()) {
+        obj->print_value_on(st);
+      } else {
+        // Might be an invalid oop. We don't have the
+        // stackChunk to correct it so just print address.
+        st->print(INTPTR_FORMAT, p2i(obj));
+      }
+    }
     st->print_cr("]");
     st->print(" - lock   [");
-    current->lock()->print_on(st, current->obj());
+    if (!is_heap_frame()) {
+      current->lock()->print_on(st, obj);
+    }
     st->print_cr("]");
   }
   // monitor
@@ -1085,7 +1095,7 @@ oop frame::retrieve_receiver(RegisterMap* reg_map) {
 }
 
 
-BasicLock* frame::get_native_monitor() {
+BasicLock* frame::get_native_monitor() const {
   nmethod* nm = (nmethod*)_cb;
   assert(_cb != nullptr && _cb->is_nmethod() && nm->method()->is_native(),
          "Should not call this unless it's a native nmethod");
@@ -1094,7 +1104,7 @@ BasicLock* frame::get_native_monitor() {
   return (BasicLock*) &sp()[byte_offset / wordSize];
 }
 
-oop frame::get_native_receiver() {
+oop frame::get_native_receiver() const {
   nmethod* nm = (nmethod*)_cb;
   assert(_cb != nullptr && _cb->is_nmethod() && nm->method()->is_native(),
          "Should not call this unless it's a native nmethod");
@@ -1340,9 +1350,14 @@ public:
 
 // callers need a ResourceMark because of name_and_sig_as_C_string() usage,
 // RA allocated string is returned to the caller
-void frame::describe(FrameValues& values, int frame_no, const RegisterMap* reg_map) {
+void frame::describe(FrameValues& values, int frame_no, const RegisterMap* reg_map, bool top) {
   // boundaries: sp and the 'real' frame pointer
   values.describe(-1, sp(), err_msg("sp for #%d", frame_no), 0);
+  if (top) {
+    values.describe(-1, sp() - 1, err_msg("sp[-1] for #%d", frame_no), 0);
+    values.describe(-1, sp() - 2, err_msg("sp[-2] for #%d", frame_no), 0);
+  }
+
   intptr_t* frame_pointer = real_fp(); // Note: may differ from fp()
 
   // print frame info at the highest boundary
@@ -1414,7 +1429,7 @@ void frame::describe(FrameValues& values, int frame_no, const RegisterMap* reg_m
   } else if (is_entry_frame()) {
     // For now just label the frame
     values.describe(-1, info_address, err_msg("#%d entry frame", frame_no), 2);
-  } else if (cb()->is_nmethod()) {
+  } else if (is_compiled_frame()) {
     // For now just label the frame
     nmethod* nm = cb()->as_nmethod();
     values.describe(-1, info_address,
@@ -1517,17 +1532,16 @@ void frame::describe(FrameValues& values, int frame_no, const RegisterMap* reg_m
         oop_map()->all_type_do(this, OopMapValue::callee_saved_value, &valuesFn);
       }
     }
-
-    if (nm->method()->is_continuation_enter_intrinsic()) {
-      ContinuationEntry* ce = Continuation::get_continuation_entry_for_entry_frame(reg_map->thread(), *this); // (ContinuationEntry*)unextended_sp();
-      ce->describe(values, frame_no);
-    }
   } else if (is_native_frame()) {
     // For now just label the frame
     nmethod* nm = cb()->as_nmethod_or_null();
     values.describe(-1, info_address,
                     FormatBuffer<1024>("#%d nmethod " INTPTR_FORMAT " for native method %s", frame_no,
                                        p2i(nm), nm->method()->name_and_sig_as_C_string()), 2);
+    if (nm->method()->is_continuation_enter_intrinsic()) {
+      ContinuationEntry* ce = Continuation::get_continuation_entry_for_entry_frame(reg_map->thread(), *this); // (ContinuationEntry*)unextended_sp();
+      ce->describe(values, frame_no);
+    }
   } else {
     // provide default info if not handled before
     char *info = (char *) "special frame";
