@@ -55,7 +55,7 @@ jobs:
   ###
 
   select:
-    name: 'Select platforms'
+    name: 'Prepare the run'
     runs-on: ubuntu-22.04
     env:
       # List of platforms to exclude by default
@@ -73,7 +73,21 @@ jobs:
       docs: ${{ steps.include.outputs.docs }}
 
     steps:
-        # This function must be inlined in main.yml, or we'd be forced to checkout the repo
+      - name: 'Checkout the scripts'
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            make/conf/github-actions.conf
+
+      - name: 'Get or build JTReg'
+        id: jtreg
+        uses: ./.github/actions/get-jtreg
+        with:
+          fail-on-cache-miss: false
+
+      # TODO: Now that we are checking out the repo scripts, we can put the following code
+      # into a separate file
       - name: 'Check what jobs to run'
         id: include
         run: |
@@ -235,8 +249,7 @@ jobs:
 
   build-linux-cross-compile:
     name: linux-cross-compile
-    needs:
-      - select
+    needs: select
     uses: ./.github/workflows/build-cross-compile.yml
     with:
       gcc-major-version: '10'
