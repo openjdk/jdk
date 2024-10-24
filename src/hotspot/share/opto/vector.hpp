@@ -57,7 +57,7 @@ class PhaseVector : public Phase {
 
  public:
   PhaseVector(PhaseIterGVN& igvn) : Phase(Vector), _igvn(igvn) {}
-  void optimize_vector_boxes(PhaseIterGVN &igvn);
+  void optimize_vector_boxes();
 };
 
 #endif // SHARE_OPTO_VECTOR_HPP
