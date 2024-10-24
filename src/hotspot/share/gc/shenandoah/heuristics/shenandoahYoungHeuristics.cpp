@@ -112,13 +112,16 @@ void ShenandoahYoungHeuristics::choose_young_collection_set(ShenandoahCollection
 
 bool ShenandoahYoungHeuristics::should_start_gc() {
   auto heap = ShenandoahGenerationalHeap::heap();
-  ShenandoahOldHeuristics* old_heuristics = heap->old_generation()->heuristics();
+  ShenandoahOldGeneration* old_generation = heap->old_generation();
+  ShenandoahOldHeuristics* old_heuristics = old_generation->heuristics();
 
-  // Checks that an old cycle has run for at least ShenandoahMinimumOldMarkTimeMs before allowing a young cycle.
-  if (ShenandoahMinimumOldMarkTimeMs > 0 && heap->is_concurrent_old_mark_in_progress()) {
-    size_t old_mark_elapsed = size_t(old_heuristics->elapsed_cycle_time() * 1000);
-    if (old_mark_elapsed < ShenandoahMinimumOldMarkTimeMs) {
-      return false;
+  // Checks that an old cycle has run for at least ShenandoahMinimumOldTimeMs before allowing a young cycle.
+  if (ShenandoahMinimumOldTimeMs > 0) {
+    if (old_generation->is_preparing_for_mark() || old_generation->is_concurrent_mark_in_progress()) {
+      size_t old_time_elapsed = size_t(old_heuristics->elapsed_cycle_time() * 1000);
+      if (old_time_elapsed < ShenandoahMinimumOldTimeMs) {
+        return false;
+      }
     }
   }
 
@@ -133,7 +136,7 @@ bool ShenandoahYoungHeuristics::should_start_gc() {
   // be done, we start up the young-gen GC threads so they can do some of this old-gen work.  As implemented, promotion
   // gets priority over old-gen marking.
   size_t promo_expedite_threshold = percent_of(heap->young_generation()->max_capacity(), ShenandoahExpeditePromotionsThreshold);
-  size_t promo_potential = heap->old_generation()->get_promotion_potential();
+  size_t promo_potential = old_generation->get_promotion_potential();
   if (promo_potential > promo_expedite_threshold) {
     // Detect unsigned arithmetic underflow
     assert(promo_potential < heap->capacity(), "Sanity");
