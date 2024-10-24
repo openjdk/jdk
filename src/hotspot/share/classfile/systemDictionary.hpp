@@ -75,7 +75,10 @@ class GCTimer;
 class EventClassLoad;
 class Symbol;
 
+template <class E> class GrowableArray;
+
 class SystemDictionary : AllStatic {
+  friend class AOTLinkedClassBulkLoader;
   friend class BootstrapInfo;
   friend class vmClasses;
   friend class VMStructs;
@@ -239,6 +242,9 @@ public:
                                               Symbol* signature,
                                               TRAPS);
 
+  static void get_all_method_handle_intrinsics(GrowableArray<Method*>* methods) NOT_CDS_RETURN;
+  static void restore_archived_method_handle_intrinsics() NOT_CDS_RETURN;
+
   // compute java_mirror (java.lang.Class instance) for a type ("I", "[[B", "LFoo;", etc.)
   // Either the accessing_klass or the CL/PD can be non-null, but not both.
   static Handle    find_java_mirror_for_type(Symbol* signature,
@@ -293,6 +299,9 @@ public:
                                   const char* message);
   static const char* find_nest_host_error(const constantPoolHandle& pool, int which);
 
+  static void add_to_initiating_loader(JavaThread* current, InstanceKlass* k,
+                                       ClassLoaderData* loader_data) NOT_CDS_RETURN;
+
   static OopHandle  _java_system_loader;
   static OopHandle  _java_platform_loader;
 
@@ -331,6 +340,7 @@ private:
                                                Handle protection_domain, TRAPS);
   // Second part of load_shared_class
   static void load_shared_class_misc(InstanceKlass* ik, ClassLoaderData* loader_data) NOT_CDS_RETURN;
+  static void restore_archived_method_handle_intrinsics_impl(TRAPS) NOT_CDS_RETURN;
 
 protected:
   // Used by SystemDictionaryShared

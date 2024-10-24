@@ -1,0 +1,11 @@
+java/math/BigInteger/largeMemory/DivisionOverflow.java          0000000 generic-all
+java/math/BigInteger/largeMemory/StringConstructorOverflow.java 0000000 generic-all
+
+jdk/internal/misc/CDS/ArchivedEnumTest.java                     0000000 generic-all
+
+java/lang/module/ModuleDescriptorHashCodeTest.java              0000000 generic-all
+
+
+# The test case is incorrect. There's no guarantee that running a JVM with the following
+# parameters will always cause the class java/lang/invoke/MethodHandleStatics to be initialized
+java/lang/invoke/DumpMethodHandleInternals.java                 0000000 generic-all

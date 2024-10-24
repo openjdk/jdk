@@ -92,12 +92,15 @@ class InterpreterRuntime: AllStatic {
 
   static void resolve_from_cache(JavaThread* current, Bytecodes::Code bytecode);
 
-  // Used by ClassPrelinker
+  // Used by AOTConstantPoolResolver
   static void resolve_get_put(Bytecodes::Code bytecode, int field_index,
                               methodHandle& m, constantPoolHandle& pool, bool initialize_holder, TRAPS);
   static void cds_resolve_invoke(Bytecodes::Code bytecode, int method_index,
                                  constantPoolHandle& pool, TRAPS);
-
+  static void cds_resolve_invokehandle(int raw_index,
+                                       constantPoolHandle& pool, TRAPS);
+  static void cds_resolve_invokedynamic(int raw_index,
+                                        constantPoolHandle& pool, TRAPS);
 private:
   // Statics & fields
   static void resolve_get_put(JavaThread* current, Bytecodes::Code bytecode);

@@ -23,11 +23,11 @@
  */
 
 #include "precompiled.hpp"
-#include "cds/archiveHeapWriter.hpp"
-#include "cds/archiveHeapLoader.hpp"
+#include "cds/aotConstantPoolResolver.hpp"
 #include "cds/archiveBuilder.hpp"
+#include "cds/archiveHeapLoader.hpp"
+#include "cds/archiveHeapWriter.hpp"
 #include "cds/cdsConfig.hpp"
-#include "cds/classPrelinker.hpp"
 #include "cds/heapShared.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.hpp"
@@ -35,6 +35,7 @@
 #include "classfile/metadataOnStackMark.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
@@ -299,12 +300,15 @@ objArrayOop ConstantPool::prepare_resolved_references_for_archiving() {
   }
 
   objArrayOop rr = resolved_references();
-  if (rr != nullptr) {
+  if (rr == nullptr) {
+    return nullptr;
+  } else {
     int rr_len = rr->length();
     ConstantPool* src_cp = ArchiveBuilder::current()->get_source_addr(this);
     objArrayOop scratch_rr = HeapShared::scratch_resolved_references(src_cp);
     Array<u2>* ref_map = reference_map();
     int ref_map_len = ref_map == nullptr ? 0 : ref_map->length();
+
     for (int i = 0; i < rr_len; i++) {
       oop obj = rr->obj_at(i);
       scratch_rr->obj_at_put(i, nullptr);
@@ -316,13 +320,50 @@ objArrayOop ConstantPool::prepare_resolved_references_for_archiving() {
             if (!ArchiveHeapWriter::is_string_too_large_to_archive(obj)) {
               scratch_rr->obj_at_put(i, obj);
             }
+            continue;
           }
+        }
+
+        if (CDSConfig::is_dumping_invokedynamic()) {
+          scratch_rr->obj_at_put(i, obj);
         }
       }
     }
     return scratch_rr;
   }
-  return rr;
+}
+
+void ConstantPool::find_required_hidden_classes() {
+  if (!CDSConfig::is_dumping_invokedynamic()) {
+    // This function is needed only for supporting aot-linking indy.
+    return;
+  }
+
+  if (_cache == nullptr) {
+    return;
+  }
+
+  ClassLoaderData* loader_data = pool_holder()->class_loader_data();
+  if (loader_data == nullptr) {
+    // These are custom loader classes from the preimage
+    return;
+  }
+
+  if (!SystemDictionaryShared::is_builtin_loader(loader_data)) {
+    // Archiving resolved references for classes from non-builtin loaders
+    // is not yet supported.
+    return;
+  }
+
+  objArrayOop rr = resolved_references();
+  if (rr != nullptr) {
+    for (int i = 0; i < rr->length(); i++) {
+      oop obj = rr->obj_at(i);
+      if (obj != nullptr) {
+        HeapShared::find_required_hidden_classes_in_object(obj);
+      }
+    }
+  }
 }
 
 void ConstantPool::add_dumped_interned_strings() {
@@ -349,6 +390,11 @@ void ConstantPool::restore_unshareable_info(TRAPS) {
   assert(is_constantPool(), "ensure C++ vtable is restored");
   assert(on_stack(), "should always be set for shared constant pools");
   assert(is_shared(), "should always be set for shared constant pools");
+  if (is_for_method_handle_intrinsic()) {
+    // See the same check in remove_unshareable_info() below.
+    assert(cache() == NULL, "must not have cpCache");
+    return;
+  }
   assert(_cache != nullptr, "constant pool _cache should not be null");
 
   // Only create the new resolved references array if it hasn't been attempted before
@@ -387,6 +433,14 @@ void ConstantPool::remove_unshareable_info() {
   // class redefinition. Since shared ConstantPools cannot be deallocated anyway,
   // we always set _on_stack to true to avoid having to change _flags during runtime.
   _flags |= (_on_stack | _is_shared);
+
+  if (is_for_method_handle_intrinsic()) {
+    // This CP was created by Method::make_method_handle_intrinsic() and has nothing
+    // that need to be removed/restored. It has no cpCache since the intrinsic methods
+    // don't have any bytecodes.
+    assert(cache() == NULL, "must not have cpCache");
+    return;
+  }
 
   // resolved_references(): remember its length. If it cannot be restored
   // from the archived heap objects at run time, we need to dynamically allocate it.
@@ -482,7 +536,7 @@ void ConstantPool::remove_resolved_klass_if_non_deterministic(int cp_index) {
     can_archive = false;
   } else {
     ConstantPool* src_cp = ArchiveBuilder::current()->get_source_addr(this);
-    can_archive = ClassPrelinker::is_resolution_deterministic(src_cp, cp_index);
+    can_archive = AOTConstantPoolResolver::is_resolution_deterministic(src_cp, cp_index);
   }
 
   if (!can_archive) {
@@ -502,7 +556,7 @@ void ConstantPool::remove_resolved_klass_if_non_deterministic(int cp_index) {
                 (!k->is_instance_klass() || pool_holder()->is_subtype_of(k)) ? "" : " (not supertype)");
     } else {
       Symbol* name = klass_name_at(cp_index);
-      log.print("    %s", name->as_C_string());
+      log.print(" => %s", name->as_C_string());
     }
   }
 
@@ -748,9 +802,7 @@ int ConstantPool::to_cp_index(int index, Bytecodes::Code code) {
     case Bytecodes::_fast_invokevfinal: // Bytecode interpreter uses this
       return resolved_method_entry_at(index)->constant_pool_index();
     default:
-      tty->print_cr("Unexpected bytecode: %d", code);
-      ShouldNotReachHere(); // All cases should have been handled
-      return -1;
+      fatal("Unexpected bytecode: %s", Bytecodes::name(code));
   }
 }
 

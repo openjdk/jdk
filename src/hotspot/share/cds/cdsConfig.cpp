@@ -33,14 +33,19 @@
 #include "logging/log.hpp"
 #include "memory/universe.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
 #include "utilities/defaultStream.hpp"
+#include "utilities/formatBuffer.hpp"
 
 bool CDSConfig::_is_dumping_static_archive = false;
 bool CDSConfig::_is_dumping_dynamic_archive = false;
 bool CDSConfig::_is_using_optimized_module_handling = true;
 bool CDSConfig::_is_dumping_full_module_graph = true;
 bool CDSConfig::_is_using_full_module_graph = true;
+bool CDSConfig::_has_aot_linked_classes = false;
+bool CDSConfig::_has_archived_invokedynamic = false;
+bool CDSConfig::_old_cds_flags_used = false;
 
 char* CDSConfig::_default_archive_path = nullptr;
 char* CDSConfig::_static_archive_path = nullptr;
@@ -325,7 +330,95 @@ bool CDSConfig::has_unsupported_runtime_module_options() {
   return false;
 }
 
+#define CHECK_ALIAS(f) check_flag_alias(FLAG_IS_DEFAULT(f), #f)
+
+void CDSConfig::check_flag_alias(bool alias_is_default, const char* alias_name) {
+  if (_old_cds_flags_used && !alias_is_default) {
+    vm_exit_during_initialization(err_msg("Option %s cannot be used at the same time with "
+                                          "-Xshare:on, -Xshare:auto, -Xshare:off, -Xshare:dump, "
+                                          "DumpLoadedClassList, SharedClassListFile, or SharedArchiveFile",
+                                          alias_name));
+  }
+}
+
+void CDSConfig::check_flag_aliases() {
+  if (!FLAG_IS_DEFAULT(DumpLoadedClassList) ||
+      !FLAG_IS_DEFAULT(SharedClassListFile) ||
+      !FLAG_IS_DEFAULT(SharedArchiveFile)) {
+    _old_cds_flags_used = true;
+  }
+
+  CHECK_ALIAS(AOTCache);
+  CHECK_ALIAS(AOTConfiguration);
+  CHECK_ALIAS(AOTMode);
+
+  if (FLAG_IS_DEFAULT(AOTCache) && FLAG_IS_DEFAULT(AOTConfiguration) && FLAG_IS_DEFAULT(AOTMode)) {
+    // Aliases not used.
+    return;
+  }
+
+  if (FLAG_IS_DEFAULT(AOTMode) || strcmp(AOTMode, "auto") == 0 || strcmp(AOTMode, "on") == 0) {
+    if (!FLAG_IS_DEFAULT(AOTConfiguration)) {
+      vm_exit_during_initialization("AOTConfiguration can only be used with -XX:AOTMode=record or -XX:AOTMode=create");
+    }
+
+    if (!FLAG_IS_DEFAULT(AOTCache)) {
+      assert(FLAG_IS_DEFAULT(SharedArchiveFile), "already checked");
+      FLAG_SET_ERGO(SharedArchiveFile, AOTCache);
+    }
+
+    UseSharedSpaces = true;
+    if (FLAG_IS_DEFAULT(AOTMode) || (strcmp(AOTMode, "auto") == 0)) {
+      RequireSharedSpaces = false;
+    } else {
+      assert(strcmp(AOTMode, "on") == 0, "already checked");
+      RequireSharedSpaces = true;
+    }
+  } else if (strcmp(AOTMode, "off") == 0) {
+    UseSharedSpaces = false;
+    RequireSharedSpaces = false;
+  } else {
+    // AOTMode is record or create
+    if (FLAG_IS_DEFAULT(AOTConfiguration)) {
+      vm_exit_during_initialization(err_msg("-XX:AOTMode=%s cannot be used without setting AOTConfiguration", AOTMode));
+    }
+
+    if (strcmp(AOTMode, "record") == 0) {
+      if (!FLAG_IS_DEFAULT(AOTCache)) {
+        vm_exit_during_initialization("AOTCache must not be specified when using -XX:AOTMode=record");
+      }
+
+      assert(FLAG_IS_DEFAULT(DumpLoadedClassList), "already checked");
+      FLAG_SET_ERGO(DumpLoadedClassList, AOTConfiguration);
+      UseSharedSpaces = false;
+      RequireSharedSpaces = false;
+    } else {
+      assert(strcmp(AOTMode, "create") == 0, "checked by AOTModeConstraintFunc");
+      if (FLAG_IS_DEFAULT(AOTCache)) {
+        vm_exit_during_initialization("AOTCache must be specified when using -XX:AOTMode=create");
+      }
+
+      assert(FLAG_IS_DEFAULT(SharedClassListFile), "already checked");
+      FLAG_SET_ERGO(SharedClassListFile, AOTConfiguration);
+      assert(FLAG_IS_DEFAULT(SharedArchiveFile), "already checked");
+      FLAG_SET_ERGO(SharedArchiveFile, AOTCache);
+
+      CDSConfig::enable_dumping_static_archive();
+    }
+  }
+}
+
 bool CDSConfig::check_vm_args_consistency(bool patch_mod_javabase, bool mode_flag_cmd_line) {
+  check_flag_aliases();
+
+  if (AOTClassLinking) {
+    // If AOTClassLinking is specified, enable all AOT optimizations by default.
+    FLAG_SET_ERGO_IF_DEFAULT(AOTInvokeDynamicLinking, true);
+  } else {
+    // AOTInvokeDynamicLinking depends on AOTClassLinking.
+    FLAG_SET_ERGO(AOTInvokeDynamicLinking, false);
+  }
+
   if (is_dumping_static_archive()) {
     if (!mode_flag_cmd_line) {
       // By default, -Xshare:dump runs in interpreter-only mode, which is required for deterministic archive.
@@ -344,6 +437,9 @@ bool CDSConfig::check_vm_args_consistency(bool patch_mod_javabase, bool mode_fla
     // run to another which resulting in non-determinstic CDS archives.
     // Disable UseStringDeduplication while dumping CDS archive.
     UseStringDeduplication = false;
+
+    // Don't use SoftReferences so that objects used by java.lang.invoke tables can be archived.
+    Arguments::PropertyList_add(new SystemProperty("java.lang.invoke.MethodHandleNatives.USE_SOFT_CACHE", "false", false));
   }
 
   // RecordDynamicDumpInfo is not compatible with ArchiveClassesAtExit
@@ -388,6 +484,11 @@ bool CDSConfig::check_vm_args_consistency(bool patch_mod_javabase, bool mode_fla
   return true;
 }
 
+bool CDSConfig::allow_only_single_java_thread() {
+  // See comments in JVM_StartThread()
+  return is_dumping_static_archive();
+}
+
 bool CDSConfig::is_using_archive() {
   return UseSharedSpaces;
 }
@@ -406,6 +507,10 @@ void CDSConfig::stop_using_optimized_module_handling() {
 bool CDSConfig::is_dumping_heap() {
   // heap dump is not supported in dynamic dump
   return is_dumping_static_archive() && HeapShared::can_write();
+}
+
+bool CDSConfig::is_loading_heap() {
+  return ArchiveHeapLoader::is_in_use();
 }
 
 bool CDSConfig::is_using_full_module_graph() {
@@ -446,4 +551,39 @@ void CDSConfig::stop_using_full_module_graph(const char* reason) {
     }
   }
 }
+
+bool CDSConfig::is_dumping_aot_linked_classes() {
+  if (is_dumping_dynamic_archive()) {
+    return is_using_full_module_graph() && AOTClassLinking;
+  } else if (is_dumping_static_archive()) {
+    return is_dumping_full_module_graph() && AOTClassLinking;
+  } else {
+    return false;
+  }
+}
+
+bool CDSConfig::is_using_aot_linked_classes() {
+  // Make sure we have the exact same module graph as in the assembly phase, or else
+  // some aot-linked classes may not be visible so cannot be loaded.
+  return is_using_full_module_graph() && _has_aot_linked_classes;
+}
+
+void CDSConfig::set_has_aot_linked_classes(bool has_aot_linked_classes) {
+  _has_aot_linked_classes |= has_aot_linked_classes;
+}
+
+bool CDSConfig::is_initing_classes_at_dump_time() {
+  return is_dumping_heap() && is_dumping_aot_linked_classes();
+}
+
+bool CDSConfig::is_dumping_invokedynamic() {
+  // Requires is_dumping_aot_linked_classes(). Otherwise the classes of some archived heap
+  // objects used by the archive indy callsites may be replaced at runtime.
+  return AOTInvokeDynamicLinking && is_dumping_aot_linked_classes() && is_dumping_heap();
+}
+
+bool CDSConfig::is_loading_invokedynamic() {
+  return UseSharedSpaces && is_using_full_module_graph() && _has_archived_invokedynamic;
+}
+
 #endif // INCLUDE_CDS_JAVA_HEAP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @bug 8214781 8293187
  * @summary Test for the -XX:ArchiveHeapTestClass flag
  * @requires vm.debug == true & vm.cds.write.archived.java.heap
- * @modules java.base/sun.invoke.util java.logging
+ * @modules java.logging
  * @library /test/jdk/lib/testlibrary /test/lib
  *          /test/hotspot/jtreg/runtime/cds/appcds
  *          /test/hotspot/jtreg/runtime/cds/appcds/test-classes
@@ -35,12 +35,13 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar boot.jar
  *             CDSTestClassA CDSTestClassA$XX CDSTestClassA$YY
  *             CDSTestClassB CDSTestClassC CDSTestClassD
- *             CDSTestClassE CDSTestClassF CDSTestClassG
+ *             CDSTestClassE CDSTestClassF CDSTestClassG CDSTestClassG$MyEnum CDSTestClassG$Wrapper
  *             pkg.ClassInPackage
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar Hello
  * @run driver ArchiveHeapTestClass
  */
 
+import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.Platform;
 import jdk.test.lib.helpers.ClassFileInstaller;
 import jdk.test.lib.process.OutputAnalyzer;
@@ -151,19 +152,24 @@ public class ArchiveHeapTestClass {
         output = dumpBootAndHello(CDSTestClassD_name);
         mustFail(output, "Unable to find the static T_OBJECT field CDSTestClassD::archivedObjects");
 
-        testCase("Use a disallowed class: in unnamed module but not in unname package");
-        output = dumpBootAndHello(CDSTestClassE_name);
-        mustFail(output, "Class pkg.ClassInPackage not allowed in archive heap");
+        if (!CDSTestUtils.isAOTClassLinkingEnabled()) {
+            testCase("Use a disallowed class: in unnamed module but not in unname package");
+            output = dumpBootAndHello(CDSTestClassE_name);
+            mustFail(output, "Class pkg.ClassInPackage not allowed in archive heap");
 
-        testCase("Use a disallowed class: not in java.base module");
-        output = dumpBootAndHello(CDSTestClassF_name);
-        mustFail(output, "Class java.util.logging.Level not allowed in archive heap");
-
-        if (false) { // JDK-8293187
-            testCase("sun.invoke.util.Wrapper");
-            output = dumpBootAndHello(CDSTestClassG_name);
-            mustSucceed(output);
+            testCase("Use a disallowed class: not in java.base module");
+            output = dumpBootAndHello(CDSTestClassF_name);
+            mustFail(output, "Class java.util.logging.Level not allowed in archive heap");
         }
+
+        testCase("Complex enums");
+        output = dumpBootAndHello(CDSTestClassG_name, "-XX:+AOTClassLinking", "-Xlog:cds+class=debug");
+        mustSucceed(output);
+
+        TestCommon.run("-Xbootclasspath/a:" + bootJar, "-cp", appJar, "-Xlog:cds+heap,cds+init",
+                       CDSTestClassG_name)
+            .assertNormalExit("init subgraph " + CDSTestClassG_name,
+                              "Initialized from CDS");
     }
 }
 
@@ -171,12 +177,27 @@ class CDSTestClassA {
     static final String output = "CDSTestClassA.<clinit> was executed";
     static Object[] archivedObjects;
     static {
-        archivedObjects = new Object[5];
-        archivedObjects[0] = output;
-        archivedObjects[1] = new CDSTestClassA[0];
-        archivedObjects[2] = new YY();
-        archivedObjects[3] = new int[0];
-        archivedObjects[4] = new int[2][2];
+        // The usual convention would be to call this here:
+        //     CDS.initializeFromArchive(CDSTestClassA.class);
+        // However, the CDS class is not exported to the unnamed module by default,
+        // and we don't want to use "--add-exports java.base/jdk.internal.misc=ALL-UNNAMED", as
+        // that would disable the archived full module graph, which will disable
+        // CDSConfig::is_using_aot_linked_classes().
+        //
+        // Instead, HeapShared::initialize_test_class_from_archive() will set up the
+        // "archivedObjects" field first, before calling CDSTestClassA.<clinit>. So
+        // if we see that archivedObjects is magically non-null here, that means
+        // it has been restored from the CDS archive.
+        if (archivedObjects == null) {
+            archivedObjects = new Object[5];
+            archivedObjects[0] = output;
+            archivedObjects[1] = new CDSTestClassA[0];
+            archivedObjects[2] = new YY();
+            archivedObjects[3] = new int[0];
+            archivedObjects[4] = new int[2][2];
+        } else {
+            System.out.println("Initialized from CDS");
+        }
         System.out.println(output);
         System.out.println("CDSTestClassA   module  = " + CDSTestClassA.class.getModule());
         System.out.println("CDSTestClassA   package = " + CDSTestClassA.class.getPackage());
@@ -269,8 +290,143 @@ class CDSTestClassF {
 class CDSTestClassG {
     static Object[] archivedObjects;
     static {
-        // Not in java.base
-        archivedObjects = new Object[1];
-        archivedObjects[0] = sun.invoke.util.Wrapper.BOOLEAN;
+        if (archivedObjects == null) {
+            archivedObjects = new Object[13];
+            archivedObjects[0] = Wrapper.BOOLEAN;
+            archivedObjects[1] = Wrapper.INT.zero();
+            archivedObjects[2] = Wrapper.DOUBLE.zero();
+            archivedObjects[3] = MyEnum.DUMMY1;
+
+            archivedObjects[4] = Boolean.class;
+            archivedObjects[5] = Byte.class;
+            archivedObjects[6] = Character.class;
+            archivedObjects[7] = Short.class;
+            archivedObjects[8] = Integer.class;
+            archivedObjects[9] = Long.class;
+            archivedObjects[10] = Float.class;
+            archivedObjects[11] = Double.class;
+            archivedObjects[12] = Void.class;
+        } else {
+            System.out.println("Initialized from CDS");
+        }
+    }
+
+    public static void main(String args[]) {
+        if (archivedObjects[0] != Wrapper.BOOLEAN) {
+            throw new RuntimeException("Huh 0");
+        }
+
+        if (archivedObjects[1] != Wrapper.INT.zero()) {
+            throw new RuntimeException("Huh 1");
+        }
+
+        if (archivedObjects[2] != Wrapper.DOUBLE.zero()) {
+            throw new RuntimeException("Huh 2");
+        }
+
+        if (archivedObjects[3] != MyEnum.DUMMY1) {
+            throw new RuntimeException("Huh 3");
+        }
+
+        if (MyEnum.BOOLEAN != true) {
+            throw new RuntimeException("Huh 10.1");
+        }
+        if (MyEnum.BYTE != -128) {
+            throw new RuntimeException("Huh 10.2");
+        }
+        if (MyEnum.CHAR != 'c') {
+            throw new RuntimeException("Huh 10.3");
+        }
+        if (MyEnum.SHORT != -12345) {
+            throw new RuntimeException("Huh 10.4");
+        }
+        if (MyEnum.INT != -123456) {
+            throw new RuntimeException("Huh 10.5");
+        }
+        if (MyEnum.LONG != 0x1234567890L) {
+            throw new RuntimeException("Huh 10.6");
+        }
+        if (MyEnum.LONG2 != -0x1234567890L) {
+            throw new RuntimeException("Huh 10.7");
+        }
+        if (MyEnum.FLOAT != 567891.0f) {
+            throw new RuntimeException("Huh 10.8");
+        }
+        if (MyEnum.DOUBLE != 12345678905678.890) {
+            throw new RuntimeException("Huh 10.9");
+        }
+
+        checkClass(4, Boolean.class);
+        checkClass(5, Byte.class);
+        checkClass(6, Character.class);
+        checkClass(7, Short.class);
+        checkClass(8, Integer.class);
+        checkClass(9, Long.class);
+        checkClass(10, Float.class);
+        checkClass(11, Double.class);
+        checkClass(12, Void.class);
+
+        System.out.println("Success!");
+    }
+
+    static void checkClass(int index, Class c) {
+        if (archivedObjects[index] != c) {
+            throw new RuntimeException("archivedObjects[" + index + "] should be " + c);
+        }
+    }
+
+    // Simplified version of sun.invoke.util.Wrapper
+    public enum Wrapper {
+        //        wrapperType      simple     primitiveType  simple     char  emptyArray
+        BOOLEAN(  Boolean.class,   "Boolean", boolean.class, "boolean", 'Z', new boolean[0]),
+        INT    (  Integer.class,   "Integer",     int.class,     "int", 'I', new     int[0]),
+        DOUBLE (   Double.class,    "Double",  double.class,  "double", 'D', new  double[0])
+        ;
+
+        public static final int COUNT = 10;
+        private static final Object DOUBLE_ZERO = (Double)(double)0;
+
+        private final Class<?> wrapperType;
+        private final Class<?> primitiveType;
+        private final char     basicTypeChar;
+        private final String   basicTypeString;
+        private final Object   emptyArray;
+
+        Wrapper(Class<?> wtype,
+                String wtypeName,
+                Class<?> ptype,
+                String ptypeName,
+                char tchar,
+                Object emptyArray) {
+            this.wrapperType = wtype;
+            this.primitiveType = ptype;
+            this.basicTypeChar = tchar;
+            this.basicTypeString = String.valueOf(this.basicTypeChar);
+            this.emptyArray = emptyArray;
+        }
+
+        public Object zero() {
+            return switch (this) {
+                case BOOLEAN -> Boolean.FALSE;
+                case INT -> (Integer)0;
+                case DOUBLE -> DOUBLE_ZERO;
+                default -> null;
+            };
+        }
+    }
+
+    enum MyEnum {
+        DUMMY1,
+        DUMMY2;
+
+        static final boolean BOOLEAN = true;
+        static final byte    BYTE    = -128;
+        static final short   SHORT   = -12345;
+        static final char    CHAR    = 'c';
+        static final int     INT     = -123456;
+        static final long    LONG    =  0x1234567890L;
+        static final long    LONG2   = -0x1234567890L;
+        static final float   FLOAT   = 567891.0f;
+        static final double  DOUBLE  = 12345678905678.890;
     }
 }

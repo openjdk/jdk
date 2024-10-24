@@ -211,6 +211,7 @@ private:
   //      validate_shared_path_table()
   //      validate_non_existent_class_paths()
   size_t _shared_path_table_offset;
+  size_t _main_module_name_offset;      // property of "jdk.module.main"
 
   jshort _app_class_paths_start_index;  // Index of first app classpath entry
   jshort _app_module_paths_start_index; // Index of first module path entry
@@ -225,7 +226,9 @@ private:
   bool   _allow_archiving_with_java_agent; // setting of the AllowArchivingWithJavaAgent option
   bool   _use_optimized_module_handling;// No module-relation VM options were specified, so we can skip
                                         // some expensive operations.
+  bool   _has_aot_linked_classes;       // Was the CDS archive created with -XX:+AOTClassLinking
   bool   _has_full_module_graph;        // Does this CDS archive contain the full archived module graph?
+  bool   _has_archived_invokedynamic;   // Does the archive have aot-linked invokedynamic CP entries?
   HeapRootSegments _heap_root_segments; // Heap root segments info
   size_t _heap_oopmap_start_pos;        // The first bit in the oopmap corresponds to this position in the heap.
   size_t _heap_ptrmap_start_pos;        // The first bit in the ptrmap corresponds to this position in the heap.
@@ -263,11 +266,13 @@ public:
   CompressedOops::Mode narrow_oop_mode()   const { return _narrow_oop_mode; }
   char* cloned_vtables()                   const { return from_mapped_offset(_cloned_vtables_offset); }
   char* serialized_data()                  const { return from_mapped_offset(_serialized_data_offset); }
+  char* main_module_name()                 const { return from_mapped_offset(_main_module_name_offset); }
   const char* jvm_ident()                  const { return _jvm_ident; }
   char* requested_base_address()           const { return _requested_base_address; }
   char* mapped_base_address()              const { return _mapped_base_address; }
   bool has_platform_or_app_classes()       const { return _has_platform_or_app_classes; }
   bool has_non_jar_in_classpath()          const { return _has_non_jar_in_classpath; }
+  bool has_aot_linked_classes()            const { return _has_aot_linked_classes; }
   bool compressed_oops()                   const { return _compressed_oops; }
   bool compressed_class_pointers()         const { return _compressed_class_ptrs; }
   HeapRootSegments heap_root_segments()    const { return _heap_root_segments; }
@@ -285,6 +290,7 @@ public:
   void set_has_platform_or_app_classes(bool v)   { _has_platform_or_app_classes = v; }
   void set_cloned_vtables(char* p)               { set_as_offset(p, &_cloned_vtables_offset); }
   void set_serialized_data(char* p)              { set_as_offset(p, &_serialized_data_offset); }
+  void set_main_module_name(char* p)             { set_as_offset(p, &_main_module_name_offset); }
   void set_mapped_base_address(char* p)          { _mapped_base_address = p; }
   void set_heap_root_segments(HeapRootSegments segments) { _heap_root_segments = segments; }
   void set_heap_oopmap_start_pos(size_t n)       { _heap_oopmap_start_pos = n; }
@@ -399,6 +405,8 @@ public:
   void  set_cloned_vtables(char* p)           const { header()->set_cloned_vtables(p); }
   char* serialized_data()                     const { return header()->serialized_data(); }
   void  set_serialized_data(char* p)          const { header()->set_serialized_data(p); }
+  char* main_module_name()                    const { return header()->main_module_name(); }
+  void  set_main_module_name(char* p)         const { header()->set_main_module_name(p); }
 
   bool  is_file_position_aligned() const;
   void  align_file_position();
@@ -482,7 +490,9 @@ public:
   static void check_nonempty_dir_in_shared_path_table();
   bool check_module_paths();
   bool validate_shared_path_table();
-  void validate_non_existent_class_paths();
+  bool validate_non_existent_class_paths();
+  bool validate_aot_class_linking();
+  void check_main_module_name();
   static void set_shared_path_table(FileMapInfo* info) {
     _shared_path_table = info->header()->shared_path_table();
   }
