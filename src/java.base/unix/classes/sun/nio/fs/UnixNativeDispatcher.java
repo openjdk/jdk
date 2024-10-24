@@ -569,7 +569,7 @@ class UnixNativeDispatcher {
     }
 
     /**
-     * Supports futimes or futimesat
+     * Supports futimes
      */
     static boolean futimesSupported() {
         return (capabilities & SUPPORTS_FUTIMES) != 0;
