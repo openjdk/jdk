@@ -275,23 +275,41 @@ public:
 //      and we can reasonably ignore it.
 //
 bool VTransformGraph::has_store_to_load_forwarding_failure(const VLoopAnalyzer& vloop_analyzer) const {
+  if (SuperWordStoreToLoadForwardingFailureDetection == 0) { return false; }
+
   // Collect all pointers for scalar and vector loads/stores.
   ResourceMark rm;
   GrowableArray<VPointerRecord> records;
-  for (int i = 0; i < _schedule.length(); i++) {
-    VTransformNode* vtn = _schedule.at(i);
-    if (vtn->is_load_or_store_in_loop()) {
-      const VPointer& p = vtn->vpointer(vloop_analyzer);
-      if (p.valid()) {
-        VTransformVectorNode* vector = vtn->isa_Vector();
-        uint vector_length = vector != nullptr ? vector->nodes().length() : 1;
-        records.push(VPointerRecord(p, 0, vector_length, i));
+
+  int iv_stride = vloop_analyzer.vloop().iv_stride();
+  int order = 0;
+  for (uint k = 0; k < SuperWordStoreToLoadForwardingFailureDetection; k++) {
+    int iv_offset = k * iv_stride; // virtual super-unrolling
+    for (int i = 0; i < _schedule.length(); i++) {
+      VTransformNode* vtn = _schedule.at(i);
+      if (vtn->is_load_or_store_in_loop()) {
+        const VPointer& p = vtn->vpointer(vloop_analyzer);
+        if (p.valid()) {
+          VTransformVectorNode* vector = vtn->isa_Vector();
+          uint vector_length = vector != nullptr ? vector->nodes().length() : 1;
+          records.push(VPointerRecord(p, iv_offset, vector_length, order++));
+        }
       }
     }
   }
 
   // Sort the pointers by group (same base, invar and stride), and by offset.
   records.sort(VPointerRecord::cmp_for_sort);
+
+#ifndef PRODUCT
+  if (_trace._verbose) {
+    tty->print_cr("VTransformGraph::has_store_to_load_forwarding_failure:");
+    for (int i = 0; i < records.length(); i++) {
+      VPointerRecord& record = records.at(i);
+      record.print();
+    }
+  }
+#endif
 
   // For all pairs of pointers in the same group, check if they have partial overlap.
   for (int i = 0; i < records.length(); i++) {
