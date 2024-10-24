@@ -28,11 +28,11 @@ public class FFMEscapeAnalysisTest {
     MemorySegment cs5 = confinedArena.allocateFrom(ValueLayout.JAVA_INT, 0);
 
     Arena sharedArena = Arena.ofShared();
-    MemorySegment ss1 = confinedArena.allocateFrom(ValueLayout.JAVA_INT, 0);
-    MemorySegment ss2 = confinedArena.allocateFrom(ValueLayout.JAVA_INT, 0);
-    MemorySegment ss3 = confinedArena.allocateFrom(ValueLayout.JAVA_INT, 0);
-    MemorySegment ss4 = confinedArena.allocateFrom(ValueLayout.JAVA_INT, 0);
-    MemorySegment ss5 = confinedArena.allocateFrom(ValueLayout.JAVA_INT, 0);
+    MemorySegment ss1 = sharedArena.allocateFrom(ValueLayout.JAVA_INT, 0);
+    MemorySegment ss2 = sharedArena.allocateFrom(ValueLayout.JAVA_INT, 0);
+    MemorySegment ss3 = sharedArena.allocateFrom(ValueLayout.JAVA_INT, 0);
+    MemorySegment ss4 = sharedArena.allocateFrom(ValueLayout.JAVA_INT, 0);
+    MemorySegment ss5 = sharedArena.allocateFrom(ValueLayout.JAVA_INT, 0);
 
     // A shared library that exports the functions below
     private static final SymbolLookup LOOKUP = SymbolLookup.loaderLookup();
