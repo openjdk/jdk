@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,14 @@
 package sun.reflect.generics.reflectiveObjects;
 
 import java.lang.annotation.*;
+import java.lang.classfile.Signature;
 import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.GenericDeclaration;
+import java.lang.reflect.MalformedParameterizedTypeException;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.util.LinkedHashMap;
@@ -39,8 +42,7 @@ import java.util.Objects;
 import sun.reflect.annotation.AnnotationSupport;
 import sun.reflect.annotation.TypeAnnotationParser;
 import sun.reflect.annotation.AnnotationType;
-import sun.reflect.generics.factory.GenericsFactory;
-import sun.reflect.generics.tree.FieldTypeSignature;
+import sun.reflect.generics.info.GenericInfo;
 import sun.reflect.misc.ReflectUtil;
 
 /**
@@ -61,8 +63,8 @@ public class TypeVariableImpl<D extends GenericDeclaration>
     private volatile Object[] bounds;
 
     // constructor is private to enforce access through static factory
-    private TypeVariableImpl(D decl, String n, FieldTypeSignature[] bs,
-                             GenericsFactory f) {
+    private TypeVariableImpl(D decl, String n, Signature[] bs,
+                             GenericInfo<D> f) {
         super(f);
         genericDeclaration = decl;
         name = n;
@@ -83,8 +85,8 @@ public class TypeVariableImpl<D extends GenericDeclaration>
      */
     public static <T extends GenericDeclaration>
                              TypeVariableImpl<T> make(T decl, String name,
-                                                      FieldTypeSignature[] bs,
-                                                      GenericsFactory f) {
+                                                      Signature[] bs,
+                                                      GenericInfo<T> f) {
 
         if (!((decl instanceof Class) ||
                 (decl instanceof Method) ||
@@ -104,14 +106,14 @@ public class TypeVariableImpl<D extends GenericDeclaration>
      * <p>For each upper bound B:
      * <ul>
      *  <li>if B is a parameterized type or a type variable, it is created,
-     *  (see {@link #ParameterizedType} for the details of the creation
+     *  (see {@link ParameterizedType} for the details of the creation
      *  process for parameterized types).
      *  <li>Otherwise, B is resolved.
      * </ul>
      *
-     * @throws {@code TypeNotPresentException} if any of the
+     * @throws TypeNotPresentException if any of the
      *     bounds refers to a non-existent type declaration
-     * @throws {@code MalformedParameterizedTypeException} if any of the
+     * @throws MalformedParameterizedTypeException if any of the
      *     bounds refer to a parameterized type that cannot be instantiated
      *     for any reason
      * @return an array of Types representing the upper bound(s) of this
@@ -119,7 +121,7 @@ public class TypeVariableImpl<D extends GenericDeclaration>
      */
     public Type[] getBounds() {
         Object[] value = bounds;
-        if (value instanceof FieldTypeSignature[] sigs) {
+        if (value instanceof Signature[] sigs) {
             value = reifyBounds(sigs);
             bounds = value;
         }

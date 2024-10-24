@@ -31,10 +31,7 @@ import jdk.internal.reflect.FieldAccessor;
 import jdk.internal.reflect.Reflection;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
-import sun.reflect.generics.repository.FieldRepository;
-import sun.reflect.generics.factory.CoreReflectionFactory;
-import sun.reflect.generics.factory.GenericsFactory;
-import sun.reflect.generics.scope.ClassScope;
+import sun.reflect.generics.info.FieldGenericInfo;
 import java.lang.annotation.Annotation;
 import java.util.Map;
 import java.util.Set;
@@ -77,7 +74,7 @@ class Field extends AccessibleObject implements Member {
     // Generics and annotations support
     private final transient String    signature;
     // generic info repository; lazily initialized
-    private transient volatile FieldRepository genericInfo;
+    private transient volatile FieldGenericInfo genericInfo;
     private final byte[]              annotations;
     // Cached field accessor created without override
     @Stable
@@ -97,21 +94,13 @@ class Field extends AccessibleObject implements Member {
 
     private String getGenericSignature() {return signature;}
 
-    // Accessor for factory
-    private GenericsFactory getFactory() {
-        Class<?> c = getDeclaringClass();
-        // create scope and factory
-        return CoreReflectionFactory.make(c, ClassScope.make(c));
-    }
-
     // Accessor for generic info repository
-    private FieldRepository getGenericInfo() {
+    private FieldGenericInfo getGenericInfo() {
         var genericInfo = this.genericInfo;
         // lazily initialize repository if necessary
         if (genericInfo == null) {
             // create and cache generic info repository
-            genericInfo = FieldRepository.make(getGenericSignature(),
-                                               getFactory());
+            genericInfo = new FieldGenericInfo(getDeclaringClass(), getGenericSignature());
             this.genericInfo = genericInfo;
         }
         return genericInfo; //return cached repository
@@ -291,7 +280,7 @@ class Field extends AccessibleObject implements Member {
      */
     public Type getGenericType() {
         if (getGenericSignature() != null)
-            return getGenericInfo().getGenericType();
+            return getGenericInfo().getType();
         else
             return getType();
     }
