@@ -593,6 +593,10 @@ tier1_runtime_appcds_exclude = \
   runtime/cds/appcds/ \
   -:tier1_runtime_appcds
 
+tier1_runtime_no_cds = \
+   :tier1_runtime \
+   -runtime/cds
+
 # This group should be executed with "jtreg -Dtest.cds.run.with.jfr=true ..."
 # to test interaction between AppCDS and JFR. It also has the side effect of
 # testing JVMTI ClassFileLoadHook.
