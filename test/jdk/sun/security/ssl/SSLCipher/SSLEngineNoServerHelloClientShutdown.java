@@ -38,12 +38,12 @@ import static jdk.test.lib.Asserts.fail;
 import static jdk.test.lib.security.SecurityUtils.inspectTlsBuffer;
 
 import java.nio.ByteBuffer;
+import java.security.GeneralSecurityException;
 
-import javax.crypto.BadPaddingException;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
 import javax.net.ssl.SSLEngineResult.HandshakeStatus;
-import javax.net.ssl.SSLHandshakeException;
+import javax.net.ssl.SSLProtocolException;
 import javax.net.ssl.SSLSession;
 
 /**
@@ -61,10 +61,7 @@ import javax.net.ssl.SSLSession;
 public class SSLEngineNoServerHelloClientShutdown extends SSLContextTemplate {
 
     protected static final String EXCEPTION_MSG =
-        "Unexpected plaintext alert received. This can happen"
-            + " during TLSv1.3 handshake if client doesn't receive"
-            + " server_hello due to network timeout and tries to"
-            + " close a connection by sending an alert message.";
+            "Unexpected plaintext alert received: user_canceled";
 
     protected SSLEngine clientEngine;     // client Engine
     protected ByteBuffer clientOut;       // write side of clientEngine
@@ -198,12 +195,12 @@ public class SSLEngineNoServerHelloClientShutdown extends SSLContextTemplate {
         log("---Server Unwrap user_canceled alert---");
         try {
             serverEngine.unwrap(cTOs, serverIn);
-        } catch (SSLHandshakeException e) {
-            assertEquals(e.getCause().getClass(), BadPaddingException.class);
-            assertEquals(e.getCause().getMessage(), EXCEPTION_MSG);
+        } catch (SSLProtocolException e) {
+            assertEquals(GeneralSecurityException.class, e.getCause().getClass());
+            assertEquals(EXCEPTION_MSG, e.getCause().getMessage());
             return;
         }
-        fail();
+        fail("Server should have thrown SSLProtocolException");
     }
 
     protected static void logEngineStatus(SSLEngine engine) {

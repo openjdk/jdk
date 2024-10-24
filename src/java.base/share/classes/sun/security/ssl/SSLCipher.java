@@ -1859,23 +1859,23 @@ enum SSLCipher {
                 }
 
                 if (bb.remaining() <= tagSize) {
-                    String msg = "Insufficient buffer remaining for AEAD cipher " +
-                        "fragment (" + bb.remaining() + "). Needs to be " +
-                        "more than tag size (" + tagSize + ")";
-
                     // Check for unexpected plaintext alert.
                     if (ContentType.ALERT.equals(ContentType.valueOf(contentType))) {
-                        msg = "Unexpected plaintext alert received. This can happen"
-                            + " during TLSv1.3 handshake if client doesn't receive"
-                            + " server_hello due to network timeout and tries to"
-                            + " close a connection by sending an alert message.";
+                        // In TLSv1.3 alert level can be ignored, we only get the alert.
+                        final String msg = "Unexpected plaintext alert received: "
+                                + Alert.nameOf(bb.get(bb.position() + 1));
 
                         if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
                             SSLLogger.info(msg);
                         }
-                    }
 
-                    throw new BadPaddingException(msg);
+                        throw new GeneralSecurityException(msg);
+                    } else {
+                        throw new BadPaddingException(
+                                "Insufficient buffer remaining for AEAD cipher " +
+                                        "fragment (" + bb.remaining() + "). Needs to be " +
+                                        "more than tag size (" + tagSize + ")");
+                    }
                 }
 
                 byte[] sn = sequence;

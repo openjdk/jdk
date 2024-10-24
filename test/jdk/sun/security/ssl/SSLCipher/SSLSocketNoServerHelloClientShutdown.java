@@ -38,12 +38,12 @@ import static jdk.test.lib.security.SecurityUtils.inspectTlsBuffer;
 import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.nio.channels.SocketChannel;
+import java.security.GeneralSecurityException;
 
-import javax.crypto.BadPaddingException;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngineResult;
 import javax.net.ssl.SSLEngineResult.Status;
-import javax.net.ssl.SSLHandshakeException;
+import javax.net.ssl.SSLProtocolException;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLSocket;
@@ -98,11 +98,11 @@ public class SSLSocketNoServerHelloClientShutdown extends SSLEngineNoServerHello
             }
         } finally {
             if (serverException != null) {
-                assertEquals(serverException.getClass(), SSLHandshakeException.class);
-                assertEquals(serverException.getCause().getClass(), BadPaddingException.class);
-                assertEquals(serverException.getCause().getMessage(), EXCEPTION_MSG);
+                assertEquals(SSLProtocolException.class, serverException.getClass());
+                assertEquals(GeneralSecurityException.class, serverException.getCause().getClass());
+                assertEquals(EXCEPTION_MSG, serverException.getCause().getMessage());
             } else {
-                fail("Server should have thrown SSLHandshakeException");
+                fail("Server should have thrown SSLProtocolException");
             }
             if (clientException != null) {
                 throw clientException;
