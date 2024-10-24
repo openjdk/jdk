@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 # @library /test/lib/
 # @build jdk.test.lib.util.ForceGC
 #        jdk.test.lib.Platform
+#        jdk.test.lib.Utils
 # @run shell MultipleLogins.sh
 
 # set a few environment variables so that the shell-script can run stand-alone
