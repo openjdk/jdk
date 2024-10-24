@@ -77,7 +77,8 @@ TEST_VM(AssemblerX86, validate) {
   address entry = __ pc();
 
   // To build asmtest.out.h, ensure you have binutils version 2.34 or higher, then run:
-  // python3 x86-asmtest.py | expand > asmtest.out.h
+  // python3 x86-asmtest.py | expand > asmtest.out.h to generate tests with random inputs
+  // python3 x86-asmtest.py --full | expand > asmtest.out.h to generate tests with all possible inputs
 #include "asmtest.out.h"
 
   asm_check((const uint8_t *)entry, (const uint8_t *)insns, insns_lens, insns_strs, sizeof(insns_lens) / sizeof(insns_lens[0]));
