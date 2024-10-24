@@ -139,7 +139,7 @@ bool RuntimePredicate::is_predicate(Node* node, Deoptimization::DeoptReason deop
 }
 
 // Rewire any non-CFG nodes dependent on this Template Assertion Predicate (i.e. with a control input to this
-// Template Assertion Predicate) to the 'target_predicate' based on the `data_in_loop_body` check.
+// Template Assertion Predicate) to the 'target_predicate' based on the 'data_in_loop_body' check.
 void TemplateAssertionPredicate::rewire_loop_data_dependencies(IfTrueNode* target_predicate,
                                                                const NodeInLoopBody& data_in_loop_body,
                                                                PhaseIdealLoop* phase) const {

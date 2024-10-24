@@ -941,8 +941,8 @@ class NodeInOriginalLoopBody : public NodeInLoopBody {
   }
 };
 
-// Visitor to create Initialized Assertion Predicates at a target from Template Assertion Predicates from a source loop.
-// This visitor can be used in combination with a PredicateIterator.
+// Visitor to create Initialized Assertion Predicates at a target loop from Template Assertion Predicates from a source
+// loop. This visitor can be used in combination with a PredicateIterator.
 class AssertionPredicatesForLoop : public PredicateVisitor {
   Node* const _init;
   Node* const _stride;

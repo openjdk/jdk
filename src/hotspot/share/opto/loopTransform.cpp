@@ -1988,9 +1988,9 @@ void PhaseIdealLoop::create_assertion_predicates_at_loop(CountedLoopNode* source
   PredicateIterator predicate_iterator(source_loop_entry);
   predicate_iterator.for_each(assertion_predicates_for_loop);
   if (assertion_predicates_for_loop.has_created_predicates()) {
-    IfTrueNode* last_created_node = assertion_predicates_for_loop.last_created_success_proj();
-    _igvn.replace_input_of(target_outer_loop_head, LoopNode::EntryControl, last_created_node);
-    set_idom(target_outer_loop_head, last_created_node, dom_depth(target_outer_loop_head));
+    IfTrueNode* last_created_predicate_success_proj = assertion_predicates_for_loop.last_created_success_proj();
+    _igvn.replace_input_of(target_outer_loop_head, LoopNode::EntryControl, last_created_predicate_success_proj);
+    set_idom(target_outer_loop_head, last_created_predicate_success_proj, dom_depth(target_outer_loop_head));
   }
 }
 //------------------------------do_unroll--------------------------------------
