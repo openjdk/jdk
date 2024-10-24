@@ -2285,14 +2285,14 @@ class StubGenerator: public StubCodeGenerator {
     }
   }
 
-  void generate_aes_encrypt(const VectorRegister &res, VectorRegister *working_vregs, int reg_number) {
-    assert(reg_number <= 15, "reg_number should be less than or equal to working_vregs size");
+  void generate_aes_encrypt(const VectorRegister &res, VectorRegister *working_vregs, int rounds) {
+    assert(rounds <= 15, "rounds should be less than or equal to working_vregs size");
 
     __ vxor_vv(res, res, working_vregs[0]);
-    for (int i = 1; i < reg_number; i++) {
+    for (int i = 1; i < rounds - 1; i++) {
       __ vaesem_vv(res, working_vregs[i]);
     }
-    __ vaesef_vv(res, working_vregs[reg_number]);
+    __ vaesef_vv(res, working_vregs[rounds - 1]);
   }
 
   // Arguments:
@@ -2308,7 +2308,7 @@ class StubGenerator: public StubCodeGenerator {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", "aescrypt_encryptBlock");
 
-    Label L_do44, L_do52;
+    Label L_aes128, L_aes192;
 
     const Register from        = c_rarg0;  // source array address
     const Register to          = c_rarg1;  // destination array address
@@ -2330,31 +2330,31 @@ class StubGenerator: public StubCodeGenerator {
     __ vle32_v(res, from);
 
     __ mv(t2, 52);
-    __ blt(keylen, t2, L_do44);
-    __ beq(keylen, t2, L_do52);
+    __ blt(keylen, t2, L_aes128);
+    __ beq(keylen, t2, L_aes192);
     // Else we fallthrough to the biggest case (256-bit key size)
 
     // Note: the following function performs key += 15*16
     generate_aes_loadkeys(key, working_vregs, 15);
-    generate_aes_encrypt(res, working_vregs, 14);
+    generate_aes_encrypt(res, working_vregs, 15);
     __ vse32_v(res, to);
     __ mv(c_rarg0, 0);
     __ leave();
     __ ret();
 
-  __ bind(L_do52);
+  __ bind(L_aes192);
     // Note: the following function performs key += 13*16
     generate_aes_loadkeys(key, working_vregs, 13);
-    generate_aes_encrypt(res, working_vregs, 12);
+    generate_aes_encrypt(res, working_vregs, 13);
     __ vse32_v(res, to);
     __ mv(c_rarg0, 0);
     __ leave();
     __ ret();
 
-  __ bind(L_do44);
+  __ bind(L_aes128);
     // Note: the following function performs key += 11*16
     generate_aes_loadkeys(key, working_vregs, 11);
-    generate_aes_encrypt(res, working_vregs, 10);
+    generate_aes_encrypt(res, working_vregs, 11);
     __ vse32_v(res, to);
     __ mv(c_rarg0, 0);
     __ leave();
@@ -2363,11 +2363,11 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-  void generate_aes_decrypt(const VectorRegister &res, VectorRegister *working_vregs, int reg_number) {
-    assert(reg_number <= 15, "reg_number should be less than or equal to working_vregs size");
+  void generate_aes_decrypt(const VectorRegister &res, VectorRegister *working_vregs, int rounds) {
+    assert(rounds <= 15, "rounds should be less than or equal to working_vregs size");
 
-    __ vxor_vv(res, res, working_vregs[reg_number]);
-    for (int i = reg_number - 1; i > 0; i--) {
+    __ vxor_vv(res, res, working_vregs[rounds - 1]);
+    for (int i = rounds - 2; i > 0; i--) {
       __ vaesdm_vv(res, working_vregs[i]);
     }
     __ vaesdf_vv(res, working_vregs[0]);
@@ -2386,7 +2386,7 @@ class StubGenerator: public StubCodeGenerator {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", "aescrypt_decryptBlock");
 
-    Label L_do44, L_do52;
+    Label L_aes128, L_aes192;
 
     const Register from        = c_rarg0;  // source array address
     const Register to          = c_rarg1;  // destination array address
@@ -2408,31 +2408,31 @@ class StubGenerator: public StubCodeGenerator {
     __ vle32_v(res, from);
 
     __ mv(t2, 52);
-    __ blt(keylen, t2, L_do44);
-    __ beq(keylen, t2, L_do52);
+    __ blt(keylen, t2, L_aes128);
+    __ beq(keylen, t2, L_aes192);
     // Else we fallthrough to the biggest case (256-bit key size)
 
     // Note: the following function performs key += 15*16
     generate_aes_loadkeys(key, working_vregs, 15);
-    generate_aes_decrypt(res, working_vregs, 14);
+    generate_aes_decrypt(res, working_vregs, 15);
     __ vse32_v(res, to);
     __ mv(c_rarg0, 0);
     __ leave();
     __ ret();
 
-  __ bind(L_do52);
+  __ bind(L_aes192);
     // Note: the following function performs key += 13*16
     generate_aes_loadkeys(key, working_vregs, 13);
-    generate_aes_decrypt(res, working_vregs, 12);
+    generate_aes_decrypt(res, working_vregs, 13);
     __ vse32_v(res, to);
     __ mv(c_rarg0, 0);
     __ leave();
     __ ret();
 
-  __ bind(L_do44);
+  __ bind(L_aes128);
     // Note: the following function performs key += 11*16
     generate_aes_loadkeys(key, working_vregs, 11);
-    generate_aes_decrypt(res, working_vregs, 10);
+    generate_aes_decrypt(res, working_vregs, 11);
     __ vse32_v(res, to);
     __ mv(c_rarg0, 0);
     __ leave();
