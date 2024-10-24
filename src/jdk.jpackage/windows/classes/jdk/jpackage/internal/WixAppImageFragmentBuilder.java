@@ -84,7 +84,7 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
         do {
             ApplicationLayout layout = pkg.appLayout();
             // Don't want app image info file in installed application.
-            layout.pathGroup().ghostPath(AppImageFile.getPathInAppImage(Path.of("")));
+            layout.pathGroup().ghostPath(AppImageFile2.getPathInAppImage(layout));
 
             // Want absolute paths to source files in generated WiX sources.
             // This is to handle scenario if sources would be processed from
@@ -119,6 +119,8 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
 
         programMenuFolderName = pkg.startMenuGroupName();
 
+        packageFile = new PackageFile(pkg.packageName());
+
         initFileAssociations(pkg);
     }
 
@@ -126,6 +128,7 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
     void addFilesToConfigRoot() throws IOException {
         removeFolderItems = new HashMap<>();
         defaultedMimes = new HashSet<>();
+        packageFile.save(ApplicationLayout.windowsAppImage().resolveAt(getConfigRoot()));
         super.addFilesToConfigRoot();
     }
 
@@ -705,16 +708,16 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
             public void copyFile(Path src, Path dst) throws IOException {
                 files.add(Map.entry(src, dst));
             }
-
-            @Override
-            public void createDirectory(final Path dir) throws IOException {
-            }
         });
 
         if (serviceInstaller != null) {
             files.add(Map.entry(serviceInstaller.srcPath(),
                     serviceInstaller.installPath()));
         }
+
+        files.add(Map.entry(PackageFile.getPathInAppImage(
+                getConfigRoot().toAbsolutePath().normalize()),
+                PackageFile.getPathInAppImage(installedAppImage)));
 
         List<String> componentIds = new ArrayList<>();
         for (var file : files) {
@@ -794,10 +797,6 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
                 if (IOUtils.getFileName(src).toString().endsWith(".ico")) {
                     icoFiles.add(Map.entry(src, dst));
                 }
-            }
-
-            @Override
-            public void createDirectory(Path dst) throws IOException {
             }
         });
 
@@ -965,6 +964,8 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
 
     private Map<Path, Integer> removeFolderItems;
     private Set<String> defaultedMimes;
+
+    private PackageFile packageFile;
 
     private static final Path TARGETDIR = Path.of("TARGETDIR");
 

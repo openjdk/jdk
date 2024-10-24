@@ -161,8 +161,13 @@ final class PathGroup {
     }
 
     static interface TransformHandler {
-        public void copyFile(Path src, Path dst) throws IOException;
-        public void createDirectory(Path dir) throws IOException;
+        default public void copyFile(Path src, Path dst) throws IOException {
+
+        }
+
+        default public void createDirectory(Path dir) throws IOException {
+
+        }
     }
 
     private static void copy(PathGroup src, PathGroup dst,
