@@ -350,7 +350,7 @@ class ObjectMonitorsDump : public MonitorClosure, public ObjectMonitorsView {
   void do_monitor(ObjectMonitor* monitor) override {
     assert(monitor->has_owner(), "Expects only owned monitors");
 
-    if (monitor->has_owner_anonymous()) {
+    if (monitor->has_anonymous_owner()) {
       // There's no need to collect anonymous owned monitors
       // because the caller of this code is only interested
       // in JNI owned monitors.

@@ -1265,7 +1265,7 @@ JavaThread* Threads::owning_thread_from_object(ThreadsList * t_list, oop obj) {
 }
 
 JavaThread* Threads::owning_thread_from_monitor(ThreadsList* t_list, ObjectMonitor* monitor) {
-  if (monitor->has_owner_anonymous()) {
+  if (monitor->has_anonymous_owner()) {
     if (LockingMode == LM_LIGHTWEIGHT) {
       return owning_thread_from_object(t_list, monitor->object());
     } else {

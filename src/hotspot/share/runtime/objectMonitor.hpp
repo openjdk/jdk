@@ -320,8 +320,8 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
     return try_set_owner_from(NO_OWNER, thread) == NO_OWNER;
   }
 
-  bool has_owner_anonymous() const { return owner_raw() == ANONYMOUS_OWNER; }
-  void set_owner_anonymous() {
+  bool has_anonymous_owner() const { return owner_raw() == ANONYMOUS_OWNER; }
+  void set_anonymous_owner() {
     set_owner_from_raw(NO_OWNER, ANONYMOUS_OWNER);
   }
   void set_owner_from_anonymous(JavaThread* owner) {

@@ -657,7 +657,7 @@ void ObjectSynchronizer::exit_legacy(oop object, BasicLock* lock, JavaThread* cu
   // The ObjectMonitor* can't be async deflated until ownership is
   // dropped inside exit() and the ObjectMonitor* must be !is_busy().
   ObjectMonitor* monitor = inflate(current, object, inflate_cause_vm_internal);
-  assert(!monitor->has_owner_anonymous(), "must not be");
+  assert(!monitor->has_anonymous_owner(), "must not be");
   monitor->exit(current);
 }
 
@@ -1464,7 +1464,7 @@ ObjectMonitor* ObjectSynchronizer::inflate_impl(JavaThread* inflating_thread, oo
       ObjectMonitor* inf = mark.monitor();
       markWord dmw = inf->header();
       assert(dmw.is_neutral(), "invariant: header=" INTPTR_FORMAT, dmw.value());
-      if (inf->has_owner_anonymous() && inflating_thread != nullptr) {
+      if (inf->has_anonymous_owner() && inflating_thread != nullptr) {
         assert(LockingMode == LM_LEGACY, "invariant");
         if (inflating_thread->is_lock_owned((address)inf->stack_locker())) {
           inf->set_stack_locker(nullptr);
@@ -1556,7 +1556,7 @@ ObjectMonitor* ObjectSynchronizer::inflate_impl(JavaThread* inflating_thread, oo
         // Use ANONYMOUS_OWNER to indicate that the owner is the BasicLock on the stack,
         // and set the stack locker field in the monitor.
         m->set_stack_locker(mark.locker());
-        m->set_owner_anonymous();  // second
+        m->set_anonymous_owner();  // second
       }
       // TODO-FIXME: assert BasicLock->dhw != 0.
 

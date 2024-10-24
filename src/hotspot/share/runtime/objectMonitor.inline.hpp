@@ -52,7 +52,7 @@ inline int64_t ObjectMonitor::owner_from(oop vthread) {
 }
 
 inline bool ObjectMonitor::is_entered(JavaThread* current) const {
-  if (has_owner_anonymous()) {
+  if (has_anonymous_owner()) {
     if (LockingMode == LM_LIGHTWEIGHT) {
       return current->lock_stack().contains(object());
     } else {
