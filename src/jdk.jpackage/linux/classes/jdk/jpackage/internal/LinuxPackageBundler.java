@@ -125,8 +125,9 @@ abstract class LinuxPackageBundler extends AbstractBundler {
 
                 // Copy app layout omitting application image info file.
                 var srcLayout = pkg.appLayout().resolveAt(srcAppImageDir);
-                srcLayout.pathGroup().ghostPath(AppImageFile2.getPathInAppImage(
-                        srcLayout));
+                Optional.ofNullable(AppImageFile2.getPathInAppImage(srcLayout)).ifPresent(
+                        appImageFile -> srcLayout.pathGroup().ghostPath(
+                                appImageFile));
                 srcLayout.copy(pkg.packageLayout().resolveAt(pkgWorkshop.appImageDir()));
             }
 
