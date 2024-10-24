@@ -770,7 +770,7 @@ void CompileBroker::compilation_init(JavaThread* THREAD) {
                                           CHECK);
   }
 
-  _initialized = true;
+  Atomic::release_store(&_initialized, true);
 }
 
 #if defined(ASSERT) && COMPILER2_OR_JVMCI
@@ -1329,7 +1329,7 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
                                        CompileTask::CompileReason compile_reason,
                                        TRAPS) {
   // Do nothing if compilebroker is not initialized or compiles are submitted on level none
-  if (!_initialized || comp_level == CompLevel_none) {
+  if (!is_initialized() || comp_level == CompLevel_none) {
     return nullptr;
   }
 

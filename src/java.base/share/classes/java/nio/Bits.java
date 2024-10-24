@@ -108,7 +108,7 @@ class Bits {                            // package-private
     // which a process may access.  All sizes are specified in bytes.
     static void reserveMemory(long size, long cap) {
 
-        if (!MEMORY_LIMIT_SET && VM.initLevel() >= 1) {
+        if (!MEMORY_LIMIT_SET && VM.initLevelReached(VM.JAVA_LANG_SYSTEM_INITED)) {
             MAX_MEMORY = VM.maxDirectMemory();
             MEMORY_LIMIT_SET = true;
         }

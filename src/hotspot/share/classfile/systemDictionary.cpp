@@ -45,6 +45,7 @@
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "compiler/compileBroker.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "interpreter/bootstrapInfo.hpp"
 #include "jfr/jfrEvents.hpp"
@@ -2028,6 +2029,11 @@ Method* SystemDictionary::find_method_handle_intrinsic(vmIntrinsicID iid,
 
   // Throw OOM or the pending exception in the JavaThread
   if (throw_error && !HAS_PENDING_EXCEPTION) {
+    if (!CompileBroker::is_initialized() && !Arguments::is_interpreter_only()) {
+      // Give a more accurate diagnostic; we didn't fill up the code cache:
+      THROW_MSG_NULL(vmSymbols::java_lang_InternalError(),
+                     "Compile method handle intrinsic requested before compiler start-up");
+    }
     THROW_MSG_NULL(vmSymbols::java_lang_OutOfMemoryError(),
                    "Out of space in CodeCache for method handle intrinsic");
   }
