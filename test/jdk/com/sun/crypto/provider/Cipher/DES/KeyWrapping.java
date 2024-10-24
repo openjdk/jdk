@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,8 @@ import java.security.*;
 public class KeyWrapping {
 
     public static void main(String[] args) throws Exception {
-        Cipher c1 = Cipher.getInstance("DES", "SunJCE");
+        Cipher c1 = Cipher.getInstance("DES",
+                            System.getProperty("test.provider.name", "SunJCE"));
         Cipher c2 = Cipher.getInstance("DES");
 
         KeyGenerator keyGen = KeyGenerator.getInstance("DES");

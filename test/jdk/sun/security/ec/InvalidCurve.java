@@ -38,7 +38,8 @@ public class InvalidCurve {
 
         KeyPairGenerator keyGen;
         try {
-            keyGen = KeyPairGenerator.getInstance("EC", "SunEC");
+            keyGen = KeyPairGenerator.getInstance("EC",
+                    System.getProperty("test.provider.name", "SunEC"));
             ECGenParameterSpec brainpoolSpec =
                 new ECGenParameterSpec("brainpoolP160r1");
             keyGen.initialize(brainpoolSpec);

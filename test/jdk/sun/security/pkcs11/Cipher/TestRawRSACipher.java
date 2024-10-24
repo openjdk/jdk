@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,8 @@ public class TestRawRSACipher extends PKCS11Test {
         plainText[0] = 0; // to ensure that it's less than modulus
 
         Cipher c1 = Cipher.getInstance("RSA/ECB/NoPadding", p);
-        Cipher c2 = Cipher.getInstance("RSA/ECB/NoPadding", "SunJCE");
+        Cipher c2 = Cipher.getInstance("RSA/ECB/NoPadding",
+                        System.getProperty("test.provider.name", "SunJCE"));
 
         c1.init(Cipher.ENCRYPT_MODE, kp.getPublic());
         c2.init(Cipher.DECRYPT_MODE, kp.getPrivate());

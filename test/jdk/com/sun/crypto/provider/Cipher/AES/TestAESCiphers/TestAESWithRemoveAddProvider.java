@@ -34,8 +34,8 @@ import java.security.Provider;
 
 public class TestAESWithRemoveAddProvider extends Dynamic {
     public static void main(String argv[]) throws Exception {
-        Provider pJCE = Security.getProvider(SUNJCE);
-        Security.removeProvider(SUNJCE);
+        Provider pJCE = Security.getProvider(PROVIDER);
+        Security.removeProvider(PROVIDER);
         Security.addProvider(pJCE);
         new TestAESWithRemoveAddProvider().run(argv);
     }

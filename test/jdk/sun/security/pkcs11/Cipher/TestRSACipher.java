@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,8 @@ public class TestRSACipher extends PKCS11Test {
 
         for (String rsaAlgo: RSA_ALGOS) {
             Cipher c1 = Cipher.getInstance(rsaAlgo, p);
-            Cipher c2 = Cipher.getInstance(rsaAlgo, "SunJCE");
+            Cipher c2 = Cipher.getInstance(rsaAlgo,
+                            System.getProperty("test.provider.name", "SunJCE"));
 
             c1.init(Cipher.ENCRYPT_MODE, publicKey);
             e = c1.doFinal(b);

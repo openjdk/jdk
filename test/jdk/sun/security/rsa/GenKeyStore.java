@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,8 @@ public class GenKeyStore {
 
     private static void generateKeyPair(KeyStore ks, int keyLength, String alias) throws Exception {
         System.out.println("Generating " + keyLength + " keypair " + alias + "...");
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA", "SunRsaSign");
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA",
+                System.getProperty("test.provider.name", "SunRsaSign"));
         kpg.initialize(keyLength);
         KeyPair kp = kpg.generateKeyPair();
         addToKeyStore(ks, kp, alias);
