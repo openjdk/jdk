@@ -768,7 +768,7 @@ final public class TKit {
         if (actual.size() < expected.size()) {
             // Actual string list is shorter than expected
             error(concatMessages(String.format(
-                    "Actual list is longer than expected by %d elements",
+                    "Actual list is shorter than expected by %d elements",
                     expected.size() - actual.size()), msg));
         }
     }
