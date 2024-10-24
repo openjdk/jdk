@@ -653,13 +653,12 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
                     Set<FigureWidget> oldVisibleFigureWidgets = getVisibleFigureWidgets();
                     Set<BlockWidget> oldVisibleBlockWidgets = getVisibleBlockWidgets();
 
-                    Set<Figure> selectedFigures = model.getSelectedFigures();
-                    for (Figure figure : selectedFigures) {
+                    Set<Figure> movedFigures = new HashSet<>(model.getSelectedFigures());
+                    for (Figure figure : movedFigures) {
                         FigureWidget fw = getWidget(figure);
-                        Point newLocation = new Point(fw.getLocation().x, fw.getLocation().y);
-                        figure.setPosition(newLocation);
-                        seaLayoutManager.moveVertex(figure);
+                        figure.setPosition(new Point(fw.getLocation().x, fw.getLocation().y));
                     }
+                    seaLayoutManager.moveVertices(movedFigures);
 
                     rebuildConnectionLayer();
                     updateFigureWidgetLocations(oldVisibleFigureWidgets);

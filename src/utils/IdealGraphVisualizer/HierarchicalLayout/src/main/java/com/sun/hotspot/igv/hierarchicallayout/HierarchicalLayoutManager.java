@@ -455,7 +455,13 @@ public class HierarchicalLayoutManager extends LayoutManager {
         new WriteResult().run();
     }
 
-    public void moveVertex(Vertex movedVertex) {
+    public void moveVertices(Set<? extends Vertex> movedVertices) {
+        for (Vertex vertex : movedVertices) {
+            moveVertex(vertex);
+        }
+    }
+
+    private void moveVertex(Vertex movedVertex) {
         Point newLoc = movedVertex.getPosition();
         LayoutNode movedNode = graph.getLayoutNode(movedVertex);
 
