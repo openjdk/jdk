@@ -28,7 +28,6 @@ package jdk.internal.vm;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
-import jdk.internal.vm.annotation.JvmtiMountTransition;
 import sun.security.action.GetPropertyAction;
 
 import java.util.EnumSet;
