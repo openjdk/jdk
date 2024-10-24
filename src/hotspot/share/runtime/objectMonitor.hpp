@@ -331,7 +331,7 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   }
 
   // Returns true if BasicLock* stored in _stack_locker
-  // points to current's stack, false othwerwise.
+  // points to current's stack, false otherwise.
   bool has_stack_locker(JavaThread* current);
   // Get and set _stack_locker.
   BasicLock* stack_locker() const;
