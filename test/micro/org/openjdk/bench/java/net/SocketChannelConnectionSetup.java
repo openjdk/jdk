@@ -125,7 +125,7 @@ public class SocketChannelConnectionSetup {
 
         opt = new OptionsBuilder()
                 .include(org.openjdk.bench.java.net.SocketChannelConnectionSetup.class.getSimpleName())
-                .jvmArgsPrepend("-Djdk.net.useFastTcpLoopback=true")
+                .jvmArgs("-Djdk.net.useFastTcpLoopback=true")
                 .warmupForks(1)
                 .forks(2)
                 .build();

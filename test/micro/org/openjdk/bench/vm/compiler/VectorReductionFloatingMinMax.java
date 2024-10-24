@@ -69,7 +69,7 @@ public class VectorReductionFloatingMinMax {
     }
 
     @Benchmark
-    @Fork(jvmArgsPrepend = {"-XX:-SuperWordLoopUnrollAnalysis"})
+    @Fork(jvmArgs = {"-XX:-SuperWordLoopUnrollAnalysis"})
     public void maxRedF(Blackhole bh) {
         float max = 0.0f;
         for (int i = 0; i < COUNT_FLOAT; i++) {
@@ -79,7 +79,7 @@ public class VectorReductionFloatingMinMax {
     }
 
     @Benchmark
-    @Fork(jvmArgsPrepend = {"-XX:-SuperWordLoopUnrollAnalysis"})
+    @Fork(jvmArgs = {"-XX:-SuperWordLoopUnrollAnalysis"})
     public void minRedF(Blackhole bh) {
         float min = 0.0f;
         for (int i = 0; i < COUNT_FLOAT; i++) {

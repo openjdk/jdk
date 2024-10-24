@@ -47,7 +47,7 @@ import java.util.random.RandomGenerator;
 
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Thread)
-@Fork(jvmArgsPrepend = {"--add-modules=jdk.incubator.vector"})
+@Fork(jvmArgs = {"--add-modules=jdk.incubator.vector"})
 public class ArrayMismatchBenchmark {
 
     @Param({"9", "257", "100000"})

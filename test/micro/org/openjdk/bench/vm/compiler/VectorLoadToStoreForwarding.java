@@ -200,12 +200,12 @@ public abstract class VectorLoadToStoreForwarding {
         }
     }
 
-    @Fork(value = 1, jvmArgsPrepend = {
+    @Fork(value = 1, jvmArgs = {
         "-XX:+UseSuperWord"
     })
     public static class VectorLoadToStoreForwardingSuperWord extends VectorLoadToStoreForwarding {}
 
-    @Fork(value = 1, jvmArgsPrepend = {
+    @Fork(value = 1, jvmArgs = {
         "-XX:-UseSuperWord"
     })
     public static class VectorLoadToStoreForwardingNoSuperWord extends VectorLoadToStoreForwarding {}

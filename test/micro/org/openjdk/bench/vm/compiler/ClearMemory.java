@@ -38,7 +38,7 @@ import org.openjdk.jmh.infra.Blackhole;
 
 import java.util.concurrent.TimeUnit;
 
-@Fork(value = 3, jvmArgsPrepend = {"-XX:-EliminateAllocations", "-XX:-DoEscapeAnalysis"})
+@Fork(value = 3, jvmArgs = {"-XX:-EliminateAllocations", "-XX:-DoEscapeAnalysis"})
 @BenchmarkMode(Mode.Throughput)
 @OutputTimeUnit(TimeUnit.SECONDS)
 @State(Scope.Thread)

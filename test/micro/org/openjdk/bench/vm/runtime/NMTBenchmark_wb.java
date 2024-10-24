@@ -137,13 +137,13 @@ public abstract class NMTBenchmark_wb {
 
     public static final String WB_JAR_APPEND = "-Xbootclasspath/a:lib-test/wb.jar";
 
-    @Fork(value = 2, jvmArgsPrepend = { WB_JAR_APPEND, WB_UNLOCK_OPTION, WB_API, ADD_EXPORTS, MISC_PACKAGE, "-XX:NativeMemoryTracking=off"})
+    @Fork(value = 2, jvmArgs = { WB_JAR_APPEND, WB_UNLOCK_OPTION, WB_API, ADD_EXPORTS, MISC_PACKAGE, "-XX:NativeMemoryTracking=off"})
     public static class NMTOff extends NMTBenchmark_wb { }
 
-    @Fork(value = 2, jvmArgsPrepend = { WB_JAR_APPEND, WB_UNLOCK_OPTION, WB_API, ADD_EXPORTS, MISC_PACKAGE, "-XX:NativeMemoryTracking=summary"})
+    @Fork(value = 2, jvmArgs = { WB_JAR_APPEND, WB_UNLOCK_OPTION, WB_API, ADD_EXPORTS, MISC_PACKAGE, "-XX:NativeMemoryTracking=summary"})
     public static class NMTSummary extends NMTBenchmark_wb { }
 
-    // @Fork(value = 2, jvmArgsPrepend = { WB_JAR_APPEND, WB_UNLOCK_OPTION, WB_API, ADD_EXPORTS, MISC_PACKAGE, "-XX:NativeMemoryTracking=detail"})
+    // @Fork(value = 2, jvmArgs = { WB_JAR_APPEND, WB_UNLOCK_OPTION, WB_API, ADD_EXPORTS, MISC_PACKAGE, "-XX:NativeMemoryTracking=detail"})
     // public static class NMTDetail extends NMTBenchmark_wb { }
 
 }

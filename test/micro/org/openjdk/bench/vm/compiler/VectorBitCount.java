@@ -72,14 +72,14 @@ public abstract class VectorBitCount {
     }
 
 
-    @Fork(value = 2, jvmArgsPrepend = {
+    @Fork(value = 2, jvmArgs = {
         "-XX:+UseSuperWord"
     })
     public static class WithSuperword extends VectorBitCount {
 
     }
 
-    @Fork(value = 2, jvmArgsPrepend = {
+    @Fork(value = 2, jvmArgs = {
         "-XX:-UseSuperWord"
     })
     public static class NoSuperword extends VectorBitCount {

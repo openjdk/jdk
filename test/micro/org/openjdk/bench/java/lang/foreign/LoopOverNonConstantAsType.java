@@ -54,7 +54,7 @@ import static java.lang.foreign.ValueLayout.*;
 @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @State(org.openjdk.jmh.annotations.Scope.Thread)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
-@Fork(value = 3, jvmArgsAppend = { "-XX:-TieredCompilation" })
+@Fork(value = 3, jvmArgs = { "-XX:-TieredCompilation" })
 public class LoopOverNonConstantAsType extends JavaLayouts {
 
     static final Unsafe unsafe = Utils.unsafe;

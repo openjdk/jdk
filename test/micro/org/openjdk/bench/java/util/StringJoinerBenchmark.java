@@ -45,7 +45,7 @@ import java.util.concurrent.TimeUnit;
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @Warmup(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
-@Fork(value = 3, jvmArgsAppend = {"-Xms1g", "-Xmx1g"})
+@Fork(value = 3, jvmArgs = {"-Xms1g", "-Xmx1g"})
 public class StringJoinerBenchmark {
 
     @Benchmark

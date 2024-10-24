@@ -176,14 +176,14 @@ public abstract class VectorReduction {
         }
     }
 
-    @Fork(value = 2, jvmArgsPrepend = {
+    @Fork(value = 2, jvmArgs = {
         "-XX:+UseSuperWord"
     })
     public static class WithSuperword extends VectorReduction {
 
     }
 
-    @Fork(value = 2, jvmArgsPrepend = {
+    @Fork(value = 2, jvmArgs = {
         "-XX:-UseSuperWord"
     })
     public static class NoSuperword extends VectorReduction {

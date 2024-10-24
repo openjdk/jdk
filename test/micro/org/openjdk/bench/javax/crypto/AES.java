@@ -59,19 +59,19 @@ public class AES {
     }
 
     @Benchmark
-    @Fork(jvmArgsAppend = {"-XX:+UnlockDiagnosticVMOptions", "-XX:-UseAES", "-XX:-UseAESIntrinsics"})
+    @Fork(jvmArgs = {"-XX:+UnlockDiagnosticVMOptions", "-XX:-UseAES", "-XX:-UseAESIntrinsics"})
     public byte[] testBaseline() throws Exception {
         return cipher.doFinal(src);
     }
 
     @Benchmark
-    @Fork(jvmArgsAppend = {"-XX:+UnlockDiagnosticVMOptions", "-XX:+UseAES", "-XX:-UseAESIntrinsics"})
+    @Fork(jvmArgs = {"-XX:+UnlockDiagnosticVMOptions", "-XX:+UseAES", "-XX:-UseAESIntrinsics"})
     public byte[] testUseAes() throws Exception {
         return cipher.doFinal(src);
     }
 
     @Benchmark
-    @Fork(jvmArgsAppend = {"-XX:+UnlockDiagnosticVMOptions", "-XX:+UseAES", "-XX:+UseAESIntrinsics"})
+    @Fork(jvmArgs = {"-XX:+UnlockDiagnosticVMOptions", "-XX:+UseAES", "-XX:+UseAESIntrinsics"})
     public byte[] testUseAesIntrinsics() throws Exception {
         return cipher.doFinal(src);
     }
