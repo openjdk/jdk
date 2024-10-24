@@ -456,7 +456,7 @@ public class HierarchicalLayoutManager extends LayoutManager {
         writeBack();
     }
 
-    public void writeBack() {
+    private void writeBack() {
         optimizeBackedgeCrossing();
         straightenEdges();
         new AssignYCoordinates().run();
