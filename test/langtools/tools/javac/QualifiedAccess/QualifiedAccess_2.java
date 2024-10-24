@@ -7,7 +7,7 @@
  *
  * @compile pack1/P1.java
  * @compile pack1/P2.java
- * @compile/fail/ref=QualifiedAccess_2.out -XDrawDiagnostics QualifiedAccess_2.java
+ * @compile/fail/ref=QualifiedAccess_2.out -XDdev -XDrawDiagnostics QualifiedAccess_2.java
  */
 
 import pack1.P1;
