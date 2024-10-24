@@ -25,6 +25,7 @@
 
 #include "precompiled.hpp"
 #include "nmt/vmatree.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
 
 const VMATree::RegionData VMATree::empty_regiondata{NativeCallStackStorage::StackIndex{}, mtNone};
@@ -212,6 +213,12 @@ VMATree::SummaryDiff VMATree::set_tag(position from, size size, MemTag tag) {
   VMATreap::Range range = _tree.find_enclosing_range(from);
   assert(range.start != nullptr && range.end != nullptr,
          "Setting a memory tag must be done within existing range");
+  if (range.start == nullptr || range.end == nullptr) {
+    log_debug(nmt)("set_tag called on non-existent range: " PTR_FORMAT " - " PTR_FORMAT,
+                   from, from+size);
+    return SummaryDiff();
+  }
+
   StateType type = out_state(range.start).type();
   RegionData new_data = RegionData(out_state(range.start).stack(), tag);
 
