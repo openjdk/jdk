@@ -306,20 +306,6 @@ public class HierarchicalLayoutManager extends LayoutManager {
         return optimalPos;
     }
 
-    private int findLayer(int y) {
-        int optimalLayer = -1;
-        int minDistance = Integer.MAX_VALUE;
-        for (int l = 0; l < graph.getLayerCount(); l++) {
-            int layerY = graph.getLayer(l).getCenter();
-            int distance = Math.abs(layerY - y);
-            if (distance < minDistance) {
-                minDistance = distance;
-                optimalLayer = l;
-            }
-        }
-        return optimalLayer;
-    }
-
     private void removeEmptyLayers(int emptyLayerNr) {
         if (0 < emptyLayerNr && emptyLayerNr < graph.getLayerCount() - 1) {
             LayoutLayer emptyLayer = graph.getLayer(emptyLayerNr);
@@ -456,7 +442,7 @@ public class HierarchicalLayoutManager extends LayoutManager {
         LayoutNode movedNode = findDummyNode(fromNode, oldFrom, isReversed);
         if (movedNode != null) {
             Point newLocation = new Point(newFrom.x, newFrom.y + movedNode.getHeight() / 2);
-            int newLayerNr = findLayer(newLocation.y);
+            int newLayerNr = graph.findLayer(newLocation.y);
             if (movedNode.getLayer() == newLayerNr) { // we move the node in the same layer
                 boolean hasSamePos = tryMoveNodeInSamePosition(movedNode, newLocation.x, newLayerNr);
                 if (!hasSamePos) {
@@ -477,18 +463,17 @@ public class HierarchicalLayoutManager extends LayoutManager {
 
     public void moveVertex(Vertex movedVertex, Point newLoc) {
         LayoutNode movedNode = graph.getLayoutNode(movedVertex);
-        Point newLocation = new Point(newLoc.x, newLoc.y + movedNode.getHeight() / 2);
 
-        int newLayerNr = findLayer(newLocation.y);
+        int newLayerNr = graph.findLayer(newLoc.y + movedNode.getHeight() / 2);
         if (movedNode.getLayer() == newLayerNr) { // we move the node in the same layer
-            boolean hasSamePos = tryMoveNodeInSamePosition(movedNode, newLocation.x, newLayerNr);
+            boolean hasSamePos = tryMoveNodeInSamePosition(movedNode, newLoc.x, newLayerNr);
             if (!hasSamePos) {
-                moveNode(movedNode, newLocation.x, movedNode.getLayer());
+                moveNode(movedNode, newLoc.x, movedNode.getLayer());
             }
         } else { // only remove edges if we moved the node to a new layer
             newLayerNr = insertNewLayerIfNeeded(movedNode, newLayerNr);
             removeEdges(movedNode);
-            moveNode(movedNode, newLocation.x, newLayerNr);
+            moveNode(movedNode, newLoc.x, newLayerNr);
             addEdges(movedNode);
         }
         writeBack();
