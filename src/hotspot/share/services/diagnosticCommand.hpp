@@ -998,4 +998,141 @@ public:
 
 #endif // LINUX or WINDOWS
 
+// a summary of VM Usage metadata that describes this invocation...
+
+class VMUsageMetadataDCmd : public DCmdWithParser {
+  public:
+
+  VMUsageMetadataDCmd(outputStream* output, bool heap);
+  
+  static int         num_arguments() { return 3; }; 
+
+  static const char* name() { return "VM.usage_metadata"; }
+  static const char* description() { return "Print VM usage metadata."; }
+  static const char* impact() { return "Low"; }
+
+  static const JavaPermission permission() {
+    JavaPermission p = {"java.util.PropertyPermission", "*", "read"};
+    return p;
+  }
+  virtual void execute(DCmdSource source, TRAPS);
+
+  // formatters are intended to handle the format-specific rendering of the metadata...
+
+  class Formatter {
+    public:
+      virtual void prefix(outputStream* output) const {};
+
+      virtual bool field(outputStream* output, const char *fieldName , bool prefixSep, TRAPS) const {
+         return _writeField(this, output, fieldName, prefixSep, CHECK_false);
+      }; // returns true if field is written...
+
+      virtual void postfix(outputStream* output) const {};
+      virtual char*kvSeparator() const { return (char *)""; };
+      virtual char*fldSeparator() const { return (char *)", "; };
+
+      virtual void _writeValues(outputStream* output, char** values, int nvalues) const;
+  };
+
+  // "<fieldName>"="<value>",...
+  class PlainFormatter : public  Formatter {
+    public:
+      char *kvSeparator() const override { return (char *)"="; }
+      void _writeValues(outputStream* output, char** array, int n) const override;
+  };
+
+  //  { "<fieldName>" : "<value>", ... }
+  class JsonFormatter :  public Formatter {
+    public:
+      void prefix(outputStream* output)  const override { output->print("{ "); };
+      void postfix(outputStream* output)  const override { output->print(" }"); };
+      char *kvSeparator() const override { return (char *)" : "; }
+      void _writeValues(outputStream* output, char** array, int n) const override;
+  };
+
+  private:
+
+  static constexpr const char *const _JAVA_CLASSPATH  = "java.class.path";
+  static constexpr const char *const _JAVA_HOME       = "java.home";
+  static constexpr const char *const _JAVA_VERSION    = "java.version";
+  static constexpr const char *const _JAVA_VM_VERSION = "java.vm.version";
+
+  static constexpr const char *const _JDK_MODULE_PATH         = "jdk.module.path";
+  static constexpr const char *const _JDK_MAIN_MODULE         = "jdk.module.main";
+  static constexpr const char *const _JDK_MAIN_MODULE_CLASS   = "jdk.module.main.class";
+  static constexpr const char *const _JDK_UPGRADE_MODULE_PATH = "jdk.module.upgrade.path";
+
+  static constexpr const char *const _JVM_ARGS        = "jvm.args";
+#ifdef LINUX
+  static constexpr const char *const _JVM_CTR_INFO    = "jvm.container.info";
+#endif
+  static constexpr const char *const _JVM_FLAGS       = "jvm.flags";
+  static constexpr const char *const _JVM_PID         = "jvm.pid";
+  static constexpr const char *const _JVM_STARTTIME   = "jvm.starttime";
+  static constexpr const char *const _JVM_UPTIME      = "jvm.uptime.ms";
+  
+  static constexpr const char *const _SUN_JAVA_LAUNCHER   = "sun.java.launcher";
+  static constexpr const char *const _SUN_JAVA_CMD        = "sun.java.command";
+
+  static constexpr const char *const _TIMESTAMP           = "timestamp";
+
+  static constexpr const char *const _USER_DIR            = "user.dir";
+  static constexpr const char *const _USER_NAME           = "user.name";
+
+  static constexpr const char *const _OS_ARCH             = "os.arch";
+  static constexpr const char *const _OS_HOSTNAME         = "os.hostname";
+  static constexpr const char *const _OS_NAME             = "os.name";
+  static constexpr const char *const _OS_VERSION          = "os.version";
+  
+  static constexpr const char *const _APPLICATION_JSON  = "json";
+  static constexpr const char *const _TEXT_PLAIN        = "plain"; 
+
+  static const char *const _DEFAULT_FMT[];
+
+  static void _writeValueEscapingQuotes(outputStream *output, const char *const value);
+
+  /*
+   * FieldWriters are responsible for fetching the required value and emitting that in a KV tuple.
+   *
+   * additionally they are responsible for prefixing (if necessary) with a 'field separator' 
+   */
+
+  typedef bool (*FieldWriter)(const Formatter* formatter, outputStream*, const char *const, bool, TRAPS);
+
+  static bool _writeTime(const Formatter* formatter, outputStream* output, const char *fieldName, bool needsSeparator, TRAPS);
+  static bool _writeJVMStartTime(const Formatter* formatter, outputStream* output, const char *fieldName,bool needsSeparator, TRAPS);
+  static bool _writeJVMUptime(const Formatter* formatter, outputStream* output, const char *const fieldName, bool needsSeparator, TRAPS);
+  static bool _writeJVMPid(const Formatter* formatter, outputStream* output, const char *const fieldName, bool needsSeparator, TRAPS);
+  
+  static bool _writeSystemProperty(const Formatter* formatter, outputStream* output, const char *const propertyName, bool needsSeparator, TRAPS);
+
+#ifdef LINUX
+  static bool _writeJVMContainerInfo(const Formatter* formatter, outputStream* output, const char *const propertyName, bool needsSeparator, TRAPS);
+#endif
+
+  static bool _writeHostname(const Formatter* formatter, outputStream* output, const char *const propertyName, bool needsSeparator, TRAPS);
+
+  static bool _writeJVMFlags(const Formatter* formatter, outputStream* output, const char *const propertyName, bool needsSeparator, TRAPS);
+
+  static bool _writeJVMArgs(const Formatter* formatter, outputStream* output, const char *const propertyName, bool needsSeparator, TRAPS);
+
+  static bool _writeField(const Formatter* formatter, outputStream* output, const char *const fieldName, bool needsSeparator, TRAPS);
+
+  static bool _writeFieldWithArrayValues(const Formatter* formatter, outputStream* output, const char *const fieldName, char** values, int nvalues, bool needsSepartor);
+
+  static int _comparator(const void *x, const void *y) {
+    return strcmp(((MapEntry*)x)->key, ((MapEntry*)y)->key);
+  }
+
+  typedef struct { const char *const key; const void *const value; } MapEntry;
+
+  static MapEntry _FORMATTER_MAP[];
+
+  static MapEntry _FIELD_WRITER_MAP[];
+  
+  DCmdArgument<char *> _fields;
+  DCmdArgument<char *> _format;
+  DCmdArgument<char *> _filepath;
+};
+
 #endif // SHARE_SERVICES_DIAGNOSTICCOMMAND_HPP
