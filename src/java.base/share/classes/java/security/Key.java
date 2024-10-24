@@ -128,6 +128,7 @@ public interface Key extends java.io.Serializable {
      * Java Security Standard Algorithm Names Specification</a>
      * for information about standard key algorithm names.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return the name of the algorithm associated with this key.
      */
     String getAlgorithm();

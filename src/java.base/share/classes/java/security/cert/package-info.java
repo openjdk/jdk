@@ -53,6 +53,9 @@
  * </ul>
  *
  * @spec security/standard-names.html Java Security Standard Algorithm Names
+ * @spec https://www.rfc-editor.org/info/rfc2560
+ *      RFC 2560: X.509 Internet Public Key Infrastructure Online Certificate
+ *              Status Protocol - OCSP
  * @spec https://www.rfc-editor.org/info/rfc5280
  *      RFC 5280: Internet X.509 Public Key Infrastructure Certificate
  *              and Certificate Revocation List (CRL) Profile
