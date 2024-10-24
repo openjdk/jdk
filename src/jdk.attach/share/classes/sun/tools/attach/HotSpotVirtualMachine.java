@@ -338,7 +338,7 @@ public abstract class HotSpotVirtualMachine extends VirtualMachine {
      */
     protected int detectVersion() throws IOException {
         try {
-            InputStream reply = execute("getVersion");
+            InputStream reply = execute("getversion");
             String message = readMessage(reply);
             reply.close();
             try {

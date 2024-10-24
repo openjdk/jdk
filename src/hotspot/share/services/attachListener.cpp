@@ -383,7 +383,7 @@ static jint print_flag(AttachOperation* op, outputStream* out) {
   return JNI_OK;
 }
 
-// Implementation of "getVersion" command
+// Implementation of "getversion" command
 static jint get_version(AttachOperation* op, outputStream* out) {
   out->print("%d", (int)AttachListener::get_supported_version());
   return JNI_OK;
@@ -403,7 +403,7 @@ static AttachOperationFunctionInfo funcs[] = {
   { "setflag",          set_flag },
   { "printflag",        print_flag },
   { "jcmd",             jcmd },
-  { "getVersion",       get_version },
+  { "getversion",       get_version },
   { nullptr,            nullptr }
 };
 

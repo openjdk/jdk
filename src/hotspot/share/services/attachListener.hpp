@@ -65,7 +65,7 @@ Version 1 (since jdk6): attach operations always have 3 (AttachOperation::arg_co
   arguments, each up to 1024 (AttachOperation::arg_length_max) chars.
 Version 2 (since jdk24): attach operations may have any number of arguments of any length;
   for safety default implementation restricts attach operation request size by 256KB.
-  To detect if target VM supports version 2, client sends "getVersion" command.
+  To detect if target VM supports version 2, client sends "getversion" command.
   Old VM reports "Operation not recognized" error, newer VM reports version supported by the implementation.
   If the target VM does not support version 2, client uses version 1 to enqueue operations.
 */
