@@ -67,6 +67,9 @@ static void asm_check(const uint8_t *insns, const uint8_t *insns1, const unsigne
 
 TEST_VM(AssemblerX86, validate) {
   FlagSetting flag_change_apx(UseAPX, true);
+  VM_Version::set_bmi_cpuFeatures();
+  VM_Version::set_evex_cpuFeatures();
+  VM_Version::set_avx_cpuFeatures();
   VM_Version::set_apx_cpuFeatures();
   BufferBlob* b = BufferBlob::create("x64Test", 500000);
   CodeBuffer code(b);
