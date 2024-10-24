@@ -24,11 +24,10 @@
  */
 package jdk.internal.classfile.impl;
 
+import java.lang.classfile.Interfaces;
+import java.lang.classfile.constantpool.ClassEntry;
 import java.util.List;
 import java.util.stream.Collectors;
-
-import java.lang.classfile.constantpool.ClassEntry;
-import java.lang.classfile.Interfaces;
 
 public final class InterfacesImpl
         extends AbstractElement

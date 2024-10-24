@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,9 @@
  */
 package jdk.internal.classfile.impl;
 
-import java.util.List;
-import java.util.Objects;
 import java.lang.classfile.Label;
 import java.lang.classfile.TypeAnnotation.*;
+import java.util.List;
 
 import static java.util.Objects.requireNonNull;
 
@@ -37,7 +36,6 @@ public final class TargetInfoImpl {
     }
 
     private static TargetType checkValid(TargetType targetType, int rangeFrom, int rangeTo) {
-        Objects.requireNonNull(targetType);
         if (targetType.targetTypeValue() < rangeFrom || targetType.targetTypeValue() > rangeTo)
             throw new IllegalArgumentException("Wrong target type specified " + targetType);
         return targetType;

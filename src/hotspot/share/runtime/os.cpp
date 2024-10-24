@@ -1290,7 +1290,7 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
   }
 
   // Check if in metaspace and print types that have vptrs
-  if (Metaspace::contains(addr)) {
+  if (Metaspace::initialized() && Metaspace::contains(addr)) {
     if (Klass::is_valid((Klass*)addr)) {
       st->print_cr(INTPTR_FORMAT " is a pointer to class: ", p2i(addr));
       ((Klass*)addr)->print_on(st);
