@@ -104,7 +104,7 @@ public class CompressedClassPointersEncodingScheme {
         // On aarch64 and x64 we expect the VM to chose the smallest possible shift value needed to cover
         // the encoding range. We expect the encoding Base to start at the class space start - but to enforce that,
         // we choose a high address.
-        if (Platform.isAArch64() || Platform.isX64()) {
+        if (Platform.isAArch64() || Platform.isX64() || Platform.isRISCV64()) {
             long forceAddress = 32 * G;
 
             long ccsSize = 128 * M;
