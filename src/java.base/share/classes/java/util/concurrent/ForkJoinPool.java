@@ -1268,7 +1268,8 @@ public class ForkJoinPool extends AbstractExecutorService {
         final void push(ForkJoinTask<?> task, ForkJoinPool pool,
                         boolean internal) {
             int s = top, b = base, m, cap, room; ForkJoinTask<?>[] a;
-            if ((a = array) != null && (cap = a.length) > 0) { // else disabled
+            if ((a = array) != null && (cap = a.length) > 0 &&
+                task != null) {                             // else disabled
                 if ((room = (m = cap - 1) - (s - b)) >= 0) {
                     top = s + 1;
                     long pos = slotOffset(m & s);
@@ -1279,11 +1280,15 @@ public class ForkJoinPool extends AbstractExecutorService {
                     if (room == 0)                          // resize
                         growArray(a, cap, s);
                 }
-                if (!internal)
+                int d = 1;
+                if (!internal) {
                     unlockPhase();
+                    if (task.getClass().getSuperclass() == interruptibleTaskClass)
+                        d = 2;
+                }
                 if (room < 0)
                     throw new RejectedExecutionException("Queue capacity exceeded");
-                else if ((room == 0 || a[m & (s - 1)] == null) && pool != null)
+                else if ((room == 0 || a[m & (s - d)] == null) && pool != null)
                     pool.signalWork(); // may have appeared empty
             }
         }
@@ -2045,22 +2050,24 @@ public class ForkJoinPool extends AbstractExecutorService {
         w.phase = p;
         if (!compareAndSetCtl(pc, qc))        // try to enqueue
             return w.phase = phase;           // back out on possible signal
-        long e; WorkQueue[] qs; int n;
+        int ac =  (short)(qc >>> RC_SHIFT), n; long e; WorkQueue[] qs;
         if (((e = runState) & STOP) != 0L ||
-            ((e & SHUTDOWN) != 0L && (qc & RC_MASK) == 0L && quiescent() > 0) ||
+            ((e & SHUTDOWN) != 0L && ac == 0 && quiescent() > 0) ||
             (qs = queues) == null || (n = qs.length) <= 0)
             return IDLE;                      // terminating
-        for (int k = Math.max(n << 1, SPIN_WAITS), checks = 2;;) {
+        int checks = (ac == 0) ? 1 : (ac == 1) ? 2 : 3;
+        for (int k = Math.max(n + (n << 1), SPIN_WAITS);;) {
             WorkQueue q; int cap; ForkJoinTask<?>[] a;
             if (w.phase == activePhase)
                 return activePhase;
             if (--k < 0)
                 return awaitWork(w, p);       // block, drop, or exit
-            Thread.onSpinWait();              // interleave spins and rechecks
-            if (checks != 0 && (k & 1) == 0 && (q = qs[k & (n - 1)]) != null &&
-                (a = q.array) != null && (cap = a.length) > 0 &&
-                a[q.base & (cap - 1)] != null && --checks == 0)
-                reactivate(false);            // help signal
+            if ((q = qs[k & (n - 1)]) == null)
+                Thread.onSpinWait();          // interleave spins and rechecks
+            else if ((a = q.array) != null && (cap = a.length) > 0 &&
+                     a[q.base & (cap - 1)] != null && --checks <= 0 &&
+                     ctl == qc && compareAndSetCtl(qc, pc))
+                return w.phase = activePhase; // reactivate
         }
     }
 
