@@ -430,11 +430,12 @@ public class HierarchicalLayoutManager extends LayoutManager {
         return null;
     }
 
-    public boolean moveLink(Vertex linkFromVertex, Point oldFrom, Point newFrom) {
+    public boolean moveLink(Vertex linkFromVertex, Point oldFrom, int shiftX) {
         LayoutNode fromNode = graph.getLayoutNode(linkFromVertex);
         boolean isReversed = fromNode.getY() > oldFrom.y;
         LayoutNode movedNode = findDummyNode(fromNode, oldFrom, isReversed);
         if (movedNode != null) {
+            Point newFrom = new Point(oldFrom.x + shiftX, oldFrom.y);
             Point newLocation = new Point(newFrom.x, newFrom.y + movedNode.getHeight() / 2);
             int newLayerNr = graph.findLayer(newLocation.y);
             if (movedNode.getLayer() == newLayerNr) { // we move the node in the same layer
@@ -443,8 +444,10 @@ public class HierarchicalLayoutManager extends LayoutManager {
                     moveNode(movedNode, newLocation.x, movedNode.getLayer());
                 }
             }
+            writeBack();
             return true;
         }
+        writeBack();
         return false;
     }
 

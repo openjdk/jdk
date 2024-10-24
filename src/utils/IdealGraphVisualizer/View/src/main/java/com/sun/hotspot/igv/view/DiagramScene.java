@@ -1004,9 +1004,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
                         if (shiftX == 0) return;
 
                         rebuilding = true;
-                        Point newFrom = new Point(origFrom.x + shiftX, origFrom.y);
-                        boolean wasMoved = seaLayoutManager.moveLink(lineWidget.getFromFigure(), origFrom, newFrom);
-                        seaLayoutManager.writeBack();
+                        boolean wasMoved = seaLayoutManager.moveLink(lineWidget.getFromFigure(), origFrom, shiftX);
                         rebuildConnectionLayer();
                         for (FigureWidget fw : getVisibleFigureWidgets()) {
                             fw.updatePosition();
