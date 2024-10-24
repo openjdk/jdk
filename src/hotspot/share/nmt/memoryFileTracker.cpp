@@ -47,7 +47,7 @@ void MemoryFileTracker::allocate_memory(MemoryFile* file, size_t offset,
   VMATree::RegionData regiondata(sidx, mem_tag);
   VMATree::SummaryDiff diff = file->_tree.commit_mapping(offset, size, regiondata);
   for (int i = 0; i < mt_number_of_tags; i++) {
-    VirtualMemory* summary = file->_summary.by_type(NMTUtil::index_to_tag(i));
+    VirtualMemory* summary = file->_summary.by_tag(NMTUtil::index_to_tag(i));
     summary->reserve_memory(diff.tag[i].commit);
     summary->commit_memory(diff.tag[i].commit);
   }
@@ -56,7 +56,7 @@ void MemoryFileTracker::allocate_memory(MemoryFile* file, size_t offset,
 void MemoryFileTracker::free_memory(MemoryFile* file, size_t offset, size_t size) {
   VMATree::SummaryDiff diff = file->_tree.release_mapping(offset, size);
   for (int i = 0; i < mt_number_of_tags; i++) {
-    VirtualMemory* summary = file->_summary.by_type(NMTUtil::index_to_tag(i));
+    VirtualMemory* summary = file->_summary.by_tag(NMTUtil::index_to_tag(i));
     summary->reserve_memory(diff.tag[i].commit);
     summary->commit_memory(diff.tag[i].commit);
   }
@@ -76,7 +76,7 @@ void MemoryFileTracker::print_report_on(const MemoryFile* file, outputStream* st
     if (prev == nullptr) {
       // Must be first node.
       prev = current;
-      return;
+      return true;
     }
 #ifdef ASSERT
     if (broken_start != nullptr && prev->val().out.mem_tag() != current->val().in.mem_tag()) {
@@ -99,6 +99,7 @@ void MemoryFileTracker::print_report_on(const MemoryFile* file, outputStream* st
       stream->cr();
     }
     prev = current;
+    return true;
   });
 #ifdef ASSERT
   if (broken_start != nullptr) {
@@ -182,8 +183,8 @@ void MemoryFileTracker::summary_snapshot(VirtualMemorySnapshot* snapshot) const 
   for (int d = 0; d < _files.length(); d++) {
     const MemoryFile* file = _files.at(d);
     for (int i = 0; i < mt_number_of_tags; i++) {
-      VirtualMemory* snap = snapshot->by_type(NMTUtil::index_to_tag(i));
-      const VirtualMemory* current = file->_summary.by_type(NMTUtil::index_to_tag(i));
+      VirtualMemory* snap = snapshot->by_tag(NMTUtil::index_to_tag(i));
+      const VirtualMemory* current = file->_summary.by_tag(NMTUtil::index_to_tag(i));
       // Only account the committed memory.
       snap->commit_memory(current->committed());
     }
