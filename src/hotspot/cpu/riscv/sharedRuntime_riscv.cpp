@@ -1139,8 +1139,7 @@ static void gen_continuation_yield(MacroAssembler* masm,
   Label ok;
   __ beqz(t0, ok);
   __ leave();
-  __ la(t1, RuntimeAddress(StubRoutines::forward_exception_entry()));
-  __ jr(t1);
+  __ j(RuntimeAddress(StubRoutines::forward_exception_entry()));
   __ bind(ok);
 
   __ leave();

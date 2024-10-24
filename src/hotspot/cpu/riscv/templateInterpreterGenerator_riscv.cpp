@@ -421,7 +421,7 @@ address TemplateInterpreterGenerator::generate_exception_handler_common(
                c_rarg1, c_rarg2);
   }
   // throw exception
-  __ j(address(Interpreter::throw_exception_entry()));
+  __ j(RuntimeAddress(Interpreter::throw_exception_entry()));
   return entry;
 }
 

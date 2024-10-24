@@ -663,7 +663,7 @@ class MacroAssembler: public Assembler {
   // For long reach uses temp register for:
   // la + jr
   void j(const address dest, Register temp = t1);
-  void j(const Address &adr, Register temp = t1);
+  void j(const Address &dest, Register temp = t1);
   void j(Label &l, Register temp = noreg);
 
   // jump register: jalr x0, offset(rs)
