@@ -623,8 +623,8 @@ bool AttachOperation::read_request(RequestReader* reader) {
   int min_read_size = 1; // expected size of the request data (by default 1 symbol for terminating '\0')
   switch (ver) {
   case ATTACH_API_V1: // <ver>0<cmd>0<arg>0<arg>0<arg>0
-    // Always contain a command (up to name_length_max symbols)
-    // and arg_count_max(3) arguments (each up to arg_length_max symbols).
+    // Always contain a command (up to name_length_max chars)
+    // and arg_count_max(3) arguments (each up to arg_length_max chars).
     buffer_size = (name_length_max + 1) + arg_count_max * (arg_length_max + 1);
     min_str_count = 1 /*name*/ + arg_count_max;
     break;

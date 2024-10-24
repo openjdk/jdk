@@ -66,7 +66,7 @@ public class CompatTest {
     }
 
     // The test uses HotSpotVirtualMachine.setFlag method with long flag value.
-    // For attach API v1 an exception is expected to be thrown (argument cannot be longer than 1024 symbols).
+    // For attach API v1 an exception is expected to be thrown (argument cannot be longer than 1024 characters).
     private static String flagName = "HeapDumpPath";
     // long for v1
     private static String flagValue = "X" + "A".repeat(1024) + "X";

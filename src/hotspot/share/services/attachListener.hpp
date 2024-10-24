@@ -61,8 +61,8 @@ enum AttachListenerState {
 };
 
 /*
-Version 1 (since jdk6): attach operations always have 3 (AttachOparation::arg_count_max)
-  arguments, each up to 1024 (AttachOparation::arg_length_max) symbols.
+Version 1 (since jdk6): attach operations always have 3 (AttachOperation::arg_count_max)
+  arguments, each up to 1024 (AttachOperation::arg_length_max) chars.
 Version 2 (since jdk24): attach operations may have any number of arguments of any length;
   for safety default implementation restricts attach operation request size by 256KB.
   To detect if target VM supports version 2, client sends "getVersion" command.
