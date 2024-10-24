@@ -226,7 +226,7 @@ class ProcSmapsSummary {
   size_t _shared;       // combined shared size
   size_t _swapped_out;  // combined amount of swapped-out memory
 public:
-  ProcSmapsSummary() : _num_mappings(0),// _vsize(0), _rss(0), 
+  ProcSmapsSummary() : _num_mappings(0),// _vsize(0), _rss(0),
   _private(0),  _committed(0), _shared(0), _swapped_out(0) {}
 
   void add_mapping(const proc_regioninfo& region_info, const MappingInfo& mapping_info) {
@@ -327,7 +327,7 @@ public:
     outputStream* st = _session.out();
     //            0         1         2         3         4         5         6         7         8         9         0         1         2         3         4         5         6         7
     //            012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
-    //            0x00000001714a0000-0x000000017169c000      2080768 rw-/rwx  p/a       0xc000 STACK-28419-C2-CompilerThread0 
+    //            0x00000001714a0000-0x000000017169c000      2080768 rw-/rwx  p/a       0xc000 STACK-28419-C2-CompilerThread0
     st->print_cr("from               to                        vsize prot share     offset vminfo/file");
     st->print_cr("==================================================================================================");
   }
