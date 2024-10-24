@@ -698,4 +698,26 @@ public:
 #endif
 };
 
+// Phase for lowering common Ideal nodes into machine-specific Ideal nodes and identifying complex patterns before
+// the platform matcher.
+class PhaseLowering : public PhaseTransform {
+  PhaseIterGVN* _igvn;
+public:
+  PhaseLowering(PhaseIterGVN* igvn) : PhaseTransform(Lower), _igvn(igvn) {};
+
+  // GVN the given node, returning an existing version if it exists.
+  virtual Node* transform(Node* n);
+
+  // Return a lowered version of the input node, or nullptr if no lowering took place.
+  // Implemented by backends.
+  Node* lower_node(Node* in);
+
+  // Main function to lower all nodes in the graph.
+  void lower();
+
+  inline PhaseIterGVN* igvn() {
+    return _igvn;
+  }
+};
+
 #endif // SHARE_OPTO_PHASEX_HPP

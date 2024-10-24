@@ -87,6 +87,7 @@ void Phase::print_timers() {
     tty->print_cr ("         GVN 2:               %7.3f s", timers[_t_iterGVN2].seconds());
     tty->print_cr ("         Macro Expand:        %7.3f s", timers[_t_macroExpand].seconds());
     tty->print_cr ("         Barrier Expand:      %7.3f s", timers[_t_barrierExpand].seconds());
+    tty->print_cr ("         Lowering:            %7.3f s", timers[_t_lower].seconds());
     tty->print_cr ("         Graph Reshape:       %7.3f s", timers[_t_graphReshaping].seconds());
 
     double other = timers[_t_optimizer].seconds() -
