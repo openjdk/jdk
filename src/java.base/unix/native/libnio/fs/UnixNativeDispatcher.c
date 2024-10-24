@@ -204,6 +204,7 @@ typedef int openat_func(int, const char *, int, ...);
 typedef int fstatat_func(int, const char *, struct stat *, int);
 typedef int unlinkat_func(int, const char*, int);
 typedef int renameat_func(int, const char*, int, const char*);
+typedef int futimes_func(int, const struct timeval *);
 typedef int futimens_func(int, const struct timespec *);
 typedef int lutimes_func(const char *, const struct timeval *);
 typedef DIR* fdopendir_func(int);
@@ -216,6 +217,7 @@ static openat_func* my_openat_func = NULL;
 static fstatat_func* my_fstatat_func = NULL;
 static unlinkat_func* my_unlinkat_func = NULL;
 static renameat_func* my_renameat_func = NULL;
+static futimes_func* my_futimes_func = NULL;
 static futimens_func* my_futimens_func = NULL;
 static lutimes_func* my_lutimes_func = NULL;
 static fdopendir_func* my_fdopendir_func = NULL;
@@ -371,11 +373,14 @@ Java_sun_nio_fs_UnixNativeDispatcher_init(JNIEnv* env, jclass this)
     my_unlinkat_func = (unlinkat_func*) dlsym(RTLD_DEFAULT, "unlinkat");
     my_renameat_func = (renameat_func*) dlsym(RTLD_DEFAULT, "renameat");
 #if defined(__linux__) && defined(__arm__)
+    my_futimes_func = (futimes_func*) lookup_time_t_function("futimes",
+        "__futimes64");
     my_lutimes_func = (lutimes_func*) lookup_time_t_function("lutimes",
         "__lutimes64");
     my_futimens_func = (futimens_func*) lookup_time_t_function("futimens",
         "__futimens64");
 #else
+    my_futimes_func = (futimes_func*) dlsym(RTLD_DEFAULT, "futimes");
     my_lutimes_func = (lutimes_func*) dlsym(RTLD_DEFAULT, "lutimes");
     my_futimens_func = (futimens_func*) dlsym(RTLD_DEFAULT, "futimens");
 #endif
@@ -394,9 +399,15 @@ Java_sun_nio_fs_UnixNativeDispatcher_init(JNIEnv* env, jclass this)
 
     /* supports futimes, futimens, and/or lutimes */
 
+#ifdef _ALLBSD_SOURCE
     capabilities |= sun_nio_fs_UnixNativeDispatcher_SUPPORTS_FUTIMES;
+    capabilities |= sun_nio_fs_UnixNativeDispatcher_SUPPORTS_LUTIMES;
+#else
+    if (my_futimes_func != NULL)
+        capabilities |= sun_nio_fs_UnixNativeDispatcher_SUPPORTS_FUTIMES;
     if (my_lutimes_func != NULL)
         capabilities |= sun_nio_fs_UnixNativeDispatcher_SUPPORTS_LUTIMES;
+#endif
     if (my_futimens_func != NULL)
         capabilities |= sun_nio_fs_UnixNativeDispatcher_SUPPORTS_FUTIMENS;
 
@@ -404,7 +415,7 @@ Java_sun_nio_fs_UnixNativeDispatcher_init(JNIEnv* env, jclass this)
 
     if (my_openat_func != NULL &&  my_fstatat_func != NULL &&
         my_unlinkat_func != NULL && my_renameat_func != NULL &&
-        my_fdopendir_func != NULL)
+        my_futimes_func != NULL && my_fdopendir_func != NULL)
     {
         capabilities |= sun_nio_fs_UnixNativeDispatcher_SUPPORTS_OPENAT;
     }
@@ -898,7 +909,15 @@ Java_sun_nio_fs_UnixNativeDispatcher_futimes0(JNIEnv* env, jclass this, jint fil
     times[1].tv_sec = modificationTime / 1000000;
     times[1].tv_usec = modificationTime % 1000000;
 
+#ifdef _ALLBSD_SOURCE
     RESTARTABLE(futimes(filedes, &times[0]), err);
+#else
+    if (my_futimes_func == NULL) {
+        JNU_ThrowInternalError(env, "my_futimes_func is NULL");
+        return;
+    }
+    RESTARTABLE((*my_futimes_func)(filedes, &times[0]), err);
+#endif
     if (err == -1) {
         throwUnixException(env, errno);
     }
