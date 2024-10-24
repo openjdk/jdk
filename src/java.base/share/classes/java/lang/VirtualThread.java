@@ -628,15 +628,15 @@ final class VirtualThread extends BaseVirtualThread {
 
         // Object.wait
         if (s == WAITING || s == TIMED_WAITING) {
-            byte nonce;
+            byte seqNo;
             int newState;
             if (s == WAITING) {
-                nonce = 0;  // not used
+                seqNo = 0;  // not used
                 setState(newState = WAIT);
             } else {
                 // synchronize with timeout task (previous timed-wait may be running)
                 synchronized (timedWaitLock()) {
-                    nonce = ++timedWaitSeqNo;
+                    seqNo = ++timedWaitSeqNo;
                     setState(newState = TIMED_WAIT);
                 }
             }
@@ -659,7 +659,7 @@ final class VirtualThread extends BaseVirtualThread {
             // schedule wakeup
             if (newState == TIMED_WAIT) {
                 assert waitTimeout > 0;
-                waitTimeoutTask = schedule(() -> waitTimeoutExpired(nonce), waitTimeout, MILLISECONDS);
+                waitTimeoutTask = schedule(() -> waitTimeoutExpired(seqNo), waitTimeout, MILLISECONDS);
             }
             return;
         }
@@ -945,12 +945,12 @@ final class VirtualThread extends BaseVirtualThread {
      * and submit its task so that it continues and attempts to reenter the monitor.
      * This method does nothing if the thread has been woken by notify or interrupt.
      */
-    private void waitTimeoutExpired(byte nounce) {
+    private void waitTimeoutExpired(byte seqNo) {
         assert !Thread.currentThread().isVirtual();
         for (;;) {
             boolean unblocked = false;
             synchronized (timedWaitLock()) {
-                if (nounce != timedWaitSeqNo) {
+                if (seqNo != timedWaitSeqNo) {
                     // this timeout task is for a past timed-wait
                     return;
                 }
@@ -1394,7 +1394,7 @@ final class VirtualThread extends BaseVirtualThread {
     }
 
     /**
-     * Returns a lock object to coordinating timed-wait setup and timeout handling.
+     * Returns a lock object for coordinating timed-wait setup and timeout handling.
      */
     private Object timedWaitLock() {
         // use this object for now to avoid the overhead of introducing another lock
