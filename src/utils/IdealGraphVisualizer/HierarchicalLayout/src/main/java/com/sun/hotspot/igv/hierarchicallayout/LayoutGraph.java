@@ -75,8 +75,17 @@ public class LayoutGraph {
         return Collections.unmodifiableList(dummyNodes);
     }
 
-    public void createNewLayer(int layerNr) {
-        layers.add(layerNr, new LayoutLayer());
+    public LayoutLayer createNewLayer(int layerNr) {
+        LayoutLayer layer = new LayoutLayer();
+        layers.add(layerNr, layer);
+
+        // update layer field in nodes below layerNr
+        for (int l = layerNr + 1; l < getLayerCount(); l++) {
+            for (LayoutNode layoutNode : getLayer(l)) {
+                layoutNode.setLayer(l);
+            }
+        }
+        return layer;
     }
 
     public List<LayoutLayer> getLayers() {

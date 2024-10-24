@@ -116,4 +116,14 @@ public class LayoutLayer extends ArrayList<LayoutNode> {
     public void setHeight(int height) {
         this.height = height;
     }
+
+    public void printLayerInfo(String label) {
+        System.out.println("Layer Info: " + label);
+        System.out.println("Height: " + height + ", Y: " + y);
+        System.out.println("Nodes:");
+        for (LayoutNode layoutNode : this) {
+            String dummyStr = layoutNode.isDummy() ? "Dummy" : "Node";
+            System.out.println("Pos: " + layoutNode.getPos() + ", X: " + layoutNode.getX() + ", " + dummyStr + ", Succs: " + layoutNode.getSuccs().size() + ", Preds: " + layoutNode.getPreds().size());
+        }
+    }
 }
