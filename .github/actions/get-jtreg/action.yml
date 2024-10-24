@@ -25,6 +25,10 @@
 
 name: 'Get JTReg'
 description: 'Download JTReg from cache or source location'
+inputs:
+  fail-on-cache-miss:
+    description: 'Fail on cache miss?'
+    required: true
 outputs:
   path:
     description: 'Path to the installed JTReg'
@@ -45,6 +49,8 @@ runs:
       with:
         path: jtreg/installed
         key: jtreg-${{ steps.version.outputs.value }}
+        fail-on-cache-miss: ${{ inputs.fail-on-cache-miss }}
+        enableCrossOsArchive: true
 
     - name: 'Checkout the JTReg source'
       uses: actions/checkout@v4
@@ -56,14 +62,8 @@ runs:
 
     - name: 'Build JTReg'
       run: |
-        # If runner architecture is x64 set JAVA_HOME_17_X64 otherwise set to JAVA_HOME_17_arm64
-        if [[ '${{ runner.arch }}' == 'X64' ]]; then
-          JDK="$JAVA_HOME_17_X64"
-        else
-          JDK="$JAVA_HOME_17_arm64"
-        fi
         # Build JTReg and move files to the proper locations
-        bash make/build.sh --jdk "$JDK"
+        bash make/build.sh --jdk "$JAVA_HOME_17_X64"
         mkdir ../installed
         mv build/images/jtreg/* ../installed
       working-directory: jtreg/src
