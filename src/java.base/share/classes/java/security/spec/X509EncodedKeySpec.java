@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 package java.security.spec;
 
+import java.security.DEREncodable;
+
 /**
  * This class represents the ASN.1 encoding of a public key,
  * encoded according to the ASN.1 type {@code SubjectPublicKeyInfo}.
@@ -49,7 +51,8 @@ package java.security.spec;
  * @since 1.2
  */
 
-public class X509EncodedKeySpec extends EncodedKeySpec {
+public final class X509EncodedKeySpec extends EncodedKeySpec implements
+    DEREncodable {
 
     /**
      * Creates a new {@code X509EncodedKeySpec} with the given encoded key.
