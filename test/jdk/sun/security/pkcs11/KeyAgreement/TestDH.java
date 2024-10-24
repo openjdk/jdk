@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ import java.security.Provider;
 import java.util.Arrays;
 import javax.crypto.KeyAgreement;
 import javax.crypto.SecretKey;
+import jdk.test.lib.security.SecurityUtils;
 
 public class TestDH extends PKCS11Test {
 
@@ -47,8 +48,9 @@ public class TestDH extends PKCS11Test {
             System.out.println("DH not supported, skipping");
             return;
         }
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("DH", p);
-        kpg.initialize(512);
+        String kpgAlgorithm = "DH";
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance(kpgAlgorithm, p);
+        kpg.initialize(SecurityUtils.getTestKeySize(kpgAlgorithm));
         KeyPair kp1 = kpg.generateKeyPair();
         KeyPair kp2 = kpg.generateKeyPair();
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ import java.util.Arrays;
 import java.util.HexFormat;
 import java.util.Random;
 import javax.crypto.Cipher;
+import jdk.test.lib.security.SecurityUtils;
 
 public class TestRawRSACipher extends PKCS11Test {
 
@@ -53,8 +54,9 @@ public class TestRawRSACipher extends PKCS11Test {
             return;
         }
 
-        final int KEY_LEN = 1024;
-        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("RSA", p);
+        String kpgAlgorithm = "RSA";
+        final int KEY_LEN = SecurityUtils.getTestKeySize(kpgAlgorithm);
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance(kpgAlgorithm, p);
         kpGen.initialize(KEY_LEN);
         KeyPair kp = kpGen.generateKeyPair();
         Random random = new Random();

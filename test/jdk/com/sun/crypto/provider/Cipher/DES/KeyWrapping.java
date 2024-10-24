@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,11 +24,13 @@
 /*
  * @test
  * @bug 0000000
+ * @library /test/lib
  * @summary KeyWrapping
  * @author Jan Luehe
  */
 import javax.crypto.*;
 import java.security.*;
+import jdk.test.lib.security.SecurityUtils;
 
 public class KeyWrapping {
 
@@ -70,8 +72,9 @@ public class KeyWrapping {
         if (!msg.equals(new String(clearText)))
             throw new Exception("The unwrapped session key is corrupted.");
 
-        KeyPairGenerator kpairGen = KeyPairGenerator.getInstance("DSA");
-        kpairGen.initialize(1024);
+        String kpgAlgorithm = "DSA";
+        KeyPairGenerator kpairGen = KeyPairGenerator.getInstance(kpgAlgorithm);
+        kpairGen.initialize(SecurityUtils.getTestKeySize(kpgAlgorithm));
 
         KeyPair kpair = kpairGen.genKeyPair();
 
