@@ -239,13 +239,12 @@ Node *CastIINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if (progress != nullptr) {
     return progress;
   }
-  if (can_reshape && !_range_check_dependency) {
-    if (!phase->C->post_loop_opts_phase()) {
-      // makes sure we run ::Value to potentially remove type assertion and optimize_integer_cast() after loop opts
-      phase->C->record_for_post_loop_opts_igvn(this);
-    } else {
-      return optimize_integer_cast(phase, T_INT);
-    }
+  if (can_reshape && !_range_check_dependency && !phase->C->post_loop_opts_phase()) {
+    // makes sure we run ::Value to potentially remove type assertion after loop opts
+    phase->C->record_for_post_loop_opts_igvn(this);
+  }
+  if (!_range_check_dependency) {
+    return optimize_integer_cast(phase, T_INT);
   }
   return nullptr;
 }
@@ -307,7 +306,7 @@ Node* CastLLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
     return progress;
   }
   if (!phase->C->post_loop_opts_phase()) {
-    // makes sure we run ::Value to potentially remove type assertion and optimize_integer_cast() after loop opts
+    // makes sure we run ::Value to potentially remove type assertion after loop opts
     phase->C->record_for_post_loop_opts_igvn(this);
   }
   // transform (CastLL (ConvI2L ..)) into (ConvI2L (CastII ..)) if the type of the CastLL is narrower than the type of
@@ -330,10 +329,7 @@ Node* CastLLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       }
     }
   }
-  if (phase->C->post_loop_opts_phase()) {
-    return optimize_integer_cast(phase, T_LONG);
-  }
-  return nullptr;
+  return optimize_integer_cast(phase, T_LONG);
 }
 
 //------------------------------Value------------------------------------------
