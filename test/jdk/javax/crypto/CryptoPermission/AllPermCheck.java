@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,7 +86,7 @@ public class AllPermCheck {
     public static void main(String[] args) throws Exception {
         Provider p = Security.getProvider("SunJCE");
         System.out.println("Testing provider " + p.getName() + "...");
-        if (Cipher.getMaxAllowedKeyLength("DES") == Integer.MAX_VALUE) {
+        if (Cipher.getMaxAllowedKeyLength("AES") == Integer.MAX_VALUE) {
             // skip this test for unlimited jurisdiction policy files
             System.out.println("Skip this test due to unlimited version");
             return;

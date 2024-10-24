@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ public class ByteBuffers {
         byte[] t = new byte[n];
         random.nextBytes(t);
 
-        MessageDigest md = MessageDigest.getInstance("MD5", p);
+        MessageDigest md = MessageDigest.getInstance("SHA-1", p);
         byte[] d1 = md.digest(t);
 
         // test 1: ByteBuffer with an accessible backing array

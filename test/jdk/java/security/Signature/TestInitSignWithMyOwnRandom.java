@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,12 @@
 /**
  * @test
  * @bug 4716321
+ * @library /test/lib
  * @summary Ensure the random source supplied in
  * Signature.initSign(PrivateKey, SecureRandom) is used.
  */
 import java.security.*;
+import jdk.test.lib.security.SecurityUtils;
 
 public class TestInitSignWithMyOwnRandom {
 
@@ -35,11 +37,12 @@ public class TestInitSignWithMyOwnRandom {
         // any signature implementation will do as long as
         // it needs a random source
         Provider p = Security.getProvider("SUN");
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("DSA", p);
-        kpg.initialize(512);
+        String kpgAlgorithm = "DSA";
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance(kpgAlgorithm, p);
+        kpg.initialize(SecurityUtils.getTestKeySize(kpgAlgorithm));
         KeyPair kp = kpg.generateKeyPair();
         TestRandomSource rand = new TestRandomSource();
-        Signature sig = Signature.getInstance("DSA", p);
+        Signature sig = Signature.getInstance("SHA224withDSA", p);
         sig.initSign(kp.getPrivate(), rand);
         sig.update(new byte[20]);
         sig.sign();

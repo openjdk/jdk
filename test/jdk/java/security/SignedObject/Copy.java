@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,16 +26,18 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.Signature;
 import java.security.SignedObject;
+import jdk.test.lib.security.SecurityUtils;
 
 /*
  * @test
  * @bug 8050374
+ * @library /test/lib
  * @summary Checks if a signed object is a copy of an original object
  */
 public class Copy {
 
     private static final String DSA = "DSA";
-    private static final int KEY_SIZE = 512;
+    private static final int KEY_SIZE = SecurityUtils.getTestKeySize(DSA);
     private static final int MAGIC = 123;
 
     public static void main(String args[]) throws Exception {
@@ -43,13 +45,13 @@ public class Copy {
         kg.initialize(KEY_SIZE);
         KeyPair kp = kg.genKeyPair();
 
-        Signature signature = Signature.getInstance(DSA);
+        Signature signature = Signature.getInstance("SHA224withDSA");
         Test original = new Test();
         SignedObject so = new SignedObject(original, kp.getPrivate(),
                 signature);
         System.out.println("Signature algorithm: " + so.getAlgorithm());
 
-        signature = Signature.getInstance(DSA, "SUN");
+        signature = Signature.getInstance("SHA224withDSA", "SUN");
         if (!so.verify(kp.getPublic(), signature)) {
             throw new RuntimeException("Verification failed");
         }
