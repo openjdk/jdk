@@ -431,7 +431,7 @@ public:
   ThreadDumpDCmd(outputStream* output, bool heap);
   static const char* name() { return "Thread.print"; }
   static const char* description() {
-    return "Print all threads with stacktraces.";
+    return "Print all platform threads with stacktraces.";
   }
   static const char* impact() {
     return "Medium: Depends on the number of threads.";
@@ -933,6 +933,19 @@ public:
     JavaPermission p = {"java.lang.management.ManagementPermission", "monitor", nullptr};
     return p;
   }
+  virtual void execute(DCmdSource source, TRAPS);
+};
+
+class VThreadSummaryDCmd : public DCmd {
+public:
+  VThreadSummaryDCmd(outputStream* output, bool heap) : DCmd(output, heap) { }
+  static const char* name() {
+    return "Thread.vthread_summary";
+  }
+  static const char* description() {
+    return "Print the virtual thread scheduler, timeout schedulers, I/O pollers, and thread groupings.";
+  }
+  static const char* impact() { return "Low"; }
   virtual void execute(DCmdSource source, TRAPS);
 };
 
