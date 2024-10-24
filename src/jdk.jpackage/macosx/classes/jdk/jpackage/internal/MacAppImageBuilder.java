@@ -751,6 +751,14 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
                         "message.codesign.failed.reason.app.content"));
                 }
 
+                // Signing might not work without Xcode with command line
+                // developer tools. Show user if Xcode is missing as possible
+                // reason.
+                if (!isXcodeDevToolsInstalled()) {
+                    Log.info(I18N.getString(
+                        "message.codesign.failed.reason.xcode.tools"));
+                }
+
                 // Log "codesign" output
                 Log.info(MessageFormat.format(I18N.getString(
                          "error.tool.failed.with.output"), "codesign"));
@@ -759,6 +767,16 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
                 throw ioe;
             }
         }
+    }
+
+    private static boolean isXcodeDevToolsInstalled() {
+        try {
+            Executor.of("/usr/bin/xcrun", "--help").executeExpectSuccess();
+        } catch (IOException e) {
+            return false;
+        }
+
+        return true;
     }
 
     static void signAppBundle(
