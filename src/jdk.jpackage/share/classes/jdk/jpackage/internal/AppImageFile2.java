@@ -50,7 +50,7 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 
-public final class AppImageFile2 {
+final class AppImageFile2 {
 
     AppImageFile2(Application app) {
         appVersion = app.version();
@@ -149,11 +149,17 @@ public final class AppImageFile2 {
      * Returns path to application image info file.
      * @param appImageDir - path to application image
      */
-    public static Path getPathInAppImage(Path appImageDir) {
-        return ApplicationLayout.platformAppImage()
-                .resolveAt(appImageDir)
-                .appDirectory()
-                .resolve(FILENAME);
+    static Path getPathInAppImage(Path appImageDir) {
+        return getPathInAppImage(ApplicationLayout.platformAppImage().resolveAt(
+                appImageDir));
+    }
+
+    /**
+     * Returns path to application image info file.
+     * @param appLayout - application layout
+     */
+    static Path getPathInAppImage(ApplicationLayout appLayout) {
+        return appLayout.appDirectory().resolve(FILENAME);
     }
 
     /**
@@ -162,7 +168,7 @@ public final class AppImageFile2 {
      * @return valid info about application image or null
      * @throws IOException
      */
-    public static AppImageFile2 load(Path appImageDir) throws ConfigException, IOException {
+    static AppImageFile2 load(Path appImageDir) throws ConfigException, IOException {
         try {
             Document doc = IOUtils.initDocumentBuilder().parse(
                     Files.newInputStream(getPathInAppImage(appImageDir)));
