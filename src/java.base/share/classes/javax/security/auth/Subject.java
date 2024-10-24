@@ -436,7 +436,7 @@ public final class Subject implements java.io.Serializable {
         Objects.requireNonNull(action);
         if (!SharedSecrets.getJavaLangAccess().allowSecurityManager()) {
             try {
-                return ScopedValue.callWhere(SCOPED_SUBJECT, subject, action::call);
+                return ScopedValue.where(SCOPED_SUBJECT, subject).call(action::call);
             } catch (Exception e) {
                 throw new CompletionException(e);
             }
