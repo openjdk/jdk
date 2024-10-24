@@ -2522,6 +2522,17 @@ class Assembler : public AbstractAssembler {
   // Load pointer d from s1+roc.
   void ld_ptr(Register d, RegisterOrConstant roc, Register s1 = noreg) { ld(d, roc, s1); }
 
+  void ld( Register d, Address &a);
+  void lwa( Register d, Address &a);
+  void lwz( Register d, Address &a);
+  void lha( Register d, Address &a);
+  void lhz( Register d, Address &a);
+  void lbz( Register d, Address &a);
+  void std( Register d, Address &a, Register tmp = noreg);
+  void stw( Register d, Address &a, Register tmp = noreg);
+  void sth( Register d, Address &a, Register tmp = noreg);
+  void stb( Register d, Address &a, Register tmp = noreg);
+
   // Emit several instructions to load a 64 bit constant. This issues a fixed
   // instruction pattern so that the constant can be patched later on.
   enum {

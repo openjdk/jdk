@@ -1090,7 +1090,7 @@ void LIR_Assembler::stack2stack(LIR_Opr src, LIR_Opr dest, BasicType type) {
     case T_FLOAT: {
       Address from = frame_map()->address_for_slot(src->single_stack_ix());
       Address to   = frame_map()->address_for_slot(dest->single_stack_ix());
-      __ lwz(tmp, from.disp(), from.base());
+      __ lwz(tmp, from);
       __ stw(tmp, to.disp(), to.base());
       break;
     }
@@ -1098,7 +1098,7 @@ void LIR_Assembler::stack2stack(LIR_Opr src, LIR_Opr dest, BasicType type) {
     case T_OBJECT: {
       Address from = frame_map()->address_for_slot(src->single_stack_ix());
       Address to   = frame_map()->address_for_slot(dest->single_stack_ix());
-      __ ld(tmp, from.disp(), from.base());
+      __ ld(tmp, from);
       __ std(tmp, to.disp(), to.base());
       break;
     }
@@ -1106,7 +1106,7 @@ void LIR_Assembler::stack2stack(LIR_Opr src, LIR_Opr dest, BasicType type) {
     case T_DOUBLE: {
       Address from = frame_map()->address_for_double_slot(src->double_stack_ix());
       Address to   = frame_map()->address_for_double_slot(dest->double_stack_ix());
-      __ ld(tmp, from.disp(), from.base());
+      __ ld(tmp, from);
       __ std(tmp, to.disp(), to.base());
       break;
     }
