@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,11 @@ class SSLAlgorithmDecomposer extends AlgorithmDecomposer {
     private Set<String> decomposes(CipherSuite.KeyExchange keyExchange) {
         Set<String> components = new HashSet<>();
         switch (keyExchange) {
+            case null:
+                // keyExchange is null for TLSv1.3 cipher suites,
+                // it means ECDHE for both key exchange and authentication.
+                components.add("ECDHE");
+                break;
             case K_NULL:
                 if (!onlyX509) {
                     components.add("K_NULL");
@@ -229,9 +234,7 @@ class SSLAlgorithmDecomposer extends AlgorithmDecomposer {
             HashAlg hashAlg) {
         Set<String> components = new HashSet<>();
 
-        if (keyExchange != null) {
-            components.addAll(decomposes(keyExchange));
-        }
+        components.addAll(decomposes(keyExchange));
 
         if (onlyX509) {
             // Certification path algorithm constraints do not apply
