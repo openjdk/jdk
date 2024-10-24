@@ -426,7 +426,7 @@ void ReservedHeapSpace::try_reserve_heap(size_t size,
                              p2i(requested_address),
                              size);
 
-  reserve(size, alignment, page_size, requested_address, false, mtGC);
+  reserve(size, alignment, page_size, requested_address, false, mtJavaHeap);
 
   // Check alignment constraints.
   if (is_reserved() && !is_aligned(_base, _alignment)) {
@@ -655,7 +655,7 @@ ReservedHeapSpace::ReservedHeapSpace(size_t size, size_t alignment, size_t page_
     ShouldNotReachHere();
 #endif // _LP64
   } else {
-    initialize(size, alignment, page_size, nullptr, false, mtGC);
+    initialize(size, alignment, page_size, nullptr, false, mtJavaHeap);
   }
 
   assert(markWord::encode_pointer_as_mark(_base).decode_pointer() == _base,
@@ -664,7 +664,7 @@ ReservedHeapSpace::ReservedHeapSpace(size_t size, size_t alignment, size_t page_
          "area must be distinguishable from marks for mark-sweep");
 
   if (base() != nullptr) {
-    MemTracker::record_virtual_memory_tag((address)base(), mtGC);
+    MemTracker::record_virtual_memory_tag((address)base(), mtJavaHeap);
   }
 
   if (_fd_for_heap != -1) {
