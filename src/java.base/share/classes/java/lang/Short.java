@@ -483,8 +483,8 @@ public final class Short extends Number implements Comparable<Short>, Constable 
      *                  {@code false} otherwise.
      */
     public boolean equals(Object obj) {
-        if (obj instanceof Short) {
-            return value == ((Short)obj).shortValue();
+        if (obj instanceof Short s) {
+            return value == s.shortValue();
         }
         return false;
     }
