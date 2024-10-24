@@ -402,23 +402,13 @@ public class HierarchicalLayoutManager extends LayoutManager {
         LayoutLayer oldLayer = graph.getLayer(layerNr);
         LayoutLayer newLayerAbove =  graph.createNewLayer(layerNr);
 
-        System.out.println("moveExpandLayerDown");
         for (LayoutNode node : oldLayer) {
             for (LayoutEdge predEdge : node.getPreds()) {
                 int x = predEdge.getStartX();
                 LayoutNode dummyNode = insertDummyBetweenSourceAndEdge(predEdge);
-                System.out.println("dummyNode setX2" + predEdge.getStartX());
                 dummyNode.setX(x);
                 dummyNode.setOptimalX(x);
-                System.out.println("dummyNode getX" + dummyNode.getX());
                 graph.insertNodeIntoLayer(dummyNode, newLayerAbove);
-
-                System.out.println("dummyNode.getPreds()" + dummyNode.getPreds().size());
-                System.out.println("dummyNode.getSuccs()" + dummyNode.getSuccs().size());
-
-
-                //System.out.println("dummyNode X2" + dummyNode.getX());
-                //newLayerAbove.printLayerInfo();
             }
         }
         newLayerAbove.sort(NODE_X_COMPARATOR);
