@@ -3679,10 +3679,16 @@ public abstract class VectorStoreToLoadForwarding {
     @Fork(value = 1, jvmArgsPrepend = {
         "-XX:+UseSuperWord"
     })
-    public static class VectorStoreToLoadForwardingSuperWord extends VectorStoreToLoadForwarding {}
+    public static class Default extends VectorStoreToLoadForwarding {}
 
     @Fork(value = 1, jvmArgsPrepend = {
         "-XX:-UseSuperWord"
     })
-    public static class VectorStoreToLoadForwardingNoSuperWord extends VectorStoreToLoadForwarding {}
+    public static class NoVectorization extends VectorStoreToLoadForwarding {}
+
+
+    @Fork(value = 1, jvmArgsPrepend = {
+        "-XX:+UseSuperWord", "-XX:+UnlockDiagnosticVMOptions", "-XX:SuperWordStoreToLoadForwardingFailureDetection=0"
+    })
+    public static class NoStoreToLoadForwardFailureDetection extends VectorStoreToLoadForwarding {}
 }
