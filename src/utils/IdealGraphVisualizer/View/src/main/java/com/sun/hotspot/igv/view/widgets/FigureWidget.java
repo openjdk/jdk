@@ -170,6 +170,10 @@ public class FigureWidget extends Widget implements Properties.Provider, PopupMe
         this.setToolTipText(PropertiesConverter.convertToHTML(f.getProperties()));
     }
 
+    public void updatePosition() {
+        setPreferredLocation(figure.getPosition());
+    }
+
     public int getFigureHeight() {
         return middleWidget.getPreferredBounds().height;
     }

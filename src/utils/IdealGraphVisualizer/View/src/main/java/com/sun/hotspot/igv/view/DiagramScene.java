@@ -639,8 +639,6 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
                 public void movementFinished(Widget widget) {
                     if (!getModel().getShowSea()) return;
                     rebuilding = true;
-                    Set<FigureWidget> oldVisibleFigureWidgets = getVisibleFigureWidgets();
-                    Set<BlockWidget> oldVisibleBlockWidgets = getVisibleBlockWidgets();
 
                     Set<Figure> movedFigures = new HashSet<>(model.getSelectedFigures());
                     for (Figure figure : movedFigures) {
@@ -650,8 +648,10 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
                     seaLayoutManager.moveVertices(movedFigures);
 
                     rebuildConnectionLayer();
-                    updateFigureWidgetLocations(oldVisibleFigureWidgets);
-                    updateBlockWidgetBounds(oldVisibleBlockWidgets);
+                    for (FigureWidget fw : getVisibleFigureWidgets()) {
+                        fw.updatePosition();
+                    }
+
                     shadowWidget.setVisible(false);
                     pointerWidget.setVisible(false);
                     validateAll();
@@ -1003,15 +1003,14 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
                         int shiftX = lineWidget.getClientAreaLocation().x - startLocation.x;
                         if (shiftX == 0) return;
 
+                        rebuilding = true;
                         Point newFrom = new Point(origFrom.x + shiftX, origFrom.y);
                         boolean wasMoved = seaLayoutManager.moveLink(lineWidget.getFromFigure(), origFrom, newFrom);
-                        rebuilding = true;
-                        Set<FigureWidget> oldVisibleFigureWidgets = getVisibleFigureWidgets();
-                        Set<BlockWidget> oldVisibleBlockWidgets = getVisibleBlockWidgets();
                         seaLayoutManager.writeBack();
                         rebuildConnectionLayer();
-                        updateFigureWidgetLocations(oldVisibleFigureWidgets);
-                        updateBlockWidgetBounds(oldVisibleBlockWidgets);
+                        for (FigureWidget fw : getVisibleFigureWidgets()) {
+                            fw.updatePosition();
+                        }
                         validateAll();
                         if (wasMoved) {
                             addUndo();
