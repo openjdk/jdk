@@ -57,7 +57,6 @@ ifeq ($(call check-jvm-feature, compiler2), true)
   ADLC_CFLAGS += -DASSERT
 
   ADLC_CFLAGS += -D$(HOTSPOT_TARGET_CPU_DEFINE)
-
   ADLC_CFLAGS += -DINCLUDE_SUFFIX_CPU=_$(HOTSPOT_TARGET_CPU_ARCH)
 
   ADLC_CFLAGS += -I$(TOPDIR)/src/hotspot/share

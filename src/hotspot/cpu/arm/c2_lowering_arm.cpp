@@ -23,9 +23,11 @@
  */
 
 #include "precompiled.hpp"
+#ifdef COMPILER2
 #include "opto/node.hpp"
 #include "opto/phaseX.hpp"
 
-Node* PhaseLowering::lower_node(Node* in) {
+Node* PhaseLowering::lower_node(Node* n) {
   return nullptr;
 }
+#endif // COMPILER2

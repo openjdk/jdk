@@ -2461,7 +2461,6 @@ void Compile::Optimize() {
   // Lower nodes and match backend-specific patterns with Ideal nodes
   {
     TracePhase tp("lower", &timers[_t_lower]);
-    print_method(PHASE_BEFORE_LOWERING, 3);
 
     PhaseLowering lower(&igvn);
     lower.lower();
