@@ -418,12 +418,11 @@ public class HierarchicalLayoutManager extends LayoutManager {
     public void moveLink(Point linkPos, int shiftX) {
         int layerNr = graph.findLayer(linkPos.y);
         for (LayoutNode node : graph.getLayer(layerNr)) {
-            if (node.isDummy() && linkPos.x == node.getCenterX()) {
-                Point newFrom = new Point(linkPos.x + shiftX, linkPos.y);
-                Point newLocation = new Point(newFrom.x, newFrom.y + node.getHeight() / 2);
-                boolean hasSamePos = tryMoveNodeInSamePosition(node, newLocation.x, layerNr);
+            if (node.isDummy() && linkPos.x == node.getX()) {
+                int x = linkPos.x + shiftX;
+                boolean hasSamePos = tryMoveNodeInSamePosition(node, x, layerNr);
                 if (!hasSamePos) {
-                    moveNode(node, newLocation.x, node.getLayer());
+                    moveNode(node, x, layerNr);
                 }
                 break;
             }
