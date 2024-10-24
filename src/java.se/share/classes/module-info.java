@@ -23,6 +23,8 @@
  * questions.
  */
 
+import jdk.internal.javac.ParticipatesInPreview;
+
 /**
  * Defines the API of the Java SE Platform.
  *
@@ -38,7 +40,9 @@
  * @moduleGraph
  * @since 9
  */
+@ParticipatesInPreview
 module java.se {
+    requires transitive java.base;
     requires transitive java.compiler;
     requires transitive java.datatransfer;
     requires transitive java.desktop;
