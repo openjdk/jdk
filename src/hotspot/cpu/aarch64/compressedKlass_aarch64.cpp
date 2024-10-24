@@ -24,10 +24,11 @@
  */
 
 #include "precompiled.hpp"
-#include "asm/assembler.hpp"
+#include "asm/macroAssembler.hpp"
 #include "logging/log.hpp"
 #include "oops/compressedKlass.hpp"
 #include "memory/metaspace.hpp"
+#include "runtime/java.hpp"
 #include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -79,6 +80,7 @@ static char* reserve_at_eor_compatible_address(size_t size, bool aslr) {
   }
   return result;
 }
+
 char* CompressedKlassPointers::reserve_address_space_for_compressed_classes(size_t size, bool aslr, bool optimize_for_zero_base) {
 
   char* result = nullptr;
@@ -132,4 +134,28 @@ void CompressedKlassPointers::initialize(address addr, size_t len) {
   // Remember the Klass range:
   _klass_range_start = addr;
   _klass_range_end = addr + len;
+
+  // Initialize klass decode mode and check compability with decode instructions
+  if (!check_klass_decode_mode()) {
+
+    // Give fatal error if this is a specified address
+    if ((address)CompressedClassSpaceBaseAddress == _base) {
+      vm_exit_during_initialization(
+            err_msg("CompressedClassSpaceBaseAddress=" PTR_FORMAT " given with shift %d, cannot be used to encode class pointers",
+                    CompressedClassSpaceBaseAddress, _shift));
+    } else {
+      // If this fails, it's a bug in the allocation code.
+      fatal("CompressedClassSpaceBaseAddress=" PTR_FORMAT " given with shift %d, cannot be used to encode class pointers",
+            p2i(_base), _shift);
+    }
+  }
+}
+
+bool CompressedKlassPointers::check_klass_decode_mode(address base, int shift, const size_t range) {
+  return MacroAssembler::check_klass_decode_mode(base, shift, range);
+}
+
+bool CompressedKlassPointers::check_klass_decode_mode() {
+  const size_t range = CompressedKlassPointers::klass_range_end() - CompressedKlassPointers::base();
+  return check_klass_decode_mode(_base, _shift, range);
 }

@@ -1356,6 +1356,15 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
   const size_t total_range_size =
       archive_space_size + gap_size + class_space_size;
 
+  // Test that class space base address plus shift can be decoded by aarch64, when restored.
+  const int precomputed_narrow_klass_shift = ArchiveHeapWriter::precomputed_narrow_klass_shift;
+  if (!CompressedKlassPointers::check_klass_decode_mode(base_address, precomputed_narrow_klass_shift,
+                                                        total_range_size)) {
+    log_info(cds)("CDS initialization: Cannot use SharedBaseAddress " PTR_FORMAT " with precomputed shift %d.",
+                  p2i(base_address), precomputed_narrow_klass_shift);
+    use_archive_base_addr = false;
+  }
+
   assert(total_range_size > ccs_begin_offset, "must be");
   if (use_windows_memory_mapping() && use_archive_base_addr) {
     if (base_address != nullptr) {
@@ -1395,7 +1404,7 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
     }
 
     // Paranoid checks:
-    assert(base_address == nullptr || (address)total_space_rs.base() == base_address,
+    assert(!use_archive_base_addr || (address)total_space_rs.base() == base_address,
            "Sanity (" PTR_FORMAT " vs " PTR_FORMAT ")", p2i(base_address), p2i(total_space_rs.base()));
     assert(is_aligned(total_space_rs.base(), base_address_alignment), "Sanity");
     assert(total_space_rs.size() == total_range_size, "Sanity");
