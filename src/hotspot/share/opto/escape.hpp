@@ -673,9 +673,11 @@ public:
     assert(ptn != nullptr, "only existing PointsTo node");
     _nodes.at_put(n->_idx, ptn);
   }
-
+  
   void add_to_congraph_unsafe_access(Node* n, uint opcode, Unique_Node_List* delayed_worklist);
   bool add_final_edges_unsafe_access(Node* n, uint opcode);
+
+  int invocation() { return _invocation; }
 
 #ifndef PRODUCT
   static int _no_escape_counter;
