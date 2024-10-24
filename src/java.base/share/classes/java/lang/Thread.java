@@ -651,7 +651,7 @@ public class Thread implements Runnable {
      * Helper class to generate thread identifiers. The identifiers start at
      * {@link Thread#PRIMORDIAL_TID}&nbsp;+1 as this class cannot be used during
      * early startup to generate the identifier for the primordial thread. The
-     * counter is off-heap and shared with the VM to allow it assign thread
+     * counter is off-heap and shared with the VM to allow it to assign thread
      * identifiers to non-Java threads.
      * See Thread initialization.
      */
