@@ -28,7 +28,7 @@ import java.nio.file.Path;
 import java.util.Map;
 import static jdk.jpackage.internal.BundlerParamInfo.createStringBundlerParam;
 import jdk.jpackage.internal.Workshop.Impl;
-import jdk.jpackage.internal.Workshop.Proxy;
+import static jdk.jpackage.internal.Workshop.withAppImageDir;
 
 final class WorkshopFromParams {
 
@@ -48,12 +48,7 @@ final class WorkshopFromParams {
             appImageDir = defaultWorkshop.buildRoot().resolve("image").resolve(dir);
         }
 
-        return new Proxy(defaultWorkshop) {
-            @Override
-            public Path appImageDir() {
-                return appImageDir;
-            }
-        };
+        return withAppImageDir(defaultWorkshop, appImageDir);
     }
 
     static final BundlerParamInfo<Workshop> WORKSHOP = BundlerParamInfo.createBundlerParam(
