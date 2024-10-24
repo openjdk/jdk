@@ -380,7 +380,7 @@ Defaults to 4.
 Sets the argument `-timeoutHandlerTimeout` for JTReg. The default value is 0.
 This is only valid if the failure handler is built.
 
-#### JTREG_TEST_THREAD_FACTORY
+#### TEST_THREAD_FACTORY
 
 Sets the `-testThreadFactory` for JTReg. It should be the fully qualified
 classname of a class which implements `java.util.concurrent.ThreadFactory`. One
