@@ -725,10 +725,16 @@ void disarm_assert_poison() {
 
 static void store_context(const void* context) {
   memcpy(&g_stored_assertion_context, context, sizeof(ucontext_t));
-#if defined(LINUX) && defined(PPC64)
+#if defined(LINUX)
   // on Linux ppc64, ucontext_t contains pointers into itself which have to be patched up
   //  after copying the context (see comment in sys/ucontext.h):
+#if defined(PPC64)
   *((void**) &g_stored_assertion_context.uc_mcontext.regs) = &(g_stored_assertion_context.uc_mcontext.gp_regs);
+#elif defined(AMD64)
+  // In the copied version, fpregs should point to the copied contents. Preserve the offset.
+  intptr_t fpregs_offset = (address)(void*)(((const ucontext_t*)context)->uc_mcontext.fpregs) - (address)context;
+  *((void**) &g_stored_assertion_context.uc_mcontext.fpregs) = (void*)((address)(void*)&g_stored_assertion_context + fpregs_offset);
+#endif
 #endif
 }
 

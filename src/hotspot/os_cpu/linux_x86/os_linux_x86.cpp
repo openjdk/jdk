@@ -544,6 +544,16 @@ void os::print_context(outputStream *st, const void *context) {
   st->print(", ERR=" INTPTR_FORMAT, (intptr_t)uc->uc_mcontext.gregs[REG_ERR]);
   st->cr();
   st->print("  TRAPNO=" INTPTR_FORMAT, (intptr_t)uc->uc_mcontext.gregs[REG_TRAPNO]);
+#ifndef MUSL_LIBC
+  // Add XMM registers + MXCSR. Note that C2 uses XMM to spill GPR values including pointers.
+  st->cr();
+  st->cr();
+  for (int i = 0; i < 16; ++i) {
+    const int64_t* xmm_val_addr = (int64_t*)&(uc->uc_mcontext.fpregs->_xmm[i]);
+    st->print_cr("XMM[%d]=" INTPTR_FORMAT " " INTPTR_FORMAT, i, xmm_val_addr[1], xmm_val_addr[0]);
+  }
+  st->print("  MXCSR=" UINT32_FORMAT_X_0, uc->uc_mcontext.fpregs->mxcsr);
+#endif
 #else
   st->print(  "EAX=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_EAX]);
   st->print(", EBX=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_EBX]);
