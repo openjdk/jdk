@@ -58,7 +58,7 @@ public class ConfigException extends Exception {
             return new ConfigException(msg, advice, cause);
         }
 
-        public Builder msg(String msgId, Object ... args) {
+        public Builder message(String msgId, Object ... args) {
             msg = I18N.format(msgId, args);
             return this;
         }
