@@ -139,18 +139,12 @@ public final class SecurityUtils {
      * Returns a key size in bits for tests, depending on the specified algorithm
      */
     public static int getTestKeySize(String algo) {
-        switch (algo) {
-            case "RSA" -> {
-                return KeySize.RSA.keySize;
-            }
-            case "DSA" -> {
-                return KeySize.DSA.keySize;
-            }
-            case "DH", "DiffieHellman" -> {
-                return KeySize.DH.keySize;
-            }
+        return switch (algo) {
+            case "RSA" -> KeySize.RSA.keySize;
+            case "DSA" -> KeySize.DSA.keySize;
+            case "DH", "DiffieHellman" -> KeySize.DH.keySize;
             default -> throw new RuntimeException("Test key size not defined for " + algo);
-        }
+        };
     }
 
     private static void removeFromDSigPolicy(String rule, List<String> algs) {
