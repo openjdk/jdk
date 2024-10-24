@@ -169,6 +169,7 @@ class RootNode;
 class SafePointNode;
 class SafePointScalarObjectNode;
 class SafePointScalarMergeNode;
+class SaturatingVectorNode;
 class StartNode;
 class State;
 class StoreNode;
@@ -741,6 +742,7 @@ public:
         DEFINE_CLASS_ID(CompressM, Vector, 6)
         DEFINE_CLASS_ID(Reduction, Vector, 7)
         DEFINE_CLASS_ID(NegV, Vector, 8)
+        DEFINE_CLASS_ID(SaturatingVector, Vector, 9)
       DEFINE_CLASS_ID(Con, Type, 8)
           DEFINE_CLASS_ID(ConI, Con, 0)
       DEFINE_CLASS_ID(SafePointScalarMerge, Type, 9)
@@ -1010,6 +1012,7 @@ public:
   DEFINE_CLASS_QUERY(StoreVectorScatter)
   DEFINE_CLASS_QUERY(StoreVectorMasked)
   DEFINE_CLASS_QUERY(StoreVectorScatterMasked)
+  DEFINE_CLASS_QUERY(SaturatingVector)
   DEFINE_CLASS_QUERY(ShiftV)
   DEFINE_CLASS_QUERY(Unlock)
 

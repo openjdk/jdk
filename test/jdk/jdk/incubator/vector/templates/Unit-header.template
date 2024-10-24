@@ -38,6 +38,9 @@ import jdk.incubator.vector.VectorShuffle;
 import jdk.incubator.vector.VectorMask;
 import jdk.incubator.vector.VectorOperators;
 import jdk.incubator.vector.Vector;
+#if[!FP]
+import jdk.incubator.vector.VectorMath;
+#end[!FP]
 
 #if[Byte]
 import jdk.incubator.vector.ByteVector;
@@ -1221,6 +1224,35 @@ relativeError));
             })
     );
 
+#if[!FP]
+    static final List<IntFunction<$type$[]>> $TYPE$_SATURATING_GENERATORS = List.of(
+            withToString("$type$[$Boxtype$.MIN_VALUE]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> ($type$)($Boxtype$.MIN_VALUE));
+            }),
+            withToString("$type$[$Boxtype$.MAX_VALUE]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> ($type$)($Boxtype$.MAX_VALUE));
+            }),
+            withToString("$type$[$Boxtype$.MAX_VALUE - 100]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> ($type$)($Boxtype$.MAX_VALUE - 100));
+            }),
+            withToString("$type$[$Boxtype$.MIN_VALUE + 100]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> ($type$)($Boxtype$.MIN_VALUE + 100));
+            }),
+            withToString("$type$[-i * 5]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> ($type$)(-i * 5));
+            }),
+            withToString("$type$[i * 5]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> ($type$)(i * 5));
+            })
+    );
+
+#end[!FP]
     // Create combinations of pairs
     // @@@ Might be sensitive to order e.g. div by 0
     static final List<List<IntFunction<$type$[]>>> $TYPE$_GENERATOR_PAIRS =
@@ -1228,6 +1260,13 @@ relativeError));
                 flatMap(fa -> $TYPE$_GENERATORS.stream().skip(1).map(fb -> List.of(fa, fb))).
                 collect(Collectors.toList());
 
+#if[!FP]
+    static final List<List<IntFunction<$type$[]>>> $TYPE$_SATURATING_GENERATOR_PAIRS =
+        Stream.of($TYPE$_GENERATORS.get(0)).
+                flatMap(fa -> $TYPE$_SATURATING_GENERATORS.stream().skip(1).map(fb -> List.of(fa, fb))).
+                collect(Collectors.toList());
+
+#end[!FP]
     @DataProvider
     public Object[][] boolUnaryOpProvider() {
         return BOOL_ARRAY_GENERATORS.stream().
@@ -1258,12 +1297,31 @@ relativeError));
                 toArray(Object[][]::new);
     }
 
+#if[!FP]
+    @DataProvider
+    public Object[][] $type$SaturatingBinaryOpProvider() {
+        return $TYPE$_SATURATING_GENERATOR_PAIRS.stream().map(List::toArray).
+                toArray(Object[][]::new);
+    }
+
+#end[!FP]
     @DataProvider
     public Object[][] $type$IndexedOpProvider() {
         return $TYPE$_GENERATOR_PAIRS.stream().map(List::toArray).
                 toArray(Object[][]::new);
     }
 
+#if[!FP]
+    @DataProvider
+    public Object[][] $type$SaturatingBinaryOpMaskProvider() {
+        return BOOLEAN_MASK_GENERATORS.stream().
+                flatMap(fm -> $TYPE$_SATURATING_GENERATOR_PAIRS.stream().map(lfa -> {
+                    return Stream.concat(lfa.stream(), Stream.of(fm)).toArray();
+                })).
+                toArray(Object[][]::new);
+    }
+
+#end[!FP]
     @DataProvider
     public Object[][] $type$BinaryOpMaskProvider() {
         return BOOLEAN_MASK_GENERATORS.stream().

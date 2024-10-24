@@ -56,10 +56,21 @@ public:
                 XMMRegister dst, XMMRegister src1, XMMRegister src2,
                 int vlen_enc);
 
+  void vpuminmax(int opcode, BasicType elem_bt,
+                XMMRegister dst, XMMRegister src1, XMMRegister src2,
+                int vlen_enc);
+
+  void vpuminmax(int opcode, BasicType elem_bt,
+                XMMRegister dst, XMMRegister src1, Address src2,
+                int vlen_enc);
+
   void vminmax_fp(int opcode, BasicType elem_bt,
                   XMMRegister dst, XMMRegister a, XMMRegister b,
                   XMMRegister tmp, XMMRegister atmp, XMMRegister btmp,
                   int vlen_enc);
+
+  void vpuminmaxq(int opcode, XMMRegister dst, XMMRegister src1, XMMRegister src2, XMMRegister xtmp1, XMMRegister xtmp2, int vlen_enc);
+
   void evminmax_fp(int opcode, BasicType elem_bt,
                    XMMRegister dst, XMMRegister a, XMMRegister b,
                    KRegister ktmp, XMMRegister atmp, XMMRegister btmp,
@@ -105,6 +116,7 @@ public:
 
   void evmovdqu(BasicType type, KRegister kmask, XMMRegister dst, Address src, bool merge, int vector_len);
   void evmovdqu(BasicType type, KRegister kmask, Address dst, XMMRegister src, bool merge, int vector_len);
+  void evmovdqu(BasicType type, KRegister kmask, XMMRegister dst, XMMRegister src, bool merge, int vector_len);
 
   // extract
   void extract(BasicType typ, Register dst, XMMRegister src, int idx);
@@ -504,6 +516,70 @@ public:
 #endif
   void vgather8b_offset(BasicType elem_bt, XMMRegister dst, Register base, Register idx_base,
                               Register offset, Register rtmp, int vlen_enc);
+
+  void vector_saturating_op(int opc, BasicType elem_bt, XMMRegister dst, XMMRegister src1, XMMRegister src2, bool is_unsigned, int vlen_enc);
+
+  void vector_saturating_op(int opc, BasicType elem_bt, XMMRegister dst, XMMRegister src1, Address src2, bool is_unsigned, int vlen_enc);
+
+  void vector_saturating_op(int opc, BasicType elem_bt, XMMRegister dst, XMMRegister src1, XMMRegister src2, int vlen_enc);
+
+  void vector_saturating_op(int opc, BasicType elem_bt, XMMRegister dst, XMMRegister src1, Address src2, int vlen_enc);
+
+  void vector_saturating_unsigned_op(int opc, BasicType elem_bt, XMMRegister dst, XMMRegister src1, XMMRegister src2, int vlen_enc);
+
+  void vector_saturating_unsigned_op(int opc, BasicType elem_bt, XMMRegister dst, XMMRegister src1, Address src2, int vlen_enc);
+
+  void vector_sub_dq_saturating_unsigned_evex(BasicType elem_bt, XMMRegister dst, XMMRegister src1, XMMRegister src2, KRegister ktmp, int vlen_enc);
+
+  void vector_sub_dq_saturating_unsigned_avx(BasicType elem_bt, XMMRegister dst, XMMRegister src1, XMMRegister src2,
+                                             XMMRegister xtmp1, XMMRegister xtmp2, int vlen_enc);
+
+  void vector_add_dq_saturating_unsigned_evex(BasicType elem_bt, XMMRegister dst, XMMRegister src1, XMMRegister src2,
+                                              XMMRegister xtmp1, XMMRegister xtmp2, KRegister ktmp, int vlen_enc);
+
+  void vector_add_dq_saturating_unsigned_avx(BasicType elem_bt, XMMRegister dst, XMMRegister src1, XMMRegister src2,
+                                             XMMRegister xtmp1, XMMRegister xtmp2, XMMRegister xtmp3, int vlen_enc);
+
+  void vector_addsub_dq_saturating_avx(int opc, BasicType elem_bt, XMMRegister dst, XMMRegister src1, XMMRegister src2,
+                                       XMMRegister xtmp1, XMMRegister xtmp2, XMMRegister xtmp3, XMMRegister xtmp4, int vlen_enc);
+
+  void vector_addsub_dq_saturating_evex(int opc, BasicType elem_bt, XMMRegister dst, XMMRegister src1, XMMRegister src2,
+                                        XMMRegister xtmp1, XMMRegister xtmp2, KRegister ktmp1, KRegister ktmp2, int vlen_enc);
+
+  void evpmovd2m_emu(KRegister ktmp, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2, int vlen_enc, bool xtmp2_hold_M1 = false);
+
+  void evpmovq2m_emu(KRegister ktmp, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2, int vlen_enc, bool xtmp2_hold_M1 = false);
+
+  void vpsign_extend_dq(BasicType etype, XMMRegister dst, XMMRegister src, int vlen_enc);
+
+  void vpgenmin_value(BasicType etype, XMMRegister dst, XMMRegister allones, int vlen_enc, bool compute_allones = false);
+
+  void vpgenmax_value(BasicType etype, XMMRegister dst, XMMRegister allones, int vlen_enc, bool compute_allones = false);
+
+  void evpcmpu(BasicType etype, KRegister kmask,  XMMRegister src1, XMMRegister src2, Assembler::ComparisonPredicate cond, int vlen_enc);
+
+  void vpcmpgt(BasicType etype, XMMRegister dst, XMMRegister src1, XMMRegister src2, int vlen_enc);
+
+  void evpmov_vec_to_mask(BasicType etype, KRegister ktmp, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
+                          int vlen_enc, bool xtmp2_hold_M1 = false);
+
+  void evmasked_saturating_op(int ideal_opc, BasicType elem_bt, KRegister mask, XMMRegister dst, XMMRegister src1, XMMRegister src2,
+                              bool is_unsigned, bool merge, int vlen_enc);
+
+  void evmasked_saturating_op(int ideal_opc, BasicType elem_bt, KRegister mask, XMMRegister dst, XMMRegister src1, Address src2,
+                              bool is_unsigned, bool merge, int vlen_enc);
+
+  void evmasked_saturating_signed_op(int ideal_opc, BasicType elem_bt, KRegister mask, XMMRegister dst, XMMRegister src1, XMMRegister src2,
+                              bool merge, int vlen_enc);
+
+  void evmasked_saturating_signed_op(int ideal_opc, BasicType elem_bt, KRegister mask, XMMRegister dst, XMMRegister src1, Address src2,
+                              bool merge, int vlen_enc);
+
+  void evmasked_saturating_unsigned_op(int ideal_opc, BasicType elem_bt, KRegister mask, XMMRegister dst, XMMRegister src1,
+                                       XMMRegister src2, bool merge, int vlen_enc);
+
+  void evmasked_saturating_unsigned_op(int ideal_opc, BasicType elem_bt, KRegister mask, XMMRegister dst, XMMRegister src1,
+                                       Address src2, bool merge, int vlen_enc);
 
   void select_from_two_vectors_evex(BasicType elem_bt, XMMRegister dst, XMMRegister src1, XMMRegister src2, int vlen_enc);
 
