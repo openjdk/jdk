@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Objects;
+import java.util.Optional;
 
 public final class PackageFile {
 
@@ -46,7 +47,8 @@ public final class PackageFile {
      * @param appLayout - application layout
      */
     public static Path getPathInAppImage(ApplicationLayout appLayout) {
-        return appLayout.appDirectory().resolve(FILENAME);
+        return Optional.ofNullable(appLayout.appDirectory()).map(
+                path -> path.resolve(FILENAME)).orElse(null);
     }
 
     PackageFile(String packageName) {

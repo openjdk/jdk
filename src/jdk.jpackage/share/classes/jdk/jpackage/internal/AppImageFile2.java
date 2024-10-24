@@ -159,7 +159,8 @@ final class AppImageFile2 {
      * @param appLayout - application layout
      */
     static Path getPathInAppImage(ApplicationLayout appLayout) {
-        return appLayout.appDirectory().resolve(FILENAME);
+        return Optional.ofNullable(appLayout.appDirectory()).map(
+                path -> path.resolve(FILENAME)).orElse(null);
     }
 
     /**
