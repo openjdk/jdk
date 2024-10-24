@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,7 @@ import jdk.jpackage.internal.PackageFile;
 import static jdk.jpackage.test.AdditionalLauncher.forEachAdditionalLauncher;
 import jdk.jpackage.test.Functional.ThrowingConsumer;
 import jdk.jpackage.test.Functional.ThrowingFunction;
+import jdk.jpackage.test.Functional.ThrowingRunnable;
 import jdk.jpackage.test.Functional.ThrowingSupplier;
 
 /**
@@ -76,6 +77,7 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
         immutable = cmd.immutable;
         prerequisiteActions = new Actions(cmd.prerequisiteActions);
         verifyActions = new Actions(cmd.verifyActions);
+        executeInDirectory = cmd.executeInDirectory;
     }
 
     JPackageCommand createImmutableCopy() {
@@ -198,7 +200,10 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
     }
 
     public Path outputDir() {
-        return getArgumentValue("--dest", () -> Path.of("."), Path::of);
+        var path = getArgumentValue("--dest", () -> Path.of("."), Path::of);
+        return Optional.ofNullable(executeInDirectory).map(base -> {
+            return base.resolve(path);
+        }).orElse(path);
     }
 
     public Path inputDir() {
@@ -691,6 +696,12 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
         return this;
     }
 
+    public JPackageCommand setDirectory(Path v) {
+        verifyMutable();
+        executeInDirectory = v;
+        return this;
+    }
+
     public JPackageCommand saveConsoleOutput(boolean v) {
         verifyMutable();
         saveConsoleOutput = v;
@@ -733,6 +744,7 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
     private Executor createExecutor() {
         Executor exec = new Executor()
                 .saveOutput(saveConsoleOutput).dumpOutput(!suppressOutput)
+                .setDirectory(executeInDirectory)
                 .addArguments(args);
 
         if (isWithToolProvider()) {
@@ -755,18 +767,19 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
         executePrerequisiteActions();
 
         if (hasArgument("--dest")) {
-            if (isImagePackageType()) {
-                TKit.deleteDirectoryContentsRecursive(outputDir());
-            } else {
-                nullableOutputBundle().ifPresent(path -> {
-                    if (ThrowingSupplier.toSupplier(() -> TKit.deleteIfExists(
-                            path)).get()) {
+            nullableOutputBundle().ifPresent(path -> {
+                ThrowingRunnable.toRunnable(() -> {
+                    if (Files.isDirectory(path)) {
+                        TKit.deleteDirectoryRecursive(path, String.format(
+                                "Delete [%s] folder before running jpackage",
+                                path));
+                    } else if (TKit.deleteIfExists(path)) {
                         TKit.trace(String.format(
                                 "Deleted [%s] file before running jpackage",
                                 path));
                     }
-                });
-            }
+                }).run();
+            });
         }
 
         Path resourceDir = getArgumentValue("--resource-dir", () -> null, Path::of);
@@ -1111,6 +1124,7 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
     private boolean immutable;
     private final Actions prerequisiteActions;
     private final Actions verifyActions;
+    private Path executeInDirectory;
     private static boolean defaultWithToolProvider;
 
     private final static Map<String, PackageType> PACKAGE_TYPES = Functional.identity(

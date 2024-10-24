@@ -121,29 +121,52 @@ public class IOUtils {
     }
 
     public static void copyRecursive(Path src, Path dest,
-            final List<String> excludes, CopyOption... options)
+            final List<Path> excludes, CopyOption... options)
             throws IOException {
+
+        List<CopyAction> copyActions = new ArrayList<>();
+
         Files.walkFileTree(src, new SimpleFileVisitor<Path>() {
             @Override
             public FileVisitResult preVisitDirectory(final Path dir,
-                    final BasicFileAttributes attrs) throws IOException {
-                if (excludes.contains(dir.toFile().getName())) {
+                    final BasicFileAttributes attrs) {
+                if (isPathMatch(dir, excludes)) {
                     return FileVisitResult.SKIP_SUBTREE;
                 } else {
-                    Files.createDirectories(dest.resolve(src.relativize(dir)));
+                    copyActions.add(new CopyAction(null, dest.resolve(src.
+                            relativize(dir))));
                     return FileVisitResult.CONTINUE;
                 }
             }
 
             @Override
             public FileVisitResult visitFile(final Path file,
-                    final BasicFileAttributes attrs) throws IOException {
-                if (!excludes.contains(file.toFile().getName())) {
-                    Files.copy(file, dest.resolve(src.relativize(file)), options);
+                    final BasicFileAttributes attrs) {
+                if (!isPathMatch(file, excludes)) {
+                    copyActions.add(new CopyAction(file, dest.resolve(src.
+                            relativize(file))));
                 }
                 return FileVisitResult.CONTINUE;
             }
         });
+
+        for (var copyAction : copyActions) {
+            copyAction.apply(options);
+        }
+    }
+
+    private static record CopyAction(Path src, Path dest) {
+        void apply(CopyOption... options) throws IOException {
+            if (src == null) {
+                Files.createDirectories(dest);
+            } else {
+                Files.copy(src, dest, options);
+            }
+        }
+    }
+
+    private static boolean isPathMatch(Path what, List<Path> paths) {
+        return paths.stream().anyMatch(what::endsWith);
     }
 
     public static void copyFile(Path sourceFile, Path destFile)
