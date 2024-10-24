@@ -743,7 +743,7 @@ void Metaspace::global_initialize() {
                     CompressedClassSpaceBaseAddress, Metaspace::reserve_alignment()));
       }
       rs = ReservedSpace(size, Metaspace::reserve_alignment(),
-                         os::vm_page_size() /* large */, (char*)base, mtClass);
+                         os::vm_page_size() /* large */, (char*)base, mtMetaspace);
       if (rs.is_reserved()) {
         log_info(metaspace)("Successfully forced class space address to " PTR_FORMAT, p2i(base));
       } else {
@@ -771,7 +771,7 @@ void Metaspace::global_initialize() {
                    CompressedClassSpaceSize));
     }
 
-    // Mark class space as such
+    // Mark metaspace as such
     MemTracker::record_virtual_memory_tag((address)rs.base(), mtMetaspace);
 
     // Initialize space
