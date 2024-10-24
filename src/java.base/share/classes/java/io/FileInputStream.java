@@ -29,6 +29,7 @@ import java.nio.channels.FileChannel;
 import java.util.Arrays;
 import jdk.internal.util.ArraysSupport;
 import jdk.internal.event.FileReadEvent;
+import jdk.internal.vm.annotation.Stable;
 import sun.nio.ch.FileChannelImpl;
 
 /**
@@ -80,6 +81,10 @@ public class FileInputStream extends InputStream
     private final Object closeLock = new Object();
 
     private volatile boolean closed;
+
+    // This field indicates whether the position0() or skip0() may be
+    // invoked without encountering an illegal seek exception.
+    private @Stable Boolean canSeek;
 
     /**
      * Creates a {@code FileInputStream} to read from an existing file
@@ -331,6 +336,9 @@ public class FileInputStream extends InputStream
 
     @Override
     public byte[] readAllBytes() throws IOException {
+        if (!canSeek())
+            return super.readAllBytes();
+
         long length = length();
         long position = position();
         long size = length - position;
@@ -382,6 +390,9 @@ public class FileInputStream extends InputStream
         if (len == 0)
             return new byte[0];
 
+        if (!canSeek())
+            return super.readNBytes(len);
+
         long length = length();
         long position = position();
         long size = length - position;
@@ -418,7 +429,7 @@ public class FileInputStream extends InputStream
     @Override
     public long transferTo(OutputStream out) throws IOException {
         long transferred = 0L;
-        if (out instanceof FileOutputStream fos) {
+        if (out instanceof FileOutputStream fos && canSeek()) {
             FileChannel fc = getChannel();
             long pos = fc.position();
             transferred = fc.transferTo(pos, Long.MAX_VALUE, fos.getChannel());
@@ -471,7 +482,10 @@ public class FileInputStream extends InputStream
      */
     @Override
     public long skip(long n) throws IOException {
-        return skip0(n);
+        if (canSeek())
+            return skip0(n);
+
+        return super.skip(n);
     }
 
     private native long skip0(long n) throws IOException;
@@ -602,6 +616,19 @@ public class FileInputStream extends InputStream
         }
         return fc;
     }
+
+    /**
+     * Whether seeking is supported. Seeking is used in the implementations of
+     * position0() and skip0().
+     */
+    private boolean canSeek() {
+        Boolean canSeek = this.canSeek;
+        if (canSeek == null) {
+            this.canSeek = canSeek = canSeek0(fd);
+        }
+        return canSeek;
+    }
+    private native boolean canSeek0(FileDescriptor fd);
 
     private static native void initIDs();
 
