@@ -164,9 +164,9 @@ void CardTable::resize_covered_region(MemRegion new_region) {
 
     os::commit_memory_or_exit((char*)delta.start(),
                               delta.byte_size(),
-                              _page_size,
                               !ExecMem,
-                              "card table expansion");
+                              "card table expansion",
+                              _page_size);
 
     memset(delta.start(), clean_card, delta.byte_size());
   } else {

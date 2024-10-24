@@ -1762,18 +1762,20 @@ static void warn_fail_commit_memory(char* addr, size_t size, bool exec,
 }
 #endif
 
+// Alignment_hint is ignored on this OS.
 void os::pd_commit_memory_or_exit(char* addr, size_t size, bool exec,
-                                  const char* mesg) {
+                                  const char* mesg, size_t alignment_hint) {
   assert(mesg != nullptr, "mesg must be specified");
-  if (!pd_commit_memory(addr, size, exec)) {
+  if (!pd_commit_memory(addr, size, exec, alignment_hint)) {
     // Add extra info in product mode for vm_exit_out_of_memory():
     PRODUCT_ONLY(warn_fail_commit_memory(addr, size, exec, errno);)
     vm_exit_out_of_memory(size, OOM_MMAP_ERROR, "%s", mesg);
   }
 }
 
-bool os::pd_commit_memory(char* addr, size_t size, bool exec) {
-
+// Alignment_hint is ignored on this OS.
+bool os::pd_commit_memory(char* addr, size_t size, bool exec,
+                          size_t alignment_hint) {
   assert(is_aligned_to(addr, os::vm_page_size()),
     "addr " PTR_FORMAT " not aligned to vm_page_size (" SIZE_FORMAT ")",
     p2i(addr), os::vm_page_size());
@@ -1795,17 +1797,6 @@ bool os::pd_commit_memory(char* addr, size_t size, bool exec) {
   }
 
   return true;
-}
-
-bool os::pd_commit_memory(char* addr, size_t size, size_t alignment_hint, bool exec) {
-  return pd_commit_memory(addr, size, exec);
-}
-
-void os::pd_commit_memory_or_exit(char* addr, size_t size,
-                                  size_t alignment_hint, bool exec,
-                                  const char* mesg) {
-  // Alignment_hint is ignored on this OS.
-  pd_commit_memory_or_exit(addr, size, exec, mesg);
 }
 
 bool os::pd_uncommit_memory(char* addr, size_t size, bool exec) {
