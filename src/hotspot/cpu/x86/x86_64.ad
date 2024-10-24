@@ -1596,6 +1596,10 @@ OptoRegPair Matcher::vector_return_value(uint ideal_reg) {
   return OptoRegPair(hi, lo);
 }
 
+bool Matcher::use_same_src_and_dest_reg_for_CastX2P(void) {
+  return false;
+}
+
 // Is this branch offset short enough that a short branch can be used?
 //
 // NOTE: If the platform does not provide any short branch variants, then
