@@ -959,6 +959,14 @@ public class Long64VectorTests extends AbstractVectorTest {
             withToString("long[Long.MIN_VALUE + 100]", (int s) -> {
                 return fill(s * BUFFER_REPS,
                             i -> (long)(Long.MIN_VALUE + 100));
+            }),
+            withToString("long[-i * 5]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> (long)(-i * 5));
+            }),
+            withToString("long[i * 5]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> (long)(i * 5));
             })
     );
 

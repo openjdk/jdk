@@ -1241,6 +1241,14 @@ relativeError));
             withToString("$type$[$Boxtype$.MIN_VALUE + 100]", (int s) -> {
                 return fill(s * BUFFER_REPS,
                             i -> ($type$)($Boxtype$.MIN_VALUE + 100));
+            }),
+            withToString("$type$[-i * 5]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> ($type$)(-i * 5));
+            }),
+            withToString("$type$[i * 5]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> ($type$)(i * 5));
             })
     );
 

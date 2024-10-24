@@ -969,6 +969,14 @@ public class Int512VectorTests extends AbstractVectorTest {
             withToString("int[Integer.MIN_VALUE + 100]", (int s) -> {
                 return fill(s * BUFFER_REPS,
                             i -> (int)(Integer.MIN_VALUE + 100));
+            }),
+            withToString("int[-i * 5]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> (int)(-i * 5));
+            }),
+            withToString("int[i * 5]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> (int)(i * 5));
             })
     );
 

@@ -969,6 +969,14 @@ public class Short512VectorTests extends AbstractVectorTest {
             withToString("short[Short.MIN_VALUE + 100]", (int s) -> {
                 return fill(s * BUFFER_REPS,
                             i -> (short)(Short.MIN_VALUE + 100));
+            }),
+            withToString("short[-i * 5]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> (short)(-i * 5));
+            }),
+            withToString("short[i * 5]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> (short)(i * 5));
             })
     );
 

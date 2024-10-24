@@ -979,6 +979,14 @@ public class Byte512VectorTests extends AbstractVectorTest {
             withToString("byte[Byte.MIN_VALUE + 100]", (int s) -> {
                 return fill(s * BUFFER_REPS,
                             i -> (byte)(Byte.MIN_VALUE + 100));
+            }),
+            withToString("byte[-i * 5]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> (byte)(-i * 5));
+            }),
+            withToString("byte[i * 5]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> (byte)(i * 5));
             })
     );
 
