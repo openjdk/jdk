@@ -159,6 +159,9 @@ interface Package {
                         }
                     }
                 }
+                case WinExe, WinMsi -> {
+                    return v;
+                }
             }
             return v.resolve(packageName());
         }).orElseGet(() -> defaultInstallDir(this));
@@ -301,8 +304,8 @@ interface Package {
     }
 
     static Path mapInstallDir(Path installDir, PackageType pkgType) throws ConfigException {
-        var ex = new ConfigException(MessageFormat.format(I18N.getString("error.invalid-install-dir"),
-                installDir), null);
+        var ex = ConfigException.build().message("error.invalid-install-dir",
+                installDir).create();
 
         if (installDir.getNameCount() == 0) {
             throw ex;
