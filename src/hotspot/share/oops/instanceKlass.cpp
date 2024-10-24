@@ -2647,7 +2647,9 @@ void InstanceKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handl
     // have been redefined.
     bool trace_name_printed = false;
     adjust_default_methods(&trace_name_printed);
-    vtable().initialize_vtable();
+    if (is_linked()) {
+      vtable().initialize_vtable();
+    }
     itable().initialize_itable();
   }
 #endif
