@@ -638,8 +638,8 @@ public class CAInterop {
                     new CATestURLs("https://good.gsr4.demo.pki.goog",
                     "https://revoked.gsr4.demo.pki.goog");
             case "gtsrootcar1" ->
-                    new CATestURLs("https://good.gtsr1.demosite.pki.goog/",
-                    "https://revoked.gtsr1.demosite.pki.goog/");
+                    new CATestURLs("https://good.gtsr1.demosite.pki.goog",
+                    "https://revoked.gtsr1.demosite.pki.goog");
             case "gtsrootcar2" ->
                     new CATestURLs("https://good.gtsr2.demosite.pki.goog",
                     "https://revoked.gtsr2.demosite.pki.goog");
