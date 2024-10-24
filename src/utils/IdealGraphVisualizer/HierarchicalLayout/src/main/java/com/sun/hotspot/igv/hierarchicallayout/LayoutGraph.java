@@ -217,6 +217,20 @@ public class LayoutGraph {
         return layers.indexOf(layer);
     }
 
+    public int findLayer(int y) {
+        int optimalLayer = -1;
+        int minDistance = Integer.MAX_VALUE;
+        for (int l = 0; l < getLayerCount(); l++) {
+            int layerY = getLayer(l).getCenter();
+            int distance = Math.abs(layerY - y);
+            if (distance < minDistance) {
+                minDistance = distance;
+                optimalLayer = l;
+            }
+        }
+        return optimalLayer;
+    }
+
     public void insertNodeIntoLayer(LayoutNode node, LayoutLayer layer) {
         int layerNr = getLayerNr(layer);
         node.setLayer(layerNr);
