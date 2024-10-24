@@ -1398,7 +1398,11 @@ public class VectorGatherMaskFoldingTest {
     public static void main(String[] args) {
         TestFramework testFramework = new TestFramework();
         testFramework.setDefaultWarmup(10000)
-                     .addFlags("--add-modules=jdk.incubator.vector", "-XX:+IgnoreUnrecognizedVMOptions", "-XX:+IncrementalInlineForceCleanup")
+                     .addFlags("--add-modules=jdk.incubator.vector")
+                     .start();
+        testFramework = new TestFramework();
+        testFramework.setDefaultWarmup(10000)
+                     .addFlags("--add-modules=jdk.incubator.vector", "-XX:-TieredCompilation")
                      .start();
     }
 }
