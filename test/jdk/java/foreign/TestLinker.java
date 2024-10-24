@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,9 @@ import org.testng.annotations.Test;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.Linker;
 import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.PaddingLayout;
+import java.lang.foreign.SequenceLayout;
+import java.lang.foreign.StructLayout;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 import java.util.ArrayList;
@@ -49,6 +52,7 @@ import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertNotSame;
 import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.expectThrows;
 
 public class TestLinker extends NativeTestHelper {
 
@@ -149,6 +153,27 @@ public class TestLinker extends NativeTestHelper {
         MemoryLayout layout = LINKER.canonicalLayouts().get(typeName);
         assertNotNull(layout);
         assertTrue(layout instanceof ValueLayout);
+    }
+
+    @Test
+    public void embeddedPaddingLayout() {
+        PaddingLayout padding = MemoryLayout.paddingLayout(64).withByteAlignment(64);
+        SequenceLayout sequence = MemoryLayout.sequenceLayout(2, padding);
+        StructLayout struct = MemoryLayout.structLayout(sequence);
+        FunctionDescriptor fd = FunctionDescriptor.of(struct, struct);
+        Linker linker = Linker.nativeLinker();
+        var x = expectThrows(IllegalArgumentException.class, () -> linker.downcallHandle(fd));
+        assertTrue(x.getMessage().contains("not supported because a sequence of a padding layout is not allowed"));
+    }
+
+    @Test
+    public void groupLayoutWithOnlyPadding() {
+        PaddingLayout padding = MemoryLayout.paddingLayout(1);
+        StructLayout struct = MemoryLayout.structLayout(padding);
+        FunctionDescriptor fd = FunctionDescriptor.of(struct, struct);
+        Linker linker = Linker.nativeLinker();
+        var x = expectThrows(IllegalArgumentException.class, () -> linker.downcallHandle(fd));
+        assertTrue(x.getMessage().contains("is non-empty and only has padding layouts"));
     }
 
     @DataProvider
