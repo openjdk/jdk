@@ -43,11 +43,10 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import jdk.internal.constant.PrimitiveClassDescImpl;
-import jdk.internal.constant.ReferenceClassDescImpl;
+import jdk.internal.constant.ClassOrInterfaceDescImpl;
 import jdk.internal.util.Preconditions;
 
-import static java.lang.classfile.ClassFile.ACC_STATIC;
+import static java.lang.classfile.ClassFile.*;
 import static java.lang.classfile.constantpool.PoolEntry.*;
 import static java.lang.constant.ConstantDescs.*;
 import static jdk.internal.classfile.impl.RawBytecodeHelper.*;
@@ -1059,7 +1058,7 @@ public final class StackMapGenerator {
             if (desc == CD_double) return pushStack(Type.DOUBLE_TYPE, Type.DOUBLE2_TYPE);
             return desc == CD_void ? this
                     : pushStack(
-                    desc instanceof PrimitiveClassDescImpl
+                    desc.isPrimitive()
                             ? (desc == CD_float ? Type.FLOAT_TYPE : Type.INTEGER_TYPE)
                             : Type.referenceType(desc));
         }
@@ -1069,7 +1068,7 @@ public final class StackMapGenerator {
             if (desc == CD_double) return decStack1PushStack(Type.DOUBLE_TYPE, Type.DOUBLE2_TYPE);
             return desc == CD_void ? this
                     : decStack1PushStack(
-                    desc instanceof PrimitiveClassDescImpl
+                    desc.isPrimitive()
                             ? (desc == CD_float ? Type.FLOAT_TYPE : Type.INTEGER_TYPE)
                             : Type.referenceType(desc));
         }
@@ -1274,7 +1273,7 @@ public final class StackMapGenerator {
                     locals[localsSize + 1] = Type.DOUBLE2_TYPE;
                     localsSize += 2;
                 } else {
-                    if (desc instanceof ReferenceClassDescImpl) {
+                    if (!desc.isPrimitive()) {
                         type = Type.referenceType(desc);
                     } else if (desc == CD_float) {
                         type = Type.FLOAT_TYPE;
@@ -1459,14 +1458,14 @@ public final class StackMapGenerator {
         //frequently used types to reduce footprint
         static final Type OBJECT_TYPE = referenceType(CD_Object),
             THROWABLE_TYPE = referenceType(CD_Throwable),
-            INT_ARRAY_TYPE = referenceType(ReferenceClassDescImpl.ofValidated("[I")),
-            BOOLEAN_ARRAY_TYPE = referenceType(ReferenceClassDescImpl.ofValidated("[Z")),
-            BYTE_ARRAY_TYPE = referenceType(ReferenceClassDescImpl.ofValidated("[B")),
-            CHAR_ARRAY_TYPE = referenceType(ReferenceClassDescImpl.ofValidated("[C")),
-            SHORT_ARRAY_TYPE = referenceType(ReferenceClassDescImpl.ofValidated("[S")),
-            LONG_ARRAY_TYPE = referenceType(ReferenceClassDescImpl.ofValidated("[J")),
-            DOUBLE_ARRAY_TYPE = referenceType(ReferenceClassDescImpl.ofValidated("[D")),
-            FLOAT_ARRAY_TYPE = referenceType(ReferenceClassDescImpl.ofValidated("[F")),
+            INT_ARRAY_TYPE = referenceType(CD_int.arrayType()),
+            BOOLEAN_ARRAY_TYPE = referenceType(CD_boolean.arrayType()),
+            BYTE_ARRAY_TYPE = referenceType(CD_byte.arrayType()),
+            CHAR_ARRAY_TYPE = referenceType(CD_char.arrayType()),
+            SHORT_ARRAY_TYPE = referenceType(CD_short.arrayType()),
+            LONG_ARRAY_TYPE = referenceType(CD_long.arrayType()),
+            DOUBLE_ARRAY_TYPE = referenceType(CD_double.arrayType()),
+            FLOAT_ARRAY_TYPE = referenceType(CD_float.arrayType()),
             STRING_TYPE = referenceType(CD_String),
             CLASS_TYPE = referenceType(CD_Class),
             METHOD_HANDLE_TYPE = referenceType(CD_MethodHandle),
@@ -1531,8 +1530,8 @@ public final class StackMapGenerator {
             }
         }
 
-        private static final ClassDesc CD_Cloneable = ReferenceClassDescImpl.ofValidated("Ljava/lang/Cloneable;");
-        private static final ClassDesc CD_Serializable = ReferenceClassDescImpl.ofValidated("Ljava/io/Serializable;");
+        private static final ClassDesc CD_Cloneable = ClassOrInterfaceDescImpl.ofValidated("Ljava/lang/Cloneable;");
+        private static final ClassDesc CD_Serializable = ClassOrInterfaceDescImpl.ofValidated("Ljava/io/Serializable;");
 
         private Type mergeReferenceFrom(Type from, ClassHierarchyImpl context) {
             if (from == NULL_TYPE) {

@@ -1147,8 +1147,8 @@ public final class Integer extends Number
      *          {@code false} otherwise.
      */
     public boolean equals(Object obj) {
-        if (obj instanceof Integer) {
-            return value == ((Integer)obj).intValue();
+        if (obj instanceof Integer i) {
+            return value == i.intValue();
         }
         return false;
     }

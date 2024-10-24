@@ -1126,28 +1126,11 @@ public final class Locale implements Cloneable, Serializable {
     }
 
     private static Locale initDefault() {
-        String language, region, script, country, variant;
-        language = StaticProperty.USER_LANGUAGE;
-        // for compatibility, check for old user.region property
-        region = StaticProperty.USER_REGION;
-        if (!region.isEmpty()) {
-            // region can be of form country, country_variant, or _variant
-            int i = region.indexOf('_');
-            if (i >= 0) {
-                country = region.substring(0, i);
-                variant = region.substring(i + 1);
-            } else {
-                country = region;
-                variant = "";
-            }
-            script = "";
-        } else {
-            script = StaticProperty.USER_SCRIPT;
-            country = StaticProperty.USER_COUNTRY;
-            variant = StaticProperty.USER_VARIANT;
-        }
-
-        return getInstance(language, script, country, variant,
+        return getInstance(
+                StaticProperty.USER_LANGUAGE,
+                StaticProperty.USER_SCRIPT,
+                StaticProperty.USER_COUNTRY,
+                StaticProperty.USER_VARIANT,
                 getDefaultExtensions(StaticProperty.USER_EXTENSIONS)
                     .orElse(null));
     }

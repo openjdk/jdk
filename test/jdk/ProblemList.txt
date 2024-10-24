@@ -723,6 +723,9 @@ javax/swing/JMenuItem/ActionListenerCalledTwice/ActionListenerCalledTwiceTest.ja
 
 # core_tools
 
+tools/jar/ExtractFilesTest.java 8342930 generic-all
+tools/jar/MultipleManifestTest.java 8342930 generic-all
+
 
 ############################################################################
 
