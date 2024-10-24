@@ -25,9 +25,11 @@
 
 package jdk.internal.management.remote.rest;
 
+import java.io.IOException;
 import javax.management.MBeanServer;
+import javax.management.remote.JMXConnector;
 
-public interface JmxRestAdapter {
+public interface JMXRestAdapter {
 
     public void start();
 
@@ -36,4 +38,8 @@ public interface JmxRestAdapter {
     public String getUrl();
 
     public MBeanServer getMBeanServer();
+
+    public void setConnector(JMXConnector cs);
+
+    public String getConnectionId() throws IOException;
 }

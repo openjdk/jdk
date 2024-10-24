@@ -106,7 +106,7 @@ public class MBeanCollectionResource implements RestResource, NotificationListen
             allMBeans.stream().filter((objIns) -> (isMBeanAllowed(objIns.getObjectName())))
                     .forEachOrdered(objIns -> allowedMBeans.add(objIns.getObjectName()));
 //        }
-        System.err.println("ZZZZ MBeanCollectionResource.introspect " + allowedMBeans.size());
+        System.err.println("ZZZZ MBeanCollectionResource.introspect size = " + allowedMBeans.size());
     }
 
     @Override
@@ -141,8 +141,6 @@ public class MBeanCollectionResource implements RestResource, NotificationListen
     @Override
     public void handle(HttpExchange exchange) throws IOException {
         String path = URLDecoder.decode(exchange.getRequestURI().getPath(), StandardCharsets.UTF_8.name());
-
-        System.err.println("ZZZZ MBeanCollectionResource " + allowedMBeans);
 
         if (path.matches(pathPrefix + "/?$")) {
             RestResource.super.handle(exchange);

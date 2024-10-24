@@ -49,14 +49,17 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
+//import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.management.*;
 import javax.management.MBeanServerConnection;
 import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.CompositeDataSupport;
+import javax.management.remote.JMXServiceURL;
 
 import javax.net.ssl.HttpsURLConnection;
+
+import javax.management.remote.JMXConnector;
 
 import jdk.internal.management.remote.rest.json.JSONArray;
 import jdk.internal.management.remote.rest.json.JSONElement;
@@ -75,13 +78,15 @@ import jdk.internal.management.remote.rest.mapper.JSONMappingFactory;
  */
 public class HttpRestConnection implements MBeanServerConnection, Closeable {
 
+    protected JMXConnector connector;
+
     protected String baseURL;
     protected Map<String,?> env;
 
+    protected String connectionId;
     protected String defaultDomain;
     protected String[] domains;
     protected int mBeanCount;
-    protected String connectionId;
 
     // ObjectNames map to URLs and JSONObjects:
     protected HashMap<ObjectName,String> objectRefMap;
@@ -92,12 +97,11 @@ public class HttpRestConnection implements MBeanServerConnection, Closeable {
     private volatile boolean terminated;
 
     private static final String CHARSET = "UTF-8";
-    private static AtomicInteger id = new AtomicInteger(0); 
 
     /**
      * Construct given a base URL and env.
      */    
-    public HttpRestConnection(String baseURL, Map<String,?> env) {
+    public HttpRestConnection(JMXServiceURL url, String baseURL, Map<String,?> env) {
         this.env = env;
         // URL should end /jmx/servers/servername/ e.g. /jmx/servers/platform/
         this.baseURL = baseURL; // "http://" + host + ":" + port + "/jmx/servers/platform/";
@@ -105,11 +109,9 @@ public class HttpRestConnection implements MBeanServerConnection, Closeable {
         objectMap = new HashMap<ObjectName, JSONObject>();
         objectInfoRefMap = new HashMap<ObjectName,String>();
         objectInfoMap = new HashMap<ObjectName, JSONObject>();
-        connectionId = Integer.toString(id.incrementAndGet());
         terminated = false;
 
         System.err.println("XXXX HttpRestConnection created on baseURL " + baseURL);
-        new Exception("XXXXXX").printStackTrace(System.out);
     }
 
 private static void stacks() {
@@ -128,6 +130,10 @@ private static void printStack(Thread t, StackTraceElement[] stack) {
     }                                                                                                                                        
 }
 
+    public void setConnector(JMXConnector c) {
+        this.connector = c;
+    }
+
     public void setup() throws IOException { 
         // Fetch /jmx/servers/platform, populate basic info and MBeans.
         System.err.println("XXXX HttpRestConnection setup " + url(baseURL)); 
@@ -135,6 +141,7 @@ private static void printStack(Thread t, StackTraceElement[] stack) {
         if (jo == null) {
             throw new IOException("cannot read JSON from base URL");
         }
+        connectionId = JSONObject.getObjectFieldString(jo, "connectionId");
         defaultDomain = JSONObject.getObjectFieldString(jo, "defaultDomain");
 
         // domains:  "[JMImplementation, java.util.logging, jdk.management.jfr, java.lang, com.sun.management, java.nio]"
@@ -154,22 +161,17 @@ private static void printStack(Thread t, StackTraceElement[] stack) {
     }
 
     public void close() throws IOException {
-        // Consider a terminated flag like RMIConnectionImpl.
         terminated = true;
         if (notifPoller != null) {
             notifPoller.stop();
         }
-        new Exception("XXXXXX").printStackTrace(System.out);
     }
 
-     public String getConnectionId() throws IOException {
-        // Need to throw if connection closed, see FailedConnectionTest.java.
+     protected String getConnectionId() throws IOException {
         if (terminated) {
-            throw new IOException("connection closed");
+            throw new IOException("Connection closed");
         }
-        // RMIConnectionIdTest expects protocol://host
-        int p = baseURL.indexOf(":", 6);
-        return baseURL.substring(0, p) + " " + baseURL.substring(p + 1) + "  " + connectionId;
+        return connectionId;
      }
 
     protected void readMBeans() throws IOException {
@@ -194,7 +196,6 @@ private static void printStack(Thread t, StackTraceElement[] stack) {
                     try {
                         objectRefMap.put(new ObjectName(name), href);
                         objectInfoRefMap.put(new ObjectName(name), href + "/info");
-                        System.err.println("XXXX readMBeans: " + name);
                     } catch (Exception e) {
                         throw new IOException(e);
                     }
@@ -439,8 +440,6 @@ private static void printStack(Thread t, StackTraceElement[] stack) {
         }
 
         try {
-//            System.err.println("XXXXX a = '" + a.toJsonString() + "'");
-
             // MBeanResource may indicate errors or not supported with e.g.
             // "< Attribute not supported >"
             // "< Error: No such attribute >"
@@ -852,6 +851,7 @@ private static void printStack(Thread t, StackTraceElement[] stack) {
         JSONObject body = new JSONObject();
         body.put("addNotificationListener", "123");
         body.put("name", name.toString());
+        // Ideally filtering would be server-side, but could be simply but less efficiently done here at client end.
         // body.add("filter", xxxx);
 
         String href = objectRefMap.get(name);
@@ -865,7 +865,7 @@ private static void printStack(Thread t, StackTraceElement[] stack) {
             System.err.println("XXXX http client addNotifListener result: " + json.toJsonString());
             String ref = JSONObject.getObjectFieldString(json, "href");
             if (ref != null) {
-                registerNotif(ref, listener, handback);
+                registerNotif(name, ref, listener, handback);
             } else {
 
             }
@@ -893,7 +893,7 @@ private static void printStack(Thread t, StackTraceElement[] stack) {
         }
     }
 
-    protected void registerNotif(String ref, NotificationListener listener, Object handback) {
+    protected void registerNotif(ObjectName name, String ref, NotificationListener listener, Object handback) {
         // Check Notification polling thread is active.
         if (notifPoller == null) {
             notifPoller = new NotifPoller();
@@ -902,31 +902,37 @@ private static void printStack(Thread t, StackTraceElement[] stack) {
             thr.start();
         }    
         // Add ref to locations to poll.
-        notifPoller.add(ref, listener, handback);
+        notifPoller.add(name, ref, listener, handback);
     }
 
     // To poll notifs we need: a URL, a listener, a possible handback object.
     private NotifPoller notifPoller;
     protected int pollDelay = 10000;
 
+    protected record NotifData(ObjectName name, String href, NotificationListener listener, Object handback) {
+    }
+
     protected class NotifPoller implements Runnable {
 
-        protected List<String> refs;
+        protected List<NotifData> data;
+/*        protected List<String> refs;
         protected List<NotificationListener> listeners;
-        protected List<Object> handbacks;
+        protected List<Object> handbacks; */
         protected volatile boolean active;
 
         public NotifPoller() {
-            refs = new ArrayList<>();
+/*            refs = new ArrayList<>();
             listeners = new ArrayList<>();
-            handbacks = new ArrayList<>();
+            handbacks = new ArrayList<>(); */
+            data = new ArrayList<>();
             active = true;
         }
 
-        public void add(String r, NotificationListener listener, Object handback) {
-            refs.add(r);
-            listeners.add(listener);
-            handbacks.add(handback);
+        public void add(ObjectName name, String href, NotificationListener listener, Object handback) {
+            data.add(new NotifData(name, href, listener, handback));
+//            refs.add(href);
+//            listeners.add(listener);
+//            handbacks.add(handback);
         }
 
         public void run() {
@@ -936,26 +942,27 @@ private static void printStack(Thread t, StackTraceElement[] stack) {
                 } catch (InterruptedException ie) {
                     // ignored
                 }
+                synchronized(this) {
                 JSONObject body = new JSONObject();
                 // Could consider a body that requests specific notifs, but for now
                 // not poll fetches and clears all notifications.
                 body.put("blah", "123");
-                for (int i = 0; i < refs.size(); i++) {
-                    String r = refs.get(i); 
+                for (int i = 0; i < data.size(); i++) {
+                    NotifData d = data.get(i);
                     try {
-                        String s = executeHttpPostRequest(url(r), body.toJsonString());
+                        String s = executeHttpPostRequest(url(d.href), body.toJsonString());
                         if (s != null) {
                             JSONParser parser = new JSONParser(s);
                             try {
                             JSONArray j = (JSONArray) parser.parse();
                             System.err.println("XXXX Notification poll gets: " + j.toJsonString());
                             // Recognise any Notifications and invoke them here in the client...
-                            NotificationListener listener = listeners.get(i); 
+                            NotificationListener listener = d.listener;
                             for (JSONElement json : j) {
                                 if (json != null && json instanceof JSONObject) {
                                     Notification n = decodeNotification((JSONObject) json);
                                     System.err.println("HttpRestConnection NotifPoller got: " + n);
-                                    listener.handleNotification(n, handbacks.get(i));
+                                    listener.handleNotification(n, d.handback);
                                 }
                             }
                             } catch (ParseException pe) {
@@ -970,6 +977,16 @@ private static void printStack(Thread t, StackTraceElement[] stack) {
                     } catch (IOException e) {
                         // e.printStackTrace(System.err);
                     }
+                }
+            } // end sync
+            }
+        }
+
+        public synchronized void remove(ObjectName name) {
+            for (int i = 0; i < data.size(); i++) {
+                if (name.equals(data.get(i).name)) {
+                    data.remove(i);
+                    break;
                 }
             }
         }
@@ -989,16 +1006,17 @@ private static void printStack(Thread t, StackTraceElement[] stack) {
         String message = JSONObject.getObjectFieldString(json, "message");
         Object userData = null;
 
-        ObjectName objectName = null;
-        try {
-            objectName = new ObjectName(source);
-        } catch (MalformedObjectNameException mone) { 
-            mone.printStackTrace(System.err);
-        }
         Notification n = null;
 
         switch (type) { 
-            case "JMX.mbean.registered": {
+            case "JMX.mbean.registered": 
+            case "JMX.mbean.unregistered": {
+                ObjectName objectName = null;
+                try {
+                    objectName = new ObjectName(JSONObject.getObjectFieldString(json, "objectName"));
+                } catch (MalformedObjectNameException mone) { 
+                    // ignore
+                }
                 n = new javax.management.MBeanServerNotification(type, source, sequenceNumber, objectName);
                 break;
             }
@@ -1026,10 +1044,27 @@ private static void printStack(Thread t, StackTraceElement[] stack) {
         if (o == null) {
             throw new InstanceNotFoundException("Not known: " + name);
         }
-        // XXXX
-        // This is doable:
         // remove local poller
+        if (notifPoller == null) {
+            return; // Nothing to do
+        }
+        notifPoller.remove(name);
+
         // call server to remove its listener.
+        JSONObject body = new JSONObject();
+        body.put("removeNotificationListener", "123");
+        body.put("name", name.toString());
+
+        String href = objectRefMap.get(name);
+        href += "/removeNotificationListener";
+        String s = executeHttpPostRequest(url(href), body.toJsonString());
+        try {
+            JSONParser parser = new JSONParser(s);
+            JSONObject json = (JSONObject) parser.parse();
+            System.err.println("XXXX http client removeNotifListener result: " + json.toJsonString());
+        } catch (ParseException pe) {
+            pe.printStackTrace(System.err);
+        }
     }
 
     public void removeNotificationListener(ObjectName name,

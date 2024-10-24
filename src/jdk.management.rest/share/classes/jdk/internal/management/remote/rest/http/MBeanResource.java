@@ -804,7 +804,7 @@ public class MBeanResource implements RestResource {
         }
 
         public void handleNotification(Notification notification, Object handback) {
-            System.err.println("XXXX server handleNotification: " + notification);
+//            System.err.println("XXXX server handleNotification: " + notification);
             synchronized(notifLock) {
                 list.add(notification);
             }
@@ -825,11 +825,15 @@ public class MBeanResource implements RestResource {
                 // e.g.
                 // javax.management.Notification[source=java.lang:type=GarbageCollector,name=G1 Young Generation][type=com.sun.management.gc.notification][message=G1 Young Generation]
                 // is class javax.management.Notification
+//                System.err.println("XXX MBeanResource.doPollNotifications: " + n);
+//                if (n instanceof javax.management.MBeanServerNotification) {
+//                    System.err.println("yyyy " + ((javax.management.MBeanServerNotification) n).toString());
+//                }
 
                 JSONMapper typeMapper = JSONMappingFactory.INSTANCE.getTypeMapper(n.getClass());
                 if (typeMapper != null) {
                     try {
-                        System.err.println("XXX MBeanResource.doPollNotifications: " + n);
+//                        System.err.println("XXX MBeanResource.doPollNotifications: " + n);
                         JSONElement json = typeMapper.toJsonValue(n);
                         if (json != null) {
                             System.err.println("XXX MBeanResource.doPollNotifications: json = " + json.toJsonString());
@@ -839,14 +843,17 @@ public class MBeanResource implements RestResource {
                         jme.printStackTrace(System.err);
                     }
                 } else {
-                    System.err.println("XXX  MBeanResource.doPollNotifications: no mapper for: " + n.getClass());
+//                    System.err.println("XXX  MBeanResource.doPollNotifications: no mapper for: " + n.getClass());
                     JSONObject json = new JSONObject();
                     json.put("source", n.getSource().toString());
                     json.put("type", n.getType());
                     json.put("sequenceNumber", n.getSequenceNumber());
                     json.put("timeStamp", n.getTimeStamp());
                     json.put("message", n.getMessage());
-                    System.err.println("XXX MBeanResource.doPollNotifications: " + json.toJsonString());
+                    if (n instanceof javax.management.MBeanServerNotification) {
+                        json.put("objectName", ((javax.management.MBeanServerNotification) n).getMBeanName().toString());
+                    }
+//                    System.err.println("XXX MBeanResource.doPollNotifications: " + json.toJsonString());
                     result.add(json);
                 }
             }

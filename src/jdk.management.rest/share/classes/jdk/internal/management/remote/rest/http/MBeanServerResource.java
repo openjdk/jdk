@@ -41,7 +41,9 @@ import javax.management.MBeanServer;
 import javax.management.MBeanServerDelegate;
 import javax.management.MBeanServerDelegateMBean;
 import javax.management.remote.JMXAuthenticator;
-import jdk.internal.management.remote.rest.JmxRestAdapter;
+import javax.management.remote.JMXConnector;
+import javax.management.remote.JMXConnectorServer;
+import jdk.internal.management.remote.rest.JMXRestAdapter;
 import jdk.internal.management.remote.rest.PlatformRestAdapter;
 
 import javax.security.auth.Subject;
@@ -66,9 +68,10 @@ import java.util.concurrent.atomic.AtomicInteger;
  * An MBeanServerResoure implements the Rest Adapter.
  * Created by PlatformRestAdapter.
  */
-public final class MBeanServerResource implements RestResource, JmxRestAdapter {
+public final class MBeanServerResource implements RestResource, JMXRestAdapter {
 
     // Initialization parameters
+    private final String connectionId;
     private final HttpServer httpServer;
     private final String contextStr;
     private final Map<String, ?> env;
@@ -87,11 +90,15 @@ public final class MBeanServerResource implements RestResource, JmxRestAdapter {
     private static AtomicInteger resourceNumber = new AtomicInteger(1);
     private boolean started = false;
 
-    public MBeanServerResource(HttpServer hServer, MBeanServer mbeanServer,
+    private static AtomicInteger id = new AtomicInteger(0);
+
+    public MBeanServerResource(JMXConnectorServer connServer, HttpServer hServer, MBeanServer mbeanServer,
                                String context, Map<String, ?> env) {
+
         this.httpServer = hServer;
         this.env = env;
         this.mbeanServer = mbeanServer;
+        this.connectionId = makeConnectionId(hServer, context);
 
         mBeanServerDelegateMBean = JMX.newMBeanProxy(mbeanServer,
                 MBeanServerDelegate.DELEGATE_NAME, MBeanServerDelegateMBean.class);
@@ -103,6 +110,9 @@ public final class MBeanServerResource implements RestResource, JmxRestAdapter {
         }
 
         // setup authentication
+        authenticator = (JMXAuthenticator) env.get("jmx.remote.authenticator");
+        System.err.println("ZZZZZZZZZZZZZ MBeanServerResource authenticator = " + authenticator);
+
         if (env.get("jmx.remote.x.authentication") != null) {
             authenticator = (JMXAuthenticator) env.get("jmx.remote.authenticator");
             if (authenticator == null) {
@@ -123,10 +133,33 @@ public final class MBeanServerResource implements RestResource, JmxRestAdapter {
         }
     }
 
+    private String makeConnectionId(HttpServer hServer, String context) {
+        // Format is specified in java.management/javax/management/remote package summary.                                                             
+        // RMIConnectionIdTest expects protocol://ip port username arbitrary
+        StringBuilder s = new StringBuilder(); 
+        s.append("http").append(":");
+        String a = hServer.getAddress().toString();
+        a = a.substring(0, a.indexOf(":"));
+        s.append(a);
+        s.append(" ;").append(id.incrementAndGet());  
+        return s.toString();
+
+    }
+
+    public String getConnectionId() throws IOException {
+        return connectionId;
+    }
+
     private MBeanServer getMBeanServerProxy(MBeanServer mbeaServer, Subject subject) {
         return (MBeanServer) Proxy.newProxyInstance(MBeanServer.class.getClassLoader(),
                 new Class<?>[]{MBeanServer.class},
                 new AuthInvocationHandler(mbeaServer, subject));
+    }
+
+    private JMXConnector connector;
+
+    public void setConnector(JMXConnector c) {
+        this.connector = c;
     }
 
     @Override
@@ -247,6 +280,7 @@ public final class MBeanServerResource implements RestResource, JmxRestAdapter {
         Map<String, Object> result = new LinkedHashMap<>();
 
         result.put("id", mBeanServerDelegateMBean.getMBeanServerId());
+        result.put("connectionId", connectionId);
         result.put("context", contextStr);
 
         result.put("defaultDomain", mbeanServer.getDefaultDomain());

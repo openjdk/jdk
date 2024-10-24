@@ -48,6 +48,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.management.*;
+import javax.management.remote.JMXConnectorServer;
 import javax.management.remote.JMXServiceURL;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
@@ -56,8 +57,10 @@ import javax.net.ssl.TrustManagerFactory;
 import sun.management.jmxremote.ConnectorBootstrap;
 
 /**
- * This is the root class that initializes the HTTPServer and
- * REST adapter for platform mBeanServer.
+ * This is the root class that initializes the HttpServer and
+ * REST adapter for mBeanServer.
+ *
+ *
  */
 public final class PlatformRestAdapter {
 
@@ -93,8 +96,9 @@ public final class PlatformRestAdapter {
             Thread t = new Thread(group, r,
                     namePrefix + threadNumber.getAndIncrement(),
                     0);
-            if (t.isDaemon())
-                t.setDaemon(false);
+//            if (t.isDaemon())
+//                t.setDaemon(false);
+            t.setDaemon(true);
             if (t.getPriority() != Thread.NORM_PRIORITY)
                 t.setPriority(Thread.NORM_PRIORITY);
             return t;
@@ -123,7 +127,8 @@ public final class PlatformRestAdapter {
      *                   If null or if any of the properties is not specified, default values will be assumed.
      * @throws IOException If the server could not be created
      */
-    public static synchronized void init(MBeanServer mbeanServer, Properties properties) throws IOException {
+    public static synchronized void init(JMXConnectorServer connServer, MBeanServer mbeanServer,
+                                         Properties properties) throws IOException {
         if (httpServer == null) {
             if (properties == null || properties.isEmpty()) {
                 properties = new Properties();
@@ -164,7 +169,7 @@ public final class PlatformRestAdapter {
             new MBeanServerCollectionResource(restAdapters, httpServer);
             httpServer.setExecutor(Executors.newFixedThreadPool(maxThreadCount, new HttpThreadFactory()));
             httpServer.start();
-            startDefaultRestAdapter(mbeanServer, properties);
+            startDefaultRestAdapter(connServer, mbeanServer, properties);
         }
     }
 
@@ -172,7 +177,7 @@ public final class PlatformRestAdapter {
         return httpServer!=null;
     }
 
-    private static void startDefaultRestAdapter(MBeanServer mbeanServer, Properties properties) {
+    private static void startDefaultRestAdapter(JMXConnectorServer connServer, MBeanServer mbeanServer, Properties properties) {
         env = new HashMap<>();
         // Do we use authentication?
         final String useAuthenticationStr
@@ -204,7 +209,7 @@ public final class PlatformRestAdapter {
             mbeanServer = ManagementFactory.getPlatformMBeanServer();
             serverName = "platform";
         }
-        MBeanServerResource adapter = new MBeanServerResource(httpServer, mbeanServer, serverName, env);
+        MBeanServerResource adapter = new MBeanServerResource(connServer, httpServer, mbeanServer, serverName, env);
         adapter.start();
         restAdapters.add(adapter);
     }
@@ -226,13 +231,14 @@ public final class PlatformRestAdapter {
      *                    jmx.remote.x.password.file : file name for default JAAS login configuration
      * @return an Instance of REST adapter that allows to start/stop the adapter
      */
-    public static synchronized JmxRestAdapter newRestAdapter(MBeanServer mbeanServer, String context, Map<String, ?> env) {
+    public static synchronized JMXRestAdapter newRestAdapter(JMXConnectorServer connServer, MBeanServer mbeanServer,
+                                                             String context, Map<String, ?> env) {
         if (httpServer == null) {
             // throw new IllegalStateException("Platform Adapter not initialized");
             // A possible call via JMXConnectorServerFactory.newJMXConnectorServer() then to HttpConnectorServer.start()
             // means we need to start http server if needed now.
             try {
-                init(mbeanServer, new Properties());
+                init(connServer, mbeanServer, new Properties());
             } catch (IOException ioe) {
                 ioe.printStackTrace(System.err);
             }
@@ -252,10 +258,10 @@ public final class PlatformRestAdapter {
             restAdapters.remove(server);
             // throw new IllegalArgumentException("MBeanServer already registered at " + server.getUrl());
         }
-            MBeanServerResource adapter = new MBeanServerResource(httpServer, mbeanServer, context, env);
-            adapter.start();
-            restAdapters.add(adapter);
-            return adapter;
+        MBeanServerResource adapter = new MBeanServerResource(connServer, httpServer, mbeanServer, context, env);
+        adapter.start();
+        restAdapters.add(adapter);
+        return adapter;
     }
 
     private static boolean areMBeanServersEqual(MBeanServer server1, MBeanServer server2) {

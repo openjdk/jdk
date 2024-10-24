@@ -33,6 +33,8 @@ import javax.management.*;
 import javax.management.remote.*;
 import java.net.MalformedURLException;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 /**
  * Compare with
  * src/java.management.rmi/share/classes/javax/management/remote/rmi/RMIConnector.java
@@ -46,6 +48,8 @@ public class HttpRestConnector implements JMXConnector, JMXAddressable, Closeabl
     protected String baseURL;
     protected Map<String,?> env;
     protected HttpRestConnection connection;
+
+    private static AtomicInteger id = new AtomicInteger(0);
 
     public HttpRestConnector(JMXServiceURL url, Map<String,?> env) {
         this.url = url;
@@ -87,9 +91,15 @@ public class HttpRestConnector implements JMXConnector, JMXAddressable, Closeabl
         if (connected) {
             return;
         }
-        System.err.println("XXX HttpRestConnector.connect " + baseURL);
-        connection = new HttpRestConnection(baseURL, env); 
+        System.err.println("XXXXXX XXXXX HttpRestConnector.connect " + baseURL);
+        new Exception().printStackTrace(System.err);
+        // In RMI, the Connector would call RMIServerImpl.newClient over RMI,
+        // whch calls connServer.connectionOpened (which adds to list of connections in JmxConnectorServer)
+        // and returns an RMIConnection.
+
+        connection = new HttpRestConnection(url, baseURL, env); 
         connection.setup();
+        connection.setConnector(this);
         connected = true;
     }
 
@@ -139,7 +149,6 @@ public class HttpRestConnector implements JMXConnector, JMXAddressable, Closeabl
         if (!connected) {
             throw new IOException("Not connected");
         }
-        new Exception().printStackTrace(System.out);
         return connection.getConnectionId();
     }
 }

@@ -264,10 +264,19 @@ public class JMXConnectorFactory {
     public static JMXConnector connect(JMXServiceURL serviceURL,
                                        Map<String,?> environment)
             throws IOException {
-        if (serviceURL == null)
+
+        if (serviceURL == null) {
             throw new NullPointerException("Null JMXServiceURL");
+        }
         JMXConnector conn = newJMXConnector(serviceURL, environment);
         conn.connect(environment);
+
+        // HTTP/REST Connector
+        if (serviceURL.getProtocol().startsWith("http")) {
+            System.err.println("ZZZZZZ JMXConnectorFactory.connect: " + conn);
+            // javax.management.remote.http.HttpRestConnector
+        }
+
         return conn;
     }
 

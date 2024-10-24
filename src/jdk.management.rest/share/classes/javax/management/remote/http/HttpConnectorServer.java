@@ -31,7 +31,7 @@ import com.sun.jmx.remote.util.EnvHelp;
 import com.sun.jmx.remote.util.ClassLogger;
 
 import jdk.internal.management.remote.rest.PlatformRestAdapter;
-import jdk.internal.management.remote.rest.JmxRestAdapter;
+import jdk.internal.management.remote.rest.JMXRestAdapter;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -44,6 +44,8 @@ import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Map;
 import java.util.Set;
+
+import java.util.concurrent.atomic.AtomicInteger;
 
 import java.lang.management.ManagementFactory;
 
@@ -62,10 +64,8 @@ import javax.management.remote.MBeanServerForwarder;
  * from remote clients.  Usually, such connector servers are made
  * using {@link javax.management.remote.JMXConnectorServerFactory
  * JMXConnectorServerFactory}.  However, specialized applications can
- * use this class directly, for example with an {@link RMIServerImpl}
- * object.</p>
+ * use this class directly.</p>
  *
- * @since 1.5
  */
 public class HttpConnectorServer extends JMXConnectorServer {
 
@@ -235,8 +235,6 @@ public class HttpConnectorServer extends JMXConnectorServer {
         usemap = EnvHelp.filterAttributes(usemap);
 
         throw new RuntimeException("not implemented XXXX");
-//         return new HttpRestConnector(url, map);
-//        return null;
     }
 
     /**
@@ -245,15 +243,6 @@ public class HttpConnectorServer extends JMXConnectorServer {
      * server is already active has no effect.  Calling this method
      * when the connector server has been stopped will generate an
      * <code>IOException</code>.</p>
-     *
-     * <p>The behavior of this method when called for the first time
-     * depends on the parameters that were supplied at construction,
-     * as described below.</p>
-     *
-     * <p>First, an object of a subclass of {@link RMIServerImpl} is
-     * required, to export the connector server through RMI:</p>
-     *
-     * <ul>
      *
      * <li>If an <code>RMIServerImpl</code> was supplied to the
      * constructor, it is used.
@@ -267,26 +256,6 @@ public class HttpConnectorServer extends JMXConnectorServer {
      * {@link MalformedURLException}.
      *
      * </ul>
-     *
-     * <p>If the given address includes a JNDI directory URL as
-     * specified in the package documentation for {@link
-     * javax.management.remote.rmi}, then this
-     * <code>RMIConnectorServer</code> will bootstrap by binding the
-     * <code>RMIServerImpl</code> to the given address.</p>
-     *
-     * <p>If the URL path part of the <code>JMXServiceURL</code> was
-     * empty or a single slash (<code>/</code>), then the RMI object
-     * will not be bound to a directory.  Instead, a reference to it
-     * will be encoded in the URL path of the RMIConnectorServer
-     * address (returned by {@link #getAddress()}).  The encodings for
-     * <code>rmi</code> are described in the package documentation for
-     * {@link javax.management.remote.rmi}.</p>
-     *
-     * <p>The behavior when the URL path is neither empty nor a JNDI
-     * directory URL, or when the protocol is not <code>rmi</code>,
-     * is implementation defined, and may include throwing
-     * {@link MalformedURLException} when the connector server is created
-     * or when it is started.</p>
      *
      * @exception IllegalStateException if the connector server has
      * not been attached to an MBean server.
@@ -337,15 +306,22 @@ public class HttpConnectorServer extends JMXConnectorServer {
             String serverName = null; // platform
             if (getMBeanServer() == ManagementFactory.getPlatformMBeanServer()) {
                 serverName = "platform";
-                System.err.println("XXXX HTTPConnServer start server = platform: " + getMBeanServer());
             }
-            JmxRestAdapter rest = PlatformRestAdapter.newRestAdapter(getMBeanServer(), serverName /* context */,  null /*env */);
-            System.err.println("XXXX HTTPConnectorServer start rest = " + rest);
-            synchronized(openedServers) {
+
+            // Our address may only be a partial/generic address like "service:jmx:http://"
+            // so we need the http server to start etc...
+            // Therefore connection ID has to be set by JMXRestAdapter.
+            // We will query it and send up to JMXConnectorServer by calling connectionOpened.
+            JMXRestAdapter rest = PlatformRestAdapter.newRestAdapter(this, getMBeanServer(), serverName /* context */,  null /*env */);
+
+            System.err.println("XXXX HTTPConnectorServer start  current address = " + address + " rest = " + rest);
+
+            synchronized(openedServers) { // is this needed?
                 openedServers.add(rest);
             }
             String a = rest.getUrl();
             address = new JMXServiceURL("service:jmx:" + a);
+            connectionOpened(rest.getConnectionId(), "Connection opened", null);
 
         } catch (Exception e) {
             if (e instanceof RuntimeException) throw (RuntimeException) e;
@@ -355,9 +331,7 @@ public class HttpConnectorServer extends JMXConnectorServer {
                 throw new IOException("Got unexpected exception while " +
                                      "starting the connector server: "
                                      + e, e);
-
         }
-
 
         state = STARTED;
 
@@ -366,7 +340,7 @@ public class HttpConnectorServer extends JMXConnectorServer {
             logger.trace("start", "started.");
         }
     }
-
+ 
     /**
      * <p>Deactivates the connector server, that is, stops listening for
      * client connections.  Calling this method will also close all
@@ -429,7 +403,7 @@ public class HttpConnectorServer extends JMXConnectorServer {
 
         synchronized(openedServers) {
             // openedServers.remove(this) ;
-            for (JmxRestAdapter a : openedServers) {
+            for (JMXRestAdapter a : openedServers) {
                 System.err.println("XXXX JMXConnectorServer stop : " + a);
                 a.stop();
             }
@@ -501,5 +475,6 @@ public class HttpConnectorServer extends JMXConnectorServer {
 
     private int state = CREATED;
 
-    private static final Set<JmxRestAdapter> openedServers = new HashSet<>();
+    private static final Set<JMXRestAdapter> openedServers = new HashSet<>();
+
 }
