@@ -82,8 +82,10 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
             // Keep canonical version of File, to delete, in case target process ends and /proc link has gone:
             File f = createAttachFile(pid, ns_pid).getCanonicalFile();
 
+	    boolean sentQuit = false;
+
             try {
-                checkCatchesAndSendQuitTo(pid, false);
+                sentQuit = checkCatchesAndSendQuitTo(pid, false);
 
                 // give the target VM time to start the attach mechanism
                 final int delay_step = 100;
@@ -100,14 +102,15 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
                     time_spend += delay;
                     if (time_spend > timeout/2 && !socket_file.exists()) {
                         // Send QUIT again to give target VM the last chance to react
-                        checkCatchesAndSendQuitTo(pid, false);
+                        sentQuit = checkCatchesAndSendQuitTo(pid, false);
                     }
                 } while (time_spend <= timeout && !socket_file.exists());
+
                 if (!socket_file.exists()) {
                     throw new AttachNotSupportedException(
                         String.format("Unable to open socket file %s: " +
-                          "target process %d doesn't respond within %dms " +
-                          "or HotSpot VM not loaded", socket_path, pid,
+                          "target process %d doesn't %s within %dms " +
+                          "or HotSpot VM not loaded", socket_path, pid, sentQuit ? "respond" : "become ready", 
                                       time_spend));
                 }
             } finally {
@@ -253,16 +256,16 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
         final var procPidRoot = PROC.resolve(Long.toString(pid)).resolve(ROOT_TMP);
 
         /*
-         * if target is elevated, we cant use /proc/<pid>/... so we have to fallback to /tmp, but that may not be shared 
+         * if target is elevated, we cant use /proc/<pid>/... so we have to fallback to /tmp, but that may not be shared
          * with the target/attachee process, we can try, except in the case where the ns_pid also exists in this pid ns
-         * which is ambiguous, if we share /tmp with the intended target, the attach will succeed, if we do not, 
+         * which is ambiguous, if we share /tmp with the intended target, the attach will succeed, if we do not,
          * then we will potentially attempt to attach to some arbitrary process with the same pid (in this pid ns)
          * as that of the intended target (in its * pid ns).
          *
          * so in that case we should prehaps throw - or risk sending SIGQUIT to some arbitrary process... which could kill it
          *
          * however we can also check the target pid's signal masks to see if it catches SIGQUIT and only do so if in
-         * fact it does ... this reduces the risk of killing an innocent process in the current ns as opposed to 
+         * fact it does ... this reduces the risk of killing an innocent process in the current ns as opposed to
          * attaching to the actual target JVM ... c.f: checkCatchesAndSendQuitTo() below.
          *
          * note that if pid == ns_pid we are in a shared pid ns with the target and may (potentially) share /tmp
@@ -377,7 +380,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
                 cmd = cmdline.get();
                 cmd = cmd.substring(0, cmd.length() - 1); // remove trailing \0
             }
-                
+
             throw new AttachNotSupportedException("pid: " + pid + " cmd: '" + cmd + "' state is not ready to participate in attach handshake!");
         }
 
