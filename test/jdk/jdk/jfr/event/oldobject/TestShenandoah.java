@@ -35,7 +35,8 @@ import jdk.test.lib.jfr.Events;
 /**
  * @test
  * @key jfr
- * @requires vm.hasJFRLeakProf & vm.gc.Shenandoah
+ * @ignore // Leak profiler does not work with Shenandoah
+ * @requires vm.hasJFRLeakProf
  * @summary Test leak profiler with Shenandoah
  * @library /test/lib /test/jdk
  * @modules jdk.jfr/jdk.jfr.internal.test
