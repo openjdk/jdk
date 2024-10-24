@@ -340,7 +340,9 @@ static inline void add_one_req(Node* dstphi, Node* src) {
 // having a control input of its exception map, rather than null.  Such
 // regions do not appear except in this function, and in use_exception_state.
 void GraphKit::combine_exception_states(SafePointNode* ex_map, SafePointNode* phi_map) {
-  if (failing())  return;  // dying anyway...
+  if (failing_internal()) {
+    return;  // dying anyway...
+  }
   JVMState* ex_jvms = ex_map->_jvms;
   assert(ex_jvms->same_calls_as(phi_map->_jvms), "consistent call chains");
   assert(ex_jvms->stkoff() == phi_map->_jvms->stkoff(), "matching locals");
@@ -446,7 +448,7 @@ void GraphKit::combine_exception_states(SafePointNode* ex_map, SafePointNode* ph
 
 //--------------------------use_exception_state--------------------------------
 Node* GraphKit::use_exception_state(SafePointNode* phi_map) {
-  if (failing()) { stop(); return top(); }
+  if (failing_internal()) { stop(); return top(); }
   Node* region = phi_map->control();
   Node* hidden_merge_mark = root();
   assert(phi_map->jvms()->map() == phi_map, "sanity: 1-1 relation");
@@ -1456,7 +1458,7 @@ Node* GraphKit::cast_not_null(Node* obj, bool do_replace_in_map) {
 // In that case that data path will die and we need the control path
 // to become dead as well to keep the graph consistent. So we have to
 // add a check for null for which one branch can't be taken. It uses
-// an Opaque4 node that will cause the check to be removed after loop
+// an OpaqueNotNull node that will cause the check to be removed after loop
 // opts so the test goes away and the compiled code doesn't execute a
 // useless check.
 Node* GraphKit::must_be_not_null(Node* value, bool do_replace_in_map) {
@@ -1464,9 +1466,9 @@ Node* GraphKit::must_be_not_null(Node* value, bool do_replace_in_map) {
     return value;
   }
   Node* chk = _gvn.transform(new CmpPNode(value, null()));
-  Node *tst = _gvn.transform(new BoolNode(chk, BoolTest::ne));
-  Node* opaq = _gvn.transform(new Opaque4Node(C, tst, intcon(1)));
-  IfNode *iff = new IfNode(control(), opaq, PROB_MAX, COUNT_UNKNOWN);
+  Node* tst = _gvn.transform(new BoolNode(chk, BoolTest::ne));
+  Node* opaq = _gvn.transform(new OpaqueNotNullNode(C, tst));
+  IfNode* iff = new IfNode(control(), opaq, PROB_MAX, COUNT_UNKNOWN);
   _gvn.set_type(iff, iff->Value(&_gvn));
   if (!tst->is_Con()) {
     record_for_igvn(iff);
@@ -1556,6 +1558,7 @@ Node* GraphKit::make_load(Node* ctl, Node* adr, const Type* t, BasicType bt,
                           bool mismatched,
                           bool unsafe,
                           uint8_t barrier_data) {
+  assert(adr_idx == C->get_alias_index(_gvn.type(adr)->isa_ptr()), "slice of address and input slice don't match");
   assert(adr_idx != Compile::AliasIdxTop, "use other make_load factory" );
   const TypePtr* adr_type = nullptr; // debug-mode-only argument
   debug_only(adr_type = C->get_adr_type(adr_idx));
@@ -1585,6 +1588,7 @@ Node* GraphKit::store_to_memory(Node* ctl, Node* adr, Node *val, BasicType bt,
                                 bool unsafe,
                                 int barrier_data) {
   assert(adr_idx != Compile::AliasIdxTop, "use other store_to_memory factory" );
+  assert(adr_idx == C->get_alias_index(_gvn.type(adr)->isa_ptr()), "slice of address and input slice don't match");
   const TypePtr* adr_type = nullptr;
   debug_only(adr_type = C->get_adr_type(adr_idx));
   Node *mem = memory(adr_idx);
@@ -1926,7 +1930,7 @@ static void add_mergemem_users_to_worklist(Unique_Node_List& wl, Node* mem) {
 }
 
 // Replace the call with the current state of the kit.
-void GraphKit::replace_call(CallNode* call, Node* result, bool do_replaced_nodes) {
+void GraphKit::replace_call(CallNode* call, Node* result, bool do_replaced_nodes, bool do_asserts) {
   JVMState* ejvms = nullptr;
   if (has_exceptions()) {
     ejvms = transfer_exceptions_into_jvms();
@@ -1940,7 +1944,7 @@ void GraphKit::replace_call(CallNode* call, Node* result, bool do_replaced_nodes
 
   // Find all the needed outputs of this call
   CallProjections callprojs;
-  call->extract_projections(&callprojs, true);
+  call->extract_projections(&callprojs, true, do_asserts);
 
   Unique_Node_List wl;
   Node* init_mem = call->in(TypeFunc::Memory);
@@ -2056,7 +2060,9 @@ Node* GraphKit::uncommon_trap(int trap_request,
                              ciKlass* klass, const char* comment,
                              bool must_throw,
                              bool keep_exact_action) {
-  if (failing())  stop();
+  if (failing_internal()) {
+    stop();
+  }
   if (stopped())  return nullptr; // trap reachable?
 
   // Note:  If ProfileTraps is true, and if a deopt. actually
@@ -3008,7 +3014,7 @@ void GraphKit::guard_klass_being_initialized(Node* klass) {
   Node* adr = basic_plus_adr(top(), klass, init_state_off);
   Node* init_state = LoadNode::make(_gvn, nullptr, immutable_memory(), adr,
                                     adr->bottom_type()->is_ptr(), TypeInt::BYTE,
-                                    T_BYTE, MemNode::unordered);
+                                    T_BYTE, MemNode::acquire);
   init_state = _gvn.transform(init_state);
 
   Node* being_initialized_state = makecon(TypeInt::make(InstanceKlass::being_initialized));

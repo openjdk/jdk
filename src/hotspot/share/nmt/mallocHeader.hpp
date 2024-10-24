@@ -127,6 +127,7 @@ public:
 
   inline MallocHeader(size_t size, MemTag mem_tag, uint32_t mst_marker);
 
+  inline static size_t malloc_overhead() { return sizeof(MallocHeader) + sizeof(uint16_t); }
   inline size_t size()  const { return _size; }
   inline MemTag mem_tag() const { return _mem_tag; }
   inline uint32_t mst_marker() const { return _mst_marker; }

@@ -636,7 +636,7 @@ void ZBarrierSetAssembler::copy_load_at(MacroAssembler* masm,
 
   // Remove metadata bits so that the store side (vectorized or non-vectorized) can
   // inject the store-good color with an or instruction.
-  __ andq(dst, _zpointer_address_mask);
+  __ andq(dst, ZPointerAddressMask);
 
   if ((decorators & ARRAYCOPY_CHECKCAST) != 0) {
     // The checkcast arraycopy needs to be able to dereference the oops in order to perform a typechecks.
@@ -1260,6 +1260,8 @@ void ZBarrierSetAssembler::generate_c2_store_barrier_stub(MacroAssembler* masm, 
       __ call(RuntimeAddress(ZBarrierSetRuntime::store_barrier_on_native_oop_field_without_healing_addr()));
     } else if (stub->is_atomic()) {
       __ call(RuntimeAddress(ZBarrierSetRuntime::store_barrier_on_oop_field_with_healing_addr()));
+    } else if (stub->is_nokeepalive()) {
+      __ call(RuntimeAddress(ZBarrierSetRuntime::no_keepalive_store_barrier_on_oop_field_without_healing_addr()));
     } else {
       __ call(RuntimeAddress(ZBarrierSetRuntime::store_barrier_on_oop_field_without_healing_addr()));
     }
