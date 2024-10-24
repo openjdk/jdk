@@ -353,11 +353,43 @@ HeapWord* G1CollectedHeap::humongous_obj_allocate(size_t word_size) {
     // Policy: We could not find enough regions for the humongous object in the
     // free list. Look through the heap to find a mix of free and uncommitted regions.
     // If so, expand the heap and allocate the humongous object.
-    humongous_start = _hrm.expand_and_allocate_humongous(obj_regions);
+
+    // If AHS is enabled, check to see if AHS allows for expansion.
+    // Save temporary value to prevent race conditions in case
+    // CurrentMaxHeapSize is overridden during the lifetime of this
+    // function.
+    const size_t current_max_heap_size = CurrentMaxHeapSize;
+    const size_t current_max_expansion_size =
+        current_max_heap_size - capacity();
+    bool can_expand = true;
+    if (current_max_heap_size > 0) {
+      size_t aligned_current_max_expansion_size =
+          ReservedSpace::page_align_size_down(current_max_expansion_size);
+      aligned_current_max_expansion_size = align_down(
+          aligned_current_max_expansion_size, G1HeapRegion::GrainBytes);
+      const uint max_regions_to_expand =
+          (uint)(aligned_current_max_expansion_size / G1HeapRegion::GrainBytes);
+
+      // If AHS says that an expansion of the requested size cannot be
+      // completed for the humongous object, we should not expand.
+      if (obj_regions > max_regions_to_expand) {
+        log_debug(gc, ergo, heap, ahs)(
+            "Did not expand with humongous allocation of size: %u "
+            "regions, due to CurrentMaxExpansionSize: " SIZE_FORMAT
+            "B, which corresponds to %u regions.",
+            obj_regions, current_max_expansion_size, max_regions_to_expand);
+        can_expand = false;
+      }
+    }
+
+    if (can_expand) {
+        humongous_start = _hrm.expand_and_allocate_humongous(obj_regions);
+    }
+
     if (humongous_start != nullptr) {
       // We managed to find a region by expanding the heap.
-      log_debug(gc, ergo, heap)("Heap expansion (humongous allocation request). Allocation request: " SIZE_FORMAT "B",
-                                word_size * HeapWordSize);
+      log_debug(gc, ergo, heap, ahs)("Heap expansion (humongous allocation request). Allocation request: " SIZE_FORMAT "B",
+                                 word_size * HeapWordSize);
       policy()->record_new_heap_size(num_regions());
     } else {
       // Policy: Potentially trigger a defragmentation GC.
@@ -774,7 +806,7 @@ void G1CollectedHeap::prepare_for_mutator_after_full_collection() {
   assert(num_free_regions() == 0, "we should not have added any free regions");
   rebuild_region_sets(false /* free_list_only */);
   abort_refinement();
-  resize_heap_if_necessary();
+  resize_heap_if_necessary(false);
   uncommit_regions_if_necessary();
 
   // Rebuild the code root lists for each region
@@ -862,7 +894,15 @@ bool G1CollectedHeap::upgrade_to_full_collection() {
   return success;
 }
 
-void G1CollectedHeap::resize_heap_if_necessary() {
+void G1CollectedHeap::resize_heap_if_necessary(bool record_expand_time) {
+  if (SoftMaxHeapSize == 0) {
+    resize_heap_if_necessary_non_ahs();
+  } else {
+    resize_heap_if_necessary_ahs(record_expand_time);
+  }
+}
+
+void G1CollectedHeap::resize_heap_if_necessary_non_ahs() {
   assert_at_safepoint_on_vm_thread();
 
   bool should_expand;
@@ -874,6 +914,40 @@ void G1CollectedHeap::resize_heap_if_necessary() {
     expand(resize_amount, _workers);
   } else {
     shrink(resize_amount);
+  }
+}
+
+void G1CollectedHeap::resize_heap_if_necessary_ahs(bool record_expand_time) {
+  assert(SoftMaxHeapSize > 0,
+         "Unexpected call to resize_heap_if_necessary_ahs() when "
+         "SoftMaxHeapSize not set!");
+
+  const size_t heap_capacity = capacity();
+  const size_t heap_occupancy =
+      heap_capacity -
+      unused_committed_regions_in_bytes();
+  const int64_t bytes_to_change = _heap_sizing_policy->resize_amount_ahs();
+
+  if (bytes_to_change > 0) {
+    log_info(ahs)(
+        "Attempt heap expansion via ahs resize. "
+        "Expand bytes: " INT64_FORMAT "B Capacity: " SIZE_FORMAT
+        "B occupancy: " SIZE_FORMAT "B live: " SIZE_FORMAT
+        "B SoftMaxHeapSize: " SIZE_FORMAT "B",
+        bytes_to_change, heap_capacity, heap_occupancy, used(),
+        SoftMaxHeapSize);
+    double expand_ms = 0.0;
+    expand(bytes_to_change, _workers, &expand_ms);
+    if (record_expand_time) {
+      policy()->phase_times()->record_expand_heap_time(expand_ms);
+    }
+  } else if (bytes_to_change < 0) {
+    log_info(ahs)(
+        "Attempt heap shrinking via ahs resize. "
+        "Capacity: " SIZE_FORMAT "B occupancy: " SIZE_FORMAT
+        "B live: " SIZE_FORMAT "B SoftMaxHeapSize: " SIZE_FORMAT "B",
+        heap_capacity, heap_occupancy, used(), SoftMaxHeapSize);
+    shrink(-bytes_to_change);
   }
 }
 
@@ -983,18 +1057,75 @@ HeapWord* G1CollectedHeap::expand_and_allocate(size_t word_size) {
   if (expand(expand_bytes, _workers)) {
     _hrm.verify_optional();
     _verifier->verify_region_sets_optional();
-    return attempt_allocation_at_safepoint(word_size,
-                                           false /* expect_null_mutator_alloc_region */);
+    HeapWord* result = attempt_allocation_at_safepoint(
+        word_size, false /* expect_null_mutator_alloc_region */);
+    if (result != nullptr) {
+      return result;
+    }
+    // If the allocation fails and AHS is enabled, we force the allocation.
+    // This is because we don't want the failed allocation attempt to make this
+    // function return nullptr, which can result in a premature Java OOM. With
+    // AHS enabled, we should only return nullptr if even after all attempts we
+    // still cannot successfully allocate.
+    // Note that since humongous objects go through a different code path in
+    // attempt_allocation_at_safepoint(), we don't need to handle that case
+    // here.
+    if (SoftMaxHeapSize > 0 && !is_humongous(word_size)) {
+      result = _allocator->attempt_allocation_locked(word_size);
+      if (result != nullptr) {
+        return result;
+      } else {
+        log_debug(ahs)(
+            "Forced allocation attempt under AHS failed - returning nullptr.");
+      }
+    }
   }
   return nullptr;
 }
 
 bool G1CollectedHeap::expand(size_t expand_bytes, WorkerThreads* pretouch_workers, double* expand_time_ms) {
+  // Save temporary value to mitigate race conditions in case
+  // CurrentMaxHeapSize is overwritten during the lifetime of this
+  // function. It is still possible for the timing of the write to override a
+  // more recent CurrentMaxHeapSize value, but this is tolerable for one
+  // iteration.
+  const size_t current_max_expansion_size = CurrentMaxHeapSize - capacity();
+  log_debug(ahs)("expand() of size: " SIZE_FORMAT
+                 " called with SoftMaxHeapSize: " SIZE_FORMAT
+                 "B, CurrentMaxHeapSize" SIZE_FORMAT
+                 "B, current_max_expansion_size: " SIZE_FORMAT
+                 "B, and current heap size: " SIZE_FORMAT "B.",
+                 expand_bytes, SoftMaxHeapSize, CurrentMaxHeapSize, current_max_expansion_size,
+                 capacity());
   size_t aligned_expand_bytes = ReservedSpace::page_align_size_up(expand_bytes);
   aligned_expand_bytes = align_up(aligned_expand_bytes, G1HeapRegion::GrainBytes);
 
-  log_debug(gc, ergo, heap)("Expand the heap. requested expansion amount: " SIZE_FORMAT "B expansion amount: " SIZE_FORMAT "B",
-                            expand_bytes, aligned_expand_bytes);
+  // Make sure we are not expanding too much if there is not much space left in
+  // the container.
+  if (current_max_expansion_size > 0) {
+    size_t aligned_max_expand_bytes =
+        ReservedSpace::page_align_size_down(current_max_expansion_size);
+    aligned_max_expand_bytes =
+        align_down(aligned_max_expand_bytes, G1HeapRegion::GrainBytes);
+    log_debug(ahs)("CMESize flag value: " SIZE_FORMAT
+                   "B. After alignment: " SIZE_FORMAT "B.",
+                   current_max_expansion_size, aligned_max_expand_bytes);
+    if (aligned_expand_bytes > aligned_max_expand_bytes) {
+      log_debug(ahs)(
+          "Wanted to expand by: " SIZE_FORMAT
+          ", but limited by (aligned) CMESize, which is: " SIZE_FORMAT,
+          aligned_expand_bytes, aligned_max_expand_bytes);
+      aligned_expand_bytes = aligned_max_expand_bytes;
+    }
+    if (aligned_max_expand_bytes == 0) {
+      return false;
+    }
+  }
+
+  log_debug(gc, ergo, heap)(
+      "Expand the heap. requested expansion amount: " SIZE_FORMAT
+      "B expansion amount: " SIZE_FORMAT "B",
+      expand_bytes, aligned_expand_bytes);
 
   if (is_maximal_no_gc()) {
     log_debug(gc, ergo, heap)("Did not expand the heap (heap already fully expanded)");
@@ -1015,6 +1146,10 @@ bool G1CollectedHeap::expand(size_t expand_bytes, WorkerThreads* pretouch_worker
   size_t actual_expand_bytes = expanded_by * G1HeapRegion::GrainBytes;
   assert(actual_expand_bytes <= aligned_expand_bytes, "post-condition");
   policy()->record_new_heap_size(num_regions());
+
+  log_debug(gc, ergo, heap, ahs)(
+      "Expanded the heap by %i regions, wanted to expand by %i regions",
+      expanded_by, regions_to_expand);
 
   return true;
 }
@@ -2375,7 +2510,19 @@ void G1CollectedHeap::verify_after_young_collection(G1HeapVerifier::G1VerifyType
 }
 
 void G1CollectedHeap::expand_heap_after_young_collection(){
-  size_t expand_bytes = _heap_sizing_policy->young_collection_expansion_amount();
+  int64_t expand_bytes;
+  if (SoftMaxHeapSize == 0) {
+    expand_bytes = _heap_sizing_policy->young_collection_expansion_amount();
+  } else {
+    expand_bytes = _heap_sizing_policy->resize_amount_ahs();
+    log_trace(ahs)(
+        "expand_heap_after_young_collection() with AHS enabled suggests an "
+        "expansion of size: " INT64_FORMAT
+        ", with a current heap size of: " SIZE_FORMAT
+        ", and a SoftMaxHeapSize of size: " SIZE_FORMAT
+        ". We only expand if the suggested expansion is positive.",
+        expand_bytes, capacity(), SoftMaxHeapSize);
+  }
   if (expand_bytes > 0) {
     // No need for an ergo logging here,
     // expansion_amount() does this when it returns a value > 0.

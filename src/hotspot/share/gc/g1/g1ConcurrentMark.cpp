@@ -1458,7 +1458,7 @@ void G1ConcurrentMark::remark() {
     // GC pause.
     _g1h->increment_total_collections();
 
-    _g1h->resize_heap_if_necessary();
+    _g1h->resize_heap_if_necessary(false);
     _g1h->uncommit_regions_if_necessary();
 
     compute_new_sizes();
