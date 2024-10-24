@@ -85,7 +85,7 @@ class WindowsException extends Exception {
             return new NoSuchFileException(file, other, null);
         if (lastError() == ERROR_FILE_EXISTS || lastError() == ERROR_ALREADY_EXISTS)
             return new FileAlreadyExistsException(file, other, null);
-        if (lastError() == ERROR_ACCESS_DENIED)
+        if (lastError() == ERROR_ACCESS_DENIED || lastError() == ERROR_PRIVILEGE_NOT_HELD)
             return new AccessDeniedException(file, other, null);
 
         // fallback to the more general exception
