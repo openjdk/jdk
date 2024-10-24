@@ -29,9 +29,12 @@ import java.lang.classfile.constantpool.*;
 
 import java.util.List;
 
+import static java.util.Objects.requireNonNull;
+
 public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elements)
         implements Annotation {
     public AnnotationImpl {
+        requireNonNull(className);
         elements = List.copyOf(elements);
     }
 
@@ -50,6 +53,11 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
     public record AnnotationElementImpl(Utf8Entry name,
                                         AnnotationValue value)
             implements AnnotationElement {
+        public AnnotationElementImpl {
+            requireNonNull(name);
+            requireNonNull(value);
+        }
+
         @Override
         public String toString() {
             return name + "=" + value;

@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +26,12 @@
 
 package java.io;
 
+import jdk.internal.access.JavaLangAccess;
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.ByteArray;
+
+import static jdk.internal.util.ModifiedUtf.putChar;
+import static jdk.internal.util.ModifiedUtf.utfLen;
 
 /**
  * A data output stream lets an application write primitive Java data
@@ -44,6 +50,8 @@ import jdk.internal.util.ByteArray;
  * @since   1.0
  */
 public class DataOutputStream extends FilterOutputStream implements DataOutput {
+    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
+
     /**
      * The number of bytes written to the data output stream so far.
      * If this counter overflows, it will be wrapped to Integer.MAX_VALUE.
@@ -352,15 +360,11 @@ public class DataOutputStream extends FilterOutputStream implements DataOutput {
      *             {@code str} would exceed 65535 bytes in length
      * @throws     IOException  if some other I/O error occurs.
      */
+    @SuppressWarnings("deprecation")
     static int writeUTF(String str, DataOutput out) throws IOException {
         final int strlen = str.length();
-        int utflen = strlen; // optimized for ASCII
-
-        for (int i = 0; i < strlen; i++) {
-            int c = str.charAt(i);
-            if (c >= 0x80 || c == 0)
-                utflen += (c >= 0x800) ? 2 : 1;
-        }
+        int countNonZeroAscii = JLA.countNonZeroAscii(str);
+        int utflen = utfLen(str, countNonZeroAscii);
 
         if (utflen > 65535 || /* overflow */ utflen < strlen)
             throw new UTFDataFormatException(tooLongMsg(str, utflen));
@@ -377,25 +381,11 @@ public class DataOutputStream extends FilterOutputStream implements DataOutput {
         int count = 0;
         ByteArray.setUnsignedShort(bytearr, count, utflen);
         count += 2;
-        int i = 0;
-        for (i = 0; i < strlen; i++) { // optimized for initial run of ASCII
-            int c = str.charAt(i);
-            if (c >= 0x80 || c == 0) break;
-            bytearr[count++] = (byte) c;
-        }
+        str.getBytes(0, countNonZeroAscii, bytearr, count);
+        count += countNonZeroAscii;
 
-        for (; i < strlen; i++) {
-            int c = str.charAt(i);
-            if (c < 0x80 && c != 0) {
-                bytearr[count++] = (byte) c;
-            } else if (c >= 0x800) {
-                bytearr[count++] = (byte) (0xE0 | ((c >> 12) & 0x0F));
-                bytearr[count++] = (byte) (0x80 | ((c >>  6) & 0x3F));
-                bytearr[count++] = (byte) (0x80 | ((c >>  0) & 0x3F));
-            } else {
-                bytearr[count++] = (byte) (0xC0 | ((c >>  6) & 0x1F));
-                bytearr[count++] = (byte) (0x80 | ((c >>  0) & 0x3F));
-            }
+        for (int i = countNonZeroAscii; i < strlen;) {
+            count = putChar(bytearr, count, str.charAt(i++));
         }
         out.write(bytearr, 0, utflen + 2);
         return utflen + 2;

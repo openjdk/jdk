@@ -64,16 +64,16 @@ class CgroupV2CpuController: public CgroupCpuController {
     bool is_read_only() override {
       return reader()->is_read_only();
     }
-    const char* subsystem_path() {
+    const char* subsystem_path() override {
       return reader()->subsystem_path();
     }
     bool needs_hierarchy_adjustment() override {
       return reader()->needs_hierarchy_adjustment();
     }
-    void set_subsystem_path(const char* cgroup_path) {
+    void set_subsystem_path(const char* cgroup_path) override {
       reader()->set_subsystem_path(cgroup_path);
     }
-    const char* mount_point() { return reader()->mount_point(); }
+    const char* mount_point() override { return reader()->mount_point(); }
     const char* cgroup_path() override { return reader()->cgroup_path(); }
 };
 
@@ -97,16 +97,16 @@ class CgroupV2MemoryController final: public CgroupMemoryController {
     bool is_read_only() override {
       return reader()->is_read_only();
     }
-    const char* subsystem_path() {
+    const char* subsystem_path() override {
       return reader()->subsystem_path();
     }
     bool needs_hierarchy_adjustment() override {
       return reader()->needs_hierarchy_adjustment();
     }
-    void set_subsystem_path(const char* cgroup_path) {
+    void set_subsystem_path(const char* cgroup_path) override {
       reader()->set_subsystem_path(cgroup_path);
     }
-    const char* mount_point() { return reader()->mount_point(); }
+    const char* mount_point() override { return reader()->mount_point(); }
     const char* cgroup_path() override { return reader()->cgroup_path(); }
 };
 

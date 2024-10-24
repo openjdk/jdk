@@ -82,10 +82,9 @@ public class FileInputStream extends InputStream
     private volatile boolean closed;
 
     /**
-     * Creates a {@code FileInputStream} by
-     * opening a connection to an actual file,
-     * the file named by the path name {@code name}
-     * in the file system.  {@linkplain java.nio.file##links Symbolic links}
+     * Creates a {@code FileInputStream} to read from an existing file
+     * named by the path name {@code name}.
+     * {@linkplain java.nio.file##links Symbolic links}
      * are automatically redirected to the <i>target</i> of the link.
      * A new {@code FileDescriptor}
      * object is created to represent this file
@@ -115,10 +114,8 @@ public class FileInputStream extends InputStream
     }
 
     /**
-     * Creates a {@code FileInputStream} by
-     * opening a connection to an actual file,
-     * the file named by the {@code File}
-     * object {@code file} in the file system.
+     * Creates a {@code FileInputStream} to read from an existing file
+     * represented by the {@code File} object {@code file}.
      * {@linkplain java.nio.file##links Symbolic links}
      * are automatically redirected to the <i>target</i> of the link.
      * A new {@code FileDescriptor} object

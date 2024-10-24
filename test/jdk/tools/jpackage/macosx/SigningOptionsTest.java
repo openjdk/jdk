@@ -91,8 +91,17 @@ public final class SigningOptionsTest {
                     new String[]{"--type"},
                     "Option [--mac-installer-sign-identity] is not valid with type"},
             // --app-content and --type app-image
+            // JDK-8340802: "codesign" may or may not fail if additional
+            // content is specified based on macOS version. For example on
+            // macOS 15 aarch64 "codesign" will not fail with additional content.
+            // Since we only need to check that warning is displayed when
+            // "codesign" fails and "--app-content" is provided, lets fail
+            // "codesign" for some better reason like identity which does not
+            // exists.
             {"Hello",
-                    new String[]{"--app-content", TEST_DUKE},
+                    new String[]{"--app-content", TEST_DUKE,
+                                 "--mac-sign",
+                                 "--mac-app-image-sign-identity", "test-identity"},
                     null,
                     "\"codesign\" failed and additional application content" +
                     " was supplied via the \"--app-content\" parameter."},

@@ -397,6 +397,25 @@ relativeError));
         }
     }
 
+    static void assertSelectFromTwoVectorEquals($type$[] r, $type$[] order, $type$[] a, $type$[] b, int vector_len) {
+        int i = 0, j = 0;
+        boolean is_exceptional_idx = false;
+        int idx = 0, wrapped_index = 0, oidx = 0;
+        try {
+            for (; i < a.length; i += vector_len) {
+                for (j = 0; j < vector_len; j++) {
+                    idx = i + j;
+                    wrapped_index = Math.floorMod((int)order[idx], 2 * vector_len);
+                    is_exceptional_idx = wrapped_index >= vector_len;
+                    oidx = is_exceptional_idx ? (wrapped_index - vector_len) : wrapped_index;
+                    Assert.assertEquals(r[idx], (is_exceptional_idx ? b[i + oidx] : a[i + oidx]));
+                }
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals(r[idx], (is_exceptional_idx ? b[i + oidx] : a[i + oidx]), "at index #" + idx + ", order = " + order[idx] + ", a = " + a[i + oidx] + ", b = " + b[i + oidx]);
+        }
+    }
+
     static void assertSelectFromArraysEquals($type$[] r, $type$[] a, $type$[] order, int vector_len) {
         int i = 0, j = 0;
         try {
@@ -1221,6 +1240,18 @@ relativeError));
                 flatMap(pair -> $TYPE$_GENERATORS.stream().map(f -> List.of(pair.get(0), pair.get(1), f))).
                 collect(Collectors.toList());
 
+    static final List<IntFunction<$type$[]>> SELECT_FROM_INDEX_GENERATORS = List.of(
+            withToString("$type$[0..VECLEN*2)", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> ($type$)(RAND.nextInt()));
+            })
+    );
+
+    static final List<List<IntFunction<$type$[]>>> $TYPE$_GENERATOR_SELECT_FROM_TRIPLES =
+        $TYPE$_GENERATOR_PAIRS.stream().
+                flatMap(pair -> SELECT_FROM_INDEX_GENERATORS.stream().map(f -> List.of(pair.get(0), pair.get(1), f))).
+                collect(Collectors.toList());
+
     @DataProvider
     public Object[][] $type$BinaryOpProvider() {
         return $TYPE$_GENERATOR_PAIRS.stream().map(List::toArray).
@@ -1245,6 +1276,12 @@ relativeError));
     @DataProvider
     public Object[][] $type$TernaryOpProvider() {
         return $TYPE$_GENERATOR_TRIPLES.stream().map(List::toArray).
+                toArray(Object[][]::new);
+    }
+
+    @DataProvider
+    public Object[][] $type$SelectFromTwoVectorOpProvider() {
+        return $TYPE$_GENERATOR_SELECT_FROM_TRIPLES.stream().map(List::toArray).
                 toArray(Object[][]::new);
     }
 

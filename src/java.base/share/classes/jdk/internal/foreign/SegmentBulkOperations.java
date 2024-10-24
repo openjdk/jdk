@@ -200,8 +200,8 @@ public final class SegmentBulkOperations {
         int offset = 0;
         final int limit = length & (NATIVE_THRESHOLD_MISMATCH - 8);
         for (; offset < limit; offset += 8) {
-            final long s = SCOPED_MEMORY_ACCESS.getLongUnaligned(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcFromOffset + offset, !Architecture.isLittleEndian());
-            final long d = SCOPED_MEMORY_ACCESS.getLongUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstFromOffset + offset, !Architecture.isLittleEndian());
+            final long s = SCOPED_MEMORY_ACCESS.getLongUnaligned(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcFromOffset + offset, false);
+            final long d = SCOPED_MEMORY_ACCESS.getLongUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstFromOffset + offset, false);
             if (s != d) {
                 return start + offset + mismatch(s, d);
             }
@@ -210,8 +210,8 @@ public final class SegmentBulkOperations {
 
         // 0...0X00
         if (remaining >= 4) {
-            final int s = SCOPED_MEMORY_ACCESS.getIntUnaligned(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcFromOffset + offset, !Architecture.isLittleEndian());
-            final int d = SCOPED_MEMORY_ACCESS.getIntUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstFromOffset + offset, !Architecture.isLittleEndian());
+            final int s = SCOPED_MEMORY_ACCESS.getIntUnaligned(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcFromOffset + offset, false);
+            final int d = SCOPED_MEMORY_ACCESS.getIntUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstFromOffset + offset, false);
             if (s != d) {
                 return start + offset + mismatch(s, d);
             }
@@ -220,8 +220,8 @@ public final class SegmentBulkOperations {
         }
         // 0...00X0
         if (remaining >= 2) {
-            final short s = SCOPED_MEMORY_ACCESS.getShortUnaligned(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcFromOffset + offset, !Architecture.isLittleEndian());
-            final short d = SCOPED_MEMORY_ACCESS.getShortUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstFromOffset + offset, !Architecture.isLittleEndian());
+            final short s = SCOPED_MEMORY_ACCESS.getShortUnaligned(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcFromOffset + offset, false);
+            final short d = SCOPED_MEMORY_ACCESS.getShortUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstFromOffset + offset, false);
             if (s != d) {
                 return start + offset + mismatch(s, d);
             }
@@ -243,26 +243,18 @@ public final class SegmentBulkOperations {
     @ForceInline
     private static int mismatch(long first, long second) {
         final long x = first ^ second;
-        return (Architecture.isLittleEndian()
-                ? Long.numberOfTrailingZeros(x)
-                : Long.numberOfLeadingZeros(x)) / 8;
+        return Long.numberOfTrailingZeros(x) / 8;
     }
 
     @ForceInline
     private static int mismatch(int first, int second) {
         final int x = first ^ second;
-        return (Architecture.isLittleEndian()
-                ? Integer.numberOfTrailingZeros(x)
-                : Integer.numberOfLeadingZeros(x)) / 8;
+        return Integer.numberOfTrailingZeros(x) / 8;
     }
 
     @ForceInline
     private static int mismatch(short first, short second) {
-        if (Architecture.isLittleEndian()) {
-            return ((0xff & first) == (0xff & second)) ? 1 : 0;
-        } else {
-            return ((0xff & first) == (0xff & second)) ? 0 : 1;
-        }
+        return ((0xff & first) == (0xff & second)) ? 1 : 0;
     }
 
     /**

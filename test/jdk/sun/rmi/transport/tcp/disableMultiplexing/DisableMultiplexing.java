@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /* @test
  * @bug 4183204
  * @summary The RMI runtime should fail to export a remote object on a TCP
- * port for an applet or application that does not have permission to listen
+ * port for an application that does not have permission to listen
  * on that port, rather than engage in the deprecated "multiplexing protocol".
  * @author Peter Jones
  *

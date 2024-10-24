@@ -616,6 +616,19 @@ public final class Utils {
                 Integer.parseInt(System.getProperty(name, String.valueOf(defaultValue))));
     }
 
+    public static int getIntegerNetProperty(String property, int min, int max, int defaultValue, boolean log) {
+        int value =  Utils.getIntegerNetProperty(property, defaultValue);
+        // use default value if misconfigured
+        if (value < min || value > max) {
+            if (log && Log.errors()) {
+                Log.logError("Property value for {0}={1} not in [{2}..{3}]: " +
+                        "using default={4}", property, value, min, max, defaultValue);
+            }
+            value = defaultValue;
+        }
+        return value;
+    }
+
     public static SSLParameters copySSLParameters(SSLParameters p) {
         SSLParameters p1 = new SSLParameters();
         p1.setAlgorithmConstraints(p.getAlgorithmConstraints());

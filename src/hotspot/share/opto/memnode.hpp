@@ -55,8 +55,7 @@ public:
   enum { Control,               // When is it safe to do this load?
          Memory,                // Chunk of memory is being loaded from
          Address,               // Actually address, derived from base
-         ValueIn,               // Value to store
-         OopStore               // Preceding oop store, only in StoreCM
+         ValueIn                // Value to store
   };
   typedef enum { unordered = 0,
                  acquire,       // Load has to acquire or be succeeded by MemBarAcquire.
@@ -775,36 +774,6 @@ public:
     : StoreNNode(c, mem, adr, at, val, mo) {}
   virtual int Opcode() const;
   virtual BasicType memory_type() const { return T_NARROWKLASS; }
-};
-
-//------------------------------StoreCMNode-----------------------------------
-// Store card-mark byte to memory for CM
-// The last StoreCM before a SafePoint must be preserved and occur after its "oop" store
-// Preceding equivalent StoreCMs may be eliminated.
-class StoreCMNode : public StoreNode {
- private:
-  virtual uint hash() const { return StoreNode::hash() + _oop_alias_idx; }
-  virtual bool cmp( const Node &n ) const {
-    return _oop_alias_idx == ((StoreCMNode&)n)._oop_alias_idx
-      && StoreNode::cmp(n);
-  }
-  virtual uint size_of() const { return sizeof(*this); }
-  int _oop_alias_idx;   // The alias_idx of OopStore
-
-public:
-  StoreCMNode( Node *c, Node *mem, Node *adr, const TypePtr* at, Node *val, Node *oop_store, int oop_alias_idx ) :
-    StoreNode(c, mem, adr, at, val, oop_store, MemNode::release),
-    _oop_alias_idx(oop_alias_idx) {
-    assert(_oop_alias_idx >= Compile::AliasIdxRaw ||
-           (_oop_alias_idx == Compile::AliasIdxBot && !Compile::current()->do_aliasing()),
-           "bad oop alias idx");
-  }
-  virtual int Opcode() const;
-  virtual Node* Identity(PhaseGVN* phase);
-  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
-  virtual const Type* Value(PhaseGVN* phase) const;
-  virtual BasicType memory_type() const { return T_VOID; } // unspecific
-  int oop_alias_idx() const { return _oop_alias_idx; }
 };
 
 //------------------------------SCMemProjNode---------------------------------------

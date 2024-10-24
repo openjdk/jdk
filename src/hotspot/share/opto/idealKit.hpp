@@ -234,15 +234,6 @@ class IdealKit: public StackObj {
               bool require_atomic_access = false,
               bool mismatched = false);
 
-  // Store a card mark ordered after store_oop
-  Node* storeCM(Node* ctl,
-                Node* adr,
-                Node* val,
-                Node* oop_store,
-                int oop_adr_idx,
-                BasicType bt,
-                int adr_idx);
-
   // Trivial call
   Node* make_leaf_call(const TypeFunc *slow_call_type,
                        address slow_call,

@@ -44,6 +44,6 @@ public sealed interface FieldRefEntry extends MemberRefEntry
      * {@return a symbolic descriptor for the field's type}
      */
     default ClassDesc typeSymbol() {
-        return Util.fieldTypeSymbol(nameAndType());
+        return Util.fieldTypeSymbol(type());
     }
 }

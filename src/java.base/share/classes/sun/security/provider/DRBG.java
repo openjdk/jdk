@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package sun.security.provider;
 
 import java.io.IOException;
+import java.io.InvalidObjectException;
 import java.security.AccessController;
 import java.security.DrbgParameters;
 import java.security.PrivilegedAction;
@@ -272,11 +273,18 @@ public final class DRBG extends SecureRandomSpi {
         }
     }
 
+    /**
+     * Restores the state of this object from the stream.
+     *
+     * @param  s the {@code ObjectInputStream} from which data is read
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
+     */
     @java.io.Serial
     private void readObject(java.io.ObjectInputStream s)
             throws IOException, ClassNotFoundException {
         s.defaultReadObject();
-        if (mdp.mech == null) {
+        if (mdp == null || mdp.mech == null) {
             throw new IllegalArgumentException("Input data is corrupted");
         }
         createImpl();

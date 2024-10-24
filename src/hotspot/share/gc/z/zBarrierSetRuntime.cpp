@@ -59,6 +59,10 @@ JRT_LEAF(void, ZBarrierSetRuntime::store_barrier_on_oop_field_without_healing(oo
   ZBarrier::store_barrier_on_heap_oop_field((zpointer*)p, false /* heal */);
 JRT_END
 
+JRT_LEAF(void, ZBarrierSetRuntime::no_keepalive_store_barrier_on_oop_field_without_healing(oop* p))
+  ZBarrier::no_keep_alive_store_barrier_on_heap_oop_field((zpointer*)p);
+JRT_END
+
 JRT_LEAF(void, ZBarrierSetRuntime::store_barrier_on_native_oop_field_without_healing(oop* p))
   ZBarrier::store_barrier_on_native_oop_field((zpointer*)p, false /* heal */);
 JRT_END
@@ -124,6 +128,10 @@ address ZBarrierSetRuntime::store_barrier_on_oop_field_with_healing_addr() {
 
 address ZBarrierSetRuntime::store_barrier_on_oop_field_without_healing_addr() {
   return reinterpret_cast<address>(store_barrier_on_oop_field_without_healing);
+}
+
+address ZBarrierSetRuntime::no_keepalive_store_barrier_on_oop_field_without_healing_addr() {
+  return reinterpret_cast<address>(no_keepalive_store_barrier_on_oop_field_without_healing);
 }
 
 address ZBarrierSetRuntime::store_barrier_on_native_oop_field_without_healing_addr() {

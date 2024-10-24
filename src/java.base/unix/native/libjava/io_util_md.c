@@ -135,7 +135,7 @@ void
 fileDescriptorClose(JNIEnv *env, jobject this)
 {
     FD fd = (*env)->GetIntField(env, this, IO_fd_fdID);
-    if ((*env)->ExceptionOccurred(env)) {
+    if ((*env)->ExceptionCheck(env)) {
         return;
     }
 
@@ -150,7 +150,7 @@ fileDescriptorClose(JNIEnv *env, jobject this)
      * taking extra precaution over here.
      */
     (*env)->SetIntField(env, this, IO_fd_fdID, -1);
-    if ((*env)->ExceptionOccurred(env)) {
+    if ((*env)->ExceptionCheck(env)) {
         return;
     }
     /*

@@ -470,10 +470,11 @@ public sealed interface ConstantPoolBuilder
     }
 
     /**
-     * {@return A {@link ConstantValueEntry} descripbing the provided
+     * {@return A {@link ConstantValueEntry} describing the provided
      * Integer, Long, Float, Double, or String constant}
      *
      * @param c the constant
+     * @see ConstantValueEntry#constantValue()
      */
     default ConstantValueEntry constantValueEntry(ConstantDesc c) {
         if (c instanceof Integer i) return intEntry(i);

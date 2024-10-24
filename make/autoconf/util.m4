@@ -25,6 +25,70 @@
 
 m4_include([util_paths.m4])
 
+###############################################################################
+# Overwrite the existing version of AC_PROG_CC with our own custom variant.
+# Unlike the regular AC_PROG_CC, the compiler list must always be passed.
+AC_DEFUN([AC_PROG_CC],
+[
+  AC_LANG_PUSH(C)
+  AC_ARG_VAR([CC], [C compiler command])
+  AC_ARG_VAR([CFLAGS], [C compiler flags])
+
+  _AC_ARG_VAR_LDFLAGS()
+  _AC_ARG_VAR_LIBS()
+  _AC_ARG_VAR_CPPFLAGS()
+
+  AC_CHECK_TOOLS(CC, [$1])
+
+  test -z "$CC" && AC_MSG_FAILURE([no acceptable C compiler found in \$PATH])
+
+  # Provide some information about the compiler.
+  _AS_ECHO_LOG([checking for _AC_LANG compiler version])
+  set X $ac_compile
+  ac_compiler=$[2]
+  for ac_option in --version -v -V -qversion -version; do
+    _AC_DO_LIMIT([$ac_compiler $ac_option >&AS_MESSAGE_LOG_FD])
+  done
+
+  m4_expand_once([_AC_COMPILER_EXEEXT])
+  m4_expand_once([_AC_COMPILER_OBJEXT])
+
+  _AC_PROG_CC_G
+
+  AC_LANG_POP(C)
+])
+
+###############################################################################
+# Overwrite the existing version of AC_PROG_CXX with our own custom variant.
+# Unlike the regular AC_PROG_CXX, the compiler list must always be passed.
+AC_DEFUN([AC_PROG_CXX],
+[
+  AC_LANG_PUSH(C++)
+  AC_ARG_VAR([CXX], [C++ compiler command])
+  AC_ARG_VAR([CXXFLAGS], [C++ compiler flags])
+
+  _AC_ARG_VAR_LDFLAGS()
+  _AC_ARG_VAR_LIBS()
+  _AC_ARG_VAR_CPPFLAGS()
+
+  AC_CHECK_TOOLS(CXX, [$1])
+
+  # Provide some information about the compiler.
+  _AS_ECHO_LOG([checking for _AC_LANG compiler version])
+  set X $ac_compile
+  ac_compiler=$[2]
+  for ac_option in --version -v -V -qversion; do
+    _AC_DO_LIMIT([$ac_compiler $ac_option >&AS_MESSAGE_LOG_FD])
+  done
+
+  m4_expand_once([_AC_COMPILER_EXEEXT])
+  m4_expand_once([_AC_COMPILER_OBJEXT])
+
+  _AC_PROG_CXX_G
+
+  AC_LANG_POP(C++)
+])
+
 ################################################################################
 # Create a function/macro that takes a series of named arguments. The call is
 # similar to AC_DEFUN, but the setup of the function looks like this:

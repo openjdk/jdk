@@ -80,6 +80,8 @@ private:
   bool is_forward_consecutive_ones(idx_t start_idx, idx_t count) const;
   bool is_backward_consecutive_ones(idx_t last_idx, idx_t count) const;
 
+  static inline uintx tail_mask(uintx bit_number);
+
 public:
 
   inline idx_t aligned_index(idx_t idx) const {

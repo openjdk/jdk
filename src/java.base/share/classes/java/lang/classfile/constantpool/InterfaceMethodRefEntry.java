@@ -45,6 +45,6 @@ public sealed interface InterfaceMethodRefEntry
      * {@return a symbolic descriptor for the interface method's type}
      */
     default MethodTypeDesc typeSymbol() {
-        return Util.methodTypeSymbol(nameAndType());
+        return Util.methodTypeSymbol(type());
     }
 }

@@ -29,8 +29,8 @@
  * Object}, which is the root of the class hierarchy, and {@link
  * Class}, instances of which represent classes at run time.
  *
- * <p>Frequently it is necessary to represent a value of primitive
- * type as if it were an object.The <dfn id=wrapperClasses>{@index
+ * <p id=wrapperClass>Frequently it is necessary to represent a
+ * value of primitive type as if it were an object.The <dfn>{@index
  * "wrapper classes"}</dfn> {@link Boolean}, {@link Byte}, {@link
  * Character}, {@link Short}, {@link Integer}, {@link Long}, {@link
  * Float}, and {@link Double} serve this purpose.  An object of type

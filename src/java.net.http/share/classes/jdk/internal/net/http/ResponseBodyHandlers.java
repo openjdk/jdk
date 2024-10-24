@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ import java.nio.file.Paths;
 import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
@@ -137,16 +138,21 @@ public final class ResponseBodyHandlers {
             if (!initiatingURI.getHost().equalsIgnoreCase(pushRequestURI.getHost()))
                 return;
 
+            String initiatingScheme = initiatingURI.getScheme();
+            String pushRequestScheme = pushRequestURI.getScheme();
+
+            if (!initiatingScheme.equalsIgnoreCase(pushRequestScheme)) return;
+
             int initiatingPort = initiatingURI.getPort();
             if (initiatingPort == -1 ) {
-                if ("https".equalsIgnoreCase(initiatingURI.getScheme()))
+                if ("https".equalsIgnoreCase(initiatingScheme))
                     initiatingPort = 443;
                 else
                     initiatingPort = 80;
             }
             int pushPort = pushRequestURI.getPort();
             if (pushPort == -1 ) {
-                if ("https".equalsIgnoreCase(pushRequestURI.getScheme()))
+                if ("https".equalsIgnoreCase(pushRequestScheme))
                     pushPort = 443;
                 else
                     pushPort = 80;

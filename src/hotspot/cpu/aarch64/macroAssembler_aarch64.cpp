@@ -1838,7 +1838,8 @@ void MacroAssembler::clinit_barrier(Register klass, Register scratch, Label* L_f
     L_slow_path = &L_fallthrough;
   }
   // Fast path check: class is fully initialized
-  ldrb(scratch, Address(klass, InstanceKlass::init_state_offset()));
+  lea(scratch, Address(klass, InstanceKlass::init_state_offset()));
+  ldarb(scratch, scratch);
   subs(zr, scratch, InstanceKlass::fully_initialized);
   br(Assembler::EQ, *L_fast_path);
 
@@ -5010,8 +5011,10 @@ void  MacroAssembler::decode_heap_oop(Register d, Register s) {
   verify_heapbase("MacroAssembler::decode_heap_oop: heap base corrupted?");
 #endif
   if (CompressedOops::base() == nullptr) {
-    if (CompressedOops::shift() != 0 || d != s) {
+    if (CompressedOops::shift() != 0) {
       lsl(d, s, CompressedOops::shift());
+    } else if (d != s) {
+      mov(d, s);
     }
   } else {
     Label done;

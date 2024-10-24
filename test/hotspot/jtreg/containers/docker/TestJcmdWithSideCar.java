@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
  *          and other uses. In side car pattern the main application/service container
  *          is paired with a sidecar container by sharing certain aspects of container
  *          namespace such as PID namespace, specific sub-directories, IPC and more.
- * @requires docker.support
+ * @requires container.support
  * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -42,8 +42,8 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
@@ -52,7 +52,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
 import jdk.test.lib.Container;
+import jdk.test.lib.Platform;
 import jdk.test.lib.Utils;
 import jdk.test.lib.containers.docker.Common;
 import jdk.test.lib.containers.docker.DockerRunOptions;
@@ -108,6 +110,11 @@ public class TestJcmdWithSideCar {
                 mainContainer.waitForMainMethodStart(TIME_TO_WAIT_FOR_MAIN_METHOD_START);
 
                 for (AttachStrategy attachStrategy : EnumSet.allOf(AttachStrategy.class)) {
+                    if (attachStrategy == AttachStrategy.ACCESS_TMP_VIA_PROC_ROOT &&
+                        elevated && !Platform.isRoot()) {
+                        // Elevated attach via proc/root not yet supported.
+                        continue;
+                    }
                     long mainProcPid = testCase01(attachStrategy, elevated);
 
                     // Excluding the test case below until JDK-8228850 is fixed

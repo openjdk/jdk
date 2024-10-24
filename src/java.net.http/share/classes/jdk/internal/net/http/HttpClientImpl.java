@@ -964,7 +964,9 @@ final class HttpClientImpl extends HttpClient implements Trackable {
                 // SSLException
                 throw new SSLException(msg, throwable);
             } else if (throwable instanceof ProtocolException) {
-                throw new ProtocolException(msg);
+                ProtocolException pe = new ProtocolException(msg);
+                pe.initCause(throwable);
+                throw pe;
             } else if (throwable instanceof IOException) {
                 throw new IOException(msg, throwable);
             } else {

@@ -33,8 +33,10 @@ import sun.security.jgss.spi.*;
 import sun.security.jgss.TokenTracker;
 import sun.security.krb5.*;
 import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.InvalidObjectException;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.OutputStream;
 import java.security.*;
 import javax.security.auth.Subject;
 import javax.security.auth.kerberos.ServicePermission;
@@ -899,15 +901,11 @@ class Krb5Context implements GSSContextSpi {
 
     public final byte[] wrap(byte[] inBuf, int offset, int len,
                              MessageProp msgProp) throws GSSException {
-        if (DEBUG != null) {
-            DEBUG.println("Krb5Context.wrap: data=["
-                               + getHexBytes(inBuf, offset, len)
-                               + "]");
-        }
 
-        if (state != STATE_DONE)
-        throw new GSSException(GSSException.NO_CONTEXT, -1,
-                               "Wrap called in invalid state!");
+        if (state != STATE_DONE) {
+            throw new GSSException(GSSException.NO_CONTEXT, -1,
+                    "Wrap called in invalid state!");
+        }
 
         byte[] encToken = null;
         try {
@@ -1048,12 +1046,6 @@ class Krb5Context implements GSSContextSpi {
                         new WrapToken_v2(this, inBuf, offset, len, msgProp);
                 data = token.getData();
                 setSequencingAndReplayProps(token, msgProp);
-            }
-
-            if (DEBUG != null) {
-                DEBUG.println("Krb5Context.unwrap: data=["
-                                   + getHexBytes(data, 0, data.length)
-                                   + "]");
             }
 
             return data;
@@ -1405,8 +1397,22 @@ class Krb5Context implements GSSContextSpi {
 
         @Override
         public String toString() {
-            return "Kerberos session key: etype: " + key.getEType() + "\n" +
-                    new HexDumpEncoder().encodeBuffer(key.getBytes());
+            return "Kerberos session key: etype=" + key.getEType()
+                    + ", " + Krb5Util.keyInfo(key.getBytes());
+        }
+
+        /**
+         * Restores the state of this object from the stream.
+         *
+         * @param  stream the {@code ObjectInputStream} from which data is read
+         * @throws IOException if an I/O error occurs
+         * @throws ClassNotFoundException if a serialized class cannot be loaded
+         */
+        @java.io.Serial
+        private void readObject(ObjectInputStream stream)
+                throws IOException, ClassNotFoundException {
+            throw new InvalidObjectException
+                    ("KerberosSessionKey not directly deserializable");
         }
     }
 
@@ -1477,5 +1483,4 @@ class Krb5Context implements GSSContextSpi {
     public void setAuthzData(AuthorizationData authzData) {
         this.authzData = authzData;
     }
-
 }

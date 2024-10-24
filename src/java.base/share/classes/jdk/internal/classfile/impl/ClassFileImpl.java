@@ -40,6 +40,8 @@ import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.lang.classfile.constantpool.Utf8Entry;
 import jdk.internal.classfile.impl.verifier.VerifierImpl;
 
+import static java.util.Objects.requireNonNull;
+
 public final class ClassFileImpl implements ClassFile {
 
     private Option stackMapsOption;
@@ -123,7 +125,7 @@ public final class ClassFileImpl implements ClassFile {
             } else if (o instanceof AttributeMapperOption oo) {
                 amo = oo;
             } else { // null or unknown Option type
-                throw new IllegalArgumentException("Invalid option: " + o);
+                throw new IllegalArgumentException("Invalid option: " + requireNonNull(o));
             }
         }
         return new ClassFileImpl(smo, deo, lno, apo, cpso, sjo, dco, dlo, chro, amo);

@@ -172,10 +172,10 @@ public class TestIndependentPacksWithCyclicDependency {
     static void test2(int[] dataIa, int[] dataIb, float[] dataFa, float[] dataFb) {
         for (int i = 0; i < RANGE; i+=2) {
             // int and float arrays are two slices. But we pretend both are of type int.
-            unsafe.putInt(dataFa, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4 * i + 0, dataIa[i+0] + 1);
-            unsafe.putInt(dataFa, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4 * i + 4, dataIa[i+1] + 1);
-            dataIb[i+0] = 11 * unsafe.getInt(dataFb, unsafe.ARRAY_INT_BASE_OFFSET + 4 * i + 0);
-            dataIb[i+1] = 11 * unsafe.getInt(dataFb, unsafe.ARRAY_INT_BASE_OFFSET + 4 * i + 4);
+            unsafe.putInt(dataFa, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4L * i + 0, dataIa[i+0] + 1);
+            unsafe.putInt(dataFa, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4L * i + 4, dataIa[i+1] + 1);
+            dataIb[i+0] = 11 * unsafe.getInt(dataFb, unsafe.ARRAY_INT_BASE_OFFSET + 4L * i + 0);
+            dataIb[i+1] = 11 * unsafe.getInt(dataFb, unsafe.ARRAY_INT_BASE_OFFSET + 4L * i + 4);
         }
     }
 
@@ -248,10 +248,10 @@ public class TestIndependentPacksWithCyclicDependency {
         for (int i = 0; i < RANGE; i+=2) {
             // same as test2, except that reordering leads to different semantics
             // explanation analogue to test4
-            unsafe.putInt(dataFa, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4 * i + 0, dataIa[i+0] + 1); // A
-            dataIb[i+0] = 11 * unsafe.getInt(dataFb, unsafe.ARRAY_INT_BASE_OFFSET + 4 * i + 0); // X
-            dataIb[i+1] = 11 * unsafe.getInt(dataFb, unsafe.ARRAY_INT_BASE_OFFSET + 4 * i + 4); // Y
-            unsafe.putInt(dataFa, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4 * i + 4, dataIa[i+1] + 1); // B
+            unsafe.putInt(dataFa, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4L * i + 0, dataIa[i+0] + 1); // A
+            dataIb[i+0] = 11 * unsafe.getInt(dataFb, unsafe.ARRAY_INT_BASE_OFFSET + 4L * i + 0); // X
+            dataIb[i+1] = 11 * unsafe.getInt(dataFb, unsafe.ARRAY_INT_BASE_OFFSET + 4L * i + 4); // Y
+            unsafe.putInt(dataFa, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4L * i + 4, dataIa[i+1] + 1); // B
         }
     }
 
@@ -275,18 +275,18 @@ public class TestIndependentPacksWithCyclicDependency {
                       long[] dataLa, long[] dataLb) {
         for (int i = 0; i < RANGE; i+=2) {
             // Chain of parallelizable op and conversion
-            int v00 = unsafe.getInt(dataIa, unsafe.ARRAY_INT_BASE_OFFSET + 4 * i + 0) + 3;
-            int v01 = unsafe.getInt(dataIa, unsafe.ARRAY_INT_BASE_OFFSET + 4 * i + 4) + 3;
-            unsafe.putInt(dataFa, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4 * i + 0, v00);
-            unsafe.putInt(dataFa, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4 * i + 4, v01);
-            int v10 = unsafe.getInt(dataFb, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4 * i + 0) * 45;
-            int v11 = unsafe.getInt(dataFb, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4 * i + 4) * 45;
-            unsafe.putInt(dataLa, unsafe.ARRAY_LONG_BASE_OFFSET + 4 * i + 0, v10);
-            unsafe.putInt(dataLa, unsafe.ARRAY_LONG_BASE_OFFSET + 4 * i + 4, v11);
-            float v20 = unsafe.getFloat(dataLb, unsafe.ARRAY_LONG_BASE_OFFSET + 4 * i + 0) + 0.55f;
-            float v21 = unsafe.getFloat(dataLb, unsafe.ARRAY_LONG_BASE_OFFSET + 4 * i + 4) + 0.55f;
-            unsafe.putFloat(dataIb, unsafe.ARRAY_INT_BASE_OFFSET + 4 * i + 0, v20);
-            unsafe.putFloat(dataIb, unsafe.ARRAY_INT_BASE_OFFSET + 4 * i + 4, v21);
+            int v00 = unsafe.getInt(dataIa, unsafe.ARRAY_INT_BASE_OFFSET + 4L * i + 0) + 3;
+            int v01 = unsafe.getInt(dataIa, unsafe.ARRAY_INT_BASE_OFFSET + 4L * i + 4) + 3;
+            unsafe.putInt(dataFa, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4L * i + 0, v00);
+            unsafe.putInt(dataFa, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4L * i + 4, v01);
+            int v10 = unsafe.getInt(dataFb, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4L * i + 0) * 45;
+            int v11 = unsafe.getInt(dataFb, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4L * i + 4) * 45;
+            unsafe.putInt(dataLa, unsafe.ARRAY_LONG_BASE_OFFSET + 4L * i + 0, v10);
+            unsafe.putInt(dataLa, unsafe.ARRAY_LONG_BASE_OFFSET + 4L * i + 4, v11);
+            float v20 = unsafe.getFloat(dataLb, unsafe.ARRAY_LONG_BASE_OFFSET + 4L * i + 0) + 0.55f;
+            float v21 = unsafe.getFloat(dataLb, unsafe.ARRAY_LONG_BASE_OFFSET + 4L * i + 4) + 0.55f;
+            unsafe.putFloat(dataIb, unsafe.ARRAY_INT_BASE_OFFSET + 4L * i + 0, v20);
+            unsafe.putFloat(dataIb, unsafe.ARRAY_INT_BASE_OFFSET + 4L * i + 4, v21);
         }
     }
 
@@ -307,18 +307,18 @@ public class TestIndependentPacksWithCyclicDependency {
                       long[] dataLa, long[] dataLb) {
         for (int i = 0; i < RANGE; i+=2) {
             // Cycle involving 3 memory slices
-            int v00 = unsafe.getInt(dataIa, unsafe.ARRAY_INT_BASE_OFFSET + 4 * i + 0) + 3;
-            unsafe.putInt(dataFa, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4 * i + 0, v00);
-            int v10 = unsafe.getInt(dataFb, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4 * i + 0) * 45;
-            int v11 = unsafe.getInt(dataFb, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4 * i + 4) * 45;
-            unsafe.putInt(dataLa, unsafe.ARRAY_LONG_BASE_OFFSET + 4 * i + 0, v10);
-            unsafe.putInt(dataLa, unsafe.ARRAY_LONG_BASE_OFFSET + 4 * i + 4, v11);
-            float v20 = unsafe.getFloat(dataLb, unsafe.ARRAY_LONG_BASE_OFFSET + 4 * i + 0) + 0.55f;
-            float v21 = unsafe.getFloat(dataLb, unsafe.ARRAY_LONG_BASE_OFFSET + 4 * i + 4) + 0.55f;
-            unsafe.putFloat(dataIb, unsafe.ARRAY_INT_BASE_OFFSET + 4 * i + 0, v20);
-            unsafe.putFloat(dataIb, unsafe.ARRAY_INT_BASE_OFFSET + 4 * i + 4, v21);
-            int v01 = unsafe.getInt(dataIa, unsafe.ARRAY_INT_BASE_OFFSET + 4 * i + 4) + 3; // moved down
-            unsafe.putInt(dataFa, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4 * i + 4, v01);
+            int v00 = unsafe.getInt(dataIa, unsafe.ARRAY_INT_BASE_OFFSET + 4L * i + 0) + 3;
+            unsafe.putInt(dataFa, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4L * i + 0, v00);
+            int v10 = unsafe.getInt(dataFb, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4L * i + 0) * 45;
+            int v11 = unsafe.getInt(dataFb, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4L * i + 4) * 45;
+            unsafe.putInt(dataLa, unsafe.ARRAY_LONG_BASE_OFFSET + 4L * i + 0, v10);
+            unsafe.putInt(dataLa, unsafe.ARRAY_LONG_BASE_OFFSET + 4L * i + 4, v11);
+            float v20 = unsafe.getFloat(dataLb, unsafe.ARRAY_LONG_BASE_OFFSET + 4L * i + 0) + 0.55f;
+            float v21 = unsafe.getFloat(dataLb, unsafe.ARRAY_LONG_BASE_OFFSET + 4L * i + 4) + 0.55f;
+            unsafe.putFloat(dataIb, unsafe.ARRAY_INT_BASE_OFFSET + 4L * i + 0, v20);
+            unsafe.putFloat(dataIb, unsafe.ARRAY_INT_BASE_OFFSET + 4L * i + 4, v21);
+            int v01 = unsafe.getInt(dataIa, unsafe.ARRAY_INT_BASE_OFFSET + 4L * i + 4) + 3; // moved down
+            unsafe.putInt(dataFa, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4L * i + 4, v01);
         }
     }
 
@@ -340,19 +340,19 @@ public class TestIndependentPacksWithCyclicDependency {
                       long[] dataLa, long[] dataLb) {
         for (int i = 0; i < RANGE; i+=2) {
             // 2-cycle, with more ops after
-            int v00 = unsafe.getInt(dataIa, unsafe.ARRAY_INT_BASE_OFFSET + 4 * i + 0) + 3;
-            unsafe.putInt(dataFa, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4 * i + 0, v00);
-            int v10 = unsafe.getInt(dataFb, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4 * i + 0) * 45;
-            int v11 = unsafe.getInt(dataFb, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4 * i + 4) * 45;
-            unsafe.putInt(dataLa, unsafe.ARRAY_LONG_BASE_OFFSET + 4 * i + 0, v10);
-            unsafe.putInt(dataLa, unsafe.ARRAY_LONG_BASE_OFFSET + 4 * i + 4, v11);
-            int v01 = unsafe.getInt(dataIa, unsafe.ARRAY_INT_BASE_OFFSET + 4 * i + 4) + 3;
-            unsafe.putInt(dataFa, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4 * i + 4, v01);
+            int v00 = unsafe.getInt(dataIa, unsafe.ARRAY_INT_BASE_OFFSET + 4L * i + 0) + 3;
+            unsafe.putInt(dataFa, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4L * i + 0, v00);
+            int v10 = unsafe.getInt(dataFb, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4L * i + 0) * 45;
+            int v11 = unsafe.getInt(dataFb, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4L * i + 4) * 45;
+            unsafe.putInt(dataLa, unsafe.ARRAY_LONG_BASE_OFFSET + 4L * i + 0, v10);
+            unsafe.putInt(dataLa, unsafe.ARRAY_LONG_BASE_OFFSET + 4L * i + 4, v11);
+            int v01 = unsafe.getInt(dataIa, unsafe.ARRAY_INT_BASE_OFFSET + 4L * i + 4) + 3;
+            unsafe.putInt(dataFa, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4L * i + 4, v01);
             // more stuff after
-            float v20 = unsafe.getFloat(dataLb, unsafe.ARRAY_LONG_BASE_OFFSET + 4 * i + 0) + 0.55f;
-            float v21 = unsafe.getFloat(dataLb, unsafe.ARRAY_LONG_BASE_OFFSET + 4 * i + 4) + 0.55f;
-            unsafe.putFloat(dataIb, unsafe.ARRAY_INT_BASE_OFFSET + 4 * i + 0, v20);
-            unsafe.putFloat(dataIb, unsafe.ARRAY_INT_BASE_OFFSET + 4 * i + 4, v21);
+            float v20 = unsafe.getFloat(dataLb, unsafe.ARRAY_LONG_BASE_OFFSET + 4L * i + 0) + 0.55f;
+            float v21 = unsafe.getFloat(dataLb, unsafe.ARRAY_LONG_BASE_OFFSET + 4L * i + 4) + 0.55f;
+            unsafe.putFloat(dataIb, unsafe.ARRAY_INT_BASE_OFFSET + 4L * i + 0, v20);
+            unsafe.putFloat(dataIb, unsafe.ARRAY_INT_BASE_OFFSET + 4L * i + 4, v21);
         }
     }
 
@@ -373,19 +373,19 @@ public class TestIndependentPacksWithCyclicDependency {
                       long[] dataLa, long[] dataLb) {
         for (int i = 0; i < RANGE; i+=2) {
             // 2-cycle, with more stuff before
-            float v20 = unsafe.getFloat(dataLb, unsafe.ARRAY_LONG_BASE_OFFSET + 4 * i + 0) + 0.55f;
-            float v21 = unsafe.getFloat(dataLb, unsafe.ARRAY_LONG_BASE_OFFSET + 4 * i + 4) + 0.55f;
-            unsafe.putFloat(dataIb, unsafe.ARRAY_INT_BASE_OFFSET + 4 * i + 0, v20);
-            unsafe.putFloat(dataIb, unsafe.ARRAY_INT_BASE_OFFSET + 4 * i + 4, v21);
+            float v20 = unsafe.getFloat(dataLb, unsafe.ARRAY_LONG_BASE_OFFSET + 4L * i + 0) + 0.55f;
+            float v21 = unsafe.getFloat(dataLb, unsafe.ARRAY_LONG_BASE_OFFSET + 4L * i + 4) + 0.55f;
+            unsafe.putFloat(dataIb, unsafe.ARRAY_INT_BASE_OFFSET + 4L * i + 0, v20);
+            unsafe.putFloat(dataIb, unsafe.ARRAY_INT_BASE_OFFSET + 4L * i + 4, v21);
             // 2-cycle
-            int v00 = unsafe.getInt(dataIa, unsafe.ARRAY_INT_BASE_OFFSET + 4 * i + 0) + 3;
-            unsafe.putInt(dataFa, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4 * i + 0, v00);
-            int v10 = unsafe.getInt(dataFb, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4 * i + 0) * 45;
-            int v11 = unsafe.getInt(dataFb, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4 * i + 4) * 45;
-            unsafe.putInt(dataLa, unsafe.ARRAY_LONG_BASE_OFFSET + 4 * i + 0, v10);
-            unsafe.putInt(dataLa, unsafe.ARRAY_LONG_BASE_OFFSET + 4 * i + 4, v11);
-            int v01 = unsafe.getInt(dataIa, unsafe.ARRAY_INT_BASE_OFFSET + 4 * i + 4) + 3;
-            unsafe.putInt(dataFa, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4 * i + 4, v01);
+            int v00 = unsafe.getInt(dataIa, unsafe.ARRAY_INT_BASE_OFFSET + 4L * i + 0) + 3;
+            unsafe.putInt(dataFa, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4L * i + 0, v00);
+            int v10 = unsafe.getInt(dataFb, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4L * i + 0) * 45;
+            int v11 = unsafe.getInt(dataFb, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4L * i + 4) * 45;
+            unsafe.putInt(dataLa, unsafe.ARRAY_LONG_BASE_OFFSET + 4L * i + 0, v10);
+            unsafe.putInt(dataLa, unsafe.ARRAY_LONG_BASE_OFFSET + 4L * i + 4, v11);
+            int v01 = unsafe.getInt(dataIa, unsafe.ARRAY_INT_BASE_OFFSET + 4L * i + 4) + 3;
+            unsafe.putInt(dataFa, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4L * i + 4, v01);
         }
     }
 
@@ -423,18 +423,18 @@ public class TestIndependentPacksWithCyclicDependency {
             //
             // The cycle thus does not only go via packs, but also scalar ops.
             //
-            int v00 = unsafe.getInt(dataIa, unsafe.ARRAY_INT_BASE_OFFSET + 4 * i + 0) + 3; // A
-            unsafe.putInt(dataFa, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4 * i + 0, v00);
-            int v10 = unsafe.getInt(dataFb, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4 * i + 0) * 45; // R: constant mismatch
-            int v11 = unsafe.getInt(dataFb, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4 * i + 4) + 43; // S
-            unsafe.putInt(dataLa, unsafe.ARRAY_LONG_BASE_OFFSET + 4 * i + 0, v10);
-            unsafe.putInt(dataLa, unsafe.ARRAY_LONG_BASE_OFFSET + 4 * i + 4, v11);
-            float v20 = unsafe.getFloat(dataLb, unsafe.ARRAY_LONG_BASE_OFFSET + 4 * i + 0) + 0.55f; // U
-            float v21 = unsafe.getFloat(dataLb, unsafe.ARRAY_LONG_BASE_OFFSET + 4 * i + 4) + 0.55f; // V
-            unsafe.putFloat(dataIb, unsafe.ARRAY_INT_BASE_OFFSET + 4 * i + 0, v20);
-            unsafe.putFloat(dataIb, unsafe.ARRAY_INT_BASE_OFFSET + 4 * i + 4, v21);
-            int v01 = unsafe.getInt(dataIa, unsafe.ARRAY_INT_BASE_OFFSET + 4 * i + 4) + 3; // B: moved down
-            unsafe.putInt(dataFa, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4 * i + 4, v01);
+            int v00 = unsafe.getInt(dataIa, unsafe.ARRAY_INT_BASE_OFFSET + 4L * i + 0) + 3; // A
+            unsafe.putInt(dataFa, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4L * i + 0, v00);
+            int v10 = unsafe.getInt(dataFb, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4L * i + 0) * 45; // R: constant mismatch
+            int v11 = unsafe.getInt(dataFb, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4L * i + 4) + 43; // S
+            unsafe.putInt(dataLa, unsafe.ARRAY_LONG_BASE_OFFSET + 4L * i + 0, v10);
+            unsafe.putInt(dataLa, unsafe.ARRAY_LONG_BASE_OFFSET + 4L * i + 4, v11);
+            float v20 = unsafe.getFloat(dataLb, unsafe.ARRAY_LONG_BASE_OFFSET + 4L * i + 0) + 0.55f; // U
+            float v21 = unsafe.getFloat(dataLb, unsafe.ARRAY_LONG_BASE_OFFSET + 4L * i + 4) + 0.55f; // V
+            unsafe.putFloat(dataIb, unsafe.ARRAY_INT_BASE_OFFSET + 4L * i + 0, v20);
+            unsafe.putFloat(dataIb, unsafe.ARRAY_INT_BASE_OFFSET + 4L * i + 4, v21);
+            int v01 = unsafe.getInt(dataIa, unsafe.ARRAY_INT_BASE_OFFSET + 4L * i + 4) + 3; // B: moved down
+            unsafe.putInt(dataFa, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4L * i + 4, v01);
         }
     }
 
@@ -463,8 +463,8 @@ public class TestIndependentPacksWithCyclicDependency {
 
     static void verify(String name, float[] data, float[] gold) {
         for (int i = 0; i < RANGE; i++) {
-            int datav = unsafe.getInt(data, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4 * i);
-            int goldv = unsafe.getInt(gold, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4 * i);
+            int datav = unsafe.getInt(data, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4L * i);
+            int goldv = unsafe.getInt(gold, unsafe.ARRAY_FLOAT_BASE_OFFSET + 4L * i);
             if (datav != goldv) {
                 throw new RuntimeException(" Invalid " + name + " result: dataF[" + i + "]: " + datav + " != " + goldv);
             }

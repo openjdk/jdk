@@ -113,6 +113,7 @@ public final class EntryMap {
             throw new IllegalArgumentException("hash must be nonzero");
 
         int ptr = (hash & mask1) << 1;
+        var data = this.data;
         int k = data[ptr];
         if (k == 0) {
             data[ptr] = hash;

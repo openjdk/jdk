@@ -4048,6 +4048,7 @@ void TemplateTable::_new() {
   __ push(rcx);  // save the contexts of klass for initializing the header
 
   // make sure klass is initialized
+  // init_state needs acquire, but x86 is TSO, and so we are already good.
 #ifdef _LP64
   assert(VM_Version::supports_fast_class_init_checks(), "must support fast class initialization checks");
   __ clinit_barrier(rcx, r15_thread, nullptr /*L_fast_path*/, &slow_case);

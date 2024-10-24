@@ -24,6 +24,7 @@
  */
 
 #include "precompiled.hpp"
+#include "logging/log.hpp"
 #include "nmt/vmatree.hpp"
 #include "utilities/growableArray.hpp"
 
@@ -34,7 +35,9 @@ const char* VMATree::statetype_strings[3] = {
 };
 
 VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType state,
-                                               const RegionData& metadata) {
+                                               const RegionData& metadata, bool use_tag_inplace) {
+  assert(!use_tag_inplace || metadata.mem_tag == mtNone,
+         "If using use_tag_inplace, then the supplied tag should be mtNone, was instead: %s", NMTUtil::tag_to_name(metadata.mem_tag));
   if (A == B) {
     // A 0-sized mapping isn't worth recording.
     return SummaryDiff();
@@ -55,6 +58,10 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
   AddressState LEQ_A;
   TreapNode* leqA_n = _tree.closest_leq(A);
   if (leqA_n == nullptr) {
+    assert(!use_tag_inplace, "Cannot use the tag inplace if no pre-existing tag exists. From: " PTR_FORMAT " To: " PTR_FORMAT, A, B);
+    if (use_tag_inplace) {
+      log_debug(nmt)("Cannot use the tag inplace if no pre-existing tag exists. From: " PTR_FORMAT " To: " PTR_FORMAT, A, B);
+    }
     // No match. We add the A node directly, unless it would have no effect.
     if (!stA.is_noop()) {
       _tree.upsert(A, stA);
@@ -62,6 +69,17 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
   } else {
     LEQ_A_found = true;
     LEQ_A = AddressState{leqA_n->key(), leqA_n->val()};
+    StateType leqA_state = leqA_n->val().out.type();
+    StateType new_state = stA.out.type();
+    // If we specify use_tag_inplace then the new region takes over the current tag instead of the tag in metadata.
+    // This is important because the VirtualMemoryTracker API doesn't require supplying the tag for some operations.
+    if (use_tag_inplace) {
+      assert(leqA_n->val().out.type() != StateType::Released, "Should not use inplace the tag of a released region");
+      MemTag tag = leqA_n->val().out.mem_tag();
+      stA.out.set_tag(tag);
+      stB.in.set_tag(tag);
+    }
+
     // Unless we know better, let B's outgoing state be the outgoing state of the node at or preceding A.
     // Consider the case where the found node is the start of a region enclosing [A,B)
     stB.out = leqA_n->val().out;

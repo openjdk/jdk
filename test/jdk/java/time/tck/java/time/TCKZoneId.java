@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,11 +96,11 @@ public class TCKZoneId extends AbstractTCKTest {
     //-----------------------------------------------------------------------
     // SHORT_IDS
     //-----------------------------------------------------------------------
-    public void test_constant_OLD_IDS_POST_2005() {
+    public void test_constant_OLD_IDS_POST_2024b() {
         Map<String, String> ids = ZoneId.SHORT_IDS;
-        assertEquals(ids.get("EST"), "-05:00");
-        assertEquals(ids.get("MST"), "-07:00");
-        assertEquals(ids.get("HST"), "-10:00");
+        assertEquals(ids.get("EST"), "America/Panama");
+        assertEquals(ids.get("MST"), "America/Phoenix");
+        assertEquals(ids.get("HST"), "Pacific/Honolulu");
         assertEquals(ids.get("ACT"), "Australia/Darwin");
         assertEquals(ids.get("AET"), "Australia/Sydney");
         assertEquals(ids.get("AGT"), "America/Argentina/Buenos_Aires");
@@ -129,7 +129,7 @@ public class TCKZoneId extends AbstractTCKTest {
     }
 
     @Test(expectedExceptions=UnsupportedOperationException.class)
-    public void test_constant_OLD_IDS_POST_2005_immutable() {
+    public void test_constant_OLD_IDS_POST_2024b_immutable() {
         Map<String, String> ids = ZoneId.SHORT_IDS;
         ids.clear();
     }

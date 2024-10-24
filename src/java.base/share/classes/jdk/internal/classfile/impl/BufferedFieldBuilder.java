@@ -34,6 +34,8 @@ import java.lang.classfile.*;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.lang.classfile.constantpool.Utf8Entry;
 
+import static java.util.Objects.requireNonNull;
+
 public final class BufferedFieldBuilder
         implements TerminalFieldBuilder {
     private final SplitConstantPool constantPool;
@@ -49,8 +51,8 @@ public final class BufferedFieldBuilder
                                 Utf8Entry type) {
         this.constantPool = constantPool;
         this.context = context;
-        this.name = name;
-        this.desc = type;
+        this.name = requireNonNull(name);
+        this.desc = requireNonNull(type);
         this.flags = new AccessFlagsImpl(AccessFlag.Location.FIELD);
     }
 
@@ -61,7 +63,7 @@ public final class BufferedFieldBuilder
 
     @Override
     public FieldBuilder with(FieldElement element) {
-        elements.add(element);
+        elements.add(requireNonNull(element));
         if (element instanceof AccessFlags f) this.flags = f;
         return this;
     }

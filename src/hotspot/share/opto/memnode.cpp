@@ -3462,9 +3462,7 @@ Node *StoreNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   Node* address = in(MemNode::Address);
   Node* value   = in(MemNode::ValueIn);
   // Back-to-back stores to same address?  Fold em up.  Generally
-  // unsafe if I have intervening uses...  Also disallowed for StoreCM
-  // since they must follow each StoreP operation.  Redundant StoreCMs
-  // are eliminated just before matching in final_graph_reshape.
+  // unsafe if I have intervening uses.
   {
     Node* st = mem;
     // If Store 'st' has more than one use, we cannot fold 'st' away.
@@ -3474,7 +3472,7 @@ Node *StoreNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     // require exactly ONE user until such time as we clone 'mem' for
     // each of 'mem's uses (thus making the exactly-1-user-rule hold
     // true).
-    while (st->is_Store() && st->outcnt() == 1 && st->Opcode() != Op_StoreCM) {
+    while (st->is_Store() && st->outcnt() == 1) {
       // Looking at a dead closed cycle of memory?
       assert(st != st->in(MemNode::Memory), "dead loop in StoreNode::Ideal");
       assert(Opcode() == st->Opcode() ||
@@ -3780,48 +3778,6 @@ Node *StoreCNode::Ideal(PhaseGVN *phase, bool can_reshape){
   // Finally check the default case
   return StoreNode::Ideal(phase, can_reshape);
 }
-
-//=============================================================================
-//------------------------------Identity---------------------------------------
-Node* StoreCMNode::Identity(PhaseGVN* phase) {
-  // No need to card mark when storing a null ptr
-  Node* my_store = in(MemNode::OopStore);
-  if (my_store->is_Store()) {
-    const Type *t1 = phase->type( my_store->in(MemNode::ValueIn) );
-    if( t1 == TypePtr::NULL_PTR ) {
-      return in(MemNode::Memory);
-    }
-  }
-  return this;
-}
-
-//=============================================================================
-//------------------------------Ideal---------------------------------------
-Node *StoreCMNode::Ideal(PhaseGVN *phase, bool can_reshape){
-  Node* progress = StoreNode::Ideal(phase, can_reshape);
-  if (progress != nullptr) return progress;
-
-  Node* my_store = in(MemNode::OopStore);
-  if (my_store->is_MergeMem()) {
-    Node* mem = my_store->as_MergeMem()->memory_at(oop_alias_idx());
-    set_req_X(MemNode::OopStore, mem, phase);
-    return this;
-  }
-
-  return nullptr;
-}
-
-//------------------------------Value-----------------------------------------
-const Type* StoreCMNode::Value(PhaseGVN* phase) const {
-  // Either input is TOP ==> the result is TOP (checked in StoreNode::Value).
-  // If extra input is TOP ==> the result is TOP
-  const Type* t = phase->type(in(MemNode::OopStore));
-  if (t == Type::TOP) {
-    return Type::TOP;
-  }
-  return StoreNode::Value(phase);
-}
-
 
 //=============================================================================
 //----------------------------------SCMemProjNode------------------------------

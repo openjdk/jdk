@@ -564,20 +564,20 @@ public class ZipEntry implements ZipConstants, Cloneable {
                             // be the magic value and it "accidentally" has some
                             // bytes in extra match the id.
                             if (sz >= 16) {
-                                size = get64(extra, off);
-                                csize = get64(extra, off + 8);
+                                size = get64S(extra, off);
+                                csize = get64S(extra, off + 8);
                             }
                         } else {
                             // CEN extra zip64
                             if (size == ZIP64_MAGICVAL) {
                                 if (off + 8 > len)  // invalid zip64 extra
                                     break;          // fields, just skip
-                                size = get64(extra, off);
+                                size = get64S(extra, off);
                             }
                             if (csize == ZIP64_MAGICVAL) {
                                 if (off + 16 > len)  // invalid zip64 extra
                                     break;           // fields, just skip
-                                csize = get64(extra, off + 8);
+                                csize = get64S(extra, off + 8);
                             }
                         }
                     }
@@ -588,15 +588,15 @@ public class ZipEntry implements ZipConstants, Cloneable {
                     int pos = off + 4;               // reserved 4 bytes
                     if (get16(extra, pos) !=  0x0001 || get16(extra, pos + 2) != 24)
                         break;
-                    long wtime = get64(extra, pos + 4);
+                    long wtime = get64S(extra, pos + 4);
                     if (wtime != WINDOWS_TIME_NOT_AVAILABLE) {
                         mtime = winTimeToFileTime(wtime);
                     }
-                    wtime = get64(extra, pos + 12);
+                    wtime = get64S(extra, pos + 12);
                     if (wtime != WINDOWS_TIME_NOT_AVAILABLE) {
                         atime = winTimeToFileTime(wtime);
                     }
-                    wtime = get64(extra, pos + 20);
+                    wtime = get64S(extra, pos + 20);
                     if (wtime != WINDOWS_TIME_NOT_AVAILABLE) {
                         ctime = winTimeToFileTime(wtime);
                     }

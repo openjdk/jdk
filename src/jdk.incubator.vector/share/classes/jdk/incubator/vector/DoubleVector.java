@@ -525,6 +525,19 @@ public abstract class DoubleVector extends AbstractVector<Double> {
         return r;
     }
 
+    static DoubleVector selectFromTwoVectorHelper(Vector<Double> indexes, Vector<Double> src1, Vector<Double> src2) {
+        int vlen = indexes.length();
+        double[] res = new double[vlen];
+        double[] vecPayload1 = ((DoubleVector)indexes).vec();
+        double[] vecPayload2 = ((DoubleVector)src1).vec();
+        double[] vecPayload3 = ((DoubleVector)src2).vec();
+        for (int i = 0; i < vlen; i++) {
+            int wrapped_index = VectorIntrinsics.wrapToRange((int)vecPayload1[i], 2 * vlen);
+            res[i] = wrapped_index >= vlen ? vecPayload3[wrapped_index - vlen] : vecPayload2[wrapped_index];
+        }
+        return ((DoubleVector)src1).vectorFactory(res);
+    }
+
     // Static factories (other than memory operations)
 
     // Note: A surprising behavior in javadoc
@@ -2415,6 +2428,22 @@ public abstract class DoubleVector extends AbstractVector<Double> {
                                                         length(), this, v, m,
                                                         (v1, v2, _m) ->
                                                          v2.rearrange(v1.toShuffle(), _m));
+    }
+
+
+    /**
+     * {@inheritDoc} <!--workaround-->
+     */
+    @Override
+    public abstract
+    DoubleVector selectFrom(Vector<Double> v1, Vector<Double> v2);
+
+
+    /*package-private*/
+    @ForceInline
+    final DoubleVector selectFromTemplate(DoubleVector v1, DoubleVector v2) {
+        return VectorSupport.selectFromTwoVectorOp(getClass(), double.class, length(), this, v1, v2,
+                                                   (vec1, vec2, vec3) -> selectFromTwoVectorHelper(vec1, vec2, vec3));
     }
 
     /// Ternary operations

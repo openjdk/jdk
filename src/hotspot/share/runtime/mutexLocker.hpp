@@ -31,7 +31,6 @@
 
 // Mutexes used in the VM.
 
-extern Mutex*   Patching_lock;                   // a lock used to guard code patching of compiled code
 extern Mutex*   NMethodState_lock;               // a lock used to guard a compiled method state
 extern Monitor* SystemDictionary_lock;           // a lock on the system dictionary
 extern Mutex*   InvokeMethodTypeTable_lock;
@@ -61,6 +60,8 @@ extern Monitor* CodeCache_lock;                  // a lock on the CodeCache
 extern Mutex*   TouchedMethodLog_lock;           // a lock on allocation of LogExecutedMethods info
 extern Mutex*   RetData_lock;                    // a lock on installation of RetData inside method data
 extern Monitor* VMOperation_lock;                // a lock on queue of vm_operations waiting to execute
+extern Monitor* ThreadsLockThrottle_lock;        // used by Thread start/exit to reduce competition for Threads_lock,
+                                                 // so a VM thread calling a safepoint is prioritized
 extern Monitor* Threads_lock;                    // a lock on the Threads table of active Java threads
                                                  // (also used by Safepoints too to block threads creation/destruction)
 extern Mutex*   NonJavaThreadsList_lock;         // a lock on the NonJavaThreads list

@@ -1168,8 +1168,8 @@ void LIR_Assembler::emit_opConvert(LIR_OpConvert* op) {
 
 void LIR_Assembler::emit_alloc_obj(LIR_OpAllocObj* op) {
   if (op->init_check()) {
-    __ ldrb(rscratch1, Address(op->klass()->as_register(),
-                               InstanceKlass::init_state_offset()));
+    __ lea(rscratch1, Address(op->klass()->as_register(), InstanceKlass::init_state_offset()));
+    __ ldarb(rscratch1, rscratch1);
     __ cmpw(rscratch1, InstanceKlass::fully_initialized);
     add_debug_info_for_null_check_here(op->stub()->info());
     __ br(Assembler::NE, *op->stub()->entry());

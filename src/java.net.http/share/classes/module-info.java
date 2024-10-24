@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,6 +115,25 @@
  * The HTTP/2 client maximum frame size in bytes. The server is not permitted to send a frame
  * larger than this.
  * </li>
+ * <li><p><b>{@systemProperty jdk.httpclient.maxLiteralWithIndexing}</b> (default: 512)<br>
+ * The maximum number of header field lines (header name and value pairs) that a
+ * client is willing to add to the HPack Decoder dynamic table during the decoding
+ * of an entire header field section.
+ * This is purely an implementation limit.
+ * If a peer sends a field section with encoding that
+ * exceeds this limit a {@link java.net.ProtocolException ProtocolException} will be raised.
+ * A value of zero or a negative value means no limit.
+ * </li>
+ * <li><p><b>{@systemProperty jdk.httpclient.maxNonFinalResponses}</b> (default: 8)<br>
+ * The maximum number of interim (non-final) responses that a client is prepared
+ * to accept on a request-response stream before the final response is received.
+ * Interim responses are responses with a status in the range [100, 199] inclusive.
+ * This is purely an implementation limit.
+ * If a peer sends a number of interim response that exceeds this limit before
+ * sending the final response, a {@link java.net.ProtocolException ProtocolException}
+ * will be raised.
+ * A value of zero or a negative value means no limit.
+ * </li>
  * <li><p><b>{@systemProperty jdk.httpclient.maxstreams}</b> (default: 100)<br>
  * The maximum number of HTTP/2 push streams that the client will permit servers to open
  * simultaneously.
@@ -154,6 +173,15 @@
  * <li><p><b>{@systemProperty jdk.http.auth.tunneling.disabledSchemes}</b> (default: see
  * conf/net.properties)<br>A comma separated list of HTTP authentication scheme names, that
  * are disallowed for use by the HTTP client implementation, for HTTP CONNECT tunneling.
+ * </li>
+ * <li><p><b>{@systemProperty jdk.http.maxHeaderSize}</b> (default: 393216 or 384kB)
+ * <br>The maximum header field section size that the client is prepared to accept.
+ * This is computed as the sum of the size of the uncompressed header name, plus
+ * the size of the uncompressed header value, plus an overhead of 32 bytes for
+ * each field section line. If a peer sends a field section that exceeds this
+ * size a {@link java.net.ProtocolException ProtocolException} will be raised.
+ * This applies to all versions of the protocol. A value of zero or a negative
+ * value means no limit.
  * </li>
  * </ul>
  * @moduleGraph

@@ -411,7 +411,7 @@ static void retire_target_page(ZGeneration* generation, ZPage* page) {
   // relocate the remaining objects, leaving the target page empty when
   // relocation completed.
   if (page->used() == 0) {
-    ZHeap::heap()->free_page(page);
+    ZHeap::heap()->free_page(page, true /* allow_defragment */);
   }
 }
 
@@ -1012,7 +1012,7 @@ public:
       page->log_msg(" (relocate page done normal)");
 
       // Free page
-      ZHeap::heap()->free_page(page);
+      ZHeap::heap()->free_page(page, true /* allow_defragment */);
     }
   }
 };

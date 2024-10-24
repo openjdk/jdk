@@ -177,10 +177,13 @@ void ShenandoahControlThread::run_service() {
       // it is a normal completion, or the abort.
       heap->free_set()->log_status_under_lock();
 
-      // Notify Universe about new heap usage. This has implications for
-      // global soft refs policy, and we better report it every time heap
-      // usage goes down.
-      heap->update_capacity_and_used_at_gc();
+      {
+        // Notify Universe about new heap usage. This has implications for
+        // global soft refs policy, and we better report it every time heap
+        // usage goes down.
+        ShenandoahHeapLocker locker(heap->lock());
+        heap->update_capacity_and_used_at_gc();
+      }
 
       // Signal that we have completed a visit to all live objects.
       heap->record_whole_heap_examined_timestamp();

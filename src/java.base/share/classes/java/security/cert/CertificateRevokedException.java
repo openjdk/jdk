@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package java.security.cert;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.IOException;
+import java.io.InvalidObjectException;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -70,6 +71,13 @@ public class CertificateRevokedException extends CertificateException {
 
     private transient Map<String, Extension> extensions;
 
+    private static boolean isNull(Date revocationDate,
+            CRLReason reason, X500Principal authority,
+            Map<String, Extension> extensions) {
+        return (revocationDate == null || reason == null || authority == null
+                || extensions == null);
+    }
+
     /**
      * Constructs a {@code CertificateRevokedException} with
      * the specified revocation date, reason code, authority name, and map
@@ -92,8 +100,7 @@ public class CertificateRevokedException extends CertificateException {
      */
     public CertificateRevokedException(Date revocationDate, CRLReason reason,
         X500Principal authority, Map<String, Extension> extensions) {
-        if (revocationDate == null || reason == null || authority == null ||
-            extensions == null) {
+        if (isNull(revocationDate, reason, authority, extensions)) {
             throw new NullPointerException();
         }
         this.revocationDate = new Date(revocationDate.getTime());
@@ -234,9 +241,6 @@ public class CertificateRevokedException extends CertificateException {
         // (revocationDate, reason, authority)
         ois.defaultReadObject();
 
-        // Defensively copy the revocation date
-        revocationDate = new Date(revocationDate.getTime());
-
         // Read in the size (number of mappings) of the extensions map
         // and create the extensions map
         int size = ois.readInt();
@@ -247,6 +251,13 @@ public class CertificateRevokedException extends CertificateException {
         } else {
             extensions = HashMap.newHashMap(Math.min(size, 20));
         }
+        // make sure all fields are set before checking
+        if (isNull(revocationDate, reason, authority, extensions)) {
+            throw new InvalidObjectException("Invalid null field(s)");
+        }
+
+        // Defensively copy the revocation date
+        revocationDate = new Date(revocationDate.getTime());
 
         // Read in the extensions and put the mappings in the extensions map
         for (int i = 0; i < size; i++) {

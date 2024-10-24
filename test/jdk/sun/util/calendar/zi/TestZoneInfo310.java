@@ -280,5 +280,4 @@ public class TestZoneInfo310 {
                                willGMTOffsetChange.getBoolean(tz));
     }
 
-
 }

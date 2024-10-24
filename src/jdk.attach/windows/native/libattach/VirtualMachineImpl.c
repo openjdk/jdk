@@ -432,7 +432,7 @@ JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_enqueue
                     return;
                 }
             }
-            if ((*env)->ExceptionOccurred(env)) return;
+            if ((*env)->ExceptionCheck(env)) return;
         }
     }
     for (i = argsLen; i < MAX_ARGS; i++) {
@@ -463,7 +463,7 @@ JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_enqueue
     stubLen = (DWORD)(*env)->GetArrayLength(env, stub);
     stubCode = (*env)->GetByteArrayElements(env, stub, &isCopy);
 
-    if ((*env)->ExceptionOccurred(env)) return;
+    if ((*env)->ExceptionCheck(env)) return;
 
     pCode = (PDWORD) VirtualAllocEx( hProcess, 0, stubLen, MEM_COMMIT, PAGE_EXECUTE_READWRITE );
     if (pCode == NULL) {
@@ -636,7 +636,7 @@ static jboolean jstring_to_cstring(JNIEnv* env, jstring jstr, char* cstr, size_t
         cstr[0] = '\0';
     } else {
         str = JNU_GetStringPlatformChars(env, jstr, &isCopy);
-        if ((*env)->ExceptionOccurred(env)) {
+        if ((*env)->ExceptionCheck(env)) {
             return result;
         }
         if (strlen(str) >= cstr_buf_size) {
