@@ -37,7 +37,7 @@
  * yet.
  */
 
-static HANDLE memHandle = NULL;
+// static HANDLE memHandle = NULL;
 
 int
 sysSharedMemCreate(const char *name, int length,
