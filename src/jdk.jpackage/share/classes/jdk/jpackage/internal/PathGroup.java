@@ -32,6 +32,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
@@ -63,6 +64,7 @@ final class PathGroup {
     }
 
     void ghostPath(Path path) {
+        Objects.requireNonNull(path);
         setPath(new Object(), path);
     }
 
