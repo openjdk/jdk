@@ -96,6 +96,7 @@ requires.properties= \
     vm.debug \
     vm.hasSA \
     vm.hasJFR \
+    vm.hasJFRLeakProf \
     vm.jvmci \
     vm.jvmci.enabled \
     vm.jvmti \

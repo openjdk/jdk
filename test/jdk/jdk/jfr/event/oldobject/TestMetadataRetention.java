@@ -42,7 +42,7 @@ import jdk.test.lib.jfr.TestClassLoader;
 /**
  * @test
  * @summary The test verifies that an old object sample maintains references to "stale" metadata
- * @requires vm.hasJFR
+ * @requires vm.hasJFRLeakProf
  * @key jfr
  * @modules jdk.jfr/jdk.jfr.internal.test
  * @library /test/lib /test/jdk

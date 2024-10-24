@@ -34,7 +34,7 @@ import jdk.test.lib.jfr.Events;
 
 /**
  * @test id=ZSinglegen
- * @requires vm.hasJFR & vm.gc.ZSinglegen
+ * @requires vm.hasJFRLeakProf & vm.gc.ZSinglegen
  * @key jfr
  * @summary Test leak profiler with ZGC
  * @library /test/lib /test/jdk
@@ -44,7 +44,7 @@ import jdk.test.lib.jfr.Events;
 
 /**
  * @test id=ZGenerational
- * @requires vm.hasJFR & vm.gc.ZGenerational
+ * @requires vm.hasJFRLeakProf & vm.gc.ZGenerational
  * @key jfr
  * @summary Test leak profiler with ZGC
  * @library /test/lib /test/jdk

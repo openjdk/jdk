@@ -44,7 +44,7 @@ import jdk.jfr.Configuration;
 /**
  * @test
  * @key jfr
- * @requires vm.hasJFR
+ * @requires vm.hasJFRLeakProf
  * @library /test/lib /test/jdk
  * @modules jdk.jfr/jdk.jfr.internal.test
  * @run main/othervm -Xlog:jfr+system+parser=debug -XX:TLABSize=2k jdk.jfr.jvm.TestWaste

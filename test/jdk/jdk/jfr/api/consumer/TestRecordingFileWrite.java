@@ -40,7 +40,7 @@ import jdk.jfr.consumer.RecordingFile;
  * @test
  * @summary Tests RecordingFile::write(Path, Predicate<RecordedEvent>)
  * @key jfr
- * @requires vm.hasJFR
+ * @requires vm.hasJFRLeakProf
  * @library /test/lib
  * @run main/othervm jdk.jfr.api.consumer.TestRecordingFileWrite
  */
