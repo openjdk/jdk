@@ -221,7 +221,8 @@ public class TreeDiffer extends TreeScanner {
         Symbol symbol = tree.sym;
         Symbol otherSymbol = that.sym;
 
-        result &= scan(symbol, otherSymbol);
+        if (result)
+            result = scan(symbol, otherSymbol);
     }
 
     @Override
@@ -689,7 +690,7 @@ public class TreeDiffer extends TreeScanner {
                         && scan(tree.vartype, that.vartype)
                         && scan(tree.init, that.init);
 
-        if (!tree.sym.owner.type.hasTag(TypeTag.METHOD)) {
+        if (!tree.sym.owner.type.hasTag(TypeTag.METHOD) && result) {
             result &= tree.name == that.name;
         }
 
