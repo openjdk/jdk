@@ -103,6 +103,9 @@
 #include "utilities/macros.hpp"
 #include "utilities/nativeCallStack.hpp"
 #include "utilities/ostream.hpp"
+#if INCLUDE_JFR
+#include "jfr/leakprofiler/leakProfiler.hpp"
+#endif
 #if INCLUDE_G1GC
 #include "gc/g1/g1Arguments.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
@@ -2172,6 +2175,14 @@ WB_ENTRY(jboolean, WB_IsJFRIncluded(JNIEnv* env))
 #endif // INCLUDE_JFR
 WB_END
 
+WB_ENTRY(jboolean, WB_IsJFRLeakProfSupported(JNIEnv* env))
+#if INCLUDE_JFR
+  return LeakProfiler::is_supported();
+#else
+  return false;
+#endif // INCLUDE_JFR
+WB_END
+
 WB_ENTRY(jboolean, WB_IsDTraceIncluded(JNIEnv* env))
 #if defined(DTRACE_ENABLED)
   return true;
@@ -2911,6 +2922,7 @@ static JNINativeMethod methods[] = {
   {CC"areOpenArchiveHeapObjectsMapped",   CC"()Z",    (void*)&WB_AreOpenArchiveHeapObjectsMapped},
   {CC"isCDSIncluded",                     CC"()Z",    (void*)&WB_IsCDSIncluded },
   {CC"isJFRIncluded",                     CC"()Z",    (void*)&WB_IsJFRIncluded },
+  {CC"isJFRLeakProfSupported",            CC"()Z",    (void*)&WB_IsJFRLeakProfSupported },
   {CC"isDTraceIncluded",                  CC"()Z",    (void*)&WB_IsDTraceIncluded },
   {CC"hasLibgraal",                       CC"()Z",    (void*)&WB_HasLibgraal },
   {CC"isC2OrJVMCIIncluded",               CC"()Z",    (void*)&WB_isC2OrJVMCIIncluded },

@@ -35,7 +35,7 @@ import jdk.test.lib.jfr.Events;
 /**
  * @test
  * @summary Test -XX:FlightRecorderOptions:old-object-queue-size
- * @requires vm.hasJFR
+ * @requires vm.hasJFRLeakProf
  * @modules jdk.jfr/jdk.jfr.internal.test
  * @library /test/lib
  * @key jfr

@@ -35,7 +35,7 @@ import jdk.test.lib.jfr.Events;
 /**
  * @test
  * @key jfr
- * @requires vm.hasJFR
+ * @requires vm.hasJFRLeakProf
  * @requires vm.gc.G1
  * @summary Test leak profiler with G1 GC
  * @library /test/lib /test/jdk
