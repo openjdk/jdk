@@ -128,6 +128,7 @@ struct java_nmethod_stats_struct {
   uint nmethod_count;
   uint total_nm_size;
   uint total_immut_size;
+  uint total_mut_size;
   uint relocation_size;
   uint consts_size;
   uint insts_size;
@@ -148,6 +149,7 @@ struct java_nmethod_stats_struct {
     nmethod_count += 1;
     total_nm_size       += nm->size();
     total_immut_size    += nm->immutable_data_size();
+    total_mut_size      += nm->mutable_data_size();
     relocation_size     += nm->relocation_size();
     consts_size         += nm->consts_size();
     insts_size          += nm->insts_size();
@@ -167,7 +169,7 @@ struct java_nmethod_stats_struct {
   void print_nmethod_stats(const char* name) {
     if (nmethod_count == 0)  return;
     tty->print_cr("Statistics for %u bytecoded nmethods for %s:", nmethod_count, name);
-    uint total_size = total_nm_size + total_immut_size;
+    uint total_size = total_nm_size + total_immut_size + total_mut_size;
     if (total_nm_size != 0) {
       tty->print_cr(" total size      = %u (100%%)", total_size);
       tty->print_cr(" in CodeCache    = %u (%f%%)", total_nm_size, (total_nm_size * 100.0f)/total_size);
@@ -216,6 +218,9 @@ struct java_nmethod_stats_struct {
     }
     if (scopes_data_size != 0) {
       tty->print_cr("   scopes data   = %u (%f%%)", scopes_data_size, (scopes_data_size * 100.0f)/total_immut_size);
+    }
+    if (total_mut_size != 0) {
+      tty->print_cr(" mutable data    = %u (%f%%)", total_mut_size, (total_mut_size * 100.0f)/total_size);
     }
 #if INCLUDE_JVMCI
     if (speculations_size != 0) {
@@ -1143,7 +1148,7 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
   code_buffer->finalize_oop_references(method);
   // create nmethod
   nmethod* nm = nullptr;
-  int nmethod_size = CodeBlob::allocation_size(code_buffer, sizeof(nmethod));
+  int nmethod_size = CodeBlob::allocation_size(code_buffer, sizeof(nmethod), false);
 #if INCLUDE_JVMCI
     if (compiler->is_jvmci()) {
       nmethod_size += align_up(jvmci_data->size(), oopSize);
@@ -1169,12 +1174,28 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
       return nullptr;
     }
   }
+
+  int mutable_data_size = align_up(code_buffer->total_relocation_size(), oopSize) +
+                        + align_up(code_buffer->total_oop_size(), oopSize) +
+                        + align_up(code_buffer->total_metadata_size(), oopSize);
+#if INCLUDE_JVMCI
+  mutable_data_size += align_up(compiler->is_jvmci() ? jvmci_data->size() : 0, oopSize);
+#endif
+  address mutable_data = nullptr;
+  if (mutable_data_size > 0) {
+    mutable_data = (address)os::malloc(mutable_data_size, mtCode);
+    if (mutable_data == nullptr) {
+      vm_exit_out_of_memory(mutable_data_size, OOM_MALLOC_ERROR, "nmethod: no space for mutable data");
+      return nullptr;
+    }
+  }
+
   {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 
     nm = new (nmethod_size, comp_level)
-    nmethod(method(), compiler->type(), nmethod_size, immutable_data_size,
-            compile_id, entry_bci, immutable_data, offsets, orig_pc_offset,
+    nmethod(method(), compiler->type(), nmethod_size, immutable_data_size, mutable_data_size,
+            compile_id, entry_bci, immutable_data, mutable_data, offsets, orig_pc_offset,
             debug_info, dependencies, code_buffer, frame_size, oop_maps,
             handler_table, nul_chk_table, compiler, comp_level
 #if INCLUDE_JVMCI
@@ -1322,7 +1343,7 @@ nmethod::nmethod(
     assert((data_offset() + data_end_offset) <= nmethod_size, "wrong nmethod's size: %d < %d", nmethod_size, (data_offset() + data_end_offset));
 
     // native wrapper does not have read-only data but we need unique not null address
-    _immutable_data          = data_end();
+    _immutable_data          = blob_end();
     _immutable_data_size     = 0;
     _nul_chk_table_offset    = 0;
     _handler_table_offset    = 0;
@@ -1399,9 +1420,11 @@ nmethod::nmethod(
   CompilerType type,
   int nmethod_size,
   int immutable_data_size,
+  int mutable_data_size,
   int compile_id,
   int entry_bci,
   address immutable_data,
+  address mutable_data,
   CodeOffsets* offsets,
   int orig_pc_offset,
   DebugInformationRecorder* debug_info,
@@ -1420,7 +1443,7 @@ nmethod::nmethod(
 #endif
   )
   : CodeBlob("nmethod", CodeBlobKind::Nmethod, code_buffer, nmethod_size, sizeof(nmethod),
-             offsets->value(CodeOffsets::Frame_Complete), frame_size, oop_maps, false),
+             offsets->value(CodeOffsets::Frame_Complete), frame_size, oop_maps, false, false),
   _deoptimization_generation(0),
   _gc_epoch(CodeCache::gc_epoch()),
   _method(method),
@@ -1486,18 +1509,21 @@ nmethod::nmethod(
     } else {
       _unwind_handler_offset = -1;
     }
-    CHECKED_CAST(_metadata_offset, uint16_t, (align_up(code_buffer->total_oop_size(), oopSize)));
-    int metadata_end_offset = _metadata_offset + align_up(code_buffer->total_metadata_size(), wordSize);
 
+    int reloc_size = align_up(code_buffer->total_relocation_size(), oopSize);
+    int oop_size = align_up(code_buffer->total_oop_size(), oopSize);
+    int metadata_size = align_up(code_buffer->total_metadata_size(), wordSize);
+    CHECKED_CAST(_metadata_offset, uint16_t, reloc_size + oop_size);
+    int jvmci_data_size = 0;
 #if INCLUDE_JVMCI
-    CHECKED_CAST(_jvmci_data_offset, uint16_t, metadata_end_offset);
-    int jvmci_data_size   = compiler->is_jvmci() ? jvmci_data->size() : 0;
-    DEBUG_ONLY( int data_end_offset = _jvmci_data_offset  + align_up(jvmci_data_size, oopSize); )
-#else
-    DEBUG_ONLY( int data_end_offset = metadata_end_offset; )
+    CHECKED_CAST(_jvmci_data_offset, uint16_t, _metadata_offset + metadata_size);
+    jvmci_data_size = align_up(compiler->is_jvmci() ? jvmci_data->size() : 0, oopSize);
 #endif
-    assert((data_offset() + data_end_offset) <= nmethod_size, "wrong nmethod's size: %d > %d",
-           (data_offset() + data_end_offset), nmethod_size);
+    assert(mutable_data_size == reloc_size + oop_size + metadata_size + jvmci_data_size,
+           "wrong mutable data size: %d != %d + %d + %d + %d",
+           mutable_data_size, reloc_size, oop_size, metadata_size, jvmci_data_size);
+    assert(nmethod_size == code_end() - header_begin(), "wrong nmethod size: %d != %d",
+           nmethod_size, (int)(code_end() - header_begin()));
 
     _immutable_data_size  = immutable_data_size;
     if (immutable_data_size > 0) {
@@ -1505,7 +1531,15 @@ nmethod::nmethod(
       _immutable_data     = immutable_data;
     } else {
       // We need unique not null address
-      _immutable_data     = data_end();
+      _immutable_data     = blob_end();
+    }
+    _mutable_data_size  = mutable_data_size;
+    if (mutable_data_size > 0) {
+      assert(mutable_data != nullptr, "required");
+      _mutable_data     = mutable_data;
+    } else {
+      // We need unique not null address
+      _mutable_data     = blob_end();
     }
     CHECKED_CAST(_nul_chk_table_offset, uint16_t, (align_up((int)dependencies->size_in_bytes(), oopSize)));
     CHECKED_CAST(_handler_table_offset, uint16_t, (_nul_chk_table_offset + align_up(nul_chk_table->size_in_bytes(), oopSize)));
@@ -2127,9 +2161,13 @@ void nmethod::purge(bool unregister_nmethod) {
   }
   delete[] _compiled_ic_data;
 
-  if (_immutable_data != data_end()) {
+  if (_immutable_data != blob_end()) {
     os::free(_immutable_data);
-    _immutable_data = data_end(); // Valid not null address
+    _immutable_data = blob_end(); // Valid not null address
+  }
+  if (_mutable_data != blob_end()) {
+    os::free(_mutable_data);
+    _mutable_data = blob_end(); // Valid not null address
   }
   if (unregister_nmethod) {
     Universe::heap()->unregister_nmethod(this);
@@ -3062,7 +3100,8 @@ void nmethod::print(outputStream* st) const {
                                              p2i(this),
                                              p2i(this) + size(),
                                              size());
-  if (relocation_size   () > 0) st->print_cr(" relocation     [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
+  if (relocation_size() > 0 && !relocInfo_in_mutable_data())
+                                st->print_cr(" relocation     [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
                                              p2i(relocation_begin()),
                                              p2i(relocation_end()),
                                              relocation_size());
@@ -3116,6 +3155,10 @@ void nmethod::print(outputStream* st) const {
                                              p2i(scopes_data_begin()),
                                              p2i(scopes_data_end()),
                                              scopes_data_size());
+  if (mutable_data_size() > 0)  st->print_cr(" mutable data   [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
+                                             p2i(mutable_data_begin()),
+                                             p2i(mutable_data_end()),
+                                             mutable_data_size());
 #if INCLUDE_JVMCI
   if (speculations_size () > 0) st->print_cr(" speculations   [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
                                              p2i(speculations_begin()),

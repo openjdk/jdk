@@ -135,8 +135,6 @@ public:
 //
 // An nmethod contains:
 //  - header                 (the nmethod structure)
-//  [Relocation]
-//  - relocation information
 //  - constant part          (doubles, longs and floats used in nmethod)
 //  - oop table
 //  [Code]
@@ -312,9 +310,11 @@ class nmethod : public CodeBlob {
           CompilerType type,
           int nmethod_size,
           int immutable_data_size,
+          int mutable_data_size,
           int compile_id,
           int entry_bci,
           address immutable_data,
+          address mutable_data,
           CodeOffsets* offsets,
           int orig_pc_offset,
           DebugInformationRecorder *recorder,
@@ -533,13 +533,13 @@ public:
   address unwind_handler_begin  () const { return _unwind_handler_offset != -1 ? (insts_end() - _unwind_handler_offset) : nullptr; }
 
   // mutable data
-  oop*    oops_begin            () const { return (oop*)        data_begin(); }
-  oop*    oops_end              () const { return (oop*)       (data_begin() + _metadata_offset)      ; }
-  Metadata** metadata_begin     () const { return (Metadata**) (data_begin() + _metadata_offset)      ; }
+  oop*    oops_begin            () const { return (oop*)       ((_mutable_data != nullptr) ? (mdata_begin() + _relocation_size) : data_begin()); }
+  oop*    oops_end              () const { return (oop*)       ((_mutable_data != nullptr) ? (mdata_begin() + _metadata_offset) : data_end()); }
+  Metadata** metadata_begin     () const { return (Metadata**) (mdata_begin() + _metadata_offset)      ; }
 #if INCLUDE_JVMCI
-  Metadata** metadata_end       () const { return (Metadata**) (data_begin() + _jvmci_data_offset)    ; }
-  address jvmci_data_begin      () const { return               data_begin() + _jvmci_data_offset     ; }
-  address jvmci_data_end        () const { return               data_end(); }
+  Metadata** metadata_end       () const { return (Metadata**) (mdata_begin() + _jvmci_data_offset)    ; }
+  address jvmci_data_begin      () const { return               mdata_begin() + _jvmci_data_offset     ; }
+  address jvmci_data_end        () const { return               mutable_data_end(); }
 #else
   Metadata** metadata_end       () const { return (Metadata**)  data_end(); }
 #endif
