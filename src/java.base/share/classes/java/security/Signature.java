@@ -455,7 +455,7 @@ public abstract class Signature extends SignatureSpi {
             throws NoSuchAlgorithmException {
         // try Signature first
         Service s = p.getService("Signature", RSA_SIGNATURE);
-        if (s != null) {
+        if (s != null && ProvidersFilter.isAllowed(s)) {
             Instance instance = GetInstance.getInstance(s, SignatureSpi.class);
             return getInstance(instance, RSA_SIGNATURE);
         }

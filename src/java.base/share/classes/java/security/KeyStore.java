@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import javax.crypto.SecretKey;
 import javax.security.auth.DestroyFailedException;
 import javax.security.auth.callback.*;
 
+import sun.security.jca.ProvidersFilter;
 import sun.security.util.Debug;
 
 /**
@@ -1793,7 +1794,8 @@ public class KeyStore {
             // Detect the keystore type
             for (Provider p : Security.getProviders()) {
                 for (Provider.Service s : p.getServices()) {
-                    if (s.getType().equals("KeyStore")) {
+                    if (ProvidersFilter.isAllowed(s) &&
+                            s.getType().equals("KeyStore")) {
                         try {
                             KeyStoreSpi impl = (KeyStoreSpi) s.newInstance(null);
                             if (impl.engineProbe(dataStream)) {
