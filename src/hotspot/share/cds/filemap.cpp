@@ -934,7 +934,7 @@ void FileMapInfo::extract_module_paths(const char* runtime_path, GrowableArray<c
     ClassLoaderExt::extract_jar_files_from_path(name, module_paths);
   }
   // module paths are stored in sorted order in the CDS archive.
-  module_paths->sort(ClassLoaderExt::compare_module_path_by_name);
+  module_paths->sort(ClassLoaderExt::compare_module_names);
 }
 
 bool FileMapInfo::check_module_paths() {

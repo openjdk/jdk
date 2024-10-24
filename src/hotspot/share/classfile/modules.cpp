@@ -30,6 +30,7 @@
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoaderDataShared.hpp"
+#include "classfile/classLoaderExt.hpp"
 #include "classfile/javaAssertions.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/javaClasses.inline.hpp"
@@ -560,6 +561,7 @@ void Modules::verify_archived_modules() {
 }
 
 char* Modules::_archived_main_module_name = nullptr;
+char* Modules::_archived_addmods_names = nullptr;
 
 void Modules::dump_main_module_name() {
   const char* module_name = Arguments::get_property("jdk.module.main");
@@ -598,6 +600,100 @@ void Modules::serialize(SerializeClosure* soc) {
     log_info(cds)("optimized module handling: %s", CDSConfig::is_using_optimized_module_handling() ? "enabled" : "disabled");
     log_info(cds)("full module graph: %s", CDSConfig::is_using_full_module_graph() ? "enabled" : "disabled");
   }
+}
+
+void Modules::dump_addmods_names() {
+  unsigned int count = Arguments::addmods_count();
+  const char* addmods_names = get_addmods_names_as_sorted_string();
+  if (addmods_names != nullptr) {
+    _archived_addmods_names = ArchiveBuilder::current()->ro_strdup(addmods_names);
+  }
+  ArchivePtrMarker::mark_pointer(&_archived_addmods_names);
+}
+
+void Modules::serialize_addmods_names(SerializeClosure* soc) {
+  soc->do_ptr(&_archived_addmods_names);
+  if (soc->reading()) {
+    bool disable = false;
+    if (_archived_addmods_names[0] != '\0') {
+      if (Arguments::addmods_count() == 0) {
+        log_info(cds)("--add-modules module name(s) found in archive but not specified during runtime: %s",
+            _archived_addmods_names);
+        disable = true;
+      } else {
+        const char* addmods_names = get_addmods_names_as_sorted_string();
+        if (strcmp((const char*)_archived_addmods_names, addmods_names) != 0) {
+          log_info(cds)("Mismatched --add-modules module name(s).");
+          log_info(cds)("  dump time: %s runtime: %s", _archived_addmods_names, addmods_names);
+          disable = true;
+        }
+      }
+    } else {
+      if (Arguments::addmods_count() > 0) {
+        log_info(cds)("--add-modules module name(s) specified during runtime but not found in archive: %s",
+                      get_addmods_names_as_sorted_string());
+        disable = true;
+      }
+    }
+    if (disable) {
+      log_info(cds)("Disabling optimized module handling");
+      CDSConfig::stop_using_optimized_module_handling();
+    }
+    log_info(cds)("optimized module handling: %s", CDSConfig::is_using_optimized_module_handling() ? "enabled" : "disabled");
+    log_info(cds)("full module graph: %s", CDSConfig::is_using_full_module_graph() ? "enabled" : "disabled");
+  }
+}
+
+const char* Modules::get_addmods_names_as_sorted_string() {
+  ResourceMark rm;
+  const int max_digits = 3;
+  const int extra_symbols_count = 2; // includes '.', '\0'
+  size_t prop_len = strlen("jdk.module.addmods") + max_digits + extra_symbols_count;
+  char* prop_name = resource_allocate_bytes(prop_len);
+  GrowableArray<const char*> list;
+  for (unsigned int i = 0; i < Arguments::addmods_count(); i++) {
+    jio_snprintf(prop_name, prop_len, "jdk.module.addmods.%d", i);
+    const char* prop_value = Arguments::get_property(prop_name);
+    char* p = resource_allocate_bytes(strlen(prop_value) + 1);
+    strcpy(p, prop_value);
+    while (*p == ',') p++; // skip leading commas
+    while (*p) {
+      char* next = strchr(p, ',');
+      if (next == nullptr) {
+        // no more commas, p is the last element
+        list.append(p);
+        break;
+      } else {
+        *next = 0;
+        list.append(p);
+        p = next + 1;
+      }
+    }
+  }
+
+  // Example:
+  // --add-modules=java.compiler --add-modules=java.base,java.base,,
+  //
+  // list[0] = "java.compiler"
+  // list[1] = "java.base"
+  // list[2] = "java.base"
+  // list[3] = ""
+  // list[4] = ""
+  list.sort(ClassLoaderExt::compare_module_names);
+
+  const char* prefix = "";
+  stringStream st;
+  const char* last_string = ""; // This also filters out all empty strings
+  for (int i = 0; i < list.length(); i++) {
+    const char* m = list.at(i);
+    if (strcmp(m, last_string) != 0) { // filter out duplicates
+      st.print("%s%s", prefix, m);
+      last_string = m;
+      prefix = "\n";
+    }
+  }
+
+  return (const char*)os::strdup(st.as_string()); // Example: "java.base,java.compiler"
 }
 
 void Modules::define_archived_modules(Handle h_platform_loader, Handle h_system_loader, TRAPS) {
