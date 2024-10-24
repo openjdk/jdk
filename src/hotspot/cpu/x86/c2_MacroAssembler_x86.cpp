@@ -837,8 +837,9 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register reg_rax, 
 #ifdef ASSERT
   // Check that unlocked label is reached with ZF set.
   Label zf_correct;
+  Label zf_bad_zero;
   jcc(Assembler::zero, zf_correct);
-  stop("Fast Unlock ZF != 1");
+  jmp(zf_bad_zero);
 #endif
 
   bind(slow_path);
@@ -847,8 +848,10 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register reg_rax, 
   }
 #ifdef ASSERT
   // Check that stub->continuation() label is reached with ZF not set.
-  jccb(Assembler::notZero, zf_correct);
+  jcc(Assembler::notZero, zf_correct);
   stop("Fast Unlock ZF != 0");
+  bind(zf_bad_zero);
+  stop("Fast Unlock ZF != 1");
   bind(zf_correct);
 #endif
   // C2 uses the value of ZF to determine the continuation.

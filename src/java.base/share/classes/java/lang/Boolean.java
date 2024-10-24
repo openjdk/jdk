@@ -255,8 +255,8 @@ public final class Boolean implements java.io.Serializable,
      *          same value; {@code false} otherwise.
      */
     public boolean equals(Object obj) {
-        if (obj instanceof Boolean) {
-            return value == ((Boolean)obj).booleanValue();
+        if (obj instanceof Boolean b) {
+            return value == b.booleanValue();
         }
         return false;
     }

@@ -1085,7 +1085,7 @@ void TemplateTable::aastore() {
 
   // Come here on failure
   // object is at TOS
-  __ j(Interpreter::_throw_ArrayStoreException_entry);
+  __ j(RuntimeAddress(Interpreter::_throw_ArrayStoreException_entry));
 
   // Come here on success
   __ bind(ok_is_subtype);
@@ -3672,7 +3672,7 @@ void TemplateTable::checkcast() {
   // Come here on failure
   __ push_reg(x13);
   // object is at TOS
-  __ j(Interpreter::_throw_ClassCastException_entry);
+  __ j(RuntimeAddress(Interpreter::_throw_ClassCastException_entry));
 
   // Come here on success
   __ bind(ok_is_subtype);
@@ -3779,7 +3779,7 @@ void TemplateTable::_breakpoint() {
 void TemplateTable::athrow() {
   transition(atos, vtos);
   __ null_check(x10);
-  __ j(Interpreter::throw_exception_entry());
+  __ j(RuntimeAddress(Interpreter::throw_exception_entry()));
 }
 
 //-----------------------------------------------------------------------------
