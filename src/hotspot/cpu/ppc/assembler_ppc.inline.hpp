@@ -377,23 +377,23 @@ inline void Assembler::ld_ptr(Register d, ByteSize b, Register s1) { ld(d, in_by
 
 //  PPC 1, section 3.3.3 Fixed-Point Store Instructions
 inline void Assembler::stwx( Register d, Register s1, Register s2) { emit_int32(STWX_OPCODE | rs(d) | ra0mem(s1) | rb(s2));}
-inline void Assembler::stw(  Register d, Address &a, Register s1) { stw(d, a.index() != noreg ? RegisterOrConstant(a.index()) : RegisterOrConstant(a.disp()), a.base(), s1); }
+inline void Assembler::stw(  Register d, Address &a, Register tmp) { stw(d, a.index() != noreg ? RegisterOrConstant(a.index()) : RegisterOrConstant(a.disp()), a.base(), tmp); }
 inline void Assembler::stw(  Register d, int si16,    Register s1) { emit_int32(STW_OPCODE  | rs(d) | d1(si16)   | ra0mem(s1));}
 inline void Assembler::stwu( Register d, int si16,    Register s1) { emit_int32(STWU_OPCODE | rs(d) | d1(si16)   | rta0mem(s1));}
 inline void Assembler::stwbrx( Register d, Register s1, Register s2) { emit_int32(STWBRX_OPCODE | rs(d) | ra0mem(s1) | rb(s2));}
 
 inline void Assembler::sthx( Register d, Register s1, Register s2) { emit_int32(STHX_OPCODE | rs(d) | ra0mem(s1) | rb(s2));}
-inline void Assembler::sth(  Register d, Address &a, Register s1) { sth(d, a.index() != noreg ? RegisterOrConstant(a.index()) : RegisterOrConstant(a.disp()), a.base(), s1); }
+inline void Assembler::sth(  Register d, Address &a, Register tmp) { sth(d, a.index() != noreg ? RegisterOrConstant(a.index()) : RegisterOrConstant(a.disp()), a.base(), tmp); }
 inline void Assembler::sth(  Register d, int si16,    Register s1) { emit_int32(STH_OPCODE  | rs(d) | d1(si16)   | ra0mem(s1));}
 inline void Assembler::sthu( Register d, int si16,    Register s1) { emit_int32(STHU_OPCODE | rs(d) | d1(si16)   | rta0mem(s1));}
 inline void Assembler::sthbrx( Register d, Register s1, Register s2) { emit_int32(STHBRX_OPCODE | rs(d) | ra0mem(s1) | rb(s2));}
 
 inline void Assembler::stbx( Register d, Register s1, Register s2) { emit_int32(STBX_OPCODE | rs(d) | ra0mem(s1) | rb(s2));}
-inline void Assembler::stb(  Register d, Address &a, Register s1) { stb(d, a.index() != noreg ? RegisterOrConstant(a.index()) : RegisterOrConstant(a.disp()), a.base(), s1); }
+inline void Assembler::stb(  Register d, Address &a, Register tmp) { stb(d, a.index() != noreg ? RegisterOrConstant(a.index()) : RegisterOrConstant(a.disp()), a.base(), tmp); }
 inline void Assembler::stb(  Register d, int si16,    Register s1) { emit_int32(STB_OPCODE  | rs(d) | d1(si16)   | ra0mem(s1));}
 inline void Assembler::stbu( Register d, int si16,    Register s1) { emit_int32(STBU_OPCODE | rs(d) | d1(si16)   | rta0mem(s1));}
 
-inline void Assembler::std(  Register d, Address &a, Register s1) { std(d, a.index() != noreg ? RegisterOrConstant(a.index()) : RegisterOrConstant(a.disp()), a.base(), s1); }
+inline void Assembler::std(  Register d, Address &a, Register tmp) { std(d, a.index() != noreg ? RegisterOrConstant(a.index()) : RegisterOrConstant(a.disp()), a.base(), tmp); }
 inline void Assembler::std(  Register d, int si16,    Register s1) { emit_int32(STD_OPCODE  | rs(d) | ds(si16)   | ra0mem(s1));}
 inline void Assembler::stdx( Register d, Register s1, Register s2) { emit_int32(STDX_OPCODE | rs(d) | ra0mem(s1) | rb(s2));}
 inline void Assembler::stdu( Register d, int si16,    Register s1) { emit_int32(STDU_OPCODE | rs(d) | ds(si16)   | rta0mem(s1));}
