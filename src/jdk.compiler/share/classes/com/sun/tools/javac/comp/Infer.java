@@ -1195,7 +1195,7 @@ public class Infer {
         }
 
     boolean doIncorporationOp(IncorporationBinaryOpKind opKind, Type op1, Type op2, Warner warn, InferenceContext ic) {
-            IncorporationBinaryOpKey newOp = new IncorporationBinaryOpKey(opKind, new TypeOperands(ic.asTVar(op1), ic.asTVar(op2), types));
+            IncorporationBinaryOpKey newOp = new IncorporationBinaryOpKey(opKind, ic.asTypeVar(op1), ic.asTypeVar(op2), types);
             Boolean res = incorporationCache.get(newOp);
             if (res == null) {
                 incorporationCache.put(newOp, res = opKind.apply(op1, op2, warn, types));
@@ -1232,18 +1232,19 @@ public class Infer {
      * are not executed unnecessarily (which would potentially lead to adding
      * same bounds over and over).
      */
-    record IncorporationBinaryOpKey(IncorporationBinaryOpKind opKind, TypeOperands typeOperands) {}
-
-    record TypeOperands(Type op1, Type op2, Types types) {
+    record IncorporationBinaryOpKey(IncorporationBinaryOpKind opKind, Type op1, Type op2, Types types) {
         @Override
         public boolean equals(Object o) {
-            return (o instanceof TypeOperands typeOperands)
-                    && types.isSameType(op1, typeOperands.op1)
-                    && types.isSameType(op2, typeOperands.op2);
+            return (o instanceof IncorporationBinaryOpKey anotherKey)
+                    && opKind == anotherKey.opKind
+                    && types.isSameType(op1, anotherKey.op1)
+                    && types.isSameType(op2, anotherKey.op2);
         }
         @Override
         public int hashCode() {
-            int result = types.hashCode(op1);
+            int result = opKind.hashCode();
+            result *= 127;
+            result += types.hashCode(op1);
             result *= 127;
             result += types.hashCode(op2);
             return result;

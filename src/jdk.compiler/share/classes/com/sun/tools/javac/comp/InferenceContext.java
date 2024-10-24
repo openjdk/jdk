@@ -217,9 +217,16 @@ public class InferenceContext {
     /**
      * Replace all undet vars in a given type with corresponding free variables
      */
-    public final Type asTVar(Type t) {
-        return types.subst(t, undetvars, inferencevars);
+    public final Type asTypeVar(Type t) {
+        return asTypeVarFun.apply(t);
     }
+
+    Types.TypeMapping<Void> asTypeVarFun = new Type.StructuralTypeMapping<>() {
+        @Override
+        public Type visitUndetVar(UndetVar uv, Void aVoid) {
+            return uv.qtype;
+        }
+    };
 
     List<Type> instTypes() {
         ListBuffer<Type> buf = new ListBuffer<>();
