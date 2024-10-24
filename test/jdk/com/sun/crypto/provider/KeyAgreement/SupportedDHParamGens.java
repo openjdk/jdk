@@ -40,7 +40,6 @@
 import java.math.BigInteger;
 
 import java.security.*;
-import javax.crypto.*;
 import javax.crypto.interfaces.*;
 import javax.crypto.spec.*;
 import jdk.test.lib.security.DiffieHellmanGroup;
@@ -48,44 +47,31 @@ import jdk.test.lib.security.SecurityUtils;
 
 public class SupportedDHParamGens {
 
-    static DiffieHellmanGroup dhGroup2048 = SecurityUtils.getTestDHGroup(2048);
-    static DiffieHellmanGroup dhGroup3072 = SecurityUtils.getTestDHGroup(3072);
-    static DiffieHellmanGroup dhGroup4096 = SecurityUtils.getTestDHGroup(4096);
-    static DHParameterSpec FFDHE2048_SPEC =  new DHParameterSpec(
-            dhGroup2048.getPrime(), dhGroup2048.getBase());
-
-    static DHParameterSpec FFDHE3072_SPEC =  new DHParameterSpec(
-            dhGroup3072.getPrime(), dhGroup3072.getBase());
-
-    static DHParameterSpec FFDHE4096_SPEC =  new DHParameterSpec(
-            dhGroup4096.getPrime(), dhGroup4096.getBase());
-
-
     public static void main(String[] args) throws Exception {
         int primeSize = Integer.valueOf(args[0]).intValue();
 
         System.out.println("Checking " + primeSize + " ...");
         DHParameterSpec spec = null;
         switch (primeSize) {
-            case 2048: spec = FFDHE2048_SPEC;
-                break;
-            case 3072: spec = FFDHE3072_SPEC;
-                break;
-            case 4096: spec = FFDHE4096_SPEC;
-                break;
-            default:
+            case 2048, 3072, 4096 -> spec = getDHParameterSpec(primeSize);
+            default -> {
                 AlgorithmParameterGenerator apg =
                         AlgorithmParameterGenerator.getInstance("DH", "SunJCE");
                 apg.init(primeSize);
                 AlgorithmParameters ap = apg.generateParameters();
                 spec = ap.getParameterSpec(DHParameterSpec.class);
-                break;
+            }
         }
 
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("DH", "SunJCE");
         kpg.initialize(spec);
         KeyPair kp = kpg.generateKeyPair();
         checkKeyPair(kp, primeSize);
+    }
+
+    private static DHParameterSpec getDHParameterSpec(int primeSize) {
+        DiffieHellmanGroup dhGroup = SecurityUtils.getTestDHGroup(primeSize);
+        return new DHParameterSpec(dhGroup.getPrime(), dhGroup.getBase());
     }
 
     private static void checkKeyPair(KeyPair kp, int pSize) throws Exception {
