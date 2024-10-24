@@ -206,7 +206,7 @@ final class ExecutableRebrander {
             return new ExecutableProperties(pkg.app().vendor(),
                     pkg.description(), DottedVersion.lazy(pkg.version()),
                     pkg.app().copyright(), pkg.packageName(),
-                    pkg.packageFileName().getFileName().toString());
+                    pkg.packageFileNameWithSuffix());
         }
     }
 

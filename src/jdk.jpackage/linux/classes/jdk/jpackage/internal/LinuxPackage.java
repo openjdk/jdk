@@ -51,21 +51,21 @@ interface LinuxPackage extends Package {
     }
 
     @Override
-    default Path packageFileName() {
+    default String packageFileName() {
         String packageFileNameTemlate;
         switch (asStandardPackageType()) {
             case LinuxDeb -> {
-                packageFileNameTemlate = "%s_%s-%s_%s.deb";
+                packageFileNameTemlate = "%s_%s-%s_%s";
             }
             case LinuxRpm -> {
-                packageFileNameTemlate = "%s-%s-%s.%s.rpm";
+                packageFileNameTemlate = "%s-%s-%s.%s";
             }
             default -> {
                 throw new UnsupportedOperationException();
             }
         }
 
-        return Path.of(String.format(packageFileNameTemlate, packageName(), version(), release(), arch()));
+        return String.format(packageFileNameTemlate, packageName(), version(), release(), arch());
     }
 
     default boolean isInstallDirInUsrTree() {

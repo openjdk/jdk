@@ -29,7 +29,6 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.text.MessageFormat;
 import java.util.Map;
 import static jdk.jpackage.internal.Functional.ThrowingRunnable.toRunnable;
 import static jdk.jpackage.internal.StandardBundlerParam.ICON;
@@ -89,15 +88,14 @@ public class WinExeBundler extends AbstractBundler {
         Path msi = msiBundler.execute(params, msiDir);
 
         try {
-            var exePkg = new WinExePackage.Impl(pkg, ICON.fetchFrom(params));
-
             new ScriptRunner()
             .setDirectory(msi.getParent())
             .setResourceCategoryId("resource.post-msi-script")
             .setScriptNameSuffix("post-msi")
             .setEnvironmentVariable("JpMsiFile", msi.toAbsolutePath().toString())
-            .run(workshop, IOUtils.replaceSuffix(pkg.packageFileName(), "").getFileName().toString());
+            .run(workshop, pkg.packageName());
 
+            var exePkg = new WinExePackage.Impl(pkg, ICON.fetchFrom(params));
             return buildEXE(workshop, exePkg, msi, outdir);
         } catch (IOException|ConfigException ex) {
             Log.verbose(ex);
@@ -108,12 +106,10 @@ public class WinExeBundler extends AbstractBundler {
     private Path buildEXE(Workshop workshop, WinExePackage pkg, Path msi,
             Path outdir) throws IOException {
 
-        Log.verbose(MessageFormat.format(
-                I18N.getString("message.outputting-to-location"),
-                outdir.toAbsolutePath().toString()));
+        Log.verbose(I18N.format("message.outputting-to-location", outdir.toAbsolutePath()));
 
         // Copy template msi wrapper next to msi file
-        final Path exePath = msi.getParent().resolve(pkg.packageFileName());
+        final Path exePath = msi.getParent().resolve(pkg.packageFileNameWithSuffix());
         try (InputStream is = OverridableResource.readDefault("msiwrapper.exe")) {
             Files.copy(is, exePath);
         }
@@ -129,9 +125,7 @@ public class WinExeBundler extends AbstractBundler {
 
         dstExePath.toFile().setExecutable(true);
 
-        Log.verbose(MessageFormat.format(
-                I18N.getString("message.output-location"),
-                outdir.toAbsolutePath().toString()));
+        Log.verbose(I18N.format("message.output-location", outdir.toAbsolutePath()));
 
         return dstExePath;
     }

@@ -34,7 +34,6 @@ import java.nio.file.attribute.BasicFileAttributes;
 
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -353,9 +352,8 @@ public class LinuxDebBundler extends LinuxPackageBundler {
     }
 
     private Path buildDeb(Workshop workshop, LinuxPackage pkg, Path outdir) throws IOException {
-        Path outFile = pkg.packageFileName();
-        Log.verbose(MessageFormat.format(I18N.getString(
-                "message.outputting-to-location"), outFile.toAbsolutePath().toString()));
+        Path outFile = outdir.resolve(pkg.packageFileNameWithSuffix());
+        Log.verbose(I18N.format("message.outputting-to-location", outFile.toAbsolutePath()));
 
         List<String> cmdline = new ArrayList<>();
         cmdline.addAll(List.of(TOOL_FAKEROOT, TOOL_DPKG_DEB));
@@ -370,8 +368,7 @@ public class LinuxDebBundler extends LinuxPackageBundler {
                 "semop(1): encountered an error: Invalid argument").execute(
                         cmdline.toArray(String[]::new));
 
-        Log.verbose(MessageFormat.format(I18N.getString(
-                "message.output-to-location"), outFile.toAbsolutePath().toString()));
+        Log.verbose(I18N.format("message.output-to-location", outFile.toAbsolutePath()));
 
         return outFile;
     }

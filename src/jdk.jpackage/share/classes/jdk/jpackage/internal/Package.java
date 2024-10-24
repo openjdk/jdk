@@ -25,7 +25,6 @@
 package jdk.jpackage.internal;
 
 import java.nio.file.Path;
-import java.text.MessageFormat;
 import java.util.Optional;
 import java.util.stream.Stream;
 import static jdk.jpackage.internal.Getter.getValueOrDefault;
@@ -74,6 +73,9 @@ interface Package {
 
     /**
      * Returns platform-specific package name.
+     *
+     * The value should be valid file system name as it will be used to create
+     * files/directories in the file system.
      */
     String packageName();
 
@@ -127,16 +129,27 @@ interface Package {
     /**
      * Returns package file name.
      */
-    default Path packageFileName() {
+    default String packageFileName() {
         if (type() instanceof StandardPackageType type) {
             switch (type) {
                 case WinMsi, WinExe -> {
-                    return Path.of(String.format("%s-%s%s", packageName(),
-                            version(), type.suffix()));
+                    return String.format("%s-%s", packageName(), version());
                 }
             }
         }
         throw new UnsupportedOperationException();
+    }
+
+    default String packageFileSuffix() {
+        if (type() instanceof StandardPackageType type) {
+            return type.suffix();
+        } else {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    default String packageFileNameWithSuffix() {
+        return packageFileName() + Optional.ofNullable(packageFileSuffix()).orElse("");
     }
 
     default boolean isRuntimeInstaller() {
@@ -342,26 +355,25 @@ interface Package {
     }
 
     private static Path defaultInstallDir(Package pkg) {
-        Path base;
         switch (pkg.asStandardPackageType()) {
             case WinExe, WinMsi -> {
-                base = Path.of("");
+                return Path.of(pkg.app().name());
             }
             case LinuxDeb, LinuxRpm -> {
-                base = Path.of("/opt");
+                return Path.of("/opt").resolve(pkg.packageName());
             }
             case MacDmg, MacPkg -> {
+                Path base;
                 if (pkg.isRuntimeInstaller()) {
                     base = Path.of("/Library/Java/JavaVirtualMachines");
                 } else {
                     base = Path.of("/Applications");
                 }
+                return base.resolve(pkg.packageName());
             }
             default -> {
                 throw new UnsupportedOperationException();
             }
         }
-
-        return base.resolve(pkg.packageName());
     }
 }

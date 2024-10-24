@@ -33,7 +33,6 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.PathMatcher;
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -179,9 +178,9 @@ public class WinMsiBundler  extends AbstractBundler {
             }
 
             for (var tool : wixToolset.getType().getTools()) {
-                Log.verbose(MessageFormat.format(I18N.getString(
-                        "message.tool-version"), wixToolset.getToolPath(tool).
-                                getFileName(), wixToolset.getVersion()));
+                Log.verbose(I18N.format("message.tool-version",
+                        wixToolset.getToolPath(tool).getFileName(),
+                        wixToolset.getVersion()));
             }
 
             wixFragments.forEach(wixFragment -> wixFragment.setWixVersion(wixToolset.getVersion(),
@@ -293,10 +292,8 @@ public class WinMsiBundler  extends AbstractBundler {
         data.put("JpProductCode", pkg.productCode().toString());
         data.put("JpProductUpgradeCode", pkg.upgradeCode().toString());
 
-        Log.verbose(MessageFormat.format(I18N.getString("message.product-code"),
-                pkg.productCode()));
-        Log.verbose(MessageFormat.format(I18N.getString("message.upgrade-code"),
-                pkg.upgradeCode()));
+        Log.verbose(I18N.format("message.product-code", pkg.productCode()));
+        Log.verbose(I18N.format("message.upgrade-code", pkg.upgradeCode()));
 
         data.put("JpAllowUpgrades", "yes");
         if (!pkg.isRuntimeInstaller()) {
@@ -339,11 +336,9 @@ public class WinMsiBundler  extends AbstractBundler {
             Map<String, String> wixVars, Path outdir)
             throws IOException {
 
-        Path msiOut = outdir.resolve(pkg.packageFileName());
+        Path msiOut = outdir.resolve(pkg.packageFileNameWithSuffix());
 
-        Log.verbose(MessageFormat.format(I18N.getString(
-                "message.preparing-msi-config"), msiOut.toAbsolutePath()
-                        .toString()));
+        Log.verbose(I18N.format("message.preparing-msi-config", msiOut.toAbsolutePath()));
 
         WixPipeline wixPipeline = new WixPipeline()
                 .setToolset(wixToolset)
@@ -355,8 +350,7 @@ public class WinMsiBundler  extends AbstractBundler {
             wixFragment.configureWixPipeline(wixPipeline);
         }
 
-        Log.verbose(MessageFormat.format(I18N.getString(
-                "message.generating-msi"), msiOut.toAbsolutePath().toString()));
+        Log.verbose(I18N.format("message.generating-msi", msiOut.toAbsolutePath()));
 
         switch (wixToolset.getType()) {
             case Wix3 -> {
@@ -402,11 +396,10 @@ public class WinMsiBundler  extends AbstractBundler {
                 .filter(custom -> primaryWxlFiles.stream().noneMatch(primary ->
                         primary.getFileName().toString().equalsIgnoreCase(
                                 custom.getFileName().toString())))
-                .peek(custom -> Log.verbose(MessageFormat.format(
-                        I18N.getString("message.using-custom-resource"),
-                                String.format("[%s]", I18N.getString("resource.wxl-file")),
-                                custom.getFileName().toString())))
-                .toList();
+                .peek(custom -> Log.verbose(I18N.format(
+                        "message.using-custom-resource", String.format("[%s]",
+                                I18N.getString("resource.wxl-file")),
+                        custom.getFileName()))).toList();
 
         // Copy custom l10n files.
         for (var path : customWxlFiles) {
@@ -489,19 +482,18 @@ public class WinMsiBundler  extends AbstractBundler {
 
             XPath xPath = XPathFactory.newInstance().newXPath();
             NodeList nodes = (NodeList) xPath.evaluate(
-                    "//WixLocalization/@Culture", doc,
-                    XPathConstants.NODESET);
+                    "//WixLocalization/@Culture", doc, XPathConstants.NODESET);
             if (nodes.getLength() != 1) {
-                throw new IOException(MessageFormat.format(I18N.getString(
-                        "error.extract-culture-from-wix-l10n-file"),
+                throw new IOException(I18N.format(
+                        "error.extract-culture-from-wix-l10n-file",
                         wxlPath.toAbsolutePath()));
             }
 
             return nodes.item(0).getNodeValue();
         } catch (XPathExpressionException | ParserConfigurationException
                 | SAXException ex) {
-            throw new IOException(MessageFormat.format(I18N.getString(
-                    "error.read-wix-l10n-file"), wxlPath.toAbsolutePath()), ex);
+            throw new IOException(I18N.format("error.read-wix-l10n-file",
+                    wxlPath.toAbsolutePath()), ex);
         }
     }
 

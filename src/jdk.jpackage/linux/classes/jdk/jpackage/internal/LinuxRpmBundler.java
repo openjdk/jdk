@@ -27,7 +27,6 @@ package jdk.jpackage.internal;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -180,11 +179,9 @@ public class LinuxRpmBundler extends LinuxPackageBundler {
 
     private Path buildRPM(Workshop workshop, Package pkg, Path outdir) throws IOException {
 
-        Path rpmFile = outdir.toAbsolutePath().resolve(pkg.packageFileName());
+        Path rpmFile = outdir.toAbsolutePath().resolve(pkg.packageFileNameWithSuffix());
 
-        Log.verbose(MessageFormat.format(I18N.getString(
-                "message.outputting-bundle-location"),
-                rpmFile.getParent()));
+        Log.verbose(I18N.format("message.outputting-bundle-location", rpmFile.getParent()));
 
         //run rpmbuild
         Executor.of(
@@ -200,9 +197,7 @@ public class LinuxRpmBundler extends LinuxPackageBundler {
                 "--define", String.format("%%_rpmfilename %s", rpmFile.getFileName())
         ).executeExpectSuccess();
 
-        Log.verbose(MessageFormat.format(
-                I18N.getString("message.output-bundle-location"),
-                rpmFile.getParent()));
+        Log.verbose(I18N.format("message.output-bundle-location", rpmFile.getParent()));
 
         return rpmFile;
     }
