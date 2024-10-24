@@ -68,12 +68,8 @@ endef
 
 ################################################################################
 define CreateStaticLibrary
-  # Include partial linking when building the static library with clang on linux
-  ifeq ($(call isTargetOs, linux), true)
-    ifneq ($(findstring $(TOOLCHAIN_TYPE), clang), )
-      $1_ENABLE_PARTIAL_LINKING := true
-    endif
-  endif
+  # Disable partial linking due to JDK-8342974
+  $1_ENABLE_PARTIAL_LINKING := false
 
   $1_VARDEPS := $$($1_AR) $$(ARFLAGS) $$($1_LIBS) \
       $$($1_EXTRA_LIBS)
