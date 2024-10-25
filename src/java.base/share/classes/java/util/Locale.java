@@ -93,10 +93,10 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * {@code Locale} need not have all such fields. For example, {@link
  * Locale#ENGLISH Locale.ENGLISH} is only comprised of the <em>language</em> field.
  * Contrarily, a {@code Locale} such as the one returned by {@code
- * Locale.forLanguageTag("en-Latn-US-oxendict-u-nu-latn")} would be comprised of all
- * the fields below. This particular {@code Locale} would
- * represent English in the United States using the Latin alphabet and numerics with
- * Oxford English Dictionary spelling.
+ * Locale.forLanguageTag("en-Latn-US-POSIX-u-nu-latn")} would be comprised of all
+ * the fields below. This particular {@code Locale} would represent English in
+ * the United States using the Latin alphabet and numerics for use in POSIX
+ * environments.
  * {@code Locale} implements IETF BCP 47 and any deviations should be observed
  * by the comments prefixed by <em>"Note:"</em>. The various ISO (639, 3166, 15924)
  * standards included in the composition of {@code Locale} are defined in
