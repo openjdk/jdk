@@ -98,7 +98,8 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * the United States using the Latin alphabet and numerics for use in POSIX
  * environments.
  * {@code Locale} implements IETF BCP 47 and any deviations should be observed
- * by the comments prefixed by <em>"Note:"</em>. <a href="https://tools.ietf.org/html/rfc5646">RFC 5646</a>
+ * by the comments prefixed by <em>"BCP 47 deviation:"</em>.
+ * <a href="https://tools.ietf.org/html/rfc5646">RFC 5646</a>
  * combines subtags from various ISO (639, 3166, 15924) standards which are also
  * included in the composition of {@code Locale}.
  * Additionally, you can find the full list of valid codes for each field in the
@@ -116,7 +117,7 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  *   {@code Locale} always canonicalizes to lower case.</dd>
  *
  *   <dd>- <em>Syntax:</em> Well-formed language values have the form {@code [a-zA-Z]{2,8}}.
- *   Note: this is not the full BCP 47 language production, since it excludes
+ *   BCP 47 deviation: this is not the full BCP 47 language production, since it excludes
  *   <a href="https://datatracker.ietf.org/doc/html/rfc5646#section-2.2.2">extlang</a>
  *   (as modern three-letter language codes are preferred).</dd>
  *
@@ -153,7 +154,7 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  *
  *   <dd>- Any arbitrary value used to indicate a variation of a
  *   {@code Locale}. When multiple variant values exist, they should be ordered
- *   by higher importance values preceding the other variant values. Note:
+ *   by higher importance values preceding the other variant values. BCP 47 deviation:
  *   BCP 47 subtags are strictly used to indicate
  *   additional variations that define a language or its dialects that
  *   are not covered by any combinations of language, script and
@@ -166,12 +167,12 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  *   language, is supported by extension subtags or private use
  *   subtags.</dd>
  *
- *   <dd>- <em>Case convention:</em> {@code variant} is case sensitive. Note: BCP 47 treats the variant
- *   field as case insensitive.</dd>
+ *   <dd>- <em>Case convention:</em> {@code variant} is case sensitive. BCP 47
+ *   deviation: BCP 47 treats the variant field as case insensitive.</dd>
  *
  *   <dd>- <em>Syntax:</em> Well-formed variant values have the form {@code
  *   SUBTAG (('_'|'-') SUBTAG)*} where {@code SUBTAG =
- *   [0-9][0-9a-zA-Z]{3} | [0-9a-zA-Z]{5,8}}. Note: BCP 47 only
+ *   [0-9][0-9a-zA-Z]{3} | [0-9a-zA-Z]{5,8}}. BCP 47 deviation: BCP 47 only
  *   uses hyphen ('-') as a delimiter, {@code Locale} is more lenient.</dd>
  *
  *   <dd>- <em>Example:</em> "polyton" (Polytonic Greek), "POSIX"</dd>
@@ -179,8 +180,8 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  *   <dt><a id="def_extensions"><b>extensions</b></a></dt>
  *
  *   <dd>- A map from single character keys to string values, indicating
- *   extensions apart from language identification. Note: The {@code extensions} in
- *   {@code Locale} implement the semantics and syntax of BCP 47
+ *   extensions apart from language identification. BCP 47 deviation: The {@code
+ *   extensions} in {@code Locale} implement the semantics and syntax of BCP 47
  *   extension subtags <em>and</em> private use subtags. The {@code extensions}
  *   field cannot have empty values. </dd>
  *
@@ -199,7 +200,7 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  *   key="x"/value="java-1-7"</dd>
  * </dl>
  *
- * <b>Note:</b> Although BCP 47 requires field values to be registered
+ * <b>BCP 47 deviation:</b> Although BCP 47 requires field values to be registered
  * in the IANA Language Subtag Registry, the {@code Locale} class
  * does not validate this requirement. For example, the variant code <em>"foobar"</em>
  * is well-formed since it is composed of 5 to 8 alphanumerics, but is not defined
