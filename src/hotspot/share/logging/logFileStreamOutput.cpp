@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,23 +122,23 @@ int LogFileStreamOutput::write_internal_line(const LogDecorations& decorations, 
 
   if (!_fold_multilines) {
     const char* base = msg;
-    int written_tmp = 0;
+    int written_msg = 0;
     int decorator_padding = 0;
     if (use_decorations) {
       WRITE_LOG_WITH_RESULT_CHECK(write_decorations(decorations), decorator_padding);
       WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, " "), written);
     }
     written += decorator_padding;
-    WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, "%s\n", msg), written_tmp);
-    while (written_tmp < msg_len) {
-      msg = base + written_tmp;
+    WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, "%s\n", msg), written_msg);
+    while (written_msg < msg_len) {
+      msg = base + written_msg;
 
       if (use_decorations) {
-        WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, "[%*c] ", decorator_padding - 2, ' '), written);
+        WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, "[%*c] ", decorator_padding - 2, ' '), written); // Substracting 2 because decorator_padding includes the brackets
       }
-      WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, "%s\n", msg), written_tmp);
+      WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, "%s\n", msg), written_msg);
     }
-    written += written_tmp;
+    written += written_msg;
   } else {
     if (use_decorations) {
       WRITE_LOG_WITH_RESULT_CHECK(write_decorations(decorations), written);
@@ -172,14 +172,15 @@ int LogFileStreamOutput::write_internal(const LogDecorations& decorations, const
   // Handle multiline strings: split the string replacing newlines with terminators,
   // and then force write_internal_line to print all of them (i.e. not stopping at the
   // first null but until msg_len bytes are printed)
-  ALLOW_C_FUNCTION(::malloc, char* dupstr = (char*)::malloc(msg_len * sizeof(char));)
+  ALLOW_C_FUNCTION(::malloc, char* dupstr = (char*)::malloc((msg_len + 1) * sizeof(char));)
   if (dupstr == nullptr) {
     return 0;
   }
-  ALLOW_C_FUNCTION(::memcpy, ::memcpy(dupstr, msg, msg_len);)
+  ALLOW_C_FUNCTION(::memcpy, ::memcpy(dupstr, msg, msg_len + 1);)
   char* tmp = dupstr;
 
-  while (tmp - dupstr < msg_len) {
+  char* end = dupstr + msg_len;
+  while (tmp < end) {
     if (*tmp == '\n') {
       *tmp = '\0';
     }
