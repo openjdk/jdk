@@ -79,8 +79,8 @@ void MemReporterBase::print_malloc(const MemoryCounter* c, MemTag mem_tag) const
   const size_t count = c->count();
 
   if (mem_tag != mtNone) {
-    out->print("(%s" SIZE_FORMAT "%s type=%s", alloc_type,
-      amount_in_current_scale(amount), scale, NMTUtil::tag_to_name(mem_tag));
+    out->print("(%s" SIZE_FORMAT "%s type=%u", alloc_type,
+      amount_in_current_scale(amount), scale, (unsigned)mem_tag);
   } else {
     out->print("(%s" SIZE_FORMAT "%s", alloc_type,
       amount_in_current_scale(amount), scale);
