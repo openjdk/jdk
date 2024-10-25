@@ -89,7 +89,7 @@ final class TableSorter {
                 if (isIntegralType(n1)) {
                     if (isIntegralType(n2)) {
                         return Long.compare(n1.longValue(), n2.longValue());
-                    } 
+                    }
                     if (isFractionalType(n2)) {
                         return compare(n1.longValue(), n2.doubleValue());
                     }
@@ -100,7 +100,7 @@ final class TableSorter {
                     }
                     if (isIntegralType(n2)) {
                         return - compare(n2.longValue(), n1.doubleValue());
-                    } 
+                    }
                 }
             }
             // Use something that is stable if there is any other type of mix
