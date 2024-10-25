@@ -25,8 +25,7 @@
  * @test
  * @bug 8034066
  * @summary javap incorrect indentation when CodeWriter called via ClassWriter
- * @build EmptyLoop
- * @run main T8034066
+ * @run main ClassWriterCodeIndentTest
  * @modules jdk.jdeps/com.sun.tools.javap
  */
 
@@ -34,12 +33,23 @@ import java.io.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class T8034066 {
-    public static void main(String[] args) throws Exception {
-        new T8034066().run();
+public class ClassWriterCodeIndentTest {
+    public static void main(String[] args) {
+        new ClassWriterCodeIndentTest().run();
     }
 
-    public void run() throws IOException {
+    public void run() {
+        /*
+         * Partial expected output within a larger file. There exists another "Code: " section above, and thus we
+         * select the second occurrence in `findNthMatchPrecedingSpaces(output, "Code:", 1);`
+         * ...
+         *    Code:
+         *         0: iconst_0
+         *         1: istore_1
+         *      StackMap locals:  this int
+         *      StackMap stack:
+         * ...
+         */
         String output = javap();
 
         int codeHeaderIndent = findNthMatchPrecedingSpaces(output, "Code:", 1);
@@ -62,7 +72,8 @@ public class T8034066 {
     String javap() {
         StringWriter sw = new StringWriter();
         PrintWriter out = new PrintWriter(sw);
-        int rc = com.sun.tools.javap.Main.run(new String[] { "-c", "-XDdetails:stackMaps", System.getProperty("test.classes") + "/EmptyLoop.class" }, out);
+        int rc = com.sun.tools.javap.Main.run(new String[]{"-c", "-XDdetails:stackMaps",
+            System.getProperty("test.classes") + "/EmptyLoop.class"}, out);
         if (rc != 0)
             throw new Error("javap failed. rc=" + rc);
         out.close();
@@ -92,4 +103,11 @@ public class T8034066 {
     }
 
     int errors;
+}
+
+class EmptyLoop {
+    public void emptyLoop() {
+        for (int i = 0; i < 10; i++) {
+        }
+    }
 }
