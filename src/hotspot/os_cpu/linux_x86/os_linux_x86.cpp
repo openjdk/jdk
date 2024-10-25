@@ -549,7 +549,7 @@ void os::print_context(outputStream *st, const void *context) {
   st->cr();
   st->cr();
   size_t fpregs_offset = pointer_delta(uc->uc_mcontext.fpregs, uc, 1);
-  if (fpregs_offset > sizeof(ucontext_t)) {
+  if (fpregs_offset >= sizeof(ucontext_t)) {
     st->print_cr("bad uc->uc_mcontext.fpregs: " INTPTR_FORMAT " (uc: " INTPTR_FORMAT ")",
                  p2i(uc->uc_mcontext.fpregs), p2i(uc));
   } else {
