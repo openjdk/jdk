@@ -576,11 +576,7 @@ public class ClassWriter extends BasicWriter {
             attrWriter.write(m.attributes());
         } else if (code != null) {
             if (options.showDisassembled) {
-                println("Code:");
-                indent(+1);
-                codeWriter.writeInstrs(code);
-                codeWriter.writeExceptionTable(code);
-                indent(-1);
+                codeWriter.writeMinimal(code);
             }
 
             if (options.showLineAndLocalVariableTables) {
