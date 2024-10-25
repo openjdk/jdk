@@ -63,9 +63,8 @@ public class FoldMultilinesTest {
     private static void analyzeFoldMultilinesOff(ProcessBuilder pb, String out) throws Exception {
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
-        String st = getLog(out, output);
-        if (!NEWLINE_LOG_PATTERN.matcher(st).find()) {
-            throw new RuntimeException(out + ": foldmultilines=false did not work." + st);
+        if (!NEWLINE_LOG_PATTERN.matcher(getLog(out, output)).find()) {
+            throw new RuntimeException(out + ": foldmultilines=false did not work.");
         }
     }
 
