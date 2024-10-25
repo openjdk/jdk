@@ -115,7 +115,6 @@ public final class Http3Connection implements AutoCloseable {
     // streams for HTTP3 exchanges
     private final ConcurrentMap<Long, QuicBidiStream> exchangeStreams = new ConcurrentHashMap<>();
     private final ConcurrentMap<Long, Http3ExchangeImpl<?>> exchanges = new ConcurrentHashMap<>();
-    private volatile boolean finalStream;
     // true when the settings frame has been received on the control stream of this connection
     private volatile boolean settingsFrameReceived;
     // the settings we received from the peer
@@ -131,7 +130,13 @@ public final class Http3Connection implements AutoCloseable {
     private final AtomicLong lowestGoAwayReceipt = new AtomicLong(-1);
     private volatile IdleConnectionTimeoutEvent idleConnectionTimeoutEvent;
     private final AtomicLong nextStreamId = new AtomicLong();
-    private final AtomicLong lastStreamId = new AtomicLong(-1);
+    // represents the final stream (if any) on this connection. once a final stream id is
+    // set on a connection, no more streams are allowed to be initiated on that connection
+    // and the connection will be closed once the in-progress streams complete.
+    private final AtomicLong finalStreamId = new AtomicLong(-1);
+    // this is just convenience boolean representing the same state as finalStreamId.
+    // value of true implies no more streams will be initiated on this connection.
+    private volatile boolean finalStream;
 
     private static final int GOAWAY_SENT = 1; // local endpoint sent GOAWAY
     private static final int GOAWAY_RECEIVED = 2; // received GOAWAY from remote peer
@@ -372,7 +377,7 @@ public final class Http3Connection implements AutoCloseable {
     void setFinalStream(long streamId) {
         lock();
         try {
-            this.lastStreamId.set(streamId);
+            this.finalStreamId.set(streamId);
             this.finalStream = true;
         } finally {
             unlock();
@@ -418,48 +423,49 @@ public final class Http3Connection implements AutoCloseable {
 
     /**
      * When opening a client initiated stream, this method checks whether
-     * the new stream id is expected to exceed the lastStreamId set on the
-     * connection. If yes, it yields false, otherwise, it increments the
-     * nextStreamId by 4 and returns its previous value.
+     * the new stream id is expected to exceed the finalStreamId (if any) set on the
+     * connection. If yes, then this method returns false, otherwise, it increments the
+     * nextStreamId by 4 and returns true.
      *
-     * @return true if creation of the new stream is allowed. Note that
+     * @return true if creation of the new stream is allowed. Note that, subsequently,
      * it could still be denied by the underlying quic connection.
      */
-    boolean canCreateStream() {
+    boolean isBeforeFinalStream() {
         lock();
         try {
-            long lastStreamId = this.lastStreamId.get();
-            long nextStreamId = this.nextStreamId.getAndAccumulate(4, (v, a)
-                    -> lastStreamId == -1 ? v + a : v > lastStreamId ? v : (v + a));
+            final long finalStrmId = this.finalStreamId.get();
+            final long nextStreamId = this.nextStreamId.getAndAccumulate(
+                    4, (v, a) -> finalStrmId == -1 ? v + a : v > finalStrmId ? v : (v + a));
             if (debug.on()) {
-                debug.log("canCreateStream(lastStreamId: %s, nextStreamId: %s):%s",
-                        lastStreamId, nextStreamId,
-                        (lastStreamId == -1 || nextStreamId <= lastStreamId));
+                debug.log("isBeforeFinalStream(finalStreamId: %s, nextStreamId: %s):%s",
+                        finalStrmId, nextStreamId,
+                        (finalStrmId == -1 || nextStreamId <= finalStrmId));
             }
-            if (lastStreamId == -1) {
+            if (finalStrmId == -1 || nextStreamId <= finalStrmId) {
+                // allowed to create the stream
                 reservedStreamCount.incrementAndGet();
                 return true;
             }
-            if (nextStreamId > lastStreamId) {
-                // no more streams allowed on this connection
-                return false;
-            }
-            reservedStreamCount.incrementAndGet();
+            // no more streams allowed on this connection
+            return false;
         } finally {
             unlock();
         }
-        return true;
     }
 
     <U> CompletableFuture<? extends ExchangeImpl<U>>
     createStream(final Exchange<U> exchange) throws IOException {
-        if (!canCreateStream()) {
+        // check if this connection has a final stream id set before initiating this new stream
+        if (!isBeforeFinalStream()) {
             if (Log.http3()) {
-                Log.logHttp3("Maximum stream limit reached on {0} for exchange {1}" ,
-                        quicConnectionTag(), exchange.multi.streamLimitState());
+                Log.logHttp3("Cannot initiate new stream on connection {0} for exchange {1}" ,
+                        quicConnectionTag(), exchange);
             }
-            return MinimalFuture.failedFuture(new StreamLimitException(HTTP_3,
-                    "No more streams allowed on connection"));
+            // we didn't create the stream and thus the server hasn't yet processed this request.
+            // mark the request as unprocessed to allow it to be retried on a different connection.
+            exchange.markUnprocessedByPeer();
+            return MinimalFuture.failedFuture(new IOException("cannot initiate additional new" +
+                    " streams on chosen connection"));
         }
         // TODO: this duration is currently "computed" from the request timeout duration.
         // this computation needs a bit more thought
@@ -475,15 +481,23 @@ public final class Http3Connection implements AutoCloseable {
         final CompletableFuture<CompletableFuture<ExchangeImpl<U>>> h3ExchangeCf =
                 bidiStream.handle((stream, t) -> {
                     if (t == null) {
-                        final var io = checkConnectionError();
-                        if (io != null && finalStream) return MinimalFuture.failedFuture(
-                                new StreamLimitException(HTTP_3, "final stream reached on connection"));
-                        if (io != null) return MinimalFuture.failedFuture(new ConnectionExpiredException(io));
+                        // no exception occurred and a bidi stream was created on the quic
+                        // connection, but check if the connection has been terminated
+                        // in the meantime
+                        final var terminationCause = checkConnectionError();
+                        if (terminationCause != null) {
+                            // connection already closed and we haven't yet issued the request.
+                            // mark the exchange as unprocessed to allow it to be retried on
+                            // a different connection.
+                            exchange.markUnprocessedByPeer();
+                            return MinimalFuture.failedFuture(terminationCause);
+                        }
                         // creation of bidi stream succeeded, now create the H3 exchange impl
                         // and return it
                         final Http3ExchangeImpl<U> h3Exchange = createHttp3ExchangeImpl(exchange, stream);
-                        return checkExpiredCreatingStream(exchange, h3Exchange);
+                        return MinimalFuture.completedFuture(h3Exchange);
                     }
+                    // failed to open a bidi stream
                     reservedStreamCount.decrementAndGet();
                     final Throwable cause = Utils.getCompletionCause(t);
                     if (cause instanceof QuicFlowControlException) {
@@ -503,41 +517,18 @@ public final class Http3Connection implements AutoCloseable {
                         client.streamLimitReached(this, exchange.request);
                         this.setFinalStream();
                         return MinimalFuture.failedFuture(new StreamLimitException(HTTP_3,
-                                "No more streams allowed on connection " + quicConnectionTag()
-                                        + " for exchange " + exchange.multi.streamLimitState()));
+                                "No more streams allowed on connection"));
                     } else if (cause instanceof ClosedChannelException) {
-                        if (finalStream) return MinimalFuture.failedFuture(
-                                new StreamLimitException(HTTP_3, "final stream reached on connection"));
-                        return MinimalFuture.failedFuture(new ConnectionExpiredException(cause));
+                        // stream creation failed due to the connection (that was chosen)
+                        // got closed. Thus the request wasn't processed by the server.
+                        // mark the request as unprocessed to allow it to be
+                        // initiated on a different connection
+                        exchange.markUnprocessedByPeer();
+                        return MinimalFuture.failedFuture(cause);
                     }
                     return MinimalFuture.failedFuture(cause);
                 });
         return h3ExchangeCf.thenCompose(Function.identity());
-    }
-
-    private <U> CompletableFuture<ExchangeImpl<U>> checkExpiredCreatingStream(
-            Exchange<U> exchange,
-            Http3ExchangeImpl<U> exchangeImpl) {
-        var error = checkConnectionError(); // check connection level error
-        if (error == null) {
-            error = exchange.getCancelCause(); // now check exchange/stream specific error
-        }
-        if (error == null) {
-            return MinimalFuture.completedFuture(exchangeImpl);
-        } else {
-            if (debug.on()) {
-                debug.log("cancelling HTTP/3 exchange due to: " + error);
-            }
-            if (error instanceof ClosedChannelException) {
-                if (finalStream) {
-                    error = new StreamLimitException(HTTP_3, "final stream reached on connection");
-                }
-                error = new ConnectionExpiredException(error);
-            }
-            assert error != null;
-            exchangeImpl.cancelImpl(error, H3_INTERNAL_ERROR);
-            return MinimalFuture.failedFuture(error);
-        }
     }
 
     private <T> Http3ExchangeImpl<T> createHttp3ExchangeImpl(Exchange<T> exchange, QuicBidiStream stream) {

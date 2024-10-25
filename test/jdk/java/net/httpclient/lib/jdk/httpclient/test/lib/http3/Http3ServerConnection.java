@@ -443,7 +443,14 @@ public class Http3ServerConnection {
                 debug.log("Rejecting HTTP request on stream %s of connection %s",
                         stream.streamId(), this);
             }
-            // just return back and consider the request unprocessed
+            // consider the request as unprocessed and send a GOAWAY on the connection
+            try {
+                sendGoAway();
+            } catch (IOException ioe) {
+                System.err.println("Failed to send GOAWAY on connection " + this
+                        + " due to: " + ioe);
+                ioe.printStackTrace();
+            }
             return;
         }
         var streamId = stream.streamId();

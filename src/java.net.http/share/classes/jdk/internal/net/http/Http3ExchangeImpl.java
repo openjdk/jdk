@@ -934,13 +934,20 @@ public final class Http3ExchangeImpl<T> extends Http3Stream<T> {
      * new connection.
      */
     void closeAsUnprocessed() {
+        // null exchange implies a PUSH stream and those aren't
+        // initiated by the client, so we don't expect them to be
+        // considered unprocessed.
+        assert this.exchange != null : "PUSH streams aren't expected to be closed as unprocessed";
         // We arrange for the request to be retried on a new connection as allowed
         // by RFC-9114, section 5.2
-        markUnprocessedByPeer();
+        this.exchange.markUnprocessedByPeer();
         this.errorRef.compareAndSet(null, new IOException("request not processed by peer"));
         // close the exchange and complete the response CF exceptionally
         close();
         completeResponseExceptionally(this.errorRef.get());
+        if (debug.on()) {
+            debug.log("request unprocessed by peer " + this.request);
+        }
     }
 
     // This method doesn't send any frame

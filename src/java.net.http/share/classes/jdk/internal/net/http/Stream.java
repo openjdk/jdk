@@ -730,12 +730,16 @@ class Stream<T> extends ExchangeImpl<T> {
                 // A REFUSED_STREAM error code implies that the stream wasn't processed by the
                 // peer and the client is free to retry the request afresh.
                 if (error == ErrorFrame.REFUSED_STREAM) {
+                    // null exchange implies a PUSH stream and those aren't
+                    // initiated by the client, so we don't expect them to be
+                    // considered unprocessed.
+                    assert this.exchange != null : "PUSH streams aren't expected to be marked as unprocessed";
                     // Here we arrange for the request to be retried. Note that we don't call
                     // closeAsUnprocessed() method here because the "closed" state is already set
                     // to true a few lines above and calling close() from within
                     // closeAsUnprocessed() will end up being a no-op. We instead do the additional
                     // bookkeeping here.
-                    markUnprocessedByPeer();
+                    this.exchange.markUnprocessedByPeer();
                     errorRef.compareAndSet(null, new IOException("request not processed by peer"));
                     if (debug.on()) {
                         debug.log("request unprocessed by peer (REFUSED_STREAM) " + this.request);
@@ -1822,8 +1826,12 @@ class Stream<T> extends ExchangeImpl<T> {
      */
     void closeAsUnprocessed() {
         try {
+            // null exchange implies a PUSH stream and those aren't
+            // initiated by the client, so we don't expect them to be
+            // considered unprocessed.
+            assert this.exchange != null : "PUSH streams aren't expected to be closed as unprocessed";
             // We arrange for the request to be retried on a new connection as allowed by the RFC-9113
-            markUnprocessedByPeer();
+            this.exchange.markUnprocessedByPeer();
             this.errorRef.compareAndSet(null, new IOException("request not processed by peer"));
             if (debug.on()) {
                 debug.log("closing " + this.request + " as unprocessed by peer");

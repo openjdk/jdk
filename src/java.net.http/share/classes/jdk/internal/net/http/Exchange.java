@@ -101,6 +101,13 @@ final class Exchange<T> {
 
     final AtomicInteger nonFinalResponses = new AtomicInteger();
 
+    // This will be set to true only when it is guaranteed that the server hasn't processed
+    // the request. Typically this happens when the server explicitly states (through a GOAWAY frame
+    // or a relevant error code in reset frame) that the corresponding stream (id) wasn't processed.
+    // However, there can be cases where the client is certain that the request wasn't sent
+    // to the server (and thus not processed). In such cases, the client can set this to true.
+    private volatile boolean unprocessedByPeer;
+
     Exchange(HttpRequestImpl request, MultiExchange<T> multi) {
         this.request = request;
         this.upgrading = false;
@@ -952,5 +959,14 @@ final class Exchange<T> {
 
     String dbgString() {
         return dbgTag;
+    }
+
+    final boolean isUnprocessedByPeer() {
+        return this.unprocessedByPeer;
+    }
+
+    // Marks the exchange as unprocessed by the peer
+    final void markUnprocessedByPeer() {
+        this.unprocessedByPeer = true;
     }
 }
