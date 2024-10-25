@@ -104,7 +104,7 @@ public final class InOutPathTest {
             {packageTypes, wrap(cmd -> {
                 tempDirInInputDir(cmd);
                 var tempDir = cmd.getArgumentValue("--temp");
-                Files.createDirectory(Path.of(tempDir));
+                Files.createDirectories(Path.of(tempDir));
                 cmd.addArguments(argName, tempDir);
             }, argName + " as --temp; --temp in --input")},
         });

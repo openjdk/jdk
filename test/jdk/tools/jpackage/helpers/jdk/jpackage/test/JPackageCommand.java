@@ -834,21 +834,40 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
         AppImageFile(JPackageCommand::assertAppImageFile),
         PackageFile(JPackageCommand::assertPackageFile),
         MainLauncher(cmd -> {
-            TKit.assertExecutableFileExists(cmd.appLauncherPath());
+            if (cmd.isRuntime()) {
+                TKit.assertPathExists(convertFromRuntime(cmd).appLauncherPath(), false);
+            } else {
+                TKit.assertExecutableFileExists(cmd.appLauncherPath());
+            }
         }),
         MainLauncherCfgFile(cmd -> {
-            TKit.assertFileExists(cmd.appLauncherCfgPath(null));
+            if (cmd.isRuntime()) {
+                TKit.assertPathExists(convertFromRuntime(cmd).appLauncherCfgPath(null), false);
+            } else {
+                TKit.assertFileExists(cmd.appLauncherCfgPath(null));
+            }
         }),
         RuntimeDirectory(cmd -> {
             TKit.assertDirectoryExists(cmd.appRuntimeDirectory());
-                if (TKit.isOSX() && !cmd.isRuntime()) {
-                    TKit.assertFileExists(cmd.appRuntimeDirectory().resolve(
-                            "Contents/MacOS/libjli.dylib"));
+            if (TKit.isOSX()) {
+                var libjliPath = cmd.appRuntimeDirectory().resolve("Contents/MacOS/libjli.dylib");
+                if (cmd.isRuntime()) {
+                    TKit.assertPathExists(libjliPath, false);
+                } else {
+                    TKit.assertFileExists(libjliPath);
                 }
+            }
         });
 
         AppLayoutAssert(Consumer<JPackageCommand> action) {
             this.action = action;
+        }
+
+        private static JPackageCommand convertFromRuntime(JPackageCommand cmd) {
+            var copy = new JPackageCommand(cmd);
+            copy.immutable = false;
+            copy.removeArgumentWithValue("--runtime-image");
+            return copy;
         }
 
         private final Consumer<JPackageCommand> action;
