@@ -118,7 +118,7 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  *   <dd>- <em>Syntax:</em> Well-formed language values have the form {@code [a-zA-Z]{2,8}}.
  *   Note: this is not the full BCP 47 language production, since it excludes
  *   <a href="https://datatracker.ietf.org/doc/html/rfc5646#section-2.2.2">extlang</a>
- *   (deprecated by modern three-letter language codes).</dd>
+ *   (as modern three-letter language codes are preferred).</dd>
  *
  *   <dd>- <em>Example:</em> "en" (English), "ja" (Japanese), "kok" (Konkani)</dd>
  *
