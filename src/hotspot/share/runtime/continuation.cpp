@@ -84,7 +84,7 @@ class JvmtiUnmountBeginMark : public StackObj {
       // Don't preempt in case there is an async exception installed since
       // we would incorrectly throw it during the unmount logic in the carrier.
       if (_target->has_async_exception_condition()) {
-        _failed = false;
+        _failed = true;
       }
     } else {
       _target->set_is_in_VTMS_transition(true);
