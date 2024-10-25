@@ -102,7 +102,7 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * <a href="https://tools.ietf.org/html/rfc5646">RFC 5646</a>
  * combines subtags from various ISO (639, 3166, 15924) standards which are also
  * included in the composition of {@code Locale}.
- * Additionally, you can find the full list of valid codes for each field in the
+ * Additionally, the full list of valid codes for each field can be found in the
  * <a href="https://www.iana.org/assignments/language-subtag-registry/language-subtag-registry">
  * IANA Language Subtag Registry</a> (e.g. search for "Type: region").
  *
@@ -229,7 +229,7 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * String representing this information, for example, "nu-thai".  The
  * {@code Locale} class also provides {@link
  * #getUnicodeLocaleAttributes}, {@link #getUnicodeLocaleKeys}, and
- * {@link #getUnicodeLocaleType} which allow you to access Unicode
+ * {@link #getUnicodeLocaleType} which provides access to the Unicode
  * locale attributes and key/type pairs directly.  When represented as
  * a string, the Unicode Locale Extension lists attributes
  * alphabetically, followed by key/type sequences with keys listed
@@ -327,9 +327,8 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * <dl>
  *  <dt><b>Locale Constants</b></dt>
  *  <dd>The {@code Locale} class provides a number of convenient constants
- *  that you can use to obtain {@code Locale} objects for commonly used
- *  locales. For example, {@link Locale#US Locale.US} is the {@code Locale} object
- *  for the United States.</dd>
+ *  that return {@code Locale} objects for commonly used locales. For example,
+ *  {@link Locale#US Locale.US} is the {@code Locale} object for the United States.</dd>
  *  <dt><b>Factory Methods</b></dt>
  *  <dd>The method {@link #of(String, String, String)} and its overloads obtain a
  *  {@code Locale} object from the given {@code language}, {@code country},
@@ -350,12 +349,12 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  *
  * <h2>Usage Examples</h2>
  *
- * <p>Once you've {@linkplain ##ObtainingLocale obtained} a {@code Locale},
- * you can query it for information about itself. For example, use {@link
+ * <p>Once a {@code Locale} is {@linkplain ##ObtainingLocale obtained},
+ * it can be queried for information about itself. For example, use {@link
  * #getCountry} to get the country (or region) code and {@link #getLanguage} to
- * get the language. You can use {@link #getDisplayCountry} to get the
+ * get the language. {@link #getDisplayCountry} can be used to get the
  * name of the country suitable for displaying to the user. Similarly,
- * you can use {@link #getDisplayLanguage()} to get the name of
+ * use {@link #getDisplayLanguage()} to get the name of
  * the language suitable for displaying to the user. The {@code getDisplayXXX}
  * methods are themselves <em>locale-sensitive</em> and have two variants; one with an explicit
  * locale parameter, and one without. The latter uses the default {@link
@@ -1588,8 +1587,8 @@ public final class Locale implements Cloneable, Serializable {
      * Java 6 and prior.
      *
      * <p>If both the language and country fields are missing, this function will return
-     * the empty string, even if the variant, script, or extensions field is present (you
-     * can't have a locale with just a variant, the variant must accompany a well-formed
+     * the empty string, even if the variant, script, or extensions field is present
+     * (a locale with just a variant is not allowed, the variant must accompany a well-formed
      * language or country code).
      *
      * <p>If script or extensions are present and variant is missing, no underscore is
