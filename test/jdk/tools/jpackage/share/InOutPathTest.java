@@ -29,16 +29,18 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
+import static java.util.stream.Collectors.toSet;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.AppImageFile;
 import jdk.jpackage.internal.ApplicationLayout;
 import jdk.jpackage.internal.PackageFile;
 import jdk.jpackage.test.Annotations;
-import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.Functional.ThrowingConsumer;
+import jdk.jpackage.test.HelloApp;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.PackageTest;
+import jdk.jpackage.test.PackageType;
 import static jdk.jpackage.test.RunnablePackageTest.Action.CREATE_AND_UNPACK;
 import jdk.jpackage.test.TKit;
 
@@ -58,35 +60,80 @@ public final class InOutPathTest {
     public static Collection input() {
         List<Object[]> data = new ArrayList<>();
 
+        for (var packageTypes : List.of(PackageType.IMAGE.toString(), ALL_NATIVE_PACKAGE_TYPES)) {
+            data.addAll(List.of(new Object[][]{
+                {packageTypes, wrap(InOutPathTest::outputDirInInputDir, "--dest in --input")},
+                {packageTypes, wrap(InOutPathTest::outputDirSameAsInputDir, "--dest same as --input")},
+                {packageTypes, wrap(InOutPathTest::tempDirInInputDir, "--temp in --input")},
+                {packageTypes, wrap(cmd -> {
+                    outputDirInInputDir(cmd);
+                    tempDirInInputDir(cmd);
+                }, "--dest and --temp in --input")},
+            }));
+            data.addAll(additionalContentInput(packageTypes, "--app-content"));
+        }
+
         data.addAll(List.of(new Object[][]{
-            {wrap(InOutPathTest::outputDirInInputDir, "--dest:subdir")},
-            {wrap(InOutPathTest::outputDirSameAsInputDir, "--dest:same")},
-            {wrap(InOutPathTest::tempDirInInputDir, "--temp")},
-            {wrap(cmd -> {
-                outputDirInInputDir(cmd);
-                tempDirInInputDir(cmd);
-            }, "--dest:subdir and --temp")},
+            {PackageType.IMAGE.toString(), wrap(cmd -> {
+                additionalContent(cmd, "--app-content", cmd.outputBundle());
+            }, "--app-content same as output bundle")},
         }));
+
+        if (TKit.isOSX()) {
+            data.addAll(additionalContentInput(PackageType.MAC_DMG.toString(),
+                    "--mac-dmg-content"));
+        }
 
         return data;
     }
 
-    public InOutPathTest(Envelope configure) {
+    private static List<Object[]> additionalContentInput(String packageTypes, String argName) {
+        return List.of(new Object[][]{
+            {packageTypes, wrap(cmd -> {
+                additionalContent(cmd, argName, cmd.inputDir().resolve("foo"));
+            }, argName + " in --input")},
+            {packageTypes, wrap(cmd -> {
+                additionalContent(cmd, argName, cmd.inputDir());
+            }, argName + " same as --input")},
+            {packageTypes, wrap(cmd -> {
+                additionalContent(cmd, argName, cmd.outputDir().resolve("bar"));
+            }, argName + " in --dest")},
+            {packageTypes, wrap(cmd -> {
+                additionalContent(cmd, argName, cmd.outputDir());
+            }, argName + " same as --dest")},
+            {packageTypes, wrap(cmd -> {
+                tempDirInInputDir(cmd);
+                var tempDir = cmd.getArgumentValue("--temp");
+                Files.createDirectory(Path.of(tempDir));
+                cmd.addArguments(argName, tempDir);
+            }, argName + " as --temp; --temp in --input")},
+        });
+    }
+
+    public InOutPathTest(String packageTypes, Envelope configure) {
+        if (ALL_NATIVE_PACKAGE_TYPES.equals(packageTypes)) {
+            this.packageTypes = PackageType.NATIVE;
+        } else {
+            this.packageTypes = Stream.of(packageTypes.split(",")).map(
+                    PackageType::valueOf).collect(toSet());
+        }
         this.configure = configure.value;
     }
 
     @Test
-    @Parameter("true")
-    @Parameter("false")
-    public void test(boolean appImage) throws Throwable {
-        runTest(appImage, configure);
+    public void test() throws Throwable {
+        runTest(packageTypes, configure);
     }
 
     private static Envelope wrap(ThrowingConsumer<JPackageCommand> v, String label) {
         return new Envelope(v, label);
     }
 
-    private static void runTest(boolean appImage,
+    private static boolean isAppImageValid(JPackageCommand cmd) {
+        return !cmd.hasArgument("--app-content") && !cmd.hasArgument("--dmg-app-content");
+    }
+
+    private static void runTest(Set<PackageType> packageTypes,
             ThrowingConsumer<JPackageCommand> configure) throws Throwable {
         ThrowingConsumer<JPackageCommand> configureWrapper = cmd -> {
             // Make sure the input directory is empty in every test run.
@@ -103,13 +150,19 @@ public final class InOutPathTest {
             }
         };
 
-        if (appImage) {
+        if (packageTypes.contains(PackageType.IMAGE)) {
             JPackageCommand cmd = JPackageCommand.helloAppImage(JAR_NAME + ":");
             configureWrapper.accept(cmd);
             cmd.executeAndAssertHelloAppImageCreated();
-            verifyAppImage(cmd);
+            if (isAppImageValid(cmd)) {
+                verifyAppImage(cmd);
+            } else {
+                cmd.execute();
+                HelloApp.executeLauncherAndVerifyOutput(cmd);
+            }
         } else {
             new PackageTest()
+                    .forTypes(packageTypes)
                     .configureHelloApp(JAR_NAME + ":")
                     .addInitializer(configureWrapper)
                     .addInstallVerifier(InOutPathTest::verifyAppImage)
@@ -137,7 +190,23 @@ public final class InOutPathTest {
         cmd.setArgumentValue("--temp", tmpDir);
     }
 
+    private static void additionalContent(JPackageCommand cmd,
+            String argName, Path base) throws IOException {
+        Path appContentFile = base.resolve(base.toString().replaceAll("[\\\\/]",
+                "-") + "-foo.txt");
+        TKit.createDirectories(appContentFile.getParent());
+        TKit.createTextFile(appContentFile, List.of("Hello Duke!"));
+        cmd.addArguments(argName, appContentFile.getParent());
+    }
+
     private static void verifyAppImage(JPackageCommand cmd) throws IOException {
+        if (!isAppImageValid(cmd)) {
+            // Don't verify the contents of app image as it is invalid.
+            // jpackage exited without getting stuck in infinite spiral.
+            // No more expectations from the tool for the give arguments.
+            return;
+        }
+
         final Path rootDir = cmd.isImagePackageType() ? cmd.outputBundle() : cmd.pathToUnpackedPackageFile(
                 cmd.appInstallationDirectory());
         final Path appDir = ApplicationLayout.platformAppImage().resolveAt(
@@ -171,7 +240,10 @@ public final class InOutPathTest {
         }
     }
 
+    private final Set<PackageType> packageTypes;
     private final ThrowingConsumer<JPackageCommand> configure;
 
     private final static String JAR_NAME = "duke.jar";
+
+    private final static String ALL_NATIVE_PACKAGE_TYPES = "NATIVE";
 }
