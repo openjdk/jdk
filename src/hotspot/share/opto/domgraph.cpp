@@ -410,8 +410,8 @@ void PhaseIdealLoop::Dominators() {
   // Setup mappings from my Graph to Tarjan's stuff and back
   // Note: Tarjan uses 1-based arrays
   NTarjan *ntarjan = NEW_RESOURCE_ARRAY(NTarjan,C->unique()+1);
-  // Initialize all fields for safety.
-  // This initializes _control field for fast reference.
+  // Initialize all fields at once for safety and extra performance.
+  // Among other things, this initializes _control field for fast reference.
   memset(ntarjan, 0, (C->unique() + 1)*sizeof(NTarjan));
 
   // Store the DFS order for the main loop
