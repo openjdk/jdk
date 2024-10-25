@@ -708,7 +708,8 @@ void nmethod::preserve_callee_argument_oops(frame fr, const RegisterMap *reg_map
 
   // handle the case of an anchor explicitly set in continuation code that doesn't have a callee
   JavaThread* thread = reg_map->thread();
-  if ((thread->has_last_Java_frame() && fr.sp() == thread->last_Java_sp()) JVMTI_ONLY(|| (method()->is_continuation_enter_intrinsic() && thread->on_monitor_waited_event()))) {
+  if ((thread->has_last_Java_frame() && fr.sp() == thread->last_Java_sp())
+      JVMTI_ONLY(|| (method()->is_continuation_enter_intrinsic() && thread->on_monitor_waited_event()))) {
     return;
   }
 
