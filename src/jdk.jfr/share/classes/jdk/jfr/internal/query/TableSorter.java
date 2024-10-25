@@ -93,7 +93,7 @@ final class TableSorter {
                     if (isFractionalType(n2)) {
                         return compare(n1.longValue(), n2.doubleValue());
                     }
-                } 
+                }
                 if (isFractionalType(n1)) {
                     if (isFractionalType(n2)) {
                         return Double.compare(n1.doubleValue(), n2.doubleValue());
