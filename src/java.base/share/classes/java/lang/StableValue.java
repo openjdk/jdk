@@ -68,10 +68,12 @@ import java.util.function.Supplier;
  * Stable values are objects that represent deferred immutable data and are treated
  * as constants by the JVM, enabling the same performance optimizations that are
  * possible by marking a field final. Yet, stable values offer greater flexibility as to
- * the timing of initialization compared to {@code final} fields:
+ * the timing of initialization compared to {@code final} fields.
+ * <p>
+ * The characteristics of the various kinds of storage are summarized in the following table:
  * <br/>
  * <blockquote>
- * <table>
+ * <table class="plain">
  *     <caption style="display:none">Storage kind comparison</caption>
  *     <thead>
  *     <tr>
@@ -305,7 +307,7 @@ import java.util.function.Supplier;
  * <p>
  * A <em>stable list</em> is similar to a stable int function, but provides a full
  * implementation of an immutable {@linkplain List}. This is useful when interacting with
- * collection-based methods. Here is an example how a stable list can be used to hold
+ * collection-based methods. Here is an example of how a stable list can be used to hold
  * a pool of order controllers:
  * {@snippet lang = java:
  *    class Application {
