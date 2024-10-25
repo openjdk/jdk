@@ -228,8 +228,7 @@ public sealed class Console implements Flushable permits ProxyingConsole {
     }
 
     /**
-     * Writes a prompt as if by calling {@code print}, then reads a single line
-     * of text from this console.
+     * Reads a single line of text from this console.
      *
      * @throws IOError
      *         If an I/O error occurs.
