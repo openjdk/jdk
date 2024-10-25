@@ -41,6 +41,7 @@ package java.text;
 import java.io.IOException;
 import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
+import java.io.ObjectStreamException;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -109,17 +110,21 @@ import java.util.Objects;
  * </pre></blockquote>
  *
  * <p>
- * The <i>ArgumentIndex</i> value is a non-negative integer written
+ * The {@code ArgumentIndex} value is a non-negative integer written
  * using the digits {@code '0'} through {@code '9'}, and represents an index into the
  * {@code arguments} array passed to the {@code format} methods
  * or the result array returned by the {@code parse} methods.
  * <p>
- * The <i>FormatType</i> and <i>FormatStyle</i> values are used to create
+ * Any constructor or method that takes a String pattern parameter will throw an {@code IllegalArgumentException} if the
+ * pattern contains an {@code ArgumentIndex} value that is equal to or exceeds an implementation limit.
+ * <p>
+ * The {@code FormatType} and {@code FormatStyle} values are used to create
  * a {@code Format} instance for the format element. The following
  * table shows how the values map to {@code Format} instances. These values
  * are case-insensitive when passed to {@link #applyPattern(String)}. Combinations
  * not shown in the table are illegal. A <i>SubformatPattern</i> must
  * be a valid pattern string for the {@code Format} subclass used.
+ * @implNote In the reference implementation, the limit of {@code ArgumentIndex} is 10,000.
  *
  * <table class="plain">
  * <caption style="display:none">Shows how FormatType and FormatStyle values map to Format instances</caption>
@@ -1181,6 +1186,8 @@ public class MessageFormat extends Format {
                 maximumArgumentNumber = argumentNumbers[i];
             }
         }
+
+        // Constructors/applyPattern ensure that resultArray.length < MAX_ARGUMENT_INDEX
         Object[] resultArray = new Object[maximumArgumentNumber + 1];
 
         int patternOffset = 0;
@@ -1459,6 +1466,9 @@ public class MessageFormat extends Format {
      * @serial
      */
     private int[] argumentNumbers = new int[INITIAL_FORMATS];
+    // Implementation limit for ArgumentIndex pattern element. Valid indices must
+    // be less than this value
+    private static final int MAX_ARGUMENT_INDEX = 10000;
 
     /**
      * One less than the number of entries in {@code offsets}.  Can also be thought of
@@ -1637,6 +1647,11 @@ public class MessageFormat extends Format {
         if (argumentNumber < 0) {
             throw new IllegalArgumentException("negative argument number: "
                                                + argumentNumber);
+        }
+
+        if (argumentNumber >= MAX_ARGUMENT_INDEX) {
+            throw new IllegalArgumentException(
+                    argumentNumber + " exceeds the ArgumentIndex implementation limit");
         }
 
         // resize format information arrays if necessary
@@ -2006,24 +2021,53 @@ public class MessageFormat extends Format {
      */
     @java.io.Serial
     private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
-        in.defaultReadObject();
-        boolean isValid = maxOffset >= -1
-                && formats.length > maxOffset
-                && offsets.length > maxOffset
-                && argumentNumbers.length > maxOffset;
+        ObjectInputStream.GetField fields = in.readFields();
+        if (fields.defaulted("argumentNumbers") || fields.defaulted("offsets")
+                || fields.defaulted("formats") || fields.defaulted("locale")
+                || fields.defaulted("pattern") || fields.defaulted("maxOffset")){
+            throw new InvalidObjectException("Stream has missing data");
+        }
+
+        locale = (Locale) fields.get("locale", null);
+        String patt = (String) fields.get("pattern", null);
+        int maxOff = fields.get("maxOffset", -2);
+        int[] argNums = ((int[]) fields.get("argumentNumbers", null)).clone();
+        int[] offs = ((int[]) fields.get("offsets", null)).clone();
+        Format[] fmts = ((Format[]) fields.get("formats", null)).clone();
+
+        // Check arrays/maxOffset have correct value/length
+        boolean isValid = maxOff >= -1 && argNums.length > maxOff
+                && offs.length > maxOff && fmts.length > maxOff;
+
+        // Check the correctness of arguments and offsets
         if (isValid) {
-            int lastOffset = pattern.length() + 1;
-            for (int i = maxOffset; i >= 0; --i) {
-                if ((offsets[i] < 0) || (offsets[i] > lastOffset)) {
+            int lastOffset = patt.length();
+            for (int i = maxOff; i >= 0; --i) {
+                if (argNums[i] < 0 || argNums[i] >= MAX_ARGUMENT_INDEX
+                        || offs[i] < 0 || offs[i] > lastOffset) {
                     isValid = false;
                     break;
                 } else {
-                    lastOffset = offsets[i];
+                    lastOffset = offs[i];
                 }
             }
         }
+
         if (!isValid) {
-            throw new InvalidObjectException("Could not reconstruct MessageFormat from corrupt stream.");
+            throw new InvalidObjectException("Stream has invalid data");
         }
+        maxOffset = maxOff;
+        pattern = patt;
+        offsets = offs;
+        formats = fmts;
+        argumentNumbers = argNums;
+    }
+
+    /**
+     * Serialization without data not supported for this class.
+     */
+    @java.io.Serial
+    private void readObjectNoData() throws ObjectStreamException {
+        throw new InvalidObjectException("Deserialized MessageFormat objects need data");
     }
 }
