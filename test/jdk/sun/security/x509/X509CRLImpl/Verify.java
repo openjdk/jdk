@@ -96,8 +96,7 @@ public class Verify {
          * Should fail with NoSuchAlgorithmException.
          */
         try {
-            verifyCRL(crlIssuerCertPubKey,
-                System.getProperty("test.provider.name", "SunJCE"));
+            verifyCRL(crlIssuerCertPubKey, "SunJCE");
             throw new RuntimeException("Didn't catch the exception properly");
         } catch (NoSuchAlgorithmException e) {
             System.out.println("Caught the correct exception.");
@@ -152,6 +151,7 @@ public class Verify {
             throws CRLException, NoSuchAlgorithmException, InvalidKeyException,
             SignatureException {
         Provider provider = Security.getProvider(providerName);
+        System.out.println("Provider = " + provider.getName());
         if (provider == null) {
             throw new RuntimeException("Provider " + providerName
                                                    + " not found.");

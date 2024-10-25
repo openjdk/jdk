@@ -74,8 +74,7 @@ public class NONEwithRSA {
         sig.initSign(kp.getPrivate());
 
         try {
-            Signature.getInstance("NONEwithRSA",
-                    System.getProperty("test.provider.name", "SUN"));
+            Signature.getInstance("NONEwithRSA", "SUN");
             throw new Exception("call succeeded");
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
