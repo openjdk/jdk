@@ -445,9 +445,8 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                         if (debug != null) {
                             debug.println("Constraints usage length is " + s.length);
                         }
-                    } else if ((segment = TLSCipherSegment.nameOf(entry)) != null &&
-                            // Apply TLSCipherConstraint to TLS properties only.
-                            propertyName.toLowerCase().contains(".tls.")) {
+                    } else if (PROPERTY_TLS_DISABLED_ALGS.equalsIgnoreCase(propertyName) &&
+                            (segment = TLSCipherSegment.nameOf(entry)) != null) {
                         if (lastConstraint != null) {
                             throw tlsCipherSegmentLinkException;
                         }
