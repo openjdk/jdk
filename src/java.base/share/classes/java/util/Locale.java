@@ -97,7 +97,7 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * the fields below. This particular {@code Locale} would
  * represent English in the United States using the Latin alphabet and numerics with
  * Oxford English Dictionary spelling.
- * {@code Locale} largely implements IETF BCP 47 and any differences should be observed
+ * {@code Locale} implements IETF BCP 47 and any deviations should be observed
  * by the comments prefixed by <em>"Note:"</em>. The various ISO (639, 3166, 15924)
  * standards included in the composition of {@code Locale} are defined in
  * <a href="https://tools.ietf.org/html/rfc5646">RFC 5646</a>.
