@@ -258,7 +258,7 @@ public class LayoutGraph {
         }
     }
 
-    public void removeAndCompactLayers(int removeLayerNr) {
+    public void removeLayer(int removeLayerNr) {
         // Create a new ArrayList to store the compacted layers
         List<LayoutLayer> compactedLayers = new ArrayList<>();
 
@@ -270,5 +270,29 @@ public class LayoutGraph {
 
         // Replace the old layers list with the new compacted one
         layers = compactedLayers;
+
+        for (int l = removeLayerNr; l < getLayerCount(); l++) {
+            for (LayoutNode layoutNode : getLayer(l)) {
+                layoutNode.setLayer(l);
+            }
+        }
     }
+
+    public void positionLayers() {
+        int currentY = 0;
+        for (LayoutLayer layer : getLayers()) {
+            layer.setTop(currentY);
+
+            // Calculate the maximum layer height and set it for the layer
+            int maxLayerHeight = layer.calculateMaxLayerHeight();
+            layer.setHeight(maxLayerHeight);
+
+            // Center nodes vertically within the layer
+            layer.centerNodesVertically();
+
+            // Update currentY to account for the padded bottom of this layer
+            currentY += layer.calculateScalePaddedBottom();
+        }
+    }
+
 }

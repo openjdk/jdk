@@ -999,10 +999,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
                     public void movementStarted(Widget widget) {
                         LineWidget lw = (LineWidget) widget;
                         startLocation = lw.getClientAreaLocation();
-                        originalPosition = new Point(
-                                (lw.getFrom().x + lw.getTo().x) / 2,
-                                (lw.getFrom().y + lw.getTo().y) / 2
-                        );
+                        originalPosition = lw.getFrom();
                     }
 
                     @Override
