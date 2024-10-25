@@ -216,23 +216,33 @@ public final class ImageFileCreator {
         BasicImageWriter writer = new BasicImageWriter(byteOrder);
         ResourcePoolManager allContent = createPoolManager(archives,
                 entriesForModule, byteOrder, writer);
-        ResourcePool result;
+        ResourcePool result = null;
         try (DataOutputStream out = plugins.getJImageFileOutputStream()) {
             result = generateJImage(allContent, writer, plugins, out, generateRuntimeImage);
+        } catch (RuntimeImageLinkException e) {
+            throwRuntimeLinkFailure(e);
         }
 
         //Handle files.
         try {
             plugins.storeFiles(allContent.resourcePool(), result, writer);
         } catch (RuntimeImageLinkException e) {
-            // Propagate reason for jlink runs based on linkable JDK runtimes
-            throw e.getReason();
+            throwRuntimeLinkFailure(e);
         } catch (Exception ex) {
             if (JlinkTask.DEBUG) {
                 ex.printStackTrace();
             }
             throw new IOException(ex);
         }
+    }
+
+    private static void throwRuntimeLinkFailure(RuntimeImageLinkException e) throws IOException {
+        if (JlinkTask.DEBUG) {
+            e.getReason().printStackTrace();
+        }
+        // Propagate as IOException with appropriate message for
+        // jlink runs from the run-time image
+        throw new IOException(e.getReason().getMessage());
     }
 
     /**

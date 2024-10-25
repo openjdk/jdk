@@ -35,6 +35,7 @@ import java.lang.module.ModuleFinder;
 import java.lang.module.ModuleReference;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
@@ -459,7 +460,20 @@ public class JRTArchive implements Archive {
                             // the underlying base path is a JrtPath with the
                             // JrtFileSystem underneath which is able to handle
                             // this size query.
-                            return Files.size(archive.getPath().resolve(resPath));
+                            try {
+                                return Files.size(archive.getPath().resolve(resPath));
+                            } catch (NoSuchFileException file) {
+                                // This indicates that we don't find the class in the
+                                // modules image using the JRT FS provider. Yet, we find
+                                // the class using the system module finder. Therefore,
+                                // we have a patched module. Mention that module patching
+                                // is not supported.
+                                String msgFormat = "File %s not found in the modules image.\n" +
+                                                   "--patch-module is not supported for run-time image linking.";
+                                String msg = String.format(msgFormat, file.getFile());
+                                IllegalArgumentException noModulePatch = new IllegalArgumentException(msg);
+                                throw new RuntimeImageLinkException(noModulePatch);
+                            }
                         }
                     } catch (IOException e) {
                         throw new UncheckedIOException(e);

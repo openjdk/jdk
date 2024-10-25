@@ -38,7 +38,6 @@ public abstract class ModifiedFilesTest extends AbstractLinkableRuntimeTest {
     @Override
     void runTest(Helper helper) throws Exception {
         Path initialImage = createRuntimeLinkImage(new BaseJlinkSpecBuilder()
-                //.name("java-base-jlink-with-mod")
                 .name(initialImageName())
                 .addModule("java.base")
                 .validatingModule("java.base")
