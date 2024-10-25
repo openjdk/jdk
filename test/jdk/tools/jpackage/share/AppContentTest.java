@@ -24,6 +24,7 @@
 import java.nio.file.Path;
 import java.nio.file.Files;
 import jdk.jpackage.internal.ApplicationLayout;
+import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.PackageType;
 import jdk.jpackage.test.TKit;
@@ -33,8 +34,6 @@ import jdk.jpackage.test.Annotations.Parameters;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-
-import jdk.internal.util.OSVersion;
 
 /**
  * Tests generation of packages with input folder containing empty folders.
@@ -49,7 +48,6 @@ import jdk.internal.util.OSVersion;
  * @build jdk.jpackage.test.*
  * @build AppContentTest
  * @modules jdk.jpackage/jdk.jpackage.internal
- * @modules java.base/jdk.internal.util
  * @run main/othervm/timeout=720 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=AppContentTest
  */
@@ -82,37 +80,64 @@ public class AppContentTest {
 
     @Test
     public void test() throws Exception {
-
-        // On macOS signing may or may not work for modified app bundles.
-        // It works on macOS 15 and up, but fails on macOS below 15.
+        // On macOS signing may or may not work for modified app bundles, so
+        // generating package might fail. We still want to test if app image
+        // with addtional content was generated correctly, so on macOS we
+        // only generating app image and ignoring jpackage exit code.
         final int expectedJPackageExitCode;
-        final boolean isMacOS15 = (OSVersion.current().compareTo(
-                                      new OSVersion(15, 0, 0)) > 0);
-        if (testPathArgs.contains(TEST_BAD) || (TKit.isOSX() && !isMacOS15)) {
+        if (testPathArgs.contains(TEST_BAD)) {
             expectedJPackageExitCode = 1;
         } else {
             expectedJPackageExitCode = 0;
         }
 
+        if (TKit.isOSX()) {
+            testOSX(expectedJPackageExitCode);
+        } else {
+            testWindowsOrLinux(expectedJPackageExitCode);
+        }
+    }
+
+    private void testOSX(int expectedJPackageExitCode) throws Exception {
+        JPackageCommand cmd = JPackageCommand.helloAppImage();
+        for (String arg : testPathArgs) {
+            cmd.addArguments("--app-content", arg);
+        }
+        if (expectedJPackageExitCode == 0) {
+            // If expected code is 0, jpackage might still fail when doing
+            // signing. Which is expected on some macOS versions due to
+            // additional content.
+            cmd.setExecuteWithoutExitCodeCheck(true);
+        }
+
+        cmd.execute(expectedJPackageExitCode);
+
+        if (expectedJPackageExitCode == 0) {
+            verify(cmd);
+        }
+    }
+
+    private void testWindowsOrLinux(int expectedJPackageExitCode) throws Exception {
         new PackageTest().configureHelloApp()
             .addInitializer(cmd -> {
                 for (String arg : testPathArgs) {
                     cmd.addArguments("--app-content", arg);
                 }
             })
-            .addInstallVerifier(cmd -> {
-                ApplicationLayout appLayout = cmd.appLayout();
-                Path contentDir = appLayout.contentDirectory();
-                for (String arg : testPathArgs) {
-                    List<String> paths = Arrays.asList(arg.split(","));
-                    for (String p : paths) {
-                        Path name = Path.of(p).getFileName();
-                        TKit.assertPathExists(contentDir.resolve(name), true);
-                    }
-                }
-
-            })
+            .addInstallVerifier(cmd -> { verify(cmd); })
             .setExpectedExitCode(expectedJPackageExitCode)
             .run();
+    }
+
+    protected void verify(JPackageCommand cmd) {
+        ApplicationLayout appLayout = cmd.appLayout();
+        Path contentDir = appLayout.contentDirectory();
+        for (String arg : testPathArgs) {
+            List<String> paths = Arrays.asList(arg.split(","));
+            for (String p : paths) {
+                Path name = Path.of(p).getFileName();
+                TKit.assertPathExists(contentDir.resolve(name), true);
+            }
         }
+    }
 }

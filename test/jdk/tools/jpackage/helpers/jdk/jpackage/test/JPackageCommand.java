@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -715,6 +715,12 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
         return this;
     }
 
+    public JPackageCommand setExecuteWithoutExitCodeCheck(boolean v) {
+        verifyMutable();
+        executeWithoutExitCodeCheck = v;
+        return this;
+    }
+
     public boolean isWithToolProvider() {
         return Optional.ofNullable(withToolProvider).orElse(
                 defaultWithToolProvider);
@@ -786,10 +792,18 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
             }
         }
 
-        Executor.Result result = new JPackageCommand(this)
-                .adjustArgumentsBeforeExecution()
-                .createExecutor()
-                .execute(expectedExitCode);
+        Executor.Result result;
+        if (executeWithoutExitCodeCheck) {
+            result = new JPackageCommand(this)
+                    .adjustArgumentsBeforeExecution()
+                    .createExecutor()
+                    .executeWithoutExitCodeCheck();
+        } else {
+            result = new JPackageCommand(this)
+                    .adjustArgumentsBeforeExecution()
+                    .createExecutor()
+                    .execute(expectedExitCode);
+        }
 
         if (result.exitCode == 0) {
             executeVerifyActions();
@@ -1108,6 +1122,7 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
     private boolean suppressOutput;
     private boolean ignoreDefaultRuntime;
     private boolean ignoreDefaultVerbose;
+    private boolean executeWithoutExitCodeCheck;
     private boolean immutable;
     private final Actions prerequisiteActions;
     private final Actions verifyActions;
