@@ -51,14 +51,14 @@ public final class ModuleLoaderMap {
         private static final ClassLoader APP_CLASSLOADER =
                 ClassLoaders.appClassLoader();
 
-        private static final Integer PLATFORM_LOADER_INDEX = 1;
-        private static final Integer APP_LOADER_INDEX      = 2;
+        private static final String PLATFORM_LOADER_INDEX = "PLATFORM";
+        private static final String APP_LOADER_INDEX      = "APP";
 
         /**
          * Map from module to a class loader index. The index is resolved to the
          * actual class loader in {@code apply}.
          */
-        private final Map<String, Integer> map;
+        private final Map<String, String> map;
 
         /**
          * Creates a Mapper to map module names in the given Configuration to
@@ -69,7 +69,7 @@ public final class ModuleLoaderMap {
          * so that we can cheaply do identity comparisons during bootstrap.
          */
         Mapper(Configuration cf) {
-            var map = new HashMap<String, Integer>();
+            var map = new HashMap<String, String>();
             for (ResolvedModule resolvedModule : cf.modules()) {
                 String mn = resolvedModule.name();
                 if (!Modules.bootModules.contains(mn)) {
@@ -85,7 +85,7 @@ public final class ModuleLoaderMap {
 
         @Override
         public ClassLoader apply(String name) {
-            Integer loader = map.get(name);
+            String loader = map.get(name);
             if (loader == APP_LOADER_INDEX) {
                 return APP_CLASSLOADER;
             } else if (loader == PLATFORM_LOADER_INDEX) {
