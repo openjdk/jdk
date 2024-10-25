@@ -87,8 +87,7 @@ public class ScreenCaptureRobotTest {
     }
 
     private static void doTest() throws Exception {
-        Robot robot;
-        robot = new Robot();
+        Robot robot = new Robot();
         robot.waitForIdle();
         robot.delay(500);
 
@@ -103,7 +102,7 @@ public class ScreenCaptureRobotTest {
 
         if (!compareImages(capturedImage, realImage)) {
             String errorMessage = "FAIL : Captured Image is different from "
-                    + "the actual image";
+                    + "the real image";
             System.err.println("Test failed");
             saveImage(capturedImage, "CapturedImage.png");
             saveImage(realImage, "RealImage.png");
@@ -115,14 +114,10 @@ public class ScreenCaptureRobotTest {
             BufferedImage realImg) {
         int capturedPixel;
         int realPixel;
-        int imgWidth;
-        int imgHeight;
+        int imgWidth = capturedImg.getWidth(null);
+        int imgHeight = capturedImg.getHeight(null);
 
-        imgWidth = capturedImg.getWidth(null);
-        imgHeight = capturedImg.getHeight(null);
-
-        if (imgWidth != realImg.getWidth()
-                || imgHeight != realImg.getHeight()) {
+        if (imgWidth != IMAGE_WIDTH || imgHeight != IMAGE_HEIGHT) {
             System.out
                     .println("Captured and real images are different in size");
             return false;
