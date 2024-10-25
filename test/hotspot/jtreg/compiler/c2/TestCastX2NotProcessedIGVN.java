@@ -1,4 +1,4 @@
-package compiler.c2;/*
+/*
  * Copyright (c) 2024, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -20,6 +20,8 @@ package compiler.c2;/*
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+package compiler.c2;
 
 import compiler.lib.ir_framework.*;
 import jdk.internal.misc.Unsafe;
