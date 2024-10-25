@@ -49,6 +49,7 @@ import jdk.internal.foreign.abi.Binding.VMLoad;
 import jdk.internal.foreign.abi.Binding.VMStore;
 import jdk.internal.vm.annotation.ForceInline;
 import sun.security.action.GetBooleanAction;
+import sun.security.action.GetIntegerAction;
 import sun.security.action.GetPropertyAction;
 
 import java.io.IOException;
@@ -80,6 +81,8 @@ public class BindingSpecializer {
         = GetPropertyAction.privilegedGetProperty("jdk.internal.foreign.abi.Specializer.DUMP_CLASSES_DIR");
     private static final boolean PERFORM_VERIFICATION
         = GetBooleanAction.privilegedGetProperty("jdk.internal.foreign.abi.Specializer.PERFORM_VERIFICATION");
+    private static final int SCOPE_DEDUP_DEPTH
+            = GetIntegerAction.privilegedGetProperty("jdk.internal.foreign.abi.Specializer.SCOPE_DEDUP_DEPTH", 2);
 
     // Bunch of helper constants
     private static final int CLASSFILE_VERSION = ClassFileFormatVersion.latest().major();
@@ -271,11 +274,19 @@ public class BindingSpecializer {
         if (callingSequence.forDowncall()) {
             returnAllocatorIdx = 0; // first param
 
-            // set up scope cache (for acquire/release)
-            scopeSlots = new int[1];
-            int scopeLocal = cb.allocateLocal(REFERENCE);
-            scopeSlots[0] = scopeLocal;
-            cb.aconst_null().astore(scopeLocal);
+            // for downcalls we also acquire/release scoped parameters before/after the call
+            // create a bunch of locals here to keep track of their scopes (to release later)
+            int[] initialScopeSlots = new int[callerMethodType.parameterCount()];
+            int numScopes = 0;
+            for (int i = 0; i < callerMethodType.parameterCount(); i++) {
+                if (shouldAcquire(i)) {
+                    int scopeLocal = cb.allocateLocal(REFERENCE);
+                    initialScopeSlots[numScopes++] = scopeLocal;
+                    cb.aconst_null()
+                      .astore(scopeLocal); // need to initialize all scope locals here in case an exception occurs
+                }
+            }
+            scopeSlots = Arrays.copyOf(initialScopeSlots, numScopes); // fit to size
             curScopeLocalIdx = 0; // used from emitGetInput
         }
 
@@ -493,63 +504,35 @@ public class BindingSpecializer {
 
     private void emitAcquireScope() {
         cb.checkcast(CD_AbstractMemorySegmentImpl)
-                .invokevirtual(CD_AbstractMemorySegmentImpl, "sessionImpl", MTD_SESSION_IMPL);
+          .invokevirtual(CD_AbstractMemorySegmentImpl, "sessionImpl", MTD_SESSION_IMPL);
         Label skipAcquire = cb.newLabel();
         Label end = cb.newLabel();
 
         // start with 1 scope to maybe acquire on the stack
         assert curScopeLocalIdx != -1;
-        boolean addressParam = curScopeLocalIdx == 0;
-        boolean firstParam = curScopeLocalIdx == 1;
+        boolean hasLookup = false;
 
-        if (!addressParam) {
-            cb.dup()
-              .aload(scopeSlots[0])
+        // Here we check if the current scope has not been already acquired.
+        // To do that, we generate many comparisons (one per cached scope).
+        // Note that we always skip comparisons against the very first cached scope
+        // (as that is the function address, which typically belongs to another scope).
+        // We also stop the comparisons at SCOPE_DEDUP_DEPTH, to keep a lid on the size
+        // of the generated code.
+        for (int i = 1; i < curScopeLocalIdx && i <= SCOPE_DEDUP_DEPTH; i++) {
+            cb.dup() // dup for comparison
+              .aload(scopeSlots[i])
               .if_acmpeq(skipAcquire);
+            hasLookup = true;
         }
 
-        if (firstParam) { // only cache by-ref params after the first
-            // call acquire first here. So that if it fails, we don't call release
-            cb.dup()
-              .invokevirtual(CD_MemorySessionImpl, "acquire0", MTD_ACQUIRE0) // call acquire on the other
-              .astore(scopeSlots[0]);
-        } else {
-            cb.invokevirtual(CD_MemorySessionImpl, "acquire0", MTD_ACQUIRE0); // call acquire on the other
-        }
+        // 1 scope to acquire on the stack
+        cb.dup();
+        int nextScopeLocal = scopeSlots[curScopeLocalIdx++];
+        // call acquire first here. So that if it fails, we don't call release
+        cb.invokevirtual(CD_MemorySessionImpl, "acquire0", MTD_ACQUIRE0) // call acquire on the other
+          .astore(nextScopeLocal); // store off one to release later
 
-        curScopeLocalIdx++;
-
-        if (!addressParam) { // avoid ASM generating a bunch of nops for the dead code
-            cb.goto_(end)
-                    .labelBinding(skipAcquire)
-                    .pop(); // drop scope
-        }
-
-        cb.labelBinding(end);
-    }
-
-    private void emitReleaseScope() {
-        cb.checkcast(CD_AbstractMemorySegmentImpl)
-                .invokevirtual(CD_AbstractMemorySegmentImpl, "sessionImpl", MTD_SESSION_IMPL);
-        Label skipAcquire = cb.newLabel();
-        Label end = cb.newLabel();
-
-        // start with 1 scope to maybe acquire on the stack
-        assert curScopeLocalIdx != -1;
-        boolean addressParam = curScopeLocalIdx == 0;
-        boolean firstParam = curScopeLocalIdx == 1;
-        boolean useCache = !addressParam && !firstParam;
-
-        if (useCache) {
-            cb.dup()
-                    .aload(scopeSlots[0])
-                    .if_acmpeq(skipAcquire);
-        }
-
-        cb.invokevirtual(CD_MemorySessionImpl, "release0", MTD_RELEASE0); // call acquire on the other
-        curScopeLocalIdx++;
-
-        if (useCache) { // avoid ASM generating a bunch of nops for the dead code
+        if (hasLookup) { // avoid ASM generating a bunch of nops for the dead code
             cb.goto_(end)
                     .labelBinding(skipAcquire)
                     .pop(); // drop scope
@@ -559,13 +542,12 @@ public class BindingSpecializer {
     }
 
     private void emitReleaseScopes() {
-        curScopeLocalIdx = 0; // reset
-        for (int paramIndex = 0 ; paramIndex < callerMethodType.parameterCount() ; paramIndex++) {
-            if (shouldAcquire(paramIndex)) {
-                Class<?> highLevelType = callerMethodType.parameterType(paramIndex);
-                cb.loadLocal(TypeKind.from(highLevelType), cb.parameterSlot(paramIndex));
-                emitReleaseScope();
-            }
+        for (int scopeLocal : scopeSlots) {
+            cb.aload(scopeLocal)
+              .ifThen(Opcode.IFNONNULL, ifCb -> {
+                ifCb.aload(scopeLocal)
+                    .invokevirtual(CD_MemorySessionImpl, "release0", MTD_RELEASE0);
+            });
         }
     }
 

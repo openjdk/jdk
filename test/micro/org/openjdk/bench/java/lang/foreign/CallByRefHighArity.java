@@ -86,14 +86,14 @@ public class CallByRefHighArity {
 
     // void noop_params0() {}
     private static final MethodHandle MH_NOOP_PARAMS0 = Linker.nativeLinker()
-            .downcallHandle(FunctionDescriptor.ofVoid())
+            .downcallHandle(FunctionDescriptor.ofVoid(), Linker.Option.critical(true))
             .bindTo(LOOKUP.find("noop_params0").orElseThrow());
 
     // void noop_params1(void *param0) {}
     private static final MethodHandle MH_NOOP_PARAMS1 = Linker.nativeLinker()
             .downcallHandle(FunctionDescriptor.ofVoid(
                     ValueLayout.ADDRESS
-            ))
+            ), Linker.Option.critical(true))
             .bindTo(LOOKUP.find("noop_params1").orElseThrow());
 
     // void noop_params2(void *param0, void *param1) {}
@@ -101,7 +101,7 @@ public class CallByRefHighArity {
             .downcallHandle(FunctionDescriptor.ofVoid(
                     ValueLayout.ADDRESS,
                     ValueLayout.ADDRESS
-            ))
+            ), Linker.Option.critical(true))
             .bindTo(LOOKUP.find("noop_params2").orElseThrow());
 
     // void noop_params3(void *param0, void *param1, void *param2) {}
@@ -110,7 +110,7 @@ public class CallByRefHighArity {
                     ValueLayout.ADDRESS,
                     ValueLayout.ADDRESS,
                     ValueLayout.ADDRESS
-            ))
+            ), Linker.Option.critical(true))
             .bindTo(LOOKUP.find("noop_params3").orElseThrow());
 
     // void noop_params4(void *param0, void *param1, void *param2, void *param3) {}
@@ -120,7 +120,7 @@ public class CallByRefHighArity {
                     ValueLayout.ADDRESS,
                     ValueLayout.ADDRESS,
                     ValueLayout.ADDRESS
-            ))
+            ), Linker.Option.critical(true))
             .bindTo(LOOKUP.find("noop_params4").orElseThrow());
 
     // void noop_params5(int param0, int param1, void *param2, void *param3, void *param4) {}
@@ -131,7 +131,7 @@ public class CallByRefHighArity {
                     ValueLayout.ADDRESS,
                     ValueLayout.ADDRESS,
                     ValueLayout.ADDRESS
-            ))
+            ), Linker.Option.critical(true))
             .bindTo(LOOKUP.find("noop_params5").orElseThrow());
 
     // void noop_params10(int param0, int param1, void *param2, void *param3, void *param4,
