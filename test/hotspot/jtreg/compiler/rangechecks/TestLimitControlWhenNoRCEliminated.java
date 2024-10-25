@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,14 +21,41 @@
  * questions.
  */
 
-package jdk.internal.reflect;
+/**
+ * @test
+ * @bug 8341407
+ * @summary C2: assert(main_limit == cl->limit() || get_ctrl(main_limit) == new_limit_ctrl) failed: wrong control for added limit
+ *
+ * @run main/othervm -XX:CompileCommand=compileonly,TestLimitControlWhenNoRCEliminated::* -Xcomp TestLimitControlWhenNoRCEliminated
+ *
+ */
 
-class ByteVectorFactory {
-    static ByteVector create() {
-        return new ByteVectorImpl();
+public class TestLimitControlWhenNoRCEliminated {
+    static long[] lArr;
+    static int iFld;
+
+    public static void main(String[] strArr) {
+        try {
+            test();
+        } catch (NullPointerException npe) {}
     }
 
-    static ByteVector create(int sz) {
-        return new ByteVectorImpl(sz);
+    static void test() {
+        int x = iFld;
+        int i = 1;
+        do {
+            lArr[i - 1] = 9;
+            x += 1;
+            iFld += x;
+            if (x != 0) {
+                A.foo();
+            }
+        } while (++i < 23);
     }
 }
+
+class A {
+    static void foo() {
+    }
+}
+

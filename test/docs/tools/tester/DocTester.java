@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,15 +21,27 @@
  * questions.
  */
 
-package jdk.internal.reflect;
 
-/** A growable array of bytes. */
+import jtreg.SkippedException;
 
-interface ByteVector {
-    public int  getLength();
-    public byte get(int index);
-    public void put(int index, byte value);
-    public void add(byte value);
-    public void trim();
-    public byte[] getData();
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+/**
+ * Test framework for performing tests on the generated documentation.
+ */
+public class DocTester {
+    private final static String DIR = System.getenv("DOCS_JDK_IMAGE_DIR");
+    private static final Path firstCandidate = Path.of(System.getProperty("test.jdk"))
+            .getParent().resolve("docs");
+
+    public static Path resolveDocs() {
+        if (DIR != null && !DIR.isBlank() && Files.exists(Path.of(DIR))) {
+            return Path.of(DIR);
+        } else if (Files.exists(firstCandidate)) {
+            return firstCandidate;
+        }else {
+            throw new SkippedException("docs folder not found in either location");
+        }
+    }
 }
