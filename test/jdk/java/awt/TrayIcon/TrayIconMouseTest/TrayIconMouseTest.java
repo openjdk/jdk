@@ -23,6 +23,7 @@
 
 import java.awt.EventQueue;
 import java.awt.Point;
+import java.awt.Robot;
 import java.awt.SystemTray;
 import java.awt.TrayIcon;
 import java.awt.event.InputEvent;
@@ -40,14 +41,14 @@ import java.awt.image.BufferedImage;
  * @library /java/awt/patchlib
  * @library /lib/client ../
  * @build java.desktop/java.awt.Helper
- * @build ExtendedRobot SystemTrayIconHelper
+ * @build SystemTrayIconHelper
  * @run main TrayIconMouseTest
  */
 
 public class TrayIconMouseTest {
 
     TrayIcon icon;
-    ExtendedRobot robot;
+    Robot robot;
     boolean actionPerformed = false;
     Object actionLock = new Object();
     static boolean isMacOS = false;
@@ -83,7 +84,7 @@ public class TrayIconMouseTest {
     }
 
     TrayIconMouseTest() throws Exception {
-        robot = new ExtendedRobot();
+        robot = new Robot();
         EventQueue.invokeAndWait(this::initializeGUI);
     }
 

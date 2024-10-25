@@ -40,7 +40,6 @@ import java.util.Properties;
  * @author Jitender(jitender.singh@eng.sun.com) area=AWT
  * @author dmitriy.ermashov@oracle.com
  * @library /lib/client
- * @build ExtendedRobot
  * @run main IndependenceSwingTest
  */
 
@@ -156,7 +155,7 @@ public class IndependenceSwingTest {
 
     public void doTest() throws Exception {
         checkSecurity();
-        ExtendedRobot robot = new ExtendedRobot();
+        Robot robot = new Robot();
         robot.waitForIdle(1000);
         frame.setLocation(100, 100);
         robot.waitForIdle(1000);

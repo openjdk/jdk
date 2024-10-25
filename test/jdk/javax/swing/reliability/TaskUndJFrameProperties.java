@@ -31,17 +31,16 @@ import java.awt.*;
  *          using setVisible() method.
  * @author Aruna Samji
  * @library /lib/client
- * @build ExtendedRobot
  * @run main TaskUndJFrameProperties
  */
 
 public class TaskUndJFrameProperties extends Task<GUIUndFrame> {
 
     public static void main (String[] args) throws Exception {
-        new TaskUndJFrameProperties(GUIUndFrame.class, new ExtendedRobot()).task();
+        new TaskUndJFrameProperties(GUIUndFrame.class, new Robot()).task();
     }
 
-    TaskUndJFrameProperties(Class guiClass, ExtendedRobot robot) throws Exception {
+    TaskUndJFrameProperties(Class guiClass, Robot robot) throws Exception {
         super(guiClass, robot);
     }
 

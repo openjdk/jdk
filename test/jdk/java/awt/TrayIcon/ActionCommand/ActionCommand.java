@@ -35,14 +35,14 @@ import java.awt.image.BufferedImage;
  * @library /lib/client ../
  * @library /java/awt/patchlib
  * @build java.desktop/java.awt.Helper
- * @build ExtendedRobot SystemTrayIconHelper
+ * @build SystemTrayIconHelper
  * @run main ActionCommand
  */
 
 public class ActionCommand {
 
     TrayIcon icon;
-    ExtendedRobot robot;
+    Robot robot;
 
     boolean actionPerformed = false;
     Object actionLock = new Object();
@@ -73,7 +73,7 @@ public class ActionCommand {
     }
 
     void doTest() throws Exception {
-        robot = new ExtendedRobot();
+        robot = new Robot();
 
         EventQueue.invokeAndWait(() -> {
             SystemTray tray = SystemTray.getSystemTray();

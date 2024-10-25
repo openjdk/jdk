@@ -34,14 +34,14 @@ import java.awt.image.BufferedImage;
  * @library /java/awt/patchlib
  * @library /lib/client ../../
  * @build java.desktop/java.awt.Helper
- * @build ExtendedRobot SystemTrayIconHelper
+ * @build  SystemTrayIconHelper
  * @run main/othervm/policy=tray.policy -Djava.security.manager FunctionalityCheck
  */
 
 public class FunctionalityCheck {
 
     TrayIcon icon;
-    ExtendedRobot robot;
+    Robot robot;
 
     boolean actionPerformed = false;
     Object actionLock = new Object();
@@ -80,7 +80,7 @@ public class FunctionalityCheck {
     }
 
     FunctionalityCheck() throws Exception {
-        robot = new ExtendedRobot();
+        robot = new Robot();
         EventQueue.invokeAndWait(this::initializeGUI);
     }
 

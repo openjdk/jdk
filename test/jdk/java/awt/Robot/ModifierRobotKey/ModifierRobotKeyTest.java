@@ -25,6 +25,7 @@ import java.awt.BorderLayout;
 import java.awt.Canvas;
 import java.awt.EventQueue;
 import java.awt.Frame;
+import java.awt.Robot;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.awt.event.InputEvent;
@@ -44,7 +45,6 @@ import static jdk.test.lib.Asserts.assertTrue;
  *          some key with one or more modifiers.
  * @library /lib/client
  * @library /test/lib
- * @build ExtendedRobot
  * @run main ModifierRobotKeyTest
  */
 
@@ -52,7 +52,7 @@ public class ModifierRobotKeyTest extends KeyAdapter {
 
     private volatile boolean focusGained = false;
     private volatile boolean startTest = false;
-    private ExtendedRobot robot;
+    private Robot robot;
     private volatile Frame frame;
     private Canvas canvas;
 
@@ -151,7 +151,7 @@ public class ModifierRobotKeyTest extends KeyAdapter {
 
     public void doTest() throws Exception {
         try {
-            robot = new ExtendedRobot();
+            robot = new Robot();
             robot.setAutoDelay(50);
             robot.waitForIdle(1000);
 

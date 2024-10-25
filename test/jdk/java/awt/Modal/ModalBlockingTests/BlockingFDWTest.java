@@ -38,14 +38,14 @@ public class BlockingFDWTest {
     private Frame  hiddenFrame;
 
     private static final int delay = 500;
-    private final ExtendedRobot robot;
+    private final Robot robot;
 
     public enum DialogOwner {HIDDEN_DIALOG, NULL_DIALOG, HIDDEN_FRAME, NULL_FRAME};
 
     public BlockingFDWTest(Dialog.ModalityType modalityType,
                            DialogOwner         owner) throws Exception {
 
-        robot = new ExtendedRobot();
+        robot = new Robot();
         EventQueue.invokeLater(() -> { createGUI(modalityType, owner); });
     }
 

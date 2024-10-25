@@ -23,6 +23,7 @@
 
 import java.awt.Dimension;
 import java.awt.Frame;
+import java.awt.Robot;
 import java.awt.ScrollPane;
 import java.awt.Toolkit;
 
@@ -32,7 +33,6 @@ import java.awt.Toolkit;
  * @bug 7124213
  * @author Sergey Bylokhov
  * @library /lib/client/
- * @build ExtendedRobot
  * @run main ScrollPanePreferredSize
  */
 public final class ScrollPanePreferredSize {
@@ -57,7 +57,7 @@ public final class ScrollPanePreferredSize {
 
     private static void sleep() {
         try {
-            ExtendedRobot robot = new ExtendedRobot();
+            Robot robot = new Robot();
             robot.waitForIdle(500);
         } catch (Exception ex) {
             ex.printStackTrace();

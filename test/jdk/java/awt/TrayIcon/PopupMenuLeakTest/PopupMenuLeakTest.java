@@ -28,7 +28,6 @@
   @summary Reference to the popup leaks after the TrayIcon is removed.
   @requires os.family != "windows"
   @library /lib/client/
-  @build ExtendedRobot
   @run main/othervm -Xmx50m PopupMenuLeakTest
  */
 
@@ -39,6 +38,7 @@ import java.awt.Image;
 import java.awt.MenuItem;
 import java.awt.PopupMenu;
 import java.awt.RenderingHints;
+import java.awt.Robot;
 import java.awt.SystemTray;
 import java.awt.TrayIcon;
 import javax.swing.SwingUtilities;
@@ -52,13 +52,13 @@ public class PopupMenuLeakTest {
 
     static final AtomicReference<WeakReference<TrayIcon>> iconWeakReference = new AtomicReference<>();
     static final AtomicReference<WeakReference<PopupMenu>> popupWeakReference = new AtomicReference<>();
-    static ExtendedRobot robot;
+    static Robot robot;
     public static void main(String[] args) throws Exception {
         if (!SystemTray.isSupported()) {
             System.out.println("SystemTray not supported. Skipping the test.");
             return;
         }
-        robot = new ExtendedRobot();
+        robot = new Robot();
         SwingUtilities.invokeAndWait(PopupMenuLeakTest::createSystemTrayIcon);
         sleep();
         // To make the test automatic we explicitly call addNotify on a popup to create the peer

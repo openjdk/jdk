@@ -36,7 +36,6 @@ import static jdk.test.lib.Asserts.*;
  *
  * @library ../helpers /lib/client/
  * @library /test/lib
- * @build ExtendedRobot
  * @build Flag
  * @build TestDialog
  * @build TestFrame
@@ -78,11 +77,11 @@ public class NullModalityDialogTest {
 
     private static final int delay = 1000;
 
-    private final ExtendedRobot robot;
+    private final Robot robot;
 
     NullModalityDialogTest() throws Exception {
 
-        robot = new ExtendedRobot();
+        robot = new Robot();
         robot.setAutoDelay(100);
         EventQueue.invokeAndWait(this::createGUI);
     }
