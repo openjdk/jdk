@@ -1674,7 +1674,7 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
   current->set_current_waiting_monitor(this);
 
   ContinuationEntry* ce = current->last_continuation();
-  if (interruptible && ce != nullptr && ce->is_virtual_thread()) {
+  if (ce != nullptr && ce->is_virtual_thread()) {
     int result = Continuation::try_preempt(current, ce->cont_oop(current));
     if (result == freeze_ok) {
       VThreadWait(current, millis);
