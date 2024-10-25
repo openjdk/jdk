@@ -640,13 +640,14 @@ address generate_ghash_processBlocks() {
   Register subkeyH = R4_ARG2;
   Register data = R5_ARG3;  // byte[] data  // long[] subH
   Register blocks = R6_ARG4; 
-  __ stop("ghash start");
+ // __ stop("ghash start");
   
   // Temporary registers
   Register temp1 = R8;
   Register temp2 = R9;
   Register temp3 = R10;
   Register temp4 = R11;
+  Register align = data;
   Register fubar_addr = R12;
   Register fubar_value = R13;
   VectorRegister vH = VR0;
@@ -669,17 +670,23 @@ address generate_ghash_processBlocks() {
   VectorRegister vTmp5 = VR17;
   VectorRegister vTmp6 = VR18;
   VectorRegister vTmp7 = VR19;
+  VectorRegister vHigh = VR20;
+  VectorRegister vLow = VR21;
+  VectorRegister vPerm = VR22;
+
+ Label   L_end, L_aligned, L_align_2,L_end_2;
 
 
- static const unsigned char perm_pattern[16] __attribute__((aligned(16))) = {7, 6, 5, 4, 3, 2, 1, 0, 15, 14, 13, 12, 11, 10, 9, 8};
+
+static const unsigned char perm_pattern[16] __attribute__((aligned(16))) = {7, 6, 5, 4, 3, 2, 1, 0, 15, 14, 13, 12, 11, 10, 9, 8};
 static const unsigned char perm_pattern2[16] __attribute__((aligned(16))) = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
 // Load the address of perm_pattern
 __ load_const_optimized(temp1, (uintptr_t)&perm_pattern);
 __ load_const_optimized(temp2, (uintptr_t)&perm_pattern2);
-
+__ li(temp3,0);
 // Load the 128-bit vector from memory
 __ vxor(fromPerm, fromPerm, fromPerm);  // Clear the vector register
-__ lvx(fromPerm,  temp1);  // Lo
+__ lvxl(fromPerm, temp3,  temp1);  // Lo
 __ li(temp1, 0xc2);
  __ sldi(temp1, temp1, 56);
   // Load the vector from memory into vConstC2
@@ -688,10 +695,27 @@ __ li(temp1, 0xc2);
   __ vxor(vZero, vZero, vZero);
   // Load H into vector registsiers
   // Use a different register (e.g., R3)
+   __ li(temp1, 0);
+  __ andi(temp1, subkeyH, 15);
+  __ cmpwi(CCR0,temp1,0);
+  __ beq(CCR0, L_aligned);         // Check if 'to' is aligned (mask lower 4 bits)
   __ li(temp1, 0);      // Load immediate value 0 into temp  
   __ vxor(vH,vH,vH);
-  __ lvx(vH, temp1, subkeyH);  // Load H using temp instead of R0
+
+  
+  __ lvx(vHigh, temp1, subkeyH);  // Load H using temp instead of R0
+  __ lvsl(vPerm,temp1,subkeyH);
+  __ addi(subkeyH,subkeyH,16);
+  __ lvx(vLow,temp1,subkeyH);
+  __ vec_perm(vH, vHigh, vLow, vPerm);
+  __ subi(subkeyH,subkeyH,16);
+
+  __ b(L_end);
+  __ bind(L_aligned);
+  __ lvx(vH,temp1,subkeyH);
+  __ bind(L_end);
   __ vec_perm(vH, vH, vH, fromPerm);
+
   __ vspltisb(vConst1, 1); // Vector with 1s
   __ vspltisb(vConst7, 7); // Vector with 7s
 
@@ -713,17 +737,34 @@ __ li(temp1, 0xc2);
     __ vxor(vZero, vZero, vZero);
 
     // Calculate the number of blocks
-    __ lvx(fromPerm,  temp2);
+    
     __ mtctr(blocks);
     __ li(temp1, 0);
+    __ load_const_optimized(temp2, (uintptr_t)&perm_pattern2);
     Label loop;
     __ bind(loop);
   
    // Load immediate value 0 into temp  
     __ vxor(vX,vX,vX);
-    __ lvx(vX, temp1, data);
+    __ li(temp1,0);
+
+    __ andi(temp1, data, 15);
+    __ cmpwi(CCR0,temp1,0);
+    __  beq(CCR0, L_align_2);
+    __ li(temp1,0);
+    __ lvx(vHigh,temp1,align);
+    __ lvsl(fromPerm,temp1,align);
+    __ addi(align,align,16);
+    __ lvx(vLow,temp1,data);
+    __ vec_perm(vX, vHigh, vLow, fromPerm);
+    __ subi(align,align,16);
+    __ b(L_end_2);
+    __ bind(L_align_2);
+    __ lvx(vX,temp1,data);
+    
+     __ bind(L_end_2);
+    __ lvx(fromPerm,  temp2);
     __ vec_perm(vX, vX, vX, fromPerm);
-    // __ vec_perm(vX, vX, vX, fromPerm);
     __ addi(temp1, temp1, 16);
 
     // Perform GCM multiplication
@@ -749,10 +790,8 @@ __ li(temp1, 0xc2);
     __ li(temp4, 0);
     __ stvx(vZero, temp4, state); 
     __ blr();  // Return from function
-    
-
-
   return start;
+ 
 
 
 }
