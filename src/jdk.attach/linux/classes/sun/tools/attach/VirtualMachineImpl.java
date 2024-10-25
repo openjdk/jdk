@@ -82,7 +82,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
             // Keep canonical version of File, to delete, in case target process ends and /proc link has gone:
             File f = createAttachFile(pid, ns_pid).getCanonicalFile();
 
-	    boolean sentQuit = false;
+            boolean sentQuit = false;
 
             try {
                 sentQuit = checkCatchesAndSendQuitTo(pid, false);
@@ -109,8 +109,8 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
                 if (!socket_file.exists()) {
                     throw new AttachNotSupportedException(
                         String.format("Unable to open socket file %s: " +
-                          "target process %d doesn't %s within %dms " +
-                          "or HotSpot VM not loaded", socket_path, pid, sentQuit ? "respond" : "become ready", 
+                          "target process %d %s within %dms " +
+                          "or HotSpot VM not loaded", socket_path, pid, sentQuit ? "doesn't respond" : "has not become ready",
                                       time_spend));
                 }
             } finally {
