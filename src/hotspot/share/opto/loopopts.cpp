@@ -787,10 +787,9 @@ Node *PhaseIdealLoop::conditional_move( Node *region ) {
   }//for
   Node* bol = iff->in(1);
   assert(!bol->is_OpaqueInitializedAssertionPredicate(), "Initialized Assertion Predicates cannot form a diamond with Halt");
-  if (bol->is_Opaque4()) {
-    // Ignore Template Assertion Predicates with Opaque4 nodes.
-    assert(assertion_predicate_has_loop_opaque_node(iff),
-           "must be Template Assertion Predicate, non-null-check with Opaque4 cannot form a diamond with Halt");
+  if (bol->is_OpaqueTemplateAssertionPredicate()) {
+    // Ignore Template Assertion Predicates with OpaqueTemplateAssertionPredicate nodes.
+    assert(assertion_predicate_has_loop_opaque_node(iff), "must find OpaqueLoop* nodes");
     return nullptr;
   }
   assert(bol->Opcode() == Op_Bool, "Unexpected node");
@@ -1702,8 +1701,9 @@ void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
       !n->is_Proj() &&
       !n->is_MergeMem() &&
       !n->is_CMove() &&
-      !n->is_Opaque4() &&
+      !n->is_OpaqueNotNull() &&
       !n->is_OpaqueInitializedAssertionPredicate() &&
+      !n->is_OpaqueTemplateAssertionPredicate() &&
       !n->is_Type()) {
     Node *n_ctrl = get_ctrl(n);
     IdealLoopTree *n_loop = get_loop(n_ctrl);
@@ -1945,10 +1945,11 @@ bool PhaseIdealLoop::ctrl_of_use_out_of_loop(const Node* n, Node* n_ctrl, IdealL
   // Sinking a node from a pre loop to its main loop pins the node between the pre and main loops. If that node is input
   // to a check that's eliminated by range check elimination, it becomes input to an expression that feeds into the exit
   // test of the pre loop above the point in the graph where it's pinned.
-  if (n_loop->_head->is_CountedLoop() && n_loop->_head->as_CountedLoop()->is_pre_loop() &&
-      u_loop->_head->is_CountedLoop() && u_loop->_head->as_CountedLoop()->is_main_loop() &&
-      n_loop->_next == get_loop(u_loop->_head->as_CountedLoop()->skip_strip_mined())) {
-    return false;
+  if (n_loop->_head->is_CountedLoop() && n_loop->_head->as_CountedLoop()->is_pre_loop()) {
+    CountedLoopNode* pre_loop = n_loop->_head->as_CountedLoop();
+    if (is_dominator(pre_loop->loopexit(), ctrl)) {
+      return false;
+    }
   }
   return true;
 }
@@ -2020,14 +2021,14 @@ Node* PhaseIdealLoop::clone_iff(PhiNode* phi) {
     if (b->is_Phi()) {
       _igvn.replace_input_of(phi, i, clone_iff(b->as_Phi()));
     } else {
-      assert(b->is_Bool() || b->is_Opaque4() || b->is_OpaqueInitializedAssertionPredicate(),
-             "bool, non-null check with Opaque4 node or Initialized Assertion Predicate with its Opaque node");
+      assert(b->is_Bool() || b->is_OpaqueNotNull() || b->is_OpaqueInitializedAssertionPredicate(),
+             "bool, non-null check with OpaqueNotNull or Initialized Assertion Predicate with its Opaque node");
     }
   }
   Node* n = phi->in(1);
   Node* sample_opaque = nullptr;
   Node *sample_bool = nullptr;
-  if (n->is_Opaque4() || n->is_OpaqueInitializedAssertionPredicate()) {
+  if (n->is_OpaqueNotNull() || n->is_OpaqueInitializedAssertionPredicate()) {
     sample_opaque = n;
     sample_bool = n->in(1);
     assert(sample_bool->is_Bool(), "wrong type");
@@ -2201,7 +2202,9 @@ void PhaseIdealLoop::clone_loop_handle_data_uses(Node* old, Node_List &old_new,
       // For example, it is unexpected that there is a Phi between an
       // AllocateArray node and its ValidLengthTest input that could cause
       // split if to break.
-      if (use->is_If() || use->is_CMove() || use->is_Opaque4() || use->is_OpaqueInitializedAssertionPredicate() ||
+      assert(!use->is_OpaqueTemplateAssertionPredicate(),
+             "should not clone a Template Assertion Predicate which should be removed once it's useless");
+      if (use->is_If() || use->is_CMove() || use->is_OpaqueNotNull() || use->is_OpaqueInitializedAssertionPredicate() ||
           (use->Opcode() == Op_AllocateArray && use->in(AllocateNode::ValidLengthTest) == old)) {
         // Since this code is highly unlikely, we lazily build the worklist
         // of such Nodes to go split.
