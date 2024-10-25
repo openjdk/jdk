@@ -80,11 +80,9 @@ jobs:
             .github
             make/conf/github-actions.conf
 
-      - name: 'Get or build JTReg'
+      - name: 'Build JTReg'
         id: jtreg
-        uses: ./.github/actions/get-jtreg
-        with:
-          fail-on-cache-miss: false
+        uses: ./.github/actions/build-jtreg
 
       # TODO: Now that we are checking out the repo scripts, we can put the following code
       # into a separate file

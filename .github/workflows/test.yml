@@ -135,8 +135,6 @@ jobs:
       - name: 'Get JTReg'
         id: jtreg
         uses: ./.github/actions/get-jtreg
-        with:
-          fail-on-cache-miss: true
 
       - name: 'Get bundles'
         id: bundles
