@@ -140,8 +140,7 @@ void LIR_Assembler::osr_entry() {
 
     if (!Immediate::is_simm20(monitor_offset + BytesPerWord) && number_of_locks > 0) {
       // z_lg can only handle displacement upto 20bit signed binary integer
-      __ load_const(Z_R0_scratch, locals_space);
-      __ z_algr(OSR_buf, Z_R0_scratch);
+      __ z_algfi(OSR_buf, locals_space);
       monitor_offset -= locals_space;
       handled_manually = true;
     }
@@ -161,9 +160,7 @@ void LIR_Assembler::osr_entry() {
     }
 
     if (handled_manually) {
-      // Z_R0 is killed by asm_assert_mem8_isnot_zero
-      __ load_const(Z_R0_scratch, locals_space);
-      __ z_slgr(OSR_buf, Z_R0_scratch);
+      __ z_slgfi(OSR_buf, locals_space);
     }
   }
 }
