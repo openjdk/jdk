@@ -500,7 +500,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
             if (prefix) {
                 sb.append(" ");
             }
-            sb.append(getAnnotationMirrors());
+            sb.append(getAnnotationMirrors().toString(" "));
             sb.append(" ");
         }
     }
