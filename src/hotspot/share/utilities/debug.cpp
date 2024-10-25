@@ -732,7 +732,7 @@ static void store_context(const void* context) {
   *((void**) &g_stored_assertion_context.uc_mcontext.regs) = &(g_stored_assertion_context.uc_mcontext.gp_regs);
 #elif defined(AMD64)
   // In the copied version, fpregs should point to the copied contents. Preserve the offset.
-  intptr_t fpregs_offset = (address)(void*)(((const ucontext_t*)context)->uc_mcontext.fpregs) - (address)context;
+  size_t fpregs_offset = pointer_delta(((const ucontext_t*)context)->uc_mcontext.fpregs, context, 1);
   *((void**) &g_stored_assertion_context.uc_mcontext.fpregs) = (void*)((address)(void*)&g_stored_assertion_context + fpregs_offset);
 #endif
 #endif
