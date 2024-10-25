@@ -1547,6 +1547,7 @@ void InterpreterMacroAssembler::call_VM_preemptable(Register oop_result,
   }
 #endif /* ASSERT */
 
+  // Force freeze slow path.
   push_cont_fastpath();
 
   // Make VM call. In case of preemption set last_pc to the one we want to resume to.

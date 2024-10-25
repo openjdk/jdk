@@ -1047,7 +1047,10 @@ freeze_result FreezeBase::finalize_freeze(const frame& callee, frame& caller, in
   if (_preempt) {
     frame f = _thread->last_frame();
     if (f.is_interpreted_frame()) {
-      // Do it now that we know freezing will be successful.
+      // Some platforms do not save the last_sp in the top interpreter frame on VM calls.
+      // We need it so that on resume we can restore the sp to the right place, since
+      // thawing might add an alignment word to the expression stack (see finish_thaw()).
+      // We do it now that we know freezing will be successful.
       prepare_freeze_interpreted_top_frame(f);
     }
   }
@@ -1095,6 +1098,7 @@ freeze_result FreezeBase::finalize_freeze(const frame& callee, frame& caller, in
   return freeze_ok_bottom;
 }
 
+// After freezing a frame we need to possibly adjust some values related to the caller frame.
 void FreezeBase::patch(const frame& f, frame& hf, const frame& caller, bool is_bottom_frame) {
   if (is_bottom_frame) {
     // If we're the bottom frame, we need to replace the return barrier with the real
@@ -1231,7 +1235,8 @@ freeze_result FreezeBase::recurse_freeze_compiled_frame(frame& f, frame& caller,
   assert(!is_bottom_frame || !caller.is_compiled_frame() || (heap_frame_top + fsize) == (caller.unextended_sp() + argsize), "");
 
   if (caller.is_interpreted_frame()) {
-    _total_align_size += frame::align_wiggle; // See Thaw::align
+    // When thawing the frame we might need to add alignment (see Thaw::align)
+    _total_align_size += frame::align_wiggle;
   }
 
   patch(f, hf, caller, is_bottom_frame);
@@ -1265,10 +1270,6 @@ NOINLINE freeze_result FreezeBase::recurse_freeze_stub_frame(frame& f, frame& ca
   intptr_t* heap_frame_top = ContinuationHelper::StubFrame::frame_top(hf);
 
   copy_to_chunk(stack_frame_top, heap_frame_top, fsize);
-
-  if (caller.is_interpreted_frame()) {
-    _total_align_size += frame::align_wiggle;
-  }
 
   patch(f, hf, caller, false /*is_bottom_frame*/);
 
@@ -1312,6 +1313,7 @@ NOINLINE freeze_result FreezeBase::recurse_freeze_native_frame(frame& f, frame& 
   copy_to_chunk(stack_frame_top, heap_frame_top, fsize);
 
   if (caller.is_interpreted_frame()) {
+    // When thawing the frame we might need to add alignment (see Thaw::align)
     _total_align_size += frame::align_wiggle;
   }
 
@@ -2655,10 +2657,6 @@ void ThawBase::recurse_thaw_stub_frame(const frame& hf, frame& caller, int num_f
   assert(caller.sp() == caller.unextended_sp(), "");
 
   DEBUG_ONLY(before_thaw_java_frame(hf, caller, false /*is_bottom_frame*/, num_frames);)
-
-  if (caller.is_interpreted_frame()) {
-    _align_size += frame::align_wiggle; // we add one whether or not we've aligned because we add it in recurse_freeze_stub_frame
-  }
 
   frame f = new_stack_frame<ContinuationHelper::StubFrame>(hf, caller, false);
   intptr_t* stack_frame_top = f.sp();

@@ -887,7 +887,7 @@ void ObjectMonitor::EnterI(JavaThread* current) {
   // to defer the state transitions until absolutely necessary,
   // and in doing so avoid some transitions ...
 
-  // For virtual threads that are pinned do a timed-park instead, to
+  // For virtual threads that are pinned, do a timed-park instead to
   // alleviate some deadlocks cases where the succesor is an unmounted
   // virtual thread that cannot run. This can happen in particular when
   // this virtual thread is currently loading/initializing a class, and
@@ -2482,6 +2482,7 @@ void ObjectMonitor::Initialize() {
   DEBUG_ONLY(InitDone = true;)
 }
 
+// We can't call this during Initialize() because BarrierSet needs to be set.
 void ObjectMonitor::Initialize2() {
   _vthread_cxq_head = OopHandle(JavaThread::thread_oop_storage(), nullptr);
   _vthread_unparker_ParkEvent = ParkEvent::Allocate(nullptr);
