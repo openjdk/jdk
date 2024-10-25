@@ -41,14 +41,76 @@ import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
 /**
- * Stable values are objects that represent immutable data and are treated as constants
- * by the JVM, enabling the same performance optimizations that are possible by marking
- * a field final. Yet, stable values offer greater flexibility as to the timing of
- * initialization compared to final fields.
+ * A value that has the same performance as a final field but can be freely initialized.
+ * <p>
+ * In the Java programming language, a field could either be immutable (i.e. declared
+ * {@code final}) or mutable (i.e. not declared {@code final}):
+ * <p>
+ * <em>Immutable fields</em> must be set eagerly either by the constructor
+ * (for instance fields) or during class initialization (for {@code static} fields).
+ * Moreover, the order in which {@code final} fields are initialized is determined by
+ * the textual order in which the fields are declared. A {@code final} field is
+ * initialized exactly once by the same thread that instantiated an object or that
+ * first loaded a class. Because the field requires initialization upfront, the use
+ * of them often increases the application startup time.
+ * As the field can never change after being initialized, the JVM is able to reason about
+ * constantness and can trust a {@code final} is stable and the field may therefor be
+ * eligible for certain JVM optimization such as constant folding.
+ * <p>
+ * <em>Mutable fields</em>, on the other hand, can be initialized at any time, by any
+ * thread and may subsequently be updated arbitrarily. A mutable field can be lazily
+ * initialized and can be used to reduce application startup time. However, as the field
+ * can change at any time, the JVM is not able to reason about constantness and cannot
+ * trust the value remains stable. Hence, it is not able to perform optimizations like
+ * constant folding.
+ *
+ * <h2 id="stable-values">Stable Values</h2>
+ * Stable values are objects that represent deferred immutable data and are treated
+ * as constants by the JVM, enabling the same performance optimizations that are
+ * possible by marking a field final. Yet, stable values offer greater flexibility as to
+ * the timing of initialization compared to {@code final} fields:
+ * <br/>
+ * <blockquote>
+ * <table>
+ *     <caption style="display:none">Storage kind comparison</caption>
+ *     <thead>
+ *     <tr>
+ *         <th scope="col">Storage kind</th>
+ *         <th scope="col">#Updates</th>
+ *         <th scope="col">Update location</th>
+ *         <th scope="col">Constant folding</th>
+ *         <th scope="col">Concurrent updated</th>
+ *     </tr>
+ *     </thead>
+ *     <tbody>
+ *     <tr>
+ *         <th scope="row" style="font-weight:normal">Mutable (non-{@code final})</th>
+ *         <td style="text-align:center;">[0, &infin;)</td>
+ *         <td style="text-align:center;">Anywhere</td>
+ *         <td style="text-align:center;">No</td>
+ *         <td style="text-align:center;">Yes</td>
+ *     </tr>
+ *     <tr>
+ *         <th scope="row" style="font-weight:normal">Stable (StableValue)</th>
+ *         <td style="text-align:center;">[0, 1]</td>
+ *         <td style="text-align:center;">Anywhere</td>
+ *         <td style="text-align:center;">Yes, after update</td>
+ *         <td style="text-align:center;">Yes, by winner</td>
+ *      </tr>
+ *      <tr>
+ *         <th scope="row" style="font-weight:normal">Immutable ({@code final})</th>
+ *         <td style="text-align:center;">1</td>
+ *         <td style="text-align:center;">Constructor or static initializer</td>
+ *         <td style="text-align:center;">Yes</td>
+ *         <td style="text-align:center;">No</td>
+ *      </tr>
+ *      </tbody>
+ * </table>
+ * </blockquote>
  * <p>
  * There are three categories of stable values and six variants of stable value objects :
  * <ul>
- *     <li>{@linkplain StableValue##stable-holder Stable Holder}
+ *     <li>{@linkplain StableValue##stable-value Stable Value}
  *     <ul>
  *         <li>Stable value: {@linkplain StableValue {@code StableValue<T>}}</li>
  *     </ul>
@@ -68,11 +130,60 @@ import java.util.function.Supplier;
  *     </li>
  * </ul>
  *
- * <h2 id="stable-holder">Stable Holder</h2>
- * A <em>stable value</em> is of type {@linkplain StableValue {@code StableValue<T>}} and
- * is a holder of underlying data of type {@code T}. It can be used to defer
+ * <h2 id="stable-value">Stable Value</h2>
+ * A <em>stable value</em> is an object of type {@linkplain StableValue {@code StableValue<T>}}
+ * and is a holder of underlying data of type {@code T}. It can be used to defer
  * initialization of its underlying data while retaining the same performance as if
- * a field of type {@code T} was declared {@code final}:
+ * a field of type {@code T} was declared {@code final}. Once the underlying data has
+ * been initialized, the stable value usually acts as a constant for the rest of the
+ * program's execution. In effect, a stable value provides a way of achieving deferred
+ * immutability.
+ * <p>
+ * A stable value can be used <em>imperatively</em> or <em>functionally</em> as outlined
+ * hereunder.
+ * <h3 id="imperative-use">Imperative use</h3>
+ * Imperative use often entails more low-level usage, interacting directly with the
+ * underlying data. Here is an example of how the underlying data can be initialized
+ * imperatively using a pre-computed value (here {@code 42}) using the method
+ * {@linkplain StableValue#trySet(Object) trySet()}. The method will return {@code true}
+ * if the underlying data was indeed initialized, or it will return {@code false} if
+ * the underlying data was already initialized:
+ *
+ * {@snippet lang=java :
+ *     // Creates a new stable value with no underlying data
+ *     StableValue<Integer> stableValue = StableValue.of();
+ *     // ... logic that may or may not set the underlying data of stableValue
+ *     if (stableValue.trySet(42)) {
+ *        System.out.println("The underlying data was initialized to 42.");
+ *     } else {
+ *        System.out.println("The value was already initialized to " + stableValue.orElseThrow());
+ *     }
+ * }
+ * Note that the underlying data can only be initialized at most once, even when several
+ * threads are racing to initialize the underlying data. Only one thread is selected as
+ * the winner.
+ * <p>
+ * Here is another example where the underlying data of a stable value is retrieved
+ * using the method {@linkplain StableValue#orElseThrow() orElseThrow()}. The method will
+ * throw {@linkplain NoSuchElementException} if no underlying data exists:
+ *
+ * {@snippet lang=java :
+ *     StableValue<Integer> stableValue = StableValue.of();
+ *     // ... logic that may set the underlying data of stableValue
+ *     int val = stableValue.orElseThrow(); // The underlying data if set, else throws
+ * }
+ * <p>
+ * The presence of underlying data can be examined using the method
+ * {@linkplain StableValue#isSet() isSet()}. The method will return {@code true} if the
+ * underlying data is initialized, otherwise it will return {@code false}.
+
+ * <h3 id="functional-use">Functional use</h3>
+ * Functional use of a stable value entails providing a
+ * {@linkplain Supplier {@code Supplier<? extends T>}} to the instance method
+ * {@linkplain StableValue#computeIfUnset(Supplier) computeIfUnset()} whereby the
+ * provided supplier is automatically invoked if there is no underlying data as shown in
+ * this example:
+ *
  * {@snippet lang = java:
  *    class Component {
  *
@@ -89,85 +200,24 @@ import java.util.function.Supplier;
  *
  *    }
  *}
+ * The {@code getLogger()} method calls {@code logger.computeIfUnset()} on the
+ * stable value to retrieve its underlying data. If the stable value is unset, then
+ * {@code computeIfUnset()} initializes the underlying data, causing the stable value to
+ * become set; the underlying data is then returned to the client. In other words,
+ * {@code computeIfUnset()} guarantees that a stable value's underlying data is
+ * initialized before it is used.
+ * <p>
+ * Even though the stable value, once set, is immutable, its underlying data is not
+ * required to be initialized upfront. Rather, it can be initialized on demand. Furthermore,
+ * {@code computeIfUnset()} guarantees that the lambda expression provided is evaluated
+ * only once, even when {@code logger.computeIfUnset()} is invoked concurrently.
+ * This property is crucial as evaluation of the lambda expression may have side effects,
+ * e.g., the call above to {@code Logger.getLogger()} may result in storage resources
+ * being prepared.
  * <p>
  * A {@linkplain StableValue} is mainly intended to be a member of a holding class (as
- * shown in the example above) and is usually neither exposed directly via accessors nor
+ * shown in the examples above) and is usually neither exposed directly via accessors nor
  * passed as a method parameter.
- *
- * <h3>Initializing the underlying data</h3>
- * A {@linkplain StableValue}'s underlying data can be initialized to a {@code value} of
- * type {@code T} via three instance methods:
- * <ul>
- *     <li>{@linkplain StableValue#trySet(Object) {@code trySet(T value)}}</li>
- *     <li>{@linkplain StableValue#setOrThrow(Object) {@code setOrThrow(T value)}}</li>
- *     <li>{@linkplain StableValue#computeIfUnset(Supplier) {@code computeIfUnset(Supplier<? extends T>} supplier)}</li>
- * </ul>
- * <p>
- * Here is an example of how the underlying data can be initialized imperatively
- * using a pre-computed value (here {@code 42}) using the method
- * {@linkplain StableValue#trySet(Object) trySet()}. The method will return {@code true}
- * if the underlying data was indeed initialized, or it will return {@code false} if
- * the underlying data was already initialized:
- *
- * {@snippet lang=java :
- *     StableValue<Integer> stableValue = StableValue.of();
- *     // ...
- *     if (stableValue.trySet(42)) {
- *        System.out.println("The underlying data was initialized to 42.");
- *     } else {
- *        System.out.println("The value was already initialized.");
- *     }
- * }
- * <p>
- * A similar way to initialize the underlying data imperatively using a pre-computed
- * value, is to invoke the method {@linkplain StableValue#setOrThrow(Object)
- * setOrThrow()}. The method will initialize the underlying data if uninitialized,
- * otherwise it will throw {@linkplain IllegalStateException}:
- *
- * {@snippet lang=java :
- *     StableValue<Integer> stableValue = StableValue.of();
- *     // ...
- *     // Throws IllegalStateException if the underlying data was already initialized
- *     stableValue.setOrThrow(42);
- * }
- * <p>
- * Finally, the underlying data can be initialized via
- * {@linkplain StableValue#computeIfUnset(Supplier) {@code computeIfUnset(Supplier<? extends T>} supplier)}
- * as shown in the {@linkplain StableValue##stable-holder initial example} in this class.
- * It should be noted that a {@linkplain  StableValue} guarantees the provided
- * {@code supplier} is invoked at most once if it did not throw an exception even in
- * a multithreaded environment.
- *
- * <h3>Retrieving the underlying data</h3>
- * The underlying data of a stable value can be retrieved using two instance methods:
- * <ul>
- *     <li>{@linkplain StableValue#orElse(Object) {@code orElse(T other)}}</li>
- *     <li>{@linkplain StableValue#orElseThrow() {@code orElseThrow()}}</li>
- * </ul>
- * <p>
- * The method {@linkplain StableValue#orElse(Object) orElse(other)} will return
- * the underlying data if initialized, otherwise it will return the provided
- * {@code other} value:
- *
- * {@snippet lang=java :
- *     StableValue<Integer> stableValue = StableValue.of();
- *     // ...
- *     int val = stableValue.orElse(13); // The underlying data if set, otherwise 13
- * }
- * The other method {@linkplain StableValue#orElseThrow() orElseThrow()} will retrieve
- * the underlying data if initialized or throw
- * {@linkplain NoSuchElementException} if the underlying data was not initialized:
- *
- * {@snippet lang=java :
- *     StableValue<Integer> stableValue = StableValue.of();
- *     // ...
- *     int val = stableValue.orElseThrow(); // The underlying data if set, else throws
- * }
- *
- * <h3>Determining the presence of underlying data</h3>
- * The presence of underlying data can be examined using the method
- * {@linkplain StableValue#isSet() isSet()}. The method will return {@code true} if the
- * underlying data is initialized, otherwise it will return {@code false}.
  *
  * <h2 id="stable-functions">Stable Functions</h2>
  * There are three stable functions:
@@ -198,7 +248,7 @@ import java.util.function.Supplier;
  *}
  * This also allows the stable supplier to be accessed directly, without going through
  * an accessor method like {@code getLogger()} in the
- * {@linkplain StableValue##stable-holder initial example} of this class.
+ * {@linkplain StableValue##functional-use functional example} above.
  * <p>
  * A <em>stable int function</em> stores values in an array of stable values where
  * the elements` underlying data are computed the first time a particular input value
@@ -304,7 +354,8 @@ import java.util.function.Supplier;
  * valid input value {@code I} <em>happens-before</em> any subsequent action of attempting
  * to interact via a valid input value {@code J} if, and only if, {@code I} and {@code J}
  * {@linkplain Object#equals(Object) equals()}.
- * <p>
+ *
+ * <h2 id="miscellaneous">Miscellaneous</h2>
  * Except for a StableValue's underlying data itself, all method parameters must be
  * <em>non-null</em> or a {@link NullPointerException} will be thrown.
  *
@@ -323,7 +374,7 @@ import java.util.function.Supplier;
  *
  * @param <T> type of the underlying data
  *
- * @since 24
+ * @since 25
  */
 @PreviewFeature(feature = PreviewFeature.Feature.STABLE_VALUES)
 public sealed interface StableValue<T>
@@ -333,7 +384,7 @@ public sealed interface StableValue<T>
 
     /**
      * {@return {@code true} if the underlying data was set to the provided
-     * {@code underlyingData}, otherwise returns {@code false}}
+     *          {@code underlyingData}, otherwise returns {@code false}}
      * <p>
      * When this method returns, the underlying data is always set.
      *
@@ -342,8 +393,9 @@ public sealed interface StableValue<T>
     boolean trySet(T underlyingData);
 
     /**
-     * {@return the underlying data if set, otherwise return the
-     * {@code other} value}
+     * {@return the underlying data if set, otherwise return the provided
+     *          {@code other} value}
+     *
      *
      * @param other to return if the underlying data is not set
      */
@@ -363,8 +415,8 @@ public sealed interface StableValue<T>
 
     /**
      * {@return the underlying data if set, otherwise attempts to compute and set
-     * new underlying data using the provided {@code supplier}, returning the
-     * newly set underlying data}
+     *           ew underlying data using the provided {@code supplier}, returning the
+     *           newly set underlying data}
      * <p>
      * The provided {@code supplier} is guaranteed to be invoked at most once if it
      * completes without throwing an exception.
@@ -397,8 +449,6 @@ public sealed interface StableValue<T>
      * {@code supplier} throws an exception.
      *
      * @param  supplier to be used for computing the underlying data
-     * @throws StackOverflowError if the provided {@code supplier} recursively
-     *         invokes the provided {@code supplier} upon being invoked.
      */
     T computeIfUnset(Supplier<? extends T> supplier);
 
@@ -420,8 +470,8 @@ public sealed interface StableValue<T>
 
     /**
      * {@return a new thin, atomic, thread-safe, set-at-most-once, {@linkplain StableValue}
-     * with no underlying data eligible for certain JVM optimizations once the
-     * underlying data is set}
+     *          with no underlying data eligible for certain JVM optimizations once the
+     *          underlying data is set}
      *
      * @param <T> type of the underlying data
      */
@@ -431,19 +481,15 @@ public sealed interface StableValue<T>
 
     /**
      * {@return a new stable, thread-safe, caching, lazily computed
-     * {@linkplain Supplier supplier} that records the value of the provided
-     * {@code original} supplier upon being first accessed via
-     * the returned supplier's {@linkplain Supplier#get() Supplier::get get()} method}
+     *          {@linkplain Supplier supplier} that records the value of the provided
+     *          {@code original} supplier upon being first accessed via
+     *          the returned supplier's {@linkplain Supplier#get() get()} method}
      * <p>
      * The provided {@code original} supplier is guaranteed to be successfully invoked
      * at most once even in a multi-threaded environment. Competing threads invoking the
-     * {@linkplain Supplier#get() Supplier::get} method when a value is already under
-     * computation will block until a value is computed or an exception is thrown by the
-     * computing thread.
-     * <p>
-     * If the {@code original} Supplier invokes the returned Supplier recursively,
-     * a {@linkplain StackOverflowError} will be thrown when the returned
-     * Supplier's {@linkplain Supplier#get() Supplier::get} method is invoked.
+     * returned supplier's {@linkplain Supplier#get() get()} method when a value is
+     * already under computation will block until a value is computed or an exception is
+     * thrown by the computing thread.
      * <p>
      * If the provided {@code original} supplier throws an exception, it is relayed
      * to the initial caller and no value is recorded.
@@ -458,20 +504,17 @@ public sealed interface StableValue<T>
 
     /**
      * {@return a new stable, thread-safe, caching, lazily computed
-     * {@link IntFunction } that, for each allowed input, records the values of the
-     * provided {@code original} IntFunction upon being first accessed via
-     * the returned IntFunction's {@linkplain IntFunction#apply(int) apply()} method}
+     *          {@link IntFunction } that, for each allowed input, records the values of
+     *          the provided {@code original} IntFunction upon being first accessed via
+     *          the returned IntFunction's {@linkplain IntFunction#apply(int) apply()}
+     *          method}
      * <p>
      * The provided {@code original} IntFunction is guaranteed to be successfully invoked
      * at most once per allowed input, even in a multi-threaded environment. Competing
-     * threads invoking the {@linkplain IntFunction#apply(int) IntFunction::apply} method
-     * when a value is already under computation will block until a value is computed or
-     * an exception is thrown by the computing thread.
-     * <p>
-     * If the {@code original} IntFunction invokes the returned IntFunction recursively
-     * for a particular input value, a {@linkplain StackOverflowError} will be thrown when
-     * the returned IntFunction's {@linkplain IntFunction#apply(int) IntFunction::apply}
-     * method is invoked.
+     * threads invoking the returned IntFunction's
+     * {@linkplain IntFunction#apply(int) apply()} method when a value is already under
+     * computation will block until a value is computed or an exception is thrown by
+     * the computing thread.
      * <p>
      * If the provided {@code original} IntFunction throws an exception, it is relayed
      * to the initial caller and no value is recorded.
@@ -491,20 +534,16 @@ public sealed interface StableValue<T>
 
     /**
      * {@return a new stable, thread-safe, caching, lazily computed {@link Function}
-     * that, for each allowed input in the given set of {@code inputs}, records the
-     * values of the provided {@code original} Function upon being first accessed via
-     * the returned Function's {@linkplain Function#apply(Object) apply()} method}
+     *          that, for each allowed input in the given set of {@code inputs}, records
+     *          the values of the provided {@code original} Function upon being first
+     *          accessed via the returned Function's
+     *          {@linkplain Function#apply(Object) apply()} method}
      * <p>
      * The provided {@code original} Function is guaranteed to be successfully invoked
      * at most once per allowed input, even in a multi-threaded environment. Competing
-     * threads invoking the {@linkplain Function#apply(Object) Function::apply} method
-     * when a value is already under computation will block until a value is computed or
-     * an exception is thrown by the computing thread.
-     * <p>
-     * If the {@code original} Function invokes the returned Function recursively
-     * for a particular input value, a {@linkplain StackOverflowError} will be thrown when
-     * the returned Function's {@linkplain Function#apply(Object) Function::apply} method
-     * is invoked.
+     * threads invoking the returned function's {@linkplain Function#apply(Object) apply()}
+     * method when a value is already under computation will block until a value is
+     * computed or an exception is thrown by the computing thread.
      * <p>
      * If the provided {@code original} Function throws an exception, it is relayed
      * to the initial caller and no value is recorded.
@@ -523,18 +562,15 @@ public sealed interface StableValue<T>
 
     /**
      * {@return a shallowly immutable, lazy, stable List of the provided {@code size}
-     * where the individual elements of the list are lazily computed via the provided
-     * {@code mapper} whenever an element is first accessed (directly or indirectly),
-     * for example via {@linkplain List#get(int) List::get}}
+     *          where the individual elements of the list are lazily computed via the
+     *          provided {@code mapper} whenever an element is first accessed
+     *          (directly or indirectly), for example via
+     *          {@linkplain List#get(int) List::get}}
      * <p>
      * The provided {@code mapper} IntFunction is guaranteed to be successfully invoked
      * at most once per list index, even in a multi-threaded environment. Competing
      * threads accessing an element already under computation will block until an element
      * is computed or an exception is thrown by the computing thread.
-     * <p>
-     * If the {@code mapper} IntFunction invokes the returned IntFunction recursively
-     * for a particular index, a {@linkplain StackOverflowError} will be thrown when the
-     * returned List's {@linkplain List#get(int) List::get} method is invoked.
      * <p>
      * If the provided {@code mapper} IntFunction throws an exception, it is relayed
      * to the initial caller and no element is recorded.
@@ -558,18 +594,14 @@ public sealed interface StableValue<T>
 
     /**
      * {@return a shallowly immutable, lazy, stable Map with the provided {@code keys}
-     * where the associated values of the maps are lazily computed via the provided
-     * {@code mapper} whenever a value is first accessed (directly or indirectly), for
-     * example via {@linkplain Map#get(Object) Map::get}}
+     *          where the associated values of the maps are lazily computed via
+     *          the provided {@code mapper} whenever a value is first accessed
+     *          (directly or indirectly), for example via {@linkplain Map#get(Object) Map::get}}
      * <p>
      * The provided {@code mapper} Function is guaranteed to be successfully invoked
      * at most once per key, even in a multi-threaded environment. Competing
      * threads accessing an associated value already under computation will block until
      * an associated value is computed or an exception is thrown by the computing thread.
-     * <p>
-     * If the {@code mapper} Function invokes the returned Map recursively
-     * for a particular key, a {@linkplain StackOverflowError} will be thrown when the
-     * returned Map's {@linkplain Map#get(Object) Map::get}} method is invoked.
      * <p>
      * If the provided {@code mapper} Function throws an exception, it is relayed
      * to the initial caller and no value is recorded.
