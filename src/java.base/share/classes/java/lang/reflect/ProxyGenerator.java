@@ -39,9 +39,10 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Objects;
+
+import jdk.internal.constant.ClassOrInterfaceDescImpl;
 import jdk.internal.constant.ConstantUtils;
 import jdk.internal.constant.MethodTypeDescImpl;
-import jdk.internal.constant.ReferenceClassDescImpl;
 import sun.security.action.GetBooleanAction;
 
 import static java.lang.classfile.ClassFile.*;
@@ -64,18 +65,18 @@ final class ProxyGenerator {
             ClassFile.of(ClassFile.StackMapsOption.DROP_STACK_MAPS);
 
     private static final ClassDesc
-            CD_ClassLoader = ReferenceClassDescImpl.ofValidated("Ljava/lang/ClassLoader;"),
-            CD_Class_array = ReferenceClassDescImpl.ofValidated("[Ljava/lang/Class;"),
-            CD_ClassNotFoundException = ReferenceClassDescImpl.ofValidated("Ljava/lang/ClassNotFoundException;"),
-            CD_NoClassDefFoundError = ReferenceClassDescImpl.ofValidated("Ljava/lang/NoClassDefFoundError;"),
-            CD_IllegalAccessException = ReferenceClassDescImpl.ofValidated("Ljava/lang/IllegalAccessException;"),
-            CD_InvocationHandler = ReferenceClassDescImpl.ofValidated("Ljava/lang/reflect/InvocationHandler;"),
-            CD_Method = ReferenceClassDescImpl.ofValidated("Ljava/lang/reflect/Method;"),
-            CD_NoSuchMethodError = ReferenceClassDescImpl.ofValidated("Ljava/lang/NoSuchMethodError;"),
-            CD_NoSuchMethodException = ReferenceClassDescImpl.ofValidated("Ljava/lang/NoSuchMethodException;"),
-            CD_Object_array = ReferenceClassDescImpl.ofValidated("[Ljava/lang/Object;"),
-            CD_Proxy = ReferenceClassDescImpl.ofValidated("Ljava/lang/reflect/Proxy;"),
-            CD_UndeclaredThrowableException = ReferenceClassDescImpl.ofValidated("Ljava/lang/reflect/UndeclaredThrowableException;");
+            CD_ClassLoader = ClassOrInterfaceDescImpl.ofValidated("Ljava/lang/ClassLoader;"),
+            CD_Class_array = CD_Class.arrayType(),
+            CD_ClassNotFoundException = ClassOrInterfaceDescImpl.ofValidated("Ljava/lang/ClassNotFoundException;"),
+            CD_NoClassDefFoundError = ClassOrInterfaceDescImpl.ofValidated("Ljava/lang/NoClassDefFoundError;"),
+            CD_IllegalAccessException = ClassOrInterfaceDescImpl.ofValidated("Ljava/lang/IllegalAccessException;"),
+            CD_InvocationHandler = ClassOrInterfaceDescImpl.ofValidated("Ljava/lang/reflect/InvocationHandler;"),
+            CD_Method = ClassOrInterfaceDescImpl.ofValidated("Ljava/lang/reflect/Method;"),
+            CD_NoSuchMethodError = ClassOrInterfaceDescImpl.ofValidated("Ljava/lang/NoSuchMethodError;"),
+            CD_NoSuchMethodException = ClassOrInterfaceDescImpl.ofValidated("Ljava/lang/NoSuchMethodException;"),
+            CD_Object_array = ConstantUtils.CD_Object_array,
+            CD_Proxy = ClassOrInterfaceDescImpl.ofValidated("Ljava/lang/reflect/Proxy;"),
+            CD_UndeclaredThrowableException = ClassOrInterfaceDescImpl.ofValidated("Ljava/lang/reflect/UndeclaredThrowableException;");
 
     private static final MethodTypeDesc
             MTD_boolean = MethodTypeDescImpl.ofValidated(CD_boolean),

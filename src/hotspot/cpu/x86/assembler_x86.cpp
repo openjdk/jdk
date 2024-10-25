@@ -4439,11 +4439,6 @@ void Assembler::enotl(Register dst, Register src) {
   emit_int16((unsigned char)0xF7, (0xD0 | encode));
 }
 
-void Assembler::orw(Register dst, Register src) {
-  (void)prefix_and_encode(dst->encoding(), src->encoding());
-  emit_arith(0x0B, 0xC0, dst, src);
-}
-
 void Assembler::eorw(Register dst, Register src1, Register src2, bool no_flags) {
   InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   (void) evex_prefix_and_encode_ndd(src1->encoding(), dst->encoding(), src2->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F_3C, &attributes, no_flags);

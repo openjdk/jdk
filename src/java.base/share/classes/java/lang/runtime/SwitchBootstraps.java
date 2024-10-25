@@ -48,9 +48,9 @@ import java.lang.classfile.ClassFile;
 import java.lang.classfile.Label;
 import java.lang.classfile.instruction.SwitchCase;
 
+import jdk.internal.constant.ClassOrInterfaceDescImpl;
 import jdk.internal.constant.ConstantUtils;
 import jdk.internal.constant.MethodTypeDescImpl;
-import jdk.internal.constant.ReferenceClassDescImpl;
 import jdk.internal.misc.PreviewFeatures;
 import jdk.internal.vm.annotation.Stable;
 
@@ -82,8 +82,8 @@ public class SwitchBootstraps {
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
     private static final boolean previewEnabled = PreviewFeatures.isEnabled();
 
-    private static final ClassDesc CD_BiPredicate = ReferenceClassDescImpl.ofValidated("Ljava/util/function/BiPredicate;");
-    private static final ClassDesc CD_Objects = ReferenceClassDescImpl.ofValidated("Ljava/util/Objects;");
+    private static final ClassDesc CD_BiPredicate = ClassOrInterfaceDescImpl.ofValidated("Ljava/util/function/BiPredicate;");
+    private static final ClassDesc CD_Objects = ClassOrInterfaceDescImpl.ofValidated("Ljava/util/Objects;");
 
     private static final MethodTypeDesc CHECK_INDEX_DESCRIPTOR =
             MethodTypeDescImpl.ofValidated(CD_int, CD_int, CD_int);
@@ -584,7 +584,7 @@ public class SwitchBootstraps {
 
                             TypePairs typePair = TypePairs.of(Wrapper.asPrimitiveType(selectorType), classLabel);
                             String methodName = TypePairs.typePairToName.get(typePair);
-                            cb.invokestatic(referenceClassDesc(ExactConversionsSupport.class),
+                            cb.invokestatic(ConstantUtils.referenceClassDesc(ExactConversionsSupport.class),
                                     methodName,
                                     MethodTypeDesc.of(CD_boolean, classDesc(typePair.from)))
                               .ifeq(next);
