@@ -84,7 +84,7 @@ public class FileInputStream extends InputStream
 
     // This field indicates whether the position0() or skip0() may be
     // invoked without encountering an illegal seek exception.
-    private @Stable Boolean canSeek;
+    private @Stable Boolean isRegularFile;
 
     /**
      * Creates a {@code FileInputStream} to read from an existing file
@@ -336,7 +336,7 @@ public class FileInputStream extends InputStream
 
     @Override
     public byte[] readAllBytes() throws IOException {
-        if (!canSeek())
+        if (!isRegularFile())
             return super.readAllBytes();
 
         long length = length();
@@ -390,7 +390,7 @@ public class FileInputStream extends InputStream
         if (len == 0)
             return new byte[0];
 
-        if (!canSeek())
+        if (!isRegularFile())
             return super.readNBytes(len);
 
         long length = length();
@@ -429,7 +429,7 @@ public class FileInputStream extends InputStream
     @Override
     public long transferTo(OutputStream out) throws IOException {
         long transferred = 0L;
-        if (out instanceof FileOutputStream fos && canSeek()) {
+        if (out instanceof FileOutputStream fos && isRegularFile()) {
             FileChannel fc = getChannel();
             long pos = fc.position();
             transferred = fc.transferTo(pos, Long.MAX_VALUE, fos.getChannel());
@@ -482,7 +482,7 @@ public class FileInputStream extends InputStream
      */
     @Override
     public long skip(long n) throws IOException {
-        if (canSeek())
+        if (isRegularFile())
             return skip0(n);
 
         return super.skip(n);
@@ -621,14 +621,14 @@ public class FileInputStream extends InputStream
      * Whether seeking is supported. Seeking is used in the implementations of
      * position0() and skip0().
      */
-    private boolean canSeek() {
-        Boolean canSeek = this.canSeek;
-        if (canSeek == null) {
-            this.canSeek = canSeek = canSeek0(fd);
+    private boolean isRegularFile() {
+        Boolean isRegularFile = this.isRegularFile;
+        if (isRegularFile == null) {
+            this.isRegularFile = isRegularFile = isRegularFile0(fd);
         }
-        return canSeek;
+        return isRegularFile;
     }
-    private native boolean canSeek0(FileDescriptor fd);
+    private native boolean isRegularFile0(FileDescriptor fd);
 
     private static native void initIDs();
 

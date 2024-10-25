@@ -51,7 +51,7 @@ jint handleAppend(FD fd, const void *buf, jint len);
 void fileDescriptorClose(JNIEnv *env, jobject this);
 JNIEXPORT jlong JNICALL
 handleLseek(FD fd, jlong offset, jint whence);
-jboolean handleCanSeek(JNIEnv* env, FD fd);
+jboolean handleIsRegularFile(JNIEnv* env, FD fd);
 
 /*
  * Returns an opaque handle to file named by "path".  If an error occurs,

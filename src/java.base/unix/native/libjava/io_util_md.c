@@ -266,14 +266,11 @@ handleGetLength(FD fd)
 }
 
 jboolean
-handleCanSeek(JNIEnv* env, FD fd)
+handleIsRegularFile(JNIEnv* env, FD fd)
 {
     struct stat fbuf;
     if (fstat(fd, &fbuf) == -1)
         JNU_ThrowIOExceptionWithLastError(env, "fstat failed");
 
-    if (S_ISREG(fbuf.st_mode) || S_ISDIR(fbuf.st_mode) || S_ISLNK(fbuf.st_mode))
-        return JNI_TRUE;
-
-    return JNI_FALSE;
+    return S_ISREG(fbuf.st_mode) ? JNI_TRUE : JNI_FALSE;
 }

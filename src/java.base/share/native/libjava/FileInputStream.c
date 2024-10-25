@@ -143,7 +143,7 @@ Java_java_io_FileInputStream_available0(JNIEnv *env, jobject this) {
 }
 
 JNIEXPORT jboolean JNICALL
-Java_java_io_FileInputStream_canSeek0(JNIEnv *env, jobject this, jobject fdo) {
+Java_java_io_FileInputStream_isRegularFile0(JNIEnv *env, jobject this, jobject fdo) {
     FD fd = getFD(env, this, fis_fd);
-    return IO_CanSeek(env, fd);
+    return IO_IsRegularFile(env, fd);
 }

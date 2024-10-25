@@ -597,7 +597,7 @@ handleGetLength(FD fd) {
 }
 
 jboolean
-handleCanSeek(JNIEnv* env, FD fd)
+handleIsRegularFile(JNIEnv* env, FD fd)
 {
     return JNI_TRUE;
 }
