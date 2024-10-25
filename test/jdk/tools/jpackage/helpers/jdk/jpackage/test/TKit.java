@@ -673,26 +673,40 @@ final public class TKit {
             assertTrue(path.toFile().exists(), String.format(
                     "Check [%s] path exists", path));
         } else {
-            assertFalse(path.toFile().exists(), String.format(
+            assertTrue(!path.toFile().exists(), String.format(
                     "Check [%s] path doesn't exist", path));
         }
     }
 
-    public static void assertPathNotEmptyDirectory(Path path) {
-        if (Files.isDirectory(path)) {
+    public static void assertDirectoryNotEmpty(Path path) {
+        assertDirectoryExists(path, Optional.of(false));
+    }
+
+    public static void assertDirectoryEmpty(Path path) {
+        assertDirectoryExists(path, Optional.of(true));
+    }
+
+    public static void assertDirectoryExists(Path path, Optional<Boolean> isEmptyCheck) {
+        assertPathExists(path, true);
+        boolean isDirectory = Files.isDirectory(path);
+        if (isEmptyCheck.isEmpty() || !isDirectory) {
+            assertTrue(isDirectory, String.format("Check [%s] is a directory", path));
+        } else {
             ThrowingRunnable.toRunnable(() -> {
                 try (var files = Files.list(path)) {
-                    TKit.assertFalse(files.findFirst().isEmpty(), String.format
-                            ("Check [%s] is not an empty directory", path));
+                    boolean actualIsEmpty = files.findFirst().isEmpty();
+                    if (isEmptyCheck.get()) {
+                        TKit.assertTrue(actualIsEmpty, String.format("Check [%s] is not an empty directory", path));
+                    } else {
+                        TKit.assertTrue(!actualIsEmpty, String.format("Check [%s] is an empty directory", path));
+                    }
                 }
             }).run();
-         }
+        }
     }
 
     public static void assertDirectoryExists(Path path) {
-        assertPathExists(path, true);
-        assertTrue(path.toFile().isDirectory(), String.format(
-                "Check [%s] is a directory", path));
+        assertDirectoryExists(path, Optional.empty());
     }
 
     public static void assertSymbolicLinkExists(Path path) {
