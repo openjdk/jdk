@@ -24,6 +24,7 @@
 /* @test
  * @bug 4313887 6838333
  * @summary Unit test for java.nio.file.SecureDirectoryStream
+ * @requires (os.family == "linux" | os.family == "mac")
  * @library ..
  */
 
@@ -45,11 +46,7 @@ public class SecureDS {
             DirectoryStream<Path> stream = newDirectoryStream(dir);
             stream.close();
             if (!(stream instanceof SecureDirectoryStream)) {
-                if (System.getProperty("os.name").equals("Linux"))
-                    throw new AssertionError(
-                            "SecureDirectoryStream not supported.");
-                System.out.println("SecureDirectoryStream not supported.");
-                return;
+                throw new AssertionError("SecureDirectoryStream not supported.");
             }
 
             supportsSymbolicLinks = TestUtil.supportsSymbolicLinks(dir);
