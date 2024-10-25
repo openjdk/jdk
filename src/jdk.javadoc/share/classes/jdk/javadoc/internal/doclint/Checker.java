@@ -34,6 +34,7 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -119,7 +120,8 @@ import static jdk.javadoc.internal.doclint.Messages.Group.SYNTAX;
 public class Checker extends DocTreePathScanner<Void, Void> {
     final Env env;
 
-    Set<Element> foundParams = new HashSet<>();
+    Set<Element> foundParams = new LinkedHashSet<>();
+    Set<Element> foundTypeParams = new LinkedHashSet<>();
     Set<TypeMirror> foundThrows = new HashSet<>();
     Map<Element, Set<String>> foundAnchors = new HashMap<>();
     boolean foundInheritDoc = false;
@@ -225,6 +227,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
         currHeadingTag = null;
 
         foundParams.clear();
+        foundTypeParams.clear();
         foundThrows.clear();
         foundInheritDoc = false;
         foundReturn = false;
@@ -255,14 +258,16 @@ public class Checker extends DocTreePathScanner<Void, Void> {
         // the following checks are made after the scan, which will record @param tags
         if (isDeclaredType()) {
             TypeElement te = (TypeElement) env.currElement;
-            checkParamsDocumented(te.getTypeParameters());
-            checkParamsDocumented(te.getRecordComponents());
+            checkParamsDocumented(te.getTypeParameters(), true);
+            checkParamsDocumented(te.getRecordComponents(), false);
         } else if (isExecutable()) {
+            // Note: although @params are not required in overriding methods it
+            // would still be a good idea to check them if they are present.
             if (!isOverridingMethod) {
                 ExecutableElement ee = (ExecutableElement) env.currElement;
                 if (!isCanonicalRecordConstructor(ee)) {
-                    checkParamsDocumented(ee.getTypeParameters());
-                    checkParamsDocumented(ee.getParameters());
+                    checkParamsDocumented(ee.getTypeParameters(), true);
+                    checkParamsDocumented(ee.getParameters(), false);
                 }
                 switch (ee.getReturnType().getKind()) {
                     case VOID, NONE -> { }
@@ -963,7 +968,9 @@ public class Checker extends DocTreePathScanner<Void, Void> {
                     env.messages.error(REFERENCE, tree, "dc.invalid.param");
             }
         } else {
-            boolean unique = foundParams.add(paramElement);
+            boolean unique = typaram
+                    ? foundTypeParams.add(paramElement)
+                    : foundParams.add(paramElement);
 
             if (!unique) {
                 env.messages.warning(REFERENCE, tree, "dc.exists.param", nameTree);
@@ -974,16 +981,22 @@ public class Checker extends DocTreePathScanner<Void, Void> {
         return super.visitParam(tree, ignore);
     }
 
-    private void checkParamsDocumented(List<? extends Element> list) {
-        if (foundInheritDoc)
+    private void checkParamsDocumented(List<? extends Element> list, boolean isTypeParam) {
+        if (foundInheritDoc || list.isEmpty()) {
             return;
-
-        for (Element e: list) {
-            if (!foundParams.contains(e)) {
-                CharSequence paramName = (e.getKind() == ElementKind.TYPE_PARAMETER)
+        }
+        Set<Element> found = isTypeParam ? foundTypeParams : foundParams;
+        var iter = found.iterator();
+        var reportedOrderWarning = false;
+        for (Element e : list) {
+            if (!found.contains(e)) {
+                CharSequence paramName = isTypeParam
                         ? "<" + e.getSimpleName() + ">"
                         : e.getSimpleName();
                 reportMissing("dc.missing.param", paramName);
+            } else if (!reportedOrderWarning && iter.hasNext() && !e.equals(iter.next())) {
+                reportReference("dc.param.wrong.order");
+                reportedOrderWarning = true;
             }
         }
     }
