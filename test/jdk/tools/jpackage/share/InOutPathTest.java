@@ -37,7 +37,6 @@ import jdk.jpackage.internal.PackageFile;
 import jdk.jpackage.test.Annotations;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.Functional.ThrowingConsumer;
-import jdk.jpackage.test.HelloApp;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.PackageType;
@@ -130,7 +129,7 @@ public final class InOutPathTest {
     }
 
     private static boolean isAppImageValid(JPackageCommand cmd) {
-        return !cmd.hasArgument("--app-content") && !cmd.hasArgument("--dmg-app-content");
+        return !cmd.hasArgument("--app-content") && !cmd.hasArgument("--mac-dmg-content");
     }
 
     private static void runTest(Set<PackageType> packageTypes,
@@ -151,6 +150,7 @@ public final class InOutPathTest {
 
             if (!isAppImageValid(cmd)) {
                 cmd.setAppLayoutAsserts(
+                        JPackageCommand.AppLayoutAssert.PackageFile,
                         JPackageCommand.AppLayoutAssert.MainLauncher,
                         JPackageCommand.AppLayoutAssert.MainLauncherCfgFile,
                         JPackageCommand.AppLayoutAssert.RuntimeDirectory);
