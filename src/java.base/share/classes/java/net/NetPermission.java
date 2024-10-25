@@ -41,7 +41,7 @@ import java.security.*;
  * match, while "*foo" and "a*b" do not.
  *
  * @apiNote
- * This permission cannot be used for controlling access to resources anymore
+ * This permission cannot be used for controlling access to resources
  * as the Security Manager is no longer supported.
  *
  * @see java.security.BasicPermission

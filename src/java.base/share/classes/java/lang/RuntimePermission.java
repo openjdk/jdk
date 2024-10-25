@@ -39,7 +39,7 @@ import java.security.*;
  * or by itself, to signify a wildcard match. For example: "loadLibrary.*"
  * and "*" signify a wildcard match, while "*loadLibrary" and "a*b" do not.
  * @apiNote
- * This permission cannot be used for controlling access to resources anymore
+ * This permission cannot be used for controlling access to resources
  * as the Security Manager is no longer supported.
  *
  * @see java.security.BasicPermission

@@ -339,7 +339,7 @@ public final class LoaderHandler {
 
         /*
          * There is no security manager, so disable access to RMI class
-         * loaders and use the would-de parent instead.
+         * loaders and use the would-be parent instead.
          */
         try {
             Class<?> c = loadProxyClass(interfaces, defaultLoader, parent,
