@@ -474,8 +474,9 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  *
  * <h2>Compatibility</h2>
  * @implNote
- * <p>Applications on the latest release of the reference implementation using the recommended
- * {@code Locale} API may not be concerned with the following compatibility commentary.
+ * <p> The following commentary is provided for apps that want to ensure
+ * interoperability with older releases of {@code Locale} provided by the
+ * reference implementation.
  * <h3><a id="locale_behavior">Locale Behavior</a></h3>
  * In order to maintain compatibility, Locale's
  * (deprecated) constructors retain their behavior prior to the Java Runtime
