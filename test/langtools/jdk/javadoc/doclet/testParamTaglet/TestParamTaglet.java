@@ -105,7 +105,7 @@ public class TestParamTaglet extends JavadocTester {
     public void testParamOrder(Path base) throws Exception {
         String contents = """
                 package pkg;
-                
+
                 /**
                  * Class with missing and unsorted param tags.
                  *
