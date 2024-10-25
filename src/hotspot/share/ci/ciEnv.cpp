@@ -1597,6 +1597,10 @@ void ciEnv::dump_replay_data_helper(outputStream* out) {
   NoSafepointVerifier no_safepoint;
   ResourceMark rm;
 
+  if (this->task() == nullptr) {
+    return;
+  }
+
   dump_replay_data_version(out);
 #if INCLUDE_JVMTI
   out->print_cr("JvmtiExport can_access_local_variables %d",     _jvmti_can_access_local_variables);
@@ -1611,17 +1615,13 @@ void ciEnv::dump_replay_data_helper(outputStream* out) {
 
   // The very first entry is the InstanceKlass of the root method of the current compilation in order to get the right
   // protection domain to load subsequent classes during replay compilation.
-  if (this->task() != nullptr) {
-    ciInstanceKlass::dump_replay_instanceKlass(out, task()->method()->method_holder());
-  }
+  ciInstanceKlass::dump_replay_instanceKlass(out, task()->method()->method_holder());
 
   for (int i = 0; i < objects->length(); i++) {
     objects->at(i)->dump_replay_data(out);
   }
 
-  if (this->task() != nullptr) {
-    dump_compile_data(out);
-  }
+  dump_compile_data(out);
   out->flush();
 }
 
