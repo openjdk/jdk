@@ -253,7 +253,7 @@ JvmtiVTMSTransitionDisabler::print_info() {
 #endif
 
 // disable VTMS transitions for one virtual thread
-// no-op if thread is non-null and not a virtual thread
+// disable VTMS transitions for all threads if thread is nullptr or a platform thread
 JvmtiVTMSTransitionDisabler::JvmtiVTMSTransitionDisabler(jthread thread)
   : _is_SR(false), _thread(thread)
 {
@@ -269,7 +269,7 @@ JvmtiVTMSTransitionDisabler::JvmtiVTMSTransitionDisabler(jthread thread)
   oop thread_oop = JNIHandles::resolve_external_guard(thread);
 
   // Target can be virtual or platform thread.
-  // If traget is a platform thread then we have to disable VTMS transitions for all threads.
+  // If target is a platform thread then we have to disable VTMS transitions for all threads.
   // It is by several reasons:
   // - carrier threads can mount virtual threads which may cause incorrect behavior
   // - there is no mechanism to disable transitions for a specific carrier thread yet
@@ -327,9 +327,8 @@ JvmtiVTMSTransitionDisabler::VTMS_transition_disable_for_one() {
   JavaThread* thread = JavaThread::current();
   HandleMark hm(thread);
   Handle vth = Handle(thread, JNIHandles::resolve_external_guard(_thread));
-  if (!java_lang_VirtualThread::is_instance(vth())) {
-    return; // no-op if _thread is not a virtual thread
-  }
+  assert(java_lang_VirtualThread::is_instance(vth()), "sanity check");
+
   MonitorLocker ml(JvmtiVTMSTransition_lock);
 
   while (_SR_mode) { // suspender or resumer is a JvmtiVTMSTransitionDisabler monopolist
@@ -479,7 +478,7 @@ JvmtiVTMSTransitionDisabler::start_VTMS_transition(jthread vthread, bool is_moun
           JvmtiVTSuspender::is_vthread_suspended(thread_id)
       ) {
         // Block while transitions are disabled or there are suspend requests.
-        if (ml.wait(10)) {
+        if (ml.wait(200)) {
           attempts--;
         }
         DEBUG_ONLY(if (attempts == 0) break;)
@@ -536,7 +535,7 @@ JvmtiVTMSTransitionDisabler::finish_VTMS_transition(jthread vthread, bool is_mou
           (is_mount && JvmtiVTSuspender::is_vthread_suspended(thread_id))
       ) {
         // Block while there are suspend requests.
-        if (ml.wait(10)) {
+        if (ml.wait(200)) {
           attempts--;
         }
         DEBUG_ONLY(if (attempts == 0) break;)
