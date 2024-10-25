@@ -463,8 +463,8 @@ public class MethodHandles {
      * If there is a security manager, its {@code checkPermission} method
      * is called with a {@code ReflectPermission("suppressAccessChecks")} permission.
      * @param <T> the desired type of the result, either {@link Member} or a subtype
-     * @param target a direct method handle to crack into symbolic reference components
      * @param expected a class object representing the desired result type {@code T}
+     * @param target a direct method handle to crack into symbolic reference components
      * @return a reference to the method, constructor, or field object
      * @throws    SecurityException if the caller is not privileged to call {@code setAccessible}
      * @throws    NullPointerException if either argument is {@code null}
