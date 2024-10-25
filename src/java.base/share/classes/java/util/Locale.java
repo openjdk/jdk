@@ -207,7 +207,7 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * the IANA Language Subtag Registry. The {@link Builder}
  * only checks if an individual field satisfies the syntactic
  * requirement (is well-formed), but does not validate the value
- * itself. Conversely, the {@link #of(String, String, String)} overloads do not
+ * itself. Conversely, {@link #of(String, String, String)} and its overloads do not
  * make any syntactic checks on the input.
  *
  * <h3><a id="def_locale_extension">Unicode locale/language extension</a></h3>
@@ -478,8 +478,8 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * interoperability with older releases of {@code Locale} provided by the
  * reference implementation.
  * <h3><a id="locale_behavior">Locale Behavior</a></h3>
- * In order to maintain compatibility, Locale's
- * (deprecated) constructors retain their behavior prior to the Java Runtime
+ * In order to maintain compatibility, Locale's (deprecated) constructors,
+ * {@link #of(String, String, String)}, and its overloads retain their behavior prior to the Java Runtime
  * Environment version 1.7. That is, a length constraint is not imposed on any of
  * the input parameters. Similarly, the same preservation of past behavior is largely true
  * for the {@link #toString()} method.
