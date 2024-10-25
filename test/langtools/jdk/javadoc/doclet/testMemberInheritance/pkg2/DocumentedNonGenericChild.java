@@ -25,4 +25,9 @@ package pkg2;
 
 public abstract class DocumentedNonGenericChild extends UndocumentedGenericParent<String, InterruptedException, IllegalArgumentException> {
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void parentMethod2() {}
 }
