@@ -83,7 +83,7 @@ FD getFD(JNIEnv *env, jobject cur, jfieldID fid);
 #define IO_Available handleAvailable
 #define IO_SetLength handleSetLength
 #define IO_GetLength handleGetLength
-#define IO_IsRegularFile handleIsRegulerFile
+#define IO_IsRegularFile handleIsRegularFile
 
 /*
  * Setting the handle field in Java_java_io_FileDescriptor_set for
