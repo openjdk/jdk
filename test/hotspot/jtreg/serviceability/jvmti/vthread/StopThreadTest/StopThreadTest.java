@@ -192,7 +192,7 @@ public class StopThreadTest {
 
         static void ensureAtPointA(Thread vt) {
             // wait while the thread state is not the expected one
-            while (vt.getState() != Thread.State.BLOCKED) {
+            while (!atPointA && vt.getState() != Thread.State.BLOCKED) {
                 sleep(1);
             }
         }
@@ -253,6 +253,7 @@ public class StopThreadTest {
         //  - when suspended: JVMTI_ERROR_NONE is expected
         static void A() {
             log("TestTask.A: started");
+            atPointA = true;
             synchronized (lock) {
             }
             log("TestTask.A: finished");
