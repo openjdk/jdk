@@ -23,6 +23,8 @@
  */
 package com.sun.hotspot.igv.hierarchicallayout;
 
+import static com.sun.hotspot.igv.hierarchicallayout.LayoutManager.*;
+import static com.sun.hotspot.igv.hierarchicallayout.LayoutNode.NODE_X_COMPARATOR;
 import java.util.ArrayList;
 import java.util.Collection;
 
@@ -47,11 +49,38 @@ public class LayoutLayer extends ArrayList<LayoutNode> {
         return super.add(n);
     }
 
-    public void updateLayerPositions() {
-        int pos = 0;
+    public int calculateMaxLayerHeight() {
+        int maxLayerHeight = 0;
         for (LayoutNode layoutNode : this) {
-            layoutNode.setPos(pos);
-            pos++;
+            if (!layoutNode.isDummy()) {
+                // Center the node by setting equal top and bottom margins
+                int offset = Math.max(layoutNode.getTopMargin(), layoutNode.getBottomMargin());
+                layoutNode.setTopMargin(offset);
+                layoutNode.setBottomMargin(offset);
+            }
+            maxLayerHeight = Math.max(maxLayerHeight, layoutNode.getOuterHeight());
+        }
+        return maxLayerHeight;
+    }
+
+    public int calculateScalePaddedBottom() {
+        int maxXOffset = 0;
+
+        for (LayoutNode layoutNode : this) {
+            for (LayoutEdge succEdge : layoutNode.getSuccs()) {
+                maxXOffset = Math.max(Math.abs(succEdge.getStartX() - succEdge.getEndX()), maxXOffset);
+            }
+        }
+
+        int scalePaddedBottom = this.getHeight();
+        scalePaddedBottom += (int) (SCALE_LAYER_PADDING * Math.max((int) (Math.sqrt(maxXOffset) * 2), LAYER_OFFSET * 3));
+        return scalePaddedBottom;
+    }
+
+    public void centerNodesVertically() {
+        for (LayoutNode layoutNode : this) {
+            int centeredY = getTop() + (getHeight() - layoutNode.getOuterHeight()) / 2;
+            layoutNode.setY(centeredY);
         }
     }
 
@@ -124,6 +153,46 @@ public class LayoutLayer extends ArrayList<LayoutNode> {
         for (LayoutNode layoutNode : this) {
             String dummyStr = layoutNode.isDummy() ? "Dummy" : "Node";
             System.out.println("Pos: " + layoutNode.getPos() + ", X: " + layoutNode.getX() + ", " + dummyStr + ", Succs: " + layoutNode.getSuccs().size() + ", Preds: " + layoutNode.getPreds().size());
+        }
+    }
+
+    // Layer contains no non-dummy nodes
+    public boolean isDummyLayer() {
+        for (LayoutNode node : this) {
+            if (!node.isDummy()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public void sortNodesByXAndSetPositions() {
+        if (this.isEmpty()) return;
+
+        // Sort nodes in the layer increasingly by x
+        this.sort(NODE_X_COMPARATOR);
+
+        int pos = 0;
+        int minX = this.get(0).getX(); // Starting X position for the first node
+
+        for (LayoutNode node : this) {
+            node.setPos(pos);
+            pos++;
+
+            // Set the X position of the node to at least minX, ensuring spacing
+            int x = Math.max(node.getX(), minX);
+            node.setX(x);
+
+            // Update minX for the next node based on the current node's outer width and offset
+            minX = x + node.getOuterWidth() + NODE_OFFSET;
+        }
+    }
+
+    public void updateLayerPositions() {
+        int pos = 0;
+        for (LayoutNode layoutNode : this) {
+            layoutNode.setPos(pos);
+            pos++;
         }
     }
 }
