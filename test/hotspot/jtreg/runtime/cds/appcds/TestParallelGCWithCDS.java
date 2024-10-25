@@ -47,7 +47,7 @@
  * @requires vm.cds
  * @requires vm.gc.Parallel
  * @requires vm.gc.G1
- * requires vm.bits == "64"
+ * @requires vm.bits == "64"
  *
  * @comment don't run this test if any -XX::+Use???GC options are specified, since they will
  *          interfere with the test.
