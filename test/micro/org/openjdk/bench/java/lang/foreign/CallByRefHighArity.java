@@ -134,8 +134,8 @@ public class CallByRefHighArity {
             ), Linker.Option.critical(true))
             .bindTo(LOOKUP.find("noop_params5").orElseThrow());
 
-    // void noop_params10(int param0, int param1, void *param2, void *param3, void *param4,
-    //                    int param5, int param6, void *param7, void *param8, void *param9) {}
+    // void noop_params10(void *param0, void *param1, void *param2, void *param3, void *param4,
+    //                    void *param5, void *param6, void *param7, void *param8, void *param9) {}
     private static final MethodHandle MH_NOOP_PARAMS10 = Linker.nativeLinker()
             .downcallHandle(FunctionDescriptor.ofVoid(
                     ValueLayout.ADDRESS,
