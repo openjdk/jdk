@@ -80,22 +80,6 @@ public class BindingSpecializer {
         = GetPropertyAction.privilegedGetProperty("jdk.internal.foreign.abi.Specializer.DUMP_CLASSES_DIR");
     private static final boolean PERFORM_VERIFICATION
         = GetBooleanAction.privilegedGetProperty("jdk.internal.foreign.abi.Specializer.PERFORM_VERIFICATION");
-    private static final AcquireDedupStrategy ACQUIRE_DEDUP_STRATEGY
-        = AcquireDedupStrategy.of(GetPropertyAction.privilegedGetProperty("jdk.internal.foreign.abi.Specializer.ACQUIRE_DEDUP_STRATEGY"));
-
-    enum AcquireDedupStrategy {
-        DEFAULT,
-        SKIP,
-        SINGLE;
-
-        static AcquireDedupStrategy of(String property) {
-            return switch (property) {
-                case "skip" -> SKIP;
-                case "single" -> SINGLE;
-                case null, default -> DEFAULT;
-            };
-        }
-    }
 
     // Bunch of helper constants
     private static final int CLASSFILE_VERSION = ClassFileFormatVersion.latest().major();
@@ -287,26 +271,11 @@ public class BindingSpecializer {
         if (callingSequence.forDowncall()) {
             returnAllocatorIdx = 0; // first param
 
-            if (ACQUIRE_DEDUP_STRATEGY.equals(AcquireDedupStrategy.DEFAULT)) {
-                // for downcalls we also acquire/release scoped parameters before/after the call
-                // create a bunch of locals here to keep track of their scopes (to release later)
-                int[] initialScopeSlots = new int[callerMethodType.parameterCount()];
-                int numScopes = 0;
-                for (int i = 0; i < callerMethodType.parameterCount(); i++) {
-                    if (shouldAcquire(i)) {
-                        int scopeLocal = cb.allocateLocal(REFERENCE);
-                        initialScopeSlots[numScopes++] = scopeLocal;
-                        cb.aconst_null()
-                                .astore(scopeLocal); // need to initialize all scope locals here in case an exception occurs
-                    }
-                }
-                scopeSlots = Arrays.copyOf(initialScopeSlots, numScopes); // fit to size
-            } else if (ACQUIRE_DEDUP_STRATEGY.equals(AcquireDedupStrategy.SINGLE)) {
-                scopeSlots = new int[1];
-                int scopeLocal = cb.allocateLocal(REFERENCE);
-                scopeSlots[0] = scopeLocal;
-                cb.aconst_null().astore(scopeLocal);
-            }
+            // set up scope cache (for acquire/release)
+            scopeSlots = new int[1];
+            int scopeLocal = cb.allocateLocal(REFERENCE);
+            scopeSlots[0] = scopeLocal;
+            cb.aconst_null().astore(scopeLocal);
             curScopeLocalIdx = 0; // used from emitGetInput
         }
 
@@ -523,70 +492,40 @@ public class BindingSpecializer {
     }
 
     private void emitAcquireScope() {
-        if (ACQUIRE_DEDUP_STRATEGY == AcquireDedupStrategy.SKIP) {
-            cb.checkcast(CD_AbstractMemorySegmentImpl)
-                    .invokevirtual(CD_AbstractMemorySegmentImpl, "sessionImpl", MTD_SESSION_IMPL)
-                    .invokevirtual(CD_MemorySessionImpl, "acquire0", MTD_ACQUIRE0);
-        } else if (ACQUIRE_DEDUP_STRATEGY == AcquireDedupStrategy.DEFAULT) {
-            cb.checkcast(CD_AbstractMemorySegmentImpl)
-                    .invokevirtual(CD_AbstractMemorySegmentImpl, "sessionImpl", MTD_SESSION_IMPL);
-            Label skipAcquire = cb.newLabel();
-            Label end = cb.newLabel();
+        cb.checkcast(CD_AbstractMemorySegmentImpl)
+                .invokevirtual(CD_AbstractMemorySegmentImpl, "sessionImpl", MTD_SESSION_IMPL);
+        Label skipAcquire = cb.newLabel();
+        Label end = cb.newLabel();
 
-            // start with 1 scope to maybe acquire on the stack
-            assert curScopeLocalIdx != -1;
-            boolean hasOtherScopes = curScopeLocalIdx != 0;
-            for (int i = 0; i < curScopeLocalIdx; i++) {
-                cb.dup() // dup for comparison
-                        .aload(scopeSlots[i])
-                        .if_acmpeq(skipAcquire);
-            }
+        // start with 1 scope to maybe acquire on the stack
+        assert curScopeLocalIdx != -1;
+        boolean addressParam = curScopeLocalIdx == 0;
+        boolean firstParam = curScopeLocalIdx == 1;
 
-            // 1 scope to acquire on the stack
-            cb.dup();
-            int nextScopeLocal = scopeSlots[curScopeLocalIdx++];
-            // call acquire first here. So that if it fails, we don't call release
-            cb.invokevirtual(CD_MemorySessionImpl, "acquire0", MTD_ACQUIRE0) // call acquire on the other
-                    .astore(nextScopeLocal); // store off one to release later
-
-            if (hasOtherScopes) { // avoid ASM generating a bunch of nops for the dead code
-                cb.goto_(end)
-                        .labelBinding(skipAcquire)
-                        .pop(); // drop scope
-            }
-
-            cb.labelBinding(end);
-        } else if (ACQUIRE_DEDUP_STRATEGY == AcquireDedupStrategy.SINGLE) {
-            cb.checkcast(CD_AbstractMemorySegmentImpl)
-                    .invokevirtual(CD_AbstractMemorySegmentImpl, "sessionImpl", MTD_SESSION_IMPL);
-            Label skipAcquire = cb.newLabel();
-            Label end = cb.newLabel();
-
-            // start with 1 scope to maybe acquire on the stack
-            assert curScopeLocalIdx != -1;
-            boolean first = curScopeLocalIdx == 0;
-
-            if (curScopeLocalIdx == 1) { // only cache by-ref params after the first
-                cb.dup()
-                  .astore(scopeSlots[0]);
-            } else if (!first) {
-                cb.dup()
-                  .aload(scopeSlots[0])
-                  .if_acmpeq(skipAcquire);
-            }
-
-            // call acquire first here. So that if it fails, we don't call release
-            cb.invokevirtual(CD_MemorySessionImpl, "acquire0", MTD_ACQUIRE0); // call acquire on the other
-            curScopeLocalIdx++;
-
-            if (!first) { // avoid ASM generating a bunch of nops for the dead code
-                cb.goto_(end)
-                        .labelBinding(skipAcquire)
-                        .pop(); // drop scope
-            }
-
-            cb.labelBinding(end);
+        if (!addressParam) {
+            cb.dup()
+              .aload(scopeSlots[0])
+              .if_acmpeq(skipAcquire);
         }
+
+        if (firstParam) { // only cache by-ref params after the first
+            // call acquire first here. So that if it fails, we don't call release
+            cb.dup()
+              .invokevirtual(CD_MemorySessionImpl, "acquire0", MTD_ACQUIRE0) // call acquire on the other
+              .astore(scopeSlots[0]);
+        } else {
+            cb.invokevirtual(CD_MemorySessionImpl, "acquire0", MTD_ACQUIRE0); // call acquire on the other
+        }
+
+        curScopeLocalIdx++;
+
+        if (!addressParam) { // avoid ASM generating a bunch of nops for the dead code
+            cb.goto_(end)
+                    .labelBinding(skipAcquire)
+                    .pop(); // drop scope
+        }
+
+        cb.labelBinding(end);
     }
 
     private void emitReleaseScope() {
@@ -597,9 +536,11 @@ public class BindingSpecializer {
 
         // start with 1 scope to maybe acquire on the stack
         assert curScopeLocalIdx != -1;
-        boolean first = curScopeLocalIdx == 0;
+        boolean addressParam = curScopeLocalIdx == 0;
+        boolean firstParam = curScopeLocalIdx == 1;
+        boolean useCache = !addressParam && !firstParam;
 
-        if (!first) {
+        if (useCache) {
             cb.dup()
                     .aload(scopeSlots[0])
                     .if_acmpeq(skipAcquire);
@@ -608,7 +549,7 @@ public class BindingSpecializer {
         cb.invokevirtual(CD_MemorySessionImpl, "release0", MTD_RELEASE0); // call acquire on the other
         curScopeLocalIdx++;
 
-        if (!first) { // avoid ASM generating a bunch of nops for the dead code
+        if (useCache) { // avoid ASM generating a bunch of nops for the dead code
             cb.goto_(end)
                     .labelBinding(skipAcquire)
                     .pop(); // drop scope
@@ -618,32 +559,12 @@ public class BindingSpecializer {
     }
 
     private void emitReleaseScopes() {
-        if (ACQUIRE_DEDUP_STRATEGY.equals(AcquireDedupStrategy.SKIP)) {
-            for (int paramIndex = 0 ; paramIndex < callerMethodType.parameterCount() ; paramIndex++) {
+        curScopeLocalIdx = 0; // reset
+        for (int paramIndex = 0 ; paramIndex < callerMethodType.parameterCount() ; paramIndex++) {
+            if (shouldAcquire(paramIndex)) {
                 Class<?> highLevelType = callerMethodType.parameterType(paramIndex);
                 cb.loadLocal(TypeKind.from(highLevelType), cb.parameterSlot(paramIndex));
-                if (shouldAcquire(paramIndex)) {
-                    cb.checkcast(CD_AbstractMemorySegmentImpl)
-                            .invokevirtual(CD_AbstractMemorySegmentImpl, "sessionImpl", MTD_SESSION_IMPL)
-                            .invokevirtual(CD_MemorySessionImpl, "release0", MTD_RELEASE0);
-                }
-            }
-        } else if (ACQUIRE_DEDUP_STRATEGY.equals(AcquireDedupStrategy.DEFAULT)) {
-            for (int scopeLocal : scopeSlots) {
-                cb.aload(scopeLocal)
-                        .ifThen(Opcode.IFNONNULL, ifCb -> {
-                            ifCb.aload(scopeLocal)
-                                    .invokevirtual(CD_MemorySessionImpl, "release0", MTD_RELEASE0);
-                        });
-            }
-        } else if (ACQUIRE_DEDUP_STRATEGY.equals(AcquireDedupStrategy.SINGLE)) {
-            curScopeLocalIdx = 0;
-            for (int paramIndex = 0 ; paramIndex < callerMethodType.parameterCount() ; paramIndex++) {
-                if (shouldAcquire(paramIndex)) {
-                    Class<?> highLevelType = callerMethodType.parameterType(paramIndex);
-                    cb.loadLocal(TypeKind.from(highLevelType), cb.parameterSlot(paramIndex));
-                    emitReleaseScope();
-                }
+                emitReleaseScope();
             }
         }
     }

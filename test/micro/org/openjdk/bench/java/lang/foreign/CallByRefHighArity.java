@@ -1,3 +1,26 @@
+/*
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
 package org.openjdk.bench.java.lang.foreign;
 
 import org.openjdk.jmh.annotations.*;
@@ -5,34 +28,58 @@ import org.openjdk.jmh.annotations.*;
 import java.lang.foreign.*;
 import java.lang.invoke.*;
 import java.util.concurrent.TimeUnit;
-/*
- * Source: https://gist.github.com/Spasi/71d5cfa687a1dbe95b3fce608d31ae6b
- */
+import java.util.function.Supplier;
+
 @BenchmarkMode(Mode.AverageTime)
 @Warmup(iterations = 5, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @State(org.openjdk.jmh.annotations.Scope.Thread)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @Fork(value = 3, jvmArgsAppend = { "--enable-native-access=ALL-UNNAMED", "-Djava.library.path=micro/native" })
-public class FFMEscapeAnalysisTest {
+public class CallByRefHighArity {
 
     static {
-        System.loadLibrary("eaTest");
+        System.loadLibrary("CallByRefHighArity");
     }
 
-    Arena confinedArena = Arena.ofConfined();
-    MemorySegment cs1 = confinedArena.allocateFrom(ValueLayout.JAVA_INT, 0);
-    MemorySegment cs2 = confinedArena.allocateFrom(ValueLayout.JAVA_INT, 0);
-    MemorySegment cs3 = confinedArena.allocateFrom(ValueLayout.JAVA_INT, 0);
-    MemorySegment cs4 = confinedArena.allocateFrom(ValueLayout.JAVA_INT, 0);
-    MemorySegment cs5 = confinedArena.allocateFrom(ValueLayout.JAVA_INT, 0);
+    @Param
+    SegmentKind kind;
 
-    Arena sharedArena = Arena.ofShared();
-    MemorySegment ss1 = sharedArena.allocateFrom(ValueLayout.JAVA_INT, 0);
-    MemorySegment ss2 = sharedArena.allocateFrom(ValueLayout.JAVA_INT, 0);
-    MemorySegment ss3 = sharedArena.allocateFrom(ValueLayout.JAVA_INT, 0);
-    MemorySegment ss4 = sharedArena.allocateFrom(ValueLayout.JAVA_INT, 0);
-    MemorySegment ss5 = sharedArena.allocateFrom(ValueLayout.JAVA_INT, 0);
+    public enum SegmentKind {
+        CONFINED,
+        SHARED,
+        GLOBAL,
+        HEAP
+    }
+
+    Supplier<MemorySegment> segmentSupplier;
+    Arena arena;
+
+    @Setup
+    public void setup() {
+        if (kind == SegmentKind.CONFINED) {
+            arena = Arena.ofConfined();
+            MemorySegment segment = arena.allocateFrom(ValueLayout.JAVA_INT, 0);
+            segmentSupplier = () -> segment;
+        } else if (kind == SegmentKind.SHARED) {
+            arena = Arena.ofShared();
+            MemorySegment segment = arena.allocateFrom(ValueLayout.JAVA_INT, 0);
+            segmentSupplier = () -> segment;
+        } else if (kind == SegmentKind.HEAP) {
+            byte[] array = new byte[8];
+            MemorySegment segment = MemorySegment.ofArray(array);
+            segmentSupplier = () -> segment;
+        } else { // global
+            segmentSupplier = () -> MemorySegment.ofAddress(0);
+        }
+    }
+
+    @TearDown
+    public void tearDown() {
+        if (arena != null) {
+            arena.close();
+        }
+    }
 
     // A shared library that exports the functions below
     private static final SymbolLookup LOOKUP = SymbolLookup.loaderLookup();
@@ -87,7 +134,8 @@ public class FFMEscapeAnalysisTest {
             ))
             .bindTo(LOOKUP.find("noop_params5").orElseThrow());
 
-    // void noop_params5(int param0, int param1, void *param2, void *param3, void *param4) {}
+    // void noop_params10(int param0, int param1, void *param2, void *param3, void *param4,
+    //                    int param5, int param6, void *param7, void *param8, void *param9) {}
     private static final MethodHandle MH_NOOP_PARAMS10 = Linker.nativeLinker()
             .downcallHandle(FunctionDescriptor.ofVoid(
                     ValueLayout.ADDRESS,
@@ -100,7 +148,7 @@ public class FFMEscapeAnalysisTest {
                     ValueLayout.ADDRESS,
                     ValueLayout.ADDRESS,
                     ValueLayout.ADDRESS
-            ))
+            ), Linker.Option.critical(true))
             .bindTo(LOOKUP.find("noop_params10").orElseThrow());
 
     @Benchmark
@@ -116,7 +164,7 @@ public class FFMEscapeAnalysisTest {
     public void noop_params1() {
         try {
             MH_NOOP_PARAMS1.invokeExact(
-                    MemorySegment.ofAddress(0L)
+                    segmentSupplier.get()
             );
         } catch (Throwable t) {
             throw new AssertionError(t);
@@ -127,8 +175,8 @@ public class FFMEscapeAnalysisTest {
     public void noop_params2() {
         try {
             MH_NOOP_PARAMS2.invokeExact(
-                    MemorySegment.ofAddress(0L),
-                    MemorySegment.ofAddress(0L)
+                    segmentSupplier.get(),
+                    segmentSupplier.get()
             );
         } catch (Throwable t) {
             throw new AssertionError(t);
@@ -139,9 +187,9 @@ public class FFMEscapeAnalysisTest {
     public void noop_params3() {
         try {
             MH_NOOP_PARAMS3.invokeExact(
-                    MemorySegment.ofAddress(0L),
-                    MemorySegment.ofAddress(0L),
-                    MemorySegment.ofAddress(0L)
+                    segmentSupplier.get(),
+                    segmentSupplier.get(),
+                    segmentSupplier.get()
             );
         } catch (Throwable t) {
             throw new AssertionError(t);
@@ -152,13 +200,11 @@ public class FFMEscapeAnalysisTest {
     public void noop_params4() {
         try {
             MH_NOOP_PARAMS4.invokeExact(
-                    MemorySegment.ofAddress(0L),
-                    MemorySegment.ofAddress(0L),
-                    MemorySegment.ofAddress(0L),
-                    MemorySegment.ofAddress(0L)
+                    segmentSupplier.get(),
+                    segmentSupplier.get(),
+                    segmentSupplier.get(),
+                    segmentSupplier.get()
             );
-            /*var p = MemorySegment.ofAddress(0L);
-            MH_NOOP_PARAMS4.invokeExact(p, p, p, p);*/
         } catch (Throwable t) {
             throw new AssertionError(t);
         }
@@ -168,40 +214,12 @@ public class FFMEscapeAnalysisTest {
     public void noop_params5() {
         try {
             MH_NOOP_PARAMS5.invokeExact(
-                    MemorySegment.ofAddress(0L),
-                    MemorySegment.ofAddress(0L),
-                    MemorySegment.ofAddress(0L),
-                    MemorySegment.ofAddress(0L),
-                    MemorySegment.ofAddress(0L)
+                    segmentSupplier.get(),
+                    segmentSupplier.get(),
+                    segmentSupplier.get(),
+                    segmentSupplier.get(),
+                    segmentSupplier.get()
             );
-            /*var p = MemorySegment.ofAddress(0L);
-            MH_NOOP_PARAMS5.invokeExact(p, p, p, p, p);*/
-        } catch (Throwable t) {
-            throw new AssertionError(t);
-        }
-    }
-
-    @Benchmark
-    public void noop_params5_confined() {
-        try {
-            MH_NOOP_PARAMS5.invokeExact(
-                    cs1, cs2, cs3, cs4, cs5
-            );
-            /*var p = MemorySegment.ofAddress(0L);
-            MH_NOOP_PARAMS5.invokeExact(p, p, p, p, p);*/
-        } catch (Throwable t) {
-            throw new AssertionError(t);
-        }
-    }
-
-    @Benchmark
-    public void noop_params5_shared() {
-        try {
-            MH_NOOP_PARAMS5.invokeExact(
-                    ss1, ss2, ss3, ss4, ss5
-            );
-            /*var p = MemorySegment.ofAddress(0L);
-            MH_NOOP_PARAMS5.invokeExact(p, p, p, p, p);*/
         } catch (Throwable t) {
             throw new AssertionError(t);
         }
@@ -211,47 +229,17 @@ public class FFMEscapeAnalysisTest {
     public void noop_params10() {
         try {
             MH_NOOP_PARAMS10.invokeExact(
-                    MemorySegment.ofAddress(0L),
-                    MemorySegment.ofAddress(0L),
-                    MemorySegment.ofAddress(0L),
-                    MemorySegment.ofAddress(0L),
-                    MemorySegment.ofAddress(0L),
-                    MemorySegment.ofAddress(0L),
-                    MemorySegment.ofAddress(0L),
-                    MemorySegment.ofAddress(0L),
-                    MemorySegment.ofAddress(0L),
-                    MemorySegment.ofAddress(0L)
+                    segmentSupplier.get(),
+                    segmentSupplier.get(),
+                    segmentSupplier.get(),
+                    segmentSupplier.get(),
+                    segmentSupplier.get(),
+                    segmentSupplier.get(),
+                    segmentSupplier.get(),
+                    segmentSupplier.get(),
+                    segmentSupplier.get(),
+                    segmentSupplier.get()
             );
-            /*var p = MemorySegment.ofAddress(0L);
-            MH_NOOP_PARAMS5.invokeExact(p, p, p, p, p);*/
-        } catch (Throwable t) {
-            throw new AssertionError(t);
-        }
-    }
-
-    @Benchmark
-    public void noop_params10_confined() {
-        try {
-            MH_NOOP_PARAMS10.invokeExact(
-                    cs1, cs2, cs3, cs4, cs5,
-                    cs1, cs2, cs3, cs4, cs5
-            );
-            /*var p = MemorySegment.ofAddress(0L);
-            MH_NOOP_PARAMS5.invokeExact(p, p, p, p, p);*/
-        } catch (Throwable t) {
-            throw new AssertionError(t);
-        }
-    }
-
-    @Benchmark
-    public void noop_params10_shared() {
-        try {
-            MH_NOOP_PARAMS10.invokeExact(
-                    ss1, ss2, ss3, ss4, ss5,
-                    ss1, ss2, ss3, ss4, ss5
-            );
-            /*var p = MemorySegment.ofAddress(0L);
-            MH_NOOP_PARAMS5.invokeExact(p, p, p, p, p);*/
         } catch (Throwable t) {
             throw new AssertionError(t);
         }
