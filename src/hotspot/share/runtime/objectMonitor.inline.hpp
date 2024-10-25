@@ -107,7 +107,7 @@ inline bool ObjectMonitor::has_owner() const {
   return owner != NO_OWNER && owner != DEFLATER_MARKER;
 }
 
-// Returns null if DEFLATER_MARKER is observed.
+// Returns NO_OWNER if DEFLATER_MARKER is observed.
 inline int64_t ObjectMonitor::owner() const {
   int64_t owner = owner_raw();
   return owner != DEFLATER_MARKER ? owner : NO_OWNER;
@@ -126,8 +126,6 @@ inline void ObjectMonitor::set_stack_locker(BasicLock* locker) {
 }
 
 // Returns true if owner field == DEFLATER_MARKER and false otherwise.
-// This accessor is called when we really need to know if the owner
-// field == DEFLATER_MARKER and any non-null value won't do the trick.
 inline bool ObjectMonitor::owner_is_DEFLATER_MARKER() const {
   return owner_raw() == DEFLATER_MARKER;
 }

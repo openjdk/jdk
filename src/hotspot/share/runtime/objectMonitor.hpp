@@ -305,6 +305,10 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   // Same as above but uses tid of current as new_value.
   int64_t   try_set_owner_from(int64_t old_value, JavaThread* current);
 
+  // Methods to check and set _succ. The successor is the thread selected
+  // from _cxq/_EntryList by the current owner when releasing the monitor,
+  // to run again and re-try acquiring the monitor. It is used to avoid
+  // unnecessary wake-ups if there is already a successor set.
   bool      has_successor();
   bool      has_successor(JavaThread* thread);
   void      set_successor(JavaThread* thread);

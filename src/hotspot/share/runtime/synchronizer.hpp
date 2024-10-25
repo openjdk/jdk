@@ -169,7 +169,7 @@ public:
   static void owned_monitors_iterate_filtered(MonitorClosure* closure, OwnerFilter filter);
 
   // Iterate ObjectMonitors where the owner is thread; this does NOT include
-  // ObjectMonitors where owner is set to a stack lock address in thread.
+  // ObjectMonitors where the owner is anonymous.
   static void owned_monitors_iterate(MonitorClosure* m, JavaThread* thread);
 
   // Iterate ObjectMonitors where the owner is vthread.

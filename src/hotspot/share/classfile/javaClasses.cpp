@@ -2079,6 +2079,10 @@ void java_lang_VirtualThread::set_next(oop vthread, oop next_vthread) {
   vthread->obj_field_put(_next_offset, next_vthread);
 }
 
+// Add vthread to the waiting list if it's not already in it. Multiple threads
+// could be trying to add vthread to the list at the same time, so we control
+// access with a cmpxchg on onWaitingList. The winner adds vthread to the list.
+// Method returns true if we added vthread to the list, false otherwise.
 bool java_lang_VirtualThread::set_onWaitingList(oop vthread, OopHandle& list_head) {
   jboolean* addr = vthread->field_addr<jboolean>(_onWaitingList_offset);
   jboolean vthread_on_list = Atomic::load(addr);

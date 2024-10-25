@@ -1137,8 +1137,12 @@ bool ObjectMonitor::VThreadMonitorEnter(JavaThread* current, ObjectWaiter* waite
   return false;
 }
 
+// Called from thaw code to resume the monitor operation that caused the vthread
+// to be unmounted. Method returns true if the monitor is successfully acquired,
+// which marks the end of the monitor operation, otherwise it returns false.
 bool ObjectMonitor::resume_operation(JavaThread* current, ObjectWaiter* node, ContinuationWrapper& cont) {
   assert(java_lang_VirtualThread::state(current->vthread()) == java_lang_VirtualThread::RUNNING, "wrong state for vthread");
+  assert(!has_owner(current), "");
 
   if (node->is_wait() && !node->at_reenter()) {
     bool acquired_monitor = VThreadWaitReenter(current, node, cont);
@@ -1935,6 +1939,7 @@ void ObjectMonitor::INotify(JavaThread* current) {
     // is the only thread that grabs _WaitSetLock.  There's almost no contention
     // on _WaitSetLock so it's not profitable to reduce the length of the
     // critical section.
+
     if (!iterator->is_vthread()) {
       iterator->wait_reenter_begin(this);
     }
@@ -2051,7 +2056,6 @@ bool ObjectMonitor::VThreadWaitReenter(JavaThread* current, ObjectWaiter* node, 
 
   // Mark that we are at reenter so that we don't call this method again.
   node->_at_reenter = true;
-  assert(!has_owner(current), "invariant");
 
   if (!was_notified) {
     bool acquired = VThreadMonitorEnter(current, node);
