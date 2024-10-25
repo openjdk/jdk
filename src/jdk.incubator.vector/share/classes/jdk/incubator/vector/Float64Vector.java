@@ -493,6 +493,13 @@ final class Float64Vector extends FloatVector {
                                      Float64Mask.class, (Float64Mask) m);  // specialize
     }
 
+    @Override
+    @ForceInline
+    public Float64Vector selectFrom(Vector<Float> v1,
+                                   Vector<Float> v2) {
+        return (Float64Vector)
+            super.selectFromTemplate((Float64Vector) v1, (Float64Vector) v2);  // specialize
+    }
 
     @ForceInline
     @Override

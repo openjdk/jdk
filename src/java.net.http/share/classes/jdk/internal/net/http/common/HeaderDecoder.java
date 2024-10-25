@@ -39,7 +39,11 @@ public class HeaderDecoder extends ValidatingHeadersConsumer {
         String n = name.toString();
         String v = value.toString();
         super.onDecoded(n, v);
-        headersBuilder.addHeader(n, v);
+        addHeader(n, v);
+    }
+
+    protected void addHeader(String name, String value) {
+        headersBuilder.addHeader(name, value);
     }
 
     public HttpHeaders headers() {

@@ -187,7 +187,6 @@ public class HBShaper {
         dispose_face_handle = tmp3;
 
         FunctionDescriptor shapeDesc = FunctionDescriptor.ofVoid(
-            //JAVA_INT,    // return type
             JAVA_FLOAT,  // ptSize
             ADDRESS,     // matrix
             ADDRESS,     // face
@@ -470,7 +469,7 @@ public class HBShaper {
                 MemorySegment matrix = arena.allocateFrom(JAVA_FLOAT, mat);
                 MemorySegment chars = arena.allocateFrom(JAVA_CHAR, text);
 
-                /*int ret =*/ jdk_hb_shape_handle.invokeExact(
+                jdk_hb_shape_handle.invokeExact(
                      ptSize, matrix, hbface, chars, text.length,
                      script, offset, limit,
                      baseIndex, startX, startY, flags, slot,

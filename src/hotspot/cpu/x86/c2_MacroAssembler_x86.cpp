@@ -837,8 +837,9 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register reg_rax, 
 #ifdef ASSERT
   // Check that unlocked label is reached with ZF set.
   Label zf_correct;
+  Label zf_bad_zero;
   jcc(Assembler::zero, zf_correct);
-  stop("Fast Unlock ZF != 1");
+  jmp(zf_bad_zero);
 #endif
 
   bind(slow_path);
@@ -847,8 +848,10 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register reg_rax, 
   }
 #ifdef ASSERT
   // Check that stub->continuation() label is reached with ZF not set.
-  jccb(Assembler::notZero, zf_correct);
+  jcc(Assembler::notZero, zf_correct);
   stop("Fast Unlock ZF != 0");
+  bind(zf_bad_zero);
+  stop("Fast Unlock ZF != 1");
   bind(zf_correct);
 #endif
   // C2 uses the value of ZF to determine the continuation.
@@ -6473,5 +6476,32 @@ void C2_MacroAssembler::vector_rearrange_int_float(BasicType bt, XMMRegister dst
   } else {
     assert(bt == T_FLOAT, "");
     vpermps(dst, shuffle, src, vlen_enc);
+  }
+}
+
+void C2_MacroAssembler::select_from_two_vectors_evex(BasicType elem_bt, XMMRegister dst, XMMRegister src1,
+                                                     XMMRegister src2, int vlen_enc) {
+  switch(elem_bt) {
+    case T_BYTE:
+      evpermi2b(dst, src1, src2, vlen_enc);
+      break;
+    case T_SHORT:
+      evpermi2w(dst, src1, src2, vlen_enc);
+      break;
+    case T_INT:
+      evpermi2d(dst, src1, src2, vlen_enc);
+      break;
+    case T_LONG:
+      evpermi2q(dst, src1, src2, vlen_enc);
+      break;
+    case T_FLOAT:
+      evpermi2ps(dst, src1, src2, vlen_enc);
+      break;
+    case T_DOUBLE:
+      evpermi2pd(dst, src1, src2, vlen_enc);
+      break;
+    default:
+      fatal("Unsupported type %s", type2name(elem_bt));
+      break;
   }
 }
