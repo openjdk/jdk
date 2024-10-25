@@ -77,6 +77,7 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
         immutable = cmd.immutable;
         prerequisiteActions = new Actions(cmd.prerequisiteActions);
         verifyActions = new Actions(cmd.verifyActions);
+        appLayoutAsserts = cmd.appLayoutAsserts;
         executeInDirectory = cmd.executeInDirectory;
     }
 
@@ -829,22 +830,39 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
         return this;
     }
 
-    JPackageCommand assertAppLayout() {
-        assertAppImageFile();
-        assertPackageFile();
+    public static enum AppLayoutAssert {
+        AppImageFile(JPackageCommand::assertAppImageFile),
+        PackageFile(JPackageCommand::assertPackageFile),
+        MainLauncher(cmd -> {
+            TKit.assertExecutableFileExists(cmd.appLauncherPath());
+        }),
+        MainLauncherCfgFile(cmd -> {
+            TKit.assertFileExists(cmd.appLauncherCfgPath(null));
+        }),
+        RuntimeDirectory(cmd -> {
+            TKit.assertDirectoryExists(cmd.appRuntimeDirectory());
+                if (TKit.isOSX() && !cmd.isRuntime()) {
+                    TKit.assertFileExists(cmd.appRuntimeDirectory().resolve(
+                            "Contents/MacOS/libjli.dylib"));
+                }
+        });
 
-        TKit.assertDirectoryExists(appRuntimeDirectory());
-
-        if (!isRuntime()) {
-            TKit.assertExecutableFileExists(appLauncherPath());
-            TKit.assertFileExists(appLauncherCfgPath(null));
-
-            if (TKit.isOSX()) {
-                TKit.assertFileExists(appRuntimeDirectory().resolve(
-                        "Contents/MacOS/libjli.dylib"));
-            }
+        AppLayoutAssert(Consumer<JPackageCommand> action) {
+            this.action = action;
         }
 
+        private final Consumer<JPackageCommand> action;
+    }
+
+    public JPackageCommand setAppLayoutAsserts(AppLayoutAssert ... asserts) {
+        this.appLayoutAsserts = Set.of(asserts);
+        return this;
+    }
+
+    JPackageCommand assertAppLayout() {
+        for (var appLayoutAssert : appLayoutAsserts.stream().sorted().toList()) {
+            appLayoutAssert.action.accept(this);
+        }
         return this;
     }
 
@@ -1125,6 +1143,7 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
     private final Actions prerequisiteActions;
     private final Actions verifyActions;
     private Path executeInDirectory;
+    private Set<AppLayoutAssert> appLayoutAsserts = Set.of(AppLayoutAssert.values());
     private static boolean defaultWithToolProvider;
 
     private final static Map<String, PackageType> PACKAGE_TYPES = Functional.identity(

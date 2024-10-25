@@ -148,6 +148,13 @@ public final class InOutPathTest {
             } else {
                 cmd.setFakeRuntime();
             }
+
+            if (!isAppImageValid(cmd)) {
+                cmd.setAppLayoutAsserts(
+                        JPackageCommand.AppLayoutAssert.MainLauncher,
+                        JPackageCommand.AppLayoutAssert.MainLauncherCfgFile,
+                        JPackageCommand.AppLayoutAssert.RuntimeDirectory);
+            }
         };
 
         if (packageTypes.contains(PackageType.IMAGE)) {
@@ -156,9 +163,6 @@ public final class InOutPathTest {
             cmd.executeAndAssertHelloAppImageCreated();
             if (isAppImageValid(cmd)) {
                 verifyAppImage(cmd);
-            } else {
-                cmd.execute();
-                HelloApp.executeLauncherAndVerifyOutput(cmd);
             }
         } else {
             new PackageTest()
