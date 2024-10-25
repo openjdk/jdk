@@ -1458,7 +1458,7 @@ Node* GraphKit::cast_not_null(Node* obj, bool do_replace_in_map) {
 // In that case that data path will die and we need the control path
 // to become dead as well to keep the graph consistent. So we have to
 // add a check for null for which one branch can't be taken. It uses
-// an Opaque4 node that will cause the check to be removed after loop
+// an OpaqueNotNull node that will cause the check to be removed after loop
 // opts so the test goes away and the compiled code doesn't execute a
 // useless check.
 Node* GraphKit::must_be_not_null(Node* value, bool do_replace_in_map) {
@@ -1466,9 +1466,9 @@ Node* GraphKit::must_be_not_null(Node* value, bool do_replace_in_map) {
     return value;
   }
   Node* chk = _gvn.transform(new CmpPNode(value, null()));
-  Node *tst = _gvn.transform(new BoolNode(chk, BoolTest::ne));
-  Node* opaq = _gvn.transform(new Opaque4Node(C, tst, intcon(1)));
-  IfNode *iff = new IfNode(control(), opaq, PROB_MAX, COUNT_UNKNOWN);
+  Node* tst = _gvn.transform(new BoolNode(chk, BoolTest::ne));
+  Node* opaq = _gvn.transform(new OpaqueNotNullNode(C, tst));
+  IfNode* iff = new IfNode(control(), opaq, PROB_MAX, COUNT_UNKNOWN);
   _gvn.set_type(iff, iff->Value(&_gvn));
   if (!tst->is_Con()) {
     record_for_igvn(iff);
@@ -1930,7 +1930,7 @@ static void add_mergemem_users_to_worklist(Unique_Node_List& wl, Node* mem) {
 }
 
 // Replace the call with the current state of the kit.
-void GraphKit::replace_call(CallNode* call, Node* result, bool do_replaced_nodes) {
+void GraphKit::replace_call(CallNode* call, Node* result, bool do_replaced_nodes, bool do_asserts) {
   JVMState* ejvms = nullptr;
   if (has_exceptions()) {
     ejvms = transfer_exceptions_into_jvms();
@@ -1944,7 +1944,7 @@ void GraphKit::replace_call(CallNode* call, Node* result, bool do_replaced_nodes
 
   // Find all the needed outputs of this call
   CallProjections callprojs;
-  call->extract_projections(&callprojs, true);
+  call->extract_projections(&callprojs, true, do_asserts);
 
   Unique_Node_List wl;
   Node* init_mem = call->in(TypeFunc::Memory);

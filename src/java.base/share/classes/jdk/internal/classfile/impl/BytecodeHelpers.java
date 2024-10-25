@@ -25,6 +25,10 @@
  */
 package jdk.internal.classfile.impl;
 
+import java.lang.classfile.BootstrapMethodEntry;
+import java.lang.classfile.Opcode;
+import java.lang.classfile.TypeKind;
+import java.lang.classfile.constantpool.*;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDesc;
 import java.lang.constant.ConstantDescs;
@@ -35,18 +39,7 @@ import java.lang.invoke.MethodHandleInfo;
 import java.util.ArrayList;
 import java.util.List;
 
-import java.lang.classfile.BootstrapMethodEntry;
-import java.lang.classfile.constantpool.ClassEntry;
-import java.lang.classfile.constantpool.ConstantDynamicEntry;
-import java.lang.classfile.constantpool.ConstantPoolBuilder;
-import java.lang.classfile.Opcode;
-import java.lang.classfile.TypeKind;
-import java.lang.classfile.constantpool.LoadableConstantEntry;
-import java.lang.classfile.constantpool.MemberRefEntry;
-import java.lang.classfile.constantpool.MethodHandleEntry;
-import java.lang.classfile.constantpool.NameAndTypeEntry;
-import java.util.Objects;
-
+import static java.util.Objects.requireNonNull;
 import static jdk.internal.classfile.impl.RawBytecodeHelper.*;
 
 /**
@@ -463,7 +456,7 @@ public class BytecodeHelpers {
         if (opcode == Opcode.RET && (slot & ~0xFF) == 0 ||
                 opcode == Opcode.RET_W && (slot & ~0xFFFF) == 0)
             return;
-        Objects.requireNonNull(opcode);
+        requireNonNull(opcode);
         throw slotOutOfBounds(opcode, slot);
     }
 
@@ -551,7 +544,7 @@ public class BytecodeHelpers {
         } if (constantValue instanceof DynamicConstantDesc<?> value) {
             return handleConstantDescToHandleInfo(constantPool, value);
         }
-        throw new UnsupportedOperationException("not yet: " + constantValue);
+        throw new UnsupportedOperationException("not yet: " + requireNonNull(constantValue));
     }
 
     public static ConstantDesc intrinsicConstantValue(Opcode opcode) {
