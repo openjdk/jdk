@@ -537,7 +537,8 @@ class SuperWord : public ResourceObj {
   }
 
   bool is_trace_align_vector() const {
-    return _vloop.vtrace().is_trace(TraceAutoVectorizationTag::ALIGN_VECTOR) ||
+    return TraceSuperWord ||
+           _vloop.vtrace().is_trace(TraceAutoVectorizationTag::ALIGN_VECTOR) ||
            _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_VERBOSE);
   }
 #endif
