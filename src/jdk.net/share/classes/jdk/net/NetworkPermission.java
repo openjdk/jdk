@@ -33,7 +33,7 @@ import java.security.BasicPermission;
  * name, but no actions list. Callers either possess the permission or not.
  *
  * @apiNote
- * This permission cannot be used for controlling access to resources anymore
+ * This permission cannot be used for controlling access to resources
  * as the Security Manager is no longer supported.
  *
  * @see jdk.net.ExtendedSocketOptions

@@ -33,7 +33,7 @@ package java.security;
  * The target name is the name of a security configuration parameter.
  *
  * @apiNote
- * This permission cannot be used for controlling access to resources anymore
+ * This permission cannot be used for controlling access to resources
  * as the Security Manager is no longer supported.
  *
  * @see java.security.BasicPermission

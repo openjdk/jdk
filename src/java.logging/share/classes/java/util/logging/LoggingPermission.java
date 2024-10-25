@@ -33,7 +33,7 @@ import java.security.*;
  * LoggingPermission named "control".
  *
  * @apiNote
- * This permission cannot be used for controlling access to resources anymore
+ * This permission cannot be used for controlling access to resources
  * as the Security Manager is no longer supported.
  *
  *
