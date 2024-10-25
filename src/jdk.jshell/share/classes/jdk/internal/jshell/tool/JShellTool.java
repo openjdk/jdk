@@ -4112,6 +4112,8 @@ public class JShellTool implements MessageHandler {
         public String readLine(String prompt) {
             try {
                 return input.readUserLine(prompt);
+            } catch (UserInterruptException ex) {
+                return null;
             } catch (IOException ex) {
                 throw new IOError(ex);
             }
@@ -4121,6 +4123,8 @@ public class JShellTool implements MessageHandler {
         public char[] readPassword(String prompt) {
             try {
                 return input.readPassword(prompt);
+            } catch (UserInterruptException ex) {
+                return null;
             } catch (IOException ex) {
                 throw new IOError(ex);
             }

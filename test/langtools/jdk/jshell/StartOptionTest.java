@@ -129,6 +129,10 @@ public class StartOptionTest {
     protected void startCheckUserOutput(Consumer<String> checkUserOutput,
             String... args) {
         runShell(args);
+        System.err.println("userout: " + userout);
+        System.err.println("usererr: " + usererr);
+        System.err.println("cmdout: " + cmdout);
+        System.err.println("cmderr: " + cmderr);
         check(userout, checkUserOutput, "userout");
         check(usererr, null, "usererr");
     }
@@ -389,6 +393,26 @@ public class StartOptionTest {
                              fn2);
         startCheckUserOutput(s -> assertEquals(s, "prefix\ntest\nsuffix\n"),
                              "--enable-preview", fn2);
+    }
+    public void testInput() {
+        //readLine(String):
+        String readLinePrompt = writeToFile(
+                """
+                var v = System.console().readLine("prompt: ");
+                System.out.println(v);
+                /exit
+                """);
+        startCheckUserOutput(s -> assertEquals(s, "prompt: null\n"),
+                             readLinePrompt);
+        //readPassword(String):
+        String readPasswordPrompt = writeToFile(
+                """
+                var v = System.console().readPassword("prompt: ");
+                System.out.println(java.util.Arrays.toString(v));
+                /exit
+                """);
+        startCheckUserOutput(s -> assertEquals(s, "prompt: null\n"),
+                             readPasswordPrompt);
     }
 
     @AfterMethod
