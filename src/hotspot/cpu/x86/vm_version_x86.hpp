@@ -285,7 +285,8 @@ class VM_Version : public Abstract_VM_Version {
   union SefCpuid7SubLeaf1Eax {
     uint32_t value;
     struct {
-      uint32_t             : 23,
+      uint32_t    sha512   : 1,
+                           : 22,
                   avx_ifma : 1,
                            : 8;
     } bits;
@@ -418,7 +419,8 @@ protected:
     decl(AVX512_IFMA,       "avx512_ifma",       58) /* Integer Vector FMA instructions*/ \
     decl(AVX_IFMA,          "avx_ifma",          59) /* 256-bit VEX-coded variant of AVX512-IFMA*/ \
     decl(APX_F,             "apx_f",             60) /* Intel Advanced Performance Extensions*/ \
-    decl(AVX512_FP16,       "avx512_fp16",       61) /* AVX512 FP16 ISA support*/
+    decl(SHA512,            "sha512",            61) /* SHA512 instructions*/ \
+    decl(AVX512_FP16,       "avx512_fp16",       62) /* AVX512 FP16 ISA support*/
 
 #define DECLARE_CPU_FEATURE_FLAG(id, name, bit) CPU_##id = (1ULL << bit),
     CPU_FEATURE_FLAGS(DECLARE_CPU_FEATURE_FLAG)
@@ -641,9 +643,10 @@ public:
   LP64_ONLY(static void clear_apx_test_state());
 
   static void clean_cpuFeatures()   { _features = 0; }
-  static void set_avx_cpuFeatures() { _features = (CPU_SSE | CPU_SSE2 | CPU_AVX | CPU_VZEROUPPER ); }
-  static void set_evex_cpuFeatures() { _features = (CPU_AVX512F | CPU_SSE | CPU_SSE2 | CPU_VZEROUPPER ); }
+  static void set_avx_cpuFeatures() { _features |= (CPU_SSE | CPU_SSE2 | CPU_AVX | CPU_VZEROUPPER ); }
+  static void set_evex_cpuFeatures() { _features |= (CPU_AVX512F | CPU_SSE | CPU_SSE2 | CPU_VZEROUPPER ); }
   static void set_apx_cpuFeatures() { _features |= CPU_APX_F; }
+  static void set_bmi_cpuFeatures() { _features |= (CPU_BMI1 | CPU_BMI2 | CPU_LZCNT); }
 
   // Initialization
   static void initialize();
@@ -761,6 +764,7 @@ public:
   static bool supports_ospke()        { return (_features & CPU_OSPKE) != 0; }
   static bool supports_cet_ss()       { return (_features & CPU_CET_SS) != 0; }
   static bool supports_cet_ibt()      { return (_features & CPU_CET_IBT) != 0; }
+  static bool supports_sha512()       { return (_features & CPU_SHA512) != 0; }
 
   //
   // Feature identification not affected by VM flags

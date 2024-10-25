@@ -112,7 +112,8 @@ public class IREncodingPrinter {
         "asimdhp",
         // Riscv64
         "rvv",
-        "zvbb"
+        "zvbb",
+        "zvfh"
     ));
 
     public IREncodingPrinter() {

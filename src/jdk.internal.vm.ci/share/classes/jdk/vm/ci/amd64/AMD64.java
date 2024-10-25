@@ -256,6 +256,7 @@ public class AMD64 extends Architecture {
         AVX512_IFMA,
         AVX_IFMA,
         APX_F,
+        SHA512,
         AVX512_FP16,
     }
 

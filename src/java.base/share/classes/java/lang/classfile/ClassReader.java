@@ -29,10 +29,10 @@ import java.lang.classfile.constantpool.ConstantPool;
 import java.lang.classfile.constantpool.ConstantPoolException;
 import java.lang.classfile.constantpool.PoolEntry;
 import java.lang.classfile.constantpool.Utf8Entry;
-import jdk.internal.classfile.impl.ClassReaderImpl;
-
 import java.util.Optional;
 import java.util.function.Function;
+
+import jdk.internal.classfile.impl.ClassReaderImpl;
 import jdk.internal.javac.PreviewFeature;
 
 /**
