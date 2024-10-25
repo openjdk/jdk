@@ -98,9 +98,9 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * the United States using the Latin alphabet and numerics for use in POSIX
  * environments.
  * {@code Locale} implements IETF BCP 47 and any deviations should be observed
- * by the comments prefixed by <em>"Note:"</em>. The various ISO (639, 3166, 15924)
- * standards included in the composition of {@code Locale} are defined in
- * <a href="https://tools.ietf.org/html/rfc5646">RFC 5646</a>.
+ * by the comments prefixed by <em>"Note:"</em>. <a href="https://tools.ietf.org/html/rfc5646">RFC 5646</a>
+ * combines subtags from various ISO (639, 3166, 15924) standards which are also
+ * included in the composition of {@code Locale}.
  * Additionally, you can find the full list of valid codes for each field in the
  * <a href="https://www.iana.org/assignments/language-subtag-registry/language-subtag-registry">
  * IANA Language Subtag Registry</a> (e.g. search for "Type: region").
