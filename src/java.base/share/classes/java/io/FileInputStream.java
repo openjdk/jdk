@@ -82,8 +82,8 @@ public class FileInputStream extends InputStream
 
     private volatile boolean closed;
 
-    // This field indicates whether the position0() or skip0() may be
-    // invoked without encountering an illegal seek exception.
+    // This field indicates whether the file is a regular file as some
+    // operations need the current position which requires seeking
     private @Stable Boolean isRegularFile;
 
     /**
@@ -618,8 +618,7 @@ public class FileInputStream extends InputStream
     }
 
     /**
-     * Whether seeking is supported. Seeking is used in the implementations of
-     * position0() and skip0().
+     * Determine whether the file is a regular file.
      */
     private boolean isRegularFile() {
         Boolean isRegularFile = this.isRegularFile;
