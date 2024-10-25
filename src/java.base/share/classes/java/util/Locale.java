@@ -342,7 +342,7 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * {@snippet lang=java :
  *     // The following are all equivalent
  *     Locale.US;
- *     Locale.of("en", "US")
+ *     Locale.of("en", "US");
  *     Locale.forLanguageTag("en-US");
  *     new Locale.Builder().setLanguage("en").setRegion("US").build();
  * }
