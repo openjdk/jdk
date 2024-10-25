@@ -363,8 +363,8 @@ Java_sun_nio_fs_UnixNativeDispatcher_init(JNIEnv* env, jclass this)
     /* system calls that might not be available at run time */
 
 #if defined(_ALLBSD_SOURCE)
-    my_openat_func = (openat_func*)dlsym(RTLD_DEFAULT, "openat");
-    my_fstatat_func = (fstatat_func*)dlsym(RTLD_DEFAULT, "fstatat");
+    my_openat_func = (openat_func*) openat;
+    my_fstatat_func = (fstatat_func*) fstatat;
 #else
     // Make sure we link to the 64-bit version of the functions
     my_openat_func = (openat_func*) dlsym(RTLD_DEFAULT, "openat64");
@@ -387,6 +387,8 @@ Java_sun_nio_fs_UnixNativeDispatcher_init(JNIEnv* env, jclass this)
 #if defined(_AIX)
     // Make sure we link to the 64-bit version of the function
     my_fdopendir_func = (fdopendir_func*) dlsym(RTLD_DEFAULT, "fdopendir64");
+#elif defined(_ALLBSD_SOURCE)
+    my_fdopendir_func = (fdopendir_func*) fdopendir;
 #else
     my_fdopendir_func = (fdopendir_func*) dlsym(RTLD_DEFAULT, "fdopendir");
 #endif
