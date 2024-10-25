@@ -216,25 +216,44 @@ address StubGenerator::generate_sha3_implCompress(bool multiBlock, const char *n
   __ evpxorq(xmm3, k5, xmm3, Address(buf, 120), true, Assembler::AVX_512bit);
   __ evpxorq(xmm4, k1, xmm4, Address(buf, 160), true, Assembler::AVX_512bit);
 
+  // The 24 rounds of the keccak transformation.
+  // The implementation closely follows the Java version, with the state
+  // array "rows" in the lowest 5 64-bit slots of zmm0 - zmm4, i.e.
+  // each row of the SHA3 specification is located in one zmm register.
   __ BIND(rounds24_loop);
-  __ subl( roundsLeft, 1);
+  __ subl(roundsLeft, 1);
 
   __ evmovdquw(xmm5, xmm0, Assembler::AVX_512bit);
+  // vpternlogq(x, 150, y, z) does x = x ^ y ^ z
   __ vpternlogq(xmm5, 150, xmm1, xmm2, Assembler::AVX_512bit);
   __ vpternlogq(xmm5, 150, xmm3, xmm4, Assembler::AVX_512bit);
+  // Now the "c row", i.e. c0-c4 are in zmm5.
+  // Rotate each element of the c row by one bit to zmm6, call the
+  // rotated version c'.
   __ evprolq(xmm6, xmm5, 1, Assembler::AVX_512bit);
+  // Rotate elementwise the c row so that c4 becomes c0,
+  // c0 becomes c1, etc.
   __ evpermt2q(xmm5, xmm30, xmm5, Assembler::AVX_512bit);
+  // rotate elementwise the c' row so that c'0 becomes c'4,
+  // c'1 becomes c'0, etc.
   __ evpermt2q(xmm6, xmm31, xmm6, Assembler::AVX_512bit);
   __ vpternlogq(xmm0, 150, xmm5, xmm6, Assembler::AVX_512bit);
   __ vpternlogq(xmm1, 150, xmm5, xmm6, Assembler::AVX_512bit);
   __ vpternlogq(xmm2, 150, xmm5, xmm6, Assembler::AVX_512bit);
   __ vpternlogq(xmm3, 150, xmm5, xmm6, Assembler::AVX_512bit);
   __ vpternlogq(xmm4, 150, xmm5, xmm6, Assembler::AVX_512bit);
+  // Now the theta mapping has been finished.
+
+  // Do the cyclical permutation of the 24 moving state elements
+  // and the required rotations within each element (the combined
+  // rho and sigma steps).
   __ evpermt2q(xmm4, xmm17, xmm3, Assembler::AVX_512bit);
   __ evpermt2q(xmm3, xmm18, xmm2, Assembler::AVX_512bit);
   __ evpermt2q(xmm2, xmm17, xmm1, Assembler::AVX_512bit);
   __ evpermt2q(xmm1, xmm19, xmm0, Assembler::AVX_512bit);
   __ evpermt2q(xmm4, xmm20, xmm2, Assembler::AVX_512bit);
+  // The 24 moving elements are now in zmm1, zmm3 and zmm4,
+  // do the rotations now.
   __ evprolvq(xmm1, xmm1, xmm27, Assembler::AVX_512bit);
   __ evprolvq(xmm3, xmm3, xmm28, Assembler::AVX_512bit);
   __ evprolvq(xmm4, xmm4, xmm29, Assembler::AVX_512bit);
@@ -249,7 +268,10 @@ address StubGenerator::generate_sha3_implCompress(bool multiBlock, const char *n
   __ evpermt2q(xmm2, xmm24, xmm4, Assembler::AVX_512bit);
   __ evpermt2q(xmm3, xmm25, xmm4, Assembler::AVX_512bit);
   __ evpermt2q(xmm4, xmm26, xmm5, Assembler::AVX_512bit);
+  // The combined rho and sigma steps are done.
 
+  // Do the chi step (the same operation on all 5 rows).
+  // vpternlogq(x, 180, y, z) does x = x ^ (y & ~z).
   __ evpermt2q(xmm5, xmm31, xmm0, Assembler::AVX_512bit);
   __ evpermt2q(xmm6, xmm31, xmm5, Assembler::AVX_512bit);
   __ vpternlogq(xmm0, 180, xmm6, xmm5, Assembler::AVX_512bit);
@@ -258,6 +280,7 @@ address StubGenerator::generate_sha3_implCompress(bool multiBlock, const char *n
   __ evpermt2q(xmm6, xmm31, xmm5, Assembler::AVX_512bit);
   __ vpternlogq(xmm1, 180, xmm6, xmm5, Assembler::AVX_512bit);
 
+  // xor the round constant into a0 (the lowest 64 bits of zmm0
   __ evpxorq(xmm0, k1, xmm0, Address(constant2use, 0), true, Assembler::AVX_512bit);
   __ addptr(constant2use, 8);
 
@@ -268,6 +291,7 @@ address StubGenerator::generate_sha3_implCompress(bool multiBlock, const char *n
   __ evpermt2q(xmm5, xmm31, xmm3, Assembler::AVX_512bit);
   __ evpermt2q(xmm6, xmm31, xmm5, Assembler::AVX_512bit);
   __ vpternlogq(xmm3, 180, xmm6, xmm5, Assembler::AVX_512bit);
+
   __ evpermt2q(xmm5, xmm31, xmm4, Assembler::AVX_512bit);
   __ evpermt2q(xmm6, xmm31, xmm5, Assembler::AVX_512bit);
   __ vpternlogq(xmm4, 180, xmm6, xmm5, Assembler::AVX_512bit);
