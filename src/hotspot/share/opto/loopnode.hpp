@@ -955,7 +955,7 @@ private:
   IfTrueNode* create_initialized_assertion_predicate(IfNode* template_assertion_predicate, Node* new_init,
                                                      Node* new_stride, Node* control);
   static void count_opaque_loop_nodes(Node* n, uint& init, uint& stride);
-  static bool assertion_predicate_has_loop_opaque_node(IfNode* iff);
+  DEBUG_ONLY(static bool assertion_predicate_has_loop_opaque_node(IfNode* iff);)
   static void get_assertion_predicates(Node* predicate, Unique_Node_List& list, bool get_opaque = false);
   void update_main_loop_assertion_predicates(Node* ctrl, CountedLoopNode* loop_head, Node* init, int stride_con);
   void copy_assertion_predicates_to_post_loop(LoopNode* main_loop_head, CountedLoopNode* post_loop_head,
@@ -1133,6 +1133,8 @@ private:
     DEBUG_ONLY(C->reset_phase_verify_ideal_loop();)
   }
 #endif
+
+  Node* insert_convert_node_if_needed(BasicType target, Node* input);
 
 public:
   Node* idom_no_update(Node* d) const {

@@ -25,13 +25,14 @@
 package java.lang.classfile;
 
 import java.lang.constant.ClassDesc;
-import jdk.internal.classfile.impl.SignaturesImpl;
-
 import java.util.List;
-import static java.util.Objects.requireNonNull;
 import java.util.Optional;
+
+import jdk.internal.classfile.impl.SignaturesImpl;
 import jdk.internal.classfile.impl.Util;
 import jdk.internal.javac.PreviewFeature;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * Models generic Java type signatures, as defined in JVMS {@jvms 4.7.9.1}.
