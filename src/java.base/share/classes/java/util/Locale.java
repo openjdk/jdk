@@ -325,10 +325,6 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * It is advised against using the deprecated {@code Locale} constructors.
  *
  * <dl>
- *  <dt><b>Default Locale</b></dt>
- *  <dd>The {@code Locale} class provides the default {@code Locale} with
- *  {@link Locale#getDefault()} and {@link Locale#getDefault(Category)}. See the
- *  {@linkplain ##default_locale Default Locale} section for more information.</dd>
  *  <dt><b>Locale Constants</b></dt>
  *  <dd>The {@code Locale} class provides a number of convenient constants
  *  that you can use to obtain {@code Locale} objects for commonly used
@@ -346,7 +342,6 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  *
  * {@snippet lang=java :
  *     // The following are all equivalent
- *     Locale.getDefault(); // (Host environment provides en-US locale)
  *     Locale.US;
  *     Locale.forLanguageTag("en-US");
  *     new Locale.Builder().setLanguage("en").setRegion("US").build();
