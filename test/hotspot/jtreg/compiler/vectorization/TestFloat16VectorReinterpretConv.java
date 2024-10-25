@@ -25,6 +25,7 @@
 * @test
 * @bug 8330021
 * @summary Test auto-vectorization for "dst (ConvHF2F (ReinterpretHF2S src))" sequence
+* @modules jdk.incubator.vector
 * @requires vm.compiler2.enabled
 * @library /test/lib /
 * @run driver compiler.vectorization.TestFloat16VectorReinterpretConv
@@ -33,7 +34,8 @@
 package compiler.vectorization;
 import compiler.lib.ir_framework.*;
 import java.util.Random;
-import static java.lang.Float16.*;
+import static jdk.incubator.vector.Float16.*;
+import static java.lang.Float.*;
 
 public class TestFloat16VectorReinterpretConv {
     private short[] fin;
@@ -42,7 +44,7 @@ public class TestFloat16VectorReinterpretConv {
     private Random rng;
 
     public static void main(String args[]) {
-        TestFramework.runWithFlags("-XX:-TieredCompilation", "-Xbatch");
+        TestFramework.runWithFlags("-XX:-TieredCompilation", "-Xbatch", "--add-modules=jdk.incubator.vector");
     }
 
     public TestFloat16VectorReinterpretConv() {
@@ -50,7 +52,7 @@ public class TestFloat16VectorReinterpretConv {
         flout = new float[LEN];
         rng = new Random(25);
         for (int i = 0; i < LEN; i++) {
-            fin[i] = Float.floatToFloat16(rng.nextFloat());
+            fin[i] = floatToFloat16(rng.nextFloat());
         }
     }
 
@@ -68,14 +70,14 @@ public class TestFloat16VectorReinterpretConv {
         applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
     public void testVect() {
         for (int i = 0; i < LEN; i++) {
-            flout[i] = Float.float16ToFloat(float16ToRawShortBits(Float16.add(shortBitsToFloat16(fin[i]), shortBitsToFloat16(fin[i]))));
+            flout[i] = float16ToFloat(float16ToRawShortBits(add(shortBitsToFloat16(fin[i]), shortBitsToFloat16(fin[i]))));
         }
     }
 
     @Check(test="testVect")
     public void checkResult() {
         for (int i = 0; i < LEN; i++) {
-            float expected = Float.float16ToFloat(fin[i]) + Float.float16ToFloat(fin[i]);
+            float expected = float16ToFloat(fin[i]) + float16ToFloat(fin[i]);
             if (flout[i] != expected) {
                 throw new RuntimeException("Invalid result: flout[" + i + "] = " + flout[i] + " != " + expected);
             }

@@ -294,5 +294,10 @@ class RoundDoubleModeNode: public Node {
   virtual const Type* Value(PhaseGVN* phase) const;
 };
 
+class Float16NodeFactory {
+  public:
+  static bool is_binary_oper(int opc);
+  static Node* make(int opc, Node* c, Node* in1, Node* in2);
+};
 
 #endif // SHARE_OPTO_CONVERTNODE_HPP

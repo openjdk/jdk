@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,18 +23,21 @@
  * questions.
  */
 
-package java.lang;
+package jdk.incubator.vector;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 
-import jdk.internal.math.*;
-import jdk.internal.vm.annotation.IntrinsicCandidate;
+// import jdk.internal.math.*;
+// import jdk.internal.vm.annotation.IntrinsicCandidate;
+import jdk.internal.vm.annotation.ForceInline;
 
 import static java.lang.Float.float16ToFloat;
 import static java.lang.Float.floatToFloat16;
+import jdk.internal.vm.vector.Float16Math;
 
 /**
- * The {@code Float16} is a primitive value class holding 16-bit data
+ * The {@code Float16} is a class holding 16-bit data
  * in IEEE 754 binary16 format.
  *
  * <p>Binary16 Format:<br>
@@ -43,12 +46,15 @@ import static java.lang.Float.floatToFloat16;
  *   Exponent    - 5 bits<br>
  *   Significand - 10 bits (does not include the <i>implicit bit</i> inferred from the exponent, see {@link #PRECISION})<br>
  *
- * <p>This is a <a href="https://openjdk.org/jeps/401">primitive value class</a> and its objects are
- * identity-less non-nullable value objects.
- *
  * <p>Unless otherwise specified, the methods in this class use a
  * <em>rounding policy</em> (JLS {@jls 15.4}) of {@linkplain
  * java.math.RoundingMode#HALF_EVEN round to nearest}.
+ *
+ * <p>This is a <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>
+ * class; programmers should treat instances that are
+ * {@linkplain #equals(Object) equal} as interchangeable and should not
+ * use instances for synchronization, or unpredictable behavior may
+ * occur. For example, in a future release, synchronization may fail.
  *
  * @apiNote
  * The methods in this class generally have analogous methods in
@@ -59,14 +65,12 @@ import static java.lang.Float.floatToFloat16;
  * zeros of methods in this class is wholly analogous to the handling
  * of equivalent cases by methods in {@code Float}, {@code Double},
  * {@code Math}, etc.
- * @author Joseph D. Darcy
- * @author Jatin Bhateja
- * @since 24.00
  */
 
 // Currently Float16 is a value based class but in future will be aligned with
 // Enhanced Primitive Boxes described by JEP-402 (https://openjdk.org/jeps/402)
-@jdk.internal.ValueBased
+// @jdk.internal.MigratedValueClass
+//@jdk.internal.ValueBased
 @SuppressWarnings("serial")
 public final class Float16
     extends Number
@@ -83,7 +87,7 @@ public final class Float16
     *
     * @param  bits a short value.
     */
-    private Float16 (short bits) {
+    private Float16 (short bits ) {
         this.value = bits;
     }
 
@@ -209,7 +213,8 @@ public final class Float16
      */
     public static String toString(Float16 f16) {
         // FIXME -- update for Float16 precision
-        return FloatToDecimal.toString(f16.floatValue());
+        return Float.toString(f16.floatValue());
+        // return FloatToDecimal.toString(f16.floatValue());
     }
 
     /**
@@ -416,10 +421,124 @@ public final class Float16
      * in IEEE 754.
      *
      * @param  v a {@link BigDecimal}
-     * @see java.math.BigDecimal#float16Value()
      */
     public static Float16 valueOf(BigDecimal v) {
-        return v.float16Value();
+        return BigDecimalConversion.float16Value(v);
+    }
+
+    private class BigDecimalConversion {
+        /*
+         * Let l = log_2(10).
+         * Then, L < l < L + ulp(L) / 2, that is, L = roundTiesToEven(l).
+         */
+        private static final double L = 3.321928094887362;
+
+        private static final int P_F16 = PRECISION;  // 11
+        private static final int Q_MIN_F16 = MIN_EXPONENT - (P_F16 - 1);  // -24
+        private static final int Q_MAX_F16 = MAX_EXPONENT - (P_F16 - 1);  // 5
+
+        /**
+         * Powers of 10 which can be represented exactly in {@code
+         * Float16}.
+         */
+        private static final Float16[] FLOAT16_10_POW = {
+            Float16.valueOf(1), Float16.valueOf(10), Float16.valueOf(100),
+            Float16.valueOf(1_000), Float16.valueOf(10_000)
+        };
+
+        public static Float16 float16Value(BigDecimal bd) {
+//             int scale = bd.scale();
+//             BigInteger unscaledValue = bd.unscaledValue();
+
+//              if (unscaledValue.abs().compareTo(BigInteger.valueOf(Long.MAX_VALUE)) <= 0) {
+//                 long intCompact = bd.longValue();
+//                 Float16 v = Float16.valueOf(intCompact);
+//                 if (scale == 0) {
+//                     return v;
+//                 }
+//                 /*
+//                  * The discussion for the double case also applies here. That is,
+//                  * the following test is precise for all long values, but here
+//                  * Long.MAX_VALUE is not an issue.
+//                  */
+//                 if (v.longValue() == intCompact) {
+//                     if (0 < scale && scale < FLOAT16_10_POW.length) {
+//                         return Float16.divide(v, FLOAT16_10_POW[scale]);
+//                     }
+//                     if (0 > scale && scale > -FLOAT16_10_POW.length) {
+//                         return Float16.multiply(v, FLOAT16_10_POW[-scale]);
+//                     }
+//                 }
+//             }
+            return fullFloat16Value(bd);
+        }
+
+        private static BigInteger bigTenToThe(int scale) {
+            return BigInteger.TEN.pow(scale);
+        }
+
+        private static Float16 fullFloat16Value(BigDecimal bd) {
+            if (BigDecimal.ZERO.compareTo(bd) == 0) {
+                return Float16.valueOf(0);
+            }
+            BigInteger w = bd.unscaledValue().abs();
+            int scale = bd.scale();
+            long qb = w.bitLength() - (long) Math.ceil(scale * L);
+            Float16 signum = Float16.valueOf(bd.signum());
+            if (qb < Q_MIN_F16 - 2) {  // qb < -26
+                return Float16.multiply(signum, Float16.valueOf(0));
+            }
+            if (qb > Q_MAX_F16 + P_F16 + 1) {  // qb > 17
+                return Float16.multiply(signum, Float16.POSITIVE_INFINITY);
+            }
+            if (scale < 0) {
+                return Float16.multiply(signum, valueOf(w.multiply(bigTenToThe(-scale))));
+            }
+            if (scale == 0) {
+                return Float16.multiply(signum, valueOf(w));
+            }
+            int ql = (int) qb - (P_F16 + 3);
+            BigInteger pow10 =  bigTenToThe(scale);
+            BigInteger m, n;
+            if (ql <= 0) {
+                m = w.shiftLeft(-ql);
+                n = pow10;
+            } else {
+                m = w;
+                n = pow10.shiftLeft(ql);
+            }
+            BigInteger[] qr = m.divideAndRemainder(n);
+            /*
+             * We have
+             *      2^12 = 2^{P+1} <= i < 2^{P+5} = 2^16
+             * Contrary to the double and float cases, where we use long and int, resp.,
+             * here we cannot simply declare i as short, because P + 5 < Short.SIZE
+             * fails to hold.
+             * Using int is safe, though.
+             *
+             * Further, as Math.scalb(Float16) does not exists, we fall back to
+             * Math.scalb(double).
+             */
+            int i = qr[0].intValue();
+            int sb = qr[1].signum();
+            int dq = (Integer.SIZE - (P_F16 + 2)) - Integer.numberOfLeadingZeros(i);
+            int eq = (Q_MIN_F16 - 2) - ql;
+            if (dq >= eq) {
+                return Float16.valueOf(bd.signum() * Math.scalb((double) (i | sb), ql));
+            }
+            int mask = (1 << eq) - 1;
+            int j = i >> eq | (Integer.signum(i & mask)) | sb;
+            return Float16.valueOf(bd.signum() * Math.scalb((double) j, Q_MIN_F16 - 2));
+        }
+
+        public static Float16 valueOf(BigInteger bi) {
+            int signum = bi.signum();
+            return (signum == 0 || bi.bitLength() <= 31)
+                ? Float16.valueOf(bi.longValue())  // might return infinities
+                : signum > 0
+                ? Float16.POSITIVE_INFINITY
+                : Float16.NEGATIVE_INFINITY;
+        }
     }
 
     /**
@@ -569,7 +688,7 @@ public final class Float16
     /**
      * Returns a hash code for this {@code Float16} object. The
      * result is the integer bit representation, exactly as produced
-     * by the method {@link #float16ToShortBits(Float16)}, of the primitive
+     * by the method {@link #float16ToRawShortBits(Float16)}, of the primitive
      * {@code short} value represented by this {@code Float16}
      * object.
      *
@@ -599,13 +718,13 @@ public final class Float16
      * represents a {@code short} with the same value as the
      * {@code short} represented by this object. For this
      * purpose, two {@code short} values are considered to be the
-     * same if and only if the method {@link #float16ToShortBits(Float16)}
+     * same if and only if the method {@link #float16ToRawShortBits(Float16)}
      * returns the identical {@code short} value when applied to
      * each.
      *
      * @apiNote
      * This method is defined in terms of {@link
-     * #float16ToShortBits(Float16)} rather than the {@code ==} operator on
+     * #float16ToRawShortBits(Float16)} rather than the {@code ==} operator on
      * {@code float} values since the {@code ==} operator does
      * <em>not</em> define an equivalence relation and to satisfy the
      * {@linkplain Object#equals equals contract} an equivalence
@@ -615,18 +734,17 @@ public final class Float16
      * @param obj the object to be compared
      * @return  {@code true} if the objects are the same;
      *          {@code false} otherwise.
-     * @see java.lang.Float16#float16ToShortBits(Float16)
+     * @see jdk.incubator.vector.Float16#float16ToRawShortBits(Float16)
      * @jls 15.21.1 Numerical Equality Operators == and !=
      */
     public boolean equals(Object obj) {
         return (obj instanceof Float16)
-               && (float16ToShortBits(((Float16)obj)) == float16ToShortBits(this));
+               && (float16ToRawShortBits(((Float16)obj)) == float16ToRawShortBits(this));
     }
 
     /**
      * Returns a representation of the specified floating-point value
-     * according to the IEEE 754 floating-point binary16 bit layout,
-     * preserving Not-a-Number (NaN) values.
+     * according to the IEEE 754 floating-point binary16 bit layout.
      *
      * @param   f16   a {@code Float16} floating-point number.
      * @return the bits that represent the floating-point number.
@@ -636,23 +754,6 @@ public final class Float16
      */
     public static short float16ToRawShortBits(Float16 f16) {
         return f16.value;
-    }
-
-    /**
-     * Returns a representation of the specified floating-point value
-     * according to the IEEE 754 floating-point binary16 bit layout.
-     *
-     * @param   fp16   a {@code Float16} floating-point number.
-     * @return the bits that represent the floating-point number.
-     *
-     * @see Float#floatToIntBits(float)
-     * @see Double#doubleToLongBits(double)
-     */
-    public static short float16ToShortBits(Float16 fp16) {
-        if (!isNaN(fp16)) {
-            return float16ToRawShortBits(fp16);
-        }
-        return 0x7e00;
     }
 
     /**
@@ -743,7 +844,8 @@ public final class Float16
      * @see Math#max(double, double)
      */
     public static Float16 max(Float16 a, Float16 b) {
-        return shortBitsToFloat16(Float16Math.max(float16ToRawShortBits(a), float16ToRawShortBits(b)));
+        return shortBitsToFloat16(floatToFloat16(Math.max(a.floatValue(),
+                                                          b.floatValue() )));
     }
 
     /**
@@ -761,7 +863,8 @@ public final class Float16
      * @see Math#min(double, double)
      */
     public static Float16 min(Float16 a, Float16 b) {
-        return shortBitsToFloat16(Float16Math.min(float16ToRawShortBits(a), float16ToRawShortBits(b)));
+        return shortBitsToFloat16(floatToFloat16(Math.min(a.floatValue(),
+                                                          b.floatValue()) ));
     }
 
     // Skipping for now
@@ -826,9 +929,10 @@ public final class Float16
      * @return the sum of the operands
      *
      * @jls 15.4 Floating-point Expressions
+     * @jls 15.18.2 Additive Operators (+ and -) for Numeric Types
      */
     public static Float16 add(Float16 addend, Float16 augend) {
-        return shortBitsToFloat16(Float16Math.add(float16ToRawShortBits(addend), float16ToRawShortBits(augend)));
+        return valueOf(addend.floatValue() + augend.floatValue());
     }
 
     /**
@@ -848,9 +952,10 @@ public final class Float16
      * @return the difference of the operands
      *
      * @jls 15.4 Floating-point Expressions
+     * @jls 15.18.2 Additive Operators (+ and -) for Numeric Types
      */
     public static Float16 subtract(Float16 minuend, Float16 subtrahend) {
-        return shortBitsToFloat16(Float16Math.subtract(float16ToRawShortBits(minuend), float16ToRawShortBits(subtrahend)));
+        return valueOf(minuend.floatValue() - subtrahend.floatValue());
     }
 
     /**
@@ -870,9 +975,10 @@ public final class Float16
      * @return the product of the operands
      *
      * @jls 15.4 Floating-point Expressions
+     * @jls 15.17.1 Multiplication Operator *
      */
     public static Float16 multiply(Float16 multiplier, Float16 multiplicand) {
-        return shortBitsToFloat16(Float16Math.multiply(float16ToRawShortBits(multiplier), float16ToRawShortBits(multiplicand)));
+        return valueOf(multiplier.floatValue() * multiplicand.floatValue());
     }
 
     /**
@@ -892,9 +998,10 @@ public final class Float16
      * @return the quotient of the operands
      *
      * @jls 15.4 Floating-point Expressions
+     * @jls 15.17.2 Division Operator /
      */
     public static Float16 divide(Float16 dividend, Float16 divisor) {
-        return shortBitsToFloat16(Float16Math.divide(float16ToRawShortBits(dividend), float16ToRawShortBits(divisor)));
+        return valueOf(dividend.floatValue() / divisor.floatValue());
     }
 
     /**
@@ -919,7 +1026,9 @@ public final class Float16
         // Float16 -> double preserves the exact numerical value. The
         // of the double -> Float16 conversion also benefits from the
         // 2p+2 property of IEEE 754 arithmetic.
-        return shortBitsToFloat16(Float16Math.sqrt(float16ToRawShortBits(radicand)));
+        short res = Float16Math.sqrt(float16ToRawShortBits(radicand),
+                (f16) -> float16ToRawShortBits(valueOf(Math.sqrt(shortBitsToFloat16(f16).doubleValue()))));
+        return shortBitsToFloat16(res);
     }
 
     /**
@@ -946,6 +1055,7 @@ public final class Float16
      * @see Math#fma(float, float, float)
      * @see Math#fma(double, double, double)
      */
+    @SuppressWarnings({"cast"})
     public static Float16 fma(Float16 a, Float16 b, Float16 c) {
         /*
          * The double format has sufficient precision that a Float16
@@ -1120,7 +1230,19 @@ public final class Float16
          *   adjacent `float16` values, and double rounding is
          *   harmless.
          */
-        return shortBitsToFloat16(Float16Math.fma(float16ToRawShortBits(a), float16ToRawShortBits(b), float16ToRawShortBits(c)));
+
+        // product is numerically exact in float before the cast to
+        // double; not necessary to widen to double before the
+        // multiply.
+        short fa = float16ToRawShortBits(a);
+        short fb = float16ToRawShortBits(b);
+        short fc = float16ToRawShortBits(c);
+        short res = Float16Math.fma(fa, fb, fc,
+                (f16a, f16b, f16c) -> {
+                    double product = (double)(float16ToFloat(f16a) * float16ToFloat(f16b));
+                    return float16ToRawShortBits(valueOf(product + float16ToFloat(f16c)));
+                });
+        return shortBitsToFloat16(res);
     }
 
     /**
@@ -1351,6 +1473,7 @@ public final class Float16
         // Make sure scaling factor is in a reasonable range
         scaleFactor = Math.max(Math.min(scaleFactor, MAX_SCALE), -MAX_SCALE);
 
+        int DoubleConsts_EXP_BIAS = 1023;
         /*
          * Since + MAX_SCALE for Float16 fits well within the double
          * exponent range and + Float16 -> double conversion is exact
@@ -1359,9 +1482,8 @@ public final class Float16
          * Float16 will be the correctly rounded Float16 result.
          */
         return valueOf(v.doubleValue()
-                * Double.longBitsToDouble((long) (scaleFactor + DoubleConsts.EXP_BIAS) << Double.PRECISION - 1));
+                * Double.longBitsToDouble((long) (scaleFactor + DoubleConsts_EXP_BIAS) << Double.PRECISION - 1));
     }
-
     /**
      * Returns the first floating-point argument with the sign of the
      * second floating-point argument.
@@ -1405,5 +1527,4 @@ public final class Float16
     public static Float16 signum(Float16 f) {
         return (f.floatValue() == 0.0f || isNaN(f)) ? f : copySign(valueOf(1), f);
     }
-
 }

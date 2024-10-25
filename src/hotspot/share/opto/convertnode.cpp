@@ -27,8 +27,10 @@
 #include "opto/castnode.hpp"
 #include "opto/connode.hpp"
 #include "opto/convertnode.hpp"
+#include "opto/divnode.hpp"
 #include "opto/matcher.hpp"
 #include "opto/movenode.hpp"
+#include "opto/mulnode.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/subnode.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -251,20 +253,20 @@ const Type* ConvF2HFNode::Value(PhaseGVN* phase) const {
 
 //------------------------------Ideal------------------------------------------
 Node* ConvF2HFNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  // Optimize pattern - ConvHF2F (SqrtF) ConvF2HF ==> ReinterpretS2HF (SqrtHF) ReinterpretHF2S.
+  // Optimize pattern - ConvHF2F (FP32BinOp) ConvF2HF ==> ReinterpretS2HF (FP16BinOp) ReinterpretHF2S.
   // It is safe to do so as we do not lose any precision bits during ConvHF2F and ConvF2HF conversions.
   // Eventually if the loop is vectorizable, ReinterpretS2HF/HF2S will be optimized away as they are
   // of the same size and only the vectorized sqrt nodes for half-precision floats will be generated.
-  Node* hf2f; Node* sqrthf;
-  if (in(1)->Opcode() == Op_SqrtF && in(1)->in(1)->Opcode() == Op_ConvHF2F) {
-    Node* sqrtf = in(1);
-    Node* convhf2f = sqrtf->in(1);
-    if (Matcher::match_rule_supported(Op_SqrtHF) &&
+  if (Float16NodeFactory::is_binary_oper(in(1)->Opcode()) &&
+      in(1)->in(1)->Opcode() == Op_ConvHF2F &&
+      in(1)->in(2)->Opcode() == Op_ConvHF2F) {
+    if (Matcher::match_rule_supported(in(1)->Opcode()) &&
         Matcher::match_rule_supported(Op_ReinterpretS2HF) &&
         Matcher::match_rule_supported(Op_ReinterpretHF2S)) {
-      hf2f = phase->transform(new ReinterpretS2HFNode(convhf2f->in(1)));
-      sqrthf = phase->transform(new SqrtHFNode(phase->C, sqrtf->in(0), hf2f));
-      return new ReinterpretHF2SNode(sqrthf);
+      Node* in1 = phase->transform(new ReinterpretS2HFNode(in(1)->in(1)->in(1)));
+      Node* in2 = phase->transform(new ReinterpretS2HFNode(in(1)->in(2)->in(1)));
+      Node* binop = phase->transform(Float16NodeFactory::make(in(1)->Opcode(), in(1)->in(0), in1, in2));
+      return new ReinterpretHF2SNode(binop);
     }
   }
   return nullptr;
@@ -948,4 +950,30 @@ const Type* ReinterpretHF2SNode::Value(PhaseGVN* phase) const {
      return TypeInt::make(hfval);
   }
   return TypeInt::SHORT;
+}
+
+bool Float16NodeFactory::is_binary_oper(int opc) {
+  switch(opc) {
+    case Op_AddF:
+    case Op_SubF:
+    case Op_MulF:
+    case Op_DivF:
+    case Op_MaxF:
+    case Op_MinF:
+      return true;
+    default:
+      return false;
+  }
+}
+
+Node* Float16NodeFactory::make(int opc, Node* c, Node* in1, Node* in2) {
+  switch(opc) {
+    case Op_AddF: return new AddHFNode(in1, in2);
+    case Op_SubF: return new SubHFNode(in1, in2);
+    case Op_MulF: return new MulHFNode(in1, in2);
+    case Op_DivF: return new DivHFNode(c, in1, in2);
+    case Op_MaxF: return new MaxHFNode(in1, in2);
+    case Op_MinF: return new MinHFNode(in1, in2);
+    default: ShouldNotReachHere();
+  }
 }

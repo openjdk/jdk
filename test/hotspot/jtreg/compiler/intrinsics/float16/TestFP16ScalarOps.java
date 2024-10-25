@@ -26,6 +26,7 @@
 * @test
 * @bug 8308363 8336406
 * @summary Validate compiler IR for FP16 scalar operations.
+* @modules jdk.incubator.vector
 * @requires vm.compiler2.enabled
 * @library /test/lib /
 * @run driver TestFP16ScalarOps
@@ -33,7 +34,8 @@
 
 import compiler.lib.ir_framework.*;
 import java.util.Random;
-import static java.lang.Float16.*;
+import jdk.incubator.vector.Float16;
+import static jdk.incubator.vector.Float16.*;
 
 public class TestFP16ScalarOps {
     private static final int count = 1024;
@@ -43,7 +45,7 @@ public class TestFP16ScalarOps {
     private short res;
 
     public static void main(String args[]) {
-        TestFramework.runWithFlags("--enable-preview");
+        TestFramework.runWithFlags("--add-modules=jdk.incubator.vector");
     }
 
     public TestFP16ScalarOps() {

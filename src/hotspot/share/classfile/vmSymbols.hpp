@@ -92,7 +92,8 @@ class SerializeClosure;
   template(java_lang_Long,                            "java/lang/Long")                           \
   template(java_lang_Long_LongCache,                  "java/lang/Long$LongCache")                 \
                                                                                                   \
-  template(jdk_internal_vm_vector_VectorSupport,      "jdk/internal/vm/vector/VectorSupport")               \
+  template(jdk_internal_vm_vector_VectorSupport,      "jdk/internal/vm/vector/VectorSupport")     \
+  template(jdk_internal_vm_vector_Float16Math,        "jdk/internal/vm/vector/Float16Math")       \
   template(jdk_internal_vm_vector_VectorPayload,      "jdk/internal/vm/vector/VectorSupport$VectorPayload") \
   template(jdk_internal_vm_vector_Vector,             "jdk/internal/vm/vector/VectorSupport$Vector")        \
   template(jdk_internal_vm_vector_VectorMask,         "jdk/internal/vm/vector/VectorSupport$VectorMask")    \

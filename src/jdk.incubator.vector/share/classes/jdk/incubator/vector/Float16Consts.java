@@ -23,18 +23,18 @@
  * questions.
  */
 
-package jdk.internal.math;
+package jdk.incubator.vector;
 
-import static java.lang.Float16.MIN_EXPONENT;
-import static java.lang.Float16.PRECISION;
-import static java.lang.Float16.SIZE;
+import static jdk.incubator.vector.Float16.MIN_EXPONENT;
+import static jdk.incubator.vector.Float16.PRECISION;
+import static jdk.incubator.vector.Float16.SIZE;
 
 /**
  * This class contains additional constants documenting limits of the
  * {@code Float16} type.
  */
 
-public class Float16Consts {
+class Float16Consts {
     /**
      * Don't let anyone instantiate this class.
      */

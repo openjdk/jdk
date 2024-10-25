@@ -940,27 +940,13 @@ class methodHandle;
   do_intrinsic(_getAndSetReference,       jdk_internal_misc_Unsafe,     getAndSetReference_name, getAndSetReference_signature, F_R)   \
    do_name(     getAndSetReference_name,                                "getAndSetReference")                                         \
    do_signature(getAndSetReference_signature,                           "(Ljava/lang/Object;JLjava/lang/Object;)Ljava/lang/Object;" ) \
-                                                                                                           \
-  /* Float16Math API intrinsification support */                                                           \
-                                                                                                           \
-  do_name(add_name, "add")                                                                                 \
-  do_name(subtract_name, "subtract")                                                                       \
-  do_name(multiply_name, "multiply")                                                                       \
-  do_name(divide_name, "divide")                                                                           \
-  /* Float16 signatures */                                                                                                \
-  do_signature(short_2_short_signature,   "(SS)S")                                                                        \
-  do_signature(short_3_short_signature,  "(SSS)S")                                                                        \
-  /* Float16 intrinsics for binary operations */                                                                          \
-  do_intrinsic(_add_float16,              jdk_internal_math_Float16Math, add_name,         short_2_short_signature,  F_S) \
-  do_intrinsic(_subtract_float16,         jdk_internal_math_Float16Math, subtract_name,    short_2_short_signature,  F_S) \
-  do_intrinsic(_multiply_float16,         jdk_internal_math_Float16Math, multiply_name,    short_2_short_signature,  F_S) \
-  do_intrinsic(_divide_float16,           jdk_internal_math_Float16Math, divide_name,      short_2_short_signature,  F_S) \
-  do_intrinsic(_max_float16,              jdk_internal_math_Float16Math, max_name,         short_2_short_signature,  F_S) \
-  do_intrinsic(_min_float16,              jdk_internal_math_Float16Math, min_name,         short_2_short_signature,  F_S) \
-  /* Float16 intrinsics for unary operations */                                                                           \
-  do_intrinsic(_sqrt_float16,             jdk_internal_math_Float16Math, sqrt_name,        short_short_signature,   F_S)  \
-  /* Float16 intrinsics for ternary operations */                                                                         \
-  do_intrinsic(_fma_float16,              jdk_internal_math_Float16Math, fma_name,         short_3_short_signature,  F_S) \
+                                                                                                                         \
+  /* Float16Math API intrinsification support */                                                                         \
+  /* Float16 signatures */                                                                                               \
+  do_signature(float16_unary_math_op_sig, "(SLjdk/internal/vm/vector/Float16Math$Float16UnaryMathOp;)S")                 \
+  do_signature(float16_ternary_math_op_sig, "(SSSLjdk/internal/vm/vector/Float16Math$Float16TernaryMathOp;)S")           \
+  do_intrinsic(_sqrt_float16, jdk_internal_vm_vector_Float16Math, sqrt_name, float16_unary_math_op_sig, F_S)             \
+  do_intrinsic(_fma_float16, jdk_internal_vm_vector_Float16Math, fma_name, float16_ternary_math_op_sig, F_S)             \
                                                                                                                                                \
   /* Vector API intrinsification support */                                                                                                    \
                                                                                                                                                \

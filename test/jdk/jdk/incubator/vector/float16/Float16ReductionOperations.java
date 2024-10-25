@@ -24,16 +24,18 @@
 /*
  * @test
  * @bug 8308363
- * @summary Test FP16 reduction operations.
- * @compile FP16ReductionOperations.java
- * @run main/othervm --enable-preview -XX:-TieredCompilation -Xbatch FP16ReductionOperations
+ * @summary Test Float16 reduction operations.
+ * @modules jdk.incubator.vector
+ * @compile Float16ReductionOperations.java
+ * @run main/othervm -XX:-TieredCompilation -Xbatch Float16ReductionOperations
  */
 
 import java.util.Random;
 
-import static java.lang.Float16.*;
+import jdk.incubator.vector.Float16;
+import static jdk.incubator.vector.Float16.*;
 
-public class FP16ReductionOperations {
+public class Float16ReductionOperations {
 
     public static Random r = new Random(1024);
 
@@ -43,7 +45,7 @@ public class FP16ReductionOperations {
         Float16 hf2 = shortBitsToFloat16((short)16384);
         Float16 hf3 = shortBitsToFloat16((short)16896);
         Float16 hf4 = shortBitsToFloat16((short)17408);
-        return float16ToRawShortBits(Float16.add(Float16.add(Float16.add(Float16.add(hf0, hf1), hf2), hf3), hf4));
+        return float16ToRawShortBits(add(add(add(add(hf0, hf1), hf2), hf3), hf4));
     }
 
     public static short expected_reduction_add_constants() {
@@ -81,7 +83,7 @@ public class FP16ReductionOperations {
     public static short test_reduction_add(short [] arr) {
         Float16 res = shortBitsToFloat16((short)0);
         for (int i = 0; i < arr.length; i++) {
-            res = Float16.add(res, shortBitsToFloat16(arr[i]));
+            res = add(res, shortBitsToFloat16(arr[i]));
         }
         return float16ToRawShortBits(res);
     }
@@ -109,7 +111,7 @@ public class FP16ReductionOperations {
         }
     }
 
-    public static short [] get_fp16_array(int size) {
+    public static short [] get_float16_array(int size) {
         short [] arr = new short[size];
         for (int i = 0; i < arr.length; i++) {
             arr[i] = Float.floatToFloat16(r.nextFloat());
@@ -119,7 +121,7 @@ public class FP16ReductionOperations {
 
     public static void main(String [] args) {
         int res = 0;
-        short [] input = get_fp16_array(1024);
+        short [] input = get_float16_array(1024);
         short [] special_values = {
               32256,          // NAN
               31744,          // +Inf
