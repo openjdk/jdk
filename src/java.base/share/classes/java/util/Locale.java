@@ -115,8 +115,8 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  *   <dd>- <em>Case convention:</em> {@code language} is case insensitive, but
  *   {@code Locale} always canonicalizes to lower case.</dd>
  *
- *   <dd>- <em>Syntax:</em> {@code [a-zA-Z]{2,8}}. Note: this is not the full
- *   BCP 47 language production, since it excludes
+ *   <dd>- <em>Syntax:</em> Well-formed language values have the form {@code [a-zA-Z]{2,8}}.
+ *   Note: this is not the full BCP 47 language production, since it excludes
  *   <a href="https://datatracker.ietf.org/doc/html/rfc5646#section-2.2.2">extlang</a>
  *   (deprecated by modern three-letter language codes).</dd>
  *
@@ -131,7 +131,8 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  *   letter is upper case and the rest of the letters are lower
  *   case).</dd>
  *
- *   <dd>- <em>Syntax:</em> {@code [a-zA-Z]{4}}</dd>
+ *   <dd>- <em>Syntax:</em> Well-formed script values have the form {@code
+ *   [a-zA-Z]{4}}</dd>
  *
  *   <dd>- <em>Example:</em> "Latn" (Latin), "Cyrl" (Cyrillic)</dd>
  *
@@ -142,7 +143,8 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  *   <dd>- <em>Case convention:</em> {@code country (region)} is case insensitive, but
  *   {@code Locale} always canonicalizes to upper case.</dd>
  *
- *   <dd>- <em>Syntax:</em> {@code [a-zA-Z]{2} | [0-9]{3}}</dd>
+ *   <dd>- <em>Syntax:</em> Well-formed country (region) values have the form {@code
+ *   [a-zA-Z]{2} | [0-9]{3}}</dd>
  *
  *   <dd>- <em>Example:</em> "US" (United States), "FR" (France), "029"
  *   (Caribbean)</dd>
@@ -167,7 +169,8 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  *   <dd>- <em>Case convention:</em> {@code variant} is case sensitive. Note: BCP 47 treats the variant
  *   field as case insensitive.</dd>
  *
- *   <dd>- <em>Syntax:</em> {@code SUBTAG (('_'|'-') SUBTAG)*} where {@code SUBTAG =
+ *   <dd>- <em>Syntax:</em> Well-formed variant values have the form {@code
+ *   SUBTAG (('_'|'-') SUBTAG)*} where {@code SUBTAG =
  *   [0-9][0-9a-zA-Z]{3} | [0-9a-zA-Z]{5,8}}. Note: BCP 47 only
  *   uses hyphen ('-') as a delimiter, {@code Locale} is more lenient.</dd>
  *
@@ -185,8 +188,8 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  *   case insensitive, but {@code Locale} canonicalizes all
  *   extension keys and values to lower case.</dd>
  *
- *   <dd>- <em>Syntax:</em> keys are single characters from the set
- *   {@code [0-9a-zA-Z]}.  Values have the form
+ *   <dd>- <em>Syntax:</em> Well-formed keys are single characters from the set
+ *   {@code [0-9a-zA-Z]}.  Well-formed values have the form
  *   {@code SUBTAG ('-' SUBTAG)*} where for the key 'x'
  *   {@code SUBTAG = [0-9a-zA-Z]{1,8}} and for other keys
  *   {@code SUBTAG = [0-9a-zA-Z]{2,8}} (that is, 'x' allows
