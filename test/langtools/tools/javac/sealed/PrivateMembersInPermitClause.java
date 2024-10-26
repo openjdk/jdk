@@ -84,7 +84,6 @@ public class PrivateMembersInPermitClause extends toolbox.TestRunner {
             public class S {
                 private static final class A extends S {}
             }
-            
             sealed class T permits S.A {
             }
             """
