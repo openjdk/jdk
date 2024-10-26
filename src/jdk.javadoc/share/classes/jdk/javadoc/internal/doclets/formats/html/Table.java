@@ -361,7 +361,7 @@ public class Table<T> extends Content {
     private Content toContent() {
         Content main;
         if (id != null) {
-            main = new HtmlTree(HtmlTag.DIV).setId(id);
+            main = HtmlTree.DIV(id);
         } else {
             main = new ContentBuilder();
         }
@@ -403,8 +403,7 @@ public class Table<T> extends Content {
             if (id == null) {
                 throw new IllegalStateException("no id set for table");
             }
-            var tabpanel = new HtmlTree(HtmlTag.DIV)
-                    .setId(HtmlIds.forTabPanel(id))
+            var tabpanel = HtmlTree.DIV(HtmlIds.forTabPanel(id))
                     .put(HtmlAttr.ROLE, "tabpanel")
                     .put(HtmlAttr.ARIA_LABELLEDBY, defaultTabId.name());
             table.add(getTableBody());
@@ -416,8 +415,7 @@ public class Table<T> extends Content {
     }
 
     private HtmlTree createTab(HtmlId tabId, HtmlStyle style, boolean defaultTab, Content tabLabel) {
-        var tab = new HtmlTree(HtmlTag.BUTTON)
-                .setId(tabId)
+        var tab = HtmlTree.BUTTON(tabId)
                 .put(HtmlAttr.ROLE, "tab")
                 .put(HtmlAttr.ARIA_SELECTED, defaultTab ? "true" : "false")
                 .put(HtmlAttr.ARIA_CONTROLS, HtmlIds.forTabPanel(id).name())

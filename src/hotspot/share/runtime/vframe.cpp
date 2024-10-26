@@ -622,7 +622,7 @@ javaVFrame* vframeStreamCommon::asJavaVFrame() {
 
 #ifndef PRODUCT
 void vframe::print(outputStream* output) {
-  if (WizardMode) _fr.print_value_on(output, nullptr);
+  if (WizardMode) _fr.print_value_on(output);
 }
 
 void vframe::print_value(outputStream* output) const {
@@ -737,7 +737,7 @@ void javaVFrame::print_activation(int index, outputStream* output) const {
 // ------------- externalVFrame --------------
 
 void externalVFrame::print(outputStream* output) {
-  _fr.print_value_on(output, nullptr);
+  _fr.print_value_on(output);
 }
 
 void externalVFrame::print_value(outputStream* output) const {

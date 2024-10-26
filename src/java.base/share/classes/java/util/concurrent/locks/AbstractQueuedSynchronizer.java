@@ -657,6 +657,40 @@ public abstract class AbstractQueuedSynchronizer
     }
 
     /**
+     * Repeatedly invokes acquire, if its execution throws an Error or a Runtime Exception,
+     * using an Unsafe.park-based backoff
+     * @param node which to reacquire
+     * @param arg the acquire argument
+     */
+    private final void reacquire(Node node, int arg) {
+        try {
+            acquire(node, arg, false, false, false, 0L);
+        } catch (Error | RuntimeException firstEx) {
+            // While we currently do not emit an JFR events in this situation, mainly
+            // because the conditions under which this happens are such that it
+            // cannot be presumed to be possible to actually allocate an event, and
+            // using a preconstructed one would have limited value in serviceability.
+            // Having said that, the following place would be the more appropriate
+            // place to put such logic:
+            //     emit JFR event
+
+            for (long nanos = 1L;;) {
+                U.park(false, nanos); // must use Unsafe park to sleep
+                if (nanos < 1L << 30)            // max about 1 second
+                    nanos <<= 1;
+
+                try {
+                    acquire(node, arg, false, false, false, 0L);
+                } catch (Error | RuntimeException ignored) {
+                    continue;
+                }
+
+                throw firstEx;
+            }
+        }
+    }
+
+    /**
      * Main acquire method, invoked by all exported acquire methods.
      *
      * @param node null unless a reacquiring Condition
@@ -1678,7 +1712,7 @@ public abstract class AbstractQueuedSynchronizer
             }
             LockSupport.setCurrentBlocker(null);
             node.clearStatus();
-            acquire(node, savedState, false, false, false, 0L);
+            reacquire(node, savedState);
             if (interrupted)
                 Thread.currentThread().interrupt();
         }
@@ -1725,7 +1759,7 @@ public abstract class AbstractQueuedSynchronizer
             }
             LockSupport.setCurrentBlocker(null);
             node.clearStatus();
-            acquire(node, savedState, false, false, false, 0L);
+            reacquire(node, savedState);
             if (interrupted) {
                 if (cancelled) {
                     unlinkCancelledWaiters(node);
@@ -1768,7 +1802,7 @@ public abstract class AbstractQueuedSynchronizer
                     LockSupport.parkNanos(this, nanos);
             }
             node.clearStatus();
-            acquire(node, savedState, false, false, false, 0L);
+            reacquire(node, savedState);
             if (cancelled) {
                 unlinkCancelledWaiters(node);
                 if (interrupted)
@@ -1812,7 +1846,7 @@ public abstract class AbstractQueuedSynchronizer
                     LockSupport.parkUntil(this, abstime);
             }
             node.clearStatus();
-            acquire(node, savedState, false, false, false, 0L);
+            reacquire(node, savedState);
             if (cancelled) {
                 unlinkCancelledWaiters(node);
                 if (interrupted)
@@ -1857,7 +1891,7 @@ public abstract class AbstractQueuedSynchronizer
                     LockSupport.parkNanos(this, nanos);
             }
             node.clearStatus();
-            acquire(node, savedState, false, false, false, 0L);
+            reacquire(node, savedState);
             if (cancelled) {
                 unlinkCancelledWaiters(node);
                 if (interrupted)

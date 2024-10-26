@@ -231,7 +231,6 @@ class ConstantPoolCache: public MetaspaceObj {
   // RedefineClasses support
   DEBUG_ONLY(bool on_stack() { return false; })
   void deallocate_contents(ClassLoaderData* data);
-  bool is_klass() const { return false; }
   void record_gc_epoch();
   uint64_t gc_epoch() { return _gc_epoch; }
 

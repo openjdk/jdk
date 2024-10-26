@@ -938,8 +938,6 @@ private:
     return ctrl;
   }
 
-  Node* cast_incr_before_loop(Node* incr, Node* ctrl, Node* loop);
-
 #ifdef ASSERT
   void ensure_zero_trip_guard_proj(Node* node, bool is_main_loop);
 #endif
@@ -953,14 +951,14 @@ private:
                                               uint idx_after_post_before_pre, Node* zero_trip_guard_proj_main,
                                               Node* zero_trip_guard_proj_post, const Node_List& old_new);
   Node* clone_template_assertion_predicate(IfNode* iff, Node* new_init, Node* predicate, Node* uncommon_proj, Node* control,
-                                           IdealLoopTree* outer_loop, Node* input_proj);
+                                           IdealLoopTree* outer_loop, Node* new_control);
   IfTrueNode* create_initialized_assertion_predicate(IfNode* template_assertion_predicate, Node* new_init,
                                                      Node* new_stride, Node* control);
   static void count_opaque_loop_nodes(Node* n, uint& init, uint& stride);
   static bool assertion_predicate_has_loop_opaque_node(IfNode* iff);
   static void get_assertion_predicates(Node* predicate, Unique_Node_List& list, bool get_opaque = false);
   void update_main_loop_assertion_predicates(Node* ctrl, CountedLoopNode* loop_head, Node* init, int stride_con);
-  void copy_assertion_predicates_to_post_loop(LoopNode* main_loop_head, CountedLoopNode* post_loop_head, Node* init,
+  void copy_assertion_predicates_to_post_loop(LoopNode* main_loop_head, CountedLoopNode* post_loop_head,
                                               Node* stride);
   void initialize_assertion_predicates_for_peeled_loop(const PredicateBlock* predicate_block, LoopNode* outer_loop_head,
                                                        int dd_outer_loop_head, Node* init, Node* stride,
@@ -968,10 +966,6 @@ private:
                                                        const Node_List& old_new);
   void insert_loop_limit_check_predicate(ParsePredicateSuccessProj* loop_limit_check_parse_proj, Node* cmp_limit,
                                          Node* bol);
-#ifdef ASSERT
-  bool only_has_infinite_loops();
-#endif
-
   void log_loop_tree();
 
 public:
@@ -1078,7 +1072,7 @@ private:
 
   // Place 'n' in some loop nest, where 'n' is a CFG node
   void build_loop_tree();
-  int build_loop_tree_impl( Node *n, int pre_order );
+  int build_loop_tree_impl(Node* n, int pre_order);
   // Insert loop into the existing loop tree.  'innermost' is a leaf of the
   // loop tree, not the root.
   IdealLoopTree *sort( IdealLoopTree *loop, IdealLoopTree *innermost );
@@ -1134,7 +1128,9 @@ private:
     _verify_only(verify_me == nullptr),
     _mode(LoopOptsVerify),
     _nodes_required(UINT_MAX) {
+    DEBUG_ONLY(C->set_phase_verify_ideal_loop();)
     build_and_optimize();
+    DEBUG_ONLY(C->reset_phase_verify_ideal_loop();)
   }
 #endif
 
@@ -1185,6 +1181,16 @@ public:
     return find_non_split_ctrl(dom_lca_internal(n1, n2));
   }
   Node *dom_lca_internal( Node *n1, Node *n2 ) const;
+
+  Node* dominated_node(Node* c1, Node* c2) {
+    assert(is_dominator(c1, c2) || is_dominator(c2, c1), "nodes must be related");
+    return is_dominator(c1, c2) ? c2 : c1;
+  }
+
+  // Return control node that's dominated by the 2 others
+  Node* dominated_node(Node* c1, Node* c2, Node* c3) {
+    return dominated_node(c1, dominated_node(c2, c3));
+  }
 
   // Build and verify the loop tree without modifying the graph.  This
   // is useful to verify that all inputs properly dominate their uses.
@@ -1378,20 +1384,17 @@ public:
  private:
   bool loop_predication_impl_helper(IdealLoopTree* loop, IfProjNode* if_success_proj,
                                     ParsePredicateSuccessProj* parse_predicate_proj, CountedLoopNode* cl, ConNode* zero,
-                                    Invariance& invar, Deoptimization::DeoptReason reason);
+                                    Invariance& invar, Deoptimization::DeoptReason deopt_reason);
   bool can_create_loop_predicates(const PredicateBlock* profiled_loop_predicate_block) const;
   bool loop_predication_should_follow_branches(IdealLoopTree* loop, float& loop_trip_cnt);
   void loop_predication_follow_branches(Node *c, IdealLoopTree *loop, float loop_trip_cnt,
                                         PathFrequency& pf, Node_Stack& stack, VectorSet& seen,
                                         Node_List& if_proj_list);
-  IfTrueNode* add_template_assertion_predicate(IfNode* iff, IdealLoopTree* loop, IfProjNode* if_proj,
-                                               ParsePredicateSuccessProj* parse_predicate_proj,
-                                               IfProjNode* upper_bound_proj, int scale, Node* offset, Node* init, Node* limit,
-                                               jint stride, Node* rng, bool& overflow, Deoptimization::DeoptReason reason);
+  IfTrueNode* create_template_assertion_predicate(int if_opcode, CountedLoopNode* loop_head,
+                                                  ParsePredicateSuccessProj* parse_predicate_proj,
+                                                  IfProjNode* new_control, int scale, Node* offset,
+                                                  Node* range, Deoptimization::DeoptReason deopt_reason);
   void eliminate_hoisted_range_check(IfTrueNode* hoisted_check_proj, IfTrueNode* template_assertion_predicate_proj);
-  Node* add_range_check_elimination_assertion_predicate(
-      IdealLoopTree* loop, Node* predicate_proj, int scale_con, Node* offset, Node* limit, int stride_con, Node* value,
-      bool is_template NOT_PRODUCT(COMMA AssertionPredicateType assertion_predicate_type = AssertionPredicateType::None));
 
   // Helper function to collect predicate for eliminating the useless ones
   void eliminate_useless_predicates();
@@ -1533,6 +1536,8 @@ public:
 
   // Attempt to use a conditional move instead of a phi/branch
   Node *conditional_move( Node *n );
+
+  bool split_thru_phi_could_prevent_vectorization(Node* n, Node* n_blk);
 
   // Check for aggressive application of 'split-if' optimization,
   // using basic block level info.
@@ -1784,6 +1789,8 @@ public:
   bool can_move_to_inner_loop(Node* n, LoopNode* n_loop, Node* x);
 
   void pin_array_access_nodes_dependent_on(Node* ctrl);
+
+  Node* ensure_node_and_inputs_are_above_pre_end(CountedLoopEndNode* pre_end, Node* node);
 };
 
 

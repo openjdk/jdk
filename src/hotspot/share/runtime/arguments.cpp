@@ -336,6 +336,11 @@ bool Arguments::is_internal_module_property(const char* property) {
   return false;
 }
 
+// Return true if the key matches the --module-path property name ("jdk.module.path").
+bool Arguments::is_module_path_property(const char* key) {
+  return (strcmp(key, MODULE_PROPERTY_PREFIX PATH) == 0);
+}
+
 // Process java launcher properties.
 void Arguments::process_sun_java_launcher_properties(JavaVMInitArgs* args) {
   // See if sun.java.launcher or sun.java.launcher.is_altjvm is defined.
@@ -506,6 +511,9 @@ static SpecialFlag const special_jvm_flags[] = {
   { "RequireSharedSpaces",          JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
   { "UseSharedSpaces",              JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
   { "DontYieldALot",                JDK_Version::jdk(23), JDK_Version::jdk(24), JDK_Version::jdk(25) },
+#ifdef LINUX
+  { "UseLinuxPosixThreadCPUClocks", JDK_Version::jdk(24), JDK_Version::jdk(25), JDK_Version::jdk(26) },
+#endif
   { "LockingMode",                  JDK_Version::jdk(24), JDK_Version::jdk(26), JDK_Version::jdk(27) },
   // --- Deprecated alias flags (see also aliased_jvm_flags) - sorted by obsolete_in then expired_in:
   { "CreateMinidumpOnCrash",        JDK_Version::jdk(9),  JDK_Version::undefined(), JDK_Version::undefined() },
@@ -1811,17 +1819,6 @@ bool Arguments::check_vm_args_consistency() {
   if (StackReservedPages != 0) {
     FLAG_SET_CMDLINE(StackReservedPages, 0);
     warning("Reserved Stack Area not supported on this platform");
-  }
-#endif
-
-#if !defined(X86) && !defined(AARCH64) && !defined(RISCV64) && !defined(ARM) && !defined(PPC64) && !defined(S390)
-  if (LockingMode == LM_LIGHTWEIGHT) {
-    FLAG_SET_CMDLINE(LockingMode, LM_LEGACY);
-    warning("New lightweight locking not supported on this platform");
-  }
-  if (UseObjectMonitorTable) {
-    FLAG_SET_CMDLINE(UseObjectMonitorTable, false);
-    warning("UseObjectMonitorTable not supported on this platform");
   }
 #endif
 

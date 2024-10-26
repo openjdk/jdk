@@ -2428,6 +2428,14 @@ class StubGenerator: public StubCodeGenerator {
       __ la(t1, ExternalAddress(bs_asm->patching_epoch_addr()));
       __ lwu(t1, t1);
       __ sw(t1, thread_epoch_addr);
+      // There are two ways this can work:
+      // - The writer did system icache shootdown after the instruction stream update.
+      //   Hence do nothing.
+      // - The writer trust us to make sure our icache is in sync before entering.
+      //   Hence use cmodx fence (fence.i, may change).
+      if (UseCtxFencei) {
+        __ cmodx_fence();
+      }
       __ membar(__ LoadLoad);
     }
 
@@ -4474,7 +4482,7 @@ class StubGenerator: public StubCodeGenerator {
     RegSet reg_cache_saved_regs = RegSet::of(x24, x25, x26, x27); // s8, s9, s10, s11
     RegSet reg_cache_regs;
     reg_cache_regs += reg_cache_saved_regs;
-    reg_cache_regs += RegSet::of(x28, x29, x30, x31); // t3, t4, t5, t6
+    reg_cache_regs += RegSet::of(t3, t4, t5, t6);
     BufRegCache reg_cache(_masm, reg_cache_regs);
 
     RegSet saved_regs;
@@ -5322,6 +5330,283 @@ class StubGenerator: public StubCodeGenerator {
     return (address) start;
   }
 
+  /**
+   * vector registers:
+   * input VectorRegister's:  intputV1-V4, for m2 they could be v2, v4, v6, for m1 they could be v2, v4, v6, v8
+   * index VectorRegister's:  idxV1-V3, for m2 they could be v8, v10, v12, v14, for m1 they could be v10, v12, v14, v16
+   * output VectorRegister's: outputV1-V4, for m2 they could be v16, v18, v20, v22, for m1 they could be v18, v20, v22
+   *
+   * NOTE: each field will occupy a single vector register group
+   */
+  void base64_vector_decode_round(Register src, Register dst, Register codec,
+                    Register size, Register stepSrc, Register stepDst, Register failedIdx,
+                    VectorRegister inputV1, VectorRegister inputV2, VectorRegister inputV3, VectorRegister inputV4,
+                    VectorRegister idxV1, VectorRegister idxV2, VectorRegister idxV3, VectorRegister idxV4,
+                    VectorRegister outputV1, VectorRegister outputV2, VectorRegister outputV3,
+                    Assembler::LMUL lmul) {
+    // set vector register type/len
+    __ vsetvli(x0, size, Assembler::e8, lmul, Assembler::ma, Assembler::ta);
+
+    // segmented load src into v registers: mem(src) => vr(4)
+    __ vlseg4e8_v(inputV1, src);
+
+    // src = src + register_group_len_bytes * 4
+    __ add(src, src, stepSrc);
+
+    // decoding
+    //   1. indexed load: vr(4) => vr(4)
+    __ vluxei8_v(idxV1, codec, inputV1);
+    __ vluxei8_v(idxV2, codec, inputV2);
+    __ vluxei8_v(idxV3, codec, inputV3);
+    __ vluxei8_v(idxV4, codec, inputV4);
+
+    //   2. check wrong data
+    __ vor_vv(outputV1, idxV1, idxV2);
+    __ vor_vv(outputV2, idxV3, idxV4);
+    __ vor_vv(outputV1, outputV1, outputV2);
+    __ vmseq_vi(v0, outputV1, -1);
+    __ vfirst_m(failedIdx, v0);
+    Label NoFailure, FailureAtIdx0;
+    // valid value can only be -1 when < 0
+    __ bltz(failedIdx, NoFailure);
+    // when the first data (at index 0) fails, no need to process data anymore
+    __ beqz(failedIdx, FailureAtIdx0);
+    __ vsetvli(x0, failedIdx, Assembler::e8, lmul, Assembler::mu, Assembler::tu);
+    __ slli(stepDst, failedIdx, 1);
+    __ add(stepDst, failedIdx, stepDst);
+    __ BIND(NoFailure);
+
+    //   3. compute the decoded data: vr(4) => vr(3)
+    __ vsll_vi(idxV1, idxV1, 2);
+    __ vsrl_vi(outputV1, idxV2, 4);
+    __ vor_vv(outputV1, outputV1, idxV1);
+
+    __ vsll_vi(idxV2, idxV2, 4);
+    __ vsrl_vi(outputV2, idxV3, 2);
+    __ vor_vv(outputV2, outputV2, idxV2);
+
+    __ vsll_vi(idxV3, idxV3, 6);
+    __ vor_vv(outputV3, idxV4, idxV3);
+
+    // segmented store encoded data in v registers back to dst: vr(3) => mem(dst)
+    __ vsseg3e8_v(outputV1, dst);
+
+    // dst = dst + register_group_len_bytes * 3
+    __ add(dst, dst, stepDst);
+    __ BIND(FailureAtIdx0);
+  }
+
+  /**
+   * int j.u.Base64.Decoder.decodeBlock(byte[] src, int sp, int sl, byte[] dst, int dp, boolean isURL, boolean isMIME)
+   *
+   *  Input arguments:
+   *  c_rarg0   - src, source array
+   *  c_rarg1   - sp, src start offset
+   *  c_rarg2   - sl, src end offset
+   *  c_rarg3   - dst, dest array
+   *  c_rarg4   - dp, dst start offset
+   *  c_rarg5   - isURL, Base64 or URL character set
+   *  c_rarg6   - isMIME, Decoding MIME block
+   */
+  address generate_base64_decodeBlock() {
+
+    static const uint8_t fromBase64[256] = {
+        255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+        255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+        255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,  62u, 255u, 255u, 255u,  63u,
+        52u,  53u,  54u,  55u,  56u,  57u,  58u,  59u,  60u,  61u, 255u, 255u, 255u, 255u, 255u, 255u,
+        255u,   0u,   1u,   2u,   3u,   4u,   5u,   6u,   7u,   8u,   9u,  10u,  11u,  12u,  13u,  14u,
+        15u,  16u,  17u,  18u,  19u,  20u,  21u,  22u,  23u,  24u,  25u, 255u, 255u, 255u, 255u, 255u,
+        255u,  26u,  27u,  28u,  29u,  30u,  31u,  32u,  33u,  34u,  35u,  36u,  37u,  38u,  39u,  40u,
+        41u,  42u,  43u,  44u,  45u,  46u,  47u,  48u,  49u,  50u,  51u, 255u, 255u, 255u, 255u, 255u,
+        255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+        255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+        255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+        255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+        255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+        255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+        255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+        255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+    };
+
+    static const uint8_t fromBase64URL[256] = {
+        255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+        255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+        255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,  62u, 255u, 255u,
+        52u,  53u,  54u,  55u,  56u,  57u,  58u,  59u,  60u,  61u, 255u, 255u, 255u, 255u, 255u, 255u,
+        255u,   0u,   1u,   2u,   3u,   4u,   5u,   6u,   7u,   8u,   9u,  10u,  11u,  12u,  13u,  14u,
+        15u,  16u,  17u,  18u,  19u,  20u,  21u,  22u,  23u,  24u,  25u, 255u, 255u, 255u, 255u,  63u,
+        255u,  26u,  27u,  28u,  29u,  30u,  31u,  32u,  33u,  34u,  35u,  36u,  37u,  38u,  39u,  40u,
+        41u,  42u,  43u,  44u,  45u,  46u,  47u,  48u,  49u,  50u,  51u, 255u, 255u, 255u, 255u, 255u,
+        255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+        255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+        255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+        255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+        255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+        255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+        255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+        255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+    };
+
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "decodeBlock");
+    address start = __ pc();
+    __ enter();
+
+    Register src    = c_rarg0;
+    Register soff   = c_rarg1;
+    Register send   = c_rarg2;
+    Register dst    = c_rarg3;
+    Register doff   = c_rarg4;
+    Register isURL  = c_rarg5;
+    Register isMIME = c_rarg6;
+
+    Register codec     = c_rarg7;
+    Register dstBackup = t6;
+    Register length    = t3;     // total length of src data in bytes
+
+    Label ProcessData, Exit;
+    Label ProcessScalar, ScalarLoop;
+
+    // passed in length (send - soff) is guaranteed to be > 4,
+    // and in this intrinsic we only process data of length in multiple of 4,
+    // it's not guaranteed to be multiple of 4 by java level, so do it explicitly
+    __ sub(length, send, soff);
+    __ andi(length, length, -4);
+    // real src/dst to process data
+    __ add(src, src, soff);
+    __ add(dst, dst, doff);
+    // backup of dst, used to calculate the return value at exit
+    __ mv(dstBackup, dst);
+
+    // load the codec base address
+    __ la(codec, ExternalAddress((address) fromBase64));
+    __ beqz(isURL, ProcessData);
+    __ la(codec, ExternalAddress((address) fromBase64URL));
+    __ BIND(ProcessData);
+
+    // vector version
+    if (UseRVV) {
+      // for MIME case, it has a default length limit of 76 which could be
+      // different(smaller) from (send - soff), so in MIME case, we go through
+      // the scalar code path directly.
+      __ bnez(isMIME, ScalarLoop);
+
+      Label ProcessM1, ProcessM2;
+
+      Register failedIdx = soff;
+      Register stepSrcM1 = send;
+      Register stepSrcM2 = doff;
+      Register stepDst   = isURL;
+      Register size      = t4;
+
+      __ mv(size, MaxVectorSize * 2);
+      __ mv(stepSrcM1, MaxVectorSize * 4);
+      __ slli(stepSrcM2, stepSrcM1, 1);
+      __ mv(stepDst, MaxVectorSize * 2 * 3);
+
+      __ blt(length, stepSrcM2, ProcessM1);
+
+
+      // Assembler::m2
+      __ BIND(ProcessM2);
+      base64_vector_decode_round(src, dst, codec,
+                    size, stepSrcM2, stepDst, failedIdx,
+                    v2, v4, v6, v8,      // inputs
+                    v10, v12, v14, v16,  // indexes
+                    v18, v20, v22,       // outputs
+                    Assembler::m2);
+      __ sub(length, length, stepSrcM2);
+
+      // error check
+      // valid value of failedIdx can only be -1 when < 0
+      __ bgez(failedIdx, Exit);
+
+      __ bge(length, stepSrcM2, ProcessM2);
+
+
+      // Assembler::m1
+      __ BIND(ProcessM1);
+      __ blt(length, stepSrcM1, ProcessScalar);
+
+      __ srli(size, size, 1);
+      __ srli(stepDst, stepDst, 1);
+      base64_vector_decode_round(src, dst, codec,
+                    size, stepSrcM1, stepDst, failedIdx,
+                    v1, v2, v3, v4,      // inputs
+                    v5, v6, v7, v8,      // indexes
+                    v9, v10, v11,        // outputs
+                    Assembler::m1);
+      __ sub(length, length, stepSrcM1);
+
+      // error check
+      // valid value of failedIdx can only be -1 when < 0
+      __ bgez(failedIdx, Exit);
+
+      __ BIND(ProcessScalar);
+      __ beqz(length, Exit);
+    }
+
+    // scalar version
+    {
+      Register byte0 = soff, byte1 = send, byte2 = doff, byte3 = isURL;
+      Register combined32Bits = t4;
+
+      // encoded:   [byte0[5:0] : byte1[5:0] : byte2[5:0]] : byte3[5:0]] =>
+      // plain:     [byte0[5:0]+byte1[5:4] : byte1[3:0]+byte2[5:2] : byte2[1:0]+byte3[5:0]]
+      __ BIND(ScalarLoop);
+
+      // load 4 bytes encoded src data
+      __ lbu(byte0, Address(src, 0));
+      __ lbu(byte1, Address(src, 1));
+      __ lbu(byte2, Address(src, 2));
+      __ lbu(byte3, Address(src, 3));
+      __ addi(src, src, 4);
+
+      // get codec index and decode (ie. load from codec by index)
+      __ add(byte0, codec, byte0);
+      __ add(byte1, codec, byte1);
+      __ lb(byte0, Address(byte0, 0));
+      __ lb(byte1, Address(byte1, 0));
+      __ add(byte2, codec, byte2);
+      __ add(byte3, codec, byte3);
+      __ lb(byte2, Address(byte2, 0));
+      __ lb(byte3, Address(byte3, 0));
+      __ slliw(byte0, byte0, 18);
+      __ slliw(byte1, byte1, 12);
+      __ orr(byte0, byte0, byte1);
+      __ orr(byte0, byte0, byte3);
+      __ slliw(byte2, byte2, 6);
+      // For performance consideration, `combined32Bits` is constructed for 2 purposes at the same time,
+      //  1. error check below
+      //  2. decode below
+      __ orr(combined32Bits, byte0, byte2);
+
+      // error check
+      __ bltz(combined32Bits, Exit);
+
+      // store 3 bytes decoded data
+      __ sraiw(byte0, combined32Bits, 16);
+      __ sraiw(byte1, combined32Bits, 8);
+      __ sb(byte0, Address(dst, 0));
+      __ sb(byte1, Address(dst, 1));
+      __ sb(combined32Bits, Address(dst, 2));
+
+      __ sub(length, length, 4);
+      __ addi(dst, dst, 3);
+      // loop back
+      __ bnez(length, ScalarLoop);
+    }
+
+    __ BIND(Exit);
+    __ sub(c_rarg0, dst, dstBackup);
+
+    __ leave();
+    __ ret();
+
+    return (address) start;
+  }
+
   void adler32_process_bytes(Register buff, Register s1, Register s2, VectorRegister vtable,
     VectorRegister vzero, VectorRegister vbytes, VectorRegister vs1acc, VectorRegister vs2acc,
     Register temp0, Register temp1, Register temp2,  Register temp3,
@@ -5423,10 +5708,10 @@ class StubGenerator: public StubCodeGenerator {
     Register nmax  = c_rarg4;
     Register base  = c_rarg5;
     Register count = c_rarg6;
-    Register temp0 = x28; // t3
-    Register temp1 = x29; // t4
-    Register temp2 = x30; // t5
-    Register temp3 = x31; // t6
+    Register temp0 = t3;
+    Register temp1 = t4;
+    Register temp2 = t5;
+    Register temp3 = t6;
 
     VectorRegister vzero = v31;
     VectorRegister vbytes = v8; // group: v8, v9, v10, v11
@@ -5786,6 +6071,58 @@ static const int64_t right_3_bits = right_n_bits(3);
     return start;
   }
 
+  void generate_vector_math_stubs() {
+    if (!UseRVV) {
+      log_info(library)("vector is not supported, skip loading vector math (sleef) library!");
+      return;
+    }
+
+    // Get native vector math stub routine addresses
+    void* libsleef = nullptr;
+    char ebuf[1024];
+    char dll_name[JVM_MAXPATHLEN];
+    if (os::dll_locate_lib(dll_name, sizeof(dll_name), Arguments::get_dll_dir(), "sleef")) {
+      libsleef = os::dll_load(dll_name, ebuf, sizeof ebuf);
+    }
+    if (libsleef == nullptr) {
+      log_info(library)("Failed to load native vector math (sleef) library, %s!", ebuf);
+      return;
+    }
+
+    // Method naming convention
+    //   All the methods are named as <OP><T>_<U><suffix>
+    //
+    //   Where:
+    //     <OP>     is the operation name, e.g. sin, cos
+    //     <T>      is to indicate float/double
+    //              "fx/dx" for vector float/double operation
+    //     <U>      is the precision level
+    //              "u10/u05" represents 1.0/0.5 ULP error bounds
+    //               We use "u10" for all operations by default
+    //               But for those functions do not have u10 support, we use "u05" instead
+    //     <suffix> rvv, indicates riscv vector extension
+    //
+    //   e.g. sinfx_u10rvv is the method for computing vector float sin using rvv instructions
+    //
+    log_info(library)("Loaded library %s, handle " INTPTR_FORMAT, JNI_LIB_PREFIX "sleef" JNI_LIB_SUFFIX, p2i(libsleef));
+
+    for (int op = 0; op < VectorSupport::NUM_VECTOR_OP_MATH; op++) {
+      int vop = VectorSupport::VECTOR_OP_MATH_START + op;
+      if (vop == VectorSupport::VECTOR_OP_TANH) { // skip tanh because of performance regression
+        continue;
+      }
+
+      // The native library does not support u10 level of "hypot".
+      const char* ulf = (vop == VectorSupport::VECTOR_OP_HYPOT) ? "u05" : "u10";
+
+      snprintf(ebuf, sizeof(ebuf), "%sfx_%srvv", VectorSupport::mathname[op], ulf);
+      StubRoutines::_vector_f_math[VectorSupport::VEC_SIZE_SCALABLE][op] = (address)os::dll_lookup(libsleef, ebuf);
+
+      snprintf(ebuf, sizeof(ebuf), "%sdx_%srvv", VectorSupport::mathname[op], ulf);
+      StubRoutines::_vector_d_math[VectorSupport::VEC_SIZE_SCALABLE][op] = (address)os::dll_lookup(libsleef, ebuf);
+    }
+  }
+
 #endif // COMPILER2
 
   /**
@@ -5807,26 +6144,17 @@ static const int64_t right_3_bits = right_n_bits(3);
 
     address start = __ pc();
 
+    // input parameters
     const Register crc    = c_rarg0;  // crc
     const Register buf    = c_rarg1;  // source java byte array address
     const Register len    = c_rarg2;  // length
-    const Register table0 = c_rarg3;  // crc_table address
-    const Register table1 = c_rarg4;
-    const Register table2 = c_rarg5;
-    const Register table3 = c_rarg6;
-
-    const Register tmp1 = c_rarg7;
-    const Register tmp2 = t2;
-    const Register tmp3 = x28; // t3
-    const Register tmp4 = x29; // t4
-    const Register tmp5 = x30; // t5
-    const Register tmp6 = x31; // t6
 
     BLOCK_COMMENT("Entry:");
     __ enter(); // required for proper stackwalking of RuntimeStub frame
 
-    __ kernel_crc32(crc, buf, len, table0, table1, table2,
-                    table3, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6);
+    __ kernel_crc32(crc, buf, len,
+                    c_rarg3, c_rarg4, c_rarg5, c_rarg6, // tmp's for tables
+                    c_rarg7, t2, t3, t4, t5, t6);       // misc tmps
 
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret();
@@ -5844,6 +6172,29 @@ static const int64_t right_3_bits = right_n_bits(3);
     __ verify_oop(x10); // return a exception oop in a0
     __ rt_call(CAST_FROM_FN_PTR(address, UpcallLinker::handle_uncaught_exception));
     __ should_not_reach_here();
+
+    return start;
+  }
+
+  // load Method* target of MethodHandle
+  // j_rarg0 = jobject receiver
+  // xmethod = Method* result
+  address generate_upcall_stub_load_target() {
+
+    StubCodeMark mark(this, "StubRoutines", "upcall_stub_load_target");
+    address start = __ pc();
+
+    __ resolve_global_jobject(j_rarg0, t0, t1);
+      // Load target method from receiver
+    __ load_heap_oop(xmethod, Address(j_rarg0, java_lang_invoke_MethodHandle::form_offset()), t0, t1);
+    __ load_heap_oop(xmethod, Address(xmethod, java_lang_invoke_LambdaForm::vmentry_offset()), t0, t1);
+    __ load_heap_oop(xmethod, Address(xmethod, java_lang_invoke_MemberName::method_offset()), t0, t1);
+    __ access_load_at(T_ADDRESS, IN_HEAP, xmethod,
+                      Address(xmethod, java_lang_invoke_ResolvedMethodName::vmtarget_offset()),
+                      noreg, noreg);
+    __ sd(xmethod, Address(xthread, JavaThread::callee_target_offset())); // just in case callee is deoptimized
+
+    __ ret();
 
     return start;
   }
@@ -5913,6 +6264,7 @@ static const int64_t right_3_bits = right_n_bits(3);
 #endif // COMPILER2
 
     StubRoutines::_upcall_stub_exception_handler = generate_upcall_stub_exception_handler();
+    StubRoutines::_upcall_stub_load_target = generate_upcall_stub_load_target();
 
     StubRoutines::riscv::set_completed();
   }
@@ -5980,6 +6332,7 @@ static const int64_t right_3_bits = right_n_bits(3);
 
     if (UseBASE64Intrinsics) {
       StubRoutines::_base64_encodeBlock = generate_base64_encodeBlock();
+      StubRoutines::_base64_decodeBlock = generate_base64_decodeBlock();
     }
 
     if (UseAdler32Intrinsics) {
@@ -5989,6 +6342,8 @@ static const int64_t right_3_bits = right_n_bits(3);
     generate_compare_long_strings();
 
     generate_string_indexof_stubs();
+
+    generate_vector_math_stubs();
 
 #endif // COMPILER2
   }
