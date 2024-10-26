@@ -464,10 +464,9 @@ public class Resolve {
     }
 
     private boolean privateMemberInPermitsClauseIfAllowed(Env<AttrContext> env, Symbol sym) {
-        if (env.info.isPermitsClause && ((JCClassDecl) env.tree).sym.outermostClass() == sym.owner.outermostClass()) {
-            return allowPrivateMembersInPermitsClause;
-        }
-        return false;
+        return allowPrivateMembersInPermitsClause &&
+            env.info.isPermitsClause &&
+            ((JCClassDecl) env.tree).sym.outermostClass() == sym.owner.outermostClass();
     }
 
     //where

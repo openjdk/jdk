@@ -84,20 +84,18 @@ public class PrivateMembersInPermitClause extends toolbox.TestRunner {
             public class S {
                 private static final class A extends S {}
             }
-            """,
-            """
-            public sealed class T permits S.A {
-                private static final class A {}
+            
+            sealed class T permits S.A {
             }
             """
         );
         var expectedErrors = List.of(
-            "T.java:1:32: compiler.err.report.access: S.A, private, S",
+            "S.java:5:25: compiler.err.report.access: S.A, private, S",
             "1 error"
         );
 
         var compileErrors = new toolbox.JavacTask(tb)
-            .files(root.resolve("S.java"), root.resolve("T.java"))
+            .files(root.resolve("S.java"))
             .options("-XDrawDiagnostics")
             .run(toolbox.Task.Expect.FAIL)
             .getOutputLines(Task.OutputKind.DIRECT);
@@ -153,41 +151,7 @@ public class PrivateMembersInPermitClause extends toolbox.TestRunner {
     }
 
     /**
-     * Tests that referencing a private class in the permits clause from another class fails to compile.
-     */
-    @Test
-    public void referencePrivateClassFails() throws Exception {
-        var root = Path.of("src");
-        tb.writeJavaFiles(root,
-            """
-            sealed class S permits S.A {
-                private static final class A extends S {}
-            }
-            """,
-            """
-            sealed class T permits S.A {
-            }
-            """
-        );
-
-        var expectedErrors = List.of(
-            "T.java:1:25: compiler.err.report.access: S.A, private, S",
-            "1 error"
-        );
-
-        var compileErrors = new toolbox.JavacTask(tb)
-            .files(root.resolve("S.java"), root.resolve("T.java"))
-            .options("-XDrawDiagnostics")
-            .run(toolbox.Task.Expect.FAIL)
-            .getOutputLines(Task.OutputKind.DIRECT);
-
-        if (!Objects.equals(compileErrors, expectedErrors)) {
-            throw new AssertionError("Expected errors: " + expectedErrors + ", but got: " + compileErrors);
-        }
-    }
-
-    /**
-     * Tests that a private class in the permits clause of a sealed class does not compile when the source is lower than 19.
+     * Tests that a private class in the permits clause of a sealed class does not compile when the release is lower than 19.
      */
     @Test
     public void testSourceLowerThan19() throws Exception {
