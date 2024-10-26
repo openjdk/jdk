@@ -218,6 +218,106 @@ public class LayoutGraph {
         return outputLinks;
     }
 
+    private Set<Link> getAllLinks(Vertex vertex) {
+        Set<Link> allLinks = new HashSet<>();
+
+        for (Port inputPort : inputPorts.getOrDefault(vertex, Collections.emptySet())) {
+            allLinks.addAll(portLinks.getOrDefault(inputPort, Collections.emptySet()));
+        }
+
+        for (Port outputPort : outputPorts.getOrDefault(vertex, Collections.emptySet())) {
+            allLinks.addAll(portLinks.getOrDefault(outputPort, Collections.emptySet()));
+        }
+
+        return allLinks;
+    }
+
+    private void removeEdges(LayoutNode movedNode) {
+        for (Link inputLink : getAllLinks(movedNode.getVertex())) {
+            Vertex from = inputLink.getFrom().getVertex();
+            Vertex to = inputLink.getTo().getVertex();
+            LayoutNode toNode = getLayoutNode(to);
+            LayoutNode fromNode = getLayoutNode(from);
+
+            if (toNode.getLayer() < fromNode.getLayer()) {
+                // Reversed edge
+                toNode = fromNode;
+                toNode.getReversedLinkEndPoints().remove(inputLink);
+                fromNode.getReversedLinkStartPoints().remove(inputLink);
+            }
+
+            // Remove preds-edges bottom up, starting at "to" node
+            // Cannot start from "from" node since there might be joint edges
+            List<LayoutEdge> toNodePredsEdges = List.copyOf(toNode.getPreds());
+            for (LayoutEdge edge : toNodePredsEdges) {
+                LayoutNode predNode = edge.getFrom();
+                LayoutEdge edgeToRemove;
+
+                if (edge.getLink() != null && edge.getLink().equals(inputLink)) {
+                    toNode.getPreds().remove(edge);
+                    edgeToRemove = edge;
+                } else {
+                    // Wrong edge, look at next
+                    continue;
+                }
+
+                if (!predNode.isDummy() && predNode.getVertex().equals(from)) {
+                    // No dummy nodes inbetween 'from' and 'to' vertex
+                    predNode.getSuccs().remove(edgeToRemove);
+                    break;
+                } else {
+                    // Must remove edges between dummy nodes
+                    boolean found = true;
+                    LayoutNode succNode = toNode;
+                    while (predNode.isDummy() && found) {
+                        found = false;
+
+                        if (predNode.getSuccs().size() <= 1 && predNode.getPreds().size() <= 1) {
+                            // Dummy node used only for this link, remove if not already removed
+                            if (getDummyNodes().contains(predNode)) {
+                                removeDummyNode(predNode);
+                            }
+                        } else {
+                            // anchor node, should not be removed
+                            break;
+                        }
+
+                        if (predNode.getPreds().size() == 1) {
+                            predNode.getSuccs().remove(edgeToRemove);
+                            succNode = predNode;
+                            edgeToRemove = predNode.getPreds().get(0);
+                            predNode = edgeToRemove.getFrom();
+                            found = true;
+                        }
+                    }
+
+                    predNode.getSuccs().remove(edgeToRemove);
+                    succNode.getPreds().remove(edgeToRemove);
+                }
+                break;
+            }
+        }
+
+        // remove link connected to movedNode
+        for (Link link : getLinks()) {
+            if (link.getTo().getVertex() == movedNode.getVertex()) {
+                link.setControlPoints(new ArrayList<>());
+                movedNode.getReversedLinkStartPoints().remove(link);
+            } else if (link.getFrom().getVertex() == movedNode.getVertex()) {
+                link.setControlPoints(new ArrayList<>());
+                movedNode.getReversedLinkEndPoints().remove(link);
+            }
+        }
+
+        movedNode.initSize();
+    }
+
+    public void removeNodeAndEdges(LayoutNode node) {
+        removeEdges(node);
+        removeNode(node);
+    }
+
+
     public LayoutLayer getLayer(int layerNr) {
         return layers.get(layerNr);
     }
