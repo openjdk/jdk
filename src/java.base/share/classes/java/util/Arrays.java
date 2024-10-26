@@ -3735,8 +3735,8 @@ public final class Arrays {
 
     /**
      * Copies the specified range of the specified array into a new array.
-     * The initial index of the range ({@code from}) must lie between zero
-     * and {@code original.length}, inclusive.  The value at
+     * The initial index of the range ({@code from}) must lie between zero (inclusive)
+     * and {@code original.length} (exclusive).  The value at
      * {@code original[from]} is placed into the initial element of the copy
      * (unless {@code from == original.length} or {@code from == to}).
      * Values from subsequent elements in the original array are placed into
