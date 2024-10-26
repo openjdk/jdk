@@ -73,11 +73,15 @@ public class LayoutNode {
 
     public LayoutNode(Vertex v) {
         vertex = v;
-        if (v == null) {
+        initSize();
+    }
+
+    public void initSize() {
+        if (vertex == null) {
             height = DUMMY_HEIGHT;
             width = DUMMY_WIDTH;
         } else {
-            Dimension size = v.getSize();
+            Dimension size = vertex.getSize();
             height = size.height;
             width = size.width;
         }
