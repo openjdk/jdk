@@ -100,7 +100,7 @@ public:
     static CfgFile load(const tstring& path);
 
     static tstring asString(Properties::const_reference property);
-    
+
     static bool asBoolean(Properties::const_reference property);
 
     static tstring asPathList(Properties::const_reference property);

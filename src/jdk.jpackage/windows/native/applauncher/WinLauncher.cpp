@@ -243,7 +243,7 @@ bool needRestartLauncher(AppLauncher& appLauncher, CfgFile& cfgFile) {
     bool result;
     if (winNorestart != appOptions.end()) {
         const bool norestart = CfgFile::asBoolean(*winNorestart);
-        LOG_TRACE(tstrings::any() << PropertyName::winNorestart.name() << "=" 
+        LOG_TRACE(tstrings::any() << PropertyName::winNorestart.name() << "="
                 << (norestart ? "true" : "false") << " from config file");
         result = !norestart;
     } else {
