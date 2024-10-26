@@ -1291,7 +1291,11 @@ public class ForkJoinPool extends AbstractExecutorService {
                     unlockPhase();
                 if (room < 0)
                     throw new RejectedExecutionException("Queue capacity exceeded");
-                else if ((room == 0 || a[m & (s - 1)] == null) && pool != null)
+                else if ((room == 0 || a[m & (s - 1)] == null ||
+                          (!internal && task != null &&
+                           task.getClass().getSuperclass() == interruptibleTaskClass &&
+                           a[m & (s - 2)] != null)) &&
+                         pool != null)
                     pool.signalWork(); // may have appeared empty
             }
         }
@@ -1990,7 +1994,7 @@ public class ForkJoinPool extends AbstractExecutorService {
                     if ((q = qs[j = i & (n - 1)]) != null &&
                         (a = q.array) != null && (cap = a.length) > 0) {
                         for (int m = cap - 1, pb = -1;;) { // track progress
-                            ForkJoinTask<?> t; int b, nb; long k;
+                            ForkJoinTask<?> t; int b; long k;
                             t = (ForkJoinTask<?>)U.getReferenceAcquire(
                                 a, k = slotOffset(m & (b = q.base)));
                             if (q.base != b)              // inconsistent
@@ -2009,15 +2013,13 @@ public class ForkJoinPool extends AbstractExecutorService {
                                 }
                             }
                             else if (U.compareAndSetReference(a, k, t, null)) {
-                                ForkJoinTask<?> next = a[(nb = q.base = b + 1) & m];
+                                int nk = (q.base = b + 1) & m;
                                 w.nsteals = ++nsteals;
                                 w.source = j;             // volatile
                                 rescan = true;
                                 if ((t.getClass().getSuperclass() ==
-                                     interruptibleTaskClass) ?
-                                    (next != null ||
-                                     (j & 1) == 0 && q.top - nb > 0) :
-                                    (!propagated && next != null)) {
+                                     interruptibleTaskClass || !propagated) &&
+                                    a[nk] != null) {
                                     propagated = true;
                                     signalWork();
                                 }
