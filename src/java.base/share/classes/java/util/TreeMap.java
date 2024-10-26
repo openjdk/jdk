@@ -420,10 +420,10 @@ public class TreeMap<K,V>
     }
 
     /**
-     * Gets the entry corresponding to the specified key; if no such entry
-     * exists, returns the entry for the least key greater than the specified
-     * key; if no such entry exists (i.e., the greatest key in the Tree is less
-     * than the specified key), returns {@code null}.
+     * Gets the entry corresponding to the specified key; returns the entry for
+     * the least key greater than the specified key; if no such entry exists
+     * (i.e., the greatest key in the Tree is less than the specified key),
+     * returns {@code null}.
      */
     final Entry<K,V> getCeilingEntry(K key) {
         Entry<K,V> p = root;
@@ -453,10 +453,10 @@ public class TreeMap<K,V>
     }
 
     /**
-     * Gets the entry corresponding to the specified key; if no such entry
-     * exists, returns the entry for the greatest key less than the specified
-     * key; if no such entry exists (i.e., the least key in the Tree is greater
-     * than the specified key), returns {@code null}.
+     * Gets the entry corresponding to the specified key; returns the entry for
+     * the greatest key less than the specified key; if no such entry exists
+     * (i.e., the least key in the Tree is greater than the specified key),
+     * returns {@code null}.
      */
     final Entry<K,V> getFloorEntry(K key) {
         Entry<K,V> p = root;
