@@ -57,9 +57,11 @@
  * means that the cache is unbounded.
  * </li>
  * <li><p><b>{@systemProperty jdk.httpclient.connectionWindowSize}</b> (default: 2^26)<br>
- * The HTTP/2 client connection window size in bytes. The maximum size is 2^31-1. This value
- * cannot be smaller than the stream window size, which can be configured through the
- * {@code jdk.httpclient.windowsize} system property.
+ * The HTTP/2 client connection window size in bytes. Valid values are in the range
+ * [2^16-1, 2^31-1]. If an invalid value is provided, the default value is used.
+ * The implementation guarantees that the actual value will be no smaller than the stream
+ * window size, which can be configured through the {@code jdk.httpclient.windowsize}
+ * system property.
  * </li>
  * <li><p><b>{@systemProperty jdk.httpclient.disableRetryConnect}</b> (default: false)<br>
  * Whether automatic retry of connection failures is disabled. If false, then retries are
@@ -150,7 +152,8 @@
  * or 16kB)<br>The buffer size used by the web socket implementation for socket writes.
  * </li>
  * <li><p><b>{@systemProperty jdk.httpclient.windowsize}</b> (default: 16777216 or 16 MB)<br>
- * The HTTP/2 client stream window size in bytes.
+ * The HTTP/2 client stream window size in bytes. Valid values are in the range [2^14, 2^31-1].
+ * If an invalid value is provided, the default value is used.
  * </li>
  * <li><p><b>{@systemProperty jdk.httpclient.auth.retrylimit}</b> (default: 3)<br>
  * The number of attempts the Basic authentication filter will attempt to retry a failed
