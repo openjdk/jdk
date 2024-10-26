@@ -138,7 +138,7 @@ public final class AccessControlContext {
     public void checkPermission(Permission perm)
         throws AccessControlException
     {
-        throw new AccessControlException("");
+        throw new AccessControlException("checking permissions is not supported");
     }
 
     /**
