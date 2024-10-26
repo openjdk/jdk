@@ -26,16 +26,16 @@
 package java.security;
 
 /**
+ * This exception was originally thrown by the {@link AccessController} to
+ * indicate that a requested access was denied.
  *
  * @author Li Gong
  * @author Roland Schemers
  * @since 1.2
- * @deprecated This exception was originally thrown by the
- *       {@link AccessController} to indicate that a requested access was
- *       denied. The {@code AccessController} was only useful in conjunction
- *       with {@linkplain SecurityManager the Security Manager}, which is no
- *       longer supported. There is no replacement for the Security Manager,
- *       the {@code AccessController}, or this class.
+ * @deprecated This exception was only useful in conjunction with
+ *       {@linkplain SecurityManager the Security Manager}, which is no
+ *       longer supported. There is no replacement for the Security Manager
+ *       or this class.
  */
 
 @Deprecated(since="17", forRemoval=true)

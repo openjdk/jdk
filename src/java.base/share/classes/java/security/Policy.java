@@ -31,6 +31,9 @@ import java.util.Objects;
 import sun.security.jca.GetInstance;
 
 /**
+ * A {@code Policy} object was responsible for determining whether code
+ * executing in the Java runtime environment had permission to perform a
+ * security-sensitive operation. This feature no longer exists.
  *
  * @author Roland Schemers
  * @author Gary Ellison
