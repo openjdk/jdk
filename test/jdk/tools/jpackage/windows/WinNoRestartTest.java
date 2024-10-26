@@ -69,10 +69,10 @@ public class WinNoRestartTest {
 
         void apply(CfgFile cfgFile) {
             if (firstValue != null) {
-                cfgFile.setValue(sectionName, "win.norestart", firstValue);
+                cfgFile.addValue(sectionName, "win.norestart", firstValue);
             }
             if (secondValue != null) {
-                cfgFile.setValue(sectionName, "win.norestart", secondValue);
+                cfgFile.addValue(sectionName, "win.norestart", secondValue);
             }
         }
     }
@@ -116,26 +116,39 @@ public class WinNoRestartTest {
 
     private static List<NoRerunConfig> testConfig() {
         return List.of(
-            testConfig(true, "true"),
-            testConfig(true, "7"),
-            testConfig(true, "TRUE"),
-            testConfig(false, "false"),
-            testConfig(false, ""),
-            testConfig(false, "true2"),
-            testConfig(false, "true", ""),
-            testConfig(true, "false", "true")
+            // Test boolean conversion
+            withValue(true, "true"),
+            withValue(true, "7"),
+            withValue(true, "TRUE"),
+            withValue(false, "false"),
+            withValue(false, ""),
+            withValue(false, "true2"),
+
+            // Test multiple values of the property (the last should win)
+            withValues(false, "true", ""),
+            withValues(true, "false", "true"),
+
+            // Test property ignored in other sections
+            withWrongSection("Foo", "true"),
+            withWrongSection("JavaOptions", "true")
         );
     }
 
-    private static NoRerunConfig testConfig(boolean expectedNorestart,
+    private static NoRerunConfig withValue(boolean expectedNorestart,
             String norestartValue) {
         return new NoRerunConfig(null, new NoRerunSectionConfig("Application",
                 norestartValue, null), expectedNorestart);
     }
 
-    private static NoRerunConfig testConfig(boolean expectedNorestart,
+    private static NoRerunConfig withValues(boolean expectedNorestart,
             String firstNorestartValue, String secondNorestartValue) {
         return new NoRerunConfig(null, new NoRerunSectionConfig("Application",
                 firstNorestartValue, secondNorestartValue), expectedNorestart);
+    }
+
+    private static NoRerunConfig withWrongSection(String sectionName,
+            String norestartValue) {
+        return new NoRerunConfig(new NoRerunSectionConfig(sectionName,
+                norestartValue, null), null, false);
     }
 }
