@@ -32,7 +32,7 @@ import tests.JImageGenerator;
 
 /*
  * @test
- * @summary Make sure that ~3500 packages in a uber jar can be linked using jlink. Depends on the
+ * @summary Make sure that ~20000 packages in a uber jar can be linked using jlink. Depends on the
  *          packages, this is almost hit the 64K limitation as each plain export could take
  *          ~17 bytecodes.
  * @bug 8321413
@@ -45,9 +45,9 @@ import tests.JImageGenerator;
  *          jdk.jlink/jdk.tools.jimage
  *          jdk.compiler
  * @build tests.*
- * @run main/othervm -Xmx1g -Xlog:init=debug -XX:+UnlockDiagnosticVMOptions -XX:+BytecodeVerificationLocal JLink3500Packages
+ * @run main/othervm -Xmx1g -Xlog:init=debug -XX:+UnlockDiagnosticVMOptions -XX:+BytecodeVerificationLocal JLink20000Packages
  */
-public class JLink3500Packages {
+public class JLink20000Packages {
     private static final ToolProvider JAVAC_TOOL = ToolProvider.findFirst("javac")
             .orElseThrow(() -> new RuntimeException("javac tool not found"));
 
@@ -66,7 +66,7 @@ public class JLink3500Packages {
 
         StringJoiner mainModuleInfoContent = new StringJoiner(";\n  exports ", "module bug8321413x {\n  exports ", ";\n}");
 
-        for (int i = 0; i < 3500; i++) {
+        for (int i = 0; i < 20000; i++) {
             String packageName = "p" + i;
             String className = "C" + i;
 
@@ -87,12 +87,12 @@ public class JLink3500Packages {
         Path mainClassDir = mainModulePath.resolve("testpackage");
         Files.createDirectories(mainClassDir);
 
-        Files.writeString(mainClassDir.resolve("JLink3500PackagesTest.java"), """
+        Files.writeString(mainClassDir.resolve("JLink20000PackagesTest.java"), """
                 package testpackage;
 
-                public class JLink3500PackagesTest {
+                public class JLink20000PackagesTest {
                     public static void main(String[] args) throws Exception {
-                        System.out.println("JLink3500PackagesTest started.");
+                        System.out.println("JLink20000PackagesTest started.");
                     }
                 }
                 """);
@@ -117,12 +117,12 @@ public class JLink3500Packages {
         ProcessBuilder processBuilder = new ProcessBuilder(bin.toString(),
                 "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:+BytecodeVerificationLocal",
-                "-m", "bug8321413x/testpackage.JLink3500PackagesTest");
+                "-m", "bug8321413x/testpackage.JLink20000PackagesTest");
         processBuilder.inheritIO();
         processBuilder.directory(binDir.toFile());
         Process process = processBuilder.start();
         int exitCode = process.waitFor();
         if (exitCode != 0)
-             throw new AssertionError("JLink3500PackagesTest failed to launch");
+             throw new AssertionError("JLink20000PackagesTest failed to launch");
     }
 }

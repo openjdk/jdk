@@ -87,11 +87,8 @@ import jdk.tools.jlink.plugin.ResourcePoolEntry;
 
 import static java.lang.classfile.ClassFile.*;
 
-import static jdk.tools.jlink.internal.Snippets.genArrayProvider;
-import static jdk.tools.jlink.internal.Snippets.genImmutableSetProvider;
-import static jdk.tools.jlink.internal.Snippets.getEnumLoader;
-import static jdk.tools.jlink.internal.Snippets.loadArray;
-import static jdk.tools.jlink.internal.Snippets.loadImmutableSet;
+import static jdk.tools.jlink.internal.Snippets.*;
+
 
 /**
  * Jlink plugin to reconstitute module descriptors and other attributes for system
@@ -585,19 +582,19 @@ public final class SystemModulesPlugin extends AbstractPlugin {
          */
         private void dedups(ModuleDescriptor md) {
             // exports
-            for (Exports e : md.exports()) {
+            for (Exports e : sorted(md.exports())) {
                 dedupSetBuilder.stringSet(e.targets());
                 dedupSetBuilder.exportsModifiers(e.modifiers());
             }
 
             // opens
-            for (Opens opens : md.opens()) {
+            for (Opens opens : sorted(md.opens())) {
                 dedupSetBuilder.stringSet(opens.targets());
                 dedupSetBuilder.opensModifiers(opens.modifiers());
             }
 
             // requires
-            for (Requires r : md.requires()) {
+            for (Requires r : sorted(md.requires())) {
                 dedupSetBuilder.requiresModifiers(r.modifiers());
             }
 
@@ -647,8 +644,10 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                     });
         }
 
-        private void addModuleHelpers(Consumer<ClassBuilder> amendment) {
-            amendments.add(amendment);
+        private void setupLoadable(Loadable loadable) {
+            if (loadable.doesRequireSetup()) {
+                amendments.add(loadable::setup);
+            }
         }
 
         /**
@@ -674,9 +673,8 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                         MTD_void,
                         ACC_STATIC,
                         cob -> {
-                            clinitSnippets.forEach(snippet -> snippet.accept(cob));
-                            cob.pop()
-                               .return_();
+                            clinitSnippets.get().accept(cob);
+                            cob.return_();
                         });
             }
         }
@@ -1019,7 +1017,8 @@ public final class SystemModulesPlugin extends AbstractPlugin {
          * Generate code to generate an immutable set.
          */
         private void genImmutableSet(CodeBuilder cob, Set<String> set) {
-            loadImmutableSet(cob, sorted(set), CodeBuilder::loadConstant);
+            var loadableSet = LoadableSet.of(sorted(set), STRING_LOADER);
+            loadableSet.load(cob);
         }
 
         class ModuleDescriptorBuilder {
@@ -1066,7 +1065,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
             static final MethodTypeDesc MTD_ModuleDescriptor_int = MethodTypeDesc.of(CD_MODULE_DESCRIPTOR, CD_int);
             static final MethodTypeDesc MTD_List_ObjectArray = MethodTypeDesc.of(CD_List, CD_Object.arrayType());
 
-            static final int SET_SIZE_THRESHOLD = 512; // An arbitrary number as this likely generate minimum ~4K code
+            static final int PAGING_THRESHOLD = 512; // An arbitrary number as this likely generate minimum ~4K code
 
             final CodeBuilder cob;
             final ModuleDescriptor md;
@@ -1216,26 +1215,24 @@ public final class SystemModulesPlugin extends AbstractPlugin {
              *
              */
             void exports(Set<Exports> exports) {
+                var exportArray = LoadableArray.of(
+                        CD_EXPORTS,
+                        sorted(exports),
+                        this::loadExports,
+                        PAGING_THRESHOLD,
+                        classDesc,
+                        "module" + index + "Exports",
+                        // number safe for a single page helper under 64K size limit
+                        2000);
+
+                setupLoadable(exportArray);
+
                 cob.aload(BUILDER_VAR);
-                loadExportsArray(exports);
+                exportArray.load(cob);
                 cob.invokevirtual(CD_MODULE_BUILDER,
                         "exports",
                         MTD_EXPORTS_ARRAY)
                         .pop();
-            }
-
-            void loadExportsArray(Set<Exports> exports) {
-                if (exports.size() > SET_SIZE_THRESHOLD) {
-                    String methodName = "module" + index + "Exports";
-                    addModuleHelpers(clb -> genArrayProvider(clb,
-                            methodName,
-                            CD_EXPORTS,
-                            sorted(exports),
-                            this::loadExports));
-                    cob.invokestatic(classDesc, methodName, MethodTypeDesc.of(CD_EXPORTS.arrayType()));
-                } else {
-                    loadArray(cob, CD_EXPORTS, sorted(exports), this::loadExports);
-                }
             }
 
             /*
@@ -1249,7 +1246,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
              * pn = export.source()
              * targets = export.targets()
              */
-            void loadExports(CodeBuilder cb, Exports export) {
+            void loadExports(CodeBuilder cb, Exports export, int unused) {
                 dedupSetBuilder.loadExportsModifiers(cb, export.modifiers());
                 cb.loadConstant(export.source());
                 var targets = export.targets();
@@ -1272,8 +1269,20 @@ public final class SystemModulesPlugin extends AbstractPlugin {
              * Builder.opens(Opens[])
              */
             void opens(Set<Opens> opens) {
+                var opensArray = LoadableArray.of(
+                        CD_OPENS,
+                        sorted(opens),
+                        this::newOpens,
+                        PAGING_THRESHOLD,
+                        classDesc,
+                        "module" + index + "Opens",
+                        // number safe for a single page helper under 64K size limit
+                        2000);
+
+                setupLoadable(opensArray);
+
                 cob.aload(BUILDER_VAR);
-                loadArray(cob, CD_OPENS, sorted(opens), this::newOpens);
+                opensArray.load(cob);
                 cob.invokevirtual(CD_MODULE_BUILDER,
                                   "opens",
                                   MTD_OPENS_ARRAY)
@@ -1292,7 +1301,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
              * targets = open.targets()
              * Builder.newOpens(mods, pn, targets);
              */
-            void newOpens(CodeBuilder cb, Opens open) {
+            void newOpens(CodeBuilder cb, Opens open, int unused) {
                 dedupSetBuilder.loadOpensModifiers(cb, open.modifiers());
                 cb.loadConstant(open.source());
                 var targets = open.targets();
@@ -1327,8 +1336,20 @@ public final class SystemModulesPlugin extends AbstractPlugin {
             *
             */
             void provides(Collection<Provides> provides) {
+                var providesArray = LoadableArray.of(
+                        CD_PROVIDES,
+                        sorted(provides),
+                        this::newProvides,
+                        PAGING_THRESHOLD,
+                        classDesc,
+                        "module" + index + "Provides",
+                        // number safe for a single page helper under 64K size limit
+                        2000);
+
+                setupLoadable(providesArray);
+
                 cob.aload(BUILDER_VAR);
-                loadArray(cob, CD_PROVIDES, sorted(provides), this::newProvides);
+                providesArray.load(cob);
                 cob.invokevirtual(CD_MODULE_BUILDER,
                                   "provides",
                                   MTD_PROVIDES_ARRAY)
@@ -1342,10 +1363,22 @@ public final class SystemModulesPlugin extends AbstractPlugin {
              * providers = List.of(new String[] { provide.providers() }
              * Builder.newProvides(service, providers);
              */
-            void newProvides(CodeBuilder cb, Provides provide) {
+            void newProvides(CodeBuilder cb, Provides provide, int offset) {
+                var providersArray = LoadableArray.of(
+                        CD_String,
+                        provide.providers(),
+                        STRING_LOADER,
+                        PAGING_THRESHOLD,
+                        classDesc,
+                        "module" + index + "Provider" + offset,
+                        STRING_PAGE_SIZE);
+
+
+                setupLoadable(providersArray);
+
                 cb.loadConstant(provide.service());
-                loadArray(cb, CD_String, provide.providers(), CodeBuilder::loadConstant);
-                cob.invokestatic(CD_List,
+                providersArray.load(cb);
+                cb.invokestatic(CD_List,
                                  "of",
                                  MTD_List_ObjectArray,
                                  true)
@@ -1362,14 +1395,18 @@ public final class SystemModulesPlugin extends AbstractPlugin {
              *   Set.of(packages)
              */
             void packages(Set<String> packages) {
+                var packagesArray = LoadableSet.of(
+                        sorted(packages),
+                        STRING_LOADER,
+                        PAGING_THRESHOLD,
+                        classDesc,
+                        "module" + index + "Packages",
+                        STRING_PAGE_SIZE);
+
+                setupLoadable(packagesArray);
+
                 cob.aload(BUILDER_VAR);
-                if (packages.size() > SET_SIZE_THRESHOLD) {
-                    var methodName = "module" + index + "Packages";
-                    addModuleHelpers(clb -> genImmutableSetProvider(clb, methodName, sorted(packages), CodeBuilder::loadConstant));
-                    cob.invokestatic(classDesc, methodName, MethodTypeDesc.of(CD_Set));
-                } else {
-                    loadImmutableSet(cob, sorted(packages), CodeBuilder::loadConstant);
-                }
+                packagesArray.load(cob);
                 cob.invokevirtual(CD_MODULE_BUILDER,
                                   "packages",
                                   MTD_SET)
@@ -1396,15 +1433,6 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                    .loadConstant(v.toString())
                    .invokevirtual(CD_MODULE_BUILDER,
                                   "version",
-                                  MTD_STRING)
-                   .pop();
-            }
-
-            void invokeBuilderMethod(String methodName, String value) {
-                cob.aload(BUILDER_VAR)
-                   .loadConstant(value)
-                   .invokevirtual(CD_MODULE_BUILDER,
-                                  methodName,
                                   MTD_STRING)
                    .pop();
             }
@@ -1508,34 +1536,43 @@ public final class SystemModulesPlugin extends AbstractPlugin {
         static class DedupSetBuilder {
             // map Set<String> to a specialized builder to allow them to be
             // deduplicated as they are requested
-            final Map<Set<String>, SetReference<String>> stringSets = new HashMap<>();
+            final Map<Set<String>, SetReference> stringSets = new HashMap<>();
 
             // map Set<Requires.Modifier> to a specialized builder to allow them to be
             // deduplicated as they are requested
-            final Map<Set<Requires.Modifier>, SetReference<Requires.Modifier>>
+            final Map<Set<Requires.Modifier>, SetReference>
                 requiresModifiersSets = new HashMap<>();
 
             // map Set<Exports.Modifier> to a specialized builder to allow them to be
             // deduplicated as they are requested
-            final Map<Set<Exports.Modifier>, SetReference<Exports.Modifier>>
+            final Map<Set<Exports.Modifier>, SetReference>
                 exportsModifiersSets = new HashMap<>();
 
             // map Set<Opens.Modifier> to a specialized builder to allow them to be
             // deduplicated as they are requested
-            final Map<Set<Opens.Modifier>, SetReference<Opens.Modifier>>
+            final Map<Set<Opens.Modifier>, SetReference>
                 opensModifiersSets = new HashMap<>();
 
             private static final String VALUES_ARRAY = "dedupSetValues";
 
             final ClassDesc owner;
-            int countOfStoredValues = 0;
+            private final ArrayList<SetReference> values = new ArrayList<>();
 
             DedupSetBuilder(ClassDesc owner) {
                 this.owner = owner;
             }
 
-            int requestValueStorage() {
-                return countOfStoredValues++;
+            <T extends Comparable<T>> SetReference createLoadableSet(Set<T> elements, ElementLoader<T> elementLoader) {
+                var loadableSet = LoadableSet.of(sorted(elements),
+                                                 elementLoader,
+                                                 ModuleDescriptorBuilder.PAGING_THRESHOLD,
+                                                 owner,
+                                                 "dedupSet" + values.size(),
+                                                 // Safe for String and Enum within 64K
+                                                 3000);
+                var ref = new SetReference(loadableSet);
+                values.add(ref);
+                return ref;
             }
 
             /*
@@ -1543,7 +1580,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
              */
             void stringSet(Set<String> strings) {
                 stringSets.computeIfAbsent(strings,
-                    s -> new SetReference<>(s, CodeBuilder::loadConstant)
+                        s -> createLoadableSet(s, STRING_LOADER)
                 ).increment();
             }
 
@@ -1551,8 +1588,8 @@ public final class SystemModulesPlugin extends AbstractPlugin {
              * Add the given set of Exports.Modifiers
              */
             void exportsModifiers(Set<Exports.Modifier> mods) {
-                exportsModifiersSets.computeIfAbsent(mods, s ->
-                        new SetReference<>(s, getEnumLoader(CD_EXPORTS_MODIFIER))
+                exportsModifiersSets.computeIfAbsent(mods,
+                        s -> createLoadableSet(s, getEnumLoader(CD_EXPORTS_MODIFIER))
                 ).increment();
             }
 
@@ -1560,8 +1597,8 @@ public final class SystemModulesPlugin extends AbstractPlugin {
              * Add the given set of Opens.Modifiers
              */
             void opensModifiers(Set<Opens.Modifier> mods) {
-                opensModifiersSets.computeIfAbsent(mods, s ->
-                        new SetReference<>(s, getEnumLoader(CD_OPENS_MODIFIER))
+                opensModifiersSets.computeIfAbsent(mods,
+                        s -> createLoadableSet(s, getEnumLoader(CD_OPENS_MODIFIER))
                 ).increment();
             }
 
@@ -1569,8 +1606,8 @@ public final class SystemModulesPlugin extends AbstractPlugin {
              * Add the given set of Requires.Modifiers
              */
             void requiresModifiers(Set<Requires.Modifier> mods) {
-                requiresModifiersSets.computeIfAbsent(mods, s ->
-                        new SetReference<>(s, getEnumLoader(CD_REQUIRES_MODIFIER))
+                requiresModifiersSets.computeIfAbsent(mods,
+                        s -> createLoadableSet(s, getEnumLoader(CD_REQUIRES_MODIFIER))
                 ).increment();
             }
 
@@ -1620,39 +1657,44 @@ public final class SystemModulesPlugin extends AbstractPlugin {
              *     dedupSetValues[countOfStoredValues - 1] = ...
              * }
              */
-            Collection<Consumer<CodeBuilder>> buildConstants(ClassBuilder clb) {
-                var index = 0;
-                ArrayList<Consumer<CodeBuilder>> setValueBuilders = new ArrayList<>();
-                // The SetReferences need to be sorted to reproduce same result.
-                for (var ref : sorted(stringSets.values())) {
-                    index++;
-                    ref.generateConstant(clb, "dedupStringSet" + index).ifPresent(setValueBuilders::add);
-                }
-                for (var ref: sorted(opensModifiersSets.values())) {
-                    index++;
-                    ref.generateConstant(clb, "dedupOpensSet" + index).ifPresent(setValueBuilders::add);
-                }
-                for (var ref: sorted(exportsModifiersSets.values())) {
-                    index++;
-                    ref.generateConstant(clb, "dedupExportsSet" + index).ifPresent(setValueBuilders::add);
-                }
-                for (var ref: sorted(requiresModifiersSets.values())) {
-                    index++;
-                    ref.generateConstant(clb, "dedupRequiresSet" + index).ifPresent(setValueBuilders::add);
+            Optional<Consumer<CodeBuilder>> buildConstants(ClassBuilder clb) {
+                var staticCache = new ArrayList<SetReference>();
+
+                for (var set: values) {
+                    set.loadableSet().setup(clb);
+                    if (set.refCount() > 1) {
+                        staticCache.add(set);
+                    }
                 }
 
-                if (countOfStoredValues > 0) {
-                    // The request cache slots each should have an initial value
-                    assert setValueBuilders.size() == countOfStoredValues;
-                    clb.withField(VALUES_ARRAY, CD_Set.arrayType(), ACC_STATIC | ACC_FINAL);
-                    // Allocate array before assign values
-                    setValueBuilders.addFirst(cob ->
-                            cob.loadConstant(countOfStoredValues)
-                               .anewarray(CD_Set)
-                               .dup()
-                               .putstatic(owner, VALUES_ARRAY, CD_Set.arrayType()));
+                if (staticCache.isEmpty()) {
+                    return Optional.empty();
                 }
-                return setValueBuilders;
+
+                // This is called when the value is build for the cache
+                // At that time, a slot in cache is assigned
+                // The loader is called when building the static initializer
+                // We need to ensure that happens before we access SetReference::load
+                ElementLoader<SetReference> cacheLoader = (cob, setRef, index) -> {
+                    setRef.assignTo(index);
+                    setRef.loadableSet().load(cob);
+                };
+
+                var loadableArray = LoadableArray.of(
+                        CD_Set,
+                        staticCache,
+                        cacheLoader,
+                        ModuleDescriptorBuilder.PAGING_THRESHOLD,
+                        owner,
+                        VALUES_ARRAY,
+                        2000);
+
+                loadableArray.setup(clb);
+                clb.withField(VALUES_ARRAY, CD_Set.arrayType(), ACC_STATIC | ACC_FINAL);
+                return Optional.of(cob -> {
+                        loadableArray.load(cob);
+                        cob.putstatic(owner, VALUES_ARRAY, CD_Set.arrayType());
+                });
             }
 
             /*
@@ -1669,24 +1711,32 @@ public final class SystemModulesPlugin extends AbstractPlugin {
              * generateConstant method should be called to setup the provider methods and cache array.
              * load method can then be called to load the set onto the operand stack.
              */
-            class SetReference<T extends Comparable<T>> implements Comparable<SetReference<T>> {
+            class SetReference {
                 // sorted elements of the set to ensure same generated code
-                private final List<T> elements;
-                private final BiConsumer<CodeBuilder, T> elementLoader;
+                private final LoadableSet loadableSet;
 
                 private int refCount;
                 // The index for this set value in the cache array
                 private int index = -1;
-                // The provider method name, null if ths set is small enough for inline generation
-                private String methodName;
 
-                SetReference(Set<T> elements, BiConsumer<CodeBuilder, T> elementLoader) {
-                    this.elements = sorted(elements);
-                    this.elementLoader = elementLoader;
+                SetReference(LoadableSet set) {
+                    this.loadableSet = set;
                 }
 
                 int increment() {
                     return ++refCount;
+                }
+
+                int refCount() {
+                    return refCount;
+                }
+
+                LoadableSet loadableSet() {
+                    return loadableSet;
+                }
+
+                void assignTo(int index) {
+                    this.index = index;
                 }
 
                 // Load the set to the operand stack.
@@ -1704,73 +1754,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                         cob.loadConstant(index);
                         cob.aaload();
                     } else {
-                        build(cob);
-                    }
-                }
-
-                // Build the set value and store the reference.
-                // Generate either
-                //   dedupSetValues[index] = Set.of(elements);
-                // or
-                //   dedupSetValues[index] = methodName();
-                void store(CodeBuilder cob) {
-                    assert index >= 0;
-                    // array should be on top of the operands for this generate code in clinit
-                    cob.dup()
-                       .loadConstant(index);
-                    build(cob);
-                    cob.aastore();
-                }
-
-                // Build the set and leave the reference at top of the operand stack.
-                // Generate either
-                //   Set.of(elements)
-                // or invoke the provider method
-                //   methodName()
-                private void build(CodeBuilder cob) {
-                    if (methodName != null) {
-                        cob.invokestatic(owner, methodName, MethodTypeDesc.of(CD_Set));
-                    } else {
-                        loadImmutableSet(cob, elements, elementLoader);
-                    }
-                }
-
-                /**
-                 * Generate provider method if the set size is over threshold to avoid overload
-                 * bytecode limitation per method.
-                 * Return a snippet builder that generates code to store the reference of the set value.
-                 */
-                Optional<Consumer<CodeBuilder>> generateConstant(ClassBuilder clb, String name) {
-                    if (elements.size() > ModuleDescriptorBuilder.SET_SIZE_THRESHOLD) {
-                        methodName = name + "Provider";
-                        genImmutableSetProvider(clb, methodName, elements, elementLoader);
-                    }
-
-                    if (refCount <= 1) {
-                        return Optional.empty();
-                    } else {
-                        index = requestValueStorage();
-                        return Optional.of(this::store);
-                    }
-                }
-
-                @Override
-                public int compareTo(SetReference<T> o) {
-                    if (o == this) {
-                        return 0;
-                    }
-                    if (elements.size() == o.elements.size()) {
-                        var a1 = elements;
-                        var a2 = o.elements;
-                        for (int i = 0; i < elements.size(); i++) {
-                            var r = a1.get(i).compareTo(a2.get(i));
-                            if (r != 0) {
-                                return r;
-                            }
-                        }
-                        return 0;
-                    } else {
-                        return elements.size() - o.elements.size();
+                        loadableSet.load(cob);
                     }
                 }
             }
