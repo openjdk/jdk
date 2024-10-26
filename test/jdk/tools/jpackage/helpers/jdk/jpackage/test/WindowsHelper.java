@@ -28,9 +28,12 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.jpackage.test.Functional.ThrowingRunnable;
@@ -226,6 +229,71 @@ public class WindowsHelper {
 
         throw new RuntimeException(String.format(
                 "Failed to get file description of [%s]", pathToExeFile));
+    }
+
+    public static void killProcess(long pid) {
+        Executor.of("taskkill", "/F", "/PID", Long.toString(pid)).dumpOutput(true).execute();
+    }
+
+    public static Optional<Long> findAppLauncherPID(JPackageCommand cmd,
+            String launcherName, int expectedCount) {
+        // Get the list of PIDs and PPIDs of app launcher processes.
+        // wmic process where (name = "foo.exe") get ProcessID,ParentProcessID
+        List<String> output = Executor.of("wmic", "process", "where", "(name",
+                "=",
+                "\"" + cmd.appLauncherPath(launcherName).getFileName().toString() + "\"",
+                ")", "get", "ProcessID,ParentProcessID").dumpOutput(true).
+                saveOutput().executeAndGetOutput();
+
+        if (expectedCount == 0) {
+            TKit.assertEquals("No Instance(s) Available.", output.getFirst().
+                    trim(), "Check no app launcher processes found running");
+            return Optional.empty();
+        }
+
+        String[] headers = Stream.of(output.getFirst().split("\\s+", 2)).map(
+                String::trim).map(String::toLowerCase).toArray(String[]::new);
+        Pattern pattern;
+        if (headers[0].equals("parentprocessid") && headers[1].equals(
+                "processid")) {
+            pattern = Pattern.compile("^(?<ppid>\\d+)\\s+(?<pid>\\d+)\\s+$");
+        } else if (headers[1].equals("parentprocessid") && headers[0].equals(
+                "processid")) {
+            pattern = Pattern.compile("^(?<pid>\\d+)\\s+(?<ppid>\\d+)\\s+$");
+        } else {
+            throw new RuntimeException(
+                    "Unrecognizable output of \'wmic process\' command");
+        }
+
+        List<long[]> processes = output.stream().skip(1).map(line -> {
+            Matcher m = pattern.matcher(line);
+            long[] pids = null;
+            if (m.matches()) {
+                pids = new long[]{Long.parseLong(m.group("pid")), Long.
+                    parseLong(m.group("ppid"))};
+            }
+            return pids;
+        }).filter(Objects::nonNull).toList();
+
+        TKit.assertEquals(expectedCount, processes.size(), String.format(
+                "Check [%d] app launcher processes found running", expectedCount));
+
+        switch (expectedCount) {
+            case 2 -> {
+                if (processes.get(0)[0] == processes.get(1)[1]) {
+                    return Optional.of(processes.get(0)[0]);
+                } else if (processes.get(1)[0] == processes.get(0)[1]) {
+                    return Optional.of(processes.get(1)[0]);
+                } else {
+                    throw new RuntimeException("App launcher processes unrelated");
+                }
+            }
+            case 1 -> {
+                return Optional.of(processes.get(0)[0]);
+            }
+            default ->
+                throw new IllegalArgumentException();
+        }
     }
 
     private static boolean isUserLocalInstall(JPackageCommand cmd) {

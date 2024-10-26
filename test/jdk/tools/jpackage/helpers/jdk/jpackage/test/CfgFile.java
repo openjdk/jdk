@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,14 @@ package jdk.jpackage.test;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Collections;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 
 public final class CfgFile {
@@ -59,27 +60,65 @@ public final class CfgFile {
                 null);
     }
 
+    public void setValue(String section, String key, String value) {
+        Objects.requireNonNull(section);
+        Objects.requireNonNull(key);
+        Objects.requireNonNull(value);
+
+        if (!data.containsKey(section)) {
+            data.put(section, new LinkedHashMap<>());
+        }
+
+        data.get(section).put(key, value);
+    }
+
+    public CfgFile() {
+        this(new LinkedHashMap<>(), "*");
+    }
+    
+    public static CfgFile combine(CfgFile base, CfgFile mods) {
+        var cfgFile = new CfgFile(new LinkedHashMap<>(), "*");
+        for (var src : List.of(base, mods)) {
+            for (var section : src.data.entrySet()) {
+                for (var kvp : section.getValue().entrySet()) {
+                    cfgFile.setValue(section.getKey(), kvp.getKey(), kvp.getValue());
+                }
+            }
+        }
+        return cfgFile;
+    }
+
     private CfgFile(Map<String, Map<String, String>> data, String id) {
         this.data = data;
         this.id = id;
     }
 
-    public static CfgFile readFromFile(Path path) throws IOException {
+    public void save(Path path) {
+        var lines = data.entrySet().stream().flatMap(section -> {
+            return Stream.concat(
+                    Stream.of(String.format("[%s]", section.getKey())),
+                    section.getValue().entrySet().stream().map(kvp -> {
+                        return String.format("%s=%s", kvp.getKey(), kvp.getValue());
+                    }));
+        });
+        TKit.createTextFile(path, lines);
+    }
+
+    public static CfgFile load(Path path) throws IOException {
         TKit.trace(String.format("Read [%s] jpackage cfg file", path));
 
         final Pattern sectionBeginRegex = Pattern.compile( "\\s*\\[([^]]*)\\]\\s*");
         final Pattern keyRegex = Pattern.compile( "\\s*([^=]*)=(.*)" );
 
-        Map<String, Map<String, String>> result = new HashMap<>();
+        Map<String, Map<String, String>> result = new LinkedHashMap<>();
 
         String currentSectionName = null;
-        Map<String, String> currentSection = new HashMap<>();
+        Map<String, String> currentSection = new LinkedHashMap<>();
         for (String line : Files.readAllLines(path)) {
             Matcher matcher = sectionBeginRegex.matcher(line);
             if (matcher.find()) {
                 if (currentSectionName != null) {
-                    result.put(currentSectionName, Collections.unmodifiableMap(
-                            new HashMap<>(currentSection)));
+                    result.put(currentSectionName, new LinkedHashMap<>(currentSection));
                 }
                 currentSectionName = matcher.group(1);
                 currentSection.clear();
@@ -94,11 +133,10 @@ public final class CfgFile {
         }
 
         if (!currentSection.isEmpty()) {
-            result.put(Optional.ofNullable(currentSectionName).orElse(""),
-                    Collections.unmodifiableMap(currentSection));
+            result.put(Optional.ofNullable(currentSectionName).orElse(""), currentSection);
         }
 
-        return new CfgFile(Collections.unmodifiableMap(result), path.toString());
+        return new CfgFile(result, path.toString());
     }
 
     private final Map<String, Map<String, String>> data;

@@ -215,7 +215,7 @@ public final class LauncherAsServiceVerifier {
         if (cmd.isPackageUnpacked(msg) || cmd.isFakeRuntime(msg)) {
             return false;
         }
-        var cfgFile = CfgFile.readFromFile(cmd.appLauncherCfgPath(launcherName));
+        var cfgFile = CfgFile.load(cmd.appLauncherCfgPath(launcherName));
         if (!expectedValue.equals(cfgFile.getValueUnchecked("ArgOptions",
                 "arguments"))) {
             TKit.trace(String.format(
