@@ -26,15 +26,15 @@
 package java.security;
 
 /**
- * AccessController was used with a SecurityManager for access control
- * operations and decisions. This feature no longer exists.
+ * {@code AccessController} was used with the Security Manager for access
+ * control operations and decisions. This feature no longer exists.
  *
  * @author Li Gong
  * @author Roland Schemers
  * @since 1.2
- * @deprecated This class was only useful in conjunction with the Security
- *       Manager, which is no longer supported. There is no replacement for
- *       the Security Manager or this class.
+ * @deprecated This class was only useful in conjunction with {@linkplain
+ *       SecurityManager the Security Manager}, which is no longer supported.
+ *       There is no replacement for the Security Manager or this class.
  */
 @Deprecated(since="17", forRemoval=true)
 public final class AccessController {

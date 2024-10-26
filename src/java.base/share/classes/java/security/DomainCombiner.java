@@ -26,13 +26,14 @@
 package java.security;
 
 /**
- * DomainCombiner was used to dynamically update ProtectionDomains for
- * access control operations and decisions. This feature no longer exists.
+ * {@code DomainCombiner} was used to dynamically update
+ * {@code ProtectionDomain}s for access control operations and decisions. This
+ * feature no longer exists.
  *
  * @since 1.3
- * @deprecated This class was only useful in conjunction with the Security
- *       Manager, which is no longer supported. There is no replacement for
- *       the Security Manager or this class.
+ * @deprecated This class was only useful in conjunction with {@linkplain
+ *       SecurityManager the Security Manager}, which is no longer supported.
+ *       There is no replacement for the Security Manager or this class.
  */
 @Deprecated(since="17", forRemoval=true)
 public interface DomainCombiner {
