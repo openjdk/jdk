@@ -471,13 +471,13 @@ public abstract class SctpMultiChannel
      * @param   name
      *          The socket option
      *
-     * @param  association
-     *         The association whose option should be set, or {@code null}
-     *         if this option should be set at the channel's socket level.
-     *
      * @param   value
      *          The value of the socket option. A value of {@code null} may be
      *          a valid value for some socket options.
+     *
+     * @param  association
+     *         The association whose option should be set, or {@code null}
+     *         if this option should be set at the channel's socket level.
      *
      * @return  This channel
      *

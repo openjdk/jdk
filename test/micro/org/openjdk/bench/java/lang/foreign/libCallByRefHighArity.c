@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Google LLC. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,42 +21,13 @@
  * questions.
  */
 
-package p;
+#include "export.h"
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-
-@Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.TYPE_USE)
-@interface A {}
-
-@Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.TYPE_USE)
-@interface B {}
-
-public class Test {
-    static class StaticNested {
-        static class InnerMostStaticNested {}
-    }
-
-    class Inner {
-        class InnerMost {}
-    }
-
-    @ExpectedToString("p.Test.@p.A @p.B StaticNested")
-    @A @B StaticNested i;
-
-    @ExpectedToString("p.Test.StaticNested.@p.A InnerMostStaticNested")
-    StaticNested.@A InnerMostStaticNested j;
-
-    @ExpectedToString("p.Test.@p.A Inner")
-    @A Inner k;
-
-    @ExpectedToString("p.Test.Inner.@p.A InnerMost")
-    Inner.@A InnerMost l;
-
-    @ExpectedToString("p.Test.@p.A Inner.InnerMost")
-    @A Inner.InnerMost m;
-}
+EXPORT void noop_params0() {}
+EXPORT void noop_params1(void *param0) {}
+EXPORT void noop_params2(void *param0, void *param1) {}
+EXPORT void noop_params3(void *param0, void *param1, void *param2) {}
+EXPORT void noop_params4(void *param0, void *param1, void *param2, void *param3) {}
+EXPORT void noop_params5(void *param0, void *param1, void *param2, void *param3, void *param4) {}
+EXPORT void noop_params10(void *param0, void *param1, void *param2, void *param3, void *param4,
+                          void *param5, void *param6, void *param7, void *param8, void *param9) {}
