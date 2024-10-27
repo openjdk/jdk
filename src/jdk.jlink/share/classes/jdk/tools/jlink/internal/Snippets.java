@@ -24,7 +24,6 @@
  */
 package jdk.tools.jlink.internal;
 
-import java.lang.annotation.Target;
 import java.lang.classfile.ClassBuilder;
 import static java.lang.classfile.ClassFile.ACC_PUBLIC;
 import static java.lang.classfile.ClassFile.ACC_STATIC;
