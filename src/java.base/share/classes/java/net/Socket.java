@@ -875,8 +875,9 @@ public class Socket implements java.io.Closeable {
      *
      * <p> If this socket has an associated channel then the resulting input
      * stream delegates all of its operations to the channel.  If the channel
-     * is in non-blocking mode then the input stream's {@code read} operations
-     * will throw an {@link java.nio.channels.IllegalBlockingModeException}.
+     * is in non-blocking mode then the input stream's {@code read} and
+     * {@code skip} operations will throw an
+     * {@link java.nio.channels.IllegalBlockingModeException}.
      *
      * <p> Reading from the input stream is {@linkplain Thread#interrupt()
      * interruptible} in the following circumstances:
@@ -884,9 +885,9 @@ public class Socket implements java.io.Closeable {
      *   <li> The socket is {@linkplain SocketChannel#socket() associated} with
      *        a {@link SocketChannel SocketChannel}.
      *        In that case, interrupting a thread reading from the input stream
-     *        will close the underlying channel and cause the read method to
-     *        throw {@link ClosedByInterruptException} with the interrupt
-     *        status set.
+     *        will close the underlying channel and cause the read and skip
+     *        methods to throw {@link ClosedByInterruptException} with the
+     *        interrupt status set.
      *   <li> The socket uses the system-default socket implementation and a
      *        {@linkplain Thread#isVirtual() virtual thread} is reading from the
      *        input stream. In that case, interrupting the virtual thread will
@@ -1274,6 +1275,9 @@ public class Socket implements java.io.Closeable {
      *  Socket is still valid. A timeout of zero is interpreted as an infinite timeout.
      *  The option <B>must</B> be enabled prior to entering the blocking operation
      *  to have effect.
+     *
+     * <p> Behavior of any other method call on the InputStream associated with
+     * this Socket is implementation specific.
      *
      * @param timeout the specified timeout, in milliseconds.
      * @throws SocketException if there is an error in the underlying protocol,
