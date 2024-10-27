@@ -32,10 +32,10 @@ final class LinuxPackageArch {
 
     static String getValue(StandardPackageType pkgType) {
         switch (pkgType) {
-            case LinuxRpm -> {
+            case LINUX_RPM -> {
                 return RpmPackageArch.VALUE;
             }
-            case LinuxDeb -> {
+            case LINUX_DEB -> {
                 return DebPackageArch.VALUE;
             }
             default -> {

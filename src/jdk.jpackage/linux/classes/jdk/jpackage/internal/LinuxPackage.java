@@ -54,10 +54,10 @@ interface LinuxPackage extends Package {
     default String packageFileName() {
         String packageFileNameTemlate;
         switch (asStandardPackageType()) {
-            case LinuxDeb -> {
+            case LINUX_DEB -> {
                 packageFileNameTemlate = "%s_%s-%s_%s";
             }
-            case LinuxRpm -> {
+            case LINUX_RPM -> {
                 packageFileNameTemlate = "%s-%s-%s.%s";
             }
             default -> {
@@ -90,7 +90,7 @@ interface LinuxPackage extends Package {
                     var packageName = target.packageName();
                     if (target.type() instanceof StandardPackageType type) {
                         switch (type) {
-                            case LinuxDeb, LinuxRpm -> {
+                            case LINUX_DEB, LINUX_RPM -> {
                                 // make sure to lower case and spaces/underscores become dashes
                                 packageName = packageName.toLowerCase().replaceAll("[ _]", "-");
                             }
@@ -184,7 +184,7 @@ interface LinuxPackage extends Package {
     private static void validatePackageName(String packageName,
             StandardPackageType pkgType) throws ConfigException {
         switch (pkgType) {
-            case LinuxDeb -> {
+            case LINUX_DEB -> {
                 //
                 // Debian rules for package naming are used here
                 // https://www.debian.org/doc/debian-policy/ch-controlfields.html#s-f-Source
@@ -201,7 +201,7 @@ interface LinuxPackage extends Package {
                                     .getString("error.deb-invalid-value-for-package-name.advice"));
                 }
             }
-            case LinuxRpm -> {
+            case LINUX_RPM -> {
                 //
                 // Fedora rules for package naming are used here
                 // https://fedoraproject.org/wiki/Packaging:NamingGuidelines?rd=Packaging/NamingGuidelines

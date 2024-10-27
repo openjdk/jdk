@@ -44,7 +44,7 @@ interface WinExePackage extends Package {
 
         @Override
         public PackageType type() {
-            return StandardPackageType.WinExe;
+            return StandardPackageType.WIN_EXE;
         }
 
         @Override

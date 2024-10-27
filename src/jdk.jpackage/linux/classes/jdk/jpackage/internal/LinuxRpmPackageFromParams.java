@@ -27,13 +27,13 @@ package jdk.jpackage.internal;
 import java.util.Map;
 import static jdk.jpackage.internal.BundlerParamInfo.createStringBundlerParam;
 import jdk.jpackage.internal.LinuxRpmPackage.Impl;
-import static jdk.jpackage.internal.Package.StandardPackageType.LinuxRpm;
 import static jdk.jpackage.internal.PackageFromParams.createBundlerParam;
+import static jdk.jpackage.internal.Package.StandardPackageType.LINUX_RPM;
 
 final class LinuxRpmPackageFromParams {
 
     private static LinuxRpmPackage create(Map<String, ? super Object> params) throws ConfigException {
-        var pkg = LinuxPackageFromParams.create(params, LinuxRpm);
+        var pkg = LinuxPackageFromParams.create(params, LINUX_RPM);
 
         var licenseType = LICENSE_TYPE.fetchFrom(params);
 

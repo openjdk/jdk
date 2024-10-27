@@ -48,7 +48,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.internal.util.OperatingSystem;
 import static jdk.jpackage.internal.Functional.ThrowingFunction.toFunction;
-import static jdk.jpackage.internal.Package.StandardPackageType.LinuxDeb;
+import static jdk.jpackage.internal.Package.StandardPackageType.LINUX_DEB;
 
 public class LinuxDebBundler extends LinuxPackageBundler {
 
@@ -152,7 +152,7 @@ public class LinuxDebBundler extends LinuxPackageBundler {
         Set<String> archPackages = new HashSet<>();
         Set<String> otherPackages = new HashSet<>();
 
-        var debArch = LinuxPackageArch.getValue(LinuxDeb);
+        var debArch = LinuxPackageArch.getValue(LINUX_DEB);
 
         Executor.of(TOOL_DPKG, "-S", file.toString())
                 .saveOutput(true).executeExpectSuccess()

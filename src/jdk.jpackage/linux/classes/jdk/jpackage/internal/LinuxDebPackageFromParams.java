@@ -26,13 +26,13 @@ package jdk.jpackage.internal;
 
 import java.util.Map;
 import static jdk.jpackage.internal.BundlerParamInfo.createStringBundlerParam;
-import static jdk.jpackage.internal.Package.StandardPackageType.LinuxDeb;
 import static jdk.jpackage.internal.PackageFromParams.createBundlerParam;
+import static jdk.jpackage.internal.Package.StandardPackageType.LINUX_DEB;
 
 final class LinuxDebPackageFromParams {
 
     private static LinuxDebPackage create(Map<String, ? super Object> params) throws ConfigException {
-        var pkg = LinuxPackageFromParams.create(params, LinuxDeb);
+        var pkg = LinuxPackageFromParams.create(params, LINUX_DEB);
 
         var maintainerEmail = MAINTAINER_EMAIL.fetchFrom(params);
 

@@ -29,15 +29,15 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import static jdk.jpackage.internal.BundlerParamInfo.createStringBundlerParam;
-import static jdk.jpackage.internal.Package.StandardPackageType.WinMsi;
 import static jdk.jpackage.internal.PackageFromParams.createBundlerParam;
 import static jdk.jpackage.internal.StandardBundlerParam.RESOURCE_DIR;
 import jdk.jpackage.internal.WinMsiPackage.Impl;
+import static jdk.jpackage.internal.Package.StandardPackageType.WIN_MSI;
 
 final class WinMsiPackageFromParams {
 
     private static WinMsiPackage create(Map<String, ? super Object> params) throws ConfigException {
-        var pkg = PackageFromParams.create(params, WinApplicationFromParams.APPLICATION, WinMsi);
+        var pkg = PackageFromParams.create(params, WinApplicationFromParams.APPLICATION, WIN_MSI);
         var withInstallDirChooser = INSTALLDIR_CHOOSER.fetchFrom(params);
         var withShortcutPrompt = SHORTCUT_PROMPT.fetchFrom(params);
         var helpURL = HELP_URL.fetchFrom(params);

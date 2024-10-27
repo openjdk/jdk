@@ -35,12 +35,12 @@ interface Package {
     }
 
     enum StandardPackageType implements PackageType {
-        WinMsi(".msi"),
-        WinExe(".exe"),
-        LinuxDeb(".deb"),
-        LinuxRpm(".rpm"),
-        MacPkg(".pkg"),
-        MacDmg(".dmg");
+        WIN_MSI(".msi"),
+        WIN_EXE(".exe"),
+        LINUX_DEB(".deb"),
+        LINUX_RPM(".rpm"),
+        MAC_PKG(".pkg"),
+        MAC_DMG(".dmg");
 
         StandardPackageType(String suffix) {
             this.suffix = suffix;
@@ -118,7 +118,7 @@ interface Package {
         Path root = relativeInstallDir();
         if (type() instanceof StandardPackageType type) {
             switch (type) {
-                case LinuxDeb, LinuxRpm, MacDmg, MacPkg -> {
+                case LINUX_DEB, LINUX_RPM, MAC_DMG, MAC_PKG -> {
                     root = Path.of("/").resolve(root);
                 }
             }
@@ -132,7 +132,7 @@ interface Package {
     default String packageFileName() {
         if (type() instanceof StandardPackageType type) {
             switch (type) {
-                case WinMsi, WinExe -> {
+                case WIN_MSI, WIN_EXE -> {
                     return String.format("%s-%s", packageName(), version());
                 }
             }
@@ -165,14 +165,14 @@ interface Package {
     default Path relativeInstallDir() {
         var path = Optional.ofNullable(configuredInstallBaseDir()).map(v -> {
             switch (asStandardPackageType()) {
-                case LinuxDeb, LinuxRpm -> {
+                case LINUX_DEB, LINUX_RPM -> {
                     switch (v.toString()) {
                         case "/usr", "/usr/local" -> {
                             return v;
                         }
                     }
                 }
-                case WinExe, WinMsi -> {
+                case WIN_EXE, WIN_MSI -> {
                     return v;
                 }
             }
@@ -180,7 +180,7 @@ interface Package {
         }).orElseGet(() -> defaultInstallDir(this));
 
         switch (asStandardPackageType()) {
-            case WinExe, WinMsi -> {
+            case WIN_EXE, WIN_MSI -> {
                 return path;
             }
             default -> {
@@ -334,7 +334,7 @@ interface Package {
         }
 
         switch (pkgType) {
-            case StandardPackageType.WinExe, StandardPackageType.WinMsi -> {
+            case StandardPackageType.WIN_EXE, StandardPackageType.WIN_MSI -> {
                 if (installDir.isAbsolute()) {
                     throw ex;
                 }
@@ -356,13 +356,13 @@ interface Package {
 
     private static Path defaultInstallDir(Package pkg) {
         switch (pkg.asStandardPackageType()) {
-            case WinExe, WinMsi -> {
+            case WIN_EXE, WIN_MSI -> {
                 return Path.of(pkg.app().name());
             }
-            case LinuxDeb, LinuxRpm -> {
+            case LINUX_DEB, LINUX_RPM -> {
                 return Path.of("/opt").resolve(pkg.packageName());
             }
-            case MacDmg, MacPkg -> {
+            case MAC_DMG, MAC_PKG -> {
                 Path base;
                 if (pkg.isRuntimeInstaller()) {
                     base = Path.of("/Library/Java/JavaVirtualMachines");
