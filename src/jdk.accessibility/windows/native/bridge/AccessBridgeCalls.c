@@ -220,7 +220,7 @@ extern "C" {
 
 
     BOOL shutdownAccessBridge() {
-        BOOL result;
+     // BOOL result;
      // DWORD error;
         theAccessBridgeInitializedFlag = FALSE;
         if (theAccessBridgeInstance != (HANDLE) 0) {
