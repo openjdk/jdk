@@ -36,9 +36,9 @@ import java.util.function.Predicate;
  */
 public final class MacLaunchersAsServices extends UnixLaunchersAsServices {
 
-    private MacLaunchersAsServices(Workshop workshop, Package pkg) throws IOException {
-        super(workshop, pkg.app(), List.of(), launcher -> {
-            return new MacLauncherAsService(workshop, pkg, launcher);
+    private MacLaunchersAsServices(BuildEnv env, Package pkg) throws IOException {
+        super(env, pkg.app(), List.of(), launcher -> {
+            return new MacLauncherAsService(env, pkg, launcher);
         });
     }
 
@@ -47,12 +47,12 @@ public final class MacLaunchersAsServices extends UnixLaunchersAsServices {
 
         // Order is important!
         var pkg = PackageFromParams.PACKAGE.fetchFrom(params);
-        var workshop = WorkshopFromParams.WORKSHOP.fetchFrom(params);
+        var env = BuildEnvFromParams.BUILD_ENV.fetchFrom(params);
 
         if (pkg.isRuntimeInstaller()) {
             return null;
         }
-        return Optional.of(new MacLaunchersAsServices(workshop, pkg)).filter(Predicate.not(
+        return Optional.of(new MacLaunchersAsServices(env, pkg)).filter(Predicate.not(
                 MacLaunchersAsServices::isEmpty)).orElse(null);
     }
 
@@ -64,8 +64,8 @@ public final class MacLaunchersAsServices extends UnixLaunchersAsServices {
 
     private static class MacLauncherAsService extends UnixLauncherAsService {
 
-        MacLauncherAsService(Workshop workshop, Package pkg, Launcher launcher) {
-            super(launcher, workshop.createResource("launchd.plist.template").setCategory(I18N
+        MacLauncherAsService(BuildEnv env, Package pkg, Launcher launcher) {
+            super(launcher, env.createResource("launchd.plist.template").setCategory(I18N
                     .getString("resource.launchd-plist-file")));
 
             plistFilename = getServicePListFileName(pkg.packageName(), getName());

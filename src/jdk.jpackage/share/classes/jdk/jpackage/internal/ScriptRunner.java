@@ -72,11 +72,11 @@ class ScriptRunner {
         return this;
     }
 
-    public void run(Workshop workshop, String name) throws IOException {
+    public void run(BuildEnv env, String name) throws IOException {
         String scriptName = String.format("%s-%s%s", name,
                 scriptNameSuffix, scriptSuffix());
-        Path scriptPath = workshop.configDir().resolve(scriptName);
-        workshop.createResource(null)
+        Path scriptPath = env.configDir().resolve(scriptName);
+        env.createResource(null)
                 .setCategory(I18N.getString(resourceCategoryId))
                 .saveToFile(scriptPath);
         if (!Files.exists(scriptPath)) {

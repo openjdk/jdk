@@ -58,13 +58,13 @@ final class DesktopIntegration extends ShellCustomAction {
     private static final List<String> REPLACEMENT_STRING_IDS = List.of(
             COMMANDS_INSTALL, COMMANDS_UNINSTALL, SCRIPTS, COMMON_SCRIPTS);
 
-    private DesktopIntegration(Workshop workshop, LinuxPackage pkg, LinuxLauncher launcher) throws IOException {
+    private DesktopIntegration(BuildEnv env, LinuxPackage pkg, LinuxLauncher launcher) throws IOException {
 
         associations = launcher.fileAssociations().stream()
                 .filter(fa -> !fa.mimeTypes.isEmpty())
                 .map(LinuxFileAssociation::new).toList();
 
-        this.workshop = workshop;
+        this.env = env;
         this.pkg = pkg;
         this.launcher = launcher;
 
@@ -74,7 +74,7 @@ final class DesktopIntegration extends ShellCustomAction {
         boolean withDesktopFile = !associations.isEmpty() || launcher.shortcut().orElse(false);
 
         var curIconResource = pkg.app().createLauncherIconResource(launcher,
-                workshop::createResource);
+                env::createResource);
         if (curIconResource == null) {
             // This is additional launcher with explicit `no icon` configuration.
             withDesktopFile = false;
@@ -87,7 +87,7 @@ final class DesktopIntegration extends ShellCustomAction {
             }
         }
 
-        desktopFileResource = workshop.createResource("template.desktop")
+        desktopFileResource = env.createResource("template.desktop")
                 .setCategory(I18N.getString("resource.menu-shortcut-descriptor"))
                 .setPublicName(launcher.name() + ".desktop");
 
@@ -109,8 +109,7 @@ final class DesktopIntegration extends ShellCustomAction {
 
             if (curIconResource == null) {
                 // Create default icon.
-                curIconResource = pkg.app().createLauncherIconResource(
-                        pkg.app().mainLauncher(), workshop::createResource);
+                curIconResource = pkg.app().createLauncherIconResource(pkg.app().mainLauncher(), env::createResource);
             }
         } else {
             desktopFile = null;
@@ -129,17 +128,17 @@ final class DesktopIntegration extends ShellCustomAction {
             }).filter(l -> {
                 return l.shortcut().orElse(true);
             }).map(toFunction(l -> {
-                return new DesktopIntegration(workshop, pkg, l);
+                return new DesktopIntegration(env, pkg, l);
             })).toList();
         }
     }
 
-    static ShellCustomAction create(Workshop workshop, Package pkg) throws IOException {
+    static ShellCustomAction create(BuildEnv env, Package pkg) throws IOException {
         if (pkg.isRuntimeInstaller()) {
             return ShellCustomAction.nop(REPLACEMENT_STRING_IDS);
         }
-        return new DesktopIntegration(workshop, (LinuxPackage) pkg, (LinuxLauncher) pkg.app()
-                .mainLauncher());
+        return new DesktopIntegration(env, (LinuxPackage) pkg,
+                (LinuxLauncher) pkg.app().mainLauncher());
     }
 
     @Override
@@ -333,7 +332,7 @@ final class DesktopIntegration extends ShellCustomAction {
      *  - installPath(): path where it should be installed by package manager;
      */
     private InstallableFile createDesktopFile(String fileName) {
-        var srcPath = pkg.packageLayout().resolveAt(workshop.appImageDir()).destktopIntegrationDirectory().resolve(
+        var srcPath = pkg.packageLayout().resolveAt(env.appImageDir()).destktopIntegrationDirectory().resolve(
                 fileName);
         var installPath = pkg.installedPackageLayout().destktopIntegrationDirectory().resolve(
                 fileName);
@@ -475,7 +474,7 @@ final class DesktopIntegration extends ShellCustomAction {
         final int iconSize;
     }
 
-    private final Workshop workshop;
+    private final BuildEnv env;
     private final LinuxPackage pkg;
     private final Launcher launcher;
 

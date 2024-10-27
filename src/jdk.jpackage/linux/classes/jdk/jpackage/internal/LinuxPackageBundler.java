@@ -51,7 +51,7 @@ abstract class LinuxPackageBundler extends AbstractBundler {
 
         // Order is important!
         LinuxPackage pkg = pkgParam.fetchFrom(params);
-        var workshop = WorkshopFromParams.WORKSHOP.fetchFrom(params);
+        var env = BuildEnvFromParams.BUILD_ENV.fetchFrom(params);
 
         FileAssociation.verify(FileAssociation.fetchFrom(params));
 
@@ -83,7 +83,7 @@ abstract class LinuxPackageBundler extends AbstractBundler {
         }
 
         // Packaging specific validation
-        doValidate(workshop, pkg);
+        doValidate(env, pkg);
 
         return true;
     }
@@ -100,23 +100,23 @@ abstract class LinuxPackageBundler extends AbstractBundler {
 
         // Order is important!
         LinuxPackage pkg = pkgParam.fetchFrom(params);
-        var workshop = WorkshopFromParams.WORKSHOP.fetchFrom(params);
+        var env = BuildEnvFromParams.BUILD_ENV.fetchFrom(params);
 
-        Workshop pkgWorkshop = Workshop.withAppImageDir(workshop,
-                workshop.buildRoot().resolve("image"));
+        BuildEnv pkgEnv = BuildEnv.withAppImageDir(env,
+                env.buildRoot().resolve("image"));
 
         try {
             // We either have an application image or need to build one.
             if (pkg.app().runtimeBuilder() != null) {
                 // Runtime builder is present, build app image.
-                LinuxAppImageBuilder.build().create(pkg).execute(pkgWorkshop);
+                LinuxAppImageBuilder.build().create(pkg).execute(pkgEnv);
             } else {
                 Path srcAppImageDir = pkg.predefinedAppImage();
                 if (srcAppImageDir == null) {
                     // No predefined app image and no runtime builder.
                     // This should be runtime packaging.
                     if (pkg.isRuntimeInstaller()) {
-                        srcAppImageDir = workshop.appImageDir();
+                        srcAppImageDir = env.appImageDir();
                     } else {
                         // Can't create app image without runtime builder.
                         throw new UnsupportedOperationException();
@@ -128,25 +128,25 @@ abstract class LinuxPackageBundler extends AbstractBundler {
                 Optional.ofNullable(AppImageFile2.getPathInAppImage(srcLayout)).ifPresent(
                         appImageFile -> srcLayout.pathGroup().ghostPath(
                                 appImageFile));
-                srcLayout.copy(pkg.packageLayout().resolveAt(pkgWorkshop.appImageDir()));
+                srcLayout.copy(pkg.packageLayout().resolveAt(pkgEnv.appImageDir()));
             }
 
             for (var ca : customActions) {
-                ca.init(pkgWorkshop, pkg);
+                ca.init(pkgEnv, pkg);
             }
 
-            Map<String, String> data = createDefaultReplacementData(pkgWorkshop, pkg);
+            Map<String, String> data = createDefaultReplacementData(pkgEnv, pkg);
 
             for (var ca : customActions) {
                 ShellCustomAction.mergeReplacementData(data, ca.instance.create());
             }
 
-            data.putAll(createReplacementData(pkgWorkshop, pkg));
+            data.putAll(createReplacementData(pkgEnv, pkg));
 
             Path packageBundle = buildPackageBundle(Collections.unmodifiableMap(
-                    data), pkgWorkshop, pkg, outputParentDir);
+                    data), pkgEnv, pkg, outputParentDir);
 
-            verifyOutputBundle(pkgWorkshop, pkg, packageBundle).stream()
+            verifyOutputBundle(pkgEnv, pkg, packageBundle).stream()
                     .filter(Objects::nonNull)
                     .forEachOrdered(ex -> {
                 Log.verbose(ex.getLocalizedMessage());
@@ -160,7 +160,7 @@ abstract class LinuxPackageBundler extends AbstractBundler {
         }
     }
 
-    private List<String> getListOfNeededPackages(Workshop workshop) throws IOException {
+    private List<String> getListOfNeededPackages(BuildEnv env) throws IOException {
 
         final List<String> caPackages = customActions.stream()
                 .map(ca -> ca.instance)
@@ -172,7 +172,7 @@ abstract class LinuxPackageBundler extends AbstractBundler {
             LibProvidersLookup lookup = new LibProvidersLookup();
             initLibProvidersLookup(lookup);
 
-            neededLibPackages = lookup.execute(workshop.appImageDir());
+            neededLibPackages = lookup.execute(env.appImageDir());
         } else {
             neededLibPackages = Collections.emptyList();
             Log.info(I18N.getString("warning.foreign-app-image"));
@@ -188,7 +188,7 @@ abstract class LinuxPackageBundler extends AbstractBundler {
         return result;
     }
 
-    private Map<String, String> createDefaultReplacementData(Workshop workshop, LinuxPackage pkg) throws IOException {
+    private Map<String, String> createDefaultReplacementData(BuildEnv env, LinuxPackage pkg) throws IOException {
         Map<String, String> data = new HashMap<>();
 
         data.put("APPLICATION_PACKAGE", pkg.packageName());
@@ -196,7 +196,7 @@ abstract class LinuxPackageBundler extends AbstractBundler {
         data.put("APPLICATION_VERSION", pkg.version());
         data.put("APPLICATION_DESCRIPTION", pkg.description());
 
-        String defaultDeps = String.join(", ", getListOfNeededPackages(workshop));
+        String defaultDeps = String.join(", ", getListOfNeededPackages(env));
         String customDeps = Optional.ofNullable(pkg.additionalDependencies()).orElse("");
         if (!customDeps.isEmpty() && !defaultDeps.isEmpty()) {
             customDeps = ", " + customDeps;
@@ -208,21 +208,21 @@ abstract class LinuxPackageBundler extends AbstractBundler {
     }
 
     protected abstract List<ConfigException> verifyOutputBundle(
-            Workshop workshop, LinuxPackage pkg, Path packageBundle);
+            BuildEnv env, LinuxPackage pkg, Path packageBundle);
 
     protected abstract void initLibProvidersLookup(LibProvidersLookup libProvidersLookup);
 
     protected abstract List<ToolValidator> getToolValidators();
 
-    protected abstract void doValidate(Workshop workshop, LinuxPackage pkg)
+    protected abstract void doValidate(BuildEnv env, LinuxPackage pkg)
             throws ConfigException;
 
     protected abstract Map<String, String> createReplacementData(
-            Workshop workshop, LinuxPackage pkg) throws IOException;
+            BuildEnv env, LinuxPackage pkg) throws IOException;
 
     protected abstract Path buildPackageBundle(
             Map<String, String> replacementData,
-            Workshop workshop, LinuxPackage pkg, Path outputParentDir) throws
+            BuildEnv env, LinuxPackage pkg, Path outputParentDir) throws
             PackagerException, IOException;
 
     private final BundlerParamInfo<? extends LinuxPackage> pkgParam;
@@ -235,8 +235,8 @@ abstract class LinuxPackageBundler extends AbstractBundler {
             this.factory = factory;
         }
 
-        void init(Workshop workshop, Package pkg) throws IOException {
-            instance = factory.create(workshop, pkg);
+        void init(BuildEnv env, Package pkg) throws IOException {
+            instance = factory.create(env, pkg);
             Objects.requireNonNull(instance);
         }
 

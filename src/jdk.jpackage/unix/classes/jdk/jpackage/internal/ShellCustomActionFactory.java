@@ -28,5 +28,5 @@ import java.io.IOException;
 
 interface ShellCustomActionFactory {
 
-    ShellCustomAction create(Workshop workshop, Package pkg) throws IOException;
+    ShellCustomAction create(BuildEnv env, Package pkg) throws IOException;
 }

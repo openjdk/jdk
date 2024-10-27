@@ -27,16 +27,16 @@ package jdk.jpackage.internal;
 import java.nio.file.Path;
 import java.util.Map;
 import static jdk.jpackage.internal.BundlerParamInfo.createStringBundlerParam;
-import jdk.jpackage.internal.Workshop.Impl;
-import static jdk.jpackage.internal.Workshop.withAppImageDir;
+import jdk.jpackage.internal.BuildEnv.Impl;
+import static jdk.jpackage.internal.BuildEnv.withAppImageDir;
 
-final class WorkshopFromParams {
+final class BuildEnvFromParams {
 
-    static Workshop create(Map<String, ? super Object> params) throws ConfigException {
+    static BuildEnv create(Map<String, ? super Object> params) throws ConfigException {
         var root = StandardBundlerParam.TEMP_ROOT.fetchFrom(params);
         var resourceDir = StandardBundlerParam.RESOURCE_DIR.fetchFrom(params);
 
-        var defaultWorkshop = new Impl(root, resourceDir);
+        var defaultEnv = new Impl(root, resourceDir);
 
         Path appImageDir;
         if (StandardBundlerParam.isRuntimeInstaller(params)) {
@@ -45,14 +45,13 @@ final class WorkshopFromParams {
             appImageDir = StandardBundlerParam.getPredefinedAppImage(params);
         } else {
             Path dir = ApplicationFromParams.APPLICATION.fetchFrom(params).appImageDirName();
-            appImageDir = defaultWorkshop.buildRoot().resolve("image").resolve(dir);
+            appImageDir = defaultEnv.buildRoot().resolve("image").resolve(dir);
         }
 
-        return withAppImageDir(defaultWorkshop, appImageDir);
+        return withAppImageDir(defaultEnv, appImageDir);
     }
 
-    static final BundlerParamInfo<Workshop> WORKSHOP = BundlerParamInfo.createBundlerParam(
-            "workshop", WorkshopFromParams::create);
+    static final BundlerParamInfo<BuildEnv> BUILD_ENV = BundlerParamInfo.createBundlerParam("env", BuildEnvFromParams::create);
 
     static final BundlerParamInfo<String> PACKAGE_TYPE = createStringBundlerParam(
             Arguments.CLIOptions.PACKAGE_TYPE.getId());

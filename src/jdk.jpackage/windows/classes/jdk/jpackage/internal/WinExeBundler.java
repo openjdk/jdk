@@ -77,11 +77,11 @@ public class WinExeBundler extends AbstractBundler {
 
         // Order is important!
         var pkg = WinMsiPackageFromParams.PACKAGE.fetchFrom(params);
-        var workshop = WorkshopFromParams.WORKSHOP.fetchFrom(params);
+        var env = BuildEnvFromParams.BUILD_ENV.fetchFrom(params);
 
         IOUtils.writableOutputDir(outdir);
 
-        Path msiDir = workshop.buildRoot().resolve("msi");
+        Path msiDir = env.buildRoot().resolve("msi");
         toRunnable(() -> Files.createDirectories(msiDir)).run();
 
         // Write msi to temporary directory.
@@ -93,17 +93,17 @@ public class WinExeBundler extends AbstractBundler {
             .setResourceCategoryId("resource.post-msi-script")
             .setScriptNameSuffix("post-msi")
             .setEnvironmentVariable("JpMsiFile", msi.toAbsolutePath().toString())
-            .run(workshop, pkg.packageName());
+            .run(env, pkg.packageName());
 
             var exePkg = new WinExePackage.Impl(pkg, ICON.fetchFrom(params));
-            return buildEXE(workshop, exePkg, msi, outdir);
+            return buildEXE(env, exePkg, msi, outdir);
         } catch (IOException|ConfigException ex) {
             Log.verbose(ex);
             throw new PackagerException(ex);
         }
     }
 
-    private Path buildEXE(Workshop workshop, WinExePackage pkg, Path msi,
+    private Path buildEXE(BuildEnv env, WinExePackage pkg, Path msi,
             Path outdir) throws IOException {
 
         Log.verbose(I18N.format("message.outputting-to-location", outdir.toAbsolutePath()));
@@ -114,10 +114,10 @@ public class WinExeBundler extends AbstractBundler {
             Files.copy(is, exePath);
         }
 
-        new ExecutableRebrander(pkg, workshop::createResource, resourceLock -> {
+        new ExecutableRebrander(pkg, env::createResource, resourceLock -> {
             // Embed msi in msi wrapper exe.
             embedMSI(resourceLock, msi.toAbsolutePath().toString());
-        }).execute(workshop, exePath, pkg.icon());
+        }).execute(env, exePath, pkg.icon());
 
         Path dstExePath = outdir.resolve(exePath.getFileName());
 

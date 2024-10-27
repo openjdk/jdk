@@ -48,8 +48,8 @@ import jdk.jpackage.internal.WixToolset.WixToolsetType;
 final class WixUiFragmentBuilder extends WixFragmentBuilder {
 
     @Override
-    void initFromParams(Workshop workshop, WinMsiPackage pkg) {
-        super.initFromParams(workshop, pkg);
+    void initFromParams(BuildEnv env, WinMsiPackage pkg) {
+        super.initFromParams(env, pkg);
 
         Path licenseFile = pkg.licenseFile();
         withLicenseDlg = licenseFile != null;
@@ -68,7 +68,7 @@ final class WixUiFragmentBuilder extends WixFragmentBuilder {
         customDialogs = new ArrayList<>();
 
         if (withShortcutPromptDlg) {
-            CustomDialog dialog = new CustomDialog(workshop::createResource, I18N.getString(
+            CustomDialog dialog = new CustomDialog(env::createResource, I18N.getString(
                     "resource.shortcutpromptdlg-wix-file"),
                     "ShortcutPromptDlg.wxs");
             for (var shortcutFolder : shortcutFolders) {
@@ -79,7 +79,7 @@ final class WixUiFragmentBuilder extends WixFragmentBuilder {
         }
 
         if (withInstallDirChooserDlg) {
-            CustomDialog dialog = new CustomDialog(workshop::createResource, I18N.getString(
+            CustomDialog dialog = new CustomDialog(env::createResource, I18N.getString(
                     "resource.installdirnotemptydlg-wix-file"),
                     "InstallDirNotEmptyDlg.wxs");
             List<Dialog> dialogIds = getUI().dialogIdsSupplier.apply(this);

@@ -59,11 +59,11 @@ abstract class WixFragmentBuilder {
         outputFileName = v;
     }
 
-    void initFromParams(Workshop workshop, WinMsiPackage pkg) {
+    void initFromParams(BuildEnv env, WinMsiPackage pkg) {
         wixVariables = null;
         additionalResources = null;
-        configRoot = workshop.configDir();
-        fragmentResource = workshop.createResource(outputFileName).setSourceOrder(Source.ResourceDir);
+        configRoot = env.configDir();
+        fragmentResource = env.createResource(outputFileName).setSourceOrder(Source.ResourceDir);
     }
 
     List<String> getLoggableWixFeatures() {

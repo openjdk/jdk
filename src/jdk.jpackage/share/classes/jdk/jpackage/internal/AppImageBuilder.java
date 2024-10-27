@@ -68,12 +68,12 @@ final class AppImageBuilder {
         this(pkg.app(), pkg.packageLayout(), launcherCallback);
     }
 
-    private static void copyRecursive(Path srcDir, Path dstDir, Workshop workshop) throws IOException {
+    private static void copyRecursive(Path srcDir, Path dstDir, BuildEnv env) throws IOException {
         srcDir = srcDir.toAbsolutePath();
 
         List<Path> excludes = new ArrayList<>();
 
-        for (var path : List.of(workshop.buildRoot(), workshop.appImageDir())) {
+        for (var path : List.of(env.buildRoot(), env.appImageDir())) {
             if (Files.isDirectory(path)) {
                 path = path.toAbsolutePath();
                 if (path.startsWith(srcDir) && !Files.isSameFile(path, srcDir)) {
@@ -85,8 +85,8 @@ final class AppImageBuilder {
         IOUtils.copyRecursive(srcDir, dstDir.toAbsolutePath() /*, excludes */);
     }
 
-    void execute(Workshop workshop) throws IOException, PackagerException {
-        var resolvedAppLayout = appLayout.resolveAt(workshop.appImageDir());
+    void execute(BuildEnv env) throws IOException, PackagerException {
+        var resolvedAppLayout = appLayout.resolveAt(env.appImageDir());
 
         app.runtimeBuilder().createRuntime(resolvedAppLayout);
         if (app.isRuntime()) {
@@ -94,17 +94,17 @@ final class AppImageBuilder {
         }
 
         if (app.srcDir() != null) {
-            copyRecursive(app.srcDir(), resolvedAppLayout.appDirectory(), workshop);
+            copyRecursive(app.srcDir(), resolvedAppLayout.appDirectory(), env);
         }
 
         for (var srcDir : Optional.ofNullable(app.contentDirs()).orElseGet(List::of)) {
             copyRecursive(srcDir,
                     resolvedAppLayout.contentDirectory().resolve(srcDir.getFileName()),
-                    workshop);
+                    env);
         }
 
         if (withAppImageFile) {
-            new AppImageFile2(app).save(workshop.appImageDir());
+            new AppImageFile2(app).save(env.appImageDir());
         }
 
         for (var launcher : app.launchers()) {
@@ -121,7 +121,7 @@ final class AppImageBuilder {
 
             if (launcherCallback != null) {
                 launcherCallback.onLauncher(app, new LauncherContext(launcher,
-                        workshop, resolvedAppLayout, executableFile));
+                        env, resolvedAppLayout, executableFile));
             }
 
             executableFile.toFile().setExecutable(true);
@@ -131,7 +131,7 @@ final class AppImageBuilder {
     static interface LauncherCallback {
         default public void onLauncher(Application app, LauncherContext ctx) throws IOException, PackagerException {
             var iconResource = app.createLauncherIconResource(ctx.launcher,
-                    ctx.workshop::createResource);
+                    ctx.env::createResource);
             if (iconResource != null) {
                 onLauncher(app, ctx, iconResource);
             }
@@ -142,7 +142,7 @@ final class AppImageBuilder {
         }
     }
 
-    static record LauncherContext(Launcher launcher, Workshop workshop,
+    static record LauncherContext(Launcher launcher, BuildEnv env,
             ApplicationLayout resolvedAppLayout, Path launcherExecutable) {
     }
 

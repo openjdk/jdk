@@ -171,7 +171,7 @@ public class WinMsiBundler  extends AbstractBundler {
         try {
             // Order is important!
             WinApplicationFromParams.APPLICATION.fetchFrom(params);
-            WorkshopFromParams.WORKSHOP.fetchFrom(params);
+            BuildEnvFromParams.BUILD_ENV.fetchFrom(params);
 
             if (wixToolset == null) {
                 wixToolset = WixTool.createToolset();
@@ -201,7 +201,7 @@ public class WinMsiBundler  extends AbstractBundler {
         }
     }
 
-    private void prepareProto(WinMsiPackage pkg, Workshop workshop) throws
+    private void prepareProto(WinMsiPackage pkg, BuildEnv env) throws
             PackagerException, IOException {
 
         ApplicationLayout appLayout;
@@ -209,15 +209,15 @@ public class WinMsiBundler  extends AbstractBundler {
         // We either have an application image or need to build one.
         if (pkg.app().runtimeBuilder() != null) {
             // Runtime builder is present, build app image.
-            WinAppImageBuilder.build().create(pkg.app()).execute(workshop);
-            appLayout = pkg.appLayout().resolveAt(workshop.appImageDir());
+            WinAppImageBuilder.build().create(pkg.app()).execute(env);
+            appLayout = pkg.appLayout().resolveAt(env.appImageDir());
         } else {
             Path srcAppImageDir = pkg.predefinedAppImage();
             if (srcAppImageDir == null) {
                 // No predefined app image and no runtime builder.
                 // This should be runtime packaging.
                 if (pkg.isRuntimeInstaller()) {
-                    srcAppImageDir = workshop.appImageDir();
+                    srcAppImageDir = env.appImageDir();
                 } else {
                     // Can't create app image without runtime builder.
                     throw new UnsupportedOperationException();
@@ -244,7 +244,7 @@ public class WinMsiBundler  extends AbstractBundler {
         if (licenseFile != null) {
             // need to copy license file to the working directory
             // and convert to rtf if needed
-            Path destFile = workshop.configDir().resolve(licenseFile.getFileName());
+            Path destFile = env.configDir().resolve(licenseFile.getFileName());
 
             IOUtils.copyFile(licenseFile, destFile);
             destFile.toFile().setWritable(true);
@@ -260,33 +260,33 @@ public class WinMsiBundler  extends AbstractBundler {
 
         // Order is important!
         var pkg = WinMsiPackageFromParams.PACKAGE.fetchFrom(params);
-        var workshop = WorkshopFromParams.WORKSHOP.fetchFrom(params);
+        var env = BuildEnvFromParams.BUILD_ENV.fetchFrom(params);
 
-        Path imageDir = workshop.appImageDir();
+        Path imageDir = env.appImageDir();
         try {
-            prepareProto(pkg, workshop);
+            prepareProto(pkg, env);
             for (var wixFragment : wixFragments) {
-                wixFragment.initFromParams(workshop, pkg);
+                wixFragment.initFromParams(env, pkg);
                 wixFragment.addFilesToConfigRoot();
             }
 
-            Map<String, String> wixVars = prepareMainProjectFile(workshop, pkg);
+            Map<String, String> wixVars = prepareMainProjectFile(env, pkg);
 
             new ScriptRunner()
             .setDirectory(imageDir)
             .setResourceCategoryId("resource.post-app-image-script")
             .setScriptNameSuffix("post-image")
             .setEnvironmentVariable("JpAppImageDir", imageDir.toAbsolutePath().toString())
-            .run(workshop, pkg.packageName());
+            .run(env, pkg.packageName());
 
-            return buildMSI(workshop, pkg, wixVars, outputParentDir);
+            return buildMSI(env, pkg, wixVars, outputParentDir);
         } catch (IOException ex) {
             Log.verbose(ex);
             throw new PackagerException(ex);
         }
     }
 
-    private Map<String, String> prepareMainProjectFile(Workshop workshop, WinMsiPackage pkg) throws IOException {
+    private Map<String, String> prepareMainProjectFile(BuildEnv env, WinMsiPackage pkg) throws IOException {
         Map<String, String> data = new HashMap<>();
 
         data.put("JpProductCode", pkg.productCode().toString());
@@ -321,9 +321,9 @@ public class WinMsiBundler  extends AbstractBundler {
         });
 
         data.put("JpAppSizeKb", Long.toString(pkg.packageLayout().resolveAt(
-                workshop.appImageDir()).sizeInBytes() >> 10));
+                env.appImageDir()).sizeInBytes() >> 10));
 
-        data.put("JpConfigDir", workshop.configDir().toAbsolutePath().toString());
+        data.put("JpConfigDir", env.configDir().toAbsolutePath().toString());
 
         if (pkg.isSystemWideInstall()) {
             data.put("JpIsSystemWide", "yes");
@@ -332,7 +332,7 @@ public class WinMsiBundler  extends AbstractBundler {
         return data;
     }
 
-    private Path buildMSI(Workshop workshop, WinMsiPackage pkg,
+    private Path buildMSI(BuildEnv env, WinMsiPackage pkg,
             Map<String, String> wixVars, Path outdir)
             throws IOException {
 
@@ -342,9 +342,9 @@ public class WinMsiBundler  extends AbstractBundler {
 
         WixPipeline wixPipeline = new WixPipeline()
                 .setToolset(wixToolset)
-                .setWixObjDir(workshop.buildRoot().resolve("wixobj"))
-                .setWorkDir(workshop.appImageDir())
-                .addSource(workshop.configDir().resolve("main.wxs"), wixVars);
+                .setWixObjDir(env.buildRoot().resolve("wixobj"))
+                .setWorkDir(env.appImageDir())
+                .addSource(env.configDir().resolve("main.wxs"), wixVars);
 
         for (var wixFragment : wixFragments) {
             wixFragment.configureWixPipeline(wixPipeline);
@@ -367,7 +367,7 @@ public class WinMsiBundler  extends AbstractBundler {
             }
         }
 
-        final Path configDir = workshop.configDir();
+        final Path configDir = env.configDir();
 
         var primaryWxlFiles = Stream.of("de", "en", "ja", "zh_CN").map(loc -> {
             return configDir.resolve("MsiInstallerStrings_" + loc + ".wxl");
@@ -378,21 +378,21 @@ public class WinMsiBundler  extends AbstractBundler {
         // Copy standard l10n files.
         for (var path : primaryWxlFiles) {
             var name = path.getFileName().toString();
-            wixResources.addResource(workshop.createResource(name).setPublicName(name).setCategory(
+            wixResources.addResource(env.createResource(name).setPublicName(name).setCategory(
                     I18N.getString("resource.wxl-file")), path);
         }
 
-        wixResources.addResource(workshop.createResource("main.wxs").setPublicName("main.wxs").
+        wixResources.addResource(env.createResource("main.wxs").setPublicName("main.wxs").
                 setCategory(I18N.getString("resource.main-wix-file")), configDir.resolve("main.wxs"));
 
-        wixResources.addResource(workshop.createResource("overrides.wxi").setPublicName(
+        wixResources.addResource(env.createResource("overrides.wxi").setPublicName(
                 "overrides.wxi").setCategory(I18N.getString("resource.overrides-wix-file")),
                 configDir.resolve("overrides.wxi"));
 
         // Filter out custom l10n files that were already used to
         // override primary l10n files. Ignore case filename comparison,
         // both lists are expected to be short.
-        List<Path> customWxlFiles = getWxlFilesFromDir(workshop.resourceDir()).stream()
+        List<Path> customWxlFiles = getWxlFilesFromDir(env.resourceDir()).stream()
                 .filter(custom -> primaryWxlFiles.stream().noneMatch(primary ->
                         primary.getFileName().toString().equalsIgnoreCase(
                                 custom.getFileName().toString())))
@@ -404,7 +404,7 @@ public class WinMsiBundler  extends AbstractBundler {
         // Copy custom l10n files.
         for (var path : customWxlFiles) {
             var name = path.getFileName().toString();
-            wixResources.addResource(workshop.createResource(name).setPublicName(name).
+            wixResources.addResource(env.createResource(name).setPublicName(name).
                     setSourceOrder(OverridableResource.Source.ResourceDir).setCategory(I18N.
                     getString("resource.wxl-file")), configDir.resolve(name));
         }
@@ -427,7 +427,7 @@ public class WinMsiBundler  extends AbstractBundler {
         }
 
         // Append a primary culture bases on runtime locale.
-        final Path primaryWxlFile = workshop.configDir().resolve(
+        final Path primaryWxlFile = env.configDir().resolve(
                 I18N.getString("resource.wxl-file-name"));
         cultures.add(getCultureFromWxlFile(primaryWxlFile));
 

@@ -30,9 +30,9 @@ public class WinAppBundler extends AppImageBundler {
         setAppImageSupplier((params, output) -> {
             // Order is important!
             var app = WinApplicationFromParams.APPLICATION.fetchFrom(params);
-            var workshop = WorkshopFromParams.WORKSHOP.fetchFrom(params);
+            var env = BuildEnvFromParams.BUILD_ENV.fetchFrom(params);
             WinAppImageBuilder.build().create(app).execute(
-                    Workshop.withAppImageDir(workshop, output));
+                    BuildEnv.withAppImageDir(env, output));
         });
     }
 }

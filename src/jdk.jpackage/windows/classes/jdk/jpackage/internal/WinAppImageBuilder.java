@@ -41,9 +41,9 @@ final class WinAppImageBuilder {
                 AppImageBuilder.LauncherContext ctx) throws IOException, PackagerException {
             Path iconTarget = null;
             var iconResource = app.createLauncherIconResource(ctx.launcher(),
-                    name -> ctx.workshop().createResource(name));
+                    name -> ctx.env().createResource(name));
             if (iconResource != null) {
-                var iconDir = ctx.workshop().buildRoot().resolve("icons");
+                var iconDir = ctx.env().buildRoot().resolve("icons");
                 iconTarget = iconDir.resolve(ctx.launcher().executableName() + ".ico");
                 if (null == iconResource.saveToFile(iconTarget)) {
                     iconTarget = null;
@@ -53,8 +53,8 @@ final class WinAppImageBuilder {
             // Update branding of launcher executable
             new ExecutableRebrander((WinApplication) app,
                     (WinLauncher) ctx.launcher(),
-                    name -> ctx.workshop().createResource(name)).execute(
-                    ctx.workshop(), ctx.launcherExecutable(), iconTarget);
+                    name -> ctx.env().createResource(name)).execute(
+                    ctx.env(), ctx.launcherExecutable(), iconTarget);
         }
     }
 }

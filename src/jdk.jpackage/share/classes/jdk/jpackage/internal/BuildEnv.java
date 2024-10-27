@@ -26,7 +26,7 @@ package jdk.jpackage.internal;
 
 import java.nio.file.Path;
 
-interface Workshop {
+interface BuildEnv {
 
     Path buildRoot();
 
@@ -50,12 +50,12 @@ interface Workshop {
         return new OverridableResource(defaultName).setResourceDir(resourceDir());
     }
 
-    record Impl(Path buildRoot, Path resourceDir) implements Workshop {
+    record Impl(Path buildRoot, Path resourceDir) implements BuildEnv {
 
     }
 
-    static Workshop withAppImageDir(Workshop workshop, Path appImageDir) {
-        return new Proxy(workshop) {
+    static BuildEnv withAppImageDir(BuildEnv env, Path appImageDir) {
+        return new Proxy(env) {
             @Override
             public Path appImageDir() {
                 return appImageDir;
@@ -63,9 +63,9 @@ interface Workshop {
         };
     }
 
-    static class Proxy implements Workshop {
+    static class Proxy implements BuildEnv {
 
-        Proxy(Workshop target) {
+        Proxy(BuildEnv target) {
             this.target = target;
         }
 
@@ -79,6 +79,6 @@ interface Workshop {
             return target.resourceDir();
         }
 
-        private final Workshop target;
+        private final BuildEnv target;
     }
 }

@@ -30,9 +30,8 @@ public class LinuxAppBundler extends AppImageBundler {
         setAppImageSupplier((params, output) -> {
             // Order is important!
             var app = LinuxApplicationFromParams.APPLICATION.fetchFrom(params);
-            var workshop = WorkshopFromParams.WORKSHOP.fetchFrom(params);
-            LinuxAppImageBuilder.build().create(app).execute(
-                    Workshop.withAppImageDir(workshop, output));
+            var env = BuildEnvFromParams.BUILD_ENV.fetchFrom(params);
+            LinuxAppImageBuilder.build().create(app).execute(BuildEnv.withAppImageDir(env, output));
         });
     }
 }

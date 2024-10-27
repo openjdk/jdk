@@ -64,7 +64,7 @@ public class LinuxRpmBundler extends LinuxPackageBundler {
     }
 
     @Override
-    protected void doValidate(Workshop workshop, LinuxPackage pkg) throws ConfigException {
+    protected void doValidate(BuildEnv env, LinuxPackage pkg) throws ConfigException {
     }
 
     private static ToolValidator createRpmbuildToolValidator() {
@@ -87,18 +87,18 @@ public class LinuxRpmBundler extends LinuxPackageBundler {
     }
 
     @Override
-    protected Path buildPackageBundle(Map<String, String> replacementData, Workshop workshop,
+    protected Path buildPackageBundle(Map<String, String> replacementData, BuildEnv env,
             LinuxPackage pkg, Path outputParentDir) throws PackagerException, IOException {
 
-        Path specFile = specFile(workshop, pkg);
+        Path specFile = specFile(env, pkg);
 
         // prepare spec file
-        workshop.createResource(DEFAULT_SPEC_TEMPLATE)
+        env.createResource(DEFAULT_SPEC_TEMPLATE)
                 .setCategory(I18N.getString("resource.rpm-spec-file"))
                 .setSubstitutionData(replacementData)
                 .saveToFile(specFile);
 
-        return buildRPM(workshop, pkg, outputParentDir);
+        return buildRPM(env, pkg, outputParentDir);
     }
 
     private static Path installPrefix(LinuxPackage pkg) {
@@ -110,7 +110,7 @@ public class LinuxRpmBundler extends LinuxPackageBundler {
     }
 
     @Override
-    protected Map<String, String> createReplacementData(Workshop workshop, LinuxPackage pkg) throws IOException {
+    protected Map<String, String> createReplacementData(BuildEnv env, LinuxPackage pkg) throws IOException {
         Map<String, String> data = new HashMap<>();
 
         data.put("APPLICATION_RELEASE", pkg.release());
@@ -141,11 +141,11 @@ public class LinuxRpmBundler extends LinuxPackageBundler {
     }
 
     @Override
-    protected List<ConfigException> verifyOutputBundle(Workshop workshop, LinuxPackage pkg,
+    protected List<ConfigException> verifyOutputBundle(BuildEnv env, LinuxPackage pkg,
             Path packageBundle) {
         List<ConfigException> errors = new ArrayList<>();
 
-        String specFileName = specFile(workshop, pkg).getFileName().toString();
+        String specFileName = specFile(env, pkg).getFileName().toString();
 
         try {
             List<PackageProperty> properties = List.of(
@@ -173,27 +173,26 @@ public class LinuxRpmBundler extends LinuxPackageBundler {
         return errors;
     }
 
-    private Path specFile(Workshop workshop, Package pkg) {
-        return workshop.buildRoot().resolve(Path.of("SPECS", pkg.packageName() + ".spec"));
+    private Path specFile(BuildEnv env, Package pkg) {
+        return env.buildRoot().resolve(Path.of("SPECS", pkg.packageName() + ".spec"));
     }
 
-    private Path buildRPM(Workshop workshop, Package pkg, Path outdir) throws IOException {
+    private Path buildRPM(BuildEnv env, Package pkg, Path outdir) throws IOException {
 
         Path rpmFile = outdir.toAbsolutePath().resolve(pkg.packageFileNameWithSuffix());
 
         Log.verbose(I18N.format("message.outputting-bundle-location", rpmFile.getParent()));
 
         //run rpmbuild
-        Executor.of(
-                TOOL_RPMBUILD,
-                "-bb", specFile(workshop, pkg).toAbsolutePath().toString(),
+        Executor.of(TOOL_RPMBUILD,
+                "-bb", specFile(env, pkg).toAbsolutePath().toString(),
                 "--define", String.format("%%_sourcedir %s",
-                        workshop.appImageDir().toAbsolutePath()),
+                        env.appImageDir().toAbsolutePath()),
                 // save result to output dir
                 "--define", String.format("%%_rpmdir %s", rpmFile.getParent()),
                 // do not use other system directories to build as current user
                 "--define", String.format("%%_topdir %s",
-                        workshop.buildRoot().toAbsolutePath()),
+                        env.buildRoot().toAbsolutePath()),
                 "--define", String.format("%%_rpmfilename %s", rpmFile.getFileName())
         ).executeExpectSuccess();
 

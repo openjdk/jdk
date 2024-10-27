@@ -66,10 +66,10 @@ import org.w3c.dom.NodeList;
 final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
 
     @Override
-    void initFromParams(Workshop workshop, WinMsiPackage pkg) {
-        super.initFromParams(workshop, pkg);
+    void initFromParams(BuildEnv env, WinMsiPackage pkg) {
+        super.initFromParams(env, pkg);
 
-        Path appImageRoot = workshop.appImageDir();
+        Path appImageRoot = env.appImageDir();
 
         systemWide = pkg.isSystemWideInstall();
 
@@ -105,7 +105,7 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
                     var launcherPath = installedAppImage.launchersDirectory().resolve(
                             launcher.executableNameWithSuffix());
                     var id = Id.File.of(launcherPath);
-                    return new WixLauncherAsService(launcher, workshop::createResource)
+                    return new WixLauncherAsService(launcher, env::createResource)
                             .setLauncherInstallPath(toWixPath(launcherPath))
                             .setLauncherInstallPathId(id);
                 }).toList();

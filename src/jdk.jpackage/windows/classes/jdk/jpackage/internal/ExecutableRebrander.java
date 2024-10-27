@@ -79,7 +79,7 @@ final class ExecutableRebrander {
         this.props.put("ORIGINAL_FILENAME", props.executableName);
     }
 
-    void execute(Workshop workshop, Path target, Path icon) throws IOException {
+    void execute(BuildEnv env, Path target, Path icon) throws IOException {
         String[] propsArray = toStringArray(propertiesFileResource, props);
 
         UpdateResourceAction versionSwapper = resourceLock -> {
@@ -92,9 +92,9 @@ final class ExecutableRebrander {
         var absIcon = Optional.ofNullable(icon).map(Path::toAbsolutePath).orElse(
                 null);
         if (absIcon == null) {
-            rebrandExecutable(workshop, target, versionSwapper);
+            rebrandExecutable(env, target, versionSwapper);
         } else {
-            rebrandExecutable(workshop, target, versionSwapper,
+            rebrandExecutable(env, target, versionSwapper,
                     resourceLock -> {
                         if (iconSwap(resourceLock, absIcon.toString()) != 0) {
                             throw new RuntimeException(MessageFormat.format(
@@ -104,10 +104,10 @@ final class ExecutableRebrander {
         }
     }
 
-    private static void rebrandExecutable(Workshop workshop,
+    private static void rebrandExecutable(BuildEnv env,
             Path target, UpdateResourceAction ... actions) throws IOException {
         try {
-            String tempDirectory = workshop.buildRoot().toAbsolutePath().toString();
+            String tempDirectory = env.buildRoot().toAbsolutePath().toString();
             if (WindowsDefender.isThereAPotentialWindowsDefenderIssue(
                     tempDirectory)) {
                 Log.verbose(MessageFormat.format(I18N.getString(

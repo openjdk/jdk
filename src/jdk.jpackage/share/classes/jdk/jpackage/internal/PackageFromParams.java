@@ -70,7 +70,7 @@ final class PackageFromParams {
 
     static final BundlerParamInfo<Package> PACKAGE = createBundlerParam(params -> {
         return PackageFromParams.create(params, ApplicationFromParams.APPLICATION,
-                StandardPackageType.fromCmdLineType(WorkshopFromParams.PACKAGE_TYPE
+                StandardPackageType.fromCmdLineType(BuildEnvFromParams.PACKAGE_TYPE
                         .fetchFrom(params)));
     });
 }

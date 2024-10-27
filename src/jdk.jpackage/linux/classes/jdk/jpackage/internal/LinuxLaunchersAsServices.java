@@ -36,9 +36,9 @@ import java.util.Map;
  */
 public final class LinuxLaunchersAsServices extends UnixLaunchersAsServices {
 
-    private LinuxLaunchersAsServices(Workshop workshop, Package pkg) throws IOException {
-        super(workshop, pkg.app(), REQUIRED_PACKAGES, launcher -> {
-            return new LauncherImpl(workshop, pkg, launcher);
+    private LinuxLaunchersAsServices(BuildEnv env, Package pkg) throws IOException {
+        super(env, pkg.app(), REQUIRED_PACKAGES, launcher -> {
+            return new LauncherImpl(env, pkg, launcher);
         });
     }
 
@@ -56,11 +56,11 @@ public final class LinuxLaunchersAsServices extends UnixLaunchersAsServices {
         return data;
     }
 
-    static ShellCustomAction create(Workshop workshop, Package pkg) throws IOException {
+    static ShellCustomAction create(BuildEnv env, Package pkg) throws IOException {
         if (pkg.isRuntimeInstaller()) {
             return ShellCustomAction.nop(LINUX_REPLACEMENT_STRING_IDS);
         }
-        return new LinuxLaunchersAsServices(workshop, pkg);
+        return new LinuxLaunchersAsServices(env, pkg);
     }
 
     public static Path getServiceUnitFileName(String packageName, String launcherName) {
@@ -70,18 +70,15 @@ public final class LinuxLaunchersAsServices extends UnixLaunchersAsServices {
 
     private static class LauncherImpl extends UnixLauncherAsService {
 
-        LauncherImpl(Workshop workshop, Package pkg, Launcher launcher) {
+        LauncherImpl(BuildEnv env, Package pkg, Launcher launcher) {
             super(launcher,
-                    workshop.createResource("unit-template.service").setCategory(
+                    env.createResource("unit-template.service").setCategory(
                             I18N.getString("resource.systemd-unit-file")));
 
             unitFilename = getServiceUnitFileName(pkg.packageName(), launcher.executableName());
 
-            getResource().setPublicName(unitFilename).addSubstitutionDataEntry(
-                    "APPLICATION_LAUNCHER",
-                    Enquoter.forPropertyValues().applyTo(
-                            pkg.installedPackageLayout().resolveAt(
-                                    workshop.appImageDir()).launchersDirectory().resolve(
+            getResource().setPublicName(unitFilename).addSubstitutionDataEntry("APPLICATION_LAUNCHER",
+                    Enquoter.forPropertyValues().applyTo(pkg.installedPackageLayout().resolveAt(env.appImageDir()).launchersDirectory().resolve(
                                     getName()).toString()));
         }
 

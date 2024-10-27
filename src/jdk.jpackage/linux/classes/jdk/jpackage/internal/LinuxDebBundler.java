@@ -61,7 +61,7 @@ public class LinuxDebBundler extends LinuxPackageBundler {
     }
 
     @Override
-    protected void doValidate(Workshop workshop, LinuxPackage pkg) throws ConfigException {
+    protected void doValidate(BuildEnv env, LinuxPackage pkg) throws ConfigException {
 
         // Show warning if license file is missing
         if (pkg.licenseFile() == null) {
@@ -76,12 +76,12 @@ public class LinuxDebBundler extends LinuxPackageBundler {
     }
 
     @Override
-    protected Path buildPackageBundle(Map<String, String> replacementData, Workshop workshop,
+    protected Path buildPackageBundle(Map<String, String> replacementData, BuildEnv env,
             LinuxPackage pkg, Path outputParentDir) throws PackagerException, IOException {
 
-        prepareProjectConfig(replacementData, workshop, pkg);
-        adjustPermissionsRecursive(workshop.appImageDir());
-        return buildDeb(workshop, pkg, outputParentDir);
+        prepareProjectConfig(replacementData, env, pkg);
+        adjustPermissionsRecursive(env.appImageDir());
+        return buildDeb(env, pkg, outputParentDir);
     }
 
     private static final Pattern PACKAGE_NAME_REGEX = Pattern.compile("^(^\\S+):");
@@ -178,7 +178,7 @@ public class LinuxDebBundler extends LinuxPackageBundler {
     }
 
     @Override
-    protected List<ConfigException> verifyOutputBundle(Workshop workshop, LinuxPackage pkg,
+    protected List<ConfigException> verifyOutputBundle(BuildEnv env, LinuxPackage pkg,
             Path packageBundle) {
         List<ConfigException> errors = new ArrayList<>();
 
@@ -301,9 +301,9 @@ public class LinuxDebBundler extends LinuxPackageBundler {
         private String permissions;
     }
 
-    private void prepareProjectConfig(Map<String, String> data, Workshop workshop, LinuxPackage pkg) throws IOException {
+    private void prepareProjectConfig(Map<String, String> data, BuildEnv env, LinuxPackage pkg) throws IOException {
 
-        Path configDir = workshop.appImageDir().resolve("DEBIAN");
+        Path configDir = env.appImageDir().resolve("DEBIAN");
         List<DebianFile> debianFiles = new ArrayList<>();
         debianFiles.add(new DebianFile(
                 configDir.resolve("control"),
@@ -327,12 +327,12 @@ public class LinuxDebBundler extends LinuxPackageBundler {
         });
 
         for (DebianFile debianFile : debianFiles) {
-            debianFile.create(data, workshop::createResource);
+            debianFile.create(data, env::createResource);
         }
     }
 
     @Override
-    protected Map<String, String> createReplacementData(Workshop workshop, LinuxPackage pkg) throws IOException {
+    protected Map<String, String> createReplacementData(BuildEnv env, LinuxPackage pkg) throws IOException {
         Map<String, String> data = new HashMap<>();
 
         String licenseText = Optional.ofNullable(pkg.licenseFile()).map(toFunction(Files::readString)).orElse("Unknown");
@@ -342,8 +342,7 @@ public class LinuxDebBundler extends LinuxPackageBundler {
         data.put("APPLICATION_COPYRIGHT", pkg.app().copyright());
         data.put("APPLICATION_LICENSE_TEXT", licenseText);
         data.put("APPLICATION_ARCH", pkg.arch());
-        data.put("APPLICATION_INSTALLED_SIZE", Long.toString(pkg.packageLayout().resolveAt(
-                workshop.appImageDir()).sizeInBytes() >> 10));
+        data.put("APPLICATION_INSTALLED_SIZE", Long.toString(pkg.packageLayout().resolveAt(env.appImageDir()).sizeInBytes() >> 10));
         data.put("APPLICATION_HOMEPAGE", Optional.ofNullable(pkg.aboutURL()).map(
                 value -> "Homepage: " + value).orElse(""));
         data.put("APPLICATION_VERSION_WITH_RELEASE", ((LinuxDebPackage) pkg).versionWithRelease());
@@ -351,7 +350,7 @@ public class LinuxDebBundler extends LinuxPackageBundler {
         return data;
     }
 
-    private Path buildDeb(Workshop workshop, LinuxPackage pkg, Path outdir) throws IOException {
+    private Path buildDeb(BuildEnv env, LinuxPackage pkg, Path outdir) throws IOException {
         Path outFile = outdir.resolve(pkg.packageFileNameWithSuffix());
         Log.verbose(I18N.format("message.outputting-to-location", outFile.toAbsolutePath()));
 
@@ -360,7 +359,7 @@ public class LinuxDebBundler extends LinuxPackageBundler {
         if (Log.isVerbose()) {
             cmdline.add("--verbose");
         }
-        cmdline.addAll(List.of("-b", workshop.appImageDir().toString(),
+        cmdline.addAll(List.of("-b", env.appImageDir().toString(),
                 outFile.toAbsolutePath().toString()));
 
         // run dpkg

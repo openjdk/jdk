@@ -39,10 +39,10 @@ import java.util.stream.Stream;
  */
 class UnixLaunchersAsServices extends ShellCustomAction {
 
-    UnixLaunchersAsServices(Workshop workshop, Application app, List<String> requiredPackages,
+    UnixLaunchersAsServices(BuildEnv env, Application app, List<String> requiredPackages,
             Function<Launcher, UnixLauncherAsService> factory) throws IOException {
 
-        this.appImageDir = workshop.appImageDir();
+        this.appImageDir = env.appImageDir();
         this.requiredPackages = requiredPackages;
 
         // Read launchers information
