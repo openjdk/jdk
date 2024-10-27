@@ -1115,6 +1115,8 @@ NOINLINE freeze_result FreezeBase::recurse_freeze_interpreted_frame(frame& f, fr
 
   log_develop_trace(continuations)("recurse_freeze_interpreted_frame %s _size: %d fsize: %d argsize: %d",
     frame_method->name_and_sig_as_C_string(), _freeze_size, fsize, argsize);
+  // we'd rather not yield inside methods annotated with @JvmtiMountTransition
+  assert(!ContinuationHelper::Frame::frame_method(f)->jvmti_mount_transition(), "");
 
   freeze_result result = recurse_freeze_java_frame<ContinuationHelper::InterpretedFrame>(f, caller, fsize, argsize);
   if (UNLIKELY(result > freeze_ok_bottom)) {
@@ -1168,6 +1170,8 @@ freeze_result FreezeBase::recurse_freeze_compiled_frame(frame& f, frame& caller,
                              ContinuationHelper::Frame::frame_method(f) != nullptr ?
                              ContinuationHelper::Frame::frame_method(f)->name_and_sig_as_C_string() : "",
                              _freeze_size, fsize, argsize);
+  // we'd rather not yield inside methods annotated with @JvmtiMountTransition
+  assert(!ContinuationHelper::Frame::frame_method(f)->jvmti_mount_transition(), "");
 
   freeze_result result = recurse_freeze_java_frame<ContinuationHelper::CompiledFrame>(f, caller, fsize, argsize);
   if (UNLIKELY(result > freeze_ok_bottom)) {

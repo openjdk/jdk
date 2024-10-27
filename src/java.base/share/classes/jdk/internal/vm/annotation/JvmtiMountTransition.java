@@ -35,7 +35,7 @@ import java.lang.annotation.*;
  * identity is undefined or different at method entry and exit.
  *
  * @implNote
- * This annotation is only used for the VirtualThread notifyJvmti*  methods.
+ * This annotation is only used for VirtualThread methods.
  */
 @Target({ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
