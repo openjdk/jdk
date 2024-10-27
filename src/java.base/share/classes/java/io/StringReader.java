@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,16 +30,17 @@ import java.util.Objects;
 /**
  * A character stream whose source is a string.
  *
+ * @apiNote
+ * {@link Reader#of(CharSequence)} provides a method to read from any
+ * {@link CharSequence} that may be more efficient than {@code StringReader}.
+ *
  * @author      Mark Reinhold
  * @since       1.1
  */
 
 public class StringReader extends Reader {
 
-    private final int length;
-    private String str;
-    private int next = 0;
-    private int mark = 0;
+    private final Reader r;
 
     /**
      * Creates a new string reader.
@@ -47,14 +48,7 @@ public class StringReader extends Reader {
      * @param s  String providing the character stream.
      */
     public StringReader(String s) {
-        this.length = s.length();
-        this.str = s;
-    }
-
-    /** Check to make sure that the stream has not been closed */
-    private void ensureOpen() throws IOException {
-        if (str == null)
-            throw new IOException("Stream closed");
+        r = Reader.of(s);
     }
 
     /**
@@ -67,10 +61,7 @@ public class StringReader extends Reader {
      */
     public int read() throws IOException {
         synchronized (lock) {
-            ensureOpen();
-            if (next >= length)
-                return -1;
-            return str.charAt(next++);
+            return r.read();
         }
     }
 
@@ -94,17 +85,7 @@ public class StringReader extends Reader {
      */
     public int read(char[] cbuf, int off, int len) throws IOException {
         synchronized (lock) {
-            ensureOpen();
-            Objects.checkFromIndexSize(off, len, cbuf.length);
-            if (len == 0) {
-                return 0;
-            }
-            if (next >= length)
-                return -1;
-            int n = Math.min(length - next, len);
-            str.getChars(next, next + n, cbuf, off);
-            next += n;
-            return n;
+            return r.read(cbuf, off, len);
         }
     }
 
@@ -130,14 +111,7 @@ public class StringReader extends Reader {
      */
     public long skip(long n) throws IOException {
         synchronized (lock) {
-            ensureOpen();
-            if (next >= length)
-                return 0;
-            // Bound skip by beginning and end of the source
-            long r = Math.min(length - next, n);
-            r = Math.max(-next, r);
-            next += (int)r;
-            return r;
+            return r.skip(n);
         }
     }
 
@@ -150,8 +124,7 @@ public class StringReader extends Reader {
      */
     public boolean ready() throws IOException {
         synchronized (lock) {
-            ensureOpen();
-            return true;
+            return r.ready();
         }
     }
 
@@ -176,12 +149,8 @@ public class StringReader extends Reader {
      * @throws     IOException  If an I/O error occurs
      */
     public void mark(int readAheadLimit) throws IOException {
-        if (readAheadLimit < 0){
-            throw new IllegalArgumentException("Read-ahead limit < 0");
-        }
         synchronized (lock) {
-            ensureOpen();
-            mark = next;
+            r.mark(readAheadLimit);
         }
     }
 
@@ -193,8 +162,7 @@ public class StringReader extends Reader {
      */
     public void reset() throws IOException {
         synchronized (lock) {
-            ensureOpen();
-            next = mark;
+            r.reset();
         }
     }
 
@@ -207,7 +175,11 @@ public class StringReader extends Reader {
      */
     public void close() {
         synchronized (lock) {
-            str = null;
+            try {
+                r.close();
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
         }
     }
 }

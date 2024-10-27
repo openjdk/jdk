@@ -531,6 +531,7 @@ java/lang/instrument/RetransformBigClass.sh                     8065756 generic-
 # jdk_io
 
 java/io/pathNames/GeneralWin32.java                             8180264 windows-all
+java/io/IO/IO.java                                              8337935 linux-ppc64le
 
 ############################################################################
 
@@ -585,7 +586,7 @@ java/net/Socket/asyncClose/Race.java                            8317801 aix-ppc6
 
 # jdk_nio
 
-java/nio/Buffer/LimitDirectMemory.java                          8340728 generic-all
+java/nio/Buffer/LimitDirectMemory.java                          8342849 generic-all
 
 java/nio/channels/AsynchronousSocketChannel/StressLoopback.java 8211851 aix-ppc64
 

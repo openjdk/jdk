@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,15 +21,13 @@
  * questions.
  */
 
-package jdk.internal.reflect;
+#include "export.h"
 
-/** A growable array of bytes. */
-
-interface ByteVector {
-    public int  getLength();
-    public byte get(int index);
-    public void put(int index, byte value);
-    public void add(byte value);
-    public void trim();
-    public byte[] getData();
-}
+EXPORT void noop_params0() {}
+EXPORT void noop_params1(void *param0) {}
+EXPORT void noop_params2(void *param0, void *param1) {}
+EXPORT void noop_params3(void *param0, void *param1, void *param2) {}
+EXPORT void noop_params4(void *param0, void *param1, void *param2, void *param3) {}
+EXPORT void noop_params5(void *param0, void *param1, void *param2, void *param3, void *param4) {}
+EXPORT void noop_params10(void *param0, void *param1, void *param2, void *param3, void *param4,
+                          void *param5, void *param6, void *param7, void *param8, void *param9) {}
