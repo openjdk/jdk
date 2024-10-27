@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,6 +75,21 @@ import java.security.PrivilegedAction;
  * exception.  Under these circumstances, however, subsequently invoking
  * {@code flush()} or {@code sync} would not imply that all previous
  * operations had successfully been made permanent.
+ *
+ * <p>There is one circumstance under which {@code putSpi, removeSpi and
+ * childSpi} <i>should</i> throw an exception: if the caller lacks
+ * sufficient privileges on the underlying operating system to perform the
+ * requested operation.  This will, for instance, occur on most systems
+ * if a non-privileged user attempts to modify system preferences.
+ * (The required privileges will vary from implementation to
+ * implementation.  On some implementations, they are the right to modify the
+ * contents of some directory in the file system; on others they are the right
+ * to modify contents of some key in a registry.)  Under any of these
+ * circumstances, it would generally be undesirable to let the program
+ * continue executing as if these operations would become permanent at a later
+ * time.  While implementations are not required to throw an exception under
+ * these circumstances, they are encouraged to do so.  A {@link
+ * SecurityException} would be appropriate.
  *
  * <p>Most of the SPI methods require the implementation to read or write
  * information at a preferences node.  The implementor should beware of the
