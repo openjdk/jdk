@@ -1291,10 +1291,7 @@ public class ForkJoinPool extends AbstractExecutorService {
                     unlockPhase();
                 if (room < 0)
                     throw new RejectedExecutionException("Queue capacity exceeded");
-                else if ((room == 0 || a[m & (s - 1)] == null ||
-                          (!internal && task != null &&
-                           task.getClass().getSuperclass() == interruptibleTaskClass &&
-                           a[m & (s - 2)] != null)) &&
+                else if ((room == 0 || a[m & (s - (internal? 1 : 2))] == null) &&
                          pool != null)
                     pool.signalWork(); // may have appeared empty
             }
@@ -1981,8 +1978,8 @@ public class ForkJoinPool extends AbstractExecutorService {
     final void runWorker(WorkQueue w) {
         if (w != null) {
             int phase = w.phase, r = w.stackPred;     // seed from registerWorker
-            int cfg = w.config, nsteals = 0;
-            for (boolean propagated = false;;) {
+            int cfg = w.config, nsteals = 0, src = -1;
+            for (;;) {
                 WorkQueue[] qs;
                 r ^= r << 13; r ^= r >>> 17; r ^= r << 5; // xorshift
                 if ((runState & STOP) != 0L || (qs = queues) == null)
@@ -1994,15 +1991,15 @@ public class ForkJoinPool extends AbstractExecutorService {
                     if ((q = qs[j = i & (n - 1)]) != null &&
                         (a = q.array) != null && (cap = a.length) > 0) {
                         for (int m = cap - 1, pb = -1;;) { // track progress
-                            ForkJoinTask<?> t; int b; long k;
+                            ForkJoinTask<?> t; int b; long k; Object o;
                             t = (ForkJoinTask<?>)U.getReferenceAcquire(
                                 a, k = slotOffset(m & (b = q.base)));
                             if (q.base != b)              // inconsistent
                                 ;
                             else if (t == null) {
-                                if (rescan)
-                                    break scan;           // end of run
-                                if (U.getReference(a, k) == null) {
+                                if (a[b & m] == null) {
+                                    if (rescan)           // end of run
+                                        break scan;
                                     if (a[(b + 1) & m] == null &&
                                         a[(b + 2) & m] == null)
                                         break;            // probably empty
@@ -2012,18 +2009,24 @@ public class ForkJoinPool extends AbstractExecutorService {
                                     }
                                 }
                             }
-                            else if (U.compareAndSetReference(a, k, t, null)) {
-                                int nk = (q.base = b + 1) & m;
+                            else if ((o = U.compareAndExchangeReference(
+                                          a, k, t, null)) == t) {
+                                int nb = q.base = b + 1;
                                 w.nsteals = ++nsteals;
                                 w.source = j;             // volatile
                                 rescan = true;
-                                if ((t.getClass().getSuperclass() ==
-                                     interruptibleTaskClass || !propagated) &&
-                                    a[nk] != null) {
-                                    propagated = true;
-                                    signalWork();
-                                }
+                                if ((src != (src = j) ||
+                                     t.getClass().getSuperclass() ==
+                                     interruptibleTaskClass) &&
+                                    a[nb & m] != null)
+                                    signalWork();         // propagate
                                 w.topLevelExec(t, cfg);
+                                if (q.base != nb)         // reduce interference
+                                    break scan;
+                            }
+                            else if (o == null) {
+                                rescan = true;            // move on collision
+                                break scan;
                             }
                         }
                     }
@@ -2031,7 +2034,7 @@ public class ForkJoinPool extends AbstractExecutorService {
                 if (!rescan) {
                     if (((phase = deactivate(w, phase)) & IDLE) != 0)
                         break;
-                    propagated = false;
+                    src = -1;
                 }
             }
         }
