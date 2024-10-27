@@ -840,7 +840,7 @@ javaVFrame *VM_VirtualThreadGetOrSetLocal::get_java_vframe() {
     _result = JVMTI_ERROR_THREAD_NOT_SUSPENDED;
     return nullptr;
   }
-  javaVFrame* jvf = JvmtiEnvBase::get_vthread_jvf(_vthread_h()); 
+  javaVFrame* jvf = JvmtiEnvBase::get_vthread_jvf(_vthread_h());
 
   int d = 0;
   while ((jvf != nullptr) && (d < _depth)) {
