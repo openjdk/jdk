@@ -296,7 +296,9 @@ final public class TKit {
             if (!path.toFile().exists()) {
                 return path;
             }
-            nameComponents[0] = String.format("%s.%d", baseName, i);
+            // Don't use period (.) as a separator. OSX codesign fails to sign folders
+            // with subfolders with names like "input.0".
+            nameComponents[0] = String.format("%s-%d", baseName, i);
         }
         throw new IllegalStateException(String.format(
                 "Failed to create unique file name from [%s] basename after %d attempts",

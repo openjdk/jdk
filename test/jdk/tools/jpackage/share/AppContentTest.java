@@ -22,22 +22,18 @@
  */
 
 import java.nio.file.Path;
-import java.nio.file.Files;
 import jdk.jpackage.internal.ApplicationLayout;
 import jdk.jpackage.test.PackageTest;
-import jdk.jpackage.test.PackageType;
 import jdk.jpackage.test.TKit;
 import jdk.jpackage.test.Annotations.Test;
-import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.Annotations.Parameters;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
-import jdk.internal.util.OSVersion;
 
 /**
- * Tests generation of packages with input folder containing empty folders.
+ * Tests generation of packages with additional content in app image.
  */
 
 /*
@@ -82,13 +78,8 @@ public class AppContentTest {
 
     @Test
     public void test() throws Exception {
-
-        // On macOS signing may or may not work for modified app bundles.
-        // It works on macOS 15 and up, but fails on macOS below 15.
         final int expectedJPackageExitCode;
-        final boolean isMacOS15 = (OSVersion.current().compareTo(
-                                      new OSVersion(15, 0, 0)) > 0);
-        if (testPathArgs.contains(TEST_BAD) || (TKit.isOSX() && !isMacOS15)) {
+        if (testPathArgs.contains(TEST_BAD)) {
             expectedJPackageExitCode = 1;
         } else {
             expectedJPackageExitCode = 0;
