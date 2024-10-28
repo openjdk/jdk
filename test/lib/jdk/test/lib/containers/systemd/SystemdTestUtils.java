@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -92,19 +93,23 @@ public class SystemdTestUtils {
         try {
             return SystemdTestUtils.systemdRunJava(opts);
         } finally {
-            try {
-                if (files.memory() != null) {
-                    Files.delete(files.memory());
-                }
-                if (files.cpu() != null) {
-                    Files.delete(files.cpu());
-                }
-                if (files.sliceDotDDir() != null) {
-                    FileUtils.deleteFileTreeUnchecked(files.sliceDotDDir());
-                }
-            } catch (NoSuchFileException e) {
-                // ignore
+            cleanupFiles(files);
+        }
+    }
+
+    private static void cleanupFiles(ResultFiles files) throws IOException {
+        try {
+            if (files.memory() != null) {
+                Files.delete(files.memory());
             }
+            if (files.cpu() != null) {
+                Files.delete(files.cpu());
+            }
+            if (files.sliceDotDDir() != null) {
+                FileUtils.deleteFileTreeUnchecked(files.sliceDotDDir());
+            }
+        } catch (NoSuchFileException e) {
+            // ignore
         }
     }
 
@@ -135,15 +140,23 @@ public class SystemdTestUtils {
         if (runOpts.hasSliceDLimit()) {
             String dirName = String.format("%s.slice.d", SLICE_NAMESPACE_PREFIX);
             sliceDotDDir = SYSTEMD_CONFIG_HOME.resolve(Path.of(dirName));
-            Files.createDirectory(sliceDotDDir);
+            // Using createDirectories since we only need to ensure the directory
+            // exists. Ignore it if already existent.
+            Files.createDirectories(sliceDotDDir);
 
             if (runOpts.sliceDMemoryLimit != null) {
                 Path memoryConfig = sliceDotDDir.resolve(Path.of(SLICE_D_MEM_CONFIG_FILE));
-                Files.writeString(memoryConfig, getMemoryDSliceContent(runOpts));
+                Files.writeString(memoryConfig,
+                                  getMemoryDSliceContent(runOpts),
+                                  StandardOpenOption.TRUNCATE_EXISTING,
+                                  StandardOpenOption.CREATE);
             }
             if (runOpts.sliceDCpuLimit != null) {
                 Path cpuConfig = sliceDotDDir.resolve(Path.of(SLICE_D_CPU_CONFIG_FILE));
-                Files.writeString(cpuConfig, getCPUDSliceContent(runOpts));
+                Files.writeString(cpuConfig,
+                                  getCPUDSliceContent(runOpts),
+                                  StandardOpenOption.TRUNCATE_EXISTING,
+                                  StandardOpenOption.CREATE);
             }
         }
 
@@ -159,7 +172,7 @@ public class SystemdTestUtils {
             throw new AssertionError("Failed to write systemd slice files");
         }
 
-        systemdDaemonReload(cpu);
+        systemdDaemonReload(cpu, memory, sliceDotDDir);
 
         return new ResultFiles(memory, cpu, sliceDotDDir);
     }
@@ -175,12 +188,25 @@ public class SystemdTestUtils {
         return String.format("%s-cpu", slice);
     }
 
-    private static void systemdDaemonReload(Path cpu) throws Exception {
+    private static void systemdDaemonReload(Path cpu, Path memory, Path sliceDdir) throws Exception {
         List<String> daemonReload = systemCtl();
         daemonReload.add("daemon-reload");
 
         if (execute(daemonReload).getExitValue() != 0) {
-            throw new AssertionError("Failed to reload systemd daemon");
+            if (RUN_AS_USER) {
+                cleanupFiles(new ResultFiles(cpu, memory, sliceDdir));
+                // When run as user the systemd user manager needs to be
+                // accessible and working. This is usually the case when
+                // connected via SSH or user login, but may not work for
+                // sessions set up via 'su <user>' or similar.
+                // In that case, 'systemctl --user status' usually doesn't
+                // work. There is no other option than skip the test.
+                String msg = "Service user@.service not properly configured. " +
+                             "Skipping the test!";
+                throw new SkippedException(msg);
+            } else {
+                throw new AssertionError("Failed to reload systemd daemon");
+            }
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -27,6 +27,7 @@
 #include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "classfile/javaClasses.hpp"
+#include "compiler/disassembler.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/bytecodeTracer.hpp"
@@ -70,7 +71,7 @@
 // Max size with JVMTI
 int TemplateInterpreter::InterpreterCodeSize = 256 * 1024;
 
-#define __ _masm->
+#define __ Disassembler::hook<InterpreterMacroAssembler>(__FILE__, __LINE__, _masm)->
 
 //-----------------------------------------------------------------------------
 
@@ -165,7 +166,6 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
 
   address fn = nullptr;
   address entry_point = nullptr;
-  Register continuation = ra;
   switch (kind) {
     case Interpreter::java_lang_math_abs:
       entry_point = __ pc();
@@ -184,83 +184,82 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
       __ fld(f10, Address(esp));
       __ mv(sp, x19_sender_sp);
       __ mv(x9, ra);
-      continuation = x9;  // The first callee-saved register
       if (StubRoutines::dsin() == nullptr) {
         fn = CAST_FROM_FN_PTR(address, SharedRuntime::dsin);
       } else {
         fn = CAST_FROM_FN_PTR(address, StubRoutines::dsin());
       }
       __ call(fn);
+      __ mv(ra, x9);
       break;
     case Interpreter::java_lang_math_cos :
       entry_point = __ pc();
       __ fld(f10, Address(esp));
       __ mv(sp, x19_sender_sp);
       __ mv(x9, ra);
-      continuation = x9;  // The first callee-saved register
       if (StubRoutines::dcos() == nullptr) {
         fn = CAST_FROM_FN_PTR(address, SharedRuntime::dcos);
       } else {
         fn = CAST_FROM_FN_PTR(address, StubRoutines::dcos());
       }
       __ call(fn);
+      __ mv(ra, x9);
       break;
     case Interpreter::java_lang_math_tan :
       entry_point = __ pc();
       __ fld(f10, Address(esp));
       __ mv(sp, x19_sender_sp);
       __ mv(x9, ra);
-      continuation = x9;  // The first callee-saved register
       if (StubRoutines::dtan() == nullptr) {
         fn = CAST_FROM_FN_PTR(address, SharedRuntime::dtan);
       } else {
         fn = CAST_FROM_FN_PTR(address, StubRoutines::dtan());
       }
       __ call(fn);
+      __ mv(ra, x9);
       break;
     case Interpreter::java_lang_math_log :
       entry_point = __ pc();
       __ fld(f10, Address(esp));
       __ mv(sp, x19_sender_sp);
       __ mv(x9, ra);
-      continuation = x9;  // The first callee-saved register
       if (StubRoutines::dlog() == nullptr) {
         fn = CAST_FROM_FN_PTR(address, SharedRuntime::dlog);
       } else {
         fn = CAST_FROM_FN_PTR(address, StubRoutines::dlog());
       }
       __ call(fn);
+      __ mv(ra, x9);
       break;
     case Interpreter::java_lang_math_log10 :
       entry_point = __ pc();
       __ fld(f10, Address(esp));
       __ mv(sp, x19_sender_sp);
       __ mv(x9, ra);
-      continuation = x9;  // The first callee-saved register
       if (StubRoutines::dlog10() == nullptr) {
         fn = CAST_FROM_FN_PTR(address, SharedRuntime::dlog10);
       } else {
         fn = CAST_FROM_FN_PTR(address, StubRoutines::dlog10());
       }
       __ call(fn);
+      __ mv(ra, x9);
       break;
     case Interpreter::java_lang_math_exp :
       entry_point = __ pc();
       __ fld(f10, Address(esp));
       __ mv(sp, x19_sender_sp);
       __ mv(x9, ra);
-      continuation = x9;  // The first callee-saved register
       if (StubRoutines::dexp() == nullptr) {
         fn = CAST_FROM_FN_PTR(address, SharedRuntime::dexp);
       } else {
         fn = CAST_FROM_FN_PTR(address, StubRoutines::dexp());
       }
       __ call(fn);
+      __ mv(ra, x9);
       break;
     case Interpreter::java_lang_math_pow :
       entry_point = __ pc();
       __ mv(x9, ra);
-      continuation = x9;
       __ fld(f10, Address(esp, 2 * Interpreter::stackElementSize));
       __ fld(f11, Address(esp));
       __ mv(sp, x19_sender_sp);
@@ -270,6 +269,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
         fn = CAST_FROM_FN_PTR(address, StubRoutines::dpow());
       }
       __ call(fn);
+      __ mv(ra, x9);
       break;
     case Interpreter::java_lang_math_fmaD :
       if (UseFMA) {
@@ -295,7 +295,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
       ;
   }
   if (entry_point != nullptr) {
-    __ jr(continuation);
+    __ ret();
   }
 
   return entry_point;
@@ -421,7 +421,7 @@ address TemplateInterpreterGenerator::generate_exception_handler_common(
                c_rarg1, c_rarg2);
   }
   // throw exception
-  __ j(address(Interpreter::throw_exception_entry()));
+  __ j(RuntimeAddress(Interpreter::throw_exception_entry()));
   return entry;
 }
 
@@ -1748,13 +1748,21 @@ void TemplateInterpreterGenerator::set_vtos_entry_points(Template* t,
                                                          address& vep) {
   assert(t != nullptr && t->is_valid() && t->tos_in() == vtos, "illegal template");
   Label L;
-  aep = __ pc();  __ push_ptr();  __ j(L);
-  fep = __ pc();  __ push_f();    __ j(L);
-  dep = __ pc();  __ push_d();    __ j(L);
-  lep = __ pc();  __ push_l();    __ j(L);
-  bep = cep = sep =
-  iep = __ pc();  __ push_i();
-  vep = __ pc();
+  aep = __ pc();     // atos entry point
+      __ push_ptr();
+      __ j(L);
+  fep = __ pc();     // ftos entry point
+      __ push_f();
+      __ j(L);
+  dep = __ pc();     // dtos entry point
+      __ push_d();
+      __ j(L);
+  lep = __ pc();     // ltos entry point
+      __ push_l();
+      __ j(L);
+  bep = cep = sep = iep = __ pc();     // [bcsi]tos entry point
+      __ push_i();
+  vep = __ pc();     // vtos entry point
   __ bind(L);
   generate_and_dispatch(t);
 }

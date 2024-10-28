@@ -39,13 +39,13 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
+import static java.lang.constant.ConstantDescs.CD_void;
 import static java.util.Objects.requireNonNull;
 
 import static jdk.internal.constant.ConstantUtils.badMethodDescriptor;
 import static jdk.internal.constant.ConstantUtils.resolveClassDesc;
 import static jdk.internal.constant.ConstantUtils.skipOverFieldSignature;
 import static jdk.internal.constant.ConstantUtils.EMPTY_CLASSDESC;
-import static jdk.internal.constant.PrimitiveClassDescImpl.CD_void;
 
 /**
  * A <a href="package-summary.html#nominal">nominal descriptor</a> for a
@@ -86,7 +86,7 @@ public final class MethodTypeDescImpl implements MethodTypeDesc {
     }
 
     private static ClassDesc validateArgument(ClassDesc arg) {
-        if (arg.descriptorString().charAt(0) == 'V') // implicit null check
+        if (requireNonNull(arg) == CD_void)
             throw new IllegalArgumentException("Void parameters not permitted");
         return arg;
     }
@@ -287,15 +287,31 @@ public final class MethodTypeDescImpl implements MethodTypeDesc {
         if (desc != null)
             return desc;
 
-        int len = 2 + returnType.descriptorString().length();
-        for (ClassDesc argType : argTypes) {
-            len += argType.descriptorString().length();
+        return buildDescriptorString();
+    }
+
+    private String buildDescriptorString() {
+        var returnType = this.returnType;
+        var returnTypeDesc = returnType.descriptorString();
+        var argTypes = this.argTypes;
+        String desc;
+        if (argTypes.length == 0) {
+            // getter
+            desc = "()".concat(returnTypeDesc);
+        } else if (argTypes.length == 1 && returnType == ConstantDescs.CD_void) {
+            // setter
+            desc = ConstantUtils.concat("(", argTypes[0].descriptorString(), ")V");
+        } else {
+            int len = 2 + returnTypeDesc.length();
+            for (ClassDesc argType : argTypes) {
+                len += argType.descriptorString().length();
+            }
+            StringBuilder sb = new StringBuilder(len).append('(');
+            for (ClassDesc argType : argTypes) {
+                sb.append(argType.descriptorString());
+            }
+            desc = sb.append(')').append(returnTypeDesc).toString();
         }
-        StringBuilder sb = new StringBuilder(len).append('(');
-        for (ClassDesc argType : argTypes) {
-            sb.append(argType.descriptorString());
-        }
-        desc = sb.append(')').append(returnType.descriptorString()).toString();
         cachedDescriptorString = desc;
         return desc;
     }

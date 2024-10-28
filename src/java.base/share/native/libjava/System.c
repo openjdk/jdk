@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,7 @@ Java_java_lang_System_identityHashCode(JNIEnv *env, jobject this, jobject x)
         if (jval == NULL)                                  \
             return NULL;                                   \
         (*env)->SetObjectArrayElement(env, array, jdk_internal_util_SystemProps_Raw_##prop_index, jval); \
-        if ((*env)->ExceptionOccurred(env))                \
+        if ((*env)->ExceptionCheck(env))                \
             return NULL;                                   \
         (*env)->DeleteLocalRef(env, jval);                 \
     }
@@ -86,7 +86,7 @@ Java_java_lang_System_identityHashCode(JNIEnv *env, jobject this, jobject x)
         if (jval == NULL)                                  \
             return NULL;                                   \
         (*env)->SetObjectArrayElement(env, array, jdk_internal_util_SystemProps_Raw_##prop_index, jval); \
-        if ((*env)->ExceptionOccurred(env))                \
+        if ((*env)->ExceptionCheck(env))                \
             return NULL;                                   \
         (*env)->DeleteLocalRef(env, jval);                 \
     }

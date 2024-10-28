@@ -34,7 +34,6 @@ import java.lang.classfile.instruction.LoadInstruction;
 import java.lang.classfile.instruction.LocalVariable;
 import java.lang.classfile.instruction.LocalVariableType;
 import java.lang.classfile.instruction.StoreInstruction;
-
 import java.util.Arrays;
 
 public final class CodeLocalsShifterImpl implements CodeLocalsShifter {

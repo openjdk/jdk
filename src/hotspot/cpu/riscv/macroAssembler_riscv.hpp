@@ -431,6 +431,8 @@ class MacroAssembler: public Assembler {
     }
   }
 
+  void cmodx_fence();
+
   void pause() {
     Assembler::fence(w, 0);
   }
@@ -625,7 +627,7 @@ class MacroAssembler: public Assembler {
   void bgtz(Register Rs, const address dest);
 
  private:
-  void load_link_jump(const address source, Register temp = t0);
+  void load_link_jump(const address source, Register temp);
   void jump_link(const address dest, Register temp);
  public:
   // We try to follow risc-v asm menomics.
@@ -633,18 +635,42 @@ class MacroAssembler: public Assembler {
   // we often need to resort to movptr, li <48imm>.
   // https://github.com/riscv-non-isa/riscv-asm-manual/blob/master/riscv-asm.md
 
+  // Hotspot only use the standard calling convention using x1/ra.
+  // The alternative calling convection using x5/t0 is not used.
+  // Using x5 as a temp causes the CPU to mispredict returns.
+
+  // JALR, return address stack updates:
+  // | rd is x1/x5 | rs1 is x1/x5 | rd=rs1 | RAS action
+  // | ----------- | ------------ | ------ |-------------
+  // |     No      |      No      |   —    | None
+  // |     No      |      Yes     |   —    | Pop
+  // |     Yes     |      No      |   —    | Push
+  // |     Yes     |      Yes     |   No   | Pop, then push
+  // |     Yes     |      Yes     |   Yes  | Push
+  //
+  // JAL, return address stack updates:
+  // | rd is x1/x5 | RAS action
+  // | ----------- | ----------
+  // |     Yes     | Push
+  // |     No      | None
+  //
+  // JUMPs   uses Rd = x0/zero and Rs = x6/t1 or imm
+  // CALLS   uses Rd = x1/ra   and Rs = x6/t1 or imm (or x1/ra*)
+  // RETURNS uses Rd = x0/zero and Rs = x1/ra
+  // *use of x1/ra should not normally be used, special case only.
+
   // jump: jal x0, offset
   // For long reach uses temp register for:
   // la + jr
-  void j(const address dest, Register temp = t0);
-  void j(const Address &adr, Register temp = t0);
-  void j(Label &l, Register temp = t0);
+  void j(const address dest, Register temp = t1);
+  void j(const Address &dest, Register temp = t1);
+  void j(Label &l, Register temp = noreg);
 
   // jump register: jalr x0, offset(rs)
   void jr(Register Rd, int32_t offset = 0);
 
   // call: la + jalr x1
-  void call(const address dest, Register temp = t0);
+  void call(const address dest, Register temp = t1);
 
   // jalr: jalr x1, offset(rs)
   void jalr(Register Rs, int32_t offset = 0);
@@ -652,7 +678,8 @@ class MacroAssembler: public Assembler {
   // Emit a runtime call. Only invalidates the tmp register which
   // is used to keep the entry address for jalr/movptr.
   // Uses call() for intra code cache, else movptr + jalr.
-  void rt_call(address dest, Register tmp = t0);
+  // Clobebrs t1
+  void rt_call(address dest, Register tmp = t1);
 
   // ret: jalr x0, 0(x1)
   inline void ret() {
@@ -1163,8 +1190,9 @@ public:
   // - relocInfo::external_word_type
   // - relocInfo::runtime_call_type
   // - relocInfo::none
-  void far_call(const Address &entry, Register tmp = t0);
-  void far_jump(const Address &entry, Register tmp = t0);
+  // Clobbers t1 default.
+  void far_call(const Address &entry, Register tmp = t1);
+  void far_jump(const Address &entry, Register tmp = t1);
 
   static int far_branch_size() {
       return 2 * 4;  // auipc + jalr, see far_call() & far_jump()
@@ -1299,7 +1327,7 @@ public:
   void decrement(const Address dst, int64_t value = 1, Register tmp1 = t0, Register tmp2 = t1);
   void decrementw(const Address dst, int32_t value = 1, Register tmp1 = t0, Register tmp2 = t1);
 
-  void cmpptr(Register src1, Address src2, Label& equal);
+  void cmpptr(Register src1, const Address &src2, Label& equal, Register tmp = t0);
 
   void clinit_barrier(Register klass, Register tmp, Label* L_fast_path = nullptr, Label* L_slow_path = nullptr);
   void load_method_holder_cld(Register result, Register method);
@@ -1319,11 +1347,12 @@ public:
         Register table0, Register table1, Register table2, Register table3,
         bool upper);
   void update_byte_crc32(Register crc, Register val, Register table);
+
+#ifdef COMPILER2
   void vector_update_crc32(Register crc, Register buf, Register len,
                            Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register tmp5,
                            Register table0, Register table3);
 
-#ifdef COMPILER2
   void mul_add(Register out, Register in, Register offset,
                Register len, Register k, Register tmp);
   void wide_mul(Register prod_lo, Register prod_hi, Register n, Register m);
@@ -1353,7 +1382,7 @@ public:
                        Register tmp1, Register tmp2, Register tmp3, Register tmp4,
                        Register tmp5, Register tmp6, Register product_hi);
 
-#endif
+#endif // COMPILER2
 
   void inflate_lo32(Register Rd, Register Rs, Register tmp1 = t0, Register tmp2 = t1);
   void inflate_hi32(Register Rd, Register Rs, Register tmp1 = t0, Register tmp2 = t1);
