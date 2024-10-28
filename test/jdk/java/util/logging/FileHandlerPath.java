@@ -31,7 +31,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.FileHandler;
 import java.util.logging.LogManager;
 
@@ -48,7 +47,7 @@ public class FileHandlerPath {
 
     // We will test the simple pattern
     public static void run(Properties propertyFile) throws Exception {
-        Configure.setUp(propertyFile);
+        setUp(propertyFile);
         test(propertyFile.getProperty("test.name"), propertyFile);
     }
 
@@ -115,50 +114,41 @@ public class FileHandlerPath {
             }
         } finally {
             // Cleanup...
-            Configure.doPrivileged(() -> {
-                for(File log : files) {
-                    try {
-                        final boolean isLockFile = log.getName().endsWith(".lck");
-                        // lock file should already be deleted, except if the
-                        // test failed in exception.
-                        // log file should all be present, except if the test
-                        // failed in exception.
-                        if (log.exists()) {
-                            if (!isLockFile) {
-                                System.out.println("deleting "+log.toString());
-                            } else {
-                                System.err.println("deleting lock file "+log.toString());
-                            }
-                            log.delete();
+            for(File log : files) {
+                try {
+                    final boolean isLockFile = log.getName().endsWith(".lck");
+                    // lock file should already be deleted, except if the
+                    // test failed in exception.
+                    // log file should all be present, except if the test
+                    // failed in exception.
+                    if (log.exists()) {
+                        if (!isLockFile) {
+                            System.out.println("deleting "+log.toString());
                         } else {
-                            if (!isLockFile) {
-                                System.err.println(log.toString() + ": not found.");
-                            }
+                            System.err.println("deleting lock file "+log.toString());
                         }
-                    } catch (Throwable t) {
-                        // should not happen
-                        t.printStackTrace();
+                        log.delete();
+                    } else {
+                        if (!isLockFile) {
+                            System.err.println(log.toString() + ": not found.");
+                        }
                     }
+                } catch (Throwable t) {
+                    // should not happen
+                    t.printStackTrace();
                 }
-            });
+            }
         }
     }
 
-    static class Configure {
-        static void setUp(Properties propertyFile) {
-            doPrivileged(() -> {
-                try {
-                    ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-                    propertyFile.store(bytes, propertyFile.getProperty("test.name"));
-                    ByteArrayInputStream bais = new ByteArrayInputStream(bytes.toByteArray());
-                    LogManager.getLogManager().readConfiguration(bais);
-                } catch (IOException ex) {
-                    throw new RuntimeException(ex);
-                }
-            });
-        }
-        static void doPrivileged(Runnable run) {
-            run.run();
+    static void setUp(Properties propertyFile) {
+        try {
+            ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+            propertyFile.store(bytes, propertyFile.getProperty("test.name"));
+            ByteArrayInputStream bais = new ByteArrayInputStream(bytes.toByteArray());
+            LogManager.getLogManager().readConfiguration(bais);
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
         }
     }
 
