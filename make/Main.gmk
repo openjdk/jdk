@@ -300,9 +300,9 @@ $(eval $(call SetupTarget, doctor, \
     MAKEFILE := Doctor, \
 ))
 
-$(eval $(call SetupTarget, verify-build-javac, \
+$(eval $(call SetupTarget, verify-build-jdk, \
     MAKEFILE := VerifyBuild, \
-    TARGET := verify-build-javac, \
+    TARGET := verify-build-jdk, \
     DEPS :=  build-jdk-javac, \
 ))
 

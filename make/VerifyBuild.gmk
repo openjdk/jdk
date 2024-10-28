@@ -29,27 +29,36 @@ include $(SPEC)
 include MakeBase.gmk
 include Execute.gmk
 
-TEST_JAVAC_DIR :=  $(SUPPORT_OUTPUTDIR)/verify-build
-TEST_JAVAC_OUTPUT := $(TEST_JAVAC_DIR)/javac.output
+TEST_JAVA_DIR :=  $(SUPPORT_OUTPUTDIR)/verify-buildjdk
+TEST_JAVA_OUTPUT := $(TEST_JAVA_DIR)/java-output.txt
+TEST_JAVA_SRC := $(TEST_JAVA_DIR)/HelloWorld.java
 
-$(eval $(call SetupExecute, TEST_BUILD_JAVAC, \
-    COMMAND := $(BUILD_JAVAC) --version > $(TEST_JAVAC_OUTPUT) 2>&1 || ( \
+$(eval $(call SetupExecute, TEST_BUILD_JAVA, \
+    PRE_COMMAND := $(ECHO) 'void main() { println("Hello, World!"); }' > $(TEST_JAVA_SRC), \
+    COMMAND := cd $(TEST_JAVA_DIR) && $(BUILD_JAVA) --enable-preview $(TEST_JAVA_SRC) > $(TEST_JAVA_OUTPUT) 2>&1 || ( \
         exitcode=$$? ; \
-        $(ECHO) "ERROR: Failed to run javac from the build JDK." \
-            "This is likely a problem with the newly built JVM/JDK. Output:" ; \
-        $(CAT) $(TEST_JAVAC_OUTPUT) ; \
+        $(ECHO) "ERROR: Failed to run java from the Build JDK." ; \
+        $(ECHO) ; \
+        $(ECHO) "This is likely caused by faulty changes in the source code," ; \
+        $(ECHO) "which makes java unable to start and run a simple program." ; \
+        $(ECHO) ; \
+        $(ECHO) "In case of a hotspot crash, relevant log files can be found in" ; \
+        $(ECHO) "$(TEST_JAVA_DIR)." ; \
+        $(ECHO) ; \
+        $(ECHO) "Output from java: " ; \
+        $(CAT) $(TEST_JAVA_OUTPUT) ; \
         exit $$exitcode \
     ), \
     INFO := Testing javac from the Build JDK, \
-    OUTPUT_DIR := $(TEST_JAVAC_DIR), \
+    OUTPUT_DIR := $(TEST_JAVA_DIR), \
 ))
 
-TARGETS += $(TEST_BUILD_JAVAC)
+TARGETS += $(TEST_BUILD_JAVA)
 
 ################################################################################
 
-verify-build-javac: $(TEST_BUILD_JAVAC)
+verify-build-jdk: $(TEST_BUILD_JAVA)
 
 all: $(TARGETS)
 
-.PHONY: default all verify-build-javac
+.PHONY: default all verify-build-jdk
