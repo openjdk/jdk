@@ -29,6 +29,8 @@ import com.sun.hotspot.igv.layout.Vertex;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.sun.hotspot.igv.hierarchicallayout.LayoutEdge.LAYOUT_EDGE_LAYER_COMPARATOR;
+import static com.sun.hotspot.igv.hierarchicallayout.LayoutManager.NODE_OFFSET;
 import static com.sun.hotspot.igv.hierarchicallayout.LayoutNode.NODE_POS_COMPARATOR;
 
 /**
@@ -419,6 +421,84 @@ public class LayoutGraph {
 
             // Update currentY to account for the padded bottom of this layer
             currentY += layer.calculateScalePaddedBottom();
+        }
+    }
+
+    public void optimizeBackEdgeCrossing() {
+        for (LayoutNode node : getLayoutNodes()) {
+            if (node.getReversedLinkStartPoints().isEmpty() && node.getReversedLinkEndPoints().isEmpty()) continue;
+            int orig_score = node.getBackedgeCrossingScore();
+            node.computeReversedLinkPoints(!node.isReverseLeft());
+            int reverse_score = node.getBackedgeCrossingScore();
+            if (orig_score > reverse_score) {
+                node.computeReversedLinkPoints(!node.isReverseLeft());
+            }
+        }
+    }
+    private void tryAlignDummy(int x, LayoutNode dummy) {
+        if (x == dummy.getX()) return;
+        LayoutLayer nextLayer = getLayer(dummy.getLayer());
+        if (dummy.getX() < x) {
+            // try move nextDummyNode.x to the right
+            int rightPos = dummy.getPos() + 1;
+            if (rightPos < nextLayer.size()) {
+                // we have a right neighbor
+                LayoutNode rightNode = nextLayer.get(rightPos);
+                int rightShift = x - dummy.getX();
+                if (dummy.getRight() + rightShift <= rightNode.getOuterLeft() - NODE_OFFSET) {
+                    // it is possible to shift nextDummyNode right
+                    dummy.setX(x);
+                }
+            } else {
+                // nextDummyNode is the right-most node, so we can always move nextDummyNode to the right
+                dummy.setX(x);
+            }
+        } else {
+            // try move nextDummyNode.x to the left
+            int leftPos = dummy.getPos() - 1;
+            if (leftPos >= 0) {
+                // we have a left neighbor
+                LayoutNode leftNode = nextLayer.get(leftPos);
+                int leftShift = dummy.getX() - x;
+                if (leftNode.getOuterRight() + NODE_OFFSET <= dummy.getLeft() - leftShift) {
+                    // it is possible to shift nextDummyNode left
+                    dummy.setX(x);
+                }
+            } else {
+                // nextDummyNode is the left-most node, so we can always move nextDummyNode to the left
+                dummy.setX(x);
+            }
+        }
+    }
+
+    private void straightenDown(LayoutNode node) {
+        if (node.getSuccs().size() == 1) {
+            LayoutEdge succEdge = node.getSuccs().get(0);
+            LayoutNode succDummy = succEdge.getTo();
+            if (!succDummy.isDummy()) return;
+            if (node.isDummy()) {
+                tryAlignDummy(node.getX(), succDummy);
+            } else {
+                tryAlignDummy(succEdge.getStartX(), succDummy);
+            }
+        }
+    }
+
+    private void straightenLayer(LayoutLayer layer) {
+        for (LayoutNode node : layer) {
+            straightenDown(node);
+        }
+        for (int i = layer.size() - 1; i >= 0; i--) {
+            straightenDown(layer.get(i));
+        }
+    }
+
+    public void straightenEdges() {
+        for (int i = 0; i < getLayerCount(); i++) {
+            straightenLayer(getLayer(i));
+        }
+        for (int i = getLayerCount() - 1; i >= 0; i--) {
+            straightenLayer(getLayer(i));
         }
     }
 
