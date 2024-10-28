@@ -37,7 +37,7 @@ import java.security.spec.AlgorithmParameterSpec;
  * <p>
  * All the abstract methods in this class must be implemented by each
  * cryptographic service provider who wishes to supply the implementation of a
- * particular key derivation algorithm.
+ * particular key derivation function algorithm.
  * <p>
  * Implementations must provide a public constructor which accepts a {@code
  * KDFParameters} object if they depend on the default implementation of
@@ -110,6 +110,10 @@ public abstract class KDFSpi {
     /**
      * Derives a key, returned as a {@code SecretKey} object.
      *
+     * @implNote If the resultant key is extractable, then its
+     *         {@code getEncoded} value should have the same content as the
+     *         result of {@code deriveData}.
+     *
      * @param alg
      *         the algorithm of the resultant {@code SecretKey} object
      * @param derivationSpec
@@ -125,9 +129,6 @@ public abstract class KDFSpi {
      *         if {@code alg} is empty or invalid
      * @throws NullPointerException
      *         if {@code alg} or {@code derivationSpec} is null
-     * @implNote If the resultant key is extractable, then its
-     *         {@code getEncoded} value should have the same content as the
-     *         result of {@code deriveData}.
      */
     protected abstract SecretKey engineDeriveKey(String alg,
                                                  AlgorithmParameterSpec derivationSpec)

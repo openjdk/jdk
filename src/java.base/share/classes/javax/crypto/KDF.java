@@ -208,6 +208,14 @@ public final class KDF {
     /**
      * Returns a {@code KDF} object that implements the specified algorithm.
      *
+     * @implNote The JDK Reference Implementation additionally uses the
+     *         {@code jdk.security.provider.preferred}
+     *         {@link Security#getProperty(String) Security} property to
+     *         determine the preferred provider order for the specified
+     *         algorithm. This may be different than the order of providers
+     *         returned by
+     *         {@link Security#getProviders() Security.getProviders()}.
+     *
      * @param algorithm
      *         the key derivation algorithm to use. See the {@code KDF} section
      *         in the <a href="{@docRoot}/../specs/security/standard-names.html#kdf-algorithms">
@@ -221,13 +229,6 @@ public final class KDF {
      *         the specified algorithm
      * @throws NullPointerException
      *         if {@code algorithm} is {@code null}
-     * @implNote The JDK Reference Implementation additionally uses the
-     *         {@code jdk.security.provider.preferred}
-     *         {@link Security#getProperty(String) Security} property to
-     *         determine the preferred provider order for the specified
-     *         algorithm. This may be different than the order of providers
-     *         returned by
-     *         {@link Security#getProviders() Security.getProviders()}.
      * @see <a href="#DelayedProviderSelection">Delayed Provider
      *         Selection</a>
      */
@@ -314,6 +315,14 @@ public final class KDF {
      * Returns a {@code KDF} object that implements the specified algorithm and
      * is initialized with the specified parameters.
      *
+     * @implNote The JDK Reference Implementation additionally uses the
+     *         {@code jdk.security.provider.preferred}
+     *         {@link Security#getProperty(String) Security} property to
+     *         determine the preferred provider order for the specified
+     *         algorithm. This may be different than the order of providers
+     *         returned by
+     *         {@link Security#getProviders() Security.getProviders()}.
+     *
      * @param algorithm
      *         the key derivation algorithm to use. See the {@code KDF} section
      *         in the <a href="{@docRoot}/../specs/security/standard-names.html#kdf-algorithms">
@@ -334,13 +343,6 @@ public final class KDF {
      *         support the specified parameters
      * @throws NullPointerException
      *         if {@code algorithm} is {@code null}
-     * @implNote The JDK Reference Implementation additionally uses the
-     *         {@code jdk.security.provider.preferred}
-     *         {@link Security#getProperty(String) Security} property to
-     *         determine the preferred provider order for the specified
-     *         algorithm. This may be different than the order of providers
-     *         returned by
-     *         {@link Security#getProviders() Security.getProviders()}.
      * @see <a href="#DelayedProviderSelection">Delayed Provider
      *         Selection</a>
      */
