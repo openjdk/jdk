@@ -207,6 +207,14 @@ public class InMemoryJavaCompiler {
         }
     }
 
+    /**
+     * Compiles the list of classes with the given map of name and source code.
+     * This overloaded version of compile is useful for batch compile use cases.
+     *
+     * @param inputMap The map containing the name of the class and corresponding source code
+     * @throws RuntimeException if the compilation did not succeed
+     * @return The resulting byte code from the compilation
+     */
     public static Map<String, byte[]> compile(Map<String, ? extends CharSequence> inputMap) {
         Collection<JavaFileObject> sourceFiles = new LinkedList<JavaFileObject>();
         for (Entry<String, ? extends CharSequence> entry : inputMap.entrySet()) {
