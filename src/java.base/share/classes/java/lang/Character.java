@@ -3647,7 +3647,6 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
          */
         public static final UnicodeBlock TULU_TIGALARI =
                 new UnicodeBlock("TULU_TIGALARI",
-                        "TULU-TIGALARI",
                         "TULU-TIGALARI");
 
         /**
