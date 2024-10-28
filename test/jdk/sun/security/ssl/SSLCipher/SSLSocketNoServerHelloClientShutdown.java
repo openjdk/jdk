@@ -49,11 +49,12 @@ import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLSocket;
 
 /**
- * To reproduce @bug 8331682 (client sends an unencrypted TLS alert during 1.3 handshake)
- * with SSLSockets we use an SSLSocket on the server side and a plain TCP socket backed by
- * SSLEngine on the client side.
+ * To reproduce @bug 8331682 (client sends an unencrypted TLS alert during
+ * TLSv1.3 handshake) with SSLSockets we use an SSLSocket on the server side
+ * and a plain TCP socket backed by SSLEngine on the client side.
  */
-public class SSLSocketNoServerHelloClientShutdown extends SSLEngineNoServerHelloClientShutdown {
+public class SSLSocketNoServerHelloClientShutdown
+    extends SSLEngineNoServerHelloClientShutdown {
 
     private volatile Exception clientException;
     private volatile Exception serverException;
@@ -71,7 +72,8 @@ public class SSLSocketNoServerHelloClientShutdown extends SSLEngineNoServerHello
         SSLContext context = createServerSSLContext();
         SSLServerSocketFactory sslssf = context.getServerSocketFactory();
 
-        try (SSLServerSocket serverSocket = (SSLServerSocket) sslssf.createServerSocket()) {
+        try (SSLServerSocket serverSocket =
+            (SSLServerSocket) sslssf.createServerSocket()) {
 
             serverSocket.setReuseAddress(false);
             serverSocket.bind(null);
@@ -98,9 +100,12 @@ public class SSLSocketNoServerHelloClientShutdown extends SSLEngineNoServerHello
             }
         } finally {
             if (serverException != null) {
-                assertEquals(SSLProtocolException.class, serverException.getClass());
-                assertEquals(GeneralSecurityException.class, serverException.getCause().getClass());
-                assertEquals(EXCEPTION_MSG, serverException.getCause().getMessage());
+                assertEquals(
+                    SSLProtocolException.class, serverException.getClass());
+                assertEquals(GeneralSecurityException.class,
+                             serverException.getCause().getClass());
+                assertEquals(
+                    EXCEPTION_MSG, serverException.getCause().getMessage());
             } else {
                 fail("Server should have thrown SSLProtocolException");
             }
@@ -148,9 +153,10 @@ public class SSLSocketNoServerHelloClientShutdown extends SSLEngineNoServerHello
                     assertTrue(clientEngine.isOutboundDone());
                     assertEquals(clientResult.getStatus(), Status.CLOSED);
 
-                    // Send client_hello, user_canceled alert and close_notify alert
-                    // to server. Server should throw a proper exception when
-                    // receiving an unencrypted 2 byte packet user_canceled alert.
+                    // Send client_hello, user_canceled alert and close_notify
+                    // alert to server. Server should throw a proper exception
+                    // when receiving an unencrypted 2 byte packet user_canceled
+                    // alert.
                     cTOs.flip();
                     inspectTlsBuffer(cTOs);
                     log("---Client sends unencrypted alerts---");

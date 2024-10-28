@@ -61,7 +61,8 @@ import javax.net.ssl.SSLSession;
 public class SSLEngineNoServerHelloClientShutdown extends SSLContextTemplate {
 
     protected static final String EXCEPTION_MSG =
-            "Unexpected plaintext alert received: user_canceled";
+        "Unexpected plaintext alert received: " +
+        "Level: warning; Alert: user_canceled";
 
     protected SSLEngine clientEngine;     // client Engine
     protected ByteBuffer clientOut;       // write side of clientEngine
@@ -71,8 +72,8 @@ public class SSLEngineNoServerHelloClientShutdown extends SSLContextTemplate {
     protected final ByteBuffer serverOut;       // write side of serverEngine
     protected final ByteBuffer serverIn;        // read side of serverEngine
 
-    protected ByteBuffer cTOs;      // "reliable" transport client->server
-    protected final ByteBuffer sTOc;      // "reliable" transport server->client
+    protected ByteBuffer cTOs;        // "reliable" transport client->server
+    protected final ByteBuffer sTOc;  // "reliable" transport server->client
 
     protected SSLEngineNoServerHelloClientShutdown() throws Exception {
         serverEngine = configureServerEngine(
@@ -93,7 +94,8 @@ public class SSLEngineNoServerHelloClientShutdown extends SSLContextTemplate {
         serverIn = ByteBuffer.allocate(appBufferMax + 50);
 
         cTOs = ByteBuffer.allocateDirect(netBufferMax * 2);
-        // Make it larger so subsequent server wraps won't generate BUFFER_OVERFLOWS
+        // Make it larger so subsequent server wraps won't generate
+        // BUFFER_OVERFLOWS
         sTOc = ByteBuffer.allocateDirect(netBufferMax * 2);
 
         clientOut = createClientOutputBuffer();
@@ -196,7 +198,8 @@ public class SSLEngineNoServerHelloClientShutdown extends SSLContextTemplate {
         try {
             serverEngine.unwrap(cTOs, serverIn);
         } catch (SSLProtocolException e) {
-            assertEquals(GeneralSecurityException.class, e.getCause().getClass());
+            assertEquals(
+                GeneralSecurityException.class, e.getCause().getClass());
             assertEquals(EXCEPTION_MSG, e.getCause().getMessage());
             return;
         }
@@ -225,7 +228,9 @@ public class SSLEngineNoServerHelloClientShutdown extends SSLContextTemplate {
 
     // If the result indicates that we have outstanding tasks to do,
     // go ahead and run them in this thread.
-    protected static void runDelegatedTasks(SSLEngine engine) throws Exception {
+    protected static void runDelegatedTasks(SSLEngine engine)
+        throws Exception {
+
         if (engine.getHandshakeStatus() == HandshakeStatus.NEED_TASK) {
             Runnable runnable;
             while ((runnable = engine.getDelegatedTask()) != null) {

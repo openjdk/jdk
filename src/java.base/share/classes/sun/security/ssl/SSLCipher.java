@@ -1860,10 +1860,14 @@ enum SSLCipher {
 
                 if (bb.remaining() <= tagSize) {
                     // Check for unexpected plaintext alert.
-                    if (ContentType.ALERT.equals(ContentType.valueOf(contentType))) {
-                        // In TLSv1.3 alert level can be ignored, we only get the alert.
-                        final String msg = "Unexpected plaintext alert received: "
-                                + Alert.nameOf(bb.get(bb.position() + 1));
+                    if (contentType == ContentType.ALERT.id
+                        && bb.remaining() == 2) {
+
+                        final String msg = String.format(
+                            "Unexpected plaintext alert received: " +
+                            "Level: %s; Alert: %s",
+                            Alert.Level.nameOf(bb.get(bb.position())),
+                            Alert.nameOf(bb.get(bb.position() + 1)));
 
                         if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
                             SSLLogger.info(msg);
@@ -1872,9 +1876,9 @@ enum SSLCipher {
                         throw new GeneralSecurityException(msg);
                     } else {
                         throw new BadPaddingException(
-                                "Insufficient buffer remaining for AEAD cipher " +
-                                        "fragment (" + bb.remaining() + "). Needs to be " +
-                                        "more than tag size (" + tagSize + ")");
+                            "Insufficient buffer remaining for AEAD cipher " +
+                            "fragment (" + bb.remaining() + "). Needs to be " +
+                            "more than tag size (" + tagSize + ")");
                     }
                 }
 

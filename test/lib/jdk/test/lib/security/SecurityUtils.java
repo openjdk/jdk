@@ -133,7 +133,8 @@ public final class SecurityUtils {
         }
 
         ByteBuffer packet = buffer.slice();
-        System.err.printf("---TLS Buffer Inspection. Bytes Remaining: %d---\n", packet.remaining());
+        System.err.printf("---TLS Buffer Inspection. Bytes Remaining: %d---\n",
+                          packet.remaining());
 
         for (int i = 1; packet.position() < packet.limit(); i++) {
             byte contentType = packet.get();                   // pos: 0
@@ -142,8 +143,9 @@ public final class SecurityUtils {
             int contentLen = getInt16(packet);                 // pos: 3, 4
 
             System.err.printf(
-                    "Flight %d: contentType: %d; majorVersion: %d; minorVersion: %d; contentLen: %d\n",
-                    i, (int) contentType, (int) majorVersion, (int) minorVersion, contentLen);
+                "Flight %d: contentType: %d; majorVersion: %d; "
+                + "minorVersion: %d; contentLen: %d\n", i, (int) contentType,
+                (int) majorVersion, (int) minorVersion, contentLen);
 
             packet.position(packet.position() + contentLen);
         }
