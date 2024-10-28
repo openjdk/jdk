@@ -164,5 +164,4 @@ class LDCTest {
 
         assertDoesNotThrow(() -> ByteCodeLoader.load("MyClass", bytes), "Invalid LDC bytecode generated");
     }
-
 }
