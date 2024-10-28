@@ -971,7 +971,7 @@ public final class Long extends Number
                 }
                 archivedCache = c;
             } else if (archivedCache.length != size) {
-                throw new IllegalStateException("CDS archive is broken");
+                throw new IllegalStateException("CDS archive is broken: LongCache mismatch");
             }
             cache = archivedCache;
         }

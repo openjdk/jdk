@@ -8992,7 +8992,7 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
                 }
                 archivedCache = c;
             } else if (archivedCache.length != size) {
-                throw new IllegalStateException("CDS archive is broken");
+                throw new IllegalStateException("CDS archive is broken: CharacterCache mismatch");
             }
             cache = archivedCache;
         }

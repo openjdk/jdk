@@ -963,14 +963,14 @@ public final class Integer extends Number
                 int j = low;
                 // Use all cached values from the archive to avoid breaking
                 // identity rules with objects loaded from the archive.
-                int fill = (archivedCache == null) ? 0 : archivedCache.length;
-                for (int i = 0; i < fill; i++) {
+                int archivedHigh = (archivedCache == null) ? 0 : archivedCache.length;
+                for (int i = 0; i < archivedHigh; i++) {
                     c[i] = archivedCache[i];
                     assert j == archivedCache[i];
                     j++;
                 }
                 // Fill the rest of the cache.
-                for (int i = fill; i < size; i++) {
+                for (int i = archivedHigh; i < size; i++) {
                     c[i] = new Integer(j++);
                 }
                 archivedCache = c;
