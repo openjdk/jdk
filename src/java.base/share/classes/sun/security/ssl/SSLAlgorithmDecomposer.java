@@ -282,12 +282,14 @@ class SSLAlgorithmDecomposer extends AlgorithmDecomposer {
             CipherSuite cipherSuite = CipherSuite.nameOf(algorithm);
 
             if (cipherSuite != null) {
-                // keyExchange is null for TLSv1.3 cipher suites,
-                // it means ECDHE for both key exchange and authentication.
+                // keyExchange is null for TLSv1.3 cipher suites, it means
+                // undefined for both key exchange and authentication.
                 if (cipherSuite.keyExchange == null) {
-                    return new String[]{"ECDHE", "ECDHE"};
+                    return new String[]{null, null};
                 } else {
-                    return new String[]{cipherSuite.keyExchange.kx, cipherSuite.keyExchange.authn};
+                    return new String[]{
+                        cipherSuite.keyExchange.kx,
+                        cipherSuite.keyExchange.authn};
                 }
             }
         }

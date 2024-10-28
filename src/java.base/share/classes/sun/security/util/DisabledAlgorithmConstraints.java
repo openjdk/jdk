@@ -380,9 +380,9 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                 boolean denyAfterLimit = false;
 
                 final IllegalArgumentException tlsCipherSegmentLinkException =
-                        new IllegalArgumentException("TLSCipherConstraint "
-                                + "should not be linked with other constraints. "
-                                + "Constraint: " + constraintEntry);
+                    new IllegalArgumentException(
+                        "TLSCipherConstraint should not be linked with other "
+                        + "constraints. Constraint: " + constraintEntry);
 
                 for (String rawEntry : policy.split("&")) {
 
@@ -445,8 +445,10 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                         if (debug != null) {
                             debug.println("Constraints usage length is " + s.length);
                         }
-                    } else if (PROPERTY_TLS_DISABLED_ALGS.equalsIgnoreCase(propertyName) &&
-                            (segment = TLSCipherSegment.nameOf(entry)) != null) {
+                    } else if (PROPERTY_TLS_DISABLED_ALGS
+                                   .equalsIgnoreCase(propertyName) &&
+                               (segment = TLSCipherSegment.nameOf(entry))
+                               != null) {
                         if (lastConstraint != null) {
                             throw tlsCipherSegmentLinkException;
                         }
