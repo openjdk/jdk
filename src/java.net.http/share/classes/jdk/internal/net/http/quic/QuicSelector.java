@@ -511,6 +511,7 @@ public abstract sealed class QuicSelector<T extends QuicEndpoint> implements Run
             super(null, selector,
                     "Thread(%s)".formatted(selector.name()),
                     0, false);
+            this.setDaemon(true);
         }
     }
 
