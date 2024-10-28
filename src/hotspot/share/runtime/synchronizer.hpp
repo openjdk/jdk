@@ -137,7 +137,7 @@ public:
 
 private:
   // Shared implementation between the different LockingMode.
-  static ObjectMonitor* inflate_impl(JavaThread* inflating_thread, oop obj, const InflateCause cause);
+  static ObjectMonitor* inflate_impl(JavaThread* locking_thread, oop obj, const InflateCause cause);
 
 public:
   // This version is only for internal use

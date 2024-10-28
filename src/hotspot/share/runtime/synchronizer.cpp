@@ -1437,8 +1437,8 @@ ObjectMonitor* ObjectSynchronizer::inflate_for(JavaThread* thread, oop obj, cons
   return inflate_impl(thread, obj, cause);
 }
 
-ObjectMonitor* ObjectSynchronizer::inflate_impl(JavaThread* inflating_thread, oop object, const InflateCause cause) {
-  // The JavaThread* inflating_thread requires that the inflating_thread == Thread::current() or
+ObjectMonitor* ObjectSynchronizer::inflate_impl(JavaThread* locking_thread, oop object, const InflateCause cause) {
+  // The JavaThread* locking_thread requires that the locking_thread == Thread::current() or
   // is suspended throughout the call by some other mechanism.
   // The thread might be nullptr when called from a non JavaThread. (As may still be
   // the case from FastHashCode). However it is only important for correctness that the
@@ -1452,8 +1452,8 @@ ObjectMonitor* ObjectSynchronizer::inflate_impl(JavaThread* inflating_thread, oo
 
     // The mark can be in one of the following states:
     // *  inflated     - If the ObjectMonitor owner is anonymous and the
-    //                   inflating_thread owns the object lock, then we
-    //                   make the inflating_thread the ObjectMonitor owner.
+    //                   locking_thread owns the object lock, then we
+    //                   make the locking_thread the ObjectMonitor owner.
     // *  stack-locked - Coerce it to inflated from stack-locked.
     // *  INFLATING    - Busy wait for conversion from stack-locked to
     //                   inflated.
@@ -1464,11 +1464,11 @@ ObjectMonitor* ObjectSynchronizer::inflate_impl(JavaThread* inflating_thread, oo
       ObjectMonitor* inf = mark.monitor();
       markWord dmw = inf->header();
       assert(dmw.is_neutral(), "invariant: header=" INTPTR_FORMAT, dmw.value());
-      if (inf->has_anonymous_owner() && inflating_thread != nullptr) {
+      if (inf->has_anonymous_owner() && locking_thread != nullptr) {
         assert(LockingMode == LM_LEGACY, "invariant");
-        if (inflating_thread->is_lock_owned((address)inf->stack_locker())) {
+        if (locking_thread->is_lock_owned((address)inf->stack_locker())) {
           inf->set_stack_locker(nullptr);
-          inf->set_owner_from_anonymous(inflating_thread);
+          inf->set_owner_from_anonymous(locking_thread);
         }
       }
       return inf;
@@ -1550,8 +1550,8 @@ ObjectMonitor* ObjectSynchronizer::inflate_impl(JavaThread* inflating_thread, oo
       // Note that a thread can inflate an object
       // that it has stack-locked -- as might happen in wait() -- directly
       // with CAS.  That is, we can avoid the xchg-nullptr .... ST idiom.
-      if (inflating_thread != nullptr && inflating_thread->is_lock_owned((address)mark.locker())) {
-        m->set_owner(inflating_thread);
+      if (locking_thread != nullptr && locking_thread->is_lock_owned((address)mark.locker())) {
+        m->set_owner(locking_thread);
       } else {
         // Use ANONYMOUS_OWNER to indicate that the owner is the BasicLock on the stack,
         // and set the stack locker field in the monitor.

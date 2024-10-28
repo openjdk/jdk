@@ -804,10 +804,10 @@ ObjectMonitor* LightweightSynchronizer::inflate_locked_or_imse(oop obj, ObjectSy
   }
 }
 
-ObjectMonitor* LightweightSynchronizer::inflate_into_object_header(oop object, ObjectSynchronizer::InflateCause cause, JavaThread* inflating_thread, Thread* current) {
+ObjectMonitor* LightweightSynchronizer::inflate_into_object_header(oop object, ObjectSynchronizer::InflateCause cause, JavaThread* locking_thread, Thread* current) {
 
-  // The JavaThread* inflating_thread parameter is only used by LM_LIGHTWEIGHT and requires
-  // that the inflating_thread == Thread::current() or is suspended throughout the call by
+  // The JavaThread* locking_thread parameter is only used by LM_LIGHTWEIGHT and requires
+  // that the locking_thread == Thread::current() or is suspended throughout the call by
   // some other mechanism.
   // Even with LM_LIGHTWEIGHT the thread might be nullptr when called from a non
   // JavaThread. (As may still be the case from FastHashCode). However it is only
@@ -822,10 +822,10 @@ ObjectMonitor* LightweightSynchronizer::inflate_into_object_header(oop object, O
     // The mark can be in one of the following states:
     // *  inflated     - Just return if using stack-locking.
     //                   If using fast-locking and the ObjectMonitor owner
-    //                   is anonymous and the inflating_thread owns the
-    //                   object lock, then we make the inflating_thread
+    //                   is anonymous and the locking_thread owns the
+    //                   object lock, then we make the locking_thread
     //                   the ObjectMonitor owner and remove the lock from
-    //                   the inflating_thread's lock stack.
+    //                   the locking_thread's lock stack.
     // *  fast-locked  - Coerce it to inflated from fast-locked.
     // *  unlocked     - Aggressively inflate the object.
 
@@ -835,31 +835,31 @@ ObjectMonitor* LightweightSynchronizer::inflate_into_object_header(oop object, O
       markWord dmw = inf->header();
       assert(dmw.is_neutral(), "invariant: header=" INTPTR_FORMAT, dmw.value());
       if (inf->has_anonymous_owner() &&
-          inflating_thread != nullptr && inflating_thread->lock_stack().contains(object)) {
-        inf->set_owner_from_anonymous(inflating_thread);
-        size_t removed = inflating_thread->lock_stack().remove(object);
+          locking_thread != nullptr && locking_thread->lock_stack().contains(object)) {
+        inf->set_owner_from_anonymous(locking_thread);
+        size_t removed = locking_thread->lock_stack().remove(object);
         inf->set_recursions(removed - 1);
       }
       return inf;
     }
 
     // CASE: fast-locked
-    // Could be fast-locked either by the inflating_thread or by some other thread.
+    // Could be fast-locked either by the locking_thread or by some other thread.
     //
     // Note that we allocate the ObjectMonitor speculatively, _before_
     // attempting to set the object's mark to the new ObjectMonitor. If
-    // the inflating_thread owns the monitor, then we set the ObjectMonitor's
-    // owner to the inflating_thread. Otherwise, we set the ObjectMonitor's owner
+    // the locking_thread owns the monitor, then we set the ObjectMonitor's
+    // owner to the locking_thread. Otherwise, we set the ObjectMonitor's owner
     // to anonymous. If we lose the race to set the object's mark to the
     // new ObjectMonitor, then we just delete it and loop around again.
     //
     if (mark.is_fast_locked()) {
       ObjectMonitor* monitor = new ObjectMonitor(object);
       monitor->set_header(mark.set_unlocked());
-      bool own = inflating_thread != nullptr && inflating_thread->lock_stack().contains(object);
+      bool own = locking_thread != nullptr && locking_thread->lock_stack().contains(object);
       if (own) {
-        // Owned by inflating_thread.
-        monitor->set_owner(inflating_thread);
+        // Owned by locking_thread.
+        monitor->set_owner(locking_thread);
       } else {
         // Owned by somebody else.
         monitor->set_anonymous_owner();
@@ -869,7 +869,7 @@ ObjectMonitor* LightweightSynchronizer::inflate_into_object_header(oop object, O
       if (old_mark == mark) {
         // Success! Return inflated monitor.
         if (own) {
-          size_t removed = inflating_thread->lock_stack().remove(object);
+          size_t removed = locking_thread->lock_stack().remove(object);
           monitor->set_recursions(removed - 1);
         }
         // Once the ObjectMonitor is configured and object is associated
