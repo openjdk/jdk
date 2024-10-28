@@ -851,7 +851,9 @@ public class ForkJoinPool extends AbstractExecutorService {
      * shutdown, runners are interrupted so they can cancel. Since
      * external joining callers never run these tasks, they must await
      * cancellation by others, which can occur along several different
-     * paths.
+     * paths. The inability to rely on caller-runs may also require
+     * extra signalling (and resulting scanning and contention) so is
+     * done only conditionally in methods push and runworker.
      *
      * Across these APIs, rules for reporting exceptions for tasks
      * with results accessed via join() differ from those via get(),
@@ -1825,7 +1827,7 @@ public class ForkJoinPool extends AbstractExecutorService {
      */
     final void deregisterWorker(ForkJoinWorkerThread wt, Throwable ex) {
         if ((runState & STOP) != 0L)       // ensure released
-            releaseAll();
+            dropWaiters();
         WorkQueue w = null;
         int src = 0, phase = 0;
         boolean replaceable = false;
@@ -1909,26 +1911,24 @@ public class ForkJoinPool extends AbstractExecutorService {
     }
 
     /**
-     * Releases all waiting workers. Called only during shutdown.
+     * Releases and drops all waiting workers. Called only during shutdown.
      *
      * @return current ctl
      */
-    private long releaseAll() {
-        long c = ctl;
-        for (;;) {
+    private long dropWaiters() {
+        for (long c = ctl;;) {
             WorkQueue[] qs; WorkQueue v; int sp, i;
             if ((sp = (int)c) == 0 || (qs = queues) == null ||
                 qs.length <= (i = sp & SMASK) || (v = qs[i]) == null)
-                break;
+                return c;
             if (c == (c = compareAndExchangeCtl(
-                          c, ((UMASK & (c + RC_UNIT)) | (c & TC_MASK) |
-                              (v.stackPred & LMASK))))) {
+                          c, (v.stackPred & LMASK) | (UMASK & (c - TC_UNIT))))) {
+                v.source = DROPPED;
                 v.phase = sp;
                 if (v.parking != 0)
                     U.unpark(v.owner);
             }
         }
-        return c;
     }
 
     /**
@@ -2750,20 +2750,22 @@ public class ForkJoinPool extends AbstractExecutorService {
                 if (quiescent() > 0)
                     e = runState;
             }
-            if ((e & STOP) != 0L && (releaseAll() & RC_MASK) > 0L && now)
+            if ((e & STOP) != 0L && (dropWaiters() & RC_MASK) != 0L && now)
                 interruptAll();
         }
         if ((e & (STOP | TERMINATED)) == STOP) { // help cancel tasks
-            int r = (int)Thread.currentThread().threadId();
-            WorkQueue[] qs = queues;             // stagger traversals
-            int n = (qs == null) ? 0 : qs.length;
-            for (int l = n; l > 0; --l, ++r) {
-                WorkQueue q; ForkJoinTask<?> t;
-                if ((q = qs[r & (n - 1)]) != null) {
-                    while ((t = q.poll()) != null) {
-                        try {
-                            t.cancel(false);
-                        } catch (Throwable ignore) {
+            if ((ctl & RC_MASK) != 0L) {         // unless all inactive
+                int r = (int)Thread.currentThread().threadId();
+                WorkQueue[] qs = queues;         // stagger traversals
+                int n = (qs == null) ? 0 : qs.length;
+                for (int l = n; l > 0; --l, ++r) {
+                    WorkQueue q; ForkJoinTask<?> t;
+                    if ((q = qs[r & (n - 1)]) != null) {
+                        while (q.source != DROPPED && (t = q.poll()) != null) {
+                            try {
+                                t.cancel(false);
+                            } catch (Throwable ignore) {
+                            }
                         }
                     }
                 }
