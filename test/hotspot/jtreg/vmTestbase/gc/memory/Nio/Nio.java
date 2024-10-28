@@ -56,6 +56,11 @@ import java.io.IOException;
 public class Nio {
 
     static final int MAX_VM_SIZE = (int)VM.maxDirectMemory();
+
+    // Maximum direct memory allowed to be allocated before this test is run
+    static final int MAX_ALLOC_SIZE = 8*1024;
+
+    // Direct memory actually allocated by this test
     static int max_size = 0;
 
     public static void main(String[] args) {
@@ -71,18 +76,21 @@ public class Nio {
         long usedHeap_0 = getUsedHeap();
         long usedNonHeap_0 = getUsedNonHeap();
 
-        // Step1: allocate the all available direct memory
+        // Step1: allocate all the available direct memory
         //        no OOME, no heap memory should be used
-        System.out.println("Allocating all the direct memory: " + MAX_VM_SIZE);
+        System.out.printf("Allocating all available direct memory: [%d, %d]%n",
+            MAX_VM_SIZE - MAX_ALLOC_SIZE, MAX_VM_SIZE);
         ByteBuffer bb;
         max_size = MAX_VM_SIZE;
         while (true) {
             try {
-                System.out.println(max_size);
+                System.out.printf("Trying to allocate %d bytes,,,%n", max_size);
                 bb = ByteBuffer.allocateDirect((int)max_size);
                 System.out.println("... success");
             } catch (OutOfMemoryError oom) {
                 max_size -= 1024;
+                if (max_size < MAX_VM_SIZE - MAX_ALLOC_SIZE)
+                    throw new Fault("Insufficient direct memory is available");
                 continue;
             }
             System.out.println("max_size: " + max_size);
@@ -90,6 +98,7 @@ public class Nio {
                 (MAX_VM_SIZE - max_size));
             break;
         }
+
         long usedHeap_1 = getUsedHeap();
         long usedNonHeap_1 = getUsedNonHeap();
         checkHeapIsNotAffected(usedHeap_0, usedHeap_1, usedNonHeap_0, usedNonHeap_1);
