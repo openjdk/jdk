@@ -128,7 +128,7 @@ void FreezeBase::adjust_interpreted_frame_unextended_sp(frame& f) {
 }
 
 inline void FreezeBase::prepare_freeze_interpreted_top_frame(frame& f) {
-  assert(*f.addr_at(frame::interpreter_frame_last_sp_offset) == 0, "should be null for top frame");
+  assert(f.interpreter_frame_last_sp() == nullptr, "should be null for top frame");
   f.interpreter_frame_set_last_sp(f.unextended_sp());
 }
 
