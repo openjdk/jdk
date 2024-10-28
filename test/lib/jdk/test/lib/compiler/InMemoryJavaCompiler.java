@@ -222,10 +222,6 @@ public class InMemoryJavaCompiler {
             System.out.println("*********** javac output begin ***********");
             System.out.println(writer.toString());
             System.out.println("*********** javac output end ***********");
-            if (writer.toString().contains("java.lang.OutOfMemoryError")) {
-                System.out.println("Got OOME while performing in memory compilation. It happens on weak hosts and there is nothing we can do. ");
-                throw new OutOfMemoryError("Got OOME while performing in memory compilation.");
-            }
             throw new RuntimeException("Test bug: in memory compilation failed.");
         }
         return fileManager.getByteCode();
