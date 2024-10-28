@@ -1118,6 +1118,7 @@ public:
                    XMMRegister msgtmp1, XMMRegister msgtmp2, XMMRegister msgtmp3, XMMRegister msgtmp4,
                    Register buf, Register state, Register ofs, Register limit, Register rsp, bool multi_block,
                    XMMRegister shuf_mask);
+  void sha512_update_ni_x1(Register arg_hash, Register arg_msg, Register ofs, Register limit, bool multi_block);
 #endif // _LP64
 
   void fast_md5(Register buf, Address state, Address ofs, Address limit,
@@ -1216,6 +1217,9 @@ public:
   void addpd(XMMRegister dst, Address        src) { Assembler::addpd(dst, src); }
   void addpd(XMMRegister dst, AddressLiteral src, Register rscratch = noreg);
 
+  using Assembler::vbroadcasti128;
+  void vbroadcasti128(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch = noreg);
+
   using Assembler::vbroadcastsd;
   void vbroadcastsd(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch = noreg);
 
@@ -1278,6 +1282,7 @@ public:
   // AVX512 Unaligned
   void evmovdqu(BasicType type, KRegister kmask, Address     dst, XMMRegister src, bool merge, int vector_len);
   void evmovdqu(BasicType type, KRegister kmask, XMMRegister dst, Address     src, bool merge, int vector_len);
+  void evmovdqu(BasicType type, KRegister kmask, XMMRegister dst, XMMRegister src, bool merge, int vector_len);
 
   void evmovdqub(XMMRegister dst, XMMRegister src, int vector_len) { Assembler::evmovdqub(dst, src, vector_len); }
   void evmovdqub(XMMRegister dst, Address     src, int vector_len) { Assembler::evmovdqub(dst, src, vector_len); }
@@ -1584,6 +1589,11 @@ public:
   void evpmaxs(BasicType type, XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int vector_len);
   void evpmins(BasicType type, XMMRegister dst, KRegister mask, XMMRegister nds, Address src, bool merge, int vector_len);
   void evpmaxs(BasicType type, XMMRegister dst, KRegister mask, XMMRegister nds, Address src, bool merge, int vector_len);
+
+  void evpminu(BasicType type, XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int vector_len);
+  void evpmaxu(BasicType type, XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int vector_len);
+  void evpminu(BasicType type, XMMRegister dst, KRegister mask, XMMRegister nds, Address src, bool merge, int vector_len);
+  void evpmaxu(BasicType type, XMMRegister dst, KRegister mask, XMMRegister nds, Address src, bool merge, int vector_len);
 
   void vpsrlw(XMMRegister dst, XMMRegister nds, XMMRegister shift, int vector_len);
   void vpsrlw(XMMRegister dst, XMMRegister nds, int shift, int vector_len);

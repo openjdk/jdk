@@ -147,7 +147,8 @@ public class InternalErrorTest {
                 break;
             case 1:
                 // testing Unsafe.copySwapMemory, trying to access next page after truncation.
-                unsafe.copySwapMemory(null, mapAddr + pageSize, new byte[4000], 16, 2000, 2);
+                int destOffset = Unsafe.ARRAY_BYTE_BASE_OFFSET;
+                unsafe.copySwapMemory(null, mapAddr + pageSize, new byte[4000], destOffset, 2000, 2);
                 break;
             case 2:
                 // testing Unsafe.copySwapMemory, trying to access next page after truncation.
