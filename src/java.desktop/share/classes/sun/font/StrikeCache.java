@@ -167,56 +167,56 @@ public final class StrikeCache {
         }
         return widthHandle;
     }
- 
+
     private static VarHandle getHeightHandle() {
         if (heightHandle == null) {
             heightHandle = getVarHandle(GlyphImageLayout, "height");
         }
         return heightHandle;
     }
- 
+
     private static VarHandle getRowBytesHandle() {
         if (rowBytesHandle == null) {
             rowBytesHandle = getVarHandle(GlyphImageLayout, "rowBytes");
         }
         return rowBytesHandle;
     }
- 
+
     private static VarHandle getManagedHandle() {
         if (managedHandle == null) {
             managedHandle = getVarHandle(GlyphImageLayout, "managed");
         }
         return managedHandle;
     }
- 
+
     private static VarHandle getTopLeftXHandle() {
         if (topLeftXHandle == null) {
             topLeftXHandle = getVarHandle(GlyphImageLayout, "topLeftX");
         }
         return topLeftXHandle;
     }
- 
+
     private static VarHandle getTopLeftYHandle() {
         if (topLeftYHandle == null) {
             topLeftYHandle = getVarHandle(GlyphImageLayout, "topLeftY");
         }
         return topLeftYHandle;
     }
- 
+
     private static VarHandle getCellInfoHandle() {
         if (cellInfoHandle == null) {
             cellInfoHandle = getVarHandle(GlyphImageLayout, "cellInfo");
         }
         return cellInfoHandle;
     }
- 
+
     private static VarHandle getImageHandle() {
         if (imageHandle == null) {
             imageHandle = getVarHandle(GlyphImageLayout, "image");
         }
         return imageHandle;
     }
- 
+
     @SuppressWarnings("restricted")
     static final float getGlyphXAdvance(long ptr) {
         MemorySegment seg = MemorySegment.ofAddress(ptr);
