@@ -718,9 +718,7 @@ void VMError::report(outputStream* st, bool _verbose) {
 
   BEGIN
   if (MemTracker::enabled() && NmtVirtualMemory_lock != nullptr && NmtVirtualMemory_lock->owned_by_self()) {
-    // Avoid reentrancy due to mallocs in detailed mode.
-    MemTracker::reduce_tracking_to_summary();
-    // Manually unlock if already holding lock upon entering error reporting.
+    // Manually unlock to avoid reentrancy due to mallocs in detailed mode.
     NmtVirtualMemory_lock->unlock();
   }
 

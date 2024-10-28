@@ -268,12 +268,6 @@ class MemTracker : AllStatic {
   // and return true; false if not found.
   static bool print_containing_region(const void* p, outputStream* out);
 
-  static void reduce_tracking_to_summary() {
-    if (_tracking_level == NMT_detail) {
-      _tracking_level = NMT_summary;
-    }
-  }
-
  private:
   static void report(bool summary_only, outputStream* output, size_t scale);
 
