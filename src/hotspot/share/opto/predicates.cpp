@@ -728,17 +728,18 @@ void Predicates::dump_for_loop(LoopNode* loop_node) {
 }
 #endif // NOT PRODUCT
 
-// Keep track of the current Predicate Block by setting '_current_parse_predicate'.
-void AssertionPredicatesForLoop::visit(const ParsePredicate& parse_predicate) {
+// Keep track of whether we are in the correct Predicate Block where Template Assertion Predicates can be found.
+// The PredicateIterator will always start at the loop entry and first visits the Loop Limit Check Predicate Block.
+void CreateAssertionPredicatesVisitor::visit(const ParsePredicate& parse_predicate) {
   Deoptimization::DeoptReason deopt_reason = parse_predicate.head()->deopt_reason();
   if (deopt_reason == Deoptimization::Reason_predicate ||
       deopt_reason == Deoptimization::Reason_profile_predicate) {
-    _current_parse_predicate = parse_predicate.tail();
+    _has_hoisted_check_parse_predicates = true;
   }
 }
 
-void AssertionPredicatesForLoop::visit(const TemplateAssertionPredicate& template_assertion_predicate) {
-  if (_current_parse_predicate == nullptr) {
+void CreateAssertionPredicatesVisitor::visit(const TemplateAssertionPredicate& template_assertion_predicate) {
+  if (!_has_hoisted_check_parse_predicates) {
     // Only process if we are in the correct Predicate Block.
     return;
   }

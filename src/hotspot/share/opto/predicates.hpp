@@ -943,26 +943,26 @@ class NodeInOriginalLoopBody : public NodeInLoopBody {
 
 // Visitor to create Initialized Assertion Predicates at a target loop from Template Assertion Predicates from a source
 // loop. This visitor can be used in combination with a PredicateIterator.
-class AssertionPredicatesForLoop : public PredicateVisitor {
+class CreateAssertionPredicatesVisitor : public PredicateVisitor {
   Node* const _init;
   Node* const _stride;
   Node* const _old_target_loop_entry;
   Node* _new_control;
   PhaseIdealLoop* const _phase;
-  ParsePredicateSuccessProj* _current_parse_predicate;
+  bool _has_hoisted_check_parse_predicates;
   const NodeInLoopBody& _node_in_loop_body;
 
  public:
-  AssertionPredicatesForLoop(Node* init, Node* stride, Node* new_control, PhaseIdealLoop* phase,
-                             const NodeInLoopBody& node_in_loop_body)
+  CreateAssertionPredicatesVisitor(Node* init, Node* stride, Node* new_control, PhaseIdealLoop* phase,
+                                   const NodeInLoopBody& node_in_loop_body)
       : _init(init),
         _stride(stride),
         _old_target_loop_entry(new_control),
         _new_control(new_control),
         _phase(phase),
-        _current_parse_predicate(nullptr),
+        _has_hoisted_check_parse_predicates(false),
         _node_in_loop_body(node_in_loop_body) {}
-  NONCOPYABLE(AssertionPredicatesForLoop);
+  NONCOPYABLE(CreateAssertionPredicatesVisitor);
 
   using PredicateVisitor::visit;
 
