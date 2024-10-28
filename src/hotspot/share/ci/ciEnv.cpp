@@ -1597,9 +1597,7 @@ void ciEnv::dump_replay_data_helper(outputStream* out) {
   NoSafepointVerifier no_safepoint;
   ResourceMark rm;
 
-  if (this->task() == nullptr) {
-    return;
-  }
+  assert(this->task() != nullptr, "task must not be null");
 
   dump_replay_data_version(out);
 #if INCLUDE_JVMTI
