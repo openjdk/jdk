@@ -24,7 +24,6 @@
 package com.sun.hotspot.igv.hierarchicallayout;
 
 import static com.sun.hotspot.igv.hierarchicallayout.LayoutEdge.LAYOUT_EDGE_LAYER_COMPARATOR;
-import static com.sun.hotspot.igv.hierarchicallayout.LayoutGraph.LINK_COMPARATOR;
 import static com.sun.hotspot.igv.hierarchicallayout.LayoutNode.*;
 import com.sun.hotspot.igv.layout.Link;
 import com.sun.hotspot.igv.layout.Vertex;
@@ -40,189 +39,6 @@ public class HierarchicalLayoutManager extends LayoutManager {
     public HierarchicalLayoutManager() {
         maxLayerLength = -1;
     }
-
-    private void insertNodeAtPos(LayoutNode node, int pos, int layerNr) {
-        node.setLayer(layerNr);
-        node.setPos(pos);
-
-        LayoutLayer layer = graph.getLayer(layerNr);
-
-        // update pos of the nodes right (and including) of pos
-        for (LayoutNode n : layer) {
-            if (n.getPos() >= pos) {
-                n.setPos(n.getPos() + 1);
-            }
-        }
-
-        // insert in layer at pos
-        if (pos < layer.size()) {
-            layer.add(pos, node);
-        } else {
-            layer.add(node);
-        }
-
-        int minX = node.getPos() == 0 ? 0 : layer.get(node.getPos() - 1).getOuterRight() + NODE_OFFSET;
-        node.setX(Math.max(node.getX(), minX));
-
-        // update x of the nodes right of inserted node at pos
-        int prevRightSide = node.getOuterRight();
-        for (LayoutNode n : layer) {
-            if (n.getPos() > pos) {
-                n.setX(Math.max(n.getX(), prevRightSide + NODE_OFFSET));
-                prevRightSide = n.getOuterRight();
-            }
-        }
-
-        graph.addNode(node, layerNr);
-    }
-
-    private void addEdges(LayoutNode movedNode) {
-        // BuildDatastructure
-        List<Link> nodeLinks = new ArrayList<>(graph.getInputLinks(movedNode.getVertex()));
-        nodeLinks.addAll(graph.getOutputLinks(movedNode.getVertex()));
-        nodeLinks.sort(LINK_COMPARATOR);
-
-        Set<LayoutNode> reversedLayoutNodes = new HashSet<>();
-        for (Link link : nodeLinks) {
-            if (link.getFrom().getVertex() == link.getTo().getVertex()) continue;
-            LayoutEdge layoutEdge = graph.createLayoutEdge(link);
-
-            LayoutNode fromNode = layoutEdge.getFrom();
-            LayoutNode toNode = layoutEdge.getTo();
-
-            if (fromNode.getLayer() > toNode.getLayer()) {
-                reverseEdge(layoutEdge);
-                reversedLayoutNodes.add(fromNode);
-                reversedLayoutNodes.add(toNode);
-            }
-        }
-
-        // ReverseEdges
-        for (LayoutNode layoutNode : reversedLayoutNodes) {
-            computeReversedLinkPoints(layoutNode, false);
-        }
-
-        // CreateDummyNodes
-        createDummiesForNodeSuccessor(movedNode, true);
-        for (LayoutEdge predEdge : movedNode.getPreds()) {
-            insertDummyNodes(predEdge);
-        }
-
-        graph.updatePositions();
-    }
-
-    /**
-     * Find the optimal position within the given layer to insert the given node.
-     * The optimum is given by the least amount of edge crossings.
-     */
-    private int optimalPosition(LayoutNode node, int layerNr) {
-        LayoutLayer layer = graph.getLayer(layerNr);
-        layer.sort(NODE_POS_COMPARATOR);
-        int edgeCrossings = Integer.MAX_VALUE;
-        int optimalPos = -1;
-
-        // Try each possible position in the layer
-        for (int i = 0; i < layer.size() + 1; i++) {
-            int xCoord;
-            if (i == 0) {
-                xCoord = layer.get(i).getX() - node.getWidth() - 1;
-            } else {
-                xCoord = layer.get(i - 1).getX() + layer.get(i - 1).getWidth() + 1;
-            }
-
-            int currentCrossings = 0;
-
-            if (0 <= layerNr - 1) {
-                // For each link with an end point in vertex, check how many edges cross it
-                for (LayoutEdge edge : node.getPreds()) {
-                    if (edge.getFrom().getLayer() == layerNr - 1) {
-                        int fromNodeXCoord = edge.getFromX();
-                        int toNodeXCoord = xCoord;
-                        if (!node.isDummy()) {
-                            toNodeXCoord += edge.getRelativeToX();
-                        }
-                        for (LayoutNode n : graph.getLayer(layerNr - 1)) {
-                            for (LayoutEdge e : n.getSuccs()) {
-                                if (e.getTo() == null) {
-                                    continue;
-                                }
-                                int compFromXCoord = e.getFromX();
-                                int compToXCoord = e.getToX();
-                                if ((fromNodeXCoord > compFromXCoord && toNodeXCoord < compToXCoord)
-                                        || (fromNodeXCoord < compFromXCoord
-                                        && toNodeXCoord > compToXCoord)) {
-                                    currentCrossings += 1;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            // Edge crossings across current layer and layer below
-            if (layerNr + 1 < graph.getLayerCount()) {
-                // For each link with an end point in vertex, check how many edges cross it
-                for (LayoutEdge edge : node.getSuccs()) {
-                    if (edge.getTo().getLayer() == layerNr + 1) {
-                        int toNodeXCoord = edge.getToX();
-                        int fromNodeXCoord = xCoord;
-                        if (!node.isDummy()) {
-                            fromNodeXCoord += edge.getRelativeFromX();
-                        }
-                        for (LayoutNode n : graph.getLayer(layerNr + 1)) {
-                            for (LayoutEdge e : n.getPreds()) {
-                                if (e.getFrom() == null) {
-                                    continue;
-                                }
-                                int compFromXCoord = e.getFromX();
-                                int compToXCoord = e.getToX();
-                                if ((fromNodeXCoord > compFromXCoord && toNodeXCoord < compToXCoord)
-                                        || (fromNodeXCoord < compFromXCoord
-                                        && toNodeXCoord > compToXCoord)) {
-                                    currentCrossings += 1;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            if (currentCrossings <= edgeCrossings) {
-                edgeCrossings = currentCrossings;
-                optimalPos = i;
-            }
-        }
-        return optimalPos;
-    }
-
-    private void removeDummyLayer(int emptyLayerNr) {
-        LayoutLayer layer = graph.getLayer(emptyLayerNr);
-        if (!layer.isDummyLayer()) return;
-
-        for (LayoutNode dummyNode : layer) {
-
-
-            LayoutEdge predEdge = dummyNode.getPreds().get(0);
-            LayoutNode fromNode = predEdge.getFrom(); // Root
-            // remove the dummy node from Root
-            fromNode.getSuccs().remove(predEdge);
-            if (predEdge.getLink() != null) {
-                LayoutEdge succEdge = dummyNode.getSuccs().get(0);
-                succEdge.setLink(predEdge.getLink());
-            }
-
-            // modify succEdge to come from fromNode and add to succs
-            for (LayoutEdge succEdge : dummyNode.getSuccs()) {
-                succEdge.setFrom(fromNode);
-                fromNode.getSuccs().add(succEdge);
-                succEdge.setRelativeFromX(predEdge.getRelativeFromX());
-            }
-
-            graph.removeNode(dummyNode);
-        }
-
-
-        graph.removeLayer(emptyLayerNr);
-    }
-
 
     public void moveLink(Point linkPos, int shiftX) {
         int layerNr = graph.findLayer(linkPos.y);
@@ -481,18 +297,95 @@ public class HierarchicalLayoutManager extends LayoutManager {
             LayoutEdge prevEdge = layoutEdge;
             for (int l = layoutNode.getLayer() - 1; l > prevEdge.getFrom().getLayer(); l--) {
                 LayoutNode dummyNode = prevEdge.insertDummyBetweenSourceAndEdge();
-                if (graph.getLayer(l).isEmpty()) {
-                    dummyNode.setPos(0);
-                } else {
-                    dummyNode.setPos(optimalPosition(dummyNode, l));
-                }
-                graph.insertNodeIntoLayer(dummyNode, graph.getLayer(l));
+                graph.addNodeAtPosition(dummyNode, l, optimalPosition(dummyNode, l));
                 prevEdge = dummyNode.getPreds().get(0);
             }
         }
     }
 
-    public void createDummiesForNodeSuccessor(LayoutNode layoutNode, boolean optimalPos) {
+    private int optimalPosition(LayoutNode node, int layerNr) {
+        if (graph.getLayer(layerNr).isEmpty()) {
+            return 0;
+        }
+        LayoutLayer layer = graph.getLayer(layerNr);
+        layer.sort(NODE_POS_COMPARATOR);
+        int edgeCrossings = Integer.MAX_VALUE;
+        int optimalPos = -1;
+
+        // Try each possible position in the layer
+        for (int i = 0; i < layer.size() + 1; i++) {
+            int xCoord;
+            if (i == 0) {
+                xCoord = layer.get(i).getX() - node.getWidth() - 1;
+            } else {
+                xCoord = layer.get(i - 1).getX() + layer.get(i - 1).getWidth() + 1;
+            }
+
+            int currentCrossings = 0;
+
+            if (0 <= layerNr - 1) {
+                // For each link with an end point in vertex, check how many edges cross it
+                for (LayoutEdge edge : node.getPreds()) {
+                    if (edge.getFrom().getLayer() == layerNr - 1) {
+                        int fromNodeXCoord = edge.getFromX();
+                        int toNodeXCoord = xCoord;
+                        if (!node.isDummy()) {
+                            toNodeXCoord += edge.getRelativeToX();
+                        }
+                        for (LayoutNode n : graph.getLayer(layerNr - 1)) {
+                            for (LayoutEdge e : n.getSuccs()) {
+                                if (e.getTo() == null) {
+                                    continue;
+                                }
+                                int compFromXCoord = e.getFromX();
+                                int compToXCoord = e.getToX();
+                                if ((fromNodeXCoord > compFromXCoord && toNodeXCoord < compToXCoord)
+                                        || (fromNodeXCoord < compFromXCoord
+                                        && toNodeXCoord > compToXCoord)) {
+                                    currentCrossings += 1;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            // Edge crossings across current layer and layer below
+            if (layerNr + 1 < graph.getLayerCount()) {
+                // For each link with an end point in vertex, check how many edges cross it
+                for (LayoutEdge edge : node.getSuccs()) {
+                    if (edge.getTo().getLayer() == layerNr + 1) {
+                        int toNodeXCoord = edge.getToX();
+                        int fromNodeXCoord = xCoord;
+                        if (!node.isDummy()) {
+                            fromNodeXCoord += edge.getRelativeFromX();
+                        }
+                        for (LayoutNode n : graph.getLayer(layerNr + 1)) {
+                            for (LayoutEdge e : n.getPreds()) {
+                                if (e.getFrom() == null) {
+                                    continue;
+                                }
+                                int compFromXCoord = e.getFromX();
+                                int compToXCoord = e.getToX();
+                                if ((fromNodeXCoord > compFromXCoord && toNodeXCoord < compToXCoord)
+                                        || (fromNodeXCoord < compFromXCoord
+                                        && toNodeXCoord > compToXCoord)) {
+                                    currentCrossings += 1;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            if (currentCrossings <= edgeCrossings) {
+                edgeCrossings = currentCrossings;
+                optimalPos = i;
+            }
+        }
+        return optimalPos;
+    }
+
+
+    public void createDummiesForNodeSuccessor(LayoutNode layoutNode) {
         HashMap<Integer, List<LayoutEdge>> portsToUnprocessedEdges = new HashMap<>();
         ArrayList<LayoutEdge> succs = new ArrayList<>(layoutNode.getSuccs());
         HashMap<Integer, LayoutNode> portToTopNode = new HashMap<>();
@@ -514,13 +407,7 @@ public class HierarchicalLayoutManager extends LayoutManager {
                     if (topCutNode == null) {
                         topCutNode = new LayoutNode();
                         topCutNode.setLayer(fromNode.getLayer() + 1);
-                        if (optimalPos) {
-                            int layerNr = topCutNode.getLayer();
-                            int pos = optimalPosition(topCutNode, layerNr);
-                            insertNodeAtPos(topCutNode, pos, layerNr);
-                        } else {
-                            graph.addNode(topCutNode, topCutNode.getLayer());
-                        }
+                        graph.addNodeToLayer(topCutNode, topCutNode.getLayer());
                         portToTopNode.put(startPort, topCutNode);
                         portToBottomNodeMapping.put(startPort, new HashMap<>());
                     }
@@ -534,13 +421,7 @@ public class HierarchicalLayoutManager extends LayoutManager {
                     if (bottomCutNode == null) {
                         bottomCutNode = new LayoutNode();
                         bottomCutNode.setLayer(toNode.getLayer() - 1);
-                        if (optimalPos) {
-                            int layerNr = bottomCutNode.getLayer();
-                            int pos = optimalPosition(bottomCutNode, layerNr);
-                            insertNodeAtPos(bottomCutNode, pos, layerNr);
-                        } else {
-                            graph.addNode(bottomCutNode, bottomCutNode.getLayer());
-                        }
+                        graph.addNodeToLayer(bottomCutNode, bottomCutNode.getLayer());
                         layerToBottomNode.put(toNode.getLayer(), bottomCutNode);
                     }
                     LayoutEdge bottomEdge = new LayoutEdge(bottomCutNode, toNode, bottomCutNode.getWidth() / 2, succEdge.getRelativeToX(), succEdge.getLink());
@@ -570,13 +451,7 @@ public class HierarchicalLayoutManager extends LayoutManager {
                         LayoutNode dummyNode = new LayoutNode();
                         dummyNode.setLayer(i);
                         dummyNode.getPreds().add(previousEdge);
-                        if (optimalPos) {
-                            int layerNr = dummyNode.getLayer();
-                            int pos = optimalPosition(dummyNode, layerNr);
-                            insertNodeAtPos(dummyNode, pos, layerNr);
-                        } else {
-                            graph.addNode(dummyNode, dummyNode.getLayer());
-                        }
+                        graph.addNodeToLayer(dummyNode, dummyNode.getLayer());
                         LayoutEdge dummyEdge = new LayoutEdge(dummyNode, previousEdge.getTo(), dummyNode.getWidth() / 2, previousEdge.getRelativeToX(), null);
                         if (previousEdge.isReversed()) dummyEdge.reverse();
                         dummyNode.getSuccs().add(dummyEdge);
@@ -614,13 +489,7 @@ public class HierarchicalLayoutManager extends LayoutManager {
                     layoutNode.getSuccs().remove(unprocessedEdge);
                 }
                 for (LayoutNode dummyNode : newDummyNodes) {
-                    if (optimalPos) {
-                        int layerNr = dummyNode.getLayer();
-                        int pos = optimalPosition(dummyNode, layerNr);
-                        insertNodeAtPos(dummyNode, pos, layerNr);
-                    } else {
-                        graph.addNode(dummyNode, dummyNode.getLayer());
-                    }
+                    graph.addNodeToLayer(dummyNode, dummyNode.getLayer());
                 }
             }
         }
@@ -981,7 +850,7 @@ public class HierarchicalLayoutManager extends LayoutManager {
             }
 
             for (LayoutNode layoutNode : layoutNodes) {
-                createDummiesForNodeSuccessor(layoutNode, false);
+                createDummiesForNodeSuccessor(layoutNode);
             }
 
             for (int i = 0; i < graph.getLayerCount() - 1; i++) {
