@@ -343,7 +343,7 @@ public sealed interface StableValue<T>
 
     /**
      * {@return {@code true} if the underlying data was set to the provided
-     *          {@code underlyingData}, otherwise returns {@code false}}
+     *          {@code underlyingData}, {@code false} otherwise}
      * <p>
      * When this method returns, the underlying data is always set.
      *
@@ -352,7 +352,7 @@ public sealed interface StableValue<T>
     boolean trySet(T underlyingData);
 
     /**
-     * {@return the underlying data if set, otherwise, return the provided
+     * {@return the underlying data if set, otherwise, returns the provided
      *          {@code other} value}
      *
      *
@@ -566,7 +566,7 @@ public sealed interface StableValue<T>
      * lazily computed, shallowly immutable map where the individual values of the map
      * are lazily computed via the provided {@code mapper} whenever an element is first
      * accessed (directly or indirectly), for example via the returned map's
-     * {@linkplain Map#get(Object)} get()} method.
+     * {@linkplain Map#get(Object) get()} method.
      * <p>
      * If the provided {@code mapper} throws an exception, it is relayed to the initial
      * caller and no value is recorded.
