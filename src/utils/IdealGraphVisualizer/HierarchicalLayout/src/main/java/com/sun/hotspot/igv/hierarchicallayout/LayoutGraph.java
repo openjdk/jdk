@@ -29,6 +29,8 @@ import com.sun.hotspot.igv.layout.Vertex;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.sun.hotspot.igv.hierarchicallayout.LayoutNode.NODE_POS_COMPARATOR;
+
 /**
  *
  * @author Thomas Wuerthinger
@@ -114,7 +116,7 @@ public class LayoutGraph {
                 if (!dummyNodeCache.contains(x)) {
                     LayoutNode dummyNode = predEdge.insertDummyBetweenSourceAndEdge();
                     dummyNode.setX(x);
-                    addNode(dummyNode, layerNr);
+                    addNodeToLayer(dummyNode, layerNr);
                     dummyNodeCache.add(x);
                 }
             }
@@ -184,16 +186,47 @@ public class LayoutGraph {
         }
     }
 
-    public void addNode(LayoutNode node, int layerNr) {
-        node.setLayer(layerNr);
-        getLayer(layerNr).add(node);
+    public void addNodeAtPosition(LayoutNode node, int layerNumber, int position) {
+        LayoutLayer layer = getLayer(layerNumber);
 
+        // Ensure nodes in the layer are sorted by position before insertion
+        layer.sort(NODE_POS_COMPARATOR);
+
+        // Set the layer number for the node and add it at the specified position
+        node.setLayer(layerNumber);
+        layer.add(position, node);
+
+        // Shift positions of nodes to accommodate the new node
+        shiftNodePositions(layer, position);
+
+        // Register node in the appropriate collection based on its type
+        registerNode(node);
+    }
+
+    public void addNodeToLayer(LayoutNode node, int layerNumber) {
+        node.setLayer(layerNumber);
+        getLayer(layerNumber).add(node);
+
+        // Register node in the appropriate collection based on its type
+        registerNode(node);
+    }
+
+    private void shiftNodePositions(LayoutLayer layer, int startPosition) {
+        for (LayoutNode n : layer) {
+            if (n.getPos() >= startPosition) {
+                n.setPos(n.getPos() + 1);
+            }
+        }
+    }
+
+    private void registerNode(LayoutNode node) {
         if (node.isDummy()) {
             dummyNodes.add(node);
         } else {
             vertexToLayoutNode.put(node.getVertex(), node);
         }
     }
+
 
     public void removeNode(LayoutNode node) {
         int layer = node.getLayer();
@@ -357,10 +390,6 @@ public class LayoutGraph {
         return layers.get(layerNr);
     }
 
-    public int getLayerNr(LayoutLayer layer) {
-        return layers.indexOf(layer);
-    }
-
     public int findLayer(int y) {
         int optimalLayer = -1;
         int minDistance = Integer.MAX_VALUE;
@@ -373,38 +402,6 @@ public class LayoutGraph {
             }
         }
         return optimalLayer;
-    }
-
-    public void insertNodeIntoLayer(LayoutNode node, LayoutLayer layer) {
-        int layerNr = getLayerNr(layer);
-
-        for (LayoutNode n : layer) {
-            if (n.getPos() >= node.getPos()) {
-                n.setPos(n.getPos() + 1);
-            }
-        }
-
-        addNode(node, layerNr);
-    }
-
-    public void removeLayer(int removeLayerNr) {
-        // Create a new ArrayList to store the compacted layers
-        List<LayoutLayer> compactedLayers = new ArrayList<>();
-
-        // Copy upper part from layers to compactedLayers
-        compactedLayers.addAll(layers.subList(0, removeLayerNr));
-
-        // Copy lower part from layers to compactedLayers
-        compactedLayers.addAll(layers.subList(removeLayerNr + 1, getLayerCount()));
-
-        // Replace the old layers list with the new compacted one
-        layers = compactedLayers;
-
-        for (int l = removeLayerNr; l < getLayerCount(); l++) {
-            for (LayoutNode layoutNode : getLayer(l)) {
-                layoutNode.setLayer(l);
-            }
-        }
     }
 
     public void positionLayers() {
