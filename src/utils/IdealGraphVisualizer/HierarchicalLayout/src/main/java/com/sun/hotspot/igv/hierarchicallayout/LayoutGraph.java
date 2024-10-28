@@ -63,14 +63,6 @@ public class LayoutGraph {
         }
     }
 
-    public void removeDummyNode(LayoutNode node) {
-        dummyNodes.remove(node);
-    }
-
-    public void addDummyNode(LayoutNode node) {
-        dummyNodes.add(node);
-    }
-
     public List<LayoutNode> getDummyNodes() {
         return Collections.unmodifiableList(dummyNodes);
     }
@@ -122,8 +114,7 @@ public class LayoutGraph {
                 if (!dummyNodeCache.contains(x)) {
                     LayoutNode dummyNode = predEdge.insertDummyBetweenSourceAndEdge();
                     dummyNode.setX(x);
-                    dummyNode.setLayer(layerNr);
-                    addNode(dummyNode);
+                    addNode(dummyNode, layerNr);
                     dummyNodeCache.add(x);
                 }
             }
@@ -145,18 +136,6 @@ public class LayoutGraph {
 
     public LayoutNode getLayoutNode(Vertex vertex) {
         return vertexToLayoutNode.get(vertex);
-    }
-
-    public void removeNode(LayoutNode node) {
-        int layer = node.getLayer();
-        layers.get(layer).remove(node);
-        layers.get(layer).updateLayerPositions();
-        // Remove node from graph layout
-        if (node.isDummy()) {
-            dummyNodes.remove(node);
-        } else {
-            vertexToLayoutNode.remove(node.getVertex());
-        }
     }
 
     public LayoutGraph(Set<? extends Link> links, Set<? extends Vertex> additionalVertices) {
@@ -205,11 +184,26 @@ public class LayoutGraph {
         }
     }
 
-    public void addNode(LayoutNode node) {
+    public void addNode(LayoutNode node, int layerNr) {
+        node.setLayer(layerNr);
+        getLayer(layerNr).add(node);
+
         if (node.isDummy()) {
             dummyNodes.add(node);
         } else {
             vertexToLayoutNode.put(node.getVertex(), node);
+        }
+    }
+
+    public void removeNode(LayoutNode node) {
+        int layer = node.getLayer();
+        layers.get(layer).remove(node);
+        layers.get(layer).updateLayerPositions();
+        // Remove node from graph layout
+        if (node.isDummy()) {
+            dummyNodes.remove(node);
+        } else {
+            vertexToLayoutNode.remove(node.getVertex());
         }
     }
 
@@ -317,9 +311,7 @@ public class LayoutGraph {
 
                         if (predNode.getSuccs().size() <= 1 && predNode.getPreds().size() <= 1) {
                             // Dummy node used only for this link, remove if not already removed
-                            if (getDummyNodes().contains(predNode)) {
-                                removeDummyNode(predNode);
-                            }
+                            removeNode(predNode);
                         } else {
                             // anchor node, should not be removed
                             break;
@@ -385,20 +377,14 @@ public class LayoutGraph {
 
     public void insertNodeIntoLayer(LayoutNode node, LayoutLayer layer) {
         int layerNr = getLayerNr(layer);
-        node.setLayer(layerNr);
 
         for (LayoutNode n : layer) {
             if (n.getPos() >= node.getPos()) {
                 n.setPos(n.getPos() + 1);
             }
         }
-        layer.add(node);
 
-        addNode(node);
-
-        if (!node.isDummy()) {
-            vertexToLayoutNode.put(node.getVertex(), node);
-        }
+        addNode(node, layerNr);
     }
 
     public void removeLayer(int removeLayerNr) {
