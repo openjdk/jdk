@@ -85,6 +85,7 @@ public class LayoutGraph {
 
     // check that NO neighbors of node are in a given layer
     public int insertNewLayerIfNeeded(LayoutNode node, int layerNr) {
+        // TODO: needs improvement
         for (Link inputLink : getInputLinks(node.getVertex())) {
             if (inputLink.getFrom().getVertex() == inputLink.getTo().getVertex()) continue;
             LayoutNode fromNode = getLayoutNode(inputLink.getFrom().getVertex());
