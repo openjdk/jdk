@@ -2465,7 +2465,7 @@ void TemplateTable::jvmti_post_field_access(Register cache, Register index,
     // take the time to call into the VM.
     Label L1;
     assert_different_registers(cache, index, x10);
-    ExternalAddress target((address) JvmtiExport::get_field_access_count_addr());
+    ExternalAddress target(JvmtiExport::get_field_access_count_addr());
     __ relocate(target.rspec(), [&] {
       int32_t offset;
       __ la(t0, target.target(), offset);
@@ -2676,7 +2676,7 @@ void TemplateTable::jvmti_post_field_mod(Register cache, Register index, bool is
     // we take the time to call into the VM.
     Label L1;
     assert_different_registers(cache, index, x10);
-    ExternalAddress target((address)JvmtiExport::get_field_modification_count_addr());
+    ExternalAddress target(JvmtiExport::get_field_modification_count_addr());
     __ relocate(target.rspec(), [&] {
       int32_t offset;
       __ la(t0, target.target(), offset);
@@ -2969,7 +2969,7 @@ void TemplateTable::jvmti_post_fast_field_mod() {
     // Check to see if a field modification watch has been set before
     // we take the time to call into the VM.
     Label L2;
-    ExternalAddress target((address)JvmtiExport::get_field_modification_count_addr());
+    ExternalAddress target(JvmtiExport::get_field_modification_count_addr());
     __ relocate(target.rspec(), [&] {
       int32_t offset;
       __ la(t0, target.target(), offset);
@@ -3101,7 +3101,7 @@ void TemplateTable::fast_accessfield(TosState state) {
     // Check to see if a field access watch has been set before we
     // take the time to call into the VM.
     Label L1;
-    ExternalAddress target((address)JvmtiExport::get_field_access_count_addr());
+    ExternalAddress target(JvmtiExport::get_field_access_count_addr());
     __ relocate(target.rspec(), [&] {
       int32_t offset;
       __ la(t0, target.target(), offset);

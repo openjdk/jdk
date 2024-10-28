@@ -1610,7 +1610,14 @@ protected:
   Node** _nodes;
   ReallocMark _nesting;         // Safety checks for arena reallocation
 
-  void   grow( uint i );        // Grow array node to fit
+  // Grow array to required capacity
+  void maybe_grow(uint i) {
+    if (i >= _max) {
+      grow(i);
+    }
+  }
+  void grow(uint i);
+
 public:
   Node_Array(Arena* a, uint max = OptoNodeListSize) : _a(a), _max(max) {
     _nodes = NEW_ARENA_ARRAY(a, Node*, max);
@@ -1628,7 +1635,7 @@ public:
   Node* at(uint i) const { assert(i<_max,"oob"); return _nodes[i]; }
   Node** adr() { return _nodes; }
   // Extend the mapping: index i maps to Node *n.
-  void map( uint i, Node *n ) { grow(i); _nodes[i] = n; }
+  void map( uint i, Node *n ) { maybe_grow(i); _nodes[i] = n; }
   void insert( uint i, Node *n );
   void remove( uint i );        // Remove, preserving order
   // Clear all entries in _nodes to null but keep storage
