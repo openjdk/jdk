@@ -1983,7 +1983,7 @@ void PhaseIdealLoop::create_assertion_predicates_at_loop(CountedLoopNode* source
   LoopNode* target_outer_loop_head = target_loop_head->skip_strip_mined();
   Node* target_loop_entry = target_outer_loop_head->in(LoopNode::EntryControl);
   CreateAssertionPredicatesVisitor create_assertion_predicates_visitor(init, stride, target_loop_entry, this,
-                                                                        _node_in_loop_body);
+                                                                       _node_in_loop_body);
   Node* source_loop_entry = source_loop_head->skip_strip_mined()->in(LoopNode::EntryControl);
   PredicateIterator predicate_iterator(source_loop_entry);
   predicate_iterator.for_each(create_assertion_predicates_visitor);
