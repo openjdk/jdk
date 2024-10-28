@@ -371,8 +371,7 @@ public abstract class Policy {
      * <p> The default implementation of this method ignores the
      * CodeSource and returns Policy.UNSUPPORTED_EMPTY_COLLECTION.
      *
-     * @param codesource the CodeSource to which the returned
-     *          PermissionCollection has been granted
+     * @param codesource ignored
      *
      * @return a set of permissions granted to the specified CodeSource.
      *          If this operation is supported, the returned
@@ -392,8 +391,7 @@ public abstract class Policy {
      * <p> The default implementation of this method ignores the
      * ProtectionDomain and returns Policy.UNSUPPORTED_EMPTY_COLLECTION.
      *
-     * @param domain the ProtectionDomain to which the returned
-     *          PermissionCollection has been granted
+     * @param domain ignored
      *
      * @return a set of permissions granted to the specified ProtectionDomain.
      *          If this operation is supported, the returned
@@ -416,11 +414,10 @@ public abstract class Policy {
      * <p> The default implementation of this method ignores the
      * ProtectionDomain and Permission parameters and always returns false.
      *
-     * @param domain the ProtectionDomain to test
-     * @param permission the Permission object to be tested for implication
+     * @param domain ignored
+     * @param permission ignored
      *
-     * @return {@code true} if "permission" is a proper subset of a permission
-     * granted to this ProtectionDomain
+     * @return {@code false} always
      *
      * @see java.security.ProtectionDomain
      * @since 1.4
