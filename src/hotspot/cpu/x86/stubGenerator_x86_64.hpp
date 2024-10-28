@@ -599,7 +599,6 @@ class StubGenerator: public StubCodeGenerator {
   address generate_cont_returnBarrier_exception();
 
   address generate_cont_preempt_stub();
-  address generate_cont_resume_monitor_operation();
 
   // Continuation point for throwing of implicit exceptions that are
   // not handled in the current activation. Fabricates an exception

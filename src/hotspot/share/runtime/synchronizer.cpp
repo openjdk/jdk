@@ -1556,7 +1556,7 @@ ObjectMonitor* ObjectSynchronizer::inflate_impl(JavaThread* locking_thread, oop 
         // Use ANONYMOUS_OWNER to indicate that the owner is the BasicLock on the stack,
         // and set the stack locker field in the monitor.
         m->set_stack_locker(mark.locker());
-        m->set_anonymous_owner();  // second
+        m->set_anonymous_owner();
       }
       // TODO-FIXME: assert BasicLock->dhw != 0.
 
