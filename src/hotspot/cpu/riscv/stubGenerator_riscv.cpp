@@ -2280,6 +2280,7 @@ class StubGenerator: public StubCodeGenerator {
     const int step = 16;
     for (int i = 0; i < rounds; i++) {
       __ vle32_v(working_vregs[i], key);
+      // We need to operate in big endian here
       __ vrev8_v(working_vregs[i], working_vregs[i]);
       __ addi(key, key, step);
     }
