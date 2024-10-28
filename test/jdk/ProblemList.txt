@@ -830,7 +830,6 @@ java/awt/dnd/WinMoveFileToShellTest.java 8341665 windows-all
 # JEP 486: remaining SM related tests that are failing
 
 # :jdk_desktop
-javax/swing/JPopupMenu/6694823/bug6694823.java 8342012 windows-all,linux-all
 java/awt/Robot/InfiniteLoopException.java 8342638 windows-all
 
 # :tier2_part2
