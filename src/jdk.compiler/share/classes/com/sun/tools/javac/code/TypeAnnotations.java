@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,6 @@ import com.sun.tools.javac.comp.Annotate;
 import com.sun.tools.javac.comp.Attr;
 import com.sun.tools.javac.comp.AttrContext;
 import com.sun.tools.javac.comp.Env;
-import com.sun.tools.javac.resources.CompilerProperties;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.resources.CompilerProperties.Fragments;
 import com.sun.tools.javac.tree.JCTree;
@@ -1402,7 +1401,6 @@ public class TypeAnnotations {
                 }
             }
             scan(tree.elems);
-            checkArraySize(tree.elems);
         }
 
         private void findPosition(JCTree tree, JCTree frame, List<JCAnnotation> annotations) {
@@ -1425,12 +1423,6 @@ public class TypeAnnotations {
             }
         }
 
-        private void checkArraySize(List<JCExpression> tree) {
-            //check if attribute length exceeds maximum unsigned 16-bit value
-            if (!sigOnly && tree != null && (tree.size() >>> 16) > 0) {
-                log.warning(tree.getFirst().pos(), CompilerProperties.Warnings.ProcAnnotationArrayTooLarge);
-            }
-        }
 
         @Override
         public String toString() {
