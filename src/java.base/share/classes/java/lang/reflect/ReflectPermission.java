@@ -29,7 +29,7 @@ package java.lang.reflect;
  * The Permission class for reflective operations.
  *
  * @apiNote
- * This permission cannot be used for controlling access to resources anymore
+ * This permission cannot be used for controlling access to resources
  * as the Security Manager is no longer supported.
  *
  * @see java.security.Permission

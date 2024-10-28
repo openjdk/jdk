@@ -6340,7 +6340,6 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      *                           dialog or run interactively, and
      *                           <code>GraphicsEnvironment.isHeadless</code>
      *                           returns <code>true</code>
-     *          method disallows this thread from creating a print job request
      * @throws PrinterException if an error in the print system causes the job
      *                          to be aborted
      * @see #getPrintable

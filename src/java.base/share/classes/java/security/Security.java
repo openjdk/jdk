@@ -486,7 +486,7 @@ public final class Security {
     }
 
     /**
-     * Adds a provider to the next position available..
+     * Adds a provider to the next position available.
      *
      * @param provider the provider to be added.
      *

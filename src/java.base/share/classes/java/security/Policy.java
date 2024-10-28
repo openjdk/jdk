@@ -31,6 +31,9 @@ import java.util.Objects;
 import sun.security.jca.GetInstance;
 
 /**
+ * A {@code Policy} object was responsible for determining whether code
+ * executing in the Java runtime environment had permission to perform a
+ * security-sensitive operation. This feature no longer exists.
  *
  * @author Roland Schemers
  * @author Gary Ellison
@@ -94,7 +97,7 @@ public abstract class Policy {
      *
      * @return a {@code Policy} object that grants no permissions
      *
-     * @deprecated This method originally returned the installed {@code Policy}
+     * @apiNote This method originally returned the installed {@code Policy}
      *    object, or if no {@code Policy} object had been installed, a default
      *    {@code Policy} implementation. Installing a system-wide {@code Policy}
      *    object is no longer supported. This method always returns a
@@ -105,7 +108,6 @@ public abstract class Policy {
      *
      * @see #setPolicy(java.security.Policy)
      */
-    @Deprecated(since="17", forRemoval=true)
     public static Policy getPolicy()
     {
         return NO_PERMISSIONS_POLICY;
@@ -117,7 +119,7 @@ public abstract class Policy {
      *
      * @param p ignored
      * @throws UnsupportedOperationException always
-     * @deprecated This method originally installed the system-wide
+     * @apiNote This method originally installed the system-wide
      *    {@code Policy} object. Installing a system-wide {@code Policy} object
      *    is no longer supported. A {@code Policy} object was only useful in
      *    conjunction with {@linkplain SecurityManager the Security Manager},
@@ -125,7 +127,6 @@ public abstract class Policy {
      *
      * @see #getPolicy()
      */
-    @Deprecated(since="17", forRemoval=true)
     public static void setPolicy(Policy p)
     {
         throw new UnsupportedOperationException(
@@ -370,8 +371,7 @@ public abstract class Policy {
      * <p> The default implementation of this method ignores the
      * CodeSource and returns Policy.UNSUPPORTED_EMPTY_COLLECTION.
      *
-     * @param codesource the CodeSource to which the returned
-     *          PermissionCollection has been granted
+     * @param codesource ignored
      *
      * @return a set of permissions granted to the specified CodeSource.
      *          If this operation is supported, the returned
@@ -391,8 +391,7 @@ public abstract class Policy {
      * <p> The default implementation of this method ignores the
      * ProtectionDomain and returns Policy.UNSUPPORTED_EMPTY_COLLECTION.
      *
-     * @param domain the ProtectionDomain to which the returned
-     *          PermissionCollection has been granted
+     * @param domain ignored
      *
      * @return a set of permissions granted to the specified ProtectionDomain.
      *          If this operation is supported, the returned
@@ -415,11 +414,10 @@ public abstract class Policy {
      * <p> The default implementation of this method ignores the
      * ProtectionDomain and Permission parameters and always returns false.
      *
-     * @param domain the ProtectionDomain to test
-     * @param permission the Permission object to be tested for implication
+     * @param domain ignored
+     * @param permission ignored
      *
-     * @return {@code true} if "permission" is a proper subset of a permission
-     * granted to this ProtectionDomain
+     * @return {@code false} always
      *
      * @see java.security.ProtectionDomain
      * @since 1.4

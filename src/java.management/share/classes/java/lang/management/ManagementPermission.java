@@ -29,7 +29,7 @@ package java.lang.management;
  * This class is for management permissions.
  *
  * @apiNote
- * This permission cannot be used for controlling access to resources anymore
+ * This permission cannot be used for controlling access to resources
  * as the Security Manager is no longer supported.
  *
  * @author  Mandy Chung

@@ -53,11 +53,11 @@ import jdk.internal.module.Modules;
  * @test
  * @bug 8065552 8309532
  * @summary test that all public fields returned by getDeclaredFields() can
- *          be set accessible if the right permission is granted; this test
+ *          be set accessible; this test
  *          loads all classes and get their declared fields
  *          and call setAccessible(false) followed by setAccessible(true);
  * @modules java.base/jdk.internal.module
- * @run main/othervm --add-modules=ALL-SYSTEM FieldSetAccessibleTest UNSECURE
+ * @run main/othervm --add-modules=ALL-SYSTEM FieldSetAccessibleTest
  *
  * @author danielfuchs
  */
@@ -137,44 +137,38 @@ public class FieldSetAccessibleTest {
     /**
      * @param args the command line arguments:
      *
-     *     UNSECURE [startIndex (default=0)] [maxSize (default=Long.MAX_VALUE)]
+     *     [startIndex (default=0)] [maxSize (default=Long.MAX_VALUE)]
      *
      * @throws java.lang.Exception if the test fails
      */
     public static void main(String[] args) throws Exception {
         if (args == null || args.length == 0) {
-            args = new String[] {"UNSECURE", "0"};
-        } else if (args.length > 3) {
+            args = new String[] {"0"};
+        } else if (args.length > 2) {
             throw new RuntimeException("Expected at most one argument. Found "
                     + Arrays.asList(args));
         }
         try {
-            if (args.length > 1) {
-                startIndex = Long.parseLong(args[1]);
+            if (args.length > 0) {
+                startIndex = Long.parseLong(args[0]);
                 if (startIndex < 0) {
-                    throw new IllegalArgumentException("startIndex args[1]: "
+                    throw new IllegalArgumentException("startIndex args[0]: "
                             + startIndex);
                 }
             }
-            if (args.length > 2) {
-                maxSize = Long.parseLong(args[2]);
+            if (args.length > 1) {
+                maxSize = Long.parseLong(args[1]);
                 if (maxSize <= 0) {
                     maxSize = Long.MAX_VALUE;
                 }
                 maxIndex = (Long.MAX_VALUE - startIndex) < maxSize
                         ? Long.MAX_VALUE : startIndex + maxSize;
             }
-            TestCase.valueOf(args[0]).run();
+            test(listAllClassNames());
         } catch (OutOfMemoryError oome) {
             System.err.println(classCount.get());
             throw oome;
         }
-    }
-
-    public static void run(TestCase test) {
-        System.out.println("Testing " + test);
-        test(listAllClassNames());
-        System.out.println("Passed " + test);
     }
 
     static Iterable<String> listAllClassNames() {
@@ -331,14 +325,6 @@ public class FieldSetAccessibleTest {
                     deque.addAll(deps);
             }
             return visited;
-        }
-    }
-
-    public static enum TestCase {
-        UNSECURE;
-        public void run() throws Exception {
-            System.out.println("Running test case: " + name());
-            FieldSetAccessibleTest.run(this);
         }
     }
 }

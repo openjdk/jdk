@@ -1,5 +1,5 @@
 /*
- * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,30 +21,13 @@
  * questions.
  */
 
-import java.io.File;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+#include "export.h"
 
-import javax.sound.midi.InvalidMidiDataException;
-import javax.sound.midi.MidiSystem;
-
-/**
- * @test
- * @bug 8312535
- * @summary MidiSystem.getSoundbank() throws unexpected SecurityException
- * @run main GetSoundBankSecurityException
- */
-public final class GetSoundBankSecurityException {
-
-    public static void main(String[] args) throws Exception {
-        File tempFile = new File("sound.bank");
-        tempFile.createNewFile();
-        try {
-            MidiSystem.getSoundbank(tempFile);
-            throw new RuntimeException("InvalidMidiDataException is expected");
-        } catch (InvalidMidiDataException ignore) {
-        } finally {
-            Files.delete(Paths.get(tempFile.getAbsolutePath()));
-        }
-    }
-}
+EXPORT void noop_params0() {}
+EXPORT void noop_params1(void *param0) {}
+EXPORT void noop_params2(void *param0, void *param1) {}
+EXPORT void noop_params3(void *param0, void *param1, void *param2) {}
+EXPORT void noop_params4(void *param0, void *param1, void *param2, void *param3) {}
+EXPORT void noop_params5(void *param0, void *param1, void *param2, void *param3, void *param4) {}
+EXPORT void noop_params10(void *param0, void *param1, void *param2, void *param3, void *param4,
+                          void *param5, void *param6, void *param7, void *param8, void *param9) {}

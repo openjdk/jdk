@@ -29,14 +29,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * AccessControlContext was used with a SecurityManager for access control decisions
- * based on context that it encapsulated. This feature no longer exists.
+ * {@code AccessControlContext} was used with the Security Manager for access
+ * control decisions based on context that it encapsulated. This feature no
+ * longer exists.
  *
  * @author Roland Schemers
  * @since 1.2
- * @deprecated This class was only useful in conjunction with the Security
- *       Manager, which is no longer supported. There is no replacement for
- *       the Security Manager or this class.
+ * @deprecated This class was only useful in conjunction with the {@linkplain
+ *       SecurityManager the Security Manager}, which is no longer supported.
+ *       There is no replacement for the Security Manager or this class.
  */
 
 @Deprecated(since="17", forRemoval=true)
@@ -138,7 +139,7 @@ public final class AccessControlContext {
     public void checkPermission(Permission perm)
         throws AccessControlException
     {
-        throw new AccessControlException("");
+        throw new AccessControlException("checking permissions is not supported");
     }
 
     /**

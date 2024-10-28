@@ -31,7 +31,7 @@ package com.sun.tools.attach;
  * named permission or you don't.
  *
  * @apiNote
- * This permission cannot be used for controlling access to resources anymore
+ * This permission cannot be used for controlling access to resources
  * as the Security Manager is no longer supported.
  *
  * @see com.sun.tools.attach.VirtualMachine

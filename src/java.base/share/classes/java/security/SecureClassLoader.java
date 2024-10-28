@@ -34,8 +34,11 @@ import java.util.function.Function;
 
 /**
  * This class extends {@code ClassLoader} with additional support for defining
- * classes with an associated code source and permissions which are
- * retrieved by the system policy by default.
+ * classes with an associated code source and permissions.
+ *
+ * @apiNote
+ * Permissions cannot be used for controlling access to resources
+ * as the Security Manager is no longer supported.
  *
  * @author  Li Gong
  * @author  Roland Schemers
@@ -170,7 +173,7 @@ public class SecureClassLoader extends ClassLoader {
      *
      * @param codesource the codesource.
      *
-     * @return the permissions granted to the codesource.
+     * @return the permissions for the codesource.
      *
      */
     protected PermissionCollection getPermissions(CodeSource codesource)

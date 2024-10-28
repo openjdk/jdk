@@ -31,7 +31,7 @@ package javax.security.auth;
  * list; you either have the named permission or you don't.
  *
  * @apiNote
- * This permission cannot be used for controlling access to resources anymore
+ * This permission cannot be used for controlling access to resources
  * as the Security Manager is no longer supported.
  *
  * @since 1.4
