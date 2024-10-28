@@ -242,13 +242,8 @@ JNIEXPORT jlong JNICALL Java_sun_tools_attach_VirtualMachineImpl_openProcess
 
         if (isCurrent32bit != isTarget32bit) {
             CloseHandle(hProcess);
-            #ifdef _WIN64
-              JNU_ThrowByName(env, "com/sun/tools/attach/AttachNotSupportedException",
-                  "Unable to attach to 32-bit process running under WOW64");
-            #else
-              JNU_ThrowByName(env, "com/sun/tools/attach/AttachNotSupportedException",
-                  "Unable to attach to 64-bit process");
-            #endif
+            JNU_ThrowByName(env, "com/sun/tools/attach/AttachNotSupportedException",
+                "Unable to attach to 32-bit process running under WOW64");
         }
     }
 

@@ -25,7 +25,6 @@
 #include "precompiled.hpp"
 #include "runtime/sharedRuntime.hpp"
 
-#ifdef _WIN64
 // These are copied defines originally from fdlibm.h.
 
 #define __HI(x) *(1+(int*)&x)
@@ -158,5 +157,3 @@ double SharedRuntime::fmod_winx64(double x, double y)
   }
   return x;               /* exact output */
 }
-
-#endif

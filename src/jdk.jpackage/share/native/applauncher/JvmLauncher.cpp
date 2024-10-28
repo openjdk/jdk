@@ -34,12 +34,6 @@
 #include "Toolbox.h"
 #include "ErrorHandling.h"
 
-#if defined(_WIN32) && !defined(_WIN64)
-#define LAUNCH_FUNC "_JLI_Launch@56"
-#else
-#define LAUNCH_FUNC "JLI_Launch"
-#endif
-
 Jvm::Jvm() {
     LOG_TRACE(tstrings::any() << "Jvm(" << this << ")::Jvm()");
 }
@@ -206,7 +200,7 @@ void Jvm::launch() {
 
     LOG_TRACE(tstrings::any() << "JVM library: \"" << jvmPath << "\"");
 
-    DllFunction<void*> func(Dll(jvmPath), LAUNCH_FUNC);
+    DllFunction<void*> func(Dll(jvmPath), "JLI_Launch");
 
     int exitStatus = jvmLauncherStartJvm(jld.get(), func.operator void*());
 

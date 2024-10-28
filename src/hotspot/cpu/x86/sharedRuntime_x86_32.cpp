@@ -1424,14 +1424,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   //      |                     |
   // SP-> | out_preserved_slots |
   //
-  //
-  // ****************************************************************************
-  // WARNING - on Windows Java Natives use pascal calling convention and pop the
-  // arguments off of the stack after the jni call. Before the call we can use
-  // instructions that are SP relative. After the jni call we switch to FP
-  // relative instructions instead of re-adjusting the stack on windows.
-  // ****************************************************************************
-
 
   // Now compute actual number of stack words we need rounding to make
   // stack properly aligned.
@@ -1483,6 +1475,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   // Frame is now completed as far as size and linkage.
   int frame_complete = ((intptr_t)__ pc()) - start;
 
+  // FIXME: The logic below do not apply anymore. Should we change anything? /ihse
   // Calculate the difference between rsp and rbp,. We need to know it
   // after the native call because on windows Java Natives will pop
   // the arguments and it is painful to do rsp relative addressing
@@ -1718,6 +1711,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   // Verify or restore cpu control state after JNI call
   __ restore_cpu_control_state_after_jni(noreg);
 
+  // FIXME: The logic below do not apply anymore. Should we change anything? /ihse
   // WARNING - on Windows Java Natives use pascal calling convention and pop the
   // arguments off of the stack. We could just re-adjust the stack pointer here
   // and continue to do SP relative addressing but we instead switch to FP

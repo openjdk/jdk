@@ -53,35 +53,7 @@ static void pd_conjoint_jints_atomic(const jint* from, jint* to, size_t count) {
 }
 
 static void pd_conjoint_jlongs_atomic(const jlong* from, jlong* to, size_t count) {
-#ifdef AMD64
   pd_conjoint_atomic_helper(from, to, count);
-#else
-  // Guarantee use of fild/fistp or xmm regs via some asm code, because compilers won't.
-  __asm {
-    mov    eax, from;
-    mov    edx, to;
-    mov    ecx, count;
-    cmp    eax, edx;
-    jbe    downtest;
-    jmp    uptest;
-  up:
-    fild   qword ptr [eax];
-    fistp  qword ptr [edx];
-    add    eax, 8;
-    add    edx, 8;
-  uptest:
-    sub    ecx, 1;
-    jge    up;
-    jmp    done;
-  down:
-    fild   qword ptr [eax][ecx*8];
-    fistp  qword ptr [edx][ecx*8];
-  downtest:
-    sub    ecx, 1;
-    jge    down;
-  done:;
-  }
-#endif // AMD64
 }
 
 static void pd_conjoint_oops_atomic(const oop* from, oop* to, size_t count) {
@@ -89,11 +61,7 @@ static void pd_conjoint_oops_atomic(const oop* from, oop* to, size_t count) {
 }
 
 static void pd_arrayof_conjoint_bytes(const HeapWord* from, HeapWord* to, size_t count) {
-#ifdef AMD64
   pd_conjoint_bytes_atomic(from, to, count);
-#else
-  pd_conjoint_bytes(from, to, count);
-#endif // AMD64
 }
 
 static void pd_arrayof_conjoint_jshorts(const HeapWord* from, HeapWord* to, size_t count) {

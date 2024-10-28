@@ -378,7 +378,7 @@ JVM_ENTRY(jobjectArray, JVM_GetProperties(JNIEnv *env))
   // Add the sun.management.compiler property for the compiler's name
   {
 #undef CSIZE
-#if defined(_LP64) || defined(_WIN64)
+#if defined(_LP64)
   #define CSIZE "64-Bit "
 #else
   #define CSIZE

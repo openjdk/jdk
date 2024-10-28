@@ -289,10 +289,6 @@ private:
     extern "C" UINT __stdcall name(MSIHANDLE); \
     __pragma(comment(linker, "/INCLUDE:" JP_CA_MANGLED_NAME(name)))
 
-#ifdef _WIN64
-    #define JP_CA_MANGLED_NAME(name) #name
-#else
-    #define JP_CA_MANGLED_NAME(name) "_" #name "@4"
-#endif
+#define JP_CA_MANGLED_NAME(name) #name
 
 #endif // #ifndef MsiCA_h

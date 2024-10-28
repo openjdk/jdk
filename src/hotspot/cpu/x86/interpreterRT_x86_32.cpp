@@ -44,6 +44,7 @@ InterpreterRuntime::SignatureHandlerGenerator::SignatureHandlerGenerator(const m
   _masm = new MacroAssembler(buffer);
 #ifdef AMD64
 #ifdef _WIN64
+   // FIXME: This is weird. How can we ever have _WIN64 for 32-bit code? I wonder what was meant. /ihse
   _num_args = (method->is_static() ? 1 : 0);
   _stack_offset = (Argument::n_int_register_parameters_c+1)* wordSize; // don't overwrite return address
 #else

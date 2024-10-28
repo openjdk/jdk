@@ -28,9 +28,7 @@ import java.io.*;
 import java.util.*;
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.debugger.cdbg.*;
-import sun.jvm.hotspot.debugger.x86.*;
 import sun.jvm.hotspot.debugger.amd64.*;
-import sun.jvm.hotspot.debugger.windows.x86.*;
 import sun.jvm.hotspot.debugger.windows.amd64.*;
 import sun.jvm.hotspot.utilities.AddressOps;
 
@@ -69,14 +67,7 @@ class WindbgCDebugger implements CDebugger {
   }
 
   public CFrame topFrameForThread(ThreadProxy thread) throws DebuggerException {
-    if (dbg.getCPU().equals("x86")) {
-      X86ThreadContext context = (X86ThreadContext) thread.getContext();
-      Address ebp = context.getRegisterAsAddress(X86ThreadContext.EBP);
-      if (ebp == null) return null;
-      Address pc  = context.getRegisterAsAddress(X86ThreadContext.EIP);
-      if (pc == null) return null;
-      return new WindowsX86CFrame(dbg, ebp, pc);
-    } else if (dbg.getCPU().equals("amd64")) {
+    if (dbg.getCPU().equals("amd64")) {
       AMD64ThreadContext context = (AMD64ThreadContext) thread.getContext();
       Address rbp = context.getRegisterAsAddress(AMD64ThreadContext.RBP);
       if (rbp == null) return null;

@@ -25,8 +25,6 @@
 #ifndef OS_CPU_WINDOWS_X86_UNWIND_WINDOWS_X86_HPP
 #define OS_CPU_WINDOWS_X86_UNWIND_WINDOWS_X86_HPP
 
-
-#ifdef AMD64
 typedef unsigned char UBYTE;
 
 // This structure is used to define an UNWIND_INFO that
@@ -53,7 +51,5 @@ typedef struct _RUNTIME_FUNCTION {
     ULONG UnwindData;
 } RUNTIME_FUNCTION, *PRUNTIME_FUNCTION;
 */
-
-#endif // AMD64
 
 #endif // OS_CPU_WINDOWS_X86_UNWIND_WINDOWS_X86_HPP

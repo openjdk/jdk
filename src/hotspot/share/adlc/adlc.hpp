@@ -47,20 +47,12 @@ using namespace std;
 #define strdup _strdup
 
 #ifndef _INTPTR_T_DEFINED
-#ifdef _WIN64
 typedef __int64 intptr_t;
-#else
-typedef int intptr_t;
-#endif
 #define _INTPTR_T_DEFINED
 #endif
 
 #ifndef _UINTPTR_T_DEFINED
-#ifdef _WIN64
 typedef unsigned __int64 uintptr_t;
-#else
-typedef unsigned int uintptr_t;
-#endif
 #define _UINTPTR_T_DEFINED
 #endif
 

@@ -63,15 +63,8 @@
 /* For static variables initialized to zero */
 #define jlong_zero_init ((jlong) 0)
 
-#ifdef _WIN64
 #define jlong_to_ptr(a) ((void*)(a))
 #define ptr_to_jlong(a) ((jlong)(a))
-#else
-/* Double casting to avoid warning messages looking for casting of */
-/* smaller sizes into pointers */
-#define jlong_to_ptr(a) ((void*)(int)(a))
-#define ptr_to_jlong(a) ((jlong)(int)(a))
-#endif
 
 #define jint_to_jlong(a)        ((jlong)(a))
 #define jlong_to_jint(a)        ((jint)(a))

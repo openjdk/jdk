@@ -48,13 +48,7 @@ inline void OrderAccess::acquire()    { compiler_barrier(); }
 inline void OrderAccess::release()    { compiler_barrier(); }
 
 inline void OrderAccess::fence() {
-#ifdef AMD64
   StubRoutines_fence();
-#else
-  __asm {
-    lock add dword ptr [esp], 0;
-  }
-#endif // AMD64
   compiler_barrier();
 }
 

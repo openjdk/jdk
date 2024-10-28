@@ -3712,6 +3712,7 @@ operand rRegP() %{
   interface(REG_INTER);
 %}
 
+// FIXME: The logic below do not apply anymore. Should we change anything? /ihse
 // On windows95, EBP is not safe to use for implicit null tests.
 operand eRegP_no_EBP() %{
   constraint(ALLOC_IN_RC(int_reg_no_ebp));
