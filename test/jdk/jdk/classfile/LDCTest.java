@@ -93,7 +93,7 @@ class LDCTest {
                               .ldc(wideString0).pop() // adaption - narrowed
                               .with(ConstantInstruction.ofLoad(LDC, wideString0)).pop() // adaption
                               .with(ConstantInstruction.ofLoad(LDC_W, wideString0)).pop() // adaption - narrowed
-                              //.with(ConstantInstruction.ofLoad(LDC_W, s0)).pop() // explicit ldc_w - local
+                              .with(ConstantInstruction.ofLoad(LDC_W, s0)).pop() // explicit ldc_w - local
                               .ldc("string131").pop() // ldc_w
                               .ldc(narrowString131).pop() // adaption - widened
                               .with(ConstantInstruction.ofLoad(LDC, narrowString131)).pop() // adaption - widened
@@ -132,7 +132,7 @@ class LDCTest {
                 LDC,
                 LDC,
                 LDC,
-                //LDC_W,
+                LDC_W,
                 LDC_W, // string131
                 LDC_W,
                 LDC_W,
@@ -148,7 +148,7 @@ class LDCTest {
                 LDC2_W // wide condy
         ), instructions.stream().map(Instruction::opcode).toList());
 
-        int longCaseStart = 10 - 1;
+        int longCaseStart = 10;
         for (int longCaseIndex = longCaseStart; longCaseIndex < longCaseStart + 3; longCaseIndex++) {
             var message = "Case " + longCaseIndex;
             assertEquals(42, (long) instructions.get(longCaseIndex).constantValue(), message);
