@@ -383,7 +383,7 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * {@snippet lang = java:
  *     // Localized currency format
  *     var number = 1000;
- *     NumberFormat.getCurrencyInstance(Locale.US).format(number); // returns "$1,000"
+ *     NumberFormat.getCurrencyInstance(Locale.US).format(number); // returns "$1,000.00"
  *     NumberFormat.getCurrencyInstance(Locale.JAPAN).format(number); // returns "\u00A51,000""
  *     // Localized date format
  *     var date = LocalDate.of(2024, 1, 1);
