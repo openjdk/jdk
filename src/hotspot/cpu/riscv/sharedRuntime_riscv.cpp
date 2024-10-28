@@ -2616,19 +2616,18 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(SharedStubId id, address desti
   __ reset_last_Java_frame(false);
   // check for pending exceptions
   Label pending;
-  __ ld(t0, Address(xthread, Thread::pending_exception_offset()));
-  __ bnez(t0, pending);
+  __ ld(t1, Address(xthread, Thread::pending_exception_offset()));
+  __ bnez(t1, pending);
 
   // get the returned Method*
   __ get_vm_result_2(xmethod, xthread);
   __ sd(xmethod, Address(sp, reg_saver.reg_offset_in_bytes(xmethod)));
 
-  // x10 is where we want to jump, overwrite t0 which is saved and temporary
-  __ sd(x10, Address(sp, reg_saver.reg_offset_in_bytes(t0)));
+  // x10 is where we want to jump, overwrite t1 which is saved and temporary
+  __ sd(x10, Address(sp, reg_saver.reg_offset_in_bytes(t1)));
   reg_saver.restore_live_registers(masm);
 
   // We are back to the original state on entry and ready to go.
-  __ mv(t1, t0);
   __ jr(t1);
 
   // Pending exception after the safepoint

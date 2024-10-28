@@ -530,7 +530,7 @@ void MacroAssembler::_verify_oop(Register reg, const char* s, const char* file, 
     movptr(t0, (address) b);
   }
 
-  // call indirectly to solve generation ordering problem
+  // Call indirectly to solve generation ordering problem
   RuntimeAddress target(StubRoutines::verify_oop_subroutine_entry_address());
   relocate(target.rspec(), [&] {
     int32_t offset;
@@ -575,7 +575,7 @@ void MacroAssembler::_verify_oop_addr(Address addr, const char* s, const char* f
     movptr(t0, (address) b);
   }
 
-  // call indirectly to solve generation ordering problem
+  // Call indirectly to solve generation ordering problem
   RuntimeAddress target(StubRoutines::verify_oop_subroutine_entry_address());
   relocate(target.rspec(), [&] {
     int32_t offset;
@@ -2570,7 +2570,6 @@ void MacroAssembler::bang_stack_size(Register size, Register tmp) {
 }
 
 SkipIfEqual::SkipIfEqual(MacroAssembler* masm, const bool* flag_addr, bool value) {
-  int32_t offset = 0;
   _masm = masm;
   ExternalAddress target((address)flag_addr);
   _masm->relocate(target.rspec(), [&] {
@@ -2578,6 +2577,7 @@ SkipIfEqual::SkipIfEqual(MacroAssembler* masm, const bool* flag_addr, bool value
     _masm->la(t0, target.target(), offset);
     _masm->lbu(t0, Address(t0, offset));
   });
+
   if (value) {
     _masm->bnez(t0, _label);
   } else {
@@ -4210,7 +4210,7 @@ void MacroAssembler::read_polling_page(Register r, int32_t offset, relocInfo::re
   });
 }
 
-void  MacroAssembler::set_narrow_oop(Register dst, jobject obj) {
+void MacroAssembler::set_narrow_oop(Register dst, jobject obj) {
 #ifdef ASSERT
   {
     ThreadInVMfromUnknown tiv;
@@ -4511,14 +4511,15 @@ void MacroAssembler::decrementw(const Address dst, int32_t value, Register tmp1,
   sw(tmp1, adr);
 }
 
-void MacroAssembler::cmpptr(Register src1, Address src2, Label& equal) {
-  assert_different_registers(src1, t0);
+void MacroAssembler::cmpptr(Register src1, const Address &src2, Label& equal, Register tmp) {
+  assert_different_registers(src1, tmp);
+  assert(src2.getMode() == Address::literal, "must be applied to a literal address");
   relocate(src2.rspec(), [&] {
     int32_t offset;
-    la(t0, src2.target(), offset);
-    ld(t0, Address(t0, offset));
+    la(tmp, src2.target(), offset);
+    ld(tmp, Address(tmp, offset));
   });
-  beq(src1, t0, equal);
+  beq(src1, tmp, equal);
 }
 
 void MacroAssembler::load_method_holder_cld(Register result, Register method) {
