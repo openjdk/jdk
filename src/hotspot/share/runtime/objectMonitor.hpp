@@ -61,15 +61,15 @@ class ObjectWaiter : public CHeapObj<mtThread> {
   ObjectWaiter(JavaThread* current);
   ObjectWaiter(oop vthread, ObjectMonitor* mon);
   ~ObjectWaiter();
-  JavaThread* thread() { return _thread; }
-  bool is_vthread()    { return _thread == nullptr; }
-  uint8_t state()      { return TState; }
-  ObjectMonitor* monitor() { return _monitor; }
-  bool is_monitorenter()   { return !_is_wait; }
-  bool is_wait()           { return _is_wait; }
-  bool notified()          { return _notified; }
-  bool at_reenter()        { return _at_reenter; }
-  oop vthread();
+  JavaThread* thread()      const { return _thread; }
+  bool is_vthread()         const { return _thread == nullptr; }
+  uint8_t state()           const { return TState; }
+  ObjectMonitor* monitor()  const { return _monitor; }
+  bool is_monitorenter()    const { return !_is_wait; }
+  bool is_wait()            const { return _is_wait; }
+  bool notified()           const { return _notified; }
+  bool at_reenter()         const { return _at_reenter; }
+  oop vthread() const;
   void wait_reenter_begin(ObjectMonitor *mon);
   void wait_reenter_end(ObjectMonitor *mon);
 };

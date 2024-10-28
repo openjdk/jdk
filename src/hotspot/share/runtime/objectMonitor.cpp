@@ -2367,7 +2367,7 @@ ObjectWaiter::~ObjectWaiter() {
   }
 }
 
-oop ObjectWaiter::vthread() {
+oop ObjectWaiter::vthread() const {
   return _vthread.resolve();
 }
 
