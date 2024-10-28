@@ -283,22 +283,24 @@ HeapWord* ParallelScavengeHeap::mem_allocate_work(size_t size,
   // limit is being exceeded as checked below.
   *gc_overhead_limit_was_exceeded = false;
 
-  HeapWord* result = young_gen()->allocate(size);
+  HeapWord* result = nullptr;
 
   uint loop_count = 0;
-  uint gc_count = total_collections();
+  uint gc_count = -1;
   uint gclocker_stalled_count = 0;
 
   while (result == nullptr) {
     if (gc_count != total_collections()) {
-      if (SafepointSynchronize::is_synchronizing()) {
-        ThreadBlockInVM tbivm(JavaThread::current());
-      }
       result = young_gen()->allocate(size);
       gc_count = total_collections();
       if (result != nullptr) {
         return result;
       }
+
+    }
+
+    if (SafepointSynchronize::is_synchronizing()) {
+      ThreadBlockInVM tbivm(JavaThread::current());
     }
 
     // If certain conditions hold, try allocating from the old gen.
@@ -307,7 +309,8 @@ HeapWord* ParallelScavengeHeap::mem_allocate_work(size_t size,
       {
         // Take Heap_lock when allocate on old gen, since it is not thread-safe.
         MutexLocker ml(Heap_lock);
-        result = mem_allocate_old_gen(size);
+        // Try young gen again when allocate on old gen if gc count has changed after taking lock
+        result = mem_allocate_old_gen(size, gc_count != total_collections());
       }
       if (result != nullptr) {
         return result;
@@ -415,7 +418,13 @@ HeapWord* ParallelScavengeHeap::allocate_old_gen_and_record(size_t size) {
   return res;
 }
 
-HeapWord* ParallelScavengeHeap::mem_allocate_old_gen(size_t size) {
+HeapWord* ParallelScavengeHeap::mem_allocate_old_gen(size_t size, bool try_young_gen) {
+  if (try_young_gen) {
+    HeapWord* result = young_gen()->allocate(size);
+    if (result != nullptr) {
+      return result;
+    }
+  }
   return allocate_old_gen_and_record(size);;
 }
 

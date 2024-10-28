@@ -102,7 +102,7 @@ class ParallelScavengeHeap : public CollectedHeap {
 
   inline bool should_alloc_in_eden(size_t size) const;
 
-  HeapWord* mem_allocate_old_gen(size_t size);
+  HeapWord* mem_allocate_old_gen(size_t size, bool try_young_gen);
 
   HeapWord* mem_allocate_work(size_t size,
                               bool is_tlab,
