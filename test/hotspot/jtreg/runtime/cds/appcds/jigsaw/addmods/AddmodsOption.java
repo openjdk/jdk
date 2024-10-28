@@ -39,9 +39,12 @@ public class AddmodsOption {
         final String incubatorModule = "jdk.incubator.vector";
         final String jconsoleModule = "jdk.jconsole";
         final String multiModules = ",,jdk.jconsole,jdk.compiler,,";
+        final String allSystem = "ALL-SYSTEM";
+        final String allModulePath = "ALL-MODULE-PATH";
         final String loggingOption = "-Xlog:cds=debug,cds+module=debug,cds+heap=info,module=trace";
         final String versionPattern = "java.[0-9][0-9][-].*";
         final String subgraphCannotBeUsed = "subgraph jdk.internal.module.ArchivedBootLayer cannot be used because full module graph is disabled";
+        final String warningIncubator = "WARNING: Using incubator modules: jdk.incubator.vector";
         String archiveName = TestCommon.getNewArchiveName("addmods-option");
         TestCommon.setCurrentArchiveName(archiveName);
 
@@ -181,5 +184,48 @@ public class AddmodsOption {
         oa.shouldHaveExitValue(0)
           .shouldMatch("cds,module.*Restored from archive: entry.0x.*name jdk.compiler")
           .shouldMatch("cds,module.*Restored from archive: entry.0x.*name jdk.jconsole");
+
+        // dump an archive with ALL-SYSTEM in -add-modules
+        archiveName = TestCommon.getNewArchiveName("muti-modules");
+        TestCommon.setCurrentArchiveName(archiveName);
+        oa = TestCommon.dumpBaseArchive(
+            archiveName,
+            loggingOption,
+            "--add-modules", allSystem,
+            "-m", moduleOption,
+            "-version");
+        oa.shouldHaveExitValue(0)
+          .shouldContain(warningIncubator);
+
+        // run with the same ALL-SYSTEM in --add-modules
+        oa = TestCommon.execCommon(
+            loggingOption,
+            "--add-modules", allSystem,
+            "-m", moduleOption,
+            "-version");
+        oa.shouldHaveExitValue(0)
+          // the jdk.incubator.vector was specified indirectly via ALL-SYSTEM
+          .shouldContain(warningIncubator)
+          .shouldContain("full module graph cannot be loaded: archive was created without full module graph");
+
+        // dump an archive with ALL-MODULE-PATH in -add-modules
+        archiveName = TestCommon.getNewArchiveName("muti-modules");
+        TestCommon.setCurrentArchiveName(archiveName);
+        oa = TestCommon.dumpBaseArchive(
+            archiveName,
+            loggingOption,
+            "--add-modules", allModulePath,
+            "-m", moduleOption,
+            "-version");
+        oa.shouldHaveExitValue(0);
+
+        // run with the same ALL-MODULE-PATH in --add-modules
+        oa = TestCommon.execCommon(
+            loggingOption,
+            "--add-modules", allModulePath,
+            "-m", moduleOption,
+            "-version");
+        oa.shouldHaveExitValue(0)
+          .shouldMatch("cds,module.*Restored from archive: entry.0x.*name jdk.httpserver");
     }
 }

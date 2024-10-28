@@ -464,7 +464,6 @@ public final class ModuleBootstrap {
 
         if (CDS.isDumpingStaticArchive()
                 && !haveUpgradeModulePath
-                && (addModules.isEmpty() || allJrt(cf, addModules))
                 && allJrtOrModularJar(cf)) {
             assert !isPatched;
 
@@ -511,18 +510,6 @@ public final class ModuleBootstrap {
                 ((BuiltinClassLoader) loader).loadModule(mref);
             }
         }
-    }
-
-    /**
-     * Returns true if all modules named in the given set are in the Configuration and
-     * the run-time image.
-     */
-    private static boolean allJrt(Configuration cf, Set<String> moduleNames) {
-        return !moduleNames.stream()
-                .filter(mn -> !mn.equals(ALL_SYSTEM))
-                .map(mn -> cf.findModule(mn).orElseThrow())
-                .map(m -> m.reference().location().orElseThrow())
-                .anyMatch(uri -> !uri.getScheme().equalsIgnoreCase("jrt"));
     }
 
     /**
