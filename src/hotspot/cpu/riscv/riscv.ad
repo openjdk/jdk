@@ -1259,13 +1259,13 @@ int MachCallRuntimeNode::ret_addr_offset() {
   //   jal(addr)
   // or with far branches
   //   jal(trampoline_stub)
-  // for real runtime callouts it will be 11 instructions
+  // for real runtime callouts it will be 9 instructions
   // see riscv_enc_java_to_runtime
   //   la(t0, retaddr)                ->  auipc + addi
-  //   la(t1, RuntimeAddress(addr))   ->  lui + addi + slli + addi + slli + addi
   //   addi(sp, sp, -2 * wordSize)    ->  addi
-  //   sd(t1, Address(sp, wordSize))  ->  sd
-  //   jalr(t1)                       ->  jalr
+  //   sd(t0, Address(sp, wordSize))  ->  sd
+  //   movptr(t1, addr, offset, t0)   ->  lui + lui + slli + add
+  //   jalr(t1, offset)               ->  jalr
   CodeBlob *cb = CodeCache::find_blob(_entry_point);
   if (cb != nullptr) {
     if (UseTrampolines) {
@@ -1273,7 +1273,7 @@ int MachCallRuntimeNode::ret_addr_offset() {
     }
     return 3 * NativeInstruction::instruction_size;
   } else {
-    return 11 * NativeInstruction::instruction_size;
+    return 9 * NativeInstruction::instruction_size;
   }
 }
 
@@ -2505,11 +2505,13 @@ encode %{
     } else {
       Label retaddr;
       __ la(t0, retaddr);
-      __ la(t1, RuntimeAddress(entry));
       // Leave a breadcrumb for JavaFrameAnchor::capture_last_Java_pc()
       __ addi(sp, sp, -2 * wordSize);
       __ sd(t0, Address(sp, wordSize));
-      __ jalr(t1);
+      int32_t offset = 0;
+      // No relocation needed
+      __ movptr(t1, entry, offset, t0); // lui + lui + slli + add
+      __ jalr(t1, offset);
       __ bind(retaddr);
       __ post_call_nop();
       __ addi(sp, sp, 2 * wordSize);
