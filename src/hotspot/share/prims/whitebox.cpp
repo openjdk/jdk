@@ -2159,8 +2159,7 @@ WB_ENTRY(jboolean, WB_IsJVMCISupportedByGC(JNIEnv* env))
 WB_END
 
 WB_ENTRY(jboolean, WB_CanWriteJavaHeapArchive(JNIEnv* env))
-  return HeapShared::can_write()
-      && ArchiveHeapLoader::can_use(); // work-around JDK-8341371
+  return HeapShared::can_write();
 WB_END
 
 
