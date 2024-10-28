@@ -116,94 +116,54 @@ public:
     }
   }
 
+#define X1(TAG) case VM_MEMORY_ ## TAG: return # TAG;
+#define X2(TAG, DESCRIPTION) case VM_MEMORY_ ## TAG: return # DESCRIPTION;
   static const char* tagToStr(uint32_t user_tag) {
     switch (user_tag) {
       case 0:
         return 0;
-      case VM_MEMORY_MALLOC:
-        return "MALLOC";
-      case VM_MEMORY_MALLOC_SMALL:
-        return "MALLOC_SMALL";
-      case VM_MEMORY_MALLOC_LARGE:
-        return "MALLOC_LARGE";
-      case VM_MEMORY_MALLOC_HUGE:
-        return "MALLOC_HUGE";
-      case VM_MEMORY_SBRK:
-        return "SBRK";
-      case VM_MEMORY_REALLOC:
-        return "REALLOC";
-      case VM_MEMORY_MALLOC_TINY:
-        return "MALLOC_TINY";
-      case VM_MEMORY_MALLOC_LARGE_REUSABLE:
-        return "MALLOC_LARGE_REUSABLE";
-      case VM_MEMORY_MALLOC_LARGE_REUSED:
-        return "MALLOC_LARGE_REUSED";
-      case VM_MEMORY_ANALYSIS_TOOL:
-        return "ANALYSIS_TOOL";
-      case VM_MEMORY_MALLOC_NANO:
-        return "MALLOC_NANO";
-      case VM_MEMORY_MALLOC_MEDIUM:
-        return "MALLOC_MEDIUM";
-      case VM_MEMORY_MALLOC_PROB_GUARD:
-        return "MALLOC_PROB_GUARD";
-      case VM_MEMORY_MACH_MSG:
-        return "MACH_MSG";
-      case VM_MEMORY_IOKIT:
-        return "IOKIT";
-      case VM_MEMORY_STACK:
-        return "STACK";
-      case VM_MEMORY_GUARD:
-        return "MEMORY_GUARD";
-      case VM_MEMORY_SHARED_PMAP:
-        return "SHARED_PMAP";
-      case VM_MEMORY_DYLIB:
-        return "DYLIB";
-      case VM_MEMORY_UNSHARED_PMAP:
-        return "UNSHARED_PMAP";
-      case VM_MEMORY_APPKIT:
-        return "AppKit";
-      case VM_MEMORY_FOUNDATION:
-        return "Foundation";
-      case VM_MEMORY_COREGRAPHICS:
-        return "CoreGraphics";
-      case VM_MEMORY_CARBON: /* is also VM_MEMORY_CORESERVICES */
-        return "Carbon";
-      case VM_MEMORY_JAVA:
-        return "Java";
-      case VM_MEMORY_COREDATA:
-        return "CoreData";
-      case VM_MEMORY_COREDATA_OBJECTIDS:
-        return "COREDATA_OBJECTIDS";
-      case VM_MEMORY_ATS:
-        return "ATS";
-      case VM_MEMORY_DYLD:
-        return "DYLD";
-      case VM_MEMORY_DYLD_MALLOC:
-        return "DYLD_MALLOC";
-      case VM_MEMORY_SQLITE:
-        return "SQLITE";
-      case VM_MEMORY_JAVASCRIPT_CORE:
-        return "JAVASCRIPT_CORE";
-      case VM_MEMORY_JAVASCRIPT_JIT_EXECUTABLE_ALLOCATOR:
-        return "JAVASCRIPT_JIT_EXECUTABLE_ALLOCATOR";
-      case VM_MEMORY_JAVASCRIPT_JIT_REGISTER_FILE:
-        return "JAVASCRIPT_JIT_REGISTER_FILE";
-      case VM_MEMORY_OPENCL:
-        return "OPENCL";
-      case VM_MEMORY_COREIMAGE:
-        return "CoreImage";
-      case VM_MEMORY_IMAGEIO:
-        return "ImageIO";
-      case VM_MEMORY_COREPROFILE:
-        return "CoreProfile";
-      case VM_MEMORY_APPLICATION_SPECIFIC_1:
-        return "APPLICATION_SPECIFIC_1";
-      case VM_MEMORY_APPLICATION_SPECIFIC_16:
-        return "APPLICATION_SPECIFIC_16";
-      case VM_MEMORY_OS_ALLOC_ONCE:
-        return "OS_ALLOC_ONCE";
-      case VM_MEMORY_GENEALOGY:
-        return "GENEALOGY";
+      X1(MALLOC);
+      X1(MALLOC_SMALL);
+      X1(MALLOC_LARGE);
+      X1(MALLOC_HUGE);
+      X1(SBRK);
+      X1(REALLOC);
+      X1(MALLOC_TINY);
+      X1(MALLOC_LARGE_REUSABLE);
+      X1(MALLOC_LARGE_REUSED);
+      X1(ANALYSIS_TOOL);
+      X1(MALLOC_NANO);
+      X1(MALLOC_MEDIUM);
+      X1(MALLOC_PROB_GUARD);
+      X1(MACH_MSG);
+      X1(IOKIT);
+      X1(STACK);
+      X1(GUARD);
+      X1(SHARED_PMAP);
+      X1(DYLIB);
+      X1(UNSHARED_PMAP);
+      X2(APPKIT, AppKit);
+      X2(FOUNDATION, Foundation);
+      X2(COREGRAPHICS, CoreGraphics);
+      X2(CORESERVICES, CoreServices); /* is also VM_MEMORY_CARBON */
+      X2(JAVA, Java);
+      X2(COREDATA, CoreData);
+      X1(COREDATA_OBJECTIDS);
+      X1(ATS);
+      X1(DYLD);
+      X1(DYLD_MALLOC);
+      X1(SQLITE);
+      X1(JAVASCRIPT_CORE);
+      X1(JAVASCRIPT_JIT_EXECUTABLE_ALLOCATOR);
+      X1(JAVASCRIPT_JIT_REGISTER_FILE);
+      X1(OPENCL);
+      X2(COREIMAGE, CoreImage);
+      X2(IMAGEIO, ImageIO);
+      X2(COREPROFILE, CoreProfile);
+      X1(APPLICATION_SPECIFIC_1);
+      X1(APPLICATION_SPECIFIC_16);
+      X1(OS_ALLOC_ONCE);
+      X1(GENEALOGY);
       default:
         static char buffer[30];
         snprintf(buffer, sizeof(buffer), "user_tag=0x%x(%d)", user_tag, user_tag);
@@ -357,7 +317,8 @@ void MemMapPrinter::pd_print_all_mappings(const MappingPrintSession& session) {
     if (retval <= 0) {
       break;
     } else if (retval < (int)sizeof(region_info)) {
-      fatal("proc_pidinfo() returned %d", retval);
+      st->print_cr("proc_pidinfo() returned %d", retval);
+      assert(false, "proc_pidinfo() returned %d", retval);
     }
     if (region_info.prp_prinfo.pri_share_mode != SM_EMPTY) {
       mapping_info.process(region_info);
