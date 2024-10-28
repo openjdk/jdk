@@ -97,7 +97,7 @@ public abstract class Policy {
      *
      * @return a {@code Policy} object that grants no permissions
      *
-     * @deprecated This method originally returned the installed {@code Policy}
+     * @apiNote This method originally returned the installed {@code Policy}
      *    object, or if no {@code Policy} object had been installed, a default
      *    {@code Policy} implementation. Installing a system-wide {@code Policy}
      *    object is no longer supported. This method always returns a
@@ -108,7 +108,6 @@ public abstract class Policy {
      *
      * @see #setPolicy(java.security.Policy)
      */
-    @Deprecated(since="17", forRemoval=true)
     public static Policy getPolicy()
     {
         return NO_PERMISSIONS_POLICY;
@@ -120,7 +119,7 @@ public abstract class Policy {
      *
      * @param p ignored
      * @throws UnsupportedOperationException always
-     * @deprecated This method originally installed the system-wide
+     * @apiNote This method originally installed the system-wide
      *    {@code Policy} object. Installing a system-wide {@code Policy} object
      *    is no longer supported. A {@code Policy} object was only useful in
      *    conjunction with {@linkplain SecurityManager the Security Manager},
@@ -128,7 +127,6 @@ public abstract class Policy {
      *
      * @see #getPolicy()
      */
-    @Deprecated(since="17", forRemoval=true)
     public static void setPolicy(Policy p)
     {
         throw new UnsupportedOperationException(
