@@ -55,7 +55,7 @@ public final class ModuleLoaderMap {
         private static final String APP_LOADER_NAME      = "APP";
 
         /**
-         * Map from module to a class loader name. The name is resolved to the
+         * Map from module name to class loader name. The name is resolved to the
          * actual class loader in {@code apply}.
          */
         private final Map<String, String> map;
