@@ -663,7 +663,7 @@ class MacroAssembler: public Assembler {
   // For long reach uses temp register for:
   // la + jr
   void j(const address dest, Register temp = t1);
-  void j(const Address &adr, Register temp = t1);
+  void j(const Address &dest, Register temp = t1);
   void j(Label &l, Register temp = noreg);
 
   // jump register: jalr x0, offset(rs)
@@ -1327,7 +1327,7 @@ public:
   void decrement(const Address dst, int64_t value = 1, Register tmp1 = t0, Register tmp2 = t1);
   void decrementw(const Address dst, int32_t value = 1, Register tmp1 = t0, Register tmp2 = t1);
 
-  void cmpptr(Register src1, Address src2, Label& equal);
+  void cmpptr(Register src1, const Address &src2, Label& equal, Register tmp = t0);
 
   void clinit_barrier(Register klass, Register tmp, Label* L_fast_path = nullptr, Label* L_slow_path = nullptr);
   void load_method_holder_cld(Register result, Register method);

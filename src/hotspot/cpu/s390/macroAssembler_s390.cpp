@@ -3667,7 +3667,7 @@ void MacroAssembler::compiler_fast_unlock_object(Register oop, Register box, Reg
   // We need a full fence after clearing owner to avoid stranding.
   z_fence();
 
-  // Check if the entry lists are empty.
+  // Check if the entry lists are empty (EntryList first - by convention).
   load_and_test_long(temp, Address(currentHeader, OM_OFFSET_NO_MONITOR_VALUE_TAG(EntryList)));
   z_brne(check_succ);
   load_and_test_long(temp, Address(currentHeader, OM_OFFSET_NO_MONITOR_VALUE_TAG(cxq)));
@@ -6510,7 +6510,7 @@ void MacroAssembler::compiler_fast_unlock_lightweight_object(Register obj, Regis
     // We need a full fence after clearing owner to avoid stranding.
     z_fence();
 
-    // Check if the entry lists are empty.
+    // Check if the entry lists are empty (EntryList first - by convention).
     load_and_test_long(tmp2, EntryList_address);
     z_brne(check_succ);
     load_and_test_long(tmp2, cxq_address);

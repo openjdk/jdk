@@ -24,6 +24,7 @@
  */
 package jdk.internal.foreign.abi;
 
+import java.lang.classfile.Annotation;
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.Label;
@@ -46,10 +47,13 @@ import jdk.internal.foreign.abi.Binding.ShiftLeft;
 import jdk.internal.foreign.abi.Binding.ShiftRight;
 import jdk.internal.foreign.abi.Binding.VMLoad;
 import jdk.internal.foreign.abi.Binding.VMStore;
+import jdk.internal.vm.annotation.ForceInline;
 import sun.security.action.GetBooleanAction;
+import sun.security.action.GetIntegerAction;
 import sun.security.action.GetPropertyAction;
 
 import java.io.IOException;
+import java.lang.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDesc;
 import java.lang.constant.DynamicConstantDesc;
@@ -77,6 +81,8 @@ public class BindingSpecializer {
         = GetPropertyAction.privilegedGetProperty("jdk.internal.foreign.abi.Specializer.DUMP_CLASSES_DIR");
     private static final boolean PERFORM_VERIFICATION
         = GetBooleanAction.privilegedGetProperty("jdk.internal.foreign.abi.Specializer.PERFORM_VERIFICATION");
+    private static final int SCOPE_DEDUP_DEPTH
+            = GetIntegerAction.privilegedGetProperty("jdk.internal.foreign.abi.Specializer.SCOPE_DEDUP_DEPTH", 2);
 
     // Bunch of helper constants
     private static final int CLASSFILE_VERSION = ClassFileFormatVersion.latest().major();
@@ -99,6 +105,7 @@ public class BindingSpecializer {
     private static final ClassDesc CD_ValueLayout_OfFloat = referenceClassDesc(ValueLayout.OfFloat.class);
     private static final ClassDesc CD_ValueLayout_OfDouble = referenceClassDesc(ValueLayout.OfDouble.class);
     private static final ClassDesc CD_AddressLayout = referenceClassDesc(AddressLayout.class);
+    private static final ClassDesc CD_ForceInline = referenceClassDesc(ForceInline.class);
 
     private static final MethodTypeDesc MTD_NEW_BOUNDED_ARENA = MethodTypeDesc.of(CD_Arena, CD_long);
     private static final MethodTypeDesc MTD_NEW_EMPTY_ARENA = MethodTypeDesc.of(CD_Arena);
@@ -196,8 +203,9 @@ public class BindingSpecializer {
             clb.withFlags(ACC_PUBLIC + ACC_FINAL + ACC_SUPER)
                .withSuperclass(CD_Object)
                .withVersion(CLASSFILE_VERSION, 0)
-               .withMethodBody(METHOD_NAME, methodTypeDesc(callerMethodType), ACC_PUBLIC | ACC_STATIC,
-                    cb -> new BindingSpecializer(cb, callerMethodType, callingSequence, abi, leafType).specialize());
+               .withMethod(METHOD_NAME, methodTypeDesc(callerMethodType), ACC_PUBLIC | ACC_STATIC,
+                    mb -> mb.with(RuntimeVisibleAnnotationsAttribute.of(Annotation.of(CD_ForceInline)))
+                            .withCode(cb -> new BindingSpecializer(cb, callerMethodType, callingSequence, abi, leafType).specialize()));
         });
 
         if (DUMP_CLASSES_DIR != null) {
@@ -502,11 +510,19 @@ public class BindingSpecializer {
 
         // start with 1 scope to maybe acquire on the stack
         assert curScopeLocalIdx != -1;
-        boolean hasOtherScopes = curScopeLocalIdx != 0;
-        for (int i = 0; i < curScopeLocalIdx; i++) {
+        boolean hasLookup = false;
+
+        // Here we check if the current scope has not been already acquired.
+        // To do that, we generate many comparisons (one per cached scope).
+        // Note that we always skip comparisons against the very first cached scope
+        // (as that is the function address, which typically belongs to another scope).
+        // We also stop the comparisons at SCOPE_DEDUP_DEPTH, to keep a lid on the size
+        // of the generated code.
+        for (int i = 1; i < curScopeLocalIdx && i <= SCOPE_DEDUP_DEPTH; i++) {
             cb.dup() // dup for comparison
               .aload(scopeSlots[i])
               .if_acmpeq(skipAcquire);
+            hasLookup = true;
         }
 
         // 1 scope to acquire on the stack
@@ -516,10 +532,10 @@ public class BindingSpecializer {
         cb.invokevirtual(CD_MemorySessionImpl, "acquire0", MTD_ACQUIRE0) // call acquire on the other
           .astore(nextScopeLocal); // store off one to release later
 
-        if (hasOtherScopes) { // avoid ASM generating a bunch of nops for the dead code
+        if (hasLookup) { // avoid ASM generating a bunch of nops for the dead code
             cb.goto_(end)
-              .labelBinding(skipAcquire)
-              .pop(); // drop scope
+                    .labelBinding(skipAcquire)
+                    .pop(); // drop scope
         }
 
         cb.labelBinding(end);
