@@ -290,12 +290,17 @@ HeapWord* ParallelScavengeHeap::mem_allocate_work(size_t size,
   uint gclocker_stalled_count = 0;
 
   while (true /*return or throw error in loop*/) {
-    if (gc_count != total_collections()) {
+    if (VM_CollectForAllocation::is_collect_for_allocation_started()) {
+      VM_CollectForAllocation::wait_at_collect_for_allocation_barrier();
+    }
+
+    uint new_gc_count = total_collections();
+    if (gc_count != new_gc_count) {
       result = young_gen()->allocate(size);
-      gc_count = total_collections();
       if (result != nullptr) {
         return result;
       }
+      gc_count = new_gc_count;
     }
 
     // If certain conditions hold, try allocating from the old gen.
@@ -304,16 +309,18 @@ HeapWord* ParallelScavengeHeap::mem_allocate_work(size_t size,
       {
         // Take Heap_lock when allocate on old gen, since it is not thread-safe.
         MutexLocker ml(Heap_lock);
-        if (gc_count != total_collections()) {
+        new_gc_count = total_collections();
+        if (gc_count != new_gc_count) {
           // Try young gen again before allocate on old gen if gc count has changed after taking lock
           result = young_gen()->allocate(size);
           if (result == nullptr) {
             result = mem_allocate_old_gen(size);
           }
+          if (result != nullptr) {
+            return result;
+          }
+          gc_count = new_gc_count;
         }
-      }
-      if (result != nullptr) {
-        return result;
       }
     }
 
@@ -344,7 +351,6 @@ HeapWord* ParallelScavengeHeap::mem_allocate_work(size_t size,
     }
 
     if (!VM_CollectForAllocation::try_set_collect_for_allocation_started()) {
-      VM_CollectForAllocation::wait_at_collect_for_allocation_barrier();
       continue;
     }
 
