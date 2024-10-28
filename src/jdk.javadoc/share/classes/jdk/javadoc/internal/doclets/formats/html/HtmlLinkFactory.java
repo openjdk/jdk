@@ -401,7 +401,7 @@ public class HtmlLinkFactory {
             boolean many = false;
             for (TypeMirror t : vars) {
                 if (many) {
-                    links.add(",");
+                    links.add(", ");
                     links.add(HtmlTree.WBR());
                     if (linkInfo.addLineBreaksInTypeParameters()) {
                         links.add(Text.NL);

@@ -212,14 +212,14 @@ public class TestInterface extends JavadocTester {
                 ator.OfInt</a>&lt;<a href="Spliterator.OfInt.html#type-param-Integer" title="type parameter in Spli\
                 terator.OfInt">Integer</a>&gt;, <a href="Spliterator.OfPrimitive.html" title="in\
                 terface in pkg2">Spliterator.OfPrimitive</a>&lt;<a href="Spliterator.OfPrimitive\
-                .html#type-param-T" title="type parameter in Spliterator.OfPrimitive">T</a>,<wbr><a href="Spl\
+                .html#type-param-T" title="type parameter in Spliterator.OfPrimitive">T</a>, <wbr><a href="Spl\
                 iterator.OfPrimitive.html#type-param-T_CONS" title="type parameter in Spliterator.OfPrimitive">T_C\
-                ONS</a>,<wbr><a href="Spliterator.OfPrimitive.html#type-param-T_SPLITR" title="type parameter in Spl\
+                ONS</a>, <wbr><a href="Spliterator.OfPrimitive.html#type-param-T_SPLITR" title="type parameter in Spl\
                 iterator.OfPrimitive">T_SPLITR</a> extends <a href="Spliterator.OfPrimitive.html\
                 " title="interface in pkg2">Spliterator.OfPrimitive</a>&lt;<a href="Spliterator.\
-                OfPrimitive.html#type-param-T" title="type parameter in Spliterator.OfPrimitive">T</a>,<wbr><\
+                OfPrimitive.html#type-param-T" title="type parameter in Spliterator.OfPrimitive">T</a>, <wbr><\
                 a href="Spliterator.OfPrimitive.html#type-param-T_CONS" title="type parameter in Spliterator.OfPri\
-                mitive">T_CONS</a>,<wbr><a href="Spliterator.OfPrimitive.html#type-param-T_SPLITR" title="type param\
+                mitive">T_CONS</a>, <wbr><a href="Spliterator.OfPrimitive.html#type-param-T_SPLITR" title="type param\
                 eter in Spliterator.OfPrimitive">T_SPLITR</a>&gt;&gt;</code>""");
         checkOutput("pkg2/Spliterator.html", true,
             """
@@ -243,13 +243,13 @@ public class TestInterface extends JavadocTester {
                 <div class="col-second even-row-color"><code><a href="Spliterator.OfPrimitive.ht\
                 ml" class="type-name-link" title="interface in pkg2">Spliterator.OfPrimitive</a>\
                 &lt;<a href="Spliterator.OfPrimitive.html#type-param-T" title="type parameter in Spliterator.\
-                OfPrimitive">T</a>,<wbr><a href="Spliterator.OfPrimitive.html#type-param-T_CONS" title="type param\
-                eter in Spliterator.OfPrimitive">T_CONS</a>,<wbr><a href="Spliterator.OfPrimitiv\
+                OfPrimitive">T</a>, <wbr><a href="Spliterator.OfPrimitive.html#type-param-T_CONS" title="type param\
+                eter in Spliterator.OfPrimitive">T_CONS</a>, <wbr><a href="Spliterator.OfPrimitiv\
                 e.html#type-param-T_SPLITR" title="type parameter in Spliterator.OfPrimitive">T_SPLITR</a> extends <\
                 a href="Spliterator.OfPrimitive.html" title="interface in pkg2">Spliterator.OfPr\
                 imitive</a>&lt;<a href="Spliterator.OfPrimitive.html#type-param-T" title="type parameter in S\
-                pliterator.OfPrimitive">T</a>,<wbr><a href="Spliterator.OfPrimitive.html#type-param-T_CONS" title=\
-                "type parameter in Spliterator.OfPrimitive">T_CONS</a>,<wbr><a href="Spliterator\
+                pliterator.OfPrimitive">T</a>, <wbr><a href="Spliterator.OfPrimitive.html#type-param-T_CONS" title=\
+                "type parameter in Spliterator.OfPrimitive">T_CONS</a>, <wbr><a href="Spliterator\
                 .OfPrimitive.html#type-param-T_SPLITR" title="type parameter in Spliterator.OfPrimitive">T_SPLITR</a\
                 >&gt;&gt;</code></div>
                 <div class="col-last even-row-color">&nbsp;</div>
@@ -277,7 +277,7 @@ public class TestInterface extends JavadocTester {
                 sp;</div>
                 <div class="col-first even-row-color all-classes-table all-classes-table-tab1"><\
                 a href="pkg2/Spliterator.OfPrimitive.html" title="interface in pkg2">Spliterator\
-                .OfPrimitive&lt;T,<wbr>T_CONS,<wbr>T_SPLITR&gt;</a></div>
+                .OfPrimitive&lt;T, <wbr>T_CONS, <wbr>T_SPLITR&gt;</a></div>
                 <div class="col-last even-row-color all-classes-table all-classes-table-tab1">&n\
                 bsp;</div>""");
         checkOutput("index-all.html", true,
@@ -295,7 +295,7 @@ public class TestInterface extends JavadocTester {
                 kage-summary.html">pkg2</a></dt>
                 <dd>&nbsp;</dd>
                 <dt><a href="pkg2/Spliterator.OfPrimitive.html" class="type-name-link" title="in\
-                terface in pkg2">Spliterator.OfPrimitive&lt;T,<wbr>T_CONS,<wbr>T_SPLITR&gt;</a> \
+                terface in pkg2">Spliterator.OfPrimitive&lt;T, <wbr>T_CONS, <wbr>T_SPLITR&gt;</a> \
                 - Interface in <a href="pkg2/package-summary.html">pkg2</a></dt>
                 <dd>&nbsp;</dd>""");
     }
