@@ -961,7 +961,16 @@ public final class Integer extends Number
             if (archivedCache == null || size > archivedCache.length) {
                 Integer[] c = new Integer[size];
                 int j = low;
-                for(int i = 0; i < c.length; i++) {
+                // Use all cached values from the archive to avoid breaking
+                // identity rules with objects loaded from the archive.
+                int fill = (archivedCache == null) ? 0 : archivedCache.length;
+                for (int i = 0; i < fill; i++) {
+                    c[i] = archivedCache[i];
+                    assert j == archivedCache[i];
+                    j++;
+                }
+                // Fill the rest of the cache.
+                for (int i = fill; i < size; i++) {
                     c[i] = new Integer(j++);
                 }
                 archivedCache = c;

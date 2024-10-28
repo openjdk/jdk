@@ -245,13 +245,15 @@ public final class Short extends Number implements Comparable<Short>, Constable 
 
             // Load and use the archived cache if it exists
             CDS.initializeFromArchive(ShortCache.class);
-            if (archivedCache == null || archivedCache.length != size) {
+            if (archivedCache == null) {
                 Short[] c = new Short[size];
                 short value = -128;
                 for(int i = 0; i < size; i++) {
                     c[i] = new Short(value++);
                 }
                 archivedCache = c;
+            } else if (archivedCache.length != size) {
+                throw new IllegalStateException("CDS archive is broken");
             }
             cache = archivedCache;
         }

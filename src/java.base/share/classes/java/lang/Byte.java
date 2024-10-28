@@ -118,13 +118,15 @@ public final class Byte extends Number implements Comparable<Byte>, Constable {
 
             // Load and use the archived cache if it exists
             CDS.initializeFromArchive(ByteCache.class);
-            if (archivedCache == null || archivedCache.length != size) {
+            if (archivedCache == null) {
                 Byte[] c = new Byte[size];
                 byte value = (byte)-128;
                 for(int i = 0; i < size; i++) {
                     c[i] = new Byte(value++);
                 }
                 archivedCache = c;
+            } else if (archivedCache.length != size) {
+                throw new IllegalStateException("CDS archive is broken");
             }
             cache = archivedCache;
         }
