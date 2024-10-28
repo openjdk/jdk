@@ -189,6 +189,7 @@ void StubAssembler::epilogue(bool use_pop) {
   // must restore the rfp value saved on enter though.
   if (use_pop) {
     ldp(rfp, lr, Address(post(sp, 2 * wordSize)));
+    authenticate_return_address();
   } else {
     leave();
   }
