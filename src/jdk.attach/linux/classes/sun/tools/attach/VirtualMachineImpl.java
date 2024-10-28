@@ -82,10 +82,10 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
             // Keep canonical version of File, to delete, in case target process ends and /proc link has gone:
             File f = createAttachFile(pid, ns_pid).getCanonicalFile();
 
-            boolean sentQuit = false;
+            boolean timedout = false;
 
             try {
-                sentQuit = checkCatchesAndSendQuitTo(pid, false);
+                checkCatchesAndSendQuitTo(pid, false);
 
                 // give the target VM time to start the attach mechanism
                 final int delay_step = 100;
@@ -99,19 +99,19 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
                         Thread.sleep(delay);
                     } catch (InterruptedException x) { }
 
-                    time_spend += delay;
+                    timedout = (time_spend += delay) > timeout;
+
                     if (time_spend > timeout/2 && !socket_file.exists()) {
                         // Send QUIT again to give target VM the last chance to react
-                        sentQuit = checkCatchesAndSendQuitTo(pid, false);
+                        checkCatchesAndSendQuitTo(pid, !timedout);
                     }
-                } while (time_spend <= timeout && !socket_file.exists());
+                } while (!timedout && !socket_file.exists());
 
                 if (!socket_file.exists()) {
                     throw new AttachNotSupportedException(
                         String.format("Unable to open socket file %s: " +
-                          "target process %d %s within %dms " +
-                          "or HotSpot VM not loaded", socket_path, pid, sentQuit ? "doesn't respond" : "has not become ready",
-                                      time_spend));
+                          "target process %d doesn't respond within %dms " +
+                          "or HotSpot VM not loaded", socket_path, time_spend));
                 }
             } finally {
                 f.delete();
@@ -245,17 +245,16 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
     }
 
     private String findTargetProcessTmpDirectory(long pid, long ns_pid) throws AttachNotSupportedException, IOException {
-        // We need to handle at least 4 different cases:
-        // 1. Caller and target processes share PID namespace and root filesystem (host to host or container to
-        //    container with both /tmp mounted between containers).
-        // 2. Caller and target processes share PID namespace and root filesystem but the target process has elevated
-        //    privileges (host to host).
-        // 3. Caller and target processes share PID namespace but NOT root filesystem (container to container).
-        // 4. Caller and target processes share neither PID namespace nor root filesystem (host to container).
-
         final var procPidRoot = PROC.resolve(Long.toString(pid)).resolve(ROOT_TMP);
 
-        /*
+        /* We need to handle at least 4 different cases:
+         * 1. Caller and target processes share PID namespace and root filesystem (host to host or container to
+         *    container with both /tmp mounted between containers).
+         * 2. Caller and target processes share PID namespace and root filesystem but the target process has elevated
+         *    privileges (host to host).
+         * 3. Caller and target processes share PID namespace but NOT root filesystem (container to container).
+         * 4. Caller and target processes share neither PID namespace nor root filesystem (host to container)
+         *
          * if target is elevated, we cant use /proc/<pid>/... so we have to fallback to /tmp, but that may not be shared
          * with the target/attachee process, we can try, except in the case where the ns_pid also exists in this pid ns
          * which is ambiguous, if we share /tmp with the intended target, the attach will succeed, if we do not,
