@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,17 +25,23 @@
  */
 package jdk.internal.classfile.impl;
 
-
-import java.nio.ByteBuffer;
-import java.util.Arrays;
-
 import java.lang.classfile.BufWriter;
 import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.constantpool.ConstantPool;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.lang.classfile.constantpool.PoolEntry;
+import java.util.Arrays;
+
+import jdk.internal.access.JavaLangAccess;
+import jdk.internal.access.SharedSecrets;
+import jdk.internal.vm.annotation.ForceInline;
+
+import static java.lang.classfile.constantpool.PoolEntry.TAG_UTF8;
+import static jdk.internal.util.ModifiedUtf.putChar;
+import static jdk.internal.util.ModifiedUtf.utfLen;
 
 public final class BufWriterImpl implements BufWriter {
+    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
 
     private final ConstantPoolBuilder constantPool;
     private final ClassFileImpl context;
@@ -95,6 +102,7 @@ public final class BufWriterImpl implements BufWriter {
         elems[offset++] = (byte) x;
     }
 
+    @ForceInline
     @Override
     public void writeU2(int x) {
         reserveSpace(2);
@@ -103,6 +111,93 @@ public final class BufWriterImpl implements BufWriter {
         elems[offset    ] = (byte) (x >> 8);
         elems[offset + 1] = (byte) x;
         this.offset = offset + 2;
+    }
+
+    @ForceInline
+    public void writeU1U1(int x1, int x2) {
+        reserveSpace(2);
+        byte[] elems = this.elems;
+        int offset = this.offset;
+        elems[offset    ] = (byte) x1;
+        elems[offset + 1] = (byte) x2;
+        this.offset = offset + 2;
+    }
+
+    public void writeU1U2(int u1, int u2) {
+        reserveSpace(3);
+        byte[] elems = this.elems;
+        int offset = this.offset;
+        elems[offset    ] = (byte) u1;
+        elems[offset + 1] = (byte) (u2 >> 8);
+        elems[offset + 2] = (byte) u2;
+        this.offset = offset + 3;
+    }
+
+    public void writeU1U1U1(int x1, int x2, int x3) {
+        reserveSpace(3);
+        byte[] elems = this.elems;
+        int offset = this.offset;
+        elems[offset    ] = (byte) x1;
+        elems[offset + 1] = (byte) x2;
+        elems[offset + 2] = (byte) x3;
+        this.offset = offset + 3;
+    }
+
+    public void writeU1U1U2(int x1, int x2, int x3) {
+        reserveSpace(4);
+        byte[] elems = this.elems;
+        int offset = this.offset;
+        elems[offset    ] = (byte) x1;
+        elems[offset + 1] = (byte) x2;
+        elems[offset + 2] = (byte) (x3 >> 8);
+        elems[offset + 3] = (byte) x3;
+        this.offset = offset + 4;
+    }
+
+    public void writeU1U2U2(int x1, int x2, int x3) {
+        reserveSpace(5);
+        byte[] elems = this.elems;
+        int offset = this.offset;
+        elems[offset    ] = (byte) x1;
+        elems[offset + 1] = (byte) (x2 >> 8);
+        elems[offset + 2] = (byte) x2;
+        elems[offset + 3] = (byte) (x3 >> 8);
+        elems[offset + 4] = (byte) x3;
+        this.offset = offset + 5;
+    }
+
+    public void writeU2U1(int x1, int x2) {
+        reserveSpace(3);
+        byte[] elems = this.elems;
+        int offset = this.offset;
+        elems[offset    ] = (byte) (x1 >> 8);
+        elems[offset + 1] = (byte) x1;
+        elems[offset + 2] = (byte) x2;
+        this.offset = offset + 3;
+    }
+
+    public void writeU2U2(int x1, int x2) {
+        reserveSpace(4);
+        byte[] elems = this.elems;
+        int offset = this.offset;
+        elems[offset    ] = (byte) (x1 >> 8);
+        elems[offset + 1] = (byte) x1;
+        elems[offset + 2] = (byte) (x2 >> 8);
+        elems[offset + 3] = (byte) x2;
+        this.offset = offset + 4;
+    }
+
+    public void writeU2U2U2(int x1, int x2, int x3) {
+        reserveSpace(6);
+        byte[] elems = this.elems;
+        int offset = this.offset;
+        elems[offset    ] = (byte) (x1 >> 8);
+        elems[offset + 1] = (byte) x1;
+        elems[offset + 2] = (byte) (x2 >> 8);
+        elems[offset + 3] = (byte) x2;
+        elems[offset + 4] = (byte) (x3 >> 8);
+        elems[offset + 5] = (byte) x3;
+        this.offset = offset + 6;
     }
 
     @Override
@@ -115,6 +210,21 @@ public final class BufWriterImpl implements BufWriter {
         elems[offset + 2] = (byte) (x >> 8);
         elems[offset + 3] = (byte)  x;
         this.offset = offset + 4;
+    }
+
+    public void writeIntInt(int x1, int x2) {
+        reserveSpace(8);
+        byte[] elems = this.elems;
+        int offset = this.offset;
+        elems[offset    ] = (byte) (x1 >> 24);
+        elems[offset + 1] = (byte) (x1 >> 16);
+        elems[offset + 2] = (byte) (x1 >> 8);
+        elems[offset + 3] = (byte)  x1;
+        elems[offset + 4] = (byte) (x2 >> 24);
+        elems[offset + 5] = (byte) (x2 >> 16);
+        elems[offset + 6] = (byte) (x2 >> 8);
+        elems[offset + 7] = (byte)  x2;
+        this.offset = offset + 8;
     }
 
     @Override
@@ -152,6 +262,34 @@ public final class BufWriterImpl implements BufWriter {
         writeBytes(other.elems, 0, other.offset);
     }
 
+    @SuppressWarnings("deprecation")
+    void writeUtfEntry(String str) {
+        int strlen = str.length();
+        int countNonZeroAscii = JLA.countNonZeroAscii(str);
+        int utflen = utfLen(str, countNonZeroAscii);
+        if (utflen > 65535) {
+            throw new IllegalArgumentException("string too long");
+        }
+        reserveSpace(utflen + 3);
+
+        int offset = this.offset;
+        byte[] elems = this.elems;
+
+        elems[offset    ] = (byte) TAG_UTF8;
+        elems[offset + 1] = (byte) (utflen >> 8);
+        elems[offset + 2] = (byte)  utflen;
+        offset += 3;
+
+        str.getBytes(0, countNonZeroAscii, elems, offset);
+        offset += countNonZeroAscii;
+
+        for (int i = countNonZeroAscii; i < strlen; i++) {
+            offset = putChar(elems, offset, str.charAt(i));
+        }
+
+        this.offset = offset;
+    }
+
     @Override
     public void writeBytes(byte[] arr, int start, int length) {
         reserveSpace(length);
@@ -167,12 +305,38 @@ public final class BufWriterImpl implements BufWriter {
         this.offset = prevOffset;
     }
 
+    public void patchU2(int offset, int x) {
+        byte[] elems = this.elems;
+        elems[offset    ] = (byte) (x >> 8);
+        elems[offset + 1] = (byte)  x;
+    }
+
+    public void patchInt(int offset, int x) {
+        byte[] elems = this.elems;
+        elems[offset    ] = (byte) (x >> 24);
+        elems[offset + 1] = (byte) (x >> 16);
+        elems[offset + 2] = (byte) (x >> 8);
+        elems[offset + 3] = (byte)  x;
+    }
+
     @Override
     public void writeIntBytes(int intSize, long intValue) {
         reserveSpace(intSize);
         for (int i = 0; i < intSize; i++) {
             elems[offset++] = (byte) ((intValue >> 8 * (intSize - i - 1)) & 0xFF);
         }
+    }
+
+    /**
+     * Skip a few bytes in the output buffer. The skipped area has undefined value.
+     * @param bytes number of bytes to skip
+     * @return the index, for later patching
+     */
+    public int skip(int bytes) {
+        int now = offset;
+        reserveSpace(bytes);
+        offset += bytes;
+        return now;
     }
 
     @Override
@@ -196,8 +360,8 @@ public final class BufWriterImpl implements BufWriter {
         return offset;
     }
 
-    public ByteBuffer asByteBuffer() {
-        return ByteBuffer.wrap(elems, 0, offset).slice();
+    public RawBytecodeHelper.CodeRange bytecodeView() {
+        return RawBytecodeHelper.of(elems, offset);
     }
 
     public void copyTo(byte[] array, int bufferOffset) {
@@ -207,19 +371,45 @@ public final class BufWriterImpl implements BufWriter {
     // writeIndex methods ensure that any CP info written
     // is relative to the correct constant pool
 
-    @Override
-    public void writeIndex(PoolEntry entry) {
+    public int cpIndex(PoolEntry entry) {
         int idx = AbstractPoolEntry.maybeClone(constantPool, entry).index();
         if (idx < 1 || idx > Character.MAX_VALUE)
-            throw new IllegalArgumentException(idx + " is not a valid index. Entry: " + entry);
-        writeU2(idx);
+            throw invalidIndex(idx, entry);
+        return idx;
+    }
+
+    public int cpIndexOrZero(PoolEntry entry) {
+        if (entry == null || entry.index() == 0)
+            return 0;
+        return cpIndex(entry);
+    }
+
+    @ForceInline
+    @Override
+    public void writeIndex(PoolEntry entry) {
+        writeU2(cpIndex(entry));
+    }
+
+    public void writeIndex(int bytecode, PoolEntry entry) {
+        writeU1U2(bytecode, cpIndex(entry));
+    }
+
+    static IllegalArgumentException invalidIndex(int idx, PoolEntry entry) {
+        return new IllegalArgumentException(idx + " is not a valid index. Entry: " + entry);
     }
 
     @Override
     public void writeIndexOrZero(PoolEntry entry) {
-        if (entry == null || entry.index() == 0)
-            writeU2(0);
-        else
-            writeIndex(entry);
+        writeU2(cpIndexOrZero(entry));
+    }
+
+    /**
+     * Join head and tail into an exact-size buffer
+     */
+    static byte[] join(BufWriterImpl head, BufWriterImpl tail) {
+        byte[] result = new byte[head.size() + tail.size()];
+        head.copyTo(result, 0);
+        tail.copyTo(result, head.size());
+        return result;
     }
 }

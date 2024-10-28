@@ -25,6 +25,7 @@
 #ifndef SHARE_GC_SHARED_PARTIALARRAYSTATE_HPP
 #define SHARE_GC_SHARED_PARTIALARRAYSTATE_HPP
 
+#include "memory/allocation.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
@@ -109,7 +110,7 @@ public:
 // the worker_id used in the operation.  This avoids locking and such on those
 // data structures, at the cost of possibly doing more total arena allocation
 // that would be needed with a single shared arena and free-list.
-class PartialArrayStateAllocator {
+class PartialArrayStateAllocator : public CHeapObj<mtGC> {
   class Impl;
   Impl* _impl;
 

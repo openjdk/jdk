@@ -678,7 +678,7 @@ AC_DEFUN([PLATFORM_CHECK_DEPRECATION],
 
 AC_DEFUN_ONCE([PLATFORM_SETUP_OPENJDK_BUILD_OS_VERSION],
 [
-  ###############################################################################
+  ##############################################################################
 
   # Note that this is the build platform OS version!
 
@@ -693,7 +693,7 @@ AC_DEFUN_ONCE([PLATFORM_SETUP_OPENJDK_BUILD_OS_VERSION],
 
 AC_DEFUN_ONCE([PLATFORM_SETUP_OPENJDK_TARGET_BITS],
 [
-  ###############################################################################
+  ##############################################################################
   #
   # Now we check if libjvm.so will use 32 or 64 bit pointers for the C/C++ code.
   # (The JVM can use 32 or 64 bit Java pointers but that decision
@@ -739,7 +739,7 @@ AC_DEFUN_ONCE([PLATFORM_SETUP_OPENJDK_TARGET_BITS],
 
 AC_DEFUN_ONCE([PLATFORM_SETUP_OPENJDK_TARGET_ENDIANNESS],
 [
-  ###############################################################################
+  ##############################################################################
   #
   # Is the target little or big endian?
   #

@@ -61,33 +61,23 @@ public:
   }
 };
 
-class ShenandoahMarkUpdateRefsSuperClosure : public ShenandoahMarkRefsSuperClosure {
-protected:
+template <ShenandoahGenerationType GENERATION>
+class ShenandoahMarkUpdateRefsClosure : public ShenandoahMarkRefsSuperClosure {
+private:
   ShenandoahHeap* const _heap;
 
-  template <class T, ShenandoahGenerationType GENERATION>
+  template <class T>
   inline void work(T* p);
 
 public:
-  ShenandoahMarkUpdateRefsSuperClosure(ShenandoahObjToScanQueue* q, ShenandoahReferenceProcessor* rp) :
+  ShenandoahMarkUpdateRefsClosure(ShenandoahObjToScanQueue* q, ShenandoahReferenceProcessor* rp) :
     ShenandoahMarkRefsSuperClosure(q, rp),
     _heap(ShenandoahHeap::heap()) {
     assert(_heap->is_stw_gc_in_progress(), "Can only be used for STW GC");
-  };
-};
+  }
 
-template <ShenandoahGenerationType GENERATION>
-class ShenandoahMarkUpdateRefsClosure : public ShenandoahMarkUpdateRefsSuperClosure {
-private:
-  template <class T>
-  inline void do_oop_work(T* p)     { work<T, GENERATION>(p); }
-
-public:
-  ShenandoahMarkUpdateRefsClosure(ShenandoahObjToScanQueue* q, ShenandoahReferenceProcessor* rp) :
-    ShenandoahMarkUpdateRefsSuperClosure(q, rp) {}
-
-  virtual void do_oop(narrowOop* p) { do_oop_work(p); }
-  virtual void do_oop(oop* p)       { do_oop_work(p); }
+  virtual void do_oop(narrowOop* p) { work(p); }
+  virtual void do_oop(oop* p)       { work(p); }
 };
 
 template <ShenandoahGenerationType GENERATION>
@@ -104,7 +94,6 @@ public:
   virtual void do_oop(oop* p)       { do_oop_work(p); }
 };
 
-
 class ShenandoahUpdateRefsSuperClosure : public ShenandoahOopClosureBase {
 protected:
   ShenandoahHeap* _heap;
@@ -113,15 +102,13 @@ public:
   ShenandoahUpdateRefsSuperClosure() :  _heap(ShenandoahHeap::heap()) {}
 };
 
-class ShenandoahSTWUpdateRefsClosure : public ShenandoahUpdateRefsSuperClosure {
+class ShenandoahNonConcUpdateRefsClosure : public ShenandoahUpdateRefsSuperClosure {
 private:
   template<class T>
   inline void work(T* p);
 
 public:
-  ShenandoahSTWUpdateRefsClosure() : ShenandoahUpdateRefsSuperClosure() {
-    assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Must only be used at safepoints");
-  }
+  ShenandoahNonConcUpdateRefsClosure() : ShenandoahUpdateRefsSuperClosure() {}
 
   virtual void do_oop(narrowOop* p) { work(p); }
   virtual void do_oop(oop* p)       { work(p); }

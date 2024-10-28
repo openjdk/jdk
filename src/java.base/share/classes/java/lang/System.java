@@ -65,11 +65,13 @@ import java.util.PropertyPermission;
 import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.WeakHashMap;
+import java.util.concurrent.Executor;
 import java.util.function.Supplier;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
 import jdk.internal.javac.Restricted;
+import jdk.internal.loader.NativeLibraries;
 import jdk.internal.logger.LoggerFinderLoader.TemporaryLoggerFinder;
 import jdk.internal.misc.Blocker;
 import jdk.internal.misc.CarrierThreadLocal;
@@ -145,8 +147,7 @@ public final class System {
      * corresponds to display output or another output destination
      * specified by the host environment or user. The encoding used
      * in the conversion from characters to bytes is equivalent to
-     * {@link Console#charset()} if the {@code Console} exists,
-     * <a href="#stdout.encoding">stdout.encoding</a> otherwise.
+     * {@link ##stdout.encoding stdout.encoding}.
      * <p>
      * For simple stand-alone Java applications, a typical way to write
      * a line of output data is:
@@ -166,8 +167,7 @@ public final class System {
      * @see     java.io.PrintStream#println(long)
      * @see     java.io.PrintStream#println(java.lang.Object)
      * @see     java.io.PrintStream#println(java.lang.String)
-     * @see     Console#charset()
-     * @see     <a href="#stdout.encoding">stdout.encoding</a>
+     * @see     ##stdout.encoding stdout.encoding
      */
     public static final PrintStream out = null;
 
@@ -183,11 +183,9 @@ public final class System {
      * variable {@code out}, has been redirected to a file or other
      * destination that is typically not continuously monitored.
      * The encoding used in the conversion from characters to bytes is
-     * equivalent to {@link Console#charset()} if the {@code Console}
-     * exists, <a href="#stderr.encoding">stderr.encoding</a> otherwise.
+     * equivalent to {@link ##stderr.encoding stderr.encoding}.
      *
-     * @see     Console#charset()
-     * @see     <a href="#stderr.encoding">stderr.encoding</a>
+     * @see     ##stderr.encoding stderr.encoding
      */
     public static final PrintStream err = null;
 
@@ -786,7 +784,8 @@ public final class System {
      *     <td>Character encoding name derived from the host environment and/or
      *     the user's settings. Setting this system property has no effect.</td></tr>
      * <tr><th scope="row">{@systemProperty stdout.encoding}</th>
-     *     <td>Character encoding name for {@link System#out System.out}.
+     *     <td>Character encoding name for {@link System#out System.out} and
+     *     {@link System#console() System.console()}.
      *     The Java runtime can be started with the system property set to {@code UTF-8},
      *     starting it with the property set to another value leads to undefined behavior.
      * <tr><th scope="row">{@systemProperty stderr.encoding}</th>
@@ -2569,6 +2568,9 @@ public final class System {
             public int countPositives(byte[] bytes, int offset, int length) {
                 return StringCoding.countPositives(bytes, offset, length);
             }
+            public int countNonZeroAscii(String s) {
+                return StringCoding.countNonZeroAscii(s);
+            }
             public String newStringNoRepl(byte[] bytes, Charset cs) throws CharacterCodingException  {
                 return String.newStringNoRepl(bytes, cs);
             }
@@ -2638,6 +2640,14 @@ public final class System {
                 return new StringConcatHelper.Concat1(constants);
             }
 
+            public byte stringInitCoder() {
+                return String.COMPACT_STRINGS ? String.LATIN1 : String.UTF16;
+            }
+
+            public byte stringCoder(String str) {
+                return str.coder();
+            }
+
             public int getCharsLatin1(long i, int index, byte[] buf) {
                 return StringLatin1.getChars(i, index, buf);
             }
@@ -2650,13 +2660,17 @@ public final class System {
                 return String.join(prefix, suffix, delimiter, elements, size);
             }
 
+            public String concat(String prefix, Object value, String suffix) {
+                return StringConcatHelper.concat(prefix, value, suffix);
+            }
+
             public Object classData(Class<?> c) {
                 return c.getClassData();
             }
 
             @Override
-            public long findNative(ClassLoader loader, String entry) {
-                return ClassLoader.findNativeInternal(loader, entry);
+            public NativeLibraries nativeLibrariesFor(ClassLoader loader) {
+                return ClassLoader.nativeLibrariesFor(loader);
             }
 
             @Override
@@ -2752,6 +2766,10 @@ public final class System {
                 } else {
                     throw new WrongThreadException();
                 }
+            }
+
+            public Executor virtualThreadDefaultScheduler() {
+                return VirtualThread.defaultScheduler();
             }
 
             public StackWalker newStackWalkerInstance(Set<StackWalker.Option> options,

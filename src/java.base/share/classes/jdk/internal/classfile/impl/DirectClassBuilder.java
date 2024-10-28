@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,34 +26,30 @@
 
 package jdk.internal.classfile.impl;
 
+import java.lang.classfile.*;
+import java.lang.classfile.constantpool.ClassEntry;
+import java.lang.classfile.constantpool.Utf8Entry;
 import java.lang.constant.ConstantDescs;
-import java.lang.constant.MethodTypeDesc;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
 
-import java.lang.classfile.ClassBuilder;
-import java.lang.classfile.ClassElement;
-import java.lang.classfile.ClassModel;
-import java.lang.classfile.ClassFile;
-import java.lang.classfile.CustomAttribute;
-import java.lang.classfile.constantpool.ClassEntry;
-import java.lang.classfile.FieldBuilder;
-import java.lang.classfile.FieldModel;
-import java.lang.classfile.FieldTransform;
-import java.lang.classfile.MethodBuilder;
-import java.lang.classfile.MethodModel;
-import java.lang.classfile.MethodTransform;
-import java.lang.classfile.constantpool.Utf8Entry;
+import static java.util.Objects.requireNonNull;
 
 public final class DirectClassBuilder
         extends AbstractDirectBuilder<ClassModel>
         implements ClassBuilder {
 
+    /** The value of default class access flags */
+    static final int DEFAULT_CLASS_FLAGS = ClassFile.ACC_PUBLIC;
+    static final Util.Writable[] EMPTY_WRITABLE_ARRAY = {};
+    static final ClassEntry[] EMPTY_CLASS_ENTRY_ARRAY = {};
     final ClassEntry thisClassEntry;
-    private final List<Util.Writable> fields = new ArrayList<>();
-    private final List<Util.Writable> methods = new ArrayList<>();
+    private Util.Writable[] fields = EMPTY_WRITABLE_ARRAY;
+    private Util.Writable[] methods = EMPTY_WRITABLE_ARRAY;
+    private int fieldsCount = 0;
+    private int methodsCount = 0;
     private ClassEntry superclassEntry;
     private List<ClassEntry> interfaceEntries;
     private int majorVersion;
@@ -65,7 +62,7 @@ public final class DirectClassBuilder
                               ClassEntry thisClass) {
         super(constantPool, context);
         this.thisClassEntry = AbstractPoolEntry.maybeClone(constantPool, thisClass);
-        this.flags = ClassFile.DEFAULT_CLASS_FLAGS;
+        this.flags = DEFAULT_CLASS_FLAGS;
         this.superclassEntry = null;
         this.interfaceEntries = Collections.emptyList();
         this.majorVersion = ClassFile.latestMajorVersion();
@@ -77,23 +74,36 @@ public final class DirectClassBuilder
         if (element instanceof AbstractElement ae) {
             ae.writeTo(this);
         } else {
-            writeAttribute((CustomAttribute<?>) element);
+            writeAttribute((CustomAttribute<?>) requireNonNull(element));
         }
+        return this;
+    }
+
+    @Override
+    public ClassBuilder withFlags(int flags) {
+        setFlags(flags);
         return this;
     }
 
     @Override
     public ClassBuilder withField(Utf8Entry name,
                                   Utf8Entry descriptor,
+                                  int flags) {
+        return withField(new DirectFieldBuilder(constantPool, context, name, descriptor, flags, null));
+    }
+
+    @Override
+    public ClassBuilder withField(Utf8Entry name,
+                                  Utf8Entry descriptor,
                                   Consumer<? super FieldBuilder> handler) {
-        return withField(new DirectFieldBuilder(constantPool, context, name, descriptor, null)
+        return withField(new DirectFieldBuilder(constantPool, context, name, descriptor, 0, null)
                                  .run(handler));
     }
 
     @Override
     public ClassBuilder transformField(FieldModel field, FieldTransform transform) {
         DirectFieldBuilder builder = new DirectFieldBuilder(constantPool, context, field.fieldName(),
-                                                            field.fieldType(), field);
+                                                            field.fieldType(), 0, field);
         builder.transform(field, transform);
         return withField(builder);
     }
@@ -105,13 +115,6 @@ public final class DirectClassBuilder
                                    Consumer<? super MethodBuilder> handler) {
         return withMethod(new DirectMethodBuilder(constantPool, context, name, descriptor, flags, null)
                                   .run(handler));
-    }
-
-    @Override
-    public ClassBuilder withMethod(String name, MethodTypeDesc descriptor, int flags, Consumer<? super MethodBuilder> handler) {
-        var method = new DirectMethodBuilder(constantPool, context, constantPool.utf8Entry(name), constantPool.utf8Entry(descriptor), flags, null);
-        method.mDesc = descriptor;
-        return withMethod(method.run(handler));
     }
 
     @Override
@@ -127,12 +130,20 @@ public final class DirectClassBuilder
     // internal / for use by elements
 
     ClassBuilder withField(Util.Writable field) {
-        fields.add(field);
+        if (fieldsCount >= fields.length) {
+            int newCapacity = fieldsCount + 8;
+            this.fields = Arrays.copyOf(fields, newCapacity);
+        }
+        fields[fieldsCount++] = field;
         return this;
     }
 
     ClassBuilder withMethod(Util.Writable method) {
-        methods.add(method);
+        if (methodsCount >= methods.length) {
+            int newCapacity = methodsCount + 8;
+            this.methods = Arrays.copyOf(methods, newCapacity);
+        }
+        methods[methodsCount++] = method;
         return this;
     }
 
@@ -167,14 +178,14 @@ public final class DirectClassBuilder
         // BSM writers until everything else is written.
 
         // Do this early because it might trigger CP activity
+        var constantPool = this.constantPool;
         ClassEntry superclass = superclassEntry;
         if (superclass != null)
             superclass = AbstractPoolEntry.maybeClone(constantPool, superclass);
         else if ((flags & ClassFile.ACC_MODULE) == 0 && !"java/lang/Object".equals(thisClassEntry.asInternalName()))
             superclass = constantPool.classEntry(ConstantDescs.CD_Object);
-        List<ClassEntry> ies = new ArrayList<>(interfaceEntries.size());
-        for (ClassEntry ce : interfaceEntries)
-            ies.add(AbstractPoolEntry.maybeClone(constantPool, ce));
+        int interfaceEntriesSize = interfaceEntries.size();
+        ClassEntry[] ies = interfaceEntriesSize == 0 ? EMPTY_CLASS_ENTRY_ARRAY : buildInterfaceEnties(interfaceEntriesSize);
 
         // We maintain two writers, and then we join them at the end
         int size = sizeHint == 0 ? 256 : sizeHint;
@@ -183,32 +194,35 @@ public final class DirectClassBuilder
 
         // The tail consists of fields and methods, and attributes
         // This should trigger all the CP/BSM mutation
-        Util.writeList(tail, fields);
-        Util.writeList(tail, methods);
+        Util.writeList(tail, fields, fieldsCount);
+        Util.writeList(tail, methods, methodsCount);
         int attributesOffset = tail.size();
         attributes.writeTo(tail);
 
         // Now we have to append the BSM, if there is one
-        boolean written = constantPool.writeBootstrapMethods(tail);
-        if (written) {
+        if (constantPool.writeBootstrapMethods(tail)) {
             // Update attributes count
-            tail.patchInt(attributesOffset, 2, attributes.size() + 1);
+            tail.patchU2(attributesOffset, attributes.size() + 1);
         }
 
         // Now we can make the head
         head.writeInt(ClassFile.MAGIC_NUMBER);
-        head.writeU2(minorVersion);
-        head.writeU2(majorVersion);
+        head.writeU2U2(minorVersion, majorVersion);
         constantPool.writeTo(head);
-        head.writeU2(flags);
-        head.writeIndex(thisClassEntry);
-        head.writeIndexOrZero(superclass);
-        Util.writeListIndices(head, ies);
+        head.writeU2U2U2(flags, head.cpIndex(thisClassEntry), head.cpIndexOrZero(superclass));
+        head.writeU2(interfaceEntriesSize);
+        for (int i = 0; i < interfaceEntriesSize; i++) {
+            head.writeIndex(ies[i]);
+        }
 
         // Join head and tail into an exact-size buffer
-        byte[] result = new byte[head.size() + tail.size()];
-        head.copyTo(result, 0);
-        tail.copyTo(result, head.size());
-        return result;
+        return BufWriterImpl.join(head, tail);
+    }
+
+    private ClassEntry[] buildInterfaceEnties(int interfaceEntriesSize) {
+        var ies = new ClassEntry[interfaceEntriesSize];
+        for (int i = 0; i < interfaceEntriesSize; i++)
+            ies[i] = AbstractPoolEntry.maybeClone(constantPool, interfaceEntries.get(i));
+        return ies;
     }
 }

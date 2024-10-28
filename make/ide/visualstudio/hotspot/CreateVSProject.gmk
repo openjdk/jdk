@@ -80,7 +80,7 @@ ifeq ($(call isTargetOs, windows), true)
     -ignorePath zero \
       #
 
-  ################################################################################
+  ##############################################################################
   # Build the ProjectCreator java tool.
 
   TOOLS_OUTPUTDIR := $(MAKESUPPORT_OUTPUTDIR)/ide/visualstudio

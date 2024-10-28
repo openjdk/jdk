@@ -277,12 +277,31 @@ public:
   }
 };
 
+#ifdef _WINDOWS
+static void map_stack_pages(JavaThread* thread, size_t size, address sp) {
+  address new_sp = sp - size;
+  address watermark = thread->stack_overflow_state()->shadow_zone_growth_watermark();
+
+  if (new_sp < watermark) {
+    size_t page_size = os::vm_page_size();
+    address last_touched_page = watermark - StackOverflow::stack_shadow_zone_size();
+    size_t pages_to_touch = align_up(watermark - new_sp, page_size) / page_size;
+    while (pages_to_touch-- > 0) {
+      last_touched_page -= page_size;
+      *last_touched_page = 0;
+    }
+    thread->stack_overflow_state()->set_shadow_zone_growth_watermark(new_sp);
+  }
+}
+#endif
+
 static bool stack_overflow_check(JavaThread* thread, size_t size, address sp) {
   const size_t page_size = os::vm_page_size();
   if (size > page_size) {
     if (sp - size < thread->stack_overflow_state()->shadow_zone_safe_limit()) {
       return false;
     }
+    WINDOWS_ONLY(map_stack_pages(thread, size, sp));
   }
   return true;
 }
@@ -2043,7 +2062,7 @@ NOINLINE intptr_t* ThawBase::thaw_slow(stackChunkOop chunk, bool return_barrier)
 
   assert(_cont.chunk_invariant(), "");
 
-  JVMTI_ONLY(if (!return_barrier) invalidate_jvmti_stack(_thread));
+  JVMTI_ONLY(invalidate_jvmti_stack(_thread));
 
   _thread->set_cont_fastpath(_fastpath);
 

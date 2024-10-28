@@ -276,19 +276,23 @@ inline constexpr bool different_registers(R first_register, Rx... more_registers
 }
 
 template<typename R, typename... Rx>
-inline void assert_different_registers(R first_register, Rx... more_registers) {
+inline void assert_different_registers_impl(const char* file, int line, R first_register, Rx... more_registers) {
 #ifdef ASSERT
   if (!different_registers(first_register, more_registers...)) {
     const R regs[] = { first_register, more_registers... };
     // Find a duplicate entry.
     for (size_t i = 0; i < ARRAY_SIZE(regs) - 1; ++i) {
       for (size_t j = i + 1; j < ARRAY_SIZE(regs); ++j) {
-        assert(!regs[i]->is_valid() || regs[i] != regs[j],
-               "Multiple uses of register: %s", regs[i]->name());
+        if (regs[i]->is_valid()) {
+          assert_with_file_and_line(regs[i] != regs[j], file, line, "regs[%zu] and regs[%zu] are both: %s",
+              i, j, regs[i]->name());
+        }
       }
     }
   }
 #endif
 }
+
+#define assert_different_registers(...) assert_different_registers_impl(__FILE__, __LINE__, __VA_ARGS__)
 
 #endif // SHARE_ASM_REGISTER_HPP

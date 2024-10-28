@@ -60,8 +60,6 @@ friend class ArrayCopyStub;
   void casw(Register addr, Register newval, Register cmpval);
   void casl(Register addr, Register newval, Register cmpval);
 
-  void poll_for_safepoint(relocInfo::relocType rtype, CodeEmitInfo* info = nullptr);
-
   static const int max_tableswitches = 20;
   struct tableswitch switches[max_tableswitches];
   int tableswitch_count;

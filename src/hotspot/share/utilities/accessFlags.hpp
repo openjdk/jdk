@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,14 +40,7 @@ enum {
   // flags actually put in .class file
   JVM_ACC_WRITTEN_FLAGS           = 0x00007FFF,
 
-  // HotSpot-specific access flags
-  // These Klass flags should be migrated, to a field such as InstanceKlass::_misc_flags,
-  // or to a similar flags field in Klass itself.
   // Do not add new ACC flags here.
-  JVM_ACC_HAS_FINALIZER           = 0x40000000,     // True if klass has a non-empty finalize() method
-  JVM_ACC_IS_CLONEABLE_FAST       = (int)0x80000000,// True if klass implements the Cloneable interface and can be optimized in generated code
-  JVM_ACC_IS_HIDDEN_CLASS         = 0x04000000,     // True if klass is hidden
-  JVM_ACC_IS_VALUE_BASED_CLASS    = 0x08000000,     // True if klass is marked as a ValueBased class
 };
 
 
@@ -77,12 +70,6 @@ class AccessFlags {
   // Attribute flags
   bool is_synthetic   () const         { return (_flags & JVM_ACC_SYNTHETIC   ) != 0; }
 
-  // Klass* flags
-  bool has_finalizer           () const { return (_flags & JVM_ACC_HAS_FINALIZER          ) != 0; }
-  bool is_cloneable_fast       () const { return (_flags & JVM_ACC_IS_CLONEABLE_FAST      ) != 0; }
-  bool is_hidden_class         () const { return (_flags & JVM_ACC_IS_HIDDEN_CLASS        ) != 0; }
-  bool is_value_based_class    () const { return (_flags & JVM_ACC_IS_VALUE_BASED_CLASS   ) != 0; }
-
   // get .class file flags
   jint get_flags               () const { return (_flags & JVM_ACC_WRITTEN_FLAGS); }
 
@@ -101,13 +88,6 @@ class AccessFlags {
 
   // attribute flags
   void set_is_synthetic()              { _flags |= JVM_ACC_SYNTHETIC; }
-
-  // Klass* flags
-  // These are set at classfile parsing time so do not require atomic access.
-  void set_has_finalizer()             { _flags |= JVM_ACC_HAS_FINALIZER; }
-  void set_is_cloneable_fast()         { _flags |= JVM_ACC_IS_CLONEABLE_FAST; }
-  void set_is_hidden_class()           { _flags |= JVM_ACC_IS_HIDDEN_CLASS; }
-  void set_is_value_based_class()      { _flags |= JVM_ACC_IS_VALUE_BASED_CLASS; }
 
  public:
   // Conversion

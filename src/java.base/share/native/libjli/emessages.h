@@ -103,9 +103,6 @@
 #define JRE_ERROR12     "Error: Exec of %s failed"
 #define JRE_ERROR13     "Error: String processing operation failed"
 
-#define SPC_ERROR1      "Error: Specifying an alternate JDK/JRE version is no longer supported.\n  The use of the flag '-version:' is no longer valid.\n  Please download and execute the appropriate version."
-#define SPC_ERROR2      "Error: Specifying an alternate JDK/JRE is no longer supported.\n  The related flags -jre-restrict-search | -jre-no-restrict-search are also no longer valid."
-
 #define DLL_ERROR1      "Error: dl failure on line %d"
 #define DLL_ERROR2      "Error: failed %s, because %s"
 #define DLL_ERROR3      "Error: could not find executable %s"
