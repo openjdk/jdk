@@ -547,9 +547,9 @@ void os::print_context(outputStream *st, const void *context) {
   // Add XMM registers + MXCSR. Note that C2 uses XMM to spill GPR values including pointers.
   st->cr();
   st->cr();
-  size_t fpregs_offset = ((address)uc->uc_mcontext.fpregs >= (address)uc) ?
-                         pointer_delta(uc->uc_mcontext.fpregs, uc, 1) : 0;
-  if (fpregs_offset >= sizeof(ucontext_t) || fpregs_offset == 0) {
+  // Sanity check: fpregs should point into the context.
+  if ((address)uc->uc_mcontext.fpregs < (address)uc ||
+      pointer_delta(uc->uc_mcontext.fpregs, uc, 1) >= sizeof(ucontext_t)) {
     st->print_cr("bad uc->uc_mcontext.fpregs: " INTPTR_FORMAT " (uc: " INTPTR_FORMAT ")",
                  p2i(uc->uc_mcontext.fpregs), p2i(uc));
   } else {
