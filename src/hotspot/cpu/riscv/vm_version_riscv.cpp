@@ -421,8 +421,12 @@ void VM_Version::c2_initialize() {
 
   // AES
   if (UseZvkn) {
-    if (FLAG_IS_DEFAULT(UseAESIntrinsics)) {
-      FLAG_SET_DEFAULT(UseAESIntrinsics, true);
+    UseAES = UseAES || FLAG_IS_DEFAULT(UseAES);
+    UseAESIntrinsics =
+        UseAESIntrinsics || (UseAES && FLAG_IS_DEFAULT(UseAESIntrinsics));
+    if (UseAESIntrinsics && !UseAES) {
+      warning("UseAESIntrinsics enabled, but UseAES not, enabling");
+      UseAES = true;
     }
   } else if (UseAESIntrinsics || UseAES) {
     if (!FLAG_IS_DEFAULT(UseAESIntrinsics) || !FLAG_IS_DEFAULT(UseAES)) {
