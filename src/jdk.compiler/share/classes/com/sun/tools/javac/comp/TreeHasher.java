@@ -101,22 +101,21 @@ public class TreeHasher extends TreeScanner {
                 return;
             }
         }
-        if (sym instanceof PoolConstant.Dynamic dynamic) {
-            hash(dynamic.bsmKey(types));
-        } else {
-            hash(sym);
-        }
+        hashSymbol(sym);
     }
 
     @Override
     public void visitSelect(JCFieldAccess tree) {
-        Symbol sym = tree.sym;
+        hashSymbol(tree.sym);
+        super.visitSelect(tree);
+    }
+
+    private void hashSymbol(Symbol sym) {
         if (sym instanceof PoolConstant.Dynamic dynamic) {
             hash(dynamic.bsmKey(types));
         } else {
             hash(sym);
         }
-        super.visitSelect(tree);
     }
 
     @Override

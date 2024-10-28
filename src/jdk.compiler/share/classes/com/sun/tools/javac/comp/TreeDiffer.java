@@ -201,10 +201,10 @@ public class TreeDiffer extends TreeScanner {
                 return;
             }
         }
-        result = scan(symbol, otherSymbol);
+        result = scanSymbol(symbol, otherSymbol);
     }
 
-    private boolean scan(Symbol symbol, Symbol otherSymbol) {
+    private boolean scanSymbol(Symbol symbol, Symbol otherSymbol) {
         if (symbol instanceof PoolConstant.Dynamic dms && otherSymbol instanceof PoolConstant.Dynamic other_dms) {
             return dms.bsmKey(types).equals(other_dms.bsmKey(types));
         }
@@ -216,13 +216,9 @@ public class TreeDiffer extends TreeScanner {
     @Override
     public void visitSelect(JCFieldAccess tree) {
         JCFieldAccess that = (JCFieldAccess) parameter;
-        result = scan(tree.selected, that.selected);
 
-        Symbol symbol = tree.sym;
-        Symbol otherSymbol = that.sym;
-
-        if (result)
-            result = scan(symbol, otherSymbol);
+        result = scan(tree.selected, that.selected) &&
+                scanSymbol(tree.sym, that.sym);
     }
 
     @Override
@@ -690,14 +686,14 @@ public class TreeDiffer extends TreeScanner {
                         && scan(tree.vartype, that.vartype)
                         && scan(tree.init, that.init);
 
-        if (!tree.sym.owner.type.hasTag(TypeTag.METHOD) && result) {
+        if (tree.sym.owner.type.hasTag(TypeTag.CLASS)) {
+            // field names are important!
             result &= tree.name == that.name;
         }
 
-        if (!result) {
-            return;
+        if (result) {
+            equiv.put(tree.sym, that.sym);
         }
-        equiv.put(tree.sym, that.sym);
     }
 
     @Override
