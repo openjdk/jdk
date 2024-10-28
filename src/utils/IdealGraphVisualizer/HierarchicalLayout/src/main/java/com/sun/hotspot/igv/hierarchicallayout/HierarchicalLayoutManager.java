@@ -70,7 +70,6 @@ public class HierarchicalLayoutManager extends LayoutManager {
         if (movedNode.getLayer() == layerNr) { // we move the node in the same layer
             LayoutLayer layer = graph.getLayer(layerNr);
             if (layer.contains(movedNode)) {
-                System.out.println(movedNode.getX() + " -> " + newLoc.x);
                 movedNode.setX(newLoc.x);
                 layer.sortNodesByXAndSetPositions();
             }
@@ -117,24 +116,54 @@ public class HierarchicalLayoutManager extends LayoutManager {
         WriteResult.apply(graph);
     }
 
+
     static private class ReverseEdges {
 
-        static private HashSet<LayoutNode> visited;
-        static private HashSet<LayoutNode> active;
+        static private final Set<LayoutNode> visited = new HashSet<>();
+        static private final Set<LayoutNode> active = new HashSet<>();
 
         static public void apply(LayoutGraph graph, boolean prioritizeControl) {
-            // Remove self-edges
+            visited.clear();
+            active.clear();
+
+            removeSelfEdges(graph);
+            reverseRootInputs(graph);
+
+            visited.clear();
+            active.clear();
+
+            List<LayoutNode> layoutNodes = new ArrayList<>(graph.getLayoutNodes());
+
+            if (prioritizeControl) {
+                detectControlFlowBackEdges(graph);
+                visited.clear();
+                active.clear();
+                layoutNodes.sort(ROOTS_FIRST_VERTEX_COMPARATOR);
+            }
+
+            for (LayoutNode node : layoutNodes) {
+                depthFirstSearch(node);
+            }
+
             for (LayoutNode node : graph.getLayoutNodes()) {
-                ArrayList<LayoutEdge> succs = new ArrayList<>(node.getSuccs());
-                for (LayoutEdge e : succs) {
-                    if (e.getTo() == node) {
-                        node.getSuccs().remove(e);
-                        node.getPreds().remove(e);
+                node.computeReversedLinkPoints(false);
+            }
+        }
+
+        private static void removeSelfEdges(LayoutGraph graph) {
+            for (LayoutNode node : graph.getLayoutNodes()) {
+                Iterator<LayoutEdge> edgeIterator = node.getSuccs().iterator();
+                while (edgeIterator.hasNext()) {
+                    LayoutEdge edge = edgeIterator.next();
+                    if (edge.getTo() == node) {
+                        edgeIterator.remove();
+                        node.getPreds().remove(edge);
                     }
                 }
             }
+        }
 
-            // Reverse inputs of roots
+        private static void reverseRootInputs(LayoutGraph graph) {
             for (LayoutNode node : graph.getLayoutNodes()) {
                 if (node.getVertex().isRoot()) {
                     for (LayoutEdge predEdge : new ArrayList<>(node.getPreds())) {
@@ -142,119 +171,95 @@ public class HierarchicalLayoutManager extends LayoutManager {
                     }
                 }
             }
-
-            visited = new HashSet<>();
-            active = new HashSet<>();
-            List<LayoutNode> layoutNodes = new ArrayList<>(graph.getLayoutNodes());
-
-            if (prioritizeControl) {
-                // detect back-edges in control-flow
-                controlFlowBackEdges(graph);
-
-                visited.clear();
-                active.clear();
-
-                // Start DFS and reverse back edges
-                layoutNodes.sort(ROOTS_FIRST_VERTEX_COMPARATOR);
-            }
-
-            for (LayoutNode node : layoutNodes) {
-                DFS(node);
-            }
-            for (LayoutNode node : graph.getLayoutNodes()) {
-                node.computeReversedLinkPoints(false);
-            }
         }
 
-        static private void controlFlowBackEdges(LayoutGraph graph) {
-            ArrayList<LayoutNode> workingList = new ArrayList<>();
-            for (LayoutNode node : graph.getLayoutNodes()) {
-                if (!node.hasPreds()) {
-                    workingList.add(node);
+        private static void detectControlFlowBackEdges(LayoutGraph graph) {
+            Queue<LayoutNode> workingQueue = initializeWorkingQueue(graph);
+
+            while (!workingQueue.isEmpty()) {
+                LayoutNode node = workingQueue.poll();
+                if (shouldSkipNode(node)) {
+                    continue;
                 }
-            }
-            // detect back-edges in control-flow
-            while (!workingList.isEmpty()) {
-                ArrayList<LayoutNode> newWorkingList = new ArrayList<>();
-                for (LayoutNode node : workingList) {
-                    if (node.getVertex().getPriority() < 4 && !node.getVertex().isRoot()) {
+
+                visited.add(node);
+                for (LayoutEdge edge : new ArrayList<>(node.getSuccs())) {
+                    if (edge.isReversed()) {
                         continue;
                     }
-                    visited.add(node);
-                    ArrayList<LayoutEdge> succs = new ArrayList<>(node.getSuccs());
-                    for (LayoutEdge edge : succs) {
-                        if (edge.isReversed()) {
-                            continue;
-                        }
-
-                        LayoutNode succNode = edge.getTo();
-                        if (visited.contains(succNode)) {
-                            // we found a back edge, reverse it
-                            reverseEdge(edge);
-
-                        } else {
-                            newWorkingList.add(succNode);
-                        }
+                    LayoutNode successor = edge.getTo();
+                    if (visited.contains(successor)) {
+                        reverseEdge(edge);
+                    } else {
+                        workingQueue.add(successor);
                     }
                 }
-                workingList = newWorkingList;
             }
-
         }
 
-        static private void reverseEdge(LayoutEdge layoutEdge) {
-            layoutEdge.reverse();
-
-            LayoutNode oldFrom = layoutEdge.getFrom();
-            LayoutNode oldTo = layoutEdge.getTo();
-            int oldRelativeFrom = layoutEdge.getRelativeFromX();
-            int oldRelativeTo = layoutEdge.getRelativeToX();
-
-            layoutEdge.setFrom(oldTo);
-            layoutEdge.setTo(oldFrom);
-            layoutEdge.setRelativeFromX(oldRelativeTo);
-            layoutEdge.setRelativeToX(oldRelativeFrom);
-
-            oldFrom.getSuccs().remove(layoutEdge);
-            oldFrom.getPreds().add(layoutEdge);
-            oldTo.getPreds().remove(layoutEdge);
-            oldTo.getSuccs().add(layoutEdge);
+        private static Queue<LayoutNode> initializeWorkingQueue(LayoutGraph graph) {
+            Queue<LayoutNode> workingQueue = new LinkedList<>();
+            for (LayoutNode node : graph.getLayoutNodes()) {
+                if (!node.hasPreds()) {
+                    workingQueue.add(node);
+                }
+            }
+            return workingQueue;
         }
 
-        static private void DFS(LayoutNode startNode) {
+        private static boolean shouldSkipNode(LayoutNode node) {
+            return node.getVertex().getPriority() < 4 && !node.getVertex().isRoot();
+        }
+
+        private static void reverseEdge(LayoutEdge edge) {
+            edge.reverse();
+
+            LayoutNode fromNode = edge.getFrom();
+            LayoutNode toNode = edge.getTo();
+            int relativeFrom = edge.getRelativeFromX();
+            int relativeTo = edge.getRelativeToX();
+
+            edge.setFrom(toNode);
+            edge.setTo(fromNode);
+            edge.setRelativeFromX(relativeTo);
+            edge.setRelativeToX(relativeFrom);
+
+            fromNode.getSuccs().remove(edge);
+            fromNode.getPreds().add(edge);
+            toNode.getPreds().remove(edge);
+            toNode.getSuccs().add(edge);
+        }
+
+        private static void depthFirstSearch(LayoutNode startNode) {
             if (visited.contains(startNode)) {
                 return;
             }
 
-            Stack<LayoutNode> workingList = new Stack<>();
-            workingList.push(startNode);
+            Deque<LayoutNode> stack = new ArrayDeque<>();
+            stack.push(startNode);
 
-            while (!workingList.empty()) {
-                LayoutNode node = workingList.pop();
+            while (!stack.isEmpty()) {
+                LayoutNode node = stack.pop();
 
                 if (visited.contains(node)) {
-                    // Node no longer active
                     active.remove(node);
                     continue;
                 }
 
-                // Repush immediately to know when no longer active
-                workingList.push(node);
+                stack.push(node);
                 visited.add(node);
                 active.add(node);
 
-                ArrayList<LayoutEdge> succs = new ArrayList<>(node.getSuccs());
-                for (LayoutEdge succEdge : succs) {
-                    if (active.contains(succEdge.getTo())) {
-                        // Encountered back edge
-                        reverseEdge(succEdge);
-                    } else if (!visited.contains(succEdge.getTo())) {
-                        workingList.push(succEdge.getTo());
+                for (LayoutEdge edge : new ArrayList<>(node.getSuccs())) {
+                    LayoutNode successor = edge.getTo();
+                    if (active.contains(successor)) {
+                        reverseEdge(edge);
+                    } else if (!visited.contains(successor)) {
+                        stack.push(successor);
                     }
                 }
             }
         }
-
     }
 
 
