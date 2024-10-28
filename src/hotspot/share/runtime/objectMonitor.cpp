@@ -2028,9 +2028,9 @@ void ObjectMonitor::VThreadWait(JavaThread* current, jlong millis) {
 }
 
 bool ObjectMonitor::VThreadWaitReenter(JavaThread* current, ObjectWaiter* node, ContinuationWrapper& cont) {
-  // First time we run after being preempted on Object.wait().
-  // Check if we were interrupted or the wait timed-out, and in
-  // that case remove ourselves from the _WaitSet queue.
+  // The first time we run after being preempted on Object.wait() we
+  // need to check if we were interrupted or the wait timed-out, and
+  // in that case remove ourselves from the _WaitSet queue.
   if (node->TState == ObjectWaiter::TS_WAIT) {
     Thread::SpinAcquire(&_WaitSetLock, "WaitSet - unlink");
     if (node->TState == ObjectWaiter::TS_WAIT) {
