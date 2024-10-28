@@ -889,6 +889,11 @@ void Threads::destroy_vm() {
       nu.wait(0);
   }
 
+  // finish recording as soon as we know that we're done
+  // to get the most accurate state of the app when it's still running
+  NMT_MemoryLogRecorder::finish();
+  NMT_VirtualMemoryLogRecorder::finish();
+
   EventShutdown e;
   if (e.should_commit()) {
     e.set_reason("No remaining non-daemon Java threads");

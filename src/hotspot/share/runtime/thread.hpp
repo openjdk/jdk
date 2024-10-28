@@ -30,6 +30,7 @@
 #include "gc/shared/gcThreadLocalData.hpp"
 #include "gc/shared/threadLocalAllocBuffer.hpp"
 #include "memory/allocation.hpp"
+#include "nmt/memLogRecorder.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
@@ -355,6 +356,7 @@ class Thread: public ThreadShadow {
   void set_native_thread_name(const char *name) {
     assert(Thread::current() == this, "set_native_thread_name can only be called on the current thread");
     os::set_native_thread_name(name);
+    NMT_MemoryLogRecorder::rememberThreadName(name);
   }
 
   // Support for Unhandled Oop detection

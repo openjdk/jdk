@@ -3884,6 +3884,10 @@ void Arguments::PropertyList_unique_add(SystemProperty** plist, const char* k, c
 // 2. The passed in "buflen" should be large enough to hold the null terminator.
 bool Arguments::copy_expand_pid(const char* src, size_t srclen,
                                 char* buf, size_t buflen) {
+  return Arguments::copy_expand_pid(src, srclen, buf, buflen, os::current_process_id());
+}
+bool Arguments::copy_expand_pid(const char* src, size_t srclen,
+                                char* buf, size_t buflen, int pid) {
   const char* p = src;
   char* b = buf;
   const char* src_end = &src[srclen];
@@ -3899,7 +3903,7 @@ bool Arguments::copy_expand_pid(const char* src, size_t srclen,
         // buf_end points to the character before the last character so
         // that we could write '\0' to the end of the buffer.
         size_t buf_sz = buf_end - b + 1;
-        int ret = jio_snprintf(b, buf_sz, "%d", os::current_process_id());
+        int ret = jio_snprintf(b, buf_sz, "%d", pid);
 
         // if jio_snprintf fails or the buffer is not long enough to hold
         // the expanded pid, returns false.

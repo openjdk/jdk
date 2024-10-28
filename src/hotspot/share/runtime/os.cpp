@@ -668,6 +668,8 @@ void* os::malloc(size_t size, MemTag mem_tag, const NativeCallStack& stack) {
     return nullptr;
   }
 
+  NMT_MemoryLogRecorder::log_malloc(mem_tag, outer_size, outer_ptr, &stack);
+
   void* const inner_ptr = MemTracker::record_malloc((address)outer_ptr, size, mem_tag, stack);
 
   if (CDSConfig::is_dumping_static_archive()) {
@@ -738,6 +740,16 @@ void* os::realloc(void *memblock, size_t size, MemTag mem_tag, const NativeCallS
       header->revive();
       return nullptr;
     }
+
+#if defined(__APPLE__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wuse-after-free"
+#endif // APPLE
+    NMT_MemoryLogRecorder::log_realloc(mem_tag, new_outer_size, new_outer_ptr, header, &stack);
+#if defined(__APPLE__)
+#pragma GCC diagnostic pop
+#endif // APPLE
+
     // realloc(3) succeeded, variable header now points to invalid memory and we need to deaccount the old block.
     MemTracker::deaccount(free_info);
 
@@ -762,15 +774,30 @@ void* os::realloc(void *memblock, size_t size, MemTag mem_tag, const NativeCallS
     if (rc == nullptr) {
       return nullptr;
     }
-
+#if defined(__APPLE__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wuse-after-free"
+#endif // APPLE
+    NMT_MemoryLogRecorder::log_realloc(mem_tag, size, rc, memblock, &stack);
+#if defined(__APPLE__)
+#pragma GCC diagnostic pop
+#endif // APPLE
   }
 
   DEBUG_ONLY(break_if_ptr_caught(rc);)
 
+  MemTag flags = mtNone;
+#ifdef ASSERT
+  if (MemTracker::enabled()) {
+    MallocHeader* header = MallocHeader::resolve_checked(memblock);
+    flags = header->flags();
+  }
+#endif
+
   return rc;
 }
 
-void  os::free(void *memblock) {
+void os::free(void *memblock) {
 
   // Special handling for NMT preinit phase before arguments are parsed
   if (NMTPreInit::handle_free(memblock)) {
@@ -783,8 +810,18 @@ void  os::free(void *memblock) {
 
   DEBUG_ONLY(break_if_ptr_caught(memblock);)
 
+  MemTag tags = mtNone;
+#ifdef ASSERT
+  if (MemTracker::enabled()) {
+    MallocHeader* header = MallocHeader::resolve_checked(memblock);
+    flags = header->flags();
+  }
+#endif
+
   // When NMT is enabled this checks for heap overwrites, then deaccounts the old block.
   void* const old_outer_ptr = MemTracker::record_free(memblock);
+
+  NMT_MemoryLogRecorder::log_free(tags, old_outer_ptr);
 
   ALLOW_C_FUNCTION(::free, ::free(old_outer_ptr);)
 }

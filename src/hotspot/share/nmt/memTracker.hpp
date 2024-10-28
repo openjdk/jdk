@@ -28,6 +28,7 @@
 #include "nmt/mallocTracker.hpp"
 #include "nmt/nmtCommon.hpp"
 #include "nmt/memoryFileTracker.hpp"
+#include "nmt/memLogRecorder.hpp"
 #include "nmt/threadStackTracker.hpp"
 #include "nmt/virtualMemoryTracker.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -126,6 +127,7 @@ class MemTracker : AllStatic {
     if (!enabled()) return;
     if (addr != nullptr) {
       ThreadCritical tc;
+      NMT_VirtualMemoryLogRecorder::log_virtual_memory_reserve((address)addr, size, stack, mem_tag);
       VirtualMemoryTracker::add_reserved_region((address)addr, size, stack, mem_tag);
     }
   }
@@ -134,6 +136,7 @@ class MemTracker : AllStatic {
     assert_post_init();
     if (!enabled()) return;
     if (addr != nullptr) {
+      NMT_VirtualMemoryLogRecorder::log_virtual_memory_release((address)addr, size);
       VirtualMemoryTracker::remove_released_region((address)addr, size);
     }
   }
@@ -142,6 +145,7 @@ class MemTracker : AllStatic {
     assert_post_init();
     if (!enabled()) return;
     if (addr != nullptr) {
+      NMT_VirtualMemoryLogRecorder::log_virtual_memory_uncommit((address)addr, size);
       VirtualMemoryTracker::remove_uncommitted_region((address)addr, size);
     }
   }
@@ -152,6 +156,7 @@ class MemTracker : AllStatic {
     if (!enabled()) return;
     if (addr != nullptr) {
       ThreadCritical tc;
+      NMT_VirtualMemoryLogRecorder::log_virtual_memory_reserve_and_commit((address)addr, size, stack, mem_tag);
       VirtualMemoryTracker::add_reserved_region((address)addr, size, stack, mem_tag);
       VirtualMemoryTracker::add_committed_region((address)addr, size, stack);
     }
@@ -163,6 +168,7 @@ class MemTracker : AllStatic {
     if (!enabled()) return;
     if (addr != nullptr) {
       ThreadCritical tc;
+      NMT_VirtualMemoryLogRecorder::log_virtual_memory_commit((address)addr, size, stack);
       VirtualMemoryTracker::add_committed_region((address)addr, size, stack);
     }
   }
@@ -211,6 +217,7 @@ class MemTracker : AllStatic {
     if (!enabled()) return;
     if (addr != nullptr) {
       ThreadCritical tc;
+      NMT_VirtualMemoryLogRecorder::log_virtual_memory_split_reserved((address)addr, size, split, mem_tag, split_tag);
       VirtualMemoryTracker::split_reserved_region((address)addr, size, split, mem_tag, split_tag);
     }
   }
@@ -220,6 +227,7 @@ class MemTracker : AllStatic {
     if (!enabled()) return;
     if (addr != nullptr) {
       ThreadCritical tc;
+      NMT_VirtualMemoryLogRecorder::log_virtual_memory_tag((address)addr, mem_tag);
       VirtualMemoryTracker::set_reserved_region_type((address)addr, mem_tag);
     }
   }
