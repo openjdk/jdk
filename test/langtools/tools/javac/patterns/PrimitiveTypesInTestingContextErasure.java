@@ -1,5 +1,3 @@
-import java.util.List;
-
 /*
  * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -27,9 +25,10 @@ import java.util.List;
  * @bug 8341408
  * @summary Compiler Implementation for Primitive types in patterns, instanceof, and switch (Second Preview)
  * @enablePreview
- * @compile PrimitiveTypesInTestingContextErasure.java
- * @run main/othervm PrimitiveTypesInTestingContextErasure
  */
+
+import java.util.List;
+
 public class PrimitiveTypesInTestingContextErasure {
     public static void main(String[] args) {
         erasureSwitch();
@@ -73,7 +72,7 @@ public class PrimitiveTypesInTestingContextErasure {
     public static void pollutedInstanceofTypeComparisonOperator() {
         List<Short> ls = (List) List.of("42");
 
-        assertTrue(!(ls.get(0) instanceof int i));
+        assertTrue(!(ls.get(0) instanceof int));
     }
 
     public static void pollutedInstanceofPatternMatchingOperatorReference() {
