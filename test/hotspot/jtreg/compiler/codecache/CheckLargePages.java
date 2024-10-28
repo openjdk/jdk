@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,8 +111,14 @@ public class CheckLargePages {
         out.shouldNotContain("CodeHeap 'profiled nmethods'");
         out.shouldNotContain("CodeHeap 'non-profiled nmethods'");
         out.shouldContain("UseLargePages=1, UseTransparentHugePages=0");
-        out.shouldMatch("CodeCache:  min=1[gG] max=1[gG] base=[^ ]+ size=1[gG] page_size=1[gG]");
+        out.shouldMatch("Large page support enabled\\. Usable page sizes: .*1[gG].*\\. Default large page size: .*\\.");
+        out.shouldMatch(
+                // 1GB large pages configured and available
+                "CodeCache:\\s+min=1[gG] max=1[gG] base=[^ ]+ size=1[gG] page_size=1[gG]|" +
+                // 1GB large pages configured but none available
+                "Failed to reserve and commit memory with given page size\\. req_addr: [^ ]+ size: 1[gG], page size: 1[gG], \\(errno = 12\\)");
     }
+
     public static void main(String[] args) throws Exception {
         if (isLargePageSizeEqual(LP_1G)) {
             testSegmented2GbCodeCacheWith1GbPage();
