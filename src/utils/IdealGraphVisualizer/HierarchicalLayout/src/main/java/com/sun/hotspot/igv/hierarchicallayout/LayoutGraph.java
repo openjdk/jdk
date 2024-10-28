@@ -75,7 +75,7 @@ public class LayoutGraph {
         return Collections.unmodifiableList(dummyNodes);
     }
 
-    public LayoutLayer createNewLayer(int layerNr) {
+    private LayoutLayer createNewLayer(int layerNr) {
         LayoutLayer layer = new LayoutLayer();
         layers.add(layerNr, layer);
 
@@ -86,6 +86,49 @@ public class LayoutGraph {
             }
         }
         return layer;
+    }
+
+
+    // check that NO neighbors of node are in a given layer
+    public int insertNewLayerIfNeeded(LayoutNode node, int layerNr) {
+        for (Link inputLink : getInputLinks(node.getVertex())) {
+            if (inputLink.getFrom().getVertex() == inputLink.getTo().getVertex()) continue;
+            LayoutNode fromNode = getLayoutNode(inputLink.getFrom().getVertex());
+            if (fromNode.getLayer() == layerNr) {
+                moveExpandLayerDown(layerNr + 1);
+                return layerNr + 1;
+            }
+        }
+        for (Link outputLink : getOutputLinks(node.getVertex())) {
+            if (outputLink.getFrom().getVertex() == outputLink.getTo().getVertex()) continue;
+            LayoutNode toNode = getLayoutNode(outputLink.getTo().getVertex());
+            if (toNode.getLayer() == layerNr) {
+                moveExpandLayerDown(layerNr);
+                return layerNr;
+            }
+        }
+        return layerNr;
+
+    }
+
+    private void moveExpandLayerDown(int layerNr) {
+        LayoutLayer oldLayer = getLayer(layerNr);
+        LayoutLayer newLayerAbove =  createNewLayer(layerNr);
+
+        Set<Integer> dummyNodeCache = new HashSet<>();
+        for (LayoutNode node : oldLayer) {
+            for (LayoutEdge predEdge : node.getPreds()) {
+                int x = predEdge.getStartX();
+                if (!dummyNodeCache.contains(x)) {
+                    LayoutNode dummyNode = predEdge.insertDummyBetweenSourceAndEdge();
+                    dummyNode.setX(x);
+                    dummyNode.setLayer(layerNr);
+                    addNode(dummyNode);
+                    dummyNodeCache.add(x);
+                }
+            }
+        }
+        newLayerAbove.sortNodesByXAndSetPositions();
     }
 
     public List<LayoutLayer> getLayers() {
