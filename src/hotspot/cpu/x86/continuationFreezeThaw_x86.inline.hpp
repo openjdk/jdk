@@ -126,10 +126,9 @@ void FreezeBase::adjust_interpreted_frame_unextended_sp(frame& f) {
   }
 }
 
-inline void FreezeBase::prepare_freeze_interpreted_top_frame(const frame& f) {
+inline void FreezeBase::prepare_freeze_interpreted_top_frame(frame& f) {
   assert(*f.addr_at(frame::interpreter_frame_last_sp_offset) == 0, "should be null for top frame");
-  intptr_t* lspp = f.addr_at(frame::interpreter_frame_last_sp_offset);
-  *lspp = f.unextended_sp() - f.fp();
+  f.interpreter_frame_set_last_sp(f.unextended_sp());
 }
 
 inline void FreezeBase::relativize_interpreted_frame_metadata(const frame& f, const frame& hf) {

@@ -455,7 +455,7 @@ private:
   inline void set_top_frame_metadata_pd(const frame& hf);
   inline void patch_pd(frame& callee, const frame& caller);
   void adjust_interpreted_frame_unextended_sp(frame& f);
-  static inline void prepare_freeze_interpreted_top_frame(const frame& f);
+  static inline void prepare_freeze_interpreted_top_frame(frame& f);
   static inline void relativize_interpreted_frame_metadata(const frame& f, const frame& hf);
 
 protected:

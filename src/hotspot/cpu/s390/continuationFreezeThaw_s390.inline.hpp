@@ -48,7 +48,7 @@ void FreezeBase::adjust_interpreted_frame_unextended_sp(frame& f) {
   Unimplemented();
 }
 
-inline void FreezeBase::prepare_freeze_interpreted_top_frame(const frame& f) {
+inline void FreezeBase::prepare_freeze_interpreted_top_frame(frame& f) {
   Unimplemented();
 }
 

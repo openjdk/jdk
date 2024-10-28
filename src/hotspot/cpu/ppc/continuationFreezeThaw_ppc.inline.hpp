@@ -71,7 +71,7 @@ void FreezeBase::adjust_interpreted_frame_unextended_sp(frame& f) {
   // nothing to do
 }
 
-inline void FreezeBase::prepare_freeze_interpreted_top_frame(const frame& f) {
+inline void FreezeBase::prepare_freeze_interpreted_top_frame(frame& f) {
   // nothing to do
   DEBUG_ONLY( intptr_t* lspp = (intptr_t*) &(f.get_ijava_state()->top_frame_sp); )
   assert(*lspp == f.unextended_sp() - f.fp(), "should be " INTPTR_FORMAT " usp:" INTPTR_FORMAT " fp:" INTPTR_FORMAT, *lspp, p2i(f.unextended_sp()), p2i(f.fp()));
