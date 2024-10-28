@@ -715,15 +715,18 @@ public final class SystemModulesPlugin extends AbstractPlugin {
         }
 
         private void genModuleDescriptorsMethod(ClassBuilder clb) {
+            var moduleInfoLoader = new ModuleInfoLoader(dedupSetBuilder, classDesc);
             var moduleDescriptors = LoadableArray.of(
                     CD_MODULE_DESCRIPTOR,
                     moduleInfos,
-                    new ModuleInfoLoader(dedupSetBuilder, classDesc),
+                    moduleInfoLoader,
                     moduleDescriptorsPerMethod,
                     classDesc,
                     "sub",
                     moduleDescriptorsPerMethod);
 
+            // This setup helpers needed by the LoadableArray, but element loader is responsible
+            // to setup elements.
             moduleDescriptors.setup(clb);
 
             clb.withMethodBody(
@@ -734,6 +737,9 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                             moduleDescriptors.load(cob);
                             cob.areturn();
                     });
+
+            // amend class with helpers needed by individual ModuleDescriptor
+            moduleInfoLoader.finish(clb);
         }
 
         /**
