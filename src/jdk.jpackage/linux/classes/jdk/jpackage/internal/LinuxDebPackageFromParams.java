@@ -27,7 +27,7 @@ package jdk.jpackage.internal;
 import java.util.Map;
 import static jdk.jpackage.internal.BundlerParamInfo.createStringBundlerParam;
 import static jdk.jpackage.internal.PackageFromParams.createBundlerParam;
-import static jdk.jpackage.internal.Package.StandardPackageType.LINUX_DEB;
+import static jdk.jpackage.model.StandardPackageType.LINUX_DEB;
 
 final class LinuxDebPackageFromParams {
 

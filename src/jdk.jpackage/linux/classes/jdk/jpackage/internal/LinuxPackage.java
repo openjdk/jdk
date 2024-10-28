@@ -24,6 +24,7 @@
  */
 package jdk.jpackage.internal;
 
+import jdk.jpackage.model.StandardPackageType;
 import java.nio.file.Path;
 import java.text.MessageFormat;
 import java.util.Optional;

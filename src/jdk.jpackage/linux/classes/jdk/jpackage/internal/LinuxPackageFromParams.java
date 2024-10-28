@@ -27,7 +27,7 @@ package jdk.jpackage.internal;
 import java.util.Map;
 import static jdk.jpackage.internal.BundlerParamInfo.createStringBundlerParam;
 import jdk.jpackage.internal.LinuxPackage.Impl;
-import jdk.jpackage.internal.Package.StandardPackageType;
+import jdk.jpackage.model.StandardPackageType;
 
 final class LinuxPackageFromParams {
 

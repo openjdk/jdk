@@ -26,7 +26,7 @@ package jdk.jpackage.internal;
 
 import java.io.IOException;
 import static jdk.jpackage.internal.Functional.ThrowingSupplier.toSupplier;
-import jdk.jpackage.internal.Package.StandardPackageType;
+import jdk.jpackage.model.StandardPackageType;
 
 final class LinuxPackageArch {
 

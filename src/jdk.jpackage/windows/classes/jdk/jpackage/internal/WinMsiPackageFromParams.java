@@ -32,7 +32,7 @@ import static jdk.jpackage.internal.BundlerParamInfo.createStringBundlerParam;
 import static jdk.jpackage.internal.PackageFromParams.createBundlerParam;
 import static jdk.jpackage.internal.StandardBundlerParam.RESOURCE_DIR;
 import jdk.jpackage.internal.WinMsiPackage.Impl;
-import static jdk.jpackage.internal.Package.StandardPackageType.WIN_MSI;
+import static jdk.jpackage.model.StandardPackageType.WIN_MSI;
 
 final class WinMsiPackageFromParams {
 

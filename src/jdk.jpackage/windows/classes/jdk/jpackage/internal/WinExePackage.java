@@ -24,6 +24,8 @@
  */
 package jdk.jpackage.internal;
 
+import jdk.jpackage.model.StandardPackageType;
+import jdk.jpackage.model.PackageType;
 import java.nio.file.Path;
 
 interface WinExePackage extends Package {

@@ -24,40 +24,14 @@
  */
 package jdk.jpackage.internal;
 
+import jdk.jpackage.model.StandardPackageType;
+import jdk.jpackage.model.PackageType;
 import java.nio.file.Path;
 import java.util.Optional;
-import java.util.stream.Stream;
 import static jdk.jpackage.internal.Getter.getValueOrDefault;
 
-interface Package {
+public interface Package {
 
-    interface PackageType {
-    }
-
-    enum StandardPackageType implements PackageType {
-        WIN_MSI(".msi"),
-        WIN_EXE(".exe"),
-        LINUX_DEB(".deb"),
-        LINUX_RPM(".rpm"),
-        MAC_PKG(".pkg"),
-        MAC_DMG(".dmg");
-
-        StandardPackageType(String suffix) {
-            this.suffix = suffix;
-        }
-
-        String suffix() {
-            return suffix;
-        }
-
-        static StandardPackageType fromCmdLineType(String type) {
-            return Stream.of(values()).filter(pt -> {
-                return pt.suffix().substring(1).equals(type);
-            }).findAny().get();
-        }
-
-        private final String suffix;
-    }
 
     Application app();
 

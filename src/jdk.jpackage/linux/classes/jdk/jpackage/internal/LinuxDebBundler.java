@@ -48,7 +48,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.internal.util.OperatingSystem;
 import static jdk.jpackage.internal.Functional.ThrowingFunction.toFunction;
-import static jdk.jpackage.internal.Package.StandardPackageType.LINUX_DEB;
+import static jdk.jpackage.model.StandardPackageType.LINUX_DEB;
 
 public class LinuxDebBundler extends LinuxPackageBundler {
 
