@@ -48,7 +48,7 @@ import java.util.logging.Logger;
  * @key randomness
  */
 // This test is a best effort to try & detect issues. The test itself will run
-// for 8secs. This is usually sufficient to detect issues.
+// for 4secs. This is usually sufficient to detect issues.
 // However to get a greater confidence it is recommended to run this test in a loop:
 // e.g. use something like:
 // $ while jtreg -jdk:$JDK -verbose:all  \
@@ -79,9 +79,6 @@ public class TestLogConfigurationDeadLockWithConf {
      *     that will attempt to detect deadlocks.
      * If after 4secs no deadlock was detected and no exception was thrown
      * then the test is considered a success and passes.
-     *
-     * Note that 4sec may not be enough to detect issues if there are some.
-     * This is a best effort test.
      *
      * @param args the command line arguments
      * @throws java.lang.Exception if the test fails.
