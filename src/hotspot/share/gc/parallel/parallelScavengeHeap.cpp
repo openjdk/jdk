@@ -313,13 +313,13 @@ HeapWord* ParallelScavengeHeap::mem_allocate_work(size_t size,
         if (gc_count != new_gc_count) {
           // Try young gen again before allocate on old gen if gc count has changed after taking lock
           result = young_gen()->allocate(size);
-          if (result == nullptr) {
-            result = mem_allocate_old_gen(size);
-          }
-          if (result != nullptr) {
-            return result;
-          }
           gc_count = new_gc_count;
+        }
+        if (result == nullptr) {
+          result = mem_allocate_old_gen(size);
+        }
+        if (result != nullptr) {
+          return result;
         }
       }
     }
