@@ -1827,7 +1827,7 @@ public class ForkJoinPool extends AbstractExecutorService {
      */
     final void deregisterWorker(ForkJoinWorkerThread wt, Throwable ex) {
         if ((runState & STOP) != 0L)       // ensure released
-            dropWaiters();
+            releaseAll();
         WorkQueue w = null;
         int src = 0, phase = 0;
         boolean replaceable = false;
@@ -1911,24 +1911,26 @@ public class ForkJoinPool extends AbstractExecutorService {
     }
 
     /**
-     * Releases and drops all waiting workers. Called only during shutdown.
+     * Releases all waiting workers. Called only during shutdown.
      *
      * @return current ctl
      */
-    private long dropWaiters() {
-        for (long c = ctl;;) {
+    private long releaseAll() {
+        long c = ctl;
+        for (;;) {
             WorkQueue[] qs; WorkQueue v; int sp, i;
             if ((sp = (int)c) == 0 || (qs = queues) == null ||
                 qs.length <= (i = sp & SMASK) || (v = qs[i]) == null)
-                return c;
+                break;
             if (c == (c = compareAndExchangeCtl(
-                          c, (v.stackPred & LMASK) | (UMASK & (c - TC_UNIT))))) {
-                v.source = DROPPED;
+                          c, ((UMASK & (c + RC_UNIT)) | (c & TC_MASK) |
+                              (v.stackPred & LMASK))))) {
                 v.phase = sp;
                 if (v.parking != 0)
                     U.unpark(v.owner);
             }
         }
+        return c;
     }
 
     /**
@@ -2750,22 +2752,24 @@ public class ForkJoinPool extends AbstractExecutorService {
                 if (quiescent() > 0)
                     e = runState;
             }
-            if ((e & STOP) != 0L && (dropWaiters() & RC_MASK) != 0L && now)
-                interruptAll();
+            if ((e & STOP) != 0L) {
+                releaseAll();
+                if (now)
+                    interruptAll();
+                e = runState;
+            }
         }
         if ((e & (STOP | TERMINATED)) == STOP) { // help cancel tasks
-            if ((ctl & RC_MASK) != 0L) {         // unless all inactive
-                int r = (int)Thread.currentThread().threadId();
-                WorkQueue[] qs = queues;         // stagger traversals
-                int n = (qs == null) ? 0 : qs.length;
-                for (int l = n; l > 0; --l, ++r) {
-                    WorkQueue q; ForkJoinTask<?> t;
-                    if ((q = qs[r & (n - 1)]) != null) {
-                        while (q.source != DROPPED && (t = q.poll()) != null) {
-                            try {
-                                t.cancel(false);
-                            } catch (Throwable ignore) {
-                            }
+            int r = (int)Thread.currentThread().threadId();
+            WorkQueue[] qs = queues;             // stagger traversals
+            int n = (qs == null) ? 0 : qs.length;
+            for (int l = n; l > 0; --l, ++r) {
+                WorkQueue q; ForkJoinTask<?> t;
+                if ((q = qs[r & (n - 1)]) != null) {
+                    while (q.source != DROPPED && (t = q.poll()) != null) {
+                        try {
+                            t.cancel(false);
+                        } catch (Throwable ignore) {
                         }
                     }
                 }
