@@ -43,7 +43,9 @@ import java.util.stream.Stream;
  */
 
 public class OOMEInAQS extends Thread {
-    static final int NTHREADS = 2; // intentionally not a scalable test; > 2 is very slow
+    // Intentionaly non-final to avoid EA of the threads array in main which can cause this test to
+    // fail in Xcomp mode.
+    static int NTHREADS = 2; // intentionally not a scalable test; > 2 is very slow
     static final int NREPS = 100;
     // statically allocate
     static final ReentrantLock mainLock = new ReentrantLock();
