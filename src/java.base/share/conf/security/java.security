@@ -330,10 +330,7 @@ ssl.TrustManagerFactory.algorithm=PKIX
 # any positive value: the number of seconds to cache an address for
 # zero: do not cache
 #
-# default value is forever (FOREVER). For security reasons, this
-# caching is made forever when a security manager is set. When a security
-# manager is not set, the default behavior in this implementation
-# is to cache for 30 seconds.
+# The default behavior in this implementation is to cache for 30 seconds.
 #
 # NOTE: setting this to anything other than the default value can have
 #       serious security implications. Do not set it unless
