@@ -345,11 +345,6 @@ address NativeLookup::lookup_entry(const methodHandle& method, TRAPS) {
 
   // 2) Try JNI long style
   entry = lookup_style(method, pure_name, long_name, args_size, CHECK_NULL);
-  if (entry != nullptr) return entry;
-
-  // 3) Try JNI short style without os prefix/suffix
-  entry = lookup_style(method, pure_name, "",        args_size, CHECK_NULL);
-  if (entry != nullptr) return entry;
 
   return entry; // null indicates not found
 }
