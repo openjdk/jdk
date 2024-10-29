@@ -46,13 +46,8 @@ import java.util.Arrays;
 import java.util.List;
 
 import static java.lang.foreign.MemoryLayout.*;
-import static java.lang.foreign.ValueLayout.JAVA_CHAR;
-import static java.lang.foreign.ValueLayout.JAVA_SHORT;
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.assertSame;
-import static org.testng.Assert.assertNotSame;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.expectThrows;
+import static java.lang.foreign.ValueLayout.*;
+import static org.testng.Assert.*;
 
 public class TestLinker extends NativeTestHelper {
 
@@ -174,6 +169,45 @@ public class TestLinker extends NativeTestHelper {
         Linker linker = Linker.nativeLinker();
         var x = expectThrows(IllegalArgumentException.class, () -> linker.downcallHandle(fd));
         assertTrue(x.getMessage().contains("is non-empty and only has padding layouts"));
+    }
+
+    @Test
+    public void interwovenPadding() {
+        Linker linker = Linker.nativeLinker();
+        var padding1 = MemoryLayout.paddingLayout(1);
+        var padding2 = MemoryLayout.paddingLayout(2).withByteAlignment(2);
+
+        var struct = MemoryLayout.structLayout(JAVA_BYTE, padding1, padding2, JAVA_INT);
+
+        var fd = FunctionDescriptor.of(struct, struct, struct);
+        assertThrows(IllegalArgumentException.class, () ->linker.downcallHandle(fd));
+    }
+
+    @Test
+    public void stackedPadding() {
+        Linker linker = Linker.nativeLinker();
+        var struct32 = MemoryLayout.structLayout(MemoryLayout.sequenceLayout(4, JAVA_LONG));
+        var padding1 = MemoryLayout.paddingLayout(1);
+        var padding2 = MemoryLayout.paddingLayout(2).withByteAlignment(2);
+        var padding4 = MemoryLayout.paddingLayout(4).withByteAlignment(4);
+        var padding8 = MemoryLayout.paddingLayout(8).withByteAlignment(8);
+        var padding16 = MemoryLayout.paddingLayout(16).withByteAlignment(16);
+        var padding32 = MemoryLayout.paddingLayout(32).withByteAlignment(32);
+        var union = MemoryLayout.unionLayout(struct32, padding32);
+        var struct = MemoryLayout.structLayout(JAVA_BYTE, padding1, padding2, padding4, padding8, padding16, union);
+        var fd = FunctionDescriptor.of(struct, struct, struct);
+        assertThrows(IllegalArgumentException.class, () -> linker.downcallHandle(fd));
+    }
+
+    @Test
+    public void sequenceOfZeroElements() {
+        Linker linker = Linker.nativeLinker();
+        var sequence0a8 = MemoryLayout.sequenceLayout(0, JAVA_LONG);
+        var sequence3a1 = MemoryLayout.sequenceLayout(3, JAVA_BYTE);
+        var padding5a1 = MemoryLayout.paddingLayout(5);
+        var struct8a8 = MemoryLayout.structLayout(sequence0a8, sequence3a1, padding5a1);
+        var fd = FunctionDescriptor.of(struct8a8, struct8a8, struct8a8);
+        linker.downcallHandle(fd);
     }
 
     @DataProvider
