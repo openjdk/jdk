@@ -186,7 +186,7 @@ class ProcSmapsSummary {
   size_t _shared;       // combined shared size
   size_t _swapped_out;  // combined amount of swapped-out memory
 public:
-  ProcSmapsSummary() : _num_mappings(0), _private(0), 
+  ProcSmapsSummary() : _num_mappings(0), _private(0),
                        _committed(0), _shared(0), _swapped_out(0) {}
 
   void add_mapping(const proc_regioninfo& region_info, const MappingInfo& mapping_info) {
