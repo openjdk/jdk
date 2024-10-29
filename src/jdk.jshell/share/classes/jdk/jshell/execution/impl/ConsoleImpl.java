@@ -240,15 +240,7 @@ public class ConsoleImpl {
          */
         @Override
         public String readln() {
-            try {
-                return sendAndReceive(() -> {
-                    remoteInput.write(Task.READ_LINE_NO_PROMPT.ordinal());
-                    char[] line = readChars();
-                    return new String(line);
-                });
-            } catch (IOException ex) {
-                throw new IOError(ex);
-            }
+            return readLine();
         }
 
         /**
@@ -287,7 +279,15 @@ public class ConsoleImpl {
          */
         @Override
         public String readLine() {
-            return readLine(Locale.getDefault(Locale.Category.FORMAT), "");
+            try {
+                return sendAndReceive(() -> {
+                    remoteInput.write(Task.READ_LINE_NO_PROMPT.ordinal());
+                    char[] line = readChars();
+                    return new String(line);
+                });
+            } catch (IOException ex) {
+                throw new IOError(ex);
+            }
         }
 
         /**

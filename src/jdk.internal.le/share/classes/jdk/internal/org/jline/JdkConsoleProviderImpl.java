@@ -231,12 +231,7 @@ public class JdkConsoleProviderImpl implements JdkConsoleProvider {
 
         @Override
         public String readln() {
-            try {
-                initJLineIfNeeded();
-                return jline.readLine();
-            } catch (EndOfFileException eofe) {
-                return null;
-            }
+            return readLine();
         }
 
         @Override
@@ -257,7 +252,12 @@ public class JdkConsoleProviderImpl implements JdkConsoleProvider {
 
         @Override
         public String readLine() {
-            return readLine(Locale.getDefault(Locale.Category.FORMAT), "");
+            try {
+                initJLineIfNeeded();
+                return jline.readLine();
+            } catch (EndOfFileException eofe) {
+                return null;
+            }
         }
 
         @Override
