@@ -183,8 +183,8 @@
 //     pointer1 = array[i + 0] = array_base + array_int_base_offset + 4L * ConvI2L(i + 0)
 //     pointer2 = array[i + 1] = array_base + array_int_base_offset + 4L * ConvI2L(i + 1)
 //
-//     At first, computing the aliasing is not immediately straight-forward in the general case because 
-//     the distance is hidden inside the ConvI2L. We can convert this (with array_int_base_offset = 16) 
+//     At first, computing the aliasing is not immediately straight-forward in the general case because
+//     the distance is hidden inside the ConvI2L. We can convert this (with array_int_base_offset = 16)
 //     into these decomposed forms:
 //
 //     pointer1 = 1L * array_base + 4L * i + 16L
