@@ -142,9 +142,9 @@
 // -----------------------------------------------------------------------------------------
 //
 // MemPointerDecomposedForm:
-//   When the pointer is parsed, it is decomposed into sum of summands plus a constant:
+//   When the pointer is parsed, it is decomposed into a SUM of summands plus a constant:
 //
-//     pointer = sum(summands) + con
+//     pointer = SUM(summands) + con
 //
 //   Where each summand_i in summands has the form:
 //
@@ -152,19 +152,19 @@
 //
 //   Hence, the full decomposed form is:
 //
-//     pointer = sum_i(scale_i * variable_i) + con
+//     pointer = SUM(scale_i * variable_i) + con
 //
 //   Note: the scale_i are compile-time constants (NoOverflowInt), and the variable_i are
 //         compile-time variables (C2 nodes).
-//   On 64bit systems, this decomposed form is computed with long-add/mul, on 32bit systems
+//   On 64-bit systems, this decomposed form is computed with long-add/mul, on 32-bit systems
 //   it is computed with int-add/mul.
 //
 // MemPointerAliasing:
 //   The decomposed form allows us to determine the aliasing between two pointers easily. For
 //   example, if two pointers are identical, except for their constant:
 //
-//     pointer1 = sum(summands) + con1
-//     pointer2 = sum(summands) + con2
+//     pointer1 = SUM(summands) + con1
+//     pointer2 = SUM(summands) + con2
 //
 //   then we can easily compute the distance between the pointers (distance = con2 - con1),
 //   and determine if they are adjacent.
@@ -183,8 +183,9 @@
 //     pointer1 = array[i + 0] = array_base + array_int_base_offset + 4L * ConvI2L(i + 0)
 //     pointer2 = array[i + 1] = array_base + array_int_base_offset + 4L * ConvI2L(i + 1)
 //
-//     At first, computing aliasing is difficult because the distance is hidden inside the
-//     ConvI2L. we can convert this (with array_int_base_offset = 16) into these decomposed forms:
+//     At first, computing the aliasing is not immediately straight-forward in the general case because 
+//     the distance is hidden inside the ConvI2L. We can convert this (with array_int_base_offset = 16) 
+//     into these decomposed forms:
 //
 //     pointer1 = 1L * array_base + 4L * i + 16L
 //     pointer2 = 1L * array_base + 4L * i + 20L
@@ -199,7 +200,7 @@
 //
 // -----------------------------------------------------------------------------------------
 //
-//   We have to be careful on 64bit systems with ConvI2L: decomposing its input is not
+//   We have to be careful on 64-bit systems with ConvI2L: decomposing its input is not
 //   correct in general, overflows may not be preserved in the decomposed form:
 //
 //     AddI:     ConvI2L(a +  b)    != ConvI2L(a) +  ConvI2L(b)
@@ -221,10 +222,10 @@
 //
 //  Definition: Safe decomposition (from some mp_i to mp_{i+1})
 //    We decompose summand in:
-//      mp_i     = con + summand                     + sum(other_summands)
+//      mp_i     = con + summand                     + SUM(other_summands)
 //    Resulting in:      +-------------------------+
-//      mp_{i+1} = con + dec_con + sum(dec_summands) + sum(other_summands)
-//               = new_con + sum(new_summands)
+//      mp_{i+1} = con + dec_con + SUM(dec_summands) + SUM(other_summands)
+//               = new_con + SUM(new_summands)
 //
 //    We call a decomposition safe if either:
 //      SAFE1) No matter the values of the summand variables:
@@ -249,7 +250,7 @@
 //      S2) The constants do not differ too much: abs(mp1.con - mp2.con) < 2^31
 //      S3) All summands of mp1 and mp2 are identical.
 //
-//    Then the ponter difference between p1 and p2 is identical to the difference between
+//    Then the pointer difference between p1 and p2 is identical to the difference between
 //    mp1 and mp2:
 //      p1 - p2 = mp1 - mp2
 //
