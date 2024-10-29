@@ -1751,7 +1751,7 @@ WB_ENTRY(jlong, WB_GetTotalUsedWordsInMetaspaceTestContext(JNIEnv* env, jobject 
 WB_END
 
 WB_ENTRY(jlong, WB_CreateArenaInTestContext(JNIEnv* env, jobject wb, jlong context, jboolean is_micro))
-  const Metaspace::MetaspaceType type = is_micro ? Metaspace::ReflectionMetaspaceType : Metaspace::StandardMetaspaceType;
+  const Metaspace::MetaspaceType type = is_micro ? Metaspace::ClassMirrorHolderMetaspaceType : Metaspace::StandardMetaspaceType;
   metaspace::MetaspaceTestContext* context0 = (metaspace::MetaspaceTestContext*) context;
   return (jlong)p2i(context0->create_arena(type));
 WB_END
@@ -2159,8 +2159,7 @@ WB_ENTRY(jboolean, WB_IsJVMCISupportedByGC(JNIEnv* env))
 WB_END
 
 WB_ENTRY(jboolean, WB_CanWriteJavaHeapArchive(JNIEnv* env))
-  return HeapShared::can_write()
-      && ArchiveHeapLoader::can_use(); // work-around JDK-8341371
+  return HeapShared::can_write();
 WB_END
 
 

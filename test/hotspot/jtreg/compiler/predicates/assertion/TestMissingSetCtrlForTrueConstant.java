@@ -24,37 +24,35 @@
 
 /*
  * @test
- * @bug 8342287
- * @summary Test that a fail path projection of a Template Assertion Predicate is not treated as success path projection.
- * @run main/othervm -XX:-TieredCompilation -Xbatch
- *                   -XX:CompileCommand=compileonly,compiler.predicates.TestTemplateAssertionPredicateWithTwoUCTs::test
- *                   compiler.predicates.TestTemplateAssertionPredicateWithTwoUCTs
+ * @bug 8343137
+ * @requires vm.debug == true & vm.compiler2.enabled
+ * @summary Test that set_ctrl() is properly set for true constant when folding useless Template Assertion Predicate.
+ * @run main/othervm -Xcomp -XX:+VerifyLoopOptimizations
+ *                   -XX:CompileCommand=compileonly,compiler.predicates.assertion.TestMissingSetCtrlForTrueConstant::test
+ *                   compiler.predicates.assertion.TestMissingSetCtrlForTrueConstant
  */
 
-package compiler.predicates;
+package compiler.predicates.assertion;
 
-public class TestTemplateAssertionPredicateWithTwoUCTs {
-    static int iFld;
+public class TestMissingSetCtrlForTrueConstant {
+    static long iFld;
+    static int[] iArrFld = new int[100];
+    static double[] dArrFld = new double[100];
 
     public static void main(String[] strArr) {
-        for (int i = 0; i < 1000; i++) {
-            test();
-        }
+        test();
     }
 
     static void test() {
-        int[][] lArr = new int[100][1];
-        for (int i14 = 5; i14 < 273; ++i14) {
-            int i16 = 1;
-            while (++i16 < 94) {
-                lArr[i16][0] += 1;
-                switch (i14) {
-                    case 11:
-                    case 2:
-                    case 13:
-                        iFld = 34;
-                }
+        long l = 34;
+        for (int i = 78; i > 8; --i) {
+            switch (i) {
+                case 24:
+                    l += iFld - 34;
+                case 25:
+                    iFld = iArrFld[i] += i;
             }
+            dArrFld[i + 1] += i;
         }
     }
 }

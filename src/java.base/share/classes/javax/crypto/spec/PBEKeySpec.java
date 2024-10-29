@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,8 @@ import java.util.Arrays;
  * this class requests the password as a char array, so it can be overwritten
  * when done.
  *
+ * @spec https://www.rfc-editor.org/info/rfc2898
+ *      RFC 2898: PKCS #5: Password-Based Cryptography Specification Version 2.0
  * @author Jan Luehe
  * @author Valerie Peng
  *

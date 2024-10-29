@@ -4782,23 +4782,6 @@ void MacroAssembler::kernel_crc32_common_fold_using_crypto_pmull(Register crc, R
     mov(tmp1, v0, D, 1);
 }
 
-SkipIfEqual::SkipIfEqual(
-    MacroAssembler* masm, const bool* flag_addr, bool value) {
-  _masm = masm;
-  uint64_t offset;
-  _masm->adrp(rscratch1, ExternalAddress((address)flag_addr), offset);
-  _masm->ldrb(rscratch1, Address(rscratch1, offset));
-  if (value) {
-    _masm->cbnzw(rscratch1, _label);
-  } else {
-    _masm->cbzw(rscratch1, _label);
-  }
-}
-
-SkipIfEqual::~SkipIfEqual() {
-  _masm->bind(_label);
-}
-
 void MacroAssembler::addptr(const Address &dst, int32_t src) {
   Address adr;
   switch(dst.getMode()) {
