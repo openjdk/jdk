@@ -80,9 +80,8 @@ final class TableSorter {
             if (b == null) {
                 return 1;
             }
-            // Comparison with the same class
-            if (a.getClass() == b.getClass() && a instanceof Comparable c1) {
-                return c1.compareTo((Comparable)b);
+            if (a instanceof String s1 && b instanceof String s2) {
+                return s1.compareTo(s2);
             }
 
             if (a instanceof Number n1 && b instanceof Number n2) {
@@ -103,7 +102,23 @@ final class TableSorter {
                     }
                 }
             }
-            // Use something that is stable if there is any other type of mix
+            if (a instanceof Number) {
+                return 1;
+            }
+            if (b instanceof Number) {
+                return -1;
+            }
+            // Comparison with the same class
+            if (a.getClass() == b.getClass() && a instanceof Comparable c1) {
+                return c1.compareTo((Comparable)b);
+            }
+            if (a instanceof Comparable) {
+                return 1;
+            }
+            if (b instanceof Comparable) {
+                return -1;
+            }
+            // Use something that is stable if it's not null, comparable or numeric
             return Integer.compare(System.identityHashCode(a), System.identityHashCode(b));
         }
 
