@@ -1862,18 +1862,11 @@ enum SSLCipher {
                     // Check for unexpected plaintext alert.
                     if (contentType == ContentType.ALERT.id
                         && bb.remaining() == 2) {
-
-                        final String msg = String.format(
+                        throw new GeneralSecurityException(String.format(
                             "Unexpected plaintext alert received: " +
                             "Level: %s; Alert: %s",
                             Alert.Level.nameOf(bb.get(bb.position())),
-                            Alert.nameOf(bb.get(bb.position() + 1)));
-
-                        if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
-                            SSLLogger.info(msg);
-                        }
-
-                        throw new GeneralSecurityException(msg);
+                            Alert.nameOf(bb.get(bb.position() + 1))));
                     } else {
                         throw new BadPaddingException(
                             "Insufficient buffer remaining for AEAD cipher " +
