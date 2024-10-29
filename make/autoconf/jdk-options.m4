@@ -620,7 +620,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JLINK_OPTIONS],
   UTIL_ARG_ENABLE(NAME: keep-packaged-modules, DEFAULT: $DEFAULT_PACKAGED_MODULES,
       RESULT: JLINK_KEEP_PACKAGED_MODULES,
       DESC: [enable keeping of packaged modules in jdk image],
-      DEFAULT_DESC: [enabled by default unless --enable-runtime-link-image is set],
+      DEFAULT_DESC: [enabled by default unless --enable-linkable-runtime is set],
       CHECKING_MSG: [if packaged modules are kept])
   AC_SUBST(JLINK_KEEP_PACKAGED_MODULES)
 ])
