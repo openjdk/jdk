@@ -428,10 +428,10 @@ define SetupJdkNativeCompilationBody
   ifneq ($$($1_DEFAULT_LDFLAGS), false)
     ifeq ($$($1_TYPE), EXECUTABLE)
       # Set the default flags first to be able to override
-      $1_LDFLAGS := $$(filter-out $$($1_LDFLAGS_FILTER_OUT), $$(LDFLAGS_JDKEXE)) $$($1_LDFLAGS)
+      $1_LDFLAGS := $$(filter-out $$($1_LDFLAGS_FILTER_OUT), $$(LDFLAGS_JDKEXE) $$($1_LDFLAGS))
     else
       # Set the default flags first to be able to override
-      $1_LDFLAGS := $$(filter-out $$($1_LDFLAGS_FILTER_OUT), $$(LDFLAGS_JDKLIB)) $$($1_LDFLAGS)
+      $1_LDFLAGS := $$(filter-out $$($1_LDFLAGS_FILTER_OUT), $$(LDFLAGS_JDKLIB) $$($1_LDFLAGS))
     endif
   endif
 
